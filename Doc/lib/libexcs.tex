@@ -9,7 +9,7 @@ traditionally, most exceptions have been string objects, in Python
 1.5, all standard exceptions have been converted to class objects,
 and users are encouraged to the the same.  The source code for those
 exceptions is present in the standard library module
-\code{exceptions}; this module never needs to be imported explicitly.
+\module{exceptions}; this module never needs to be imported explicitly.
 
 For backward compatibility, when Python is invoked with the \code{-X}
 option, the standard exceptions are strings.  This may be needed to
@@ -24,7 +24,7 @@ The string value of all built-in exceptions is their name, but this is
 not a requirement for user-defined exceptions or exceptions defined by
 library modules.
 
-For class exceptions, in a \code{try} statement with an \code{except}
+For class exceptions, in a \keyword{try} statement with an \keyword{except}
 clause that mentions a particular class, that clause also handles
 any exception classes derived from that class (but not exception
 classes from which \emph{it} is derived).  Two exception classes
@@ -38,14 +38,14 @@ interpreter or built-in functions.  Except where mentioned, they have
 an ``associated value'' indicating the detailed cause of the error.
 This may be a string or a tuple containing several items of
 information (e.g., an error code and a string explaining the code).
-The associated value is the second argument to the \code{raise}
+The associated value is the second argument to the \keyword{raise}
 statement.  For string exceptions, the associated value itself will be
 stored in the variable named as the second argument of the
-\code{except} clause (if any).  For class exceptions derived from
-the root class \code{Exception}, that variable receives the exception
+\keyword{except} clause (if any).  For class exceptions derived from
+the root class \exception{Exception}, that variable receives the exception
 instance, and the associated value is present as the exception
-instance's \code{args} attribute; this is a tuple even if the second
-argument to \code{raise} was not (then it is a singleton tuple).
+instance's \member{args} attribute; this is a tuple even if the second
+argument to \keyword{raise} was not (then it is a singleton tuple).
 \stindex{raise}
 
 User code can raise built-in exceptions.  This can be used to test an
@@ -63,7 +63,7 @@ are tuples containing the directly derived classes.
 \begin{excdesc}{Exception}
 The root class for exceptions.  All built-in exceptions are derived
 from this class.  All user-defined exceptions should also be derived
-from this class, but this is not (yet) enforced.  The \code{str()}
+from this class, but this is not (yet) enforced.  The \function{str()}
 function, when applied to an instance of this class (or most derived
 classes) returns the string value of the argument or arguments, or an
 empty string if no arguments were given to the constructor.  When used
@@ -74,19 +74,19 @@ as a sequence, this accesses the arguments given to the constructor
 \begin{excdesc}{StandardError}
 The base class for built-in exceptions.  All built-in exceptions are
 derived from this class, which is itself derived from the root class
-\code{Exception}.
+\exception{Exception}.
 \end{excdesc}
 
 \begin{excdesc}{ArithmeticError}
 The base class for those built-in exceptions that are raised for
-various arithmetic errors: \code{OverflowError},
-\code{ZeroDivisionError}, \code{FloatingPointError}.
+various arithmetic errors: \exception{OverflowError},
+\exception{ZeroDivisionError}, \exception{FloatingPointError}.
 \end{excdesc}
 
 \begin{excdesc}{LookupError}
 The base class for thise exceptions that are raised when a key or
-index used on a mapping or sequence is invalid: \code{IndexError},
-\code{KeyError}.
+index used on a mapping or sequence is invalid: \exception{IndexError},
+\exception{KeyError}.
 \end{excdesc}
 
 \setindexsubitem{(built-in exception)}
@@ -96,7 +96,7 @@ They are class objects, except when the \code{-X} option is used to
 revert back to string-based standard exceptions.
 
 \begin{excdesc}{AssertionError}
-Raised when an \code{assert} statement fails.
+Raised when an \keyword{assert} statement fails.
 \stindex{assert}
 \end{excdesc}
 
@@ -104,42 +104,42 @@ Raised when an \code{assert} statement fails.
 % xref to attribute reference?
   Raised when an attribute reference or assignment fails.  (When an
   object does not support attribute references or attribute assignments
-  at all, \code{TypeError} is raised.)
+  at all, \exception{TypeError} is raised.)
 \end{excdesc}
 
 \begin{excdesc}{EOFError}
 % XXXJH xrefs here
-  Raised when one of the built-in functions (\code{input()} or
-  \code{raw_input()}) hits an end-of-file condition (\EOF{}) without
+  Raised when one of the built-in functions (\function{input()} or
+  \function{raw_input()}) hits an end-of-file condition (\EOF{}) without
   reading any data.
 % XXXJH xrefs here
-  (N.B.: the \code{read()} and \code{readline()} methods of file
+  (N.B.: the \method{read()} and \method{readline()} methods of file
   objects return an empty string when they hit \EOF{}.)  No associated value.
 \end{excdesc}
 
 \begin{excdesc}{FloatingPointError}
 Raised when a floating point operation fails.  This exception is
 always defined, but can only be raised when Python is configured with
-the \code{--with-fpectl} option, or the \code{WANT_SIGFPE_HANDLER}
+the \code{--with-fpectl} option, or the \constant{WANT_SIGFPE_HANDLER}
 symbol is defined in the \file{config.h} file.
 \end{excdesc}
 
 \begin{excdesc}{IOError}
 % XXXJH xrefs here
-  Raised when an I/O operation (such as a \code{print} statement, the
-  built-in \code{open()} function or a method of a file object) fails
+  Raised when an I/O operation (such as a \keyword{print} statement, the
+  built-in \function{open()} function or a method of a file object) fails
   for an I/O-related reason, e.g., ``file not found'' or ``disk full''.
 
 When class exceptions are used, and this exception is instantiated as
 \code{IOError(errno, strerror)}, the instance has two additional
-attributes \code{errno} and \code{strerror} set to the error code and
+attributes \member{errno} and \member{strerror} set to the error code and
 the error message, respectively.  These attributes default to
 \code{None}.
 \end{excdesc}
 
 \begin{excdesc}{ImportError}
 % XXXJH xref to import statement?
-  Raised when an \code{import} statement fails to find the module
+  Raised when an \keyword{import} statement fails to find the module
   definition or when a \code{from {\rm \ldots} import} fails to find a
   name that is to be imported.
 \end{excdesc}
@@ -148,7 +148,7 @@ the error message, respectively.  These attributes default to
 % XXXJH xref to sequences
   Raised when a sequence subscript is out of range.  (Slice indices are
   silently truncated to fall in the allowed range; if an index is not a
-  plain integer, \code{TypeError} is raised.)
+  plain integer, \exception{TypeError} is raised.)
 \end{excdesc}
 
 \begin{excdesc}{KeyError}
@@ -172,10 +172,10 @@ the error message, respectively.  These attributes default to
   still be rescued (by deleting some objects).  The associated value is
   a string indicating what kind of (internal) operation ran out of memory.
   Note that because of the underlying memory management architecture
-  (\C{}'s \code{malloc()} function), the interpreter may not always be able
-  to completely recover from this situation; it nevertheless raises an
-  exception so that a stack traceback can be printed, in case a run-away
-  program was the cause.
+  (\C{}'s \cfunction{malloc()} function), the interpreter may not
+  always be able to completely recover from this situation; it
+  nevertheless raises an exception so that a stack traceback can be
+  printed, in case a run-away program was the cause.
 \end{excdesc}
 
 \begin{excdesc}{NameError}
@@ -188,7 +188,7 @@ the error message, respectively.  These attributes default to
 % XXXJH reference to long's and/or int's?
   Raised when the result of an arithmetic operation is too large to be
   represented.  This cannot occur for long integers (which would rather
-  raise \code{MemoryError} than give up).  Because of the lack of
+  raise \exception{MemoryError} than give up).  Because of the lack of
   standardization of floating point exception handling in \C{}, most
   floating point operations also aren't checked.  For plain integers,
   all operations that can overflow are checked except left shift, where
@@ -206,17 +206,17 @@ the error message, respectively.  These attributes default to
 \begin{excdesc}{SyntaxError}
 % XXXJH xref to these functions?
   Raised when the parser encounters a syntax error.  This may occur in
-  an \code{import} statement, in an \code{exec} statement, in a call
-  to the built-in function \code{eval()} or \code{input()}, or
+  an \keyword{import} statement, in an \keyword{exec} statement, in a call
+  to the built-in function \function{eval()} or \function{input()}, or
   when reading the initial script or standard input (also
   interactively).
 
 When class exceptions are used, instances of this class have
-atttributes \code{filename}, \code{lineno}, \code{offset} and
-\code{text} for easier access to the details; for string exceptions,
+atttributes \member{filename}, \member{lineno}, \member{offset} and
+\member{text} for easier access to the details; for string exceptions,
 the associated value is usually a tuple of the form
 \code{(message, (filename, lineno, offset, text))}.
-For class exceptions, \code{str()} returns only the message.
+For class exceptions, \function{str()} returns only the message.
 \end{excdesc}
 
 \begin{excdesc}{SystemError}
@@ -235,23 +235,23 @@ For class exceptions, \code{str()} returns only the message.
 
 \begin{excdesc}{SystemExit}
 % XXXJH xref to module sys?
-  This exception is raised by the \code{sys.exit()} function.  When it
+  This exception is raised by the \function{sys.exit()} function.  When it
   is not handled, the Python interpreter exits; no stack traceback is
   printed.  If the associated value is a plain integer, it specifies the
-  system exit status (passed to \C{}'s \code{exit()} function); if it is
+  system exit status (passed to \C{}'s \cfunction{exit()} function); if it is
   \code{None}, the exit status is zero; if it has another type (such as
   a string), the object's value is printed and the exit status is one.
 
 When class exceptions are used, the instance has an attribute
-\code{code} which is set to the proposed exit status or error message
+\member{code} which is set to the proposed exit status or error message
 (defaulting to \code{None}).
   
-  A call to \code{sys.exit()} is translated into an exception so that
-  clean-up handlers (\code{finally} clauses of \code{try} statements)
+  A call to \function{sys.exit()} is translated into an exception so that
+  clean-up handlers (\keyword{finally} clauses of \keyword{try} statements)
   can be executed, and so that a debugger can execute a script without
-  running the risk of losing control.  The \code{os._exit()} function
+  running the risk of losing control.  The \function{os._exit()} function
   can be used if it is absolutely positively necessary to exit
-  immediately (e.g., after a \code{fork()} in the child process).
+  immediately (e.g., after a \function{fork()} in the child process).
 \end{excdesc}
 
 \begin{excdesc}{TypeError}
@@ -264,7 +264,7 @@ When class exceptions are used, the instance has an attribute
   Raised when a built-in operation or function receives an argument
   that has the right type but an inappropriate value, and the
   situation is not described by a more precise exception such as
-  \code{IndexError}.
+  \exception{IndexError}.
 \end{excdesc}
 
 \begin{excdesc}{ZeroDivisionError}
