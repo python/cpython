@@ -356,7 +356,17 @@ class StreamReader(Codec):
             from decoding errors.
 
         """
-        pass
+        self.bytebuffer = ""
+        self.charbuffer = u""
+        self.atcr = False
+
+    def seek(self, offset, whence):
+        """ Set the input stream's current position.
+
+            Resets the codec buffers used for keeping state.
+        """
+        self.reset()
+        self.stream.seek(offset, whence)
 
     def next(self):
 
