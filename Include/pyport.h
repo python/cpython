@@ -389,13 +389,6 @@ extern int fclose(FILE *);
 
 /* From Modules/posixmodule.c */
 extern int fdatasync(int);
-/* XXX These are supposedly for SunOS4.1.3 but "shouldn't hurt elsewhere" */
-extern int rename(const char *, const char *);
-extern int pclose(FILE *);
-extern int lstat(const char *, struct stat *);
-extern int symlink(const char *, const char *);
-extern int fsync(int fd);
-
 #endif /* 0 */
 
 

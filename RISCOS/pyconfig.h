@@ -67,10 +67,6 @@
    and you want support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
-/* Define if your <unistd.h> contains bad prototypes for exec*()
-   (as it does on SGI IRIX 4.x) */
-#undef BAD_EXEC_PROTOTYPES
-
 /* Define if your compiler botches static forward declarations
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD

@@ -13,16 +13,6 @@ extern double fmod(double, double);
 extern double pow(double, double);
 #endif
 
-#if defined(sun) && !defined(__SVR4)
-/* On SunOS4.1 only libm.a exists. Make sure that references to all
-   needed math functions exist in the executable, so that dynamic
-   loading of mathmodule does not fail. */
-double (*_Py_math_funcs_hack[])() = {
-	acos, asin, atan, atan2, ceil, cos, cosh, exp, fabs, floor,
-	fmod, log, log10, pow, sin, sinh, sqrt, tan, tanh
-};
-#endif
-
 /* Special free list -- see comments for same code in intobject.c. */
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
 #define BHEAD_SIZE	8	/* Enough for a 64-bit pointer */

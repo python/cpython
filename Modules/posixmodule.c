@@ -136,16 +136,6 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifndef _MSC_VER
 
-#if defined(sun) && !defined(__SVR4)
-/* SunOS 4.1.4 doesn't have prototypes for these: */
-extern int rename(const char *, const char *);
-extern int pclose(FILE *);
-extern int fclose(FILE *);
-extern int fsync(int);
-extern int lstat(const char *, struct stat *);
-extern int symlink(const char *, const char *);
-#endif
-
 #if defined(__sgi)&&_COMPILER_VERSION>=700
 /* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
    (default) */
@@ -2117,11 +2107,7 @@ posix_execv(PyObject *self, PyObject *args)
 	}
 	argvlist[argc] = NULL;
 
-#ifdef BAD_EXEC_PROTOTYPES
-	execv(path, (const char **) argvlist);
-#else /* BAD_EXEC_PROTOTYPES */
 	execv(path, argvlist);
-#endif /* BAD_EXEC_PROTOTYPES */
 
 	/* If we get here it's definitely an error */
 
@@ -2260,12 +2246,7 @@ posix_execve(PyObject *self, PyObject *args)
 	}
 	envlist[envc] = 0;
 
-
-#ifdef BAD_EXEC_PROTOTYPES
-	execve(path, (const char **)argvlist, envlist);
-#else /* BAD_EXEC_PROTOTYPES */
 	execve(path, argvlist, envlist);
-#endif /* BAD_EXEC_PROTOTYPES */
 
 	/* If we get here it's definitely an error */
 
