@@ -2216,13 +2216,10 @@ staticforward PyTypeObject SSL_Type = {
 static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 {
 	char *data;
-	size_t len = 0;
+	size_t len;
   
-	if (!PyArg_ParseTuple(args, "s#|i:write", &data, &len))
+	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
 		return NULL;
-  
-	if (!len)
-		len = strlen(data);
   
 	len = SSL_write(self->ssl, data, len);
 	return PyInt_FromLong((long)len);
