@@ -105,6 +105,7 @@ PyObject *PyMac_BuildNumVersion(NumVersion);	/* Convert NumVersion to PyObject *
 
 int PyMac_GetStr255(PyObject *, Str255);	/* argument parser for Str255 */
 PyObject *PyMac_BuildStr255(Str255);		/* Convert Str255 to PyObject */
+PyObject *PyMac_BuildOptStr255(Str255);		/* Convert Str255 to PyObject, NULL to None */
 
 int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
 PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
