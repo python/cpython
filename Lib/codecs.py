@@ -360,7 +360,7 @@ class StreamReader(Codec):
         self.charbuffer = u""
         self.atcr = False
 
-    def seek(self, offset, whence):
+    def seek(self, offset, whence=0):
         """ Set the input stream's current position.
 
             Resets the codec buffers used for keeping state.
