@@ -80,6 +80,9 @@ def mkpycresourcefile(list, main='', dst=None):
 		print '%5d\t%s\t%s'%(id, name, main)
 	for name, location in list:
 		if not location: continue
+		if location[-4:] == '.pyc':
+			# Attempt corresponding .py
+			location = location[:-1]
 		if location[-3:] != '.py':
 			print '*** skipping', location
 			continue
