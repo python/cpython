@@ -147,6 +147,8 @@ class PrettyPrinter:
 			self.__format(ent, stream, indent,
 				      allowance + 1, context, level)
 		indent = indent - self.__indent_per_level
+	    if typ is TupleType and length == 1:
+		stream.write(',')
 	    stream.write(((typ is ListType) and ']') or ')')
 
 	elif sepLines and typ is DictType:
@@ -226,7 +228,11 @@ def _safe_repr(object, context, maxlevels=None, level=0):
 		object[0], context, maxlevels, level)
 	    readable = readable and subreadable
 	    s = s + subrepr
-	    for ent in object[1:]:
+	    tail = object[1:]
+	    if not tail:
+		if typ is TupleType:
+		    s = s + ','
+	    for ent in tail:
 		subrepr, subreadable = _safe_repr(
 		    ent, context, maxlevels, level)
 		readable = readable and subreadable
