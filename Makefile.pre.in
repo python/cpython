@@ -426,6 +426,8 @@ PYTHON_HEADERS= \
 		Include/pymem.h \
 		Include/object.h \
 		Include/objimpl.h \
+		Include/compile.h \
+		Include/symtable.h \
 		Include/pydebug.h \
 		Include/unicodeobject.h \
 		Include/intobject.h \
