@@ -3764,54 +3764,56 @@ slotptr(PyTypeObject *type, int offset)
 	return (void **)ptr;
 }
 
-staticforward int recurse_down_subclasses(PyTypeObject *type, slotdef *p);
+staticforward int recurse_down_subclasses(PyTypeObject *type,
+					  slotdef **pp, PyObject *name);
 
 static int
-update_one_slot(PyTypeObject *type, slotdef *p0)
+update_these_slots(PyTypeObject *type, slotdef **pp0, PyObject *name)
 {
-	slotdef *p = p0;
-	PyObject *descr;
-	PyWrapperDescrObject *d;
-	void *generic = NULL, *specific = NULL;
-	int use_generic = 0;
-	int offset;
-	void **ptr;
+	slotdef **pp;
 
-	offset = p->offset;
-	ptr = slotptr(type, offset);
-	if (ptr == NULL)
-		return recurse_down_subclasses(type, p);
-	do {
-		descr = _PyType_Lookup(type, p->name_strobj);
-		if (descr == NULL)
+	for (pp = pp0; *pp; pp++) {
+		slotdef *p = *pp;
+		PyObject *descr;
+		PyWrapperDescrObject *d;
+		void *generic = NULL, *specific = NULL;
+		int use_generic = 0;
+		int offset = p->offset;
+		void **ptr = slotptr(type, offset);
+		if (ptr == NULL)
 			continue;
-		generic = p->function;
-		if (descr->ob_type == &PyWrapperDescr_Type) {
-			d = (PyWrapperDescrObject *)descr;
-			if (d->d_base->wrapper == p->wrapper &&
-			    PyType_IsSubtype(type, d->d_type)) {
-				if (specific == NULL ||
-				    specific == d->d_wrapped)
-					specific = d->d_wrapped;
-				else
-					use_generic = 1;
+		do {
+			descr = _PyType_Lookup(type, p->name_strobj);
+			if (descr == NULL)
+				continue;
+			generic = p->function;
+			if (descr->ob_type == &PyWrapperDescr_Type) {
+				d = (PyWrapperDescrObject *)descr;
+				if (d->d_base->wrapper == p->wrapper &&
+				    PyType_IsSubtype(type, d->d_type)) {
+					if (specific == NULL ||
+					    specific == d->d_wrapped)
+						specific = d->d_wrapped;
+					else
+						use_generic = 1;
+				}
 			}
-		}
+			else
+				use_generic = 1;
+		} while ((++p)->offset == offset);
+		if (specific && !use_generic)
+			*ptr = specific;
 		else
-			use_generic = 1;
-	} while ((++p)->offset == offset);
-	if (specific && !use_generic)
-		*ptr = specific;
-	else
-		*ptr = generic;
-	return recurse_down_subclasses(type, p0);
+			*ptr = generic;
+	}
+	return recurse_down_subclasses(type, pp0, name);
 }
 
 static int
-recurse_down_subclasses(PyTypeObject *type, slotdef *p)
+recurse_down_subclasses(PyTypeObject *type, slotdef **pp, PyObject *name)
 {
 	PyTypeObject *subclass;
-	PyObject *ref, *subclasses;
+	PyObject *ref, *subclasses, *dict;
 	int i, n;
 
 	subclasses = type->tp_subclasses;
@@ -3826,7 +3828,12 @@ recurse_down_subclasses(PyTypeObject *type, slotdef *p)
 		if (subclass == NULL)
 			continue;
 		assert(PyType_Check(subclass));
-		if (update_one_slot(subclass, p) < 0)
+		/* Avoid recursing down into unaffected classes */
+		dict = subclass->tp_dict;
+		if (dict != NULL && PyDict_Check(dict) &&
+		    PyDict_GetItem(dict, name) != NULL)
+			continue;
+		if (update_these_slots(subclass, pp, name) < 0)
 			return -1;
 	}
 	return 0;
@@ -3856,21 +3863,9 @@ init_slotdefs(void)
 		if (!p->name_strobj)
 			Py_FatalError("XXX ouch");
 	}
-	qsort((void *)slotdefs, (size_t)(p-slotdefs), sizeof(slotdef), slotdef_cmp);
+	qsort((void *)slotdefs, (size_t)(p-slotdefs), sizeof(slotdef),
+	      slotdef_cmp);
 	initialized = 1;
-}
-
-static void
-collect_ptrs(PyObject *name, slotdef *ptrs[])
-{
-	slotdef *p;
-
-	init_slotdefs();
-	for (p = slotdefs; p->name; p++) {
-		if (name == p->name_strobj)
-			*ptrs++ = p;
-	}
-	*ptrs = NULL;
 }
 
 static int
@@ -3879,16 +3874,24 @@ update_slot(PyTypeObject *type, PyObject *name)
 	slotdef *ptrs[10];
 	slotdef *p;
 	slotdef **pp;
+	int offset;
 
-	collect_ptrs(name, ptrs);
+	init_slotdefs();
+	pp = ptrs;
+	for (p = slotdefs; p->name; p++) {
+		/* XXX assume name is interned! */
+		if (p->name_strobj == name)
+			*pp++ = p;
+	}
+	*pp = NULL;
 	for (pp = ptrs; *pp; pp++) {
 		p = *pp;
-		while (p > slotdefs && p->offset == (p-1)->offset)
+		offset = p->offset;
+		while (p > slotdefs && (p-1)->offset == offset)
 			--p;
-		if (update_one_slot(type, p) < 0)
-			return -1;
+		*pp = p;
 	}
-	return 0;
+	return update_these_slots(type, ptrs, name);
 }
 
 static void
@@ -3921,7 +3924,8 @@ fixup_slot_dispatchers(PyTypeObject *type)
 		do {
 			descr = NULL;
 			for (i = 0; i < n; i++) {
-				base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+				base = (PyTypeObject *)
+					PyTuple_GET_ITEM(mro, i);
 				assert(PyType_Check(base));
 				descr = PyDict_GetItem(
 					base->tp_dict, p->name_strobj);
