@@ -1,11 +1,9 @@
 test_sre
 test_support -- test failed re module pickle
 test_support -- test failed re module cPickle
-=== Syntax error: ('(?P<foo_123>a)(?P=foo_123)', 'aa', 0, 'g1', 'a')
 === Failed incorrectly ('^(.+)?B', 'AB', 0, 'g1', 'A')
 === Failed incorrectly ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
 === grouping error ('([^/]*/)*sub1/', 'd:msgs/tdir/sub1/trial/away.cpp', 0, 'found+"-"+g1', 'd:msgs/tdir/sub1/-tdir/') 'd:msgs/tdir/sub1/-trial/' should be 'd:msgs/tdir/sub1/-tdir/'
-=== Syntax error: ('(?P<id>aa)(?P=id)', 'aaaa', 0, 'found+"-"+id', 'aaaa-aa')
 === grouping error ('([abc])*bcd', 'abcd', 0, 'found+"-"+g1', 'abcd-a') 'abcd-c' should be 'abcd-a'
 === grouping error ('(?i)([abc])*bcd', 'ABCD', 0, 'found+"-"+g1', 'ABCD-A') 'ABCD-C' should be 'ABCD-A'
 === Syntax error: ('a(?!b).', 'abad', 0, 'found', 'ad')
