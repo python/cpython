@@ -59,7 +59,7 @@ def search_function(encoding):
         import aliases
         modname = aliases.aliases.get(modname, modname)
         try:
-            mod = __import__(modname, globals(), locals(), _import_tail)
+            mod = __import__('encodings.' + modname, globals(), locals(), _import_tail)
         except ImportError,why:
             mod = None
     if mod is None:
