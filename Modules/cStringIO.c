@@ -58,6 +58,9 @@
 
 
   $Log$
+  Revision 2.5  1997/04/11 19:56:06  guido
+  My own patch: support writable 'softspace' attribute.
+
   Revision 2.4  1997/04/09 17:35:33  guido
   Unknown changes by Jim Fulton.
 
@@ -154,7 +157,7 @@ static char cStringIO_module_documentation[] =
 typedef struct {
   PyObject_HEAD
   char *buf;
-  int pos, string_size, buf_size, closed;
+  int pos, string_size, buf_size, closed, softspace;
 } Oobject;
 
 staticforward PyTypeObject Otype;
@@ -453,6 +456,7 @@ newOobject(int  size) {
   self->pos=0;
   self->closed = 0;
   self->string_size = 0;
+  self->softspace = 0;
 
   UNLESS(self->buf=malloc(size*sizeof(char)))
     {
@@ -474,7 +478,24 @@ O_dealloc(Oobject *self) {
 
 static PyObject *
 O_getattr(Oobject *self, char *name) {
+  if (strcmp(name, "softspace") == 0) {
+	  return PyInt_FromLong(self->softspace);
+  }
   return Py_FindMethod(O_methods, (PyObject *)self, name);
+}
+
+static int
+O_setattr(Oobject *self, char *name, PyObject *value) {
+	long x;
+	if (strcmp(name, "softspace") != 0) {
+		PyErr_SetString(PyExc_AttributeError, name);
+		return -1;
+	}
+	x = PyInt_AsLong(value);
+	if (x == -1 && PyErr_Occurred())
+		return -1;
+	self->softspace = x;
+	return 0;
 }
 
 static char Otype__doc__[] = 
@@ -491,7 +512,7 @@ static PyTypeObject Otype = {
   (destructor)O_dealloc,	/*tp_dealloc*/
   (printfunc)0,		/*tp_print*/
   (getattrfunc)O_getattr,	/*tp_getattr*/
-  (setattrfunc)0,		/*tp_setattr*/
+  (setattrfunc)O_setattr,	/*tp_setattr*/
   (cmpfunc)0,		/*tp_compare*/
   (reprfunc)0,		/*tp_repr*/
   0,			/*tp_as_number*/
