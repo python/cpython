@@ -126,6 +126,6 @@ xxxPyCObject_Import(char *module_name, char *name)
 }
 
 #define PycString_IMPORT \
-  PycStringIO=xxxPyCObject_Import("cStringIO", "cStringIO_CAPI")
+  PycStringIO=(struct PycStringIO_CAPI*)xxxPyCObject_Import("cStringIO", "cStringIO_CAPI")
 
 #endif /* CSTRINGIO_INCLUDED */
