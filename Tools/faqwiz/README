@@ -21,6 +21,7 @@ faqw.py		executable script to be edited and installed in cgi-bin
 faqwiz.py	main module, lives in same directory as FAQ entry files
 faqconf.py	main configuration module
 faqcust.py	additional local customization module (optional)
+move-faqwiz.sh  Script to move faqwiz entries.
 
 
 What's New?
