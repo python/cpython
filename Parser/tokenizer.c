@@ -327,12 +327,16 @@ fp_readl(char *s, int size, struct tok_state *tok)
 #ifndef Py_USING_UNICODE
 	/* In a non-Unicode built, this should never be called. */
 	Py_FatalError("fp_readl should not be called in this build.");
-	return NULL;
+	return NULL; /* Keep compiler happy (not reachable) */
 #else
 	PyObject* utf8;
 	PyObject* buf = tok->decoding_buffer;
 	if (buf == NULL) {
-		buf = PyObject_CallObject(tok->decoding_readline, NULL);
+		PyObject *args = PyTuple_New(0);
+		if (args == NULL)
+			return error_ret(tok);
+		buf = PyObject_Call(tok->decoding_readline, args, NULL);
+		Py_DECREF(args);
 		if (buf == NULL)
 			return error_ret(tok);
 	} else {
@@ -464,7 +468,14 @@ decoding_feof(struct tok_state *tok)
 	} else {
 		PyObject* buf = tok->decoding_buffer;
 		if (buf == NULL) {
-			buf = PyObject_CallObject(tok->decoding_readline, NULL);
+			PyObject *args = PyTuple_New(0);
+			if (args == NULL) {
+				error_ret(tok);
+				return 1;
+			}
+			buf = PyObject_Call(tok->decoding_readline,
+					    args, NULL);
+			Py_DECREF(args);
 			if (buf == NULL) {
 				error_ret(tok);
 				return 1;

@@ -163,7 +163,12 @@ static PyObject *
 calliter_iternext(calliterobject *it)
 {
 	if (it->it_callable != NULL) {
-		PyObject *result = PyObject_CallObject(it->it_callable, NULL);
+		PyObject *args = PyTuple_New(0);
+		PyObject *result;
+		if (args == NULL)
+			return NULL;
+		result = PyObject_Call(it->it_callable, args, NULL);
+		Py_DECREF(args);
 		if (result != NULL) {
 			int ok;
 			ok = PyObject_RichCompareBool(result,

@@ -3257,7 +3257,7 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_nonzero(PyObject *self)
 {
-	PyObject *func, *res;
+	PyObject *func, *res, *args;
 	static PyObject *nonzero_str, *len_str;
 
 	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
@@ -3272,7 +3272,11 @@ slot_nb_nonzero(PyObject *self)
 				return 1;
 		}
 	}
-	res = PyObject_CallObject(func, NULL);
+	args = res = PyTuple_New(0);
+	if (args != NULL) {
+		res = PyObject_Call(func, args, NULL);
+		Py_DECREF(args);
+	}
 	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
@@ -3651,9 +3655,14 @@ slot_tp_iter(PyObject *self)
 
 	func = lookup_method(self, "__iter__", &iter_str);
 	if (func != NULL) {
-		 res = PyObject_CallObject(func, NULL);
-		 Py_DECREF(func);
-		 return res;
+		PyObject *args;
+		args = res = PyTuple_New(0);
+		if (args != NULL) {
+			res = PyObject_Call(func, args, NULL);
+			Py_DECREF(args);
+		}
+		Py_DECREF(func);
+		return res;
 	}
 	PyErr_Clear();
 	func = lookup_method(self, "__getitem__", &getitem_str);
