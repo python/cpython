@@ -3317,7 +3317,7 @@ wrap_inquiry(PyObject *self, PyObject *args, void *wrapped)
 	inquiry func = (inquiry)wrapped;
 	int res;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_UnpackTuple(args, "", 0, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3331,7 +3331,7 @@ wrap_inquirypred(PyObject *self, PyObject *args, void *wrapped)
 	inquiry func = (inquiry)wrapped;
 	int res;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_UnpackTuple(args, "", 0, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3345,7 +3345,7 @@ wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	return (*func)(self, other);
 }
@@ -3356,7 +3356,7 @@ wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
@@ -3372,7 +3372,7 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
@@ -3389,7 +3389,7 @@ wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *other, *res;
 	int ok;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	ok = func(&self, &other);
 	if (ok < 0)
@@ -3418,7 +3418,7 @@ wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 
 	/* Note: This wrapper only works for __pow__() */
 
-	if (!PyArg_ParseTuple(args, "O|O", &other, &third))
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &other, &third))
 		return NULL;
 	return (*func)(self, other, third);
 }
@@ -3432,7 +3432,7 @@ wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 
 	/* Note: This wrapper only works for __pow__() */
 
-	if (!PyArg_ParseTuple(args, "O|O", &other, &third))
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &other, &third))
 		return NULL;
 	return (*func)(other, self, third);
 }
@@ -3442,7 +3442,7 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	unaryfunc func = (unaryfunc)wrapped;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_UnpackTuple(args, "", 0, 0))
 		return NULL;
 	return (*func)(self);
 }
@@ -3492,7 +3492,7 @@ wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
 			return NULL;
 		return (*func)(self, i);
 	}
-	PyArg_ParseTuple(args, "O", &arg);
+	PyArg_UnpackTuple(args, "", 1, 1, &arg);
 	assert(PyErr_Occurred());
 	return NULL;
 }
@@ -3515,7 +3515,7 @@ wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
 	int i, res;
 	PyObject *arg, *value;
 
-	if (!PyArg_ParseTuple(args, "OO", &arg, &value))
+	if (!PyArg_UnpackTuple(args, "", 2, 2, &arg, &value))
 		return NULL;
 	i = getindex(self, arg);
 	if (i == -1 && PyErr_Occurred())
@@ -3534,7 +3534,7 @@ wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
 	int i, res;
 	PyObject *arg;
 
-	if (!PyArg_ParseTuple(args, "O", &arg))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &arg))
 		return NULL;
 	i = getindex(self, arg);
 	if (i == -1 && PyErr_Occurred())
@@ -3585,7 +3585,7 @@ wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *value;
 
-	if (!PyArg_ParseTuple(args, "O", &value))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &value))
 		return NULL;
 	res = (*func)(self, value);
 	if (res == -1 && PyErr_Occurred())
@@ -3601,7 +3601,7 @@ wrap_objobjargproc(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *key, *value;
 
-	if (!PyArg_ParseTuple(args, "OO", &key, &value))
+	if (!PyArg_UnpackTuple(args, "", 2, 2, &key, &value))
 		return NULL;
 	res = (*func)(self, key, value);
 	if (res == -1 && PyErr_Occurred())
@@ -3617,7 +3617,7 @@ wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *key;
 
-	if (!PyArg_ParseTuple(args, "O", &key))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &key))
 		return NULL;
 	res = (*func)(self, key, NULL);
 	if (res == -1 && PyErr_Occurred())
@@ -3633,7 +3633,7 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *other;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	if (other->ob_type->tp_compare != func &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
@@ -3676,7 +3676,7 @@ wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *name, *value;
 
-	if (!PyArg_ParseTuple(args, "OO", &name, &value))
+	if (!PyArg_UnpackTuple(args, "", 2, 2, &name, &value))
 		return NULL;
 	if (!hackcheck(self, func, "__setattr__"))
 		return NULL;
@@ -3694,7 +3694,7 @@ wrap_delattr(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "O", &name))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &name))
 		return NULL;
 	if (!hackcheck(self, func, "__delattr__"))
 		return NULL;
@@ -3711,7 +3711,7 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 	hashfunc func = (hashfunc)wrapped;
 	long res;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_UnpackTuple(args, "", 0, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3733,7 +3733,7 @@ wrap_richcmpfunc(PyObject *self, PyObject *args, void *wrapped, int op)
 	richcmpfunc func = (richcmpfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_ParseTuple(args, "O", &other))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
 		return NULL;
 	return (*func)(self, other, op);
 }
@@ -3759,7 +3759,7 @@ wrap_next(PyObject *self, PyObject *args, void *wrapped)
 	unaryfunc func = (unaryfunc)wrapped;
 	PyObject *res;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_UnpackTuple(args, "", 0, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == NULL && !PyErr_Occurred())
@@ -3774,7 +3774,7 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *obj;
 	PyObject *type = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|O", &obj, &type))
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &obj, &type))
 		return NULL;
 	if (obj == Py_None)
 		obj = NULL;
@@ -3795,7 +3795,7 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *obj, *value;
 	int ret;
 
-	if (!PyArg_ParseTuple(args, "OO", &obj, &value))
+	if (!PyArg_UnpackTuple(args, "", 2, 2, &obj, &value))
 		return NULL;
 	ret = (*func)(self, obj, value);
 	if (ret < 0)
@@ -3811,7 +3811,7 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *obj;
 	int ret;
 
-	if (!PyArg_ParseTuple(args, "O", &obj))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &obj))
 		return NULL;
 	ret = (*func)(self, obj, NULL);
 	if (ret < 0)
