@@ -17,6 +17,7 @@ $INFO = 1;              # 0 = do not make a "About this document..." section
 $MAX_LINK_DEPTH = 3;
 $ADDRESS = '';
 
+$NO_FOOTNODE = 1;
 $NUMBERED_FOOTNOTES = 1;
 
 # Python documentation uses section numbers to support references to match
