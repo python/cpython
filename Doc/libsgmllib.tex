@@ -12,7 +12,7 @@ exists as a basis for the \code{htmllib} module.
 \stmodindex{htmllib}
 
 In particular, the parser is hardcoded to recognize the following
-elements:
+constructs:
 
 \begin{itemize}
 
@@ -22,13 +22,15 @@ Opening and closing tags of the form
 ``\code{</\var{tag}>}'', respectively.
 
 \item
-Character references of the form ``\code{\&\#\var{name};}''.
+Numeric character references of the form ``\code{\&\#\var{name};}''.
 
 \item
 Entity references of the form ``\code{\&\var{name};}''.
 
 \item
-SGML comments of the form ``\code{<!--\var{text}>}''.
+SGML comments of the form ``\code{<!--\var{text}-->}''.  Note that
+spaces, tabs, and newlines are allowed between the trailing
+``\code{>}'' and the immediately preceeding ``\code{--}''.
 
 \end{itemize}
 
@@ -63,23 +65,32 @@ define additional processing at the end of the input, but the
 redefined version should always call \code{SGMLParser.close()}.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_charref}{ref}
-This method is called to process a character reference of the form
-``\code{\&\#\var{ref};}'' where \var{ref} is a decimal number in the
-range 0-255.  It translates the character to \ASCII{} and calls the
-method \code{handle_data()} with the character as argument.  If
-\var{ref} is invalid or out of range, the method
-\code{unknown_charref(\var{ref})} is called instead.
+\begin{funcdesc}{handle_starttag}{tag\, method\, attributes}
+This method is called to handle start tags for which either a
+\code{start_\var{tag}()} or \code{do_\var{tag}()} method has been
+defined.  The \code{tag} argument is the name of the tag converted to
+lower case, and the \code{method} argument is the bound method which
+should be used to support semantic interpretation of the start tag.
+The \var{attributes} argument is a list of (\var{name}, \var{value})
+pairs containing the attributes found inside the tag's \code{<>}
+brackets.  The \var{name} has been translated to lower case and double
+quotes and backslashes in the \var{value} have been interpreted.  For
+instance, for the tag \code{<A HREF="http://www.cwi.nl/">}, this
+method would be called as \code{unknown_starttag('a', [('href',
+'http://www.cwi.nl/')])}.  The base implementation simply calls
+\code{method} with \code{attributes} as the only argument.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_entityref}{ref}
-This method is called to process an entity reference of the form
-``\code{\&\var{ref};}'' where \var{ref} is an alphabetic entity
-reference.  It looks for \var{ref} in the instance (or class)
-variable \code{entitydefs} which should give the entity's translation.
-If a translation is found, it calls the method \code{handle_data()}
-with the translation; otherwise, it calls the method
-\code{unknown_entityref(\var{ref})}.
+\begin{funcdesc}{handle_endtag}{tag\, method}
+
+This method is called to handle endtags for which an
+\code{end_\var{tag}()} method has been defined.  The \code{tag}
+argument is the name of the tag converted to lower case, and the
+\code{method} argument is the bound method which should be used to
+support semantic interpretation of the end tag.  If no
+\code{end_\var{tag}()} method is defined for the closing element, this
+handler is not called.  The base implementation simply calls
+\code{method}.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_data}{data}
@@ -88,16 +99,49 @@ overridden by a derived class; the base class implementation does
 nothing.
 \end{funcdesc}
 
+\begin{funcdesc}{handle_charref}{ref}
+This method is called to process a character reference of the form
+``\code{\&\#\var{ref};}''.  In the base implementation, \var{ref} must
+be a decimal number in the
+range 0-255.  It translates the character to \ASCII{} and calls the
+method \code{handle_data()} with the character as argument.  If
+\var{ref} is invalid or out of range, the method
+\code{unknown_charref(\var{ref})} is called to handle the error.  A
+subclass must override this method to provide support for named
+character entities.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_entityref}{ref}
+This method is called to process a general entity reference of the form
+``\code{\&\var{ref};}'' where \var{ref} is an general entity
+reference.  It looks for \var{ref} in the instance (or class)
+variable \code{entitydefs} which should be a mapping from entity names
+to corresponding translations.
+If a translation is found, it calls the method \code{handle_data()}
+with the translation; otherwise, it calls the method
+\code{unknown_entityref(\var{ref})}.  The default \code{entitydefs}
+defines translations for \code{\&amp;}, \code{\&apos}, \code{\&gt;},
+\code{\&lt;}, and \code{\&quot;}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_comment}{comment}
+This method is called when a comment is encountered.  The
+\code{comment} argument is a string containing the text between the
+``\code{<!--}'' and ``\code{-->}'' delimiters, but not the delimiters
+themselves.  For example, the comment ``\code{<!--text-->}'' will
+cause this method to be called with the argument \code{'text'}.  The
+default method does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{report_unbalanced}{tag}
+This method is called when an end tag is found which does not
+correspond to any open element.
+\end{funcdesc}
+
 \begin{funcdesc}{unknown_starttag}{tag\, attributes}
 This method is called to process an unknown start tag.  It is intended
 to be overridden by a derived class; the base class implementation
-does nothing.  The \var{attributes} argument is a list of
-(\var{name}, \var{value}) pairs containing the attributes found inside
-the tag's \code{<>} brackets.  The \var{name} has been translated to
-lower case and double quotes and backslashes in the \var{value} have
-been interpreted.  For instance, for the tag
-\code{<A HREF="http://www.cwi.nl/">}, this method would be
-called as \code{unknown_starttag('a', [('href', 'http://www.cwi.nl/')])}.
+does nothing.
 \end{funcdesc}
 
 \begin{funcdesc}{unknown_endtag}{tag}
@@ -107,9 +151,9 @@ does nothing.
 \end{funcdesc}
 
 \begin{funcdesc}{unknown_charref}{ref}
-This method is called to process an unknown character reference.  It
-is intended to be overridden by a derived class; the base class
-implementation does nothing.
+This method is called to process unresolvable numeric character
+references.  It is intended to be overridden by a derived class; the
+base class implementation does nothing.
 \end{funcdesc}
 
 \begin{funcdesc}{unknown_entityref}{ref}
@@ -127,22 +171,25 @@ case:
 \begin{funcdesc}{start_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag}.  It has
 preference over \code{do_\var{tag}()}.  The \var{attributes} argument
-has the same meaning as described for \code{unknown_tag()} above.
+has the same meaning as described for \code{handle_starttag()} above.
 \end{funcdesc}
 
 \begin{funcdesc}{do_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag} that does
 not come with a matching closing tag.  The \var{attributes} argument
-has the same meaning as described for \code{unknown_tag()} above.
+has the same meaning as described for \code{handle_starttag()} above.
 \end{funcdesc}
 
 \begin{funcdesc}{end_\var{tag}}{}
 This method is called to process a closing tag \var{tag}.
 \end{funcdesc}
 
-Note that the parser maintains a stack of opening tags for which no
-matching closing tag has been found yet.  Only tags processed by
-\code{start_\var{tag}()} are pushed on this stack.  Definition of a
+Note that the parser maintains a stack of open elements for which no
+end tag has been found yet.  Only tags processed by
+\code{start_\var{tag}()} are pushed on this stack.  Definition of an
 \code{end_\var{tag}()} method is optional for these tags.  For tags
 processed by \code{do_\var{tag}()} or by \code{unknown_tag()}, no
-\code{end_\var{tag}()} method must be defined.
+\code{end_\var{tag}()} method must be defined; if defined, it will not
+be used.  If both \code{start_\var{tag}()} and \code{do_\var{tag}()}
+methods exist for a tag, the \code{start_\var{tag}()} method takes
+precedence.
