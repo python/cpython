@@ -1436,7 +1436,7 @@ PySequence_Fast(PyObject *v, const char *m)
 	if (v == NULL)
 		return null_error();
 
-	if (PyList_Check(v) || PyTuple_Check(v)) {
+	if (PyList_CheckExact(v) || PyTuple_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
 	}
