@@ -9,8 +9,8 @@
 -v  Verbose.  Print informative msgs; else no output.
 
 Change Python (.py) files to use 4-space indents and no hard tab characters.
-Also trim excess whitespace from ends of lines, and empty lines at the ends
-of files.  Ensure the last line ends with a newline.
+Also trim excess spaces and tabs from ends of lines, and remove empty lines
+at the end of files.  Also ensure the last line ends with a newline.
 
 Pass one or more file and/or directory paths.  When a directory path, all
 .py files within the directory will be examined, and, if the -r option is
@@ -108,6 +108,19 @@ def check(file):
         if verbose:
             print "unchanged."
 
+def _rstrip(line, JUNK='\n \t'):
+    """Return line stripped of trailing spaces, tabs, newlines.
+
+    Note that line.rstrip() instead also strips sundry control characters,
+    but at least one known Emacs user expects to keep junk like that, not
+    mentioning Barry by name or anything <wink>.
+    """
+
+    i = len(line)
+    while i > 0 and line[i-1] in JUNK:
+        i -= 1
+    return line[:i]
+
 class Reindenter:
 
     def __init__(self, f):
@@ -120,7 +133,7 @@ class Reindenter:
         # File lines, rstripped & tab-expanded.  Dummy at start is so
         # that we can use tokenize's 1-based line numbering easily.
         # Note that a line is all-blank iff it's "\n".
-        self.lines = [line.rstrip().expandtabs() + "\n"
+        self.lines = [_rstrip(line).expandtabs() + "\n"
                       for line in self.raw]
         self.lines.insert(0, None)
         self.index = 1  # index into self.lines of next line
