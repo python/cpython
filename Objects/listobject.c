@@ -486,6 +486,29 @@ list_repeat(PyListObject *a, int n)
 }
 
 static int
+list_clear(PyListObject *a)
+{
+	int i;
+	PyObject **item = a->ob_item;
+	if (item != NULL) {
+		/* Because XDECREF can recursively invoke operations on
+		   this list, we make it empty first. */
+		i = a->ob_size;
+		a->ob_size = 0;
+		a->ob_item = NULL;
+		a->allocated = 0;
+		while (--i >= 0) {
+			Py_XDECREF(item[i]);
+		}
+		PyMem_FREE(item);
+	}
+	/* Never fails; the return value can be ignored.
+	   Note that there is no guarantee that the list is actually empty
+	   at this point, because XDECREF may have populated it again! */
+	return 0;
+}
+
+static int
 list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 {
 	/* Because [X]DECREF can recursively invoke list operations on
@@ -530,8 +553,13 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		ihigh = ilow;
 	else if (ihigh > a->ob_size)
 		ihigh = a->ob_size;
-	item = a->ob_item;
+
 	d = n - (ihigh-ilow);
+	if (a->ob_size + d == 0) {
+		Py_XDECREF(v_as_SF);
+		return list_clear(a);
+	}
+	item = a->ob_item;
 	if (ihigh > ilow) {
 		p = recycle = PyMem_NEW(PyObject *, (ihigh-ilow));
 		if (recycle == NULL) {
@@ -576,10 +604,6 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			Py_XDECREF(*p);
 		PyMem_DEL(recycle);
 	}
-	if (a->ob_size == 0 && a->ob_item != NULL) {
-		PyMem_FREE(a->ob_item);
-		a->ob_item = NULL;
-	}
 	Py_XDECREF(v_as_SF);
 	return 0;
 #undef b
@@ -609,12 +633,7 @@ list_inplace_repeat(PyListObject *self, int n)
 	}
 
 	if (n < 1) {
-		items = self->ob_item;
-		self->ob_item = NULL;
-		self->ob_size = 0;
-		for (i = 0; i < size; i++)
-			Py_XDECREF(items[i]);
-		PyMem_DEL(items);
+		(void)list_clear(self);
 		Py_INCREF(self);
 		return (PyObject *)self;
 	}
@@ -1908,6 +1927,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	int minrun;
 	int saved_ob_size, saved_allocated;
 	PyObject **saved_ob_item;
+	PyObject **final_ob_item;
 	PyObject *compare = NULL;
 	PyObject *result = NULL;	/* guilty until proved innocent */
 	int reverse = 0;
@@ -1942,8 +1962,9 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	saved_ob_size = self->ob_size;
 	saved_ob_item = self->ob_item;
 	saved_allocated = self->allocated;
-	self->ob_size = self->allocated = 0;
+	self->ob_size = 0;
 	self->ob_item = NULL;
+	self->allocated = -1; /* any operation will reset it to >= 0 */
 
 	if (keyfunc != NULL) {
 		for (i=0 ; i < saved_ob_size ; i++) {
@@ -2032,7 +2053,7 @@ fail:
 		}
 	}
 
-	if (self->ob_item != NULL && result != NULL) {
+	if (self->allocated != -1 && result != NULL) {
 		/* The user mucked with the list during the sort,
 		 * and we don't already have another error to report.
 		 */
@@ -2046,13 +2067,19 @@ fail:
 	merge_freemem(&ms);
 
 dsu_fail:
-	if (self->ob_item != NULL) {
-		(void)list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL);
-		PyMem_FREE(self->ob_item);
-	}
+	final_ob_item = self->ob_item;
+	i = self->ob_size;
 	self->ob_size = saved_ob_size;
 	self->ob_item = saved_ob_item;
 	self->allocated = saved_allocated;
+	if (final_ob_item != NULL) {
+		/* we cannot use list_clear() for this because it does not
+		   guarantee that the list is really empty when it returns */
+		while (--i >= 0) {
+			Py_XDECREF(final_ob_item[i]);
+		}
+		PyMem_FREE(final_ob_item);
+	}
 	Py_XDECREF(compare);
 	Py_XINCREF(result);
 	return result;
@@ -2207,13 +2234,6 @@ list_traverse(PyListObject *o, visitproc visit, void *arg)
 	return 0;
 }
 
-static int
-list_clear(PyListObject *lp)
-{
-	(void) PyList_SetSlice((PyObject *)lp, 0, lp->ob_size, 0);
-	return 0;
-}
-
 static PyObject *
 list_richcompare(PyObject *v, PyObject *w, int op)
 {
@@ -2295,10 +2315,8 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
 		return -1;
 	/* Empty previous contents */
-	self->allocated = self->ob_size;
-	if (self->ob_size != 0) {
-		if (list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL) != 0)
-			return -1;
+	if (self->ob_item != NULL) {
+		(void)list_clear(self);
 	}
 	if (arg != NULL) {
 		PyObject *rv = listextend(self, arg);

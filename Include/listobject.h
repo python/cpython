@@ -30,9 +30,7 @@ typedef struct {
      *     0 <= ob_size <= allocated
      *     len(list) == ob_size
      *     ob_item == NULL implies ob_size == allocated == 0
-     *     If ob_item ever becomes non-NULL, it remains non-NULL for the
-     *         life of the list object.  The check for mutation in list.sort()
-     *         relies on this odd detail.
+     * list.sort() temporarily sets allocated to -1 to detect mutations.
      */
     int allocated;
 } PyListObject;
