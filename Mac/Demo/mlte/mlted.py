@@ -6,6 +6,7 @@
 from Menu import DrawMenuBar
 from FrameWork import *
 import Win
+import Ctl
 import Qd
 import Res
 import Scrap
@@ -18,141 +19,51 @@ UNDOLABELS = [ # Indexed by MLTECanUndo() value
 	"Typing", "Cut", "Paste", "Clear", "Font Change", "Color Change", "Size Change",
 	"Style Change", "Align Left", "Align Center", "Align Right", "Drop", "Move"]
 	
-class WasteWindow(Window):
+class MlteWindow(Window):
 	def open(self, path, name, data):
 		self.path = path
 		self.name = name
 		r = windowbounds(400, 400)
 		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
 		self.wid = w
-##		vr = 0, 0, r[2]-r[0]-15, r[3]-r[1]-15
-##		dr = (0, 0, 10240, 0)
-##		Qd.SetPort(w)
-##		Qd.TextFont(4)
-##		Qd.TextSize(9)
-##		self.ted = waste.WENew(dr, vr, flags)
-		flags = MacTextEditor.kTXNDrawGrowIconMask|MacTextEditor.kTXNShowWindowMask|MacTextEditor.kTXNWantHScrollBarMask| \
+		flags = MacTextEditor.kTXNDrawGrowIconMask|MacTextEditor.kTXNWantHScrollBarMask| \
 				MacTextEditor.kTXNWantVScrollBarMask
 		self.ted, self.frameid = Mlte.TXNNewObject(None, w, None, flags, MacTextEditor.kTXNTextEditStyleFrameType,
 				MacTextEditor.kTXNTextFile, MacTextEditor.kTXNMacOSEncoding)
-##		self.tedtexthandle = Res.Resource(data)
-##		self.ted.WEUseText(self.tedtexthandle)
 		self.ted.TXNSetData(MacTextEditor.kTXNTextData, data, 0, 0x7fffffff)
-##		self.ted.WECalText()
-##		w.DrawGrowIcon()
-##		self.scrollbars()
 		self.changed = 0
 		self.do_postopen()
 		self.do_activate(1, None)
 		
 	def do_idle(self, event):
-##		(what, message, when, where, modifiers) = event
-##		Qd.SetPort(self.wid)
 		self.ted.TXNIdle()	
 		self.ted.TXNAdjustCursor(None)
 		
-##	def getscrollbarvalues(self):
-##		dr = self.ted.WEGetDestRect()
-##		vr = self.ted.WEGetViewRect()
-##		vx = self.scalebarvalue(dr[0], dr[2], vr[0], vr[2])
-##		vy = self.scalebarvalue(dr[1], dr[3], vr[1], vr[3])
-####		print dr, vr, vx, vy
-##		return vx, vy
-##		
-##	def scrollbar_callback(self, which, what, value):
-##		if which == 'y':
-##			if what == 'set':
-##				height = self.ted.WEGetHeight(0, 0x3fffffff)
-##				cur = self.getscrollbarvalues()[1]
-##				delta = (cur-value)*height/32767
-##			if what == '-':
-##				topline_off,dummy = self.ted.WEGetOffset((1,1))
-##				topline_num = self.ted.WEOffsetToLine(topline_off)
-##				delta = self.ted.WEGetHeight(topline_num, topline_num+1)
-##			elif what == '--':
-##				delta = (self.ted.WEGetViewRect()[3]-10)
-##				if delta <= 0:
-##					delta = 10 # Random value
-##			elif what == '+':
-##				# XXXX Wrong: should be bottom line size
-##				topline_off,dummy = self.ted.WEGetOffset((1,1))
-##				topline_num = self.ted.WEOffsetToLine(topline_off)
-##				delta = -self.ted.WEGetHeight(topline_num, topline_num+1)
-##			elif what == '++':
-##				delta = -(self.ted.WEGetViewRect()[3]-10)
-##				if delta >= 0:
-##					delta = -10
-##			self.ted.WEScroll(0, delta)
-####			print 'SCROLL Y', delta
-##		else:
-##			if what == 'set':
-##				return # XXXX
-##			vr = self.ted.WEGetViewRect()
-##			winwidth = vr[2]-vr[0]
-##			if what == '-':
-##				delta = winwidth/10
-##			elif what == '--':
-##				delta = winwidth/2
-##			elif what == '+':
-##				delta = -winwidth/10
-##			elif what == '++':
-##				delta = -winwidth/2
-##			self.ted.WEScroll(delta, 0)
-##		# Pin the scroll
-##		l, t, r, b = self.ted.WEGetDestRect()
-##		vl, vt, vr, vb = self.ted.WEGetViewRect()
-##		if t > 0 or l > 0:
-##			dx = dy = 0
-##			if t > 0: dy = -t
-##			if l > 0: dx = -l
-####			print 'Extra scroll', dx, dy
-##			self.ted.WEScroll(dx, dy)
-##		elif b < vb:
-####			print 'Extra downscroll', b-vb
-##			self.ted.WEScroll(0, b-vb)
 
 		
 	def do_activate(self, onoff, evt):
-##		print "ACTIVATE", onoff
-		Qd.SetPort(self.wid)
-		Window.do_activate(self, onoff, evt)
 		if onoff:
+##			self.ted.TXNActivate(self.frameid, 0)
 			self.ted.TXNFocus(1)
 			self.parent.active = self
-			self.parent.updatemenubar()
 		else:
 			self.ted.TXNFocus(0)
-
-	def do_update(self, wid, event):
-		Qd.SetPort(self.wid)
-##		region = wid.GetWindowPort().visRgn
-##		if Qd.EmptyRgn(region):
-##			return
-##		Qd.EraseRgn(region)
-		self.ted.TXNUpdate()
-##		self.updatescrollbars()
-		
-##	def do_postresize(self, width, height, window):
-##		l, t, r, b = self.ted.WEGetViewRect()
-##		vr = (l, t, l+width-15, t+height-15)
-##		self.ted.WESetViewRect(vr)
-##		self.wid.InvalWindowRect(vr)
-##		ScrolledWindow.do_postresize(self, width, height, window)
-		
-	def do_contentclick(self, local, modifiers, evt):
-##		(what, message, when, where, modifiers) = evt
-		self.ted.TXNClick(evt)
-##		self.updatescrollbars()
+			self.parent.active = None
 		self.parent.updatemenubar()
 
+	def do_update(self, wid, event):
+		self.ted.TXNDraw(None)
+		
+	def do_postresize(self, width, height, window):
+		self.ted.TXNResizeFrame(width, height, self.frameid)
+		
+	def do_contentclick(self, local, modifiers, evt):
+		self.ted.TXNClick(evt)
+		self.parent.updatemenubar()
+		
 	def do_char(self, ch, event):
 		self.ted.TXNKeyDown(event)
-##		self.ted.WESelView()
-##		(what, message, when, where, modifiers) = event
-##		self.ted.WEKey(ord(ch), modifiers)
-##		self.changed = 1
-##		self.updatescrollbars()
-##		self.parent.updatemenubar()
+		self.parent.updatemenubar()
 		
 	def close(self):
 		if self.changed:
@@ -163,7 +74,7 @@ class WasteWindow(Window):
 				return
 		if self.parent.active == self:
 			self.parent.active = None
-##		self.parent.updatemenubar()
+		self.ted.TXNDeleteObject()
 		del self.ted
 ##		del self.tedtexthandle
 		self.do_postclose()
@@ -172,7 +83,6 @@ class WasteWindow(Window):
 		if not self.path:
 			self.menu_save_as()
 			return # Will call us recursively
-		print 'Saving to ', self.path
 		dhandle = self.ted.TXNGetData(0, 0x7fffffff)
 		data = dhandle.data
 		fp = open(self.path, 'wb')  # NOTE: wb, because data has CR for end-of-line
@@ -279,7 +189,8 @@ class Mlted(Application):
 		
 		self.editmenu = m = Menu(self.menubar, "Edit")
 		self.undoitem = MenuItem(m, "Undo", "Z", self.undo)
-		self.redoitem = MenuItem(m, "Undo", None, self.redo)
+		self.redoitem = MenuItem(m, "Redo", None, self.redo)
+		m.addseparator()
 		self.cutitem = MenuItem(m, "Cut", "X", self.cut)
 		self.copyitem = MenuItem(m, "Copy", "C", self.copy)
 		self.pasteitem = MenuItem(m, "Paste", "V", self.paste)
@@ -373,7 +284,7 @@ class Mlted(Application):
 			path = None
 			name = "Untitled %d"%self.num
 			data = ''
-		w = WasteWindow(self)
+		w = MlteWindow(self)
 		w.open(path, name, data)
 		self.num = self.num + 1
 		
