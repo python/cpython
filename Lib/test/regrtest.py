@@ -506,6 +506,7 @@ _expectations = {
         test_poll
         test_pty
         test_pwd
+        test_resource
         test_signal
         test_socket_ssl
         test_socketserver
