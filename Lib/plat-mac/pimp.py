@@ -377,24 +377,24 @@ class PimpDatabase:
             return
         self._urllist.append(url)
         fp = urllib2.urlopen(url).fp
-        dict = plistlib.Plist.fromFile(fp)
+        plistdata = plistlib.Plist.fromFile(fp)
         # Test here for Pimp version, etc
         if included:
-            version = dict.get('Version')
+            version = plistdata.get('Version')
             if version and version > self._version:
                 sys.stderr.write("Warning: included database %s is for pimp version %s\n" %
                     (url, version))
         else:
-            self._version = dict.get('Version')
+            self._version = plistdata.get('Version')
             if not self._version:
                 sys.stderr.write("Warning: database has no Version information\n")
             elif self._version > PIMP_VERSION:
                 sys.stderr.write("Warning: database version %s newer than pimp version %s\n" 
                     % (self._version, PIMP_VERSION))
-            self._maintainer = dict.get('Maintainer', '')
-            self._description = dict.get('Description', '').strip()
-        self._appendPackages(dict['Packages'])
-        others = dict.get('Include', [])
+            self._maintainer = plistdata.get('Maintainer', '')
+            self._description = plistdata.get('Description', '').strip()
+        self._appendPackages(plistdata['Packages'])
+        others = plistdata.get('Include', [])
         for url in others:
             self.appendURL(url, included=1)
         
@@ -437,13 +437,13 @@ class PimpDatabase:
         packages = []
         for pkg in self._packages:
             packages.append(pkg.dump())
-        dict = {
+        plistdata = {
             'Version': self._version,
             'Maintainer': self._maintainer,
             'Description': self._description,
             'Packages': packages
             }
-        plist = plistlib.Plist(**dict)
+        plist = plistlib.Plist(**plistdata)
         plist.write(pathOrFile)
         
     def find(self, ident):
@@ -504,13 +504,13 @@ ALLOWED_KEYS = [
 class PimpPackage:
     """Class representing a single package."""
     
-    def __init__(self, db, dict):
+    def __init__(self, db, plistdata):
         self._db = db
-        name = dict["Name"]
-        for k in dict.keys():
+        name = plistdata["Name"]
+        for k in plistdata.keys():
             if not k in ALLOWED_KEYS:
                 sys.stderr.write("Warning: %s: unknown key %s\n" % (name, k))
-        self._dict = dict
+        self._dict = plistdata
     
     def __getitem__(self, key):
         return self._dict[key]
