@@ -7,9 +7,13 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 import os
 import sys
 import stat
+import exceptions
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
-           "copytree","rmtree"]
+           "copytree","rmtree","Error"]
+
+class Error(exceptions.EnvironmentError):
+    pass
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""
@@ -95,6 +99,7 @@ def copytree(src, dst, symlinks=0):
     """
     names = os.listdir(src)
     os.mkdir(dst)
+    errors = []
     for name in names:
         srcname = os.path.join(src, name)
         dstname = os.path.join(dst, name)
@@ -108,7 +113,9 @@ def copytree(src, dst, symlinks=0):
                 copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
-            print "Can't copy %s to %s: %s" % (`srcname`, `dstname`, str(why))
+            errors.append((srcname, dstname, why))
+    if errors:
+        raise Error, errors
 
 def rmtree(path, ignore_errors=0, onerror=None):
     """Recursively delete a directory tree.
@@ -141,3 +148,24 @@ def _build_cmdtuple(path, cmdtuples):
         else:
             cmdtuples.append((os.remove, real_f))
     cmdtuples.append((os.rmdir, path))
+
+
+def move(src, dst):
+    """Recursively move a file or directory to another location.
+
+    If the destination is on our current filesystem, then simply use
+    rename.  Otherwise, copy src to the dst and then remove src.
+    A lot more could be done here...  A look at a mv.c shows a lot of
+    the issues this implementation glosses over.
+
+    """
+
+    try:
+        os.rename(src, dst)
+    except OSError:
+        if os.path.isdir(src):
+            copytree(src, dst, symlinks=1)
+            rmtree(src)
+        else:
+            copy2(src,dst)
+            os.unlink(src)
