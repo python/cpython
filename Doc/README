@@ -125,7 +125,7 @@ To create HTML files:
 
 	- LaTeX2HTML 98.2b2 or newer.  Older version will fail with
 	  the new directory layout.  Releases are available at
-	  <http://dc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
+	  <http://cdc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
 
 
 What if Times fonts are not available?
