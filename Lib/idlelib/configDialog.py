@@ -10,7 +10,7 @@ configuration dialog
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
 
-import IdleConf
+from configHandler import idleConf
 
 class ConfigDialog(Toplevel):
     """
@@ -24,10 +24,7 @@ class ConfigDialog(Toplevel):
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+20,
                 parent.winfo_rooty()+30))
-        self.LoadConfig()
-        #elguavas - config placeholders til config stuff completed
-        self.bg=self.cget('bg')
-        self.fg=None
+        #self.LoadConfig()
 
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
@@ -45,18 +42,8 @@ class ConfigDialog(Toplevel):
         self.bind('<Alt-h>',self.ChangePageBinding)
         self.bind('<Alt-k>',self.ChangePageBinding)
         self.bind('<Alt-g>',self.ChangePageBinding)
+        #self.LoadOptMenuHighlightTarget()
         self.wait_window()
-        
-    def LoadConfig(self):
-        #self.configParser=IdleConf.idleconf
-        #self.loadedConfig={}        
-        #self.workingConfig={}
-        #for key in .keys():        
-        #print self.configParser.getsection('Colors').options()
-        self.workingTestColours={
-                'Foo-Bg': '#ffffff',
-                'Foo-Fg': '#000000',
-                'Bar-Bg': '#777777'}
         
     def Cancel(self):
         self.destroy()
@@ -134,17 +121,7 @@ class ConfigDialog(Toplevel):
             self.frameHighlightSample.update() #redraw after dialog
             self.labelTestSample.update()
 
-    def __LoadFontList(self):
-        fonts=list(tkFont.families(self))
-        fonts.sort()
-        for font in fonts:
-            self.listFontName.insert(END,font)
-        currentFontIndex=fonts.index('courier')
-        self.listFontName.see(currentFontIndex)
-        self.listFontName.select_set(currentFontIndex)
-        self.fontSize.set('12')
-    
-    def __SetFontSample(self,event):
+    def SetFontSample(self,event):
         self.newFont.config(size=self.fontSize.get(),weight=NORMAL,
             family=self.listFontName.get(self.listFontName.curselection()[0]))
     
@@ -167,13 +144,14 @@ class ConfigDialog(Toplevel):
         pageButtonNames=('Fonts/Tabs','Highlighting','Keys','General')
         self.pageButtons=[]
         buttonValue=0
+        buttonSelColour=framePageButtons.cget('bg')
         for name in pageButtonNames:
             buttonFrame=Frame(framePageButtons,borderwidth=2,relief=RIDGE)
             buttonFrame.pack(side=LEFT)
             button = Radiobutton(buttonFrame,command=self.ChangePage,
                 value=buttonValue,padx=5,pady=5,takefocus=FALSE,underline=0,
                 indicatoron=FALSE,highlightthickness=0,variable=self.pageNum,
-                selectcolor=self.bg,borderwidth=0,text=name)
+                selectcolor=buttonSelColour,borderwidth=0,text=name)
             button.pack()
             button.lift()
             self.pageButtons.append(button)
@@ -216,21 +194,20 @@ class ConfigDialog(Toplevel):
                 text='Font :')
         self.listFontName=Listbox(frameFontName,height=5,takefocus=FALSE,
                 exportselection=FALSE)
-        self.listFontName.bind('<<ListboxSelect>>',self.__SetFontSample)
+        self.listFontName.bind('<<ListboxSelect>>',self.SetFontSample)
         scrollFont=Scrollbar(frameFontName)
-        self.__LoadFontList()
+        self.LoadFontList()
         scrollFont.config(command=self.listFontName.yview)
         self.listFontName.config(yscrollcommand=scrollFont.set)
         labelFontSizeTitle=Label(frameFontSize,text='Size :')
         sizes=('10','11','12','13','14','16','18','20','22')
         args=(frameFontSize,self.fontSize)+sizes
-        keyArgs={'command':self.__SetFontSample}
+        keyArgs={'command':self.SetFontSample}
         optFontSize=apply(OptionMenu,args,keyArgs)
-        #optFontSize.bind('<<MenuSelect>>',self.__SetFontSample)
-        frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1,
-                bg=self.workingTestColours['Foo-Bg'])
-        self.labelFontSample=Label(frameFontSample,bg=self.workingTestColours['Foo-Bg'], 
-                fg='#000000',text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
+        #optFontSize.bind('<<MenuSelect>>',self.SetFontSample)
+        frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1)
+        self.labelFontSample=Label(frameFontSample,
+                text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
                 justify=LEFT,font=self.newFont)
         #frameIndent
         labelIndentTitle=Label(frameIndent,text='Set Indentation Defaults')
@@ -299,18 +276,16 @@ class ConfigDialog(Toplevel):
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameCustom
-        frameTarget=Frame(frameCustom)
-        self.frameHighlightSample=Frame(frameCustom,relief=SOLID,borderwidth=1,
-                bg=self.workingTestColours['Foo-Bg'],cursor='hand2')
+        self.frameHighlightTarget=Frame(frameCustom)
+        self.frameHighlightSample=Frame(frameCustom,relief=SOLID,
+                borderwidth=1,cursor='hand2')
         frameSet=Frame(frameCustom)
-        self.frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1,
-                bg=self.workingTestColours['Foo-Bg'])
+        self.frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1)
         frameFontSet=Frame(frameSet)
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
-        labelTargetTitle=Label(frameTarget,text='for : ')
-        optMenuTarget=OptionMenu(frameTarget,
+        labelTargetTitle=Label(self.frameHighlightTarget,text='for : ')
+        self.optMenuHighlightTarget=OptionMenu(self.frameHighlightTarget,
             self.highlightTarget,'normal text background','test target interface item 2')
-        self.highlightTarget.set('normal text background')
         buttonSetColour=Button(self.frameColourSet,text='Set Colour',
                 command=self.GetColour)
         labelFontTitle=Label(frameFontSet,text='Set Font Style')
@@ -322,8 +297,7 @@ class ConfigDialog(Toplevel):
             text='#when finished, this\n#sample area will\n#be interactive\n'+
             'def Ahem(foo,bar):\n    '+
             '"""'+'doc hazard'+'"""'+
-            '\n    test=foo\n    text=bar\n    return',
-            bg=self.workingTestColours['Foo-Bg'])        
+            '\n    test=foo\n    text=bar\n    return')        
         buttonSaveCustomTheme=Button(frameCustom, 
             text='Save as a Custom Theme')
         #frameTheme
@@ -350,13 +324,13 @@ class ConfigDialog(Toplevel):
         frameTheme.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        frameTarget.pack(side=TOP,padx=5,pady=5,fill=X)
+        self.frameHighlightTarget.pack(side=TOP,padx=5,pady=5,fill=X)
         self.frameHighlightSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         frameSet.pack(side=TOP,fill=X)
         self.frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
         frameFontSet.pack(side=RIGHT,padx=5,pady=5,anchor=W)
         labelTargetTitle.pack(side=LEFT,anchor=E)
-        optMenuTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
+        self.optMenuHighlightTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
         buttonSetColour.pack(expand=TRUE,fill=BOTH,padx=10,pady=10)
         labelFontTitle.pack(side=TOP,anchor=W)
         checkFontBold.pack(side=LEFT,anchor=W,pady=2)
@@ -528,6 +502,68 @@ class ConfigDialog(Toplevel):
         buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
 
         return frame
+
+    def LoadFontList(self):
+        fonts=list(tkFont.families(self))
+        fonts.sort()
+        for font in fonts:
+            self.listFontName.insert(END,font)
+        currentFontIndex=fonts.index('courier')
+        self.listFontName.see(currentFontIndex)
+        self.listFontName.select_set(currentFontIndex)
+        self.fontSize.set('12')
+    
+    #def LoadOptionMenu(self, optMenu, optList, optVar, optVal=None, 
+    #            command=None):
+    def LoadOptionMenu(self, optMenu, optVar, optVal=None, command=None):
+        """
+        Load the relevant list of values into an OptionMenu and set 
+        selected value if required.
+        """
+        params={'cfg':None,
+                'section':None,
+                'optList':None,
+                'optVar':None,
+                'optVal':None,
+                'command':None}
+        if optMenu == self.optMenuHighlightTarget:
+            params['cfg']=idleConf.userCfg['highlight']
+#             if 
+#             params['section']=idleconf.userCfg['main'].GetDef('EditorWindow',
+#                     'theme')
+#             
+#             params['optVar']=self.HighlightTarget
+#             params['optList']=idleconf.defaultCfg['main'].options(params.Section)
+#             else: # a default theme
+#                 pass
+            #params.optList=idleConf
+            
+
+        #if not params.optVar.get(): #no value set yet (initial load)
+        #    params.optVal=   
+
+        #if params.section: #we're asking to load a list of option names
+        #    optList=params.cfg
+        #elif optMenu == xx:
+        #else:
+        
+        #if self.HighlightTarget.get(): #if there was a value set (reload)
+        #    params.optVal=self.HighlightTarget.get() 
+        #else: #no value set yet (initial load)
+        #if not params.optVar.get(): #no value set yet (initial load)   
+            
+        menu=optMenu['menu']
+        print menu
+        menu.delete(0,END)
+        for item in optList:
+            menu.add_command(label=item,command=command)
+        if optVal:
+            optVar.set(optVal)
+        elif optList:
+            optVar.set(optList[0])
+
+    def SaveConfigs(self):
+        pass
 
 if __name__ == '__main__':
     #test the dialog
