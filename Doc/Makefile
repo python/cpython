@@ -65,6 +65,7 @@ DOCDESTDIR=	$LIBDEST/doc
 EMACS=		emacs
 PYTHON=		python
 MAKEINFO=	makeinfo
+# When debugging partparse.py, make this the pyc file:
 PARTPARSEOBJ=	partparse.pyc
 PARTPARSE=	$(PYTHON) $(PARTPARSEOBJ)
 
@@ -163,8 +164,8 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
-	echo '\\begin{theindex}\end{theindex}' >$*.ind
-	echo '\\begin{theindex}\label{modindex}\end{theindex}' >mod$*.ind
+	./newind.py >$*.ind
+	./newind.py modindex >mod$*.ind
 	$(LATEX) $*
 	./modindex.py mod$*.idx
 	./fix_hack $*.idx
@@ -180,7 +181,7 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	echo '\\''begin{theindex}\end{theindex}' >$*.ind
+	./newind.py >$*.ind
 	$(LATEX) $*
 	./fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
