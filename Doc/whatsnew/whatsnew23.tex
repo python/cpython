@@ -4,7 +4,7 @@
 \title{What's New in Python 2.3}
 \release{0.03}
 \author{A.M. Kuchling}
-\authoraddress{\email{akuchlin@mems-exchange.org}}
+\authoraddress{\email{amk@amk.ca}}
 
 \begin{document}
 \maketitle
@@ -19,7 +19,7 @@
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for some
-random version of the CVS tree around mid-July 2002.  Please send any
+random version of the CVS tree from early November 2002.  Please send any
 additions, comments or errata to the author.}
 
 This article explains the new features in Python 2.3.  The tentative
@@ -1072,29 +1072,32 @@ in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding, by specifying an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
 
-\item The \function{stat} family of functions can now report fractions
-of a second in a time stamp. Similar to \function{time.time}, such
-time stamps are represented as floats.
+\item The \function{*stat()} family of functions can now report
+fractions of a second in a timestamp.  Such time stamps are
+represented as floats, similar to \function{time.time()}.
 
-During testing, it was found that some applications break if time
-stamps are floats. For compatibility, when using the tuple interface
+During testing, it was found that some applications will break if time
+stamps are floats.  For compatibility, when using the tuple interface
 of the \class{stat_result}, time stamps are represented as integers.
-When using named fields (first introduced in Python 2.2), time stamps
-are still represented as ints, unless \function{os.stat_float_times}
-is invoked:
+When using named fields (a feature first introduced in Python 2.2),
+time stamps are still represented as ints, unless
+\function{os.stat_float_times()} is invoked to enable float return
+values:
 
 \begin{verbatim}
+>>> os.stat("/tmp").st_mtime
+1034791200
 >>> os.stat_float_times(True)
 >>> os.stat("/tmp").st_mtime
 1034791200.6335014
 \end{verbatim}
 
-In Python 2.4, the default will change to return floats.
+In Python 2.4, the default will change to always returning floats.
 
 Application developers should use this feature only if all their
 libraries work properly when confronted with floating point time
-stamps (or use the tuple API). If used, the feature should be
-activated on application level, instead of trying to activate it on a
+stamps, or if they use the tuple API. If used, the feature should be
+activated on an application level instead of trying to enable it on a
 per-use basis.
 
 \end{itemize}
@@ -1345,6 +1348,7 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Simon Brunning, Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
 Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
-Lalo Martins, Gustavo Niemeyer, Neal Norwitz, Jason Tishler.
+Lalo Martins, Gustavo Niemeyer, Neal Norwitz, Neil Schemenauer, Jason
+Tishler.
 
 \end{document}
