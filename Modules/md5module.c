@@ -86,7 +86,7 @@ PyDoc_STRVAR(digest_doc,
 "digest() -> string\n\
 \n\
 Return the digest of the strings passed to the update() method so\n\
-far. This is an 16-byte string which may contain non-ASCII characters,\n\
+far. This is a 16-byte string which may contain non-ASCII characters,\n\
 including null bytes.");
 
 
