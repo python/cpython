@@ -7,9 +7,7 @@
 
 import dumbdbm as dbm
 from dumbdbm import error
-from test_support import verbose
-
-filename = '/tmp/delete_me'
+from test_support import verbose, TESTFN as filename
 
 d = dbm.open(filename, 'c')
 d['a'] = 'b'
