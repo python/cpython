@@ -70,6 +70,11 @@ from sets import Set
 # putting them in test_grammar.py has no effect:
 warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
                         ".*test.test_grammar$")
+if sys.maxint > 0x7fffffff:
+    # Also suppress them in <string>, because for 64-bit platforms,
+    # that's where test_grammar.py hides them.
+    warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
+                            "<string>")
 
 from test import test_support
 
