@@ -22,6 +22,7 @@ ctl	Controls
 dlg	Dialogs
 evt	Events
 menu	Menus
+list	Lists
 qd	QuickDraw
 res	Resources
 snd	Sound
@@ -64,6 +65,12 @@ aetools.py	Conversions between AE and Python data type
 echo.py		Dummy AE server, echoes all data back
 tell.py		Primitive AE client
 aete.py		Decode 'aete' and 'aeut' resources (incomplete)
+gensuitemodule.py
+		Read aete/aeut resources and turn them into python
+		modules. The *_Suite.py modules have been generated
+		with this.
+AEservertest.py	A simple AE server, similar to echo but different.
+		
 
 In res:
 
@@ -77,3 +84,72 @@ playaiff.py	Play an AIFF file
 morse.py	Turn text into Morse code
 audiodev.py	The standard audiodev.py extended with Mac support
 Audio_mac.py	The Mac support for audiodev.py
+
+
+Creating new Macintosh interfaces
+---------------------------------
+
+These instructions were written up by Jack while he was building the
+interface to Lists.h, the macintosh list manager. they may or may not
+have a more global scope than exactly that.
+
+First, start by copying ...scan.py and ...support.py from another,
+preferrably similar type. I started with evt, but that was a mistake
+since evt has no "own" object. Ctl or Dlg would probably have been a
+better idea.
+
+Now, the first thing to do is to comment out the blacklisted types and
+functions and the transformation rules for arguments, we'll fill those
+in lateron. Also, change the various definitions at the top, so that
+the right include file is parsed, and the .py files are generated with
+the correct name. If your manager has a type that will be implemented
+as a python object you may as well now change the destination() method
+to recognize that. (List was funny in this respect, since it has the
+list as the last argument in stead of the first).
+
+Now run your scanner. This will probably go fine until it tries to
+execute the generated code in the ...gen.py module. Look at that file,
+it will have formalized "definitions" of all the functions and methods
+that will be generated. Look at them all (with the documentation of the
+manager you're implementing in hand). Now you'll have to fix the
+blacklists and the repair instructions. This is sort of a black art,
+but a few guidelines may be handy here: 
+- If there are argument types you cannot implement (or want to leave for
+  the moment) put them in blacklisttypes. Complex structures come to
+  mind, or routine pointers/UPP's. You will probably also want to
+  blacklist the routine that disposes of your object (since you'll do
+  that in the python destruction routine).
+- Various types of buffers are available in bgenBuffer, bgenHeapBuffer
+  and macsupport in the bgen directory. These'll let you handle all
+  sorts of input and output parameters. You can put instructions in the
+  repair list to let the C-arguments be handled by the correct type
+  of buffer. Check the other bgen-generated modules for using this for
+  passing raw structures and input and output buffers.
+- It appears that the parser usually guesses correctly whether a parameter
+  is meant for input or output. But, check the routines to be sure.
+- Some types are pretty hard to handle but you need the functionality
+  the a routine that uses them anyway. Various routines expecting ProcPtrs
+  or RegionHandles come to mind. Often, you can use the FakeType class
+  to provide a sensible default (i.e. NULL or a pointer to a routine you
+  coded in C, or a region specifying "the whole window"). This way, python
+  programmers won't get the full functionality but at least they'll get the
+  common case. You put the FakeType stuff in ...support.py.
+  
+Next you'll probably have to write the code to implement your object.
+This will probably be a subclass of GlobalObjectDefinition. This goes
+into ...support.py. Also, some types used by the manager may look
+enough like standard types that you can equate them here (there are a
+lot of 2-integer structures that look remarkably like a Point, for
+instance).
+
+You'll also have to define the Function() and Method() classes. The
+OSErrFunctionGenerator and its method-counterpart are particularly
+handy for a lot of mac managers.
+
+Finally, you'll have to try and compile your resulting C-source, and go
+through the steps above until it works. For tlist.py, the test program
+for list, I started with the application framework. This is probably a
+good idea for any manager that does something to the display, since
+ApplicationFramework takes care of all the intricacies of event
+handling and decoding (up to a point).
+
