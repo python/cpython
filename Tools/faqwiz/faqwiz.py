@@ -11,7 +11,7 @@ The actual script to place in cgi-bin is faqw.py.
 
 """
 
-import sys, string, time, os, stat, regex, cgi, faqconf
+import sys, string, time, os, stat, re, cgi, faqconf
 from faqconf import *			# This imports all uppercase names
 now = time.time()
 
@@ -32,21 +32,15 @@ class NoSuchFile(FileError):
 	FileError.__init__(self, file)
 	self.why = why
 
-def replace(s, old, new):
-    try:
-	return string.replace(s, old, new)
-    except AttributeError:
-	return string.join(string.split(s, old), new)
-
 def escape(s):
-    s = replace(s, '&', '&amp;')
-    s = replace(s, '<', '&lt;')
-    s = replace(s, '>', '&gt;')
+    s = string.replace(s, '&', '&amp;')
+    s = string.replace(s, '<', '&lt;')
+    s = string.replace(s, '>', '&gt;')
     return s
 
 def escapeq(s):
     s = escape(s)
-    s = replace(s, '"', '&quot;')
+    s = string.replace(s, '"', '&quot;')
     return s
 
 def _interpolate(format, args, kw):
@@ -73,20 +67,20 @@ translate_prog = None
 def translate(text, pre=0):
     global translate_prog
     if not translate_prog:
-	url = '\(http\|ftp\|https\)://[^ \t\r\n]*'
-	email = '\<[-a-zA-Z0-9._]+@[-a-zA-Z0-9._]+'
-	translate_prog = prog = regex.compile(url + '\|' + email)
+	translate_prog = prog = re.compile(
+	    r'\b(http|ftp|https)://\S+(\b|/)|\b[-.\w]+@[-.\w]+')
     else:
 	prog = translate_prog
     i = 0
     list = []
     while 1:
-	j = prog.search(text, i)
-	if j < 0:
+	m = prog.search(text, i)
+	if not m:
 	    break
+	j = m.start()
 	list.append(escape(text[i:j]))
 	i = j
-	url = prog.group(0)
+	url = m.group(0)
 	while url[-1] in '();:,.?\'"<>':
 	    url = url[:-1]
 	i = i + len(url)
@@ -103,26 +97,19 @@ def translate(text, pre=0):
     list.append(escape(text[i:j]))
     return string.join(list, '')
 
-emphasize_prog = None
-
 def emphasize(line):
-    global emphasize_prog
-    import regsub
-    if not emphasize_prog:
-	pat = '\*\([a-zA-Z]+\)\*'
-	emphasize_prog = regex.compile(pat)
-    return regsub.gsub(emphasize_prog, '<I>\\1</I>', line)
+    return re.sub(r'\*([a-zA-Z]+)\*', r'<I>\1</I>', line)
 
 revparse_prog = None
 
 def revparse(rev):
     global revparse_prog
     if not revparse_prog:
-	revparse_prog = regex.compile(
-	    '^\([1-9][0-9]?[0-9]?\)\.\([1-9][0-9]?[0-9]?[0-9]?\)$')
-    if revparse_prog.match(rev) < 0:
+	revparse_prog = re.compile(r'^(\d{1,3})\.(\d{1-4})$')
+    m = revparse_prog.match(rev)
+    if not m:
 	return None
-    [major, minor] = map(string.atoi, revparse_prog.group(1, 2))
+    [major, minor] = map(string.atoi, m.group(1, 2))
     return major, minor
 
 def load_cookies():
@@ -315,7 +302,7 @@ class FaqDir:
 
     entryclass = FaqEntry
 
-    __okprog = regex.compile(OKFILENAME)
+    __okprog = re.compile(OKFILENAME)
 
     def __init__(self, dir=os.curdir):
 	self.__dir = dir
@@ -327,17 +314,18 @@ class FaqDir:
 	self.__files = files = []
 	okprog = self.__okprog
 	for file in os.listdir(self.__dir):
-	    if okprog.match(file) >= 0:
+	    if self.__okprog.match(file):
 		files.append(file)
 	files.sort()
 
     def good(self, file):
-	return self.__okprog.match(file) >= 0
+	return self.__okprog.match(file)
 
     def parse(self, file):
-	if not self.good(file):
+	m = self.good(file)
+	if not m:
 	    return None
-	sec, num = self.__okprog.group(1, 2)
+	sec, num = m.group(1, 2)
 	return string.atoi(sec), string.atoi(num)
 
     def list(self):
@@ -426,31 +414,29 @@ class FaqWizard:
 	    self.error("Empty query string!")
 	    return
 	if self.ui.querytype == 'simple':
-	    for c in '\\.[]?+^$*':
-		if c in query:
-		    query = replace(query, c, '\\'+c)
+	    query = re.escape(query)
 	    queries = [query]
 	elif self.ui.querytype in ('anykeywords', 'allkeywords'):
-	    import regsub
-	    words = string.split(regsub.gsub('[^a-zA-Z0-9]+', ' ', query))
+	    words = filter(None, re.split('\W+', query))
 	    if not words:
 		self.error("No keywords specified!")
 		return
-	    words = map(lambda w: '\<%s\>' % w, words)
+	    words = map(lambda w: r'\b%s\b' % w, words)
 	    if self.ui.querytype[:3] == 'any':
-		queries = [string.join(words, '\|')]
+		queries = [string.join(words, '|')]
 	    else:
+		# Each of the individual queries must match
 		queries = words
 	else:
-	    # Default to regex
+	    # Default to regular expression
 	    queries = [query]
 	self.prologue(T_SEARCH)
 	progs = []
 	for query in queries:
 	    if self.ui.casefold == 'no':
-		p = regex.compile(query)
+		p = re.compile(query)
 	    else:
-		p = regex.compile(query, regex.casefold)
+		p = re.compile(query, re.IGNORECASE)
 	    progs.append(p)
 	hits = []
 	for file in self.dir.list():
@@ -459,7 +445,7 @@ class FaqWizard:
 	    except FileError:
 		constants
 	    for p in progs:
-		if p.search(entry.title) < 0 and p.search(entry.body) < 0:
+		if not p.search(entry.title) and not p.search(entry.body):
 		    break
 	    else:
 		hits.append(file)
@@ -777,8 +763,7 @@ class FaqWizard:
 	file = entry.file
 	# Normalize line endings in body
 	if '\r' in self.ui.body:
-	    import regsub
-	    self.ui.body = regsub.gsub('\r\n?', '\n', self.ui.body)
+	    self.ui.body = re.sub('\r\n?', '\n', self.ui.body)
 	# Normalize whitespace in title
 	self.ui.title = string.join(string.split(self.ui.title))
 	# Check that there were any changes
