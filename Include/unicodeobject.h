@@ -683,6 +683,17 @@ extern DL_IMPORT(PyObject *) PyUnicode_Format(
     PyObject *args		/* Argument tuple or dictionary */
     );
 
+/* Checks whether element is contained in container and return 1/0
+   accordingly.
+
+   element has to coerce to an one element Unicode string. -1 is
+   returned in case of an error. */
+
+extern DL_IMPORT(int) PyUnicode_Contains(
+    PyObject *container,	/* Container string */ 
+    PyObject *element		/* Element string */
+    );
+
 /* === Characters Type APIs =============================================== */
 
 /* These should not be used directly. Use the Py_UNICODE_IS* and
