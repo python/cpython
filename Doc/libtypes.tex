@@ -294,9 +294,12 @@ operator (modulo) with a string left argument interprets this string
 as a C sprintf format string to be applied to the right argument, and
 returns the string resulting from this formatting operation.
 
-Unless the format string requires exactly one argument, the right
-argument should be a tuple of the correct size.  The following format
-characters are understood: \%, c, s, i, d, u, o, x, X, e, E, f, g, G.
+The right argument should be a tuple with one item for each argument
+required by the format string; if the string requires a single
+argument, the right argument may also be a single non-tuple object.%
+\footnote{A tuple object in this case should be a singleton.}
+The following format characters are understood:
+\%, c, s, i, d, u, o, x, X, e, E, f, g, G.
 Width and precision may be a * to specify that an integer argument
 specifies the actual width or precision.  The flag characters -, +,
 blank, \# and 0 are understood.  The size specifiers h, l or L may be
@@ -603,6 +606,12 @@ Files have the following methods:
 
 \begin{funcdesc}{write}{str}
   Write a string to the file.  There is no return value.
+\end{funcdesc}
+
+\begin{funcdesc}{writelines}{list}
+Write a list of strings to the file.  There is no return value.
+(The name is intended to match \code{readlines}; \code{writelines}
+does not add line separators.)
 \end{funcdesc}
 
 \subsubsection{Internal Objects.}
