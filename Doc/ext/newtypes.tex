@@ -38,18 +38,13 @@ seem familiar from the last chapter.
 The first bit that will be new is:
 
 \begin{verbatim}
-staticforward PyTypeObject noddy_NoddyType;
+static PyTypeObject noddy_NoddyType;
 \end{verbatim}
 
 This names the type object that will be defining further down in the
 file.  It can't be defined here because its definition has to refer to
 functions that have no yet been defined, but we need to be able to
 refer to it, hence the declaration.
-
-The \code{staticforward} is required to placate various brain dead
-compilers.  The actual definition of the object declared using
-\code{staticforward} should use \code{statichere} instead of
-\keyword{static}.
 
 \begin{verbatim}
 typedef struct {
@@ -156,7 +151,7 @@ Python objects, one would decref them here.
 Moving on, we come to the crunch --- the type object.
 
 \begin{verbatim}
-statichere PyTypeObject noddy_NoddyType = {
+static PyTypeObject noddy_NoddyType = {
     PyObject_HEAD_INIT(NULL)
     0,                          /* ob_size */
     "Noddy",                    /* tp_name */
@@ -174,9 +169,6 @@ statichere PyTypeObject noddy_NoddyType = {
     0,                          /* tp_hash */
 };
 \end{verbatim}
-
-(Note the use of \code{statichere} instead of \keyword{static}, since
-we used \code{staticforward} in the declaration.)
 
 Now if you go and look up the definition of \ctype{PyTypeObject} in
 \file{object.h} you'll see that it has many, many more fields that the
