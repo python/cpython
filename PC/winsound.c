@@ -195,7 +195,7 @@ add_define(PyObject *dict, const char *key, long value)
 
 #define ADD_DEFINE(tok) add_define(dict,#tok,tok)
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initwinsound(void)
 {
 	OSVERSIONINFO version;
