@@ -5,76 +5,16 @@ splash = Dlg.GetNewDialog(468, -1)
 splash.DrawDialog()
 
 from Carbon import Qd, TE, Fm
-import sys
 
-_real__import__ = None
-
-def install_importhook():
-	global _real__import__
-	import __builtin__
-	if _real__import__ is None:
-		_real__import__ = __builtin__.__import__
-		__builtin__.__import__ = my__import__
-
-def uninstall_importhook():
-	global _real__import__
-	if _real__import__ is not None:
-		import __builtin__
-		__builtin__.__import__ = _real__import__
-		_real__import__ = None
-
-_progress = 0
-
-_about_width = 440
-_about_height = 340
-
-def importing(module):
-	global _progress
-	Qd.SetPort(splash)
-	fontID = Fm.GetFNum("Python-Sans")
-	if not fontID:
-		from Carbon.Fonts import geneva
-		fontID = geneva
-	Qd.TextFont(fontID)
-	Qd.TextSize(9)
-	labelrect = (35, _about_height - 35, _about_width - 35, _about_height - 19)
-	framerect = (35, _about_height - 19, _about_width - 35, _about_height - 11)
-	l, t, r, b = progrect = Qd.InsetRect(framerect, 1, 1)
-	if module:
-		TE.TETextBox('Importing: ' + module, labelrect, 0)
-		if not _progress:
-			Qd.FrameRect(framerect)
-		pos = min(r, l + ((r - l) * _progress) / 44)
-		Qd.PaintRect((l, t, pos, b))
-		_progress = _progress + 1
-	else:
-		Qd.EraseRect(labelrect)
-		Qd.PaintRect((l, t, pos, b))
-	Qd.QDFlushPortBuffer(splash.GetDialogWindow().GetWindowPort(), None)
-
-def my__import__(name, globals=None, locals=None, fromlist=None):
-	try:
-		return sys.modules[name]
-	except KeyError:
-		try:
-			importing(name)
-		except:
-			try:
-				rv = _real__import__(name)
-			finally:
-				uninstall_importhook()
-			return rv
-		return _real__import__(name)
-
-#install_importhook()
-
-kHighLevelEvent = 23
 from Carbon import Win
 from Carbon.Fonts import *
 from Carbon.QuickDraw import *
-from Carbon.TextEdit import *
+from Carbon.TextEdit import teJustCenter
 import string
 import sys
+
+_about_width = 440
+_about_height = 340
 
 _keepsplashscreenopen = 0
 

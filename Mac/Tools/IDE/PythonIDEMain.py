@@ -1,4 +1,4 @@
-# copyright 1997-2000 Just van Rossum, Letterror. just@letterror.com
+# copyright 1997-2001 Just van Rossum, Letterror. just@letterror.com
 
 import Splash
 
@@ -29,7 +29,6 @@ class PythonIDE(Wapplication.Application):
 				self.quitevent)
 		import PyConsole, PyEdit
 		Splash.wait()
-		Splash.uninstall_importhook()
 		PyConsole.installoutput()
 		PyConsole.installconsole()
 		import sys
