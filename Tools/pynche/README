@@ -2,7 +2,7 @@ Pynche - The PYthonically Natural Color and Hue Editor
 
 Contact: Barry A. Warsaw
 Email:   bwarsaw@python.org
-Version: 1.0
+Version: 1.1
 
 Introduction
 
@@ -16,13 +16,12 @@ Introduction
     changed the name because these days, too many other systems have
     the acronym `ICE'.
 
-    Pynche has been tested with Python 1.5.x using Tk 8.0.x.  It
-    probably works with Python 1.5.  I've tested it on both Solaris
-    2.6 and Windows NT.  There are some funky things that happen on
-    Windows but I think they are primarily Tk problems.  You'll want
-    to be sure to have at least Tk 8.0.3 for Windows.  Also, Pynche is
-    very colormap intensive, so it doesn't work very well on 8-bit
-    graphics cards.  I'll probably fix that in the future.
+    Pynche should work with Python 1.5.2, 2.0, or 2.1, using Tk 8.0.x.
+    It's been tested on Solaris 2.6, Windows NT 4, and various Linux
+    distros.  You'll want to be sure to have at least Tk 8.0.3 for
+    Windows.  Also, Pynche is very colormap intensive, so it doesn't
+    work very well on 8-bit graphics cards; 24bit+ graphics cards are
+    so cheap these days, I'll probably never "fix" that.
 
     Pynche must find a text database of colors names in order to
     provide `nearest' color matching.  Pynche is distributed with an
@@ -358,8 +357,6 @@ To Do
     Here's a brief list of things I want to do:
 
     - Better support for resizing the top level windows
-
-    - Better support on 8-bit screens
 
     - More output views, e.g. color solids
 
