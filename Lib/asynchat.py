@@ -100,7 +100,7 @@ class async_chat (asyncore.dispatcher):
         while self.ac_in_buffer:
             lb = len(self.ac_in_buffer)
             terminator = self.get_terminator()
-            if terminator is None:
+            if terminator is None or terminator == '':
                 # no terminator, collect it all
                 self.collect_incoming_data (self.ac_in_buffer)
                 self.ac_in_buffer = ''
