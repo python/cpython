@@ -5,7 +5,7 @@ modules in setup scripts."""
 
 __revision__ = "$Id$"
 
-import os, string
+import os, string, sys
 from types import *
 
 try:
