@@ -1747,6 +1747,16 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 			type->tp_clear = base->tp_clear;
 	}
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
+		/* The condition below could use some explanation.
+		   It appears that tp_new is not inherited for static types
+		   whose base class is 'object'; this seems to be a precaution
+		   so that old extension types don't suddenly become
+		   callable (object.__new__ wouldn't insure the invariants
+		   that the extension type's own factory function ensures).
+		   Heap types, of course, are under our control, so they do
+		   inherit tp_new; static extension types that specify some
+		   other built-in type as the default are considered
+		   new-style-aware so they also inherit object.__new__. */
 		if (base != &PyBaseObject_Type ||
 		    (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 			if (type->tp_new == NULL)
@@ -1939,6 +1949,12 @@ PyType_Ready(PyTypeObject *type)
 	assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
+
+	/* Initialize ob_type if NULL.  This means extensions that want to be
+	   compilable separately on Windows can call PyType_Ready() instead of
+	   initializing the ob_type field of their type objects. */
+	if (type->ob_type == NULL)
+		type->ob_type = &PyType_Type;
 
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */
 	base = type->tp_base;
