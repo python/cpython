@@ -117,18 +117,13 @@ different again.  Three project files (*.dsp) and a workspace file
 (pcbuild.dsw) are provided in the subdirectory vc5x.  (These are the
 same three subprojects as discussed for VC++ 4.x.)
 
-To use these, create a new directory (I called it "pcbuild") in the
-Python source directory, and copy the files from vc5x there.  Then
-simply open the pcbuild.dsw workspace file with Developer Studio.
-Select the Debug configuration (use Set Active Configuration... in the
-Build menu) and build the python15 and python projects (in that
-order).  If you have Tcl/Tk 8.0 installed you can also try building
-the _tkinter project.
-
-The distributed files are text files with CRLF line terminators.  You
-can rename the workspace file (pcbuild.dsw), but since it refers to
-the project files by name, you can't rename the individual project
-files.
+To use these, copy the files from vc5x to the toplevel PCbuild
+directory.  Then open the pcbuild.dsw workspace file with Developer
+Studio.  Select the Debug configuration (use Set Active
+Configuration... in the Build menu) and build the python15 and python
+projects (in that order).  If you have Tcl/Tk 8.0 installed you can
+also try building the _tkinter project.  If you plan to use the parser
+module, also build that project.
 
 
 Additional files and subdirectories for 32-bit Windows
