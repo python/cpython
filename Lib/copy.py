@@ -164,17 +164,24 @@ def deepcopy(x, memo = None):
         copierfunction = _deepcopy_dispatch[type(x)]
     except KeyError:
         try:
-            copier = x.__deepcopy__
-        except AttributeError:
-            try:
-                reductor = x.__reduce__
-            except AttributeError:
-                raise error, \
-                      "un-deep-copyable object of type %s" % type(x)
-            else:
-                y = _reconstruct(x, reductor(), 1, memo)
+            issc = issubclass(type(x), type)
+        except TypeError:
+            issc = 0
+        if issc:
+            y = _deepcopy_dispatch[type](x, memo)
         else:
-            y = copier(memo)
+            try:
+                copier = x.__deepcopy__
+            except AttributeError:
+                try:
+                    reductor = x.__reduce__
+                except AttributeError:
+                    raise error, \
+                       "un-deep-copyable object of type %s" % type(x)
+                else:
+                    y = _reconstruct(x, reductor(), 1, memo)
+            else:
+                y = copier(memo)
     else:
         y = copierfunction(x, memo)
     memo[d] = y
