@@ -443,13 +443,6 @@ typedef unsigned long uintptr_t;
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 
-/* Smaller stack size limit.  (9500 would work too, but we're conservative.) */
-
-#ifndef MAX_RECURSION_DEPTH
-#define MAX_RECURSION_DEPTH 5000
-#endif
-
-
 /* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
    imported modules against case of file; this causes "import String" to fail
    with a NameError exception when it finds "string.py".  Normally, you set

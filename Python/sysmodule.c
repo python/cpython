@@ -199,6 +199,45 @@ static char setcheckinterval_doc[] =
 Tell the Python interpreter to check for asynchronous events every\n\
 n instructions.  This also affects how often thread switches occur.";
 
+static PyObject *
+sys_setrecursionlimit(PyObject *self, PyObject *args)
+{
+	int new_limit;
+	if (!PyArg_ParseTuple(args, "i:setrecursionlimit", &new_limit))
+		return NULL;
+	if (new_limit <= 0) {
+		PyErr_SetString(PyExc_ValueError, 
+				"recursion limit must be positive");  
+		return NULL;
+	}
+	Py_SetRecursionLimit(new_limit);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char setrecursionlimit_doc[] =
+"setrecursionlimit(n)\n\
+\n\
+Set the maximum depth of the Python interpreter stack to n.  This\n\
+limit prevents infinite recursion from causing an overflow of the C\n\
+stack and crashing Python.  The highest possible limit is platform-\n\
+dependent.";
+
+static PyObject *
+sys_getrecursionlimit(PyObject *self, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ":getrecursionlimit"))
+		return NULL;
+	return PyInt_FromLong(Py_GetRecursionLimit());
+}
+
+static char getrecursionlimit_doc[] =
+"getrecursionlimit()\n\
+\n\
+Return the current value of the recursion limit, the maximum depth\n\
+of the Python interpreter stack.  This limit prevents infinite\n\
+recursion from causing an overflow of the C stack and crashing Python.";
+
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
@@ -268,7 +307,8 @@ static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"exc_info",	sys_exc_info, 1, exc_info_doc},
 	{"exit",	sys_exit, 0, exit_doc},
-	{"getdefaultencoding", sys_getdefaultencoding, 1, getdefaultencoding_doc},
+	{"getdefaultencoding", sys_getdefaultencoding, 1,
+	 getdefaultencoding_doc}, 
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 1},
 #endif
@@ -280,12 +320,18 @@ static PyMethodDef sys_methods[] = {
 	{"gettotalrefcount", sys_gettotalrefcount, 1},
 #endif
 	{"getrefcount",	sys_getrefcount, 1, getrefcount_doc},
+	{"getrecursionlimit", sys_getrecursionlimit, 1,
+	 getrecursionlimit_doc},
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 1},
 #endif
-	{"setdefaultencoding", sys_setdefaultencoding, 1, setdefaultencoding_doc},
-	{"setcheckinterval",	sys_setcheckinterval, 1, setcheckinterval_doc},
+	{"setdefaultencoding", sys_setdefaultencoding, 1,
+	 setdefaultencoding_doc}, 
+	{"setcheckinterval",	sys_setcheckinterval, 1,
+	 setcheckinterval_doc}, 
 	{"setprofile",	sys_setprofile, 0, setprofile_doc},
+	{"setrecursionlimit", sys_setrecursionlimit, 1,
+	 setrecursionlimit_doc},
 	{"settrace",	sys_settrace, 0, settrace_doc},
 	{NULL,		NULL}		/* sentinel */
 };
@@ -376,8 +422,10 @@ Functions:\n\
 exc_info() -- return thread-safe information about the current exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
+getrecursionlimit() -- return the max recursion depth for the interpreter\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
 setprofile() -- set the global profiling function\n\
+setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
 "
 #endif
