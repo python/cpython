@@ -531,6 +531,9 @@ Tools/Demos
 Build
 -----
 
+- Bug #978645: Modules/getpath.c now builds properly in --disable-framework
+  build under OS X.
+
 - Profiling using gprof is now available if Python is configured with
   --enable-profiling.
 
