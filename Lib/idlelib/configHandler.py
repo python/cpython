@@ -4,7 +4,7 @@ Refer to the comments at the beginning of config-main.def for a description of
 the available configuration files and the design implemented to update user
 configuration information.  In particular, user configuration choices which
 duplicate the defaults will be removed from the user's configuration files,
-and if a file becomes empty, it will be deleted.  
+and if a file becomes empty, it will be deleted.
 
 The contents of the user files may be altered using the Options/Configure IDLE
 menu to access the configuration GUI (configDialog.py), or manually.
@@ -570,7 +570,7 @@ class IdleConf:
 
     def GetExtraHelpSourceList(self,configSet):
         """Fetch list of extra help sources from a given configSet.
-        
+
         Valid configSets are 'user' or 'default'.  Return a list of tuples of
         the form (menu_item , path_to_help_file , option), or return the empty
         list.  'option' is the sequence number of the help resource.  'option'
