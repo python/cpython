@@ -69,6 +69,11 @@ def conv_rgb8(rgb, d1, d2):
 	b = (rgb >> 3) & 0x03
 	return (r/7.0, g/7.0, b/3.0)
 
+def conv_jpeg(r, g, b):
+	raise Error, 'Attempt to make RGB colormap (jpeg)'
+
+conv_jpeggrey = conv_grey
+
 
 # Choose one of the above based upon a color system name
 
@@ -106,6 +111,11 @@ def inv_rgb8(r, g, b):
 	b = int(b*7.0)
 	rgb = ((r&7) << 5) | ((b&3) << 3) | (g&7)
 	return rgb / 255.0, 0, 0
+
+def inv_jpeg(r, g, b):
+	raise Error, 'Attempt to invert RGB colormap (jpeg)'
+
+inv_jpeggrey = inv_grey
 
 
 # Choose one of the above based upon a color system name
@@ -175,6 +185,13 @@ def grab_hls(w, h, pf):
 def grab_hsv(w, h, pf):
 	raise Error, 'Sorry, grabbing hsv not implemented'
 
+def grab_jpeg(w, h, pf):
+	# XXX Ought to grab rgb and compress it
+	raise Error, 'sorry, grabbing jpeg not implemented'
+
+def grab_jpeggrey(w, h, pf):
+	raise Error, 'sorry, grabbing jpeggrey not implemented'
+
 
 # Choose one of the above based upon a color system name
 
@@ -196,7 +213,7 @@ class VideoParams:
 	def init(self):
 		# Essential parameters
 		self.format = 'grey'	# color system used
-		# Choose from: 'rgb', 'rgb8', 'hsv', 'yiq', 'hls'
+		# Choose from: grey, rgb, rgb8, hsv, yiq, hls, jpeg, jpeggrey
 		self.width = 0		# width of frame
 		self.height = 0		# height of frame
 		self.packfactor = 1	# expansion using rectzoom
@@ -286,12 +303,22 @@ class Displayer(VideoParams):
 			  (0,0,self.width,self.height))
 
 	def showpartframe(self, data, chromdata, (x,y,w,h)):
+		pf = self.packfactor
+		if self.format in ('jpeg', 'jpeggrey'):
+			import jpeg
+			data, width, height, bytes = jpeg.decompress(data)
+			if self.format == 'jpeg':
+				b = 4
+			else:
+				b = 1
+				width, height = width*pf, height*pf
+			if (width, height, bytes) <> (w, h, b):
+				raise Error, 'jpeg data has wrong size'
 		if not self.colormapinited:
 			self.initcolormap()
 		if self.fixcolor0:
 			gl.mapcolor(self.color0)
 			self.fixcolor0 = 0
-		pf = self.packfactor
 		factor = self.magnify
 		if pf: factor = factor * pf
 		if chromdata and not self.skipchrom:
@@ -326,7 +353,7 @@ class Displayer(VideoParams):
 		self.colormapinited = 1
 		self.color0 = None
 		self.fixcolor0 = 0
-		if self.format == 'rgb':
+		if self.format in ('rgb', 'jpeg'):
 			gl.RGBmode()
 			gl.gconfig()
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
@@ -509,11 +536,11 @@ def readfileheader(fp, filename):
 			format, rest = eval(line[:-1])
 		except:
 			raise Error, filename + ': Bad 3.0 color info'
-		if format == 'rgb':
+		if format in ('rgb', 'jpeg'):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0
 			offset = 0
-		elif format == 'grey':
+		elif format in ('grey', 'jpeggrey'):
 			c0bits = rest
 			c1bits = c2bits = 0
 			chrompack = 0
@@ -606,17 +633,17 @@ def writefileheader(fp, values):
 	#
 	# Write color encoding info
 	#
-	if format == 'rgb':
-		data = ('rgb', 0)
-	elif format == 'grey':
-		data = ('grey', c0bits)
+	if format in ('rgb', 'jpeg'):
+		data = (format, 0)
+	elif format in ('grey', 'jpeggrey'):
+		data = (format, c0bits)
 	else:
 		data = (format, (c0bits, c1bits, c2bits, chrompack, offset))
 	fp.write(`data`+'\n')
 	#
 	# Write frame geometry info
 	#
-	if format == 'rgb':
+	if format in ('rgb', 'jpeg'):
 		packfactor = 0
 	elif packfactor == 0:
 		packfactor = 1
@@ -699,6 +726,7 @@ class BasicVinFile(VideoParams):
 
 	def printinfo(self):
 		print 'File:    ', self.filename
+		print 'Size:    ', getfilesize(self.filename)
 		print 'Version: ', self.version
 		VideoParams.printinfo(self)
 
@@ -763,6 +791,17 @@ class BasicVinFile(VideoParams):
 			del dummy
 		self.atframeheader = 1
 		self.framecount = self.framecount + 1
+
+
+# Subroutine to return a file's size in bytes
+
+def getfilesize(filename):
+	import os, stat
+	try:
+		st = os.stat(filename)
+		return st[stat.ST_SIZE]
+	except os.error:
+		return 0
 
 
 # Derived class implementing random access and index cached in the file

@@ -20,6 +20,7 @@ import sys
 sys.path.append('/ufs/guido/src/video')
 import VFile
 import getopt
+import string
 
 
 # Global options
@@ -27,22 +28,34 @@ import getopt
 short = 0
 quick = 0
 delta = 0
+terse = 0
+maxwidth = 10
 
 
 # Main program -- mostly command line parsing
 
 def main():
-	global short, quick, delta
-	opts, args = getopt.getopt(sys.argv[1:], 'dqs')
+	global short, quick, delta, terse, maxwidth
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'dqst')
+	except getopt.error, msg:
+		sys.stdout = sys.stderr
+		print msg
+		print 'usage: Vinfo [-d] [-q] [-s] [-t] [file] ...'
+		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-q':
 			quick = 1
-		elif opt == '-d':
+		if opt == '-d':
 			delta = 1
-		elif opt == '-s':
+		if opt == '-s':
 			short = 1
+		if opt == '-t':
+			terse = short = 1
 	if not args:
 		args = ['film.video']
+	for filename in args:
+		maxwidth = max(maxwidth, len(filename))
 	sts = 0
 	for filename in args:
 		if process(filename):
@@ -65,17 +78,31 @@ def process(filename):
 		sys.stderr.write(filename + ': EOF in video file\n')
 		return 1
 
-	vin.printinfo()
+	if terse:
+		print string.ljust(filename, maxwidth),
+		kbytes = (VFile.getfilesize(filename) + 1023) / 1024
+		print string.rjust(`kbytes`, 5) + 'K',
+		print ' ', string.ljust(`vin.version`, 5),
+		print string.ljust(vin.format, 8),
+		print string.rjust(`vin.width`, 4),
+		print string.rjust(`vin.height`, 4),
+		sys.stdout.flush()
+	else:
+		vin.printinfo()
 
 	if quick:
+		if terse:
+			print
 		vin.close()
-		return
+		return 0
 
 	try:
 		vin.readcache()
-		print '[Using cached index]'
+		if not terse:
+			print '[Using cached index]'
 	except VFile.Error:
-		print '[Constructing index on the fly]'
+		if not terse:
+			print '[Constructing index on the fly]'
 
 	if not short:
 		if delta:
@@ -107,16 +134,21 @@ def process(filename):
 
 	if not short: print
 
-	print 'Total', n, 'frames in', t*0.001, 'sec.',
-	if t: print '-- average', int(n*10000.0/t)*0.1, 'frames/sec',
-	print
-	print 'Total data', 0.1 * int(datasize / 102.4), 'Kbytes',
-	if t:
-		print '-- average',
-		print 0.1 * int(datasize / 0.1024 / t), 'Kbytes/sec',
-	print
+	if terse:
+		print string.rjust(`n`, 6),
+		print string.rjust(`int(n*10000.0/t)*0.1`, 5)
+	else:
+		print 'Total', n, 'frames in', t*0.001, 'sec.',
+		if t: print '-- average', int(n*10000.0/t)*0.1, 'frames/sec',
+		print
+		print 'Total data', 0.1 * int(datasize / 102.4), 'Kbytes',
+		if t:
+			print '-- average',
+			print 0.1 * int(datasize / 0.1024 / t), 'Kbytes/sec',
+		print
 
 	vin.close()
+	return 0
 
 
 # Don't forget to call the main program

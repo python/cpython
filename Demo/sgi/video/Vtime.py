@@ -65,7 +65,7 @@ def main():
 
 def process(infilename, outfilename):
 	try:
-		vin = VFile.VinFile().init(infilename)
+		vin = VFile.BasicVinFile().init(infilename)
 	except IOError, msg:
 		sys.stderr.write(infilename + ': I/O error: ' + `msg` + '\n')
 		return 1
@@ -77,7 +77,7 @@ def process(infilename, outfilename):
 		return 1
 
 	try:
-		vout = VFile.VoutFile().init(outfilename)
+		vout = VFile.BasicVoutFile().init(outfilename)
 	except IOError, msg:
 		sys.stderr.write(outfilename + ': I/O error: ' + `msg` + '\n')
 		return 1
