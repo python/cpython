@@ -299,6 +299,17 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 				"Contents/Resources/python.rsrc",
 				]
 		copyapptree(template, destname, exceptlist, progress)
+		# SERIOUS HACK. If we've just copied a symlink as the
+		# executable we assume we're running from the MacPython addon
+		# to 10.2 python. We remove the symlink again and install
+		# the appletrunner script.
+		executable = os.path.join(destname, "Contents/MacOS/python")
+		if os.path.islink(executable):
+			os.remove(executable)
+			dummyfp, appletrunner, d2 = imp.find_module('appletrunner')
+			del dummyfp
+			shutil.copy2(appletrunner, executable)
+			os.chmod(executable, 0775)
 	# Now either use the .plist file or the default
 	if progress:
 		progress.label('Create info.plist')
