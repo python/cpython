@@ -9,7 +9,6 @@
 #define TARGET_API_MAC_CARBON 1
 #define TARGET_API_MAC_CARBON_NOTYET 1 /* Things we should do eventually, but not now */
 
-#define USE_ARGV0_CHDIR		/* Workaround for OSXDP4: change dir to argv[0] dir */
 #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 /* # define USE_GUSI1	/* Stdio implemented with GUSI 1 */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
@@ -29,7 +28,6 @@
 /* #define HAVE_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
 /* #define USE_GDBM		/* Include the gdbm module */
 /* #define USE_ZLIB		/* Include the zlib module */
-#define USE_UCNHASH		/* Include ucnhash module */
 #define USE_APPEARANCE	/* Enable Appearance support */
 
 #define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
