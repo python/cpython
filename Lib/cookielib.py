@@ -25,7 +25,7 @@ are available from http://wwwsearch.sf.net/):
 
 """
 
-import sys, re, urlparse, copy, time, struct, urllib, types, logging
+import sys, re, urlparse, copy, time, urllib, logging
 from types import StringTypes
 try:
     import threading as _threading
@@ -643,7 +643,7 @@ def escape_path(path):
     # And here, kind of: draft-fielding-uri-rfc2396bis-03
     # (And in draft IRI specification: draft-duerst-iri-05)
     # (And here, for new URI schemes: RFC 2718)
-    if isinstance(path, types.UnicodeType):
+    if isinstance(path, unicode):
         path = path.encode("utf-8")
     path = urllib.quote(path, HTTP_PATH_SAFE)
     path = ESCAPED_CHAR_RE.sub(uppercase_escaped_char, path)
