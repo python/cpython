@@ -43,6 +43,11 @@ Test whether \var{filename} matches \var{pattern}, returning true or
 false; the comparison is case-sensitive.
 \end{funcdesc}
 
+\begin{funcdesc}{filter}{names, pattern}
+Return the subset of the list of \var{names} that match \var{pattern}.
+It is the same as \code{[n for n in names if fnmatch(n, pattern)]}, but
+implemented more efficiently.
+\end{funcdesc}
 
 \begin{seealso}
   \seemodule{glob}{\UNIX{} shell-style path expansion.}
