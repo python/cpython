@@ -810,28 +810,33 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__iadd__", &x,
-					PyNumber_Add, 0) <= 0)
+					 PyNumber_Add, 0) <= 0)
 			return x;
 	}
-	else if (HASINPLACE(v)
-		  && ((v->ob_type->tp_as_sequence != NULL &&
-		       (f = v->ob_type->tp_as_sequence->sq_inplace_concat)
-		       != NULL)
-		 || (v->ob_type->tp_as_number != NULL &&
-		     (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL)))
-		return (*f)(v, w);
+	else if (HASINPLACE(v)) {
+		if (v->ob_type->tp_as_sequence != NULL)
+			f = v->ob_type->tp_as_sequence->sq_inplace_concat;
+		if (f == NULL && v->ob_type->tp_as_number != NULL)
+			f = v->ob_type->tp_as_number->nb_inplace_add;
+		if (f != NULL)
+			return (*f)(v, w);
+	}
 
 	BINOP(v, w, "__add__", "__radd__", PyNumber_Add);
 
-	if (v->ob_type->tp_as_sequence != NULL &&
-	    (f = v->ob_type->tp_as_sequence->sq_concat) != NULL)
-		return (*f)(v, w);
-	else if (v->ob_type->tp_as_number != NULL) {
+	if (v->ob_type->tp_as_sequence != NULL) {
+		f = v->ob_type->tp_as_sequence->sq_concat;
+		if (f != NULL)
+			return (*f)(v, w);
+	}
+	if (v->ob_type->tp_as_number != NULL) {
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if (v->ob_type->tp_as_number != NULL &&
-		    (f = v->ob_type->tp_as_number->nb_add) != NULL)
-			x = (*f)(v, w);
+		if (v->ob_type->tp_as_number != NULL) {
+			f = v->ob_type->tp_as_number->nb_add;
+			if (f != NULL)
+				x = (*f)(v, w);
+		}
 		Py_DECREF(v);
 		Py_DECREF(w);
 		if (f != NULL)
