@@ -69,6 +69,10 @@ for line in map(addnoise, lines):
     res = res + b
 verify(res == testdata)
 
+# Test base64 with just invalid characters, which should return
+# empty strings. TBD: shouldn't it raise an exception instead ?
+verify(binascii.a2b_base64(fillers) == '')
+
 # Test uu
 print "uu test"
 MAX_UU = 45

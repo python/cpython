@@ -408,9 +408,16 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	/* and set string size correctly */
+	/* And set string size correctly. If the result string is empty
+	** (because the input was all invalid) return the shared empty
+	** string instead; _PyString_Resize() won't do this for us.
+	*/
 	if (bin_len > 0)
 		_PyString_Resize(&rv, bin_len);
+	else {
+		Py_DECREF(rv);
+		rv = PyString_FromString("");
+	}
 	return rv;
 }
 
