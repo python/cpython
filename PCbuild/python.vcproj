@@ -137,6 +137,75 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ReleaseItanium|Win32"
+			OutputDirectory=".\."
+			IntermediateDirectory=".\ia64-temp-release\python"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /USECL:MS_ITANIUM /VSEXTCOMP_VERBOSE"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				StringPooling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\ia64-temp-release\python/python.pch"
+				AssemblerListingLocation=".\ia64-temp-release\python/"
+				ObjectFile=".\ia64-temp-release\python/"
+				ProgramDataBaseFileName=".\ia64-temp-release\python/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK /VSEXTCOMP_VERBOSE"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile=".\./python.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\./python.pdb"
+				SubSystem="1"
+				BaseAddress="0x1d000000"
+				TargetMachine="0"/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName=".\./python.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -163,6 +232,14 @@
 					PreprocessorDefinitions=""
 					BrowseInformation="1"/>
 			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions=""/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\PC\python_exe.rc">
@@ -175,6 +252,13 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
+				<Tool
+					Name="VCResourceCompilerTool"
+					PreprocessorDefinitions=""
+					AdditionalIncludeDirectories="\Pyinst\python\PC"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
 				<Tool
 					Name="VCResourceCompilerTool"
 					PreprocessorDefinitions=""

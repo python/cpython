@@ -287,6 +287,21 @@ _ssl
     build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
     this by hand.
 
+Building for Itanium
+--------------------
+
+The project files support a ReleaseItanium configuration which creates 
+Win64/Itanium binaries. For this to work, you need to install the Platform
+SDK, in particular the 64-bit support. This includes an Itanium compiler
+(future releases of the SDK likely include an AMD64 compiler as well).
+In addition, you need the Visual Studio plugin for external C compilers,
+from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
+locate the proper target compiler, and convert compiler options 
+accordingly.
+
+The Itanium build has seen little testing. The SDK compiler reports a lot
+of warnings about conversion from size_t to int, which will be fixed in
+future Python releases.
 
 YOUR OWN EXTENSION DLLs
 -----------------------
