@@ -515,7 +515,7 @@ class Aifc_read:
 		self._nchannels = _read_short(chunk)
 		self._nframes = _read_long(chunk)
 		self._sampwidth = (_read_short(chunk) + 7) / 8
-		self._framerate = _read_float(chunk)
+		self._framerate = int(_read_float(chunk))
 		self._framesize = self._nchannels * self._sampwidth
 		if self._aifc:
 			#DEBUG: SGI's soundeditor produces a bad size :-(
