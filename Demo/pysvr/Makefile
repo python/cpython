@@ -1,9 +1,12 @@
 # Makefile for 'pysvr' application embedding Python.
 # Tailored for Python 1.5a3 or later.
 # Some details are specific for Solaris or CNRI.
+# Also see ## comments for tailoring.
 
 # Which C compiler
 CC=gcc
+##PURIFY=/usr/local/pure/purify
+LINKCC=$(PURIFY) $(CC)
 
 # Optimization preferences
 OPT=-g
@@ -14,9 +17,13 @@ VER=1.5
 
 # Expressions using the above definitions -- no need to change
 PYVER=python$(VER)
+# Use these defs when compiling against installed Python
 PYC=$(INST)/lib/$(PYVER)/config
 PYINCL=-I$(INST)/include/$(PYVER) -I$(PYC)
-PYLIBS=$(PYC)/libpython1.5.a
+PYLIBS=$(PYC)/lib$(PYVER).a
+# Use these defs when compiling against built Python
+##PYINCL=-I../../Include -I../../sparc
+##PYLIBS=../../sparc/lib$(PYVER).a
 
 # Libraries to link with -- very installation dependent
 # (See LIBS= in Modules/Makefile in build tree)
@@ -34,8 +41,8 @@ PORT=4000
 all: pysvr
 
 # Target to build pysvr
-pysvr: pysvr.o $(PYOBJS)
-	$(CC) pysvr.o $(LIBS) -o pysvr
+pysvr: pysvr.o $(PYOBJS) $(PYLIBS)
+	$(LINKCC) pysvr.o $(LIBS) -o pysvr
 
 # Target to build and run pysvr
 run: pysvr
