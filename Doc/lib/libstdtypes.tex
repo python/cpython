@@ -664,12 +664,6 @@ there is at least one cased character, false otherwise.
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{iswide}{}
-Return true if all characters in the string are wide or full width and
-there is at least one wide or full width character, false otherwise.
-This method is supported by unicode type only.
-\end{methoddesc}
-
 \begin{methoddesc}[string]{join}{seq}
 Return a string which is the concatenation of the strings in the
 sequence \var{seq}.  The separator between elements is the string
@@ -808,11 +802,6 @@ character mapping codec using the \refmodule{codecs} module (see
 Return a copy of the string converted to uppercase.
 
 For 8-bit strings, this method is locale-dependent.
-\end{methoddesc}
-
-\begin{methoddesc}[string]{width}{}
-Return length of fixed-width representation of the string. This method
-is supported by unicode type only.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{zfill}{width}

@@ -19,7 +19,6 @@
 #define SPACE_MASK 0x20
 #define TITLE_MASK 0x40
 #define UPPER_MASK 0x80
-#define WIDE_MASK 0x100
 
 typedef struct {
     const Py_UNICODE upper;
@@ -321,15 +320,6 @@ int _PyUnicode_IsNumeric(Py_UNICODE ch)
     if (_PyUnicode_ToNumeric(ch) < 0.0)
 	return 0;
     return 1;
-}
-
-/* Returns 1 for Unicode characters having Full or Wide width, 0 otherwise */
-
-int _PyUnicode_IsWide(Py_UNICODE ch)
-{
-    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-
-    return (ctype->flags & WIDE_MASK) != 0;
 }
 
 #ifndef WANT_WCTYPE_FUNCTIONS

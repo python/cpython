@@ -702,27 +702,6 @@ int PyUnicode_GetSize(PyObject *unicode)
     return -1;
 }
 
-int PyUnicode_GetWidth(PyObject *unicode)
-{
-    const Py_UNICODE *p, *e;
-    int width;
-
-    if (!PyUnicode_Check(unicode)) {
-	PyErr_BadArgument();
-	return -1;
-    }
-
-    p = PyUnicode_AS_UNICODE(unicode);
-    e = p + PyUnicode_GET_SIZE(unicode);
-    for (width = 0; p < e; p++)
-	if (Py_UNICODE_ISWIDE(*p))
-	    width += 2;
-	else
-	    width++;
-
-    return width;
-}
-
 const char *PyUnicode_GetDefaultEncoding(void)
 {
     return unicode_default_encoding;
@@ -5436,35 +5415,6 @@ unicode_isnumeric(PyUnicodeObject *self)
     return PyBool_FromLong(1);
 }
 
-PyDoc_STRVAR(iswide__doc__,
-"S.iswide() -> bool\n\
-\n\
-Return True if all characters in S are wide width\n\
-and there is at least one character in S, False otherwise.");
-
-static PyObject*
-unicode_iswide(PyUnicodeObject *self)
-{
-    register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
-    register const Py_UNICODE *e;
-
-    /* Shortcut for single character strings */
-    if (PyUnicode_GET_SIZE(self) == 1 &&
-	Py_UNICODE_ISWIDE(*p))
-	Py_RETURN_TRUE;
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	Py_RETURN_FALSE;
-
-    e = p + PyUnicode_GET_SIZE(self);
-    for (; p < e; p++) {
-	if (!Py_UNICODE_ISWIDE(*p))
-	    Py_RETURN_FALSE;
-    }
-    Py_RETURN_TRUE;
-}
-
 PyDoc_STRVAR(join__doc__,
 "S.join(sequence) -> unicode\n\
 \n\
@@ -6076,21 +6026,6 @@ unicode_upper(PyUnicodeObject *self)
     return fixup(self, fixupper);
 }
 
-PyDoc_STRVAR(width__doc__,
-"S.width() -> unicode\n\
-\n\
-Return a fixed-width representation length of S.");
-
-static PyObject*
-unicode_width(PyObject *self)
-{
-    int width = PyUnicode_GetWidth(self);
-    if (width == -1)
-	return NULL;
-    else
-	return PyInt_FromLong((long)width);
-}
-
 PyDoc_STRVAR(zfill__doc__,
 "S.zfill(width) -> unicode\n\
 \n\
@@ -6255,8 +6190,6 @@ static PyMethodDef unicode_methods[] = {
     {"isnumeric", (PyCFunction) unicode_isnumeric, METH_NOARGS, isnumeric__doc__},
     {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
-    {"iswide", (PyCFunction) unicode_iswide, METH_NOARGS, iswide__doc__},
-    {"width", (PyCFunction) unicode_width, METH_NOARGS, width__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},

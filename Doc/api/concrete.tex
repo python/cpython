@@ -894,11 +894,6 @@ functions depending on the Python configuration.
   character.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{Py_UNICODE_ISWIDE}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a wide or full-width
-  character.
-\end{cfuncdesc}
-
 These APIs can be used for fast direct character conversions:
 
 \begin{cfuncdesc}{Py_UNICODE}{Py_UNICODE_TOLOWER}{Py_UNICODE ch}
@@ -955,10 +950,6 @@ use these APIs:
 
 \begin{cfuncdesc}{int}{PyUnicode_GetSize}{PyObject *unicode}
   Return the length of the Unicode object.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyUnicode_GetWidth}{PyObject *unicode}
-  Return the fixed-width representation length of the Unicode object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromEncodedObject}{PyObject *obj,
