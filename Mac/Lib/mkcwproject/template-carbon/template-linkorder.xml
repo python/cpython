@@ -1,5 +1,0 @@
-                <FILEREF>
-                    <PATHTYPE>Name</PATHTYPE>
-                    <PATH>%(sources)s</PATH>
-                    <PATHFORMAT>MacOS</PATHFORMAT>
-                </FILEREF>

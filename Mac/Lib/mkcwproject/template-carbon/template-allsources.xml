@@ -1,7 +1,0 @@
-                <FILE>
-                    <PATHTYPE>Name</PATHTYPE>
-                    <PATH>%(sources)s</PATH>
-                    <PATHFORMAT>MacOS</PATHFORMAT>
-                    <FILEKIND>Text</FILEKIND>
-                    <FILEFLAGS></FILEFLAGS>
-                </FILE>
