@@ -100,6 +100,7 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 LIBFILES = lib.tex \
 libal.tex libaifc.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
 libbltin.tex \
+libcd.tex \
 libcgi.tex libcopy.tex libctb.tex libcrypto.tex \
 libdbm.tex \
 libexcs.tex \
