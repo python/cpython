@@ -1316,7 +1316,8 @@ PyList_Sort(PyObject *v)
 static PyObject *
 listreverse(PyListObject *self)
 {
-	reverse_slice(self->ob_item, self->ob_item + self->ob_size);
+	if (self->ob_size > 1)
+		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
