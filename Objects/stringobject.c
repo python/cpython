@@ -389,9 +389,9 @@ PyObject *a, *el;
 {
 	register char *s, *end;
 	register char c;
-	if (!PyString_Check(el))
+	if (PyUnicode_Check(el))
 		return PyUnicode_Contains(a, el);
-	if (PyString_Size(el) != 1) {
+	if (!PyString_Check(el) || PyString_Size(el) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 				"string member test needs char left operand");
 		return -1;
@@ -2384,12 +2384,13 @@ PyString_Format(format, args)
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
 	int args_owned = 0;
-	PyObject *result;
+	PyObject *result, *orig_args;
 	PyObject *dict = NULL;
 	if (format == NULL || !PyString_Check(format) || args == NULL) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
+	orig_args = args;
 	fmt = PyString_AsString(format);
 	fmtcnt = PyString_Size(format);
 	reslen = rescnt = fmtcnt + 100;
@@ -2434,6 +2435,8 @@ PyString_Format(format, args)
 			int sign;
 			int len;
 			char tmpbuf[120]; /* For format{float,int,char}() */
+			char *fmt_start = fmt;
+			
 			fmt++;
 			if (*fmt == '(') {
 				char *keystart;
@@ -2583,6 +2586,11 @@ PyString_Format(format, args)
 				len = 1;
 				break;
 			case 's':
+  			case 'r':
+				if (PyUnicode_Check(v)) {
+					fmt = fmt_start;
+					goto unicode;
+				}
 				temp = PyObject_Str(v);
 				if (temp == NULL)
 					goto error;
@@ -2712,6 +2720,47 @@ PyString_Format(format, args)
 	}
 	_PyString_Resize(&result, reslen - rescnt);
 	return result;
+
+ unicode:
+	if (args_owned) {
+		Py_DECREF(args);
+		args_owned = 0;
+	}
+	/* Fiddle args right (remove the first argidx-1 arguments) */
+	--argidx;
+	if (PyTuple_Check(orig_args) && argidx > 0) {
+		PyObject *v;
+		int n = PyTuple_GET_SIZE(orig_args) - argidx;
+		v = PyTuple_New(n);
+		if (v == NULL)
+			goto error;
+		while (--n >= 0) {
+			PyObject *w = PyTuple_GET_ITEM(orig_args, n + argidx);
+			Py_INCREF(w);
+			PyTuple_SET_ITEM(v, n, w);
+		}
+		args = v;
+	} else {
+		Py_INCREF(orig_args);
+		args = orig_args;
+	}
+	/* Paste rest of format string to what we have of the result
+	   string; we reuse result for this */
+	rescnt = res - PyString_AS_STRING(result);
+	fmtcnt = PyString_GET_SIZE(format) - \
+		 (fmt - PyString_AS_STRING(format));
+	if (_PyString_Resize(&result, rescnt + fmtcnt)) {
+		Py_DECREF(args);
+		goto error;
+	}
+	memcpy(PyString_AS_STRING(result) + rescnt, fmt, fmtcnt);
+	format = result;
+	/* Let Unicode do its magic */
+	result = PyUnicode_Format(format, args);
+	Py_DECREF(format);
+	Py_DECREF(args);
+	return result;
+	
  error:
 	Py_DECREF(result);
 	if (args_owned) {
