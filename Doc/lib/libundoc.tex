@@ -107,12 +107,19 @@ contains helper code for colorizing Python source code.
 
 \section{Platform specific modules}
 
-\begin{description}
-\item[ntpath.py]
---- equivalent of posixpath on 32-bit Windows
 
+These modules are used to implement the \refmodule{os.path} module, and
+are not documented beyond this mention.
+
+\begin{description}
 \item[dospath.py]
---- equivalent of posixpath on MS-DOS
+--- implementation of \module{os.path} on MS-DOS
+
+\item[ntpath.py]
+--- implementation on \module{os.path} on 32-bit Windows
+
+\item[posixpath.py]
+--- implementation on \module{os.path} on \POSIX{}
 \end{description}
 
 
@@ -276,11 +283,15 @@ The following are SGI specific:
 (obsolete hardware).
 \end{description}
 
-The following is Windows specific:
+The following are Windows specific:
 
 \begin{description}
 \item[msvcrtmodule.c]
 (in directory \file{PC/}) --- define a number of Windows
 specific goodies like \function{khbit()}, \function{getch()} and
 \function{setmode()}.  (Windows 95 and NT only.)
+
+\item[winsound.c]
+--- Define \function{play()} and \function{stop()} operations for
+controlling audio playback on Windows.
 \end{description}
