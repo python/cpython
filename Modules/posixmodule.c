@@ -1504,6 +1504,14 @@ initposix()
 		fatal("can't define posix.environ");
 	DECREF(v);
 	
+#ifdef WNOHANG
+	/* Export WNOHANG symbol */
+	v = newintobject((long)WNOHANG);
+	if (v == NULL || dictinsert(d, "WNOHANG", v) != 0)
+		fatal("can't define posix.WNOHANG");
+	DECREF(v);
+#endif
+	
 	/* Initialize posix.error exception */
 	PosixError = newstringobject("posix.error");
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
