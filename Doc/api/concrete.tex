@@ -884,16 +884,16 @@ following functions. Support is optimized if Python's own
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromWideChar}{const wchar_t *w,
                                                      int size}
-  Create a Unicode object from the \ctype{whcar_t} buffer \var{w} of
+  Create a Unicode object from the \ctype{wchar_t} buffer \var{w} of
   the given size.  Returns \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_AsWideChar}{PyUnicodeObject *unicode,
                                              wchar_t *w,
                                              int size}
-  Copies the Unicode object contents into the \ctype{whcar_t} buffer
-  \var{w}.  At most \var{size} \ctype{whcar_t} characters are copied.
-  Returns the number of \ctype{whcar_t} characters copied or -1 in
+  Copies the Unicode object contents into the \ctype{wchar_t} buffer
+  \var{w}.  At most \var{size} \ctype{wchar_t} characters are copied.
+  Returns the number of \ctype{wchar_t} characters copied or -1 in
   case of an error.
 \end{cfuncdesc}
 
