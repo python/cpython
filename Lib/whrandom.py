@@ -54,20 +54,17 @@ class whrandom:
 			t, x = divmod(t, 256)
 			t, y = divmod(t, 256)
 			t, z = divmod(t, 256)
-		self._seed = (x, y, z)
+		# Zero is a poor seed, so substitute 1
+		self._seed = (x or 1, y or 1, z or 1)
 	#
 	# Get the next random number in the range [0.0, 1.0).
 	#
 	def random(self):
 		x, y, z = self._seed
 		#
-		x1, x2 = divmod(x, 177)
-		y1, y2 = divmod(y, 176)
-		z1, z2 = divmod(z, 178)
-		#
-		x = (171 * x2 -  2 * x1) % 30269
-		y = (172 * y2 - 35 * y1) % 30307
-		z = (170 * z2 - 63 * z1) % 30323
+		x = (171 * x) % 30269
+		y = (172 * y) % 30307
+		z = (170 * z) % 30323
 		#
 		self._seed = x, y, z
 		#
