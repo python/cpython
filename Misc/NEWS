@@ -56,7 +56,7 @@ serialized.  Recursive imports are not affected.
 
 - Rewrote the finalization code almost completely, to be much more
 careful with the order in which modules are destroyed.  Destructors
-pwill now generally be able to reference built-in names such as None
+will now generally be able to reference built-in names such as None
 without trouble.
 
 - Case-insensitive platforms such as Mac and Windows require the case
