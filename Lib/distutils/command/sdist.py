@@ -189,7 +189,7 @@ class sdist (Command):
 
             # Add default file set to 'files'
             if self.use_defaults:
-                self.find_defaults ()
+                self.add_defaults ()
 
             # Read manifest template if it exists
             if template_exists:
@@ -219,7 +219,7 @@ class sdist (Command):
     # get_file_list ()
 
 
-    def find_defaults (self):
+    def add_defaults (self):
         """Add all the default files to self.files:
           - README or README.txt
           - setup.py
@@ -268,6 +268,8 @@ class sdist (Command):
             build_clib = self.get_finalized_command ('build_clib')
             self.files.extend (build_clib.get_source_files ())
 
+    # add_defaults ()
+    
 
     def search_dir (self, dir, pattern=None):
         """Recursively find files under 'dir' matching 'pattern' (a string
@@ -287,16 +289,6 @@ class sdist (Command):
         return files
 
     # search_dir ()
-
-
-#     def exclude_pattern (self, pattern):
-#         """Remove filenames from 'self.files' that match 'pattern'."""
-#         self.debug_print("exclude_pattern: pattern=%s" % pattern)
-#         pattern_re = translate_pattern (pattern)
-#         for i in range (len (self.files)-1, -1, -1):
-#             if pattern_re.match (self.files[i]):
-#                 self.debug_print("removing %s" % self.files[i])
-#                 del self.files[i]
 
 
     def recursive_exclude_pattern (self, dir, pattern=None):
@@ -544,7 +536,7 @@ class sdist (Command):
 
     def write_manifest (self):
         """Write the file list in 'self.files' (presumably as filled in by
-        'find_defaults()' and 'read_template()') to the manifest file named
+        'add_defaults()' and 'read_template()') to the manifest file named
         by 'self.manifest'.
         """
         self.execute(write_file,
