@@ -163,30 +163,27 @@ bz2
 
 
 _bsddb
-    XXX The Sleepycat release we use will probably change before
-    XXX 2.3a1.
-    Go to Sleepycat's patches page:
-        http://www.sleepycat.com/update/index.html
-    and download
-        4.0.14.zip
-    from the download page.  The file name is db-4.0.14.zip.  Unpack into
-        dist\db-4.0.14
+    Go to Sleepycat's download page:
+        http://www.sleepycat.com/download/
 
-    Apply the patch file bsddb_patch.txt in this (PCbuild) directory
-    against the file
-        dist\db-4.0.14\db\db_reclaim.c
+    and download version 4.1.25.  The file name is db-4.1.25.NC.zip.
+    XXX with or without strong cryptography?  I picked "without".
 
-    Go to
-        http://www.sleepycat.com/docs/ref/build_win/intro.html
-    and follow the instructions for building the Sleepycat software.
-    Build the Release version.
-    NOTE:  The instructions are for a later release of the software,
-    so use your imagination.  Berkeley_DB.dsw in this release was
-    also pre-MSVC6, so you'll be prompted to upgrade the format (say
-    yes, of course).  Choose configuration "db_buildall - Win32 Release",
-    and build db_buildall.exe.
+    Unpack into
+        dist\db-4.1.25
 
-    XXX We're actually linking against Release_static\libdb40s.lib.
+    [If using WinZip to unpack the db-4.1.25.NC distro, that requires
+     renaming the directory (to remove ".NC") after unpacking.
+    ]
+
+    Open
+        dist\db-4.1.25\docs\index.html
+
+    and follow the Windows instructions for building the Sleepycat
+    software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
+    Build the Release version ("build_all -- Win32 Release").
+
+    XXX We're actually linking against Release_static\libdb41s.lib.
     XXX This yields the following warnings:
 """
 Compiling...
@@ -200,6 +197,31 @@ LINK : warning LNK4049: locally defined symbol "_fopen" imported
 _bsddb.pyd - 0 error(s), 4 warning(s)
 """
     XXX This isn't encouraging, but I don't know what to do about it.
+
+    To run extensive tests, pass "-u bsddb" to regrtest.py.  test_bsddb3.py
+    is then enabled.  Running in verbose mode may be helpful.
+
+    XXX The test_bsddb3 tests don't always pass, on Windows (according to
+    XXX me) or on Linux (according to Barry).  I had much better luck
+    XXX on Win2K than on Win98SE.  The common failure mode across platforms
+    XXX is
+    XXX     DBAgainError: (11, 'Resource temporarily unavailable -- unable
+    XXX                         to join the environment')
+    XXX
+    XXX and it appears timing-dependent.  On Win2K I also saw this once:
+    XXX
+    XXX test02_SimpleLocks (bsddb.test.test_thread.HashSimpleThreaded) ...
+    XXX Exception in thread reader 1:
+    XXX Traceback (most recent call last):
+    XXX File "C:\Code\python\lib\threading.py", line 411, in __bootstrap
+    XXX    self.run()
+    XXX File "C:\Code\python\lib\threading.py", line 399, in run
+    XXX    apply(self.__target, self.__args, self.__kwargs)
+    XXX File "C:\Code\python\lib\bsddb\test\test_thread.py", line 268, in
+    XXX                  readerThread
+    XXX    rec = c.next()
+    XXX DBLockDeadlockError: (-30996, 'DB_LOCK_DEADLOCK: Locker killed
+    XXX                                to resolve a deadlock')
 
 
 _ssl
