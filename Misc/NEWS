@@ -952,8 +952,59 @@ Windows
 Mac
 ----
 
-Yet to be written.
+- Mac/Relnotes is gone, the release notes are now here.
 
+- The current naming convention for Python on the Macintosh is that MacPython
+  refers to the unix-based OSX-only version, and MacPython-OS9 refers to the
+  CFM-based version that runs on both OS9 and OSX.
+
+- All MacPython-OS9 functionality is now available in an OSX unix build,
+  including the Carbon modules, the IDE, OSA support, etc. A lot of this
+  will only work correctly in a framework build, though, because you cannot
+  talk to the window manager unless your application is run from a .app
+  bundle. There is a command line tool "pythonw" that runs your script
+  with an interpreter living in such a .app bundle, this interpreter should
+  be used to run any Python script using the window manager (including
+  Tkinter or wxPython scripts).
+  
+- A new utility PythonLauncher will start a Python interpreter when a .py or
+  .pyw script is double-clicked in the Finder. By default .py scripts are
+  run with a normal Python interpreter in a Terminal window and .pyw
+  files are run with a window-aware pythonw interpreter without a Terminal
+  window, but all this can be customized.
+  
+- MacPython-OS9 is now Carbon-only, so it runs on Mac OS 9 or Mac OS X and
+  possibly on Mac OS 8.6 with the right CarbonLib installed, but not on earlier
+  releases.
+  
+- Many tools such as BuildApplet.py and gensuitemodule.py now support a command
+  line interface too.
+  
+- All the Carbon classes are now PEP253 compliant, meaning that you can
+  subclass them from Python. Most of the attributes have gone, you should
+  now use the accessor function call API, which is also what Apple's
+  documentation uses. Some attributes such as grafport.visRgn are still
+  available for convenience.
+  
+- New Carbon modules File (implementing the APIs in Files.h and Aliases.h)
+  and Folder (APIs from Folders.h). The old macfs builtin module is
+  gone, and replaced by a Python wrapper around the new modules.
+
+- Pathname handling should now be fully consistent: MacPython-OSX always uses
+  unix pathnames and MacPython-OS9 always uses colon-separated Mac pathnames
+  (also when running on Mac OS X).
+  
+- New Carbon modules Help and AH give access to the Carbon Help Manager.
+  There are hooks in the IDE to allow accessing the Python documentation
+  (and Apple's Carbon and Cocoa documentation) through the Help Viewer.
+  See Mac/OSX/README for converting the Python documentation to a
+  Help Viewer comaptible form and installing it.
+  
+- OSA support has been redesigned and the generated Python classes now
+  mirror the inheritance defined by the underlying OSA classes.
+  
+- MacPython no longer maps both \r and \n to \n on input for any text file.
+  This feature has been replaced by universal newline support (PEP278).
 
 What's New in Python 2.2 final?
 ===============================
