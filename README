@@ -227,14 +227,14 @@ compilers from the vendor, or one of the free compilers (gcc).
 Unsupported systems
 -------------------
 
-A number of features are not supported in Python 2.3 anymore. Some
-support code is still present, but will be removed in Python 2.4.
-If you still need to use current Python versions on these systems,
-please send a message to python-dev@python.org indicating that you
-volunteer to support this system.
+A number of features have not been supported since Python 2.3, and
+the code to support them was removed in Python 2.4. If you still 
+need to use current Python versions on these systems, please send 
+a message to python-dev@python.org indicating that you volunteer 
+to support this system. There is more detail on this in PEP 11.
 
-More specifically, the following systems are not supported any
-longer:
+More specifically, the following systems are no longer supported:
+
 - SunOS 4
 - DYNIX
 - dgux
@@ -319,15 +319,19 @@ Linux:  A problem with threads and fork() was tracked down to a bug in
 	takes care of this automatically.
 
 Red Hat Linux: Red Hat 9 built Python2.2 in UCS-4 mode and hacked
-	Tcl to support it. To compile Python2.3 with Tkinter, you will
-	need to pass --enable-unicode=ucs4 flag to ./configure. 
+	Tcl to support it. To compile Python with Tkinter on these
+        systems, you will need to pass --enable-unicode=ucs4 flag 
+        to ./configure. This is no longer needed in Fedora Core.
 
-	There's an executable /usr/bin/python which is Python
-	1.5.2 on most older Red Hat installations; several key Red Hat tools
-	require this version.  Python 2.1.x may be installed as
-	/usr/bin/python2.  The Makefile installs Python as
-	/usr/local/bin/python, which may or may not take precedence
-	over /usr/bin/python, depending on how you have set up $PATH.
+        On older Red Hat releases, there's an executable 
+        /usr/bin/python which is Python 1.5.2 on most older Red Hat 
+        installations; several key Red Hat tools require this version.  
+        Python 2.1.x may be installed as /usr/bin/python2 (you can also
+        use "make altinstall" to install Python in a way that won't replace
+        the 'python' executable, but instead only create a "python2.4" 
+        binary).  The Makefile installs Python as /usr/local/bin/python, 
+        which may or may not take precedence over /usr/bin/python, depending 
+        on how you have set up $PATH.
 
 FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
 	similar: When using cursesmodule, the linking is not done in
