@@ -332,6 +332,23 @@ for state in 0, 1, 2, ..., until it returns a non-string.\n\
 It should return the next possible completion starting with 'text'.\
 ";
 
+static PyObject *
+get_completer(PyObject *self, PyObject *args)
+{
+	if (completer == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	Py_INCREF(completer);
+	return completer;
+}
+
+static char doc_get_completer[] = "\
+get_completer() -> function\n\
+\n\
+Returns current completer function.\
+";
+
 /* Exported function to read the current line buffer */
 
 static PyObject *
@@ -385,6 +402,7 @@ static struct PyMethodDef readline_methods[] =
  	{"get_history_length", get_history_length, 
 	 METH_VARARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
+	{"get_completer", get_completer, METH_VARARGS, doc_get_completer},
 	{"get_begidx", get_begidx, METH_OLDARGS, doc_get_begidx},
 	{"get_endidx", get_endidx, METH_OLDARGS, doc_get_endidx},
 

@@ -2,6 +2,9 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Backported SF patch #676342: after using pdb, the readline command
+  completion was botched.
+
 - Fix problem building on OSF1 because the compiler only accepted
   preprocessor directives that start in column 1.  (SF bug #691793.)
 
