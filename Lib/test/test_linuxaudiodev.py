@@ -1,4 +1,4 @@
-from test_support import verbose, findfile, TestFailed
+from test_support import verbose, findfile, TestFailed, TestSkipped
 import linuxaudiodev
 import errno
 import os
@@ -11,7 +11,7 @@ def play_sound_file(path):
         a = linuxaudiodev.open('w')
     except linuxaudiodev.error, msg:
 	if msg[0] in (errno.EACCES, errno.ENODEV):
-		raise ImportError, msg
+		raise TestSkipped, msg
         raise TestFailed, msg
     else:
         a.write(data)
