@@ -107,6 +107,15 @@ fi
 AC_AIX
 AC_MINIX
 
+# check for ANSI or K&R ("traditional") preprocessor
+AC_MSG_CHECKING(for C preprocessor type)
+AC_TRY_COMPILE([
+#define spam(name, doc) {#name, &name, #name "() -- " doc}
+int foo;
+struct {char *name; int *addr; char *doc;} desc = spam(foo, "something");
+], [;], cpp_type=ansi, AC_DEFINE(HAVE_OLD_CPP) cpp_type=traditional)
+AC_MSG_RESULT($cpp_type)
+
 # checks for header files
 AC_HEADER_STDC
 AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h \
@@ -120,6 +129,13 @@ was_it_defined=no
 AC_MSG_CHECKING(for clock_t in time.h)
 AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, AC_DEFINE(clock_t, long))
 AC_MSG_RESULT($was_it_defined)
+
+# Add some code to confdefs.h so that the test for off_t works on SCO
+cat >> confdefs.h <<\EOF
+#if defined(SCO_DS)
+#undef _OFF_T
+#endif
+EOF
 
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
@@ -152,7 +168,7 @@ AC_MSG_CHECKING(LDSHARED)
 if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) LDSHARED="ld_so_aix";;
+	AIX*) LDSHARED="ld_so_aix \$(CC)";;
 	IRIX*) LDSHARED="ld -shared";;
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
@@ -162,6 +178,7 @@ then
 	Linux*) LDSHARED="gcc -shared";;
 	FreeBSD*) LDSHARED="ld -Bshareable";;
 	NeXT|next/3*) LDSHARED="ld -u libsys_s";;
+	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -178,6 +195,7 @@ then
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
 	FreeBSD*) CCSHARED="-fpic";;
+	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -190,6 +208,7 @@ then
 	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp";;
 	hp*|HP*) LINKFORSHARED="-Wl,-E";;
 	Linux*) LINKFORSHARED="-rdynamic";;
+	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -216,14 +235,12 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
-# XXX need to check whether libreadline.a actually exists there!
-# XXX Also, on some systems, it's libreadline.so...
 AC_MSG_CHECKING(for --with-readline)
 AC_ARG_WITH(readline, [--with-readline[=DIRECTORY] use GNU readline library], [
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_READLINE)
 if test -d "$withval"
-then LIBS="$LIBS -L$withval"
+then LDFLAGS="$LDFLAGS -L$withval"
 fi
 termcap=
 AC_CHECK_LIB(termcap, tgetent, [termcap=termcap], [
@@ -245,7 +262,7 @@ AC_MSG_CHECKING(for --with-thread)
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
 AC_MSG_RESULT($withval)
 if test -d "$withval"
-then LIBS="$LIBS -L$withval"
+then LDFLAGS="$LDFLAGS -L$withval"
 fi
 AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
@@ -278,7 +295,7 @@ AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_SGI_DL)
 dldir=$withval
 if test -d "$dldir"
-then LIBS="$LIBS -L$dldir"
+then LDFLAGS="$LDFLAGS -L$dldir"
 else AC_ERROR(proper usage is --with-sgi-dl=DIRECTORY)
 fi
 DLINCLDIR=${dldir}
@@ -291,7 +308,7 @@ AC_DEFINE(WITH_DL_DLD)
 dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
 if test -d "$dldir" -a -d "$dlddir"
-then LIBS="$LIBS -L$dldir -L$dlddir"
+then LDFLAGS="$LDFLAGS -L$dldir -L$dlddir"
 else AC_ERROR(proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY)
 fi
 DLINCLDIR=${dldir}
