@@ -149,6 +149,22 @@ def test_xmlgen_content_escape():
 
     return result.getvalue() == start + "<doc>&lt;huhei&amp;</doc>"
 
+def test_xmlgen_attr_escape():
+    result = StringIO()
+    gen = XMLGenerator(result)
+
+    gen.startDocument()
+    gen.startElement("doc", {"a": '"'})
+    gen.startElement("e", {"a": "'"})
+    gen.endElement("e")
+    gen.startElement("e", {"a": "'\""})
+    gen.endElement("e")
+    gen.endElement("doc")
+    gen.endDocument()
+
+    return result.getvalue() == start \
+           + "<doc a='\"'><e a=\"'\"></e><e a=\"'&quot;\"></e></doc>"
+
 def test_xmlgen_ignorable():
     result = StringIO()
     gen = XMLGenerator(result)
