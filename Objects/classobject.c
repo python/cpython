@@ -43,7 +43,7 @@ PyObject *
 PyClass_New(bases, dict, name)
 	PyObject *bases; /* NULL or tuple of classobjects! */
 	PyObject *dict;
-	PyObject *name; /* String; NULL if unknown */
+	PyObject *name;
 {
 	PyClassObject *op, *dummy;
 	static PyObject *getattrstr, *setattrstr, *delattrstr;
@@ -63,6 +63,16 @@ PyClass_New(bases, dict, name)
 		if (namestr == NULL)
 			return NULL;
 	}
+	if (name == NULL || !PyString_Check(name)) {
+		PyErr_SetString(PyExc_SystemError,
+				"PyClass_New: name must be a string");
+		return NULL;
+	}
+	if (dict == NULL || !PyDict_Check(dict)) {
+		PyErr_SetString(PyExc_SystemError,
+				"PyClass_New: dict must be a dictionary");
+		return NULL;
+	}
 	if (PyDict_GetItem(dict, docstr) == NULL) {
 		if (PyDict_SetItem(dict, docstr, Py_None) < 0)
 			return NULL;
@@ -70,9 +80,9 @@ PyClass_New(bases, dict, name)
 	if (PyDict_GetItem(dict, modstr) == NULL) {
 		PyObject *globals = PyEval_GetGlobals();
 		if (globals != NULL) {
-			PyObject *name = PyDict_GetItem(globals, namestr);
-			if (name != NULL) {
-				if (PyDict_SetItem(dict, modstr, name) < 0)
+			PyObject *modname = PyDict_GetItem(globals, namestr);
+			if (modname != NULL) {
+				if (PyDict_SetItem(dict, modstr, modname) < 0)
 					return NULL;
 			}
 		}
@@ -82,8 +92,23 @@ PyClass_New(bases, dict, name)
 		if (bases == NULL)
 			return NULL;
 	}
-	else
+	else {
+		int i;
+		if (!PyTuple_Check(bases)) {
+			PyErr_SetString(PyExc_SystemError,
+					"PyClass_New: bases must be a tuple");
+			return NULL;
+		}
+		i = PyTuple_Size(bases);
+		while (--i >= 0) {
+			if (!PyClass_Check(PyTuple_GetItem(bases, i))) {
+				PyErr_SetString(PyExc_SystemError,
+					"PyClass_New: base must be a class");
+				return NULL;
+			}
+		}
 		Py_INCREF(bases);
+	}
 	op = PyObject_NEW(PyClassObject, &PyClass_Type);
 	if (op == NULL) {
 		Py_DECREF(bases);
