@@ -110,4 +110,24 @@ class install_lib (Command):
 
     # get_outputs ()
 
+    def get_inputs (self):
+        """Get the list of files that are input to this command, ie. the
+        files that get installed as they are named in the build tree.
+        The files in this list correspond one-to-one to the output
+        filenames returned by 'get_outputs()'."""
+
+        inputs = []
+        
+        if self.distribution.has_pure_modules():
+            build_py = self.find_peer ('build_py')
+            inputs.extend (build_py.get_outputs())
+
+        if self.distribution.has_ext_modules():
+            build_ext = self.find_peer ('build_ext')
+            inputs.extend (build_ext.get_outputs())
+
+        return inputs
+            
+        
+
 # class install_lib
