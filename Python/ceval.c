@@ -1320,7 +1320,7 @@ eval_code2(co, globals, locals,
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
 			if (x == NULL) {
-				PyErr_SetObject(PyExc_NameError,
+				PyErr_SetObject(PyExc_UnboundLocalError,
 					   PyTuple_GetItem(co->co_varnames,
 							oparg));
 				break;
@@ -1338,7 +1338,7 @@ eval_code2(co, globals, locals,
 		case DELETE_FAST:
 			x = GETLOCAL(oparg);
 			if (x == NULL) {
-				PyErr_SetObject(PyExc_NameError,
+				PyErr_SetObject(PyExc_UnboundLocalError,
 					   PyTuple_GetItem(co->co_varnames,
 							oparg));
 				break;
