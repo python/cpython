@@ -99,6 +99,13 @@ class MyScanner(Scanner):
 			 [("ExistingWindowPtr", "*", "*")]),
 			([("WindowPtr", "*", "ReturnMode")],
 			 [("ExistingWindowPtr", "*", "*")]),
+			 
+			# StdFilterProc
+			([('EventRecord', 'event', 'OutMode'), 
+			  ('DialogItemIndex', 'itemHit', 'OutMode')],
+			 [('EventRecord', 'event', 'InOutMode'), 
+			  ('DialogItemIndex', 'itemHit', 'InOutMode')])
+
 			]
 
 	def writeinitialdefs(self):
