@@ -27,8 +27,33 @@ rationale, refer to the PEP for a particular new feature.
 
 
 %======================================================================
+\section{PEP 322: Reverse Iteration}
 
-% Large, PEP-level features and changes should be described here.
+A new built-in function, \function{reversed(seq)}, takes a sequence
+and returns an iterator that returns the elements of the sequence 
+in reverse order.  
+
+\begin{verbatim}
+>>> for i in reversed([1,2,3]):
+...    print i
+... 
+3
+2
+1
+\end{verbatim}
+
+Note that \function{reversed()} only accepts sequences, not arbitrary
+iterators.  If you want to reverse an iterator, convert it to 
+a list or tuple with \function{list()} or \function{tuple()}.
+
+\begin{verbatim}
+>>> input = open('/etc/passwd', 'r')
+>>> for line in reversed(list(input)):
+...   print line
+... 
+root:*:0:0:System Administrator:/var/root:/bin/tcsh
+  ...
+\end{verbatim}
 
 
 %======================================================================
@@ -76,6 +101,23 @@ The \var{reverse} parameter should have a Boolean value.  If the value is
 of \code{L.sort() ; L.reverse()}, you can now write
 \code{L.sort(reverse=True)}.
 
+\item The list type gained a \method{sorted(iterable)} method that
+returns the elements of the iterable as a sorted list.  It also accepts 
+the \var{cmp}, \var{key}, and \var{reverse} keyword arguments, same as 
+the \method{sort()} method.  An  example usage:
+
+\begin{verbatim}
+>>> L = [9,7,8,3,2,4,1,6,5]
+>>> list.sorted(L)
+[1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> L
+[9, 7, 8, 3, 2, 4, 1, 6, 5]
+>>> 
+\end{verbatim}
+
+Note that the original list is unchanged; the list returned by
+\method{sorted()} is a newly-created one.
+
 \item The \function{zip()} built-in function and \function{itertools.izip()} now return  an empty list 
   instead of raising a \exception{TypeError} exception if called
   with no arguments.
@@ -113,6 +155,9 @@ details.
    \function{use_default_colors()}.   On platforms where the terminal 
    supports transparency, this makes it possible to use a transparent background.
    (Contributed by J\"org Lehmann.)
+
+\item The \module{heapq} module is no longer implemented in Python,
+      having been converted into C.
 
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
    which returns an N-bit long integer.
