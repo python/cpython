@@ -204,8 +204,9 @@ typedef struct {
     int length;			/* Length of raw Unicode data in buffer */
     Py_UNICODE *str;		/* Raw Unicode buffer */
     long hash;			/* Hash value; -1 if not set */
-    PyObject *utf8str;		/* UTF-8 encoded version as Python string,
-				   or NULL */
+    PyObject *defenc;		/* (Default) Encoded version as Python
+				   string, or NULL; this is used for
+				   implementing the buffer protocol */
 } PyUnicodeObject;
 
 extern DL_IMPORT(PyTypeObject) PyUnicode_Type;

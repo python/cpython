@@ -165,9 +165,9 @@ int _PyUnicode_Resize(register PyUnicodeObject *unicode,
 
  reset:
     /* Reset the object caches */
-    if (unicode->utf8str) {
-        Py_DECREF(unicode->utf8str);
-        unicode->utf8str = NULL;
+    if (unicode->defenc) {
+        Py_DECREF(unicode->defenc);
+        unicode->defenc = NULL;
     }
     unicode->hash = -1;
     
@@ -243,7 +243,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
-    unicode->utf8str = NULL;
+    unicode->defenc = NULL;
     return unicode;
 
  onError:
@@ -262,9 +262,9 @@ void _PyUnicode_Free(register PyUnicodeObject *unicode)
 	    unicode->str = NULL;
 	    unicode->length = 0;
 	}
-	if (unicode->utf8str) {
-	    Py_DECREF(unicode->utf8str);
-	    unicode->utf8str = NULL;
+	if (unicode->defenc) {
+	    Py_DECREF(unicode->defenc);
+	    unicode->defenc = NULL;
 	}
 	/* Add to free list */
         *(PyUnicodeObject **)unicode = unicode_freelist;
@@ -273,7 +273,7 @@ void _PyUnicode_Free(register PyUnicodeObject *unicode)
     }
     else {
 	PyMem_DEL(unicode->str);
-	Py_XDECREF(unicode->utf8str);
+	Py_XDECREF(unicode->defenc);
 	PyObject_DEL(unicode);
     }
 }
@@ -527,6 +527,33 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     
  onError:
     return NULL;
+}
+
+/* Return a Python string holding the default encoded value of the
+   Unicode object. 
+
+   The resulting string is cached in the Unicode object for subsequent
+   usage by this function. The cached version is needed to implement
+   the character buffer interface and will live (at least) as long as
+   the Unicode object itself.
+
+   The refcount of the string is *not* incremented.
+
+   *** Exported for internal use by the interpreter only !!! ***
+
+*/
+
+PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
+					    const char *errors)
+{
+    PyObject *v = ((PyUnicodeObject *)unicode)->defenc;
+
+    if (v)
+        return v;
+    v = PyUnicode_AsEncodedString(unicode, NULL, errors);
+    if (v && errors == NULL)
+        ((PyUnicodeObject *)unicode)->defenc = v;
+    return v;
 }
 
 Py_UNICODE *PyUnicode_AsUnicode(PyObject *unicode)
@@ -874,35 +901,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     return NULL;
 }
 
-/* Return a Python string holding the UTF-8 encoded value of the
-   Unicode object. 
-
-   The resulting string is cached in the Unicode object for subsequent
-   usage by this function. The cached version is needed to implement
-   the character buffer interface and will live (at least) as long as
-   the Unicode object itself.
-
-   The refcount of the string is *not* incremented.
-
-   *** Exported for internal use by the interpreter only !!! ***
-
-*/
-
-PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
-				  const char *errors)
-{
-    PyObject *v = ((PyUnicodeObject *)unicode)->utf8str;
-
-    if (v)
-        return v;
-    v = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-			     PyUnicode_GET_SIZE(unicode),
-			     errors);
-    if (v && errors == NULL)
-        ((PyUnicodeObject *)unicode)->utf8str = v;
-    return v;
-}
-
 PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
 {
     PyObject *str;
@@ -911,7 +909,9 @@ PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
-    str = _PyUnicode_AsUTF8String(unicode, NULL);
+    str = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+			       PyUnicode_GET_SIZE(unicode),
+			       NULL);
     if (str == NULL)
         return NULL;
     Py_INCREF(str);
@@ -4519,7 +4519,7 @@ unicode_buffer_getcharbuf(PyUnicodeObject *self,
 			"accessing non-existent unicode segment");
         return -1;
     }
-    str = _PyUnicode_AsUTF8String((PyObject *)self, NULL);
+    str = _PyUnicode_AsDefaultEncodedString((PyObject *)self, NULL);
     if (str == NULL)
 	return -1;
     *ptr = (void *) PyString_AS_STRING(str);
@@ -5130,7 +5130,7 @@ _PyUnicode_Fini(void)
 	u = *(PyUnicodeObject **)u;
 	if (v->str)
 	    PyMem_DEL(v->str);
-	Py_XDECREF(v->utf8str);
+	Py_XDECREF(v->defenc);
 	PyObject_DEL(v);
     }
     unicode_freelist = NULL;

@@ -372,7 +372,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 
 /* Internal API needed by convertsimple1(): */
 extern 
-PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
+PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
 				  const char *errors);
 
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
@@ -567,7 +567,8 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 				if (PyString_Check(arg))
 				    *p = PyString_AS_STRING(arg);
 				else if (PyUnicode_Check(arg)) {
-				    arg = _PyUnicode_AsUTF8String(arg, NULL);
+				    arg = _PyUnicode_AsDefaultEncodedString(
+							            arg, NULL);
 				    if (arg == NULL)
 					return "unicode conversion error";
 				    *p = PyString_AS_STRING(arg);
@@ -612,7 +613,8 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 				else if (PyString_Check(arg))
 				  *p = PyString_AsString(arg);
 				else if (PyUnicode_Check(arg)) {
-				  arg = _PyUnicode_AsUTF8String(arg, NULL);
+				  arg = _PyUnicode_AsDefaultEncodedString(
+								  arg, NULL);
 				  if (arg == NULL)
 				      return "unicode conversion error";
 				  *p = PyString_AS_STRING(arg);
@@ -644,7 +646,7 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			/* Get 'e' parameter: the encoding name */
 			encoding = (const char *)va_arg(*p_va, const char *);
 			if (encoding == NULL)
-				return "(encoding is NULL)";
+			    	encoding = PyUnicode_GetDefaultEncoding();
 			
 			/* Get 's' parameter: the output buffer to use */
 			if (*format != 's')
