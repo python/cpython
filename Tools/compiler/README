@@ -1,7 +1,5 @@
-This directory contains modules for a a Python source to bytecode compiler
-written in pure Python.	 To install the compiler modules so they're
-available for use by third-party Python software, run 'python setup.py
-install'.
+This directory contains support tools for the Python compiler package,
+which is now part of the standard library.
 
 compile.py	Demo that compiles a Python module into a .pyc file
 		using the pure-Python compiler code.
@@ -18,4 +16,3 @@ regrtest.py	Runs the Python test suite using bytecode generated
 		by the pure-Python compiler code instead of the
 		builtin compiler.
 
-setup.py	Setup file for installing the compiler code as a package.
