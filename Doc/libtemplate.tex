@@ -1,40 +1,121 @@
-% Template for library sections.
-% Replace text in ALL CAPS by your own text.
-% Comments starting with %** give additional directions.
-
-%** Choose one of the following two section headings:
-\section{Built-in module {\tt YOUR-MODULE-NAME}} % If written in C
-\section{Standard module {\tt YOUR-MODULE-NAME}} % If written in Python
-
-PUT A SHORT INTRODUCTION AND DESCRIPTION OF THE MODULE HERE.
-
-%** change this sentence to taste:
-The module defines the following variables and functions:
-
-\begin{description}
-
-\renewcommand{\indexsubitem}{(in module YOUR-MODULE-NAME)}
+% Template for a library manual section.
+% PLEASE REMOVE THE COMMENTS AFTER USING THE TEMPLATE
 
 
-%** You can mix exceptions, variables and functions below; often it is a
-%** good idea to alphabetize them all.
+% ==== 1. ====
+% Choose one of the following section headers and index entries;
+% \section{} generates the section header,
+% \bimodindex{} or \stmodundex{} generates an index entry for this module
+
+\section{Built-in module \sectcode{spam}}	% If implemented in C
+\bimodindex[spam}
+
+\section{Standard module \sectcode{spam}}	% If implemented in Python
+\stmodindex{spam}
 
 
-%** repeat the following for each exception:
-\excitem{NAME}
-DESCRIPTION OF THE EXCEPTION GOES HERE.
+% ==== 2. ====
+% Give a short overview of what the module does.
+% If it is platform specific, mention this.
+% Mention other important restrictions or general operating principles.
+% For example:
+
+The \code{spam} module defines operations for handling cans of Spam.
+It knows the four generally available Spam varieties and understands
+both can sizes.
+
+Because spamification requires UNIX process management, the module is
+only available on genuine UNIX systems.
 
 
-%** repeat the following for each variable (or constant):
-\dataitem{NAME}
-DESCRIPTION OF THE VARIABLE/CONSTANT GOES HERE.
+% ==== 3. ====
+% List the public functions defined by the module.  Begin with a
+% standard phrase.  You may also list the exceptions and other data
+% items defined in the module, insofar as they are important for the
+% user.
+
+The \code{spam} module defines the following functions:
+
+% ---- 3.1. ----
+% Redefine the ``indexsubitem'' macro to point to this module:
+
+\renewcommand{\indexsubitem}{(in module spam)}
+
+% ---- 3.2. ----
+% For each function, use a ``funcdesc'' block.  This has exactly two
+% parameters (each parameters is contained in a set of curly braces):
+% the first parameter is the function name (this automatically
+% generates an index entry); the second parameter is the function's
+% argument list.  If there are no arguments, use an empty pair of
+% curly braces.  If there is more than one argument, separate the
+% arguments with backslash-comma.  Optional parts of the parameter
+% list are contained in \optional{...} (this generates a set of square
+% brackets around its parameter).  Arguments are automatically set in
+% italics in the parameter list.  Each argument should be mentioned at
+% least once in the description; each usage (even inside \code{...})
+% should be enclosed in \var{...}.
+
+\begin{funcdesc}{open}{filename\optional{\, mode\, buffersize}}
+Open the file \var{filename} as a can of Spam.  The optional
+\var{mode} and \var{buffersize} arguments specify the read-write mode
+(\code{'r'} (default) or \code{'w'}) and the buffer size (default:
+system dependent).
+\end{funcdesc}
+
+% ---- 3.3. ----
+% Data items are described using a ``datadesc'' block.  This has only
+% one parameter: the item's name.
+
+\begin{datadesc}{cansize}
+The default can size, in ounces.  Legal values are 7 and 12.  The
+default varies per supermarket.  This variable should not be changed
+once the \code{open()} function has been called.
+\end{datadesc}
+
+% --- 3.4. ---
+% Exceptions are described using a ``excdesc'' block.  This has only
+% one parameter: the exception name.
+
+\begin{excdesc}{error}
+Exception raised when an operation fails for a Spam specific reason.
+The exception argument is a string describing the reason of the
+failure.
+\end{excdesc}
+
+% ---- 3.5. ----
+% There is no standard block type for classes.  I generally use
+% ``funcdesc'' blocks, since class instantiation looks very much like
+% a function call.
 
 
-%** repeat the following for each function:
-\funcitem{NAME}{PARAMETERS} % Don't include the parentheses
-DESCRIPTION OF THE FUNCTION GOES HERE.
+% ==== 4. ====
+% Now is probably a good time for a complete example.  (Alternatively,
+% an example giving the flavor of the module may be given before the
+% detailed list of functions.)
 
+Example:
 
-\end{description}
+\begin{verbatim}
+>>> import spam
+>>> can = spam.open('/etc/passwd')
+>>> can.empty()
+>>> can.close()
+\end{verbatim}
 
-ADDITIONAL HINTS FOR USING THE MODULE MAY GO HERE.
+% ==== 5. ====
+% If your module defines new object types (for a built-in module) or
+% classes (for a module written in Python), you should list the
+% methods and instance variables (if any) of each type or class in a
+% separate subsection.  It is important to redefine ``indexsubitem''
+% for each subsection.
+
+\subsection{Spam methods}
+
+Spam objects (returned by \code{open()} above) have the following
+methods.
+
+\renewcommand{\indexsubitem}{(spam method)}
+
+\begin{funcdesc}{empty}{}
+Empty the can into the trash.
+\end{funcdesc}
