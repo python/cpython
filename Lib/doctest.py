@@ -1279,10 +1279,7 @@ class DocTestRunner:
             # any exception that gets raised.  (But don't intercept
             # keyboard interrupts.)
             try:
-                # If the example is a compound statement on one line,
-                # like "if 1: print 2", then compile() requires a
-                # trailing newline.  Rather than analyze that, always
-                # append one (it never hurts).
+                # Don't blink!  This is where the user's code gets run.
                 exec compile(example.source, "<string>", "single",
                              compileflags, 1) in test.globs
                 exception = None
@@ -1291,10 +1288,7 @@ class DocTestRunner:
             except:
                 exception = sys.exc_info()
 
-            # Extract the example's actual output from fakeout, and
-            # write it to `got`.  Add a terminating newline if it
-            # doesn't have already one.
-            got = self._fakeout.getvalue()
+            got = self._fakeout.getvalue()  # the actual output
             self._fakeout.truncate(0)
 
             # If the example executed without raising any exceptions,
