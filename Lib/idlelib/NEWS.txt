@@ -1,7 +1,7 @@
 What's New in IDLE 1.1a2?
 =========================
 
-*Release date: XX-JUL-2004*
+*Release date: 05-AUG-2004*
 
 - checking sys.platform for substring 'win' was breaking IDLE docs on Mac
   (darwin).  Also, Mac Safari browser requires full file:// URIs.  SF 900580.
