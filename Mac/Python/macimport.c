@@ -48,6 +48,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #include <CodeFragments.h>
 
+#ifdef USE_GUSI
+#include "TFileSpec.h"	/* for Path2FSSpec() */
+#endif
+
 typedef void (*dl_funcptr)();
 #define FUNCNAME_PATTERN "init%.200s"
 
@@ -100,7 +104,11 @@ findnamedresource(
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
+#ifdef USE_GUSI
+		if ( Path2FSSpec(filename, &fss) != noErr ||
+#else
 		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ||
+#endif
 		     FSpGetFInfo(&fss, &finfo) != noErr ) {
 #ifdef INTERN_STRINGS
 			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
@@ -296,7 +304,12 @@ char *filename;
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
+#ifdef USE_GUSI
+		if ( (err=Path2FSSpec(filename, &fss)) != noErr ||
+		     FSpGetFInfo(&fss, &finfo) != noErr )
+#else
 		if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
+#endif
 			goto error;
 		if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
 			goto error;
@@ -401,6 +414,7 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 	unsigned char fnbuf[64];
 	int modnamelen = strlen(module);
 	FSSpec fss;
+	FInfo finfo;
 	short refnum;
 	long dirid;
 	
@@ -419,8 +433,14 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 #else
 	strcpy(buf+*lenp, _PyImport_Filetab[0].suffix);
 #endif
+#ifdef USE_GUSI
+	if ( Path2FSSpec(buf, &fss) == noErr && 
+			FSpGetFInfo(&fss, &finfo) == noErr)
+		return _PyImport_Filetab;
+#else
 	if ( FSMakeFSSpec(0, 0, Pstring(buf), &fss) == noErr )
 		return _PyImport_Filetab;
+#endif
 	/*
 	** We cannot check for fnfErr (unfortunately), it can mean either that
 	** the file doesn't exist (fine, we try others) or the path leading to it.
