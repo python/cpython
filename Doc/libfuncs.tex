@@ -425,7 +425,7 @@ there's no reliable way to determine whether this is the case.}
 \begin{funcdesc}{pow}{x, y\optional{, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
-  efficiently than \code{pow(\var{x}, \var{y}) \% \var{z}}).
+  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).
   The arguments must have
   numeric types.  With mixed operand types, the rules for binary
   arithmetic operators apply.  The effective operand type is also the
@@ -445,8 +445,8 @@ there's no reliable way to determine whether this is the case.}
   the last element is the largest \code{\var{start} + \var{i} *
   \var{step}} less than \var{stop}; if \var{step} is negative, the last
   element is the largest \code{\var{start} + \var{i} * \var{step}}
-  greater than \var{stop}.  \var{step} must not be zero (or else an
-  exception is raised).  Example:
+  greater than \var{stop}.  \var{step} must not be zero (or else
+  \exception{ValueError} is raised).  Example:
 
 \begin{verbatim}
 >>> range(10)
@@ -575,9 +575,9 @@ and \var{step} arguments default to None.  Slice objects have
 read-only data attributes \member{start}, \member{stop} and \member{step}
 which merely return the argument values (or their default).  They have
 no other explicit functionality; however they are used by Numerical
-Python and other third party extensions.  Slice objects are also
-generated when extended indexing syntax is used, e.g. for
-\code{a[start:stop:step]} or \code{a[start:stop, i]}.
+Python\index{Numerical Python} and other third party extensions.
+Slice objects are also generated when extended indexing syntax is
+used, e.g. for \samp{a[start:stop:step]} or \samp{a[start:stop, i]}.
 \end{funcdesc}
 
 \begin{funcdesc}{str}{object}
