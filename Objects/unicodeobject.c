@@ -944,8 +944,7 @@ PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
 /* --- UTF-16 Codec ------------------------------------------------------- */
 
 static
-int utf16_decoding_error(const Py_UCS2 **source,
-			 Py_UNICODE **dest,
+int utf16_decoding_error(Py_UNICODE **dest,
 			 const char *errors,
 			 const char *details) 
 {
@@ -975,23 +974,29 @@ int utf16_decoding_error(const Py_UCS2 **source,
     }
 }
 
-PyObject *PyUnicode_DecodeUTF16(const char *s,
-				int size,
-				const char *errors,
-				int *byteorder)
+PyObject *
+PyUnicode_DecodeUTF16(const char *s,
+		      int size,
+		      const char *errors,
+		      int *byteorder)
 {
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
-    const Py_UCS2 *q, *e;
-    int bo = 0;
+    const unsigned char *q, *e;
+    int bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
+    /* Offsets from q for retrieving byte pairs in the right order. */
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+    int ihi = 1, ilo = 0;
+#else
+    int ihi = 0, ilo = 1;
+#endif
 
     /* size should be an even number */
-    if (size % sizeof(Py_UCS2) != 0) {
-	if (utf16_decoding_error(NULL, NULL, errors, "truncated data"))
-	    return NULL;
-	/* The remaining input chars are ignored if we fall through
-           here... */
+    if (size & 1) {
+        if (utf16_decoding_error(NULL, errors, "truncated data"))
+            return NULL;
+        --size;  /* else ignore the oddball byte */
     }
 
     /* Note: size will always be longer than the resulting Unicode
@@ -1004,48 +1009,54 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 
     /* Unpack UTF-16 encoded data */
     p = unicode->str;
-    q = (Py_UCS2 *)s;
-    e = q + (size / sizeof(Py_UCS2));
+    q = (unsigned char *)s;
+    e = q + size;
 
     if (byteorder)
-	bo = *byteorder;
+        bo = *byteorder;
 
     /* Check for BOM marks (U+FEFF) in the input and adjust current
        byte order setting accordingly. In native mode, the leading BOM
        mark is skipped, in all other modes, it is copied to the output
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0) {
+        const Py_UNICODE bom = (q[ihi] << 8) | q[ilo];
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
-	if (*q == 0xFEFF) {
-	    q++;
+	if (bom == 0xFEFF) {
+	    q += 2;
 	    bo = -1;
-	} else if (*q == 0xFFFE) {
-	    q++;
+	}
+        else if (bom == 0xFFFE) {
+	    q += 2;
 	    bo = 1;
 	}
 #else    
-	if (*q == 0xFEFF) {
-	    q++;
+	if (bom == 0xFEFF) {
+	    q += 2;
 	    bo = 1;
-	} else if (*q == 0xFFFE) {
-	    q++;
+	}
+        else if (bom == 0xFFFE) {
+	    q += 2;
 	    bo = -1;
 	}
 #endif
     }
-    
-    while (q < e) {
-	register Py_UCS2 ch = *q++;
 
-	/* Swap input bytes if needed. (This assumes
-	   sizeof(Py_UNICODE) == 2 !) */
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-	if (bo == 1)
-	    ch = (ch >> 8) | (ch << 8);
-#else    
-	if (bo == -1)
-	    ch = (ch >> 8) | (ch << 8);
-#endif
+    if (bo == -1) {
+        /* force LE */
+        ihi = 1;
+        ilo = 0;
+    }
+    else if (bo == 1) {
+        /* force BE */
+        ihi = 0;
+        ilo = 1;
+    }
+
+    while (q < e) {
+	Py_UNICODE ch = (q[ihi] << 8) | q[ilo];
+	q += 2;
+
 	if (ch < 0xD800 || ch > 0xDFFF) {
 	    *p++ = ch;
 	    continue;
@@ -1057,14 +1068,8 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 	    goto utf16Error;
 	}
 	if (0xD800 <= ch && ch <= 0xDBFF) {
-	    Py_UCS2 ch2 = *q++;
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN
-	    if (bo == 1)
-		    ch2 = (ch2 >> 8) | (ch2 << 8);
-#else    
-	    if (bo == -1)
-		    ch2 = (ch2 >> 8) | (ch2 << 8);
-#endif
+	    Py_UNICODE ch2 = (q[ihi] << 8) | q[ilo];
+	    q += 2;
 	    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
 #ifndef Py_UNICODE_WIDE
 		*p++ = ch;
@@ -1084,7 +1089,7 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 	/* Fall through to report the error */
 
     utf16Error:
-	if (utf16_decoding_error(&q, &p, errors, errmsg))
+	if (utf16_decoding_error(&p, errors, errmsg))
 	    goto onError;
     }
 
@@ -1102,58 +1107,67 @@ onError:
     return NULL;
 }
 
-#undef UTF16_ERROR
-
-PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
-				int size,
-				const char *errors,
-				int byteorder)
+PyObject *
+PyUnicode_EncodeUTF16(const Py_UNICODE *s,
+		      int size,
+		      const char *errors,
+		      int byteorder)
 {
     PyObject *v;
-    Py_UCS2 *p;
-    char *q;
-    int i, pairs, doswap = 1;
+    unsigned char *p;
+    int i, pairs;
+    /* Offsets from p for storing byte pairs in the right order. */
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+    int ihi = 1, ilo = 0;
+#else
+    int ihi = 0, ilo = 1;
+#endif
+
+#define STORECHAR(CH)                   \
+    do {                                \
+        p[ihi] = ((CH) >> 8) & 0xff;    \
+        p[ilo] = (CH) & 0xff;           \
+        p += 2;                         \
+    } while(0)
 
     for (i = pairs = 0; i < size; i++)
 	if (s[i] >= 0x10000)
 	    pairs++;
     v = PyString_FromStringAndSize(NULL, 
-		  sizeof(Py_UCS2) * (size + pairs + (byteorder == 0)));
+		  2 * (size + pairs + (byteorder == 0)));
     if (v == NULL)
         return NULL;
 
-    q = PyString_AS_STRING(v);
-    p = (Py_UCS2 *)q;
+    p = (unsigned char *)PyString_AS_STRING(v);
     if (byteorder == 0)
-	*p++ = 0xFEFF;
+	STORECHAR(0xFEFF);
     if (size == 0)
         return v;
-    if (byteorder == 0 ||
-#ifdef BYTEORDER_IS_LITTLE_ENDIAN	
-	byteorder == -1
-#else
-	byteorder == 1
-#endif
-	)
-	doswap = 0;
+
+    if (byteorder == -1) {
+        /* force LE */
+        ihi = 1;
+        ilo = 0;
+    }
+    else if (byteorder == 1) {
+        /* force BE */
+        ihi = 0;
+        ilo = 1;
+    }
+
     while (size-- > 0) {
 	Py_UNICODE ch = *s++;
 	Py_UNICODE ch2 = 0;
 	if (ch >= 0x10000) {
-	    ch2 = 0xDC00|((ch-0x10000) & 0x3FF);
-	    ch  = 0xD800|((ch-0x10000)>>10);
+	    ch2 = 0xDC00 | ((ch-0x10000) & 0x3FF);
+	    ch  = 0xD800 | ((ch-0x10000) >> 10);
 	}
-	if (doswap){
-	    *p++ = (ch >> 8) | (ch << 8);
-	    if (ch2)
-		*p++ = (ch2 >> 8) | (ch2 << 8);
-	}else{
-	    *p++ = ch;
-	    if(ch2)
-		*p++ = ch2;
-	}
+        STORECHAR(ch);
+        if (ch2)
+            STORECHAR(ch2);
     }
     return v;
+#undef STORECHAR
 }
 
 PyObject *PyUnicode_AsUTF16String(PyObject *unicode)

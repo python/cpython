@@ -121,12 +121,6 @@ typedef unsigned int Py_UCS4;
 typedef unsigned long Py_UCS4; 
 #endif
 
-#if SIZEOF_SHORT == 2
-typedef unsigned short Py_UCS2;
-#else
-#error Cannot find a two-byte type
-#endif 
-
 typedef PY_UNICODE_TYPE Py_UNICODE;
 
 /* --- UCS-2/UCS-4 Name Mangling ------------------------------------------ */
