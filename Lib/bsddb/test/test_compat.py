@@ -4,13 +4,18 @@ regression test suite.
 """
 
 import sys, os, string
-from bsddb import hashopen, btopen, rnopen
 import bsddb
 import unittest
 import tempfile
 
 from test_all import verbose
 
+try:
+    # For Python 2.3
+    from bsddb import db, hashopen, btopen, rnopen
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db, hashopen, btopen, rnopen
 
 
 class CompatibilityTestCase(unittest.TestCase):
@@ -126,7 +131,7 @@ class CompatibilityTestCase(unittest.TestCase):
                 if verbose: print "truth test: true"
             else:
                 if verbose: print "truth test: false"
-        except bsddb.error:
+        except db.DBError:
             pass
         else:
             self.fail("Exception expected")

@@ -26,7 +26,12 @@
 #
 from time import sleep as _sleep
 
-from bsddb import _db
+try:
+    # For Python 2.3
+    from bsddb import db
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db
 
 # always sleep at least N seconds between retrys
 _deadlock_MinSleepTime = 1.0/64
@@ -60,7 +65,7 @@ def DeadlockWrap(function, *_args, **_kwargs):
     while 1:
         try:
             return function(*_args, **_kwargs)
-        except _db.DBLockDeadlockError:
+        except db.DBLockDeadlockError:
             if _deadlock_VerboseFile:
                 _deadlock_VerboseFile.write(
                     'dbutils.DeadlockWrap: sleeping %1.3f\n' % sleeptime)

@@ -17,23 +17,26 @@
 #
 _cvsid = '$Id$'
 
-import string
-import sys
-try:
-    import cPickle
-    pickle = cPickle
-except ImportError:
-    import pickle
-import whrandom
-import xdrlib
 import re
+import sys
 import copy
+import xdrlib
+import whrandom
+from types import ListType, StringType
+import cPickle as pickle
 
-from bsddb.db import *
+try:
+    # For Python 2.3
+    from bsddb.db import *
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3.db import *
 
 
-class TableDBError(StandardError): pass
-class TableAlreadyExists(TableDBError): pass
+class TableDBError(StandardError):
+    pass
+class TableAlreadyExists(TableDBError):
+    pass
 
 
 class Cond:
@@ -72,9 +75,9 @@ class LikeCond(Cond):
         # escape python re characters
         chars_to_escape = '.*+()[]?'
         for char in chars_to_escape :
-            likestr = string.replace(likestr, char, '\\'+char)
+            likestr = likestr.replace(char, '\\'+char)
         # convert %s to wildcards
-        self.likestr = string.replace(likestr, '%', '.*')
+        self.likestr = likestr.replace('%', '.*')
         self.re = re.compile('^'+self.likestr+'$', re_flags)
     def __call__(self, s):
         return self.re.match(s)
@@ -84,7 +87,9 @@ class LikeCond(Cond):
 #
 _table_names_key = '__TABLE_NAMES__'  # list of the tables in this db
 _columns = '._COLUMNS__'  # table_name+this key contains a list of columns
-def _columns_key(table) : return table + _columns
+
+def _columns_key(table):
+    return table + _columns
 
 #
 # these keys are found within table sub databases
@@ -93,28 +98,39 @@ _data =  '._DATA_.'  # this+column+this+rowid key contains table data
 _rowid = '._ROWID_.' # this+rowid+this key contains a unique entry for each
                      # row in the table.  (no data is stored)
 _rowid_str_len = 8   # length in bytes of the unique rowid strings
-def _data_key(table, col, rowid) : return table + _data + col + _data + rowid
-def _search_col_data_key(table, col) : return table + _data + col + _data
-def _search_all_data_key(table) : return table + _data
-def _rowid_key(table, rowid) : return table + _rowid + rowid + _rowid
-def _search_rowid_key(table) : return table + _rowid
+
+def _data_key(table, col, rowid):
+    return table + _data + col + _data + rowid
+
+def _search_col_data_key(table, col):
+    return table + _data + col + _data
+
+def _search_all_data_key(table):
+    return table + _data
+
+def _rowid_key(table, rowid):
+    return table + _rowid + rowid + _rowid
+
+def _search_rowid_key(table):
+    return table + _rowid
 
 def contains_metastrings(s) :
     """Verify that the given string does not contain any
     metadata strings that might interfere with dbtables database operation.
     """
-    if string.find(s, _table_names_key) >= 0 or \
-       string.find(s, _columns) >= 0 or \
-       string.find(s, _data) >= 0 or \
-       string.find(s, _rowid) >= 0 :
+    if (s.find(_table_names_key) >= 0 or
+        s.find(_columns) >= 0 or
+        s.find(_data) >= 0 or
+        s.find(_rowid) >= 0):
+        # Then
         return 1
-    else :
+    else:
         return 0
 
 
 class bsdTableDB :
     def __init__(self, filename, dbhome, create=0, truncate=0, mode=0600,
-                 recover=0, dbflags=0) :
+                 recover=0, dbflags=0):
         """bsdTableDB.open(filename, dbhome, create=0, truncate=0, mode=0600)
         Open database name in the dbhome BerkeleyDB directory.
         Use keyword arguments when calling this constructor.
@@ -186,7 +202,7 @@ class bsdTableDB :
         cur = self.db.cursor()
         try:
             key, data = cur.first()
-            while 1 :
+            while 1:
                 print `{key: data}`
                 next = cur.next()
                 if next:
@@ -202,7 +218,7 @@ class bsdTableDB :
         """CreateTable(table, columns) - Create a new table in the database
         raises TableDBError if it already exists or for other DB errors.
         """
-        assert type(columns) == type([])
+        assert isinstance(columns, ListType)
         txn = None
         try:
             # checking sanity of the table and column names here on
@@ -233,9 +249,8 @@ class bsdTableDB :
 
             txn.commit()
             txn = None
-
         except DBError, dberror:
-            if txn :
+            if txn:
                 txn.abort()
             raise TableDBError, dberror[1]
 
@@ -244,8 +259,8 @@ class bsdTableDB :
         """Return a list of columns in the given table.
         [] if the table doesn't exist.
         """
-        assert type(table) == type('')
-        if contains_metastrings(table) :
+        assert isinstance(table, StringType)
+        if contains_metastrings(table):
             raise ValueError, "bad table name: contains reserved metastrings"
 
         columnlist_key = _columns_key(table)
@@ -273,7 +288,7 @@ class bsdTableDB :
         additional columns present in the given list as well as
         all of its current columns.
         """
-        assert type(columns) == type([])
+        assert isinstance(columns, ListType)
         try:
             self.CreateTable(table, columns)
         except TableAlreadyExists:
@@ -331,7 +346,7 @@ class bsdTableDB :
     def __new_rowid(self, table, txn) :
         """Create a new unique row identifier"""
         unique = 0
-        while not unique :
+        while not unique:
             # Generate a random 64-bit row ID string
             # (note: this code has <64 bits of randomness
             # but it's plenty for our database id needs!)
@@ -358,14 +373,14 @@ class bsdTableDB :
         """
         txn = None
         try:
-            if not self.db.has_key(_columns_key(table)) :
+            if not self.db.has_key(_columns_key(table)):
                 raise TableDBError, "unknown table"
 
             # check the validity of each column name
-            if not self.__tablecolumns.has_key(table) :
+            if not self.__tablecolumns.has_key(table):
                 self.__load_column_info(table)
             for column in rowdict.keys() :
-                if not self.__tablecolumns[table].count(column) :
+                if not self.__tablecolumns[table].count(column):
                     raise TableDBError, "unknown column: "+`column`
 
             # get a unique row identifier for this row
@@ -373,7 +388,7 @@ class bsdTableDB :
             rowid = self.__new_rowid(table, txn=txn)
 
             # insert the row values into the table database
-            for column, dataitem in rowdict.items() :
+            for column, dataitem in rowdict.items():
                 # store the value
                 self.db.put(_data_key(table, column, rowid), dataitem, txn=txn)
 
@@ -392,7 +407,7 @@ class bsdTableDB :
             raise TableDBError, dberror[1], info[2]
 
 
-    def Modify(self, table, conditions={}, mappings={}) :
+    def Modify(self, table, conditions={}, mappings={}):
         """Modify(table, conditions) - Modify in rows matching 'conditions'
         using mapping functions in 'mappings'
         * conditions is a dictionary keyed on column names
@@ -407,10 +422,10 @@ class bsdTableDB :
 
             # modify only requested columns
             columns = mappings.keys()
-            for rowid in matching_rowids.keys() :
+            for rowid in matching_rowids.keys():
                 txn = None
                 try:
-                    for column in columns :
+                    for column in columns:
                         txn = self.env.txn_begin()
                         # modify the requested column
                         try:
@@ -433,14 +448,14 @@ class bsdTableDB :
                         txn = None
 
                 except DBError, dberror:
-                    if txn :
+                    if txn:
                         txn.abort()
                     raise
 
         except DBError, dberror:
             raise TableDBError, dberror[1]
 
-    def Delete(self, table, conditions={}) :
+    def Delete(self, table, conditions={}):
         """Delete(table, conditions) - Delete items matching the given
         conditions from the table.
         * conditions is a dictionary keyed on column names
@@ -452,11 +467,11 @@ class bsdTableDB :
 
             # delete row data from all columns
             columns = self.__tablecolumns[table]
-            for rowid in matching_rowids.keys() :
+            for rowid in matching_rowids.keys():
                 txn = None
                 try:
                     txn = self.env.txn_begin()
-                    for column in columns :
+                    for column in columns:
                         # delete the data key
                         try:
                             self.db.delete(_data_key(table, column, rowid),
@@ -473,15 +488,14 @@ class bsdTableDB :
                     txn.commit()
                     txn = None
                 except DBError, dberror:
-                    if txn :
+                    if txn:
                         txn.abort()
                     raise
-
         except DBError, dberror:
             raise TableDBError, dberror[1]
 
 
-    def Select(self, table, columns, conditions={}) :
+    def Select(self, table, columns, conditions={}):
         """Select(table, conditions) - retrieve specific row data
         Returns a list of row column->value mapping dictionaries.
         * columns is a list of which column data to return.  If
@@ -491,19 +505,18 @@ class bsdTableDB :
           argument and returning a boolean.
         """
         try:
-            if not self.__tablecolumns.has_key(table) :
+            if not self.__tablecolumns.has_key(table):
                 self.__load_column_info(table)
-            if columns is None :
+            if columns is None:
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
         except DBError, dberror:
             raise TableDBError, dberror[1]
-
         # return the matches as a list of dictionaries
         return matching_rowids.values()
 
 
-    def __Select(self, table, columns, conditions) :
+    def __Select(self, table, columns, conditions):
         """__Select() - Used to implement Select and Delete (above)
         Returns a dictionary keyed on rowids containing dicts
         holding the row data for columns listed in the columns param
@@ -513,26 +526,26 @@ class bsdTableDB :
         argument and returning a boolean.
         """
         # check the validity of each column name
-        if not self.__tablecolumns.has_key(table) :
+        if not self.__tablecolumns.has_key(table):
             self.__load_column_info(table)
-        if columns is None :
+        if columns is None:
             columns = self.tablecolumns[table]
-        for column in (columns + conditions.keys()) :
-            if not self.__tablecolumns[table].count(column) :
+        for column in (columns + conditions.keys()):
+            if not self.__tablecolumns[table].count(column):
                 raise TableDBError, "unknown column: "+`column`
 
         # keyed on rows that match so far, containings dicts keyed on
         # column names containing the data for that row and column.
         matching_rowids = {}
-
-        rejected_rowids = {} # keys are rowids that do not match
+        # keys are rowids that do not match
+        rejected_rowids = {}
 
         # attempt to sort the conditions in such a way as to minimize full
         # column lookups
         def cmp_conditions(atuple, btuple):
             a = atuple[1]
             b = btuple[1]
-            if type(a) == type(b) :
+            if type(a) is type(b):
                 if isinstance(a, PrefixCond) and isinstance(b, PrefixCond):
                     # longest prefix first
                     return cmp(len(b.prefix), len(a.prefix))
@@ -557,38 +570,38 @@ class bsdTableDB :
         # Apply conditions to column data to find what we want
         cur = self.db.cursor()
         column_num = -1
-        for column, condition in conditionlist :
+        for column, condition in conditionlist:
             column_num = column_num + 1
             searchkey = _search_col_data_key(table, column)
             # speedup: don't linear search columns within loop
-            if column in columns :
+            if column in columns:
                 savethiscolumndata = 1  # save the data for return
-            else :
+            else:
                 savethiscolumndata = 0  # data only used for selection
 
             try:
                 key, data = cur.set_range(searchkey)
-                while key[:len(searchkey)] == searchkey :
+                while key[:len(searchkey)] == searchkey:
                     # extract the rowid from the key
                     rowid = key[-_rowid_str_len:]
 
-                    if not rejected_rowids.has_key(rowid) :
+                    if not rejected_rowids.has_key(rowid):
                         # if no condition was specified or the condition
                         # succeeds, add row to our match list.
-                        if not condition or condition(data) :
-                            if not matching_rowids.has_key(rowid) :
+                        if not condition or condition(data):
+                            if not matching_rowids.has_key(rowid):
                                 matching_rowids[rowid] = {}
-                            if savethiscolumndata :
+                            if savethiscolumndata:
                                 matching_rowids[rowid][column] = data
-                        else :
-                            if matching_rowids.has_key(rowid) :
+                        else:
+                            if matching_rowids.has_key(rowid):
                                 del matching_rowids[rowid]
                             rejected_rowids[rowid] = rowid
 
                     key, data = cur.next()
 
             except DBError, dberror:
-                if dberror[0] != DB_NOTFOUND :
+                if dberror[0] != DB_NOTFOUND:
                     raise
                 continue
 
@@ -599,16 +612,16 @@ class bsdTableDB :
 
         # extract any remaining desired column data from the
         # database for the matching rows.
-        if len(columns) > 0 :
-            for rowid, rowdata in matching_rowids.items() :
-                for column in columns :
-                    if rowdata.has_key(column) :
+        if len(columns) > 0:
+            for rowid, rowdata in matching_rowids.items():
+                for column in columns:
+                    if rowdata.has_key(column):
                         continue
                     try:
                         rowdata[column] = self.db.get(
                             _data_key(table, column, rowid))
                     except DBError, dberror:
-                        if dberror[0] != DB_NOTFOUND :
+                        if dberror[0] != DB_NOTFOUND:
                             raise
                         rowdata[column] = None
 
@@ -616,9 +629,8 @@ class bsdTableDB :
         return matching_rowids
 
 
-    def Drop(self, table) :
-        """Remove an entire table from the database
-        """
+    def Drop(self, table):
+        """Remove an entire table from the database"""
         txn = None
         try:
             txn = self.env.txn_begin()
@@ -630,25 +642,25 @@ class bsdTableDB :
 
             # delete all keys containing this tables column and row info
             table_key = _search_all_data_key(table)
-            while 1 :
+            while 1:
                 try:
                     key, data = cur.set_range(table_key)
                 except DBNotFoundError:
                     break
                 # only delete items in this table
-                if key[:len(table_key)] != table_key :
+                if key[:len(table_key)] != table_key:
                     break
                 cur.delete()
 
             # delete all rowids used by this table
             table_key = _search_rowid_key(table)
-            while 1 :
+            while 1:
                 try:
                     key, data = cur.set_range(table_key)
                 except DBNotFoundError:
                     break
                 # only delete items in this table
-                if key[:len(table_key)] != table_key :
+                if key[:len(table_key)] != table_key:
                     break
                 cur.delete()
 
@@ -669,10 +681,10 @@ class bsdTableDB :
             txn.commit()
             txn = None
 
-            if self.__tablecolumns.has_key(table) :
+            if self.__tablecolumns.has_key(table):
                 del self.__tablecolumns[table]
 
         except DBError, dberror:
-            if txn :
+            if txn:
                 txn.abort()
             raise TableDBError, dberror[1]

@@ -16,7 +16,12 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
 
 
 def print_versions():
-    from bsddb import db
+    try:
+        # For Python 2.3
+        from bsddb import db
+    except ImportError:
+        # For earlier Pythons w/distutils pybsddb
+        from bsddb3 import db
     print
     print '-=' * 38
     print db.DB_VERSION_STRING
