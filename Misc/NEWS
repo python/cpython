@@ -94,6 +94,10 @@ Library
 
 - Bug #891637, patch #1005466: fix inspect.getargs() crash on def foo((bar)).
 
+- The distutils sdist command now ignores all .svn directories, in
+  addition to CVS and RCS directories.  .svn directories hold
+  administrative files for the Subversion source control system.
+
 Tools/Demos
 -----------
 

@@ -354,7 +354,7 @@ class sdist (Command):
 
         self.filelist.exclude_pattern(None, prefix=build.build_base)
         self.filelist.exclude_pattern(None, prefix=base_dir)
-        self.filelist.exclude_pattern(r'/(RCS|CVS)/.*', is_regex=1)
+        self.filelist.exclude_pattern(r'/(RCS|CVS|\.svn)/.*', is_regex=1)
 
 
     def write_manifest (self):
