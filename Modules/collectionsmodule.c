@@ -244,6 +244,44 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 PyDoc_STRVAR(extendleft_doc, 
 "Extend the left side of the deque with elements from the iterable");
 
+static PyObject *
+deque_rotate(dequeobject *deque, PyObject *args)
+{
+	int i, n;
+	PyObject *item, *rv;
+
+	if (!PyArg_ParseTuple(args, "i:rotate", &n))
+		return NULL;
+
+	if (n == 0  ||  deque->len == 0)
+		Py_RETURN_NONE;
+
+	for (i=0 ; i<n ; i++) {
+		item = deque_pop(deque, NULL);
+		if (item == NULL)
+			return NULL;
+		rv = deque_appendleft(deque, item);
+		Py_DECREF(item);
+		if (rv == NULL)
+			return NULL;
+		Py_DECREF(rv);
+	}
+	for (i=0 ; i>n ; i--) {
+		item = deque_popleft(deque, NULL);
+		if (item == NULL)
+			return NULL;
+		rv = deque_append(deque, item);
+		Py_DECREF(item);
+		if (rv == NULL)
+			return NULL;
+		Py_DECREF(rv);
+	}
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(rotate_doc, 
+"Rotate the deque n steps to the right.  If n is negative, rotates left.");
+
 static int
 deque_len(dequeobject *deque)
 {
@@ -461,6 +499,10 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 clear_doc},
 	{"__copy__",		(PyCFunction)deque_copy,	
 		METH_NOARGS,	 copy_doc},
+	{"extend",		(PyCFunction)deque_extend,	
+		METH_O,		 extend_doc},
+	{"extendleft",	(PyCFunction)deque_extendleft,	
+		METH_O,		 extendleft_doc},
 	{"pop",			(PyCFunction)deque_pop,	
 		METH_NOARGS,	 pop_doc},
 	{"popleft",		(PyCFunction)deque_popleft,	
@@ -469,10 +511,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 reduce_doc},
 	{"__reversed__",	(PyCFunction)deque_reviter,	
 		METH_NOARGS,	 reversed_doc},
-	{"extend",		(PyCFunction)deque_extend,	
-		METH_O,		 extend_doc},
-	{"extendleft",	(PyCFunction)deque_extendleft,	
-		METH_O,		 extendleft_doc},
+	{"rotate",		(PyCFunction)deque_rotate,	
+		METH_VARARGS,	rotate_doc},
 	{NULL,		NULL}	/* sentinel */
 };
 

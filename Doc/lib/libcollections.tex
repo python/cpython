@@ -1,5 +1,5 @@
 \section{\module{collections} ---
-         High-performance datatypes}
+         High-performance container datatypes}
 
 \declaremodule{standard}{collections}
 \modulesynopsis{High-performance datatypes}
@@ -8,7 +8,7 @@
 \versionadded{2.4}
 
 
-This module implements high-performance datatypes.  Currently, the
+This module implements high-performance container datatypes.  Currently, the
 only datatype is a deque.  Future additions may include B-trees
 and Fibonacci heaps.
 
@@ -17,9 +17,15 @@ and Fibonacci heaps.
   \method{append()}) with data from \var{iterable}.  If \var{iterable}
   is not specified, the new deque is empty.
 
-  Deques are a generalization of stacks and queues.  They support
-  thread-safe, memory efficient appends and pops from either side of the
-  deque with approximately the same performance in either direction.
+  Deques are a generalization of stacks and queues (the name is pronounced
+  ``deck'' and is short for ``double-ended queue'').  Deques support
+  thread-safe, memory efficient appends and pops from either side of the deque
+  with approximately the same \code{O(1)} performance in either direction.
+
+  Though \class{list} objects support similar operations, they are optimized
+  for fast fixed-length operations and incur \code{O(n)} memory movement costs
+  for \samp{pop(0)} and \samp{insert(0, v)} operations which change both the
+  size and position of the underlying data representation.
   \versionadded{2.4}
 \end{funcdesc}
 
@@ -58,48 +64,62 @@ Deque objects support the following methods:
    If no elements are present, raises a \exception{LookupError}.   
 \end{methoddesc}
 
-In addition to the above, deques support iteration, membership testing
-using the \keyword{in} operator, \samp{len(d)}, \samp{copy.copy(d)},
-\samp{copy.deepcopy(d)}, \samp{reversed(d)} and pickling.
+\begin{methoddesc}{rotate}{n}
+   Rotate the deque \var{n} steps to the right.  If \var{n} is
+   negative, rotate to the left.  Rotating one step to the right
+   is equivalent to:  \samp{d.appendleft(d.pop())}.
+\end{methoddesc}
+
+In addition to the above, deques support iteration, pickling, \samp{len(d)},
+\samp{reversed(d)}, \samp{copy.copy(d)}, \samp{copy.deepcopy(d)}, and
+membership testing with the \keyword{in} operator.
 
 Example:
 
 \begin{verbatim}
 >>> from collections import deque
->>> d = deque('ghi')        # make a new deque with three items
->>> for elem in d:          # iterate over the deque's elements
+>>> d = deque('ghi')                 # make a new deque with three items
+>>> for elem in d:                   # iterate over the deque's elements
 	print elem.upper()
 
 	
 G
 H
 I
->>> d.append('j')           # add a new entry to the right side
->>> d.appendleft('f')       # add a new entry to the left side
->>> d                       # show the representation of the deque
+>>> d.append('j')                    # add a new entry to the right side
+>>> d.appendleft('f')                # add a new entry to the left side
+>>> d                                # show the representation of the deque
 deque(['f', 'g', 'h', 'i', 'j'])
->>> d.pop()                 # return and remove the rightmost item
+>>> d.pop()                          # return and remove the rightmost item
 'j'
->>> d.popleft()             # return and remove the leftmost item
+>>> d.popleft()                      # return and remove the leftmost item
 'f'
->>> list(d)                 # list the contents of the deque
+>>> list(d)                          # list the contents of the deque
 ['g', 'h', 'i']
->>> list(reversed(d))       # list the contents of a deque in reverse
+>>> list(reversed(d))                # list the contents of a deque in reverse
 ['i', 'h', 'g']
->>> 'h' in d                # search the deque
+>>> 'h' in d                         # search the deque
 True
->>> d.extend('jkl')         # extend() will append many elements at once
+>>> d.extend('jkl')                  # add multiple elements at once
 >>> d
 deque(['g', 'h', 'i', 'j', 'k', 'l'])
->>> d.clear()               # empty the deque
->>> d.pop()                 # cannot pop from an empty deque
+>>> d.rotate(1)                      # right rotation
+>>> d
+deque(['l', 'g', 'h', 'i', 'j', 'k'])
+>>> d.rotate(-1)                     # left rotation
+>>> d
+deque(['g', 'h', 'i', 'j', 'k', 'l'])
+>>> deque(reversed(d))               # make a new deque in reverse order
+deque(['l', 'k', 'j', 'i', 'h', 'g'])
+>>> d.clear()                        # empty the deque
+>>> d.pop()                          # cannot pop from an empty deque
 
 Traceback (most recent call last):
   File "<pyshell#6>", line 1, in -toplevel-
     d.pop()
 LookupError: pop from an empty deque
 
->>> d.extendleft('abc')     # extendleft() reverses the element order
+>>> d.extendleft('abc')              # extendleft() reverses the input order
 >>> d
 deque(['c', 'b', 'a'])
 
