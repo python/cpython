@@ -14,23 +14,17 @@ the following #defines
 MS_WIN64 - Code specific to the MS Win64 API
 MS_WIN32 - Code specific to the MS Win32 (and Win64) API (obsolete, this covers all supported APIs)
 MS_WINDOWS - Code specific to Windows, but all versions.
-MS_COREDLL - Code if the Python core is built as a DLL.
-
-Note that the old defines "NT" and "WIN32" are still supported, but
-will soon be dropped.
+Py_ENABLE_SHARED - Code if the Python core is built as a DLL.
 
 Also note that neither "_M_IX86" or "_MSC_VER" should be used for
 any purpose other than "Windows Intel x86 specific" and "Microsoft
 compiler specific".  Therefore, these should be very rare.
 
-*/
 
+NOTE: The following symbols are deprecated:
+NT, WIN32, USE_DL_EXPORT, USE_DL_IMPORT, DL_EXPORT, DL_IMPORT
+MS_CORE_DLL.
 
-/*
- Some systems require special declarations for data items imported
- or exported from dynamic link libraries.  Note that the definition
- of DL_IMPORT covers both cases.  Define USE_DL_IMPORT for the client
- of a DLL.  Define USE_DL_EXPORT when making a DLL.
 */
 
 #include <io.h>
@@ -40,12 +34,30 @@ compiler specific".  Therefore, these should be very rare.
 #define HAVE_TEMPNAM
 #define HAVE_TMPFILE
 #define HAVE_TMPNAM
+#define HAVE_CLOCK
+#define HAVE_STRFTIME
+#define HAVE_STRERROR
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
 #define LONG_BIT	32
+#define WORD_BIT 32
 #define PREFIX ""
 #define EXEC_PREFIX ""
 
+#define MS_WIN32 /* only support win32 and greater. */
+#define MS_WINDOWS
+#ifndef PYTHONPATH
+#	define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+#endif
+#define NT_THREADS
+#define WITH_THREAD
+#ifndef NETSCAPE_PI
+#define USE_SOCKET
+#endif
+
+/* Compiler specific defines */
+
+/* ------------------------------------------------------------------------*/
 /* Microsoft C defines _MSC_VER */
 #ifdef _MSC_VER
 
@@ -60,11 +72,6 @@ compiler specific".  Therefore, these should be very rare.
 #ifdef _WIN64
 #define MS_WIN64
 #endif
-#ifdef _WIN32
-#define NT	/* NT is obsolete - please use MS_WIN32 instead */
-#define MS_WIN32
-#endif
-#define MS_WINDOWS
 
 /* set the COMPILER */
 #ifdef MS_WIN64
@@ -87,99 +94,39 @@ compiler specific".  Therefore, these should be very rare.
 #endif
 #endif /* MS_WIN32 && !MS_WIN64 */
 
+typedef int pid_t;
+#define hypot _hypot
+
 #endif /* _MSC_VER */
 
-#if defined(_MSC_VER) && _MSC_VER > 850
-/* Start of defines for MS_WIN32 using VC++ 2.0 and up */
-
-/* For NT the Python core is in a DLL by default.  Test the
-standard macro MS_COREDLL to find out.  If you have an exception
-you must define MS_NO_COREDLL (do not test this macro) */
-#ifndef MS_NO_COREDLL
-#define MS_COREDLL	/* Python core is in a DLL */
-#ifndef USE_DL_EXPORT
-#define USE_DL_IMPORT
-#endif /* !USE_DL_EXPORT */
-#endif /* !MS_NO_COREDLL */
-
-#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
-typedef int pid_t;
-#define WORD_BIT 32
-#pragma warning(disable:4113)
-#define hypot _hypot
-#include <stdio.h>
-#define HAVE_CLOCK
-#define HAVE_STRFTIME
-#define HAVE_STRERROR
-#define NT_THREADS
-#define WITH_THREAD
-#ifndef NETSCAPE_PI
-#define USE_SOCKET
-#endif
-#ifdef USE_DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#endif
-#ifdef USE_DL_EXPORT
-#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+/* define some ANSI types that are not defined in earlier Win headers */
+#if defined(_MSC_VER) && _MSC_VER >= 1200
+/* This file only exists in VC 6.0 or higher */
+#include <basetsd.h>
 #endif
 
-#define HAVE_LONG_LONG 1
-#define LONG_LONG __int64
-#endif /* _MSC_VER && > 850 */
-
+/* ------------------------------------------------------------------------*/
 /* The Borland compiler defines __BORLANDC__ */
 /* XXX These defines are likely incomplete, but should be easy to fix. */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
-#define HAVE_CLOCK
-#define HAVE_STRFTIME
 
 #ifdef _WIN32
-
 /* tested with BCC 5.5 (__BORLANDC__ >= 0x0550)
  */
-#define NT	/* NT is obsolete - please use MS_WIN32 instead */
-#define MS_WIN32
-#define MS_WINDOWS
 
-/* For NT the Python core is in a DLL by default.  Test the
-standard macro MS_COREDLL to find out.  If you have an exception
-you must define MS_NO_COREDLL (do not test this macro) */
-#ifndef MS_NO_COREDLL
-#define MS_COREDLL	/* Python core is in a DLL */
-#ifndef USE_DL_EXPORT
-#define USE_DL_IMPORT
-#endif /* !USE_DL_EXPORT */
-#endif /* !MS_NO_COREDLL */
-
-#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
 typedef int pid_t;
-#define WORD_BIT 32
-#include <stdio.h>
-#define HAVE_STRERROR
-#define NT_THREADS
-#define WITH_THREAD
-#ifndef NETSCAPE_PI
-#define USE_SOCKET
-#endif
 /* BCC55 seems to understand __declspec(dllimport), it is used in its
-   own header files (winnt.h, ...) */
-#ifdef USE_DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#endif
-#ifdef USE_DL_EXPORT
-#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#endif
-
-#define HAVE_LONG_LONG 1
-#define LONG_LONG __int64
+   own header files (winnt.h, ...) - so we can do nothing and get the default*/
 
 #undef HAVE_SYS_UTIME_H
 #define HAVE_UTIME_H
 #define HAVE_DIRENT_H
-#define HAVE_CLOCK
+
+/* rename a few functions for the Borland compiler */
+#include <io.h>
+#define _chsize chsize
+#define _setmode setmode
 
 #else /* !_WIN32 */
 #error "Only Win32 and later are supported"
@@ -187,6 +134,7 @@ typedef int pid_t;
 
 #endif /* BORLANDC */
 
+/* ------------------------------------------------------------------------*/
 /* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
 #if defined(__GNUC__) && defined(_WIN32)
 /* XXX These defines are likely incomplete, but should be easy to fix.
@@ -199,96 +147,66 @@ typedef int pid_t;
 #warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
 #endif
 
-#define NT	/* NT is obsolete - please use MS_WIN32 instead */
-#define MS_WIN32
-#define MS_WINDOWS
-
-/* For NT the Python core is in a DLL by default.  Test the
-standard macro MS_COREDLL to find out.  If you have an exception
-you must define MS_NO_COREDLL (do not test this macro) */
-#ifndef MS_NO_COREDLL
-#define MS_COREDLL	/* Python core is in a DLL */
-#ifndef USE_DL_EXPORT
-#define USE_DL_IMPORT
-#endif /* !USE_DL_EXPORT */
-#endif /* !MS_NO_COREDLL */
-
 #define COMPILER "[gcc]"
-#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
-#define WORD_BIT 32
 #define hypot _hypot
-#include <stdio.h>
-#define HAVE_CLOCK
-#define HAVE_STRFTIME
-#define HAVE_STRERROR
-#define NT_THREADS
-#define WITH_THREAD
-#ifndef NETSCAPE_PI
-#define USE_SOCKET
-#endif
-#ifdef USE_DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#endif
-#ifdef USE_DL_EXPORT
-#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#endif
-
-#define HAVE_LONG_LONG 1
 #define LONG_LONG long long
 #endif /* GNUC */
 
+/* ------------------------------------------------------------------------*/
 /* lcc-win32 defines __LCC__ */
-
 #if defined(__LCC__)
 /* XXX These defines are likely incomplete, but should be easy to fix.
    They should be complete enough to build extension modules. */
 
-#define NT	/* NT is obsolete - please use MS_WIN32 instead */
-#define MS_WIN32
-#define MS_WINDOWS
-
-/* For NT the Python core is in a DLL by default.  Test the
-standard macro MS_COREDLL to find out.  If you have an exception
-you must define MS_NO_COREDLL (do not test this macro) */
-#ifndef MS_NO_COREDLL
-#define MS_COREDLL	/* Python core is in a DLL */
-#ifndef USE_DL_EXPORT
-#define USE_DL_IMPORT
-#endif /* !USE_DL_EXPORT */
-#endif /* !MS_NO_COREDLL */
-
 #define COMPILER "[lcc-win32]"
-#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
 typedef int pid_t;
-#define WORD_BIT 32
-#include <stdio.h>
-#define HAVE_CLOCK
-#define HAVE_STRFTIME
-#define HAVE_STRERROR
-#define NT_THREADS
-#define WITH_THREAD
-#ifndef NETSCAPE_PI
-#define USE_SOCKET
-#endif
-#ifdef USE_DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#endif
-#ifdef USE_DL_EXPORT
-#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#endif
+/* __declspec() is supported here too - do nothing to get the defaults */
 
-#define HAVE_LONG_LONG 1
-#define LONG_LONG __int64
 #endif /* LCC */
 
+/* ------------------------------------------------------------------------*/
 /* End of compilers - finish up */
 
-/* define some ANSI types that are not defined in earlier Win headers */
-#if _MSC_VER >= 1200 /* This file only exists in VC 6.0 or higher */
-#include <basetsd.h>
+#ifndef NO_STDIO_H
+#	include <stdio.h>
 #endif
+
+/* 64 bit ints are usually spelt __int64 unless compiler has overridden */
+#define HAVE_LONG_LONG 1
+#ifndef LONG_LONG
+#	define LONG_LONG __int64
+#endif
+
+/* For Windows the Python core is in a DLL by default.  Test 
+Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
+#if !defined(MS_NO_COREDLL) && !defined(Py_NO_ENABLE_SHARED)
+#	define Py_ENABLE_SHARED 1 /* standard symbol for shared library */
+#	define MS_COREDLL	/* deprecated old symbol */
+#endif /* !MS_NO_COREDLL && ... */
+
+/* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
+#ifdef USE_DL_EXPORT
+#	define Py_BUILD_CORE
+#endif /* USE_DL_EXPORT */
+
+/*  All windows compilers that use this header support __declspec */
+#define HAVE_DECLSPEC_DLL
+
+/* For an MSVC DLL, we can nominate the .lib files used by extensions */
+#ifdef MS_COREDLL
+#	ifndef Py_BUILD_CORE /* not building the core - must be an ext */
+#		if defined(_MSC_VER)
+			/* So MSVC users need not specify the .lib file in 
+			their Makefile (other compilers are generally
+			taken care of by distutils.) */
+#			ifdef _DEBUG
+#				pragma comment(lib,"python23_d.lib")
+#			else
+#				pragma comment(lib,"python23.lib")
+#			endif /* _DEBUG */
+#		endif /* _MSC_VER */
+#	endif /* Py_BUILD_CORE */
+#endif /* MS_COREDLL */
 
 #if defined(MS_WIN64)
 /* maintain "win32" sys.platform for backward compatibility of Python code,
@@ -321,23 +239,12 @@ typedef int pid_t;
 #	endif
 #endif
 
+#ifdef _DEBUG
+#	define Py_DEBUG
+#endif
+
 
 #ifdef MS_WIN32
-
-#if !defined(USE_DL_EXPORT) && defined(_MSC_VER)
-/* So nobody using MSVC needs to specify the .lib in their Makefile any
-   more (other compilers will still need to do so, but that's taken care
-   of by the Distutils, so it's not a problem). */
-#ifdef _DEBUG
-#pragma comment(lib,"python23_d.lib")
-#else
-#pragma comment(lib,"python23.lib")
-#endif
-#endif /* USE_DL_EXPORT */
-
-#ifdef _DEBUG
-#define Py_DEBUG
-#endif
 
 #define SIZEOF_SHORT 2
 #define SIZEOF_INT 4

@@ -1583,10 +1583,9 @@ get_version_string(void)
 #define MODULE_INITFUNC initpyexpat
 #endif
 
-void MODULE_INITFUNC(void);  /* avoid compiler warnings */
+PyMODINIT_FUNC MODULE_INITFUNC(void);  /* avoid compiler warnings */
 
-DL_EXPORT(void)
-MODULE_INITFUNC(void)
+PyMODINIT_FUNC MODULE_INITFUNC(void)
 {
     PyObject *m, *d;
     PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");

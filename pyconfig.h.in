@@ -11,10 +11,6 @@
    on SGI IRIX 4.x) */
 #undef BAD_EXEC_PROTOTYPES
 
-/* Define if your compiler botches static forward declarations (as it does on
-   SCI ODT 3.0) */
-#undef BAD_STATIC_FORWARD
-
 /* Define this if you have BeOS threads. */
 #undef BEOS_THREADS
 
@@ -127,9 +123,6 @@
 
 /* Define to 1 if you have the `gai_strerror' function. */
 #undef HAVE_GAI_STRERROR
-
-/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
-#undef HAVE_GDBM_NDBM_H
 
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
@@ -272,9 +265,6 @@
 /* Define to 1 if you have the <ncurses.h> header file. */
 #undef HAVE_NCURSES_H
 
-/* Define to 1 if you have the <ndbm.h> header file. */
-#undef HAVE_NDBM_H
-
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -352,9 +342,6 @@
 
 /* Define to 1 if you have the `setpgid' function. */
 #undef HAVE_SETPGID
-
-/* Define to 1 if you have the `setpgrp' function. */
-#undef HAVE_SETPGRP
 
 /* Define to 1 if you have the `setregid' function. */
 #undef HAVE_SETREGID
@@ -626,6 +613,9 @@
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
 
+/* Defined if Python is built as a shared library. */
+#undef Py_ENABLE_SHARED
+
 /* Define as the size of the unicode type. */
 #undef Py_UNICODE_SIZE
 
@@ -637,6 +627,9 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
+
+/* Define to 1 if the `setpgrp' function takes no argument. */
+#undef SETPGRP_VOID
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
@@ -712,9 +705,6 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
-/* Define if you want to compile in cycle garbage collection. */
-#undef WITH_CYCLE_GC
-
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking. This is
    rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4), Sequent Symmetry
    (Dynix), and Atari ST. This requires the 'dl-dld' library,
@@ -782,6 +772,9 @@
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
+
+/* Needed on Tru64 and does no harm on Linux */
+#undef _XOPEN_SOURCE
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__

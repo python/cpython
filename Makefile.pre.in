@@ -65,7 +65,7 @@ LINKFORSHARED=	@LINKFORSHARED@
 # Extra C flags added for building the interpreter object files.
 CFLAGSFORSHARED=@CFLAGSFORSHARED@
 # C flags used for building the interpreter object files
-PY_CFLAGS=	$(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED)
+PY_CFLAGS=	$(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
 
 
 # Machine-dependent subdirectories
@@ -420,10 +420,10 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 Python/compile.o Python/symtable.o: $(GRAMMAR_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
-		$(CC) -c $(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
+		$(CC) -c $(PY_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
-		$(CC) -c $(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
+		$(CC) -c $(PY_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h

@@ -125,8 +125,7 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 		ppc)
 			CC=mwcc
 			without_gcc=yes
-			OPT="-O -D'DL_EXPORT(RTYPE)=__declspec(dllexport) RTYPE' -D'DL_IMPORT(RTYPE)=__declspec(dllexport) RTYPE' -export pragma"
-			CCSHARED="-UDL_IMPORT -D'DL_IMPORT(RTYPE)=__declspec(dllimport) RTYPE'"
+			OPT="-O -export pragma"
 			LDFLAGS="$LDFLAGS -nodup"
 			;;
 		x86)
@@ -359,6 +358,7 @@ fi
 
 # Other platforms follow
 if test $enable_shared = "yes"; then
+  AC_DEFINE(Py_ENABLE_SHARED, 1, [Defined if Python is built as a shared library.])
   case $ac_sys_system in
     BeOS*)
           LDLIBRARY='libpython$(VERSION).so'
@@ -948,7 +948,6 @@ then
 		   *gcc*) CCSHARED="-shared";;
 		   *) CCSHARED="";;
 		   esac;;
-	CYGWIN*) CCSHARED="-DUSE_DL_IMPORT";;
 	atheos*) CCSHARED="-fPIC";;
 	esac
 fi
