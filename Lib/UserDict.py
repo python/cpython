@@ -22,6 +22,9 @@ class UserDict:
         return copy.copy(self)
     def keys(self): return self.data.keys()
     def items(self): return self.data.items()
+    def iteritems(self): return self.data.iteritems()
+    def iterkeys(self): return self.data.iterkeys()
+    def itervalues(self): return self.data.itervalues()
     def values(self): return self.data.values()
     def has_key(self, key): return self.data.has_key(key)
     def update(self, dict):
