@@ -43,7 +43,7 @@ get_buf(PyBufferObject *self, void **ptr, int *size)
 			offset = count;
 		else
 			offset = self->b_offset;
-		(char *)*ptr = (char *)*ptr + offset;
+		*(char **)ptr = *(char **)ptr + offset;
 		if (self->b_size == Py_END_OF_BUFFER)
 			*size = count;
 		else
