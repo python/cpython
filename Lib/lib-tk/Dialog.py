@@ -1,15 +1,17 @@
 # Dialog.py -- Tkinter interface to the tk_dialog script.
 
 from Tkinter import *
+from Tkinter import _cnfmerge
 
-if TkVersion == 3.6:
+if TkVersion <= 3.6:
 	DIALOG_ICON = 'warning'
 else:
 	DIALOG_ICON = 'questhead'
 
 
 class Dialog(Widget):
-	def __init__(self, master=None, cnf={}):
+	def __init__(self, master=None, cnf={}, **kw):
+		cnf = _cnfmerge((cnf, kw))
 		self.widgetName = '__dialog__'
 		Widget._setup(self, master, cnf)
 		self.num = self.tk.getint(
