@@ -147,10 +147,23 @@ _PyModule_Clear(PyObject *m)
 /* Methods */
 
 static int
-module_init(PyModuleObject *m, PyObject *args, PyObject *kw)
+module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
 {
-	m->md_dict = PyDict_New();
-	if (m->md_dict == NULL)
+	static char *kwlist[] = {"name", "doc", NULL};
+	PyObject *dict, *name = Py_None, *doc = Py_None;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O", kwlist,
+					 &name, &doc))
+		return -1;
+	dict = m->md_dict;
+	if (dict == NULL) {
+		dict = PyDict_New();
+		if (dict == NULL)
+			return -1;
+		m->md_dict = dict;
+	}
+	if (PyDict_SetItemString(dict, "__name__", name) < 0)
+		return -1;
+	if (PyDict_SetItemString(dict, "__doc__", doc) < 0)
 		return -1;
 	return 0;
 }
