@@ -48,6 +48,11 @@ class ListedToplevel(Toplevel):
         return self.wm_title()
 
     def wakeup(self):
-        self.tkraise()
-        self.wm_deiconify()
-        self.focus_set()
+        try:
+            self.tkraise()
+            self.wm_deiconify()
+            self.focus_set()
+        except TclError:
+            # This can happen when the window menu was torn off.
+            # Simply ignore it.
+            pass
