@@ -211,6 +211,18 @@ translabel(grammar *g, label *lb)
 				printf("Unknown OP label %s\n",
 					lb->lb_str);
 		}
+		else if (lb->lb_str[2] && lb->lb_str[3] && lb->lb_str[4] == lb->lb_str[0]) {
+			int type = (int) PyToken_ThreeChars(lb->lb_str[1],
+							    lb->lb_str[2],
+							    lb->lb_str[3]);
+			if (type != OP) {
+				lb->lb_type = type;
+				lb->lb_str = NULL;
+			}
+			else
+				printf("Unknown OP label %s\n",
+					lb->lb_str);
+		}
 		else
 			printf("Can't translate STRING label %s\n",
 				lb->lb_str);

@@ -669,12 +669,69 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PUSH(w);
 			continue;
 		
+		case ROT_FOUR:
+			u = POP();
+			v = POP();
+			w = POP();
+			x = POP();
+			PUSH(u);
+			PUSH(x);
+			PUSH(w);
+			PUSH(v);
+			continue;
+		
 		case DUP_TOP:
 			v = TOP();
 			Py_INCREF(v);
 			PUSH(v);
 			continue;
 		
+		case DUP_TOPX:
+			switch (oparg) {
+			case 5:
+			case 4:
+			case 3:
+			case 2:
+			case 1:
+				x = POP();
+				if (oparg == 1) break;
+				w = POP();
+				if (oparg == 2) break;
+				v = POP();
+				if (oparg == 3) break;
+				u = POP();
+				if (oparg == 4) break;
+				t = POP();
+				break;
+			default:
+				fprintf(stderr, "Invalid argument to DUP_TOPX: %d!\n", oparg);
+				PyErr_SetString(PyExc_SystemError,
+					"invalid argument to DUP_TOPX");
+				x = NULL;
+			}
+			if (x == NULL)
+				break;
+			switch (oparg) {
+			case 5: PUSH(t);
+				Py_INCREF(t); /* Fallthrough */
+			case 4: PUSH(u);
+				Py_INCREF(u); /* Fallthrough */
+			case 3: PUSH(v);
+				Py_INCREF(v); /* Fallthrough */
+			case 2: PUSH(w);
+				Py_INCREF(w); /* Fallthrough */
+			case 1: PUSH(x);
+				Py_INCREF(x); /* Fallthrough */
+			}
+			switch (oparg) {
+			case 5: PUSH(t); /* Fallthrough */
+			case 4: PUSH(u); /* Fallthrough */
+			case 3: PUSH(v); /* Fallthrough */
+			case 2: PUSH(w); /* Fallthrough */
+			case 1: PUSH(x); /* Fallthrough */
+			}
+			continue;
+
 		case UNARY_POSITIVE:
 			v = POP();
 			x = PyNumber_Positive(v);
@@ -890,7 +947,147 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
+
+		case INPLACE_POWER:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlacePower(v, w, Py_None);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
 		
+		case INPLACE_MULTIPLY:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceMultiply(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_DIVIDE:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceDivide(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_MODULO:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceRemainder(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_ADD:
+			w = POP();
+			v = POP();
+			if (PyInt_Check(v) && PyInt_Check(w)) {
+				/* INLINE: int + int */
+				register long a, b, i;
+				a = PyInt_AS_LONG(v);
+				b = PyInt_AS_LONG(w);
+				i = a + b;
+				if ((i^a) < 0 && (i^b) < 0) {
+					PyErr_SetString(PyExc_OverflowError,
+							"integer addition");
+					x = NULL;
+				}
+				else
+					x = PyInt_FromLong(i);
+			}
+			else
+				x = PyNumber_InPlaceAdd(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_SUBTRACT:
+			w = POP();
+			v = POP();
+			if (PyInt_Check(v) && PyInt_Check(w)) {
+				/* INLINE: int - int */
+				register long a, b, i;
+				a = PyInt_AS_LONG(v);
+				b = PyInt_AS_LONG(w);
+				i = a - b;
+				if ((i^a) < 0 && (i^~b) < 0) {
+					PyErr_SetString(PyExc_OverflowError,
+							"integer subtraction");
+					x = NULL;
+				}
+				else
+					x = PyInt_FromLong(i);
+			}
+			else
+				x = PyNumber_InPlaceSubtract(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_LSHIFT:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceLshift(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_RSHIFT:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceRshift(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_AND:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceAnd(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_XOR:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceXor(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+		
+		case INPLACE_OR:
+			w = POP();
+			v = POP();
+			x = PyNumber_InPlaceOr(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
+
 		case SLICE+0:
 		case SLICE+1:
 		case SLICE+2:
@@ -1063,6 +1260,10 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			stream = NULL;
 			break;
 		
+
+#ifdef CASE_TOO_BIG
+		default: switch (opcode) {
+#endif
 		case BREAK_LOOP:
 			why = WHY_BREAK;
 			break;
@@ -1180,10 +1381,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PyErr_SetObject(PyExc_NameError, w);
 			break;
 
-#ifdef CASE_TOO_BIG
-		default: switch (opcode) {
-#endif
-		
 		case UNPACK_SEQUENCE:
 			v = POP();
 			if (PyTuple_Check(v)) {
