@@ -629,7 +629,7 @@ there is at least one character, false otherwise.
 
 \begin{methoddesc}[string]{istitle}{}
 Return true if the string is a titlecased string and there is at least one
-character, i.e. uppercase characters may only follow uncased
+character, for example uppercase characters may only follow uncased
 characters and lowercase characters only cased ones.  Return false
 otherwise.
 \end{methoddesc}
@@ -975,6 +975,9 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.sort(\optional{\var{cmp}=None\optional{, \var{key}=None
                         \optional{, \var{reverse}=False}}})}
 	{sort the items of \var{s} in place}{(7), (8), (9), (10)}
+  \lineiii{\var{s}.sorted(\var{iterable}\optional{, \var{cmp}=None\optional{, \var{key}=None
+                        \optional{, \var{reverse}=False}}})}
+	{return a new sorted list from the items in \var{iterable}}{(8), (9), (11)}     
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -1024,8 +1027,8 @@ Notes:
   list.  To remind you that they operate by side effect, they don't return
   the sorted or reversed list.
 
-\item[(8)] The \method{sort()} method takes optional arguments for
-  controlling the comparisions.
+\item[(8)] The \method{sort()} and \method{sorted()} methods take optional
+  arguments for controlling the comparisions.
 
   \var{cmp} specifies a custom comparison function of two arguments
      (list items) which should return a negative, zero or positive number
@@ -1052,7 +1055,8 @@ Notes:
   \versionchanged[Support for \var{key} and \var{reverse} was added]{2.4}
 
 \item[(9)]  Starting with Python 2.3, the \method{sort()} method is
-  guaranteed to be stable.  A sort is stable if it guarantees not to
+  guaranteed to be stable.  Starting with Python 2.4, the \method{sorted()}
+  method is also guaranteed to be stable.  A sort is stable if it does not
   change the relative order of elements that compare equal --- this is
   helpful for sorting in multiple passes (for example, sort by
   department, then by salary grade).
@@ -1062,6 +1066,9 @@ Notes:
   of Python 2.3 makes the list appear empty for the duration, and raises
   \exception{ValueError} if it can detect that the list has been
   mutated during a sort.
+
+\item[(11)] \method{sorted()} is a class method that returns a new list.
+  \versionadded{2.4}
 \end{description}
 
 
