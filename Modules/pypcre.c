@@ -1884,7 +1884,6 @@ for (;; ptr++)
 	     report an error.  Add more Python-extensions here. */
 	  *errorptr="unknown after (?P";
 	  goto FAILED;
-	  break;
 
         case '>':                         /* "Match once" brackets */
         if ((options & PCRE_EXTRA) != 0)  /* Not yet standard */
@@ -3392,7 +3391,6 @@ for (;;)
 	ecode=prev+3; goto match_loop;
         }
       }
-    break;
     
     /* Start of subject unless notbol, or after internal newline if multiline */
 
