@@ -348,6 +348,7 @@ PyDict_Values
 PyDict_Keys
 PyDict_Size
 PyDict_Copy
+PyDict_Merge
 PyDict_Update
 PyDict_Next
 PyDict_Clear
@@ -432,6 +433,7 @@ PyCFunction_Type
 PyCFunction_Fini
 Py_FindMethod
 Py_FindMethodInChain
+PyCFunction_Call
 PyCFunction_GetFlags
 PyCFunction_GetSelf
 PyCFunction_GetFunction
@@ -460,6 +462,7 @@ PyObject_Malloc
 PyMem_Free
 PyMem_Realloc
 PyMem_Malloc
+_Py_ReadyTypes
 PyCallable_Check
 PyNumber_Coerce
 PyNumber_CoerceEx
@@ -483,7 +486,6 @@ PyObject_Compare
 PyObject_Unicode
 PyObject_Str
 PyObject_Repr
-_PyGC_Dump
 _PyObject_Dump
 PyObject_Print
 _PyObject_Del
@@ -518,6 +520,8 @@ PyString_Encode
 PyString_AsDecodedString
 PyString_AsDecodedObject
 PyString_Decode
+PyString_FromFormat
+PyString_FromFormatV
 PyString_FromString
 PyString_FromStringAndSize
 PyTuple_Type
@@ -531,8 +535,10 @@ PyTuple_New
 type_getsets
 PyType_Type
 PyBaseObject_Type
+PySuper_Type
 PyType_Ready
 _PyType_Lookup
+call_method
 PyType_IsSubtype
 PyType_GenericNew
 PyType_GenericAlloc
@@ -642,6 +648,7 @@ PyMac_StopGUSISpin
 RotateCursor
 SpinCursor
 PyMac_GetFullPath
+__convert_to_newlines
 PyMac_AppRefNum
 PyMac_options
 console_output_state
@@ -840,6 +847,7 @@ PyExc_Warning
 PyExc_UserWarning
 PyExc_DeprecationWarning
 PyExc_SyntaxWarning
+PyExc_OverflowWarning
 PyExc_RuntimeWarning
 _PyExc_Fini
 _PyExc_Init
@@ -863,6 +871,7 @@ PyOS_vsnprintf
 PyOS_snprintf
 proxytype
 wrappertype
+PyGetSet_Type
 PyWrapper_New
 PyDictProxy_New
 proxy_str
@@ -871,9 +880,16 @@ PyDescr_NewWrapper
 PyDescr_NewGetSet
 PyDescr_NewMember
 PyDescr_NewMethod
+_PyGC_generation0
+_PyObject_GC_Del
+_PyObject_GC_Resize
+_PyObject_GC_NewVar
+_PyObject_GC_New
+_PyObject_GC_Malloc
+_PyObject_GC_UnTrack
+_PyObject_GC_Track
+_PyGC_Dump
 initgc
-_PyGC_Remove
-_PyGC_Insert
 PyMac_OSErrException
 PyMacGluePtr_PyMac_GetFSSpec
 PyMacGluePtr_AEDesc_New
@@ -1952,7 +1968,6 @@ setvbuf
 __flush_buffer
 __load_buffer
 __prep_buffer
-__convert_to_newlines
 __convert_from_newlines
 ccommand
 puts
