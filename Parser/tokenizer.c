@@ -722,7 +722,7 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 	/* Number */
 	if (isdigit(c)) {
 		if (c == '0') {
-			/* Hex or octal */
+			/* Hex or octal -- maybe. */
 			c = tok_nextc(tok);
 			if (c == '.')
 				goto fraction;
@@ -737,12 +737,30 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 				} while (isxdigit(c));
 			}
 			else {
-				/* XXX This is broken!  E.g.,
-				   09.9 should be accepted as float! */
+				int found_decimal = 0;
 				/* Octal; c is first char of it */
 				/* There's no 'isoctdigit' macro, sigh */
 				while ('0' <= c && c < '8') {
 					c = tok_nextc(tok);
+				}
+				if (isdigit(c)) {
+					found_decimal = 1;
+					do {
+						c = tok_nextc(tok);
+					} while (isdigit(c));
+				}
+				if (c == '.')
+					goto fraction;
+				else if (c == 'e' || c == 'E')
+					goto exponent;
+#ifndef WITHOUT_COMPLEX
+				else if (c == 'j' || c == 'J')
+					goto imaginary;
+#endif
+				else if (found_decimal) {
+					tok->done = E_TOKEN;
+					tok_backup(tok, c);
+					return ERRORTOKEN;
 				}
 			}
 			if (c == 'l' || c == 'L')
@@ -765,6 +783,7 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 					} while (isdigit(c));
 				}
 				if (c == 'e' || c == 'E') {
+		exponent:
 					/* Exponent part */
 					c = tok_nextc(tok);
 					if (c == '+' || c == '-')

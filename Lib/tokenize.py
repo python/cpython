@@ -56,9 +56,9 @@ Decnumber = r'[1-9]\d*[lL]?'
 Intnumber = group(Hexnumber, Octnumber, Decnumber)
 Exponent = r'[eE][-+]?\d+'
 Pointfloat = group(r'\d+\.\d*', r'\.\d+') + maybe(Exponent)
-Expfloat = r'[1-9]\d*' + Exponent
+Expfloat = r'\d+' + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group(r'0[jJ]', r'[1-9]\d*[jJ]', Floatnumber + r'[jJ]')
+Imagnumber = group(r'\d+[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
 # Tail end of ' string.
