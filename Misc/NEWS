@@ -12,7 +12,10 @@ What's New in Python 2.4 (release candidate 1|beta 3)
 Core and builtins
 -----------------
 
-...
+- Bug 1061968:  Fixes in 2.4a3 to address thread bug 1010677 reintroduced
+  the years-old thread shutdown race bug 225673.  Numeric history lesson
+  aside, all bugs in all three reports are fixed now.
+
 
 Extension Modules
 -----------------
