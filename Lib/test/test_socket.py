@@ -86,6 +86,7 @@ except socket.error:
 try:
     PORT = 50007
     if os.fork():
+	# parent is server
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.bind(hostname, PORT)
 	s.listen(1)
@@ -115,7 +116,9 @@ try:
 		print 'received:', data
 	    conn.send(data)
 	conn.close()
+	os._exit(0)
     else:
+	# child is client
 	time.sleep(1)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	if verbose:
