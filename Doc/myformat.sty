@@ -114,6 +114,7 @@
 % Add the defining entry for a module
 \newcommand{\defmodindex}[2]{\index{#1@{\codefont#1} (#2module)|textbf}%
   \write\modindexfile{#1 \thepage}}
+\newcommand{\modindex}[1]{\defmodindex{#1}{}}
 \newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
 \newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
 
