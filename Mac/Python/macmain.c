@@ -38,6 +38,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Windows.h>
 #include <Fonts.h>
 #include <Balloons.h>
+#if TARGET_API_MAC_CARBON
+#include <CFBundle.h>
+#include <CFURL.h>
+#include <CFString.h>
+#include <CFBase.h>
+#include <CFArray.h>
+#endif /* TARGET_API_MAC_CARBON */
 #ifdef USE_APPEARANCE
 #include <Gestalt.h>
 #include <Appearance.h>
@@ -487,7 +494,7 @@ PyMac_Initialize(void)
 
 #endif /* USE_MAC_APPLET_SUPPORT */
 
-#if TARGET_API_MAC_OSX
+#if TARGET_API_MAC_OSX /* Really: TARGET_API_MAC_CARBON */
 
 static int
 locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
@@ -495,44 +502,56 @@ locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
     CFURLRef URL, absoluteURL;
     CFStringRef filenameString, filepathString, rsrcString;
     CFIndex size, i;
-    CFArrayRef arrayRef;
-    Boolean success = 0;
-
-    /* Create a CFString with the resource name in it */
-    rsrcString = CFStringCreateWithCString(0, resourceName, kCFStringEncodingMacRoman);
+    CFArrayRef arrayRef = NULL;
+    int success = 0;
+    
+#if TARGET_API_MAC_OSX
+	CFURLPathStyle thePathStyle = kCFURLPOSIXPathStyle;
+#else
+	CFURLPathStyle thePathStyle = kCFURLHFSPathStyle;
+#endif
 
     /* Get a reference to our main bundle */
     mainBundle = CFBundleGetMainBundle();
 
-    /* Look for py files in the main bundle by type */
-    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
-            CFSTR("py"), 
-           NULL );
+	/* If we are running inside a bundle, look through it. Otherwise, do nothing. */
+	if (mainBundle) {
+	    /* Create a CFString with the resource name in it */
+	    rsrcString = CFStringCreateWithCString(0, resourceName, kCFStringEncodingMacRoman);
 
-    /* See if there are any filename matches */
-    size = CFArrayGetCount(arrayRef);
-    for (i = 0; i < size; i++) {
-        URL = CFArrayGetValueAtIndex(arrayRef, i);
-        filenameString = CFURLCopyLastPathComponent(URL);
-        if (CFStringCompare(filenameString, rsrcString, 0) == kCFCompareEqualTo) {
-            /* We found a match, get the file's full path */
-            absoluteURL = CFURLCopyAbsoluteURL(URL);
-            filepathString = CFURLCopyFileSystemPath(absoluteURL, kCFURLPOSIXPathStyle);
-            CFRelease(absoluteURL);
+	    /* Look for py files in the main bundle by type */
+	    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
+	            CFSTR("py"), 
+	           NULL );
 
-            /* Copy the full path into the caller's character buffer */
-            success = CFStringGetCString(filepathString, resourceURLCStr, length,
-                                        kCFStringEncodingMacRoman);
+	    /* See if there are any filename matches */
+	    size = CFArrayGetCount(arrayRef);
+	    for (i = 0; i < size; i++) {
+	        URL = CFArrayGetValueAtIndex(arrayRef, i);
+	        filenameString = CFURLCopyLastPathComponent(URL);
+	        if (CFStringCompare(filenameString, rsrcString, 0) == kCFCompareEqualTo) {
+	            /* We found a match, get the file's full path */
+	            absoluteURL = CFURLCopyAbsoluteURL(URL);
+	            filepathString = CFURLCopyFileSystemPath(absoluteURL, thePathStyle);
+	            CFRelease(absoluteURL);
 
-            CFRelease(filepathString);
-        }
-        CFRelease(filenameString);
-    }
-    CFRelease(rsrcString);
-    CFRelease(arrayRef);
+	            /* Copy the full path into the caller's character buffer */
+	            success = CFStringGetCString(filepathString, resourceURLCStr, length,
+	                                        kCFStringEncodingMacRoman);
 
+	            CFRelease(filepathString);
+	        }
+	        CFRelease(filenameString);
+	    }
+		CFRelease(arrayRef);
+	    CFRelease(rsrcString);
+	}
     return success;
 }
+
+#endif /* TARGET_API_MAC_CARBON */
+
+#if TARGET_API_MAC_OSX
 
 int
 main(int argc, char **argv)
@@ -580,7 +599,16 @@ PyMac_InitApplication(void)
 	int argc;
 	char **argv;
 	
+	static char scriptpath[1024];
+	char *script = NULL;
+
 	init_common(&argc, &argv, 0);
+
+#if TARGET_API_MAC_OSX /* Really: TARGET_API_MAC_CARBON */
+	/* If we are running inside of a bundle, and a __main__.py is available, use it */
+	if (locateResourcePy("__main__.py", scriptpath, 1024))
+		script = scriptpath;
+#endif
 	
 	if ( argc > 1 ) {
 		/* We're running a script. Attempt to change current directory */
@@ -603,7 +631,7 @@ PyMac_InitApplication(void)
 			exit(0);
 		}
 	}
-	Py_Main(argc, argv, NULL);
+	Py_Main(argc, argv, script);
 }
 #endif /* TARGET_API_MAC_OSX */
 
