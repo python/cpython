@@ -90,6 +90,7 @@ class PythonIDE(Wapplication.Application):
 		prefs = self.getprefs()
 		try:
 			fss, fss_changed = macfs.RawAlias(prefs.scriptsfolder).Resolve()
+			self.scriptsfolder = fss.NewAlias()
 		except:
 			path = os.path.join(os.getcwd(), 'Scripts')
 			if not os.path.exists(path):
@@ -98,7 +99,6 @@ class PythonIDE(Wapplication.Application):
 			self.scriptsfolder = fss.NewAlias()
 			self.scriptsfoldermodtime = fss.GetDates()[1]
 		else:
-			self.scriptsfolder = fss.NewAlias()
 			self.scriptsfoldermodtime = fss.GetDates()[1]
 		prefs.scriptsfolder = self.scriptsfolder.data
 		self._scripts = {}
