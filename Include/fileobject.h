@@ -21,7 +21,7 @@ extern DL_IMPORT(PyObject *) PyFile_Name(PyObject *);
 extern DL_IMPORT(PyObject *) PyFile_GetLine(PyObject *, int);
 extern DL_IMPORT(int) PyFile_WriteObject(PyObject *, PyObject *, int);
 extern DL_IMPORT(int) PyFile_SoftSpace(PyObject *, int);
-extern DL_IMPORT(int) PyFile_WriteString(char *, PyObject *);
+extern DL_IMPORT(int) PyFile_WriteString(const char *, PyObject *);
 extern DL_IMPORT(int) PyObject_AsFileDescriptor(PyObject *);
 
 /* The default encoding used by the platform file system APIs

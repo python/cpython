@@ -1634,7 +1634,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 }
 
 int
-PyFile_WriteString(char *s, PyObject *f)
+PyFile_WriteString(const char *s, PyObject *f)
 {
 	if (f == NULL) {
 		/* Should be caused by a pre-existing error */
