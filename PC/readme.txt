@@ -1,7 +1,7 @@
 Welcome to the "PC" subdirectory of the Python distribution
 ***********************************************************
 
-*** Note: the project files for MS VC++ 6.0 are now in the
+*** Note: the project files for MS VC++ 7.1 are now in the
 *** PCbuild directory.  See the file readme.txt there for build
 *** instructions.  There is some information below that might
 *** still be relevant.
@@ -78,6 +78,12 @@ dllbase_nt.txt A (manually maintained) list of base addresses for
 
 example_nt     A subdirectory showing how to build an extension as a
                DLL.
+
+Visual Studio 6.0
+=================
+The subdirectory VC6 contains Visual Studio 6 project files. These
+were originally located in the PCBuild directory, but are no longer
+maintained.
 
 
 IBM VisualAge C/C++ for OS/2
