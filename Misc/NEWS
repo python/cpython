@@ -169,6 +169,10 @@ Core language, builtins, and interpreter
 
 Standard library
 
+- In the time module, the time argument to the functions strftime,
+  localtime, gmtime, asctime and ctime is now optional, defaulting to
+  the current time (in the local timezone).
+
 - The ftplib module now defaults to passive mode, which is deemed a
   more useful default given that clients are often inside firewalls
   these days.  Note that this could break if ftplib is used to connect
