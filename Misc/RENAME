@@ -394,3 +394,4 @@ askyesno _Py_AskYesNo
 import_filetab _PyImport_Filetab
 import_maxsuffixsize _PyImport_MaxSuffixSize
 load_dynamic_module _PyImport_LoadDynamicModule
+inittab _PyImport_Inittab
