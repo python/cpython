@@ -105,8 +105,11 @@ values from C values.
   are \index{package variable!\code{__all__}}
   \withsubitem{(package variable)}{\ttindex{__all__}}loaded.)  Return
   a new reference to the imported module, or \NULL{} with an exception
-  set on failure (the module may still be created in this case ---
-  examine \code{sys.modules} to find out).
+  set on failure.  Before Python 2.4, the module may still be created in
+  the failure case --- examine \code{sys.modules} to find out.  Starting
+  with Python 2.4, a failing import of a module no longer leaves the
+  module in \code{sys.modules}.
+  \versionchanged[failing imports remove incomplete module objects]{2.4}
   \withsubitem{(in module sys)}{\ttindex{modules}}
 \end{cfuncdesc}
 
@@ -118,11 +121,13 @@ values from C values.
   \function{__import__()} function calls this function directly.
 
   The return value is a new reference to the imported module or
-  top-level package, or \NULL{} with an exception set on failure (the
+  top-level package, or \NULL{} with an exception set on failure (before
+  Python 2.4, the
   module may still be created in this case).  Like for
   \function{__import__()}, the return value when a submodule of a
   package was requested is normally the top-level package, unless a
   non-empty \var{fromlist} was given.
+  \versionchanged[failing imports remove incomplete module objects]{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_Import}{PyObject *name}
@@ -161,11 +166,24 @@ values from C values.
   a code object read from a Python bytecode file or obtained from the
   built-in function \function{compile()}\bifuncindex{compile}, load
   the module.  Return a new reference to the module object, or \NULL{}
-  with an exception set if an error occurred (the module may still be
-  created in this case).  This function would reload the module if it
-  was already imported.  If \var{name} points to a dotted name of the
+  with an exception set if an error occurred.  Before Python 2.4, the module
+  could still be created in error cases.  Starting with Python 2.4,
+  \var{name} is removed from \code{sys.modules} in error cases, and even
+  if \var{name} was already in \code{sys.modules} on entry to
+  \cfunction{PyImport_ExecCodeModule()}.  Leaving incompletely initialized
+  modules in \code{sys.modules} is dangerous, as imports of such modules
+  have no way to know that the module object is an unknown (and probably
+  damaged with respect to the module author's intents) state.
+
+  This function will reload the module if it was already imported.  See
+  \cfunction{PyImport_ReloadModule()}
+
+  If \var{name} points to a dotted name of the
   form \code{package.module}, any package structures not already
   created will still not be created.
+
+  \versionchanged[\var{name} is removed from \code{sys.modules} in error cases]{2.4}
+
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
@@ -804,13 +822,13 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
     Same as \samp{s\#}.
 
     \item[\samp{u} (Unicode string) {[Py_UNICODE *]}]
-    Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4) 
-    data to a Python Unicode object.  If the Unicode buffer pointer 
+    Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4)
+    data to a Python Unicode object.  If the Unicode buffer pointer
     is \NULL, \code{None} is returned.
 
     \item[\samp{u\#} (Unicode string) {[Py_UNICODE *, int]}]
-    Convert a Unicode (UCS-2 or UCS-4) data buffer and its length 
-    to a Python Unicode object.   If the Unicode buffer pointer 
+    Convert a Unicode (UCS-2 or UCS-4) data buffer and its length
+    to a Python Unicode object.   If the Unicode buffer pointer
     is \NULL, the length is ignored and \code{None} is returned.
 
     \item[\samp{i} (integer) {[int]}]
