@@ -15,6 +15,9 @@ Core and builtins
 - Patch #820195: object.__contains__() now returns True or False instead
   of 1 or 0.
 
+- builtin_sum() now uses PyNumber_InPlaceAdd, fixing a previous
+  performance bug for sum(list_of_lists) and similar cases.
+
 Extension modules
 -----------------
 
