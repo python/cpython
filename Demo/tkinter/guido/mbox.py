@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
 
 # Scan MH folder, display results in window
 

@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
 
 # A Python program implementing rmt, an application for remotely
 # controlling other Tk applications.

@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
 
 # Tk man page browser -- currently only shows the Tcl/Tk man pages
 
@@ -9,7 +9,7 @@ import regex
 from Tkinter import *
 
 import addpack
-addpack.addpack('/ufs/guido/src/python/Demo/tkinter')
+addpack.addpack('/ufs/guido/src/python/Demo/guido/tkinter')
 from ManPage import ManPage
 
 MANNDIR = '/usr/local/man/mann'
