@@ -10,6 +10,22 @@ This is a manually maintained version used for the Watcom,
 Borland and and Microsoft Visual C++ compilers.  It is a
 standard part of the Python distribution.
 
+WINDOWS DEFINES:
+The code specific to Windows should be wrapped around one of
+the following #defines
+
+MS_WIN32 - Code specific to the MS Win32 API
+MS_WIN16 - Code specific to the old 16 bit Windows API.
+MS_WINDOWS - Code specific to Windows, but all versions.
+MS_COREDLL - Code if the Python core is built as a DLL.
+
+Note that the old defines "NT" and "WIN32" are still supported, but
+will soon be dropped.
+
+Also note that neither "_M_IX86" or "_MSC_VER" should be used for
+any purpose other than "Windows Intel x86 specific" and "Microsoft
+compiler specific".  Therefore, these should be very rare.
+
 */
 
 /*
@@ -25,6 +41,8 @@ standard part of the Python distribution.
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
 #define LONG_BIT	32
+#define PREFIX ""
+#define EXEC_PREFIX ""
 
 /* Microsoft C defines _MSC_VER */
 
@@ -33,12 +51,20 @@ standard part of the Python distribution.
 #define NT	/* NT is obsolete - please use MS_WIN32 instead */
 #define MS_WIN32
 #define MS_WINDOWS
+
+#ifdef MS_COREDLL	/* Python core is in a DLL */
+#define main Py_Main
+#ifndef USE_DL_EXPORT
+#define USE_DL_IMPORT
+#endif /* !USE_DL_EXPORT */
+#endif /* MS_COREDLL */
+
 #ifdef _M_IX86
 #define COMPILER "[MSC 32 bit (Intel)]"
 #else
 #define COMPILER "[MSC (Unknown)]"
 #endif
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win"
+#define PYTHONPATH ".\\lib;.\\lib\\win"
 typedef int pid_t;
 #define WORD_BIT 32
 #pragma warning(disable:4113)
@@ -48,7 +74,6 @@ typedef int pid_t;
 #define HAVE_STRFTIME
 #define NT_THREADS
 #define WITH_THREAD
-#define _COMPLEX_DEFINED
 #ifndef NETSCAPE_PI
 #define USE_SOCKET
 #endif
@@ -58,7 +83,8 @@ typedef int pid_t;
 #ifdef USE_DL_EXPORT
 #define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
 #endif
-#endif /* MS_WIN32 */
+
+#endif /* _MSC_VER && > 850 */
 
 #if defined(_MSC_VER) && _MSC_VER <= 850
 /* Start of defines for 16-bit Windows using VC++ 1.5 */
@@ -67,11 +93,10 @@ typedef int pid_t;
 #define MS_WIN16
 #define MS_WINDOWS
 #endif
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
 #define WORD_BIT 16
-#define _COMPLEX_DEFINED
 #pragma warning(disable:4113)
 #define memcpy memmove	/* memcpy dangerous pointer wrap in Win 3.1 */
 #define hypot _hypot
@@ -109,7 +134,7 @@ int sscanf(const char *, const char *, ...);
 /* The Watcom compiler defines __WATCOMC__ */
 #ifdef __WATCOMC__
 #define COMPILER "[Watcom]"
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 #include <ctype.h>
 #include <direct.h>
@@ -144,7 +169,7 @@ typedef int pid_t;
 /* The Borland compiler defines __BORLANDC__ */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
@@ -152,6 +177,18 @@ typedef int pid_t;
 #define DL_IMPORT(RTYPE)  RTYPE __import
 #endif
 #endif /* BORLANDC */
+
+/* End of compilers - finish up */
+
+#ifdef MS_WIN32
+#define PLATFORM "win32"
+#else
+#ifdef MS_WIN16
+#define PLATFORM "win16"
+#else
+#define PLATFORM "dos"
+#endif /* !MS_WIN16 */
+#endif /* !MS_WIN32 */
 
 /* Fairly standard from here! */
 
@@ -257,7 +294,7 @@ typedef int pid_t;
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
    Don't bother on IRIX 5, it already has dynamic linking using SunOS
-   style shared libraries */ 
+   style shared libraries */
 /* #undef WITH_SGI_DL */
 
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
@@ -268,7 +305,7 @@ typedef int pid_t;
    as well as the "GNU dld" library,
    ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
    Don't bother on SunOS 4 or 5, they already have dynamic linking using
-   shared libraries */ 
+   shared libraries */
 /* #undef WITH_DL_DLD */
 
 /* Define if you want to compile in rudimentary thread support */

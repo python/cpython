@@ -10,7 +10,7 @@ D_RCDEFINES = -d_DEBUG
 R_RCDEFINES = -dNDEBUG
 ORIGIN = MSVC
 ORIGIN_VER = 1.00
-PROJPATH = N:\PYTHON\PYTHO~HA.4B0\PC\VC15_LIB\
+PROJPATH = N:\PYTHON\PYTHON-1.4B2\PC\VC15_LIB\
 USEMFC = 0
 CC = cl
 CPP = cl
@@ -115,2386 +115,2465 @@ SBRS = ABSTRACT.SBR \
 		YUVCONVE.SBR \
 		COBJECT.SBR \
 		COMPLEXO.SBR \
-		CMATHMOD.SBR
-
-
-ABSTRACT_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-ACCELER_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\parser.h
-
-
-ACCESSOB_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-ARRAYMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-AUDIOOP_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-BINASCII_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-BLTINMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\graminit.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\eval.h
-
-
-CEVAL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\frameobj.h \
-	n:\python\pytho~ha.4b0\pc\src\eval.h \
-	n:\python\pytho~ha.4b0\pc\src\opcode.h \
-	n:\python\pytho~ha.4b0\pc\src\graminit.h
-
-
-CGENSUPP_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\cgensupp.h
-
-
-CLASSOBJ_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-COMPILE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\graminit.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\opcode.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-CONFIG_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-ENVIRONM_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-ERRORS_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-FILEOBJE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-FLOATOBJ_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-FRAMEOBJ_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\frameobj.h \
-	n:\python\pytho~ha.4b0\pc\src\opcode.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-FROZEN_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-FUNCOBJE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-GETARGS_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-GETCOMPI_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-GETCOPYR_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-GETMTIME_DEP = n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h
-
-
-GETPATH_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\osdefs.h
-
-
-GETPLATF_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-GETVERSI_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\patchlev.h
-
-
-GRAMINIT_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h
-
-
-GRAMMAR1_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h
-
-
-IMAGEOP_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-IMPORT_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\graminit.h \
-	n:\python\pytho~ha.4b0\pc\src\errcode.h \
-	n:\python\pytho~ha.4b0\pc\src\marshal.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\eval.h \
-	n:\python\pytho~ha.4b0\pc\src\osdefs.h \
-	n:\python\pytho~ha.4b0\pc\src\importdl.h
-
-
-IMPORTDL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\osdefs.h \
-	n:\python\pytho~ha.4b0\pc\src\importdl.h
-
-
-INTOBJEC_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-LISTOBJE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-LONGOBJE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\longintr.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-MAPPINGO_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-MARSHAL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\longintr.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\marshal.h
-
-
-MATHMODU_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-MD5C_DEP = n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\md5.h
-
-
-MD5MODUL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\md5.h
-
-
-METHODOB_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h
-
-
-MODSUPPO_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-MODULEOB_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-MYREADLI_DEP = n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h
-
-
-MYSTRTOU_DEP = n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h
-
-
-NEWMODUL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h
-
-
-NODE_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h
-
-
-OBJECT_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-PARSER_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\parser.h \
-	n:\python\pytho~ha.4b0\pc\src\errcode.h
-
-
-PARSETOK_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\tokenize.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h \
-	n:\python\pytho~ha.4b0\pc\src\parser.h \
-	n:\python\pytho~ha.4b0\pc\src\parsetok.h \
-	n:\python\pytho~ha.4b0\pc\src\errcode.h
-
-
-POSIXMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mytime.h
-
-
-PYTHONRU_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\grammar.h \
-	n:\python\pytho~ha.4b0\pc\src\bitset.h \
-	n:\python\pytho~ha.4b0\pc\src\node.h \
-	n:\python\pytho~ha.4b0\pc\src\parsetok.h \
-	n:\python\pytho~ha.4b0\pc\src\graminit.h \
-	n:\python\pytho~ha.4b0\pc\src\errcode.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\eval.h \
-	n:\python\pytho~ha.4b0\pc\src\marshal.h
-
-
-RANGEOBJ_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-REGEXMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\regexpr.h
-
-
-REGEXPR_DEP = n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\regexpr.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h
-
-
-RGBIMGMO_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-ROTORMOD_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-SIGNALMO_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-SOUNDEX_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-STRINGOB_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-STROPMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-STRUCTME_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h
-
-
-STRUCTMO_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-SYSMODUL_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\osdefs.h
-
-
-TIMEMODU_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\myselect.h \
-	n:\python\pytho~ha.4b0\pc\src\mytime.h
-
-
-TOKENIZE_DEP = n:\python\pytho~ha.4b0\pc\src\pgenhead.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\tokenize.h \
-	n:\python\pytho~ha.4b0\pc\src\token.h \
-	n:\python\pytho~ha.4b0\pc\src\errcode.h
-
-
-TRACEBAC_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\compile.h \
-	n:\python\pytho~ha.4b0\pc\src\frameobj.h \
-	n:\python\pytho~ha.4b0\pc\src\structme.h \
-	n:\python\pytho~ha.4b0\pc\src\osdefs.h
-
-
-TUPLEOBJ_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-TYPEOBJE_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-YUVCONVE_DEP = n:\python\pytho~ha.4b0\pc\src\yuv.h
-
-
-COBJECT_DEP = n:\python\pytho~ha.4b0\pc\src\python.h \
-	n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h
-
-
-COMPLEXO_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
-
-
-CMATHMOD_DEP = n:\python\pytho~ha.4b0\pc\src\allobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\config.h \
-	n:\python\pytho~ha.4b0\pc\src\myproto.h \
-	n:\python\pytho~ha.4b0\pc\src\rename2.h \
-	n:\python\pytho~ha.4b0\pc\src\object.h \
-	n:\python\pytho~ha.4b0\pc\src\objimpl.h \
-	n:\python\pytho~ha.4b0\pc\src\pydebug.h \
-	n:\python\pytho~ha.4b0\pc\src\accessob.h \
-	n:\python\pytho~ha.4b0\pc\src\intobjec.h \
-	n:\python\pytho~ha.4b0\pc\src\longobje.h \
-	n:\python\pytho~ha.4b0\pc\src\floatobj.h \
-	n:\python\pytho~ha.4b0\pc\src\complexo.h \
-	n:\python\pytho~ha.4b0\pc\src\rangeobj.h \
-	n:\python\pytho~ha.4b0\pc\src\stringob.h \
-	n:\python\pytho~ha.4b0\pc\src\tupleobj.h \
-	n:\python\pytho~ha.4b0\pc\src\listobje.h \
-	n:\python\pytho~ha.4b0\pc\src\mappingo.h \
-	n:\python\pytho~ha.4b0\pc\src\methodob.h \
-	n:\python\pytho~ha.4b0\pc\src\moduleob.h \
-	n:\python\pytho~ha.4b0\pc\src\funcobje.h \
-	n:\python\pytho~ha.4b0\pc\src\classobj.h \
-	n:\python\pytho~ha.4b0\pc\src\thread.h \
-	n:\python\pytho~ha.4b0\pc\src\fileobje.h \
-	n:\python\pytho~ha.4b0\pc\src\cobject.h \
-	n:\python\pytho~ha.4b0\pc\src\tracebac.h \
-	n:\python\pytho~ha.4b0\pc\src\errors.h \
-	n:\python\pytho~ha.4b0\pc\src\mymalloc.h \
-	n:\python\pytho~ha.4b0\pc\src\modsuppo.h \
-	n:\python\pytho~ha.4b0\pc\src\ceval.h \
-	n:\python\pytho~ha.4b0\pc\src\pythonru.h \
-	n:\python\pytho~ha.4b0\pc\src\sysmodul.h \
-	n:\python\pytho~ha.4b0\pc\src\intrchec.h \
-	n:\python\pytho~ha.4b0\pc\src\import.h \
-	n:\python\pytho~ha.4b0\pc\src\bltinmod.h \
-	n:\python\pytho~ha.4b0\pc\src\abstract.h \
-	n:\python\pytho~ha.4b0\pc\src\mymath.h
+		CMATHMOD.SBR \
+		ERRNOMOD.SBR \
+		OPERATOR.SBR
+
+
+ABSTRACT_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+ACCELER_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\parser.h
+
+
+ACCESSOB_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+ARRAYMOD_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+AUDIOOP_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+BINASCII_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+BLTINMOD_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\graminit.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\eval.h
+
+
+CEVAL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\frameobj.h \
+	n:\python\python-1.4b2\pc\src\eval.h \
+	n:\python\python-1.4b2\pc\src\opcode.h \
+	n:\python\python-1.4b2\pc\src\graminit.h
+
+
+CGENSUPP_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\cgensupp.h
+
+
+CLASSOBJ_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+COMPILE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\graminit.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\opcode.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+CONFIG_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+ENVIRONM_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+ERRORS_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+FILEOBJE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+FLOATOBJ_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+FRAMEOBJ_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\frameobj.h \
+	n:\python\python-1.4b2\pc\src\opcode.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+FROZEN_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+FUNCOBJE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+GETARGS_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+GETCOMPI_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+GETCOPYR_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+GETMTIME_DEP = n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\rename2.h
+
+
+GETPATH_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\osdefs.h
+
+
+GETPLATF_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+GETVERSI_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\patchlev.h
+
+
+GRAMINIT_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h
+
+
+GRAMMAR1_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h \
+	n:\python\python-1.4b2\pc\src\token.h
+
+
+IMAGEOP_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+IMPORT_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\graminit.h \
+	n:\python\python-1.4b2\pc\src\errcode.h \
+	n:\python\python-1.4b2\pc\src\marshal.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\eval.h \
+	n:\python\python-1.4b2\pc\src\osdefs.h \
+	n:\python\python-1.4b2\pc\src\importdl.h
+
+
+IMPORTDL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\osdefs.h \
+	n:\python\python-1.4b2\pc\src\importdl.h
+
+
+INTOBJEC_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+LISTOBJE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+LONGOBJE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\longintr.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+MAPPINGO_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+MARSHAL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\longintr.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\marshal.h
+
+
+MATHMODU_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+MD5C_DEP = n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\md5.h
+
+
+MD5MODUL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\md5.h
+
+
+METHODOB_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\token.h
+
+
+MODSUPPO_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+MODULEOB_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+MYREADLI_DEP = n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h
+
+
+MYSTRTOU_DEP = n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\rename2.h
+
+
+NEWMODUL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\compile.h
+
+
+NODE_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\node.h
+
+
+OBJECT_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+PARSER_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\parser.h \
+	n:\python\python-1.4b2\pc\src\errcode.h
+
+
+PARSETOK_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\tokenize.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h \
+	n:\python\python-1.4b2\pc\src\parser.h \
+	n:\python\python-1.4b2\pc\src\parsetok.h \
+	n:\python\python-1.4b2\pc\src\errcode.h
+
+
+POSIXMOD_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mytime.h
+
+
+PYTHONRU_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\grammar.h \
+	n:\python\python-1.4b2\pc\src\bitset.h \
+	n:\python\python-1.4b2\pc\src\node.h \
+	n:\python\python-1.4b2\pc\src\parsetok.h \
+	n:\python\python-1.4b2\pc\src\graminit.h \
+	n:\python\python-1.4b2\pc\src\errcode.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\eval.h \
+	n:\python\python-1.4b2\pc\src\marshal.h
+
+
+RANGEOBJ_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+REGEXMOD_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\regexpr.h
+
+
+REGEXPR_DEP = n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\regexpr.h \
+	n:\python\python-1.4b2\pc\src\config.h
+
+
+RGBIMGMO_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+ROTORMOD_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+SIGNALMO_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+SOUNDEX_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+STRINGOB_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+STROPMOD_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+STRUCTME_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\structme.h
+
+
+STRUCTMO_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+SYSMODUL_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\osdefs.h
+
+
+TIMEMODU_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\myselect.h \
+	n:\python\python-1.4b2\pc\src\mytime.h
+
+
+TOKENIZE_DEP = n:\python\python-1.4b2\pc\src\pgenhead.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\tokenize.h \
+	n:\python\python-1.4b2\pc\src\token.h \
+	n:\python\python-1.4b2\pc\src\errcode.h
+
+
+TRACEBAC_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\compile.h \
+	n:\python\python-1.4b2\pc\src\frameobj.h \
+	n:\python\python-1.4b2\pc\src\structme.h \
+	n:\python\python-1.4b2\pc\src\osdefs.h
+
+
+TUPLEOBJ_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+TYPEOBJE_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+YUVCONVE_DEP = n:\python\python-1.4b2\pc\src\yuv.h
+
+
+COBJECT_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+COMPLEXO_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+CMATHMOD_DEP = n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h \
+	n:\python\python-1.4b2\pc\src\mymath.h
+
+
+ERRNOMOD_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
+
+
+OPERATOR_DEP = n:\python\python-1.4b2\pc\src\python.h \
+	n:\python\python-1.4b2\pc\src\allobjec.h \
+	n:\python\python-1.4b2\pc\src\config.h \
+	n:\python\python-1.4b2\pc\src\myproto.h \
+	n:\python\python-1.4b2\pc\src\rename2.h \
+	n:\python\python-1.4b2\pc\src\object.h \
+	n:\python\python-1.4b2\pc\src\objimpl.h \
+	n:\python\python-1.4b2\pc\src\pydebug.h \
+	n:\python\python-1.4b2\pc\src\accessob.h \
+	n:\python\python-1.4b2\pc\src\intobjec.h \
+	n:\python\python-1.4b2\pc\src\longobje.h \
+	n:\python\python-1.4b2\pc\src\floatobj.h \
+	n:\python\python-1.4b2\pc\src\complexo.h \
+	n:\python\python-1.4b2\pc\src\rangeobj.h \
+	n:\python\python-1.4b2\pc\src\stringob.h \
+	n:\python\python-1.4b2\pc\src\tupleobj.h \
+	n:\python\python-1.4b2\pc\src\listobje.h \
+	n:\python\python-1.4b2\pc\src\mappingo.h \
+	n:\python\python-1.4b2\pc\src\methodob.h \
+	n:\python\python-1.4b2\pc\src\moduleob.h \
+	n:\python\python-1.4b2\pc\src\funcobje.h \
+	n:\python\python-1.4b2\pc\src\classobj.h \
+	n:\python\python-1.4b2\pc\src\thread.h \
+	n:\python\python-1.4b2\pc\src\fileobje.h \
+	n:\python\python-1.4b2\pc\src\cobject.h \
+	n:\python\python-1.4b2\pc\src\tracebac.h \
+	n:\python\python-1.4b2\pc\src\errors.h \
+	n:\python\python-1.4b2\pc\src\mymalloc.h \
+	n:\python\python-1.4b2\pc\src\modsuppo.h \
+	n:\python\python-1.4b2\pc\src\ceval.h \
+	n:\python\python-1.4b2\pc\src\pythonru.h \
+	n:\python\python-1.4b2\pc\src\sysmodul.h \
+	n:\python\python-1.4b2\pc\src\intrchec.h \
+	n:\python\python-1.4b2\pc\src\import.h \
+	n:\python\python-1.4b2\pc\src\bltinmod.h \
+	n:\python\python-1.4b2\pc\src\abstract.h
 
 
 all:	$(PROJ).LIB $(PROJ).BSC
@@ -2715,6 +2794,12 @@ COMPLEXO.OBJ:	..\SRC\COMPLEXO.C $(COMPLEXO_DEP)
 CMATHMOD.OBJ:	..\SRC\CMATHMOD.C $(CMATHMOD_DEP)
 	$(CC) $(CFLAGS) $(CUSEPCHFLAG) /c ..\SRC\CMATHMOD.C
 
+ERRNOMOD.OBJ:	..\SRC\ERRNOMOD.C $(ERRNOMOD_DEP)
+	$(CC) $(CFLAGS) $(CUSEPCHFLAG) /c ..\SRC\ERRNOMOD.C
+
+OPERATOR.OBJ:	..\SRC\OPERATOR.C $(OPERATOR_DEP)
+	$(CC) $(CFLAGS) $(CUSEPCHFLAG) /c ..\SRC\OPERATOR.C
+
 $(PROJ).LIB::	ABSTRACT.OBJ ACCELER.OBJ ACCESSOB.OBJ ARRAYMOD.OBJ AUDIOOP.OBJ BINASCII.OBJ \
 	BLTINMOD.OBJ CEVAL.OBJ CGENSUPP.OBJ CLASSOBJ.OBJ COMPILE.OBJ CONFIG.OBJ ENVIRONM.OBJ \
 	ERRORS.OBJ FILEOBJE.OBJ FLOATOBJ.OBJ FRAMEOBJ.OBJ FROZEN.OBJ FUNCOBJE.OBJ GETARGS.OBJ \
@@ -2725,7 +2810,7 @@ $(PROJ).LIB::	ABSTRACT.OBJ ACCELER.OBJ ACCESSOB.OBJ ARRAYMOD.OBJ AUDIOOP.OBJ BIN
 	PARSETOK.OBJ POSIXMOD.OBJ PYTHONRU.OBJ RANGEOBJ.OBJ REGEXMOD.OBJ REGEXPR.OBJ RGBIMGMO.OBJ \
 	ROTORMOD.OBJ SIGNALMO.OBJ SOUNDEX.OBJ STRINGOB.OBJ STROPMOD.OBJ STRUCTME.OBJ STRUCTMO.OBJ \
 	SYSMODUL.OBJ TIMEMODU.OBJ TOKENIZE.OBJ TRACEBAC.OBJ TUPLEOBJ.OBJ TYPEOBJE.OBJ YUVCONVE.OBJ \
-	COBJECT.OBJ COMPLEXO.OBJ CMATHMOD.OBJ $(OBJS_EXT)
+	COBJECT.OBJ COMPLEXO.OBJ CMATHMOD.OBJ ERRNOMOD.OBJ OPERATOR.OBJ $(OBJS_EXT)
 	echo >NUL @<<$(PROJ).CRF
 $@ /PAGESIZE:64
 y
@@ -2801,6 +2886,8 @@ y
 +COBJECT.OBJ &
 +COMPLEXO.OBJ &
 +CMATHMOD.OBJ &
++ERRNOMOD.OBJ &
++OPERATOR.OBJ &
 ;
 <<
 	if exist $@ del $@

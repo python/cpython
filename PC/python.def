@@ -121,6 +121,8 @@ EXPORTS
 	PyImport_GetModuleDict
 	PyImport_AddModule
 	PyImport_ImportModule
+	PyImport_ImportFrozenModule
+	PyImport_FrozenModules
 	PyImport_ReloadModule
 	PyImport_Cleanup
 	PyInt_FromLong
