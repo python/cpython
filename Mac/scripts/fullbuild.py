@@ -153,6 +153,7 @@ I_CORE : (buildmwproject, "CWIE", [
 	]),
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
+	(":Mac:Build:ucnhash.prj", "ucnhash.ppc"),
 	(":Mac:Build:calldll.ppc.prj", "calldll.ppc"),
 	(":Mac:Build:ctb.prj", "ctb.ppc"),
 	(":Mac:Build:gdbm.prj", "gdbm.ppc"),
@@ -167,7 +168,6 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:App.prj", "App.ppc"),
 	(":Mac:Build:Cm.prj", "Cm.ppc"),
 	(":Mac:Build:Drag.prj", "Drag.ppc"),
-	(":Mac:Build:Evt.prj", "Evt.ppc"),
 	(":Mac:Build:Fm.prj", "Fm.ppc"),
 	(":Mac:Build:Help.prj", "Help.ppc"),
 	(":Mac:Build:Icn.prj", "Icn.ppc"),
@@ -181,6 +181,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
+	(":Mac:Build:ucnhash.prj", "ucnhash.CFM68K"),
 	(":Mac:Build:ctb.prj", "ctb.CFM68K"),
 	(":Mac:Build:gdbm.prj", "gdbm.CFM68K"),
 	(":Mac:Build:icglue.prj", "icglue.CFM68K"),
@@ -193,7 +194,6 @@ I_68K_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:App.prj", "App.CFM68K"),
 	(":Mac:Build:Cm.prj", "Cm.CFM68K"),
 	(":Mac:Build:Drag.prj", "Drag.CFM68K"),
-	(":Mac:Build:Evt.prj", "Evt.CFM68K"),
 	(":Mac:Build:Fm.prj", "Fm.CFM68K"),
 	(":Mac:Build:Help.prj", "Help.CFM68K"),
 	(":Mac:Build:Icn.prj", "Icn.CFM68K"),
