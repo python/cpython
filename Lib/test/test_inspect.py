@@ -233,3 +233,204 @@ class D(B, C): pass
 expected = (D, B, C, A, object)
 got = inspect.getmro(D)
 test(expected == got, "expected %r mro, got %r", expected, got)
+
+# Test classify_class_attrs.
+def attrs_wo_objs(cls):
+    return [t[:3] for t in inspect.classify_class_attrs(cls)]
+
+class A:
+    def s(): pass
+    s = staticmethod(s)
+
+    def c(cls): pass
+    c = classmethod(c)
+
+    def getp(self): pass
+    p = property(getp)
+
+    def m(self): pass
+
+    def m1(self): pass
+
+    datablob = '1'
+
+attrs = attrs_wo_objs(A)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', A) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class B(A):
+    def m(self): pass
+
+attrs = attrs_wo_objs(B)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+
+class C(A):
+    def m(self): pass
+    def c(self): pass
+
+attrs = attrs_wo_objs(C)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'method', C) in attrs, 'missing plain method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', C) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class D(B, C):
+    def m1(self): pass
+
+attrs = attrs_wo_objs(D)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', D) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+# Repeat all that, but w/ new-style non-dynamic classes.
+
+class A(object):
+    __dynamic__ = 0
+
+    def s(): pass
+    s = staticmethod(s)
+
+    def c(cls): pass
+    c = classmethod(c)
+
+    def getp(self): pass
+    p = property(getp)
+
+    def m(self): pass
+
+    def m1(self): pass
+
+    datablob = '1'
+
+attrs = attrs_wo_objs(A)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', A) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class B(A):
+    __dynamic__ = 0
+
+    def m(self): pass
+
+attrs = attrs_wo_objs(B)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+
+class C(A):
+    __dynamic__ = 0
+
+    def m(self): pass
+    def c(self): pass
+
+attrs = attrs_wo_objs(C)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'method', C) in attrs, 'missing plain method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', C) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class D(B, C):
+    __dynamic__ = 0
+
+    def m1(self): pass
+
+attrs = attrs_wo_objs(D)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'method', C) in attrs, 'missing plain method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', D) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+# And again, but w/ new-style dynamic classes.
+
+class A(object):
+    __dynamic__ = 1
+
+    def s(): pass
+    s = staticmethod(s)
+
+    def c(cls): pass
+    c = classmethod(c)
+
+    def getp(self): pass
+    p = property(getp)
+
+    def m(self): pass
+
+    def m1(self): pass
+
+    datablob = '1'
+
+attrs = attrs_wo_objs(A)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', A) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class B(A):
+    __dynamic__ = 1
+
+    def m(self): pass
+
+attrs = attrs_wo_objs(B)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'class method', A) in attrs, 'missing class method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+
+class C(A):
+    __dynamic__ = 1
+
+    def m(self): pass
+    def c(self): pass
+
+attrs = attrs_wo_objs(C)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'method', C) in attrs, 'missing plain method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', C) in attrs, 'missing plain method')
+test(('m1', 'method', A) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
+
+class D(B, C):
+    __dynamic__ = 1
+
+    def m1(self): pass
+
+attrs = attrs_wo_objs(D)
+test(('s', 'static method', A) in attrs, 'missing static method')
+test(('c', 'method', C) in attrs, 'missing plain method')
+test(('p', 'property', A) in attrs, 'missing property')
+test(('m', 'method', B) in attrs, 'missing plain method')
+test(('m1', 'method', D) in attrs, 'missing plain method')
+test(('datablob', 'data', A) in attrs, 'missing data')
