@@ -41,7 +41,12 @@ def get_platform ():
     # Try to distinguish various flavours of Unix
 
     (osname, host, release, version, machine) = os.uname()
-    osname = string.lower(osname)
+
+    # Convert the OS name to lowercase and remove '/' characters
+    # (to accommodate BSD/OS)
+    osname = string.lower(osname) 
+    osname = string.replace(osname, '/', '')
+    
     if osname[:5] == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
