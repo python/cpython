@@ -87,7 +87,7 @@ _extension_cache = {}                   # code -> object
 def add_extension(module, name, code):
     """Register an extension code."""
     code = int(code)
-    if not 1 <= code < 0x7fffffff:
+    if not 1 <= code <= 0x7fffffff:
         raise ValueError, "code out of range"
     key = (module, name)
     if (_extension_registry.get(key) == code and
