@@ -142,6 +142,12 @@ HOME = """
 	/
     <INPUT TYPE=radio NAME=querytype VALUE=regex>
         Regular expression
+	/
+    <INPUT TYPE=radio NAME=querytype VALUE=anykeywords>
+        Keywords (any)
+	/
+    <INPUT TYPE=radio NAME=querytype VALUE=allkeywords>
+        Keywords (all)
 	<BR>
     <INPUT TYPE=radio NAME=casefold VALUE=yes CHECKED>
         Fold case
