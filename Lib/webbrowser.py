@@ -322,6 +322,7 @@ for cmd in _tryorder:
         if _iscommand(cmd.lower()):
             register(cmd.lower(), None, GenericBrowser(
                 "%s '%%s'" % cmd.lower()))
+del cmd
 
 _tryorder = filter(lambda x: _browsers.has_key(x.lower())
                    or x.find("%s") > -1, _tryorder)
