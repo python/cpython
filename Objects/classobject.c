@@ -193,13 +193,6 @@ class_getattr(register PyClassObject *op, PyObject *name)
 			     PyString_AS_STRING(op->cl_name), sname);
 		return NULL;
 	}
-	Py_INCREF(v);
-	if (PyFunction_Check(v)) {
-		PyObject *w = PyMethod_New(v, (PyObject *)NULL,
-						    (PyObject *)class);
-		Py_DECREF(v);
-		v = w;
-	}
 	f = v->ob_type->tp_descr_get;
 	if (f == NULL)
 		Py_INCREF(v);
