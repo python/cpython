@@ -7,7 +7,7 @@ version = "0.20"
 
 from xml.sax._exceptions import *
 from xml.parsers import expat
-from xml.sax import xmlreader, saxutils
+from xml.sax import xmlreader, saxutils, handler
 
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
@@ -47,14 +47,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             self._parser.SetBase(source.getSystemId())
         
     def getFeature(self, name):
-        if name == feature_namespaces:
+        if name == handler.feature_namespaces:
             return self._namespaces
         raise SAXNotRecognizedException("Feature '%s' not recognized" % name)
 
     def setFeature(self, name, state):
         if self._parsing:
             raise SAXNotSupportedException("Cannot set features while parsing")
-        if name == feature_namespaces:
+        if name == handler.feature_namespaces:
             self._namespaces = state
         else:
             raise SAXNotRecognizedException("Feature '%s' not recognized" %
