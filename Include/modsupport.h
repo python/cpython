@@ -53,12 +53,16 @@ extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
 #define PYTHON_API_VERSION 1005
+#define PYTHON_API_STRING "1005"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.  These are diagnosticised by an error message but
    the module is still loaded (because the mismatch can only be tested
    after loading the module).  The error message is intended to
    explain the core dump a few seconds later.
+
+   The symbol PYTHON_API_STRING defines the same value as a string
+   literal.  *** PLEASE MAKE SURE THE DEFINITIONS MATCH. ***
 
    Please add a line or two to the top of this log for each API
    version change:
@@ -73,6 +77,24 @@ extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
    9-Jan-1995	GvR	Initial version (incompatible with older API)
 */
+
+#ifdef MS_WINDOWS
+/* Special defines for Windows versions.  MS_DLL_ID is the key
+   used in the registry.
+   The full MS_DLL_VERSION_ID is imbedded in the core DLL, and
+   is so installers can determine incremental changes.
+*/
+#define MS_DLL_ID "1.4.0"
+#define MS_DLL_VERSION_ID       MS_DLL_ID "." PYTHON_API_STRING
+
+#endif /* MS_WINDOWS */
+
+#ifdef Py_TRACE_REFS
+/* When we are tracing reference counts, rename Py_InitModule4 so
+   modules compiled with incompatible settings will generate a
+   link-time error. */
+#define Py_InitModule4 Py_InitModule4TraceRefs
+#endif
 
 extern PyObject *Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
 					  char *, PyObject *, int));
