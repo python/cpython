@@ -1207,6 +1207,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                             if (_PyString_Resize(&v, cbAllocated))
                                 goto onError;
                             p = PyString_AS_STRING(v) + (p - q);
+                            q = PyString_AS_STRING(v);
                         }
                         
                         /* combine the two values */
@@ -1232,6 +1233,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                 if (_PyString_Resize(&v, cbAllocated))
                     goto onError;
                 p = PyString_AS_STRING(v) + (p - q);
+                q = PyString_AS_STRING(v);
             }
 
             *p++ = 0xf0 | (ch>>18);
@@ -1246,7 +1248,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     return v;
 
  onError:
-    Py_DECREF(v);
+    Py_XDECREF(v);
     return NULL;
 }
 
@@ -5525,12 +5527,12 @@ PyObject *PyUnicode_Format(PyObject *format,
 		break;
 
 	    default:
-		PyErr_Format(PyExc_ValueError,
-			     "unsupported format character '%c' (0x%x) "
-			     "at index %i",
-			     (31<=c && c<=126) ? c : '?', 
-                             c, fmt -1 - PyUnicode_AS_UNICODE(uformat));
-		goto onError;
+                PyErr_Format(PyExc_ValueError,
+                             "unsupported format character '%c' (0x%x) "
+                             "at index %i",
+                             (31<=c && c<=126) ? (int)c : '?', 
+                             (int)c, (fmt -1 - PyUnicode_AS_UNICODE(uformat)));
+                goto onError;
 	    }
 	    if (sign) {
 		if (*pbuf == '-' || *pbuf == '+') {
