@@ -68,14 +68,6 @@
 
 #endif
 
-#ifdef USE_GUSI
-/* The Macintosh GUSI I/O library sets the stackspace to
-** 20KB, much too low. We up it to 64K.
-*/
-#define THREAD_STACK_SIZE 0x10000
-#endif
-
-
 /* set default attribute object for different versions */
 
 #if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
