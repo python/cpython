@@ -51,7 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #endif /* !COMPILER */
 
-char *
+const char *
 Py_GetCompiler()
 {
 	return COMPILER;

@@ -35,9 +35,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "patchlevel.h"
 
-extern const char *Py_GetCompiler();
-extern const char *Py_GetBuildInfo();
-
 const char *
 Py_GetVersion()
 {

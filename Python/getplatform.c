@@ -35,7 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define PLATFORM "unknown"
 #endif
 
-char *
+const char *
 Py_GetPlatform()
 {
 	return PLATFORM;
