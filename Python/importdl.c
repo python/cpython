@@ -42,7 +42,7 @@ extern int verbose; /* Defined in pythonrun.c */
    _AIX		-- AIX style dynamic linking
    NT		-- NT style dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
-   USE_MAC_SHARED_LIBRARY -- Mac CFM shared libraries
+   USE_MAC_DYNAMIC_LOADING -- Mac CFM shared libraries
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
@@ -99,10 +99,10 @@ typedef FARPROC dl_funcptr;
 #endif
 
 #ifdef __CFM68K__
-#define USE_MAC_SHARED_LIBRARY
+#define USE_MAC_DYNAMIC_LOADING
 #endif
 
-#ifdef USE_MAC_SHARED_LIBRARY
+#ifdef USE_MAC_DYNAMIC_LOADING
 #define DYNAMIC_LINK
 #define SHORT_EXT ".slb"
 #define LONG_EXT "module.slb"
@@ -149,7 +149,7 @@ typedef void (*dl_funcptr)();
 #include "dl.h"
 #endif
 
-#ifdef USE_MAC_SHARED_LIBRARY
+#ifdef USE_MAC_DYNAMIC_LOADING
 #include <CodeFragments.h>
 #ifdef __CFM68K__ /* Really just an older version of Universal Headers */
 #define CFragConnectionID ConnectionID
@@ -246,29 +246,60 @@ load_dynamic_module(name, pathname, fp)
 		}
 	}
 #endif /* USE_SHLIB */
-#ifdef USE_MAC_SHARED_LIBRARY
-	/* Dynamic loading of CFM shared libraries on the Mac */
+#ifdef USE_MAC_DYNAMIC_LOADING
+	/*
+	** Dynamic loading of CFM shared libraries on the Mac.
+	** The code has become more convoluted than it was, because we want to be able
+	** to put multiple modules in a single file. For this reason, we have to determine
+	** the fragment name, and we cannot use the library entry point but we have to locate
+	** the correct init routine "by hand".
+	*/
 	{
 		FSSpec libspec;
 		CFragConnectionID connID;
 		Ptr mainAddr;
 		Str255 errMessage;
 		OSErr err;
+		Boolean isfolder, didsomething;
+		char buf[512];
+		Str63 fragname;
+		Ptr symAddr;
+		CFragSymbolClass class;
 		
+		/* First resolve any aliases to find the real file */
 		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
-		err = GetDiskFragment(&libspec, 0, 0, Pstring(name),
+		err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
+		if ( err ) {
+			sprintf(buf, "%s: %s", pathname, PyMac_StrError(err));
+			err_setstr(ImportError, buf);
+			return NULL;
+		}
+		/* Next, determine the fragment name, by stripping '.slb' and 'module' */
+		memcpy(fragname+1, libspec.name+1, libspec.name[0]);
+		fragname[0] = libspec.name[0];
+		if( strncmp((char *)(fragname+1+fragname[0]-4), ".slb", 4) == 0 )
+			fragname[0] -= 4;
+		if ( strncmp((char *)(fragname+1+fragname[0]-6), "module", 6) == 0 )
+			fragname[0] -= 6;
+		/* Load the fragment (or return the connID if it is already loaded */
+		err = GetDiskFragment(&libspec, 0, 0, fragname, 
 				      kLoadCFrag, &connID, &mainAddr,
 				      errMessage);
 		if ( err ) {
-			char buf[512];
-			
 			sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1, PyMac_StrError(err));
 			err_setstr(ImportError, buf);
 			return NULL;
 		}
-		p = (dl_funcptr)mainAddr;
+		/* Locate the address of the correct init function */
+		err = FindSymbol(connID, Pstring(funcname), &symAddr, &class);
+		if ( err ) {
+			sprintf(buf, "%s: %s", funcname, PyMac_StrError(err));
+			err_setstr(ImportError, buf);
+			return NULL;
+		}
+		p = (dl_funcptr)symAddr;
 	}
-#endif /* USE_MAC_SHARED_LIBRARY */
+#endif /* USE_MAC_DYNAMIC_LOADING */
 #ifdef USE_SHLIB
 	{
 #ifdef RTLD_NOW
