@@ -30,19 +30,10 @@ class GetKeysDialog(Toplevel):
         self.keyCtrl.set('')
         self.keyAlt=StringVar(self)
         self.keyAlt.set('')
-#         self.keyMeta=StringVar(self)
-#         self.keyMeta.set('')
         self.keyShift=StringVar(self)
         self.keyShift.set('')
-#         self.keyFinal1=StringVar(self)
-#         self.keyFinal1.set('')
-#         self.keyFinal2=StringVar(self)
-#         self.keyFinal2.set('')
-#         self.keyFn1=IntVar(self)
-#         self.keyFn2=IntVar(self)
         self.CreateWidgets()
         self.LoadFinalKeyList()
-        #self.buttonOk.focus_set()
         self.withdraw() #hide while setting geometry
         self.update_idletasks()
         self.geometry("+%d+%d" % 
@@ -91,10 +82,6 @@ class GetKeysDialog(Toplevel):
                 command=self.BuildKeyString,
                 text='Alt',variable=self.keyAlt,onvalue='Alt',offvalue='')
         checkAlt.grid(row=0,column=1,padx=2,sticky=W)
-#         checkMeta=Checkbutton(self.frameControlsBasic,
-#         command=self.BuildKeyString,
-#                 text='Meta',variable=self.keyMeta,onvalue='Meta',offvalue='')
-#         checkMeta.grid(row=0,column=2,padx=2,sticky=W)
         checkShift=Checkbutton(self.frameControlsBasic,
                 command=self.BuildKeyString,
                 text='Shift',variable=self.keyShift,onvalue='Shift',offvalue='')
@@ -102,21 +89,16 @@ class GetKeysDialog(Toplevel):
         labelFnAdvice=Label(self.frameControlsBasic,justify=LEFT,
                 text="Select the desired modifier\n"+
                      "keys above, and final key\n"+
-#                      "keys above, and final key(s)\n"+
                      "from the list on the right.")
         labelFnAdvice.grid(row=1,column=0,columnspan=4,padx=2,sticky=W)
         self.listKeysFinal=Listbox(self.frameControlsBasic,width=15,height=10,
                 selectmode=SINGLE)
-#                 selectmode=MULTIPLE)
         self.listKeysFinal.bind('<ButtonRelease-1>',self.FinalKeySelected)
         self.listKeysFinal.grid(row=0,column=4,rowspan=4,sticky=NS)
         scrollKeysFinal=Scrollbar(self.frameControlsBasic,orient=VERTICAL,
                 command=self.listKeysFinal.yview)
         self.listKeysFinal.config(yscrollcommand=scrollKeysFinal.set)
         scrollKeysFinal.grid(row=0,column=5,rowspan=4,sticky=NS)
-#         self.buttonAddNew=Button(self.frameControlsBasic,
-#                 text='Accept Key Sequence',width=25,command=None)
-#         self.buttonAddNew.grid(row=2,column=0,columnspan=4)
         self.buttonClear=Button(self.frameControlsBasic,
                 text='Clear Keys',command=self.ClearKeySeq)
         self.buttonClear.grid(row=2,column=0,columnspan=4)

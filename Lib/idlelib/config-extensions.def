@@ -10,6 +10,7 @@
 # extension that are not sensibly re-configurable. If present, 
 # ExtensionName_cfgBindings defines virtual event bindings for the extension 
 # that may be sensibly re-configured.
+# See config-keys.def for notes on specifying keys.
 
 [FormatParagraph]
 enable=1

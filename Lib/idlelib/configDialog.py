@@ -561,7 +561,16 @@ class ConfigDialog(Toplevel):
         listIndex=self.listBindings.index(ANCHOR)
         binding=self.listBindings.get(listIndex)
         bindName=binding.split()[0] #first part, up to first space
-        currentKeySequences=idleConf.GetCurrentKeySet().values()
+        if self.keysAreBuiltin.get(): 
+            currentKeySetName=self.builtinKeys.get()
+        else:  
+            currentKeySetName=self.customKeys.get()
+        currentBindings=idleConf.GetCurrentKeySet()
+        if currentKeySetName in self.changedItems['keys'].keys(): #unsaved changes
+            keySetChanges=self.changedItems['keys'][currentKeySetName]
+            for event in keySetChanges.keys():
+                currentBindings[event]=keySetChanges[event].split()
+        currentKeySequences=currentBindings.values()
         newKeys=GetKeysDialog(self,'Get New Keys',bindName,
                 currentKeySequences).result
         if newKeys: #new keys were specified
