@@ -315,6 +315,8 @@ rm -f mainpkg.files tools.files
 %{__prefix}/lib/python%{libvers}/xml
 %{__prefix}/lib/python%{libvers}/email
 %{__prefix}/lib/python%{libvers}/compiler
+%{__prefix}/lib/python%{libvers}/lib-old
+%{__prefix}/lib/python%{libvers}/hotshot
 
 %files devel
 %defattr(-,root,root)
