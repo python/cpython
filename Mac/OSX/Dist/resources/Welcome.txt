@@ -1,8 +1,10 @@
-This program will install MacPython 2.3b2 for Mac OS X 10.2. Installation
-on 10.0, 10.1 or the 10.3 seed is explicitly discouraged.
+This package will install MacPython 2.3rc1+ for Mac OS X 10.2. 
+Installation on 10.0, 10.1 or the Panther seed is explicitly discouraged.
+Installation requires approximately 20 MB of disk space, ignore the
+message that it will take zero bytes.
 
-MacPython consists of the Python programming language interpreter, plus
-a set of programs to allow easy access to it for Mac users (an
+MacPython consists of the Python programming language interpreter, 
+plus a set of programs to allow easy access to it for Mac users (an
 integrated development environment, a Python extension package manager),
 plus a set of pre-built extension modules that open up specific
 Macintosh technologies to Python programs (Carbon, AppleScript,
