@@ -21,7 +21,10 @@ def init():
 	widgetrespathsegs = [sys.exec_prefix, "Mac", "Tools", "IDE", "Widgets.rsrc"]
 	widgetresfile = os.path.join(*widgetrespathsegs)
 	refno = macresource.need('CURS', 468, widgetresfile)
-	if refno:
+	if os.environ.has_key('PYTHONIDEPATH'):
+		# For development set this environment variable
+		ide_path = os.environ['PYTHONIDEPATH']
+	elif refno:
 		# We're not a fullblown application
 		idepathsegs = [sys.exec_prefix, "Mac", "Tools", "IDE"]
 		ide_path = os.path.join(*idepathsegs)
