@@ -378,18 +378,15 @@ call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 {
 	va_list va;
 	PyObject *args, *func = 0, *retval;
-	PyObject *dummy_str = NULL;
 	va_start(va, format);
 
-	func = lookup_maybe(o, name, &dummy_str);
+	func = lookup_maybe(o, name, nameobj);
 	if (func == NULL) {
 		va_end(va);
 		if (!PyErr_Occurred())
-			PyErr_SetObject(PyExc_AttributeError, dummy_str);
-		Py_XDECREF(dummy_str);
+			PyErr_SetObject(PyExc_AttributeError, *nameobj);
 		return NULL;
 	}
-	Py_DECREF(dummy_str);
 
 	if (format && *format)
 		args = Py_VaBuildValue(format, va);
@@ -417,11 +414,9 @@ call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 {
 	va_list va;
 	PyObject *args, *func = 0, *retval;
-	PyObject *dummy_str = NULL;
 	va_start(va, format);
 
-	func = lookup_maybe(o, name, &dummy_str);
-	Py_XDECREF(dummy_str);
+	func = lookup_maybe(o, name, nameobj);
 	if (func == NULL) {
 		va_end(va);
 		if (!PyErr_Occurred()) {
