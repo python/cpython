@@ -268,8 +268,8 @@ class _Semaphore(_Verbose):
         else:
             self.__value = self.__value - 1
             if __debug__:
-                self._note("%s.acquire: success, value=%s(%s)",
-                           self, self.__value, self.__initial_value)
+                self._note("%s.acquire: success, value=%s",
+                           self, self.__value)
             rc = 1
         self.__cond.release()
         return rc
@@ -278,8 +278,8 @@ class _Semaphore(_Verbose):
         self.__cond.acquire()
         self.__value = self.__value + 1
         if __debug__:
-            self._note("%s.release: success, value=%s(%s)",
-                       self, self.__value, self.__initial_value)
+            self._note("%s.release: success, value=%s",
+                       self, self.__value)
         self.__cond.notify()
         self.__cond.release()
 
