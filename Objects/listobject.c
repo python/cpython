@@ -401,9 +401,9 @@ list_ass_slice(a, ilow, ihigh, v)
 		ihigh = a->ob_size;
 	item = a->ob_item;
 	d = n - (ihigh-ilow);
-	if (d <= 0) { /* Delete -d items; DECREF ihigh-ilow items */
+	if (d <= 0) { /* Delete -d items; XDECREF ihigh-ilow items */
 		for (k = ilow; k < ihigh; k++)
-			DECREF(item[k]);
+			XDECREF(item[k]);
 		if (d < 0) {
 			for (/*k = ihigh*/; k < a->ob_size; k++)
 				item[k+d] = item[k];
@@ -412,7 +412,7 @@ list_ass_slice(a, ilow, ihigh, v)
 			a->ob_item = item;
 		}
 	}
-	else { /* Insert d items; DECREF ihigh-ilow items */
+	else { /* Insert d items; XDECREF ihigh-ilow items */
 		RESIZE(item, object *, a->ob_size + d);
 		if (item == NULL) {
 			err_nomem();
@@ -421,13 +421,13 @@ list_ass_slice(a, ilow, ihigh, v)
 		for (k = a->ob_size; --k >= ihigh; )
 			item[k+d] = item[k];
 		for (/*k = ihigh-1*/; k >= ilow; --k)
-			DECREF(item[k]);
+			XDECREF(item[k]);
 		a->ob_item = item;
 		a->ob_size += d;
 	}
 	for (k = 0; k < n; k++, ilow++) {
 		object *w = b->ob_item[k];
-		INCREF(w);
+		XINCREF(w);
 		item[ilow] = w;
 	}
 	return 0;
