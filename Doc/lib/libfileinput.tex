@@ -47,7 +47,9 @@ The following function is the primary interface of this module:
                        inplace\optional{, backup}}}}
   Create an instance of the \class{FileInput} class.  The instance
   will be used as global state for the functions of this module, and
-  is also returned to use during iteration.
+  is also returned to use during iteration.  The parameters to this
+  function will be passed along to the constructor of the
+  \class{FileInput} class.
 \end{funcdesc}
 
 
@@ -118,7 +120,8 @@ module is available for subclassing as well:
 \strong{Optional in-place filtering:} if the keyword argument
 \code{\var{inplace}=1} is passed to \function{input()} or to the
 \class{FileInput} constructor, the file is moved to a backup file and
-standard output is directed to the input file.
+standard output is directed to the input file (if a file of the same
+name as the backup file already exists, it will be replaced silently).
 This makes it possible to write a filter that rewrites its input file
 in place.  If the keyword argument \code{\var{backup}='.<some
 extension>'} is also given, it specifies the extension for the backup
