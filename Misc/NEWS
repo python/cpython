@@ -12,6 +12,11 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
+- The internal portable implementation of thread-local storage (TLS), used
+  by the ``PyGILState_Ensure()``/``PyGILState_Release()`` API, was not
+  thread-correct.  This could lead to a variety of problems, up to and
+  including segfaults.  See bug 1041645 for an example.
+
 - Added a command line option, -m module, which searches sys.path for the
   module and then runs it.  (Contributed by Nick Coghlan.)
 
