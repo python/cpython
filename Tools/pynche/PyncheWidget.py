@@ -40,7 +40,7 @@ class PyncheWidget:
         #
         filemenu = self.__filemenu = Menu(menubar, tearoff=0)
         filemenu.add_command(label='Quit',
-                             command=tkroot.quit,
+                             command=self.__quit,
                              accelerator='Alt-Q',
                              underline=0)
         #
@@ -78,12 +78,15 @@ class PyncheWidget:
 
         # now create the top level window
         root = self.__root = Toplevel(tkroot, class_='Pynche', menu=menubar)
-        root.protocol('WM_DELETE_WINDOW', tkroot.quit)
+        root.protocol('WM_DELETE_WINDOW', self.__quit)
         root.title('Pynche %s' % version)
         root.iconname('Pynche')
         root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
-        root.bind('<Alt-q>', tkroot.quit)
-        root.bind('<Alt-Q>', tkroot.quit)
+        root.bind('<Alt-q>', self.__quit)
+        root.bind('<Alt-Q>', self.__quit)
+
+    def __quit(self, event=None):
+        self.__root.quit()
 
     def __keepalive(self):
         # Exercise the Python interpreter regularly so keyboard interrupts get
