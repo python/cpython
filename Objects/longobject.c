@@ -47,7 +47,7 @@ static PyLongObject *long_normalize Py_PROTO((PyLongObject *));
 static PyLongObject *mul1 Py_PROTO((PyLongObject *, wdigit));
 static PyLongObject *muladd1 Py_PROTO((PyLongObject *, wdigit, wdigit));
 static PyLongObject *divrem1 Py_PROTO((PyLongObject *, wdigit, digit *));
-static PyObject *long_format Py_PROTO((PyObject *aa, int base));
+static PyObject *long_format Py_PROTO((PyObject *aa, int base, int addL));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 
@@ -570,13 +570,13 @@ divrem1(a, n, prem)
 
 /* Convert a long int object to a string, using a given conversion base.
    Return a string object.
-   If base is 8 or 16, add the proper prefix '0' or '0x'.
-   External linkage: used in bltinmodule.c by hex() and oct(). */
+   If base is 8 or 16, add the proper prefix '0' or '0x'. */
 
 static PyObject *
-long_format(aa, base)
+long_format(aa, base, addL)
 	PyObject *aa;
 	int base;
+        int addL;
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
@@ -599,13 +599,14 @@ long_format(aa, base)
 		++bits;
 		i >>= 1;
 	}
-	i = 6 + (size_a*SHIFT + bits-1) / bits;
+	i = 5 + (addL ? 1 : 0) + (size_a*SHIFT + bits-1) / bits;
 	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, i);
 	if (str == NULL)
 		return NULL;
 	p = PyString_AS_STRING(str) + i;
 	*p = '\0';
-	*--p = 'L';
+        if (addL)
+                *--p = 'L';
 	if (a->ob_size < 0)
 		sign = '-';
 	
@@ -974,7 +975,14 @@ static PyObject *
 long_repr(v)
 	PyObject *v;
 {
-	return long_format(v, 10);
+	return long_format(v, 10, 1);
+}
+
+static PyObject *
+long_str(v)
+	PyObject *v;
+{
+	return long_format(v, 10, 0);
 }
 
 static int
@@ -1756,14 +1764,14 @@ static PyObject *
 long_oct(v)
 	PyObject *v;
 {
-	return long_format(v, 8);
+	return long_format(v, 8, 1);
 }
 
 static PyObject *
 long_hex(v)
 	PyObject *v;
 {
-	return long_format(v, 16);
+	return long_format(v, 16, 1);
 }
 
 
@@ -1817,4 +1825,6 @@ PyTypeObject PyLong_Type = {
 	0,		/*tp_as_mapping*/
 	(long (*) Py_FPROTO((PyObject *)))
 	(hashfunc)long_hash, /*tp_hash*/
+        0,              /*tp_call*/
+        (reprfunc)long_str, /*tp_str*/
 };
