@@ -120,6 +120,17 @@ lock_acquire_lock(self, args)
 		return PyInt_FromLong((long)i);
 }
 
+static char acquire_doc[] =
+"acquire([wait]) -> None or Boolean\n\
+(acquire_lock() is an obsolete synonym)\n\
+\n\
+Lock the lock.  Without argument, this blocks if the lock is already\n\
+locked (even by the same thread), waiting for another thread to release\n\
+the lock, and return None when the lock is acquired.\n\
+With a Boolean argument, this will only block if the argument is true,\n\
+and the return value reflects whether the lock is acquired.\n\
+The blocking operation is not interruptible.";
+
 static PyObject *
 lock_release_lock(self, args)
 	lockobject *self;
@@ -140,6 +151,14 @@ lock_release_lock(self, args)
 	return Py_None;
 }
 
+static char release_doc[] =
+"release()\n\
+(release_lock() is an obsolete synonym)\n\
+\n\
+Release the lock, allowing another thread that is blocked waiting for\n\
+the lock to acquire the lock.  The lock must be in the locked state,\n\
+but it needn't be locked by the same thread that unlocks it.";
+
 static PyObject *
 lock_locked_lock(self, args)
 	lockobject *self;
@@ -155,14 +174,20 @@ lock_locked_lock(self, args)
 	return PyInt_FromLong(1L);
 }
 
+static char locked_doc[] =
+"locked() -> Boolean\n\
+(locked_lock() is an obsolete synonym)\n\
+\n\
+Return whether the lock is in the locked state.";
+
 static PyMethodDef lock_methods[] = {
-	{"acquire_lock",	(PyCFunction)lock_acquire_lock},
-	{"acquire",		(PyCFunction)lock_acquire_lock},
-	{"release_lock",	(PyCFunction)lock_release_lock},
-	{"release",		(PyCFunction)lock_release_lock},
-	{"locked_lock",		(PyCFunction)lock_locked_lock},
-	{"locked",		(PyCFunction)lock_locked_lock},
-	{NULL,			NULL}		/* sentinel */
+	{"acquire_lock", (PyCFunction)lock_acquire_lock, 0, acquire_doc},
+	{"acquire",      (PyCFunction)lock_acquire_lock, 0, acquire_doc},
+	{"release_lock", (PyCFunction)lock_release_lock, 0, release_doc},
+	{"release",      (PyCFunction)lock_release_lock, 0, release_doc},
+	{"locked_lock",  (PyCFunction)lock_locked_lock,  0, locked_doc},
+	{"locked",       (PyCFunction)lock_locked_lock,  0, locked_doc},
+	{NULL,           NULL}		/* sentinel */
 };
 
 static PyObject *
@@ -278,6 +303,17 @@ thread_start_new_thread(self, fargs)
 	return Py_None;
 }
 
+static char start_new_doc[] =
+"start_new_thread(functon, args[, kwargs])\n\
+(start_new() is an obsolete synonym)\n\
+\n\
+Start a new thread.  The thread will call the function with positional\n\
+arguments from the tuple args and keyword arguments taken from the optional\n\
+dictionary kwargs.  The thread exits when the function returns; the return\n\
+value is ignored.  The thread will also exit when the function raises an\n\
+unhandled exception; a stack trace will be printed unless the exception is\n\
+SystemExit.";
+
 static PyObject *
 thread_exit_thread(self, args)
 	PyObject *self; /* Not used */
@@ -288,6 +324,13 @@ thread_exit_thread(self, args)
 	PyErr_SetNone(PyExc_SystemExit);
 	return NULL;
 }
+
+static char exit_doc[] =
+"exit()\n\
+(exit_thread() is an obsolete synonym)\n\
+\n\
+This is synonymous to ``raise SystemExit''.  It will cause the current\n\
+thread to exit silently unless the exception is caught.";
 
 #ifndef NO_EXIT_PROG
 static PyObject *
@@ -313,6 +356,12 @@ thread_allocate_lock(self, args)
 	return (PyObject *) newlockobject();
 }
 
+static char allocate_doc[] =
+"allocate_lock() -> lock object\n\
+(allocate() is an obsolete synonym)\n\
+\n\
+Create a new lock object.  See LockType.__doc__ for information about locks.";
+
 static PyObject *
 thread_get_ident(self, args)
 	PyObject *self; /* Not used */
@@ -329,14 +378,32 @@ thread_get_ident(self, args)
 	return PyInt_FromLong(ident);
 }
 
+static char get_ident_doc[] =
+"get_ident() -> integer\n\
+\n\
+Return a non-zero integer that uniquely identifies the current thread\n\
+amongst other threads that exist simultaneously.\n\
+This may be used to identify per-thread resources.\n\
+Even though on some platforms threads identities may appear to be\n\
+allocated consecutive numbers starting at 1, this behavior should not\n\
+be relied upon, and the number should be seen purely as a magic cookie.\n\
+A thread's identity may be reused for another thread after it exits.";
+
 static PyMethodDef thread_methods[] = {
-	{"start_new_thread",	(PyCFunction)thread_start_new_thread, 1},
-	{"start_new",		(PyCFunction)thread_start_new_thread, 1},
-	{"allocate_lock",	(PyCFunction)thread_allocate_lock},
-	{"allocate",		(PyCFunction)thread_allocate_lock},
-	{"exit_thread",		(PyCFunction)thread_exit_thread},
-	{"exit",		(PyCFunction)thread_exit_thread},
-	{"get_ident",		(PyCFunction)thread_get_ident},
+	{"start_new_thread",	(PyCFunction)thread_start_new_thread, 1,
+				start_new_doc},
+	{"start_new",		(PyCFunction)thread_start_new_thread, 1,
+				start_new_doc},
+	{"allocate_lock",	(PyCFunction)thread_allocate_lock, 0,
+				allocate_doc},
+	{"allocate",		(PyCFunction)thread_allocate_lock, 0,
+				allocate_doc},
+	{"exit_thread",		(PyCFunction)thread_exit_thread, 0,
+				exit_doc},
+	{"exit",		(PyCFunction)thread_exit_thread, 0,
+				exit_doc},
+	{"get_ident",		(PyCFunction)thread_get_ident, 0,
+				get_ident_doc},
 #ifndef NO_EXIT_PROG
 	{"exit_prog",		(PyCFunction)thread_exit_prog},
 #endif
@@ -346,18 +413,38 @@ static PyMethodDef thread_methods[] = {
 
 /* Initialization function */
 
+static char thread_doc[] =
+"This module provides primitive operations to write multi-threaded programs.\n\
+The 'threading' module provides a more convenient interface.";
+
+static char lock_doc[] =
+"A lock object is a synchronization primitive.  To create a lock,\n\
+call the allocate_lock() function.  Methods are:\n\
+\n\
+\n\
+acquire() -- lock the lock, possibly blocking until it can be obtained\n\
+release() -- unlock of the lock\n\
+locked() -- test whether the lock is currently locked\n\
+\n\
+A lock is not owned by the thread that locked it; another thread may\n\
+unlock it.  A thread attempting to lock a lock that it has already locked\n\
+will block until another thread unlocks it.  Deadlocks may ensue.";
+
 void
 initthread()
 {
 	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("thread", thread_methods);
+	m = Py_InitModule3("thread", thread_methods, thread_doc);
 
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);
 	ThreadError = PyErr_NewException("thread.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ThreadError);
+	Locktype.tp_doc = lock_doc;
+	Py_INCREF(&Locktype);
+	PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
 
 	/* Initialize the C thread library */
 	init_thread();
