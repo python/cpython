@@ -53,10 +53,14 @@ valid headers):
 %
 The module itself defines the following items:
 
-\begin{classdesc}{NNTP}{host\optional{, port}}
+\begin{classdesc}{NNTP}{host\optional{, port
+                        \optional{, user\optional{, password}}}}
 Return a new instance of the \class{NNTP} class, representing a
 connection to the NNTP server running on host \var{host}, listening at
-port \var{port}.  The default \var{port} is 119.
+port \var{port}.  The default \var{port} is 119.  If the optional
+\var{user} and \var{password} are provided, the \samp{AUTHINFO USER}
+and \samp{AUTHINFO PASS} commands are used to identify and
+authenticate the user to the server.
 \end{classdesc}
 
 \begin{excdesc}{error_reply}
