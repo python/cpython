@@ -27,44 +27,6 @@
 # Bioreason or Mojam Media be used in advertising or publicity pertaining to
 # distribution of the software without specific, written prior permission.
 #
-#
-# Cleaned up the usage message --GvR 11/28/01
-#
-# Summary of even more recent changes, --Zooko 2001-10-14
-#   Used new `inspect' module for better (?) determination of file<->module
-#      mappings, line numbers, and source code.
-#   Used new local trace function for faster (and better?) operation.
-#   Removed "speed hack", which, as far as I can tell, meant that it would
-#      ignore all files ??? (When I tried it, it would ignore only *most* of my
-#      files.  In any case with the speed hack removed in favor of actually
-#      calling `Ignore.names()', it ignores only those files that I told it to
-#      ignore, so I am happy.)
-#   Rolled the `Coverage' class into `Trace', which now does either tracing or
-#      counting or both according to constructor flags.
-#   Moved the construction of the `Ignore' object inside the constructor of
-#      `Trace', simplifying usage.
-#   Changed function `create_results_log()' into method
-#      `CoverageResults.write_results()'.
-#   Add new mode "countfuncs" which is faster and which just reports which
-#      functions were invoked.
-
-#   Made `write_results' create `coverdir' if it doesn't already exist.
-#   Moved the `run' funcs into `Trace' for simpler usage.
-#   Use pickle instead of marshal for persistence.
-#
-# Summary of recent changes:
-#   Support for files with the same basename (submodules in packages)
-#   Expanded the idea of how to ignore files or modules
-#   Split tracing and counting into different classes
-#   Extracted count information and reporting from the count class
-#   Added some ability to detect which missing lines could be executed
-#   Added pseudo-pragma to prohibit complaining about unexecuted lines
-#   Rewrote the main program
-
-# Summary of older changes:
-#   Added run-time display of statements being executed
-#   Incorporated portability and performance fixes from Greg Stein
-#   Incorporated main program from Michael Scharf
 
 """
 program/module to trace Python program or function execution
