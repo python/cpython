@@ -22,7 +22,14 @@ Extension modules
 Library
 -------
 
-...
+- SF patch #998993: The UTF-8 and the UTF-16 stateful decoders now support
+  decoding incomplete input (when the input stream is temporarily exhausted).
+  ``codecs.StreamReader`` now implements buffering, which enables proper
+  readline support for the UTF-16 decoders. ``codecs.StreamReader.read()``
+  has a new argument ``chars`` which specifies the number of characters to
+  return. ``codecs.StreamReader.readline()`` and
+  ``codecs.StreamReader.readlines()`` have a new argument ``keepends``.
+  Trailing "\n"s will be stripped from the lines if ``keepends`` is false.
 
 Build
 -----
@@ -32,7 +39,9 @@ Build
 C API
 -----
 
-...
+- SF patch #998993: ``PyUnicode_DecodeUTF8Stateful`` and
+  ``PyUnicode_DecodeUTF16Stateful`` have been added, which implement stateful
+  decoding.
 
 Documentation
 -------------

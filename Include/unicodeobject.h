@@ -160,7 +160,9 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS2_DecodeLatin1
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS2_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF16 PyUnicodeUCS2_DecodeUTF16
+# define PyUnicode_DecodeUTF16Stateful PyUnicodeUCS2_DecodeUTF16Stateful
 # define PyUnicode_DecodeUTF8 PyUnicodeUCS2_DecodeUTF8
+# define PyUnicode_DecodeUTF8Stateful PyUnicodeUCS2_DecodeUTF8Stateful
 # define PyUnicode_DecodeUnicodeEscape PyUnicodeUCS2_DecodeUnicodeEscape
 # define PyUnicode_Encode PyUnicodeUCS2_Encode
 # define PyUnicode_EncodeASCII PyUnicodeUCS2_EncodeASCII
@@ -233,7 +235,9 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS4_DecodeLatin1
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS4_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF16 PyUnicodeUCS4_DecodeUTF16
+# define PyUnicode_DecodeUTF16Stateful PyUnicodeUCS4_DecodeUTF16Stateful
 # define PyUnicode_DecodeUTF8 PyUnicodeUCS4_DecodeUTF8
+# define PyUnicode_DecodeUTF8Stateful PyUnicodeUCS4_DecodeUTF8Stateful
 # define PyUnicode_DecodeUnicodeEscape PyUnicodeUCS4_DecodeUnicodeEscape
 # define PyUnicode_Encode PyUnicodeUCS4_Encode
 # define PyUnicode_EncodeASCII PyUnicodeUCS4_EncodeASCII
@@ -658,6 +662,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8(
     const char *errors		/* error handling */
     );
 
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8Stateful(
+    const char *string, 	/* UTF-8 encoded string */
+    int length,	 		/* size of string */
+    const char *errors,		/* error handling */
+    int *consumed		/* bytes consumed */
+    );
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
     PyObject *unicode	 	/* Unicode object */
     );
@@ -700,6 +711,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF16(
     int *byteorder		/* pointer to byteorder to use
 				   0=native;-1=LE,1=BE; updated on
 				   exit */
+    );
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF16Stateful(
+    const char *string, 	/* UTF-16 encoded string */
+    int length,	 		/* size of string */
+    const char *errors,		/* error handling */
+    int *byteorder,		/* pointer to byteorder to use
+				   0=native;-1=LE,1=BE; updated on
+				   exit */
+    int *consumed		/* bytes consumed */
     );
 
 /* Returns a Python string using the UTF-16 encoding in native byte

@@ -228,11 +228,21 @@ class StreamReader(Codec):
         """
         self.stream = stream
         self.errors = errors
+        self.bytebuffer = ""
+        self.charbuffer = u""
 
-    def read(self, size=-1):
+    def decode(self, input, errors='strict'):
+        raise NotImplementedError
+
+    def read(self, size=-1, chars=-1):
 
         """ Decodes data from the stream self.stream and returns the
             resulting object.
+
+            chars indicates the number of characters to read from the
+            stream. read() will never return more than chars
+            characters, but it might return less, if there are not enough
+            characters available.
 
             size indicates the approximate maximum number of bytes to
             read from the stream for decoding purposes. The decoder
@@ -248,54 +258,70 @@ class StreamReader(Codec):
             on the stream, these should be read too.
 
         """
-        # Unsliced reading:
-        if size < 0:
-            return self.decode(self.stream.read(), self.errors)[0]
-
-        # Sliced reading:
-        read = self.stream.read
-        decode = self.decode
-        data = read(size)
-        i = 0
-        while 1:
-            try:
-                object, decodedbytes = decode(data, self.errors)
-            except ValueError, why:
-                # This method is slow but should work under pretty much
-                # all conditions; at most 10 tries are made
-                i = i + 1
-                newdata = read(1)
-                if not newdata or i > 10:
-                    raise
-                data = data + newdata
+        # read until we get the required number of characters (if available)
+        done = False
+        while True:
+            # can the request can be satisfied from the character buffer?
+            if chars < 0:
+                if self.charbuffer:
+                    done = True
             else:
-                return object
+                if len(self.charbuffer) >= chars:
+                    done = True
+            if done:
+                if chars < 0:
+                    result = self.charbuffer
+                    self.charbuffer = u""
+                    break
+                else:
+                    result = self.charbuffer[:chars]
+                    self.charbuffer = self.charbuffer[chars:]
+                    break
+            # we need more data
+            if size < 0:
+                newdata = self.stream.read()
+            else:
+                newdata = self.stream.read(size)
+            data = self.bytebuffer + newdata
+            object, decodedbytes = self.decode(data, self.errors)
+            # keep undecoded bytes until the next call
+            self.bytebuffer = data[decodedbytes:]
+            # put new characters in the character buffer
+            self.charbuffer += object
+            # there was no data available
+            if not newdata:
+                done = True
+        return result
 
-    def readline(self, size=None):
+    def readline(self, size=None, keepends=True):
 
         """ Read one line from the input stream and return the
             decoded data.
 
-            Note: Unlike the .readlines() method, this method inherits
-            the line breaking knowledge from the underlying stream's
-            .readline() method -- there is currently no support for
-            line breaking using the codec decoder due to lack of line
-            buffering. Subclasses should however, if possible, try to
-            implement this method using their own knowledge of line
-            breaking.
-
-            size, if given, is passed as size argument to the stream's
-            .readline() method.
+            size, if given, is passed as size argument to the
+            read() method.
 
         """
         if size is None:
-            line = self.stream.readline()
-        else:
-            line = self.stream.readline(size)
-        return self.decode(line, self.errors)[0]
+            size = 10
+        line = u""
+        while True:
+            data = self.read(size)
+            line += data
+            pos = line.find("\n")
+            if pos>=0:
+                self.charbuffer = line[pos+1:] + self.charbuffer
+                if keepends:
+                    line = line[:pos+1]
+                else:
+                    line = line[:pos]
+                return line
+            elif not data:
+                return line
+            if size<8000:
+                size *= 2
 
-
-    def readlines(self, sizehint=None):
+    def readlines(self, sizehint=None, keepends=True):
 
         """ Read all lines available on the input stream
             and return them as list of lines.
@@ -307,8 +333,8 @@ class StreamReader(Codec):
             way to finding the true end-of-line.
 
         """
-        data = self.stream.read()
-        return self.decode(data, self.errors)[0].splitlines(1)
+        data = self.read()
+        return self.splitlines(keepends)
 
     def reset(self):
 
