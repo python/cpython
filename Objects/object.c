@@ -1497,6 +1497,10 @@ int
 PyObject_IsTrue(PyObject *v)
 {
 	int res;
+	if (v == Py_True)
+		return 1;
+	if (v == Py_False)
+		return 0;
 	if (v == Py_None)
 		return 0;
 	else if (v->ob_type->tp_as_number != NULL &&
