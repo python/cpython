@@ -79,14 +79,14 @@ findnamedresource(
 	static int max_not_a_file = 0;
 	int i;
 		
-	if (obj && obj->ob_sinterned ) {
+	if (obj && PyString_Check(obj) && PyString_CHECK_INTERNED(obj) ) {
 		for( i=0; i< max_not_a_file; i++ )
 			if ( obj == not_a_file[i] )
 				return 0;
 	}
 	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ) {
 	     /* doesn't exist or is folder */
-		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned ) {
+		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && PyString_Check(obj) && PyString_CHECK_INTERNED(obj) ) {
 			Py_INCREF(obj);
 			not_a_file[max_not_a_file++] = obj;
 			if (Py_VerboseFlag > 1)
@@ -106,7 +106,7 @@ findnamedresource(
 	} else {
      	if ( FSpGetFInfo(&fss, &finfo) != noErr ) {
      		/* doesn't exist or is folder */
-			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned ) {
+			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && PyString_Check(obj) && PyString_CHECK_INTERNED(obj) ) {
 				Py_INCREF(obj);
 				not_a_file[max_not_a_file++] = obj;
 				if (Py_VerboseFlag > 1)
