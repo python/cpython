@@ -822,7 +822,7 @@ void _PyCodecRegistry_Init(void)
 	_PyCodec_ErrorRegistry = PyDict_New();
 
 	if (_PyCodec_ErrorRegistry) {
-	    for (i = 0; i < 5; ++i) {
+	    for (i = 0; i < sizeof(methods)/sizeof(methods[0]); ++i) {
 		PyObject *func = PyCFunction_New(&methods[i].def, NULL);
 		int res;
 		if (!func)
