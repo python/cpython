@@ -608,7 +608,7 @@ class CodeGenerator:
         self.visit(node.list)
         self.emit('GET_ITER')
         self.nextBlock(start)
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node, force=True)
         self.emit('FOR_ITER', anchor)
         self.nextBlock()
         self.visit(node.assign)
@@ -1117,15 +1117,9 @@ class CodeGenerator:
         self.emit('BUILD_SLICE', len(node.nodes))
 
     def visitDict(self, node):
-        lineno = getattr(node, 'lineno', None)
-        if lineno:
-            self.emit('SET_LINENO', lineno)
+        self.set_lineno(node)
         self.emit('BUILD_MAP', 0)
         for k, v in node.items:
-            lineno2 = getattr(node, 'lineno', None)
-            if lineno2 is not None and lineno != lineno2:
-                self.emit('SET_LINENO', lineno2)
-                lineno = lineno2
             self.emit('DUP_TOP')
             self.visit(k)
             self.visit(v)
