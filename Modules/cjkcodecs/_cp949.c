@@ -18,7 +18,7 @@ ENCODER(cp949)
         DBCHAR      code;
 
         if (c < 0x80) {
-            WRITE1(c)
+            WRITE1((unsigned char)c)
             NEXT(1, 1)
             continue;
         }

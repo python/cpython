@@ -57,7 +57,7 @@ ENCODER(iso2022_jp_2)
         if (c < 0x80) {
             switch (STATE_GETG0(state)) {
             case CHARSET_ASCII:
-                WRITE1(c)
+                WRITE1((unsigned char)c)
                 NEXT(1, 1)
                 break;
             case CHARSET_JISX0201_R:
@@ -69,7 +69,7 @@ ENCODER(iso2022_jp_2)
                     STATE_SETG0(state, CHARSET_ASCII)
                     code = c;
                 }
-                WRITE1(code)
+                WRITE1((unsigned char)code)
                 NEXT(1, 1)
                 break;
             }
@@ -85,7 +85,7 @@ ENCODER(iso2022_jp_2)
                 code = DBCINV;
                 JISX0201_R_ENCODE(c, code)
                 if (code != DBCINV) {
-                    WRITE1(code)
+                    WRITE1((unsigned char)code)
                     NEXT(1, 1)
                     continue;
                 }
@@ -140,7 +140,7 @@ jisx0208encode:     if (charset != CHARSET_JISX0208) {
                     return 1;
                 }
                 /* if (charset == CHARSET_JISX0201_R) : already checked */
-                WRITE4(ESC, '(', 'J', code)
+                WRITE4(ESC, '(', 'J', (unsigned char)code)
                 STATE_SETG0(state, CHARSET_JISX0201_R)
                 NEXT(1, 4)
             }

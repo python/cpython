@@ -36,10 +36,10 @@ ENCODER(hz)
 
         if (c < 0x80) {
             if (state->i == 0) {
-                WRITE1(c)
+                WRITE1((unsigned char)c)
                 NEXT(1, 1)
             } else {
-                WRITE3('~', '}', c)
+                WRITE3('~', '}', (unsigned char)c)
                 NEXT(1, 3)
                 state->i = 0;
             }

@@ -43,11 +43,11 @@ ENCODER(iso2022_kr)
 
         if (c < 0x80) {
             if (STATE_GETFLAG(state, F_SHIFTED)) {
-                WRITE2(SI, c)
+                WRITE2(SI, (unsigned char)c)
                 STATE_CLEARFLAG(state, F_SHIFTED)
                 NEXT(1, 2)
             } else {
-                WRITE1(c)
+                WRITE1((unsigned char)c)
                 NEXT(1, 1)
             }
             if (c == '\n')
