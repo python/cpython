@@ -9,10 +9,12 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 
 # Import functions and variables from time module
 from time import localtime, mktime, strftime
+from types import SliceType
 
 __all__ = ["error","setfirstweekday","firstweekday","isleap",
            "leapdays","weekday","monthrange","monthcalendar",
-           "prmonth","month","prcal","calendar","timegm"]
+           "prmonth","month","prcal","calendar","timegm",
+           "month_name", "month_abbr", "day_name", "day_abbr"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
@@ -24,29 +26,52 @@ February = 2
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-class _localized_name:
-    def __init__(self, format, len):
+# This module used to have hard-coded lists of day and month names, as
+# English strings.  The classes following emulate a read-only version of
+# that, but supply localized names.  Note that the values are computed
+# fresh on each call, in case the user changes locale between calls.
+
+class _indexer:
+    def __getitem__(self, i):
+        if isinstance(i, SliceType):
+            return self.data[i.start : i.stop]
+        else:
+            # May raise an appropriate exception.
+            return self.data[i]
+
+class _localized_month(_indexer):
+    def __init__(self, format):
         self.format = format
-        self.len = len
-    def __getitem__(self, item):
-        if isinstance(item, int):
-            if item < 0: item += self.len
-            if not 0 <= item < self.len:
-                raise IndexError, "out of range"
-            t = (2001, 1, item+1, 12, 0, 0, item, item+1, 0)
-            return strftime(self.format, t).capitalize()
-        elif isinstance(item, type(slice(0))):
-            return [self[e] for e in range(self.len)].__getslice__(item.start, item.stop)
+
+    def __getitem__(self, i):
+        self.data = [strftime(self.format, (2001, j, 1, 12, 0, 0, 1, 1, 0))
+                     for j in range(1, 13)]
+        self.data.insert(0, "")
+        return _indexer.__getitem__(self, i)
+
     def __len__(self):
-        return self.len
+        return 13
+
+class _localized_day(_indexer):
+    def __init__(self, format):
+        self.format = format
+
+    def __getitem__(self, i):
+        # January 1, 2001, was a Monday.
+        self.data = [strftime(self.format, (2001, 1, j+1, 12, 0, 0, j, j+1, 0))
+                     for j in range(7)]
+        return _indexer.__getitem__(self, i)
+
+    def __len__(self_):
+        return 7
 
 # Full and abbreviated names of weekdays
-day_name = _localized_name('%A', 7)
-day_abbr = _localized_name('%a', 7)
+day_name = _localized_day('%A')
+day_abbr = _localized_day('%a')
 
 # Full and abbreviated names of months (1-based arrays!!!)
-month_name = _localized_name('%B', 13)
-month_abbr = _localized_name('%b', 13)
+month_name = _localized_month('%B')
+month_abbr = _localized_month('%b')
 
 # Constants for weekdays
 (MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
