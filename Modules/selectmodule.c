@@ -230,7 +230,8 @@ select_select(PyObject *self, PyObject *args)
 	}
 	else {
 		if (timeout > (double)LONG_MAX) {
-			PyErr_SetString(PyExc_OverflowError, "timeout period too long");
+			PyErr_SetString(PyExc_OverflowError,
+					"timeout period too long");
 			return NULL;
 		}
 		seconds = (long)timeout;
@@ -368,7 +369,8 @@ update_ufd_array(pollObject *self)
 static char poll_register_doc[] =
 "register(fd [, eventmask] ) -> None\n\n\
 Register a file descriptor with the polling object.\n\
-fd -- either an integer, or an object with a fileno() method returning an int.\n\
+fd -- either an integer, or an object with a fileno() method returning an\n\
+      int.\n\
 events -- an optional bitmask describing the type of events to check for";
 
 static PyObject *
