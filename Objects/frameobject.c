@@ -181,11 +181,15 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	f->f_builtins = builtins;
 	INCREF(globals);
 	f->f_globals = globals;
-	if ((code->co_flags & (CO_NEWLOCALS|CO_OPTIMIZED)) == CO_NEWLOCALS) {
-		locals = newdictobject();
-		if (locals == NULL) {
-			DECREF(f);
-			return NULL;
+	if (code->co_flags & CO_NEWLOCALS) {
+		if (code->co_flags & CO_OPTIMIZED)
+			locals = NULL; /* Let fast_2_locals handle it */
+		else {
+			locals = newdictobject();
+			if (locals == NULL) {
+				DECREF(f);
+				return NULL;
+			}
 		}
 	}
 	else {
@@ -285,10 +289,6 @@ fast_2_locals(f)
 	int j;
 	if (f == NULL)
 		return;
-	fast = f->f_fastlocals;
-	if (fast == NULL || f->f_code->co_nlocals == 0)
-		return;
-	map = f->f_code->co_varnames;
 	locals = f->f_locals;
 	if (locals == NULL) {
 		locals = f->f_locals = newdictobject();
@@ -297,6 +297,10 @@ fast_2_locals(f)
 			return;
 		}
 	}
+	fast = f->f_fastlocals;
+	if (fast == NULL || f->f_code->co_nlocals == 0)
+		return;
+	map = f->f_code->co_varnames;
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_tupleobject(map))
 		return;
