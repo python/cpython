@@ -91,6 +91,9 @@ extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
 #endif
+#ifdef USE_IC
+extern void initicglue();
+#endif
 #ifdef USE_TOOLBOX
 #ifndef USE_CORE_TOOLBOX
 #define USE_CORE_TOOLBOX
@@ -100,6 +103,7 @@ extern void initFm();
 extern void initHelp();
 extern void initIcn();
 extern void initList();
+extern void initQdoffs();
 extern void initSnd();
 extern void initSndihooks();
 extern void initScrap();
@@ -213,6 +217,9 @@ struct _inittab _PyImport_Inittab[] = {
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
+#ifdef USE_IC
+	{"icglue", initicglue},
+#endif
 #ifdef USE_CORE_TOOLBOX
 	{"AE", initAE},
 	{"Ctl", initCtl},
@@ -229,6 +236,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Fm", initFm},
 	{"Icn", initIcn},
 	{"List", initList},
+	{"Qdoffs", initQdoffs},
 	{"Snd", initSnd},
 	{"Sndihooks", initSndihooks},
 #if !TARGET_API_MAC_CARBON_NOTYET
