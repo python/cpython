@@ -39,7 +39,7 @@ As a result, it is probably clumsy code, but I don't know for sure yet
 so that profiling would be a reasonable thing to do.  I tried not to
 repeat code fragments, but I'm sure I did some stuff in really awkward
 ways at times.  Please send suggestions for improvements to:
-\code{jar@netscape.com}.  I won't promise \emph{any} support.  ...but
+\email{jar@netscape.com}.  I won't promise \emph{any} support.  ...but
 I'd appreciate the feedback.
 
 
@@ -49,10 +49,12 @@ I'd appreciate the feedback.
 A \dfn{profiler} is a program that describes the run time performance
 of a program, providing a variety of statistics.  This documentation
 describes the profiler functionality provided in the modules
-\code{profile} and \code{pstats.}  This profiler provides
+\module{profile} and \module{pstats}.  This profiler provides
 \dfn{deterministic profiling} of any Python programs.  It also
 provides a series of report generation tools to allow users to rapidly
 examine the results of a profile operation.
+\index{deterministic profiling}
+\index{profiling, deterministic}
 
 
 \section{How Is This Profiler Different From The Old Profiler?}
@@ -81,7 +83,7 @@ profiler \emph{during} profiling (and charged to user's code!).
 \item[Speed increased:]
 Overhead CPU cost was reduced by more than a factor of two (perhaps a
 factor of five), lightweight profiler module is all that must be
-loaded, and the report generating module (\code{pstats}) is not needed
+loaded, and the report generating module (\module{pstats}) is not needed
 during profiling.
 
 \item[Recursive functions support:]
@@ -116,7 +118,7 @@ The above action would cause \samp{foo()} to be run, and a series of
 informative lines (the profile) to be printed.  The above approach is
 most useful when working with the interpreter.  If you would like to
 save the results of a profile into a file for later examination, you
-can supply a file name as the second argument to the \code{run()}
+can supply a file name as the second argument to the \function{run()}
 function:
 
 \begin{verbatim}
@@ -124,12 +126,15 @@ import profile
 profile.run("foo()", 'fooprof')
 \end{verbatim}
 %
-\code{profile.py} can also be invoked as
+The file \file{profile.py} can also be invoked as
 a script to profile another script.  For example:
-\code{python} \code{/usr/local/lib/python1.4/profile.py myscript.py}
+
+\begin{verbatim}
+python /usr/local/lib/python1.4/profile.py myscript.py
+\end{verbatim}
 
 When you wish to review the profile, you should use the methods in the
-\code{pstats} module.  Typically you would load the statistics data as
+\module{pstats} module.  Typically you would load the statistics data as
 follows:
 
 \begin{verbatim}
@@ -137,10 +142,10 @@ import pstats
 p = pstats.Stats('fooprof')
 \end{verbatim}
 %
-The class \code{Stats} (the above code just created an instance of
+The class \class{Stats} (the above code just created an instance of
 this class) has a variety of methods for manipulating and printing the
 data that was just read into \samp{p}.  When you ran
-\code{profile.run()} above, what was printed was the result of three
+\function{profile.run()} above, what was printed was the result of three
 method calls:
 
 \begin{verbatim}
@@ -188,7 +193,7 @@ p.sort_stats('file').print_stats('__init__')
 %
 This will sort all the statistics by file name, and then print out
 statistics for only the class init methods ('cause they are spelled
-with \code{__init__} in them).  As one final example, you could try:
+with \samp{__init__} in them).  As one final example, you could try:
 
 \begin{verbatim}
 p.sort_stats('time', 'cum').print_stats(.5, 'init')
@@ -206,7 +211,7 @@ now (\samp{p} is still sorted according to the last criteria) do:
 \begin{verbatim}
 p.print_callers(.5, 'init')
 \end{verbatim}
-%
+
 and you would get a list of callers for each of the listed functions. 
 
 If you want more functionality, you're going to have to read the
@@ -252,12 +257,12 @@ of algorithms to be directly compared to iterative implementations.
 
 \section{Reference Manual}
 
-\setindexsubitem{(profiler function)}
+\setindexsubitem{(in module profile)}
 
 The primary entry point for the profiler is the global function
-\code{profile.run()}.  It is typically used to create any profile
+\function{profile.run()}.  It is typically used to create any profile
 information.  The reports are formatted and printed using methods of
-the class \code{pstats.Stats}.  The following is a description of all
+the class \class{pstats.Stats}.  The following is a description of all
 of these standard entry points and functions.  For a more in-depth
 view of some of the code, consider reading the later section on
 Profiler Extensions, which includes discussion of how to derive
@@ -267,8 +272,8 @@ code for these modules.
 \begin{funcdesc}{profile.run}{string\optional{\, filename\optional{\, ...}}}
 
 This function takes a single argument that has can be passed to the
-\code{exec} statement, and an optional file name.  In all cases this
-routine attempts to \code{exec} its first argument, and gather profiling
+\keyword{exec} statement, and an optional file name.  In all cases this
+routine attempts to \keyword{exec} its first argument, and gather profiling
 statistics from the execution. If no file name is present, then this
 function automatically prints a simple profiling report, sorted by the
 standard name string (file/line/function-name) that is presented in
@@ -328,23 +333,28 @@ printed.
 
 \end{funcdesc}
 
-\begin{funcdesc}{pstats.Stats}{filename\optional{\, ...}}
+Analysis of the profiler data is done using this class from the
+\module{pstats} module:
+
+\setindexsubitem{(in module pstats)}
+
+\begin{classdesc}{Stats}{filename\optional{\, ...}}
 This class constructor creates an instance of a ``statistics object''
-from a \var{filename} (or set of filenames).  \code{Stats} objects are
+from a \var{filename} (or set of filenames).  \class{Stats} objects are
 manipulated by methods, in order to print useful reports.
 
 The file selected by the above constructor must have been created by
-the corresponding version of \code{profile}.  To be specific, there is
-\emph{NO} file compatibility guaranteed with future versions of this
+the corresponding version of \module{profile}.  To be specific, there is
+\emph{no} file compatibility guaranteed with future versions of this
 profiler, and there is no compatibility with files produced by other
 profilers (e.g., the old system profiler).
 
 If several files are provided, all the statistics for identical
 functions will be coalesced, so that an overall view of several
 processes can be considered in a single report.  If additional files
-need to be combined with data in an existing \code{Stats} object, the
-\code{add()} method can be used.
-\end{funcdesc}
+need to be combined with data in an existing \class{Stats} object, the
+\method{add()} method can be used.
+\end{classdesc}
 
 
 \subsection{The \sectcode{Stats} Class}
@@ -352,37 +362,38 @@ need to be combined with data in an existing \code{Stats} object, the
 \setindexsubitem{(Stats method)}
 
 \begin{funcdesc}{strip_dirs}{}
-This method for the \code{Stats} class removes all leading path information
-from file names.  It is very useful in reducing the size of the
-printout to fit within (close to) 80 columns.  This method modifies
-the object, and the stripped information is lost.  After performing a
-strip operation, the object is considered to have its entries in a
-``random'' order, as it was just after object initialization and
-loading.  If \code{strip_dirs()} causes two function names to be
-indistinguishable (i.e., they are on the same line of the same
-filename, and have the same function name), then the statistics for
-these two entries are accumulated into a single entry.
+This method for the \class{Stats} class removes all leading path
+information from file names.  It is very useful in reducing the size
+of the printout to fit within (close to) 80 columns.  This method
+modifies the object, and the stripped information is lost.  After
+performing a strip operation, the object is considered to have its
+entries in a ``random'' order, as it was just after object
+initialization and loading.  If \method{strip_dirs()} causes two
+function names to be indistinguishable (i.e., they are on the same
+line of the same filename, and have the same function name), then the
+statistics for these two entries are accumulated into a single entry.
 \end{funcdesc}
 
 
 \begin{funcdesc}{add}{filename\optional{\, ...}}
-This method of the \code{Stats} class accumulates additional profiling
-information into the current profiling object.  Its arguments should
-refer to filenames created by the corresponding version of
-\code{profile.run()}.  Statistics for identically named (re: file,
-line, name) functions are automatically accumulated into single
-function statistics.
+This method of the \class{Stats} class accumulates additional
+profiling information into the current profiling object.  Its
+arguments should refer to filenames created by the corresponding
+version of \function{profile.run()}.  Statistics for identically named
+(re: file, line, name) functions are automatically accumulated into
+single function statistics.
 \end{funcdesc}
 
 \begin{funcdesc}{sort_stats}{key\optional{\, ...}}
-This method modifies the \code{Stats} object by sorting it according to the
-supplied criteria.  The argument is typically a string identifying the
-basis of a sort (example: \code{"time"} or \code{"name"}).
+This method modifies the \class{Stats} object by sorting it according
+to the supplied criteria.  The argument is typically a string
+identifying the basis of a sort (example: \code{"time"} or
+\code{"name"}).
 
 When more than one key is provided, then additional keys are used as
 secondary criteria when the there is equality in all keys selected
-before them.  For example, sort_stats('name', 'file') will sort all
-the entries according to their function name, and resolve all ties
+before them.  For example, \samp{sort_stats('name', 'file')} will sort
+all the entries according to their function name, and resolve all ties
 (identical function names) by sorting by file name.
 
 Abbreviations can be used for any key names, as long as the
@@ -423,7 +434,7 @@ additional arguments will be silently ignored.
 
 
 \begin{funcdesc}{reverse_order}{}
-This method for the \code{Stats} class reverses the ordering of the basic
+This method for the \class{Stats} class reverses the ordering of the basic
 list within the object.  This method is provided primarily for
 compatibility with the old profiler.  Its utility is questionable
 now that ascending vs descending order is properly selected based on
@@ -431,12 +442,12 @@ the sort key of choice.
 \end{funcdesc}
 
 \begin{funcdesc}{print_stats}{restriction\optional{\, ...}}
-This method for the \code{Stats} class prints out a report as described
-in the \code{profile.run()} definition.
+This method for the \class{Stats} class prints out a report as described
+in the \function{profile.run()} definition.
 
-The order of the printing is based on the last \code{sort_stats()}
-operation done on the object (subject to caveats in \code{add()} and
-\code{strip_dirs())}.
+The order of the printing is based on the last \method{sort_stats()}
+operation done on the object (subject to caveats in \method{add()} and
+\method{strip_dirs()}.
 
 The arguments provided (if any) can be used to limit the list down to
 the significant entries.  Initially, the list is taken to be the
@@ -445,13 +456,13 @@ integer (to select a count of lines), or a decimal fraction between
 0.0 and 1.0 inclusive (to select a percentage of lines), or a regular
 expression (to pattern match the standard name that is printed; as of
 Python 1.5b1, this uses the Perl-style regular expression syntax
-defined by the \code{re} module).  If several restrictions are
+defined by the \module{re} module).  If several restrictions are
 provided, then they are applied sequentially.  For example:
 
 \begin{verbatim}
 print_stats(.1, "foo:")
 \end{verbatim}
-%
+
 would first limit the printing to first 10\% of list, and then only
 print functions that were part of filename \samp{.*foo:}.  In
 contrast, the command:
@@ -459,16 +470,16 @@ contrast, the command:
 \begin{verbatim}
 print_stats("foo:", .1)
 \end{verbatim}
-%
+
 would limit the list to all functions having file names \samp{.*foo:},
 and then proceed to only print the first 10\% of them.
 \end{funcdesc}
 
 
 \begin{funcdesc}{print_callers}{restrictions\optional{\, ...}}
-This method for the \code{Stats} class prints a list of all functions
+This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
-identical to that provided by \code{print_stats()}, and the definition
+identical to that provided by \method{print_stats()}, and the definition
 of the restricting argument is also identical.  For convenience, a
 number is shown in parentheses after each caller to show how many
 times this specific call was made.  A second non-parenthesized number
@@ -476,14 +487,14 @@ is the cumulative time spent in the function at the right.
 \end{funcdesc}
 
 \begin{funcdesc}{print_callees}{restrictions\optional{\, ...}}
-This method for the \code{Stats} class prints a list of all function
+This method for the \class{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and
-ordering are identical to the \code{print_callers()} method.
+ordering are identical to the \method{print_callers()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{ignore}{}
-This method of the \code{Stats} class is used to dispose of the value
+This method of the \class{Stats} class is used to dispose of the value
 returned by earlier methods.  All standard methods in this class
 return the instance that is being processed, so that the commands can
 be strung together.  For example:
@@ -494,7 +505,7 @@ pstats.Stats('foofile').strip_dirs().sort_stats('cum') \
 \end{verbatim}
 %
 would perform all the indicated functions, but it would not return
-the final reference to the \code{Stats} instance.%
+the final reference to the \class{Stats} instance.%
 \footnote{
 This was once necessary, when Python would print any unused expression
 result that was not \code{None}.  The method is still defined for
@@ -507,10 +518,10 @@ backward compatibility.
 
 There are two fundamental limitations on this profiler.  The first is
 that it relies on the Python interpreter to dispatch \dfn{call},
-\dfn{return}, and \dfn{exception} events.  Compiled C code does not
+\dfn{return}, and \dfn{exception} events.  Compiled \C{} code does not
 get interpreted, and hence is ``invisible'' to the profiler.  All time
-spent in C code (including builtin functions) will be charged to the
-Python function that invoked the C code.  If the C code calls out
+spent in \C{} code (including builtin functions) will be charged to the
+Python function that invoked the \C{} code.  If the \C{} code calls out
 to some native Python code, then those calls will be profiled
 properly.
 
@@ -559,21 +570,21 @@ pr.calibrate(100)
 pr.calibrate(100)
 pr.calibrate(100)
 \end{verbatim}
-%
-The argument to calibrate() is the number of times to try to do the
-sample calls to get the CPU times.  If your computer is \emph{very}
-fast, you might have to do:
+
+The argument to \method{calibrate()} is the number of times to try to
+do the sample calls to get the CPU times.  If your computer is
+\emph{very} fast, you might have to do:
 
 \begin{verbatim}
 pr.calibrate(1000)
 \end{verbatim}
-%
+
 or even:
 
 \begin{verbatim}
 pr.calibrate(10000)
 \end{verbatim}
-%
+
 The object of this exercise is to get a fairly consistent result.
 When you have a consistent answer, you are ready to use that number in
 the source code.  For a Sun Sparcstation 1000 running Solaris 2.3, the
@@ -598,14 +609,14 @@ def trace_dispatch(self, frame, event, arg):
         self.t = r[0] + r[1] - t # put back unrecorded delta
     return
 \end{verbatim}
-%
+
 Note that if there is no calibration constant, then the line
 containing the callibration constant should simply say:
 
 \begin{verbatim}
 t = t[0] + t[1] - self.t  # no calibration constant
 \end{verbatim}
-%
+
 You can also achieve the same results using a derived class (and the
 profiler will actually run equally fast!!), but the above method is
 the simplest to use.  I could have made the profiler ``self
@@ -620,7 +631,7 @@ at this point, when a constant can be used.
 \section{Extensions --- Deriving Better Profilers}
 \nodename{Profiler Extensions}
 
-The \code{Profile} class of module \code{profile} was written so that
+The \class{Profile} class of module \module{profile} was written so that
 derived classes could be developed to extend the profiler.  Rather
 than describing all the details of such an effort, I'll just present
 the following two examples of derived classes that can be used to do
@@ -636,10 +647,10 @@ function to call into the constructor:
 \begin{verbatim}
 pr = profile.Profile(your_time_func)
 \end{verbatim}
-%
+
 The resulting profiler will call \code{your_time_func()} instead of
-\code{os.times()}.  The function should return either a single number
-or a list of numbers (like what \code{os.times()} returns).  If the
+\function{os.times()}.  The function should return either a single number
+or a list of numbers (like what \function{os.times()} returns).  If the
 function returns a single time number, or the list of returned numbers
 has length 2, then you will get an especially fast version of the
 dispatch routine.
@@ -647,12 +658,13 @@ dispatch routine.
 Be warned that you \emph{should} calibrate the profiler class for the
 timer function that you choose.  For most machines, a timer that
 returns a lone integer value will provide the best results in terms of
-low overhead during profiling.  (os.times is \emph{pretty} bad, 'cause
-it returns a tuple of floating point values, so all arithmetic is
-floating point in the profiler!).  If you want to substitute a
-better timer in the cleanest fashion, you should derive a class, and
-simply put in the replacement dispatch method that better handles your
-timer call, along with the appropriate calibration constant :-).
+low overhead during profiling.  (\function{os.times()} is
+\emph{pretty} bad, 'cause it returns a tuple of floating point values,
+so all arithmetic is floating point in the profiler!).  If you want to
+substitute a better timer in the cleanest fashion, you should derive a
+class, and simply put in the replacement dispatch method that better
+handles your timer call, along with the appropriate calibration
+constant :-).
 
 
 \subsection{OldProfile Class}
@@ -716,7 +728,7 @@ class OldProfile(Profile):
                 nc = nc + callers[func_caller]
             self.stats[nor_func] = nc, nc, tt, ct, nor_callers
 \end{verbatim}
-%
+
 \subsection{HotProfile Class}
 
 This profiler is the fastest derived profile example.  It does not
