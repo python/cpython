@@ -39,6 +39,9 @@ var			{ font-family: serif;
 
 .navigation .title	{ font-family: avantgarde, sans-serif;
 			  font-size: 110% }
+.navigation td		{ background-color: #99ccff; }
+
+.titlegraphic		{ vertical-align: top; }
 
 .verbatim		{ color: #00008b }
 
