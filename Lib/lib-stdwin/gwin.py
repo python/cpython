@@ -4,12 +4,11 @@
 # This is used as a base class from which to derive other window types.
 # The mainloop() function here is an event dispatcher for all window types.
 
+# XXX This is really obsoleted by "mainloop.py".
+# XXX Also you should to it class-oriented...
+
 import stdwin, stdwinq
 from stdwinevents import *
-
-# XXX Old version of stdwinevents, should go
-import stdwinsupport
-S = stdwinsupport			# Shorthand
 
 windows = []				# List of open windows
 
@@ -50,46 +49,46 @@ def mainloop():				# Handle events until no windows left
 
 def treatevent(e):			# Handle a stdwin event
 	type, w, detail = e
-	if type = S.we_draw:
+	if type = WE_DRAW:
 		w.draw(w, detail)
-	elif type = S.we_menu:
+	elif type = WE_MENU:
 		m, item = detail
 		m.action[item](w, m, item)
-	elif type = S.we_command:
+	elif type = WE_COMMAND:
 		treatcommand(w, detail)
-	elif type = S.we_char:
+	elif type = WE_CHAR:
 		w.char(w, detail)
-	elif type = S.we_mouse_down:
+	elif type = WE_MOUSE_DOWN:
 		if detail[1] > 1: w.m2down(w, detail)
 		else: w.mdown(w, detail)
-	elif type = S.we_mouse_move:
+	elif type = WE_MOUSE_MOVE:
 		w.mmove(w, detail)
-	elif type = S.we_mouse_up:
+	elif type = WE_MOUSE_UP:
 		if detail[1] > 1: w.m2up(w, detail)
 		else: w.mup(w, detail)
-	elif type = S.we_size:
+	elif type = WE_SIZE:
 		w.size(w, w.getwinsize())
-	elif type = S.we_activate:
+	elif type = WE_ACTIVATE:
 		w.activate(w)
-	elif type = S.we_deactivate:
+	elif type = WE_DEACTIVATE:
 		w.deactivate(w)
-	elif type = S.we_move:
+	elif type = WE_MOVE:
 		w.move(w)
-	elif type = S.we_timer:
+	elif type = WE_TIMER:
 		w.timer(w)
 	elif type = WE_CLOSE:
 		w.close(w)
 
 def treatcommand(w, type):		# Handle a we_command event
-	if type = S.wc_close:
+	if type = WC_CLOSE:
 		w.close(w)
-	elif type = S.wc_return:
+	elif type = WC_RETURN:
 		w.enter(w)
-	elif type = S.wc_tab:
+	elif type = WC_TAB:
 		w.tab(w)
-	elif type = S.wc_backspace:
+	elif type = WC_BACKSPACE:
 		w.backspace(w)
-	elif type in (S.wc_left, S.wc_up, S.wc_right, S.wc_down):
+	elif type in (WC_LEFT, WC_UP, WC_RIGHT, WC_DOWN):
 		w.arrow(w, type)
 
 
@@ -102,13 +101,13 @@ def close(w):				# Close method
 			break
 
 def arrow(w, detail):			# Arrow key method
-	if detail = S.wc_left:
+	if detail = WC_LEFT:
 		w.kleft(w)
-	elif detail = S.wc_up:
+	elif detail = WC_UP:
 		w.kup(w)
-	elif detail = S.wc_right:
+	elif detail = WC_RIGHT:
 		w.kright(w)
-	elif detail = S.wc_down:
+	elif detail = WC_DOWN:
 		w.kdown(w)
 
 
