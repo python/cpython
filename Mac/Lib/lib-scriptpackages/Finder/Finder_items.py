@@ -1,7 +1,7 @@
 """Suite Finder items: Commands used with file system items, and basic item definition
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -26,7 +26,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -51,7 +51,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -71,7 +71,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -91,7 +91,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -111,28 +111,34 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	_argmap_put_away = {
+		'asking' : 'fask',
+	}
+
 	def put_away(self, _object, _attributes={}, **_arguments):
 		"""put away: Put away the specified object(s)
 		Required argument: the items to put away
+		Keyword argument asking: Specifies whether or not to present a dialog to confirm putting this item away.
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: the object put away in its put-away location
 		"""
 		_code = 'fndr'
 		_subcode = 'ptwy'
 
-		if _arguments: raise TypeError, 'No optional args expected'
+		aetools.keysubst(_arguments, self._argmap_put_away)
 		_arguments['----'] = _object
 
+		aetools.enumsubst(_arguments, 'fask', _Enum_bool)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -152,7 +158,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -172,7 +178,7 @@ class Finder_items_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -293,6 +299,7 @@ item._propdict = {
 }
 item._elemdict = {
 }
+_Enum_bool = None # XXXX enum bool not found!!
 
 #
 # Indices of types declared in this module
@@ -302,27 +309,27 @@ _classdeclarations = {
 }
 
 _propdeclarations = {
-	'iwnd' : information_window,
+	'posn' : position,
+	'kind' : kind,
+	'ptsz' : size,
+	'phys' : physical_size,
+	'dwnd' : content_space,
+	'pbnd' : bounds,
+	'issl' : selected,
+	'labi' : label_index,
+	'dscr' : description,
+	'comt' : comment,
+	'ctnr' : container,
+	'pidx' : index,
+	'iimg' : icon,
+	'ID  ' : id,
+	'cwin' : window,
+	'pnam' : name,
+	'ascd' : creation_date,
 	'cdis' : disk,
 	'asmo' : modification_date,
-	'ascd' : creation_date,
-	'pnam' : name,
-	'labi' : label_index,
-	'ID  ' : id,
-	'iimg' : icon,
-	'pidx' : index,
-	'dwnd' : content_space,
-	'cwin' : window,
-	'comt' : comment,
-	'dscr' : description,
 	'asdr' : folder,
-	'issl' : selected,
-	'pbnd' : bounds,
-	'ctnr' : container,
-	'phys' : physical_size,
-	'ptsz' : size,
-	'kind' : kind,
-	'posn' : position,
+	'iwnd' : information_window,
 }
 
 _compdeclarations = {

@@ -1,8 +1,9 @@
 """
-Package generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
+Package generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
 Resource aete resid 0 
 """
 import aetools
+Error = aetools.Error
 import Required_suite
 import Standard_Suite
 import Standard_URL_suite

@@ -1,7 +1,7 @@
 """Suite Mozilla suite: Experimental Mozilla suite
 Level 1, version 1
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
+Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -33,7 +33,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -53,7 +53,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -79,7 +79,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -99,7 +99,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -118,7 +118,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -138,7 +138,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -158,7 +158,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -177,7 +177,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -197,7 +197,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -217,7 +217,7 @@ class Mozilla_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -240,13 +240,13 @@ _Enum_comp = {
 }
 
 _Enum_ncmd = {
-	'Get_new_mail' : '\000\000\004W',	# 
-	'Send_queued_messages' : '\000\000\004X',	# 
-	'Read_newsgroups' : '\000\000\004\004',	# 
-	'Show_Inbox' : '\000\000\004\005',	# 
-	'Show_Bookmarks_window' : '\000\000\004\006',	# 
-	'Show_History_window' : '\000\000\004\007',	# 
-	'Show_Address_Book_window' : '\000\000\004\011',	# 
+	'Get_new_mail' : '\x00\x00\x04W',	# 
+	'Send_queued_messages' : '\x00\x00\x04X',	# 
+	'Read_newsgroups' : '\x00\x00\x04\x04',	# 
+	'Show_Inbox' : '\x00\x00\x04\x05',	# 
+	'Show_Bookmarks_window' : '\x00\x00\x04\x06',	# 
+	'Show_History_window' : '\x00\x00\x04\x07',	# 
+	'Show_Address_Book_window' : '\x00\x00\x04\t',	# 
 }
 
 
@@ -263,7 +263,7 @@ _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'dire' : _Enum_dire,
 	'comp' : _Enum_comp,
 	'ncmd' : _Enum_ncmd,
+	'dire' : _Enum_dire,
 }

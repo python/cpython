@@ -1,7 +1,7 @@
 """Suite Text: 
 Level 0, version 0
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
+Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -95,22 +95,22 @@ styleset._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'stys' : styleset,
 	'ctxt' : text,
+	'stys' : styleset,
 }
 
 _propdeclarations = {
-	'pAft' : justbehind,
-	'psct' : writing_code,
-	'txst' : style,
-	'colr' : color,
 	'pBef' : infront,
-	'pnam' : name,
+	'bgng' : beginning,
+	'colr' : color,
+	'txst' : style,
+	'psct' : writing_code,
+	'pAft' : justbehind,
+	'end ' : end,
 	'ptsz' : size,
 	'pUpL' : updateLevel,
-	'bgng' : beginning,
+	'pnam' : name,
 	'font' : font,
-	'end ' : end,
 }
 
 _compdeclarations = {

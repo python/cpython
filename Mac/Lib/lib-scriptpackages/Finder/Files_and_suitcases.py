@@ -1,7 +1,7 @@
 """Suite Files and suitcases: Classes representing files and suitcases
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -243,37 +243,37 @@ desk_accessory_suitcase._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'clpf' : clipping,
-	'docf' : document_file,
-	'stcs' : suitcase,
-	'appf' : application_file,
-	'file' : file,
-	'fsut' : font_suitcase,
-	'pack' : package,
-	'dafi' : desk_accessory_file,
-	'alia' : alias_file,
-	'dsut' : desk_accessory_suitcase,
-	'inlf' : internet_location_file,
-	'fntf' : font_file,
 	'sndf' : sound_file,
+	'fntf' : font_file,
+	'inlf' : internet_location_file,
+	'clpf' : clipping,
+	'alia' : alias_file,
+	'dafi' : desk_accessory_file,
+	'dsut' : desk_accessory_suitcase,
+	'fsut' : font_suitcase,
+	'file' : file,
+	'appf' : application_file,
+	'stcs' : suitcase,
+	'docf' : document_file,
+	'pack' : package,
 }
 
 _propdeclarations = {
-	'orig' : original_item,
-	'pspd' : stationery,
-	'aslk' : locked,
-	'iloc' : location,
-	'mprt' : minimum_size,
-	'fcrt' : creator_type,
-	'c@#^' : _3c_Inheritance_3e_,
-	'asty' : file_type,
-	'hscr' : has_scripting_terminology,
-	'sprt' : suggested_size,
-	'appt' : preferred_size,
-	'isab' : accepts_high_level_events,
-	'snd ' : sound,
-	'ver2' : product_version,
 	'vers' : version,
+	'ver2' : product_version,
+	'snd ' : sound,
+	'appt' : preferred_size,
+	'sprt' : suggested_size,
+	'isab' : accepts_high_level_events,
+	'hscr' : has_scripting_terminology,
+	'asty' : file_type,
+	'c@#^' : _3c_Inheritance_3e_,
+	'fcrt' : creator_type,
+	'mprt' : minimum_size,
+	'pspd' : stationery,
+	'iloc' : location,
+	'aslk' : locked,
+	'orig' : original_item,
 }
 
 _compdeclarations = {

@@ -1,7 +1,7 @@
 """Suite Process classes: Classes representing processes that are running
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -120,26 +120,26 @@ desk_accessory_process._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'prcs' : process,
 	'pcda' : desk_accessory_process,
 	'pcap' : application_process,
-	'prcs' : process,
 }
 
 _propdeclarations = {
-	'revt' : accepts_remote_events,
-	'appf' : application_file,
-	'pnam' : name,
-	'file' : file,
-	'pusd' : partition_space_used,
-	'fcrt' : creator_type,
-	'c@#^' : _3c_Inheritance_3e_,
-	'asty' : file_type,
-	'hscr' : has_scripting_terminology,
-	'dafi' : desk_accessory_file,
-	'isab' : accepts_high_level_events,
-	'appt' : total_partition_size,
-	'pisf' : frontmost,
 	'pvis' : visible,
+	'pisf' : frontmost,
+	'appt' : total_partition_size,
+	'isab' : accepts_high_level_events,
+	'dafi' : desk_accessory_file,
+	'hscr' : has_scripting_terminology,
+	'asty' : file_type,
+	'c@#^' : _3c_Inheritance_3e_,
+	'fcrt' : creator_type,
+	'pusd' : partition_space_used,
+	'file' : file,
+	'pnam' : name,
+	'appf' : application_file,
+	'revt' : accepts_remote_events,
 }
 
 _compdeclarations = {
