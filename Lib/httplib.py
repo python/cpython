@@ -87,8 +87,9 @@ _CS_REQ_SENT = 'Request-sent'
 
 
 class HTTPResponse:
-    def __init__(self, sock):
+    def __init__(self, sock, debuglevel=0):
         self.fp = sock.makefile('rb', 0)
+        self.debuglevel = debuglevel
 
         self.msg = None
 
@@ -108,6 +109,8 @@ class HTTPResponse:
             return
 
         line = self.fp.readline()
+        if self.debuglevel > 0:
+            print "reply:", repr(line)
         try:
             [version, status, reason] = string.split(line, None, 2)
         except ValueError:
@@ -132,6 +135,9 @@ class HTTPResponse:
             raise UnknownProtocol(version)
 
         self.msg = mimetools.Message(self.fp, 0)
+        if self.debuglevel > 0:
+            for hdr in self.msg.headers:
+                print "header:", hdr,
 
         # don't let the msg keep an fp
         self.msg.fp = None
@@ -186,11 +192,6 @@ class HTTPResponse:
            not self.chunked and \
            self.length is None:
             self.will_close = 1
-
-        # if there is no body, then close NOW. read() may never be called, thus
-        # we will never mark self as closed.
-        if self.length == 0:
-            self.close()
 
     def close(self):
         if self.fp:
@@ -273,12 +274,6 @@ class HTTPResponse:
         # (for example, reading in 1k chunks)
         s = self.fp.read(amt)
 
-        # close our "file" if we know we should
-        ### I'm not sure about the len(s) < amt part; we should be safe because
-        ### we shouldn't be using non-blocking sockets
-        if self.length == 0 or len(s) < amt:
-            self.close()
-
         return s
 
     def _safe_read(self, amt):
@@ -318,6 +313,7 @@ class HTTPConnection:
     response_class = HTTPResponse
     default_port = HTTP_PORT
     auto_open = 1
+    debuglevel = 0
 
     def __init__(self, host, port=None):
         self.sock = None
@@ -337,9 +333,14 @@ class HTTPConnection:
         self.host = host
         self.port = port
 
+    def set_debuglevel(self, level):
+        self.debuglevel = level
+
     def connect(self):
         """Connect to the host and port specified in __init__."""
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.debuglevel > 0:
+            print "connect: (%s, %s)" % (self.host, self.port)
         self.sock.connect((self.host, self.port))
 
     def close(self):
@@ -365,6 +366,8 @@ class HTTPConnection:
         #
         # NOTE: we DO propagate the error, though, because we cannot simply
         #       ignore the error... the caller will know if they can retry.
+        if self.debuglevel > 0:
+            print "send:", repr(str)
         try:
             self.sock.send(str)
         except socket.error, v:
@@ -524,7 +527,10 @@ class HTTPConnection:
         if self.__state != _CS_REQ_SENT or self.__response:
             raise ResponseNotReady()
 
-        response = self.response_class(self.sock)
+        if self.debuglevel > 0:
+            response = self.response_class(self.sock, self.debuglevel)
+        else:
+            response = self.response_class(self.sock)
 
         response.begin()
         self.__state = _CS_IDLE
@@ -647,8 +653,7 @@ class HTTP:
         self._conn.connect()
 
     def set_debuglevel(self, debuglevel):
-        "The class no longer supports the debuglevel."
-        pass
+        self._conn.set_debuglevel(debuglevel)
 
     def getfile(self):
         "Provide a getfile, since the superclass' does not use this concept."
