@@ -1,6 +1,8 @@
 THE FREEZE SCRIPT
 =================
 
+(Directions for Windows NT are at the end of this file.)
+
 
 What is Freeze?
 ---------------
@@ -77,9 +79,6 @@ where hello.py is your program and freeze.py is the main file of
 Freeze (in actuality, you'll probably specify an absolute pathname
 such as /usr/joe/python/Tools/freeze/freeze.py).
 
-(With Python 1.4, freeze is much more likely to work "out of the box"
-than before, provided Python has been installed properly.)
-
 
 What do I do next?
 ------------------
@@ -104,5 +103,37 @@ fundamentally wrong -- perhaps you haven't installed Python.  To do a
 proper install, you should do "make install" in the Python root
 directory.
 
+
+Usage under Windows NT
+----------------------
+
+Under Windows NT, you *must* use the -p option and point it to the top
+of the Python source tree.
+
+WARNING: the resulting executable is not self-contained; it requires
+the Python DLL, currently PYTHON15.DLL (it does not require the
+standard library of .py files though).
+
+The driver script generates a Makefile that works with the Microsoft
+command line C compiler (CL).  To compile, run "nmake"; this will
+build a target "hello.exe" if the source was "hello.py".  Only the
+files frozenmain.c and frozen.c are used; no config.c is generated or
+used, since the standard DLL is used.
+
+In order for this to work, you must have built Python using the VC++
+(Developer Studio) 5.0 compiler.  The provided project builds
+python15.lib in the subdirectory pcbuild\Release of thje Python source
+tree, and this is where the generated Makefile expects it to be.  If
+this is not the case, you can edit the Makefile or (probably better)
+winmakemakefile.py (e.g., if you are using the 4.2 compiler, the
+python15.lib file is generated in the subdirectory vc40 of the Python
+source tree).
+
+Freezing pure GUI applications has not yet been tried; there's a new
+-s option to specify the subsystem, but only the default ('console')
+has been tested.  Freezing applications using Tkinter works; note that
+these will require that that _tkinter.dll is available and the right
+version of Tcl/Tk (the one that was used to build _tkinter.dll) is
+installed.
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
