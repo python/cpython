@@ -1,0 +1,154 @@
+% Manual text and implementation by Jaap Vermeulen
+\section{Standard Module \sectcode{posixfile}}
+\bimodindex{posixfile}
+\indexii{posix}{file object}
+
+This module implements some additional functionality over the built-in
+file objects.  In particular, it implements file locking, control over
+the file flags, and an easy interface to duplicate the file object.
+The module defines a new file object, the posixfile object.  It
+inherits all the standard file object methods and adds the methods
+described below.
+
+To instantiate a posixfile object, use the \code{open()} function in
+the posixfile module.  The resulting object looks and feels the same as
+a standard file object.
+
+The posixfile module defines the following constants:
+
+\renewcommand{\indexsubitem}{(in module posixfile)}
+\begin{datadesc}{SEEK_SET}
+offset is calculated from the start of the file
+\end{datadesc}
+
+\begin{datadesc}{SEEK_CUR}
+offset is calculated from the current position in the file
+\end{datadesc}
+
+\begin{datadesc}{SEEK_END}
+offset is calculated from the end of the file
+\end{datadesc}
+
+The posixfile module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module posixfile)}
+\begin{funcdesc}{open}{filename\, mode}
+ Create a new posixfile object with the given filename and mode.  The
+ filename and mode are interpreted the same way as the \code{open()}
+ builtin function.
+\end{funcdesc}
+
+\begin{funcdesc}{openfile}{fileobject}
+ Create a new posixfile object with the given standard file object.
+ The resulting object has the same filename and mode as the original
+ file object.
+\end{funcdesc}
+
+The posixfile object defines the following additional methods:
+
+\renewcommand{\indexsubitem}{(posixfile method)}
+\begin{funcdesc}{lock}{fmt\, len\, start\, whence}
+ Lock the specified section of the file that the file object is
+ referring to.  The arguments \code{\var{len}}, \code{\var{start}}
+ and \code{\var{whence}} are optional with the understanding that
+ if \code{\var{start}} is used \code{\var{len}} becomes mandatory,
+ and if \code{\var{whence}} is used \code{\var{len}} and
+ \code{\var{start}} become mandatory.  The format is explained
+ below in a table. The length argument specifies the length of the
+ section that should be locked. The default is \code{0}. The start
+ specifies the starting offset of the section. The default is
+ \code{0}.  The whence argument specifies where the offset is
+ relative to. It accepts one of the constants \code{SEEK_SET},
+ \code{SEEK_CUR} or \code{SEEK_END}.  The default is \code{SEEK_SET}.
+ For more information about the arguments refer to the fcntl
+ manual page on your system.
+\end{funcdesc}
+
+\begin{funcdesc}{flags}{fmt}
+ Set the specified flags for the file that the file object is referring
+ to.  The new flags are ORed with the old flags, unless specified
+ otherwise.  The format is explained below in a table.  Without
+ arguments a string indicating the current flags is returned (this is
+ the same as the '?'modifier).  For more information about the flags
+ refer to the fcntl manual page on your system.
+\end{funcdesc}
+
+\begin{funcdesc}{dup}{}
+ Duplicate the file object and the underlying file pointer and file
+ descriptor.  The resulting object behaves as if it were newly
+ opened.
+\end{funcdesc}
+
+\begin{funcdesc}{dup2}{fd}
+ Duplicate the file object and the underlying file pointer and file
+ descriptor.  The new object will have the given file descriptor.
+ Otherwise the resulting object behaves as if it were newly opened.
+\end{funcdesc}
+
+\begin{funcdesc}{file}{}
+ Return the standard file object that the posixfile object is based
+ on.  This is sometimes necessary for functions that insist on a
+ standard file object.
+\end{funcdesc}
+
+All methods return \code{IOError} when the request fails.
+
+Format characters for the \code{lock()} method have the following meaning:
+
+\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
+  \lineii{u}{unlock the specified region}
+  \lineii{r}{request a read lock for the specified section}
+  \lineii{w}{request a write lock for the specified section}
+\end{tableii}
+
+In addition the following modifiers can be added to the format:
+
+\begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
+  \lineiii{|}{wait until the lock has been granted}{}
+  \lineiii{?}{return the first lock conflicting with the requested lock,
+  or \code{None} if there is no conflict.}{(1)}
+\end{tableiii}
+
+Note:
+
+(1) The lock returned is in the format \code{(mode, len, start,
+whence, pid)} where mode is a character representing the type of lock
+('r' or 'w').  This modifier prevents a request from being granted; it
+is for query purposes only.
+
+Format character for the \code{flags()} method have the following meaning:
+
+\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
+  \lineii{a}{append only flag}
+  \lineii{c}{close on exec flag}
+  \lineii{n}{no delay flag (also called non-blocking flag)}
+  \lineii{s}{synchronization flag}
+\end{tableii}
+
+In addition the following modifiers can be added to the format:
+
+\begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
+  \lineiii{!}{turn the specified flags 'off', instead of the default 'on'}{(1)}
+  \lineiii{=}{replace the flags, instead of the default 'OR' operation}{(1)}
+  \lineiii{?}{return a string in which the characters represent the flags that
+  are set.}{(2)}
+\end{tableiii}
+
+Note:
+
+(1) The \code{!} and \code{=} modifiers are mutually exclusive.
+
+(2) This string represents the flag after they may have been altered
+by the same call.
+
+Examples:
+
+\bcode\begin{verbatim}
+from posixfile import *
+
+file = open('/tmp/test', 'w')
+file.lock('w|')
+...
+file.lock('u')
+file.close()
+\end{verbatim}\ecode
