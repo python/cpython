@@ -450,6 +450,8 @@ class DatagramHandler(SocketHandler):
         when the network is busy - UDP does not guarantee delivery and
         can deliver packets out of sequence.
         """
+        if self.sock is None:
+            self.createSocket()
         self.sock.sendto(s, (self.host, self.port))
 
 class SysLogHandler(logging.Handler):
