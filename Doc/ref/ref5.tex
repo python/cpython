@@ -523,12 +523,14 @@ evaluated only once (but in both cases $z$ is not evaluated at all
 when $x < y$ is found to be false).
 \indexii{chaining}{comparisons}
 
+\catcode`\_=8
 Formally, $e_0 op_1 e_1 op_2 e_2 ...e_{n-1} op_n e_n$ is equivalent to
 $e_0 op_1 e_1$ \verb\and\ $e_1 op_2 e_2$ \verb\and\ ... \verb\and\
 $e_{n-1} op_n e_n$, except that each expression is evaluated at most once.
 
 Note that $e_0 op_1 e_1 op_2 e_2$ does not imply any kind of comparison
 between $e_0$ and $e_2$, e.g. $x < y > z$ is perfectly legal.
+\catcode`\_=12
 
 The forms \verb\<>\ and \verb\!=\ are equivalent; for consistency with
 C, \verb\!=\ is preferred; where \verb\!=\ is mentioned below
