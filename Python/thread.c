@@ -14,6 +14,7 @@ static int thread_debug = 0;
 #include <sys/types.h>
 #include <sys/prctl.h>
 #include <ulocks.h>
+#include <errno.h>
 
 #define MAXPROC		100	/* max # of threads that can be started */
 
@@ -101,6 +102,9 @@ void init_thread _P0()
 {
 #ifdef __sgi
 	struct sigaction s;
+#ifdef USE_DL
+	long addr, size;
+#endif
 #endif
 
 #ifdef DEBUG
@@ -112,6 +116,17 @@ void init_thread _P0()
 	dprintf(("init_thread called\n"));
 
 #ifdef __sgi
+#ifdef USE_DL
+	if ((size = usconfig(CONF_INITSIZE, 64*1024)) < 0)
+		perror("usconfig - CONF_INITSIZE (check)");
+	if (usconfig(CONF_INITSIZE, size) < 0)
+		perror("usconfig - CONF_INITSIZE (reset)");
+	addr = (long) dl_getrange(size + sizeof(ushdr_t));
+	dprintf(("trying to use addr %lx-%lx for shared arena\n", addr, addr+size));
+	errno = 0;
+	if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
+		perror("usconfig - CONF_ATTACHADDR (set)");
+#endif
 	if (usconfig(CONF_INITUSERS, 16) < 0)
 		perror("usconfig - CONF_INITUSERS");
 	my_pid = getpid();	/* so that we know which is the main thread */
@@ -128,13 +143,16 @@ void init_thread _P0()
 	/*usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);*/
 	if ((shared_arena = usinit(tmpnam(0))) == 0)
 		perror("usinit");
-	count_lock = usnewlock(shared_arena);
-	(void) usinitlock(count_lock);
-	wait_lock = usnewlock(shared_arena);
-	dprintf(("arena start: %lx, arena size: %ld\n", (long) shared_arena, (long) usconfig(CONF_GETSIZE, shared_arena)));
-#ifdef USE_DL			/* for python */
-	dl_setrange((long) shared_arena, (long) shared_arena + 64 * 1024);
+#ifdef USE_DL
+	if (usconfig(CONF_ATTACHADDR, addr) < 0) /* reset address */
+		perror("usconfig - CONF_ATTACHADDR (reset)");
 #endif
+	if ((count_lock = usnewlock(shared_arena)) == NULL)
+		perror("usnewlock (count_lock)");
+	(void) usinitlock(count_lock);
+	if ((wait_lock = usnewlock(shared_arena)) == NULL)
+		perror("usnewlock (wait_lock)");
+	dprintf(("arena start: %lx, arena size: %ld\n", (long) shared_arena, (long) usconfig(CONF_GETSIZE, shared_arena)));
 #endif
 #ifdef sun
 	lwp_setstkcache(STACKSIZE, NSTACKS);
@@ -152,6 +170,10 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 #ifdef sun
 	thread_t tid;
 #endif
+#if defined(__sgi) && defined(USE_DL)
+	long addr, size;
+	static int local_initialized = 0;
+#endif
 	int success = 0;	/* init not needed when SOLARIS and */
 				/* C_THREADS implemented properly */
 
@@ -159,18 +181,42 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	if (!initialized)
 		init_thread();
 #ifdef __sgi
-	if (ussetlock(count_lock) == 0)
-		return 0;
+	switch (ussetlock(count_lock)) {
+	case 0: return 0;
+	case -1: perror("ussetlock (count_lock)");
+	}
 	if (maxpidindex >= MAXPROC)
 		success = -1;
 	else {
-		success = sproc(func, PR_SALL, arg);
+#ifdef USE_DL
+		if (!local_initialized) {
+			if ((size = usconfig(CONF_INITSIZE, 64*1024)) < 0)
+				perror("usconfig - CONF_INITSIZE (check)");
+			if (usconfig(CONF_INITSIZE, size) < 0)
+				perror("usconfig - CONF_INITSIZE (reset)");
+			addr = (long) dl_getrange(size + sizeof(ushdr_t));
+			dprintf(("trying to use addr %lx-%lx for sproc\n", addr, addr+size));
+			errno = 0;
+			if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
+				perror("usconfig - CONF_ATTACHADDR (set)");
+		}
+#endif
+		if ((success = sproc(func, PR_SALL, arg)) < 0)
+			perror("sproc");
+#ifdef USE_DL
+		if (!local_initialized) {
+			if (usconfig(CONF_ATTACHADDR, addr) < 0) /* reset address */
+				perror("usconfig - CONF_ATTACHADDR (reset)");
+			local_initialized = 1;
+		}
+#endif
 		if (success >= 0) {
 			nthreads++;
 			pidlist[maxpidindex++] = success;
 		}
 	}
-	(void) usunsetlock(count_lock);
+	if (usunsetlock(count_lock) < 0)
+		perror("usunsetlock (count_lock)");
 #endif
 #ifdef SOLARIS
 	(void) thread_create(0, 0, func, arg, THREAD_NEW_LWP);
@@ -193,7 +239,8 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 		else
 			exit(0);
 #ifdef __sgi
-	(void) ussetlock(count_lock);
+	if (ussetlock(count_lock) < 0)
+		perror("ussetlock (count_lock)");
 	nthreads--;
 	if (getpid() == my_pid) {
 		/* main thread; wait for other threads to exit */
@@ -210,7 +257,8 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 			}
 		}
 		waiting_for_threads = 1;
-		ussetlock(wait_lock);
+		if (ussetlock(wait_lock) < 0)
+			perror("ussetlock (wait_lock)");
 		for (;;) {
 			if (nthreads < 0) {
 				dprintf(("really exit (%d)\n", exit_status));
@@ -219,19 +267,24 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 				else
 					exit(exit_status);
 			}
-			usunsetlock(count_lock);
+			if (usunsetlock(count_lock) < 0)
+				perror("usunsetlock (count_lock)");
 			dprintf(("waiting for other threads (%d)\n", nthreads));
-			ussetlock(wait_lock);
-			ussetlock(count_lock);
+			if (ussetlock(wait_lock) < 0)
+				perror("ussetlock (wait_lock)");
+			if (ussetlock(count_lock) < 0)
+				perror("ussetlock (count_lock)");
 		}
 	}
 	/* not the main thread */
 	if (waiting_for_threads) {
 		dprintf(("main thread is waiting\n"));
-		usunsetlock(wait_lock);
+		if (usunsetlock(wait_lock) < 0)
+			perror("usunsetlock (wait_lock)");
 	} else if (do_exit)
 		(void) kill(my_pid, SIGUSR1);
-	(void) usunsetlock(count_lock);
+	if (usunsetlock(count_lock) < 0)
+		perror("usunsetlock (count_lock)");
 	_exit(0);
 #endif
 #ifdef SOLARIS
@@ -301,7 +354,8 @@ type_lock allocate_lock _P0()
 		init_thread();
 
 #ifdef __sgi
-	lock = usnewlock(shared_arena);
+	if ((lock = usnewlock(shared_arena)) == NULL)
+		perror("usnewlock");
 	(void) usinitlock(lock);
 #endif
 #ifdef sun
@@ -332,10 +386,13 @@ int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 
 	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
 #ifdef __sgi
+	errno = 0;		/* clear it just in case */
 	if (waitflag)
 		success = ussetlock((ulock_t) lock);
 	else
 		success = uscsetlock((ulock_t) lock, 1); /* Try it once */
+	if (success < 0)
+		perror(waitflag ? "ussetlock" : "uscsetlock");
 #endif
 #ifdef sun
 	success = 0;
@@ -359,7 +416,8 @@ void release_lock _P1(lock, type_lock lock)
 {
 	dprintf(("release_lock(%lx) called\n", (long)lock));
 #ifdef __sgi
-	(void) usunsetlock((ulock_t) lock);
+	if (usunsetlock((ulock_t) lock) < 0)
+		perror("usunsetlock");
 #endif
 #ifdef sun
 	(void) mon_enter(((struct lock *) lock)->lock_monitor);
@@ -383,7 +441,8 @@ type_sema allocate_sema _P1(value, int value)
 		init_thread();
 
 #ifdef __sgi
-	sema = usnewsema(shared_arena, value);
+	if ((sema = usnewsema(shared_arena, value)) == NULL)
+		perror("usnewsema");
 	dprintf(("allocate_sema() -> %lx\n", (long) sema));
 	return (type_sema) sema;
 #endif
@@ -401,7 +460,8 @@ void down_sema _P1(sema, type_sema sema)
 {
 	dprintf(("down_sema(%lx) called\n", (long) sema));
 #ifdef __sgi
-	(void) uspsema((usema_t *) sema);
+	if (uspsema((usema_t *) sema) < 0)
+		perror("uspsema");
 #endif
 	dprintf(("down_sema(%lx) return\n", (long) sema));
 }
@@ -410,6 +470,7 @@ void up_sema _P1(sema, type_sema sema)
 {
 	dprintf(("up_sema(%lx)\n", (long) sema));
 #ifdef __sgi
-	(void) usvsema((usema_t *) sema);
+	if (usvsema((usema_t *) sema) < 0)
+		perror("usvsema");
 #endif
 }
