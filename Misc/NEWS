@@ -21,6 +21,9 @@ Extension modules
 Library
 -------
 
+- inspect.is{method|data}descriptor was added, to allow pydoc display
+  __doc__ of data descriptors.
+
 - Fixed socket speed loss caused by use of the _socketobject wrapper class
   in socket.py.
 

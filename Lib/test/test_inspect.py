@@ -61,6 +61,7 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 # isbuiltin, isroutine, getmembers, getdoc, getfile, getmodule,
 # getsourcefile, getcomments, getsource, getclasstree, getargspec,
 # getargvalues, formatargspec, formatargvalues, currentframe, stack, trace
+# isdatadescriptor
 
 from test.test_support import TestFailed, TESTFN
 import sys, imp, os, string
@@ -104,6 +105,8 @@ istest(inspect.ismethod, 'mod.StupidGit.abuse')
 istest(inspect.ismethod, 'git.argue')
 istest(inspect.ismodule, 'mod')
 istest(inspect.istraceback, 'tb')
+istest(inspect.isdatadescriptor, '__builtins__.file.closed')
+istest(inspect.isdatadescriptor, '__builtins__.file.softspace')
 test(inspect.isroutine(mod.spam), 'isroutine(mod.spam)')
 test(inspect.isroutine([].count), 'isroutine([].count)')
 

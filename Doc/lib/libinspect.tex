@@ -161,6 +161,31 @@ Note:
   Return true if the object is a user-defined or built-in function or method.
 \end{funcdesc}
 
+\begin{funcdesc}{ismethoddescriptor}{object}
+  Return true if the object is a method descriptor, but not if ismethod() or 
+  isclass() or isfunction() are true.
+
+  This is new as of Python 2.2, and, for example, is true of int.__add__.
+  An object passing this test has a __get__ attribute but not a __set__
+  attribute, but beyond that the set of attributes varies.  __name__ is
+  usually sensible, and __doc__ often is.
+
+  Methods implemented via descriptors that also pass one of the other
+  tests return false from the ismethoddescriptor() test, simply because
+  the other tests promise more -- you can, e.g., count on having the
+  im_func attribute (etc) when an object passes ismethod().
+\end{funcdesc}
+
+\begin{funcdesc}{isdatadescriptor}{object}
+  Return true if the object is a data descriptor.
+
+  Data descriptors have both a __get__ and a __set__ attribute.  Examples are
+  properties (defined in Python) and getsets and members (defined in C).
+  Typically, data descriptors will also have __name__ and __doc__ attributes 
+  (properties, getsets, and members have both of these attributes), but this 
+  is not guaranteed.
+\end{funcdesc}
+
 \subsection{Retrieving source code
             \label{inspect-source}}
 
