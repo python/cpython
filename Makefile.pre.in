@@ -1,21 +1,21 @@
 # Top-level Makefile for Python
-# 
+#
 # As distributed, this file is called Makefile.pre.in; it is processed
 # into the real Makefile by running the script ./configure, which
 # replaces things like @spam@ with values appropriate for your system.
 # This means that if you edit Makefile, your changes get lost the next
 # time you run the configure script.  Ideally, you can do:
-# 
+#
 #	./configure
 #	make
 #	make test
 #	make install
-# 
+#
 # If you have a previous version of Python installed that you don't
 # want to overwrite, you can use "make altinstall" instead of "make
 # install".  Refer to the "Installing" section in the README file for
 # additional details.
-# 
+#
 # See also the section "Build instructions" in the README file.
 
 # === Variables set by makesetup ===
@@ -282,7 +282,7 @@ LIBRARY_OBJS=	\
 # Rules
 
 # Default target
-all:		$(PYTHON) oldsharedmods sharedmods 
+all:		$(PYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
 $(PYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
@@ -339,7 +339,7 @@ libpython$(VERSION).so:	$(LIBRARY)
 # This rule is here for OPENSTEP/Rhapsody/MacOSX
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHONFRAMEWORKDIR)
 	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-		-framework System @LIBTOOL_CRUFT@ 
+		-framework System @LIBTOOL_CRUFT@
 
 # This rule builds the Cygwin Python DLL
 libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
@@ -500,7 +500,7 @@ install:	altinstall bininstall maninstall
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall 
+                sharedinstall oldsharedinstall
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -513,7 +513,7 @@ oldsharedinstall: $(DESTSHARED) $(SHAREDMODS)
 		  fi; \
 		done
 
-$(DESTSHARED): 
+$(DESTSHARED):
 		@for i in $(DESTDIRS); \
 		do \
 			if test ! -d $$i; then \
@@ -749,7 +749,7 @@ $(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
 	$(LN) -fs Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
 	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
 	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
-	
+
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to
 # --enable-framework. If --enable-framework has been specified then we have
@@ -781,7 +781,7 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
-		
+
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
@@ -833,7 +833,7 @@ clean:
 clobber: clean
 	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
-		config.cache config.log pyconfig.h Modules/config.c 
+		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 
 # Make things extra clean, before making a distribution:
