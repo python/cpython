@@ -116,56 +116,112 @@ for n in sizes:
     x = [e for e, i in augmented] # a stable sort of s
     check("stability", x, s)
 
-def bug453523():
-    global nerrors
-    from random import random
 
-    # If this fails, the most likely outcome is a core dump.
-    if verbose:
-        print "Testing bug 453523 -- list.sort() crasher."
+import unittest
+from test import test_support
+import sys
 
-    class C:
-        def __lt__(self, other):
-            if L and random() < 0.75:
-                pop()
-            else:
-                push(3)
-            return random() < 0.5
+#==============================================================================
 
-    L = [C() for i in range(50)]
-    pop = L.pop
-    push = L.append
-    try:
-        L.sort()
-    except ValueError:
-        pass
-    else:
-        print "    Mutation during list.sort() wasn't caught."
-        nerrors += 1
+class TestBugs(unittest.TestCase):
 
-bug453523()
+    def test_bug453523(self):
+        # bug 453523 -- list.sort() crasher.
+        # If this fails, the most likely outcome is a core dump.
+        # Mutations during a list sort should raise a ValueError.
 
-def cmpNone():
-    global nerrors
+        class C:
+            def __lt__(self, other):
+                if L and random.random() < 0.75:
+                    L.pop()
+                else:
+                    L.append(3)
+                return random.random() < 0.5
 
-    if verbose:
-        print "Testing None as a comparison function."
+        L = [C() for i in range(50)]
+        self.assertRaises(ValueError, L.sort)
 
-    L = range(50)
-    random.shuffle(L)
-    try:
+    def test_cmpNone(self):
+        # Testing None as a comparison function.
+
+        L = range(50)
+        random.shuffle(L)
         L.sort(None)
-    except TypeError:
-        print "    Passing None as cmpfunc failed."
-        nerrors += 1
-    else:
-        if L != range(50):
-            print "    Passing None as cmpfunc failed."
-            nerrors += 1
+        self.assertEqual(L, range(50))
 
-cmpNone()
+#==============================================================================
 
-if nerrors:
-    print "Test failed", nerrors
-elif verbose:
-    print "Test passed -- no errors."
+class TestDecorateSortUndecorate(unittest.TestCase):
+
+    def test_decorated(self):
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        copy = data[:]
+        random.shuffle(data)
+        data.sort(key=str.lower)
+        copy.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
+
+    def test_baddecorator(self):
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        self.assertRaises(TypeError, data.sort, None, lambda x,y: 0)
+
+    def test_stability(self):
+        data = [(random.randrange(100), i) for i in xrange(200)]
+        copy = data[:]
+        data.sort(key=lambda (x,y): x)  # sort on the random first field
+        copy.sort()                     # sort using both fields
+        self.assertEqual(data, copy)    # should get the same result
+
+    def test_cmp_and_key_combination(self):
+        # Verify that the wrapper has been removed
+        def compare(x, y):
+            self.assertEqual(type(x), str)
+            self.assertEqual(type(x), str)
+            return cmp(x, y)
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        data.sort(cmp=compare, key=str.lower)
+
+    def test_badcmp_with_key(self):
+        # Verify that the wrapper has been removed
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        self.assertRaises(TypeError, data.sort, "bad", str.lower)
+
+    def test_reverse(self):
+        data = range(100)
+        random.shuffle(data)
+        data.sort(reverse=True)
+        self.assertEqual(data, range(99,-1,-1))
+
+    def test_reverse_stability(self):
+        data = [(random.randrange(100), i) for i in xrange(200)]
+        copy1 = data[:]
+        copy2 = data[:]
+        data.sort(cmp=lambda x,y: cmp(x[0],y[0]), reverse=True)
+        copy1.sort(cmp=lambda x,y: cmp(y[0],x[0]))
+        self.assertEqual(data, copy1)
+        copy2.sort(key=lambda x: x[0], reverse=True)
+        self.assertEqual(data, copy2)
+
+#==============================================================================
+
+def test_main(verbose=None):
+    test_classes = (
+        TestDecorateSortUndecorate,
+        TestBugs,
+    )
+
+    test_support.run_unittest(*test_classes)
+
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(*test_classes)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
+
+if __name__ == "__main__":
+    test_main(verbose=True)
+
+
