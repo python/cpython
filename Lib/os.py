@@ -362,7 +362,7 @@ else:
     import UserDict
 
     # Fake unsetenv() for Windows
-    # not sure about os2 and dos here but 
+    # not sure about os2 and dos here but
     # I'm guessing they are the same.
 
     if name in ('os2', 'nt', 'dos'):
@@ -421,7 +421,7 @@ else:
                 def __delitem__(self, key):
                     unsetenv(key)
                     del self.data[key]
-                
+
 
     environ = _Environ(environ)
 

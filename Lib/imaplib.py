@@ -226,7 +226,7 @@ class IMAP4:
         while bytes > 0:
             sent = self.sock.send(data)
             if sent == bytes:
-                break	# avoid copy
+                break   # avoid copy
             data = data[sent:]
             bytes = bytes - sent
 

@@ -39,7 +39,7 @@ class MimeTypesTestCase(unittest.TestCase):
                          ".pyunit")
 
     def test_non_standard_types(self):
-        # First try strict 
+        # First try strict
         self.assertEqual(self.db.guess_type('foo.xul', strict=1),
                          (None, None))
         self.assertEqual(self.db.guess_extension('image/jpg', strict=1),
