@@ -287,9 +287,10 @@ PyMac_StopGUSISpin() {
 	PyMac_ConsoleIsDead = 1;
 }
 
+#if !TARGET_API_MAC_CARBON
 /*
 ** Replacement routines for the PLstr... functions so we don't need
-** StdCLib. Moreover, that implementation is broken under cfm68k...
+** StdCLib.
 */
 pascal void
 PLstrcpy(unsigned char *to, unsigned char *fr)
@@ -327,6 +328,7 @@ PLstrrchr(unsigned char *str, unsigned char chr)
 	return ptr;
 }
 	
+#endif /* !TARGET_API_MAC_CARBON */
 #endif /* USE_GUSI */
 
 
@@ -356,7 +358,7 @@ c2pstrcpy(unsigned char *dst, const char *src)
 	strncpy((char *)dst+1, src, len);
 	dst[0] = len;
 }
-#endif
+#endif /* !TARGET_API_MAC_CARBON */
 
 /* Like strerror() but for Mac OS error numbers */
 char *PyMac_StrError(int err)
