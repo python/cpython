@@ -97,13 +97,16 @@ class UnixMailbox(_Mailbox):
 
         def _search_start(self):
                 while 1:
+			pos = self.fp.tell()
                         line = self.fp.readline()
                         if not line:
                                 raise EOFError
                         if line[:5] == 'From ' and self._isrealfromline(line):
+				self.fp.seek(pos)
                                 return
 
         def _search_end(self):
+		self.fp.readline()	# Throw away header line
                 while 1:
                         pos = self.fp.tell()
                         line = self.fp.readline()
