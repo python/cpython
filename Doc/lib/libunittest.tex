@@ -1,0 +1,266 @@
+\section{\module{unittest} ---
+         Unit testing framework}
+
+\declaremodule{standard}{unittest}
+\moduleauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
+\sectionauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+The Python unit testing framework, often referred to as ``PyUnit,'' is
+a Python language version of JUnit, by Kent Beck and Erich Gamma.
+JUnit is, in turn, a Java version of Kent's Smalltalk testing
+framework.  Each is the de facto standard unit testing framework for
+its respective language.
+
+PyUnit supports test automation, sharing of setup and shutdown code
+for tests, aggregation of tests into collections, and independence of
+the tests from the reporting framework.  The \module{unittest} module
+provides classes that make it easy to support these qualities for a
+set of tests.
+
+To achieve this, PyUnit supports three major concepts:
+
+\begin{definitions}
+\term{test case}
+A \dfn{test case} is the smallest unit of testing.  It checks for a
+specific response to a particular set of inputs.  PyUnit provides a
+base class, \class{TestCase}, which may be used to create new test
+cases.
+
+\term{test suite}
+A \dfn{test suite} is a collection of test cases, test suites, or
+both.  It is used to aggregate tests that should be executed
+together.
+
+\term{test runner}
+A \dfn{test runner} is a component which orchestrates the execution of
+tests and provides the outcome to the user.  The runner may use a
+graphical interface, a textual interface, or return a special value to
+indicate the results of executing the tests.
+\end{definitions}
+
+
+
+\begin{seealso}
+  \seetitle[http://pyunit.sourceforge.net/]{PyUnit Web Site}{The
+            source for further information on PyUnit.}
+  \seetitle[http://www.XProgramming.com/testfram.htm]{Simple Smalltalk
+            Testing: With Patterns}{Kent Beck's original paper on
+            testing frameworks using the pattern shared by
+            \module{unittest}.}
+\end{seealso}
+
+
+\subsection{Mapping concepts to classes
+            \label{test-concept-classes}}
+
+
+\subsection{Organizing test code
+            \label{organizing-tests}}
+
+
+\subsection{Re-using old test code
+            \label{legacy-unit-tests}}
+
+Some users will find that they have existing test code that they would
+like to run from PyUnit, without converting every old test function to
+a \class{TestCase} subclass.
+
+For this reason, PyUnit provides a \class{FunctionTestCase} class.
+This subclass of \class{TestCase} can be used to wrap an existing test
+function.  Set-up and tear-down functions can also optionally be
+wrapped.
+
+Given the following test function:
+
+\begin{verbatim}
+def testSomething():
+    something = makeSomething()
+    assert something.name is not None
+    # ...
+\end{verbatim}
+
+one can create an equivalent test case instance as follows:
+
+\begin{verbatim}
+testcase = unittest.FunctionTestCase(testSomething)
+\end{verbatim}
+
+If there are additional set-up and tear-down methods that should be
+called as part of the test case's operation, they can also be provided:
+
+\begin{verbatim}
+testcase = unittest.FunctionTestCase(testSomething,
+                                     setUp=makeSomethingDB,
+                                     tearDown=deleteSomethingDB)
+\end{verbatim}
+
+
+\subsection{Classes and functions
+            \label{unittest-contents}}
+
+\begin{classdesc}{TestCase}{}
+  Instances of the \class{TestCase} class represent the smallest
+  testable units in a set of tests.  This class is intended to be used
+  as a base class, with specific tests being implemented by concrete
+  subclasses.  This class implements the interface needed by the test
+  runner to allow it to drive the test, and methods that the test code
+  can use to check for and report various kinds of failures.
+\end{classdesc}
+
+\begin{classdesc}{FunctionTestCase}{testFunc\optional{,
+                  setup\optional{, tearDown\optional{, description}}}}
+  This class implements the portion of the \class{TestCase} interface
+  which allows the test runner to drive the test, but does not provide
+  the methods which test code can use to check and report errors.
+  This is used to create test cases using legacy test code, allowing
+  it to be integrated into a \refmodule{unittest}-based test
+  framework.
+\end{classdesc}
+
+\begin{classdesc}{TestSuite}{}
+  This class represents an aggregation of individual tests cases and
+  test suites.  The class presents the interface needed by the test
+  runner to allow it to be run as any other test case, but all the
+  contained tests and test suites are executed.  Additional methods
+  are provided to add test cases and suites to the aggregation.
+\end{classdesc}
+
+\begin{classdesc}{TestLoader}{}
+\end{classdesc}
+
+\begin{classdesc}{TextTestRunner}{\optional{stream\optional{,
+                  descriptions\optional{, verbosity}}}}
+\end{classdesc}
+
+\begin{funcdesc}{main}{\optional{module\optional{,
+                 defaultTest\optional{, argv\optional{,
+                 testRunner\optional{, testRunner}}}}}}
+A command-line program that runs a set of tests; this is primarily
+for making test modules conveniently executable.  The simplest use for
+this function is:
+
+\begin{verbatim}
+if __name__ == '__main__':
+    unittest.main()
+\end{verbatim}
+\end{funcdesc}
+
+
+\subsection{TestCase Objects
+            \label{testcase-objects}}
+
+
+\subsection{TestSuite Objects
+            \label{testsuite-objects}}
+
+\class{TestSuite} objects behave much like \class{TestCase} objects,
+except they do not actually implement a test.  Instead, they are used
+to aggregate tests into groups that should be run together.  Some
+additional methods are available to add tests to \class{TestSuite}
+instances:
+
+\begin{methoddesc}[TestSuite]{addTest}{test}
+  Add a \class{TestCase} or \class{TestSuite} to the set of tests that
+  make up the suite.
+\end{methoddesc}
+
+\begin{methoddesc}[TestSuite]{addTests}{tests}
+  Add all the tests from a sequence of \class{TestCase} and
+  \class{TestSuite} instances to this test suite.
+\end{methoddesc}
+
+
+\subsection{TestResult Objects
+            \label{testresult-objects}}
+
+A \class{TestResult} object stores the results of a set of tests.  The
+\class{TestCase} and \class{TestSuite} classes ensure that results are
+properly stored; test authors do not need to worry about recording the
+outcome of tests.
+
+Testing frameworks built on top of \refmodule{unittest} may want
+access to the \class{TestResult} object generated by running a set of
+tests for reporting purposes; a \class{TestResult} instance is
+returned by the \method{TestRunner.run()} method for this purpose.
+
+Each instance holds the total number of tests run, and collections of
+failures and errors that occurred among those test runs.  The
+collections contain tuples of \code{(\var{testcase},
+\var{exceptioninfo})}, where \var{exceptioninfo} is a tuple as
+returned by \function{sys.exc_info()}.
+
+\class{TestResult} instances have the following attributes that will
+be of interest when inspecting the results of running a set of tests:
+
+\begin{memberdesc}[TestResult]{errors}
+  A list containing pairs of \class{TestCase} instances and the
+  \function{sys.exc_info()} results for tests which raised exceptions
+  other than \exception{AssertionError}.
+\end{memberdesc}
+
+\begin{memberdesc}[TestResult]{failures}
+  A list containing pairs of \class{TestCase} instances and the
+  \function{sys.exc_info()} results for tests which raised the
+  \exception{AssertionError} exception.
+\end{memberdesc}
+
+\begin{memberdesc}[TestResult]{testsRun}
+  The number of tests which have been started.
+\end{memberdesc}
+
+\begin{methoddesc}[TestResult]{wasSuccessful}{}
+  Returns true if all tests run so far have passed, otherwise returns
+  false.
+\end{methoddesc}
+
+
+The following methods of the \class{TestResult} class are used to
+maintain the internal data structures, and mmay be extended in
+subclasses to support additional reporting requirements.  This is
+particularly useful in building GUI tools which support interactive
+reporting while tests are being run.
+
+\begin{methoddesc}[TestResult]{startTest}{test}
+  Called when the test case \var{test} is about to be run.
+\end{methoddesc}
+
+\begin{methoddesc}[TestResult]{stopTest}{test}
+  Called when the test case \var{test} has been executed, regardless
+  of the outcome.
+\end{methoddesc}
+
+\begin{methoddesc}[TestResult]{addError}{test, err}
+  Called when the test case \var{test} results in an exception other
+  than \exception{AssertionError}.  \var{err} is a tuple of the form
+  returned by \function{sys.exc_info()}:  \code{(\var{type},
+  \var{value}, \var{traceback})}.
+\end{methoddesc}
+
+\begin{methoddesc}[TestResult]{addFailure}{test, err}
+  Called when the test case \var{test} results in an
+  \exception{AssertionError} exception; the assumption is that the
+  test raised the \exception{AssertionError} and not the
+  implementation being tested.  \var{err} is a tuple of the form
+  returned by \function{sys.exc_info()}:  \code{(\var{type},
+  \var{value}, \var{traceback})}.
+\end{methoddesc}
+
+\begin{methoddesc}[TestResult]{addSuccess}{test}
+  This method is called for a test that does not fail; \var{test} is
+  the test case object.
+\end{methoddesc}
+
+
+One additional method is available for \class{TestResult} objects:
+
+\begin{methoddesc}[TestResult]{stop}{}
+  This method can be called to signal that the set of tests being run
+  should be aborted.  Once this has been called, the
+  \class{TestRunner} object return to its caller without running any
+  additional tests.  This is used by the \class{TextTestRunner} class
+  to stop the test framework when the user signals an interrupt from
+  the keyboard.  GUI tools which provide runners can use this in a
+  similar manner.
+\end{methoddesc}
