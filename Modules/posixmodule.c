@@ -285,6 +285,7 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 #endif
 
 /* choose the appropriate stat and fstat functions and return structs */
+#undef STAT
 #ifdef MS_WIN64
 #	define STAT _stati64
 #	define FSTAT _fstati64
