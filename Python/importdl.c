@@ -38,8 +38,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    USE_DL	-- Jack's dl for IRIX 4 or GNU dld with emulation for Jack's dl
    USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
    _AIX		-- AIX style dynamic linking
-   NT		-- NT style dynamic linking (using DLLs)
-   WIN16_DL	-- Windows 16-bit dynamic linking (using DLLs)
+   MS_WIN32	-- Windows NT style dynamic linking (using DLLs)
+   MS_WIN16	-- Windows 16-bit dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
    USE_MAC_DYNAMIC_LOADING -- Mac CFM shared libraries
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
@@ -76,15 +76,7 @@ typedef void (*dl_funcptr)();
 #define dlerror() "error in dynamic linking"
 #endif
 
-#ifdef __WIN32__
-#define NT
-#endif
-
-#ifdef MS_WIN16
-#define WIN16_DL
-#endif
-
-#if defined(NT) || defined(WIN16_DL)
+#ifdef MS_WINDOWS /* i.e. MS_WIN32 or MS_WIN16 */
 #define DYNAMIC_LINK
 #include <windows.h>
 typedef FARPROC dl_funcptr;
@@ -382,7 +374,7 @@ load_dynamic_module(name, pathname, fp)
 		}
 	}
 #endif /* _AIX */
-#ifdef NT
+#ifdef MS_WIN32
 	{
 		HINSTANCE hDLL;
 		hDLL = LoadLibrary(pathname);
@@ -424,8 +416,8 @@ load_dynamic_module(name, pathname, fp)
 		}
 		p = GetProcAddress(hDLL, funcname);
 	}
-#endif /* NT */
-#ifdef WIN16_DL
+#endif /* MS_WIN32 */
+#ifdef MS_WIN16
 	{
 		HINSTANCE hDLL;
 		hDLL = LoadLibrary(pathname);
@@ -437,7 +429,7 @@ load_dynamic_module(name, pathname, fp)
 		}
 		p = GetProcAddress(hDLL, funcname);
 	}
-#endif /* WIN16_DL */
+#endif /* MS_WIN16 */
 #ifdef USE_DL
 	p =  dl_loadmod(getprogramname(), pathname, funcname);
 #endif /* USE_DL */
