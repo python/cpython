@@ -1,13 +1,10 @@
 /* strdup() replacement (from stdwin, if you must know) */
 
 #include "config.h"
-#include <string.h>
+#include "myproto.h"
+#include "mymalloc.h"
 
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#else
-extern ANY *malloc Py_PROTO((size_t));
-#endif
+#include <string.h>
 
 char *
 strdup(str)
