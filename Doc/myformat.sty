@@ -272,6 +272,7 @@
 \newcommand{\refmodule}[2]{\index{#1@{\idxcode{#1}} (#2module)}}
 \newcommand{\refmodindex}[1]{\refmodule{#1}{}}
 \newcommand{\refbimodindex}[1]{\refmodule{#1}{built-in }}
+\newcommand{\refexmodindex}[1]{\refmodule{#1}{extension }}
 \newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
 
 % support for the module index
@@ -290,7 +291,7 @@
 
 % Python & extension modules outside the main distribution
 \newcommand{\modindex}[1]{\defmodindex{#1}{}}
-\newcommand{\exmodindex}[1]{\defmodindex{#1}{}}
+\newcommand{\exmodindex}[1]{\defmodindex{#1}{extension }}
 
 % Additional string for an index entry
 \newcommand{\index@subitem}{}
