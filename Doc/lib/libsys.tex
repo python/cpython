@@ -83,7 +83,7 @@ set at build time with the \code{--exec-prefix} argument to the
 (e.g. the \code{config.h} header file) are installed in the directory
 \code{sys.exec_prefix+"/lib/python\emph{VER}/config"}, and shared library
 modules are installed in
-\code{sys.exec_prefix+"/lib/python\emph{VER}/sharedmodules"},
+\code{sys.exec_prefix+"/lib/python\emph{VER}/lib-dynload"},
 where \emph{VER} is equal to \code{sys.version[:3]}.
 \end{datadesc}
 
@@ -115,7 +115,7 @@ without having to re-execute the command that caused the error.
 (Typical use is \code{import pdb; pdb.pm()} to enter the post-mortem
 debugger; see the chapter ``The Python Debugger'' for more
 information.)
-\stmodindex{pdb}
+\refstmodindex{pdb}
 
 The meaning of the variables is the same
 as that of the return values from \code{sys.exc_info()} above.
@@ -139,7 +139,7 @@ interpreter.  If the script directory is not available (e.g.  if the
 interpreter is invoked interactively or if the script is read from 
 standard input), \code{sys.path[0]} is the empty string, which directs 
 Python to search modules in the current directory first.  Notice that 
-the script directory is inserted {\em before} the entries inserted as 
+the script directory is inserted \emph{before} the entries inserted as 
 a result of \code{\$PYTHONPATH}.  
 \end{datadesc}
 
@@ -215,11 +215,11 @@ maximizing responsiveness as well as overhead.
   own prompts and (almost all of) its error messages go to
   \code{sys.stderr}.  \code{sys.stdout} and \code{sys.stderr} needn't
   be built-in file objects: any object is acceptable as long as it has
-  a \code{write} method that takes a string argument.  (Changing these
+  a \code{write()} method that takes a string argument.  (Changing these
   objects doesn't affect the standard I/O streams of processes
   executed by \code{popen()}, \code{system()} or the \code{exec*()}
   family of functions in the \code{os} module.)
-\stmodindex{os}
+\refstmodindex{os}
 \end{datadesc}
 
 \begin{datadesc}{tracebacklimit}

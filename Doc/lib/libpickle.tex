@@ -25,7 +25,7 @@ byte streams is to write them onto a file, but it is also conceivable
 to send them across a network or store them in a database.  The module
 \code{shelve} provides a simple interface to pickle and unpickle
 objects on ``dbm''-style database files.
-\stmodindex{shelve}
+\refstmodindex{shelve}
 
 \strong{Note:} The \code{pickle} module is rather slow.  A
 reimplementation of the same algorithm in C, which is up to 1000 times
@@ -36,7 +36,7 @@ inheritance).
 
 Unlike the built-in module \code{marshal}, \code{pickle} handles the
 following correctly:
-\stmodindex{marshal}
+\refbimodindex{marshal}
 
 \begin{itemize}
 
@@ -74,7 +74,7 @@ it should, but there's probably no great need for it right now (as
 long as \code{marshal} continues to be used for reading and writing
 code objects), and at least this avoids the possibility of smuggling
 Trojan horses into a program.
-\stmodindex{marshal}
+\refbimodindex{marshal}
 
 For the benefit of persistency modules written using \code{pickle}, it
 supports the notion of a reference to an object outside the pickled
