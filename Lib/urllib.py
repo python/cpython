@@ -172,7 +172,7 @@ class URLopener:
         raise IOError, ('url error', 'unknown url type', type)
 
     # External interface
-    def retrieve(self, url, filename=None, reporthook=None):
+    def retrieve(self, url, filename=None, reporthook=None, data=None):
         """retrieve(url) returns (filename, None) for a local object
         or (tempfilename, headers) for a remote object."""
         url = unwrap(url)
