@@ -77,5 +77,5 @@ as well as a Python shell window and a debugger.""",
                   'install_lib':idle_install_lib},
       package_dir = {idlelib:'.'},
       packages = [idlelib],
-      scripts = ['idle']
+      scripts = ['idle', 'idles']
       )
