@@ -70,6 +70,20 @@ def test_main():
         if item > heap[0]:  # this gets rarer the longer we run
             heapreplace(heap, item)
     vereq(list(heapiter(heap)), data_sorted[-10:])
+    # 6)  Exercise everything with repeated heapsort checks
+    for trial in xrange(100):
+        size = random.randrange(50)
+        data = [random.randrange(25) for i in range(size)]
+        if trial & 1:     # Half of the time, use heapify
+            heap = data[:]
+            heapify(heap)
+        else:             # The rest of the time, use heappush
+            heap = []
+            for item in data:
+                heappush(heap,item)
+        data.sort()
+        sorted = [heappop(heap) for i in range(size)]
+        vereq(data, sorted)
     # Make user happy
     if verbose:
         print "All OK"
