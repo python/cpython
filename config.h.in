@@ -396,3 +396,6 @@
 
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
+
+/* Define if you have the m library (-lm).  */
+#undef HAVE_LIBM
