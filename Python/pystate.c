@@ -151,7 +151,7 @@ PyThreadState_Clear(tstate)
 {
 	if (tstate->frame != NULL)
 		fprintf(stderr,
-		  "PyThreadState_Clear: warning: thread still has a frame");
+		  "PyThreadState_Clear: warning: thread still has a frame\n");
 
 	ZAP(tstate->frame);
 
