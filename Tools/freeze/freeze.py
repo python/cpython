@@ -28,6 +28,8 @@ Options:
 
 -m:           Additional arguments are module names instead of filenames.
 
+-l file:      Pass the file to the linker (windows only)
+
 -d:           Debugging mode for the module finder.
 
 -q:           Make the module finder totally quiet.
@@ -38,8 +40,11 @@ Options:
               (For debugging only -- on a win32 platform, win32 behaviour
               is automatic.)
 
--s subsystem: Specify the subsystem; 'windows' or 'console' (default).
-              (For Windows only.)
+-x module     Exclude the specified module.
+
+-s subsystem: Specify the subsystem (For Windows only.); 
+              'console' (default), 'windows', 'service' or 'com_dll'
+              
 
 Arguments:
 
@@ -87,11 +92,16 @@ def main():
     prefix = None                       # settable with -p option
     exec_prefix = None                  # settable with -P option
     extensions = []
+    exclude = []                        # settable with -x option
+    addn_link = []                      # settable with -l, but only honored under Windows.
     path = sys.path[:]
     modargs = 0
     debug = 1
     odir = ''
     win = sys.platform[:3] == 'win'
+
+    # default the exclude list for each platform
+#    if win: exclude = exclude + ['dos', 'dospath', 'mac', 'macpath', 'MACFS', 'posix', 'os2']
 
     # modules that are imported by the Python runtime
     implicits = ["site", "exceptions"]
@@ -105,7 +115,7 @@ def main():
 
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'de:hmo:p:P:qs:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'de:hmo:p:P:qs:wx:l:')
     except getopt.error, msg:
         usage('getopt error: ' + str(msg))
 
@@ -134,6 +144,10 @@ def main():
             if not win:
                 usage("-s subsystem option only on Windows")
             subsystem = a
+        if o == '-x':
+            exclude.append(a)
+        if o == '-l':
+            addn_link.append(a)
 
     # default prefix and exec_prefix
     if not exec_prefix:
@@ -156,6 +170,7 @@ def main():
         config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
         frozenmain_c = os.path.join(prefix, 'Python', 'frozenmain.c')
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+        if win: frozendllmain_c = os.path.join(exec_prefix, 'Pc\\frozen_dllmain.c')
     else:
         binlib = os.path.join(exec_prefix,
                               'lib', 'python%s' % version, 'config')
@@ -198,12 +213,15 @@ def main():
     for arg in args:
         if arg == '-m':
             break
+        # if user specified -m on the command line before _any_
+        # file names, then nothing should be checked (as the
+        # very first file should be a module name)
+        if modargs:
+            break
         if not os.path.exists(arg):
             usage('argument %s not found' % arg)
         if not os.path.isfile(arg):
             usage('%s: not a plain file' % arg)
-        if modargs:
-            break
 
     # process non-option arguments
     scriptfile = args[0]
@@ -234,12 +252,32 @@ def main():
         target = os.path.join(odir, target)
         makefile = os.path.join(odir, makefile)
 
+    # Handle special entry point requirements
+    # (on Windows, some frozen programs do not use __main__, but
+    # import the module directly.  Eg, DLLs, Services, etc
+    custom_entry_point = None  # Currently only used on Windows
+    python_entry_is_main = 1   # Is the entry point called __main__?
+    # handle -s option on Windows
+    if win:
+        import winmakemakefile
+        try:
+            custom_entry_point, python_entry_is_main = winmakemakefile. get_custom_entry_point(subsystem)
+        except ValueError, why:
+            usage(why)
+            
+
     # Actual work starts here...
 
     # collect all modules of the program
     dir = os.path.dirname(scriptfile)
     path[0] = dir
-    mf = modulefinder.ModuleFinder(path, debug)
+    mf = modulefinder.ModuleFinder(path, debug, exclude)
+    
+    if win and subsystem=='service':
+        # If a Windows service, then add the "built-in" module.
+        mod = mf.add_module("servicemanager")
+        mod.__file__="dummy.pyd" # really built-in to the resulting EXE
+
     for mod in implicits:
         mf.import_hook(mod)
     for mod in modules:
@@ -253,7 +291,16 @@ def main():
                 mf.import_hook(mod)
         else:
             mf.load_file(mod)
-    mf.run_script(scriptfile)
+
+    # Add the main script as either __main__, or the actual module name.
+    if python_entry_is_main:
+        mf.run_script(scriptfile)
+    else:
+        if modargs:
+            mf.import_hook(scriptfile)
+        else:
+            mf.load_file(scriptfile)
+
     if debug > 0:
         mf.report()
         print
@@ -267,10 +314,7 @@ def main():
         backup = None
     outfp = open(frozen_c, 'w')
     try:
-        makefreeze.makefreeze(outfp, dict, debug)
-        if win and subsystem == 'windows':
-            import winmakemakefile
-            outfp.write(winmakemakefile.WINMAINTEMPLATE)
+        makefreeze.makefreeze(outfp, dict, debug, custom_entry_point)
     finally:
         outfp.close()
     if backup:
@@ -294,12 +338,29 @@ def main():
 
     # search for unknown modules in extensions directories (not on Windows)
     addfiles = []
-    if unknown and not win:
-        addfiles, addmods = \
-                  checkextensions.checkextensions(unknown, extensions)
-        for mod in addmods:
-            unknown.remove(mod)
-        builtins = builtins + addmods
+    addmoddefns = [] # Windows list of modules.
+    if unknown:
+        if not win:
+            addfiles, addmods = \
+                      checkextensions.checkextensions(unknown, extensions)
+            for mod in addmods:
+                unknown.remove(mod)
+            builtins = builtins + addmods
+        else:
+            # Do the windows thang...
+            import checkextensions_win32
+            # Get a list of CExtension instances, each describing a module 
+            # (including its source files)
+            addmoddefns = checkextensions_win32.checkextensions(unknown, extensions)
+            maindefn = checkextensions_win32.CExtension( '__main__', 
+                                 [frozenmain_c, os.path.basename(frozen_c),frozendllmain_c])
+
+            for mod in addmoddefns:
+                unknown.remove(mod.name)
+                builtins.append(mod.name)
+
+            addmoddefns.append( maindefn )
+
 
     # report unknown modules
     if unknown:
@@ -314,8 +375,7 @@ def main():
         try:
             winmakemakefile.makemakefile(outfp,
                                          locals(),
-                                         [frozenmain_c,
-                                          os.path.basename(frozen_c)],
+                                         addmoddefns,
                                          os.path.basename(target))
         finally:
             outfp.close()

@@ -8,6 +8,16 @@ import re
 import string
 import sys
 
+if sys.platform=="win32":
+    # On Windows, we can locate modules in the registry with
+    # the help of the win32api package.
+    try:
+        import win32api
+    except ImportError:
+        print "The win32api module is not available - modules listed"
+        print "in the registry will not be found."
+        win32api = None
+
 
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 IMPORT_FROM = dis.opname.index('IMPORT_FROM')
@@ -33,7 +43,7 @@ class Module:
 
 class ModuleFinder:
 
-    def __init__(self, path=None, debug=0):
+    def __init__(self, path=None, debug=0, excludes = []):
         if path is None:
             path = sys.path
         self.path = path
@@ -41,6 +51,7 @@ class ModuleFinder:
         self.badmodules = {}
         self.debug = debug
         self.indent = 0
+        self.excludes = excludes
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -219,7 +230,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == imp.PY_SOURCE:
-            co = compile(fp.read(), pathname, 'exec')
+            co = compile(fp.read()+'\n', pathname, 'exec')
         elif type == imp.PY_COMPILED:
             if fp.read(4) != imp.get_magic():
                 self.msgout(2, "raise ImportError: Bad magic number", pathname)
@@ -289,9 +300,26 @@ class ModuleFinder:
         return m
 
     def find_module(self, name, path):
+        if name in self.excludes:
+            self.msgout(3, "find_module -> Excluded")
+            raise ImportError, name
+
         if path is None:
             if name in sys.builtin_module_names:
                 return (None, None, ("", "", imp.C_BUILTIN))
+
+            # Emulate the Registered Module support on Windows.
+            if sys.platform=="win32" and win32api is not None:
+                HKEY_LOCAL_MACHINE = 0x80000002
+                try:
+                    pathname = win32api.RegQueryValue(HKEY_LOCAL_MACHINE, "Software\\Python\\PythonCore\\%s\\Modules\\%s" % (sys.winver, name))
+                    fp = open(pathname, "rb")
+                    # XXX - To do - remove the hard code of C_EXTENSION.
+                    stuff = "", "rb", imp.C_EXTENSION
+                    return fp, pathname, stuff
+                except win32api.error:
+                    pass
+
             path = self.path
         return imp.find_module(name, path)
 

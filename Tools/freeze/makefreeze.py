@@ -12,7 +12,9 @@ static struct _frozen _PyImport_FrozenModules[] = {
 trailer = """\
     {0, 0, 0} /* sentinel */
 };
+"""
 
+default_entry_point = """
 int
 main(argc, argv)
     int argc;
@@ -24,7 +26,8 @@ main(argc, argv)
 
 """
 
-def makefreeze(outfp, dict, debug=0):
+def makefreeze(outfp, dict, debug=0, entry_point = None):
+    if entry_point is None: entry_point = default_entry_point
     done = []
     mods = dict.keys()
     mods.sort()
@@ -47,6 +50,8 @@ def makefreeze(outfp, dict, debug=0):
     for mod, mangled, size in done:
         outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
     outfp.write(trailer)
+    outfp.write(entry_point)
+
 
 
 # Write a C initializer for a module containing the frozen python code.
