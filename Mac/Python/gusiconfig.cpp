@@ -119,7 +119,7 @@ extern "C" void GUSISetupConfig()
    	if ( prefrh != -1) CloseResFile(prefrh);
 	UseResFile(oldrh);
 
-	config->ConfigureDefaultTypeCreator('ttxt', 'TEXT');
+	config->ConfigureDefaultTypeCreator('TEXT', 'ttxt');
 	config->ConfigureSuffices(
 		sizeof(sSuffices)/sizeof(GUSIConfiguration::FileSuffix)-1, sSuffices);
 	config->ConfigureAutoInitGraf(false);
