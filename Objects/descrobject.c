@@ -91,9 +91,9 @@ wrapper_repr(PyWrapperDescrObject *descr)
 
 static int
 descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
-	  PyObject **pres)
+	    PyObject **pres)
 {
-	if (obj == NULL || obj == Py_None) {
+	if (obj == NULL || (obj == Py_None && type != Py_None->ob_type)) {
 		Py_INCREF(descr);
 		*pres = (PyObject *)descr;
 		return 1;
