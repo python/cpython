@@ -773,9 +773,6 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
-/* Needed on Tru64 and does no harm on Linux */
-#undef _XOPEN_SOURCE
-
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
