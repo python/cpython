@@ -45,6 +45,8 @@ import urllib
 
 import pimp
 
+PACKMAN_HOMEPAGE="http://www.python.org/packman"
+
 ELIPSES = '...'
 		
 USER_INSTALL_DIR = os.path.join(os.environ.get('HOME', ''),
@@ -60,6 +62,7 @@ class PackageManagerMain(Wapplication.Application):
 		Wapplication.Application.__init__(self, 'Pimp')
 		from Carbon import AE
 		from Carbon import AppleEvents
+		self.defaulturl = ""
 		
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEOpenApplication, 
 				self.ignoreevent)
@@ -80,14 +83,18 @@ class PackageManagerMain(Wapplication.Application):
 			PyConsole.installoutput()
 			if debug_stderr:
 				sys.stderr = debug_stderr
-		self.opendoc(None)
+		self.domenu_openstandard()
 		self.mainloop()
 		
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
 		newitem = FrameWork.MenuItem(m, "Open Standard Database", "N", 'openstandard')
+		newexpitem = FrameWork.MenuItem(m, "Open Experimental Database", None, 'openexperimental')
+		newexpitem.enable(pimp.PIMP_VERSION >= "0.4")
 		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
 		openURLitem = FrameWork.MenuItem(m, "Open URL"+ELIPSES, "D", 'openURL')
+		FrameWork.Separator(m)
+		moreinfoitem = FrameWork.MenuItem(m, "More Databases", None, 'opendatabasepage')
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 ##		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
@@ -147,16 +154,28 @@ class PackageManagerMain(Wapplication.Application):
 			self.opendoc(path)
 	
 	def opendoc(self, url):
+		if url:
+			self.defaulturl = url
 		PackageBrowser(url)
 	
 	def getabouttext(self):
 		return "About Package Manager"+ELIPSES
 	
 	def do_about(self, id, item, window, event):
-		EasyDialogs.Message("Package Install Manager for Python")
+		EasyDialogs.Message("Package Install Manager for Python\nPackMan engine (pimp) version: %s" %
+			pimp.PIMP_VERSION)
 	
 	def domenu_openstandard(self, *args):
-		self.opendoc(None)
+		if pimp.PIMP_VERSION >= "0.4":
+			url = pimp.getDefaultDatabase()
+		else:
+			# 0.3 compatibility
+			url = None
+		self.opendoc(url)
+		
+	def domenu_openexperimental(self, *args):
+		database = pimp.getDefaultDatabase(experimental=True)
+		self.opendoc(database)
 		
 	def domenu_open(self, *args):
 		filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
@@ -171,15 +190,16 @@ class PackageManagerMain(Wapplication.Application):
 			"to run arbitrary code on your machine.",
 			yes="OK", no="")
 		if ok <= 0: return
-		url = EasyDialogs.AskString("URL of database to open:", ok="Open")
+		url = EasyDialogs.AskString("URL of database to open:", 
+			default=self.defaulturl, ok="Open")
 		if url:
 			self.opendoc(url)
 	
-	def domenu_openbyname(self, *args):
-		url = EasyDialogs.AskString("Open URL:", ok="Open")
-		if url:
-			self.opendoc(url)
-		
+	def domenu_opendatabasepage(self):
+		import ic
+			
+		icr = ic.IC()
+		icr.launchurl(PACKMAN_HOMEPAGE)
 	def makeopenwindowsmenu(self):
 		for i in range(len(self.openwindowsmenu.items)):
 			self.openwindowsmenu.menu.DeleteMenuItem(1)
