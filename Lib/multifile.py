@@ -117,7 +117,7 @@ class MultiFile:
         return list
 
     def read(self): # Note: no size argument -- read until EOF only!
-        return self.readlines().join('')
+        return ''.join(self.readlines())
 
     def next(self):
         while self.readline(): pass
