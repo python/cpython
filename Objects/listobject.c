@@ -582,18 +582,15 @@ listappend(self, args)
 
 /* Comparison function.  Takes care of calling a user-supplied
    comparison function (any callable Python object).  Calls the
-   standard comparison function, cmpobject(), if the user-supplied
-   function is NULL. */
+   standard comparison function, PyObject_Compare(), if the user-
+   supplied function is NULL. */
 
 static int
-docompare(x, y, compare, list)
+docompare(x, y, compare)
 	PyObject *x;
 	PyObject *y;
 	PyObject *compare;
-	PyListObject *list;
 {
-	int size = list->ob_size; /* Number of elements to sort */
-	PyObject **array = list->ob_item; /* Start of array to sort */
 	PyObject *args, *res;
 	int i;
 
@@ -601,11 +598,6 @@ docompare(x, y, compare, list)
 		i = PyObject_Compare(x, y);
 		if (i && PyErr_Occurred())
 			i = CMPERROR;
-		else if (size != list->ob_size || array != list->ob_item) {
-			PyErr_SetString(PyExc_SystemError,
-					"list changed size during sort");
-			i = CMPERROR;
-		}
 		return i;
 	}
 
@@ -622,11 +614,6 @@ docompare(x, y, compare, list)
 				"comparison function should return int");
 		return CMPERROR;
 	}
-	if (size != list->ob_size || array != list->ob_item) {
-		PyErr_SetString(PyExc_SystemError,
-				"list changed size during sort");
-		return CMPERROR;
-	}
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
 	if (i < 0)
@@ -636,246 +623,535 @@ docompare(x, y, compare, list)
 	return 0;
 }
 
-/* MINSIZE is the smallest array we care to partition; smaller arrays
-   are sorted using binary insertion.  It must be at least 4 for the
-   quicksort implementation to work.  Binary insertion always requires
-   fewer compares than quicksort, but does O(N**2) data movement.  The
-   more expensive compares, the larger MINSIZE should be. */
-#define MINSIZE 49
+/* MINSIZE is the smallest array that will get a full-blown samplesort
+   treatment; smaller arrays are sorted using binary insertion.  It must
+   be at least 7 for the samplesort implementation to work.  Binary
+   insertion does fewer compares, but can suffer O(N**2) data movement.
+   The more expensive compares, the larger MINSIZE should be. */
+#define MINSIZE 100
+
+/* MINPARTITIONSIZE is the smallest array slice samplesort will bother to
+   partition; smaller slices are passed to binarysort.  It must be at
+   least 2, and no larger than MINSIZE.  Setting it higher reduces the #
+   of compares slowly, but increases the amount of data movement quickly.
+   The value here was chosen assuming a compare costs ~25x more than
+   swapping a pair of memory-resident pointers -- but under that assumption,
+   changing the value by a few dozen more or less has aggregate effect
+   under 1%.  So the value is crucial, but not touchy <wink>. */
+#define MINPARTITIONSIZE 40
+
+/* MAXMERGE is the largest number of elements we'll always merge into
+   a known-to-be sorted chunk via binary insertion, regardless of the
+   size of that chunk.  Given a chunk of N sorted elements, and a group
+   of K unknowns, the largest K for which it's better to do insertion
+   (than a full-blown sort) is a complicated function of N and K mostly
+   involving the expected number of compares and data moves under each
+   approach, and the relative cost of those operations on a specific
+   architecure.  The fixed value here is conservative, and should be a
+   clear win regardless of architecture or N. */
+#define MAXMERGE 15
 
 /* STACKSIZE is the size of our work stack.  A rough estimate is that
-   this allows us to sort arrays of MINSIZE * 2**STACKSIZE, or large
-   enough.  (Because of the way we push the biggest partition first,
-   the worst case occurs when all subarrays are always partitioned
-   exactly in two.) */
-#define STACKSIZE 64
+   this allows us to sort arrays of size N where
+   N / ln(N) = MINPARTITIONSIZE * 2**STACKSIZE, so 60 is more than enough
+   for arrays of size 2**64.  Because we push the biggest partition
+   first, the worst case occurs when all subarrays are always partitioned
+   exactly in two. */
+#define STACKSIZE 60
 
-/* quicksort algorithm.  Return -1 if an exception occurred; in this
-   case we leave the array partly sorted but otherwise in good health
-   (i.e. no items have been removed or duplicated). */
+
+#define SETK(X,Y) if ((k = docompare(X,Y,compare))==CMPERROR) goto fail
+
+/* binarysort is the best method for sorting small arrays: it does
+   few compares, but can do data movement quadratic in the number of
+   elements.
+   [lo, hi) is a contiguous slice of the list, and is sorted via
+   binary insertion.
+   On entry, must have lo <= start <= hi, and that [lo, start) is already
+   sorted (pass start == lo if you don't know!).
+   If docompare complains (returns CMPERROR) return -1, else 0.
+   Even in case of error, the output slice will be some permutation of
+   the input (nothing is lost or duplicated).
+*/
 
 static int
-quicksort(list, compare)
-	PyListObject *list; /* List to sort */
+binarysort(lo, hi, start, list, compare)
+	PyObject **lo;
+	PyObject **hi;
+	PyObject **start;
+	PyListObject *list; /* Needed by docompare for paranoia checks */
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
-	register PyObject *tmp, *pivot;
-	register PyObject **l, **r, **p;
-	PyObject **lo, **hi, **notp;
-	int top, k, n, lisp, risp;
-	PyObject **lostack[STACKSIZE];
-	PyObject **histack[STACKSIZE];
+	/* assert lo <= start <= hi
+	   assert [lo, start) is sorted */
+	register int k;
+	register PyObject **l, **p, **r;
+	register PyObject *pivot;
 
-	/* Start out with the whole array on the work stack */
-	lostack[0] = list->ob_item;
-	histack[0] = list->ob_item + list->ob_size;
-	top = 1;
-
-#define SETK(X,Y) if ((k = docompare(X,Y,compare,list))==CMPERROR) goto fail
-
-	/* Repeat until the work stack is empty */
-	while (--top >= 0) {
-		lo = lostack[top];
-		hi = histack[top];
-		n = hi - lo;
-
-		/* If it's a small one, use binary insertion sort */
-		if (n < MINSIZE) {
-			for (notp = lo+1; notp < hi; ++notp) {
-				/* set l to where *notp belongs */
-				l = lo;
-				r = notp;
-				pivot = *r;
-				do {
-					p = l + ((r - l) >> 1);
-					SETK(pivot, *p);
-					if (k < 0)
-						r = p;
-					else
-						l = p + 1;
-				} while (l < r);
-				/* Pivot should go at l -- slide over to
-				   make room.  Caution: using memmove
-				   is much slower under MSVC 5; we're
-				   not usually moving many slots. */
-				for (p = notp; p > l; --p)
-					*p = *(p-1);
-				*l = pivot;
-			}
-			continue;
-		}
-
-		/* Choose median of first, middle and last as pivot;
-		   this is a simple unrolled 3-element insertion sort */
-		l = lo;          /* First  */
-		p = lo + (n>>1); /* Middle */
-		r = hi - 1;      /* Last   */
-
-		pivot = *p;
-		SETK(pivot, *l);
-		if (k < 0) {
-			*p = *l;
-			*l = pivot;
-		}
-
+	if (lo == start)
+		++start;
+	for (; start < hi; ++start) {
+		/* set l to where *start belongs */
+		l = lo;
+		r = start;
 		pivot = *r;
-		SETK(pivot, *p);
-		if (k < 0) {
-			*r = *p;
-			*p = pivot;   /* for consistency */
-			SETK(pivot, *l);
-			if (k < 0) {
-				*p = *l;
-				*l = pivot;
-			}
-		}
-
-		pivot = *p;
-		l++;
-		r--;
-
-		/* Partition the array */
-		for (;;) {
-			lisp = risp = 1;    /* presumed guilty */
-
-			/* Move left index to element >= pivot */
-			while (l < p) {
-				SETK(*l, pivot);
-				if (k < 0)
-					l++;
-				else {
-					lisp = 0;
-					break;
-				}
-			}
-			/* Move right index to element <= pivot */
-			while (r > p) {
-				SETK(pivot, *r);
-				if (k < 0)
-					r--;
-				else {
-					risp = 0;
-					break;
-				}
-			}
-
-			if (lisp == risp) {
-				/* assert l < p < r or l == p == r
-				 * This is the most common case, so we
-				 * strive to get back to the top of the
-				 * loop ASAP.
-				 */
-				tmp = *l; *l = *r; *r = tmp;
-				l++; r--;
-				if (l < r)
-					continue;
-				break;
-			}
-
-			/* One (exactly) of the pointers is at p */
-			/* assert (p == l) ^ (p == r) */
-			notp = lisp ? r : l;
-			*p = *notp;
-			k = (r - l) >> 1;
-			if (k) {
-				if (lisp) {
-					p = r - k;
-					l++;
-				}
-				else {
-					p = l + k;
-					r--;
-				}
-				*notp = *p;
-				*p = pivot;    /* for consistency */
-				continue;
-			}
-
-			/* assert l+1 == r */
-			*notp = pivot;
-			p = notp;
-			break;
-		}   /* end of partitioning loop */
-
-		/* assert *p == pivot
-		   All in [lo,p)   are <= pivot
-		   At p                == pivot
-		   All in [p+1,hi) are >= pivot
-		*/
-
-		r = p;
-		l = p + 1;
-		/* Partitions are [lo,r) and [l,hi).
-		 * See whether *l == pivot; we know *l >= pivot, so
-		 * they're equal iff *l <= pivot too, or not pivot < *l.
-		 * This wastes a compare if it fails, but can win big
-		 * when there are runs of duplicates.
-		 */
-		SETK(pivot, *l);
-		if (!(k < 0)) {
-			/* Now extend as far as possible (around p) so that:
-			   All in [lo,r) are <= pivot
-			   All in [r,l)  are == pivot
-			   All in [l,hi) are >= pivot
-			   Mildly tricky: continue using only "<" -- we
-			   deduce equality indirectly.
-			*/
-			while (r > lo) {
-				/* because r-1 < p, *(r-1) <= pivot is known */
-				SETK(*(r-1), pivot);
-				if (k < 0)
-					break;
-				/* <= and not < implies == */
-				r--;
-			}
-
-			l++;
-			while (l < hi) {
-				/* because l > p, pivot <= *l is known */
-				SETK(pivot, *l);
-				if (k < 0)
-					break;
-				/* <= and not < implies == */
-				l++;
-			}
-
-		}    /* end of checking for duplicates */
-
-		/* Push biggest partition first */
-		if (r - lo >= hi - l) {
-			/* First one is bigger */
-			lostack[top]   = lo;
-			histack[top++] = r;
-			lostack[top]   = l;
-			histack[top++] = hi;
-		} else {
-			/* Second one is bigger */
-			lostack[top]   = l;
-			histack[top++] = hi;
-			lostack[top]   = lo;
-			histack[top++] = r;
-		}
-		/* Should assert top <= STACKSIZE */
+		do {
+			p = l + ((r - l) >> 1);
+			SETK(pivot, *p);
+			if (k < 0)
+				r = p;
+			else
+				l = p + 1;
+		} while (l < r);
+		/* Pivot should go at l -- slide over to make room.
+		   Caution: using memmove is much slower under MSVC 5;
+		   we're not usually moving many slots. */
+		for (p = start; p > l; --p)
+			*p = *(p-1);
+		*l = pivot;
 	}
-
-	/* Success */
 	return 0;
 
  fail:
 	return -1;
+}
+
+/* samplesortslice is the sorting workhorse.
+   [lo, hi) is a contiguous slice of the list, to be sorted in place.
+   On entry, must have lo <= hi,
+   If docompare complains (returns CMPERROR) return -1, else 0.
+   Even in case of error, the output slice will be some permutation of
+   the input (nothing is lost or duplicated).
+
+   samplesort is basically quicksort on steroids:  a power of 2 close
+   to n/ln(n) is computed, and that many elements (less 1) are picked at
+   random from the array and sorted.  These 2**k - 1 elements are then
+   used as preselected pivots for an equal number of quicksort
+   partitioning steps, partitioning the slice into 2**k chunks each of
+   size about ln(n).  These small final chunks are then usually handled
+   by binarysort.  Note that when k=1, this is roughly the same as an
+   ordinary quicksort using a random pivot, and when k=2 this is roughly
+   a median-of-3 quicksort.  From that view, using k ~= lg(n/ln(n)) makes
+   this a "median of n/ln(n)" quicksort.  You can also view it as a kind
+   of bucket sort, where 2**k-1 bucket boundaries are picked dynamically.
+
+   The large number of samples makes a quadratic-time case almost
+   impossible, and asymptotically drives the average-case number of
+   compares from quicksort's 2 N ln N (or 12/7 N ln N for the median-of-
+   3 variant) down to N lg N.
+
+   We also play lots of low-level tricks to cut the number of compares.
+   
+   Very obscure:  To avoid using extra memory, the PPs are stored in the
+   array and shuffled around as partitioning proceeds.  At the start of a
+   partitioning step, we'll have 2**m-1 (for some m) PPs in sorted order,
+   adjacent (either on the left or the right!) to a chunk of X elements
+   that are to be partitioned: P X or X P.  In either case we need to
+   shuffle things *in place* so that the 2**(m-1) smaller PPs are on the
+   left, followed by the PP to be used for this step (that's the middle
+   of the PPs), followed by X, followed by the 2**(m-1) larger PPs:
+       P X or X P -> Psmall pivot X Plarge
+   and the order of the PPs must not be altered.  It can take a while
+   to realize this isn't trivial!  It can take even longer <wink> to
+   understand why the simple code below works, using only 2**(m-1) swaps.
+   The key is that the order of the X elements isn't necessarily
+   preserved:  X can end up as some cyclic permutation of its original
+   order.  That's OK, because X is unsorted anyway.  If the order of X
+   had to be preserved too, the simplest method I know of using O(1)
+   scratch storage requires len(X) + 2**(m-1) swaps, spread over 2 passes.
+   Since len(X) is typically several times larger than 2**(m-1), that
+   would slow things down.
+*/
+
+struct SamplesortStackNode {
+	/* Represents a slice of the array, from (& including) lo up
+	   to (but excluding) hi.  "extra" additional & adjacent elements
+	   are pre-selected pivots (PPs), spanning [lo-extra, lo) if
+	   extra > 0, or [hi, hi-extra) if extra < 0.  The PPs are
+	   already sorted, but nothing is known about the other elements
+	   in [lo, hi). |extra| is always one less than a power of 2.
+	   When extra is 0, we're out of PPs, and the slice must be
+	   sorted by some other means. */
+	PyObject **lo;
+	PyObject **hi;
+	int extra;
+};
+
+/* The number of PPs we want is 2**k - 1, where 2**k is as close to
+   N / ln(N) as possible.  So k ~= lg(N / ln(N).  Calling libm routines
+   is undesirable, so cutoff values are canned in the "cutoff" table
+   below:  cutoff[i] is the smallest N such that k == CUTOFFBASE + i. */
+#define CUTOFFBASE 4
+static int cutoff[] = {
+	43,        /* smallest N such that k == 4 */
+	106,       /* etc */
+	250,
+	576,
+	1298,
+	2885,
+	6339,
+	13805,
+	29843,
+	64116,
+	137030,
+	291554,
+	617916,
+	1305130,
+	2748295,
+	5771662,
+	12091672,
+	25276798,
+	52734615,
+	109820537,
+	228324027,
+	473977813,
+	982548444,   /* smallest N such that k == 26 */
+	2034159050   /* largest N that fits in signed 32-bit; k == 27 */
+};
+
+static int
+samplesortslice(lo, hi, list, compare)
+	PyObject **lo;
+	PyObject **hi;
+	PyListObject *list;  /* Needed by docompare for paranoia checks */
+	PyObject *compare;/* Comparison function object, or NULL for default */
+{
+	register PyObject **l, **r;
+	register PyObject *tmp, *pivot;
+	register int k;
+	int n, extra, top, extraOnRight;
+	struct SamplesortStackNode stack[STACKSIZE];
+
+	/* assert lo <= hi */
+	n = hi - lo;
+
+	/* ----------------------------------------------------------
+	 * Special cases
+	 * --------------------------------------------------------*/
+	if (n < 2)
+		return 0;
+
+	/* Set r to the largest value such that [lo,r) is sorted.
+	   This catches the already-sorted case, the all-the-same
+	   case, and the appended-a-few-elements-to-a-sorted-list case.
+	   If the array is unsorted, we're very likely to get out of
+	   the loop fast, so the test is cheap if it doesn't pay off.
+	*/
+	/* assert lo < hi */
+	for (r = lo+1; r < hi; ++r) {
+		SETK(*r, *(r-1));
+		if (k < 0)
+			break;
+	}
+	/* [lo,r) is sorted, [r,hi) unknown.  Get out cheap if there are
+	   few unknowns, or few elements in total. */
+	if (hi - r <= MAXMERGE || n < MINSIZE)
+		return binarysort(lo, hi, r, list, compare);
+
+	/* Check for the array already being reverse-sorted.  Typical
+	   benchmark-driven silliness <wink>. */
+	/* assert lo < hi */
+	for (r = lo+1; r < hi; ++r) {
+		SETK(*(r-1), *r);
+		if (k < 0)
+			break;
+	}
+	if (hi - r <= MAXMERGE) {
+		/* Reverse the reversed prefix, then insert the tail */
+		PyObject **originalr = r;
+		l = lo;
+		do {
+			--r;
+			tmp = *l; *l = *r; *r = tmp;
+			++l;
+		} while (l < r);
+		return binarysort(lo, hi, originalr, list, compare);
+	}
+
+	/* ----------------------------------------------------------
+	 * Normal case setup: a large array without obvious pattern.
+	 * --------------------------------------------------------*/
+
+	/* extra := a power of 2 ~= n/ln(n), less 1.
+	   First find the smallest extra s.t. n < cutoff[extra] */
+	for (extra = 0;
+	     extra < sizeof(cutoff) / sizeof(cutoff[0]);
+	     ++extra) {
+		if (n < cutoff[extra])
+			break;
+		/* note that if we fall out of the loop, the value of
+		   extra still makes *sense*, but may be smaller than
+		   we would like (but the array has more than ~= 2**31
+		   elements in this case!) */ 
+	}
+	/* Now k == extra - 1 + CUTOFFBASE.  The smallest value k can
+	   have is CUTOFFBASE-1, so
+	   assert MINSIZE >= 2**(CUTOFFBASE-1) - 1 */
+	extra = (1 << (extra - 1 + CUTOFFBASE)) - 1;
+	/* assert extra > 0 and n >= extra */
+
+	/* Swap that many values to the start of the array.  The
+	   selection of elements is pseudo-random, but the same on
+	   every run (this is intentional! timing algorithm changes is
+	   a pain if timing varies across runs).  */
+	{
+		unsigned int seed = n / extra;  /* arbitrary */
+		unsigned int i;
+		for (i = 0; i < (unsigned)extra; ++i) {
+			/* j := random int in [i, n) */
+			unsigned int j;
+			seed = seed * 69069 + 7;
+			j = i + seed % (n - i);
+			tmp = lo[i]; lo[i] = lo[j]; lo[j] = tmp;
+		}
+	}
+
+	/* Recursively sort the preselected pivots. */
+	if (samplesortslice(lo, lo + extra, list, compare) < 0)
+		goto fail;
+
+	top = 0;          /* index of available stack slot */
+	lo += extra;      /* point to first unknown */
+	extraOnRight = 0; /* the PPs are at the left end */
+
+	/* ----------------------------------------------------------
+	 * Partition [lo, hi), and repeat until out of work.
+	 * --------------------------------------------------------*/
+	for (;;) {
+		/* assert lo <= hi, so n >= 0 */
+		n = hi - lo;
+
+		/* We may not want, or may not be able, to partition:
+		   If n is small, it's quicker to insert.
+		   If extra is 0, we're out of pivots, and *must* use
+		   another method.
+		*/
+		if (n < MINPARTITIONSIZE || extra == 0) {
+			if (n >= MINSIZE) {
+				/* assert extra == 0
+				   This is rare, since the average size
+				   of a final block is only about
+				   ln(original n). */
+				if (samplesortslice(lo, hi, list,
+						    compare) < 0)
+					goto fail;
+			}
+			else {
+				/* Binary insertion should be quicker,
+				   and we can take advantage of the PPs
+				   already being sorted. */
+				if (extraOnRight && extra) {
+					/* swap the PPs to the left end */
+					k = extra;
+					do {
+						tmp = *lo;
+						*lo = *hi;
+						*hi = tmp;
+						++lo; ++hi;
+					} while (--k);
+				}
+				if (binarysort(lo - extra, hi, lo,
+					       list, compare) < 0)
+					goto fail;
+			}
+
+			/* Find another slice to work on. */
+			if (--top < 0)
+				break;   /* no more -- done! */
+			lo = stack[top].lo;
+			hi = stack[top].hi;
+			extra = stack[top].extra;
+			extraOnRight = 0;
+			if (extra < 0) {
+				extraOnRight = 1;
+				extra = -extra;
+			}
+			continue;
+		}
+
+		/* Pretend the PPs are indexed 0, 1, ..., extra-1.
+		   Then our preselected pivot is at (extra-1)/2, and we
+		   want to move the PPs before that to the left end of
+		   the slice, and the PPs after that to the right end.
+		   The following section changes extra, lo, hi, and the
+		   slice such that:
+		   [lo-extra, lo) contains the smaller PPs.
+		   *lo == our PP.
+		   (lo, hi) contains the unknown elements.
+		   [hi, hi+extra) contains the larger PPs.
+		*/
+		k = extra >>= 1;  /* num PPs to move */ 
+		if (extraOnRight) {
+			/* Swap the smaller PPs to the left end.
+			   Note that this loop actually moves k+1 items:
+			   the last is our PP */
+			do {
+				tmp = *lo; *lo = *hi; *hi = tmp;
+				++lo; ++hi;
+			} while (k--);
+		}
+		else {
+			/* Swap the larger PPs to the right end. */
+			while (k--) {
+				--lo; --hi;
+				tmp = *lo; *lo = *hi; *hi = tmp;
+			}
+		}
+		--lo;   /* *lo is now our PP */
+		pivot = *lo;
+
+		/* Now an almost-ordinary quicksort partition step.
+		   Note that most of the time is spent here!
+		   Only odd thing is that we partition into < and >=,
+		   instead of the usual <= and >=.  This helps when
+		   there are lots of duplicates of different values,
+		   because it eventually tends to make subfiles
+		   "pure" (all duplicates), and we special-case for
+		   duplicates later. */
+		l = lo + 1;
+		r = hi - 1;
+		/* assert lo < l < r < hi (small n weeded out above) */
+
+		do {
+			/* slide l right, looking for key >= pivot */
+			do {
+				SETK(*l, pivot);
+				if (k < 0)
+					++l;
+				else
+					break;
+			} while (l < r);
+
+			/* slide r left, looking for key < pivot */
+			while (l < r) {
+				SETK(*r, pivot);
+				if (k < 0)
+					break;
+				else
+					--r;
+			}
+
+			/* swap and advance both pointers */
+			if (l < r) {
+				tmp = *l; *l = *r; *r = tmp;
+				++l;
+				--r;
+			}
+
+		} while (l < r);
+
+		/* assert lo < r <= l < hi
+		   assert r == l or r+1 == l
+		   everything to the left of l is < pivot, and
+		   everything to the right of r is >= pivot */
+
+		if (l == r) {
+			SETK(*r, pivot);
+			if (k < 0)
+				++l;
+			else
+				--r;
+		}
+		/* assert lo <= r and r+1 == l and l <= hi
+		   assert r == lo or a[r] < pivot
+		   assert a[lo] is pivot
+		   assert l == hi or a[l] >= pivot
+		   Swap the pivot into "the middle", so we can henceforth
+		   ignore it.
+		*/
+		*lo = *r;
+		*r = pivot;
+
+		/* The following is true now, & will be preserved:
+		   All in [lo,r) are < pivot
+		   All in [r,l) == pivot (& so can be ignored)
+		   All in [l,hi) are >= pivot */
+
+		/* Check for duplicates of the pivot.  One compare is
+		   wasted if there are no duplicates, but can win big
+		   when there are.
+		   Tricky: we're sticking to "<" compares, so deduce
+		   equality indirectly.  We know pivot <= *l, so they're
+		   equal iff not pivot < *l.
+		*/
+		while (l < hi) {
+			/* pivot <= *l known */
+			SETK(pivot, *l);
+			if (k < 0)
+				break;
+			else
+				/* <= and not < implies == */
+				++l;
+		}
+
+		/* assert lo <= r < l <= hi
+		   Partitions are [lo, r) and [l, hi) */
+
+		/* push fattest first; remember we still have extra PPs
+		   to the left of the left chunk and to the right of
+		   the right chunk! */
+		/* assert top < STACKSIZE */
+		if (r - lo <= hi - l) {
+			/* second is bigger */
+			stack[top].lo = l;
+			stack[top].hi = hi;
+			stack[top].extra = -extra;
+			hi = r;
+			extraOnRight = 0;
+		}
+		else {
+			/* first is bigger */
+			stack[top].lo = lo;
+			stack[top].hi = r;
+			stack[top].extra = extra;
+			lo = l;
+			extraOnRight = 1;
+		}
+		++top;
+
+	}   /* end of partitioning loop */
+
+	return 0;
+
+ fail:
+	return -1;
+}
 
 #undef SETK
-}
+
+staticforward PyTypeObject immutable_list_type;
 
 static PyObject *
 listsort(self, compare)
 	PyListObject *self;
 	PyObject *compare;
 {
-	if (quicksort(self, compare) < 0)
+	int err;
+
+	self->ob_type = &immutable_list_type;
+	err = samplesortslice(self->ob_item,
+			      self->ob_item + self->ob_size,
+			      self, compare);
+	self->ob_type = &PyList_Type;
+	if (err < 0)
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+int
+PyList_Sort(v)
+	PyObject *v;
+{
+	if (v == NULL || !PyList_Check(v)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	v = listsort((PyListObject *)v, (PyObject *)NULL);
+	if (v == NULL)
+		return -1;
+	Py_DECREF(v);
+	return 0;
 }
 
 static PyObject *
@@ -917,17 +1193,6 @@ PyList_Reverse(v)
 		return -1;
 	Py_DECREF(v);
 	return 0;
-}
-
-int
-PyList_Sort(v)
-	PyObject *v;
-{
-	if (v == NULL || !PyList_Check(v)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	return quicksort((PyListObject *)v, (PyObject *)NULL);
 }
 
 PyObject *
@@ -1067,5 +1332,73 @@ PyTypeObject PyList_Type = {
 	(reprfunc)list_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	&list_as_sequence,	/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+};
+
+
+/* During a sort, we really can't have anyone modifying the list; it could
+   cause core dumps.  Thus, we substitute a dummy type that raises an
+   explanatory exception when a modifying operation is used.  Caveat:
+   comparisons may behave differently; but I guess it's a bad idea anyway to
+   compare a list that's being sorted... */
+
+static PyObject *
+immutable_list_op(/*No args!*/)
+{
+	PyErr_SetString(PyExc_TypeError,
+			"a list cannot be modified while it is being sorted");
+	return NULL;
+}
+
+static PyMethodDef immutable_list_methods[] = {
+	{"append",	(PyCFunction)immutable_list_op},
+	{"insert",	(PyCFunction)immutable_list_op},
+	{"remove",	(PyCFunction)immutable_list_op},
+	{"index",	(PyCFunction)listindex},
+	{"count",	(PyCFunction)listcount},
+	{"reverse",	(PyCFunction)immutable_list_op},
+	{"sort",	(PyCFunction)immutable_list_op},
+	{NULL,		NULL}		/* sentinel */
+};
+
+static PyObject *
+immutable_list_getattr(f, name)
+	PyListObject *f;
+	char *name;
+{
+	return Py_FindMethod(immutable_list_methods, (PyObject *)f, name);
+}
+
+static int
+immutable_list_ass(/*No args!*/)
+{
+	immutable_list_op();
+	return -1;
+}
+
+static PySequenceMethods immutable_list_as_sequence = {
+	(inquiry)list_length, /*sq_length*/
+	(binaryfunc)list_concat, /*sq_concat*/
+	(intargfunc)list_repeat, /*sq_repeat*/
+	(intargfunc)list_item, /*sq_item*/
+	(intintargfunc)list_slice, /*sq_slice*/
+	(intobjargproc)immutable_list_ass, /*sq_ass_item*/
+	(intintobjargproc)immutable_list_ass, /*sq_ass_slice*/
+};
+
+static PyTypeObject immutable_list_type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"list (immutable, during sort)",
+	sizeof(PyListObject),
+	0,
+	0,		/*tp_dealloc*/ /* Cannot happen */
+	(printfunc)list_print, /*tp_print*/
+	(getattrfunc)immutable_list_getattr, /*tp_getattr*/
+	0,		/*tp_setattr*/
+	0,		/*tp_compare*/ /* Won't be called */
+	(reprfunc)list_repr, /*tp_repr*/
+	0,		/*tp_as_number*/
+	&immutable_list_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 };
