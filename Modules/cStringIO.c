@@ -389,8 +389,11 @@ O_dealloc(Oobject *self) {
 
 static PyObject *
 O_getattr(Oobject *self, char *name) {
-  if (strcmp(name, "softspace") == 0) {
+  if (name[0] == 's' && strcmp(name, "softspace") == 0) {
 	  return PyInt_FromLong(self->softspace);
+  }
+  else if (name[0] == 'c' && strcmp(name, "closed") == 0) {
+	  return PyInt_FromLong(self->closed);
   }
   return Py_FindMethod(O_methods, (PyObject *)self, name);
 }
@@ -496,6 +499,9 @@ I_dealloc(Iobject *self) {
 
 static PyObject *
 I_getattr(Iobject *self, char *name) {
+  if (name[0] == 'c' && strcmp(name,"closed") == 0) {
+	  return PyInt_FromLong(self->closed);
+  }
   return Py_FindMethod(I_methods, (PyObject *)self, name);
 }
 
