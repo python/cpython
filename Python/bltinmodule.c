@@ -68,6 +68,69 @@ PyDoc_STRVAR(abs_doc,
 \n\
 Return the absolute value of the argument.");
 
+static PyObject *
+builtin_all(PyObject *self, PyObject *v)
+{
+	PyObject *it, *item;
+
+	it = PyObject_GetIter(v);
+	if (it == NULL)
+		return NULL;
+
+	while ((item = PyIter_Next(it)) != NULL) {
+		int cmp = PyObject_IsTrue(item);
+		Py_DECREF(item);
+		if (cmp < 0) {
+			Py_DECREF(it);
+			return NULL;
+		}
+		if (cmp == 0) {
+			Py_DECREF(it);
+			Py_RETURN_FALSE;
+		}
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred())
+		return NULL;
+	Py_RETURN_TRUE;
+}
+
+PyDoc_STRVAR(all_doc,
+"all(iterable) -> bool\n\
+\n\
+Return True if bool(x) is True for all values x in the iterable.");
+
+static PyObject *
+builtin_any(PyObject *self, PyObject *v)
+{
+	PyObject *it, *item;
+
+	it = PyObject_GetIter(v);
+	if (it == NULL)
+		return NULL;
+
+	while ((item = PyIter_Next(it)) != NULL) {
+		int cmp = PyObject_IsTrue(item);
+		Py_DECREF(item);
+		if (cmp < 0) {
+			Py_DECREF(it);
+			return NULL;
+		}
+		if (cmp == 1) {
+			Py_DECREF(it);
+			Py_RETURN_TRUE;
+		}
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred())
+		return NULL;
+	Py_RETURN_FALSE;
+}
+
+PyDoc_STRVAR(any_doc,
+"any(iterable) -> bool\n\
+\n\
+Return True if bool(x) is True for any x in the iterable.");
 
 static PyObject *
 builtin_apply(PyObject *self, PyObject *args)
@@ -2125,6 +2188,8 @@ in length to the length of the shortest argument sequence.");
 static PyMethodDef builtin_methods[] = {
  	{"__import__",	builtin___import__, METH_VARARGS, import_doc},
  	{"abs",		builtin_abs,        METH_O, abs_doc},
+ 	{"all",		builtin_all,        METH_O, all_doc},
+ 	{"any",		builtin_any,        METH_O, any_doc},
  	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
