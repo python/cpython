@@ -1,4 +1,4 @@
-How to install Python 1.6a1 on your Macintosh
+How to install Python 1.6a2 on your Macintosh
 ---------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
@@ -19,51 +19,54 @@ to be expected.
 
 Aside from the general Python 1.6 features like unicode support the
 main new features of this MacPython release is support for multithreading.
-This has not been tested very well. 
+This has had some preliminary testing, but please report any success or failure
+on the mailing list.
 
 This installer installs MacPython for PowerPC only, whether a 68K distribution
-of Python 1.6 will happen is not certain at the moment. There is no Tkinter
-in this installer.
+of Python 1.6 will happen is not certain at the moment.
 
-All references to 68k, cfm68k and Tkinter in this document and in the
-installer should be ignored: it really isn't there.
+Changes since 1.6a1
+-------------------
+
+- All core-Python changes, plus a few from after 1.6a2, approximately as the
+  Python CVS tree was at May 5.
+- The threading performance bug has been fixed.
+- Tkinter is included again (yeah!), but only lightly tested. Please report
+  findings to the mailing list.
+- macfsn.py is auto-imported on startup (unless disabled with a new option).
+  This retrofits macfs.StandardGetFile() and friends to use Navigation Services
+  in stead of the old Standard File dialogs.
+- I think all installer problems have been fixed. Please report if not so.
 
 What to install
 ---------------
 
-There are three flavors of Python: PowerPC, cfm68k and Classic 68k
-(the FAT flavor is just a combination of the first two, which is handy
-if you want to install Python on a fileserver or so). 68K-mac owners
-should definitely use the cfm68k version if possible, since it enables
-the use of applets and dynamically loaded modules and usually has a
-smaller memory footprint. If you have an older system than MacOS 8 it
-does however need the CFM68K Runtime Enabler which is available from
-Apple (available for free from
-<http://support.info.apple.com/ftp/swhome.html>, included since MacOS
-7.6.1 and builtin to the system since MacOS 8). If your machine is
-pre-68020 you cannot use cfm68k and you can install the classic 68k
-Python.
+This installer is PPC only: too many new MacOS features are not available on 68K,
+and doing workarounds, even just #ifdeffing in the code, is too much work for
+me right now. If someone wants to revive 68K-MacPython: please do so. The project
+files still contain the 68K targets (they're simply skipped by the build process)
+so all that is needed is CodeWarrior, a source distribution and commitment.
+
+The optional parts in this distribution are
+- TK+PIL: Tkinter and support modules, plus Imaging, the Python image manipulation 
+  package (allows you to read, write and display images and do lots of operations on them).
+- img: another imaging package. Has more file format support and is faster
+  than imaging, but has only limited operations on images. There is a bridge
+  between the packages.
+- Numeric: the LLNL Numeric Python extension. All sorts of nifty operations
+  on matrices and such.
+- Developers kit: all header files and some tools and sample projects to get you started on
+  writing Python extensions if you have CodeWarrior.
+All these except the DevKit are installed with Easy Install.
 
 After the installer finishes it automatically launches the
-ConfigurePython applet, to finish configuration of your Python
-installation (except for classic 68K installations, where no extra
-configuration is needed).
-
-If you have a pre-system 7 macintosh: sorry, this release will not work
-on your system. Too many sys7 features are used to make a sys6 python
-easy to create.
+ConfigurePython applet, to finish configuration of your Python.
 
 If you don't have enough memory: the sizes choosen are somewhat
 arbitrary. Try lowering the application sizes in the finder "get info"
 window, and seeing whether the resulting python is still usable. Some
 modules (Tkinter comes to mind) need a lot of memory, so it may also be
 necessary to increase the application size.
-
-A final note to CFM68K (and possibly PPC) users: the Code Fragment
-Manager can (incorrectly) produce "library not found" and other strange
-error messages when it really means that there is not enough room in the
-system heap. Decreasing (yes, *de*creasing) the size of the interpreter
-and/or enabling virtual memory may solve these problems.
 
 After installing
 ----------------
@@ -74,52 +77,38 @@ created on-the-fly as well. You may also want to skip this step if you
 are low on diskspace.
 
 Next, it is probably a good idea to run the automatic tests. Start
-Python and "import test.autotest". This should not print any
-errors. It will, however, print some messages about optional features
+Python and "import test.autotest". This should not print only one error, about some
+AM/PM format not supported in strftime. 
+It will, however, print some messages about optional features
 not supported. Also, if you didn't run compileall before autotesting
 you may run out of memory the first time you run the
 tests. test_socket may also fail if you have no internet
 connection. Please also read the Relnotes file for other minor
 problems with this distribution.
 
-PPC and CFM68K users have a couple of applets in the main folder they
-may want to try, (68K users can use the corresponding scripts from the
-"scripts" folder):
-
-- EditPythonPrefs allows you to edit the preferences file, to change the
-python home folder or modify the initial sys.path setting. The default
-settings are somewhat arbitrary, you can remove tkinter if you don't use
-it and possibly add Extensions:img:Lib. - mkapplet creates a python
-applet, a tiny application written in python. Drop a python source on it
-and out comes the application. More information can be found in the
-"Mac:Demo" folder.
-
-If you have a slow machine you may want to disable automatic site.py import
-since site.py does not do too much on the mac (unless you make it do
-something), and it can take a few seconds.
-
-PPC and CFM68K users will see one more file in the python folder:
-PythonApplet. This is the template for building applets, leave it alone.
-The applet is "fat", containing both PPC and CFM68K code. Hence, applets
-built with it can be transported to machines with the other
-architecture.
+Using Python is most easily done from the IDE, which has a builtin editor,
+debugger and other goodies. The alternative is to use PythonInterpreter,
+which is the lowlevel interpreter with a console-window only (similar to Unix
+Python).
 
 Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-library "PythonCore 1.5.2b1" lives in the Extensions folder and the
-"Python 1.5.2b1 Preferences" file in the Preferences folder. All the rest
+library "PythonCore 1.6a2" lives in the Extensions folder and the
+"Python 1.6a2 Preferences" file in the Preferences folder. All the rest
 of Python lives in the folder you installed in.
 
 Things to see
 -------------
 
-There are some readme files in the "Read me files" folder that may
+Start off at Mac:Demo:index.html. Read at least the first few sections.
+
+There are also some readme files in the "Read me files" folder that may
 contain useful information. There is also a first stab at documentation
 (plus examples) in the Mac:Demo folder. The toplevel Demo folder has
-machine-independent demos. See the file Readme-mac for mac-specific
-notes. The Mac:Lib:test folder also has some programs that show simple
+machine-independent demos. 
+The Mac:Lib:test folder also has some programs that show simple
 capabilities of various modules.
 
 The "scripts" folder has some sample scripts. Some are useful, some are
@@ -133,8 +122,7 @@ formats is included, but without documentation.  You can find docs at
 ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere around there).
 
 Finally there is a Mac:Contrib folder which contains some contributed
-software, including a Real Programming Environment and some AppleScript
-related modules.
+software.
 
 Upgrading from older Python releases
 ------------------------------------
@@ -145,15 +133,15 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 1.5.2b1 works as expected you can trash
+After you are satisfied that 1.6a2 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"1.5.2b1".
+"1.6a2".
 
 The installer
 -------------
 
-The installer for this product was created using Installer VISE Lite
-from MindVision Software. For more information on Installer VISE Lite,
+The installer for this product was created using Installer VISE
+from MindVision Software. For more information on Installer VISE,
 contact:
 MindVision Software
 7201 North 7th Street
@@ -163,7 +151,8 @@ Fax: 402-477-1395
 Internet: mindvision@mindvision.com
 http://www.mindvision.com
 
-Just van Rossum <just@letterror.nl> created the installer.
+Just van Rossum <just@letterror.nl> created the initial version of the
+installer (with Installer Vise Lite), and Jack worked from there.
 
 Thanks!
 -------
@@ -187,9 +176,9 @@ I may miss it there (but other people may know quite a bit more than me
 anyway:-).
 
 Jack Jansen
-Centrum voor Wiskunde en Informatica
-Kruislaan 413
-1098 SJ Amsterdam
+Oratrix Development BV
+Valeriusplein 30
+Amsterdam
 the Netherlands
 
 <jack@cwi.nl>, http://www.cwi.nl/~jack
