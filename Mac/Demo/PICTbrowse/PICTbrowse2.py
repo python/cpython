@@ -137,7 +137,7 @@ class MyDialog(FrameWork.DialogWindow):
 					v = v + '"' + self.contents[i][1] + '"'
 				self.list.LSetCell(v, (0, i))
 		self.list.LSetDrawingMode(1)
-		self.list.LUpdate()
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_listhit(self, event):
 		(what, message, when, where, modifiers) = event
@@ -170,7 +170,7 @@ class MyDialog(FrameWork.DialogWindow):
 		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
 		Qd.SetPort(self.wid)
 		Qd.FrameRect(rect)
-		self.list.LUpdate()
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		self.list.LActivate(activate)
