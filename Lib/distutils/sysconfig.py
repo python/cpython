@@ -94,7 +94,10 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
         if standard_lib:
             return os.path.join(prefix, "Lib")
         else:
-            return prefix
+            if sys.version < "2.2":
+                return prefix
+            else:
+                return os.path.join(PREFIX, "Lib", "site-packages")
 
     elif os.name == "mac":
         if plat_specific:
