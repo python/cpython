@@ -33,6 +33,8 @@
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
+#else
+#error "limits.h is required by std C -- why isn't HAVE_LIMITS_H defined?"
 #endif
 
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
