@@ -29,7 +29,7 @@ argument:
 --------------------
 class: 11
 type: 5
-box: 330.000000 170.000000 110.000015 60.000004
+box: 330.000000 130.000000 110.000015 60.000004
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -89,7 +89,7 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 330.000000 90.000000 110.000000 30.000000
+box: 330.000000 200.000000 110.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -419,7 +419,7 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 390.000000 130.000000 50.000000 30.000002
+box: 390.000000 90.000000 50.000000 30.000002
 boxtype: 2
 colors: 47 47
 alignment: 2
@@ -434,7 +434,7 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 320.000000 130.000000 60.000000 30.000000
+box: 320.000000 90.000000 60.000000 30.000000
 boxtype: 0
 colors: 47 47
 alignment: 2
@@ -451,7 +451,7 @@ class: 10000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 1147496041 1852404841
 alignment: 4
 style: 0
 size: 11.000000
@@ -478,7 +478,7 @@ argument: 0
 
 --------------------
 class: 31
-type: 1
+type: 2
 box: 220.000000 170.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
@@ -486,9 +486,9 @@ alignment: 0
 style: 0
 size: 11.000000
 lcol: 0
-label: Delay:
-name: in_sleeptime
-callback: cb_sleeptime
+label: Sample rate:
+name: in_rate_vcr
+callback: cb_rate_vcr
 argument: 0
 
 --------------------
@@ -496,7 +496,7 @@ class: 20000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 0 0
+colors: 544171552 1331849829
 alignment: 4
 style: 0
 size: 11.000000
