@@ -4,7 +4,6 @@
 \index{HTML}
 \index{hypertext}
 
-\setindexsubitem{(in module htmllib)}
 
 This module defines a class which can serve as a base for parsing text
 files formatted in the HyperText Mark-up Language (HTML).  The class
@@ -22,7 +21,7 @@ the \module{formatter}\refstmodindex{formatter} module; refer to the
 documentation for that module for information on the formatter
 interface.
 \index{SGML}
-\ttindex{SGMLParser}
+\withsubitem{(in module sgmllib)}{\ttindex{SGMLParser}}
 \index{formatter}
 
 The following is a summary of the interface defined by
@@ -44,7 +43,7 @@ For example, to parse the entire contents of a file, use:
 parser.feed(open('myfile.html').read())
 parser.close()
 \end{verbatim}
-%
+
 \item
 The interface to define semantics for HTML tags is very simple: derive
 a class and define methods called \code{start_\var{tag}()},
@@ -62,11 +61,11 @@ should define the \code{do_\var{tag}()} method.
 
 The module defines a single class:
 
-\begin{funcdesc}{HTMLParser}{formatter}
+\begin{classdesc}{HTMLParser}{formatter}
 This is the basic HTML parser class.  It supports all entity names
 required by the HTML 2.0 specification (\rfc{1866}).  It also defines
 handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
-\end{funcdesc}
+\end{classdesc}
 
 In addition to tag methods, the \class{HTMLParser} class provides some
 additional methods and instance variables for use within tag methods.
