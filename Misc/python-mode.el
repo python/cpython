@@ -593,6 +593,7 @@ Currently-active file is at the head of the list.")
   ;; subprocess commands
   (define-key py-mode-map "\C-c\C-c"  'py-execute-buffer)
   (define-key py-mode-map "\C-c\C-m"  'py-execute-import-or-reload)
+  (define-key py-mode-map "\C-c\C-s"  'py-execute-string)
   (define-key py-mode-map "\C-c|"     'py-execute-region)
   (define-key py-mode-map "\e\C-x"    'py-execute-def-or-class)
   (define-key py-mode-map "\C-c!"     'py-shell)
@@ -729,6 +730,7 @@ package.  Note that the latest X/Emacs releases contain this package.")
 	["Execute buffer"       py-execute-buffer t]
 	["Execute region"       py-execute-region (mark)]
 	["Execute def or class" py-execute-def-or-class (mark)]
+	["Execute string"       py-execute-string t]
 	["Start interpreter..." py-shell t]
 	"-"
 	["Go to start of block" py-goto-block-up t]
