@@ -43,28 +43,23 @@ class _Subfile:
         self.stop = stop
         self.pos = self.start
 
-    def read(self, length = None):
+
+    def _read(self, length, read_function):
         if self.pos >= self.stop:
             return ''
         remaining = self.stop - self.pos
-        if length is None or length < 0:
-            length = remaining
-        elif length > remaining:
+        if length is None or length < 0 or length > remaining:
             length = remaining
         self.fp.seek(self.pos)
-        data = self.fp.read(length)
+        data = read_function(length)
         self.pos = self.fp.tell()
         return data
 
+    def read(self, length = None):
+        self._read(length, self.fp.read)
+
     def readline(self, length = None):
-        if self.pos >= self.stop:
-            return ''
-        if length is None:
-            length = self.stop - self.pos
-        self.fp.seek(self.pos)
-        data = self.fp.readline(length)
-        self.pos = self.fp.tell()
-        return data
+        self._read(length, self.fp.readline)
 
     def readlines(self, sizehint = -1):
         lines = []
