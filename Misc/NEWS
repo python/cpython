@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The built-ins slice() and buffer() are now callable types.  The
+  types classobj (formerly class), code, function, instance, and
+  instancemethod (formerly instance-method), which have no built-in
+  names but are accessible through the types module, are now also
+  callable.  The type dict-proxy is renamed to dictproxy.
+
 - Fixed string.startswith and string.endswith builtin methods
   so they accept negative indices.  [SF bug 493951]
 
@@ -112,6 +118,10 @@ Core and builtins
   An exception will now be raised if more than one argument is used.
 
 Extension modules
+
+- The 'new' module is no longer an extension, but a Python module that
+  only exists for backwards compatibility.  Its contents are no longer
+  functions but callable type objects.
 
 - The bsddb.*open functions can now take 'None' as a filename.
   This will create a temporary in-memory bsddb that won't be
