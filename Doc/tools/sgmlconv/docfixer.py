@@ -578,6 +578,46 @@ def skip_leading_nodes(children, start, i):
     return start, i
 
 
+def fixup_rfc_references(doc):
+    rfc_nodes = []
+    for child in doc.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            kids = child.getElementsByTagName("rfc")
+            for k in kids:
+                rfc_nodes.append(k)
+    for rfc_node in rfc_nodes:
+        rfc_node.appendChild(doc.createTextNode(
+            "RFC " + rfc_node.getAttribute("num")))
+
+
+def fixup_signatures(doc):
+    for child in doc.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            args = child.getElementsByTagName("args")
+            for arg in args:
+                fixup_args(doc, arg)
+            args = child.getElementsByTagName("constructor-args")
+            for arg in args:
+                fixup_args(doc, arg)
+                arg.normalize()
+
+
+def fixup_args(doc, arglist):
+    for child in arglist.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT \
+           and child.tagName == "optional":
+            # found it; fix and return
+            arglist.insertBefore(doc.createTextNode("["), child)
+            optkids = child.childNodes
+            while optkids:
+                k = optkids[0]
+                child.removeChild(k)
+                arglist.insertBefore(k, child)
+            arglist.insertBefore(doc.createTextNode("]"), child)
+            arglist.removeChild(child)
+            return fixup_args(doc, arglist)
+
+
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 
 def write_esis(doc, ofp, knownempty):
@@ -638,10 +678,14 @@ def convert(ifp, ofp):
         "lineiv": ("row", {}),
         })
     fixup_table_structures(doc)
+    fixup_rfc_references(doc)
+    fixup_signatures(doc)
     #
     d = {}
     for gi in p.get_empties():
         d[gi] = gi
+    if d.has_key("rfc"):
+        del d["rfc"]
     knownempty = d.has_key
     #
     try:
