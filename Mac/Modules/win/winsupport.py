@@ -97,10 +97,27 @@ functions = []
 methods = []
 execfile(INPUTFILE)
 
+# Add a manual routine for converting integer WindowPtr's (as returned by
+# various event routines) to a WindowObject.
+whichwin_body = """
+long ptr;
+
+if ( !PyArg_ParseTuple(_args, "i", &ptr) )
+	return NULL;
+return WinObj_WhichWindow((WindowPtr)ptr);
+"""
+
+f = ManualGenerator("WhichWindow", whichwin_body)
+f.docstring = lambda : "Resolve an integer WindowPtr address to a Window object"
+
+functions.append(f)
+
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
 for f in methods: object.add(f)
+
+
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
