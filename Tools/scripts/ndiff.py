@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-# Module ndiff version 1.4.0
-# Released to the public domain 27-Mar-1999,
+# Module ndiff version 1.5.0
+# Released to the public domain 08-Oct-2000,
 # by Tim Peters (tim_one@email.msn.com).
 
 # Provided as-is; use at your own risk; no warranty; no promises; enjoy!
@@ -28,14 +28,14 @@ Each remaining line begins with a two-letter code:
     "? "    line not present in either input file
 
 Lines beginning with "? " attempt to guide the eye to intraline
-differences, and were not present in either input file.  These lines can
-be confusing if the source files contain tab characters.
+differences, and were not present in either input file.  These lines can be
+confusing if the source files contain tab characters.
 
 The first file can be recovered by retaining only lines that begin with
 "  " or "- ", and deleting those 2-character prefixes; use ndiff with -r1.
 
-The second file can be recovered similarly, but by retaining only "  "
-and "+ " lines; use ndiff with -r2; or, on Unix, the second file can be
+The second file can be recovered similarly, but by retaining only "  " and
+"+ " lines; use ndiff with -r2; or, on Unix, the second file can be
 recovered by piping the output through
 
     sed -n '/^[+ ] /s/^..//p'
@@ -43,7 +43,7 @@ recovered by piping the output through
 See module comments for details and programmatic interface.
 """
 
-__version__ = 1, 4, 0
+__version__ = 1, 5, 0
 
 # SequenceMatcher tries to compute a "human-friendly diff" between
 # two sequences (chiefly picturing a file as a sequence of lines,
@@ -514,8 +514,7 @@ def fancy_replace(a, alo, ahi, b, blo, bhi):
         elif lb < la:
             btags = btags + ' ' * (la - lb)
         combined = map(lambda x,y: _combine[x+y], atags, btags)
-        print '-', aelt, '+', belt, '?', \
-              string.rstrip(string.join(combined, ''))
+        printq(aelt, belt, string.rstrip(string.join(combined, '')))
     else:
         # the synch pair is identical
         print ' ', aelt,
@@ -531,6 +530,22 @@ def fancy_helper(a, alo, ahi, b, blo, bhi):
             dump('-', a, alo, ahi)
     elif blo < bhi:
         dump('+', b, blo, bhi)
+
+# Crap to deal with leading tabs in "?" output.  Can hurt, but will
+# probably help most of the time.
+
+def printq(aline, bline, qline):
+    common = min(count_leading(aline, "\t"),
+                 count_leading(bline, "\t"))
+    common = min(common, count_leading(qline[:common], " "))
+    qline = "\t" * common + qline[common:]
+    print '-', aline, '+', bline, '?', qline
+
+def count_leading(line, ch):
+    i, n = 0, len(line)
+    while i < n and line[i] == ch:
+        i += 1
+    return i
 
 def fail(msg):
     import sys
