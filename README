@@ -369,15 +369,47 @@ BeOS:	Chris Herborth (chrish@qnx.com) writes:
 	BeOS R3 or later.  Note that only the PowerPC platform is
 	supported for R3; both PowerPC and x86 are supported for R4.
 
-Cray T3E: Konrad Hinsen writes:
-	1) Don't use gcc. It compiles Python/graminit.c into something
-	   that the Cray assembler doesn't like. Cray's cc seems to work
-	   fine.
-	2) Comment out modules md5 (won't compile) and audioop (will
-	   crash the interpreter during the test suite).
-	If you run the test suite, two tests will fail (rotate and
-	binascii), but these are not the modules you'd expect to need
-	on a Cray.
+Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
+	Python can be built satisfactorily on a Cray T3E but based on
+	my experience with the NIWA T3E (2002-05-22, version 2.2.1)
+	there are a few bugs and gotchas. For more information see a
+	thread on comp.lang.python in May 2002 entitled "Building
+	Python on Cray T3E".
+
+        1) Use Cray's cc and not gcc. The latter was reported not to
+           work by Konrad Hinsen. It may work now, but it may not.
+
+        2) To set sys.platform to something sensible, pass the
+           following environment variable to the configure script:
+
+             MACHDEP=unicosmk
+
+	2) Run configure with option "--enable-unicode=ucs4".
+
+	3) The Cray T3E does not support dynamic linking, so extension
+	   modules have to be built by adding (or uncommenting) lines
+	   in Modules/Setup. The minimum set of modules is
+
+	     posix, new, _sre, unicodedata
+
+	   On NIWA's vanilla T3E system the following have also been
+	   included successfully:
+
+	     _codecs, _locale, _socket, _symtable, _testcapi, _weakref
+	     array, binascii, cmath, cPickle, crypt, cStringIO, dbm
+	     errno, fcntl, grp, math, md5, operator, parser, pcre, pwd
+	     regex, rotor, select, struct, strop, syslog, termios
+	     time, timing, xreadlines
+
+	4) Once the python executable and library have been built, make
+	   will execute setup.py, which will attempt to build remaining
+	   extensions and link them dynamically. Each of these attempts
+	   will fail but should not halt the make process. This is
+	   normal.
+
+	5) Running "make test" uses a lot of resources and causes
+	   problems on our system. You might want to try running tests
+	   singly or in small groups.
 
 SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	does not check whether a command actually changed the file it

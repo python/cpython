@@ -1788,7 +1788,7 @@ deepcopy(PyObject** object, PyObject* memo)
 #endif
 
 static PyObject*
-join(PyObject* list, PyObject* pattern)
+join_list(PyObject* list, PyObject* pattern)
 {
     /* join list elements */
 
@@ -2241,7 +2241,7 @@ next:
     Py_DECREF(filter);
 
     /* convert list to single string (also removes list) */
-    item = join(list, self->pattern);
+    item = join_list(list, self->pattern);
 
     if (!item)
         return NULL;

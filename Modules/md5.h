@@ -30,17 +30,15 @@ documentation and/or software.
 /* POINTER defines a generic pointer type */
 typedef unsigned char *POINTER;
 
-/* UINT2 defines a two byte word */
-typedef unsigned short int UINT2;
-
 /* UINT4 defines a four byte word */
 #if SIZEOF_LONG == 4
 typedef unsigned long int UINT4;
-#else
-#if INT_MAX == 2147483647
+#elif SIZEOF_SHORT == 4
+typedef unsigned short int UINT4;
+#elif INT_MAX == 2147483647
 typedef unsigned int UINT4;
-#endif
-/* Too bad if neither is; pyport.h would need to be fixed. */
+#else
+#error "Can't find a 4-byte integral type"
 #endif
 
 /* ========== End global.h; continue md5.h ========== */
