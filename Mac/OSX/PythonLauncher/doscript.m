@@ -100,7 +100,7 @@ doscript(const char *command)
         goto bail;
     }
 
-    /* send the event to the Finder */
+    /* send the command event to Terminal.app */
     err = AESend(&theAEvent, &theReply, kAEWaitReply,
             kAENormalPriority, kAEDefaultTimeout, NULL, NULL);
     
