@@ -308,7 +308,11 @@ Email:   bwarsaw@python.org''' % __version__)
                       self.__linevar.get()
         info.i_port = self.__inputvar.get()
         info.o_gain = self.__scalevar.get()
-        self.__devctl.setinfo(info)
+        try:
+            self.__devctl.setinfo(info)
+        except sunaudiodev.error, msg:
+            # TBD: what to do?  it's probably temporary.
+            pass
 
     def __getset(self, var, onvalue):
         if var.get() == onvalue:
