@@ -1906,7 +1906,6 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	int minrun;
 	int saved_ob_size, saved_allocated;
 	PyObject **saved_ob_item;
-	PyObject **empty_ob_item;
 	PyObject *compare = NULL;
 	PyObject *result = NULL;	/* guilty until proved innocent */
 	int reverse = 0;
@@ -1941,9 +1940,8 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	saved_ob_size = self->ob_size;
 	saved_ob_item = self->ob_item;
 	saved_allocated = self->allocated;
-	self->ob_size = 0;
-	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0);
-	self->allocated = 0;
+	self->ob_size = self->allocated = 0;
+	self->ob_item = NULL;
 
 	if (keyfunc != NULL) {
 		for (i=0 ; i < saved_ob_size ; i++) {
@@ -1957,18 +1955,6 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 					saved_ob_item[i] = value;
 					Py_DECREF(kvpair);
 				}
-				if (self->ob_item != empty_ob_item
-				    || self->ob_size) {
-					/* If the list changed *as well* we
-					   have two errors.  We let the first
-					   one "win", but we shouldn't let
-					   what's in the list currently
-					   leak. */
-					(void)list_ass_slice(
-						self, 0, self->ob_size,
-						(PyObject *)NULL);
-				}
-
 				goto dsu_fail;
 			}
 			kvpair = build_sortwrapper(key, value);
@@ -2044,14 +2030,12 @@ fail:
 		}
 	}
 
-	if (self->ob_item != empty_ob_item || self->ob_size) {
-		/* The user mucked with the list during the sort. */
-		(void)list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL);
-		if (result != NULL) {
-			PyErr_SetString(PyExc_ValueError,
-					"list modified during sort");
-			result = NULL;
-		}
+	if (self->ob_item != NULL && result != NULL) {
+		/* The user mucked with the list during the sort,
+		 * and we don't already have another error to report.
+		 */
+		PyErr_SetString(PyExc_ValueError, "list modified during sort");
+		result = NULL;
 	}
 
 	if (reverse && saved_ob_size > 1)
@@ -2060,8 +2044,10 @@ fail:
 	merge_freemem(&ms);
 
 dsu_fail:
-	if (self->ob_item == empty_ob_item)
-		PyMem_FREE(empty_ob_item);
+	if (self->ob_item != NULL) {
+		(void)list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL);
+		PyMem_FREE(self->ob_item);
+	}
 	self->ob_size = saved_ob_size;
 	self->ob_item = saved_ob_item;
 	self->allocated = saved_allocated;
