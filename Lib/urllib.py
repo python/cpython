@@ -302,15 +302,24 @@ class URLopener:
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""
             import httplib
+            user_passwd = None
             if type(url) is type(""):
                 host, selector = splithost(url)
-                user_passwd, host = splituser(host)
+                if host:
+                    user_passwd, host = splituser(host)
+                    host = unquote(host)
+                realhost = host
             else:
                 host, selector = url
                 urltype, rest = splittype(selector)
-                if string.lower(urltype) == 'https':
+                url = rest
+                user_passwd = None
+                if string.lower(urltype) != 'https':
+                    realhost = None
+                else:
                     realhost, rest = splithost(rest)
-                    user_passwd, realhost = splituser(realhost)
+                    if realhost:
+                        user_passwd, realhost = splituser(realhost)
                     if user_passwd:
                         selector = "%s://%s%s" % (urltype, realhost, rest)
                 #print "proxy via https:", host, selector
@@ -331,6 +340,7 @@ class URLopener:
             else:
                 h.putrequest('GET', selector)
             if auth: h.putheader('Authorization: Basic %s' % auth)
+            if realhost: h.putheader('Host', realhost)
             for args in self.addheaders: apply(h.putheader, args)
             h.endheaders()
             if data is not None:
@@ -340,8 +350,11 @@ class URLopener:
             if errcode == 200:
                 return addinfourl(fp, headers, url)
             else:
-                return self.http_error(url, fp, errcode, errmsg, headers)
-  
+                if data is None:
+                    return self.http_error(url, fp, errcode, errmsg, headers)
+                else:
+                    return self.http_error(url, fp, errcode, errmsg, headers, data)
+
     def open_gopher(self, url):
         """Use Gopher protocol."""
         import gopherlib
@@ -872,7 +885,7 @@ def splituser(host):
         _userprog = re.compile('^([^@]*)@(.*)$')
 
     match = _userprog.match(host)
-    if match: return match.group(1, 2)
+    if match: return map(unquote, match.group(1, 2))
     return None, host
 
 _passwdprog = None
