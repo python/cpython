@@ -25,6 +25,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Check for interrupts */
 
 #ifdef THINK_C
+/* This is for THINK C 4.0.
+   For 3.0, you may have to remove the signal stuff. */
+#include <MacHeaders>
 #define macintosh
 #endif
 
@@ -56,13 +59,7 @@ intrcheck()
 
 #ifdef macintosh
 
-#ifdef THINK_C
-/* This is for THINK C 4.0.
-   For 3.0, you may have to remove the signal stuff. */
-#include <MacHeaders>
-#else
-/* This is for MPW 3.1 */
-/* XXX Untested */
+#ifdef applec /* MPW */
 #include <OSEvents.h>
 #include <SysEqu.h>
 #endif
@@ -73,7 +70,7 @@ intrcheck()
 static int interrupted;
 
 static SIGTYPE
-intcatcher(ig)
+intcatcher(sig)
 	int sig;
 {
 	interrupted = 1;
@@ -92,8 +89,6 @@ intrcheck()
 {
 	register EvQElPtr q;
 	
-	/* This is like THINK C 4.0's <console.h> */
-	/* q = (EvQElPtr) EventQueue.qHead; */
 	q = (EvQElPtr) GetEvQHdr()->qHead;
 	
 	for (; q; q = (EvQElPtr)q->qLink) {
