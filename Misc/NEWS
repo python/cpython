@@ -358,6 +358,14 @@ Mac
 
 - Type Carbon.File.FSCatalogInfo and supporting methods have been implemented.
   This also makes macfs.FSSpec.SetDates() work again.
+  
+- There is a new module pimp, the package install manager for Python, and
+  accompanying applet PackageManager. These allow you to easily download
+  and install pretested extension packages either in source or binary
+  form. Only in MacPython-OSX.
+  
+- Applets are now built with bundlebuilder in MacPython-OSX, which should make
+  them more robust and also provides a path towards BuildApplication. 
 
 
 What's New in Python 2.3 alpha 1?
