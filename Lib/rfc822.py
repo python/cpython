@@ -460,10 +460,7 @@ class Message:
         return self.dict.items()
 
     def __str__(self):
-        str = ''
-        for hdr in self.headers:
-            str = str + hdr
-        return str
+        return ''.join(self.headers)
 
 
 # Utility functions
