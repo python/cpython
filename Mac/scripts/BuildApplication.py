@@ -4,7 +4,7 @@ This puts up a dialog asking for a Python source file ('TEXT').
 The output is a file with the same name but its ".py" suffix dropped.
 It is created by copying an applet template, all used shared libs and 
 then adding 'PYC ' resources containing compiled versions of all used 
-modules wirrten in Python and the main script itself, as __main__.
+modules written in Python and the main script itself, as __main__.
 """
 
 
@@ -24,7 +24,6 @@ MACFREEZEPATH = os.path.join(sys.prefix, ":Mac:Tools:macfreeze")
 if MACFREEZEPATH not in sys.path:
 	sys.path.append(MACFREEZEPATH)
 
-import macmodulefinder
 import macgen_bin
 
 # dialog, items
