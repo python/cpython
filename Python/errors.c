@@ -588,3 +588,37 @@ PyErr_WriteUnraisable(PyObject *obj)
 	Py_XDECREF(v);
 	Py_XDECREF(tb);
 }
+
+
+/* Function to issue a warning message; may raise an exception. */
+int
+PyErr_Warn(PyObject *category, char *message)
+{
+	PyObject *mod, *dict, *func = NULL;
+
+	mod = PyImport_ImportModule("warnings");
+	if (mod != NULL) {
+		dict = PyModule_GetDict(mod);
+		func = PyDict_GetItemString(dict, "warn");
+		Py_DECREF(mod);
+	}
+	if (func == NULL) {
+		PySys_WriteStderr("warning: %s\n", message);
+		return 0;
+	}
+	else {
+		PyObject *args, *res;
+
+		if (category == NULL)
+			category = PyExc_RuntimeWarning;
+		args = Py_BuildValue("(sO)", message, category);
+		if (args == NULL)
+			return -1;
+		res = PyEval_CallObject(func, args);
+		Py_DECREF(args);
+		if (res == NULL)
+			return -1;
+		Py_DECREF(res);
+		return 0;
+	}
+}
