@@ -39,6 +39,8 @@ class TestBasicOps(unittest.TestCase):
             self.gen.seed(arg)
         for arg in [range(3), dict(one=1)]:
             self.assertRaises(TypeError, self.gen.seed, arg)
+        self.assertRaises(TypeError, self.gen.seed, 1, 2)
+        self.assertRaises(TypeError, type(self.gen), [])
 
     def test_jumpahead(self):
         self.gen.seed()
@@ -122,6 +124,9 @@ class TestBasicOps(unittest.TestCase):
 class WichmannHill_TestBasicOps(TestBasicOps):
     gen = random.WichmannHill()
 
+    def test_setstate_first_arg(self):
+        self.assertRaises(ValueError, self.gen.setstate, (2, None, None))
+
     def test_strong_jumpahead(self):
         # tests that jumpahead(n) semantics correspond to n calls to random()
         N = 1000
@@ -161,6 +166,19 @@ class WichmannHill_TestBasicOps(TestBasicOps):
 
 class MersenneTwister_TestBasicOps(TestBasicOps):
     gen = random.Random()
+
+    def test_setstate_first_arg(self):
+        self.assertRaises(ValueError, self.gen.setstate, (1, None, None))
+
+    def test_setstate_middle_arg(self):
+        # Wrong type, s/b tuple
+        self.assertRaises(TypeError, self.gen.setstate, (2, None, None))
+        # Wrong length, s/b 625
+        self.assertRaises(ValueError, self.gen.setstate, (2, (1,2,3), None))
+        # Wrong type, s/b tuple of 625 ints
+        self.assertRaises(TypeError, self.gen.setstate, (2, ('a',)*625, None))
+        # Last element s/b an int also
+        self.assertRaises(TypeError, self.gen.setstate, (2, (0,)*624+('a',), None))
 
     def test_referenceImplementation(self):
         # Compare the python implementation with results from the original
@@ -210,7 +228,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
                     0x11388382c15694L,
                     0x02dad977c9e1feL,
                     0x191d96d4d334c6L]
-
         self.gen.seed(61731L + (24903L<<32) + (614L<<64) + (42143L<<96))
         actual = self.randomlist(2000)[-10:]
         for a, e in zip(actual, expected):
@@ -273,6 +290,13 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             for i in xrange(100):
                 cum |= getbits(span)
             self.assertEqual(cum, 2**span-1)
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.getrandbits)
+        self.assertRaises(TypeError, self.gen.getrandbits, 'a')
+        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
+        self.assertRaises(ValueError, self.gen.getrandbits, 0)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
