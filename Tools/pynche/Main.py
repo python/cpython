@@ -14,9 +14,13 @@ This program currently requires Python 1.5 with Tkinter.  It also requires at
 least Pmw 0.6.1.  It has only been tested on Solaris 2.6.  Feedback is greatly 
 appreciated.  Send email to bwarsaw@python.org
 
-Usage: %(PROGRAM)s [-h]
+Usage: %(PROGRAM)s [-c color] [-h]
 
 Where:
+    --color color
+    -c color
+        initial color, as an X color name or #RRGGBB format
+
     --help
     -h
         print this message
@@ -71,7 +75,7 @@ def keepalive():
 def main():
     global app
 
-    initialcolor = 'grey50'
+    initialcolor = (128, 128, 128)
     try:
 	opts, args = getopt.getopt(sys.argv[1:],
 				   'hc:',
@@ -101,7 +105,18 @@ def main():
     app = Pmw.initialise(fontScheme='pmw1')
     app.title('Pynche %s' % __version__)
     app.tk.createtimerhandler(KEEPALIVE_TIMER, keepalive)
-    p = PyncheWidget(colordb, app, color=initialcolor)
+
+    # get triplet for initial color
+    try:
+	red, green, blue = colordb.find_byname(initialcolor)
+    except ColorDB.BadColor:
+	# must be a #rrggbb style color
+	try:
+	    red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
+	except ColorDB.BadColor:
+	    usage(1, 'Bad initial color: %s' % initialcolor)
+
+    p = PyncheWidget(colordb, app, color=(red, green, blue))
     try:
 	keepalive()
 	app.mainloop()
