@@ -11,13 +11,12 @@ snapshot:
 
     http://docutils.sf.net/docutils-snapshot.tgz
 
-Unfortunately, docutils doesn't work with Python 2.3 yet; you need
-Python 2.2.2 (or perhaps an older version).
+Docutils works with Python 2.1 or newer (including 2.3).
 
-To process NEWS into NEWS.html, first install docutils for Python 2.2,
-and then run this command:
+To process NEWS into NEWS.html, first install Docutils, and then run
+this command:
 
-    python2.2 .../docutils/tools/html.py NEWS >NEWS.html
+    python .../docutils/tools/html.py NEWS >NEWS.html
 
 Here ".../docutils" is the directory into which the above snapshot was
 extracted.  (I hope this recipe will change for the better.)
@@ -32,7 +31,10 @@ The changes required fell into the following categories:
     What's New in Python 2.3 alpha 1?
     =================================
 
-    *XXX Release date: DD-MMM-2002 XXX*
+    *Release date: DD-MMM-2002*
+
+  Note that the release date line is emphasized, with a "*" at each
+  end.
 
 * Subsections are underlined with a single row of hyphens:
 
