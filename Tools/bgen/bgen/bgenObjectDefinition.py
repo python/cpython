@@ -4,6 +4,8 @@ from bgenGeneratorGroup import GeneratorGroup
 class ObjectDefinition(GeneratorGroup):
 	"Spit out code that together defines a new Python object type"
 	basechain = "NULL"
+	tp_flags = "Py_TPFLAGS_DEFAULT"
+	basetype = None
 
 	def __init__(self, name, prefix, itselftype):
 		"""ObjectDefinition constructor.  May be extended, but do not override.
@@ -45,7 +47,11 @@ class ObjectDefinition(GeneratorGroup):
 		sf = self.static and "static "
 		Output("%sPyTypeObject %s;", sf, self.typename)
 		Output()
-		Output("#define %s_Check(x) ((x)->ob_type == &%s)",
+		if self.basetype:
+			Output("#define %s_Check(x) ((x)->ob_type == &%s || PyObject_TypeCheck((x), %s)",
+		       self.prefix, self.typename, self.typename)
+		else:
+			Output("#define %s_Check(x) ((x)->ob_type == &%s)",
 		       self.prefix, self.typename)
 		Output()
 		Output("typedef struct %s {", self.objecttype)
@@ -76,6 +82,8 @@ class ObjectDefinition(GeneratorGroup):
 		
 		self.outputHash()
 		
+		self.outputPEP253Hooks()
+		
 		self.outputTypeObject()
 
 		OutHeader2("End object type " + self.name)
@@ -96,6 +104,8 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputCheckNewArg()
 		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
 		Output("if (it == NULL) return NULL;")
+		if self.basetype:
+			Output("/* XXXX Should we tp_init or tp_new our basetype? */")
 		self.outputInitStructMembers()
 		Output("return (PyObject *)it;")
 		OutRbrace()
@@ -128,7 +138,10 @@ class ObjectDefinition(GeneratorGroup):
 		Output("static void %s_dealloc(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		self.outputCleanupStructMembers()
-		Output("PyObject_Del(self);")
+		if self.basetype:
+			Output("%s.tp_dealloc(self)", self.basetype)
+		else:
+			Output("PyObject_Del(self);")
 		OutRbrace()
 
 	def outputCleanupStructMembers(self):
@@ -197,14 +210,17 @@ class ObjectDefinition(GeneratorGroup):
 		
 	def outputTypeObjectInitializer(self):
 		Output("""%s.ob_type = &PyType_Type;""", self.typename);
+		if self.basetype:
+			Output("%s.tp_base = %s;", self.typename, self.basetype)
+		Output("""Py_INCREF(&%s);""", self.typename)
+		Output("PyModule_AddObject(m, \"%s\", (PyObject *)&%s);", self.name, self.typename);
+		Output("/* Backward-compatible name */")
 		Output("""Py_INCREF(&%s);""", self.typename);
-		Output("""if (PyDict_SetItemString(d, "%sType", (PyObject *)&%s) != 0)""",
-			self.name, self.typename);
-		IndentLevel()
-		Output("""Py_FatalError("can\'t initialize %sType");""",
-		                                           self.name)
-		DedentLevel()
+		Output("PyModule_AddObject(m, \"%sType\", (PyObject *)&%s);", self.name, self.typename);
 
+	def outputPEP253Hooks(self):
+		pass
+		
 class PEP252Mixin:
 	getsetlist = []
 	
@@ -237,7 +253,7 @@ class PEP252Mixin:
 			func = getattr(self, methodname)
 			func()
 		else:
-			Output("0, /*%s*/", methodname)
+			Output("0, /*%s*/", name)
 	
 	def outputTypeObject(self):
 		sf = self.static and "static "
@@ -266,13 +282,13 @@ class PEP252Mixin:
 		Output("(PyMappingMethods *)0, /* tp_as_mapping */")
 		
 		Output("(hashfunc) %s_hash, /*tp_hash*/", self.prefix)
-		Output("0, /*tp_call*/")
+		self.outputHook("tp_call")
 		Output("0, /*tp_str*/")
 		Output("PyObject_GenericGetAttr, /*tp_getattro*/")
 		Output("PyObject_GenericSetAttr, /*tp_setattro */")
 		
 		self.outputHook("tp_as_buffer")
-		self.outputHook("tp_flags")
+		Output("%s, /* tp_flags */", self.tp_flags)
 		self.outputHook("tp_doc")
 		self.outputHook("tp_traverse")
 		self.outputHook("tp_clear")
@@ -284,6 +300,14 @@ class PEP252Mixin:
 		self.outputHook("tp_members")
 		Output("%s_getsetlist, /*tp_getset*/", self.prefix)
 		self.outputHook("tp_base")
+		self.outputHook("tp_dict")
+		self.outputHook("tp_descr_get")
+		self.outputHook("tp_descr_set")
+		self.outputHook("tp_dictoffset")
+		self.outputHook("tp_init")
+		self.outputHook("tp_alloc")
+		self.outputHook("tp_new")
+		self.outputHook("tp_free")
 		DedentLevel()
 		Output("};")
 		
@@ -333,6 +357,85 @@ class PEP252Mixin:
 		Output("return 0;")
 		OutRbrace()
 		Output()
+		
+class PEP253Mixin(PEP252Mixin):
+	tp_flags = "Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE"
+	
+	def outputHook_tp_init(self):
+		Output("%s_tp_init, /* tp_init */", self.prefix)
+		
+	def outputHook_tp_alloc(self):
+		Output("%s_tp_alloc, /* tp_alloc */", self.prefix)
+	
+	def outputHook_tp_new(self):
+		Output("%s_tp_new, /* tp_new */", self.prefix)
+		
+	def outputHook_tp_free(self):
+		Output("%s_tp_free, /* tp_free */", self.prefix)
+		
+	output_tp_initBody = None
+	
+	def output_tp_init(self):
+		if self.output_tp_initBody:
+			Output("static int %s_init(PyObject *self, PyObject *args, PyObject *kwds)", self.prefix)
+			OutLbrace()
+			self.output_tp_initBody()
+			OutRbrace()
+		else:
+			Output("#define %s_tp_init 0", self.prefix)
+		Output()
+		
+	output_tp_allocBody = None
+	
+	def output_tp_alloc(self):
+		if self.output_tp_allocBody:
+			Output("static PyObject *%s_tp_alloc(PyTypeObject *type, int nitems)",
+				self.prefix)
+			OutLbrace()
+			self.output_tp_allocBody()
+			OutRbrace()
+		else:
+			Output("#define %s_tp_alloc PyType_GenericAlloc", self.prefix)
+		Output()
+		
+	def output_tp_newBody(self):
+		Output("PyObject *self;");
+		Output("%s itself;", self.itselftype);
+		Output("char *kw[] = {\"itself\", 0};")
+		Output()
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself)) return NULL;",
+			self.prefix);
+		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+		Output("return self;")
+	
+	def output_tp_new(self):
+		if self.output_tp_newBody:
+			Output("static PyObject *%s_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)", self.prefix)
+			OutLbrace()
+			self.output_tp_newBody()
+			OutRbrace()
+		else:
+			Output("#define %s_tp_new PyType_GenericNew", self.prefix)
+		Output()
+	
+	output_tp_freeBody = None
+	
+	def output_tp_free(self):
+		if self.output_tp_freeBody:
+			Output("static void %s_tp_free(PyObject *self)", self.prefix)
+			OutLbrace()
+			self.output_tp_freeBody()
+			OutRbrace()
+		else:
+			Output("#define %s_tp_free PyObject_Del", self.prefix)
+		Output()
+		
+	def outputPEP253Hooks(self):
+		self.output_tp_init()
+		self.output_tp_alloc()
+		self.output_tp_new()
+		self.output_tp_free()
 
 class GlobalObjectDefinition(ObjectDefinition):
 	"""Like ObjectDefinition but exports some parts.
