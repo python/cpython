@@ -67,22 +67,22 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.2a0
+RELEASE=2.2a1
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-MKDVI=	   ../tools/mkhowto --paper=$(PAPER) --dvi
-MKHTML=	   tools/mkhowto --html --about html/stdabout.dat \
+MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
+MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html"
-MKPDF=	   ../tools/mkhowto --paper=$(PAPER) --pdf
-MKPS=	   ../tools/mkhowto --paper=$(PAPER) --ps
+MKPDF=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --pdf
+MKPS=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --ps
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
-PYTHONDOCS='See <i><a href="about.html">About this document...</a></i> for information on suggesting changes.'
+PYTHONDOCS="See <i><a href=\"about.html\">About this document...</a></i> for information on suggesting changes."
 HTMLBASE=  file:`pwd`
 
 # what's what
@@ -148,75 +148,75 @@ world:	ps pdf html distfiles
 # Targets for each document:
 # Python/C API Reference Manual
 paper-$(PAPER)/api.dvi: paper-$(PAPER)/api.tex $(APIFILES)
-	(cd paper-$(PAPER); $(MKDVI) api.tex)
+	cd paper-$(PAPER) && $(MKDVI) api.tex
 
 paper-$(PAPER)/api.pdf: paper-$(PAPER)/api.tex $(APIFILES)
-	(cd paper-$(PAPER); $(MKPDF) api.tex)
+	cd paper-$(PAPER) && $(MKPDF) api.tex
 
 paper-$(PAPER)/api.tex: api/api.tex api/refcounts.dat tools/anno-api.py
 	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/api.tex
 
 # Distributing Python Modules
 paper-$(PAPER)/dist.dvi: $(DISTFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../dist/dist.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../dist/dist.tex
 
 paper-$(PAPER)/dist.pdf: $(DISTFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../dist/dist.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../dist/dist.tex
 
 # Documenting Python
 paper-$(PAPER)/doc.dvi: $(DOCFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../doc/doc.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../doc/doc.tex
 
 paper-$(PAPER)/doc.pdf: $(DOCFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../doc/doc.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../doc/doc.tex
 
 # Extending and Embedding the Python Interpreter
 paper-$(PAPER)/ext.dvi: $(EXTFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../ext/ext.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../ext/ext.tex
 
 paper-$(PAPER)/ext.pdf: $(EXTFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../ext/ext.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../ext/ext.tex
 
 # Installing Python Modules
 paper-$(PAPER)/inst.dvi: $(INSTFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../inst/inst.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../inst/inst.tex
 
 paper-$(PAPER)/inst.pdf: $(INSTFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../inst/inst.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../inst/inst.tex
 
 # Python Library Reference
 paper-$(PAPER)/lib.dvi: $(LIBFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../lib/lib.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../lib/lib.tex
 
 paper-$(PAPER)/lib.pdf: $(LIBFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../lib/lib.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../lib/lib.tex
 
 # Macintosh Library Modules
 paper-$(PAPER)/mac.dvi: $(MACFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../mac/mac.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../mac/mac.tex
 
 paper-$(PAPER)/mac.pdf: $(MACFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../mac/mac.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../mac/mac.tex
 
 # Python Reference Manual
 paper-$(PAPER)/ref.dvi: $(REFFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../ref/ref.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../ref/ref.tex
 
 paper-$(PAPER)/ref.pdf: $(REFFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../ref/ref.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../ref/ref.tex
 
 # Python Tutorial
 paper-$(PAPER)/tut.dvi: $(TUTFILES)
-	(cd paper-$(PAPER); $(MKDVI) ../tut/tut.tex)
+	cd paper-$(PAPER) && $(MKDVI) ../tut/tut.tex
 
 paper-$(PAPER)/tut.pdf: $(TUTFILES)
-	(cd paper-$(PAPER); $(MKPDF) ../tut/tut.tex)
+	cd paper-$(PAPER) && $(MKPDF) ../tut/tut.tex
 
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
 info:
-	(cd $(INFODIR); $(MAKE))
+	cd $(INFODIR) && $(MAKE)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
@@ -237,15 +237,27 @@ info:
 $(INDEXFILES): $(COMMONPERL) html/about.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
-	$(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
+	$(PYTHON) $(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
 		--output html/acks.html <ACKS
+
+
+# html/index.html is dependent on $(INDEXFILES) since we want the date
+# on the front index to be updated whenever any of the child documents
+# are updated and boilerplate.tex uses \today as the date.  The index
+# files are not used to actually generate content.
+
+BOILERPLATE=texinputs/boilerplate.tex
+html/index.html: $(INDEXFILES)
+html/index.html: html/index.html.in $(BOILERPLATE) tools/rewrite.py
+	$(PYTHON) tools/rewrite.py $(BOILERPLATE) RELEASE=$(RELEASE) \
+		<$< >$@
 
 html/modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
 html/modindex.html: html/lib/lib.html html/mac/mac.html
-	(cd html; \
-	 ../$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
-		--address $(PYTHONDOCS) \
-		lib/modindex.html mac/modindex.html)
+	cd html && \
+	 $(PYTHON) ../$(TOOLSDIR)/mkmodindex --columns 4 \
+		--output modindex.html --address $(PYTHONDOCS) \
+		lib/modindex.html mac/modindex.html
 
 html:	$(INDEXFILES) html/index.html html/modindex.html html/acks.html
 
@@ -307,60 +319,60 @@ fastwebcheck: html
 # Release packaging targets:
 
 paper-$(PAPER)/README: ps $(TOOLSDIR)/getpagecounts
-	(cd paper-$(PAPER); ../$(TOOLSDIR)/getpagecounts >../$@)
+	cd paper-$(PAPER) && ../$(TOOLSDIR)/getpagecounts >../$@
 
 info-$(RELEASE).tgz: info
-	(cd $(INFODIR); tar cf - README python.dir python-???.info*) \
+	cd $(INFODIR) && tar cf - README python.dir python-*.info* \
 		| gzip -9 >$@
 
 info-$(RELEASE).tar.bz2: info
-	(cd $(INFODIR); tar cf - README python.dir python-???.info*) \
+	cd $(INFODIR) && tar cf - README python.dir python-*.info* \
 		| bzip2 -9 >$@
 
 latex-$(RELEASE).tgz:
-	$(TOOLSDIR)/mksourcepkg --gzip $(RELEASE)
+	$(PYTHON) $(TOOLSDIR)/mksourcepkg --gzip $(RELEASE)
 
 latex-$(RELEASE).tar.bz2:
-	$(TOOLSDIR)/mksourcepkg --bzip2 $(RELEASE)
+	$(PYTHON) $(TOOLSDIR)/mksourcepkg --bzip2 $(RELEASE)
 
 latex-$(RELEASE).zip:
 	rm -f $@
-	$(TOOLSDIR)/mksourcepkg --zip $(RELEASE)
+	$(PYTHON) $(TOOLSDIR)/mksourcepkg --zip $(RELEASE)
 
 pdf-$(PAPER)-$(RELEASE).tgz: pdf
-	(cd paper-$(PAPER); tar cf - *.pdf) | gzip -9 >$@
+	cd paper-$(PAPER) && tar cf - *.pdf | gzip -9 >$@
 
 pdf-$(PAPER)-$(RELEASE).tar.bz2: pdf
-	(cd paper-$(PAPER); tar cf - *.pdf) | bzip2 -9 >$@
+	cd paper-$(PAPER) && tar cf - *.pdf | bzip2 -9 >$@
 
 pdf-$(PAPER)-$(RELEASE).zip: pdf
 	rm -f $@
-	(cd paper-$(PAPER); zip -q -9 ../$@ *.pdf)
+	cd paper-$(PAPER) && zip -q -9 ../$@ *.pdf
 
 postscript-$(PAPER)-$(RELEASE).tar.bz2: ps paper-$(PAPER)/README
-	(cd paper-$(PAPER); tar cf - *.ps README) | bzip2 -9 >$@
+	cd paper-$(PAPER) && tar cf - *.ps README | bzip2 -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps paper-$(PAPER)/README
-	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
+	cd paper-$(PAPER) && tar cf - *.ps README | gzip -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).zip: ps paper-$(PAPER)/README
 	rm -f $@
-	(cd paper-$(PAPER); zip -q -9 ../$@ *.ps README)
+	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
 html-$(RELEASE).tgz:	html
-	(cd $(HTMLDIR); \
-		tar cf - *.html */*.css */*.html */*.gif */*.txt) \
+	cd $(HTMLDIR) && \
+		tar cf - *.html */*.css */*.html */*.gif */*.txt \
 		| gzip -9 >$@
 
 html-$(RELEASE).tar.bz2:	html
-	(cd $(HTMLDIR); \
-		tar cf - *.html */*.css */*.html */*.gif */*.txt) \
+	cd $(HTMLDIR) && \
+		tar cf - *.html */*.css */*.html */*.gif */*.txt \
 		| bzip2 -9 >$@
 
 html-$(RELEASE).zip:	html
 	rm -f $@
-	(cd $(HTMLDIR); \
-		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt)
+	cd $(HTMLDIR) && \
+		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt
 
 # convenience targets:
 
@@ -403,8 +415,7 @@ distfiles:	tarballs zips bzips
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
-	(cd paper-$(PAPER); $(MAKE) clean)
-	(cd $(INFODIR); $(MAKE) clean)
+	cd $(INFODIR) && $(MAKE) clean
 
 # Remove temporaries as well as final products
 clobber:
@@ -413,23 +424,9 @@ clobber:
 	rm -f latex-$(RELEASE).tgz html-$(RELEASE).zip
 	rm -f pdf-$(RELEASE).zip postscript-$(RELEASE).zip
 	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
-	(cd $(INFODIR); $(MAKE) clobber)
+	cd $(INFODIR) && $(MAKE) clobber
 	rm -rf html/index.html html/modindex.html html/acks.html
 	rm -rf html/api/ html/doc/ html/ext/ html/lib/ html/mac/
 	rm -rf html/ref/ html/tut/ html/inst/ html/dist/
 
 realclean distclean:  clobber
-
-
-# html/index.html is dependent on $(INDEXFILES) since we want the date
-# on the front index to be updated whenever any of the child documents
-# are updated and boilerplate.tex uses \today as the date.
-
-# It's at the end of the file since it wedges font-lock in XEmacs.
-
-BOILERPLATE=texinputs/boilerplate.tex
-html/index.html: html/index.html.in $(BOILERPLATE) $(INDEXFILES)
-	DATE=`grep '\\date{' $(BOILERPLATE) | sed 's/.*\\date{\(.*\)}.*$$/\1/'` ; \
-	if [ "$$DATE" = '\today' ] ; then DATE=`date '+%B %e, %Y'`;fi;\
-	sed -e "s/@DATE@/$$DATE/g" -e "s/@RELEASE@/$(RELEASE)/g" \
-		$< >$@
