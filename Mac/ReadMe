@@ -1,5 +1,5 @@
-How to install Python 1.5.1 on your Macintosh
----------------------------------------------
+How to install Python 1.5.2b1 on your Macintosh
+-----------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
 common user documentation (common to all platforms). You can find this
@@ -99,8 +99,8 @@ Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-library "PythonCore 1.5.1" lives in the Extensions folder and the
-"Python 1.5.1 Preferences" file in the Preferences folder. All the rest
+library "PythonCore 1.5.2b1" lives in the Extensions folder and the
+"Python 1.5.2b1 Preferences" file in the Preferences folder. All the rest
 of Python lives in the folder you installed in.
 
 Things to see
@@ -136,9 +136,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 1.5.1 works as expected you can trash
+After you are satisfied that 1.5.2b1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"1.5.1".
+"1.5.2b1".
 
 The installer
 -------------
