@@ -50,7 +50,7 @@ PAPER=letter
 LATEX=		latex
 PDFLATEX=	pdflatex
 DVIPS=		dvips -N0
-KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
+KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 ACROREAD=	acroread
 L2HARGS=
