@@ -20,14 +20,7 @@ from test import test_support
 from optparse import make_option, Option, IndentedHelpFormatter, \
      TitledHelpFormatter, OptionParser, OptionContainer, OptionGroup, \
      SUPPRESS_HELP, SUPPRESS_USAGE, OptionError, OptionConflictError, \
-     BadOptionError, OptionValueError
-from optparse import _match_abbrev
-
-# Do the right thing with boolean values for all known Python versions.
-try:
-    True, False
-except NameError:
-    (True, False) = (1, 0)
+     BadOptionError, OptionValueError, _match_abbrev
 
 class BaseTest(unittest.TestCase):
     def assertParseOK(self, args, expected_opts, expected_positional_args):
@@ -60,50 +53,62 @@ Args were %(args)s.""" % locals ())
 
         return (options, positional_args)
 
-    def assertRaises(self, func, expected_exception, expected_output,
-                     get_output=None,
-                     funcargs=[], funckwargs={}):
+    def assertRaises(self,
+                     func,
+                     args,
+                     kwargs,
+                     expected_exception,
+                     expected_output,
+                     get_output=None, 
+                     exact_match=False):
         """Assert the expected exception is raised when calling a function.
 
         Also check whether the right error message is given for a given error.
 
-        Keyword arguments:
-        func -- The function to be called.
-        expected_exception -- The exception that should be raised.
-        expected_output -- The output we expect to see.
-        get_output -- The function to call to get the output.
-        funcargs -- The arguments `func` should be called with.
-        funckwargs -- The keyword arguments `func` should be called with.
+        Arguments:
+          func -- the function to call
+          args -- positional arguments to `func`
+          kwargs -- keyword arguments to `func`
+          expected_exception -- exception that should be raised
+          expected_output -- output we expect to see
+          get_output -- function to call to get the output
+          exact_match -- whether output must exactly match expected output,
+            or merely contain it
 
         Returns the exception raised for further testing.
         """
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
         if get_output is None:
             get_output = self.exception
 
         try:
-            out = func(*funcargs, **funckwargs)
+            out = func(*args, **kwargs)
         except expected_exception, err:
-            output = get_output(err)
+            actual_output = get_output(err)
 
-            self.failUnless(output.find(expected_output) != -1,
-                            """
-Message was:
-%(output)s
-Should contain:
-%(expected_output)s
-Function called:
-%(func)s
-With args/kwargs:
-%(funcargs)s/%(funckwargs)s""" % locals())
+            if exact_match:
+                match = actual_output == expected_exception
+            else:
+                match = actual_output.find(expected_output) != -1
+
+            self.assert_(match,
+                         """mismatched output
+expected output:
+'''%(expected_output)s'''
+actual output:
+'''%(actual_output)s'''
+""" % locals())
 
             return err
         else:
-            self.fail("""
-No %(expected_exception)s raised.
-Function called:
-%(func)s
-With args/kwargs:
-%(funcargs)s/%(funckwargs)s""" % locals ())
+            self.fail("""expected exception %(expected_exception)s not raised
+called %(func)r
+with args %(args)r
+and kwargs %(kwargs)r
+""" % locals ())
 
     # -- Functions to be used as the get_output argument to assertRaises ------
 
@@ -113,23 +118,38 @@ With args/kwargs:
     def redirected_stdout(self, err):
         return sys.stdout.getvalue()
 
+    def redirected_stderr(self, err):
+        return sys.stderr.getvalue()
+
     # -- Assertions used in more than one class --------------------
 
     def assertParseFail(self, cmdline_args, expected_output):
         """Assert the parser fails with the expected message."""
-        self.assertRaises(self.parser.parse_args, SystemExit, expected_output,
-                          funcargs=[cmdline_args])
+        sys.stderr = StringIO()
+        self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
+                          SystemExit, expected_output,
+                          self.redirected_stderr)
+        sys.stderr = sys.__stderr__
 
     def assertStdoutEquals(self, cmdline_args, expected_output):
         """Assert the parser prints the expected output on stdout."""
         sys.stdout = StringIO()
-        self.assertRaises(self.parser.parse_args, SystemExit, expected_output,
-                          self.redirected_stdout, [cmdline_args])
+        self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
+                          SystemExit, expected_output,
+                          self.redirected_stdout)
         sys.stdout = sys.__stdout__
 
     def assertTypeError(self, func, expected_output, *args):
         """Assert a TypeError is raised when executing func."""
-        self.assertRaises(func, TypeError, expected_output, funcargs=args)
+        self.assertRaises(func, args, None, TypeError, expected_output)
+
+    def assertHelp(self, parser, expected_help):
+        actual_help = parser.format_help()
+        if actual_help != expected_help:
+            raise self.failureException(
+                'help text failure; expected:\n"' +
+                expected_help + '"; got:\n"' +
+                actual_help + '"\n')
 
 # -- Test make_option() aka Option -------------------------------------
 
@@ -142,8 +162,8 @@ class TestOptionChecks(BaseTest):
         self.parser = OptionParser(usage=SUPPRESS_USAGE)
 
     def assertOptionError(self, expected_output, args=[], kwargs={}):
-        self.assertRaises(make_option, OptionError, expected_output,
-                          funcargs=args, funckwargs=kwargs)
+        self.assertRaises(make_option, args, kwargs,
+                          OptionError, expected_output)
 
     def test_opt_string_empty(self):
         self.assertTypeError(make_option,
@@ -175,6 +195,8 @@ class TestOptionChecks(BaseTest):
     def test_type_invalid(self):
         self.assertOptionError("invalid option type: 'foo'",
                                ["-b"], {'type': 'foo'})
+        self.assertOptionError("invalid option type: 'tuple'",
+                               ["-b"], {'type': tuple})
 
     def test_no_type_for_action(self):
         self.assertOptionError("must not supply a type for action 'count'",
@@ -304,8 +326,204 @@ class TestOptionParser(BaseTest):
         self.assert_removed()
 
     def test_remove_nonexistent(self):
-        self.assertRaises(self.parser.remove_option, ValueError,
-                          "no such option 'foo'", funcargs=['foo'])
+        self.assertRaises(self.parser.remove_option, ('foo',), None,
+                          ValueError, "no such option 'foo'")
+
+class TestTypeAliases(BaseTest):
+    def setUp(self):
+        self.parser = OptionParser()
+
+    def test_type_aliases(self):
+        self.parser.add_option("-x", type=int)
+        self.parser.add_option("-s", type=str)
+        self.parser.add_option("-t", type="str")
+        self.assertEquals(self.parser.get_option("-x").type, "int")
+        self.assertEquals(self.parser.get_option("-s").type, "string")
+        self.assertEquals(self.parser.get_option("-t").type, "string")
+        
+
+# Custom type for testing processing of default values.
+_time_units = { 's' : 1, 'm' : 60, 'h' : 60*60, 'd' : 60*60*24 }
+
+def _check_duration(option, opt, value):
+    try:
+        if value[-1].isdigit():
+            return int(value)
+        else:
+            return int(value[:-1]) * _time_units[value[-1]]
+    except ValueError, IndexError:
+        raise OptionValueError(
+            'option %s: invalid duration: %r' % (opt, value))
+
+class DurationOption(Option):
+    TYPES = Option.TYPES + ('duration',)
+    TYPE_CHECKER = copy.copy(Option.TYPE_CHECKER)
+    TYPE_CHECKER['duration'] = _check_duration
+
+class TestDefaultValues(BaseTest):
+    def setUp(self):
+        self.parser = OptionParser()
+        self.parser.add_option("-v", "--verbose", default=True)
+        self.parser.add_option("-q", "--quiet", dest='verbose')
+        self.parser.add_option("-n", type="int", default=37)
+        self.parser.add_option("-m", type="int")
+        self.parser.add_option("-s", default="foo")
+        self.parser.add_option("-t")
+        self.parser.add_option("-u", default=None)
+        self.expected = { 'verbose': True,
+                          'n': 37,
+                          'm': None,
+                          's': "foo",
+                          't': None,
+                          'u': None }
+
+    def test_basic_defaults(self):
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+    def test_mixed_defaults_post(self):
+        self.parser.set_defaults(n=42, m=-100)
+        self.expected.update({'n': 42, 'm': -100})
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+    def test_mixed_defaults_pre(self):
+        self.parser.set_defaults(x="barf", y="blah")
+        self.parser.add_option("-x", default="frob")
+        self.parser.add_option("-y")
+
+        self.expected.update({'x': "frob", 'y': "blah"})
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+        self.parser.remove_option("-y")
+        self.parser.add_option("-y", default=None)
+        self.expected.update({'y': None})
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+    def test_process_default(self):
+        self.parser.option_class = DurationOption
+        self.parser.add_option("-d", type="duration", default=300)
+        self.parser.add_option("-e", type="duration", default="6m")
+        self.parser.set_defaults(n="42")
+        self.expected.update({'d': 300, 'e': 360, 'n': 42})
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+        self.parser.set_process_default_values(False)
+        self.expected.update({'d': 300, 'e': "6m", 'n': "42"})
+        self.assertEqual(self.parser.get_default_values(), self.expected)
+
+
+class TestProgName(BaseTest):
+    """
+    Test that %prog expands to the right thing in usage, version,
+    and help strings.
+    """
+
+    def assertUsage(self, parser, expected_usage):
+        self.assertEqual(parser.get_usage(), expected_usage)
+
+    def assertVersion(self, parser, expected_version):
+        self.assertEqual(parser.get_version(), expected_version)
+
+
+    def test_default_progname(self):
+        # Make sure that program name taken from sys.argv[0] by default.
+        sys.argv[0] = "/foo/bar/baz.py"
+        parser = OptionParser("usage: %prog ...", version="%prog 1.2")
+        expected_usage = "usage: baz.py ...\n"
+        self.assertUsage(parser, expected_usage)
+        self.assertVersion(parser, "baz.py 1.2")
+        self.assertHelp(parser,
+            expected_usage + "\n" +
+            "options:\n"
+            "  --version   show program's version number and exit\n"
+            "  -h, --help  show this help message and exit\n")
+
+    def test_custom_progname(self):
+        parser = OptionParser(prog="thingy",
+                              version="%prog 0.1",
+                              usage="%prog arg arg")
+        parser.remove_option("-h")
+        parser.remove_option("--version")
+        expected_usage = "usage: thingy arg arg\n"
+        self.assertUsage(parser, expected_usage)
+        self.assertVersion(parser, "thingy 0.1")
+        self.assertHelp(parser, expected_usage + "\n")
+
+
+class TestExpandDefaults(BaseTest):
+    def setUp(self):
+        self.parser = OptionParser(prog="test")
+        self.help_prefix = """\
+usage: test [options]
+
+options:
+  -h, --help            show this help message and exit
+"""
+        self.file_help = "read from FILE [default: %default]"
+        self.expected_help_file = self.help_prefix + \
+            "  -f FILE, --file=FILE  read from FILE [default: foo.txt]\n"
+        self.expected_help_none = self.help_prefix + \
+            "  -f FILE, --file=FILE  read from FILE [default: none]\n"
+
+    def test_option_default(self):
+        self.parser.add_option("-f", "--file",
+                               default="foo.txt",
+                               help=self.file_help)
+        self.assertHelp(self.parser, self.expected_help_file)
+
+    def test_parser_default_1(self):
+        self.parser.add_option("-f", "--file",
+                               help=self.file_help)
+        self.parser.set_default('file', "foo.txt")
+        self.assertHelp(self.parser, self.expected_help_file)
+
+    def test_parser_default_2(self):
+        self.parser.add_option("-f", "--file",
+                               help=self.file_help)
+        self.parser.set_defaults(file="foo.txt")
+        self.assertHelp(self.parser, self.expected_help_file)
+
+    def test_no_default(self):
+        self.parser.add_option("-f", "--file",
+                               help=self.file_help)
+        self.assertHelp(self.parser, self.expected_help_none)
+
+    def test_default_none_1(self):
+        self.parser.add_option("-f", "--file",
+                               default=None,
+                               help=self.file_help)
+        self.assertHelp(self.parser, self.expected_help_none)
+        
+    def test_default_none_2(self):
+        self.parser.add_option("-f", "--file",
+                               help=self.file_help)
+        self.parser.set_defaults(file=None)
+        self.assertHelp(self.parser, self.expected_help_none)
+
+    def test_float_default(self):
+        self.parser.add_option(
+            "-p", "--prob",
+            help="blow up with probability PROB [default: %default]")
+        self.parser.set_defaults(prob=0.43)
+        expected_help = self.help_prefix + \
+            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.43]\n"
+        self.assertHelp(self.parser, expected_help)
+
+    def test_alt_expand(self):
+        self.parser.add_option("-f", "--file",
+                               default="foo.txt",
+                               help="read from FILE [default: *DEFAULT*]")
+        self.parser.formatter.default_tag = "*DEFAULT*"
+        self.assertHelp(self.parser, self.expected_help_file)
+
+    def test_no_expand(self):
+        self.parser.add_option("-f", "--file",
+                               default="foo.txt",
+                               help="read from %default file")
+        self.parser.formatter.default_tag = None
+        expected_help = self.help_prefix + \
+            "  -f FILE, --file=FILE  read from %default file\n"
+        self.assertHelp(self.parser, expected_help)
+
 
 # -- Test parser.parse_args() ------------------------------------------
 
@@ -318,7 +536,7 @@ class TestStandard(BaseTest):
         self.parser = OptionParser(usage=SUPPRESS_USAGE, option_list=options)
 
     def test_required_value(self):
-        self.assertParseFail(["-a"], "-a option requires a value")
+        self.assertParseFail(["-a"], "-a option requires an argument")
 
     def test_invalid_integer(self):
         self.assertParseFail(["-b", "5x"],
@@ -580,7 +798,7 @@ class TestNArgs(BaseTest):
 
     def test_nargs_required_values(self):
         self.assertParseFail(["--point", "1.0", "3.5"],
-                             "--point option requires 3 values")
+                             "--point option requires 3 arguments")
 
 class TestNArgsAppend(BaseTest):
     def setUp(self):
@@ -597,7 +815,7 @@ class TestNArgsAppend(BaseTest):
 
     def test_nargs_append_required_values(self):
         self.assertParseFail(["-f4,3"],
-                             "-f option requires 2 values")
+                             "-f option requires 2 arguments")
 
     def test_nargs_append_simple(self):
         self.assertParseOK(["--foo=3", "4"],
@@ -610,22 +828,6 @@ class TestVersion(BaseTest):
         sys.argv[0] = "./foo/bar"
         self.parser = OptionParser(usage=SUPPRESS_USAGE, version="%prog 0.1")
         self.assertStdoutEquals(["--version"], "bar 0.1\n")
-        sys.argv[0] = oldargv
-
-    def test_version_with_prog_keyword(self):
-        oldargv = sys.argv[0]
-        sys.argv[0] = "./foo/bar"
-        self.parser = OptionParser(usage=SUPPRESS_USAGE, version="%prog 0.1",
-                                   prog="splat")
-        self.assertStdoutEquals(["--version"], "splat 0.1\n")
-        sys.argv[0] = oldargv
-
-    def test_version_with_prog_attribute(self):
-        oldargv = sys.argv[0]
-        sys.argv[0] = "./foo/bar"
-        self.parser = OptionParser(usage=SUPPRESS_USAGE, version="%prog 0.1")
-        self.parser.prog = "splat"
-        self.assertStdoutEquals(["--version"], "splat 0.1\n")
         sys.argv[0] = oldargv
 
     def test_no_version(self):
@@ -673,8 +875,8 @@ class TestOptionGroup(BaseTest):
     def test_add_group_wrong_parser(self):
         group = OptionGroup(self.parser, "Spam")
         group.parser = OptionParser()
-        self.assertRaises(self.parser.add_option_group, ValueError,
-                          "invalid OptionGroup (wrong parser)", funcargs=[group])
+        self.assertRaises(self.parser.add_option_group, (group,), None,
+                          ValueError, "invalid OptionGroup (wrong parser)")
 
     def test_group_manipulate(self):
         group = self.parser.add_option_group("Group 2",
@@ -794,7 +996,22 @@ class TestCallback(BaseTest):
                            {'filename': "foo", 'x': 42},
                            [])
 
-class TestCallBackExtraArgs(BaseTest):
+    def test_callback_help(self):
+        # This test was prompted by SF bug #960515 -- the point is
+        # not to inspect the help text, just to make sure that
+        # format_help() doesn't crash.
+        parser = OptionParser(usage=SUPPRESS_USAGE)
+        parser.remove_option("-h")
+        parser.add_option("-t", "--test", action="callback",
+                          callback=lambda: None, type="string",
+                          help="foo")
+
+        expected_help = ("options:\n"
+                         "  -t TEST, --test=TEST  foo\n")
+        self.assertHelp(parser, expected_help)
+
+
+class TestCallbackExtraArgs(BaseTest):
     def setUp(self):
         options = [make_option("-p", "--point", action="callback",
                                callback=self.process_tuple,
@@ -819,7 +1036,7 @@ class TestCallBackExtraArgs(BaseTest):
                            {'points': [(1,2,3), (4,5,6)]},
                            [])
 
-class TestCallBackMeddleArgs(BaseTest):
+class TestCallbackMeddleArgs(BaseTest):
     def setUp(self):
         options = [make_option(str(x), action="callback",
                                callback=self.process_n, dest='things')
@@ -848,7 +1065,7 @@ class TestCallBackMeddleArgs(BaseTest):
                            {'things': [('foo', '--')]},
                            [2])
 
-class TestCallBackManyArgs(BaseTest):
+class TestCallbackManyArgs(BaseTest):
     def setUp(self):
         options = [make_option("-a", "--apple", action="callback", nargs=2,
                                callback=self.process_many, type="string"),
@@ -870,10 +1087,10 @@ class TestCallBackManyArgs(BaseTest):
         self.assertParseOK(["-a", "foo", "bar", "--apple", "ding", "dong",
                             "-b", "1", "2", "3", "--bob", "-666", "42",
                             "0"],
-                           {},
+                           {"apple": None, "bob": None},
                            [])
 
-class TestCallBackCheckAbbrev(BaseTest):
+class TestCallbackCheckAbbrev(BaseTest):
     def setUp(self):
         self.parser = OptionParser()
         self.parser.add_option("--foo-bar", action="callback",
@@ -885,7 +1102,7 @@ class TestCallBackCheckAbbrev(BaseTest):
     def test_abbrev_callback_expansion(self):
         self.assertParseOK(["--foo"], {}, [])
 
-class TestCallBackVarArgs(BaseTest):
+class TestCallbackVarArgs(BaseTest):
     def setUp(self):
         options = [make_option("-a", type="int", nargs=2, dest="a"),
                    make_option("-b", action="store_true", dest="b"),
@@ -950,13 +1167,12 @@ class ConflictBase(BaseTest):
 class TestConflict(ConflictBase):
     """Use the default conflict resolution for Optik 1.2: error."""
     def assert_conflict_error(self, func):
-        err = self.assertRaises(func, OptionConflictError,
-                                "option -v/--version: conflicting option "
-                                "string(s): -v",
-                                funcargs=["-v", "--version"],
-                                funckwargs={'action':"callback",
-                                            'callback':self.show_version,
-                                            'help':"show version"})
+        err = self.assertRaises(
+            func, ("-v", "--version"), {'action' : "callback",
+                                        'callback' : self.show_version,
+                                        'help' : "show version"},
+            OptionConflictError,
+            "option -v/--version: conflicting option string(s): -v")
 
         self.assertEqual(err.msg, "conflicting option string(s): -v")
         self.assertEqual(err.option_id, "-v/--version")
@@ -969,9 +1185,9 @@ class TestConflict(ConflictBase):
         self.assert_conflict_error(group.add_option)
 
     def test_no_such_conflict_handler(self):
-        self.assertRaises(self.parser.set_conflict_handler, ValueError,
-                          "invalid conflict_resolution value 'foo'",
-                          funcargs=['foo'])
+        self.assertRaises(
+            self.parser.set_conflict_handler, ('foo',), None,
+            ValueError, "invalid conflict_resolution value 'foo'")
 
 
 class TestConflictIgnore(ConflictBase):
@@ -1082,8 +1298,60 @@ options:
 
 # -- Other testing. ----------------------------------------------------
 
+_expected_help_basic = """\
+usage: bar.py [options]
+
+options:
+  -a APPLE           throw APPLEs at basket
+  -b NUM, --boo=NUM  shout "boo!" NUM times (in order to frighten away all the
+                     evil spirits that cause trouble and mayhem)
+  --foo=FOO          store FOO in the foo list for later fooing
+  -h, --help         show this help message and exit
+"""
+
+_expected_help_long_opts_first = """\
+usage: bar.py [options]
+
+options:
+  -a APPLE           throw APPLEs at basket
+  --boo=NUM, -b NUM  shout "boo!" NUM times (in order to frighten away all the
+                     evil spirits that cause trouble and mayhem)
+  --foo=FOO          store FOO in the foo list for later fooing
+  --help, -h         show this help message and exit
+"""
+
+_expected_help_title_formatter = """\
+Usage
+=====
+  bar.py [options]
+
+options
+=======
+-a APPLE           throw APPLEs at basket
+--boo=NUM, -b NUM  shout "boo!" NUM times (in order to frighten away all the
+                   evil spirits that cause trouble and mayhem)
+--foo=FOO          store FOO in the foo list for later fooing
+--help, -h         show this help message and exit
+"""
+
+_expected_help_short_lines = """\
+usage: bar.py [options]
+
+options:
+  -a APPLE           throw APPLEs at basket
+  -b NUM, --boo=NUM  shout "boo!" NUM times (in order to
+                     frighten away all the evil spirits
+                     that cause trouble and mayhem)
+  --foo=FOO          store FOO in the foo list for later
+                     fooing
+  -h, --help         show this help message and exit
+"""
+
 class TestHelp(BaseTest):
     def setUp(self):
+        self.parser = self.make_parser(80)
+
+    def make_parser(self, columns):
         options = [
             make_option("-a", type="string", dest='a',
                         metavar="APPLE", help="throw APPLEs at basket"),
@@ -1095,9 +1363,8 @@ class TestHelp(BaseTest):
             make_option("--foo", action="append", type="string", dest='foo',
                         help="store FOO in the foo list for later fooing"),
             ]
-
-        usage = "%prog [options]"
-        self.parser = OptionParser(usage=usage, option_list=options)
+        os.environ['COLUMNS'] = str(columns)
+        return OptionParser(option_list=options)        
 
     def assertHelpEquals(self, expected_output):
         # This trick is used to make optparse believe bar.py is being executed.
@@ -1109,62 +1376,30 @@ class TestHelp(BaseTest):
         sys.argv[0] = oldargv
 
     def test_help(self):
-        self.assertHelpEquals("""\
-usage: bar.py [options]
-
-options:
-  -aAPPLE           throw APPLEs at basket
-  -bNUM, --boo=NUM  shout "boo!" NUM times (in order to frighten away all
-                    the evil spirits that cause trouble and mayhem)
-  --foo=FOO         store FOO in the foo list for later fooing
-  -h, --help        show this help message and exit
-""")
+        self.assertHelpEquals(_expected_help_basic)
 
     def test_help_old_usage(self):
         self.parser.set_usage("usage: %prog [options]")
-        self.assertHelpEquals("""\
-usage: bar.py [options]
-
-options:
-  -aAPPLE           throw APPLEs at basket
-  -bNUM, --boo=NUM  shout "boo!" NUM times (in order to frighten away all
-                    the evil spirits that cause trouble and mayhem)
-  --foo=FOO         store FOO in the foo list for later fooing
-  -h, --help        show this help message and exit
-""")
+        self.assertHelpEquals(_expected_help_basic)
 
     def test_help_long_opts_first(self):
         self.parser.formatter.short_first = 0
-        self.assertHelpEquals("""\
-usage: bar.py [options]
-
-options:
-  -aAPPLE           throw APPLEs at basket
-  --boo=NUM, -bNUM  shout "boo!" NUM times (in order to frighten away all
-                    the evil spirits that cause trouble and mayhem)
-  --foo=FOO         store FOO in the foo list for later fooing
-  --help, -h        show this help message and exit
-""")
+        self.assertHelpEquals(_expected_help_long_opts_first)
 
     def test_help_title_formatter(self):
         self.parser.formatter = TitledHelpFormatter()
-        self.assertHelpEquals("""\
-Usage
-=====
-  bar.py [options]
+        self.assertHelpEquals(_expected_help_title_formatter)
 
-options
-=======
--aAPPLE           throw APPLEs at basket
---boo=NUM, -bNUM  shout "boo!" NUM times (in order to frighten away all
-                  the evil spirits that cause trouble and mayhem)
---foo=FOO         store FOO in the foo list for later fooing
---help, -h        show this help message and exit
-""")
+    def test_wrap_columns(self):
+        # Ensure that wrapping respects $COLUMNS environment variable.
+        # Need to reconstruct the parser, since that's the only time
+        # we look at $COLUMNS.
+        self.parser = self.make_parser(60)
+        self.assertHelpEquals(_expected_help_short_lines)
 
     def test_help_description_groups(self):
         self.parser.set_description(
-            "This is the program description.  This program has "
+            "This is the program description for %prog.  %prog has "
             "an option group as well as single options.")
 
         group = OptionGroup(
@@ -1177,20 +1412,25 @@ options
         self.assertHelpEquals("""\
 usage: bar.py [options]
 
-This is the program description.  This program has an option group as well as
-single options.
+This is the program description for bar.py.  bar.py has an option group as
+well as single options.
+
 options:
-  -aAPPLE           throw APPLEs at basket
-  -bNUM, --boo=NUM  shout "boo!" NUM times (in order to frighten away all
-                    the evil spirits that cause trouble and mayhem)
-  --foo=FOO         store FOO in the foo list for later fooing
-  -h, --help        show this help message and exit
+  -a APPLE           throw APPLEs at basket
+  -b NUM, --boo=NUM  shout "boo!" NUM times (in order to frighten away all the
+                     evil spirits that cause trouble and mayhem)
+  --foo=FOO          store FOO in the foo list for later fooing
+  -h, --help         show this help message and exit
 
   Dangerous Options:
-    Caution: use of these options is at your own risk.  It is believed that
-    some of them bite.
-    -g              Group option.
+    Caution: use of these options is at your own risk.  It is believed
+    that some of them bite.
+
+    -g               Group option.
 """)
+
+
+        
 
 class TestMatchAbbrev(BaseTest):
     def test_match_abbrev(self):
@@ -1205,15 +1445,23 @@ class TestMatchAbbrev(BaseTest):
         s = "--f"
         wordmap = {"--foz": None, "--foo": None, "--fie": None}
         possibilities = ", ".join(wordmap.keys())
-        self.assertRaises(_match_abbrev, BadOptionError,
-                          "ambiguous option: --f (%s?)" % possibilities,
-                          funcargs=[s, wordmap])
+        self.assertRaises(
+            _match_abbrev, (s, wordmap), None,
+            BadOptionError, "ambiguous option: --f (%s?)" % possibilities)
+
+
+def _testclasses():
+    mod = sys.modules[__name__]
+    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
+
+def suite():
+    suite = unittest.TestSuite()
+    for testclass in _testclasses():
+        suite.addTest(unittest.makeSuite(testclass))
+    return suite
 
 def test_main():
-    mod = sys.modules[__name__]
-    test_support.run_unittest(
-        *[getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-    )
+    test_support.run_suite(suite())
 
 if __name__ == '__main__':
     unittest.main()
