@@ -17,12 +17,13 @@ the "typical" Unix-style command-line C compiler:
 
 __rcsid__ = "$Id$"
 
-import string, re
+import string, re, os
 from types import *
+from copy import copy
 from sysconfig import \
      CC, CCSHARED, CFLAGS, OPT, LDSHARED, LDFLAGS, RANLIB, AR, SO
 from ccompiler import CCompiler, gen_preprocess_options, gen_lib_options
-
+from util import move_file, newer_pairwise, newer_group
 
 # XXX Things not currently handled:
 #   * optimization/debug/warning flags; we just use whatever's in Python's
@@ -86,9 +87,12 @@ class UnixCCompiler (CCompiler):
 
     def compile (self,
                  sources,
+                 output_dir=None,
                  macros=None,
                  includes=None):
 
+        if output_dir is None:
+            output_dir = self.output_dir
         if macros is None:
             macros = []
         if includes is None:
@@ -104,15 +108,48 @@ class UnixCCompiler (CCompiler):
         pp_opts = gen_preprocess_options (self.macros + macros,
                                           self.include_dirs + includes)
 
-        # use of ccflags_shared means we're blithely assuming that we're
-        # compiling for inclusion in a shared object! (will have to fix
-        # this when I add the ability to build a new Python)
-        cc_args = ['-c'] + pp_opts + \
-                  self.ccflags + self.ccflags_shared + \
-                  sources
+        # So we can mangle 'sources' without hurting the caller's data
+        orig_sources = sources
+        sources = copy (sources)
 
-        self.spawn ([self.cc] + cc_args)
-        return self.object_filenames (sources)
+        # Get the list of expected output (object) files and drop files we
+        # don't have to recompile.  (Simplistic check -- we just compare the
+        # source and object file, no deep dependency checking involving
+        # header files.  Hmmm.)
+        objects = self.object_filenames (sources, output_dir)
+        skipped = newer_pairwise (sources, objects)
+        for skipped_pair in skipped:
+            self.announce ("skipping %s (%s up-to-date)" % skipped_pair)
+
+        # If anything left to compile, compile it
+        if sources:
+            # XXX use of ccflags_shared means we're blithely assuming
+            # that we're compiling for inclusion in a shared object!
+            # (will have to fix this when I add the ability to build a
+            # new Python)
+            cc_args = ['-c'] + pp_opts + \
+                      self.ccflags + self.ccflags_shared + \
+                      sources
+            self.spawn ([self.cc] + cc_args)
+        
+
+        # Note that compiling multiple source files in the same go like
+        # we've just done drops the .o file in the current directory, which
+        # may not be what the caller wants (depending on the 'output_dir'
+        # parameter).  So, if necessary, fix that now by moving the .o
+        # files into the desired output directory.  (The alternative, of
+        # course, is to compile one-at-a-time with a -o option.  6 of one,
+        # 12/2 of the other...)
+
+        if output_dir:
+            for i in range (len (objects)):
+                src = os.path.basename (objects[i])
+                objects[i] = self.move_file (src, output_dir)
+
+        # Have to re-fetch list of object filenames, because we want to
+        # return *all* of them, including those that weren't recompiled on
+        # this call!
+        return self.object_filenames (orig_sources, output_dir)
     
 
     # XXX punting on 'link_static_lib()' for now -- it might be better for
@@ -124,23 +161,31 @@ class UnixCCompiler (CCompiler):
     def link_shared_lib (self,
                          objects,
                          output_libname,
+                         output_dir=None,
                          libraries=None,
                          library_dirs=None,
                          build_info=None):
         # XXX should we sanity check the library name? (eg. no
         # slashes)
-        self.link_shared_object (objects, "lib%s%s" % \
-                                 (output_libname, self._shared_lib_ext),
-                                 build_info=build_info)
-
+        self.link_shared_object (
+            objects,
+            "lib%s%s" % (output_libname, self._shared_lib_ext),
+            output_dir,
+            libraries,
+            library_dirs,
+            build_info)
+        
 
     def link_shared_object (self,
                             objects,
                             output_filename,
+                            output_dir=None,
                             libraries=None,
                             library_dirs=None,
                             build_info=None):
 
+        if output_dir is None:
+            output_dir = self.output_dir
         if libraries is None:
             libraries = []
         if library_dirs is None:
@@ -151,21 +196,37 @@ class UnixCCompiler (CCompiler):
         lib_opts = gen_lib_options (self.libraries + libraries,
                                     self.library_dirs + library_dirs,
                                     "-l%s", "-L%s")
-        ld_args = self.ldflags_shared + lib_opts + \
-                  objects + ['-o', output_filename]
+        if output_dir is not None:
+            output_filename = os.path.join (output_dir, output_filename)
 
-        self.spawn ([self.ld_shared] + ld_args)
+        # If any of the input object files are newer than the output shared
+        # object, relink.  Again, this is a simplistic dependency check:
+        # doesn't look at any of the libraries we might be linking with.
+        if newer_group (objects, output_filename):
+            ld_args = self.ldflags_shared + lib_opts + \
+                      objects + ['-o', output_filename]
+
+            self.spawn ([self.ld_shared] + ld_args)
+        else:
+            self.announce ("skipping %s (up-to-date)" % output_filename)
 
 
-    def object_filenames (self, source_filenames):
+    def object_filenames (self, source_filenames, output_dir=None):
         outnames = []
         for inname in source_filenames:
-            outnames.append ( re.sub (r'\.(c|C|cc|cxx|cpp)$',
-                                      self._obj_ext, inname))
+            outname = re.sub (r'\.(c|C|cc|cxx|cpp)$', self._obj_ext, inname)
+            outname = os.path.basename (outname)
+            if output_dir is not None:
+                outname = os.path.join (output_dir, outname)
+            outnames.append (outname)
         return outnames
 
-    def shared_object_filename (self, source_filename):
-        return re.sub (r'\.(c|C|cc|cxx|cpp)$', self._shared_lib_ext)
+    def shared_object_filename (self, source_filename, output_dir=None):
+        outname = re.sub (r'\.(c|C|cc|cxx|cpp)$', self._shared_lib_ext)
+        outname = os.path.basename (outname)
+        if output_dir is not None:
+            outname = os.path.join (output_dir, outname)
+        return outname
 
     def library_filename (self, libname):
         return "lib%s%s" % (libname, self._static_lib_ext )
