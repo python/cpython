@@ -202,6 +202,7 @@ Instead, you can get the same information from the list type:
      '__iadd__',
      '__imul__',
      '__init__',
+     '__iter__',
      '__le__',
      '__len__',
      '__lt__',

@@ -68,25 +68,15 @@ iter_iternext(PyObject *iterator)
 	it = (seqiterobject *)iterator;
 	seq = it->it_seq;
 
-	if (PyList_CheckExact(seq)) {
-		PyObject *item;
-		if (it->it_index >= PyList_GET_SIZE(seq)) {
-			return NULL;
-		}
-		item = PyList_GET_ITEM(seq, it->it_index);
-		it->it_index++;
-		Py_INCREF(item);
-		return item;
-	}
 	if (PyTuple_CheckExact(seq)) {
-		PyObject *item;
-		if (it->it_index >= PyTuple_GET_SIZE(seq)) {
-			return NULL;
+		if (it->it_index < PyTuple_GET_SIZE(seq)) {
+			PyObject *item;
+			item = PyTuple_GET_ITEM(seq, it->it_index);
+			it->it_index++;
+			Py_INCREF(item);
+			return item;
 		}
-		item = PyTuple_GET_ITEM(seq, it->it_index);
-		it->it_index++;
-		Py_INCREF(item);
-		return item;
+		return NULL;
 	}
 	else {
 		PyObject *result = PySequence_ITEM(seq, it->it_index);
