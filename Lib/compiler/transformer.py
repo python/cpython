@@ -993,9 +993,9 @@ class Transformer:
       n = n[1]
     if n[0] != token.NAME:
       raise SyntaxError, "keyword can't be an expression (%s)"%n[0]
-    n = Node('keyword', n[1], result)
-    n.lineno = result.lineno
-    return 1, n
+    node = Node('keyword', n[1], result)
+    node.lineno = n[2]
+    return 1, node
 
   def com_subscriptlist(self, primary, nodelist, assigning):
     # slicing:      simple_slicing | extended_slicing
