@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -25,10 +25,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"		/* For getargs() etc. */
 
+#include "macglue.h"
 #include <AddressXlation.h>
 #include <Desk.h>
 
-#ifndef __MWERKS__
+#ifndef HAVE_UNIVERSAL_HEADERS
 #define ResultUPP ResultProcPtr
 #define NewResultProc(x) (x)
 /* The '2' has move in this name... */
@@ -76,7 +77,7 @@ static int dnrwait(self)
 	dnrrobject *self;
 {
 	while ( self->waiting ) {
-		if ( !PyMac_Idle() )
+		if ( PyMac_Idle() )
 			return 0;
 	}
 	return 1;
@@ -90,6 +91,7 @@ dnrr_wait(self, args)
 	if (!newgetargs(args, ""))
 		return NULL;
 	if ( !dnrwait(self) ) {
+		/* XXX An interrupt is pending -- is this correct? */
 		INCREF(None);
 		return None;
 	}
@@ -194,6 +196,7 @@ dnrr_getattr(self, name)
 	err_clear();
 	if ( self->waiting )
 		if ( !dnrwait(self) ) {
+			/* XXX An interrupt is pending -- is this correct? */
 			err_setstr(ErrorObject, "Resolver busy");
 			return NULL;
 		}
