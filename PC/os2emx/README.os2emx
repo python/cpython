@@ -1,35 +1,20 @@
-This is a port of Python 2.3 to OS/2 using the EMX development tools
+This is a port of Python 2.4 to OS/2 using the EMX development tools
 =========================================================================
 
 What's new since the previous release
 -------------------------------------
 
-This release of the port incorporates the following changes from the 
-October 24, 2002 release of the Python 2.2.2 port:
-
-- based on the Python v2.3 final release source.
-- now setting higher number of file handles (250).
-- defaults to building with PyMalloc enabled (Python 2.3 default).
-- the port is now maintained in the Python CVS repository.
-- most standard modules are now built into the core Python DLL.
-
-Python 2.3 incorporates several changes which have resolved the 
-longstanding problems the EMX port has had with test_longexp.
-
-Python 2.3 introduces changes to the Berkeley DB support, as a result of
-the PyBSDDB3 module (for the Sleepycat DB 3.3.x/4.0.x/4.1.x library)
-being imported into Python's standard library - see "YOU HAVE BEEN WARNED"
-items 4 & 5 for more information.
+Another day, another version...
 
 
 Licenses and info about Python and EMX
 --------------------------------------
 
-Please read the file README.Python-2.3 included in this package for 
-information about Python 2.3.  This file is the README file from the 
-Python 2.3 source distribution available via http://www.python.org/ 
-and its mirrors.  The file LICENCE.Python-2.3 is the text of the Licence 
-from the Python 2.3 source distribution.
+Please read the file README.Python-2.4 included in this package for 
+information about Python 2.4.  This file is the README file from the 
+Python 2.4 source distribution available via http://www.python.org/ 
+and its mirrors.  The file LICENCE.Python-2.4 is the text of the Licence 
+from the Python 2.4 source distribution.
 
 Note that the EMX package that this package depends on is released under 
 the GNU General Public Licence.  Please refer to the documentation 
@@ -61,7 +46,7 @@ There have been ports of previous versions of Python to OS/2.
 
 The best known would be that by Jeff Rush, most recently of version 
 1.5.2.  Jeff used IBM's Visual Age C++ (v3) for his ports, and his 
-patches have been included in the Python 2.3 source distribution.
+patches have been included in the Python 2.4 source distribution.
 
 Andy Zabolotny implemented a port of Python v1.5.2 using the EMX 
 development tools.  His patches against the Python v1.5.2 source 
@@ -70,25 +55,6 @@ this port wouldn't exist.  Andy's port also appears to have been
 compiled with his port of gcc 2.95.2 to EMX, which I have but have 
 chosen not to use for the binary distribution of this port (see item 16 
 of the "YOU HAVE BEEN WARNED" section below).
-
-Previous Python port releases by me:-
- - v2.0 on March 31, 2001;
- - v2.0 on April 25, 2001 (cleanup release + Stackless variant);
- - v2.1 on June 17, 2001;
- - v2.0 (Stackless re-release) on June 18, 2001.
- - v2.1.1 on August 5, 2001;
- - v2.1.1 on August 12, 2001 (cleanup release);
- - v2.1.1 (updated DLL) on August 14, 2001;
- - v2.2b2 on December 8, 2001 (not uploaded to archive sites);
- - v2.2c1 on December 16, 2001 (not uploaded to archive sites);
- - v2.2 on December 24, 2001;
- - v2.2.1c2 on March 31, 2002 (not uploaded to archive sites);
- - v2.2.1 on April 14, 2002;
- - v2.2.2 on October 24, 2002;
- - v2.3a2 on March 2, 2003 (not uploaded to archive sites);
- - v2.3b1 on April 27, 2003 (not uploaded to archive sites);
- - v2.2.3c1 on May 28, 2003 (not uploaded to archive sites);
- - v2.2.3 on June 1, 2003.
 
 It is possible to have these earlier ports still usable after installing 
 this port - see the README.os2emx.multiple_versions file, contributed by
@@ -127,7 +93,7 @@ Python.exe is linked as an a.out executable, ie using EMX method E1
 to compile & link the executable.  This is so that fork() works (see 
 "YOU HAVE BEEN WARNED" item 1).
 
-Python23.dll is created as a normal OMF DLL, with an OMF import 
+Python24.dll is created as a normal OMF DLL, with an OMF import 
 library and module definition file.  There is also an a.out (.a) import 
 library to support linking the DLL to a.out executables.  The DLL 
 requires the EMX runtime DLLs.
@@ -148,7 +114,7 @@ modules over to using the DistUtils.
 See "YOU HAVE BEEN WARNED" item 3 for notes about the fcntl module, and 
 "YOU HAVE BEEN WARNED" item 10 for notes about the pwd and grp modules.
 
-Support for case sensitive module import semantics has been added to match 
+This port supports case sensitive module import semantics, matching 
 the Windows release.  This can be deactivated by setting the PYTHONCASEOK 
 environment variable (the value doesn't matter) - see "YOU HAVE BEEN WARNED" 
 item 12.
@@ -162,8 +128,8 @@ These include ncurses (_curses, _curses_panel), BSD DB (bsddb185),
 GNU GDBM (gdbm, dbm), zlib (zlib), GNU Readline (readline), GNU MP (mpz) 
 and GNU UFC (crypt).
 
-Expat is now included in the Python release sourceball, and is always 
-built.
+Expat is now included in the Python release sourceball, and the pyexpat 
+module is always built.
 
 I have built these modules statically linked against the 3rd party 
 libraries.  Unfortunately my attempts to use the dll version of GNU 
@@ -183,7 +149,7 @@ WARNED" item 13.
 
 Upstream source patches:
 
-No updates to the Python 2.3 release have become available.
+No updates to the Python 2.4 release have become available.
 
 Eberhard Mattes' EMXFIX04 update to his EMX 0.9d tools suite includes 
 bug fixes for the BSD DB library.  The bsddb module included in this 
@@ -192,13 +158,13 @@ port incorporates these fixes.
 Library and other distributed Python code:
 
 The Python standard library lives in the Lib directory.  All the standard 
-library code included with the Python 2.3 source distribution is included 
+library code included with the Python 2.4 source distribution is included 
 in the binary archive, with the exception of the dos-8x3 and tkinter 
 subdirectories which have been omitted to reduce the size of the binary 
 archive - the dos-8x3 components are unnecessary duplicates and Tkinter 
 is not supported by this port (yet).  All the plat-* subdirectories in the 
-source distribution have also been omitted, and a plat-os2emx directory 
-included.
+source distribution have also been omitted, except for the plat-os2emx 
+subdirectory.
 
 The Tools and Demo directories contain a collection of Python scripts.  
 To reduce the size of the binary archive, the Demo/sgi, Demo/Tix, 
@@ -207,7 +173,7 @@ omitted as not being supported by this port.  The Misc directory has
 also been omitted.
 
 All subdirectories omitted from the binary archive can be reconstituted 
-from the Python 2.3 source distribution, if desired.
+from the Python 2.4 source distribution, if desired.
 
 Support for building Python extensions:
 
@@ -225,15 +191,15 @@ Packaging
 ---------
 
 This port is packaged as follows:
-- python-2.3-os2emx-bin-03????.zip  (binaries, library modules)
-- python-2.3-os2emx-src-03????      (patches+makefiles for non-Python code)
+- python-2.4-os2emx-bin-03????.zip  (binaries, library modules)
+- python-2.4-os2emx-src-03????      (patches+makefiles for non-Python code)
 
 As all the Python specific patches for the port are now part of the 
 Python release tarball, only the patches and makefiles involved in 
 building external libraries for optional extensions are included in 
 the source archive.
 
-Documentation for the Python language, as well as the Python 2.3 
+Documentation for the Python language, as well as the Python 2.4 
 source distibution, can be obtained from the Python website 
 (http://www.python.org/) or the Python project pages at Sourceforge 
 (http://sf.net/projects/python/).
@@ -248,7 +214,7 @@ package.
 Unpack this archive, preserving the subdirectories, in the root directory 
 of the drive where you want Python to live.
 
-Add the Python directory (eg C:\Python23) to the PATH and LIBPATH 
+Add the Python directory (eg C:\Python24) to the PATH and LIBPATH 
 variables in CONFIG.SYS.
 
 You should then set the PYTHONHOME and PYTHONPATH environment variables 
@@ -258,9 +224,9 @@ PYTHONHOME should be set to Python's top level directory.  PYTHONPATH
 should be set to the semicolon separated list of principal Python library 
 directories.
 I use:
-  SET PYTHONHOME=F:/Python23
-  SET PYTHONPATH=F:/Python23/Lib;F:/Python23/Lib/plat-os2emx;
-                 F:/Python23/Lib/lib-dynload;F:/Python23/Lib/site-packages
+  SET PYTHONHOME=F:/Python24
+  SET PYTHONPATH=F:/Python24/Lib;F:/Python24/Lib/plat-os2emx;
+                 F:/Python24/Lib/lib-dynload;F:/Python24/Lib/site-packages
 
 NOTE!:  the PYTHONPATH setting above is linewrapped for this document - it 
 should all be on one line in CONFIG.SYS!
@@ -273,7 +239,7 @@ EMX subset of the Terminfo database included with the ncurses-5.2 source
 distribution.  This can be used by setting the TERMINFO environment variable 
 to the path of the Terminfo subdirectory below the Python home directory.
 On my system this looks like:
-  SET TERMINFO=F:/Python23/Terminfo
+  SET TERMINFO=F:/Python24/Terminfo
 
 For the TERM environment variable, I would try one of the following:
   SET TERM=ansi
@@ -287,17 +253,14 @@ If you wish to compile all the included Python library modules to bytecode,
 you can change into the Python home directory and run the COMPILEALL.CMD 
 batch file.
 
-You can execute the regression tests included with the Python 2.3 source 
-distribution by changing to the Python 2.3 home directory and executing the 
+You can execute the regression tests included with the Python 2.4 source 
+distribution by changing to the Python 2.4 home directory and executing the 
 REGRTEST.CMD batch file.  The following tests are known to fail at this 
 time:
 - test_mhlib (I don't know of any port of MH to OS/2);
-- test_pwd (see "YOU HAVE BEEN WARNED" item 10);
-- test_grp (as per test_pwd);
-- test_strftime (see "YOU HAVE BEEN WARNED" item 15);
 - test_strptime (see "YOU HAVE BEEN WARNED" item 22);
-- test_whichdb (see "YOU HAVE BEEN WARNED" item 5).
-- test_socketserver (fork() related, see "YOU HAVE BEEN WARNED" item 1).
+- test_time (see "YOU HAVE BEEN WARNED" item 22);
+- test_posixpath (see "YOU HAVE BEEN WARNED" item 23).
 
 Note that some of the network related tests expect the loopback interface
 (interface "lo", with IP address 127.0.0.1) to be enabled, which from my
@@ -326,6 +289,7 @@ Other items of software required:-
 - GNU make (I'm using v3.76.1)
 - rm, cp, mkdir from the GNU file utilities package
 - GNU find
+- GNU sed
 
 Procedure
 
@@ -336,7 +300,7 @@ Procedure
 1. decide if you need to change the location of the Python installation.
    If you wish to do this, set the value of the Makefile variable LIB_DIR 
    to the directory you wish to use for PYTHONHOME 
-   (eg /usr/local/lib/python2.3).
+   (eg /usr/local/lib/python2.4).
 
    If you want Python to find its library without the PYTHONHOME 
    environment variable set, set the value of the Makefile variable 
@@ -346,7 +310,7 @@ Procedure
    to be installed in a directory other than the PYTHONHOME directory, set 
    the value of the Makefile variable EXE_DIR to the appropriate directory.
 
-3. If you wish the Python core DLL (python23.dll) to be installed in a 
+3. If you wish the Python core DLL (python24.dll) to be installed in a 
    directory other than the directory in which the Python executables are 
    installed (by default, the PYTHONHOME directory), set the value of the 
    Makefile variable DLL_DIR to the appropriate directory.  This DLL must 
@@ -445,17 +409,14 @@ licenses which would rule out GDBM (and the dbm module because it is
 linked against the GDBM library) or need it for file format compatibility, 
 you may be better off deleting it and relying on GDBM.
 
-Any code you have which uses the bsddb module can be modified to use the 
-renamed module by changing
+Any code you have which uses the v1.85 bsddb module can be modified to 
+use the renamed module by changing
 
   import bsddb
 
 to
 
   import bsddb185 as bsddb
-
-A side effect of these changes is that the test_whichdb regression test
-fails.
 
 6.  The readline module has been linked against ncurses rather than the 
 termcap library supplied with EMX.
@@ -521,16 +482,22 @@ out what is supported.
 case insensitive but case preserving file/operating systems (Windows etc), 
 have been incorporated into this port, and are active by default.  Setting 
 the PYTHONCASEOK environment variable (to any value) reverts to the 
-previous (case insensitive) semantics.
+previous (case insensitive) semantics.  This can be an issue with some 
+file management utilities that do not preserve the case of file and
+directory names.
 
 13. Because I am statically linking ncurses, the _curses_panel 
 module has potential problems arising from separate library data areas.
 To avoid this, I have configured the _curses_.pyd (imported as 
-"_curses_panel") to import the ncurses symbols it needs from _curses.pyd. 
-As a result the _curses module must be imported before the _curses_panel 
-module.  As far as I can tell, the modules in the curses package do this. 
-If you have problems attempting to use the _curses_panel support please 
-let me know, and I'll look into an alternative solution.
+"_curses_panel") to import the ncurses symbols it needs from _curses.dll 
+(which is the curses module, but with a .dll extension rather than .pyd 
+so that the dynamic loader can actually import the symbols from it as a 
+DLL).
+
+The site module (Lib/site.py) has code added to tweak BEGINLIBPATH so
+that _curses.dll is found when _curses_panel is imported.  If you have
+problems attempting to use the _curses_panel support please let me know,
+and I'll have another look at this.
 
 14. sys.platform reports "os2emx" instead of "os2".  os.name still 
 reports "os2".  This change was to make it easier to distinguish between 
@@ -555,8 +522,8 @@ I have not attempted to compile Python with any version of gcc prior to
 v2.8.1.
 
 This release sees the default optimisation change to 
-"-O3 -fomit-frame-pointer".  This works fine too for pgcc 2.95 but not 
-for gcc 3.2.1.
+"-O3 -fomit-frame-pointer -mprobe".  This works fine too for pgcc 2.95 
+but not for gcc 3.2.1.
 
 With gcc 3.2.1, -O3 causes 2 unexpected test failures: test_format and 
 test_unicode.  Both these tests pass if -O2 is instead of -O3 with this 
@@ -636,6 +603,44 @@ library, superceding a platform specific extension module. This module
 leverages the strftime module, and as a result test_strptime fails
 due to the EMX strftime bug in item 20 above.
 
+23.  test_posixpath attempts to exercise various Posix path related
+functionality.  Most of the sub-tests pass, but the "ismount" and
+"samestat" subtests fail:
+- EMX provides not satisfactory mount point emulation, so "ismount"
+  cannot succeed;
+- EMX documents that successive stat() calls will produce different
+  results, so "samestat" cannot succeed.
+
+test_posixpath should skip these tests on EMX.
+
+24.  I have had a report that attempting to use the Bittorrent package
+(http://bitconjurer.org/BitTorrent/) with this port causes traps not
+long after starting the download; this using the "headless" download
+script on eCS v1.1.  I have not been able to duplicate this myself,
+but the indications I have suggest a failure in the 32 bit TCP/IP
+stack (v4.3.2? on eCS v1.1) - on my v4.0 FP12 system with MPTS fixpack
+WR8425 applied (16 bit TCP/IP stack v4.02), BitTorrent appears to work
+normally in testing on a 100Mbit LAN.  With the curses.panel fix (see
+item 13 above), the BitTorrent curses downloader works too.  I'd
+appreciate any success or failure reports with BitTorrent, though
+I've regretfully recommended that the person who reported the failure
+take this up with eCS support.  Since this report, I have received a 
+followup which suggests that the problem may have been a buggy network 
+card driver.  I think it suffices to say that BitTorrent is a fair stress 
+test of a system's networking capability.
+
+25.  In the absence of an EMX implementation of the link() function, I've 
+implemented a crude Python emulation, in the file 
+Lib/plat-os2emx/_emx_link.py.  This is imported into the os module, and 
+becomes available as os.link() in the normal way.
+
+The emulation copies the source file in binary mode, and will fail if 
+disk space is exhausted. The call fails if the target already exists. 
+There are no guarantees to thread safety with this emulation - beware!
+
+The emulation was written to support a link() based file locking system 
+used in GNU Mailman.
+
 ... probably other issues that I've not encountered, or don't remember :-(
 
 If you encounter other difficulties with this port, which can be 
@@ -675,4 +680,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-18 April, 2003.
+2 December, 2003.
