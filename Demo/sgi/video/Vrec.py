@@ -260,4 +260,7 @@ def audiorecord(afile, aport, buffer):
 
 # Don't forget to call the main program
 
-main()
+try:
+	main()
+except KeyboardInterrupt:
+	print '[Interrupt]'

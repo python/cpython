@@ -73,7 +73,7 @@ def main():
 	# Interpret options
 	try:
 		for opt, arg in opts:
-			if opt == '-M': magnify = string.atoi(arg)
+			if opt == '-M': magnify = float(eval(arg))
 			if opt == '-d': debug = debug + 1
 			if opt == '-l': looping = 1
 			if opt == '-m': mindelta = string.atoi(arg)
@@ -147,7 +147,7 @@ def process(filename):
 	
 	gl.foreground()
 
-	width, height = vin.width * magnify, vin.height * magnify
+	width, height = int(vin.width * magnify), int(vin.height * magnify)
 	if xoff <> None and yoff <> None:
 		scrheight = gl.getgdesc(GL.GD_YPMAX)
 		gl.prefposition(xoff, xoff+width-1, \
