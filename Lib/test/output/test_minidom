@@ -19,6 +19,9 @@ Passed Test
 Passed Test
 Test Succeeded testAppendChild
 Passed assertion: len(Node.allnodes) == 0
+Passed appendChild(<fragment>)
+Test Succeeded testAppendChildFragment
+Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testAttrListItem
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testAttrListItemNS
@@ -122,6 +125,10 @@ Passed testInsertBefore -- node properly placed in tree
 Passed testInsertBefore -- node properly placed in tree
 Test Succeeded testInsertBefore
 Passed assertion: len(Node.allnodes) == 0
+Passed insertBefore(<fragment>, None)
+Passed insertBefore(<fragment>, orig)
+Test Succeeded testInsertBeforeFragment
+Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testLegalChildren
 Passed assertion: len(Node.allnodes) == 0
 Passed test NodeList.item()
@@ -171,6 +178,9 @@ Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Passed Test
 Test Succeeded testRemoveAttributeNode
+Passed assertion: len(Node.allnodes) == 0
+Passed replaceChild(<fragment>)
+Test Succeeded testReplaceChildFragment
 Passed assertion: len(Node.allnodes) == 0
 Passed testSAX2DOM - siblings
 Passed testSAX2DOM - parents
