@@ -9,8 +9,6 @@ latex2esis.py script when run over the Python documentation.
 # This should have an explicit option to indicate whether the *INPUT* was
 # generated from an SGML or an XML application.
 
-__version__ = '$Revision$'
-
 import errno
 import esistools
 import os

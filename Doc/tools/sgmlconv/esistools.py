@@ -1,5 +1,4 @@
 """Miscellaneous utility functions useful for dealing with ESIS streams."""
-__version__ = '$Revision$'
 
 import re
 import string

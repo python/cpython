@@ -3,7 +3,6 @@
 """Perform massive transformations on a document tree created from the LaTeX
 of the Python documentation, and dump the ESIS data for the transformed tree.
 """
-__version__ = '$Revision$'
 
 
 import errno
