@@ -139,6 +139,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
 #define CALL_FUNCTION	131	/* #args + (#kwargs<<8) */
 #define MAKE_FUNCTION	132	/* #defaults */
+#define BUILD_SLICE 	133	/* Number of items */
 
 /* Comparison operator codes (argument to COMPARE_OP) */
 enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
