@@ -1,10 +1,11 @@
-"""Test icglue module by printing all preferences"""
+"""Test icglue module by printing all preferences. Note that the ic module,
+not the icglue module, is what you should normally use."""
 
 import icglue
 import Res
 
 ici = icglue.ICStart('Pyth')
-ici.ICFindConfigFile()
+#ici.ICFindConfigFile()
 h = Res.Resource("")
 
 ici.ICBegin(1)
