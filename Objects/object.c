@@ -267,7 +267,7 @@ PyObject_Repr(v)
 			return NULL;
 		if (PyUnicode_Check(res)) {
 			PyObject* str;
-			str = PyUnicode_AsEncodedString(res, NULL, NULL);
+			str = PyUnicode_AsUnicodeEscapeString(res);
 			Py_DECREF(res);
 			if (str)
 				res = str;
