@@ -131,3 +131,22 @@ class _fileobject:
 			if not line: break
 			list.append(line)
 		return list
+
+
+# WSA error codes
+errorTab = {}
+errorTab[10004] = "The operation was interrupted."
+errorTab[10009] = "A bad file handle was passed."
+errorTab[10013] = "Permission denied."
+errorTab[10014] = "A fault occurred on the network??" # WSAEFAULT
+errorTab[10022] = "An invalid operation was attempted."
+errorTab[10035] = "The socket operation would block"
+errorTab[10036] = "A blocking operation is already in progress."
+errorTab[10048] = "The network address is in use."
+errorTab[10054] = "The connection has been reset."
+errorTab[10058] = "The network has been shut down."
+errorTab[10060] = "The operation timed out."
+errorTab[10061] = "Connection refused."
+errorTab[10063] = "The name is too long."
+errorTab[10064] = "The host is down."
+errorTab[10065] = "The host is unreachable."
