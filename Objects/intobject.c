@@ -27,7 +27,8 @@ static int
 err_ovf(char *msg)
 {
 	if (PyErr_Warn(PyExc_OverflowWarning, msg) < 0) {
-		PyErr_SetString(PyExc_OverflowError, msg);
+		if (PyErr_ExceptionMatches(PyExc_OverflowWarning))
+			PyErr_SetString(PyExc_OverflowError, msg);
 		return 1;
 	}
 	else
