@@ -202,7 +202,17 @@ class UnixCCompiler (CCompiler):
         # If any of the input object files are newer than the output shared
         # object, relink.  Again, this is a simplistic dependency check:
         # doesn't look at any of the libraries we might be linking with.
-        if newer_group (objects, output_filename):
+        # Note that we have to dance around errors comparing timestamps if
+        # we're in dry-run mode (yuck).
+        try:
+            newer = newer_group (objects, output_filename)
+        except OSError:
+            if self.dry_run:
+                newer = 1
+            else:
+                raise
+
+        if newer:
             ld_args = self.ldflags_shared + lib_opts + \
                       objects + ['-o', output_filename]
 
