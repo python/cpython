@@ -102,6 +102,11 @@ class BaseSet(object):
         """
         return self._data.iterkeys()
 
+    # Three-way comparison is not supported
+
+    def __cmp__(self, other):
+        raise TypeError, "can't compare sets using cmp()"
+
     # Equality comparisons using the underlying dicts
 
     def __eq__(self, other):
