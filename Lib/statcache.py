@@ -22,14 +22,10 @@ def stat(path):
 
 
 # Reset the cache completely.
-# Hack: to reset a global variable, we import this module.
 #
 def reset():
-	import statcache
-	# Check that we really imported the same module
-	if cache is not statcache.cache:
-		raise 'sorry, statcache identity crisis'
-	statcache.cache = {}
+	global cache
+	cache = {}
 
 
 # Remove a given item from the cache, if it exists.
