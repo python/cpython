@@ -177,7 +177,8 @@ def rrggbb_to_triplet(color, atoi=string.atoi):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
     rgbtuple = _namedict.get(color)
     if rgbtuple is None:
-	assert color[0] == '#'
+        if color[0] <> '#':
+            raise BadColor(color)
 	red = color[1:3]
 	green = color[3:5]
 	blue = color[5:7]
