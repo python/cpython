@@ -40,7 +40,7 @@
 \end{verbatim}
 \end{funcdesc}
 
-\begin{classdesc}{SequenceMatcher}{\unspecified}
+\begin{classdesc*}{SequenceMatcher}
   This is a flexible class for comparing pairs of sequences of any
   type, so long as the sequence elements are hashable.  The basic
   algorithm predates, and is a little fancier than, an algorithm
@@ -71,6 +71,8 @@
 
 
 \subsection{SequenceMatcher Objects \label{sequence-matcher}}
+
+The \class{SequenceMatcher} class has this constructor:
 
 \begin{classdesc}{SequenceMatcher}{\optional{isjunk\optional{,
                                    a\optional{, b}}}}
