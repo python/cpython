@@ -37,6 +37,12 @@ def test_true_division():
         else:
             raise TestFailed("expected OverflowError from %r" % overflow)
 
+    for underflow in ["1 / huge", "2L / huge", "-1 / huge", "-2L / huge",
+                     "100 / mhuge", "100L / mhuge"]:
+        result = eval(underflow, namespace)
+        if result != 0.0:
+            raise TestFailed("expected undeflow to 0 from %r" % undeflow)
+
     for zero in ["huge / 0", "huge / 0L",
                  "mhuge / 0", "mhuge / 0L"]:
         try:
