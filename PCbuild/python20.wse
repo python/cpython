@@ -2320,6 +2320,24 @@ item: Install File
   Description=Python Test files
   Flags=0000000000000010
 end
+item: Install File
+  Source=..\lib\test\*.bz2
+  Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\test\*.tar
+  Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\test\*.gz
+  Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
+  Flags=0000000000000010
+end
 item: Remark
 end
 item: Install File
