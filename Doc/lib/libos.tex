@@ -166,6 +166,13 @@ Return the current process' user id.
 Availability: \UNIX{}.
 \end{funcdesc}
 
+\begin{funcdesc}{getenv}{varname\optional{, value}}
+Return the value of the environment variable \var{varname} if it
+exists, or \var{value} if it doesn't.  \var{value} defaults to
+\code{None}.
+Availability: most flavors of \UNIX{}, Windows.
+\end{funcdesc}
+
 \begin{funcdesc}{putenv}{varname, value}
 \index{environment variables!setting}
 Set the environment variable named \var{varname} to the string
