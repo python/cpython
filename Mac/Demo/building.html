@@ -48,7 +48,7 @@ Think/Symantec C but you are basically on your own.
 
 <LI> You need GUSI, the Grand Unified Socket Interface, by Matthias
 Neeracher. The current distribution has been built with a modified version of
-CWGUSI 1.7.2. CWGUSI is
+CWGUSI 1.8.0. CWGUSI is
 obtainable from <A
 HREF="ftp://ftp.switch.ch/software/mac/src/mw_c">ftp://ftp.switch.ch/software/mac/src/mw_c</A>.
 It is possible to build a non-GUSI Python, see below.
@@ -374,7 +374,7 @@ can change the gusi settings should you feel like doing so).  Do
 <em>not</em> run it yet, this will possibly result in a garbled
 preferences file. <p>
 
-<DT> PythonApplet
+<DT> PythonAppletPPC
 <DD> The applet skeleton application. Very similar to
 <code>PythonPPC</code>, but it calls to a different entrypoint in the
 core library. The <code>mkapplet</code> script will copy this complete
@@ -383,16 +383,15 @@ applet. <p>
 
 </DL>
 
-After creating the alias to <code>PythonCore</code> you should move
-<code>PythonPPC</code> to the main Python folder. Next you remove any
-old <code>Python Preferences</code> file from the
-<code>Preferences</code> folder (if you had python installed on your
-system before) and run the interpreter once to create the correct
-preferences file. You should also make an alias to
-<code>PythonApplet</code> in the main Python folder. (again: making an
-alias is preferrable to copying or moving the file, since this will
-cause the correct file to be used if you ever rebuild
-PythonApplet). <p>
+After creating the alias to <code>PythonCorePPC</code> you should move
+<code>PythonPPC</code> to the main Python folder. Next you remove any old
+<code>Python XXX Preferences</code> file from the <code>Preferences</code> folder
+(if you had python installed on your system before) and run the interpreter once
+to create the correct preferences file. You should also make an alias
+<code>PythonApplet</code> pointing to <code>PythonAppletPPC</code> in the main
+Python folder. (again: making an alias is preferrable to copying or moving the
+file, since this will cause the correct file to be used if you ever rebuild
+PythonAppletPPC). <p>
 
 Next, you have to build the extension modules in the
 <code>PlugIns</code> folder. Open each project with <code>.ppc</code> in the
