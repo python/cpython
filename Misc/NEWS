@@ -284,6 +284,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- The _tkinter module (and hence Tkinter) has dropped support for
+  Tcl/Tk 8.0 and 8.1.  Only Tcl/Tk versions 8.2, 8.3 and 8.4 are
+  supported.
+
 - cPickle.BadPickleGet is now a class.
 
 - The time stamps in os.stat_result are floating point numbers now.
