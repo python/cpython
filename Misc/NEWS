@@ -78,6 +78,11 @@ Windows
   a powerful set of user  interface components that expands the capabilities
   of your Tcl/Tk and Python applications.
 
+Build
+-----
+
+- Bug #929689: Don't define _XOPEN_SOURCE on UnixWare 7.1.4.
+
 
 What's New in Python 2.3.3 (final)?
 ===================================
