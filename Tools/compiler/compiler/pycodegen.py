@@ -16,6 +16,7 @@ import sys
 import os
 import stat
 import struct
+import types
 
 def parse(path):
     f = open(path)
@@ -177,7 +178,10 @@ class CodeGenerator:
     def _generateFunctionOrLambdaCode(self, func):
         self.name = func.name
         self.filename = filename
-        args = func.argnames
+
+        # keep a lookout for 'def foo((x,y)):'
+        args, hasTupleArg = self.generateArglist(func.argnames)
+        
 	self.code = PyAssembler(args=args, name=func.name,
                                  filename=filename)
         self.namespace = self.OPTIMIZED
@@ -188,7 +192,40 @@ class CodeGenerator:
         lnf = walk(func.code, LocalNameFinder(args), 0)
         self.locals.push(lnf.getLocals())
 	self.emit('SET_LINENO', func.lineno)
+	if hasTupleArg:
+            self.generateArgUnpack(func.argnames)
         walk(func.code, self)
+
+    def generateArglist(self, arglist):
+        args = []
+        extra = []
+        count = 0
+        for elt in arglist:
+            if type(elt) == types.StringType:
+                args.append(elt)
+            elif type(elt) == types.TupleType:
+                args.append(".nested%d" % count)
+                count = count + 1
+                extra.extend(misc.flatten(elt))
+            else:
+                raise ValueError, "unexpect argument type:", elt
+        return args + extra, count
+
+    def generateArgUnpack(self, args):
+        count = 0
+        for arg in args:
+            if type(arg) == types.TupleType:
+                self.emit('LOAD_FAST', '.nested%d' % count)
+                count = count + 1
+                self.unpackTuple(arg)
+                        
+    def unpackTuple(self, tup):
+        self.emit('UNPACK_TUPLE', len(tup))
+        for elt in tup:
+            if type(elt) == types.TupleType:
+                self.unpackTuple(elt)
+            else:
+                self.emit('STORE_FAST', elt)
 
     def generateFunctionCode(self, func):
         """Generate code for a function body"""
@@ -391,7 +428,8 @@ class CodeGenerator:
         else:
             lElse = l.breakAnchor
         l.startAnchor.bind(self.code.getCurInst())
-        self.emit('SET_LINENO', node.test.lineno)
+        if hasattr(node.test, 'lineno'):
+            self.emit('SET_LINENO', node.test.lineno)
         self.visit(node.test)
         self.emit('JUMP_IF_FALSE', lElse)
         self.emit('POP_TOP')
@@ -455,7 +493,8 @@ class CodeGenerator:
             self.emit('POP_TOP')
             self.visit(body)
             self.emit('JUMP_FORWARD', end)
-            next.bind(self.code.getCurInst())
+            if expr:
+                next.bind(self.code.getCurInst())
             self.emit('POP_TOP')
         self.emit('END_FINALLY')
         if node.else_:
@@ -553,7 +592,6 @@ class CodeGenerator:
             self.emit('STORE_SUBSCR')
 	elif node.flags == 'OP_DELETE':
             self.emit('DELETE_SUBSCR')
-        print
         return 1
 
     def visitSlice(self, node):
@@ -596,16 +634,20 @@ class CodeGenerator:
         return 1
 
     def visitAssName(self, node):
+        # XXX handle OP_DELETE
         if node.flags != 'OP_ASSIGN':
             print "oops", node.flags
         self.storeName(node.name)
 
     def visitAssAttr(self, node):
-        if node.flags != 'OP_ASSIGN':
+        self.visit(node.expr)
+        if node.flags == 'OP_ASSIGN':
+            self.emit('STORE_ATTR', node.attrname)
+        elif node.flags == 'OP_DELETE':
+            self.emit('DELETE_ATTR', node.attrname)
+        else:
             print "warning: unexpected flags:", node.flags
             print node
-        self.visit(node.expr)
-        self.emit('STORE_ATTR', node.attrname)
         return 1
 
     def visitAssTuple(self, node):
@@ -865,7 +907,7 @@ class CompiledModule:
         t = transformer.Transformer()
         self.ast = t.parsesuite(self.source)
         cg = CodeGenerator(self.filename)
-        walk(self.ast, cg, walker=ExampleASTVisitor)
+        walk(self.ast, cg)
         self.code = cg.asConst()
 
     def dump(self, path):
@@ -888,18 +930,22 @@ class CompiledModule:
 if __name__ == "__main__":
     import getopt
 
+    VERBOSE = 0
     opts, args = getopt.getopt(sys.argv[1:], 'vq')
     for k, v in opts:
         if k == '-v':
+            VERBOSE = 1
             ASTVisitor.VERBOSE = ASTVisitor.VERBOSE + 1
         if k == '-q':
             f = open('/dev/null', 'wb')
             sys.stdout = f
-    if args:
-        filename = args[0]
+    if not args:
+        print "no files to compile"
     else:
-        filename = 'test.py'
-    buf = open(filename).read()
-    mod = CompiledModule(buf, filename)
-    mod.compile()
-    mod.dump(filename + 'c')
+        for filename in args:
+            if VERBOSE:
+                print filename
+            buf = open(filename).read()
+            mod = CompiledModule(buf, filename)
+            mod.compile()
+            mod.dump(filename + 'c')
