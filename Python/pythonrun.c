@@ -570,8 +570,8 @@ maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
 		   be read as they are on disk. */
 		unsigned int halfmagic = PyImport_GetMagicNumber() & 0xFFFF;
 		unsigned char buf[2];
-		if (fread(buf, 1, 2, fp) == 2 
-		    && (buf[1]<<8 | buf[0]) == halfmagic)
+		if (fread(buf, 1, 2, fp) == 2
+		    && ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
 			return 1;
 		fseek(fp, 0, SEEK_SET);
 	}
