@@ -1,193 +1,167 @@
-#! /usr/local/bin/python
+#!/usr/local/bin/python
 
-# Convert the Python FAQ to HTML
+# A somewhat-generalized FAQ-to-HTML converter (by Ka-Ping Yee, 10 Sept 96)
 
-import string
-import regex
-import regsub
-import sys
-import os
+# Reads a text file given on standard input or named as first argument, and
+# generates HTML 2.0 on standard output.  Recognizes these constructions:
+#
+#     HTML element               pattern at the beginning of a line
+#
+#     section heading            (<number><period>)+<space>
+#     numbered list element      <1-2 spaces>(<number><period>)+<space>
+#     unnumbered list element    <0-2 spaces><hyphen or asterisk><space>
+#     preformatted section       <more than two spaces>
+#
+# Heading level is determined by the number of (<number><period>) segments.
+# Blank lines force a separation of elements; if none of the above four
+# types is indicated, a new paragraph begins.  A line beginning with many
+# spaces is interpreted as a continuation (instead of preformatted) after
+# a list element.  Headings are anchored; paragraphs starting with "Q." are
+# emphasized, and those marked with "A." get their first sentence emphasized.
+#
+# Hyperlinks are created from references to:
+#     URLs, explicitly marked using <URL:scheme://host...> 
+#     other questions, of the form "question <number>(<period><number>)*"
+#     sections, of the form "section <number>".
 
-FAQ = 'FAQ'
+import sys, string, regex, regsub, regex_syntax
+regex.set_syntax(regex_syntax.RE_SYNTAX_AWK)
 
-chapterprog = regex.compile('^\([1-9][0-9]*\)\. ')
-questionprog = regex.compile('^\([1-9][0-9]*\)\.\([1-9][0-9]*\)\. ')
-newquestionprog = regex.compile('^Q\. ')
-blankprog = regex.compile('^[ \t]*$')
-indentedorblankprog = regex.compile('^\([ \t]+\|[ \t]*$\)')
-underlineprog = regex.compile('^==*$')
-eightblanksprog = regex.compile('^\(        \| *\t\)')
-mailheaderprog = regex.compile('^\(Subject\|Newsgroups\|Followup-To\|From\|Reply-To\|Approved\|Archive-name\|Version\|Last-modified\): +')
-urlprog = regex.compile('<URL:\([^>]*\)>')
-ampprog = regex.compile('&')
-aprog = regex.compile('^A\. +')
-qprog = regex.compile('>Q\. +')
-qrefprog = regex.compile('question +\([0-9]\.[0-9]+\)')
-versionprog = regex.compile('^Version: ')
-emailprog = regex.compile('<\([^>@:]+@[^>@:]+\)>')
+# --------------------------------------------------------- regular expressions
+orditemprog = regex.compile('  ?([1-9][0-9]*\.)+ +')
+itemprog = regex.compile(' ? ?[-*] +')
+headingprog = regex.compile('([1-9][0-9]*\.)+ +')
+prefmtprog = regex.compile('   ')
+blankprog = regex.compile('^[ \t\r\n]$')
+questionprog = regex.compile(' *Q\. +')
+answerprog = regex.compile(' *A\. +')
+sentprog = regex.compile('(([^.:;?!(]|[.:;?!][^ \t\r\n])+[.:;?!]?)')
 
-def main():
-    print 'Reading lines...'
-    lines = open(FAQ, 'r').readlines()
-    print 'Renumbering in memory...'
-    oldlines = lines[:]
-    after_blank = 1
-    chapter = 0
-    question = 0
-    chapters = ['<OL>']
-    questions = ['<OL>']
-    for i in range(len(lines)):
-	line = lines[i]
-	if after_blank:
-	    n = chapterprog.match(line)
-	    if n >= 0:
-		chapter = chapter + 1
-		if chapter != 1:
-		    questions.append('</UL>\n')
-		question = 0
-		lines[i] = '<H2>' + line[n:-1] + '</H2>\n'
-		chapters.append('<LI> ' + line[n:])
-		questions.append('<LI> ' + line[n:])
-		questions.append('<UL>\n')
-		afterblank = 0
-		continue
-	    n = underlineprog.match(line)
-	    if n >= 0:
-		lines[i] = ''
-		continue
-	    n = questionprog.match(line)
-	    if n < 0: n = newquestionprog.match(line) - 3
-	    if n >= 0:
-		question = question + 1
-		number = '%d.%d'%(chapter, question)
-		lines[i] = '<A NAME="' + number + '"><H3>' + line[n:]
-		questions.append('<LI><A HREF="#' + \
-				 number + '">' + line[n:])
-		# Add up to 4 continuations of the question
-		n = len(number)
-		for j in range(i+1, i+5):
-		    if blankprog.match(lines[j]) >= 0:
-			lines[j-1] = lines[j-1] + '</H3></A>'
-			questions[-1] = \
-			      questions[-1][:-1] + '</A>\n'
-			break
-		    questions.append(' '*(n+2) + lines[j])
-		afterblank = 0
-		continue
-	afterblank = (blankprog.match(line) >= 0)
-    print 'Inserting list of chapters...'
-    chapters.append('</OL>\n')
-    for i in range(len(lines)):
-	line = lines[i]
-	if regex.match(
-		  '^This FAQ is divided in the following chapters',
-		  line) >= 0:
-	    i = i+1
-	    while 1:
-		line = lines[i]
-		if indentedorblankprog.match(line) < 0:
-		    break
-		del lines[i]
-	    lines[i:i] = chapters
-	    break
-    else:
-	print '*** Can\'t find header for list of chapters'
-	print '*** Chapters found:'
-	for line in chapters: print line,
-    print 'Inserting list of questions...'
-    questions.append('</UL></OL>\n')
-    for i in range(len(lines)):
-	line = lines[i]
-	if regex.match('^Here.s an overview of the questions',
-		  line) >= 0:
-	    i = i+1
-	    while 1:
-		line = lines[i]
-		if indentedorblankprog.match(line) < 0:
-		    break
-		del lines[i]
-	    lines[i:i] = questions
-	    break
-    else:
-	print '*** Can\'t find header for list of questions'
-	print '*** Questions found:'
-	for line in questions: print line,
-    # final cleanup
-    print "Final cleanup..."
-    doingpre = 0
-    for i in range(len(lines)):
-	# set lines indented by >= 8 spaces using PRE
-	# blank lines either terminate PRE or separate paragraphs
-	n = eightblanksprog.match(lines[i])
-	if n < 0: n = mailheaderprog.match(lines[i])
-	if n >= 0:
-	    if versionprog.match(lines[i]) > 0:
-		version = string.split(lines[i])[1]
-	    if doingpre == 0:
-		lines[i] = '<PRE>\n' + lines[i]
-		doingpre = 1
-		continue
-	n = blankprog.match(lines[i])
-	if n >= 0:
-	    # print '*** ', lines[i-1], doingpre
-	    if doingpre == 1:
-		lines[i] = '</PRE><P>\n'
-		doingpre = 0
-	    else:
-		lines[i] = '<P>\n'
-	    continue
+mailhdrprog = regex.compile('^(Subject|Newsgroups|Followup-To|From|Reply-To'
+    '|Approved|Archive-Name|Version|Last-Modified): +', regex.casefold)
+urlprog = regex.compile('&lt;URL:([^&]+)&gt;')
+addrprog = regex.compile('&lt;([^>@:]+@[^&@:]+)&gt;')
+qrefprog = regex.compile('question +([1-9](\.[0-9]+)*)')
+srefprog = regex.compile('section +([1-9][0-9]*)')
+entityprog = regex.compile('[&<>]')
 
-	# & -> &amp;
-	n = ampprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.gsub(ampprog, '&amp;', lines[i])
-	    # no continue - there might be other changes to the line...
+# ------------------------------------------------------------ global variables
+body = []
+ollev = ullev = 0
+element = content = secnum = version = ''
 
-	# zap all the 'Q.' and 'A.' leaders - what happened to the
-	# last couple?
-	n = qprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.sub(qprog, '>', lines[i])
-	    # no continue - there might be other changes to the line...
+# ----------------------------------------------------- for making nested lists
+def dnol():
+    global body, ollev
+    ollev = ollev + 1
+    if body[-1] == '</li>': del body[-1]
+    body.append('<ol>')
 
-	n = aprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.sub(aprog, '', lines[i])
-	    # no continue - there might be other changes to the line...
+def upol(): 
+    global body, ollev
+    ollev = ollev - 1
+    body.append(ollev and '</ol></li>' or '</ol>')
 
-	# patch up hard refs to questions
-	n = qrefprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.sub(qrefprog,
-				  '<A HREF="#\\1">question \\1</A>', lines[i])
-	    # no continue - there might be other changes to the line...
+# --------------------------------- output one element and convert its contents
+def spew(clearol=0, clearul=0):
+    global content, body, ollev, ullev
 
-	# make <URL:...> into actual links
-	n = urlprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.gsub(urlprog, '<A HREF="\\1">\\1</A>', lines[i])
-	    # no continue - there might be other changes to the line...
+    if content:
+        if entityprog.search(content) > -1:
+            content = regsub.gsub('&', '&amp;', content)
+            content = regsub.gsub('<', '&lt;', content)
+            content = regsub.gsub('>', '&gt;', content)
 
-	# make <user@host.domain> into <mailto:...> links
-	n = emailprog.search(lines[i])
-	if n >= 0:
-	    lines[i] = regsub.gsub(emailprog,
-				   '<A HREF="mailto:\\1">\\1</A>', lines[i])
-	    # no continue - there might be other changes to the line...
+        n = questionprog.match(content)
+        if n > 0:
+            content = '<em>' + content[n:] + '</em>'
+            if ollev:                       # question reference in index
+                fragid = regsub.gsub('^ +|\.? +$', '', secnum)
+                content = '<a href="#%s">%s</a>' % (fragid, content)
 
-    lines[0:0] = ['<HTML><HEAD><TITLE>Python Frequently Asked Questions v',
-		  version,
-		  '</TITLE>\n',
-		  '</HEAD><body>\n',
-		  '(This file was generated using\n',
-		  '<A HREF="faq2html.py">faq2html.py</A>.)<P>\n']
-    lines.append('<P></BODY></HTML>\n')
+        if element[0] == 'h':               # heading in the main text
+            fragid = regsub.gsub('^ +|\.? +$', '', secnum)
+            content = secnum + '<a name="%s">%s</a>' % (fragid, content)
 
-    print 'Writing html file...'
-    f = open(FAQ + '.html', 'w')
-    for line in lines:
-	f.write(line)
-    f.close()
-    print 'Done.'
+        n = answerprog.match(content)
+        if n > 0:                           # answer paragraph
+            content = regsub.sub(sentprog, '<strong>\\1</strong>', content[n:])
 
-main()
+        body.append('<' + element + '>' + content)
+        body.append('</' + element + '>')
+        content = ''
+
+    while clearol and ollev: upol()
+    if clearul and ullev: body.append('</ul>'); ullev = 0
+
+# ---------------------------------------------------------------- main program
+faq = len(sys.argv)>1 and sys.argv[1] and open(sys.argv[1]) or sys.stdin
+lines = faq.readlines()
+
+for line in lines:
+    if line[2:9] == '=======':              # <hr> will appear *before*
+        body.append('<hr>')                 # the underlined heading
+        continue
+
+    n = orditemprog.match(line)
+    if n > 0:                               # make ordered list item
+        spew(0, 'clear ul')
+        secnum = line[:n]
+        level = string.count(secnum, '.')
+        while level > ollev: dnol()
+        while level < ollev: upol()
+        element, content = 'li', line[n:]
+        continue
+
+    n = itemprog.match(line)
+    if n > 0:                               # make unordered list item
+        spew('clear ol', 0)
+        if ullev == 0: body.append('<ul>'); ullev = 1
+        element, content = 'li', line[n:]
+        continue
+
+    n = headingprog.match(line)
+    if n > 0:                               # make heading element
+        spew('clear ol', 'clear ul')
+        secnum = line[:n]
+        sys.stderr.write(line)
+        element, content = 'h%d' % string.count(secnum, '.'), line[n:]
+        continue
+
+    n = 0
+    if not secnum:                          # haven't hit body yet
+        n = mailhdrprog.match(line) 
+        v = version and -1 or regex.match('Version: ', line)
+        if v > 0 and not version: version = line[v:]
+    if n <= 0 and element != 'li':          # not pre if after a list item
+        n = prefmtprog.match(line)
+    if n > 0:                               # make preformatted element
+        if element == 'pre':
+            content = content + line
+        else: 
+            spew('clear ol', 'clear ul')
+            element, content = 'pre', line
+        continue
+
+    if blankprog.match(line) > 0:           # force a new element
+        spew()
+        element = ''
+    elif element:                           # continue current element
+        content = content + line
+    else:                                   # no element; make paragraph
+        spew('clear ol', 'clear ul')
+        element, content = 'p', line
+
+spew()										# output last element
+
+body = string.joinfields(body, '')
+body = regsub.gsub(urlprog, '<a href="\\1">\\1</a>', body)
+body = regsub.gsub(addrprog, '<a href="mailto:\\1">\\1</a>', body)
+body = regsub.gsub(qrefprog, '<a href="#\\1">question \\1</a>', body)
+body = regsub.gsub(srefprog, '<a href="#\\1">section \\1</a>', body)
+
+print '<!doctype html public "-//IETF//DTD HTML 2.0//EN"><html>'
+print '<head><title>Python Frequently-Asked Questions v' + version
+print "</title></head><body>(This file was generated using Ping's"
+print '<a href="faq2html.py">faq2html.py</a>.)'
+print body + '</body></html>'
