@@ -1643,10 +1643,10 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                     chr += 10 + c - 'A';
             }
             s += i;
-	    if (chr == 0xffffffff)
-		    /* _decoding_error will have already written into the
-		       target buffer. */
-		    break;
+            if (chr == 0xffffffff)
+                    /* _decoding_error will have already written into the
+                       target buffer. */
+                    break;
         store:
             /* when we get here, chr is a 32-bit unicode character */
             if (chr <= 0xffff)
@@ -1654,7 +1654,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 *p++ = (Py_UNICODE) chr;
             else if (chr <= 0x10ffff) {
                 /* UCS-4 character. Either store directly, or as
-		   surrogate pair. */
+                   surrogate pair. */
 #ifdef Py_UNICODE_WIDE
                 *p++ = chr;
 #else
@@ -1707,21 +1707,21 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             break;
 
         default:
-	    if (s > end) {
-		if (unicodeescape_decoding_error(&p, errors, "\\ at end of string"))
-		    goto onError;
-	    }
-	    else {
-		*p++ = '\\';
-		*p++ = (unsigned char)s[-1];
-	    }
+            if (s > end) {
+                if (unicodeescape_decoding_error(&p, errors, "\\ at end of string"))
+                    goto onError;
+            }
+            else {
+                *p++ = '\\';
+                *p++ = (unsigned char)s[-1];
+            }
             break;
         }
     }
     if (_PyUnicode_Resize(&v, (int)(p - buf)))
-		goto onError;
+                goto onError;
     return (PyObject *)v;
-    
+
 ucnhashError:
     PyErr_SetString(
         PyExc_UnicodeError,
