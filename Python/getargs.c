@@ -473,12 +473,12 @@ convertsimple1(arg, p_format, p_va)
 				return "integer<b>";
 			else if (ival < 0) {
 				PyErr_SetString(PyExc_OverflowError,
-					"unsigned byte integer is less than minimum");
+			      "unsigned byte integer is less than minimum");
 				return "integer<b>";
 			}
 			else if (ival > UCHAR_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				    "unsigned byte integer is greater than maximum");
+			      "unsigned byte integer is greater than maximum");
 				return "integer<b>";
 			}
 			else
@@ -494,12 +494,12 @@ convertsimple1(arg, p_format, p_va)
 				return "integer<h>";
 			else if (ival < SHRT_MIN) {
 				PyErr_SetString(PyExc_OverflowError,
-					"signed short integer is less than minimum");
+			      "signed short integer is less than minimum");
 				return "integer<h>";
 			}
 			else if (ival > SHRT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				  "signed short integer is greater than maximum");
+			      "signed short integer is greater than maximum");
 				return "integer<h>";
 			}
 			else
@@ -513,14 +513,14 @@ convertsimple1(arg, p_format, p_va)
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<i>";
-			else if (ival < INT_MIN) {
-				PyErr_SetString(PyExc_OverflowError,
-					"signed integer is less than minimum");
-				return "integer<i>";
-			}
 			else if (ival > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				  "signed integer is greater than maximum");
+				    "signed integer is greater than maximum");
+				return "integer<i>";
+			}
+			else if (ival < INT_MIN) {
+				PyErr_SetString(PyExc_OverflowError,
+				    "signed integer is less than minimum");
 				return "integer<i>";
 			}
 			else
