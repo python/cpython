@@ -361,12 +361,12 @@ class bdist_rpm (Command):
                 assert len(rpms) == 1, \
                        "unexpected number of RPM files found: %s" % rpms
                 dist_file = ('bdist_rpm', get_python_version(),
-                             self._dist_path(rpms[0])
+                             self._dist_path(rpms[0]))
                 self.distribution.dist_files.append(dist_file)
                 self.move_file(rpms[0], self.dist_dir)
                 if debuginfo:
                     dist_file = ('bdist_rpm', get_python_version(),
-                                 self._dist_path(debuginfo[0])
+                                 self._dist_path(debuginfo[0]))
                     self.move_file(debuginfo[0], self.dist_dir)
     # run()
 
