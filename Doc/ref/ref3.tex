@@ -1324,15 +1324,15 @@ each instance.
     
 \begin{datadesc}{__slots__}
 This class variable can be assigned a string, iterable, or sequence of strings
-with variable names used by instances.  If defined in a new-style class
-definition, \var{__slots__} reserves space for the declared variables
+with variable names used by instances.  If defined in a new-style class,
+\var{__slots__} reserves space for the declared variables
 and prevents the automatic creation of \var{__dict__} and \var{__weakref__}
 for each instance.
 \versionadded{2.2}                     
 \end{datadesc}
 
 \noindent
-Notes on Using \var{__slots__}
+Notes on using \var{__slots__}
 
 \begin{itemize}
 
@@ -1349,7 +1349,7 @@ specifically listed in the sequence of instance variable names]{2.3}
 defining \var{__slots__} do not support weak references to its instances.
 If weak reference support is needed, then add \code{'__weakref__'} to the
 sequence of strings in the \var{__slots__} declaration.                    
-\versionchanged[Previously, adding \code{__weakref__} to the \var{__slots__}
+\versionchanged[Previously, adding \code{'__weakref__'} to the \var{__slots__}
 declaration would not enable support for weak references]{2.3}                                            
 
 \item \var{__slots__} are implemented at the class level by creating
@@ -1370,7 +1370,7 @@ unless they also define  \var{__slots__}.
 \item \var{__slots__} do not work for classes derived from ``variable-length''
 built-in types such as \class{long}, \class{str} and \class{tuple}. 
 
-\item Any non-string iterable may be assigned \var{__slots__}.
+\item Any non-string iterable may be assigned to \var{__slots__}.
 Mappings may also be used; however, in the future, special meaning may
 be assigned to the values corresponding to each key.                      
 
