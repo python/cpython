@@ -129,7 +129,8 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'nlargest',
            'nsmallest']
 
-from itertools import islice, repeat
+from itertools import islice, repeat, count, imap, izip, tee
+from operator import itemgetter
 import bisect
 
 def heappush(heap, item):
@@ -306,6 +307,33 @@ try:
     from _heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
 except ImportError:
     pass
+
+# Extend the implementations of nsmallest and nlargest to use a key= argument
+_nsmallest = nsmallest
+def nsmallest(n, iterable, key=None):
+    """Find the n smallest elements in a dataset.
+
+    Equivalent to:  sorted(iterable, key=key)[:n]
+    """
+    if key is None:
+        return _nsmallest(n, iterable)
+    in1, in2 = tee(iterable)
+    it = izip(imap(key, in1), count(), in2)                 # decorate
+    result = _nsmallest(n, it)
+    return map(itemgetter(2), result)                       # undecorate
+
+_nlargest = nlargest
+def nlargest(n, iterable, key=None):
+    """Find the n largest elements in a dataset.
+
+    Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
+    """
+    if key is None:
+        return _nlargest(n, iterable)
+    in1, in2 = tee(iterable)
+    it = izip(imap(key, in1), count(), in2)                 # decorate
+    result = _nlargest(n, it)
+    return map(itemgetter(2), result)                       # undecorate
 
 if __name__ == "__main__":
     # Simple sanity test
