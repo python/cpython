@@ -104,14 +104,18 @@ sub do_cmd_email{ &use_sans_serif(@_); }
 sub do_cmd_mimetype{ &use_sans_serif(@_); }
 
 sub do_cmd_var{ &use_italics(@_); }
-sub do_cmd_dfn{ &use_italics(@_); }
+sub do_cmd_dfn{ &use_italics(@_); }	# make an index entry?
 sub do_cmd_emph{ &use_italics(@_); }
 
 
 sub do_cmd_envvar{
     local($_) = @_;
-    s/$next_pair_pr_rx/\$\2/;
-    $_;
+    s/$next_pair_pr_rx//;
+    my($br_id,$envvar) = ($1, $2);
+    my($name,$aname,$ahref) = link_info($br_id);
+    add_index_entry("environment variables!$envvar@\$$envvar", $ahref);
+    add_index_entry("$envvar@\$$envvar", $ahref);
+    "$aname\$$envvar</a>" . $_;
 }
 
 sub do_cmd_url{
@@ -126,8 +130,8 @@ sub do_cmd_url{
 sub do_cmd_manpage{
     # two parameters:  \manpage{name}{section}
     local($_) = @_;
-    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    s|$pair_pr_rx$any_next_pair_pr_rx3|<i>\2</i>(\4)|;
+    my $rx = "$next_pair_pr_rx$any_next_pair_pr_rx3";
+    s|$rx|<i>\2</i>(\4)|;
     $_;
 }
 
@@ -157,12 +161,9 @@ sub do_cmd_strong{
 sub do_cmd_deprecated{
     # two parameters:  \deprecated{version}{whattodo}
     local($_) = @_;
-    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    my($release,$action) = ($2, $4);
-    s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
-    "<b>Deprecated since release $release.</b>"
-      . "\n$action<p>"
-      . $_;
+    my $rx = "$next_pair_pr_rx$any_next_pair_pr_rx3";
+    s|$rx|<b>Deprecated since release \2.</b>\n\4<p>|;
+    $_;
 }
 
 # file and samp are at the end of this file since they screw up fontlock.
@@ -191,19 +192,75 @@ sub do_cmd_withsubitem{
     local($_) = @_;
     my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     s/$next_pair_pr_rx$any_next_pair_pr_rx3/\4/;
+    $INDEX_SUBITEM = $2;
     $_;
 }
 
 sub do_cmd_makemodindex{ @_[0]; }
 
+# We're in the document subdirectory when this happens!
+open(IDXFILE, ">index.dat") || die "\n$!\n";
+open(INTLABELS, ">intlabels.pl") || die "\n$!\n";
+print INTLABELS
+  "%internal_labels = ();\n1;  # hack in case there are no entries\n\n";
+
+sub gen_target_name{
+    "l2h-" . @_[0];
+}
+
+sub gen_target{
+    "<a name=\"" . @_[0] . "\">";
+}
+
+sub gen_link{
+    my($node,$target) = @_;
+    print INTLABELS "\$internal_labels{\"$target\"} = \"$URL/$node\";\n";
+    "<a href=\"$node#$target\">";
+}
+
+sub make_index_entry{
+    my($br_id,$str) = @_;
+    my($name,$aname,$ahref) = link_info($br_id);
+    add_index_entry($str, $ahref);
+    "$aname$anchor_invisible_mark</a>";
+}
+
+sub add_index_entry{
+    # add an entry to the index structures; ignore the return value
+    my($str,$ahref) = @_;
+    $str = gen_index_id($str, '');
+    $index{$str} .= $ahref;
+    print IDXFILE $ahref, "\0", $str, "\n";
+}
+
+sub link_info{
+    my $name = gen_target_name(@_[0]);
+    my $aname = gen_target($name);
+    my $ahref = gen_link($CURRENT_FILE, $name);
+    return ($name, $aname, $ahref);
+}
+
+sub do_cmd_index{
+    local($_) = @_;
+    s/$next_pair_pr_rx[\n]?//o;
+    my($br_id,$str) = ($1, $2);
+    #
+    my($name,$aname,$ahref) = link_info($br_id);
+    add_index_entry("$str", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
+}
+
 sub do_cmd_indexii{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
     my($br_id1,$str1) = ($1, $2);
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id2,$str2) = ($1, $2);
-    join('', &make_index_entry($br_id1, "$str1 $str2"),
-	 &make_index_entry($br_id2, "$str2, $str1"), $_);
+    #
+    my($name,$aname,$ahref) = link_info($br_id1);
+    add_index_entry("$str1!$str2", $ahref);
+    add_index_entry("$str2!$str1", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_indexiii{
@@ -212,12 +269,14 @@ sub do_cmd_indexiii{
     my($br_id1,$str1) = ($1, $2);
     s/$next_pair_pr_rx//o;
     my($br_id2,$str2) = ($1, $2);
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id3,$str3) = ($1, $2);
-    join('', &make_index_entry($br_id1, "$str1 $str2 $str3"),
-	 &make_index_entry($br_id2, "$str2 $str3, $str1"),
-	 &make_index_entry($br_id3, "$str3, $str1 $str2"),
-	 $_);
+    #
+    my($name,$aname,$ahref) = link_info($br_id1);
+    add_index_entry("$str1!$str2 $str3", $ahref);
+    add_index_entry("$str2!$str3, $str1", $ahref);
+    add_index_entry("$str3!$str1 $str2", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_indexiv{
@@ -228,28 +287,33 @@ sub do_cmd_indexiv{
     my($br_id2,$str2) = ($1, $2);
     s/$next_pair_pr_rx//o;
     my($br_id3,$str3) = ($1, $2);
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id4,$str4) = ($1, $2);
-    join('', &make_index_entry($br_id1, "$str1 $str2 $str3 $str4"),
-	 &make_index_entry($br_id2, "$str2 $str3 $str4, $str1"),
-	 &make_index_entry($br_id3, "$str3 $str4, $str1 $str2"),
-	 &make_index_entry($br_id4, "$str4, $str1 $str2 $str3"),
-	 $_);
+    #
+    my($name,$aname,$ahref) = link_info($br_id1);
+    add_index_entry("$str1!$str2 $str3 $str4", $ahref);
+    add_index_entry("$str2!$str3 $str4, $str1", $ahref);
+    add_index_entry("$str3!$str4, $str1 $str2", $ahref);
+    add_index_entry("$str4!$$str1 $str2 $str3", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_ttindex{
     local($_) = @_;
-    s/$next_pair_pr_rx//;
+    s/$next_pair_pr_rx[\n]?//;
     my($br_id,$str) = ($1, $2);
     &make_index_entry($br_id, $str . &get_indexsubitem) . $_;
 }
 
 sub my_typed_index_helper{
     local($word,$_) = @_;
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id,$str) = ($1, $2);
-    join('', &make_index_entry($br_id, "$str $word"),
-	 &make_index_entry($br_id, "$word, $str"), $_);
+    #
+    my($name,$aname,$ahref) = link_info($br_id1);
+    add_index_entry("$str $word", $ahref);
+    add_index_entry("$word!$str", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
 }
 
 sub do_cmd_stindex{ &my_typed_index_helper('statement', @_); }
@@ -259,9 +323,9 @@ sub do_cmd_obindex{ &my_typed_index_helper('object', @_); }
 
 sub my_parword_index_helper{
     local($word,$_) = @_;
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id,$str) = ($1, $2);
-    &make_index_entry($br_id, "$str ($word)") . $_;
+    make_index_entry($br_id, "$str ($word)") . $_;
 }
 
 
@@ -275,24 +339,24 @@ $STRIP_INDEX_TT = 0;
 
 sub make_mod_index_entry{
     my($br_id,$str,$define) = @_;
-    my $halfref = &make_half_href("$CURRENT_FILE#$br_id");
-    # If TITLE is not yet available (i.e the \index command is in the title
-    # of the current section), use $ref_before.
-    $TITLE = $ref_before unless $TITLE;
-    # Save the reference
+    my($name,$aname,$ahref) = link_info($br_id);
+    $str =~ s|<tt>(.*)</tt>|\1|
+        if $STRIP_INDEX_TT;
+    # equivalent of add_index_entry() using $define instead of ''
+    $str = gen_index_id($str, $define);
+    $index{$str} .= $ahref;
+    print IDXFILE $ahref, "\0", $str, "\n";
+
     if ($define eq 'DEF') {
+	# add to the module index
 	my($nstr,$garbage) = split / /, $str, 2;
-	$Modules{$nstr} .= $halfref;
+	$Modules{$nstr} .= $ahref;
     }
-    $str = &gen_index_id($str, $define);
-    if ($STRIP_INDEX_TT) {
-        $str =~ s|<tt>(.*)</tt>|\1|;
-    }
-    $index{$str} .= $halfref;
-    "<a name=$br_id>$anchor_invisible_mark</a>";
+    "$aname$anchor_invisible_mark</a>";
 }
 
 $THIS_MODULE = '';
+$THIS_CLASS = '';
 
 sub my_module_index_helper{
     local($word, $_) = @_;
@@ -301,96 +365,70 @@ sub my_module_index_helper{
     my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
     $THIS_MODULE = "$str";
-    &make_mod_index_entry("SECTION$section_tag",
-			  "<tt>$str</tt> (${word}module)", 'DEF');
-    $_;
+    make_mod_index_entry("SECTION$section_tag",
+			 "<tt>$str</tt> (${word}module)", 'DEF') . $_;
 }
 
 sub ref_module_index_helper{
     local($word, $_) = @_;
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id, $str) = ($1, $2);
     $word = "$word " if $word;
-    &make_mod_index_entry($br_id, "<tt>$str</tt> (${word}module)", 'REF') . $_;
+    make_mod_index_entry($br_id, "<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
 
 sub do_cmd_bifuncindex{
     local($_) = @_;
-    s/$next_pair_pr_rx//o;
+    s/$next_pair_pr_rx[\n]?//o;
     my($br_id,$str,$fname) = ($1, $2, "<tt>$2()</tt>");
     $fname = "$str()"
       if $STRIP_INDEX_TT;
-    &make_index_entry($br_id, "$fname (built-in function)") . $_;
+    make_index_entry($br_id, "$fname (built-in function)") . $_;
 }
 
-sub do_cmd_modindex{ &my_module_index_helper('', @_); }
-sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_); }
-sub do_cmd_exmodindex{ &my_module_index_helper('extension', @_); }
-sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_); }
+sub do_cmd_modindex{ my_module_index_helper('', @_); }
+sub do_cmd_bimodindex{ my_module_index_helper('built-in', @_); }
+sub do_cmd_exmodindex{ my_module_index_helper('extension', @_); }
+sub do_cmd_stmodindex{ my_module_index_helper('standard', @_); }
 
 # these should be adjusted a bit....
-sub do_cmd_refmodindex{ &ref_module_index_helper('', @_); }
-sub do_cmd_refbimodindex{ &ref_module_index_helper('built-in', @_); }
-sub do_cmd_refexmodindex{ &ref_module_index_helper('extension', @_); }
-sub do_cmd_refstmodindex{ &ref_module_index_helper('standard', @_); }
+sub do_cmd_refmodindex{ ref_module_index_helper('', @_); }
+sub do_cmd_refbimodindex{ ref_module_index_helper('built-in', @_); }
+sub do_cmd_refexmodindex{ ref_module_index_helper('extension', @_); }
+sub do_cmd_refstmodindex{ ref_module_index_helper('standard', @_); }
 
-sub do_cmd_nodename{ &do_cmd_label(@_); }
+sub do_cmd_nodename{ do_cmd_label(@_); }
 
 sub init_myformat{
     # XXX need some way for this to be called after &initialise; ???
     $anchor_mark = '';
     $icons{'anchor_mark'} = '';
+    my $cmark = "(?:$comment_mark)?";
     # <<2>>...<<2>>
-    $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
-    $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
-    $any_next_pair_rx7 = "$O(\\d+)$C([\\s\\S]*)$O\\7$C";
-    $any_next_pair_rx9 = "$O(\\d+)$C([\\s\\S]*)$O\\9$C";
+    $next_pair_rx = "^[\\s\n%]*$O(\\d+)$C([\\s\\S]*)$O\\1$C";
+    $any_next_pair_rx3 = "[\\s\n%]*$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+    $any_next_pair_rx5 = "[\\s\n%]*$O(\\d+)$C([\\s\\S]*)$O\\5$C";
+    $any_next_pair_rx7 = "[\\s\n%]*$O(\\d+)$C([\\s\\S]*)$O\\7$C";
+    $any_next_pair_rx9 = "[\\s\n%]*$O(\\d+)$C([\\s\\S]*)$O\\9$C";
     # <#2#>...<#2#>
-    $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    $any_next_pair_pr_rx5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
-    $any_next_pair_pr_rx7 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP";
-    $any_next_pair_pr_rx9 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP";
-#     if (defined &process_commands_wrap_deferred) {
-# 	&process_commands_wrap_deferred(<<THESE_COMMANDS);
-# indexii # {} # {}
-# indexiii # {} # {} # {}
-# indexiv # {} # {} # {} # {}
-# exindex # {}
-# obindex # {}
-# opindex # {}
-# stindex # {}
-# ttindex # {}
-# bifuncindex # {}
-# modindex # {}
-# bimodindex # {}
-# exmodindex # {}
-# stmodindex # {}
-# refmodindex # {}
-# refbimodindex # {}
-# refexmodindex # {}
-# refstmodindex # {}
-# rfc # {}
-# THESE_COMMANDS
-#     }
+    $next_pair_pr_rx = "^[\\s\n%]*$OP(\\d+)$CP([\\s\\S]*)$OP\\1$CP$cmark";
+    $any_next_pair_pr_rx3 = "[\\s\n%]*$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP$cmark";
+    $any_next_pair_pr_rx5 = "[\\s\n%]*$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP$cmark";
+    $any_next_pair_pr_rx7 = "[\\s\n%]*$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP$cmark";
+    $any_next_pair_pr_rx9 = "[\\s\n%]*$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP$cmark";
 }
-
-&init_myformat;
+init_myformat();
 
 # similar to make_index_entry(), but includes the string in the result
 # instead of the dummy filler.
 #
 sub make_str_index_entry{
     my($br_id,$str) = @_;
-    # If TITLE is not yet available (i.e the \index command is in the title
-    # of the current section), use $ref_before.
-    $TITLE = $ref_before unless $TITLE;
-    # Save the reference
-    my $nstr = &gen_index_id($str, '');
-    if ($STRIP_INDEX_TT) {
-        $nstr =~ s|<tt>(.*)</tt>|\1|;
-    }
-    $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=\"$br_id\">$str</a>";
+    my($name,$aname,$ahref) = link_info($br_id);
+    $str =~ s|<tt>(.*)</tt>|\1|
+        if $STRIP_INDEX_TT;
+    add_index_entry($str, $ahref);
+    "$aname$str</a>";
 }
 
 # Changed from the stock version to indent {verbatim} sections,
@@ -405,6 +443,8 @@ sub replace_verbatim {
 }
 
 # (Used with LaTeX2HTML 98.1)
+# The HTML this produces is bad; the <PRE> is on the outside of the <dl>,
+# but I haven't found a workaround yet.
 sub replace_verbatim_hook{
     # Modifies $_
     my($prefix,$suffix) = ("\n<p><dl><dd>", "</dl>");
@@ -426,13 +466,13 @@ sub do_env_cfuncdesc{
 	$return_type = "$2";
 	$function_name = "$4";
 	$arg_list = "$6";
-	$idx = &make_str_index_entry($3,
+	$idx = make_str_index_entry($3,
 			"<tt>$function_name()</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
 	$idx =~ s/\(\)//;
     }
     "<dl><dt>$return_type <b>$idx</b>"
-      . "(<var>$arg_list</var>)\n<dd>$'\n</dl>"
+      . "(<var>$arg_list</var>)\n<dd>$'</dl>"
 }
 
 sub do_env_ctypedesc{
@@ -441,11 +481,11 @@ sub do_env_ctypedesc{
     my $cfuncdesc_rx = "$next_pair_rx";
     if (/$cfuncdesc_rx/o) {
 	$type_name = "$2";
-	$idx = &make_str_index_entry($1,
+	$idx = make_str_index_entry($1,
 			"<tt>$type_name</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
     }
-    "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
+    "<dl><dt><b>$idx</b>\n<dd>$'</dl>"
 }
 
 sub do_env_cvardesc{
@@ -455,12 +495,12 @@ sub do_env_cvardesc{
     if (/$cfuncdesc_rx/o) {
 	$var_type = "$2";
 	$var_name = "$4";
-	$idx = &make_str_index_entry($3,
+	$idx = make_str_index_entry($3,
 			"<tt>$var_name</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
     }
     "<dl><dt>$var_type <b>$idx</b>\n"
-      . "<dd>$'\n</dl>";
+      . "<dd>$'</dl>";
 }
 
 sub do_env_funcdesc{
@@ -470,12 +510,12 @@ sub do_env_funcdesc{
     if (/$funcdesc_rx/o) {
 	$function_name = "$2";
 	$arg_list = "$4";
-	$idx = &make_str_index_entry($3, "<tt>$function_name()</tt>"
+	$idx = make_str_index_entry($3, "<tt>$function_name()</tt>"
 				     . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
 	$idx =~ s/\(\)//;
     }
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
 }
 
 sub do_env_funcdescni{
@@ -490,7 +530,7 @@ sub do_env_funcdescni{
 	else {
 	    $idx = "<tt>$function_name</tt>"; }
     }
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
 }
 
 sub do_cmd_funcline{
@@ -501,8 +541,8 @@ sub do_cmd_funcline{
     my $function_name = $2;
     s/$next_pair_pr_rx//o;
     my($br_id,$arg_list) = ($1, $2);
-    my $idx = &make_str_index_entry($br_id, "<tt>$function_name()</tt>"
-				    . &get_indexsubitem);
+    my $idx = make_str_index_entry($br_id, "<tt>$function_name()</tt>"
+				   . &get_indexsubitem);
     $idx =~ s/\(\)//;
 
     "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
@@ -517,13 +557,12 @@ $INDEX_OPCODES = 0;
 sub do_env_opcodedesc{
     local($_) = @_;
     my($opcode_name,$arg_list,$stuff,$idx) = ('', '', '', '');
-    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     my $opcodedesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$opcodedesc_rx/o) {
 	$opcode_name = "$2";
 	$arg_list = "$4";
 	if ($INDEX_OPCODES) {
-	    $idx = &make_str_index_entry($3,
+	    $idx = make_str_index_entry($3,
 			"<tt>$opcode_name</tt> (byte code instruction)");
 	    $idx =~ s/ \(byte code instruction\)//;
 	}
@@ -535,17 +574,17 @@ sub do_env_opcodedesc{
     if ($arg_list) {
 	$stuff .= "&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
     }
-    $stuff . "\n<dd>$'\n</dl>";
+    $stuff . "\n<dd>$'</dl>";
 }
 
 sub do_env_datadesc{
     local($_) = @_;
     my $idx = '';
     if (/$next_pair_rx/o) {
-	$idx = &make_str_index_entry($1, "<tt>$2</tt>" . &get_indexsubitem);
+	$idx = make_str_index_entry($1, "<tt>$2</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
     }
-    "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
+    "<dl><dt><b>$idx</b>\n<dd>$'</dl>"
 }
 
 sub do_env_datadescni{
@@ -557,7 +596,7 @@ sub do_env_datadescni{
 	else {
 	    $idx = "<tt>$2</tt>"; }
     }
-    "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
+    "<dl><dt><b>$idx</b>\n<dd>$'</dl>"
 }
 
 sub do_cmd_dataline{
@@ -565,31 +604,109 @@ sub do_cmd_dataline{
 
     s/$next_pair_pr_rx//o;
     my($br_id, $data_name) = ($1, $2);
-    my $idx = &make_str_index_entry($br_id, "<tt>$data_name</tt>"
-				    . &get_indexsubitem);
+    my $idx = make_str_index_entry($br_id, "<tt>$data_name</tt>"
+				   . &get_indexsubitem);
     $idx =~ s/ \(.*\)//;
 
-    "<dt><b>$idx</b>\n<dd>" . $_;
+    "<dt><b>$idx</b><dd>" . $_;
 }
 
-sub do_env_excdesc{ &do_env_datadesc(@_); }
-#sub do_env_classdesc{ &do_env_funcdesc(@_); }
-sub do_env_fulllineitems{ &do_env_itemize(@_); }
+sub do_env_excdesc{
+    local($_) = @_;
+    /$next_pair_rx/o;
+    my($br_id,$excname,$rest) = ($1, $2, $');
+    my $idx = make_str_index_entry($br_id,
+			"<tt>$excname</tt> (exception in $THIS_MODULE)");
+    $idx =~ s/ \(.*\)//;
+    "<dl><dt><b>$idx</b>\n<dd>$rest</dl>"
+}
+
+sub do_env_fulllineitems{ do_env_itemize(@_); }
 
 
 sub do_env_classdesc{
     local($_) = @_;
-    my($function_name,$arg_list,$idx) = ('', '', '');
+    my($class_name,$arg_list,$idx) = ('', '', '');
     my $funcdesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$funcdesc_rx/o) {
-	$function_name = "$2";
+	$class_name = "$2";
 	$arg_list = "$4";
-	$idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt> (class in $THIS_MODULE)" );
+	$THIS_CLASS = $class_name;
+	$idx = make_str_index_entry($3,
+			"<tt>$class_name</tt> (class in $THIS_MODULE)" );
 	$idx =~ s/ \(.*\)//;
     }
-    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
 }
+
+
+sub do_env_methoddesc{
+    local($_) = @_;
+    my($class_name,$arg_list,$idx,$extra);
+    # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
+    # require the argument to be there.
+    my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
+    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3$any_next_pair_rx5";
+    if (/$funcdesc_rx/o) {
+	$class_name = $2;
+	$class_name = $THIS_CLASS
+	    unless $class_name;
+	$method_name = $4;
+	$arg_list = $6;
+	if ($class_name) {
+	    $extra = " ($class_name method)";
+	}
+	$idx = make_str_index_entry($3, "<tt>$method_name()</tt>$extra");
+	$idx =~ s/ \(.*\)//;
+	$idx =~ s/\(\)//;
+    }
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
+}
+
+
+sub do_env_methoddescni{
+    local($_) = @_;
+    # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
+    # require the argument to be there.
+    my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
+    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3$any_next_pair_rx5";
+    /$funcdesc_rx/o;
+    my $method = $4;
+    my $arg_list = $6;
+    "<dl><dt><b>$method</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
+}
+
+
+sub do_env_memberdesc{
+    local($_) = @_;
+    # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
+    # require the argument to be there.
+    my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
+    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3$any_next_pair_rx5";
+    /$funcdesc_rx/o;
+    my($class,$member,$arg_list) = ($2, $4, $6);
+    $class = $THIS_CLASS
+        unless $class;
+    $extra = " ($class_name attribute)"
+        if $class;
+    my $idx = make_str_index_entry($3, "<tt>$member()</tt>$extra");
+    $idx =~ s/ \(.*\)//;
+    $idx =~ s/\(\)//;
+    "<dl><dt><b>$idx</b>\n<dd>$'</dl>";
+}
+
+
+sub do_env_memberdescni{
+    local($_) = @_;
+    # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
+    # require the argument to be there.
+    my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
+    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3";
+    /$funcdesc_rx/o;
+    my $member = $4;
+    "<dl><dt><b>$member</b>\n<dd>$'</dl>";
+}
+
 
 @col_aligns = ("<td>", "<td>", "<td>");
 
@@ -620,7 +737,7 @@ sub do_env_tableii{
 	$h1 = $6;
 	$h2 = $8;
     }
-    my($th1,$th2,$th3) = &setup_column_alignments($2);
+    my($th1,$th2,$th3) = setup_column_alignments($2);
     $globals{"lineifont"} = $font;
     "<table border align=center>"
       . "\n  <tr>$th1<b>$h1</b></th>"
@@ -653,7 +770,7 @@ sub do_env_tableiii{
 	$h2 = $8;
 	$h3 = $10;
     }
-    my($th1,$th2,$th3) = &setup_column_alignments($2);
+    my($th1,$th2,$th3) = setup_column_alignments($2);
     $globals{"lineifont"} = $font;
     "<table border align=center>"
       . "\n  <tr>$th1<b>$h1</b></th>"
@@ -742,15 +859,9 @@ sub do_cmd_maketitle {
 }
 
 
-sub do_cmd_inputindex{
-    local($_) = @_;
-    s/$next_pair_pr_rx//;
-    &do_cmd_input($2);
-}
-
-sub do_cmd_indexlabel{
-    "genindex" . @_[0];
-}
+# sub do_cmd_indexlabel{
+#     "genindex" . @_[0];
+# }
 
 
 # These are located down here since they screw up fontlock.  -- used to.
