@@ -855,14 +855,7 @@ eval_frame(PyFrameObject *f)
 			continue;
 
 		case DUP_TOPX:
-			switch (oparg) {
-			case 1:
-				x = TOP();
-				Py_INCREF(x);
-				STACKADJ(1);
-				SET_TOP(x);
-				continue;
-			case 2:
+			if (oparg == 2) {
 				x = TOP();
 				Py_INCREF(x);
 				w = SECOND();
@@ -871,7 +864,7 @@ eval_frame(PyFrameObject *f)
 				SET_TOP(x);
 				SET_SECOND(w);
 				continue;
-			case 3:
+			} else if (oparg == 3) {
 				x = TOP();
 				Py_INCREF(x);
 				w = SECOND();
@@ -883,10 +876,9 @@ eval_frame(PyFrameObject *f)
 				SET_SECOND(w);
 				SET_THIRD(v);
 				continue;
-			default:
-				Py_FatalError("invalid argument to DUP_TOPX"
-					      " (bytecode corruption?)");
 			}
+			Py_FatalError("invalid argument to DUP_TOPX"
+				      " (bytecode corruption?)");
 			break;
 
 		case UNARY_POSITIVE:
@@ -1842,7 +1834,7 @@ eval_frame(PyFrameObject *f)
 		case COMPARE_OP:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
+			if (PyInt_CheckExact(w) && PyInt_CheckExact(v)) {
 				/* INLINE: cmp(int, int) */
 				register long a, b;
 				register int res;
@@ -3581,18 +3573,21 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 	int res = 0;
 	switch (op) {
 	case PyCmp_IS:
-	case PyCmp_IS_NOT:
 		res = (v == w);
-		if (op == (int) PyCmp_IS_NOT)
-			res = !res;
+		break;
+	case PyCmp_IS_NOT:
+		res = (v != w);
 		break;
 	case PyCmp_IN:
+		res = PySequence_Contains(w, v);
+		if (res < 0)
+			return NULL;
+		break;
 	case PyCmp_NOT_IN:
 		res = PySequence_Contains(w, v);
 		if (res < 0)
 			return NULL;
-		if (op == (int) PyCmp_NOT_IN)
-			res = !res;
+		res = !res;
 		break;
 	case PyCmp_EXC_MATCH:
 		res = PyErr_GivenExceptionMatches(v, w);
