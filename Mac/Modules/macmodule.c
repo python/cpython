@@ -22,67 +22,233 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Macintosh OS module implementation */
+/* Mac module implementation */
+/* Richard J. Walker April 7, 1994 Island Graphics Corp. */
+/* Thanks to Guido's unix emulation routines */
 
 #include "allobjects.h"
-
-#include "import.h"
 #include "modsupport.h"
+#include "ceval.h"
 
-#include "::unixemu:dir.h"
-#include "::unixemu:stat.h"
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
-static object *MacError; /* Exception */
+#include <fcntl.h>
 
+#include "macdefs.h"
+#include "dir.h"
+#include "stat.h"
+
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
+/* Prototypes for Unix simulation on Mac */
+
+int access PROTO((char *path, int mode));
+int chdir PROTO((char *path));
+char *getbootvol PROTO((void));
+char *getwd PROTO((char *));
+int mkdir  PROTO((char *path, int mode));
+DIR * opendir  PROTO((char *));
+void closedir PROTO((DIR *));
+struct direct * readdir PROTO((DIR *));
+int rmdir  PROTO((char *path));
+int stat  PROTO((char *path, struct stat *buf));
+int sync PROTO((void));
+
+
+
+static object *MacError; /* Exception mac.error */
+
+/* Set a MAC-specific error from errno, and return NULL */
+
+static object * 
+mac_error() 
+{
+ 	return err_errno(MacError);
+}
+
+/* MAC generic methods */
+
+static object *
+mac_1str(args, func)
+	object *args;
+	int (*func) FPROTO((const char *));
+{
+	char *path1;
+	int res;
+	if (!getargs(args, "s", &path1))
+		return NULL;
+	BGN_SAVE
+	res = (*func)(path1);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
+mac_2str(args, func)
+	object *args;
+	int (*func) FPROTO((const char *, const char *));
+{
+	char *path1, *path2;
+	int res;
+	if (!getargs(args, "(ss)", &path1, &path2))
+		return NULL;
+	BGN_SAVE
+	res = (*func)(path1, path2);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
+mac_strint(args, func)
+	object *args;
+	int (*func) FPROTO((const char *, int));
+{
+	char *path;
+	int i;
+	int res;
+	if (!getargs(args, "(si)", &path, &i))
+		return NULL;
+	BGN_SAVE
+	res = (*func)(path, i);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
+	INCREF(None);
+	return None;
+}
+
+static object *
+mac_access(self, args)
+	object *self;
+	object *args;
+{
+	return mac_strint(args, access);
+}
 
 static object *
 mac_chdir(self, args)
 	object *self;
 	object *args;
 {
-	char *path;
-	if (!getstrarg(args, &path))
+	return mac_1str(args, chdir);
+}
+
+static object *
+mac_close(self, args)
+	object *self;
+	object *args;
+{
+	int fd, res;
+	if (!getargs(args, "i", &fd))
 		return NULL;
-	if (chdir(path) != 0)
-		return err_errno(MacError);
+	BGN_SAVE
+	res = close(fd);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
 	INCREF(None);
 	return None;
 }
 
+static object *
+mac_dup(self, args)
+	object *self;
+	object *args;
+{
+	int fd;
+	if (!getargs(args, "i", &fd))
+		return NULL;
+	BGN_SAVE
+	fd = dup(fd);
+	END_SAVE
+	if (fd < 0)
+		return mac_error();
+	return newintobject((long)fd);
+}
+
+static object *
+mac_fdopen(self, args)
+	object *self;
+	object *args;
+{
+	extern int fclose PROTO((FILE *));
+	int fd;
+	char *mode;
+	FILE *fp;
+	if (!getargs(args, "(is)", &fd, &mode))
+		return NULL;
+	BGN_SAVE
+	fp = fdopen(fd, mode);
+	END_SAVE
+	if (fp == NULL)
+		return mac_error();
+	return newopenfileobject(fp, "(fdopen)", mode, fclose);
+}
+
+static object *
+mac_getbootvol(self, args)
+	object *self;
+	object *args;
+{
+	char *res;
+	if (!getnoarg(args))
+		return NULL;
+	BGN_SAVE
+	res = getbootvol();
+	END_SAVE
+	if (res == NULL)
+		return mac_error();
+	return newstringobject(res);
+}
 
 static object *
 mac_getcwd(self, args)
 	object *self;
 	object *args;
 {
-	extern char *getwd();
-	char buf[1025];
+	char path[MAXPATHLEN];
+	char *res;
 	if (!getnoarg(args))
 		return NULL;
-	strcpy(buf, "mac.getcwd() failed"); /* In case getwd() doesn't set a msg */
-	if (getwd(buf) == NULL) {
-		err_setstr(MacError, buf);
+	BGN_SAVE
+	res = getwd(path);
+	END_SAVE
+	if (res == NULL) {
+		err_setstr(MacError, path);
 		return NULL;
 	}
-	return newstringobject(buf);
+	return newstringobject(res);
 }
-
 
 static object *
 mac_listdir(self, args)
 	object *self;
 	object *args;
 {
-	object *d, *v;
 	char *name;
+	object *d, *v;
 	DIR *dirp;
 	struct direct *ep;
-	if (!getstrarg(args, &name))
+	if (!getargs(args, "s", &name))
 		return NULL;
-	if ((dirp = opendir(name)) == NULL)
-		return err_errno(MacError);
+	BGN_SAVE
+	if ((dirp = opendir(name)) == NULL) {
+		RET_SAVE
+		return mac_error();
+	}
 	if ((d = newlistobject(0)) == NULL) {
 		closedir(dirp);
+		RET_SAVE
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
@@ -101,55 +267,94 @@ mac_listdir(self, args)
 		DECREF(v);
 	}
 	closedir(dirp);
+	END_SAVE
+
 	return d;
 }
 
+static object *
+mac_lseek(self, args)
+	object *self;
+	object *args;
+{
+	int fd;
+	int where;
+	int how;
+	long res;
+	if (!getargs(args, "(iii)", &fd, &where, &how))
+		return NULL;
+	BGN_SAVE
+	res = lseek(fd, (long)where, how);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
+	return newintobject(res);
+}
 
 static object *
 mac_mkdir(self, args)
 	object *self;
 	object *args;
 {
-	char *path;
-	int mode;
-	if (!getargs(args, "(si)", &path, &mode))
-		return NULL;
-	if (mkdir(path, mode) != 0)
-		return err_errno(MacError);
-	INCREF(None);
-	return None;
+	return mac_strint(args, mkdir);
 }
 
+static object *
+mac_open(self, args)
+	object *self;
+	object *args;
+{
+	char *path;
+	int mode;
+	int fd;
+	if (!getargs(args, "(si)", &path, &mode))
+		return NULL;
+	BGN_SAVE
+	fd = open(path, mode);
+	END_SAVE
+	if (fd < 0)
+		return mac_error();
+	return newintobject((long)fd);
+}
+
+static object *
+mac_read(self, args)
+	object *self;
+	object *args;
+{
+	int fd, size;
+	object *buffer;
+	if (!getargs(args, "(ii)", &fd, &size))
+		return NULL;
+	buffer = newsizedstringobject((char *)NULL, size);
+	if (buffer == NULL)
+		return NULL;
+	BGN_SAVE
+	size = read(fd, getstringvalue(buffer), size);
+	END_SAVE
+	if (size < 0) {
+		DECREF(buffer);
+		return mac_error();
+	}
+	resizestring(&buffer, size);
+	return buffer;
+}
 
 static object *
 mac_rename(self, args)
 	object *self;
 	object *args;
 {
-	char *src, *dst;
-	if (!getargs(args, "(ss)", &src, &dst))
-		return NULL;
-	if (rename(src, dst) != 0)
-		return err_errno(MacError);
-	INCREF(None);
-	return None;
+	return mac_2str(args, rename);
 }
-
 
 static object *
 mac_rmdir(self, args)
 	object *self;
 	object *args;
 {
-	char *path;
-	if (!getstrarg(args, &path))
-		return NULL;
-	if (rmdir(path) != 0)
-		return err_errno(MacError);
-	INCREF(None);
-	return None;
+	return mac_1str(args, rmdir);
 }
-
 
 static object *
 mac_stat(self, args)
@@ -158,75 +363,83 @@ mac_stat(self, args)
 {
 	struct stat st;
 	char *path;
-	object *v;
-	if (!getstrarg(args, &path))
+	int res;
+	if (!getargs(args, "s", &path))
 		return NULL;
-	if (stat(path, &st) != 0)
-		return err_errno(MacError);
-	v = newtupleobject(11);
-	if (v == NULL)
-		return NULL;
-#define SET(i, val) settupleitem(v, i, newintobject((long)(val)))
-#define UNSET(i, val) SET(i, 0) /* For values my Mac stat doesn't support */
-	SET(0, st.st_mode);
-	UNSET(1, st.st_ino);
-	UNSET(2, st.st_dev);
-	UNSET(3, st.st_nlink);
-	UNSET(4, st.st_uid);
-	UNSET(5, st.st_gid);
-	SET(6, st.st_size);
-	UNSET(7, st.st_atime);
-	SET(8, st.st_mtime);
-	UNSET(9, st.st_ctime);
-	SET(10, st.st_rsize); /* Mac-specific: resource size */
-	/* XXX Check that unixemu:stat.c defines this! */
-#undef SET
-	if (err_occurred()) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	BGN_SAVE
+	res = stat(path, &st);
+	END_SAVE
+	if (res != 0)
+		return mac_error();
+	return mkvalue("(llll)",
+		    (long)st.st_mode,
+		    (long)st.st_size,
+		    (long)st.st_rsize,
+		    (long)st.st_mtime);
 }
-
 
 static object *
 mac_sync(self, args)
 	object *self;
 	object *args;
 {
+	int res;
 	if (!getnoarg(args))
 		return NULL;
-	sync();
+	BGN_SAVE
+	res = sync();
+	END_SAVE
+	if (res != 0)
+		return mac_error();
 	INCREF(None);
 	return None;
 }
-
 
 static object *
 mac_unlink(self, args)
 	object *self;
 	object *args;
 {
-	char *path;
-	if (!getstrarg(args, &path))
-		return NULL;
-	if (unlink(path) != 0)
-		return err_errno(MacError);
-	INCREF(None);
-	return None;
+	return mac_1str(args, unlink);
 }
 
+static object *
+mac_write(self, args)
+	object *self;
+	object *args;
+{
+	int fd, size;
+	char *buffer;
+	if (!getargs(args, "(is#)", &fd, &buffer, &size))
+		return NULL;
+	BGN_SAVE
+	size = write(fd, buffer, size);
+	END_SAVE
+	if (size < 0)
+		return mac_error();
+	return newintobject((long)size);
+}
 
 static struct methodlist mac_methods[] = {
+	{"access",	mac_access},
 	{"chdir",	mac_chdir},
+	{"close",	mac_close},
+	{"dup",		mac_dup},
+	{"fdopen",	mac_fdopen},
+	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir},
+	{"lseek",	mac_lseek},
 	{"mkdir",	mac_mkdir},
+	{"open",	mac_open},
+	{"read",	mac_read},
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
 	{"sync",	mac_sync},
 	{"unlink",	mac_unlink},
+	{"write",	mac_write},
+
 	{NULL,		NULL}		 /* Sentinel */
 };
 
@@ -234,7 +447,7 @@ static struct methodlist mac_methods[] = {
 void
 initmac()
 {
-	object *m, *d;
+	object *m, *d, *v;
 	
 	m = initmodule("mac", mac_methods);
 	d = getmoduledict(m);
