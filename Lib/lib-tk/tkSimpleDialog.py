@@ -86,18 +86,18 @@ class Dialog(Toplevel):
     def body(self, master):
         '''create dialog body.
 
-        return widget that should have initial focus. 
+        return widget that should have initial focus.
         This method should be overridden, and is called
         by the __init__ method.
         '''
         pass
 
     def buttonbox(self):
-        '''add standard button box. 
+        '''add standard button box.
 
         override if you don't want the standard buttons
         '''
-        
+
         box = Frame(self)
 
         w = Button(box, text="OK", width=10, command=self.ok, default=ACTIVE)
@@ -138,7 +138,7 @@ class Dialog(Toplevel):
     def validate(self):
         '''validate the data
 
-        This method is called automatically to validate the data before the 
+        This method is called automatically to validate the data before the
         dialog is destroyed. By default, it always validates OK.
         '''
 
@@ -227,7 +227,7 @@ class _QueryDialog(Dialog):
                 parent = self
             )
             return 0
-                
+
         self.result = result
 
         return 1
@@ -289,7 +289,7 @@ def askstring(title, prompt, **kw):
     d = apply(_QueryString, (title, prompt), kw)
     return d.result
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
     root = Tk()
     root.update()
@@ -297,4 +297,3 @@ if __name__ == "__main__":
     print askinteger("Spam", "Egg count", initialvalue=12*12)
     print askfloat("Spam", "Egg weight\n(in tons)", minvalue=1, maxvalue=100)
     print askstring("Spam", "Egg label")
-

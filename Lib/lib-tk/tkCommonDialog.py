@@ -63,4 +63,3 @@ class Dialog:
                 pass
 
         return s
-

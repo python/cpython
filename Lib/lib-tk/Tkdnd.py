@@ -1,12 +1,12 @@
-"""Drag-and-drop support for Tkinter. 
- 
+"""Drag-and-drop support for Tkinter.
+
 This is very preliminary.  I currently only support dnd *within* one
 application, between different windows (or within the same window).
- 
+
 I an trying to make this as generic as possible -- not dependent on
 the use of a particular widget or icon type, etc.  I also hope that
 this will work with Pmw.
- 
+
 To enable an object to be dragged, you must create an event binding
 for it that starts the drag-and-drop process. Typically, you should
 bind <ButtonPress> to a callback function that you write. The function
@@ -20,11 +20,11 @@ When a drag-and-drop is already in process for the Tk interpreter, the
 call is *ignored*; this normally averts starting multiple simultaneous
 dnd processes, e.g. because different button callbacks all
 dnd_start().
- 
+
 The object is *not* necessarily a widget -- it can be any
 application-specific object that is meaningful to potential
 drag-and-drop targets.
- 
+
 Potential drag-and-drop targets are discovered as follows.  Whenever
 the mouse moves, and at the start and end of a drag-and-drop move, the
 Tk widget directly under the mouse is inspected.  This is the target
@@ -43,34 +43,34 @@ target widget, and the search for a target object is repeated from
 there.  If necessary, the search is repeated all the way up to the
 root widget.  If none of the target widgets can produce a target
 object, there is no target object (the target object is None).
- 
+
 The target object thus produced, if any, is called the new target
 object.  It is compared with the old target object (or None, if there
 was no old target widget).  There are several cases ('source' is the
 source object, and 'event' is the most recent event object):
- 
+
 - Both the old and new target objects are None.  Nothing happens.
- 
+
 - The old and new target objects are the same object.  Its method
 dnd_motion(source, event) is called.
- 
+
 - The old target object was None, and the new target object is not
 None.  The new target object's method dnd_enter(source, event) is
 called.
- 
+
 - The new target object is None, and the old target object is not
 None.  The old target object's method dnd_leave(source, event) is
 called.
- 
+
 - The old and new target objects differ and neither is None.  The old
 target object's method dnd_leave(source, event), and then the new
 target object's method dnd_enter(source, event) is called.
- 
+
 Once this is done, the new target object replaces the old one, and the
 Tk mainloop proceeds.  The return value of the methods mentioned above
 is ignored; if they raise an exception, the normal exception handling
 mechanisms take over.
- 
+
 The drag-and-drop processes can end in two ways: a final target object
 is selected, or no final target object is selected.  When a final
 target object is selected, it will always have been notified of the
@@ -79,7 +79,7 @@ above, and possibly one or more calls to its dnd_motion() method; its
 dnd_leave() method has not been called since the last call to
 dnd_enter().  The target is notified of the drop by a call to its
 method dnd_commit(source, event).
- 
+
 If no final target object is selected, and there was an old target
 object, its dnd_leave(source, event) method is called to complete the
 dnd sequence.
