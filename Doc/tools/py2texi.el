@@ -74,6 +74,10 @@
      (progn (setq obindex t)
 	    "\n@table @code\n@item \\1\n@obindex \\1\n")
      "@end table")
+    ("cmemberdesc" 3
+     (progn (setq findex t)
+	    "\n@table @code\n@item \\1 \\2 \\3\n@findex \\3\n")
+     "@end table")
     ("csimplemacrodesc" 1
      (progn (setq cindex t)
 	    "\n@table @code\n@item \\1\n@cindex \\1\n")
@@ -196,6 +200,9 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("catcode" 0 "")
     ("cdata" 1 "@code{\\1}")
     ("centerline" 1 "@center \\1")
+    ("cfuncline" 3
+     (progn (setq findex t)
+	    "\n@item \\1 \\2(\\3)\n@findex \\2\n"))
     ("cfunction" 1 "@code{\\1}")
     ("chapter" 1 (format "@node \\1\n@%s \\1\n"
 			 (if appendix "appendix" "chapter")))
@@ -203,11 +210,15 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("character" 1 "@samp{\\1}")
     ("citetitle" 1 "@ref{Top,,,\\1}")
     ("class" 1 "@code{\\1}")
+    ("cmemberline" 3
+     (progn (setq findex t)
+	    "\n@item \\1 \\2 \\3\n@findex \\3\n"))
     ("code" 1 "@code{\\1}")
     ("command" 1 "@command{\\1}")
     ("constant" 1 "@code{\\1}")
     ("copyright" 1 "@copyright{}")
     ("Cpp" 0 "C++")
+    ("csimplemacro" 1 "@code{\\1}")
     ("ctype" 1 "@code{\\1}")
     ("dataline" 1 (progn (setq findex t) "@item \\1\n@findex \\1\n"))
     ("date" 1 "\\1")
@@ -297,6 +308,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("plusminus" 0 "+-")
     ("POSIX" 0 "POSIX")
     ("production" 2 "@item \\1 \\2")
+    ("productioncont" 1 "@item \\1")
     ("program" 1 "@command{\\1}")
     ("programopt" 1 "@option{\\1}")
     ("protect" 0 "")
@@ -348,6 +360,8 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("textasciitilde" 0 "~")
     ("textasciicircum" 0 "^")
     ("textbackslash" 0 "@backslash{}")
+    ("textgreater" 0 ">")
+    ("textless" 0 "<")
     ("textrm" 1 "\\1")
     ("texttt" 1 "@code{\\1}")
     ("textunderscore" 0 "_")
