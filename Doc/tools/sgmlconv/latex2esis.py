@@ -109,7 +109,7 @@ class Conversion:
         self.write = ofp.write
         self.ofp = ofp
         self.table = table
-        self.line = string.join(map(string.rstrip, ifp.readlines()), "\n")
+        self.line = string.join([s.rstrip() for s in ifp.readlines()], "\n")
         self.preamble = 1
 
     def convert(self):
@@ -170,7 +170,7 @@ class Conversion:
                 entry = self.get_entry(macroname)
                 if entry.verbatim:
                     # magic case!
-                    pos = string.find(line, "\\end{%s}" % macroname)
+                    pos = line.find("\\end{%s}" % macroname)
                     text = line[m.end(1):pos]
                     stack.append(entry.name)
                     self.write("(%s\n" % entry.outputname)
@@ -410,7 +410,7 @@ def convert(ifp, ofp, table):
 
 def skip_white(line):
     while line and line[0] in " %\n\t\r":
-        line = string.lstrip(line[1:])
+        line = line[1:].lstrip()
     return line
 
 
@@ -461,14 +461,14 @@ class TableParser(XMLParser):
         self.__current.verbatim = attrs.get("verbatim") == "yes"
         if attrs.has_key("outputname"):
             self.__current.outputname = attrs.get("outputname")
-        self.__current.endcloses = string.split(attrs.get("endcloses", ""))
+        self.__current.endcloses = attrs.get("endcloses", "").split()
     def end_environment(self):
         self.end_macro()
 
     def start_macro(self, attrs):
         name = attrs["name"]
         self.__current = TableEntry(name)
-        self.__current.closes = string.split(attrs.get("closes", ""))
+        self.__current.closes = attrs.get("closes", "").split()
         if attrs.has_key("outputname"):
             self.__current.outputname = attrs.get("outputname")
     def end_macro(self):
