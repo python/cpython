@@ -344,11 +344,18 @@ given type object has a specified feature.
 
 #define Py_TPFLAGS_HAVE_RICHCOMPARE (1L<<5)
 
+/* Objects which are weakly referencable if their tp_weaklistoffset is >0 */
+/* XXX Should this have the same value as Py_TPFLAGS_HAVE_RICHCOMPARE?
+ * These both indicate a feature that appeared in the same alpha release.
+ */
+#define Py_TPFLAGS_HAVE_WEAKREFS (1L<<6)
+
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
                              Py_TPFLAGS_HAVE_INPLACEOPS | \
                              Py_TPFLAGS_HAVE_RICHCOMPARE | \
+                             Py_TPFLAGS_HAVE_WEAKREFS | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
