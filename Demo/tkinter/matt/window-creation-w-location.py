@@ -1,12 +1,19 @@
 from Tkinter import *
 
 import sys
-sys.path.append("/users/mjc4y/projects/python/tkinter/utils")
-from TkinterUtils  import *
+##sys.path.append("/users/mjc4y/projects/python/tkinter/utils")
+##from TkinterUtils  import *
 
 # this shows how to create a new window with a button in it that
 # can create new windows
 
+class QuitButton(Button):
+    def __init__(self, master, *args, **kwargs):
+        if not kwargs.has_key("text"):
+            kwargs["text"] = "QUIT"
+        if not kwargs.has_key("command"):
+            kwargs["command"] = master.quit
+        apply(Button.__init__, (self, master) + args, kwargs)
 
 class Test(Frame):
     def makeWindow(self, *args):
@@ -18,7 +25,7 @@ class Test(Frame):
 	fred.label.create_line("0", "2i", "2i", "0")
 	fred.label.pack()
 
-	centerWindow(fred, self.master)
+	##centerWindow(fred, self.master)
 
     def createWidgets(self):
 	self.QUIT = QuitButton(self)
