@@ -196,11 +196,9 @@ visit_decref(PyObject *op, void *data)
          * getting collected.  That would be a waste of time, but wouldn't
          * cause an error.
          */
-	if (op && PyObject_IS_GC(op)) {
-		if (IS_TRACKED(op)) {
-			AS_GC(op)->gc.gc_refs--;
-		}
-	}
+        assert(op != NULL);
+	if (PyObject_IS_GC(op))
+	        AS_GC(op)->gc.gc_refs--;
 	return 0;
 }
 
