@@ -1,0 +1,36 @@
+test_parser
+Expressions:
+foo(1)
+[1, 2, 3]
+[x**3 for x in range(20)]
+[x**3 for x in range(20) if x % 3]
+foo(*args)
+foo(*args, **kw)
+foo(**kw)
+foo(key=value)
+foo(key=value, *args)
+foo(key=value, *args, **kw)
+foo(key=value, **kw)
+foo(a, b, c, *args)
+foo(a, b, c, *args, **kw)
+foo(a, b, c, **kw)
+foo + bar
+
+Statements:
+print
+print 1
+print 1,
+print >>fp
+print >>fp, 1
+print >>fp, 1,
+
+Invalid parse trees:
+
+<junk>
+caught expected exception for invalid tree
+
+print >>fp,
+caught expected exception for invalid tree
+
+a,,c
+caught expected exception for invalid tree
