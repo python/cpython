@@ -93,9 +93,12 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 
 long get_thread_ident _P0()
 {
+	pthread_t threadid;
 	if (!initialized)
 		init_thread();
-	return (long) pthread_self();
+	/* Jump through some hoops for Alpha OSF/1 */
+	threadid = pthread_self();
+	return (long) *(long *) &threadid;
 }
 
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
