@@ -53,6 +53,13 @@ f.lock(mode [, len [, start [, whence]]])
               query only
 """
 
+import warnings
+warnings.warn(
+    "The posixfile module is obsolete and will disappear in the future",
+    DeprecationWarning)
+del warnings
+
+
 class _posixfile_:
     """File wrapper class that provides extra POSIX file routines."""
 
