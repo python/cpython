@@ -25,12 +25,51 @@
 
 Translated from anonymously contributed C/C++ source.
 
-Multi-threading note: the random number generator used here is not
-thread-safe; it is possible that two calls return the same random
-value.  But you can instantiate a different instance of Random() in
-each thread to get generators that don't share state, then use
-.setstate() and .jumpahead() to move the generators to disjoint
-segments of the full period.
+Multi-threading note:  the random number generator used here is not thread-
+safe; it is possible that two calls return the same random value.  However,
+you can instantiate a different instance of Random() in each thread to get
+generators that don't share state, then use .setstate() and .jumpahead() to
+move the generators to disjoint segments of the full period.  For example,
+
+def create_generators(num, delta, firstseed=None):
+    ""\"Return list of num distinct generators.
+    Each generator has its own unique segment of delta elements from
+    Random.random()'s full period.
+    Seed the first generator with optional arg firstseed (default is
+    None, to seed from current time).
+    ""\"
+
+    from random import Random
+    g = Random(firstseed)
+    result = [g]
+    for i in range(num - 1):
+        laststate = g.getstate()
+        g = Random()
+        g.setstate(laststate)
+        g.jumpahead(delta)
+        result.append(g)
+    return result
+
+gens = create_generators(10, 1000000)
+
+That creates 10 distinct generators, which can be passed out to 10 distinct
+threads.  The generators don't share state so can be called safely in
+parallel.  So long as no thread calls its g.random() more than a million
+times (the second argument to create_generators), the sequences seen by
+each thread will not overlap.
+
+The period of the underlying Wichmann-Hill generator is 6,953,607,871,644,
+and that limits how far this technique can be pushed.
+
+Just for fun, note that since we know the period, .jumpahead() can also be
+used to "move backward in time":
+
+>>> g = Random(42)  # arbitrary
+>>> g.random()
+0.24855401895528142
+>>> g.jumpahead(6953607871644L - 1) # move *back* one
+>>> g.random()
+0.24855401895528142
 """
 # XXX The docstring sucks.
 

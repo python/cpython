@@ -38,10 +38,56 @@ own instances of \var{Random} to get generators that don't share state.
 This is especially useful for multi-threaded programs, creating a different
 instance of \var{Random} for each thread, and using the \method{jumpahead()}
 method to ensure that the generated sequences seen by each thread don't
-overlap.  Class \var{Random} can also be subclassed if you want to use a
-different basic generator of your own devising:  in that case, override the
+overlap (see example below).
+Class \var{Random} can also be subclassed if you want to use a different
+basic generator of your own devising:  in that case, override the
 \method{random()}, \method{seed()}, \method{getstate()},
 \method{setstate()} and \method{jumpahead()} methods.
+
+Here's one way to create threadsafe distinct and non-overlapping generators:
+
+\begin{verbatim}
+def create_generators(num, delta, firstseed=None):
+    """Return list of num distinct generators.
+    Each generator has its own unique segment of delta elements
+    from Random.random()'s full period.
+    Seed the first generator with optional arg firstseed (default
+    is None, to seed from current time).
+    """
+
+    from random import Random
+    g = Random(firstseed)
+    result = [g]
+    for i in range(num - 1):
+        laststate = g.getstate()
+        g = Random()
+        g.setstate(laststate)
+        g.jumpahead(delta)
+        result.append(g)
+    return result
+
+gens = create_generators(10, 1000000)
+\end{verbatim}
+
+That creates 10 distinct generators, which can be passed out to 10 distinct
+threads.  The generators don't share state so can be called safely in
+parallel.  So long as no thread calls its \code{g.random()} more than a
+million times (the second argument to \function{create_generators}), the
+sequences seen by each thread will not overlap.  The period of the
+underlying Wichmann-Hill generator limits how far this technique can be
+pushed.
+
+Just for fun, note that since we know the period, \method{jumpahead()} can
+also be used to "move backward in time":
+
+\begin{verbatim}
+>>> g = Random(42)  # arbitrary
+>>> g.random()
+0.24855401895528142
+>>> g.jumpahead(6953607871644L - 1) # move *back* one
+>>> g.random()
+0.24855401895528142
+\end{verbatim}
 
 
 Bookkeeping functions:
