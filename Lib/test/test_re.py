@@ -336,9 +336,14 @@ for t in tests:
 
             # Try the match on a unicode string, and check that it
             # still succeeds.
-            result = obj.search(unicode(s, "latin-1"))
-            if result is None:
-                print '=== Fails on unicode match', t
+            try:
+                result = obj.search(unicode(s, "latin-1"))
+                if result is None:
+                    print '=== Fails on unicode match', t
+            except NameError:
+                continue # 1.5.2
+            except TypeError:
+                continue # unicode test case
 
             # Try the match on a unicode pattern, and check that it
             # still succeeds.
