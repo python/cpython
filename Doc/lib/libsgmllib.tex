@@ -145,6 +145,16 @@ cause this method to be called with the argument \code{'text'}.  The
 default method does nothing.
 \end{methoddesc}
 
+\begin{methoddesc}{handle_decl}{data}
+Method called when an SGML declaration is read by the parser.  In
+practice, the \code{DOCTYPE} declaration is the only thing observed in
+HTML, but the parser does not discriminate among different (or broken)
+declarations.  Internal subsets in a \code{DOCTYPE} declaration are
+not supported.  The \var{data} parameter will be the entire contents
+of the declaration inside the \code{<!}...\code{>} markup.  The
+default implementation does nothing.
+\end{methoddesc}
+
 \begin{methoddesc}{report_unbalanced}{tag}
 This method is called when an end tag is found which does not
 correspond to any open element.
