@@ -1131,7 +1131,6 @@ typedef struct {
 	object	*im_func;	/* The function implementing the method */
 	object	*im_self;	/* The instance it is bound to, or NULL */
 	object	*im_class;	/* The class that defined the method */
-	object	*im_doc;	/* The documentation string */
 } instancemethodobject;
 
 object *
@@ -1154,8 +1153,6 @@ newinstancemethodobject(func, self, class)
 	im->im_self = self;
 	INCREF(class);
 	im->im_class = class;
-	XINCREF(((funcobject *)func)->func_doc);
-	im->im_doc = ((funcobject *)func)->func_doc;
 	return (object *)im;
 }
 
@@ -1200,8 +1197,9 @@ static struct memberlist instancemethod_memberlist[] = {
 	{"im_func",	T_OBJECT,	OFF(im_func)},
 	{"im_self",	T_OBJECT,	OFF(im_self)},
 	{"im_class",	T_OBJECT,	OFF(im_class)},
-	{"im_doc",	T_OBJECT,	OFF(im_doc)},
-	{"__doc__",	T_OBJECT,	OFF(im_doc)},
+	/* Dummies that are not handled by getattr() except for __members__ */
+	{"__doc__",	T_INT,		0},
+	{"__name__",	T_INT,		0},
 	{NULL}	/* Sentinel */
 };
 
@@ -1210,7 +1208,18 @@ instancemethod_getattr(im, name)
 	register instancemethodobject *im;
 	char *name;
 {
-	if (name[0] != '_' && getrestricted()) {
+	if (name[0] == '_') {
+		funcobject *func = (funcobject *)(im->im_func);
+		if (strcmp(name, "__name__") == 0) {
+			INCREF(func->func_name);
+			return func->func_name;
+		}
+		if (strcmp(name, "__doc__") == 0) {
+			INCREF(func->func_doc);
+			return func->func_doc;
+		}
+	}
+	if (getrestricted()) {
 		err_setstr(RuntimeError,
 			   "instance-method attributes not accessible in restricted mode");
 		return NULL;
@@ -1225,7 +1234,6 @@ instancemethod_dealloc(im)
 	DECREF(im->im_func);
 	XDECREF(im->im_self);
 	DECREF(im->im_class);
-	XDECREF(im->im_doc);
 	free((ANY *)im);
 }
 
