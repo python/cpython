@@ -58,6 +58,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#if defined(PYCC_VACPP)
+/* VisualAge C/C++ Failed to Define MountType Field in sys/stat.h */
+#define S_IFMT (S_IFDIR|S_IFCHR|S_IFREG)
+#endif
+
 #ifndef S_ISDIR
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
