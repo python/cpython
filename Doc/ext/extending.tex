@@ -1238,9 +1238,9 @@ cycles.  This allows applications to not worry about creating direct
 or indirect circular references; these are the weakness of garbage
 collection implemented using only reference counting.  Reference
 cycles consist of objects which contain (possibly indirect) references
-themselves so that each object in the cycle has a reference count
+to themselves, so that each object in the cycle has a reference count
 which is non-zero.  Typical reference counting implementations are not
-able to reclaim the memory beloning to any objects in a reference
+able to reclaim the memory belonging to any objects in a reference
 cycle, or referenced from the objects in the cycle, even though there
 are no further references to the cycle itself.
 
