@@ -220,6 +220,9 @@ encodings_map = {
     '.Z': 'compress',
     }
 
+# Before adding new types, make sure they are either registered with IANA, at
+# http://www.isi.edu/in-notes/iana/assignments/media-types
+# or extensions, i.e. using the x- prefix
 types_map = {
     '.a': 'application/octet-stream',
     '.ai': 'application/postscript',
@@ -254,8 +257,6 @@ types_map = {
     '.latex': 'application/x-latex',
     '.man': 'application/x-troff-man',
     '.me': 'application/x-troff-me',
-    '.mid': 'audio/midi',
-    '.midi': 'audio/midi',
     '.mif': 'application/x-mif',
     '.mov': 'video/quicktime',
     '.movie': 'video/x-sgi-movie',
@@ -284,7 +285,6 @@ types_map = {
     '.rgb': 'image/x-rgb',
     '.rdf': 'application/xml',
     '.roff': 'application/x-troff',
-    '.rtf': 'application/rtf',
     '.rtx': 'text/richtext',
     '.sgm': 'text/x-sgml',
     '.sgml': 'text/x-sgml',
@@ -315,6 +315,39 @@ types_map = {
     '.xpm': 'image/x-xpixmap',
     '.xwd': 'image/x-xwindowdump',
     '.zip': 'application/zip',
+    '.mp3': 'audio/mpeg',
+    '.ra': 'audio/x-pn-realaudio',
+    '.pdf': 'application/pdf',
+    '.c': 'text/plain',
+    '.bat': 'text/plain',
+    '.h': 'text/plain',
+    '.pl': 'text/plain',
+    '.ksh': 'text/plain',
+    '.ram': 'application/x-pn-realaudio',
+    '.cdf': 'application/x-cdf',
+    '.doc': 'application/msword',
+    '.dot': 'application/msword',
+    '.wiz': 'application/msword',
+    '.xlb': 'application/vnd.ms-excel',
+    '.xls': 'application/vnd.ms-excel',
+    '.ppa': 'application/vnd.ms-powerpoint',
+    '.ppt': 'application/vnd.ms-powerpoint',
+    '.pps': 'application/vnd.ms-powerpoint',
+    '.pot': 'application/vnd.ms-powerpoint',
+    '.pwz': 'application/vnd.ms-powerpoint',
+    '.eml':   'message/rfc822',
+    '.nws':   'message/rfc822',
+    '.mht':   'message/rfc822',
+    '.mhtml': 'message/rfc822',
+    '.css': 'text/css',
+    '.p7c': 'application/pkcs7-mime',
+    '.p12': 'application/x-pkcs12',
+    '.pfx': 'application/x-pkcs12',
+    '.js':  'application/x-javascript',
+    '.m1v': 'video/mpeg',
+    '.mpa': 'video/mpeg',
+    '.vcf': 'text/x-vcard',
+    '.xml': 'text/xml',
     }
 
 if __name__ == '__main__':
