@@ -453,7 +453,7 @@ convertsimple1(arg, p_format, p_va)
 			if (ival == -1 && err_occurred())
 				return "integer<b>";
 			else
-				*p = ival;
+				*p = (char) ival;
 			break;
 		}
 	
@@ -464,7 +464,7 @@ convertsimple1(arg, p_format, p_va)
 			if (ival == -1 && err_occurred())
 				return "integer<h>";
 			else
-				*p = ival;
+				*p = (short) ival;
 			break;
 		}
 	
@@ -497,7 +497,7 @@ convertsimple1(arg, p_format, p_va)
 			if (err_occurred())
 				return "float<f>";
 			else
-				*p = dval;
+				*p = (float) dval;
 			break;
 		}
 	
@@ -548,7 +548,7 @@ convertsimple1(arg, p_format, p_va)
 				*q = getstringsize(arg);
 				format++;
 			}
-			else if (strlen(*p) != getstringsize(arg))
+			else if ((int)strlen(*p) != getstringsize(arg))
 				return "string without null bytes";
 			break;
 		}
@@ -571,7 +571,7 @@ convertsimple1(arg, p_format, p_va)
 				format++;
 			}
 			else if (*p != NULL &&
-				 strlen(*p) != getstringsize(arg))
+				 (int)strlen(*p) != getstringsize(arg))
 				return "None or string without null bytes";
 			break;
 		}

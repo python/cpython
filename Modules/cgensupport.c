@@ -93,7 +93,7 @@ getishortarg(args, nargs, i, p_arg)
 	long x;
 	if (!getilongarg(args, nargs, i, &x))
 		return 0;
-	*p_arg = x;
+	*p_arg = (short) x;
 	return 1;
 }
 
@@ -129,15 +129,15 @@ extractfloat(v, p_arg)
 		/* Fall through to error return at end of function */
 	}
 	else if (is_floatobject(v)) {
-		*p_arg = GETFLOATVALUE((floatobject *)v);
+		*p_arg = (float) GETFLOATVALUE((floatobject *)v);
 		return 1;
 	}
 	else if (is_intobject(v)) {
-		*p_arg = GETINTVALUE((intobject *)v);
+		*p_arg = (float) GETINTVALUE((intobject *)v);
 		return 1;
 	}
 	else if (is_longobject(v)) {
-		*p_arg = dgetlongvalue(v);
+		*p_arg = (float) dgetlongvalue(v);
 		return 1;
 	}
 	return err_badarg();
@@ -221,7 +221,7 @@ getishortarraysize(args, nargs, i, p_arg)
 	long x;
 	if (!getilongarraysize(args, nargs, i, &x))
 		return 0;
-	*p_arg = x;
+	*p_arg = (short) x;
 	return 1;
 }
 
@@ -287,7 +287,7 @@ getishortarray(args, nargs, i, n, p_arg)
 			if (!is_intobject(w)) {
 				return err_badarg();
 			}
-			p_arg[i] = getintvalue(w);
+			p_arg[i] = (short) getintvalue(w);
 		}
 		return 1;
 	}
@@ -300,7 +300,7 @@ getishortarray(args, nargs, i, n, p_arg)
 			if (!is_intobject(w)) {
 				return err_badarg();
 			}
-			p_arg[i] = getintvalue(w);
+			p_arg[i] = (short) getintvalue(w);
 		}
 		return 1;
 	}

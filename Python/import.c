@@ -436,6 +436,7 @@ find_module(name, path, buf, buflen, p_fp)
 	FILE *fp = NULL;
 
 #ifdef MS_COREDLL
+	extern FILE *PyWin_FindRegisteredModule();
 	if ((fp=PyWin_FindRegisteredModule(name, &fdp, buf, buflen))!=NULL) {
 		*p_fp = fp;
 		return fdp;
@@ -460,7 +461,7 @@ find_module(name, path, buf, buflen, p_fp)
 		if (len + 2 + namelen + import_maxsuffixsize >= buflen)
 			continue; /* Too long */
 		strcpy(buf, getstringvalue(v));
-		if (strlen(buf) != len)
+		if ((int)strlen(buf) != len)
 			continue; /* v contains '\0' */
 #ifdef macintosh
 		if ( PyMac_FindResourceModule(name, buf) ) {
@@ -740,10 +741,10 @@ imp_get_magic(self, args)
 
 	if (!newgetargs(args, ""))
 		return NULL;
-	buf[0] = (MAGIC >>  0) & 0xff;
-	buf[1] = (MAGIC >>  8) & 0xff;
-	buf[2] = (MAGIC >> 16) & 0xff;
-	buf[3] = (MAGIC >> 24) & 0xff;
+	buf[0] = (char) ((MAGIC >>  0) & 0xff);
+	buf[1] = (char) ((MAGIC >>  8) & 0xff);
+	buf[2] = (char) ((MAGIC >> 16) & 0xff);
+	buf[3] = (char) ((MAGIC >> 24) & 0xff);
 
 	return newsizedstringobject(buf, 4);
 }
