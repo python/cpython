@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.263 
+# From configure.in Revision: 1.264 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1649,7 +1649,7 @@ then
 	;;
     *)
 	case $ac_sys_system in
-	UnixWare*)
+	OpenUNIX*|UnixWare*)
 	    OPT="-O -K pentium,host,inline,loop_unroll,alloca ";;
 	*)
 	    OPT="-O";;
@@ -3102,7 +3102,7 @@ then
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
-	UnixWare*)
+	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then LDSHARED="$(CC) -shared"
 		else LDSHARED="$(CC) -G"
@@ -3132,7 +3132,7 @@ then
 	Linux*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fPIC";;
-	UnixWare*)
+	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
 		else CCSHARED="-KPIC"
@@ -3174,7 +3174,7 @@ then
 			LINKFORSHARED="$LINKFORSHARED -framework Python"
 		fi
 		LINKFORSHARED="$LINKFORSHARED $extra_frameworks";;
-	UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
+	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*) 
