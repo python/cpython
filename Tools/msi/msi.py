@@ -876,6 +876,7 @@ def add_files(db):
         dirs[dir]=lib
         lib.glob("*.txt")
         if dir=='site-packages':
+            lib.add_file("README.txt", src="README")
             continue
         files = lib.glob("*.py")
         files += lib.glob("*.pyw")
