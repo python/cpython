@@ -309,6 +309,8 @@ class SGMLParser:
                     method = getattr(self, 'end_' + tag)
                 except AttributeError:
                     self.unknown_endtag(tag)
+                else:
+                    self.report_unbalanced(tag)
                 return
             found = len(self.stack)
             for i in range(found):
