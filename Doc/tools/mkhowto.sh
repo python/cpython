@@ -64,7 +64,7 @@ build_html() {
 	latex2html -init_file $L2H_INIT_FILE \
 	 -address "$ADDRESS" \
 	 -link $MAX_LINK_DEPTH -split $MAX_SPLIT_DEPTH \
-	 $1 || exit $?
+	 -dir $1 $TEXFILE || exit $?
     else
 	latex2html -init_file $L2H_INIT_FILE \
 	 -link $MAX_LINK_DEPTH -split $MAX_SPLIT_DEPTH \
@@ -126,6 +126,7 @@ cleanup() {
     if [ ! "$BUILD_DVI" ] ; then
 	rm -f $1.dvi
     fi
+    rm -f $1/IMG* $1/*.pl $1/WARNINGS $1/index.dat $1/modindex.dat
 }
 
 # figure out what our targets are:
