@@ -66,12 +66,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #    define PY_PTHREAD_D7
 #  endif
 
-#elif defined(__unix) && defined(__sparc)
-#  define PY_PTHREAD_STD
-#elif defined(__linux)
-#  define PY_PTHREAD_STD
 #elif defined(__DGUX)
 #  define PY_PTHREAD_D6
+
+#else /* Default case */
+#  define PY_PTHREAD_STD
+
 #endif
 
 
