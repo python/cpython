@@ -1,4 +1,8 @@
-#include <MacHeaders>
+#include <Types.h>
+#include <Files.h>
+#include <OSUtils.h>
+#include <Resources.h>
+
 #include <string.h>
 
 /* Interface used by tokenizer.c */
