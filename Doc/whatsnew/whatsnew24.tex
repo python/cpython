@@ -21,14 +21,15 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.4 alpha1, to be released in early July 2004  The final version of Python 2.4 
-is expected to be around September 2004.
+This article explains the new features in Python 2.4 alpha1, scheduled
+for release in early July 2004.  The final version of Python 2.4 is
+expected to be released around September 2004.
 
-Python 2.4 is a middle-sized release.  It doesn't introduce as many
+Python 2.4 is a medium-sized release.  It doesn't introduce as many
 changes as the radical Python 2.2, but introduces more features than
 the conservative 2.3 release did.  The most significant new language
 feature (as of this writing) is the addition of generator expressions;
-most of the changes are to the standard library.
+most other changes are to the standard library.
 
 This article doesn't attempt to provide a complete specification of
 every single new feature, but instead provides a convenient overview.
@@ -43,11 +44,13 @@ documentation.
 %======================================================================
 \section{PEP 218: Built-In Set Objects}
 
-Two new built-in types, \function{set(\var{iterable})} and
-\function{frozenset(\var{iterable})} provide high speed data types for
-membership testing, for eliminating duplicates from sequences, and
-for mathematical operations like unions, intersections, differences,
-and symmetric differences.  
+Python 2.3 introduced the \module{sets} module.  C implementations of
+set data types have now been added to the Python core as two new
+built-in types, \function{set(\var{iterable})} and
+\function{frozenset(\var{iterable})}.  They provide high speed
+operations for membership testing, for eliminating duplicates from
+sequences, and for mathematical operations like unions, intersections,
+differences, and symmetric differences.
 
 \begin{verbatim}
 >>> a = set('abracadabra')              # form a set from a string
@@ -77,16 +80,13 @@ set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'x', 'z'])
 set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'z'])       
 \end{verbatim}
 
-The type \function{frozenset()} is an immutable version of \function{set()}.
+The \function{frozenset} type is an immutable version of \function{set}.
 Since it is immutable and hashable, it may be used as a dictionary key or
-as a member of another set.  Accordingly, it does not have methods
-like \method{add()} and \method{remove()} which could alter its contents.
+as a member of another set.  
 
-% XXX what happens to the sets module?
-% The current thinking is that the sets module will be left alone.
-% That way, existing code will continue to run without alteration.
-% Also, the module provides an autoconversion feature not supported by set()
-% and frozenset().
+The \module{sets} module remains in the standard library, and may be
+useful if you wish to subclass the \class{Set} or \class{ImmutableSet}
+classes.  There are currently no plans to deprecate the module.
 
 \begin{seealso}
 \seepep{218}{Adding a Built-In Set Object Type}{Originally proposed by
@@ -96,23 +96,22 @@ Greg Wilson and ultimately implemented by Raymond Hettinger.}
 %======================================================================
 \section{PEP 237: Unifying Long Integers and Integers}
 
-The lengthy transition process for the PEP, begun with Python 2.2,
+The lengthy transition process for this PEP, begun in Python 2.2,
 takes another step forward in Python 2.4.  In 2.3, certain integer
 operations that would behave differently after int/long unification
 triggered \exception{FutureWarning} warnings and returned values
-limited to 32 or 64 bits.  In 2.4, these expressions no longer produce
-a warning, but they now produce a different value that's a long
-integer.  
+limited to 32 or 64 bits (depending on your platform).  In 2.4, these
+expressions no longer produce a warning and instead produce a
+different result that's usually a long integer.
 
 The problematic expressions are primarily left shifts and lengthy
-hexadecimal and octal constants.  For example, \code{2 << 32} is one
-expression that results in a warning in 2.3, evaluating to 0 on 32-bit
-platforms.  In Python 2.4, this expression now returns 8589934592.
-
+hexadecimal and octal constants.  For example, \code{2 << 32} results
+in a warning in 2.3, evaluating to 0 on 32-bit platforms.  In Python
+2.4, this expression now returns the correct answer, 8589934592.
 
 \begin{seealso}
 \seepep{237}{Unifying Long Integers and Integers}{Original PEP
-written by Moshe Zadka and Gvr.  The changes for 2.4 were implemented by 
+written by Moshe Zadka and GvR.  The changes for 2.4 were implemented by 
 Kalle Svensson.}
 \end{seealso}
 
@@ -124,9 +123,12 @@ programs that loop through large data sets without having the entire
 data set in memory at one time.  Programmers can use iterators and the
 \module{itertools} module to write code in a fairly functional style.
 
-The fly in the ointment has been list comprehensions, because they
+% XXX avoid metaphor
+List comprehensions have been the fly in the ointment because they
 produce a Python list object containing all of the items, unavoidably
-pulling them all into memory.  When trying to write a program using the functional approach, it would be natural to write something like:
+pulling them all into memory.  When trying to write a
+functionally-styled program, it would be natural to write something
+like:
 
 \begin{verbatim}
 links = [link for link in get_all_links() if not link.followed]
@@ -166,12 +168,12 @@ passed to a function you could write:
 print sum(obj.count for obj in list_all_objects())
 \end{verbatim}
 
-There are some small differences from list comprehensions.  Most
-notably, the loop variable (\var{obj} in the above example) is not
-accessible outside of the generator expression.  List comprehensions
-leave the variable assigned to its last value; future versions of
-Python will change this, making list comprehensions match generator
-expressions in this respect.
+Generator expressions differ from list comprehensions in various small
+ways.  Most notably, the loop variable (\var{obj} in the above
+example) is not accessible outside of the generator expression.  List
+comprehensions leave the variable assigned to its last value; future
+versions of Python will change this, making list comprehensions match
+generator expressions in this respect.
 
 \begin{seealso}
 \seepep{289}{Generator Expressions}{Proposed by Raymond Hettinger and
@@ -182,7 +184,7 @@ implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
 \section{PEP 322: Reverse Iteration}
 
 A new built-in function, \function{reversed(\var{seq})}, takes a sequence
-and returns an iterator that returns the elements of the sequence 
+and returns an iterator that loops over the elements of the sequence 
 in reverse order.  
 
 \begin{verbatim}
@@ -194,8 +196,9 @@ in reverse order.
 1
 \end{verbatim}
 
-Compared to extended slicing, \code{range(1,4)[::-1]}, \function{reversed()}
-is easier to read, runs faster, and uses substantially less memory.
+Compared to extended slicing, such as \code{range(1,4)[::-1]},
+\function{reversed()} is easier to read, runs faster, and uses
+substantially less memory.
 
 Note that \function{reversed()} only accepts sequences, not arbitrary
 iterators.  If you want to reverse an iterator, first convert it to 
@@ -450,7 +453,7 @@ language.
 argument forms as the \class{dict} constructor.  This includes any
 mapping, any iterable of key/value pairs, and keyword arguments.       
 
-\item The string methods, \method{ljust()}, \method{rjust()}, and
+\item The string methods \method{ljust()}, \method{rjust()}, and
 \method{center()} now take an optional argument for specifying a
 fill character other than a space.
 
@@ -466,7 +469,7 @@ the string.
 \end{verbatim}      
 
 \item The \method{sort()} method of lists gained three keyword
-arguments, \var{cmp}, \var{key}, and \var{reverse}.  These arguments
+arguments: \var{cmp}, \var{key}, and \var{reverse}.  These arguments
 make some common usages of \method{sort()} simpler.  All are optional.
 
 \var{cmp} is the same as the previous single argument to
@@ -496,7 +499,7 @@ The last example, which uses the \var{cmp} parameter, is the old way
 to perform a case-insensitive sort.  It works but is slower than
 using a \var{key} parameter.  Using \var{key} results in calling the
 \method{lower()} method once for each element in the list while using
-\var{cmp} will call the method twice for each comparison.
+\var{cmp} will call it twice for each comparison.
 
 For simple key functions and comparison functions, it is often
 possible to avoid a \keyword{lambda} expression by using an unbound
@@ -509,10 +512,11 @@ coded as:
 ['A', 'b', 'c', 'D']
 \end{verbatim}       
 
-The \var{reverse} parameter should have a Boolean value.  If the value is
-\constant{True}, the list will be sorted into reverse order.  Instead
-of \code{L.sort(lambda x,y: cmp(y.score, x.score))}, you can now write:
-\code{L.sort(key = lambda x: x.score, reverse=True)}.
+The \var{reverse} parameter should have a Boolean value.  If the value
+is \constant{True}, the list will be sorted into reverse order.
+Instead of \code{L.sort(lambda x,y: cmp(x.score, y.score)) ;
+L.reverse()}, you can now write: \code{L.sort(key = lambda x: x.score,
+reverse=True)}.
 
 The results of sorting are now guaranteed to be stable.  This means
 that two entries with equal keys will be returned in the same order as
@@ -522,7 +526,7 @@ people with the same age are in name-sorted order.
 
 \item There is a new built-in function
 \function{sorted(\var{iterable})} that works like the in-place
-\method{list.sort()} method but has been made suitable for use in
+\method{list.sort()} method but can be used in
 expressions.  The differences are:
   \begin{itemize}
   \item the input may be any iterable;
@@ -550,7 +554,6 @@ blue 2
 green 3
 red 1
 yellow 5
-
 \end{verbatim}
 
 \item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
@@ -558,8 +561,9 @@ function now accepts any mapping type for the \var{locals} argument.
 Previously this had to be a regular Python dictionary.
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
-  now return an empty list instead of raising a \exception{TypeError}
-  exception if called with no arguments.  This makes them more
+  now return an empty list if called with no arguments.
+  Previously they raised a \exception{TypeError}
+  exception.  This makes them more
   suitable for use with variable length argument lists:
 
 \begin{verbatim}
@@ -580,28 +584,24 @@ Previously this had to be a regular Python dictionary.
 
 \begin{itemize}
 
-\item The inner loops for \class{list} and \class{tuple} slicing
+\item The inner loops for list and tupleslicing
  were optimized and now run about one-third faster.  The inner
- loops were also optimized for \class{dict} with performance
+ loops were also optimized for dictionaries with performance
  boosts to \method{keys()}, \method{values()}, \method{items()},
 \method{iterkeys()}, \method{itervalues()}, and \method{iteritems()}.
 
-\item The machinery for growing and shrinking lists was optimized
- for speed and for space efficiency.  Small lists (under eight elements)
- never over-allocate by more than three elements.  Large lists do not
- over-allocate by more than 1/8th.  Appending and popping from lists
- now runs faster due to more efficient code paths and less frequent
- use of the underlying system realloc().  List comprehensions also
- benefit.  The amount of improvement varies between systems and shows
- the greatest improvement on systems with poor realloc() implementations.
- \method{list.extend()} was also optimized and no longer converts its
- argument into a temporary list prior to extending the base list.
+\item The machinery for growing and shrinking lists was optimized for
+ speed and for space efficiency.  Appending and popping from lists now
+ runs faster due to more efficient code paths and less frequent use of
+ the underlying system \cfunction{realloc()}.  List comprehensions
+ also benefit.   \method{list.extend()} was also optimized and no
+ longer converts its argument into a temporary list before extending
+ the base list.
 
 \item \function{list()}, \function{tuple()}, \function{map()},
   \function{filter()}, and \function{zip()} now run several times
   faster with non-sequence arguments that supply a \method{__len__()}
-  method.  Previously, the pre-sizing optimization only applied to
-  sequence arguments.
+  method.  
 
 \item The methods \method{list.__getitem__()},
   \method{dict.__getitem__()}, and \method{dict.__contains__()} are
@@ -685,8 +685,8 @@ True
 \end{verbatim}
 
 Several modules now take advantage of \class{collections.deque} for
-improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
-\module{threading}, and \module{pydoc}.
+improved performance, such as the \module{Queue} and
+\module{threading} modules.
 
 \item The \module{ConfigParser} classes have been enhanced slightly.
    The \method{read()} method now returns a list of the files that
@@ -705,8 +705,7 @@ improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
 (Contributed by Yves Dionne.)
 
 \item The \module{itertools} module gained a
-  \function{groupby(\var{iterable}\optional{, \var{func}})} function,
-  inspired by the GROUP BY clause from SQL.
+  \function{groupby(\var{iterable}\optional{, \var{func}})} function.
   \var{iterable} returns a succession of elements, and the optional
   \var{func} is a function that takes an element and returns a key
   value; if omitted, the key is simply the element itself.
@@ -732,22 +731,30 @@ return consecutive runs of odd or even numbers.
 >>> 
 \end{verbatim}
 
-Like its SQL counterpart, \function{groupby()} is typically used with
-sorted input.  The logic for \function{groupby()} is similar to the
-\UNIX{} \code{uniq} filter which makes it handy for eliminating,
-counting, or identifying duplicate elements:
+\function{groupby()} is typically used with sorted input.  The logic
+for \function{groupby()} is similar to the \UNIX{} \code{uniq} filter
+which makes it handy for eliminating, counting, or identifying
+duplicate elements:
 
 \begin{verbatim}
 >>> word = 'abracadabra'
 >>> letters = sorted(word)   # Turn string into a sorted list of letters
 >>> letters 
 ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
->>> [k for k, g in groupby(letters)]                     # List unique letters
+>>> for k, g in itertools.groupby(letters):
+...    print k, list(g)
+... 
+a ['a', 'a', 'a', 'a', 'a']
+b ['b', 'b']
+c ['c']
+d ['d']
+r ['r', 'r']
+>>> # List unique letters
+>>> [k for k, g in groupby(letters)]                     
 ['a', 'b', 'c', 'd', 'r']
->>> [(k, len(list(g))) for k, g in groupby(letters)]     # Count letter occurences
+>>> # Count letter occurences
+>>> [(k, len(list(g))) for k, g in groupby(letters)]     
 [('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
->>> [k for k, g in groupby(letters) if len(list(g)) > 1] # List duplicated letters
-['a', 'b', 'r']
 \end{verbatim}
 
 \item \module{itertools} also gained a function named
@@ -770,7 +777,7 @@ Note that \function{tee()} has to keep copies of the values returned
 by the iterator; in the worst case, it may need to keep all of them.  
 This should therefore be used carefully if the leading iterator
 can run far ahead of the trailing iterator in a long stream of inputs.
-If the separation is large, then it becomes preferable to use
+If the separation is large, then you might as well use 
 \function{list()} instead.  When the iterators track closely with one
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
