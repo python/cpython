@@ -144,7 +144,11 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->tick_counter = 0;
 		tstate->gilstate_counter = 0;
 		tstate->async_exc = NULL;
+#ifdef WITH_THREAD
 		tstate->thread_id = PyThread_get_thread_ident();
+#else
+		tstate->thread_id = 0;
+#endif
 
 		tstate->dict = NULL;
 
