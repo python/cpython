@@ -33,7 +33,7 @@ Limitations:
 - no asynchronous I/O (but read polling: avail)
 - no read/write operations (use send/recv or makefile instead)
 - no flags on sendto/recvfrom operations
-- no setsockopt() call
+- no general setsockopt() call (but see s.allowbroadcast())
 
 Interface:
 
@@ -53,6 +53,7 @@ Socket methods:
 
 - s.accept() --> new socket object, sockaddr
 - s.avail() --> boolean
+- s.allowbroadcast(boolean) --> None
 - s.bind(sockaddr) --> None
 - s.connect(sockaddr) --> None
 - s.listen(n) --> None
@@ -341,6 +342,26 @@ sock_accept(s, args)
 }
 
 
+/* s.allowbroadcast() method */
+
+static object *
+sock_allowbroadcast(s, args)
+	sockobject *s;
+	object *args;
+{
+	int flag;
+	int res;
+	if (!getintarg(args, &flag))
+		return NULL;
+	res = setsockopt(s->sock_fd, SOL_SOCKET, SO_BROADCAST,
+			 &flag, sizeof flag);
+	if (res < 0)
+		return socket_error();
+	INCREF(None);
+	return None;
+}
+
+
 /* s.avail() method */
 
 static object *
@@ -582,6 +603,7 @@ sock_shutdown(s, args)
 static struct methodlist sock_methods[] = {
 	{"accept",	sock_accept},
 	{"avail",	sock_avail},
+	{"allowbroadcast",	sock_allowbroadcast},
 	{"bind",	sock_bind},
 	{"close",	sock_close},
 	{"connect",	sock_connect},
