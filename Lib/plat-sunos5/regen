@@ -5,5 +5,5 @@ case `uname -sr` in
 	exit 1;;
 esac
 set -v
-h2py -i '(u_long)' /usr/include/netinet/in.h
-h2py /usr/include/sys/stropts.h
+h2py -i '(u_long)' /usr/include/sys/types.h /usr/include/netinet/in.h /usr/include/sys/stropts.h /usr/include/dlfcn.h
+
