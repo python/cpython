@@ -28,8 +28,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 /* Forward */
-static PyObject *filterstring Py_PROTO((PyObject *, PyObject *));
-static PyObject *filtertuple  Py_PROTO((PyObject *, PyObject *));
+static PyObject *filterstring(PyObject *, PyObject *);
+static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
 builtin___import__(self, args)
@@ -428,7 +428,7 @@ static PyObject *
 complex_from_string(v)
 	PyObject *v;
 {
-	extern double strtod Py_PROTO((const char *, char **));
+	extern double strtod(const char *, char **);
 	const char *s, *start;
 	char *end;
 	double x=0.0, y=0.0, z;
@@ -1225,7 +1225,7 @@ static char hex_doc[] =
 Return the hexadecimal representation of an integer or long integer.";
 
 
-static PyObject *builtin_raw_input Py_PROTO((PyObject *, PyObject *));
+static PyObject *builtin_raw_input(PyObject *, PyObject *);
 
 static PyObject *
 builtin_input(self, args)

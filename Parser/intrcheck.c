@@ -22,7 +22,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "intrcheck.h"
 
 /* Copied here from ceval.h -- can't include that file. */
-int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
+int Py_AddPendingCall(int (*func)(ANY *), ANY *arg);
 
 
 #ifdef QUICKWIN
@@ -152,7 +152,7 @@ intcatcher(sig)
 	int sig; /* Not used by required by interface */
 #endif /* _M_IX86 */
 {
-	extern void Py_Exit Py_PROTO((int));
+	extern void Py_Exit(int);
 	static char message[] =
 "python: to interrupt a truly hanging Python program, interrupt once more.\n";
 	switch (interrupted++) {

@@ -347,7 +347,7 @@ math_error()
 static PyObject *
 math_1(args, func)
 	PyObject *args;
-	Py_complex (*func) Py_FPROTO((Py_complex));
+	Py_complex (*func)(Py_complex);
 {
 	Py_complex x;
 	if (!PyArg_ParseTuple(args, "D", &x))

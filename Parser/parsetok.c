@@ -22,8 +22,7 @@ int Py_TabcheckFlag;
 
 
 /* Forward */
-static node *parsetok Py_PROTO((struct tok_state *, grammar *, int,
-			     perrdetail *));
+static node *parsetok(struct tok_state *, grammar *, int, perrdetail *);
 
 /* Parse input coming from a string.  Return error code, print some errors. */
 

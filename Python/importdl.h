@@ -36,8 +36,8 @@ struct filedescr {
 extern struct filedescr * _PyImport_Filetab;
 extern const struct filedescr _PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModule
-	Py_PROTO((char *name, char *pathname, FILE *));
+extern PyObject *_PyImport_LoadDynamicModule(char *name, char *pathname,
+					     FILE *);
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12

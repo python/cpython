@@ -38,18 +38,18 @@ extern char *Py_GetPath();
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
-static void initmain Py_PROTO((void));
-static void initsite Py_PROTO((void));
-static PyObject *run_err_node Py_PROTO((node *n, char *filename,
-				   PyObject *globals, PyObject *locals));
-static PyObject *run_node Py_PROTO((node *n, char *filename,
-			       PyObject *globals, PyObject *locals));
-static PyObject *run_pyc_file Py_PROTO((FILE *fp, char *filename,
-				   PyObject *globals, PyObject *locals));
-static void err_input Py_PROTO((perrdetail *));
-static void initsigs Py_PROTO((void));
-static void call_sys_exitfunc Py_PROTO((void));
-static void call_ll_exitfuncs Py_PROTO((void));
+static void initmain(void);
+static void initsite(void);
+static PyObject *run_err_node(node *n, char *filename,
+			      PyObject *globals, PyObject *locals);
+static PyObject *run_node(node *n, char *filename,
+			  PyObject *globals, PyObject *locals);
+static PyObject *run_pyc_file(FILE *fp, char *filename,
+			      PyObject *globals, PyObject *locals);
+static void err_input(perrdetail *);
+static void initsigs(void);
+static void call_sys_exitfunc(void);
+static void call_ll_exitfuncs(void);
 
 #ifdef Py_TRACE_REFS
 int _Py_AskYesNo(char *prompt);
@@ -163,7 +163,7 @@ Py_Initialize()
 }
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts Py_PROTO((void));
+extern void dump_counts(void);
 #endif
 
 /* Undo the effect of Py_Initialize().
@@ -1059,7 +1059,7 @@ static void (*exitfuncs[NEXITFUNCS])();
 static int nexitfuncs = 0;
 
 int Py_AtExit(func)
-	void (*func) Py_PROTO((void));
+	void (*func)(void);
 {
 	if (nexitfuncs >= NEXITFUNCS)
 		return -1;

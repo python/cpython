@@ -14,10 +14,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "structmember.h"
 
 /* Forward */
-static PyObject *class_lookup
-	Py_PROTO((PyClassObject *, PyObject *, PyClassObject **));
-static PyObject *instance_getattr1 Py_PROTO((PyInstanceObject *, PyObject *));
-static PyObject *instance_getattr2 Py_PROTO((PyInstanceObject *, PyObject *));
+static PyObject *class_lookup(PyClassObject *, PyObject *,
+			      PyClassObject **);
+static PyObject *instance_getattr1(PyInstanceObject *, PyObject *);
+static PyObject *instance_getattr2(PyInstanceObject *, PyObject *);
 
 static PyObject *getattrstr, *setattrstr, *delattrstr;
 
@@ -1203,8 +1203,8 @@ generic_unary_op(self, methodname)
 
 
 /* Forward */
-static int halfbinop Py_PROTO((PyObject *, PyObject *, char *, PyObject **,
-		PyObject * (*) Py_PROTO((PyObject *, PyObject *)), int ));
+static int halfbinop(PyObject *, PyObject *, char *, PyObject **,
+		     PyObject * (*)(PyObject *, PyObject *), int);
 
 
 /* Implement a binary operator involving at least one class instance. */
@@ -1215,7 +1215,7 @@ PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
 	PyObject *w;
 	char *opname;
 	char *ropname;
-	PyObject * (*thisfunc) Py_PROTO((PyObject *, PyObject *));
+	PyObject * (*thisfunc)(PyObject *, PyObject *);
 {
 	char buf[256];
 	PyObject *result = NULL;
@@ -1249,7 +1249,7 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	PyObject *w;
 	char *opname;
 	PyObject **r_result;
-	PyObject * (*thisfunc) Py_PROTO((PyObject *, PyObject *));
+	PyObject * (*thisfunc)(PyObject *, PyObject *);
 	int swapped;
 {
 	PyObject *func;

@@ -406,11 +406,10 @@ typedef struct _formatdef {
 	char format;
 	int size;
 	int alignment;
-	PyObject* (*unpack) Py_PROTO((const char *,
-				      const struct _formatdef *));
-	int (*pack) Py_PROTO((char *,
-			      PyObject *,
-			      const struct _formatdef *));
+	PyObject* (*unpack)(const char *,
+			    const struct _formatdef *);
+	int (*pack)(char *, PyObject *,
+		    const struct _formatdef *);
 } formatdef;
 
 static PyObject *

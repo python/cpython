@@ -17,7 +17,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 extern int Py_DebugFlag;
 
 /* Forward */
-static void calcfirstset Py_PROTO((grammar *, dfa *));
+static void calcfirstset(grammar *, dfa *);
 
 void
 addfirstsets(g)

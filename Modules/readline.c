@@ -39,7 +39,7 @@ extern Function *rl_event_hook;
 
 /* Pointers needed from outside (but not declared in a header file). */
 extern int (*PyOS_InputHook)();
-extern char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
+extern char *(*PyOS_ReadlineFunctionPointer)(char *);
 
 
 /* Exported function to send one line to readline's init file parser */

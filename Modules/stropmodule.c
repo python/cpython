@@ -878,7 +878,7 @@ strop_atof(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	extern double strtod Py_PROTO((const char *, char **));
+	extern double strtod(const char *, char **);
 	char *s, *end;
 	double x;
 	char buffer[256]; /* For errors */

@@ -64,8 +64,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #if !defined(__STDC__) && !defined(macintosh)
-extern double fmod Py_PROTO((double, double));
-extern double pow Py_PROTO((double, double));
+extern double fmod(double, double);
+extern double pow(double, double);
 #endif
 
 #ifdef sun
@@ -137,7 +137,7 @@ PyFloat_FromString(v, pend)
 	PyObject *v;
 	char **pend;
 {
-	extern double strtod Py_PROTO((const char *, char **));
+	extern double strtod(const char *, char **);
 	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* For errors */

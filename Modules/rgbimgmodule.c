@@ -95,12 +95,12 @@ typedef struct {
 
 #define CHANOFFSET(z)	(3-(z))	/* this is byte order dependent */
 
-static void expandrow Py_PROTO((unsigned char *, unsigned char *, int));
-static void setalpha Py_PROTO((unsigned char *, int));
-static void copybw Py_PROTO((Py_Int32 *, int));
-static void interleaverow Py_PROTO((unsigned char*, unsigned char*, int, int));
-static int compressrow Py_PROTO((unsigned char *, unsigned char *, int, int));
-static void lumrow Py_PROTO((unsigned char *, unsigned char *, int));
+static void expandrow(unsigned char *, unsigned char *, int);
+static void setalpha(unsigned char *, int);
+static void copybw(Py_Int32 *, int);
+static void interleaverow(unsigned char*, unsigned char*, int, int);
+static int compressrow(unsigned char *, unsigned char *, int, int);
+static void lumrow(unsigned char *, unsigned char *, int);
 
 #ifdef ADD_TAGS
 #define TAGLEN	(5)

@@ -14,6 +14,11 @@ See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
+/***************************************
+THIS FILE IS OBSOLETE
+DON'T USE Py_PROTO or Py_FPROTO anymore.
+***************************************/
+
 #ifdef HAVE_PROTOTYPES
 #define Py_PROTO(x) x
 #else

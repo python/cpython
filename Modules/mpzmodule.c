@@ -1012,8 +1012,8 @@ mpz_mpzcoerce(z)
 } /* mpz_mpzcoerce() */
 	
 /* Forward */
-static void mpz_divm Py_PROTO((MP_INT *res, const MP_INT *num,
-			       const MP_INT *den, const MP_INT *mod));
+static void mpz_divm(MP_INT *res, const MP_INT *num,
+	             const MP_INT *den, const MP_INT *mod);
 
 static PyObject *
 MPZ_powm(self, args)

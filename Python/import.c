@@ -763,10 +763,10 @@ load_source_module(name, pathname, fp)
 
 
 /* Forward */
-static PyObject *load_module Py_PROTO((char *, FILE *, char *, int));
-static struct filedescr *find_module Py_PROTO((char *, PyObject *,
-					       char *, size_t, FILE **));
-static struct _frozen *find_frozen Py_PROTO((char *name));
+static PyObject *load_module(char *, FILE *, char *, int);
+static struct filedescr *find_module(char *, PyObject *,
+				     char *, size_t, FILE **);
+static struct _frozen *find_frozen(char *name);
 
 /* Load a package and return its module object WITH INCREMENTED
    REFERENCE COUNT */
@@ -855,7 +855,7 @@ extern FILE *PyWin_FindRegisteredModule();
 static int check_case(char *, int, int, char *);
 #endif
 
-static int find_init_module Py_PROTO((char *)); /* Forward */
+static int find_init_module(char *); /* Forward */
 
 static struct filedescr *
 find_module(realname, path, buf, buflen, p_fp)
@@ -1206,7 +1206,7 @@ find_init_module(buf)
 #endif /* HAVE_STAT */
 
 
-static int init_builtin Py_PROTO((char *)); /* Forward */
+static int init_builtin(char *); /* Forward */
 
 /* Load an external module using the default search path and return
    its module object WITH INCREMENTED REFERENCE COUNT */
@@ -1455,15 +1455,13 @@ PyImport_ImportModule(name)
 }
 
 /* Forward declarations for helper routines */
-static PyObject *get_parent Py_PROTO((PyObject *globals,
-				      char *buf, int *p_buflen));
-static PyObject *load_next Py_PROTO((PyObject *mod, PyObject *altmod,
-				     char **p_name, char *buf, int *p_buflen));
-static int mark_miss Py_PROTO((char *name));
-static int ensure_fromlist Py_PROTO((PyObject *mod, PyObject *fromlist,
-				     char *buf, int buflen, int recursive));
-static PyObject * import_submodule Py_PROTO((PyObject *mod,
-					     char *name, char *fullname));
+static PyObject *get_parent(PyObject *globals, char *buf, int *p_buflen);
+static PyObject *load_next(PyObject *mod, PyObject *altmod,
+			   char **p_name, char *buf, int *p_buflen);
+static int mark_miss(char *name);
+static int ensure_fromlist(PyObject *mod, PyObject *fromlist,
+			   char *buf, int buflen, int recursive);
+static PyObject * import_submodule(PyObject *mod, char *name, char *fullname);
 
 /* The Magnum Opus of dotted-name import :-) */
 
@@ -2006,7 +2004,7 @@ call_find_module(name, path)
 	char *name;
 	PyObject *path; /* list or None or NULL */
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	PyObject *fob, *ret;
 	struct filedescr *fdp;
 	char pathname[MAXPATHLEN+1];

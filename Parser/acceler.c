@@ -26,8 +26,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "parser.h"
 
 /* Forward references */
-static void fixdfa Py_PROTO((grammar *, dfa *));
-static void fixstate Py_PROTO((grammar *, state *));
+static void fixdfa(grammar *, dfa *);
+static void fixstate(grammar *, state *);
 
 void
 PyGrammar_AddAccelerators(g)

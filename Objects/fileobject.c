@@ -69,7 +69,7 @@ typedef struct {
 	FILE *f_fp;
 	PyObject *f_name;
 	PyObject *f_mode;
-	int (*f_close) Py_PROTO((FILE *));
+	int (*f_close)(FILE *);
 	int f_softspace; /* Flag used by 'print' command */
 	int f_binary; /* Flag which indicates whether the file is open
 			 open in binary (1) or test (0) mode */
@@ -100,7 +100,7 @@ PyFile_FromFile(fp, name, mode, close)
 	FILE *fp;
 	char *name;
 	char *mode;
-	int (*close) Py_FPROTO((FILE *));
+	int (*close)(FILE *);
 {
 	PyFileObject *f = PyObject_NEW(PyFileObject, &PyFile_Type);
 	if (f == NULL)
@@ -126,7 +126,7 @@ PyObject *
 PyFile_FromString(name, mode)
 	char *name, *mode;
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	PyFileObject *f;
 	f = (PyFileObject *) PyFile_FromFile((FILE *)NULL, name, mode, fclose);
 	if (f == NULL)

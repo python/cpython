@@ -15,20 +15,20 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Declarations for objects of type PyCObject */
 
-typedef void (*destructor1) Py_PROTO((void *));
-typedef void (*destructor2) Py_PROTO((void *, void*));
+typedef void (*destructor1)(void *);
+typedef void (*destructor2)(void *, void*);
 
 typedef struct {
 	PyObject_HEAD
 	void *cobject;
         void *desc;
-	void (*destructor) Py_PROTO((void *));
+	void (*destructor)(void *);
 } PyCObject;
 
 PyObject *
 PyCObject_FromVoidPtr(cobj, destr)
 	void *cobj;
-	void (*destr) Py_PROTO((void *));
+	void (*destr)(void *);
 {
 	PyCObject *self;
 	
@@ -45,7 +45,7 @@ PyObject *
 PyCObject_FromVoidPtrAndDesc(cobj, desc, destr)
 	void *cobj;
 	void *desc;
-	void (*destr) Py_PROTO((void *, void *));
+	void (*destr)(void *, void *);
 {
 	PyCObject *self;
 

@@ -14,10 +14,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "grammar.h"
 
 /* Forward */
-static void printarcs Py_PROTO((int, dfa *, FILE *));
-static void printstates Py_PROTO((grammar *, FILE *));
-static void printdfas Py_PROTO((grammar *, FILE *));
-static void printlabels Py_PROTO((grammar *, FILE *));
+static void printarcs(int, dfa *, FILE *);
+static void printstates(grammar *, FILE *);
+static void printdfas(grammar *, FILE *);
+static void printlabels(grammar *, FILE *);
 
 void
 printgrammar(g, fp)

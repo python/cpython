@@ -84,7 +84,7 @@ Py_InitModule4(name, methods, doc, passthrough, module_api_version)
 
 /* Helper for mkvalue() to scan the length of a format */
 
-static int countformat Py_PROTO((char *format, int endchar));
+static int countformat(char *format, int endchar);
 static int countformat(format, endchar)
 	char *format;
 	int endchar;
@@ -130,10 +130,10 @@ static int countformat(format, endchar)
 /* Generic function to create a value -- the inverse of getargs() */
 /* After an original idea and first implementation by Steven Miale */
 
-static PyObject *do_mktuple Py_PROTO((char**, va_list *, int, int));
-static PyObject *do_mklist Py_PROTO((char**, va_list *, int, int));
-static PyObject *do_mkdict Py_PROTO((char**, va_list *, int, int));
-static PyObject *do_mkvalue Py_PROTO((char**, va_list *));
+static PyObject *do_mktuple(char**, va_list *, int, int);
+static PyObject *do_mklist(char**, va_list *, int, int);
+static PyObject *do_mkdict(char**, va_list *, int, int);
+static PyObject *do_mkvalue(char**, va_list *);
 
 
 static PyObject *
@@ -358,7 +358,7 @@ do_mkvalue(p_format, p_va)
 		case 'S':
 		case 'O':
 		if (**p_format == '&') {
-			typedef PyObject *(*converter) Py_PROTO((void *));
+			typedef PyObject *(*converter)(void *);
 			converter func = va_arg(*p_va, converter);
 			void *arg = va_arg(*p_va, void *);
 			++*p_format;

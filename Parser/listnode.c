@@ -15,8 +15,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "node.h"
 
 /* Forward */
-static void list1node Py_PROTO((FILE *, node *));
-static void listnode Py_PROTO((FILE *, node *));
+static void list1node(FILE *, node *);
+static void listnode(FILE *, node *);
 
 void
 PyNode_ListTree(n)

@@ -23,26 +23,25 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 
-int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
-int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
-int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
+int PyArg_Parse(PyObject *, char *, ...);
+int PyArg_ParseTuple(PyObject *, char *, ...);
+int PyArg_VaParse(PyObject *, char *, va_list);
 
-int PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
-				       char *, char **, ...));
+int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
+				char *, char **, ...);
 
 /* Forward */
-static int vgetargs1 Py_PROTO((PyObject *, char *, va_list *, int));
-static void seterror Py_PROTO((int, char *, int *, char *, char *));
-static char *convertitem Py_PROTO((PyObject *, char **, va_list *,
-				   int *, char *));
-static char *converttuple Py_PROTO((PyObject *, char **, va_list *,
-				 int *, char *, int));
-static char *convertsimple Py_PROTO((PyObject *, char **, va_list *, char *));
-static char *convertsimple1 Py_PROTO((PyObject *, char **, va_list *));
+static int vgetargs1(PyObject *, char *, va_list *, int);
+static void seterror(int, char *, int *, char *, char *);
+static char *convertitem(PyObject *, char **, va_list *, int *, char *);
+static char *converttuple(PyObject *, char **, va_list *,
+			  int *, char *, int);
+static char *convertsimple(PyObject *, char **, va_list *, char *);
+static char *convertsimple1(PyObject *, char **, va_list *);
 
-static int vgetargskeywords Py_PROTO((PyObject *, PyObject *,
-				   char *, char **, va_list *));
-static char *skipitem Py_PROTO((char **, va_list *));
+static int vgetargskeywords(PyObject *, PyObject *,
+			    char *, char **, va_list *);
+static char *skipitem(char **, va_list *);
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
@@ -886,8 +885,7 @@ convertsimple1(arg, p_format, p_va)
 				
 			}
 			else if (*format == '&') {
-				typedef int (*converter)
-					Py_PROTO((PyObject *, void *));
+				typedef int (*converter)(PyObject *, void *);
 				converter convert = va_arg(*p_va, converter);
 				void *addr = va_arg(*p_va, void *);
 				format++;
@@ -1323,8 +1321,7 @@ skipitem(p_format, p_va)
 			}
 #endif
 			else if (*format == '&') {
-				typedef int (*converter)
-					Py_PROTO((PyObject *, void *));
+				typedef int (*converter)(PyObject *, void *);
 				(void) va_arg(*p_va, converter);
 				(void) va_arg(*p_va, void *);
 				format++;

@@ -270,7 +270,7 @@ static PyObject *
 sys_getcounts(self, args)
 	PyObject *self, *args;
 {
-	extern PyObject *get_counts Py_PROTO((void));
+	extern PyObject *get_counts(void);
 
 	if (!PyArg_ParseTuple(args, ":getcounts"))
 		return NULL;
@@ -280,12 +280,12 @@ sys_getcounts(self, args)
 
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals if that file */
-extern PyObject *_Py_GetObjects Py_PROTO((PyObject *, PyObject *));
+extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #endif
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
 /* Defined in ceval.c because it uses static globals if that file */
-extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
+extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 #endif
 
 static PyMethodDef sys_methods[] = {
@@ -409,7 +409,7 @@ settrace() -- set the global debug tracing function\n\
 PyObject *
 _PySys_Init()
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 	char *s;

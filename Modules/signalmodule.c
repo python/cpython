@@ -123,7 +123,7 @@ signal_handler(sig_num)
 		is_tripped++;
 		Handlers[sig_num].tripped = 1;
 		Py_AddPendingCall(
-			(int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
+			(int (*)(ANY *))PyErr_CheckSignals, NULL);
 #ifdef WITH_THREAD
 	}
 #endif
@@ -638,7 +638,7 @@ PyErr_SetInterrupt()
 {
 	is_tripped++;
 	Handlers[SIGINT].tripped = 1;
-	Py_AddPendingCall((int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
+	Py_AddPendingCall((int (*)(ANY *))PyErr_CheckSignals, NULL);
 }
 
 void
