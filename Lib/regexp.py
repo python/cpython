@@ -4,13 +4,12 @@ import regex
 from regex_syntax import *
 
 class Prog:
-	def init(self, pat):
+	def __init__(self, pat):
 		save_syntax = regex.set_syntax(RE_SYNTAX_AWK)
 		try:
 			self.prog = regex.compile(pat)
 		finally:
 			xxx = regex.set_syntax(save_syntax)
-		return self
 	def match(self, *args):
 		if len(args) == 2:
 			str, offset = args
@@ -27,7 +26,7 @@ class Prog:
 		return regs[:i]
 
 def compile(pat):
-	return Prog().init(pat)
+	return Prog(pat)
 
 cache_pat = None
 cache_prog = None

@@ -6,14 +6,12 @@ class Queue:
 
 	# Initialize a queue object with a given maximum size
 	# (If maxsize is <= 0, the maximum size is infinite)
-	def init(self, maxsize):
-		import thread
+	def __init__(self, maxsize):
 		self._init(maxsize)
 		self.mutex = thread.allocate_lock()
 		self.esema = thread.allocate_lock()
 		self.esema.acquire_lock()
 		self.fsema = thread.allocate_lock()
-		return self
 
 	# Get an approximation of the queue size (not reliable!)
 	def qsize(self):

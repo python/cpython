@@ -34,11 +34,10 @@ class scheduler:
 	#
 	# Initialize a new instance, passing the time and delay functions
 	#
-	def init(self, timefunc, delayfunc):
+	def __init__(self, timefunc, delayfunc):
 		self.queue = []
 		self.timefunc = timefunc
 		self.delayfunc = delayfunc
-		return self
 	#
 	# Enter a new event in the queue at an absolute time.
 	# Returns an ID for the event which can be used

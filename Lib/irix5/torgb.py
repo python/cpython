@@ -13,40 +13,40 @@ import imghdr
 
 table = {}
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('fromppm $IN $OUT', 'ff')
 table['ppm'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['pnm'] = t
 table['pgm'] = t
 table['pbm'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('fromgif $IN $OUT', 'ff')
 table['gif'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('tifftopnm', '--')
 t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['tiff'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('rasttopnm', '--')
 t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['rast'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('djpeg', '--')
 t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['jpeg'] = t
 
-uncompress = pipes.Template().init()
+uncompress = pipes.Template()
 uncompress.append('uncompress', '--')
 
 

@@ -13,7 +13,7 @@ import whatsound
 
 table = {}
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t au - -t aiff -r 8000 -', '--')
 table['au'] = t
 
@@ -23,31 +23,31 @@ table['au'] = t
 # XXX files sampled at 5.5k or 7.333k; however this means that files
 # XXX sampled at 11k are unnecessarily expanded.
 # XXX Similar comments apply to some other file types.
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t hcom - -t aiff -r 22050 -', '--')
 table['hcom'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t voc - -t aiff -r 11025 -', '--')
 table['voc'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t wav - -t aiff -', '--')
 table['wav'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t 8svx - -t aiff -r 16000 -', '--')
 table['8svx'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t sndt - -t aiff -r 16000 -', '--')
 table['sndt'] = t
 
-t = pipes.Template().init()
+t = pipes.Template()
 t.append('sox -t sndr - -t aiff -r 16000 -', '--')
 table['sndr'] = t
 
-uncompress = pipes.Template().init()
+uncompress = pipes.Template()
 uncompress.append('uncompress', '--')
 
 

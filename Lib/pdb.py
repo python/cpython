@@ -16,9 +16,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		bdb.Bdb.__init__(self)
 		cmd.Cmd.__init__(self)
 		self.prompt = '(Pdb) '
-
-	def init(self):			# BW compat only
-		return self
 	
 	def reset(self):
 		bdb.Bdb.reset(self)

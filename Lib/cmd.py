@@ -13,9 +13,6 @@ class Cmd:
 		self.prompt = PROMPT
 		self.identchars = IDENTCHARS
 		self.lastcmd = ''
-	
-	def init(self):			# BW compat only
-		return self
 
 	def cmdloop(self):
 		stop = None

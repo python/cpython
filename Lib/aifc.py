@@ -287,7 +287,7 @@ def _write_float(f, x):
 	_write_long(f, lomant)
 
 class Chunk:
-	def init(self, file):
+	def __init__(self, file):
 		self.file = file
 		self.chunkname = self.file.read(4)
 		if len(self.chunkname) < 4:
@@ -295,7 +295,6 @@ class Chunk:
 		self.chunksize = _read_long(self.file)
 		self.size_read = 0
 		self.offset = self.file.tell()
-		return self
 
 	def rewind(self):
 		self.file.seek(self.offset, 0)
@@ -333,7 +332,7 @@ class Aifc_read:
 	# These variables are available to the user though appropriate
 	# methods of this class:
 	# _file -- the open file with methods read(), close(), and seek()
-	#		set through the init() ir initfp() method
+	#		set through the __init__() method
 	# _nchannels -- the number of audio channels
 	#		available through the getnchannels() method
 	# _nframes -- the number of audio frames
@@ -389,7 +388,7 @@ class Aifc_read:
 			#DEBUG: SGI's soundfiler has a bug.  There should
 			# be no need to check for EOF here.
 			try:
-				chunk = Chunk().init(self._file)
+				chunk = Chunk(self._file)
 			except EOFError:
 				if formlength == 8:
 					print 'Warning: FORM chunk size too large'
@@ -433,10 +432,12 @@ class Aifc_read:
 			else:
 				params[3] = 24
 			self._decomp.SetParams(params)
-		return self
 
-	def init(self, filename):
-		return self.initfp(builtin.open(filename, 'r'))
+	def __init__(self, f):
+		if type(f) == type(''):
+			f = builtin.open(f, 'r')
+		# else, assume it is an open file object already
+		self.initfp(f)
 
 	def __del__(self):
 		if self._file:
@@ -610,7 +611,7 @@ class Aifc_write:
 	# These variables are user settable through appropriate methods
 	# of this class:
 	# _file -- the open file with methods write(), close(), tell(), seek()
-	#		set through the init() or initfp() method
+	#		set through the __init__() method
 	# _comptype -- the AIFF-C compression type ('NONE' in AIFF)
 	#		set through the setcomptype() or setparams() method
 	# _compname -- the human-readable AIFF-C compression type
@@ -634,13 +635,15 @@ class Aifc_write:
 	# _datalength -- the size of the audio samples written to the header
 	# _datawritten -- the size of the audio samples actually written
 
-	def init(self, filename):
-		self = self.initfp(builtin.open(filename, 'w'))
+	def __init__(self, f):
+		if type(f) == type(''):
+			f = builtin.open(f, 'w')
+		# else, assume it is an open file object already
+		self.initfp(f)
 		if filename[-5:] == '.aiff':
 			self._aifc = 0
 		else:
 			self._aifc = 1
-		return self
 
 	def initfp(self, file):
 		self._file = file
@@ -659,7 +662,6 @@ class Aifc_write:
 		self._markers = []
 		self._marklength = 0
 		self._aifc = 1		# AIFF-C is default
-		return self
 
 	def __del__(self):
 		if self._file:
@@ -976,18 +978,12 @@ class Aifc_write:
 			_write_long(self._file, pos)
 			_write_string(self._file, name)
 
-def open(filename, mode):
+def open(f, mode):
 	if mode == 'r':
-		return Aifc_read().init(filename)
+		return Aifc_read(f)
 	elif mode == 'w':
-		return Aifc_write().init(filename)
+		return Aifc_write(f)
 	else:
 		raise Error, 'mode must be \'r\' or \'w\''
 
-def openfp(filep, mode):
-	if mode == 'r':
-		return Aifc_read().initfp(filep)
-	elif mode == 'w':
-		return Aifc_write().initfp(filep)
-	else:
-		raise Error, 'mode must be \'r\' or \'w\''
+openfp = open # B/W compatibility

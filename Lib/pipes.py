@@ -29,7 +29,7 @@
 # -----------
 #
 # To create a template:
-#   t = Template().init()
+#   t = Template()
 #
 # To add a conversion step to a template:
 #   t.append(command, kind)
@@ -85,11 +85,10 @@ stepkinds = [FILEIN_FILEOUT, STDIN_FILEOUT, FILEIN_STDOUT, STDIN_STDOUT, \
 
 class Template:
 
-	# Template().init() returns a fresh pipeline template
-	def init(self):
+	# Template() returns a fresh pipeline template
+	def __init__(self):
 		self.debugging = 0
 		self.reset()
-		return self
 
 	# t.__repr__() implements `t`
 	def __repr__(self):
@@ -102,7 +101,7 @@ class Template:
 	# t.clone() returns a new pipeline template with identical
 	# initial state as the current one
 	def clone(self):
-		t = Template().init()
+		t = Template()
 		t.steps = self.steps[:]
 		t.debugging = self.debugging
 		return t
@@ -291,7 +290,7 @@ def quote(file):
 def test():
 	import os
 	print 'Testing...'
-	t = Template().init()
+	t = Template()
 	t.append('togif $IN $OUT', 'ff')
 	t.append('giftoppm', '--')
 	t.append('ppmtogif >$OUT', '-f')

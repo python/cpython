@@ -3,7 +3,7 @@
 import string
 
 class Repr:
-	def init(self):
+	def __init__(self):
 		self.maxlevel = 6
 		self.maxtuple = 6
 		self.maxlist = 6
@@ -11,7 +11,6 @@ class Repr:
 		self.maxstring = 30
 		self.maxlong = 40
 		self.maxother = 20
-		return self
 	def repr(self, x):
 		return self.repr1(x, self.maxlevel)
 	def repr1(self, x, level):
@@ -79,5 +78,5 @@ class Repr:
 			s = s[:i] + '...' + s[len(s)-j:]
 		return s
 
-aRepr = Repr().init()
+aRepr = Repr()
 repr = aRepr.repr

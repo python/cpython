@@ -87,11 +87,6 @@ class FTP:
 			if args[1:]:
 				apply(self.login, args[1:])
 
-	# Old init method (explicitly called by caller)
-	def init(self, *args):
-		if args:
-			apply(self.connect, args)
-
 	# Connect to host.  Arguments:
 	# - host: hostname to connect to (default previous host)
 	# - port: port to connect to (default previous port)
@@ -105,7 +100,7 @@ class FTP:
 		self.welcome = self.getresp()
 
 	# Get the welcome message from the server
-	# (this is read and squirreled away by init())
+	# (this is read and squirreled away by connect())
 	def getwelcome(self):
 		if self.debugging: print '*welcome*', `self.welcome`
 		return self.welcome

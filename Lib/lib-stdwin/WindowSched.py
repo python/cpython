@@ -35,7 +35,7 @@ def delayfunc(msecs):
 	if event[0] <> WE_TIMER:
 		mainloop.dispatch(event)
 
-q = sched.scheduler().init(time.millitimer, delayfunc)
+q = sched.scheduler(time.millitimer, delayfunc)
 
 # Export functions enter, enterabs and cancel just like a scheduler
 #

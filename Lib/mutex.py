@@ -15,10 +15,9 @@ class mutex:
 	#
 	# Create a new mutex -- initially unlocked
 	#
-	def init(self):
+	def __init__(self):
 		self.locked = 0
 		self.queue = []
-		return self
 	#
 	# Test the locked bit of the mutex
 	#

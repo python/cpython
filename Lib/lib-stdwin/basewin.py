@@ -6,11 +6,10 @@ from stdwinevents import *
 
 class BaseWindow:
 	
-	def init(self, title):
+	def __init__(self, title):
 		self.win = stdwin.open(title)
 		self.win.dispatch = self.dispatch
 		mainloop.register(self.win)
-		return self
 	
 #	def reopen(self):
 #		title = self.win.gettitle()

@@ -7,11 +7,11 @@ import srcwin
 
 class DebuggerSourceWindow(srcwin.SourceWindow):
 	
-	def init(self, debugger, filename):
+	def __init__(self, debugger, filename):
 		self.debugger = debugger
 		self.curlineno = 0
 		self.focus = 0
-		return srcwin.SourceWindow.init(self, filename)
+		srcwin.SourceWindow.__init__(self, filename)
 	
 	def close(self):
 		del self.debugger.sourcewindows[self.filename]

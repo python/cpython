@@ -92,11 +92,11 @@ def _unpack_cache(altforms):
 	forms = {}
 	for name in altforms.keys():
 	    altobj, altlist = altforms[name]
-	    obj = _newobj().init()
+	    obj = _newobj()
 	    obj.make(altobj)
 	    list = []
 	    for altobj in altlist:
-		nobj = _newobj().init()
+		nobj = _newobj()
 		nobj.make(altobj)
 		list.append(nobj)
 	    forms[name] = obj, list
@@ -235,8 +235,6 @@ def _parse_fd_form(file, name):
 # Internal class: a convient place to store object info fields
 #
 class _newobj:
-    def init(self):
-	return self
     def add(self, name, value):
 	self.__dict__[name] = value
     def make(self, dict):
@@ -320,7 +318,7 @@ def _skip_object(file):
 	file.seek(pos)
 
 def _parse_object(file):
-    obj = _newobj().init()
+    obj = _newobj()
     while 1:
 	pos = file.tell()
 	datum = _parse_1_line(file)

@@ -14,13 +14,12 @@ import marshal
 
 class Profile:
 
-	def init(self):
+	def __init__(self):
 		self.timings = {}
 		self.debug = None
 		self.call_level = 0
 		self.profile_func = None
 		self.profiling = 0
-		return self
 
 	def profile(self, funcname):
 		if not self.profile_func:
@@ -230,12 +229,11 @@ def depth(frame):
 	return d
 
 class Stats:
-	def init(self, file):
+	def __init__(self, file):
 		f = open(file, 'r')
 		self.stats = marshal.load(f)
 		f.close()
 		self.stats_list = None
-		return self
 
 	def print_stats(self):
 		print_title()
@@ -354,7 +352,7 @@ def f8(x):
 
 # simplified user interface
 def run(statement, *args):
-	prof = Profile().init()
+	prof = Profile()
 	try:
 		prof.run(statement)
 	except SystemExit:
@@ -366,7 +364,7 @@ def run(statement, *args):
 
 # test command with debugging
 def debug():
-	prof = Profile().init()
+	prof = Profile()
 	prof.debug = 1
 	try:
 		prof.run('import x; x.main()')

@@ -42,9 +42,8 @@ TestFailed = 'autotest.TestFailed'
 
 # Class substituted for sys.stdout, to compare it with the given file
 class Compare:
-	def init(self, filename):
+	def __init__(self, filename):
 		self.fp = open(filename, 'r')
-		return self
 	def write(self, data):
 		expected = self.fp.read(len(data))
 		if data <> expected:
@@ -59,7 +58,7 @@ def main():
 	filename = findfile('testall.out')
 	real_stdout = sys.stdout
 	try:
-		sys.stdout = Compare().init(filename)
+		sys.stdout = Compare(filename)
 		import testall
 	finally:
 		sys.stdout = real_stdout

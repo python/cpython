@@ -13,7 +13,7 @@ class formatter:
 	# Pass the window's drawing object, and left, top, right
 	# coordinates of the drawing space as arguments.
 	#
-	def init(self, d, left, top, right):
+	def __init__(self, d, left, top, right):
 		self.d = d		# Drawing object
 		self.left = left	# Left margin
 		self.right = right	# Right margin
@@ -22,7 +22,6 @@ class formatter:
 		self.justify = 1
 		self.setfont('')	# Default font
 		self._reset()		# Prepare for new line
-		return self
 	#
 	# Reset for start of fresh line.
 	#
@@ -190,7 +189,7 @@ def test():
 			w.change((0, 0), (1000, 1000))
 		elif type == WE_DRAW:
 			width, height = winsize
-			f = formatter().init(w.begindrawing(), 0, 0, width)
+			f = formatter(w.begindrawing(), 0, 0, width)
 			f.center = center
 			f.justify = justify
 			if not center:
