@@ -1,3 +1,49 @@
+Thu Jul 14 15:26:14 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README, Misc/NEWS, Python/patchlevel.h,
+	Doc/{lib,ext,tut,ref}.tex: bump version to 1.0.3; in README, fewer
+	references to it elsewhere, nor to IP numbers.
+
+Wed Jul 13 18:51:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/mhlib.py (removefromallsequences): call putsequences with
+	proper argument
+
+Mon Jul 11 13:00:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/selectmodule.c: don't accept negative file descriptors;
+	changed error messages slightly
+
+Thu Jul  7 12:20:10 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/syslogmodule.c: new module by Lance
+
+	* configure.in: don't check for strtod!
+
+	* Python/import.c: undo Mac DL mods (temporarily) and install NeXT
+	dl mods by William Lewis instead.
+
+	* Modules/posixmodule.c (posix_popen): substitute pclose for
+	fclose (how did fclose ever creep into this?)
+
+Wed Jul  6 21:45:54 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/{bdb,cmd,pdb}.py: Mods by Rickard Westman: No longer barfs
+	on lambda:s (outputs "<lambda>" as the function name); "a(rgs)" in
+	pdb now works; help messages added to pdb (lifted from pdb.doc).
+	Also, "h pdb" calls pdb.help().  cmd.do_help() displays topics on
+	a nicer way (I think).  Also, topics for which there is a help_
+	method, but no do_method (like "pdb" above) are displayed in a
+	special way.  My own mod: fix break on function to also support
+	methods.
+
+Tue Jul  5 23:18:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/stropmodule.c (strop_rindex): change semantics of third
+	argument -- as in the original string.rindex, search to its right,
+	not to its left.  (Maybe both index and rindex need a 4th
+	parameter to restrict the search on the other end?
+
 Mon Jul  4 23:01:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Modules/timemodule.c (sleep, floatsleep): don't use setjmp or
@@ -85,7 +131,7 @@ Wed May  4 22:23:48 1994  Donald Beaudry  (don@scooter.vicorp.com)
 Fri Jun 27 17:22:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/pythonmain.c: On MPW (3.2) unbuffered seems to hang, so
-	use setvbuf ... _IOLBF for -s option.
+	use setvbuf ... _IOLBF for -u option.
 
 	* Python/mystrtoul.c: MPW hack (overflow check doesn't seem to work)
 
@@ -94,6 +140,10 @@ Thu Jun 23 14:46:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 	* Modules/Makefile.pre.in (clobber): delete config.c and glmodule.c
 
 Thu Jun 23 00:17:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/tokenizer.c: if a triple-quoted string ends in a quote
+	followed by a newline (followed immediately by the terminating 3
+	quotes) then a syntax error or system error ensues (one-line fix)
 
 	* Doc/ref4.tex: clarify that global name space is almost always
 	containing module's name space
@@ -324,6 +374,104 @@ Fri May  6 11:25:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 Thu May  5 12:33:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Modules/{cryptmodule.c,Setup.in}: new crypt(3) interface (Steve M)
+
+	* Python/bltinmodule.c, Include/bltinmodule.h: new fn setbuiltin()
+	to set a built-in variable
+
+	* Python/ceval.c (eval_code): place '_' variable in __builtin__
+	instead of in local dictionary, to avoid endless recursion when
+	printing vars()
+
+========================================================================
+Release 1.0.3 (14 July 1994)
+========================================================================
+
+Thu Jul 14 14:38:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* copied FAQ 1.10 (which still references 1.0.2 by the way)
+
+Thu Jul  7 12:20:10 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: don't check for strtod!
+
+Tue Jul  5 23:18:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/stropmodule.c (strop_rindex): change semantics of third
+	argument -- as in the original string.rindex, search to its right,
+	not to its left.  (Maybe both index and rindex need a 4th
+	parameter to restrict the search on the other end?
+
+Fri Jul  1 12:47:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: support --with-gcc[=value], --without-gcc
+
+	* configure.in, acconfig.h, config.h.in: check for clock_t
+
+	* Objects/stringobject.c (formatstring): fix nasty bug in resizing
+
+Tue Jun 28 00:57:35 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in (termcap): hack around conflict about clear() on
+	IRIX 5 in shared libraries gl and termcap
+
+Thu Jun 23 00:17:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/tokenizer.c: if a triple-quoted string ends in a quote
+	followed by a newline (followed immediately by the terminating 3
+	quotes) then a syntax error or system error ensues (one-line fix)
+
+Sun Jun 12 17:38:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/socketmodule.c (sock_listen): fix typo (== instead of =)
+
+Thu Jun  9 23:33:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/compile.c (parsenumber), Python/marshal.c (r_object):
+	replace strtod() by atof()
+
+Thu Jun  2 13:50:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: test for existence of link, chown, setuid, setgid;
+	use std macros for output; require autoconf 1.8
+
+Wed Jun  1 11:33:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/regexmodule.c (reg_dealloc): remove bogus XDEL's.
+
+Tue May 31 11:22:47 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/structmember.c (setmember): test for NULL value
+
+Fri May 20 09:46:50 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/myreadline.c (my_fgets): Fix position of #endif EINTR
+
+Wed May 11 10:29:22 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/tokenizer.c (tok_nextc): fix inf loop when file does not
+	end in newline
+
+Tue May 10 09:01:06 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/import.c (get_module): print dlopen debug message only of
+	verbose
+
+Mon May  9 10:37:48 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* acconfig.h: added _POSIX_THREADS define
+
+	* configure.in: test for -lpthreads; add directory argument to
+	--with-thread to LIBS as -L option
+
+	* Objects/stringobject.c (formatstring): don't DECREF result of
+	strobject() before using it
+
+Fri May  6 11:25:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* various files: micro changes needed to compile on Mac;
+	Grouped more Mac-specific files in Mac subdirectory
+
+Thu May  5 12:33:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/bltinmodule.c, Include/bltinmodule.h: new fn setbuiltin()
 	to set a built-in variable
