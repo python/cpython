@@ -265,6 +265,15 @@ protocol number.  The address family should be \constant{AF_INET}, \constant{AF_
 The protocol number is usually zero and may be omitted in that case.
 \end{funcdesc}
 
+\begin{funcdesc}{ssl}{sock, keyfile, certfile}
+Initiate a SSL connection over the socket \var{sock}. \var{keyfile} is
+the name of a PEM formatted file that contains your private
+key. \var{certfile} is a PEM formatted certificate chain file. On
+success, a new \class{SSLObject} is returned.
+
+\strong{Warning:} This does not do any certificate verification!
+\end{funcdesc}
+
 \begin{funcdesc}{fromfd}{fd, family, type\optional{, proto}}
 Build a socket object from an existing file descriptor (an integer as
 returned by a file object's \method{fileno()} method).  Address family,
@@ -509,6 +518,20 @@ Note that there are no methods \method{read()} or \method{write()};
 use \method{recv()} and \method{send()} without \var{flags} argument
 instead.
 
+
+\subsection{SSL Objects \label{ssl-objects}}
+
+SSL objects have the following methods.
+
+\begin{methoddesc}{write}{s}
+Writes the string \var{s} to the on the object's SSL connection.
+The return value is the number of bytes written.
+\end{methoddesc}
+
+\begin{methoddesc}{read}{\optional{n}}
+If \var{n} is provided, read \var{n} bytes from the SSL connection, otherwise
+read until EOF. The return value is a string of the bytes read.
+\end{methoddesc}
 
 \subsection{Example \label{socket-example}}
 
