@@ -28,7 +28,7 @@ class HotShotTestCase(unittest.TestCase):
 
     def get_logreader(self):
         log = hotshot.log.LogReader(self.logfn)
-        os.unlink(self.logfn)
+        #XXX os.unlink(self.logfn)
         return log
 
     def get_events_wotime(self):
