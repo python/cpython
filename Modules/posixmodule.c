@@ -278,6 +278,9 @@ extern int lstat(const char *, struct stat *);
 #	define STRUCT_STAT struct stat
 #endif
 
+#if defined(HAVE_MKNOD) && defined(HAVE_SYS_MKDEV_H)
+#include <sys/mkdev.h>
+#endif
 
 /* Return a dictionary corresponding to the POSIX environment table */
 
