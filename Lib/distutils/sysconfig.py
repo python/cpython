@@ -16,8 +16,8 @@ import sys
 
 def get_config_h_filename():
     """Return full pathname of installed config.h file."""
-    return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
-                        "config", "config.h")
+    return os.path.join(sys.exec_prefix, "include", "python" + sys.version[:3],
+                        "config.h")
 
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
