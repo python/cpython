@@ -5,9 +5,9 @@ import os
 import string
 import imp
 import marshal
-import macfs
 from Carbon import Res
-import MACFS
+import Carbon.Files
+import Carbon.File
 import MacOS
 import macostools
 import macresource
@@ -38,6 +38,8 @@ DEFAULT_APPLET_CREATOR="Pyta"
 READ = 1
 WRITE = 2
 
+# Parameter for FSOpenResourceFile
+RESOURCE_FORK_NAME=Carbon.File.FSGetResourceForkName()
 
 def findtemplate(template=None):
 	"""Locate the applet template along sys.path"""
@@ -50,9 +52,9 @@ def findtemplate(template=None):
 	for p in sys.path:
 		file = os.path.join(p, template)
 		try:
-			file, d1, d2 = macfs.ResolveAliasFile(file)
+			file, d1, d2 = Carbon.File.FSResolveAliasFile(file, 1)
 			break
-		except (macfs.error, ValueError):
+		except (Carbon.File.error, ValueError):
 			continue
 	else:
 		raise BuildError, "Template %s not found on sys.path" % `template`
@@ -145,9 +147,8 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 	if others:
 		raise BuildError, "Extra files only allowed for MachoPython applets"
 	# Create FSSpecs for the various files
-	template_fss = macfs.FSSpec(template)
-	template_fss, d1, d2 = macfs.ResolveAliasFile(template_fss)
-	dest_fss = macfs.FSSpec(destname)
+	template_fsr, d1, d2 = Carbon.File.FSResolveAliasFile(template, 1)
+	template = template_fsr.as_pathname()
 	
 	# Copy data (not resources, yet) from the template
 	if progress:
@@ -171,15 +172,16 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 		progress.label("Copy resources...")
 		progress.set(20)
 	try:
-		output = Res.FSpOpenResFile(dest_fss, WRITE)
+		output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
 	except MacOS.Error:
-		Res.FSpCreateResFile(destname, '????', 'APPL', MACFS.smAllScripts)
-		output = Res.FSpOpenResFile(dest_fss, WRITE)
+		destdir, destfile = os.path.split(destname)
+		Res.FSCreateResourceFile(destdir, destfile, RESOURCE_FORK_NAME)
+		output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
 	
 	# Copy the resources from the target specific resource template, if any
 	typesfound, ownertype = [], None
 	try:
-		input = Res.FSpOpenResFile(rsrcname, READ)
+		input = Res.FSOpenResourceFile(rsrcname, RESOURCE_FORK_NAME, READ)
 	except (MacOS.Error, ValueError):
 		pass
 		if progress:
@@ -204,7 +206,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 	
 	# Copy the resources from the template
 	
-	input = Res.FSpOpenResFile(template_fss, READ)
+	input = Res.FSOpenResourceFile(template, RESOURCE_FORK_NAME, READ)
 	dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
 		
 	Res.CloseResFile(input)
@@ -257,15 +259,17 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 	
 	Res.CloseResFile(output)
 	
-	# Now set the creator, type and bundle bit of the destination
-	dest_finfo = dest_fss.GetFInfo()
+	# Now set the creator, type and bundle bit of the destination.
+	# Done with FSSpec's, FSRef FInfo isn't good enough yet (2.3a1+)
+	dset_fss = Carbon.File.FSSpec(destname)
+	dest_finfo = dest_fss.FSpGetFInfo()
 	dest_finfo.Creator = ownertype
 	dest_finfo.Type = 'APPL'
-	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle | MACFS.kIsShared
-	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
-	dest_fss.SetFInfo(dest_finfo)
+	dest_finfo.Flags = dest_finfo.Flags | Carbon.Files.kHasBundle | Carbon.Files.kIsShared
+	dest_finfo.Flags = dest_finfo.Flags & ~Carbon.Files.kHasBeenInited
+	dest_fss.FSpSetFInfo(dest_finfo)
 	
-	macostools.touched(dest_fss)
+	macostools.touched(destname)
 	if progress:
 		progress.label("Done.")
 		progress.inc(0)
