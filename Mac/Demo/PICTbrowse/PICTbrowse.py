@@ -97,9 +97,9 @@ class MyDialog(FrameWork.DialogWindow):
 	def open(self, id, contents):
 		self.id = id
 		FrameWork.DialogWindow.open(self, ID_MAIN)
-		self.wid.SetDialogDefaultItem(MAIN_SHOW)
+		self.dlg.SetDialogDefaultItem(MAIN_SHOW)
 		self.contents = contents
-		self.ctl = self.wid.GetDialogItemAsControl(MAIN_LIST)
+		self.ctl = self.dlg.GetDialogItemAsControl(MAIN_LIST)
 		h = self.ctl.GetControlData_Handle(Controls.kControlListBoxPart, 
 				Controls.kControlListBoxListHandleTag)
 		self.list = List.as_List(h)
