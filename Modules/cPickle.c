@@ -65,7 +65,7 @@ static char cPickle_module_documentation[] =
 #ifndef Py_eval_input
 #include <graminit.h>
 #define Py_eval_input eval_input
-#endif Py_eval_input
+#endif /* Py_eval_input */
 
 #include <errno.h>
 
@@ -3912,6 +3912,9 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.10  1997/08/21 02:30:40  guido
+ Added /**/ around #end tags
+
  Revision 2.9  1997/08/20 23:38:57  guido
  Renamed strndup to pystrndup, to avoid conflicting prototype
  in GNU libc on some platforms.

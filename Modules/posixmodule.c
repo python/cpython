@@ -1997,7 +1997,7 @@ putenv(char *newval)
 
 	return 0;
 }
-#endif NeXT
+#endif /* NeXT */
 
 
 #ifdef HAVE_PUTENV
