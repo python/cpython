@@ -308,23 +308,34 @@ static PyObject *
 builtin_unichr(PyObject *self, PyObject *args)
 {
 	long x;
-	Py_UNICODE s[1];
+	Py_UNICODE s[2];
 
 	if (!PyArg_ParseTuple(args, "l:unichr", &x))
 		return NULL;
-	if (x < 0 || x >= 65536) {
+
+	if (x < 0 || x > 0x10ffff) {
 		PyErr_SetString(PyExc_ValueError,
-				"unichr() arg not in range(65536)");
+				"unichr() arg not in range(0x10ffff)");
 		return NULL;
 	}
-	s[0] = (Py_UNICODE)x;
-	return PyUnicode_FromUnicode(s, 1);
+
+	if (x <= 0xffff) {
+		/* UCS-2 character */
+		s[0] = (Py_UNICODE) x;
+		return PyUnicode_FromUnicode(s, 1);
+	} else {
+		/* UCS-4 character.  store as two surrogate characters */
+		x -= 0x10000L;
+		s[0] = 0xD800 + (Py_UNICODE) (x >> 10);
+		s[1] = 0xDC00 + (Py_UNICODE) (x & 0x03FF);
+		return PyUnicode_FromUnicode(s, 2);
+	}
 }
 
 static char unichr_doc[] =
 "unichr(i) -> Unicode character\n\
 \n\
-Return a Unicode string of one character with ordinal i; 0 <= i < 65536.";
+Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.";
 
 
 static PyObject *
