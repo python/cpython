@@ -538,6 +538,7 @@ class SheetGUI:
         self.entry.bind("<Tab>", self.tab_event)
         self.entry.bind("<Shift-Tab>", self.shift_tab_event)
         self.entry.bind("<Delete>", self.delete_event)
+        self.entry.bind("<Escape>", self.escape_event)
         # Now create the cell grid
         self.makegrid(rows, columns)
         # Select the top-left cell
@@ -555,6 +556,22 @@ class SheetGUI:
         self.sync()
         self.entry.delete(0, 'end')
         return "break"
+
+    def escape_event(self, event):
+        x, y = self.currentxy
+        self.load_entry(x, y)
+
+    def load_entry(self, x, y):
+        cell = self.sheet.getcell(x, y)
+        if cell is None:
+            text = ""
+        elif isinstance(cell, FormulaCell):
+            text = '=' + cell.formula
+        else:
+            text, alignment = cell.format()
+        self.entry.delete(0, 'end')
+        self.entry.insert(0, text)
+        self.entry.selection_range(0, 'end')
 
     def makegrid(self, rows, columns):
         """Helper to create the grid of GUI cells.
@@ -653,18 +670,8 @@ class SheetGUI:
         if self.currentxy is not None:
             self.change_cell()
         self.clearfocus()
-        name = cellname(x, y)
-        cell = self.sheet.getcell(x, y)
-        if cell is None:
-            text = ""
-        elif isinstance(cell, FormulaCell):
-            text = '=' + cell.formula
-        else:
-            text, alignment = cell.format()
-        self.beacon['text'] = name
-        self.entry.delete(0, 'end')
-        self.entry.insert(0, text)
-        self.entry.selection_range(0, 'end')
+        self.beacon['text'] = cellname(x, y)
+        self.load_entry(x, y)
         self.entry.focus_set()
         self.currentxy = x, y
         self.cornerxy = None
