@@ -150,6 +150,7 @@ def process(fp, outfp, env = {}):
                             '\n# Included from %s\n' % filename)
                     process(inclfp, outfp, env)
                 else:
-                    sys.stderr.write('Warning - could not find file %s' % filename)
+                    sys.stderr.write('Warning - could not find file %s\n' %
+                                     filename)
 
 main()
