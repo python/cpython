@@ -999,12 +999,34 @@ Notes:
   should return a negative, zero or positive number depending on whether
   the first argument is considered smaller than, equal to, or larger
   than the second argument.  Note that this slows the sorting process
-  down considerably; e.g. to sort a list in reverse order it is much
-  faster to call method \method{sort()} followed by \method{reverse()}
-  than to use method \method{sort()} with a comparison function that
+  down considerably; for example to sort a list in reverse order it is much
+  faster to call \method{sort()} followed by \method{reverse()}
+  than to use \method{sort()} with a comparison function that
   reverses the ordering of the elements.  Passing \constant{None} as the
   comparison function is semantically equivalent to calling
   \method{sort()} with no comparison function.
+  \versionchanged[Support for \code{None} as an equivalent to omitting
+  \var{cmpfunc} was added]{2.3}
+
+  As an example of using the \var{cmpfunc} argument to the
+  \method{sort()} method, consider sorting a list of sequences by the
+  second element of that list:
+
+\begin{verbatim}
+def mycmp(a, b):
+    return cmp(a[1], b[1])
+
+mylist.sort(mycmp)
+\end{verbatim}
+
+  A more time-efficient approach for reasonably-sized data structures can
+  often be used:
+
+\begin{verbatim}
+tmplist = [(x[1], x) for x in mylist]
+tmplist.sort()
+mylist = [x for (key, x) in tmplist]
+\end{verbatim}
 
 \item[(9)] Whether the \method{sort()} method is stable is not defined by
   the language (a sort is stable if it guarantees not to change the
