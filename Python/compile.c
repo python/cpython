@@ -3340,7 +3340,6 @@ optimize(c)
 			name = GETNAMEOBJ(oparg);
 			v = PyDict_GetItem(c->c_locals, name);
 			if (v == NULL) {
-				PyErr_Clear();
 				if (opcode == LOAD_NAME &&
 				    (c->c_flags&CO_OPTIMIZED))
 					cur_instr[0] = LOAD_GLOBAL;
