@@ -28,7 +28,7 @@ if test -f /usr/lib/NextStep/software_version; then
  			sed -e 's/://' -e 's/\./_/'` && \
 			ac_sys_system=next && ac_sys_release=$4
 
-		MACHDEP="plat-$ac_sys_system$ac_sys_release"
+		MACHDEP="$ac_sys_system$ac_sys_release"
 	fi
 fi
 
@@ -47,10 +47,10 @@ then
 			   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
 	ac_md_release=`echo $ac_sys_release |
 			   tr -d '[/ ]' | sed 's/\..*//'`
-	MACHDEP="plat-$ac_md_system$ac_md_release"
+	MACHDEP="$ac_md_system$ac_md_release"
 
 	case $MACHDEP in
-	'')	MACHDEP="plat-unknown";;
+	'')	MACHDEP="unknown";;
 	esac
 fi
 AC_MSG_RESULT($MACHDEP)
