@@ -52,6 +52,12 @@ Library
 Tools/Demos
 -----------
 
+- md5sum.py mistakenly opened input files in text mode by default, a
+  silent and dangerous change from previous releases.  It once again
+  opens input files in binary mode by default.  The -t and -b flags
+  remain for compatibility with the 2.3 release, but -b is the default
+  now.
+
 - py-electric-colon now works when pending-delete/delete-selection mode is
   in effect
 
