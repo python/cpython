@@ -29,6 +29,7 @@
 {
 //    [[self window] setTitle: script];
     
+	[interpreter reloadData];
     [interpreter setStringValue: [settings interpreter]];
     [honourhashbang setState: [settings honourhashbang]];
     [debug setState: [settings debug]];
@@ -97,17 +98,23 @@
 // NSComboBoxDataSource protocol
 - (unsigned int)comboBox:(NSComboBox *)aComboBox indexOfItemWithStringValue:(NSString *)aString
 {
-    return [[settings interpreters] indexOfObjectIdenticalTo: aString];
+	NSArray *interp_list = [settings interpreters];
+    unsigned int rv = [interp_list indexOfObjectIdenticalTo: aString];
+	return rv;
 }
 
 - (id)comboBox:(NSComboBox *)aComboBox objectValueForItemAtIndex:(int)index
 {
-    return [[settings interpreters] objectAtIndex: index];
+	NSArray *interp_list = [settings interpreters];
+    id rv = [interp_list objectAtIndex: index];
+	return rv;
 }
 
 - (int)numberOfItemsInComboBox:(NSComboBox *)aComboBox
 {
-    return [[settings interpreters] count];
+	NSArray *interp_list = [settings interpreters];
+    int rv = [interp_list count];
+	return rv;
 }
 
 
