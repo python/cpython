@@ -129,10 +129,6 @@ FUNC2(pow, power,
 FUNC2(pow, pow,
       "pow(x,y)\n\nReturn x**y.")
 #endif
-#ifdef HAVE_RINT
-FUNC1(rint, rint,
-      "rint(x)\n\nReturn the integer nearest to x as a real.")
-#endif
 FUNC1(sin, sin,
       "sin(x)\n\nReturn the sine of x.")
 FUNC1(sinh, sinh,
@@ -240,9 +236,6 @@ static PyMethodDef math_methods[] = {
 	{"log10",	math_log10,	METH_VARARGS,	math_log10_doc},
 	{"modf",	math_modf,	METH_VARARGS,	math_modf_doc},
 	{"pow",		math_pow,	METH_VARARGS,	math_pow_doc},
-#ifdef HAVE_RINT
-	{"rint",	math_rint,	METH_VARARGS,	math_rint_doc},
-#endif
 	{"sin",		math_sin,	METH_VARARGS,	math_sin_doc},
 	{"sinh",	math_sinh,	METH_VARARGS,	math_sinh_doc},
 	{"sqrt",	math_sqrt,	METH_VARARGS,	math_sqrt_doc},
