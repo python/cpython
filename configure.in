@@ -968,7 +968,11 @@ AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
 # On Solaris, term.h requires curses.h
-AC_CHECK_HEADERS(term.h,,,[#include <curses.h>])
+AC_CHECK_HEADER(term.h,,,[
+#ifdef HAVE_CURSES_H
+#include <curses.h>
+#endif
+])
 
 # checks for typedefs
 was_it_defined=no
