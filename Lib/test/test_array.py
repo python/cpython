@@ -3,36 +3,38 @@
    Roger E. Masse
 """
 import array
-from test_support import verbose, TESTFN, unlink, TestFailed
+from test_support import verbose, TESTFN, unlink, TestFailed, have_unicode
 
 def main():
     testtype('c', 'c')
-    testtype('u', u'\u263a')
+    if have_unicode:
+        testtype('u', unicode(r'\u263a', 'unicode-escape'))
     for type in (['b', 'h', 'i', 'l', 'f', 'd']):
         testtype(type, 1)
-    testunicode()
+    if have_unicode:
+        testunicode()
     testsubclassing()
     unlink(TESTFN)
 
 def testunicode():
     try:
-        array.array('b', u'foo')
+        array.array('b', unicode('foo', 'ascii'))
     except TypeError:
         pass
     else:
         raise TestFailed("creating a non-unicode array from "
                          "a Unicode string should fail")
 
-    x = array.array('u', u'\xa0\xc2\u1234')
-    x.fromunicode(u' ')
-    x.fromunicode(u'')
-    x.fromunicode(u'')
-    x.fromunicode(u'\x11abc\xff\u1234')
+    x = array.array('u', unicode(r'\xa0\xc2\u1234', 'unicode-escape'))
+    x.fromunicode(unicode(' ', 'ascii'))
+    x.fromunicode(unicode('', 'ascii'))
+    x.fromunicode(unicode('', 'ascii'))
+    x.fromunicode(unicode(r'\x11abc\xff\u1234', 'unicode-escape'))
     s = x.tounicode()
-    if s != u'\xa0\xc2\u1234 \x11abc\xff\u1234':
+    if s != unicode(r'\xa0\xc2\u1234 \x11abc\xff\u1234', 'unicode-escape'):
         raise TestFailed("fromunicode()/tounicode()")
 
-    s = u'\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
+    s = unicode(r'\x00="\'a\\b\x80\xff\u0000\u0001\u1234', 'unicode-escape')
     a = array.array('u', s)
     if verbose:
         print "repr of type 'u' array:", repr(a)
@@ -235,42 +237,42 @@ def testtype(type, example):
         if a != array.array(type, "dca"):
             raise TestFailed, "array(%s) reverse-test" % `type`
     elif type == 'u':
-        a = array.array(type, u"abcde")
+        a = array.array(type, unicode("abcde", 'ascii'))
         a[:-1] = a
-        if a != array.array(type, u"abcdee"):
+        if a != array.array(type, unicode("abcdee", 'ascii')):
             raise TestFailed, "array(%s) self-slice-assign (head)" % `type`
-        a = array.array(type, u"abcde")
+        a = array.array(type, unicode("abcde", 'ascii'))
         a[1:] = a
-        if a != array.array(type, u"aabcde"):
+        if a != array.array(type, unicode("aabcde", 'ascii')):
             raise TestFailed, "array(%s) self-slice-assign (tail)" % `type`
-        a = array.array(type, u"abcde")
+        a = array.array(type, unicode("abcde", 'ascii'))
         a[1:-1] = a
-        if a != array.array(type, u"aabcdee"):
+        if a != array.array(type, unicode("aabcdee", 'ascii')):
             raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
-        if a.index(u"e") != 5:
+        if a.index(unicode("e", 'ascii')) != 5:
             raise TestFailed, "array(%s) index-test" % `type`
-        if a.count(u"a") != 2:
+        if a.count(unicode("a", 'ascii')) != 2:
             raise TestFailed, "array(%s) count-test" % `type`
-        a.remove(u"e")
-        if a != array.array(type, u"aabcde"):
+        a.remove(unicode("e", 'ascii'))
+        if a != array.array(type, unicode("aabcde", 'ascii')):
             raise TestFailed, "array(%s) remove-test" % `type`
-        if a.pop(0) != u"a":
+        if a.pop(0) != unicode("a", 'ascii'):
             raise TestFailed, "array(%s) pop-test" % `type`
-        if a.pop(1) != u"b":
+        if a.pop(1) != unicode("b", 'ascii'):
             raise TestFailed, "array(%s) pop-test" % `type`
-        a.extend(array.array(type, u"xyz"))
-        if a != array.array(type, u"acdexyz"):
+        a.extend(array.array(type, unicode("xyz", 'ascii')))
+        if a != array.array(type, unicode("acdexyz", 'ascii')):
             raise TestFailed, "array(%s) extend-test" % `type`
         a.pop()
         a.pop()
         a.pop()
         x = a.pop()
-        if x != u'e':
+        if x != unicode('e', 'ascii'):
             raise TestFailed, "array(%s) pop-test" % `type`
-        if a != array.array(type, u"acd"):
+        if a != array.array(type, unicode("acd", 'ascii')):
             raise TestFailed, "array(%s) pop-test" % `type`
         a.reverse()
-        if a != array.array(type, u"dca"):
+        if a != array.array(type, unicode("dca", 'ascii')):
             raise TestFailed, "array(%s) reverse-test" % `type`
     else:
         a = array.array(type, [1, 2, 3, 4, 5])
