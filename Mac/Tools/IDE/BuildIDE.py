@@ -7,6 +7,8 @@ import os
 import buildtools
 import Res
 import py_resource
+import macfs
+import MACFS
 
 buildtools.DEBUG=1
 
@@ -18,6 +20,17 @@ mainfilename = os.path.join(ide_home, "PythonIDE.py")
 dstfilename = os.path.join(sys.exec_prefix, "Python IDE")
 
 buildtools.process(template, mainfilename, dstfilename, 1)
+
+# Override the owner: IDE gets its bundle stuff from the applet
+# template and only needs to set the file creator.
+dest_fss = macfs.FSSpec(dstfilename)
+dest_finfo = dest_fss.GetFInfo()
+dest_finfo.Creator = ownertype
+dest_finfo.Type = 'APPL'
+dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
+dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
+dest_fss.SetFInfo(dest_finfo)
+
 
 targetref = Res.OpenResFile(dstfilename)
 Res.UseResFile(targetref)
