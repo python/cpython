@@ -222,7 +222,9 @@ PyPcre_compile(self, args)
 	  {
 	    PyMem_DEL(rv);
 	    if (!PyErr_Occurred())
-	      PyErr_SetObject(ErrorObject, Py_BuildValue("si", error, erroroffset));
+	      {
+		PyErr_SetObject(ErrorObject, Py_BuildValue("si", error, erroroffset));
+	      }
 	    return NULL;
 	  }
 	rv->regex_extra=pcre_study(rv->regex, 0, &error);
@@ -243,47 +245,57 @@ PyPcre_compile(self, args)
 }
 
 static PyObject *
-PyPcre_expand_escape(self, args)
-	PyObject *self;
-	PyObject *args;
+PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
+     unsigned char *pattern;
+     int pattern_len, *indexptr, *typeptr;
 {
-  unsigned char c, *pattern;
-  int index, pattern_len;
-  const int context=REPLACEMENT;
-
-  if (!PyArg_ParseTuple(args, "s#i", &pattern, &pattern_len, &index)) 
-    return NULL;
+  unsigned char c;
+  int index = *indexptr;
+  
   if (pattern_len<=index)
     {
       PyErr_SetString(ErrorObject, "escape ends too soon");
       return NULL;
     }
   c=pattern[index]; index++;
+  *typeptr=CHAR;
+
   switch (c)
     {
     case('t'):
-      return Py_BuildValue("ici", CHAR, (char)9, index);
+      *indexptr=index;
+      return Py_BuildValue("c", (char)9);
       break;
     case('n'):
-      return Py_BuildValue("ici", CHAR, (char)10, index);
+      *indexptr = index;
+      return Py_BuildValue("c", (char)10);
       break;
     case('v'):
-      return Py_BuildValue("ici", CHAR, (char)11, index);
+      *indexptr = index;
+      return Py_BuildValue("c", (char)11);
       break;
     case('r'):
-      return Py_BuildValue("ici", CHAR, (char)13, index);
+      *indexptr = index;
+      return Py_BuildValue("c", (char)13);
       break;
     case('f'):
-      return Py_BuildValue("ici", CHAR, (char)12, index);
+      *indexptr = index;
+      return Py_BuildValue("c", (char)12);
       break;
     case('a'):
-      return Py_BuildValue("ici", CHAR, (char)7, index);
+      *indexptr = index;
+      return Py_BuildValue("c", (char)7);
       break;
+    case('b'):
+      *indexptr=index;
+      return Py_BuildValue("c", (char)8);
+      break;
+
     case('x'):
       {
 	int end, length;
 	unsigned char *string;
-	PyObject *v, *result;
+	PyObject *v;
 
 	end=index; 
 	while (end<pattern_len && 
@@ -312,52 +324,11 @@ PyPcre_expand_escape(self, args)
 	free(string);
 	/* The evaluation raised an exception */
 	if (v==NULL) return NULL;
-	result=Py_BuildValue("iOi", CHAR, v, end);
-	Py_DECREF(v);
-	return result;
+	*indexptr = end;
+	return v;
       }
       break;
 
-    case('b'):
-      if (context!=NORMAL)
-	return Py_BuildValue("ici", CHAR, (char)8, index);
-      else 
-	{
-	  unsigned char empty_string[1];
-	  empty_string[0]='\0';
-	  return Py_BuildValue("isi", WORD_BOUNDARY, empty_string, index);
-	}
-      break;
-    case('B'):
-      if (context!=NORMAL)
-	return Py_BuildValue("ici", CHAR, 'B', index);
-      else 
-	{
-	  unsigned char empty_string[1];
-	  empty_string[0]='\0';
-	  return Py_BuildValue("isi", NOT_WORD_BOUNDARY, empty_string, index);
-	}
-      break;
-    case('A'):
-      if (context!=NORMAL)
-	return Py_BuildValue("ici", CHAR, 'A', index);
-      else 
-	{
-	  unsigned char empty_string[1];
-	  empty_string[0]='\0';
-	  return Py_BuildValue("isi", BEGINNING_OF_BUFFER, empty_string, index);
-	}
-      break;
-    case('Z'):
-      if (context!=NORMAL)
-	return Py_BuildValue("ici", CHAR, 'Z', index);
-      else 
-	{
-	  unsigned char empty_string[1];
-	  empty_string[0]='\0';
-	  return Py_BuildValue("isi", END_OF_BUFFER, empty_string, index);
-	}
-      break;
     case('E'):    case('G'):    case('L'):    case('Q'):
     case('U'):    case('l'):    case('u'):
       {
@@ -366,26 +337,6 @@ PyPcre_expand_escape(self, args)
 	PyErr_SetString(ErrorObject, message);
 	return NULL;
       }
-
-    case ('w'):
-      return Py_BuildValue("ici", CHAR, 'w', index);
-      break;
-    case ('W'):
-      return Py_BuildValue("ici", CHAR, 'W', index);
-      break;
-    case ('s'):
-	return Py_BuildValue("ici", CHAR, 's', index);
-      break;
-    case ('S'):
-	return Py_BuildValue("ici", CHAR, 'S', index);
-      break;
-
-    case ('d'):
-	return Py_BuildValue("ici", CHAR, 'd', index);
-      break;
-    case ('D'):
-	return Py_BuildValue("ici", CHAR, 'D', index);
-      break;
 
     case('g'):
       {
@@ -427,9 +378,9 @@ PyPcre_expand_escape(self, args)
 	    return NULL;
 	  }
 	    
-	return Py_BuildValue("is#i", MEMORY_REFERENCE, 
-			             pattern+index, end-index, 
-			             end+1);
+	*typeptr = MEMORY_REFERENCE;
+	*indexptr = end+1;
+	return Py_BuildValue("s#", pattern+index, end-index);
       }
     break;
 
@@ -451,7 +402,8 @@ PyPcre_expand_escape(self, args)
 	    PyErr_SetString(ErrorObject, "octal value out of range");
 	    return NULL;
 	  }
-	return Py_BuildValue("ici", CHAR, (unsigned char)octval, i);
+	*indexptr = i;
+	return Py_BuildValue("c", (unsigned char)octval);
       }
       break;
     case('1'):    case('2'):    case('3'):    case('4'):
@@ -483,17 +435,12 @@ PyPcre_expand_escape(self, args)
 		    PyErr_SetString(ErrorObject, "octal value out of range");
 		    return NULL;
 		  }
-		return Py_BuildValue("ici", CHAR, (unsigned char)value, index+3);
+		*indexptr = index+3;
+		return Py_BuildValue("c", (unsigned char)value);
 	      }
 	    else
 	      {
 		/* 2-digit form, so it's a memory reference */
-		if (context==CHARCLASS)
-		  {
-		    PyErr_SetString(ErrorObject, "cannot reference a register "
-				    "from inside a character class");
-		    return NULL;
-		  }
 		value= 10*(pattern[index  ]-'0') +
 		          (pattern[index+1]-'0');
 		if (value<1 || EXTRACT_MAX<=value)
@@ -501,27 +448,24 @@ PyPcre_expand_escape(self, args)
 		    PyErr_SetString(ErrorObject, "memory reference out of range");
 		    return NULL;
 		  }
-		return Py_BuildValue("iii", MEMORY_REFERENCE, 
-				     value, index+2);
+		*typeptr = MEMORY_REFERENCE;
+		*indexptr = index+2;
+		return Py_BuildValue("i", value);
 	      }
 	  }
 	else 
 	  {
 	    /* Single-digit form, like \2, so it's a memory reference */
-	    if (context==CHARCLASS)
-	      {
-		PyErr_SetString(ErrorObject, "cannot reference a register "
-				"from inside a character class");
-		return NULL;
-	      }
-	    return Py_BuildValue("iii", MEMORY_REFERENCE, 
-				 pattern[index]-'0', index+1);
+	    *typeptr = MEMORY_REFERENCE;
+	    *indexptr = index+1;
+	    return Py_BuildValue("i", pattern[index]-'0');
 	  }
       }
       break;
 
     default:
-	return Py_BuildValue("ici", CHAR, c, index);
+	*indexptr = index;
+	return Py_BuildValue("c", c);
 	break;
     }
 }
@@ -547,7 +491,7 @@ PyPcre_expand(self, args)
     {
       if (repl[i]=='\\')
 	{
-	  PyObject *args, *t, *value;
+	  PyObject *value;
 	  int escape_type;
 
 	  if (start!=i)
@@ -557,18 +501,14 @@ PyPcre_expand(self, args)
 	      total_len += i-start;
 	    }
 	  i++;
-	  args=Py_BuildValue("Oi", repl_obj, i);
-	  t=PyPcre_expand_escape(NULL, args);
-	  Py_DECREF(args);
-	  if (t==NULL)
+	  value=PyPcre_expand_escape(repl, size, &i, &escape_type);
+	  if (value==NULL)
 	    {
 	      /* PyPcre_expand_escape triggered an exception of some sort,
 		 so just return */
 	      Py_DECREF(results);
 	      return NULL;
 	    }
-	  value=PyTuple_GetItem(t, 1);
-	  escape_type=PyInt_AsLong(PyTuple_GetItem(t, 0));
 	  switch (escape_type)
 	    {
 	    case (CHAR):
@@ -599,7 +539,6 @@ PyPcre_expand(self, args)
 		    PyErr_SetString(ErrorObject, 
 				    message);
 		    Py_DECREF(result);
-		    Py_DECREF(t);
 		    Py_DECREF(results);
 		    return NULL;
 		  }
@@ -610,15 +549,13 @@ PyPcre_expand(self, args)
 	      }
 	      break;
 	    default:
-	      Py_DECREF(t);
 	      Py_DECREF(results);
 	      PyErr_SetString(ErrorObject, 
 			      "bad escape in replacement");
 	      return NULL;
 	    }
-	  i=start=PyInt_AsLong(PyTuple_GetItem(t, 2));
+	  start=i;
 	  i--; /* Decrement now, because the 'for' loop will increment it */
-	  Py_DECREF(t);
 	}
     } /* endif repl[i]!='\\' */
 
@@ -690,7 +627,6 @@ void
 initpcre()
 {
 	PyObject *m, *d;
-	int a;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("pcre", pcre_methods);

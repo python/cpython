@@ -999,6 +999,7 @@ get_group_id(uschar *ptr, char finalchar, char **errorptr)
   for(; (*ptr != 0) && (*ptr != finalchar) && 
 	(pcre_ctypes[*ptr] & ctype_word); ptr++)
     {
+      /* Empty loop body */
     }
   if (*ptr==finalchar)
     return ptr-start;
@@ -1089,9 +1090,9 @@ else switch (c)
 
   case 'x':
     {
-      int end, length;
+      int length;
       char *string;
-      PyObject *v, *result;
+      PyObject *result;
       
       i=1;
       while (ptr[i]!=0 && 
@@ -1116,23 +1117,23 @@ else switch (c)
       string[length+4]='\0';
       memcpy(string+2, ptr, length+1);
       ptr += length;
-      v=PyRun_String((char *)string, Py_eval_input, 
-		     PyEval_GetGlobals(), PyEval_GetLocals());
+      result=PyRun_String((char *)string, Py_eval_input, 
+			  PyEval_GetGlobals(), PyEval_GetLocals());
       free(string);
       /* The evaluation raised an exception */
-      if (v==NULL) 
+      if (result==NULL) 
 	{
 	  *errorptr="exception occurred during evaluation of \\x";
 	  break;
 	}
-      if (PyString_Size(v)!=1)
+      if (PyString_Size(result)!=1)
 	{
-	  Py_DECREF(v);
+	  Py_DECREF(result);
 	  *errorptr="\\x string is not one byte in length";
 	  break;
 	}
-      c=*(unsigned char *)PyString_AsString(v);
-      Py_DECREF(v);
+      c=*(unsigned char *)PyString_AsString(result);
+      Py_DECREF(result);
       break;
     }
   break;
@@ -1760,20 +1761,20 @@ for (;; ptr++)
 		goto FAILED;
 	      }
 	      string = PyString_FromStringAndSize(ptr, idlen);
-	      if (string==NULL)
-		{
+	      if (string==NULL)	{
 		  Py_XDECREF(string);
 		  *errorptr = "exception raised";
 		  goto FAILED;
 		}
 	      intobj = PyDict_GetItem(dictionary, string);
 	      if (intobj==NULL) {
+		Py_DECREF(string);
 		*errorptr = "?P= group identifier isn't defined";
 		goto FAILED;
 	      }
 
 	      refnum = PyInt_AsLong(intobj);
-	       Py_DECREF(string); Py_DECREF(intobj);
+	      Py_DECREF(string); Py_DECREF(intobj);
 	      *code++ = OP_REF;
 	      *code++ = refnum;
 	      /* The continue will cause the top-level for() loop to
@@ -2942,7 +2943,8 @@ if (md->offset_top) free(md->offset_top);
 if (md->r1)         free(md->r1); 
 if (md->r2)         free(md->r2); 
 if (md->eptr)       free(md->eptr); 
-if (md->ecode)      free(md->ecode); 
+if (md->ecode)      free(md->ecode);
+return 0;
 }
 
 static int grow_stack(match_data *md)
@@ -2987,7 +2989,7 @@ for (;;)
   int min, max, ctype;
   register int i;
   register int c;
-  BOOL minimize;
+  BOOL minimize = 0;
 
   /* Opening bracket. Check the alternative branches in turn, failing if none
   match. We have to set the start offset if required and there is space
@@ -3000,7 +3002,7 @@ for (;;)
   if ((int)*ecode >= OP_BRA)
     {
     int number = (*ecode - OP_BRA) << 1;
-    int save_offset1, save_offset2;
+    int save_offset1 = 0, save_offset2 = 0;
 
     #ifdef DEBUG
     printf("start bracket %d\n", number/2);
@@ -3858,7 +3860,7 @@ fail:
  if (md->point > save_stack_position)
  {
    /* If there are still points remaining on the stack, pop the next one off */
-   int start, end, off_num;
+   int off_num;
 
    md->point--; 
    offset_top = md->offset_top[md->point]; 
