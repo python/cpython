@@ -881,6 +881,8 @@ initunicodedata(void)
     if (!m)
         return;
 
+    PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
+
     /* Export C API */
     v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
     if (v != NULL)
