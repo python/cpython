@@ -97,7 +97,13 @@ class LockingTestCase(unittest.TestCase):
         for t in threads:
             t.join()
 
-
+    def test03_set_timeout(self):
+        # test that the set_timeout call works
+        if hasattr(self.env, 'set_timeout'):
+            self.env.set_timeout(0, db.DB_SET_LOCK_TIMEOUT)
+            self.env.set_timeout(0, db.DB_SET_TXN_TIMEOUT)
+            self.env.set_timeout(123456, db.DB_SET_LOCK_TIMEOUT)
+            self.env.set_timeout(7890123, db.DB_SET_TXN_TIMEOUT)
 
     def theThread(self, sleepTime, lockType):
         name = currentThread().getName()
