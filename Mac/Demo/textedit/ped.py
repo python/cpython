@@ -338,6 +338,8 @@ class Ped(Application):
 	def idle(self, *args):
 		if self.active:
 			self.active.do_idle()
+		else:
+			Qd.SetCursor(Qd.qd.arrow)
 
 def main():
 	App = Ped()

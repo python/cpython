@@ -603,6 +603,8 @@ class Wed(Application):
 	def idle(self, event):
 		if self.active:
 			self.active.do_idle(event)
+		else:
+			Qd.SetCursor(Qd.qd.arrow)
 			
 def getfontnames():
 	names = []
