@@ -307,9 +307,13 @@ EXPORTS
 	PyThread_allocate_lock
 	PyThread_allocate_sema
 	PyThread_down_sema
+	PyThread_exit_thread
 	PyThread_free_lock
 	PyThread_free_sema
+	PyThread_get_thread_ident
+	PyThread_init_thread
 	PyThread_release_lock
+	PyThread_start_new_thread
 	PyThread_up_sema
 	PyToken_OneChar
 	PyToken_TwoChars
@@ -362,8 +366,3 @@ EXPORTS
 	_Py_c_prod
 	_Py_c_quot
 	_Py_c_sum
-
- 	PyThread_exit_thread
- 	PyThread_get_thread_ident
- 	PyThread_init_thread
- 	PyThread_start_new_thread
