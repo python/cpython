@@ -4,7 +4,8 @@
 """\
 This module provides socket operations and some related functions.
 On Unix, it supports IP (Internet Protocol) and Unix domain sockets.
-On other systems, it only supports IP.
+On other systems, it only supports IP. Functions specific for a 
+socket are available as methods of the socket object.
 
 Functions:
 
