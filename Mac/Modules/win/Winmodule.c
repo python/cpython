@@ -76,7 +76,10 @@ PyObject *WinObj_New(WindowPtr itself)
 }
 WinObj_Convert(PyObject *v, WindowPtr *p_itself)
 {
-#if 1
+
+	if (v == Py_None) { *p_itself = NULL; return 1; }
+	if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
+
 	{
 		DialogRef dlg;
 		if (DlgObj_Convert(v, &dlg) && dlg) {
@@ -85,16 +88,6 @@ WinObj_Convert(PyObject *v, WindowPtr *p_itself)
 		}
 		PyErr_Clear();
 	}
-#else
-	if (DlgObj_Check(v)) {
-		*p_itself = DlgObj_ConvertToWindow(v);
-		return 1;
-	}
-#endif
-
-	if (v == Py_None) { *p_itself = NULL; return 1; }
-	if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
-
 	if (!WinObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "Window required");

@@ -137,7 +137,10 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("it->ob_freeit = PyMac_AutoDisposeWindow;")
 		OutRbrace()
 	def outputCheckConvertArg(self):
-		Output("#if 1")
+		Out("""
+		if (v == Py_None) { *p_itself = NULL; return 1; }
+		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
+		""")
 		OutLbrace()
 		Output("DialogRef dlg;")
 		OutLbrace("if (DlgObj_Convert(v, &dlg) && dlg)")
@@ -146,16 +149,6 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		OutRbrace()
 		Output("PyErr_Clear();")
 		OutRbrace()
-		Output("#else")
-		OutLbrace("if (DlgObj_Check(v))")
-		Output("*p_itself = DlgObj_ConvertToWindow(v);")
-		Output("return 1;")
-		OutRbrace()
-		Output("#endif")
-		Out("""
-		if (v == Py_None) { *p_itself = NULL; return 1; }
-		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
-		""")
 	def outputCleanupStructMembers(self):
 		Output("if (self->ob_freeit && self->ob_itself)")
 		OutLbrace()
