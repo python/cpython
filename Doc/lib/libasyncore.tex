@@ -105,6 +105,11 @@ def handle_write(self):
   Called when the socket is closed.
 \end{methoddesc}
 
+\begin{methoddesc}{handle_error}{}
+  Called when an exception is raised and not otherwise handled.  The default
+  version prints a condensed traceback.
+\end{methoddesc}
+
 \begin{methoddesc}{handle_accept}{}
   Called on listening sockets when they actually accept a new 
   connection.
