@@ -96,6 +96,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - atexit.py - mutate list of functions in thread-safe way
 
+- curses.ascii - space (ASCII 32) is now considered whitespace
+
 What's New in Python 2.0?
 =========================
 
