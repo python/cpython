@@ -253,7 +253,10 @@ altbininstall:	python
 		done
 		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
 		@DGUX_IS_BROKEN@
-		test -f libpython$(VERSION).so && $(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR)
+		if test -f libpython$(VERSION).so; then \
+			$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
+		else	true; \
+		fi
 
 # Install the manual page
 maninstall:
