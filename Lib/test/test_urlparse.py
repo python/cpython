@@ -61,14 +61,12 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, 'g/', 'http://a/b/c/g/')
         self.checkJoin(RFC1808_BASE, '/g', 'http://a/g')
         self.checkJoin(RFC1808_BASE, '//g', 'http://g')
-        self.checkJoin(RFC1808_BASE, '?y', 'http://a/b/c/d;p?y')
         self.checkJoin(RFC1808_BASE, 'g?y', 'http://a/b/c/g?y')
         self.checkJoin(RFC1808_BASE, 'g?y/./x', 'http://a/b/c/g?y/./x')
         self.checkJoin(RFC1808_BASE, '#s', 'http://a/b/c/d;p?q#s')
         self.checkJoin(RFC1808_BASE, 'g#s', 'http://a/b/c/g#s')
         self.checkJoin(RFC1808_BASE, 'g#s/./x', 'http://a/b/c/g#s/./x')
         self.checkJoin(RFC1808_BASE, 'g?y#s', 'http://a/b/c/g?y#s')
-        self.checkJoin(RFC1808_BASE, ';x', 'http://a/b/c/d;x')
         self.checkJoin(RFC1808_BASE, 'g;x', 'http://a/b/c/g;x')
         self.checkJoin(RFC1808_BASE, 'g;x?y#s', 'http://a/b/c/g;x?y#s')
         self.checkJoin(RFC1808_BASE, '.', 'http://a/b/c/')
@@ -103,9 +101,8 @@ class UrlParseTestCase(unittest.TestCase):
     def test_RFC2396(self):
         # cases from RFC 2396
 
-        ### urlparse.py as of v 1.32 fails on these two
-        #self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
-        #self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
+        self.checkJoin(RFC2396_BASE, '?y', 'http://a/b/c/?y')
+        self.checkJoin(RFC2396_BASE, ';x', 'http://a/b/c/;x')
 
         self.checkJoin(RFC2396_BASE, 'g:h', 'g:h')
         self.checkJoin(RFC2396_BASE, 'g', 'http://a/b/c/g')
