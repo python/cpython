@@ -3100,7 +3100,7 @@ socket_inet_pton(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-#ifndef ENABLE_IPV6
+#if !defined(ENABLE_IPV6) && defined(AF_INET6)
 	if(af == AF_INET6) {
 		PyErr_SetString(socket_error,
 				"can't use AF_INET6, IPv6 is disabled");
