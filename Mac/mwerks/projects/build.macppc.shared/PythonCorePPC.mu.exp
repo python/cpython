@@ -381,12 +381,11 @@ PySlice_Type
 PySlice_GetIndices
 PySlice_New
 PyOS_GetLastModificationTime
+options
+PyMac_AppRefNum
 Py_GetExecPrefix
 Py_GetPrefix
-Py_GetArgcArgv
-Py_GetProgramName
 PyMac_Exit
-PyMac_InteractiveOptions
 PyMac_InitApplication
 PyMac_InitApplet
 initmac
@@ -403,6 +402,7 @@ setfiletype
 initbinascii
 PyMac_DoYieldEnabled
 PyMac_OSErrException
+PyMac_ConsoleIsDead
 PyMac_BuildFixed
 PyMac_GetFixed
 PyMac_BuildEventRecord
@@ -421,7 +421,8 @@ PyMac_PromptGetFile
 PyMac_GetDirectory
 PyMac_LoadResourceModule
 PyMac_FindResourceModule
-PyMac_Idle
+SIOUXDoAboutBox
+PyMac_InitMenuBar
 PyMac_Yield
 PyMac_HandleEvent
 PyMac_SetYield
@@ -434,6 +435,8 @@ PyErr_Mac
 PyMac_GetOSErrException
 PyMac_StrError
 Pstring
+PyMac_SetGUSISpin
+SpinCursor
 PyMac_FixGUSIcd
 initmacfs
 newmfssobject
@@ -443,6 +446,7 @@ nfullpath
 PyMac_AddLibResources
 __initialize_with_resources
 Py_GetCompiler
+PyMac_SetGUSIOptions
 PyMac_PreferenceOptions
 Py_GetPath
 Py_GetPlatform
@@ -566,6 +570,7 @@ hasMakeFSSpec
 CatchStdIO
 Sockets
 GUSIConfig
+GUSILoadConfiguration
 GUSISetup
 GUSIDefaultSetup
 AppleTalkIdentity__FRsRs		# AppleTalkIdentity(short&,short&)
@@ -630,8 +635,10 @@ choose
 socket
 getdtablesize
 InitConsole__11SocketTableFv		# SocketTable::InitConsole()
+DelayConsole__17GUSIConfigurationCFv		# GUSIConfiguration::DelayConsole() const
 SetDefaultFType__17GUSIConfigurationCFRC9TFileSpec		# GUSIConfiguration::SetDefaultFType(constTFileSpec&) const
 __ct__17GUSIConfigurationFv		# GUSIConfiguration::GUSIConfiguration()
+GUSILoadConfiguration__17GUSIConfigurationFPPc		# GUSIConfiguration::GUSILoadConfiguration(char**)
 GUSI_error_nil
 GUSI_error
 GUSIDefaultSpin
@@ -1056,6 +1063,7 @@ read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
 ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
 __dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
 __ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
+DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
 __RTTI__16NullSocketDomain		# NullSocketDomain::__RTTI
 __vt__16NullSocketDomain		# NullSocketDomain::__vt
 __RTTI__10NullSocket		# NullSocket::__RTTI
@@ -1071,6 +1079,86 @@ __ct__10NullSocketFv		# NullSocket::NullSocket()
 _Fopen
 fwalk
 fdopen
+exit
+abort
+__dc_arr
+__del_arr
+__new_arr
+__init_arr
+__copy
+__end__catch
+__throw
+__unexpected
+__unregister_fragment
+__register_fragment
+__global_destructor_chain
+__destroy_global_chain
+__register_global_object
+__dynamic_cast
+__get_typeid
+__as__9type_infoFRC9type_info		# type_info::operator =(consttype_info&)
+__ct__9type_infoFRC9type_info		# type_info::type_info(consttype_info&)
+name__9type_infoCFv		# type_info::name() const
+before__9type_infoCFRC9type_info		# type_info::before(consttype_info&) const
+__ne__9type_infoCFRC9type_info		# type_info::operator !=(consttype_info&) const
+__eq__9type_infoCFRC9type_info		# type_info::operator ==(consttype_info&) const
+__dl__FPv		# operator delete(void*)
+__nw__FUl		# operator new(unsigned long)
+_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
+_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
+_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
+new_handler
+__del_hdl
+__new_hdl
+set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
+__destroy_new_array
+__destroy_arr
+__construct_array
+__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
+__construct_new_array
+__throw_catch_compare
+unexpected__Fv		# unexpected()
+set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
+terminate__Fv		# terminate()
+set_terminate__FPFv_v		# set_terminate(void (*)(void))
+qd
+__RTTI__9exception		# exception::__RTTI
+__RTTI__13runtime_error		# runtime_error::__RTTI
+__RTTI__14overflow_error		# overflow_error::__RTTI
+__vt__14overflow_error		# overflow_error::__vt
+__RTTI__11range_error		# range_error::__RTTI
+__vt__11range_error		# range_error::__vt
+__vt__13runtime_error		# runtime_error::__vt
+__RTTI__11logic_error		# logic_error::__RTTI
+__RTTI__12out_of_range		# out_of_range::__RTTI
+__vt__12out_of_range		# out_of_range::__vt
+__RTTI__12length_error		# length_error::__RTTI
+__vt__12length_error		# length_error::__vt
+__RTTI__16invalid_argument		# invalid_argument::__RTTI
+__vt__16invalid_argument		# invalid_argument::__vt
+__RTTI__12domain_error		# domain_error::__RTTI
+__vt__12domain_error		# domain_error::__vt
+__vt__11logic_error		# logic_error::__vt
+__RTTI__13bad_exception		# bad_exception::__RTTI
+__vt__13bad_exception		# bad_exception::__vt
+__RTTI__10bad_typeid		# bad_typeid::__RTTI
+__vt__10bad_typeid		# bad_typeid::__vt
+__RTTI__8bad_cast		# bad_cast::__RTTI
+__vt__8bad_cast		# bad_cast::__vt
+__vt__9exception		# exception::__vt
+__priv_throwbadcast__Fv		# __priv_throwbadcast()
+what__14overflow_errorCFv		# overflow_error::what() const
+what__11range_errorCFv		# range_error::what() const
+what__13runtime_errorCFv		# runtime_error::what() const
+what__12out_of_rangeCFv		# out_of_range::what() const
+what__12length_errorCFv		# length_error::what() const
+what__16invalid_argumentCFv		# invalid_argument::what() const
+what__12domain_errorCFv		# domain_error::what() const
+what__11logic_errorCFv		# logic_error::what() const
+what__13bad_exceptionCFv		# bad_exception::what() const
+what__10bad_typeidCFv		# bad_typeid::what() const
+what__8bad_castCFv		# bad_cast::what() const
+what__9exceptionCFv		# exception::what() const
 _atexit
 atexit
 _Atcount
@@ -1339,7 +1427,6 @@ SIOUXDoPrintText
 SIOUXDoPageSetup
 SIOUXYesNoCancelAlert
 SIOUXCantSaveAlert
-SIOUXDoAboutBox
 SIOUXSetupTextWindow
 SIOUXDoContentClick
 SIOUXMyGrowWindow
@@ -1348,132 +1435,3 @@ SIOUXUpdateScrollbar
 SIOUXUpdateWindow
 SIOUXDrawGrowBox
 SIOUXIsAppWindow
-InitCursorCtl
-RotateCursor
-SpinCursor
-Hide_Cursor
-Show_Cursor
-gHasAliasMgr
-pascalStrings
-gHasFindFolder
-InitErrMgr
-AddErrInsert
-openErrorFile
-CloseErrMgr
-GetSysErrText
-GetToolErrText
-addInserts
-INITERRMGR
-GETSYSERRTEXT
-GETTOOLERRTEXT
-disPrimaryTable
-disOptable
-disGenInvalidInstr
-disGenConditionalBranchPrediction
-disCopyMnemonicToComment
-ppcDisassembler
-disGenExtendedBranchMnemonic
-disGenExtendedCompareMnemonic
-disGenExtendedTrapMnemonic
-disGenExtendedDblShiftMnemonic
-disGenExtendedWordShiftMnemonic
-disGenExtendedMoveSPRMnemonic
-disGenExtendedCRLogicalMnemonic
-disGenExtendedSubImmMnemonic
-disGenGPR
-disGenDec
-disGenHex
-disGenCRbitForExtended
-disGenField
-genRA
-disGenFPR
-disGenSPR
-disGenSI
-disGenUI
-disGenPCRel
-disGenCRField
-disGenCRbit
-disGenBO
-disGenTO
-disGenD_LP_RA_RP
-disGenStartComment
-unmangle
-Unmangle
-__dc_arr
-__del_arr
-__new_arr
-__init_arr
-__copy
-__end__catch
-__throw
-__unexpected
-__unregister_fragment
-__register_fragment
-__global_destructor_chain
-__destroy_global_chain
-__register_global_object
-__dynamic_cast
-__get_typeid
-__as__9type_infoFRC9type_info		# type_info::operator =(consttype_info&)
-__ct__9type_infoFRC9type_info		# type_info::type_info(consttype_info&)
-name__9type_infoCFv		# type_info::name() const
-before__9type_infoCFRC9type_info		# type_info::before(consttype_info&) const
-__ne__9type_infoCFRC9type_info		# type_info::operator !=(consttype_info&) const
-__eq__9type_infoCFRC9type_info		# type_info::operator ==(consttype_info&) const
-__dl__FPv		# operator delete(void*)
-__nw__FUl		# operator new(unsigned long)
-_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
-_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
-_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-new_handler
-__del_hdl
-__new_hdl
-set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
-__destroy_new_array
-__destroy_arr
-__construct_array
-__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
-__construct_new_array
-__throw_catch_compare
-unexpected__Fv		# unexpected()
-set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
-terminate__Fv		# terminate()
-set_terminate__FPFv_v		# set_terminate(void (*)(void))
-qd
-__RTTI__9exception		# exception::__RTTI
-__RTTI__13runtime_error		# runtime_error::__RTTI
-__RTTI__14overflow_error		# overflow_error::__RTTI
-__vt__14overflow_error		# overflow_error::__vt
-__RTTI__11range_error		# range_error::__RTTI
-__vt__11range_error		# range_error::__vt
-__vt__13runtime_error		# runtime_error::__vt
-__RTTI__11logic_error		# logic_error::__RTTI
-__RTTI__12out_of_range		# out_of_range::__RTTI
-__vt__12out_of_range		# out_of_range::__vt
-__RTTI__12length_error		# length_error::__RTTI
-__vt__12length_error		# length_error::__vt
-__RTTI__16invalid_argument		# invalid_argument::__RTTI
-__vt__16invalid_argument		# invalid_argument::__vt
-__RTTI__12domain_error		# domain_error::__RTTI
-__vt__12domain_error		# domain_error::__vt
-__vt__11logic_error		# logic_error::__vt
-__RTTI__13bad_exception		# bad_exception::__RTTI
-__vt__13bad_exception		# bad_exception::__vt
-__RTTI__10bad_typeid		# bad_typeid::__RTTI
-__vt__10bad_typeid		# bad_typeid::__vt
-__RTTI__8bad_cast		# bad_cast::__RTTI
-__vt__8bad_cast		# bad_cast::__vt
-__vt__9exception		# exception::__vt
-__priv_throwbadcast__Fv		# __priv_throwbadcast()
-what__14overflow_errorCFv		# overflow_error::what() const
-what__11range_errorCFv		# range_error::what() const
-what__13runtime_errorCFv		# runtime_error::what() const
-what__12out_of_rangeCFv		# out_of_range::what() const
-what__12length_errorCFv		# length_error::what() const
-what__16invalid_argumentCFv		# invalid_argument::what() const
-what__12domain_errorCFv		# domain_error::what() const
-what__11logic_errorCFv		# logic_error::what() const
-what__13bad_exceptionCFv		# bad_exception::what() const
-what__10bad_typeidCFv		# bad_typeid::what() const
-what__8bad_castCFv		# bad_cast::what() const
-what__9exceptionCFv		# exception::what() const
