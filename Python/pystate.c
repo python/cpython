@@ -3,6 +3,16 @@
 
 #include "Python.h"
 
+/* --------------------------------------------------------------------------
+CAUTION
+
+Always use malloc() and free() directly in this file.  A number of these
+functions are advertised as safe to call when the GIL isn't held, and in
+a debug build Python redirects (e.g.) PyMem_NEW (etc) to Python's debugging
+obmalloc functions.  Those aren't thread-safe (they rely on the GIL to avoid
+the expense of doing their own locking).
+-------------------------------------------------------------------------- */
+
 #ifdef HAVE_DLOPEN
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -41,7 +51,8 @@ PyThreadFrameGetter _PyThreadState_GetFrame = NULL;
 PyInterpreterState *
 PyInterpreterState_New(void)
 {
-	PyInterpreterState *interp = PyMem_NEW(PyInterpreterState, 1);
+	PyInterpreterState *interp = (PyInterpreterState *)
+				     malloc(sizeof(PyInterpreterState));
 
 	if (interp != NULL) {
 		HEAD_INIT();
@@ -119,7 +130,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 		Py_FatalError("PyInterpreterState_Delete: remaining threads");
 	*p = interp->next;
 	HEAD_UNLOCK();
-	PyMem_DEL(interp);
+	free(interp);
 }
 
 
@@ -133,7 +144,8 @@ threadstate_getframe(PyThreadState *self)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
+	PyThreadState *tstate = (PyThreadState *)malloc(sizeof(PyThreadState));
+
 	if (_PyThreadState_GetFrame == NULL)
 		_PyThreadState_GetFrame = threadstate_getframe;
 
@@ -226,7 +238,7 @@ tstate_delete_common(PyThreadState *tstate)
 	}
 	*p = tstate->next;
 	HEAD_UNLOCK();
-	PyMem_DEL(tstate);
+	free(tstate);
 }
 
 
