@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """Pynche: The PYthon Natural Color and Hue Editor.
 
 Pynche is based largely on a similar color editor I wrote years ago for the
