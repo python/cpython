@@ -1724,7 +1724,10 @@ static PyMethodDef builtin_methods[] = {
 
 /* Predefined exceptions */
 
-PyObject *PyExc_AccessError;
+PyObject *PyExc_StandardError;
+PyObject *PyExc_NumberError;
+PyObject *PyExc_LookupError;
+
 PyObject *PyExc_AssertionError;
 PyObject *PyExc_AttributeError;
 PyObject *PyExc_EOFError;
@@ -1745,6 +1748,108 @@ PyObject *PyExc_TypeError;
 PyObject *PyExc_ValueError;
 PyObject *PyExc_ZeroDivisionError;
 
+PyObject *PyExc_MemoryErrorInst;
+
+static struct 
+{
+	char* name;
+	PyObject** exc;
+	int leaf_exc;
+}
+bltin_exc[] = {
+	{"StandardError",      &PyExc_StandardError,      0},
+	{"NumberError",        &PyExc_NumberError,        0},
+	{"LookupError",        &PyExc_LookupError,        0},
+	{"AssertionError",     &PyExc_AssertionError,     1},
+	{"AttributeError",     &PyExc_AttributeError,     1},
+	{"EOFError",           &PyExc_EOFError,           1},
+	{"FloatingPointError", &PyExc_FloatingPointError, 1},
+	{"IOError",            &PyExc_IOError,            1},
+	{"ImportError",        &PyExc_ImportError,        1},
+	{"IndexError",         &PyExc_IndexError,         1},
+	{"KeyError",           &PyExc_KeyError,           1},
+	{"KeyboardInterrupt",  &PyExc_KeyboardInterrupt,  1},
+	{"MemoryError",        &PyExc_MemoryError,        1},
+	{"NameError",          &PyExc_NameError,          1},
+	{"OverflowError",      &PyExc_OverflowError,      1},
+	{"RuntimeError",       &PyExc_RuntimeError,       1},
+	{"SyntaxError",        &PyExc_SyntaxError,        1},
+	{"SystemError",        &PyExc_SystemError,        1},
+	{"SystemExit",         &PyExc_SystemExit,         1},
+	{"TypeError",          &PyExc_TypeError,          1},
+	{"ValueError",         &PyExc_ValueError,         1},
+	{"ZeroDivisionError",  &PyExc_ZeroDivisionError,  1},
+	{NULL, NULL}
+};
+
+
+/* import exceptions module to extract class exceptions */
+static void
+init_class_exc(dict)
+	PyObject *dict;
+{
+	int i;
+	PyObject *m = PyImport_ImportModule("exceptions");
+	PyObject *d;
+	PyObject *args;
+
+	if (m == NULL ||
+	    (d = PyModule_GetDict(m)) == NULL)
+	{
+		PyObject *f = PySys_GetObject("stderr");
+		if (Py_VerboseFlag) {
+			PyFile_WriteString(
+				"'import exceptions' failed; traceback:\n", f);
+			PyErr_Print();
+		}
+		else {
+			PyFile_WriteString(
+		      "'import exceptions' failed; use -v for traceback\n", f);
+			PyErr_Clear();
+		}
+		PyFile_WriteString("defaulting to old style exceptions\n", f);
+		return;
+	}
+	for (i = 0; bltin_exc[i].name; i++) {
+		/* dig the exception out of the module */
+		PyObject *exc = PyDict_GetItemString(d, bltin_exc[i].name);
+		if (!exc)
+		     Py_FatalError("built-in exception cannot be initialized");
+		
+		Py_XDECREF(*bltin_exc[i].exc);
+
+		/* squirrel away a pointer to the exception */
+		Py_INCREF(exc);
+		*bltin_exc[i].exc = exc;
+
+		/* and insert the name in the __builtin__ module */
+		PyDict_SetItemString(dict, bltin_exc[i].name, exc);
+	}
+
+	/* we need one pre-allocated instance */
+	args = Py_BuildValue("()");
+	if (args) {
+		PyExc_MemoryErrorInst =
+			PyEval_CallObject(PyExc_MemoryError, args);
+		Py_DECREF(args);
+	}
+
+	/* we're done with the exceptions module */
+	Py_DECREF(m);
+
+	if (PyErr_Occurred())
+		Py_FatalError("can't instantiate standard exceptions");
+}
+
+
+static void
+fini_instances()
+{
+	Py_XDECREF(PyExc_MemoryErrorInst);
+	PyExc_MemoryErrorInst = NULL;
+}
+
+
 static PyObject *
 newstdexception(dict, name)
 	PyObject *dict;
@@ -1760,55 +1865,60 @@ static void
 initerrors(dict)
 	PyObject *dict;
 {
-	PyExc_AccessError = newstdexception(dict, "AccessError");
-	PyExc_AssertionError = newstdexception(dict, "AssertionError");
-	PyExc_AttributeError = newstdexception(dict, "AttributeError");
-	PyExc_EOFError = newstdexception(dict, "EOFError");
-	PyExc_FloatingPointError = newstdexception(dict, "FloatingPointError");
-	PyExc_IOError = newstdexception(dict, "IOError");
-	PyExc_ImportError = newstdexception(dict, "ImportError");
-	PyExc_IndexError = newstdexception(dict, "IndexError");
-	PyExc_KeyError = newstdexception(dict, "KeyError");
-	PyExc_KeyboardInterrupt = newstdexception(dict, "KeyboardInterrupt");
-	PyExc_MemoryError = newstdexception(dict, "MemoryError");
-	PyExc_NameError = newstdexception(dict, "NameError");
-	PyExc_OverflowError = newstdexception(dict, "OverflowError");
-	PyExc_RuntimeError = newstdexception(dict, "RuntimeError");
-	PyExc_SyntaxError = newstdexception(dict, "SyntaxError");
-	PyExc_SystemError = newstdexception(dict, "SystemError");
-	PyExc_SystemExit = newstdexception(dict, "SystemExit");
-	PyExc_TypeError = newstdexception(dict, "TypeError");
-	PyExc_ValueError = newstdexception(dict, "ValueError");
-	PyExc_ZeroDivisionError = newstdexception(dict, "ZeroDivisionError");
+	int i;
+	int exccnt = 0;
+	for (i = 0; bltin_exc[i].name; i++, exccnt++) {
+		if (bltin_exc[i].leaf_exc)
+			*bltin_exc[i].exc =
+				newstdexception(dict, bltin_exc[i].name);
+	}
+
+	/* This is kind of bogus because we special case the three new
+	   exceptions to be nearly forward compatible.  But this means we
+	   hard code knowledge about exceptions.py into C here.  I don't
+	   have a better solution, though
+	*/
+	PyExc_LookupError = PyTuple_New(2);
+	Py_INCREF(PyExc_IndexError);
+	PyTuple_SET_ITEM(PyExc_LookupError, 0, PyExc_IndexError);
+	Py_INCREF(PyExc_KeyError);
+	PyTuple_SET_ITEM(PyExc_LookupError, 1, PyExc_KeyError);
+	PyDict_SetItemString(dict, "LookupError", PyExc_LookupError);
+
+	PyExc_NumberError = PyTuple_New(3);
+	Py_INCREF(PyExc_OverflowError);
+	PyTuple_SET_ITEM(PyExc_NumberError, 0, PyExc_OverflowError);
+	Py_INCREF(PyExc_ZeroDivisionError);
+	PyTuple_SET_ITEM(PyExc_NumberError, 1, PyExc_ZeroDivisionError);
+	Py_INCREF(PyExc_FloatingPointError);
+	PyTuple_SET_ITEM(PyExc_NumberError, 2, PyExc_FloatingPointError);
+	PyDict_SetItemString(dict, "NumberError", PyExc_NumberError);
+
+	PyExc_StandardError = PyTuple_New(exccnt-1);
+	for (i = 1; bltin_exc[i].name; i++) {
+		PyObject *exc = *bltin_exc[i].exc;
+		Py_INCREF(exc);
+		PyTuple_SET_ITEM(PyExc_StandardError, i-1, exc);
+	}
+	PyDict_SetItemString(dict, "StandardError", PyExc_StandardError);
+	
+	if (PyErr_Occurred())
+	      Py_FatalError("Could not initialize built-in string exceptions");
 }
 
 static void
 finierrors()
 {
-	Py_XDECREF(PyExc_AccessError); PyExc_AccessError = NULL;
-	Py_XDECREF(PyExc_AssertionError); PyExc_AssertionError = NULL;
-	Py_XDECREF(PyExc_AttributeError); PyExc_AttributeError = NULL;
-	Py_XDECREF(PyExc_EOFError); PyExc_EOFError = NULL;
-	Py_XDECREF(PyExc_FloatingPointError); PyExc_FloatingPointError = NULL;
-	Py_XDECREF(PyExc_IOError); PyExc_IOError = NULL;
-	Py_XDECREF(PyExc_ImportError); PyExc_ImportError = NULL;
-	Py_XDECREF(PyExc_IndexError); PyExc_IndexError = NULL;
-	Py_XDECREF(PyExc_KeyError); PyExc_KeyError = NULL;
-	Py_XDECREF(PyExc_KeyboardInterrupt); PyExc_KeyboardInterrupt = NULL;
-	Py_XDECREF(PyExc_MemoryError); PyExc_MemoryError = NULL;
-	Py_XDECREF(PyExc_NameError); PyExc_NameError = NULL;
-	Py_XDECREF(PyExc_OverflowError); PyExc_OverflowError = NULL;
-	Py_XDECREF(PyExc_RuntimeError); PyExc_RuntimeError = NULL;
-	Py_XDECREF(PyExc_SyntaxError); PyExc_SyntaxError = NULL;
-	Py_XDECREF(PyExc_SystemError); PyExc_SystemError = NULL;
-	Py_XDECREF(PyExc_SystemExit); PyExc_SystemExit = NULL;
-	Py_XDECREF(PyExc_TypeError); PyExc_TypeError = NULL;
-	Py_XDECREF(PyExc_ValueError); PyExc_ValueError = NULL;
-	Py_XDECREF(PyExc_ZeroDivisionError); PyExc_ZeroDivisionError = NULL;
+	int i;
+	for (i = 0; bltin_exc[i].name; i++) {
+		PyObject *exc = *bltin_exc[i].exc;
+		Py_XDECREF(exc);
+		*bltin_exc[i].exc = NULL;
+	}
 }
 
 PyObject *
-_PyBuiltin_Init()
+_PyBuiltin_Init_1()
 {
 	PyObject *mod, *dict;
 	mod = Py_InitModule("__builtin__", builtin_methods);
@@ -1823,11 +1933,29 @@ _PyBuiltin_Init()
 	if (PyDict_SetItemString(dict, "__debug__",
 			  PyInt_FromLong(Py_OptimizeFlag == 0)) < 0)
 		return NULL;
+
 	return mod;
 }
 
 void
-_PyBuiltin_Fini()
+_PyBuiltin_Init_2(dict)
+	PyObject *dict;
+{
+	/* if Python was started with -X, initialize the class exceptions */
+	if (Py_UseClassExceptionsFlag)
+		init_class_exc(dict);
+}
+
+
+void
+_PyBuiltin_Fini_1()
+{
+	fini_instances();
+}
+
+
+void
+_PyBuiltin_Fini_2()
 {
 	finierrors();
 }
