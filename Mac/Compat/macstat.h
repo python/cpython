@@ -26,3 +26,8 @@ struct macstat {
 #define S_IREAD    0400
 #define S_IWRITE   0200
 #define S_IEXEC    0100
+
+/* To stop inclusion of MWerks header: */
+#ifndef _STAT
+#define _STAT
+#endif

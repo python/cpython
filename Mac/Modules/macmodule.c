@@ -454,6 +454,7 @@ mac_write(self, args)
 }
 #endif /* !__MWERKS__ */
 
+#undef MALLOC_DEBUG
 #ifdef MALLOC_DEBUG
 static object *
 mac_mstats(self, args)

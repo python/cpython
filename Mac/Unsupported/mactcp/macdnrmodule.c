@@ -32,9 +32,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define ResultUPP ResultProcPtr
 #define NewResultProc(x) (x)
-/* The '2' has move in this name... */
-#define Result2UPP ResultProc2Ptr
-#define NewResult2Proc(x) (x)
+#define ResultProc2UPP ResultProc2Ptr
+#define NewResultProc2Proc(x) (x)
 #endif
 
 static object *ErrorObject;
@@ -365,7 +364,7 @@ dnr_HInfo(self, args)
 	OSErr err;
 	char *hostname;
 	dnrrobject *rv;
-	Result2UPP cb_upp = NewResult2Proc(dnrr_done);
+	ResultProc2UPP cb_upp = NewResultProc2Proc(dnrr_done);
 
 	if (!newgetargs(args, "s", &hostname))
 		return NULL;
@@ -398,7 +397,7 @@ dnr_MXInfo(self, args)
 	OSErr err;
 	char *hostname;
 	dnrrobject *rv;
-	Result2UPP cb_upp = NewResult2Proc(dnrr_done);
+	ResultProc2UPP cb_upp = NewResultProc2Proc(dnrr_done);
 
 	if (!newgetargs(args, "s", &hostname))
 		return NULL;
