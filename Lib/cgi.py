@@ -600,7 +600,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
             continue
         name = urllib.unquote(string.replace(nv[0], '+', ' '))
         value = urllib.unquote(string.replace(nv[1], '+', ' '))
-        r.append(name, value)
+        r.append((name, value))
 
     return r
 
