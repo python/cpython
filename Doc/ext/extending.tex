@@ -818,10 +818,8 @@ In languages like C or \Cpp, the programmer is responsible for
 dynamic allocation and deallocation of memory on the heap.  In C,
 this is done using the functions \cfunction{malloc()} and
 \cfunction{free()}.  In \Cpp, the operators \keyword{new} and
-\keyword{delete} are used with essentially the same meaning; they are
-actually implemented using \cfunction{malloc()} and
-\cfunction{free()}, so we'll restrict the following discussion to the
-latter.
+\keyword{delete} are used with essentially the same meaning and
+we'll restrict the following discussion to the latter.
 
 Every block of memory allocated with \cfunction{malloc()} should
 eventually be returned to the pool of available memory by exactly one
