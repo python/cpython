@@ -4,9 +4,9 @@ import string, os, re, sys
 
 PAGESIZE = mmap.PAGESIZE
 
-def test_unix():
-    "Test mmap module on Unix systems"
-    	
+def test_both():
+    "Test mmap module on Unix systems and Windows"
+    
     # Create an mmap'ed file
     f = open('foo', 'w+')
     
@@ -14,8 +14,11 @@ def test_unix():
     f.write('\0'* PAGESIZE)
     f.write('foo')
     f.write('\0'* (PAGESIZE-3) )
-    
-    m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+
+    if sys.platform[:3]=="win":
+        m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+    else:
+        m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
     f.close()
     
     # Simple sanity checks
@@ -61,9 +64,5 @@ def test_unix():
         
     print ' Test passed'
 
-# XXX need to write a test suite for Windows
-if sys.platform == 'win32':
-    pass
-else:
-    test_unix()
-    
+test_both()
+
