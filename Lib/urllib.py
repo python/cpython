@@ -881,21 +881,30 @@ def unquote_plus(s):
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
 	safe = always_safe + safe
-	res = []
-	for c in s:
-		if c in safe:
-			res.append(c)
-		else:
-			res.append('%%%02x' % ord(c))
+	res = list(s)
+	for i in range(len(res)):
+		c = res[i]
+		if c not in safe:
+			res[i] = '%%%02x' % ord(c)
 	return string.joinfields(res, '')
 
 def quote_plus(s, safe = '/'):
 	if ' ' in s:
 		# replace ' ' with '+'
-		s = string.join(string.split(s, ' '), '+')
-		return quote(s, safe + '+')
+		l = string.split(s, ' ')
+		for i in range(len(l)):
+			l[i] = quote(l[i], safe)
+		return string.join(l, '+')
 	else:
 		return quote(s, safe)
+
+def urlencode(dict):
+	 l = []
+	 for k, v in dict.items():
+		 k = quote_plus(str(k))
+		 v = quote_plus(str(v))
+		 l.append(k + '=' + v)
+	 return string.join(l, '&')
 
 
 # Proxy handling
