@@ -73,7 +73,6 @@ nonzero fraction (\UNIX{} \cfunction{select()} is used to implement
 this, where available).
 
 \item
-
 The time tuple as returned by \function{gmtime()},
 \function{localtime()}, and \function{strptime()}, and accepted by
 \function{asctime()}, \function{mktime()} and \function{strftime()},
@@ -96,6 +95,10 @@ range of 1-12, not 0-11.  A year value will be handled as described
 under ``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as
 daylight savings flag, passed to \function{mktime()} will usually
 result in the correct daylight savings state to be filled in.
+
+When a tuple with an incorrect length is passed to a function
+expecting a time tuple, or having elements of the wrong type, a
+\exception{TypeError} is raised.
 
 \end{itemize}
 
@@ -174,7 +177,9 @@ is the full 9-tuple (since the dst flag is needed; use \code{-1} as
 the dst flag if it is unknown) which expresses the time in
 \emph{local} time, not UTC.  It returns a floating point number, for
 compatibility with \function{time()}.  If the input value cannot be
-represented as a valid time, \exception{OverflowError} is raised.  The
+represented as a valid time, either \exception{OverflowError} or
+\exception{ValueError} will be raised (which depends on whether the
+invalid value is caught by Python or the underlying C libraries).  The
 earliest date for which it can generate a time is platform-dependent.
 \end{funcdesc}
 
