@@ -45,6 +45,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef WITH_READLINE
 
 extern char *readline();
+extern int rl_initialize();
+extern int rl_insert();
+extern char *rl_readline_name;
 
 #include <setjmp.h>
 #include <signal.h>
@@ -105,7 +108,8 @@ PyOS_ReadlineInit()
 	static int been_here;
 	if (!been_here) {
 		/* Force rebind of TAB to insert-tab */
-		extern int rl_insert();
+		rl_readline_name = "python";
+		rl_initialize();
 		rl_bind_key('\t', rl_insert);
 		been_here++;
 	}
