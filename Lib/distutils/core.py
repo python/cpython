@@ -47,7 +47,9 @@ setup_keywords = ('distclass', 'script_name', 'script_args', 'options',
                   'name', 'version', 'author', 'author_email',
                   'maintainer', 'maintainer_email', 'url', 'license',
                   'description', 'long_description', 'keywords',
-                  'platforms', 'classifiers', 'download_url',)
+                  'platforms', 'classifiers', 'download_url',
+                  'requires', 'provides', 'obsoletes',
+                  )
 
 # Legal keyword arguments for the Extension constructor
 extension_keywords = ('name', 'sources', 'include_dirs',

@@ -4,6 +4,7 @@ import distutils.cmd
 import distutils.dist
 import os
 import shutil
+import StringIO
 import sys
 import tempfile
 import unittest
@@ -96,5 +97,93 @@ class DistributionTestCase(unittest.TestCase):
             os.unlink(TESTFN)
 
 
+class MetadataTestCase(unittest.TestCase):
+
+    def test_simple_metadata(self):
+        attrs = {"name": "package",
+                 "version": "1.0"}
+        dist = distutils.dist.Distribution(attrs)
+        meta = self.format_metadata(dist)
+        self.assert_("Metadata-Version: 1.0" in meta)
+        self.assert_("provides:" not in meta.lower())
+        self.assert_("requires:" not in meta.lower())
+        self.assert_("obsoletes:" not in meta.lower())
+
+    def test_provides(self):
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "provides": ["package", "package.sub"]}
+        dist = distutils.dist.Distribution(attrs)
+        self.assertEqual(dist.metadata.get_provides(),
+                         ["package", "package.sub"])
+        self.assertEqual(dist.get_provides(),
+                         ["package", "package.sub"])
+        meta = self.format_metadata(dist)
+        self.assert_("Metadata-Version: 1.1" in meta)
+        self.assert_("requires:" not in meta.lower())
+        self.assert_("obsoletes:" not in meta.lower())
+
+    def test_provides_illegal(self):
+        self.assertRaises(ValueError,
+                          distutils.dist.Distribution,
+                          {"name": "package",
+                           "version": "1.0",
+                           "provides": ["my.pkg (splat)"]})
+
+    def test_requires(self):
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "requires": ["other", "another (==1.0)"]}
+        dist = distutils.dist.Distribution(attrs)
+        self.assertEqual(dist.metadata.get_requires(),
+                         ["other", "another (==1.0)"])
+        self.assertEqual(dist.get_requires(),
+                         ["other", "another (==1.0)"])
+        meta = self.format_metadata(dist)
+        self.assert_("Metadata-Version: 1.1" in meta)
+        self.assert_("provides:" not in meta.lower())
+        self.assert_("Requires: other" in meta)
+        self.assert_("Requires: another (==1.0)" in meta)
+        self.assert_("obsoletes:" not in meta.lower())
+
+    def test_requires_illegal(self):
+        self.assertRaises(ValueError,
+                          distutils.dist.Distribution,
+                          {"name": "package",
+                           "version": "1.0",
+                           "requires": ["my.pkg (splat)"]})
+
+    def test_obsoletes(self):
+        attrs = {"name": "package",
+                 "version": "1.0",
+                 "obsoletes": ["other", "another (<1.0)"]}
+        dist = distutils.dist.Distribution(attrs)
+        self.assertEqual(dist.metadata.get_obsoletes(),
+                         ["other", "another (<1.0)"])
+        self.assertEqual(dist.get_obsoletes(),
+                         ["other", "another (<1.0)"])
+        meta = self.format_metadata(dist)
+        self.assert_("Metadata-Version: 1.1" in meta)
+        self.assert_("provides:" not in meta.lower())
+        self.assert_("requires:" not in meta.lower())
+        self.assert_("Obsoletes: other" in meta)
+        self.assert_("Obsoletes: another (<1.0)" in meta)
+
+    def test_obsoletes_illegal(self):
+        self.assertRaises(ValueError,
+                          distutils.dist.Distribution,
+                          {"name": "package",
+                           "version": "1.0",
+                           "obsoletes": ["my.pkg (splat)"]})
+ 
+    def format_metadata(self, dist):
+        sio = StringIO.StringIO()
+        dist.metadata.write_pkg_file(sio)
+        return sio.getvalue()
+
+
 def test_suite():
-    return unittest.makeSuite(DistributionTestCase)
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(DistributionTestCase))
+    suite.addTest(unittest.makeSuite(MetadataTestCase))
+    return suite
