@@ -1,10 +1,10 @@
 test_httplib
-reply: 'HTTP/1.1 200 Ok\r\n'
+reply: 'HTTP/1.1 200 Ok\n'
 Text
-reply: 'HTTP/1.1 400.100 Not Ok\r\n'
+reply: 'HTTP/1.1 400.100 Not Ok\n'
 BadStatusLine raised as expected
 InvalidURL raised as expected
 InvalidURL raised as expected
-reply: 'HTTP/1.1 200 OK\r\n'
+reply: 'HTTP/1.1 200 OK\n'
 header: Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"
 header: Set-Cookie: Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"

@@ -13,14 +13,14 @@ class FakeSocket:
 
 # Test HTTP status lines
 
-body = "HTTP/1.1 200 Ok\r\n\r\nText"
+body = "HTTP/1.1 200 Ok\n\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock, 1)
 resp.begin()
 print resp.read()
 resp.close()
 
-body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
+body = "HTTP/1.1 400.100 Not Ok\n\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock, 1)
 try:
@@ -41,12 +41,12 @@ for hp in ("www.python.org:abc", "www.python.org:"):
         print "Expect InvalidURL"
 
 # test response with multiple message headers with the same field name.
-text = ('HTTP/1.1 200 OK\r\n'
-        'Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"\r\n'
+text = ('HTTP/1.1 200 OK\n'
+        'Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"\n'
         'Set-Cookie: Part_Number="Rocket_Launcher_0001"; Version="1";'
-        ' Path="/acme"\r\n'
-        '\r\n'
-        'No body\r\n')
+        ' Path="/acme"\n'
+        '\n'
+        'No body\n')
 hdr = ('Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"'
        ', '
        'Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"')
