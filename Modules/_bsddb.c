@@ -2570,7 +2570,7 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
 
     /* get a cursor */
     MYDB_BEGIN_ALLOW_THREADS;
-    err = self->db->cursor(self->db, NULL, &cursor, 0);
+    err = self->db->cursor(self->db, txn, &cursor, 0);
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
 
