@@ -764,11 +764,11 @@ class StackDepthTracker:
     # UNPACK_SEQUENCE, BUILD_TUPLE,
     # BUILD_LIST, CALL_FUNCTION, MAKE_FUNCTION, BUILD_SLICE
     def UNPACK_SEQUENCE(self, count):
-        return count
+        return count-1
     def BUILD_TUPLE(self, count):
-        return -count
+        return -count+1
     def BUILD_LIST(self, count):
-        return -count
+        return -count+1
     def CALL_FUNCTION(self, argc):
         hi, lo = divmod(argc, 256)
         return lo + hi * 2
