@@ -2106,6 +2106,9 @@ int count(PyUnicodeObject *self,
 {
     int count = 0;
 
+    if (substring->length == 0)
+	return (end - start + 1);
+
     end -= substring->length;
 
     while (start <= end)
@@ -2130,7 +2133,7 @@ int PyUnicode_Count(PyObject *str,
 	return -1;
     substr = PyUnicode_FromObject(substr);
     if (substr == NULL) {
-	Py_DECREF(substr);
+	Py_DECREF(str);
 	return -1;
     }
     
@@ -3086,11 +3089,6 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     if (substring == NULL)
 	return NULL;
     
-    if (substring->length == 0) {
-	Py_DECREF(substring);
-        return PyInt_FromLong((long) 0);
-    }
-
     if (start < 0)
         start += self->length;
     if (start < 0)
