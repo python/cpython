@@ -21,6 +21,23 @@ READ = 1
 WRITE = 2
 smAllScripts = -3
 
+#
+# Find the epoch conversion for file dates in a way that works on OS9 and OSX
+import time
+if time.gmtime(0)[0] == 1970:
+	_EPOCHCONVERT = -((1970-1904)*365 + 17) * (24*60*60) + 0x100000000L
+	def _utc2time(utc):
+		t = utc[1] + _EPOCHCONVERT
+		return int(t)
+	def _time2utc(t):
+		t = t - _EPOCHCONVERT
+		if t < -0x7fffffff:
+			t = t + 0x10000000L
+		return (0, int(t), 0)
+else:
+	def _utc2time(utc): return utc[1]
+	def _time2utc(t): return (0, t, 0)
+
 # The old name of the error object:
 error = Carbon.File.Error
 
@@ -52,12 +69,20 @@ class FSSpec(Carbon.File.FSSpec):
 		return self.FSpSetFInfo(info)
 		
 	def GetDates(self):
-		import os
-		statb = os.stat(self.as_pathname())
-		return statb.st_ctime, statb.st_mtime, 0
+		catInfoFlags = kFSCatInfoCreateDate|kFSCatInfoContentMod|kFSCatInfoBackupDate
+		catinfo, d1, d2, d3 = FSRef(self).FSGetCatalogInfo(catInfoFlags)
+		cdate = catinfo.createDate
+		mdate = catinfo.contentModDate
+		bdate = catinfo.backupDate
+		return _utc2time(cdate), _utc2time(mdate), _utc2time(bdate)
 	
-	def SetDates(self, *dates):
-		pass # print "FSSpec.SetDates not yet implemented"
+	def SetDates(self, cdate, mdate, bdate):
+		catInfoFlags = kFSCatInfoCreateDate|kFSCatInfoContentMod|kFSCatInfoBackupDate
+		catinfo = Carbon.File.FSCatalogInfo(
+			createDate = _time2utc(cdate),
+			contentModDate = _time2utc(mdate),
+			backupDate = _time2utc(bdate))
+		FSRef(self).FSSetCatalogInfo(catInfoFlags, catinfo)
 	
 class FSRef(Carbon.File.FSRef):
 	def as_fsspec(self):
