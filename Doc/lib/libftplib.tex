@@ -214,8 +214,8 @@ Rename file \var{fromname} on the server to \var{toname}.
 \begin{methoddesc}{delete}{filename}
 Remove the file named \var{filename} from the server.  If successful,
 returns the text of the response, otherwise raises
-\exception{error_perm} on permission errors or \exception{error_reply} 
-on other errors.
+\exception{error_perm} on permission errors or
+\exception{error_reply} on other errors.
 \end{methoddesc}
 
 \begin{methoddesc}{cwd}{pathname}
@@ -244,10 +244,10 @@ standardized, but is supported by many common server implementations.
 \begin{methoddesc}{quit}{}
 Send a \samp{QUIT} command to the server and close the connection.
 This is the ``polite'' way to close a connection, but it may raise an
-exception of the server reponds with an error to the \samp{QUIT}
-command.  This implies a call to the \method{close()} method which
-renders the \class{FTP} instance useless for subsequent calls (see
-below).
+exception of the server reponds with an error to the
+\samp{QUIT} command.  This implies a call to the \method{close()}
+method which renders the \class{FTP} instance useless for subsequent
+calls (see below).
 \end{methoddesc}
 
 \begin{methoddesc}{close}{}
