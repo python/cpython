@@ -1,0 +1,6 @@
+M_*.c
+*.o
+Makefile
+config.c
+frozen.c
+hello
