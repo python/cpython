@@ -1191,10 +1191,10 @@ PyMac_Getwide(PyObject *v, wide *rv)
 
 
 PyObject *
-PyMac_Buildwide(wide w)
+PyMac_Buildwide(wide *w)
 {
-	if ( (w.hi == 0 && (w.lo & 0x80000000) == 0) ||
-	     (w.hi == -1 && (w.lo & 0x80000000) ) )
-		return PyInt_FromLong(w.lo);
-	return Py_BuildValue("(ll)", w.hi, w.lo);
+	if ( (w->hi == 0 && (w->lo & 0x80000000) == 0) ||
+	     (w->hi == -1 && (w->lo & 0x80000000) ) )
+		return PyInt_FromLong(w->lo);
+	return Py_BuildValue("(ll)", w->hi, w->lo);
 }
