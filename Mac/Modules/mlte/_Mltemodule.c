@@ -19,7 +19,7 @@
 #ifdef WITHOUT_FRAMEWORKS
 #include <MacTextEditor.h>
 #else
-#include <xxxx.h>
+#include <Carbon/Carbon.h>
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
