@@ -122,13 +122,6 @@ def monthcalendar(year, month):
         rows.append(row)
     return rows
 
-def _center(str, width):
-    """Center a string in a field."""
-    n = width - len(str)
-    if n <= 0:
-        return str
-    return ' '*((n+1)/2) + str + ' '*((n)/2)
-
 def prweek(theweek, width):
     """Print a single week (no newline)."""
     print week(theweek, width),
@@ -141,7 +134,7 @@ def week(theweek, width):
             s = ''
         else:
             s = '%2i' % day             # right-align single-digit days
-        days.append(_center(s, width))
+        days.append(s.center(width))
     return ' '.join(days)
 
 def weekheader(width):
@@ -152,7 +145,7 @@ def weekheader(width):
         names = day_abbr
     days = []
     for i in range(_firstweekday, _firstweekday + 7):
-        days.append(_center(names[i%7][:width], width))
+        days.append(names[i%7][:width].center(width))
     return ' '.join(days)
 
 def prmonth(theyear, themonth, w=0, l=0):
@@ -163,7 +156,7 @@ def month(theyear, themonth, w=0, l=0):
     """Return a month's calendar string (multi-line)."""
     w = max(2, w)
     l = max(1, l)
-    s = (_center(month_name[themonth] + ' ' + `theyear`,
+    s = ((month_name[themonth] + ' ' + `theyear`).center(
                  7 * (w + 1) - 1).rstrip() +
          '\n' * l + weekheader(w).rstrip() + '\n' * l)
     for aweek in monthcalendar(theyear, themonth):
@@ -180,8 +173,8 @@ def format3c(a, b, c, colwidth=_colwidth, spacing=_spacing):
 
 def format3cstring(a, b, c, colwidth=_colwidth, spacing=_spacing):
     """Returns a string formatted from 3 strings, centered within 3 columns."""
-    return (_center(a, colwidth) + ' ' * spacing + _center(b, colwidth) +
-            ' ' * spacing + _center(c, colwidth))
+    return (a.center(colwidth) + ' ' * spacing + b.center(colwidth) +
+            ' ' * spacing + c.center(colwidth))
 
 def prcal(year, w=0, l=0, c=_spacing):
     """Print a year's calendar."""
@@ -193,7 +186,7 @@ def calendar(year, w=0, l=0, c=_spacing):
     l = max(1, l)
     c = max(2, c)
     colwidth = (w + 1) * 7 - 1
-    s = _center(`year`, colwidth * 3 + c * 2).rstrip() + '\n' * l
+    s = `year`.center(colwidth * 3 + c * 2).rstrip() + '\n' * l
     header = weekheader(w)
     header = format3cstring(header, header, header, colwidth, c).rstrip()
     for q in range(January, January+12, 3):
