@@ -12,7 +12,7 @@ def timefunc(n, func, *args, **kw):
     t0 = time.clock()
     try:
         for i in range(n):
-            result = apply(func, args, kw)
+            result = func(*args, **kw)
         return result
     finally:
         t1 = time.clock()

@@ -249,7 +249,7 @@ def askinteger(title, prompt, **kw):
 
     Return value is an integer
     '''
-    d = apply(_QueryInteger, (title, prompt), kw)
+    d = _QueryInteger(title, prompt, **kw)
     return d.result
 
 class _QueryFloat(_QueryDialog):
@@ -268,7 +268,7 @@ def askfloat(title, prompt, **kw):
 
     Return value is a float
     '''
-    d = apply(_QueryFloat, (title, prompt), kw)
+    d = _QueryFloat(title, prompt, **kw)
     return d.result
 
 class _QueryString(_QueryDialog):
@@ -300,7 +300,7 @@ def askstring(title, prompt, **kw):
 
     Return value is a string
     '''
-    d = apply(_QueryString, (title, prompt), kw)
+    d = _QueryString(title, prompt, **kw)
     return d.result
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ def wrapper(func, *rest):
         except:
             pass
 
-        res = apply(func, (stdscr,) + rest)
+        res = func(stdscr, *rest)
     except:
         # In the event of an error, restore the terminal
         # to a sane state.

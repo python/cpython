@@ -112,7 +112,10 @@ PyDoc_STRVAR(apply_doc,
 \n\
 Call a callable object with positional arguments taken from the tuple args,\n\
 and keyword arguments taken from the optional dictionary kwargs.\n\
-Note that classes are callable, as are instances with a __call__() method.");
+Note that classes are callable, as are instances with a __call__() method.\n\
+\n\
+Deprecated since release 2.3. Instead, use the extended call syntax:\n\
+    function(*args, **keywords).");
 
 
 static PyObject *

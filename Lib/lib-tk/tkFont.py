@@ -73,7 +73,7 @@ class Font:
         if not name:
             name = "font" + str(id(self))
         self.name = name
-        apply(root.tk.call, ("font", "create", name) + font)
+        root.tk.call("font", "create", name, *font)
         # backlinks!
         self._root  = root
         self._split = root.tk.splitlist
@@ -90,7 +90,7 @@ class Font:
 
     def copy(self):
         "Return a distinct copy of the current font"
-        return apply(Font, (self._root,), self.actual())
+        return Font(self._root, **self.actual())
 
     def actual(self, option=None):
         "Return actual font attributes"
@@ -108,8 +108,8 @@ class Font:
     def config(self, **options):
         "Modify font attributes"
         if options:
-            apply(self._call, ("font", "config", self.name) +
-                  self._set(options))
+            self._call("font", "config", self.name,
+                  *self._set(options))
         else:
             return self._mkdict(
                 self._split(self._call("font", "config", self.name))
