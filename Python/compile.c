@@ -1529,9 +1529,9 @@ com_dictmaker(struct compiling *c, node *n)
 		   It wants the stack to look like (value) (dict) (key) */
 		com_addbyte(c, DUP_TOP);
 		com_push(c, 1);
-		com_node(c, CHILD(n, i+2)); /* value */
-		com_addbyte(c, ROT_TWO);
 		com_node(c, CHILD(n, i)); /* key */
+		com_node(c, CHILD(n, i+2)); /* value */
+		com_addbyte(c, ROT_THREE);
 		com_addbyte(c, STORE_SUBSCR);
 		com_pop(c, 3);
 	}

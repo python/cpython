@@ -1026,6 +1026,24 @@ tuple, but rather yields the value of that expression.
 \code{()}.)
 \indexii{trailing}{comma}
 
+\section{Evaluation order\label{evalorder}}
+\indexii{evaluation}{order}
+
+Python evaluates expressions from left to right. Notice that while
+evaluating an assignment, the right-hand side is evaluated before
+the left-hand side.
+
+In the following lines, expressions will be evaluated in the
+arithmetic order of their suffixes:
+
+\begin{verbatim}
+expr1, expr2, expr3, expr4
+(expr1, expr2, expr3, expr4)
+{expr1: expr2, expr3: expr4}
+expr1 + expr2 * (expr3 - expr4)
+func(expr1, expr2, *expr3, **expr4)
+expr3, expr4 = expr1, expr2
+\end{verbatim}
 
 \section{Summary\label{summary}}
 
