@@ -17,9 +17,24 @@
 import string
 import socket
 import regex
+import os
 
 
 __version__ = '1.2'
+
+# Helper for non-unix systems
+if os.name == 'mac':
+	def _fixpath(pathname):
+		components = string.split(pathname, '/')
+		if not components[0]:
+			# Absolute unix path, don't start with colon
+			return string.join(components[1:], ':')
+		else:
+			# relative unix path, start with colon
+			return ':' + string.join(components, ':')
+else:
+	def _fixpath(pathname):
+		return pathname
 
 
 # This really consists of two pieces:
@@ -223,12 +238,12 @@ class URLopener:
 	# Use local file
 	def open_local_file(self, url):
 		host, file = splithost(url)
-		if not host: return addinfo(open(file, 'r'), noheaders())
+		if not host: return addinfo(open(_fixpath(file), 'r'), noheaders())
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfo(open(file, 'r'), noheaders())
+			return addinfo(open(_fixpath(file), 'r'), noheaders())
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
