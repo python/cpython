@@ -502,7 +502,8 @@
 % classes ----------------------------------------------------------------
 % \begin{classdesc}{name}{constructor args}
 \newenvironment{classdesc}[2]{
-  \renewcommand{\py@thisclass}{#1}
+  % Using \renewcommand doesn't work for this, for unknown reasons:
+  \global\def\py@thisclass{#1}
   \begin{fulllineitems}
     \item[\code{\bfcode{#1}(\py@varvars{#2})}%
       \withsubitem{(class in \py@thismodule)}{\ttindex{#1}}]
