@@ -1,16 +1,16 @@
-BUILDING PYTHON 1.1 FOR THE MACINTOSH
+BUILDING PYTHON 1.2 FOR THE MACINTOSH
 *************************************
 
-Python can be built on the Mac using either THINK C 6.0 (or 7.0) or
-MPW 3.2.  In the past it has been compiled with earlier versions of
-these compilers, but no guarantees are made that the source is still
-compatible with those versions.  Likewise, new compiler versions may
-effectively change the language accepted (or the library provided!)
-and thus cause problems.
+Python can be built on the Mac using either THINK C 6.0 (or 7.0), MPW
+3.2, or CodeWarrior 5.0.  In the past it has also been compiled with
+earlier versions of Think and MPW, but no guarantees are made that the
+source is still compatible with those versions.  Think C 5.0 appears
+to be OK.  Likewise, new compiler versions may effectively change the
+language accepted (or the library provided!)  and thus cause problems.
 
 
-1. Using Think C 6.0
-====================
+1. Using Think C 6.0 (or 7.0)
+=============================
 
 1.1 The directory structure
 ---------------------------
@@ -64,7 +64,9 @@ prevent parsing larger modules.
 	slower, but Python programs can use strings and lists with
 	more than 32000 items (with 2-byte ints these can cause
 	crashes).  The range of Python integers is not affected (these
-	are always represented as longs).
+	are always represented as longs).  In fact, nowadays I always
+	use 4-byte integers, since it is actually rather annoying that
+	strings >= 64K cause crashes.
 
 1.2.3 Files to add
 
@@ -77,19 +79,18 @@ compile.c in a separate segment.  You could also group them by
 subdirectory or function, but you may still have to split segments
 arbitrarily because of the 32000 bytes restriction.
 
-	- From Mac: all .c files except fopenRF.c [[which shouldn't even
-	be there]].
+	- From Mac: all .c files.
 
-	- From Parser: acceler.c, grammar1.c, intrcheck.c,
+	- From Parser: acceler.c, grammar1.c,
 	myreadline.c, node.c, parser.c, parsetok.c, tokenizer.c.
 
 	- From Python: bltinmodule.c, ceval.c, cgensupport.c,
-	compile.c, errors.c, getopt.c, graminit.c, import.c,
-	marshal.c, modsupport.c, mystrtoul.c, pythonmain.c,
-	pythonrun.c, sigcheck.c, structmember.c, sysmodule.c,
-	traceback.c (i.e. all .c files except dup2.c, fmod.c,
-	frozenmain.c, getcwd.c, getmtime.c, memmove.c, sigcheck.c,
-	strerror.c, strtod.c, thread.c)
+	compile.c, errors.c, getargs.c getopt.c, graminit.c, import.c,
+	importdl.c, marshal.c, modsupport.c, mystrtoul.c,
+	pythonmain.c, pythonrun.c, sigcheck.c, structmember.c,
+	sysmodule.c, traceback.c (i.e. all .c files except dup2.c,
+	fmod.c, frozenmain.c, getcwd.c, getmtime.c, memmove.c,
+	sigcheck.c, strerror.c, strtod.c, thread.c)
 
 	- From Objects: all .c files except xxobject.c.
 
@@ -138,6 +139,17 @@ distributed Python application with ResEdit.  THINK C automatically
 copies resources into the application file from a file
 <projectname>.rsrc.
 
+1.6 Think C 5.0
+---------------
+
+Tim Gilbert adds one note that will be helpful to future Think C 5.0
+users: When you have a really big project like python, and you want to
+compile and run it, if you just hit Command-R, often Think C will
+compile the remaining files, think for a moment, and then give you a
+warning "internal error(ZREF)--please remove objects."  Don't listen
+to it.  It is lying.  What you should do instead is "Check Link..."
+and _then_ hit Run.  Why?  Ask Symantec.
+
 
 2. Using MPW 3.2
 ================
@@ -166,6 +178,14 @@ Some notes:
 - I haven't tried building STDWIN with MPW recently.  There is MPW
   specific code all over the STDWIN source but it is for a much older
   version of the compiler and library.
+
+
+3. Using MicroWerks CodeWarrior 5.0
+===================================
+
+Essentially, follow the instructions for Think C.
+
+XXX Should at least list the project options.
 
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
