@@ -200,7 +200,6 @@ class IOBinding:
 
 
 def test():
-    from Tkinter import *
     root = Tk()
     class MyEditWin:
         def __init__(self, text):
@@ -229,4 +228,5 @@ def test():
     root.mainloop()
 
 if __name__ == "__main__":
+    from Tkinter import *
     test()
