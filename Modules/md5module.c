@@ -268,13 +268,12 @@ static PyMethodDef md5_functions[] = {
 DL_EXPORT(void)
 initmd5(void)
 {
-	PyObject *m, *d, *i;
+	PyObject *m, *d;
 
         MD5type.ob_type = &PyType_Type;
 	m = Py_InitModule3("md5", md5_functions, module_doc);
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "MD5Type", (PyObject *)&MD5type);
-        if ( (i = PyInt_FromLong(16)) != NULL) 
-        	PyDict_SetItemString(d, "digest_size", i);
+	PyModule_AddIntConstant(m, "digest_size", 16);
 	/* No need to check the error here, the caller will do that */
 }
