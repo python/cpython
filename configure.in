@@ -1632,12 +1632,8 @@ AC_CHECK_FUNCS(getpgrp,
    [Define if getpgrp() must be called as getpgrp(0).])
  )
 )
-AC_CHECK_FUNCS(setpgrp, 
-  AC_TRY_COMPILE([#include <unistd.h>], 
-   [setpgrp(0,0);], 
-   AC_DEFINE(SETPGRP_HAVE_ARG, 1,
-   [Define if setpgrp() must be called as setpgrp(0, 0).])
-  )
+AC_FUNC_SETPGRP(AC_DEFINE(SETPGRP_HAVE_ARG, 1,
+	   [Define if setpgrp() must be called as setpgrp(0, 0).])
 )
 AC_CHECK_FUNCS(gettimeofday, 
   AC_TRY_COMPILE([#include <sys/time.h>], 
