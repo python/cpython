@@ -811,7 +811,7 @@ class Aifc_write:
 		import cl
 		dum = self._comp.SetParam(cl.FRAME_BUFFER_SIZE, len(data))
 		dum = self._comp.SetParam(cl.COMPRESSED_BUFFER_SIZE, len(data))
-		return self._comp.Compress(nframes, data)
+		return self._comp.Compress(self._nframes, data)
 
 	def _lin2ulaw(self, data):
 		import audioop
