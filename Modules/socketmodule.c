@@ -122,7 +122,7 @@ Socket methods:
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#ifndef __BEOS__
+#if !(defined(__BEOS__) || defined(__CYGWIN__))
 #include <netinet/tcp.h>
 #endif
 
