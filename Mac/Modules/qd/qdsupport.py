@@ -45,13 +45,14 @@ GDHandle = OpaqueByValueType("GDHandle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
-BitMap = BitMap_ptr
+BitMap = OpaqueType("BitMap", "BMObj")
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
 FontInfo = OpaqueType('FontInfo', 'QdFI')
 Component = OpaqueByValueType('Component', 'CmpObj')
 ComponentInstance = OpaqueByValueType('ComponentInstance', 'CmpInstObj')
 
+Cursor = StructOutputBufferType('Cursor')
 Cursor_ptr = StructInputBufferType('Cursor')
 Pattern = StructOutputBufferType('Pattern')
 Pattern_ptr = StructInputBufferType('Pattern')
@@ -63,11 +64,12 @@ includestuff = includestuff + """
 
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetPortBitMapForCopyBits(port) (((GrafPort)(port))->portBits)
+#define GetPortPixMap(port) (((CGrafPtr)(port))->portPixMap)
 #define GetPortBounds(port, bounds) (*(bounds) = (port)->portRect, (bounds))
 #define GetPortForeColor(port, color) (*(color) = (port)->rgbFgColor, (color))
 #define GetPortBackColor(port, color) (*(color) = (port)->rgbBkColor, (color))
-#define GetPortOpColor(port, color) (*(color) = (*((port)->grafVars))->rgbOpColor, (color))
-#define GetPortHiliteColor(port, color) (*(color) = (*((port)->grafVars))->rgbHiliteColor, (color))
+#define GetPortOpColor(port, color) (*(color) = (*(GVarHandle)((port)->grafVars))->rgbOpColor, (color))
+#define GetPortHiliteColor(port, color) (*(color) = (*(GVarHandle)((port)->grafVars))->rgbHiliteColor, (color))
 #define GetPortTextFont(port) ((port)->txFont)
 #define GetPortTextFace(port) ((port)->txFace)
 #define GetPortTextMode(port) ((port)->txMode)
@@ -84,23 +86,50 @@ includestuff = includestuff + """
 #define GetPortPenSize(port, pensize) (*(pensize) = (port)->pnSize, (pensize))
 #define GetPortPenMode(port) ((port)->pnMode)
 #define GetPortPenLocation(port, location) ((*location) = (port)->pnLoc, (location))
-#define IsPortRegionBeingDefined(port) ((port)->rgnSave)
-#define IsPortPictureBeingDefined(port) ((port)->picSave)
+#define IsPortRegionBeingDefined(port) (!!((port)->rgnSave))
+#define IsPortPictureBeingDefined(port) (!!((port)->picSave))
 /* #define IsPortOffscreen(port) */
 /* #define IsPortColor(port) */
 
 #define SetPortBounds(port, bounds) ((port)->portRect = *(bounds))
-#define SetPortOpColor(port, color) ((*((port)->grafVars))->rgbOpColor = *(color))
+#define SetPortOpColor(port, color) ((*(GVarHandle)((port)->grafVars))->rgbOpColor = *(color))
 #define SetPortVisibleRegion(port, rgn) ((port)->visRgn = (rgn))
 #define SetPortClipRegion(port, rgn) ((port)->clipRgn = (rgn))
 #define SetPortBackPixPat(port, pat) ((port)->bkPixPat = (pat))
 #define SetPortPenPixPat(port, pat) ((port)->pnPixPat = (pat))
-#define GetPortFillPixPat(port, pat) ((port)->fillPixPat = (pat))
+#define SetPortFillPixPat(port, pat) ((port)->fillPixPat = (pat))
 #define SetPortPenSize(port, pensize) ((port)->pnSize = (pensize))
 #define SetPortPenMode(port, mode) ((port)->pnMode = (mode))
 #define SetPortFracHPenLocation(port, frac) ((port)->pnLocHFrac = (frac))
 
-#endif
+/* On pixmaps */
+#define GetPixBounds(pixmap, rect) (*(rect) = (*(pixmap))->bounds, (rect))
+#define GetPixDepth(pixmap) ((*(pixmap))->pixelSize)
+
+/* On regions */
+#define GetRegionBounds(rgn, rect) (*(rect) = (*(rgn))->rgnBBox, (rect))
+
+/* On QD Globals */
+#define GetQDGlobalsRandomSeed() (qd.randSeed)
+#define GetQDGlobalsScreenBits(bits) (*(bits) = qd.screenBits, (bits))
+#define GetQDGlobalsArrow(crsr) (*(crsr) = qd.arrow, (crsr))
+#define GetQDGlobalsDarkGray(pat) (*(pat) = qd.dkGray, (pat))
+#define GetQDGlobalsLightGray(pat) (*(pat) = qd.ltGray, (pat))
+#define GetQDGlobalsGray(pat) (*(pat) = qd.gray, (pat))
+#define GetQDGlobalsBlack(pat) (*(pat) = qd.black, (pat))
+#define GetQDGlobalsWhite(pat) (*(pat) = qd.white, (pat))
+#define GetQDGlobalsThePort() ((CGrafPtr)qd.thePort)
+
+#define SetQDGlobalsRandomSeed(seed) (qd.randSeed = (seed))
+#define SetQDGlobalsArrow(crsr) (qd.arrow = *(crsr))
+
+#endif /* ACCESSOR_CALLS_ARE_FUNCTIONS */
+
+#if !TARGET_API_MAC_CARBON
+#define QDFlushPortBuffer(port, rgn) /* pass */
+#define QDIsPortBufferDirty(port) 0
+#define QDIsPortBuffered(port) 0
+#endif /* !TARGET_API_MAC_CARBON  */
 
 /*
 ** Parse/generate RGB records
@@ -174,7 +203,7 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("return 1;")
 		OutRbrace()
 	def outputGetattrHook(self):
-		Output("#if !TARGET_API_MAC_CARBON")
+		Output("#if !ACCESSOR_CALLS_ARE_FUNCTIONS")
 		Output("""
 		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
 		
@@ -252,6 +281,77 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 			if ( strcmp(name, "_id") == 0 )
 				return Py_BuildValue("l", (long)self->ob_itself);
 		}""")
+		Output("#else")
+		Output("""
+		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
+			/*
+			if ( strcmp(name, "portBits") == 0 )
+				return BMObj_New((BitMapPtr)GetPortPixMap(itself_color));
+			*/
+			if ( strcmp(name, "chExtra") == 0 )
+				return Py_BuildValue("h", GetPortChExtra(itself_color));
+			if ( strcmp(name, "pnLocHFrac") == 0 )
+				return Py_BuildValue("h", GetPortFracHPenLocation(itself_color));
+			if ( strcmp(name, "bkPixPat") == 0 ) {
+				PixPatHandle h=0;
+				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortBackPixPat(itself_color, h));
+			}
+			if ( strcmp(name, "rgbFgColor") == 0 ) {
+				RGBColor c;
+				return Py_BuildValue("O&", QdRGB_New, GetPortForeColor(itself_color, &c));
+			}
+			if ( strcmp(name, "rgbBkColor") == 0 ) {
+				RGBColor c;
+				return Py_BuildValue("O&", QdRGB_New, GetPortBackColor(itself_color, &c));
+			}
+			if ( strcmp(name, "pnPixPat") == 0 ) {
+				PixPatHandle h=0;
+				
+				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortPenPixPat(itself_color, h));
+			}
+			if ( strcmp(name, "fillPixPat") == 0 ) {
+				PixPatHandle h=0;
+				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortFillPixPat(itself_color, h));
+			}
+			if ( strcmp(name, "portRect") == 0 ) {
+				Rect r;
+				return Py_BuildValue("O&", PyMac_BuildRect, GetPortBounds(itself_color, &r));
+			}
+			if ( strcmp(name, "visRgn") == 0 ) {
+				RgnHandle h=0;
+				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(itself_color, h));
+			}
+			if ( strcmp(name, "clipRgn") == 0 ) {
+				RgnHandle h=0;
+				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(itself_color, h));
+			}
+			if ( strcmp(name, "pnLoc") == 0 ) {
+				Point p;
+				return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenLocation(itself_color, &p));
+			}
+			if ( strcmp(name, "pnSize") == 0 ) {
+				Point p;
+				return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenSize(itself_color, &p));
+			}
+			if ( strcmp(name, "pnMode") == 0 )
+				return Py_BuildValue("h", GetPortPenMode(itself_color));
+			if ( strcmp(name, "pnVis") == 0 )
+				return Py_BuildValue("h", GetPortPenVisibility(itself_color));
+			if ( strcmp(name, "txFont") == 0 )
+				return Py_BuildValue("h", GetPortTextFont(itself_color));
+			if ( strcmp(name, "txFace") == 0 )
+				return Py_BuildValue("h", (short)GetPortTextFace(itself_color));
+			if ( strcmp(name, "txMode") == 0 )
+				return Py_BuildValue("h", GetPortTextMode(itself_color));
+			if ( strcmp(name, "txSize") == 0 )
+				return Py_BuildValue("h", GetPortTextSize(itself_color));
+			if ( strcmp(name, "spExtra") == 0 )
+				return Py_BuildValue("O&", PyMac_BuildFixed, GetPortSpExtra(itself_color));
+			/* XXXX Add more, as needed */
+			/* This one is so we can compare grafports: */
+			if ( strcmp(name, "_id") == 0 )
+				return Py_BuildValue("l", (long)self->ob_itself);
+		}""")
 		Output("#endif")
 
 class MyBMObjectDefinition(GlobalObjectDefinition):
@@ -303,7 +403,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 		pass
 
 	def outputGetattrHook(self):
-		Output("#if !TARGET_API_MAC_CARBON")
+		Output("#if !ACCESSOR_CALLS_ARE_FUNCTIONS")
 		Output("""
 	if ( strcmp(name, "arrow") == 0 )
 		return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
