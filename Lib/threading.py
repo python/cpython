@@ -450,8 +450,9 @@ class Thread(_Verbose):
                 # shutdown) use self.__stderr.  Otherwise still use sys (as in
                 # _sys) in case sys.stderr was redefined.
                 if _sys:
-                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                      (self.getName(), _format_exc()))
+                    _sys.stderr.write("Exception in thread %s:" %
+                            self.getName())
+                    _print_exc(file=_sys.stderr)
                 else:
                     # Do the best job possible w/o a huge amt. of code to
                     # approx. a traceback stack trace
