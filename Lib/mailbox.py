@@ -46,8 +46,11 @@ class _Subfile:
 	def read(self, length = None):
 		if self.pos >= self.stop:
 			return ''
-		if length is None:
-			length = self.stop - self.pos
+		remaining = self.stop - self.pos
+		if length is None or length < 0:
+			length = remaining
+		elif length > remaining:
+			length = remaining
 		self.fp.seek(self.pos)
 		self.pos = self.pos + length
 		return self.fp.read(length)
