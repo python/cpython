@@ -29,7 +29,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "c:dD:EhiOStuUvVWxX:"
+#define BASE_OPTS "c:dD:EhiOStuUvVW:xX"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
