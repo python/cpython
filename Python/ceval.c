@@ -1337,6 +1337,13 @@ eval_code2(co, globals, locals,
 			continue;
 
 		case DELETE_FAST:
+			x = GETLOCAL(oparg);
+			if (x == NULL) {
+				PyErr_SetObject(PyExc_NameError,
+					   PyTuple_GetItem(co->co_varnames,
+							oparg));
+				break;
+			}
 			SETLOCAL(oparg, NULL);
 			continue;
 		
