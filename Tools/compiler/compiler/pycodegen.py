@@ -439,9 +439,14 @@ class CodeGenerator:
         for name, alias in node.names:
             if name == '*':
                 self.namespace = 0
-            self.emit('IMPORT_FROM', name)
-            self._resolveDots(name)
-            self.storeName(alias or name)
+                self.emit('IMPORT_STAR')
+                # There can only be one name w/ from ... import *
+                assert len(node.names) == 1
+                return
+            else:
+                self.emit('IMPORT_FROM', name)
+                self._resolveDots(name)
+                self.storeName(alias or name)
         self.emit('POP_TOP')
 
     def _resolveDots(self, name):

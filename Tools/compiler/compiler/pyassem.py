@@ -515,12 +515,14 @@ class StackDepthTracker:
         'BUILD_MAP': 1,
         'COMPARE_OP': -1,
         'STORE_FAST': -1,
+        'IMPORT_STAR': -1,
+        'IMPORT_NAME': 0,
+        'IMPORT_FROM': 1,
         }
     # use pattern match
     patterns = [
         ('BINARY_', -1),
         ('LOAD_', 1),
-        ('IMPORT_', 1),
         ]
     
     # special cases:
