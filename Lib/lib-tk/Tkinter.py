@@ -16,21 +16,72 @@ TupleType = type(())
 ListType = type([])
 CallableTypes = (FunctionType, MethodType)
 
+_default_root = None
+
 def _tkerror(err):
 	pass
 
 class Event:
 	pass
 
+_varnum = 0
+class Variable:
+	def __init__(self, master=None):
+		global _default_root
+		global _varnum
+		if master:
+			self._tk = master.tk
+		else:
+			self._tk = _default_root.tk
+		self._name = 'PY_VAR' + `_varnum`
+		_varnum = _varnum + 1
+	def __del__(self):
+		self._tk.unsetvar(self._name)
+	def __str__(self):
+		return self._name
+	def __call__(self, value=None):
+		if value == None:
+			return self.get()
+		else:
+			self.set(value)
+	def set(self, value):
+		return self._tk.setvar(self._name, value)
+
+class StringVar(Variable):
+	def __init__(self, master=None):
+		Variable.__init__(self, master)
+	def get(self):
+		return self._tk.getvar(self._name)
+
+class IntVar(Variable):
+	def __init__(self, master=None):
+		Variable.__init__(self, master)
+	def get(self):
+		return self._tk.getint(self._tk.getvar(self._name))
+
+class DoubleVar(Variable):
+	def __init__(self, master=None):
+		Variable.__init__(self, master)
+	def get(self):
+		return self._tk.getdouble(self._tk.getvar(self._name))
+
+class BooleanVar(Variable):
+	def __init__(self, master=None):
+		Variable.__init__(self, master)
+	def get(self):
+		return self._tk.getboolean(self._tk.getvar(self._name))
+
 class Misc:
 	def tk_strictMotif(self, boolean=None):
 		self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
-	def waitvar(self, name='VAR'):
+	def tk_menuBar(self, *args):
+		apply(self.tk.call, ('tk_menuBar', self._w) + args)
+	def waitvar(self, name='PY_VAR'):
 		self.tk.call('tkwait', 'variable', name)
-	def setvar(self, name='VAR', value='1'):
+	def setvar(self, name='PY_VAR', value='1'):
 		self.tk.setvar(name, value)
-	def getvar(self, name='VAR'):
+	def getvar(self, name='PY_VAR'):
 		return self.tk.getvar(name)
 	def getint(self, s):
 		return self.tk.getint(s)
@@ -89,11 +140,14 @@ class Misc:
 		self.tk.call('selection', 'get', type)
 	def selection_handle(self, func, type=None, format=None):
 		name = self._register(func)
-		self.tk.call('selection', 'handle',
-			     self._w, name, type, format)
-	#XXX def selection_own(self):
-	#	self.tk.call('selection', 'own', self._w)
-	def send(self, interp, cmd, *args): #XXX
+		self.tk.call('selection', 'handle', self._w, 
+			     name, type, format)
+	def selection_own(self, func=None):
+		name = self._register(func)
+		self.tk.call('selection', 'own', self._w, name)
+	def selection_own_get(self):
+		return self._nametowidget(self.tk.call('selection', 'own'))
+	def send(self, interp, cmd, *args):
 		return apply(self.tk.call, ('send', interp, cmd) + args)
 	def lower(self, belowThis=None):
 		self.tk.call('lift', self._w, belowThis)
@@ -186,7 +240,8 @@ class Misc:
 		return self.tk.getint(
 			self.tk.call('winfo', 'screenwidth', self._w))
 	def winfo_toplevel(self):
-		return self.tk.call('winfo', 'toplevel', self._w)
+		return self._nametowidget(self.tk.call(
+			'winfo', 'toplevel', self._w))
 	def winfo_visual(self):
 		return self.tk.call('winfo', 'visual', self._w)
 	def winfo_vrootheight(self):
@@ -218,17 +273,17 @@ class Misc:
 		if add: add = '+'
 		name = self._register(func, self._substitute)
 		self.tk.call('bind', self._w, sequence, 
-			     (add + name,) + self._subst_prefix)
+			     (add + name,) + self._subst_format)
 	def bind_all(self, sequence, func, add=''):
 		if add: add = '+'
 		name = self._register(func, self._substitute)
 		self.tk.call('bind', 'all' , sequence, 
-			     (add + `name`,) + self._subst_prefix)
+			     (add + `name`,) + self._subst_format)
 	def bind_class(self, className, sequence, func, add=''):
 		if add: add = '+'
 		name = self._register(func, self._substitute)
 		self.tk.call('bind', className , sequence, 
-			     (add + name,) + self._subst_prefix)
+			     (add + name,) + self._subst_format)
 	def mainloop(self):
 		self.tk.mainloop()
 	def quit(self):
@@ -280,12 +335,12 @@ class Misc:
 		w = self
 		while w.master: w = w.master
 		return w
-	_subst_prefix = ('%#', '%b', '%f', '%h', '%k', 
+	_subst_format = ('%#', '%b', '%f', '%h', '%k', 
 			 '%s', '%t', '%w', '%x', '%y',
 			 '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y')
 	def _substitute(self, *args):
 		tk = self.tk
-		if len(args) != len(self._subst_prefix): return args
+		if len(args) != len(self._subst_format): return args
 		nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y = args
 		# Missing: (a, c, d, m, o, v, B, R)
 		e = Event()
@@ -480,10 +535,8 @@ class Place:
 				   self.tk.call(
 					   'place', 'slaves', self._w)))
 
-_default_root = None
-
 class Widget(Misc, Pack, Place):
-	def __init__(self, master, widgetName, cnf={}, extra=()):
+	def _setup(self, master, cnf):
 		global _default_root
 		if not master:
 			if not _default_root:
@@ -503,13 +556,15 @@ class Widget(Misc, Pack, Place):
 			self._w = '.' + name
 		else:
 			self._w = master._w + '.' + name
+		self.children = {}
+		if self.master.children.has_key(self._name):
+			 self.master.children[self._name].destroy()
+		self.master.children[self._name] = self
+	def __init__(self, master, widgetName, cnf={}, extra=()):
+		Widget._setup(self, master, cnf)
 		self.widgetName = widgetName
 		apply(self.tk.call, (widgetName, self._w) + extra)
 		Widget.config(self, cnf)
-		self.children = {}
-		if master.children.has_key(name):
-			 master.children[name].destroy()
-		master.children[name] = self
 	def config(self, cnf=None):
 		if cnf is None:
 			cnf = {}
@@ -528,7 +583,7 @@ class Widget(Misc, Pack, Place):
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
 	def __getitem__(self, key):
-		v = self.tk.splitlist(self.tk.call(
+		v = self.tk.split(self.tk.call(
 			self._w, 'configure', '-' + key))
 		return v[4]
 	def __setitem__(self, key, value):
@@ -562,13 +617,13 @@ class Toplevel(Widget, Wm):
 class Button(Widget):
 	def __init__(self, master=None, cnf={}):
 		Widget.__init__(self, master, 'button', cnf)
-	def tk_butEnter(self):
+	def tk_butEnter(self, *dummy):
 		self.tk.call('tk_butEnter', self._w)
-	def tk_butLeave(self):
+	def tk_butLeave(self, *dummy):
 		self.tk.call('tk_butLeave', self._w)
-	def tk_butDown(self):
+	def tk_butDown(self, *dummy):
 		self.tk.call('tk_butDown', self._w)
-	def tk_butUp(self):
+	def tk_butUp(self, *dummy):
 		self.tk.call('tk_butUp', self._w)
 	def flash(self):
 		self.tk.call(self._w, 'flash')
@@ -618,7 +673,7 @@ class Canvas(Widget):
 		if add: add='+'
 		name = self._register(func, self._substitute)
 		self.tk.call(self._w, 'bind', tagOrId, sequence, 
-			     (add + name,) + self._subst_prefix)
+			     (add + name,) + self._subst_format)
 	def canvasx(self, screenx, gridspacing=None):
 		return self.tk.getint(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
@@ -842,8 +897,6 @@ class Listbox(Widget):
 class Menu(Widget):
 	def __init__(self, master=None, cnf={}):
 		Widget.__init__(self, master, 'menu', cnf)
-	def tk_menuBar(self, *args):
-		apply(self.tk.call, ('tk_menuBar', self._w) + args)
 	def tk_bindForTraversal(self):
 		self.tk.call('tk_bindForTraversal', self._w)
 	def tk_mbPost(self):
@@ -871,15 +924,23 @@ class Menu(Widget):
 	def add(self, itemType, cnf={}):
 		apply(self.tk.call, (self._w, 'add', itemType) 
 		      + self._options(cnf))
+	def add_cascade(self, cnf={}):
+		self.add('cascade', cnf)
+	def add_checkbutton(self, cnf={}):
+		self.add('checkbutton', cnf)
+	def add_command(self, cnf={}):
+		self.add('command', cnf)
+	def add_radiobutton(self, cnf={}):
+		self.add('radiobutton', cnf)
+	def add_separator(self, cnf={}):
+		self.add('separator', cnf)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
 	def entryconfig(self, index, cnf={}):
 		apply(self.tk.call, (self._w, 'entryconfigure', index)
 		      + self._options(cnf))
 	def index(self, index):
-		i = self.tk.call(self._w, 'index', index)
-		if i == 'none': return None
-		return self.tk.getint(i)
+		return self.tk.call(self._w, 'index', index)
 	def invoke(self, index):
 		return self.tk.call(self._w, 'invoke', index)
 	def post(self, x, y):
@@ -922,7 +983,7 @@ class Scrollbar(Widget):
 	def __init__(self, master=None, cnf={}):
 		Widget.__init__(self, master, 'scrollbar', cnf)
 	def get(self):
-		return self.tk.getints(self.tk.call(self._w, 'get'))
+		return self._getints(self.tk.call(self._w, 'get'))
 	def set(self, totalUnits, windowUnits, firstUnit, lastUnit):
 		self.tk.call(self._w, 'set', 
 			     totalUnits, windowUnits, firstUnit, lastUnit)
@@ -971,7 +1032,7 @@ class Text(Widget):
 		name = self._register(func, self._substitute)
 		self.tk.call(self._w, 'tag', 'bind', 
 			     tagName, sequence, 
-			     (add + name,) + self._subst_prefix)
+			     (add + name,) + self._subst_format)
 	def tag_config(self, tagName, cnf={}):
 		apply(self.tk.call, 
 		      (self._w, 'tag', 'configure', tagName) 
@@ -1002,5 +1063,22 @@ class Text(Widget):
 	def yview_pickplace(self, what):
 		self.tk.call(self._w, 'yview', '-pickplace', what)
 
-#class Dialog:
-	
+######################################################################
+# Extensions:
+
+class Studbutton(Button):
+	def __init__(self, master=None, cnf={}):
+		Widget.__init__(self, master, 'studbutton', cnf)
+		self.bind('<Any-Enter>',       self.tk_butEnter)
+		self.bind('<Any-Leave>',       self.tk_butLeave)
+		self.bind('<1>',               self.tk_butDown)
+		self.bind('<ButtonRelease-1>', self.tk_butUp)
+
+class Tributton(Button):
+	def __init__(self, master=None, cnf={}):
+		Widget.__init__(self, master, 'tributton', cnf)
+		self.bind('<Any-Enter>',       self.tk_butEnter)
+		self.bind('<Any-Leave>',       self.tk_butLeave)
+		self.bind('<1>',               self.tk_butDown)
+		self.bind('<ButtonRelease-1>', self.tk_butUp)
+
