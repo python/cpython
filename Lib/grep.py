@@ -4,14 +4,14 @@ import regexp
 import string
 
 def grep(expr, filename):
-	prog = regexp.compile(expr)
+	match = regexp.compile(expr).match
 	fp = open(filename, 'r')
 	lineno = 0
 	while 1:
 		line = fp.readline()
 		if not line: break
 		lineno = lineno + 1
-		res = prog.exec(line)
+		res = match(line)
 		if res:
 			#print res
 			start, end = res[0]
