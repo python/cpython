@@ -68,6 +68,50 @@ PySys_SetObject(char *name, PyObject *v)
 }
 
 static PyObject *
+sys_displayhook(PyObject *self, PyObject *args)
+{
+	PyObject *o, *stdout;
+	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	PyObject *modules = interp->modules;
+	PyObject *builtins = PyDict_GetItemString(modules, "__builtin__");
+
+	/* parse arguments */
+	if (!PyArg_ParseTuple(args, "O:displayhook", &o))
+		return NULL;
+
+	/* Print value except if None */
+	/* After printing, also assign to '_' */
+	/* Before, set '_' to None to avoid recursion */
+	if (o == Py_None) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	if (PyObject_SetAttrString(builtins, "_", Py_None) != 0)
+		return NULL;
+	if (Py_FlushLine() != 0)
+		return NULL;
+	stdout = PySys_GetObject("stdout");
+	if (stdout == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+		return NULL;
+	}
+	if (PyFile_WriteObject(o, stdout, 0) != 0)
+		return NULL;
+	PyFile_SoftSpace(stdout, 1);
+	if (Py_FlushLine() != 0)
+		return NULL;
+	if (PyObject_SetAttrString(builtins, "_", o) != 0)
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char displayhook_doc[] =
+"displayhook(o) -> None\n"
+"\n"
+"Print o to the stdout, and save it in __builtin__._\n";
+
+static PyObject *
 sys_exc_info(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate;
@@ -332,6 +376,7 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
+	{"displayhook",	sys_displayhook, 1, displayhook_doc},
 	{"exc_info",	sys_exc_info, 1, exc_info_doc},
 	{"exit",	sys_exit, 0, exit_doc},
 	{"getdefaultencoding", sys_getdefaultencoding, 1,
@@ -475,6 +520,7 @@ __stderr__ -- the original stderr; don't use!\n\
 \n\
 Functions:\n\
 \n\
+displayhook() -- print an object to the screen, and save it in __builtin__._\n\
 exc_info() -- return thread-safe information about the current exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\

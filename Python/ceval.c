@@ -1245,36 +1245,26 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		case PRINT_EXPR:
 			v = POP();
-			/* Print value except if None */
-			/* After printing, also assign to '_' */
-			/* Before, set '_' to None to avoid recursion */
-			if (v != Py_None &&
-			    (err = PyDict_SetItemString(
-				    f->f_builtins, "_", Py_None)) == 0) {
-				err = Py_FlushLine();
-				if (err == 0) {
-					x = PySys_GetObject("stdout");
-					if (x == NULL) {
-						PyErr_SetString(
-							PyExc_RuntimeError,
-							"lost sys.stdout");
-						err = -1;
-					}
-				}
-				if (err == 0)
-					err = PyFile_WriteObject(v, x, 0);
-				if (err == 0) {
-					PyFile_SoftSpace(x, 1);
-					err = Py_FlushLine();
-				}
-				if (err == 0) {
-					err = PyDict_SetItemString(
-						f->f_builtins, "_", v);
-				}
+			w = PySys_GetObject("displayhook");
+			if (w == NULL) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"lost sys.displayhook");
+				err = -1;
+			}
+			if (err == 0) {
+				x = Py_BuildValue("(O)", v);
+				if (x == NULL)
+					err = -1;
+			}
+			if (err == 0) {
+				w = PyEval_CallObject(w, x);
+				if (w == NULL)
+					err = -1;
 			}
 			Py_DECREF(v);
+			Py_XDECREF(x);
 			break;
-		
+
 		case PRINT_ITEM_TO:
 			w = stream = POP();
 			/* fall through to PRINT_ITEM */
