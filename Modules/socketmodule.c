@@ -364,9 +364,12 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *,addr, int,addrlen)
 	/* More cases here... */
 
 	default:
-		PyErr_SetString(PySocket_Error,
-				"return unknown socket address type");
-		return NULL;
+		/* If we don't know the address family, don't raise an
+		   exception -- return it as a tuple. */
+		return Py_BuildValue("is#",
+				     addr->sa_family,
+				     addr->sa_data,
+				     sizeof(addr->sa_data));
 
 	}
 }
