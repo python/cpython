@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # -*- python -*-
 #
 # guido's version, from rcsbump,v 1.2 1995/06/22 21:27:27 bwarsaw Exp
