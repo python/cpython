@@ -1,4 +1,3 @@
-
 /* List object implementation */
 
 #include "Python.h"
@@ -2016,7 +2015,7 @@ static PyTypeObject immutable_list_type = {
 typedef struct {
         PyObject_HEAD
         long it_index;
-        PyListObject *it_seq;
+	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listiterobject;
 
 PyTypeObject PyListIter_Type;
@@ -2044,13 +2043,15 @@ static void
 listiter_dealloc(listiterobject *it)
 {
         _PyObject_GC_UNTRACK(it);
-        Py_DECREF(it->it_seq);
+	Py_XDECREF(it->it_seq);
         PyObject_GC_Del(it);
 }
 
 static int
 listiter_traverse(listiterobject *it, visitproc visit, void *arg)
 {
+	if (it->it_seq == NULL)
+		return 0;
         return visit((PyObject *)it->it_seq, arg);
 }
 
@@ -2070,6 +2071,8 @@ listiter_next(listiterobject *it)
 
 	assert(it != NULL);
         seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
         assert(PyList_Check(seq));
 
         if (it->it_index < PyList_GET_SIZE(seq)) {
@@ -2078,14 +2081,11 @@ listiter_next(listiterobject *it)
                 Py_INCREF(item);
                 return item;
         }
+
+	Py_DECREF(seq);
+	it->it_seq = NULL;
         return NULL;
 }
-
-static PyMethodDef listiter_methods[] = {
-        {"next",        (PyCFunction)listiter_next,     METH_NOARGS,
-         "it.next() -- get the next value, or raise StopIteration"},
-        {NULL,          NULL}           /* sentinel */
-};
 
 PyTypeObject PyListIter_Type = {
         PyObject_HEAD_INIT(&PyType_Type)
@@ -2117,7 +2117,7 @@ PyTypeObject PyListIter_Type = {
         0,                                      /* tp_weaklistoffset */
         (getiterfunc)listiter_getiter,          /* tp_iter */
         (iternextfunc)listiter_next,            /* tp_iternext */
-        listiter_methods,			/* tp_methods */
+	0,					/* tp_methods */
         0,                                      /* tp_members */
         0,                                      /* tp_getset */
         0,                                      /* tp_base */
@@ -2125,4 +2125,3 @@ PyTypeObject PyListIter_Type = {
         0,                                      /* tp_descr_get */
         0,                                      /* tp_descr_set */
 };
-
