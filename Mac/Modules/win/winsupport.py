@@ -84,7 +84,7 @@ WinObj_WhichWindow(w)
 		Py_INCREF(it);
 	} else {
 		it = (PyObject *) GetWRefCon(w);
-		if (it == NULL || ((WindowObject *)it)->ob_itself != w) {
+		if (it == NULL || ((WindowObject *)it)->ob_itself != w || !WinObj_Check(it)) {
 			it = WinObj_New(w);
 			((WindowObject *)it)->ob_freeit = NULL;
 		} else {
@@ -103,8 +103,12 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("void (*ob_freeit)(%s ptr);", self.itselftype)
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
+		Output("it->ob_freeit = NULL;")
+		Output("if (GetWRefCon(itself) == 0)")
+		OutLbrace()
 		Output("SetWRefCon(itself, (long)it);")
 		Output("it->ob_freeit = PyMac_AutoDisposeWindow;")
+		OutRbrace()
 	def outputCheckConvertArg(self):
 		OutLbrace("if (DlgObj_Check(v))")
 		Output("*p_itself = DlgObj_ConvertToWindow(v);")
@@ -115,12 +119,13 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
 		""")
 	def outputCleanupStructMembers(self):
-		Output("if (self->ob_itself) SetWRefCon(self->ob_itself, 0);")
 		Output("if (self->ob_freeit && self->ob_itself)")
 		OutLbrace()
+		Output("SetWRefCon(self->ob_itself, 0);")
 		Output("self->ob_freeit(self->ob_itself);")
 		OutRbrace()
 		Output("self->ob_itself = NULL;")
+		Output("self->ob_freeit = NULL;")
 ##	def outputFreeIt(self, itselfname):
 ##		Output("DisposeWindow(%s);", itselfname)
 # From here on it's basically all boiler plate...
