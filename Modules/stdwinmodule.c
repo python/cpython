@@ -1784,7 +1784,6 @@ window_textcreate(self, args)
 	windowobject *self;
 	object *args;
 {
-	textobject *tp;
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
@@ -2600,12 +2599,12 @@ initstdwin()
 {
 	object *m, *d;
 	static int inited = 0;
-	char buf[1000];
 
 	if (!inited) {
 #ifdef macintosh
 		winit();
 #else
+		char buf[1000];
 		int argc = 0;
 		char **argv = NULL;
 		object *sys_argv = sysget("argv");
