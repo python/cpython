@@ -23,6 +23,13 @@
   no return value; it is a fatal error if the initialization fails.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{Py_InitializeEx}{int initsigs}
+  This function works like \cfunction{Py_Initialize} if
+  \var{initsigs} is 1. If \var{initsigs} is 0, it skips
+  initialization registration of signal handlers, which
+  might be useful when Python is embedded. \versionadded{2.4}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{Py_IsInitialized}{}
   Return true (nonzero) when the Python interpreter has been
   initialized, false (zero) if not.  After \cfunction{Py_Finalize()}
