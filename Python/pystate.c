@@ -137,31 +137,3 @@ PyThreadState_Swap(new)
 	current_tstate = new;
 	return old;
 }
-
-
-/* How should one use this code?
-
-   1. Standard Python interpreter, assuming no other interpreters or threads:
-
-      PyInterpreterState *interp;
-      PyThreadState *tstate;
-      interp = PyInterpreterState_New();
-      if (interp == NULL)
-          Py_FatalError("...");
-      tstate = PyThreadState_New(interp);
-      if (tstate == NULL)
-          Py_FatalError("...");
-      (void) PyThreadState_Swap(tstate);
-      PyInitialize();
-      .
-      . (use the interpreter here)
-      .
-      Py_Cleanup();
-      PyThreadState_Delete(tstate);
-      PyInterpreterState_Delete(interp);
-
-   2. Totally indepent interpreter invocation in a separate C thread:
-
-      XXX Need to interact with the thread lock nevertheless!!!
-
-*/
