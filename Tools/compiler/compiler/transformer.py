@@ -274,7 +274,8 @@ class Transformer:
 
     def expr_stmt(self, nodelist):
         # augassign testlist | testlist ('=' testlist)*
-        exprNode = self.com_node(nodelist[-1])
+        en = nodelist[-1]
+        exprNode = self.lookup_node(en)(en[1:])
         if len(nodelist) == 1:
             n = Discard(exprNode)
             n.lineno = exprNode.lineno
@@ -696,6 +697,17 @@ class Transformer:
     # INTERNAL PARSING UTILITIES
     #
 
+    # The use of com_node() introduces a lot of extra stack frames,
+    # enough to cause a stack overflow compiling test.test_parser with
+    # the standard interpreter recursionlimit.  The com_node() is a
+    # convenience function that hides the dispatch details, but comes
+    # at a very high cost.  It is more efficient to dispatch directly
+    # in the callers.  In these cases, use lookup_node() and call the
+    # dispatched node directly.
+
+    def lookup_node(self, node):
+        return self._dispatch[node[0]]
+
     def com_node(self, node):
         # Note: compile.c has handling in com_node for del_stmt, pass_stmt,
         #       break_stmt, stmt, small_stmt, flow_stmt, simple_stmt,
@@ -938,14 +950,16 @@ class Transformer:
         "Compile 'NODE (OP NODE)*' into (type, [ node1, ..., nodeN ])."
         l = len(nodelist)
         if l == 1:
-            return self.com_node(nodelist[0])
+            n = nodelist[0]
+            return self.lookup_node(n)(n[1:])
         items = []
         for i in range(0, l, 2):
-            items.append(self.com_node(nodelist[i]))
+            n = nodelist[i]
+            items.append(self.lookup_node(n)(n[1:]))
         return constructor(items)
 
     def com_stmt(self, node):
-        result = self.com_node(node)
+        result = self.lookup_node(node)(node[1:])
         assert result is not None
         if isinstance(result, Stmt):
             return result
@@ -1254,7 +1268,6 @@ _legal_node_types = [
     symbol.continue_stmt,
     symbol.return_stmt,
     symbol.raise_stmt,
-    symbol.yield_stmt,
     symbol.import_stmt,
     symbol.global_stmt,
     symbol.exec_stmt,
@@ -1280,6 +1293,9 @@ _legal_node_types = [
     symbol.power,
     symbol.atom,
     ]
+
+if hasattr(symbol, 'yield_stmt'):
+    _legal_node_types.append(symbol.yield_stmt)
 
 _assign_types = [
     symbol.test,
