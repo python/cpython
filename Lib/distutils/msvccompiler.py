@@ -523,6 +523,7 @@ class MSVCCompiler (CCompiler) :
                    % (self.__root,))
         else:
             key = (r"%s\6.0\Build System\Components\Platforms"
+                   r"\Win32 (%s)\Directories" % (self.__root, platform))
 
         for base in HKEYS:
             d = read_values(base, key)
