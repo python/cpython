@@ -6,7 +6,18 @@ DISTFILES=	README Makefile configure configure.in
 DIST=		$(DISTFILES) $(SUBDIRS) $(SUBDIRSTOO)
 
 all:		config.status
-		for i in $(SUBDIRS); do (echo $$i; cd $$i; $(MAKE) all); done
+		for i in $(SUBDIRS); do \
+			(echo $$i; cd $$i; $(MAKE) all); \
+		done
+
+tags:		ctags -t Parser/*.[ch] Objects/*.[ch] Python/*.[ch] Include/*.h
+
+TAGS:		etags -t Parser/*.[ch] Objects/*.[ch] Python/*.[ch] Include/*.h
+
+depend:
+		for i in $(SUBDIRS); do \
+			(echo $$i; cd $$i; $(MAKE) depend); \
+		done
 
 localclean:
 		-rm -f core *~ [@,#]* *.old *.orig *.rej
@@ -14,12 +25,15 @@ localclean:
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
-			(echo $$i;cd $$i;$(MAKE) clean); \
+			(echo $$i; cd $$i; $(MAKE) clean); \
 		done
 
-clobber:	localclean
+localclobber:	localclean
+		-rm -f tags TAGS config.status
+
+clobber:	localclobber
 		-for i in $(SUBDIRS); do \
-			(echo $$i;cd $$i;$(MAKE) clobber); \
+			(echo $$i; cd $$i; $(MAKE) clobber); \
 		done
 
 distclean:	clobber
@@ -28,7 +42,6 @@ distclean:	clobber
 				rm -f $$i/Makefile; \
 			fi; \
 		done
-		-rm -f config.status
 
 Makefiles:	config.status
 		./config.status
