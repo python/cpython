@@ -33,12 +33,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stat.h>
 
 #include <fcntl.h>
 
 #include "macdefs.h"
 #include "dirent.h"
-#include "stat.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -369,7 +369,7 @@ mac_stat(self, args)
 		return mac_error();
 	return mkvalue("(llllllllll)",
 		    (long)st.st_mode,
-		    0L /* st_ino */,
+		    (long)st.st_ito, /* XXX st_ino -- typo in THINK C <stat.h>? */
 		    (long)st.st_dev,
 		    (long)st.st_nlink,
 		    (long)st.st_uid,

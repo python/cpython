@@ -82,13 +82,13 @@ arbitrarily because of the 32000 bytes restriction.
 	- From Mac: all .c files except fopenRF.c [[which shouldn't even
 	be there]].
 
-	- From Parser: acceler.c, grammar1.c, myreadline.c, node.c,
+	- From Parser: acceler.c, grammar1.c, intrcheck.c, myreadline.c, node.c,
 	parser.c, parsetok.c, tokenizer.c.
 
 	- From Python: bltinmodule.c, ceval.c, cgensupport.c,
 	compile.c, errors.c, getopt.c, graminit.c, import.c,
 	marshal.c, modsupport.c, mystrtoul.c, pythonmain.c,
-	pythonrun.c, structmember.c, sysmodule.c, traceback.c
+	pythonrun.c, sigcheck.c, structmember.c, sysmodule.c, traceback.c
 	(i.e. all .c files except dup2.c, fmod.c, frozenmain.c,
 	getcwd.c, getmtime.c, memmove.c, sigcheck.c, strerror.c,
 	strtod.c, thread.c)
@@ -102,9 +102,7 @@ arbitrarily because of the 32000 bytes restriction.
 	macmodule.c in the Mac subdirectory, so it should already have
 	been added in a previous step.)  Note that for most modules,
 	the source file is called <name>module.c, but for a few long
-	module names it is just <module>.c.  - If you don't add
-	signalmodule.c, you must add intrcheck.c from Parser and
-	sigcheck.c from Python.
+	module names it is just <module>.c.
 
 The following THINK C libraries must be added: from Standard
 Libraries, ANSI and unix; from Mac Libraries, MacTraps.  I put each

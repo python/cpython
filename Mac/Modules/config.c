@@ -1,4 +1,3 @@
-/* Generated automatically from ../../Modules/config.c.in by makesetup. */
 /* -*- C -*- ***********************************************
 Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -23,10 +22,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Universal Python configuration file */
+/* Macintosh Python configuration file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef macintosh
+/* The Macintosh main program is in macmain.c */
+#define NO_MAIN
+/* Comment this out if you're not interested in STDWIN */
+#define USE_STDWIN
 #endif
 
 #include <stdio.h>
@@ -53,10 +59,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-#ifdef macintosh
-	/* Macs always support stdwin */
-//	wargs(&argc, &argv);
-#endif
 	argv0 = argv[0];
 	realmain(argc, argv);
 }
@@ -190,6 +192,7 @@ extern void initcl();
 extern void initfm();
 extern void initgl();
 extern void initimgfile();
+extern void initimgformat();
 extern void initsgi();
 extern void initsv();
 extern void initfl();
@@ -199,6 +202,7 @@ extern void initsignal();
 extern void initnew();
 extern void initdl();
 extern void initsyslog();
+extern void initgestalt();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -220,11 +224,14 @@ struct {
 	{"audioop", initaudioop},
 	{"imageop", initimageop},
 	{"rgbimg", initrgbimg},
-//	{"stdwin", initstdwin},
+#ifdef USE_STDWIN
+	{"stdwin", initstdwin},
+#endif
 	{"md5", initmd5},
 	{"rotor", initrotor},
-//	{"signal", initsignal},
 	{"new", initnew},
+	{"gestalt", initgestalt},
+	{"imgformat", initimgformat},
 
 /* -- ADDMODULE MARKER 2 -- */
 
