@@ -1,34 +1,17 @@
 These scripts and Makefile fragment are used to convert the Python
-documentation in LaTeX format to SGML or XML.  Though I originally
-thought that the XML was unlikely to be used, tool support for XML
-is increasing quickly enough that it may well be the final format.
-(It is the default output format when using the makefiles included
-here.)
+documentation in LaTeX format to XML.
 
-This material is preliminary and incomplete.  The XML omnibus package
-developed by the Python XML-SIG is required; specifically, the version
-available in the public CVS repository.  See
-http://www.python.org/sigs/xml-sig/ for more information on the
-package.
+This material is preliminary and incomplete.  Python 2.0 is required.
 
 To convert all documents to XML:
 
 	cd Doc/
-	make -f tools/sgmlconv/Makefile sgml
+	make -f tools/sgmlconv/Makefile
 
 To convert one document to XML:
 
 	cd Doc/<document-dir>
 	make -f ../tools/sgmlconv/make.rules TOOLSDIR=../tools
-
-To generate SGML instead, use:
-
-	cd Doc/<document-dir>
-	make -f ../tools/sgmlconv/make.rules TOOLSDIR=../tools sgml
-
-Note that building the second target format is fast because both
-conversions use the same intermediate format (an ESIS event stream).
-This is true regardless of whether you build SGML or XML first.
 
 Please send comments and bug reports to python-docs@python.org.
 
@@ -50,6 +33,8 @@ latex2esis.py
     comments are converted to <COMMENT> elements, which might exist at
     the same level as the top-level content elements.
 
+    The output of latex2esis.py gets saved as <filename>.esis1.
+
 docfixer.py
     This is the really painful part of the conversion.  Well, it's the 
     second really painful part, but more of the pain is specific to
@@ -63,7 +48,7 @@ docfixer.py
     micro-conversions.  Most of the code is not in any way "general".
     After processing the fragment, a new ESIS data stream is written
     out.  Like the input, it may not represent a well-formed
-    document.
+    document, but does represent a parsed entity.
 
     The output of docfixer.py is what gets saved in <filename>.esis.
 
