@@ -653,7 +653,7 @@ e.g., when the object administration appears to be corrupted.
 Initialize the \code{__builtin__} module.  For internal use only.
 \end{cfuncdesc}
 
-XXX Other init functions: PyEval_InitThreads, PyOS_InitInterrupts,
+XXX Other init functions: PyOS_InitInterrupts,
 PyMarshal_Init, PySys_Init.
 
 \chapter{Reference Counting}
@@ -743,14 +743,14 @@ return value to a specific exception; use
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_ExceptionMatches}{PyObject *exc}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 Equivalent to
 \code{PyErr_GivenExceptionMatches(PyErr_Occurred(), \var{exc})}.
 This should only be called when an exception is actually set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_GivenExceptionMatches}{PyObject *given, PyObject *exc}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 Return true if the \var{given} exception matches the exception in
 \var{exc}.  If \var{exc} is a class object, this also returns true
 when \var{given} is a subclass.  If \var{exc} is a tuple, all
@@ -760,7 +760,7 @@ set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_NormalizeException}{PyObject**exc, PyObject**val, PyObject**tb}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 Under certain circumstances, the values returned by
 \code{PyErr_Fetch()} below can be ``unnormalized'', meaning that
 \var{*exc} is a class object but \var{*val} is not an instance of the
@@ -871,7 +871,7 @@ raised.
 
 \begin{cfuncdesc}{PyObject *}{PyErr_NewException}{char *name,
 PyObject *base, PyObject *dict}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 This utility function creates and returns a new exception object.  The
 \var{name} argument must be the name of the new exception, a C string
 of the form \code{module.class}.  The \var{base} and \var{dict}
@@ -965,35 +965,17 @@ be created in this case).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 Import a module.  This is best described by referring to the built-in
 Python function \code{__import()__}, as the standard
 \code{__import__()} function calls this function directly.
 
-% Should move this para to libfuncs.tex:
-For example, the statement \code{import spam} results in the following
-call:
-\code{__import__('spam', globals(), locals(), [])};
-the statement \code{from spam.ham import eggs} results in
-\code{__import__('spam.ham', globals(), locals(), ['eggs'])}.
-Note that even though \code{locals()} and \code{['eggs']} are passed
-in as arguments, the \code{__import__()} function does not set the
-local variable named \code{eggs}; this is done by subsequent code that
-is generated for the import statement.
-
 The return value is a new reference to the imported module or
 top-level package, or \code{NULL} with an exception set on failure
-(the module may still be created in this case).  When the \var{name}
-variable is of the form \code{package.module}, normally, the top-level
-package (the name up till the first dot) is returned, \emph{not} the
-module named by \var{name}.  However, when a non-empty \var{fromlist}
-argument is given, the module named by \var{name} is returned.  This
-is done for compatibility with the bytecode generated for the
-different kinds of import statement; when using \code{import
-spam.ham.eggs}, the top-level package \code{spam} must be placed in
-the importing namespace, but when using \code{from spam.ham import
-eggs}, the \code{spam.ham} subpackage must be used to find the
-\code{eggs} variable.
+(the module may still be created in this case).  Like for
+\code{__import__()}, the return value when a submodule of a package
+was requested is normally the top-level package, unless a non-empty
+\var{fromlist} was given.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyImport_Import}{PyObject *name}
@@ -1067,7 +1049,7 @@ For internal use only.
 Load a frozen module.  Return \code{1} for success, \code{0} if the
 module is not found, and \code{-1} with an exception set if the
 initialization failed.  To access the imported module on a successful
-load, use \code{PyImport_ImportModule()).
+load, use \code{PyImport_ImportModule())}.
 (Note the misnomer -- this function would reload the module if it was
 already imported.)
 \end{cfuncdesc}
@@ -1744,8 +1726,6 @@ e.g. to check that an object is a dictionary, use
 
 \chapter{Initialization, Finalization, and Threads}
 
-% XXX Check argument/return type of all these
-
 \begin{cfuncdesc}{void}{Py_Initialize}{}
 Initialize the Python interpreter.  In an application embedding 
 Python, this should be called before using any other Python/C API 
@@ -1762,7 +1742,7 @@ initialization fails.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_IsInitialized}{}
-\strong{NEW in 1.5a4!}
+\strong{(NEW in 1.5a4!)}
 Return true (nonzero) when the Python interpreter has been
 initialized, false (zero) if not.  After \code{Py_Finalize()} is
 called, this returns false until \code{Py_Initialize()} is called
@@ -1770,7 +1750,7 @@ again.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Finalize}{}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
 Undo all initializations made by \code{Py_Initialize()} and subsequent 
 use of Python/C API functions, and destroy all sub-interpreters (see 
 \code{Py_NewInterpreter()} below) that were created and not yet 
@@ -1802,7 +1782,7 @@ calls \code{Py_Initialize()} and \code{Py_Finalize()} more than once.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{Py_NewInterpreter}{}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
 Create a new sub-interpreter.  This is an (almost) totally separate 
 environment for the execution of Python code.  In particular, the new 
 interpreter has separate, independent versions of all imported 
@@ -1855,7 +1835,7 @@ a hard-to-fix bug that will be addressed in a future release.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_EndInterpreter}{PyThreadState *tstate}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
 Destroy the (sub-)interpreter represented by the given thread state.  
 The given thread state must be the current thread state.  See the 
 discussion of thread states below.  When the call returns, the current 
@@ -1867,7 +1847,7 @@ been explicitly destroyed at that point.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_SetProgramName}{char *name}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
 This function should be called before \code{Py_Initialize()} is called 
 for the first time, if it is called at all.  It tells the interpreter 
 the value of the \code{argv[0]} argument to the \code{main()} function 
@@ -1939,7 +1919,7 @@ platform.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char *}{Py_GetProgramFullPath}{}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
 Return the full program name of the Python executable; this is 
 computed as a side-effect of deriving the default module search path 
 from the program name (set by \code{Py_SetProgramName()} above).  The 
@@ -2032,41 +2012,320 @@ the variable \code{sys.version}.
 
 \section{Thread State and the Global Interpreter Lock}
 
+The Python interpreter is not fully thread safe.  In order to support
+multi-threaded Python programs, there's a global lock that must be
+held by the current thread before it can safely access Python objects.
+Without the lock, even the simplest operations could cause problems in
+a multi-threaded proram: for example, when two threads simultaneously
+increment the reference count of the same object, the reference count
+could end up being incremented only once instead of twice.
+
+Therefore, the rule exists that only the thread that has acquired the
+global interpreter lock may operate on Python objects or call Python/C
+API functions.  In order to support multi-threaded Python programs,
+the interpreter regularly release and reacquires the lock -- by
+default, every ten bytecode instructions (this can be changed with
+\code{sys.setcheckinterval()}).  The lock is also released and
+reacquired around potentially blocking I/O operations like reading or
+writing a file, so that other threads can run while the thread that
+requests the I/O is waiting for the I/O operation to complete.
+
+The Python interpreter needs to keep some bookkeeping information
+separate per thread -- for this it uses a data structure called
+PyThreadState.  This is new in Python 1.5; in earlier versions, such
+state was stored in global variables, and switching threads could
+cause problems.  In particular, exception handling is now thread safe,
+when the application uses \code{sys.exc_info()} to access the exception
+last raised in the current thread.
+
+There's one global variable left, however: the pointer to the current
+PyThreadState structure.  While most thread packages have a way to
+store ``per-thread global data'', Python's internal platform
+independent thread abstraction doesn't support this (yet).  Therefore,
+the current thread state must be manipulated explicitly.
+
+This is easy enough in most cases.  Most code manipulating the global
+interpreter lock has the following simple structure:
+
+\bcode\begin{verbatim}
+Save the thread state in a local variable.
+Release the interpreter lock.
+...Do some blocking I/O operation...
+Reacquire the interpreter lock.
+Restore the thread state from the local variable.
+\end{verbatim}\ecode
+
+This is so common that a pair of macros exists to simplify it:
+
+\bcode\begin{verbatim}
+Py_BEGIN_ALLOW_THREADS
+...Do some blocking I/O operation...
+Py_END_ALLOW_THREADS
+\end{verbatim}\ecode
+
+The BEGIN macro opens a new block and declares a hidden local
+variable; the END macro closes the block.  Another advantage of using
+these two macros is that when Python is compiled without thread
+support, they are defined empty, thus saving the thread state and lock
+manipulations.
+
+When thread support is enabled, the block above expands to the
+following code:
+
+\bcode\begin{verbatim}
+{
+    PyThreadState *_save;
+    _save = PyEval_SaveThread();
+    ...Do some blocking I/O operation...
+    PyEval_RestoreThread(_save);
+}
+\end{verbatim}\ecode
+
+Using even lower level primitives, we can get roughly the same effect
+as follows:
+
+\bcode\begin{verbatim}
+{
+    PyThreadState *_save;
+    _save = PyThreadState_Swap(NULL);
+    PyEval_ReleaseLock();
+    ...Do some blocking I/O operation...
+    PyEval_AcquireLock();
+    PyThreadState_Swap(_save);
+}
+\end{verbatim}\ecode
+
+There are some subtle differences; in particular,
+\code{PyEval_RestoreThread()} saves and restores the value of the
+global variable \code{errno}, since the lock manipulation does not
+guarantee that \code{errno} is left alone.  Also, when thread support
+is disabled, \code{PyEval_SaveThread()} and
+\code{PyEval_RestoreThread()} don't manipulate the lock; in this case,
+\code{PyEval_ReleaseLock()} and \code{PyEval_AcquireLock()} are not
+available.  (This is done so that dynamically loaded extensions
+compiled with thread support enabled can be loaded by an interpreter
+that was compiled with disabled thread support.)
+
+The global interpreter lock is used to protect the pointer to the
+current thread state.  When releasing the lock and saving the thread
+state, the current thread state pointer must be retrieved before the
+lock is released (since another thread could immediately acquire the
+lock and store its own thread state in the global variable).
+Reversely, when acquiring the lock and restoring the thread state, the
+lock must be acquired before storing the thread state pointer.
+
+Why am I going on with so much detail about this?  Because when
+threads are created from C, they don't have the global interpreter
+lock, nor is there a thread state data structure for them.  Such
+threads must bootstrap themselves into existence, by first creating a
+thread state data structure, then acquiring the lock, and finally
+storing their thread state pointer, before they can start using the
+Python/C API.  When they are done, they should reset the thread state
+pointer, release the lock, and finally free their thread state data
+structure.
+
+When creating a thread data structure, you need to provide an
+interpreter state data structure.  The interpreter state data
+structure hold global data that is shared by all threads in an
+interpreter, for example the module administration
+(\code{sys.modules}).  Depending on your needs, you can either create
+a new interpreter state data structure, or share the interpreter state
+data structure used by the Python main thread (to access the latter,
+you must obtain the thread state and access its \code{interp} member;
+this must be done by a thread that is created by Python or by the main
+thread after Python is initialized).
+
+XXX More?
+
+\begin{ctypedesc}{PyInterpreterState}
+\strong{(NEW in 1.5a3!)}
+This data structure represents the state shared by a number of
+cooperating threads.  Threads belonging to the same interpreter
+share their module administration and a few other internal items.
+There are no public members in this structure.
+
+Threads belonging to different interpreters initially share nothing,
+except process state like available memory, open file descriptors and
+such.  The global interpreter lock is also shared by all threads,
+regardless of to which interpreter they belong.
+\end{ctypedesc}
+
+\begin{ctypedesc}{PyThreadState}
+\strong{(NEW in 1.5a3!)}
+This data structure represents the state of a single thread.  The only
+public data member is \code{PyInterpreterState *interp}, which points
+to this thread's interpreter state.
+\end{ctypedesc}
+
+\begin{cfuncdesc}{void}{PyEval_InitThreads}{}
+Initialize and acquire the global interpreter lock.  It should be
+called in the main thread before creating a second thread or engaging
+in any other thread operations such as \code{PyEval_ReleaseLock()} or
+\code{PyEval_ReleaseThread(tstate)}.  It is not needed before
+calling \code{PyEval_SaveThread()} or \code{PyEval_RestoreThread()}.
+
+This is a no-op when called for a second time.  It is safe to call
+this function before calling \code{Py_Initialize()}.
+
+When only the main thread exists, no lock operations are needed.  This
+is a common situation (most Python programs do not use threads), and
+the lock operations slow the interpreter down a bit.  Therefore, the
+lock is not created initially.  This situation is equivalent to having
+acquired the lock: when there is only a single thread, all object
+accesses are safe.  Therefore, when this function initializes the
+lock, it also acquires it.  Before the Python \code{thread} module
+creates a new thread, knowing that either it has the lock or the lock
+hasn't been created yet, it calls \code{PyEval_InitThreads()}.  When
+this call returns, it is guaranteed that the lock has been created and
+that it has acquired it.
+
+It is \strong{not} safe to call this function when it is unknown which
+thread (if any) currently has the global interpreter lock.
+
+This function is not available when thread support is disabled at
+compile time.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyEval_AcquireLock}{}
-\strong{NEW in 1.5a3!}
-HIRO
-
-
+\strong{(NEW in 1.5a3!)}
+Acquire the global interpreter lock.  The lock must have been created
+earlier.  If this thread already has the lock, a deadlock ensues.
+This function is not available when thread support is disabled at
+compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseLock}{}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
+Release the global interpreter lock.  The lock must have been created
+earlier.  This function is not available when thread support is
+disabled at
+compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
-\strong{NEW in 1.5a3!}
+\strong{(NEW in 1.5a3!)}
+Acquire the global interpreter lock and then set the current thread
+state to \var{tstate}, which should not be \code{NULL}.  The lock must
+have been created earlier.  If this thread already has the lock,
+deadlock ensues.  This function is not available when thread support
+is disabled at
+compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseThread}{PyThreadState *tstate}
-\strong{NEW in 1.5a3!}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void}{PyEval_RestoreThread}{PyThreadState *tstate}
+\strong{(NEW in 1.5a3!)}
+Reset the current thread state to \code{NULL} and release the global
+interpreter lock.  The lock must have been created earlier and must be
+held by the current thread.  The \var{tstate} argument, which must not
+be \code{NULL}, is only used to check that it represents the current
+thread state -- if it isn't, a fatal error is reported.  This function
+is not available when thread support is disabled at
+compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{PyEval_SaveThread}{}
+\strong{(Different return type in 1.5a3!)}
+Release the interpreter lock (if it has been created and thread
+support is enabled) and reset the thread state to \code{NULL},
+returning the previous thread state (which is not \code{NULL}).  If
+the lock has been created, the current thread must have acquired it.
+(This function is available even when thread support is disabled at
+compile time.)
 \end{cfuncdesc}
 
-% XXX These aren't really C functions!
-\begin{cfuncdesc}{}{Py_BEGIN_ALLOW_THREADS}{}
+\begin{cfuncdesc}{void}{PyEval_RestoreThread}{PyThreadState *tstate}
+\strong{(Different argument type in 1.5a3!)}
+Acquire the interpreter lock (if it has been created and thread
+support is enabled) and set the thread state to \var{tstate}, which
+must not be \code{NULL}.  If the lock has been created, the current
+thread must not have acquired it, otherwise deadlock ensues.  (This
+function is available even when thread support is disabled at compile
+time.)
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{}{Py_BEGIN_END_THREADS}{}
+% XXX These aren't really C types, but the ctypedesc macro is the simplest!
+\begin{ctypedesc}{Py_BEGIN_ALLOW_THREADS}
+This macro expands to
+\code{\{ PyThreadState *_save; _save = PyEval_SaveThread();}.
+Note that it contains an opening brace; it must be matched with a
+following \code{Py_END_ALLOW_THREADS} macro.  See above for further
+discussion of this macro.  It is a no-op when thread support is
+disabled at compile time.
+\end{ctypedesc}
+
+\begin{ctypedesc}{Py_END_ALLOW_THREADS}
+This macro expands to
+\code{PyEval_RestoreThread(_save); \} }.
+Note that it contains a closing brace; it must be matched with an
+earlier \code{Py_BEGIN_ALLOW_THREADS} macro.  See above for further
+discussion of this macro.  It is a no-op when thread support is
+disabled at compile time.
+\end{ctypedesc}
+
+\begin{ctypedesc}{Py_BEGIN_BLOCK_THREADS}
+This macro expands to \code{PyEval_RestoreThread(_save);} i.e. it
+is equivalent to \code{Py_END_ALLOW_THREADS} without the closing
+brace.  It is a no-op when thread support is disabled at compile
+time.
+\end{ctypedesc}
+
+\begin{ctypedesc}{Py_BEGIN_UNBLOCK_THREADS}
+This macro expands to \code{_save = PyEval_SaveThread();} i.e. it is
+equivalent to \code{Py_BEGIN_ALLOW_THREADS} without the opening brace
+and variable declaration.  It is a no-op when thread support is
+disabled at compile time.
+\end{ctypedesc}
+
+All of the following functions are only available when thread support
+is enabled at compile time, and must be called only when the
+interpreter lock has been created.  They are all new in 1.5a3.
+
+\begin{cfuncdesc}{PyInterpreterState *}{PyInterpreterState_New}{}
+Create a new interpreter state object.  The interpreter lock must be
+held.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{}{Py_BEGIN_XXX_THREADS}{}
+\begin{cfuncdesc}{void}{PyInterpreterState_Clear}{PyInterpreterState *interp}
+Reset all information in an interpreter state object.  The interpreter
+lock must be held.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{PyInterpreterState_Delete}{PyInterpreterState *interp}
+Destroy an interpreter state object.  The interpreter lock need not be
+held.  The interpreter state must have been reset with a previous
+call to \code{PyInterpreterState_Clear()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{PyThreadState_New}{PyInterpreterState *interp}
+Create a new thread state object belonging to the given interpreter
+object.  The interpreter lock must be held.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyThreadState_Clear}{PyThreadState *tstate}
+Reset all information in a thread state object.  The interpreter lock
+must be held.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyThreadState_Delete}{PyThreadState *tstate}
+Destroy a thread state object.  The interpreter lock need not be
+held.  The thread state must have been reset with a previous
+call to \code{PyThreadState_Clear()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{PyThreadState_Get}{}
+Return the current thread state.  The interpreter lock must be held.
+When the current thread state is \code{NULL}, this issues a fatal
+error (so that the caller needn't check for \code{NULL}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{PyThreadState_Swap}{PyThreadState *tstate}
+Swap the current thread state with the thread state given by the
+argument \var{tstate}, which may be \code{NULL}.  The interpreter lock
+must be held.
+\end{cfuncdesc}
+
+
+\section{Defining New Object Types}
 
 XXX To be done:
 
@@ -2131,7 +2390,7 @@ This section describes Python type objects and the singleton object
 \subsection{The None Object}
 
 \begin{cvardesc}{PyObject *}{Py_None}
-macro
+XXX macro
 \end{cvardesc}
 
 
@@ -2139,7 +2398,7 @@ macro
 
 Generic operations on sequence objects were discussed in the previous 
 chapter; this section deals with the specific kinds of sequence 
-objects that are intrinsuc to the Python language.
+objects that are intrinsic to the Python language.
 
 
 \subsection{String Objects}
