@@ -35,6 +35,8 @@ Extension modules
 Library
 -------
 
+- Bug #798254:  doctest.py can now handle unbound methods.
+
 - Bug #797650:  textwrap.py now avoids an infinite loop when one of the
   indent arguments is set longer than the total width.
 
