@@ -193,7 +193,7 @@ def test():
     f.write(lines[1])
     f.seek(0)
     print 'First line =', `f.readline()`
-    here = f.tell()
+    print 'Position =', f.tell()
     line = f.readline()
     print 'Second line =', `line`
     f.seek(-len(line), 1)
