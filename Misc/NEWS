@@ -99,10 +99,10 @@ Core and builtins
       been changed.  Both the check interval and the ticker used to be
       per-thread values.  They are now just a pair of global variables.  In
       addition, the default check interval was boosted from 10 to 100
-      bytecode instructions.  This may have some effect on systems relied on
-      the old default value.  In particular, in multi-threaded applications
-      which try to be highly responsive, response time will increase by some
-      (perhaps imperceptible) amount.
+      bytecode instructions.  This may have some effect on systems that
+      relied on the old default value.  In particular, in multi-threaded
+      applications which try to be highly responsive, response time will
+      increase by some (perhaps imperceptible) amount.
 
 - When multiplying very large integers, a version of the so-called
   Karatsuba algorithm is now used.  This is most effective if the
