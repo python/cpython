@@ -174,22 +174,21 @@ def test_saveall():
     gc.collect()
     vereq(gc.garbage, []) # if this fails, someone else created immortal trash
 
-    debug = gc.get_debug()
-    gc.set_debug(debug | gc.DEBUG_SAVEALL)
     l = []
     l.append(l)
     id_l = id(l)
-    del l
 
+    debug = gc.get_debug()
+    gc.set_debug(debug | gc.DEBUG_SAVEALL)
+    del l
     gc.collect()
-    try:
-        vereq(len(gc.garbage), 1)
-        if id(gc.garbage[0]) == id_l:
-            del gc.garbage[0]
-        else:
-            raise TestFailed, "didn't find obj in garbage (saveall)"
-    finally:
-        gc.set_debug(debug)
+    gc.set_debug(debug)
+
+    vereq(len(gc.garbage), 1)
+    if id(gc.garbage[0]) == id_l:
+        del gc.garbage[0]
+    else:
+        raise TestFailed, "didn't find obj in garbage (saveall)"
 
 def test_del():
     # __del__ methods can trigger collection, make this to happen
