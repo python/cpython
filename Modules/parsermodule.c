@@ -772,7 +772,6 @@ build_node_tree(PyObject *tuple)
          */
         int line_num = 0;
         PyObject *encoding = NULL;
-        PyObject *tmpTuple = NULL;
 
         if (num == encoding_decl) {
             encoding = PySequence_GetItem(tuple, 2);
