@@ -2,10 +2,6 @@ What's New in Python 2.2.2 (final) ?
 Release date: dd-Mmm-yyyy
 ====================================
 
-What's New in Python 2.2.2b1?
-Release date: 7-Oct-2002
-=============================
-
 Almost everything in this release is a pure bugfix and is backported
 from a corresponding bugfix already applied to Python 2.3.  While at
 the time of writing, Python 2.3 is still in pre-alpha form, only
@@ -16,6 +12,42 @@ about.  Documentation fixes are not listed.
 
 Tip: to quickly find SourceForge bug or patch NNNNNN, use an URL of
 the form www.python.org/sf/NNNNNN.
+
+Here are the changes since the 2.2.2b1 release.  Below are the changes
+since 2.2.1.
+
+Core and builtins
+
+- XXX
+
+Extension modules
+
+- XXX
+
+Library
+
+- XXX
+
+Build
+
+- XXX
+
+C API
+
+- XXX
+
+Windows
+
+- XXX
+
+Other
+
+- XXX
+
+
+What's New in Python 2.2.2b1?
+Release date: 7-Oct-2002
+=============================
 
 Core and builtins
 
