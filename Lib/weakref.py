@@ -69,7 +69,6 @@ class WeakDictionary(UserDict.UserDict):
     def items(self):
         L = []
         for key, ref in self.data.items():
-            key, ref = L[i]
             o = ref()
             if o is not None:
                 L.append((key, o))
