@@ -344,6 +344,9 @@ list_repeat(a, n)
 	return (object *) np;
 }
 
+/* XXX The following function has a bug: don't try assigning a
+   XXX list object to a slice of itself (e.g., a[:1] = a). */
+
 static int
 list_ass_slice(a, ilow, ihigh, v)
 	listobject *a;
