@@ -459,11 +459,12 @@ next time you run make in the toplevel directory.  (When working
 inside the Modules directory, use "make Makefile; make".)
 
 The default collection of modules should build on any Unix system, but
-many optional modules should work on all modern Unices (e.g. try dbm,
-nis, termios, timing, syslog, curses, new, soundex, parser).  Often
-the quickest way to determine whether a particular module works or not
-is to see if it will build: enable it in Setup, then if you get
-compilation or link errors, disable it -- you're missing support.
+many optional modules should work on all modern Unices (e.g. try
+audioop, imageop, crypt, dbm, gdbm, nis, resource, termios, timing,
+syslog, _curses, pyexpat, readline, rgbimg, zlib).  Often the quickest
+way to determine whether a particular module works or not is to see if
+it will build: enable it in Setup, then if you get compilation or link
+errors, disable it -- you're missing support.
 
 On SGI IRIX, there are modules that interface to many SGI specific
 system libraries, e.g. the GL library and the audio hardware.
