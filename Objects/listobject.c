@@ -536,6 +536,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		p = recycle = PyMem_NEW(PyObject *, (ihigh-ilow));
 		if (recycle == NULL) {
 			PyErr_NoMemory();
+			Py_XDECREF(v_as_SF);
 			return -1;
 		}
 	}
@@ -556,6 +557,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		if (list_resize(a, s+d) == -1) {
 			if (recycle != NULL)
 				PyMem_DEL(recycle);
+			Py_XDECREF(v_as_SF);
 			return -1;
 		}
 		item = a->ob_item;
