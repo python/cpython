@@ -2113,12 +2113,16 @@ wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *arg;
 	int i;
 
-	if (!PyArg_ParseTuple(args, "O", &arg))
-		return NULL;
-	i = getindex(self, arg);
-	if (i == -1 && PyErr_Occurred())
-		return NULL;
-	return (*func)(self, i);
+	if (PyTuple_GET_SIZE(args) == 1) {
+		arg = PyTuple_GET_ITEM(args, 0);
+		i = getindex(self, arg);
+		if (i == -1 && PyErr_Occurred())
+			return NULL;
+		return (*func)(self, i);
+	}
+	PyArg_ParseTuple(args, "O", &arg);
+	assert(PyErr_Occurred());
+	return NULL;
 }
 
 static struct wrapperbase tab_getitem_int[] = {
@@ -2825,7 +2829,57 @@ slot_sq_length(PyObject *self)
 
 SLOT1(slot_sq_concat, "__add__", PyObject *, "O")
 SLOT1(slot_sq_repeat, "__mul__", int, "i")
-SLOT1(slot_sq_item, "__getitem__", int, "i")
+
+/* Super-optimized version of slot_sq_item.
+   Other slots could do the same... */
+static PyObject *
+slot_sq_item(PyObject *self, int i)
+{
+	static PyObject *getitem_str;
+	PyObject *func, *args = NULL, *ival = NULL, *retval = NULL;
+	descrgetfunc f;
+
+	if (getitem_str == NULL) {
+		getitem_str = PyString_InternFromString("__getitem__");
+		if (getitem_str == NULL)
+			return NULL;
+	}
+	func = _PyType_Lookup(self->ob_type, getitem_str);
+	if (func != NULL) {
+		if (func->ob_type == &PyWrapperDescr_Type) {
+			PyWrapperDescrObject *wrapper =
+				(PyWrapperDescrObject *)func;
+			if (wrapper->d_base->wrapper == wrap_sq_item) {
+				intargfunc f;
+				f = (intargfunc)(wrapper->d_wrapped);
+				return f(self, i);
+			}
+		}
+		if ((f = func->ob_type->tp_descr_get) == NULL)
+			Py_INCREF(func);
+		else
+			func = f(func, self, (PyObject *)(self->ob_type));
+		ival = PyInt_FromLong(i);
+		if (ival != NULL) {
+			args = PyTuple_New(1);
+			if (args != NULL) {
+				PyTuple_SET_ITEM(args, 0, ival);
+				retval = PyObject_Call(func, args, NULL);
+				Py_XDECREF(args);
+				Py_XDECREF(func);
+				return retval;
+			}
+		}
+	}
+	else {
+		PyErr_SetObject(PyExc_AttributeError, getitem_str);
+	}
+	Py_XDECREF(args);
+	Py_XDECREF(ival);
+	Py_XDECREF(func);
+	return NULL;
+}
+
 SLOT2(slot_sq_slice, "__getslice__", int, int, "ii")
 
 static int

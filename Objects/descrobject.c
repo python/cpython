@@ -3,38 +3,6 @@
 #include "Python.h"
 #include "structmember.h" /* Why is this not included in Python.h? */
 
-/* Various kinds of descriptor objects */
-
-#define COMMON \
-	PyObject_HEAD \
-	PyTypeObject *d_type; \
-	PyObject *d_name
-
-typedef struct {
-	COMMON;
-} PyDescrObject;
-
-typedef struct {
-	COMMON;
-	PyMethodDef *d_method;
-} PyMethodDescrObject;
-
-typedef struct {
-	COMMON;
-	PyMemberDef *d_member;
-} PyMemberDescrObject;
-
-typedef struct {
-	COMMON;
-	PyGetSetDef *d_getset;
-} PyGetSetDescrObject;
-
-typedef struct {
-	COMMON;
-	struct wrapperbase *d_base;
-	void *d_wrapped; /* This can be any function pointer */
-} PyWrapperDescrObject;
-
 static void
 descr_dealloc(PyDescrObject *descr)
 {
@@ -481,7 +449,7 @@ static PyTypeObject PyGetSetDescr_Type = {
 	(descrsetfunc)getset_set,		/* tp_descr_set */
 };
 
-static PyTypeObject PyWrapperDescr_Type = {
+PyTypeObject PyWrapperDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"wrapper_descriptor",
