@@ -267,6 +267,11 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 
+/* Atleast VC 7.1 has them. If some compiler does not provide them,
+   #ifdef appropriately .*/
+#define HAVE_UINTPTR_T 1
+#define HAVE_INTPTR_T 1
+
 #endif
 
 /* Fairly standard from here! */
@@ -483,6 +488,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the <stdarg.h> prototypes.  */
 #define HAVE_STDARG_PROTOTYPES
+
+/* Define if you have the <stddef.h> header file.  */
+#define HAVE_STDDEF_H 1
 
 /* Define if you have the <sys/audioio.h> header file.  */
 /* #undef HAVE_SYS_AUDIOIO_H */
