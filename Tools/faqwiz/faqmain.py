@@ -596,7 +596,6 @@ class FAQServer:
 	    if i >= 0:
 		key, value = word[:i], word[i+1:]
 		cookies[key] = value
-	print "\n<PRE>Cookies:", cookies, "</PRE>"
 	if not cookies.has_key('Python-FAQ-Wizard'):
 	    return "", "", ""
 	value = cookies['Python-FAQ-Wizard']
