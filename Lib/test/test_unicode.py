@@ -168,6 +168,57 @@ assert 'abc' < u'abcd'
 assert u'abc' < u'abcd'
 print 'done.'
 
+print 'Testing UTF-16 code point order comparisons...',
+#No surrogates, no fixup required.
+assert u'\u0061' < u'\u20ac'
+# Non surrogate below surrogate value, no fixup required
+assert u'\u0061' < u'\ud800\udc02'
+
+# Non surrogate above surrogate value, fixup required
+def test_lecmp(s, s2):
+  assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
+  
+def test_fixup(s):
+  s2 = u'\ud800\udc01'
+  test_lecmp(s, s2)
+  s2 = u'\ud900\udc01'
+  test_lecmp(s, s2)
+  s2 = u'\uda00\udc01'
+  test_lecmp(s, s2)
+  s2 = u'\udb00\udc01'
+  test_lecmp(s, s2)
+  s2 = u'\ud800\udd01'
+  test_lecmp(s, s2)
+  s2 = u'\ud900\udd01'
+  test_lecmp(s, s2)
+  s2 = u'\uda00\udd01'
+  test_lecmp(s, s2)
+  s2 = u'\udb00\udd01'
+  test_lecmp(s, s2)
+  s2 = u'\ud800\ude01'
+  test_lecmp(s, s2)
+  s2 = u'\ud900\ude01'
+  test_lecmp(s, s2)
+  s2 = u'\uda00\ude01'
+  test_lecmp(s, s2)
+  s2 = u'\udb00\ude01'
+  test_lecmp(s, s2)
+  s2 = u'\ud800\udfff'
+  test_lecmp(s, s2)
+  s2 = u'\ud900\udfff'
+  test_lecmp(s, s2)
+  s2 = u'\uda00\udfff'
+  test_lecmp(s, s2)
+  s2 = u'\udb00\udfff'
+  test_lecmp(s, s2)
+
+test_fixup(u'\ue000')
+test_fixup(u'\uff61')
+
+# Surrogates on both sides, no fixup required
+assert u'\ud800\udc02' < u'\ud84d\udc56'
+print 'done.'
+
 test('ljust', u'abc',  u'abc       ', 10)
 test('rjust', u'abc',  u'       abc', 10)
 test('center', u'abc', u'   abc    ', 10)
@@ -292,6 +343,27 @@ print 'done.'
 
 # Test builtin codecs
 print 'Testing builtin codecs...',
+
+# UTF-8 specific encoding tests:
+assert u'\u20ac'.encode('utf-8') == \
+       ''.join((chr(0xe2), chr(0x82), chr(0xac)))
+assert u'\ud800\udc02'.encode('utf-8') == \
+       ''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82)))
+assert u'\ud84d\udc56'.encode('utf-8') == \
+       ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96)))
+# UTF-8 specific decoding tests
+assert unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))),
+               'utf-8') == u'\ud84d\udc56'
+assert unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))),
+               'utf-8') == u'\ud800\udc02'
+assert unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
+               'utf-8') == u'\u20ac'
+
+# Other possible utf-8 test cases:
+# * strict decoding testing for all of the
+#   UTF8_ERROR cases in PyUnicode_DecodeUTF8
+
+
 
 assert unicode('hello','ascii') == u'hello'
 assert unicode('hello','utf-8') == u'hello'
