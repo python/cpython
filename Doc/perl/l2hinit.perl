@@ -251,9 +251,12 @@ sub img_tag {
 			,'border=', $nav_border, ' alt="', $alt
 			,'" src="', $icon, '">' );
 	}
-	return join('', '<img ', $iconsizes{$1}, $align
-		    ,'border=', $nav_border, ' alt="', $alt, "\"\n"
-		    ,' src="', $ICONSERVER, "/$icon", '">' );
+	my $s = join('', '<img ', $iconsizes{$1}, $align,
+                     'border=', $nav_border, ' alt="', $alt, "\"\n",
+                     ' src="', $ICONSERVER, "/$icon", '">' );
+        # if $ICONSERVER starts with "./", remove "./":
+        $s =~ s|src="(.\/)+|src="|;
+        return $s;
     }
     else {
 	return $icon;
