@@ -17,6 +17,9 @@ try:
     from xml.parsers import expat
 except ImportError:
     raise SAXReaderNotAvailable("expat not supported",None)
+else:
+    if not hasattr(expat, "ParserCreate"):
+        raise SAXReaderNotAvailable("expat not supported",None)
 from xml.sax import xmlreader, saxutils, handler
 
 AttributesImpl = xmlreader.AttributesImpl
