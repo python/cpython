@@ -737,7 +737,8 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   Read until \EOF{} using \code{readline()} and return a list containing
   the lines thus read.  If the optional \var{sizehint} argument is
   present, instead of reading up to \EOF{}, whole lines totalling
-  approximately \var{sizehint} bytes are read.
+  approximately \var{sizehint} bytes (possibly after rounding up to an
+  internal buffer size) are read.
 \end{funcdesc}
 
 \begin{funcdesc}{seek}{offset\, whence}
