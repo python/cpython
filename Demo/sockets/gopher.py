@@ -39,7 +39,9 @@ TAB = '\t'
 
 # Open a TCP connection to a given host and port
 def open_socket(host, port):
-	if type(port) == type(''):
+	if not port:
+		port = DEF_PORT
+	elif type(port) == type(''):
 		port = string.atoi(port)
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
