@@ -621,6 +621,9 @@ Library
 Tools/Demos
 -----------
 
+- pygettext.py now supports globbing on Windows, and accepts module
+  names in addition to accepting file names.
+
 - The SGI demos (Demo/sgi) have been removed.  Nobody thought they
   were interesting any more.  (The SGI library modules and extensions
   are still there; it is believed that at least some of these are
