@@ -206,6 +206,38 @@ Send an \samp{IHAVE} command.  If the response is not an error, treat
 \var{file} exactly as for the \code{post()} method.
 \end{funcdesc}
 
+\begin{funcdesc}{date}{}
+Return a triple \code{(\var{response}, \var{date}, \var{time})},
+containing the current date and time in a form suitable for the
+\code{newnews} and \code{newgroups} methods.
+This is an optional NNTP extension, and may not be supported by all
+servers.
+\end{funcdesc}
+
+\begin{funcdesc}{xgtitle}{name}
+Process an XGTITLE command, returning a pair \code{(\var{response},
+\var{list}}, where \var{list} is a list of tuples containing
+\code{(\var{name}, \var{title})}.
+% XXX huh?  Should that be name, description?
+This is an optional NNTP extension, and may not be supported by all
+servers.
+\end{funcdesc}
+
+\begin{funcdesc}{xover}{start\, end}
+Return a pair \code{(\var{resp}, \var{list})}.  \var{list} is a list
+of tuples, one for each article in the range delimited by the \var{start}
+and \var{end} article numbers.  Each tuple is of the form
+\code{(\var{article number}, \var{subject}, \var{poster}, \var{date}, \var{id}, \var{references}, \var{size}, \var{lines})}.
+This is an optional NNTP extension, and may not be supported by all
+servers.
+\end{funcdesc}
+
+\begin{funcdesc}{xpath}{id}
+Return a pair \code{(\var{resp}, \var{path})}, where \var{path} is the
+directory path to the article with message ID \var{id}.  This is an
+optional NNTP extension, and may not be supported by all servers.
+\end{funcdesc}
+
 \begin{funcdesc}{quit}{}
 Send a \samp{QUIT} command and close the connection.  Once this method
 has been called, no other methods of the NNTP object should be called.
