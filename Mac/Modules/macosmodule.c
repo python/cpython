@@ -197,13 +197,13 @@ MacOS_SetScheduleTimes(PyObject *self, PyObject *args)
 static PyObject *
 MacOS_EnableAppswitch(PyObject *self, PyObject *args)
 {
-	int enable;
+	int old, new;
 	
-	if (!PyArg_ParseTuple(args, "i", &enable))
+	if (!PyArg_ParseTuple(args, "i", &new))
 		return NULL;
-	PyMac_DoYieldEnabled = enable;
-	Py_INCREF(Py_None);
-	return Py_None;
+	old = PyMac_DoYieldEnabled;
+	PyMac_DoYieldEnabled = new;
+	return Py_BuildValue("i", old);
 }
 
 
@@ -246,3 +246,4 @@ MacOS_Init()
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		Py_FatalError("can't define MacOS.Error");
 }
+
