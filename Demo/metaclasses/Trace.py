@@ -1,6 +1,10 @@
-"""Tracing metaclass."""
+"""Tracing metaclass.
 
-import types
+XXX This is very much a work in progress.
+
+"""
+
+import types, sys
 
 class TraceMetaClass:
     """Metaclass for tracing.
@@ -28,7 +32,7 @@ class TraceMetaClass:
 	except KeyError:
 	    for base in self.__bases__:
 		try:
-		    return getattr(base, name)
+		    return base.__getattr__(name)
 		except AttributeError:
 		    pass
 	    raise AttributeError, name
@@ -106,12 +110,15 @@ Traced = TraceMetaClass('Traced', (), {'__trace_output__': None})
 
 
 def _test():
-    import sys
+    global C, D
     class C(Traced):
 	def __init__(self, x=0): self.x = x
 	def m1(self, x): self.x = x
 	def m2(self, y): return self.x + y
-    C.__trace_output__ = sys.stdout
+	__trace_output__ = sys.stdout
+    class D(C):
+	def m2(self, y): print "D.m2(%s)" % `y`; return C.m2(self, y)
+	__trace_output__ = None
     x = C(4321)
     print x
     print x.x
@@ -122,5 +129,17 @@ def _test():
     print x.m2(4000)
     print x.x
 
+    print C.__init__
+    print C.m2
+    print D.__init__
+    print D.m2
+
+    y = D()
+    print y
+    print y.m1(10)
+    print y.m2(100)
+    print y.x
+
 if __name__ == '__main__':
     _test()
+
