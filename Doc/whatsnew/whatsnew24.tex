@@ -182,6 +182,18 @@ implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
 \end{seealso}
 
 %======================================================================
+\section{PEP 318: Decorators for Functions, Methods and Classes}
+
+% XXX write this section
+
+\begin{seealso}
+\seepep{318}{Decorators for Functions, Methods and Classes}{Written 
+by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people wrote
+patches implementing function decorators, but the one that was actually 
+checked in was patch #979728, written by Mark Russell.}
+\end{seealso}
+
+%======================================================================
 \section{PEP 322: Reverse Iteration}
 
 A new built-in function, \function{reversed(\var{seq})}, takes a sequence
@@ -628,6 +640,11 @@ Python dictionary.  (Contributed by Raymond Hettinger.)
 >>> transpose([])
 []
 \end{verbatim}
+
+\item Encountering a failure while importing a module no longer leaves
+a partially-initialized module object in \code{sys.modules}.  The
+incomplete module object left behind would fool further imports of the
+same module into succeeding, leading to confusing errors.  
 
 \item \constant{None} is now a constant; code that binds a new value to 
 the name \samp{None} is now a syntax error.
