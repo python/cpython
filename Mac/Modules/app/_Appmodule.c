@@ -29,6 +29,114 @@
 
 static PyObject *App_Error;
 
+/* ----------------- Object type ThemeDrawingState ------------------ */
+
+PyTypeObject ThemeDrawingState_Type;
+
+#define ThemeDrawingState_Check(x) ((x)->ob_type == &ThemeDrawingState_Type)
+
+typedef struct ThemeDrawingStateObject {
+	PyObject_HEAD
+	ThemeDrawingState ob_itself;
+} ThemeDrawingStateObject;
+
+PyObject *ThemeDrawingState_New(ThemeDrawingState itself)
+{
+	ThemeDrawingStateObject *it;
+	it = PyObject_NEW(ThemeDrawingStateObject, &ThemeDrawingState_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	return (PyObject *)it;
+}
+int ThemeDrawingState_Convert(PyObject *v, ThemeDrawingState *p_itself)
+{
+	if (!ThemeDrawingState_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "ThemeDrawingState required");
+		return 0;
+	}
+	*p_itself = ((ThemeDrawingStateObject *)v)->ob_itself;
+	return 1;
+}
+
+static void ThemeDrawingState_dealloc(ThemeDrawingStateObject *self)
+{
+	/* Cleanup of self->ob_itself goes here */
+	PyMem_DEL(self);
+}
+
+static PyObject *ThemeDrawingState_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _rv;
+	Boolean inDisposeNow;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &inDisposeNow))
+		return NULL;
+	_rv = SetThemeDrawingState(_self->ob_itself,
+	                           inDisposeNow);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *ThemeDrawingState_DisposeThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = DisposeThemeDrawingState(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyMethodDef ThemeDrawingState_methods[] = {
+	{"SetThemeDrawingState", (PyCFunction)ThemeDrawingState_SetThemeDrawingState, 1,
+	 "(Boolean inDisposeNow) -> (OSStatus _rv)"},
+	{"DisposeThemeDrawingState", (PyCFunction)ThemeDrawingState_DisposeThemeDrawingState, 1,
+	 "() -> (OSStatus _rv)"},
+	{NULL, NULL, 0}
+};
+
+PyMethodChain ThemeDrawingState_chain = { ThemeDrawingState_methods, NULL };
+
+static PyObject *ThemeDrawingState_getattr(ThemeDrawingStateObject *self, char *name)
+{
+	return Py_FindMethodInChain(&ThemeDrawingState_chain, (PyObject *)self, name);
+}
+
+#define ThemeDrawingState_setattr NULL
+
+#define ThemeDrawingState_compare NULL
+
+#define ThemeDrawingState_repr NULL
+
+#define ThemeDrawingState_hash NULL
+
+PyTypeObject ThemeDrawingState_Type = {
+	PyObject_HEAD_INIT(NULL)
+	0, /*ob_size*/
+	"_App.ThemeDrawingState", /*tp_name*/
+	sizeof(ThemeDrawingStateObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) ThemeDrawingState_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) ThemeDrawingState_getattr, /*tp_getattr*/
+	(setattrfunc) ThemeDrawingState_setattr, /*tp_setattr*/
+	(cmpfunc) ThemeDrawingState_compare, /*tp_compare*/
+	(reprfunc) ThemeDrawingState_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) ThemeDrawingState_hash, /*tp_hash*/
+};
+
+/* --------------- End object type ThemeDrawingState ---------------- */
+
+
 static PyObject *App_RegisterAppearanceClient(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1033,6 +1141,20 @@ static PyObject *App_NormalizeThemeDrawingState(PyObject *_self, PyObject *_args
 	return _res;
 }
 
+static PyObject *App_GetThemeDrawingState(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeDrawingState outState;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetThemeDrawingState(&outState);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ThemeDrawingState_New, outState);
+	return _res;
+}
+
 static PyObject *App_ApplyThemeBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1281,6 +1403,8 @@ static PyMethodDef App_methods[] = {
 	 "(Point origin, ThemeGrowDirection growDirection, Boolean isSmall) -> (Rect bounds)"},
 	{"NormalizeThemeDrawingState", (PyCFunction)App_NormalizeThemeDrawingState, 1,
 	 "() -> None"},
+	{"GetThemeDrawingState", (PyCFunction)App_GetThemeDrawingState, 1,
+	 "() -> (ThemeDrawingState outState)"},
 	{"ApplyThemeBackground", (PyCFunction)App_ApplyThemeBackground, 1,
 	 "(ThemeBackgroundKind inKind, Rect bounds, ThemeDrawState inState, SInt16 inDepth, Boolean inColorDev) -> None"},
 	{"SetThemeTextColorForWindow", (PyCFunction)App_SetThemeTextColorForWindow, 1,
@@ -1316,6 +1440,10 @@ void init_App(void)
 	if (App_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", App_Error) != 0)
 		return;
+	ThemeDrawingState_Type.ob_type = &PyType_Type;
+	Py_INCREF(&ThemeDrawingState_Type);
+	if (PyDict_SetItemString(d, "ThemeDrawingStateType", (PyObject *)&ThemeDrawingState_Type) != 0)
+		Py_FatalError("can't initialize ThemeDrawingStateType");
 }
 
 /* ======================== End module _App ========================= */

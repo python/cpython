@@ -8,8 +8,8 @@ import string
 # Declarations that change for each manager
 MACHEADERFILE = 'Appearance.h'		# The Apple header file
 MODNAME = '_App'				# The name of the module
-OBJECTNAME = 'UNUSED'			# The basic name of the objects used here
-KIND = 'Record'				# Usually 'Ptr' or 'Handle'
+OBJECTNAME = 'ThemeDrawingState'			# The basic name of the objects used here
+KIND = ''				# Usually 'Ptr' or 'Handle'
 
 # The following is *usually* unchanged but may still require tuning
 MODPREFIX = 'App'			# The prefix for module-wide routines
@@ -82,7 +82,8 @@ includestuff = includestuff + """
 
 """
 
-## class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(GlobalObjectDefinition):
+	pass
 ## 	def outputCheckNewArg(self):
 ## 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 ## 	def outputCheckConvertArg(self):
@@ -99,8 +100,12 @@ includestuff = includestuff + """
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
-##object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
-##module.addobject(object)
+object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
+module.addobject(object)
+
+ThemeDrawingState = OpaqueByValueType("ThemeDrawingState", "ThemeDrawingStateObj")
+Method = MethodGenerator
+
 
 # Create the generator classes used to populate the lists
 Function = OSErrFunctionGenerator
@@ -108,13 +113,13 @@ Function = OSErrFunctionGenerator
 
 # Create and populate the lists
 functions = []
-##methods = []
+methods = []
 execfile(INPUTFILE)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
-##for f in methods: object.add(f)
+for f in methods: object.add(f)
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)

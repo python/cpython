@@ -9,7 +9,7 @@ from bgenlocations import TOOLBOXDIR
 
 LONG = "Appearance"
 SHORT = "app"
-OBJECT = "NOTUSED"
+OBJECT = "ThemeDrawingState"
 
 def main():
 	input = LONG + ".h"
@@ -73,7 +73,7 @@ class MyScanner(Scanner):
 			"ThemeTrackDrawInfo_ptr", 	# Too much work
 			"ThemeButtonDrawInfo_ptr",	# ditto
 			"ThemeWindowMetrics_ptr",	# ditto
-			"ThemeDrawingState",	# This is an opaque pointer, so it should be simple. Later.
+#			"ThemeDrawingState",	# This is an opaque pointer, so it should be simple. Later.
 			"Collection",		# No interface to collection mgr yet.
 			"BytePtr",		# Not yet.
 			]
