@@ -10,12 +10,12 @@ def zipTest(f, compression, srccontents):
     zip.write(srcname, "another.name")
     zip.write(srcname, srcname)
     zip.close()
-            
+
     zip = zipfile.ZipFile(f, "r", compression)   # Read the ZIP archive
     readData2 = zip.read(srcname)
     readData1 = zip.read("another.name")
     zip.close()
-    
+
     if readData1 != srccontents or readData2 != srccontents:
         raise TestFailed, "Written data doesn't equal read data."
 
@@ -25,11 +25,11 @@ try:
     for i in range(0, 1000):
         fp.write("Test of zipfile line %d.\n" % i)
     fp.close()
-    
+
     fp = open(srcname, "rb")
     writtenData = fp.read()
     fp.close()
-    
+
     for file in (zipname, tempfile.TemporaryFile(), StringIO.StringIO()):
         zipTest(file, zipfile.ZIP_STORED, writtenData)
 

@@ -131,10 +131,10 @@ class ZipInfo:
 
 
 class ZipFile:
-    """ Class with methods to open, read, write, close, list zip files. 
-     
+    """ Class with methods to open, read, write, close, list zip files.
+
     z = ZipFile(file, mode="r", compression=ZIP_STORED)
-     
+
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
     mode: The mode can be either read "r", write "w" or append "a".
@@ -158,7 +158,7 @@ class ZipFile:
         self.filelist = []      # List of ZipInfo instances for archive
         self.compression = compression  # Method of compression
         self.mode = key = mode[0]
-        
+
         # Check if we were passed a file-like object
         if type(file) in _STRING_TYPES:
             self._filePassed = 0
@@ -169,7 +169,7 @@ class ZipFile:
             self._filePassed = 1
             self.fp = file
             self.filename = getattr(file, 'name', None)
-        
+
         if key == 'r':
             self._GetContents()
         elif key == 'w':

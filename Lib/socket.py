@@ -63,7 +63,7 @@ if (sys.platform.lower().startswith("win")
         def ssl(sock, keyfile=None, certfile=None):
             if hasattr(sock, "_sock"):
                 sock = sock._sock
-            return _realsslcall(sock, keyfile, certfile)    
+            return _realsslcall(sock, keyfile, certfile)
 
 
 # WSA error codes

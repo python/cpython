@@ -221,7 +221,7 @@ def print_last(limit=None, file=None):
 
 def print_stack(f=None, limit=None, file=None):
     """Print a stack trace from its invocation point.
-    
+
     The optional 'f' argument can be used to specify an alternate
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
