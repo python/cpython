@@ -944,6 +944,17 @@ builtin_hasattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "OO:hasattr", &v, &name))
 		return NULL;
+	if (PyUnicode_Check(name)) {
+		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
+		if (name == NULL)
+			return NULL;
+	}
+
+	if (!PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		return NULL;
+	}
 	v = PyObject_GetAttr(v, name);
 	if (v == NULL) {
 		PyErr_Clear();
