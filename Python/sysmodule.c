@@ -102,7 +102,7 @@ sys_settrace(self, args)
 	if (args == None)
 		args = NULL;
 	else
-		INCREF(args);
+		XINCREF(args);
 	XDECREF(sys_trace);
 	sys_trace = args;
 	INCREF(None);
@@ -117,7 +117,7 @@ sys_setprofile(self, args)
 	if (args == None)
 		args = NULL;
 	else
-		INCREF(args);
+		XINCREF(args);
 	XDECREF(sys_profile);
 	sys_profile = args;
 	INCREF(None);

@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Xx objects */
 
 #include "allobjects.h"
+#include "modsupport.h"		/* For getargs() etc. */
 
 typedef struct {
 	OB_HEAD
