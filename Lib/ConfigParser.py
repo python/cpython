@@ -66,8 +66,9 @@ ConfigParser -- responsible for for parsing a list of
         like get(), but convert value to a float
 
     getboolean(section, options)
-        like get(), but convert value to a boolean (currently defined as 0 or
-        1, only)
+        like get(), but convert value to a boolean (currently case
+        insensitively defined as 0, false, no, off for 0, and 1, true,
+        yes, on for 1).  Returns 0 or 1.
 
     remove_section(section)
         remove the given file section and all its options
@@ -306,11 +307,12 @@ class ConfigParser:
         return self.__get(section, string.atof, option)
 
     def getboolean(self, section, option):
-        v = self.get(section, option)
-        val = int(v)
-        if val not in (0, 1):
+        states = {'1': 1, 'yes': 1, 'true': 1, 'on': 1,
+                  '0': 0, 'no': 0, 'false': 0, 'off': 0}
+        v = self.get(section, option)       
+        if not states.has_key(v.lower()):
             raise ValueError, 'Not a boolean: %s' % v
-        return val
+        return states[v.lower()]
 
     def optionxform(self, optionstr):
         return optionstr.lower()
