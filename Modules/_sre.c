@@ -947,10 +947,20 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (pattern[1] == SRE_OP_IN &&
                     (ptr >= end || !SRE_CHARSET(pattern + 3, (SRE_CODE) *ptr)))
                     continue;
+                if (state->repeat) {
+                    i = mark_save(state, 0, lastmark);
+                    if (i < 0)
+                        return i;
+                }
                 state->ptr = ptr;
                 i = SRE_MATCH(state, pattern + 1, level + 1);
                 if (i)
                     return i;
+                if (state->repeat) {
+                    i = mark_restore(state, 0, lastmark);
+                    if (i < 0)
+                        return i;
+                }
                 LASTMARK_RESTORE();
             }
             return 0;
