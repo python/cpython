@@ -262,7 +262,7 @@ class fifo:
         return self.list == []
 
     def first (self):
-        return self.list.left()
+        return self.list[0]
 
     def push (self, data):
         self.list.append(data)
