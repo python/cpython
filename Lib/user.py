@@ -7,7 +7,7 @@ the PYTHONPATH environment variable if it exists).
 However, some programs or sites may find it convenient to allow users
 to have a standard customization file, which gets run when a program
 requests it.  This module implements such a mechanism.  A program
-that wishes to use the mechanism mist execute the statement
+that wishes to use the mechanism must execute the statement
 
     import user
 
