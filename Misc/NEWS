@@ -12,8 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
-- Unicode objects received two new methods now; iswide() and width(). They
-  query east asian width information according to Unicode TR11.
+- Unicode objects received two new methods: iswide() and width().
+  These query East Asian width information, as specified in Unicode
+  TR11.
 
 - Improved the tuple hashing algorithm to give fewer collisions in
   common cases.  Fixes bug  #942952.
