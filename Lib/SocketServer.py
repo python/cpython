@@ -448,10 +448,15 @@ class ForkingMixIn:
 class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
 
+    def process_request_thread(self, request, client_address):
+        """Same as in BaseServer but as a thread."""
+        self.finish_request(request, client_address)
+        self.close_request(request)
+
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
         import threading
-        t = threading.Thread(target = self.finish_request,
+        t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.start()
 

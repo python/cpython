@@ -86,6 +86,9 @@ Library
   which indicates whether output is intended for the header 'Q'
   encoding.
 
+- The SocketServer.ThreadingMixIn class now closes the request after
+  finish_request() returns.  (Not when it errors out though.)
+
 Tools/Demos
 
 - Demo/dns was removed.  It no longer serves any purpose; a package
