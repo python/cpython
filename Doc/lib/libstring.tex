@@ -213,6 +213,11 @@ The functions defined in this module are:
   and the remainder of the string is returned as the final element of
   the list (thus, the list will have at most \code{\var{maxsplit}+1}
   elements).
+
+  The behavior of split on an empty string depends on the value of \var{sep}.
+  If \var{sep} is not specified, or specified as \code{None}, the result will
+  be an empty list.  If \var{sep} is specified as any string, the result will
+  be a list containing one element which is an empty string.
 \end{funcdesc}
 
 \begin{funcdesc}{rsplit}{s\optional{, sep\optional{, maxsplit}}}
