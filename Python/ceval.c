@@ -161,11 +161,11 @@ enum why_code {
 /* Interpreter main loop */
 
 object *
-eval_code(co, globals, locals, class, arg)
+eval_code(co, globals, locals, owner, arg)
 	codeobject *co;
 	object *globals;
 	object *locals;
-	object *class;
+	object *owner;
 	object *arg;
 {
 	register unsigned char *next_instr;
@@ -246,7 +246,7 @@ eval_code(co, globals, locals, class, arg)
 			co,			/*code*/
 			globals,		/*globals*/
 			locals,			/*locals*/
-			class,			/*class*/
+			owner,			/*owner*/
 			50,			/*nvalues*/
 			20);			/*nblocks*/
 	if (f == NULL)
@@ -767,7 +767,7 @@ eval_code(co, globals, locals, class, arg)
 						u = (object *)v->ob_type;
 					else
 						u = NULL;
-					x = newaccessobject(v, class,
+					x = newaccessobject(v, f->f_locals,
 							    (typeobject *)u,
 							    defmode);
 					DECREF(v);
@@ -777,7 +777,7 @@ eval_code(co, globals, locals, class, arg)
 				}
 			}
 			else if (is_accessobject(u)) {
-				err = setaccessvalue(u, class, v);
+				err = setaccessvalue(u, f->f_locals, v);
 				DECREF(v);
 				break;
 			}
@@ -789,7 +789,7 @@ eval_code(co, globals, locals, class, arg)
 			w = GETNAMEV(oparg);
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, class,
+				err = setaccessvalue(u, f->f_locals,
 						     (object *)NULL);
 				break;
 			}
@@ -987,7 +987,7 @@ eval_code(co, globals, locals, class, arg)
 			v = POP();
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, class, v);
+				err = setaccessvalue(u, f->f_globals, v);
 				DECREF(v);
 				break;
 			}
@@ -999,7 +999,7 @@ eval_code(co, globals, locals, class, arg)
 			w = GETNAMEV(oparg);
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, class,
+				err = setaccessvalue(u, f->f_globals,
 						     (object *)NULL);
 				break;
 			}
@@ -1030,7 +1030,7 @@ eval_code(co, globals, locals, class, arg)
 				}
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, class);
+				x = getaccessvalue(x, f->f_globals /* XXX */);
 				if (x == NULL)
 					break;
 			}
@@ -1052,7 +1052,7 @@ eval_code(co, globals, locals, class, arg)
 				}
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, class);
+				x = getaccessvalue(x, f->f_globals);
 				if (x == NULL)
 					break;
 			}
@@ -1069,7 +1069,7 @@ eval_code(co, globals, locals, class, arg)
 				break;
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, class);
+				x = getaccessvalue(x, f->f_locals);
 				if (x == NULL)
 					break;
 			}
@@ -1105,7 +1105,7 @@ eval_code(co, globals, locals, class, arg)
 				break;
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, class);
+				x = getaccessvalue(x, f->f_locals);
 				if (x == NULL)
 					break;
 			}
@@ -1118,7 +1118,7 @@ eval_code(co, globals, locals, class, arg)
 			v = POP();
 			w = GETLISTITEM(fastlocals, oparg);
 			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, class, v);
+				err = setaccessvalue(w, f->f_locals, v);
 				DECREF(v);
 				break;
 			}
@@ -1134,7 +1134,8 @@ eval_code(co, globals, locals, class, arg)
 				break;
 			}
 			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, class, (object *)NULL);
+				err = setaccessvalue(w, f->f_locals,
+						     (object *)NULL);
 				break;
 			}
 			DECREF(x);
@@ -1668,12 +1669,12 @@ getglobals()
 }
 
 object *
-getclass()
+getowner()
 {
 	if (current_frame == NULL)
 		return NULL;
 	else
-		return current_frame->f_class;
+		return current_frame->f_owner;
 }
 
 void
@@ -2363,14 +2364,25 @@ import_from(locals, v, name)
 	object *w, *x;
 	w = getmoduledict(v);
 	if (getstringvalue(name)[0] == '*') {
-		int pos;
+		int pos, err;
 		object *name, *value;
 		pos = 0;
 		while (mappinggetnext(w, &pos, &name, &value)) {
 			if (!is_stringobject(name) ||
 			    getstringvalue(name)[0] == '_')
 				continue;
-			if (dict2insert(locals, name, value) != 0)
+			if (is_accessobject(value)) {
+				value = getaccessvalue(value, (object *)NULL);
+				if (value == NULL) {
+					err_clear();
+					continue;
+				}
+			}
+			else
+				INCREF(value);
+			err = dict2insert(locals, name, value);
+			DECREF(value);
+			if (err != 0)
 				return -1;
 		}
 		return 0;
@@ -2456,7 +2468,7 @@ access_statement(name, vmode, f)
 		type = value->ob_type;
 	else
 		type = NULL;
-	ac = newaccessobject(value, f->f_class, type, mode);
+	ac = newaccessobject(value, f->f_locals, type, mode);
 	if (ac == NULL)
 		return -1;
 	if (fastind >= 0)

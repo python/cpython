@@ -32,7 +32,7 @@ Limitations:
 - only AF_INET and AF_UNIX address families are supported
 - no asynchronous I/O (but read polling: avail)
 - no read/write operations (use send/recv or makefile instead)
-- no flags on sendto/recvfrom operations
+- no flags on recvfrom operations
 - setsockopt() and getsockopt() only support integer options
 
 Interface:
@@ -61,10 +61,10 @@ Socket methods:
 - s.getpeername() --> sockaddr
 - s.listen(n) --> None
 - s.makefile(mode) --> file object
-- s.recv(nbytes) --> string
+- s.recv(nbytes [,flags]) --> string
 - s.recvfrom(nbytes) --> string, sockaddr
-- s.send(string) --> None
-- s.sendto(string, sockaddr) --> None
+- s.send(string [,flags]) --> None
+- s.sendto(string, [flags,] sockaddr) --> None
 - s.shutdown(how) --> None
 - s.close() --> None
 
@@ -669,7 +669,7 @@ sock_makefile(s, args)
 }
 
 
-/* s.recv(nbytes) method */
+/* s.recv(nbytes [,flags]) method */
 
 static object *
 sock_recv(s, args)
@@ -678,11 +678,11 @@ sock_recv(s, args)
 {
 	int len, n, flags;
 	object *buf;
-	if (!getintintarg(args, &len, &flags)) {
+	flags = 0;
+	if (!getargs(args, "i", &len)) {
 		err_clear();
-		if (!getintarg(args, &len))
+		if (!getargs(args, "(ii)", &len, &flags))
 			return NULL;
-		flags = 0;
 	}
 	buf = newsizedstringobject((char *) 0, len);
 	if (buf == NULL)
@@ -698,7 +698,7 @@ sock_recv(s, args)
 }
 
 
-/* s.recvfrom(nbytes) method */
+/* s.recvfrom(nbytes [,flags]) method */
 
 static object *
 sock_recvfrom(s, args)
@@ -707,14 +707,16 @@ sock_recvfrom(s, args)
 {
 	char addrbuf[256];
 	object *buf, *addr, *ret;
-	int addrlen, len, n;
-	if (!getintarg(args, &len))
-		return NULL;
-	if (!getsockaddrlen(s, &addrlen))
-		return NULL;
+	int addrlen, len, n, flags;
+	flags = 0;
+	if (!getargs(args, "i", &len)) {
+		err_clear();
+		if (!getargs(args, "(ii)", &len, &flags))
+		    return NULL;
+	}
 	buf = newsizedstringobject((char *) 0, len);
 	BGN_SAVE
-	n = recvfrom(s->sock_fd, getstringvalue(buf), len, 0,
+	n = recvfrom(s->sock_fd, getstringvalue(buf), len, flags,
 		     addrbuf, &addrlen);
 	END_SAVE
 	if (n < 0)
@@ -729,7 +731,7 @@ sock_recvfrom(s, args)
 }
 
 
-/* s.send(data) method */
+/* s.send(data [,flags]) method */
 
 static object *
 sock_send(s, args)
@@ -738,11 +740,11 @@ sock_send(s, args)
 {
 	char *buf;
 	int len, n, flags;
-	if (!getargs(args, "(s#i)", &buf, &len, &flags)) {
+	flags = 0;
+	if (!getargs(args, "(s#)", &buf, &len)) {
 		err_clear();
-		if (!getargs(args, "s#", &buf, &len))
+		if (!getargs(args, "s#", &buf, &len, &flags))
 			return NULL;
-		flags = 0;
 	}
 	BGN_SAVE
 	n = send(s->sock_fd, buf, len, flags);
@@ -754,7 +756,7 @@ sock_send(s, args)
 }
 
 
-/* s.sendto(data, sockaddr) method */
+/* s.sendto(data, [flags,] sockaddr) method */
 
 static object *
 sock_sendto(s, args)
@@ -764,16 +766,17 @@ sock_sendto(s, args)
 	object *addro;
 	char *buf;
 	struct sockaddr *addr;
-	int addrlen, len, n;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_badarg();
-		return NULL;
+	int addrlen, len, n, flags;
+	flags = 0;
+	if (!getargs(args, "(s#O)", &buf, &len, &addro)) {
+		err_clear();
+		if (!getargs(args, "(s#iO)", &buf, &len, &flags, &addro))
+			return NULL;
 	}
-	if (!getargs(args, "(s#O)", &buf, &len, &addro) ||
-	    !getsockaddrarg(s, addro, &addr, &addrlen))
+	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
 	BGN_SAVE
-	n = sendto(s->sock_fd, buf, len, 0, addr, addrlen);
+	n = sendto(s->sock_fd, buf, len, flags, addr, addrlen);
 	END_SAVE
 	if (n < 0)
 		return socket_error();
