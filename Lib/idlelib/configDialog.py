@@ -8,7 +8,7 @@
 configuration dialog
 """
 from Tkinter import *
-import tkMessageBox, tkColorChooser
+import tkMessageBox, tkColorChooser, tkFont
 
 import IdleConf
 
@@ -28,8 +28,6 @@ class ConfigDialog(Toplevel):
         #elguavas - config placeholders til config stuff completed
         self.bg=self.cget('bg')
         self.fg=None
-        #no ugly bold default text font on *nix
-        self.textFont=tuple(Label().cget('font').split())[0:2]+('normal',) 
 
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
@@ -41,7 +39,7 @@ class ConfigDialog(Toplevel):
         self.framePages.focus_set()
         #key bindings for this dialog
         self.bind('<Escape>',self.CancelBinding) #dismiss dialog, no save
-        self.bind('<Alt-s>',self.SaveBinding) #dismiss dialog, save
+        self.bind('<Alt-a>',self.ApplyBinding) #apply changes, save
         self.bind('<F1>',self.HelpBinding) #context help
         self.bind('<Alt-f>',self.ChangePageBinding)
         self.bind('<Alt-h>',self.ChangePageBinding)
@@ -63,7 +61,10 @@ class ConfigDialog(Toplevel):
     def Cancel(self):
         self.destroy()
 
-    def Save(self):
+    def Ok(self):
+        pass
+
+    def Apply(self):
         pass
 
     def Help(self):
@@ -72,8 +73,11 @@ class ConfigDialog(Toplevel):
     def CancelBinding(self,event):
         self.Cancel()
     
-    def SaveBinding(self,event):
-        self.Save()
+    def OkBinding(self,event):
+        self.Ok()
+    
+    def ApplyBinding(self,event):
+        self.Apply()
     
     def HelpBinding(self,event):
         self.Help()
@@ -126,6 +130,20 @@ class ConfigDialog(Toplevel):
             self.frameHighlightSample.update() #redraw after dialog
             self.labelTestSample.update()
 
+    def __LoadFontList(self):
+        fonts=list(tkFont.families(self))
+        fonts.sort()
+        for font in fonts:
+            self.listFontName.insert(END,font)
+        currentFontIndex=fonts.index('courier')
+        self.listFontName.see(currentFontIndex)
+        self.listFontName.select_set(currentFontIndex)
+        self.fontSize.set('12')
+    
+    def __SetFontSample(self,event):
+        self.newFont.config(size=self.fontSize.get(),weight=NORMAL,
+            family=self.listFontName.get(self.listFontName.curselection()[0]))
+    
     def CreateWidgets(self):
         self.framePages = Frame(self)
         frameActionButtons = Frame(self)
@@ -133,8 +151,10 @@ class ConfigDialog(Toplevel):
         #action buttons
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE)
-        self.buttonSave = Button(frameActionButtons,text='Save, Apply and Exit',
-                command=self.Save,underline=0,takefocus=FALSE)
+        self.buttonOk = Button(frameActionButtons,text='Ok',
+                command=self.Ok,takefocus=FALSE)
+        self.buttonApply = Button(frameActionButtons,text='Apply',
+                command=self.Apply,underline=0,takefocus=FALSE)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE)
         #page buttons
@@ -165,19 +185,20 @@ class ConfigDialog(Toplevel):
         framePageButtons.grid(row=0,column=0,sticky=W)
         for page in self.pages: page.grid(row=1,column=0,sticky=(N,S,E,W))
         
-        self.buttonHelp.pack(side=RIGHT,padx=20,pady=5)
-        self.buttonSave.pack(side=LEFT,padx=5,pady=5)
+        self.buttonHelp.pack(side=RIGHT,padx=5,pady=5)
+        self.buttonOk.pack(side=LEFT,padx=5,pady=5)
+        self.buttonApply.pack(side=LEFT,padx=5,pady=5)
         self.buttonCancel.pack(side=LEFT,padx=5,pady=5)
         frameActionButtons.pack(side=BOTTOM)
         self.framePages.pack(side=TOP,expand=TRUE,fill=BOTH)
         
     def CreatePageFontTab(self):
         #tkVars
-        self.fontName=StringVar()
         self.fontSize=StringVar()
         self.spaceNum=IntVar()
         self.tabCols=IntVar()
         self.indentType=IntVar() 
+        self.newFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
@@ -187,21 +208,27 @@ class ConfigDialog(Toplevel):
         #frameFont
         labelFontTitle=Label(frameFont,text='Set Base Editor Font')
         frameFontName=Frame(frameFont)
-        frameFontSize=Frame(frameFont)
+        frameFontSize=Frame(frameFontName)
         labelFontNameTitle=Label(frameFontName,justify=LEFT,
-                text='Choose from available\nmonospaced fonts :')
-        optFontName=OptionMenu(frameFontName,
-            self.fontName,'Courier','Font Name 2','Font Name 3')
-        self.fontName.set('Courier')
-        labelFontSizeTitle=Label(frameFontSize,text='Choose font size :')
-        optFontSize=OptionMenu(frameFontSize,
-            self.fontSize,'8','10','12','14','16','18','20')
-        self.fontSize.set('12')
+                text='Font :')
+        self.listFontName=Listbox(frameFontName,height=5,takefocus=FALSE,
+                exportselection=FALSE)
+        self.listFontName.bind('<<ListboxSelect>>',self.__SetFontSample)
+        scrollFont=Scrollbar(frameFontName)
+        self.__LoadFontList()
+        scrollFont.config(command=self.listFontName.yview)
+        self.listFontName.config(yscrollcommand=scrollFont.set)
+        labelFontSizeTitle=Label(frameFontSize,text='Size :')
+        sizes=('10','11','12','13','14','16','18','20','22')
+        args=(frameFontSize,self.fontSize)+sizes
+        keyArgs={'command':self.__SetFontSample}
+        optFontSize=apply(OptionMenu,args,keyArgs)
+        #optFontSize.bind('<<MenuSelect>>',self.__SetFontSample)
         frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1,
                 bg=self.workingTestColours['Foo-Bg'])
-        labelFontSample=Label(frameFontSample,bg=self.workingTestColours['Foo-Bg'], 
-                fg='#000000',text='Font\nSample',justify=LEFT,
-                font=('courier',12,''))
+        self.labelFontSample=Label(frameFontSample,bg=self.workingTestColours['Foo-Bg'], 
+                fg='#000000',text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
+                justify=LEFT,font=self.newFont)
         #frameIndent
         labelIndentTitle=Label(frameIndent,text='Set Indentation Defaults')
         frameIndentType=Frame(frameIndent)
@@ -225,18 +252,19 @@ class ConfigDialog(Toplevel):
         
         #widget packing
         #body
-        frameFont.pack(side=LEFT,padx=5,pady=10,fill=Y)
-        frameIndent.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
+        frameFont.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
+        frameIndent.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameFont
         labelFontTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        frameFontName.pack(side=TOP,padx=5,pady=5,fill=X)
-        frameFontSize.pack(side=TOP,padx=5,pady=5,fill=BOTH)
+        frameFontName.pack(side=TOP,padx=5,pady=5)
+        frameFontSize.pack(side=RIGHT,anchor=N,fill=X)
         labelFontNameTitle.pack(side=TOP,anchor=W)
-        optFontName.pack(side=TOP,pady=5,fill=X)
+        self.listFontName.pack(side=LEFT,fill=Y)
+        scrollFont.pack(side=LEFT,fill=Y)
         labelFontSizeTitle.pack(side=TOP,anchor=W)
-        optFontSize.pack(side=TOP,pady=5,fill=X)
+        optFontSize.pack(side=TOP,anchor=W,fill=X)
         frameFontSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
-        labelFontSample.pack(expand=TRUE,fill=BOTH)
+        self.labelFontSample.pack(expand=TRUE,fill=BOTH)
         #frameIndent
         labelIndentTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameIndentType.pack(side=TOP,padx=5,fill=X)
@@ -260,7 +288,6 @@ class ConfigDialog(Toplevel):
         self.fontName=StringVar()
         self.fontBold=StringVar()
         self.fontItalic=StringVar()
-        self.fontSize=IntVar()
         self.themeType=IntVar() 
         ##widget creation
         #body frame
@@ -367,6 +394,8 @@ class ConfigDialog(Toplevel):
         labelTargetTitle=Label(frameTarget,text='Action')
         scrollTarget=Scrollbar(frameTarget)
         listTarget=Listbox(frameTarget)
+        scrollTarget.config(command=listTarget.yview)
+        listTarget.config(yscrollcommand=scrollTarget.set)
         labelKeyBindTitle=Label(frameSet,text='Binding')
         labelModifierTitle=Label(frameSet,text='Modifier:')
         checkCtrl=Checkbutton(frameSet,text='Ctrl')
@@ -456,6 +485,8 @@ class ConfigDialog(Toplevel):
         labelExtListTitle=Label(frameExtList,text='Extension')
         scrollExtList=Scrollbar(frameExtList)
         listExt=Listbox(frameExtList,height=5)
+        scrollExtList.config(command=listExt.yview)
+        listExt.config(yscrollcommand=scrollExtList.set)
         labelExtSetTitle=Label(frameExtSet,text='Settings')
         radioEnableExt=Radiobutton(frameExtSet,variable=self.extState,
             value=1,text="enable")

@@ -8,6 +8,7 @@
 about box for idle
 """
 from Tkinter import *
+import tkFont
 import string, os
 import textView
 import idlever
@@ -24,12 +25,8 @@ class AboutDialog(Toplevel):
         self.bg="#555555"
         self.fg="#ffffff"
         #no ugly bold default font on *nix 
-        font=Label().cget('font')
-        if os.name=='posix':
-            lFont=font.split()
-            if len(lFont) == 2: lFont=lFont+['normal']
-            else: lFont[2]='normal'
-            font=tuple(lFont)
+        font=tkFont.Font(self,Label().cget('font'))
+        if os.name=='posix': font.config(weight=NORMAL)
         self.textFont=font
         
         self.CreateWidgets()
