@@ -1,0 +1,6 @@
+            <FILEREF>
+                <TARGETNAME>%(mac_targetname)s</TARGETNAME>
+                <PATHTYPE>Name</PATHTYPE>
+                <PATH>%(libraries)s</PATH>
+                <PATHFORMAT>MacOS</PATHFORMAT>
+            </FILEREF>
