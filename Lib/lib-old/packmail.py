@@ -21,7 +21,7 @@ def pack(outfp, file, name):
 def packsome(outfp, dirname, names):
 	for name in names:
 		print name
-		file = macpath.cat(dirname, name)
+		file = macpath.join(dirname, name)
 		pack(outfp, file, name)
 
 # Pack all files from a directory
@@ -33,13 +33,13 @@ def packall(outfp, dirname):
 # Pack all files from a directory that are not older than a give one
 def packnotolder(outfp, dirname, oldest):
 	names = mac.listdir(dirname)
-	oldest = macpath.cat(dirname, oldest)
+	oldest = macpath.join(dirname, oldest)
 	st = mac.stat(oldest)
 	mtime = st[ST_MTIME]
 	todo = []
 	for name in names:
 		print name, '...',
-		st = mac.stat(macpath.cat(dirname, name))
+		st = mac.stat(macpath.join(dirname, name))
 		if st[ST_MTIME] >= mtime:
 			print 'Yes.'
 			todo.append(name)
@@ -55,7 +55,7 @@ def packtree(outfp, dirname):
 	names = mac.listdir(dirname)
 	subdirs = []
 	for name in names:
-		fullname = macpath.cat(dirname, name)
+		fullname = macpath.join(dirname, name)
 		if macpath.isdir(fullname):
 			subdirs.append(fullname)
 		else:

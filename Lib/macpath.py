@@ -15,11 +15,11 @@ def isabs(s):
 	return ':' in s and s[0] <> ':'
 
 
-# Concatenate two pathnames.
+# Join two pathnames.
 # The result is equivalent to what the second pathname would refer to
 # if the first pathname were the current directory.
 
-def cat(s, t):
+def join(s, t):
 	if (not s) or isabs(t): return t
 	if t[:1] = ':': t = t[1:]
 	if ':' not in s:
@@ -29,9 +29,12 @@ def cat(s, t):
 	return s + t
 
 
+cat = join # For compatibility
+
+
 # Split a pathname in two parts: the directory leading up to the final bit,
 # and the basename (the filename, without colons, in that directory).
-# The result (s, t) is such that cat(s, t) yields the original argument.
+# The result (s, t) is such that join(s, t) yields the original argument.
 
 def split(s):
 	if ':' not in s: return '', s
