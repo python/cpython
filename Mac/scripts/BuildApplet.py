@@ -67,7 +67,7 @@ def main():
 	# Ask for source text if not specified in sys.argv[1:]
 	
 	if not sys.argv[1:]:
-		srcfss, ok = macfs.PromptGetFile('Select Python source file:', 'TEXT')
+		srcfss, ok = macfs.PromptGetFile('Select Python source or applet:', 'TEXT', 'APPL')
 		if not ok:
 			return
 		filename = srcfss.as_pathname()
@@ -75,15 +75,24 @@ def main():
 		if tf[-3:] == '.py':
 			tf = tf[:-3]
 		else:
-			tf = tf + '.applet'
+			tf = tf + '.out'
 		dstfss, ok = macfs.StandardPutFile('Save application as:', tf)
 		if not ok: return
-		process(template, filename, dstfss.as_pathname())
+		dstfilename = dstfss.as_pathname()
+		cr, tp = MacOS.GetCreatorAndType(filename)
+		if tp == 'APPL':
+			update(template, filename, dstfilename)
+		else:
+			process(template, filename, dstfilename)
 	else:
 		
 		# Loop over all files to be processed
 		for filename in sys.argv[1:]:
-			process(template, filename, '')
+			cr, tp = MacOS.GetCreatorAndType(filename)
+			if tp == 'APPL':
+				update(template, filename, '')
+			else:
+				process(template, filename, '')
 
 def process(template, filename, output):
 	
@@ -116,10 +125,23 @@ def process(template, filename, output):
 	
 	if output:
 		destname = output
+	
+	process_common(template, progress, code, rsrcname, destname, 0)
+	
+def update(template, filename, output):
+	if DEBUG:
+		progress = EasyDialogs.ProgressBar("Updating %s..."%os.path.split(filename)[1], 120)
+	else:
+		progress = None
+	if not output:
+		output = filename + ' (updated)'
+	process_common(template, progress, None, filename, output, 1)
+	
 		
+def process_common(template, progress, code, rsrcname, destname, is_update):
 	# Try removing the output file
 	try:
-		os.unlink(output)
+		os.unlink(destname)
 	except os.error:
 		pass
 		
@@ -163,7 +185,11 @@ def process(template, filename, output):
 		if DEBUG:
 			progress.inc(50)
 	else:
-		typesfound, ownertype = copyres(input, output, [], 0, progress)
+		if is_update:
+			skip_oldfile = ['cfrg']
+		else:
+			skip_oldfile = []
+		typesfound, ownertype = copyres(input, output, skip_oldfile, 0, progress)
 		CloseResFile(input)
 		
 	# Check which resource-types we should not copy from the template
@@ -195,32 +221,33 @@ def process(template, filename, output):
 	
 	UseResFile(output)
 	
-	# Delete any existing 'PYC ' resource named __main__
+	if code:
+		# Delete any existing 'PYC ' resource named __main__
+		
+		try:
+			res = Get1NamedResource(RESTYPE, RESNAME)
+			res.RemoveResource()
+		except Error:
+			pass
 	
-	try:
-		res = Get1NamedResource(RESTYPE, RESNAME)
-		res.RemoveResource()
-	except Error:
-		pass
-	
-	# Create the raw data for the resource from the code object
-	if DEBUG:
-		progress.label("Write PYC resource...")
-		progress.set(120)
-	
-	data = marshal.dumps(code)
-	del code
-	data = (MAGIC + '\0\0\0\0') + data
-	
-	# Create the resource and write it
-	
-	id = 0
-	while id < 128:
-		id = Unique1ID(RESTYPE)
-	res = Resource(data)
-	res.AddResource(RESTYPE, id, RESNAME)
-	res.WriteResource()
-	res.ReleaseResource()
+		# Create the raw data for the resource from the code object
+		if DEBUG:
+			progress.label("Write PYC resource...")
+			progress.set(120)
+		
+		data = marshal.dumps(code)
+		del code
+		data = (MAGIC + '\0\0\0\0') + data
+		
+		# Create the resource and write it
+		
+		id = 0
+		while id < 128:
+			id = Unique1ID(RESTYPE)
+		res = Resource(data)
+		res.AddResource(RESTYPE, id, RESNAME)
+		res.WriteResource()
+		res.ReleaseResource()
 	
 	# Close the output file
 	
@@ -252,8 +279,8 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
 			res = Get1IndResource(type, ires)
 			id, type, name = res.GetResInfo()
 			lcname = string.lower(name)
-			if (type, lcname) == (RESTYPE, RESNAME):
-				continue # Don't copy __main__ from template
+##			if (type, lcname) == (RESTYPE, RESNAME):
+##				continue # Don't copy __main__ from template
 			# XXXX should look for id=0
 			if lcname == OWNERNAME:
 				if skipowner:
