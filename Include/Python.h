@@ -41,10 +41,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define DL_EXPORT(RTYPE) RTYPE
 #endif
 
-#ifdef SYMANTEC__CFM68K__
-#define UsingSharedLibs
-#endif
-
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
@@ -57,10 +53,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #include "myproto.h"
-
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
-#endif
 
 #include "object.h"
 #include "objimpl.h"
