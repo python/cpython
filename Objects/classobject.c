@@ -39,6 +39,8 @@ static PyObject *class_lookup
 	Py_PROTO((PyClassObject *, PyObject *, PyClassObject **));
 static PyObject *instance_getattr1 Py_PROTO((PyInstanceObject *, PyObject *));
 
+static PyObject *getattrstr, *setattrstr, *delattrstr;
+
 PyObject *
 PyClass_New(bases, dict, name)
 	PyObject *bases; /* NULL or tuple of classobjects! */
@@ -46,7 +48,6 @@ PyClass_New(bases, dict, name)
 	PyObject *name;
 {
 	PyClassObject *op, *dummy;
-	static PyObject *getattrstr, *setattrstr, *delattrstr;
 	static PyObject *docstr, *modstr, *namestr;
 	if (docstr == NULL) {
 		docstr= PyString_InternFromString("__doc__");
@@ -215,6 +216,72 @@ class_getattr(op, name)
 	return v;
 }
 
+static void
+set_slot(slot, v)
+	PyObject **slot;
+	PyObject *v;
+{
+	PyObject *temp = *slot;
+	Py_XINCREF(v);
+	*slot = v;
+	Py_XDECREF(temp);
+}
+
+static char *
+set_dict(c, v)
+	PyClassObject *c;
+	PyObject *v;
+{
+	PyClassObject *dummy;
+
+	if (v == NULL || !PyDict_Check(v))
+		return "__dict__ must be a dictionary object";
+	set_slot(&c->cl_dict, v);
+
+	set_slot(&c->cl_getattr, class_lookup(c, getattrstr, &dummy));
+	set_slot(&c->cl_setattr, class_lookup(c, setattrstr, &dummy));
+	set_slot(&c->cl_delattr, class_lookup(c, delattrstr, &dummy));
+
+	return "";
+}
+
+static char *
+set_bases(c, v)
+	PyClassObject *c;
+	PyObject *v;
+{
+	PyObject *temp;
+	int i, n;
+
+	if (v == NULL || !PyTuple_Check(v))
+		return "__bases__ must be a tuple object";
+	n = PyTuple_Size(v);
+	for (i = 0; i < n; i++) {
+		PyObject *x = PyTuple_GET_ITEM(v, i);
+		if (!PyClass_Check(x))
+			return "__bases__ items must be classes";
+		if (PyClass_IsSubclass(x, (PyObject *)c))
+			return "a __bases__ item causes an inheritance cycle";
+	}
+	set_slot(&c->cl_bases, v);
+	return "";
+}
+
+static char *
+set_name(c, v)
+	PyClassObject *c;
+	PyObject *v;
+{
+	PyObject *temp;
+
+	if (v == NULL || !PyString_Check(v))
+		return "__name__ must be a string object";
+	if (strlen(PyString_AS_STRING(v)) != PyString_GET_SIZE(v))
+		return "__name__ must not contain null bytes";
+	set_slot(&c->cl_name, v);
+	return "";
+}
+
 static int
 class_setattr(op, name, v)
 	PyClassObject *op;
@@ -231,17 +298,25 @@ class_setattr(op, name, v)
 	if (sname[0] == '_' && sname[1] == '_') {
 		int n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
-			if (strcmp(sname, "__dict__") == 0 ||
-			    strcmp(sname, "__bases__") == 0 ||
-			    strcmp(sname, "__name__") == 0 ||
-			    strcmp(sname, "__getattr__") == 0 ||
-			    strcmp(sname, "__setattr__") == 0 ||
-			    strcmp(sname, "__delattr__") == 0)
-			{
-				/* XXX In unrestricted mode, we should
-				   XXX allow this -- with a type check */
-				PyErr_SetString(PyExc_TypeError,
-						"read-only special attribute");
+			char *err = NULL;
+			if (strcmp(sname, "__dict__") == 0)
+				err = set_dict(op, v);
+			else if (strcmp(sname, "__bases__") == 0)
+				err = set_bases(op, v);
+			else if (strcmp(sname, "__name__") == 0)
+				err = set_name(op, v);
+			else if (strcmp(sname, "__getattr__") == 0)
+				set_slot(&op->cl_getattr, v);
+			else if (strcmp(sname, "__setattr__") == 0)
+				set_slot(&op->cl_setattr, v);
+			else if (strcmp(sname, "__delattr__") == 0)
+				set_slot(&op->cl_delattr, v);
+			/* For the last three, we fall through to update the
+			   dictionary as well. */
+			if (err != NULL) {
+				if (*err == '\0')
+					return 0;
+				PyErr_SetString(PyExc_TypeError, err);
 				return -1;
 			}
 		}
