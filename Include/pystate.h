@@ -100,6 +100,13 @@ extern DL_IMPORT(PyThreadState *) _PyThreadState_Current;
 #define PyThreadState_GET() (_PyThreadState_Current)
 #endif
 
+/* Routines for advanced debuggers, requested by David Beazley.
+   Don't use unless you know what you are doing! */
+DL_IMPORT(PyInterpreterState *) PyInterpreterState_Head(void);
+DL_IMPORT(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
+DL_IMPORT(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
+DL_IMPORT(PyThreadState *) PyThreadState_Next(PyThreadState *);
+
 #ifdef __cplusplus
 }
 #endif
