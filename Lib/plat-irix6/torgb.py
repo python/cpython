@@ -92,7 +92,7 @@ def _torgb(filename, temps):
 	if ftype is None or not table.has_key(ftype):
 		raise error, \
 			filename + ': unsupported image file type ' + `ftype`
-	(fd, temp) = tempfile.mktemp()
+	(fd, temp) = tempfile.mkstemp()
 	os.close(fd)
 	sts = table[ftype].copy(fname, temp)
 	if sts:

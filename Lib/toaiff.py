@@ -99,7 +99,7 @@ def _toaiff(filename, temps):
     if ftype is None or not ftype in table:
         raise error, \
                 filename + ': unsupported audio file type ' + `ftype`
-    (fd, temp) = tempfile.mktemp()
+    (fd, temp) = tempfile.mkstemp()
     os.close(fd)
     temps.append(temp)
     sts = table[ftype].copy(fname, temp)
