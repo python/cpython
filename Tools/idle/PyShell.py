@@ -291,7 +291,7 @@ class PyShell(OutputWindow):
         __builtin__.quit = __builtin__.exit = "To exit, type Ctrl-D."
 
         self.auto = self.extensions["AutoIndent"] # Required extension
-        self.auto.config(prefertabs=1)
+        self.auto.config(usetabs=1, indentwidth=8)
 
         text = self.text
         text.configure(wrap="char")
