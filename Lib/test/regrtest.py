@@ -399,38 +399,61 @@ class _Set:
             data.sort()
         return data
 
+_expectations = {
+    'win32':
+        """
+        test_al
+        test_cd
+        test_cl
+        test_commands
+        test_crypt
+        test_dbm
+        test_dl
+        test_fcntl
+        test_fork1
+        test_gdbm
+        test_gl
+        test_grp
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_mhlib
+        test_nis
+        test_openpty
+        test_poll
+        test_pty
+        test_pwd
+        test_signal
+        test_socketserver
+        test_sunaudiodev
+        test_timing
+        """,
+    'linux2':
+        """
+        test_al
+        test_cd
+        test_cl
+        test_dl
+        test_gl
+        test_imgfile
+        test_largefile
+        test_nis
+        test_ntpath
+        test_socketserver
+        test_sunaudiodev
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
+}
+
 class _ExpectedSkips:
     def __init__(self):
         self.valid = 0
-
-        if sys.platform == "win32":
-            self.valid = 1
-            s = """test_al
-                   test_cd
-                   test_cl
-                   test_commands
-                   test_crypt
-                   test_dbm
-                   test_dl
-                   test_fcntl
-                   test_fork1
-                   test_gdbm
-                   test_gl
-                   test_grp
-                   test_imgfile
-                   test_largefile
-                   test_linuxaudiodev
-                   test_mhlib
-                   test_nis
-                   test_openpty
-                   test_poll
-                   test_pty
-                   test_pwd
-                   test_signal
-                   test_socketserver
-                   test_sunaudiodev
-                   test_timing"""
+        if _expectations.has_key(sys.platform):
+            s = _expectations[sys.platform]
             self.expected = _Set(s.split())
+            self.valid = 1
 
     def isvalid(self):
         "Return true iff _ExpectedSkips knows about the current platform."
