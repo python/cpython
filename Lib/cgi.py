@@ -130,7 +130,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     """
     if fp is None:
         fp = sys.stdin
-    if not environ.has_key('REQUEST_METHOD'):
+    if not 'REQUEST_METHOD' in environ:
         environ['REQUEST_METHOD'] = 'GET'       # For testing stand-alone
     if environ['REQUEST_METHOD'] == 'POST':
         ctype, pdict = parse_header(environ['CONTENT_TYPE'])
@@ -143,14 +143,14 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             qs = fp.read(clength)
         else:
             qs = ''                     # Unknown content-type
-        if environ.has_key('QUERY_STRING'):
+        if 'QUERY_STRING' in environ:
             if qs: qs = qs + '&'
             qs = qs + environ['QUERY_STRING']
         elif sys.argv[1:]:
             if qs: qs = qs + '&'
             qs = qs + sys.argv[1]
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
-    elif environ.has_key('QUERY_STRING'):
+    elif 'QUERY_STRING' in environ:
         qs = environ['QUERY_STRING']
     else:
         if sys.argv[1:]:
@@ -181,7 +181,7 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
     """
     dict = {}
     for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
-        if dict.has_key(name):
+        if name in dict:
             dict[name].append(value)
         else:
             dict[name] = [value]
@@ -244,7 +244,7 @@ def parse_multipart(fp, pdict):
 
     """
     boundary = ""
-    if pdict.has_key('boundary'):
+    if 'boundary' in pdict:
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
         raise ValueError,  ('Invalid boundary in multipart form: %s'
@@ -304,11 +304,11 @@ def parse_multipart(fp, pdict):
         key, params = parse_header(line)
         if key != 'form-data':
             continue
-        if params.has_key('name'):
+        if 'name' in params:
             name = params['name']
         else:
             continue
-        if partdict.has_key(name):
+        if name in partdict:
             partdict[name].append(data)
         else:
             partdict[name] = [data]
@@ -440,10 +440,10 @@ class FieldStorage:
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
-        if environ.has_key('REQUEST_METHOD'):
+        if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         if method == 'GET' or method == 'HEAD':
-            if environ.has_key('QUERY_STRING'):
+            if 'QUERY_STRING' in environ:
                 qs = environ['QUERY_STRING']
             elif sys.argv[1:]:
                 qs = sys.argv[1]
@@ -458,9 +458,9 @@ class FieldStorage:
             if method == 'POST':
                 # Set default content-type for POST to what's traditional
                 headers['content-type'] = "application/x-www-form-urlencoded"
-            if environ.has_key('CONTENT_TYPE'):
+            if 'CONTENT_TYPE' in environ:
                 headers['content-type'] = environ['CONTENT_TYPE']
-            if environ.has_key('CONTENT_LENGTH'):
+            if 'CONTENT_LENGTH' in environ:
                 headers['content-length'] = environ['CONTENT_LENGTH']
         self.fp = fp or sys.stdin
         self.headers = headers
@@ -468,15 +468,15 @@ class FieldStorage:
 
         # Process content-disposition header
         cdisp, pdict = "", {}
-        if self.headers.has_key('content-disposition'):
+        if 'content-disposition' in self.headers:
             cdisp, pdict = parse_header(self.headers['content-disposition'])
         self.disposition = cdisp
         self.disposition_options = pdict
         self.name = None
-        if pdict.has_key('name'):
+        if 'name' in pdict:
             self.name = pdict['name']
         self.filename = None
-        if pdict.has_key('filename'):
+        if 'filename' in pdict:
             self.filename = pdict['filename']
 
         # Process content-type header
@@ -491,7 +491,7 @@ class FieldStorage:
         #
         # See below for what we do if there does exist a content-type header,
         # but it happens to be something we don't understand.
-        if self.headers.has_key('content-type'):
+        if 'content-type' in self.headers:
             ctype, pdict = parse_header(self.headers['content-type'])
         elif self.outerboundary or method != 'POST':
             ctype, pdict = "text/plain", {}
@@ -500,10 +500,10 @@ class FieldStorage:
         self.type = ctype
         self.type_options = pdict
         self.innerboundary = ""
-        if pdict.has_key('boundary'):
+        if 'boundary' in pdict:
             self.innerboundary = pdict['boundary']
         clen = -1
-        if self.headers.has_key('content-length'):
+        if 'content-length' in self.headers:
             try:
                 clen = int(self.headers['content-length'])
             except ValueError:
@@ -555,7 +555,7 @@ class FieldStorage:
 
     def getvalue(self, key, default=None):
         """Dictionary style get() method, including 'value' lookup."""
-        if self.has_key(key):
+        if key in self:
             value = self[key]
             if type(value) is type([]):
                 return map(lambda v: v.value, value)
@@ -566,7 +566,7 @@ class FieldStorage:
 
     def getfirst(self, key, default=None):
         """ Return the first value received."""
-        if self.has_key(key):
+        if key in self:
             value = self[key]
             if type(value) is type([]):
                 return value[0].value
@@ -577,7 +577,7 @@ class FieldStorage:
 
     def getlist(self, key):
         """ Return list of received values."""
-        if self.has_key(key):
+        if key in self:
             value = self[key]
             if type(value) is type([]):
                 return map(lambda v: v.value, value)
@@ -597,6 +597,14 @@ class FieldStorage:
 
     def has_key(self, key):
         """Dictionary style has_key() method."""
+        if self.list is None:
+            raise TypeError, "not indexable"
+        for item in self.list:
+            if item.name == key: return True
+        return False
+
+    def __contains__(self, key):
+        """Dictionary style __contains__ method."""
         if self.list is None:
             raise TypeError, "not indexable"
         for item in self.list:
@@ -770,7 +778,7 @@ class FormContentDict(UserDict.UserDict):
     form = FormContentDict()
 
     form[key] -> [value, value, ...]
-    form.has_key(key) -> Boolean
+    key in form -> Boolean
     form.keys() -> [key, key, ...]
     form.values() -> [[val, val, ...], [val, val, ...], ...]
     form.items() ->  [(key, [val, val, ...]), (key, [val, val, ...]), ...]
@@ -847,21 +855,21 @@ class InterpFormContentDict(SvFormContentDict):
 class FormContent(FormContentDict):
     """This class is present for backwards compatibility only."""
     def values(self, key):
-        if self.dict.has_key(key) :return self.dict[key]
+        if key in self.dict :return self.dict[key]
         else: return None
     def indexed_value(self, key, location):
-        if self.dict.has_key(key):
+        if key in self.dict:
             if len(self.dict[key]) > location:
                 return self.dict[key][location]
             else: return None
         else: return None
     def value(self, key):
-        if self.dict.has_key(key): return self.dict[key][0]
+        if key in self.dict: return self.dict[key][0]
         else: return None
     def length(self, key):
         return len(self.dict[key])
     def stripped(self, key):
-        if self.dict.has_key(key): return self.dict[key][0].strip()
+        if key in self.dict: return self.dict[key][0].strip()
         else: return None
     def pars(self):
         return self.dict

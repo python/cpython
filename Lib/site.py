@@ -84,7 +84,7 @@ for dir in sys.path:
         if dir and not os.path.exists(dir):
             continue
     dir, dircase = makepath(dir)
-    if not _dirs_in_sys_path.has_key(dircase):
+    if not dircase in _dirs_in_sys_path:
         L.append(dir)
         _dirs_in_sys_path[dircase] = 1
 sys.path[:] = L
@@ -116,7 +116,7 @@ def addsitedir(sitedir):
     else:
         reset = 0
     sitedir, sitedircase = makepath(sitedir)
-    if not _dirs_in_sys_path.has_key(sitedircase):
+    if not sitedircase in _dirs_in_sys_path:
         sys.path.append(sitedir)        # Add path component
     try:
         names = os.listdir(sitedir)
@@ -153,7 +153,7 @@ def addpackage(sitedir, name):
         if dir[-1] == '\n':
             dir = dir[:-1]
         dir, dircase = makepath(sitedir, dir)
-        if not _dirs_in_sys_path.has_key(dircase) and os.path.exists(dir):
+        if not dircase in _dirs_in_sys_path and os.path.exists(dir):
             sys.path.append(dir)
             _dirs_in_sys_path[dircase] = 1
     if reset:

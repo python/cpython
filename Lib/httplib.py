@@ -549,7 +549,7 @@ class HTTPConnection:
         # If headers already contains a host header, then define the
         # optional skip_host argument to putrequest().  The check is
         # harder because field names are case insensitive.
-        if (headers.has_key('Host')
+        if 'Host' in (headers
             or [k for k in headers.iterkeys() if k.lower() == "host"]):
             self.putrequest(method, url, skip_host=1)
         else:

@@ -356,12 +356,12 @@ def getmodule(object):
         file = getabsfile(object)
     except TypeError:
         return None
-    if modulesbyfile.has_key(file):
+    if file in modulesbyfile:
         return sys.modules[modulesbyfile[file]]
     for module in sys.modules.values():
         if hasattr(module, '__file__'):
             modulesbyfile[getabsfile(module)] = module.__name__
-    if modulesbyfile.has_key(file):
+    if file in modulesbyfile:
         return sys.modules[modulesbyfile[file]]
     main = sys.modules['__main__']
     if hasattr(main, object.__name__):
@@ -529,7 +529,7 @@ def walktree(classes, children, parent):
     classes.sort(lambda a, b: cmp(a.__name__, b.__name__))
     for c in classes:
         results.append((c, c.__bases__))
-        if children.has_key(c):
+        if c in children:
             results.append(walktree(children[c], children, c))
     return results
 
@@ -547,7 +547,7 @@ def getclasstree(classes, unique=0):
     for c in classes:
         if c.__bases__:
             for parent in c.__bases__:
-                if not children.has_key(parent):
+                if not parent in children:
                     children[parent] = []
                 children[parent].append(c)
                 if unique and parent in classes: break

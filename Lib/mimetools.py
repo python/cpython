@@ -142,7 +142,7 @@ def decode(input, output, encoding):
         return uu.decode(input, output)
     if encoding in ('7bit', '8bit'):
         return output.write(input.read())
-    if decodetab.has_key(encoding):
+    if encoding in decodetab:
         pipethrough(input, decodetab[encoding], output)
     else:
         raise ValueError, \
@@ -161,7 +161,7 @@ def encode(input, output, encoding):
         return uu.encode(input, output)
     if encoding in ('7bit', '8bit'):
         return output.write(input.read())
-    if encodetab.has_key(encoding):
+    if encoding in encodetab:
         pipethrough(input, encodetab[encoding], output)
     else:
         raise ValueError, \

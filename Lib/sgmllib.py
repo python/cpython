@@ -396,7 +396,7 @@ class SGMLParser(markupbase.ParserBase):
         tailored by setting up the self.entitydefs mapping appropriately.
         """
         table = self.entitydefs
-        if table.has_key(name):
+        if name in table:
             self.handle_data(table[name])
         else:
             self.unknown_entityref(name)

@@ -35,7 +35,7 @@ def getlines(filename):
     """Get the lines for a file from the cache.
     Update the cache if it doesn't contain an entry for this file already."""
 
-    if cache.has_key(filename):
+    if filename in cache:
         return cache[filename][2]
     else:
         return updatecache(filename)
@@ -61,7 +61,7 @@ def updatecache(filename):
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
 
-    if cache.has_key(filename):
+    if filename in cache:
         del cache[filename]
     if not filename or filename[0] + filename[-1] == '<>':
         return []

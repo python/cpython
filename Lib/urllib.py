@@ -153,14 +153,14 @@ class URLopener:
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
         fullurl = unwrap(toBytes(fullurl))
-        if self.tempcache and self.tempcache.has_key(fullurl):
+        if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
             fp = open(filename, 'rb')
             return addinfourl(fp, headers, fullurl)
         urltype, url = splittype(fullurl)
         if not urltype:
             urltype = 'file'
-        if self.proxies.has_key(urltype):
+        if urltype in self.proxies:
             proxy = self.proxies[urltype]
             urltype, proxyhost = splittype(proxy)
             host, selector = splithost(proxyhost)
@@ -200,7 +200,7 @@ class URLopener:
         """retrieve(url) returns (filename, None) for a local object
         or (tempfilename, headers) for a remote object."""
         url = unwrap(toBytes(url))
-        if self.tempcache and self.tempcache.has_key(url):
+        if self.tempcache and url in self.tempcache:
             return self.tempcache[url]
         type, url1 = splittype(url)
         if not filename and (not type or type == 'file'):
@@ -230,7 +230,7 @@ class URLopener:
         size = -1
         blocknum = 1
         if reporthook:
-            if headers.has_key("content-length"):
+            if "content-length" in headers:
                 size = int(headers["Content-Length"])
             reporthook(0, bs, size)
         block = fp.read(bs)
@@ -473,7 +473,7 @@ class URLopener:
                     del self.ftpcache[k]
                     v.close()
         try:
-            if not self.ftpcache.has_key(key):
+            if not key in self.ftpcache:
                 self.ftpcache[key] = \
                     ftpwrapper(user, passwd, host, port, dirs)
             if not file: type = 'D'
@@ -566,9 +566,9 @@ class FancyURLopener(URLopener):
         return result
 
     def redirect_internal(self, url, fp, errcode, errmsg, headers, data):
-        if headers.has_key('location'):
+        if 'location' in headers:
             newurl = headers['location']
-        elif headers.has_key('uri'):
+        elif 'uri' in headers:
             newurl = headers['uri']
         else:
             return
@@ -589,7 +589,7 @@ class FancyURLopener(URLopener):
         """Error 401 -- authentication required.
         See this URL for a description of the basic authentication scheme:
         http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
-        if not headers.has_key('www-authenticate'):
+        if not 'www-authenticate' in headers:
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         stuff = headers['www-authenticate']
@@ -633,7 +633,7 @@ class FancyURLopener(URLopener):
 
     def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + host.lower()
-        if self.auth_cache.has_key(key):
+        if key in self.auth_cache:
             if clear_cache:
                 del self.auth_cache[key]
             else:
@@ -1108,7 +1108,7 @@ def _fast_quote(s):
     res = list(s)
     for i in range(len(res)):
         c = res[i]
-        if not _fast_safe.has_key(c):
+        if not c in _fast_safe:
             res[i] = '%%%02X' % ord(c)
     return ''.join(res)
 
@@ -1253,7 +1253,7 @@ if os.name == 'mac':
             return {}
         proxies = {}
         # HTTP:
-        if config.has_key('UseHTTPProxy') and config['UseHTTPProxy']:
+        if 'UseHTTPProxy' in config and config['UseHTTPProxy']:
             try:
                 value = config['HTTPProxyHost']
             except ic.error:

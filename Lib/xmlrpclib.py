@@ -496,7 +496,7 @@ class Marshaller:
     def opencontainer(self, value):
         if value:
             i = id(value)
-            if self.memo.has_key(i):
+            if i in self.memo:
                 raise TypeError, "cannot marshal recursive data structures"
             self.memo[i] = None
 

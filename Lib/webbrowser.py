@@ -312,19 +312,19 @@ if sys.platform[:3] == "os2" and _iscommand("netscape.exe"):
 # OK, now that we know what the default preference orders for each
 # platform are, allow user to override them with the BROWSER variable.
 #
-if os.environ.has_key("BROWSER"):
+if "BROWSER" in os.environ:
     # It's the user's responsibility to register handlers for any unknown
     # browser referenced by this value, before calling open().
     _tryorder = os.environ["BROWSER"].split(os.pathsep)
 
 for cmd in _tryorder:
-    if not _browsers.has_key(cmd.lower()):
+    if not cmd.lower() in _browsers:
         if _iscommand(cmd.lower()):
             register(cmd.lower(), None, GenericBrowser(
                 "%s '%%s'" % cmd.lower()))
 cmd = None # to make del work if _tryorder was empty
 del cmd
 
-_tryorder = filter(lambda x: _browsers.has_key(x.lower())
+_tryorder = filter(lambda x: x.lower() in _browsers
                    or x.find("%s") > -1, _tryorder)
 # what to do if _tryorder is now empty?

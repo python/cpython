@@ -333,7 +333,7 @@ def _execvpe(file, args, env=None):
     if head:
         apply(func, (file,) + argrest)
         return
-    if env.has_key('PATH'):
+    if 'PATH' in env:
         envpath = env['PATH']
     else:
         envpath = defpath
@@ -406,7 +406,9 @@ else:
                     unsetenv(key)
                     del self.data[key.upper()]
             def has_key(self, key):
-                return self.data.has_key(key.upper())
+                return key.upper() in self.data
+            def __contains__(self, key):
+                return key.upper() in self.data
             def get(self, key, failobj=None):
                 return self.data.get(key.upper(), failobj)
             def update(self, dict):

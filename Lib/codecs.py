@@ -611,7 +611,7 @@ def make_encoding_map(decoding_map):
     """
     m = {}
     for k,v in decoding_map.items():
-        if not m.has_key(v):
+        if not v in m:
             m[v] = k
         else:
             m[v] = None

@@ -660,7 +660,7 @@ class Netrc:
 
     def __init__(self, filename=None):
         if filename is None:
-            if os.environ.has_key("HOME"):
+            if "HOME" in os.environ:
                 filename = os.path.join(os.environ["HOME"],
                                         ".netrc")
             else:
@@ -714,7 +714,7 @@ class Netrc:
                 self.__defpasswd = passwd or self.__defpasswd
                 self.__defacct = acct or self.__defacct
             if host:
-                if self.__hosts.has_key(host):
+                if host in self.__hosts:
                     ouser, opasswd, oacct = \
                            self.__hosts[host]
                     user = user or ouser
@@ -736,7 +736,7 @@ class Netrc:
         """
         host = host.lower()
         user = passwd = acct = None
-        if self.__hosts.has_key(host):
+        if host in self.__hosts:
             user, passwd, acct = self.__hosts[host]
         user = user or self.__defuser
         passwd = passwd or self.__defpasswd

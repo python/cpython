@@ -16,7 +16,7 @@ __all__ = ["stat","reset","forget","forget_prefix","forget_dir",
 
 # The cache.  Keys are pathnames, values are os.stat outcomes.
 # Remember that multiple threads may be calling this!  So, e.g., that
-# cache.has_key(path) returns 1 doesn't mean the cache will still contain
+# path in cache returns 1 doesn't mean the cache will still contain
 # path on the next line.  Code defensively.
 
 cache = {}

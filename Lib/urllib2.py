@@ -255,7 +255,7 @@ class OpenerDirector:
         for meth in dir(handler):
             if meth[-5:] == '_open':
                 protocol = meth[:-5]
-                if self.handle_open.has_key(protocol):
+                if protocol in self.handle_open:
                     self.handle_open[protocol].append(handler)
                 else:
                     self.handle_open[protocol] = [handler]
@@ -271,7 +271,7 @@ class OpenerDirector:
                 except ValueError:
                     pass
                 dict = self.handle_error.get(proto, {})
-                if dict.has_key(kind):
+                if kind in dict:
                     dict[kind].append(handler)
                 else:
                     dict[kind] = [handler]
@@ -404,9 +404,9 @@ class HTTPRedirectHandler(BaseHandler):
     # have already seen.  Do this by adding a handler-specific
     # attribute to the Request object.
     def http_error_302(self, req, fp, code, msg, headers):
-        if headers.has_key('location'):
+        if 'location' in headers:
             newurl = headers['location']
-        elif headers.has_key('uri'):
+        elif 'uri' in headers:
             newurl = headers['uri']
         else:
             return
@@ -419,7 +419,7 @@ class HTTPRedirectHandler(BaseHandler):
         new.error_302_dict = {}
         if hasattr(req, 'error_302_dict'):
             if len(req.error_302_dict)>10 or \
-               req.error_302_dict.has_key(newurl):
+               newurl in req.error_302_dict:
                 raise HTTPError(req.get_full_url(), code,
                                 self.inf_msg + msg, headers, fp)
             new.error_302_dict.update(req.error_302_dict)
@@ -505,7 +505,7 @@ class CustomProxyHandler(BaseHandler):
         return self.parent.open(req)
 
     def add_proxy(self, cpo):
-        if self.proxies.has_key(cpo.proto):
+        if cpo.proto in self.proxies:
             self.proxies[cpo.proto].append(cpo)
         else:
             self.proxies[cpo.proto] = [cpo]
@@ -519,7 +519,7 @@ class HTTPPasswordMgr:
         if isinstance(uri, types.StringTypes):
             uri = [uri]
         uri = tuple(map(self.reduce_uri, uri))
-        if not self.passwd.has_key(realm):
+        if not realm in self.passwd:
             self.passwd[realm] = {}
         self.passwd[realm][uri] = (user, passwd)
 
@@ -751,10 +751,10 @@ class AbstractHTTPHandler(BaseHandler):
             if req.has_data():
                 data = req.get_data()
                 h.putrequest('POST', req.get_selector())
-                if not req.headers.has_key('Content-type'):
+                if not 'Content-type' in req.headers:
                     h.putheader('Content-type',
                                 'application/x-www-form-urlencoded')
-                if not req.headers.has_key('Content-length'):
+                if not 'Content-length' in req.headers:
                     h.putheader('Content-length', '%d' % len(data))
             else:
                 h.putrequest('GET', req.get_selector())
@@ -954,7 +954,7 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs):
         key = user, passwd, host, port
-        if self.cache.has_key(key):
+        if key in self.cache:
             self.timeout[key] = time.time() + self.delay
         else:
             self.cache[key] = ftpwrapper(user, passwd, host, port, dirs)

@@ -171,7 +171,7 @@ def readmodule_ex(module, path=[], inpackage=0):
         child = readmodule_ex(submodule, parent['__path__'], 1)
         return child
 
-    if _modules.has_key(module):
+    if module in _modules:
         # we've seen this module before...
         return _modules[module]
     if module in sys.builtin_module_names:
@@ -265,7 +265,7 @@ def readmodule_ex(module, path=[], inpackage=0):
                 names = []
                 for n in inherit.split(','):
                     n = n.strip()
-                    if dict.has_key(n):
+                    if n in dict:
                         # we know this super class
                         n = dict[n]
                     else:
@@ -278,9 +278,9 @@ def readmodule_ex(module, path=[], inpackage=0):
                             # module for class
                             m = c[-2]
                             c = c[-1]
-                            if _modules.has_key(m):
+                            if m in _modules:
                                 d = _modules[m]
-                                if d.has_key(c):
+                                if c in d:
                                     n = d[c]
                     names.append(n)
                 inherit = names
@@ -316,7 +316,7 @@ def readmodule_ex(module, path=[], inpackage=0):
             # were mentioned in the list
             for n in names:
                 n = n.strip()
-                if d.has_key(n):
+                if n in d:
                     dict[n] = d[n]
                 elif n == '*':
                     # only add a name if not
@@ -326,7 +326,7 @@ def readmodule_ex(module, path=[], inpackage=0):
                     # start with _
                     for n in d.keys():
                         if n[0] != '_' and \
-                           not dict.has_key(n):
+                           not n in dict:
                             dict[n] = d[n]
         else:
             assert 0, "regexp _getnext found something unexpected"

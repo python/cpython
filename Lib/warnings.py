@@ -27,7 +27,7 @@ def warn(message, category=None, stacklevel=1):
     else:
         globals = caller.f_globals
         lineno = caller.f_lineno
-    if globals.has_key('__name__'):
+    if '__name__' in globals:
         module = globals['__name__']
     else:
         module = "<string>"

@@ -1015,7 +1015,7 @@ see its docs for details.
 
         d = self.name2ft
         for name, (f, t) in other.name2ft.items():
-            if d.has_key(name):
+            if name in d:
                 print "*** Tester.merge: '" + name + "' in both" \
                     " testers; summing outcomes."
                 f2, t2 = d[name]
@@ -1024,7 +1024,7 @@ see its docs for details.
             d[name] = f, t
 
     def __record_outcome(self, name, f, t):
-        if self.name2ft.has_key(name):
+        if name in self.name2ft:
             print "*** Warning: '" + name + "' was tested before;", \
                 "summing outcomes."
             f2, t2 = self.name2ft[name]
