@@ -32,6 +32,10 @@ syncaudio.py	record audio synchronized with camcorder -a
 
 tv.py		receiver for transmissions from cam.py
 
+vcopy.py	selectively write frames from one movie file to another
+		usage: vcopy infile outfile
+		commands: 'n' gets next frame; 'w' writes current frame
+
 video.py	player for movies recorded by camcorder.py
 		usage: video [moviefile [soundfile [skipbytes]]]
 		- default moviefile is film.video
@@ -60,5 +64,5 @@ squash2.c	make a movie smaller by dropping pixels
 
 tomono.c	like squash2 but outputs a monochrome movie
 
-v2i.c		convert the first image of a movie file to SGI .rgb format
+v2i.c		convert the first frame of a movie file to SGI .rgb format
 		link with -limage
