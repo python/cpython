@@ -91,7 +91,7 @@ LINK32=link.exe
 # Name "w9xpopen - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\PC\w9xpopen.c
+SOURCE=..\w9xpopen.c
 # End Source File
 # End Target
 # End Project

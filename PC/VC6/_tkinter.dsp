@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\tcl84\include" /I "..\Include" /I "..\PC" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\..\tcl84\include" /I "..\..\Include" /I ".." /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\tcl84\include" /I "..\Include" /I "..\PC" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\..\tcl84\include" /I "..\..\Include" /I ".." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "WITH_APPINIT" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -93,11 +93,11 @@ LINK32=link.exe
 # Name "_tkinter - Win32 Release"
 # Begin Source File
 
-SOURCE=..\Modules\_tkinter.c
+SOURCE=..\..\Modules\_tkinter.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\tkappinit.c
+SOURCE=..\..\Modules\tkappinit.c
 # End Source File
 # End Target
 # End Project
