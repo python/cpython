@@ -39,50 +39,52 @@ def strftest(now):
     else: clock12 = 12
 
     expectations = (
-	('%A', calendar.day_name[now[6]], 'full weekday name'),
 	('%a', calendar.day_abbr[now[6]], 'abbreviated weekday name'),
-	('%B', calendar.month_name[now[1]], 'full month name'),
+	('%A', calendar.day_name[now[6]], 'full weekday name'),
 	('%b', calendar.month_abbr[now[1]], 'abbreviated month name'),
-	('%h', calendar.month_abbr[now[1]], 'abbreviated month name'),
-	('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
-	('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
+	('%B', calendar.month_name[now[1]], 'full month name'),
+	# %c see below
 	('%d', '%02d' % now[2], 'day of month as number (00-31)'),
-	('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
 	('%H', '%02d' % now[3], 'hour (00-23)'),
 	('%I', '%02d' % clock12, 'hour (01-12)'),
 	('%j', '%03d' % now[7], 'julian day (001-366)'),
-	('%M', '%02d' % now[4], 'minute, (00-59)'),
 	('%m', '%02d' % now[1], 'month as number (01-12)'),
+	('%M', '%02d' % now[4], 'minute, (00-59)'),
 	('%p', ampm, 'AM or PM as appropriate'),
-	('%R', '%02d:%02d' % (now[3], now[4]), '%H:%M'),
-	('%r', '%02d:%02d:%02d %s' % (clock12, now[4], now[5], ampm),
-	 '%I:%M:%S %p'),
 	('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
-	('%T', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
-	('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
 	('%U', '%02d' % ((now[7] + jan1[6])/7),
 	 'week number of the year (Sun 1st)'),
+	('%w', '%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
 	('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
 	 'week number of the year (Mon 1st)'),
-	('%w', '%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
 	('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
 	 '%m/%d/%y %H:%M:%S'),
-	('%Y', '%d' % now[0], 'year with century'),
+	('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
 	('%y', '%02d' % (now[0]%100), 'year without century'),
+	('%Y', '%d' % now[0], 'year with century'),
+	# %Z see below
 	('%%', '%', 'single percent sign'),
 	)
 
     nonstandard_expectations = (
-	('%C', '%02d' % (now[0]/100), 'century'),
-	    # This is for IRIX; on Solaris, %C yields date(1) format.
-	    # Tough.
+	# These are standard but don't have predictable output
+	('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
+	('%Z', tz, 'time zone name'),
+
+	# These are some platform specific extensions
+	('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
+	('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
+	('%h', calendar.month_abbr[now[1]], 'abbreviated month name'),
 	('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
+	('%n', '\n', 'newline character'),
+	('%r', '%02d:%02d:%02d %s' % (clock12, now[4], now[5], ampm),
+	 '%I:%M:%S %p'),
+	('%R', '%02d:%02d' % (now[3], now[4]), '%H:%M'),
 	('%s', nowsecs, 'seconds since the Epoch in UCT'),
+	('%t', '\t', 'tab character'),
+	('%T', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
 	('%3y', '%03d' % (now[0]%100),
 	 'year without century rendered using fieldwidth'),
-	('%n', '\n', 'newline character'),
-	('%t', '\t', 'tab character'),
-	('%Z', tz, 'time zone name'),
 	)
 
     if verbose:
