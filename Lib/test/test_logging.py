@@ -470,6 +470,8 @@ def test_main():
         socketDataProcessed.acquire()
         socketDataProcessed.wait()
         socketDataProcessed.release()
+        for thread in threads:
+            thread.join()
         banner("logrecv output", "begin")
         sys.stdout.write(sockOut.getvalue())
         sockOut.close()
