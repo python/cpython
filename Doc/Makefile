@@ -88,6 +88,8 @@ BUILDINDEX=$(TOOLSDIR)/buildindex.py
 PYTHONDOCS="See <i><a href=\"about.html\">About this document...</a></i> for information on suggesting changes."
 HTMLBASE=  file:`pwd`
 
+# The end of this should reflect the major/minor version numbers of
+# the release:
 WHATSNEW=whatsnew23
 
 # what's what
@@ -384,7 +386,8 @@ ISILOINDEXFILES=isilo/api/api.html \
 	isilo/ref/ref.html \
 	isilo/tut/tut.html \
 	isilo/inst/inst.html \
-	isilo/dist/dist.html
+	isilo/dist/dist.html \
+	isilo/whatsnew/$(WHATSNEW).html
 
 $(ISILOINDEXFILES): $(COMMONPERL) html/about.dat perl/isilo.perl
 
@@ -396,7 +399,8 @@ isilo:	isilo/python-api-$(RELEASE).pdb \
 	isilo/python-ref-$(RELEASE).pdb \
 	isilo/python-tut-$(RELEASE).pdb \
 	isilo/python-dist-$(RELEASE).pdb \
-	isilo/python-inst-$(RELEASE).pdb
+	isilo/python-inst-$(RELEASE).pdb \
+	isilo/python-whatsnew-$(RELEASE).pdb
 
 isilo/python-api-$(RELEASE).pdb: isilo/api/api.html isilo/api/api.css
 	$(MKISILO) "-iPython/C API Reference Manual" \
@@ -433,6 +437,10 @@ isilo/python-dist-$(RELEASE).pdb: isilo/dist/dist.html isilo/dist/dist.css
 isilo/python-inst-$(RELEASE).pdb: isilo/inst/inst.html isilo/inst/inst.css
 	$(MKISILO) "-iInstalling Python Modules" \
 		isilo/inst/inst.html $@
+
+isilo/python-whatsnew-$(RELEASE).pdb: isilo/whatsnew/$(WHATSNEW).html isilo/whatsnew/$(WHATSNEW).css
+	$(MKISILO) "-iWhat's New in Python X.Y" \
+		isilo/whatsnew/$(WHATSNEW).html $@
 
 isilo/api/api.html: $(APIFILES)
 	$(MKISILOHTML) --dir isilo/api api/api.tex
@@ -489,6 +497,7 @@ webcheck: $(ALLHTMLFILES)
 	$(WEBCHECKER) $(HTMLBASE)/tut/
 	$(WEBCHECKER) $(HTMLBASE)/dist/
 	$(WEBCHECKER) $(HTMLBASE)/inst/
+	$(WEBCHECKER) $(HTMLBASE)/whatsnew/
 
 fastwebcheck: $(ALLHTMLFILES)
 	$(WEBCHECKER) -x $(HTMLBASE)/api/
@@ -500,6 +509,7 @@ fastwebcheck: $(ALLHTMLFILES)
 	$(WEBCHECKER) -x $(HTMLBASE)/tut/
 	$(WEBCHECKER) -x $(HTMLBASE)/dist/
 	$(WEBCHECKER) -x $(HTMLBASE)/inst/
+	$(WEBCHECKER) -x $(HTMLBASE)/whatsnew/
 
 
 # Release packaging targets:
@@ -633,8 +643,10 @@ clobber:
 	rm -rf html/index.html html/modindex.html html/acks.html
 	rm -rf html/api/ html/doc/ html/ext/ html/lib/ html/mac/
 	rm -rf html/ref/ html/tut/ html/inst/ html/dist/
+	rm -rf html/whatsnew/
 	rm -rf isilo/api/ isilo/doc/ isilo/ext/ isilo/lib/ isilo/mac/
 	rm -rf isilo/ref/ isilo/tut/ isilo/inst/ isilo/dist/
+	rm -rf isilo/whatsnew/
 	rm -f isilo/python-*-$(RELEASE).pdb isilo-$(RELEASE).zip
 
 realclean distclean:  clobber
