@@ -1995,7 +1995,7 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.";
 
 static int
-abstract_issubclass(PyObject *derived, PyObject *cls, char *err, int first)
+abstract_issubclass(PyObject *derived, PyObject *cls, int first)
 {
 	static PyObject *__bases__ = NULL;
 	PyObject *bases;
@@ -2012,7 +2012,8 @@ abstract_issubclass(PyObject *derived, PyObject *cls, char *err, int first)
 		bases = PyObject_GetAttr(cls, __bases__);
 		if (bases == NULL || !PyTuple_Check(bases)) {
 		        Py_XDECREF(bases);
-	        	PyErr_SetString(PyExc_TypeError, err);
+	        	PyErr_SetString(PyExc_TypeError,
+					"arg 2 must be a class or type");
 			return -1;
 		}
 		Py_DECREF(bases);
@@ -2024,14 +2025,14 @@ abstract_issubclass(PyObject *derived, PyObject *cls, char *err, int first)
 	bases = PyObject_GetAttr(derived, __bases__);
 	if (bases == NULL || !PyTuple_Check(bases)) {
 	        Py_XDECREF(bases);
-	        PyErr_SetString(PyExc_TypeError, err);
+		PyErr_SetString(PyExc_TypeError,
+				"arg 2 must be a class or type");
 		return -1;
 	}
 
 	n = PyTuple_GET_SIZE(bases);
 	for (i = 0; i < n; i++) {
-		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i),
-					cls, err, 0);
+		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls, 0);
 		if (r != 0)
 			break;
 	}
@@ -2071,24 +2072,16 @@ builtin_isinstance(PyObject *self, PyObject *args)
 		}
 		icls = PyObject_GetAttr(inst, __class__);
 		if (icls != NULL) {
-			retval = abstract_issubclass(
-				icls, cls,
-				"isinstance() arg 2 must be a class", 
-				1);
+			retval = abstract_issubclass( icls, cls, 1);
 			Py_DECREF(icls);
 			if (retval < 0)
 				return NULL;
 		}
 		else {
 			PyErr_SetString(PyExc_TypeError,
-					"isinstance() arg 2 must be a class");
+					"arg 2 must be a class or type");
 			return NULL;
 		}
-	}
-        else {
-		PyErr_SetString(PyExc_TypeError,
-				"isinstance() arg 2 must be a class");
-		return NULL;
 	}
 	return PyInt_FromLong(retval);
 }
@@ -2111,8 +2104,7 @@ builtin_issubclass(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
-		retval = abstract_issubclass(
-				derived, cls, "arguments must be classes", 1);
+		retval = abstract_issubclass(derived, cls, 1);
 		if (retval < 0) 
 			return NULL;
 	}
