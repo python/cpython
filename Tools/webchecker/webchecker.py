@@ -297,7 +297,9 @@ class Checker:
                 print
                 print "Round %d (%s)" % (self.round, self.status())
                 print 
-            urls = self.todo.keys()[:self.roundsize]
+            urls = self.todo.keys()
+            urls.sort()
+            del urls[self.roundsize:]
             for url in urls:
                 self.dopage(url)
 
