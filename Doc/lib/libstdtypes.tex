@@ -941,8 +941,7 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.index(\var{x})}
     {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(4)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
-	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
-	  if \code{\var{i} >= 0}}{(5)}
+	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}}{(5)}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
     {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(6)}
   \lineiii{\var{s}.remove(\var{x})}
@@ -982,8 +981,10 @@ Notes:
   \var{s}.
 
 \item[(5)] When a negative index is passed as the first parameter to
-  the \method{insert()} method, the new element is prepended to the
-  sequence.
+  the \method{insert()} method, the list length is added, as for slice
+  indices.  If it is still negative, it is truncated to zero, as for
+  slice indices.  \versionchanged[Previously, all negative indices
+  were truncated to zero]{2.3}
 
 \item[(6)] The \method{pop()} method is only supported by the list and
   array types.  The optional argument \var{i} defaults to \code{-1},

@@ -159,8 +159,11 @@ ins1(PyListObject *self, int where, PyObject *v)
 		PyErr_NoMemory();
 		return -1;
 	}
-	if (where < 0)
-		where = 0;
+	if (where < 0) {
+		where += self->ob_size;
+		if (where < 0)
+			where = 0;
+	}
 	if (where > self->ob_size)
 		where = self->ob_size;
 	for (i = self->ob_size; --i >= where; )

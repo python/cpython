@@ -12,6 +12,11 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- list.insert(i, x) now interprets negative i as it would be
+  interpreted by slicing, so negative values count from the end of the
+  list.  This was the only place where such an interpretation was not
+  placed on a list index.
+
 - range() now works even if the arguments are longs with magnitude
   larger than sys.maxint, as long as the total length of the sequence
   fits.  E.g., range(2**100, 2**101, 2**100) is the following list:

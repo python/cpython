@@ -345,6 +345,11 @@ a.insert(0, -2)
 a.insert(1, -1)
 a.insert(2,0)
 if a != [-2,-1,0,0,1,2]: raise TestFailed, 'list insert'
+b = a[:]
+b.insert(-2, "foo")
+b.insert(-200, "left")
+b.insert(200, "right")
+if b != ["left",-2,-1,0,0,"foo",1,2,"right"]: raise TestFailed, 'list insert2'
 if a.count(0) != 2: raise TestFailed, ' list count'
 if a.index(0) != 2: raise TestFailed, 'list index'
 a.remove(0)
