@@ -17,7 +17,7 @@ version = '2.0beta'
 #
 #============================================================================
 
-# ===== ErrorHandler =====
+# ===== ERRORHANDLER =====
 
 class ErrorHandler:
     """Basic interface for SAX error handlers. If you create an object
@@ -40,6 +40,7 @@ class ErrorHandler:
         "Handle a warning."   
         print exception
 
+        
 # ===== CONTENTHANDLER =====
 
 class ContentHandler:
@@ -199,7 +200,39 @@ class ContentHandler:
         http://xml.org/sax/features/external-general-entities and the
         http://xml.org/sax/features/external-parameter-entities
         properties."""
+
         
+# ===== DTDHandler =====
+
+class DTDHandler:
+    """Handle DTD events.
+
+    This interface specifies only those DTD events required for basic
+    parsing (unparsed entities and attributes)."""
+
+    def notationDecl(self, name, publicId, systemId):
+	"Handle a notation declaration event."
+
+    def unparsedEntityDecl(self, name, publicId, systemId, ndata):
+	"Handle an unparsed entity declaration event."
+
+        
+# ===== ENTITYRESOLVER =====
+        
+class EntityResolver:
+    """Basic interface for resolving entities. If you create an object
+    implementing this interface, then register the object with your
+    Parser, the parser will call the method in your object to
+    resolve all external entities. Note that DefaultHandler implements
+    this interface with the default behaviour."""
+    
+    def resolveEntity(self, publicId, systemId):
+	"""Resolve the system identifier of an entity and return either
+        the system identifier to read from as a string, or an InputSource
+        to read from."""
+	return systemId
+
+
 #============================================================================
 #
 # CORE FEATURES
