@@ -2923,6 +2923,7 @@ I.e., if the line starts with `return', `raise', `break', `continue',
 and `pass'.  This doesn't catch embedded statements."
   (let ((here (point)))
     (back-to-indentation)
+    (py-goto-initial-line)
     (prog1
 	(looking-at (concat py-block-closing-keywords-re "\\>"))
       (goto-char here))))
