@@ -4,6 +4,7 @@ from test import test_support
 import copy
 import cPickle as pickle
 from cStringIO import StringIO
+import random
 
 BIG = 100000
 
@@ -57,13 +58,37 @@ class TestBasic(unittest.TestCase):
         d.extendleft('bcd')
         self.assertEqual(list(d), list(reversed('abcd')))
 
-    def test_leftright(self):
+    def test_getitem(self):
+        n = 200
+        d = deque(xrange(n))
+        l = range(n)
+        for i in xrange(n):
+            d.popleft()
+            l.pop(0)
+            if random.random() < 0.5:
+                d.append(i)
+                l.append(i)
+            for j in xrange(1-len(l), len(l)):
+                assert d[j] == l[j]
+
         d = deque('superman')
-        self.assertEqual(d.left(), 's')
-        self.assertEqual(d.right(), 'n')
+        self.assertEqual(d[0], 's')
+        self.assertEqual(d[-1], 'n')
         d = deque()
-        self.assertRaises(IndexError, d.left)
-        self.assertRaises(IndexError, d.right)
+        self.assertRaises(IndexError, d.__getitem__, 0)
+        self.assertRaises(IndexError, d.__getitem__, -1)
+
+    def test_setitem(self):
+        n = 200
+        d = deque(xrange(n))
+        for i in xrange(n):
+            d[i] = 10 * i
+        self.assertEqual(list(d), [10*i for i in xrange(n)])
+        l = list(d)
+        for i in xrange(1-n, 0, -1):
+            d[i] = 7*i
+            l[i] = 7*i
+        self.assertEqual(list(d), l)
 
     def test_rotate(self):
         s = tuple('abcde')
@@ -405,7 +430,7 @@ Example from the Library Reference:  Doc/lib/libcollections.tex
 >>> from collections import deque
 >>> d = deque('ghi')                 # make a new deque with three items
 >>> for elem in d:                   # iterate over the deque's elements
-...     print elem.upper()	
+...     print elem.upper()
 G
 H
 I
@@ -419,9 +444,9 @@ deque(['f', 'g', 'h', 'i', 'j'])
 'f'
 >>> list(d)                          # list the contents of the deque
 ['g', 'h', 'i']
->>> d.left()                         # peek at leftmost item
+>>> d[0]                             # peek at leftmost item
 'g'
->>> d.right()                        # peek at rightmost item
+>>> d[-1]                            # peek at rightmost item
 'i'
 >>> list(reversed(d))                # list the contents of a deque in reverse
 ['i', 'h', 'g']
@@ -476,7 +501,7 @@ def test_main(verbose=None):
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print counts
-        
+
     # doctests
     from test import test_deque
     test_support.run_doctest(test_deque, verbose)
