@@ -308,9 +308,8 @@ class bdist_rpm (Command):
             rpm_args.append('-bb')
         else:
             rpm_args.append('-ba')
-        topdir = os.getcwd() + 'build/rpm'
         rpm_args.extend(['--define',
-                         '_topdir ' + os.getcwd() + '/build/rpm',])
+                         '_topdir %s/%s' % (os.getcwd(), rpm_base),])
         if self.clean:
             rpm_args.append('--clean')
         rpm_args.append(spec_path)
