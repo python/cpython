@@ -3507,7 +3507,7 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 		if (x > INT_MAX)
 			x = INT_MAX;
 		else if (x < -INT_MAX)
-			x = 0;
+			x = -INT_MAX;
 		*pi = x;
 	}
 	return 1;
