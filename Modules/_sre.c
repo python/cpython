@@ -406,6 +406,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 	int stackbase;
     int lastmark;
 	int i, count;
+    SRE_STACK* sp;
 
     /* FIXME: this is a hack! */
     void* mark_copy[SRE_MARK_SIZE];
@@ -571,8 +572,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			/* set mark */
 			/* args: <mark> */
 			TRACE(("%8d: set mark %d\n", PTR(ptr), pattern[0]));
-            if (state->lastmark < pattern[0])
-                state->lastmark = pattern[0];
+            if (state->lastmark < pattern[0]+1)
+                state->lastmark = pattern[0]+1;
             if (!mark) {
                 mark = mark_copy;
                 memcpy(mark, state->mark, state->lastmark*sizeof(void*));
@@ -780,10 +781,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 #endif
 
 		case SRE_OP_MAX_REPEAT:
-			/* match repeated sequence (maximizing regexp).	 repeated
-			   group should end with a MAX_UNTIL code */
-
-            /* args: <skip> <min> <max> <item> */
+			/* match repeated sequence (maximizing regexp) */
+            /* args: <skip> <1=min> <2=max> <3=save> <4=item> */
 
 			TRACE(("%8d: max repeat (%d %d)\n", PTR(ptr),
 				   pattern[1], pattern[2]));
@@ -793,7 +792,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
             /* match minimum number of items */
             while (count < (int) pattern[1]) {
-                i = SRE_MATCH(state, pattern + 3);
+                i = SRE_MATCH(state, pattern + 4);
                 if (i < 0)
                     return i;
                 if (!i)
@@ -817,8 +816,13 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                points to the stack */
 
             while (pattern[2] == 65535 || count < (int) pattern[2]) {
+                void *mark0, *mark1;
+                if (pattern[3] != 65535) {
+                    mark0 = state->mark[pattern[3]];
+                    mark1 = state->mark[pattern[3]+1];
+                }
 				state->stackbase = stack;
-				i = SRE_MATCH(state, pattern + 3);
+				i = SRE_MATCH(state, pattern + 4);
 				state->stackbase = stackbase; /* rewind */
                 if (i < 0)
                     return i;
@@ -837,8 +841,14 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 						return i; /* out of memory */
 				}
                 TRACE(("%8d: stack[%d] = %d\n", PTR(ptr), stack, PTR(ptr)));
-				state->stack[stack].ptr = ptr;
-				state->stack[stack].pattern = pattern + pattern[0];
+                sp = state->stack + stack;
+				sp->ptr = ptr;
+				sp->pattern = pattern + pattern[0];
+                sp->mark = pattern[3];
+                if (pattern[3] != 65535) {
+                    sp->mark0 = mark0;
+                    sp->mark1 = mark1;
+                }
                 stack++;
 				/* move forward */
 				ptr = state->ptr;
@@ -855,13 +865,15 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 		case SRE_OP_MIN_REPEAT:
 			/* match repeated sequence (minimizing regexp) */
+            /* args: <skip> <1=min> <2=max> <3=save> <4=item> */
+
 			TRACE(("%8d: min repeat %d %d\n", PTR(ptr),
 				   pattern[1], pattern[2]));
 			count = 0;
 			state->ptr = ptr;
 			/* match minimum number of items */
 			while (count < (int) pattern[1]) {
-				i = SRE_MATCH(state, pattern + 3);
+				i = SRE_MATCH(state, pattern + 4);
 				if (i < 0)
                     return i;
                 if (!i)
@@ -877,7 +889,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 					goto success;
 				}
 				state->ptr = ptr; /* backtrack */
-				i = SRE_MATCH(state, pattern + 3);
+				i = SRE_MATCH(state, pattern + 4);
                 if (i < 0)
                     return i;
 				if (!i)
@@ -940,15 +952,20 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 	}
 
   failure:
+    TRACE(("%8d: leave (failure)\n", PTR(ptr)));
     if (stack-- > stackbase) {
-        ptr = state->stack[stack].ptr;
-        pattern = state->stack[stack].pattern;
+        sp = state->stack + stack;
+        ptr = sp->ptr;
+        pattern = sp->pattern;
+        if (sp->mark != 65535) {
+            state->mark[sp->mark] = sp->mark0;
+            state->mark[sp->mark+1] = sp->mark1;
+        }
         TRACE(("%8d: retry (%d)\n", PTR(ptr), stack));
         goto retry;
     }
-    TRACE(("%8d: leave (failure)\n", PTR(ptr)));
-    state->stackbase = stackbase;
     state->lastmark = lastmark;
+    state->stackbase = stackbase;
     if (mark)
         memcpy(state->mark, mark, state->lastmark*sizeof(void*));
     return 0;

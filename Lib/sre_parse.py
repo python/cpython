@@ -241,7 +241,7 @@ def _escape(source, escape, state):
                 if group:
                     if (not source.next or
                         not _group(escape + source.next, state.groups)):
-                        return GROUP, group
+                        return GROUPREF, group
                     escape = escape + source.get()
                 elif source.next in OCTDIGITS:
                     escape = escape + source.get()
@@ -450,7 +450,7 @@ def _parse(source, state):
                         gid = state.groupdict.get(name)
                         if gid is None:
                             raise error, "unknown group name"
-                        subpattern.append((GROUP, gid))
+                        subpattern.append((GROUPREF, gid))
                     elif source.match("#"):
                         index = ""
                         while 1:

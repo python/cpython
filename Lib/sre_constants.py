@@ -29,8 +29,8 @@ BRANCH = "branch"
 CALL = "call"
 CATEGORY = "category"
 CHARSET = "charset"
-GROUP = "group"
-GROUP_IGNORE = "group_ignore"
+GROUPREF = "groupref"
+GROUPREF_IGNORE = "groupref_ignore"
 IN = "in"
 IN_IGNORE = "in_ignore"
 INDEX = "index"
@@ -90,7 +90,7 @@ OPCODES = [
     CALL,
     CATEGORY,
     CHARSET,
-    GROUP, GROUP_IGNORE,
+    GROUPREF, GROUPREF_IGNORE,
     INDEX,
     IN, IN_IGNORE,
     INFO,
@@ -136,7 +136,7 @@ CHCODES = makedict(CHCODES)
 
 # replacement operations for "ignore case" mode
 OP_IGNORE = {
-    GROUP: GROUP_IGNORE,
+    GROUPREF: GROUPREF_IGNORE,
     IN: IN_IGNORE,
     LITERAL: LITERAL_IGNORE,
     NOT_LITERAL: NOT_LITERAL_IGNORE

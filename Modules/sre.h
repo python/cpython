@@ -46,6 +46,9 @@ typedef struct {
     /* stack elements */
     SRE_CODE* pattern;
     void* ptr;
+    int mark;
+    void* mark0;
+    void* mark1;
 } SRE_STACK;
 
 /* FIXME: <fl> shouldn't be a constant, really... */

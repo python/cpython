@@ -148,18 +148,25 @@ def _compile(code, pattern, flags):
                     skip = len(code); emit(0)
                     emit(av[0])
                     emit(av[1])
+                    mark = MAXCODE
+                    if av[2][0][0] == SUBPATTERN:
+                        # repeated subpattern
+                        gid, foo = av[2][0][1]
+                        if gid:
+                            mark = (gid-1)*2
+                    emit(mark)
                     _compile(code, av[2], flags)
                     emit(OPCODES[SUCCESS])
                     code[skip] = len(code) - skip
         elif op is SUBPATTERN:
-            group = av[0]
-            if group:
+            gid = av[0]
+            if gid:
                 emit(OPCODES[MARK])
-                emit((group-1)*2)
+                emit((gid-1)*2)
             _compile(code, av[1], flags)
-            if group:
+            if gid:
                 emit(OPCODES[MARK])
-                emit((group-1)*2+1)
+                emit((gid-1)*2+1)
         elif op in (SUCCESS, FAILURE):
             emit(OPCODES[op])
         elif op in (ASSERT, ASSERT_NOT):
@@ -207,7 +214,7 @@ def _compile(code, pattern, flags):
                 emit(CHCODES[CH_UNICODE[av]])
             else:
                 emit(CHCODES[av])
-        elif op is GROUP:
+        elif op is GROUPREF:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
             else:
