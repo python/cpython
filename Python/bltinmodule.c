@@ -859,19 +859,32 @@ builtin_pow(self, args)
 	object *self;
 	object *args;
 {
-	object *v, *w, *x;
-	if (!getargs(args, "(OO)", &v, &w))
-		return NULL;
+	object *v, *w, *z, *x;
+ 	z = None;
+	if (!getargs(args, "(OO)", &v, &w)) {
+		 err_clear();
+		 if (!getargs(args, "(OOO)", &v, &w, &z)) {
+			return NULL;
+		}
+	}
 	if (v->ob_type->tp_as_number == NULL ||
-				w->ob_type->tp_as_number == NULL) {
+	    (z!=None && z->ob_type->tp_as_number == NULL) ||
+	    w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "pow() requires numeric arguments");
 		return NULL;
 	}
 	if (coerce(&v, &w) != 0)
 		return NULL;
-	x = (*v->ob_type->tp_as_number->nb_power)(v, w);
+	if (z!=None) {
+	 	if (coerce(&w, &z) != 0)
+			return NULL;
+		if (coerce(&v, &z) != 0)
+			return NULL;
+	}
+	x = (*v->ob_type->tp_as_number->nb_power)(v, w, z);
 	DECREF(v);
 	DECREF(w);
+	if (z!=None) {DECREF(w); DECREF(v); DECREF(z); DECREF(z);}
 	return x;
 }
 
