@@ -601,11 +601,17 @@ class Unpickler:
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         klass = self.find_class(module, name)
+	instantiated = 0
 	if (not args and type(klass) is ClassType and
 	    not hasattr(klass, "__getinitargs__")):
-	    value = _EmptyClass()
-	    value.__class__ = klass
-	else:
+	    try:
+		value = _EmptyClass()
+		value.__class__ = klass
+	    except RuntimeError:
+		# In restricted execution, assignment to inst.__class__ is
+		# prohibited
+		pass
+	if not instantiated:
 	    value = apply(klass, args)
         self.append(value)
     dispatch[INST] = load_inst
@@ -617,11 +623,18 @@ class Unpickler:
         del stack[k + 1]
         args = tuple(stack[k + 1:]) 
         del stack[k:]
+	instantiated = 0
 	if (not args and type(klass) is ClassType and
 	    not hasattr(klass, "__getinitargs__")):
-	    value = _EmptyClass()
-	    value.__class__ = klass
-	else:
+	    try:
+		value = _EmptyClass()
+		value.__class__ = klass
+		instantiated = 1
+	    except RuntimeError:
+		# In restricted execution, assignment to inst.__class__ is
+		# prohibited
+		pass
+	if not instantiated:
 	    value = apply(klass, args)
         self.append(value)
     dispatch[OBJ] = load_obj                
@@ -756,7 +769,15 @@ class Unpickler:
         try:
             setstate = inst.__setstate__
         except AttributeError:
-	    inst.__dict__.update(value)
+	    try:
+		inst.__dict__.update(value)
+	    except RuntimeError:
+		# XXX In restricted execution, the instance's __dict__ is not
+		# accessible.  Use the old way of unpickling the instance
+		# variables.  This is a semantic different when unpickling in
+		# restricted vs. unrestricted modes.
+		for k, v in value.items():
+		    setattr(inst, k, v)
         else:
             setstate(value)
     dispatch[BUILD] = load_build
