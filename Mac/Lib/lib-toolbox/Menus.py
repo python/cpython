@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h'
+# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h'
 
 def FOUR_CHAR_CODE(x): return x
 gestaltMenuMgrAttr = FOUR_CHAR_CODE('menu')

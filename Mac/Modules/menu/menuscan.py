@@ -40,6 +40,23 @@ class MyScanner(Scanner):
 			"RemoveMenuItemProperty",
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'GetMenuItemRefCon2',
+				'SetMenuItemRefCon2',
+				'EnableItem',
+				'DisableItem',
+				'CheckItem',
+				'CountMItems',
+				'OpenDeskAcc',
+				'SystemEdit',
+				'SystemMenu',
+				'SetMenuFlash',
+				'InitMenus',
+				'InitProcMenu',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			'MCTableHandle',

@@ -129,7 +129,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		self.basechain = "&WinObj_chain"
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
-		Output("SetWRefCon(itself, (long)it);")
+		Output("SetWRefCon(GetDialogWindow(itself), (long)it);")
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return Py_None;")
 	def outputCheckConvertArg(self):
@@ -160,7 +160,7 @@ for f in methods: object.add(f)
 # Some methods that are currently macro's in C, but will be real routines
 # in MacOS 8.
 
-f = Method(ExistingDialogPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
+f = Method(WindowPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
 object.add(f)
 f = Method(SInt16, 'GetDialogDefaultItem', (DialogRef, 'dialog', InMode))
 object.add(f)
@@ -168,7 +168,8 @@ f = Method(SInt16, 'GetDialogCancelItem', (DialogRef, 'dialog', InMode))
 object.add(f)
 f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
 object.add(f)
-f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode))
+f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode), 
+	condition='#ifndef TARGET_API_MAC_CARBON')
 object.add(f)
 
 setuseritembody = """

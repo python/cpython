@@ -46,8 +46,11 @@ includestuff = includestuff + """
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
+#ifdef TARGET_API_MAC_CARBON
+#define GetControlRect(ctl, rectp) GetControlBounds(ctl, rectp)
+#else
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
-
+#endif
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
@@ -85,10 +88,12 @@ ControlFontStyle_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
+#ifndef TARGET_API_MAC_CARBON_NOTYET
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
+#endif
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
@@ -147,9 +152,7 @@ clrtrackfunc()
 }
 
 static pascal void
-mytracker(ctl, part)
-	ControlHandle ctl;
-	short part;
+mytracker(ControlHandle ctl, short part)
 {
 	PyObject *args, *rv=0;
 
@@ -164,6 +167,7 @@ mytracker(ctl, part)
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\\n");
 }
 
+#ifndef TARGET_API_MAC_CARBON_NOTYET
 static int
 setcallback(self, which, callback, uppp)
 	ControlObject *self;
@@ -279,15 +283,17 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 	Py_XDECREF(rv);
 	return (ControlPartCode)c_rv;
 }
-
+#endif
 """
 
 initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
+#ifndef TARGET_API_MAC_CARBON_NOTYET
 mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
 myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
 mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
+#endif
 """
 
 class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
@@ -564,7 +570,7 @@ _res = Py_None;
 return _res;
 """
 
-f = ManualGenerator("SetControlDataCallback", setcontroldatacallback_body);
+f = ManualGenerator("SetControlDataCallback", setcontroldatacallback_body, condition="#ifndef TARGET_API_MAC_CARBON_NOTYET");
 f.docstring = lambda: "(callbackfunc) -> None"
 object.add(f)
 
@@ -582,7 +588,7 @@ _res = Py_BuildValue("O&i", MenuObj_New, (*hdl)->mHandle, (int)(*hdl)->mID);
 HUnlock((Handle)hdl);
 return _res;
 """
-f = ManualGenerator("GetPopupData", getpopupdata_body)
+f = ManualGenerator("GetPopupData", getpopupdata_body, condition="#ifndef TARGET_API_MAC_CARBON_NOTYET")
 object.add(f)
 
 setpopupdata_body = """
@@ -602,7 +608,7 @@ hdl = (PopupPrivateDataHandle)(*_self->ob_itself)->contrlData;
 Py_INCREF(Py_None);
 return Py_None;
 """
-f = ManualGenerator("SetPopupData", setpopupdata_body)
+f = ManualGenerator("SetPopupData", setpopupdata_body, condition="#ifndef TARGET_API_MAC_CARBON_NOTYET")
 object.add(f)
 
 

@@ -141,6 +141,7 @@ static PyObject *GrafObj_getattr(self, name)
 	GrafPortObject *self;
 	char *name;
 {
+#ifndef TARGET_API_MAC_CARBON
 
 			{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
 			
@@ -218,6 +219,7 @@ static PyObject *GrafObj_getattr(self, name)
 				if ( strcmp(name, "_id") == 0 )
 					return Py_BuildValue("l", (long)self->ob_itself);
 			}
+#endif
 	return Py_FindMethodInChain(&GrafObj_chain, (PyObject *)self, name);
 }
 
@@ -424,6 +426,7 @@ static PyObject *QDGA_getattr(self, name)
 	QDGlobalsAccessObject *self;
 	char *name;
 {
+#ifndef TARGET_API_MAC_CARBON
 
 		if ( strcmp(name, "arrow") == 0 )
 			return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
@@ -444,6 +447,7 @@ static PyObject *QDGA_getattr(self, name)
 		if ( strcmp(name, "randSeed") == 0 ) 
 			return Py_BuildValue("l", &qd.randSeed);
 			
+#endif
 	return Py_FindMethodInChain(&QDGA_chain, (PyObject *)self, name);
 }
 

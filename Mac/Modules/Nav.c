@@ -323,6 +323,8 @@ navrr_getattr(self, name)
 	navrrobject *self;
 	char *name;
 {
+	FSSpec fss;
+	
 	if( strcmp(name, "__members__") == 0 )
 		return Py_BuildValue("sssssss", "version", "validRecord", "replacing",
 			"isStationery", "translationNeeded", "selection", "fileTranslation");
@@ -355,7 +357,16 @@ navrr_getattr(self, name)
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-			rvitem = PyMac_BuildFSSpec((FSSpec *)*desc.dataHandle);
+#ifdef TARGET_API_MAC_CARBON
+			if (err=AEGetDescData(&desc, &fss, sizeof(FSSpec))) {
+				Py_DECREF(rv);
+				PyErr_Mac(ErrorObject, err);
+				return NULL;
+			}
+#else
+			memcpy((void *)&fss, (void *)*desc.dataHandle, sizeof(FSSpec));
+#endif
+			rvitem = PyMac_BuildFSSpec(&fss);
 			PyList_SetItem(rv, i, rvitem);
 			AEDisposeDesc(&desc);
 		}

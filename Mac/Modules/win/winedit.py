@@ -40,29 +40,34 @@ methods.append(f)
 
 f = Method(Boolean, 'GetWindowZoomFlag',
     (WindowRef, 'theWindow', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowStructureRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowContentRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowUpdateRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(short, 'GetWindowTitleWidth',
     (WindowRef, 'theWindow', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
@@ -96,20 +101,11 @@ f = Method(void, 'SetWindowUserState',
 )
 methods.append(f)
 
-f = Method(Handle, 'GetWindowDataHandle',
-	(WindowRef, 'theWindow', InMode),
-)
-methods.append(f)
-f = Method(void, 'SetWindowDataHandle',
-	(WindowRef, 'theWindow', InMode),
-	(Handle, 'data', InMode),
-)
-methods.append(f)
-
 # These have Mac prefixed to their name in the 3.1 universal headers,
 # so we add the old/real names by hand.
 f = Method(void, 'CloseWindow',
     (WindowPtr, 'theWindow', InMode),
+    condition='#ifndef TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 

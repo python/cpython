@@ -29,9 +29,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Speech.h"
 
 #ifdef __MWERKS__
+#define OLDP2C 1
 #include <TextUtils.h>
+#ifndef c2pstr
 #define c2pstr C2PStr
+#endif
+#ifndef p2cstr
 #define p2cstr P2CStr
+#endif
 #else
 #include "pascal.h"
 #endif /* __MWERKS__ */

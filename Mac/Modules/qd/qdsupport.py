@@ -132,6 +132,7 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("return 1;")
 		OutRbrace()
 	def outputGetattrHook(self):
+		Output("#ifndef TARGET_API_MAC_CARBON")
 		Output("""
 		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
 		
@@ -209,6 +210,7 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 			if ( strcmp(name, "_id") == 0 )
 				return Py_BuildValue("l", (long)self->ob_itself);
 		}""")
+		Output("#endif")
 
 class MyBMObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
@@ -259,6 +261,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 		pass
 
 	def outputGetattrHook(self):
+		Output("#ifndef TARGET_API_MAC_CARBON")
 		Output("""
 	if ( strcmp(name, "arrow") == 0 )
 		return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
@@ -279,6 +282,7 @@ class QDGlobalsAccessObjectDefinition(ObjectDefinition):
 	if ( strcmp(name, "randSeed") == 0 ) 
 		return Py_BuildValue("l", &qd.randSeed);
 		""")
+		Output("#endif")
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)

@@ -115,7 +115,6 @@ extern void initTE();
 extern void initColorPicker();
 extern void initPrinting();
 extern void initDrag();
-extern void initNav();
 #endif
 #ifdef USE_CORE_TOOLBOX
 extern void initCtl();
@@ -124,6 +123,7 @@ extern void initMenu();
 extern void initQd();
 extern void initRes();
 extern void initWin();
+extern void initNav();
 #endif
 #ifdef USE_QT
 extern void initCm();
@@ -225,6 +225,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Menu", initMenu},
+	{"Nav", initNav},
 	{"Qd", initQd},
 	{"Win", initWin},
 	{"Res", initRes},
@@ -234,7 +235,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"App", initApp},
 	{"Evt", initEvt},
 	{"Fm", initFm},
-	{"Help", initHelp},
 	{"Icn", initIcn},
 	{"List", initList},
 	{"Snd", initSnd},
@@ -242,9 +242,11 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Scrap", initScrap},
 	{"TE", initTE},
 	{"ColorPicker", initColorPicker},
+#ifndef TARGET_API_MAC_CARBON
+	{"Help", initHelp},
 	{"Printing", initPrinting},
+#endif
 	{"Drag", initDrag},
-	{"Nav", initNav},
 #endif
 #ifdef USE_QT
 	{"Cm", initCm},
@@ -302,4 +304,3 @@ struct _inittab _PyImport_Inittab[] = {
 	/* Sentinel */
 	{0, 0}
 };
-

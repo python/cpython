@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h'
+# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h'
 
 
 def FOUR_CHAR_CODE(x): return x
@@ -141,7 +141,7 @@ kUYVY422PixelFormat = FOUR_CHAR_CODE('UYVY')
 kYUV211PixelFormat = FOUR_CHAR_CODE('Y211')
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h'
+# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h'
 
 
 def FOUR_CHAR_CODE(x): return x

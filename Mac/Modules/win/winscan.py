@@ -41,10 +41,33 @@ class MyScanner(Scanner):
 			'GetWindowProperty',
 			'GetWindowPropertySize',
 			'RemoveWindowProperty',
+			'MacCloseWindow',
 			# Constants with funny definitions
 			'kMouseUpOutOfSlop',
 			]
-
+			
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'GetAuxWin',
+				'GetWindowDataHandle',
+				'SaveOld',
+				'DrawNew',
+				'SetWinColor',
+				'SetDeskCPat',
+				'InitWindows',
+				'InitFloatingWindows',
+				'GetWMgrPort',
+				'GetCWMgrPort',
+				'ValidRgn',		# Use versions with Window in their name
+				'ValidRect',
+				'InvalRgn',
+				'InvalRect',
+			]),
+			('#ifndef TARGET_API_MAC_CARBON_NOTYET', [
+				'IsValidWindowPtr',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
