@@ -7,6 +7,7 @@
 #   api -- Python/C API Reference Manual
 #   ext -- Extending and Embedding the Python Interpreter
 #   lib -- Library Reference Manual
+#   mac -- Macintosh Library Modules
 #   ref -- Python Reference Manual
 #   tut -- Python Tutorial
 #
@@ -33,13 +34,15 @@
 # Additional targets attempt to convert selected LaTeX sources to
 # various other formats.  These are generally site specific because
 # the tools used are all but universal.  These targets are:
-#   l2h -- convert tut, ref, lib, ext, api from LaTeX to HTML
+#
+#   html -- convert all documents from LaTeX to HTML
+#
 # See the README file for more info on these targets.
 #
 # The formatted output is located in subdirectories.  For PDF and
 # PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
-# the html/ directory.  If you fix the GNU info process, look in the
-# info/ directory.
+# the html/ directory.  If you want to fix the GNU info process, look
+# in the info/ directory.
 
 # Customizations -- you *may* have to edit these
 
@@ -97,24 +100,24 @@ MKHTML=		PAPER=$(PAPER) $(srcdir)/tools/mkhtml.sh
 MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 
 # Main target
-all:	all-ps
+all:	ps
 
-all-dvi dvi:
+dvi:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-dvi)
 
-all-pdf pdf:
+pdf:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-pdf)
 
-all-ps ps:
+ps:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-ps)
 
-world:	all-ps all-pdf l2h tarballs
+world:	ps pdf html tarballs
 
 
 # Targets for each document:
@@ -262,6 +265,7 @@ lib.pdf: tools/indfix.py $(LIBFILES)
 	$(srcdir)/tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	$(srcdir)/tools/indfix.py $*.ind
+	$(srcdir)/tools/toc2bkm.py $*
 	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(PDFLATEX) $*
 
 # Python/C API Reference Manual
@@ -321,9 +325,7 @@ info:
 
 COMMONPERL=perl/manual.perl perl/python.perl
 
-html:	l2h
-
-l2h:
+l2h html:
 	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs: \
 		-f ../html/Makefile)
 
