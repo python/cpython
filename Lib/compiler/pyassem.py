@@ -253,8 +253,14 @@ class PyFlowGraph(FlowGraph):
 
     def _lookupName(self, name, list):
         """Return index of name in list, appending if necessary"""
-        if name in list:
-            i = list.index(name)
+        found = None
+        t = type(name)
+        for i in range(len(list)):
+            # must do a comparison on type first to prevent UnicodeErrors 
+            if t == type(list[i]) and list[i] == name:
+                found = 1
+                break
+        if found:
             # this is cheap, but incorrect in some cases, e.g 2 vs. 2L
             if type(name) == type(list[i]):
                 return i
