@@ -425,6 +425,16 @@ isatty(fd)
 	return fd == fileno(stdin);
 }
 
+#ifdef macintosh
+/* same */
+int
+isatty(fd)
+	int fd;
+{
+	return fd == fileno(stdin);
+}
+#endif
+
 #endif
 
 /*	XXX WISH LIST
