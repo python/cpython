@@ -9,8 +9,6 @@ import SimpleHTTPServer
 import SocketServer
 import aifc
 import anydbm
-#import asynchat
-import asyncore
 import audiodev
 import bdb
 import cmd
