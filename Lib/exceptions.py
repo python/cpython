@@ -1,19 +1,23 @@
 """Class based built-in exception hierarchy.
 
-This is a new feature whereby all the standard built-in exceptions,
-traditionally string objects, are replaced with classes.  This gives
-Python's exception handling mechanism a more object-oriented feel.
+New with Python 1.5, all standard built-in exceptions are now class objects by
+default.  This gives Python's exception handling mechanism a more
+object-oriented feel.  Traditionally they were string objects.  Python will
+fallback to string based exceptions if the interpreter is invoked with the -X
+option, or if some failure occurs during class exception initialization (in
+this case a warning will be printed).
 
-Most existing code should continue to work with class based
-exceptions.  Some tricky uses of IOError may break, but the most
-common uses should work.
+Most existing code should continue to work with class based exceptions.  Some
+tricky uses of IOError may break, but the most common uses should work.
 
-To disable this feature, start the Python executable with the -X option.
+Here is a rundown of the class hierarchy.  You can change this by editing this
+file, but it isn't recommended.  The class names described here are expected
+to be found by the bltinmodule.c file.
 
-Here is a rundown of the class hierarchy.  You can change this by
-editing this file, but it isn't recommended.  The classes with a `*'
-are new with this feature.  They are defined as tuples containing the
-derived exceptions when string-based exceptions are used.
+The classes with a `*' are new as of Python 1.5.  They are defined as tuples
+containing the derived exceptions when string-based exceptions are used.  If
+you define your own class based exceptions, they should be derived from
+Exception.
 
 Exception(*)
  |
@@ -22,7 +26,11 @@ Exception(*)
       +-- SystemExit
       +-- KeyboardInterrupt
       +-- ImportError
-      +-- IOError
+      +-- EnvironmentError(*)
+      |    |
+      |    +-- IOError
+      |    +-- OSError(*)
+      |
       +-- EOFError
       +-- RuntimeError
       +-- NameError
