@@ -68,7 +68,6 @@ import sys
 import time
 import socket # For gethostbyaddr()
 import string
-import rfc822
 import mimetools
 import SocketServer
 
