@@ -280,6 +280,17 @@ def copy_file (src, dst,
     if dry_run:
         return 1
 
+    # On a Mac, use the native file copy routine
+    if os.name == 'mac':
+        import macostools
+        try:
+            macostools.copy (src, dst, 0, preserve_times)
+        except OSError, exc:
+            raise DistutilsFileError, \
+                  "could not copy '%s' to '%s': %s" % (src, dst, exc[-1])
+        return 1
+    
+    # Otherwise use custom routine
     _copy_file_contents (src, dst)
     if preserve_mode or preserve_times:
         st = os.stat (src)
