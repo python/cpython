@@ -711,6 +711,12 @@ array_insert(self, args)
 	return ins(self, i, v);
 }
 
+static char insert_doc [] =
+"insert (i,x)\n\
+\n\
+Insert a new item x into the array before position i.";
+
+
 static PyObject *
 array_buffer_info(self, args)
 	arrayobject *self;
@@ -719,6 +725,13 @@ array_buffer_info(self, args)
 	return Py_BuildValue("ll",
 			     (long)(self->ob_item), (long)(self->ob_size));
 }
+
+static char buffer_info_doc [] =
+"buffer_info -> (address, length)\n\
+\n\
+Return a tuple (address, length) giving the current memory address and\n\
+the length in bytes of the buffer used to hold array's contents.";
+
 
 static PyObject *
 array_append(self, args)
@@ -730,6 +743,12 @@ array_append(self, args)
 		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
+
+static char append_doc [] =
+"append(x)\n\
+\n\
+Append new value x to the end of the array.";
+
 
 static PyObject *
 array_byteswap(self, args)
@@ -783,6 +802,12 @@ array_byteswap(self, args)
 	return Py_None;
 }
 
+static char byteswap_doc [] =
+"byteswap(x)\n\
+\n\
+Byteswap all items of the array.  This is only supported for integer\n\
+values of x, which determines the size of the blocks swapped.";
+
 static PyObject *
 array_reverse(self, args)
 	arrayobject *self;
@@ -811,6 +836,11 @@ array_reverse(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char reverse_doc [] =
+"reverse()\n\
+\n\
+Reverse the order of the items in the array.";
 
 /* The following routines were adapted from listobject.c but not converted.
    To make them work you will have to work! */
@@ -927,6 +957,13 @@ array_fromfile(self, args)
 	return Py_None;
 }
 
+static char fromfile_doc [] =
+"fromfile(f, n)\n\
+\n\
+Read n objects from the file object f and append them to the end of the\n\
+array.  Also called as read.";
+
+
 static PyObject *
 array_tofile(self, args)
 	arrayobject *self;
@@ -952,6 +989,13 @@ array_tofile(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char tofile_doc [] =
+"tofile(f)\n\
+\n\
+Write all items (as machine values) to the file object f.  Also called as\n\
+write.";
+
 
 static PyObject *
 array_fromlist(self, args)
@@ -994,6 +1038,12 @@ array_fromlist(self, args)
 	return Py_None;
 }
 
+static char fromlist_doc [] =
+"fromlist(list)\n\
+\n\
+Append items to array from list.";
+
+
 static PyObject *
 array_tolist(self, args)
 	arrayobject *self;
@@ -1013,6 +1063,12 @@ array_tolist(self, args)
 	}
 	return list;
 }
+
+static char tolist_doc [] =
+"tolist() -> list
+\n\
+Convert array to an ordinary list with the same items.";
+
 
 static PyObject *
 array_fromstring(self, args)
@@ -1046,6 +1102,13 @@ array_fromstring(self, args)
 	return Py_None;
 }
 
+static char fromstring_doc [] =
+"fromstring(string)\n\
+\n\
+Appends items from the string, interpreting it as an array of machine\n\
+values,as if it had been read from a file using the fromfile() method).";
+
+
 static PyObject *
 array_tostring(self, args)
 	arrayobject *self;
@@ -1057,24 +1120,30 @@ array_tostring(self, args)
 				    self->ob_size * self->ob_descr->itemsize);
 }
 
-static PyMethodDef array_methods[] = {
-	{"append",	(PyCFunction)array_append},
-	{"buffer_info", (PyCFunction)array_buffer_info},
-	{"byteswap",	(PyCFunction)array_byteswap},
+static char tostring_doc [] =
+"tostring() -> string\n\
+\n\
+Convert the array to an array of machine values and return the string\n\
+representation.";
+
+PyMethodDef array_methods[] = {
+	{"append",	(PyCFunction)array_append, 0, append_doc},
+	{"buffer_info", (PyCFunction)array_buffer_info, 0, buffer_info_doc},
+	{"byteswap",	(PyCFunction)array_byteswap, 0, byteswap_doc},
 /*	{"count",	(method)array_count},*/
-	{"fromfile",	(PyCFunction)array_fromfile},
-	{"fromlist",	(PyCFunction)array_fromlist},
-	{"fromstring",	(PyCFunction)array_fromstring},
+	{"fromfile",	(PyCFunction)array_fromfile, 0, fromfile_doc},
+	{"fromlist",	(PyCFunction)array_fromlist, 0, fromlist_doc},
+	{"fromstring",	(PyCFunction)array_fromstring, 0, fromstring_doc},
 /*	{"index",	(method)array_index},*/
-	{"insert",	(PyCFunction)array_insert},
-	{"read",	(PyCFunction)array_fromfile},
+	{"insert",	(PyCFunction)array_insert, 0, insert_doc},
+	{"read",	(PyCFunction)array_fromfile, 0, fromfile_doc},
 /*	{"remove",	(method)array_remove},*/
-	{"reverse",	(PyCFunction)array_reverse},
+	{"reverse",	(PyCFunction)array_reverse, 0, reverse_doc},
 /*	{"sort",	(method)array_sort},*/
-	{"tofile",	(PyCFunction)array_tofile},
-	{"tolist",	(PyCFunction)array_tolist},
-	{"tostring",	(PyCFunction)array_tostring},
-	{"write",	(PyCFunction)array_tofile},
+	{"tofile",	(PyCFunction)array_tofile, 0, tofile_doc},
+	{"tolist",	(PyCFunction)array_tolist, 0, tolist_doc},
+	{"tostring",	(PyCFunction)array_tostring, 0, tostring_doc},
+	{"write",	(PyCFunction)array_tofile, 0, tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1186,7 +1255,8 @@ array_buffer_getreadbuf(self, index, ptr)
 	const void **ptr;
 {
 	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError, "Accessing non-existent array segment");
+		PyErr_SetString(PyExc_SystemError,
+				"Accessing non-existent array segment");
 		return -1;
 	}
 	*ptr = (void *)self->ob_item;
@@ -1200,7 +1270,8 @@ array_buffer_getwritebuf(self, index, ptr)
 	const void **ptr;
 {
 	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError, "Accessing non-existent array segment");
+		PyErr_SetString(PyExc_SystemError,
+				"Accessing non-existent array segment");
 		return -1;
 	}
 	*ptr = (void *)self->ob_item;
@@ -1234,30 +1305,6 @@ static PyBufferProcs array_as_buffer = {
 };
 
 
-statichere PyTypeObject Arraytype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"array",
-	sizeof(arrayobject),
-	0,
-	(destructor)array_dealloc,	/*tp_dealloc*/
-	(printfunc)array_print,		/*tp_print*/
-	(getattrfunc)array_getattr,	/*tp_getattr*/
-	0,				/*tp_setattr*/
-	(cmpfunc)array_compare,		/*tp_compare*/
-	(reprfunc)array_repr,		/*tp_repr*/
-	0,				/*tp_as_number*/
-	&array_as_sequence,		/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
-	0, 				/*tp_hash*/
-	0,				/*tp_call*/
-	0,				/*tp_str*/
-	0,				/*tp_getattro*/
-	0,				/*tp_setattro*/
-	&array_as_buffer,		/*tp_as_buffer*/
-	0,				/*tp_xxx4*/
-	0,				/*tp_doc*/
-};
 
 
 static PyObject *
@@ -1317,16 +1364,104 @@ a_array(self, args)
 	return NULL;
 }
 
+static char a_array_doc [] =
+"array(typecode [, initializer]) -> array\n\
+\n\
+Return a new array whose items are restricted by typecode, and\n\
+initialized from the optional initializer value, which must be a list\n\
+or a string.";
+
 static PyMethodDef a_methods[] = {
-	{"array",	a_array},
+	{"array",	a_array, 0, a_array_doc},
 	{NULL,		NULL}		/* sentinel */
+};
+
+static char module_doc [] =
+"This module defines a new object type which can efficiently represent\n\
+an array of basic values: characters, integers, floating point\n\
+numbers.  Arrays are sequence types and behave very much like lists,\n\
+except that the type of objects stored in them is constrained.  The\n\
+type is specified at object creation time by using a type code, which\n\
+is a single character.  The following type codes are defined:\n\
+\n\
+    Type code   C Type             Minimum size in bytes \n\
+    'c'         character          1 \n\
+    'b'         signed integer     1 \n\
+    'B'         unsigned integer   1 \n\
+    'h'         signed integer     2 \n\
+    'H'         unsigned integer   2 \n\
+    'i'         signed integer     2 \n\
+    'I'         unsigned integer   2 \n\
+    'l'         signed integer     4 \n\
+    'L'         unsigned integer   4 \n\
+    'f'         floating point     4 \n\
+    'd'         floating point     8 \n\
+\n\
+Functions:\n\
+\n\
+array(typecode [, initializer]) -- create a new array\n\
+\n\
+Special Objects:\n\
+\n\
+ArrayType -- type object for array objects\n\
+";
+
+static char arraytype_doc [] =
+"An array represents basic values and behave very much like lists, except\n\
+the type of objects stored in them is constrained.\n\
+\n\
+Methods:\n\
+\n\
+append() -- append a new item to the end of the array\n\
+buffer_info() -- return information giving the current memory info\n\
+byteswap() -- byteswap all the items of the array\n\
+fromfile() -- read items from a file object\n\
+fromlist() -- append items from the list\n\
+fromstring() -- append items from the string\n\
+insert() -- insert a new item into the array at a provided position\n\
+read() -- DEPRECATED, use fromfile()\n\
+reverse() -- reverse the order of the items in the array\n\
+tofile() -- write all items to a file object\n\
+tolist() -- return the array converted to an ordinary list\n\
+tostring() -- return the array converted to a string\n\
+write() -- DEPRECATED, use tofile()\n\
+\n\
+Variables:\n\
+\n\
+typecode -- the typecode character used to create the array\n\
+itemsize -- the length in bytes of one array item\n\
+";
+
+statichere PyTypeObject Arraytype = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"array",
+	sizeof(arrayobject),
+	0,
+	(destructor)array_dealloc,	/*tp_dealloc*/
+	(printfunc)array_print,		/*tp_print*/
+	(getattrfunc)array_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	(cmpfunc)array_compare,		/*tp_compare*/
+	(reprfunc)array_repr,		/*tp_repr*/
+	0,				/*tp_as_number*/
+	&array_as_sequence,		/*tp_as_sequence*/
+	0,				/*tp_as_mapping*/
+	0, 				/*tp_hash*/
+	0,				/*tp_call*/
+	0,				/*tp_str*/
+	0,				/*tp_getattro*/
+	0,				/*tp_setattro*/
+	&array_as_buffer,		/*tp_as_buffer*/
+	0,				/*tp_xxx4*/
+	arraytype_doc,			/*tp_doc*/
 };
 
 void
 initarray()
 {
 	PyObject *m, *d;
-	m = Py_InitModule("array", a_methods);
+	m = Py_InitModule3("array", a_methods, module_doc);
 	d = PyModule_GetDict(m);
 	if (PyDict_SetItemString(d, "ArrayType",
 				 (PyObject *)&Arraytype) != 0)
