@@ -12,6 +12,7 @@ import StringIO
 import sys
 
 from esistools import encode
+from types import ListType, StringType, TupleType
 
 
 DEBUG = 0
@@ -26,7 +27,7 @@ class LaTeXFormatError(Error):
 
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
 _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
-_begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
+_begin_macro_rx = re.compile(r"[\\]([a-zA-Z]+[*]?)({|\s*\n?)")
 _comment_rx = re.compile("%+ ?(.*)\n[ \t]*")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
@@ -159,9 +160,9 @@ class Conversion:
                     self.write("Anumbered TOKEN no\n")
                 # rip off the macroname
                 if params:
-                    if optional and len(params) == 1:
-                        line = line[m.end():]
-                    else:
+##                    if optional and len(params) == 1:
+##                        line = line[m.end():]
+##                    else:
                         line = line[m.end(1):]
                 elif empty:
                     line = line[m.end(1):]
@@ -173,7 +174,7 @@ class Conversion:
                 # handles attribute parsing so we can 'continue' the outer
                 # loop.
                 #
-                if optional and type(params[0]) is type(()):
+                if optional and type(params[0]) is TupleType:
                     # the attribute name isn't used in this special case
                     pushing(macroname, "a", depth + len(stack))
                     stack.append(macroname)
@@ -188,13 +189,13 @@ class Conversion:
                 for attrname in params:
                     if optional:
                         optional = 0
-                        if type(attrname) is type(""):
+                        if type(attrname) is StringType:
                             m = _optional_rx.match(line)
                             if m:
                                 line = line[m.end():]
                                 self.write("A%s TOKEN %s\n"
                                            % (attrname, encode(m.group(1))))
-                    elif type(attrname) is type(()):
+                    elif type(attrname) is TupleType:
                         # This is a sub-element; but don't place the
                         # element we found on the stack (\section-like)
                         pushing(macroname, "b", len(stack) + depth)
@@ -204,7 +205,7 @@ class Conversion:
                         m = _start_group_rx.match(line)
                         if m:
                             line = line[m.end():]
-                    elif type(attrname) is type([]):
+                    elif type(attrname) is ListType:
                         # A normal subelement: <macroname><attrname>...</>...
                         attrname = attrname[0]
                         if not opened:
@@ -215,7 +216,6 @@ class Conversion:
                         pushing(attrname, "sub-elem", len(stack) + depth + 1)
                         self.line = skip_white(line)[1:]
                         line = self.subconvert("}", len(stack) + depth + 1)[1:]
-                        dbgmsg("subconvert() ==> " + `line[:20]`)
                         popping(attrname, "sub-elem", len(stack) + depth + 1)
                         self.write(")%s\n" % attrname)
                     else:
@@ -232,7 +232,7 @@ class Conversion:
                         self.write("A%s %s %s\n"
                                    % (attrname, dtype, encode(value)))
                         line = line[m.end():]
-                if params and type(params[-1]) is type('') \
+                if params and type(params[-1]) is StringType \
                    and (not empty) and not environ:
                     # attempt to strip off next '{'
                     m = _start_group_rx.match(line)
@@ -260,7 +260,7 @@ class Conversion:
                 conversion = self.table.get(macroname)
                 if macroname \
                    and macroname not in self.discards \
-                   and type(conversion) is not type(""):
+                   and type(conversion) is not StringType:
                     # otherwise, it was just a bare group
                     self.write(")%s\n" % stack[-1])
                 popping(macroname, "d", len(stack) + depth - 1)
@@ -400,6 +400,11 @@ def main():
         "opcodedesc": (["name", "var"], 0, 0, 1, 0),
         "par": ([], 0, 1, 0, 0),
         "paragraph": ([("title",)], 0, 0, 0, 0),
+        "refbimodindex": (["name"], 0, 1, 0, 0),
+        "refexmodindex": (["name"], 0, 1, 0, 0),
+        "refmodindex": (["name"], 0, 1, 0, 0),
+        "refstmodindex": (["name"], 0, 1, 0, 0),
+        "refmodule": (["ref"], 1, 0, 0, 0),
         "renewcommand": (["macro"], 0, 0, 0, 0),
         "rfc": (["num"], 0, 1, 0, 0),
         "section": ([("title",)], 0, 0, 0, 0),
