@@ -11,7 +11,8 @@ def grep(text, io=None, flist=None):
     if not hasattr(engine, "_grepdialog"):
         engine._grepdialog = GrepDialog(root, engine, flist)
     dialog = engine._grepdialog
-    dialog.open(io)
+    searchphrase = text.get("sel.first", "sel.last")
+    dialog.open(text, searchphrase, io)
 
 class GrepDialog(SearchDialogBase):
 
@@ -25,8 +26,8 @@ class GrepDialog(SearchDialogBase):
         self.globvar = StringVar(root)
         self.recvar = BooleanVar(root)
 
-    def open(self, io=None):
-        SearchDialogBase.open(self, None)
+    def open(self, text, searchphrase, io=None):
+        SearchDialogBase.open(self, text, searchphrase)
         if io:
             path = io.filename or ""
         else:
