@@ -196,12 +196,29 @@ tar archive several times. Each archive member is represented by a
     more available.
 \end{methoddesc}
 
+\begin{methoddesc}{extractall}{\optional{path\optional{, members}}}
+    Extract all members from the archive to the current working directory
+    or directory \var{path}. If optional \var{members} is given, it must be
+    a subset of the list returned by \method{getmembers()}.
+    Directory informations like owner, modification time and permissions are
+    set after all members have been extracted. This is done to work around two
+    problems: A directory's modification time is reset each time a file is
+    created in it. And, if a directory's permissions do not allow writing,
+    extracting files to it will fail.
+    \versionadded{2.5}
+\end{methoddesc}
+
 \begin{methoddesc}{extract}{member\optional{, path}}
     Extract a member from the archive to the current working directory,
     using its full name. Its file information is extracted as accurately as
     possible.
     \var{member} may be a filename or a \class{TarInfo} object.
     You can specify a different directory using \var{path}.
+    \begin{notice}
+    Because the \method{extract()} method allows random access to a tar
+    archive there are some issues you must take care of yourself. See the
+    description for \method{extractall()} above.
+    \end{notice}
 \end{methoddesc}
 
 \begin{methoddesc}{extractfile}{member}
@@ -415,6 +432,14 @@ A \class{TarInfo} object also provides some convenient query methods:
 %------------------------
 
 \subsection{Examples \label{tar-examples}}
+
+How to extract an entire tar archive to the current working directory:
+\begin{verbatim}
+import tarfile
+tar = tarfile.open("sample.tar.gz")
+tar.extractall()
+tar.close()
+\end{verbatim}
 
 How to create an uncompressed tar archive from a list of filenames:
 \begin{verbatim}
