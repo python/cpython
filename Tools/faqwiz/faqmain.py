@@ -777,7 +777,7 @@ class FAQServer:
 	    <P>
 	    <HR>
 	    <A HREF="http://www.python.org">Python home</A> /
-	    <A HREF="faq.py?req=frontpage">FAQ home</A> /
+	    <A HREF="faq.py?req=frontpage">FAQ Wizard home</A> /
 	    Feedback to <A HREF="mailto:guido@python.org">GvR</A>
 	    '''
 	print '''
