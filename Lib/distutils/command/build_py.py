@@ -23,13 +23,13 @@ class build_py (Command):
         ]
 
 
-    def set_default_options (self):
+    def initialize_options (self):
         self.build_dir = None
         self.modules = None
         self.package = None
         self.package_dir = None
 
-    def set_final_options (self):
+    def finalize_options (self):
         self.set_undefined_options ('build',
                                     ('build_lib', 'build_dir'))
 

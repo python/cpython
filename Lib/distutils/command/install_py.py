@@ -18,14 +18,14 @@ class install_py (Command):
         ]
                
 
-    def set_default_options (self):
+    def initialize_options (self):
         # let the 'install' command dictate our installation directory
         self.install_dir = None
         self.build_dir = None
         self.compile = 1
         self.optimize = 1
 
-    def set_final_options (self):
+    def finalize_options (self):
 
         # Find out from the 'build_ext' command if we were asked to build
         # any extensions.  If so, that means even pure-Python modules in

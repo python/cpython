@@ -50,7 +50,7 @@ class sdist (Command):
     exclude_re = re.compile (r'\s*!\s*(\S+)') # for manifest lines
 
 
-    def set_default_options (self):
+    def initialize_options (self):
         # 'template' and 'manifest' are, respectively, the names of
         # the manifest template and manifest file.
         self.template = None
@@ -68,7 +68,7 @@ class sdist (Command):
         self.keep_tree = 0
 
 
-    def set_final_options (self):
+    def finalize_options (self):
         if self.manifest is None:
             self.manifest = "MANIFEST"
         if self.template is None:
