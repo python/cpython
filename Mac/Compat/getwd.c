@@ -28,7 +28,7 @@
 */
 
 #include "macdefs.h"
-#ifdef MPW
+#if defined(MPW) || defined(__MWERKS__)
 #include <Strings.h>
 #endif
 

@@ -11,6 +11,9 @@
 #include <pascal.h>
 #endif
 
+#ifdef __MWERKS__
+#include "errno_unix.h"
+#endif
 #include <errno.h>
 #include <string.h>
 
