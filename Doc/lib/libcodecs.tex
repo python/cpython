@@ -394,8 +394,13 @@ order to be compatible to the Python codec registry.
   be extended with \function{register_error()}.
 \end{classdesc}
 
-\begin{methoddesc}{read}{\optional{size}}
+\begin{methoddesc}{read}{\optional{size\optional{, chars}}}
   Decodes data from the stream and returns the resulting object.
+
+  \var{chars} indicates the number of characters to read from the
+  stream. \function{read()} will never return more than \vars{chars}
+  characters, but it might return less, if there are not enough
+  characters available.
 
   \var{size} indicates the approximate maximum number of bytes to read
   from the stream for decoding purposes. The decoder can modify this
@@ -407,29 +412,29 @@ order to be compatible to the Python codec registry.
   read as much data as is allowed within the definition of the encoding
   and the given size, e.g.  if optional encoding endings or state
   markers are available on the stream, these should be read too.
+
+  \versionchanged[\var{chars} argument added]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}{readline}{[size]}
+\begin{methoddesc}{readline}{\optional{size\optional{, keepends}}}
   Read one line from the input stream and return the
   decoded data.
 
-  Unlike the \method{readlines()} method, this method inherits
-  the line breaking knowledge from the underlying stream's
-  \method{readline()} method -- there is currently no support for line
-  breaking using the codec decoder due to lack of line buffering.
-  Sublcasses should however, if possible, try to implement this method
-  using their own knowledge of line breaking.
-
   \var{size}, if given, is passed as size argument to the stream's
   \method{readline()} method.
+
+  If \var{keepends} is false lineends will be stripped from the
+  lines returned.
+
+  \versionchanged[\var{keepends} argument added]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}{readlines}{[sizehint]}
+\begin{methoddesc}{readlines}{\optional{sizehint\optional{, keepends}}}
   Read all lines available on the input stream and return them as list
   of lines.
 
   Line breaks are implemented using the codec's decoder method and are
-  included in the list entries.
+  included in the list entries if \var{keepends} is true.
 
   \var{sizehint}, if given, is passed as \var{size} argument to the
   stream's \method{read()} method.

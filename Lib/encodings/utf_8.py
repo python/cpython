@@ -10,21 +10,19 @@ import codecs
 
 ### Codec APIs
 
-class Codec(codecs.Codec):
+encode = codecs.utf_8_encode
 
-    # Note: Binding these as C functions will result in the class not
-    # converting them to methods. This is intended.
+def decode(input, errors='strict'):
+    return codecs.utf_8_decode(input, errors, True)
+
+class StreamWriter(codecs.StreamWriter):
     encode = codecs.utf_8_encode
+
+class StreamReader(codecs.StreamReader):
     decode = codecs.utf_8_decode
-
-class StreamWriter(Codec,codecs.StreamWriter):
-    pass
-
-class StreamReader(Codec,codecs.StreamReader):
-    pass
 
 ### encodings module API
 
 def getregentry():
 
-    return (Codec.encode,Codec.decode,StreamReader,StreamWriter)
+    return (encode,decode,StreamReader,StreamWriter)

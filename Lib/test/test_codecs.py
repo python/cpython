@@ -3,7 +3,45 @@ import unittest
 import codecs
 import StringIO
 
-class UTF16Test(unittest.TestCase):
+class Queue(object):
+    """
+    queue: write bytes at one end, read bytes from the other end
+    """
+    def __init__(self):
+        self._buffer = ""
+
+    def write(self, chars):
+        self._buffer += chars
+
+    def read(self, size=-1):
+        if size<0:
+            s = self._buffer
+            self._buffer = ""
+            return s
+        else:
+            s = self._buffer[:size]
+            self._buffer = self._buffer[size:]
+            return s
+
+class PartialReadTest(unittest.TestCase):
+    def check_partial(self, encoding, input, partialresults):
+        # get a StreamReader for the encoding and feed the bytestring version
+        # of input to the reader byte by byte. Read every available from
+        # the StreamReader and check that the results equal the appropriate
+        # entries from partialresults.
+        q = Queue()
+        r = codecs.getreader(encoding)(q)
+        result = u""
+        for (c, partialresult) in zip(input.encode(encoding), partialresults):
+            q.write(c)
+            result += r.read()
+            self.assertEqual(result, partialresult)
+        # check that there's nothing left in the buffers
+        self.assertEqual(r.read(), u"")
+        self.assertEqual(r.bytebuffer, "")
+        self.assertEqual(r.charbuffer, u"")
+
+class UTF16Test(PartialReadTest):
 
     spamle = '\xff\xfes\x00p\x00a\x00m\x00s\x00p\x00a\x00m\x00'
     spambe = '\xfe\xff\x00s\x00p\x00a\x00m\x00s\x00p\x00a\x00m'
@@ -22,6 +60,81 @@ class UTF16Test(unittest.TestCase):
         s = StringIO.StringIO(d)
         f = reader(s)
         self.assertEquals(f.read(), u"spamspam")
+
+    def test_partial(self):
+        self.check_partial(
+            "utf-16",
+            u"\x00\xff\u0100\uffff",
+            [
+                u"", # first byte of BOM read
+                u"", # second byte of BOM read => byteorder known
+                u"",
+                u"\x00",
+                u"\x00",
+                u"\x00\xff",
+                u"\x00\xff",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100\uffff",
+            ]
+        )
+
+class UTF16LETest(PartialReadTest):
+
+    def test_partial(self):
+        self.check_partial(
+            "utf-16-le",
+            u"\x00\xff\u0100\uffff",
+            [
+                u"",
+                u"\x00",
+                u"\x00",
+                u"\x00\xff",
+                u"\x00\xff",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100\uffff",
+            ]
+        )
+
+class UTF16BETest(PartialReadTest):
+
+    def test_partial(self):
+        self.check_partial(
+            "utf-16-be",
+            u"\x00\xff\u0100\uffff",
+            [
+                u"",
+                u"\x00",
+                u"\x00",
+                u"\x00\xff",
+                u"\x00\xff",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100",
+                u"\x00\xff\u0100\uffff",
+            ]
+        )
+
+class UTF8Test(PartialReadTest):
+
+    def test_partial(self):
+        self.check_partial(
+            "utf-8",
+            u"\x00\xff\u07ff\u0800\uffff",
+            [
+                u"\x00",
+                u"\x00",
+                u"\x00\xff",
+                u"\x00\xff",
+                u"\x00\xff\u07ff",
+                u"\x00\xff\u07ff",
+                u"\x00\xff\u07ff",
+                u"\x00\xff\u07ff\u0800",
+                u"\x00\xff\u07ff\u0800",
+                u"\x00\xff\u07ff\u0800",
+                u"\x00\xff\u07ff\u0800\uffff",
+            ]
+        )
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty_escape_decode(self):
@@ -348,6 +461,9 @@ class CodecsModuleTest(unittest.TestCase):
 def test_main():
     test_support.run_unittest(
         UTF16Test,
+        UTF16LETest,
+        UTF16BETest,
+        UTF8Test,
         EscapeDecodeTest,
         RecodingTest,
         PunycodeTest,

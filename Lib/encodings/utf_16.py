@@ -10,54 +10,40 @@ import codecs, sys
 
 ### Codec APIs
 
-class Codec(codecs.Codec):
+encode = codecs.utf_16_encode
 
-    # Note: Binding these as C functions will result in the class not
-    # converting them to methods. This is intended.
-    encode = codecs.utf_16_encode
-    decode = codecs.utf_16_decode
+def decode(input, errors='strict'):
+    return codecs.utf_16_decode(input, errors, True)
 
-class StreamWriter(Codec,codecs.StreamWriter):
+class StreamWriter(codecs.StreamWriter):
     def __init__(self, stream, errors='strict'):
-        self.bom_written = 0
+        self.bom_written = False
         codecs.StreamWriter.__init__(self, stream, errors)
 
-    def write(self, data):
-        result = codecs.StreamWriter.write(self, data)
-        if not self.bom_written:
-            self.bom_written = 1
-            if sys.byteorder == 'little':
-                self.encode = codecs.utf_16_le_encode
-            else:
-                self.encode = codecs.utf_16_be_encode
+    def encode(self, input, errors='strict'):
+        self.bom_written = True
+        result = codecs.utf_16_encode(input, errors)
+        if sys.byteorder == 'little':
+            self.encode = codecs.utf_16_le_encode
+        else:
+            self.encode = codecs.utf_16_be_encode
         return result
 
-class StreamReader(Codec,codecs.StreamReader):
-    def __init__(self, stream, errors='strict'):
-        self.bom_read = 0
-        codecs.StreamReader.__init__(self, stream, errors)
+class StreamReader(codecs.StreamReader):
 
-    def read(self, size=-1):
-        if not self.bom_read:
-            signature = self.stream.read(2)
-            if signature == codecs.BOM_BE:
-                self.decode = codecs.utf_16_be_decode
-            elif signature == codecs.BOM_LE:
-                self.decode = codecs.utf_16_le_decode
-            else:
-                raise UnicodeError,"UTF-16 stream does not start with BOM"
-            if size > 2:
-                size -= 2
-            elif size >= 0:
-                size = 0
-            self.bom_read = 1
-        return codecs.StreamReader.read(self, size)
-
-    def readline(self, size=None):
-        raise NotImplementedError, '.readline() is not implemented for UTF-16'
+    def decode(self, input, errors='strict'):
+        (object, consumed, byteorder) = \
+            codecs.utf_16_ex_decode(input, errors, 0, False)
+        if byteorder == -1:
+            self.decode = codecs.utf_16_le_decode
+        elif byteorder == 1:
+            self.decode = codecs.utf_16_be_decode
+        elif consumed>=2:
+            raise UnicodeError,"UTF-16 stream does not start with BOM"
+        return (object, consumed)
 
 ### encodings module API
 
 def getregentry():
 
-    return (Codec.encode,Codec.decode,StreamReader,StreamWriter)
+    return (encode,decode,StreamReader,StreamWriter)

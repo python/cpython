@@ -1136,6 +1136,14 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 			       int size,
 			       const char *errors)
 {
+    return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
+}
+
+PyObject *PyUnicode_DecodeUTF8Stateful(const char *s,
+			                int size,
+			                const char *errors,
+			                int *consumed)
+{
     const char *starts = s;
     int n;
     int startinpos;
@@ -1153,8 +1161,11 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
     unicode = _PyUnicode_New(size);
     if (!unicode)
         return NULL;
-    if (size == 0)
+    if (size == 0) {
+        if (consumed)
+            *consumed = 0;
         return (PyObject *)unicode;
+    }
 
     /* Unpack UTF-8 encoded data */
     p = unicode->str;
@@ -1172,10 +1183,14 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
         n = utf8_code_length[ch];
 
         if (s + n > e) {
-	    errmsg = "unexpected end of data";
-	    startinpos = s-starts;
-	    endinpos = size;
-	    goto utf8Error;
+	    if (consumed)
+		break;
+	    else {
+		errmsg = "unexpected end of data";
+		startinpos = s-starts;
+		endinpos = size;
+		goto utf8Error;
+	    }
 	}
 
         switch (n) {
@@ -1293,6 +1308,8 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 	     (PyObject **)&unicode, &outpos, &p))
 	goto onError;
     }
+    if (consumed)
+	*consumed = s-starts;
 
     /* Adjust length */
     if (_PyUnicode_Resize(&unicode, p - unicode->str) < 0)
@@ -1428,6 +1445,16 @@ PyUnicode_DecodeUTF16(const char *s,
 		      const char *errors,
 		      int *byteorder)
 {
+    return PyUnicode_DecodeUTF16Stateful(s, size, errors, byteorder, NULL);
+}
+
+PyObject *
+PyUnicode_DecodeUTF16Stateful(const char *s,
+			      int size,
+			      const char *errors,
+			      int *byteorder,
+			      int *consumed)
+{
     const char *starts = s;
     int startinpos;
     int endinpos;
@@ -1467,26 +1494,28 @@ PyUnicode_DecodeUTF16(const char *s,
        mark is skipped, in all other modes, it is copied to the output
        stream as-is (giving a ZWNBSP character). */
     if (bo == 0) {
-        const Py_UNICODE bom = (q[ihi] << 8) | q[ilo];
+        if (size >= 2) {
+            const Py_UNICODE bom = (q[ihi] << 8) | q[ilo];
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
-	if (bom == 0xFEFF) {
-	    q += 2;
-	    bo = -1;
-	}
-        else if (bom == 0xFFFE) {
-	    q += 2;
-	    bo = 1;
-	}
+	    if (bom == 0xFEFF) {
+		q += 2;
+		bo = -1;
+	    }
+	    else if (bom == 0xFFFE) {
+		q += 2;
+		bo = 1;
+	    }
 #else
-	if (bom == 0xFEFF) {
-	    q += 2;
-	    bo = 1;
-	}
-        else if (bom == 0xFFFE) {
-	    q += 2;
-	    bo = -1;
-	}
+	    if (bom == 0xFEFF) {
+		q += 2;
+		bo = 1;
+	    }
+	    else if (bom == 0xFFFE) {
+		q += 2;
+		bo = -1;
+	    }
 #endif
+	}
     }
 
     if (bo == -1) {
@@ -1502,8 +1531,10 @@ PyUnicode_DecodeUTF16(const char *s,
 
     while (q < e) {
 	Py_UNICODE ch;
-	/* remaing bytes at the end? (size should be even) */
+	/* remaining bytes at the end? (size should be even) */
 	if (e-q<2) {
+	    if (consumed)
+		break;
 	    errmsg = "truncated data";
 	    startinpos = ((const char *)q)-starts;
 	    endinpos = ((const char *)e)-starts;
@@ -1564,6 +1595,9 @@ PyUnicode_DecodeUTF16(const char *s,
 
     if (byteorder)
         *byteorder = bo;
+
+    if (consumed)
+	*consumed = (const char *)q-starts;
 
     /* Adjust length */
     if (_PyUnicode_Resize(&unicode, p - unicode->str) < 0)

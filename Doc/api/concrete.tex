@@ -1076,6 +1076,17 @@ These are the UTF-8 codec APIs:
   by the codec.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUTF8Stateful}{const char *s,
+                                               int size,
+                                               const char *errors,
+                                               int *consumed}
+  If \var{consumed} is \NULL{}, behaves like \cfunction{PyUnicode_DecodeUTF8()}.
+  If \var{consumed} is not \NULL{}, trailing incomplete UTF-8 byte sequences
+  will not be treated as an error. Those bytes will not be decoded and the
+  number of bytes that have been decoded will be stored in \var{consumed}.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeUTF8}{const Py_UNICODE *s,
                                                int size,
                                                const char *errors}
@@ -1119,6 +1130,20 @@ These are the UTF-16 codec APIs:
   If \var{byteorder} is \NULL{}, the codec starts in native order mode.
 
   Returns \NULL{} if an exception was raised by the codec.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUTF16Stateful}{const char *s,
+                                               int size,
+                                               const char *errors,
+                                               int *byteorder,
+                                               int *consumed}
+  If \var{consumed} is \NULL{}, behaves like
+  \cfunction{PyUnicode_DecodeUTF16()}. If \var{consumed} is not \NULL{},
+  \cfunction{PyUnicode_DecodeUTF16Stateful()} will not treat trailing incomplete
+  UTF-16 byte sequences (i.e. an odd number of bytes or a split surrogate pair)
+  as an error. Those bytes will not be decoded and the number of bytes that
+  have been decoded will be stored in \var{consumed}.
+  \versionadded{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeUTF16}{const Py_UNICODE *s,
