@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.58 $"[11:-2]
+__version__ = "#Revision: 1.61 $"[11:-2]
 
 import time
 import sys
@@ -329,7 +329,7 @@ class TestCase:
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
 
-           Note that decimal places (from zero) is usually not the same
+           Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
         """
         if round(second-first, places) != 0:
@@ -509,19 +509,18 @@ class TestLoader:
         for part in parts:
             parent, obj = obj, getattr(obj, part)
 
-        import unittest
         if type(obj) == types.ModuleType:
             return self.loadTestsFromModule(obj)
         elif (isinstance(obj, (type, types.ClassType)) and
-              issubclass(obj, unittest.TestCase)):
+              issubclass(obj, TestCase)):
             return self.loadTestsFromTestCase(obj)
         elif type(obj) == types.UnboundMethodType:
             return parent(obj.__name__)
-        elif isinstance(obj, unittest.TestSuite):
+        elif isinstance(obj, TestSuite):
             return obj
         elif callable(obj):
             test = obj()
-            if not isinstance(test, (unittest.TestCase, unittest.TestSuite)):
+            if not isinstance(test, (TestCase, TestSuite)):
                 raise ValueError, \
                       "calling %s returned %s, not a test" % (obj,test)
             return test
@@ -674,7 +673,7 @@ class TextTestRunner:
         startTime = time.time()
         test(result)
         stopTime = time.time()
-        timeTaken = float(stopTime - startTime)
+        timeTaken = stopTime - startTime
         result.printErrors()
         self.stream.writeln(result.separator2)
         run = result.testsRun
