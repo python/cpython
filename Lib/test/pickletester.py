@@ -88,7 +88,6 @@ class use_metaclass(object):
 
 # DATA0 .. DATA2 are the pickles we expect under the various protocols, for
 # the object returned by create_data().
-# XXX DATA2 doesn't exist yet, as it's not fully implemented in cPickle.
 
 # break into multiple strings to avoid confusing font-lock-mode
 DATA0 = """(lp1
@@ -276,6 +275,71 @@ DATA1_DIS = """\
 highest protocol among opcodes = 1
 """
 
+DATA2 = ('\x80\x02]q\x01(K\x00\x8a\x01\x01G@\x00\x00\x00\x00\x00\x00\x00'
+         'c__builtin__\ncomplex\nq\x02G@\x08\x00\x00\x00\x00\x00\x00G\x00'
+         '\x00\x00\x00\x00\x00\x00\x00\x86Rq\x03K\x01J\xff\xff\xff\xffK'
+         '\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xff'
+         'J\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00'
+         '\x80(U\x03abcq\x04h\x04(c__main__\nC\nq\x05oq\x06}q\x07(U\x03foo'
+         'q\x08K\x01U\x03barq\tK\x02ubh\x06tq\nh\nK\x05e.')
+
+# Disassembly of DATA2.
+DATA2_DIS = """\
+    0: \x80 PROTO      2
+    2: ]    EMPTY_LIST
+    3: q    BINPUT     1
+    5: (    MARK
+    6: K        BININT1    0
+    8: \x8a     LONG1      1L
+   11: G        BINFLOAT   2.0
+   20: c        GLOBAL     '__builtin__ complex'
+   41: q        BINPUT     2
+   43: G        BINFLOAT   3.0
+   52: G        BINFLOAT   0.0
+   61: \x86     TUPLE2
+   62: R        REDUCE
+   63: q        BINPUT     3
+   65: K        BININT1    1
+   67: J        BININT     -1
+   72: K        BININT1    255
+   74: J        BININT     -255
+   79: J        BININT     -256
+   84: M        BININT2    65535
+   87: J        BININT     -65535
+   92: J        BININT     -65536
+   97: J        BININT     2147483647
+  102: J        BININT     -2147483647
+  107: J        BININT     -2147483648
+  112: (        MARK
+  113: U            SHORT_BINSTRING 'abc'
+  118: q            BINPUT     4
+  120: h            BINGET     4
+  122: (            MARK
+  123: c                GLOBAL     '__main__ C'
+  135: q                BINPUT     5
+  137: o                OBJ        (MARK at 122)
+  138: q            BINPUT     6
+  140: }            EMPTY_DICT
+  141: q            BINPUT     7
+  143: (            MARK
+  144: U                SHORT_BINSTRING 'foo'
+  149: q                BINPUT     8
+  151: K                BININT1    1
+  153: U                SHORT_BINSTRING 'bar'
+  158: q                BINPUT     9
+  160: K                BININT1    2
+  162: u                SETITEMS   (MARK at 143)
+  163: b            BUILD
+  164: h            BINGET     6
+  166: t            TUPLE      (MARK at 112)
+  167: q        BINPUT     10
+  169: h        BINGET     10
+  171: K        BININT1    5
+  173: e        APPENDS    (MARK at 5)
+  174: .    STOP
+highest protocol among opcodes = 2
+"""
+
 def create_data():
     c = C()
     c.foo = 1
@@ -333,7 +397,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_load_from_canned_string(self):
         expected = self._testdata
-        for canned in DATA0, DATA1:
+        for canned in DATA0, DATA1, DATA2:
             got = self.loads(canned)
             self.assertEqual(expected, got)
 
