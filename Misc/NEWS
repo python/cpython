@@ -177,6 +177,9 @@ Build
   preprocessor symbols were eliminated.  The internal decisions they
   controlled stopped being experimental long ago.
 
+- The tools used to build the documentation now work under Cygwin as
+  well as Unix.
+
 C API
 
 - PyNumber_Coerce() and PyNumber_CoerceEx() now also invoke the type's
