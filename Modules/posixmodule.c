@@ -1755,7 +1755,8 @@ posix_fork(self, args)
 	pid = fork();
 	if (pid == -1)
 		return posix_error();
-	PyOS_AfterFork();
+	if (pid == 0)
+		PyOS_AfterFork();
 	return PyInt_FromLong((long)pid);
 }
 #endif
@@ -1814,7 +1815,8 @@ posix_forkpty(self, args)
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
 	if (pid == -1)
 		return posix_error();
-	PyOS_AfterFork();
+	if (pid == 0)
+		PyOS_AfterFork();
 	return Py_BuildValue("(ii)", pid, master_fd);
 }
 #endif
