@@ -47,7 +47,7 @@ def main():
     for arg in args:
         check(arg)
 
-class NannyNag:
+class NannyNag(Exception):
     def __init__(self, lineno, msg, line):
         self.lineno, self.msg, self.line = lineno, msg, line
     def get_lineno(self):
