@@ -89,6 +89,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- operator.isNumberType() now checks that the object has a nb_int or
+  nb_float slot, rather than simply checking whether it has a non-NULL
+  tp_as_number pointer.
+
 - The imp module now has ways to acquire and release the "import
   lock": imp.acquire_lock() and imp.release_lock().  Note: this is a
   reentrant lock, so releasing the lock only truly releases it when
@@ -317,6 +321,10 @@ Build
 
 C API
 -----
+
+- PyNumber_Check() now checks that the object has a nb_int or nb_float
+  slot, rather than simply checking whether it has a non-NULL
+  tp_as_number pointer.
 
 - A C type that inherits from a base type that defines tp_as_buffer
   will now inherit the tp_as_buffer pointer if it doesn't define one.
