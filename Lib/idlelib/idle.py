@@ -7,7 +7,7 @@ except ImportError:
     try:
         import PyShell
     except ImportError:
-        print "Can't locate PyShell.py"
+        raise
     else:
         import os
         idledir = os.path.dirname(os.path.abspath(PyShell.__file__))
