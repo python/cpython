@@ -108,7 +108,7 @@ systems, this function is emulated using \cfunction{fcntl()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{lockf}{fd, operation,
-    \optional{len, \optional{start, \optional{whence}}}}
+    \optional{length, \optional{start, \optional{whence}}}}
 This is essentially a wrapper around the \function{fcntl()} locking
 calls.  \var{fd} is the file descriptor of the file to lock or unlock,
 and \var{operation} is one of the following values:
