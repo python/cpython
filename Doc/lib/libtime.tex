@@ -13,7 +13,21 @@ An explanation of some terminology and conventions is in order.
 The \dfn{epoch}\index{epoch} is the point where the time starts.  On
 January 1st of that year, at 0 hours, the ``time since the epoch'' is
 zero.  For \UNIX{}, the epoch is 1970.  To find out what the epoch is,
-look at \code{gmtime(0)}.
+look at \code{gmtime(0)}.%
+\index{epoch}
+
+\item
+The functions in this module don't handle dates and times before the
+epoch or far in the future.  The cut-off point in the future is
+determined by the C library; for \UNIX{}, it is typically in 2038.%
+\index{Year 2038}
+
+\item
+Year 2000 (Y2K) issues: Python depends on the platform's C library,
+which generally doesn't have year 2000 issues, since all dates and
+times are represented internally as seconds since the epoch.%
+\index{Year 2000}%
+\index{Y2K}
 
 \item
 UTC is Coordinated Universal Time (formerly known as Greenwich Mean
@@ -48,8 +62,9 @@ nonzero fraction (\UNIX{} \cfunction{select()} is used to implement
 this, where available).
 
 \item
-The time tuple as returned by \function{gmtime()} and
-\function{localtime()}, or as accpted by \function{mktime()} is a
+The time tuple as returned by \function{gmtime()},
+\function{localtime()}, and \function{strptime()}, and accepted by
+\function{asctime()}, \function{mktime()} and \function{strftime()}, is a
 tuple of 9 integers: year (e.g.\ 1993), month (1--12), day (1--31),
 hour (0--23), minute (0--59), second (0--59), weekday (0--6, monday is
 0), Julian day (1--366) and daylight savings flag (-1, 0  or 1).
@@ -99,7 +114,7 @@ Nonzero if a DST timezone is defined.
 \begin{funcdesc}{gmtime}{secs}
 Convert a time expressed in seconds since the epoch to a time tuple
 in UTC in which the dst flag is always zero.  Fractions of a second are
-ignored.
+ignored.  See above for a description of the tuple lay-out.
 \end{funcdesc}
 
 \begin{funcdesc}{localtime}{secs}
