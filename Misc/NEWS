@@ -117,7 +117,7 @@ Library
 - SimpleXMLRPCServer: a new module (based upon SimpleHTMLServer)
   simplifies writing XML RPC servers.
 
-- os.path.realpath(): a new function that returns the absoute pathname
+- os.path.realpath(): a new function that returns the absolute pathname
   after interpretation of symbolic links.  On non-Unix systems, this
   is an alias for os.path.abspath().
 
