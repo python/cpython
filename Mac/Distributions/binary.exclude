@@ -30,3 +30,6 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
+*.mcp
+*.mcp.exp
+*.mcp.xml
