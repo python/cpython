@@ -15,9 +15,8 @@
 This module defines two classes for implementing HTTP servers
 (web servers). Usually, this module isn't used directly, but is used
 as a basis for building functioning web servers. See the
-\module{SimpleHTTPServer} and \module{CGIHTTPServer} modules.
-\refstmodindex{SimpleHTTPServer}
-\refstmodindex{CGIHTTPServer}
+\module{SimpleHTTPServer}\refstmodindex{SimpleHTTPServer} and
+\refmodule{CGIHTTPServer}\refstmodindex{CGIHTTPServer} modules.
 
 The first class, \class{HTTPServer}, is a
 \class{SocketServer.TCPServer} subclass. It creates and listens at the
@@ -221,3 +220,12 @@ Returns the current date and time, formatted for logging.
 Returns the client address, formatted for logging. A name lookup
 is performed on the client's IP address.
 \end{methoddesc}
+
+
+\begin{seealso}
+  \seemodule{CGIHTTPServer}{Extended request handler that supports CGI
+                            scripts.}
+
+  \seemodule{SimpleHTTPServer}{Basic request handler that limits response
+                               to files actually under the document root.}
+\end{seealso}
