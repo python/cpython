@@ -533,6 +533,40 @@ class TestDialectValidity(unittest.TestCase):
         self.assertRaises(csv.Error, mydialect)
 
 
+class TestSniffer(unittest.TestCase):
+    sample1 = """\
+Harry's, Arlington Heights, IL, 2/1/03, Kimi Hayes
+Shark City, Glendale Heights, IL, 12/28/02, Prezence
+Tommy's Place, Blue Island, IL, 12/28/02, Blue Sunday/White Crow
+Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
+"""
+    sample2 = """\
+'Harry''s':'Arlington Heights':'IL':'2/1/03':'Kimi Hayes'
+'Shark City':'Glendale Heights':'IL':'12/28/02':'Prezence'
+'Tommy''s Place':'Blue Island':'IL':'12/28/02':'Blue Sunday/White Crow'
+'Stonecutters Seafood and Chop House':'Lemont':'IL':'12/19/02':'Week Back'
+"""
+
+    header = '''\
+"venue","city","state","date","performers"
+'''
+    def test_has_header(self):
+        sniffer = csv.Sniffer()
+        self.assertEqual(sniffer.has_header(self.sample1), False)
+        self.assertEqual(sniffer.has_header(self.header+self.sample1), True)
+
+    def test_sniff(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(self.sample1)
+        self.assertEqual(dialect.delimiter, ",")
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertEqual(dialect.skipinitialspace, True)
+
+        dialect = sniffer.sniff(self.sample2)
+        self.assertEqual(dialect.delimiter, ":")
+        self.assertEqual(dialect.quotechar, "'")
+        self.assertEqual(dialect.skipinitialspace, False)
+
 if not hasattr(sys, "gettotalrefcount"):
     if verbose: print "*** skipping leakage tests ***"
 else:
