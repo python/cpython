@@ -68,7 +68,8 @@ class _posixfile_:
                  hex(id(self))[2:])
 
     def __del__(self):
-        self._file_.close()
+        if hasattr(self, "_file_"):
+            self._file_.close()
 
     #
     # Initialization routines
