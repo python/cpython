@@ -1274,17 +1274,18 @@ class BuiltinTest(unittest.TestCase):
             self.assertRaises(ValueError, unichr, sys.maxunicode+1)
             self.assertRaises(TypeError, unichr)
 
+    # We don't want self in vars(), so these are static methods
+
+    @staticmethod
     def get_vars_f0():
         return vars()
-    # we don't want self in vars(), so use staticmethod
-    get_vars_f0 = staticmethod(get_vars_f0)
 
+    @staticmethod
     def get_vars_f2():
         BuiltinTest.get_vars_f0()
         a = 1
         b = 2
         return vars()
-    get_vars_f2 = staticmethod(get_vars_f2)
 
     def test_vars(self):
         self.assertEqual(set(vars()), set(dir()))
