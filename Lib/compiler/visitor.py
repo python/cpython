@@ -47,31 +47,19 @@ class ASTVisitor:
         self._preorder(tree)
 
     def _preorder(self, node, *args):
-	stop = apply(self.dispatch, (node,) + args)
-        if stop:
-            return
+	return apply(self.dispatch, (node,) + args)
+
+    def default(self, node, *args):
         for child in node.getChildren():
             if isinstance(child, ast.Node):
-                self._preorder(child)
-
-    def postorder(self, tree, visitor):
-        """Do preorder walk of tree using visitor"""
-        self.visitor = visitor
-        visitor.visit = self._postorder
-        self._postorder(tree)
-
-    def _postorder(self, tree, *args):
-        for child in node.getChildren():
-            if isinstance(child, ast.Node):
-                self._postorder(child)
-	apply(self.dispatch, (node,) + args)
+                apply(self._preorder, (child,) + args)
 
     def dispatch(self, node, *args):
         self.node = node
 	meth = self._cache.get(node.__class__, None)
 	className = node.__class__.__name__
 	if meth is None:
-	    meth = getattr(self.visitor, 'visit' + className, 0)
+	    meth = getattr(self.visitor, 'visit' + className, self.default)
 	    self._cache[node.__class__] = meth
         if self.VERBOSE > 0:
             if self.VERBOSE == 1:
@@ -79,8 +67,7 @@ class ASTVisitor:
                     print "dispatch", className
             else:
                 print "dispatch", className, (meth and meth.__name__ or '')
-        if meth:
-            return apply(meth, (node,) + args)
+	return apply(meth, (node,) + args)
 
 class ExampleASTVisitor(ASTVisitor):
     """Prints examples of the nodes that aren't visited
@@ -93,24 +80,27 @@ class ExampleASTVisitor(ASTVisitor):
     
     def dispatch(self, node, *args):
         self.node = node
-        className = node.__class__.__name__
-        meth = getattr(self.visitor, 'visit' + className, None)
-        if self.VERBOSE > 0:
-            if self.VERBOSE > 1:
-                print "dispatch", className, (meth and meth.__name__ or '')
+	meth = self._cache.get(node.__class__, None)
+	className = node.__class__.__name__
+	if meth is None:
+	    meth = getattr(self.visitor, 'visit' + className, 0)
+	    self._cache[node.__class__] = meth
+        if self.VERBOSE > 1:
+            print "dispatch", className, (meth and meth.__name__ or '')
         if meth:
             return apply(meth, (node,) + args)
         elif self.VERBOSE > 0:
             klass = node.__class__
-            if self.examples.has_key(klass):
-                return
-            self.examples[klass] = klass
-            print
-            print klass
-            for attr in dir(node):
-                if attr[0] != '_':
-                    print "\t", "%-12.12s" % attr, getattr(node, attr)
-            print
+            if not self.examples.has_key(klass):
+		self.examples[klass] = klass
+		print
+		print self.visitor
+		print klass
+		for attr in dir(node):
+		    if attr[0] != '_':
+			print "\t", "%-12.12s" % attr, getattr(node, attr)
+		print
+	    return apply(self.default, (node,) + args)
 
 _walker = ASTVisitor
 def walk(tree, visitor, verbose=None):
