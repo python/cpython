@@ -35,3 +35,10 @@ $(XMLTARGETS): $(ESIS2ML) $(FIXGES)
 
 .esis.xml:
 	$(ESIS2ML) --xml $< | $(FIXGES) > $@
+
+
+clean:
+	rm -f *.esis
+
+clobber: clean
+	rm -f *.sgml *.xml
