@@ -56,18 +56,19 @@ def runtest(hier, code):
     root = tempfile.mkdtemp()
     mkhier(root, hier)
     savepath = sys.path[:]
-    codefile = tempfile.NamedTemporaryFile()
-    codefile.write(code)
-    codefile.flush()
+    fd, fname = tempfile.mkstemp(binary=False)
+    os.write(fd, code)
+    os.close(fd)
     try:
         sys.path.insert(0, root)
         if verbose: print "sys.path =", sys.path
         try:
-            execfile(codefile.name, globals(), {})
+            execfile(fname, globals(), {})
         except:
             traceback.print_exc(file=sys.stdout)
     finally:
         sys.path[:] = savepath
+        os.unlink(fname)
         try:
             cleanout(root)
         except (os.error, IOError):
