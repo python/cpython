@@ -148,6 +148,21 @@ print dir(t5.foo)
 print dir(t5.string)
 """),
 
+    ("t6", [
+    ("t6", None),
+    ("t6 __init__.py", "__all__ = ['spam', 'ham', 'eggs']"),
+    ("t6 spam.py", "print __name__, 'loading'"),
+    ("t6 ham.py", "print __name__, 'loading'"),
+    ("t6 eggs.py", "print __name__, 'loading'"),
+    ],
+"""
+import t6
+print dir(t6)
+from t6 import *
+print dir(t6)
+print dir()
+"""),
+
 ]
 
 nontests = [
