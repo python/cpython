@@ -38,6 +38,8 @@ ignores = [p_comment, p_cpp_comment]
 
 p_char = re.compile(r"'(\\.[^\\]*|[^\\])'")
 
+p_hex = re.compile(r"0x([0-9a-fA-F]+)L?")
+
 filedict = {}
 importable = {}
 
@@ -88,6 +90,26 @@ def main():
             outfp.close()
             fp.close()
 
+def pytify(body):
+    # replace ignored patterns by spaces
+    for p in ignores:
+        body = p.sub(' ', body)
+    # replace char literals by ord(...)
+    body = p_char.sub('ord(\\0)', body)
+    # Compute negative hexadecimal constants
+    start = 0
+    UMAX = 2*(sys.maxint+1)
+    while 1:
+        m = p_hex.search(body, start)
+        if not m: break
+        s,e = m.span()
+        val = long(body[slice(*m.span(1))], 16)
+        if val > sys.maxint:
+            val -= UMAX
+            body = body[:s] + "(" + str(val) + ")" + body[e:]
+        start = s + 1
+    return body
+
 def process(fp, outfp, env = {}):
     lineno = 0
     while 1:
@@ -104,13 +126,9 @@ def process(fp, outfp, env = {}):
                 line = line + nextline
             name = match.group(1)
             body = line[match.end():]
-            # replace ignored patterns by spaces
-            for p in ignores:
-                body = p.sub(' ', body)
-            # replace char literals by ord(...)
-            body = p_char.sub('ord(\\0)', body)
-            stmt = '%s = %s\n' % (name, body.strip())
+            body = pytify(body)
             ok = 0
+            stmt = '%s = %s\n' % (name, body.strip())
             try:
                 exec stmt in env
             except:
@@ -121,9 +139,7 @@ def process(fp, outfp, env = {}):
         if match:
             macro, arg = match.group(1, 2)
             body = line[match.end():]
-            for p in ignores:
-                body = p.sub(' ', body)
-            body = p_char.sub('ord(\\0)', body)
+            body = pytify(body)
             stmt = 'def %s(%s): return %s\n' % (macro, arg, body)
             try:
                 exec stmt in env
