@@ -111,7 +111,11 @@ class StatAttributeTests(unittest.TestCase):
         for name in dir(stat):
             if name[:3] == 'ST_':
                 attr = name.lower()
-                self.assertEquals(getattr(result, attr),
+                if name.endswith("TIME"):
+                    def trunc(x): return int(x)
+                else:
+                    def trunc(x): return x
+                self.assertEquals(trunc(getattr(result, attr)),
                                   result[getattr(stat, name)])
                 self.assert_(attr in members)
 
