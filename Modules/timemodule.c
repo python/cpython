@@ -305,7 +305,7 @@ floattime()
 #ifdef HAVE_FTIME
 	struct timeb t;
 	ftime(&t);
-	return (double)t.time + t.millitm*0.001;
+	return (double)t.time + (double)t.millitm * (double)0.001;
 #else /* !HAVE_FTIME */
 	time_t secs;
 	time(&secs);
