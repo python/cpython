@@ -111,6 +111,12 @@ if fcmp(divmod(-3.25, -1.0), (3.0, -0.25)):
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
 if eval(' 1+1\n') <> 2: raise TestFailed, 'eval(\' 1+1\\n\')'
+globals = {'a': 1, 'b': 2}
+locals = {'b': 200, 'c': 300}
+if eval('a', globals) <> 1: raise TestFailed, "eval(1)"
+if eval('a', globals, locals) <> 1: raise TestFailed, "eval(2)"
+if eval('b', globals, locals) <> 200: raise TestFailed, "eval(3)"
+if eval('c', globals, locals) <> 300: raise TestFailed, "eval(4)"
 
 print 'execfile'
 z = 0
@@ -119,6 +125,13 @@ f.write('z = z+1\n')
 f.write('z = z*2\n')
 f.close()
 execfile(TESTFN)
+if z <> 2: raise TestFailed, "execfile(1)"
+globals['z'] = 0
+execfile(TESTFN, globals)
+if globals['z'] <> 2: raise TestFailed, "execfile(1)"
+locals['z'] = 0
+execfile(TESTFN, globals, locals)
+if locals['z'] <> 2: raise TestFailed, "execfile(1)"
 unlink(TESTFN)
 
 print 'filter'
