@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.3.5?
-===========================
+What's New in Python 2.3.5rc1?
+==============================
 
-*Release date: xx-xxx-2005*
+*Release date: 26-JAN-2005*
 
 Core and builtins
 -----------------
@@ -75,6 +75,9 @@ Extension modules
 
 Library
 -------
+
+- copy.py fixed to first lookup __copy__ from the instance being copied, 
+  rather than only looking at the type - this was broken in 2.3. 
 
 - Bug #1103844: fix distutils.install.dump_dirs() with negated options.
 
