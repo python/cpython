@@ -6,6 +6,7 @@ import unittest
 from StringIO import StringIO
 from csv import csv
 import gc
+from test.test_support import verbose
 
 class Test_Csv(unittest.TestCase):
     """
@@ -533,7 +534,7 @@ class TestDialectValidity(unittest.TestCase):
 
 
 if not hasattr(sys, "gettotalrefcount"):
-    print "*** skipping leakage tests ***"
+    if verbose: print "*** skipping leakage tests ***"
 else:
     class NUL:
         def write(s, *args):
