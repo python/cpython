@@ -1004,7 +1004,7 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 int (*_Py_abstract_hack)(PyObject *) = &PyObject_Size;
 
 
-/* Python's malloc wrappers (see mymalloc.h) */
+/* Python's malloc wrappers (see pymem.h) */
 
 void *
 PyMem_Malloc(size_t nbytes)

@@ -166,7 +166,7 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 		( (type *) _PyObject_NewVar((typeobj), (n)) )
 #define PyObject_Del(op) _PyObject_Del((PyObject *)(op))
 
-/* Macros trading binary compatibility for speed. See also mymalloc.h.
+/* Macros trading binary compatibility for speed. See also pymem.h.
    Note that these macros expect non-NULL object pointers.*/
 #define PyObject_INIT(op, typeobj) \
 	( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
