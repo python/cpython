@@ -67,12 +67,12 @@ int_from_string(v)
 	s = PyString_AS_STRING(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for int()");
-		return NULL;
-	}
 	errno = 0;
 	x = PyOS_strtol(s, &end, 10);
+	if (end == s || !isdigit(end[-1])) {
+		PyErr_SetString(PyExc_ValueError, "no digits in int constant");
+		return NULL;
+	}
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
@@ -80,7 +80,7 @@ int_from_string(v)
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	else if (end-s != PyString_GET_SIZE(v)) {
+	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for int()");
 		return NULL;
@@ -104,10 +104,6 @@ long_from_string(v)
 	s = PyString_AS_STRING(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for long()");
-		return NULL;
-	}
 	x = PyLong_FromString(s, &end, 10);
 	if (x == NULL)
 		return NULL;
@@ -119,9 +115,9 @@ long_from_string(v)
 		Py_DECREF(x);
 		return NULL;
 	}
-	else if (end-s != PyString_GET_SIZE(v)) {
+	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
 		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
+				"null byte in argument for long()");
 		return NULL;
 	}
 	return x;
@@ -154,7 +150,7 @@ float_from_string(v)
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	else if (end-s != PyString_GET_SIZE(v)) {
+	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for float()");
 		return NULL;
