@@ -56,6 +56,7 @@ def buildproject(projectfile):
 	prjfss = macfs.FSSpec(projectfile)
 	cw.open(prjfss)
 	cw.Make_Project()	# XXX Should set target
+	cw.Close_Project()
 	
 def cleanproject(projectfile):
 	cw = cwtalker.MyCodeWarrior(start=1)
