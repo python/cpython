@@ -1116,6 +1116,17 @@ else AC_MSG_RESULT(no)
 fi],
 [AC_MSG_RESULT(no)])
 
+# Check for GC support
+AC_SUBST(USE_GC_MODULE)
+USE_GC_MODULE="#"
+AC_MSG_CHECKING(for --with-cycle-gc)
+AC_ARG_WITH(cycle-gc, [--with-cycle-gc           enable garbage collection], [
+AC_MSG_RESULT($withval)
+AC_DEFINE(WITH_CYCLE_GC)
+USE_GC_MODULE=
+],
+AC_MSG_RESULT(no))
+
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
 cat >> confdefs.h <<\EOF
