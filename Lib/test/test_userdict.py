@@ -1,7 +1,8 @@
 # Check every path through every method of UserDict
 
-from test.test_support import verify, verbose
-from UserDict import UserDict, IterableUserDict
+import test.test_support, unittest
+
+import UserDict
 
 d0 = {}
 d1 = {"one": 1}
@@ -10,137 +11,144 @@ d3 = {"one": 1, "two": 3, "three": 5}
 d4 = {"one": None, "two": None}
 d5 = {"one": 1, "two": 1}
 
-# Test constructors
+class UserDictTest(unittest.TestCase):
+    def test_all(self):
+        # Test constructors
+        u = UserDict.UserDict()
+        u0 = UserDict.UserDict(d0)
+        u1 = UserDict.UserDict(d1)
+        u2 = UserDict.IterableUserDict(d2)
 
-u = UserDict()
-u0 = UserDict(d0)
-u1 = UserDict(d1)
-u2 = IterableUserDict(d2)
+        uu = UserDict.UserDict(u)
+        uu0 = UserDict.UserDict(u0)
+        uu1 = UserDict.UserDict(u1)
+        uu2 = UserDict.UserDict(u2)
 
-uu = UserDict(u)
-uu0 = UserDict(u0)
-uu1 = UserDict(u1)
-uu2 = UserDict(u2)
+        # keyword arg constructor
+        self.assertEqual(UserDict.UserDict(one=1, two=2), d2)
+        # item sequence constructor
+        self.assertEqual(UserDict.UserDict([('one',1), ('two',2)]), d2)
+        self.assertEqual(UserDict.UserDict(dict=[('one',1), ('two',2)]), d2)
+        # both together
+        self.assertEqual(UserDict.UserDict([('one',1), ('two',2)], two=3, three=5), d3)
 
-verify(UserDict(one=1, two=2) == d2)            # keyword arg constructor
-verify(UserDict([('one',1), ('two',2)]) == d2)  # item sequence constructor
-verify(UserDict(dict=[('one',1), ('two',2)]) == d2)
-verify(UserDict([('one',1), ('two',2)], two=3, three=5) == d3) # both together
+        # alternate constructor
+        self.assertEqual(UserDict.UserDict.fromkeys('one two'.split()), d4)
+        self.assertEqual(UserDict.UserDict().fromkeys('one two'.split()), d4)
+        self.assertEqual(UserDict.UserDict.fromkeys('one two'.split(), 1), d5)
+        self.assertEqual(UserDict.UserDict().fromkeys('one two'.split(), 1), d5)
+        self.assert_(u1.fromkeys('one two'.split()) is not u1)
+        self.assert_(isinstance(u1.fromkeys('one two'.split()), UserDict.UserDict))
+        self.assert_(isinstance(u2.fromkeys('one two'.split()), UserDict.IterableUserDict))
 
-verify(UserDict.fromkeys('one two'.split()) == d4)  # alternate constructor
-verify(UserDict().fromkeys('one two'.split()) == d4)
-verify(UserDict.fromkeys('one two'.split(), 1) == d5)
-verify(UserDict().fromkeys('one two'.split(), 1) == d5)
-verify(u1.fromkeys('one two'.split()) is not u1)
-verify(isinstance(u1.fromkeys('one two'.split()), UserDict))
-verify(isinstance(u2.fromkeys('one two'.split()), IterableUserDict))
+        # Test __repr__
+        self.assertEqual(str(u0), str(d0))
+        self.assertEqual(repr(u1), repr(d1))
+        self.assertEqual(`u2`, `d2`)
 
-# Test __repr__
+        # Test __cmp__ and __len__
+        all = [d0, d1, d2, u, u0, u1, u2, uu, uu0, uu1, uu2]
+        for a in all:
+            for b in all:
+                self.assertEqual(cmp(a, b), cmp(len(a), len(b)))
 
-verify(str(u0) == str(d0))
-verify(repr(u1) == repr(d1))
-verify(`u2` == `d2`)
+        # Test __getitem__
+        self.assertEqual(u2["one"], 1)
+        self.assertRaises(KeyError, u1.__getitem__, "two")
 
-# Test __cmp__ and __len__
+        # Test __setitem__
+        u3 = UserDict.UserDict(u2)
+        u3["two"] = 2
+        u3["three"] = 3
 
-all = [d0, d1, d2, u, u0, u1, u2, uu, uu0, uu1, uu2]
-for a in all:
-    for b in all:
-        verify(cmp(a, b) == cmp(len(a), len(b)))
+        # Test __delitem__
+        del u3["three"]
+        self.assertRaises(KeyError, u3.__delitem__, "three")
 
-# Test __getitem__
+        # Test clear
+        u3.clear()
+        self.assertEqual(u3, {})
 
-verify(u2["one"] == 1)
-try:
-    u1["two"]
-except KeyError:
-    pass
-else:
-    verify(0, "u1['two'] shouldn't exist")
+        # Test copy()
+        u2a = u2.copy()
+        self.assertEqual(u2a, u2)
+        u2b = UserDict.UserDict(x=42, y=23)
+        u2c = u2b.copy() # making a copy of a UserDict is special cased
+        self.assertEqual(u2b, u2c)
 
-# Test __setitem__
+        class MyUserDict(UserDict.UserDict):
+            def display(self): print self
 
-u3 = UserDict(u2)
-u3["two"] = 2
-u3["three"] = 3
+        m2 = MyUserDict(u2)
+        m2a = m2.copy()
+        self.assertEqual(m2a, m2)
 
-# Test __delitem__
+        # SF bug #476616 -- copy() of UserDict subclass shared data
+        m2['foo'] = 'bar'
+        self.assertNotEqual(m2a, m2)
 
-del u3["three"]
-try:
-    del u3["three"]
-except KeyError:
-    pass
-else:
-    verify(0, "u3['three'] shouldn't exist")
+        # Test keys, items, values
+        self.assertEqual(u2.keys(), d2.keys())
+        self.assertEqual(u2.items(), d2.items())
+        self.assertEqual(u2.values(), d2.values())
 
-# Test clear
+        # Test has_key and "in".
+        for i in u2.keys():
+            self.assert_(u2.has_key(i))
+            self.assert_(i in u2)
+            self.assertEqual(u1.has_key(i), d1.has_key(i))
+            self.assertEqual(i in u1, i in d1)
+            self.assertEqual(u0.has_key(i), d0.has_key(i))
+            self.assertEqual(i in u0, i in d0)
 
-u3.clear()
-verify(u3 == {})
+        # Test update
+        t = UserDict.UserDict()
+        t.update(u2)
+        self.assertEqual(t, u2)
+        class Items:
+            def items(self):
+                return (("x", 42), ("y", 23))
+        t = UserDict.UserDict()
+        t.update(Items())
+        self.assertEqual(t, {"x": 42, "y": 23})
 
-# Test copy()
+        # Test get
+        for i in u2.keys():
+            self.assertEqual(u2.get(i), u2[i])
+            self.assertEqual(u1.get(i), d1.get(i))
+            self.assertEqual(u0.get(i), d0.get(i))
 
-u2a = u2.copy()
-verify(u2a == u2)
+        # Test "in" iteration.
+        for i in xrange(20):
+            u2[i] = str(i)
+        ikeys = []
+        for k in u2:
+            ikeys.append(k)
+        ikeys.sort()
+        keys = u2.keys()
+        keys.sort()
+        self.assertEqual(ikeys, keys)
 
-class MyUserDict(UserDict):
-    def display(self): print self
+        # Test setdefault
+        t = UserDict.UserDict()
+        self.assertEqual(t.setdefault("x", 42), 42)
+        self.assert_(t.has_key("x"))
+        self.assertEqual(t.setdefault("x", 23), 42)
 
-m2 = MyUserDict(u2)
-m2a = m2.copy()
-verify(m2a == m2)
+        # Test pop
+        t = UserDict.UserDict(x=42)
+        self.assertEqual(t.pop("x"), 42)
+        self.assertRaises(KeyError, t.pop, "x")
 
-# SF bug #476616 -- copy() of UserDict subclass shared data
-m2['foo'] = 'bar'
-verify(m2a != m2)
-
-# Test keys, items, values
-
-verify(u2.keys() == d2.keys())
-verify(u2.items() == d2.items())
-verify(u2.values() == d2.values())
-
-# Test has_key and "in".
-
-for i in u2.keys():
-    verify(u2.has_key(i) == 1)
-    verify((i in u2) == 1)
-    verify(u1.has_key(i) == d1.has_key(i))
-    verify((i in u1) == (i in d1))
-    verify(u0.has_key(i) == d0.has_key(i))
-    verify((i in u0) == (i in d0))
-
-# Test update
-
-t = UserDict()
-t.update(u2)
-verify(t == u2)
-
-# Test get
-
-for i in u2.keys():
-    verify(u2.get(i) == u2[i])
-    verify(u1.get(i) == d1.get(i))
-    verify(u0.get(i) == d0.get(i))
-
-# Test "in" iteration.
-for i in xrange(20):
-    u2[i] = str(i)
-ikeys = []
-for k in u2:
-    ikeys.append(k)
-ikeys.sort()
-keys = u2.keys()
-keys.sort()
-verify(ikeys == keys)
+        # Test popitem
+        t = UserDict.UserDict(x=42)
+        self.assertEqual(t.popitem(), ("x", 42))
+        self.assertRaises(KeyError, t.popitem)
 
 ##########################
 # Test Dict Mixin
 
-from UserDict import DictMixin
-
-class SeqDict(DictMixin):
+class SeqDict(UserDict.DictMixin):
     """Dictionary lookalike implemented with lists.
 
     Used to test and demonstrate DictMixin
@@ -171,67 +179,99 @@ class SeqDict(DictMixin):
     def keys(self):
         return list(self.keylist)
 
-## Setup test and verify working of the test class
-s = SeqDict()                   # check init
-s[10] = 'ten'                   # exercise setitem
-s[20] = 'twenty'
-s[30] = 'thirty'
-del s[20]                       # exercise delitem
-verify(s[10] == 'ten')          # check getitem and setitem
-verify(s.keys() == [10, 30])    # check keys() and delitem
+class UserDictMixinTest(unittest.TestCase):
+    def test_all(self):
+        ## Setup test and verify working of the test class
 
-## Now, test the DictMixin methods one by one
-verify(s.has_key(10))                                       # has_key
-verify(not s.has_key(20))
+        # check init
+        s = SeqDict()
 
-verify(10 in s)                                             # __contains__
-verify(20 not in s)
+        # exercise setitem
+        s[10] = 'ten'
+        s[20] = 'twenty'
+        s[30] = 'thirty'
 
-verify([k for k in s] == [10, 30])                          # __iter__
+        # exercise delitem
+        del s[20]
+        # check getitem and setitem
+        self.assertEqual(s[10], 'ten')
+        # check keys() and delitem
+        self.assertEqual(s.keys(), [10, 30])
 
-verify(len(s) == 2)                                         # __len__
+        ## Now, test the DictMixin methods one by one
+        # has_key
+        self.assert_(s.has_key(10))
+        self.assert_(not s.has_key(20))
 
-verify(list(s.iteritems()) == [(10,'ten'), (30, 'thirty')]) # iteritems
+        # __contains__
+        self.assert_(10 in s)
+        self.assert_(20 not in s)
 
-verify(list(s.iterkeys()) == [10, 30])                      # iterkeys
+        # __iter__
+        self.assertEqual([k for k in s], [10, 30])
 
-verify(list(s.itervalues()) == ['ten', 'thirty'])           # itervalues
+        # __len__
+        self.assertEqual(len(s), 2)
 
-verify(s.values() == ['ten', 'thirty'])                     # values
+        # iteritems
+        self.assertEqual(list(s.iteritems()), [(10,'ten'), (30, 'thirty')])
 
-verify(s.items() == [(10,'ten'), (30, 'thirty')])           # items
+        # iterkeys
+        self.assertEqual(list(s.iterkeys()), [10, 30])
 
-verify(s.get(10) == 'ten')                                  # get
-verify(s.get(15,'fifteen') == 'fifteen')
-verify(s.get(15) == None)
+        # itervalues
+        self.assertEqual(list(s.itervalues()), ['ten', 'thirty'])
 
-verify(s.setdefault(40, 'forty') == 'forty')                # setdefault
-verify(s.setdefault(10, 'null') == 'ten')
-del s[40]
+        # values
+        self.assertEqual(s.values(), ['ten', 'thirty'])
 
-verify(s.pop(10) == 'ten')                                  # pop
-verify(10 not in s)
-s[10] = 'ten'
+        # items
+        self.assertEqual(s.items(), [(10,'ten'), (30, 'thirty')])
 
-k, v = s.popitem()                                          # popitem
-verify(k not in s)
-s[k] = v
+        # get
+        self.assertEqual(s.get(10), 'ten')
+        self.assertEqual(s.get(15,'fifteen'), 'fifteen')
+        self.assertEqual(s.get(15), None)
 
-s.clear()                                                   # clear
-verify(len(s) == 0)
+        # setdefault
+        self.assertEqual(s.setdefault(40, 'forty'), 'forty')
+        self.assertEqual(s.setdefault(10, 'null'), 'ten')
+        del s[40]
 
-try:                                                        # empty popitem
-    s.popitem()
-except KeyError:
-    pass
-else:
-    verify(0, "popitem from an empty list should raise KeyError")
+        # pop
+        self.assertEqual(s.pop(10), 'ten')
+        self.assert_(10 not in s)
+        s[10] = 'ten'
 
-s.update({10: 'ten', 20:'twenty'})                          # update
-verify(s[10]=='ten' and s[20]=='twenty')
+        # popitem
+        k, v = s.popitem()
+        self.assert_(k not in s)
+        s[k] = v
 
-verify(s == {10: 'ten', 20:'twenty'})                       # cmp
-t = SeqDict()
-t[20] = 'twenty'
-t[10] = 'ten'
-verify(s == t)
+        # clear
+        s.clear()
+        self.assertEqual(len(s), 0)
+
+        # empty popitem
+        self.assertRaises(KeyError, s.popitem)
+
+        # update
+        s.update({10: 'ten', 20:'twenty'})
+        self.assertEqual(s[10], 'ten')
+        self.assertEqual(s[20], 'twenty')
+
+        # cmp
+        self.assertEqual(s, {10: 'ten', 20:'twenty'})
+        t = SeqDict()
+        t[20] = 'twenty'
+        t[10] = 'ten'
+        self.assertEqual(s, t)
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(UserDictTest))
+    suite.addTest(unittest.makeSuite(UserDictMixinTest))
+    test.test_support.run_suite(suite)
+
+if __name__ == "__main__":
+    test_main()
