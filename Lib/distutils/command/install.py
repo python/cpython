@@ -440,12 +440,7 @@ class install (Command):
         # write list of installed files, if requested.
         if self.record:
             outputs = self.get_outputs()
-            for counter in xrange (len (outputs)): # include ".pyc" and ".pyo"
-                if outputs[counter][-3:] == ".py":
-                    byte_code = glob(outputs[counter] + '[co]')
-                    outputs.extend(byte_code)
-            outputs.sort() # just makes it look nicer
-            if self.root: # strip any package prefix
+            if self.root:               # strip any package prefix
                 root_len = len(self.root)
                 for counter in xrange (len (outputs)):
                     outputs[counter] = outputs[counter][root_len:]
