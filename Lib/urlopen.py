@@ -32,6 +32,11 @@ def urlopen(url):
 	if not _urlopener:
 		_urlopener = URLopener()
 	return _urlopener.open(url)
+def urlretrieve(url):
+	global _urlopener
+	if not _urlopener:
+		_urlopener = URLopener()
+	return _urlopener.retrieve(url)
 
 
 # Class to open URLs.
@@ -44,9 +49,24 @@ class URLopener:
 	def __init__(self):
 		self.addheaders = []
 		self.ftpcache = ftpcache
+		self.tempfiles = []
 		# Undocumented feature: you can use a different
 		# ftp cache by assigning to the .ftpcache member;
 		# in case you want logically independent URL openers
+
+	def __del__(self):
+		self.close()
+
+	def close(self):
+		self.cleanup()
+
+	def cleanup(self):
+		import os
+		for tfn in self.tempfiles:
+			try:
+				os.unlink(tfn)
+			except os.error:
+				pass
 
 	# Add a header to be used by the HTTP interface only
 	# e.g. u.addheader('Accept', 'sound/basic')
@@ -56,13 +76,8 @@ class URLopener:
 	# External interface
 	# Use URLopener().open(file) instead of open(file, 'r')
 	def open(self, url):
-		import string
-		url = string.strip(url)
-		if url[:1] == '<' and url[-1:] == '>':
-			url = string.strip(url[1:-1])
-		if url[:4] == 'URL:': url = string.strip(url[4:])
-		type, url = splittype(url)
-		if not type: type = 'file'
+		type, url = splittype(unwrap(url))
+ 		if not type: type = 'file'
 		name = 'open_' + type
 		if '-' in name:
 			import regsub
@@ -74,6 +89,32 @@ class URLopener:
 			return meth(url)
 		except socket.error, msg:
 			raise IOError, ('socket error', msg)
+
+	# External interface
+	# retrieve(url) returns (filename, None) for a local object
+	# or (tempfilename, headers) for a remote object
+	def retrieve(self, url):
+		type, url1 = splittype(unwrap(url))
+		if not type or type == 'file':
+			try:
+				fp = self.open_local_file(url1)
+				return splithost(url1)[1], None
+			except IOError, msg:
+				pass
+		fp = self.open(url)
+		import tempfile
+		tfn = tempfile.mktemp()
+		self.tempfiles.append(tfn)
+		tfp = open(tfn, 'w')
+		bs = 1024*8
+		block = fp.read(bs)
+		while block:
+			tfp.write(block)
+			block = fp.read(bs)
+		headers = fp.info()
+		fp.close()
+		tfp.close()
+		return tfn, headers
 
 	# Each method named open_<type> knows how to open that type of URL
 
@@ -100,15 +141,20 @@ class URLopener:
 
 	# Use local file or FTP depending on form of URL
 	def open_file(self, url):
+		try:
+			return self.open_local_file(url)
+		except IOError:
+			return self.open_ftp(url)
+
+	# Use local file
+	def open_local_file(self, url):
 		host, file = splithost(url)
 		if not host: return addinfo(open(file, 'r'), noheaders())
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
-			try: fp = open(file, 'r')
-			except IOError: fp = None
-			if fp: return addinfo(fp, noheaders())
-		return self.open_ftp(url)
+			return addinfo(open(file, 'r'), noheaders())
+		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
 	def open_ftp(self, url):
@@ -199,8 +245,8 @@ class ftpwrapper:
 					raise IOError, ('ftp error', reason)
 		if not conn:
 			# Try a directory listing
-			if file: cmd = 'NLST ' + file
-			else: cmd = 'NLST'
+			if file: cmd = 'LIST ' + file
+			else: cmd = 'LIST'
 			conn = self.ftp.transfercmd(cmd)
 		return addclosehook(conn.makefile('r'), self.ftp.voidresp)
 
@@ -215,6 +261,11 @@ class addbase:
 	def __del__(self):
 		self.close()
 	def close(self):
+		self.read = None
+		self.readline = None
+		self.readlines = None
+		self.fileno = None
+		self.fp.close()
 		self.fp = None
 
 # Class to add a close hook to an open file
@@ -227,7 +278,8 @@ class addclosehook(addbase):
 		if self.closehook:
 			apply(self.closehook, self.hookargs)
 			self.closehook = None
-		self.fp = None
+			self.hookargs = None
+		addbase.close(self)
 
 # class to add an info() method to an open file
 class addinfo(addbase):
@@ -239,12 +291,21 @@ class addinfo(addbase):
 
 
 # Utilities to parse URLs:
+# unwrap('<URL:type//host/path>') --> 'type//host/path'
 # splittype('type:opaquestring') --> 'type', 'opaquestring'
 # splithost('//host[:port]/path') --> 'host[:port]', '/path'
 # splitport('host:port') --> 'host', 'port'
 # splitquery('/path?query') --> '/path', 'query'
 # splittag('/path#tag') --> '/path', 'tag'
 # splitgophertype('/Xselector') --> 'X', 'selector'
+
+def unwrap(url):
+	import string
+	url = string.strip(url)
+	if url[:1] == '<' and url[-1:] == '>':
+		url = string.strip(url[1:-1])
+	if url[:4] == 'URL:': url = string.strip(url[4:])
+	return url
 
 _typeprog = regex.compile('^\([^/:]+\):\(.*\)$')
 def splittype(url):
@@ -291,10 +352,21 @@ def test():
 			'gopher://gopher.cwi.nl/11/',
 			'http://www.cwi.nl/index.html',
 			]
-	for arg in args:
-		print '-'*10, arg, '-'*10
-		print regsub.gsub('\r', '', urlopen(arg).read())
-	print '-'*40
+	try:
+		for url in args:
+			print '-'*10, url, '-'*10
+			fn, h = urlretrieve(url)
+			print fn, h
+			if h:
+				print '======'
+				for k in h.keys(): print k + ':', h[k]
+				print '======'
+			fp = open(fn, 'r')
+			data = fp.read()
+			print regsub.gsub('\r', '', data)
+		print '-'*40
+	finally:
+		_urlopener.cleanup()
 
 # Run test program when run as a script
 if __name__ == '__main__':
