@@ -42,6 +42,7 @@ typedef struct {
 	PyObject_HEAD
 	int co_argcount;	/* #arguments, except *args */
 	int co_nlocals;		/* #local variables */
+	int co_stacksize;	/* #entries needed for evaluation stack */
 	int co_flags;		/* CO_..., see below */
 	PyStringObject *co_code; /* instruction opcodes */
 	PyObject *co_consts;	/* list (constants used) */
@@ -62,12 +63,13 @@ extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) ((op)->ob_type == &PyCode_Type)
 
+#define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
 PyCodeObject *PyNode_Compile Py_PROTO((struct _node *, char *));
 PyCodeObject *PyCode_New Py_PROTO((
-	int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
+	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *)); /* same as struct above */
 
 #ifdef __cplusplus
