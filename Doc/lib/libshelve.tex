@@ -1,5 +1,5 @@
 \section{\module{shelve} ---
-         Python object persistency.}
+         Python object persistency}
 \declaremodule{standard}{shelve}
 
 \modulesynopsis{Python object persistency.}
@@ -8,8 +8,8 @@
 A ``shelf'' is a persistent, dictionary-like object.  The difference
 with ``dbm'' databases is that the values (not the keys!) in a shelf
 can be essentially arbitrary Python objects --- anything that the
-\code{pickle} module can handle.  This includes most class instances,
-recursive data types, and objects containing lots of shared
+\refmodule{pickle} module can handle.  This includes most class
+instances, recursive data types, and objects containing lots of shared 
 sub-objects.  The keys are ordinary strings.
 \refstmodindex{pickle}
 
@@ -32,20 +32,20 @@ list = d.keys() # a list of all existing keys (slow!)
 
 d.close()       # close it
 \end{verbatim}
-%
+
 Restrictions:
 
 \begin{itemize}
 
 \item
-The choice of which database package will be used (e.g. \code{dbm} or
-\code{gdbm})
-depends on which interface is available.  Therefore it isn't safe to
-open the database directly using \code{dbm}.  The database is also
-(unfortunately) subject to the limitations of \code{dbm}, if it is used ---
-this means that (the pickled representation of) the objects stored in
-the database should be fairly small, and in rare cases key collisions
-may cause the database to refuse updates.
+The choice of which database package will be used
+(e.g. \refmodule{dbm} or \refmodule{gdbm}) depends on which interface
+is available.  Therefore it is not safe to open the database directly
+using \refmodule{dbm}.  The database is also (unfortunately) subject
+to the limitations of \refmodule{dbm}, if it is used --- this means
+that (the pickled representation of) the objects stored in the
+database should be fairly small, and in rare cases key collisions may
+cause the database to refuse updates.
 \refbimodindex{dbm}
 \refbimodindex{gdbm}
 
@@ -54,7 +54,7 @@ Dependent on the implementation, closing a persistent dictionary may
 or may not be necessary to flush changes to disk.
 
 \item
-The \code{shelve} module does not support \emph{concurrent} read/write
+The \module{shelve} module does not support \emph{concurrent} read/write
 access to shelved objects.  (Multiple simultaneous read accesses are
 safe.)  When a program has a shelf open for writing, no other program
 should have it open for reading or writing.  \UNIX{} file locking can
@@ -65,6 +65,11 @@ requires knowledge about the database implementation used.
 
 
 \begin{seealso}
+  \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
+  % Should include entry for dbhash, but that isn't documented.
+  \seemodule{dbm}{Standard \UNIX{} database interface.}
+  \seemodule{dumbdbm}{Portable implementation of the \code{dbm} interface.}
+  \seemodule{gdbm}{GNU database interface, based on the \code{dbm} interface.}
   \seemodule{pickle}{Object serialization used by \module{shelve}.}
   \seemodule{cPickle}{High-performance version of \module{pickle}.}
 \end{seealso}
