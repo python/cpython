@@ -231,16 +231,15 @@ def escape(pattern):
 	result.append(char)
     return string.join(result, '')
 
+_idprog = None
 def valid_identifier(id):
-    import string
-    if len(id) == 0:
+    global _idprog
+    if not _idprog:
+	_idprog = compile(r"[a-zA-Z_]\w*$")
+    if _idprog.match(id):
+	return 1
+    else:
 	return 0
-    if id[0] not in string.letters+'_':
-	return 0
-    for char in id[1:]:
-	if not syntax_table[char] & word:
-	    return 0
-    return 1
 
 def compile(pattern, flags=0):
     groupindex={}
