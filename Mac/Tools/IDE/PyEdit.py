@@ -186,6 +186,8 @@ class Editor(W.Window):
 	
 	def makeoptionsmenu(self):
 		menuitems = [('Font settingsä', self.domenu_fontsettings), 
+				("Save optionsä", self.domenu_options),
+				'-',
 				('\0' + chr(self.run_as_main) + 'Run as __main__', self.domenu_toggle_run_as_main), 
 				('Modularize', self.domenu_modularize),
 				('Browse namespaceä', self.domenu_browsenamespace), 
@@ -262,6 +264,11 @@ class Editor(W.Window):
 			fontsettings, tabsettings = settings
 			self.editgroup.editor.setfontsettings(fontsettings)
 			self.editgroup.editor.settabsettings(tabsettings)
+	
+	def domenu_options(self, *args):
+		rv = SaveOptions(self._creator)
+		if rv:
+			self._creator = rv
 	
 	def clicklinefield(self):
 		if self._currentwidget <> self.linefield:
@@ -618,6 +625,55 @@ class Editor(W.Window):
 	
 	def selectline(self, lineno, charoffset = 0):
 		self.editgroup.editor.selectline(lineno - 1, charoffset)
+
+class _saveoptions:
+	
+	def __init__(self, creator):
+		self.rv = None
+		self.w = w = W.ModalDialog((240, 140), 'Save options')
+		radiobuttons = []
+		w.label = W.TextBox((8, 8, 80, 18), "File creator:")
+		w.ide_radio = W.RadioButton((8, 22, 80, 18), "IDE", radiobuttons, self.ide_hit)
+		w.interp_radio = W.RadioButton((8, 42, 80, 18), "Interpreter", radiobuttons, self.interp_hit)
+		w.other_radio = W.RadioButton((8, 62, 50, 18), "Other:", radiobuttons)
+		w.other_creator = W.EditText((62, 62, 40, 20), creator, self.otherselect)
+		w.cancelbutton = W.Button((-180, -30, 80, 16), "Cancel", self.cancelbuttonhit)
+		w.okbutton = W.Button((-90, -30, 80, 16), "Done", self.okbuttonhit)
+		w.setdefaultbutton(w.okbutton)
+		if creator == 'Pyth':
+			w.interp_radio.set(1)
+		elif creator == 'Pide':
+			w.ide_radio.set(1)
+		else:
+			w.other_radio.set(1)
+		w.bind("cmd.", w.cancelbutton.push)
+		w.open()
+	
+	def ide_hit(self):
+		self.w.other_creator.set("Pide")
+	
+	def interp_hit(self):
+		self.w.other_creator.set("Pyth")
+	
+	def otherselect(self, *args):
+		sel_from, sel_to = self.w.other_creator.getselection()
+		creator = self.w.other_creator.get()[:4]
+		creator = creator + " " * (4 - len(creator))
+		self.w.other_creator.set(creator)
+		self.w.other_creator.setselection(sel_from, sel_to)
+		self.w.other_radio.set(1)
+	
+	def cancelbuttonhit(self):
+		self.w.close()
+	
+	def okbuttonhit(self):
+		self.rv = self.w.other_creator.get()[:4]
+		self.w.close()
+
+
+def SaveOptions(creator):
+	s = _saveoptions(creator)
+	return s.rv
 
 
 def _escape(where, what) : 
