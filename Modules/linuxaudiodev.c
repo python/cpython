@@ -67,10 +67,11 @@ static struct {
     {  8, 	AFMT_A_LAW,  "Logarithmic A-law audio" },
     {  8,	AFMT_U8,     "Standard unsigned 8-bit audio" },
     {  8, 	AFMT_S8,     "Standard signed 8-bit audio" },
-    { 16, 	AFMT_U16_BE, "Big-endian 16-bit unsigned format" },
-    { 16, 	AFMT_U16_LE, "Little-endian 16-bit unsigned format" },
-    { 16, 	AFMT_S16_BE, "Big-endian 16-bit signed format" },
-    { 16, 	AFMT_S16_LE, "Little-endian 16-bit signed format" },
+    { 16, 	AFMT_U16_BE, "Big-endian 16-bit unsigned audio" },
+    { 16, 	AFMT_U16_LE, "Little-endian 16-bit unsigned audio" },
+    { 16, 	AFMT_S16_BE, "Big-endian 16-bit signed audio" },
+    { 16, 	AFMT_S16_LE, "Little-endian 16-bit signed audio" },
+    { 16, 	AFMT_S16_NE, "Native-endian 16-bit signed audio" },
 };
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
@@ -484,6 +485,8 @@ initlinuxaudiodev(void)
     if (PyModule_AddIntConstant(m, "AFMT_S16_BE", (long)AFMT_S16_BE) == -1)
 	return;
     if (PyModule_AddIntConstant(m, "AFMT_S16_LE", (long)AFMT_S16_LE) == -1)
+	return;
+    if (PyModule_AddIntConstant(m, "AFMT_S16_NE", (long)AFMT_S16_NE) == -1)
 	return;
 
     return;
