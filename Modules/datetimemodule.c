@@ -1350,12 +1350,6 @@ static PyObject *us_per_day = NULL;	/* 1e6 * 3600 * 24 as Python long */
 static PyObject *us_per_week = NULL;	/* 1e6*3600*24*7 as Python long */
 static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
 
-/* Callables to support unpickling. */
-static PyObject *date_unpickler_object = NULL;
-static PyObject *datetime_unpickler_object = NULL;
-static PyObject *tzinfo_unpickler_object = NULL;
-static PyObject *time_unpickler_object = NULL;
-
 /* ---------------------------------------------------------------------------
  * Class implementations.
  */
@@ -2003,6 +1997,7 @@ delta_reduce(PyDateTime_Delta* self)
 #define OFFSET(field)  offsetof(PyDateTime_Delta, field)
 
 static PyMemberDef delta_members[] = {
+
 	{"days",         T_INT, OFFSET(days),         READONLY,
 	 PyDoc_STR("Number of days.")},
 
@@ -2015,14 +2010,16 @@ static PyMemberDef delta_members[] = {
 };
 
 static PyMethodDef delta_methods[] = {
-	{"__setstate__", (PyCFunction)delta_setstate, METH_O,
-	 PyDoc_STR("__setstate__(state)")},
 
-	{"__reduce__", (PyCFunction)delta_reduce,     METH_NOARGS,
+	{"__setstate__", (PyCFunction)delta_setstate, METH_O,
 	 PyDoc_STR("__setstate__(state)")},
 
 	{"__getstate__", (PyCFunction)delta_getstate, METH_NOARGS,
 	 PyDoc_STR("__getstate__() -> state")},
+
+	{"__reduce__", (PyCFunction)delta_reduce,     METH_NOARGS,
+	 PyDoc_STR("__reduce__() -> (cls, state)")},
+
 	{NULL,	NULL},
 };
 
@@ -2148,6 +2145,8 @@ static PyGetSetDef date_getset[] = {
 
 static char *date_kws[] = {"year", "month", "day", NULL};
 
+static PyObject *date_setstate(PyDateTime_Date *self, PyObject *arg);
+
 static PyObject *
 date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -2155,6 +2154,24 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int year;
 	int month;
 	int day;
+
+	/* Check for invocation from pickle with __getstate__ state */
+	if (PyTuple_GET_SIZE(args) == 1 &&
+	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	{
+		self = new_date(1, 1, 1);
+		if (self != NULL) {
+			PyObject *res = date_setstate(
+				(PyDateTime_Date *)self, args);
+			if (res == Py_None)
+				Py_DECREF(res);
+			else {
+				Py_DECREF(self);
+				self = NULL;
+			}
+		}
+		return self;
+	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
 					&year, &month, &day)) {
@@ -2518,22 +2535,34 @@ date_weekday(PyDateTime_Date *self)
 static PyObject *
 date_getstate(PyDateTime_Date *self)
 {
-	return PyString_FromStringAndSize((char *)self->data,
-					  _PyDateTime_DATE_DATASIZE);
+	return Py_BuildValue(
+		"(N)",
+		PyString_FromStringAndSize((char *)self->data,
+					   _PyDateTime_DATE_DATASIZE));
 }
 
 static PyObject *
-date_setstate(PyDateTime_Date *self, PyObject *state)
+date_setstate(PyDateTime_Date *self, PyObject *arg)
 {
-	const int len = PyString_Size(state);
-	unsigned char *pdata = (unsigned char*)PyString_AsString(state);
+	PyObject *state;
+	int len;
+	unsigned char *pdata;
 
-	if (! PyString_Check(state) ||
-	    len != _PyDateTime_DATE_DATASIZE) {
+	if (!PyTuple_Check(arg) || PyTuple_GET_SIZE(arg) != 1) {
+  error:
 		PyErr_SetString(PyExc_TypeError,
 				"bad argument to date.__setstate__");
 		return NULL;
 	}
+	state = PyTuple_GET_ITEM(arg, 0);
+	if (!PyString_Check(state))
+		goto error;
+
+	len = PyString_Size(state);
+	if (len != _PyDateTime_DATE_DATASIZE)
+		goto error;
+
+	pdata = (unsigned char*)PyString_AsString(state);
 	memcpy(self->data, pdata, _PyDateTime_DATE_DATASIZE);
 	self->hashcode = -1;
 
@@ -2541,52 +2570,16 @@ date_setstate(PyDateTime_Date *self, PyObject *state)
 	return Py_None;
 }
 
-/* XXX This seems a ridiculously inefficient way to pickle a short string. */
 static PyObject *
-date_pickler(PyObject *module, PyDateTime_Date *date)
+date_reduce(PyDateTime_Date *self, PyObject *arg)
 {
-	PyObject *state;
-	PyObject *result = NULL;
-
-	if (! PyDate_CheckExact(date)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to date pickler: %s",
-			     date->ob_type->tp_name);
-		return NULL;
-	}
-	state = date_getstate(date);
-	if (state) {
-		result = Py_BuildValue("O(O)", date_unpickler_object, state);
-		Py_DECREF(state);
-	}
-	return result;
-}
-
-static PyObject *
-date_unpickler(PyObject *module, PyObject *arg)
-{
-	PyDateTime_Date *self;
-
-	if (! PyString_CheckExact(arg)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to date unpickler: %s",
-			     arg->ob_type->tp_name);
-		return NULL;
-	}
-	self = PyObject_New(PyDateTime_Date, &PyDateTime_DateType);
-	if (self != NULL) {
-		PyObject *res = date_setstate(self, arg);
-		if (res == NULL) {
-			Py_DECREF(self);
-			return NULL;
-		}
-		Py_DECREF(res);
-	}
-	return (PyObject *)self;
+	return Py_BuildValue("(ON)", self->ob_type, date_getstate(self));
 }
 
 static PyMethodDef date_methods[] = {
+
 	/* Class methods: */
+
 	{"fromtimestamp", (PyCFunction)date_fromtimestamp, METH_VARARGS |
 							   METH_CLASS,
 	 PyDoc_STR("timestamp -> local date from a POSIX timestamp (like "
@@ -2639,6 +2632,9 @@ static PyMethodDef date_methods[] = {
 
 	{"__getstate__", (PyCFunction)date_getstate,	METH_NOARGS,
 	 PyDoc_STR("__getstate__() -> state")},
+
+	{"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
+	 PyDoc_STR("__reduce__() -> (cls, state)")},
 
 	{NULL,	NULL}
 };
@@ -2834,23 +2830,66 @@ Fail:
 
 /*
  * Pickle support.  This is solely so that tzinfo subclasses can use
- * pickling -- tzinfo itself is supposed to be uninstantiable.  The
- * pickler and unpickler functions are given module-level private
- * names, and registered with copy_reg, by the module init function.
+ * pickling -- tzinfo itself is supposed to be uninstantiable.
  */
 
-static PyObject*
-tzinfo_pickler(PyDateTime_TZInfo *self) {
-	return Py_BuildValue("O()", tzinfo_unpickler_object);
-}
+static PyObject *
+tzinfo_reduce(PyObject *self)
+{
+	PyObject *args, *state, *tmp;
+	PyObject *getinitargs, *getstate;
 
-static PyObject*
-tzinfo_unpickler(PyObject * unused) {
- 	return PyType_GenericNew(&PyDateTime_TZInfoType, NULL, NULL);
-}
+	tmp = PyTuple_New(0);
+	if (tmp == NULL)
+		return NULL;
 
+	getinitargs = PyObject_GetAttrString(self, "__getinitargs__");
+	if (getinitargs != NULL) {
+		args = PyObject_CallObject(getinitargs, tmp);
+		Py_DECREF(getinitargs);
+		if (args == NULL) {
+			Py_DECREF(tmp);
+			return NULL;
+		}
+	}
+	else {
+		PyErr_Clear();
+		args = tmp;
+		Py_INCREF(args);
+	}
+
+	getstate = PyObject_GetAttrString(self, "__getstate__");
+	if (getstate != NULL) {
+		state = PyObject_CallObject(getstate, tmp);
+		Py_DECREF(getstate);
+		if (state == NULL) {
+			Py_DECREF(args);
+			Py_DECREF(tmp);
+			return NULL;
+		}
+	}
+	else {
+		PyObject **dictptr;
+		PyErr_Clear();
+		state = Py_None;
+		dictptr = _PyObject_GetDictPtr(self);
+		if (dictptr && *dictptr && PyDict_Size(*dictptr))
+			state = *dictptr;
+		Py_INCREF(state);
+	}
+
+	Py_DECREF(tmp);
+
+	if (state == Py_None) {
+		Py_DECREF(state);
+		return Py_BuildValue("(ON)", self->ob_type, args);
+	}
+	else
+		return Py_BuildValue("(ONN)", self->ob_type, args, state);
+}
 
 static PyMethodDef tzinfo_methods[] = {
+
 	{"tzname",	(PyCFunction)tzinfo_tzname,		METH_O,
 	 PyDoc_STR("datetime -> string name of time zone.")},
 
@@ -2863,6 +2902,9 @@ static PyMethodDef tzinfo_methods[] = {
 
 	{"fromutc",	(PyCFunction)tzinfo_fromutc,		METH_O,
 	 PyDoc_STR("datetime in UTC -> datetime in local time.")},
+
+	{"__reduce__",  (PyCFunction)tzinfo_reduce,             METH_NOARGS,
+	 PyDoc_STR("-> (cls, state)")},
 
 	{NULL, NULL}
 };
@@ -2970,6 +3012,8 @@ static PyGetSetDef time_getset[] = {
 static char *time_kws[] = {"hour", "minute", "second", "microsecond",
 			   "tzinfo", NULL};
 
+static PyObject *time_setstate(PyDateTime_Time *self, PyObject *state);
+
 static PyObject *
 time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -2979,6 +3023,27 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int second = 0;
 	int usecond = 0;
 	PyObject *tzinfo = Py_None;
+
+	/* Check for invocation from pickle with __getstate__ state */
+	if (PyTuple_GET_SIZE(args) >= 1 &&
+	    PyTuple_GET_SIZE(args) <= 2 &&
+	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	{
+		if (PyTuple_GET_SIZE(args) == 2)
+			tzinfo = PyTuple_GET_ITEM(args, 1);
+		self = new_time(0, 0, 0, 0, tzinfo);
+		if (self != NULL) {
+			PyObject *res = time_setstate(
+				(PyDateTime_Time *)self, args);
+			if (res == Py_None)
+				Py_DECREF(res);
+			else {
+				Py_DECREF(self);
+				self = NULL;
+			}
+		}
+		return self;
+	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", time_kws,
 					&hour, &minute, &second, &usecond,
@@ -3337,62 +3402,13 @@ time_setstate(PyDateTime_Time *self, PyObject *state)
 }
 
 static PyObject *
-time_pickler(PyObject *module, PyDateTime_Time *time)
+time_reduce(PyDateTime_Time *self, PyObject *arg)
 {
-	PyObject *state;
-	PyObject *result = NULL;
-
-	if (! PyTime_CheckExact(time)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to time pickler: %s",
-			     time->ob_type->tp_name);
-		return NULL;
-	}
-	state = time_getstate(time);
-	if (state) {
-		result = Py_BuildValue("O(O)",
-				       time_unpickler_object,
-				       state);
-		Py_DECREF(state);
-	}
-	return result;
-}
-
-static PyObject *
-time_unpickler(PyObject *module, PyObject *arg)
-{
-	PyDateTime_Time *self;
-
-	/* We don't want to allocate space for tzinfo if it's not needed.
-	 * Figuring that out in advance is irritating, so for now we
-	 * realloc later.
-	 */
-	self = PyObject_New(PyDateTime_Time, &PyDateTime_TimeType);
-	if (self != NULL) {
-		PyObject *res;
-
-		self->tzinfo = Py_None;
-		Py_INCREF(self->tzinfo);
-		self->hastzinfo = (char)1;	/* true */
-		res = time_setstate(self, arg);
-		if (res == NULL) {
-			Py_DECREF(self);
-			return NULL;
-		}
-		Py_DECREF(res);
-		if (self->tzinfo == Py_None) {
-			/* shrinking; can't fail */
-			Py_DECREF(self->tzinfo);
-			self = (PyDateTime_Time *)PyObject_Realloc(self,
-						sizeof(_PyDateTime_BaseTime));
-			assert(self != NULL);
-			self->hastzinfo = (char)0;
- 		}
-	}
-	return (PyObject *)self;
+	return Py_BuildValue("(ON)", self->ob_type, time_getstate(self));
 }
 
 static PyMethodDef time_methods[] = {
+
 	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
 	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm]"
 	 	   "[+HH:MM].")},
@@ -3417,6 +3433,10 @@ static PyMethodDef time_methods[] = {
 
 	{"__getstate__", (PyCFunction)time_getstate,	METH_NOARGS,
 	 PyDoc_STR("__getstate__() -> state")},
+
+	{"__reduce__", (PyCFunction)time_reduce,        METH_NOARGS,
+	 PyDoc_STR("__reduce__() -> (cls, state)")},
+
 	{NULL,	NULL}
 };
 
@@ -3539,6 +3559,8 @@ static char *datetime_kws[] = {
 	"microsecond", "tzinfo", NULL
 };
 
+static PyObject *datetime_setstate(PyDateTime_DateTime *self, PyObject *state);
+
 static PyObject *
 datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -3551,6 +3573,27 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int second = 0;
 	int usecond = 0;
 	PyObject *tzinfo = Py_None;
+
+	/* Check for invocation from pickle with __getstate__ state */
+	if (PyTuple_GET_SIZE(args) >= 1 &&
+	    PyTuple_GET_SIZE(args) <= 2 &&
+	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	{
+		if (PyTuple_GET_SIZE(args) == 2)
+			tzinfo = PyTuple_GET_ITEM(args, 1);
+		self = new_datetime(1, 1, 1, 0, 0, 0, 0, tzinfo);
+		if (self != NULL) {
+			PyObject *res = datetime_setstate(
+				(PyDateTime_DateTime *)self, args);
+			if (res == Py_None)
+				Py_DECREF(res);
+			else {
+				Py_DECREF(self);
+				self = NULL;
+			}
+		}
+		return self;
+	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO", datetime_kws,
 					&year, &month, &day, &hour, &minute,
@@ -4363,63 +4406,13 @@ datetime_setstate(PyDateTime_DateTime *self, PyObject *state)
 }
 
 static PyObject *
-datetime_pickler(PyObject *module, PyDateTime_DateTime *datetime)
+datetime_reduce(PyDateTime_DateTime *self, PyObject *arg)
 {
-	PyObject *state;
-	PyObject *result = NULL;
-
-	if (! PyDateTime_CheckExact(datetime)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to datetime pickler: %s",
-			     datetime->ob_type->tp_name);
-		return NULL;
-	}
-	state = datetime_getstate(datetime);
-	if (state) {
-		result = Py_BuildValue("O(O)",
-				       datetime_unpickler_object,
-				       state);
-		Py_DECREF(state);
-	}
-	return result;
+	return Py_BuildValue("(ON)", self->ob_type, datetime_getstate(self));
 }
-
-static PyObject *
-datetime_unpickler(PyObject *module, PyObject *arg)
-{
-	PyDateTime_DateTime *self;
-
-	/* We don't want to allocate space for tzinfo if it's not needed.
-	 * Figuring that out in advance is irritating, so for now we
-	 * realloc later.
-	 */
-	self = PyObject_New(PyDateTime_DateTime, &PyDateTime_DateTimeType);
-	if (self != NULL) {
-		PyObject *res;
-
-		self->tzinfo = Py_None;
-		Py_INCREF(self->tzinfo);
-		self->hastzinfo = (char)1;	/* true */
-		res = datetime_setstate(self, arg);
-		if (res == NULL) {
-			Py_DECREF(self);
-			return NULL;
-		}
-		Py_DECREF(res);
-		if (self->tzinfo == Py_None) {
-			/* shrinking; can't fail */
-			Py_DECREF(self->tzinfo);
-			self = (PyDateTime_DateTime *)PyObject_Realloc(self,
-					 sizeof(_PyDateTime_BaseDateTime));
-			assert(self != NULL);
-			self->hastzinfo = (char)0;
- 		}
-	}
-	return (PyObject *)self;
-}
-
 
 static PyMethodDef datetime_methods[] = {
+
 	/* Class methods: */
 
 	{"now",         (PyCFunction)datetime_now,
@@ -4444,6 +4437,7 @@ static PyMethodDef datetime_methods[] = {
 	 PyDoc_STR("date, time -> datetime with same date and time fields")},
 
 	/* Instance methods: */
+
 	{"date",   (PyCFunction)datetime_getdate, METH_NOARGS,
          PyDoc_STR("Return date object with same year, month and day.")},
 
@@ -4488,6 +4482,10 @@ static PyMethodDef datetime_methods[] = {
 
 	{"__getstate__", (PyCFunction)datetime_getstate, METH_NOARGS,
 	 PyDoc_STR("__getstate__() -> state")},
+
+	{"__reduce__", (PyCFunction)datetime_reduce,     METH_NOARGS,
+	 PyDoc_STR("__reduce__() -> (cls, state)")},
+
 	{NULL,	NULL}
 };
 
@@ -4557,18 +4555,6 @@ statichere PyTypeObject PyDateTime_DateTimeType = {
  */
 
 static PyMethodDef module_methods[] = {
-	/* Private functions for pickling support, registered with the
-	 * copy_reg module by the module init function.
-	 */
-	{"_date_pickler",	(PyCFunction)date_pickler,	METH_O, NULL},
-	{"_date_unpickler",	(PyCFunction)date_unpickler, 	METH_O, NULL},
-	{"_datetime_pickler",	(PyCFunction)datetime_pickler,	METH_O, NULL},
-	{"_datetime_unpickler",	(PyCFunction)datetime_unpickler,METH_O, NULL},
-	{"_time_pickler",	(PyCFunction)time_pickler,	METH_O, NULL},
-	{"_time_unpickler",	(PyCFunction)time_unpickler,	METH_O, NULL},
-	{"_tzinfo_pickler",	(PyCFunction)tzinfo_pickler,	METH_O, NULL},
-	{"_tzinfo_unpickler",	(PyCFunction)tzinfo_unpickler,	METH_NOARGS,
-	 NULL},
 	{NULL, NULL}
 };
 
@@ -4600,67 +4586,51 @@ initdatetime(void)
 	if (PyType_Ready(&PyDateTime_TZInfoType) < 0)
 		return;
 
-	/* Pickling support, via registering functions with copy_reg. */
+	/* Make __getnewargs__ a true alias for __getstate__ */
 	{
-		PyObject *pickler;
-		PyObject *copyreg = PyImport_ImportModule("copy_reg");
+		PyObject *d, *f;
 
-		if (copyreg == NULL) return;
+		d = PyDateTime_DateType.tp_dict;
+		f = PyDict_GetItemString(d, "__getstate__");
+		if (f != NULL) {
+			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
+				return;
+		}
 
-		pickler = PyObject_GetAttrString(m, "_date_pickler");
-		if (pickler == NULL) return;
-		date_unpickler_object = PyObject_GetAttrString(m,
-						"_date_unpickler");
-		if (date_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_DateType,
-	    				pickler,
-		                    	date_unpickler_object);
-		if (x == NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
+		d = PyDateTime_DateTimeType.tp_dict;
+		f = PyDict_GetItemString(d, "__getstate__");
+		if (f != NULL) {
+			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
+				return;
+		}
 
-		pickler = PyObject_GetAttrString(m, "_time_pickler");
-		if (pickler == NULL) return;
-		time_unpickler_object = PyObject_GetAttrString(m,
-						"_time_unpickler");
-		if (time_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_TimeType,
-	    				pickler,
-		                	time_unpickler_object);
-		if (x == NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
+		d = PyDateTime_DeltaType.tp_dict;
+		f = PyDict_GetItemString(d, "__getstate__");
+		if (f != NULL) {
+			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
+				return;
+		}
 
-		pickler = PyObject_GetAttrString(m, "_tzinfo_pickler");
-		if (pickler == NULL) return;
-		tzinfo_unpickler_object = PyObject_GetAttrString(m,
-							"_tzinfo_unpickler");
-		if (tzinfo_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_TZInfoType,
-	    				pickler,
-		        		tzinfo_unpickler_object);
-		if (x== NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
+		d = PyDateTime_TimeType.tp_dict;
+		f = PyDict_GetItemString(d, "__getstate__");
+		if (f != NULL) {
+			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
+				return;
+		}
 
-		pickler = PyObject_GetAttrString(m, "_datetime_pickler");
-		if (pickler == NULL) return;
-		datetime_unpickler_object = PyObject_GetAttrString(m,
-						 "_datetime_unpickler");
-		if (datetime_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_DateTimeType,
-	    				pickler,
-		                	datetime_unpickler_object);
-		if (x== NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
-
-		Py_DECREF(copyreg);
+		d = PyDateTime_TZInfoType.tp_dict;
+		f = PyDict_GetItemString(d, "__getstate__");
+		if (f != NULL) {
+			if (PyDict_SetItemString(d, "__getnewargs__", f) < 0)
+				return;
+		}
 	}
+
+	/* tzinfo values */
+	d = PyDateTime_TZInfoType.tp_dict;
+
+	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
+		return;
 
 	/* timedelta values */
 	d = PyDateTime_DeltaType.tp_dict;
@@ -4686,6 +4656,9 @@ initdatetime(void)
 	/* date values */
 	d = PyDateTime_DateType.tp_dict;
 
+	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
+		return;
+
 	x = new_date(1, 1, 1);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
 		return;
@@ -4704,6 +4677,9 @@ initdatetime(void)
 	/* time values */
 	d = PyDateTime_TimeType.tp_dict;
 
+	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
+		return;
+
 	x = new_time(0, 0, 0, 0, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
 		return;
@@ -4721,6 +4697,9 @@ initdatetime(void)
 
 	/* datetime values */
 	d = PyDateTime_DateTimeType.tp_dict;
+
+	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
+		return;
 
 	x = new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)

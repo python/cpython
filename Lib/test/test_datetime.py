@@ -4,6 +4,8 @@ See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
 
 import sys
+import pickle
+import cPickle
 import unittest
 
 from test import test_support
@@ -13,6 +15,22 @@ from datetime import timedelta
 from datetime import tzinfo
 from datetime import time
 from datetime import date, datetime
+
+
+pickle_choices = [
+    (pickle, pickle, 0),
+    (pickle, pickle, 1),
+    (pickle, pickle, 2),
+    (cPickle, cPickle, 0),
+    (cPickle, cPickle, 1),
+##    (cPickle, cPickle, 2),
+    (pickle, cPickle, 0),
+    (pickle, cPickle, 1),
+##    (pickle, cPickle, 2),
+    (cPickle, pickle, 0),
+    (cPickle, pickle, 1),
+##    (cPickle, pickle, 2),
+    ]
 
 
 # XXX The test suite uncovered a bug in Python 2.2.2:  if x and y are
@@ -100,22 +118,17 @@ class TestTZInfo(unittest.TestCase):
             self.assertEqual(fo.dst(dt), timedelta(minutes=42))
 
     def test_pickling_base(self):
-        import pickle, cPickle
-
         # There's no point to pickling tzinfo objects on their own (they
         # carry no data), but they need to be picklable anyway else
         # concrete subclasses can't be pickled.
         orig = tzinfo.__new__(tzinfo)
         self.failUnless(type(orig) is tzinfo)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.failUnless(type(derived) is tzinfo)
 
     def test_pickling_subclass(self):
-        import pickle, cPickle
-
         # Make sure we can pickle/unpickle an instance of a subclass.
         offset = timedelta(minutes=-300)
         orig = PicklableFixedOffset(offset, 'cookie')
@@ -123,10 +136,9 @@ class TestTZInfo(unittest.TestCase):
         self.failUnless(type(orig) is PicklableFixedOffset)
         self.assertEqual(orig.utcoffset(None), offset)
         self.assertEqual(orig.tzname(None), 'cookie')
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.failUnless(isinstance(derived, tzinfo))
                 self.failUnless(type(derived) is PicklableFixedOffset)
                 self.assertEqual(derived.utcoffset(None), offset)
@@ -264,7 +276,6 @@ class TestTimeDelta(unittest.TestCase):
         self.assertEqual(d[t1], 2)
 
     def test_pickling(self):
-        import pickle, cPickle
         args = 12, 34, 56
         orig = timedelta(*args)
         state = orig.__getstate__()
@@ -272,10 +283,9 @@ class TestTimeDelta(unittest.TestCase):
         derived = timedelta()
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
     def test_compare(self):
@@ -823,18 +833,16 @@ class TestDate(unittest.TestCase):
             self.assertEqual(t.tm_isdst, -1)
 
     def test_pickling(self):
-        import pickle, cPickle
         args = 6, 7, 23
         orig = self.theclass(*args)
         state = orig.__getstate__()
-        self.assertEqual(state, '\x00\x06\x07\x17')
+        self.assertEqual(state, ('\x00\x06\x07\x17',), self.theclass)
         derived = self.theclass(1, 1, 1)
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
     def test_compare(self):
@@ -1182,7 +1190,6 @@ class TestDateTime(TestDate):
         self.assertRaises(TypeError, lambda: a + a)
 
     def test_pickling(self):
-        import pickle, cPickle
         args = 6, 7, 23, 20, 59, 1, 64**2
         orig = self.theclass(*args)
         state = orig.__getstate__()
@@ -1190,10 +1197,9 @@ class TestDateTime(TestDate):
         derived = self.theclass(1, 1, 1)
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
     def test_more_compare(self):
@@ -1568,7 +1574,6 @@ class TestTime(unittest.TestCase):
         self.assert_(self.theclass.max > self.theclass.min)
 
     def test_pickling(self):
-        import pickle, cPickle
         args = 20, 59, 16, 64**2
         orig = self.theclass(*args)
         state = orig.__getstate__()
@@ -1576,10 +1581,9 @@ class TestTime(unittest.TestCase):
         derived = self.theclass()
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
     def test_bool(self):
@@ -1882,8 +1886,6 @@ class TestTimeTZ(TestTime, TZInfoBase):
         self.assertEqual(hash(t1), hash(t2))
 
     def test_pickling(self):
-        import pickle, cPickle
-
         # Try one without a tzinfo.
         args = 20, 59, 16, 64**2
         orig = self.theclass(*args)
@@ -1892,10 +1894,9 @@ class TestTimeTZ(TestTime, TZInfoBase):
         derived = self.theclass()
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
@@ -1909,10 +1910,9 @@ class TestTimeTZ(TestTime, TZInfoBase):
         self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
         self.assertEqual(derived.tzname(), 'cookie')
 
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
                 self.failUnless(isinstance(derived.tzinfo,
                                 PicklableFixedOffset))
@@ -2101,8 +2101,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         self.assertRaises(ValueError, lambda: t1 == t2)
 
     def test_pickling(self):
-        import pickle, cPickle
-
         # Try one without a tzinfo.
         args = 6, 7, 23, 20, 59, 1, 64**2
         orig = self.theclass(*args)
@@ -2111,10 +2109,9 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         derived = self.theclass(1, 1, 1)
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
@@ -2128,10 +2125,9 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
         self.assertEqual(derived.tzname(), 'cookie')
 
-        for pickler in pickle, cPickle:
-            for binary in 0, 1:
-                green = pickler.dumps(orig, binary)
-                derived = pickler.loads(green)
+        for pickler, unpickler, proto in pickle_choices:
+                green = pickler.dumps(orig, proto)
+                derived = unpickler.loads(green)
                 self.assertEqual(orig, derived)
                 self.failUnless(isinstance(derived.tzinfo,
                                 PicklableFixedOffset))
