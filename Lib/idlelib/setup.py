@@ -31,6 +31,15 @@ txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'LICENSE.txt']
 txt_files += ['config-extensions.def', 'config-highlight.def',
               'config-keys.def', 'config-main.def']
 Icons = glob.glob1("Icons","*.gif")
+
+# Create a .pth file to live in site-packages; Python will add IDLE to
+# sys.path:
+
+pathfile = idle_name + ".pth"
+pfile = open(pathfile, 'w')
+pfile.write(pkgname +'\n')
+pfile.close()
+
 class IDLE_Builder(build_py):
     def get_plain_outfile(self, build_dir, package, file):
         # like get_module_outfile, but does not append .py
@@ -54,6 +63,12 @@ class IDLE_Builder(build_py):
             self.mkpath(dir)
             self.copy_file(os.path.join("Icons", name),
                            outfile, preserve_mode = 0)
+        # Copy the .pth file to the same level as the package directory
+        outfile = self.get_plain_outfile(self.build_lib, [], pathfile)
+        dir = os.path.dirname(outfile)
+        self.mkpath(dir)
+        self.copy_file(os.path.join(package_dir, pathfile), outfile,
+                       preserve_mode=0)
 
     def get_source_files(self):
         # returns the .py files, the .txt and .def files, and the icons

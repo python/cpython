@@ -29,6 +29,8 @@ import idlever
 import rpc
 import RemoteDebugger
 
+import boolcheck
+
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 # Change warnings module to write to sys.__stderr__

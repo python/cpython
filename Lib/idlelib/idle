@@ -1,33 +1,17 @@
 #! /usr/bin/env python
 
-# Add IDLE.app/Contents/Resources/idlelib to path.
-# __file__ refers to this file when it is used as a module, sys.argv[0]
-# refers to this file when it is used as a script (pythonw macosx_main.py)
-import sys
-from os.path import split, join
-try:
-    __file__
-except NameError:
-    __file__ = sys.argv[0]
-idlelib = join(split(__file__)[0], 'idlelib')
-if os.path.isdir(idlelib):
-    sys.path.append(idlelib)
+import sys as _sys
 
-# Make sure True, False, bool() builtins exist.
-# - preserves 2.2 compatibility - 2.2.1 includes bool, 2.2 does not.
-# - important for Mac OS X because it ships python 2.2
-import boolcheck
-
-# see if we are being asked to execute the subprocess code
-if '-p' in sys.argv:
-    # run expects only the port number in sys.argv
-    sys.argv.remove('-p')
+# See if we are being asked to execute the subprocess code
+if '-p' in _sys.argv:
+    # run expects only the port number in _sys.argv
+    _sys.argv.remove('-p')
 
     # this module will become the namepsace used by the interactive
     # interpreter; remove all variables we have defined.
-    del sys, __file__, boolcheck, split, join
+    del _sys
     __import__('run').main()
 else:
-    # start the application.
+    # Start the IDLE GUI
     import PyShell
     PyShell.main()
