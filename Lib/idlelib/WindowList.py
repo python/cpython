@@ -67,6 +67,10 @@ class ListedToplevel(Toplevel):
     def destroy(self):
         registry.delete(self)
         Toplevel.destroy(self)
+        # If this is Idle's last window then quit the mainloop
+        # (Needed for clean exit on Windows 98)
+        if not registry.dict:
+            self.quit()
 
     def get_title(self):
         # Subclass can override
