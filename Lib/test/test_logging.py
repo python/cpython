@@ -411,7 +411,7 @@ def test_main_inner():
     #Set up a handler such that all events are sent via a socket to the log
     #receiver (logrecv).
     #The handler will only be added to the rootLogger for some of the tests
-    hdlr = logging.handlers.SocketHandler('localhost',
+    shdlr = logging.handlers.SocketHandler('localhost',
                                    logging.handlers.DEFAULT_TCP_LOGGING_PORT)
 
     #Configure the logger for logrecv so events do not propagate beyond it.
@@ -437,10 +437,10 @@ def test_main_inner():
     try:
         banner("log_test0", "begin")
 
-        rootLogger.addHandler(hdlr)
+        rootLogger.addHandler(shdlr)
         test0()
-        hdlr.close()
-        rootLogger.removeHandler(hdlr)
+        shdlr.close()
+        rootLogger.removeHandler(shdlr)
 
         banner("log_test0", "end")
 
@@ -463,10 +463,16 @@ def test_main_inner():
             thread.join()
         banner("logrecv output", "begin")
         sys.stdout.write(sockOut.getvalue())
-        sockhdlr.close()
         sockOut.close()
+        sockLogger.removeHandler(sockhdlr)
+        sockhdlr.close()
         banner("logrecv output", "end")
         sys.stdout.flush()
+        try:
+            hdlr.close()
+        except:
+            pass
+        rootLogger.removeHandler(hdlr)
 
 def test_main():
     import locale
