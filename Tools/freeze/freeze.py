@@ -5,7 +5,6 @@
 usage: freeze [options...] script [module]...
 
 Options:
-
 -p prefix:    This is the prefix used when you ran ``make install''
               in the Python build directory.
               (If you never ran this, freeze won't work.)
@@ -22,6 +21,8 @@ Options:
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
               should also have a Setup file describing the .o files.
+              On Windows, the name of a .INI file describing one
+              or more extensions is passed.
               More than one -e option may be given.
 
 -o dir:       Directory where the output files are created; default '.'.
@@ -41,15 +42,20 @@ Options:
 
 -h:           Print this help message.
 
--w:           Toggle Windows (NT or 95) behavior.
-              (For debugging only -- on a win32 platform, win32 behaviour
-              is automatic.)
-
 -x module     Exclude the specified module.
+
+-i filename:  Include a file with additional command line options.  Used
+              to prevent command lines growing beyond the capabilities of
+              the shell/OS.  All arguments specified in filename
+              are read and the -i option replaced with the parsed
+              params (note - quoting args in this file is NOT supported)
 
 -s subsystem: Specify the subsystem (For Windows only.); 
               'console' (default), 'windows', 'service' or 'com_dll'
               
+-w:           Toggle Windows (NT or 95) behavior.
+              (For debugging only -- on a win32 platform, win32 behaviour
+              is automatic.)
 
 Arguments:
 
@@ -87,6 +93,7 @@ import makeconfig
 import makefreeze
 import makemakefile
 import parsesetup
+import bkfile
 
 
 # Main program
@@ -105,8 +112,8 @@ def main():
     win = sys.platform[:3] == 'win'
 
     # default the exclude list for each platform
-##     if win: exclude = exclude + [
-##         'dos', 'dospath', 'mac', 'macpath', 'MACFS', 'posix', 'os2']
+    if win: exclude = exclude + [
+        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix', 'os2']
 
     # modules that are imported by the Python runtime
     implicits = ["site", "exceptions"]
@@ -118,7 +125,20 @@ def main():
     makefile = 'Makefile'
     subsystem = 'console'
 
-    # parse command line
+    # parse command line by first replacing any "-i" options with the file contents.
+    pos = 1
+    while pos < len(sys.argv)-1: # last option can not be "-i", so this ensures "pos+1" is in range!
+        if sys.argv[pos] == '-i':
+            try:
+                options = string.split(open(sys.argv[pos+1]).read())
+            except IOError, why:
+                usage("File name '%s' specified with the -i option can not be read - %s" % (sys.argv[pos+1], why) )
+            # Replace the '-i' and the filename with the read params.
+            sys.argv[pos:pos+2] = options
+            pos = pos + len(options) - 1 # Skip the name and the included args.
+        pos = pos + 1
+
+    # Now parse the command line with the extras inserted.
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'a:de:hmo:p:P:qs:wx:l:')
     except getopt.error, msg:
@@ -197,13 +217,15 @@ def main():
     includes = ['-I' + incldir, '-I' + config_h_dir]
 
     # sanity check of directories and files
-    for dir in [prefix, exec_prefix, binlib, incldir] + extensions:
+    check_dirs = [prefix, exec_prefix, binlib, incldir]
+    if not win: check_dirs = check_dirs + extensions # These are not directories on Windows.
+    for dir in check_dirs:
         if not os.path.exists(dir):
             usage('needed directory %s not found' % dir)
         if not os.path.isdir(dir):
             usage('%s: not a directory' % dir)
     if win:
-        files = supp_sources
+        files = supp_sources + extensions # extensions are files on Windows.
     else:
         files = [config_c_in, makefile_in] + supp_sources
     for file in supp_sources:
@@ -260,7 +282,9 @@ def main():
             print "Created output directory", odir
         except os.error, msg:
             usage('%s: mkdir failed (%s)' % (odir, str(msg)))
+    base = ''
     if odir:
+        base = os.path.join(odir, '')
         frozen_c = os.path.join(odir, frozen_c)
         config_c = os.path.join(odir, config_c)
         target = os.path.join(odir, target)
@@ -323,21 +347,7 @@ def main():
     dict = mf.modules
 
     # generate output for frozen modules
-    backup = frozen_c + '~'
-    try:
-        os.rename(frozen_c, backup)
-    except os.error:
-        backup = None
-    outfp = open(frozen_c, 'w')
-    try:
-        makefreeze.makefreeze(outfp, dict, debug, custom_entry_point)
-    finally:
-        outfp.close()
-    if backup:
-        if cmp.cmp(backup, frozen_c):
-            sys.stderr.write('%s not changed, not written\n' % frozen_c)
-            os.unlink(frozen_c)
-            os.rename(backup, frozen_c)
+    files = makefreeze.makefreeze(base, dict, debug, custom_entry_point)
 
     # look for unfrozen modules (builtin and of unknown origin)
     builtins = []
@@ -387,7 +397,7 @@ def main():
                                                     frozen_extensions)
         # Create a module definition for the bootstrap C code.
         xtras = [frozenmain_c, os.path.basename(frozen_c),
-                 frozendllmain_c, extensions_c]
+                 frozendllmain_c, extensions_c] + files
         maindefn = checkextensions_win32.CExtension( '__main__', xtras )
         frozen_extensions.append( maindefn )
         outfp = open(makefile, 'w')
@@ -403,22 +413,12 @@ def main():
     # generate config.c and Makefile
     builtins.sort()
     infp = open(config_c_in)
-    backup = config_c + '~'
-    try:
-        os.rename(config_c, backup)
-    except os.error:
-        backup = None
-    outfp = open(config_c, 'w')
+    outfp = bkfile.open(config_c, 'w')
     try:
         makeconfig.makeconfig(infp, outfp, builtins)
     finally:
         outfp.close()
     infp.close()
-    if backup:
-        if cmp.cmp(backup, config_c):
-            sys.stderr.write('%s not changed, not written\n' % config_c)
-            os.unlink(config_c)
-            os.rename(backup, config_c)
 
     cflags = defines + includes + ['$(OPT)']
     libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
@@ -431,31 +431,14 @@ def main():
 
     somevars['CFLAGS'] = string.join(cflags) # override
     files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
-            supp_sources +  addfiles + libs + \
+            files + supp_sources +  addfiles + libs + \
             ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
-    backup = makefile + '~'
-    if os.path.exists(makefile):
-        try:
-            os.unlink(backup)
-        except os.error:
-            pass
-    try:
-        os.rename(makefile, backup)
-    except os.error:
-        backup = None
-    outfp = open(makefile, 'w')
+    outfp = bkfile.open(makefile, 'w')
     try:
         makemakefile.makemakefile(outfp, somevars, files, base_target)
     finally:
         outfp.close()
-    if backup:
-        if not cmp.cmp(backup, makefile):
-            print 'previous Makefile saved as', backup
-        else:
-            sys.stderr.write('%s not changed, not written\n' % makefile)
-            os.unlink(makefile)
-            os.rename(backup, makefile)
 
     # Done!
 

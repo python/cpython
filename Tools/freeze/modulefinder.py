@@ -359,14 +359,16 @@ class ModuleFinder:
         keys = self.badmodules.keys()
         keys.sort()
         for key in keys:
-            print "?", key
+            # ... but not if they were explicitely excluded.
+            if key not in self.excludes:
+                print "?", key
 
 
 def test():
     # Parse command line
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "dmp:q")
+        opts, args = getopt.getopt(sys.argv[1:], "dmp:qx:")
     except getopt.error, msg:
         print msg
         return
@@ -375,6 +377,7 @@ def test():
     debug = 1
     domods = 0
     addpath = []
+    exclude = []
     for o, a in opts:
         if o == '-d':
             debug = debug + 1
@@ -384,6 +387,8 @@ def test():
             addpath = addpath + string.split(a, os.pathsep)
         if o == '-q':
             debug = 0
+        if o == '-x':
+            exclude.append(a)
 
     # Provide default arguments
     if not args:
@@ -401,7 +406,7 @@ def test():
             print "   ", `item`
 
     # Create the module finder and turn its crank
-    mf = ModuleFinder(path, debug)
+    mf = ModuleFinder(path, debug, exclude)
     for arg in args[1:]:
         if arg == '-m':
             domods = 1

@@ -77,10 +77,12 @@ such as /usr/joe/python/Tools/freeze/freeze.py).
 What do I do next?
 ------------------
 
-Freeze creates three files: frozen.c, config.c and Makefile.  To
-produce the frozen version of your program, you can simply type
-"make".  This should produce a binary file.  If the filename argument
-to Freeze was "hello.py", the binary will be called "hello".
+Freeze creates a number of files: frozen.c, config.c and Makefile,
+plus one file for each Python module that gets included named
+M_<module>.c.  To produce the frozen version of your program, you can
+simply type "make".  This should produce a binary file.  If the
+filename argument to Freeze was "hello.py", the binary will be called
+"hello".
 
 Note: you can use the -o option to freeze to specify an alternative
 directory where these files are created. This makes it easier to
