@@ -37,13 +37,42 @@ class MyScanner(Scanner_OSX):
 		return classname, listname
 
 	def writeinitialdefs(self):
-		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("""
+def FOUR_CHAR_CODE(x): return x
+false = 0
+true = 1
+kTXNClearThisControl = 0xFFFFFFFF
+kTXNClearTheseFontFeatures = 0x80000000
+kTXNDontCareTypeSize = 0xFFFFFFFF
+kTXNDecrementTypeSize = 0x80000000
+kTXNUseCurrentSelection = 0xFFFFFFFF
+kTXNStartOffset = 0
+kTXNEndOffset = 0x7FFFFFFF
+MovieFileType = FOUR_CHAR_CODE('moov')
+""")
 
 	def makeblacklistnames(self):
 		return [
 			"TXNGetFontDefaults", # Arg is too difficult
 			"TXNSetFontDefaults", # Arg is too difficult
 			"TXNInitTextension", # done manually
+			
+			# Constants with funny definitions
+			"kTXNClearThisControl", 
+			"kTXNClearTheseFontFeatures",
+			"kTXNDontCareTypeSize",
+			"kTXNDecrementTypeSize",
+			"kTXNUseCurrentSelection",
+			"kTXNStartOffset",
+			"kTXNEndOffset",
+			"kTXNQDFontNameAttributeSize",
+			"kTXNQDFontFamilyIDAttributeSize",
+			"kTXNQDFontSizeAttributeSize",
+			"kTXNQDFontStyleAttributeSize",
+			"kTXNQDFontColorAttributeSize",
+			"kTXNTextEncodingAttributeSize",
+			"status",
+			"justification",
 			]
 
 	def makegreylist(self):
@@ -84,6 +113,10 @@ class MyScanner(Scanner_OSX):
 			# In buffers are passed as void *
 			([("void", "*", "OutMode"), ("ByteCount", "*", "InMode")],
 			 [("MlteInBuffer", "*", "InMode")]),
+			 
+			# The AdjustCursor region handle is optional
+			([("RgnHandle", "ioCursorRgn", "InMode")],
+			 [("OptRgnHandle", "*", "*")])
 			]
 			
 if __name__ == "__main__":
