@@ -165,7 +165,7 @@ math_frexp(PyObject *self, PyObject *args)
 static char math_frexp_doc [] =
 "frexp(x)\n\
 \n\
-Return the matissa and exponent of x, as pair (m, e).\n\
+Return the mantissa and exponent of x, as pair (m, e).\n\
 m is a float and e is an int, such that x = m * 2.**e.\n\
 If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.";
 
