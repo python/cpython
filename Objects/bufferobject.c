@@ -15,7 +15,7 @@ typedef struct {
 
 
 static PyObject *
-_PyBuffer_FromMemory(PyObject *base, void *ptr, int size, int readonly)
+buffer_from_memory(PyObject *base, void *ptr, int size, int readonly)
 {
 	PyBufferObject * b;
 
@@ -40,8 +40,8 @@ _PyBuffer_FromMemory(PyObject *base, void *ptr, int size, int readonly)
 }
 
 static PyObject *
-_PyBuffer_FromObject(PyObject *base, int offset, int size,
-                     getreadbufferproc proc, int readonly)
+buffer_from_object(PyObject *base, int offset, int size,
+		   getreadbufferproc proc, int readonly)
 {
 	PyBufferProcs *pb = base->ob_type->tp_as_buffer;
 	void *p;
@@ -76,7 +76,7 @@ _PyBuffer_FromObject(PyObject *base, int offset, int size,
 	if ( PyBuffer_Check(base) && (((PyBufferObject *)base)->b_base) )
 		base = ((PyBufferObject *)base)->b_base;
 	
-	return _PyBuffer_FromMemory(base, (char *)p + offset, size, readonly);
+	return buffer_from_memory(base, (char *)p + offset, size, readonly);
 }
 
 
@@ -93,8 +93,7 @@ PyBuffer_FromObject(PyObject *base, int offset, int size)
 		return NULL;
 	}
 
-	return _PyBuffer_FromObject(base, offset, size,
-				    pb->bf_getreadbuffer, 1);
+	return buffer_from_object(base, offset, size, pb->bf_getreadbuffer, 1);
 }
 
 PyObject *
@@ -110,21 +109,21 @@ PyBuffer_FromReadWriteObject(PyObject *base, int offset, int size)
 		return NULL;
 	}
 
-	return _PyBuffer_FromObject(base, offset, size,
-				    (getreadbufferproc)pb->bf_getwritebuffer,
-				    0);
+	return buffer_from_object(base, offset, size,
+				  (getreadbufferproc)pb->bf_getwritebuffer,
+				  0);
 }
 
 PyObject *
 PyBuffer_FromMemory(void *ptr, int size)
 {
-	return _PyBuffer_FromMemory(NULL, ptr, size, 1);
+	return buffer_from_memory(NULL, ptr, size, 1);
 }
 
 PyObject *
 PyBuffer_FromReadWriteMemory(void *ptr, int size)
 {
-	return _PyBuffer_FromMemory(NULL, ptr, size, 0);
+	return buffer_from_memory(NULL, ptr, size, 0);
 }
 
 PyObject *
