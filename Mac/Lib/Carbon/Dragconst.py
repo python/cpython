@@ -1,8 +1,8 @@
 # Generated from 'Drag.h'
 
 def FOUR_CHAR_CODE(x): return x
-from TextEdit import *
-from QuickDraw import *
+from Carbon.TextEdit import *
+from Carbon.QuickDraw import *
 
 
 kDragHasLeftSenderWindow	= (1 << 0)
