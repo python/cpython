@@ -2352,6 +2352,12 @@ def setclass():
             pass
         else:
             raise TestFailed, "shouldn't allow %r.__class__ = %r" % (x, C)
+        try:
+            delattr(x, "__class__")
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "shouldn't allow del %r.__class__" % x
     cant(C(), list)
     cant(list(), C)
     cant(C(), 1)
