@@ -116,9 +116,11 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 
 	Py_DECREF(f->f_name);
 	Py_DECREF(f->f_mode);
+#ifdef Py_USING_UNICODE
 	if (wname)
 		f->f_name = PyUnicode_FromObject(wname);
 	else
+#endif
 		f->f_name = PyString_FromString(name);
 	f->f_mode = PyString_FromString(mode);
 
@@ -329,6 +331,7 @@ static PyObject *
 file_repr(PyFileObject *f)
 {
 	if (PyUnicode_Check(f->f_name)) {
+#ifdef Py_USING_UNICODE
 		PyObject *ret = NULL;
 		PyObject *name;
 		name = PyUnicode_AsUnicodeEscapeString(f->f_name);
@@ -339,6 +342,7 @@ file_repr(PyFileObject *f)
 				   f);
 		Py_XDECREF(name);
 		return ret;
+#endif
 	} else {
 		return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",

@@ -22,6 +22,11 @@ standardized by the C Standard and the POSIX standard (a thinly\n\
 disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.");
 
+#ifndef Py_USING_UNICODE
+/* This is used in signatures of functions. */
+#define Py_UNICODE void
+#endif
+
 #if defined(PYOS_OS2)
 #define  INCL_DOS
 #define  INCL_DOSERRORS
