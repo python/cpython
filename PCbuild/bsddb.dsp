@@ -169,7 +169,13 @@ SOURCE=..\Modules\bsddbmodule.c
 
 !IF  "$(CFG)" == "bsddb - Win32 Release"
 
+# ADD CPP /I "..\..\bsddb\PORT\win32\include" /I "..\..\bsddb\PORT\include" /D "__DBINTERFACE_PRIVATE"
+# SUBTRACT CPP /X /I "..\..\bsddb\port\include"
+
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Debug"
+
+# ADD CPP /I "..\..\bsddb\PORT\win32\include" /I "..\..\bsddb\PORT\include" /D "__DBINTERFACE_PRIVATE"
+# SUBTRACT CPP /I "..\..\bsddb\port\include"
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Alpha Debug"
 
