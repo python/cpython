@@ -541,6 +541,16 @@ initsignal(void)
 	PyDict_SetItemString(d, "SIGXFSZ", x);
         Py_XDECREF(x);
 #endif
+#ifdef SIGRTMIN
+        x = PyInt_FromLong(SIGRTMIN);
+        PyDict_SetItemString(d, "SIGRTMIN", x);
+        Py_XDECREF(x);
+#endif
+#ifdef SIGRTMAX
+        x = PyInt_FromLong(SIGRTMAX);
+        PyDict_SetItemString(d, "SIGRTMAX", x);
+        Py_XDECREF(x);
+#endif
 #ifdef SIGINFO
 	x = PyInt_FromLong(SIGINFO);
 	PyDict_SetItemString(d, "SIGINFO", x);
