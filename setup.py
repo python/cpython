@@ -207,33 +207,32 @@ class PyBuildExt(build_ext):
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
         try:
             imp.load_dynamic(ext.name, ext_filename)
+        except ImportError, why:
+            self.announce('*** WARNING: renaming "%s" since importing it'
+                          ' failed: %s' % (ext.name, why), level=3)
+            assert not self.inplace
+            basename, tail = os.path.splitext(ext_filename)
+            newname = basename + "_failed" + tail
+            if os.path.exists(newname):
+                os.remove(newname)
+            os.rename(ext_filename, newname)
+
+            # XXX -- This relies on a Vile HACK in
+            # distutils.command.build_ext.build_extension().  The
+            # _built_objects attribute is stored there strictly for
+            # use here.
+            # If there is a failure, _built_objects may not be there,
+            # so catch the AttributeError and move on.
+            try:
+                for filename in self._built_objects:
+                    os.remove(filename)
+            except AttributeError:
+                self.announce('unable to remove files (ignored)')
         except:
-
             exc_type, why, tb = sys.exc_info()
-            if issubclass(exc_type, ImportError):
-                self.announce('*** WARNING: renaming "%s" since importing it'
-                              ' failed: %s' % (ext.name, why), level=3)
-                assert not self.inplace
-                basename, tail = os.path.splitext(ext_filename)
-                newname = basename + "_failed" + tail
-                if os.path.exists(newname): os.remove(newname)
-                os.rename(ext_filename, newname)
-
-                # XXX -- This relies on a Vile HACK in
-                # distutils.command.build_ext.build_extension().  The
-                # _built_objects attribute is stored there strictly for
-                # use here.
-                # If there is a failure, _built_objects may not be there,
-                # so catch the AttributeError and move on.
-                try:
-                    for filename in self._built_objects:
-                        os.remove(filename)
-                except AttributeError:
-                    self.announce('unable to remove files (ignored)')
-            else:
-                self.announce('*** WARNING: importing extension "%s" '
-                              'failed with %s: %s' % (ext.name, exc_type, why),
-                              level=3)
+            self.announce('*** WARNING: importing extension "%s" '
+                          'failed with %s: %s' % (ext.name, exc_type, why),
+                          level=3)
 
     def get_platform (self):
         # Get value of sys.platform
