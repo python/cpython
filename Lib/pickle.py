@@ -27,7 +27,7 @@ Misc variables:
 __version__ = "$Revision$"       # Code version
 
 from types import *
-from copy_reg import dispatch_table, safe_constructors
+from copy_reg import dispatch_table, safe_constructors, _reconstructor
 import marshal
 import sys
 import struct
@@ -320,6 +320,13 @@ class Pickler:
             raise PicklingError("Tuple returned by %s must have "
                                 "exactly two or three elements" % reduce)
 
+        # XXX Temporary hack XXX
+        # Override the default __reduce__ for new-style class instances
+        if self.proto >= 2:
+            if func is _reconstructor:
+                self.save_newobj(obj)
+                return
+
         # Save the reduce() output and finally memoize the object
         self.save_reduce(func, args, state)
         self.memoize(obj)
@@ -369,14 +376,37 @@ class Pickler:
         # Save a new-style class instance, using protocol 2.
         # XXX Much of this is still experimental.
         t = type(obj)
-        args = ()
         getnewargs = getattr(obj, "__getnewargs__", None)
         if getnewargs:
             args = getnewargs() # This better not reference obj
+        else:
+            for cls in int, long, float, complex, str, unicode, tuple:
+                if isinstance(obj, cls):
+                    args = (cls(obj),)
+                    break
+            else:
+                args = ()
+
+        save = self.save
+        write = self.write
+
         self.save_global(t)
-        self.save(args)
-        self.write(NEWOBJ)
+        save(args)
+        write(NEWOBJ)
         self.memoize(obj)
+
+        if isinstance(obj, list):
+            write(MARK)
+            for x in obj:
+                save(x)
+            write(APPENDS)
+        elif isinstance(obj, dict):
+            write(MARK)
+            for k, v in obj.iteritems():
+                save(k)
+                save(v)
+            write(SETITEMS)
+
         getstate = getattr(obj, "__getstate__", None)
         if getstate:
             state = getstate()
@@ -384,9 +414,8 @@ class Pickler:
             state = getattr(obj, "__dict__", None)
             # XXX What about __slots__?
         if state is not None:
-            self.save(state)
-            self.write(BUILD)
-        return
+            save(state)
+            write(BUILD)
 
     # Methods below this point are dispatched through the dispatch table
 
@@ -1173,6 +1202,8 @@ def encode_long(x):
     '\x7f'
     >>>
     """
+    # XXX This is still a quadratic algorithm.
+    # Should use hex() to get started.
     digits = []
     while not -128 <= x < 128:
         digits.append(x & 0xff)
@@ -1195,6 +1226,7 @@ def decode_long(data):
     >>> decode_long("\x7f")
     127L
     """
+    # XXX This is quadratic too.
     x = 0L
     i = 0L
     for c in data:
