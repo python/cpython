@@ -919,13 +919,13 @@ def Internaldate2tuple(resp):
     mon = Mon2num[mo.group('mon')]
     zonen = mo.group('zonen')
 
-    day = int(mo.group(day))
-    year = int(mo.group(year))
-    hour = int(mo.group(hour))
-    min = int(mo.group(min))
-    sec = int(mo.group(sec))
-    zoneh = int(mo.group(zoneh))
-    zonem = int(mo.group(zonem))
+    day = int(mo.group('day'))
+    year = int(mo.group('year'))
+    hour = int(mo.group('hour'))
+    min = int(mo.group('min'))
+    sec = int(mo.group('sec'))
+    zoneh = int(mo.group('zoneh'))
+    zonem = int(mo.group('zonem'))
 
     # INTERNALDATE timezone must be subtracted to get UT
 
