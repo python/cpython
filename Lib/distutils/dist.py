@@ -15,7 +15,7 @@ from copy import copy
 from distutils.errors import *
 from distutils import sysconfig
 from distutils.fancy_getopt import FancyGetopt, longopt_xlate
-from distutils.util import check_environ
+from distutils.util import check_environ, strtobool
 
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
@@ -321,13 +321,31 @@ class Distribution:
 
                 for opt in options:
                     if opt != '__name__':
-                        opt_dict[opt] = (filename, parser.get(section,opt))
+                        val = parser.get(section,opt)
+                        opt = string.replace(opt, '-', '_')
+                        opt_dict[opt] = (filename, val)
 
             # Make the ConfigParser forget everything (so we retain
             # the original filenames that options come from) -- gag,
             # retch, puke -- another good reason for a distutils-
             # specific config parser (sigh...)
             parser.__init__()
+
+        # If there was a "global" section in the config file, use it
+        # to set Distribution options.
+
+        if self.command_options.has_key('global'):
+            for (opt, (src, val)) in self.command_options['global'].items():
+                alias = self.negative_opt.get(opt)
+                try:
+                    if alias:
+                        setattr(self, alias, not strtobool(val))
+                    elif opt in ('verbose', 'dry_run'): # ugh!
+                        setattr(self, opt, strtobool(val))
+                except ValueError, msg:
+                    raise DistutilsOptionError, msg
+
+    # parse_config_files ()
 
 
     # -- Command-line parsing methods ----------------------------------
@@ -346,7 +364,7 @@ class Distribution:
         attribute raises DistutilsGetoptError; any error on the
         command-line raises DistutilsArgError.  If no Distutils commands
         were found on the command line, raises DistutilsArgError.  Return
-        true if command-line were successfully parsed and we should carry
+        true if command-line was successfully parsed and we should carry
         on with executing commands; false if no errors but we shouldn't
         execute commands (currently, this only happens if user asks for
         help).
@@ -714,7 +732,7 @@ class Distribution:
         this means copying elements of a dictionary ('option_dict') to
         attributes of an instance ('command').
 
-        'command_obj' must be a Commnd instance.  If 'option_dict' is not
+        'command_obj' must be a Command instance.  If 'option_dict' is not
         supplied, uses the standard option dictionary for this command
         (from 'self.command_options').
         """
@@ -727,11 +745,28 @@ class Distribution:
         if DEBUG: print "  setting options for '%s' command:" % command_name
         for (option, (source, value)) in option_dict.items():
             if DEBUG: print "    %s = %s (from %s)" % (option, value, source)
-            if not hasattr(command_obj, option):
-                raise DistutilsOptionError, \
-                      ("error in %s: command '%s' has no such option '%s'") % \
-                      (source, command_name, option)
-            setattr(command_obj, option, value)
+            try:
+                bool_opts = command_obj.boolean_options
+            except AttributeError:
+                bool_opts = []
+            try:
+                neg_opt = command_obj.negative_opt
+            except AttributeError:
+                neg_opt = {}
+
+            try:
+                if neg_opt.has_key(option):
+                    setattr(command_obj, neg_opt[option], not strtobool(value))
+                elif option in bool_opts:
+                    setattr(command_obj, option, strtobool(value))
+                elif hasattr(command_obj, option):
+                    setattr(command_obj, option, value)
+                else:
+                    raise DistutilsOptionError, \
+                          ("error in %s: command '%s' has no such option '%s'"
+                           % (source, command_name, option))
+            except ValueError, msg:
+                raise DistutilsOptionError, msg
 
     def reinitialize_command (self, command, reinit_subcommands=0):
         """Reinitializes a command to the state it was in when first
