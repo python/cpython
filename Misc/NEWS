@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- marshal now shares interned strings. This change introduces
+  a new .pyc magic.
+
 - Bug #966623. classes created with type() in an exec(, {}) don't
   have a __module__, but code in typeobject assumed it would always
   be there.
