@@ -63,7 +63,7 @@ unpack into new subdirectories of dist\.
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.5; these
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.7; these
     should work for version 8.4.6 too, with suitable substitutions:
 
     Get source
@@ -71,11 +71,11 @@ _tkinter
     Go to
         http://prdownloads.sourceforge.net/tcl/
     and download
-        tcl845-src.zip
-        tk845-src.zip
+        tcl847-src.zip
+        tk847-src.zip
     Unzip into
-        dist\tcl8.4.5\
-        dist\tk8.4.5\
+        dist\tcl8.4.7\
+        dist\tk8.4.7\
     respectively.
 
     Build Tcl first (done here w/ MSVC 7.1 on Windows XP)
@@ -83,25 +83,25 @@ _tkinter
     Use "Start -> All Programs -> Microsoft Visual Studio .NET 2003
          -> Visual Studio .NET Tools -> Visual Studio .NET 2003 Command Prompt"
     to get a shell window with the correct environment settings
-    cd dist\tcl8.4.5\win
+    cd dist\tcl8.4.7\win
     nmake -f makefile.vc
-    nmake -f makefile.vc INSTALLDIR=..\..\tcl84 install
+    nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
 
     XXX Should we compile with OPTS=threads?
 
     Optional:  run tests, via
         nmake -f makefile.vc test
 
-        On WinXP Pro, wholly up to date as of 11-Apr-2004:
-        all.tcl:        Total   10564   Passed  9855    Skipped 708     Failed  1
+        On WinXP Pro, wholly up to date as of 30-Aug-2004:
+        all.tcl:        Total   10572   Passed  9869    Skipped 703     Failed  0
         Sourced 129 Test Files.
-        Files with failing tests: httpold.test
+        Files with failing tests: ioCmd.test
 
     Build Tk
     --------
-    cd dist\tk8.4.5\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5 INSTALLDIR=..\..\tcl84 install
+    cd dist\tk8.4.7\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7 INSTALLDIR=..\..\tcltk install
 
     XXX Should we compile with OPTS=threads?
 
@@ -109,21 +109,13 @@ _tkinter
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
 
     Optional:  run tests, via
-        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5 test
+        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7 test
 
-        On WinXP Pro, wholly up to date as of 11-Apr-2004:
-        all.tcl:        Total   8327    Passed  6717    Skipped 1579    Failed  31
-        Sourced 182 Test Files.
-        Files with failing tests: canvImg.test scale.test scrollbar.test textWind.test winWm.test
-
-
-    Make sure the installer matches
-    -------------------------------
-    Ensure that the Wise compiler vrbl _TCLDIR_ is set to the name of
-    the common Tcl/Tk installation directory (tcl84 for the instructions
-    above).  This is needed so the installer can copy various Tcl/Tk
-    files into the Python distribution.
-
+        On WinXP Pro, wholly up to date as of 30-Aug-2004:
+        all.tcl:        Total   8421    Passed  6826    Skipped 1581    Failed  14
+        Sourced 91 Test Files.
+        Files with failing tests: frame.test scrollbar.test textWind.test winDialog.test
+        winWm.test winfo.test
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
