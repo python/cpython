@@ -31,8 +31,6 @@ Add __coerce__?
 
 Support pickling (via __reduce__?)
 
-Make inspect and pydoc do the right thing for new-style classes.
-
 Support mixed multiple inheritance from classic and new-style classes?
 
 Change __getattr__ to be more like classic __getattr__, and introduce
@@ -40,6 +38,9 @@ a new name for new-style __getattr__?
 
 Done (mostly)
 -------------
+
+Make inspect and pydoc do the right thing for new-style classes.  ***
+done ***
 
 Do binary operators properly.  nb_add should try to call self.__add__
 and other.__radd__.  I think I'll exclude base types that define any
