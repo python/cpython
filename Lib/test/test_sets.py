@@ -361,12 +361,25 @@ class TestMutate(unittest.TestCase):
 
 class TestSubsets(unittest.TestCase):
 
+    case2method = {"<=": "issubset",
+                   ">=": "issuperset",
+                  }
+    cases_with_ops = Set(["==", "!="])
+
     def test_issubset(self):
-        result = self.left.issubset(self.right)
-        if "<" in self.cases:
-            self.failUnless(result)
-        else:
-            self.failUnless(not result)
+        x = self.left
+        y = self.right
+        for case in "!=", "==", "<", "<=", ">", ">=":
+            expected = case in self.cases
+            if case in TestSubsets.case2method:
+                # Test the method-name spelling.
+                method = getattr(x, TestSubsets.case2method[case])
+                result = method(y)
+                self.assertEqual(result, expected)
+            if case in TestSubsets.cases_with_ops:
+                # Test the binary infix spelling.
+                result = eval("x" + case + "y", locals())
+                self.assertEqual(result, expected)
 
 #------------------------------------------------------------------------------
 
@@ -374,7 +387,7 @@ class TestSubsetEqualEmpty(TestSubsets):
     left  = Set()
     right = Set()
     name  = "both empty"
-    cases = "<>"
+    cases = "==", "<=", ">="
 
 #------------------------------------------------------------------------------
 
@@ -382,7 +395,7 @@ class TestSubsetEqualNonEmpty(TestSubsets):
     left  = Set([1, 2])
     right = Set([1, 2])
     name  = "equal pair"
-    cases = "<>"
+    cases = "==", "<=", ">="
 
 #------------------------------------------------------------------------------
 
@@ -390,7 +403,7 @@ class TestSubsetEmptyNonEmpty(TestSubsets):
     left  = Set()
     right = Set([1, 2])
     name  = "one empty, one non-empty"
-    cases = "<"
+    cases = "!=", "<", "<="
 
 #------------------------------------------------------------------------------
 
@@ -398,7 +411,7 @@ class TestSubsetPartial(TestSubsets):
    left  = Set([1])
    right = Set([1, 2])
    name  = "one a non-empty subset of other"
-   cases = "<"
+   cases = "!=", "<", "<="
 
 #------------------------------------------------------------------------------
 
@@ -406,7 +419,7 @@ class TestSubsetNonOverlap(TestSubsets):
     left  = Set([1])
     right = Set([2])
     name  = "neither empty, neither contains"
-    cases = ""
+    cases = "!="
 
 #==============================================================================
 
