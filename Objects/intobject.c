@@ -134,7 +134,7 @@ PyInt_FromLong(long ival)
 static void
 int_dealloc(PyIntObject *v)
 {
-	if (v->ob_type == &PyInt_Type) {
+	if (PyInt_CheckExact(v)) {
 		v->ob_type = (struct _typeobject *)free_list;
 		free_list = v;
 	}
@@ -999,7 +999,7 @@ PyInt_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_INTOBJECTS;
 		     i++, p++) {
-			if (p->ob_type == &PyInt_Type && p->ob_refcnt != 0)
+			if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
 				irem++;
 		}
 		next = list->next;
@@ -1009,7 +1009,7 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (p->ob_type != &PyInt_Type ||
+				if (!PyInt_CheckExact(p) ||
 				    p->ob_refcnt == 0) {
 					p->ob_type = (struct _typeobject *)
 						free_list;
@@ -1052,7 +1052,7 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (p->ob_type == &PyInt_Type && p->ob_refcnt != 0)
+				if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
 					fprintf(stderr,
 				"#   <int at %p, refcnt=%d, val=%ld>\n",
 						p, p->ob_refcnt, p->ob_ival);

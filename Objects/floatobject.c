@@ -775,7 +775,7 @@ PyFloat_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_FLOATOBJECTS;
 		     i++, p++) {
-			if (p->ob_type == &PyFloat_Type && p->ob_refcnt != 0)
+			if (PyFloat_CheckExact(p) && p->ob_refcnt != 0)
 				frem++;
 		}
 		next = list->next;
@@ -785,7 +785,7 @@ PyFloat_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
-				if (p->ob_type != &PyFloat_Type ||
+				if (!PyFloat_CheckExact(p) ||
 				    p->ob_refcnt == 0) {
 					p->ob_type = (struct _typeobject *)
 						free_list;
@@ -818,7 +818,7 @@ PyFloat_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
-				if (p->ob_type == &PyFloat_Type &&
+				if (PyFloat_CheckExact(p) &&
 				    p->ob_refcnt != 0) {
 					char buf[100];
 					PyFloat_AsString(buf, p);
