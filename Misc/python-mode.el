@@ -169,40 +169,6 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
-;; These were the previous font-lock keywords, but I think I now
-;; prefer the ones from XEmacs 19.12's font-lock.el.  I've merged the
-;; two into the new definition below.
-;;
-;;(defvar python-font-lock-keywords
-;;  (list
-;;   (cons
-;;    (concat
-;;     "\\<\\("
-;;     (mapconcat
-;;      'identity
-;;      '("access"  "and"      "break"  "continue"
-;;	"del"     "elif"     "else"   "except"
-;;	"exec"    "finally"  "for"    "from"
-;;	"global"  "if"       "import" "in"
-;;	"is"      "lambda"   "not"    "or"
-;;	"pass"    "print"    "raise"  "return"
-;;	"try"     "while"    "def"    "class"
-;;	)
-;;      "\\|")
-;;     "\\)\\>")
-;;    1)
-;;   ;; functions
-;;   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
-;;   ;; classes
-;;   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
-;;   )
-;;  "*Additional keywords to highlight `python-mode' buffers.")
-
-;; These are taken from XEmacs 19.12's font-lock.el file, but have the
-;; more complete list of keywords from the previous definition in
-;; python-mode.el.  There are a few other minor stylistic changes as
-;; well.
-;; 
 (defvar python-font-lock-keywords
   (let* ((keywords '("access"     "and"      "break"    "continue"
 		     "del"        "elif"     "else:"    "except"
@@ -228,16 +194,6 @@ the Emacs bell is also rung as a warning.")
        1 font-lock-function-name-face)
      ))
   "*Additional expressions to highlight in Python mode.")
-
-;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
-;; original keywords, which wouldn't be necessary if we go with the
-;; XEmacs defaults, but which I agree makes sense without them.
-;;
-;; functions
-;; '("\\bdef\\s +\\(\\sw+\\)\\s *(" 1 font-lock-function-name-face)
-;; classes
-;; '("\\bclass\\s +\\(\\sw+\\)\\s *[(:]" 1 font-lock-type-face)
-
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
