@@ -17,6 +17,8 @@ main(int argc, char *argv[])
     /* Error checking of pName left out */
 
     pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
     if (pModule != NULL) {
         pDict = PyModule_GetDict(pModule);
         /* pDict is a borrowed reference */
@@ -29,6 +31,8 @@ main(int argc, char *argv[])
             for (i = 0; i < argc - 3; ++i) {
                 pValue = PyInt_FromLong(atoi(argv[i + 3]));
                 if (!pValue) {
+                    Py_DECREF(pArgs);
+                    Py_DECREF(pModule);
                     fprintf(stderr, "Cannot convert argument\n");
                     return 1;
                 }
@@ -36,20 +40,22 @@ main(int argc, char *argv[])
                 PyTuple_SetItem(pArgs, i, pValue);
             }
             pValue = PyObject_CallObject(pFunc, pArgs);
+            Py_DECREF(pArgs);
             if (pValue != NULL) {
                 printf("Result of call: %ld\n", PyInt_AsLong(pValue));
                 Py_DECREF(pValue);
             }
             else {
+                Py_DECREF(pModule);
                 PyErr_Print();
                 fprintf(stderr,"Call failed\n");
                 return 1;
             }
-            Py_DECREF(pArgs);
             /* pDict and pFunc are borrowed and must not be Py_DECREF-ed */
         }
         else {
-            PyErr_Print();
+            if (PyErr_Occurred())
+                PyErr_Print();
             fprintf(stderr, "Cannot find function \"%s\"\n", argv[2]);
         }
         Py_DECREF(pModule);
@@ -59,7 +65,6 @@ main(int argc, char *argv[])
         fprintf(stderr, "Failed to load \"%s\"\n", argv[1]);
         return 1;
     }
-    Py_DECREF(pName);
     Py_Finalize();
     return 0;
 }
