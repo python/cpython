@@ -193,7 +193,7 @@ class Request:
         self.port = None
         self.data = data
         self.headers = {}
-        for key, value in headers.iteritems():
+        for key, value in headers.items():
             self.add_header(key, value)
 
     def __getattr__(self, attr):
@@ -1021,7 +1021,7 @@ class CacheFTPHandler(FTPHandler):
 
         # then check the size
         if len(self.cache) == self.max_conns:
-            for k, v in self.timeout.iteritems():
+            for k, v in self.timeout.items():
                 if v == self.soonest:
                     del self.cache[k]
                     del self.timeout[k]
