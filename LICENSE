@@ -14,6 +14,16 @@ BeOpen PythonLabs team (www.pythonlabs.com).  Python 2.0 is the first
 release from PythonLabs.  Thanks to the many outside volunteers who
 have worked under Guido's direction to make this release possible.
 
+After Python 2.0 was released by BeOpen.com, Guido van Rossum and the
+other PythonLabs developers joined Digital Creations.  The intention
+is for all intellectual property added from this point on to be owned
+by the Python Software Foundation (PSF), a non-profit that will be
+created modeled after the Apache Software Foundation.  We will also
+attempt to get the ownership in previous versions transferred to the
+PSF, and straighten out the license to remove the GPL-incompatibility
+introduced by CNRI's Python 1.6 license.  In the interim, Guido van
+Rossum will own all new intellectual property, and no new license is
+added.
 
 
 BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0
