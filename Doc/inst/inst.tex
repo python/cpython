@@ -1,0 +1,534 @@
+\documentclass{howto}
+\usepackage{ltxmarkup}
+\usepackage{times}
+
+\title{Installing Python Modules}
+
+% The audience for this document includes people who don't know anything 
+% about Python and aren't about to learn the language just in order to
+% install and maintain it for their users, i.e. system administrators.
+% Thus, I have to be sure to explain the basics at some point:
+% sys.path and PYTHONPATH at least.  Should probably give pointers to
+% other docs on "import site", PYTHONSTARTUP, PYTHONHOME, etc.
+% 
+% Also, I need to take into account that most modules out there don't
+% (yet) use Distutils: briefly explain the old Makefile.pre.in
+% convention (maybe move material from the E&E manual to here?), and
+% explain where to copy .py and .so files manually if the distribution
+% doesn't provide a mechanism for doing so.
+%
+% Finally, it might be useful to include all the material from my "Care
+% and Feeding of a Python Installation" talk in here somewhere.  Yow!
+
+% Hey wow, Guido didn't write this one either!
+\author{Greg Ward}
+\authoraddress{E-mail: \email{gward@python.net}}
+
+% Should these be added to the standard Python doc tools?  (They'll be
+% needed for my "Distributing Python Modules" guide, too.)
+\newcommand{\command}[1]{\code{#1}}
+\newcommand{\option}[1]{\code{#1}}
+\newcommand{\filevar}[1]{{\textsl{\filenq{#1}}}}
+\newcommand{\comingsoon}{\emph{Coming soon$\ \ldots$}}
+
+% And how about these?  Very handy for writing pathnames (tilde for
+% Unix, backslash for DOS/Windows).
+\renewcommand{\tilde}{\raisebox{-0.5ex}{\symbol{126}}}
+\newcommand{\bslash}{\symbol{92}}
+
+
+\begin{document}
+
+\maketitle
+
+%\begin{abstract}
+%\noindent
+%Abstract this!
+%\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:intro}
+
+\comingsoon
+
+\subsection{The new way: Distutils}
+\label{sec:new-way}
+
+
+\subsection{The old way (pure Python): whatever you feel like}
+\label{sec:old-way-pure}
+
+
+\subsection{The old way (extensions, \UNIX{} only): Makefile.pre.in}
+\label{sec:old-way-ext}
+
+
+
+
+
+\section{Normal Build and Install}
+\label{sec:normal-install}
+
+% This will cover:
+%   * setup.py install        (the usual thing)
+%   * setup.py build          (if you like doing things one-at-a-time)
+%   * setup.py build install  (not necessary unless you need to supply
+%                              build options--ref. next section)
+%   * where things are installed, on Unix and Windows (Mac...?)
+%   * simple custom install: "install --prefix=$HOME"
+\comingsoon
+
+
+\section{Custom Extension Building}
+\label{sec:custom-ext}
+
+% This will cover:
+%   * normal extension build -- stress that it doesn't matter, you
+%     do the same thing whether there are extensions or not
+%   * what you might want to customize: compiler and compiler
+%     flags (warn of the dangers); per-file compiler flags
+%     (not handled yet!)
+%   * when things go wrong: I don't know! (and I don't know what
+%     to do, either!)
+\comingsoon
+
+
+\section{Custom Installation (\UNIX)}
+\label{sec:custom-install-unix}
+
+% XXX probably should banish mentions of Windows here to the
+% separate "Non-standard installation (Windows)" section.
+
+A \dfn{custom installation} is where you install modules to a location
+that's not in Python's default module search path.  There are a couple
+of reasons you might want to do this; the most typical is simply that
+you don't have permission to write to the standard Python library
+directory.  Or, even if you do have write permission to the standard
+library, you might wish to install a module distribution into a
+non-standard place for testing or experimentation.  (This is especially
+useful when upgrading an existing module distribution: you might want to
+make sure that your existing scripts continue to work as before, and
+only then install the upgrade ``for real.'')
+
+(XXX terminology: I keep saying ``standard Python library directory''
+when I really mean ``the site-packages directory under the standard
+Python library directory''.  Is there a better way?)
+
+In any event, you can easily install to non-standard locations with a
+couple of options to the \command{install} command:
+
+\begin{tableii}{ll}{option}{Option}{Description}
+  \lineii{prefix}{base dir for pure Python distributions
+    (overrides \code{sys.prefix})}
+  \lineii{exec-prefix}{base dir for distributions with extensions
+    (overrides \code{sys.exec_prefix})}
+  \lineii{install-lib}{install dir for top-level modules from pure
+    Python distributions}
+  \lineii{install-platlib}{install dir for top-level modules from
+    distributions with extensions}
+  \lineii{install-path}{extra path under \option{install-lib} or
+    \option{install-platlib} to install to}
+\end{tableii}
+
+
+\subsection{Prefix options}
+\label{sec:prefix-options}
+
+There are a lot of picky little rules that govern the interactions of
+these five options.  As usual, it's easier to explain things with
+examples, so we'll save all the picky rules for later, after you've seen
+a bunch of examples.  However, we really have to establish some ground
+rules before we can dive into the examples:
+\begin{itemize}
+\item in a normal \UNIX{} installation, \code{sys.prefix} and
+  \code{sys.exec\_prefix} are both \file{/usr/local}.
+\item in a multi-platform \UNIX{} installation, \code{sys.prefix} and
+  \code{sys.exec\_prefix} are different, and are selected when you
+  configure and build Python itself.  Our canonical example of a
+  multi-platform installation will have a \code{sys.prefix} of
+  \file{/usr/local} and a \code{sys.exec\_prefix} of
+  \file{/usr/local.\filevar{plat}} (for whatever value of \filevar{plat} 
+  is appropriate).
+\item the canonical place to install third-party modules is
+  either \file{\filevar{prefix}/lib/python1.\filevar{X}/site-packages}
+  or \file{\filevar{exec\_prefix}/lib/python1.\filevar{X}/site-packages}.
+  These will be referred to as ``the site-packages directories.''
+\end{itemize}
+
+
+\subsubsection{Pure Python module distribution}
+
+To demonstrate, consider a hypothetical module distribution that
+contains one top-level module and a package with two modules:
+\begin{tableii}{ll}{module}{Module}{Filename}
+  \lineii{mymod}{\filenq{mymod.py}}
+  \lineii{mypkg.mod1}{\filenq{mypkg/mod1.py}}
+  \lineii{mypkg.mod2}{\filenq{mypkg/mod2.py}}
+\end{tableii}
+where the filenames are relative to \file{build/lib} after building, or
+to some directory in \code{sys.path} after installation.
+
+The goal of installation is to copy these files into a directory in
+\code{sys.path} without interfering with the standard Python library.
+The canonical, preferred, and most obvious thing to do is to put them in
+the ``site-packages'' directory, which is exactly what the
+\command{install} comand does by default: under a normal \UNIX{} Python
+installation,
+\begin{verbatim}
+    python setup.py install
+\end{verbatim}
+installs \file{/usr/local/lib/python1.\filevar{X}/lib/site-packages/mymod.py},
+with the \module{mypkg} package in a \file{mypkg} directory under
+\file{site-packages}.
+
+However, if you were interested in a standard installation, you wouldn't
+be reading this section.  The next-most-standard thing to do is to
+specify a custom prefix to override \code{sys.prefix}.  For example:
+\begin{verbatim}
+    python setup.py install --prefix=/home/greg
+\end{verbatim}
+is a sensible way to install Python modules to your home directory: this
+results in the installation of \file{/home/greg/lib/python/mymod.py},
+with the \module{mypkg} modules in \file{/home/greg/lib/python/mypkg/}.
+An important point here is that in both this example and the ``plain
+vanilla'' example above, the actual installation directory is derived
+from the \option{prefix} option.  However, when \option{prefix} differs
+from \code{sys.prefix}, the installation directory is derived
+differently: the Python version and \file{site-packages} are omitted.
+(The version number is part of the standard library directory name to
+describe the version of the standard library, so it doesn't make sense
+to include it in the name of a non-standard-library directory; likewise,
+\file{site-packages} is meant to denote non-standard modules living in
+the same area as the standard library, so it doesn't make sense to
+include it when installing to a non-standard library.  [XXX check with
+Guido that this reasoning is valid and correct; Fred disagrees!])
+
+
+\subsubsection{Module distribution with extensions}
+
+Now let's consider a different hypothetical module distribution, which
+consists of a single package, \module{foo}, containing one pure Python
+module and one extension module:
+\begin{tableii}{ll}{module}{Module}{Filename}
+  \lineii{foo.pure}{\filenq{foo/pure.py}}
+  \lineii{foo.ext}{\filenq{foo/ext.so} (or \file{foo/extmodule.so})}
+\end{tableii}
+In this case, the two modules will be in different locations in the
+build tree: \file{build/lib/foo/pure.py} and
+\file{build/platlib/foo/ext.so}.  (The \file{.so} (``shared object'')
+extension isn't universal, but it's the norm on \UNIX-like systems;
+under Windows, the extension module will be in \file{foo/ext.pyd} or
+\file{foo/extmodule.pyd}.)
+
+Consider again a standard, plain-vanilla installation:
+\begin{verbatim}
+    python setup.py install
+\end{verbatim}
+In this case, \emph{both} modules will be installed to the site-packages
+directory under \code{sys.exec\_prefix}, e.g. to
+\file{/usr/local.\filevar{plat}/lib/python1.\filevar{X}/site-packages}
+on a \UNIX{} system where Python was configured with
+\samp{--exec-prefix=/usr/local.plat}.  (On Windows, again, there is no
+site-packages directory and \code{sys.prefix} and
+\code{sys.exec\_prefix} are the same---so both modules will just be
+installed to \code{sys.prefix}.)
+
+Of course, we've already established that you're not interested in
+standard installations.  If you just want to install these modules to
+your home directory, and you don't maintain a multi-platform home
+directory, no problem---just set the prefix as before:
+\begin{verbatim}
+python setup.py install --prefix=/home/greg
+\end{verbatim}
+and both modules will be installed to \file{/home/greg/lib/python}.
+
+Now let's say your Python installation is in \file{/usr}---as is the
+case in many Linux distributions---but your local policy is to install
+third-party software to a network-wide \file{/usr/local} and
+\file{/usr/local.\filevar{plat}}.  That is, \code{sys.prefix} and
+\code{sys.exec\_prefix} are both \file{/usr}, and you want Python
+modules to be installed to either \file{/usr/local/lib/python} or
+\file{/usr/local.\filevar{plat}/lib/python}.  This is one case where you
+want to specify both \option{prefix} and \option{exec-prefix}:
+\begin{verbatim}
+python setup.py install --prefix=/usr/local \
+                        --exec-prefix=/usr/local.plat
+\end{verbatim}
+An oddity of this situation is that for any given module distribution,
+you only have to supply \emph{one} of \option{prefix} and
+\option{exec-prefix}, because pure Python distributions are always
+installed under \option{prefix}, and extension-containing distributions
+are always installed under \option{exec-prefix}.  For consistency's
+sake, though, it's best always to supply both---and the best way to do
+that is by using a system-wide configuration file (see
+Section~\ref{sec:config-files}).
+
+You could use a similar scheme to maintain a multi-platform personal
+Python library.  For example, if you install lots of stuff to your home
+directory (not just Python modules), you might have a complete
+\file{\tilde/usr} with \file{include}, \file{man}, \file{lib}, and so
+forth.  (The advantage of this scheme is that it keeps those mock system
+directories out of your home directory and makes it easier to support a
+multi-platform personal \file{usr} tree.)  If you don't care about a
+multi-platform installation, you can just install with
+\begin{verbatim}
+python setup.py install --prefix=$HOME/usr
+\end{verbatim}
+But if you want to keep separate \file{usr} trees for each architecture
+that you use, you could say
+\begin{verbatim}
+python setup.py install --prefix=$HOME/usr \
+                        --exec-prefix=$HOME/usr.plat
+\end{verbatim}
+for various values of \file{plat}.
+
+% this paragraph is for Michel Sanner ;-)
+(Perceptive readers will note that on a multi-platform Python
+installation, multiple identical copies of \file{foo/pure.py} will be
+installed, one for each platform.  This is deliberate.  First, it makes
+Python's module search algorithm simpler (XXX check this): when you say
+\samp{import foo.pure}, Python searches \code{sys.path} until it finds a
+directory containing \file{foo/__init__.py}.  When it finds one, that
+directory is deemed to be the directory containing the \module{foo}
+package for this import.  Even if the search algorithm were changed
+(necessitating a trip back in time to ``fix'' Python 1.5), the only way
+to make multiple candidate \module{foo} directories (one for pure
+Python, one for extension modules) would be to make copies of
+\file{__init__.py}---in which case, why not make copies of all the pure
+Python modules?  Second, if you kept pure Python modules related to
+extension modules in a platform-shared directory, what happens while you
+are upgrading your favourite extension from version 1.0 to 1.1 on
+platforms X and Y?  After you install 1.1 for platform X, the 1.1
+\file{.py} files will be in the platform-shared directory---but the 1.0
+extensions will still be in the platform Y directory.  If the interval
+between installing 1.1 for platform X and for platform Y is long---e.g.,
+there are portability problems with platform Y---then there's a good
+probability of a version mismatch between the 1.1 Python modules and the
+1.0 extensions on platform Y.  The solution to both problems is to
+install separate copies of the pure Python modules for every platform.
+In this day and age, unnecessary disk use is no argument.)
+
+Other ways to support a multi-platform personal Python library are
+discussed below, when we cover the \option{install-lib} and
+\option{install-platlib} options.
+
+
+% Gory details on the prefix options (still need to work these into the
+% surrounding text):
+XXX need to finish these rules and give them some context!
+\begin{itemize}
+\item \code{sys.exec\_prefix} (and the \option{exec-prefix} option)
+  only matters on a multi-platform installation.  If you don't have a
+  multi-platform installation (or even know what that is), then you
+  don't care about \option{exec-prefix}.
+\item in a normal Windows installation, \code{sys.prefix} and
+  \code{sys.exec\_prefix} are both \file{C:\bslash Program Files\bslash
+    Python}; they are never different under Windows (XXX check!).
+\item you may supply \emph{both} of \option{prefix} and
+  \option{exec-prefix}, or \emph{neither} of them, or \emph{just}
+  \option{prefix}---but you may not supply just \option{exec-prefix}.
+\end{itemize}
+ 
+
+\subsection{Installation directory options}
+\label{sec:install-dirs}
+
+Most of the time, it's enough to specify just \option{prefix} (and
+possibly \option{exec-prefix})---your modules are installed to
+\file{lib/python} under one or the other, you add the appropriate
+directory to \code{sys.path}, and that's it.
+
+However, there will inevitably be times when you want finer control over
+the installation directories, and that is when the \option{install-lib},
+\option{install-platlib}, and \option{install-path} options are
+essential.  Normally, \option{install-lib} and \option{install-platlib}
+are simply the directories where pure Python modules and extension
+modules, respectively, are installed.  That is, top-level modules
+(modules not in a package) are installed straight to
+\option{install-lib} (or \option{install-platlib} if there are any
+extensions in the module distribution).  (If \option{install-path} is
+supplied, then things are a bit more complex; we'll deal with that
+below.)
+
+Normally, \option{install-lib} and \option{install-platlib} are derived
+from \option{prefix} and/or \option{exec-prefix}.  For example, if you
+don't supply anything, then \option{prefix} defaults to
+\code{sys.prefix}, and \option{install-lib} defaults to
+\file{\filevar{prefix}/lib/python1.\filevar{X}/site-packages}.  If you
+supply \option{prefix} but not \option{install-lib}, then
+\option{install-lib} defaults to \file{\filevar{prefix}/lib/python}
+(unless you just happen to supply a prefix which equals
+\code{sys.prefix}, which is treated the same as if you don't supply
+\option{prefix} at all).  (The rules for \option{exec-prefix} and
+\option{install-platlib} are a bit more complex; the following examples
+should clarify.  Consult the Distutils source for the gory details.)
+
+To illustrate, let's go back to our hypothetical pure-Python module
+distribution containing \module{mymod}, \module{mypkg.mod1}, and
+\module{mypkg.mod2}.  If you maintain a personal stash of Python modules
+in your home directory, but don't like the \file{\tilde/lib/python}
+convention, no problem---you can put the modules right in a
+\file{\tilde/python} directory with
+\begin{verbatim}
+python setup.py install --install-lib=$HOME/python
+\end{verbatim}
+which will install \file{\$HOME/python/mymod.py},
+\file{\$HOME/python/mypkg/mod1.py}, and
+\file{\$HOME/python/mypkg/mod2.py}.
+
+If you happen to install a module distribution that contains extensions,
+again that's no problem---in the absence of \option{exec-prefix},
+\option{install-platlib} defaults to \option{install-lib}, so the above
+example will also put extension modules in \file{\$HOME/python}.
+(XXX is this correct? is this the best way to describe it? should it be
+implemented this way or some other way? how should it be described?)
+
+This may not be what you want, though, if you maintain a multi-platform
+stash of Python modules in your home directory.  In that case, you need
+to specify \option{install-platlib}---this is the directory where module
+distributions with extensions will be installed.  For example, if you
+keep pure Python module distributions in \file{\tilde/python} and
+extension distributions in \file{\tilde/python.plat}:
+\begin{verbatim}
+python setup.py install --install-lib=$HOME/python \
+                        --install-platlib=$HOME/python.plat
+\end{verbatim}
+(Just as with \option{prefix} and \option{exec-prefix}, it's only
+necessary to supply one of \option{install-lib} and
+\option{install-platlib} for any given module distribution, but to
+ensure consistency you should always supply them both using a
+configuration file (section~\ref{sec:config-files}).)
+
+An alternate way to maintain a multi-platform personal Python library is
+in \file{\tilde/lib/python} and \file{\tilde/lib/python.plat}.  In that
+case, you can get away with supplying \option{prefix} and
+\option{install-platlib}:
+\begin{verbatim}
+python setup.py install --prefix=$HOME \
+                        --install-platlib=$HOME/lib/python.plat
+\end{verbatim}
+
+Finally, the \option{install-path} option, which exists mainly to gum up
+the whole works---but in a productive (and important) way.
+Specifically, \option{install-path} exists to give a directory of their
+own to module distributions that wouldn't otherwise have one, i.e.\ that
+are not distributed as a (Python) package.
+
+Consider a module distribution, Foo, that consists of (pure Python)
+modules \module{foobar}, \module{foobaz}, and \module{fooqux}.
+Obviously these are related, and if the project had started in the
+Python 1.5 era (and doesn't worry about backwards compatibility with
+Python 1.4), they probably would be packaged up and called
+\module{foo.bar}, \module{foo.baz}, and \module{foo.qux}.
+Unfortunately, they aren't, but we still want the Foo modules to go into
+a directory of their own.
+
+Normally, this will be taken care of by the module developer: he adds a
+line \samp{install_path = 'Foo'} to his setup script, which has the
+following consequences:
+\begin{enumerate}
+\item instead of \option{install-lib} the modules would be installed in
+  \file{\filevar{install-lib}/Foo}
+\item if \option{install-lib} is the same as the default
+  \option{install-lib}---e.g., you supplied neither \option{prefix} or
+  \option{install-lib}---then a \file{Foo.pth} will be created in
+  \option{install-lib}, so that Python adds
+  \file{\filevar{install-lib}/Foo} to \code{sys.path}
+\item if \option{install-lib} is not the default, then a warning will be 
+  printed, reminding you to add \file{\filevar{install-lib}/Foo} to
+  \code{sys.path} yourself, such as with the \code{PYTHONPATH}
+  environment variable  
+\end{enumerate}
+
+Thus, you as a module installer have to be aware of the
+\option{install-path} option---especially if you maintain a personal
+stash of Python modules and don't have write permission to the standard
+library, so Distutils can't create \file{.pth} files for you---but you
+don't often have to supply it yourself.  There are situations in which
+you might want to supply it, though:
+\begin{itemize}
+\item a module developer forgot to include it (the distribution really
+  should go in a directory of its own, but it won't unless you make it)
+\item you want to override the \option{install-path} supplied by the
+  developer (e.g., you'd rather have a huge jumble of files in
+  \file{site-packages} than make Python wade through a bunch of
+  \file{.pth} files at startup)
+\end{itemize}
+
+The first case is easy: say we're dealing with the Foo distribution
+again, but the developer forgot to include \option{install-path}.  No
+problem, you can supply it on the command line:
+\begin{verbatim}
+python setup.py install --install-path=Foo
+\end{verbatim}
+Note that this will work just fine if you supply \option{prefix} or
+\option{install-lib}---but of course, you'll probably have to ensure
+that the \file{Foo} directory is in \code{sys.path} yourself.
+
+If you're really fanatical about keeping track of what you have
+installed, you might want to supply your own \option{install-path} that
+records the version as well as the name of the module distribution; this 
+overrides any \option{install-path} included by the module developer in
+the setup script:
+\begin{verbatim}
+python setup.py install --install-path=Foo-1.3
+\end{verbatim}
+
+Finally, you can disable \option{install-path} entirely:
+\begin{verbatim}
+python setup.py install --install-path=''
+\end{verbatim}
+...but the mess that will result (modules from many different
+distributions in the same \option{install-lib} and
+\option{install-platlib} directories) is your own problem.
+
+% Points to make
+%   * only one of prefix or exec_prefix matters
+%   * don't have to specify exec_prefix unless != prefix
+%   * thus, usually enough to supply prefix
+%   * only have to supply install_lib if you don't like
+%     "prefix/lib/python"
+%   * likewise for install_platlib and exec_prefix
+%   * don't have to supply install_platlib unless != install_lib (??)
+%   * in the absence of install_path, top-level modules wind up in
+%     install_lib or install_platlib
+In case you're interested, here are the exact rules for how
+\option{install-lib} and \option{install-platlib} are initialized, and
+how they and \option{install-path} affect where modules (pure Python and
+extensions) are installed to:
+\begin{itemize}
+\item If you don't supply \option{prefix} (and possibly
+  \option{exec-prefix}), then \option{install-lib} and
+  \option{install-platlib} will be, respectively,
+  \file{\filevar{\$prefix}/lib/python1.\filevar{X}/site-packages} and
+  \file{\filevar{\$exec\_prefix}/lib/python1.\filevar{X}/site-packages}.  In a
+  normal \UNIX{} installation, both of these resolve to
+  \file{/usr/local/lib/python1.\filevar{X}/site-packages}.
+\item in the absence of an \option{install-path} option, top-level
+  modules and packages from a pure Python distribution are installed to
+  \option{install-lib}
+\item in the absence of an \option{install-path} option, top-level
+  modules and packages from a distribution that contains \emph{any}
+  extension modules are installed to \option{install-platlib}.
+\item \emph{there're more, but I don't remember everything offhand}
+%\item \option{install-lib} is initialized from \option{prefix} (which
+%  in turn is initialized from \code{sys.prefix})---so you should 
+\end{itemize}
+
+
+\section{Custom Installation (Windows)}
+\label{sec:custom-install-windows}
+
+\comingsoon
+
+
+\section{Configuration Files}
+\label{sec:config-files}
+
+\comingsoon
+
+
+
+\end{document}
