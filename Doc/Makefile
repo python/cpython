@@ -32,7 +32,7 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 LIBFILES = lib.tex \
 libal.tex libaifc.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
 libbltin.tex \
-libcgi.tex libcopy.tex libcrypto.tex \
+libcgi.tex libcopy.tex libctb.tex libcrypto.tex \
 libdbm.tex \
 libexcs.tex \
 libfcntl.tex libfl.tex libfm.tex libftplib.tex libfuncs.tex \
@@ -40,7 +40,8 @@ libgdbm.tex libgetopt.tex libgl.tex libgopherlib.tex libgrp.tex \
 libhtmllib.tex libhttplib.tex \
 libimageop.tex libimgfile.tex libintro.tex \
 libjpeg.tex \
-libmac.tex libmain.tex libmarshal.tex libmath.tex \
+libmac.tex libmacconsole.tex libmacfs.tex libmactcp.tex libmacspeech.tex \
+	 libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmimetools.tex libmm.tex libmods.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
@@ -51,7 +52,8 @@ librand.tex libregex.tex libregsub.tex \
 libselect.tex libsgi.tex libsgmllib.tex \
 	libshelve.tex libsocket.tex libstd.tex libstdwin.tex \
 	libstring.tex libstruct.tex libsun.tex libsys.tex \
-libthread.tex libtime.tex libtypes.tex libtypes2.tex \
+libtempfile.tex libthread.tex libtime.tex \
+	libtraceback.tex libtypes.tex libtypes2.tex \
 libunix.tex liburllib.tex liburlparse.tex \
 libwhrandom.tex libwww.tex
 
