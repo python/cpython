@@ -8,6 +8,10 @@
 
 package main;
 
+$mydir = `pwd`;
+chop $mydir;
+unshift(@INC, $mydir);
+
 require "python.perl";
 
 1;				# sheesh....
