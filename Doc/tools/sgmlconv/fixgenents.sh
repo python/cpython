@@ -17,32 +17,8 @@ if [ "$1" ]; then
 fi
 
 sed '
-s|<ABC/>|ABC|g
-s|<ASCII/>|ASCII|g
-s|<C/>|C|g
-s|<Cpp/>|C++|g
-s|<EOF/>|EOF|g
-s|<LaTeX/>|LaTeX|g
-s|<NULL/>|NULL|g
-s|<POSIX/>|POSIX|g
-s|<UNIX/>|Unix|g
-s|<e/>|\\|g
 s|<geq/>|\&ge;|g
-s|<ldots/>|\&hellip|g
 s|<leq/>|\&le;|g
-s|<version/>|\&version;|g
-s|<ABC>|ABC|g
-s|<ASCII>|ASCII|g
-s|<C>|C|g
-s|<Cpp>|C++|g
-s|<EOF>|EOF|g
-s|<LaTeX>|LaTeX|g
-s|<NULL>|NULL|g
-s|<POSIX>|POSIX|g
-s|<UNIX>|Unix|g
-s|<e>|\\|g
 s|<geq>|\&ge;|g
-s|<ldots>|\&hellip|g
 s|<leq>|\&le;|g
-s|<version>|\&version;|g
 ' || exit $?
