@@ -32,6 +32,7 @@ ppc_goals = [
 	("Res.ppc.slb", "toolboxmodules.ppc.slb"),
 	("Scrap.ppc.slb", "toolboxmodules.ppc.slb"),
 	("Snd.ppc.slb", "toolboxmodules.ppc.slb"),
+	("Sndihooks.ppc.slb", "toolboxmodules.ppc.slb"),
 	("TE.ppc.slb", "toolboxmodules.ppc.slb"),
 	("Win.ppc.slb", "toolboxmodules.ppc.slb"),
 
@@ -63,6 +64,7 @@ cfm68k_goals = [
 	("Res.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
 	("Scrap.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
 	("Snd.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
+	("Sndihooks.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
 	("TE.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
 	("Win.CFM68K.slb", "toolboxmodules.CFM68K.slb"),
 
