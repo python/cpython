@@ -223,3 +223,29 @@ def split_quoted (s):
     return words
 
 # split_quoted ()
+
+
+def execute (func, args, msg=None, verbose=0, dry_run=0):
+    """Perform some action that affects the outside world (eg.  by writing
+    to the filesystem).  Such actions are special because they are disabled
+    by the 'dry_run' flag, and announce themselves if 'verbose' is true.
+    This method takes care of all that bureaucracy for you; all you have to
+    do is supply the function to call and an argument tuple for it (to
+    embody the "external action" being performed), and an optional message
+    to print.
+    """
+    # Generate a message if we weren't passed one
+    if msg is None:
+        msg = "%s%s" % (func.__name__, `args`)
+        if msg[-2:] == ',)':        # correct for singleton tuple 
+            msg = msg[0:-2] + ')'
+
+    # Print it if verbosity level is high enough
+    if verbose:
+        print msg
+
+    # And do it, as long as we're not in dry-run mode
+    if not dry_run:
+        apply(func, args)
+
+# execute()
