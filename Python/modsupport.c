@@ -39,6 +39,9 @@ typedef extended va_double;
 typedef double va_double;
 #endif
 
+/* Package context -- the full module name for package imports */
+char *_Py_PackageContext = NULL;
+
 /* Py_InitModule4() parameters:
    - name is the module name
    - methods is the list of top-level functions
@@ -69,6 +72,13 @@ Py_InitModule4(name, methods, doc, passthrough, module_api_version)
 	if (module_api_version != PYTHON_API_VERSION)
 		fprintf(stderr, api_version_warning,
 			name, PYTHON_API_VERSION, name, module_api_version);
+	if (_Py_PackageContext != NULL) {
+		char *p = strrchr(_Py_PackageContext, '.');
+		if (p != NULL && strcmp(name, p+1) == 0) {
+			name = _Py_PackageContext;
+			_Py_PackageContext = NULL;
+		}
+	}
 	if ((m = PyImport_AddModule(name)) == NULL)
 		return NULL;
 	d = PyModule_GetDict(m);

@@ -233,6 +233,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 #else
 	PyObject *m, *d, *s;
 	char funcname[258];
+	char *lastdot, *shortname, *packagecontext;
 	dl_funcptr p = NULL;
 #ifdef USE_SHLIB
 	static struct {
@@ -252,7 +253,16 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		Py_INCREF(m);
 		return m;
 	}
-	sprintf(funcname, FUNCNAME_PATTERN, name);
+	lastdot = strrchr(name, '.');
+	if (lastdot == NULL) {
+		packagecontext = NULL;
+		shortname = name;
+	}
+	else {
+		packagecontext = name;
+		shortname = lastdot+1;
+	}
+	sprintf(funcname, FUNCNAME_PATTERN, shortname);
 #ifdef USE_SHLIB
 	if (fp != NULL) {
 		int i;
@@ -519,11 +529,14 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
   got_it:
 #endif
 	if (p == NULL) {
-		PyErr_SetString(PyExc_ImportError,
-		   "dynamic module does not define init function");
+		PyErr_Format(PyExc_ImportError,
+		   "dynamic module does not define init function (%s)",
+			     funcname);
 		return NULL;
 	}
+	_Py_PackageContext = packagecontext;
 	(*p)();
+	_Py_PackageContext = NULL;
 	if (PyErr_Occurred())
 		return NULL;
 	if (_PyImport_FixupExtension(name, pathname) == NULL)
