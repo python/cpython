@@ -595,8 +595,9 @@ class ConfigDialog(Toplevel):
         listIndex=self.listBindings.index(ANCHOR)
         binding=self.listBindings.get(listIndex)
         bindName=binding.split()[0] #first part, up to first space
-        newKeys=GetKeysDialog(self,'Get New Keys',bindName)
-        print newKeys.result
+        currentKeySet=idleConf.CurrentKeys()
+        currentKeySequences=idleConf.GetKeys(currentKeySet).values()
+        newKeys=GetKeysDialog(self,'Get New Keys',bindName,currentKeySequences)
         if newKeys.result: #new keys were specified
             self.listBindings.delete(listIndex)
             self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
