@@ -193,7 +193,6 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if '=' not in decoded_query:
                 args.append(decoded_query)
             nobody = nobody_uid()
-            self.rfile.flush() # Always flush before forking
             self.wfile.flush() # Always flush before forking
             pid = os.fork()
             if pid != 0:
