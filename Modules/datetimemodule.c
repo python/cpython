@@ -1947,9 +1947,7 @@ delta_str(PyDateTime_Delta *self)
 	return NULL;
 }
 
-/* Pickle support.  Quite a maze!  While __getstate__/__setstate__ sufficed
- * in the Python implementation, the C implementation also requires
- * __reduce__, and a __safe_for_unpickling__ attr in the type object.
+/* Pickle support.  This is a plain application of __reduce__.
  */
 static PyObject *
 delta_getstate(PyDateTime_Delta *self)
@@ -1959,44 +1957,10 @@ delta_getstate(PyDateTime_Delta *self)
 				    GET_TD_MICROSECONDS(self));
 }
 
-/* __setstate__ isn't exposed. */
-static PyObject *
-delta_setstate(PyDateTime_Delta *self, PyObject *state)
-{
-	int day;
-	int second;
-	int us;
-
-	if (!PyArg_ParseTuple(state, "iii:__setstate__", &day, &second, &us))
-		return NULL;
-
-	self->hashcode = -1;
-	SET_TD_DAYS(self, day);
-	SET_TD_SECONDS(self, second);
-	SET_TD_MICROSECONDS(self, us);
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 static PyObject *
 delta_reduce(PyDateTime_Delta* self)
 {
-	PyObject* result = NULL;
-	PyObject* state  = delta_getstate(self);
-
-	if (state != NULL) {
-		/* The funky "()" in the format string creates an empty
-		 * tuple as the 2nd component of the result 3-tuple.
-		 */
-		result = Py_BuildValue("O(iii)",
-				       self->ob_type,
-				       self->days,
-				       self->seconds,
-				       self->microseconds);
-		Py_DECREF(state);
-	}
-	return result;
+	return Py_BuildValue("ON", self->ob_type, delta_getstate(self));
 }
 
 #define OFFSET(field)  offsetof(PyDateTime_Delta, field)
