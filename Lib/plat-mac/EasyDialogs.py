@@ -30,6 +30,7 @@ from Carbon.ControlAccessor import *	# Also import Controls constants
 import Carbon.File
 import macfs
 import macresource
+import os
 
 _initialized = 0
 
@@ -660,7 +661,7 @@ def AskFileForSave(**args):
 		# This is gross, and probably incorrect too
 		vrefnum, dirid, name = rr.selection[0].as_tuple()
 		pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
-		pardir_fsr = Carbon.File.FSRef(fss)
+		pardir_fsr = Carbon.File.FSRef(pardir_fss)
 		pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
 		name_utf8 = unicode(name, 'macroman').encode('utf8')
 		fullpath = os.path.join(pardir_path, name_utf8)

@@ -56,7 +56,7 @@ my_eventProc(NavEventCallbackMessage callBackSelector,
 	
 	if (!dict) return;
 	if ( (pyfunc = PyDict_GetItemString(dict, "eventProc")) == NULL ) {
-		PyErr_Clear();
+		PyErr_Print();
 		return;
 	}
 	if ( pyfunc == Py_None ) {
@@ -74,8 +74,8 @@ my_eventProc(NavEventCallbackMessage callBackSelector,
 	if ( rv )
 		Py_DECREF(rv);
 	else {
-		fprintf(stderr, "Nav: exception in eventProc callback\n");
-		PyErr_Clear();
+		PySys_WriteStderr("Nav: exception in eventProc callback\n");
+		PyErr_Print();
 	}
 }
 
@@ -90,7 +90,7 @@ my_previewProc(NavCBRecPtr callBackParms,
 	
 	if (!dict) return false;
 	if ( (pyfunc = PyDict_GetItemString(dict, "previewProc")) == NULL ) {
-		PyErr_Clear();
+		PyErr_Print();
 		return false;
 	}
 	rv = PyObject_CallFunction(pyfunc, "s#", (void *)callBackParms, sizeof(NavCBRec));
@@ -98,8 +98,8 @@ my_previewProc(NavCBRecPtr callBackParms,
 		c_rv = PyObject_IsTrue(rv);
 		Py_DECREF(rv);
 	} else {
-		fprintf(stderr, "Nav: exception in previewProc callback\n");
-		PyErr_Clear();
+		PySys_WriteStderr("Nav: exception in previewProc callback\n");
+		PyErr_Print();
 	}
 	return c_rv;
 }
@@ -113,20 +113,21 @@ my_filterProc(AEDesc *theItem, void *info,
 	PyObject *pyfunc;
 	PyObject *rv;
 	Boolean c_rv = false;
+	PyObject theItemCopy;
 	
 	if (!dict) return false;
 	if ( (pyfunc = PyDict_GetItemString(dict, "filterProc")) == NULL ) {
-		PyErr_Clear();
+		PyErr_Print();
 		return false;
 	}
 	rv = PyObject_CallFunction(pyfunc, "O&s#h",
-		AEDesc_New, theItem, info, sizeof(NavFileOrFolderInfo), (short)filterMode);
+		AEDesc_NewBorrowed, theItem, info, sizeof(NavFileOrFolderInfo), (short)filterMode);
 	if ( rv ) {
 		c_rv = PyObject_IsTrue(rv);
 		Py_DECREF(rv);
 	} else {
-		fprintf(stderr, "Nav: exception in filterProc callback\n");
-		PyErr_Clear();
+		PySys_WriteStderr("Nav: exception in filterProc callback\n");
+		PyErr_Print();
 	}
 	return c_rv;
 }
