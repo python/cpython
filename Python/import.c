@@ -250,9 +250,10 @@ get_module(m, name, m_ret)
 				fprintf(stderr,
 				"# invalid precompiled file \"%s\"\n",
 					namebuf);
-				goto read_py;
 			}
 		}
+		if (co == NULL)
+			goto read_py;
 	}
 	else {
 read_py:

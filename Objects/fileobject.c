@@ -541,6 +541,47 @@ file_write(f, args)
 	return None;
 }
 
+static object *
+file_writelines(f, args)
+	fileobject *f;
+	object *args;
+{
+	int i, n;
+	if (f->f_fp == NULL)
+		return err_closed();
+	if (args == NULL || !is_listobject(args)) {
+		err_setstr(TypeError,
+			   "writelines() requires list of strings");
+		return NULL;
+	}
+	n = getlistsize(args);
+	f->f_softspace = 0;
+	BGN_SAVE
+	errno = 0;
+	for (i = 0; i < n; i++) {
+		object *line = getlistitem(args, i);
+		int len;
+		int nwritten;
+		if (!is_stringobject(line)) {
+			RET_SAVE
+			err_setstr(TypeError,
+				   "writelines() requires list of strings");
+			return NULL;
+		}
+		len = getstringsize(line);
+		nwritten = fwrite(getstringvalue(line), 1, len, f->f_fp);
+		if (nwritten != len) {
+			RET_SAVE
+			err_errno(IOError);
+			clearerr(f->f_fp);
+			return NULL;
+		}
+	}
+	END_SAVE
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist file_methods[] = {
 	{"close",	file_close},
 	{"flush",	file_flush},
@@ -552,6 +593,7 @@ static struct methodlist file_methods[] = {
 	{"seek",	file_seek},
 	{"tell",	file_tell},
 	{"write",	file_write},
+	{"writelines",	file_writelines},
 	{NULL,		NULL}		/* sentinel */
 };
 
