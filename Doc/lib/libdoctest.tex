@@ -398,6 +398,23 @@ def _test():
     import doctest, sys
     doctest.testmod()
 \end{verbatim}
+
+\item WYSIWYG isn't always the case, starting in Python 2.3.  The
+  string form of boolean results changed from \code{"0"} and
+  \code{"1"} to \code{"False"} and \code{"True"} in Python 2.3.
+  This makes it clumsy to write a doctest showing boolean results that
+  passes under multiple versions of Python.  In Python 2.3, by default,
+  and as a special case, if an expected output block consists solely
+  of \code{"0"} and the actual output block consists solely of
+  \code{"False"}, that's accepted as an exact match, and similarly for
+  \code{"1"} versus \code{"True"}.  This behavior can be turned off by
+  passing the new (in 2.3) module constant
+  \constant{DONT_ACCEPT_TRUE_FOR_1} as the value of \function{testmod()}'s
+  new (in 2.3) optional \var{optionflags} argument.  Some years after
+  the integer spellings of booleans are history, this hack will
+  probably be removed again.
+
+
 \end{enumerate}
 
 
