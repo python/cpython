@@ -339,7 +339,9 @@ class PyBuildExt(build_ext):
         if have_unicode:
             exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # access to ISO C locale support
-        if platform in ['cygwin', 'aix4']:
+        data = open('pyconfig.h').read()
+        m = re.search(r"#s*define\s+WITH_LIBINTL\s+1\s*", data)
+        if m is not None:
             locale_libs = ['intl']
         else:
             locale_libs = []
