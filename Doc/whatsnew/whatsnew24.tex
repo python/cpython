@@ -38,7 +38,43 @@ Here are all of the changes that Python 2.4 makes to the core Python
 language.
 
 \begin{itemize}
-\item TBD
+\item The \method{sort()} method of lists gained three keyword
+arguments, \var{cmp}, \var{key}, and \var{reverse}.  These arguments
+make some common usages of \method{sort()} simpler.  All are optional.
+
+\var{cmp} is the same as the previous single argument to
+\method{sort()}; if provided, the value should be a comparison
+function that takes two arguments and returns -1, 0, or +1 depending
+on how the arguments compare.  
+
+\var{key} should be a single-argument function that takes a list
+element and returns a comparison key for the element.  The list is
+then sorted using the comparison keys.  The following example sorts a list
+case-insensitively:
+
+\begin{verbatim}
+>>> L = ['A', 'b', 'c', 'D']
+>>> L.sort()                 # Case-sensitive sort
+>>> L
+['A', 'D', 'b', 'c']
+>>> L.sort(key=lambda x: x.lower())
+>>> L
+['A', 'b', 'c', 'D']
+>>> L.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
+>>> L
+['A', 'b', 'c', 'D']
+\end{verbatim}
+
+The last example, which uses the \var{cmp} parameter, is the old way
+to perform a case-insensitive sort.  It works, but is slower than
+using a \var{key} parameter.  Using \var{key} results in calling the
+\method{lower()} method once for each element in the list while using
+\var{cmp} will call the method twice for each comparison.
+
+The \var{reverse} parameter should have a Boolean value.  If the value is
+\constant{True}, the list will be sorted into reverse order.  Instead
+of \code{L.sort() ; L.reverse()}, you can now write
+\code{L.sort(reverse=True)}.
 
 \end{itemize}
 
