@@ -20,7 +20,6 @@ typedef struct _frame {
     PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
     PyObject *f_globals;	/* global symbol table (PyDictObject) */
     PyObject *f_locals;		/* local symbol table (PyDictObject) */
-    PyObject *f_closure;        /* environment for free variables */
     PyObject **f_valuestack;	/* points after the last local */
     PyObject *f_trace;		/* Trace function */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
@@ -31,7 +30,10 @@ typedef struct _frame {
 				   in this scope */
     int f_iblock;		/* index in f_blockstack */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
+    int f_size;                 /* size of localsplus */
     int f_nlocals;		/* number of locals */
+    int f_ncells;
+    int f_nfreevars;
     int f_stacksize;		/* size of value stack */
     PyObject *f_localsplus[1];	/* locals+stack, dynamically sized */
 } PyFrameObject;

@@ -368,7 +368,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	register PyObject *t;
 	register PyObject *stream = NULL;    /* for PRINT opcodes */
 	register PyFrameObject *f; /* Current frame */
-	register PyObject **fastlocals;
+	register PyObject **fastlocals, **freevars;
 	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_GET();
 	unsigned char *first_instr;
@@ -439,6 +439,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 	tstate->frame = f;
 	fastlocals = f->f_localsplus;
+	freevars = f->f_localsplus + f->f_nlocals;
 
 	if (co->co_argcount > 0 ||
 	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
@@ -571,6 +572,17 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				     argcount + kwcount);
 			goto fail;
 		}
+	}
+	/* Allocate storage for cell vars and copy free vars into frame */ 
+	if (f->f_ncells) {
+		int i;
+		for (i = 0; i < f->f_ncells; ++i)
+			freevars[i] = PyCell_New(NULL);
+	}
+	if (f->f_nfreevars) {
+		int i;
+		for (i = 0; i < f->f_nfreevars; ++i)
+			freevars[f->f_ncells + i] = PyTuple_GET_ITEM(closure, i);
 	}
 
 	if (tstate->sys_tracefunc != NULL) {
@@ -1623,13 +1635,13 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			continue;
 
 		case LOAD_CLOSURE:
-			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			x = freevars[oparg];
 			Py_INCREF(x);
 			PUSH(x);
 			break;
 
 		case LOAD_DEREF:
-			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			x = freevars[oparg];
 			w = PyCell_Get(x);
 			Py_INCREF(w);
 			PUSH(w);
@@ -1637,7 +1649,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		case STORE_DEREF:
 			w = POP();
-			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			x = freevars[oparg];
 			PyCell_Set(x, w);
 			continue;
 

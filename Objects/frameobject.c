@@ -49,6 +49,7 @@ frame_setattr(PyFrameObject *f, char *name, PyObject *value)
 	f_back		next item on free list, or NULL
 	f_nlocals	number of locals
 	f_stacksize	size of value stack
+        f_size          size of localsplus
    Note that the value and block stacks are preserved -- this can save
    another malloc() call or two (and two free() calls as well!).
    Also note that, unlike for integers, each frame object is a
@@ -79,7 +80,6 @@ frame_dealloc(PyFrameObject *f)
 	Py_XDECREF(f->f_builtins);
 	Py_XDECREF(f->f_globals);
 	Py_XDECREF(f->f_locals);
-	Py_XDECREF(f->f_closure);
 	Py_XDECREF(f->f_trace);
 	Py_XDECREF(f->f_exc_type);
 	Py_XDECREF(f->f_exc_value);
@@ -114,7 +114,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	static PyObject *builtin_object;
 	PyFrameObject *f;
 	PyObject *builtins;
-	int extras, ncells;
+	int extras, ncells, nfrees;
 
 	if (builtin_object == NULL) {
 		builtin_object = PyString_InternFromString("__builtins__");
@@ -128,8 +128,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	extras = code->co_stacksize + code->co_nlocals;
 	ncells = PyTuple_GET_SIZE(code->co_cellvars);
+	nfrees = PyTuple_GET_SIZE(code->co_freevars);
+	extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
 	if (back == NULL || back->f_globals != globals) {
 		builtins = PyDict_GetItem(globals, builtin_object);
 		if (builtins != NULL && PyModule_Check(builtins))
@@ -150,19 +151,21 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		if (f == NULL)
 			return (PyFrameObject *)PyErr_NoMemory();
 		PyObject_INIT(f, &PyFrame_Type);
+		f->f_size = extras;
 	}
 	else {
 		f = free_list;
 		free_list = free_list->f_back;
-		if (f->f_nlocals + f->f_stacksize < extras) {
+		if (f->f_size < extras) {
 			f = (PyFrameObject *)
 				PyObject_REALLOC(f, sizeof(PyFrameObject) +
 						 extras*sizeof(PyObject *));
 			if (f == NULL)
 				return (PyFrameObject *)PyErr_NoMemory();
+			f->f_size = extras;
 		}
 		else
-			extras = f->f_nlocals + f->f_stacksize;
+			extras = f->f_size;
 		PyObject_INIT(f, &PyFrame_Type);
 	}
 	if (builtins == NULL) {
@@ -199,22 +202,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 			locals = globals;
 		Py_INCREF(locals);
 	}
-	if (closure || ncells) {
-		int i, size;
-		size = ncells;
-		if (closure)
-			size += PyTuple_GET_SIZE(closure);
-		f->f_closure = PyTuple_New(size);
-		for (i = 0; i < ncells; ++i)
-			PyTuple_SET_ITEM(f->f_closure, i, PyCell_New(NULL));
-		for (i = ncells; i < size; ++i) {
-			PyObject *o = PyTuple_GET_ITEM(closure, i - ncells);
-			Py_INCREF(o);
-			PyTuple_SET_ITEM(f->f_closure, i, o);
-		}
-	}
-	else
-		f->f_closure = NULL;
 	f->f_locals = locals;
 	f->f_trace = NULL;
 	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
@@ -225,12 +212,14 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	f->f_restricted = (builtins != tstate->interp->builtins);
 	f->f_iblock = 0;
 	f->f_nlocals = code->co_nlocals;
-	f->f_stacksize = extras - code->co_nlocals;
+	f->f_stacksize = code->co_stacksize;
+	f->f_ncells = ncells;
+	f->f_nfreevars = nfrees;
 
 	while (--extras >= 0)
 		f->f_localsplus[extras] = NULL;
 
-	f->f_valuestack = f->f_localsplus + f->f_nlocals;
+	f->f_valuestack = f->f_localsplus + (f->f_nlocals + ncells + nfrees);
 
 	return f;
 }
@@ -260,6 +249,8 @@ PyFrame_BlockPop(PyFrameObject *f)
 }
 
 /* Convert between "fast" version of locals and dictionary version */
+
+/* XXX should also copy free variables and cell variables */
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
