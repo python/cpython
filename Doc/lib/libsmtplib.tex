@@ -1,9 +1,9 @@
 \section{\module{smtplib} ---
-         SMTP protocol client.}
-\declaremodule{standard}{smtplib}
-\sectionauthor{Eric S. Raymond}{esr@snark.thyrsus.com}
+         SMTP protocol client}
 
+\declaremodule{standard}{smtplib}
 \modulesynopsis{SMTP protocol client (requires sockets).}
+\sectionauthor{Eric S. Raymond}{esr@snark.thyrsus.com}
 
 \indexii{SMTP}{protocol}
 \index{Simple Mail Transfer Protocol}
@@ -28,8 +28,53 @@ included below.
 \end{classdesc}
 
 
-\subsection{SMTP Objects}
-\label{SMTP-objects}
+A nice selection of exceptions is defined as well:
+
+\begin{excdesc}{SMTPException}
+  Base exception class for all exceptions raised by this module.
+\end{excdesc}
+
+\begin{excdesc}{SMTPServerDisconnected}
+  This exception is raised when the server unexpectedly disconnects,
+  or when an attempt is made to use the \class{SMTP} instance before
+  connecting it to a server.
+\end{excdesc}
+
+\begin{excdesc}{SMTPResponseException}
+  Base class for all exceptions that include an SMTP error code.
+  These exceptions are generated in some instances when the SMTP
+  server returns an error code.  The error code is stored in the
+  \member{smtp_code} attribute of the error, and the
+  \member{smtp_error} attribute is set to the error message.
+\end{excdesc}
+
+\begin{excdesc}{SMTPSenderRefused}
+  Sender address refused.  In addition to the attributes set by on all 
+  \exception{SMTPResponseException} exceptions, this sets `sender' to
+  the string that the SMTP server refused.
+\end{excdesc}
+
+\begin{excdesc}{SMTPRecipientsRefused}
+  All recipient addresses refused.  The errors for each recipient are
+  accessable through the attribute \member{recipients}, which is a
+  dictionary of exactly the same sort as \method{SMTP.sendmail()}
+  returns.
+\end{excdesc}
+
+\begin{excdesc}{SMTPDataError}
+  The SMTP server refused to accept the message data.
+\end{excdesc}
+
+\begin{excdesc}{SMTPConnectError}
+  Error occurred during establishment of a connection  with the server.
+\end{excdesc}
+
+\begin{excdesc}{SMTPHeloError}
+  The server refused our \samp{HELO} message.
+\end{excdesc}
+
+
+\subsection{SMTP Objects \label{SMTP-objects}}
 
 An \class{SMTP} instance has the following methods:
 
@@ -64,8 +109,8 @@ In normal operation it should not be necessary to call this method
 explicitly.  It is used to implement other methods and may be useful
 for testing private extensions.
 
-If the connection to the server is lost while waiting for the reply an
-\exception{SMTPServerDisconnected} exception will be raised.
+If the connection to the server is lost while waiting for the reply,
+\exception{SMTPServerDisconnected} will be raised.
 \end{methoddesc}
 
 \begin{methoddesc}{helo}{\optional{hostname}}
@@ -90,8 +135,8 @@ will be implicitly called by \method{sendmail()} when necessary.
 \end{methoddesc}
 
 \begin{methoddesc}{has_extn}{name}
-Return \code{1} if \var{name} is in the set of SMTP service extensions returned
-by the server, \code{0} otherwise.  Case is ignored.
+Return \code{1} if \var{name} is in the set of SMTP service extensions
+returned by the server, \code{0} otherwise.  Case is ignored.
 \end{methoddesc}
 
 \begin{methoddesc}{verify}{address}
@@ -104,7 +149,7 @@ Note: many sites disable SMTP \samp{VRFY} in order to foil spammers.
 \end{methoddesc}
 
 \begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{,
-mail_options, rcpt_options}}
+                             mail_options, rcpt_options}}
 Send mail.  The required arguments are an \rfc{822} from-address
 string, a list of \rfc{822} to-address strings, and a message string.
 The caller may pass a list of ESMTP options (such as \samp{8bitmime})
@@ -133,29 +178,23 @@ message sent by the server.
 This method may raise the following exceptions:
 
 \begin{itemize}
-
-\item \exception{SMTPRecipientsRefused}
-
+\item[\exception{SMTPRecipientsRefused}]
 All recipients were refused.  Nobody got the mail.  The
 \var{recipients} attribute of the exception object is a dictionary
 with information about the refused recipients (like the one returned
 when at least one recipient was accepted).
 
-\item \exception{SMTPHeloError}
-
+\item[\exception{SMTPHeloError}]
 The server didn't reply properly to
 the helo greeting.
 
-\item \exception{SMTPSenderRefused}
-
+\item[\exception{SMTPSenderRefused}]
 The server didn't accept the from_addr.
 
-\item \exception{SMTPDataError}
-
+\item[\exception{SMTPDataError}]
 The server replied with an unexpected
 error code (other than a refusal of
 a recipient).
-
 \end{itemize}
 
 Unless otherwise noted the connection will be open even after
@@ -210,9 +249,11 @@ server.quit()
 
 
 \begin{seealso}
-\seetext{\rfc{821}, \emph{Simple Mail Transfer Protocol}.  Available
-online at \url{http://info.internet.isi.edu/in-notes/rfc/files/rfc821.txt}.}
+  \seetext{Internet \rfc{821}, \emph{Simple Mail Transfer Protocol}.
+           Available online at
+           \url{http://info.internet.isi.edu/in-notes/rfc/files/rfc821.txt}.}
 
-\seetext{\rfc{1869}, \emph{SMTP Service Extensions}.  Available online 
-at \url{http://info.internet.isi.edu/in-notes/rfc/files/rfc1869.txt}.}
+  \seetext{Internet \rfc{1869}, \emph{SMTP Service Extensions}.
+           Available online at
+           \url{http://info.internet.isi.edu/in-notes/rfc/files/rfc1869.txt}.}
 \end{seealso}
