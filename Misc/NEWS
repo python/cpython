@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- the pstats module no longer uses the deprecated ignore() method.
+
 - the filecmp module no longer uses the deprecated use_statcache argument.
 
 - unittest.TestCase.run() and unittest.TestSuite.run() can now be successfully
