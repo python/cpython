@@ -45,6 +45,10 @@ DL_IMPORT(int) PyRun_InteractiveLoopFlags(FILE *, char *, PyCompilerFlags *);
 DL_IMPORT(struct _node *) PyParser_SimpleParseString(char *, int);
 DL_IMPORT(struct _node *) PyParser_SimpleParseFile(FILE *, char *, int);
 DL_IMPORT(struct _node *) PyParser_SimpleParseStringFlags(char *, int, int);
+DL_IMPORT(struct _node *) PyParser_SimpleParseStringFlagsFilename(char *,
+								  char *,
+								  int,
+								  int);
 DL_IMPORT(struct _node *) PyParser_SimpleParseFileFlags(FILE *, char *,
 							int, int);
 

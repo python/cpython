@@ -22,6 +22,15 @@ try:
 except SyntaxError:
     pass
 
+if verbose:
+    print "compiling string with syntax error"
+
+try:
+    compile("1+*3", "filename", "exec")
+except SyntaxError, detail:
+    if not detail.filename == "filename":
+        raise TestFailed, "expected 'filename', got %r" % detail.filename
+
 try:
     exec 'def f(a = 0, a = 1): pass'
     raise TestFailed, "duplicate keyword arguments"
