@@ -69,7 +69,7 @@ def test_both():
     m.seek(0,2)
     print '  Seek to last byte'
     assert m.tell() == len(m)
-	
+
     print '  Try to seek to negative position...'
     try:
         m.seek(-1)
@@ -97,14 +97,14 @@ def test_both():
     # Try resizing map
     print '  Attempting resize()'
     try:
-	m.resize( 512 )
+        m.resize( 512 )
     except SystemError:
         # resize() not supported
         # No messages are printed, since the output of this test suite
         # would then be different across platforms.
         pass
     else:
-	# resize() is supported
+        # resize() is supported
         pass
     
     m.close()
