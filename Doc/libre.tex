@@ -8,14 +8,14 @@ those found in Perl.  It's 8-bit clean: both patterns and strings may
 contain null bytes and characters whose high bit is set.  It is always
 available.
 
-Regular expressions use the backslash character (\code{\e}) to
+Regular expressions use the backslash character (\samp{\e}) to
 indicate special forms or to allow special characters to be used
 without invoking their special meaning.  This collides with Python's
 usage of the same character for the same purpose in string literals;
 for example, to match a literal backslash, one might have to write
-\code{\e\e\e\e} as the pattern string, because the regular expression
-must be \code{\e\e}, and each backslash must be expressed as
-\code{\e\e} inside a regular Python string literal. 
+\samp{\e\e\e\e} as the pattern string, because the regular expression
+must be \samp{\e\e}, and each backslash must be expressed as
+\samp{\e\e} inside a regular Python string literal. 
 
 The solution is to use Python's raw string notation for regular
 expression patterns; backslashes are not handled in any special way in
@@ -45,14 +45,14 @@ A brief explanation of the format of regular expressions follows.
 %For further information and a gentler presentation, consult XXX somewhere.
 
 Regular expressions can contain both special and ordinary characters.
-Most ordinary characters, like '\code{A}', '\code{a}', or '\code{0}',
+Most ordinary characters, like \samp{A}, \samp{a}, or \samp{0},
 are the simplest regular expressions; they simply match themselves.  
-You can concatenate ordinary characters, so '\code{last}' matches the
+You can concatenate ordinary characters, so \samp{last} matches the
 characters 'last'.  (In the rest of this section, we'll write RE's in
 \code{this special font}, usually without quotes, and strings to be
 matched 'in single quotes'.)
 
-Some characters, like \code{|} or \code{(}, are special.  Special
+Some characters, like \samp{|} or \samp{(}, are special.  Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
@@ -62,12 +62,14 @@ The special characters are:
 \newcommand{\MyLabelWidth}{0.65in}
 \begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
 \item[\code{.}] (Dot.)  In the default mode, this matches any
-character except a newline.  If the \code{DOTALL} flag has been
+character except a newline.  If the \constant{DOTALL} flag has been
 specified, this matches any character including a newline.
+%
 \item[\code{\^}] (Caret.)  Matches the start of the string, and in
-\code{MULTILINE} mode also immediately after each newline.
+\constant{MULTILINE} mode also immediately after each newline.
+%
 \item[\code{\$}] Matches the end of the string, and in
-\code{MULTILINE} mode also matches before a newline.
+\constant{MULTILINE} mode also matches before a newline.
 \code{foo} matches both 'foo' and 'foobar', while the regular
 expression \code{foo\$} matches only 'foo'.
 %
@@ -128,16 +130,16 @@ will match any of the characters 'a', 'k', 'm', or '\$'; \code{[a-z]}
 will match any lowercase letter and \code{[a-zA-Z0-9]} matches any
 letter or digit.  Character classes such as \code{\e w} or \code {\e
 S} (defined below) are also acceptable inside a range.  If you want to
-include a \code{]} or a \code{-} inside a set, precede it with a
+include a \samp{]} or a \samp{-} inside a set, precede it with a
 backslash.
 
 Characters \emph{not} within a range can be matched by including a
 \code{\^} as the first character of the set; \code{\^} elsewhere will
-simply match the '\code{\^}' character.  
+simply match the \samp{\^} character.
 %
 \item[\code{|}]\code{A|B}, where A and B can be arbitrary REs,
 creates a regular expression that will match either A or B.  This can
-be used inside groups (see below) as well.  To match a literal '\code{|}',
+be used inside groups (see below) as well.  To match a literal \samp{|},
 use \code{\e|}, or enclose it inside a character class, like \code{[|]}.
 %
 \item[\code{(...)}] Matches whatever regular expression is inside the
@@ -153,13 +155,13 @@ class: \code{[(] [)]}.
 determines what the meaning and further syntax of the construct is.
 Following are the currently supported extensions.
 %
-\item[\code{(?iLmsx)}] (One or more letters from the set '\code{i}',
-'\code{L}', '\code{m}', '\code{s}', '\code{x}'.)  The group matches
+\item[\code{(?iLmsx)}] (One or more letters from the set \samp{i},
+\samp{L}, \samp{m}, \samp{s}, \samp{x}.)  The group matches
 the empty string; the letters set the corresponding flags
-(\code{re.I}, \code{re.L}, \code{re.M}, \code{re.S}, \code{re.X}) for
-the entire regular expression.  This is useful if you wish include the
-flags as part of the regular expression, instead of passing a
-\var{flag} argument to the \code{compile()} function. 
+(\constant{re.I}, \constant{re.L}, \constant{re.M}, \constant{re.S},
+\constant{re.X}) for the entire regular expression.  This is useful if
+you wish include the flags as part of the regular expression, instead
+of passing a \var{flag} argument to the \function{compile()} function. 
 %
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
 Matches whatever's inside the parentheses, but the text matched by the
@@ -197,10 +199,10 @@ followed by 'Asimov'.
 
 \end{list}
 
-The special sequences consist of '\code{\e}' and a character from the
+The special sequences consist of \samp{\e} and a character from the
 list below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.  For example,
-\code{\e\$} matches the character '\$'.  
+\code{\e\$} matches the character \samp{\$}.
 
 \begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
 
@@ -229,7 +231,7 @@ Python's string literals.
 equivalent to the set \code{[0-9]}.
 %
 \item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \code{[{\^}0-9]}.
+equivalent to the set \code{[\^0-9]}.
 %
 \item[\code{\e s}]Matches any whitespace character; this is
 equivalent to the set \code{[ \e t\e n\e r\e f\e v]}.
@@ -237,15 +239,15 @@ equivalent to the set \code{[ \e t\e n\e r\e f\e v]}.
 \item[\code{\e S}]Matches any non-whitespace character; this is
 equivalent to the set \code{[\^\ \e t\e n\e r\e f\e v]}.
 %
-\item[\code{\e w}]When the \code{LOCALE} flag is not specified,
+\item[\code{\e w}]When the \constant{LOCALE} flag is not specified,
 matches any alphanumeric character; this is equivalent to the set
-\code{[a-zA-Z0-9_]}.  With \code{LOCALE}, it will match the set
+\code{[a-zA-Z0-9_]}.  With \constant{LOCALE}, it will match the set
 \code{[0-9_]} plus whatever characters are defined as letters for the
 current locale.
 %
-\item[\code{\e W}]When the \code{LOCALE} flag is not specified,
+\item[\code{\e W}]When the \constant{LOCALE} flag is not specified,
 matches any non-alphanumeric character; this is equivalent to the set
-\code{[{\^}a-zA-Z0-9_]}.   With \code{LOCALE}, it will match any
+\code{[\^a-zA-Z0-9_]}.   With \constant{LOCALE}, it will match any
 character not in the set \code{[0-9_]}, and not defined as a letter
 for the current locale.
 
@@ -265,8 +267,8 @@ The module defines the following functions and constants, and an exception:
 
 \begin{funcdesc}{compile}{pattern\optional{\, flags}}
   Compile a regular expression pattern into a regular expression
-  object, which can be used for matching using its \code{match()} and
-  \code{search()} methods, described below.  
+  object, which can be used for matching using its \function{match()} and
+  \function{search()} methods, described below.  
 
   The expression's behaviour can be modified by specifying a
   \var{flags} value.  Values can be any of the following variables,
@@ -277,17 +279,17 @@ The module defines the following functions and constants, and an exception:
 %  The use of \quad in the item labels is ugly but adds enough space
 %  to the label that it doesn't get visually run-in with the text.
 
-\item[\code{I} or \code{IGNORECASE} or \code{(?i)}\quad]
+\item[\constant{I} or \constant{IGNORECASE} or \code{(?i)}\quad]
 
 Perform case-insensitive matching; expressions like \code{[A-Z]} will match
 lowercase letters, too.  This is not affected by the current locale.
 
-\item[\code{L} or \code{LOCALE} or \code{(?L)}\quad]
+\item[\constant{L} or \constant{LOCALE} or \constant{(?L)}\quad]
 
 Make \code{\e w}, \code{\e W}, \code{\e b},
 \code{\e B}, dependent on the current locale. 
 
-\item[\code{M} or \code{MULTILINE} or \code{(?m)}\quad]
+\item[\constant{M} or \constant{MULTILINE} or \constant{(?m)}\quad]
 
 When specified, the pattern character \code{\^} matches at the
 beginning of the string and at the beginning of each line
@@ -298,13 +300,13 @@ By default, \code{\^} matches only at the beginning of the string, and
 \code{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
 
-\item[\code{S} or \code{DOTALL} or \code{(?s)}\quad]
+\item[\constant{S} or \constant{DOTALL} or \constant{(?s)}\quad]
 
 Make the \code{.} special character any character at all, including a
 newline; without this flag, \code{.} will match anything \emph{except}
 a newline.
 
-\item[\code{X} or \code{VERBOSE} or \code{(?x)}\quad]
+\item[\constant{X} or \constant{VERBOSE} or \constant{(?x)}\quad]
 
 Ignore whitespace within the pattern
 except when in a character class or preceded by an unescaped
@@ -327,12 +329,12 @@ is equivalent to
 result = re.match(pat, str)
 \end{verbatim}
 
-but the version using \code{compile()} is more efficient when the
+but the version using \function{compile()} is more efficient when the
 expression will be used several times in a single program.
-%(The compiled version of the last pattern passed to \code{regex.match()} or
-%\code{regex.search()} is cached, so programs that use only a single
-%regular expression at a time needn't worry about compiling regular
-%expressions.)
+%(The compiled version of the last pattern passed to
+%\function{regex.match()} or \function{regex.search()} is cached, so
+%programs that use only a single regular expression at a time needn't
+%worry about compiling regular expressions.)
 \end{funcdesc}
 
 \begin{funcdesc}{escape}{string}
@@ -344,7 +346,7 @@ expression will be used several times in a single program.
 \begin{funcdesc}{match}{pattern\, string\optional{\, flags}}
   If zero or more characters at the beginning of \var{string} match
   the regular expression \var{pattern}, return a corresponding
-  \code{MatchObject} instance.  Return \code{None} if the string does not
+  \class{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
 \end{funcdesc}
@@ -352,7 +354,7 @@ expression will be used several times in a single program.
 \begin{funcdesc}{search}{pattern\, string\optional{\, flags}}
   Scan through \var{string} looking for a location where the regular
   expression \var{pattern} produces a match, and return a
-  corresponding \code{MatchObject} instance.
+  corresponding \class{MatchObject} instance.
   Return \code{None} if no
   position in the string matches the pattern; note that this is
   different from finding a zero-length match at some point in the string.
@@ -378,7 +380,7 @@ expression will be used several times in a single program.
 \end{verbatim}
 %
   This function combines and extends the functionality of
-  the old \code{regsub.split()} and \code{regsub.splitx()}.
+  the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
 
 \begin{funcdesc}{sub}{pattern\, repl\, string\optional{, count=0}}
@@ -416,7 +418,7 @@ previous match, so \code{sub('x*', '-', 'abc')} returns '-a-b-c-'.
 \end{funcdesc}
 
 \begin{funcdesc}{subn}{pattern\, repl\, string\optional{, count=0}}
-Perform the same operation as \code{sub()}, but return a tuple
+Perform the same operation as \function{sub()}, but return a tuple
 \code{(\var{new_string}, \var{number_of_subs_made})}.
 \end{funcdesc}
 
@@ -435,13 +437,13 @@ attributes:
 \begin{funcdesc}{match}{string\optional{\, pos}\optional{\, endpos}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
-  \code{MatchObject} instance.  Return \code{None} if the string does not
+  \class{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
   
   The optional second parameter \var{pos} gives an index in the string
   where the search is to start; it defaults to \code{0}.  The
-  \code{'\^'} pattern character will match at the index where the
+  \samp{\^} pattern character will match at the index where the
   search is to start.
 
   The optional parameter \var{endpos} limits how far the string will
@@ -457,19 +459,19 @@ attributes:
   different from finding a zero-length match at some point in the string.
   
   The optional \var{pos} and \var{endpos} parameters have the same
-  meaning as for the \code{match()} method.
+  meaning as for the \method{match()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{string\, \optional{, maxsplit=0}}
-Identical to the \code{split()} function, using the compiled pattern.
+Identical to the \function{split()} function, using the compiled pattern.
 \end{funcdesc}
 
 \begin{funcdesc}{sub}{repl\, string\optional{, count=0}}
-Identical to the \code{sub()} function, using the compiled pattern.
+Identical to the \function{sub()} function, using the compiled pattern.
 \end{funcdesc}
 
 \begin{funcdesc}{subn}{repl\, string\optional{, count=0}}
-Identical to the \code{subn()} function, using the compiled pattern.
+Identical to the \function{subn()} function, using the compiled pattern.
 \end{funcdesc}
 
 \setindexsubitem{(regex attribute)}
@@ -491,7 +493,7 @@ The pattern string from which the regex object was compiled.
 
 \subsection{Match Objects}
 
-\code{MatchObject} instances support the following methods and attributes:
+\class{MatchObject} instances support the following methods and attributes:
 
 \begin{funcdesc}{group}{\optional{group1, group2, ...}}
 Returns one or more subgroups of the match.  If there is a single
@@ -551,12 +553,12 @@ Note that
 re.search('b(c?)', 'cba')}, \code{\var{m}.start(0)} is 1,
 \code{\var{m}.end(0)} is 2, \code{\var{m}.start(1)} and
 \code{\var{m}.end(1)} are both 2, and \code{\var{m}.start(2)} raises
-an \code{IndexError} exception.
+an \exception{IndexError} exception.
 
 \end{funcdesc}
 
 \begin{funcdesc}{span}{\optional{group}}
-For \code{MatchObject} \var{m}, return the 2-tuple
+For \class{MatchObject} \var{m}, return the 2-tuple
 \code{(\var{m}.start(\var{group}), \var{m}.end(\var{group}))}.
 Note that if \var{group} did not contribute to the match, this is
 \code{(None, None)}.  Again, \var{group} defaults to zero.
@@ -564,28 +566,28 @@ Note that if \var{group} did not contribute to the match, this is
 
 \begin{datadesc}{pos}
 The value of \var{pos} which was passed to the
-\code{search()} or \code{match()} function.  This is the index into
+\function{search()} or \function{match()} function.  This is the index into
 the string at which the regex engine started looking for a match. 
 \end{datadesc}
 
 \begin{datadesc}{endpos}
 The value of \var{endpos} which was passed to the
-\code{search()} or \code{match()} function.  This is the index into
+\function{search()} or \function{match()} function.  This is the index into
 the string beyond which the regex engine will not go.
 \end{datadesc}
 
 \begin{datadesc}{re}
-The regular expression object whose \code{match()} or \code{search()} method
-produced this \code{MatchObject} instance.
+The regular expression object whose \method{match()} or
+\method{search()} method produced this \class{MatchObject} instance.
 \end{datadesc}
 
 \begin{datadesc}{string}
-The string passed to \code{match()} or \code{search()}.
+The string passed to \function{match()} or \function{search()}.
 \end{datadesc}
 
 \begin{seealso}
 \seetext{Jeffrey Friedl, \emph{Mastering Regular Expressions},
 O'Reilly.  The Python material in this book dates from before the
-\code{re} module, but it covers writing good regular expression
+\module{re} module, but it covers writing good regular expression
 patterns in great detail.}
 \end{seealso}
