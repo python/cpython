@@ -52,6 +52,7 @@ typedef struct {
 extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) PyObject_TypeCheck(op, &PyString_Type)
+#define PyString_CheckExact(op) ((op)->ob_type == &PyString_Type)
 
 extern DL_IMPORT(PyObject *) PyString_FromStringAndSize(const char *, int);
 extern DL_IMPORT(PyObject *) PyString_FromString(const char *);

@@ -1440,7 +1440,7 @@ def inherits():
         verify(u == s)
     s = madstring("12345")
     #XXX verify(str(s) == "12345")
-    #XXX verify(str(s).__class__ is str)
+    verify(str(s).__class__ is str)
 
     class madunicode(unicode):
         _rev = None
