@@ -43,10 +43,7 @@
 # Additional targets attempt to convert selected LaTeX sources to
 # various other formats.  These are generally site specific because
 # the tools used are all but universal.  These targets are:
-#   l2h -- convert tut, ref, ext (but not lib!) from LaTeX to HTML
-#   lib.texi -- convert lib from LaTeX to Texinfo
-#   lib.info -- convert lib from Texinfo to Emacs INFO
-#   libwww -- convert lib from Texinfo to HTML
+#   l2h -- convert tut, lib, ext from LaTeX to HTML
 # See the README file for more info on these targets.
 
 # Customizations -- you *may* have to edit these
@@ -54,19 +51,10 @@
 # Where are the various programs?
 LATEX=		latex
 BIBTEX=		bibtex
-EMACS=		emacs
 DVIPS=		dvips -f
 MAKEINDEX=	makeindex
-PYTHON=		python
-MAKEINFO=	makeinfo
 L2H=		latex2html
 L2HARGS=	-address $$USER@`domainname`
-
-# Destination directory for output of libwww target.
-PARTPARSE=	$(PYTHON) ./partparse.pyc
-TEXI2HTMLFLAGS= -d
-TEXI2HTML=	$(PYTHON) ./texi2html.pyc
-LIBHTMLDIR=	./python-lib
 
 # Install destination -- not used now but might be useful some time...
 DESTDIR=	/usr/local
@@ -162,28 +150,6 @@ qua.ps:	qua.dvi
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-.SUFFIXES: .py .pyc
-
-.py.pyc:
-	$(PYTHON) -c "import $*"
-
-.PRECIOUS:	lib.texi
-
-lib.texi: lib*.tex texipre.dat texipost.dat partparse.pyc fix.el
-	$(PARTPARSE) -o @lib.texi `./whichlibs`
-	$(EMACS) -batch -l fix.el -f save-buffer -kill
-	mv @lib.texi lib.texi
-
-python-lib.info: lib.texi
-	-$(MAKEINFO) --footnote-style end --fill-column 72 \
-		     --paragraph-indent 0 lib.texi
-
-lib.info: python-lib.info
-
-libwww: lib.texi texi2html.pyc
-	if test ! -d $(LIBHTMLDIR); then mkdir $(LIBHTMLDIR); else true; fi
-	$(TEXI2HTML) $(TEXI2HTMLFLAGS) lib.texi $(LIBHTMLDIR)
-
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
 # <URL:http://cbl.leeds.ac.uk/nikos/tex2html/doc/latex2html/latex2html.html>.
@@ -207,10 +173,16 @@ l2hext: ext.dvi myformat.perl
 	@rm -rf python-ext
 	mv ext python-ext
 
+# The sed hack rips out a superfluous comma which I haven't found the source
+# of; the prominent location makes it worth the extra step.  This affects the
+# title page!
 l2hlib: lib.dvi myformat.perl
 	./fix_libaux.sed <lib.aux >@lib.aux
 	mv @lib.aux lib.aux
 	$(L2H) $(L2HARGS) lib.tex
+	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
+		<lib/lib.html >lib/xxx
+	mv lib/xxx lib/lib.html
 	@rm -rf python-lib
 	mv lib python-lib
 
