@@ -70,6 +70,11 @@ class _ScrollWidget:
 			destwidth = dr - dl
 			bar = self._parent._barx
 			bar.setmax(destwidth - viewwidth)
+			
+			# MacOS 8.1 doesn't automatically disable
+			# scrollbars whose max <= min
+			bar.enable(destwidth > viewwidth)
+			
 			bar.setviewsize(viewwidth)
 			bar.set(vl - dl)
 		if self._parent._bary:
@@ -77,6 +82,11 @@ class _ScrollWidget:
 			destheight = db - dt
 			bar = self._parent._bary
 			bar.setmax(destheight - viewheight)
+			
+			# MacOS 8.1 doesn't automatically disable
+			# scrollbars whose max <= min
+			bar.enable(destheight > viewheight)
+			
 			bar.setviewsize(viewheight)
 			bar.set(vt - dt)
 
@@ -218,6 +228,9 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	
 	def adjust(self, oldbounds):
 		self.SetPort()
+		# Note: if App.DrawThemeEditTextFrame is ever used, it will be necessary
+		# to unconditionally outset the invalidated rectangles, since Appearance
+		# frames are drawn outside the bounds.
 		if self._selected and self._parentwindow._hasselframes:
 			self.GetWindow().InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
 			self.GetWindow().InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
@@ -351,12 +364,19 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	
 	def activate(self, onoff):
 		self._activated = onoff
-		if self._selected and self._visible:
-			if onoff:
-				self.ted.WEActivate()
-			else:
-				self.ted.WEDeactivate()
+		if self._visible:
+			self.SetPort()
+			
+			# DISABLED!  There are too many places where it is assumed that
+			# the frame of an EditText item is 1 pixel, inside the bounds.
+			#state = [kThemeStateActive, kThemeStateInactive][not onoff]
+			#App.DrawThemeEditTextFrame(Qd.InsetRect(self._bounds, 1, 1), state)
+			
 			if self._selected:
+				if onoff:
+					self.ted.WEActivate()
+				else:
+					self.ted.WEDeactivate()
 				self.drawselframe(onoff)
 	
 	def select(self, onoff, isclick = 0):
@@ -376,10 +396,15 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			if not visRgn:
 				visRgn = self._parentwindow.wid.GetWindowPort().visRgn
 			self.ted.WEUpdate(visRgn)
+
+			# DISABLED!  There are too many places where it is assumed that
+			# the frame of an EditText item is 1 pixel, inside the bounds.
+			#state = [kThemeStateActive, kThemeStateInactive][not self._activated]
+			#App.DrawThemeEditTextFrame(Qd.InsetRect(self._bounds, 1, 1), state)
+			Qd.FrameRect(self._bounds)
+
 			if self._selected and self._activated:
 				self.drawselframe(1)
-			Qd.FrameRect(self._bounds)
-			#App.DrawThemeEditTextFrame(self._bounds, kThemeStateActive)
 	
 	# scrolling
 	def scrollpageup(self):
@@ -603,6 +628,18 @@ class TextEditor(EditText):
 			self.ted.WEUpdate(visRgn)
 			if self._selected and self._activated:
 				self.drawselframe(1)
+
+	def activate(self, onoff):
+		self._activated = onoff
+		if self._visible:
+			self.SetPort()
+			# doesn't draw frame, as EditText.activate does
+			if self._selected:
+				if onoff:
+					self.ted.WEActivate()
+				else:
+					self.ted.WEDeactivate()
+				self.drawselframe(onoff)
 
 
 import re
