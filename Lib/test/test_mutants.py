@@ -41,18 +41,33 @@ mutate = 0
 # If global mutate is true, consider mutating a dict.  May or may not
 # mutate a dict even if mutate is true.  If it does decide to mutate a
 # dict, it picks one of {dict1, dict2} at random, and deletes a random
-# entry from it.
+# entry from it; or, more rarely, adds a random element.
 
 def maybe_mutate():
+    global mutate
     if not mutate:
         return
     if random.random() < 0.5:
         return
+
     if random.random() < 0.5:
         target, keys = dict1, dict1keys
     else:
         target, keys = dict2, dict2keys
-    if keys:
+
+    if random.random() < 0.2:
+        # Insert a new key.
+        mutate = 0   # disable mutation until key inserted
+        while 1:
+            newkey = Horrid(random.randrange(100))
+            if newkey not in target:
+                break
+        target[newkey] = Horrid(random.randrange(100))
+        keys.append(newkey)
+        mutate = 1
+
+    elif keys:
+        # Delete a key at random.
         i = random.randrange(len(keys))
         key = keys[i]
         del target[key]
