@@ -345,7 +345,18 @@ mac_mkdir(self, args)
 	object *self;
 	object *args;
 {
-	return mac_strint(args, mkdir);
+	int res;
+	char *path;
+	int mode = 0777; /* Unused */
+	if (!newgetargs(args, "s|i", &path, &mode))
+		return NULL;
+	BGN_SAVE
+	res = mkdir(path, mode);
+	END_SAVE
+	if (res < 0)
+		return mac_error();
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -545,7 +556,7 @@ static struct methodlist mac_methods[] = {
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir, 0},
 	{"lseek",	mac_lseek},
-	{"mkdir",	mac_mkdir},
+	{"mkdir",	mac_mkdir, 1},
 	{"open",	mac_open},
 	{"read",	mac_read},
 	{"rename",	mac_rename},
@@ -553,6 +564,7 @@ static struct methodlist mac_methods[] = {
 	{"stat",	mac_stat},
 	{"xstat",	mac_xstat},
 	{"sync",	mac_sync},
+	{"remove",	mac_unlink},
 	{"unlink",	mac_unlink},
 	{"write",	mac_write},
 #ifdef MALLOC_DEBUG
