@@ -1,3 +1,13 @@
+Thu Sep 24 12:33:56 1992  Guido van Rossum  (guido@voorn.cwi.nl)
+
+* Improved computation of mcast group bytes (use regsub.gsub())
+
+Tue Sep  8 23:20:51 1992  Guido van Rossum  (guido@voorn.cwi.nl)
+
+* Added mcast.py and IN.py.
+
+* Use setsockopt() instead of allowbroadcast() in broadcast.py.
+
 Mon Aug 10 12:45:43 1992  Guido van Rossum  (guido@voorn.cwi.nl)
 
 * README: added broadcast.py, ftp.py, radio.py
