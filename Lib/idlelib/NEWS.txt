@@ -1,7 +1,7 @@
 What's New in IDLE 1.0.2?
 ===================================
 
-*Release date: XX-Dec-2003*
+*Release date: 05-Dec-2003*
 
 - After an exception, run.py was not setting the exception vector. Noam
   Raphael suggested correcting this so pdb's postmortem pm() would work. 
