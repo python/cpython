@@ -175,6 +175,7 @@ types_map = {
     '.jpe': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.jpg': 'image/jpeg',
+    '.js': 'application/x-javascript',
     '.latex': 'application/x-latex',
     '.man': 'application/x-troff-man',
     '.me': 'application/x-troff-me',
