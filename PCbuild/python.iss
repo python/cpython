@@ -42,57 +42,61 @@
 ; write a very simple Python program to *produce* this script.
 
 [Setup]
-; Note:  we *want* the version number to show up everywhere.
-; Which of these controls App Path???
-AppName=Python 2.2 alpha 1
-AppVerName=Python 2.2 alpha 1
-AppId=Python 2.2
-AppVersion=2.2a1
-AppCopyright=Copyright © 2001 Python Software Foundation
+AppName=Python and combined Win32 Extensions
+AppVerName=Python 2.2.2 and combined Win32 Extensions 150
+AppId=Python 2.2.2.150
+AppVersion=2.2.2.150
+AppCopyright=Python is Copyright © 2001 Python Software Foundation. Win32 Extensions are Copyright © 1996-2001 Greg Stein and Mark Hammond.
 
 ; Default install dir; value of {app} later (unless user overrides).
 ; {sd} = system root drive, probably "C:".
 DefaultDirName={sd}\Python22
+;DefaultDirName={pf}\Python
 
 ; Start menu folder name; value of {group} later (unless user overrides).
 DefaultGroupName=Python 2.2
 
 ; Point SourceDir to one above PCBuild = src.
-; YAY!  That actually worked:  means this script can run unchanged from anyone's
-; CVS tree, no matter what they called the top-level directories.  Wise
-; required hardcoded absolute paths all over the place.
-SourceDir=..
-OutputDir=PCBuild
-OutputBaseFilename=Python-2.2a1
+; means this script can run unchanged from anyone's CVS tree, no matter
+; what they called the top-level directories.
+SourceDir=.
+OutputDir=..
+OutputBaseFilename=Python-2.2.2-Win32-150-Setup
 
-AppPublisher=PythonLabs at Zope Corporation
+AppPublisher=PythonLabs at Digital Creations
 AppPublisherURL=http://www.python.org
 AppSupportURL=http://www.python.org
 AppUpdatesURL=http://www.python.org
 
-AlwaysCreateUninstallIcon=yes
-ChangesAssociations=yes
+AlwaysCreateUninstallIcon=true
+ChangesAssociations=true
 UninstallLogMode=new
+AllowNoIcons=true
+AdminPrivilegesRequired=true
+UninstallDisplayIcon={app}\pyc.ico
+WizardDebug=false
 
 ; The fewer screens the better; leave these commented.
-;LicenseFile=LICENSE
+
+Compression=bzip
+InfoBeforeFile=LICENSE.txt
 ;InfoBeforeFile=Misc\NEWS
 
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
 [Types]
-Name: normal; Description: "Select desired components"; Flags: iscustom
+Name: normal; Description: Select desired components; Flags: iscustom
 
 [Components]
-Name: main;  Description: "Python interpreter, library and Tk"; Types: normal
-Name: docs;  Description: "Python documentation (HTML)";        Types: normal
-Name: tools; Description: "Python utility scripts (Tools\)";    Types: normal
-Name: test;  Description: "Python test suite (Lib\test\)";      Types: normal
+Name: main; Description: Python and Win32 Extensions; Types: normal
+Name: docs; Description: Python documentation (HTML); Types: normal
+Name: tk; Description: TCL/TK, tkinter, and Idle; Types: normal
+Name: tools; Description: Python utility scripts (Tools\); Types: normal
+Name: test; Description: Python test suite (Lib\test\); Types: normal
 
 [Tasks]
-Name: startmenu; Description: "Create Start menu shortcuts"; Components: main docs tools
-Name: extensions; Description: "Register file extensions (.py, .pyw, .pyc, .pyo)"; Components: main
+Name: extensions; Description: Register file associations (.py, .pyw, .pyc, .pyo); Components: main; Check: IsAdminLoggedOn
 
 [Files]
 ; Caution:  Using forward slashes instead screws up in amazing ways.
@@ -100,142 +104,243 @@ Name: extensions; Description: "Register file extensions (.py, .pyw, .pyc, .pyo)
 ; going to get awfully long.  But don't see a way to continue logical lines across
 ; physical lines.
 
-Source: LICENSE;   DestDir: "{app}"; DestName: LICENSE.txt; CopyMode: alwaysoverwrite
-Source: README;    DestDir: "{app}"; DestName: README.txt;  CopyMode: alwaysoverwrite
-Source: Misc\News; DestDir: "{app}"; DestName: NEWS.txt;    CopyMode: alwaysoverwrite
-Source: PC\*.ico;  DestDir: "{app}";                        CopyMode: alwaysoverwrite; Components: main
+Source: LICENSE.txt; DestDir: {app}; CopyMode: alwaysoverwrite
+Source: README.txt; DestDir: {app}; CopyMode: alwaysoverwrite
+Source: News.txt; DestDir: {app}; CopyMode: alwaysoverwrite
+Source: *.ico; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
+
+Source: python.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
+Source: pythonw.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
+Source: w9xpopen.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
 
 
-Source: PCbuild\python.exe;   DestDir: "{app}"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\pythonw.exe;  DestDir: "{app}"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\w9xpopen.exe; DestDir: "{app}"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\tcl83.dll; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: tk
+Source: DLLs\tk83.dll; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: tk
+Source: tcl\*.*; DestDir: {app}\tcl; CopyMode: alwaysoverwrite; Components: tk; Flags: recursesubdirs
 
-Source: PCbuild\python22.dll; DestDir: "{app}"; CopyMode: alwaysoverwrite; Components: main
+Source: sysdir\python22.dll; DestDir: {sys}; CopyMode: alwaysskipifsameorolder; Components: main; Flags: sharedfile restartreplace
+Source: sysdir\PyWinTypes22.dll; DestDir: {sys}; CopyMode: alwaysskipifsameorolder; Components: main; Flags: restartreplace sharedfile
+Source: sysdir\pythoncom22.dll; DestDir: {sys}; CopyMode: alwaysskipifsameorolder; Components: main; Flags: restartreplace sharedfile
 
-Source: ..\tcl\bin\tcl83.dll; DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: ..\tcl\bin\tk83.dll;  DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: ..\tcl\lib\*.*;       DestDir: "{app}\tcl";  CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: DLLs\_socket.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\_socket.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\_socket.pyd;     DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_socket.lib;     DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\_sre.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\_sre.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\_sre.pyd;        DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_sre.lib;        DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\_symtable.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\_symtable.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\_symtable.pyd;   DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_symtable.lib;   DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\_testcapi.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\_testcapi.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\_testcapi.pyd;   DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_testcapi.lib;   DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\_tkinter.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: tk
+Source: libs\_tkinter.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: tk
 
-Source: PCbuild\_tkinter.pyd;    DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_tkinter.lib;    DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\bsddb.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\bsddb.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\bsddb.pyd;       DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\bsddb.lib;       DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\mmap.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\mmap.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\mmap.pyd;        DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\mmap.lib;        DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\parser.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\parser.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\parser.pyd;      DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\parser.lib;      DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\pyexpat.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\pyexpat.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\pyexpat.pyd;     DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\pyexpat.lib;     DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\select.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\select.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\select.pyd;      DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\select.lib;      DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\unicodedata.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\unicodedata.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\unicodedata.pyd; DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\unicodedata.lib; DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\_winreg.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\_winreg.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\_winreg.pyd;     DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\_winreg.lib;     DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\winsound.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\winsound.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\winsound.pyd;    DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\winsound.lib;    DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\zlib.pyd; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
+Source: libs\zlib.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\zlib.pyd;        DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: PCbuild\zlib.lib;        DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: libs\python22.lib; DestDir: {app}\libs; CopyMode: alwaysoverwrite; Components: main
 
-Source: PCbuild\python22.lib;    DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
+Source: DLLs\expat.dll; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: main
 
-Source: ..\expat\Libs\expat.dll; DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
 
-Source: Lib\*.py; DestDir: "{app}\Lib"; CopyMode: alwaysoverwrite; Components: main
-Source: Lib\lib-tk\*.py; DestDir: "{app}\Lib\lib-tk"; CopyMode: alwaysoverwrite; Components: main
 
-Source: Lib\encodings\*.py; DestDir: "{app}\Lib\encodings"; CopyMode: alwaysoverwrite; Components: main
-Source: Lib\distutils\*.py; DestDir: "{app}\Lib\distutils"; CopyMode: alwaysoverwrite; Components: main
-Source: Lib\xml\*.py; DestDir: "{app}\Lib\xml"; CopyMode: alwaysoverwrite; Flags: recursesubdirs; Components: main
-Source: Lib\lib-old\*.py;  DestDir: "{app}\Lib\lib-old"; CopyMode: alwaysoverwrite; Components: main
-Source: Lib\site-packages\README; DestDir: "{app}\Lib\site-packages"; DestName: README.txt; CopyMode: alwaysoverwrite; Components: main
-Source: Include\*.h; DestDir: "{app}\include"; CopyMode: alwaysoverwrite; Components: main
-Source: PC\pyconfig.h; DestDir: "{app}\include"; CopyMode: alwaysoverwrite; Components: main
+Source: Lib\*.py; DestDir: {app}\Lib; CopyMode: alwaysoverwrite; Components: main
+Source: Lib\compiler\*.*; DestDir: {app}\Lib\compiler; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\distutils\*.*; DestDir: {app}\Lib\distutils; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\email\*.*; DestDir: {app}\Lib\email; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\encodings\*.*; DestDir: {app}\Lib\encodings; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\hotshot\*.*; DestDir: {app}\Lib\hotshot; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\lib-old\*.*; DestDir: {app}\Lib\lib-old; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\xml\*.*; DestDir: {app}\Lib\xml; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\hotshot\*.*; DestDir: {app}\Lib\hotshot; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\test\*.*; DestDir: {app}\Lib\test; CopyMode: alwaysoverwrite; Components: test; Flags: recursesubdirs
 
-Source: Tools\scripts\*.py;  DestDir: "{app}\Tools\Scripts";  CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\scripts\*.pyw; DestDir: "{app}\Tools\Scripts";  CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\scripts\*.doc; DestDir: "{app}\Tools\Scripts";  CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\scripts\README; DestDir: "{app}\Tools\Scripts"; DestName: README.txt;      CopyMode: alwaysoverwrite; Components: tools
+Source: Lib\site-packages\README.txt; DestDir: {app}\Lib\site-packages; CopyMode: alwaysoverwrite; Components: main
 
-Source: Tools\webchecker\*.py;   DestDir: "{app}\Tools\webchecker"; CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\webchecker\README; DestDir: "{app}\Tools\webchecker"; DestName: README.txt;      CopyMode: alwaysoverwrite; Components: tools
+Source: Lib\site-packages\PyWin32.chm; DestDir: {app}\Lib\site-packages; CopyMode: alwaysoverwrite; Components: docs
+Source: Lib\site-packages\win32\*.*; DestDir: {app}\Lib\site-packages\win32; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\site-packages\win32com\*.*; DestDir: {app}\Lib\site-packages\win32com; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
+Source: Lib\site-packages\win32comext\*.*; DestDir: {app}\Lib\site-packages\win32comext; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 
-Source: Tools\versioncheck\*.py;   DestDir: "{app}\Tools\versioncheck"; CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\versioncheck\README; DestDir: "{app}\Tools\versioncheck"; DestName: README.txt;      CopyMode: alwaysoverwrite; Components: tools
+Source: Lib\lib-tk\*.py; DestDir: {app}\Lib\lib-tk; CopyMode: alwaysoverwrite; Components: tk; Flags: recursesubdirs
 
-Source: Tools\idle\*.py;      DestDir: "{app}\Tools\idle";       CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\idle\idle.pyw;  DestDir: "{app}\Tools\idle";       CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\idle\*.txt;     DestDir: "{app}\Tools\idle";       CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\idle\Icons\*.*; DestDir: "{app}\Tools\idle\Icons"; CopyMode: alwaysoverwrite; Components: tools
+Source: include\*.h; DestDir: {app}\include; CopyMode: alwaysoverwrite; Components: main
 
-Source: Tools\compiler\*.py;           DestDir: "{app}\Tools\compiler";                       CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\compiler\README;         DestDir: "{app}\Tools\compiler"; DestName: README.txt; CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\compiler\compiler\*.py;  DestDir: "{app}\Tools\compiler\compiler";              CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\compiler\compiler\*.txt; DestDir: "{app}\Tools\compiler\compiler";              CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\idle\*.*; DestDir: {app}\Tools\idle; CopyMode: alwaysoverwrite; Components: tk; Flags: recursesubdirs
 
-Source: Tools\pynche\*.py;       DestDir: "{app}\Tools\pynche";   CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\pynche\pynche.pyw; DestDir: "{app}\Tools\pynche";   CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\pynche\X\*.txt;    DestDir: "{app}\Tools\pynche\X"; CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\pynche\README;     DestDir: "{app}\Tools\pynche";   DestName: README.txt;      CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\pynche\pynche;     DestDir: "{app}\Tools\pynche";   DestName: pynche.py;       CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\pynche\*.*; DestDir: {app}\Tools\pynche; CopyMode: alwaysoverwrite; Components: tools; Flags: recursesubdirs
+Source: Tools\scripts\*.*; DestDir: {app}\Tools\Scripts; CopyMode: alwaysoverwrite; Components: tools; Flags: recursesubdirs
+Source: Tools\webchecker\*.*; DestDir: {app}\Tools\webchecker; CopyMode: alwaysoverwrite; Components: tools; Flags: recursesubdirs
+Source: Tools\versioncheck\*.*; DestDir: {app}\Tools\versioncheck; CopyMode: alwaysoverwrite; Components: tools; Flags: recursesubdirs
 
-Source: html\*.*; DestDir: "{app}\Doc"; CopyMode: alwaysoverwrite; Flags: recursesubdirs; Components: docs
+Source: Doc\*.*; DestDir: {app}\Doc; CopyMode: alwaysoverwrite; Flags: recursesubdirs; Components: docs
 
-Source: Lib\test\*.py;         DestDir: "{app}\Lib\test";        CopyMode: alwaysoverwrite; Components: test
-Source: Lib\test\*.uue;        DestDir: "{app}\Lib\test";        CopyMode: alwaysoverwrite; Components: test
-Source: Lib\test\*.xml;        DestDir: "{app}\Lib\test";        CopyMode: alwaysoverwrite; Components: test
-Source: Lib\test\*.out;        DestDir: "{app}\Lib\test";        CopyMode: alwaysoverwrite; Components: test
-Source: Lib\test\audiotest.au; DestDir: "{app}\Lib\test";        CopyMode: alwaysoverwrite; Components: test
-Source: Lib\test\output\*.*;   DestDir: "{app}\Lib\test\output"; CopyMode: alwaysoverwrite; Components: test
 
 [Icons]
-Tasks: startmenu; Name: "{group}\IDLE (Python GUI)"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: """{app}\Tools\idle\idle.pyw"""; Components: tools
-Tasks: startmenu; Name: "{group}\Module Docs"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: """{app}\Tools\Scripts\pydoc.pyw"""; Components: tools
-Tasks: startmenu; Name: "{group}\Python (command line)"; Filename: "{app}\python.exe"; WorkingDir: "{app}"; Components: main
-Tasks: startmenu; Name: "{group}\Python Manuals"; Filename: "{app}\Doc\index.html"; WorkingDir: "{app}"; Components: docs
+Name: {group}\Python (command line); Filename: {app}\python.exe; WorkingDir: {app}; Components: main
+Name: {group}\Python Manuals; Filename: {app}\Doc\index.html; WorkingDir: {app}; Components: docs
+Name: {group}\Win32 Extensions Help; Filename: {app}\Lib\site-packages\PyWin32.chm; WorkingDir: {app}\Lib\site-packages; Components: docs
+Name: {group}\Module Docs; Filename: {app}\pythonw.exe; WorkingDir: {app}; Parameters: """{app}\Tools\Scripts\pydoc.pyw"""; Components: tools
+Name: {group}\IDLE (Python GUI); Filename: {app}\pythonw.exe; WorkingDir: {app}; Parameters: """{app}\Tools\idle\idle.pyw"""; Components: tools
 
 [Registry]
 ; Register .py
-Tasks: extensions; Root: HKCR; Subkey: ".py"; ValueType: string; ValueName: ""; ValueData: "Python File"; Flags: uninsdeletevalue
-Tasks: extensions; Root: HKCR; Subkey: ".py"; ValueType: string; ValueName: "Content Type"; ValueData: "text/plain"; Flags: uninsdeletevalue
-Tasks: extensions; Root: HKCR; Subkey: "Python File"; ValueType: string; ValueName: ""; ValueData: "Python File"; Flags: uninsdeletekey
-Tasks: extensions; Root: HKCR; Subkey: "Python File\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Py.ico"
-Tasks: extensions; Root: HKCR; Subkey: "Python File\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python.exe"" ""%1"" %*"
+Tasks: extensions; Root: HKCR; Subkey: .py; ValueType: string; ValueName: ; ValueData: Python File; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: .py; ValueType: string; ValueName: Content Type; ValueData: text/plain; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: Python File; ValueType: string; ValueName: ; ValueData: Python File; Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: Python File\DefaultIcon; ValueType: string; ValueName: ; ValueData: {app}\Py.ico
+Tasks: extensions; Root: HKCR; Subkey: Python File\shell\open\command; ValueType: string; ValueName: ; ValueData: """{app}\python.exe"" ""%1"" %*"
 
 ; Register .pyc
-Tasks: extensions; Root: HKCR; Subkey: ".pyc"; ValueType: string; ValueName: ""; ValueData: "Python CompiledFile"; Flags: uninsdeletevalue
-Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile"; ValueType: string; ValueName: ""; ValueData: "Compiled Python File"; Flags: uninsdeletekey
-Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\pyc.ico"
-Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python.exe"" ""%1"" %*"
+Tasks: extensions; Root: HKCR; Subkey: .pyc; ValueType: string; ValueName: ; ValueData: Python CompiledFile; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: Python CompiledFile; ValueType: string; ValueName: ; ValueData: Compiled Python File; Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: Python CompiledFile\DefaultIcon; ValueType: string; ValueName: ; ValueData: {app}\pyc.ico
+Tasks: extensions; Root: HKCR; Subkey: Python CompiledFile\shell\open\command; ValueType: string; ValueName: ; ValueData: """{app}\python.exe"" ""%1"" %*"
 
 ; Register .pyo
-Tasks: extensions; Root: HKCR; Subkey: ".pyo"; ValueType: string; ValueName: ""; ValueData: "Python CompiledFile"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: .pyo; ValueType: string; ValueName: ; ValueData: Python CompiledFile; Flags: uninsdeletevalue
 
 ; Register .pyw
-Tasks: extensions; Root: HKCR; Subkey: ".pyw"; ValueType: string; ValueName: ""; ValueData: "Python NoConFile"; Flags: uninsdeletevalue
-Tasks: extensions; Root: HKCR; Subkey: ".pyw"; ValueType: string; ValueName: "Content Type"; ValueData: "text/plain"; Flags: uninsdeletevalue
-Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile"; ValueType: string; ValueName: ""; ValueData: "Python File (no console)"; Flags: uninsdeletekey
-Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Py.ico"
-Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\pythonw.exe"" ""%1"" %*"
+Tasks: extensions; Root: HKCR; Subkey: .pyw; ValueType: string; ValueName: ; ValueData: Python NoConFile; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: .pyw; ValueType: string; ValueName: Content Type; ValueData: text/plain; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: Python NoConFile; ValueType: string; ValueName: ; ValueData: Python File (no console); Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: Python NoConFile\DefaultIcon; ValueType: string; ValueName: ; ValueData: {app}\Py.ico
+Tasks: extensions; Root: HKCR; Subkey: Python NoConFile\shell\open\command; ValueType: string; ValueName: ; ValueData: """{app}\pythonw.exe"" ""%1"" %*"
+
+
+; Python Registry Keys
+Root: HKLM; Subkey: SOFTWARE\Python; Flags: uninsdeletekeyifempty; Check: IsAdminLoggedOn
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore; Flags: uninsdeletekeyifempty
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2; Flags: uninsdeletekeyifempty
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\PythonPath; ValueData: "{app}\Lib;{app}\DLLs"; Flags: uninsdeletekeyifempty
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\PythonPath\tk; ValueData: {app}\Lib\lib-tk; Flags: uninsdeletekey; Components: tk
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\PythonPath\win32; ValueData: "{app}\lib\site-packages\win32;{app}\lib\site-packages\win32\lib"; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\PythonPath\win32com; ValueData: C:\Python\lib\site-packages; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Modules; Flags: uninsdeletekeyifempty
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Modules\pythoncom; ValueData: {sys}\pythoncom22.dll; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Modules\pywintypes; ValueData: {sys}\PyWinTypes22.dll; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\InstallPath; ValueData: {app}; Flags: uninsdeletekeyifempty; ValueType: string
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\InstallPath\InstallGroup; ValueData: {group}; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Help; Flags: uninsdeletekeyifempty
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Help\Main Python Documentation; ValueType: string; ValueData: {app}\Doc\index.html; Flags: uninsdeletekey; Components: docs
+Root: HKLM; Subkey: SOFTWARE\Python\PythonCore\2.2\Help\Python Win32 Documentation; ValueType: string; ValueData: {app}\lib\site-packages\PyWin32.chm; Flags: uninsdeletekey; Components: docs
+
+[_ISTool]
+EnableISX=true
+
+
+[Code]
+Program Setup;
+
+Function IsAdminNotLoggedOn(): Boolean;
+begin
+  Result := Not IsAdminLoggedOn();
+end;
+
+begin
+end.
+
+
+
+
+[UninstallDelete]
+Name: {app}\Lib\compiler\*.pyc; Type: files
+Name: {app}\Lib\compiler\*.pyo; Type: files
+Name: {app}\Lib\compiler; Type: dirifempty
+Name: {app}\Lib\distutils\command\*.pyc; Type: files
+Name: {app}\Lib\distutils\command\*.pyo; Type: files
+Name: {app}\Lib\distutils\command; Type: dirifempty
+Name: {app}\Lib\distutils\*.pyc; Type: files
+Name: {app}\Lib\distutils\*.pyo; Type: files
+Name: {app}\Lib\distutils; Type: dirifempty
+Name: {app}\Lib\email\test\*.pyc; Type: files
+Name: {app}\Lib\email\test\*.pyo; Type: files
+Name: {app}\Lib\email\test; Type: dirifempty
+Name: {app}\Lib\email\*.pyc; Type: files
+Name: {app}\Lib\email\*.pyo; Type: files
+Name: {app}\Lib\email; Type: dirifempty
+Name: {app}\Lib\encodings\*.pyc; Type: files
+Name: {app}\Lib\encodings\*.pyo; Type: files
+Name: {app}\Lib\encodings; Type: dirifempty
+Name: {app}\Lib\hotshot\*.pyc; Type: files
+Name: {app}\Lib\hotshot\*.pyo; Type: files
+Name: {app}\Lib\hotshot; Type: dirifempty
+Name: {app}\Lib\lib-old\*.pyc; Type: files
+Name: {app}\Lib\lib-old\*.pyo; Type: files
+Name: {app}\Lib\lib-old; Type: dirifempty
+Name: {app}\Lib\lib-tk\*.pyc; Type: files
+Name: {app}\Lib\lib-tk\*.pyo; Type: files
+Name: {app}\Lib\lib-tk; Type: dirifempty
+Name: {app}\Lib\test\*.pyc; Type: files
+Name: {app}\Lib\test\*.pyo; Type: files
+Name: {app}\Lib\test; Type: dirifempty
+Name: {app}\Lib\xml\dom\*.pyc; Type: files
+Name: {app}\Lib\xml\dom\*.pyo; Type: files
+Name: {app}\Lib\xml\dom; Type: dirifempty
+Name: {app}\Lib\xml\parsers\*.pyc; Type: files
+Name: {app}\Lib\xml\parsers\*.pyo; Type: files
+Name: {app}\Lib\xml\parsers; Type: dirifempty
+Name: {app}\Lib\xml\sax\*.pyc; Type: files
+Name: {app}\Lib\xml\sax\*.pyo; Type: files
+Name: {app}\Lib\xml\sax; Type: dirifempty
+Name: {app}\Lib\xml\*.pyc; Type: files
+Name: {app}\Lib\xml\*.pyo; Type: files
+Name: {app}\Lib\xml; Type: dirifempty
+
+Name: {app}\Lib\site-packages\win32; Type: filesandordirs
+Name: {app}\Lib\site-packages\win32com; Type: filesandordirs
+Name: {app}\Lib\site-packages\win32comext; Type: filesandordirs
+Name: {app}\Lib\site-packages\pythoncom.py*; Type: files
+Name: {app}\Lib\site-packages; Type: dirifempty
+
+Name: {app}\Lib\*.pyc; Type: files
+Name: {app}\Lib; Type: dirifempty
+
+Name: {app}\Tools\pynche\*.pyc; Type: files
+Name: {app}\Tools\pynche\*.pyo; Type: files
+Name: {app}\Tools\pynche; Type: dirifempty
+
+Name: {app}\Tools\idle\*.pyc; Type: files
+Name: {app}\Tools\idle\*.pyo; Type: files
+Name: {app}\Tools\idle; Type: dirifempty
+
+Name: {app}\Tools\scripts\*.pyc; Type: files
+Name: {app}\Tools\scripts\*.pyo; Type: files
+Name: {app}\Tools\scripts; Type: dirifempty
+
+Name: {app}\Tools\versioncheck\*.pyc; Type: files
+Name: {app}\Tools\versioncheck\*.pyo; Type: files
+Name: {app}\Tools\versioncheck; Type: dirifempty
+
+Name: {app}\Tools\webchecker\*.pyc; Type: files
+Name: {app}\Tools\webchecker\*.pyo; Type: files
+Name: {app}\Tools\webchecker; Type: dirifempty
+
+Name: {app}\Tools; Type: dirifempty
 
