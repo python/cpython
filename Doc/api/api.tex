@@ -538,7 +538,7 @@ called which will attempt to produce a \file{core} file.
 
 \begin{cfuncdesc}{void}{Py_Exit}{int status}
 Exit the current process.  This calls \code{Py_Finalize()} and then
-calls the standard \C{} library function \code{exit(0)}.
+calls the standard \C{} library function \code{exit(\var{status})}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
