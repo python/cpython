@@ -92,30 +92,35 @@ sub set_icon_size{
     $iconsizes{$name} = "width=$w height=$h";
 }
 
-foreach $name (split(/ /, 'up next previous contents index modules')) {
+foreach $name (split(/ /, 'up next previous contents index modules blank')) {
     set_icon_size($name, 32, 32);
 }
 # The '_motif' is really annoying, and makes the HTML larger with no value
 # added, so strip it off:
 foreach $name (keys %icons) {
     my $icon = $icons{$name};
+    # Strip off the wasteful '_motif':
     $icon =~ s/_motif//;
+    # Change the greyed-out icons to be blank:
+    $icon =~ s/[a-z]*_gr/blank/;
     $icons{$name} = $icon;
 }
+$icons{'blank'} = 'blank.' . $IMAGE_TYPE;
 
 $CUSTOM_BUTTONS = '';
+$BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
 
 sub make_nav_panel{
-    ('<table width="100%" cellpadding=0 cellspacing=0><tr><td width="20%">'
-     . ($NEXT_TITLE ? "$NEXT " : '')
-     . ($UP_TITLE ? "$UP " : '')
-     . ($PREVIOUS_TITLE ? "$PREVIOUS " : '')
-     . "</td>\n<td align=center width=\"60%\"><b>$t_title</b>"
-     . "</td>\n<td align=right width=\"20%\">"
-     . $CONTENTS
-     . ' ' . $CUSTOM_BUTTONS
-     . ' ' . $INDEX
-     . "</td></tr></table>\n<hr>\n"
+    ("<table width=\"100%\" cellpadding=0 cellspacing=0>\n<tr>"
+     . "\n<td>$NEXT</td>"
+     . "\n<td>$UP</td>"
+     . "\n<td>$PREVIOUS</td>"
+     . "\n<td align=center bgcolor=\"#99CCFF\" width=\"100%\">"
+     . "\n <b>$t_title</b></td>"
+     . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
+     . "\n<td>$CUSTOM_BUTTONS</td>" # module index
+     . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
+     . "\n</tr></table><hr>\n"
      . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
      . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
      . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : ''));
@@ -176,7 +181,7 @@ sub img_tag {
     $alt = join('|', 'up', 'next_group', 'previous_group'
 		, 'next', 'previous', 'change_begin_right', 'change_begin'
 		, 'change_end_right', 'change_end', 'change_delete_right'
-		, 'change_delete', 'contents', 'index', 'modules');
+		, 'change_delete', 'contents', 'index', 'modules', 'blank');
 
     if ($icon =~ /(gif|png)$/) {
 	$used_icons{$icon} = 1;
@@ -380,6 +385,7 @@ sub add_bbl_and_idx_dummy_commands {
 			    . img_tag('modules.'.$IMAGE_TYPE) . "</a>");
     }
     else {
+	$CUSTOM_BUTTONS .= img_tag('blank.' . $IMAGE_TYPE);
 	$global{'max_id'} = $id; # not sure why....
 	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
 	s/[\\]printindex/\\textohtmlindex /o;
@@ -444,7 +450,7 @@ sub protect_useritems {
 }
 
 # This changes the markup used for {verbatim} environments, and is the
-# best way I've found that ensures the <dl> goes one the outside of the
+# best way I've found that ensures the <dl> goes on the outside of the
 # <pre>...</pre>.
 #
 # Note that this *must* be done in the init file, not the python.perl
