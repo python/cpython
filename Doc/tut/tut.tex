@@ -4338,7 +4338,7 @@ which returns an object with a \method{next()} method.  If the class defines
 \method{next()}, then \method{__iter__()} can just return \code{self}:
 
 \begin{verbatim}
->>> class Reverse:
+class Reverse:
     "Iterator for looping over a sequence backwards"
     def __init__(self, data):
         self.data = data
@@ -4352,8 +4352,8 @@ which returns an object with a \method{next()} method.  If the class defines
         return self.data[self.index]
 
 >>> for char in Reverse('spam'):
-	print char
-
+...     print char
+...
 m
 a
 p
@@ -4371,13 +4371,13 @@ which statement was last executed).  An example shows that generators can
 be trivially easy to create:
 
 \begin{verbatim}
->>> def reverse(data):
-        for index in range(len(data)-1, -1, -1):
-            yield data[index]
-		
+def reverse(data):
+    for index in range(len(data)-1, -1, -1):
+        yield data[index]
+	
 >>> for char in reverse('golf'):
-        print char
-
+...     print char
+...
 f
 l
 o
@@ -4894,7 +4894,7 @@ tasks in background while the main program continues to run:
     print 'The main program continues to run'
 \end{verbatim}
 
-The principal challenge of multi-thread applications is coordinating
+The principal challenge of multi-threaded applications is coordinating
 threads that share data or other resources.  To that end, the threading
 module provides a number of synchronization primitives including locks,
 events, condition variables, and semaphores.
@@ -4935,7 +4935,7 @@ This produces the following output:
 By default, informational and debugging messages are suppressed and the
 output is sent to standard error.  Other output options include routing
 messages through email, datagrams, sockets, or to an HTTP Server.  New
-filters select different routing based on message priority:  DEBUG,
+filters can select different routing based on message priority:  DEBUG,
 INFO, WARNING, ERROR, and CRITICAL.
 
 The logging system can be configured directly from Python or can be
@@ -4967,12 +4967,12 @@ applications include caching objects that are expensive to create:
     ...     def __repr__(self):
     ...             return str(self.value)
     ...
-    >>> a = A(10)		    # create a reference
+    >>> a = A(10)                   # create a reference
     >>> d = weakref.WeakValueDictionary()
     >>> d['primary'] = a            # does not create a reference
-    >>> d['primary']		    # fetch the object if it is still alive
+    >>> d['primary']                # fetch the object if it is still alive
     10
-    >>> del a			    # remove the one reference
+    >>> del a                       # remove the one reference
     >>> gc.collect()                # run garbage collection right away
     0
     >>> d['primary']                # entry was automatically removed
@@ -5054,6 +5054,62 @@ want to run a full list sort:
     >>> [heappop(data) for i in range(3)]  # fetch the three smallest entries
     [-5, 0, 1]
 \end{verbatim}
+
+
+\section{Tools for Working with Decimal Floating Point\label{decimal-fp}}
+
+The \module{decimal} module, offers a \class{Decimal} data type for
+decimal floating point arithmetic.  Compared to the built-in \class{float}
+type implemented with binary floating point, the new class is especially
+useful for financial applications and other uses which require exact
+decimal representation, control over precision, control over rounding
+to meet legal or regulatory requirements, tracking of significant
+decimal places, or for applications where the user expects the results
+to match hand calculations done as taught in school.
+
+For example, calculating a 5% tax on a 70 cent phone charge gives
+different results in decimal floating point and binary floating point
+with the difference being significant when rounding to the nearest
+cent:
+
+\begin{verbatim}
+>>> from decimal import *       
+>>> Decimal('0.70') * Decimal('1.05')
+Decimal("0.7350")
+>>> .70 * 1.05
+0.73499999999999999       
+\end{verbatim}
+
+Note that the \class{Decimal} result keeps a trailing zero, automatically
+inferring four place significance from two digit mulitiplicands.  Decimal
+reproduces mathematics as done by hand and avoids issues that can arise
+when binary floating point cannot exactly represent decimal quantities.
+
+Exact representation enables the \class{Decimal} class to perform
+modulo calculations and equality tests that are unsuitable for binary
+floating point:
+
+\begin{verbatim}
+>>> Decimal('1.00') % Decimal('.10')
+Decimal("0.00")
+>>> 1.00 % 0.10
+0.09999999999999995
+       
+>>> sum([Decimal('0.1')]*10) == Decimal('1.0')
+True
+>>> sum([0.1]*10) == 1.0
+False      
+\end{verbatim}
+
+The \module{decimal} module also allows arbitrarily large precisions to be
+set for calculation:
+
+\begin{verbatim}
+>>> getcontext().prec = 36
+>>> Decimal(1) / Decimal(7)
+Decimal("0.142857142857142857142857142857142857")
+\end{verbatim}
+
 
 
 \chapter{What Now? \label{whatNow}}
