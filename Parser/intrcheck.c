@@ -64,7 +64,7 @@ PyOS_InterruptOccurred()
 
 #endif /* QUICKWIN */
 
-#ifdef _M_IX86
+#if defined(_M_IX86) && !defined(__QNX__)
 #include <io.h>
 #endif
 
@@ -160,7 +160,7 @@ extern int PyErr_CheckSignals();
 
 /* ARGSUSED */
 static RETSIGTYPE
-#ifdef _M_IX86
+#if defined(_M_IX86) && !defined(__QNX__)
 intcatcher(int sig)	/* So the C compiler shuts up */
 #else /* _M_IX86 */
 intcatcher(sig)

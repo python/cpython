@@ -64,7 +64,7 @@ extern int ftime();
 #endif /* MS_WINDOWS */
 #endif /* HAVE_FTIME */
 
-#ifdef __WATCOMC__
+#if defined(__WATCOMC__) && !defined(__QNX__)
 #include <i86.h>
 #else
 #ifdef MS_WINDOWS
@@ -77,7 +77,7 @@ extern int ftime();
 #define altzone _altzone
 #endif /* MS_WIN16 */
 #endif /* MS_WINDOWS */
-#endif /* !__WATCOMC__ */
+#endif /* !__WATCOMC__ || __QNX__ */
 
 #ifdef MS_WIN32
 /* Win32 has better clock replacement */
@@ -558,12 +558,12 @@ floatsleep(double secs)
 			return -1;
 	}
 #else /* !macintosh */
-#ifdef __WATCOMC__
+#if defined(__WATCOMC__) && !defined(__QNX__)
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
 	Py_END_ALLOW_THREADS
-#else /* !__WATCOMC__ */
+#else /* !__WATCOMC__ || __QNX__ */
 #ifdef MSDOS
 	struct timeb t1, t2;
 	double frac;
@@ -614,7 +614,7 @@ floatsleep(double secs)
 #endif /* !PYOS_OS2 */
 #endif /* !MS_WIN32 */
 #endif /* !MSDOS */
-#endif /* !__WATCOMC__ */
+#endif /* !__WATCOMC__ || __QNX__ */
 #endif /* !macintosh */
 #endif /* !HAVE_SELECT */
 	return 0;

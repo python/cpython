@@ -44,11 +44,14 @@ PERFORMANCE OF THIS SOFTWARE.
 #define DELIM '\n'
 #endif
 
+/* Mod by chrish: QNX has WATCOM, but isn't DOS */
+#if !defined(__QNX__)
 #if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__) || defined(__DJGPP__) || defined(__TOS_OS2__)
 #define SEP '\\'
 #define ALTSEP '/'
 #define MAXPATHLEN 256
 #define DELIM ';'
+#endif
 #endif
 
 /* Filename separator */
