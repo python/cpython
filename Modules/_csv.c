@@ -642,13 +642,6 @@ static struct PyMemberDef Reader_memberlist[] = {
 };
 
 static PyObject *
-Reader_getiter(ReaderObj *self)
-{
-	Py_INCREF(self);
-	return (PyObject *)self;
-}
-
-static PyObject *
 Reader_iternext(ReaderObj *self)
 {
         PyObject *lineobj;
@@ -814,7 +807,7 @@ static PyTypeObject Reader_Type = {
         (inquiry)Reader_clear,                  /*tp_clear*/
         0,                                      /*tp_richcompare*/
         0,                                      /*tp_weaklistoffset*/
-        (getiterfunc)Reader_getiter,            /*tp_iter*/
+        PyObject_SelfIter,		        /*tp_iter*/
         (getiterfunc)Reader_iternext,           /*tp_iternext*/
         Reader_methods,                         /*tp_methods*/
         Reader_memberlist,                      /*tp_members*/
