@@ -570,7 +570,6 @@ mac_stat(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *v;
 	struct stat st;
 	char *path;
 	int res;
