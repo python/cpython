@@ -55,20 +55,18 @@ typedef unsigned int SHA_INT32;	/* 32-bit integer */
 /* The structure for storing SHS info */
 
 typedef struct {
-	PyObject_HEAD
-	SHA_INT32 digest[5];		/* Message digest */
-	SHA_INT32 count_lo, count_hi;	/* 64-bit bit count */
-	SHA_BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
-	int Endianness;
-	int local;			/* unprocessed amount in data */
+    PyObject_HEAD
+    SHA_INT32 digest[5];		/* Message digest */
+    SHA_INT32 count_lo, count_hi;	/* 64-bit bit count */
+    SHA_BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
+    int Endianness;
+    int local;				/* unprocessed amount in data */
 } SHAobject;
 
 /* When run on a little-endian CPU we need to perform byte reversal on an
    array of longwords. */
 
-static void longReverse(buffer, byteCount, Endianness)
-    SHA_INT32 *buffer; 
-    int byteCount, Endianness;
+static void longReverse(SHA_INT32 *buffer, int byteCount, int Endianness)
 {
     SHA_INT32 value;
 
@@ -76,8 +74,7 @@ static void longReverse(buffer, byteCount, Endianness)
 	return;
 
     byteCount /= sizeof(*buffer);
-    while( byteCount-- )
-    {
+    while (byteCount--) {
         value = *buffer;
         value = ( ( value & 0xFF00FF00L ) >> 8  ) | \
                 ( ( value & 0x00FF00FFL ) << 8 );
@@ -85,15 +82,14 @@ static void longReverse(buffer, byteCount, Endianness)
     }
 }
 
-static void SHAcopy(src, dest)
-     SHAobject *src, *dest;
+static void SHAcopy(SHAobject *src, SHAobject *dest)
 {
-	dest->Endianness = src->Endianness;
-	dest->local = src->local;
-	dest->count_lo = src->count_lo;
-	dest->count_hi = src->count_hi;
-	memcpy(dest->digest, src->digest, sizeof(src->digest));
-	memcpy(dest->data, src->data, sizeof(src->data));
+    dest->Endianness = src->Endianness;
+    dest->local = src->local;
+    dest->count_lo = src->count_lo;
+    dest->count_hi = src->count_hi;
+    memcpy(dest->digest, src->digest, sizeof(src->digest));
+    memcpy(dest->data, src->data, sizeof(src->data));
 }
 
 
@@ -173,8 +169,7 @@ static void SHAcopy(src, dest)
 /* do SHA transformation */
 
 static void
-sha_transform(sha_info)
-	SHAobject *sha_info;
+sha_transform(SHAobject *sha_info)
 {
     int i;
     SHA_INT32 T, A, B, C, D, E, W[80], *WP;
@@ -235,8 +230,7 @@ sha_transform(sha_info)
 /* initialize the SHA digest */
 
 static void
-sha_init(sha_info)
-    SHAobject *sha_info;
+sha_init(SHAobject *sha_info)
 {
     TestEndianness(sha_info->Endianness)
 
@@ -253,41 +247,38 @@ sha_init(sha_info)
 /* update the SHA digest */
 
 static void
-sha_update(sha_info, buffer, count)
-    SHAobject *sha_info;
-    SHA_BYTE *buffer;
-    int count;
+sha_update(SHAobject *sha_info, SHA_BYTE *buffer, int count)
 {
     int i;
     SHA_INT32 clo;
 
     clo = sha_info->count_lo + ((SHA_INT32) count << 3);
     if (clo < sha_info->count_lo) {
-		++sha_info->count_hi;
+        ++sha_info->count_hi;
     }
     sha_info->count_lo = clo;
     sha_info->count_hi += (SHA_INT32) count >> 29;
     if (sha_info->local) {
-		i = SHA_BLOCKSIZE - sha_info->local;
-		if (i > count) {
-			i = count;
-		}
-		memcpy(((SHA_BYTE *) sha_info->data) + sha_info->local,
-		       buffer, i);
-		count -= i;
-		buffer += i;
-		sha_info->local += i;
-		if (sha_info->local == SHA_BLOCKSIZE) {
-			sha_transform(sha_info);
-		} else {
-			return;
-		}
+        i = SHA_BLOCKSIZE - sha_info->local;
+        if (i > count) {
+            i = count;
+        }
+        memcpy(((SHA_BYTE *) sha_info->data) + sha_info->local, buffer, i);
+        count -= i;
+        buffer += i;
+        sha_info->local += i;
+        if (sha_info->local == SHA_BLOCKSIZE) {
+            sha_transform(sha_info);
+        }
+        else {
+            return;
+        }
     }
     while (count >= SHA_BLOCKSIZE) {
-		memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
-		buffer += SHA_BLOCKSIZE;
-		count -= SHA_BLOCKSIZE;
-		sha_transform(sha_info);
+        memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
+        buffer += SHA_BLOCKSIZE;
+        count -= SHA_BLOCKSIZE;
+        sha_transform(sha_info);
     }
     memcpy(sha_info->data, buffer, count);
     sha_info->local = count;
@@ -296,9 +287,7 @@ sha_update(sha_info, buffer, count)
 /* finish computing the SHA digest */
 
 static void
-sha_final(digest, sha_info)
-    unsigned char digest[20];
-    SHAobject *sha_info;
+sha_final(unsigned char digest[20], SHAobject *sha_info)
 {
     int count;
     SHA_INT32 lo_bit_count, hi_bit_count;
@@ -307,15 +296,13 @@ sha_final(digest, sha_info)
     hi_bit_count = sha_info->count_hi;
     count = (int) ((lo_bit_count >> 3) & 0x3f);
     ((SHA_BYTE *) sha_info->data)[count++] = 0x80;
-    if (count > SHA_BLOCKSIZE - 8)
-    {
+    if (count > SHA_BLOCKSIZE - 8) {
 	memset(((SHA_BYTE *) sha_info->data) + count, 0,
 	       SHA_BLOCKSIZE - count);
 	sha_transform(sha_info);
 	memset((SHA_BYTE *) sha_info->data, 0, SHA_BLOCKSIZE - 8);
     }
-    else
-    {
+    else {
 	memset(((SHA_BYTE *) sha_info->data) + count, 0,
 	       SHA_BLOCKSIZE - 8 - count);
     }
@@ -365,16 +352,15 @@ staticforward PyTypeObject SHAtype;
 static SHAobject *
 newSHAobject()
 {
-	return (SHAobject *)PyObject_New(SHAobject, &SHAtype);
+    return (SHAobject *)PyObject_New(SHAobject, &SHAtype);
 }
 
 /* Internal methods for a hashing object */
 
 static void
-SHA_dealloc(ptr)
-	PyObject *ptr;
+SHA_dealloc(PyObject *ptr)
 {
-	PyObject_Del(ptr);
+    PyObject_Del(ptr);
 }
 
 
@@ -384,131 +370,118 @@ static char SHA_copy__doc__[] =
 "Return a copy of the hashing object.";
 
 static PyObject *
-SHA_copy(self, args)
-	SHAobject *self;
-	PyObject *args;
+SHA_copy(SHAobject *self, PyObject *args)
 {
-	SHAobject *newobj;
+    SHAobject *newobj;
 
-	if (!PyArg_NoArgs(args)) {
-		return NULL;
-	}
+    if (!PyArg_ParseTuple(args, ":copy")) {
+        return NULL;
+    }
+    if ( (newobj = newSHAobject())==NULL)
+        return NULL;
 
-	if ( (newobj = newSHAobject())==NULL)
-		return NULL;
-	
-	SHAcopy(self, newobj);
-	return (PyObject *)newobj;
+    SHAcopy(self, newobj);
+    return (PyObject *)newobj;
 }
 
 static char SHA_digest__doc__[] = 
 "Return the digest value as a string of binary data.";
 
 static PyObject *
-SHA_digest(self, args)
-	SHAobject *self;
-	PyObject *args;
+SHA_digest(SHAobject *self, PyObject *args)
 {
-	unsigned char digest[SHA_DIGESTSIZE];
-	SHAobject temp;
+    unsigned char digest[SHA_DIGESTSIZE];
+    SHAobject temp;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":digest"))
+        return NULL;
 
-	SHAcopy(self, &temp);
-	sha_final(digest, &temp);
-	return PyString_FromStringAndSize((const char *)digest, sizeof(digest));
+    SHAcopy(self, &temp);
+    sha_final(digest, &temp);
+    return PyString_FromStringAndSize((const char *)digest, sizeof(digest));
 }
 
 static char SHA_hexdigest__doc__[] = 
 "Return the digest value as a string of hexadecimal digits.";
 
 static PyObject *
-SHA_hexdigest(self, args)
-	SHAobject *self;
-	PyObject *args;
+SHA_hexdigest(SHAobject *self, PyObject *args)
 {
-	unsigned char digest[SHA_DIGESTSIZE];
-	SHAobject temp;
-	PyObject *retval;
-	char *hex_digest;
-	int i, j;
+    unsigned char digest[SHA_DIGESTSIZE];
+    SHAobject temp;
+    PyObject *retval;
+    char *hex_digest;
+    int i, j;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
+    if (!PyArg_ParseTuple(args, ":hexdigest"))
+        return NULL;
 
-	/* Get the raw (binary) digest value */
-	SHAcopy(self, &temp);
-	sha_final(digest, &temp);
+    /* Get the raw (binary) digest value */
+    SHAcopy(self, &temp);
+    sha_final(digest, &temp);
 
-	/* Create a new string */
-	retval = PyString_FromStringAndSize(NULL, sizeof(digest) * 2);
-	hex_digest = PyString_AsString(retval);
+    /* Create a new string */
+    retval = PyString_FromStringAndSize(NULL, sizeof(digest) * 2);
+    hex_digest = PyString_AsString(retval);
 
-	/* Make hex version of the digest */
-	for(i=j=0; i<sizeof(digest); i++)	
-	{
-		char c;
-		c = digest[i] / 16; c = (c>9) ? c+'a'-10 : c + '0';
-		hex_digest[j++] = c;
-		c = digest[i] % 16; c = (c>9) ? c+'a'-10 : c + '0';
-		hex_digest[j++] = c;
-	}
-
-	return retval;
+    /* Make hex version of the digest */
+    for(i=j=0; i<sizeof(digest); i++) {
+        char c;
+        c = digest[i] / 16; c = (c>9) ? c+'a'-10 : c + '0';
+        hex_digest[j++] = c;
+        c = digest[i] % 16; c = (c>9) ? c+'a'-10 : c + '0';
+        hex_digest[j++] = c;
+    }
+    return retval;
 }
 
 static char SHA_update__doc__[] = 
 "Update this hashing object's state with the provided string.";
 
 static PyObject *
-SHA_update(self, args)
-	SHAobject *self;
-	PyObject *args;
+SHA_update(SHAobject *self, PyObject *args)
 {
-	unsigned char *cp;
-	int len;
+    unsigned char *cp;
+    int len;
 
-	if (!PyArg_Parse(args, "s#", &cp, &len))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
+        return NULL;
 
-	sha_update(self, cp, len);
+    sha_update(self, cp, len);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyMethodDef SHA_methods[] = {
-	{"copy",	(PyCFunction)SHA_copy, 0, SHA_copy__doc__},
-	{"digest",	(PyCFunction)SHA_digest, 0, SHA_digest__doc__},
-	{"hexdigest",	(PyCFunction)SHA_hexdigest, 0, SHA_hexdigest__doc__},
-	{"update",	(PyCFunction)SHA_update, 0, SHA_update__doc__},
-	{NULL,		NULL}		/* sentinel */
+    {"copy",	  (PyCFunction)SHA_copy,      METH_VARARGS, SHA_copy__doc__},
+    {"digest",	  (PyCFunction)SHA_digest,    METH_VARARGS, SHA_digest__doc__},
+    {"hexdigest", (PyCFunction)SHA_hexdigest, METH_VARARGS, SHA_hexdigest__doc__},
+    {"update",	  (PyCFunction)SHA_update,    METH_VARARGS, SHA_update__doc__},
+    {NULL,	  NULL}		/* sentinel */
 };
 
 static PyObject *
-SHA_getattr(self, name)
-	PyObject *self;
-	char *name;
+SHA_getattr(PyObject *self, char *name)
 {
-	if (strcmp(name, "blocksize")==0)
-		return PyInt_FromLong(1);
-	if (strcmp(name, "digestsize")==0)
-		return PyInt_FromLong(20);
-	
-	return Py_FindMethod(SHA_methods, self, name);
+    if (strcmp(name, "blocksize")==0)
+        return PyInt_FromLong(1);
+    if (strcmp(name, "digestsize")==0)
+        return PyInt_FromLong(20);
+
+    return Py_FindMethod(SHA_methods, self, name);
 }
 
 static PyTypeObject SHAtype = {
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
-	"SHA",			/*tp_name*/
-	sizeof(SHAobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
-	/* methods */
-	SHA_dealloc,		/*tp_dealloc*/
-	0,			/*tp_print*/
-	SHA_getattr,		/*tp_getattr*/
+    PyObject_HEAD_INIT(NULL)
+    0,			/*ob_size*/
+    "SHA",		/*tp_name*/
+    sizeof(SHAobject),	/*tp_size*/
+    0,			/*tp_itemsize*/
+    /* methods */
+    SHA_dealloc,	/*tp_dealloc*/
+    0,			/*tp_print*/
+    SHA_getattr,	/*tp_getattr*/
 };
 
 
@@ -520,44 +493,41 @@ static char SHA_new__doc__[] =
  " automatically hashed."; 
 
 static PyObject *
-SHA_new(self, args, kwdict)
-	PyObject *self;
-	PyObject *args;
-	PyObject *kwdict;
+SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
-	static char *kwlist[] = {"string", NULL};
-	SHAobject *new;
-	unsigned char *cp = NULL;
-	int len;
+    static char *kwlist[] = {"string", NULL};
+    SHAobject *new;
+    unsigned char *cp = NULL;
+    int len;
 	
-	if ((new = newSHAobject()) == NULL)
-		return NULL;
+    if ((new = newSHAobject()) == NULL)
+        return NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
-					 &cp, &len)) {
-	        Py_DECREF(new);
-		return NULL;
-	}
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
+                                     &cp, &len)) {
+        Py_DECREF(new);
+        return NULL;
+    }
 
-        sha_init(new);
+    sha_init(new);
 
-	if (PyErr_Occurred()) {
-		Py_DECREF(new);
-		return NULL;
-	}
-	if (cp)
-		sha_update(new, cp, len);
+    if (PyErr_Occurred()) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    if (cp)
+        sha_update(new, cp, len);
 
-	return (PyObject *)new;
+    return (PyObject *)new;
 }
 
 
 /* List of functions exported by this module */
 
 static struct PyMethodDef SHA_functions[] = {
-	{"new", (PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
-	{"sha",	(PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
-	{NULL,	NULL}		 /* Sentinel */
+    {"new", (PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
+    {"sha", (PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
+    {NULL,	NULL}		 /* Sentinel */
 };
 
 
@@ -570,20 +540,19 @@ static struct PyMethodDef SHA_functions[] = {
 void
 initsha()
 {
-	PyObject *d, *m;
+    PyObject *d, *m;
 
-	SHAtype.ob_type = &PyType_Type;
-	m = Py_InitModule("sha", SHA_functions);
+    SHAtype.ob_type = &PyType_Type;
+    m = Py_InitModule("sha", SHA_functions);
 
-	/* Add some symbolic constants to the module */
-	d = PyModule_GetDict(m);
-	insint("blocksize", 1);  /* For future use, in case some hash
-				    functions require an integral number of
-				    blocks */ 
-	insint("digestsize", 20);
+    /* Add some symbolic constants to the module */
+    d = PyModule_GetDict(m);
+    insint("blocksize", 1);  /* For future use, in case some hash
+                                functions require an integral number of
+                                blocks */ 
+    insint("digestsize", 20);
 
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module SHA");
+    /* Check for errors */
+    if (PyErr_Occurred())
+        Py_FatalError("can't initialize module SHA");
 }
-
