@@ -645,13 +645,40 @@ file_readinto(PyFileObject *f, PyObject *args)
 static PyObject *
 get_line(PyFileObject *f, int n)
 {
-	register FILE *fp;
+	register FILE *fp = f->f_fp;
 	register int c;
-	register char *buf, *end;
+	char *buf, *end;
 	size_t n1, n2;
 	PyObject *v;
 
-	fp = f->f_fp;
+#ifdef HAVE_GETLINE
+	/* Use GNU libc extension getline() for arbitrary-sized lines */
+	if (n == 0) {
+		size_t size = 0;
+		buf = NULL;
+		Py_BEGIN_ALLOW_THREADS
+		n1 = getline(&buf, &size, fp);
+		Py_END_ALLOW_THREADS
+		if (n1 == -1) {
+			clearerr(fp);
+			if (PyErr_CheckSignals()) {
+				return NULL;
+			}
+			if (n < 0 && feof(fp)) {
+				PyErr_SetString(PyExc_EOFError,
+						"EOF when reading a line");
+				return NULL;
+			}
+			return PyString_FromStringAndSize(NULL, 0);
+		}
+		/* No error */
+		
+		v = PyString_FromStringAndSize(buf, n1);
+		free(buf);
+		return v;
+	}
+#endif
+
 	n2 = n > 0 ? n : 100;
 	v = PyString_FromStringAndSize((char *)NULL, n2);
 	if (v == NULL)
