@@ -200,3 +200,21 @@ else:
 # http://mail.python.org/pipermail/xml-sig/2001-April/005202.html
 #
 expat.ParserCreate(namespace_separator='') # too short
+
+# Test the interning machinery.
+p = expat.ParserCreate()
+L = []
+def collector(name, *args):
+    L.append(name)
+p.StartElementHandler = collector
+p.EndElementHandler = collector
+p.Parse("<e> <e/> <e></e> </e>", 1)
+tag = L[0]
+if len(L) != 6:
+    print "L should only contain 6 entries; found", len(L)
+for entry in L:
+    if tag is not entry:
+        print "expected L to contain many references to the same string",
+        print "(it didn't)"
+        print "L =", `L`
+        break
