@@ -502,11 +502,11 @@ class ComponentItem(SelectableItem):
 	# Derived classes *must* set the *class attribute* 'want' to some constant
 	# Also, dictionaries _propdict and _elemdict must be set to map property
 	# and element names to the correct classes
-	
+
+	_propdict = {}
+	_elemdict = {}
 	def __init__(self, which, fr = None):
 		SelectableItem.__init__(self, self.want, which, fr)
-		self._propdict = {}
-		self._elemdict = {}
 	
 	def __repr__(self):
 		if not self.fr:
