@@ -343,7 +343,7 @@ Handle buffer;
 if (!PyArg_ParseTuple(_args, "hO&O&",
                       &inPart,
                       PyMac_GetOSType, &inTagName,
-                      OptResObj_Convert, buffer))
+                      OptResObj_Convert, &buffer))
 	return NULL;
 
 _err = SetControlData(_self->ob_itself,
