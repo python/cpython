@@ -159,12 +159,14 @@ def my_import(name):
 
 \begin{funcdesc}{complex}{real\optional{, imag}}
   Create a complex number with the value \var{real} + \var{imag}*j or
-  convert a string or number to a complex number.
+  convert a string or number to a complex number.  If the first
+  parameter is a string, it will be interpreted as a complex number
+  and the function must be called without a second parameter.  The
+  second parameter can never be a string.
   Each argument may be any numeric type (including complex).
   If \var{imag} is omitted, it defaults to zero and the function
   serves as a numeric conversion function like \function{int()},
-  \function{long()} and \function{float()}; in this case it also
-  accepts a string argument which should be a valid complex number.
+  \function{long()} and \function{float()}.
 \end{funcdesc}
 
 \begin{funcdesc}{delattr}{object, name}

@@ -806,8 +806,20 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:complex", kwlist,
 					 &r, &i))
 		return NULL;
-	if (PyString_Check(r) || PyUnicode_Check(r))
+	if (PyString_Check(r) || PyUnicode_Check(r)) {
+		if (i != NULL) {
+			PyErr_SetString(PyExc_TypeError,
+					"complex() can't take second arg"
+					" if first is a string");
+			return NULL;
+                }
 		return complex_subtype_from_string(type, r);
+	}
+	if (i != NULL && (PyString_Check(i) || PyUnicode_Check(i))) {
+		PyErr_SetString(PyExc_TypeError,
+				"complex() second arg can't be a string");
+		return NULL;
+	}
 
 	nbr = r->ob_type->tp_as_number;
 	if (i != NULL)
