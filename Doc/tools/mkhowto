@@ -442,6 +442,9 @@ class Job:
             self.warning(
                 "Session transcript and error messages are in %s."
                 % self.log_filename)
+            sys.stderr.write("The relevant lines from the transcript are:\n")
+            sys.stderr.write("-" * 72 + "\n")
+            sys.stderr.writelines(get_run_transcript(self.log_filename))
             sys.exit(rc)
 
     def message(self, msg):
@@ -461,7 +464,23 @@ class Job:
         fp.close()
 
 
+def get_run_transcript(filename):
+    """Return lines from the transcript file for the most recent run() call."""
+    fp = open(filename)
+    lines = fp.readlines()
+    fp.close()
+    lines.reverse()
+    L = []
+    for line in lines:
+        L.append(line)
+        if line[:4] == "+++ ":
+            break
+    L.reverse()
+    return L
+
+
 def safe_unlink(path):
+    """Unlink a file without raising an error if it doesn't exist."""
     try:
         os.unlink(path)
     except os.error:
