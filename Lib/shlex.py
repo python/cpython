@@ -1,6 +1,6 @@
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
 
-import sys, os, string
+import sys
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes." 
