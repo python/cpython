@@ -232,39 +232,45 @@ class ModuleFinder:
         if co:
             m.__file__ = pathname
             m.__code__ = co
-            code = co.co_code
-            n = len(code)
-            i = 0
-            lastname = None
-            while i < n:
-                c = code[i]
-                i = i+1
-                op = ord(c)
-                if op >= dis.HAVE_ARGUMENT:
-                    oparg = ord(code[i]) + ord(code[i+1])*256
-                    i = i+2
-                if op == IMPORT_NAME:
-                    name = lastname = co.co_names[oparg]
-                    if not self.badmodules.has_key(lastname):
-                        try:
-                            self.import_hook(name, m)
-                        except ImportError, msg:
-                            self.msg(2, "ImportError:", str(msg))
-                            self.badmodules[name] = None
-                elif op == IMPORT_FROM:
-                    name = co.co_names[oparg]
-                    assert lastname is not None
-                    if not self.badmodules.has_key(lastname):
-                        try:
-                            self.import_hook(lastname, m, [name])
-                        except ImportError, msg:
-                            self.msg(2, "ImportError:", str(msg))
-                            fullname = lastname + "." + name
-                            self.badmodules[fullname] = None
-                else:
-                    lastname = None
+            self.scan_code(co, m)
         self.msgout(2, "load_module ->", m)
         return m
+
+    def scan_code(self, co, m):
+        code = co.co_code
+        n = len(code)
+        i = 0
+        lastname = None
+        while i < n:
+            c = code[i]
+            i = i+1
+            op = ord(c)
+            if op >= dis.HAVE_ARGUMENT:
+                oparg = ord(code[i]) + ord(code[i+1])*256
+                i = i+2
+            if op == IMPORT_NAME:
+                name = lastname = co.co_names[oparg]
+                if not self.badmodules.has_key(lastname):
+                    try:
+                        self.import_hook(name, m)
+                    except ImportError, msg:
+                        self.msg(2, "ImportError:", str(msg))
+                        self.badmodules[name] = None
+            elif op == IMPORT_FROM:
+                name = co.co_names[oparg]
+                assert lastname is not None
+                if not self.badmodules.has_key(lastname):
+                    try:
+                        self.import_hook(lastname, m, [name])
+                    except ImportError, msg:
+                        self.msg(2, "ImportError:", str(msg))
+                        fullname = lastname + "." + name
+                        self.badmodules[fullname] = None
+            else:
+                lastname = None
+        for c in co.co_consts:
+            if isinstance(c, type(co)):
+                self.scan_code(c, m)
 
     def load_package(self, fqname, pathname):
         self.msgin(2, "load_package", fqname, pathname)
