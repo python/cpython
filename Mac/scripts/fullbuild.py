@@ -173,6 +173,7 @@ I_CORE : (buildmwproject, "CWIE", [
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:ucnhash.prj", "ucnhash.ppc"),
+	(":Mac:Build:pyexpat.prj", "pyexpat.ppc"),
 	(":Mac:Build:calldll.ppc.prj", "calldll.ppc"),
 	(":Mac:Build:ctb.prj", "ctb.ppc"),
 	(":Mac:Build:gdbm.prj", "gdbm.ppc"),
@@ -200,6 +201,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
+	(":Mac:Build:ucnhash.prj", "ucnhash.CFM68K"),
 	(":Mac:Build:ucnhash.prj", "ucnhash.CFM68K"),
 	(":Mac:Build:ctb.prj", "ctb.CFM68K"),
 	(":Mac:Build:gdbm.prj", "gdbm.CFM68K"),
@@ -248,8 +250,6 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Numerical:Mac:numpymodules.prj", "multiarraymodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "_numpy"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "umathmodule"),
-		(":Extensions:Numerical:Mac:numpymodules.prj", "fast_umathmodule"),
-		(":Extensions:Numerical:Mac:numpymodules.prj", "fftpackmodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "lapack_litemodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "ranlibmodule"),
 	]),
