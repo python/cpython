@@ -15,6 +15,28 @@
 #include <Movies.h>
 #include <Errors.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+/*
+** These macros are used in the module init code. If we use toolbox object glue
+** it sets the function pointer to point to the real function.
+*/
+#define PyMac_INIT_TOOLBOX_OBJECT_NEW(rtn) { \
+	extern PyObject *(*PyMacGluePtr_##rtn)(object); \
+	PyMacGluePtr_##rtn = _##rtn; \
+}
+#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(rtn) { \
+	extern int (*PyMacGluePtr_##rtn)(object); \
+	PyMacGluePtr_##rtn = _##rtn; \
+}
+#else
+/*
+** If we don't use toolbox object glue the init macros are empty. Moreover, we define
+** _xxx_New to be the same as xxx_New, and the code in mactoolboxglue isn't included.
+*/
+#define PyMac_INIT_TOOLBOX_OBJECT_NEW(rtn)
+#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(rtn)
+#endif /* USE_TOOLBOX_OBJECT_GLUE */
+
 /* AE exports */
 extern PyObject *AEDesc_New(AppleEvent *); /* XXXX Why passed by address?? */
 extern int AEDesc_Convert(PyObject *, AppleEvent *);
@@ -32,10 +54,7 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 /* Dlg exports */
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
-extern WindowPtr DlgObj_ConvertToWindow(PyObject *);
 extern PyObject *DlgObj_WhichDialog(DialogPtr);
-extern PyTypeObject Dialog_Type;
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
 
 /* Drag exports */
 extern PyObject *DragObj_New(DragReference);
@@ -67,7 +86,7 @@ extern int TrackObj_Convert(PyObject *, Track *);
 extern PyObject *MovieObj_New(Movie);
 extern int MovieObj_Convert(PyObject *, Movie *);
 extern PyObject *MovieCtlObj_New(MovieController);
-extern int MovieCtlObj_Convert(PyObject *, TimeBase *);
+extern int MovieCtlObj_Convert(PyObject *, MovieController *);
 extern PyObject *TimeBaseObj_New(TimeBase);
 extern int TimeBaseObj_Convert(PyObject *, TimeBase *);
 extern PyObject *UserDataObj_New(UserData);
@@ -89,8 +108,6 @@ extern int TEObj_Convert(PyObject *, TEHandle *);
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
-extern PyTypeObject Window_Type;
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
 
 
 #ifdef __cplusplus
