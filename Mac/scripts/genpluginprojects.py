@@ -174,6 +174,8 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "icglue", sources=["icgluemodule.c"], 
 		libraries=["ICGlueCFM-PPC.lib"], 
 		extradirs=["::::ICProgKit1.4:APIs"])
+	genpluginproject("carbon", "icglue", sources=["icgluemodule.c"], 
+		extradirs=["::::ICProgKit1.4:APIs"])
 	genpluginproject("ppc", "macspeech", libraries=["SpeechLib"])
 
 if __name__ == '__main__':
