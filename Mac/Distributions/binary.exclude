@@ -6,6 +6,7 @@
 *.dbg
 *.h
 *.hqx
+*.idb
 *.jack
 *.lib
 *.orig
@@ -17,7 +18,9 @@
 *.µ.exp
 *Icon
 *xMAP
+.#*
 @*
+CVS
 Makefile*
 Setup.in
 [(]*[)]
