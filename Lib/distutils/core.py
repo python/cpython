@@ -9,7 +9,7 @@ really defined in distutils.dist and distutils.cmd."""
 
 __revision__ = "$Id$"
 
-import sys
+import sys, os
 from types import *
 from distutils.errors import *
 from distutils.dist import Distribution
@@ -89,13 +89,19 @@ def setup (**attrs):
             dist.run_commands ()
         except KeyboardInterrupt:
             raise SystemExit, "interrupted"
-        except (OSError, IOError), exc:
-            # arg, try to work with Python pre-1.5.2
+        except (IOError, os.error), exc:
+            # check for Python 1.5.2-style {IO,OS}Error exception objects
             if hasattr (exc, 'filename') and hasattr (exc, 'strerror'):
-                raise SystemExit, \
-                      "error: %s: %s" % (exc.filename, exc.strerror)
+                if exc.filename:
+                    raise SystemExit, \
+                          "error: %s: %s" % (exc.filename, exc.strerror)
+                else:
+                    # two-argument functions in posix module don't
+                    # include the filename in the exception object!
+                    raise SystemExit, \
+                          "error: %s" % exc.strerror
             else:
-                raise SystemExit, str (exc)
+                raise SystemExit, "error: " + exc[-1]
         except (DistutilsExecError,
                 DistutilsFileError,
                 DistutilsOptionError), msg:
