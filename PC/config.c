@@ -47,6 +47,13 @@ extern void initzipimport(void);
 extern void init_random(void);
 extern void inititertools(void);
 extern void initheapq(void);
+extern void init_symtable(void);
+extern void initmmap(void);
+extern void init_csv(void);
+extern void init_sre(void);
+extern void initparser(void);
+extern void init_winreg(void);
+extern void initdatetime(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -101,6 +108,13 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_random", init_random},
         {"heapq", initheapq},
 	{"itertools", inititertools},
+	{"_symtable", init_symtable},
+	{"mmap", initmmap},
+	{"_csv", init_csv},
+	{"_sre", init_sre},
+	{"parser", initparser},
+	{"_winreg", init_winreg},
+	{"datetime", initdatetime},
 
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
