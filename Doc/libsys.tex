@@ -167,7 +167,10 @@ where \emph{VER} is equal to \code{sys.version[:3]}.
   Strings specifying the primary and secondary prompt of the
   interpreter.  These are only defined if the interpreter is in
   interactive mode.  Their initial values in this case are
-  \code{'>>> '} and \code{'... '}.
+  \code{'>>> '} and \code{'... '}.  If a non-string object is assigned
+  to either variable, its \code{str()} is re-evaluated each time the
+  interpreter prepares to read a new interactive command; this can be
+  used to implement a dynamic prompt.
 \end{datadesc}
 
 \begin{funcdesc}{setcheckinterval}{interval}
