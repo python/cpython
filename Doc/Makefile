@@ -348,7 +348,7 @@ html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 # are updated and boilerplate.tex uses \today as the date.  The index
 # files are not used to actually generate content.
 
-BOILERPLATE=texinputs/boilerplate.tex
+BOILERPLATE=commontex/boilerplate.tex
 html/index.html: $(INDEXFILES)
 html/index.html: html/index.html.in $(BOILERPLATE) tools/rewrite.py
 	$(PYTHON) tools/rewrite.py $(BOILERPLATE) \
