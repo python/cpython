@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#include <cthreads.h>
+#include <mach/cthreads.h>
 
 
 /*
@@ -44,7 +44,10 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
-	(void) cthread_fork(func, arg);
+	/* looks like solaris detaches the thread to never rejoin
+	 * so well do it here
+	 */
+	cthread_detach(cthread_fork((cthread_fn_t) func, arg));
 	return success < 0 ? 0 : 1;
 }
 
@@ -52,6 +55,7 @@ long get_thread_ident _P0()
 {
 	if (!initialized)
 		init_thread();
+	return (long) cthread_self();
 }
 
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
@@ -84,6 +88,10 @@ static void do_exit_prog _P2(status, int status, no_cleanup, int no_cleanup)
 			_exit(status);
 		else
 			exit(status);
+	if (no_cleanup)
+		_exit(status);
+	else
+		exit(status);
 }
 
 void exit_prog _P1(status, int status)
@@ -102,11 +110,18 @@ void _exit_prog _P1(status, int status)
  */
 type_lock allocate_lock _P0()
 {
+	mutex_t lock;
 
 	dprintf(("allocate_lock called\n"));
 	if (!initialized)
 		init_thread();
 
+	lock = mutex_alloc();
+	if (mutex_init(lock)) {
+		perror("mutex_init");
+		free((void *) lock);
+		lock = 0;
+	}
 	dprintf(("allocate_lock() -> %lx\n", (long)lock));
 	return (type_lock) lock;
 }
@@ -114,13 +129,20 @@ type_lock allocate_lock _P0()
 void free_lock _P1(lock, type_lock lock)
 {
 	dprintf(("free_lock(%lx) called\n", (long)lock));
+	mutex_free(lock);
 }
 
 int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 {
-	int success;
+	int success = FALSE;
 
 	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	if (waitflag) { 	/* blocking */
+		mutex_lock(lock);
+		success = TRUE;
+	} else {		/* non blocking */
+		success = mutex_try_lock(lock);
+	}
 	dprintf(("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
 	return success;
 }
@@ -128,13 +150,26 @@ int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 void release_lock _P1(lock, type_lock lock)
 {
 	dprintf(("release_lock(%lx) called\n", (long)lock));
+	mutex_unlock((mutex_t )lock);
 }
 
 /*
  * Semaphore support.
+ *
+ * This implementation is ripped directly from the pthreads implementation.
+ * Which is to say that it is 100% non-functional at this time.
+ *
+ * Assuming the page is still up, documentation can be found at:
+ *
+ * http://www.doc.ic.ac.uk/~mac/manuals/solaris-manual-pages/solaris/usr/man/man2/_lwp_sema_wait.2.html
+ *
+ * Looking at the man page, it seems that one could easily implement a
+ * semaphore using a condition.
+ *
  */
 type_sema allocate_sema _P1(value, int value)
 {
+	char *sema = 0;
 	dprintf(("allocate_sema called\n"));
 	if (!initialized)
 		init_thread();
