@@ -81,6 +81,8 @@ class Pattern:
         gid = self.groups
         self.groups = gid + 1
         if name:
+            if self.groupdict.has_key(name):
+                raise error, "can only use each group name once"
             self.groupdict[name] = gid
         self.open.append(gid)
         return gid
@@ -189,7 +191,7 @@ class Tokenizer:
             try:
                 c = self.string[self.index + 1]
             except IndexError:
-                raise error, "bogus escape"
+                raise error, "bogus escape (end of line)"
             char = char + c
         self.index = self.index + len(char)
         self.next = char
