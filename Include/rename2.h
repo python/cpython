@@ -64,9 +64,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #define TrueObject _Py_TrueStruct
 #define debugging Py_DebugFlag
 #define gram _PyParser_Grammar
-#define sys_profile _PySys_ProfileFunc
-#define sys_trace _PySys_TraceFunc
-#define sys_checkinterval _PySys_CheckInterval
 #define threads_started _PyThread_Started
 #define tok_name _PyParser_TokenNames
 #define verbose Py_VerboseFlag
