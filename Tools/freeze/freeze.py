@@ -34,8 +34,8 @@ module ...:   Additional Python modules (referenced by pathname)
 """
 
 
-# XXX Change the following line to point to your Demo/freeze directory
-PACK = '/ufs/guido/src/python/Demo/freeze'
+# XXX Change the following line to point to your Tools/freeze directory
+PACK = '/ufs/guido/src/python/Tools/freeze'
 
 # XXX Change the following line to point to your install prefix
 PREFIX = '/usr/local'
