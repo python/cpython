@@ -1,3 +1,437 @@
+Tue Feb 15 17:17:58 2000  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* NEWS.txt: News update.  Probably incomplete; what else is new?
+
+	* README.txt:
+	Updated for pending IDLE 0.5 release (still very rough -- just getting
+	it out in a more convenient format than CVS).
+
+	* TODO.txt: Tiny addition.
+
+Thu Sep  9 14:16:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* TODO.txt: A few new TODO entries.
+
+Thu Aug 26 23:06:22 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Bindings.py: Add Python Documentation entry to Help menu.
+
+	* EditorWindow.py:
+	Find the help.txt file relative to __file__ or ".", not in sys.path.
+	(Suggested by Moshe Zadka, but implemented differently.)
+
+	Add <<python-docs>> event which, on Unix, brings up Netscape pointing
+	to http://www.python.doc/current/ (a local copy would be nice but its
+	location can't be predicted).  Windows solution TBD.
+
+Wed Aug 11 14:55:43 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* TreeWidget.py:
+	Moshe noticed an inconsistency in his comment, so I'm rephrasing it to
+	be clearer.
+
+	* TreeWidget.py:
+	Patch inspired by Moshe Zadka to search for the Icons directory in the
+	same directory as __file__, rather than searching for it along sys.path.
+	This works better when idle is a package.
+
+Thu Jul 15 13:11:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* TODO.txt: New wishes.
+
+Sat Jul 10 13:17:35 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* IdlePrefs.py:
+	Make the color for stderr red (i.e. the standard warning/danger/stop
+	color) rather than green.  Suggested by Sam Schulenburg.
+
+Fri Jun 25 17:26:34 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* PyShell.py: Close debugger when closing.  This may break a cycle.
+
+	* Debugger.py: Break cycle on close.
+
+	* ClassBrowser.py: Destroy the tree when closing.
+
+	* TreeWidget.py: Add destroy() method to recursively destroy a tree.
+
+	* PyShell.py: Extend _close() to break cycles.
+	Break some other cycles too (and destroy the root when done).
+
+	* EditorWindow.py:
+	Add _close() method that does the actual cleanup (close() asks the
+	user what they want first if there's unsaved stuff, and may cancel).
+	It closes more than before.
+
+	Add unload_extensions() method to unload all extensions; called from
+	_close().  It calls an extension's close() method if it has one.
+
+	* Percolator.py: Add close() method that breaks cycles.
+
+	* WidgetRedirector.py: Add unregister() method.
+	Unregister everything at closing.
+	Don't call close() in __del__, rely on explicit call to close().
+
+	* IOBinding.py, FormatParagraph.py, CallTips.py:
+	Add close() method that breaks a cycle.
+
+Fri Jun 11 15:03:00 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* AutoIndent.py, EditorWindow.py, FormatParagraph.py:
+	Tim Peters smart.patch:
+
+	EditorWindow.py:
+
+	+ Added get_tabwidth & set_tabwidth "virtual text" methods, that get/set the
+	widget's view of what a tab means.
+
+	+ Moved TK_TABWIDTH_DEFAULT here from AutoIndent.
+
+	+ Renamed Mark's get_selection_index to get_selection_indices (sorry, Mark,
+	but the name was plain wrong <wink>).
+
+	FormatParagraph.py:  renamed use of get_selection_index.
+
+	AutoIndent.py:
+
+	+ Moved TK_TABWIDTH_DEFAULT to EditorWindow.
+
+	+ Rewrote set_indentation_params to use new VTW get/set_tabwidth methods.
+
+	+ Changed smart_backspace_event to delete whitespace back to closest
+	preceding virtual tab stop or real character (note that this may require
+	inserting characters if backspacing over a tab!).
+
+	+ Nuked almost references to the selection tag, in favor of using
+	get_selection_indices.  The sole exception is in set_region, for which no
+	"set_selection" abstraction has yet been agreed upon.
+
+	+ Had too much fun using the spiffy new features of the format-paragraph
+	cmd.
+
+Thu Jun 10 17:48:02 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* FormatParagraph.py:
+	Code by Mark Hammond to format paragraphs embedded in comments.
+	Read the comments (which I reformatted using the new feature :-)
+	for some limitations.
+
+	* EditorWindow.py:
+	Added abstraction get_selection_index() (Mark Hammond).  Also
+	reformatted some comment blocks to show off a cool feature I'm about
+	to check in next.
+
+	* ClassBrowser.py:
+	Adapt to the new pyclbr's support of listing top-level functions.  If
+	this functionality is not present (e.g. when used with a vintage
+	Python 1.5.2 installation) top-level functions are not listed.
+
+	(Hmm...  Any distribution of IDLE 0.5 should probably include a copy
+	of the new pyclbr.py!)
+
+	* AutoIndent.py:
+	Fix off-by-one error in Tim's recent change to comment_region(): the
+	list of lines returned by get_region() contains an empty line at the
+	end representing the start of the next line, and this shouldn't be
+	commented out!
+
+	* CallTips.py:
+	Mark Hammond writes: Here is another change that allows it to work for
+	class creation - tries to locate an __init__ function.  Also updated
+	the test code to reflect your new "***" change.
+
+	* CallTipWindow.py:
+	Mark Hammond writes: Tim's suggestion of copying the font for the
+	CallTipWindow from the text control makes sense, and actually makes
+	the control look better IMO.
+
+Wed Jun  9 20:34:57 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* CallTips.py:
+	Append "..." if the appropriate flag (for varargs) in co_flags is set.
+	Ditto "***" for kwargs.
+
+Tue Jun  8 13:06:07 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* ReplaceDialog.py:
+	Hmm...  Tim didn't turn "replace all" into a single undo block.
+	I think I like it better if it os, so here.
+
+	* ReplaceDialog.py: Tim Peters: made replacement atomic for undo/redo.
+
+	* AutoIndent.py: Tim Peters:
+
+	+ Set usetabs=1.  Editing pyclbr.py was driving me nuts <0.6 wink>.
+	usetabs=1 is the Emacs pymode default too, and thanks to indentwidth !=
+	tabwidth magical usetabs disabling, new files are still created with tabs
+	turned off.  The only implication is that if you open a file whose first
+	indent is a single tab, IDLE will now magically use tabs for that file (and
+	set indentwidth to 8).  Note that the whole scheme doesn't work right for
+	PythonWin, though, since Windows users typically set tabwidth to 4; Mark
+	probably has to hide the IDLE algorithm from them (which he already knows).
+
+	+ Changed comment_region_event to stick "##" in front of every line.  The
+	"holes" previously left on blank lines were visually confusing (made it
+	needlessly hard to figure out what to uncomment later).
+
+Mon Jun  7 15:38:40 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* TreeWidget.py, ObjectBrowser.py:
+	Remove unnecessary reference to pyclbr from test() code.
+
+	* PyParse.py: Tim Peters:
+
+	Smarter logic for finding a parse synch point.
+
+	Does a half to a fifth the work in normal cases; don't notice the speedup,
+	but makes  more breathing room for other extensions.
+
+	Speeds terrible cases by at least a factor of 10. "Terrible" == e.g. you put
+	""" at the start of Tkinter.py, undo it, zoom to the bottom, and start
+	typing in code.  Used to take about 8 seconds for ENTER to respond, now some
+	large fraction of a second.  The new code gets indented correctly, despite
+	that it all remains "string colored" until the colorizer catches up (after
+	which, ENTER appears instantaneous again).
+
+Fri Jun  4 19:21:19 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* extend.py: Might as well enable CallTips by default.
+	If there are too many complaints I'll remove it again or fix it.
+
+Thu Jun  3 14:32:16 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* AutoIndent.py, EditorWindow.py, PyParse.py:
+	New offerings by Tim Peters; he writes:
+
+	IDLE is now the first Python editor in the Universe not confused by my
+	doctest.py <wink>.
+
+	As threatened, this defines IDLE's is_char_in_string function as a
+	method of EditorWindow.  You just need to define one similarly in
+	whatever it is you pass as editwin to AutoIndent; looking at the
+	EditorWindow.py part of the patch should make this clear.
+
+	* GrepDialog.py: Enclose pattern in quotes in status message.
+
+	* CallTips.py:
+	Mark Hammond fixed some comments and improved the way the tip text is
+	constructed.
+
+Wed Jun  2 18:18:57 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* CallTips.py:
+	My fix to Mark's code: restore the universal check on <KeyRelease>.
+	Always cancel on <Key-Escape> or <ButtonPress>.
+
+	* CallTips.py:
+	A version that Mark Hammond posted to the newsgroup.  Has some newer
+	stuff for getting the tip.  Had to fix the Key-( and Key-) events
+	for Unix.  Will have to re-apply my patch for catching KeyRelease and
+	ButtonRelease events.
+
+	* CallTipWindow.py, CallTips.py:
+	Call tips by Mark Hammond (plus tiny fix by me.)
+
+	* IdleHistory.py:
+	Changes by Mark Hammond: (1) support optional output_sep argument to
+	the constructor so he can eliminate the sys.ps2 that PythonWin leaves
+	in the source; (2) remove duplicate history items.
+
+	* AutoIndent.py:
+	Changes by Mark Hammond to allow using IDLE extensions in PythonWin as
+	well: make three dialog routines instance variables.
+
+	* EditorWindow.py:
+	Change by Mark Hammond to allow using IDLE extensions in PythonWin as
+	well: make three dialog routines instance variables.
+
+Tue Jun  1 20:06:44 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* AutoIndent.py: Hah!  A fix of my own to Tim's code!
+	Unix bindings for <<toggle-tabs>> and <<change-indentwidth>> were
+	missing, and somehow that meant the events were never generated,
+	even though they were in the menu.  The new Unix bindings are now
+	the same as the Windows bindings (M-t and M-u).
+
+	* AutoIndent.py, PyParse.py, PyShell.py: Tim Peters again:
+
+	The new version (attached) is fast enough all the time in every real module
+	I have <whew!>.  You can make it slow by, e.g., creating an open list with
+	5,000 90-character identifiers (+ trailing comma) each on its own line, then
+	adding an item to the end -- but that still consumes less than a second on
+	my P5-166.  Response time in real code appears instantaneous.
+
+	Fixed some bugs.
+
+	New feature:  when hitting ENTER and the cursor is beyond the line's leading
+	indentation, whitespace is removed on both sides of the cursor; before
+	whitespace was removed only on the left; e.g., assuming the cursor is
+	between the comma and the space:
+
+	def something(arg1, arg2):
+	                   ^ cursor to the left of here, and hit ENTER
+	               arg2):   # new line used to end up here
+	              arg2):    # but now lines up the way you expect
+
+	New hack:  AutoIndent has grown a context_use_ps1 Boolean config option,
+	defaulting to 0 (false) and set to 1 (only) by PyShell.  Reason:  handling
+	the fancy stuff requires looking backward for a parsing synch point; ps1
+	lines are the only sensible thing to look for in a shell window, but are a
+	bad thing to look for in a file window (ps1 lines show up in my module
+	docstrings often).  PythonWin's shell should set this true too.
+
+	Persistent problem:  strings containing def/class can still screw things up
+	completely.  No improvement.  Simplest workaround is on the user's head, and
+	consists of inserting e.g.
+
+	def _(): pass
+
+	(or any other def/class) after the end of the multiline string that's
+	screwing them up.  This is especially irksome because IDLE's syntax coloring
+	is *not* confused, so when this happens the colors don't match the
+	indentation behavior they see.
+
+	* AutoIndent.py: Tim Peters again:
+
+	[Tim, after adding some bracket smarts to AutoIndent.py]
+	> ...
+	> What it can't possibly do without reparsing large gobs of text is
+	> suggest a reasonable indent level after you've *closed* a bracket
+	> left open on some previous line.
+	> ...
+
+	The attached can, and actually fast enough to use -- most of the time.  The
+	code is tricky beyond belief to achieve that, but it works so far; e.g.,
+
+	        return len(string.expandtabs(str[self.stmt_start :
+	                                         ^ indents to caret
+	                                         i],
+	                                     ^ indents to caret
+	                                     self.tabwidth)) + 1
+	    ^ indents to caret
+
+	It's about as smart as pymode now, wrt both bracket and backslash
+	continuation rules.  It does require reparsing large gobs of text, and if it
+	happens to find something that looks like a "def" or "class" or sys.ps1
+	buried in a multiline string, but didn't suck up enough preceding text to
+	see the start of the string, it's completely hosed.  I can't repair that --
+	it's just too slow to reparse from the start of the file all the time.
+
+	AutoIndent has grown a new num_context_lines tuple attribute that controls
+	how far to look back, and-- like other params --this could/should be made
+	user-overridable at startup and per-file on the fly.
+
+	* PyParse.py: New file by Tim Peters:
+
+	One new file in the attached, PyParse.py.  The LineStudier (whatever it was
+	called <wink>) class was removed from AutoIndent; PyParse subsumes its
+	functionality.
+
+	* AutoIndent.py: Tim Peters keeps revising this module (more to come):
+
+	Removed "New tabwidth" menu binding.
+
+	Added "a tab means how many spaces?" dialog to block tabify and untabify.  I
+	think prompting for this is good now:  they're usually at-most-once-per-file
+	commands, and IDLE can't let them change tabwidth from the Tk default
+	anymore, so IDLE can no longer presume to have any idea what a tab means.
+
+	Irony:  for the purpose of keeping comments aligned via tabs, Tk's
+	non-default approach is much nicer than the Emacs/Notepad/Codewright/vi/etc
+	approach.
+
+	* EditorWindow.py:
+	1. Catch NameError on import (could be raised by case mismatch on Windows).
+	2. No longer need to reset pyclbr cache and show watch cursor when calling
+	   ClassBrowser -- the ClassBrowser takes care of pyclbr and the TreeWidget
+	   takes care of the watch cursor.
+	3. Reset the focus to the current window after error message about class
+	   browser on buffer without filename.
+
+	* Icons/minusnode.gif, Icons/plusnode.gif: Missed a few.
+
+	* ClassBrowser.py, PathBrowser.py: Rewritten based on TreeWidget.py
+
+	* ObjectBrowser.py: Object browser, based on TreeWidget.py.
+
+	* TreeWidget.py: Tree widget done right.
+
+	* ToolTip.py: As yet unused code for tool tips.
+
+	* ScriptBinding.py:
+	Ensure sys.argv[0] is the script name on Run Script.
+
+	* ZoomHeight.py: Move zoom height functionality to separate function.
+
+	* Icons/folder.gif, Icons/openfolder.gif, Icons/python.gif, Icons/tk.gif:
+	A few icons used by ../TreeWidget.py and its callers.
+
+	* AutoIndent.py: New version by Tim Peters improves block opening test.
+
+Fri May 21 04:46:17 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Attic/History.py, PyShell.py: Rename History to IdleHistory.
+	Add isatty() to pseudo files.
+
+	* StackViewer.py: Make initial stack viewer wider
+
+	* TODO.txt: New wishes
+
+	* AutoIndent.py, EditorWindow.py, PyShell.py:
+	Much improved autoindent and handling of tabs,
+	by Tim Peters.
+
+Mon May  3 15:49:52 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* AutoIndent.py, EditorWindow.py, FormatParagraph.py, UndoDelegator.py:
+	Tim Peters writes:
+
+	I'm still unsure, but couldn't stand the virtual event trickery so tried a
+	different sin (adding undo_block_start/stop methods to the Text instance in
+	EditorWindow.py).  Like it or not, it's efficient and works <wink>.  Better
+	idea?
+
+	Give the attached a whirl.  Even if you hate the implementation, I think
+	you'll like the results.  Think I caught all the "block edit" cmds,
+	including Format Paragraph, plus subtler ones involving smart indents and
+	backspacing.
+
+	* WidgetRedirector.py: Tim Peters writes:
+
+	[W]hile trying to dope out how redirection works, stumbled into two
+	possible glitches.  In the first, it doesn't appear to make sense to try to
+	rename a command that's already been destroyed; in the second, the name
+	"previous" doesn't really bring to mind "ignore the previous value" <wink>.
+
+Fri Apr 30 19:39:25 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* __init__.py: Support for using idle as a package.
+
+	* PathBrowser.py:
+	Avoid listing files more than once (e.g. foomodule.so has two hits:
+	once for foo + module.so, once for foomodule + .so).
+
+Mon Apr 26 22:20:38 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* ChangeLog, ColorDelegator.py, PyShell.py: Tim Peters strikes again:
+
+	Ho ho ho -- that's trickier than it sounded!  The colorizer is working with
+	"line.col" strings instead of Text marks, and the absolute coordinates of
+	the point of interest can change across the self.update call (voice of
+	baffled experience, when two quick backspaces no longer fooled it, but a
+	backspace followed by a quick ENTER did <wink>).
+
+	Anyway, the attached appears to do the trick.  CPU usage goes way up when
+	typing quickly into a long triple-quoted string, but the latency is fine for
+	me (a relatively fast typist on a relatively slow machine).  Most of the
+	changes here are left over from reducing the # of vrbl names to help me
+	reason about the logic better; I hope the code is a *little* easier to
+
+Fri Apr 23 14:01:25 1999  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* EditorWindow.py:
+	Provide full arguments to __import__ so it works in packagized IDLE.
+
 Thu Apr 22 23:20:17 1999  Guido van Rossum  <guido@cnri.reston.va.us>
 
         * help.txt:
