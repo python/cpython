@@ -271,15 +271,15 @@ being installed is pure Python or contains extensions (``non-pure''):
   \lineiv{Unix (pure)}
           {\filenq{\var{prefix}/lib/python1.6/site-packages}}
           {\filenq{/usr/local/lib/python1.6/site-packages}}
-          {}
+          {(1)}
   \lineiv{Unix (non-pure)}
           {\filenq{\var{exec-prefix}/lib/python1.6/site-packages}}
           {\filenq{/usr/local/lib/python1.6/site-packages}}
-          {}
+          {(1)}
   \lineiv{Windows}
           {\filenq{\var{prefix}}}
           {\filenq{C:\bslash{}Python}}
-          {(1)}
+          {(2)}
   \lineiv{Mac~OS (pure)}
           {\filenq{\var{prefix}:Lib}}
           {\filenq{Python:Lib}  \XXX{???}}
@@ -292,7 +292,12 @@ being installed is pure Python or contains extensions (``non-pure''):
 
 \noindent Notes:
 \begin{description}
-\item[(1)] The default installation directory on Windows was
+\item[(1)] Most Linux distributions include Python as a standard part of
+  the system, so \filevar{prefix} and \filevar{exec-prefix} are usually
+  both \file{/usr} on Linux.  If you build Python yourself on Linux (or
+  any Unix-like system), the default \filevar{prefix} and
+  \filevar{exec-prefix} are \file{/usr/local}.
+\item[(2)] The default installation directory on Windows was
   \file{C:\bslash{}Program Files\bslash{}Python} under Python 1.6a1,
   1.5.2, and earlier.
 \end{description}
