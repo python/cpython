@@ -1,3 +1,4 @@
+import zlib # implied prerequisite
 import zipfile, os, StringIO, tempfile
 from test_support import TestFailed
 
