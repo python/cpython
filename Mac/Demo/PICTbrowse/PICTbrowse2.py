@@ -5,6 +5,7 @@ import EasyDialogs
 import Res
 import Qd
 import Win
+import Controls
 import List
 import sys
 import struct
@@ -119,11 +120,11 @@ class MyDialog(FrameWork.DialogWindow):
 		self.id = id
 		FrameWork.DialogWindow.open(self, ID_MAIN)
 		self.wid.SetDialogDefaultItem(MAIN_SHOW)
-		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
-		rect2 = rect[0]+1, rect[1]+1, rect[2]-17, rect[3]-17	# Scroll bar space
-		self.list = List.LNew(rect2, (0, 0, 1, len(contents)), (0,0), 0, self.wid,
-				0, 1, 1, 1)
 		self.contents = contents
+		self.ctl = self.wid.GetDialogItemAsControl(MAIN_LIST)
+		h = self.ctl.GetControlDataHandle(Controls.kControlListBoxPart, 
+				Controls.kControlListBoxListHandleTag)
+		self.list = List.as_List(h)
 		self.setlist()
 
 	def setlist(self):
@@ -138,14 +139,6 @@ class MyDialog(FrameWork.DialogWindow):
 				self.list.LSetCell(v, (0, i))
 		self.list.LSetDrawingMode(1)
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
-		
-	def do_listhit(self, event):
-		(what, message, when, where, modifiers) = event
-		Qd.SetPort(self.wid)
-		where = Qd.GlobalToLocal(where)
-		print 'LISTHIT', where
-		if self.list.LClick(where, modifiers):
-			self.do_show()
 		
 	def getselection(self):
 		items = []
@@ -166,21 +159,10 @@ class MyDialog(FrameWork.DialogWindow):
 		for resid in selection:
 			self.parent.showPICT(resid)
 		
-	def do_rawupdate(self, window, event):
-		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
-		Qd.SetPort(self.wid)
-		Qd.FrameRect(rect)
-		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
-		
-	def do_activate(self, activate, event):
-		self.list.LActivate(activate)
-		
 	def do_close(self):
 		self.close()
 		
 	def do_itemhit(self, item, event):
-		if item == MAIN_LIST:
-			self.do_listhit(event)
 		if item == MAIN_SHOW:
 			self.do_show()
 
