@@ -62,7 +62,7 @@ CFG=_ssl - Win32 Debug
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "."
 # PROP Intermediate_Dir "x86-temp-debug\_ssl"
-# PROP Cmd_Line "python -u build_ssl.py -d"
+# PROP Cmd_Line "python_d -u build_ssl.py -d"
 # PROP Rebuild_Opt "-a"
 # PROP Target_File "_ssl_d.pyd"
 # PROP Bsc_Name ""
