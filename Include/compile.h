@@ -57,6 +57,8 @@ typedef struct {
 } PyFutureFeatures;
 
 DL_IMPORT(PyFutureFeatures *) PyNode_Future(struct _node *, char *);
+DL_IMPORT(PyCodeObject *) PyNode_CompileFlags(struct _node *, char *,
+					      PyCompilerFlags *);
 
 #define NESTED_SCOPES_DEFAULT 0
 #define FUTURE_NESTED_SCOPES "nested_scopes"

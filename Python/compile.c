@@ -471,7 +471,8 @@ static int com_argdefs(struct compiling *, node *);
 static void com_assign(struct compiling *, node *, int, node *);
 static void com_assign_name(struct compiling *, node *, int);
 static PyCodeObject *icompile(node *, struct compiling *);
-static PyCodeObject *jcompile(node *, char *, struct compiling *);
+static PyCodeObject *jcompile(node *, char *, struct compiling *,
+			      PyCompilerFlags *);
 static PyObject *parsestrplus(node *);
 static PyObject *parsestr(char *);
 static node *get_rawdocstring(node *);
@@ -3816,7 +3817,13 @@ dict_keys_inorder(PyObject *dict, int offset)
 PyCodeObject *
 PyNode_Compile(node *n, char *filename)
 {
-	return jcompile(n, filename, NULL);
+	return PyNode_CompileFlags(n, filename, NULL);
+}
+
+PyCodeObject *
+PyNode_CompileFlags(node *n, char *filename, PyCompilerFlags *flags)
+{
+	return jcompile(n, filename, NULL, flags);
 }
 
 struct symtable *
@@ -3844,11 +3851,12 @@ PyNode_CompileSymtable(node *n, char *filename)
 static PyCodeObject *
 icompile(node *n, struct compiling *base)
 {
-	return jcompile(n, base->c_filename, base);
+	return jcompile(n, base->c_filename, base, NULL);
 }
 
 static PyCodeObject *
-jcompile(node *n, char *filename, struct compiling *base)
+jcompile(node *n, char *filename, struct compiling *base,
+	 PyCompilerFlags *flags)
 {
 	struct compiling sc;
 	PyCodeObject *co;
@@ -3864,7 +3872,17 @@ jcompile(node *n, char *filename, struct compiling *base)
 	} else {
 		sc.c_private = NULL;
 		sc.c_future = PyNode_Future(n, filename);
-		if (sc.c_future == NULL || symtable_build(&sc, n) < 0) {
+		if (sc.c_future == NULL) {
+			com_free(&sc);
+			return NULL;
+		}
+		if (flags) {
+			if (flags->cf_nested_scopes)
+				sc.c_future->ff_nested_scopes = 1;
+			else if (sc.c_future->ff_nested_scopes)
+				flags->cf_nested_scopes = 1;
+		}
+		if (symtable_build(&sc, n) < 0) {
 			com_free(&sc);
 			return NULL;
 		}
@@ -4952,12 +4970,10 @@ symtable_global(struct symtable *st, node *n)
 {
 	int i;
 
-	if (st->st_nscopes == 1) {
-		/* XXX must check that we are compiling file_input */
-		if (symtable_warn(st, 
-		  "global statement has no meaning at module level") < 0)
-			return;
-	}
+	/* XXX It might be helpful to warn about module-level global
+	   statements, but it's hard to tell the difference between
+	   module-level and a string passed to exec.
+	*/
 
 	for (i = 1; i < NCH(n); i += 2) {
 		char *name = STR(CHILD(n, i));
