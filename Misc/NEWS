@@ -111,6 +111,8 @@ Library
 Tools/Demos
 -----------
 
+- pydoc now offers help on keywords and topics.
+
 - Tools/idle is gone; long live Lib/idlelib.
 
 - diff.py is a new script for print file diffs in context, unified, or ndiff

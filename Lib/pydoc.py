@@ -2116,7 +2116,7 @@ def cli():
                     else:
                         writedoc(arg)
                 else:
-                    doc(arg)
+                    help.help(arg)
             except ErrorDuringImport, value:
                 print value
 
@@ -2126,9 +2126,11 @@ def cli():
 
 %s <name> ...
     Show text documentation on something.  <name> may be the name of a
-    function, module, or package, or a dotted reference to a class or
-    function within a module or module in a package.  If <name> contains
-    a '%s', it is used as the path to a Python source file to document.
+    Python keyword, topic, function, module, or package, or a dotted
+    reference to a class or function within a module or module in a
+    package.  If <name> contains a '%s', it is used as the path to a
+    Python source file to document. If name is 'keywords', 'topics',
+    or 'modules', a listing of these things is displayed.
 
 %s -k <keyword>
     Search for a keyword in the synopsis lines of all available modules.
