@@ -278,14 +278,15 @@ parser.add_option("-f", "--file", ...)
 
 The interesting stuff, of course, is what comes after the option
 strings.  For now, we'll only cover four of the things you can put
-there: \var{action}, \var{type}, \var{dest} (destination), and
-\var{help}.
+there: \emph{action}, \emph{type}, \emph{dest} (destination), and
+\emph{help}.
 
-\subsubsection{The \var{store} action\label{optparse-store-action}}
+\subsubsection{The \emph{store} action%
+               \label{optparse-store-action}}
 
 The action tells \module{optparse} what to do when it sees one of the
 option strings for this option on the command-line.  For example, the
-action \var{store} means: take the next argument (or the remainder of
+action \emph{store} means: take the next argument (or the remainder of
 the current argument), ensure that it is of the correct type, and
 store it to your chosen destination.
 
@@ -360,7 +361,8 @@ destination for \programopt{-f} is \var{f}.
 Adding types is fairly easy; please refer to
 section~\ref{optparse-adding-types}, ``Adding new types.''
 
-\subsubsection{Other \var{store_*} actions\label{optparse-other-store-actions}}
+\subsubsection{Other \emph{store_*} actions%
+               \label{optparse-other-store-actions}}
 
 Flag options---set a variable to true or false when a particular
 option is seen---are quite common.  \module{optparse} supports them
