@@ -1,6 +1,4 @@
-% Format this file with latex.
-
-\documentstyle[myformat]{report}		% To preview with xdvi
+\documentstyle[myformat]{report}
 
 % Underscores are not magic throughout this document
 \catcode`_=12
@@ -72,10 +70,10 @@
 \ 
 }
 
-% Define \excitem{name}{string}: define an exception item
-\newcommand{\excitem}[2]{
+% Define \excitem{name}: define an exception item
+\newcommand{\excitem}[1]{
 \ttindex{#1}
-\item[{\tt #1 = '#2'}]
+\item[{\tt #1}]
 \itembreak
 }
 
@@ -113,7 +111,10 @@ language.
 
 \pagebreak
 
+{
+\parskip = 0mm
 \tableofcontents
+}
 
 \pagebreak
 
