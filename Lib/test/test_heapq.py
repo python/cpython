@@ -38,6 +38,10 @@ class TestHeap(unittest.TestCase):
         # 2) Check that the invariant holds for a sorted array
         self.check_invariant(results)
 
+        self.assertRaises(TypeError, heappush, [])
+        self.assertRaises(TypeError, heappush, None, None)
+        self.assertRaises(TypeError, heappop, None)
+
     def check_invariant(self, heap):
         # Check the heap invariant.
         for pos, item in enumerate(heap):
@@ -50,6 +54,8 @@ class TestHeap(unittest.TestCase):
             heap = [random.random() for dummy in range(size)]
             heapify(heap)
             self.check_invariant(heap)
+
+        self.assertRaises(TypeError, heapify, None)
 
     def test_naive_nbest(self):
         data = [random.randrange(2000) for i in range(1000)]
@@ -74,6 +80,10 @@ class TestHeap(unittest.TestCase):
             if item > heap[0]:  # this gets rarer the longer we run
                 heapreplace(heap, item)
         self.assertEqual(list(heapiter(heap)), sorted(data)[-10:])
+
+        self.assertRaises(TypeError, heapreplace, None)
+        self.assertRaises(TypeError, heapreplace, None, None)
+        self.assertRaises(IndexError, heapreplace, [], None)
 
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
