@@ -301,9 +301,6 @@ class NullWriter:
 
 class AbstractWriter(NullWriter):
 
-    def __init__(self):
-        pass
-
     def new_alignment(self, align):
         print "new_alignment(%s)" % `align`
 
