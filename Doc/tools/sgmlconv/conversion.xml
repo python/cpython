@@ -45,9 +45,14 @@
     <attribute name="name"/>
     <attribute name="email"/>
     </macro>
+  <macro name="shortversion"/>
   <macro name="versionadded">
     <attribute name="version"/>
     </macro>
+  <!-- This is broken:  we need to re-order the optional and required
+       parameters, making the optional parameter the content for the
+       element.  The processor is not powerful enough to handle this.
+    -->
   <macro name="versionchanged">
     <attribute name="version"/>
     </macro>
@@ -67,6 +72,7 @@
     <child name="args"/>
     </environment>
   <environment name="ctypedesc">
+    <attribute name="tag" optional="yes"/>
     <attribute name="name"/>
     </environment>
   <environment name="cvardesc">
@@ -152,10 +158,29 @@
   <macro name="seemodule">
     <attribute name="ref" optional="yes"/>
     <attribute name="name"/>
-    <content/>
+    <child name="description"/>
+    </macro>
+  <macro name="seepep">
+    <attribute name="number"/>
+    <child name="title"/>
+    <child name="description"/>
+    </macro>
+  <macro name="seerfc">
+    <attribute name="number"/>
+    <child name="title"/>
+    <child name="description"/>
     </macro>
   <macro name="seetext">
-    <content/>
+    <child name="description"/>
+    </macro>
+  <macro name="seetitle">
+    <attribute name="href" optional="yes"/>
+    <child name="title"/>
+    <child name="description"/>
+    </macro>
+  <macro name="seeurl">
+    <attribute name="href"/>
+    <child name="description"/>
     </macro>
 
   <!-- Index-generating markup. -->
@@ -669,6 +694,9 @@
     </macro>
   <macro name="UNIX" outputname="">
     <text>Unix</text>
+    </macro>
+  <macro name="textasciitilde" outputname="">
+    <text>~</text>
     </macro>
 
   <!-- These will end up disappearing as well! -->
