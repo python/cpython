@@ -241,17 +241,20 @@ import smtplib
 import string
 
 def prompt(prompt):
-    return string.strip(raw_input(prompt))
+    return raw_input(prompt).strip()
 
 fromaddr = prompt("From: ")
-toaddrs  = string.split(prompt("To: "))
+toaddrs  = prompt("To: ").split()
 print "Enter message, end with ^D:"
 
 # Add the From: and To: headers at the start!
 msg = ("From: %s\r\nTo: %s\r\n\r\n"
        % (fromaddr, string.join(toaddrs, ", ")))
 while 1:
-    line = raw_input()
+    try:
+        line = raw_input()
+    except EOFError:
+        break
     if not line:
         break
     msg = msg + line
