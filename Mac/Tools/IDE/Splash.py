@@ -32,17 +32,17 @@ def importing(module):
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
-	rect = (35, 260, 365, 276)
+	rect = (35, 265, 365, 281)
 	if module:
 		TE.TETextBox('Importing: ' + module, rect, 0)
 		if not _progress:
-			Qd.FrameRect((35, 276, 365, 284))
+			Qd.FrameRect((35, 281, 365, 289))
 		pos = min(36 + 330 * _progress / 44, 364)
-		Qd.PaintRect((36, 277, pos, 283))
+		Qd.PaintRect((36, 282, pos, 288))
 		_progress = _progress + 1
 	else:
 		Qd.EraseRect(rect)
-		Qd.PaintRect((36, 277, pos, 283))
+		Qd.PaintRect((36, 282, pos, 288))
 
 def my__import__(name, globals=None, locals=None, fromlist=None):
 	try:
@@ -73,7 +73,6 @@ _keepsplashscreenopen = 0
 abouttext1 = """The Python Integrated Development Environment for the MacintoshÅ
 Version: %s
 Copyright 1997-2000 Just van Rossum, Letterror. <just@letterror.com>
-
 Python %s
 %s
 See: <http://www.python.org/> for information and documentation."""
