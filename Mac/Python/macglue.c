@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Events.h>
 
-#if TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_OS8
 /* Unfortunately this call is probably slower... */
 #define LMGetTicks() TickCount()
 #endif
@@ -171,7 +171,7 @@ struct hook_args {
 	int selectcur_hit;		/* Set to true when "select current" selected */
 	char *prompt;			/* The prompt */
 };
-#if TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_OS8
 /* The StandardFile hooks don't exist in Carbon. This breaks GetDirectory,
 ** but the macfsn code will replace it by a NavServices version anyway.
 */
@@ -297,7 +297,7 @@ PyMac_StopGUSISpin() {
 	PyMac_ConsoleIsDead = 1;
 }
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 /*
 ** Replacement routines for the PLstr... functions so we don't need
 ** StdCLib.
@@ -338,7 +338,7 @@ PLstrrchr(unsigned char *str, unsigned char chr)
 	return ptr;
 }
 	
-#endif /* !TARGET_API_MAC_CARBON */
+#endif /* TARGET_API_MAC_OS8 */
 #endif /* USE_GUSI */
 
 
@@ -357,7 +357,7 @@ Pstring(char *str)
 	return buf;
 }
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 void
 c2pstrcpy(unsigned char *dst, const char *src)
 {
@@ -368,7 +368,7 @@ c2pstrcpy(unsigned char *dst, const char *src)
 	strncpy((char *)dst+1, src, len);
 	dst[0] = len;
 }
-#endif /* !TARGET_API_MAC_CARBON */
+#endif /* TARGET_API_MAC_OS8 */
 
 /* Like strerror() but for Mac OS error numbers */
 char *PyMac_StrError(int err)
@@ -498,7 +498,7 @@ static void
 scan_event_queue(flush)
 	int flush;
 {
-#if TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_OS8
 	if ( CheckEventQueueForUserCancel() )
 		interrupted = 1;
 #else
@@ -608,7 +608,7 @@ void
 PyMac_HandleEventIntern(evp)
 	EventRecord *evp;
 {
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	if ( evp->what == mouseDown ) {
 		WindowPtr wp;
 		
@@ -686,7 +686,7 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	if( in_here > 1 || !schedparams.process_events || 
 	    (python_event_handler && !maycallpython) ) {
 		if ( maxsleep >= 0 ) {
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 			SystemTask();
 #else
 			int xxx = 0;
@@ -878,7 +878,7 @@ myhook_proc(short item, DialogPtr theDialog, struct hook_args *dataptr)
 	}
 	return item;
 }	
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 /*
 ** Ask the user for a directory. I still can't understand
 ** why Apple doesn't provide a standard solution for this...
@@ -931,7 +931,7 @@ void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList,
 	CustomGetFile((FileFilterYDUPP)0, numTypes, typeList, reply, GETFILEPROMPT_ID, where,
 				myhook_upp, NULL, NULL, NULL, (void *)&hook_args);
 }
-#endif /* TARGET_API_MAC_CARBON */
+#endif /* TARGET_API_MAC_OS8 */
 
 /* Convert a 4-char string object argument to an OSType value */
 int

@@ -360,7 +360,7 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 #include <EPPC.h>
 #include <Events.h>
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 static char accepthle_doc[] = "Get arguments of pending high-level event";
 
 static PyObject *
@@ -704,7 +704,7 @@ MacOS_OutputSeen(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MacOS_Methods[] = {
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
 #endif
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
@@ -760,10 +760,13 @@ initMacOS()
 				Py_BuildValue("i", PyMac_AppearanceCompliant)) != 0)
 		return;
 #if TARGET_API_MAC_CARBON
-/* Will need a different name for MachO-carbon later (macho?) */
 #define PY_RUNTIMEMODEL "carbon"
-#else
+#elif TARGET_API_MAC_OS8
 #define PY_RUNTIMEMODEL "ppc"
+#elif TARGET_API_MAC_OSX
+#define PY_RUNTIMEMODEL "macho"
+#else
+#error "None of the TARGET_API_MAC_XXX I know about is set"
 #endif
 	if (PyDict_SetItemString(d, "runtimemodel", 
 				Py_BuildValue("s", PY_RUNTIMEMODEL)) != 0)
