@@ -398,6 +398,14 @@ def mimify_part(ifile, ofile, is_mime):
 				break
 			ofile.write(line)
 			continue
+		# unexpectedly no multipart separator--copy rest of file
+		while 1:
+			line = ifile.readline()
+			if not line:
+				return
+			if must_quote_body:
+				line = mime_encode(line, 0)
+			ofile.write(line)
 
 def mimify(infile, outfile):
 	'''Convert 8bit parts of a MIME mail message to quoted-printable.'''
