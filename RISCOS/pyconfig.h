@@ -25,9 +25,6 @@
    tzname.  */
 #undef HAVE_TZNAME
 
-/* Define if on MINIX.  */
-#undef _MINIX
-
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef mode_t
 

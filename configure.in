@@ -329,7 +329,6 @@ AC_PROG_CC
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
-AC_MINIX
 
 # Check for unsupported systems
 case $ac_sys_system/$ac_sys_release in
@@ -338,12 +337,6 @@ SunOS/4*|DYNIX/*|dgux*/*|IRIX/4*|Linux*/1*)
    echo See README for details.
    exit 1;;
 esac
-
-if test "$MINIX" = yes; then
-   echo This system \(MINIX\) is no longer supported.
-   echo Read README for details.
-   exit 1
-fi
 
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
@@ -1014,10 +1007,10 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 # Sizes of various common basic types
+# ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
 AC_CHECK_SIZEOF(void *, 4)
-AC_CHECK_SIZEOF(char, 1)
 AC_CHECK_SIZEOF(short, 2)
 AC_CHECK_SIZEOF(float, 4)
 AC_CHECK_SIZEOF(double, 8)

@@ -704,9 +704,6 @@
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
 
-/* The size of a `char', as computed by sizeof. */
-#undef SIZEOF_CHAR
-
 /* The size of a `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
 
@@ -832,9 +829,6 @@
 
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE
-
-/* Define to 1 if on MINIX. */
-#undef _MINIX
 
 /* Define on NetBSD to activate all library features */
 #undef _NETBSD_SOURCE

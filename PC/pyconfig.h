@@ -295,9 +295,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
    tzname.  */
 #define HAVE_TZNAME
 
-/* Define if on MINIX.  */
-/* #undef _MINIX */
-
 /* Define to `int' if <sys/types.h> doesn't define.  */
 /* #undef mode_t */
 
