@@ -1390,6 +1390,78 @@ static PyObject *CarbonEvents_GetCurrentEventTime(PyObject *_self, PyObject *_ar
 	return _res;
 }
 
+static PyObject *CarbonEvents_TrackMouseLocation(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	GrafPtr inPort;
+	Point outPt;
+	UInt16 outResult;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &inPort))
+		return NULL;
+	_err = TrackMouseLocation(inPort,
+	                          &outPt,
+	                          &outResult);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&H",
+	                     PyMac_BuildPoint, outPt,
+	                     outResult);
+	return _res;
+}
+
+static PyObject *CarbonEvents_TrackMouseLocationWithOptions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	GrafPtr inPort;
+	OptionBits inOptions;
+	double inTimeout;
+	Point outPt;
+	UInt32 outModifiers;
+	UInt16 outResult;
+	if (!PyArg_ParseTuple(_args, "O&ld",
+	                      GrafObj_Convert, &inPort,
+	                      &inOptions,
+	                      &inTimeout))
+		return NULL;
+	_err = TrackMouseLocationWithOptions(inPort,
+	                                     inOptions,
+	                                     inTimeout,
+	                                     &outPt,
+	                                     &outModifiers,
+	                                     &outResult);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&lH",
+	                     PyMac_BuildPoint, outPt,
+	                     outModifiers,
+	                     outResult);
+	return _res;
+}
+
+static PyObject *CarbonEvents_TrackMouseRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	GrafPtr inPort;
+	RgnHandle inRegion;
+	Boolean ioWasInRgn;
+	UInt16 outResult;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      GrafObj_Convert, &inPort,
+	                      ResObj_Convert, &inRegion))
+		return NULL;
+	_err = TrackMouseRegion(inPort,
+	                        inRegion,
+	                        &ioWasInRgn,
+	                        &outResult);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("bH",
+	                     ioWasInRgn,
+	                     outResult);
+	return _res;
+}
+
 static PyObject *CarbonEvents_GetLastUserEventTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1718,6 +1790,12 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 "() -> (EventQueueRef _rv)"},
 	{"GetCurrentEventTime", (PyCFunction)CarbonEvents_GetCurrentEventTime, 1,
 	 "() -> (double _rv)"},
+	{"TrackMouseLocation", (PyCFunction)CarbonEvents_TrackMouseLocation, 1,
+	 "(GrafPtr inPort) -> (Point outPt, UInt16 outResult)"},
+	{"TrackMouseLocationWithOptions", (PyCFunction)CarbonEvents_TrackMouseLocationWithOptions, 1,
+	 "(GrafPtr inPort, OptionBits inOptions, double inTimeout) -> (Point outPt, UInt32 outModifiers, UInt16 outResult)"},
+	{"TrackMouseRegion", (PyCFunction)CarbonEvents_TrackMouseRegion, 1,
+	 "(GrafPtr inPort, RgnHandle inRegion) -> (Boolean ioWasInRgn, UInt16 outResult)"},
 	{"GetLastUserEventTime", (PyCFunction)CarbonEvents_GetLastUserEventTime, 1,
 	 "() -> (double _rv)"},
 	{"GetWindowEventTarget", (PyCFunction)CarbonEvents_GetWindowEventTarget, 1,
