@@ -921,6 +921,13 @@ def dynamics():
     verify(L(3)*2 == 6)
     verify(L(3)*L(2) == 6)
 
+    # Test comparison of classes with dynamic metaclasses
+    class dynamicmetaclass(type):
+        __dynamic__ = 1
+    class someclass:
+        __metaclass__ = dynamicmetaclass
+    verify(someclass != object)
+
 def errors():
     if verbose: print "Testing errors..."
 
