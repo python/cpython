@@ -36,7 +36,7 @@
 # Usage.
 #
 # Reading audio files:
-#	f = au.open(file, 'r')
+#	f = sunau.open(file, 'r')
 # where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods read(), seek(), and close().
 # When the setpos() and rewind() methods are not used, the seek()
@@ -69,7 +69,7 @@
 # is destroyed.
 #
 # Writing audio files:
-#	f = au.open(file, 'w')
+#	f = sunau.open(file, 'w')
 # where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods write(), tell(), seek(), and
 # close().
