@@ -152,7 +152,6 @@ Py_Initialize(void)
 
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
-	_PyImport_FixupExtension("exceptions", "exceptions");
 
 	initsigs(); /* Signal handling stuff, including initintr() */
 
