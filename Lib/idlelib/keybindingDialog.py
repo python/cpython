@@ -6,7 +6,13 @@ import tkMessageBox
 import string, os
 
 class GetKeysDialog(Toplevel):
-    def __init__(self,parent,title,action):
+    def __init__(self,parent,title,action,currentKeySequences):
+        """
+        action - string, the name of the virtual event these keys will be
+                 mapped to
+        currentKeys - list, a list of all key sequence lists currently mapped
+                 to virtual events, for overlap checking   
+        """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
         self.resizable(height=FALSE,width=FALSE)
@@ -16,6 +22,7 @@ class GetKeysDialog(Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
         self.parent = parent
         self.action=action
+        self.currentKeySequences=currentKeySequences
         self.result=''
         self.keyString=StringVar(self)
         self.keyString.set('')
@@ -191,29 +198,6 @@ class GetKeysDialog(Toplevel):
         apply(self.listKeysFinal.insert,
             (END,)+keys)
     
-    def KeysOk(self):
-        #simple validity check
-        keysOk=1
-        keys=self.keyString.get()
-        keys.strip()
-        finalKey=self.listKeysFinal.get(ANCHOR)
-        modifiers=self.GetModifiers()
-        if not keys: #no keys specified
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='No keys specified.')
-            keysOk=0
-        elif not keys.endswith('>'): #no final key specified
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='No final key specified.')
-            keysOk=0
-        elif (modifiers==['Shift']) and (finalKey not in self.functionKeys):
-            #shift alone is only a useful modifier with a function key
-            tkMessageBox.showerror(title='Key Sequence Error',
-                    message='Shift alone is only a useful modifier '+
-                            'when used with a function key.')
-            keysOk=0
-        return keysOk
-    
     def Ok(self, event=None):
         if self.KeysOk():
             self.result=self.keyString.get()
@@ -223,6 +207,39 @@ class GetKeysDialog(Toplevel):
         self.result=''
         self.destroy()
     
+    def KeysOk(self):
+        #simple validity check
+        keysOk=1
+        keys=self.keyString.get()
+        keys.strip()
+        finalKey=self.listKeysFinal.get(ANCHOR)
+        modifiers=self.GetModifiers()
+        keySequence=keys.split()#make into a key sequence list for overlap check
+        if not keys: #no keys specified
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='No keys specified.')
+            keysOk=0
+        elif not keys.endswith('>'): #no final key specified
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='No final key specified.')
+            keysOk=0
+        elif (not modifiers) and (finalKey not in self.functionKeys):
+            #modifier required if not a function key
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='No modifier key(s) specified.')
+            keysOk=0
+        elif (modifiers==['Shift']) and (finalKey not in self.functionKeys):
+            #shift alone is only a useful modifier with a function key
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='Shift alone is only a useful modifier '+
+                            'when used with a function key.')
+            keysOk=0
+        elif keySequence in self.currentKeySequences: #keys combo already in use
+            tkMessageBox.showerror(title='Key Sequence Error',
+                    message='This key combination is already in use.')
+            keysOk=0
+        return keysOk
+    
 if __name__ == '__main__':
     #test the dialog
     root=Tk()
@@ -230,7 +247,7 @@ if __name__ == '__main__':
         #import aboutDialog
         #aboutDialog.AboutDialog(root,'About')
         keySeq=''
-        dlg=GetKeysDialog(root,'Get Keys','find-again')
+        dlg=GetKeysDialog(root,'Get Keys','find-again',[])
         print dlg.result
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()
