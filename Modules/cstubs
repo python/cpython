@@ -1,6 +1,6 @@
 /*
 Input used to generate the Python module "glmodule.c".
-The stub generator is a Python script called "cgen".
+The stub generator is a Python script called "cgen.py".
 
 Each definition must be contained on one line:
 
@@ -493,6 +493,8 @@ static object *gl_endselect(self, args) object *self, *args; {
 
 /* XXX The generator botches this one.  Here's a quick hack to fix it. */
 
+/* XXX The generator botches this one.  Here's a quick hack to fix it. */
+
 % getmatrix float r[16]
 
 static object *
@@ -515,6 +517,46 @@ gl_getmatrix(self, args)
 			return NULL;
 		}
 		setlistitem(v, i, w);
+	}
+	return v;
+}
+
+/* Here's an alternate version that returns a 4x4 matrix instead of
+   a vector.  Unfortunately it is incompatible with loadmatrix and
+   multmatrix... */
+
+% altgetmatrix float r[4][4]
+
+static object *
+gl_altgetmatrix(self, args)
+	object *self;
+	object *args;
+{
+	float arg1 [ 4 ] [ 4 ] ;
+	object *v, *w;
+	int i, j;
+	getmatrix( arg1 );
+	v = newlistobject(4);
+	if (v == NULL) {
+		return NULL;
+	}
+	for (i = 0; i < 4; i++) {
+		w = newlistobject(4);
+		if (w == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		setlistitem(v, i, w);
+	}
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+			w = mknewfloatobject(arg1[i][j]);
+			if (w == NULL) {
+				DECREF(v);
+				return NULL;
+			}
+			setlistitem(getlistitem(v, i), j, w);
+		}
 	}
 	return v;
 }
@@ -680,9 +722,13 @@ void rpmv2		float s float s
 void xfpt2		float s float s
 #
 void loadmatrix		float s[16]
+# Really [4][4]
 void multmatrix		float s[16]
-void crv			float s[16]
+# Really [4][4]
+void crv			float s[12]
+# Really [4][3]
 void rcrv			float s[16]
+# Really [4][4]
 #
 # Methods that have strings.  
 #
@@ -712,8 +758,10 @@ void polfs		long s short s[3*arg1]
 void polys		long s short s[3*arg1]
 void poly2s		long s short s[2*arg1]
 #
-void defcursor		short s short s[16]
+void defcursor		short s short s[128]
+# Is this useful?
 void writepixels	short s short s[arg1]
+# Should be unsigned short...
 void defbasis		long s float s[16]
 void gewrite		short s short s[arg1]
 #
