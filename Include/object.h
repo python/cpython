@@ -218,6 +218,16 @@ typedef struct _typeobject {
 
 	hashfunc tp_hash;
 	binaryfunc tp_call;
+	reprfunc tp_str;
+
+	/* Space for future expansion */
+	long tp_xxx1;
+	long tp_xxx2;
+	long tp_xxx3;
+	long tp_xxx4;
+
+	char *tp_doc; /* Documentation string */
+
 #ifdef COUNT_ALLOCS
 	/* these must be last */
 	int tp_alloc;
