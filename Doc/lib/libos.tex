@@ -130,6 +130,18 @@ Return the current process' group id.
 Availability: \UNIX{}.
 \end{funcdesc}
 
+\begin{funcdesc}{getgroups}{}
+Return list of supplemental group ids associated with the current
+process.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{getlogin}{}
+Return the actual login name for the current process, even if there
+are multiple login names which map to the same user id.
+Availability: \UNIX{}.
+\end{funcdesc}
+
 \begin{funcdesc}{getpgrp}{}
 \index{process!group}
 Return the current process group id.
@@ -288,6 +300,25 @@ Availability: Macintosh, \UNIX{}, Windows.
 Duplicate file descriptor \var{fd} to \var{fd2}, closing the latter
 first if necessary.
 Availability: \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{fpathconf}{fd, name}
+Return system configration information relevant to an open file.
+\var{name} specifies the configuration value to retrieve; it may be a
+string which is the name of a defined system value; these names are
+specified in a number of standards (\POSIX.1, Unix95, Unix98, and
+others).  Some platforms define additional names as well.  The names
+known to the host operating system are given in the
+\code{pathconf_names} dictionary.  For configuration variables not
+included in that mapping, passing an integer for \var{name} is also
+accepted.
+Availability: \UNIX{}.
+
+If \var{name} is a string and is not known, \exception{ValueError} is
+raised.  If a specific value for \var{name} is not supported by the
+host system, even if it is included in \code{pathconf_names}, an
+\exception{OSError} is raised with \constant{errno.EINVAL} for the
+error number.
 \end{funcdesc}
 
 \begin{funcdesc}{fstat}{fd}
@@ -489,6 +520,33 @@ directory already exists or cannot be created.  The default \var{mode}
 is \code{0777} (octal).
 \versionadded{1.5.2}
 \end{funcdesc}
+
+\begin{funcdesc}{pathconf}{path, name}
+Return system configration information relevant to a named file.
+\var{name} specifies the configuration value to retrieve; it may be a
+string which is the name of a defined system value; these names are
+specified in a number of standards (\POSIX.1, Unix95, Unix98, and
+others).  Some platforms define additional names as well.  The names
+known to the host operating system are given in the
+\code{pathconf_names} dictionary.  For configuration variables not
+included in that mapping, passing an integer for \var{name} is also
+accepted.
+Availability: \UNIX{}.
+
+If \var{name} is a string and is not known, \exception{ValueError} is
+raised.  If a specific value for \var{name} is not supported by the
+host system, even if it is included in \code{pathconf_names}, an
+\exception{OSError} is raised with \constant{errno.EINVAL} for the
+error number.
+\end{funcdesc}
+
+\begin{datadesc}{pathconf_names}
+Dictionary mapping names accepted by \function{pathconf()} and
+\function{fpathconf()} to the integer values defined for those names
+by the host operating system.  This can be used to determine the set
+of names known to the system.
+Availability: \UNIX.
+\end{datadesc}
 
 \begin{funcdesc}{readlink}{path}
 Return a string representing the path to which the symbolic link
@@ -850,7 +908,55 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 
-\subsection{Miscellanenous System Data \label{os-path}}
+\subsection{Miscellanenous System Information \label{os-path}}
+
+
+\begin{funcdesc}{confstr}{name}
+Return string-valued system configuration values.
+\var{name} specifies the configuration value to retrieve; it may be a
+string which is the name of a defined system value; these names are
+specified in a number of standards (\POSIX, Unix95, Unix98, and
+others).  Some platforms define additional names as well.  The names
+known to the host operating system are given in the
+\code{confstr_names} dictionary.  For configuration variables not
+included in that mapping, passing an integer for \var{name} is also
+accepted.
+Availability: \UNIX{}.
+
+If the configuration value specified by \var{name} isn't defined, the
+empty string is returned.
+
+If \var{name} is a string and is not known, \exception{ValueError} is
+raised.  If a specific value for \var{name} is not supported by the
+host system, even if it is included in \code{confstr_names}, an
+\exception{OSError} is raised with \constant{errno.EINVAL} for the
+error number.
+\end{funcdesc}
+
+\begin{datadesc}{confstr_names}
+Dictionary mapping names accepted by \function{confstr()} to the
+integer values defined for those names by the host operating system.
+This can be used to determine the set of names known to the system.
+Availability: \UNIX.
+\end{datadesc}
+
+\begin{funcdesc}{sysconf}{name}
+Return integer-valued system configuration values.
+If the configuration value specified by \var{name} isn't defined,
+\code{-1} is returned.  The comments regarding the \var{name}
+parameter for \function{confstr()} apply here as well; the dictionary
+that provides information on the known names is given by
+\code{sysconf_names}.
+Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{datadesc}{sysconf_names}
+Dictionary mapping names accepted by \function{sysconf()} to the
+integer values defined for those names by the host operating system.
+This can be used to determine the set of names known to the system.
+Availability: \UNIX.
+\end{datadesc}
+
 
 The follow data values are used to support path manipulation
 operations.  These are defined for all platforms.
