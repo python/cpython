@@ -8,6 +8,8 @@ Core
 
 - binascii has now two quopri support functions, a2b_qp and b2a_qp.
 
+- readline now supports setting the startup_hook and the pre_event_hook.
+
 Library
 
 - quopri's encode and decode methods take an optional header parameter,
