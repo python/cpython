@@ -188,3 +188,76 @@ Example:
 >>> locale.strcoll("f\344n","foo")  #comparing a string containing an umlaut 
 >>> can.close()
 \end{verbatim}
+
+\subsection{Background, details, hints, tips and caveats}
+
+The C standard defines the locale as a program-wide property that may
+be relatively expensive to change.  On top of that, some
+implementation are broken in such a way that frequent locale changes
+may cause core dumps.  This makes the locale somewhat painful to use
+correctly.
+
+Initially, when a program is started, the locale is the "C" locale, no
+matter what the user's preferred locale is.  The program must
+explicitly say that it wants the user's preferred locale settings by
+calling \code{setlocale(LC_ALL, "")}.
+
+It is generally a bad idea to call \code{setlocale()} in some library
+routine, since as a side effect it affects the entire program.  Saving
+and restoring it is almost as bad: it is expensive and affects other
+threads that happen to run before the settings have been restored.
+
+If, when coding a module for general use, you need a locale
+independent version of an operation that is affected by the locale
+(e.g. \code{string.lower()}, or certain formats used with
+\code{time.strftime()})), you will have to find a way to do it without
+using the standard library routine.  Even better is convincing
+yourself that using locale settings is okay.  Only as a last should
+you document that your module is not compatible with non-C locale
+settings.
+
+The case conversion functions in the \code{string} and \code{strop}
+modules are affected by the locale settings.  When a call to the
+\code{setlocale()} function changes the \code{LC_CTYPE} settings, the
+variables \code{string.lowercase}, \code{string.uppercase} and
+\code{string.letters} (and their counterparts in \code{strop}) are
+recalculated.  Note that this code that uses these variable through
+\code{from ... import ...}, e.g. \code{from string import letters}, is
+not affected by subsequent \code{setlocale()} calls.
+
+The only way to perform numeric operations according to the locale
+is to use the special functions defined by this module:
+\code{atof()}, \code{atoi()}, \code{format()}, \code{str()}.
+
+\code{For extension writers and programs that embed Python}
+
+Extension modules should never call \code{setlocale()}, except to find
+out what the current locale is.  But since the return value can only
+be used portably to restore it, that is not very useful (except
+perhaps to find out whether or not the locale is ``C'').
+
+When Python is embedded in an application, if the application sets the
+locale to something specific before initializing Python, that is
+generally okay, and Python will use whatever locale is set,
+\strong{except} that the \code{LC_NUMERIC} locale should always be
+``C''.
+
+The \code{setlocale()} function in the \code{locale} module contains
+gives the Python progammer the impression that you can manipulate the
+\code{LC_NUMERIC} locale setting, but this not the case at the C
+level: C code will always find that the \code{LC_NUMERIC} locale
+setting is ``C''.  This is because too much would break when the
+decimal point character is set to something else than a period
+(e.g. the Python parser would break).  Caveat: threads that run
+without holding Python's global interpreter lock may occasionally find
+that the numeric locale setting differs; this is because the only
+portable way to implement this feature is to set the numeric locale
+settings to what the user requests, extract the relevant
+characteristics, and then restore the ``C'' numeric locale.
+
+When Python code uses the \code{locale} module to change the locale,
+this also affect the embedding application.  If the embedding
+application doesn't want this to happen, it should remove the
+\code{_locale} extension module (which does all the work) from the
+table of built-in modules in the \code{config.c} file, and make sure
+that the \code{_locale} module is not accessible as a shared library.
