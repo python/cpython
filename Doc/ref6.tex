@@ -196,9 +196,9 @@ messages.)
 
 WARNING: Although the definition of assignment implies that overlaps
 between the left-hand side and the right-hand side are `safe' (e.g.
-\verb@a, b = b, a@ swaps two variables), overlaps within the
+\code{a, b = b, a} swaps two variables), overlaps within the
 collection of assigned-to variables are not safe!  For instance, the
-following program prints \code@[0, 2]@:
+following program prints \code{[0, 2]}:
 
 \begin{verbatim}
 x = [0, 1]
@@ -208,7 +208,7 @@ print x
 \end{verbatim}
 
 
-\section{The {\tt pass} statement}
+\section{The \keyword{pass} statement}
 \stindex{pass}
 
 \begin{verbatim}
@@ -226,7 +226,7 @@ def f(arg): pass    # a function that does nothing (yet)
 class C: pass       # a class with no methods (yet)
 \end{verbatim}
 
-\section{The {\tt del} statement}
+\section{The \keyword{del} statement}
 \stindex{del}
 
 \begin{verbatim}
@@ -254,7 +254,7 @@ is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 \indexii{attribute}{deletion}
 
-\section{The {\tt print} statement} \label{print}
+\section{The \keyword{print} statement} \label{print}
 \stindex{print}
 
 \begin{verbatim}
@@ -269,21 +269,21 @@ space is written before each object is (converted and) written, unless
 the output system believes it is positioned at the beginning of a
 line.  This is the case: (1) when no characters have yet been written
 to standard output; or (2) when the last character written to standard
-output is \verb/\n/; or (3) when the last write operation on standard
+output is \character{\\n}; or (3) when the last write operation on standard
 output was not a \keyword{print} statement.  (In some cases it may be
 functional to write an empty string to standard output for this
 reason.)
 \index{output}
 \indexii{writing}{values}
 
-A \verb/"\n"/ character is written at the end, unless the \keyword{print}
+A \character{\\n} character is written at the end, unless the \keyword{print}
 statement ends with a comma.  This is the only action if the statement
 contains just the keyword \keyword{print}.
 \indexii{trailing}{comma}
 \indexii{newline}{suppression}
 
-Standard output is defined as the file object named \verb@stdout@
-in the built-in module \verb@sys@.  If no such object exists,
+Standard output is defined as the file object named \code{stdout}
+in the built-in module \module{sys}.  If no such object exists,
 or if it is not a writable file, a \exception{RuntimeError} exception is raised.
 (The original implementation attempts to write to the system's original
 standard output instead, but this is not safe, and should be fixed.)
@@ -292,7 +292,7 @@ standard output instead, but this is not safe, and should be fixed.)
 \ttindex{stdout}
 \exindex{RuntimeError}
 
-\section{The {\tt return} statement}
+\section{The \keyword{return} statement}
 \stindex{return}
 
 \begin{verbatim}
@@ -315,7 +315,7 @@ with a finally clause, that finally clause is executed
 before really leaving the function.
 \kwindex{finally}
 
-\section{The {\tt raise} statement}
+\section{The \keyword{raise} statement}
 \stindex{raise}
 
 \begin{verbatim}
@@ -346,7 +346,7 @@ exception occurred.  This is useful to re-raise an exception
 transparently in an except clause.
 \obindex{traceback}
 
-\section{The {\tt break} statement}
+\section{The \keyword{break} statement}
 \stindex{break}
 
 \begin{verbatim}
@@ -373,7 +373,7 @@ with a finally clause, that finally clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
-\section{The {\tt continue} statement}
+\section{The \keyword{continue} statement}
 \stindex{continue}
 
 \begin{verbatim}
@@ -383,7 +383,7 @@ continue_stmt:  "continue"
 \keyword{continue} may only occur syntactically nested in a \keyword{for} or
 \keyword{while} loop, but not nested in a function or class definition or
 \keyword{try} statement within that loop.\footnote{Except that it may
-currently occur within an {\tt except} clause.}
+currently occur within an except clause.}
 \stindex{for}
 \stindex{while}
 \indexii{loop}{statement}
@@ -391,7 +391,7 @@ currently occur within an {\tt except} clause.}
 
 It continues with the next cycle of the nearest enclosing loop.
 
-\section{The {\tt import} statement} \label{import}
+\section{The \keyword{import} statement} \label{import}
 \stindex{import}
 
 \begin{verbatim}
@@ -427,9 +427,8 @@ path; it is initialized from the shell environment variable
 \indexii{built-in}{module}
 \indexii{user-defined}{module}
 \refbimodindex{sys}
-\ttindex{path}
-\ttindex{sys.path}
 \indexii{filename}{extension}
+\indexiii{module}{search}{path}
 
 If a built-in module is found, its built-in initialization code is
 executed and step (1) is finished.  If no matching file is found,
@@ -454,8 +453,8 @@ module name: it goes through the list of identifiers, looks each one
 of them up in the module found in step (1), and binds the name in the
 local name space to the object thus found.  If a name is not found,
 \exception{ImportError} is raised.  If the list of identifiers is replaced
-by a star (\verb@*@), all names defined in the module are bound,
-except those beginning with an underscore(\verb@_@).
+by a star (\code{*}), all names defined in the module are bound,
+except those beginning with an underscore(\code{_}).
 \indexii{name}{binding}
 \exindex{ImportError}
 
@@ -463,7 +462,7 @@ Names bound by import statements may not occur in \keyword{global}
 statements in the same scope.
 \stindex{global}
 
-The \keyword{from} form with \verb@*@ may only occur in a module scope.
+The \keyword{from} form with \code{*} may only occur in a module scope.
 \kwindex{from}
 \ttindex{from ... import *}
 
@@ -472,7 +471,7 @@ restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
 
-\section{The {\tt global} statement} \label{global}
+\section{The \keyword{global} statement} \label{global}
 \stindex{global}
 
 \begin{verbatim}
@@ -481,8 +480,8 @@ global_stmt:    "global" identifier ("," identifier)*
 
 The \keyword{global} statement is a declaration which holds for the
 entire current code block.  It means that the listed identifiers are to be
-interpreted as globals.  While {\em using} global names is automatic
-if they are not defined in the local scope, {\em assigning} to global
+interpreted as globals.  While \emph{using} global names is automatic
+if they are not defined in the local scope, \emph{assigning} to global
 names would be impossible without \keyword{global}.
 \indexiii{global}{name}{binding}
 
@@ -501,7 +500,7 @@ program.)
 Note: the \keyword{global} is a directive to the parser.  Therefore, it
 applies only to code parsed at the same time as the \keyword{global}
 statement.  In particular, a \keyword{global} statement contained in an
-\keyword{exec} statement does not affect the code block {\em containing}
+\keyword{exec} statement does not affect the code block \emph{containing}
 the \keyword{exec} statement, and code contained in an \keyword{exec}
 statement is unaffected by \keyword{global} statements in the code
 containing the \keyword{exec} statement.  The same applies to the
