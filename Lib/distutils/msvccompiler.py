@@ -177,7 +177,7 @@ class MSVCCompiler (CCompiler) :
 
     # Private class data (need to distinguish C from C++ source for compiler)
     _c_extensions = ['.c']
-    _cpp_extensions = ['.cc','.cpp']
+    _cpp_extensions = ['.cc', '.cpp', '.cxx']
 
     # Needed for the filename generation methods provided by the
     # base class, CCompiler.
