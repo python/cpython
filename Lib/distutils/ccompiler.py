@@ -7,7 +7,7 @@ for the Distutils compiler abstraction model."""
 
 __revision__ = "$Id$"
 
-import sys, os
+import sys, os, re
 from types import *
 from copy import copy
 from distutils.errors import *
@@ -835,12 +835,44 @@ class CCompiler:
 # class CCompiler
 
 
-# Map a platform ('posix', 'nt') to the default compiler type for
-# that platform.
-default_compiler = { 'posix': 'unix',
-                     'nt': 'msvc',
-                     'mac': 'mwerks',
-                   }
+# Map a sys.platform/os.name ('posix', 'nt') to the default compiler
+# type for that platform. Keys are interpreted as re match
+# patterns. Order is important; platform mappings are preferred over
+# OS names.
+_default_compilers = (
+
+    # Platform string mappings
+    ('cygwin.*', 'cygwin'),
+    
+    # OS name mappings
+    ('posix', 'unix'),
+    ('nt', 'msvc'),
+    ('mac', 'mwerks'),
+    
+    )
+
+def get_default_compiler(osname=None, platform=None):
+
+    """ Determine the default compiler to use for the given platform.
+
+        osname should be one of the standard Python OS names (i.e. the
+        ones returned by os.name) and platform the common value
+        returned by sys.platform for the platform in question.
+
+        The default values are os.name and sys.platform in case the
+        parameters are not given.
+
+    """
+    if osname is None:
+        osname = os.name
+    if platform is None:
+        platform = sys.platform
+    for pattern, compiler in _default_compilers:
+        if re.match(pattern, platform) is not None or \
+           re.match(pattern, osname) is not None:
+            return compiler
+    # Default to Unix compiler
+    return 'unix'
 
 # Map compiler types to (module_name, class_name) pairs -- ie. where to
 # find the code that implements an interface to this compiler.  (The module
@@ -896,7 +928,7 @@ def new_compiler (plat=None,
 
     try:
         if compiler is None:
-            compiler = default_compiler[plat]
+            compiler = get_default_compiler(plat)
         
         (module_name, class_name, long_description) = compiler_class[compiler]
     except KeyError:
