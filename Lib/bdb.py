@@ -7,6 +7,7 @@
 # And of course... you can roll your own!
 
 import sys
+import types
 
 BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
 
@@ -278,9 +279,11 @@ class Bdb: # Basic Debugger
 			locals = globals
 		self.reset()
 		sys.settrace(self.trace_dispatch)
+		if type(cmd) <> types.CodeType:
+			cmd = cmd+'\n'
 		try:
 			try:
-				exec cmd + '\n' in globals, locals
+				exec cmd in globals, locals
 			except BdbQuit:
 				pass
 		finally:
@@ -295,9 +298,11 @@ class Bdb: # Basic Debugger
 			locals = globals
 		self.reset()
 		sys.settrace(self.trace_dispatch)
+		if type(expr) <> types.CodeType:
+			expr = expr+'\n'
 		try:
 			try:
-				return eval(expr + '\n', globals, locals)
+				return eval(expr, globals, locals)
 			except BdbQuit:
 				pass
 		finally:
