@@ -1,15 +1,15 @@
-# Module 'shutil' -- utility functions usable in a shell-like program.
-# XXX The copy*() functions here don't copy the data fork on Mac.
-# XXX Consider this example code rather than flexible tools.
+"""Utility functions for copying files.
+
+XXX The functions here don't copy the data fork or other metadata on Mac.
+
+"""
 
 import os
+import stat
 
-MODEBITS = 010000	# Lower 12 mode bits
-# Change this to 01000 (9 mode bits) to avoid copying setuid etc.
 
-# Copy data from src to dst
-#
 def copyfile(src, dst):
+    """Copy data from src to dst"""
     fsrc = None
     fdst = None
     try:
@@ -26,59 +26,70 @@ def copyfile(src, dst):
 	if fsrc:
 	    fsrc.close()
 
-# Copy mode bits from src to dst
-#
 def copymode(src, dst):
+    """Copy mode bits from src to dst"""
     st = os.stat(src)
-    mode = divmod(st[0], MODEBITS)[1]
+    mode = stat.S_IMODE(st[stat.ST_MODE])
     os.chmod(dst, mode)
 
-# Copy all stat info (mode bits, atime and mtime) from src to dst
-#
 def copystat(src, dst):
+    """Copy all stat info (mode bits, atime and mtime) from src to dst"""
     st = os.stat(src)
-    mode = divmod(st[0], MODEBITS)[1]
+    mode = stat.S_IMODE(st[stat.ST_MODE])
     os.chmod(dst, mode)
-    os.utime(dst, st[7:9])
+    os.utime(dst, (st[stat.ST_ATIME], st[stat.ST_MODE]))
 
-# Copy data and mode bits ("cp src dst").
-# Support directory as target.
-#
+
 def copy(src, dst):
+    """Copy data and mode bits ("cp src dst").
+    
+    The destination may be a directory.
+
+    """
     if os.path.isdir(dst):
 	dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst)
     copymode(src, dst)
 
-# Copy data and all stat info ("cp -p src dst").
-# Support directory as target.
-#
 def copy2(src, dst):
+    """Copy data and all stat info ("cp -p src dst").
+
+    The destination may be a directory.
+
+    """
     if os.path.isdir(dst):
 	dst = os.path.join(dst, os.path.basename(src))
     copyfile(src, dst)
     copystat(src, dst)
 
-# Recursively copy a directory tree.
-# The destination must not already exist.
-#
-def copytree(src, dst):
+
+def copytree(src, dst, symlinks=0):
+    """Recursively copy a directory tree using copy2().
+
+    The destination directory must not already exist.
+    Error are reported to standard output.
+
+    If the optional symlinks flag is true, symbolic links in the
+    source tree result in symbolic links in the destination tree; if
+    it is false, the contents of the files pointed to by symbolic
+    links are copied.
+
+    XXX Consider this example code rather than the ultimate tool.
+
+    """
     names = os.listdir(src)
-    os.mkdir(dst, 0777)
+    os.mkdir(dst)
     for name in names:
 	srcname = os.path.join(src, name)
 	dstname = os.path.join(dst, name)
-	#print 'Copying', srcname, 'to', dstname
 	try:
-	    #if os.path.islink(srcname):
-	    #	linkto = os.readlink(srcname)
-	    #	os.symlink(linkto, dstname)
-	    #elif os.path.isdir(srcname):
-	    if os.path.isdir(srcname):
+	    if symlinks and os.path.islink(srcname):
+	    	linkto = os.readlink(srcname)
+	    	os.symlink(linkto, dstname)
+	    elif os.path.isdir(srcname):
 		copytree(srcname, dstname)
 	    else:
 		copy2(srcname, dstname)
 	    # XXX What about devices, sockets etc.?
-	except os.error, why:
-	    print 'Could not copy', srcname, 'to', dstname,
-	    print '(', why[1], ')'
+	except (IOError, os.error), why:
+	    print "Can't copy %s to %s: %s" % (`srcname`, `dstname`, str(why))
