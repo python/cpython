@@ -8,10 +8,9 @@ from scantools import Scanner_OSX
 
 LONG = "Files"
 SHORT = "file"
-OBJECT = "NOTUSED"
 
 def main():
-	input = LONG + ".h"
+	input = ["Files.h", "Aliases.h"]
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -30,11 +29,24 @@ class MyScanner(Scanner_OSX):
 		classname = "Function"
 		listname = "functions"
 		if arglist:
+			# Funny special case
+			if len(arglist) > 2:
+				t, n, m = arglist[1]
+				if t == "AliasHandle" and m == "InMode":
+					classname = "Arg2MethodGenerator"
+					listname = "alias_methods"
+					return classname, listname
+			# Normal cases
 			t, n, m = arglist[0]
-			# This is non-functional today
-			if t == OBJECT and m == "InMode":
+			if t == "AliasHandle" and m == "InMode":
 				classname = "Method"
-				listname = "methods"
+				listname = "alias_methods"
+			if t == "FSSpec_ptr" and m == "InMode":
+				classname = "Method"
+				listname = "fsspec_methods"
+			if t == "FSRef_ptr" and m == "InMode":
+				classname = "Method"
+				listname = "fsref_methods"
 		return classname, listname
 
 	def makeblacklistnames(self):
@@ -45,6 +57,9 @@ class MyScanner(Scanner_OSX):
 			"kFSIterateReserved",
 			
 			"FSRefMakePath", # Do this manually
+#			"ResolveAlias", # Do this manually
+#			"ResolveAliasWithMountFlags", # Do this manually
+#			"FollowFinderAlias", # Do this manually
 			
 			"FSRead", # Couldn't be bothered
 			"FSWrite", # ditto
@@ -128,7 +143,8 @@ class MyScanner(Scanner_OSX):
 			
 			"IOCompletionProcPtr", # proc pointer
 			"IOCompletionUPP", # Proc pointer
-			
+			"AliasFilterProcPtr",
+			"AliasFilterUPP",
 			
 			]
 
@@ -144,6 +160,18 @@ class MyScanner(Scanner_OSX):
 			  ('UniChar_ptr', '*', 'InMode')],
 			 [('UnicodeReverseInBuffer', '*', 'InMode')]
 			),
+			# Wrong guess
+			([('Str63', 'theString', 'InMode')],
+			 [('Str63', 'theString', 'OutMode')]),
+			 
+			# Yet another way to give a pathname:-)
+			([('short', 'fullPathLength', 'InMode'),
+			  ('void_ptr', 'fullPath', 'InMode')],
+			 [('FullPathName', 'fullPath', 'InMode')]),
+	
+			# Various ResolveAliasFileXXXX functions
+			([('FSSpec', 'theSpec', 'OutMode')],
+			 [('FSSpec_ptr', 'theSpec', 'InOutMode')]),
 		]
 		
    
