@@ -32,7 +32,7 @@ Version History:
 
 """
 
-LOOPS = 1000
+LOOPS = 10000
 
 from time import clock
 
