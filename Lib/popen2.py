@@ -140,20 +140,25 @@ else:
     pass # not yet on unix
 
 def _test():
+    cmd  = "cat"
     teststr = "abc\n"
+    resultstr = teststr
+    if os.name == "nt":
+        cmd = "more"
+        resultstr = "\n" + resultstr
     print "testing popen2..."
-    r, w = popen2('cat')
+    r, w = popen2(cmd)
     w.write(teststr)
     w.close()
-    assert r.read() == teststr
+    assert r.read() == resultstr
     print "testing popen3..."
     try:
-        r, w, e = popen3(['cat'])
+        r, w, e = popen3([cmd])
     except:
-        r, w, e = popen3('cat')
+        r, w, e = popen3(cmd)
     w.write(teststr)
     w.close()
-    assert r.read() == teststr
+    assert r.read() == resultstr
     assert e.read() == ""
     for inst in _active[:]:
         inst.wait()
