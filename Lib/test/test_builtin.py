@@ -229,6 +229,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(divmod(12L, -7), (-2L, -2))
         self.assertEqual(divmod(-12L, -7), (1L, -5))
 
+        self.assertEqual(divmod(-sys.maxint-1, -1),
+                         (sys.maxint+1, 0))
+
         self.assert_(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
         self.assert_(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
         self.assert_(not fcmp(divmod(3.25, -1.0), (-4.0, -0.75)))

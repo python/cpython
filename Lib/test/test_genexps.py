@@ -121,7 +121,6 @@ Verify re-use of tuples (a side benefit of using genexps over listcomps)
     0
 
 
-
 ########### Tests borrowed from or inspired by test_generators.py ############
 
 Make a generator that acts like range()
