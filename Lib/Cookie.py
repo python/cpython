@@ -521,11 +521,11 @@ class Morsel(UserDict):
 # result, the parsing rules here are less strict.
 #
 
-_LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{]"
+_LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
 _CookiePattern = re.compile(
     r"(?x)"                       # This is a Verbose pattern
     r"(?P<key>"                   # Start of group 'key'
-    ""+ _LegalCharsPatt +"+"        # Any word of at least one letter
+    ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
     r"\s*=\s*"                    # Equal Sign
     r"(?P<val>"                   # Start of group 'val'
