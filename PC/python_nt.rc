@@ -36,11 +36,11 @@
  * For 2.3,
  * PY_MICRO_VERSION = 0
  * PY_RELEASE_LEVEL = 'final' = 0xf
- * PY_RELEASE_SERIAL = 2
+ * PY_RELEASE_SERIAL = 0
  *
- * and 0*1000 + 15*10 + 2 = 152
+ * and 0*1000 + 15*10 + 0 = 150
  */
-#define FIELD3 152
+#define FIELD3 150
 
 /* e.g., 2.1a2
  * PY_VERSION comes from patchevel.h
