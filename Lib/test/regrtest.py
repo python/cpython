@@ -138,11 +138,14 @@ def runtest(test, generate, verbose):
 	    sys.stdout = save_stdout
     except ImportError, msg:
 	return -1
+    except KeyboardInterrupt, v:
+	raise KeyboardInterrupt, v, sys.exc_info()[2]
     except test_support.TestFailed, msg:
 	print "test", test, "failed --", msg
 	return 0
     except:
-	print "test", test, "crashed --", sys.exc_type, ":", sys.exc_value
+	type, value = sys.exc_info()[:2]
+	print "test", test, "crashed --", type, ":", value
 	if verbose:
 	    traceback.print_exc(file=sys.stdout)
 	return 0
