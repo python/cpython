@@ -234,11 +234,16 @@ standardized, but is supported by many common server implementations.
 Send a \samp{QUIT} command to the server and close the connection.
 This is the ``polite'' way to close a connection, but it may raise an
 exception of the server reponds with an error to the \samp{QUIT}
-command.
+command.  This implies a call to the \method{close()} method which
+renders the \class{FTP} instance useless for subsequent calls (see
+below).
 \end{methoddesc}
 
 \begin{methoddesc}{close}{}
 Close the connection unilaterally.  This should not be applied to an
 already closed connection (e.g.\ after a successful call to
-\method{quit()}.
+\method{quit()}.  After this call the \class{FTP} instance should not
+be used any more (i.e., after a call to \method{close()} or
+\method{quit()} you cannot reopen the connection by issueing another
+\method{login()} method).
 \end{methoddesc}
