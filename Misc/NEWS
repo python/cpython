@@ -6,7 +6,12 @@ Type/class unification and new-style classes
 
 Core
 
+- binascii has now two quopri support functions, a2b_qp and b2a_qp.
+
 Library
+
+- quopri's encode and decode methods take an optional header parameter,
+  which indicates whether output is intended for the header 'Q' encoding.
 
 Tools
 
