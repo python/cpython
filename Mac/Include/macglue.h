@@ -52,6 +52,11 @@ extern void PyMac_SetGUSISpin(void);	/* Install our private GUSI spin routine */
 #endif
 
 extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.c) */
+extern FSSpec PyMac_ApplicationFSSpec;	/* Application location (from macargv.c) */
+extern char PyMac_ApplicationPath[];	/* Application location (from macargv.c) */
+extern OSErr PyMac_init_application_location Py_PROTO((void));	/* Init the above */
+extern OSErr PyMac_GetFullPath Py_PROTO((FSSpec *, char *)); /* convert fsspec->path (macargv.c) */
+extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from macargv.c) */
 
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
