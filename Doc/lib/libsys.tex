@@ -11,13 +11,12 @@ It is always available.
 
 \begin{datadesc}{argv}
   The list of command line arguments passed to a Python script.
-  \code{argv[0]} is the script name (it is operating system
-  dependent whether this is a full pathname or not).
-  If the command was executed using the \programopt{-c} command line
-  option to the interpreter, \code{argv[0]} is set to the string
-  \code{'-c'}.
-  If no script name was passed to the Python interpreter,
-  \code{argv} has zero length.
+  \code{argv[0]} is the script name (it is operating system dependent
+  whether this is a full pathname or not).  If the command was
+  executed using the \programopt{-c} command line option to the
+  interpreter, \code{argv[0]} is set to the string \code{'-c'}.  If no
+  script name was passed to the Python interpreter, \code{argv} has
+  zero length.
 \end{datadesc}
 
 \begin{datadesc}{byteorder}
@@ -36,82 +35,81 @@ It is always available.
 \end{datadesc}
 
 \begin{datadesc}{copyright}
-A string containing the copyright pertaining to the Python interpreter.
+  A string containing the copyright pertaining to the Python
+  interpreter.
 \end{datadesc}
 
 \begin{datadesc}{dllhandle}
-Integer specifying the handle of the Python DLL.
-Availability: Windows.
+  Integer specifying the handle of the Python DLL.
+  Availability: Windows.
 \end{datadesc}
 
 \begin{funcdesc}{displayhook}{\var{value}}
-If \var{value} is not \code{None}, this function prints it to 
-\code{sys.stdout}, and saves it in \code{__builtin__._}.
+  If \var{value} is not \code{None}, this function prints it to
+  \code{sys.stdout}, and saves it in \code{__builtin__._}.
 
-\code{sys.displayhook} is called on the result of evaluating
-an expression entered in an interactive Python session.
-The display of these values can be customized by assigning
-another one-argument function to \code{sys.displayhook}.
+  \code{sys.displayhook} is called on the result of evaluating an
+  expression entered in an interactive Python session.  The display of
+  these values can be customized by assigning another one-argument
+  function to \code{sys.displayhook}.
 \end{funcdesc}
 
 \begin{funcdesc}{excepthook}{\var{type}, \var{value}, \var{traceback}}
-This function prints out a given traceback and exception to
-\code{sys.stderr}.
+  This function prints out a given traceback and exception to
+  \code{sys.stderr}.
 
-When an exception is raised and uncaught, the interpreter calls
-\code{sys.excepthook} with three arguments, the exception class,
-exception instance, and a traceback object.
-In an interactive session this happens just before
-control is returned to the prompt; in a Python program this happens
-just before the program exits.
-The handling of such top-level exceptions can be customized by
-assigning another three-argument function to \code{sys.excepthook}.
+  When an exception is raised and uncaught, the interpreter calls
+  \code{sys.excepthook} with three arguments, the exception class,
+  exception instance, and a traceback object.  In an interactive
+  session this happens just before control is returned to the prompt;
+  in a Python program this happens just before the program exits.  The
+  handling of such top-level exceptions can be customized by assigning
+  another three-argument function to \code{sys.excepthook}.
 \end{funcdesc}
 
 \begin{datadesc}{__displayhook__}
 \dataline{__excepthook__}
-These objects contain the original values of \code{displayhook}
-and \code{excepthook} at the start of the program.  They are saved
-so that \code{displayhook} and \code{excepthook} can be restored
-in case they happen to get replaced with broken objects.
+  These objects contain the original values of \code{displayhook} and
+  \code{excepthook} at the start of the program.  They are saved so
+  that \code{displayhook} and \code{excepthook} can be restored in
+  case they happen to get replaced with broken objects.
 \end{datadesc}
 
 \begin{funcdesc}{exc_info}{}
-This function returns a tuple of three values that give information
-about the exception that is currently being handled.  The information
-returned is specific both to the current thread and to the current
-stack frame.  If the current stack frame is not handling an exception,
-the information is taken from the calling stack frame, or its caller,
-and so on until a stack frame is found that is handling an exception.
-Here, ``handling an exception'' is defined as ``executing or having
-executed an except clause.''  For any stack frame, only
-information about the most recently handled exception is accessible.
+  This function returns a tuple of three values that give information
+  about the exception that is currently being handled.  The
+  information returned is specific both to the current thread and to
+  the current stack frame.  If the current stack frame is not handling
+  an exception, the information is taken from the calling stack frame,
+  or its caller, and so on until a stack frame is found that is
+  handling an exception.  Here, ``handling an exception'' is defined
+  as ``executing or having executed an except clause.''  For any stack
+  frame, only information about the most recently handled exception is
+  accessible.
 
-If no exception is being handled anywhere on the stack, a tuple
-containing three \code{None} values is returned.  Otherwise, the
-values returned are
-\code{(\var{type}, \var{value}, \var{traceback})}.
-Their meaning is: \var{type} gets the exception type of the exception
-being handled (a string or class object); \var{value} gets the
-exception parameter (its \dfn{associated value} or the second argument
-to \keyword{raise}, which is always a class instance if the exception
-type is a class object); \var{traceback} gets a traceback object (see
-the Reference Manual) which encapsulates the call stack at the point
-where the exception originally occurred.
-\obindex{traceback}
+  If no exception is being handled anywhere on the stack, a tuple
+  containing three \code{None} values is returned.  Otherwise, the
+  values returned are \code{(\var{type}, \var{value},
+  \var{traceback})}.  Their meaning is: \var{type} gets the exception
+  type of the exception being handled (a string or class object);
+  \var{value} gets the exception parameter (its \dfn{associated value}
+  or the second argument to \keyword{raise}, which is always a class
+  instance if the exception type is a class object); \var{traceback}
+  gets a traceback object (see the Reference Manual) which
+  encapsulates the call stack at the point where the exception
+  originally occurred.  \obindex{traceback}
 
-\strong{Warning:} assigning the \var{traceback} return value to a
-local variable in a function that is handling an exception will cause
-a circular reference. This will prevent anything referenced by a local
-variable in the same function or by the traceback from being garbage
-collected.  Since most functions don't need access to the traceback,
-the best solution is to use something like
-\code{type, value = sys.exc_info()[:2]}
-to extract only the exception type and value.  If you do need the
-traceback, make sure to delete it after use (best done with a
-\keyword{try} ... \keyword{finally} statement) or to call
-\function{exc_info()} in a function that does not itself handle an
-exception.
+  \strong{Warning:} assigning the \var{traceback} return value to a
+  local variable in a function that is handling an exception will
+  cause a circular reference.  This will prevent anything referenced
+  by a local variable in the same function or by the traceback from
+  being garbage collected.  Since most functions don't need access to
+  the traceback, the best solution is to use something like
+  \code{type, value = sys.exc_info()[:2]} to extract only the
+  exception type and value.  If you do need the traceback, make sure
+  to delete it after use (best done with a \keyword{try}
+  ... \keyword{finally} statement) or to call \function{exc_info()} in
+  a function that does not itself handle an exception.
 \end{funcdesc}
 
 \begin{datadesc}{exc_type}
@@ -119,59 +117,61 @@ exception.
 \dataline{exc_traceback}
 \deprecated {1.5}
             {Use \function{exc_info()} instead.}
-Since they are global variables, they are not specific to the current
-thread, so their use is not safe in a multi-threaded program.  When no
-exception is being handled, \code{exc_type} is set to \code{None} and
-the other two are undefined.
+  Since they are global variables, they are not specific to the
+  current thread, so their use is not safe in a multi-threaded
+  program.  When no exception is being handled, \code{exc_type} is set
+  to \code{None} and the other two are undefined.
 \end{datadesc}
 
 \begin{datadesc}{exec_prefix}
-A string giving the site-specific directory prefix where the
-platform-dependent Python files are installed; by default, this is
-also \code{'/usr/local'}.  This can be set at build time with the
-\longprogramopt{exec-prefix} argument to the
-\program{configure} script.  Specifically, all configuration files
-(e.g. the \file{config.h} header file) are installed in the directory
-\code{exec_prefix + '/lib/python\var{version}/config'}, and shared
-library modules are installed in \code{exec_prefix +
-'/lib/python\var{version}/lib-dynload'}, where \var{version} is equal
-to \code{version[:3]}.
+  A string giving the site-specific directory prefix where the
+  platform-dependent Python files are installed; by default, this is
+  also \code{'/usr/local'}.  This can be set at build time with the
+  \longprogramopt{exec-prefix} argument to the \program{configure}
+  script.  Specifically, all configuration files (e.g. the
+  \file{config.h} header file) are installed in the directory
+  \code{exec_prefix + '/lib/python\var{version}/config'}, and shared
+  library modules are installed in \code{exec_prefix +
+  '/lib/python\var{version}/lib-dynload'}, where \var{version} is
+  equal to \code{version[:3]}.
 \end{datadesc}
 
 \begin{datadesc}{executable}
-A string giving the name of the executable binary for the Python
-interpreter, on systems where this makes sense.
+  A string giving the name of the executable binary for the Python
+  interpreter, on systems where this makes sense.
 \end{datadesc}
 
 \begin{funcdesc}{exit}{\optional{arg}}
-Exit from Python.  This is implemented by raising the
-\exception{SystemExit} exception, so cleanup actions specified by
-finally clauses of \keyword{try} statements are honored, and it is
-possible to intercept the exit attempt at an outer level.  The
-optional argument \var{arg} can be an integer giving the exit status
-(defaulting to zero), or another type of object.  If it is an integer,
-zero is considered ``successful termination'' and any nonzero value is
-considered ``abnormal termination'' by shells and the like.  Most
-systems require it to be in the range 0-127, and produce undefined
-results otherwise.  Some systems have a convention for assigning
-specific meanings to specific exit codes, but these are generally
-underdeveloped; Unix programs generally use 2 for command line syntax
-errors and 1 for all other kind of errors.  If another type of object
-is passed, \code{None} is equivalent to passing zero, and any other
-object is printed to \code{sys.stderr} and results in an exit code of
-1.  In particular, \code{sys.exit("some error message")} is a quick
-way to exit a program when an error occurs.
+  Exit from Python.  This is implemented by raising the
+  \exception{SystemExit} exception, so cleanup actions specified by
+  finally clauses of \keyword{try} statements are honored, and it is
+  possible to intercept the exit attempt at an outer level.  The
+  optional argument \var{arg} can be an integer giving the exit status
+  (defaulting to zero), or another type of object.  If it is an
+  integer, zero is considered ``successful termination'' and any
+  nonzero value is considered ``abnormal termination'' by shells and
+  the like.  Most systems require it to be in the range 0-127, and
+  produce undefined results otherwise.  Some systems have a convention
+  for assigning specific meanings to specific exit codes, but these
+  are generally underdeveloped; Unix programs generally use 2 for
+  command line syntax errors and 1 for all other kind of errors.  If
+  another type of object is passed, \code{None} is equivalent to
+  passing zero, and any other object is printed to \code{sys.stderr}
+  and results in an exit code of 1.  In particular,
+  \code{sys.exit("some error message")} is a quick way to exit a
+  program when an error occurs.
 \end{funcdesc}
 
 \begin{datadesc}{exitfunc}
   This value is not actually defined by the module, but can be set by
   the user (or by a program) to specify a clean-up action at program
-  exit.  When set, it should be a parameterless function.  This function
-  will be called when the interpreter exits.  Only one function may be
-  installed in this way; to allow multiple functions which will be called
-  at termination, use the \refmodule{atexit} module.  Note: the exit function
-  is not called when the program is killed by a signal, when a Python
-  fatal internal error is detected, or when \code{os._exit()} is called.
+  exit.  When set, it should be a parameterless function.  This
+  function will be called when the interpreter exits.  Only one
+  function may be installed in this way; to allow multiple functions
+  which will be called at termination, use the \refmodule{atexit}
+  module.  Note: the exit function is not called when the program is
+  killed by a signal, when a Python fatal internal error is detected,
+  or when \code{os._exit()} is called.
 \end{datadesc}
 
 \begin{funcdesc}{getdefaultencoding}{}
@@ -189,34 +189,35 @@ way to exit a program when an error occurs.
 \end{funcdesc}
 
 \begin{funcdesc}{getrefcount}{object}
-Return the reference count of the \var{object}.  The count returned is
-generally one higher than you might expect, because it includes the
-(temporary) reference as an argument to \function{getrefcount()}.
+  Return the reference count of the \var{object}.  The count returned
+  is generally one higher than you might expect, because it includes
+  the (temporary) reference as an argument to
+  \function{getrefcount()}.
 \end{funcdesc}
 
 \begin{funcdesc}{getrecursionlimit}{}
-Return the current value of the recursion limit, the maximum depth of
-the Python interpreter stack.  This limit prevents infinite recursion
-from causing an overflow of the C stack and crashing Python.  It can
-be set by \function{setrecursionlimit()}.
+  Return the current value of the recursion limit, the maximum depth
+  of the Python interpreter stack.  This limit prevents infinite
+  recursion from causing an overflow of the C stack and crashing
+  Python.  It can be set by \function{setrecursionlimit()}.
 \end{funcdesc}
 
 \begin{funcdesc}{_getframe}{\optional{depth}}
-Return a frame object from the call stack.  If optional integer
-\var{depth} is given, return the frame object that many calls below
-the top of the stack.  If that is deeper than the call stack,
-\exception{ValueError} is raised.  The default for \var{depth} is
-zero, returning the frame at the top of the call stack.
+  Return a frame object from the call stack.  If optional integer
+  \var{depth} is given, return the frame object that many calls below
+  the top of the stack.  If that is deeper than the call stack,
+  \exception{ValueError} is raised.  The default for \var{depth} is
+  zero, returning the frame at the top of the call stack.
 
-This function should be used for internal and specialized
-purposes only.
+  This function should be used for internal and specialized purposes
+  only.
 \end{funcdesc}
 
 \begin{datadesc}{hexversion}
-The version number encoded as a single integer.  This is guaranteed to
-increase with each version, including proper support for
-non-production releases.  For example, to test that the Python
-interpreter is at least version 1.5.2, use:
+  The version number encoded as a single integer.  This is guaranteed
+  to increase with each version, including proper support for
+  non-production releases.  For example, to test that the Python
+  interpreter is at least version 1.5.2, use:
 
 \begin{verbatim}
 if sys.hexversion >= 0x010502F0:
@@ -227,37 +228,36 @@ else:
     ...
 \end{verbatim}
 
-This is called \samp{hexversion} since it only really looks meaningful
-when viewed as the result of passing it to the built-in
-\function{hex()} function.  The \code{version_info} value may be used
-for a more human-friendly encoding of the same information.
-\versionadded{1.5.2}
+  This is called \samp{hexversion} since it only really looks
+  meaningful when viewed as the result of passing it to the built-in
+  \function{hex()} function.  The \code{version_info} value may be
+  used for a more human-friendly encoding of the same information.
+  \versionadded{1.5.2}
 \end{datadesc}
 
 \begin{datadesc}{last_type}
 \dataline{last_value}
 \dataline{last_traceback}
-These three variables are not always defined; they are set when an
-exception is not handled and the interpreter prints an error message
-and a stack traceback.  Their intended use is to allow an interactive
-user to import a debugger module and engage in post-mortem debugging
-without having to re-execute the command that caused the error.
-(Typical use is \samp{import pdb; pdb.pm()} to enter the post-mortem
-debugger; see the chapter ``The Python Debugger'' for more
-information.)
-\refstmodindex{pdb}
+  These three variables are not always defined; they are set when an
+  exception is not handled and the interpreter prints an error message
+  and a stack traceback.  Their intended use is to allow an
+  interactive user to import a debugger module and engage in
+  post-mortem debugging without having to re-execute the command that
+  caused the error.  (Typical use is \samp{import pdb; pdb.pm()} to
+  enter the post-mortem debugger; see chapter \ref{debugger}, ``The
+  Python Debugger,'' for more information.)
 
-The meaning of the variables is the same
-as that of the return values from \function{exc_info()} above.
-(Since there is only one interactive thread, thread-safety is not a
-concern for these variables, unlike for \code{exc_type} etc.)
+  The meaning of the variables is the same as that of the return
+  values from \function{exc_info()} above.  (Since there is only one
+  interactive thread, thread-safety is not a concern for these
+  variables, unlike for \code{exc_type} etc.)
 \end{datadesc}
 
 \begin{datadesc}{maxint}
-The largest positive integer supported by Python's regular integer
-type.  This is at least 2**31-1.  The largest negative integer is
-\code{-maxint-1} -- the asymmetry results from the use of 2's
-complement binary arithmetic.
+  The largest positive integer supported by Python's regular integer
+  type.  This is at least 2**31-1.  The largest negative integer is
+  \code{-maxint-1} -- the asymmetry results from the use of 2's
+  complement binary arithmetic.
 \end{datadesc}
 
 \begin{datadesc}{modules}
@@ -273,35 +273,34 @@ complement binary arithmetic.
 \indexiii{module}{search}{path}
   A list of strings that specifies the search path for modules.
   Initialized from the environment variable \envvar{PYTHONPATH}, or an
-  installation-dependent default.  
+  installation-dependent default.
 
-The first item of this list, \code{path[0]}, is the 
-directory containing the script that was used to invoke the Python 
-interpreter.  If the script directory is not available (e.g.  if the 
-interpreter is invoked interactively or if the script is read from 
-standard input), \code{path[0]} is the empty string, which directs 
-Python to search modules in the current directory first.  Notice that 
-the script directory is inserted \emph{before} the entries inserted as 
-a result of \envvar{PYTHONPATH}.  
+  The first item of this list, \code{path[0]}, is the directory
+  containing the script that was used to invoke the Python
+  interpreter.  If the script directory is not available (e.g.  if the
+  interpreter is invoked interactively or if the script is read from
+  standard input), \code{path[0]} is the empty string, which directs
+  Python to search modules in the current directory first.  Notice
+  that the script directory is inserted \emph{before} the entries
+  inserted as a result of \envvar{PYTHONPATH}.
 \end{datadesc}
 
 \begin{datadesc}{platform}
-This string contains a platform identifier, e.g. \code{'sunos5'} or
-\code{'linux1'}.  This can be used to append platform-specific
-components to \code{path}, for instance. 
+  This string contains a platform identifier, e.g. \code{'sunos5'} or
+  \code{'linux1'}.  This can be used to append platform-specific
+  components to \code{path}, for instance.
 \end{datadesc}
 
 \begin{datadesc}{prefix}
-A string giving the site-specific directory prefix where the platform
-independent Python files are installed; by default, this is the string
-\code{'/usr/local'}.  This can be set at build time with the
-\longprogramopt{prefix} argument to the
-\program{configure} script.  The main collection of Python library
-modules is installed in the directory \code{prefix +
-'/lib/python\var{version}'} while the platform independent header
-files (all except \file{config.h}) are stored in \code{prefix +
-'/include/python\var{version}'}, where \var{version} is equal to
-\code{version[:3]}.
+  A string giving the site-specific directory prefix where the
+  platform independent Python files are installed; by default, this is
+  the string \code{'/usr/local'}.  This can be set at build time with
+  the \longprogramopt{prefix} argument to the \program{configure}
+  script.  The main collection of Python library modules is installed
+  in the directory \code{prefix + '/lib/python\var{version}'} while
+  the platform independent header files (all except \file{config.h})
+  are stored in \code{prefix + '/include/python\var{version}'}, where
+  \var{version} is equal to \code{version[:3]}.
 \end{datadesc}
 
 \begin{datadesc}{ps1}
@@ -311,20 +310,20 @@ files (all except \file{config.h}) are stored in \code{prefix +
   Strings specifying the primary and secondary prompt of the
   interpreter.  These are only defined if the interpreter is in
   interactive mode.  Their initial values in this case are
-  \code{'>\code{>}> '} and \code{'... '}.  If a non-string object is assigned
-  to either variable, its \function{str()} is re-evaluated each time
-  the interpreter prepares to read a new interactive command; this can
-  be used to implement a dynamic prompt.
+  \code{'>\code{>}> '} and \code{'... '}.  If a non-string object is
+  assigned to either variable, its \function{str()} is re-evaluated
+  each time the interpreter prepares to read a new interactive
+  command; this can be used to implement a dynamic prompt.
 \end{datadesc}
 
 \begin{funcdesc}{setcheckinterval}{interval}
-Set the interpreter's ``check interval''.  This integer value
-determines how often the interpreter checks for periodic things such
-as thread switches and signal handlers.  The default is \code{10}, meaning
-the check is performed every 10 Python virtual instructions.  Setting
-it to a larger value may increase performance for programs using
-threads.  Setting it to a value \code{<=} 0 checks every virtual instruction,
-maximizing responsiveness as well as overhead.
+  Set the interpreter's ``check interval''.  This integer value
+  determines how often the interpreter checks for periodic things such
+  as thread switches and signal handlers.  The default is \code{10},
+  meaning the check is performed every 10 Python virtual instructions.
+  Setting it to a larger value may increase performance for programs
+  using threads.  Setting it to a value \code{<=} 0 checks every
+  virtual instruction, maximizing responsiveness as well as overhead.
 \end{funcdesc}
 
 \begin{funcdesc}{setdefaultencoding}{name}
@@ -347,91 +346,91 @@ maximizing responsiveness as well as overhead.
   other things, this will enable a lazy resolving of symbols when
   imporing a module, if called as \code{sys.setdlopenflags(0)}.  To
   share symols across extension modules, call as
-  \code{sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)}.  Symbolic
+  \code{sys.setdlopenflags(dl.RTLD_NOW | dl.RTLD_GLOBAL)}.  Symbolic
   names for the flag modules can be either found in the \refmodule{dl}
   module, or in the \module{DLFCN} module. If \module{DLFCN} is not
-  available, it can be generated from \code{/usr/include/dlfcn.h}
-  using the \code{h2py} script.
+  available, it can be generated from \file{/usr/include/dlfcn.h}
+  using the \program{h2py} script.
   Availability: \UNIX.
   \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{setprofile}{profilefunc}
-  Set the system's profile function, which allows you to implement a
-  Python source code profiler in Python.  See the chapter on the
-  Python Profiler.  The system's profile function
+  Set the system's profile function,\index{profile function} which
+  allows you to implement a Python source code profiler in
+  Python.\index{profiler}  See chapter \ref{profile} for more
+  information on the Python profiler.  The system's profile function
   is called similarly to the system's trace function (see
-  \function{settrace()}), but it isn't called for each executed line of
-  code (only on call and return and when an exception occurs).  Also,
-  its return value is not used, so it can just return \code{None}.
+  \function{settrace()}), but it isn't called for each executed line
+  of code (only on call and return and when an exception occurs).
+  Also, its return value is not used, so it can simply return
+  \code{None}.
 \end{funcdesc}
-\index{profile function}
-\index{profiler}
 
 \begin{funcdesc}{setrecursionlimit}{limit}
-Set the maximum depth of the Python interpreter stack to \var{limit}.
-This limit prevents infinite recursion from causing an overflow of the
-C stack and crashing Python.  
+  Set the maximum depth of the Python interpreter stack to
+  \var{limit}.  This limit prevents infinite recursion from causing an
+  overflow of the C stack and crashing Python.
 
-The highest possible limit is platform-dependent.  A user may need to
-set the limit higher when she has a program that requires deep
-recursion and a platform that supports a higher limit.  This should be
-done with care, because a too-high limit can lead to a crash.
+  The highest possible limit is platform-dependent.  A user may need
+  to set the limit higher when she has a program that requires deep
+  recursion and a platform that supports a higher limit.  This should
+  be done with care, because a too-high limit can lead to a crash.
 \end{funcdesc}
 
 \begin{funcdesc}{settrace}{tracefunc}
-  Set the system's trace function, which allows you to implement a
-  Python source code debugger in Python.  See section ``How It Works''
-  in the chapter on the Python Debugger.
+  Set the system's trace function,\index{trace function} which allows
+  you to implement a Python source code debugger in Python.  See
+  section \ref{debugger-hooks}, ``How It Works,'' in the chapter on
+  the Python debugger.\index{debugger}
 \end{funcdesc}
-\index{trace function}
-\index{debugger}
 
 \begin{datadesc}{stdin}
 \dataline{stdout}
 \dataline{stderr}
   File objects corresponding to the interpreter's standard input,
-  output and error streams.  \code{stdin} is used for all
-  interpreter input except for scripts but including calls to
+  output and error streams.  \code{stdin} is used for all interpreter
+  input except for scripts but including calls to
   \function{input()}\bifuncindex{input} and
-  \function{raw_input()}\bifuncindex{raw_input}.  \code{stdout} is used
-  for the output of \keyword{print} and expression statements and for the
-  prompts of \function{input()} and \function{raw_input()}.  The interpreter's
-  own prompts and (almost all of) its error messages go to
-  \code{stderr}.  \code{stdout} and \code{stderr} needn't
-  be built-in file objects: any object is acceptable as long as it has
-  a \method{write()} method that takes a string argument.  (Changing these
-  objects doesn't affect the standard I/O streams of processes
+  \function{raw_input()}\bifuncindex{raw_input}.  \code{stdout} is
+  used for the output of \keyword{print} and expression statements and
+  for the prompts of \function{input()} and \function{raw_input()}.
+  The interpreter's own prompts and (almost all of) its error messages
+  go to \code{stderr}.  \code{stdout} and \code{stderr} needn't be
+  built-in file objects: any object is acceptable as long as it has a
+  \method{write()} method that takes a string argument.  (Changing
+  these objects doesn't affect the standard I/O streams of processes
   executed by \function{os.popen()}, \function{os.system()} or the
-  \function{exec*()} family of functions in the \refmodule{os} module.)
-\refstmodindex{os}
+  \function{exec*()} family of functions in the \refmodule{os}
+  module.)
 \end{datadesc}
 
 \begin{datadesc}{__stdin__}
 \dataline{__stdout__}
 \dataline{__stderr__}
-These objects contain the original values of \code{stdin},
-\code{stderr} and \code{stdout} at the start of the program.  They are 
-used during finalization, and could be useful to restore the actual
-files to known working file objects in case they have been overwritten
-with a broken object.
+  These objects contain the original values of \code{stdin},
+  \code{stderr} and \code{stdout} at the start of the program.  They
+  are used during finalization, and could be useful to restore the
+  actual files to known working file objects in case they have been
+  overwritten with a broken object.
 \end{datadesc}
 
 \begin{datadesc}{tracebacklimit}
-When this variable is set to an integer value, it determines the
-maximum number of levels of traceback information printed when an
-unhandled exception occurs.  The default is \code{1000}.  When set to
-0 or less, all traceback information is suppressed and only the
-exception type and value are printed.
+  When this variable is set to an integer value, it determines the
+  maximum number of levels of traceback information printed when an
+  unhandled exception occurs.  The default is \code{1000}.  When set
+  to \code{0} or less, all traceback information is suppressed and
+  only the exception type and value are printed.
 \end{datadesc}
 
 \begin{datadesc}{version}
-A string containing the version number of the Python interpreter plus
-additional information on the build number and compiler used.  It has
-a value of the form \code{'\var{version} (\#\var{build_number},
-\var{build_date}, \var{build_time}) [\var{compiler}]'}.  The first
-three characters are used to identify the version in the installation
-directories (where appropriate on each platform).  An example:
+  A string containing the version number of the Python interpreter
+  plus additional information on the build number and compiler used.
+  It has a value of the form \code{'\var{version}
+  (\#\var{build_number}, \var{build_date}, \var{build_time})
+  [\var{compiler}]'}.  The first three characters are used to identify
+  the version in the installation directories (where appropriate on
+  each platform).  An example:
 
 \begin{verbatim}
 >>> import sys
@@ -441,22 +440,22 @@ directories (where appropriate on each platform).  An example:
 \end{datadesc}
 
 \begin{datadesc}{version_info}
-A tuple containing the five components of the version number:
-\var{major}, \var{minor}, \var{micro}, \var{releaselevel}, and
-\var{serial}.  All values except \var{releaselevel} are integers; the
-release level is \code{'alpha'}, \code{'beta'},
-\code{'candidate'}, or \code{'final'}.  The \code{version_info} value
-corresponding to the Python version 2.0 is
-\code{(2, 0, 0, 'final', 0)}.
-\versionadded{2.0}
+  A tuple containing the five components of the version number:
+  \var{major}, \var{minor}, \var{micro}, \var{releaselevel}, and
+  \var{serial}.  All values except \var{releaselevel} are integers;
+  the release level is \code{'alpha'}, \code{'beta'},
+  \code{'candidate'}, or \code{'final'}.  The \code{version_info}
+  value corresponding to the Python version 2.0 is \code{(2, 0, 0,
+  'final', 0)}.
+  \versionadded{2.0}
 \end{datadesc}
 
 \begin{datadesc}{winver}
-The version number used to form registry keys on Windows platforms.
-This is stored as string resource 1000 in the Python DLL.  The value
-is normally the first three characters of \constant{version}.  It is
-provided in the \module{sys} module for informational purposes;
-modifying this value has no effect on the registry keys used by
-Python.
-Availability: Windows.
+  The version number used to form registry keys on Windows platforms.
+  This is stored as string resource 1000 in the Python DLL.  The value
+  is normally the first three characters of \constant{version}.  It is
+  provided in the \module{sys} module for informational purposes;
+  modifying this value has no effect on the registry keys used by
+  Python.
+  Availability: Windows.
 \end{datadesc}
