@@ -6,144 +6,141 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-from test.test_support import verify, verbose
 
-print 'Testing General Unicode Character Name, and case insensitivity...',
+import unittest
 
-# General and case insensitivity test:
-try:
-    # put all \N escapes inside exec'd raw strings, to make sure this
-    # script runs even if the compiler chokes on \N escapes
-    exec r"""
-s = u"\N{LATIN CAPITAL LETTER T}" \
-    u"\N{LATIN SMALL LETTER H}" \
-    u"\N{LATIN SMALL LETTER E}" \
-    u"\N{SPACE}" \
-    u"\N{LATIN SMALL LETTER R}" \
-    u"\N{LATIN CAPITAL LETTER E}" \
-    u"\N{LATIN SMALL LETTER D}" \
-    u"\N{SPACE}" \
-    u"\N{LATIN SMALL LETTER f}" \
-    u"\N{LATIN CAPITAL LeTtEr o}" \
-    u"\N{LATIN SMaLl LETTER x}" \
-    u"\N{SPACE}" \
-    u"\N{LATIN SMALL LETTER A}" \
-    u"\N{LATIN SMALL LETTER T}" \
-    u"\N{LATIN SMALL LETTER E}" \
-    u"\N{SPACE}" \
-    u"\N{LATIN SMALL LETTER T}" \
-    u"\N{LATIN SMALL LETTER H}" \
-    u"\N{LATIN SMALL LETTER E}" \
-    u"\N{SpAcE}" \
-    u"\N{LATIN SMALL LETTER S}" \
-    u"\N{LATIN SMALL LETTER H}" \
-    u"\N{LATIN SMALL LETTER E}" \
-    u"\N{LATIN SMALL LETTER E}" \
-    u"\N{LATIN SMALL LETTER P}" \
-    u"\N{FULL STOP}"
-verify(s == u"The rEd fOx ate the sheep.", s)
-"""
-except UnicodeError, v:
-    print v
-print "done."
+from test import test_support
 
-import unicodedata
+class UnicodeNamesTest(unittest.TestCase):
 
-print "Testing name to code mapping....",
-for char in "SPAM":
-    name = "LATIN SMALL LETTER %s" % char
-    code = unicodedata.lookup(name)
-    verify(unicodedata.name(code) == name)
-print "done."
+    def checkletter(self, name, code):
+        # Helper that put all \N escapes inside eval'd raw strings,
+        # to make sure this script runs even if the compiler 
+        # chokes on \N escapes
+        res = eval(ur'u"\N{%s}"' % name)
+        self.assertEqual(res, code)
+        return res
 
-print "Testing hangul syllable names....",
-exec r"""
-verify(u"\N{HANGUL SYLLABLE GA}" == u"\uac00")
-verify(u"\N{HANGUL SYLLABLE GGWEOSS}" == u"\uafe8")
-verify(u"\N{HANGUL SYLLABLE DOLS}" == u"\ub3d0")
-verify(u"\N{HANGUL SYLLABLE RYAN}" == u"\ub7b8")
-verify(u"\N{HANGUL SYLLABLE MWIK}" == u"\ubba0")
-verify(u"\N{HANGUL SYLLABLE BBWAEM}" == u"\ubf88")
-verify(u"\N{HANGUL SYLLABLE SSEOL}" == u"\uc370")
-verify(u"\N{HANGUL SYLLABLE YI}" == u"\uc758")
-verify(u"\N{HANGUL SYLLABLE JJYOSS}" == u"\ucb40")
-verify(u"\N{HANGUL SYLLABLE KYEOLS}" == u"\ucf28")
-verify(u"\N{HANGUL SYLLABLE PAN}" == u"\ud310")
-verify(u"\N{HANGUL SYLLABLE HWEOK}" == u"\ud6f8")
-verify(u"\N{HANGUL SYLLABLE HIH}" == u"\ud7a3")
-"""
-try:
-    unicodedata.name(u"\ud7a4")
-except ValueError:
-    pass
-else:
-    raise AssertionError, "Found name for U+D7A4"
-print "done."
+    def test_general(self):
+        # General and case insensitivity test:
+        chars = [
+            "LATIN CAPITAL LETTER T",
+            "LATIN SMALL LETTER H",
+            "LATIN SMALL LETTER E",
+            "SPACE",
+            "LATIN SMALL LETTER R",
+            "LATIN CAPITAL LETTER E",
+            "LATIN SMALL LETTER D",
+            "SPACE",
+            "LATIN SMALL LETTER f",
+            "LATIN CAPITAL LeTtEr o",
+            "LATIN SMaLl LETTER x",
+            "SPACE",
+            "LATIN SMALL LETTER A",
+            "LATIN SMALL LETTER T",
+            "LATIN SMALL LETTER E",
+            "SPACE",
+            "LATIN SMALL LETTER T",
+            "LATIN SMALL LETTER H",
+            "LATIN SMALL LETTER E",
+            "SpAcE",
+            "LATIN SMALL LETTER S",
+            "LATIN SMALL LETTER H",
+            "LATIN small LETTER e",
+            "LATIN small LETTER e",
+            "LATIN SMALL LETTER P",
+            "FULL STOP"
+        ]
+        string = u"The rEd fOx ate the sheep."
 
-print "Testing names of CJK unified ideographs....",
-exec r"""
-verify(u"\N{CJK UNIFIED IDEOGRAPH-3400}" == u"\u3400")
-verify(u"\N{CJK UNIFIED IDEOGRAPH-4DB5}" == u"\u4db5")
-verify(u"\N{CJK UNIFIED IDEOGRAPH-4E00}" == u"\u4e00")
-verify(u"\N{CJK UNIFIED IDEOGRAPH-9FA5}" == u"\u9fa5")
-verify(u"\N{CJK UNIFIED IDEOGRAPH-20000}" == u"\U00020000")
-verify(u"\N{CJK UNIFIED IDEOGRAPH-2A6D6}" == u"\U0002a6d6")
-"""
-print "done."
+        self.assertEqual(
+            u"".join([self.checkletter(*args) for args in zip(chars, string)]),
+            string
+        )
 
-print "Testing code to name mapping for all BMP characters....",
-count = 0
-for code in range(0x10000):
-    try:
-        char = unichr(code)
-        name = unicodedata.name(char)
-    except (KeyError, ValueError):
-        pass
-    else:
-        verify(unicodedata.lookup(name) == char)
-        count += 1
-print "done."
+    def test_ascii_letters(self):
+        import unicodedata
 
-print "Found", count, "characters in the unicode name database"
+        for char in "".join(map(chr, xrange(ord("a"), ord("z")))):
+            name = "LATIN SMALL LETTER %s" % char.upper()
+            code = unicodedata.lookup(name)
+            self.assertEqual(unicodedata.name(code), name)
 
-# misc. symbol testing
-print "Testing misc. symbols for unicode character name expansion....",
-exec r"""
-verify(u"\N{PILCROW SIGN}" == u"\u00b6")
-verify(u"\N{REPLACEMENT CHARACTER}" == u"\uFFFD")
-verify(u"\N{HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK}" == u"\uFF9F")
-verify(u"\N{FULLWIDTH LATIN SMALL LETTER A}" == u"\uFF41")
-"""
-print "done."
+    def test_hangul_syllables(self):
+        self.checkletter("HANGUL SYLLABLE GA", u"\uac00")
+        self.checkletter("HANGUL SYLLABLE GGWEOSS", u"\uafe8")
+        self.checkletter("HANGUL SYLLABLE DOLS", u"\ub3d0")
+        self.checkletter("HANGUL SYLLABLE RYAN", u"\ub7b8")
+        self.checkletter("HANGUL SYLLABLE MWIK", u"\ubba0")
+        self.checkletter("HANGUL SYLLABLE BBWAEM", u"\ubf88")
+        self.checkletter("HANGUL SYLLABLE SSEOL", u"\uc370")
+        self.checkletter("HANGUL SYLLABLE YI", u"\uc758")
+        self.checkletter("HANGUL SYLLABLE JJYOSS", u"\ucb40")
+        self.checkletter("HANGUL SYLLABLE KYEOLS", u"\ucf28")
+        self.checkletter("HANGUL SYLLABLE PAN", u"\ud310")
+        self.checkletter("HANGUL SYLLABLE HWEOK", u"\ud6f8")
+        self.checkletter("HANGUL SYLLABLE HIH", u"\ud7a3")
 
-# strict error testing:
-print "Testing unicode character name expansion strict error handling....",
-try:
-    unicode("\N{blah}", 'unicode-escape', 'strict')
-except UnicodeError:
-    pass
-else:
-    raise AssertionError, "failed to raise an exception when given a bogus character name"
+        import unicodedata
+        self.assertRaises(ValueError, unicodedata.name, u"\ud7a4")
 
-try:
-    unicode("\N{" + "x" * 100000 + "}", 'unicode-escape', 'strict')
-except UnicodeError:
-    pass
-else:
-    raise AssertionError, "failed to raise an exception when given a very " \
-                          "long bogus character name"
+    def test_cjk_unified_ideographs(self):
+        self.checkletter("CJK UNIFIED IDEOGRAPH-3400", u"\u3400")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-4DB5", u"\u4db5")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-4E00", u"\u4e00")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-9FA5", u"\u9fa5")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-20000", u"\U00020000")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-2A6D6", u"\U0002a6d6")
 
-try:
-    unicode("\N{SPACE", 'unicode-escape', 'strict')
-except UnicodeError:
-    pass
-else:
-    raise AssertionError, "failed to raise an exception for a missing closing brace."
+    def test_bmp_characters(self):
+        import unicodedata
+        count = 0
+        for code in xrange(0x10000):
+            char = unichr(code)
+            name = unicodedata.name(char, None)
+            if name is not None:
+                self.assertEqual(unicodedata.lookup(name), char)
+                count += 1
 
-try:
-    unicode("\NSPACE", 'unicode-escape', 'strict')
-except UnicodeError:
-    pass
-else:
-    raise AssertionError, "failed to raise an exception for a missing opening brace."
-print "done."
+    def test_misc_symbols(self):
+        self.checkletter("PILCROW SIGN", u"\u00b6")
+        self.checkletter("REPLACEMENT CHARACTER", u"\uFFFD")
+        self.checkletter("HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK", u"\uFF9F")
+        self.checkletter("FULLWIDTH LATIN SMALL LETTER A", u"\uFF41")
+
+    def test_errors(self):
+        import unicodedata
+        self.assertRaises(TypeError, unicodedata.name)
+        self.assertRaises(TypeError, unicodedata.name, u'xx')
+        self.assertRaises(TypeError, unicodedata.lookup)
+        self.assertRaises(KeyError, unicodedata.lookup, u'unknown')
+
+    def test_strict_eror_handling(self):
+        # bogus character name
+        self.assertRaises(
+            UnicodeError,
+            unicode, "\\N{blah}", 'unicode-escape', 'strict'
+        )
+        # long bogus character name
+        self.assertRaises(
+            UnicodeError,
+            unicode, "\\N{%s}" % ("x" * 100000), 'unicode-escape', 'strict'
+        )
+        # missing closing brace
+        self.assertRaises(
+            UnicodeError,
+            unicode, "\\N{SPACE", 'unicode-escape', 'strict'
+        )
+        # missing opening brace
+        self.assertRaises(
+            UnicodeError,
+            unicode, "\\NSPACE", 'unicode-escape', 'strict'
+        )
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(UnicodeNamesTest))
+    test_support.run_suite(suite)
+
+if __name__ == "__main__":
+    test_main()
