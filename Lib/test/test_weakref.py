@@ -229,11 +229,10 @@ class MappingTestCase(TestBase):
     COUNT = 10
 
     def test_weak_values(self):
-        dict = weakref.WeakValueDictionary()
-        objects = map(Object, range(self.COUNT))
-        for o in objects:
-            dict[o.arg] = o
-
+        #
+        #  This exercises d.copy(), d.items(), d[], del d[], len(d).
+        #
+        dict, objects = self.make_weak_valued_dict()
         for o in objects:
             self.assert_(weakref.getweakrefcount(o) == 1,
                          "wrong number of weak references to %r!" % o)
@@ -255,11 +254,11 @@ class MappingTestCase(TestBase):
                      "deleting the values did not clear the dictionary")
 
     def test_weak_keys(self):
-        dict = weakref.WeakKeyDictionary()
-        objects = map(Object, range(self.COUNT))
-        for o in objects:
-            dict[o] = o.arg
-
+        #
+        #  This exercises d.copy(), d.items(), d[] = v, d[], del d[],
+        #  len(d).
+        #
+        dict, objects = self.make_weak_keyed_dict()
         for o in objects:
             self.assert_(weakref.getweakrefcount(o) == 1,
                          "wrong number of weak references to %r!" % o)
@@ -280,7 +279,52 @@ class MappingTestCase(TestBase):
         self.assert_(len(dict) == 0,
                      "deleting the keys did not clear the dictionary")
 
+    def test_weak_keyed_iters(self):
+        dict, objects = self.make_weak_keyed_dict()
+        self.check_iters(dict)
+
+    def test_weak_valued_iters(self):
+        dict, objects = self.make_weak_valued_dict()
+        self.check_iters(dict)
+
+    def check_iters(self, dict):
+        # item iterator:
+        items = dict.items()
+        for item in dict.iteritems():
+            items.remove(item)
+        self.assert_(len(items) == 0, "iterator did not touch all items")
+
+        # key iterator:
+        keys = dict.keys()
+        for k in dict:
+            keys.remove(k)
+        self.assert_(len(keys) == 0, "iterator did not touch all keys")
+
+        # value iterator:
+        values = dict.values()
+        for v in dict.itervalues():
+            values.remove(v)
+        self.assert_(len(values) == 0, "iterator did not touch all values")
+
+    def make_weak_keyed_dict(self):
+        dict = weakref.WeakKeyDictionary()
+        objects = map(Object, range(self.COUNT))
+        for o in objects:
+            dict[o] = o.arg
+        return dict, objects
+
+    def make_weak_valued_dict(self):
+        dict = weakref.WeakValueDictionary()
+        objects = map(Object, range(self.COUNT))
+        for o in objects:
+            dict[o.arg] = o
+        return dict, objects
+
     def check_update(self, klass, dict):
+        #
+        #  This exercises d.update(), len(d), d.keys(), d.has_key(),
+        #  d.get(), d[].
+        #
         weakdict = klass()
         weakdict.update(dict)
         self.assert_(len(weakdict) == len(dict))
