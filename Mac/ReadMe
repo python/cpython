@@ -1,4 +1,4 @@
-How to install Python 1.5b3 on your Macintosh
+How to install Python 1.5.1 on your Macintosh
 ---------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
@@ -11,18 +11,13 @@ Mac-specific documentation is included in this distribution in folder
 Mac:Demo. The documentation is sparse, but it will have to serve for
 now. The documentation is in HTML format, start with index.html.
 
-Why 1.5b3?
-----------
-The reason for distributing a third beta release for the Mac (unlike for
-other platforms) is that there are still some problems. The main problem
-is that packages ("dotted import") seem to have problems when used
-under cfm68k. Other outstanding problems are tkinter problems with menus
-(all platforms) and NumPy printing problems (cfm68k). Please report your
-findings with this distribution to pythonmac-sig@python.org, so we can
-try to iron out the problems and have a normal 1.5 distribution in a few
-weeks time.
-
-The non-system-dependent part of this distribution is identical to 1.5 final.
+Caveats
+-------
+There are still problems with cfm68k Python. 68K Mac users should
+probably try to use the cfm68k distribution first, and revert to the
+classic 68k distribution in case the bugs make their Python
+unworkable.  The main problem is that packages ("dotted import") and
+NumPy printing don't work.
 
 What to install
 ---------------
@@ -67,17 +62,14 @@ all .pyc files, but this isn't very important, as pyc files are
 created on-the-fly as well. You may also want to skip this step if you
 are low on diskspace.
 
-Next, it is probably a good idea to run the automatic tests. Start Python
-and "import test.autotest". This should not print any errors. It will,
-however, print some messages about optional features not
-supported. Also, if you didn't run compileall before autotesting you
-may run out of memory the first time you run the tests.
-
-NOTE: as of 1.5b3 the test test_strftime will fail. This is due to a
-problem with the way the MetroWerks handles %% escapes in strftime()
-strings, and there is little I can do about it. test_socket may also
-fail if you have no internet connection. Please also read the Relnotes
-file for other minor problems with this distribution.
+Next, it is probably a good idea to run the automatic tests. Start
+Python and "import test.autotest". This should not print any
+errors. It will, however, print some messages about optional features
+not supported. Also, if you didn't run compileall before autotesting
+you may run out of memory the first time you run the
+tests. test_socket may also fail if you have no internet
+connection. Please also read the Relnotes file for other minor
+problems with this distribution.
 
 PPC and CFM68K users have a couple of applets in the main folder they
 may want to try, (68K users can use the corresponding scripts from the
@@ -105,8 +97,8 @@ Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-library "PythonCore 1.5b3" lives in the Extensions folder and the
-"Python 1.5b3 Preferences" file in the Preferences folder. All the rest
+library "PythonCore 1.5.1" lives in the Extensions folder and the
+"Python 1.5.1 Preferences" file in the Preferences folder. All the rest
 of Python lives in the folder you installed in.
 
 Things to see
@@ -126,9 +118,11 @@ you to understand how to use AppleEvents and various other toolboxes
 from python.
 
 The 'img' group of modules, which handles I/O of many different image
-formats (not pict yet, sigh:-) is included, but without documentation.
-You can find docs at ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere
-around there).
+formats is included, but without documentation.  You can find docs at
+ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere around there).
+
+Finally there is a Mac:Contrib folder which contains some contributed
+software, mainly for various AppleScript things.
 
 Upgrading from older Python releases
 ------------------------------------

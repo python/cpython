@@ -1,4 +1,4 @@
-This is the Python 1.5b3 source distribution. More information can be found
+This is the Python 1.5.1 source distribution. More information can be found
 in the following files:
 
 Mac:ReadMe				ReadMe file for the normal (binary) distribution
@@ -10,4 +10,4 @@ This distribution usually lives somewhere under http://www.cwi.nl/~jack/macpytho
 or ftp://ftp.cwi.nl/pub/jack/python/mac.
 
 	
-	Jack Jansen, <jack@cwi.nl>, 02-Jan-98
+	Jack Jansen, <jack@cwi.nl>, 27-Apr-98
