@@ -1,4 +1,14 @@
 import CodeWarrior
+import aetools
+import aetypes
+
+# There is both a class "project document" and a property "project document".
+# We want the class, but the property overrides it.
+#
+##class project_document(aetools.ComponentItem):
+##	"""project document - a project document """
+##	want = 'PRJD'
+project_document=aetypes.Type('PRJD')
 
 class MyCodeWarrior(CodeWarrior.CodeWarrior):
 	# Bug in the CW OSA dictionary
@@ -23,4 +33,4 @@ class MyCodeWarrior(CodeWarrior.CodeWarrior):
 			return _arguments['----']
 
 	def my_mkproject(self, prjfile, xmlfile):
-		self.make(new=CodeWarrior.project_document(), with_data=xmlfile, as=prjfile)
+		self.make(new=project_document, with_data=xmlfile, as=prjfile)
