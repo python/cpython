@@ -15,13 +15,31 @@ import string
 from xml.utils import escape
 
 
-def format_attrs(attrs):
+def format_attrs(attrs, xml=0):
     attrs = attrs.items()
     attrs.sort()
     s = ''
     for name, value in attrs:
-        s = '%s %s="%s"' % (s, name, escape(value))
+        if xml:
+            s = '%s %s="%s"' % (s, name, escape(value))
+        else:
+            # this is a little bogus, but should do for now
+            if name == value and isnmtoken(value):
+                s = "%s %s" % (s, value)
+            elif istoken(value):
+                s = "%s %s=%s" % (s, name, value)
+            else:
+                s = '%s %s="%s"' % (s, name, escape(value))
     return s
+
+
+_nmtoken_rx = re.compile("[a-z][-._a-z0-9]*", re.IGNORECASE)
+def isnmtoken(s):
+    return _nmtoken_rx.match(s) is not None
+
+_token_rx = re.compile("[a-z0-9][-._a-z0-9]*", re.IGNORECASE)
+def istoken(s):
+    return _token_rx.match(s) is not None
 
 
 def do_convert(ifp, ofp, xml=0):
@@ -51,9 +69,9 @@ def do_convert(ifp, ofp, xml=0):
                 ofp.write("<!--")
                 continue
             if knownempty and xml:
-                ofp.write("<%s%s/>" % (data, format_attrs(attrs)))
+                ofp.write("<%s%s/>" % (data, format_attrs(attrs, xml)))
             else:
-                ofp.write("<%s%s>" % (data, format_attrs(attrs)))
+                ofp.write("<%s%s>" % (data, format_attrs(attrs, xml)))
             if knownempty and data not in knownempties:
                 # accumulate knowledge!
                 knownempties.append(data)
