@@ -18,6 +18,8 @@ dutree.py		Format du(1) output as a tree sorted by size
 eptags.py		Create Emacs TAGS file for Python modules
 fact.py			Factorize numbers
 findlinksto.py		Recursively find symbolic links to a given path prefix
+fixps.py		Fix Python scripts' first line (if #!)
+fixcid.py		Massive identifier substitution on C source files
 freeze.py		Convert a Python script into a free-standing binary
 from.py			Summarize mailbox
 linktree.py		Make a copy of a tree with links to original files
