@@ -7,4 +7,5 @@ standard = [
     "AutoExpand",
     "FormatParagraph",
     "ZoomHeight",
+    "ScriptBinding",
 ]
