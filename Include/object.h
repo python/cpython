@@ -289,6 +289,8 @@ typedef struct _typeobject {
 	PyObject *tp_bases;
 	PyObject *tp_mro; /* method resolution order */
 	PyObject *tp_defined;
+	PyObject *tp_subclasses;
+	PyObject *tp_weaklist;
 
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */

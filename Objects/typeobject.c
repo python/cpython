@@ -1118,20 +1118,52 @@ type_dealloc(PyTypeObject *type)
 	/* Assert this is a heap-allocated type object */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 	_PyObject_GC_UNTRACK(type);
+	PyObject_ClearWeakRefs((PyObject *)type);
 	et = (etype *)type;
 	Py_XDECREF(type->tp_base);
 	Py_XDECREF(type->tp_dict);
 	Py_XDECREF(type->tp_bases);
 	Py_XDECREF(type->tp_mro);
 	Py_XDECREF(type->tp_defined);
+	Py_XDECREF(type->tp_subclasses);
 	Py_XDECREF(et->name);
 	Py_XDECREF(et->slots);
 	type->ob_type->tp_free((PyObject *)type);
 }
 
+static PyObject *
+type_subclasses(PyTypeObject *type, PyObject *args_ignored)
+{
+	PyObject *list, *raw, *ref;
+	int i, n;
+
+	list = PyList_New(0);
+	if (list == NULL)
+		return NULL;
+	raw = type->tp_subclasses;
+	if (raw == NULL)
+		return list;
+	assert(PyList_Check(raw));
+	n = PyList_GET_SIZE(raw);
+	for (i = 0; i < n; i++) {
+		ref = PyList_GET_ITEM(raw, i);
+		assert(PyWeakref_CheckRef(res));
+		ref = PyWeakref_GET_OBJECT(ref);
+		if (ref != Py_None) {
+			if (PyList_Append(list, ref) < 0) {
+				Py_DECREF(list);
+				return NULL;
+			}
+		}
+	}
+	return list;
+}
+
 static PyMethodDef type_methods[] = {
 	{"mro", (PyCFunction)mro_external, METH_NOARGS,
 	 "mro() -> list\nreturn a type's method resolution order"},
+	{"__subclasses__", (PyCFunction)type_subclasses, METH_NOARGS,
+	 "__subclasses__() -> list of immediate subclasses"},
 	{0}
 };
 
@@ -1162,6 +1194,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 	VISIT(type->tp_mro);
 	VISIT(type->tp_bases);
 	VISIT(type->tp_base);
+	VISIT(type->tp_subclasses);
 	VISIT(et->slots);
 
 #undef VISIT
@@ -1192,6 +1225,7 @@ type_clear(PyTypeObject *type)
 	CLEAR(type->tp_mro);
 	CLEAR(type->tp_bases);
 	CLEAR(type->tp_base);
+	CLEAR(type->tp_subclasses);
 	CLEAR(et->slots);
 
 	if (type->tp_doc != NULL) {
@@ -1237,7 +1271,7 @@ PyTypeObject PyType_Type = {
 	(traverseproc)type_traverse,		/* tp_traverse */
 	(inquiry)type_clear,			/* tp_clear */
 	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
+	offsetof(PyTypeObject, tp_weaklist),	/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	type_methods,				/* tp_methods */
@@ -1741,6 +1775,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 }
 
 staticforward int add_operators(PyTypeObject *);
+staticforward int add_subclass(PyTypeObject *base, PyTypeObject *type);
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -1858,6 +1893,15 @@ PyType_Ready(PyTypeObject *type)
 			type->tp_as_mapping = base->tp_as_mapping;
 	}
 
+	/* Link into each base class's list of subclasses */
+	bases = type->tp_bases;
+	n = PyTuple_GET_SIZE(bases);
+	for (i = 0; i < n; i++) {
+		base = (PyTypeObject *) PyTuple_GET_ITEM(bases, i);
+		if (add_subclass((PyTypeObject *)base, type) < 0)
+			goto error;
+	}
+
 	/* All done -- set the ready flag */
 	assert(type->tp_dict != NULL);
 	type->tp_flags =
@@ -1867,6 +1911,32 @@ PyType_Ready(PyTypeObject *type)
   error:
 	type->tp_flags &= ~Py_TPFLAGS_READYING;
 	return -1;
+}
+
+static int
+add_subclass(PyTypeObject *base, PyTypeObject *type)
+{
+	int i;
+	PyObject *list, *ref, *new;
+
+	list = base->tp_subclasses;
+	if (list == NULL) {
+		base->tp_subclasses = list = PyList_New(0);
+		if (list == NULL)
+			return -1;
+	}
+	assert(PyList_Check(list));
+	new = PyWeakref_NewRef((PyObject *)type, NULL);
+	i = PyList_GET_SIZE(list);
+	while (--i >= 0) {
+		ref = PyList_GET_ITEM(list, i);
+		assert(PyWeakref_CheckRef(ref));
+		if (PyWeakref_GET_OBJECT(ref) == Py_None)
+			return PyList_SetItem(list, i, new);
+	}
+	i = PyList_Append(list, new);
+	Py_DECREF(new);
+	return i;
 }
 
 
