@@ -436,6 +436,52 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This is the equivalent of the Python statement: del o[key].
        */
 
+     DL_IMPORT(int) PyObject_AsCharBuffer(PyObject *obj,
+					  const char **buffer,
+					  int *buffer_len);
+
+       /* 
+	  Takes an arbitrary object which must support the (character,
+	  single segment) buffer interface and returns a pointer to a
+	  read-only memory location useable as character based input
+	  for subsequent processing.
+
+	  0 is returned on success.  buffer and buffer_len are only
+	  set in case no error occurrs. Otherwise, -1 is returned and
+	  an exception set.
+
+       */
+
+     DL_IMPORT(int) PyObject_AsReadBuffer(PyObject *obj,
+					  const void **buffer,
+					  int *buffer_len);
+
+       /* 
+	  Same as PyObject_AsCharBuffer() except that this API expects
+	  (readable, single segment) buffer interface and returns a
+	  pointer to a read-only memory location which can contain
+	  arbitrary data.
+
+	  0 is returned on success.  buffer and buffer_len are only
+	  set in case no error occurrs.  Otherwise, -1 is returned and
+	  an exception set.
+
+       */
+
+     DL_IMPORT(int) PyObject_AsWriteBuffer(PyObject *obj,
+					   void **buffer,
+					   int *buffer_len);
+
+       /* 
+	  Takes an arbitrary object which must support the (writeable,
+	  single segment) buffer interface and returns a pointer to a
+	  writeable memory location in buffer of size buffer_len.
+
+	  0 is returned on success.  buffer and buffer_len are only
+	  set in case no error occurrs. Otherwise, -1 is returned and
+	  an exception set.
+
+       */
 
 /*  Number Protocol:*/
 
