@@ -212,10 +212,10 @@ class DTDHandler:
     parsing (unparsed entities and attributes)."""
 
     def notationDecl(self, name, publicId, systemId):
-	"Handle a notation declaration event."
+        "Handle a notation declaration event."
 
     def unparsedEntityDecl(self, name, publicId, systemId, ndata):
-	"Handle an unparsed entity declaration event."
+        "Handle an unparsed entity declaration event."
 
         
 # ===== ENTITYRESOLVER =====
@@ -228,10 +228,10 @@ class EntityResolver:
     this interface with the default behaviour."""
     
     def resolveEntity(self, publicId, systemId):
-	"""Resolve the system identifier of an entity and return either
+        """Resolve the system identifier of an entity and return either
         the system identifier to read from as a string, or an InputSource
         to read from."""
-	return systemId
+        return systemId
 
 
 #============================================================================
