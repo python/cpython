@@ -39,7 +39,7 @@ if '-p' in sys.argv:
 
     # this module will become the namepsace used by the interactive
     # interpreter; remove all variables we have defined.
-    del sys, __file__, boolcheck, split, join
+    del sys, __file__, boolcheck, split, join, isdir
     __import__('run').main()
 else:
     # Load idlelib/idle.py which starts the application.
