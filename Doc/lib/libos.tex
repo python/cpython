@@ -28,6 +28,19 @@ instead of directly from the OS dependent built-in module, so there
 should be \emph{no} reason not to use \module{os}!
 
 
+% Frank Stajano <fstajano@uk.research.att.com> complained that it
+% wasn't clear that the entries described in the subsections were all
+% available at the module level (most uses of subsections are
+% different); I think this is only a problem for the HTML version,
+% where the relationship may not be as clear.
+%
+\ifhtml
+The \module{os} module contains many functions and data values.
+The items below and in the following sub-sections are all available
+directly from the \module{os} module.
+\fi
+
+
 \begin{excdesc}{error}
 This exception is raised when a function returns a
 system-related error (e.g., not for illegal argument types).  This is
@@ -74,6 +87,7 @@ These functions and data items provide information and operate on the
 current process and user.
 
 \begin{funcdesc}{chdir}{path}
+\index{directory!changing}
 Change the current working directory to \var{path}.
 Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
