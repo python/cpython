@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.191 
+# From configure.in Revision: 1.192 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -571,7 +571,7 @@ fi
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 
-VERSION=2.0
+VERSION=2.1
 
 # NEXTSTEP|MacOSX|Darwin stuff
 if test -f /usr/lib/NextStep/software_version -o -f /System/Library/CoreServices/software_version ; then
@@ -5277,7 +5277,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x;
+typedef int charset[2]; const charset x = {0,0};
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
