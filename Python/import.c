@@ -594,6 +594,8 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	m = PyImport_AddModule(name);
 	if (m == NULL)
 		return NULL;
+	/* If the module is being reloaded, we get the old module back
+	   and re-use its dict to exec the new code. */
 	d = PyModule_GetDict(m);
 	if (PyDict_GetItemString(d, "__builtins__") == NULL) {
 		if (PyDict_SetItemString(d, "__builtins__",
