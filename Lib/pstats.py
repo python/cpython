@@ -416,10 +416,6 @@ class Stats:
             print f8(ct/cc),
         print func_std_string(func)
 
-    def ignore(self):
-        # Deprecated since 1.5.1 -- see the docs.
-        pass # has no return value, so use at end of line :-)
-
 class TupleComp:
     """This class provides a generic function for comparing any two tuples.
     Each instance records a list of tuple-indices (from most significant
