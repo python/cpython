@@ -2355,11 +2355,19 @@ __declspec(dllexport)
 #endif
 init_sre(void)
 {
+    PyObject* m;
+    PyObject* d;
+
     /* Patch object types */
     Pattern_Type.ob_type = Match_Type.ob_type =
         Scanner_Type.ob_type = &PyType_Type;
 
-    Py_InitModule("_" MODULE, _functions);
+    m = Py_InitModule("_" MODULE, _functions);
+    d = PyModule_GetDict(m);
+
+    PyDict_SetItemString(
+        d, "MAGIC", (PyObject*) PyInt_FromLong(SRE_MAGIC)
+        );
 }
 
 #endif /* !defined(SRE_RECURSIVE) */

@@ -9,8 +9,15 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+# update when constants are added or removed
+
+MAGIC = 20010115
+
+# max code word in this release
+
 MAXREPEAT = 65535
 
+# SRE standard exception (access as sre.error)
 # should this really be here?
 
 class error(Exception):
@@ -210,6 +217,8 @@ if __name__ == "__main__":
  */
 
 """)
+
+    f.write("#define SRE_MAGIC %d\n" % MAGIC)
 
     dump(f, OPCODES, "SRE_OP")
     dump(f, ATCODES, "SRE")
