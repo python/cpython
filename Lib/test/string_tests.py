@@ -215,6 +215,9 @@ def run_method_tests(test):
     test('endswith', 'ab', 0, 'ab', 0, 1)
     test('endswith', 'ab', 0, 'ab', 0, 0)
 
+    test('zfill', '34', '34', 1)
+    test('zfill', '34', '0034', 4)
+    
     # Encoding/decoding
     codecs = [('rot13', 'uryyb jbeyq'),
               ('base64', 'aGVsbG8gd29ybGQ=\n'),
