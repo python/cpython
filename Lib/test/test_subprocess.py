@@ -317,6 +317,7 @@ class ProcessTestCase(unittest.TestCase):
             # Interpreter without universal newline support
             self.assertEqual(stdout, "line1\nline2\rline3\r\nline4\r\nline5\nline6")
 
+    # XXX test_no_leaking takes > a minute to run on a high-end WinXP Pro box
     def test_no_leaking(self):
         # Make sure we leak no resources
         for i in range(1026):
