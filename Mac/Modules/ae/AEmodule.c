@@ -813,6 +813,12 @@ static PyObject *AEDesc_getattr(self, name)
 
 #define AEDesc_setattr NULL
 
+#define AEDesc_compare NULL
+
+#define AEDesc_repr NULL
+
+#define AEDesc_hash NULL
+
 PyTypeObject AEDesc_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -824,6 +830,12 @@ PyTypeObject AEDesc_Type = {
 	0, /*tp_print*/
 	(getattrfunc) AEDesc_getattr, /*tp_getattr*/
 	(setattrfunc) AEDesc_setattr, /*tp_setattr*/
+	(cmpfunc) AEDesc_compare, /*tp_compare*/
+	(reprfunc) AEDesc_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) AEDesc_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type AEDesc --------------------- */

@@ -70,6 +70,9 @@ class AppleEventsScanner(Scanner):
 		return [
 			"AEDisposeDesc",
 #			"AEGetEventHandler",
+			# Constants with funny definitions
+			"kAEDontDisposeOnResume",
+			"kAEUseStandardDispatch",
 			]
 
 	def makeblacklisttypes(self):

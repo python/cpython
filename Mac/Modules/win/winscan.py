@@ -41,6 +41,8 @@ class MyScanner(Scanner):
 			'GetWindowProperty',
 			'GetWindowPropertySize',
 			'RemoveWindowProperty',
+			# Constants with funny definitions
+			'kMouseUpOutOfSlop',
 			]
 
 	def makeblacklisttypes(self):
