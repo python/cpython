@@ -436,7 +436,7 @@ def _fs_import(dir, modname):
 
   pathname = _os_path_join(dir, modname)
   if _os_path_isdir(pathname):
-    values = { '__pkgdir__' : pathname }
+    values = { '__pkgdir__' : pathname, '__path__' : [ pathname ] }
     ispkg = 1
     pathname = _os_path_join(pathname, '__init__')
   else:
@@ -609,7 +609,6 @@ class SysPathImporter(Importer):
     for dir in sys.path:
       result = _fs_import(dir, modname)
       if result:
-        result[2]['__path__'] = [ dir ]		# backwards compat
         return result
 
     # not found
