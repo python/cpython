@@ -59,6 +59,8 @@ def test_both():
         assert start == PAGESIZE
         assert end == PAGESIZE + 6
         
+    m.close()
+    os.unlink("foo")
     print ' Test passed'
 
 test_both()
