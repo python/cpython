@@ -16,7 +16,7 @@ def compile(file, cfile = None):
 	f = open(file)
 	codestring = f.read()
 	f.close()
-	timestamp = os.stat(file)[8]
+	timestamp = long(os.stat(file)[8])
 	codeobject = __builtin__.compile(codestring, file, 'exec')
 	if not cfile:
 		cfile = file + 'c'
