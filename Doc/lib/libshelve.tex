@@ -19,7 +19,8 @@ arbitrary object):
 \begin{verbatim}
 import shelve
 
-d = shelve.open(filename) # open, with (g)dbm filename -- no suffix
+d = shelve.open(filename) # open -- file may get suffix added by low-level
+                          # library
 
 d[key] = data   # store data at key (overwrites old data if
                 # using an existing key)
@@ -54,8 +55,10 @@ cause the database to refuse updates.
 \refbimodindex{gdbm}
 
 \item
-Dependent on the implementation, closing a persistent dictionary may
-or may not be necessary to flush changes to disk.
+Depending on the implementation, closing a persistent dictionary may
+or may not be necessary to flush changes to disk.  The \method{__del__}
+method of the \class{Shelf} class calls the \method{close} method, so the
+programmer generally need not do this explicitly.
 
 \item
 The \module{shelve} module does not support \emph{concurrent} read/write
@@ -67,10 +70,37 @@ requires knowledge about the database implementation used.
 
 \end{itemize}
 
+\begin{classdesc}{Shelf}{dict\optional{, binary=False}}
+A subclass of \class{UserDict.DictMixin} which stores pickled values in the
+\var{dict} object.  If the \var{binary} parameter is \constant{True}, binary
+pickles will be used.  This can provide much more compact storage than plain
+text pickles, depending on the nature of the objects stored in the databse.
+\end{classdesc}
+
+\begin{classdesc}{BsdDbShelf}{dict\optional{, binary=False}}
+A subclass of \class{Shelf} which exposes \method{first}, \method{next},
+{}\method{previous}, \method{last} and \method{set_location} which are
+available in the \module{bsddb} module but not in other database modules.
+The \var{dict} object passed to the constructor must support those methods.
+This is generally accomplished by calling one of \function{bsddb.hashopen},
+\function{bsddb.btopen} or \function{bsddb.rnopen}.  The optional
+\var{binary} parameter has the same interpretation as for the \class{Shelf}
+class. 
+\end{classdesc}
+
+\begin{classdesc}{DbfilenameShelf}{dict\optional{, flag='c'}\optional{, binary=False}}
+A subclass of \class{Shelf} which accepts a filename instead of a dict-like
+object.  The underlying file will be opened using \function{anydbm.open}.
+By default, the file will be created and opened for both read and write.
+The optional \var{binary} parameter has the same interpretation as for the
+\class{Shelf} class.
+\end{classdesc}
 
 \begin{seealso}
   \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
-  \seemodule{dbhash}{BSD \code{db} database interface.}
+  \seemodule{bsddb}{BSD \code{db} database interface.}
+  \seemodule{dbhash}{Thin layer around the \module{bsddb} which provides an
+  \function{open} function like the other database modules.}
   \seemodule{dbm}{Standard \UNIX{} database interface.}
   \seemodule{dumbdbm}{Portable implementation of the \code{dbm} interface.}
   \seemodule{gdbm}{GNU database interface, based on the \code{dbm} interface.}

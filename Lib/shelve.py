@@ -51,8 +51,9 @@ class Shelf(UserDict.DictMixin):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict):
+    def __init__(self, dict, binary=False):
         self.dict = dict
+        self.binary = binary
 
     def keys(self):
         return self.dict.keys()
@@ -77,7 +78,7 @@ class Shelf(UserDict.DictMixin):
 
     def __setitem__(self, key, value):
         f = StringIO()
-        p = Pickler(f)
+        p = Pickler(f, self.binary)
         p.dump(value)
         self.dict[key] = f.getvalue()
 
@@ -112,8 +113,8 @@ class BsdDbShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict):
-        Shelf.__init__(self, dict)
+    def __init__(self, dict, binary=False):
+        Shelf.__init__(self, dict, binary)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
@@ -148,16 +149,16 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c'):
+    def __init__(self, filename, flag='c', binary=False):
         import anydbm
-        Shelf.__init__(self, anydbm.open(filename, flag))
+        Shelf.__init__(self, anydbm.open(filename, flag), binary)
 
 
-def open(filename, flag='c'):
+def open(filename, flag='c', binary=False):
     """Open a persistent dictionary for reading and writing.
 
     Argument is the filename for the dbm database.
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag)
+    return DbfilenameShelf(filename, flag, binary)
