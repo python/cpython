@@ -1151,7 +1151,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 		 * that there will be no (or few) overlapping keys.
 		 */
 		if ((mp->ma_fill + other->ma_used)*3 >= (mp->ma_mask+1)*2) {
-		   if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
+		   if (dictresize(mp, (mp->ma_used + other->ma_used)*2) != 0)
 			   return -1;
 		}
 		for (i = 0; i <= other->ma_mask; i++) {
@@ -1236,7 +1236,7 @@ PyDict_Copy(PyObject *o)
 	if (copy == NULL)
 		return NULL;
 	if (mp->ma_used > 0) {
-		if (dictresize(copy, mp->ma_used*3/2) != 0)
+		if (dictresize(copy, mp->ma_used*2) != 0)
 			return NULL;
 		for (i = 0; i <= mp->ma_mask; i++) {
 			entry = &mp->ma_table[i];
