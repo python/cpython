@@ -28,17 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "cgensupport.h"
 
 
-/* Functions to construct return values */
-
-object *
-mknewcharobject(c)
-	int c;
-{
-	char ch[1];
-	ch[0] = c;
-	return newsizedstringobject(ch, 1);
-}
-
 /* Functions to extract arguments.
    These needs to know the total number of arguments supplied,
    since the argument list is a tuple only of there is more than

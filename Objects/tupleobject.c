@@ -136,7 +136,7 @@ tupleprint(op, fp, flags)
 	return 0;
 }
 
-object *
+static object *
 tuplerepr(v)
 	tupleobject *v;
 {

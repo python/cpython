@@ -744,9 +744,9 @@ sock_send(s, args)
 	char *buf;
 	int len, n, flags;
 	flags = 0;
-	if (!getargs(args, "(s#)", &buf, &len)) {
+	if (!getargs(args, "s#", &buf, &len)) {
 		err_clear();
-		if (!getargs(args, "s#", &buf, &len, &flags))
+		if (!getargs(args, "(s#i)", &buf, &len, &flags))
 			return NULL;
 	}
 	BGN_SAVE

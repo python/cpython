@@ -33,6 +33,9 @@ extern int errno;
 
 #include "modsupport.h"
 
+#define getdoublearg(v, a) getargs(v, "d", a)
+#define get2doublearg(v, a, b) getargs(v, "(dd)", a, b)
+
 #include <math.h>
 
 #ifdef i860

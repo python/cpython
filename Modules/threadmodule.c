@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 int threads_started = 0;
 
-object *ThreadError;
+static object *ThreadError;
 
 
 /* Lock objects */

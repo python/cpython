@@ -568,7 +568,7 @@ al_openport (self, args)
 	}
 	size = gettuplesize(args);
 	if (size == 2) {
-		if (!getstrstrarg (args, &name, &dir))
+		if (!getargs (args, "(ss)", &name, &dir))
 			return NULL;
 	}
 	else if (size == 3) {

@@ -57,4 +57,4 @@ initsgi()
 	initmodule("sgi", sgi_methods);
 }
 
-int dummy; /* $%#@!& dl wants at least a byte of bss */
+static int dummy; /* $%#@!& dl wants at least a byte of bss */

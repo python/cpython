@@ -261,7 +261,7 @@ divrem1(a, n, prem)
    If base is 8 or 16, add the proper prefix '0' or '0x'.
    External linkage: used in bltinmodule.c by hex() and oct(). */
 
-object *
+static object *
 long_format(aa, base)
 	object *aa;
 	int base;
@@ -1275,7 +1275,7 @@ long_or(a, b)
 	return long_bitwise(a, '|', b);
 }
 
-int
+static int
 long_coerce(pv, pw)
 	object **pv;
 	object **pw;

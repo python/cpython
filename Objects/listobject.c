@@ -207,7 +207,7 @@ list_print(op, fp, flags)
 	return 0;
 }
 
-object *
+static object *
 list_repr(v)
 	listobject *v;
 {
@@ -289,6 +289,18 @@ list_slice(a, ilow, ihigh)
 		np->ob_item[i - ilow] = v;
 	}
 	return (object *)np;
+}
+
+object *
+getlistslice(a, ilow, ihigh)
+	object *a;
+	int ilow, ihigh;
+{
+	if (!is_listobject(a)) {
+		err_badcall();
+		return NULL;
+	}
+	return list_slice((listobject *)a, ilow, ihigh);
 }
 
 static object *
@@ -420,6 +432,19 @@ list_ass_slice(a, ilow, ihigh, v)
 	}
 	return 0;
 #undef b
+}
+
+int
+setlistslice(a, ilow, ihigh, v)
+	object *a;
+	int ilow, ihigh;
+	object *v;
+{
+	if (!is_listobject(a)) {
+		err_badcall();
+		return NULL;
+	}
+	return list_ass_slice((listobject *)a, ilow, ihigh, v);
 }
 
 static int

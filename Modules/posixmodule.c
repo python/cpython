@@ -166,7 +166,7 @@ posix_2str(args, func)
 {
 	char *path1, *path2;
 	int res;
-	if (!getstrstrarg(args, &path1, &path2))
+	if (!getargs(args, "(ss)", &path1, &path2))
 		return NULL;
 	BGN_SAVE
 	res = (*func)(path1, path2);
@@ -185,7 +185,7 @@ posix_strint(args, func)
 	char *path;
 	int i;
 	int res;
-	if (!getstrintarg(args, &path, &i))
+	if (!getargs(args, "(si)", &path, &i))
 		return NULL;
 	BGN_SAVE
 	res = (*func)(path, i);
@@ -691,7 +691,7 @@ posix_kill(self, args)
 	object *args;
 {
 	int pid, sig;
-	if (!getintintarg(args, &pid, &sig))
+	if (!getargs(args, "(ii)", &pid, &sig))
 		return NULL;
 	if (kill(pid, sig) == -1)
 		return posix_error();
@@ -891,7 +891,7 @@ posix_tcsetpgrp(self, args)
 
 /* Functions acting on file descriptors */
 
-object *
+static object *
 posix_open(self, args)
 	object *self;
 	object *args;
@@ -913,7 +913,7 @@ posix_open(self, args)
 	return newintobject((long)fd);
 }
 
-object *
+static object *
 posix_close(self, args)
 	object *self;
 	object *args;
@@ -930,7 +930,7 @@ posix_close(self, args)
 	return None;
 }
 
-object *
+static object *
 posix_dup(self, args)
 	object *self;
 	object *args;
@@ -946,7 +946,7 @@ posix_dup(self, args)
 	return newintobject((long)fd);
 }
 
-object *
+static object *
 posix_dup2(self, args)
 	object *self;
 	object *args;
@@ -963,7 +963,7 @@ posix_dup2(self, args)
 	return None;
 }
 
-object *
+static object *
 posix_lseek(self, args)
 	object *self;
 	object *args;
@@ -988,7 +988,7 @@ posix_lseek(self, args)
 	return newintobject(res);
 }
 
-object *
+static object *
 posix_read(self, args)
 	object *self;
 	object *args;
@@ -1011,7 +1011,7 @@ posix_read(self, args)
 	return buffer;
 }
 
-object *
+static object *
 posix_write(self, args)
 	object *self;
 	object *args;
@@ -1028,7 +1028,7 @@ posix_write(self, args)
 	return newintobject((long)size);
 }
 
-object *
+static object *
 posix_fstat(self, args)
 	object *self;
 	object *args;
@@ -1079,7 +1079,7 @@ posix_fdopen(self, args)
 }
 
 #ifndef MSDOS
-object *
+static object *
 posix_pipe(self, args)
 	object *self;
 	object *args;

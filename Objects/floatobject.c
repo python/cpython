@@ -70,7 +70,7 @@ newfloatobject(fval)
 	return (object *) op;
 }
 
-void
+static void
 float_dealloc(op)
 	object *op;
 {
@@ -329,7 +329,7 @@ float_nonzero(v)
 	return v->ob_fval != 0.0;
 }
 
-int
+static int
 float_coerce(pv, pw)
 	object **pv;
 	object **pw;

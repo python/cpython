@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "structmember.h"
 
+#include <stropts.h>
 #include <sys/ioctl.h>
 #include <sun/audioio.h>
 
@@ -255,6 +256,38 @@ sad_drain(self, args)
     return None;
 }
 
+static object *
+sad_flush(self, args)
+    sadobject *self;
+    object *args;
+{
+    
+    if ( !getargs(args, "") )
+      return 0;
+    if ( ioctl(self->x_fd, I_FLUSH, FLUSHW) < 0 ) {
+	err_errno(SunAudioError);
+	return NULL;
+    }
+    INCREF(None);
+    return None;
+}
+
+static object *
+sad_close(self, args)
+    sadobject *self;
+    object *args;
+{
+    
+    if ( !getargs(args, "") )
+      return 0;
+    if ( self->x_fd >= 0 ) {
+	close(self->x_fd);
+	self->x_fd = -1;
+    }
+    INCREF(None);
+    return None;
+}
+
 static struct methodlist sad_methods[] = {
         { "read",	sad_read },
         { "write",	sad_write },
@@ -264,6 +297,8 @@ static struct methodlist sad_methods[] = {
         { "getinfo",	sad_getinfo },
         { "setinfo",	sad_setinfo },
         { "drain",	sad_drain },
+        { "flush",	sad_flush },
+        { "close",	sad_close },
 	{NULL,		NULL}		/* sentinel */
 };
 
