@@ -1,14 +1,14 @@
-#! /usr/bin/env perl -w
+#! /usr/bin/env perl
 # html2texi.pl -- Convert HTML documentation to Texinfo format
 # Michael Ernst <mernst@cs.washington.edu>
-# Time-stamp: <1998-09-10 12:52:38 mernst>
+# Time-stamp: <1999-01-12 21:34:27 mernst>
 
 # This program converts HTML documentation trees into Texinfo format.
 # Given the name of a main (or contents) HTML file, it processes that file,
 # and other files (transitively) referenced by it, into a Texinfo file
 # (whose name is chosen from the file or directory name of the argument).
 # For instance:
-#   html2texi.pl api/index.pl
+#   html2texi.pl api/index.html
 # produces file "api.texi".
 
 # Texinfo format can be easily converted to Info format (for browsing in
@@ -23,15 +23,22 @@
 # and mouse-free browsing.
 
 # Limitations:
-# html2texi.pl is currently tuned to latex2html output, but should be
-# extensible to arbitrary HTML documents.  It will be most useful for HTML
-# with a hierarchical structure and an index.  The HTML tree to be
-# traversed must be on local disk, rather than being accessed via HTTP.
+# html2texi.pl is currently tuned to latex2html output (and it corrects
+# several latex2html bugs), but should be extensible to arbitrary HTML
+# documents.  It will be most useful for HTML with a hierarchical structure
+# and an index, and it recognizes those features as created by latex2html
+# (and possibly by some other tools).  The HTML tree to be traversed must
+# be on local disk, rather than being accessed via HTTP.
 # This script requires the use of "checkargs.pm".  To eliminate that
 # dependence, replace calls to check_args* by @_ (which is always the last
 # argument to those functions).
 # Also see the "to do" section, below.
 # Comments, suggestions, bug fixes, and enhancements are welcome.
+
+# Troubleshooting:
+# Malformed HTML can cause this program to abort, so
+# you should check your HTML files to make sure they are legal.
+
 
 ###
 ### Typical usage for the Python documentation:
@@ -41,7 +48,7 @@
 # The resulting Info format Python documentation is currently available at
 # ftp://ftp.cs.washington.edu/homes/mernst/python-info.tar.gz
 
-# Fix up HTML problems, eg <DL COMPACT><DD>
+# Fix up HTML problems, eg <DT><DL COMPACT><DD> should be <DT><DL COMPACT><DD>.
 
 # html2texi.pl /homes/fish/mernst/tmp/python-doc/html/api/index.html
 # html2texi.pl /homes/fish/mernst/tmp/python-doc/html/ext/index.html
@@ -55,7 +62,7 @@
 #   * fix up any sectioning, such as for Abstract
 #   * make Texinfo menus
 #   * perhaps remove the @detailmenu ... @end detailmenu
-# In Emacs:
+# In Emacs, to do all this:
 #   (progn (goto-char (point-min)) (replace-regexp "\\(@setfilename \\)\\([-a-z]*\\)$" "\\1python-\\2.info") (replace-string "@node Front Matter\n@chapter Abstract\n" "@node Abstract\n@section Abstract\n") (progn (mark-whole-buffer) (texinfo-master-menu 'update-all-nodes)) (save-buffer))
 
 # makeinfo api.texi
@@ -157,11 +164,9 @@ require HTML::TreeBuilder;
 require HTML::Element;
 
 use File::Basename;
-use Cwd;
 
 use strict;
 # use Carp;
-
 
 use checkargs;
 
@@ -290,7 +295,7 @@ sub merge_contents_lists ( )
 sub process_child_links ( $ )
 { my ($he) = check_args(1, @_);
 
-  # $he->dump;
+  # $he->dump();
   if (scalar(@current_contents_list) != 0)
     { die "current_contents_list nonempty: @current_contents_list"; }
   $he->traverse(\&increment_current_contents_list, 'ignore text');
@@ -374,7 +379,7 @@ sub html_to_texi ( $ )
       $result .= "\}";
       return $result; }
   else
-    { $he->dump;
+    { $he->dump();
       die "html_to_texi confused by <$tag>"; }
 }
 
@@ -477,7 +482,7 @@ sub process_index_dl_compact ( $ )
   for (my $i = 0; $i < scalar(@content); $i++)
     { my $this_he = $content[$i];
       if ($this_he->tag ne "dt")
-	{ $this_he->dump;
+	{ $this_he->dump();
 	  die "Expected <DT> tag: " . $this_he->tag; }
       if (($i < scalar(@content) - 1) && ($content[$i+1]->tag eq "dd"))
 	{ process_index_dt_and_dd($this_he, $content[$i+1]);
@@ -792,13 +797,10 @@ sub output_body ( $$$ )
 	      return 0; } }
       else
 	{ if ($startflag)
-	    { $he->dump;
-	      warn "Can't deal with internal HREF anchors yet"; }
+	    { # cross-references are not active Info links, but no text is lost
+	      print STDERR "Can't deal with internal HREF anchors yet:\n";
+	      $he->dump; }
 	}
-    }
-  elsif ($tag eq "address")
-    { # this is part of the page footer, ignore
-	return 0;
     }
   elsif ($tag eq "br")
     { print TEXI "\@\n"; }
@@ -852,7 +854,7 @@ sub output_body ( $$$ )
 	{ }
       if (scalar(@index_deferrers) != 0)
 	{ $he->dump;
-	  die "index deferrers: ", join(" ", @index_deferrers); }
+	  die "Unexpected <$tag> while inside: (" . join(" ", @index_deferrers) . "); bad HTML?"; }
       do_deferred_index_entries();
     }
   elsif ($tag =~ /^(font|big|small)$/)
@@ -899,7 +901,8 @@ sub output_body ( $$$ )
       # This should only happen once per file.
       label_add_index_entries("");
       if (scalar(@index_deferrers) != 0)
-	{ die "index deferrers: ", join(" ", @index_deferrers); }
+	{ $he->dump;
+	  die "Unexpected <$tag> while inside: (" . join(" ", @index_deferrers) . "); bad HTML?"; }
       do_deferred_index_entries();
       return 0;
     }
@@ -922,7 +925,8 @@ sub output_body ( $$$ )
     { if ($startflag)
 	{ print TEXI "\n\n"; }
       if (scalar(@index_deferrers) != 0)
-	{ die "index deferrers: ", join(" ", @index_deferrers); }
+	{ $he->dump;
+	  die "Unexpected <$tag> while inside: (" . join(" ", @index_deferrers) . "); bad HTML?"; }
       do_deferred_index_entries(); }
   elsif ($tag eq "pre")
     { print_pre($he);
@@ -969,7 +973,8 @@ sub output_body ( $$$ )
       else
 	{ print TEXI "\n\@end itemize\n"; } }
   else
-    { print STDERR "\nBailing out\n";
+    { # I used to have a newline before "output_body" here.
+      print STDERR "output_body: ignoring <$tag> tag\n";
       $he->dump;
       return 0; }
 
@@ -1202,6 +1207,7 @@ sub cleanup_parse_tree ( $ )
   $he->traverse(\&delete_if_navigation, 'ignore text');
   $he->traverse(\&delete_extra_spaces, 'ignore text');
   $he->traverse(\&merge_dl, 'ignore text');
+  $he->traverse(\&reorder_dt_and_dl, 'ignore text');
   return $he;
 }
 
@@ -1273,6 +1279,78 @@ sub delete_trailing_spaces ( $ )
     { my $last_elt = $ {$ref_content}[$#{$ref_content}];
       if ((defined $last_elt) && ($last_elt =~ /^ *$/))
 	{ pop @{$ref_content}; } }
+}
+
+
+# LaTeX2HTML sometimes creates
+#   <DT>text
+#   <DL COMPACT><DD>text
+# which should actually be:
+#   <DL COMPACT>
+#   <DT>text
+#   <DD>text
+# Since a <DL> gets added, this ends up looking like
+# <P>
+#   <DL>
+#     <DT>
+#       text1...
+#       <DL COMPACT>
+#         <DD>
+#           text2...
+#         dt_or_dd1...
+#     dt_or_dd2...
+# which should become
+# <P>
+#   <DL COMPACT>
+#     <DT>
+#       text1...
+#     <DD>
+#       text2...
+#     dt_or_dd1...
+#     dt_or_dd2...
+
+sub reorder_dt_and_dl ( $$$ )
+{ my ($he, $startflag) = (check_args(3, @_))[0,1]; #  ignore depth argument
+  if (!$startflag)
+    { return; }
+
+  if ($he->tag() eq "p")
+    { my $ref_pcontent = $he->content();
+      if (defined $ref_pcontent)
+	{ my @pcontent = @{$ref_pcontent};
+	  # print "reorder_dt_and_dl found a <p>\n"; $he->dump();
+	  if ((scalar(@pcontent) >= 1)
+	      && (ref $pcontent[0]) && ($pcontent[0]->tag() eq "dl")
+	      && $pcontent[0]->implicit())
+	    { my $ref_dlcontent = $pcontent[0]->content();
+	      # print "reorder_dt_and_dl found a <p> and implicit <dl>\n";
+	      if (defined $ref_dlcontent)
+		{ my @dlcontent = @{$ref_dlcontent};
+		  if ((scalar(@dlcontent) >= 1)
+		      && (ref $dlcontent[0]) && ($dlcontent[0]->tag() eq "dt"))
+		    { my $ref_dtcontent = $dlcontent[0]->content();
+		      # print "reorder_dt_and_dl found a <p>, implicit <dl>, and <dt>\n";
+		      if (defined $ref_dtcontent)
+			{ my @dtcontent = @{$ref_dtcontent};
+			  if ((scalar(@dtcontent) > 0)
+			      && (ref $dtcontent[$#dtcontent])
+			      && ($dtcontent[$#dtcontent]->tag() eq "dl"))
+			    { my $ref_dl2content = $dtcontent[$#dtcontent]->content();
+			      # print "reorder_dt_and_dl found a <p>, implicit <dl>, <dt>, and <dl>\n";
+			      if (defined $ref_dl2content)
+				{ my @dl2content = @{$ref_dl2content};
+				  if ((scalar(@dl2content) > 0)
+				      && (ref ($dl2content[0]))
+				      && ($dl2content[0]->tag() eq "dd"))
+			    {
+			      # print "reorder_dt_and_dl found a <p>, implicit <dl>, <dt>, <dl>, and <dd>\n";
+			      # print STDERR "CHANGING\n"; $he->dump();
+			      html_replace_by_ignore($dtcontent[$#dtcontent]);
+			      splice(@{$ref_dlcontent}, 1, 0, @dl2content);
+			      # print STDERR "CHANGED TO:\n"; $he->dump();
+			      return 0; # don't traverse children
+			    } } } } } } } } }
+  return 1;
 }
 
 
@@ -1668,3 +1746,5 @@ if (scalar(@ARGV) != 1)
 { die "Pass one argument, the main/contents page"; }
 
 process_contents_file($ARGV[0]);
+
+# end of html2texi.pl
