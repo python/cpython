@@ -12,6 +12,9 @@
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
+#ifdef __MWERKS__
+#define HAVE_FOPENRF
+#endif
 
 #ifdef SYMANTEC__CFM68K__
 #define atof Py_AtoF
