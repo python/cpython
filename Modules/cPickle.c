@@ -1480,7 +1480,7 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 
 /* A helper for save_tuple.  Push the len elements in tuple t on the stack. */
 static int
-store_tuple_elememts(Picklerobject *self, PyObject *t, int len)
+store_tuple_elements(Picklerobject *self, PyObject *t, int len)
 {
 	int i;
 	int res = -1;	/* guilty until proved innocent */
@@ -1503,7 +1503,7 @@ store_tuple_elememts(Picklerobject *self, PyObject *t, int len)
 
 /* Tuples are ubiquitous in the pickle protocols, so many techniques are
  * used across protocols to minimize the space needed to pickle them.
- * Tuples are also the only builtin immuatable type that can be recursive
+ * Tuples are also the only builtin immutable type that can be recursive
  * (a tuple can be reached from itself), and that requires some subtle
  * magic so that it works in all cases.  IOW, this is a long routine.
  */
@@ -1553,7 +1553,7 @@ save_tuple(Picklerobject *self, PyObject *args)
 
 	if (len <= 3 && self->proto >= 2) {
 		/* Use TUPLE{1,2,3} opcodes. */
-		if (store_tuple_elememts(self, args, len) < 0)
+		if (store_tuple_elements(self, args, len) < 0)
 			goto finally;
 		if (PyDict_GetItem(self->memo, py_tuple_id)) {
 			/* pop the len elements */
@@ -1578,7 +1578,7 @@ save_tuple(Picklerobject *self, PyObject *args)
 	if (self->write_func(self, &MARKv, 1) < 0)
 		goto finally;
 
-	if (store_tuple_elememts(self, args, len) < 0)
+	if (store_tuple_elements(self, args, len) < 0)
 		goto finally;
 
 	if (PyDict_GetItem(self->memo, py_tuple_id)) {
