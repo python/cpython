@@ -7,7 +7,7 @@
 \modulesynopsis{Lock and queue for mutual exclusion.}
 
 The \module{mutex} defines a class that allows mutual-exclusion
-via aquiring and releasing locks. It does not require (or imply)
+via acquiring and releasing locks. It does not require (or imply)
 threading or multi-tasking, though it could be useful for
 those purposes.
 
@@ -27,7 +27,7 @@ the first queue entry is removed and its
 implying it now has the lock.
 
 Of course, no multi-threading is implied -- hence the funny interface
-for lock, where a function is called once the lock is aquired.
+for lock, where a function is called once the lock is acquired.
 \end{classdesc}
 
 

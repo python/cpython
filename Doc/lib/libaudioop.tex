@@ -151,7 +151,7 @@ Return the maximum peak-peak value in the sound fragment.
 \end{funcdesc}
 
 \begin{funcdesc}{mul}{fragment, width, factor}
-Return a fragment that has all samples in the original framgent
+Return a fragment that has all samples in the original fragment
 multiplied by the floating-point value \var{factor}.  Overflow is
 silently ignored.
 \end{funcdesc}
@@ -161,7 +161,7 @@ silently ignored.
 Convert the frame rate of the input fragment.
 
 \var{state} is a tuple containing the state of the converter.  The
-converter returns a tupl \code{(\var{newfragment}, \var{newstate})},
+converter returns a tuple \code{(\var{newfragment}, \var{newstate})},
 and \var{newstate} should be passed to the next call of
 \function{ratecv()}.
 

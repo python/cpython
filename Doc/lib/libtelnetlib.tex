@@ -140,7 +140,7 @@ Read until one from a list of a regular expressions matches.
 The first argument is a list of regular expressions, either
 compiled (\class{re.RegexObject} instances) or uncompiled (strings).
 The optional second argument is a timeout, in seconds; the default
-is to block indefinately.
+is to block indefinitely.
 
 Return a tuple of three items: the index in the list of the
 first regular expression that matches; the match object
@@ -153,7 +153,7 @@ far (may be the empty string if a timeout happened).
 
 If a regular expression ends with a greedy match (e.g. \regexp{.*})
 or if more than one expression can match the same input, the
-results are undeterministic, and may depend on the I/O timing.
+results are indeterministic, and may depend on the I/O timing.
 \end{methoddesc}
 
 

@@ -593,7 +593,7 @@ information; this parallels the use of the \keyword{def} statement to
 define both types of elements.
 
 Most of the accessor functions are declared in \class{SuiteInfoBase}
-and do not need to be overriden by subclasses.  More importantly, the
+and do not need to be overridden by subclasses.  More importantly, the
 extraction of most information from a parse tree is handled through a
 method called by the \class{SuiteInfoBase} constructor.  The example
 code for most of the classes is clear when read alongside the formal
@@ -684,7 +684,7 @@ a class definition, function or method definition, or
 something else.  For the definition statements, the name of the
 element defined is extracted and a representation object
 appropriate to the definition is created with the defining subtree
-passed as an argument to the constructor.  The repesentation objects
+passed as an argument to the constructor.  The representation objects
 are stored in instance variables and may be retrieved by name using
 the appropriate accessor methods.
 

@@ -24,7 +24,7 @@ A chunk has the following structure:
   \lineiii{4}{4}{Size of chunk in big-endian byte order, not including the 
                  header}
   \lineiii{8}{\var{n}}{Data bytes, where \var{n} is the size given in
-                       the preceeding field}
+                       the preceding field}
   \lineiii{8 + \var{n}}{0 or 1}{Pad byte needed if \var{n} is odd and
                                 chunk alignment is used}
 \end{tableiii}
