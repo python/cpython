@@ -70,12 +70,16 @@ PARTPARSE=	$(PYTHON) ./partparse.pyc
 
 VERSION=1.5
 
+DVIFILES=	api.dvi ext.dvi lib.dvi tut.dvi
+PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
+PSFILES=	api.ps ext.ps lib.ps tut.ps
+
 # Main target
 all:	all-ps
 
-all-dvi: tut.dvi lib.dvi ext.dvi api.dvi
-all-ps:	 tut.ps lib.ps ext.ps api.ps
-all-pdf: tut.pdf lib.pdf ext.pdf api.pdf
+all-dvi: $(DVIFILES)
+all-pdf: $(PDFFILES)
+all-ps:	 $(PSFILES)
 
 # Individual document fake targets
 tut:	tut.ps
@@ -244,29 +248,36 @@ l2hapi: api.dvi myformat.perl
 	mv api/xxx api/api.html
 	ln -s api.html api/index.html || true
 
+pdf-$(VERSION).tar.gz: $(PDFFILES)
+	tar cf - ???.pdf | gzip -9 >pdf-$(VERSION).tar.gz
+
+postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
+	cp ref/ref.ps .
+	tar cf - ???.ps | gzip -9 >postscript-$(VERSION).tar.gz
+	rm ref.ps
+
 tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
 	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* \
 		| gzip -9 >html-$(VERSION).tar.gz
 
-tarps:	all-ps
-	cp ref/ref.ps .
-	tar cf - ???.ps | gzip -9 >postscript-$(VERSION).tar.gz
-	rm ref.ps
+tarps:	postscript-$(VERSION).tar.gz
 
-tarballs:  tarps tarhtml
+tarpdf:	pdf-$(VERSION).tar.gz
+
+tarballs:  tarpdf tarps tarhtml
 
 
 # Housekeeping targets
 
 # Remove temporary files; all except the following:
 # - sources: .tex, .bib, .sty
-# - useful results: .dvi, .ps, .texi, .info
+# - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
-	rm -f *.texi *.info*
-	rm -f *.bak *.orig
+	rm -f *.bak *.orig lib1.texi
 	rm -f html-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
+	rm -f pdf-$(VERSION).tar.gz
 
 l2hclean:
 	rm -rf api ext lib tut
