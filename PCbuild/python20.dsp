@@ -1677,6 +1677,21 @@ SOURCE=..\Objects\unicodeobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\xreadlinesmodule.c
+
+!IF  "$(CFG)" == "python20 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python20 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python20 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python20 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\yuvconvert.c
 
 !IF  "$(CFG)" == "python20 - Win32 Release"
