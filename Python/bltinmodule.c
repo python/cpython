@@ -1582,10 +1582,7 @@ equivalent to (x**y) % z, but may be more efficient (e.g. for longs).";
  * large to fit in a signed long.
  */
 static long
-get_len_of_range(lo, hi, step)
-	long lo;
-	long hi;
-	long step;	/* must be > 0 */
+get_len_of_range(long lo, long hi, long step)
 {
 	/* -------------------------------------------------------------
 	If lo >= hi, the range is empty.
