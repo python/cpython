@@ -977,8 +977,8 @@ as false: \code{None}, numeric zero of all types, empty sequences
 (strings, tuples and lists), and empty mappings (dictionaries).  All
 other values are interpreted as true.
 
-The operator \keyword{not} yields \code{1} if its argument is false,
-\code{0} otherwise.
+The operator \keyword{not} yields \code{True} if its argument is false,
+\code{False} otherwise.
 \opindex{not}
 
 The expression \code{\var{x} and \var{y}} first evaluates \var{x}; if
@@ -992,13 +992,13 @@ evaluated and the resulting value is returned.
 \opindex{or}
 
 (Note that neither \keyword{and} nor \keyword{or} restrict the value
-and type they return to \code{0} and \code{1}, but rather return the
+and type they return to \code{False} and \code{True}, but rather return the
 last evaluated argument.
 This is sometimes useful, e.g., if \code{s} is a string that should be
 replaced by a default value if it is empty, the expression
 \code{s or 'foo'} yields the desired value.  Because \keyword{not} has to
 invent a value anyway, it does not bother to return a value of the
-same type as its argument, so e.g., \code{not 'foo'} yields \code{0},
+same type as its argument, so e.g., \code{not 'foo'} yields \code{False},
 not \code{''}.)
 
 \section{Lambdas\label{lambdas}}
