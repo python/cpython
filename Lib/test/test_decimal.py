@@ -32,8 +32,11 @@ import os, sys
 import pickle, copy
 from decimal import *
 from test.test_support import TestSkipped, run_unittest, run_doctest, is_resource_enabled
-import threading
 import random
+try:
+    import threading
+except ImportError:
+    threading = None
 
 # Useful Test Constant
 Signals = getcontext().flags.keys()
@@ -724,7 +727,11 @@ def thfunc2(cls):
 class DecimalUseOfContextTest(unittest.TestCase):
     '''Unit tests for Use of Context cases in Decimal.'''
 
-    import threading
+    try:
+        import threading
+    except ImportError:
+        threading = None
+
     # Take care executing this test from IDLE, there's an issue in threading
     # that hangs IDLE and I couldn't find it
 
@@ -744,6 +751,9 @@ class DecimalUseOfContextTest(unittest.TestCase):
         self.finish1.wait()
         self.finish1.wait()
         return
+
+    if threading is None:
+        del test_threading
 
 
 class DecimalUsabilityTest(unittest.TestCase):
