@@ -2,33 +2,48 @@ A. HISTORY OF THE SOFTWARE
 ==========================
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI) in the Netherlands as a successor of a
-language called ABC.  Guido is Python's principal author, although it
-includes many contributions from others.  The last version released
-from CWI was Python 1.2.  In 1995, Guido continued his work on Python
-at the Corporation for National Research Initiatives (CNRI) in Reston,
-Virginia where he released several versions of the software.  Python
-1.6 was the last of the versions released by CNRI.  In 2000, Guido and
-the Python core development team moved to BeOpen.com to form the
-BeOpen PythonLabs team.  Python 2.0 was the first and only release
-from BeOpen.com.
+Mathematisch Centrum (CWI, see http://www.cwi.nl) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
 
-Following the release of Python 1.6, and after Guido van Rossum left
-CNRI to work with commercial software developers, it became clear that
-the ability to use Python with software available under the GNU Public
-License (GPL) was very desirable.  CNRI and the Free Software
-Foundation (FSF) interacted to develop enabling wording changes to the
-Python license.  Python 1.6.1 is essentially the same as Python 1.6,
-with a few minor bug fixes, and with a different license that enables
-later versions to be GPL-compatible.  Python 2.1 is a derivative work
-of Python 1.6.1, as well as of Python 2.0.
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see http://www.cnri.reston.va.us)
+in Reston, Virginia where he released several versions of the
+software.
 
-After Python 2.0 was released by BeOpen.com, Guido van Rossum and the
-other PythonLabs developers joined Digital Creations.  All
-intellectual property added from this point on, including Python
-2.0.1, is owned by the Python Software Foundation (PSF), a non-profit
-modeled after the Apache Software Foundation.  See
-http://www.python.org/psf/ for more information about the PSF.
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (see
+http://www.digicool.com).  In 2001, the Python Software Foundation
+(PSF, see http://www.python.org/psf/) was formed, a non-profit
+organization created specifically to own Python-related Intellectual
+Property.  Digital Creations is a sponsoring member of the PSF.
+
+All Python releases are Open Source (see http://www.opensource.org for
+the Open Source Definition).  Historically, most, but not all, Python
+releases have also been GPL-compatible; the table below summarizes
+the various releases.
+
+    Release         Derived     Year        Owner       GPL-
+		    from                                compatible? (1)
+
+    0.9.0 thru 1.2              1991-1995   CWI         yes
+    1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
+    1.6             1.5.2       2000        CNRI        no
+    2.0             1.6         2000        BeOpen.com  no
+    1.6.1           1.6         2001        CNRI        no
+    2.1             2.0+1.6.1   2001        PSF         no
+    2.0.1           2.0+1.6.1   2001        PSF         yes
+    2.1.1           2.1+2.0.1   2001        PSF         yes
+    2.2             2.1.1       2001        PSF         yes
+
+Footnotes:
+
+(1) GPL-compatible doesn't mean that we're distributing Python under
+    the GPL.  All Python licenses, unlike the GPL, let you distribute
+    a modified version without making your changes open source.  The
+    GPL-compatible licenses make it possible to combine Python with
+    other software that is released under the GPL; the others don't.
 
 Thanks to the many outside volunteers who have worked under Guido's
 direction to make these releases possible.
@@ -37,39 +52,39 @@ direction to make these releases possible.
 B. TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING PYTHON
 ===============================================================
 
-PSF LICENSE AGREEMENT
----------------------
+PSF LICENSE AGREEMENT FOR PYTHON 2.2
+------------------------------------
 
 1. This LICENSE AGREEMENT is between the Python Software Foundation
 ("PSF"), and the Individual or Organization ("Licensee") accessing and
-otherwise using Python 2.1 software in source or binary form and its
+otherwise using Python 2.2 software in source or binary form and its
 associated documentation.
 
 2. Subject to the terms and conditions of this License Agreement, PSF
 hereby grants Licensee a nonexclusive, royalty-free, world-wide
 license to reproduce, analyze, test, perform and/or display publicly,
-prepare derivative works, distribute, and otherwise use Python 2.1
+prepare derivative works, distribute, and otherwise use Python 2.2
 alone or in any derivative version, provided, however, that PSF's
 License Agreement and PSF's notice of copyright, i.e., "Copyright (c)
 2001 Python Software Foundation; All Rights Reserved" are retained in
-Python 2.1 alone or in any derivative version prepared by Licensee.
+Python 2.2 alone or in any derivative version prepared by Licensee.
 
 3. In the event Licensee prepares a derivative work that is based on
-or incorporates Python 2.1 or any part thereof, and wants to make
+or incorporates Python 2.2 or any part thereof, and wants to make
 the derivative work available to others as provided herein, then
 Licensee hereby agrees to include in any such work a brief summary of
-the changes made to Python 2.1.
+the changes made to Python 2.2.
 
-4. PSF is making Python 2.1 available to Licensee on an "AS IS"
+4. PSF is making Python 2.2 available to Licensee on an "AS IS"
 basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
 IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
 DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
-FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.1 WILL NOT
+FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.2 WILL NOT
 INFRINGE ANY THIRD PARTY RIGHTS.
 
 5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
-2.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
-A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 2.1,
+2.2 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
+A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 2.2,
 OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
 6. This License Agreement will automatically terminate upon a material
@@ -81,13 +96,13 @@ Licensee.  This License Agreement does not grant permission to use PSF
 trademarks or trade name in a trademark sense to endorse or promote
 products or services of Licensee, or any third party.
 
-8. By copying, installing or otherwise using Python 2.1, Licensee
+8. By copying, installing or otherwise using Python 2.2, Licensee
 agrees to be bound by the terms and conditions of this License
 Agreement.
 
 
-BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0
-----------------------------------------------
+BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0
+-------------------------------------------
 
 BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1
 
@@ -136,8 +151,8 @@ agrees to be bound by the terms and conditions of this License
 Agreement.
 
 
-CNRI OPEN SOURCE GPL-COMPATIBLE LICENSE AGREEMENT
--------------------------------------------------
+CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
+---------------------------------------
 
 1. This LICENSE AGREEMENT is between the Corporation for National
 Research Initiatives, having an office at 1895 Preston White Drive,
@@ -207,8 +222,8 @@ bound by the terms and conditions of this License Agreement.
         ACCEPT
 
 
-CWI PERMISSIONS STATEMENT AND DISCLAIMER
-----------------------------------------
+CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
+--------------------------------------------------
 
 Copyright (c) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam,
 The Netherlands.  All rights reserved.
