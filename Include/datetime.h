@@ -225,7 +225,7 @@ static PyDateTime_CAPI *PyDateTimeAPI;
 		Py_None, PyDateTimeAPI->TimeType)
 
 #define PyDelta_FromDSU(days, seconds, useconds) \
-	PyDateTimeAPI->Delta_FromDelta(days, seconds, useconds, 1,
+	PyDateTimeAPI->Delta_FromDelta(days, seconds, useconds, 1, \
 		PyDateTimeAPI->DeltaType)
 
 /* Macros supporting the DB API. */
