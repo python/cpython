@@ -745,6 +745,10 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_File', ['file/_Filemodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Folder', ['folder/_Foldermodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Help', ['help/_Helpmodule.c'],
