@@ -216,9 +216,10 @@ class InteractiveConsole(InteractiveInterpreter):
             sys.ps2
         except AttributeError:
             sys.ps2 = "... "
+        cprt = 'Type "copyright", "credits" or "license" for more information.'
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
-                       (sys.version, sys.platform, sys.copyright,
+                       (sys.version, sys.platform, cprt,
                         self.__class__.__name__))
         else:
             self.write("%s\n" % str(banner))
