@@ -541,7 +541,7 @@ Window objects, as returned by \function{initscr()} and
 \function{newwin()} above, have the
 following methods:
 
-\begin{methoddesc}{addch}{\optional{y, x,} ch\optional{, attr}}
+\begin{methoddesc}[window]{addch}{\optional{y, x,} ch\optional{, attr}}
 \note{A \emph{character} means a C character (an
 \ASCII{} code), rather then a Python character (a string of length 1).
 (This note is true whenever the documentation mentions a character.)
@@ -553,33 +553,33 @@ location.  By default, the character position and attributes are the
 current settings for the window object.
 \end{methoddesc}
 
-\begin{methoddesc}{addnstr}{\optional{y, x,} str, n\optional{, attr}}
+\begin{methoddesc}[window]{addnstr}{\optional{y, x,} str, n\optional{, attr}}
 Paint at most \var{n} characters of the 
 string \var{str} at \code{(\var{y}, \var{x})} with attributes
 \var{attr}, overwriting anything previously on the display.
 \end{methoddesc}
 
-\begin{methoddesc}{addstr}{\optional{y, x,} str\optional{, attr}}
+\begin{methoddesc}[window]{addstr}{\optional{y, x,} str\optional{, attr}}
 Paint the string \var{str} at \code{(\var{y}, \var{x})} with attributes
 \var{attr}, overwriting anything previously on the display.
 \end{methoddesc}
 
-\begin{methoddesc}{attroff}{attr}
+\begin{methoddesc}[window]{attroff}{attr}
 Remove attribute \var{attr} from the ``background'' set applied to all
 writes to the current window.
 \end{methoddesc}
 
-\begin{methoddesc}{attron}{attr}
+\begin{methoddesc}[window]{attron}{attr}
 Add attribute \var{attr} from the ``background'' set applied to all
 writes to the current window.
 \end{methoddesc}
 
-\begin{methoddesc}{attrset}{attr}
+\begin{methoddesc}[window]{attrset}{attr}
 Set the ``background'' set of attributes to \var{attr}.  This set is
 initially 0 (no attributes).
 \end{methoddesc}
 
-\begin{methoddesc}{bkgd}{ch\optional{, attr}}
+\begin{methoddesc}[window]{bkgd}{ch\optional{, attr}}
 Sets the background property of the window to the character \var{ch},
 with attributes \var{attr}.  The change is then applied to every
 character position in that window:
@@ -594,7 +594,7 @@ it is changed to the new background character.
 
 \end{methoddesc}
 
-\begin{methoddesc}{bkgdset}{ch\optional{, attr}}
+\begin{methoddesc}[window]{bkgdset}{ch\optional{, attr}}
 Sets the window's background.  A window's background consists of a
 character and any combination of attributes.  The attribute part of
 the background is combined (OR'ed) with all non-blank characters that
@@ -605,9 +605,9 @@ character through any scrolling and insert/delete line/character
 operations.
 \end{methoddesc}
 
-\begin{methoddesc}{border}{\optional{ls\optional{, rs\optional{, ts\optional{,
-                           bs\optional{, tl\optional{, tr\optional{,
-                           bl\optional{, br}}}}}}}}}
+\begin{methoddesc}[window]{border}{\optional{ls\optional{, rs\optional{,
+                                   ts\optional{, bs\optional{, tl\optional{,
+                                   tr\optional{, bl\optional{, br}}}}}}}}}
 Draw a border around the edges of the window. Each parameter specifies 
 the character to use for a specific part of the border; see the table
 below for more details.  The characters can be specified as integers
@@ -629,46 +629,46 @@ can \emph{not} be used.  The defaults are listed in this table:}
 \end{tableiii}
 \end{methoddesc}
 
-\begin{methoddesc}{box}{\optional{vertch, horch}}
+\begin{methoddesc}[window]{box}{\optional{vertch, horch}}
 Similar to \method{border()}, but both \var{ls} and \var{rs} are
 \var{vertch} and both \var{ts} and {bs} are \var{horch}.  The default
 corner characters are always used by this function.
 \end{methoddesc}
 
-\begin{methoddesc}{clear}{}
+\begin{methoddesc}[window]{clear}{}
 Like \method{erase()}, but also causes the whole window to be repainted
 upon next call to \method{refresh()}.
 \end{methoddesc}
 
-\begin{methoddesc}{clearok}{yes}
+\begin{methoddesc}[window]{clearok}{yes}
 If \var{yes} is 1, the next call to \method{refresh()}
 will clear the window completely.
 \end{methoddesc}
 
-\begin{methoddesc}{clrtobot}{}
+\begin{methoddesc}[window]{clrtobot}{}
 Erase from cursor to the end of the window: all lines below the cursor
 are deleted, and then the equivalent of \method{clrtoeol()} is performed.
 \end{methoddesc}
 
-\begin{methoddesc}{clrtoeol}{}
+\begin{methoddesc}[window]{clrtoeol}{}
 Erase from cursor to the end of the line.
 \end{methoddesc}
 
-\begin{methoddesc}{cursyncup}{}
+\begin{methoddesc}[window]{cursyncup}{}
 Updates the current cursor position of all the ancestors of the window
 to reflect the current cursor position of the window.
 \end{methoddesc}
 
-\begin{methoddesc}{delch}{\optional{x, y}}
+\begin{methoddesc}[window]{delch}{\optional{x, y}}
 Delete any character at \code{(\var{y}, \var{x})}.
 \end{methoddesc}
 
-\begin{methoddesc}{deleteln}{}
+\begin{methoddesc}[window]{deleteln}{}
 Delete the line under the cursor. All following lines are moved up
 by 1 line.
 \end{methoddesc}
 
-\begin{methoddesc}{derwin}{\optional{nlines, ncols,} begin_y, begin_y}
+\begin{methoddesc}[window]{derwin}{\optional{nlines, ncols,} begin_y, begin_x}
 An abbreviation for ``derive window'', \method{derwin()} is the same
 as calling \method{subwin()}, except that \var{begin_y} and
 \var{begin_x} are relative to the origin of the window, rather than
@@ -676,67 +676,67 @@ relative to the entire screen.  Returns a window object for the
 derived window.
 \end{methoddesc}
 
-\begin{methoddesc}{echochar}{ch\optional{, attr}}
+\begin{methoddesc}[window]{echochar}{ch\optional{, attr}}
 Add character \var{ch} with attribute \var{attr}, and immediately 
 call \method{refresh()} on the window.
 \end{methoddesc}
 
-\begin{methoddesc}{enclose}{y, x}
+\begin{methoddesc}[window]{enclose}{y, x}
 Tests whether the given pair of screen-relative character-cell
 coordinates are enclosed by the given window, returning true or
 false.  It is useful for determining what subset of the screen
 windows enclose the location of a mouse event.
 \end{methoddesc}
 
-\begin{methoddesc}{erase}{}
+\begin{methoddesc}[window]{erase}{}
 Clear the window.
 \end{methoddesc}
 
-\begin{methoddesc}{getbegyx}{}
+\begin{methoddesc}[window]{getbegyx}{}
 Return a tuple \code{(\var{y}, \var{x})} of co-ordinates of upper-left
 corner.
 \end{methoddesc}
 
-\begin{methoddesc}{getch}{\optional{x, y}}
+\begin{methoddesc}[window]{getch}{\optional{x, y}}
 Get a character. Note that the integer returned does \emph{not} have to
 be in \ASCII{} range: function keys, keypad keys and so on return numbers
 higher than 256. In no-delay mode, an exception is raised if there is 
 no input.
 \end{methoddesc}
 
-\begin{methoddesc}{getkey}{\optional{x, y}}
+\begin{methoddesc}[window]{getkey}{\optional{x, y}}
 Get a character, returning a string instead of an integer, as
 \method{getch()} does. Function keys, keypad keys and so on return a
 multibyte string containing the key name.  In no-delay mode, an
 exception is raised if there is no input.
 \end{methoddesc}
 
-\begin{methoddesc}{getmaxyx}{}
+\begin{methoddesc}[window]{getmaxyx}{}
 Return a tuple \code{(\var{y}, \var{x})} of the height and width of
 the window.
 \end{methoddesc}
 
-\begin{methoddesc}{getparyx}{}
+\begin{methoddesc}[window]{getparyx}{}
 Returns the beginning coordinates of this window relative to its
 parent window into two integer variables y and x.  Returns
 \code{-1,-1} if this window has no parent.
 \end{methoddesc}
 
-\begin{methoddesc}{getstr}{\optional{x, y}}
+\begin{methoddesc}[window]{getstr}{\optional{x, y}}
 Read a string from the user, with primitive line editing capacity.
 \end{methoddesc}
 
-\begin{methoddesc}{getyx}{}
+\begin{methoddesc}[window]{getyx}{}
 Return a tuple \code{(\var{y}, \var{x})} of current cursor position 
 relative to the window's upper-left corner.
 \end{methoddesc}
 
-\begin{methoddesc}{hline}{\optional{y, x,} ch, n}
+\begin{methoddesc}[window]{hline}{\optional{y, x,} ch, n}
 Display a horizontal line starting at \code{(\var{y}, \var{x})} with
 length \var{n} consisting of the character \var{ch}.
 \end{methoddesc}
 
-\begin{methoddesc}{idcok}{flag}
+\begin{methoddesc}[window]{idcok}{flag}
 If \var{flag} is false, curses no longer considers using the hardware
 insert/delete character feature of the terminal; if \var{flag} is
 true, use of character insertion and deletion is enabled.  When curses
@@ -744,13 +744,13 @@ is first initialized, use of character insert/delete is enabled by
 default.
 \end{methoddesc}
 
-\begin{methoddesc}{idlok}{yes}
+\begin{methoddesc}[window]{idlok}{yes}
 If called with \var{yes} equal to 1, \module{curses} will try and use
 hardware line editing facilities. Otherwise, line insertion/deletion
 are disabled.
 \end{methoddesc}
 
-\begin{methoddesc}{immedok}{flag}
+\begin{methoddesc}[window]{immedok}{flag}
 If \var{flag} is true, any change in the window image
 automatically causes the window to be refreshed; you no longer
 have to call \method{refresh()} yourself.  However, it may
@@ -758,18 +758,18 @@ degrade performance considerably, due to repeated calls to
 wrefresh.  This option is disabled by default.
 \end{methoddesc}
 
-\begin{methoddesc}{inch}{\optional{x, y}}
+\begin{methoddesc}[window]{inch}{\optional{x, y}}
 Return the character at the given position in the window. The bottom
 8 bits are the character proper, and upper bits are the attributes.
 \end{methoddesc}
 
-\begin{methoddesc}{insch}{\optional{y, x,} ch\optional{, attr}}
+\begin{methoddesc}[window]{insch}{\optional{y, x,} ch\optional{, attr}}
 Paint character \var{ch} at \code{(\var{y}, \var{x})} with attributes
 \var{attr}, moving the line from position \var{x} right by one
 character.
 \end{methoddesc}
 
-\begin{methoddesc}{insdelln}{nlines}
+\begin{methoddesc}[window]{insdelln}{nlines}
 Inserts \var{nlines} lines into the specified window above the current
 line.  The \var{nlines} bottom lines are lost.  For negative
 \var{nlines}, delete \var{nlines} lines starting with the one under
@@ -777,12 +777,12 @@ the cursor, and move the remaining lines up.  The bottom \var{nlines}
 lines are cleared.  The current cursor position remains the same.
 \end{methoddesc}
 
-\begin{methoddesc}{insertln}{}
+\begin{methoddesc}[window]{insertln}{}
 Insert a blank line under the cursor. All following lines are moved
 down by 1 line.
 \end{methoddesc}
 
-\begin{methoddesc}{insnstr}{\optional{y, x, } str, n \optional{, attr}}
+\begin{methoddesc}[window]{insnstr}{\optional{y, x,} str, n \optional{, attr}}
 Insert a character string (as many characters as will fit on the line)
 before the character under the cursor, up to \var{n} characters.  
 If \var{n} is zero or negative,
@@ -793,7 +793,7 @@ line being lost.  The cursor position does not change (after moving to
 \var{y}, \var{x}, if specified). 
 \end{methoddesc}
 
-\begin{methoddesc}{insstr}{\optional{y, x, } str \optional{, attr}}
+\begin{methoddesc}[window]{insstr}{\optional{y, x, } str \optional{, attr}}
 Insert a character string (as many characters as will fit on the line)
 before the character under the cursor.  All characters to the right of
 the cursor are shifted right, with the the rightmost characters on the
@@ -801,7 +801,7 @@ line being lost.  The cursor position does not change (after moving to
 \var{y}, \var{x}, if specified). 
 \end{methoddesc}
 
-\begin{methoddesc}{instr}{\optional{y, x} \optional{, n}}
+\begin{methoddesc}[window]{instr}{\optional{y, x} \optional{, n}}
 Returns a string of characters, extracted from the window starting at
 the current cursor position, or at \var{y}, \var{x} if specified.
 Attributes are stripped from the characters.  If \var{n} is specified,
@@ -809,26 +809,26 @@ Attributes are stripped from the characters.  If \var{n} is specified,
 long (exclusive of the trailing NUL).
 \end{methoddesc}
 
-\begin{methoddesc}{is_linetouched}{\var{line}}
+\begin{methoddesc}[window]{is_linetouched}{\var{line}}
 Returns true if the specified line was modified since the last call to
 \method{refresh()}; otherwise returns false.  Raises a
 \exception{curses.error} exception if \var{line} is not valid
 for the given window.
 \end{methoddesc}
 
-\begin{methoddesc}{is_wintouched}{}
+\begin{methoddesc}[window]{is_wintouched}{}
 Returns true if the specified window was modified since the last call to
 \method{refresh()}; otherwise returns false.
 \end{methoddesc}
 
-\begin{methoddesc}{keypad}{yes}
+\begin{methoddesc}[window]{keypad}{yes}
 If \var{yes} is 1, escape sequences generated by some keys (keypad, 
 function keys) will be interpreted by \module{curses}.
 If \var{yes} is 0, escape sequences will be left as is in the input
 stream.
 \end{methoddesc}
 
-\begin{methoddesc}{leaveok}{yes}
+\begin{methoddesc}[window]{leaveok}{yes}
 If \var{yes} is 1, cursor is left where it is on update, instead of
 being at ``cursor position.''  This reduces cursor movement where
 possible. If possible the cursor will be made invisible.
@@ -837,42 +837,42 @@ If \var{yes} is 0, cursor will always be at ``cursor position'' after
 an update.
 \end{methoddesc}
 
-\begin{methoddesc}{move}{new_y, new_x}
+\begin{methoddesc}[window]{move}{new_y, new_x}
 Move cursor to \code{(\var{new_y}, \var{new_x})}.
 \end{methoddesc}
 
-\begin{methoddesc}{mvderwin}{y, x}
+\begin{methoddesc}[window]{mvderwin}{y, x}
 Moves the window inside its parent window.  The screen-relative
 parameters of the window are not changed.  This routine is used to
 display different parts of the parent window at the same physical
 position on the screen.
 \end{methoddesc}
 
-\begin{methoddesc}{mvwin}{new_y, new_x}
+\begin{methoddesc}[window]{mvwin}{new_y, new_x}
 Move the window so its upper-left corner is at
 \code{(\var{new_y}, \var{new_x})}.
 \end{methoddesc}
 
-\begin{methoddesc}{nodelay}{yes}
+\begin{methoddesc}[window]{nodelay}{yes}
 If \var{yes} is \code{1}, \method{getch()} will be non-blocking.
 \end{methoddesc}
 
-\begin{methoddesc}{notimeout}{yes}
+\begin{methoddesc}[window]{notimeout}{yes}
 If \var{yes} is \code{1}, escape sequences will not be timed out.
 
 If \var{yes} is \code{0}, after a few milliseconds, an escape sequence
 will not be interpreted, and will be left in the input stream as is.
 \end{methoddesc}
 
-\begin{methoddesc}{noutrefresh}{}
+\begin{methoddesc}[window]{noutrefresh}{}
 Mark for refresh but wait.  This function updates the data structure
 representing the desired state of the window, but does not force
 an update of the physical screen.  To accomplish that, call 
 \function{doupdate()}.
 \end{methoddesc}
 
-\begin{methoddesc}{overlay}{destwin\optional{, sminrow, smincol,
-                            dminrow, dmincol, dmaxrow, dmaxcol}}
+\begin{methoddesc}[window]{overlay}{destwin\optional{, sminrow, smincol,
+                                    dminrow, dmincol, dmaxrow, dmaxcol}}
 Overlay the window on top of \var{destwin}. The windows need not be
 the same size, only the overlapping region is copied. This copy is
 non-destructive, which means that the current background character
@@ -884,8 +884,8 @@ the upper-left coordinates of the source window, and the other variables
 mark a rectangle in the destination window.
 \end{methoddesc}
 
-\begin{methoddesc}{overwrite}{destwin\optional{, sminrow, smincol,
-                              dminrow, dmincol, dmaxrow, dmaxcol}}
+\begin{methoddesc}[window]{overwrite}{destwin\optional{, sminrow, smincol,
+                                      dminrow, dmincol, dmaxrow, dmaxcol}}
 Overwrite the window on top of \var{destwin}. The windows need not be
 the same size, in which case only the overlapping region is
 copied. This copy is destructive, which means that the current
@@ -897,26 +897,25 @@ the upper-left coordinates of the source window, the other variables
 mark a rectangle in the destination window.
 \end{methoddesc}
 
-\begin{methoddesc}{putwin}{file}
+\begin{methoddesc}[window]{putwin}{file}
 Writes all data associated with the window into the provided file
 object.  This information can be later retrieved using the
 \function{getwin()} function.
-
 \end{methoddesc}
 
-\begin{methoddesc}{redrawln}{beg, num}
+\begin{methoddesc}[window]{redrawln}{beg, num}
 Indicates that the \var{num} screen lines, starting at line \var{beg},
 are corrupted and should be completely redrawn on the next
 \method{refresh()} call.
 \end{methoddesc}
 
-\begin{methoddesc}{redrawwin}{}
+\begin{methoddesc}[window]{redrawwin}{}
 Touches the entire window, causing it to be completely redrawn on the
 next \method{refresh()} call.
 \end{methoddesc}
 
-\begin{methoddesc}{refresh}{\optional{pminrow, pmincol, sminrow,
-                                      smincol, smaxrow, smaxcol}}
+\begin{methoddesc}[window]{refresh}{\optional{pminrow, pmincol, sminrow,
+                                    smincol, smaxrow, smaxcol}}
 Update the display immediately (sync actual screen with previous
 drawing/deleting methods).
 
@@ -934,11 +933,11 @@ structures.  Negative values of \var{pminrow}, \var{pmincol},
 \var{sminrow}, or \var{smincol} are treated as if they were zero.
 \end{methoddesc}
 
-\begin{methoddesc}{scroll}{\optional{lines\code{ = 1}}}
+\begin{methoddesc}[window]{scroll}{\optional{lines\code{ = 1}}}
 Scroll the screen or scrolling region upward by \var{lines} lines.
 \end{methoddesc}
 
-\begin{methoddesc}{scrollok}{flag}
+\begin{methoddesc}[window]{scrollok}{flag}
 Controls what happens when the cursor of a window is moved off the
 edge of the window or scrolling region, either as a result of a
 newline action on the bottom line, or typing the last character
@@ -949,27 +948,27 @@ scrolling effect on the terminal, it is also necessary to call
 \method{idlok()}.
 \end{methoddesc}
 
-\begin{methoddesc}{setscrreg}{top, bottom}
+\begin{methoddesc}[window]{setscrreg}{top, bottom}
 Set the scrolling region from line \var{top} to line \var{bottom}. All
 scrolling actions will take place in this region.
 \end{methoddesc}
 
-\begin{methoddesc}{standend}{}
+\begin{methoddesc}[window]{standend}{}
 Turn off the standout attribute.  On some terminals this has the
 side effect of turning off all attributes.
 \end{methoddesc}
 
-\begin{methoddesc}{standout}{}
+\begin{methoddesc}[window]{standout}{}
 Turn on attribute \var{A_STANDOUT}.
 \end{methoddesc}
 
-\begin{methoddesc}{subpad}{\optional{nlines, ncols,} begin_y, begin_y}
+\begin{methoddesc}[window]{subpad}{\optional{nlines, ncols,} begin_y, begin_x}
 Return a sub-window, whose upper-left corner is at
 \code{(\var{begin_y}, \var{begin_x})}, and whose width/height is
 \var{ncols}/\var{nlines}.
 \end{methoddesc}
 
-\begin{methoddesc}{subwin}{\optional{nlines, ncols,} begin_y, begin_y}
+\begin{methoddesc}[window]{subwin}{\optional{nlines, ncols,} begin_y, begin_x}
 Return a sub-window, whose upper-left corner is at
 \code{(\var{begin_y}, \var{begin_x})}, and whose width/height is
 \var{ncols}/\var{nlines}.
@@ -978,23 +977,23 @@ By default, the sub-window will extend from the
 specified position to the lower right corner of the window.
 \end{methoddesc}
 
-\begin{methoddesc}{syncdown}{}
+\begin{methoddesc}[window]{syncdown}{}
 Touches each location in the window that has been touched in any of
 its ancestor windows.  This routine is called by \method{refresh()},
 so it should almost never be necessary to call it manually.
 \end{methoddesc}
 
-\begin{methoddesc}{syncok}{flag}
+\begin{methoddesc}[window]{syncok}{flag}
 If called with \var{flag} set to true, then \method{syncup()} is
 called automatically whenever there is a change in the window.
 \end{methoddesc}
 
-\begin{methoddesc}{syncup}{}
+\begin{methoddesc}[window]{syncup}{}
 Touches all locations in ancestors of the window that have been changed in 
 the window.  
 \end{methoddesc}
 
-\begin{methoddesc}{timeout}{delay}
+\begin{methoddesc}[window]{timeout}{delay}
 Sets blocking or non-blocking read behavior for the window.  If
 \var{delay} is negative, blocking read is used, which will wait
 indefinitely for input).  If \var{delay} is zero, then non-blocking
@@ -1004,22 +1003,22 @@ block for \var{delay} milliseconds, and return -1 if there is still no
 input at the end of that time.
 \end{methoddesc}
 
-\begin{methoddesc}{touchline}{start, count}
+\begin{methoddesc}[window]{touchline}{start, count}
 Pretend \var{count} lines have been changed, starting with line
 \var{start}.
 \end{methoddesc}
 
-\begin{methoddesc}{touchwin}{}
+\begin{methoddesc}[window]{touchwin}{}
 Pretend the whole window has been changed, for purposes of drawing
 optimizations.
 \end{methoddesc}
 
-\begin{methoddesc}{untouchwin}{}
+\begin{methoddesc}[window]{untouchwin}{}
 Marks all lines in  the  window  as unchanged since the last call to
 \method{refresh()}. 
 \end{methoddesc}
 
-\begin{methoddesc}{vline}{\optional{y, x,} ch, n}
+\begin{methoddesc}[window]{vline}{\optional{y, x,} ch, n}
 Display a vertical line starting at \code{(\var{y}, \var{x})} with
 length \var{n} consisting of the character \var{ch}.
 \end{methoddesc}
