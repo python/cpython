@@ -7,6 +7,11 @@ import struct
 import traceback
 from types import InstanceType, StringType
 
+if hasattr(Win, "FrontNonFloatingWindow"):
+	MyFrontWindow = Win.FrontNonFloatingWindow
+else:
+	MyFrontWindow = Win.FrontWindow
+
 
 class Window(FrameWork.Window, Wbase.SelectableWidget):
 	
@@ -455,7 +460,8 @@ class ModalDialog(Dialog):
 		Dialog.close(self)
 	
 	def mainloop(self):
-		saveyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			saveyield = MacOS.EnableAppswitch(-1)
 		while not self.done:
 			#self.do1event()
 			self.do1event(	Events.keyDownMask + 
@@ -465,7 +471,8 @@ class ModalDialog(Dialog):
 						Events.mDownMask +
 						Events.mUpMask, 
 						10)
-		MacOS.EnableAppswitch(saveyield)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			MacOS.EnableAppswitch(saveyield)
 	
 	def do1event(self, mask = Events.everyEvent, wait = 0):
 		ok, event = self.app.getevent(mask, wait)
@@ -486,9 +493,9 @@ class ModalDialog(Dialog):
 	
 	def do_key(self, event):
 		(what, message, when, where, modifiers) = event
-		w = Win.FrontWindow()
-		if w <> self.wid:
-			return
+		#w = Win.FrontWindow()
+		#if w <> self.wid:
+		#	return
 		c = chr(message & Events.charCodeMask)
 		if modifiers & Events.cmdKey:
 			self.app.checkmenus(self)
@@ -550,7 +557,7 @@ def FrontWindowInsert(stuff):
 		raise TypeError, 'string expected'
 	import W
 	app = W.getapplication()
-	wid = Win.FrontWindow()
+	wid = MyFrontWindow()
 	if wid and app._windows.has_key(wid):
 		window = app._windows[wid]
 		if hasattr(window, "insert"):
@@ -564,8 +571,13 @@ def FrontWindowInsert(stuff):
 			"Can't find window or widget to insert text into; copy to clipboard instead?", 
 			1) == 1:
 		from Carbon import Scrap
-		Scrap.ZeroScrap()
-		Scrap.PutScrap('TEXT', stuff)
+		if hasattr(Scrap, 'PutScrap'):
+			Scrap.ZeroScrap()
+			Scrap.PutScrap('TEXT', stuff)
+		else:
+			Scrap.ClearCurrentScrap()
+			sc = Scrap.GetCurrentScrap()
+			sc.PutScrapFlavor('TEXT', 0, stuff)
 
 
 # not quite based on the same function in FrameWork	
