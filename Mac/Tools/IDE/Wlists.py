@@ -573,9 +573,10 @@ class MultiList(List):
 			return
 		set_sel = self._list.LSetSelect
 		for i in range(len(self.items)):
-			if i in selection:
-				set_sel(1, (0, i))
-			else:
-				set_sel(0, (0, i))
+			for j in range(len(self.items[i])):
+				if i in selection:
+					set_sel(1, (j, i))
+				else:
+					set_sel(0, (j, i))
 		#self._list.LAutoScroll()
 
