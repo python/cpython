@@ -6,7 +6,7 @@
  */
 #define USE_CARB_RESOURCE
 #ifdef USE_CARB_RESOURCE
-/*----------------------------carb ¥ Carbon on OS X launch information --------------------------*/
+/*----------------------------carb € Carbon on OS X launch information --------------------------*/
 type 'carb' {
 };
 
