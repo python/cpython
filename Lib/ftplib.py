@@ -287,6 +287,8 @@ class FTP:
 	def login(self, user = '', passwd = '', acct = ''):
 		'''Login, default anonymous.'''
 		if not user: user = 'anonymous'
+		if not passwd: passwd = ''
+		if not acct: acct = ''
 		if user == 'anonymous' and passwd in ('', '-'):
 			thishost = socket.gethostname()
 			# Make sure it is fully qualified
@@ -450,6 +452,10 @@ class FTP:
 		resp = self.sendcmd('MKD ' + dirname)
 		return parse257(resp)
 
+	def rmd(self, dirname):
+		'''Remove a directory.'''
+		return self.voidcmd('RMD ' + dirname)
+
 	def pwd(self):
 		'''Return current working directory.'''
 		resp = self.sendcmd('PWD')
@@ -508,8 +514,8 @@ def parse227(resp):
 
 
 def parse257(resp):
-	'''Parse the '257' response for a MKD or RMD request.
-	This is a response to a MKD or RMD request: a directory name.
+	'''Parse the '257' response for a MKD or PWD request.
+	This is a response to a MKD or PWD request: a directory name.
 	Returns the directoryname in the 257 reply.'''
 
 	if resp[:3] <> '257':
