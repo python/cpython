@@ -172,8 +172,8 @@ class Dict:
 
 	"""Dict wrapper for convenient access of values through attributes."""
 
-	def __init__(self, **args):
-		self.__dict__.update(args)
+	def __init__(self, **kwargs):
+		self.__dict__.update(kwargs)
 
 	def __cmp__(self, other):
 		if isinstance(other, self.__class__):
