@@ -99,8 +99,8 @@ for x in 2, 2L, 2.0:
                 except TypeError:
                     pass
                 else:
-                    raise TestFailed("3-arg float pow() should have "
-                                     "raised TypeError %r" % (x, y, z))
+                    raise TestFailed("3-arg float pow(%s, %s, %s) should "
+                                     "have raised TypeError" % (x, y, z))
             else:
                 if fcmp(pow(x, y, z), 24.0):
                     raise TestFailed, 'pow(%s, %s, %s)' % (x, y, z)
