@@ -50,8 +50,9 @@ details of the theory and implementation of regular expressions,
 consult the Friedl book referenced below, or almost any textbook about
 compiler construction.
 
-A brief explanation of the format of regular expressions follows.  
-%For further information and a gentler presentation, consult XXX somewhere.
+A brief explanation of the format of regular expressions follows.  For
+further information and a gentler presentation, consult the Regular
+Expression HOWTO, accessible from \url{http://www.python.org/doc/howto/}.
 
 Regular expressions can contain both special and ordinary characters.
 Most ordinary characters, like \character{A}, \character{a}, or \character{0},
@@ -109,10 +110,9 @@ expression will match only \code{'<H1>'}.
 
 \item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
-match as many repetitions as possible.   For example, \regexp{a\{3,5\}}  
-will match from 3 to 5 \character{a} characters.  Omitting \var{m} is the same
-as specifying 0 for the lower bound; omitting \var{n} specifies an
-infinite upper bound. 
+match as many repetitions as possible.  For example, \regexp{a\{3,5\}}
+will match from 3 to 5 \character{a} characters.  Omitting \var{n}
+specifies an infinite upper bound; you can't omit \var{m}.
 
 \item[\code{\{\var{m},\var{n}\}?}] Causes the resulting RE to
 match from \var{m} to \var{n} repetitions of the preceding RE,
