@@ -16,6 +16,14 @@
 #include <unistd.h>
 #endif
 
+/* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
+ * MDTR, MRI, and MRTS (appearantly used internally by some things
+ * defined as macros; these are not used here directly).
+ */
+#ifdef HAVE_SYS_MODEM_H
+#include <sys/modem.h>
+#endif
+
 static char termios__doc__[] = "\
 This module provides an interface to the Posix calls for tty I/O control.\n\
 For a complete description of these calls, see the Posix or Unix manual\n\
@@ -528,8 +536,12 @@ static struct constant {
 	{"VSTOP", VSTOP},
 	{"VSUSP", VSUSP},
 	{"VEOL", VEOL},
+#ifndef VREPRINT
 	{"VREPRINT", VREPRINT},
+#endif
+#ifndef VDISCARD
 	{"VDISCARD", VDISCARD},
+#endif
 	{"VWERASE", VWERASE},
 	{"VLNEXT", VLNEXT},
 	{"VEOL2", VEOL2},
