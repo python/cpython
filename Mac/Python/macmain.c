@@ -216,12 +216,10 @@ Py_Main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int c;
 	int sts;
 	char *command = NULL;
 	char *filename = NULL;
 	FILE *fp = stdin;
-	char *p;
 	int inspect = 0;
 	int unbuffered = 0;
 
