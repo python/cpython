@@ -99,7 +99,7 @@ class Transformer:
     def transform(self, tree):
         """Transform an AST into a modified parse tree."""
         if type(tree) != type(()) and type(tree) != type([]):
-            tree = parser.ast2tuple(tree,1)
+            tree = parser.ast2tuple(tree, line_info=1)
         return self.compile_node(tree)
 
     def parsesuite(self, text):
@@ -657,7 +657,9 @@ class Transformer:
         return node
 
     def atom(self, nodelist):
-        return self._atom_dispatch[nodelist[0][0]](nodelist)
+        n = self._atom_dispatch[nodelist[0][0]](nodelist)
+        n.lineno = nodelist[0][2]
+        return n
 
     def atom_lpar(self, nodelist):
         if nodelist[1][0] == token.RPAR:
