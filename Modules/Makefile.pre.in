@@ -185,6 +185,7 @@ audioop.o: audioop.c
 cdmodule.o: cdmodule.c
 cgensupport.o: cgensupport.c
 clmodule.o: clmodule.c
+_codecsmodule.o: _codecsmodule.c
 dbmmodule.o: dbmmodule.c
 errnomodule.o: errnomodule.c
 fcntlmodule.o: fcntlmodule.c
@@ -219,6 +220,8 @@ svmodule.o: svmodule.c
 threadmodule.o: threadmodule.c
 timemodule.o: timemodule.c
 timingmodule.o: timingmodule.c
+unicodedata.o: unicodedata.c unicodedatabase.o
+unicodedatabase.o: unicodedatabase.c unicodedatabase.h
 xxmodule.o: xxmodule.c
 yuvconvert.o: yuvconvert.c
 
