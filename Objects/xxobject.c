@@ -85,7 +85,7 @@ xx_demo(self, args)
 	return Py_None;
 }
 
-static Py_MethodDef xx_methods[] = {
+static PyMethodDef xx_methods[] = {
 	{"demo",	(PyCFunction)xx_demo},
 	{NULL,		NULL}		/* sentinel */
 };
