@@ -41,9 +41,15 @@
   <macro name="rfc">
     <attribute name="num"/>
     </macro>
-  <macro name="sectionauthor">
+  <macro name="sectionauthor" outputname="author">
     <attribute name="name"/>
     <attribute name="email"/>
+    </macro>
+  <macro name="author">
+    <attribute name="name"/>
+    </macro>
+  <macro name="authoraddress">
+    <content/>
     </macro>
   <macro name="shortversion"/>
   <macro name="versionadded">
@@ -93,6 +99,9 @@
   <environment name="datadesc">
     <attribute name="name"/>
     </environment>
+  <macro name="dataline">
+    <attribute name="name"/>
+    </macro>
   <environment name="excdesc">
     <attribute name="name"/>
     </environment>
@@ -261,6 +270,11 @@
   <!-- Large-scale document structure. -->
   <macro name="documentclass">
     <attribute name="classname"/>
+    </macro>
+
+  <macro name="usepackage">
+    <attribute name="options" optional="yes"/>
+    <attribute name="pkg"/>
     </macro>
 
   <environment name="document"
@@ -550,6 +564,20 @@
     </macro>
   <macro name="version"/>
 
+  <!-- Distutils things. -->
+  <macro name="command">
+    <content/>
+    </macro>
+  <macro name="option">
+    <content/>
+    </macro>
+  <macro name="filevar" outputname="var">
+    <content/>
+    </macro>
+  <macro name="XXX" outputname="editorial-comment">
+    <content/>
+    </macro>
+
   <!-- Misc. -->
   <macro name="emph">
     <content/>
@@ -631,6 +659,9 @@
     <content/>
     </macro>
   <macro name="programopt" outputname="option">
+    <content/>
+    </macro>
+  <macro name="longprogramopt" outputname="longoption">
     <content/>
     </macro>
   <macro name="regexp">
