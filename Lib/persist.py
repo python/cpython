@@ -148,7 +148,7 @@ def dumpstring(x, typedict, types, stack):
 # Function to dump type objects
 #
 typeswitch = {}
-class some_class():
+class some_class:
 	def method(self): pass
 some_instance = some_class()
 #
