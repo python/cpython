@@ -386,7 +386,6 @@ import time, sys
 from time import time
 from sys import *
 from sys import path, argv
-check_syntax("def f(): from sys import *")
 
 print 'global_stmt' # 'global' NAME (',' NAME)*
 def f():

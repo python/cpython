@@ -38,7 +38,6 @@ continue + try/finally ok
 return_stmt
 raise_stmt
 import_stmt
-SyntaxError expected for "def f(): from sys import *"
 global_stmt
 exec_stmt
 if_stmt
