@@ -26,6 +26,7 @@ import sys
 import urllib
 import BaseHTTPServer
 import SimpleHTTPServer
+import select
 
 
 class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -199,6 +200,9 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if pid != 0:
                 # Parent
                 pid, sts = os.waitpid(pid, 0)
+                # throw away additional data [see bug #427345]
+                while select.select([self.rfile], [], [], 0)[0]:
+                    waste = self.rfile.read(1)
                 if sts:
                     self.log_error("CGI script exit status %#x", sts)
                 return
@@ -244,6 +248,9 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if self.command.lower() == "post" and nbytes > 0:
                 data = self.rfile.read(nbytes)
                 fi.write(data)
+            # throw away additional data [see bug #427345]
+            while select.select([self.rfile._sock], [], [], 0)[0]:
+                waste = self.rfile._sock.recv(1)
             fi.close()
             shutil.copyfileobj(fo, self.wfile)
             if self.have_popen3:
