@@ -239,7 +239,7 @@ class FancyGetopt:
         if args is None:
             args = sys.argv[1:]
         if object is None:
-            object = OptionDummy()
+            object = OptionDummy(self.attr_name.values())
             created_object = 1
         else:
             created_object = 0
@@ -465,7 +465,14 @@ def wrap_text (text, width):
 class OptionDummy:
     """Dummy class just used as a place to hold command-line option
     values as instance attributes."""
-    pass
+
+    def __init__ (self, options=[]):
+        """Create a new OptionDummy instance.  The attributes listed in
+        'options' will be initialized to None."""
+        for opt in options:
+            setattr(self, opt, None)
+
+# class OptionDummy
     
 
 if __name__ == "__main__":
