@@ -16,6 +16,12 @@
 #endif
 #endif
 
+#ifdef __OpenBSD__
+#define LEAD_UNDERSCORE "_"
+#else
+#define LEAD_UNDERSCORE ""
+#endif
+
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 1
 #endif
@@ -54,8 +60,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		pathname = pathbuf;
 	}
 
-	/* ### should there be a leading underscore for some platforms? */
-	sprintf(funcname, "init%.200s", shortname);
+	sprintf(funcname, LEAD_UNDERSCORE "init%.200s", shortname);
 
 	if (fp != NULL) {
 		int i;
