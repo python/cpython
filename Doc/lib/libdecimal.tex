@@ -22,7 +22,7 @@ arithmetic.  It offers several advantages over the \class{float()} datatype:
 
 \item Decimal numbers can be represented exactly.  In contrast, numbers like
 \constant{1.1} do not have an exact representation in binary floating point.
-End users typically wound not expect \constant{1.1} to display as
+End users typically would not expect \constant{1.1} to display as
 \constant{1.1000000000000001} as it does with binary floating point.
 
 \item The exactness carries over into arithmetic.  In decimal floating point,
@@ -538,7 +538,19 @@ large number of methods for doing arithmetic directly in a given context.
   rounding method, flags, and traps are applied to the conversion.
 
   This is useful because constants are often given to a greater precision than
-  is needed by the application.
+  is needed by the application.  Another benefit is that rounding immediately
+  eliminates unintended effects from digits beyond the current precision.
+  In the following example, using unrounded inputs means that adding zero
+  to a sum can change the result:
+
+  \begin{verbatim}
+    >>> getcontext().prec = 3
+    >>> Decimal("3.4445") + Decimal("1.0023")
+    Decimal("4.45")
+    >>> Decimal("3.4445") + Decimal(0) + Decimal("1.0023")
+    Decimal("4.44")
+  \end{verbatim}
+      
 \end{methoddesc} 
 
 \begin{methoddesc}{Etiny}{}
@@ -612,12 +624,14 @@ here.
 \begin{methoddesc}{normalize}{x}
   Normalize reduces an operand to its simplest form.
 
-  Essentially a plus operation with all trailing zeros removed from the
-  result.
+  Essentially a \method{plus} operation with all trailing zeros removed from
+  the result.
 \end{methoddesc}
   
 \begin{methoddesc}{plus}{x}
-  Minus corresponds to the unary prefix plus operator in Python.
+  Plus corresponds to the unary prefix plus operator in Python.  This
+  operation applies the context precision and rounding, so it is
+  \emph{not} an identity operation.
 \end{methoddesc}
 
 \begin{methoddesc}{power}{x, y\optional{, modulo}}
