@@ -5,7 +5,7 @@
 # there is no space (eg. action=<key1>key2>) then the keys comprise a
 # single 'emacs style' multi-keystoke binding.
 
-[IDLE CUA-ish]
+[IDLE Classic Windows]
 Copy=<Control-c> <Control-C>
 Cut=<Control-x> <Control-X>
 Paste=<Control-v> <Control-V>
@@ -33,8 +33,14 @@ save-window=<Control-s>
 select-all=<Alt-a>
 toggle-auto-coloring=<Control-slash>
 undo=<Control-z>
+find=<Control-f>
+find-again=<Control-g> <F3>
+find-in-files=<Alt-F3>
+find-selection=<Control-F3>
+replace=<Control-h>
+goto-line=<Alt-g>
 
-[IDLE Emacs-ish]
+[IDLE Classic Unix]
 Copy=<Alt-w> <Meta-w>
 Cut=<Control-w>
 Paste=<Control-y>
@@ -62,3 +68,9 @@ save-window=<Control-x><Control-s>
 select-all=<Alt-a> <Meta-a>
 toggle-auto-coloring=<Control-slash>
 undo=<Control-z>
+find=<Control-u><Control-u><Control-s>
+find-again=<Control-u><Control-s>
+find-in-files=<Alt-s> <Meta-s>
+find-selection=<Control-s>
+replace=<Control-r>
+goto-line=<Alt-g> <Meta-g>

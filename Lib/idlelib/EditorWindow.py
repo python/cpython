@@ -16,6 +16,9 @@ import tkMessageBox
 import webbrowser
 import idlever
 import WindowList
+import SearchDialog
+import GrepDialog
+import ReplaceDialog
 #from IdleConf import idleconf
 from configHandler import idleConf
 import aboutDialog, textView, configDialog
@@ -131,6 +134,12 @@ class EditorWindow:
         text.bind("<<do-nothing>>", lambda event: "break")
         text.bind("<<select-all>>", self.select_all)
         text.bind("<<remove-selection>>", self.remove_selection)
+        text.bind("<<find>>", self.find_event)
+        text.bind("<<find-again>>", self.find_again_event)
+        text.bind("<<find-in-files>>", self.find_in_files_event)
+        text.bind("<<find-selection>>", self.find_selection_event)
+        text.bind("<<replace>>", self.replace_event)
+        text.bind("<<goto-line>>", self.goto_line_event)
         text.bind("<3>", self.right_menu_event)
         if flist:
             flist.inversedict[self] = key
@@ -319,6 +328,38 @@ class EditorWindow:
     def remove_selection(self, event=None):
         self.text.tag_remove("sel", "1.0", "end")
         self.text.see("insert")
+
+    def find_event(self, event):
+        SearchDialog.find(self.text)
+        return "break"
+
+    def find_again_event(self, event):
+        SearchDialog.find_again(self.text)
+        return "break"
+
+    def find_selection_event(self, event):
+        SearchDialog.find_selection(self.text)
+        return "break"
+
+    def find_in_files_event(self, event):
+        GrepDialog.grep(self.text, self.io, self.flist)
+        return "break"
+
+    def replace_event(self, event):
+        ReplaceDialog.replace(self.text)
+        return "break"
+
+    def goto_line_event(self, event):
+        text = self.text
+        lineno = tkSimpleDialog.askinteger("Goto",
+                "Go to line number:",parent=text)
+        if lineno is None:
+            return "break"
+        if lineno <= 0:
+            text.bell()
+            return "break"
+        text.mark_set("insert", "%d.0" % lineno)
+        text.see("insert")
 
     def open_module(self, event=None):
         # XXX Shouldn't this be in IOBinding or in FileList?
