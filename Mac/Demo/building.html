@@ -7,11 +7,9 @@
 <HR>
 
 This document explains how to build MacPython from source. This is
-necessary if you want to write extension modules for 68K Python, and
-is also necessary if you want to make modifications to the Python core.
-Building Python is not something to be undertaken lightly,
-you need a reasonable working
-knowledge of the CodeWarrior development environment, a good net
+necessary if you want to make modifications to the Python core. Building
+Python is not something to be undertaken lightly, you need a reasonable
+working knowledge of the CodeWarrior development environment, a good net
 connection and probably quite some time too. <p>
 
 The information density in this file is high, so you should probably
@@ -43,49 +41,42 @@ at <A HREF="http://www.cwi.nl/~jack/macpython.html">
 http://www.cwi.nl/~jack/macpython.html</A> (which has up-to-date links
 to the other packages needed too) and possibly also from the standard
 <A HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp
-site</A>. Everything you need is also included in the standard Python
-source distribution, but the organization is different. Look in
-directory <code>Mac/mwerks/projects</code> for the project files and
-related stuff. <BR>
+site</A>. <BR>
 
-An alternative is to check the sources straight out of the CVS
+A better alternative is to check the sources straight out of the CVS
 repository, see below. Most of the packages mentioned here are also
 available through CVS. Check the section on <a href="#cvs">CVS
 repository use</a> below.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with CodeWarrior Pro 4. Ordering information is
+been built with CodeWarrior Pro 5.2. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. Building Python with MPW or Think/Symantec C is
 probably impossible without major surgery.
 
-<LI> You need GUSI, the Grand Unified Socket Interface, by Matthias
-Neeracher. The original CWGUSI is
-obtainable from <A
-HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
-ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
-At the moment Python is built with a slightly modified version of GUSI,
-these modifications are available in folder <code>Python:Mac:GUSI-mods</code>. <br>
+<LI> You need GUSI version 2, the Grand Unified Socket Interface, by
+Matthias Neeracher. The original GUSI is obtainable from <A
+HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src/mw_c">
+ftp://sunsite.cnlab-switch.ch/software/platform/macos/src/mw_c</A>. At
+the moment Python is built with a slightly modified version of GUSI
+2.1.1, so it may be better to check the <A
+HREF="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</A>
+for a GUSI that is most easily used for building Python. 
+<br>
 
 The modified GUSI is also in the MacPython cvs source repository, in the
-directory <code>lib-src/CWGUSI</code>. However, some files contain slashes in
-their names, something CVS seriously frowns upon, and each slash has been
-replaced by <code>"_s_"</code>. There is a script
-<code>Mac:scripts:fixgusidir.py</code> which you should run after checking CWGUSI
-out
-
+directory <code>lib-src/GUSI2</code>. As GUSI is moving to sourceforge
+this info may be outdated by the time you read it so better check the
+MacPython homepage, probably.
 </UL>
 
 <A NAME="optional">The MacPython project files are configured to
 include a plethora of optional modules</A>, and these modules need a
 number of extra packages. To use the project files as-is you have to
-download these packages too. PPC and CFM68K Python have all such modules as
+download these packages too. Python has all such modules as
 dynamically loaded modules, so if you don't need a certain package it
-suffices to just refrain from builing the extension module. For static 68K
-Python things are a bit more complicated: you have to edit the
-interpreter project file to remove the reference to the module (and
-the libraries it uses), and edit the <code>Mac:mwerks:mwerks_nonshared_config.h</code>
-file to remove the <code>USE_...</code> line.  Here are the locations for the various things
+suffices to just refrain from builing the extension module.
+Here are the locations for the various things
 you need:
 
 <UL>
@@ -134,7 +125,7 @@ access paths try to set things up as follows:
 
 <PRE>
 Top-level-folder:
-	CWGUSI
+	GUSI2
 	imglibs
 		jpeg
 		netpbm
@@ -159,25 +150,21 @@ Top-level-folder:
 If your setup of the libraries is exactly the same as mine (which is
 not very likely, unless you happen to work from the same CVS
 repository) you can use the project <code>buildlibs.prj</code> in the
-<code>:Mac:build.mac</code> folder to build all needed libraries in one
+<code>:Mac:Build</code> folder to build all needed libraries in one
 fell swoop, otherwise you will have to build the libraries one by
 one. <p>
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
-move the files from the "CWGUSI-mods" to the right
-place in the CWGUSI distribution folder. Build the MSL version for your
-platform (ppc, 68k, cfm68k). <p>
-
-<em>Note:</em> always rebuild the CWGUSI libraries, even if you have
-checked them out from the CVS repository. <P>
+massage some of the Python code (missing routines) and you'll miss the
+functionality of "delay console".
+ <p>
 
 Next, in
-<code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
+<code>libjpeg</code>, <code>pbmplus</code>,
 <code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
 and<code>libtiff</code> you build all projects. Usually the projects are in "mac"
 subfolders, sometimes they are in the main folder. Tcl/tk is a special
-case, see below. Of course, if you are only interested in one of
-static 68K, CFM68K or PPC you can skip building the other libraries.
+case, see below.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
@@ -222,14 +209,12 @@ folders:
 <DL>
 <DT> Demo
 <DD> Demo programs that are not Mac-specific. Some of these may not
-work, the file <code>README-Mac</code> has some details.
+work.
 
 <DT> Extensions
 <DD> Extensions to the interpreter that are not Mac-specific. Contains
-the <code>img</code>, <code>Imaging</code> and <code>Numeric</code> extensions
-in this distribution. Nowadays, the extensions are all built in their own
-folders (unlike in older distributions, where img was incorporated in the main
-build procedure).
+the <code>img</code>, <code>Imaging</code> and <code>Numerical</code> extensions
+in this distribution.
 
 <DT> Grammar
 <DD> The Python grammar. Included for reference only, you cannot build
@@ -243,7 +228,7 @@ the parser on a Mac.
 on the Mac.
 
 <DT> Objects
-<DD> Machine-independent code for various objects. Most of these are
+<DD> Machine-independent code for various object types. Most of these are
 not really optional: the interpreter will not function without them.
 
 <DT> Parser
@@ -254,11 +239,12 @@ not really optional: the interpreter will not function without them.
 are unix-specific and not used on the Mac.
 
 <DT> Tools
-<DD> Tools for python developers. Contains <code>modulator</code>
-which builds skeleton C extension modules and <code>bgen</code> which
-generates complete interface modules from information in C header
-files. There are some readme files, but more documentation is sorely
-needed.
+<DD> Tools for python developers. Contains <code>modulator</code> which
+builds skeleton C extension modules, <code>bgen</code> which generates
+complete interface modules from information in C header files and
+<code>freeze</code> which is used to turn Python scripts into real
+applications (used by MacFreeze and BuildApplication) There are some
+readme files, but more documentation is sorely needed.
 
 </DL>
 
@@ -271,8 +257,8 @@ resulting binaries, except for intermedeate results, are deposited in
 the toplevel folder or the Mac:PlugIns folder (for plugin modules).
 
 <DT> Compat
-<DD> Unix-compatability routines. Some of these are not used anymore,
-since CWGUSI provides a rather complete emulation, but you may need
+<DD> Unix-compatability routines. Most of these are not used anymore,
+since GUSI provides a rather complete emulation, but you may need
 these if you are trying to build a non-GUSI python.
 
 <DT> Demo
@@ -339,25 +325,14 @@ but for more control over the freezing process you can run the main script here.
 
 <H2>Building the 68K interpreter</H2>
 
-If you have all the optional libraries mentioned <A
-HREF="#optional">above</A> loaded building Python for 68K macs is a
-breeze: in the Mac:Build folder you build the libraries with buildlibs.prj
-and then the interpreter with PythonStandalone.prj. <p>
+68K Python is no longer supported, and the projects are not included in the
+source distirbution anymore. If you really want to build Python for the 68K
+your best bet is to check the sources out of the CVS repository. The latest
+projects (in :Mac:build:) that support 68K development are tagged as such,
+and are dated around August 2000. If you plan on doing this announce it on
+the SIG, please. <p>
 
-If you were previously running another copy of this Python release,
-from a binary installer for instance, you should
-first remove the <code>Python XXX preferences</code> file from your
-preference folder. Next, run the interpreter, in the toplevel folder. This will
-create a correct initial preferences file. You are now all set, and
-your tree should be completely compatible with a binary-only
-distribution. Read the release notes
-(<code>Relnotes-somethingorother</code>) and
-<code>ReadMe</code> in the <code>Mac</code> folder. <p>
-
-If something goes wrong you may end up with a garbled preferences file. Removing
-it from the system folder and running Python once again will re-create it.
-
-<H2>Building the PPC and CFM68K interpreter</H2>
+<H2>Building the PPC interpreter</H2>
 
 First you optionally build the external libraries with buildlibs.prj. Next, 
 the projects for
@@ -371,14 +346,16 @@ For completeness sake here is a breakdown of the projects:
 
 <DL>
 
-<DT> PythonCore (with subprojects PythonCorePPC and PythonCoreCFM68K)
+<DT> PythonCore (with subproject PythonCorePPC)
 <DD> The shared library that contains the bulk of the interpreter and
 its resources. It is a good idea to immedeately put an alias to this
 shared library in the <code>Extensions</code> folder of your system
 folder.  Do exactly that: put an <em>alias</em> there, copying or
 moving the file will cause you grief later if you rebuild the library and
 forget to copy it to the extensions folder again. The InstallPython applet
-will also do this, along with creating the plugin aliases.
+will also do this, along with creating the plugin aliases. <br>
+Note that the subproject looks a bit silly nowadays (with no more CFM68K
+support) but you will have to live with that for this release.
 
 <DT> PythonInterpeter
 <DD> The interpreter. This is basically a routine to call out to the
@@ -387,11 +364,12 @@ creating applets (for which formerly PythonApplet was used). <p>
 
 <DT> Plugin projects
 <DD> Each plugin module has a separate project. The <code>Plugins.prj</code>
-project tries to build them all, but is known to be flakey under CW Pro 4.
+project tries to build them all, but is known to be flakey. See <code>fullbuild</code>
+below for a better way to build everything.
 </DL>
 
 After creating the alias to <code>PythonCore</code> you remove any old
-<code>Python XXX Preferences</code> file from the <code>Preferences</code> folder
+<code>Python 2.0b1 Preferences</code> file from the <code>Preferences</code> folder
 (if you had python installed on your system before) and run the interpreter once
 to create the correct preferences file.  <p>
 
@@ -409,10 +387,10 @@ easiest done with the <code>fullbuild</code> script from
 Actually, the <code>fullbuild</code> script can be used to build
 everything, but you need a fully-functional interpreter before you can
 use it (and one that isn't rebuilt in the process: you cannot rebuild
-a running program). You could copy the 68K interpreter to a different
-place and use that to run fullbuild, or use the standalone PPC python
-for this. I tend to keep a standalone interpreter in a safe place for
-this use only. <p>
+a running program). You could copy the interpreter to a different
+place and use that to run fullbuild. The <code>PythonStandSmall.prj</code>
+project builds an interpreter that is suited to this, and it can also come
+in handy if you need to debug things (which is easier in a static program). <p>
 
 </BLOCKQUOTE>
 
@@ -441,7 +419,7 @@ those routines have to be in the same code fragment as they are used from.
 
 <H2><a name="cvs">Using the CVS source archive</a></H2>
 
-It is possible to access the Python sources through remote CVS. The
+It is possible (and probably best) to access the Python sources through remote CVS. The
 advantage of this is that you get the very latest sources, so any bug
 fixed or new features will be immedeately available. This is also the
 disadvantage, of course: as this is the same tree as is used for
@@ -461,7 +439,7 @@ filetypes, and this can seriously hinder you if, for instance, <code>.bmp</code>
 is not a Windows bitmap file. <p>
 
 The machine-independent Python sources are checked out from the main
-Python CVS archive, see the <a
+Python CVS archive on sourceforge.net, see the <a
 href="http://www.python.org/download/cvs.html">Source access via
 CVS</a> page for details. When you check the sources out you will get
 something like <code>Python:dist:src</code>, and under that the
@@ -503,12 +481,11 @@ Some remarks that I could not fit in elsewhere:
 <LI> It may be possible to use the <code>PythonCore</code> shared
 library to embed Python in another program, if your program can live
 with using GUSI for I/O. Use PythonCore in stead of your MSL C library
-(or, at the very least, link it before the normal C library). Let me
-know whether this works.
+(or, at the very least, link it before the normal C library).
 
 <LI> It is possible to build PPC extension modules without building a
 complete Python. The binary distribution installer can optionally install
-all the needed folders. A template for a dynamic module can be found in
+all the needed folders (the develop option). A template for a dynamic module can be found in
 <code>xx.prj</code>.
 
 <LI> The Python shared library architecture is a variant of the architecture
