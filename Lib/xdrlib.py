@@ -5,6 +5,10 @@ See: RFC 1014
 """
 
 import struct
+try:
+    from cStringIO import StringIO as _StringIO
+except ImportError:
+    from StringIO import StringIO as _StringIO
 
 __all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
 
@@ -39,22 +43,22 @@ class Packer:
         self.reset()
 
     def reset(self):
-        self.__buf = ''
+        self.__buf = _StringIO()
 
     def get_buffer(self):
-        return self.__buf
+        return self.__buf.getvalue()
     # backwards compatibility
     get_buf = get_buffer
 
     def pack_uint(self, x):
-        self.__buf = self.__buf + struct.pack('>L', x)
+        self.__buf.write(struct.pack('>L', x))
 
     pack_int = pack_uint
     pack_enum = pack_int
 
     def pack_bool(self, x):
-        if x: self.__buf = self.__buf + '\0\0\0\1'
-        else: self.__buf = self.__buf + '\0\0\0\0'
+        if x: self.__buf.write('\0\0\0\1')
+        else: self.__buf.write('\0\0\0\0')
 
     def pack_uhyper(self, x):
         self.pack_uint(x>>32 & 0xffffffffL)
@@ -63,12 +67,12 @@ class Packer:
     pack_hyper = pack_uhyper
 
     def pack_float(self, x):
-        try: self.__buf = self.__buf + struct.pack('>f', x)
+        try: self.__buf.write(struct.pack('>f', x))
         except struct.error, msg:
             raise ConversionError, msg
 
     def pack_double(self, x):
-        try: self.__buf = self.__buf + struct.pack('>d', x)
+        try: self.__buf.write(struct.pack('>d', x))
         except struct.error, msg:
             raise ConversionError, msg
 
@@ -78,7 +82,7 @@ class Packer:
         n = ((n+3)/4)*4
         data = s[:n]
         data = data + (n - len(data)) * '\0'
-        self.__buf = self.__buf + data
+        self.__buf.write(data)
 
     pack_fopaque = pack_fstring
 
