@@ -17,9 +17,9 @@ The module defines the following functions:
   Perform the requested operation on file descriptor \var{fd}.
   The operation is defined by \var{op} and is operating system
   dependent.  Typically these codes can be retrieved from the library
-  module \module{FCNTL}. The argument \var{arg} is optional, and
-  defaults to the integer value \code{0}.  When
-  it is present, it can either be an integer value, or a string.  With
+  module \module{FCNTL}\refstmodindex{FCNTL}. The argument \var{arg}
+  is optional, and defaults to the integer value \code{0}.  When
+  present, it can either be an integer value, or a string.  With
   the argument missing or an integer value, the return value of this
   function is the integer return value of the \C{} \cfunction{fcntl()}
   call.  When the argument is a string it represents a binary
@@ -39,8 +39,8 @@ The module defines the following functions:
 
 \begin{funcdesc}{flock}{fd, op}
 Perform the lock operation \var{op} on file descriptor \var{fd}.
-See the \UNIX{} manual for details.  (On some systems, this function is
-emulated using \function{fcntl()}.)
+See the \UNIX{} manual \manpage{flock}{3} for details.  (On some
+systems, this function is emulated using \cfunction{fcntl()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{lockf}{fd, code, \optional{len, \optional{start, \optional{whence}}}}
@@ -70,6 +70,6 @@ rv = fcntl(file.fileno(), FCNTL.F_SETLKW, lockdata)
 
 Note that in the first example the return value variable \code{rv} will
 hold an integer value; in the second example it will hold a string
-value.  The structure lay-out for the \var{lockadata} variable is
+value.  The structure lay-out for the \var{lockdata} variable is
 system dependent --- therefore using the \function{flock()} call may be
 better.
