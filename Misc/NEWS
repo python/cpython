@@ -4,6 +4,47 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 beta 2?
+================================
+
+*Release date: XX-XXX-2003*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+New platforms
+-------------
+
+None this time.
+
+Tests
+-----
+
+- test_imp rewritten so that it doesn't raise RuntimeError if run as a
+  side effect of being imported ("import test.autotest").
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.3 beta 1?
 ================================
 
