@@ -1576,13 +1576,13 @@ static void
 initsigs(void)
 {
 #ifdef SIGPIPE
-	signal(SIGPIPE, SIG_IGN);
+	PyOS_setsig(SIGPIPE, SIG_IGN);
 #endif
 #ifdef SIGXFZ
-	signal(SIGXFZ, SIG_IGN);
+	PyOS_setsig(SIGXFZ, SIG_IGN);
 #endif
 #ifdef SIGXFSZ
-	signal(SIGXFSZ, SIG_IGN);
+	PyOS_setsig(SIGXFSZ, SIG_IGN);
 #endif
 	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
@@ -1646,18 +1646,14 @@ PyOS_getsig(int sig)
 {
 #ifdef HAVE_SIGACTION
 	struct sigaction context;
-	/* Initialize context.sa_handler to SIG_ERR which makes about as
-	 * much sense as anything else.  It should get overwritten if
-	 * sigaction actually succeeds and otherwise we avoid an
-	 * uninitialized memory read.
-	 */
-	context.sa_handler = SIG_ERR;
-	sigaction(sig, NULL, &context);
+	if (sigaction(sig, NULL, &context) == -1)
+		return SIG_ERR;
 	return context.sa_handler;
 #else
 	PyOS_sighandler_t handler;
 	handler = signal(sig, SIG_IGN);
-	signal(sig, handler);
+	if (handler != SIG_ERR)
+		signal(sig, handler);
 	return handler;
 #endif
 }
@@ -1666,20 +1662,19 @@ PyOS_sighandler_t
 PyOS_setsig(int sig, PyOS_sighandler_t handler)
 {
 #ifdef HAVE_SIGACTION
-	struct sigaction context;
-	PyOS_sighandler_t oldhandler;
-	/* Initialize context.sa_handler to SIG_ERR which makes about as
-	 * much sense as anything else.  It should get overwritten if
-	 * sigaction actually succeeds and otherwise we avoid an
-	 * uninitialized memory read.
-	 */
-	context.sa_handler = SIG_ERR;
-	sigaction(sig, NULL, &context);
-	oldhandler = context.sa_handler;
+	struct sigaction context, ocontext;
 	context.sa_handler = handler;
-	sigaction(sig, &context, NULL);
-	return oldhandler;
+	sigemptyset(&context.sa_mask);
+	context.sa_flags = 0;
+	if (sigaction(sig, &context, &ocontext) == -1)
+		return SIG_ERR;
+	return ocontext.sa_handler;
 #else
-	return signal(sig, handler);
+	PyOS_sighandler_t oldhandler;
+	oldhandler = signal(sig, handler);
+#ifdef HAVE_SIGINTERRUPT
+	siginterrupt(sig, 1);
+#endif
+	return oldhandler;
 #endif
 }

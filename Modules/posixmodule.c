@@ -2903,18 +2903,18 @@ posix_openpty(PyObject *self, PyObject *noargs)
 	master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
 	if (master_fd < 0)
 		return posix_error();
-	sig_saved = signal(SIGCHLD, SIG_DFL);
+	sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
 	/* change permission of slave */
 	if (grantpt(master_fd) < 0) {
-		signal(SIGCHLD, sig_saved);
+		PyOS_setsig(SIGCHLD, sig_saved);
 		return posix_error();
 	}
 	/* unlock slave */
 	if (unlockpt(master_fd) < 0) {
-		signal(SIGCHLD, sig_saved);
+		PyOS_setsig(SIGCHLD, sig_saved);
 		return posix_error();
 	}
-	signal(SIGCHLD, sig_saved);
+	PyOS_setsig(SIGCHLD, sig_saved);
 	slave_name = ptsname(master_fd); /* get name of slave */
 	if (slave_name == NULL)
 		return posix_error();
