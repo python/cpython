@@ -236,6 +236,7 @@ PYTHON_OBJS=	\
 OBJECT_OBJS=	\
 		Objects/abstract.o \
 		Objects/bufferobject.o \
+		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/cobject.o \
 		Objects/complexobject.o \
