@@ -536,7 +536,6 @@ initrotor
 initselect
 gethostbyname_lock
 init_socket
-initsoundex
 initstrop
 initstruct
 inittime
