@@ -15,6 +15,22 @@ from distutils.spawn import spawn
 from distutils.util import move_file, mkpath, newer_pairwise, newer_group
 
 
+# Exception classes used by the CCompiler implementation classes
+class CCompilerError (Exception):
+    """Failure doing some compile/link operation."""
+
+class CompileError (CCompilerError):
+    """Failure to compile one or more C/C++ source files."""
+
+class LibError (CCompilerError):
+    """Failure to create a static library from one or more C/C++ object
+    files."""
+
+class LinkError (CCompilerError):
+    """Failure to link one or more C/C++ object files into an executable
+    or shared library file."""
+
+
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
        by real compiler abstraction classes.  Might have some use as a
@@ -456,7 +472,9 @@ class CCompiler:
            command line.  On other platforms, consult the implementation
            class documentation.  In any event, they are intended as an
            escape hatch for those occasions when the abstract compiler
-           framework doesn't cut the mustard."""
+           framework doesn't cut the mustard.
+
+           Raises CompileError on failure."""
            
         pass
 
@@ -481,7 +499,9 @@ class CCompiler:
            'debug' is a boolean; if true, debugging information will be
            included in the library (note that on most platforms, it is the
            compile step where this matters: the 'debug' flag is included
-           here just for consistency)."""
+           here just for consistency).
+
+           Raises LibError on failure."""
 
         pass
     
@@ -531,7 +551,9 @@ class CCompiler:
 
            'extra_preargs' and 'extra_postargs' are as for 'compile()'
            (except of course that they supply command-line arguments
-           for the particular linker being used)."""           
+           for the particular linker being used).
+
+           Raises LinkError on failure."""
 
         pass
     
@@ -552,7 +574,9 @@ class CCompiler:
            is explicitly supplied as 'output_filename'.  If 'output_dir' is
            supplied, 'output_filename' is relative to it
            (i.e. 'output_filename' can provide directory components if
-           needed)."""
+           needed).
+
+           Raises LinkError on failure."""
         pass
 
 
@@ -570,7 +594,9 @@ class CCompiler:
            file.  The "bunch of stuff" is as for 'link_shared_lib()'.
            'output_progname' should be the base name of the executable
            program--e.g. on Unix the same as the output filename, but
-           on DOS/Windows ".exe" will be appended."""
+           on DOS/Windows ".exe" will be appended.
+
+           Raises LinkError on failure."""
         pass
 
 

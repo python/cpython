@@ -21,7 +21,10 @@ import string, re, os
 from types import *
 from copy import copy
 from distutils import sysconfig
-from distutils.ccompiler import CCompiler, gen_preprocess_options, gen_lib_options
+from distutils.ccompiler import \
+     CCompiler, gen_preprocess_options, gen_lib_options, \
+     CompileError, LibError, LinkError
+from distutils.errors import DistutilsExecError
 
 # XXX Things not currently handled:
 #   * optimization/debug/warning flags; we just use whatever's in Python's
@@ -132,7 +135,12 @@ class UnixCCompiler (CCompiler):
                 self.announce ("skipping %s (%s up-to-date)" % (src, obj))
             else:
                 self.mkpath (os.path.dirname (obj))
-                self.spawn ([self.cc] + cc_args + [src, '-o', obj] + extra_postargs)
+                try:
+                    self.spawn ([self.cc] + cc_args +
+                                [src, '-o', obj] +
+                                extra_postargs)
+                except DistutilsExecError, msg:
+                    raise CompileError, msg
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
@@ -164,7 +172,10 @@ class UnixCCompiler (CCompiler):
             # needed -- or maybe Python's configure script took care of
             # it for us, hence the check for leading colon.
             if self.ranlib[0] != ':':
-                self.spawn ([self.ranlib, output_filename])
+                try:
+                    self.spawn ([self.ranlib, output_filename])
+                except DistutilsExecError, msg:
+                    raise LibError, msg
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
@@ -229,7 +240,10 @@ class UnixCCompiler (CCompiler):
             if extra_postargs:
                 ld_args.extend (extra_postargs)
             self.mkpath (os.path.dirname (output_filename))
-            self.spawn ([self.ld_shared] + ld_args)
+            try:
+                self.spawn ([self.ld_shared] + ld_args)
+            except DistutilsExecError, msg:
+                raise LinkError, msg
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
@@ -267,7 +281,10 @@ class UnixCCompiler (CCompiler):
             if extra_postargs:
                 ld_args.extend (extra_postargs)
             self.mkpath (os.path.dirname (output_filename))
-            self.spawn ([self.ld_exec] + ld_args)
+            try:
+                self.spawn ([self.ld_exec] + ld_args)
+            except DistutilsExecError, msg:
+                raise LinkError, msg
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
