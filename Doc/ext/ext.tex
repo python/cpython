@@ -1,6 +1,6 @@
 \documentclass{manual}
 
-% XXX PM Modulator
+% XXX PM explain how to add new types to Python
 
 \title{Extending and Embedding the Python Interpreter}
 
@@ -941,6 +941,11 @@ exception.  If no exception has been raised yet,
 
 \item[\samp{S} (object) {[PyObject *]}]
 Same as \samp{O}.
+
+\item[\samp{N} (object) {[PyObject *]}]
+Same as \samp{O}, except it doesn't increment the reference count on
+the object.  Useful when the object is created by a call to an object
+constructor in the argument list.
 
 \item[\samp{O\&} (object) {[\var{converter}, \var{anything}]}]
 Convert \var{anything} to a Python object through a \var{converter}
