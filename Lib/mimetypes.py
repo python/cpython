@@ -44,7 +44,7 @@ def guess_type(url):
 
     The suffixes .tgz, .taz and .tz (case sensitive!) are all mapped
     to ".tar.gz".  (This is table-driven too, using the dictionary
-    suffixes_map).
+    suffix_map).
 
     """
     if not inited:
