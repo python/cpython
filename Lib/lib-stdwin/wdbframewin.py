@@ -94,6 +94,7 @@ class FrameWindow(basewin.BaseWindow):
 			output = ''
 		else:
 			globals = self.frame.f_globals
+			globals['__privileged__'] = 1
 			locals = self.dict
 			try:
 				value = eval(expr, globals, locals)

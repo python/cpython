@@ -283,7 +283,7 @@ class FTP:
 	# The callback function is called for each line, with trailing
 	# CRLF stripped.  This creates a new port for you.
 	# print_lines is the default callback 
-	def retrlines(self, cmd, args):
+	def retrlines(self, cmd, *args):
 		callback = None
 		if args:
 			callback = args[0]
