@@ -193,7 +193,6 @@ class _Condition(_Verbose):
             return True
 
     def wait(self, timeout=None):
-        currentThread() # for side-effect
         assert self._is_owned(), "wait() of un-acquire()d lock"
         waiter = _allocate_lock()
         waiter.acquire()
@@ -235,7 +234,6 @@ class _Condition(_Verbose):
             self._acquire_restore(saved_state)
 
     def notify(self, n=1):
-        currentThread() # for side-effect
         assert self._is_owned(), "notify() of un-acquire()d lock"
         __waiters = self.__waiters
         waiters = __waiters[:n]
@@ -369,6 +367,11 @@ _limbo = {}
 class Thread(_Verbose):
 
     __initialized = False
+    # Need to store a reference to sys.exc_info for printing
+    # out exceptions when a thread tries to accept a global during interp.
+    # shutdown and thus raises an exception about trying to perform some
+    # operation on/with a NoneType
+    __exc_info = _sys.exc_info
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, verbose=None):
@@ -383,6 +386,9 @@ class Thread(_Verbose):
         self.__stopped = False
         self.__block = Condition(Lock())
         self.__initialized = True
+        # sys.stderr is not stored in the class like
+        # sys.exc_info since it can be changed during execution
+        self.__stderr = _sys.stderr
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
@@ -440,10 +446,34 @@ class Thread(_Verbose):
             except:
                 if __debug__:
                     self._note("%s.__bootstrap(): unhandled exception", self)
-                s = _StringIO()
-                _print_exc(file=s)
-                _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                 (self.getName(), s.getvalue()))
+                # If sys.stderr is no more (most likely from interpreter
+                # shutdown) use self.__stderr.  Otherwise still use sys (as in
+                # _sys) in case sys.stderr was redefined.
+                if _sys:
+                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
+                                      (self.getName(), _format_exc()))
+                else:
+                    # Do the best job possible w/o a huge amt. of code to
+                    # approx. a traceback stack trace
+                    exc_type, exc_value, exc_tb = self.__exc_info()
+                    try:
+                        print>>self.__stderr, (
+                            "Exception in thread " + self.getName() +
+                            " (most likely raised during interpreter shutdown):")
+                        print>>self.__stderr, (
+                            "Traceback (most recent call last):")
+                        while exc_tb:
+                            print>>self.__stderr, (
+                                '  File "%s", line %s, in %s' %
+                                (exc_tb.tb_frame.f_code.co_filename,
+                                    exc_tb.tb_lineno,
+                                    exc_tb.tb_frame.f_code.co_name))
+                            exc_tb = exc_tb.tb_next
+                        print>>self.__stderr, ("%s: %s" % (exc_type, exc_value))
+                    # Make sure that exc_tb gets deleted since it is a memory
+                    # hog; deleting everything else is just for thoroughness
+                    finally:
+                        del exc_type, exc_value, exc_tb
             else:
                 if __debug__:
                     self._note("%s.__bootstrap(): normal return", self)

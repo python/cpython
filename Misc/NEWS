@@ -40,6 +40,11 @@ Extension modules
 Library
 -------
 
+- Bug #754449: threading.Thread will no longer mask exceptions raised during
+  interpreter shutdown with another exception caused by attempting to output
+  the initial exception.  This fix also includes a backport of rev. 1.41 from
+  HEAD.
+
 - Bug #982215: The Back and Next buttons in bdist_wininst installers are now
   disabled during file copy operations.
 
