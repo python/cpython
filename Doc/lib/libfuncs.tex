@@ -257,6 +257,13 @@ class instances are callable if they have a \method{__call__()} method.
   If both dictionaries are omitted, the expression is executed in the
   environment where \function{execfile()} is called.  The return value is
   \code{None}.
+
+  \strong{Warning:} The default \var{locals} act as described for function
+  \function{locals()} below:  modifications to the default \var{locals}
+  dictionary should not be attempted.  Pass an explicit \var{locals}
+  dictionary if you need to see effects of the code on \var{locals} after
+  function \function{execfile()} returns.  \function{execfile()} cannot
+  be used reliably to modify a function's locals.
 \end{funcdesc}
 
 \begin{funcdesc}{file}{filename\optional{, mode\optional{, bufsize}}}
