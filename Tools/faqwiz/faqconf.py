@@ -49,7 +49,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "1.0.2"			# FAQ Wizard version
+WIZVERSION = "1.0.3"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
@@ -369,9 +369,13 @@ Click this button to commit your changes.
 <HR>
 """
 
-NOCOMMIT = """
-To commit your changes, please enter a log message, your name, email
-addres, and the correct password in the form below.
+NOCOMMIT_HEAD = """
+To commit your changes, please correct the following errors in the
+form below and click the Preview Edit button.
+<UL>
+"""
+NOCOMMIT_TAIL = """
+</UL>
 <HR>
 """
 
@@ -379,7 +383,7 @@ CANTCOMMIT_HEAD = """
 Some required information is missing:
 <UL>
 """
-NEED_PASSWD = "<LI>You must provide the correct passwd.\n"
+NEED_PASSWD = "<LI>You must provide the correct password.\n"
 NEED_AUTHOR = "<LI>You must enter your name.\n"
 NEED_EMAIL = "<LI>You must enter your email address.\n"
 NEED_LOG = "<LI>You must enter a log message.\n"
