@@ -59,27 +59,46 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
 		                &numEntries, &nameSize, &dataSize, NULL, NULL );
 	}
-	if (numEntries==0) {
-		if (newKey)
-			CloseHandle(newKey);
-		if ((rc=RegOpenKey(keyBase, "Software\\Python\\PythonPath", 
-		                   &newKey))==ERROR_SUCCESS) {
-			RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
-		       	            &numEntries, &nameSize, &dataSize, NULL, NULL );
-		}
-	}
 	if (bWin32s && numEntries==0 && dataSize==0) { /* must hardcode for Win32s */
 		numEntries = 1;
 		dataSize = 511;
 	}
 	if (numEntries) {
-		dataBuf = malloc(dataSize);
-		// on NT, datasize is unicode - ie, 2xstrlen,
-		// even when ascii string returned.
-		// presumably will be 1xstrlen on 95/win3.1
-		// Additionally, win32s doesnt work as expected, so
-		// the specific strlen() is required for 3.1.
-		rc = RegQueryValue(newKey, "", dataBuf, &dataSize);
+		/* Loop over all subkeys. */
+		/* Win32s doesnt know how many subkeys, so we do
+		   it twice */
+		char keyBuf[MAX_PATH+1];
+		int index = 0;
+		int off = 0;
+		for(index=0;;index++) {
+			long reqdSize = 0;
+			DWORD rc = RegEnumKey(newKey, index, keyBuf,MAX_PATH+1);
+			if (rc) break;
+			rc = RegQueryValue(newKey, keyBuf, NULL, &reqdSize);
+			if (rc) break;
+			if (bWin32s && reqdSize==0) reqdSize = 512;
+			dataSize += reqdSize + 1; /* 1 for the ";" */
+		}
+		dataBuf = malloc(dataSize+1);
+		if (dataBuf==NULL) return NULL; /* pretty serious?  Raise error? */
+		/* Now loop over, grabbing the paths.  Subkeys before main library */
+		for(index=0;;index++) {
+			int adjust;
+			long reqdSize = dataSize;
+			DWORD rc = RegEnumKey(newKey, index, keyBuf,MAX_PATH+1);
+			if (rc) break;
+			rc = RegQueryValue(newKey, keyBuf, dataBuf+off, &reqdSize);
+			if (rc) break;
+			adjust = strlen(dataBuf+off);
+			dataSize -= adjust;
+			off += adjust;
+			dataBuf[off++] = ';';
+			dataBuf[off] = '\0';
+			dataSize--;
+		}
+		/* Additionally, win32s doesnt work as expected, so
+		   the specific strlen() is required for 3.1. */
+		rc = RegQueryValue(newKey, "", dataBuf+off, &dataSize);
 		if (rc==ERROR_SUCCESS) {
 			if (strlen(dataBuf)==0)
 				free(dataBuf);
