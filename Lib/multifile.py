@@ -21,6 +21,11 @@
 # Note that if a nested multipart message is terminated by a separator
 # for an outer message, this is not reported, even though it is really
 # illegal input.
+#
+# If seekable is given as 0, the class code will not do the bookeeping
+# it normally attempts in order to make seeks relative to the beginning of the
+# current file part.  This may be useful when using MultiFile with a non-
+# seekable stream object.
 
 import sys
 import string
@@ -31,13 +36,16 @@ Error = 'multifile.Error'
 
 class MultiFile:
 	#
-	def __init__(self, fp):
+	seekable = 0
+	def __init__(self, fp, seekable=1):
 		self.fp = fp
 		self.stack = [] # Grows down
 		self.level = 0
 		self.last = 0
-		self.start = self.fp.tell()
-		self.posstack = [] # Grows down
+		if seekable:
+			self.seekable = 1
+			self.start = self.fp.tell()
+			self.posstack = [] # Grows down
 	#
 	def tell(self):
 		if self.level > 0:
@@ -88,7 +96,8 @@ class MultiFile:
 		else:
 			return line
 		# Get here after break out of loop
-		self.lastpos = self.tell() - len(line)
+		if self.seekable:
+			self.lastpos = self.tell() - len(line)
 		self.level = i+1
 		if self.level > 1:
 			err('*** Missing endmarker in MultiFile.readline()\n')
@@ -111,15 +120,17 @@ class MultiFile:
 			return 0
 		self.level = 0
 		self.last = 0
-		self.start = self.fp.tell()
+		if self.seekable:
+			self.start = self.fp.tell()
 		return 1
 	#
 	def push(self, sep):
 		if self.level > 0:
 			raise Error, 'bad MultiFile.push() call'
 		self.stack.insert(0, sep)
-		self.posstack.insert(0, self.start)
-		self.start = self.fp.tell()
+	        if self.seekable:
+                	self.posstack.insert(0, self.start)
+                	self.start = self.fp.tell()
 	#
 	def pop(self):
 		if self.stack == []:
@@ -130,8 +141,9 @@ class MultiFile:
 			abslastpos = self.lastpos + self.start
 		self.level = max(0, self.level - 1)
 		del self.stack[0]
-		self.start = self.posstack[0]
-		del self.posstack[0]
-		if self.level > 0:
-			self.lastpos = abslastpos - self.start
+		if self.seekable:
+			self.start = self.posstack[0]
+			del self.posstack[0]
+			if self.level > 0:
+				self.lastpos = abslastpos - self.start
 	#
