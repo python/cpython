@@ -36,12 +36,32 @@ Java implementation of Beck's original SmallTalk test framework.  Please
 see the documentation of the unittest module for detailed information on
 the interface and general guidelines on writing PyUnit based tests.
 
-The test_support helper module provides a single function for use by
+The test_support helper module provides a two functions for use by
 PyUnit based tests in the Python regression testing framework:
 run_unittest() takes a unittest.TestCase derived class as a parameter
-and runs the tests defined in that class.  All test methods in the
-Python regression framework have names that start with "test_" and use
-lower-case names with words separated with underscores.
+and runs the tests defined in that class, and run_suite() takes a
+populated TestSuite instance and runs the tests..  All test methods in
+the Python regression framework have names that start with "test_" and
+use lower-case names with words separated with underscores.
+
+All PyUnit-based tests in the Python test suite use boilerplate that
+looks like this:
+
+    import unittest
+    import test_support
+
+    class MyTestCase(unittest.TestCase):
+        # define test methods here...
+
+    def test_main():
+        test_support.run_unittest(MyTestCase)
+
+    if __name__ == "__main__":
+        test_main()
+
+This has the advantage that it allows the unittest module to be used
+as a script to run individual tests as well as working well with the
+regrtest framework.
 
 
 doctest based tests
@@ -341,8 +361,12 @@ Some Non-Obvious regrtest Features
       as a module.  Most tests run to completion as a side-effect of
       getting imported.  After importing test_spam, regrtest also executes
       test_spam.test_main(), if test_spam has a "test_main" attribute.
-      This is rarely needed, and you shouldn't create a module global
-      with name test_main unless you're specifically exploiting this
-      gimmick.  In such cases, please put a comment saying so near your
-      def test_main, because this feature is so rarely used it's not
-      obvious when reading the test code.
+      This is rarely required with the "traditional" Python tests, and
+      you shouldn't create a module global with name test_main unless
+      you're specifically exploiting this gimmick.  This usage does
+      prove useful with PyUnit-based tests as well, however; defining
+      a test_main() which is run by regrtest and a script-stub in the
+      test module ("if __name__ == '__main__': test_main()") allows
+      the test to be used like any other Python test and also work
+      with the unittest.py-as-a-script approach, allowing a developer
+      to run specific tests from the command line.
