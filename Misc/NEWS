@@ -5,7 +5,7 @@ Python News
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
 What's New in Python 2.3.3c1?
-===================================
+=============================
 
 *Release date: 05-Dec-2003*
 
@@ -67,10 +67,6 @@ Extension modules
 - Bug #811028: ncurses.h breakage on FreeBSD/MacOS X
 
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
-
-- The sre module (which underlies the re module) now uses a non-recursive
-  algorithm for matching. A bunch of ugly REs that used to fail with a
-  RuntimeError will now work. See Bug #757624
 
 Library
 -------
