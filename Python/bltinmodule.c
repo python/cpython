@@ -619,7 +619,9 @@ builtin_getattr(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	result = PyObject_GetAttr(v, name);
-	if (result == NULL && dflt != NULL) {
+	if (result == NULL && dflt != NULL &&
+	    PyErr_ExceptionMatches(PyExc_AttributeError))
+	{
 		PyErr_Clear();
 		Py_INCREF(dflt);
 		result = dflt;
