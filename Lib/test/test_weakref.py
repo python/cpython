@@ -149,6 +149,13 @@ for o in objects:
            "wrong number of weak references to %r!" % o)
     verify(o is dict[o.arg],
            "wrong object returned by weak dict!")
+items1 = dict.items()
+items2 = dict.copy().items()
+items1.sort()
+items2.sort()
+verify(items1 == items2,
+       "cloning of weak-valued dictionary did not work!")
+del items1, items2
 dict.clear()
 print "weak dict test complete"
 
@@ -165,7 +172,14 @@ for o in objects:
            "wrong number of weak references to %r!" % o)
     verify(o.arg is dict[o],
            "wrong object returned by weak dict!")
-del objects,o
+items1 = dict.items()
+items2 = dict.copy().items()
+items1.sort()
+items2.sort()
+verify(items1 == items2,
+       "cloning of weak-keyed dictionary did not work!")
+del items1, items2
+del objects, o
 verify(len(dict)==0, "deleting the keys did not clear the dictionary")
 print "weak key dict test complete"
 
