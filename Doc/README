@@ -137,8 +137,9 @@ To create HTML files:
 	- Perl 5.004_04 or newer.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
-	- LaTeX2HTML 98.1p1, or newer.  Releases are available at
-	  <http://www-dsed.llnl.gov/files/programs/unix/latex2html/>.
+	- LaTeX2HTML 98.1p5 or newer.  Older version will fail with
+	  the new directory layout.  Releases are available at
+	  <http://dc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
 
 
 What if Times fonts are not available?
