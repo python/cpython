@@ -26,8 +26,7 @@ extern int yp_get_default_domain();
 static PyObject *NisError;
 
 static PyObject *
-nis_error (err)
-	int err;
+nis_error (int err)
 {
 	PyErr_SetString(NisError, yperr_string(err));
 	return NULL;
@@ -50,9 +49,7 @@ static struct nis_map {
 };
 
 static char *
-nis_mapname (map, pfix)
-	char *map;
-	int *pfix;
+nis_mapname (char *map, int *pfix)
 {
 	int i;
 
@@ -79,13 +76,8 @@ struct ypcallback_data {
 };
 
 static int
-nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
-	int instatus;
-	char *inkey;
-	int inkeylen;
-	char *inval;
-	int invallen;
-	struct ypcallback_data *indata;
+nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
+             int invallen, struct ypcallback_data *indata)
 {
 	if (instatus == YP_TRUE) {
 		PyObject *key;
@@ -118,9 +110,7 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 }
 
 static PyObject *
-nis_match (self, args)
-	PyObject *self;
-	PyObject *args;
+nis_match (PyObject *self, PyObject *args)
 {
 	char *match;
 	char *domain;
@@ -150,9 +140,7 @@ nis_match (self, args)
 }
 
 static PyObject *
-nis_cat (self, args)
-	PyObject *self;
-	PyObject *args;
+nis_cat (PyObject *self, PyObject *args)
 {
 	char *domain;
 	char *map;
@@ -228,9 +216,7 @@ static struct timeval TIMEOUT = { 25, 0 };
 
 static
 bool_t
-nis_xdr_domainname(xdrs, objp)
-	XDR *xdrs;
-	domainname *objp;
+nis_xdr_domainname(XDR *xdrs, domainname *objp)
 {
 	if (!xdr_string(xdrs, objp, YPMAXDOMAIN)) {
 		return (FALSE);
@@ -240,9 +226,7 @@ nis_xdr_domainname(xdrs, objp)
 
 static
 bool_t
-nis_xdr_mapname(xdrs, objp)
-	XDR *xdrs;
-	mapname *objp;
+nis_xdr_mapname(XDR *xdrs, mapname *objp)
 {
 	if (!xdr_string(xdrs, objp, YPMAXMAP)) {
 		return (FALSE);
@@ -252,9 +236,7 @@ nis_xdr_mapname(xdrs, objp)
 
 static
 bool_t
-nis_xdr_ypmaplist(xdrs, objp)
-	XDR *xdrs;
-	nismaplist *objp;
+nis_xdr_ypmaplist(XDR *xdrs, nismaplist *objp)
 {
 	if (!nis_xdr_mapname(xdrs, &objp->map)) {
 		return (FALSE);
@@ -269,9 +251,7 @@ nis_xdr_ypmaplist(xdrs, objp)
 
 static
 bool_t
-nis_xdr_ypstat(xdrs, objp)
-	XDR *xdrs;
-	nisstat *objp;
+nis_xdr_ypstat(XDR *xdrs, nisstat *objp)
 {
 	if (!xdr_enum(xdrs, (enum_t *)objp)) {
 		return (FALSE);
@@ -282,9 +262,7 @@ nis_xdr_ypstat(xdrs, objp)
 
 static
 bool_t
-nis_xdr_ypresp_maplist(xdrs, objp)
-	XDR *xdrs;
-	nisresp_maplist *objp;
+nis_xdr_ypresp_maplist(XDR *xdrs, nisresp_maplist *objp)
 {
 	if (!nis_xdr_ypstat(xdrs, &objp->stat)) {
 		return (FALSE);
@@ -300,9 +278,7 @@ nis_xdr_ypresp_maplist(xdrs, objp)
 
 static
 nisresp_maplist *
-nisproc_maplist_2(argp, clnt)
-	domainname *argp;
-	CLIENT *clnt;
+nisproc_maplist_2(domainname *argp, CLIENT *clnt)
 {
 	static nisresp_maplist res;
 
@@ -362,9 +338,7 @@ nis_maplist ()
 }
 
 static PyObject *
-nis_maps (self, args)
-	PyObject *self;
-	PyObject *args;
+nis_maps (PyObject *self, PyObject *args)
 {
 	nismaplist *maps;
 	PyObject *list;
