@@ -30,7 +30,10 @@ def _find_module(fullname, path=None):
         if descr[2] == imp.PY_SOURCE:
             break                   # find but not load the source file
         module = imp.load_module(tgt, file, filename, descr)
-        path = module.__path__
+        try:
+            path = module.__path__
+        except AttributeError:
+            raise ImportError, 'No source for module ' + module.__name__
     return file, filename, descr
 
 class EditorWindow:
