@@ -67,6 +67,8 @@ class ResourcesScanner(Scanner):
 				'DetachResourceFile',
 				'InsertResourceFile',
 				'FSpResourceFileAlreadyOpen',
+				'FSOpenResourceFile',
+				'FSCreateResourceFile',
 			])]
 
 	def makerepairinstructions(self):
