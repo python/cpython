@@ -138,6 +138,15 @@ set_union(PySetObject *so, PyObject *other)
 	result = (PySetObject *)set_copy(so);
 	if (result == NULL)
 		return NULL;
+
+	if (PyAnySet_Check(other)) {
+		if (PyDict_Merge(result->data, ((PySetObject *)other)->data, 0) == -1) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		return (PyObject *)result;
+	}
+
 	it = PyObject_GetIter(other);
 	if (it == NULL) {
 		Py_DECREF(result);
@@ -170,6 +179,13 @@ static PyObject *
 set_union_update(PySetObject *so, PyObject *other)
 {
 	PyObject *item, *data, *it;
+
+	if (PyAnySet_Check(other)) {
+		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 0) == -1) 
+			return NULL;
+		Py_INCREF(so);
+		return (PyObject *)so;
+	}
 
 	it = PyObject_GetIter(other);
 	if (it == NULL)
@@ -434,7 +450,7 @@ set_isub(PySetObject *so, PyObject *other)
 static PyObject *
 set_symmetric_difference(PySetObject *so, PyObject *other)
 {
-	PySetObject *result, *otherset;
+	PySetObject *result, *otherset=NULL;
 	PyObject *item, *selfdata, *otherdata, *tgtdata, *it;
 
 	selfdata = so->data;
@@ -444,16 +460,22 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	tgtdata = result->data;
 
-	otherset = (PySetObject *)make_new_set(so->ob_type, other);
-	if (otherset == NULL) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	otherdata = otherset->data;	
+	if (PyDict_Check(other))
+		otherdata = other;
+	else if (PyAnySet_Check(other))
+		otherdata = ((PySetObject *)other)->data;
+	else {
+		otherset = (PySetObject *)make_new_set(so->ob_type, other);
+		if (otherset == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		otherdata = otherset->data;
+	}	
 
 	it = PyObject_GetIter(otherdata);
 	if (it == NULL) {
-		Py_DECREF(otherset);
+		Py_XDECREF(otherset);
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -463,7 +485,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 			PyErr_Clear();
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_DECREF(it);
-				Py_DECREF(otherset);
+				Py_XDECREF(otherset);
 				Py_DECREF(result);
 				Py_DECREF(item);
 				return NULL;
@@ -472,7 +494,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 		Py_DECREF(item);
 	}
 	Py_DECREF(it);
-	Py_DECREF(otherset);
+	Py_XDECREF(otherset);
 	if (PyErr_Occurred()) {
 		Py_DECREF(result);
 		return NULL;
@@ -627,7 +649,7 @@ frozenset_hash(PyObject *self)
 {
 	PyObject *it, *item;
 	PySetObject *so = (PySetObject *)self;
-	long hash = 0;
+	long hash = 0, x;
 
 	if (so->hash != -1)
 		return so->hash;
@@ -637,7 +659,14 @@ frozenset_hash(PyObject *self)
 		return -1;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		hash ^= PyObject_Hash(item);
+		x = PyObject_Hash(item);
+		/* Applying  x*(x+1) breaks-up linear relationships so that
+		   h(1) ^ h(2) will be less likely to coincide with hash(3).
+		   Multiplying by a large prime increases the dispersion 
+		   between consecutive hashes.  Adding one bit from the 
+		   original restores the one bit lost during the multiply 
+		   (all the products are even numbers).  */
+		hash ^= (x * (x+1) * 3644798167) | (x&1);
 		Py_DECREF(item);
 	}
 	Py_DECREF(it);
