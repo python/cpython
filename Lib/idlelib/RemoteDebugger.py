@@ -27,6 +27,9 @@ import Debugger
 
 debugging = 0
 
+idb_adap_oid = "idb_adapter"
+gui_adap_oid = "gui_adapter"
+
 #=======================================
 #
 # In the PYTHON subprocess:
@@ -113,6 +116,7 @@ class IdbAdapter:
 
     def clear_break(self, filename, lineno):
         msg = self.idb.clear_break(filename, lineno)
+        return msg
 
     def clear_all_file_breaks(self, filename):
         msg = self.idb.clear_all_file_breaks(filename)
@@ -183,7 +187,6 @@ def start_debugger(rpchandler, gui_adap_oid):
     gui_proxy = GUIProxy(rpchandler, gui_adap_oid)
     idb = Debugger.Idb(gui_proxy)
     idb_adap = IdbAdapter(idb)
-    idb_adap_oid = "idb_adapter"
     rpchandler.register(idb_adap_oid, idb_adap)
     return idb_adap_oid
 
@@ -325,6 +328,7 @@ class IdbProxy:
 
     def clear_break(self, filename, lineno):
         msg = self.call("clear_break", filename, lineno)
+        return msg
 
     def clear_all_file_breaks(self, filename):
         msg = self.call("clear_all_file_breaks", filename)
@@ -344,7 +348,8 @@ def start_remote_debugger(rpcclt, pyshell):
     Idle debugger GUI to the subprocess debugger via the IdbProxy.
 
     """
-    gui_adap_oid = "gui_adapter"
+    global idb_adap_oid
+
     idb_adap_oid = rpcclt.remotecall("exec", "start_the_debugger",\
                                    (gui_adap_oid,), {})
     idb_proxy = IdbProxy(rpcclt, idb_adap_oid)
@@ -362,7 +367,14 @@ def close_remote_debugger(rpcclt):
     is deleted in PyShell.close_remote_debugger().)
 
     """    
-    idb_adap_oid = "idb_adapter"
-    rpcclt.remotecall("exec", "stop_the_debugger", (idb_adap_oid,), {})
-    gui_adap_oid = "gui_adapter"
+    close_subprocess_debugger(rpcclt)
     rpcclt.unregister(gui_adap_oid)
+
+def close_subprocess_debugger(rpcclt):
+    rpcclt.remotecall("exec", "stop_the_debugger", (idb_adap_oid,), {})
+
+def restart_subprocess_debugger(rpcclt):
+    idb_adap_oid_ret = rpcclt.remotecall("exec", "start_the_debugger",\
+                                         (gui_adap_oid,), {})
+    assert idb_adap_oid_ret == idb_adap_oid, 'Idb restarted with different oid'
+

@@ -5,21 +5,15 @@ This adds the following commands:
 - Check module does a full syntax check of the current module.
 It also runs the tabnanny to catch any inconsistent tabs.
 
-- Import module is equivalent to either import or reload of the
-current module.  The window must have been saved previously. The
-module is added to sys.modules, and is also added to the __main__
-namespace.  Output goes to the shell window.
-
-- Run module does the same but executes the module's
-code in the __main__ namespace.
+- Run module executes the module's code in the __main__ namespace.  The window
+must have been saved previously. The module is added to sys.modules, and is
+also added to the __main__ namespace.
 
 XXX Redesign this interface (yet again) as follows:
 
 - Present a dialog box for ``Run script''
 
 - Allow specify command line arguments in the dialog box
-
-- Restart the interpreter when running a script
 
 """
 
@@ -47,7 +41,6 @@ class ScriptBinding:
     menudefs = [
         ('run', [None,
 #                 ('Check module', '<<check-module>>'),
-#                 ('Import module', '<<import-module>>'),
                   ('Run script', '<<run-script>>'),
                  ]
         ),
@@ -113,33 +106,6 @@ class ScriptBinding:
                           "There's an error in your program:\n" + msg)
         return 1
 
-    def import_module_event(self, event):
-        flist = self.editwin.flist
-        shell = flist.open_shell()
-        interp = shell.interp
-
-        filename = self.getfilename()
-        if not filename:
-            return
-
-        modname, ext = os.path.splitext(os.path.basename(filename))
-
-        dir = os.path.dirname(filename)
-        dir = os.path.normpath(os.path.abspath(dir))
-
-        interp.runcode("""if 1:
-            import sys as _sys
-            if %s not in _sys.path:
-                _sys.path.insert(0, %s)
-            if _sys.modules.get(%s):
-                del _sys
-                import %s
-                reload(%s)
-            else:
-                del _sys
-                import %s
-                \n""" % (`dir`, `dir`, `modname`, modname, modname, modname))
-
     def run_script_event(self, event):
         filename = self.getfilename()
         if not filename:
@@ -147,6 +113,10 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
+        if interp.tkconsole.executing:
+            interp.display_executing_dialog()
+            return
+        interp.restart_subprocess()
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s
