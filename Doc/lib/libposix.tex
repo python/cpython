@@ -16,7 +16,7 @@ through the \code{os} interface.  Once \code{os} is imported, there is
 \code{posix}.  In addition, \code{os} provides some additional
 functionality, such as automatically calling \code{putenv()}
 when an entry is \code{os.environ} is changed.
-\stmodindex{os}
+\refstmodindex{os}
 
 The descriptions below are very terse; refer to the corresponding
 \UNIX{} manual (or POSIX documentation) entry for more information.
@@ -208,7 +208,7 @@ position; 2 to set it relative to the end of the file.
 
 \begin{funcdesc}{lstat}{path}
 Like \code{stat()}, but do not follow symbolic links.  (On systems
-without symbolic links, this is identical to \code{posix.stat}.)
+without symbolic links, this is identical to \code{posix.stat()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{mkfifo}{path\optional{\, mode}}
@@ -373,6 +373,7 @@ More items may be added at the end by some implementations.
 
 Note: The standard module \code{stat} defines functions and constants
 that are useful for extracting information from a stat structure.
+\refstmodindex{stat}
 \end{funcdesc}
 
 \begin{funcdesc}{symlink}{src\, dst}
