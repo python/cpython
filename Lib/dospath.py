@@ -124,6 +124,24 @@ def commonprefix(m):
 	return prefix
 
 
+# Get size, mtime, atime of files.
+
+def getsize(filename):
+    """Return the size of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_SIZE]
+
+def getmtime(filename):
+    """Return the last modification time of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_MTIME]
+
+def getatime(filename):
+    """Return the last access time of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_MTIME]
+
+
 # Is a path a symbolic link?
 # This will always return false on systems where posix.lstat doesn't exist.
 

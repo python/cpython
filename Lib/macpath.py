@@ -99,6 +99,24 @@ def isdir(s):
 	return S_ISDIR(st[ST_MODE])
 
 
+# Get size, mtime, atime of files.
+
+def getsize(filename):
+    """Return the size of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_SIZE]
+
+def getmtime(filename):
+    """Return the last modification time of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_MTIME]
+
+def getatime(filename):
+    """Return the last access time of a file, reported by os.stat()."""
+    st = os.stat(filename)
+    return st[stat.ST_MTIME]
+
+
 # Return true if the pathname refers to a symbolic link.
 # (Always false on the Mac, until we understand Aliases.)
 
