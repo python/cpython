@@ -61,6 +61,8 @@ Library Reference
 * Update the httplib documentation to match Greg Stein's HTTP/1.1
   support and new classes.  (Greg, this is yours!)
 
+* SSL support in the socket module is not documented.
+
 Tutorial
 --------
 
