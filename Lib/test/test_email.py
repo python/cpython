@@ -271,7 +271,7 @@ Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
-        spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
+\tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
 
 ''')
 
@@ -801,15 +801,15 @@ class TestIterators(TestEmailBase):
         eq(len(lines), 43)
         eq(EMPTYSTRING.join(lines), """\
 Send Ppp mailing list submissions to
-        ppp@zzz.org
+\tppp@zzz.org
 
 To subscribe or unsubscribe via the World Wide Web, visit
-        http://www.zzz.org/mailman/listinfo/ppp
+\thttp://www.zzz.org/mailman/listinfo/ppp
 or, via email, send a message with subject or body 'help' to
-        ppp-request@zzz.org
+\tppp-request@zzz.org
 
 You can reach the person managing the list at
-        ppp-admin@zzz.org
+\tppp-admin@zzz.org
 
 When replying, please edit your Subject line so it is more specific
 than "Re: Contents of Ppp digest..."
