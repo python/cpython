@@ -6,10 +6,10 @@
 \modulesynopsis{Compare files efficiently.}
 
 
-The \module{filecmp} module defines functions to compare files and directories,
-with various optional time/correctness trade-offs.
+The \module{filecmp} module defines functions to compare files and
+directories, with various optional time/correctness trade-offs.
 
-The \module{filecmp} module defines the following function:
+The \module{filecmp} module defines the following functions:
 
 \begin{funcdesc}{cmp}{f1, f2\optional{, shallow\optional{, use_statcache}}}
 Compare the files named \var{f1} and \var{f2}, returning \code{1} if
@@ -58,12 +58,16 @@ Example:
 
 \subsection{The \protect\class{dircmp} class \label{dircmp-objects}}
 
+\class{dircmp} instances are built using this constructor:
+
 \begin{classdesc}{dircmp}{a, b\optional{, ignore\optional{, hide}}}
 Construct a new directory comparison object, to compare the
 directories \var{a} and \var{b}. \var{ignore} is a list of names to
 ignore, and defaults to \code{['RCS', 'CVS', 'tags']}. \var{hide} is a
 list of names to hide, and defaults to \code{[os.curdir, os.pardir]}.
 \end{classdesc}
+
+The \class{dircmp} class provides the following methods:
 
 \begin{methoddesc}[dircmp]{report}{}
 Print (to \code{sys.stdout}) a comparison between \var{a} and \var{b}.
@@ -78,6 +82,15 @@ subdirctories.
 Print a comparison between \var{a} and \var{b} and common 
 subdirctories (recursively).
 \end{methoddesc}
+
+
+The \class{dircmp} offers a number of interesting attributes that may
+be used to get various bits of information about the directory trees
+being compared.
+
+Note that via \method{__getattr__()} hooks, all attributes are
+computed lazilly, so there is no speed penalty if only those
+attributes which are lightweight to compute are used.
 
 \begin{memberdesc}[dircmp]{left_list}
 Files and subdirectories in \var{a}, filtered by \var{hide} and
@@ -132,7 +145,3 @@ compared.
 A dictionary mapping names in \member{common_dirs} to
 \class{dircmp} objects.
 \end{memberdesc}
-
-Note that via \method{__getattr__()} hooks, all attributes are
-computed lazilly, so there is no speed penalty if only those
-attributes which are lightweight to compute are used.
