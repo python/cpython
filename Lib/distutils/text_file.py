@@ -201,8 +201,10 @@ class TextFile:
                 pos = string.find (line, "#")
                 if pos == -1:           # no "#" -- no comments
                     pass
-                elif pos == 0 or line[pos-1] != "\\": # it's a comment
-                    
+
+                # It's definitely a comment -- either "#" is the first
+                # character, or it's elsewhere and unescaped.
+                elif pos == 0 or line[pos-1] != "\\":
                     # Have to preserve the trailing newline, because it's
                     # the job of a later step (rstrip_ws) to remove it --
                     # and if rstrip_ws is false, we'd better preserve it!
@@ -212,6 +214,16 @@ class TextFile:
                     eol = (line[-1] == '\n') and '\n' or ''
                     line = line[0:pos] + eol
                     
+                    # If all that's left is whitespace, then skip line
+                    # *now*, before we try to join it to 'buildup_line' --
+                    # that way constructs like
+                    #   hello \\
+                    #   # comment that should be ignored
+                    #   there
+                    # result in "hello there".
+                    if string.strip(line) == "":
+                        continue
+
                 else:                   # it's an escaped "#"
                     line = string.replace (line, "\\#", "#")
                 
@@ -232,7 +244,8 @@ class TextFile:
                 if type (self.current_line) is ListType:
                     self.current_line[1] = self.current_line[1] + 1
                 else:
-                    self.current_line = [self.current_line, self.current_line+1]
+                    self.current_line = [self.current_line,
+                                         self.current_line+1]
             # just an ordinary line, read it as usual
             else:
                 if line is None:        # eof
@@ -271,7 +284,7 @@ class TextFile:
             # well, I guess there's some actual content there: return it
             return line
 
-    # end readline
+    # readline ()
 
 
     def readlines (self):
@@ -298,21 +311,26 @@ if __name__ == "__main__":
     test_data = """# test file
 
 line 3 \\
+# intervening comment
   continues on next line
 """
-
-
     # result 1: no fancy options
     result1 = map (lambda x: x + "\n", string.split (test_data, "\n")[0:-1])
 
     # result 2: just strip comments
-    result2 = ["\n", "\n", "line 3 \\\n", "  continues on next line\n"]
+    result2 = ["\n",
+               "line 3 \\\n",
+               "  continues on next line\n"]
 
     # result 3: just strip blank lines
-    result3 = ["# test file\n", "line 3 \\\n", "  continues on next line\n"]
+    result3 = ["# test file\n",
+               "line 3 \\\n",
+               "# intervening comment\n",
+               "  continues on next line\n"]
 
     # result 4: default, strip comments, blank lines, and trailing whitespace
-    result4 = ["line 3 \\", "  continues on next line"]
+    result4 = ["line 3 \\",
+               "  continues on next line"]
 
     # result 5: strip comments and blanks, plus join lines (but don't
     # "collapse" joined lines
