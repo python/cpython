@@ -23,6 +23,7 @@ class Play_Audio_sgi:
 		self.nchannelslist = [
 			  (1, AL.MONO),
 			  (2, AL.STEREO),
+			  (4, AL.QUADRO),
 			  ]
 		self.sampwidthlist = [
 			  (1, AL.SAMPLE_8),
@@ -224,7 +225,12 @@ def AudioDev():
 	else:
 		return Play_Audio_sgi()
 
-def test(fn = 'f:just samples:just.aif'):
+def test(fn = None):
+	import sys
+	if sys.argv[1:]:
+		fn = sys.argv[1]
+	else:
+		fn = 'f:just samples:just.aif'
 	import aifc
 	af = aifc.open(fn, 'r')
 	print fn, af.getparams()
