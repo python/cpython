@@ -27,6 +27,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Assignment to __debug__ raises SyntaxError at compile-time.  This
+  was promised when 2.1c1 was released as "What's New in Python 2.1c1"
+  (below) says.
+
 - Clarified the error messages for unsupported operands to an operator
   (like 1 + '').
 
