@@ -210,17 +210,17 @@ class DetailsViewer:
                 red, green, blue = self.__red, self.__green, self.__blue
         elif atbound == WRAP or (atbound == RATIO and len(tie) < 2):
             if red < 0:
-                red = red + 256
+                red += 256
             if green < 0:
-                green = green + 256
+                green += 256
             if blue < 0:
-                blue = blue + 256
+                blue += 256
             if red > 255:
-                red = red - 256
+                red -= 256
             if green > 255:
-                green = green - 256
+                green -= 256
             if blue > 255:
-                blue = blue - 256
+                blue -= 256
         elif atbound == RATIO:
             # for when 2 or 3 colors are tied together
             dir = 0
