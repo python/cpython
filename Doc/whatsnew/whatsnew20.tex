@@ -58,37 +58,42 @@ done between May and September.
 \section{New Development Process}
 
 The most important change in Python 2.0 may not be to the code at all,
-but to how Python is developed.  
+but to how Python is developed: in May 2000 the Python developers
+began using the tools made available by SourceForge for storing 
+source code, tracking bug reports, and managing the queue of patch
+submissions.  To report bugs or submit patches for Python 2.0, use the
+bug tracking and patch manager tools available from Python's project
+page, located at \url{http://sourceforge.net/projects/python/}.
 
-In May of 2000, the Python CVS tree was moved to SourceForge.
-Previously, there were roughly 7 or so people who had write access to
-the CVS tree, and all patches had to be inspected and checked in by
-one of the people on this short list.  Obviously, this wasn't very
-scalable.  By moving the CVS tree to SourceForge, it became possible
-to grant write access to more people; as of September 2000 there were
-27 people able to check in changes, a fourfold increase.  This makes
-possible large-scale changes that wouldn't be attempted if they'd have
-to be filtered through the small group of core developers.  For
-example, one day Peter Schneider-Kamp took it into his head to drop
-K\&R C compatibility and convert the C source for Python to ANSI
-C. After getting approval on the python-dev mailing list, he launched
-into a flurry of checkins that lasted about a week, other developers
-joined in to help, and the job was done.  If there were only 5 people
-with write access, probably that task would have been viewed as
-``nice, but not worth the time and effort needed'' and it would
-never have gotten done.
+The most important of the services now hosted at SourceForge is the
+Python CVS tree, the version-controlled repository containing the
+source code for Python.  Previously, there were roughly 7 or so people
+who had write access to the CVS tree, and all patches had to be
+inspected and checked in by one of the people on this short list.
+Obviously, this wasn't very scalable.  By moving the CVS tree to
+SourceForge, it became possible to grant write access to more people;
+as of September 2000 there were 27 people able to check in changes, a
+fourfold increase.  This makes possible large-scale changes that
+wouldn't be attempted if they'd have to be filtered through the small
+group of core developers.  For example, one day Peter Schneider-Kamp
+took it into his head to drop K\&R C compatibility and convert the C
+source for Python to ANSI C. After getting approval on the python-dev
+mailing list, he launched into a flurry of checkins that lasted about
+a week, other developers joined in to help, and the job was done.  If
+there were only 5 people with write access, probably that task would
+have been viewed as ``nice, but not worth the time and effort needed''
+and it would never have gotten done.
 
-SourceForge also provides tools for tracking bug and patch
-submissions, and in combination with the public CVS tree, they've
-resulted in a remarkable increase in the speed of development.
-Patches now get submitted, commented on, revised by people other than
-the original submitter, and bounced back and forth between people
-until the patch is deemed worth checking in.  This didn't come without
-a cost: developers now have more e-mail to deal with, more mailing
-lists to follow, and special tools had to be written for the new
-environment.  For example, SourceForge sends default patch and bug
-notification e-mail messages that are completely unhelpful, so Ka-Ping
-Yee wrote an HTML screen-scraper that sends more useful messages.
+The shift to using SourceForge's services has resulted in a remarkable
+increase in the speed of development.  Patches now get submitted,
+commented on, revised by people other than the original submitter, and
+bounced back and forth between people until the patch is deemed worth
+checking in.  This didn't come without a cost: developers now have
+more e-mail to deal with, more mailing lists to follow, and special
+tools had to be written for the new environment.  For example,
+SourceForge sends default patch and bug notification e-mail messages
+that are completely unhelpful, so Ka-Ping Yee wrote an HTML
+screen-scraper that sends more useful messages.
 
 The ease of adding code caused a few initial growing pains, such as
 code was checked in before it was ready or without getting clear
@@ -135,10 +140,6 @@ and are also available in HTML form from
 \url{http://python.sourceforge.net/peps/}.  As of September 2000,
 there are 25 PEPS, ranging from PEP 201, ``Lockstep Iteration'', to
 PEP 225, ``Elementwise/Objectwise Operators''.
-
-To report bugs or submit patches for Python 2.0, use the bug tracking
-and patch manager tools available from the SourceForge project page,
-at \url{http://sourceforge.net/projects/python/}.
 
 % ======================================================================
 \section{Unicode}
@@ -1157,7 +1158,7 @@ these modules.
 
 The authors would like to thank the following people for offering
 suggestions on drafts of this article: Mark Hammond, Gregg Hauser,
-Fredrik Lundh, Detlef Lannert, Skip Montanaro, Vladimir Marangozov,
-Guido van Rossum, and Neil Schemenauer.
+Fredrik Lundh, Detlef Lannert, Aahz Maruch, Skip Montanaro, Vladimir
+Marangozov, Guido van Rossum, Neil Schemenauer, and Russ Schmidt.
 
 \end{document}
