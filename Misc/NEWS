@@ -32,6 +32,16 @@ Standard library
   each thread, then using .jumpahead() to force each instance to use a
   non-overlapping segment of the full period.
 
+- random.py's seed() function is new.  For bit-for-bit compatibility with
+  prior releases, use the whseed function instead.  The new seed function
+  addresses two problems:  (1) The old function couldn't produce more than
+  about 2**24 distinct internal states; the new one about 2**45 (the best
+  that can be done in the Wichmann-Hill generator).  (2) The old function
+  sometimes produced identical internal states when passed distinct
+  integers, and there was no simple way to predict when that would happen;
+  the new one guarantees to produce distinct internal states for all
+  arguments in [0, 27814431486576L).
+
 Windows changes
 
 - Build procedure:  the zlib project is built in a different way that

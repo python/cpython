@@ -25,7 +25,8 @@ numbers it generates before repeating the sequence exactly) is
 6,953,607,871,644.  While of much higher quality than the \function{rand()}
 function supplied by most C libraries, the theoretical properties
 are much the same as for a single linear congruential generator of
-large modulus.
+large modulus.  It is not suitable for all purposes, and is completely
+unsuitable for cryptographic purposes.
 
 The functions in this module are not threadsafe:  if you want to call these
 functions from multiple threads, you should explicitly serialize the calls.
@@ -72,7 +73,7 @@ gens = create_generators(10, 1000000)
 That creates 10 distinct generators, which can be passed out to 10 distinct
 threads.  The generators don't share state so can be called safely in
 parallel.  So long as no thread calls its \code{g.random()} more than a
-million times (the second argument to \function{create_generators}), the
+million times (the second argument to \function{create_generators), the
 sequences seen by each thread will not overlap.  The period of the
 underlying Wichmann-Hill generator limits how far this technique can be
 pushed.
@@ -83,10 +84,10 @@ also be used to "move backward in time":
 \begin{verbatim}
 >>> g = Random(42)  # arbitrary
 >>> g.random()
-0.24855401895528142
+0.25420336316883324
 >>> g.jumpahead(6953607871644L - 1) # move *back* one
 >>> g.random()
-0.24855401895528142
+0.25420336316883324
 \end{verbatim}
 
 
@@ -94,25 +95,38 @@ Bookkeeping functions:
 
 \begin{funcdesc}{seed}{\optional{x}}
   Initialize the basic random number generator.
-  Optional argument \var{x} can be any hashable object,
-  and the generator is seeded from its hash code.
-  It is not guaranteed that distinct hash codes will produce distinct
-  seeds.
-  If \var{x} is omitted or \code{None},
-  the seed is derived from the current system time.
-  The seed is also set from the current system time when
-  the module is first imported.
+  Optional argument \var{x} can be any hashable object.
+  If \var(x) is omitted or \code{None}, current system time is used;
+  current system time is also used to initialize the generator when the
+  module is first imported.
+  If \var(x) is not \code{None} or an int or long,
+  \code{hash(\var{x})) is used instead.
+  If \var{x} is an int or long, \var{x} is used directly.
+  Distinct values between 0 and 27814431486575L inclusive are guaranteed
+  to yield distinct internal states (this guarantee is specific to the
+  default Wichmann-Hill generator, and may not apply to subclasses
+  supplying their own basic generator).
+\end{funcdesc}
+
+\begin{funcdesc}{whseed}{\optional{x}}
+  This is obsolete, supplied for bit-level compatibility with versions
+  of Python prior to 2.1.
+  See \function{seed} for details.  \function{whseed} does not guarantee
+  that distinct integer arguments yield distinct internal states, and can
+  yield no more than about 2**24 distinct internal states in all.
 \end{funcdesc}
 
 \begin{funcdesc}{getstate}{}
   Return an object capturing the current internal state of the generator.
   This object can be passed to \code{setstate()} to restore the state.
- \end{funcdesc}
+  \versionadded{2.1}
+\end{funcdesc}
 
 \begin{funcdesc}{setstate}{state}
   \var{state} should have been obtained from a previous call to
   \code{getstate()}, and \code{setstate()} restores the internal state
-  of the generate to what it was at the time \code{setstate()} was called.
+  of the generator to what it was at the time \code{setstate()} was called.
+  \versionadded{2.1}
  \end{funcdesc}
 
 \begin{funcdesc}{jumpahead}{n}
@@ -124,6 +138,7 @@ Bookkeeping functions:
   internal state, and then \method{jumpahead()} can be used to force the
   instances' states as far apart as you like (up to the period of the
   generator).
+  \versionadded{2.1}
  \end{funcdesc}
 
 Functions for integers:

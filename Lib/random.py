@@ -66,10 +66,10 @@ used to "move backward in time":
 
 >>> g = Random(42)  # arbitrary
 >>> g.random()
-0.24855401895528142
+0.25420336316883324
 >>> g.jumpahead(6953607871644L - 1) # move *back* one
 >>> g.random()
-0.24855401895528142
+0.25420336316883324
 """
 # XXX The docstring sucks.
 
@@ -119,26 +119,31 @@ class Random:
     # different core generator should override the seed(), random(),
     # getstate(), setstate() and jumpahead() methods.
 
-    def __whseed(self, x=0, y=0, z=0):
-        """Set the Wichmann-Hill seed from (x, y, z).
+    def seed(self, a=None):
+        """Initialize internal state from hashable object.
 
-        These must be integers in the range [0, 256).
+        None or no argument seeds from current time.
+
+        If a is not None or an int or long, hash(a) is instead.
+
+        If a is an int or long, a is used directly.  Distinct values between
+        0 and 27814431486575L inclusive are guaranteed to yield distinct
+        internal states (this guarantee is specific to the default
+        Wichmann-Hill generator).
         """
 
-        if not type(x) == type(y) == type(z) == type(0):
-            raise TypeError('seeds must be integers')
-        if not (0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256):
-            raise ValueError('seeds must be in range(0, 256)')
-        if 0 == x == y == z:
+        if a is None:
             # Initialize from current time
             import time
-            t = long(time.time()) * 256
-            t = int((t&0xffffff) ^ (t>>24))
-            t, x = divmod(t, 256)
-            t, y = divmod(t, 256)
-            t, z = divmod(t, 256)
-        # Zero is a poor seed, so substitute 1
-        self._seed = (x or 1, y or 1, z or 1)
+            a = long(time.time() * 256)
+
+        if type(a) not in (type(3), type(3L)):
+            a = hash(a)
+
+        a, x = divmod(a, 30268)
+        a, y = divmod(a, 30306)
+        a, z = divmod(a, 30322)
+        self._seed = int(x)+1, int(y)+1, int(z)+1
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
@@ -170,26 +175,6 @@ class Random:
         # Note:  on a platform using IEEE-754 double arithmetic, this can
         # never return 0.0 (asserted by Tim; proof too long for a comment).
         return (x/30269.0 + y/30307.0 + z/30323.0) % 1.0
-
-    def seed(self, a=None):
-        """Seed from hashable object's hash code.
-
-        None or no argument seeds from current time.  It is not guaranteed
-        that objects with distinct hash codes lead to distinct internal
-        states.
-        """
-
-        if a is None:
-            self.__whseed()
-            return
-        a = hash(a)
-        a, x = divmod(a, 256)
-        a, y = divmod(a, 256)
-        a, z = divmod(a, 256)
-        x = (x + a) % 256 or 1
-        y = (y + a) % 256 or 1
-        z = (z + a) % 256 or 1
-        self.__whseed(x, y, z)
 
     def getstate(self):
         """Return internal state; can be passed to setstate() later."""
@@ -226,6 +211,50 @@ class Random:
         y = int(y * pow(172, n, 30307)) % 30307
         z = int(z * pow(170, n, 30323)) % 30323
         self._seed = x, y, z
+
+    def __whseed(self, x=0, y=0, z=0):
+        """Set the Wichmann-Hill seed from (x, y, z).
+
+        These must be integers in the range [0, 256).
+        """
+
+        if not type(x) == type(y) == type(z) == type(0):
+            raise TypeError('seeds must be integers')
+        if not (0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256):
+            raise ValueError('seeds must be in range(0, 256)')
+        if 0 == x == y == z:
+            # Initialize from current time
+            import time
+            t = long(time.time() * 256)
+            t = int((t&0xffffff) ^ (t>>24))
+            t, x = divmod(t, 256)
+            t, y = divmod(t, 256)
+            t, z = divmod(t, 256)
+        # Zero is a poor seed, so substitute 1
+        self._seed = (x or 1, y or 1, z or 1)
+
+    def whseed(self, a=None):
+        """Seed from hashable object's hash code.
+
+        None or no argument seeds from current time.  It is not guaranteed
+        that objects with distinct hash codes lead to distinct internal
+        states.
+
+        This is obsolete, provided for compatibility with the seed routine
+        used prior to Python 2.1.  Use the .seed() method instead.
+        """
+
+        if a is None:
+            self.__whseed()
+            return
+        a = hash(a)
+        a, x = divmod(a, 256)
+        a, y = divmod(a, 256)
+        a, z = divmod(a, 256)
+        x = (x + a) % 256 or 1
+        y = (y + a) % 256 or 1
+        z = (z + a) % 256 or 1
+        self.__whseed(x, y, z)
 
 ## ---- Methods below this point do not need to be overridden when
 ## ---- subclassing for the purpose of using a different core generator.
@@ -623,6 +652,7 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 jumpahead = _inst.jumpahead
+whseed = _inst.whseed
 
 if __name__ == '__main__':
     _test()
