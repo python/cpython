@@ -56,7 +56,7 @@ def join(a, *p):
 
 def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is 
-everything after the final slash.  Either part may be empty"""
+    everything after the final slash.  Either part may be empty."""
     i = p.rfind('/') + 1
     head, tail = p[:i], p[i:]
     if head and head <> '/'*len(head):
@@ -72,7 +72,7 @@ everything after the final slash.  Either part may be empty"""
 
 def splitext(p):
     """Split the extension from a pathname.  Extension is everything from the
-last dot to the end.  Returns "(root, ext)", either part may be empty"""
+    last dot to the end.  Returns "(root, ext)", either part may be empty."""
     root, ext = '', ''
     for c in p:
         if c == '/':
@@ -94,7 +94,7 @@ last dot to the end.  Returns "(root, ext)", either part may be empty"""
 
 def splitdrive(p):
     """Split a pathname into drive and path. On Posix, drive is always 
-empty"""
+    empty."""
     return '', p
 
 
@@ -254,9 +254,9 @@ def ismount(path):
 
 def walk(top, func, arg):
     """walk(top,func,arg) calls func(arg, d, files) for each directory "d" 
-in the tree  rooted at "top" (including "top" itself).  "files" is a list
-of all the files and subdirs in directory "d".
-"""
+    in the tree  rooted at "top" (including "top" itself).  "files" is a list
+    of all the files and subdirs in directory "d".
+    """
     try:
         names = os.listdir(top)
     except os.error:
@@ -280,12 +280,12 @@ of all the files and subdirs in directory "d".
 
 def expanduser(path):
     """Expand ~ and ~user constructions.  If user or $HOME is unknown, 
-do nothing"""
+    do nothing."""
     if path[:1] <> '~':
         return path
     i, n = 1, len(path)
     while i < n and path[i] <> '/':
-        i = i+1
+        i = i + 1
     if i == 1:
         if not os.environ.has_key('HOME'):
             return path
@@ -297,7 +297,7 @@ do nothing"""
         except KeyError:
             return path
         userhome = pwent[5]
-    if userhome[-1:] == '/': i = i+1
+    if userhome[-1:] == '/': i = i + 1
     return userhome + path[i:]
 
 
@@ -309,7 +309,7 @@ _varprog = None
 
 def expandvars(path):
     """Expand shell variables of form $var and ${var}.  Unknown variables
-are left unchanged"""
+    are left unchanged."""
     global _varprog
     if '$' not in path:
         return path
