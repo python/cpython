@@ -624,7 +624,7 @@ A parameter entity reference was found where it was not allowed.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_PARTIAL_CHAR}
-
+An incomplete character was found in the input.
 \end{datadescni}
 
 \begin{datadescni}{XML_ERROR_RECURSIVE_ENTITY_REF}
@@ -651,4 +651,85 @@ A reference was made to a entity which was not defined.
 
 \begin{datadescni}{XML_ERROR_UNKNOWN_ENCODING}
 The document encoding is not supported by Expat.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_UNCLOSED_CDATA_SECTION}
+A CDATA marked section was not closed.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_EXTERNAL_ENTITY_HANDLING}
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_NOT_STANDALONE}
+The parser determined that the document was not ``standalone'' though
+it declared itself to be in the XML declaration, and the
+\member{NotStandaloneHandler} was set and returned \code{0}.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_UNEXPECTED_STATE}
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_ENTITY_DECLARED_IN_PE}
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_FEATURE_REQUIRES_XML_DTD}
+An operation was requested that requires DTD support to be compiled
+in, but Expat was configured without DTD support.  This should never
+be reported by a standard build of the \module{xml.parsers.expat}
+module.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING}
+A behavioral change was requested after parsing started that can only
+be changed before parsing has started.  This is (currently) only
+raised by \method{UseForeignDTD()}.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_UNBOUND_PREFIX}
+An undeclared prefix was found when namespace processing was enabled.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_UNDECLARING_PREFIX}
+The document attempted to remove the namespace declaration associated
+with a prefix.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_INCOMPLETE_PE}
+A parameter entity contained incomplete markup.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_XML_DECL}
+The document contained no document element at all.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_TEXT_DECL}
+There was an error parsing a text declaration in an external entity.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_PUBLICID}
+Characters were found in the public id that are not allowed.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_SUSPENDED}
+The requested operation was made on a suspended parser, but isn't
+allowed.  This includes attempts to provide additional input or to
+stop the parser.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_NOT_SUSPENDED}
+An attempt to resume the parser was made when the parser had not been
+suspended.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_ABORTED}
+This should not be reported to Python applications.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_FINISHED}
+The requested operation was made on a parser which was finished
+parsing input, but isn't allowed.  This includes attempts to provide
+additional input or to stop the parser.
+\end{datadescni}
+
+\begin{datadescni}{XML_ERROR_SUSPEND_PE}
 \end{datadescni}
