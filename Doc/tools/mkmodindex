@@ -48,6 +48,23 @@ class IndexOptions(support.Options):
         print __doc__ % {"program": program}
 
 
+class Node(buildindex.Node):
+    annotation = ""
+
+    def __init__(self, link, str, seqno):
+        parts = str.split(None, 1)
+        if parts[0].endswith("</tt>"):
+            self.modname = parts[0][:-5]
+        else:
+            self.modname = parts[0]
+        if len(parts) == 2:
+            self.annotation = parts[1]
+        buildindex.Node.__init__(self, link, self.modname, seqno)
+
+    def __str__(self):
+        return '<tt class="module">%s</tt> %s' \
+               % (self.modname, self.annotation)
+
 _rx = re.compile(
     "<dt><a href='(module-.*\.html)#l2h-\d+'><tt class='module'>"
     "([a-zA-Z_][a-zA-Z0-9_.]*</tt>(\s*<em>"
@@ -83,10 +100,7 @@ def main():
                 basename, modname = m.group(1, 2)
                 has_plat_flag = has_plat_flag or m.group(3)
                 linkfile = os.path.join(dirname, basename)
-                nodes.append(buildindex.Node(
-                    '<a href="%s">' % linkfile,
-                    "<tt class=module>%s</tt>" % modname,
-                    seqno))
+                nodes.append(Node('<a href="%s">' % linkfile, modname, seqno))
                 seqno = seqno + 1
         ifp.close()
     #
