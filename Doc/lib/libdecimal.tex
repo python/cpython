@@ -15,7 +15,7 @@ Specification.}
 
 \versionadded{2.4}
 
-The decimal \module{module} provides support for decimal floating point
+The \module{decimal} module provides support for decimal floating point
 arithmetic.  It offers several advantages over the \class{float()} datatype:
 
 \begin{itemize}
@@ -89,7 +89,8 @@ the decimal module are: \constant{Clamped}, \constant{InvalidOperation},
 
 For each signal there is a flag and a trap enabler.  When a signal is
 encountered, its flag incremented from zero and, then, if the trap enabler
-is set to one, an exception is raised.
+is set to one, an exception is raised.  Flags are sticky, so the user
+needs to reset them before monitoring a calculation.
 
 
 \begin{seealso}
@@ -504,10 +505,14 @@ with the \class{Context} constructor.
   The \var{prec} field is a positive integer that sets the precision for
   arithmetic operations in the context.
 
-  The \var{rounding} option is one of: \constant{ROUND_CEILING},
-  \constant{ROUND_DOWN}, \constant{ROUND_FLOOR}, \constant{ROUND_HALF_DOWN}
-  (towards zero), \constant{ROUND_HALF_EVEN}, \constant{ROUND_HALF_UP}, or
-  \constant{ROUND_UP} (away from zero).
+  The \var{rounding} option is one of:
+      \constant{ROUND_CEILING} (towards \constant{Infinity}),
+      \constant{ROUND_DOWN} (towards zero),
+      \constant{ROUND_FLOOR} (towards \constant{-Infinity}),
+      \constant{ROUND_HALF_DOWN} (towards zero),
+      \constant{ROUND_HALF_EVEN},
+      \constant{ROUND_HALF_UP} (away from zero), or
+      \constant{ROUND_UP} (away from zero).
 
   The \var{trap_enablers} and \var{flags} fields are mappings from signals
   to either \constant{0} or \constant{1}.
