@@ -485,7 +485,7 @@ def test():
 	import getopt
 	import socket
 	protocol = 'udp'
-	server = 'meermin.cwi.nl' # XXX adapt this to your local 
+	server = 'cnri.reston.va.us' # XXX adapt this to your local 
 	port = 53
 	opcode = dnsopcode.QUERY
 	rd = 0
