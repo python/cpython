@@ -1133,6 +1133,7 @@ Electric behavior is inhibited inside a string or comment."
       (set-buffer curbuf))))
 
 (defun py-postprocess-output-buffer (buf)
+  ;; Highlight exceptions found in BUF
   (let (line file bol)
     (save-excursion
       (set-buffer buf)
@@ -1257,10 +1258,15 @@ is inserted at the end.  See also the command `py-clear-queue'."
      (t
       ;; otherwise either run it synchronously in a subprocess
       (shell-command-on-region start end py-python-command py-output-buffer)
-      (setq py-exception-buffer (current-buffer))
-      (py-postprocess-output-buffer py-output-buffer)
-      (pop-to-buffer py-output-buffer)
-      ))))
+      ;; shell-command-on-region kills the output buffer if it never
+      ;; existed and there's no output from the command
+      (if (not (get-buffer py-output-buffer))
+	  (message "No output.")
+	(setq py-exception-buffer (current-buffer))
+	(py-postprocess-output-buffer py-output-buffer)
+	(pop-to-buffer py-output-buffer)
+	))
+     )))
 
 ;; Code execution command
 (defun py-execute-buffer (&optional async)
