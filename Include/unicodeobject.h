@@ -293,7 +293,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 /* If you want Python to use the compiler's wctype.h functions instead
    of the ones supplied with Python, define WANT_WCTYPE_FUNCTIONS or
-   configure Python using --with-ctype-functions.  This reduces the
+   configure Python using --with-wctype-functions.  This reduces the
    interpreter's code size. */
 
 #if defined(HAVE_USABLE_WCHAR_T) && defined(WANT_WCTYPE_FUNCTIONS)
