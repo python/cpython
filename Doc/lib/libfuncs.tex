@@ -44,6 +44,21 @@ using \samp{import spam.ham.eggs}, the top-level package \code{spam}
 must be placed in the importing namespace, but when using \samp{from
 spam.ham import eggs}, the \code{spam.ham} subpackage must be used to
 find the \code{eggs} variable.
+As a workaround for this behavior, use \function{getattr()} to extract
+the desired components.  For example, you could define the following
+helper:
+
+\begin{verbatim}
+import string
+
+def my_import(name):
+    mod = __import__(name)
+    components = string.split(name, '.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+\end{verbatim}
+
 \end{funcdesc}
 
 \begin{funcdesc}{abs}{x}
