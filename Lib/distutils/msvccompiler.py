@@ -37,7 +37,7 @@ class MSVCCompiler (CCompiler) :
         self.cc   = "cl.exe"
         self.link = "link.exe"
         self.preprocess_options = None
-        self.compile_options = [ '/nologo' ]
+        self.compile_options = [ '/nologo', '/Ox', '/MD', '/GD' ]
 
         self.ldflags_shared = ['/DLL', '/nologo']
         self.ldflags_static = [ '/nologo']
