@@ -1,7 +1,7 @@
 \documentclass{howto}
 
 \title{What's New in Python 1.6}
-\release{0.02}
+\release{0.03}
 \author{A.M. Kuchling and Moshe Zadka}
 \authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
@@ -55,14 +55,15 @@ escapes can be used for characters up to U+01FF, which is represented
 by \code{\e 777}.
 
 Unicode strings, just like regular strings, are an immutable sequence
-type, so they can be indexed and sliced.  They also have an
-\method{encode( \optional{\var{encoding}} )} method that returns an
-8-bit string in the desired encoding.  Encodings are named by strings,
-such as \code{'ascii'}, \code{'utf-8'}, \code{'iso-8859-1'}, or
-whatever.  A codec API is defined for implementing and registering new
-encodings that are then available throughout a Python program.  If an
-encoding isn't specified, the default encoding is usually 7-bit ASCII,
-though it can be changed for your Python installation by calling the
+type.  They can be indexed and sliced, but not modified in place.
+Unicode strings have an \method{encode( \optional{\var{encoding}} )} method
+that returns an 8-bit string in the desired encoding.  Encodings are
+named by strings, such as \code{'ascii'}, \code{'utf-8'},
+\code{'iso-8859-1'}, or whatever.  A codec API is defined for
+implementing and registering new encodings that are then available
+throughout a Python program.  If an encoding isn't specified, the
+default encoding is usually 7-bit ASCII, though it can be changed for
+your Python installation by calling the
 \function{sys.setdefaultencoding(\var{encoding})} function in a
 customized version of \file{site.py}.
 
@@ -352,8 +353,8 @@ digit.
 
 Taking the \function{repr()} of a float now uses a different
 formatting precision than \function{str()}.  \function{repr()} uses
-``%.17g'' format string for C's \function{sprintf()}, while
-\function{str()} uses ``%.12g'' as before.  The effect is that
+\code{\%.17g} format string for C's \function{sprintf()}, while
+\function{str()} uses \code{\%.12g} as before.  The effect is that 
 \function{repr()} may occasionally show more decimal places than 
 \function{str()}, for numbers 
 For example, the number 8.1 can't be represented exactly in binary, so
@@ -437,14 +438,18 @@ processor, mostly by Trent Mick of ActiveState.  (Confusingly, \code{sys.platfor
 Win64 because it seems that for ease of porting, MS Visual C++ treats code
 as 32 bit.
 )  PythonWin also supports Windows CE; see the Python CE page at
-\url{http://www.python.net/crew/mhammond/ce/} for more information.
+\url{http://starship.python.net/crew/mhammond/ce/} for more information.
 
 An attempt has been made to alleviate one of Python's warts, the
 often-confusing \exception{NameError} exception when code refers to a
 local variable before the variable has been assigned a value.  For
 example, the following code raises an exception on the \keyword{print}
 statement in both 1.5.2 and 1.6; in 1.5.2 a \exception{NameError}
-exception is raised, while 1.6 raises \exception{UnboundLocalError}.
+exception is raised, while 1.6 raises a new
+\exception{UnboundLocalError} exception.
+\exception{UnboundLocalError} is a subclass of \exception{NameError},
+so any existing code that expects \exception{NameError} to be raised
+should still work.
 
 \begin{verbatim}
 def f():
@@ -483,7 +488,7 @@ This means you no longer have to remember to write code such as
 
 The \file{Python/importdl.c} file, which was a mass of \#ifdefs to
 support dynamic loading on many different platforms, was cleaned up
-are reorganized by Greg Stein.  \file{importdl.c} is now quite small,
+and reorganized by Greg Stein.  \file{importdl.c} is now quite small,
 and platform-specific code has been moved into a bunch of
 \file{Python/dynload_*.c} files.  
 
