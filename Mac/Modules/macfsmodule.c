@@ -22,8 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#include "allobjects.h"
-#include "modsupport.h"		/* For getargs() etc. */
+#include "Python.h"
 #include "macglue.h"
 
 #include <Memory.h>
@@ -39,17 +38,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define FileFilterUPP FileFilterProcPtr
 #endif
 
-static object *ErrorObject;
+static PyObject *ErrorObject;
 
 /* ----------------------------------------------------- */
 /* Declarations for objects of type Alias */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	AliasHandle alias;
 } mfsaobject;
 
-staticforward typeobject Mfsatype;
+staticforward PyTypeObject Mfsatype;
 
 #define is_mfsaobject(v)		((v)->ob_type == &Mfsatype)
 
@@ -57,11 +56,11 @@ staticforward typeobject Mfsatype;
 /* Declarations for objects of type FSSpec */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	FSSpec fsspec;
 } mfssobject;
 
-staticforward typeobject Mfsstype;
+staticforward PyTypeObject Mfsstype;
 
 #define is_mfssobject(v)		((v)->ob_type == &Mfsstype)
 
@@ -70,11 +69,11 @@ staticforward typeobject Mfsstype;
 /* Declarations for objects of type FInfo */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	FInfo finfo;
 } mfsiobject;
 
-staticforward typeobject Mfsitype;
+staticforward PyTypeObject Mfsitype;
 
 #define is_mfsiobject(v)		((v)->ob_type == &Mfsitype)
 
@@ -83,17 +82,17 @@ mfssobject *newmfssobject(FSSpec *fss); /* Forward */
 
 /* ---------------------------------------------------------------- */
 
-static object *
+static PyObject *
 mfsa_Resolve(self, args)
 	mfsaobject *self;
-	object *args;
+	PyObject *args;
 {
 	FSSpec from, *fromp, result;
 	Boolean changed;
 	OSErr err;
 	
 	from.name[0] = 0;
-	if (!newgetargs(args, "|O&", PyMac_GetFSSpec, &from))
+	if (!PyArg_ParseTuple(args, "|O&", PyMac_GetFSSpec, &from))
 		return NULL;
 	if (from.name[0] )
 		fromp = &from;
@@ -104,39 +103,39 @@ mfsa_Resolve(self, args)
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return mkvalue("(Oi)", newmfssobject(&result), (int)changed);
+	return Py_BuildValue("(Oi)", newmfssobject(&result), (int)changed);
 }
 
-static object *
+static PyObject *
 mfsa_GetInfo(self, args)
 	mfsaobject *self;
-	object *args;
+	PyObject *args;
 {
 	Str63 value;
 	int i;
 	OSErr err;
 	
-	if (!newgetargs(args, "i", &i))
+	if (!PyArg_ParseTuple(args, "i", &i))
 		return NULL;
 	err = GetAliasInfo(self->alias, (AliasInfoType)i, value);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return 0;
 	}
-	return newsizedstringobject((char *)&value[1], value[0]);
+	return PyString_FromStringAndSize((char *)&value[1], value[0]);
 }
 
-static object *
+static PyObject *
 mfsa_Update(self, args)
 	mfsaobject *self;
-	object *args;
+	PyObject *args;
 {
 	FSSpec target, fromfile, *fromfilep;
 	OSErr err;
 	Boolean changed;
 	
 	fromfile.name[0] = 0;
-	if (!newgetargs(args, "O&|O&",  PyMac_GetFSSpec, &target,
+	if (!PyArg_ParseTuple(args, "O&|O&",  PyMac_GetFSSpec, &target,
 					 PyMac_GetFSSpec, &fromfile))
 		return NULL;
 	if ( fromfile.name[0] )
@@ -148,20 +147,20 @@ mfsa_Update(self, args)
 		PyErr_Mac(ErrorObject, err);
 		return 0;
 	}
-	return mkvalue("i", (int)changed);
+	return Py_BuildValue("i", (int)changed);
 }
 
-static struct methodlist mfsa_methods[] = {
-	{"Resolve",	(method)mfsa_Resolve,	1},
-	{"GetInfo",	(method)mfsa_GetInfo,	1},
-	{"Update",	(method)mfsa_Update,	1},
+static struct PyMethodDef mfsa_methods[] = {
+	{"Resolve",	(PyCFunction)mfsa_Resolve,	1},
+	{"GetInfo",	(PyCFunction)mfsa_GetInfo,	1},
+	{"Update",	(PyCFunction)mfsa_Update,	1},
  
 	{NULL,		NULL}		/* sentinel */
 };
 
 /* ---------- */
 
-static object *
+static PyObject *
 mfsa_getattr(self, name)
 	mfsaobject *self;
 	char *name;
@@ -176,7 +175,7 @@ mfsa_getattr(self, name)
 		HUnlock((Handle)self->alias);
 		return rv;
 	}
-	return findmethod(mfsa_methods, (object *)self, name);
+	return Py_FindMethod(mfsa_methods, (PyObject *)self, name);
 }
 
 mfsaobject *
@@ -185,7 +184,7 @@ newmfsaobject(alias)
 {
 	mfsaobject *self;
 
-	self = NEWOBJ(mfsaobject, &Mfsatype);
+	self = PyObject_NEW(mfsaobject, &Mfsatype);
 	if (self == NULL)
 		return NULL;
 	self->alias = alias;
@@ -203,11 +202,11 @@ mfsa_dealloc(self)
 	}
 #endif
 		
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-statichere typeobject Mfsatype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Mfsatype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"Alias",			/*tp_name*/
 	sizeof(mfsaobject),		/*tp_basicsize*/
@@ -230,7 +229,7 @@ statichere typeobject Mfsatype = {
 
 /* ---------------------------------------------------------------- */
 
-static struct methodlist mfsi_methods[] = {
+static struct PyMethodDef mfsi_methods[] = {
 	
 	{NULL,		NULL}		/* sentinel */
 };
@@ -242,7 +241,7 @@ newmfsiobject()
 {
 	mfsiobject *self;
 	
-	self = NEWOBJ(mfsiobject, &Mfsitype);
+	self = PyObject_NEW(mfsiobject, &Mfsitype);
 	if (self == NULL)
 		return NULL;
 	memset((char *)&self->finfo, '\0', sizeof(self->finfo));
@@ -253,10 +252,10 @@ static void
 mfsi_dealloc(self)
 	mfsiobject *self;
 {
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 mfsi_getattr(self, name)
 	mfsiobject *self;
 	char *name;
@@ -272,7 +271,7 @@ mfsi_getattr(self, name)
 	else if ( strcmp(name, "Fldr") == 0 )
 		return Py_BuildValue("i", (int)self->finfo.fdFldr);
 	else
-		return findmethod(mfsi_methods, (object *)self, name);
+		return Py_FindMethod(mfsi_methods, (PyObject *)self, name);
 }
 
 
@@ -280,13 +279,13 @@ static int
 mfsi_setattr(self, name, v)
 	mfsiobject *self;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	int rv;
 	int i;
 	
 	if ( v == NULL ) {
-		err_setstr(AttributeError, "Cannot delete attribute");
+		PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
 		return -1;
 	}
 	if ( strcmp(name, "Type") == 0 )
@@ -302,7 +301,7 @@ mfsi_setattr(self, name, v)
 		rv = PyArg_Parse(v, "i", &i);
 		self->finfo.fdFldr = (short)i;
 	} else {
-		err_setstr(AttributeError, "No such attribute");
+		PyErr_SetString(PyExc_AttributeError, "No such attribute");
 		return -1;
 	}
 	if (rv)
@@ -311,8 +310,8 @@ mfsi_setattr(self, name, v)
 }
 
 
-static typeobject Mfsitype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Mfsitype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"FInfo object",			/*tp_name*/
 	sizeof(mfsiobject),		/*tp_basicsize*/
@@ -340,7 +339,7 @@ static typeobject Mfsitype = {
 */
 FSSpec *
 mfs_GetFSSpecFSSpec(self)
-	object *self;
+	PyObject *self;
 {
 	if ( is_mfssobject(self) )
 		return &((mfssobject *)self)->fsspec;
@@ -395,46 +394,46 @@ PyMac_SetFileDates(fss, crdat, mddat, bkdat)
 	return error;
 }
 
-static object *
+static PyObject *
 mfss_as_pathname(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	char strbuf[257];
 	OSErr err;
 
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	err = PyMac_GetFullPath(&self->fsspec, strbuf);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return newstringobject(strbuf);
+	return PyString_FromString(strbuf);
 }
 
-static object *
+static PyObject *
 mfss_as_tuple(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	return Py_BuildValue("(iis#)", self->fsspec.vRefNum, self->fsspec.parID, 
 						&self->fsspec.name[1], self->fsspec.name[0]);
 }
 
-static object *
+static PyObject *
 mfss_NewAlias(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	FSSpec src, *srcp;
 	OSErr err;
 	AliasHandle alias;
 	
 	src.name[0] = 0;
-	if (!newgetargs(args, "|O&", PyMac_GetFSSpec, &src))
+	if (!PyArg_ParseTuple(args, "|O&", PyMac_GetFSSpec, &src))
 		return NULL;
 	if ( src.name[0] )
 		srcp = &src;
@@ -446,37 +445,37 @@ mfss_NewAlias(self, args)
 		return NULL;
 	}
 	
-	return (object *)newmfsaobject(alias);
+	return (PyObject *)newmfsaobject(alias);
 }
 
-static object *
+static PyObject *
 mfss_NewAliasMinimal(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	AliasHandle alias;
 	
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	err = NewAliasMinimal(&self->fsspec, &alias);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return (object *)newmfsaobject(alias);
+	return (PyObject *)newmfsaobject(alias);
 }
 
 /* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
-static object *
+static PyObject *
 mfss_GetCreatorType(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	FInfo info;
 	
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	err = FSpGetFInfo(&self->fsspec, &info);
 	if ( err ) {
@@ -487,16 +486,16 @@ mfss_GetCreatorType(self, args)
 	           PyMac_BuildOSType, info.fdCreator, PyMac_BuildOSType, info.fdType);
 }
 
-static object *
+static PyObject *
 mfss_SetCreatorType(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	OSType creator, type;
 	FInfo info;
 	
-	if (!newgetargs(args, "O&O&", PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
+	if (!PyArg_ParseTuple(args, "O&O&", PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
 		return NULL;
 	err = FSpGetFInfo(&self->fsspec, &info);
 	if ( err ) {
@@ -510,78 +509,78 @@ mfss_SetCreatorType(self, args)
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mfss_GetFInfo(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	mfsiobject *fip;
 	
 	
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ( (fip=newmfsiobject()) == NULL )
 		return NULL;
 	err = FSpGetFInfo(&self->fsspec, &fip->finfo);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
-		DECREF(fip);
+		Py_DECREF(fip);
 		return NULL;
 	}
-	return (object *)fip;
+	return (PyObject *)fip;
 }
 
-static object *
+static PyObject *
 mfss_SetFInfo(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	mfsiobject *fip;
 	
-	if (!newgetargs(args, "O!", &Mfsitype, &fip))
+	if (!PyArg_ParseTuple(args, "O!", &Mfsitype, &fip))
 		return NULL;
 	err = FSpSetFInfo(&self->fsspec, &fip->finfo);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mfss_GetDates(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	unsigned long crdat, mddat, bkdat;
 	
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	err = PyMac_GetFileDates(&self->fsspec, &crdat, &mddat, &bkdat);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return mkvalue("ddd", (double)crdat, (double)mddat, (double)bkdat);
+	return Py_BuildValue("ddd", (double)crdat, (double)mddat, (double)bkdat);
 }
 
-static object *
+static PyObject *
 mfss_SetDates(self, args)
 	mfssobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	double crdat, mddat, bkdat;
 	
-	if (!newgetargs(args, "ddd", &crdat, &mddat, &bkdat))
+	if (!PyArg_ParseTuple(args, "ddd", &crdat, &mddat, &bkdat))
 		return NULL;
 	err = PyMac_SetFileDates(&self->fsspec, (unsigned long)crdat, 
 				(unsigned long)mddat, (unsigned long)bkdat);
@@ -589,35 +588,35 @@ mfss_SetDates(self, args)
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist mfss_methods[] = {
-	{"as_pathname",		(method)mfss_as_pathname,			1},
-	{"as_tuple",		(method)mfss_as_tuple,				1},
-	{"NewAlias",		(method)mfss_NewAlias,				1},
-	{"NewAliasMinimal",	(method)mfss_NewAliasMinimal,		1},
-	{"GetCreatorType",	(method)mfss_GetCreatorType,		1},
-	{"SetCreatorType",	(method)mfss_SetCreatorType,		1},
-	{"GetFInfo",		(method)mfss_GetFInfo,				1},
-	{"SetFInfo",		(method)mfss_SetFInfo,				1},
-	{"GetDates",		(method)mfss_GetDates,				1},
-	{"SetDates",		(method)mfss_SetDates,				1},
+static struct PyMethodDef mfss_methods[] = {
+	{"as_pathname",		(PyCFunction)mfss_as_pathname,			1},
+	{"as_tuple",		(PyCFunction)mfss_as_tuple,				1},
+	{"NewAlias",		(PyCFunction)mfss_NewAlias,				1},
+	{"NewAliasMinimal",	(PyCFunction)mfss_NewAliasMinimal,		1},
+	{"GetCreatorType",	(PyCFunction)mfss_GetCreatorType,		1},
+	{"SetCreatorType",	(PyCFunction)mfss_SetCreatorType,		1},
+	{"GetFInfo",		(PyCFunction)mfss_GetFInfo,				1},
+	{"SetFInfo",		(PyCFunction)mfss_SetFInfo,				1},
+	{"GetDates",		(PyCFunction)mfss_GetDates,				1},
+	{"SetDates",		(PyCFunction)mfss_SetDates,				1},
  
 	{NULL,			NULL}		/* sentinel */
 };
 
 /* ---------- */
 
-static object *
+static PyObject *
 mfss_getattr(self, name)
 	mfssobject *self;
 	char *name;
 {
 	if ( strcmp(name, "data") == 0)
 		return PyString_FromStringAndSize((char *)&self->fsspec, sizeof(FSSpec));	
-	return findmethod(mfss_methods, (object *)self, name);
+	return Py_FindMethod(mfss_methods, (PyObject *)self, name);
 }
 
 mfssobject *
@@ -626,7 +625,7 @@ newmfssobject(fss)
 {
 	mfssobject *self;
 	
-	self = NEWOBJ(mfssobject, &Mfsstype);
+	self = PyObject_NEW(mfssobject, &Mfsstype);
 	if (self == NULL)
 		return NULL;
 	self->fsspec = *fss;
@@ -637,10 +636,10 @@ static void
 mfss_dealloc(self)
 	mfssobject *self;
 {
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 mfss_repr(self)
 	mfssobject *self;
 {
@@ -650,7 +649,7 @@ mfss_repr(self)
 		self->fsspec.vRefNum, 
 		self->fsspec.parID,
 		self->fsspec.name[0], self->fsspec.name+1);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static int
@@ -673,8 +672,8 @@ mfss_compare(v, w)
 	return res;
 }
 
-statichere typeobject Mfsstype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Mfsstype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"FSSpec",			/*tp_name*/
 	sizeof(mfssobject),		/*tp_basicsize*/
@@ -695,29 +694,29 @@ statichere typeobject Mfsstype = {
 /* End of code for FSSpec objects */
 /* -------------------------------------------------------- */
 
-static object *
+static PyObject *
 mfs_ResolveAliasFile(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	FSSpec fss;
 	Boolean chain = 1, isfolder, wasaliased;
 	OSErr err;
 
-	if (!newgetargs(args, "O&|i", PyMac_GetFSSpec, &fss, &chain))
+	if (!PyArg_ParseTuple(args, "O&|i", PyMac_GetFSSpec, &fss, &chain))
 		return NULL;
 	err = ResolveAliasFile(&fss, chain, &isfolder, &wasaliased);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return mkvalue("Oii", newmfssobject(&fss), (int)isfolder, (int)wasaliased);
+	return Py_BuildValue("Oii", newmfssobject(&fss), (int)isfolder, (int)wasaliased);
 }
 
-static object *
+static PyObject *
 mfs_StandardGetFile(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	SFTypeList list;
 	short numtypes;
@@ -725,7 +724,7 @@ mfs_StandardGetFile(self, args)
 	
 	list[0] = list[1] = list[2] = list[3] = 0;
 	numtypes = 0;
-	if (!newgetargs(args, "|O&O&O&O&", PyMac_GetOSType, &list[0],
+	if (!PyArg_ParseTuple(args, "|O&O&O&O&", PyMac_GetOSType, &list[0],
 			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
 			  PyMac_GetOSType, &list[3]) )
 		return NULL;
@@ -735,13 +734,13 @@ mfs_StandardGetFile(self, args)
 	if ( numtypes == 0 )
 		numtypes = -1;
 	StandardGetFile((FileFilterUPP)0, numtypes, list, &reply);
-	return mkvalue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
+	return Py_BuildValue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
 }
 
-static object *
+static PyObject *
 mfs_PromptGetFile(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	SFTypeList list;
 	short numtypes;
@@ -750,7 +749,7 @@ mfs_PromptGetFile(self, args)
 	
 	list[0] = list[1] = list[2] = list[3] = 0;
 	numtypes = 0;
-	if (!newgetargs(args, "s|O&O&O&O&", &prompt, PyMac_GetOSType, &list[0],
+	if (!PyArg_ParseTuple(args, "s|O&O&O&O&", &prompt, PyMac_GetOSType, &list[0],
 			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
 			  PyMac_GetOSType, &list[3]) )
 		return NULL;
@@ -760,30 +759,30 @@ mfs_PromptGetFile(self, args)
 	if ( numtypes == 0 )
 		numtypes = -1;
 	PyMac_PromptGetFile(numtypes, list, &reply, prompt);
-	return mkvalue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
+	return Py_BuildValue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
 }
 
-static object *
+static PyObject *
 mfs_StandardPutFile(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	Str255 prompt, dft;
 	StandardFileReply reply;
 	
 	dft[0] = 0;
-	if (!newgetargs(args, "O&|O&", PyMac_GetStr255, &prompt, PyMac_GetStr255, &dft) )
+	if (!PyArg_ParseTuple(args, "O&|O&", PyMac_GetStr255, &prompt, PyMac_GetStr255, &dft) )
 		return NULL;
 	StandardPutFile(prompt, dft, &reply);
-	return mkvalue("(Oi)",newmfssobject(&reply.sfFile), reply.sfGood);
+	return Py_BuildValue("(Oi)",newmfssobject(&reply.sfFile), reply.sfGood);
 }
 
 /*
 ** Set initial directory for file dialogs */
-static object *
+static PyObject *
 mfs_SetFolder(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	FSSpec spec;
 	FSSpec ospec;
@@ -797,53 +796,53 @@ mfs_SetFolder(self, args)
 	
 	/* Go to working directory by default */
 	(void)FSMakeFSSpec(0, 0, "\p:placeholder", &spec);
-	if (!newgetargs(args, "|O&", PyMac_GetFSSpec, &spec))
+	if (!PyArg_ParseTuple(args, "|O&", PyMac_GetFSSpec, &spec))
 		return NULL;
 	/* Set standard-file working directory */
 	LMSetSFSaveDisk(-spec.vRefNum);
 	LMSetCurDirStore(spec.parID);
-	return (object *)newmfssobject(&ospec);
+	return (PyObject *)newmfssobject(&ospec);
 }
 
-static object *
+static PyObject *
 mfs_FSSpec(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	FSSpec fss;
 
-	if (!newgetargs(args, "O&", PyMac_GetFSSpec, &fss))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSSpec, &fss))
 		return NULL;
-	return (object *)newmfssobject(&fss);
+	return (PyObject *)newmfssobject(&fss);
 }
 
-static object *
+static PyObject *
 mfs_RawFSSpec(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	FSSpec *fssp;
 	int size;
 
-	if (!newgetargs(args, "s#", &fssp, &size))
+	if (!PyArg_ParseTuple(args, "s#", &fssp, &size))
 		return NULL;
 	if ( size != sizeof(FSSpec) ) {
 		PyErr_SetString(PyExc_TypeError, "Incorrect size for FSSpec record");
 		return NULL;
 	}
-	return (object *)newmfssobject(fssp);
+	return (PyObject *)newmfssobject(fssp);
 }
 
-static object *
+static PyObject *
 mfs_RawAlias(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	char *dataptr;
 	Handle h;
 	int size;
 
-	if (!newgetargs(args, "s#", &dataptr, &size))
+	if (!PyArg_ParseTuple(args, "s#", &dataptr, &size))
 		return NULL;
 	h = NewHandle(size);
 	if ( h == NULL ) {
@@ -853,29 +852,29 @@ mfs_RawAlias(self, args)
 	HLock(h);
 	memcpy((char *)*h, dataptr, size);
 	HUnlock(h);
-	return (object *)newmfsaobject((AliasHandle)h);
+	return (PyObject *)newmfsaobject((AliasHandle)h);
 }
 
-static object *
+static PyObject *
 mfs_GetDirectory(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	FSSpec fsdir;
 	int ok;
 	char *prompt = NULL;
 		
-	if (!newgetargs(args, "|s", &prompt) )
+	if (!PyArg_ParseTuple(args, "|s", &prompt) )
 		return NULL;
 		
 	ok = PyMac_GetDirectory(&fsdir, prompt);
-	return mkvalue("(Oi)", newmfssobject(&fsdir), ok);
+	return Py_BuildValue("(Oi)", newmfssobject(&fsdir), ok);
 }
 
-static object *
+static PyObject *
 mfs_FindFolder(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	OSErr err;
 	short where;
@@ -884,46 +883,46 @@ mfs_FindFolder(self, args)
 	short refnum;
 	long dirid;
 		
-	if (!newgetargs(args, "hO&i", &where, PyMac_GetOSType, &which, &create) )
+	if (!PyArg_ParseTuple(args, "hO&i", &where, PyMac_GetOSType, &which, &create) )
 		return NULL;
 	err = FindFolder(where, which, (Boolean)create, &refnum, &dirid);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return mkvalue("(ii)", refnum, dirid);
+	return Py_BuildValue("(ii)", refnum, dirid);
 }
 
-static object *
+static PyObject *
 mfs_FindApplication(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 	OSErr err;
 	OSType which;
 	FSSpec	fss;
 		
-	if (!newgetargs(args, "O&", PyMac_GetOSType, &which) )
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetOSType, &which) )
 		return NULL;
 	err = FindApplicationFromCreator(which, &fss);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
-	return (object *)newmfssobject(&fss);
+	return (PyObject *)newmfssobject(&fss);
 }
 
-static object *
+static PyObject *
 mfs_FInfo(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {	
-	return (object *)newmfsiobject();
+	return (PyObject *)newmfsiobject();
 }
 
 /* List of methods defined in the module */
 
-static struct methodlist mfs_methods[] = {
+static struct PyMethodDef mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
 	{"PromptGetFile",		mfs_PromptGetFile,		1},
@@ -946,19 +945,19 @@ static struct methodlist mfs_methods[] = {
 void
 initmacfs()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("macfs", mfs_methods);
+	m = Py_InitModule("macfs", mfs_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	ErrorObject = newstringobject("macfs.error");
-	dictinsert(d, "error", ErrorObject);
+	d = PyModule_GetDict(m);
+	ErrorObject = PyString_FromString("macfs.error");
+	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */
 	
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module macfs");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module macfs");
 }

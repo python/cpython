@@ -24,8 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* xx module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <GestaltEqu.h>
 #include "Speech.h"
@@ -48,7 +47,7 @@ int lib_available;
 #define double2fixed(x) ((Fixed)((x)*32768.0))
 
 char *CurrentSpeech;
-object *ms_error_object;
+PyObject *ms_error_object;
 int speech_available;
 
 static
@@ -68,12 +67,12 @@ init_available() {
 static
 check_available() {
 	if ( !speech_available ) {
-		err_setstr(ms_error_object, "Speech Mgr not available");
+		PyErr_SetString(ms_error_object, "Speech Mgr not available");
 		return 0;
 	}
 #ifdef __powerc
 	if ( !lib_available ) {
-		err_setstr(ms_error_object, "Speech Mgr available, but shared lib missing");
+		PyErr_SetString(ms_error_object, "Speech Mgr available, but shared lib missing");
 		return 0;
 	}
 #endif
@@ -85,12 +84,12 @@ check_available() {
 ** Part one - the speech channel object
 */
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	SpeechChannel chan;
-	object *curtext;	/* If non-NULL current text being spoken */
+	PyObject *curtext;	/* If non-NULL current text being spoken */
 } scobject;
 
-staticforward typeobject sctype;
+staticforward PyTypeObject sctype;
 
 #define is_scobject(v)		((v)->ob_type == &sctype)
 
@@ -101,11 +100,11 @@ newscobject(arg)
 	scobject *self;
 	OSErr err;
 	
-	self = NEWOBJ(scobject, &sctype);
+	self = PyObject_NEW(scobject, &sctype);
 	if (self == NULL)
 		return NULL;
 	if ( (err=NewSpeechChannel(arg, &self->chan)) != 0) {
-		DECREF(self);
+		Py_DECREF(self);
 		return (scobject *)PyErr_Mac(ms_error_object, err);
 	}
 	self->curtext = NULL;
@@ -119,146 +118,146 @@ sc_dealloc(self)
 	scobject *self;
 {
 	DisposeSpeechChannel(self->chan);
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 sc_Stop(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ((err=StopSpeech(self->chan)) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return NULL;
 	}
 	if ( self->curtext ) {
-		DECREF(self->curtext);
+		Py_DECREF(self->curtext);
 		self->curtext = NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 sc_SpeakText(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	char *str;
 	int len;
 	
-	if (!getargs(args, "s#", &str, &len))
+	if (!PyArg_Parse(args, "s#", &str, &len))
 		return NULL;
 	if ( self->curtext ) {
 		StopSpeech(self->chan);
-		DECREF(self->curtext);
+		Py_DECREF(self->curtext);
 		self->curtext = NULL;
 	}
 	if ((err=SpeakText(self->chan, (Ptr)str, (long)len)) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
-	(void)getargs(args, "O", &self->curtext);	/* Or should I check this? */
-	INCREF(self->curtext);
-	INCREF(None);
-	return None;
+	(void)PyArg_Parse(args, "O", &self->curtext);	/* Or should I check this? */
+	Py_INCREF(self->curtext);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 sc_GetRate(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	Fixed farg;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ((err=GetSpeechRate(self->chan, &farg)) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
-	return newfloatobject(fixed2double(farg));
+	return PyFloat_FromDouble(fixed2double(farg));
 }
 
-static object *
+static PyObject *
 sc_GetPitch(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	Fixed farg;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ((err=GetSpeechPitch(self->chan, &farg)) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
-	return newfloatobject(fixed2double(farg));
+	return PyFloat_FromDouble(fixed2double(farg));
 }
 
-static object *
+static PyObject *
 sc_SetRate(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	double darg;
 	
-	if (!getargs(args, "d", &darg))
+	if (!PyArg_Parse(args, "d", &darg))
 		return NULL;
 	if ((err=SetSpeechRate(self->chan, double2fixed(darg))) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return 0;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 sc_SetPitch(self, args)
 	scobject *self;
-	object *args;
+	PyObject *args;
 {
 	OSErr err;
 	double darg;
 	
-	if (!getargs(args, "d", &darg))
+	if (!PyArg_Parse(args, "d", &darg))
 		return NULL;
 	if ((err=SetSpeechPitch(self->chan, double2fixed(darg))) != 0) {
 		PyErr_Mac(ms_error_object, err);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist sc_methods[] = {
-	{"Stop",		(method)sc_Stop},
-	{"SetRate",		(method)sc_SetRate},
-	{"GetRate",		(method)sc_GetRate},
-	{"SetPitch",	(method)sc_SetPitch},
-	{"GetPitch",	(method)sc_GetPitch},
-	{"SpeakText",	(method)sc_SpeakText},
+static struct PyMethodDef sc_methods[] = {
+	{"Stop",		(PyCFunction)sc_Stop},
+	{"SetRate",		(PyCFunction)sc_SetRate},
+	{"GetRate",		(PyCFunction)sc_GetRate},
+	{"SetPitch",	(PyCFunction)sc_SetPitch},
+	{"GetPitch",	(PyCFunction)sc_GetPitch},
+	{"SpeakText",	(PyCFunction)sc_SpeakText},
 	{NULL,			NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 sc_getattr(self, name)
 	scobject *self;
 	char *name;
 {
-	return findmethod(sc_methods, (object *)self, name);
+	return Py_FindMethod(sc_methods, (PyObject *)self, name);
 }
 
-static typeobject sctype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject sctype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"MacSpeechChannel",			/*tp_name*/
 	sizeof(scobject),	/*tp_basicsize*/
@@ -281,13 +280,13 @@ static typeobject sctype = {
 ** Part two - the voice object
 */
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	int		initialized;
 	VoiceSpec	vs;
 	VoiceDescription vd;
 } mvobject;
 
-staticforward typeobject mvtype;
+staticforward PyTypeObject mvtype;
 
 #define is_mvobject(v)		((v)->ob_type == &mvtype)
 
@@ -295,7 +294,7 @@ static mvobject *
 newmvobject()
 {
 	mvobject *self;
-	self = NEWOBJ(mvobject, &mvtype);
+	self = PyObject_NEW(mvobject, &mvtype);
 	if (self == NULL)
 		return NULL;
 	self->initialized = 0;
@@ -326,56 +325,56 @@ static void
 mv_dealloc(self)
 	mvobject *self;
 {
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 mv_getgender(self, args)
 	mvobject *self;
-	object *args;
+	PyObject *args;
 {
-	object *rv;
+	PyObject *rv;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (!self->initialized) {
-		err_setstr(ms_error_object, "Uninitialized voice");
+		PyErr_SetString(ms_error_object, "Uninitialized voice");
 		return NULL;
 	}
-	rv = newintobject(self->vd.gender);
+	rv = PyInt_FromLong(self->vd.gender);
 	return rv;
 }
 
-static object *
+static PyObject *
 mv_newchannel(self, args)
 	mvobject *self;
-	object *args;
+	PyObject *args;
 {	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (!self->initialized) {
-		err_setstr(ms_error_object, "Uninitialized voice");
+		PyErr_SetString(ms_error_object, "Uninitialized voice");
 		return NULL;
 	}
-	return (object *)newscobject(&self->vs);
+	return (PyObject *)newscobject(&self->vs);
 }
 
-static struct methodlist mv_methods[] = {
-	{"GetGender",	(method)mv_getgender},
-	{"NewChannel",	(method)mv_newchannel},
+static struct PyMethodDef mv_methods[] = {
+	{"GetGender",	(PyCFunction)mv_getgender},
+	{"NewChannel",	(PyCFunction)mv_newchannel},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 mv_getattr(self, name)
 	mvobject *self;
 	char *name;
 {
-	return findmethod(mv_methods, (object *)self, name);
+	return Py_FindMethod(mv_methods, (PyObject *)self, name);
 }
 
-static typeobject mvtype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject mvtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"MacVoice",			/*tp_name*/
 	sizeof(mvobject),	/*tp_basicsize*/
@@ -401,46 +400,46 @@ static typeobject mvtype = {
 
 /* See if Speech manager available */
 
-static object *
+static PyObject *
 ms_Available(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject(speech_available);
+	return PyInt_FromLong(speech_available);
 }
 
 /* Count number of busy speeches */
 
-static object *
+static PyObject *
 ms_Busy(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	short result;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ( !check_available() )
 		return NULL;
 	result = SpeechBusy();
-	return newintobject(result);
+	return PyInt_FromLong(result);
 }
 
 /* Say something */
 
-static object *
+static PyObject *
 ms_SpeakString(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	OSErr err;
 	char *str;
 	int len;
 	
-	if (!getstrarg(args, &str))
+	if (!PyArg_Parse(args, "s", &str))
 		return NULL;
 	if ( !check_available())
 		return NULL;
@@ -459,68 +458,68 @@ ms_SpeakString(self, args)
 		PyErr_Mac(ms_error_object, err);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
 /* Count number of available voices */
 
-static object *
+static PyObject *
 ms_CountVoices(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	short result;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ( !check_available())
 		return NULL;
 	CountVoices(&result);
-	return newintobject(result);
+	return PyInt_FromLong(result);
 }
 
-static object *
+static PyObject *
 ms_GetIndVoice(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	mvobject *rv;
 	long ind;
 	
-	if( !getargs(args, "i", &ind))
+	if( !PyArg_Parse(args, "i", &ind))
 		return NULL;
 	if ( !check_available() )
 		return NULL;
 	rv = newmvobject();
 	if ( !initmvobject(rv, ind) ) {
-		DECREF(rv);
+		Py_DECREF(rv);
 		return NULL;
 	}
-	return (object *)rv;
+	return (PyObject *)rv;
 }
 
 
-static object *
+static PyObject *
 ms_Version(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	NumVersion v;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ( !check_available())
 		return NULL;
 	v = SpeechManagerVersion();
-	return newintobject(*(int *)&v);
+	return PyInt_FromLong(*(int *)&v);
 }
 
 
 /* List of functions defined in the module */
 
-static struct methodlist ms_methods[] = {
+static struct PyMethodDef ms_methods[] = {
 	{"Available",	ms_Available},
 	{"CountVoices",	ms_CountVoices},
 	{"Busy",		ms_Busy},
@@ -535,18 +534,18 @@ static struct methodlist ms_methods[] = {
 void
 initmacspeech()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	speech_available = init_available();
 	/* Create the module and add the functions */
-	m = initmodule("macspeech", ms_methods);
+	m = Py_InitModule("macspeech", ms_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	ms_error_object = newstringobject("macspeech.error");
-	dictinsert(d, "error", ms_error_object);
+	d = PyModule_GetDict(m);
+	ms_error_object = PyString_FromString("macspeech.error");
+	PyDict_SetItemString(d, "error", ms_error_object);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module macspeech");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module macspeech");
 }
