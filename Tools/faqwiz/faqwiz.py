@@ -572,12 +572,12 @@ class FaqWizard:
         emit(TAIL_RECENT)
 
     def do_roulette(self):
-        import whrandom
+        import random
         files = self.dir.list()
         if not files: 
             self.error("No entries.")
             return
-        file = whrandom.choice(files)
+        file = random.choice(files)
         self.prologue(T_ROULETTE)
         emit(ROULETTE)
         self.dir.show(file)

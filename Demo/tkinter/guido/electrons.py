@@ -41,12 +41,12 @@ class Electrons:
 		self.tk.update()
 
 	def random_move(self,n):
-		import whrandom
+		import random
 		c = self.canvas
 		for i in range(1,n+1):
 			p = self.pieces[i]
-			x = whrandom.choice(range(-2,4))
-			y = whrandom.choice(range(-3,4))
+			x = random.choice(range(-2,4))
+			y = random.choice(range(-3,4))
 			c.move(p, x, y)
 		self.tk.update()
 

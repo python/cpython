@@ -566,13 +566,13 @@ def _run_one_sort(tid, a, bar, done):
 
 def test():
     global TID, tid, io, wh, randint, alive
-    import whrandom
-    randint = whrandom.randint
+    import random
+    randint = random.randint
 
     TID = 0                             # thread ID (1, 2, ...)
     tid = thread.allocate_lock()        # for changing TID
     io  = thread.allocate_lock()        # for printing, and 'alive'
-    wh  = thread.allocate_lock()        # for calls to whrandom
+    wh  = thread.allocate_lock()        # for calls to random
     alive = []                          # IDs of active threads
 
     NSORTS = 5

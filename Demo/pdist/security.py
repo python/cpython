@@ -22,8 +22,8 @@ class Security:
 			raise IOError, "python keyfile %s: cannot open" % keyfile
 
 	def _generate_challenge(self):
-		import whrandom
-		return whrandom.randint(100, 100000)
+		import random
+		return random.randint(100, 100000)
 
 	def _compare_challenge_response(self, challenge, response):
 		return self._encode_challenge(challenge) == response

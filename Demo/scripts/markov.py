@@ -31,7 +31,7 @@ class Markov:
 		return seq
 
 def test():
-	import sys, string, whrandom, getopt
+	import sys, string, random, getopt
 	args = sys.argv[1:]
 	try:
 		opts, args = getopt.getopt(args, '0123456789cdw')
@@ -59,7 +59,7 @@ def test():
 		if o == '-q': debug = 0
 		if o == '-w': do_words = 1
 	if not args: args = ['-']
-	m = Markov(histsize, whrandom.choice)
+	m = Markov(histsize, random.choice)
 	try:
 	    for filename in args:
 		    if filename == '-':
