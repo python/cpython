@@ -13,6 +13,8 @@ testdoc = """\
 <greeting>Hello, world!</greeting>
 """
 
+nsdoc = "<foo xmlns='URI' attr='val'/>"
+
 import warnings
 warnings.filterwarnings("ignore", ".* xmllib .* obsolete.*",
                         DeprecationWarning, r'xmllib$')
@@ -28,6 +30,18 @@ class XMLParserTestCase(unittest.TestCase):
         for c in testdoc:
             parser.feed(c)
         parser.close()
+
+    def test_default_namespace(self):
+        class H(xmllib.XMLParser):
+            def unknown_starttag(self, name, attr):
+                self.name, self.attr = name, attr
+        h=H()
+        h.feed(nsdoc)
+        h.close()
+        # The default namespace applies to elements...
+        self.assertEquals(h.name, "URI foo")
+        # but not to attributes
+        self.assertEquals(h.attr, {'attr':'val'})
 
 
 def test_main():
