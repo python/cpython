@@ -46,7 +46,34 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define 	_CommToolboxTrap		0x8B
 #define 	_UnimplementedOSTrap	0x9F
 
+static char *errornames[] = {
+	"No Error",
+	"Rejected",		/* 1 */
+	"Failed",		/* 2 */
+	"Timeout",		/* 3 */
+	"Not Open",		/* 4 */
+	"Not Closed",	/* 5 */
+	"No Request Pending",	/* 6 */
+	"Not Supported",		/* 7 */
+	"No Tools",		/* 8 */
+	"User Cancel",	/* 9 */
+	"Error 10",		/* 10 */
+	"Unknown Error",	/* 11 */
+#define MAX_POS_ERROR 11
+};
+
 extern PyObject *PyErr_Mac(PyObject *,int);
+
+static PyObject *
+PyCtb_Error(PyObject *errobj, int errcode)
+{
+	if ( errcode > 0 && errcode <= MAX_POS_ERROR ) {
+		PyErr_SetString(errobj, errornames[errcode]);
+		return NULL;
+	} else {
+		return PyErr_Mac(errobj, errcode);
+	}
+}
 
 static PyObject *ErrorObject;
 
@@ -90,15 +117,15 @@ initialize_ctb()
 		return 0;
 	}
 	if ( (err=InitCTBUtilities()) ) {
-		PyErr_Mac(ErrorObject, (int)err);
+		PyCtb_Error(ErrorObject, (int)err);
 		return 0;
 	}
 	if ( (err=InitCRM()) ) {
-		PyErr_Mac(ErrorObject, (int)err);
+		PyCtb_Error(ErrorObject, (int)err);
 		return 0;
 	}
 	if ( (err=InitCM()) ) {
-		PyErr_Mac(ErrorObject, (int)err);
+		PyCtb_Error(ErrorObject, (int)err);
 		return 0;
 	}
 	initialized = 1;
@@ -178,8 +205,8 @@ ctbcm_open(self, args)
 	
 	if (!PyArg_Parse(args, "l", &timeout))
 		return NULL;
-	if ( (err=CMOpen(self->hdl, self->has_callback, cb_upp, timeout)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+	if ( (err=CMOpen(self->hdl, self->has_callback, cb_upp, timeout)) != 0)
+		return PyCtb_Error(ErrorObject, (int)err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -195,8 +222,8 @@ ctbcm_listen(self, args)
 	
 	if (!PyArg_Parse(args, "l", &timeout))
 		return NULL;
-	if ( (err=CMListen(self->hdl,self->has_callback, cb_upp, timeout)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+	if ( (err=CMListen(self->hdl,self->has_callback, cb_upp, timeout)) != 0)
+		return PyCtb_Error(ErrorObject, (int)err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -211,8 +238,8 @@ ctbcm_accept(self, args)
 	
 	if (!PyArg_Parse(args, "i", &accept))
 		return NULL;
-	if ( (err=CMAccept(self->hdl, accept)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+	if ( (err=CMAccept(self->hdl, accept)) != 0)
+		return PyCtb_Error(ErrorObject, (int)err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -229,8 +256,8 @@ ctbcm_close(self, args)
 	
 	if (!PyArg_Parse(args, "(li)", &timeout, &now))
 		return NULL;
-	if ( (err=CMClose(self->hdl, self->has_callback, cb_upp, timeout, now)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+	if ( (err=CMClose(self->hdl, self->has_callback, cb_upp, timeout, now)) != 0)
+		return PyCtb_Error(ErrorObject, (int)err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -244,7 +271,7 @@ ctbcm_read(self, args)
 	int chan;
 	CMFlags flags;
 	OSErr err;
-	PyObject *rv;
+	PyObject *rv, *rrv;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
 	if (!PyArg_Parse(args, "(lil)", &len, &chan, &timeout))
@@ -252,10 +279,12 @@ ctbcm_read(self, args)
 	if ((rv=PyString_FromStringAndSize(NULL, len)) == NULL)
 		return NULL;
 	if ((err=CMRead(self->hdl, (Ptr)PyString_AsString(rv), &len, (CMChannel)chan,
-				self->has_callback, cb_upp, timeout, &flags)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+				self->has_callback, cb_upp, timeout, &flags)) != 0 && err != cmTimeOut)
+		return PyCtb_Error(ErrorObject, (int)err);
 	_PyString_Resize(&rv, len);
-	return Py_BuildValue("(Oi)", rv, (int)flags);
+	rrv = Py_BuildValue("(Oi)", rv, (int)flags);
+	Py_DECREF(rv);
+	return rrv;
 }
 
 static PyObject *
@@ -273,8 +302,8 @@ ctbcm_write(self, args)
 		return NULL;
 	len = ilen;
 	if ((err=CMWrite(self->hdl, (Ptr)buf, &len, (CMChannel)chan,
-				self->has_callback, cb_upp, timeout, (CMFlags)flags)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+				self->has_callback, cb_upp, timeout, (CMFlags)flags)) != 0 && err != cmTimeOut)
+		return PyCtb_Error(ErrorObject, (int)err);
 	return PyInt_FromLong((int)len);
 }
 
@@ -286,16 +315,18 @@ ctbcm_status(self, args)
 	CMBufferSizes sizes;
 	CMStatFlags flags;
 	OSErr err;
-	PyObject *rv;
+	PyObject *rv, *rrv;
 	
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	if ((err=CMStatus(self->hdl, sizes, &flags)) < 0)
-		return PyErr_Mac(ErrorObject, (int)err);
+	if ((err=CMStatus(self->hdl, sizes, &flags)) != 0)
+		return PyCtb_Error(ErrorObject, (int)err);
 	rv = Py_BuildValue("(llllll)", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5]);
 	if ( rv == NULL )
 		return NULL;
-	return Py_BuildValue("(Ol)", rv, (long)flags);
+	rrv = Py_BuildValue("(Ol)", rv, (long)flags);
+	Py_DECREF(rv);
+	return rrv;
 }
 
 static PyObject *
@@ -320,13 +351,12 @@ ctbcm_setconfig(self, args)
 	PyObject *args;
 {
 	char *cfg;
-	OSErr err;
+	short rv;
 	
 	if (!PyArg_Parse(args, "s", &cfg))
 		return NULL;
-	if ((err=CMSetConfig(self->hdl, (Ptr)cfg)) < 0)
-		return PyErr_Mac(ErrorObject, err);
-	return PyInt_FromLong((int)err);
+	rv=CMSetConfig(self->hdl, (Ptr)cfg);
+	return PyInt_FromLong((long)rv);
 }
 
 static PyObject *
@@ -439,7 +469,7 @@ ctbcm_setattr(self, name, v)
 	if ( v == NULL ) {
 		v = Py_None;
 	}
-	Py_INCREF(v);	/* XXXX Must I do this? */
+	Py_INCREF(v);
 	self->callback = v;
 	self->has_callback = (v != Py_None);
 	return 0;
@@ -495,7 +525,7 @@ ctb_cmnew(self, args)
 			return NULL;
 	}
 	if ( (procid=CMGetProcID(p_str)) < 0 )
-		return PyErr_Mac(ErrorObject, procid);
+		return PyCtb_Error(ErrorObject, procid);
 	hdl = CMNew(procid, cmNoMenus|cmQuiet, sizes, 0, 0);
 	if ( hdl == NULL ) {
 		PyErr_SetString(ErrorObject, "CMNew failed");
