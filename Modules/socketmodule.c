@@ -89,6 +89,10 @@ Socket methods:
 #include <unistd.h>
 #endif
 
+#ifndef MS_WINDOWS
+extern int gethostname(); /* For Solaris, at least */
+#endif
+
 #include <sys/types.h>
 #include "mytime.h"
 
