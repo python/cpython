@@ -25,19 +25,19 @@ request. This diagram details these state transitions:
       v
     Unread-response   [Response-headers-read]
       |\____________________
-      |                     \ 
-      | response.read()      | putrequest()
-      v                      v
-    Idle                   Req-started-unread-response
-                     _______/|
-                    /        |
-   response.read() |         | ( putheader() )*  endheaders()
-                   v         v
-       Request-started     Req-sent-unread-response
-                             |
-                             | response.read()
-                             v
-                           Request-sent
+      |                     |
+      | response.read()     | putrequest()
+      v                     v
+    Idle                  Req-started-unread-response
+                     ______/|
+                   /        |
+   response.read() |        | ( putheader() )*  endheaders()
+                   v        v
+       Request-started    Req-sent-unread-response
+                            |
+                            | response.read()
+                            v
+                          Request-sent
 
 This diagram presents the following rules:
   -- a second request may not be started until {response-headers-read}
@@ -566,7 +566,7 @@ class FakeSocket:
         interface of a real socket.  It only supports modes 'r' and
         'rb' and the bufsize argument is ignored.
 
-        The returned object contains *all* of the file data 
+        The returned object contains *all* of the file data
         """
         if mode != 'r' and mode != 'rb':
             raise UnimplementedFileMode()
@@ -719,11 +719,11 @@ if hasattr(socket, 'ssl'):
 
         Python 1.5.2 did not have an HTTPS class, but it defined an
         interface for sending http requests that is also useful for
-        https. 
+        https.
         """
 
         _connection_class = HTTPSConnection
-        
+
 
 class HTTPException(Exception):
     pass
