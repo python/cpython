@@ -122,8 +122,16 @@ findnamedresource(
 	ok = (h != NULL);
 	if ( ok && dataptr != NULL ) {
 		HLock(h);
+		/* XXXX Unsafe if resource not correctly formatted! */
+#ifdef __CFM68K__
+		/* for cfm68k we take the second pstring */
+		*dataptr = *((*h)+(**h)+1);
+		memcpy(dataptr+1, (*h)+(**h)+2, (int)*dataptr);
+#else
+		/* for ppc we take the first pstring */
 		*dataptr = **h;
 		memcpy(dataptr+1, (*h)+1, (int)*dataptr);
+#endif
 		HUnlock(h);
 	}
 	if ( filerh != -1 )
@@ -173,7 +181,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 	char *name;
 	char *pathname;
 {
-	PyObject *m;
+	PyObject *m, *d, *s;
 	char funcname[258];
 	char *lastdot, *shortname, *packagecontext;
 	dl_funcptr p = NULL;
@@ -246,7 +254,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 				"dynamic module not initialized properly");
 		return NULL;
 	}
-#if 0
+#if 1
 	/* Remember the filename as the __file__ attribute */
 	d = PyModule_GetDict(m);
 	s = PyString_FromString(pathname);
