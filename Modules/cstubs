@@ -1168,7 +1168,7 @@ void getmcolor		short s short r short r short r
 void mapw		long s short s short s float r float r float r float r float r float r
 void mapw2		long s short s short s float r float r
 ###void defrasterfont	short s short s short s Fontchar s[arg3] short s short s[4*arg5]
-long qread		short r
+###long qread		short r
 void getcursor		short r short r short r long r
 #
 #   For these we receive arrays of stuff
