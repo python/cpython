@@ -322,13 +322,14 @@ def copy_tree (src, dst,
 
     """Copy an entire directory tree 'src' to a new location 'dst'.  Both
        'src' and 'dst' must be directory names.  If 'src' is not a
-       directory, raise DistutilsFileError.  If 'dst' does not exist, it
-       is created with 'mkpath()'.  The end result of the copy is that
-       every file in 'src' is copied to 'dst', and directories under
-       'src' are recursively copied to 'dst'.  Return the list of files
-       copied (under their output names) -- note that if 'update' is true,
-       this might be less than the list of files considered.  Return
-       value is not affected by 'dry_run'.
+       directory, raise DistutilsFileError.  If 'dst' does not exist, it is
+       created with 'mkpath()'.  The end result of the copy is that every
+       file in 'src' is copied to 'dst', and directories under 'src' are
+       recursively copied to 'dst'.  Return the list of files that were
+       copied or might have been copied, using their output name.  The
+       return value is unaffected by 'update' or 'dry_run': it is simply
+       the list of all files under 'src', with the names changed to be
+       under 'dst'.
 
        'preserve_mode' and 'preserve_times' are the same as for
        'copy_file'; note that they only apply to regular files, not to
@@ -372,10 +373,10 @@ def copy_tree (src, dst,
                            preserve_mode, preserve_times, preserve_symlinks,
                            update, verbose, dry_run))
         else:
-            if (copy_file (src_name, dst_name,
-                           preserve_mode, preserve_times,
-                           update, verbose, dry_run)):
-                outputs.append (dst_name)
+            copy_file (src_name, dst_name,
+                       preserve_mode, preserve_times,
+                       update, verbose, dry_run)
+            outputs.append (dst_name)
 
     return outputs
 
