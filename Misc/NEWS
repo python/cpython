@@ -27,7 +27,9 @@ Core and builtins
 Extension modules
 -----------------
 
-...
+- ``collections.deque`` objects didn't play quite right with garbage
+  collection, which could lead to a segfault in a release build, or
+  an assert failure in a debug build.
 
 Library
 -------
