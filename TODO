@@ -1,3 +1,19 @@
+(-) many module should export their symbolic constants instead of
+relying on a module written in Python
+
+(-) change regexmodule.c to cooperate with other non-python users and
+to export the symbolic constants
+
+(-) save/restore sys.exc_{type,value,traceback} around except clauses.
+
+(-) don't call class instance's __del__ more than once?????
+
+(-) add "access" to posix?  What name should it have?
+
+(-) add facility to "freeze" lists and dictionaries?
+
+(-) add WNOHANG to posix
+
 (-) support lists in newgetargs()
 
 (-) syntax errors detected during compilation should give line number

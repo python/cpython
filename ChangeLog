@@ -1,3 +1,66 @@
+Thu Apr  6 16:34:28 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/classobject.c (instancemethod_compare): change the way
+	instance methods are compared -- don't apply cmpobject() to
+	im_self but do a simple pointer compare
+
+	* Objects/object.c: move counting of free'd objects (#ifdef
+	COUNT_ALLOCS) from DELREF() to UNREF()
+
+	* Include/object.h (_Py_ForgetReference()): add counting of free'd
+	objects (#ifdef COUNT_ALLOCS)
+
+Tue Apr  4 13:53:47 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/frameobject.c (newframeobject): changed dictlookup()
+	with constant C string arg to mappinglookup() with static Python
+	string (Sjoerd)
+
+Fri Mar 31 12:26:03 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* irix5/tmp/lib/python/lib/frozenmain.c: carried through renaming
+	phase 3
+
+Thu Mar 30 11:44:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* README: added warning about bash bug in certain Slackware Linux
+	version
+
+	* Doc/lib*.tex: reorganized into more subject-related chapters;
+	rewritten abstract and introduction
+
+	* Doc/myformat.sty: define \dfn{} as \em instead of \sl
+
+	* Modules/config.c.in: moved decl of realmain() out of #ifdef
+
+	* Python/pythonrun.c (print_error): added fflush(stdout) to
+	print_error() so output doesn't get mangled when stdout and stderr
+	are redirected to the same file
+
+	* Modules/selectmodule.c: fix subtle refcnt bugs with fd2obj
+	arrays (R Lindsay Todd)
+
+	* Include/object.h, Object/{tupleobject.c,stringobject.c},
+	Python/ceval.c: fix ref-count debugging (R Lindsay Todd)
+
+	* Python/sysmodule.c (sys_checkinterval): initialize to 10 as
+	before (major speed up!)
+
+	* Modules/cdmodule.c: use newgetargs; removed sbtoa() and
+	timetoa(); added msftoframe(); added constants that used to be in
+	standard module CD (Sjoerd)
+
+	* Modules/posixmodule.c: added WNOHANG constant
+
+Fri Mar 24 14:55:48 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/nntplib.py: rename debug() to set_debuglevel() as for
+	ftplib.py
+
+Thu Mar 23 11:10:24 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/posixfile.py (open): make mode default to 'r' and add
+	optional bufsize
 
 ========================================
 ==> Release 1.2 BETA 4 (21 Mar 1995) <==
@@ -98,7 +161,7 @@ Thu Mar  9 15:06:02 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* configure(.in): added test for CC value not matching cache
 
-	* Modules/tkintermodule.c: add casts to malloc() calls"
+	* Modules/tkintermodule.c: add casts to malloc() calls in
 	tkintermodule.c
 
 	* Moved Demo/bgen, Demo/freeze, Demo/modulator and most of
@@ -175,12 +238,6 @@ Fri Feb 17 12:00:29 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 	printing or formatting them (R Lindsay Todd)
 
 Thu Feb 16 11:21:45 1995  Guido van Rossum  <guido@voorn.cwi.nl>
-
-	* Lib/tkinter/Tkinter.py (Entry): rename select_view method to
-	view
-
-	* Lib/tkinter/Dialog.py: set widgetName so test for photo in
-	Tkinter works
 
 	* Doc/libshelve.tex: added/reorganized list of restrictions
 
@@ -805,8 +862,6 @@ Mon Jan  2 20:15:39 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Modules/Makefile.pre.in (sharedinstall): fix bug (sh can't loop
 	over empty list) when $(SHAREDMODS) is empty
-
-sMon Jan  2 19:35:49 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Python/errors.c: added hook for better mac error messages
 

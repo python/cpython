@@ -1,37 +1,13 @@
-*** See the ChangeLog file for bugs fixed since 1.2 BETA 2 ***
-
-Sorry, this list does not claim completeness.  If I fixed a bug
-immediately upon receiving the first complaint I usually did not
-nother to make an entry in this file, unless it was a serious bug
-(core dump or infinite loop).
+THIS LIST DOES NOT CLAIM COMPLETENESS.
 
 ==> Status indicators: (-) not fixed; (*) fixed; (?) not sure.
 
 ======================================================================
 
+Problems that are difficult to solve
+------------------------------------
+
 (-) "f()=0" generates syntax error msg without line number
-
-======================================================================
-
-Known BUGS in 1.2 BETA 1, fixed in 1.2 BETA 2
----------------------------------------------
-
-(*) list slice assignment contains reantrancy bug
-
-(*) range() and xrange() break on Alpha's
-
-(*) interactive use of vars() gives barrage of output due to recursive
-inclusion of '_'
-
-(*) configure.in contains bogus name to check for inet library
-
-Known BUGS in 1.1.1 and 1.2 BETA 3
-----------------------------------
-
-(-) still a memory leak in threads when thread.exit_thread() is used
-
-Problems in 1.1.1 that are difficult to solve
----------------------------------------------
 
 (-) tkinter seems to leave an exception around sometime which breaks
 unmarshalling code objects [hard to reproduce, have added a trap to
@@ -49,9 +25,6 @@ called [problem: what if other threads are still active?]
 Known portability problems
 --------------------------
 
-(-) tkinter doesn't seem to see any declaration of malloc on sunos
-4.1.3?
-
 (-) arraymodule doesn't compile under Ultrix (FPROTO macro)
 
 (-) makesetup assumes CCC is the C++ compiler -- not portable
@@ -66,6 +39,44 @@ LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
 ======================================================================
 BUGS present in 1.1.1 and fixed in 1.2
 --------------------------------------
+
+(*) extraneous fclose() in run_script() in pythonrun.c for .pyc file
+
+(*) __str__ is called if it exists (and then fails) when applying
+str() to a class
+
+(*) mem leaks in inittime() in timemodule.c
+
+(*) mem leak in optimize() in compile.c
+
+(*) mem leak in func_dealloc() in funcobject.c
+
+(*) missing DECREF for result of run_string in exec_statement() in
+ceval.c
+
+(*) missing INCREF in RAISE_EXCEPTION case after gettupleitem() in
+ceval.c
+
+(*) posix.utime gives problems on problems on platforms where struct
+utime members are bitfields
+
+(*) leak in regex module.c:reg_dealloc() -- should free compiled pattern
+
+(*) many uses of macros from <ctype.h> fail with signed characters
+
+(*) compilation on NeXT requires manual editing of the Makefile
+
+(*) tkinter should cast malloc() result
+
+(*) marshal.c (w_object()) triggers GCC bug on DEC Alpha
+
+(*) int/long size bug in range() and xrange() on DEC Alpha
+
+(*) memory leaks in dbm and gdbm modules
+
+(*) refcnt bug in select.select([f], [f], [f])
+
+(*) Should fflush(stdout) before printing traceback to stderr
 
 (*) Linux uses GNU getopt by default which is broken
 
@@ -85,8 +96,8 @@ cmd line forgets a newline
 (*) C-level coerce() doesn't call __coerce__ when it should (and
 similar for __cmp__)
 
-(*) struct module aligns doubles wrongly when compiled with -DDEBUG on
-sparc
+(*) struct module assigns unaligned doubles when compiled with -DDEBUG
+on sparc
 
 (*) memory leak (namebuf) in initmodule2
 
@@ -234,14 +245,15 @@ Bugs found in 1.0.2 and not yet fixed
 -------------------------------------
 
 (?) compiler warnings about argument type of uname() on ULTRIX
-machines (don't know what to do about it)
+machines (don't know what to do about it) [could be fixed by fix for
+bitfields in struct uname]
 
 (?) syntax error for interactive input prints garbage instead of last
 source line on some systems (e.g. AIX) (impossible to test/reproduce)
-!!! I think I've found this one -- a missing INCREF in print_error!
+[I think I've found this one -- a missing INCREF in print_error]
 
 (?) (maybe) a bad .pyc file (with old magic number) causes the .py
-file to be ignored
+file to be ignored [should be fixed by rewrite of import.c]
 
 (?) Sunos4.0.2 / 386 configure bugs:
 	- timelocal instead of mktime
@@ -314,7 +326,7 @@ Bugs found in 1.0.1 and fixed in 1.0.2
 BUGS found in 1.0.0 and not yet fixed
 -------------------------------------
 
-(?) On NeXT, need to define _POSIX_SOURCE.
+(*) On NeXT, need to define _POSIX_SOURCE.
 
 (?) there appears to be something wrong with gcc and -ldl on some
 SunOS 4.1.3 systems
