@@ -126,6 +126,8 @@ PyThreadState_New(interp)
 		tstate->ticker = 0;
 		tstate->tracing = 0;
 
+		tstate->dict = NULL;
+
 		tstate->curexc_type = NULL;
 		tstate->curexc_value = NULL;
 		tstate->curexc_traceback = NULL;
@@ -154,6 +156,8 @@ PyThreadState_Clear(tstate)
 		  "PyThreadState_Clear: warning: thread still has a frame\n");
 
 	ZAP(tstate->frame);
+
+	ZAP(tstate->dict);
 
 	ZAP(tstate->curexc_type);
 	ZAP(tstate->curexc_value);
@@ -212,4 +216,21 @@ PyThreadState_Swap(new)
 	current_tstate = new;
 
 	return old;
+}
+
+/* An extension mechanism to store arbitrary additional per-thread state.
+   PyThreadState_GetDict() returns a dictionary that can be used to hold such
+   state; the caller should pick a unique key and store its state there.  If
+   PyThreadState_GetDict() returns NULL, an exception has been raised (most
+   likely MemoryError) and the caller should pass on the exception. */
+
+PyObject *
+PyThreadState_GetDict()
+{
+	if (current_tstate == NULL)
+		Py_FatalError("PyThreadState_GetDict: no current thread");
+
+	if (current_tstate->dict == NULL)
+		current_tstate->dict = PyDict_New();
+	return current_tstate->dict;
 }
