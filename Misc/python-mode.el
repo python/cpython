@@ -437,7 +437,7 @@ Currently-active file is at the head of the list.")
   "Regular expression matching Python backslash continuation lines.")
   
 (defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)"
-  "Regular expression matching a blank or comment line."
+  "Regular expression matching a blank or comment line.")
 
 (defconst py-outdent-re
   (concat "\\(" (mapconcat 'identity
@@ -474,7 +474,7 @@ Currently-active file is at the head of the list.")
   ;; If you change this, you probably have to change py-current-defun
   ;; as well.  This is only used by py-current-defun to find the name
   ;; for add-log.el.
-  "Regular expression matching a function, method, or variable assignment."
+  "Regular expression matching a function, method, or variable assignment.")
 
 (defconst py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)"
   ;; If you change this, you probably have to change py-current-defun
