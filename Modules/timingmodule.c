@@ -79,7 +79,7 @@ static PyMethodDef timing_methods[] = {
 };
 
 
-void inittiming()
+DL_EXPORT(void) inittiming()
 {
 	(void)Py_InitModule("timing", timing_methods);
 	if (PyErr_Occurred())

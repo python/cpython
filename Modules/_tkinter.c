@@ -2006,7 +2006,7 @@ ins_string(d, name, val)
 }
 
 
-void
+DL_EXPORT(void)
 init_tkinter()
 {
 	PyObject *m, *d;

@@ -2899,7 +2899,7 @@ all_ins(d)
 #endif
 #endif
 
-void
+DL_EXPORT(void)
 INITFUNC()
 {
 	PyObject *m, *d, *v;

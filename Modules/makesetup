@@ -234,6 +234,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	*)  sed -e "
 		1i$NL/* Generated automatically from $config by makesetup. */
 		/MARKER 1/i$NL$EXTDECLS
+ 
 		/MARKER 2/i$NL$INITBITS
 
 		" $config >config.c

@@ -255,7 +255,7 @@ spam2(delslice,__delslice__,
 
 /* Initialization function for the module (*must* be called initoperator) */
 
-void
+DL_EXPORT(void)
 initoperator()
 {
         /* Create the module and add the functions */

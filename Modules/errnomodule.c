@@ -94,7 +94,7 @@ Symbols that are not relevant to the underlying system are not defined.\n\
 To map error codes to error messages, use the function os.strerror(),\n\
 e.g. os.strerror(2) could return 'No such file or directory'.";
 
-void
+DL_EXPORT(void)
 initerrno()
 {
 	PyObject *m, *d, *de;

@@ -1887,7 +1887,7 @@ shutdown() -- shut down traffic in one or both directions\n\
 \n\
 (*) not available on all platforms!)";
 
-void
+DL_EXPORT(void)
 #if defined(MS_WINDOWS) || defined(PYOS_OS2) || defined(__BEOS__)
 init_socket()
 #else

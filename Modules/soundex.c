@@ -166,7 +166,7 @@ static PyMethodDef SoundexMethods[] =
 
 /* Register the method table.
  */
-void
+DL_EXPORT(void)
 initsoundex()
 {
     (void) Py_InitModule4("soundex",

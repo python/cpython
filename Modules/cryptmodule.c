@@ -27,7 +27,7 @@ static PyMethodDef crypt_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-void
+DL_EXPORT(void)
 initcrypt()
 {
 	Py_InitModule("crypt", crypt_methods);

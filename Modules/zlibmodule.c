@@ -788,7 +788,7 @@ static char zlib_module_documentation[]=
 "objects support decompress() and flush()."
 ;
 
-void
+DL_EXPORT(void)
 PyInit_zlib()
 {
         PyObject *m, *d, *ver;

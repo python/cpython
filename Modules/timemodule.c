@@ -596,7 +596,7 @@ strptime() -- parse string to time tuple according to format specification\n\
 ";
   
 
-void
+DL_EXPORT(void)
 inittime()
 {
 	PyObject *m, *d;

@@ -299,7 +299,7 @@ static PyMethodDef termios_methods[] =
 	{NULL, NULL}
 };
 
-void
+DL_EXPORT(void)
 PyInit_termios()
 {
 	PyObject *m, *d;

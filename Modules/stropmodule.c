@@ -1189,7 +1189,7 @@ strop_methods[] = {
 };
 
 
-void
+DL_EXPORT(void)
 initstrop()
 {
 	PyObject *m, *d, *s;

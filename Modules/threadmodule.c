@@ -424,7 +424,7 @@ A lock is not owned by the thread that locked it; another thread may\n\
 unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.";
 
-void
+DL_EXPORT(void)
 initthread()
 {
 	PyObject *m, *d;
