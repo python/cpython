@@ -1,5 +1,5 @@
 from test_support import verbose
-import string, sys
+import sys
 
 # test string formatting operator (I am not sure if this is being tested
 # elsewhere but, surely, some of the given cases are *not* tested because
