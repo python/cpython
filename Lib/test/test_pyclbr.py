@@ -76,7 +76,7 @@ class PyclbrTest(unittest.TestCase):
                 self.assertListEq(real_bases, pyclbr_bases, ignore)
 
                 actualMethods = []
-                for m in dir(py_item):
+                for m in py_item.__dict__.keys():
                     if type(getattr(py_item, m)) == MethodType:
                         actualMethods.append(m)
                 foundMethods = []

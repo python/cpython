@@ -440,9 +440,6 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 	PyObject *bases;
 
 	assert(PyDict_Check(dict));
-	/* XXX Class objects fail the PyType_Check check.  Don't
-	   XXX know of others. */
-	/* assert(PyType_Check(aclass)); */
 	assert(aclass);
 
 	/* Merge in the type's dict (if any). */
@@ -490,7 +487,7 @@ builtin_dir(PyObject *self, PyObject *args)
 		PyObject *locals = PyEval_GetLocals();
 		if (locals == NULL)
 			goto error;
-		result = PyMapping_Keys(locals);
+		result = PyDict_Keys(locals);
 		if (result == NULL)
 			goto error;
 	}
@@ -500,10 +497,13 @@ builtin_dir(PyObject *self, PyObject *args)
 		masterdict = PyObject_GetAttrString(arg, "__dict__");
 		if (masterdict == NULL)
 			goto error;
+		assert(PyDict_Check(masterdict));
 	}
 
-	/* Elif some form of type, recurse. */
-	else if (PyType_Check(arg)) {
+	/* Elif some form of type or class, grab its dict and its bases.
+	   We deliberately don't suck up its __class__, as methods belonging
+	   to the metaclass would probably be more confusing than helpful. */
+	else if (PyType_Check(arg) || PyClass_Check(arg)) {
 		masterdict = PyDict_New();
 		if (masterdict == NULL)
 			goto error;
@@ -514,28 +514,30 @@ builtin_dir(PyObject *self, PyObject *args)
 	/* Else look at its dict, and the attrs reachable from its class. */
 	else {
 		PyObject *itsclass;
-		/* Create a dict to start with. */
+		/* Create a dict to start with.  CAUTION:  Not everything
+		   responding to __dict__ returns a dict! */
 		masterdict = PyObject_GetAttrString(arg, "__dict__");
 		if (masterdict == NULL) {
 			PyErr_Clear();
 			masterdict = PyDict_New();
-			if (masterdict == NULL)
-				goto error;
+		}
+		else if (!PyDict_Check(masterdict)) {
+			Py_DECREF(masterdict);
+			masterdict = PyDict_New();
 		}
 		else {
 			/* The object may have returned a reference to its
 			   dict, so copy it to avoid mutating it. */
 			PyObject *temp = PyDict_Copy(masterdict);
-			if (temp == NULL)
-				goto error;
 			Py_DECREF(masterdict);
 			masterdict = temp;
 		}
-		/* Merge in attrs reachable from its class. */
+		if (masterdict == NULL)
+			goto error;
+
+		/* Merge in attrs reachable from its class.
+		   CAUTION:  Not all objects have a __class__ attr. */
 		itsclass = PyObject_GetAttrString(arg, "__class__");
-		/* XXX Sometimes this is null!  Like after "class C: pass",
-		   C.__class__ raises AttributeError.  Don't know of other
-		   cases. */
 		if (itsclass == NULL)
 			PyErr_Clear();
 		else {
@@ -550,7 +552,7 @@ builtin_dir(PyObject *self, PyObject *args)
 	if (masterdict != NULL) {
 		/* The result comes from its keys. */
 		assert(result == NULL);
-		result = PyMapping_Keys(masterdict);
+		result = PyDict_Keys(masterdict);
 		if (result == NULL)
 			goto error;
 	}
@@ -578,7 +580,8 @@ static char dir_doc[] =
 "\n"
 "No argument:  the names in the current scope.\n"
 "Module object:  the module attributes.\n"
-"Type object:  its attributes, and recursively the attributes of its bases.\n"
+"Type or class object:  its attributes, and recursively the attributes of\n"
+"    its bases.\n"
 "Otherwise:  its attributes, its class's attributes, and recursively the\n"
 "    attributes of its class's base classes.";
 
