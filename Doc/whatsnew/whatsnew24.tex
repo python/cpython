@@ -33,8 +33,8 @@ rationale, refer to the PEP for a particular new feature.
 %======================================================================
 \section{PEP 218: Built-In Set Objects}
 
-Two new built-in types, \function{set(iterable)} and
-\function{frozenset(iterable)} provide high speed data types for
+Two new built-in types, \function{set(\var{iterable})} and
+\function{frozenset(\var{iterable})} provide high speed data types for
 membership testing, for eliminating duplicates from sequences, and
 for mathematical operations like unions, intersections, differences,
 and symmetric differences.  
@@ -91,7 +91,7 @@ XXX write this.
 %======================================================================
 \section{PEP 322: Reverse Iteration}
 
-A new built-in function, \function{reversed(seq)}, takes a sequence
+A new built-in function, \function{reversed(\var{seq})}, takes a sequence
 and returns an iterator that returns the elements of the sequence 
 in reverse order.  
 
@@ -208,9 +208,10 @@ they were input.  For example, you can sort a list of people by name,
 and then sort the list by age, resulting in a list sorted by age where
 people with the same age are in name-sorted order.
 
-\item There is a new built-in function \function{sorted(iterable)} that works
-like the in-place \method{list.sort()} method but has been made suitable
-for use in expressions.  The differences are:
+\item There is a new built-in function
+\function{sorted(\var{iterable})} that works like the in-place
+\method{list.sort()} method but has been made suitable for use in
+expressions.  The differences are:
   \begin{itemize}
   \item the input may be any iterable;
   \item a newly formed copy is sorted, leaving the original intact; and
@@ -561,9 +562,9 @@ changes to your code:
 \item \function{dircache.listdir()} now passes exceptions to the caller
       instead of returning empty lists.
 
-\item \function{LexicalHandler.startDTD} used to receive public and system ID
-  in the wrong order. This has been corrected; applications relying on the
-  wrong order need to be fixed.
+\item \function{LexicalHandler.startDTD()} used to receive public and
+  system ID in the wrong order.  This has been corrected; applications
+  relying on the wrong order need to be fixed.
 
 \end{itemize}
 
