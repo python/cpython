@@ -6,8 +6,7 @@ import re
 import string
 
 import warnings
-warnings.warn("The xmllib module is obsolete.  Use xml.sax instead.",
-              DeprecationWarning)
+warnings.warn("The xmllib module is obsolete.  Use xml.sax instead.", DeprecationWarning)
 del warnings
 
 version = '0.3'
@@ -641,20 +640,17 @@ class XMLParser:
                     aprefix, key = res.group('prefix', 'local')
                     if self.__map_case:
                         key = key.lower()
-                    if aprefix is None:
-                        aprefix = ''
-                    ans = None
-                    for t, d, nst in self.stack:
-                        if aprefix in d:
-                            ans = d[aprefix]
-                    if ans is None and aprefix != '':
-                        ans = self.__namespaces.get(aprefix)
-                    if ans is not None:
-                        key = ans + ' ' + key
-                    elif aprefix != '':
-                        key = aprefix + ':' + key
-                    elif ns is not None:
-                        key = ns + ' ' + key
+                    if aprefix is not None:
+                        ans = None
+                        for t, d, nst in self.stack:
+                            if aprefix in d:
+                                ans = d[aprefix]
+                        if ans is None:
+                            ans = self.__namespaces.get(aprefix)
+                        if ans is not None:
+                            key = ans + ' ' + key
+                        else:
+                            key = aprefix + ':' + key
                 nattrdict[key] = val
                 attrnamemap[key] = okey
             attrdict = nattrdict
