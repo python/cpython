@@ -350,7 +350,6 @@ class Message:
         Example:
 
         msg.add_header('content-disposition', 'attachment', filename='bud.gif')
-
         """
         parts = []
         for k, v in _params.items():
@@ -361,6 +360,21 @@ class Message:
         if _value is not None:
             parts.insert(0, _value)
         self._headers.append((_name, SEMISPACE.join(parts)))
+
+    def replace_header(self, _name, _value):
+        """Replace a header.
+
+        Replace the first matching header found in the message, retaining
+        header order and case.  If no matching header was found, a KeyError is
+        raised.
+        """
+        _name = _name.lower()
+        for i, (k, v) in zip(range(len(self._headers)), self._headers):
+            if k.lower() == _name:
+                self._headers[i] = (k, _value)
+                break
+        else:
+            raise KeyError, _name
 
     #
     # These methods are silently deprecated in favor of get_content_type() and
