@@ -112,7 +112,10 @@ Windows changes
 
 - Build:  New subproject _test for the benefit of test_capi.py (see above).
 
-- Build:  subproject ucnhash is gone, since the code was folded into the
+- Build:  New subproject _symtable, for new DLL _symtable.pyd (a nascent
+  interface to some Python compiler internals).
+
+- Build:  Subproject ucnhash is gone, since the code was folded into the
   unicodedata subproject.
 
 What's New in Python 2.1 alpha 1?

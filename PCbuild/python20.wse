@@ -692,6 +692,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\PCbuild\_symtable.pyd
+  Destination=%MAINDIR%\DLLs\_symtable.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\PCbuild\_test.pyd
   Destination=%MAINDIR%\DLLs\_test.pyd
   Flags=0000000000000010
@@ -758,6 +763,11 @@ end
 item: Install File
   Source=%_SRC_%\PCbuild\_sre.lib
   Destination=%MAINDIR%\libs\_sre.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\PCbuild\_symtable.lib
+  Destination=%MAINDIR%\libs\_symtable.lib
   Flags=0000000000000010
 end
 item: Install File
