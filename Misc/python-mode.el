@@ -18,17 +18,18 @@
 
 ;;; Commentary:
 ;;
+
 ;; This is a major mode for editing Python programs.  It was developed
-;; by Tim Peters <tim@ksr.com> after an original idea by Michael
-;; A. Guravage.  Tim doesn't appear to be on the 'net any longer so I
-;; (Barry) have undertaken maintenance of the mode.
+;; by Tim Peters after an original idea by Michael A. Guravage.  Tim
+;; left the net for a while and in the interim, Barry Warsaw has
+;; undertaken maintenance of the mode.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
-;; line with GNU Emacs Lisp coding standards.  But all in all, the
-;; mode works exceedingly well, and I've simply been tweaking it as I
-;; go along.  Ain't it wonderful that Python has a much more sane
-;; syntax than C? (or <shudder> C++?! :-).  I can say that; I maintain
-;; cc-mode!
+;; line with GNU Emacs Lisp coding standards, and to wax all the Emacs
+;; 18 support.  But all in all, the mode works exceedingly well, and
+;; I've simply been tweaking it as I go along.  Ain't it wonderful
+;; that Python has a much more sane syntax than C? (or <shudder> C++?!
+;; :-).  I can say that; I maintain cc-mode!
 
 ;; The following statements, placed in your .emacs file or
 ;; site-init.el, will cause this file to be autoloaded, and
@@ -695,6 +696,12 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	    (message "Caution: tab-width changed to %d" new-tab-width)
 	    (if py-beep-if-tab-change (beep)))))
     (goto-char start))
+
+  ;; install imenu
+  (setq imenu-create-index-function
+	(function imenu-example--create-python-index))
+  (if (fboundp 'imenu-add-to-menubar)
+      (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
 
   ;; run the mode hook. py-mode-hook use is deprecated
   (if python-mode-hook
