@@ -384,12 +384,14 @@ class PyBuildExt(build_ext):
         # fcntl(2) and ioctl(2)
         exts.append( Extension('fcntl', ['fcntlmodule.c']) )
         if platform not in ['mac']:
-                # pwd(3)
+            # pwd(3)
             exts.append( Extension('pwd', ['pwdmodule.c']) )
             # grp(3)
             exts.append( Extension('grp', ['grpmodule.c']) )
             # spwd, shadow passwords
-            exts.append( Extension('spwd', ['spwdmodule.c']) )
+            if (sysconfig.get_config_var('HAVE_GETSPNAM') or
+                    sysconfig.get_config_var('HAVE_GETSPENT')):
+                exts.append( Extension('spwd', ['spwdmodule.c']) )
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 

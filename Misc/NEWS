@@ -152,6 +152,9 @@ Library
 Build
 -----
 
+- spwdmodule.c is built only if either HAVE_GETSPNAM or HAVE_HAVE_GETSPENT is
+  defined.  Discovered as a result of not being able to build on OS X.
+
 - setup.py now uses the directories specified in LDFLAGS using the -L option
   and in CPPFLAGS using the -I option for adding library and include
   directories, respectively, for compiling extension modules against.  This has
