@@ -421,7 +421,7 @@ list_repeat(PyListObject *a, int n)
 	if (n < 0)
 		n = 0;
 	size = a->ob_size * n;
-	if (size/a->ob_size != n)
+	if (n && size/n != a->ob_size)
 		return PyErr_NoMemory();
 	np = (PyListObject *) PyList_New(size);
 	if (np == NULL)
