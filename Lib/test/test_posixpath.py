@@ -2,6 +2,12 @@ import unittest
 from test import test_support
 
 import posixpath, os
+from posixpath import realpath, abspath, join, dirname, basename
+
+# An absolute path to a temporary filename for testing. We can't rely on TESTFN
+# being an absolute path, so we need this.
+
+ABSTFN = abspath(test_support.TESTFN)
 
 class PosixPathTest(unittest.TestCase):
 
@@ -389,9 +395,96 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.abspath)
 
     def test_realpath(self):
-        self.assert_("foo" in posixpath.realpath("foo"))
-
+        self.assert_("foo" in realpath("foo"))
         self.assertRaises(TypeError, posixpath.realpath)
+          
+    if hasattr(os, "symlink"):
+        def test_realpath_basic(self):
+            # Basic operation.
+            try:
+                os.symlink(ABSTFN+"1", ABSTFN)
+                self.assertEqual(realpath(ABSTFN), ABSTFN+"1")
+            finally:
+                self.safe_remove(ABSTFN)
+        
+        def test_realpath_symlink_loops(self):
+            # Bug #930024, return the path unchanged if we get into an infinite
+            # symlink loop.
+            try:
+                old_path = abspath('.')
+                os.symlink(ABSTFN, ABSTFN)
+                self.assertEqual(realpath(ABSTFN), ABSTFN)
+
+                os.symlink(ABSTFN+"1", ABSTFN+"2")
+                os.symlink(ABSTFN+"2", ABSTFN+"1")
+                self.assertEqual(realpath(ABSTFN+"1"), ABSTFN+"1")
+                self.assertEqual(realpath(ABSTFN+"2"), ABSTFN+"2")
+
+                # Test using relative path as well.
+                os.chdir(dirname(ABSTFN))
+                self.assertEqual(realpath(basename(ABSTFN)), ABSTFN)
+            finally:
+                os.chdir(old_path)
+                self.safe_remove(ABSTFN)
+                self.safe_remove(ABSTFN+"1")
+                self.safe_remove(ABSTFN+"2")
+
+        def test_realpath_resolve_parents(self):                        
+            # We also need to resolve any symlinks in the parents of a relative
+            # path passed to realpath. E.g.: current working directory is
+            # /usr/doc with 'doc' being a symlink to /usr/share/doc. We call
+            # realpath("a"). This should return /usr/share/doc/a/.
+            try:
+                old_path = abspath('.')
+                os.mkdir(ABSTFN)
+                os.mkdir(ABSTFN + "/y")
+                os.symlink(ABSTFN + "/y", ABSTFN + "/k")
+
+                os.chdir(ABSTFN + "/k")
+                self.assertEqual(realpath("a"), ABSTFN + "/y/a")
+            finally:
+                os.chdir(old_path)
+                self.safe_remove(ABSTFN + "/k")
+                self.safe_rmdir(ABSTFN + "/y")
+                self.safe_rmdir(ABSTFN)
+
+        def test_realpath_resolve_before_normalizing(self):
+            # Bug #990669: Symbolic links should be resolved before we
+            # normalize the path. E.g.: if we have directories 'a', 'k' and 'y'
+            # in the following hierarchy:
+            # a/k/y
+            #
+            # and a symbolic link 'link-y' pointing to 'y' in directory 'a',
+            # then realpath("link-y/..") should return 'k', not 'a'.
+            try:
+                old_path = abspath('.')
+                os.mkdir(ABSTFN)
+                os.mkdir(ABSTFN + "/k")
+                os.mkdir(ABSTFN + "/k/y")
+                os.symlink(ABSTFN + "/k/y", ABSTFN + "/link-y")
+
+                # Absolute path.
+                self.assertEqual(realpath(ABSTFN + "/link-y/.."), ABSTFN + "/k")
+                # Relative path.
+                os.chdir(dirname(ABSTFN))
+                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."), ABSTFN + "/k")
+            finally:
+                os.chdir(old_path)
+                self.safe_remove(ABSTFN + "/link-y")
+                self.safe_rmdir(ABSTFN + "/k/y")
+                self.safe_rmdir(ABSTFN + "/k")
+                self.safe_rmdir(ABSTFN)
+
+        # Convenience functions for removing temporary files.
+        def pass_os_error(self, func, filename):
+            try: func(filename)
+            except OSError: pass
+
+        def safe_remove(self, filename):
+            self.pass_os_error(os.remove, filename)
+
+        def safe_rmdir(self, dirname):
+            self.pass_os_error(os.rmdir, dirname)
 
 def test_main():
     test_support.run_unittest(PosixPathTest)

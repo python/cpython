@@ -41,6 +41,10 @@ Extension modules
 Library
 -------
 
+- bug #990669: os.path.realpath() will resolve symlinks before normalizing the
+  path, as normalizing the path may alter the meaning of the path if it
+  contains symlinks.
+
 - bug #851123: shutil.copyfile will raise an exception when trying to copy a
   file onto a link to itself. Thanks Gregory Ball.
 
@@ -77,7 +81,7 @@ C API
 Documentation
 -------------
 
-- bug 990669: os.path.normpath may alter the meaning of a path if it contains
+- bug #990669: os.path.normpath may alter the meaning of a path if it contains
 symbolic links. This has been documented in a comment since 1992, but is now in
 the library reference as well.
 
