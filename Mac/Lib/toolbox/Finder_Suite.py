@@ -5,11 +5,6 @@ Generated from Moes:System folder:Extensions:Finder Scripting Extension
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-
 import aetools
 import MacOS
 

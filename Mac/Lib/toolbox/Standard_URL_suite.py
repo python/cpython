@@ -8,11 +8,6 @@ Generated from flap:Programma's:Netscape 2.0b5 Folder:Netscape 2.0b5
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-
 import aetools
 import MacOS
 
