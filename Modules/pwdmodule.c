@@ -120,7 +120,6 @@ static object *mkgrent(p)
 	object *v, *w;
 	char **member;
 	if ((w = newlistobject(0)) == NULL) {
-		DECREF(v);
 		return NULL;
 	}
 	for (member = p->gr_mem; *member != NULL; member++) {
