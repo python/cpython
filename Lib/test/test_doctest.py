@@ -984,6 +984,93 @@ Run the debugger on the docstring, and then restore sys.stdin.
 
 """
 
+def test_pdb_set_trace():
+    r"""Using pdb.set_trace from a doctest
+
+    You can use pdb.set_trace from a doctest. To do so, you must
+    retrieve the set_trace function from the pdb module at the time
+    you use it. The doctest module changes sys,stdout so that it can
+    capture program output. It also temporarily replaces pdb.set_trace
+    with a version that restores stdout. This is necessary for you to
+    see debugger output.
+
+      >>> doc = '''
+      ... >>> x = 42
+      ... >>> import pdb; pdb.set_trace()
+      ... '''
+      >>> test = doctest.DocTest(doc, {}, "foo", "foo.py", 0)
+      >>> runner = doctest.DocTestRunner(verbose=False)
+
+    To demonstrate this, we'll create a fake standard input that
+    captures our debugger input:
+
+      >>> import tempfile
+      >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
+      >>> fake_stdin.write('\n'.join([
+      ...    'up',       # up out of pdb.set_trace
+      ...    'up',       # up again to get out of our wrapper
+      ...    'print x',  # print data defined by the example
+      ...    'continue', # stop debugging
+      ...    '']))
+      >>> fake_stdin.seek(0)
+      >>> real_stdin = sys.stdin
+      >>> sys.stdin = fake_stdin
+
+      >>> doctest: +ELLIPSIS
+      >>> runner.run(test)
+      --Return--
+      > ...set_trace()->None
+      -> Pdb().set_trace()
+      (Pdb) > ...set_trace()
+      -> real_pdb_set_trace()
+      (Pdb) > <string>(1)?()
+      (Pdb) 42
+      (Pdb) (0, 2)
+
+      >>> sys.stdin = real_stdin
+      >>> fake_stdin.close()
+
+      You can also put pdb.set_trace in a function called from a test:
+
+      >>> def calls_set_trace():
+      ...    y=2
+      ...    import pdb; pdb.set_trace()
+
+      >>> doc = '''
+      ... >>> x=1
+      ... >>> calls_set_trace()
+      ... '''
+      >>> test = doctest.DocTest(doc, globals(), "foo", "foo.py", 0)
+      
+      >>> import tempfile
+      >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
+      >>> fake_stdin.write('\n'.join([
+      ...    'up',       # up out of pdb.set_trace
+      ...    'up',       # up again to get out of our wrapper
+      ...    'print y',  # print data defined in the function
+      ...    'up',       # out of function
+      ...    'print x',  # print data defined by the example
+      ...    'continue', # stop debugging
+      ...    '']))
+      >>> fake_stdin.seek(0)
+      >>> real_stdin = sys.stdin
+      >>> sys.stdin = fake_stdin
+
+      >>> runner.run(test)
+      --Return--
+      > ...set_trace()->None
+      -> Pdb().set_trace()
+      (Pdb) ...set_trace()
+      -> real_pdb_set_trace()
+      (Pdb) > <string>(3)calls_set_trace()
+      (Pdb) 2
+      (Pdb) > <string>(1)?()
+      (Pdb) 1
+      (Pdb) (0, 2)
+
+      >>> doctest: -ELLIPSIS
+      """
+
 def test_DocTestSuite():
     """DocTestSuite creates a unittest test suite from a doctest.
 

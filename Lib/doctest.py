@@ -187,9 +187,11 @@ __all__ = [
 import __future__
 
 import sys, traceback, inspect, linecache, os, re, types
-import unittest, difflib, tempfile
+import unittest, difflib, pdb, tempfile
 import warnings
 from StringIO import StringIO
+
+real_pdb_set_trace = pdb.set_trace
 
 # Option constants.
 DONT_ACCEPT_TRUE_FOR_1 = 1 << 0
@@ -1251,15 +1253,28 @@ class DocTestRunner:
         """
         if compileflags is None:
             compileflags = _extract_future_flags(test.globs)
+
         if out is None:
             out = sys.stdout.write
         saveout = sys.stdout
 
+        # Note that don't save away the previous pdb.set_trace. Rather,
+        # we safe pdb.set_trace on import (see import section above).
+        # We then call and restore that original cersion.  We do it this
+        # way to make this feature testable.  If we kept and called the
+        # previous version, we'd end up restoring the original stdout,
+        # which is not what we want.
+        def set_trace():
+            sys.stdout = saveout
+            real_pdb_set_trace()
+
         try:
             sys.stdout = self._fakeout
+            pdb.set_trace = set_trace
             return self.__run(test, compileflags, out)
         finally:
             sys.stdout = saveout
+            pdb.set_trace = real_pdb_set_trace
             if clear_globs:
                 test.globs.clear()
 
