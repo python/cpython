@@ -6,23 +6,27 @@
 \moduleauthor{Piers Lauder}{piers@communitysolutions.com.au}
 \sectionauthor{Piers Lauder}{piers@communitysolutions.com.au}
 
-% Based on HTML documentation by Piers Lauder <piers@communitysolutions.com.au>;
+% Based on HTML documentation by Piers Lauder
+% <piers@communitysolutions.com.au>;
 % converted by Fred L. Drake, Jr. <fdrake@acm.org>.
 % Revised by ESR, January 2000.
 % Changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002 
-% Changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>, November 2002 
+% Changes for IMAP4_stream by Piers Lauder
+% <piers@communitysolutions.com.au>, November 2002
 
 \indexii{IMAP4}{protocol}
 \indexii{IMAP4_SSL}{protocol}
 \indexii{IMAP4_stream}{protocol}
 
-This module defines three classes, \class{IMAP4}, \class{IMAP4_SSL} and \class{IMAP4_stream}, which encapsulate a
+This module defines three classes, \class{IMAP4}, \class{IMAP4_SSL}
+and \class{IMAP4_stream}, which encapsulate a
 connection to an IMAP4 server and implement a large subset of the
 IMAP4rev1 client protocol as defined in \rfc{2060}. It is backward
 compatible with IMAP4 (\rfc{1730}) servers, but note that the
 \samp{STATUS} command is not supported in IMAP4.
 
-Three classes are provided by the \module{imaplib} module, \class{IMAP4} is the base class:
+Three classes are provided by the \module{imaplib} module,
+\class{IMAP4} is the base class:
 
 \begin{classdesc}{IMAP4}{\optional{host\optional{, port}}}
 This class implements the actual IMAP4 protocol.  The connection is
@@ -47,27 +51,32 @@ exception.
 \end{excdesc}
 
 \begin{excdesc}{IMAP4.readonly}
-This exception is raised when a writable mailbox has its status changed by the server.  This is a
-sub-class of \exception{IMAP4.error}.  Some other client now has write permission,
-and the mailbox will need to be re-opened to re-obtain write permission.
+This exception is raised when a writable mailbox has its status
+changed by the server.  This is a sub-class of
+\exception{IMAP4.error}.  Some other client now has write permission,
+and the mailbox will need to be re-opened to re-obtain write
+permission.
 \end{excdesc}
 
 There's also a subclass for secure connections:
 
-\begin{classdesc}{IMAP4_SSL}{\optional{host\optional{, port\optional{, keyfile\optional{, certfile}}}}}
-This is a subclass derived from \class{IMAP4} that connects over an SSL encrypted socket 
-(to use this class you need a socket module that was compiled with SSL support).
-If \var{host} is not specified, \code{''} (the local host) is used.
-If \var{port} is omitted, the standard IMAP4-over-SSL port (993) is used.
-\var{keyfile} and \var{certfile} are also optional - they can contain a PEM formatted
-private key and certificate chain file for the SSL connection. 
+\begin{classdesc}{IMAP4_SSL}{\optional{host\optional{, port\optional{,
+                             keyfile\optional{, certfile}}}}}
+This is a subclass derived from \class{IMAP4} that connects over an
+SSL encrypted socket (to use this class you need a socket module that
+was compiled with SSL support).  If \var{host} is not specified,
+\code{''} (the local host) is used.  If \var{port} is omitted, the
+standard IMAP4-over-SSL port (993) is used.  \var{keyfile} and
+\var{certfile} are also optional - they can contain a PEM formatted
+private key and certificate chain file for the SSL connection.
 \end{classdesc}
 
 The second subclass allows for connections created by a child process:
 
 \begin{classdesc}{IMAP4_stream}{command}
 This is a subclass derived from \class{IMAP4} that connects
-to the \code{stdin/stdout} file descriptors created by passing \var{command} to \code{os.popen2()}.
+to the \code{stdin/stdout} file descriptors created by passing
+\var{command} to \code{os.popen2()}.
 \versionadded{2.3}
 \end{classdesc}
 
@@ -144,9 +153,9 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{authenticate}{mechanism, authobject}
   Authenticate command --- requires response processing.
 
-  \var{mechanism} specifies which authentication mechanism is to
-  be used - it should appear in the instance variable \code{capabilities} in the
-  form \code{AUTH=mechanism}.
+  \var{mechanism} specifies which authentication mechanism is to be
+  used - it should appear in the instance variable \code{capabilities}
+  in the form \code{AUTH=mechanism}.
 
   \var{authobject} must be a callable object:
 
@@ -231,8 +240,9 @@ data = authobject(response)
 \end{methoddesc}
 
 \begin{methoddesc}{login_cram_md5}{user, password}
-  Force use of \samp{CRAM-MD5} authentication when identifying the client to protect the password.
-  Will only work if the server \samp{CAPABILITY} response includes the phrase \samp{AUTH=CRAM-MD5}.
+  Force use of \samp{CRAM-MD5} authentication when identifying the
+  client to protect the password.  Will only work if the server
+  \samp{CAPABILITY} response includes the phrase \samp{AUTH=CRAM-MD5}.
 \versionadded{2.3}
 \end{methoddesc}
 
@@ -264,7 +274,8 @@ data = authobject(response)
 \begin{methoddesc}{open}{host, port}
   Opens socket to \var{port} at \var{host}.
   The connection objects established by this method
-  will be used in the \code{read}, \code{readline}, \code{send}, and \code{shutdown} methods.
+  will be used in the \code{read}, \code{readline}, \code{send}, and
+  \code{shutdown} methods.
   You may override this method.
 \end{methoddesc}
 
@@ -355,16 +366,17 @@ msgnums = M.search(None, '(FROM "LDJ")')
 \end{methoddesc}
 
 \begin{methoddesc}{sort}{sort_criteria, charset, search_criterion\optional{, ...}}
-  The \code{sort} command is a variant of \code{search} with sorting semantics for
-  the results.  Returned data contains a space
-  separated list of matching message numbers.
+  The \code{sort} command is a variant of \code{search} with sorting
+  semantics for the results.  Returned data contains a space separated
+  list of matching message numbers.
 
   Sort has two arguments before the \var{search_criterion}
-  argument(s); a parenthesized list of \var{sort_criteria}, and the searching \var{charset}.
-  Note that unlike \code{search}, the searching \var{charset} argument is mandatory.
-  There is also a \code{uid sort} command which corresponds to \code{sort} the way
-  that \code{uid search} corresponds to \code{search}.
-  The \code{sort} command first searches the mailbox for messages that
+  argument(s); a parenthesized list of \var{sort_criteria}, and the
+  searching \var{charset}.  Note that unlike \code{search}, the
+  searching \var{charset} argument is mandatory.  There is also a
+  \code{uid sort} command which corresponds to \code{sort} the way
+  that \code{uid search} corresponds to \code{search}.  The
+  \code{sort} command first searches the mailbox for messages that
   match the given searching criteria using the charset argument for
   the interpretation of strings in the searching criteria.  It then
   returns the numbers of matching messages.
@@ -384,24 +396,25 @@ msgnums = M.search(None, '(FROM "LDJ")')
   Subscribe to new mailbox.
 \end{methoddesc}
 
-\begin{methoddesc}{thread}{threading_algorithm, charset, search_criterion\optional{, ...}}
-  The \code{thread} command is a variant of \code{search} with threading semantics for
-  the results.  Returned data contains a space
+\begin{methoddesc}{thread}{threading_algorithm, charset,
+                           search_criterion\optional{, ...}}
+  The \code{thread} command is a variant of \code{search} with
+  threading semantics for the results.  Returned data contains a space
   separated list of thread members.
 
-  Thread members consist of zero or more messages numbers, delimited by spaces,
-  indicating successive parent and child.
+  Thread members consist of zero or more messages numbers, delimited
+  by spaces, indicating successive parent and child.
 
   Thread has two arguments before the \var{search_criterion}
-  argument(s); a \var{threading_algorithm}, and the searching \var{charset}.
-  Note that unlike \code{search}, the searching \var{charset} argument is mandatory.
-  There is also a \code{uid thread} command which corresponds to \code{thread} the way
-  that \code{uid search} corresponds to \code{search}.
-  The \code{thread} command first searches the mailbox for messages that
-  match the given searching criteria using the charset argument for
-  the interpretation of strings in the searching criteria. It thren
-  returns the matching messages threaded according to the specified
-  threading algorithm.
+  argument(s); a \var{threading_algorithm}, and the searching
+  \var{charset}.  Note that unlike \code{search}, the searching
+  \var{charset} argument is mandatory.  There is also a \code{uid
+  thread} command which corresponds to \code{thread} the way that
+  \code{uid search} corresponds to \code{search}.  The \code{thread}
+  command first searches the mailbox for messages that match the given
+  searching criteria using the charset argument for the interpretation
+  of strings in the searching criteria. It thren returns the matching
+  messages threaded according to the specified threading algorithm.
 
   This is an \samp{IMAP4rev1} extension command. \versionadded{2.4}
 \end{methoddesc}
