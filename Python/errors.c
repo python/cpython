@@ -334,7 +334,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 {
 	PyObject *name = filename ? PyString_FromString(filename) : NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
-	Py_DECREF(name);
+	Py_XDECREF(name);
 	return result;
 }
 
@@ -444,7 +444,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
 						      PyExc_WindowsError,
 						      ierr, name);
-	Py_XDECREF(result);
+	Py_XDECREF(name);
 	return result;
 }
 
@@ -459,7 +459,7 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
 						      PyExc_WindowsError,
 						      ierr, name);
-	Py_XDECREF(result);
+	Py_XDECREF(name);
 	return result;
 }
 #endif /* Py_WIN_WIDE_FILENAMES */
