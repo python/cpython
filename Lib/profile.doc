@@ -1,0 +1,74 @@
+The Python Profiler
+
+To use the profiler in its simplest form:
+
+	>>> import profile
+	>>> profile.run(statement)
+
+This will execute the statement and print statistics.  To get more
+information out of the profiler, use:
+
+	>>> import profile
+	>>> profile.run(statement, dump_file)
+
+where dump_file is a string naming a file to which the (binary)
+profile statistics is to be dumped.  The binary format is a dump of a
+dictionary.  The key is the function name in the format described
+above; the value is a tuple consisting of, in order, number of calls,
+total time spent in the function, total time spent in the function and
+all functions called from it, a list of functions called by this
+function, and a list of functions that called this function.  The dump
+can be read back using the following code:
+
+	>>> import marshal
+	>>> f = open(dump_file, 'r')
+	>>> dict = marshal.load(f)
+	>>> f.close()
+
+An easier way of doing this is by using the class `Stats' which is
+also defined in profile:
+
+	>>> import profile
+	>>> s = profile.Stats().init(dump_file)
+
+The following methods are defined for instances of `Stats':
+
+	print_stats()	-- Print the statistics in a format similar to
+			   the format profile.run() uses.
+	print_callers()	-- For each function, print all functions
+			   which it calls.
+	print_callees()	-- For each function, print all functions from
+			   which it is called.
+	sort_stats(n)	-- Sort the statistics for subsequent
+			   printing.  The argument determines on which
+			   field the output should be sorted.
+			   Possibilities are
+				-1	function name
+				0	number of calls
+				1	total time spent in a function
+				2	total time spent in a function
+					plus all functions it called
+	strip_dirs()	-- Strip the directory names off of the file
+			   names which are part of the function names.
+			   This undoes the effect of sort_stats(), but
+			   a subsequent sort_stats() does work.
+
+The methods sort_stats and strip_dirs may change in the future.
+
+Output of profile.run(statement) and of the print_stats() method of
+the `Stats' class consists of the following fields.
+
+	Number of times the function was called.
+	Total time spent in the function.
+	Mean time per function call (second field divided by first).
+	Total time spent in the function and all functions it called,
+		recursively.
+	Mean time time spent in the function and all functions it
+		called (fourth field divided by first).
+	Name of the function in the format
+		<file name>:<line number>(<function name>)
+
+The output of the print_callers and print_callees methods consists of
+the name of the function and the names of all function it called or
+was called from.  The latter names are followed by a parenthesised
+number which is the number of calls for this function.
