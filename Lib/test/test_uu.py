@@ -124,8 +124,7 @@ except uu.Error, e:
     verify(str(e) == 'No valid begin line found in input file')
 
 # Test to verify that decode() will refuse to overwrite an existing file
-import tempfile
-outfile = tempfile.mktemp()
+outfile = TESTFN + "out"
 inp = StringIO('Here is a message to be uuencoded')
 out = StringIO()
 uu.encode(inp, out, outfile)

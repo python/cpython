@@ -1,8 +1,8 @@
-from test.test_support import verify
+from test.test_support import verify, TESTFN
 import sys, os
-import gzip, tempfile
+import gzip
 
-filename = tempfile.mktemp()
+filename = TESTFN
 
 data1 = """  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;

@@ -17,8 +17,7 @@ class TestImport(unittest.TestCase):
                 del sys.modules[module_name]
 
     def setUp(self):
-        self.test_dir = tempfile.mktemp()
-        os.mkdir(self.test_dir)
+        self.test_dir = tempfile.mkdtemp()
         sys.path.append(self.test_dir)
         self.package_dir = os.path.join(self.test_dir,
                                         self.package_name)

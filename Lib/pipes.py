@@ -225,7 +225,8 @@ def makepipeline(infile, steps, outfile):
         lkind = list[i-1][2]
         rkind = list[i][2]
         if lkind[1] == 'f' or rkind[0] == 'f':
-            temp = tempfile.mktemp()
+            (fd, temp) = tempfile.mkstemp()
+            os.close(fd)
             garbage.append(temp)
             list[i-1][-1] = list[i][0] = temp
     #

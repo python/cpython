@@ -130,8 +130,9 @@ class bdist_wininst (Command):
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
-        from tempfile import mktemp
-        archive_basename = mktemp()
+        from tempfile import NamedTemporaryFile
+        arc = NamedTemporaryFile(".zip")
+        archive_basename = arc.name[:-4]
         fullname = self.distribution.get_fullname()
         arcname = self.make_archive(archive_basename, "zip",
                                     root_dir=self.bdist_dir)
@@ -139,7 +140,7 @@ class bdist_wininst (Command):
         self.create_exe(arcname, fullname, self.bitmap)
         # remove the zip-file again
         log.debug("removing temporary file '%s'", arcname)
-        os.remove(arcname)
+        arc.close()
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)

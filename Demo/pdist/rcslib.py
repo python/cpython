@@ -143,22 +143,17 @@ class RCS:
         if message and message[-1] != '\n':
             message = message + '\n'
         lockflag = "-u"
-        textfile = None
-        try:
-            if new:
-                textfile = tempfile.mktemp()
-                f = open(textfile, 'w')
-                f.write(message)
-                f.close()
-                cmd = 'ci %s%s -t%s %s %s' % \
-                      (lockflag, rev, textfile, otherflags, name)
-            else:
-                message = regsub.gsub('\([\\"$`]\)', '\\\\\\1', message)
-                cmd = 'ci %s%s -m"%s" %s %s' % \
-                      (lockflag, rev, message, otherflags, name)
-            return self._system(cmd)
-        finally:
-            if textfile: self._remove(textfile)
+        if new:
+            f = tempfile.NamedTemporaryFile()
+            f.write(message)
+            f.flush()
+            cmd = 'ci %s%s -t%s %s %s' % \
+                  (lockflag, rev, f.name, otherflags, name)
+        else:
+            message = regsub.gsub('\([\\"$`]\)', '\\\\\\1', message)
+            cmd = 'ci %s%s -m"%s" %s %s' % \
+                  (lockflag, rev, message, otherflags, name)
+        return self._system(cmd)
 
     # --- Exported support methods ---
 

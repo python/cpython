@@ -807,19 +807,19 @@ class FaqWizard:
         f.close()
 
         import tempfile
-        tfn = tempfile.mktemp()
-        f = open(tfn, 'w')
-        emit(LOGHEADER, self.ui, os.environ, date=date, _file=f)
-        f.close()
+        tf = tempfile.NamedTemporaryFile()
+        emit(LOGHEADER, self.ui, os.environ, date=date, _file=tfn)
+        tf.flush()
+        tf.seek(0)
 
-        command = interpolate(SH_CHECKIN, file=file, tfn=tfn)
+        command = interpolate(SH_CHECKIN, file=file, tfn=tf.name)
         log("\n\n" + command)
         p = os.popen(command)
         output = p.read()
         sts = p.close()
         log("output: " + output)
         log("done: " + str(sts))
-        log("TempFile:\n" + open(tfn).read() + "end")
+        log("TempFile:\n" + tf.read() + "end")
         
         if not sts:
             self.prologue(T_COMMITTED)

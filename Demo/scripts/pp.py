@@ -120,19 +120,11 @@ for line in SCRIPT:
 program = program + (string.joinfields(epilogue, '\n') + '\n')
 
 import tempfile
-tfn = tempfile.mktemp()
-try:
-	fp = open(tfn, 'w')
-	fp.write(program)
-	fp.close()
-	if DFLAG:
-		import pdb
-		pdb.run('execfile(' + `tfn` + ')')
-	else:
-		execfile(tfn)
-finally:
-	import os
-	try:
-		os.unlink(tfn)
-	except:
-		pass
+fp = tempfile.NamedTemporaryFile()
+fp.write(program)
+fp.flush()
+if DFLAG:
+	import pdb
+	pdb.run('execfile(' + `tfn` + ')')
+else:
+	execfile(tfn)

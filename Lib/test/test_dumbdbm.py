@@ -6,10 +6,9 @@
 import os
 import unittest
 import dumbdbm
-import tempfile
 from test import test_support
 
-_fname = tempfile.mktemp()
+_fname = test_support.TESTFN
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:

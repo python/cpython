@@ -1,5 +1,5 @@
 
-import netrc, os, tempfile, unittest
+import netrc, os, unittest
 from test import test_support
 
 TEST_NETRC = """
@@ -17,7 +17,7 @@ default login log2 password pass2
 
 """
 
-temp_filename = tempfile.mktemp()
+temp_filename = test_support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 

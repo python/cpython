@@ -280,9 +280,11 @@ class IOBinding:
         if self.get_saved():
             filename = self.filename
         else:
-            filename = tempfilename = tempfile.mktemp()
+            (tfd, tfn) = tempfile.mkstemp()
+            os.close(tfd)
+            filename = tfn
             if not self.writefile(filename):
-                os.unlink(tempfilename)
+                os.unlink(tfn)
                 return "break"
         edconf = idleconf.getsection('EditorWindow')
         command = edconf.get('print-command')
