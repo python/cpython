@@ -62,6 +62,20 @@ typedef struct re_registers
 #define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
 #define RE_SYNTAX_EMACS	0
 
+/* Rename all exported symbols to avoid conflicts with similarly named
+   symbols in some systems' standard C libraries... */
+
+#define re_syntax _Py_re_syntax
+#define re_set_syntax _Py_re_set_syntax
+#define re_compile_pattern _Py_re_compile_pattern
+#define re_match _Py_re_match
+#define re_match_2 _Py_re_match_2
+#define re_search _Py_re_search
+#define re_search_2 _Py_re_search_2
+#define re_compile_fastmap _Py_re_compile_fastmap
+#define re_comp _Py_re_comp
+#define re_exec _Py_re_exec
+
 #ifdef HAVE_PROTOTYPES
 
 extern int re_syntax;
