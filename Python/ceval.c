@@ -3332,14 +3332,14 @@ loop_subscript(PyObject *v, PyObject *w)
    Silently reduce values larger than INT_MAX to INT_MAX, and silently
    boost values less than -INT_MAX to 0.  Return 0 on error, 1 on success.
 */
-/* XXX If v is NULL, this goes out of its way to indicate success(!), but
-   XXX doesn't store into *pi.  Why isn't that an error, or at least v!=NULL
-   XXX an asserted precondition?
+/* Note:  If v is NULL, return success without storing into *pi.  This
+   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
+   called by the SLICE opcode with v and/or w equal to NULL.
 */
 int
 _PyEval_SliceIndex(PyObject *v, int *pi)
 {
-	if (v != NULL) {  /* XXX why isn't this assert(v != NULL()? */
+	if (v != NULL) {
 		long x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsLong(v);
