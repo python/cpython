@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20010701
+MAGIC = 20030419
 
 # max code word in this release
 

@@ -11,7 +11,7 @@
  * See the _sre.c file for information on usage and redistribution.
  */
 
-#define SRE_MAGIC 20010701
+#define SRE_MAGIC 20030419
 #define SRE_OP_FAILURE 0
 #define SRE_OP_SUCCESS 1
 #define SRE_OP_ANY 2
