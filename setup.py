@@ -8,6 +8,7 @@ __version__ = "$Revision$"
 
 import sys, os, getopt
 from distutils import sysconfig
+from distutils import text_file
 from distutils.errors import *
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
@@ -89,6 +90,21 @@ class PyBuildExt(build_ext):
             if ext.name in sys.builtin_module_names:
                 self.extensions.remove(ext)
 
+        # Parse Modules/Setup to figure out which modules are turned
+        # on in the file. 
+        input = text_file.TextFile('Modules/Setup', join_lines=1)
+        remove_modules = []
+        while 1:
+            line = input.readline()
+            if not line: break
+            line = line.split()
+            remove_modules.append( line[0] )
+        input.close()
+        
+        for ext in self.extensions[:]:
+            if ext.name in remove_modules:
+                self.extensions.remove(ext)
+        
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
