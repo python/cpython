@@ -590,6 +590,8 @@ logreader_next(LogReaderObject *self, PyObject *args)
     return result;
 }
 
+static void
+do_stop(ProfilerObject *self);
 
 static int
 flush_data(ProfilerObject *self)
@@ -605,6 +607,7 @@ flush_data(ProfilerObject *self)
         if (written == 0) {
             char *s = PyString_AsString(self->logfilename);
             PyErr_SetFromErrnoWithFilename(PyExc_IOError, s);
+            do_stop(self);
             return -1;
         }
     }
@@ -612,13 +615,14 @@ flush_data(ProfilerObject *self)
         if (fflush(self->logfp)) {
             char *s = PyString_AsString(self->logfilename);
             PyErr_SetFromErrnoWithFilename(PyExc_IOError, s);
+            do_stop(self);
             return -1;
         }
     }
     return 0;
 }
 
-static inline void
+static inline int
 pack_packed_int(ProfilerObject *self, int value)
 {
     unsigned char partial;
@@ -631,13 +635,14 @@ pack_packed_int(ProfilerObject *self, int value)
         self->buffer[self->index] = partial;
         self->index++;
     } while (value);
+    return 0;
 }
 
 /* Encode a modified packed integer, with a subfield of modsize bits
  * containing the value "subfield".  The value of subfield is not
  * checked to ensure it actually fits in modsize bits.
  */
-static inline void
+static inline int
 pack_modified_packed_int(ProfilerObject *self, int value,
                          int modsize, int subfield)
 {
@@ -651,125 +656,154 @@ pack_modified_packed_int(ProfilerObject *self, int value,
         b |= 0x80;
         self->buffer[self->index] = b;
         self->index++;
-        pack_packed_int(self, value >> bits);
+        return pack_packed_int(self, value >> bits);
     }
-    else {
-        self->buffer[self->index] = b;
-        self->index++;
-    }
+    self->buffer[self->index] = b;
+    self->index++;
+    return 0;
 }
 
-static void
+static int
 pack_string(ProfilerObject *self, const char *s, int len)
 {
-    if (len + PISIZE + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
-    pack_packed_int(self, len);
+    if (len + PISIZE + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
+    if (pack_packed_int(self, len) < 0)
+        return -1;
     memcpy(self->buffer + self->index, s, len);
     self->index += len;
+    return 0;
 }
 
-static void
+static int
 pack_add_info(ProfilerObject *self, const char *s1, const char *s2)
 {
     int len1 = strlen(s1);
     int len2 = strlen(s2);
 
-    if (len1 + len2 + PISIZE*2 + 1 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (len1 + len2 + PISIZE*2 + 1 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     self->buffer[self->index] = WHAT_ADD_INFO;
     self->index++;
-    pack_string(self, s1, len1);
-    pack_string(self, s2, len2);
+    if (pack_string(self, s1, len1) < 0)
+        return -1;
+    return pack_string(self, s2, len2);
 }
 
-static void
+static int
 pack_define_file(ProfilerObject *self, int fileno, const char *filename)
 {
     int len = strlen(filename);
 
-    if (len + PISIZE*2 + 1 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (len + PISIZE*2 + 1 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     self->buffer[self->index] = WHAT_DEFINE_FILE;
     self->index++;
-    pack_packed_int(self, fileno);
-    pack_string(self, filename, len);
+    if (pack_packed_int(self, fileno) < 0)
+        return -1;
+    return pack_string(self, filename, len);
 }
 
-static void
+static int
 pack_define_func(ProfilerObject *self, int fileno, int lineno,
                  const char *funcname)
 {
     int len = strlen(funcname);
 
-    if (len + PISIZE*3 + 1 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (len + PISIZE*3 + 1 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     self->buffer[self->index] = WHAT_DEFINE_FUNC;
     self->index++;
-    pack_packed_int(self, fileno);
-    pack_packed_int(self, lineno);
-    pack_string(self, funcname, len);
+    if (pack_packed_int(self, fileno) < 0)
+        return -1;
+    if (pack_packed_int(self, lineno) < 0)
+        return -1;
+    return pack_string(self, funcname, len);
 }
 
-static void
+static int
 pack_line_times(ProfilerObject *self)
 {
-    if (2 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (2 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     self->buffer[self->index] = WHAT_LINE_TIMES;
     self->buffer[self->index + 1] = self->linetimings ? 1 : 0;
     self->index += 2;
+    return 0;
 }
 
-static void
+static int
 pack_frame_times(ProfilerObject *self)
 {
-    if (2 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (2 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     self->buffer[self->index] = WHAT_FRAME_TIMES;
     self->buffer[self->index + 1] = self->frametimings ? 1 : 0;
     self->index += 2;
+    return 0;
 }
 
-static inline void
+static inline int
 pack_enter(ProfilerObject *self, int fileno, int tdelta, int lineno)
 {
-    if (MPISIZE + PISIZE*2 + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
+    if (MPISIZE + PISIZE*2 + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
     pack_modified_packed_int(self, fileno, 2, WHAT_ENTER);
     pack_packed_int(self, lineno);
     if (self->frametimings)
-        pack_packed_int(self, tdelta);
+        return pack_packed_int(self, tdelta);
+    else
+        return 0;
 }
 
-static inline void
+static inline int
 pack_exit(ProfilerObject *self, int tdelta)
 {
-    if (MPISIZE + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
-    if (self->frametimings)
-        pack_modified_packed_int(self, tdelta, 2, WHAT_EXIT);
-    else {
-        self->buffer[self->index] = WHAT_EXIT;
-        self->index++;
+    if (MPISIZE + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
     }
+    if (self->frametimings)
+        return pack_modified_packed_int(self, tdelta, 2, WHAT_EXIT);
+    self->buffer[self->index] = WHAT_EXIT;
+    self->index++;
+    return 0;
 }
 
-static inline void
+static inline int
 pack_lineno(ProfilerObject *self, int lineno)
 {
-    if (MPISIZE + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
-    pack_modified_packed_int(self, lineno, 2, WHAT_LINENO);
+    if (MPISIZE + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return -1;
+    }
+    return pack_modified_packed_int(self, lineno, 2, WHAT_LINENO);
 }
 
-static inline void
+static inline int
 pack_lineno_tdelta(ProfilerObject *self, int lineno, int tdelta)
 {
-    if (MPISIZE + PISIZE + self->index >= BUFFERSIZE)
-        (void) flush_data(self);
-    pack_modified_packed_int(self, lineno, 2, WHAT_LINENO);
-    pack_packed_int(self, tdelta);
+    if (MPISIZE + PISIZE + self->index >= BUFFERSIZE) {
+        if (flush_data(self) < 0)
+            return 0;
+    }
+    if (pack_modified_packed_int(self, lineno, 2, WHAT_LINENO) < 0)
+        return -1;
+    return pack_packed_int(self, tdelta);
 }
 
 static inline int
@@ -799,7 +833,9 @@ get_fileno(ProfilerObject *self, PyCodeObject *fcode)
         }
         self->next_fileno++;
         Py_DECREF(obj);
-        pack_define_file(self, fileno, PyString_AS_STRING(fcode->co_filename));
+        if (pack_define_file(self, fileno,
+                             PyString_AS_STRING(fcode->co_filename)) < 0)
+            return -1;
     }
     else {
         /* already know this ID */
@@ -815,8 +851,9 @@ get_fileno(ProfilerObject *self, PyCodeObject *fcode)
     else {
         PyObject *name = PyDict_GetItem(dict, obj);
         if (name == NULL) {
-            pack_define_func(self, fileno, fcode->co_firstlineno,
-                             PyString_AS_STRING(fcode->co_name));
+            if (pack_define_func(self, fileno, fcode->co_firstlineno,
+                                 PyString_AS_STRING(fcode->co_name)) < 0)
+                return -1;
             if (PyDict_SetItem(dict, obj, fcode->co_name))
                 return -1;
         }
@@ -867,11 +904,13 @@ profiler_callback(ProfilerObject *self, PyFrameObject *frame, int what,
         fileno = get_fileno(self, frame->f_code);
         if (fileno < 0)
             return -1;
-        pack_enter(self, fileno, tdelta,
-                   frame->f_code->co_firstlineno);
+        if (pack_enter(self, fileno, tdelta,
+                       frame->f_code->co_firstlineno) < 0)
+            return -1;
         break;
     case PyTrace_RETURN:
-        pack_exit(self, tdelta);
+        if (pack_exit(self, tdelta) < 0)
+            return -1;
         break;
     default:
         /* should never get here */
@@ -894,18 +933,19 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
         fileno = get_fileno(self, frame->f_code);
         if (fileno < 0)
             return -1;
-        pack_enter(self, fileno, self->frametimings ? get_tdelta(self) : -1,
-                   frame->f_code->co_firstlineno);
-        break;
+        return pack_enter(self, fileno,
+                          self->frametimings ? get_tdelta(self) : -1,
+                          frame->f_code->co_firstlineno);
+
     case PyTrace_RETURN:
-        pack_exit(self, get_tdelta(self));
-        break;
+        return pack_exit(self, get_tdelta(self));
+
     case PyTrace_LINE:
         if (self->linetimings)
-            pack_lineno_tdelta(self, frame->f_lineno, get_tdelta(self));
+            return pack_lineno_tdelta(self, frame->f_lineno, get_tdelta(self));
         else
-            pack_lineno(self, frame->f_lineno);
-        break;
+            return pack_lineno(self, frame->f_lineno);
+
     default:
         /* ignore PyTrace_EXCEPTION */
         break;
@@ -1042,9 +1082,10 @@ profiler_addinfo(ProfilerObject *self, PyObject *args)
         if (self->logfp == NULL)
             PyErr_SetString(ProfilerError, "profiler already closed");
         else {
-            pack_add_info(self, key, value);
-            result = Py_None;
-            Py_INCREF(result);
+            if (pack_add_info(self, key, value) == 0) {
+                result = Py_None;
+                Py_INCREF(result);
+            }
         }
     }
     return result;
