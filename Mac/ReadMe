@@ -71,11 +71,12 @@ turned into an applet) the given resource file will be opened. This method will
 eventually also contain the magic needed to open the resource file on
 OSX MachO Python.
 
-Another feature to help with the OSX transition is that if you open a textfile
-for reading MacPython will now accept either unix linefeeds (LF, '\n') or
-Macintosh linefeeds (CR, '\r') and present both of them as '\n'. This is done on
-a low level, so it works for files opened by scripts as well as for your scripts
-and modules itself. This can be turned off with a preference/startup option.
+Another feature to help with the OSX transition is that if you open a
+textfile for reading MacPython will now accept either unix linefeeds
+(LF, '\n') or Macintosh linefeeds (CR, '\r') and present both of them
+as '\n'. This is done on a low level, so it works for files opened by
+scripts as well as for your scripts and modules itself. This can be
+turned off with a preference/startup option.
 
 But:
 - this works only for input, and there's no way to find out what the original
@@ -86,37 +87,40 @@ What to install
 ---------------
 
 The optional parts in this distribution are
-- TK+PIL: Tkinter and support modules, plus Imaging, the Python image manipulation 
-  package (allows you to read, write and display images and do lots of operations on them).
+- TK+PIL: Tkinter and support modules, plus Imaging, the Python image
+  manipulation package (allows you to read, write and display images and
+  do lots of operations on them). 
   For Carbon MacPython you only get PIL: there is no Tcl/Tk for Carbon yet.
-  This is the reason Classic MacPython is also installed on MacOSX: it allows you
-  to run Tkinter applications, albeit in the Classic box.
+  This is the reason Classic MacPython is also installed on MacOSX: it
+  allows you to run Tkinter applications, albeit in the Classic box.
 - img: another imaging package. Has more file format support and is faster
   than imaging, but has only limited operations on images. There is a bridge
   between the packages.
 - Numeric: the LLNL Numeric Python extension. All sorts of nifty operations
-  on matrices and such. This is the most recent version from the sourceforge archive.
-  Numeric has moved from Extensions to :Lib:site-python, by the way, see the release
-  notes.
-- Developers kit: all header files and some tools and sample projects to get you started on
-  writing Python extensions if you have CodeWarrior.
+  on matrices and such. This is the most recent version from the
+  sourceforge archive.
+  Numeric has moved from Extensions to :Lib:site-python, by the way,
+  see the release notes.
+- Developers kit: all header files and some tools and sample projects
+  to get you started on writing Python extensions if you have CodeWarrior.
 All these except the DevKit are installed with Easy Install.
 
 After the installer finishes it automatically launches the appropriate
-ConfigurePython applet, to finish configuration of your Python. If you run MacOS9 or later
-(or 8 with CarbonLib installed) you can switch back and forth between the classic and
-Carbon versions of Python by running either ConfigurePythonClassic or ConfigurePythonCarbon.
+ConfigurePython applet, to finish configuration of your Python. If you
+run MacOS9 or later (or 8 with CarbonLib installed) you can switch
+back and forth between the classic and Carbon versions of Python by
+running either ConfigurePythonClassic or ConfigurePythonCarbon.
 
-Moving your Python installation after installing is generally not a good idea.
-If you have to do this anyway you should remove your preference file, run
-ConfigurePython and remove all .pyc files. (there's a script zappyc.py that does
-the latter).
+Moving your Python installation after installing is generally not a
+good idea.  If you have to do this anyway you should remove your
+preference file, run ConfigurePython and remove all .pyc
+files. (there's a script zappyc.py that does the latter).
 
 If you don't have enough memory: the sizes choosen are somewhat
-arbitrary, and they are as high as they are so that test.autotest runs with fewer
-problems. An average Python program can make do with much less memory.
-Try lowering the application sizes in the finder "get info"
-window, and seeing whether the resulting python is still usable.
+arbitrary, and they are as high as they are so that test.autotest runs
+with fewer problems. An average Python program can make do with much
+less memory.  Try lowering the application sizes in the finder "get
+info" window, and seeing whether the resulting python is still usable.
 
 After installing
 ----------------
@@ -124,47 +128,49 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.regrtest ; test.regrtest.main()". 
 
-test_time will fail because MacPython accepts bogus values for mktime(), this
-will be fixed later (it is not a very serious problem).
+test_time will fail because MacPython accepts bogus values for
+mktime(), this will be fixed later (it is not a very serious problem).
 
 test_descrtut will fail because of a problem with the test itself.
 
 Three tests will fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX these should pass).
 
-If you increase the PythonInterpreter memory
-partition size they will pass (but for longexp you have to increase it by an
-incredible amount, 400MB is rumoured). It will, however, print some messages
-about optional features not supported. You should not worry about these,
-they are modules that are supported by Python on other platforms. Also,
-if you didn't run compileall before autotesting you may run out of
-memory the first time you run the tests. test_socket may also fail if
-you have no internet connection. Please also read the Relnotes file for
-other minor problems with this distribution.
+If you increase the PythonInterpreter memory partition size they will
+pass (but for longexp you have to increase it by an incredible amount,
+400MB is rumoured). It will, however, print some messages about
+optional features not supported. You should not worry about these,
+they are modules that are supported by Python on other
+platforms. Also, if you didn't run compileall before autotesting you
+may run out of memory the first time you run the tests. test_socket
+may also fail if you have no internet connection. Please also read the
+Relnotes file for other minor problems with this distribution.
 
-Using Python is most easily done from the IDE, which has a builtin editor,
-debugger and other goodies. The alternative is to use PythonInterpreter,
-which is the lowlevel interpreter with a console-window only (similar to Unix
-Python).
+Using Python is most easily done from the IDE, which has a builtin
+editor, debugger and other goodies. The alternative is to use
+PythonInterpreter, which is the lowlevel interpreter with a
+console-window only (similar to Unix Python).
 
-If your program uses Tkinter you MUST run it under PythonInterpreter, Tkinter
-and IDE are incompatible and your program will fail in strange ways.
+If your program uses Tkinter you MUST run it under PythonInterpreter,
+Tkinter and IDE are incompatible and your program will fail in strange
+ways.
 
 Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.2b1 Preferences" file in the Python subfolder in the
-Preferences folder. All the rest of Python lives in the folder you
-installed in.
+libraries PythonCore and PythonCoreCarbon lives in the Extensions
+folder and the "Python 2.2b1 Preferences" file in the Python subfolder
+in the Preferences folder. All the rest of Python lives in the folder
+you installed in.
 
-On OSX the libraries are installed in /Library/CFMSupport. There is a nasty bug
-in OSX that is triggered by Python: if any orphaned aliases are left in
-/Library/CFMSupport your machine will start to behave very badly. 2.1
-beta installers triggered this problem if you simply threw away your Python folder,
-so if you installed a 2.1beta you should clean out the aliases in /Library/CFMSupport
-too. The final 2.1 and 2.1.1 installers always copied the shared libraries on OSX, so it does
+On OSX the libraries are installed in /Library/CFMSupport. There is a
+nasty bug in OSX that is triggered by Python: if any orphaned aliases
+are left in /Library/CFMSupport your machine will start to behave very
+badly. 2.1 beta installers triggered this problem if you simply threw
+away your Python folder, so if you installed a 2.1beta you should
+clean out the aliases in /Library/CFMSupport too. The final 2.1 and
+2.1.1 installers always copied the shared libraries on OSX, so it does
 not have the problem anymore.
 
 Things to see
@@ -179,14 +185,14 @@ machine-independent demos.
 The Mac:Lib:test folder also has some programs that show simple
 capabilities of various modules.
 
-The ":Mac:scripts" folder has some sample scripts. Some are useful, some are
-just interesting to look at to see how various things work. The MkDistr,
-mkapplet and fullbuild scripts (plus the ones mentioned above) may help
-you to understand how to use AppleEvents and various other toolboxes
-from python.
+The ":Mac:scripts" folder has some sample scripts. Some are useful,
+some are just interesting to look at to see how various things
+work. The MkDistr, mkapplet and fullbuild scripts (plus the ones
+mentioned above) may help you to understand how to use AppleEvents and
+various other toolboxes from python.
 
-Other mac-specific goodies can be found in :Mac:Tools, of which the IDE sources
-and a CGI framework deserve special mention.
+Other mac-specific goodies can be found in :Mac:Tools, of which the
+IDE sources and a CGI framework deserve special mention.
 
 The 'img' group of modules, which handles I/O of many different image
 formats is included, but without documentation.  You can find docs at
@@ -198,9 +204,9 @@ software.
 Upgrading from older Python releases
 ------------------------------------
 
-Python releases are independent of each other, with
-separate Preferences files, shared library names, etc. The good news is
-that this means you can keep your older version around if you are unsure
+Python releases are independent of each other, with separate
+Preferences files, shared library names, etc. The good news is that
+this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
@@ -208,10 +214,10 @@ After you are satisfied that 2.2b1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
 "2.2b1".
 
-The ConfigurePython... applets will try to detect incompatible preferences
-files and offer to remove them. This means that re-running ConfigurePython after
-a second install of the same MacPython version (or after moving the Python folder)
-should fix things up correctly.
+The ConfigurePython... applets will try to detect incompatible
+preferences files and offer to remove them. This means that re-running
+ConfigurePython after a second install of the same MacPython version
+(or after moving the Python folder) should fix things up correctly.
 
 The installer
 -------------
@@ -239,14 +245,16 @@ Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
 Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
 Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer,
-Alexandre Parenteau,
+Alexandre Parenteau, Donovan Preston
 and all the other people who provided feedback, code or both!
 
-MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
+MacPython includes waste, a TextEdit replacement which is (c) 1998
+Marco Piovanelli.
 
-A special mention is deserved by Matthias Neeracher, who has written the brilliant
-unix-compatible GUSI I/O library, without which MacPython would not have sockets
-or select, and to Alexandre Parenteau, who has ported this library to Carbon.
+A special mention is deserved by Matthias Neeracher, who has written
+the brilliant unix-compatible GUSI I/O library, without which
+MacPython would not have sockets or select, and to Alexandre
+Parenteau, who has ported this library to Carbon.
 
 Feedback
 --------
