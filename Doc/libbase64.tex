@@ -1,0 +1,43 @@
+\section{Standard Module \sectcode{base64}}
+\stmodindex{base64}
+
+This module perform base-64 encoding and decoding of arbitrary binary
+strings into text strings that can be safely emailed or posted.  The
+encoding scheme is defined in RFC 1421 and is used for MIME email and
+various other Internet-related applications; it is not the same as the
+output produced by the \file{uuencode} program.  For example, the
+string \code{'www.python.org'} is encoded as the string
+\code{'d3d3LnB5dGhvbi5vcmc=\e n'}.  
+\indexii{base-64}{encoding}
+\indexii{RFC}{1421}
+\index{MIME, base 64 encoding}
+
+\begin{funcdesc}{decode}{input\, output}
+Decode the contents of the \var{input} file and write the resulting
+binary data to the \var{output} file.
+\var{input} and \var{output} must either be file objects or objects that
+mimic the file object interface. \var{input} will be read until
+\code{\var{input}.read()} returns an empty string.
+\end{funcdesc}
+
+\begin{funcdesc}{decodestring}{s}
+Decode the string \var{s}, which must contain one or more lines of
+base-64 encoded data, and return a string containing the resulting
+binary data.
+\end{funcdesc}
+
+\begin{funcdesc}{encode}{input\, output}
+Encode the contents of the \var{input} file and write the resulting
+base-64 encoded data to the \var{output} file.
+\var{input} and \var{output} must either be file objects or objects that
+mimic the file object interface. \var{input} will be read until
+\code{\var{input}.read()} returns an empty string.
+\end{funcdesc}
+
+\begin{funcdesc}{encodestring}{s}
+Encode the string \var{s}, which can contain arbitrary binary data,
+and return a string containing one or more lines of
+base-64 encoded data.
+\end{funcdesc}
+
+

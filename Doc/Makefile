@@ -114,7 +114,8 @@ LIBFILES = lib.tex \
     librestricted.tex librexec.tex libbastion.tex \
     libformatter.tex liboperator.tex libsoundex.tex libresource.tex \
     libstat.tex libstrio.tex libundoc.tex libmailcap.tex libglob.tex \
-    libuser.tex libanydbm.tex librandom.tex libsite.tex libwhichdb.tex
+    libuser.tex libanydbm.tex librandom.tex libsite.tex libwhichdb.tex \
+    libbase64.tex libfnmatch.tex libquopri.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
