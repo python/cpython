@@ -97,8 +97,7 @@ Distutils
   and the Metrowerks compiler.
   
 - added 'platforms' and 'keywords' to the set of metadata that can be 
-  specified for a distribution.  Supplying a version number has been made
-  compulsory.
+  specified for a distribution.  
 
 - applied patches from Jason Tishler to make the compiler class work with
   Cygwin.
