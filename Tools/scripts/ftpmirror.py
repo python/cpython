@@ -132,17 +132,17 @@ def mirrorsubdir(f, localdir):
 			infostuff = ''
 		else:
 			# Parse, assuming a UNIX listing
-			words = string.split(line)
+			words = string.split(line, None, 8)
 			if len(words) < 6:
 				if verbose > 1: print 'Skipping short line'
 				continue
-			if words[-2] == '->':
+			filename = words[-1]
+			if string.find(filename, " -> ") >= 0:
 				if verbose > 1:
-				    print 'Skipping symbolic link %s -> %s' % \
-						  (words[-3], words[-1])
+				    print 'Skipping symbolic link %s' % \
+					  filename
 				continue
-			filename = string.join(words[8:])
-			infostuff = words[5:]
+			infostuff = words[-5:-1]
 			mode = words[0]
 		skip = 0
 		for pat in skippats:
