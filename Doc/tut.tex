@@ -295,12 +295,12 @@ On BSD'ish \UNIX{} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
 
 \bcode\begin{verbatim}
-#! /usr/local/bin/python
+#! /usr/bin/env python
 \end{verbatim}\ecode
 %
-(assuming that's the name of the interpreter) at the beginning of the
-script and giving the file an executable mode.  The {\tt \#!} must be
-the first two characters of the file.
+(assuming that the interpreter is on the user's PATH) at the beginning
+of the script and giving the file an executable mode.  The {\tt \#!}
+must be the first two characters of the file.
 
 \subsection{The Interactive Startup File}
 
@@ -2243,7 +2243,7 @@ complicated.
 
 Rather than have users be constantly writing and debugging code to
 save complicated data types, Python provides a standard module called
-\code{pickle}.  code{pickle} is an amazing module that can take almost
+\code{pickle}.  This is an amazing module that can take almost
 any Python object (even some forms of Python code!), and convert it to
 a string representation; this process is called \dfn{pickling}.  
 Reconstructing the object from the string representation is called
