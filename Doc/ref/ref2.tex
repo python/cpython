@@ -75,7 +75,7 @@ Comments are ignored by the syntax; they are not tokens.
 \subsection{Encoding declarations\label{encodings}}
 
 If a comment in the first or second line of the Python script matches
-the regular expression \regexp{coding[=:]\e s*([\e w-_.]+)}, this comment is
+the regular expression \regexp{coding[=:]\e s*([-\e w.]+)}, this comment is
 processed as an encoding declaration; the first group of this
 expression names the encoding of the source code file. The recommended
 forms of this expression are
