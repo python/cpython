@@ -30,7 +30,10 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
+extern PyObject *WinObj_WhichWindow(WindowPtr);
+
 #include <Events.h>
+#include <Desk.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
@@ -159,27 +162,30 @@ static PyObject *Evt_GetKeys(_self, _args)
 {
 	PyObject *_res = NULL;
 	KeyMap theKeys__out__;
-	int theKeys__len__;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetKeys(theKeys__out__);
 	_res = Py_BuildValue("s#",
-	                     (char *)&theKeys__out__, sizeof(KeyMap));
+	                     (char *)&theKeys__out__, (int)sizeof(KeyMap));
  theKeys__error__: ;
 	return _res;
 }
 
-static PyObject *Evt_TickCount(_self, _args)
+static PyObject *Evt_SystemClick(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
-	if (!PyArg_ParseTuple(_args, ""))
+	EventRecord theEvent;
+	WindowPtr theWindow;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetEventRecord, &theEvent,
+	                      WinObj_Convert, &theWindow))
 		return NULL;
-	_rv = TickCount();
-	_res = Py_BuildValue("l",
-	                     _rv);
+	SystemClick(&theEvent,
+	            theWindow);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -200,8 +206,8 @@ static PyMethodDef Evt_methods[] = {
 	 "() -> (Boolean _rv)"},
 	{"GetKeys", (PyCFunction)Evt_GetKeys, 1,
 	 "() -> (KeyMap theKeys)"},
-	{"TickCount", (PyCFunction)Evt_TickCount, 1,
-	 "() -> (long _rv)"},
+	{"SystemClick", (PyCFunction)Evt_SystemClick, 1,
+	 "(EventRecord theEvent, WindowPtr theWindow) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -225,4 +231,5 @@ void initEvt()
 }
 
 /* ========================= End module Evt ========================= */
+
 

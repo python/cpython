@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Menus.h'
+
 mDrawMsg = 0
 mChooseMsg = 1
 mSizeMsg = 2
@@ -9,4 +10,5 @@ hMenuCmd = 27
 hierMenu = -1
 mPopUpMsg = 3
 mctAllItems = -98
-mctLastIDIndic = -99    /*last color table entry has this in ID field*/
+mctLastIDIndic = -99
+
