@@ -549,8 +549,36 @@ posix_do_stat(self, args, format, statfunc)
 	struct stat st;
 	char *path;
 	int res;
+
+#ifdef MS_WIN32
+      int pathlen;
+      char pathcopy[MAX_PATH];
+#endif /* MS_WIN32 */
+
 	if (!PyArg_ParseTuple(args, format, &path))
 		return NULL;
+
+#ifdef MS_WIN32
+	pathlen = strlen(path);
+	/* the library call can blow up if the file name is too long! */
+	if (pathlen > MAX_PATH) {
+		errno = ENAMETOOLONG;
+		return posix_error();
+	}
+
+	if ((pathlen > 0) && (path[pathlen-1] == '\\' || path[pathlen-1] == '/')) {
+		/* exception for drive root */
+		if (!((pathlen == 3) &&
+		      (path[1] == ':') &&
+		      (path[2] == '\\' || path[2] == '/')))
+		{
+			strncpy(pathcopy, path, pathlen);
+			pathcopy[pathlen-1] = '\0'; /* nuke the trailing backslash */
+			path = pathcopy;
+		}
+	}
+#endif /* MS_WIN32 */
+
 	Py_BEGIN_ALLOW_THREADS
 	res = (*statfunc)(path, &st);
 	Py_END_ALLOW_THREADS
