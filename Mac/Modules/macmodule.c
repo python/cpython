@@ -72,6 +72,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #if defined(MPW) || defined(USE_GUSI)
 #define WEHAVE_DUP
 #endif
+#if defined(USE_GUSI)
+#define WEHAVE_FSTAT
+#endif
 
 #include "macdefs.h"
 #ifdef USE_GUSI
@@ -449,7 +452,6 @@ mac_stat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-#if 1
 	return Py_BuildValue("(lllllllddd)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
@@ -461,8 +463,25 @@ mac_stat(self, args)
 		    (double)st.st_atime,
 		    (double)st.st_mtime,
 		    (double)st.st_ctime);
-#else
-	return Py_BuildValue("(llllllllll)",
+}
+
+#ifdef WEHAVE_FSTAT
+static PyObject *
+mac_fstat(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	struct stat st;
+	long fd;
+	int res;
+	if (!PyArg_Parse(args, "l", &fd))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = fstat((int)fd, &st);
+	Py_END_ALLOW_THREADS
+	if (res != 0)
+		return mac_error();
+	return Py_BuildValue("(lllllllddd)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -470,11 +489,11 @@ mac_stat(self, args)
 		    (long)st.st_uid,
 		    (long)st.st_gid,
 		    (long)st.st_size,
-		    (long)st.st_atime,
-		    (long)st.st_mtime,
-		    (long)st.st_ctime);
-#endif
+		    (double)st.st_atime,
+		    (double)st.st_mtime,
+		    (double)st.st_ctime);
 }
+#endif /* WEHAVE_FSTAT */
 
 static PyObject *
 mac_xstat(self, args)
@@ -502,7 +521,6 @@ mac_xstat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-#if 1
 	return Py_BuildValue("(llllllldddls#s#)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
@@ -517,22 +535,6 @@ mac_xstat(self, args)
 		    (long)mst.st_rsize,
 		    mst.st_creator, 4,
 		    mst.st_type, 4);
-#else
-	return Py_BuildValue("(llllllllllls#s#)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (long)st.st_atime,
-		    (long)st.st_mtime,
-		    (long)st.st_ctime,
-		    (long)mst.st_rsize,
-		    mst.st_creator, 4,
-		    mst.st_type, 4);
-#endif
 }
 
 static PyObject *
@@ -597,6 +599,9 @@ static struct PyMethodDef mac_methods[] = {
 #endif
 #ifdef WEHAVE_FDOPEN
 	{"fdopen",	mac_fdopen},
+#endif
+#ifdef WEHAVE_FSTAT
+	{"fstat",	mac_fstat},
 #endif
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
