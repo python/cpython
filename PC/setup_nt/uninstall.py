@@ -21,17 +21,17 @@ import win32con
 def rmkey(parent, key, level=0):
     sep = "    "*level
     try:
-	handle = win32api.RegOpenKey(parent, key)
+        handle = win32api.RegOpenKey(parent, key)
     except win32api.error, msg:
-	print sep + "No key", `key`
-	return
+        print sep + "No key", `key`
+        return
     print sep + "Removing key", key
     while 1:
-	try:
-	    subkey = win32api.RegEnumKey(handle, 0)
-	except win32api.error, msg:
-	    break
-	rmkey(handle, subkey, level+1)
+        try:
+            subkey = win32api.RegEnumKey(handle, 0)
+        except win32api.error, msg:
+            break
+        rmkey(handle, subkey, level+1)
     win32api.RegCloseKey(handle)
     win32api.RegDeleteKey(parent, key)
     print sep + "Done with", key
@@ -47,25 +47,25 @@ def rmtree(dir, level=0):
     sep = "    "*level
     print sep+"rmtree", dir
     for name in os.listdir(dir):
-	if level == 0 and \
-	   os.path.normcase(name) == os.path.normcase("uninstall.bat"):
-	    continue
-	fn = os.path.join(dir, name)
-	if os.path.isdir(fn):
-	    rmtree(fn, level+1)
-	else:
-	    try:
-		os.remove(fn)
-	    except os.error, msg:
-		print sep+"  can't remove", `fn`, msg
-	    else:
-		print sep+"  removed", `fn`
+        if level == 0 and \
+           os.path.normcase(name) == os.path.normcase("uninstall.bat"):
+            continue
+        fn = os.path.join(dir, name)
+        if os.path.isdir(fn):
+            rmtree(fn, level+1)
+        else:
+            try:
+                os.remove(fn)
+            except os.error, msg:
+                print sep+"  can't remove", `fn`, msg
+            else:
+                print sep+"  removed", `fn`
     try:
-	os.rmdir(dir)
+        os.rmdir(dir)
     except os.error, msg:
-	print sep+"can't remove directory", `dir`, msg
+        print sep+"can't remove directory", `dir`, msg
     else:
-	print sep+"removed directory", `dir`	
+        print sep+"removed directory", `dir`    
 
 pwd = os.getcwd()
 scriptdir = os.path.normpath(os.path.join(pwd, os.path.dirname(sys.argv[0])))

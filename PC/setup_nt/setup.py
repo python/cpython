@@ -27,41 +27,41 @@ while 1:
     pwd = nt.getcwd()
     ##print "Could it be", `pwd`, "?"
     try:
-	open("Lib\\os.py").close()
-	##print "It appears so."
-	break
+        open("Lib\\os.py").close()
+        ##print "It appears so."
+        break
     except IOError:
-	##print "Hm, it doesn't appear to be.  Try the parent directory."
-	try:
-	    opwd = pwd
-	    nt.chdir("..")
-	    pwd = nt.getcwd()
-	    if opwd == pwd:
-		##print "Seems like we're in the root already."
-		raise nt.error
-	except nt.error:
-	    ##print "Can't chdir to the parent -- we're stuck."
-	    pass
-	else:
-	    ##print "Try again one level higher."
-	    continue
-	print "Hey, would you like to help?"
-	print "Please enter the pathname of the Python root."
-	while 1:
-	    try:
-		dirname = raw_input("Python root: ")
-	    except EOFError:
-		print "OK, I give up."
-		sys.exit(1)
-	    if not dirname:
-		continue
-	    try:
-		nt.chdir(dirname)
-	    except nt.error:
-		print "That directory doesn't seem to exist."
-		print "Please try again."
-	    else:
-		break
+        ##print "Hm, it doesn't appear to be.  Try the parent directory."
+        try:
+            opwd = pwd
+            nt.chdir("..")
+            pwd = nt.getcwd()
+            if opwd == pwd:
+                ##print "Seems like we're in the root already."
+                raise nt.error
+        except nt.error:
+            ##print "Can't chdir to the parent -- we're stuck."
+            pass
+        else:
+            ##print "Try again one level higher."
+            continue
+        print "Hey, would you like to help?"
+        print "Please enter the pathname of the Python root."
+        while 1:
+            try:
+                dirname = raw_input("Python root: ")
+            except EOFError:
+                print "OK, I give up."
+                sys.exit(1)
+            if not dirname:
+                continue
+            try:
+                nt.chdir(dirname)
+            except nt.error:
+                print "That directory doesn't seem to exist."
+                print "Please try again."
+            else:
+                break
 pwd = nt.getcwd()
 print "Python root directory is", pwd
 sys.path[1:] = [".\\Lib", ".\\Lib\win", ".\\Bin", ".\\vc40"]
@@ -80,49 +80,49 @@ except ImportError:
     print "Beh.  We have win32api but not win32con."
     print "Making do with a dummy."
     class win32con:
-	REG_NOTIFY_CHANGE_ATTRIBUTES = 0x00000002L
-	REG_NOTIFY_CHANGE_SECURITY = 0x00000008L
-	REG_RESOURCE_REQUIREMENTS_LIST = 10
-	REG_NONE = 0
-	REG_SZ = 1
-	REG_EXPAND_SZ = 2
-	REG_BINARY = 3
-	REG_DWORD = 4
-	REG_DWORD_LITTLE_ENDIAN = 4
-	REG_DWORD_BIG_ENDIAN = 5
-	REG_LINK = 6
-	REG_MULTI_SZ = 7
-	REG_RESOURCE_LIST = 8
-	REG_FULL_RESOURCE_DESCRIPTOR = 9
-	HKEY_CLASSES_ROOT = 0x80000000
-	HKEY_CURRENT_USER = 0x80000001
-	HKEY_LOCAL_MACHINE = 0x80000002
-	HKEY_USERS = 0x80000003
-	HKEY_PERFORMANCE_DATA = 0x80000004
-	HKEY_PERFORMANCE_TEXT = 0x80000050
-	HKEY_PERFORMANCE_NLSTEXT = 0x80000060
+        REG_NOTIFY_CHANGE_ATTRIBUTES = 0x00000002L
+        REG_NOTIFY_CHANGE_SECURITY = 0x00000008L
+        REG_RESOURCE_REQUIREMENTS_LIST = 10
+        REG_NONE = 0
+        REG_SZ = 1
+        REG_EXPAND_SZ = 2
+        REG_BINARY = 3
+        REG_DWORD = 4
+        REG_DWORD_LITTLE_ENDIAN = 4
+        REG_DWORD_BIG_ENDIAN = 5
+        REG_LINK = 6
+        REG_MULTI_SZ = 7
+        REG_RESOURCE_LIST = 8
+        REG_FULL_RESOURCE_DESCRIPTOR = 9
+        HKEY_CLASSES_ROOT = 0x80000000
+        HKEY_CURRENT_USER = 0x80000001
+        HKEY_LOCAL_MACHINE = 0x80000002
+        HKEY_USERS = 0x80000003
+        HKEY_PERFORMANCE_DATA = 0x80000004
+        HKEY_PERFORMANCE_TEXT = 0x80000050
+        HKEY_PERFORMANCE_NLSTEXT = 0x80000060
 
 
 def listtree(handle, level=0):
     i = 0
     while 1:
-	try:
-	    key = win32api.RegEnumKey(handle, i)
-	except win32api.error:
-	    break
-	try:
-	    value = win32api.RegQueryValue(handle, key)
-	except win32api.error, msg:
-	    try:
-		msg = msg[2]
-	    except:
-		pass
-	    value = "*** Error: %s" % str(msg)
-	print "    "*level + "%s: %s" % (key, value)
-	subhandle = win32api.RegOpenKey(handle, key)
-	listtree(subhandle, level+1)
-	win32api.RegCloseKey(subhandle)
-	i = i+1
+        try:
+            key = win32api.RegEnumKey(handle, i)
+        except win32api.error:
+            break
+        try:
+            value = win32api.RegQueryValue(handle, key)
+        except win32api.error, msg:
+            try:
+                msg = msg[2]
+            except:
+                pass
+            value = "*** Error: %s" % str(msg)
+        print "    "*level + "%s: %s" % (key, value)
+        subhandle = win32api.RegOpenKey(handle, key)
+        listtree(subhandle, level+1)
+        win32api.RegCloseKey(subhandle)
+        i = i+1
 
 roothandle = win32con.HKEY_LOCAL_MACHINE
 pythonkey = "Software\\Python"
@@ -156,11 +156,11 @@ except win32api.error, msg:
 path = []
 pwd = nt.getcwd()
 for i in ["Bin",
-	  "Lib",
-	  "Lib\\win",
-	  "Lib\\tkinter",
-	  "Lib\\test",
-	  "Lib\\dos_8x3"]:
+          "Lib",
+          "Lib\\win",
+          "Lib\\tkinter",
+          "Lib\\test",
+          "Lib\\dos_8x3"]:
     i = pwd + "\\" + i
     path.append(i)
 sys.path[1:] = path
@@ -181,9 +181,9 @@ try:
 except win32api.error, msg:
     uihandle = win32api.RegCreateKey(roothandle, uninstallkey)
 win32api.RegSetValueEx(uihandle, "DisplayName", None, win32con.REG_SZ,
-		       "Python "+sys.winver)
+                       "Python "+sys.winver)
 win32api.RegSetValueEx(uihandle, "UninstallString", None, win32con.REG_SZ,
-		       uninstaller)
+                       uninstaller)
 win32api.RegCloseKey(uihandle)
 
 print "Registering Python Interpreter as shell for *.py files..."
@@ -195,7 +195,7 @@ sz = win32con.REG_SZ
 win32api.RegSetValue(root, ".py", sz, "Python.Script")
 win32api.RegSetValue(root , "Python.Script", sz, "Python Script")
 win32api.RegSetValue(root , "Python.Script\\Shell\\Open\\Command", sz,
-		     interpreter)
+                     interpreter)
 
 import compileall
 print "Compiling all library modules..."
@@ -250,10 +250,10 @@ Most common functions:
         Get the (unnamed) value stored as key in handle
     RegSetValue(handle, subkey, type, value)
         Set the (unnamed) value stored as key in handle, with given
-	type; type should be REG_SZ
+        type; type should be REG_SZ
     RegSetValueEx(handle, name, reserved, type, value)
         Set the value with given name to the given type and value;
-	currently reserved is ignored and type should be REG_SZ
+        currently reserved is ignored and type should be REG_SZ
 
 Functions to list directory contents (start counting at 0, fail if done):
     RegEnumKey(handle, i)
