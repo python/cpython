@@ -245,6 +245,14 @@ if str(a * 0) != '':
     raise TestFailed, 'repeated buffer zero times has wrong content'
 if str(a + buffer('def')) != 'asdfdef':
     raise TestFailed, 'concatenation of buffers yields wrong content'
+if str(buffer(a)) != 'asdf':
+    raise TestFailed, 'composing buffers failed'
+if str(buffer(a, 2)) != 'df':
+    raise TestFailed, 'specifying buffer offset failed'
+if str(buffer(a, 0, 2)) != 'as':
+    raise TestFailed, 'specifying buffer size failed'
+if str(buffer(a, 1, 2)) != 'sd':
+    raise TestFailed, 'specifying buffer offset and size failed'
 
 try: a[1] = 'g'
 except TypeError: pass
