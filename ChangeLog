@@ -1,4 +1,23 @@
 ========================================================================
+Release of 1.0.0 BETA 4 (Jan 5 1994)
+========================================================================
+
+Wed Jan  5 01:21:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README, version.c: bumped version to 1.0.0 BETA 4
+
+	* README: removed all references to --with-solaris; updated list
+	of files and directories
+
+	* Modules/sunaudiodevmodule.c: define SOLARIS if
+	HAVE_SYS_AUDIOIO_H is defined
+
+	* Python/thread.c: define SOLARIS if HAVE_THREAD_H is defined
+
+	* configure.in: added test for <thread.h> (SOLARIS thread
+	interface); remvoe test for --with-solaris
+
+========================================================================
 Release of 1.0.0 BETA 3 (Jan 5 1994)
 ========================================================================
 
