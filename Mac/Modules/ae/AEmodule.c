@@ -30,20 +30,44 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
+extern PyObject *WinObj_WhichWindow(WindowPtr);
+
 #include <AppleEvents.h>
 
 #ifdef THINK_C
+#define AEIdleProcPtr IdleProcPtr
 #define AEFilterProcPtr EventFilterProcPtr
 #define AEEventHandlerProcPtr EventHandlerProcPtr
 #endif
 
+#ifndef __MWERKS__
+/* Actually, this is "if not universal headers".
+** I'm trying to setup the code here so that is easily automated,
+** as follows:
+** - Use the UPP in the source
+** - for pre-universal headers, #define each UPP as the corresponding ProcPtr
+** - for each routine we pass we declare a upp_xxx that
+**   we initialize to the correct value in the init routine.
+*/
+#define AEIdleUPP AEIdleProcPtr
+#define AEFilterUPP AEFilterProcPtr
+#define AEEventHandlerUPP AEEventHandlerProcPtr
+#define NewAEIdleProc(x) (x)
+#define NewAEFilterProc(x) (x)
+#define NewAEEventHandlerProc(x) (x)
+#endif
+
 static pascal OSErr GenericEventHandler(); /* Forward */
+
+AEEventHandlerUPP upp_GenericEventHandler;
 
 static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHandle *mouseRgn)
 {
 	(void) PyMac_Idle();
 	return 0;
 }
+
+AEIdleUPP upp_AEIdleProc;
 
 static PyObject *AE_Error;
 
@@ -733,8 +757,8 @@ static PyObject *AEDesc_AESend(_self, _args)
 	              sendMode,
 	              sendPriority,
 	              timeOutInTicks,
-	              AEIdleProc,
-	              (AEFilterProcPtr)0);
+	              upp_AEIdleProc,
+	              (AEFilterUPP)0);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &reply);
@@ -778,7 +802,7 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AppleEvent reply;
-	AEEventHandlerProcPtr dispatcher__proc__ = GenericEventHandler;
+	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
 	PyObject *dispatcher;
 	if (!PyArg_ParseTuple(_args, "O&O",
 	                      AEDesc_Convert, &reply,
@@ -790,6 +814,7 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	Py_INCREF(dispatcher); /* XXX leak, but needed */
 	return _res;
 }
 
@@ -1103,7 +1128,7 @@ static PyObject *AE_AEInteractWithUser(_self, _args)
 		return NULL;
 	_err = AEInteractWithUser(timeOutInTicks,
 	                          (NMRecPtr)0,
-	                          AEIdleProc);
+	                          upp_AEIdleProc);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1118,7 +1143,7 @@ static PyObject *AE_AEInstallEventHandler(_self, _args)
 	OSErr _err;
 	AEEventClass theAEEventClass;
 	AEEventID theAEEventID;
-	AEEventHandlerProcPtr handler__proc__ = GenericEventHandler;
+	AEEventHandlerUPP handler__proc__ = upp_GenericEventHandler;
 	PyObject *handler;
 	if (!PyArg_ParseTuple(_args, "O&O&O",
 	                      PyMac_GetOSType, &theAEEventClass,
@@ -1132,6 +1157,7 @@ static PyObject *AE_AEInstallEventHandler(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	Py_INCREF(handler); /* XXX leak, but needed */
 	return _res;
 }
 
@@ -1149,7 +1175,7 @@ static PyObject *AE_AERemoveEventHandler(_self, _args)
 		return NULL;
 	_err = AERemoveEventHandler(theAEEventClass,
 	                            theAEEventID,
-	                            GenericEventHandler,
+	                            upp_GenericEventHandler,
 	                            0);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
@@ -1243,6 +1269,9 @@ void initAE()
 	PyObject *d;
 
 
+
+		upp_AEIdleProc = NewAEIdleProc(AEIdleProc);
+		upp_GenericEventHandler = NewAEEventHandlerProc(GenericEventHandler);
 
 
 	m = Py_InitModule("AE", AE_methods);
