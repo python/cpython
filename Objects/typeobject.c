@@ -190,7 +190,7 @@ PyType_GenericAlloc(PyTypeObject *type, int nitems)
 	const size_t size = _PyObject_VAR_SIZE(type, nitems);
 
 	if (PyType_IS_GC(type))
-		obj = _PyObject_GC_Malloc(type, nitems);
+		obj = _PyObject_GC_Malloc(size);
 	else
 		obj = PyObject_MALLOC(size);
 
@@ -1187,12 +1187,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	/* Always override allocation strategy to use regular heap */
 	type->tp_alloc = PyType_GenericAlloc;
 	if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
-		type->tp_free = _PyObject_GC_Del;
+		type->tp_free = PyObject_GC_Del;
 		type->tp_traverse = subtype_traverse;
 		type->tp_clear = base->tp_clear;
 	}
 	else
-		type->tp_free = _PyObject_Del;
+		type->tp_free = PyObject_Del;
 
 	/* Initialize the rest */
 	if (PyType_Ready(type) < 0) {
@@ -1494,7 +1494,7 @@ PyTypeObject PyType_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	type_new,				/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	PyObject_GC_Del,        		/* tp_free */
 	(inquiry)type_is_gc,			/* tp_is_gc */
 };
 
@@ -1709,7 +1709,7 @@ PyTypeObject PyBaseObject_Type = {
 	object_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,           		/* tp_free */
 };
 
 
@@ -4272,5 +4272,5 @@ PyTypeObject PySuper_Type = {
 	super_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	PyObject_GC_Del,        		/* tp_free */
 };
