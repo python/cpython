@@ -37,6 +37,16 @@ two functions and several constants.
   \exception{RuntimeError} is raised.
 \end{funcdesc}
 
+\begin{funcdesc}{MessageBeep}{\optional{type=\code{MB_OK}}}
+  Call the underlying \cfunction{MessageBeep()} function from the
+  Platform API.  This plays a sound as specified in the registry.  The
+  \var{type} argument specifies which sound to play; possible values
+  are \code{-1}, \code{MB_ICONASTERISK}, \code{MB_ICONEXCLAMATION},
+  \code{MB_ICONHAND}, \code{MB_ICONQUESTION}, and \code{MB_OK}, all
+  described below.  The value \code{-1} produces a ``simple beep'';
+  this is the final fallback if a sound cannot be played otherwise.
+  \versionadded{2.3}
+\end{funcdesc}
 
 \begin{datadesc}{SND_FILENAME}
   The \var{sound} parameter is the name of a WAV file.
@@ -109,4 +119,24 @@ winsound.PlaySound("*", winsound.SND_ALIAS)
 
 \begin{datadesc}{SND_NOWAIT}
   Return immediately if the sound driver is busy.
+\end{datadesc}
+
+\begin{datadesc}{MB_ICONASTERISK}
+  Play the \code{SystemDefault} sound.
+\end{datadesc}
+
+\begin{datadesc}{MB_ICONEXCLAMATION}
+  Play the \code{SystemExclamation} sound.
+\end{datadesc}
+
+\begin{datadesc}{MB_ICONHAND}
+  Play the \code{SystemHand} sound.
+\end{datadesc}
+
+\begin{datadesc}{MB_ICONQUESTION}
+  Play the \code{SystemQuestion} sound.
+\end{datadesc}
+
+\begin{datadesc}{MB_OK}
+  Play the \code{SystemDefault} sound.
 \end{datadesc}
