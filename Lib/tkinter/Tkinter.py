@@ -177,6 +177,7 @@ class Misc:
 		return self._nametowidget(name)
 	def after(self, ms, func=None, *args):
 		if not func:
+			# I'd rather use time.sleep(ms*0.001)
 			self.tk.call('after', ms)
 		else:
 			# XXX Disgusting hack to clean up after calling func
@@ -188,7 +189,11 @@ class Misc:
 					tk.deletecommand(tmp[0])
 			name = self._register(callit)
 			tmp.append(name)
-			self.tk.call('after', ms, name)
+			return self.tk.call('after', ms, name)
+	def after_idle(self, func, *args):
+		return apply(self.after, ('idle', func) + args)
+	def after_cancel(self, id):
+		self.tk.call('after', 'cancel', id)
 	def bell(self, displayof=None):
 		if displayof:
 			self.tk.call('bell', '-displayof', displayof)
@@ -212,7 +217,7 @@ class Misc:
 	def lower(self, belowThis=None):
 		self.tk.call('lower', self._w, belowThis)
 	def option_add(self, pattern, value, priority = None):
-		self.tk.call('option', 'add', pattern, priority)
+		self.tk.call('option', 'add', pattern, value, priority)
 	def option_clear(self):
 		self.tk.call('option', 'clear')
 	def option_get(self, name, className):
@@ -1190,6 +1195,21 @@ class Text(Widget):
 		self.tk.call(self._w, 'scan', 'mark', y)
 	def scan_dragto(self, y):
 		self.tk.call(self._w, 'scan', 'dragto', y)
+	def search(self, pattern, index, stopindex=None,
+		   forwards=None, backwards=None, exact=None,
+		   regexp=None, nocase=None, count=None):
+	    args = [self._w, 'search']
+	    if forwards: args.append('-forwards')
+	    if backwards: args.append('-backwards')
+	    if exact: args.append('-exact')
+	    if regexp: args.append('-regexp')
+	    if nocase: args.append('-nocase')
+	    if count: args.append('-count'); args.append(count)
+	    if pattern[0] == '-': args.append('--')
+	    args.append(pattern)
+	    args.append(index)
+	    if stopindex: args.append(stopindex)
+	    return apply(self.tk.call, tuple(args))
 	def tag_add(self, tagName, index1, index2=None):
 		self.tk.call(
 			self._w, 'tag', 'add', tagName, index1, index2)
@@ -1287,6 +1307,21 @@ class Image:
 class PhotoImage(Image):
 	def __init__(self, name=None, cnf={}, **kw):
 		apply(Image.__init__, (self, 'photo', name, cnf), kw)
+	def blank(self):
+		self.tk.call(self.name, 'blank')
+	def cget(self):
+		return self.tk.call(self.name, 'cget')
+	# XXX config
+	# XXX copy
+	def get(self, x, y):
+		return self.tk.call(self.name, 'get', x, y)
+	def put(self, data, to=None):
+		args = (self.name, 'put', data)
+		if to:
+			args = args + to
+		apply(self.tk.call, args)
+	# XXX read
+	# XXX write
 
 class BitmapImage(Image):
 	def __init__(self, name=None, cnf={}, **kw):
