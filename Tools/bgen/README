@@ -1,0 +1,79 @@
+BGEN -- An Experiment: Automatic Generation of Extension Modules
+================================================================
+
+This directory contains BGEN -- a package that helps in generating
+complete source code for Python extension module.  It currently also
+contains a set of examples that were generated with BGEN.  These
+examples are mostly interfaces to a number of important managers in
+the Macintosh toolbox.
+
+
+Overview of Subdirectories
+--------------------------
+
+Main subdirectories:
+
+bgen	the code generator package
+
+Example subdirectories:
+
+ae	AppleEvents
+ctl	Controls
+dlg	Dialogs
+evt	Events
+menu	Menus
+qd	QuickDraw
+res	Resources
+snd	Sound
+win	Windows
+
+
+Contents of Subdirectories
+--------------------------
+
+The contents of each example subdirectory is similar (<Foobar> is
+for instance AppleEvents, while <foo> is ae):
+
+<foo>scan.py	Scan the <Foobar>.h header, generating <foo>gen.py
+<foo>gen.py	Output of <foo>scan.py, input for <foo>support.py
+<foo>edit.py	Manually written complement of <foo>gen.py, sometimes
+<foo>support.py	Generate <Foo>module.c from <foo>gen.py and <foo>edit.py
+<Foo>module.c	The interface module, ready to be compiled
+<Foobar>.py	Symbolic constants extracted from <Foobar.h>
+
+
+Tests and Examples
+------------------
+
+Other files in these subdirectories are usually examples using the
+extension.  If there's a file t<foo>.py, it usually is a really
+boring test program.
+
+Some test programs contain pathnames that should be edited before
+trying them.
+
+Some of the less boring tests and examples:
+
+At the top level:
+
+test.py		Application mainloop, uses most Mac extensions
+
+In ae:
+
+aetools.py	Conversions between AE and Python data type
+echo.py		Dummy AE server, echoes all data back
+tell.py		Primitive AE client
+aete.py		Decode 'aete' and 'aeut' resources (incomplete)
+
+In res:
+
+listres.py	List *all* resources in current and in all res files
+copyres.py	Copy a resource file
+mkerrstrres.py	Read "errors.txt" and create a set of "Estr" resources
+
+In snd:
+
+playaiff.py	Play an AIFF file
+morse.py	Turn text into Morse code
+audiodev.py	The standard audiodev.py extended with Mac support
+Audio_mac.py	The Mac support for audiodev.py
