@@ -11,7 +11,7 @@ import MacOS
 _code = 'TEXT'
 
 from StdSuites.Text_Suite import *
-class Text_Events:
+class Text_Events(Text_Suite_Events):
 
 	pass
 

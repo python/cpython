@@ -25,13 +25,13 @@ _code_to_module = {
 
 
 _code_to_fullname = {
-	'reqd' : 'Netscape.Required_suite',
-	'CoRe' : 'Netscape.Standard_Suite',
-	'GURL' : 'Netscape.Standard_URL_suite',
-	'WWW!' : 'Netscape.WorldWideWeb_suite',
-	'MOSS' : 'Netscape.Mozilla_suite',
-	'ppnt' : 'Netscape.PowerPlant',
-	'TEXT' : 'Netscape.Text',
+	'reqd' : ('Netscape.Required_suite', 'Required_suite'),
+	'CoRe' : ('Netscape.Standard_Suite', 'Standard_Suite'),
+	'GURL' : ('Netscape.Standard_URL_suite', 'Standard_URL_suite'),
+	'WWW!' : ('Netscape.WorldWideWeb_suite', 'WorldWideWeb_suite'),
+	'MOSS' : ('Netscape.Mozilla_suite', 'Mozilla_suite'),
+	'ppnt' : ('Netscape.PowerPlant', 'PowerPlant'),
+	'TEXT' : ('Netscape.Text', 'Text'),
 }
 
 from Required_suite import *
@@ -44,12 +44,12 @@ from Text import *
 
 
 class Netscape(Required_suite_Events,
-	Standard_Suite_Events,
-	Standard_URL_suite_Events,
-	WorldWideWeb_suite_Events,
-	Mozilla_suite_Events,
-	PowerPlant_Events,
-	Text_Events,
-	aetools.TalkTo):
+		Standard_Suite_Events,
+		Standard_URL_suite_Events,
+		WorldWideWeb_suite_Events,
+		Mozilla_suite_Events,
+		PowerPlant_Events,
+		Text_Events,
+		aetools.TalkTo):
 	_signature = 'MOSS'
 
