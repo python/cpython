@@ -344,8 +344,7 @@ AIX:	A complete overhaul of the shared library support is now in
 	like "cc_r".  For full C++ module support, set CC="xlC_r" (or
 	CC="xlC" without thread support).
 
-HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
-	When using threading, you may have to add -D_REENTRANT to the
+HP-UX:	When using threading, you may have to add -D_REENTRANT to the
 	OPT variable in the top-level Makefile; reported by Pat Knight,
 	this seems to make a difference (at least for HP-UX 10.20)
 	even though pyconfig.h defines it.
@@ -419,10 +418,10 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	little tight.  To increase the stack size, edit the Makefile
 	to read: LDFLAGS = -N 48k
 
-BeOS:	Chris Herborth (chrish@qnx.com) writes:
-	See BeOS/README for notes about compiling/installing Python on
-	BeOS R3 or later.  Note that only the PowerPC platform is
-	supported for R3; both PowerPC and x86 are supported for R4.
+BeOS:	See Misc/BeOS-NOTES for notes about compiling/installing
+	Python on BeOS R3 or later.  Note that only the PowerPC
+	platform is supported for R3; both PowerPC and x86 are
+	supported for R4.
 
 Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
 	Python can be built satisfactorily on a Cray T3E but based on
