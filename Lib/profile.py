@@ -470,11 +470,11 @@ class Profile:
         saved_bias = self.bias
         self.bias = 0
         try:
-            return self._callibrate_inner(m, verbose)
+            return self._calibrate_inner(m, verbose)
         finally:
             self.bias = saved_bias
 
-    def _callibrate_inner(self, m, verbose):
+    def _calibrate_inner(self, m, verbose):
         get_time = self.get_time
 
         # Set up a test case to be run with and without profiling.  Include
