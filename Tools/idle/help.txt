@@ -2,18 +2,6 @@
 
 File menu:
 
-	New window -- create a new editing window
-	Open file... -- open an existing file from a dialog box
-	Open module... -- asks for a module name, finds it on sys.path,
-		and opens it; if there's a selection, it's the module name
-	Class browser... -- open a class browser for the current module
-	---
-	Save -- save the current window to its associated file
-	Save As... -- save to a new file from a dialog box
-	Save Copy As... -- save to a new file without changing window name
-	---
-	Close -- close current window; asks to save if unsaved
-	Exit -- close all windows; asks to save unsaved windows
 
 Edit menu:
 
@@ -90,6 +78,6 @@ Tips:
 	to, e.g.,
 	    text['font'] = ("courier new", 10)
 
-	To change the Python syntax colors, edit the tagdefs table
-	in ColorDelegator.py; to change the shell colors, edit the
-	tagdefs table in PyShell.py.
+	To change the Python syntax colors, edit the tagdefs table in
+	ColorDelegator.py; to change the shell colors, edit the tagdefs
+	table in PyShell.py.
