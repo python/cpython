@@ -7,7 +7,6 @@ this file as a string constant.
 XXX TO DO
 
 - next/prev/index links in do_show?
-- should have files containing section headers
 - customize rcs command pathnames
 - explanation of editing somewhere
 - various embellishments, GIFs, crosslinks, hints, etc.
@@ -28,6 +27,16 @@ XXX TO DO
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
 
+SECTIONS = {
+    "1": "General information and availability",
+    "2": "Python in the real world",
+    "3": "Building Python and Other Known Bugs",
+    "4": "Programming in Python",
+    "5": "Extending Python",
+    "6": "Python's design",
+    "7": "Using Python on non-UNIX platforms",
+}
+
 class FAQServer:
 
     def __init__(self):
@@ -46,7 +55,7 @@ class FAQServer:
 
     KEYS = ['req', 'query', 'name', 'text', 'commit', 'title',
 	    'author', 'email', 'log', 'section', 'number', 'add',
-	    'version']
+	    'version', 'edit']
 
     def __getattr__(self, key):
 	if key not in self.KEYS:
@@ -108,7 +117,11 @@ class FAQServer:
 			</UL>
 			""" % section
 		    section = nsec
-		    print "<H2>Section %s</H2>" % section
+		    if SECTIONS.has_key(section):
+			stitle = SECTIONS[section]
+		    else:
+			stitle = ""
+		    print "<H2>Section %s. %s</H2>" % (section, stitle)
 		    print "<UL>"
 		print '<LI><A HREF="faq.py?req=show&name=%s">%s</A>' % (
 		    name, cgi.escape(title))
@@ -146,9 +159,13 @@ class FAQServer:
 		nsec = title[:i]
 		if nsec != section:
 		    section = nsec
-		    print "<H1>Section %s</H1>" % section
+		    if SECTIONS.has_key(section):
+			stitle = SECTIONS[section]
+		    else:
+			stitle = ""
+		    print "<H1>Section %s. %s</H1>" % (section, stitle)
 		    print "<HR>"
-		self.show(name, title, text)
+		self.show(name, title, text, edit=(self.edit != 'no'))
 	if not section:
 	    print "No FAQ entries?!?!"
 
