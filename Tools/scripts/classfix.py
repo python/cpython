@@ -186,4 +186,5 @@ def fixline(line):
 
     return head + '(' + basepart + '):' + tail
 
-main()
+if __name__ == '__main__':
+    main()

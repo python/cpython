@@ -39,4 +39,5 @@ def visit(prog, dirname, names):
         except os.error:
             pass
 
-main()
+if __name__ == '__main__':
+    main()

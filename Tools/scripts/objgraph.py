@@ -208,7 +208,8 @@ def main():
 # Use its return value as exit status.
 # Catch interrupts to avoid stack trace.
 #
-try:
-    sys.exit(main())
-except KeyboardInterrupt:
-    sys.exit(1)
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

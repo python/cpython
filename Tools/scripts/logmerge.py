@@ -177,8 +177,9 @@ def format_output(database):
         prev.append((date, working_file, rev, author))
         prevtext = text
 
-try:
-    main()
-except IOError, e:
-    if e.errno != errno.EPIPE:
-        raise
+if __name__ == '__main__':
+    try:
+        main()
+    except IOError, e:
+        if e.errno != errno.EPIPE:
+            raise

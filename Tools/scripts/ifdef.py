@@ -109,4 +109,5 @@ def process(fpi, fpo):
     if stack:
         sys.stderr.write('stack: %s\n' % stack)
 
-main()
+if __name__ == '__main__':
+    main()

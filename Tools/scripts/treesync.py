@@ -201,4 +201,5 @@ def okay(prompt, answer='ask'):
     print "Yes or No please -- try again:"
     return okay(prompt)
 
-main()
+if __name__ == '__main__':
+    main()

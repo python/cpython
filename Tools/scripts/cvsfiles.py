@@ -68,4 +68,5 @@ def getmtime(filename):
         return 0
     return st[stat.ST_MTIME]
 
-sys.exit(main())
+if __name__ == '__main__':
+    main()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
 
 import pydoc
-pydoc.cli()
+if __name__ == '__main__':
+    pydoc.cli()

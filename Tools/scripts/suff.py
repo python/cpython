@@ -26,4 +26,5 @@ def getsuffix(filename):
             suff = filename[i:]
     return suff
 
-main()
+if __name__ == '__main__':
+    main()
