@@ -23,7 +23,6 @@ extern void initerrno(void);
 extern void initimageop(void);
 extern void initmath(void);
 extern void initmd5(void);
-extern void initnew(void);
 extern void initnt(void);
 extern void initos2(void);
 extern void initoperator(void);
