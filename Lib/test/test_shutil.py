@@ -17,7 +17,7 @@ class TestShutil(unittest.TestCase):
         self.assertRaises(OSError, shutil.rmtree, filename)
 
     if (hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin'
-        and os.getenv('USER') != 'root'):
+        and not (hasattr(os, 'geteuid') and os.geteuid() == 0)):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
