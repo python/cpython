@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.70 
+# From configure.in Revision: 1.71 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1863,7 +1863,7 @@ then
 	AIX*)	LINKFORSHARED='-Wl,-bE:$(srcdir)/python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	Linux*) LINKFORSHARED="-rdynamic";;
+	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	IRIX*/6*) LINKFORSHARED="-all";;
