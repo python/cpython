@@ -1154,8 +1154,16 @@ parsenumber(struct compiling *co, char *s)
 #endif
 	if (*end == 'l' || *end == 'L')
 		return PyLong_FromString(s, (char **)0, 0);
-	if (s[0] == '0')
+	if (s[0] == '0') {
 		x = (long) PyOS_strtoul(s, &end, 0);
+		if (x < 0 && errno == 0) {
+			if (PyErr_Warn(PyExc_DeprecationWarning,
+				       "hex/oct constants > sys.maxint "
+				       "will return positive values "
+				       "in Python 2.4 and up") < 0)
+				return NULL;
+		}
+	}
 	else
 		x = PyOS_strtol(s, &end, 0);
 	if (*end == '\0') {

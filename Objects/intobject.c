@@ -659,7 +659,7 @@ int_invert(PyIntObject *v)
 static PyObject *
 int_lshift(PyIntObject *v, PyIntObject *w)
 {
-	register long a, b;
+	long a, b, c;
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
 	if (b < 0) {
@@ -669,10 +669,20 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 	if (a == 0 || b == 0)
 		return int_pos(v);
 	if (b >= LONG_BIT) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "x<<y losing bits or changing sign "
+			       "will return a long in Python 2.4 and up") < 0)
+			return NULL;
 		return PyInt_FromLong(0L);
 	}
-	a = (long)((unsigned long)a << b);
-	return PyInt_FromLong(a);
+	c = (long)((unsigned long)a << b);
+	if ((c >> b) != a || (c < 0 && a > 0)) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "x<<y losing bits or changing sign "
+			       "will return a long in Python 2.4 and up") < 0)
+			return NULL;
+	}
+	return PyInt_FromLong(c);
 }
 
 static PyObject *
@@ -761,6 +771,12 @@ int_oct(PyIntObject *v)
 {
 	char buf[100];
 	long x = v -> ob_ival;
+	if (x < 0) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "hex()/oct() of negative int will return "
+			       "a signed string in Python 2.4 and up") < 0)
+			return NULL;
+	}
 	if (x == 0)
 		strcpy(buf, "0");
 	else
@@ -773,6 +789,12 @@ int_hex(PyIntObject *v)
 {
 	char buf[100];
 	long x = v -> ob_ival;
+	if (x < 0) {
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "hex()/oct() of negative int will return "
+			       "a signed string in Python 2.4 and up") < 0)
+			return NULL;
+	}
 	PyOS_snprintf(buf, sizeof(buf), "0x%lx", x);
 	return PyString_FromString(buf);
 }
