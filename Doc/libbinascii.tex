@@ -1,16 +1,16 @@
-\section{Built-in Module \sectcode{binascii}}
+\section{Built-in Module \module{binascii}}
 \label{module-binascii}
 \bimodindex{binascii}
 
-The binascii module contains a number of methods to convert between
-binary and various ascii-encoded binary representations. Normally, you
-will not use these modules directly but use wrapper modules like
-\var{uu} or \var{hexbin} in stead, this module solely exists because
-bit-manipuation of large amounts of data is slow in python.
+The \module{binascii} module contains a number of methods to convert
+between binary and various \ASCII{}-encoded binary
+representations. Normally, you will not use these modules directly but
+use wrapper modules like \module{uu}\refstmodindex{uu} or
+\module{hexbin}\refstmodindex{hexbin} instead, this module solely
+exists because bit-manipuation of large amounts of data is slow in
+Python.
 
-The \code{binascii} module defines the following functions:
-
-\setindexsubitem{(in module binascii)}
+The \module{binascii} module defines the following functions:
 
 \begin{funcdesc}{a2b_uu}{string}
 Convert a single line of uuencoded data back to binary and return the
@@ -19,9 +19,9 @@ last line. Line data may be followed by whitespace.
 \end{funcdesc}
 
 \begin{funcdesc}{b2a_uu}{data}
-Convert binary data to a line of ascii characters, the return value is
-the converted line, including a newline char. The length of \var{data}
-should be at most 45.
+Convert binary data to a line of \ASCII{} characters, the return value
+is the converted line, including a newline char. The length of
+\var{data} should be at most 45.
 \end{funcdesc}
 
 \begin{funcdesc}{a2b_base64}{string}
@@ -30,15 +30,15 @@ binary data. More than one line may be passed at a time.
 \end{funcdesc}
 
 \begin{funcdesc}{b2a_base64}{data}
-Convert binary data to a line of ascii characters in base64 coding.
+Convert binary data to a line of \ASCII{} characters in base64 coding.
 The return value is the converted line, including a newline char.
 The length of \var{data} should be at most 57 to adhere to the base64
 standard.
 \end{funcdesc}
 
 \begin{funcdesc}{a2b_hqx}{string}
-Convert binhex4 formatted ascii data to binary, without doing
-rle-decompression. The string should contain a complete number of
+Convert binhex4 formatted \ASCII{} data to binary, without doing
+RLE-decompression. The string should contain a complete number of
 binary bytes, or (in case of the last portion of the binhex4 data)
 have the remaining bits zero.
 \end{funcdesc}
@@ -49,7 +49,7 @@ standard. The algorithm uses \code{0x90} after a byte as a repeat
 indicator, followed by a count. A count of \code{0} specifies a byte
 value of \code{0x90}. The routine returns the decompressed data,
 unless data input data ends in an orphaned repeat indicator, in which
-case the \var{Incomplete} exception is raised.
+case the \exception{Incomplete} exception is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{rlecode_hqx}{data}
@@ -58,9 +58,9 @@ result.
 \end{funcdesc}
 
 \begin{funcdesc}{b2a_hqx}{data}
-Perform hexbin4 binary-to-ascii translation and return the resulting
-string. The argument should already be rle-coded, and have a length
-divisible by 3 (except possibly the last fragment).
+Perform hexbin4 binary-to-\ASCII{} translation and return the
+resulting string. The argument should already be RLE-coded, and have a
+length divisible by 3 (except possibly the last fragment).
 \end{funcdesc}
 
 \begin{funcdesc}{crc_hqx}{data, crc}
@@ -74,5 +74,6 @@ Exception raised on errors. These are usually programming errors.
 
 \begin{excdesc}{Incomplete}
 Exception raised on incomplete data. These are usually not programming
-errors, but handled by reading a little more data and trying again.
+errors, but may be handled by reading a little more data and trying
+again.
 \end{excdesc}
