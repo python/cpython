@@ -168,6 +168,7 @@ bitsperpixel = { \
 	  'grey4': 4, \
 	  'grey2': 2, \
 	  'mono': 1, \
+	  'compress': 32, \
 }
 
 bppafterdecomp = {'jpeg': 32, 'jpeggrey': 8}
@@ -288,7 +289,9 @@ class VideoParams:
 		self.setpf(values[3])
 		self.setsize(values[1], values[2])
 		(self.c0bits, self.c1bits, self.c2bits, \
-			  self.offset, self.chrompack) = values[4:]
+			  self.offset, self.chrompack) = values[4:9]
+		if self.format == 'compress':
+			self.compressheader = values[9]
 		self.setderived()
 
 	# Retrieve all parameters in a format suitable for a subsequent
@@ -342,6 +345,7 @@ class Displayer(VideoParams):
 		self.color0 = None	# magic, used by clearto()
 		self.fixcolor0 = 0	# don't need to fix color0
 		self.mustunpack = (not support_packed_pixels())
+		self.decompressor = None
 		return self
 
 	# setinfo() must reset some internal flags
@@ -370,6 +374,19 @@ class Displayer(VideoParams):
 			import jpeg
 			data, width, height, bytes = jpeg.decompress(data)
 			pmsize = bytes*8
+		elif self.format == 'compress':
+			if not self.decompressor:
+				import cl, CL
+				scheme = cl.QueryScheme(self.compressheader)
+				self.decompressor = cl.OpenDecompressor(scheme)
+				headersize = self.decompressor.ReadHeader(self.compressheader)
+				width = self.decompressor.GetParam(CL.IMAGE_WIDTH)
+				height = self.decompressor.GetParam(CL.IMAGE_HEIGHT)
+				params = [CL.ORIGINAL_FORMAT, CL.RGBX, \
+					  CL.ORIENTATION, CL.BOTTOM_UP, \
+					  CL.FRAME_BUFFER_SIZE, width*height*CL.BytesPerPixel(CL.RGBX)]
+				self.decompressor.SetParams(params)
+			data = self.decompressor.Decompress(1, data)
 		elif self.format in ('mono', 'grey4'):
 			if self.mustunpack:
 				if self.format == 'mono':
@@ -422,7 +439,7 @@ class Displayer(VideoParams):
 		self.colormapinited = 1
 		self.color0 = None
 		self.fixcolor0 = 0
-		if self.format in ('rgb', 'jpeg'):
+		if self.format in ('rgb', 'jpeg', 'compress'):
 			gl.RGBmode()
 			gl.gconfig()
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
@@ -568,6 +585,7 @@ def readfileheader(fp, filename):
 		# XXX Could be version 0.0 without identifying header
 		raise Error, \
 			filename + ': Unrecognized file header: ' + `line`[:20]
+	compressheader = None
 	#
 	# Get color encoding info
 	# (The format may change to 'rgb' later when packfactor == 0)
@@ -598,6 +616,11 @@ def readfileheader(fp, filename):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0
 			offset = 0
+		elif format == 'compress':
+			c0bits = c1bits = c2bits = 0
+			chrompack = 0
+			offset = 0
+			compressheader = rest
 		elif format in ('grey', 'jpeggrey', 'mono', 'grey2', 'grey4'):
 			c0bits = rest
 			c1bits = c2bits = 0
@@ -650,7 +673,7 @@ def readfileheader(fp, filename):
 	# Return (version, values)
 	#
 	values = (format, width, height, packfactor, \
-		  c0bits, c1bits, c2bits, offset, chrompack)
+		  c0bits, c1bits, c2bits, offset, chrompack, compressheader)
 	return (version, values)
 
 
