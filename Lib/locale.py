@@ -164,13 +164,13 @@ def atof(string,func=float):
     #First, get rid of the grouping
     ts = localeconv()['thousands_sep']
     if ts:
-        str = str.replace(ts, '')
+        string = string.replace(ts, '')
     #next, replace the decimal point with a dot
     dd = localeconv()['decimal_point']
     if dd:
-        str = str.replace(dd, '.')
+        string = string.replace(dd, '.')
     #finally, parse the string
-    return func(str)
+    return func(string)
 
 def atoi(str):
     "Converts a string to an integer according to the locale settings."
