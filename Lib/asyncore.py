@@ -54,7 +54,7 @@ import types
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
-     ENOTCONN, ESHUTDOWN  
+     ENOTCONN, ESHUTDOWN
 
 try:
     socket_map
