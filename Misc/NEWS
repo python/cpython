@@ -122,6 +122,10 @@ Extension modules
   Subsumed the times() function into repeat().
   Added chain() and cycle().
 
+- The rotor module is now deprecated; the encryption algorithm it uses 
+  is not believed to be secure, and including crypto code with Python
+  has implications for exporting and importing it in various countries.
+
 - The socket module now always uses the _socketobject wrapper class, even on
   platforms which have dup(2).  The makefile() method is built directly
   on top of the socket without duplicating the file descriptor, allowing
