@@ -165,6 +165,24 @@ What a mess!
                         ["this-is-a-useful-feature-for-reformatting-",
                          "posts-from-tim-peters'ly"])
 
+    def test_hyphenated_numbers(self):
+        # Test that hyphenated numbers (eg. dates) are not broken like words.
+        text = ("Python 1.0.0 was released on 1994-01-26.  Python 1.0.1 was\n"
+                "released on 1994-02-15.")
+
+        self.check_wrap(text, 30, ['Python 1.0.0 was released on',
+                                   '1994-01-26.  Python 1.0.1 was',
+                                   'released on 1994-02-15.'])
+        self.check_wrap(text, 40, ['Python 1.0.0 was released on 1994-01-26.',
+                                   'Python 1.0.1 was released on 1994-02-15.'])
+
+        text = "I do all my shopping at 7-11."
+        self.check_wrap(text, 25, ["I do all my shopping at",
+                                   "7-11."])
+        self.check_wrap(text, 27, ["I do all my shopping at",
+                                   "7-11."])
+        self.check_wrap(text, 29, ["I do all my shopping at 7-11."])
+
     def test_em_dash(self):
         # Test text with em-dashes
         text = "Em-dashes should be written -- thus."
