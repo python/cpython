@@ -915,8 +915,9 @@ class Differ:
         Example:
 
         >>> d = Differ()
-        >>> d._fancy_replace(['abcDefghiJkl\n'], 0, 1, ['abcdefGhijkl\n'], 0, 1)
-        >>> print ''.join(d.results),
+        >>> results = d._fancy_replace(['abcDefghiJkl\n'], 0, 1,
+        ...                            ['abcdefGhijkl\n'], 0, 1)
+        >>> print ''.join(results),
         - abcDefghiJkl
         ?    ^  ^  ^
         + abcdefGhijkl
@@ -1022,9 +1023,9 @@ class Differ:
         Example:
 
         >>> d = Differ()
-        >>> d._qformat('\tabcDefghiJkl\n', '\t\tabcdefGhijkl\n',
-        ...            '  ^ ^  ^      ', '+  ^ ^  ^      ')
-        >>> for line in d.results: print repr(line)
+        >>> results = d._qformat('\tabcDefghiJkl\n', '\t\tabcdefGhijkl\n',
+        ...                      '  ^ ^  ^      ', '+  ^ ^  ^      ')
+        >>> for line in results: print repr(line)
         ...
         '- \tabcDefghiJkl\n'
         '? \t ^ ^  ^\n'
