@@ -162,6 +162,9 @@ def unpack(desc):
 		return mkkeyword(desc.data)
 	if t == typeLongInteger:
 		return struct.unpack('l', desc.data)[0]
+	if t == typeLongDateTime:
+		a, b = struct.unpack('lL', desc.data)
+		return (long(a) << 32) + b
 	if t == typeNull:
 		return None
 	if t == typeMagnitude:
