@@ -143,6 +143,9 @@ Core and builtins
 
 Extension modules
 
+- The strptime function in the time module is now always available (a
+  Python implementation is used when the C library doesn't define it).
+
 - The 'new' module is no longer an extension, but a Python module that
   only exists for backwards compatibility.  Its contents are no longer
   functions but callable type objects.
@@ -197,7 +200,9 @@ Library
 - Sockets now support timeout mode.  After s.settimeout(T), where T is
   a float expressing seconds, subsequent operations raise an exception
   if they cannot be completed within T seconds.  To disable timeout
-  mode, use s.settimeout(None).
+  mode, use s.settimeout(None).  There's also a module function,
+  socket.setdefaulttimeout(T), which sets the default for all sockets
+  created henceforth.
 
 - getopt.gnu_getopt was added.  This supports GNU-style option
   processing, where options can be mixed with non-option arguments.
