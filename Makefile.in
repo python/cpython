@@ -262,7 +262,7 @@ maninstall:
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
 MACHDEPS=	$(PLATDIR)
-XMLLIBSUBDIRS=  xml xml/dom xml/parser xml/sax
+XMLLIBSUBDIRS=  xml xml/dom xml/parsers xml/sax
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output encodings \
 		distutils distutils/command $(XMLLIBSUBDIRS) curses $(MACHDEPS)
 libinstall:	python $(srcdir)/Lib/$(PLATDIR)
