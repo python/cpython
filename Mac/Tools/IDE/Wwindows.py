@@ -78,12 +78,6 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 	def isvisible(self):
 		return self.wid.IsWindowVisible()
 	
-	def getbounds(self):
-		if 0:	#self.isvisible():
-			self.wid.GetWindowContentRgn(scratchRegion)
-			self._globalbounds = GetRgnBounds(scratchRegion)
-		return self._globalbounds
-		
 	def select(self):
 		self.wid.SelectWindow()
 		# not sure if this is the best place, I need it when
@@ -143,6 +137,14 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 	def domenu_close(self, *args):
 		self.close()
 	
+	def getbounds(self):
+		return self._globalbounds
+	
+	def setbounds(self, bounds):
+		l, t, r, b = bounds
+		self.move(l, t)
+		self.resize(r-l, b-t)
+	
 	def move(self, x, y = None):
 		"""absolute move"""
 		if y == None:
@@ -150,11 +152,12 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		self.wid.MoveWindow(x, y, 0)
 	
 	def resize(self, x, y = None):
+		if not self._hasgrowbox:
+			return  # hands off!
 		if y == None:
 			x, y = x
-		if self._hasgrowbox:
-			self.SetPort()
-			Win.InvalRect(self.getgrowrect())
+		self.SetPort()
+		Win.InvalRect(self.getgrowrect())
 		self.wid.SizeWindow(x, y, 1)
 		self._calcbounds()
 	
