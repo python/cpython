@@ -65,37 +65,38 @@ class SGMLParseError(RuntimeError):
 
 class SGMLParser:
 
-    # Interface -- initialize and reset this instance
     def __init__(self, verbose=0):
+        """Initialize and reset this instance."""
         self.verbose = verbose
         self.reset()
 
-    # Interface -- reset this instance.  Loses all unprocessed data
     def reset(self):
+        """Reset this instance. Loses all unprocessed data."""
         self.rawdata = ''
         self.stack = []
         self.lasttag = '???'
         self.nomoretags = 0
         self.literal = 0
 
-    # For derived classes only -- enter literal mode (CDATA) till EOF
     def setnomoretags(self):
+        """Enter literal mode (CDATA) till EOF.  Intended for derived
+        classes only."""
         self.nomoretags = self.literal = 1
 
-    # For derived classes only -- enter literal mode (CDATA)
     def setliteral(self, *args):
+        """Enter literal mode (CDATA).  Intended for derived classes only."""
         self.literal = 1
 
-    # Interface -- feed some data to the parser.  Call this as
-    # often as you want, with as little or as much text as you
-    # want (may include '\n').  (This just saves the text, all the
-    # processing is done by goahead().)
     def feed(self, data):
+        """Feed some data to the parser.  Call this as often as you
+        want, with as little or as much text as you want (may include
+        '\n').  (This just saves the text, all the processing is done
+        by goahead().)"""
         self.rawdata = self.rawdata + data
         self.goahead(0)
 
-    # Interface -- handle the remaining data
     def close(self):
+        """Handle the remaining data."""
         self.goahead(1)
 
     # Internal -- handle data as far as reasonable.  May leave state
@@ -407,8 +408,8 @@ class SGMLParser:
             print '*** Unbalanced </' + tag + '>'
             print '*** Stack:', self.stack
 
-    # Example -- handle character reference, no need to override
     def handle_charref(self, name):
+        """Handle character reference, no need to override."""
         try:
             n = int(name)
         except ValueError:
@@ -423,8 +424,12 @@ class SGMLParser:
     entitydefs = \
             {'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': '\''}
 
-    # Example -- handle entity reference, no need to override
     def handle_entityref(self, name):
+        """Handle entity references.
+
+        There should be no need to override this method; it can be
+        tailored by setting up the self.entitydefs mapping appropriately.
+        """
         table = self.entitydefs
         if table.has_key(name):
             self.handle_data(table[name])
