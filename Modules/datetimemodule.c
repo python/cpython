@@ -1666,7 +1666,7 @@ delta_richcompare(PyDateTime_Delta *self, PyObject *other, int op)
 {
 	int diff = 42;	/* nonsense */
 
-	if (PyDelta_CheckExact(other)) {
+	if (PyDelta_Check(other)) {
 		diff = GET_TD_DAYS(self) - GET_TD_DAYS(other);
 		if (diff == 0) {
 			diff = GET_TD_SECONDS(self) - GET_TD_SECONDS(other);
@@ -2299,7 +2299,7 @@ date_add(PyObject *left, PyObject *right)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	if (PyDate_CheckExact(left)) {
+	if (PyDate_Check(left)) {
 		/* date + ??? */
 		if (PyDelta_Check(right))
 			/* date + delta */
@@ -2328,8 +2328,8 @@ date_subtract(PyObject *left, PyObject *right)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	if (PyDate_CheckExact(left)) {
-		if (PyDate_CheckExact(right)) {
+	if (PyDate_Check(left)) {
+		if (PyDate_Check(right)) {
 			/* date - date */
 			int left_ord = ymd_to_ord(GET_YEAR(left),
 						  GET_MONTH(left),
