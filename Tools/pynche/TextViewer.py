@@ -101,7 +101,6 @@ and choosing a color.'''))
         #
         # radios
         self.__radios = []
-        val = 0
         for col in (1, 2):
             for row in (2, 3, 4):
                 # there is no insertforeground option
