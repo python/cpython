@@ -231,13 +231,15 @@ md5 md5module.c md5c.c
 # extensions), edit tkappinit.c, add appropriate -DWITH_... and
 # libraries/objects to the second line, and use that.
 #
+# Make sure to edit the -l arguments to use the correct versions!
+#
 # In all cases also enable the last line (TKPATH).
 #
 # See the section "The Tk interface" in ../README for more info.
 
 # *** Use ONE of the following two lines, see previous comments ***
 #_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk4.0 -ltcl7.4 -lX11
-#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk4.0 -ltcl7.4 -lX11
 
 # *** ALWAYS use this line as well ***
 #TKPATH=:$(DESTLIB)/tkinter
