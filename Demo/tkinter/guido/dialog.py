@@ -47,7 +47,7 @@ def dialog(master, title, text, bitmap, default, *args):
 		    padx='2m', pady='2m', ipadx='2m', ipady='1m')
 	else:
 	    b.pack (side=LEFT, expand=1,
-		    padx='3m', pady='3m', ipady='2m', ipady='1m')
+		    padx='3m', pady='3m', ipadx='2m', ipady='1m')
 	i = i+1
 
     # 4. Set up a binding for <Return>, if there's a default,
