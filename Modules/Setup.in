@@ -79,7 +79,7 @@ TESTPATH=
 # Path components for machine- or system-dependent modules and shared libraries
 MACHDEPPATH=:plat-$(MACHDEP)
 
-COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
@@ -182,26 +182,6 @@ socket socketmodule.c	# socket(2); not on ancient System V
 #audioop audioop.c	# Operations on audio samples
 #imageop imageop.c	# Operations on images
 #rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
-
-
-# The stdwin module provides a simple, portable (between X11 and Mac)
-# windowing interface.  You need to ftp the STDWIN library, e.g. from
-# ftp://ftp.cwi.nl/pub/stdwin.  (If you get it elsewhere, be sure to
-# get version 1.0 or higher!)  The STDWIN variable must point to the
-# STDWIN toplevel directory.
-
-# Uncomment and edit as needed:
-#STDWIN=/ufs/guido/src/stdwin
-
-# Uncomment these lines:
-#STDWINPATH=:lib-stdwin
-#LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
-#LIBX11STDWIN=$(STDWIN)/$(MACHDEP)/Ports/x11/libstdwin.a
-#stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBX11STDWIN) -lX11
-
-# Use this instead of the last two lines above for alphanumeric stdwin:
-#LIBALFASTDWIN=$(STDWIN)/$(MACHDEP)/Ports/alfa/libstdwin.a
-#stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBALFASTDWIN) -ltermcap
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
