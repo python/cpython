@@ -92,7 +92,7 @@
                     </SETTING>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)s:Mac:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)sMac:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
                             <SETTING><NAME>PathRoot</NAME><VALUE>%(mac_sysprefixtype)s</VALUE></SETTING>
                         </SETTING>
@@ -113,7 +113,7 @@
                     %(tmp_extrasearchdirs)s
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)s::GUSI2:include:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)s:GUSI2:include:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
                             <SETTING><NAME>PathRoot</NAME><VALUE>%(mac_sysprefixtype)s</VALUE></SETTING>
                         </SETTING>

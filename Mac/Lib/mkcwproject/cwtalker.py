@@ -23,4 +23,4 @@ class MyCodeWarrior(CodeWarrior.CodeWarrior):
 			return _arguments['----']
 
 	def my_mkproject(self, prjfile, xmlfile):
-		self.make(new=CodeWarrior.project_document, with_data=xmlfile, at=prjfile)
+		self.make(new=CodeWarrior.project_document(), with_data=xmlfile, as=prjfile)
