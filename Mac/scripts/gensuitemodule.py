@@ -360,6 +360,10 @@ def compilesuite((suite, fss, modname), major, minor, language, script, fname, b
 		# Standard_Suite or so). Import everything from our base module
 		fp.write('from %s import *\n'%basepackage._code_to_fullname[code][0])
 		basemodule = basepackage._code_to_module[code]
+	elif basepackage and basepackage._code_to_module.has_key(code.lower()):
+		# This is needed by CodeWarrior and some others.
+		fp.write('from %s import *\n'%basepackage._code_to_fullname[code.lower()][0])
+		basemodule = basepackage._code_to_module[code.lower()]
 	else:
 		# We are not an extension.
 		basemodule = None
@@ -744,7 +748,7 @@ class ObjectCompiler:
 	
 	def compileenumerator(self, item):
 		[name, code, desc] = item
-		self.fp.write("\t%s : %s,\t# %s\n" % (`name`, `code`, desc))
+		self.fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, desc))
 		
 	def checkforenum(self, enum):
 		"""This enum code is used by an event. Make sure it's available"""
