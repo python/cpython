@@ -52,15 +52,8 @@ import socket
 import sys
 
 import os
-if os.name == 'nt':
-    EWOULDBLOCK = 10035
-    EINPROGRESS = 10036
-    EALREADY    = 10037
-    ECONNRESET  = 10054
-    ENOTCONN    = 10057
-    ESHUTDOWN   = 10058
-else:
-    from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN
+from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+     ENOTCONN, ESHUTDOWN, EINTR
 
 try:
     socket_map
@@ -83,7 +76,12 @@ def poll (timeout=0.0, map=None):
                 r.append (fd)
             if obj.writable():
                 w.append (fd)
-        r,w,e = select.select (r,w,e, timeout)
+        try:
+            r,w,e = select.select (r,w,e, timeout)
+        except select.error, err:
+            if err[0] != EINTR:
+                raise
+
 
         if DEBUG:
             print r,w,e
@@ -161,7 +159,12 @@ def poll3 (timeout=0.0, map=None):
                 flags = flags | select.POLLOUT
             if flags:
                 pollster.register(fd, flags)
-        r = pollster.poll (timeout)
+        try:
+            r = pollster.poll (timeout)
+        except select.error, err:
+            if err[0] != EINTR:
+                raise
+            r = []
         for fd, flags in r:
             try:
                 obj = map[fd]
@@ -260,7 +263,8 @@ class dispatcher:
         try:
             self.socket.setsockopt (
                 socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                self.socket.getsockopt (socket.SOL_SOCKET, socket.SO_REUSEADDR) | 1
+                self.socket.getsockopt (socket.SOL_SOCKET,
+                                        socket.SO_REUSEADDR) | 1
                 )
         except:
             pass
@@ -393,7 +397,7 @@ class dispatcher:
         self.handle_expt()
 
     def handle_error (self):
-        (file,fun,line), t, v, tbinfo = compact_traceback()
+        nil, t, v, tbinfo = compact_traceback()
 
         # sometimes a user repr method will crash.
         try:
