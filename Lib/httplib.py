@@ -118,8 +118,9 @@ class HTTPResponse:
                 [version, status] = string.split(line, None, 1)
                 reason = ""
             except ValueError:
-                self.close()
-                raise BadStatusLine(line)
+                version = "HTTP/0.9"
+                status = "200"
+                reason = ""
         if version[:5] != 'HTTP/':
             self.close()
             raise BadStatusLine(line)
@@ -129,10 +130,16 @@ class HTTPResponse:
 
         if version == 'HTTP/1.0':
             self.version = 10
-        elif version[:7] == 'HTTP/1.':
+        elif version.startswith('HTTP/1.'):
             self.version = 11	# use HTTP/1.1 code for HTTP/1.x where x>=1
+        elif version == 'HTTP/0.9':
+            self.version = 9
         else:
             raise UnknownProtocol(version)
+
+        if self.version == 9:
+            self.msg = mimetools.Message(StringIO())
+            return
 
         self.msg = mimetools.Message(self.fp, 0)
         if self.debuglevel > 0:
