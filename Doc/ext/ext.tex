@@ -764,15 +764,15 @@ on some systems you have to use static loading), and dynamically
 loading a module that was compiled for a different version of Python
 (e.g., with a different representation of objects) may dump core.
 
-{\bf NEW:} Under SunOS, dynamic loading now uses SunOS shared
-libraries and is always configured.  See at the end of this chapter
-for how to create a dynamically loadable module.
+{\bf NEW:} Under SunOS (all versions) and IRIX 5.x, dynamic loading
+now uses shared libraries and is always configured.  See at the
+end of this chapter for how to create a dynamically loadable module.
 
 
 \section{Configuring and building the interpreter for dynamic loading}
 
-(Ignore this section for SunOS --- on SunOS dynamic loading is always
-configured.)
+(Ignore this section for SunOS and IRIX 5.x --- on these systems
+dynamic loading is always configured.)
 
 Dynamic loading is a little complicated to configure, since its
 implementation is extremely system dependent, and there are no
@@ -812,8 +812,7 @@ with \samp{\#DL_}, but you must also edit some of the lines to choose
 which version of dl_loadmod to use, and fill in the pathname of the dld
 library if you use it.  And, of course, you must first build
 dl_loadmod and dld, if used.  (This is now done through the Configure
-script.  For SunOS, everything is now automatic as long as the
-architecture type is \code{sun4}.)
+script.  For SunOS and IRIX 5.x, everything is now automatic.)
 
 
 \section{Building a dynamically loadable module}
@@ -853,9 +852,9 @@ On SGI Irix, the compiler flag \samp{-G0} (or \samp{-G 0}) must be passed.
 IF THIS IS NOT DONE THE RESULTING CODE WILL NOT WORK.
 
 \item
-{\bf NEW:} On SunOS, you must create a shared library from your \samp{.o}
-file using the following command (assuming your module is called
-\code{foo}):
+{\bf NEW:} On SunOS and IRIX 5.x, you must create a shared library
+from your \samp{.o} file using the following command (assuming your
+module is called \code{foo}):
 
 \begin{verbatim}
 	ld -o foomodule.so foomodule.o <any other libraries needed>
@@ -863,7 +862,7 @@ file using the following command (assuming your module is called
 
 and place the resulting \samp{.so} file in the Python search path (not
 the \samp{.o} file).  Note: on Solaris, you need to pass \samp{-G} to
-the loader.
+the loader; on IRIX 5.x, you need to pass \samp{-shared}.  Sigh...
 
 \end{itemize}
 
