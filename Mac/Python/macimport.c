@@ -380,6 +380,8 @@ packageerror:
 	HUnlock(h);
 	if ( filerh != -1 )
 		CloseResFile(filerh);
+	else
+		ReleaseResource(h);
 	UseResFile(oldrh);
 	if ( co ) {
 		m = PyImport_ExecCodeModuleEx(module, co, "<pyc resource>");
