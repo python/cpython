@@ -177,7 +177,8 @@ class EMXCCompiler (UnixCCompiler):
 
     # -- Miscellaneous methods -----------------------------------------
 
-    # overwrite the one from CCompiler to support rc and res-files
+    # override the object_filenames method from CCompiler to
+    # support rc and res-files
     def object_filenames (self,
                           source_filenames,
                           strip_dir=0,
@@ -203,6 +204,29 @@ class EMXCCompiler (UnixCCompiler):
         return obj_names
 
     # object_filenames ()
+
+    # override the find_library_file method from UnixCCompiler
+    # to deal with file naming/searching differences
+    def find_library_file(self, dirs, lib, debug=0):
+        shortlib = '%s.lib' % lib
+        longlib = 'lib%s.lib' % lib    # this form very rare
+
+        # get EMX's default library directory search path
+        try:
+            emx_dirs = os.environ['LIBRARY_PATH'].split(';')
+        except KeyError:
+            emx_dirs = []
+	
+        for dir in dirs + emx_dirs:
+            shortlibp = os.path.join(dir, shortlib)
+            longlibp = os.path.join(dir, longlib)
+            if os.path.exists(shortlibp):
+                return shortlibp
+            elif os.path.exists(longlibp):
+                return longlibp
+            
+        # Oops, didn't find it in *any* of 'dirs'
+        return None
 
 # class EMXCCompiler
 
