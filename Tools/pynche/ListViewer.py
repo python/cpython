@@ -25,12 +25,15 @@ class ListViewer:
         self.__sb = switchboard
         self.__lastbox = None
         self.__dontcenter = 0
+        # GUI
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
         root.title('Pynche %s' % __version__)
         root.iconname('Pynche Color List')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
+        root.bind('<Alt-w>', self.__withdraw)
+        root.bind('<Alt-W>', self.__withdraw)
         #
         # create the canvas which holds everything, and its scrollbar
         #

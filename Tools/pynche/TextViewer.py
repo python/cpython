@@ -29,6 +29,8 @@ class TextViewer:
         root.iconname('Pynche Text Window')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
+        root.bind('<Alt-w>', self.__withdraw)
+        root.bind('<Alt-W>', self.__withdraw)
         #
         # create the text widget
         #
