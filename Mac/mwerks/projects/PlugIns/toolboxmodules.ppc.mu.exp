@@ -17,4 +17,6 @@ QdRGB_Convert
 QdRGB_New
 ResObj_Convert
 ResObj_New
+OptResObj_Convert
+OptResObj_New
 
