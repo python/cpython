@@ -46,8 +46,6 @@ newobject(tp)
 	return op;
 }
 
-#if 0 /* unused */
-
 varobject *
 newvarobject(tp, size)
 	typeobject *tp;
@@ -56,14 +54,12 @@ newvarobject(tp, size)
 	varobject *op = (varobject *)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
 	if (op == NULL)
-		return err_nomem();
+		return (varobject *)err_nomem();
 	NEWREF(op);
 	op->ob_type = tp;
 	op->ob_size = size;
 	return op;
 }
-
-#endif
 
 int StopPrint; /* Flag to indicate printing must be stopped */
 
