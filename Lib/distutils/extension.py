@@ -160,7 +160,7 @@ def read_setup_file (filename):
             suffix = os.path.splitext(word)[1]
             switch = word[0:2] ; value = word[2:]
 
-            if suffix in (".c", ".cc", ".cpp", ".cxx", ".c++"):
+            if suffix in (".c", ".cc", ".cpp", ".cxx", ".c++", ".m", ".mm"):
                 # hmm, should we do something about C vs. C++ sources?
                 # or leave it up to the CCompiler implementation to
                 # worry about?
