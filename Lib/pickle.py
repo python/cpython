@@ -167,11 +167,11 @@ del x
 
 class Pickler:
 
-    def __init__(self, file, proto=None, bin=None):
+    def __init__(self, file, protocol=None, bin=None):
         """This takes a file-like object for writing a pickle data stream.
 
-        The optional proto argument tells the pickler to use the given
-        protocol; supported protocols are 0, 1, 2.  The default
+        The optional protocol argument tells the pickler to use the
+        given protocol; supported protocols are 0, 1, 2.  The default
         protocol is 0, to be backwards compatible.  (Protocol 0 is the
         only protocol that can be written to a file opened in text
         mode and read back successfully.  When using a protocol higher
@@ -191,22 +191,22 @@ class Pickler:
         object, or any other custom object that meets this interface.
 
         """
-        if proto is not None and bin is not None:
-            raise ValueError, "can't specify both 'proto' and 'bin' arguments"
+        if protocol is not None and bin is not None:
+            raise ValueError, "can't specify both 'protocol' and 'bin'"
         if bin is not None:
             warnings.warn("The 'bin' argument to Pickler() is deprecated",
                           PendingDeprecationWarning)
-            proto = bin
-        if proto is None:
-            proto = 0
-        if proto < 0:
-            proto = 2
-        elif proto not in (0, 1, 2):
+            protocol = bin
+        if protocol is None:
+            protocol = 0
+        if protocol < 0:
+            protocol = 2
+        elif protocol not in (0, 1, 2):
             raise ValueError, "pickle protocol must be 0, 1 or 2"
         self.write = file.write
         self.memo = {}
-        self.proto = int(proto)
-        self.bin = proto >= 1
+        self.proto = int(protocol)
+        self.bin = protocol >= 1
         self.fast = 0
 
     def clear_memo(self):
@@ -1369,12 +1369,12 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(obj, file, proto=None, bin=None):
-    Pickler(file, proto, bin).dump(obj)
+def dump(obj, file, protocol=None, bin=None):
+    Pickler(file, protocol, bin).dump(obj)
 
-def dumps(obj, proto=None, bin=None):
+def dumps(obj, protocol=None, bin=None):
     file = StringIO()
-    Pickler(file, proto, bin).dump(obj)
+    Pickler(file, protocol, bin).dump(obj)
     return file.getvalue()
 
 def load(file):
