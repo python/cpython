@@ -221,12 +221,13 @@ You can force use of your own dict as the execution context by passing
 
 \subsection{What About Exceptions?}
 
-No problem:  just paste in the expected traceback.  Since
-tracebacks contain details that are likely to change
-rapidly (for example, exact file paths and line numbers), this is one
-case where doctest works hard to be flexible in what it accepts.
-This makes the full story involved, but you really don't have
-to remember much.  Simple example:
+No problem, provided that the traceback is the only output produced by
+the example:  just paste in the traceback.  Since tracebacks contain
+details that are likely to change rapidly (for example, exact file paths
+and line numbers), this is one case where doctest works hard to be
+flexible in what it accepts.
+
+Simple example:
 
 \begin{verbatim}
 >>> [1, 2, 3].remove(42)
@@ -236,9 +237,7 @@ ValueError: list.remove(x): x not in list
 \end{verbatim}
 
 That doctest succeeds if \exception{ValueError} is raised, with the
-\samp{list.remove(x): x not in list} detail as shown.\footnote{The
-  doctest also succeeds if it prints the exact text of the traceback
-  message; otherwise, it fails.}
+\samp{list.remove(x): x not in list} detail as shown.
 
 The expected output for an exception must start with a traceback
 header, which may be either of the following two lines, indented the
@@ -250,17 +249,13 @@ Traceback (innermost last):
 \end{verbatim}
 
 The traceback header is followed by an optional traceback stack, whose
-contents are ignored by doctest.  Each line of the traceback stack
-must be indented further than the first line of the example, \emph{or}
-start with a non-alphanumeric character.  Typically, the traceback
-stack is either omitted or copied verbatim from an interactive
-session.
+contents are ignored by doctest.  The traceback stack is typically
+omitted, or copied verbatim from an interactive session.
 
-The traceback stack is followed by the most interesting part: the
+The traceback stack is followed by the most interesting part:  the
 line(s) containing the exception type and detail.  This is usually the
 last line of a traceback, but can extend across multiple lines if the
-exception has a multi-line detail, as illustrated in the following
-example:
+exception has a multi-line detail:
 
 \begin{verbatim}
 >>> raise ValueError('multi\n   line\ndetail')
@@ -276,7 +271,7 @@ compared against the exception's type and detail, and the rest are
 ignored.
 
 Best practice is to omit the traceback stack, unless it adds
-significant documentation value to the example.  So the example above
+significant documentation value to the example.  So the last example
 is probably better as:
 
 \begin{verbatim}
@@ -288,13 +283,35 @@ ValueError: multi
 detail
 \end{verbatim}
 
-Note the tracebacks are treated very specially.  In particular, in the
+Note that tracebacks are treated very specially.  In particular, in the
 rewritten example, the use of \samp{...} is independent of doctest's
-\constant{ELLIPSIS} option.  The ellipsis in that example could
-be left out, or could just as well be three (or three hundred) commas.
+\constant{ELLIPSIS} option.  The ellipsis in that example could be left
+out, or could just as well be three (or three hundred) commas or digits,
+or an indented transcript of a Monty Python skit.
+
+Some details you should read once, but won't need to remember:
+
+\begin{itemize}
+
+\item Doctest can't guess whether your expected output came from an
+  exception traceback or from ordinary printing.  So, e.g., an example
+  that expects \samp{ValueError: 42 is prime} will pass whether
+  \exception{ValueError} is actually raised or if the example merely
+  prints that traceback text.  In practice, ordinary output rarely begins
+  with a traceback header line, so this doesn't create real problems.
+
+\item Each line of the traceback stack (if present) must be indented
+  further than the first line of the example, \emph{or} start with a
+  non-alphanumeric character.  The first line following the traceback
+  header indented the same and starting with an alphanumeric is taken
+  to be the start of the exception detail.  Of course this does the
+  right thing for genuine tracebacks.
+
+\end{itemize}
 
 \versionchanged[The ability to handle a multi-line exception detail
                 was added]{2.4}
+
 
 \subsection{Option Flags and Directives\label{doctest-options}}
 
@@ -302,6 +319,10 @@ A number of option flags control various aspects of doctest's comparison
 behavior.  Symbolic names for the flags are supplied as module constants,
 which can be or'ed together and passed to various functions.  The names
 can also be used in doctest directives (see below).
+
+The first group of options define test semantics, controlling
+aspects of how doctest decides whether actual output matches an
+example's expected output:
 
 \begin{datadesc}{DONT_ACCEPT_TRUE_FOR_1}
     By default, if an expected output block contains just \code{1},
@@ -343,6 +364,8 @@ can also be used in doctest directives (see below).
     same kinds of "oops, it matched too much!" surprises that \regexp{.*}
     is prone to in regular expressions.
 \end{datadesc}
+
+The second group of options controls how test failures are displayed:
 
 \begin{datadesc}{REPORT_UDIFF}
     When specified, failures that involve multi-line expected and
@@ -406,7 +429,7 @@ For example, this test passes:
 Without the directive it would fail, both because the actual output
 doesn't have two blanks before the single-digit list elements, and
 because the actual output is on a single line.  This test also passes,
-and requires a directive to do so:
+and also requires a directive to do so:
 
 \begin{verbatim}
 >>> print range(20) # doctest:+ELLIPSIS
