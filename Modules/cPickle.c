@@ -120,10 +120,10 @@ static PyObject *extension_cache;
 static PyObject *two_tuple;
 
 /* object.__reduce__, the default reduce callable. */
-PyObject *object_reduce;
+static PyObject *object_reduce;
 
 /* copy_reg._better_reduce, the protocol 2 reduction function. */
-PyObject *better_reduce;
+static PyObject *better_reduce;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
