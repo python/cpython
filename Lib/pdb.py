@@ -1,4 +1,16 @@
-# pdb.py -- finally, a Python debugger!
+# pdb.py -- finally, a Python debugger!  See below for instructions.
+
+
+# To do:
+# - Keep a list of exceptions trapped (default only KeyboardInterrupt?)
+# - It should be possible to intercept KeyboardInterrupt completely
+# - Handle return events differently (how?)
+# - When stopping on an exception, show traceback stack
+# - Merge with tb (for post-mortem usage)
+# - Show stack traces upside-down (like dbx/gdb) ???
+#   (actually, the current way is more natural given the directions
+#   taken by the up/down commands)
+
 
 # To use the debugger in its simplest form:
 #	>>> import pdb
