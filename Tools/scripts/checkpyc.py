@@ -5,6 +5,7 @@
 import sys
 import os
 from stat import ST_MTIME
+import imp
 
 def main():
 	silent = 0
@@ -14,12 +15,7 @@ def main():
 			verbose = 1
 		elif sys.argv[1] == '-s':
 			silent = 1
-	MAGIC = '\0\0\0\0'
-	try:
-		if sys.version[:5] >= '0.9.4':
-			MAGIC = '\224\224\224\0'
-	except:
-		pass
+	MAGIC = imp.get_magic()
 	if not silent:
 		print 'Using MAGIC word', `MAGIC`
 	for dirname in sys.path:
