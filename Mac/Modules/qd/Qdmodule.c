@@ -36,6 +36,9 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 extern PyObject *GrafObj_New(GrafPtr);
 extern int GrafObj_Convert(PyObject *, GrafPtr *);
 
+extern PyObject *BMObj_New(BitMapPtr);
+extern int BMObj_Convert(PyObject *, BitMapPtr *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <QuickDraw.h>
@@ -102,6 +105,8 @@ static PyObject *GrafObj_getattr(self, name)
 {
 	if ( strcmp(name, "device") == 0 )
 				return PyInt_FromLong((long)self->ob_itself->device);
+			if ( strcmp(name, "portBits") == 0 )
+				return BMObj_New(&self->ob_itself->portBits);
 			if ( strcmp(name, "portRect") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
 			/* XXXX Add more, as needed */
@@ -125,6 +130,91 @@ PyTypeObject GrafPort_Type = {
 };
 
 /* -------------------- End object type GrafPort -------------------- */
+
+
+/* ----------------------- Object type BitMap ----------------------- */
+
+PyTypeObject BitMap_Type;
+
+#define BMObj_Check(x) ((x)->ob_type == &BitMap_Type)
+
+typedef struct BitMapObject {
+	PyObject_HEAD
+	BitMapPtr ob_itself;
+	PyObject *referred_object;
+	BitMap *referred_bitmap;
+} BitMapObject;
+
+PyObject *BMObj_New(itself)
+	BitMapPtr itself;
+{
+	BitMapObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	it = PyObject_NEW(BitMapObject, &BitMap_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	it->referred_object = NULL;
+	it->referred_bitmap = NULL;
+	return (PyObject *)it;
+}
+BMObj_Convert(v, p_itself)
+	PyObject *v;
+	BitMapPtr *p_itself;
+{
+	if (!BMObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "BitMap required");
+		return 0;
+	}
+	*p_itself = ((BitMapObject *)v)->ob_itself;
+	return 1;
+}
+
+static void BMObj_dealloc(self)
+	BitMapObject *self;
+{
+	Py_XDECREF(self->referred_object);
+	if (self->referred_bitmap) free(self->referred_bitmap);
+	PyMem_DEL(self);
+}
+
+static PyMethodDef BMObj_methods[] = {
+	{NULL, NULL, 0}
+};
+
+PyMethodChain BMObj_chain = { BMObj_methods, NULL };
+
+static PyObject *BMObj_getattr(self, name)
+	BitMapObject *self;
+	char *name;
+{
+	if ( strcmp(name, "baseAddr") == 0 )
+				return PyInt_FromLong((long)self->ob_itself->baseAddr);
+			if ( strcmp(name, "rowBytes") == 0 )
+				return PyInt_FromLong((long)self->ob_itself->rowBytes);
+			if ( strcmp(name, "bounds") == 0 )
+				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
+			/* XXXX Add more, as needed */
+			
+	return Py_FindMethodInChain(&BMObj_chain, (PyObject *)self, name);
+}
+
+#define BMObj_setattr NULL
+
+PyTypeObject BitMap_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"BitMap", /*tp_name*/
+	sizeof(BitMapObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) BMObj_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) BMObj_getattr, /*tp_getattr*/
+	(setattrfunc) BMObj_setattr, /*tp_setattr*/
+};
+
+/* --------------------- End object type BitMap --------------------- */
 
 
 static PyObject *Qd_SetPort(_self, _args)
@@ -166,6 +256,21 @@ static PyObject *Qd_GrafDevice(_self, _args)
 	                      &device))
 		return NULL;
 	GrafDevice(device);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetPortBits(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	BitMapPtr bm;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      BMObj_Convert, &bm))
+		return NULL;
+	SetPortBits(bm);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1001,6 +1106,26 @@ static PyObject *Qd_CloseRgn(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_BitMapToRegion(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	RgnHandle region;
+	BitMapPtr bMap;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &region,
+	                      BMObj_Convert, &bMap))
+		return NULL;
+	_err = BitMapToRegion(region,
+	                      bMap);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_DisposeRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1353,6 +1478,66 @@ static PyObject *Qd_ScrollRect(_self, _args)
 	           dh,
 	           dv,
 	           updateRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_CopyBits(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	BitMapPtr srcBits;
+	BitMapPtr dstBits;
+	Rect srcRect;
+	Rect dstRect;
+	short mode;
+	RgnHandle maskRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&hO&",
+	                      BMObj_Convert, &srcBits,
+	                      BMObj_Convert, &dstBits,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &dstRect,
+	                      &mode,
+	                      ResObj_Convert, &maskRgn))
+		return NULL;
+	CopyBits(srcBits,
+	         dstBits,
+	         &srcRect,
+	         &dstRect,
+	         mode,
+	         maskRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_CopyMask(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	BitMapPtr srcBits;
+	BitMapPtr maskBits;
+	BitMapPtr dstBits;
+	Rect srcRect;
+	Rect maskRect;
+	Rect dstRect;
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&O&",
+	                      BMObj_Convert, &srcBits,
+	                      BMObj_Convert, &maskBits,
+	                      BMObj_Convert, &dstBits,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &maskRect,
+	                      PyMac_GetRect, &dstRect))
+		return NULL;
+	CopyMask(srcBits,
+	         maskBits,
+	         dstBits,
+	         &srcRect,
+	         &maskRect,
+	         &dstRect);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1748,6 +1933,33 @@ static PyObject *Qd_MapPoly(_self, _args)
 	MapPoly(poly,
 	        &srcRect,
 	        &dstRect);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_StdBits(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	BitMapPtr srcBits;
+	Rect srcRect;
+	Rect dstRect;
+	short mode;
+	RgnHandle maskRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&hO&",
+	                      BMObj_Convert, &srcBits,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &dstRect,
+	                      &mode,
+	                      ResObj_Convert, &maskRgn))
+		return NULL;
+	StdBits(srcBits,
+	        &srcRect,
+	        &dstRect,
+	        mode,
+	        maskRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -2253,6 +2465,42 @@ static PyObject *Qd_QDError(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_CopyDeepMask(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	BitMapPtr srcBits;
+	BitMapPtr maskBits;
+	BitMapPtr dstBits;
+	Rect srcRect;
+	Rect maskRect;
+	Rect dstRect;
+	short mode;
+	RgnHandle maskRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&O&hO&",
+	                      BMObj_Convert, &srcBits,
+	                      BMObj_Convert, &maskBits,
+	                      BMObj_Convert, &dstBits,
+	                      PyMac_GetRect, &srcRect,
+	                      PyMac_GetRect, &maskRect,
+	                      PyMac_GetRect, &dstRect,
+	                      &mode,
+	                      ResObj_Convert, &maskRgn))
+		return NULL;
+	CopyDeepMask(srcBits,
+	             maskBits,
+	             dstBits,
+	             &srcRect,
+	             &maskRect,
+	             &dstRect,
+	             mode,
+	             maskRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_GetPattern(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2556,6 +2804,38 @@ static PyObject *Qd_CharExtra(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_BitMap(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	BitMap *ptr;
+	PyObject *source;
+	Rect bounds;
+	int rowbytes;
+	char *data;
+
+	if ( !PyArg_ParseTuple(_args, "O!iO&", &PyString_Type, &source, &rowbytes, PyMac_GetRect,
+			&bounds) )
+		return NULL;
+	data = PyString_AsString(source);
+	if ((ptr=(BitMap *)malloc(sizeof(BitMap))) == NULL )
+		return PyErr_NoMemory();
+	ptr->baseAddr = (Ptr)data;
+	ptr->rowBytes = rowbytes;
+	ptr->bounds = bounds;
+	if ( (_res = BMObj_New(ptr)) == NULL ) {
+		free(ptr);
+		return NULL;
+	}
+	((BitMapObject *)_res)->referred_object = source;
+	Py_INCREF(source);
+	((BitMapObject *)_res)->referred_bitmap = ptr;
+	return _res;
+
+}
+
 static PyMethodDef Qd_methods[] = {
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
 	 "(GrafPtr port) -> None"},
@@ -2563,6 +2843,8 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> (GrafPtr port)"},
 	{"GrafDevice", (PyCFunction)Qd_GrafDevice, 1,
 	 "(short device) -> None"},
+	{"SetPortBits", (PyCFunction)Qd_SetPortBits, 1,
+	 "(BitMapPtr bm) -> None"},
 	{"PortSize", (PyCFunction)Qd_PortSize, 1,
 	 "(short width, short height) -> None"},
 	{"MovePortTo", (PyCFunction)Qd_MovePortTo, 1,
@@ -2661,6 +2943,8 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> None"},
 	{"CloseRgn", (PyCFunction)Qd_CloseRgn, 1,
 	 "(RgnHandle dstRgn) -> None"},
+	{"BitMapToRegion", (PyCFunction)Qd_BitMapToRegion, 1,
+	 "(RgnHandle region, BitMapPtr bMap) -> None"},
 	{"DisposeRgn", (PyCFunction)Qd_DisposeRgn, 1,
 	 "(RgnHandle rgn) -> None"},
 	{"CopyRgn", (PyCFunction)Qd_CopyRgn, 1,
@@ -2699,6 +2983,10 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle rgn) -> None"},
 	{"ScrollRect", (PyCFunction)Qd_ScrollRect, 1,
 	 "(Rect r, short dh, short dv, RgnHandle updateRgn) -> None"},
+	{"CopyBits", (PyCFunction)Qd_CopyBits, 1,
+	 "(BitMapPtr srcBits, BitMapPtr dstBits, Rect srcRect, Rect dstRect, short mode, RgnHandle maskRgn) -> None"},
+	{"CopyMask", (PyCFunction)Qd_CopyMask, 1,
+	 "(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits, Rect srcRect, Rect maskRect, Rect dstRect) -> None"},
 	{"OpenPicture", (PyCFunction)Qd_OpenPicture, 1,
 	 "(Rect picFrame) -> (PicHandle _rv)"},
 	{"PicComment", (PyCFunction)Qd_PicComment, 1,
@@ -2745,6 +3033,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle rgn, Rect srcRect, Rect dstRect) -> None"},
 	{"MapPoly", (PyCFunction)Qd_MapPoly, 1,
 	 "(PolyHandle poly, Rect srcRect, Rect dstRect) -> None"},
+	{"StdBits", (PyCFunction)Qd_StdBits, 1,
+	 "(BitMapPtr srcBits, Rect srcRect, Rect dstRect, short mode, RgnHandle maskRgn) -> None"},
 	{"AddPt", (PyCFunction)Qd_AddPt, 1,
 	 "(Point src, Point dst) -> (Point dst)"},
 	{"EqualPt", (PyCFunction)Qd_EqualPt, 1,
@@ -2803,6 +3093,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(short index, Boolean reserve) -> None"},
 	{"QDError", (PyCFunction)Qd_QDError, 1,
 	 "() -> (short _rv)"},
+	{"CopyDeepMask", (PyCFunction)Qd_CopyDeepMask, 1,
+	 "(BitMapPtr srcBits, BitMapPtr maskBits, BitMapPtr dstBits, Rect srcRect, Rect maskRect, Rect dstRect, short mode, RgnHandle maskRgn) -> None"},
 	{"GetPattern", (PyCFunction)Qd_GetPattern, 1,
 	 "(short patternID) -> (PatHandle _rv)"},
 	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,
@@ -2839,6 +3131,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Buffer textBuf, short firstByte, short byteCount) -> (short _rv)"},
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
 	 "(Fixed extra) -> None"},
+	{"BitMap", (PyCFunction)Qd_BitMap, 1,
+	 "Take (string, int, Rect) argument and create BitMap"},
 	{NULL, NULL, 0}
 };
 
