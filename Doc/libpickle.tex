@@ -86,7 +86,9 @@ First of all, the class must be defined at the top level in a module.
 \renewcommand{\indexsubitem}{(pickle protocol)}
 
 Next, it must normally be possible to create class instances by
-calling the class without arguments.  If this is undesirable, the
+calling the class without arguments.  Usually, this is best
+accomplished by providing default values for all arguments to its
+\code{__init__} method (if it has one).  If this is undesirable, the
 class can define a method \code{__getinitargs__()}, which should
 return a {\em tuple} containing the arguments to be passed to the
 class constructor (\code{__init__()}).
