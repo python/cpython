@@ -142,7 +142,6 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libbastion.tex \
 	lib/libformatter.tex \
 	lib/liboperator.tex \
-	lib/libsoundex.tex \
 	lib/libresource.tex \
 	lib/libstat.tex \
 	lib/libstringio.tex \
