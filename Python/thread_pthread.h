@@ -75,7 +75,7 @@
  * other UNIX International compliant systems that don't have the full
  * pthread implementation.
  */
-#ifdef PY_PTHREAD_STD
+#ifdef HAVE_PTHREAD_SIGMASK
 #  define SET_THREAD_SIGMASK pthread_sigmask
 #else
 #  define SET_THREAD_SIGMASK sigprocmask
