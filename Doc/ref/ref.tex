@@ -3,8 +3,7 @@
 \documentstyle[11pt,myformat]{report}
 
 \title{\bf
-	Python Reference Manual \\
-	{\em Incomplete Draft}
+	Python Reference Manual
 }
 	
 \author{
@@ -87,11 +86,6 @@ standard modules.  These are not documented here, but in the separate
 {\em Python Library Reference} document.  A few built-in modules are
 mentioned when they interact in a significant way with the language
 definition.
-
-\section{Warning}
-
-This version of the manual is incomplete.  Sections that still need to
-be written or need considerable work are marked with ``XXX''.
 
 \section{Notation}
 
@@ -648,29 +642,83 @@ not contain null bytes.)
 \end{description} % Mapping types
 
 \item[Callable types]
-These are the types to which the function call operation can be applied:
+These are the types to which the function call operation (written as
+\verb\function(argument, argument, ...)\) can be applied:
 
 \begin{description}
+
 \item[User-defined functions]
-XXX
-\item[Built-in functions]
-XXX
+A user-defined function is created by a function definition (starting
+with the \verb\def\ keyword).  It should be called with an argument
+list containing the same number of items as the function's
+formal parameter list.
+
+Special read-only attributes: \verb\func_code\ is the code object
+representing the compiled function body, and \verb\func_globals\ is (a
+reference to) the dictionary that holds the function's global
+variables -- it implements the global name space of the module in
+which the function was defined.
+
 \item[User-defined methods]
-XXX
+A user-defined method (a.k.a. {\tt object closure}) is a pair of a
+class instance object and a user-defined function.  It should be
+called with an argument list containing one item less than the number
+of items in the function's formal parameter list.  When called, the
+class instance becomes the first argument, and the call arguments are
+shifted one to the right.
+
+Special read-only attributes: \verb\im_self\ is the class instance
+object, \verb\im_func\ is the function object.
+
+\item[Built-in functions]
+A built-in function object is a wrapper around a C function.  Examples
+of built-in functions are \verb\len\ and \verb\math.sin\.  There
+are no special attributes.  The number and type of the arguments are
+determined by the C function.
+
 \item[Built-in methods]
-XXX
-\item[User-defined classes]
-XXX
+This is really a different disguise of a built-in function, this time
+containing an object passed to the C function as an implicit extra
+argument.  An example of a built-in method is \verb\list.append\ if
+\verb\list\ is a list object.
+
+\item[Classes]
+Class objects are described below.  When a class object is called as a
+parameterless function, a new class instance (also described below) is
+created and returned.  The class's initialization function is not
+called -- this is the responsibility of the caller.  It is illegal to
+call a class object with one or more arguments.
+
 \end{description}
 
 \item[Modules]
+A module object is a container for a module's name space, which is a
+dictionary (the same dictionary as referenced by the
+\ver\func_globals\ attribute of functions defined in the module).
+Module attribute references are translated to lookups in this
+dictionary.  A module object does not contain the code object used to
+initialize the module (since it isn't needed once the initialization
+is done).
+
+There are two special read-only attributes: \verb\__dict__\ yields the
+module's name space as a dictionary object; \verb\__name__\ yields the
+module's name.
+
+\item[Classes]
 XXX
 
 \item[Class instances]
 XXX
 
 \item[Files]
-XXX
+A file object represents an open file.  (It is a wrapper around a C
+{\tt stdio} file pointer.)  File objects are created by the
+\verb\open()\ built-in function, and also by \verb\posix.popen()\ and
+the \verb\makefile\ method of socket objects.  \verb\sys.stdin\,
+\verb\sys.stdout\ and \verb\sys.stderr\ are file objects corresponding
+the the interpreter's standard input, output and error streams.
+See the Python Library Reference for methods of file objects and other
+details.
 
 \item[Internal types]
 A few types used internally by the interpreter are exposed to the user.
@@ -678,10 +726,57 @@ Their definition may change with future versions of the interpreter,
 but they are mentioned here for completeness.
 
 \begin{description}
+
 \item[Code objects]
-XXX
+Code objects represent executable code.  The difference between a code
+object and a function object is that the function object contains an
+explicit reference to the function's context (the module in which it
+was defined) which a code object contains no context.  There is no way
+to execute a bare code object.
+
+Special read-only attributes: \verb\co_code\ is a string representing
+the sequence of instructions; \verb\co_consts\ is a list of literals
+used by the code; \verb\co_names\ is a list of names (strings) used by
+the code; \verb\co_filename\ is the filename from which the code was
+compiled.  (To find out the line numbers, you would have to decode the
+instructions; the standard library module \verb\dis\ contains an
+example of how to do this.)
+
+\item[Frame objects]
+Frame objects represent execution frames.  They may occur in traceback
+objects (see below).
+
+Special read-only attributes: \verb\f_back\ is to the previous
+stack frame (towards the caller), or \verb\None\ if this is the bottom
+stack frame; \verb\f_code\ is the code object being executed in this
+frame; \verb\f_globals\ is the dictionary used to look up global
+variables; \verb\f_locals\ is used for local variables;
+\verb\f_lineno\ gives the line number and \verb\f_lasti\ gives the
+precise instruction (this is an index into the instruction string of
+the code object).
+
 \item[Traceback objects]
-XXX
+Traceback objects represent a stack trace of an exception.  A
+traceback object is created when an exception occurs.  When the search
+for an exception handler unwinds the execution stack, at each unwound
+level a traceback object is inserted in front of the current
+traceback.  When an exception handler is entered, the stack trace is
+made available to the program as \verb\sys.exc_traceback\.  When the
+program contains no suitable handler, the stack trace is written
+(nicely formatted) to the standard error stream; if the interpreter is
+interactive, it is made available to the user as
+\verb\sys.last_traceback\.
+
+Special read-only attributes: \verb\tb_next\ is the next level in the
+stack trace (towards the frame where the exception occurred), or
+\verb\None\ if there is no next level; \verb\tb_frame\ points to the
+execution frame of the current level; \verb\tb_lineno\ gives the line
+number where the exception occurred; \verb\tb_lasti\ indicates the
+precise instruction.  The line number and last instruction in the
+traceback may differ from the line number of its frame object if the
+exception occurred in a \verb\try\ statement with no matching
+\verb\except\ clause or with a \verb\finally\ clause.
+
 \end{description} % Internal types
 
 \end{description} % Types
@@ -1120,8 +1215,8 @@ Mappings (dictionaries) are compared through lexicographic
 comparison of their sorted (key, value) lists.%
 \footnote{This is expensive since it requires sorting the keys first,
 but about the only sensible definition.  It was tried to compare
-dictionaries using the following rules, but this gave surprises in
-cases like \verb|if d == {}: ...|.}
+dictionaries using the rule below for most other types, but this gave
+surprises in cases like \verb|if d == {}: ...|.}
 
 \item
 Most other types compare unequal unless they are the same object;
@@ -1209,7 +1304,6 @@ Several simple statements may occur on a single line separated
 by semicolons.  The syntax for simple statements is:
 
 \begin{verbatim}
-stmt_list:      simple_stmt (";" simple_stmt)* [";"]
 simple_stmt:    expression_stmt
               | assignment
               | pass_stmt
@@ -1503,8 +1597,10 @@ import_stmt:    "import" identifier ("," identifier)*
 
 Import statements are executed in two steps: (1) find a module, and
 initialize it if necessary; (2) define a name or names in the local
-name space.  The first form (without \verb\from\) repeats these steps
-for each identifier in the list.
+name space (of the scope where the \verb\import\ statement occurs).
+The first form (without \verb\from\) repeats these steps for each
+identifier in the list, the \verb\from\ form performs them once, with
+the first identifier specifying the module name.
 
 The system maintains a table of modules that have been initialized,
 indexed by module name.  (The current implementation makes this table
@@ -1520,8 +1616,35 @@ path; it is initialized from the shell environment variable
 
 If a built-in module is found, its built-in initialization code is
 executed and step (1) is finished.  If no matching file is found,
-\verb\ImportError\ is raised (and step (2) is never started).  If a file is
-found, it is parsed.  If a syntax error occurs, HIRO
+\verb\ImportError\ is raised.  If a file is found, it is parsed,
+yielding an executable code block.  If a syntax error occurs,
+\verb\SyntaxError\ is raised.  Otherwise, an empty module of the given
+name is created and inserted in the module table, and then the code
+block is executed in the context of this module.  Exceptions during
+this execution terminate step (1).
+
+When step (1) finishes without raising an exception, step (2) can
+begin.
+
+The first form of \verb\import\ statement binds the module name in the
+local name space to the module object, and then goes on to import the
+next identifier, if any.  The \verb\from\ from does not bind the
+module name: it goes through the list of identifiers, looks each one
+of them up in the module found in step (1), and binds the name in the
+local name space to the object thus found.  If a name is not found,
+\verb\ImportError\ is raised.  If the list of identifiers is replaced
+by a star (\verb\*\), all names defined in the module are bound,
+except those beginning with an underscore(\verb\_\).
+
+Names bound by import statements may not occur in \verb\global\
+statements in the same scope.
+
+The \verb\from\ form with \verb\*\ may only occur in a module scope.
+
+(The current implementation does not enforce the latter two
+restrictions, but programs should not abuse this freedom, as future
+implementations may enforce them or silently change the meaning of the
+program.)
 
 \section{The {\tt global} statement}
 
@@ -1529,19 +1652,80 @@ found, it is parsed.  If a syntax error occurs, HIRO
 global_stmt:    "global" identifier ("," identifier)*
 \end{verbatim}
 
-(XXX To be done.)
+The \verb\global\ statement is a declaration which holds for the
+entire current scope.  It means that the listed identifiers are to be
+interpreted as globals.  While {\em using} global names is automatic
+if they are not defined in the local scope, {\em assigning} to global
+names would be impossible without \verb\global\.
+
+Names listed in a \verb\global\ statement must not be used in the same
+scope before that \verb\global\ statement is executed.
+
+Name listed in a \verb\global\ statement must not be defined as formal
+parameters or in a \verb\for\ loop control target, \verb\class\
+definition, function definition, or \verb\import\ statement.
+
+(The current implementation does not enforce the latter two
+restrictions, but programs should not abuse this freedom, as future
+implementations may enforce them or silently change the meaning of the
+program.)
 
 \chapter{Compound statements}
 
-(XXX The semantic definitions of this chapter are still to be done.)
+Compound statements contain (groups of) other statements; they affect
+or control the execution of those other statements in some way.
+
+The \verb\if\, \verb\while\ and \verb\for\ statements implement
+traditional control flow constructs.  \verb\try\ specifies exception
+handlers and/or cleanup code for a group of statements.  Function and
+class definitions are also syntactically compound statements.
+
+Compound statements consist of one or more `clauses'.  A clause
+consists of a header and a `suite'.  The clause headers of a
+particular compound statement are all at the same indentation level;
+all clauses begin with a uniquely identifying keyword and end with a
+colon.  A suite is a group of statements controlled by a clause.  A
+suite can be a bunch of semicolon-separated simple statements on the
+same line as the header, following the colon, or it can be a list of
+indented statements.  Only the latter form of suite can contain nested
+compound statements; the following is illegal (mostly because it
+wouldn't be clear what to do with \verb\else\):
 
 \begin{verbatim}
-statement:      stmt_list NEWLINE | compound_stmt
-compound_stmt:  if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
-suite:          statement | NEWLINE INDENT statement+ DEDENT
+if test1: if test2: print x
 \end{verbatim}
 
+Also note that the semicolon binds tighter that the colon in this
+context (so to speak), so that in the following example, either all or
+none of the \verb\print\ statements are executed:
+
+\begin{verbatim}
+if some_test: print x; print y; print z
+\end{verbatim}
+
+Summarizing:
+
+\begin{verbatim}
+compound_stmt:  if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
+suite:          stmt_list NEWLINE | NEWLINE INDENT statement+ DEDENT
+statement:      stmt_list NEWLINE | compound_stmt
+stmt_list:      simple_stmt (";" simple_stmt)* [";"]
+\end{verbatim}
+
+Note that statements always ends in a \verb\NEWLINE\ possibly followed
+by a \verb\DEDENT\.
+
+Also note that optional continuation clauses always begin with a
+keyword that cannot start a statement, thus there are no ambiguities
+(the `dangling \verb\else\' problem is solved in Python by requiring
+nested \verb\if\ statements to be indented).
+
+The formatting of the grammar rules in the following section places
+each clause on a separate line for clarity.
+
 \section{The {\tt if} statement}
+
+The \verb\if\ statement is used for conditional execution:
 
 \begin{verbatim}
 if_stmt:        "if" condition ":" suite
@@ -1549,26 +1733,116 @@ if_stmt:        "if" condition ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
+It selects exactly one of the suites, by testing the conditions one by
+one until one is true; then that suite is executed.  If all conditions
+are false, the suite of the \verb\else\ clause is executed, if present.
+
 \section{The {\tt while} statement}
 
+The \verb\while\ statement is used for repeated execution as long as a
+condition is true:
+
 \begin{verbatim}
-while_stmt:     "while" condition ":" suite ["else" ":" suite]
+while_stmt:     "while" condition ":" suite
+               ["else" ":" suite]
 \end{verbatim}
 
+This repeatedly tests the condition and, if it is true, executes the
+first suite; if the condition is false (which may be the first time it
+is tested) the suite of the \verb\else\ clause is executed, if
+present, and the loop terminates.
+
+A \verb\break\ statement executed in the first suite terminates the
+loop without executing the \verb\else\ clause's suite.  A
+\verb\continue\ statement executed in the first suited skips the rest
+of the suite and goes back to testing the condition.
+
 \section{The {\tt for} statement}
+
+The \verb\for\ statement is used to iterate over the elements of a
+sequence (string, tuple or list):
 
 \begin{verbatim}
 for_stmt:       "for" target_list "in" condition_list ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
+The suite is executed once for each item in the condition list, in the
+order of ascending indices.  Each item in turn is assigned to the
+target list using the standard rules for assignments, and then the
+suite is executed.  When the list is exhausted (which is immediately
+when the sequence is empty), the suite in the \verb\else\ clause is
+executed, if present.
+
+A \verb\break\ statement executed in the first suite terminates the
+loop without executing the \verb\else\ clause's suite.  A
+\verb\continue\ statement executed in the first suited skips the rest
+of the suite and continues with the next item or with the \verb\else\
+clause.
+
+The suite may assign to the variable(s) in the target list; this does
+not affect the next item assigned to it.
+
+The target list are not deleted when the loop is finished (but if the
+loop has executed 0 times it will not have been assigned to at all by
+the loop).
+
+The built-in function \verb\range()\ returns a sequence of integers
+suitable to emulate the effect of Pascal's \verb\for i := 1 to n do\.
+
+{\bf Warning:} There is a subtlety when the sequence is being modified
+by the loop (this can only occur for lists).  An internal counter is
+used to keep track of which item is used next, and this is incremented
+on each iteration.  When this counter has reached the end of the
+sequence the loop terminates.  This means that if the suite deletes
+the current (or a previous) item from the sequence, the next item will
+be skipped (since it gets the index of the current item and this has
+already been treated).  Likewise, if the suite inserts an item in the
+sequence before the current item, the current item will be treated
+again the next time through the loop.  This can lead to nasty bugs
+that can be avoided by making a temporary copy using the \
+
 \section{The {\tt try} statement}
+
+The \verb\try\ statement specifies exception handlers and/or cleanup
+code for a group of statements:
 
 \begin{verbatim}
 try_stmt:       "try" ":" suite
                ("except" condition ["," condition] ":" suite)*
+               ["except" ":" suite]
                ["finally" ":" suite]
 \end{verbatim}
+
+There are really two forms: \verb\try...except\ and
+\verb\try...finally\.  A \verb\try\ statement with both types of
+clauses is equivalent to a \verb\try...finally\ statement with a
+\verb\try...except\ statement in its \verb\try\ clause.  A \verb\try\
+statement with neither a \verb\except\ clause nor a \verb\finally\
+clause just executes the suite of statements in its \verb\try\ clause.
+
+The \verb\try...except\ form specifies one or more exception handlers.
+When no exception occurs in the \verb\try\ clause, no exception
+handler is executed.  When an exception occurs in the \verb\try\
+suite, a search for an exception handler HIRO
+
+The \verb\try...finally\ form specifies a `cleanup' handler.  The
+\verb\try\ clause is executed.  When no exception occurs, the
+\verb\finally\ clause is executed.  When an exception occurs on the
+\verb\try\ clause, the exception is temporarily saved, the
+\verb\finally\ clause is executed, and then the saved exception is
+re-raised.  If the \verb\finally\ clause raises another exception or
+executes a \verb\return\, \verb\break\ or \verb\continue\ statement,
+the saved exception is lost.
+
+When a \verb\return\ or \verb\break\ statement is executed in the
+\verb\try suite of a \verb\try...finally\ statement, the
+\verb\finally\ clause is also executed `on the way out'.  A
+\verb\continue\ statement is illegal in the \verb\try\ clause (the
+reason is a problem with the current implementation -- this
+restriction may be lifted in the future).
+
+
 
 \section{Function definitions}
 
