@@ -1177,6 +1177,79 @@ static PyObject *CtlObj_GetControlData(_self, _args)
 
 }
 
+static PyObject *CtlObj_SetControlDataHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	Handle buffer;
+
+	if (!PyArg_ParseTuple(_args, "hO&O&",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName,
+	                      OptResObj_Convert, buffer))
+		return NULL;
+
+	_err = SetControlData(_self->ob_itself,
+		              inPart,
+		              inTagName,
+		              sizeof(buffer),
+	                      (Ptr)buffer);
+
+	if (_err != noErr)
+		return PyMac_Error(_err);
+	_res = Py_None;
+	return _res;
+
+}
+
+static PyObject *CtlObj_GetControlDataHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	Size bufferSize;
+	Handle hdl;
+
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName))
+		return NULL;
+
+	/* Check it is handle-sized */
+	_err = GetControlDataSize(_self->ob_itself,
+		                  inPart,
+		                  inTagName,
+	                          &bufferSize);
+	if (_err != noErr)
+		return PyMac_Error(_err);
+	if (bufferSize != sizeof(Handle)) {
+		PyErr_SetString(Ctl_Error, "GetControlDataSize() != sizeof(Handle)");
+		return NULL;
+	}
+
+	_err = GetControlData(_self->ob_itself,
+		              inPart,
+		              inTagName,
+		              sizeof(Handle),
+	                      (Ptr)&hdl,
+	                      &bufferSize);
+
+	if (_err != noErr) {
+		return PyMac_Error(_err);
+	}
+	return Py_BuildValue("O&", OptResObj_New, hdl);
+
+}
+
 static PyObject *CtlObj_GetPopupData(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -1338,6 +1411,10 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(stuff) -> None"},
 	{"GetControlData", (PyCFunction)CtlObj_GetControlData, 1,
 	 "(part, type) -> String"},
+	{"SetControlDataHandle", (PyCFunction)CtlObj_SetControlDataHandle, 1,
+	 "(ResObj) -> None"},
+	{"GetControlDataHandle", (PyCFunction)CtlObj_GetControlDataHandle, 1,
+	 "(part, type) -> ResObj"},
 	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
 	 NULL},
 	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,

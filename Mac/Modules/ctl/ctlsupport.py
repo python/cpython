@@ -331,7 +331,77 @@ return _res;
 f = ManualGenerator("GetControlData", getcontroldata_body);
 f.docstring = lambda: "(part, type) -> String"
 object.add(f)
-# end CJW
+
+# Manual Generator for SetControlDataHandle
+setcontroldatahandle_body = """
+OSErr _err;
+ControlPartCode inPart;
+ResType inTagName;
+Handle buffer;
+
+if (!PyArg_ParseTuple(_args, "hO&O&",
+                      &inPart,
+                      PyMac_GetOSType, &inTagName,
+                      OptResObj_Convert, buffer))
+	return NULL;
+
+_err = SetControlData(_self->ob_itself,
+	              inPart,
+	              inTagName,
+	              sizeof(buffer),
+                      (Ptr)buffer);
+
+if (_err != noErr)
+	return PyMac_Error(_err);
+_res = Py_None;
+return _res;
+"""
+
+f = ManualGenerator("SetControlDataHandle", setcontroldatahandle_body);
+f.docstring = lambda: "(ResObj) -> None"
+object.add(f)
+
+# Manual Generator for GetControlDataHandle
+getcontroldatahandle_body = """
+OSErr _err;
+ControlPartCode inPart;
+ResType inTagName;
+Size bufferSize;
+Handle hdl;
+
+if (!PyArg_ParseTuple(_args, "hO&",
+                      &inPart,
+                      PyMac_GetOSType, &inTagName))
+	return NULL;
+
+/* Check it is handle-sized */
+_err = GetControlDataSize(_self->ob_itself,
+	                  inPart,
+	                  inTagName,
+                          &bufferSize);
+if (_err != noErr)
+	return PyMac_Error(_err);
+if (bufferSize != sizeof(Handle)) {
+	PyErr_SetString(Ctl_Error, "GetControlDataSize() != sizeof(Handle)");
+	return NULL;
+}
+
+_err = GetControlData(_self->ob_itself,
+	              inPart,
+	              inTagName,
+	              sizeof(Handle),
+                      (Ptr)&hdl,
+                      &bufferSize);
+
+if (_err != noErr) {
+	return PyMac_Error(_err);
+}
+return Py_BuildValue("O&", OptResObj_New, hdl);
+"""
+
+f = ManualGenerator("GetControlDataHandle", getcontroldatahandle_body);
+f.docstring = lambda: "(part, type) -> ResObj"
+object.add(f)
 
 # And manual generators to get/set popup menu information
 getpopupdata_body = """
