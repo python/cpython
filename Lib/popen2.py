@@ -1,3 +1,11 @@
+"""Spawn a command with pipes to its stdin, stdout, and optionally stderr.
+
+The normal os.popen(cmd, mode) call spawns a shell command and provides a
+file interface to just the input or output of the process depending on
+whether mode is 'r' or 'w'.  This module provides the functions popen2(cmd)
+and popen3(cmd) which return two or three pipes to the spawned command.
+"""
+
 import os
 import sys
 import string
@@ -11,7 +19,15 @@ def _cleanup():
         inst.poll()
 
 class Popen3:
+    """Class representing a child process.  Normally instances are created
+    by the factory functions popen2() and popen3()."""
+
     def __init__(self, cmd, capturestderr=0, bufsize=-1):
+        """The parameter 'cmd' is the shell command to execute in a
+        sub-process.  The 'capturestderr' flag, if true, specifies that
+        the object should capture standard error output of the child process.
+        The default is false.  If the 'bufsize' parameter is specified, it
+        specifies the size of the I/O buffers to/from the child process."""
         if type(cmd) == type(''):
             cmd = ['/bin/sh', '-c', cmd]
         p2cread, p2cwrite = os.pipe()
@@ -51,7 +67,10 @@ class Popen3:
             self.childerr = None
         self.sts = -1 # Child not completed yet
         _active.append(self)
+
     def poll(self):
+        """Return the exit status of the child process if it has finished,
+        or -1 if it hasn't finished yet."""
         if self.sts < 0:
             try:
                 pid, sts = os.waitpid(self.pid, os.WNOHANG)
@@ -61,7 +80,9 @@ class Popen3:
             except os.error:
                 pass
         return self.sts
+
     def wait(self):
+        """Wait for and return the exit status of the child process."""
         pid, sts = os.waitpid(self.pid, 0)
         if pid == self.pid:
             self.sts = sts
@@ -69,11 +90,17 @@ class Popen3:
         return self.sts
 
 def popen2(cmd, bufsize=-1):
+    """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+    specified, it sets the buffer size for the I/O pipes.  The file objects
+    (child_stdout, child_stdin) are returned."""
     _cleanup()
     inst = Popen3(cmd, 0, bufsize)
     return inst.fromchild, inst.tochild
 
 def popen3(cmd, bufsize=-1):
+    """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+    specified, it sets the buffer size for the I/O pipes.  The file objects
+    (child_stdout, child_stdin, child_stderr) are returned."""
     _cleanup()
     inst = Popen3(cmd, 1, bufsize)
     return inst.fromchild, inst.tochild, inst.childerr

@@ -9,8 +9,11 @@ import string
 def getcaps():
     """Return a dictionary containing the mailcap database.
     
-    The dictionary maps a MIME type (in all lowercase,
-    e.g. 'text/plain') to a list of corresponding mailcap entries.
+    The dictionary maps a MIME type (in all lowercase, e.g. 'text/plain')
+    to a list of dictionaries corresponding to mailcap entries.  The list
+    collects all the entries for that MIME type from all available mailcap
+    files.  Each dictionary contains key-value pairs for that MIME type,
+    where the viewing command is stored with the key "view".
 
     """
     caps = {}
@@ -48,6 +51,14 @@ def listmailcapfiles():
 # Part 2: the parser.
 
 def readmailcapfile(fp):
+    """Read a mailcap file and return a dictionary keyed by MIME type.
+
+    Each MIME type is mapped to an entry consisting of a list of
+    dictionaries; the list will contain more than one such dictionary
+    if a given MIME type appears more than once in the mailcap file.
+    Each dictionary contains key-value pairs for that MIME type, where
+    the viewing command is stored with the key "view".
+    """
     caps = {}
     while 1:
         line = fp.readline()
@@ -78,6 +89,11 @@ def readmailcapfile(fp):
     return caps
 
 def parseline(line):
+    """Parse one entry in a mailcap file and return a dictionary.
+
+    The viewing command is stored as the value with the key "view",
+    and the rest of the fields produce key-value pairs in the dict.
+    """
     fields = []
     i, n = 0, len(line)
     while i < n:
@@ -104,6 +120,7 @@ def parseline(line):
     return key, fields
 
 def parsefield(line, i, n):
+    """Separate one key-value pair in a mailcap entry."""
     start = i
     while i < n:
         c = line[i]

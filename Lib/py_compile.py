@@ -7,7 +7,7 @@ import imp
 MAGIC = imp.get_magic()
 
 def wr_long(f, x):
-    "Internal; write a 32-bit int to a file in little-endian order."
+    """Internal; write a 32-bit int to a file in little-endian order."""
     f.write(chr( x        & 0xff))
     f.write(chr((x >> 8)  & 0xff))
     f.write(chr((x >> 16) & 0xff))

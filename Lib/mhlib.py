@@ -1,57 +1,58 @@
-# MH interface -- purely object-oriented (well, almost)
-#
-# Executive summary:
-#
-# import mhlib
-#
-# mh = mhlib.MH()         # use default mailbox directory and profile
-# mh = mhlib.MH(mailbox)  # override mailbox location (default from profile)
-# mh = mhlib.MH(mailbox, profile) # override mailbox and profile
-#
-# mh.error(format, ...)   # print error message -- can be overridden
-# s = mh.getprofile(key)  # profile entry (None if not set)
-# path = mh.getpath()     # mailbox pathname
-# name = mh.getcontext()  # name of current folder
-# mh.setcontext(name)     # set name of current folder
-#
-# list = mh.listfolders() # names of top-level folders
-# list = mh.listallfolders() # names of all folders, including subfolders
-# list = mh.listsubfolders(name) # direct subfolders of given folder
-# list = mh.listallsubfolders(name) # all subfolders of given folder
-#
-# mh.makefolder(name)     # create new folder
-# mh.deletefolder(name)   # delete folder -- must have no subfolders
-#
-# f = mh.openfolder(name) # new open folder object
-#
-# f.error(format, ...)    # same as mh.error(format, ...)
-# path = f.getfullname()  # folder's full pathname
-# path = f.getsequencesfilename() # full pathname of folder's sequences file
-# path = f.getmessagefilename(n)  # full pathname of message n in folder
-#
-# list = f.listmessages() # list of messages in folder (as numbers)
-# n = f.getcurrent()      # get current message
-# f.setcurrent(n)         # set current message
-# list = f.parsesequence(seq)     # parse msgs syntax into list of messages
-# n = f.getlast()         # get last message (0 if no messagse)
-# f.setlast(n)            # set last message (internal use only)
-#
-# dict = f.getsequences() # dictionary of sequences in folder {name: list}
-# f.putsequences(dict)    # write sequences back to folder
-#
-# f.createmessage(n, fp)  # add message from file f as number n
-# f.removemessages(list)  # remove messages in list from folder
-# f.refilemessages(list, tofolder) # move messages in list to other folder
-# f.movemessage(n, tofolder, ton)  # move one message to a given destination
-# f.copymessage(n, tofolder, ton)  # copy one message to a given destination
-#
-# m = f.openmessage(n)    # new open message object (costs a file descriptor)
-# m is a derived class of mimetools.Message(rfc822.Message), with:
-# s = m.getheadertext()   # text of message's headers
-# s = m.getheadertext(pred) # text of message's headers, filtered by pred
-# s = m.getbodytext()     # text of message's body, decoded
-# s = m.getbodytext(0)    # text of message's body, not decoded
-#
+"""MH interface -- purely object-oriented (well, almost)
+
+Executive summary:
+
+import mhlib
+
+mh = mhlib.MH()         # use default mailbox directory and profile
+mh = mhlib.MH(mailbox)  # override mailbox location (default from profile)
+mh = mhlib.MH(mailbox, profile) # override mailbox and profile
+
+mh.error(format, ...)   # print error message -- can be overridden
+s = mh.getprofile(key)  # profile entry (None if not set)
+path = mh.getpath()     # mailbox pathname
+name = mh.getcontext()  # name of current folder
+mh.setcontext(name)     # set name of current folder
+
+list = mh.listfolders() # names of top-level folders
+list = mh.listallfolders() # names of all folders, including subfolders
+list = mh.listsubfolders(name) # direct subfolders of given folder
+list = mh.listallsubfolders(name) # all subfolders of given folder
+
+mh.makefolder(name)     # create new folder
+mh.deletefolder(name)   # delete folder -- must have no subfolders
+
+f = mh.openfolder(name) # new open folder object
+
+f.error(format, ...)    # same as mh.error(format, ...)
+path = f.getfullname()  # folder's full pathname
+path = f.getsequencesfilename() # full pathname of folder's sequences file
+path = f.getmessagefilename(n)  # full pathname of message n in folder
+
+list = f.listmessages() # list of messages in folder (as numbers)
+n = f.getcurrent()      # get current message
+f.setcurrent(n)         # set current message
+list = f.parsesequence(seq)     # parse msgs syntax into list of messages
+n = f.getlast()         # get last message (0 if no messagse)
+f.setlast(n)            # set last message (internal use only)
+
+dict = f.getsequences() # dictionary of sequences in folder {name: list}
+f.putsequences(dict)    # write sequences back to folder
+
+f.createmessage(n, fp)  # add message from file f as number n
+f.removemessages(list)  # remove messages in list from folder
+f.refilemessages(list, tofolder) # move messages in list to other folder
+f.movemessage(n, tofolder, ton)  # move one message to a given destination
+f.copymessage(n, tofolder, ton)  # copy one message to a given destination
+
+m = f.openmessage(n)    # new open message object (costs a file descriptor)
+m is a derived class of mimetools.Message(rfc822.Message), with:
+s = m.getheadertext()   # text of message's headers
+s = m.getheadertext(pred) # text of message's headers, filtered by pred
+s = m.getbodytext()     # text of message's body, decoded
+s = m.getbodytext(0)    # text of message's body, not decoded
+"""
+
 # XXX To do, functionality:
 # - annotate messages
 # - send messages
@@ -87,16 +88,15 @@ from bisect import bisect
 Error = 'mhlib.Error'
 
 
-# Class representing a particular collection of folders.
-# Optional constructor arguments are the pathname for the directory
-# containing the collection, and the MH profile to use.
-# If either is omitted or empty a default is used; the default
-# directory is taken from the MH profile if it is specified there.
-
 class MH:
+    """Class representing a particular collection of folders.
+    Optional constructor arguments are the pathname for the directory
+    containing the collection, and the MH profile to use.
+    If either is omitted or empty a default is used; the default
+    directory is taken from the MH profile if it is specified there."""
 
-    # Constructor
     def __init__(self, path = None, profile = None):
+        """Constructor."""
         if not profile: profile = MH_PROFILE
         self.profile = os.path.expanduser(profile)
         if not path: path = self.getprofile('Path')
@@ -107,38 +107,38 @@ class MH:
         if not os.path.isdir(path): raise Error, 'MH() path not found'
         self.path = path
 
-    # String representation
     def __repr__(self):
+        """String representation."""
         return 'MH(%s, %s)' % (`self.path`, `self.profile`)
 
-    # Routine to print an error.  May be overridden by a derived class
     def error(self, msg, *args):
+        """Routine to print an error.  May be overridden by a derived class."""
         sys.stderr.write('MH error: %s\n' % (msg % args))
 
-    # Return a profile entry, None if not found
     def getprofile(self, key):
+        """Return a profile entry, None if not found."""
         return pickline(self.profile, key)
 
-    # Return the path (the name of the collection's directory)
     def getpath(self):
+        """Return the path (the name of the collection's directory)."""
         return self.path
 
-    # Return the name of the current folder
     def getcontext(self):
+        """Return the name of the current folder."""
         context = pickline(os.path.join(self.getpath(), 'context'),
                   'Current-Folder')
         if not context: context = 'inbox'
         return context
 
-    # Set the name of the current folder
     def setcontext(self, context):
+        """Set the name of the current folder."""
         fn = os.path.join(self.getpath(), 'context')
         f = open(fn, "w")
         f.write("Current-Folder: %s\n" % context)
         f.close()
 
-    # Return the names of the top-level folders
     def listfolders(self):
+        """Return the names of the top-level folders."""
         folders = []
         path = self.getpath()
         for name in os.listdir(path):
@@ -148,9 +148,9 @@ class MH:
         folders.sort()
         return folders
 
-    # Return the names of the subfolders in a given folder
-    # (prefixed with the given folder name)
     def listsubfolders(self, name):
+        """Return the names of the subfolders in a given folder
+        (prefixed with the given folder name)."""
         fullname = os.path.join(self.path, name)
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
@@ -173,12 +173,12 @@ class MH:
         subfolders.sort()
         return subfolders
 
-    # Return the names of all folders, including subfolders, recursively
     def listallfolders(self):
+        """Return the names of all folders and subfolders, recursively."""
         return self.listallsubfolders('')
 
-    # Return the names of subfolders in a given folder, recursively
     def listallsubfolders(self, name):
+        """Return the names of subfolders in a given folder, recursively."""
         fullname = os.path.join(self.path, name)
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
@@ -206,13 +206,12 @@ class MH:
         subfolders.sort()
         return subfolders
 
-    # Return a new Folder object for the named folder
     def openfolder(self, name):
+        """Return a new Folder object for the named folder."""
         return Folder(self, name)
 
-    # Create a new folder.  This raises os.error if the folder
-    # cannot be created
     def makefolder(self, name):
+        """Create a new folder (or raise os.error if it cannot be created)."""
         protect = pickline(self.profile, 'Folder-Protect')
         if protect and isnumeric(protect):
             mode = string.atoi(protect, 8)
@@ -220,10 +219,9 @@ class MH:
             mode = FOLDER_PROTECT
         os.mkdir(os.path.join(self.getpath(), name), mode)
 
-    # Delete a folder.  This removes files in the folder but not
-    # subdirectories.  If deleting the folder itself fails it
-    # raises os.error
     def deletefolder(self, name):
+        """Delete a folder.  This removes files in the folder but not
+        subdirectories.  Raise os.error if deleting the folder itself fails."""
         fullname = os.path.join(self.getpath(), name)
         for subname in os.listdir(fullname):
             fullsubname = os.path.join(fullname, subname)
@@ -235,52 +233,51 @@ class MH:
         os.rmdir(fullname)
 
 
-# Class representing a particular folder
-
 numericprog = re.compile('^[1-9][0-9]*$')
 def isnumeric(str):
     return numericprog.match(str) is not None
 
 class Folder:
+    """Class representing a particular folder."""
 
-    # Constructor
     def __init__(self, mh, name):
+        """Constructor."""
         self.mh = mh
         self.name = name
         if not os.path.isdir(self.getfullname()):
             raise Error, 'no folder %s' % name
 
-    # String representation
     def __repr__(self):
+        """String representation."""
         return 'Folder(%s, %s)' % (`self.mh`, `self.name`)
 
-    # Error message handler
     def error(self, *args):
+        """Error message handler."""
         apply(self.mh.error, args)
 
-    # Return the full pathname of the folder
     def getfullname(self):
+        """Return the full pathname of the folder."""
         return os.path.join(self.mh.path, self.name)
 
-    # Return the full pathname of the folder's sequences file
     def getsequencesfilename(self):
+        """Return the full pathname of the folder's sequences file."""
         return os.path.join(self.getfullname(), MH_SEQUENCES)
 
-    # Return the full pathname of a message in the folder
     def getmessagefilename(self, n):
+        """Return the full pathname of a message in the folder."""
         return os.path.join(self.getfullname(), str(n))
 
-    # Return list of direct subfolders
     def listsubfolders(self):
+        """Return list of direct subfolders."""
         return self.mh.listsubfolders(self.name)
 
-    # Return list of all subfolders
     def listallsubfolders(self):
+        """Return list of all subfolders."""
         return self.mh.listallsubfolders(self.name)
 
-    # Return the list of messages currently present in the folder.
-    # As a side effect, set self.last to the last message (or 0)
     def listmessages(self):
+        """Return the list of messages currently present in the folder.
+        As a side effect, set self.last to the last message (or 0)."""
         messages = []
         match = numericprog.match
         append = messages.append
@@ -295,8 +292,8 @@ class Folder:
             self.last = 0
         return messages
 
-    # Return the set of sequences for the folder
     def getsequences(self):
+        """Return the set of sequences for the folder."""
         sequences = {}
         fullname = self.getsequencesfilename()
         try:
@@ -315,8 +312,8 @@ class Folder:
             sequences[key] = value
         return sequences
 
-    # Write the set of sequences back to the folder
     def putsequences(self, sequences):
+        """Write the set of sequences back to the folder."""
         fullname = self.getsequencesfilename()
         f = None
         for key in sequences.keys():
@@ -332,23 +329,23 @@ class Folder:
         else:
             f.close()
 
-    # Return the current message.  Raise KeyError when there is none
     def getcurrent(self):
+        """Return the current message.  Raise KeyError when there is none."""
         seqs = self.getsequences()
         try:
             return max(seqs['cur'])
         except (ValueError, KeyError):
             raise Error, "no cur message"
 
-    # Set the current message
     def setcurrent(self, n):
+        """Set the current message."""
         updateline(self.getsequencesfilename(), 'cur', str(n), 0)
 
-    # Parse an MH sequence specification into a message list.
-    # Attempt to mimic mh-sequence(5) as close as possible.
-    # Also attempt to mimic observed behavior regarding which
-    # conditions cause which error messages
     def parsesequence(self, seq):
+        """Parse an MH sequence specification into a message list.
+        Attempt to mimic mh-sequence(5) as close as possible.
+        Also attempt to mimic observed behavior regarding which
+        conditions cause which error messages."""
         # XXX Still not complete (see mh-format(5)).
         # Missing are:
         # - 'prev', 'next' as count
@@ -428,8 +425,8 @@ class Folder:
             else:
                 return [n]
 
-    # Internal: parse a message number (or cur, first, etc.)
     def _parseindex(self, seq, all):
+        """Internal: parse a message number (or cur, first, etc.)."""
         if isnumeric(seq):
             try:
                 return string.atoi(seq)
@@ -459,12 +456,12 @@ class Folder:
                 raise Error, "no prev message"
         raise Error, None
 
-    # Open a message -- returns a Message object
     def openmessage(self, n):
+        """Open a message -- returns a Message object."""
         return Message(self, n)
 
-    # Remove one or more messages -- may raise os.error
     def removemessages(self, list):
+        """Remove one or more messages -- may raise os.error."""
         errors = []
         deleted = []
         for n in list:
@@ -488,9 +485,9 @@ class Folder:
             else:
                 raise os.error, ('multiple errors:', errors)
 
-    # Refile one or more messages -- may raise os.error.
-    # 'tofolder' is an open folder object
     def refilemessages(self, list, tofolder, keepsequences=0):
+        """Refile one or more messages -- may raise os.error.
+        'tofolder' is an open folder object."""
         errors = []
         refiled = {}
         for n in list:
@@ -523,8 +520,8 @@ class Folder:
             else:
                 raise os.error, ('multiple errors:', errors)
 
-    # Helper for refilemessages() to copy sequences
     def _copysequences(self, fromfolder, refileditems):
+        """Helper for refilemessages() to copy sequences."""
         fromsequences = fromfolder.getsequences()
         tosequences = self.getsequences()
         changed = 0
@@ -544,9 +541,9 @@ class Folder:
         if changed:
             self.putsequences(tosequences)
 
-    # Move one message over a specific destination message,
-    # which may or may not already exist.
     def movemessage(self, n, tofolder, ton):
+        """Move one message over a specific destination message,
+        which may or may not already exist."""
         path = self.getmessagefilename(n)
         # Open it to check that it exists
         f = open(path)
@@ -576,9 +573,9 @@ class Folder:
             os.unlink(path)
         self.removefromallsequences([n])
 
-    # Copy one message over a specific destination message,
-    # which may or may not already exist.
     def copymessage(self, n, tofolder, ton):
+        """Copy one message over a specific destination message,
+        which may or may not already exist."""
         path = self.getmessagefilename(n)
         # Open it to check that it exists
         f = open(path)
@@ -602,8 +599,8 @@ class Folder:
                 except os.error:
                     pass
 
-    # Create a message, with text from the open file txt.
     def createmessage(self, n, txt):
+        """Create a message, with text from the open file txt."""
         path = self.getmessagefilename(n)
         backuppath = self.getmessagefilename(',%d' % n)
         try:
@@ -628,9 +625,9 @@ class Folder:
                 except os.error:
                     pass
 
-    # Remove one or more messages from all sequeuces (including last)
-    # -- but not from 'cur'!!!
     def removefromallsequences(self, list):
+        """Remove one or more messages from all sequeuces (including last)
+        -- but not from 'cur'!!!"""
         if hasattr(self, 'last') and self.last in list:
             del self.last
         sequences = self.getsequences()
@@ -647,14 +644,14 @@ class Folder:
         if changed:
             self.putsequences(sequences)
 
-    # Return the last message number
     def getlast(self):
+        """Return the last message number."""
         if not hasattr(self, 'last'):
             messages = self.listmessages()
         return self.last
 
-    # Set the last message number
     def setlast(self, last):
+        """Set the last message number."""
         if last is None:
             if hasattr(self, 'last'):
                 del self.last
@@ -663,8 +660,8 @@ class Folder:
 
 class Message(mimetools.Message):
 
-    # Constructor
     def __init__(self, f, n, fp = None):
+        """Constructor."""
         self.folder = f
         self.number = n
         if not fp:
@@ -672,15 +669,15 @@ class Message(mimetools.Message):
             fp = open(path, 'r')
         mimetools.Message.__init__(self, fp)
 
-    # String representation
     def __repr__(self):
+        """String representation."""
         return 'Message(%s, %s)' % (repr(self.folder), self.number)
 
-    # Return the message's header text as a string.  If an
-    # argument is specified, it is used as a filter predicate to
-    # decide which headers to return (its argument is the header
-    # name converted to lower case).
     def getheadertext(self, pred = None):
+        """Return the message's header text as a string.  If an
+        argument is specified, it is used as a filter predicate to
+        decide which headers to return (its argument is the header
+        name converted to lower case)."""
         if not pred:
             return string.joinfields(self.headers, '')
         headers = []
@@ -693,11 +690,11 @@ class Message(mimetools.Message):
             if hit: headers.append(line)
         return string.joinfields(headers, '')
 
-    # Return the message's body text as string.  This undoes a
-    # Content-Transfer-Encoding, but does not interpret other MIME
-    # features (e.g. multipart messages).  To suppress to
-    # decoding, pass a 0 as argument
     def getbodytext(self, decode = 1):
+        """Return the message's body text as string.  This undoes a
+        Content-Transfer-Encoding, but does not interpret other MIME
+        features (e.g. multipart messages).  To suppress decoding,
+        pass 0 as an argument."""
         self.fp.seek(self.startofbody)
         encoding = self.getencoding()
         if not decode or encoding in ('', '7bit', '8bit', 'binary'):
@@ -707,10 +704,10 @@ class Message(mimetools.Message):
         mimetools.decode(self.fp, output, encoding)
         return output.getvalue()
 
-    # Only for multipart messages: return the message's body as a
-    # list of SubMessage objects.  Each submessage object behaves
-    # (almost) as a Message object.
     def getbodyparts(self):
+        """Only for multipart messages: return the message's body as a
+        list of SubMessage objects.  Each submessage object behaves
+        (almost) as a Message object."""
         if self.getmaintype() != 'multipart':
             raise Error, 'Content-Type is not multipart/*'
         bdry = self.getparam('boundary')
@@ -727,8 +724,8 @@ class Message(mimetools.Message):
         mf.pop()
         return parts
 
-    # Return body, either a string or a list of messages
     def getbody(self):
+        """Return body, either a string or a list of messages."""
         if self.getmaintype() == 'multipart':
             return self.getbodyparts()
         else:
@@ -737,8 +734,8 @@ class Message(mimetools.Message):
 
 class SubMessage(Message):
 
-    # Constructor
     def __init__(self, f, n, fp):
+        """Constructor."""
         Message.__init__(self, f, n, fp)
         if self.getmaintype() == 'multipart':
             self.body = Message.getbodyparts(self)
@@ -747,8 +744,8 @@ class SubMessage(Message):
         self.bodyencoded = Message.getbodytext(self, decode=0)
             # XXX If this is big, should remember file pointers
 
-    # String representation
     def __repr__(self):
+        """String representation."""
         f, n, fp = self.folder, self.number, self.fp
         return 'SubMessage(%s, %s, %s)' % (f, n, fp)
 
@@ -766,28 +763,28 @@ class SubMessage(Message):
         return self.body
 
 
-# Class implementing sets of integers.
-#
-# This is an efficient representation for sets consisting of several
-# continuous ranges, e.g. 1-100,200-400,402-1000 is represented
-# internally as a list of three pairs: [(1,100), (200,400),
-# (402,1000)].  The internal representation is always kept normalized.
-#
-# The constructor has up to three arguments:
-# - the string used to initialize the set (default ''),
-# - the separator between ranges (default ',')
-# - the separator between begin and end of a range (default '-')
-# The separators must be strings (not regexprs) and should be different.
-#
-# The tostring() function yields a string that can be passed to another
-# IntSet constructor; __repr__() is a valid IntSet constructor itself.
-#
-# XXX The default begin/end separator means that negative numbers are
-#     not supported very well.
-#
-# XXX There are currently no operations to remove set elements.
-
 class IntSet:
+    """Class implementing sets of integers.
+
+    This is an efficient representation for sets consisting of several
+    continuous ranges, e.g. 1-100,200-400,402-1000 is represented
+    internally as a list of three pairs: [(1,100), (200,400),
+    (402,1000)].  The internal representation is always kept normalized.
+
+    The constructor has up to three arguments:
+    - the string used to initialize the set (default ''),
+    - the separator between ranges (default ',')
+    - the separator between begin and end of a range (default '-')
+    The separators must be strings (not regexprs) and should be different.
+
+    The tostring() function yields a string that can be passed to another
+    IntSet constructor; __repr__() is a valid IntSet constructor itself.
+    """
+
+    # XXX The default begin/end separator means that negative numbers are
+    #     not supported very well.
+    #
+    # XXX There are currently no operations to remove set elements.
 
     def __init__(self, data = None, sep = ',', rng = '-'):
         self.pairs = []
