@@ -84,6 +84,16 @@ class WeakValueDictionary(UserDict.UserDict):
                 L.append((key, o))
         return L
 
+    def iteritems(self):
+        return WeakValuedItemIterator(self)
+
+    def iterkeys(self):
+        return self.data.iterkeys()
+    __iter__ = iterkeys
+
+    def itervalues(self):
+        return WeakValuedValueIterator(self)
+
     def popitem(self):
         while 1:
             key, wr = self.data.popitem()
@@ -167,6 +177,16 @@ class WeakKeyDictionary(UserDict.UserDict):
                 L.append((o, value))
         return L
 
+    def iteritems(self):
+        return WeakKeyedItemIterator(self)
+
+    def iterkeys(self):
+        return WeakKeyedKeyIterator(self)
+    __iter__ = iterkeys
+
+    def itervalues(self):
+        return self.data.itervalues()
+
     def keys(self):
         L = []
         for wr in self.data.keys():
@@ -189,6 +209,59 @@ class WeakKeyDictionary(UserDict.UserDict):
         d = self.data
         for key, value in dict.items():
             d[ref(key, self._remove)] = value
+
+
+class BaseIter:
+    def __iter__(self):
+        return self
+
+
+class WeakKeyedKeyIterator(BaseIter):
+    def __init__(self, weakdict):
+        self._next = weakdict.data.iterkeys().next
+
+    def next(self):
+        while 1:
+            wr = self._next()
+            obj = wr()
+            if obj is not None:
+                return obj
+
+
+class WeakKeyedItemIterator(BaseIter):
+    def __init__(self, weakdict):
+        self._next = weakdict.data.iteritems().next
+
+    def next(self):
+        while 1:
+            wr, value = self._next()
+            key = wr()
+            if key is not None:
+                return key, value
+
+
+class WeakValuedValueIterator(BaseIter):
+    def __init__(self, weakdict):
+        self._next = weakdict.data.itervalues().next
+
+    def next(self):
+        while 1:
+            wr = self._next()
+            obj = wr()
+            if obj is not None:
+                return obj
+
+
+class WeakValuedItemIterator(BaseIter):
+    def __init__(self, weakdict):
+        self._next = weakdict.data.iteritems().next
+
+    def next(self):
+        while 1:
+            key, wr = self._next()
+            value = wr()
+            if value is not None:
+                return key, value
 
 
 # no longer needed
