@@ -75,7 +75,7 @@ the \citetitle[../dist/dist.html]{Distributing Python Modules} manual.
 
 
 \subsection{Best case: trivial installation}
-\label{trivial-inst}
+\label{trivial-install}
 
 In the best case, someone will have prepared a special version of the
 module distribution you want to install that is targeted specifically at
@@ -160,7 +160,7 @@ section~\ref{pre-distutils}.
 
 
 \section{Standard Build and Install}
-\label{normal-install}
+\label{standard-install}
 
 As described in section~\ref{new-standard}, building and installing
 a module distribution using the Distutils is usually one simple command:
@@ -173,6 +173,7 @@ Mac~OS, things are a tad more complicated (see below).
 
 
 \subsection{Platform variations}
+\label{platform-variations}
 
 You should always run the setup command from the distribution root
 directory, i.e. the top-level subdirectory that the module source
@@ -217,6 +218,7 @@ command-line arguments to the setup script:
 
 
 \subsection{Splitting the job up}
+\label{splitting-up}
 
 Running \code{setup.py install} builds and installs all modules in one
 run.  If you prefer to work incrementally---especially useful if you
@@ -246,6 +248,7 @@ their own.
 
 
 \subsection{How building works}
+\label{how-build-works}
 
 As implied above, the \command{build} command is responsible for putting
 the files to install into a \emph{build directory}.  By default, this is
@@ -285,6 +288,7 @@ the job of installing Python modules and applications.
 
 
 \subsection{How installation works}
+\label{how-install-works}
 
 After the \command{build} command runs (whether you run it explicitly,
 or the \command{install} command does it for you), the work of the
@@ -409,7 +413,7 @@ of the following section applies to you.
 
 
 \subsection{Alternate installation: Unix (the home scheme)}
-\label{alt-unix-prefix}
+\label{alt-install-prefix}
 
 Under Unix, there are two ways to perform an alternate installation.
 The ``prefix scheme'' is similar to how alternate installation works
@@ -439,7 +443,7 @@ installation base as follows:
               {home}{/share}
 
 \subsection{Alternate installation: Unix (the prefix scheme)}
-\label{alt-unix-home}
+\label{alt-install-home}
 
 The ``prefix scheme'' is useful when you wish to use one Python
 installation to perform the build/install (i.e., to run the setup
@@ -511,7 +515,7 @@ point to an alternate Python installation, this is immaterial.)
 
 
 \subsection{Alternate installation: Windows}
-\label{alt-windows}
+\label{alt-install-windows}
 
 Since Windows has no conception of a user's home directory, and since
 the standard Python installation under Windows is simpler than that
@@ -534,7 +538,7 @@ Files are installed as follows:
 
 
 \subsection{Alternate installation: Mac~OS}
-\label{alt-macos}
+\label{alt-install-macos}
 
 Like Windows, Mac~OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
