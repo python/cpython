@@ -69,6 +69,7 @@ SEL_LAST='sel.last'
 END='end'
 INSERT='insert'
 CURRENT='current'
+ANCHOR='anchor'
 
 def _flatten(tuple):
 	res = ()
@@ -739,8 +740,7 @@ class Widget(Misc, Pack, Place):
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
 		Widget._setup(self, master, cnf)
-		extra1=()
-		apply(self.tk.call, extra1+(widgetName, self._w)+extra)
+		apply(self.tk.call, (widgetName, self._w)+extra)
 		if cnf:
 			Widget.config(self, cnf)
 	def config(self, cnf=None, **kw):
@@ -1287,6 +1287,14 @@ class Text(Widget):
 		apply(self.tk.call, (self._w, 'yview')+what)
 	def yview_pickplace(self, *what):
 		apply(self.tk.call, (self._w, 'yview', '-pickplace')+what)
+
+class OptionMenu(Widget):
+	def __init__(self, master, variable, value, *values):
+		self.widgetName = 'tk_optionMenu'
+		Widget._setup(self, master, {})
+		self.menuname = apply(
+			self.tk.call,
+			(self.widgetName, self._w, variable, value) + values)
 
 class Image:
 	def __init__(self, imgtype, name=None, cnf={}, **kw):
