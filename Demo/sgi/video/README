@@ -10,9 +10,9 @@ History
 
 We started this in October 1991, when we had a large framegrabber
 board on loan from SGI for a few weeks: we developed a movie recording
-program (camcorder.py) and added numerous features, including still
-frame capture and synchronous sound recording using a second machine
-(the machine holding the framegrabber board didn't have audio).
+program and added numerous features, including still frame capture and
+synchronous sound recording using a second machine (the machine
+holding the framegrabber board didn't have audio).
 
 During the following months, when we started using and processing the
 recorded film fragments, the "CMIF video format" was revised several
@@ -80,6 +80,8 @@ Vaddcache.py	add a "cached index" to a video file, for faster playing
 
 Vrecb.py	like Vrec.py but uses "burst capture" -- somewhat specialized
 
+rgb2video.py	combine a sequence of rgb images into a CMIF video file
+
 
 These modules and files are used by the above programs:
 
@@ -91,6 +93,10 @@ LiveVideoIn.py	live video input class, used by Vsend
 
 LiveVideoOut.py	live video output class, used by Vsend and Vreceive
 
+imgconv.py	Image conversion subroutines for rgb2video.py
+
 senddefs.py	Defaults shared by Vsend and Vreceice
+
+watchcursor.py	Generally useful module to define a watch cursor in GL
 
 VeditForm.fd	FORMS' fdesign definition for Vedit's form
