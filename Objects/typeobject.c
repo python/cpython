@@ -447,6 +447,7 @@ solid_base(PyTypeObject *type)
 
 staticforward void object_dealloc(PyObject *);
 staticforward int object_init(PyObject *, PyObject *, PyObject *);
+staticforward int add_tp_new_wrapper(PyTypeObject *);
 
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
@@ -662,6 +663,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Override slots that deserve it */
 	override_slots(type, type->tp_defined);
+
+	/* Special hack for __new__ */
+	if (type->tp_new == NULL) {
+		/* Can't do this earlier, or some nasty recursion happens. */
+		type->tp_new = PyType_GenericNew;
+		if (add_tp_new_wrapper(type) < 0) {
+			Py_DECREF(type);
+			return NULL;
+		}
+	}
+
 	return (PyObject *)type;
 }
 
@@ -893,7 +905,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_dictoffset */
 	object_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
-	PyType_GenericNew,			/* tp_new */
+	0,					/* tp_new */
 	object_free,				/* tp_free */
 };
 
@@ -920,18 +932,18 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 }
 
 static int
-add_wrappers(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
+add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
 {
 	PyObject *dict = type->tp_defined;
 
-	for (; base->name != NULL; base++) {
+	for (; wraps->name != NULL; wraps++) {
 		PyObject *descr;
-		if (PyDict_GetItemString(dict, base->name))
+		if (PyDict_GetItemString(dict, wraps->name))
 			continue;
-		descr = PyDescr_NewWrapper(type, base, wrapped);
+		descr = PyDescr_NewWrapper(type, wraps, wrapped);
 		if (descr == NULL)
 			return -1;
-		if (PyDict_SetItemString(dict, base->name, descr) < 0)
+		if (PyDict_SetItemString(dict, wraps->name, descr) < 0)
 			return -1;
 		Py_DECREF(descr);
 	}
@@ -1870,12 +1882,36 @@ static struct PyMethodDef tp_new_methoddef[] = {
 static int
 add_tp_new_wrapper(PyTypeObject *type)
 {
-	PyObject *func = PyCFunction_New(tp_new_methoddef, (PyObject *)type);
+	PyObject *func;
 
+	if (PyDict_GetItemString(type->tp_defined, "__new__") != NULL)
+		return 0;
+	func = PyCFunction_New(tp_new_methoddef, (PyObject *)type);
 	if (func == NULL)
 		return -1;
 	return PyDict_SetItemString(type->tp_defined, "__new__", func);
 }
+
+/* This function is called by PyType_InitDict() to populate the type's
+   dictionary with method descriptors for function slots.  For each
+   function slot (like tp_repr) that's defined in the type, one or
+   more corresponding descriptors are added in the type's tp_defined
+   dictionary under the appropriate name (like __repr__).  Some
+   function slots cause more than one descriptor to be added (for
+   example, the nb_add slot adds both __add__ and __radd__
+   descriptors) and some function slots compete for the same
+   descriptor (for example both sq_item and mp_subscript generate a
+   __getitem__ descriptor).  This only adds new descriptors and
+   doesn't overwrite entries in tp_defined that were previously
+   defined.  The descriptors contain a reference to the C function
+   they must call, so that it's safe if they are copied into a
+   subtype's __dict__ and the subtype has a different C function in
+   its slot -- calling the method defined by the descriptor will call
+   the C function that was used to create it, rather than the C
+   function present in the slot when it is called.  (This is important
+   because a subtype may have a C function in the slot that calls the
+   method from the dictionary, and we want to avoid infinite recursion
+   here.) */
 
 static int
 add_operators(PyTypeObject *type)
@@ -1966,13 +2002,16 @@ add_operators(PyTypeObject *type)
 	ADD(type->tp_descr_set, tab_descr_set);
 	ADD(type->tp_init, tab_init);
 
-	if (type->tp_new != NULL)
-		add_tp_new_wrapper(type);
+	if (type->tp_new != NULL) {
+		if (add_tp_new_wrapper(type) < 0)
+			return -1;
+	}
 
 	return 0;
 }
 
-/* Slot wrappers that call the corresponding __foo__ slot */
+/* Slot wrappers that call the corresponding __foo__ slot.  See comments
+   below at override_slots() for more explanation. */
 
 #define SLOT0(SLOTNAME, OPNAME) \
 static PyObject * \
@@ -2294,6 +2333,22 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_DECREF(func);
 	return x;
 }
+
+/* This is called at the very end of type_new() (even after
+   PyType_InitDict()) to complete the initialization of dynamic types.
+   The dict argument is the dictionary argument passed to type_new(),
+   which is the local namespace of the class statement, in other
+   words, it contains the methods.  For each special method (like
+   __repr__) defined in the dictionary, the corresponding function
+   slot in the type object (like tp_repr) is set to a special function
+   whose name is 'slot_' followed by the slot name and whose signature
+   is whatever is required for that slot.  These slot functions look
+   up the corresponding method in the type's dictionary and call it.
+   The slot functions have to take care of the various peculiarities
+   of the mapping between slots and special methods, such as mapping
+   one slot to multiple methods (tp_richcompare <--> __le__, __lt__
+   etc.)  or mapping multiple slots to a single method (sq_item,
+   mp_subscript <--> __getitem__). */
 
 static void
 override_slots(PyTypeObject *type, PyObject *dict)
