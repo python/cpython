@@ -937,9 +937,7 @@ def test1():
 
 
 # Test program
-def test():
-	import sys
-	args = sys.argv[1:]
+def test(args=[]):
 	if not args:
 		args = [
 			'/etc/passwd',
@@ -970,7 +968,33 @@ def test():
 	finally:
 		urlcleanup()
 
+def main():
+	import getopt, sys
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "th")
+	except getopt.error, msg:
+		print msg
+		print "Use -h for help"
+		return
+	t = 0
+	for o, a in opts:
+		if o == '-t':
+			t = t + 1
+		if o == '-h':
+			print "Usage: python urllib.py [-t] [url ...]"
+			print "-t runs self-test;",
+			print "otherwise, contents of urls are printed"
+			return
+	if t:
+		if t > 1:
+			test1()
+		test(args)
+	else:
+		if not args:
+			print "Use -h for help"
+		for url in args:
+			print urlopen(url).read(),
+
 # Run test program when run as a script
 if __name__ == '__main__':
-	test1()
-	test()
+	main()
