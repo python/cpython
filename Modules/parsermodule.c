@@ -26,6 +26,9 @@
 					/* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"			/* PyNode_Compile()		  */
 
+#ifndef MS_WINDOWS
+char *strdup();
+#endif
 
 /*  String constants used to initialize module attributes.
  *
