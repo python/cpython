@@ -108,7 +108,6 @@ static void
 w_object(PyObject *v, WFILE *p)
 {
 	int i, n;
-	PyBufferProcs *pb;
 
 	p->depth++;
 
@@ -249,13 +248,10 @@ w_object(PyObject *v, WFILE *p)
 		w_short(co->co_firstlineno, p);
 		w_object(co->co_lnotab, p);
 	}
-	else if ((pb = v->ob_type->tp_as_buffer) != NULL &&
-		 pb->bf_getsegcount != NULL &&
-		 pb->bf_getreadbuffer != NULL &&
-		 (*pb->bf_getsegcount)(v, NULL) == 1)
-	{
+	else if (PyObject_CheckReadBuffer(v)) {
 		/* Write unknown buffer-style objects as a string */
 		char *s;
+		PyBufferProcs *pb = v->ob_type->tp_as_buffer;
 		w_byte(TYPE_STRING, p);
 		n = (*pb->bf_getreadbuffer)(v, 0, (void **)&s);
 		w_long((long)n, p);

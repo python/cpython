@@ -268,7 +268,6 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 {
 	PyCodeObject *co;
 	int i;
-	PyBufferProcs *pb;
 	/* Check argument types */
 	if (argcount < 0 || nlocals < 0 ||
 	    code == NULL ||
@@ -279,16 +278,8 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	    cellvars == NULL || !PyTuple_Check(cellvars) ||
 	    name == NULL || !PyString_Check(name) ||
 	    filename == NULL || !PyString_Check(filename) ||
-		lnotab == NULL || !PyString_Check(lnotab)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	pb = code->ob_type->tp_as_buffer;
-	if (pb == NULL ||
-	    pb->bf_getreadbuffer == NULL ||
-	    pb->bf_getsegcount == NULL ||
-	    (*pb->bf_getsegcount)(code, NULL) != 1)
-	{
+	    lnotab == NULL || !PyString_Check(lnotab) ||
+	    !PyObject_CheckReadBuffer(code)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
