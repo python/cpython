@@ -80,7 +80,7 @@ From the viewpoint of of C access to Python services, we have:
 	 This function always succeeds.
      \end{cfuncdesc}
 
-     \begin{cfuncdesc}{PyObject*}{PyObject_AttrString}{PyObject *o, char *attr_name}
+     \begin{cfuncdesc}{PyObject*}{PyObject_GetAttrString}{PyObject *o, char *attr_name}
 	 Retrieve an attributed named attr_name form object o.
 	 Returns the attribute value on success, or {\NULL} on failure.
 	 This is the equivalent of the Python expression: \code{o.attr_name}.
