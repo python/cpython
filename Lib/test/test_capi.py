@@ -1,5 +1,5 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
-# these are all functions _test exports whose name begins with 'test_'.
+# these are all functions _testcapi exports whose name begins with 'test_'.
 
 import sys
 import test_support
