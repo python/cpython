@@ -37,11 +37,12 @@ vcopy.py	selectively write frames from one movie file to another
 		commands: 'n' gets next frame; 'w' writes current frame
 
 video.py	player for movies recorded by camcorder.py
-		usage: video [moviefile [soundfile [skipbytes]]]
-		- default moviefile is film.video
-		- default soundfile is none (no sound)
-		- if skipbytes is given, that many bytes are skipped from
-		  soundfile before playing
+		usage: video [-l] [-p pf] [moviefile [soundfile [skipbytes]]]
+		-p pf		override packfactor (to zoom)
+		-l		looping -- restart movie when done
+		moviefile	default is film.video
+		soundfile	default is none (no sound)
+		skipbytes	byte offset in soundfile where sound starts
 
 vinfo.py	print a summary of a movie file
 
