@@ -309,12 +309,12 @@ def getfile(object):
     if ismodule(object):
         if hasattr(object, '__file__'):
             return object.__file__
-        raise TypeError, 'arg is a built-in module'
+        raise TypeError('arg is a built-in module')
     if isclass(object):
         object = sys.modules.get(object.__module__)
         if hasattr(object, '__file__'):
             return object.__file__
-        raise TypeError, 'arg is a built-in class'
+        raise TypeError('arg is a built-in class')
     if ismethod(object):
         object = object.im_func
     if isfunction(object):
@@ -325,8 +325,8 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError, 'arg is not a module, class, method, ' \
-                     'function, traceback, frame, or code object'
+    raise TypeError('arg is not a module, class, method, ' 
+                    'function, traceback, frame, or code object')
 
 def getmoduleinfo(path):
     """Get the module name, suffix, mode, and module type for a given file."""
@@ -405,7 +405,7 @@ def findsource(object):
     file = getsourcefile(object) or getfile(object)
     lines = linecache.getlines(file)
     if not lines:
-        raise IOError, 'could not get source code'
+        raise IOError('could not get source code')
 
     if ismodule(object):
         return lines, 0
@@ -415,7 +415,8 @@ def findsource(object):
         pat = re.compile(r'^\s*class\s*' + name + r'\b')
         for i in range(len(lines)):
             if pat.match(lines[i]): return lines, i
-        else: raise IOError, 'could not find class definition'
+        else:
+            raise IOError('could not find class definition')
 
     if ismethod(object):
         object = object.im_func
@@ -427,14 +428,14 @@ def findsource(object):
         object = object.f_code
     if iscode(object):
         if not hasattr(object, 'co_firstlineno'):
-            raise IOError, 'could not find function definition'
+            raise IOError('could not find function definition')
         lnum = object.co_firstlineno - 1
         pat = re.compile(r'^(\s*def\s)|(.*\slambda(:|\s))')
         while lnum > 0:
             if pat.match(lines[lnum]): break
             lnum = lnum - 1
         return lines, lnum
-    raise IOError, 'could not find code object'
+    raise IOError('could not find code object')
 
 def getcomments(object):
     """Get lines of comments immediately preceding an object's source code.
@@ -512,7 +513,8 @@ class BlockFinder:
             self.indent = self.indent + 1
         elif type == tokenize.DEDENT:
             self.indent = self.indent - 1
-            if self.indent == 0: raise EndOfBlock, self.last
+            if self.indent == 0:
+                raise EndOfBlock, self.last
         elif type == tokenize.NAME and scol == 0:
             raise EndOfBlock, self.last
 
@@ -739,7 +741,7 @@ def getframeinfo(frame, context=1):
     if istraceback(frame):
         frame = frame.tb_frame
     if not isframe(frame):
-        raise TypeError, 'arg is not a frame or traceback object'
+        raise TypeError('arg is not a frame or traceback object')
 
     filename = getsourcefile(frame) or getfile(frame)
     lineno = frame.f_lineno
@@ -786,18 +788,11 @@ def getinnerframes(tb, context=1):
         tb = tb.tb_next
     return framelist
 
-def currentframe():
-    """Return the frame object for the caller's stack frame."""
-    try:
-        1/0
-    except ZeroDivisionError:
-        return sys.exc_info()[2].tb_frame.f_back
-
-if hasattr(sys, '_getframe'): currentframe = sys._getframe
+currentframe = sys._getframe
 
 def stack(context=1):
     """Return a list of records for the stack above the caller's frame."""
-    return getouterframes(currentframe().f_back, context)
+    return getouterframes(sys._getframe(1), context)
 
 def trace(context=1):
     """Return a list of records for the stack below the current exception."""
