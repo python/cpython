@@ -10,10 +10,96 @@ __rcsid__ = "$Id$"
 
 import os
 import sys
+import string
 from distutils.errors import *
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 
+def _devstudio_versions():
+    "Get a list of devstudio versions"
+    try:
+        import win32api
+        import win32con
+    except ImportError:
+        return None
+
+    K = 'Software\\Microsoft\\Devstudio'
+    L = []
+    for base in (win32con.HKEY_CLASSES_ROOT,win32con.HKEY_LOCAL_MACHINE,win32con.HKEY_CURRENT_USER,win32con.HKEY_USERS):
+        try:
+            k = win32api.RegOpenKeyEx(base,K)
+            i = 0
+            while 1:
+                try:
+                    p = win32api.RegEnumKey(k,i)
+                    if p[0] in '123456789' and p not in L:
+                        L.append(p)
+                except win32api.error:
+                    break
+                i = i + 1
+        except win32api.error:
+            pass
+    L.sort()
+    L.reverse()
+    return L
+
+def _msvc_get_paths(path, vNum='6.0', platform='x86'):
+    "Get a devstudio path (include, lib or path)"
+    try:
+        import win32api
+        import win32con
+    except ImportError:
+        return None
+
+    L = []
+    if path=='lib': path= 'Library'
+    path = string.upper(path + ' Dirs')
+    K = 'Software\\Microsoft\\Devstudio\\%s\\Build System\\Components\\Platforms\\Win32 (%s)\\Directories' \
+                % (vNum,platform)
+    for base in (win32con.HKEY_CLASSES_ROOT,win32con.HKEY_LOCAL_MACHINE,win32con.HKEY_CURRENT_USER,win32con.HKEY_USERS):
+        try:
+            k = win32api.RegOpenKeyEx(base,K)
+            i = 0
+            while 1:
+                try:
+                    (p,v,t) = win32api.RegEnumValue(k,i)
+                    if string.upper(p)==path:
+                        V = string.split(v,';')
+                        for v in V:
+                            if v=='' or v in L: continue
+                            L.append(v)
+                        break
+                    i = i + 1
+                except win32api.error:
+                    break
+        except win32api.error:
+            pass
+    return L
+
+def _find_exe(exe):
+    for v in _devstudio_versions():
+        for p in _msvc_get_paths('path',v):
+            fn=os.path.join(os.path.abspath(p),exe)
+            if os.path.isfile(fn): return fn
+
+    #didn't find it; try existing path
+    try:
+        for p in string.split(os.environ['Path'],';'):
+            fn=os.path.join(os.path.abspath(p),exe)
+            if os.path.isfile(fn): return fn
+    except:
+        pass
+    return exe  #last desperate hope 
+
+def _find_SET(n):
+    for v in _devstudio_versions():
+        p=_msvc_get_paths(n,v)
+        if p!=[]: return p
+    return []
+
+def _do_SET(n):
+    p=_find_SET(n)
+    if p!=[]: os.environ[n]=string.join(p,';')
 
 class MSVCCompiler (CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
@@ -34,12 +120,21 @@ class MSVCCompiler (CCompiler) :
         self.add_library ( "python" + sys.version[0] + sys.version[2] )
         self.add_library_dir( os.path.join( sys.exec_prefix, 'libs' ) )
         
-        self.cc   = "cl.exe"
-        self.link = "link.exe"
+        self.cc   = _find_exe("cl.exe")
+        self.link = _find_exe("link.exe")
+        _do_SET('lib')
+        _do_SET('include')
+        path=_find_SET('path')
+        try:
+            for p in string.split(os.environ['path'],';'):
+                path.append(p)
+        except KeyError:
+            pass
+        os.environ['path'] = string.join(path,';')
         self.preprocess_options = None
         self.compile_options = [ '/nologo', '/Ox', '/MD' ]
 
-        self.ldflags_shared = ['/DLL', '/nologo']
+        self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         self.ldflags_static = [ '/nologo']
 
 
