@@ -4210,7 +4210,8 @@ symtable_node(struct symtable *st, node *n)
 	case listmaker:
 		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
 			symtable_list_comprehension(st, CHILD(n, 1));
-			break;
+			n = CHILD(n, 0);
+			goto loop;
 		}
 	case atom:
 		if (TYPE(n) == atom && TYPE(CHILD(n, 0)) == NAME) {
