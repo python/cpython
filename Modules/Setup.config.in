@@ -9,8 +9,7 @@
 # Garbage collection enabled with --with-cycle-gc
 @USE_GC_MODULE@gc gcmodule.c
 
-# You may want this to be built as a dynamically loaded module; uncomment
-# the following line in that case:
+# To build this static comment out the *shared* line below
 
 *shared*
 
