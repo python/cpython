@@ -1546,23 +1546,36 @@ class Tk(Misc, Wm):
     """Toplevel widget of Tk which represents mostly the main window
     of an appliation. It has an associated Tcl interpreter."""
     _w = '.'
-    def __init__(self, screenName=None, baseName=None, className='Tk'):
+    def __init__(self, screenName=None, baseName=None, className='Tk', useTk=1):
         """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
         It is constructed from sys.argv[0] without extensions if None is given. CLASSNAME
         is the name of the widget class."""
-        global _default_root
         self.master = None
         self.children = {}
+        self._tkloaded = 0
+        # to avoid recursions in the getattr code in case of failure, we
+        # ensure that self.tk is always _something_.
+        self.tk = None  
         if baseName is None:
             import sys, os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc', '.pyo'):
                 baseName = baseName + ext
-        self.tk = _tkinter.create(screenName, baseName, className)
-        self.tk.wantobjects(wantobjects)
+        interactive = 0
+        self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk)
+        if useTk:
+            self._loadtk()
+        self.readprofile(baseName, className)
+    def loadtk(self):
+        if not self._tkloaded:
+            self.tk.loadtk()
+            self._loadtk()
+    def _loadtk(self):
+        self._tkloaded = 1
+        global _default_root
         if _MacOS and hasattr(_MacOS, 'SchedParams'):
             # Disable event scanning except for Command-Period
             _MacOS.SchedParams(1, 0)
@@ -1587,7 +1600,6 @@ class Tk(Misc, Wm):
             % str(TkVersion)
         self.tk.createcommand('tkerror', _tkerror)
         self.tk.createcommand('exit', _exit)
-        self.readprofile(baseName, className)
         if _support_default_root and not _default_root:
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
@@ -1629,6 +1641,15 @@ class Tk(Misc, Wm):
         sys.last_value = val
         sys.last_traceback = tb
         traceback.print_exception(exc, val, tb)
+    def __getattr__(self, attr):
+        "Delegate attribute access to the interpreter object"
+        return getattr(self.tk, attr)
+    def __hasattr__(self, attr):
+        "Delegate attribute access to the interpreter object"
+        return hasattr(self.tk, attr)
+    def __delattr__(self, attr):
+        "Delegate attribute access to the interpreter object"
+        return delattr(self.tk, attr)
 
 # Ideally, the classes Pack, Place and Grid disappear, the
 # pack/place/grid methods are defined on the Widget class, and
@@ -1643,6 +1664,10 @@ class Tk(Misc, Wm):
 # the Misc class (which now incorporates all methods common between
 # toplevel and interior widgets).  Again, for compatibility, these are
 # copied into the Pack, Place or Grid class.
+
+
+def Tcl(screenName=None, baseName=None, className='Tk', useTk=0):
+    return Tk(screenName, baseName, className, useTk)
 
 class Pack:
     """Geometry manager Pack.

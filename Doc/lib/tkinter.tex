@@ -94,12 +94,23 @@ Or, more often:
 from Tkinter import *
 \end{verbatim}
 
-\begin{classdesc}{Tk}{screenName=None, baseName=None, className='Tk'}
+\begin{classdesc}{Tk}{screenName=None, baseName=None, className='Tk', useTk=1}
 The \class{Tk} class is instantiated without arguments.
 This creates a toplevel widget of Tk which usually is the main window
 of an appliation. Each instance has its own associated Tcl interpreter.
 % FIXME: The following keyword arguments are currently recognized:
 \end{classdesc}
+
+\begin{funcdesc}{Tcl}{screenName=None, baseName=None, className='Tk', useTk=0}
+The \function{Tcl} function is a factory function which creates an object
+much like that created by the \class{Tk} class, except that it does not
+initialize the Tk subsystem.  This is most often useful when driving the Tcl
+interpreter in an environment where one doesn't want to create extraneous
+toplevel windows, or where one cannot (i.e. Unix/Linux systems without an X
+server).  An object created by the \function{Tcl} object can have a Toplevel
+window created (and the Tk subsystem initialized) by calling its
+\method{loadtk} method.
+\end{funcdesc}
 
 Other modules that provide Tk support include:
 
