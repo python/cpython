@@ -4,6 +4,29 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.4 (final)?
+===================================
+
+*Release date: DD-MMM-2004*
+
+Core and builtins
+-----------------
+
+- Made omitted callback and None equivalent for weakref.ref() and
+  weakref.proxy(); the None case wasn't handled correctly in all
+  cases.
+
+- Fixed problem where PyWeakref_NewRef() and PyWeakref_NewProxy()
+  assumed that initial existing entries in an object's weakref list
+  would not be removed while allocating a new weakref object.  Since
+  GC could be invoked at that time, however, that assumption was
+  invalid.  In a truly obscure case of GC being triggered during
+  creation for a new weakref object for an referent which already
+  has a weakref without a callback which is only referenced from
+  cyclic trash, a memory error can occur.  This consistently created a
+  segfault in a debug build, but provided less predictable behavior in
+  a release build.
+
 What's New in Python 2.3.3 (final)?
 ===================================
 
