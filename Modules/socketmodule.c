@@ -2560,21 +2560,6 @@ static PyMethodDef PySocket_methods[] = {
 };
 
 
-/* Convenience routine to export an integer value.
- *
- * Errors are silently ignored, for better or for worse...
- */
-static void
-insint(PyObject *d, char *name, int value)
-{
-	PyObject *v = PyInt_FromLong((long) value);
-	if (!v || PyDict_SetItemString(d, name, v))
-		PyErr_Clear();
-
-	Py_XDECREF(v);
-}
-
-
 #ifdef MS_WINDOWS
 
 /* Additional initialization and cleanup for NT/Windows */
