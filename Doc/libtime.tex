@@ -2,8 +2,7 @@
 
 \bimodindex{time}
 This module provides various time-related functions.
-It is always available.  (On some systems, not all functions may
-exist; e.g. the ``milli'' variants can't always be implemented.)
+It is always available.
 
 An explanation of some terminology and conventions is in order.
 
@@ -55,6 +54,13 @@ the same name, there is no trailing newline.
 \end{funcdesc}
 
 
+\begin{funcdesc}{clock}{}
+Return the current CPU time as a floating point number expressed in
+seconds.  The precision depends on that of the C function by the same
+name.
+\end{funcdesc}
+
+
 \begin{funcdesc}{ctime}{secs}
 Convert a time expressed in seconds since the epoch to a string
 representing local time.  \code{ctime(t)} is equivalent to
@@ -78,18 +84,6 @@ Like \code{gmtime} but converts to local time.  The dst flag is set
 to 1 when DST applies to the given time.
 \end{funcdesc}
 
-\begin{funcdesc}{millisleep}{msecs}
-Suspend execution for the given number of milliseconds.  (Obsolete,
-you can now use use \code{sleep} with a floating point argument.)
-\end{funcdesc}
-
-\begin{funcdesc}{millitimer}{}
-Return the number of milliseconds of real time elapsed since some
-point in the past that is fixed per execution of the python
-interpreter (but may change in each following run).  The return value
-may be negative, and it may wrap around.
-\end{funcdesc}
-
 \begin{funcdesc}{mktime}{tuple}
 This is the inverse function of \code{localtime}.  Its argument is the
 full 9-tuple (since the dst flag is needed).  It returns an integer.
@@ -104,8 +98,7 @@ be a floating point number to indicate a more precise sleep time.
 Return the time as a floating point number expressed in seconds since
 the epoch, in UTC.  Note that even though the time is always returned
 as a floating point number, not all systems provide time with a better
-precision than 1 second.  An alternative for measuring precise
-intervals is \code{millitimer}.
+precision than 1 second.
 \end{funcdesc}
 
 \begin{datadesc}{timezone}
