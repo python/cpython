@@ -27,6 +27,10 @@
 #endif
 #endif
 
+#ifdef __MWERKS__
+#define HAVE_STRFTIME
+#endif
+
 #ifdef USE_GUSI
 /* GUSI provides a lot of unixisms */
 #define HAVE_SELECT
