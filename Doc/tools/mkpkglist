@@ -25,17 +25,10 @@ PKG_TYPES = [
     ("LaTeX", "latex"),
     ]
 
-
-fp = open("Makefile")
-for line in fp:
-    line = line.replace('=', ' ', 1)
-    parts = line.split()
-    if parts[:1] == ["RELEASE"]:
-        release = parts[1]
-        break
-else:
-    print >>sys.stderr, "Could not locate RELEASE in Makefile."
-    sys.exit(1)
+getversioninfo = os.path.join(os.path.dirname(__file__), "getversioninfo")
+fp = os.popen('"%s" "%s"' % (sys.executable, getversioninfo), "r")
+release = fp.readline().strip()
+fp.close()
 
 print '''\
 <table border="1" cellpadding="3" align="center">
