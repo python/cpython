@@ -237,5 +237,6 @@ initnoddy3(void)
     if (m == NULL)
       return;
 
+    Py_INCREF(&NoddyType);
     PyModule_AddObject(m, "Noddy", (PyObject *)&NoddyType);
 }
