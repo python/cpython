@@ -891,7 +891,7 @@ HISTORY file!  Many important changes listed there.
 
 Alternatively, a good overview of the changes between 1.5.2 and 2.0 is
 the document "What's New in Python 2.0" by Kuchling and Moshe Zadka:
-http://starship.python.net/crew/amk/python/writing/new-python/.
+http://www.amk.ca/python/2.0/.
 
 --Guido van Rossum (home page: http://www.pythonlabs.com/~guido/)
 
@@ -1882,7 +1882,7 @@ Overview of Changes since 1.5.2
 
 For this overview, I have borrowed from the document "What's New in
 Python 2.0" by Andrew Kuchling and Moshe Zadka:
-http://starship.python.net/crew/amk/python/writing/new-python/.
+http://www.amk.ca/python/2.0/ .
 
 There are lots of new modules and lots of bugs have been fixed.  A
 list of all new modules is included below.
