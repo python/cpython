@@ -78,16 +78,6 @@ statement or the built-in function eval():
     3
     >>>
 
-However, our __getitem__() method is not used for variable access by the
-interpreter:
-
-    >>> exec "print foo" in a
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-      File "<string>", line 1, in ?
-    NameError: name 'foo' is not defined
-    >>>
-
 Now I'll show that defaultdict instances have dynamic instance variables,
 just like classic classes:
 

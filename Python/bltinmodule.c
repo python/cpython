@@ -455,11 +455,17 @@ builtin_eval(PyObject *self, PyObject *args)
 	char *str;
 	PyCompilerFlags cf;
 
-	if (!PyArg_ParseTuple(args, "O|O!O!:eval",
-			&cmd,
-			&PyDict_Type, &globals,
-			&PyDict_Type, &locals))
+	if (!PyArg_UnpackTuple(args, "eval", 1, 3, &cmd, &globals, &locals))
 		return NULL;
+	if (locals != Py_None && !PyMapping_Check(locals)) {
+		PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+			return NULL;
+	}
+	if (globals != Py_None && !PyDict_Check(globals)) {
+		PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ? 
+			"globals must be a real dict; try eval(expr, {}, mapping)"
+			: "globals must be a dict");
+	}
 	if (globals == Py_None) {
 		globals = PyEval_GetGlobals();
 		if (locals == Py_None)
@@ -517,8 +523,9 @@ PyDoc_STRVAR(eval_doc,
 Evaluate the source in the context of globals and locals.\n\
 The source may be a string representing a Python expression\n\
 or a code object as returned by compile().\n\
-The globals and locals are dictionaries, defaulting to the current\n\
-globals and locals.  If only globals is given, locals defaults to it.");
+The globals must be a dictionary and locals can be any mappping,\n\
+defaulting to the current globals and locals.\n\
+If only globals is given, locals defaults to it.\n");
 
 
 static PyObject *

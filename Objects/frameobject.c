@@ -544,7 +544,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 
 #ifdef Py_DEBUG
 	if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
-	    (locals != NULL && !PyDict_Check(locals))) {
+	    (locals != NULL && !PyMapping_Check(locals))) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -688,11 +688,11 @@ map_to_dict(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 		if (deref)
 			value = PyCell_GET(value);
 		if (value == NULL) {
-			if (PyDict_DelItem(dict, key) != 0)
+			if (PyObject_DelItem(dict, key) != 0)
 				PyErr_Clear();
 		}
 		else {
-			if (PyDict_SetItem(dict, key, value) != 0)
+			if (PyObject_SetItem(dict, key, value) != 0)
 				PyErr_Clear();
 		}
 	}
@@ -705,7 +705,9 @@ dict_to_map(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 	int j;
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
-		PyObject *value = PyDict_GetItem(dict, key);
+		PyObject *value = PyObject_GetItem(dict, key);
+		if (value == NULL)
+			PyErr_Clear();
 		if (deref) {
 			if (value || clear) {
 				if (PyCell_GET(values[j]) != value) {
@@ -720,6 +722,7 @@ dict_to_map(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 				values[j] = value;
 			}
 		}
+		Py_XDECREF(value);
 	}
 }
 
@@ -742,7 +745,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 		}
 	}
 	map = f->f_code->co_varnames;
-	if (!PyDict_Check(locals) || !PyTuple_Check(map))
+	if (!PyTuple_Check(map))
 		return;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
@@ -780,7 +783,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 	map = f->f_code->co_varnames;
 	if (locals == NULL)
 		return;
-	if (!PyDict_Check(locals) || !PyTuple_Check(map))
+	if (!PyTuple_Check(map))
 		return;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;

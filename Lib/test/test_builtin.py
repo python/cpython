@@ -3,7 +3,7 @@
 import test.test_support, unittest
 from test.test_support import fcmp, have_unicode, TESTFN, unlink
 
-import sys, warnings, cStringIO, random
+import sys, warnings, cStringIO, random, UserDict
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -261,6 +261,60 @@ class BuiltinTest(unittest.TestCase):
                              unicode('\xc3\xa5', 'utf8'))
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
+
+    def test_general_eval(self):
+        # Tests that general mappings can be used for the locals argument
+
+        class M:
+            "Test mapping interface versus possible calls from eval()."
+            def __getitem__(self, key):
+                if key == 'a':
+                    return 12
+                raise KeyError
+            def keys(self):
+                return list('xyz')
+
+        m = M()
+        g = globals()
+        self.assertEqual(eval('a', g, m), 12)
+        self.assertRaises(NameError, eval, 'b', g, m)
+        self.assertEqual(eval('dir()', g, m), list('xyz'))
+        self.assertEqual(eval('globals()', g, m), g)
+        self.assertEqual(eval('locals()', g, m), m)
+
+        # Verify that dict subclasses work as well
+        class D(dict):
+            def __getitem__(self, key):
+                if key == 'a':
+                    return 12
+                return dict.__getitem__(self, key)
+            def keys(self):
+                return list('xyz')
+
+        d = D()
+        self.assertEqual(eval('a', g, d), 12)
+        self.assertRaises(NameError, eval, 'b', g, d)
+        self.assertEqual(eval('dir()', g, d), list('xyz'))
+        self.assertEqual(eval('globals()', g, d), g)
+        self.assertEqual(eval('locals()', g, d), d)
+
+        # Verify locals stores (used by list comps)
+        eval('[locals() for i in (2,3)]', g, d)
+        eval('[locals() for i in (2,3)]', g, UserDict.UserDict())
+
+        class SpreadSheet:
+            "Sample application showing nested, calculated lookups."
+            _cells = {}
+            def __setitem__(self, key, formula):
+                self._cells[key] = formula
+            def __getitem__(self, key ):
+                return eval(self._cells[key], globals(), self)
+
+        ss = SpreadSheet()
+        ss['a1'] = '5'
+        ss['a2'] = 'a1*6'
+        ss['a3'] = 'a2*7'
+        self.assertEqual(ss['a3'], 210)
 
     # Done outside of the method test_z to get the correct scope
     z = 0

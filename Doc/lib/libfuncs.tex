@@ -291,8 +291,12 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{eval}{expression\optional{, globals\optional{, locals}}}
-  The arguments are a string and two optional dictionaries.  The
-  \var{expression} argument is parsed and evaluated as a Python
+  The arguments are a string and optional globals and locals.  If provided,
+  \var{globals} must be a dictionary.  If provided, \var{locals} can be
+  any mapping object.  \versionchanged[formerly \var{locals} was required
+  to be a dictionary]{2.4}
+
+  The \var{expression} argument is parsed and evaluated as a Python
   expression (technically speaking, a condition list) using the
   \var{globals} and \var{locals} dictionaries as global and local name
   space.  If the \var{globals} dictionary is present and lacks
