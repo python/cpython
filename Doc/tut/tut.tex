@@ -959,7 +959,7 @@ Loop statements may have an {\tt else} clause; it is executed when the
 loop terminates through exhaustion of the list (with {\tt for}) or when
 the condition becomes false (with {\tt while}), but not when the loop is
 terminated by a {\tt break} statement.  This is exemplified by the
-following loop, which searches for a list item of value 0:
+following loop, which searches for prime numbers:
 
 \bcode\begin{verbatim}
 >>> for n in range(2, 10):
@@ -1024,7 +1024,7 @@ whereas
 variable references first look in the local symbol table, then
 in the global symbol table, and then in the table of built-in names.
 Thus,
-global variables cannot be directly assigned to from within a
+global variables cannot be directly assigned a value within a
 function (unless named in a {\tt global} statement), although
 they may be referenced.
 
@@ -3035,7 +3035,7 @@ raise an exception.  For example:
 
 \section{New Class Features in Release 1.1}
 
-Semoe changes have been made to classes: the operator overloading
+Some changes have been made to classes: the operator overloading
 mechanism is more flexible, providing more support for non-numeric use
 of operators (including calling an object as if it were a function),
 and it is possible to trap attribute accesses.
@@ -3119,7 +3119,7 @@ class Wrapper:
     def __getattr__(self, name):
         return getattr(self.wrapped, name)
     def __setattr__(self, name, value):
-        setattr(self.wrapped, value)
+        setattr(self.wrapped, name, value)
     def __delattr__(self, name):
         delattr(self.wrapped, name)
 
