@@ -80,6 +80,11 @@ Library
 
 - timeit.py now checks the current directory for imports.
 
+- urllib2.py now knows how to order proxy classes, so the user doesn't
+  have to insert it in front of other classes, nor do dirty tricks like
+  inserting a "dummy" HTTPHandler after a ProxyHandler when building an
+  opener with proxy support.
+
 Tools/Demos
 -----------
 

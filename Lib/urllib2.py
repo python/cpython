@@ -267,6 +267,7 @@ class OpenerDirector:
                 protocol = meth[:-5]
                 if protocol in self.handle_open:
                     self.handle_open[protocol].append(handler)
+                    self.handle_open[protocol].sort()
                 else:
                     self.handle_open[protocol] = [handler]
                 added = 1
@@ -283,6 +284,7 @@ class OpenerDirector:
                 dict = self.handle_error.get(proto, {})
                 if kind in dict:
                     dict[kind].append(handler)
+                    dict[kind].sort()
                 else:
                     dict[kind] = [handler]
                 self.handle_error[proto] = dict
@@ -290,6 +292,7 @@ class OpenerDirector:
                 continue
         if added:
             self.handlers.append(handler)
+            self.handlers.sort()
             handler.add_parent(self)
 
     def __del__(self):
@@ -355,17 +358,15 @@ class OpenerDirector:
             args = (dict, 'default', 'http_error_default') + orig_args
             return self._call_chain(*args)
 
-# XXX probably also want an abstract factory that knows things like
-# the fact that a ProxyHandler needs to get inserted first.
-# would also know when it makes sense to skip a superclass in favor of
-# a subclass and when it might make sense to include both
+# XXX probably also want an abstract factory that knows when it makes
+# sense to skip a superclass in favor of a subclass and when it might
+# make sense to include both
 
 def build_opener(*handlers):
     """Create an opener object from a list of handlers.
 
     The opener will use several default handlers, including support
-    for HTTP and FTP.  If there is a ProxyHandler, it must be at the
-    front of the list of handlers.  (Yuck.)
+    for HTTP and FTP.
 
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
@@ -398,10 +399,20 @@ def build_opener(*handlers):
     return opener
 
 class BaseHandler:
+    handler_order = 500
+
     def add_parent(self, parent):
         self.parent = parent
     def close(self):
         self.parent = None
+    def __lt__(self, other):
+        if not hasattr(other, "handler_order"):
+            # Try to preserve the old behavior of having custom classes
+            # inserted after default ones (works only for custom user
+            # classes which are not aware of handler_order).
+            return True
+        return self.handler_order < other.handler_order
+            
 
 class HTTPDefaultErrorHandler(BaseHandler):
     def http_error_default(self, req, fp, code, msg, hdrs):
@@ -473,6 +484,9 @@ class HTTPRedirectHandler(BaseHandler):
               "The last 302 error message was:\n"
 
 class ProxyHandler(BaseHandler):
+    # Proxies must be in front
+    handler_order = 100
+
     def __init__(self, proxies=None):
         if proxies is None:
             proxies = getproxies()
@@ -523,6 +537,9 @@ class CustomProxy:
         return self.addr
 
 class CustomProxyHandler(BaseHandler):
+    # Proxies must be in front
+    handler_order = 100
+
     def __init__(self, *proxies):
         self.proxies = {}
 
@@ -1051,12 +1068,8 @@ class OpenerFactory:
     default_handlers = [UnknownHandler, HTTPHandler,
                         HTTPDefaultErrorHandler, HTTPRedirectHandler,
                         FTPHandler, FileHandler]
-    proxy_handlers = [ProxyHandler]
     handlers = []
     replacement_handlers = []
-
-    def add_proxy_handler(self, ph):
-        self.proxy_handlers = self.proxy_handlers + [ph]
 
     def add_handler(self, h):
         self.handlers = self.handlers + [h]
@@ -1066,7 +1079,7 @@ class OpenerFactory:
 
     def build_opener(self):
         opener = OpenerDirector()
-        for ph in self.proxy_handlers:
+        for ph in self.default_handlers:
             if inspect.isclass(ph):
                 ph = ph()
             opener.add_handler(ph)
