@@ -117,6 +117,17 @@ static struct gai_afd {
 #define PTON_MAX	4
 #endif
 
+#ifndef IN_MULTICAST
+#define IN_MULTICAST(i)	    (((i) & 0xf0000000U) == 0xe0000000U)
+#endif
+
+#ifndef IN_EXPERIMENTAL
+#define IN_EXPERIMENTAL(i)  (((i) & 0xe0000000U) == 0xe0000000U)
+#endif
+
+#ifndef IN_LOOPBACKNET
+#define IN_LOOPBACKNET	    127
+#endif
 
 static int get_name Py_PROTO((const char *, struct gai_afd *,
 			  struct addrinfo **, char *, struct addrinfo *,
@@ -527,7 +538,8 @@ get_addr(hostname, af, res, pai, port0)
 	struct gai_afd *gai_afd;
 	int i, error = 0, h_error;
 	char *ap;
-#ifndef INET6
+#if !defined(INET6) && !defined(MS_WIN32)
+	/* In winsock.h, h_errno is #defined as a function call. */
 	extern int h_errno;
 #endif
 
