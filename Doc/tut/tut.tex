@@ -3553,11 +3553,11 @@ the namespace.
 Although scopes are determined statically, they are used dynamically.
 At any time during execution, there are at least three nested scopes whose
 namespaces are directly accessible: the innermost scope, which is searched
-first, contains the local names; the namespaces of any enclosing code
-blocks (a module, function, or class definition) which are searched starting
-with the nearest enclosing scope; the middle scope, searched next, contains
-the current module's global names; and the outermost scope (searched last)
-is the namespace containing built-in names.
+first, contains the local names; the namespaces of any enclosing
+functions, which are searched starting with the nearest enclosing scope;
+the middle scope, searched next, contains the current module's global names;
+and the outermost scope (searched last) is the namespace containing built-in
+names.
 
 If a name is declared global, then all references and assignments go
 directly to the middle scope containing the module's global names.
