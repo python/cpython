@@ -140,6 +140,8 @@ code_compare(co, cp)
 	PyCodeObject *co, *cp;
 {
 	int cmp;
+	cmp = PyObject_Compare(co->co_name, cp->co_name);
+	if (cmp) return cmp;
 	cmp = co->co_argcount - cp->co_argcount;
 	if (cmp) return cmp;
 	cmp = co->co_nlocals - cp->co_nlocals;
@@ -160,7 +162,9 @@ static long
 code_hash(co)
 	PyCodeObject *co;
 {
-	long h, h1, h2, h3, h4;
+	long h, h0, h1, h2, h3, h4;
+	h0 = PyObject_Hash(co->co_name);
+	if (h0 == -1) return -1;
 	h1 = PyObject_Hash(co->co_code);
 	if (h1 == -1) return -1;
 	h2 = PyObject_Hash(co->co_consts);
@@ -169,7 +173,7 @@ code_hash(co)
 	if (h3 == -1) return -1;
 	h4 = PyObject_Hash(co->co_varnames);
 	if (h4 == -1) return -1;
-	h = h1 ^ h2 ^ h3 ^ h4 ^
+	h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^
 		co->co_argcount ^ co->co_nlocals ^ co->co_flags;
 	if (h == -1) h = -2;
 	return h;
