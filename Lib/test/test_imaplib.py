@@ -1,4 +1,3 @@
-from test_support import verify,verbose
 import imaplib
 import time
 
@@ -11,4 +10,3 @@ timevalues = [2000000000, 2000000000.0, time.localtime(2000000000),
 
 for t in timevalues:
     imaplib.Time2Internaldate(t)
-              
