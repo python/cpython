@@ -2175,8 +2175,10 @@ PyType_Ready(PyTypeObject *type)
 	PyTypeObject *base;
 	int i, n;
 
-	if (type->tp_flags & Py_TPFLAGS_READY)
+	if (type->tp_flags & Py_TPFLAGS_READY) {
+		assert(type->tp_dict != NULL);
 		return 0;
+	}
 	assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
