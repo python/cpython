@@ -335,6 +335,7 @@ self.assertEqual(Rat(10, 3) / 3, Rat(10, 9))
 self.assertEqual(2 / Rat(5), Rat(2, 5))
 self.assertEqual(3.0 * Rat(1, 2), 1.5)
 self.assertEqual(Rat(1, 2) * 3.0, 1.5)
+self.assertEqual(eval('1/2'), 0.5)
 """
 
 test_support.run_unittest(RatTestCase)
