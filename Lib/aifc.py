@@ -338,7 +338,7 @@ class Aifc_read:
 	# _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
 	# _framesize -- size of one frame in the file
 
-	access _file, _nchannels, _nframes, _sampwidth, _framerate, \
+	if 0: access _file, _nchannels, _nframes, _sampwidth, _framerate, \
 		  _comptype, _compname, _markers, _soundpos, _version, \
 		  _decomp, _comm_chunk_read, __aifc, _ssnd_seek_needed, \
 		  _ssnd_chunk, _framesize: private
@@ -502,7 +502,7 @@ class Aifc_read:
 	#
 	# Internal methods.
 	#
-	access *: private
+	if 0: access *: private
 
 	def _decomp_data(self, data):
 		dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE,
@@ -635,7 +635,7 @@ class Aifc_write:
 	# _datalength -- the size of the audio samples written to the header
 	# _datawritten -- the size of the audio samples actually written
 
-	access _file, _comptype, _compname, _nchannels, _sampwidth, \
+	if 0: access _file, _comptype, _compname, _nchannels, _sampwidth, \
 		  _framerate, _nframes, _aifc, _version, _comp, \
 		  _nframeswritten, _datalength, _datawritten: private
 
@@ -829,7 +829,7 @@ class Aifc_write:
 	#
 	# Internal methods.
 	#
-	access *: private
+	if 0: access *: private
 
 	def _comp_data(self, data):
 		dum = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
