@@ -903,7 +903,7 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals)
 	PyCodeObject *co;
 	PyObject *v;
 	long magic;
-	long PyImport_GetMagicNumber();
+	long PyImport_GetMagicNumber(void);
 
 	magic = PyMarshal_ReadLongFromFile(fp);
 	if (magic != PyImport_GetMagicNumber()) {
@@ -1201,6 +1201,9 @@ Py_FdIsInteractive(FILE *fp, char *filename)
 #include <malloc.h>
 #include <excpt.h>
 
+/*
+ * Return non-zero when we run out of memory on the stack; zero otherwise.
+ */
 int
 PyOS_CheckStack()
 {
