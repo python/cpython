@@ -4578,7 +4578,7 @@ posix_fdopen(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return posix_error();
-	f = PyFile_FromFile(fp, "(fdopen)", mode, fclose);
+	f = PyFile_FromFile(fp, "<fdopen>", mode, fclose);
 	if (f != NULL)
 		PyFile_SetBufSize(f, bufsize);
 	return f;
