@@ -108,6 +108,7 @@ class CygwinCCompiler (UnixCCompiler):
         # XXX optimization, warnings etc. should be customizable.
         self.set_executables(compiler='gcc -mcygwin -O -Wall',
                              compiler_so='gcc -mcygwin -mdll -O -Wall',
+                             compiler_cxx='g++ -mcygwin -O -Wall',
                              linker_exe='gcc -mcygwin',
                              linker_so=('%s -mcygwin %s' %
                                         (self.linker_dll, shared_option)))
@@ -295,6 +296,7 @@ class Mingw32CCompiler (CygwinCCompiler):
 
         self.set_executables(compiler='gcc -mno-cygwin -O -Wall',
                              compiler_so='gcc -mno-cygwin -mdll -O -Wall',
+                             compiler_cxx='g++ -mno-cygwin -O -Wall',
                              linker_exe='gcc -mno-cygwin',
                              linker_so='%s -mno-cygwin %s %s'
                                         % (self.linker_dll, shared_option,

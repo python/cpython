@@ -322,6 +322,9 @@ Extension modules
 Library
 -------
 
+- Fixed #877165: distutils now picks the right C++ compiler command
+  on cygwin and mingw32.
+
 - urllib.urlopen().readline() now handles HTTP/0.9 correctly.
 
 - refactored site.py into functions.  Also wrote regression tests for the
