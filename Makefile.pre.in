@@ -368,7 +368,7 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c buildno
 	$(CC) -c $(PY_CFLAGS) -DBUILD=`cat buildno` -o $@ $<
-	
+
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 	$(CC) -c $(PY_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(prefix)"' \
@@ -485,8 +485,7 @@ $(DESTSHARED):
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
-				mkdir $$i; \
-				chmod 755 $$i; \
+				$(INSTALL) -d 755 $$i; \
 			else    true; \
 			fi; \
 		done
@@ -507,8 +506,7 @@ altbininstall:	$(PYTHON)
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			mkdir $$i; \
-			chmod $(DIRMODE) $$i; \
+			$(INSTALL) -d $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -528,8 +526,7 @@ maninstall:
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			mkdir $$i; \
-			chmod $(DIRMODE) $$i; \
+			$(INSTALL) -d $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -547,8 +544,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			mkdir $$i; \
-			chmod $(DIRMODE) $$i; \
+			$(INSTALL) -d $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -559,8 +555,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 		b=$(LIBDEST)/$$d; \
 		if test ! -d $$b; then \
 			echo "Creating directory $$b"; \
-			mkdir $$b; \
-			chmod $(DIRMODE) $$b; \
+			$(INSTALL) -d $(DIRMODE) $$b; \
 		else	true; \
 		fi; \
 	done
@@ -620,8 +615,7 @@ inclinstall:
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			mkdir $$i; \
-			chmod $(DIRMODE) $$i; \
+			$(INSTALL) -d $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -640,8 +634,7 @@ libainstall:	all
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			mkdir $$i; \
-			chmod $(DIRMODE) $$i; \
+			$(INSTALL) -d $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -691,7 +684,8 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	./$(PYTHON) $(srcdir)/setup.py install
+	./python$(EXE) $(srcdir)/setup.py install \
+		--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
