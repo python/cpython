@@ -132,8 +132,6 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
 
     def testWrite(self):
-        #if self.skip_mystery_test:
-        #    return
         # "Test BZ2File.write()"
         bz2f = BZ2File(self.filename, "w")
         bz2f.write(self.TEXT)
