@@ -84,6 +84,8 @@ ControlFontStyle_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
+static ControlUserPaneDrawUPP mydrawproc_upp;
+static ControlUserPaneIdleUPP myidleproc_upp;
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
@@ -157,19 +159,103 @@ mytracker(ctl, part)
 	else
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\\n");
 }
+
+static int
+setcallback(self, which, callback, uppp)
+	ControlObject *self;
+	OSType which;
+	PyObject *callback;
+	UniversalProcPtr *uppp;
+{
+	char keybuf[9];
+	
+	if ( which == kControlUserPaneDrawProcTag )
+		*uppp = mydrawproc_upp;
+	else if ( which == kControlUserPaneIdleProcTag )
+		*uppp = myidleproc_upp;
+	else
+		return -1;
+	/* Only now do we test for clearing of the callback: */
+	if ( callback == Py_None )
+		*uppp = NULL;
+	/* Create the dict if it doesn't exist yet (so we don't get such a dict for every control) */
+	if ( self->ob_callbackdict == NULL )
+		if ( (self->ob_callbackdict = PyDict_New()) == NULL )
+			return -1;
+	/* And store the Python callback */
+	sprintf(keybuf, "%x", which);
+	if (PyDict_SetItemString(self->ob_callbackdict, keybuf, callback) < 0)
+		return -1;
+	return 0;
+}
+
+static PyObject *
+callcallback(self, which, arglist)
+	ControlObject *self;
+	OSType which;
+	PyObject *arglist;
+{
+	char keybuf[9];
+	PyObject *func, *rv;
+	
+	sprintf(keybuf, "%x", which);
+	if ( self->ob_callbackdict == NULL ||
+			(func = PyDict_GetItemString(self->ob_callbackdict, keybuf)) == NULL ) {
+		PySys_WriteStderr("Control callback without callback object\\n");
+		return NULL;
+	}
+	rv = PyEval_CallObject(func, arglist);
+	if ( rv == NULL )
+		PySys_WriteStderr("Exception in control callback handler\\n");
+	return rv;
+}
+
+static pascal void
+mydrawproc(ControlHandle control, SInt16 part)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Oh", ctl_obj, part);
+	rv = callcallback(ctl_obj, kControlUserPaneDrawProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
+}
+
+static pascal void
+myidleproc(ControlHandle control)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("O", ctl_obj);
+	rv = callcallback(ctl_obj, kControlUserPaneIdleProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
+}
+
 """
 
 initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
+mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
+myidleproc_upp = NewControlUserPaneDrawProc(myidleproc);
 """
 
 class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
+	def outputStructMembers(self):
+		GlobalObjectDefinition.outputStructMembers(self)
+		Output("PyObject *ob_callbackdict;")
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetControlReference(itself, (long)it);")
+		Output("it->ob_callbackdict = NULL;")
 	def outputCleanupStructMembers(self):
+		Output("Py_XDECREF(self->ob_callbackdict);")
 		Output("if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */")
 
 # Create the generator groups and link them
@@ -402,6 +488,38 @@ return Py_BuildValue("O&", OptResObj_New, hdl);
 
 f = ManualGenerator("GetControlDataHandle", getcontroldatahandle_body);
 f.docstring = lambda: "(part, type) -> ResObj"
+object.add(f)
+
+# Manual Generator for SetControlDataCallback
+setcontroldatacallback_body = """
+OSErr _err;
+ControlPartCode inPart;
+ResType inTagName;
+PyObject *callback;
+UniversalProcPtr *c_callback;
+
+if (!PyArg_ParseTuple(_args, "hO&O",
+                      &inPart,
+                      PyMac_GetOSType, &inTagName,
+                      &callback))
+	return NULL;
+
+if ( setcallback(_self, inTagName, callback, &c_callback) < 0 )
+	return NULL;
+_err = SetControlData(_self->ob_itself,
+	              inPart,
+	              inTagName,
+	              sizeof(c_callback),
+                      (Ptr)&c_callback);
+
+if (_err != noErr)
+	return PyMac_Error(_err);
+_res = Py_None;
+return _res;
+"""
+
+f = ManualGenerator("SetControlDataCallback", setcontroldatacallback_body);
+f.docstring = lambda: "(callbackfunc) -> None"
 object.add(f)
 
 # And manual generators to get/set popup menu information
