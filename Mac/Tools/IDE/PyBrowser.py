@@ -289,7 +289,7 @@ class BrowserWidget(W.List):
 			selitems.append(double_repr(key, value))
 		text = string.join(selitems, '\r')
 		if text:
-			import Scrap
+			from Carbon import Scrap
 			Scrap.ZeroScrap()
 			Scrap.PutScrap('TEXT', text)
 
