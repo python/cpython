@@ -29,6 +29,17 @@ Extension modules
 Library
 -------
 
+- Bug #788520.  Queue.{get, get_nowait, put, put_nowait} have new
+  implementations, exploiting Conditions (which didn't exist at the time
+  Queue was introduced).  A minor semantic change is that the Full and
+  Empty exceptions raised by non-blocking calls now occur only if the
+  queue truly was full or empty at the instant the queue was checked (of
+  course the Queue may no longer be full or empty by the time a calling
+  thread sees those exceptions, though).  Before, the exceptions could
+  also be raised if it was "merely inconvenient" for the implementation
+  to determine the true state of the Queue (because the Queue was locked
+  by some other method in progress).
+
 - Bugs #979794 and #980117: difflib.get_grouped_opcodes() now handles the
   case of comparing two empty lists.  This affected both context_diff() and
   unified_diff(),
