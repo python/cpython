@@ -3184,7 +3184,6 @@ def slices():
     vereq(a, [2,3,1])
 
 def subtype_resurrection():
-    import gc
     if verbose:
         print "Testing resurrection of new-style instance..."
 
