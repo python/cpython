@@ -154,8 +154,11 @@ def readmodule(module, path = []):
 					# only add a name if not
 					# already there (to mimic what
 					# Python does internally)
+					# also don't add names that
+					# start with _
 					for n in d.keys():
-						if not dict.has_key(n):
+						if n[0] != '_' and \
+						   not dict.has_key(n):
 							dict[n] = d[n]
 			continue
 		if is_class.match(line) >= 0:
