@@ -570,11 +570,52 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			goto fail;
 		}
 	}
-	/* Allocate storage for cell vars and copy free vars into frame */ 
+	/* Allocate and initialize storage for cell vars, and copy free
+	   vars into frame.  This isn't too efficient right now. */
 	if (f->f_ncells) {
-		int i;
-		for (i = 0; i < f->f_ncells; ++i)
-			freevars[i] = PyCell_New(NULL);
+		int i = 0, j = 0, nargs, found;
+		char *cellname, *argname;
+		PyObject *c;
+
+		nargs = co->co_argcount;
+		if (co->co_flags & CO_VARARGS)
+			nargs++;
+		if (co->co_flags & CO_VARKEYWORDS)
+			nargs++;
+
+		/* Check for cells that shadow args */
+		for (i = 0; i < f->f_ncells && j < nargs; ++i) {
+			cellname = PyString_AS_STRING(
+				PyTuple_GET_ITEM(co->co_cellvars, i));
+			found = 0;
+			while (j < nargs) {
+				argname = PyString_AS_STRING(
+					PyTuple_GET_ITEM(co->co_varnames, j));
+				if (strcmp(cellname, argname) == 0) {
+					c = PyCell_New(GETLOCAL(j));
+					if (c == NULL)
+						goto fail;
+					GETLOCAL(f->f_nlocals + i) = c;
+					found = 1;
+					break;
+				}
+				j++;
+			}
+			if (found == 0) {
+				c = PyCell_New(NULL);
+				if (c == NULL)
+					goto fail;
+				SETLOCAL(f->f_nlocals + i, c);
+			}
+		}
+		/* Initialize any that are left */
+		while (i < f->f_ncells) {
+			c = PyCell_New(NULL);
+			if (c == NULL)
+				goto fail;
+			SETLOCAL(f->f_nlocals + i, c);
+			i++;
+		}
 	}
 	if (f->f_nfreevars) {
 		int i;

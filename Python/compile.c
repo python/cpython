@@ -3552,16 +3552,7 @@ com_arglist(struct compiling *c, node *n)
 			break;
 		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
 		fp = CHILD(ch, 0);
-		if (TYPE(fp) == NAME) {
-			PyObject *v;
-			name = STR(fp); 
-			v = PyDict_GetItemString(c->c_cellvars, name);
-			if (v) {
-				com_addoparg(c, LOAD_FAST, narg);
-				com_addoparg(c, STORE_DEREF, 
-					     PyInt_AS_LONG(v));
-			}
-		} else {
+		if (TYPE(fp) != NAME) {
 			name = nbuf;
 			sprintf(nbuf, ".%d", i);
 			complex = 1;
@@ -3575,47 +3566,6 @@ com_arglist(struct compiling *c, node *n)
 			i += 2;
 		else
 			REQ(ch, COMMA);
-	}
-	/* Handle *arguments */
-	if (i < nch) {
-		node *ch;
-		ch = CHILD(n, i);
-		if (TYPE(ch) != DOUBLESTAR) {
-			REQ(ch, STAR);
-			ch = CHILD(n, i+1);
-			if (TYPE(ch) == NAME) {
-				PyObject *v;
-				i += 3;
-				v = PyDict_GetItemString(c->c_cellvars,
-							 STR(ch));
-				if (v) {
-					com_addoparg(c, LOAD_FAST, narg);
-					com_addoparg(c, STORE_DEREF, 
-						     PyInt_AS_LONG(v));
-			}
-				narg++;
-		}
-	}
-	}
-	/* Handle **keywords */
-	if (i < nch) {
-		PyObject *v;
-		node *ch;
-		ch = CHILD(n, i);
-		if (TYPE(ch) != DOUBLESTAR) {
-			REQ(ch, STAR);
-			ch = CHILD(n, i+1);
-			REQ(ch, STAR);
-			ch = CHILD(n, i+2);
-		}
-		else
-			ch = CHILD(n, i+1);
-		REQ(ch, NAME);
-		v = PyDict_GetItemString(c->c_cellvars, STR(ch));
-		if (v) {
-			com_addoparg(c, LOAD_FAST, narg);
-			com_addoparg(c, STORE_DEREF, PyInt_AS_LONG(v));
-		}			
 	}
 	if (complex) {
 		/* Generate code for complex arguments only after
@@ -4137,6 +4087,69 @@ symtable_resolve_free(struct compiling *c, PyObject *name,
 	return 0;
 }
 
+/* If a variable is a cell and an argument, make sure that appears in
+   co_cellvars before any variable to its right in varnames. 
+*/
+
+
+static int
+symtable_cellvar_offsets(PyObject **cellvars, int argcount, 
+			 PyObject *varnames, int flags) 
+{
+	PyObject *v, *w, *d, *list = NULL;
+	int i, pos;
+
+	if (flags & CO_VARARGS)
+		argcount++;
+	if (flags & CO_VARKEYWORDS)
+		argcount++;
+	for (i = argcount; --i >= 0; ) {
+		v = PyList_GET_ITEM(varnames, i);
+		if (PyDict_GetItem(*cellvars, v)) {
+			if (list == NULL) {
+				list = PyList_New(1);
+				if (list == NULL)
+					return -1;
+				PyList_SET_ITEM(list, 0, v);
+				Py_INCREF(v);
+			} else
+				PyList_Insert(list, 0, v);
+		}
+	}
+	if (list == NULL || PyList_GET_SIZE(list) == 0)
+		return 0;
+	/* There are cellvars that are also arguments.  Create a dict
+	   to replace cellvars and put the args at the front.
+	*/
+	d = PyDict_New();
+	for (i = PyList_GET_SIZE(list); --i >= 0; ) {
+		v = PyInt_FromLong(i);
+		if (v == NULL) 
+			goto fail;
+		if (PyDict_SetItem(d, PyList_GET_ITEM(list, i), v) < 0)
+			goto fail;
+		if (PyDict_DelItem(*cellvars, PyList_GET_ITEM(list, i)) < 0)
+			goto fail;
+	}
+	pos = 0;
+	i = PyList_GET_SIZE(list);
+	Py_DECREF(list);
+	while (PyDict_Next(*cellvars, &pos, &v, &w)) {
+		w = PyInt_FromLong(i++);  /* don't care about the old key */
+		if (PyDict_SetItem(d, v, w) < 0) {
+			Py_DECREF(w);
+			goto fail;
+		}
+		Py_DECREF(w);
+	}
+	Py_DECREF(*cellvars);
+	*cellvars = d;
+	return 1;
+ fail:
+	Py_DECREF(d);
+	return -1;
+}
+
 static int
 symtable_freevar_offsets(PyObject *freevars, int offset)
 {
@@ -4386,6 +4399,11 @@ symtable_load_symbols(struct compiling *c)
 		}
 	}
 
+	if (si.si_ncells > 1) { /* one cell is always in order */
+		if (symtable_cellvar_offsets(&c->c_cellvars, c->c_argcount,
+					     c->c_varnames, c->c_flags) < 0)
+			return -1;
+	}
 	if (symtable_freevar_offsets(c->c_freevars, si.si_ncells) < 0)
 		return -1;
 	return symtable_update_flags(c, ste, &si);
