@@ -93,12 +93,18 @@ MANDIR=		$(prefix)/man
 INCLUDEDIR=	$(prefix)/include
 SCRIPTDIR=	$(prefix)/lib
 
+# Detailed destination directories
+BINLIBDEST=	$(LIBDIR)/python$(VERSION)
+LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
+INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
+LIBP=		$(LIBDIR)/python$(VERSION)
+
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(LIBDIR)/python$(VERSION)/sharedmodules
+DESTSHARED=	$(BINLIBDEST)/sharedmodules
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
@@ -192,7 +198,6 @@ maninstall:
 			$(MANDIR)/man1/python.1
 
 # Install the library
-LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 MACHDEPS=	$(MACHDEP)
 LIBSUBDIRS=	stdwin tkinter test $(MACHDEPS)
 libinstall:	python $(srcdir)/Lib/$(MACHDEP)
@@ -261,7 +266,6 @@ $(srcdir)/Lib/$(MACHDEP):
 		(cd $(srcdir)/Lib/$(MACHDEP); ./regen)
 
 # Install the include files
-INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
 inclinstall:
 		@for i in $(INCLUDEDIR) $(INCLUDEPY); \
 		do \
@@ -280,7 +284,6 @@ inclinstall:
 
 # Install the lib*.a files and miscellaneous stuff needed by extensions
 # This goes into $(exec_prefix)
-LIBP=		$(LIBDIR)/python$(VERSION)
 LIBPL=		$(LIBP)/config
 libainstall:	all
 		@for i in $(LIBDIR) $(LIBP) $(LIBPL); \
