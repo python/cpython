@@ -500,9 +500,9 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            sys.settrace(gself.lobaltrace)
+            sys.settrace(self.globaltrace)
         try:
-            exec cmd in dict, dict
+            exec cmd in globals, locals
         finally:
             if not self.donothing:
                 sys.settrace(None)
@@ -540,16 +540,17 @@ class Trace:
             #     print "%s.globaltrace(frame: %s, why: %s, arg: %s): filename: %s, lineno: %s, funcname: %s, context: %s, lineindex: %s\n" % (self, frame, why, arg, filename, lineno, funcname, context, lineindex,)
             if filename:
                 modulename = inspect.getmodulename(filename)
-                ignore_it = self.ignore.names(filename, modulename)
-                # if DEBUG_MODE and not self.blabbed.has_key((filename, modulename,)):
-                #     self.blabbed[(filename, modulename,)] = None
-                #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
-                if not ignore_it:
-                    if self.trace:
-                        print " --- modulename: %s, funcname: %s" % (modulename, funcname,)
-                    # if DEBUG_MODE:
-                    #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s -- about to localtrace\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
-                    return self.localtrace
+                if modulename is not None:
+                    ignore_it = self.ignore.names(filename, modulename)
+                    # if DEBUG_MODE and not self.blabbed.has_key((filename, modulename,)):
+                    #     self.blabbed[(filename, modulename,)] = None
+                    #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
+                    if not ignore_it:
+                        if self.trace:
+                            print " --- modulename: %s, funcname: %s" % (modulename, funcname,)
+                        # if DEBUG_MODE:
+                        #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s -- about to localtrace\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
+                        return self.localtrace
             else:
                 # XXX why no filename?
                 return None
@@ -586,11 +587,14 @@ class Trace:
             if bname is None:
                 # Using setdefault faster than two separate lines?  --Zooko 2001-10-14
                 bname = self.pathtobasename.setdefault(filename, os.path.basename(filename))
-            try:
-                print "%s(%d): %s" % (bname, lineno, context[lineindex],),
-            except IndexError:
-                # Uh.. sometimes getframeinfo gives me a context of length 1 and a lineindex of -2.  Oh well.
-                pass
+            if context is not None:
+                try:
+                    print "%s(%d): %s" % (bname, lineno, context[lineindex],),
+                except IndexError:
+                    # Uh.. sometimes getframeinfo gives me a context of length 1 and a lineindex of -2.  Oh well.
+                    pass
+            else:
+                print "%s(???): ???" % bname
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
