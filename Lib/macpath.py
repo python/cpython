@@ -20,18 +20,24 @@ def isabs(s):
 	return ':' in s and s[0] <> ':'
 
 
-# Join two pathnames.
-# The result is equivalent to what the second pathname would refer to
-# if the first pathname were the current directory.
+# Join pathnames.
+# Ignore the previous parts if a part is absolute.
+# Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(s, t):
-	if (not s) or isabs(t): return t
-	if t[:1] == ':': t = t[1:]
-	if ':' not in s:
-		s = ':' + s
-	if s[-1:] <> ':':
-		s = s + ':'
-	return s + t
+def join(s, *p):
+	path = s
+	for t in p:
+		if (not s) or isabs(t):
+			path = t
+			continue
+		if t[:1] == ':':
+			t = t[1:]
+		if ':' not in path:
+			path = ':' + path
+		if path[-1:] <> ':':
+			path = path + ':'
+		path = path + t
+	return path
 
 
 # Split a pathname in two parts: the directory leading up to the final bit,
