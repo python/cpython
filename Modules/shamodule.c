@@ -5,7 +5,7 @@
 /* See below for information about the original code this module was
    based upon. Additional work performed by:
 
-   Andrew Kuchling (amk1@bigfoot.com)
+   Andrew Kuchling (akuchlin@mems-exchange.org)
    Greg Stein (gstein@lyra.org)
 */
 
@@ -458,8 +458,8 @@ SHA_getattr(PyObject *self, char *name)
 {
     if (strcmp(name, "blocksize")==0)
         return PyInt_FromLong(1);
-    if (strcmp(name, "digestsize")==0)
-        return PyInt_FromLong(20);
+    if (strcmp(name, "digest_size")==0 || strcmp(name, "digestsize")==0)
+    	return PyInt_FromLong(20);
 
     return Py_FindMethod(SHA_methods, self, name);
 }
@@ -542,4 +542,5 @@ initsha(void)
                                 functions require an integral number of
                                 blocks */ 
     insint("digestsize", 20);
+    insint("digest_size", 20);
 }
