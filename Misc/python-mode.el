@@ -2497,7 +2497,7 @@ local bindings to py-newline-and-indent."))
 	(save-excursion
 	  (setq pps (parse-partial-sexp (point) here)))
 	;; make sure we don't land inside a triple-quoted string
-	(setq done (or (zerop ci)
+	(setq done (or ;(zerop ci)
 		       (not (nth 3 pps))
 		       (bobp)))
 	)
