@@ -318,3 +318,34 @@ PyErr_Format(exception, format, va_alist)
 	PyErr_SetString(exception, buffer);
 	return NULL;
 }
+
+
+PyObject *
+PyErr_NewException(name, base, dict)
+	char *name;
+	PyObject *base;
+	PyObject *dict;
+{
+	PyObject *nname = PyString_InternFromString(name);
+	PyObject *ndict = NULL;
+	PyObject *nbases = NULL;
+	PyObject *result = NULL;
+	if (nname == NULL)
+		return NULL;
+	if (dict == NULL) {
+		dict = ndict = PyDict_New();
+		if (dict == NULL)
+			goto failure;
+	}
+	if (base == NULL)
+		base = PyExc_Exception;
+	nbases = Py_BuildValue("(O)", base);
+	if (nbases == NULL)
+		goto failure;
+	result = PyClass_New(nbases, dict, nname);
+  failure:
+	Py_XDECREF(nbases);
+	Py_XDECREF(ndict);
+	Py_XDECREF(nname);
+	return result;
+}
