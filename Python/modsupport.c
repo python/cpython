@@ -417,7 +417,10 @@ do_mktuple(p_format, p_va, endchar, n)
 }
 
 static object *
-do_mkvalue(p_format, p_va) {
+do_mkvalue(p_format, p_va)
+	char **p_format;
+	va_list *p_va;
+{
 	
 	switch (*(*p_format)++) {
 	
