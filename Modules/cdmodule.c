@@ -738,7 +738,7 @@ CD_addcallback(self, args)
 		return NULL;
 	}
 
-#ifdef IRIX_405
+#ifdef CDsetcallback
 	CDaddcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback, (void *) self);
 #else
 	CDsetcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback, (void *) self);
