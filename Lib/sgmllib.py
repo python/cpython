@@ -8,34 +8,34 @@
 # and CDATA (character data -- only end tags are special).
 
 
-import regex
+import re
 import string
 
 
 # Regular expressions used for parsing
 
-interesting = regex.compile('[&<]')
-incomplete = regex.compile('&\([a-zA-Z][a-zA-Z0-9]*\|#[0-9]*\)?\|'
-			   '<\([a-zA-Z][^<>]*\|'
-			      '/\([a-zA-Z][^<>]*\)?\|'
-			      '![^<>]*\)?')
+interesting = re.compile('[&<]')
+incomplete = re.compile('&([a-zA-Z][a-zA-Z0-9]*|#[0-9]*)?|'
+			   '<([a-zA-Z][^<>]*|'
+			      '/([a-zA-Z][^<>]*)?|'
+			      '![^<>]*)?')
 
-entityref = regex.compile('&\([a-zA-Z][a-zA-Z0-9]*\)[^a-zA-Z0-9]')
-charref = regex.compile('&#\([0-9]+\)[^0-9]')
+entityref = re.compile('&([a-zA-Z][a-zA-Z0-9]*)[^a-zA-Z0-9]')
+charref = re.compile('&#([0-9]+)[^0-9]')
 
-starttagopen = regex.compile('<[>a-zA-Z]')
-shorttagopen = regex.compile('<[a-zA-Z][a-zA-Z0-9]*/')
-shorttag = regex.compile('<\([a-zA-Z][a-zA-Z0-9]*\)/\([^/]*\)/')
-endtagopen = regex.compile('</[<>a-zA-Z]')
-endbracket = regex.compile('[<>]')
-special = regex.compile('<![^<>]*>')
-commentopen = regex.compile('<!--')
-commentclose = regex.compile('--[ \t\n]*>')
-tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
-attrfind = regex.compile(
-    '[ \t\n]+\([a-zA-Z_][-.a-zA-Z_0-9]*\)'
-    '\([ \t\n]*=[ \t\n]*'
-    '\(\'[^\']*\'\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#=~]*\)\)?')
+starttagopen = re.compile('<[>a-zA-Z]')
+shorttagopen = re.compile('<[a-zA-Z][a-zA-Z0-9]*/')
+shorttag = re.compile('<([a-zA-Z][a-zA-Z0-9]*)/([^/]*)/')
+endtagopen = re.compile('</[<>a-zA-Z]')
+endbracket = re.compile('[<>]')
+special = re.compile('<![^<>]*>')
+commentopen = re.compile('<!--')
+commentclose = re.compile('--[ \t\n]*>')
+tagfind = re.compile('[a-zA-Z][a-zA-Z0-9]*')
+attrfind = re.compile(
+    '[ \t\n]+([a-zA-Z_][-.a-zA-Z_0-9]*)'
+    '([ \t\n]*=[ \t\n]*'
+    r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:+*%?!\(\)_#=~]*))?')
 
 
 # SGML parser base class -- find tags and call handler functions.
@@ -96,13 +96,14 @@ class SGMLParser:
 		self.handle_data(rawdata[i:n])
 		i = n
 		break
-	    j = interesting.search(rawdata, i)
-	    if j < 0: j = n
+	    match = interesting.search(rawdata, i)
+	    if match: j = match.start(0)
+	    else: j = n
 	    if i < j: self.handle_data(rawdata[i:j])
 	    i = j
 	    if i == n: break
 	    if rawdata[i] == '<':
-		if starttagopen.match(rawdata, i) >= 0:
+		if starttagopen.match(rawdata, i):
 		    if self.literal:
 			self.handle_data(rawdata[i])
 			i = i+1
@@ -111,13 +112,13 @@ class SGMLParser:
 		    if k < 0: break
 		    i = k
 		    continue
-		if endtagopen.match(rawdata, i) >= 0:
+		if endtagopen.match(rawdata, i):
 		    k = self.parse_endtag(i)
 		    if k < 0: break
 		    i =  k
 		    self.literal = 0
 		    continue
-		if commentopen.match(rawdata, i) >= 0:
+		if commentopen.match(rawdata, i):
 		    if self.literal:
 			self.handle_data(rawdata[i])
 			i = i+1
@@ -126,41 +127,39 @@ class SGMLParser:
 		    if k < 0: break
 		    i = i+k
 		    continue
-		k = special.match(rawdata, i)
-		if k >= 0:
+		match = special.match(rawdata, i)
+		if match:
 		    if self.literal:
 			self.handle_data(rawdata[i])
 			i = i+1
 			continue
-		    i = i+k
+		    i = match.end(0)
 		    continue
 	    elif rawdata[i] == '&':
-		k = charref.match(rawdata, i)
-		if k >= 0:
-		    k = i+k
-		    if rawdata[k-1] != ';': k = k-1
-		    name = charref.group(1)
+		match = charref.match(rawdata, i)
+		if match:
+		    name = match.group(1)
 		    self.handle_charref(name)
-		    i = k
+		    i = match.end(0)
+		    if rawdata[i-1] != ';': i = i-1
 		    continue
-		k = entityref.match(rawdata, i)
-		if k >= 0:
-		    k = i+k
-		    if rawdata[k-1] != ';': k = k-1
-		    name = entityref.group(1)
+		match = entityref.match(rawdata, i)
+		if match:
+		    name = match.group(1)
 		    self.handle_entityref(name)
-		    i = k
+		    i = match.end(0)
+		    if rawdata[i-1] != ';': i = i-1
 		    continue
 	    else:
 		raise RuntimeError, 'neither < nor & ??'
 	    # We get here only if incomplete matches but
 	    # nothing else
-	    k = incomplete.match(rawdata, i)
-	    if k < 0:
+	    match = incomplete.match(rawdata, i)
+	    if not match:
 		self.handle_data(rawdata[i])
 		i = i+1
 		continue
-	    j = i+k
+	    j = match.end(0)
 	    if j == n:
 		break # Really incomplete
 	    self.handle_data(rawdata[i:j])
@@ -177,35 +176,35 @@ class SGMLParser:
 	rawdata = self.rawdata
 	if rawdata[i:i+4] <> '<!--':
 	    raise RuntimeError, 'unexpected call to handle_comment'
-	j = commentclose.search(rawdata, i+4)
-	if j < 0:
+	match = commentclose.search(rawdata, i+4)
+	if not match:
 	    return -1
+	j = match.start(0)
 	self.handle_comment(rawdata[i+4: j])
-	j = j+commentclose.match(rawdata, j)
+	j = match.end(0)
 	return j-i
 
     # Internal -- handle starttag, return length or -1 if not terminated
     def parse_starttag(self, i):
 	rawdata = self.rawdata
-	if shorttagopen.match(rawdata, i) >= 0:
+	if shorttagopen.match(rawdata, i):
 	    # SGML shorthand: <tag/data/ == <tag>data</tag>
 	    # XXX Can data contain &... (entity or char refs)?
 	    # XXX Can data contain < or > (tag characters)?
 	    # XXX Can there be whitespace before the first /?
-	    j = shorttag.match(rawdata, i)
-	    if j < 0:
+	    match = shorttag.match(rawdata, i)
+	    if not match:
 		return -1
-	    tag, data = shorttag.group(1, 2)
+	    tag, data = match.group(1, 2)
 	    tag = string.lower(tag)
 	    self.finish_shorttag(tag, data)
-	    k = i+j
-	    if rawdata[k-1] == '<':
-		k = k-1
+	    k = match.end(0)
 	    return k
 	# XXX The following should skip matching quotes (' or ")
-	j = endbracket.search(rawdata, i+1)
-	if j < 0:
+	match = endbracket.search(rawdata, i+1)
+	if not match:
 	    return -1
+	j = match.start(0)
 	# Now parse the data between i+1 and j into a tag and attrs
 	attrs = []
 	if rawdata[i:i+2] == '<>':
@@ -213,23 +212,23 @@ class SGMLParser:
 	    k = j
 	    tag = self.lasttag
 	else:
-	    k = tagfind.match(rawdata, i+1)
-	    if k < 0:
+	    match = tagfind.match(rawdata, i+1)
+	    if not match:
 		raise RuntimeError, 'unexpected call to parse_starttag'
-	    k = i+1+k
+	    k = match.end(0)
 	    tag = string.lower(rawdata[i+1:k])
 	    self.lasttag = tag
 	while k < j:
-	    l = attrfind.match(rawdata, k)
-	    if l < 0: break
-	    attrname, rest, attrvalue = attrfind.group(1, 2, 3)
+	    match = attrfind.match(rawdata, k)
+	    if not match: break
+	    attrname, rest, attrvalue = match.group(1, 2, 3)
 	    if not rest:
 		attrvalue = attrname
 	    elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
 		 attrvalue[:1] == '"' == attrvalue[-1:]:
 		attrvalue = attrvalue[1:-1]
 	    attrs.append((string.lower(attrname), attrvalue))
-	    k = k + l
+	    k = match.end(0)
 	if rawdata[j] == '>':
 	    j = j+1
 	self.finish_starttag(tag, attrs)
@@ -238,9 +237,10 @@ class SGMLParser:
     # Internal -- parse endtag
     def parse_endtag(self, i):
 	rawdata = self.rawdata
-	j = endbracket.search(rawdata, i+1)
-	if j < 0:
+	match = endbracket.search(rawdata, i+1)
+	if not match:
 	    return -1
+	j = match.start(0)
 	tag = string.lower(string.strip(rawdata[i+2:j]))
 	if rawdata[j] == '>':
 	    j = j+1
