@@ -361,7 +361,6 @@ r_long64(p)
 			(void) PyFile_WriteString(
 			    "Warning: un-marshal 64-bit int in 32-bit mode\n",
 			    f);
-		PyErr_Clear();
 	}
 #endif
 	return x;
