@@ -134,11 +134,13 @@ class instances are callable if they have a \method{__call__()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{complex}{real\optional{, imag}}
-  Create a complex number with the value \var{real} + \var{imag}*j.
+  Create a complex number with the value \var{real} + \var{imag}*j or
+  convert a string or number to a complex number.
   Each argument may be any numeric type (including complex).
   If \var{imag} is omitted, it defaults to zero and the function
   serves as a numeric conversion function like \function{int()},
-  \function{long()} and \function{float()}.
+  \function{long()} and \function{float()}; in this case it also
+  accepts a string argument which should be a valid complex number.
 \end{funcdesc}
 
 \begin{funcdesc}{delattr}{object, name}
