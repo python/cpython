@@ -182,7 +182,7 @@ Specification: Return
 Specification: Generators and Exception Propagation
 
     >>> def f():
-    ...     return 1/0
+    ...     return 1//0
     >>> def g():
     ...     yield f()  # the zero division exception propagates
     ...     yield 42   # and we'll never get here
@@ -206,7 +206,7 @@ Specification: Try/Except/Finally
     ...         yield 1
     ...         try:
     ...             yield 2
-    ...             1/0
+    ...             1//0
     ...             yield 3  # never get here
     ...         except ZeroDivisionError:
     ...             yield 4
@@ -253,7 +253,7 @@ Guido's binary tree example.
     ...     n = len(list)
     ...     if n == 0:
     ...         return []
-    ...     i = n / 2
+    ...     i = n // 2
     ...     return Tree(list[i], tree(list[:i]), tree(list[i+1:]))
 
     >>> # Show it off: create a tree.
@@ -691,7 +691,7 @@ SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<stri
 >>> def f():
 ...     try:
 ...         try:
-...             1/0
+...             1//0
 ...         except ZeroDivisionError:
 ...             yield 666  # bad because *outer* try has finally
 ...         except:
@@ -708,7 +708,7 @@ But this is fine:
 ...     try:
 ...         try:
 ...             yield 12
-...             1/0
+...             1//0
 ...         except ZeroDivisionError:
 ...             yield 666
 ...         except:
@@ -751,7 +751,7 @@ SyntaxError: invalid syntax
 ...             pass
 ...         elif 0:
 ...             try:
-...                 1/0
+...                 1//0
 ...             except SyntaxError:
 ...                 pass
 ...             else:

@@ -169,8 +169,11 @@ Py_Main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(_PyOS_optarg, "new") == 0) {
-				/* XXX This only affects __main__ */
+				/* This only affects __main__ */
 				cf.cf_flags |= CO_FUTURE_DIVISION;
+				/* And this tells the eval loop to treat
+				   BINARY_DIVIDE as BINARY_TRUE_DIVIDE */
+				_Py_QnewFlag = 1;
 				break;
 			}
 			fprintf(stderr,

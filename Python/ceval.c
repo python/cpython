@@ -903,9 +903,22 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case BINARY_DIVIDE:
+			if (!_Py_QnewFlag) {
+				w = POP();
+				v = POP();
+				x = PyNumber_Divide(v, w);
+				Py_DECREF(v);
+				Py_DECREF(w);
+				PUSH(x);
+				if (x != NULL) continue;
+				break;
+			}
+			/* -Qnew is in effect:  fall through to
+			   BINARY_TRUE_DIVIDE */
+		case BINARY_TRUE_DIVIDE:
 			w = POP();
 			v = POP();
-			x = PyNumber_Divide(v, w);
+			x = PyNumber_TrueDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -916,16 +929,6 @@ eval_frame(PyFrameObject *f)
 			w = POP();
 			v = POP();
 			x = PyNumber_FloorDivide(v, w);
-			Py_DECREF(v);
-			Py_DECREF(w);
-			PUSH(x);
-			if (x != NULL) continue;
-			break;
-
-		case BINARY_TRUE_DIVIDE:
-			w = POP();
-			v = POP();
-			x = PyNumber_TrueDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);

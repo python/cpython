@@ -23,6 +23,11 @@ def testunop(a, res, expr="len(a)", meth="__len__"):
 def testbinop(a, b, res, expr="a+b", meth="__add__"):
     if verbose: print "checking", expr
     dict = {'a': a, 'b': b}
+
+    # XXX Hack so this passes before 2.3 when -Qnew is specified.
+    if meth == "__div__" and 1/2 == 0.5:
+        meth = "__truediv__"
+
     vereq(eval(expr, dict), res)
     t = type(a)
     m = getattr(t, meth)

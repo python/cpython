@@ -39,6 +39,13 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- -Qnew now works as documented in PEP 238:  when -Qnew is passed on
+  the command line, all occurrences of "/" use true division instead
+  of classic division.  See the PEP for details.  Note that "all"
+  means all instances in library and 3rd-party modules, as well as in
+  your own code.  As the PEP says, -Qnew is intended for use only in
+  educational environments with control over the libraries in use.
+
 Extension modules
 
 - gc.get_referents was renamed to gc.get_referrers.
@@ -712,11 +719,15 @@ Core
   warnings are issued.  Using -Qwarn issues a run-time warning about
   all uses of classic division for int and long arguments; -Qwarnall
   also warns about classic division for float and complex arguments
-  (for use with fixdiv.py).  Using -Qnew is questionable; it turns on
-  new division by default, but only in the __main__ module.  You can
-  usefully combine -Qwarn or -Qwarnall and -Qnew: this gives the
-  __main__ module new division, and warns about classic division
-  everywhere else.
+  (for use with fixdiv.py).
+  [Note:  the remainder of this paragraph (preserved below) became
+   obsolete in 2.2c1 -- -Qnew has global effect in 2.2]
+  <obsolete>
+  Using -Qnew is questionable; it turns on new division by default, but
+  only in the __main__ module.  You can usefully combine -Qwarn or
+  -Qwarnall and -Qnew: this gives the __main__ module new division, and
+  warns about classic division everywhere else.
+  </obsolete>
 
 - Many built-in types can now be subclassed.  This applies to int,
   long, float, str, unicode, and tuple.  (The types complex, list and

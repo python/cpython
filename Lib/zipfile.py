@@ -117,7 +117,7 @@ class ZipInfo:
         """Return the per-file header as a string."""
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
-        dostime = dt[3] << 11 | dt[4] << 5 | dt[5] / 2
+        dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
         if self.flag_bits & 0x08:
             # Set these to zero because we write them after the file data
             CRC = compress_size = file_size = 0
@@ -468,7 +468,7 @@ class ZipFile:
                 count = count + 1
                 dt = zinfo.date_time
                 dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
-                dostime = dt[3] << 11 | dt[4] << 5 | dt[5] / 2
+                dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
                 centdir = struct.pack(structCentralDir,
                   stringCentralDir, zinfo.create_version,
                   zinfo.create_system, zinfo.extract_version, zinfo.reserved,
