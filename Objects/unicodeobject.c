@@ -66,6 +66,7 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 
 #include "mymath.h"
 #include "unicodeobject.h"
+#include <ucnhash.h>
 
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
@@ -1020,6 +1021,28 @@ int unicodeescape_decoding_error(const char **source,
     }
 }
 
+static _Py_UCNHashAPI *pucnHash = NULL;
+
+static
+int mystrnicmp(const char *s1, const char *s2, size_t count)
+{
+    char c1, c2;
+    
+    if (count)
+    {
+        do
+        {
+           c1 = tolower(*(s1++));
+           c2 = tolower(*(s2++));
+        }
+        while(--count && c1 == c2);
+        
+        return c1 - c2;
+    }
+    
+    return 0;
+}
+
 PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 					int size,
 					const char *errors)
@@ -1123,6 +1146,104 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             *p++ = x;
             break;
 
+        case 'N':
+            /* Ok, we need to deal with Unicode Character Names now,
+             * make sure we've imported the hash table data...
+             */
+            if (pucnHash == NULL)
+            {
+                PyObject *mod = 0, *v = 0;
+    
+                mod = PyImport_ImportModule("ucnhash");
+                if (mod == NULL)
+                    goto onError;
+                v = PyObject_GetAttrString(mod,"ucnhashAPI");
+                Py_DECREF(mod);
+                if (v == NULL)
+                {
+                    goto onError;
+                }
+                pucnHash = PyCObject_AsVoidPtr(v);
+                Py_DECREF(v);
+                if (pucnHash == NULL)
+                {
+                    goto onError;
+                }
+            }
+                
+            if (*s == '{')
+            {
+                const char *start = s + 1;
+                const char *endBrace = start;
+                unsigned int uiValue;
+                unsigned long j;
+
+                /* look for either the closing brace, or we
+                 * exceed the maximum length of the unicode character names
+                 */
+                while (*endBrace != '}' &&
+                       (unsigned int)(endBrace - start) <=
+                           pucnHash->cchMax &&
+                       endBrace < end)
+                {
+                    endBrace++;
+                }
+                if (endBrace != end && *endBrace == '}')
+                {
+                    j = pucnHash->hash(start, endBrace - start);
+                    if (j > pucnHash->cKeys ||
+                        mystrnicmp(
+                            start,
+                            ((_Py_UnicodeCharacterName *) 
+                             (pucnHash->getValue(j)))->pszUCN,
+                            (int)(endBrace - start)) != 0)
+                    {
+                        if (unicodeescape_decoding_error(
+                                &s, &x, errors,
+                                "Invalid Unicode Character Name"))
+                        {
+                            goto onError;
+                        }
+                        goto ucnFallthrough;
+                    }
+                    uiValue = ((_Py_UnicodeCharacterName *)
+                               (pucnHash->getValue(j)))->uiValue;
+                    if (uiValue < 1<<16)
+                    {
+                        /* In UCS-2 range, easy solution.. */
+                        *p++ = uiValue;
+                    }
+                    else
+                    {
+                        /* Oops, its in UCS-4 space, */
+                        /*  compute and append the two surrogates: */
+                        /*  translate from 10000..10FFFF to 0..FFFFF */
+                        uiValue -= 0x10000;
+                    
+                        /* high surrogate = top 10 bits added to D800 */
+                        *p++ = 0xD800 + (uiValue >> 10);
+                        
+                        /* low surrogate  = bottom 10 bits added to DC00 */
+                        *p++ = 0xDC00 + (uiValue & ~0xFC00);
+                    }
+                    s = endBrace + 1;
+                }
+                else
+                {
+                    if (unicodeescape_decoding_error(
+                            &s, &x, errors,
+                            "Unicode name missing closing brace"))
+                        goto onError;
+                    goto ucnFallthrough;
+                }
+                break;                
+            }
+            if (unicodeescape_decoding_error(
+                    &s, &x, errors,
+                    "Missing opening brace for Unicode Character Name escape"))
+                goto onError;
+ucnFallthrough:
+            /* fall through on purpose */
         default:
             *p++ = '\\';
             *p++ = (unsigned char)s[-1];
