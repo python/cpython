@@ -1,4 +1,4 @@
-import regex
+import re
 
 
 # Write the config.c file
@@ -6,8 +6,8 @@ import regex
 never = ['marshal', '__main__', '__builtin__', 'sys', 'exceptions']
 
 def makeconfig(infp, outfp, modules, with_ifdef=0):
-	m1 = regex.compile('-- ADDMODULE MARKER 1 --')
-	m2 = regex.compile('-- ADDMODULE MARKER 2 --')
+	m1 = re.compile('-- ADDMODULE MARKER 1 --')
+	m2 = re.compile('-- ADDMODULE MARKER 2 --')
 	while 1:
 		line = infp.readline()
 		if not line: break
