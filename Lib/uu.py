@@ -121,10 +121,17 @@ def decode(in_file, out_file=None, mode=None):
     #
     # Main decoding loop
     #
-    str = in_file.readline()
-    while str and str != 'end\n':
-        out_file.write(binascii.a2b_uu(str))
-        str = in_file.readline()
+    s = in_file.readline()
+    while s and s != 'end\n':
+        try:
+            data = binascii.a2b_uu(s)
+        except binascii.Error, v:
+            # Workaround for broken uuencoders by /Fredrik Lundh
+            nbytes = (((ord(s[0])-32) & 63) * 4 + 5) / 3
+            data = binascii.a2b_uu(s[:nbytes])
+            sys.stderr.write("Warning: %s\n" % str(v))
+        out_file.write(data)
+        s = in_file.readline()
     if not str:
         raise Error, 'Truncated input file'
 
