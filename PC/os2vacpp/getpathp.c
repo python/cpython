@@ -325,7 +325,7 @@ calculate_path()
 	char argv0_path[MAXPATHLEN+1];
 	char *buf;
 	int bufsz;
-	char *pythonhome = getenv("PYTHONHOME");
+	char *pythonhome = Py_GetPythonHome();
 	char *envpath = getenv("PYTHONPATH");
 #ifdef MS_WIN32
 	char *machinepath, *userpath;
