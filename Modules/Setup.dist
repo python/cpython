@@ -147,6 +147,7 @@ GLHACK=-Dclear=__GLclear
 #struct structmodule.c	# binary structure packing/unpacking
 #time timemodule.c # -lm # time operations and variables
 #operator operator.c	# operator.add() and similar goodies
+#_weakref _weakref.c	# basic weak reference support
 #_codecs _codecsmodule.c	# access to the builtin codecs and codec registry
 
 #unicodedata unicodedata.c unicodedatabase.c
