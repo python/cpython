@@ -669,18 +669,26 @@ builtin_getattr(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *v;
+	PyObject *v, *result, *dflt = NULL;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OS:getattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OS|O:getattr", &v, &name, &dflt))
 		return NULL;
-	return PyObject_GetAttr(v, name);
+	result = PyObject_GetAttr(v, name);
+	if (result == NULL && dflt != NULL) {
+		PyErr_Clear();
+		Py_INCREF(dflt);
+		result = dflt;
+	}
+	return result;
 }
 
 static char getattr_doc[] =
-"getattr(object, name) -> value\n\
+"getattr(object, name[, default]) -> value\n\
 \n\
-Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.";
+Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
+When a default argument is given, it is returned when the attribute doesn't\n\
+exist; without it, an exception is raised in that case.";
 
 
 static PyObject *
