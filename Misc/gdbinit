@@ -1,0 +1,27 @@
+# -*- ksh -*-
+#
+# If you use the GNU debugger gdb to debug the Python C runtime, you
+# might find some of the following commands useful.  Copy this to your
+# ~/.gdbinit file and it'll get loaded into gdb automatically when you
+# start it up.  Then, at the gdb prompt you can do things like:
+#
+#    (gdb) pyo apyobjectptr
+#    <module 'foobar' (built-in)>
+#    refcounts: 1
+#    address    : 84a7a2c
+#    $1 = void
+#    (gdb)
+
+# Prints a representation of the object to stderr, along with the
+# number of reference counts it current has and the hex address the
+# object is allocated at.  The argument must be a PyObject*
+define pyo
+print PyObject_Dump($arg0)
+end
+
+# Prints a representation of the object to stderr, along with the
+# number of reference counts it current has and the hex address the
+# object is allocated at.  The argument must be a PyGC_Head*
+define pyg
+print PyGC_Dump($arg0)
+end
