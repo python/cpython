@@ -4,8 +4,13 @@ Python main documentation -- in LaTeX
 This directory contains the LaTeX sources to the Python documentation
 and a published article about Python.
 
+The Python Reference Manual is no longer maintained in LaTeX.  It is
+now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
+ref*.doc) as well as PostScript generated (ref.ps) from it are in the
+subdirectory ref/.
+
 If you don't have LaTeX, you can ftp a tar file containing PostScript
-of the 4 main documents.  It should be in the same place where you
+of the 3 main documents.  It should be in the same place where you
 fetched the main Python distribution, in a file named
 "pythondoc-ps<version>.tar.gz".  (See "../Misc/FAQ" for more
 information about ftp-ing Python files.)
@@ -14,7 +19,6 @@ The following are the LaTeX source files:
 
 	tut.tex				The tutorial
 	lib.tex, lib*.tex		The library reference
-	ref.tex, ref[1-8].tex		The reference manual
 	ext.tex				How to extend Python
 	qua.tex, quabib.bib		Article published in CWI Quarterly
 
@@ -22,33 +26,27 @@ All except qua.tex (which isn't built by the default target) use the
 style option file "myformat.sty".  This contains some macro
 definitions and sets some style parameters.
 
-The style parameters are set up for European paper size (21 x 29.7 cm,
-a.k.a. A4, or roughly 8.27 x 11.7 inch) by default.  To use US paper,
-comment out the line saying \input{a4wide.sty} in myformat.sty (you
-may want to fiddle with lay-out parameters like \textwidth and
-\textheight, since the default format uses rather wide margins).
-
-You need the makeindex utility to produce the index for ref.tex
-lib.tex; you need bibtex to produce the references list for qua.tex.
+You need the makeindex utility to produce the index for lib.tex; you
+need bibtex to produce the references list for qua.tex.
 
 There's a Makefile to call LaTeX and the other utilities in the right
 order and the right number of times.  This will produce DVI files for
 each document made; to preview them, use xdvi.  PostScript is produced
 by the same Makefile target that produces the DVI files.  This uses
 the dvips tool.  Printing depends on local conventions; at my site, I
-use lpr.  For example:
+use lp.  For example:
 
-	make ref			# creates ref.dvi and ref.ps
-	xdvi ref			# preview it ref.dvi
-	lpr -Ppsc ref.ps		# print it on printer "psc".
+	make lib			# create lib.dvi and lib.ps
+	xdvi lib			# preview lib.dvi
+	lp lib.ps			# print on default printer
 
 
 Making HTML files
 -----------------
 
-The Reference, Tutorial and Extensions manual can all be converted to
-HTML using Nikos Drakos' LaTeX2HTML converter.  See the Makefile;
-after some twiddling, "make l2h" should do the trick.
+The Tutorial and Extensions manual can be converted to HTML using
+Nikos Drakos' LaTeX2HTML converter.  See the Makefile; after some
+twiddling, "make l2h" should do the trick.
 
 The Library manual doesn't work well with LaTeX2HTML; instead, there's
 a Python script texi2html.py in this directory that can be run on the
@@ -95,6 +93,12 @@ fix_hack		Shell script to fix the results of the
 whichlibs		Shell script to print a list of lib*.tex files
 			to be processed.
 
-A Million thanks for Jan-Hein B\"uhrman for writing and debugging the
-convertor and related scripts, and for fixing the LaTeX sources and
-writing new macros for myformat.sty!
+Thanks for Jan-Hein B\"uhrman for writing and debugging the convertor
+and related scripts, and for fixing the LaTeX sources and writing new
+macros for myformat.sty!  More thanks to Dave Ascher for adapting
+myformat.sty to the new LaTeX release, to Fred Drake for revamping the
+partparse.py and texi2html.py scripts, to the many anonymous authors
+of library manual sections and corrections (too many to mention).
+
+Many thanks to Robin Friedrich for the conversion of the Reference
+Manual to FrameMaker and his work on its index.
