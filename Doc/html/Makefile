@@ -128,8 +128,8 @@ wcnew: all
 clean:
 	rm -rf @webchecker.pickle
 
-clobber: clean
-	rm -rf index.html api/ doc/ ext/ lib/ mac/ ref/ tut/
+distclean realclean clobber: clean
+	rm -rf index.html modindex.html api/ doc/ ext/ lib/ mac/ ref/ tut/
 
 
 # This is really ugly, but we're not dependent on $(RELEASE), which isn't
