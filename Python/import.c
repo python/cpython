@@ -866,7 +866,6 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 {
 	int i, npath;
 	size_t len, namelen;
-	struct _frozen *f;
 	struct filedescr *fdp = NULL;
 	FILE *fp = NULL;
 #ifndef RISCOS
@@ -903,7 +902,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			strcpy(buf, name);
 			return &fd_builtin;
 		}
-		if ((f = find_frozen(name)) != NULL) {
+		if ((find_frozen(name)) != NULL) {
 			strcpy(buf, name);
 			return &fd_frozen;
 		}
@@ -1388,9 +1387,8 @@ static int
 init_builtin(char *name)
 {
 	struct _inittab *p;
-	PyObject *mod;
 
-	if ((mod = _PyImport_FindExtension(name, name)) != NULL)
+	if (_PyImport_FindExtension(name, name) != NULL)
 		return 1;
 
 	for (p = PyImport_Inittab; p->name != NULL; p++) {
