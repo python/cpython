@@ -77,6 +77,7 @@
     nosite = source->nosite;
     tabs = source->tabs;
     others = [source->others retain];
+    scriptargs = [source->scriptargs retain];
     with_terminal = source->with_terminal;
     prefskey = source->prefskey;
     if (prefskey) [prefskey retain];
@@ -164,6 +165,7 @@
     self = [self initWithFileSettings: fsdefaults];
     if (!self) return self;
     interpreters = [fsdefaults->interpreters retain];
+    scriptargs = [@"" retain];
     [self applyUserDefaults: filetype];
     prefskey = [filetype retain];
     return self;
@@ -191,6 +193,7 @@
     nosite = [source nosite];
     tabs = [source tabs];
     others = [[source others] retain];
+    scriptargs = [[source scriptargs] retain];
     with_terminal = [source with_terminal];
     // And if this is a user defaults object we also save the
     // values
@@ -206,6 +209,7 @@
             [NSNumber numberWithBool: nosite], @"nosite",
             [NSNumber numberWithBool: nosite], @"nosite",
             others, @"others",
+            scriptargs, @"scriptargs",
             [NSNumber numberWithBool: with_terminal], @"with_terminal",
             nil];
         defaults = [NSUserDefaults standardUserDefaults];
@@ -235,6 +239,8 @@
     if (value) tabs = [value boolValue];
     value = [dict objectForKey: @"others"];
     if (value) others = [value retain];
+    value = [dict objectForKey: @"scriptargs"];
+    if (value) scriptargs = [value retain];
     value = [dict objectForKey: @"with_terminal"];
     if (value) with_terminal = [value boolValue];
 }
@@ -260,7 +266,7 @@
         cur_interp = interpreter;
         
     return [NSString stringWithFormat:
-        @"\"%@\"%s%s%s%s%s%s %@ \"%@\" %s",
+        @"\"%@\"%s%s%s%s%s%s %@ \"%@\" %@ %s",
         cur_interp,
         debug?" -d":"",
         verbose?" -v":"",
@@ -270,6 +276,7 @@
         tabs?" -t":"",
         others,
         script,
+        scriptargs,
         with_terminal? "&& echo Exit status: $? && exit 1" : " &"];
 }
 
@@ -285,6 +292,7 @@
 - (BOOL) nosite { return nosite;};
 - (BOOL) tabs { return tabs;};
 - (NSString *) others { return others;};
+- (NSString *) scriptargs { return scriptargs;};
 - (BOOL) with_terminal { return with_terminal;};
 
 @end

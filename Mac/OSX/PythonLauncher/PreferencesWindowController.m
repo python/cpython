@@ -39,6 +39,7 @@
     [tabs setState: [settings tabs]];
     [others setStringValue: [settings others]];
     [with_terminal setState: [settings with_terminal]];
+    // Not scriptargs, it isn't for preferences
     
     [commandline setStringValue: [settings commandLineForScript: @"<your script here>"]];
 }
@@ -84,6 +85,7 @@
 - (BOOL) tabs { return [tabs state];};
 - (NSString *) others { return [others stringValue];};
 - (BOOL) with_terminal { return [with_terminal state];};
+- (NSString *) scriptargs { return @"";};
 
 // Delegates
 - (void)controlTextDidChange:(NSNotification *)aNotification
