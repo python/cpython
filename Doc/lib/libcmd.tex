@@ -22,7 +22,6 @@ The optional argument is the \refmodule{readline} name of a completion
 key; it defaults to \kbd{Tab}. If \var{completekey} is not \code{None}
 and \module{readline} is available, command completion is done
 automatically.
-
 \end{classdesc}
 
 \subsection{Cmd Objects}
@@ -72,8 +71,11 @@ any undocumented commands.
 \end{methoddesc}
 
 \begin{methoddesc}{onecmd}{str}
-Interpret the argument as though it had been typed in in
-response to the prompt.
+Interpret the argument as though it had been typed in response to the
+prompt.  This may be overridden, but should not normally need to be;
+see the \method{precmd()} and \method{postcmd()} methods for useful
+execution hooks.  The return value is a flag indicating whether
+interpretation of commands by the interpreter should stop.
 \end{methoddesc}
 
 \begin{methoddesc}{emptyline}{}
@@ -94,17 +96,26 @@ Method called to complete an input line when no command-specific
 empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{precmd}{}
-Hook method executed just before the command line is interpreted, but
-after the input prompt is generated and issued.  This
+\begin{methoddesc}{precmd}{line}
+Hook method executed just before the command line \var{line} is
+interpreted, but after the input prompt is generated and issued.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
-subclasses.
+subclasses.  The return value is used as the command which will be
+executed by the \method{onecmd()} method; the \method{precmd()}
+implementation may re-write the command or simply return \var{line}
+unchanged.
 \end{methoddesc}
 
-\begin{methoddesc}{postcmd}{}
+\begin{methoddesc}{postcmd}{stop, line}
 Hook method executed just after a command dispatch is finished.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
-subclasses.
+subclasses.  \var{line} is the command line which was executed, and
+\var{stop} is a flag which indicates whether execution will be
+terminated after the call to \method{postcmd()}; this will be the
+return value of the \method{onecmd()} method.  The return value of
+this method will be used as the new value for the internal flag which
+corresponds to \var{stop}; returning false will cause interpretation
+to continue.
 \end{methoddesc}
 
 \begin{methoddesc}{preloop}{}
