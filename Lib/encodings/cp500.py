@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP500.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP500.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0004: 0x009c,	# CONTROL
 	0x0005: 0x0009,	# HORIZONTAL TABULATION
 	0x0006: 0x0086,	# CONTROL
@@ -273,7 +273,7 @@ decoding_map = {
 	0x00fd: 0x00d9,	# LATIN CAPITAL LETTER U WITH GRAVE
 	0x00fe: 0x00da,	# LATIN CAPITAL LETTER U WITH ACUTE
 	0x00ff: 0x009f,	# CONTROL
-}
+})
 
 ### Encoding Map
 

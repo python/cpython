@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'KOI8-R.TXT'.
-
+""" Python Character Mapping Codec generated from 'KOI8-R.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0080: 0x2500,	# 	BOX DRAWINGS LIGHT HORIZONTAL
 	0x0081: 0x2502,	# 	BOX DRAWINGS LIGHT VERTICAL
 	0x0082: 0x250c,	# 	BOX DRAWINGS LIGHT DOWN AND RIGHT
@@ -165,7 +165,7 @@ decoding_map = {
 	0x00fd: 0x0429,	# 	CYRILLIC CAPITAL LETTER SHCHA
 	0x00fe: 0x0427,	# 	CYRILLIC CAPITAL LETTER CHE
 	0x00ff: 0x042a,	# 	CYRILLIC CAPITAL LETTER HARD SIGN
-}
+})
 
 ### Encoding Map
 

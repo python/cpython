@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP864.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP864.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0025: 0x066a,	# ARABIC PERCENT SIGN
 	0x0080: 0x00b0,	# DEGREE SIGN
 	0x0081: 0x00b7,	# MIDDLE DOT
@@ -163,7 +163,7 @@ decoding_map = {
 	0x00fd: 0xfef1,	# ARABIC LETTER YEH ISOLATED FORM
 	0x00fe: 0x25a0,	# BLACK SQUARE
 	0x00ff: None,	# UNDEFINED
-}
+})
 
 ### Encoding Map
 

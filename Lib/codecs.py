@@ -539,6 +539,21 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
     sr.file_encoding = file_encoding
     return sr
 
+### Helpers for charmap-based codecs
+
+def make_identity_dict(rng):
+
+    """ make_identity_dict(rng) -> dict
+
+        Return a dictionary where elements of the rng sequence are
+        mapped to themselves.
+        
+    """
+    res = {}
+    for i in rng:
+        res[i]=i
+    return res
+
 ### Tests
 
 if __name__ == '__main__':

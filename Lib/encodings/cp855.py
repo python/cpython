@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP855.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP855.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0080: 0x0452,	# CYRILLIC SMALL LETTER DJE
 	0x0081: 0x0402,	# CYRILLIC CAPITAL LETTER DJE
 	0x0082: 0x0453,	# CYRILLIC SMALL LETTER GJE
@@ -165,7 +165,7 @@ decoding_map = {
 	0x00fd: 0x00a7,	# SECTION SIGN
 	0x00fe: 0x25a0,	# BLACK SQUARE
 	0x00ff: 0x00a0,	# NO-BREAK SPACE
-}
+})
 
 ### Encoding Map
 

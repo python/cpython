@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP856.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP856.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0080: 0x05d0,	# HEBREW LETTER ALEF
 	0x0081: 0x05d1,	# HEBREW LETTER BET
 	0x0082: 0x05d2,	# HEBREW LETTER GIMEL
@@ -120,10 +120,10 @@ decoding_map = {
 	0x00d0: None,	# UNDEFINED
 	0x00d1: None,	# UNDEFINED
 	0x00d2: None,	# UNDEFINED
-	0x00d3: None,	# UNDEFINED
+	0x00d3: None,	# UNDEFINEDS
 	0x00d4: None,	# UNDEFINED
 	0x00d5: None,	# UNDEFINED
-	0x00d6: None,	# UNDEFINED
+	0x00d6: None,	# UNDEFINEDE
 	0x00d7: None,	# UNDEFINED
 	0x00d8: None,	# UNDEFINED
 	0x00d9: 0x2518,	# BOX DRAWINGS LIGHT UP AND LEFT
@@ -165,7 +165,7 @@ decoding_map = {
 	0x00fd: 0x00b2,	# SUPERSCRIPT TWO
 	0x00fe: 0x25a0,	# BLACK SQUARE
 	0x00ff: 0x00a0,	# NO-BREAK SPACE
-}
+})
 
 ### Encoding Map
 

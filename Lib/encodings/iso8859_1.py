@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from '8859-1.TXT'.
-
+""" Python Character Mapping Codec generated from '8859-1.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -22,10 +22,7 @@ class Codec(codecs.Codec):
         return codecs.charmap_decode(input,errors,decoding_map)
 
 class StreamWriter(Codec,codecs.StreamWriter):
-
-    def __init__(self,stream,errors='strict'):
-
-        codecs.StreamWriter.__init__(self,strict,errors)
+    pass
         
 class StreamReader(Codec,codecs.StreamReader):
     pass
@@ -38,9 +35,9 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
-}
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
+})
 
 ### Encoding Map
 

@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from '8859-8.TXT'.
-
+""" Python Character Mapping Codec generated from '8859-8.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,11 +35,43 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
+	0x00a1: None,
 	0x00aa: 0x00d7,	# 	MULTIPLICATION SIGN
-	0x00af: 0x203e,	# 	OVERLINE
 	0x00ba: 0x00f7,	# 	DIVISION SIGN
+	0x00bf: None,
+	0x00c0: None,
+	0x00c1: None,
+	0x00c2: None,
+	0x00c3: None,
+	0x00c4: None,
+	0x00c5: None,
+	0x00c6: None,
+	0x00c7: None,
+	0x00c8: None,
+	0x00c9: None,
+	0x00ca: None,
+	0x00cb: None,
+	0x00cc: None,
+	0x00cd: None,
+	0x00ce: None,
+	0x00cf: None,
+	0x00d0: None,
+	0x00d1: None,
+	0x00d2: None,
+	0x00d3: None,
+	0x00d4: None,
+	0x00d5: None,
+	0x00d6: None,
+	0x00d7: None,
+	0x00d8: None,
+	0x00d9: None,
+	0x00da: None,
+	0x00db: None,
+	0x00dc: None,
+	0x00dd: None,
+	0x00de: None,
 	0x00df: 0x2017,	# 	DOUBLE LOW LINE
 	0x00e0: 0x05d0,	# 	HEBREW LETTER ALEF
 	0x00e1: 0x05d1,	# 	HEBREW LETTER BET
@@ -68,7 +100,12 @@ decoding_map = {
 	0x00f8: 0x05e8,	# 	HEBREW LETTER RESH
 	0x00f9: 0x05e9,	# 	HEBREW LETTER SHIN
 	0x00fa: 0x05ea,	# 	HEBREW LETTER TAV
-}
+	0x00fb: None,
+	0x00fc: None,
+	0x00fd: 0x200e,	# 	LEFT-TO-RIGHT MARK
+	0x00fe: 0x200f,	# 	RIGHT-TO-LEFT MARK
+	0x00ff: None,
+})
 
 ### Encoding Map
 

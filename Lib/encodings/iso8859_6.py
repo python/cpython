@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from '8859-6.TXT'.
-
+""" Python Character Mapping Codec generated from '8859-6.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,11 +35,38 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
+	0x00a1: None,
+	0x00a2: None,
+	0x00a3: None,
+	0x00a5: None,
+	0x00a6: None,
+	0x00a7: None,
+	0x00a8: None,
+	0x00a9: None,
+	0x00aa: None,
+	0x00ab: None,
 	0x00ac: 0x060c,	# 	ARABIC COMMA
+	0x00ae: None,
+	0x00af: None,
+	0x00b0: None,
+	0x00b1: None,
+	0x00b2: None,
+	0x00b3: None,
+	0x00b4: None,
+	0x00b5: None,
+	0x00b6: None,
+	0x00b7: None,
+	0x00b8: None,
+	0x00b9: None,
+	0x00ba: None,
 	0x00bb: 0x061b,	# 	ARABIC SEMICOLON
+	0x00bc: None,
+	0x00bd: None,
+	0x00be: None,
 	0x00bf: 0x061f,	# 	ARABIC QUESTION MARK
+	0x00c0: None,
 	0x00c1: 0x0621,	# 	ARABIC LETTER HAMZA
 	0x00c2: 0x0622,	# 	ARABIC LETTER ALEF WITH MADDA ABOVE
 	0x00c3: 0x0623,	# 	ARABIC LETTER ALEF WITH HAMZA ABOVE
@@ -66,6 +93,11 @@ decoding_map = {
 	0x00d8: 0x0638,	# 	ARABIC LETTER ZAH
 	0x00d9: 0x0639,	# 	ARABIC LETTER AIN
 	0x00da: 0x063a,	# 	ARABIC LETTER GHAIN
+	0x00db: None,
+	0x00dc: None,
+	0x00dd: None,
+	0x00de: None,
+	0x00df: None,
 	0x00e0: 0x0640,	# 	ARABIC TATWEEL
 	0x00e1: 0x0641,	# 	ARABIC LETTER FEH
 	0x00e2: 0x0642,	# 	ARABIC LETTER QAF
@@ -85,7 +117,20 @@ decoding_map = {
 	0x00f0: 0x0650,	# 	ARABIC KASRA
 	0x00f1: 0x0651,	# 	ARABIC SHADDA
 	0x00f2: 0x0652,	# 	ARABIC SUKUN
-}
+	0x00f3: None,
+	0x00f4: None,
+	0x00f5: None,
+	0x00f6: None,
+	0x00f7: None,
+	0x00f8: None,
+	0x00f9: None,
+	0x00fa: None,
+	0x00fb: None,
+	0x00fc: None,
+	0x00fd: None,
+	0x00fe: None,
+	0x00ff: None,
+})
 
 ### Encoding Map
 
