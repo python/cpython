@@ -13,6 +13,8 @@ use Cwd qw(getcwd);
 
 package main;
 
+$HTML_VERSION = 4.0;
+
 $MAX_LINK_DEPTH = 2;
 $ADDRESS = '';
 
@@ -135,7 +137,7 @@ sub add_link {
     # Returns a pair (iconic link, textual link)
     my($icon, $current_file, @link) = @_;
     my($dummy, $file, $title) = split($delim,
-				      $toc_section_info{join(' ',@link)});
+				      $section_info{join(' ',@link)});
     if ($title && ($file ne $current_file)) {
         $title = purify($title);
 	$title = get_first_words($title, $WORDS_IN_NAVIGATION_PANEL_TITLES);
