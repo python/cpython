@@ -568,11 +568,13 @@ Availability: Windows.
 \subsection{Files and Directories \label{os-file-dir}}
 
 \begin{funcdesc}{access}{path, mode}
-Check read/write/execute permissions for this process or existence of
-file \var{path}.  \var{mode} should be \constant{F_OK} to test the
-existence of \var{path}, or it can be the inclusive OR of one or more
-of \constant{R_OK}, \constant{W_OK}, and \constant{X_OK} to test
-permissions.  Return \code{1} if access is allowed, \code{0} if not.
+Use the real uid/gid to test for access to \var{path}.  Note that most
+operations will use the effective uid/gid, therefore this routine can
+be used in a suid/sgid environment to test if the invoking user has the
+specified access to \var{path}.  \var{mode} should be \constant{F_OK}
+to test the existence of \var{path}, or it can be the inclusive OR of
+one or more of \constant{R_OK}, \constant{W_OK}, and \constant{X_OK} to
+test permissions.  Return \code{1} if access is allowed, \code{0} if not.
 See the \UNIX{} man page \manpage{access}{2} for more information.
 Availability: \UNIX, Windows.
 \end{funcdesc}
