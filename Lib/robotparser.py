@@ -4,7 +4,7 @@
 
     You can choose between two licenses when using this package:
     1) GNU GPLv2
-    2) PYTHON 2.0 OPEN SOURCE LICENSE
+    2) PSF license for Python 2.2
 
     The robots.txt Exclusion Protocol is implemented as specified in
     http://info.webcrawler.com/mak/projects/robots/norobots-rfc.html
@@ -42,7 +42,11 @@ class RobotFileParser:
     def read(self):
         opener = URLopener()
         f = opener.open(self.url)
-        lines = f.readlines()
+        lines = []
+        line = f.readline()
+        while line:
+            lines.append(line.strip())
+            line = f.readline()
         self.errcode = opener.errcode
         if self.errcode == 401 or self.errcode == 403:
             self.disallow_all = 1
@@ -63,7 +67,6 @@ class RobotFileParser:
         entry = Entry()
 
         for line in lines:
-            line = line.strip()
             linenumber = linenumber + 1
             if not line:
                 if state==1:
@@ -209,24 +212,11 @@ class URLopener(urllib.FancyURLopener):
     def __init__(self, *args):
         apply(urllib.FancyURLopener.__init__, (self,) + args)
         self.errcode = 200
-        self.tries = 0
-        self.maxtries = 10
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         self.errcode = errcode
         return urllib.FancyURLopener.http_error_default(self, url, fp, errcode,
                                                         errmsg, headers)
-
-    def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
-        self.tries += 1
-        if self.tries >= self.maxtries:
-            return self.http_error_default(url, fp, 500,
-                                           "Internal Server Error: Redirect Recursion",
-                                           headers)
-        result = urllib.FancyURLopener.http_error_302(self, url, fp, errcode,
-                                                      errmsg, headers, data)
-        self.tries = 0
-        return result
 
 def _check(a,b):
     if not b:
