@@ -7,6 +7,11 @@ from types import IntType
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
 
+
+# Extension for Python source files.
+PYTHON_SOURCE_EXTENSION = os.extsep + "py"
+
+
 class install_lib (Command):
 
     description = "install all Python modules (extensions and pure Python)"
@@ -155,6 +160,12 @@ class install_lib (Command):
     def _bytecode_filenames (self, py_filenames):
         bytecode_files = []
         for py_file in py_filenames:
+            # Since build_py handles package data installation, the
+            # list of outputs can contain more than just .py files.
+            # Make sure we only report bytecode for the .py files.
+            ext = os.path.splitext(os.path.normcase(py_file))[1]
+            if ext != PYTHON_SOURCE_EXTENSION:
+                continue
             if self.compile:
                 bytecode_files.append(py_file + "c")
             if self.optimize > 0:
