@@ -6,10 +6,7 @@ import struct
 import fcntl
 import FCNTL
 import os
-
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
+from test_support import verbose
 
 filename = '/tmp/delete-me'
 

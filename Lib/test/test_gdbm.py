@@ -2,12 +2,11 @@
 """Test script for the gdbm module
    Roger E. Masse
 """
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
     
 import gdbm
 from gdbm import error
+from test_support import verbose
+
 filename= '/tmp/delete_me'
 
 g = gdbm.open(filename, 'c')

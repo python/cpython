@@ -4,13 +4,18 @@
 """
 import dbm
 from dbm import error
+from test_support import verbose
+
 filename= '/tmp/delete_me'
 
 d = dbm.open(filename, 'c')
 d['a'] = 'b'
 d['12345678910'] = '019237410982340912840198242'
 d.keys()
-d.has_key('a')
+if d.has_key('a'):
+    if verbose:
+	print 'Test dbm keys: ', d.keys()
+	
 d.close()
 d = dbm.open(filename, 'r')
 d.close()

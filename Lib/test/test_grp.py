@@ -2,11 +2,9 @@
 """Test script for the grp module
    Roger E. Masse
 """
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
-    
+  
 import grp
+from test_support import verbose
 
 groups = grp.getgrall()
 if verbose:
