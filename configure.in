@@ -389,6 +389,12 @@ then
     esac
 fi
 
+if test "$Py_DEBUG" = 'true'; then
+  :
+else
+  OPT="-DNDEBUG $OPT"
+fi
+
 # The current (beta) Monterey compiler dies with optimizations
 case $ac_sys_system in
 Monterey*) OPT="";;
