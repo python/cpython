@@ -4191,32 +4191,53 @@ symtable_check_unoptimized(struct compiling *c,
 	      || (ste->ste_nested && si->si_nimplicit)))
 		return 0;
 
+#define ILLEGAL_CONTAINS "contains a nested function with free variables"
+
+#define ILLEGAL_IS "is a nested function"
+
 #define ILLEGAL_IMPORT_STAR \
-"import * is not allowed in function '%.100s' " \
-"because it contains a nested function with free variables"
+"import * is not allowed in function '%.100s' because it %s"
 
 #define ILLEGAL_BARE_EXEC \
-"unqualified exec is not allowed in function '%.100s' " \
-"because it contains a nested function with free variables"
+"unqualified exec is not allowed in function '%.100s' it %s"
 
 #define ILLEGAL_EXEC_AND_IMPORT_STAR \
 "function '%.100s' uses import * and bare exec, which are illegal" \
-"because it contains a nested function with free variables"
+"because it %s"
 
 	/* XXX perhaps the linenos for these opt-breaking statements
 	   should be stored so the exception can point to them. */
 
-	if (ste->ste_optimized == OPT_IMPORT_STAR)
-		sprintf(buf, ILLEGAL_IMPORT_STAR, 
-			PyString_AS_STRING(ste->ste_name));
-	else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
-		sprintf(buf, ILLEGAL_BARE_EXEC,
-			PyString_AS_STRING(ste->ste_name));
-	else {
-		sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
-			PyString_AS_STRING(ste->ste_name));
+	if (ste->ste_child_free) {
+		if (ste->ste_optimized == OPT_IMPORT_STAR)
+			sprintf(buf, ILLEGAL_IMPORT_STAR, 
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_CONTAINS);
+		else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
+			sprintf(buf, ILLEGAL_BARE_EXEC,
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_CONTAINS);
+		else {
+			sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_CONTAINS);
+		}
+	} else {
+		if (ste->ste_optimized == OPT_IMPORT_STAR)
+			sprintf(buf, ILLEGAL_IMPORT_STAR, 
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_IS);
+		else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
+			sprintf(buf, ILLEGAL_BARE_EXEC,
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_IS);
+		else {
+			sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
+				PyString_AS_STRING(ste->ste_name),
+				ILLEGAL_IS);
+		}
 	}
-	
+
 	if (c->c_symtable->st_nested_scopes) {
 		PyErr_SetString(PyExc_SyntaxError, buf);
 		PyErr_SyntaxLocation(c->c_symtable->st_filename,
