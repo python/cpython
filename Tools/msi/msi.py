@@ -1080,9 +1080,9 @@ def add_registry(db):
     if have_tcl:
         tcltkshortcuts = [
               ("IDLE", "MenuDir", "IDLE|IDLE (Python GUI)", "pythonw.exe",
-               tcltk.id, r"[TARGETDIR]Lib\idlelib\idle.pyw", None, None, "python_icon.exe", 0, None, "TARGETDIR"),
+               tcltk.id, r'"[TARGETDIR]Lib\idlelib\idle.pyw"', None, None, "python_icon.exe", 0, None, "TARGETDIR"),
               ("PyDoc", "MenuDir", "MODDOCS|Module Docs", "pythonw.exe",
-               tcltk.id, r"[TARGETDIR]Tools\scripts\pydocgui.pyw", None, None, "python_icon.exe", 0, None, "TARGETDIR"),
+               tcltk.id, r'"[TARGETDIR]Tools\scripts\pydocgui.pyw"', None, None, "python_icon.exe", 0, None, "TARGETDIR"),
               ]
     add_data(db, "Shortcut",
              tcltkshortcuts +
