@@ -60,13 +60,14 @@ TESTPATH=:$(DESTLIB)/test
 # Path for machine- or system-dependent modules (and shared libraries)
 MACHDEPPATH=:$(DESTLIB)/$(MACHDEP)
 
-PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
+COREPYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
+PYTHONPATH=$(COREPYTHONPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
 
 array arraymodule.c	# array objects
-math mathmodule.c	# math library functions, e.g. sin()
+math mathmodule.c -lm	# math library functions, e.g. sin()
 parser parsermodule.c	# raw interface to the Python parser
 posix posixmodule.c	# posix (UNIX) system calls
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
