@@ -359,61 +359,6 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 #include <EPPC.h>
 #include <Events.h>
 
-#ifdef USE_STDWIN
-
-extern void (*_w_high_level_event_proc)(EventRecord *);
-
-static PyObject *MacOS_HighLevelEventHandler = NULL;
-
-static void
-MacOS_HighLevelEventProc(EventRecord *e)
-{
-	if (MacOS_HighLevelEventHandler != NULL) {
-		PyObject *args = PyMac_BuildEventRecord(e);
-		PyObject *res;
-		if (args == NULL)
-			res = NULL;
-		else {
-			res = PyEval_CallObject(MacOS_HighLevelEventHandler, args);
-			Py_DECREF(args);
-		}
-		if (res == NULL) {
-			PySys_WriteStderr("Exception in MacOS_HighLevelEventProc:\n");
-			PyErr_Print();
-		}
-		else
-			Py_DECREF(res);
-	}
-}
-
-/* XXXX Need to come here from PyMac_DoYield too... */
-
-static PyObject *
-MacOS_SetHighLevelEventHandler(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	PyObject *previous = MacOS_HighLevelEventHandler;
-	PyObject *next = NULL;
-	if (!PyArg_ParseTuple(args, "|O", &next))
-		return NULL;
-	if (next == Py_None)
-		next = NULL;
-	Py_INCREF(next);
-	MacOS_HighLevelEventHandler = next;
-	if (next == NULL)
-		_w_high_level_event_proc = NULL;
-	else
-		_w_high_level_event_proc = MacOS_HighLevelEventProc;
-	if (previous == NULL) {
-		Py_INCREF(Py_None);
-		previous = Py_None;
-	}
-	return previous;
-}
-
-#endif /* USE_STDWIN */
-
 #ifndef TARGET_API_MAC_CARBON
 static char accepthle_doc[] = "Get arguments of pending high-level event";
 
@@ -737,9 +682,6 @@ static PyMethodDef MacOS_Methods[] = {
 #endif
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
 	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1,	setcrtp_doc},
-#ifdef USE_STDWIN
-	{"SetHighLevelEventHandler",	MacOS_SetHighLevelEventHandler, 1},
-#endif
 	{"SchedParams",			MacOS_SchedParams,	1,	schedparams_doc},
 	{"EnableAppswitch",		MacOS_EnableAppswitch,	1,	appswitch_doc},
 	{"SetEventHandler",		MacOS_SetEventHandler,	1,	setevh_doc},

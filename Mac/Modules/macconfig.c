@@ -53,9 +53,6 @@ extern void initsocket();
 extern void initaudioop();
 extern void initimageop();
 extern void initrgbimg();
-#ifdef USE_STDWIN
-extern void initstdwin();
-#endif
 extern void initmd5();
 extern void initmpz();
 extern void initrotor();
@@ -84,9 +81,6 @@ extern void initerrno();
 extern void initpcre();
 extern void initunicodedata();
 extern void init_codecs();
-#ifdef THINK
-extern void initmacconsole();
-#endif
 #ifdef USE_MACCTB
 extern void initctb();
 #endif
@@ -191,9 +185,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"audioop", initaudioop},
 	{"imageop", initimageop},
 	{"rgbimg", initrgbimg},
-#ifdef USE_STDWIN
-	{"stdwin", initstdwin},
-#endif
 	{"md5", initmd5},
 	{"rotor", initrotor},
 	{"new", initnew},
@@ -206,10 +197,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"pcre", initpcre},
 	{"unicodedata", initunicodedata},
 	{"_codecs", init_codecs},
-#ifdef THINK_C
-/* This is an interface to the Think runtime */
-	{"macconsole", initmacconsole},
-#endif
 #ifdef USE_MACCTB
 	{"ctb", initctb},
 #endif

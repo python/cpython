@@ -34,10 +34,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
-#ifdef THINK_C
-#define FileFilterUPP FileFilterProcPtr
-#endif
-
 static PyObject *ErrorObject;
 
 /* ----------------------------------------------------- */
