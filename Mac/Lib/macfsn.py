@@ -35,10 +35,14 @@ def _PromptGetFile(prompt, *typelist):
 	args['preferenceKey'] = 'PyMC'
 	if _movablemodal:
 		args['eventProc'] = None
+	args['dialogOptionFlags'] = flags
+	_handleSetFolder(args)
 	try:
 		rr = Nav.NavChooseFile(args)
 		good = 1
 	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
 		good = 0
 		fss = macfs.FSSpec(':cancelled')
 	else:
@@ -49,16 +53,22 @@ def _PromptGetFile(prompt, *typelist):
 
 def _StandardPutFile(prompt, default=None):
 	args = {}
-	flags = 0x57
+	flags = 0x07
 	if prompt:
 		args['message'] = prompt
 	args['preferenceKey'] = 'PyMC'
 	if _movablemodal:
 		args['eventProc'] = None
+	if default:
+		args['savedFileName'] = default
+	args['dialogOptionFlags'] = flags
+	_handleSetFolder(args)
 	try:
 		rr = Nav.NavPutFile(args)
 		good = 1
 	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
 		good = 0
 		fss = macfs.FSSpec(':cancelled')
 	else:
@@ -70,22 +80,36 @@ def _SetFolder(folder):
 	if _curfolder:
 		rv = _curfolder
 	else:
-		_curfolder = macfs.FSSpec(":")
+		rv = None
 	_curfolder = macfs.FSSpec(folder)
 	return rv
 	
+def _handleSetFolder(args):
+	global _curfolder
+	if not _curfolder:
+		return
+	import aepack
+	fss = macfs.FSSpec(_curfolder)
+	aedesc = aepack.pack(fss)
+	args['defaultLocation'] = aedesc
+	_curfolder = None
+	
 def _GetDirectory(prompt=None):
 	args = {}
-	flags = 0x57
+	flags = 0x17
 	if prompt:
 		args['message'] = prompt
 	args['preferenceKey'] = 'PyMC'
 	if _movablemodal:
 		args['eventProc'] = None
+	args['dialogOptionFlags'] = flags
+	_handleSetFolder(args)
 	try:
 		rr = Nav.NavChooseFolder(args)
 		good = 1
 	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
 		good = 0
 		fss = macfs.FSSpec(':cancelled')
 	else:
