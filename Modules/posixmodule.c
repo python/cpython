@@ -1413,9 +1413,10 @@ posix_execve(self, args)
 
 #ifdef HAVE_SPAWNV
 static char posix_spawnv__doc__[] =
-"spawnv(path, args)\n\
+"spawnv(mode, path, args)\n\
 Execute an executable path with arguments, replacing current process.\n\
 \n\
+	mode: mode of process creation\n\
 	path: path of executable file\n\
 	args: tuple or list of strings";
 
@@ -1472,9 +1473,10 @@ posix_spawnv(self, args)
 
 
 static char posix_spawnve__doc__[] =
-"spawnve(path, args, env)\n\
+"spawnve(mode, path, args, env)\n\
 Execute a path with arguments and environment, replacing current process.\n\
 \n\
+	mode: mode of process creation\n\
 	path: path of executable file\n\
 	args: tuple or list of arguments\n\
 	env: dictonary of strings mapping to strings";
