@@ -11,11 +11,20 @@ if [ -z "$HOME" ] ; then
     export HOME
 fi
 
-UPDATES="$HOME/tmp/$1"
+DOCTYPE="$1"
+UPDATES="$HOME/tmp/$2"
+
+TMPDIR="$$-docs"
 
 cd /home/groups/python/htdocs || exit $?
-rm -rf devel-docs || exit $?
-mkdir devel-docs || exit $?
-cd devel-docs || exit $?
+mkdir $TMPDIR || exit $?
+cd $TMPDIR || exit $?
 (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
+cd .. || exit $?
+
+if [ -d $DOCTYPE-docs ] ; then
+    mv $DOCTYPE-docs $DOCTYPE-temp
+fi
+mv $TMPDIR $DOCTYPE-docs
+rm -rf $DOCTYPE-temp || exit $?
 rm "$UPDATES" || exit $?
