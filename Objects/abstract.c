@@ -2040,6 +2040,12 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	static PyObject *__class__ = NULL;
 	int retval = 0;
 
+	if (__class__ == NULL) {
+		__class__ = PyString_FromString("__class__");
+		if (__class__ == NULL)
+			return -1;
+	}
+
 	if (PyClass_Check(cls) && PyInstance_Check(inst)) {
 		PyObject *inclass =
 			(PyObject*)((PyInstanceObject*)inst)->in_class;
@@ -2047,6 +2053,19 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	}
 	else if (PyType_Check(cls)) {
 		retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
+		if (retval == 0) {
+			PyObject *c = PyObject_GetAttr(inst, __class__);
+			if (c == NULL) {
+				PyErr_Clear();
+			}
+			else {
+				if (c != inst->ob_type && PyType_Check(c))
+					retval = PyType_IsSubtype(
+						(PyTypeObject *)c,
+						(PyTypeObject *)cls);
+				Py_DECREF(c);
+			}
+		}
 	}
 	else if (PyTuple_Check(cls)) {
 		/* Not a general sequence -- that opens up the road to
@@ -2060,18 +2079,12 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 			if (retval != 0)
 				break;
 		}
-		return retval;
 	}
 	else {
 		if (!check_class(cls,
 			"isinstance() arg 2 must be a class, type,"
 			" or tuple of classes and types"))
 			return -1;
-		if (__class__ == NULL) {
-			__class__ = PyString_FromString("__class__");
-			if (__class__ == NULL)
-				return -1;
-		}
 		icls = PyObject_GetAttr(inst, __class__);
 		if (icls == NULL) {
 			PyErr_Clear();
