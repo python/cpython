@@ -342,7 +342,6 @@ dnr_AddrToStr(self, args)
 	OSErr err;
 	unsigned long ipaddr;
 	char ipname[16];
-	object *rv;
 
 	if (!newgetargs(args, "l", &ipaddr))
 		return NULL;
@@ -436,7 +435,7 @@ static struct methodlist dnr_methods[] = {
 void
 initmacdnr()
 {
-	object *m, *d, *o;
+	object *m, *d;
 
 	/* Create the module and add the functions */
 	m = initmodule("macdnr", dnr_methods);
