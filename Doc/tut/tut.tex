@@ -1266,9 +1266,20 @@ parrot(actor='John Cleese')  # unknown keyword
 In general, an argument list must have any positional arguments
 followed by any keyword arguments, where the keywords must be chosen
 from the formal parameter names.  It's not important whether a formal
-parameter has a default value or not.  No argument must receive a
+parameter has a default value or not.  No argument may receive a
 value more than once --- formal parameter names corresponding to
 positional arguments cannot be used as keywords in the same calls.
+Here's an example that fails due to this restriction:
+
+\begin{verbatim}
+>>> def function(a):
+...     pass
+... 
+>>> function(0, a=0)
+Traceback (innermost last):
+  File "<stdin>", line 1, in ?
+TypeError: keyword parameter redefined
+\end{verbatim}
 
 When a final formal parameter of the form \code{**\var{name}} is
 present, it receives a dictionary containing all keyword arguments
@@ -1393,7 +1404,8 @@ the front of the list, and \code{a.insert(len(a), x)} is equivalent to
 \code{a.append(x)}.
 
 \item[\code{append(x)}]
-Equivalent to \code{a.insert(len(a), x)}.
+Append an item to the list;
+equivalent to \code{a.insert(len(a), x)}.
 
 \item[\code{index(x)}]
 Return the index in the list of the first item whose value is \code{x}.
@@ -1605,7 +1617,7 @@ is also possible, e.g.:
 \end{verbatim}
 
 This is called, appropriately enough, \emph{tuple unpacking}.  Tuple
-unpacking requires that the list of variables on the left has the same
+unpacking requires that the list of variables on the left have the same
 number of elements as the length of the tuple.  Note that multiple
 assignment is really just a combination of tuple packing and tuple
 unpacking!
@@ -1629,7 +1641,7 @@ Another useful data type built into Python is the \emph{dictionary}.
 Dictionaries are sometimes found in other languages as ``associative
 memories'' or ``associative arrays''.  Unlike sequences, which are
 indexed by a range of numbers, dictionaries are indexed by \emph{keys},
-which can be any non-mutable type; strings and numbers can always be
+which can be any immutable type; strings and numbers can always be
 keys.  Tuples can be used as keys if they contain only strings,
 numbers, or tuples.  You can't use lists as keys, since lists can be
 modified in place using their \code{append()} method.
@@ -1687,8 +1699,8 @@ only matters for mutable objects like lists.  All comparison operators
 have the same priority, which is lower than that of all numerical
 operators.
 
-Comparisons can be chained: e.g., \code{a < b == c} tests whether \code{a}
-is less than \code{b} and moreover \code{b} equals \code{c}.
+Comparisons can be chained: e.g., \code{a < b == c} tests whether
+\code{a} is less than \code{b} and moreover \code{b} equals \code{c}.
 
 Comparisons may be combined by the Boolean operators \code{and} and
 \code{or}, and the outcome of a comparison (or of any other Boolean
@@ -1806,11 +1818,9 @@ following command:
 >>> import fibo
 \end{verbatim}
 
-This does not enter the names of the functions defined in
-\code{fibo}
+This does not enter the names of the functions defined in \code{fibo} 
 directly in the current symbol table; it only enters the module name
-\code{fibo}
-there.
+\code{fibo} there.
 Using the module name you can access the functions:
 
 \begin{verbatim}
