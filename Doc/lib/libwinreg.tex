@@ -126,13 +126,13 @@ This module offers the following functions:
  no more values.
  
  The result is a tuple of 3 items:
- \item[value_name]
- A string that identifies the value name
- \item[value_data]
- An object that holds the value data, and whose type depends
- on the underlying registry type.
- \item[data_type] is an integer that identifies the type of the 
- value data.
+
+ \begin{tableii}{c|p{3in}}{code}{Index}{Meaning}
+   \lineii{0}{A string that identifies the value name}
+   \lineii{1}{An object that holds the value data, and whose
+              type depends on the underlying registry type}
+   \lineii{2}{An integer that identifies the type of the value data}
+ \end{tableii}
 
 \end{funcdesc}
 
@@ -218,13 +218,13 @@ This module offers the following functions:
  \constant{HKEY_*} constants.
 
  The result is a tuple of 3 items:
- \item[num_subkeys]
- An integer that identifies the number of sub keys this key has.
- \item[num_values]
- An integer that identifies the number of values this key has.
- \item [last_modified]
- A long integer that identifies when the key was last modified (if available)
- as 100's of nanoseconds since Jan 1, 1600.
+
+ \begin{tableii}{c|p{3in}}{code}{Index}{Meaning}
+   \lineii{0}{An integer giving the number of sub keys this key has.}
+   \lineii{1}{An integer giving the number of values this key has.}
+   \lineii{2}{A long integer giving when the key was last modified (if
+              available) as 100's of nanoseconds since Jan 1, 1600.}
+ \end{tableii}
 \end{funcdesc}
 
 
@@ -256,10 +256,11 @@ This module offers the following functions:
  \var{value_name} is a string indicating the value to query.
 
  The result is a tuple of 2 items:
- \item [value]
- The value of the registry item.
- \item [type_id]
- An integer that identifies the registry type for this value.
+
+ \begin{tableii}{c|p{3in}}{code}{Index}{Meaning}
+   \lineii{0}{The value of the registry item.}
+   \lineii{1}{An integer giving the registry type for this value.}
+ \end{tableii}
 \end{funcdesc}
 
 
@@ -294,18 +295,20 @@ This module offers the following functions:
  \var{sub_key} is a string that names the subkey with which the value 
  is associated.
  
- \var{type} is an integer that specifies the type of the data.  Currently this
- must be \constant{REG_SZ}, meaning only strings are supported.
- Use the \function{SetValueEx()} function for support for other data types.
+ \var{type} is an integer that specifies the type of the data.
+ Currently this must be \constant{REG_SZ}, meaning only strings are
+ supported.  Use the \function{SetValueEx()} function for support for
+ other data types.
  
  \var{value} is a string that specifies the new value.
 
- If the key specified by the \var{sub_key} parameter does not exist, 
+ If the key specified by the \var{sub_key} parameter does not exist,
  the SetValue function creates it.
 
  Value lengths are limited by available memory. Long values (more than
- 2048 bytes) should be stored as files with the filenames stored in 
- the configuration registry.  This helps the registry perform efficiently.
+ 2048 bytes) should be stored as files with the filenames stored in
+ the configuration registry.  This helps the registry perform
+ efficiently.
 
  The key identified by the \var{key} parameter must have been 
  opened with \constant{KEY_SET_VALUE} access.
@@ -313,43 +316,36 @@ This module offers the following functions:
 
 
 \begin{funcdesc}{SetValueEx}{key, value_name, reserved, type, value}
-  Stores data in the value field of an open registry key.
-  
+ Stores data in the value field of an open registry key.
+
  \var{key} is an already open key, or one of the predefined 
  \constant{HKEY_*} constants.
 
  \var{sub_key} is a string that names the subkey with which the 
  value is associated.
- 
+
  \var{type} is an integer that specifies the type of the data.  
- This should be one of:
- \item[\constant{REG_BINARY}] 
- 	Binary data in any form.
- \item[\constant{REG_DWORD}]
-	A 32-bit number.
- \item[\constant{REG_DWORD_LITTLE_ENDIAN}]
- 	A 32-bit number in little-endian format.
- \item[\constant{REG_DWORD_BIG_ENDIAN}]
-	A 32-bit number in big-endian format.
- \item[\constant{REG_EXPAND_SZ}]
- 	A null-terminated string that contains unexpanded references
-	to environment variables (for example, \code{\%PATH\%})
- \item[\constant{REG_LINK}]
- 	A Unicode symbolic link.
- \item[\constant{REG_MULTI_SZ}]
-	A sequence (eg, list, sequence) of null-terminated strings, 
-	terminated by two null characters. (Note that Python handles 
-	this termination automatically)
- \item[\constant{REG_NONE}]
-	No defined value type.
- \item[\constant{REG_RESOURCE_LIST}]
-	A device-driver resource list.
- \item[\constant{REG_SZ}]
- 	A null-terminated string.
+ This should be one of the following constants defined in this module:
+
+ \begin{tableii}{l|p{3in}}{constant}{Constant}{Meaning}
+   \lineii{REG_BINARY}{Binary data in any form.}
+   \lineii{REG_DWORD}{A 32-bit number.}
+   \lineii{REG_DWORD_LITTLE_ENDIAN}{A 32-bit number in little-endian format.}
+   \lineii{REG_DWORD_BIG_ENDIAN}{A 32-bit number in big-endian format.}
+   \lineii{REG_EXPAND_SZ}{Null-terminated string containing references
+                          to environment variables (\samp{\%PATH\%}).}
+   \lineii{REG_LINK}{A Unicode symbolic link.}
+   \lineii{REG_MULTI_SZ}{A sequence of null-terminated strings, 
+	terminated by two null characters.  (Python handles 
+	this termination automatically.)}
+   \lineii{REG_NONE}{No defined value type.}
+   \lineii{REG_RESOURCE_LIST}{A device-driver resource list.}
+   \lineii{REG_SZ}{A null-terminated string.}
+ \end{tableii}
 
  \var{reserved} can be anything - zero is always passed to the 
  API.
- 
+
  \var{value} is a string that specifies the new value.
 
  This method can also set additional value and type information for the
@@ -366,7 +362,7 @@ This module offers the following functions:
 
 
 
-\subsection{Registry handle objects \label{handle-object}}
+\subsection{Registry Handle Objects \label{handle-object}}
 
  This object wraps a Windows HKEY object, automatically closing it when
  the object is destroyed.  To guarantee cleanup, you can call either
