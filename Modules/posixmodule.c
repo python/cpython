@@ -228,7 +228,7 @@ extern int lstat(const char *, struct stat *);
 #include <io.h>
 #include <process.h>
 #include "osdefs.h"
-#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x0400	  /* Needed for CryptoAPI on some systems */
 #include <windows.h>
 #include <shellapi.h>	/* for ShellExecute() */
 #define popen	_popen
@@ -7221,6 +7221,74 @@ posix_getloadavg(PyObject *self, PyObject *noargs)
 }
 #endif
 
+#ifdef MS_WINDOWS
+
+PyDoc_STRVAR(win32_urandom__doc__,
+"urandom(n) -> str\n\n\
+Return a string of n random bytes suitable for cryptographic use.");
+
+typedef BOOL (WINAPI *CRYPTACQUIRECONTEXTA)(HCRYPTPROV *phProv,\
+              LPCSTR pszContainer, LPCSTR pszProvider, DWORD dwProvType,\
+              DWORD dwFlags );
+typedef BOOL (WINAPI *CRYPTGENRANDOM)(HCRYPTPROV hProv, DWORD dwLen,\
+              BYTE *pbBuffer );
+
+static CRYPTGENRANDOM pCryptGenRandom = NULL;
+static HCRYPTPROV hCryptProv = 0;
+
+static PyObject* win32_urandom(PyObject *self, PyObject *args)
+{
+    int howMany = 0;
+    unsigned char* bytes = NULL;
+    PyObject* returnVal = NULL;
+
+    /* Read arguments */
+    if (!PyArg_ParseTuple(args, "i", &howMany))
+        return(NULL);
+
+    if (hCryptProv == 0) {
+        HINSTANCE hAdvAPI32 = NULL;
+        CRYPTACQUIRECONTEXTA pCryptAcquireContext = NULL;
+
+        /* Obtain handle to the DLL containing CryptoAPI
+           This should not fail	*/
+        if( (hAdvAPI32 = GetModuleHandle("advapi32.dll")) == NULL)
+            return win32_error("GetModuleHandle", NULL);
+
+        /* Obtain pointers to the CryptoAPI functions
+           This will fail on some early versions of Win95 */
+        pCryptAcquireContext=(CRYPTACQUIRECONTEXTA)GetProcAddress(hAdvAPI32,\
+                             "CryptAcquireContextA");
+        pCryptGenRandom=(CRYPTGENRANDOM)GetProcAddress(hAdvAPI32,\
+                        "CryptGenRandom");
+
+        if (pCryptAcquireContext == NULL || pCryptGenRandom == NULL)
+            return PyErr_Format(PyExc_NotImplementedError,\
+                                "CryptGenRandom not found");  
+
+	    /* Acquire context */
+        if(!pCryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL,
+                                 CRYPT_VERIFYCONTEXT))
+            return win32_error("CryptAcquireContext", NULL);
+    }
+
+    /* Allocate bytes */
+    if ((bytes = (unsigned char*)PyMem_Malloc(howMany)) == NULL)
+        return PyErr_NoMemory();
+
+    /* Get random data */
+    if (!pCryptGenRandom(hCryptProv, howMany, bytes)) {
+        PyMem_Free(bytes);
+        return win32_error("CryptGenRandom", NULL);
+    }
+
+    /* Build return value */
+    returnVal = PyString_FromStringAndSize(bytes, howMany);
+    PyMem_Free(bytes);
+
+    return returnVal;
+}
+#endif
 
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
@@ -7506,6 +7574,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETLOADAVG
 	{"getloadavg",	posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},
 #endif
+ #ifdef MS_WINDOWS
+ 	{"urandom", win32_urandom, METH_VARARGS, win32_urandom__doc__},
+ #endif
 	{NULL,		NULL}		 /* Sentinel */
 };
 

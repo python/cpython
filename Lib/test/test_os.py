@@ -343,6 +343,16 @@ class DevNullTests (unittest.TestCase):
         self.assertEqual(f.read(), '')
         f.close()
 
+class URandomTests (unittest.TestCase):
+    def test_urandom(self):
+        try:
+            self.assertEqual(len(os.urandom(1)), 1)
+            self.assertEqual(len(os.urandom(10)), 10)
+            self.assertEqual(len(os.urandom(100)), 100)
+            self.assertEqual(len(os.urandom(1000)), 1000)
+        except NotImplementedError:
+            pass
+
 def test_main():
     test_support.run_unittest(
         TemporaryFileTests,
@@ -351,6 +361,7 @@ def test_main():
         WalkTests,
         MakedirTests,
         DevNullTests,
+        URandomTests	
     )
 
 if __name__ == "__main__":

@@ -1828,3 +1828,22 @@ Macintosh.
 Also available via \module{os.path}.
 \versionadded{2.4}
 \end{datadesc}
+
+
+\subsection{Miscellaneous Functions \label{os-miscfunc}}
+
+\begin{funcdesc}{urandom}{n}
+Return a string of \var{n} random bytes suitable for cryptographic use.
+
+This function returns random bytes from an OS-specific 
+randomness source.  The returned data should be unpredictable enough for 
+cryptographic applications, though its exact quality depends on the OS 
+implementation.  On a UNIX-like system this will query /dev/urandom, and 
+on Windows it will use CryptGenRandom.  If a randomness source is not 
+found, \exception{NotImplementedError} will be raised.
+\versionadded{2.4}
+\end{funcdesc}
+
+
+
+
