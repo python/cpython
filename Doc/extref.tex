@@ -366,7 +366,7 @@ From the viewpoint of of C access to Python services, we have:
          reference counts), and return 0.
          If no conversion is possible, or if some other error occurs,
          return -1 (failure) and don't increment the reference counts.
-         The call \code{PyNumber_Coerce(&o1, &o2)} is equivalent to the Python
+         The call \code{PyNumber_Coerce(\&o1, \&o2)} is equivalent to the Python
          statement \code{o1, o2 = coerce(o1, o2)}.
      \end{cfuncdesc}
 
