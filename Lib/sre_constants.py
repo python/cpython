@@ -13,7 +13,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20030419
+MAGIC = 20031017
 
 # max code word in this release
 
@@ -42,6 +42,7 @@ CATEGORY = "category"
 CHARSET = "charset"
 GROUPREF = "groupref"
 GROUPREF_IGNORE = "groupref_ignore"
+GROUPREF_EXISTS = "groupref_exists"
 IN = "in"
 IN_IGNORE = "in_ignore"
 INFO = "info"
@@ -108,7 +109,7 @@ OPCODES = [
     CALL,
     CATEGORY,
     CHARSET, BIGCHARSET,
-    GROUPREF, GROUPREF_IGNORE,
+    GROUPREF, GROUPREF_EXISTS, GROUPREF_IGNORE,
     IN, IN_IGNORE,
     INFO,
     JUMP,

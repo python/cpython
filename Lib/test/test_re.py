@@ -169,7 +169,6 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.match('ac').group(1, 'b2', 3), ('a', None, 'c'))
 
     def test_re_groupref_exists(self):
-        return # not yet
         self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', '(a)').groups(),
                          ('(', 'a'))
         self.assertEqual(re.match('^(\()?([^()]+)(?(1)\))$', 'a').groups(),
@@ -405,19 +404,20 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('.*?cd', 5000*'ab'+'c'+5000*'ab'+'cde').end(0),
                          20003)
         self.assertEqual(re.match('.*?cd', 20000*'abc'+'de').end(0), 60001)
-        # non-simple '*?' still recurses and hits the recursion limit
-        self.assertRaises(RuntimeError, re.search, '(a|b)*?c', 10000*'ab'+'cd')
+        # non-simple '*?' still used to hit the recursion limit, before the
+        # non-recursive scheme was implemented. 
+        self.assertEqual(re.search('(a|b)*?c', 10000*'ab'+'cd').end(0), 20001)
 
     def test_bug_612074(self):
         pat=u"["+re.escape(u"\u2039")+u"]"
         self.assertEqual(re.compile(pat) and 1, 1)
 
     def test_stack_overflow(self):
-        # nasty case that overflows the straightforward recursive
+        # nasty cases that used to overflow the straightforward recursive
         # implementation of repeated groups.
-        self.assertRaises(RuntimeError, re.match, '(x)*', 50000*'x')
-        self.assertRaises(RuntimeError, re.match, '(x)*y', 50000*'x'+'y')
-        self.assertRaises(RuntimeError, re.match, '(x)*?y', 50000*'x'+'y')
+        self.assertEqual(re.match('(x)*', 50000*'x').group(1), 'x')
+        self.assertEqual(re.match('(x)*y', 50000*'x'+'y').group(1), 'x')
+        self.assertEqual(re.match('(x)*?y', 50000*'x'+'y').group(1), 'x')
 
     def test_scanner(self):
         def s_ident(scanner, token): return token
