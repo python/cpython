@@ -2790,7 +2790,7 @@ item: Custom Dialog Set
       Text Italian=Installazione completata!
     end
     item: Static
-      Rectangle=86 42 256 102
+      Rectangle=86 32 256 62
       Create Flags=01010000000000000000000000000000
       Text=%APPTITLE% has been successfully installed.
       Text=
@@ -2812,6 +2812,26 @@ item: Custom Dialog Set
       Rectangle=8 180 256 181
       Action=3
       Create Flags=01010000000000000000000000000111
+    end
+    item: Static
+      Rectangle=85 74 246 174
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000000000
+      Text=Special Windows thanks to:
+      Text=
+      Text=Wise Solutions, for the use of Installmaster 8.1.
+      Text=    http://www.wisesolutions.com/
+      Text=
+      Text=LettError, Erik van Blokland, for the Python for Windows graphic.
+      Text=    http://www.letterror.com/
+      Text=
+      Text=Mark Hammond, without whose years of freely shared Windows expertise Python for Windows would still be Python for DOS.
+    end
+    item: Static
+      Rectangle=86 66 239 67
+      Action=3
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000001001
     end
   end
 end
