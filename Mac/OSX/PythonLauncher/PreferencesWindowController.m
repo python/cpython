@@ -62,7 +62,7 @@
 
 - (IBAction)do_reset:(id)sender
 {
-    [self load_defaults];
+    [settings reset];
     [self update_display];
 }
 

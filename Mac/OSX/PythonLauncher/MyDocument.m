@@ -14,13 +14,14 @@
 
 - (id)init
 {
-    [super init];
+    self = [super init];
     if (self) {
     
         // Add your subclass-specific initialization here.
         // If an error occurs here, send a [self dealloc] message and return nil.
-        script = @"<no script>.py";
-        filetype = @"Python Script";    
+        script = [@"<no script>.py" retain];
+        filetype = [@"Python Script" retain];
+        settings = NULL;
     }
     return self;
 }
@@ -42,6 +43,7 @@
 
 - (void)load_defaults
 {
+//    if (settings) [settings release];
     settings = [FileSettings newSettingsForFileType: filetype];
 }
 
@@ -106,8 +108,11 @@
     
     // ask the app delegate whether we should show the UI or not. 
     show_ui = [[[NSApplication sharedApplication] delegate] shouldShowUI];
+    [script release];
     script = [fileName retain];
+    [filetype release];
     filetype = [type retain];
+//    if (settings) [settings release];
     settings = [FileSettings newSettingsForFileType: filetype];
     if (show_ui) {
         [self update_display];
@@ -135,7 +140,7 @@
 
 - (IBAction)do_reset:(id)sender
 {
-    [self load_defaults];
+    [settings reset];
     [self update_display];
 }
 
