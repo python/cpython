@@ -14,9 +14,10 @@
  * AKA solution to the problem described in KB: Q150956.
  */    
 
-#define WINDOWS_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>  /* for malloc and its friends */
 
 const char *usage =
 "This program is used by Python's os.popen function\n"
