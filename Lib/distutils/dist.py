@@ -1012,7 +1012,7 @@ class DistributionMetadata:
         return self.name or "UNKNOWN"
 
     def get_version(self):
-        return self.version or "???"
+        return self.version or "0.0.0"
 
     def get_fullname (self):
         return "%s-%s" % (self.get_name(), self.get_version())
