@@ -2905,16 +2905,6 @@ slot_sq_item(PyObject *self, int i)
 	}
 	func = _PyType_Lookup(self->ob_type, getitem_str);
 	if (func != NULL) {
-		if (func->ob_type == &PyWrapperDescr_Type) {
-			PyWrapperDescrObject *wrapper =
-				(PyWrapperDescrObject *)func;
-			if (wrapper->d_base->wrapper == wrap_sq_item &&
-			    PyType_IsSubtype(self->ob_type, wrapper->d_type)) {
-				intargfunc f;
-				f = (intargfunc)(wrapper->d_wrapped);
-				return f(self, i);
-			}
-		}
 		if ((f = func->ob_type->tp_descr_get) == NULL)
 			Py_INCREF(func);
 		else
@@ -3313,26 +3303,23 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 	return res;
 }
 
+/* There are two slot dispatch functions for tp_getattro.
+
+   - slot_tp_getattro() is used when __getattribute__ is overridden
+     but no __getattr__ hook is present;
+
+   - slot_tp_getattr_hook() is used when a __getattr__ hook is present.
+
+   The code in update_slot() and fixup_slot_dispatchers() always installs
+   slot_tp_getattr_hook(); this detects the absence of __getattr__ and then
+   installs the simpler slot if necessary. */
+
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
-	PyTypeObject *tp = self->ob_type;
-	PyObject *getattr;
-	static PyObject *getattr_str = NULL;
-
-	if (getattr_str == NULL) {
-		getattr_str = PyString_InternFromString("__getattribute__");
-		if (getattr_str == NULL)
-			return NULL;
-	}
-	getattr = _PyType_Lookup(tp, getattr_str);
-	if (getattr == NULL) {
-		/* Avoid further slowdowns */
-		if (tp->tp_getattro == slot_tp_getattro)
-			tp->tp_getattro = PyObject_GenericGetAttr;
-		return PyObject_GenericGetAttr(self, name);
-	}
-	return PyObject_CallFunction(getattr, "OO", self, name);
+	static PyObject *getattribute_str = NULL;
+	return call_method(self, "__getattribute__", &getattribute_str,
+			   "(O)", name);
 }
 
 static PyObject *
@@ -3355,29 +3342,20 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 			return NULL;
 	}
 	getattr = _PyType_Lookup(tp, getattr_str);
-	if (getattr == NULL && tp->tp_getattro == slot_tp_getattr_hook) {
+	if (getattr == NULL) {
 		/* No __getattr__ hook: use a simpler dispatcher */
 		tp->tp_getattro = slot_tp_getattro;
 		return slot_tp_getattro(self, name);
 	}
 	getattribute = _PyType_Lookup(tp, getattribute_str);
-	if (getattribute != NULL &&
-	    getattribute->ob_type == &PyWrapperDescr_Type &&
-	    ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
-	    (void *)PyObject_GenericGetAttr)
-		    getattribute = NULL;
-	if (getattr == NULL && getattribute == NULL) {
-		/* Use the default dispatcher */
-		if (tp->tp_getattro == slot_tp_getattr_hook)
-			tp->tp_getattro = PyObject_GenericGetAttr;
-		return PyObject_GenericGetAttr(self, name);
-	}
-	if (getattribute == NULL)
+	if (getattribute == NULL ||
+	    (getattribute->ob_type == &PyWrapperDescr_Type &&
+	     ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
+	     (void *)PyObject_GenericGetAttr))
 		res = PyObject_GenericGetAttr(self, name);
 	else
 		res = PyObject_CallFunction(getattribute, "OO", self, name);
-	if (getattr != NULL &&
-	    res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+	if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Clear();
 		res = PyObject_CallFunction(getattr, "OO", self, name);
 	}
