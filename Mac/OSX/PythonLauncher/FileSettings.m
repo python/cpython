@@ -59,10 +59,10 @@
     others = @"";
     if ([filetype isEqualToString: @"Python Script"] ||
         [filetype isEqualToString: @"Python Bytecode Document"]) {
-        interpreter = @"/usr/local/bin/python";
+        interpreter = @"/Library/Frameworks/Python.framework/Versions/Current/bin/python";
         with_terminal = YES;
    }  else if ([filetype isEqualToString: @"Python GUI Script"]) {
-        interpreter = @"/Applications/Python.app/Contents/MacOS/python";
+        interpreter = @"/Library/Frameworks/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/python";
         with_terminal = NO;
     } else {
         NSLog(@"Funny File Type: %@\n", filetype);
