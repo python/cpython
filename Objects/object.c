@@ -29,7 +29,7 @@ static PyObject refchain = {&refchain, &refchain};
  * force is false amd _ob_prev or _ob_next are non-NULL, do nothing.
  * force should be true if and only if op points to freshly allocated,
  * uninitialized memory, or you've unlinked op from the list and are
- * relinking it into the font.
+ * relinking it into the front.
  * Note that objects are normally added to the list via _Py_NewReference,
  * which is called by PyObject_Init.  Not all objects are initialized that
  * way, though; exceptions include statically allocated type objects, and
