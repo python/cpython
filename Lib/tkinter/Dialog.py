@@ -1,8 +1,16 @@
 # Dialog.py -- Tkinter interface to the tk_dialog script.
+
 from Tkinter import *
+
+if TkVersion == 3.6:
+	DIALOG_ICON = 'warning'
+else:
+	DIALOG_ICON = 'questhead'
+
 
 class Dialog(Widget):
 	def __init__(self, master=None, cnf={}):
+		self.widgetName = '__dialog__'
 		Widget._setup(self, master, cnf)
 		self.num = self.tk.getint(
 			apply(self.tk.call,
@@ -21,7 +29,7 @@ def _test():
 			  ' since the last time it was saved.'
 			  ' Do you want to save it before'
 			  ' exiting the application.',
-			  'bitmap': 'warning',
+			  'bitmap': DIALOG_ICON,
 			  'default': 0,
 			  'strings': ('Save File', 
 				      'Discard Changes', 
