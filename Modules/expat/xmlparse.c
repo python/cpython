@@ -309,8 +309,8 @@ doIgnoreSection(XML_Parser parser, const ENCODING *, const char **startPtr,
 #endif /* XML_DTD */
 
 static enum XML_Error
-storeAtts(XML_Parser parser, const ENCODING *,
-          const char *s, TAG_NAME *tagNamePtr, BINDING **bindingsPtr);
+storeAtts(XML_Parser parser, const ENCODING *, const char *s,
+          TAG_NAME *tagNamePtr, BINDING **bindingsPtr);
 static enum XML_Error
 addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr);
@@ -2097,11 +2097,6 @@ doContent(XML_Parser parser,
         }
         tag->name.str = (XML_Char *)tag->buf;
         *toPtr = XML_T('\0');
-        if (!startElementHandler && (tok == XML_TOK_START_TAG_NO_ATTS)) {
-          if (defaultHandler)
-            reportDefault(parser, enc, s, next);
-          break;
-        }
         result = storeAtts(parser, enc, s, &(tag->name), &(tag->bindings));
         if (result)
           return result;
@@ -2114,13 +2109,6 @@ doContent(XML_Parser parser,
         break;
       }
     case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
-      if (!startElementHandler && !endElementHandler) {
-        if (defaultHandler)
-          reportDefault(parser, enc, s, next);
-        if (tagLevel == 0)
-          return epilogProcessor(parser, next, end, nextPtr);
-        break;
-      }
       /* fall through */
     case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
       {
@@ -2134,13 +2122,10 @@ doContent(XML_Parser parser,
         if (!name.str)
           return XML_ERROR_NO_MEMORY;
         poolFinish(&tempPool);
-        if (startElementHandler || 
-            (tok == XML_TOK_EMPTY_ELEMENT_WITH_ATTS)) {
-          result = storeAtts(parser, enc, s, &name, &bindings);
-          if (result)
-            return result;
-          poolFinish(&tempPool);
-        }
+        result = storeAtts(parser, enc, s, &name, &bindings);
+        if (result)
+          return result;
+        poolFinish(&tempPool);
         if (startElementHandler) {
           startElementHandler(handlerArg, name.str, (const XML_Char **)atts);
           noElmHandlers = XML_FALSE;
@@ -2343,8 +2328,15 @@ doContent(XML_Parser parser,
   /* not reached */
 }
 
-/* If tagNamePtr is non-null, build a real list of attributes,
-   otherwise just check the attributes for well-formedness.
+/* Precondition: all arguments must be non-NULL;
+   Purpose:
+   - normalize attributes
+   - check attributes for well-formedness
+   - generate namespace aware attribute names (URI, prefix)
+   - build list of attributes for startElementHandler
+   - default attributes
+   - process namespace declarations (check and report them)
+   - generate namespace aware element name (URI, prefix)
 */
 static enum XML_Error
 storeAtts(XML_Parser parser, const ENCODING *enc,
@@ -2365,21 +2357,20 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   const XML_Char *localPart;
 
   /* lookup the element type name */
-  if (tagNamePtr) {
-    elementType = (ELEMENT_TYPE *)lookup(&dtd->elementTypes, tagNamePtr->str,0);
-    if (!elementType) {
-      const XML_Char *name = poolCopyString(&dtd->pool, tagNamePtr->str);
-      if (!name)
-        return XML_ERROR_NO_MEMORY;
-      elementType = (ELEMENT_TYPE *)lookup(&dtd->elementTypes, name,
-                                           sizeof(ELEMENT_TYPE));
-      if (!elementType)
-        return XML_ERROR_NO_MEMORY;
-      if (ns && !setElementTypePrefix(parser, elementType))
-        return XML_ERROR_NO_MEMORY;
-    }
-    nDefaultAtts = elementType->nDefaultAtts;
+  elementType = (ELEMENT_TYPE *)lookup(&dtd->elementTypes, tagNamePtr->str,0);
+  if (!elementType) {
+    const XML_Char *name = poolCopyString(&dtd->pool, tagNamePtr->str);
+    if (!name)
+      return XML_ERROR_NO_MEMORY;
+    elementType = (ELEMENT_TYPE *)lookup(&dtd->elementTypes, name,
+                                         sizeof(ELEMENT_TYPE));
+    if (!elementType)
+      return XML_ERROR_NO_MEMORY;
+    if (ns && !setElementTypePrefix(parser, elementType))
+      return XML_ERROR_NO_MEMORY;
   }
+  nDefaultAtts = elementType->nDefaultAtts;
+
   /* get the attributes from the tokenizer */
   n = XmlGetAttributes(enc, attStr, attsSize, atts);
   if (n + nDefaultAtts > attsSize) {
@@ -2393,6 +2384,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
     if (n > oldAttsSize)
       XmlGetAttributes(enc, attStr, n, atts);
   }
+
   appAtts = (const XML_Char **)atts;
   for (i = 0; i < n; i++) {
     /* add the name and value to the attribute list */
@@ -2430,14 +2422,10 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
                                    &tempPool);
       if (result)
         return result;
-      if (tagNamePtr) {
-        appAtts[attIndex] = poolStart(&tempPool);
-        poolFinish(&tempPool);
-      }
-      else
-        poolDiscard(&tempPool);
+      appAtts[attIndex] = poolStart(&tempPool);
+      poolFinish(&tempPool);
     }
-    else if (tagNamePtr) {
+    else {
       /* the value did not need normalizing */
       appAtts[attIndex] = poolStoreString(&tempPool, enc, atts[i].valuePtr,
                                           atts[i].valueEnd);
@@ -2446,7 +2434,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       poolFinish(&tempPool);
     }
     /* handle prefixed attribute names */
-    if (attId->prefix && tagNamePtr) {
+    if (attId->prefix) {
       if (attId->xmlns) {
         /* deal with namespace declarations here */
         enum XML_Error result = addBinding(parser, attId->prefix, attId,
@@ -2465,45 +2453,46 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
     else
       attIndex++;
   }
-  if (tagNamePtr) {
-    int j;
-    nSpecifiedAtts = attIndex;
-    if (elementType->idAtt && (elementType->idAtt->name)[-1]) {
-      for (i = 0; i < attIndex; i += 2)
-        if (appAtts[i] == elementType->idAtt->name) {
-          idAttIndex = i;
-          break;
-        }
-    }
-    else
-      idAttIndex = -1;
-    /* do attribute defaulting */
-    for (j = 0; j < nDefaultAtts; j++) {
-      const DEFAULT_ATTRIBUTE *da = elementType->defaultAtts + j;
-      if (!(da->id->name)[-1] && da->value) {
-        if (da->id->prefix) {
-          if (da->id->xmlns) {
-            enum XML_Error result = addBinding(parser, da->id->prefix, da->id,
-                                               da->value, bindingsPtr);
-            if (result)
-              return result;
-          }
-          else {
-            (da->id->name)[-1] = 2;
-            nPrefixes++;
-            appAtts[attIndex++] = da->id->name;
-            appAtts[attIndex++] = da->value;
-          }
+
+  /* set-up for XML_GetSpecifiedAttributeCount and XML_GetIdAttributeIndex */
+  nSpecifiedAtts = attIndex;
+  if (elementType->idAtt && (elementType->idAtt->name)[-1]) {
+    for (i = 0; i < attIndex; i += 2)
+      if (appAtts[i] == elementType->idAtt->name) {
+        idAttIndex = i;
+        break;
+      }
+  }
+  else
+    idAttIndex = -1;
+
+  /* do attribute defaulting */
+  for (i = 0; i < nDefaultAtts; i++) {
+    const DEFAULT_ATTRIBUTE *da = elementType->defaultAtts + i;
+    if (!(da->id->name)[-1] && da->value) {
+      if (da->id->prefix) {
+        if (da->id->xmlns) {
+          enum XML_Error result = addBinding(parser, da->id->prefix, da->id,
+                                             da->value, bindingsPtr);
+          if (result)
+            return result;
         }
         else {
-          (da->id->name)[-1] = 1;
+          (da->id->name)[-1] = 2;
+          nPrefixes++;
           appAtts[attIndex++] = da->id->name;
           appAtts[attIndex++] = da->value;
         }
       }
+      else {
+        (da->id->name)[-1] = 1;
+        appAtts[attIndex++] = da->id->name;
+        appAtts[attIndex++] = da->value;
+      }
     }
-    appAtts[attIndex] = 0;
   }
+  appAtts[attIndex] = 0;
+
   i = 0;
   if (nPrefixes) {
     /* expand prefixed attribute names */
@@ -2548,10 +2537,9 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
   /* clear the flags that say whether attributes were specified */
   for (; i < attIndex; i += 2)
     ((XML_Char *)(appAtts[i]))[-1] = 0;
-  if (!tagNamePtr)
-    return XML_ERROR_NONE;
   for (binding = *bindingsPtr; binding; binding = binding->nextTagBinding)
     binding->attId->name[-1] = 0;
+
   /* expand the element type name */
   if (elementType->prefix) {
     binding = elementType->prefix->binding;
