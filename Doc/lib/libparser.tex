@@ -110,17 +110,17 @@ AST objects may be created from source code or from a parse tree.
 When creating an AST object from source, different functions are used
 to create the \code{'eval'} and \code{'exec'} forms.
 
-\begin{funcdesc}{expr}{string}
-The \function{expr()} function parses the parameter \var{string}
-as if it were an input to \samp{compile(\var{string}, 'eval')}.  If
+\begin{funcdesc}{expr}{source}
+The \function{expr()} function parses the parameter \var{source}
+as if it were an input to \samp{compile(\var{source}, 'eval')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
 thrown.
 \end{funcdesc}
 
-\begin{funcdesc}{suite}{string}
-The \function{suite()} function parses the parameter \var{string}
-as if it were an input to \samp{compile(\var{string}, 'exec')}.  If
+\begin{funcdesc}{suite}{source}
+The \function{suite()} function parses the parameter \var{source}
+as if it were an input to \samp{compile(\var{source}, 'exec')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
 thrown.
