@@ -175,6 +175,8 @@ Here's an overview of the questions per chapter:
   4.33. Q. Is there an inverse to the format operator (a la C's scanf())?
   4.34. Q. Can I have Tk events handled while waiting for I/O?
   4.35. Q. How do I write a function with output parameters (call by reference)?
+  4.36. Q. Please explain the rules for local and global variables in Python.
+  4.37. Q. How can I have modules that mutually import each other?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -1243,12 +1245,8 @@ with native look and feel on NT, Windows 3.1 (using win32s) and on
 Unix (using Tk).  Source and binaries for NT and Linux are available
 in <URL:ftp://ftp.python.org/pub/python/wpy>.
 
-- Python has been mentioned on the "Futurism" subpage of the Fresco
-home page <URL:http://www.faslab.com/fresco/HomePage.html>.  "Pesto"
-is a Python interface to the CORBA dynamic invocation interface, and
-thus Fresco. A Pesto prototype is running and is currently being
-packaged up for inclusion in the Fresco snapshot.  See also the Pesto
-web pages: <URL:http://www.faslab.com/fresco/pesto/Index.html>.
+- (The Fresco port that was mentioned in earlier versions of this FAQ
+no longer seems to exist.  Inquire with Mark Linton.)
 
 4.14. Q. Are there any interfaces to database packages in Python?
 
@@ -1695,6 +1693,42 @@ in a number of ways:
    But there's probably no good reason to get this complicated :-).
 
 [Python' author favors solution 3 in most cases.]
+
+4.36. Q. Please explain the rules for local and global variables in Python.
+
+A. [Ken Manheimer] In Python, procedure variables are implicitly
+global, unless they assigned anywhere within the block.  In that case
+they are implicitly local, and you need to explicitly declare them as
+'global'.
+
+Though a bit surprising at first, a moments consideration explains
+this.  On one hand, requirement of 'global' for assigned vars provides
+a bar against unintended side-effects.  On the other hand, if global
+were required for all global references, you'd be using global all the
+time.  Eg, you'd have to declare as global every reference to a
+builtin function, or to a component of an imported module.  This
+clutter would defeat the usefulness of the 'global' declaration for
+identifying side-effects.
+
+4.37. Q. How can I have modules that mutually import each other?
+
+A. Jim Roskind recommends the following order in each module:
+
+First: all exports (like globals, functions, and classes that don't
+need imported bases classes).
+
+Then: all import statements.
+
+Finally: all active code (including globals that are initialized from
+imported values).
+
+Python's author doesn't like this approach much because the imports
+appear in a strange place, but has to admit that it works.  His
+recommended strategy is to avoid all uses of "from <module> import *"
+(so everything from an imported module is referenced as
+<module>.<name>) and to place all code inside functions.
+Initializations of global variables and class variables should use
+constants or built-in functions only.
 
 
 5. Extending Python
