@@ -8,6 +8,7 @@
 # version of a protocol, use multiple inheritance as shown below.
 
 
+import rpc
 from rpc import Packer, Unpacker, TCPClient, UDPClient
 
 MOUNTPROG = 100005
@@ -75,6 +76,18 @@ class PartialMountClient:
 	def addpackers(self):
 		self.packer = MountPacker().init()
 		self.unpacker = MountUnpacker().init('')
+
+	# This function is called to gobble up a suitable
+	# authentication object for a call to procedure 'proc'.
+	# (Experiments suggest that for Mnt/Unmnt, Unix authentication
+	# is necessary, while the other calls require no
+	# authentication.)
+	def mkcred(self, proc):
+		if proc not in (1, 3, 4): # not Mnt/Unmnt/Unmntall
+			return rpc.AUTH_NULL, ''
+		if self.cred == None:
+			self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
+		return self.cred
 
 	# The methods Mnt, Dump etc. each implement one Remote
 	# Procedure Call.  Their general structure is
