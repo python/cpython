@@ -353,6 +353,21 @@ def byte_compile (py_files,
 from distutils.util import byte_compile
 files = [
 """)
+
+            # XXX would be nice to write absolute filenames, just for
+            # safety's sake (script should be more robust in the face of
+            # chdir'ing before running it).  But this requires abspath'ing
+            # 'prefix' as well, and that breaks the hack in build_lib's
+            # 'byte_compile()' method that carefully tacks on a trailing
+            # slash (os.sep really) to make sure the prefix here is "just
+            # right".  This whole prefix business is rather delicate -- the
+            # problem is that it's really a directory, but I'm treating it
+            # as a dumb string, so trailing slashes and so forth matter.
+
+            #py_files = map(os.path.abspath, py_files)
+            #if prefix:
+            #    prefix = os.path.abspath(prefix)
+
             script.write(string.join(map(repr, py_files), ",\n") + "]\n")
             script.write("""
 byte_compile(files, optimize=%s, force=%s,
@@ -369,7 +384,8 @@ byte_compile(files, optimize=%s, force=%s,
         elif optimize == 2:
             cmd.insert(1, "-OO")
         spawn(cmd, verbose=verbose, dry_run=dry_run)
-        os.remove(script_name)
+        execute(os.remove, (script_name,), "removing %s" % script_name,
+                verbose=verbose, dry_run=dry_run)
         
     # "Direct" byte-compilation: use the py_compile module to compile
     # right here, right now.  Note that the script generated in indirect
