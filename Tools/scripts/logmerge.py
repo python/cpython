@@ -33,7 +33,7 @@ from their output.
 
 """
 
-import os, sys, getopt
+import os, sys, getopt, re
 
 sep1 = '='*77 + '\n'                    # file separator
 sep2 = '-'*28 + '\n'                    # revision separator
@@ -100,7 +100,11 @@ def digest_chunk(chunk, branch=None):
             break
     else:
         working_file = None
-    if branch and branch != "HEAD":
+    if branch is None:
+        pass
+    elif branch == "HEAD":
+        branch = re.compile(r"^\d+\.\d+$")
+    else:
         revisions = {}
         key = 'symbolic names:\n'
         found = 0
@@ -116,10 +120,11 @@ def digest_chunk(chunk, branch=None):
                 else:
                     found = 0
         rev = revisions.get(branch)
+        branch = re.compile(r"^<>$") # <> to force a mismatch by default
         if rev:
             if rev.find('.0.') >= 0:
-                rev = rev.replace('.0.', '.') + '.'
-        branch = rev or "<>" # <> to force a mismatch
+                rev = rev.replace('.0.', '.')
+                branch = re.compile(r"^" + re.escape(rev) + r"\.\d+$")
     records = []
     for lines in chunk[1:]:
         revline = lines[0]
@@ -144,13 +149,11 @@ def digest_chunk(chunk, branch=None):
         if len(words) >= 2 and words[0] == 'revision':
             rev = words[1]
         else:
+            # No 'revision' line -- weird...
             rev = None
             text.insert(0, revline)
         if branch:
-            if branch == "HEAD":
-                if rev is not None and rev.count('.') > 1:
-                    continue
-            elif rev is None or not rev.startswith(branch):
+            if rev is None or not branch.match(rev):
                 continue
         records.append((date, working_file, rev, author, text))
     return records
