@@ -1797,7 +1797,7 @@ def test_DocFileSuite():
        Here, we didn't need to use a tearDown function because we
        modified the test globals.  The test globals are
        automatically cleared for us after a test.
-       
+
        """
 
 def test_trailing_space_in_test():
@@ -1848,7 +1848,7 @@ def test_unittest_reportflags():
           NameError: name 'favorite_color' is not defined
       <BLANKLINE>
       <BLANKLINE>
-      
+
     We get only the first failure.
 
     If we give any reporting options when we set up the tests,
