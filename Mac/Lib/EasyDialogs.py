@@ -253,9 +253,13 @@ class ProgressBar:
 			self._label = lf2cr(newstr[0])
 		tp, text_h, rect = self.d.GetDialogItem(2)
 		SetDialogItemText(text_h, self._label)		
-
 				
 	def _update(self, value):
+		maxval = self.maxval
+		if maxval == 0:
+			# XXXX Quick fix. Should probably display an unknown duration
+			value = 0
+			maxval = 1
 		self.d.BringToFront()
 		tp, h, bar_rect = self.d.GetDialogItem(3)
 		Qd.SetPort(self.d)
@@ -267,11 +271,11 @@ class ProgressBar:
 
 		Qd.ForeColor(QuickDraw.blackColor)
 		Qd.BackColor(QuickDraw.blackColor)
-		Qd.PaintRect((l, t, int(l + (r-l)*value/self.maxval), b))	# Draw bar
+		Qd.PaintRect((l, t, int(l + (r-l)*value/maxval), b))	# Draw bar
 
 		Qd.ForeColor(QuickDraw.whiteColor)
 		Qd.BackColor(QuickDraw.whiteColor)
-		Qd.PaintRect((int(l + (r-l)*value/self.maxval), t, r, b))	# Clear rest
+		Qd.PaintRect((int(l + (r-l)*value/maxval), t, r, b))	# Clear rest
 				
 		# Restore settings
 		Qd.ForeColor(QuickDraw.blackColor)
@@ -294,8 +298,10 @@ class ProgressBar:
 					MacOS.HandleEvent(ev) 
 			
 			
-	def set(self, value):
+	def set(self, value, max=None):
 		"""set(value) - Set progress bar position"""
+		if max != None:
+			self.maxval = max
 		if value < 0: value = 0
 		if value > self.maxval: value = self.maxval
 		self.curval = value
