@@ -1,6 +1,7 @@
 "Dialog to specify or edit the parameters for a user configured help source."
 
 import os
+import sys
 
 from Tkinter import *
 import tkMessageBox
@@ -84,7 +85,7 @@ class GetHelpSourceDialog(Toplevel):
             dir, base = os.path.split(path)
         else:
             base = None
-            if sys.platform.count('win') or sys.platform.count('nt'):
+            if sys.platform[:3] == 'win':
                 dir = os.path.join(os.path.dirname(sys.executable), 'Doc')
                 if not os.path.isdir(dir):
                     dir = os.getcwd()
@@ -127,19 +128,30 @@ class GetHelpSourceDialog(Toplevel):
             self.entryPath.focus_set()
             pathOk = False
         elif path.startswith('www.') or path.startswith('http'):
-            pathOk = True
-        elif not os.path.exists(path):
-            tkMessageBox.showerror(title='File Path Error',
-                                   message='Help file path does not exist.',
-                                   parent=self)
-            self.entryPath.focus_set()
-            pathOk = False
+            pass
+        else:
+            if path[:5] == 'file:':
+                path = path[5:]
+            if not os.path.exists(path):
+                tkMessageBox.showerror(title='File Path Error',
+                                       message='Help file path does not exist.',
+                                       parent=self)
+                self.entryPath.focus_set()
+                pathOk = False
         return pathOk
 
     def Ok(self, event=None):
         if self.MenuOk() and self.PathOk():
             self.result = (self.menu.get().strip(),
                            self.path.get().strip())
+            if sys.platform == 'darwin':
+                path = self.result[1]
+                if (path.startswith('www') or path.startswith('file:')
+                    or path.startswith('http:')):
+                    pass
+                else:
+                    # Mac Safari insists on using the URI form for local files
+                    self.result[1] = "file://" + path
             self.destroy()
 
     def Cancel(self, event=None):
