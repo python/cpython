@@ -308,7 +308,8 @@ sub do_cmd_withsubitem{
 }
 
 # This is the prologue macro which is required to start writing the
-# mod\jobname.idx file; we can just ignore it.
+# mod\jobname.idx file; we can just ignore it.  (Defining this suppresses
+# a warning that \makemodindex is unknown.)
 #
 sub do_cmd_makemodindex{ return @_[0]; }
 
@@ -336,13 +337,6 @@ sub gen_link{
     return "<a href=\"$node#$target\">";
 }
 
-sub make_index_entry{
-    my($str) = @_;
-    my($name,$aname,$ahref) = new_link_info();
-    add_index_entry($str, $ahref);
-    return "$aname$anchor_invisible_mark</a>";
-}
-
 sub add_index_entry{
     # add an entry to the index structures; ignore the return value
     my($str,$ahref) = @_;
@@ -358,90 +352,119 @@ sub new_link_info{
     return ($name, $aname, $ahref);
 }
 
-sub do_cmd_index{
+$IndexMacroPattern = '';
+sub define_indexing_macro{
+    my $count = @_;
+    my $i = 0;
+    for (; $i < $count; ++$i) {
+	my $name = @_[$i];
+	my $cmd = "idx_cmd_$name";
+	die "\nNo function $cmd() defined!\n"
+	  if (!defined &$cmd);
+	eval ("sub do_cmd_$name { return process_index_macros("
+	      . "\@_[0], '$name'); }");
+	if (length($IndexMacroPattern) == 0) {
+	    $IndexMacroPattern = "$name";
+	}
+	else {
+	    $IndexMacroPattern .= "|$name";
+	}
+    }
+}
+
+$DEBUG_INDEXING = 0;
+sub process_index_macros{
     local($_) = @_;
-    my $str = next_argument();
-    #
+    my $cmdname = @_[1];	# This is what triggered us in the first place;
+				# we know it's real, so just process it.
     my($name,$aname,$ahref) = new_link_info();
-    add_index_entry("$str", $ahref);
+    my $cmd = "idx_cmd_$cmdname";
+    print "\nIndexing: \\$cmdname"
+      if $DEBUG_INDEXING;
+    &$cmd($ahref);		# modifies $_ and adds index entries
+    while (/^[\s\n]*\\($IndexMacroPattern)</) {
+	$cmdname = "$1";
+	print " \\$cmdname"
+	  if $DEBUG_INDEXING;
+	$cmd = "idx_cmd_$cmdname";
+	if (!defined &$cmd) {
+	    last;
+	}
+	else {
+	    s/^[\s\n]*\\$cmdname//;
+	    &$cmd($ahref);
+	}
+    }
     return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
-sub do_cmd_kwindex{
-    local($_) = @_;
+define_indexing_macro('index');
+sub idx_cmd_index{
     my $str = next_argument();
-    #
-    my($name,$aname,$ahref) = new_link_info();
-    add_index_entry("<tt>$str</tt>!keyword", $ahref);
-    add_index_entry("keyword!<tt>$str</tt>", $ahref);
-    return "$aname$anchor_invisible_mark</a>" . $_;
+    add_index_entry("$str", @_[0]);
 }
 
-sub do_cmd_indexii{
-    local($_) = @_;
+define_indexing_macro('kwindex');
+sub idx_cmd_kwindex{
+    my $str = next_argument();
+    add_index_entry("<tt>$str</tt>!keyword", @_[0]);
+    add_index_entry("keyword!<tt>$str</tt>", @_[0]);
+}
+
+define_indexing_macro('indexii');
+sub idx_cmd_indexii{
     my $str1 = next_argument();
     my $str2 = next_argument();
-    #
-    my($name,$aname,$ahref) = new_link_info();
-    add_index_entry("$str1!$str2", $ahref);
-    add_index_entry("$str2!$str1", $ahref);
-    return "$aname$anchor_invisible_mark</a>" . $_;
+    add_index_entry("$str1!$str2", @_[0]);
+    add_index_entry("$str2!$str1", @_[0]);
 }
 
-sub do_cmd_indexiii{
-    local($_) = @_;
+define_indexing_macro('indexiii');
+sub idx_cmd_indexiii{
     my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
-    #
-    my($name,$aname,$ahref) = new_link_info();
-    add_index_entry("$str1!$str2 $str3", $ahref);
-    add_index_entry("$str2!$str3, $str1", $ahref);
-    add_index_entry("$str3!$str1 $str2", $ahref);
-    return "$aname$anchor_invisible_mark</a>" . $_;
+    add_index_entry("$str1!$str2 $str3", @_[0]);
+    add_index_entry("$str2!$str3, $str1", @_[0]);
+    add_index_entry("$str3!$str1 $str2", @_[0]);
 }
 
-sub do_cmd_indexiv{
-    local($_) = @_;
+define_indexing_macro('indexiv');
+sub idx_cmd_indexiv{
     my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
     my $str4 = next_argument();
-    #
-    my($name,$aname,$ahref) = new_link_info();
-    add_index_entry("$str1!$str2 $str3 $str4", $ahref);
-    add_index_entry("$str2!$str3 $str4, $str1", $ahref);
-    add_index_entry("$str3!$str4, $str1 $str2", $ahref);
-    add_index_entry("$str4!$$str1 $str2 $str3", $ahref);
-    return "$aname$anchor_invisible_mark</a>" . $_;
+    add_index_entry("$str1!$str2 $str3 $str4", @_[0]);
+    add_index_entry("$str2!$str3 $str4, $str1", @_[0]);
+    add_index_entry("$str3!$str4, $str1 $str2", @_[0]);
+    add_index_entry("$str4!$$str1 $str2 $str3", @_[0]);
 }
 
-sub do_cmd_ttindex{
-    local($_) = @_;
+define_indexing_macro('ttindex');
+sub idx_cmd_ttindex{
     my $str = next_argument();
     my $entry = $str . get_indexsubitem();
-    return make_index_entry($entry) . $_;
+    add_index_entry($entry, @_[0]);
 }
 
 sub my_typed_index_helper{
-    local($word,$_) = @_;
+    my($word,$ahref) = @_;
     my $str = next_argument();
-    #
-    my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str $word", $ahref);
     add_index_entry("$word!$str", $ahref);
-    return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
-sub do_cmd_stindex{ return my_typed_index_helper('statement', @_); }
-sub do_cmd_opindex{ return my_typed_index_helper('operator', @_); }
-sub do_cmd_exindex{ return my_typed_index_helper('exception', @_); }
-sub do_cmd_obindex{ return my_typed_index_helper('object', @_); }
+define_indexing_macro('stindex', 'opindex', 'exindex', 'obindex');
+sub idx_cmd_stindex{ my_typed_index_helper('statement', @_[0]); }
+sub idx_cmd_opindex{ my_typed_index_helper('operator', @_[0]); }
+sub idx_cmd_exindex{ my_typed_index_helper('exception', @_[0]); }
+sub idx_cmd_obindex{ my_typed_index_helper('object', @_[0]); }
 
-sub my_parword_index_helper{
-    local($word,$_) = @_;
+define_indexing_macro('bifuncindex');
+sub idx_cmd_bifuncindex{
     my $str = next_argument();
-    return make_index_entry("$str ($word)") . $_;
+    add_index_entry("<tt>$str()</tt> (built-in function)", @_[0]);
 }
 
 
@@ -483,30 +506,30 @@ sub my_module_index_helper{
     return define_module($word, $name) . $_;
 }
 
-sub ref_module_index_helper{
-    local($word, $_) = @_;
-    my $str = next_argument();
-    $word = "$word " if $word;
-    return make_mod_index_entry("<tt>$str</tt> (${word}module)", 'REF') . $_;
-}
-
-sub do_cmd_bifuncindex{
-    local($_) = @_;
-    my $str = next_argument();
-    my $fname = "<tt>$str()</tt>";
-    return make_index_entry("$fname (built-in function)") . $_;
-}
-
 sub do_cmd_modindex{ return my_module_index_helper('', @_); }
 sub do_cmd_bimodindex{ return my_module_index_helper('built-in', @_); }
 sub do_cmd_exmodindex{ return my_module_index_helper('extension', @_); }
 sub do_cmd_stmodindex{ return my_module_index_helper('standard', @_); }
 
+sub ref_module_index_helper{
+    local($word, $ahref) = @_;
+    my $str = next_argument();
+    $word = "$word " if $word;
+    $str = "<tt>$str</tt> (${word}module)";
+    # can't use add_index_entry() since the 2nd arg to gen_index_id() is used;
+    # just inline it all here
+    $str = gen_index_id($str, 'REF');
+    $index{$str} .= $ahref;
+    write_idxfile($ahref, $str);
+}
+
 # these should be adjusted a bit....
-sub do_cmd_refmodindex{ return ref_module_index_helper('', @_); }
-sub do_cmd_refbimodindex{ return ref_module_index_helper('built-in', @_); }
-sub do_cmd_refexmodindex{ return ref_module_index_helper('extension', @_); }
-sub do_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
+define_indexing_macro('refmodindex', 'refbimodindex',
+		      'refexmodindex', 'refstmodindex');
+sub idx_cmd_refmodindex{ return ref_module_index_helper('', @_); }
+sub idx_cmd_refbimodindex{ return ref_module_index_helper('built-in', @_); }
+sub idx_cmd_refexmodindex{ return ref_module_index_helper('extension', @_); }
+sub idx_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
 
 sub do_cmd_nodename{ return do_cmd_label(@_); }
 
@@ -517,7 +540,7 @@ sub init_myformat{
 }
 init_myformat();
 
-# similar to make_index_entry(), but includes the string in the result
+# Create an index entry, but include the string in the target anchor
 # instead of the dummy filler.
 #
 sub make_str_index_entry{
@@ -825,11 +848,11 @@ sub do_env_tableii{
     my $h2 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign=baseline>"
 	   . $_
@@ -863,12 +886,12 @@ sub do_env_tableiii{
     my $h3 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
-	   . "\n      $th3<b>$h3</b></th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th3<b>$h3</b>\&nbsp;\&nbsp;</th>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign=baseline>"
 	   . $_
@@ -905,13 +928,13 @@ sub do_env_tableiv{
     my $h4 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
-	   . "\n      $th3<b>$h3</b></th>"
-	   . "\n      $th4<b>$h4</b></th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th3<b>$h3</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th4<b>$h4</b>\&nbsp;\&nbsp;</th>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign=baseline>"
 	   . $_
