@@ -20,6 +20,7 @@ static Py_complex c_halfi = {0., 0.5};
 static Py_complex c_log(Py_complex);
 static Py_complex c_prodi(Py_complex);
 static Py_complex c_sqrt(Py_complex);
+static PyObject * math_error(void);
 
 
 static Py_complex
@@ -164,11 +165,6 @@ c_log(Py_complex x)
 	return r;
 }
 
-PyDoc_STRVAR(c_log_doc,
-"log(x)\n"
-"\n"
-"Return the natural logarithm of x.");
-
 
 static Py_complex
 c_log10(Py_complex x)
@@ -312,6 +308,31 @@ PyDoc_STRVAR(c_tanh_doc,
 "\n"
 "Return the hyperbolic tangent of x.");
 
+static PyObject *
+cmath_log(PyObject *self, PyObject *args)
+{
+	Py_complex x;
+	Py_complex y;
+
+	if (!PyArg_ParseTuple(args, "D|D", &x, &y))
+		return NULL;
+
+	errno = 0;
+	PyFPE_START_PROTECT("complex function", return 0)
+	x = c_log(x);
+	if (PyTuple_GET_SIZE(args) == 2)
+		x = c_quot(x, c_log(y));
+	PyFPE_END_PROTECT(x)
+	if (errno != 0)
+		return math_error();
+	Py_ADJUST_ERANGE2(x.real, x.imag);
+	return PyComplex_FromCComplex(x);
+}
+
+PyDoc_STRVAR(cmath_log_doc,
+"log(x[, base]) -> the logarithm of x to the given base.\n\
+If the base not specified, returns the natural logarithm (base e) of x.");
+
 
 /* And now the glue to make them available from Python: */
 
@@ -358,7 +379,6 @@ FUNC1(cmath_atanh, c_atanh)
 FUNC1(cmath_cos, c_cos)
 FUNC1(cmath_cosh, c_cosh)
 FUNC1(cmath_exp, c_exp)
-FUNC1(cmath_log, c_log)
 FUNC1(cmath_log10, c_log10)
 FUNC1(cmath_sin, c_sin)
 FUNC1(cmath_sinh, c_sinh)
@@ -381,7 +401,7 @@ static PyMethodDef cmath_methods[] = {
 	{"cos",    cmath_cos,   METH_VARARGS, c_cos_doc},
 	{"cosh",   cmath_cosh,  METH_VARARGS, c_cosh_doc},
 	{"exp",    cmath_exp,   METH_VARARGS, c_exp_doc},
-	{"log",    cmath_log,   METH_VARARGS, c_log_doc},
+	{"log",    cmath_log,   METH_VARARGS, cmath_log_doc},
 	{"log10",  cmath_log10, METH_VARARGS, c_log10_doc},
 	{"sin",    cmath_sin,   METH_VARARGS, c_sin_doc},
 	{"sinh",   cmath_sinh,  METH_VARARGS, c_sinh_doc},

@@ -73,10 +73,12 @@ Return the hyperbolic cosine of \var{x}.
 Return the exponential value \code{e**\var{x}}.
 \end{funcdesc}
 
-\begin{funcdesc}{log}{x}
-Return the natural logarithm of \var{x}.
+\begin{funcdesc}{log}{x\optional{, base}}
+Returns the logarithm of \var{x} to the given \var{base}.
+If the \var{base} is not specified, returns the natural logarithm of \var{x}.
 There is one branch cut, from 0 along the negative real axis to
 -\infinity, continuous from above.
+\versionchanged[\var{base} argument added]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{log10}{x}
