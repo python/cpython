@@ -148,6 +148,8 @@ sub do_cmd_character{
     return use_wrappers(@_[0], '"<tt class=character>', '</tt>"'); }
 sub do_cmd_program{
     return use_wrappers(@_[0], '<b class=program>', '</b>'); }
+sub do_cmd_programopt{
+    return use_wrappers(@_[0], '<b class="programopt">', '</b>'); }
 sub do_cmd_email{
     return use_wrappers(@_[0], '<span class=email>', '</span>'); }
 sub do_cmd_mimetype{
@@ -231,6 +233,23 @@ sub do_cmd_rfc{
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
     return ("<a class=rfc name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>"
             . $_);
+}
+
+sub do_cmd_citetitle{
+    local($_) = @_;
+    my $url = next_optional_argument();
+    my $title = next_argument();
+    my $repl = '';
+    if ($url) {
+        $repl = ("<em class='citetitle'><a\n"
+                 . " href='$url'\n"
+                 . " title='$title'\n"
+                 . " >$title</a></em>");
+    }
+    else {
+        $repl = "<em class='citetitle'\n >$title</em>";
+    }
+    return $repl . $_;
 }
 
 sub do_cmd_deprecated{
