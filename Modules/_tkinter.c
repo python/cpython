@@ -1034,6 +1034,7 @@ Tkapp_MainLoop (self, args)
 	}
       Tk_DoOneEvent (0);
     }
+  quitMainLoop = 0;
 
   if (errorInCmd)
     {
