@@ -127,9 +127,12 @@ get_dialect_from_registry(PyObject * name_obj)
         PyObject *dialect_obj;
 
         dialect_obj = PyDict_GetItem(dialects, name_obj);
-        if (dialect_obj == NULL)
-            return PyErr_Format(error_obj, "unknown dialect");
-        Py_INCREF(dialect_obj);
+	if (dialect_obj == NULL) {
+		if (!PyErr_Occurred())
+			PyErr_Format(error_obj, "unknown dialect");
+	}
+	else
+		Py_INCREF(dialect_obj);
         return dialect_obj;
 }
 
