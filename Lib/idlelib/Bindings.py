@@ -70,8 +70,8 @@ menudefs = [
    ]),
  ('options', [
    ('_Configure IDLE...', '<<open-config-dialog>>'),
-   None,
-   ('Revert to _Default Settings', '<<revert-all-settings>>'),
+##   None,
+##   ('Revert to _Default Settings', '<<revert-all-settings>>'),
    ]),
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
