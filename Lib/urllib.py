@@ -26,9 +26,9 @@ import string
 import socket
 import os
 import sys
+import types
 
-
-__version__ = '1.13'    # XXX This version is not always updated :-(
+__version__ = '1.14'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -136,23 +136,23 @@ class URLopener:
     # External interface
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
-        fullurl = unwrap(fullurl)
+        fullurl = unwrap(toBytes(fullurl))
         if self.tempcache and self.tempcache.has_key(fullurl):
             filename, headers = self.tempcache[fullurl]
             fp = open(filename, 'rb')
             return addinfourl(fp, headers, fullurl)
-        type, url = splittype(fullurl)
-        if not type:
-            type = 'file'
-        if self.proxies.has_key(type):
-            proxy = self.proxies[type]
-            type, proxyhost = splittype(proxy)
+        urltype, url = splittype(fullurl)
+        if not urltype:
+            urltype = 'file'
+        if self.proxies.has_key(urltype):
+            proxy = self.proxies[urltype]
+            urltype, proxyhost = splittype(proxy)
             host, selector = splithost(proxyhost)
             url = (host, fullurl) # Signal special case to open_*()
         else:
             proxy = None
-        name = 'open_' + type
-        self.type = type
+        name = 'open_' + urltype
+        self.type = urltype
         if '-' in name:
             # replace - with _
             name = string.join(string.split(name, '-'), '_')
@@ -183,7 +183,7 @@ class URLopener:
     def retrieve(self, url, filename=None, reporthook=None, data=None):
         """retrieve(url) returns (filename, None) for a local object
         or (tempfilename, headers) for a remote object."""
-        url = unwrap(url)
+        url = unwrap(toBytes(url))
         if self.tempcache and self.tempcache.has_key(url):
             return self.tempcache[url]
         type, url1 = splittype(url)
@@ -238,7 +238,7 @@ class URLopener:
         """Use HTTP protocol."""
         import httplib
         user_passwd = None
-        if type(url) is type(""):
+        if type(url) is types.StringType:
             host, selector = splithost(url)
             if host:
                 user_passwd, host = splituser(host)
@@ -313,7 +313,7 @@ class URLopener:
             """Use HTTPS protocol."""
             import httplib
             user_passwd = None
-            if type(url) is type(""):
+            if type(url) in types.StringTypes:
                 host, selector = splithost(url)
                 if host:
                     user_passwd, host = splituser(host)
@@ -851,6 +851,17 @@ def basejoin(base, url):
 # splitgophertype('/Xselector') --> 'X', 'selector'
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
+
+def toBytes(url):
+    """toBytes(u"URL") --> 'URL'."""
+    # Most URL schemes require ASCII. If that changes, the conversion
+    # can be relaxed
+    if type(url) is types.UnicodeType:
+        try:
+            url = url.encode("ASCII")
+        except UnicodeError:
+            raise UnicodeError("URL "+repr(url)+" contains non-ASCII characters")
+    return url
 
 def unwrap(url):
     """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
