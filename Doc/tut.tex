@@ -1,21 +1,16 @@
 \documentstyle[twoside,11pt,myformat]{report}
 
 \title{Python Tutorial}
-        
-\author{
-        Guido van Rossum \\
-        Dept. CST, CWI, P.O. Box 94079 \\
-        1090 GB Amsterdam, The Netherlands \\
-        E-mail: {\tt guido@cwi.nl}
-}
 
-\date{14 July 1994 \\ Release 1.0.3} % XXX update before release!
+\input{boilerplate}
 
 \begin{document}
 
 \pagenumbering{roman}
 
 \maketitle
+
+\input{copyright}
 
 \begin{abstract}
 
@@ -791,7 +786,7 @@ assignments take place.
 
 \item
 The {\tt while} loop executes as long as the condition (here: {\tt b <
-100}) remains true.  In Python, like in C, any non-zero integer value is
+10}) remains true.  In Python, like in C, any non-zero integer value is
 true; zero is false.  The condition may also be a string or list value,
 in fact any sequence; anything with a non-zero length is true, empty
 sequences are false.  The test used in the example is a simple
@@ -813,7 +808,7 @@ line).
 The {\tt print} statement writes the value of the expression(s) it is
 given.  It differs from just writing the expression you want to write
 (as we did earlier in the calculator examples) in the way it handles
-multiple expressions and strings.  Strings are written without quotes,
+multiple expressions and strings.  Strings are printed without quotes,
 and a space is inserted between items, so you can format things nicely,
 like this:
 
@@ -1007,7 +1002,7 @@ arbitrary boundary:
 \bcode\begin{verbatim}
 >>> def fib(n):    # write Fibonacci series up to n
 ...     a, b = 0, 1
-...     while b <= n:
+...     while b < n:
 ...           print b,
 ...           a, b = b, a+b
 ... 
@@ -1084,7 +1079,7 @@ the Fibonacci series, instead of printing it:
 >>> def fib2(n): # return Fibonacci series up to n
 ...     result = []
 ...     a, b = 0, 1
-...     while b <= n:
+...     while b < n:
 ...           result.append(b)    # see below
 ...           a, b = b, a+b
 ...     return result
@@ -1359,7 +1354,7 @@ only matters for mutable objects like lists.  All comparison operators
 have the same priority, which is lower than that of all numerical
 operators.
 
-Comparisons can be chained: e.g., {\tt a < b = c} tests whether {\tt a}
+Comparisons can be chained: e.g., {\tt a < b == c} tests whether {\tt a}
 is less than {\tt b} and moreover {\tt b} equals {\tt c}.
 
 Comparisons may be combined by the Boolean operators {\tt and} and {\tt
@@ -1460,14 +1455,14 @@ with the following contents:
 
 def fib(n):    # write Fibonacci series up to n
     a, b = 0, 1
-    while b <= n:
+    while b < n:
           print b,
           a, b = b, a+b
 
 def fib2(n): # return Fibonacci series up to n
     result = []
     a, b = 0, 1
-    while b <= n:
+    while b < n:
           result.append(b)
           a, b = b, a+b
     return result
@@ -2101,7 +2096,7 @@ may change in the future.  Examples of name spaces are: the set of
 built-in names (functions such as \verb\abs()\, and built-in exception
 names); the global names in a module; and the local names in a
 function invocation.  In a sense the set of attributes of an object
-also form a name space.  The important things to know about name
+also form a name space.  The important thing to know about name
 spaces is that there is absolutely no relation between names in
 different name spaces; for instance, two different modules may both
 define a function ``maximize'' without confusion --- users of the
@@ -2162,7 +2157,7 @@ names, and the outermost scope (searched last) is the name space
 containing built-in names.
 
 Usually, the local scope references the local names of the (textually)
-current function.  Outside functions, the the local scope references
+current function.  Outside of functions, the the local scope references
 the same name space as the global scope: the module's name space.
 Class definitions place yet another name space in the local scope.
 
@@ -2643,7 +2638,7 @@ Python is an evolving language.  Since this tutorial was last
 thoroughly revised, several new features have been added to the
 language.  While ideally I should revise the tutorial to incorporate
 them in the mainline of the text, lack of time currently requires me
-to follow a more modest approach.  In this chapter I will briefly list the
+to take a more modest approach.  In this chapter I will briefly list the
 most important improvements to the language and how you can use them
 to your benefit.
 
@@ -2984,7 +2979,9 @@ Reference for a full description.
 \section{Generalized Dictionaries}
 
 The keys of dictionaries are no longer restricted to strings -- they
-can be numbers, tuples, or (certain) class instances.  (Lists and
+can be
+any immutable basic type including strings,
+numbers, tuples, or (certain) class instances.  (Lists and
 dictionaries are not acceptable as dictionary keys, in order to avoid
 problems when the object used as a key is modified.)
 
@@ -3007,7 +3004,7 @@ operations are slow for large dictionaries.  Examples:
 \section{Miscellaneous New Built-in Functions}
 
 The function \verb\vars()\ returns a dictionary containing the current
-local variables.  With a module as argument, it returns that module's
+local variables.  With a module argument, it returns that module's
 global variables.  The old function \verb\dir(x)\ returns
 \verb\vars(x).keys()\.
 
