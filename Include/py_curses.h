@@ -68,10 +68,6 @@ static void **PyCurses_API;
 static char *catchall_ERR  = "curses function returned ERR";
 static char *catchall_NULL = "curses function returned NULL";
 
-/* Utility macros */
-#define ARG_COUNT(X) \
-	(((X) == NULL) ? 0 : (PyTuple_Check(X) ? PyTuple_Size(X) : 1))
-
 /* Function Prototype Macros - They are ugly but very, very useful. ;-)
 
    X - function name
@@ -81,10 +77,9 @@ static char *catchall_NULL = "curses function returned NULL";
    */
 
 #define NoArgNoReturnFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
+static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
-  if (!PyArg_NoArgs(args)) return NULL; \
   return PyCursesCheckERR(X(), # X); }
 
 #define NoArgOrFlagNoReturnFunction(X) \
@@ -92,11 +87,11 @@ static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
 { \
   int flag = 0; \
   PyCursesInitialised \
-  switch(ARG_COUNT(args)) { \
+  switch(PyTuple_Size(args)) { \
   case 0: \
     return PyCursesCheckERR(X(), # X); \
   case 1: \
-    if (!PyArg_Parse(args, "i;True(1) or False(0)", &flag)) return NULL; \
+    if (!PyArg_ParseTuple(args, "i;True(1) or False(0)", &flag)) return NULL; \
     if (flag) return PyCursesCheckERR(X(), # X); \
     else return PyCursesCheckERR(no ## X (), # X); \
   default: \
@@ -104,25 +99,22 @@ static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
     return NULL; } }
 
 #define NoArgReturnIntFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
+static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
  PyCursesInitialised \
- if (!PyArg_NoArgs(args)) return NULL; \
  return PyInt_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
+static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
-  if (!PyArg_NoArgs(args)) return NULL; \
   return PyString_FromString(X()); }
 
 #define NoArgTrueFalseFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
+static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
-  if (!PyArg_NoArgs(args)) return NULL; \
   if (X () == FALSE) { \
     Py_INCREF(Py_False); \
     return Py_False; \
@@ -131,10 +123,9 @@ static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
   return Py_True; }
 
 #define NoArgNoReturnVoidFunction(X) \
-static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
+static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
   PyCursesInitialised \
-  if (!PyArg_NoArgs(args)) return NULL; \
   X(); \
   Py_INCREF(Py_None); \
   return Py_None; }
