@@ -200,11 +200,11 @@ class Main:
 		if not ok:
 			sys.exit(0)
 		os.chdir(fss.as_pathname())
-		if not os.path.isdir(':(MkDistr)'):
-			os.mkdir(':(MkDistr)')
+		if not os.path.isdir(':Mac:Distributions'):
+			os.mkdir(':Mac:Distributions')
 		typedist = GetType()
-		self.inc = IncMatcher(':(MkDistr):%s.include'%typedist)
-		self.exc = ExcMatcher(':(MkDistr):%s.exclude'%typedist)
+		self.inc = IncMatcher(':Mac:Distributions:%s.include'%typedist)
+		self.exc = ExcMatcher(':Mac:Distributions:%s.exclude'%typedist)
 		self.ui = MkDistrUI(self)
 		self.ui.mainloop()
 		
