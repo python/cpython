@@ -56,13 +56,14 @@ class PathBrowser(MultiScrolledLists):
         sorted = []
         for suff, mode, flag in suffixes:
             i = -len(suff)
-            for name in allnames:
+            for name in allnames[:]:
                 normed_name = os.path.normcase(name)
                 if normed_name[i:] == suff:
                     mod_name = name[:i]
                     if not modules.has_key(mod_name):
                         modules[mod_name] = None
                         sorted.append((normed_name, name))
+                        allnames.remove(name)
         sorted.sort()
         names = []
         for nn, name in sorted:
