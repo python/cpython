@@ -420,14 +420,11 @@ _PySys_Init(void)
 	 */
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
 	s = "alpha";
-#endif
-#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
+#elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
 	s = "beta";
-#endif
-#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA
+#elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA
 	s = "candidate";
-#endif
-#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
+#elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
 	s = "final";
 #endif
 	PyDict_SetItemString(sysdict, "version_info",
