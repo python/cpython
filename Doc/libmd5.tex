@@ -2,16 +2,17 @@
 \bimodindex{md5}
 
 This module implements the interface to RSA's MD5 message digest
-algorithm (see also the file \file{md5.doc}). It's use is very
+algorithm (see also the file \file{md5.doc}). Its use is quite
 straightforward: use the function \code{md5} to create an
 \dfn{md5}-object. You can now ``feed'' this object with arbitrary
 strings.
 
-At any time you can ask the ``final'' digest of the object. Internally,
-a temorary copy of the object is made and the digest is computed and
-returned. Because of the copy, the digest operation is not desctructive
-for the object. Before a more exact description of the use, a small
-example: to obtain the digest of the string \code{'abc'}, use \ldots
+At any time you can ask for the ``final'' digest of the object. Internally,
+a temporary copy of the object is made and the digest is computed and
+returned. Because of the copy, the digest operation is not destructive
+for the object. Before a more exact description of the module's use, a small
+example will be helpful: 
+to obtain the digest of the string \code{'abc'}, use \ldots
 
 \bcode\begin{verbatim}
 >>> from md5 import md5
@@ -29,8 +30,8 @@ More condensed:
 \end{verbatim}\ecode
 
 \renewcommand{\indexsubitem}{(in module md5)}
-\begin{funcdesc}{md5}{arg}
-  Create a new md5-object. \var{arg} is optional: if present, an initial
+\begin{funcdesc}{md5}{\optional{arg}}
+  Create a new md5-object. If \var{arg} is present, an initial
   \code{update} method is called with \var{arg} as argument.
 \end{funcdesc}
 
@@ -42,6 +43,7 @@ An md5-object has the following methods:
 \end{funcdesc}
 
 \begin{funcdesc}{digest}{}
+% XXX The following is not quite clear; what does MD5Final do?
   Return the \dfn{digest} of this md5-object. Internally, a copy is made
   and the \C-function \code{MD5Final} is called. Finally the digest is
   returned.

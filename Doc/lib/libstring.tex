@@ -108,24 +108,24 @@ This doesn't understand other non-printing characters or escape
 sequences.
 \end{funcdesc}
 
-\begin{funcdesc}{find}{s\, sub\, i}
-Return the lowest index in \var{s} not smaller than \var{i} where the
+\begin{funcdesc}{find}{s\, sub\optional{\, start}}
+Return the lowest index in \var{s} not smaller than \var{start} where the
 substring \var{sub} is found.  Return \code{-1} when \var{sub}
-does not occur as a substring of \var{s} with index at least \var{i}.
-If \var{i} is omitted, it defaults to \code{0}.  If \var{i} is
+does not occur as a substring of \var{s} with index at least \var{start}.
+If \var{start} is omitted, it defaults to \code{0}.  If \var{start} is
 negative, \code{len(\var{s})} is added.
 \end{funcdesc}
 
-\begin{funcdesc}{rfind}{s\, sub\, i}
+\begin{funcdesc}{rfind}{s\, sub\optional{\, start}}
 Like \code{find} but finds the highest index.
 \end{funcdesc}
 
-\begin{funcdesc}{index}{s\, sub\, i}
+\begin{funcdesc}{index}{s\, sub\optional{\, start}}
 Like \code{find} but raise \code{index_error} when the substring is
 not found.
 \end{funcdesc}
 
-\begin{funcdesc}{rindex}{s\, sub\, i}
+\begin{funcdesc}{rindex}{s\, sub\optional{\, start}}
 Like \code{rfind} but raise \code{index_error} when the substring is
 not found.
 \end{funcdesc}

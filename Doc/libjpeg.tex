@@ -4,7 +4,7 @@
 The module jpeg provides access to the jpeg compressor and
 decompressor written by the Independent JPEG Group. JPEG is a (draft?)
 standard for compressing pictures.  For details on jpeg or the
-Indepent JPEG Group software refer to the JPEG standard or the
+Independent JPEG Group software refer to the JPEG standard or the
 documentation provided with the software.
 
 The jpeg module defines these functions:
@@ -12,10 +12,10 @@ The jpeg module defines these functions:
 \renewcommand{\indexsubitem}{(in module jpeg)}
 \begin{funcdesc}{compress}{data\, w\, h\, b}
 Treat data as a pixmap of width w and height h, with b bytes per
-pixel.  The data is in sgi gl order, so the first pixel is in the
+pixel.  The data is in SGI GL order, so the first pixel is in the
 lower-left corner. This means that lrectread return data can
 immedeately be passed to compress.  Currently only 1 byte and 4 byte
-pixels are allowed, the former being treaded as greyscale and the
+pixels are allowed, the former being treated as greyscale and the
 latter as RGB color.  Compress returns a string that contains the
 compressed picture, in JFIF format.
 \end{funcdesc}
@@ -39,7 +39,7 @@ Set the quality of the compressed image to a
 value between \code{0} and \code{100} (default is \code{75}).  Compress only.
 
 \item[\code{'optimize'}]
-Perform huffman table optimization.  Takes longer, but results in
+Perform Huffman table optimization.  Takes longer, but results in
 smaller compressed image.  Compress only.
 
 \item[\code{'smooth'}]

@@ -9,7 +9,7 @@
 A {\em code block} is a piece of Python program text that can be
 executed as a unit, such as a module, a class definition or a function
 body.  Some code blocks (like modules) are executed only once, others
-(like function bodies) may be executed many times.  Code block may
+(like function bodies) may be executed many times.  Code blocks may
 textually contain other code blocks.  Code blocks may invoke other
 code blocks (that may or may not be textually contained in them) as
 part of their execution, e.g. by invoking (calling) a function.
@@ -72,7 +72,7 @@ When a global name is not found in the global name space, it is
 searched in the list of ``built-in'' names (which is actually the
 global name space of the module \verb@__builtin__@).  When a name is not
 found at all, the \verb@NameError@ exception is raised.%
-\footnote{If the code block contains \verb@exec@ statement or the
+\footnote{If the code block contains \verb@exec@ statements or the
 construct \verb@from ... import *@, the semantics of names not
 explicitly mentioned in a \verb@global@ statement change subtly: name
 lookup first searches the local name space, then the global one, then

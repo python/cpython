@@ -23,7 +23,7 @@ documented upper limit.)
 Module \code{al} defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module al)}
-\begin{funcdesc}{openport}{name\, direction\, config}
+\begin{funcdesc}{openport}{name\, direction\optional{\, config}}
 Equivalent to the C function ALopenport().  The name and direction
 arguments are strings.  The optional config argument is an opaque
 configuration object as returned by \code{al.newconfig()}.  The return

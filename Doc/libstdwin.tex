@@ -102,7 +102,7 @@ Return the screen size in millimeters.
 \begin{funcdesc}{fetchcolor}{colorname}
 Return the pixel value corresponding to the given color name.
 Return the default foreground color for unknown color names.
-Hint: the following code tests wheter you are on a machine that
+Hint: the following code tests whether you are on a machine that
 supports more than two colors:
 \bcode\begin{verbatim}
 if stdwin.fetchcolor('black') <> \
@@ -372,7 +372,7 @@ for the meaning of
 \var{i}.)
 Return true if it succeeds.
 If  succeeds, the window ``owns'' the selection until
-(a) another applications takes ownership of the selection; or
+(a) another application takes ownership of the selection; or
 (b) the window is deleted; or
 (c) the application clears ownership by calling
 \code{stdwin.resetselection(\var{i})}.
@@ -571,7 +571,6 @@ window.  When an object to be drawn falls partly outside the clipping
 region, the set of pixels drawn is the intersection of the clipping
 region and the set of pixels that would be drawn by the same operation
 in the absence of a clipping region.
-clipping region 
 \end{funcdesc}
 
 \begin{funcdesc}{noclip}{}

@@ -9,7 +9,7 @@
         E-mail: {\tt guido@cwi.nl}
 }
 
-\date{14 Jul 1994 \\ Release 1.0.3} % XXX update before release!
+\date{14 July 1994 \\ Release 1.0.3} % XXX update before release!
 
 \begin{document}
 
@@ -1434,7 +1434,7 @@ If you quit from the Python interpreter and enter it again, the
 definitions you have made (functions and variables) are lost.
 Therefore, if you want to write a somewhat longer program, you are
 better off using a text editor to prepare the input for the interpreter
-and run it with that file as input instead.  This is known as creating a
+and running it with that file as input instead.  This is known as creating a
 {\em script}.  As your program gets longer, you may want to split it
 into several files for easier maintenance.  You may also want to use a
 handy function that you've written in several programs without copying
@@ -2028,7 +2028,7 @@ clauses or one {\tt finally} clause, but not both.
 
 Python's class mechanism adds classes to the language with a minimum
 of new syntax and semantics.  It is a mixture of the class mechanisms
-found in C++ and Modula-3.  As is true for modules, classes in Python
+found in \Cpp{} and Modula-3.  As is true for modules, classes in Python
 do not put an absolute barrier between definition and user, but rather
 rely on the politeness of the user not to ``break into the
 definition.''  The most important features of classes are retained
@@ -2037,7 +2037,7 @@ multiple base classes, a derived class can override any methods of its
 base class(es), a method can call the method of a base class with the
 same name.  Objects can contain an arbitrary amount of private data.
 
-In C++ terminology, all class members (including the data members) are
+In \Cpp{} terminology, all class members (including the data members) are
 {\em public}, and all member functions are {\em virtual}.  There are
 no special constructors or destructors.  As in Modula-3, there are no
 shorthands for referencing the object's members from its methods: the
@@ -2045,9 +2045,9 @@ method function is declared with an explicit first argument
 representing the object, which is provided implicitly by the call.  As
 in Smalltalk, classes themselves are objects, albeit in the wider
 sense of the word: in Python, all data types are objects.  This
-provides semantics for importing and renaming.  But, just like in C++
+provides semantics for importing and renaming.  But, just like in \Cpp{}
 or Modula-3, built-in types cannot be used as base classes for
-extension by the user.  Also, like in C++ but unlike in Modula-3, most
+extension by the user.  Also, like in \Cpp{} but unlike in Modula-3, most
 built-in operators with special syntax (arithmetic operators,
 subscripting etc.) can be redefined for class members.
 
@@ -2055,13 +2055,13 @@ subscripting etc.) can be redefined for class members.
 \section{A word about terminology}
 
 Lacking universally accepted terminology to talk about classes, I'll
-make occasional use of Smalltalk and C++ terms.  (I'd use Modula-3
+make occasional use of Smalltalk and \Cpp{} terms.  (I'd use Modula-3
 terms, since its object-oriented semantics are closer to those of
-Python than C++, but I expect that few readers have heard of it...)
+Python than \Cpp{}, but I expect that few readers have heard of it...)
 
 I also have to warn you that there's a terminological pitfall for
 object-oriented readers: the word ``object'' in Python does not
-necessarily mean a class instance.  Like C++ and Modula-3, and unlike
+necessarily mean a class instance.  Like \Cpp{} and Modula-3, and unlike
 Smalltalk, not all types in Python are classes: the basic built-in
 types like integers and lists aren't, and even somewhat more exotic
 types like files aren't.  However, {\em all} Python types share a little
@@ -2273,7 +2273,7 @@ understood by instance objects are attribute references.  There are
 two kinds of valid attribute names.
 
 The first I'll call {\em data attributes}.  These correspond to
-``instance variables'' in Smalltalk, and to ``data members'' in C++.
+``instance variables'' in Smalltalk, and to ``data members'' in \Cpp{}.
 Data attributes need not be declared; like local variables, they
 spring into existence when they are first assigned to.  For example,
 if \verb\x\ in the instance of \verb\MyClass\ created above, the
@@ -2549,7 +2549,7 @@ Derived classes may override methods of their base classes.  Because
 methods have no special privileges when calling other methods of the
 same object, a method of a base class that calls another method
 defined in the same base class, may in fact end up calling a method of
-a derived class that overrides it.  (For C++ programmers: all methods
+a derived class that overrides it.  (For \Cpp{} programmers: all methods
 in Python are ``virtual functions''.)
 
 An overriding method in a derived class may in fact want to extend
@@ -2643,14 +2643,14 @@ Python is an evolving language.  Since this tutorial was last
 thoroughly revised, several new features have been added to the
 language.  While ideally I should revise the tutorial to incorporate
 them in the mainline of the text, lack of time currently requires me
-to a more modest approach.  In this chapter I will briefly list the
+to follow a more modest approach.  In this chapter I will briefly list the
 most important improvements to the language and how you can use them
 to your benefit.
 
 \section{The Last Printed Expression}
 
 In interactive mode, the last printed expression is assigned to the
-variable \code\_\.  This means that when you are using Python as a
+variable \code\_.  This means that when you are using Python as a
 desk calculator, it is somewhat easier to continue calculations, for
 example:
 
@@ -2851,7 +2851,7 @@ This feature may be combined with the previous, e.g.
 
 \subsection{Lambda Forms}
 
-On popular demand, a few features commonly found in functional
+By popular demand, a few features commonly found in functional
 programming languages and Lisp have been added to Python.  With the
 \verb\lambda\ keyword, small anonymous functions can be created.
 Here's a function that returns the sum of its two arguments:
