@@ -642,26 +642,26 @@ _quoteprog = regex.compile('%[0-9a-fA-F][0-9a-fA-F]')
 def unquote(s):
 	i = 0
 	n = len(s)
-	res = ''
+	res = []
 	while 0 <= i < n:
 		j = _quoteprog.search(s, i)
 		if j < 0:
-			res = res + s[i:]
+			res.append(s[i:])
 			break
-		res = res + (s[i:j] + chr(string.atoi(s[j+1:j+3], 16)))
+		res.append(s[i:j] + chr(string.atoi(s[j+1:j+3], 16)))
 		i = j+3
-	return res
+	return string.joinfields(res, '')
 
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
 	safe = always_safe + safe
-	res = ''
+	res = []
 	for c in s:
 		if c in safe:
-			res = res + c
+			res.append(c)
 		else:
-			res = res + '%%%02x' % ord(c)
-	return res
+			res.append('%%%02x' % ord(c))
+	return string.joinfields(res, '')
 
 
 # Proxy handling
