@@ -151,14 +151,18 @@ def _split_list(s, predicate):
             no.append(x)
     return yes, no
 
-def visiblename(name):
+def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
     if name in ['__builtins__', '__doc__', '__file__', '__path__',
                 '__module__', '__name__']: return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
-    return not name.startswith('_')
+    if all is not None:
+        # only document that which the programmer exported in __all__
+        return name in all
+    else:
+        return not name.startswith('_')
 
 # ----------------------------------------------------- module manipulation
 
@@ -544,6 +548,10 @@ class HTMLDoc(Doc):
     def docmodule(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a module object."""
         name = object.__name__ # ignore the passed-in name
+        try:
+            all = object.__all__
+        except AttributeError:
+            all = None
         parts = split(name, '.')
         links = []
         for i in range(len(parts)-1):
@@ -585,7 +593,7 @@ class HTMLDoc(Doc):
         classes, cdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isclass):
             if (inspect.getmodule(value) or object) is object:
-                if visiblename(key):
+                if visiblename(key, all):
                     classes.append((key, value))
                     cdict[key] = cdict[value] = '#' + key
         for key, value in classes:
@@ -599,13 +607,13 @@ class HTMLDoc(Doc):
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
             if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
-                if visiblename(key):
+                if visiblename(key, all):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
                     if inspect.isfunction(value): fdict[value] = fdict[key]
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if visiblename(key):
+            if visiblename(key, all):
                 data.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
@@ -988,6 +996,11 @@ class TextDoc(Doc):
         result = self.section('NAME', name + (synop and ' - ' + synop))
 
         try:
+            all = object.__all__
+        except AttributeError:
+            all = None
+
+        try:
             file = inspect.getabsfile(object)
         except TypeError:
             file = '(built-in)'
@@ -1003,16 +1016,16 @@ class TextDoc(Doc):
         classes = []
         for key, value in inspect.getmembers(object, inspect.isclass):
             if (inspect.getmodule(value) or object) is object:
-                if visiblename(key):
+                if visiblename(key, all):
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
             if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
-                if visiblename(key):
+                if visiblename(key, all):
                     funcs.append((key, value))
         data = []
         for key, value in inspect.getmembers(object, isdata):
-            if visiblename(key):
+            if visiblename(key, all):
                 data.append((key, value))
 
         if hasattr(object, '__path__'):
