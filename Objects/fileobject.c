@@ -890,40 +890,94 @@ file_writelines(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	int i, n;
+#define CHUNKSIZE 1000
+	PyObject *list, *line;
+	PyObject *result;
+	int i, j, index, len, nwritten, islist;
+
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (args == NULL || !PyList_Check(args)) {
+	if (args == NULL || !PySequence_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
-			   "writelines() requires list of strings");
+			   "writelines() requires sequence of strings");
 		return NULL;
 	}
-	n = PyList_Size(args);
-	f->f_softspace = 0;
-	Py_BEGIN_ALLOW_THREADS
-	errno = 0;
-	for (i = 0; i < n; i++) {
-		PyObject *line = PyList_GetItem(args, i);
-		int len;
-		int nwritten;
-		if (!PyString_Check(line)) {
-			Py_BLOCK_THREADS
-			PyErr_SetString(PyExc_TypeError,
-				   "writelines() requires list of strings");
+	islist = PyList_Check(args);
+
+	/* Strategy: slurp CHUNKSIZE lines into a private list,
+	   checking that they are all strings, then write that list
+	   without holding the interpreter lock, then come back for more. */
+	index = 0;
+	if (islist)
+		list = NULL;
+	else {
+		list = PyList_New(CHUNKSIZE);
+		if (list == NULL)
 			return NULL;
-		}
-		len = PyString_Size(line);
-		nwritten = fwrite(PyString_AsString(line), 1, len, f->f_fp);
-		if (nwritten != len) {
-			Py_BLOCK_THREADS
-			PyErr_SetFromErrno(PyExc_IOError);
-			clearerr(f->f_fp);
-			return NULL;
-		}
 	}
-	Py_END_ALLOW_THREADS
+	result = NULL;
+
+	for (;;) {
+		if (islist) {
+			Py_XDECREF(list);
+			list = PyList_GetSlice(args, index, index+CHUNKSIZE);
+			if (list == NULL)
+				return NULL;
+			j = PyList_GET_SIZE(list);
+		}
+		else {
+			for (j = 0; j < CHUNKSIZE; j++) {
+				line = PySequence_GetItem(args, index+j);
+				if (line == NULL) {
+					if (PyErr_ExceptionMatches(
+						PyExc_IndexError))
+					{
+						PyErr_Clear();
+						break;
+					}
+					/* Some other error occurred.
+					   XXX We may lose some output. */
+					goto error;
+				}
+				if (!PyString_Check(line)) {
+					Py_DECREF(line);
+					PyErr_SetString(PyExc_TypeError,
+				 "writelines() requires sequences of strings");
+					goto error;
+				}
+				PyList_SetItem(list, j, line);
+			}
+		}
+		if (j == 0)
+			break;
+
+		Py_BEGIN_ALLOW_THREADS
+		f->f_softspace = 0;
+		errno = 0;
+		for (i = 0; i < j; i++) {
+			line = PyList_GET_ITEM(list, i);
+			len = PyString_GET_SIZE(line);
+			nwritten = fwrite(PyString_AS_STRING(line),
+					  1, len, f->f_fp);
+			if (nwritten != len) {
+				Py_BLOCK_THREADS
+				PyErr_SetFromErrno(PyExc_IOError);
+				clearerr(f->f_fp);
+				goto error;
+			}
+		}
+		Py_END_ALLOW_THREADS
+
+		if (j < CHUNKSIZE)
+			break;
+		index += CHUNKSIZE;
+	}
+
 	Py_INCREF(Py_None);
-	return Py_None;
+	result = Py_None;
+  error:
+	Py_XDECREF(list);
+	return result;
 }
 
 static PyMethodDef file_methods[] = {
