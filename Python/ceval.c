@@ -1397,29 +1397,31 @@ eval_frame(PyFrameObject *f)
 					err = -1;
 				}
 			}
-			if (w != NULL && PyFile_SoftSpace(w, 1))
+			if (w != NULL && PyFile_SoftSpace(w, 0))
 				err = PyFile_WriteString(" ", w);
 			if (err == 0)
 				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
 			if (err == 0) {
-				/* XXX move into writeobject() ? */
+			    /* XXX move into writeobject() ? */
 			    if (PyString_Check(v)) {
 				char *s = PyString_AS_STRING(v);
 				int len = PyString_GET_SIZE(v);
-				if (len > 0 &&
-				    isspace(Py_CHARMASK(s[len-1])) &&
-				    s[len-1] != ' ')
-					PyFile_SoftSpace(w, 0);
+				if (len == 0 ||
+				    !isspace(Py_CHARMASK(s[len-1])) ||
+				    s[len-1] == ' ')
+					PyFile_SoftSpace(w, 1);
 			    } 
 #ifdef Py_USING_UNICODE
 			    else if (PyUnicode_Check(v)) {
 				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
 				int len = PyUnicode_GET_SIZE(v);
-				if (len > 0 &&
-				    Py_UNICODE_ISSPACE(s[len-1]) &&
-				    s[len-1] != ' ')
-				    PyFile_SoftSpace(w, 0);
+				if (len == 0 ||
+				    !Py_UNICODE_ISSPACE(s[len-1]) ||
+				    s[len-1] == ' ')
+				    PyFile_SoftSpace(w, 1);
 			    }
+			    else
+			    	PyFile_SoftSpace(w, 1);
 #endif
 			}
 			Py_DECREF(v);
