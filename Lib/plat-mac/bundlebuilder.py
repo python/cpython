@@ -226,28 +226,7 @@ if USE_ZIPIMPORT:
 		path = fullname.replace(".", os.sep) + PYC_EXT
 		return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
 
-#
-# The following snippet gets added as sitecustomize.py[co] to
-# non-standalone apps and appended to our custom site.py for
-# standalone apps. The bootstrap scripts calls os.execve() with
-# an argv[0] that's different from the actual executable: argv[0]
-# is the bootstrap script itself and matches the CFBundleExecutable
-# value in the Info.plist. This is needed to keep the Finder happy
-# and have the app work from the command line as well. However,
-# this causes sys.executable to also be that value, so we correct
-# that from the PYTHONEXECUTABLE environment variable that the
-# bootstrap script sets.
-# 
-SITECUSTOMIZE_PY = """\
-import sys, os
-executable = os.getenv("PYTHONEXECUTABLE")
-if executable is not None:
-    sys.executable = executable
-"""
-
-SITE_PY += SITECUSTOMIZE_PY
 SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
-SITECUSTOMIZE_CO = compile(SITECUSTOMIZE_PY, "<-bundlebuilder.py->", "exec")
 
 #
 # Extension modules can't be in the modules zip archive, so a placeholder
@@ -455,10 +434,6 @@ class AppBuilder(BundleBuilder):
 	def postProcess(self):
 		if self.standalone:
 			self.addPythonModules()
-		else:
-			sitecustomizepath = pathjoin(self.bundlepath, "Contents", "Resources",
-					"sitecustomize" + PYC_EXT)
-			writePyc(SITECUSTOMIZE_CO, sitecustomizepath)
 		if self.strip and not self.symlink:
 			self.stripBinaries()
 
