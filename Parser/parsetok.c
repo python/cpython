@@ -39,6 +39,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "parsetok.h"
 #include "errcode.h"
 
+int Py_TabcheckFlag;
+
 
 /* Forward */
 static node *parsetok Py_PROTO((struct tok_state *, grammar *, int,
@@ -92,6 +94,12 @@ PyParser_ParseFile(fp, filename, g, start, ps1, ps2, err_ret)
 	if ((tok = PyTokenizer_FromFile(fp, ps1, ps2)) == NULL) {
 		err_ret->error = E_NOMEM;
 		return NULL;
+	}
+	if (Py_TabcheckFlag || Py_VerboseFlag) {
+		tok->filename = filename;
+		tok->altwarning = (filename != NULL);
+		if (Py_TabcheckFlag >= 2)
+			tok->alterror++;
 	}
 
 #ifdef macintosh
