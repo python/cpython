@@ -4,6 +4,11 @@
 
 import time, calendar, sys, string, os
 
+verbose = 0
+
+if __name__ == '__main__':
+    verbose = 1
+
 now = time.time()
 fp = os.popen('date')
 fromdate = string.strip(fp.readline())
@@ -35,14 +40,12 @@ expectations = (
     ('%b', calendar.month_abbr[now[1]], 'abbreviated month name'),
     ('%h', calendar.month_abbr[now[1]], 'abbreviated month name'),
     ('%c', time.asctime(now), 'asctime() format'),
-    ('%C', fromdate, 'date(1) format'),
     ('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
     ('%d', '%02d' % now[2], 'day of month as number (00-31)'),
     ('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
     ('%H', '%02d' % now[3], 'hour (00-23)'),
     ('%I', '%02d' % clock12, 'hour (00-12)'),
     ('%j', '%03d' % now[7], 'julian day (001-366)'),
-    ('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
     ('%M', '%02d' % now[4], 'minute, (00-59)'),
     ('%m', '%02d' % now[1], 'month as number (01-12)'),
     ('%n', '\n', 'newline character'),
@@ -52,7 +55,6 @@ expectations = (
      '%I:%M:%S %p'),
     ('%t', '\t', 'tab character'),
     ('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
-    ('%s', '%d' % nowsecs, 'seconds since the Epoch in UCT'),
     ('%T', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
     ('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
     ('%U', '%02d' % (1+(wk1offset+now[7])/7),
@@ -65,12 +67,20 @@ expectations = (
     ('%y', '%02d' % (now[0]%100), 'year without century'),
     ('%Z', tz, 'time zone name'),
     ('%%', '%', 'single percent sign'),
+    )
+
+nonstandard_expectations = (
+    ('%C', fromdate, 'date(1) format'),
+    ('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
+    ('%s', '%d' % nowsecs, 'seconds since the Epoch in UCT'),
     ('%3y', '%03d' % (now[0]%100),
      'year without century rendered using fieldwidth'),
     )
 
-print "Strftime test, platform: %s, Python version: %s" % \
-      (sys.platform, string.split(sys.version)[0])
+if verbose:
+    print "Strftime test, platform: %s, Python version: %s" % \
+	  (sys.platform, string.split(sys.version)[0])
+    expectations = expectations + nonstandard_expectations
 
 for e in expectations:
     result = time.strftime(e[0], now)
