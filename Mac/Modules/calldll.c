@@ -45,8 +45,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <CodeFragments.h>
 
 /* Prototypes for routines not in any include file (shame, shame) */
-extern PyObject *ResObj_New Py_PROTO((Handle));
-extern int ResObj_Convert Py_PROTO((PyObject *, Handle *));
+extern PyObject *ResObj_New(Handle);
+extern int ResObj_Convert(PyObject *, Handle *);
 
 static PyObject *ErrorObject;
 
@@ -61,7 +61,7 @@ static PyObject *ErrorObject;
 /* Prototypes we use for routines and arguments */
 
 typedef long anything;
-typedef anything (*anyroutine) Py_PROTO((...));
+typedef anything (*anyroutine)(...);
 
 /* Other constants */
 #define MAXNAME 31	/* Maximum size of names, for printing only */
@@ -76,9 +76,9 @@ typedef anything (*anyroutine) Py_PROTO((...));
 **
 ** Hence, optional return values are also implementable.
 */
-typedef anything (*py2c_converter) Py_PROTO((PyObject *));
-typedef PyObject *(*c2py_converter) Py_PROTO((anything));
-typedef PyObject *(*rv2py_converter) Py_PROTO((anything));
+typedef anything (*py2c_converter)(PyObject *);
+typedef PyObject *(*c2py_converter)(anything);
+typedef PyObject *(*rv2py_converter)(anything);
 
 
 /* Dummy routine for arguments that are output-only */
