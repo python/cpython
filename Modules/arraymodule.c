@@ -476,7 +476,7 @@ array_concat(a, bb)
 	}
 	memcpy(np->ob_item, a->ob_item, a->ob_size*a->ob_descr->itemsize);
 	memcpy(np->ob_item + a->ob_size*a->ob_descr->itemsize,
-	       a->ob_item, a->ob_size*a->ob_descr->itemsize);
+	       b->ob_item, b->ob_size*b->ob_descr->itemsize);
 	return (object *)np;
 #undef b
 }
