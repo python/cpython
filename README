@@ -647,9 +647,9 @@ IMPORTANT: If the tests fail and you decide to mail a bug report,
 *don't* include the output of "make test".  It is useless.  Run the
 failing test manually, as follows:
 
-	python ../Lib/test/test_whatever.py
+	./python ./Lib/test/test_whatever.py
 
-(substituting the top of the source tree for .. if you built in a
+(substituting the top of the source tree for '.' if you built in a
 different directory).  This runs the test in verbose mode.
 
 
