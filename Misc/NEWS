@@ -50,6 +50,10 @@ Core and builtins
   division becomes the default (in the meantime, test_coercion is
   testing the current rules).
 
+- complex() now only allows the first argument to be a string
+  argument, and raises TypeError if either the second arg is a string
+  or if the second arg is specified when the first is a string.
+
 Extension modules
 
 - gc.get_referents was renamed to gc.get_referrers.
