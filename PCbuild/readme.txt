@@ -222,6 +222,10 @@ _bsddb.pyd - 0 error(s), 4 warning(s)
     XXX    rec = c.next()
     XXX DBLockDeadlockError: (-30996, 'DB_LOCK_DEADLOCK: Locker killed
     XXX                                to resolve a deadlock')
+    XXX
+    XXX I'm told that DBLockDeadlockError is expected at times.  It
+    XXX doesn't cause a test to fail when it happens (exceptions in
+    XXX threads are invisible to unittest).
 
 
 _ssl
