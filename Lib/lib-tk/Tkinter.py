@@ -46,6 +46,10 @@ _default_root = None
 def _tkerror(err):
 	pass
 
+def _exit(code='0'):
+	import sys
+	sys.exit(getint(code))
+
 _varnum = 0
 class Variable:
 	def __init__(self, master=None):
@@ -529,6 +533,7 @@ class Tk(Misc, Wm):
 			if baseName[-3:] == '.py': baseName = baseName[:-3]
 		self.tk = tkinter.create(screenName, baseName, className)
 		self.tk.createcommand('tkerror', _tkerror)
+		self.tk.createcommand('exit', _exit)
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 ##		del self.master.children[self._name]
@@ -1078,8 +1083,7 @@ class Text(Widget):
 	def tag_delete(self, *tagNames):
 		apply(self.tk.call, (self._w, 'tag', 'delete') + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
-		self.tk.call(self._w, 'tag', 'lower', 
-			     tagName, belowThis)
+		self.tk.call(self._w, 'tag', 'lower', tagName, belowThis)
 	def tag_names(self, index=None):
 		return self.tk.splitlist(
 			self.tk.call(self._w, 'tag', 'names', index))
