@@ -233,11 +233,12 @@ setup (name = "PyXML", version = "0.5.4",
 The Distutils can also take care of creating source and binary
 distributions.  The ``sdist'' command, run by ``\code{python setup.py
 sdist}', builds a source distribution such as \file{foo-1.0.tar.gz}.
-Adding new commands isn't difficult, and a ``bdist_rpm'' command has
-already been contributed to create an RPM distribution for the
-software.  Commands to create Windows installer programs, Debian
-packages, and Solaris .pkg files have been discussed and are in
-various stages of development.
+Adding new commands isn't difficult, ``bdist_rpm'' and
+``bdist_wininst'' commands have already been contributed to create an
+RPM distribution and a Windows installer for the software,
+respectively.  Commands to create other distribution formats such as
+Debian packages and Solaris \file{.pkg} files are in various stages of
+development.
 
 All this is documented in a new manual, \textit{Distributing Python
 Modules}, that joins the basic set of Python documentation.
@@ -280,12 +281,12 @@ did exist in JPython for quite some time, are \method{startswith()}
 and \method{endswith}.  \code{s.startswith(t)} is equivalent to \code{s[:len(t)]
 == t}, while \code{s.endswith(t)} is equivalent to \code{s[-len(t):] == t}.
 
-%One other method which deserves special mention is \method{join}.  The
-%\method{join} method of a string receives one parameter, a sequence of
-%strings, and is equivalent to the \function{string.join} function from
-%the old \module{string} module, with the arguments reversed. In other
-%words, \code{s.join(seq)} is equivalent to the old
-%\code{string.join(seq, s)}.
+One other method which deserves special mention is \method{join}.  The
+\method{join} method of a string receives one parameter, a sequence of
+strings, and is equivalent to the \function{string.join} function from
+the old \module{string} module, with the arguments reversed. In other
+words, \code{s.join(seq)} is equivalent to the old
+\code{string.join(seq, s)}.
 
 % ======================================================================
 \section{Porting to 2.0}
@@ -658,7 +659,7 @@ the function to be called on exit.
 
 \item{\module{codecs}, \module{encodings}, \module{unicodedata}:}  Added as part of the new Unicode support. 
 
-\item{\module{filecmp}:} Supersedes the old \module{cmp} and
+\item{\module{filecmp}:} Supersedes the old \module{cmp}, \module{cmpcache} and
 \module{dircmp} modules, which have now become deprecated.
 (Contributed by Gordon MacMillan and Moshe Zadka.)
 
@@ -690,12 +691,12 @@ checks Python source code for ambiguous indentation.
 \item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
 
 \item{\module{winreg} and \module{_winreg}:} An interface to the
-Windows registry.  \module{winreg} has been part of PythonWin since
-1995, but now has been added to the core distribution, and enhanced to
-support Unicode.  \module{_winreg} is a low-level wrapper of the
-Windows registry functions, contributed by Bill Tutt and Mark Hammond,
-while \module{winreg} is a higher-level, more object-oriented API on top of 
-\module{_winreg}, designed by Thomas Heller and implemented by Paul Prescod.
+Windows registry.  \module{_winreg} is an adaptation of functions that
+have been part of PythonWin since 1995, but has now been added to the core 
+distribution, and enhanced to support Unicode.  \module{winreg} is an
+object-oriented API on top of the \module{_winreg} module.
+\module{_winreg} was written by Bill Tutt and Mark Hammond, and \module{winreg}
+was designed by Thomas Heller and implemented by Paul Prescod.
 
 \item{\module{zipfile}:} A module for reading and writing ZIP-format
 archives.  These are archives produced by \program{PKZIP} on
@@ -770,4 +771,3 @@ suggestions on drafts of this article: Fredrik Lundh, Skip
 Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer.
 
 \end{document}
-
