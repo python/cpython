@@ -25,39 +25,53 @@ can be used to:
     path using a '.' dot-delimited nesting syntax.  The nesting is fully
     recursive.
 
-  - import an entire package as a unit, by importing the package directory.
-    If there is a module named '__main__.py' in the package, it controls the
-    load.  Otherwise, all the modules in the dir, including packages, are
-    inherently loaded into the package module's namespace.
-
-    __main__.py can load the entire directory, by loading the package
-    itself, via eg 'import __', or even 'from __ import *'.  The benefit
-    is (1) the ability to do additional things before and after the loads
-    of the other modules, and (2) the ability to populate the package
-    module with the *contents* of the component modules, ie with a
-    'from __ import *'.)
+    For example, 'import test.test_types' will import the test_types
+    module within the 'test' package.  The calling environment would
+    then access the module as 'test.test_types', which is the name of
+    the fully-loaded 'test_types' module.  It is found contained within
+    the stub (ie, only partially loaded) 'test' module, hence accessed as
+    'test.test_types'.
 
   - import siblings from modules within a package, using '__.' as a shorthand
     prefix to refer to the parent package.  This enables referential
     transparency - package modules need not know their package name.
 
-  - The '__' package references are actually names assigned within
+    The '__' package references are actually names assigned within
     modules, to refer to their containing package.  This means that
-    variable references can be made to imported modules, or variables
-    defined via 'import ... from' of the modules, also using the '__.var'
-    shorthand notation.  This establishes an proper equivalence between
-    the import reference '__.sibling' and the var reference '__.sibling'. 
+    variable references can be made to imported modules, or to variables
+    defined via 'import ... from', also using the '__.var' shorthand
+    notation.  This establishes a proper equivalence between the import
+    reference '__.sibling' and the var reference '__.sibling'.  
 
-Modules have a few new attributes, in support of packages.  As
-mentioned above, '__' is a shorthand attribute denoting the
-modules' parent package, also denoted in the module by
-'__package__'.  Additionally, modules have associated with them a
-'__pkgpath__', a path by which sibling modules are found."""
+  - import an entire package as a unit, by importing the package directory.
+    If there is a module named '__main__.py' in the package, it controls the
+    load.  Otherwise, all the modules in the dir, including packages, are
+    inherently loaded into the package module's namespace.
+
+    For example, 'import test' will load the modules of the entire 'test'
+    package, at least until a test failure is encountered.
+
+    In a package, a module with the name '__main__' has a special role.
+    If present in a package directory, then it is loaded into the package
+    module, instead of loading the contents of the directory.  This
+    enables the __main__ module to control the load, possibly loading
+    the entire directory deliberately (using 'import __', or even
+    'from __ import *', to load all the module contents directly into the
+    package module).
+
+  - perform any combination of the above - have a package that contains
+    packages, etc.
+
+Modules have a few new attributes in support of packages.  As mentioned
+above, '__' is a shorthand attribute denoting the modules' parent package,
+also denoted in the module by '__package__'.  Additionally, modules have
+associated with them a '__pkgpath__', a path by which sibling modules are
+found."""
 
 __version__ = "$Revision$"
 
-# $Id$
-# First release:  Ken.Manheimer@nist.gov,  5-Apr-1995, for python 1.2
+# $Id$ First release:
+# Ken.Manheimer@nist.gov, 5-Apr-1995, for python 1.2
 
 # Developers Notes:
 #
@@ -114,10 +128,10 @@ def install():
     """Install newimp import_module() routine, for package support.
 
     newimp.revert() reverts to __import__ routine that was superceded."""
+    import __builtin__
     global origImportFunc
     if not origImportFunc:
 	try:
-	    import __builtin__
 	    origImportFunc = __builtin__.__import__
 	except AttributeError:
 	    pass
@@ -716,7 +730,7 @@ def exterior():
 #			      TESTING FACILITIES			#
 
 def note(msg, threshold=1):
-    if VERBOSE >= threshold: print '(import:', msg, ')'
+    if VERBOSE >= threshold: sys.stderr.write('(import: ' + msg + ')\n')
 
 class TestDirHier:
     """Populate a transient directory hierarchy according to a definition
