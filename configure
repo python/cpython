@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.204 
+# From configure.in Revision: 1.205 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -5020,7 +5020,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x;
+typedef int charset[2]; const charset x = {0,0};
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
@@ -6147,7 +6147,7 @@ fi
 #fi
 
 
-SRCDIRS="Include Parser Grammar Objects Python Modules"
+SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
 echo "configure:6153: checking for build directories" >&5
 for dir in $SRCDIRS; do
