@@ -411,6 +411,10 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	/* and set string size correctly */
 	if (bin_len > 0)
 		_PyString_Resize(&rv, bin_len);
+	else {
+		Py_DECREF(rv);
+		return PyString_FromString("");
+	}
 	return rv;
 }
 
