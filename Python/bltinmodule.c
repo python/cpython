@@ -266,9 +266,11 @@ builtin_compile(self, args)
 		start = file_input;
 	else if (strcmp(startstr, "eval") == 0)
 		start = eval_input;
+	else if (strcmp(startstr, "single") == 0)
+		start = single_input;
 	else {
 		err_setstr(ValueError,
-			   "compile() mode must be 'exec' or 'eval'");
+		   "compile() mode must be 'exec' or 'eval' or 'single'");
 		return NULL;
 	}
 	return compile_string(str, filename, start);
@@ -459,6 +461,20 @@ builtin_getattr(self, args)
 	if (!newgetargs(args, "OS:getattr", &v, &name))
 		return NULL;
 	return getattro(v, name);
+}
+
+static object *
+builtin_globals(self, args)
+	object *self;
+	object *args;
+{
+	object *d;
+
+	if (!newgetargs(args, ""))
+		return NULL;
+	d = getglobals();
+	INCREF(d);
+	return d;
 }
 
 static object *
@@ -780,6 +796,20 @@ builtin_len(self, args)
 }
 
 static object *
+builtin_locals(self, args)
+	object *self;
+	object *args;
+{
+	object *d;
+
+	if (!newgetargs(args, ""))
+		return NULL;
+	d = getlocals();
+	INCREF(d);
+	return d;
+}
+
+static object *
 builtin_long(self, args)
 	object *self;
 	object *args;
@@ -1058,6 +1088,8 @@ builtin_xrange(self, args)
 	return newrangeobject(ilow, n, istep, 1);
 }
 
+extern char *my_readline PROTO((char *));
+
 static object *
 builtin_raw_input(self, args)
 	object *self;
@@ -1068,6 +1100,38 @@ builtin_raw_input(self, args)
 
 	if (!newgetargs(args, "|O:[raw_]input", &v))
 		return NULL;
+	if (getfilefile(sysget("stdin")) == stdin &&
+	    getfilefile(sysget("stdout")) == stdout) {
+		object *po;
+		char *prompt;
+		char *s;
+		object *result;
+		if (v != NULL) {
+			po = strobject(v);
+			if (po == NULL)
+				return NULL;
+			prompt = getstringvalue(po);
+		}
+		else {
+			po = NULL;
+			prompt = "";
+		}
+		s = my_readline(prompt);
+		XDECREF(po);
+		if (s == NULL) {
+			err_set(KeyboardInterrupt);
+			return NULL;
+		}
+		if (*s == '\0') {
+			err_set(EOFError);
+			result = NULL;
+		}
+		else { /* strip trailing '\n' */
+			result = newsizedstringobject(s, strlen(s)-1);
+		}
+		free(s);
+		return result;
+	}
 	if (v != NULL) {
 		f = sysget("stdout");
 		if (f == NULL) {
@@ -1328,6 +1392,7 @@ static struct methodlist builtin_methods[] = {
 	{"filter",	builtin_filter, 1},
 	{"float",	builtin_float, 1},
 	{"getattr",	builtin_getattr, 1},
+	{"globals",	builtin_globals, 1},
 	{"hasattr",	builtin_hasattr, 1},
 	{"hash",	builtin_hash, 1},
 	{"hex",		builtin_hex, 1},
@@ -1335,6 +1400,7 @@ static struct methodlist builtin_methods[] = {
 	{"input",	builtin_input, 1},
 	{"int",		builtin_int, 1},
 	{"len",		builtin_len, 1},
+	{"locals",	builtin_locals, 1},
 	{"long",	builtin_long, 1},
 	{"map",		builtin_map, 1},
 	{"max",		builtin_max, 1},
