@@ -14,11 +14,11 @@ The following are the LaTeX source files:
 All except qua.tex use the style option file "myformat.sty".  This
 contains some macro definitions and sets some style parameters.
 
-All documents are set up for European paper size ("A4": 21 x 29.7 cm)
-by default.  To use US paper, remove the "a4wide" style option from
-the \documentstyle options list in the first line of the main .tex
-files (you may want to fiddle with the lay-out parameters, since the
-default format uses rather wide margins to my taste).
+The style parameters are set up for European paper size (21 x 29.7 cm,
+a.k.a. A4, or roughly 8.27 x 11.7 inch) by default.  To use US paper,
+comment out the line saying \input{a4wide.sty} in myformat.sty (you
+may want to fiddle with lay-out parameters like \textwidth and
+\textheight, since the default format uses rather wide margins).
 
 You need the makeindex utility to produce the index for ref.tex
 lib.tex; you need bibtex to produce the references list for qua.tex.
