@@ -1654,7 +1654,6 @@ batch_list(Picklerobject *self, PyObject *iter)
 				return -1;
 			if (self->write_func(self, &append, 1) < 0)
 				return -1;
-
 		}
 		return 0;
 	}
@@ -1693,7 +1692,7 @@ batch_list(Picklerobject *self, PyObject *iter)
 		for (i = 0; i < n; ++i) {
 			Py_DECREF(slice[i]);
 		}
-	}while (n == BATCHSIZE);
+	} while (n == BATCHSIZE);
 	return 0;
 
 BatchFailed:
@@ -1734,13 +1733,12 @@ save_list(Picklerobject *self, PyObject *args)
 
 	/* Memoize. */
 	if (len == 0) {
-		if (put(self, args) < 0)
-			goto finally;
+		if (put(self, args) >= 0)
+			res = 0;
+		goto finally;
 	}
-	else {
-		if (put2(self, args) < 0)
-			goto finally;
-	}
+	if (put2(self, args) < 0)
+		goto finally;
 
 	/* Materialize the list elements. */
 	iter = PyObject_GetIter(args);
@@ -1802,7 +1800,6 @@ batch_dict(Picklerobject *self, PyObject *iter)
 				return -1;
 			if (self->write_func(self, &setitem, 1) < 0)
 				return -1;
-
 		}
 		return 0;
 	}
@@ -1852,7 +1849,7 @@ batch_dict(Picklerobject *self, PyObject *iter)
 		for (i = 0; i < n; ++i) {
 			Py_DECREF(slice[i]);
 		}
-	}while (n == BATCHSIZE);
+	} while (n == BATCHSIZE);
 	return 0;
 
 BatchFailed:
@@ -1892,13 +1889,12 @@ save_dict(Picklerobject *self, PyObject *args)
 		goto finally;
 
 	if (len == 0) {
-		if (put(self, args) < 0)
-			goto finally;
+		if (put(self, args) >= 0)
+			res = 0;
+		goto finally;
 	}
-	else {
-		if (put2(self, args) < 0)
-			goto finally;
-	}
+	if (put2(self, args) < 0)
+		goto finally;
 
 	/* Materialize the dict items. */
 	iter = PyObject_CallMethod(args, "iteritems", "()");
