@@ -58,7 +58,7 @@ values from C values.
 
 \section{Process Control \label{processControl}}
 
-\begin{cfuncdesc}{void}{Py_FatalError}{char *message}
+\begin{cfuncdesc}{void}{Py_FatalError}{const char *message}
   Print a fatal error message and kill the process.  No cleanup is
   performed.  This function should only be invoked when a condition is
   detected that would make it dangerous to continue using the Python

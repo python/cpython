@@ -66,6 +66,8 @@ whose size is determined when the object is allocated.
  * Note that if this count increases when you're not storing away new objects,
  * there's probably a leak.  Remember, though, that in interactive mode the
  * special name "_" holds a reference to the last result displayed!
+ * Py_REF_DEBUG also checks after every decref to verify that the refcount
+ * hasn't gone negative, and causes an immediate fatal error if it has.
  */
 #define Py_REF_DEBUG
 
@@ -536,18 +538,34 @@ environment the global variable trick is not safe.)
 
 #ifdef Py_REF_DEBUG
 extern DL_IMPORT(long) _Py_RefTotal;
-#define _PyMAYBE_BUMP_REFTOTAL	_Py_RefTotal++
+extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
+					    int lineno, PyObject *op);
+#define _PyMAYBE_BUMP_REFTOTAL		_Py_RefTotal++
+#define _PyMAYBE_DROP_REFTOTAL		_Py_RefTotal--
+#define _PyMAYBE_REFTOTAL_COMMA		,
+#define _PyMAYBE_CHECK_REFCNT(OP)				\
+{	if ((OP)->ob_refcnt < 0)				\
+		_Py_NegativeRefcount(__FILE__, __LINE__,	\
+				     (PyObject *)(OP));		\
+}
 #else
-#define _PyMAYBE_BUMP_REFTOTAL	(void)0
+#define _PyMAYBE_BUMP_REFTOTAL
+#define _PyMAYBE_DROP_REFTOTAL
+#define _PyMAYBE_REFTOTAL_COMMA
+#define _PyMAYBE_CHECK_REFCNT(OP)	;
 #endif
 
 #ifdef COUNT_ALLOCS
 extern DL_IMPORT(void) inc_count(PyTypeObject *);
 #define _PyMAYBE_BUMP_COUNT(OP)		inc_count((OP)->ob_type)
 #define _PyMAYBE_BUMP_FREECOUNT(OP)	(OP)->ob_type->tp_frees++
+#define _PyMAYBE_BUMP_COUNT_COMMA	,
+#define _PyMAYBE_BUMP_FREECOUNT_COMMA	,
 #else
-#define _PyMAYBE_BUMP_COUNT(OP)		(void)0
-#define _PyMAYBE_BUMP_FREECOUNT(OP)	(void)0
+#define _PyMAYBE_BUMP_COUNT(OP)
+#define _PyMAYBE_BUMP_FREECOUNT(OP)
+#define _PyMAYBE_BUMP_COUNT_COMMA
+#define _PyMAYBE_BUMP_FREECOUNT_COMMA
 #endif
 
 #ifdef Py_TRACE_REFS
@@ -562,38 +580,28 @@ extern DL_IMPORT(void) _Py_ResetReferences(void);
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
  * inline.
  */
-#define _Py_NewReference(op) (		\
-	_PyMAYBE_BUMP_COUNT(op),	\
-	_PyMAYBE_BUMP_REFTOTAL, 	\
+#define _Py_NewReference(op) (					\
+	_PyMAYBE_BUMP_COUNT(op) _PyMAYBE_BUMP_COUNT_COMMA	\
+	_PyMAYBE_BUMP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA		\
 	(op)->ob_refcnt = 1)
 
-#define _Py_ForgetReference(op) (_PyMAYBE_BUMP_FREECOUNT(op))
+#define _Py_ForgetReference(op) _PyMAYBE_BUMP_FREECOUNT(op)
 
-#define _Py_Dealloc(op) (		\
-	_Py_ForgetReference(op),	\
+#define _Py_Dealloc(op) (						\
+	_PyMAYBE_BUMP_FREECOUNT(op) _PyMAYBE_BUMP_FREECOUNT_COMMA	\
 	(*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
-
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (			\
-	_PyMAYBE_BUMP_REFTOTAL,		\
+#define Py_INCREF(op) (						\
+	_PyMAYBE_BUMP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA		\
 	(op)->ob_refcnt++)
 
-#ifdef Py_REF_DEBUG
-/* under Py_REF_DEBUG: also log negative ref counts after Py_DECREF() !! */
-#define Py_DECREF(op)							\
-       if (--_Py_RefTotal, 0 < (--((op)->ob_refcnt))) ;			\
-       else if (0 == (op)->ob_refcnt) _Py_Dealloc( (PyObject*)(op));	\
-       else ((void)fprintf(stderr, "%s:%i negative ref count %i\n",	\
-		           __FILE__, __LINE__, (op)->ob_refcnt), abort())
-
-#else
-#define Py_DECREF(op) \
-	if (--(op)->ob_refcnt != 0) \
-		; \
-	else \
+#define Py_DECREF(op)						\
+	if (_PyMAYBE_DROP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA	\
+	    --(op)->ob_refcnt != 0)				\
+		_PyMAYBE_CHECK_REFCNT(op)			\
+	else							\
 		_Py_Dealloc((PyObject *)(op))
-#endif /* !Py_REF_DEBUG */
 
 /* Macros to use in case the object pointer may be NULL: */
 #define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)

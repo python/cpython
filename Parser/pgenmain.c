@@ -147,7 +147,7 @@ askfile(void)
 #endif
 
 void
-Py_FatalError(char *msg)
+Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "pgen: FATAL ERROR: %s\n", msg);
 	Py_Exit(1);
