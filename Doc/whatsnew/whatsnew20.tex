@@ -1,0 +1,233 @@
+\documentclass{howto}
+
+\title{What's New in Python 1.6}
+\release{0.01}
+\author{A.M. Kuchling}
+\authoraddress{\email{amk1@bigfoot.com}}
+\begin{document}
+\maketitle\tableofcontents
+
+\section{Introduction}
+
+A new release of Python, version 1.6, will be released some time this
+summer.  Alpha versions are already available from
+\url{http://www.python.org/1.6/}.  This article talks about the
+exciting new features in 1.6, highlights some useful new features, and
+points out a few incompatible changes that may require rewriting code.
+
+Python's development never ceases, and a steady flow of bug fixes and
+improvements are always being submitted.  A host of minor bug-fixes, a
+few optimizations, additional docstrings, and better error messages
+went into 1.6; to list them all would be impossible, but they're
+certainly significant.  Consult the publicly-available CVS logs if you
+want to see the full list.
+
+% ======================================================================
+\section{Unicode}
+
+XXX
+
+unicode support: Unicode strings are marked with u"string", and there
+is support for arbitrary encoders/decoders
+
+Added -U command line option.  With the option enabled the Python
+compiler interprets all "..."  strings as u"..." (same with r"..." and
+ur"...").  (Is this just for experimenting?)
+
+
+% ======================================================================
+\section{Distribution Utilities}
+
+XXX
+
+% ======================================================================
+\section{String Methods}
+
+% ======================================================================
+\section{Porting to 1.6}
+
+New Python releases try hard to be compatible with previous releases,
+and the record has been pretty good.  However, some changes are
+considered useful enough (often fixing design decisions that were
+initially bad) that breaking backward compatibility in subtle ways
+can't always be avoided.  This section lists the changes in Python 1.6
+that may cause old Python code to break.
+
+The change which will probably break the most code is tightening up
+the arguments accepted by some methods.  Some methods would take
+multiple arguments and treat them as a tuple, particularly various
+list methods such as \method{.append()}, \method{.insert()},
+\method{remove()}, and \method{.count()}.
+%
+% XXX did anyone ever call the last 2 methods with multiple args?
+%
+In earlier versions of Python, if \code{L} is a list, \code{L.append(
+1,2 )} appends the tuple \code{(1,2)} to the list.  In Python 1.6 this
+causes a \exception{TypeError} exception to be raised, with the
+message: 'append requires exactly 1 argument; 2 given'.  The fix is to
+simply add an extra set of parentheses to pass both values as a tuple: 
+\code{L.append( (1,2) )}.
+
+The earlier versions of these methods were more forgiving because they
+used an old function in Python's C interface to parse their arguments;
+1.6 modernizes them to use \function{PyArg_ParseTuple}, the current
+argument parsing function, which provides more helpful error messages
+and treats multi-argument calls as errors.  If you absolutely must use
+1.6 but can't fix your code, you can edit \file{Objects/listobject.c}
+and define the preprocessor symbol \code{NO_STRICT_LIST_APPEND} to
+preserve the old behaviour; this isn't recommended.
+
+Some of the functions in the \module{socket} module are still
+forgiving in this way.  For example, \function{socket.connect(
+('hostname', 25) )} is the correct form, passing a tuple representing
+an IP address, but
+\function{socket.connect( 'hostname', 25 )} also
+works. \function{socket.connect_ex()} and \function{socket.bind()} are
+similarly easy-going.  1.6alpha1 tightened these functions up, but
+because the documentation actually used the erroneous multiple
+argument form, many people wrote code which will break.  So for
+the\module{socket} module, the documentation was fixed and the
+multiple argument form is simply marked as deprecated; it'll be
+removed in a future Python version.  
+
+Some work has been done to make integers and long integers a bit more
+interchangeable.  In 1.5.2, large-file support was added for Solaris,
+to allow reading files larger than 2Gb; this made the \method{tell()}
+method of file objects return a long integer instead of a regular
+integer.  Some code would subtract two file offsets and attempt to use
+the result to multiply a sequence or slice a string, but this raised a
+\exception{TypeError}.   In 1.6, long integers can be used to multiply
+or slice a sequence, and it'll behave as you'd intuitively expect it to; 
+\code{3L * 'abc'} produces 'abcabcabc', and 
+\code{ (0,1,2,3)[2L:4L]} produces (2,3). Long integers can also be
+used in various new places where previously only integers were
+accepted, such as in the \method{seek()} method of file objects.
+
+The subtlest long integer change of all is that the \function{str()}
+of a long integer no longer has a trailing 'L' character, though
+\function{repr()} still includes it.  The 'L' annoyed many people who
+wanted to print long integers that looked just like regular integers,
+since they had to go out of their way to chop off the character.  This
+is no longer a problem in 1.6, but code which assumes the 'L' is
+there, and does \code{str(longval)[:-1]} will now lose the final
+digit.  
+
+Taking the \function{repr()} of a float now uses a different
+formatting precision than \function{str()}.  \function{repr()} uses
+``%.17g'' format string for C's \function{sprintf()}, while
+\function{str()} uses ``%.12g'' as before.  The effect is that
+\function{repr()} may occasionally show more decimal places than 
+\function{str()}, for numbers 
+XXX need example value here.
+
+
+% ======================================================================
+\section{Core Changes}
+
+Deleting objects is safe even for deeply nested data structures.
+Comparing recursive objects is now safe (doesn't dump core).
+
+Builds on NT Alpha, and work on Win64 (NT Itanium -- sys.platform is
+still 'win32') is ongoing.  Supports Windows CE (confirm with Mark
+Hammond)
+
+UnboundLocalError is raised when a local variable is undefined
+long, int take optional "base" parameter
+
+string objects now have methods (though they are still immutable)
+
+sys.version_info is a tuple: (major, minor, micro, level, serial); level
+is a string "a2", "b1", "c1", or '' for a final release.
+
+New format style '%r' inserts repr(arg) instead of str(arg).
+
+"in" operator can now be overriden in user-defined classes to mean anything:
+it calls the magic method __contains__
+
+New calling syntax: f(*args, **kw) equivalent to apply(f, args, kw)
+
+% ======================================================================
+\section{Extending/embedding Changes}
+
+Some of the changes are under the covers, and will only be apparent to
+people writing C extension modules, or embedding a Python interpreter
+in a larger application.  If you aren't dealing with Python's C API,
+you can safely skip this section since it won't contain anything of
+interest to you.
+
+Users of Jim Fulton's ExtensionClass module will be pleased to find
+out that hooks have been added so that ExtensionClasses are now
+supported by \function{isinstance()} and \function{issubclass()}.
+This means you no longer have to remember to write code such as
+\code{if type(obj) == myExtensionClass}, but can use the more natural
+\code{if isinstance(obj, myExtensionClass)}.
+
+The \file{Python/importdl.c} file, which was a mass of #ifdefs to
+support dynamic loading on many different platforms, was cleaned up
+are reorganized by Greg Stein.  \file{importdl.c} is now quite small,
+and platform-specific code has been moved into a bunch of
+\file{Python/dynload_*.c} files.  
+
+Vladimir Marangozov's long-awaited malloc restructuring was completed,
+to make it easy to have the Python interpreter use a custom allocator
+instead of C's standard \function{malloc()}.  For documentation, read
+the comments in \file{Include/mymalloc.h} and
+\file{Include/objimpl.h}.  For the lengthy discussions during which
+the interface was hammered out, see the Web archives of the 'patches'
+and 'python-dev' lists at python.org.
+
+Recent versions of the GUSI % XXX what is GUSI?  
+development environment for MacOS support POSIX threads.  Therefore,
+POSIX threads are now supported on the Macintosh too.  Threading
+support using the user-space GNU pth library was also contributed.
+
+Threading support on Windows was enhanced, too.  Windows supports
+thread locks that use kernel objects only in case of contention; in
+the common case when there's no contention, they use simpler functions
+which are an order of magnitude faster.  A threaded version of Python
+1.5.2 on NT is twice as slow as an unthreaded version; with the 1.6
+changes, the difference is only 10\%.  These improvements were
+contributed by Yakov Markovitch.
+
+% ======================================================================
+\section{Module changes}
+
+re - changed to be a frontend to sre
+
+readline, ConfigParser, cgi, calendar, posix, readline, xmllib, aifc, chunk,
+wave, random, shelve, nntplib - minor enhancements
+
+socket, httplib, urllib - optional OpenSSL support
+
+_tkinter - support for 8.1,8.2,8.3 (support for versions older then 8.0
+has been dropped).  Supports Unicode (Lib/lib-tk/Tkinter.py has a test)
+
+curses -- changed to use ncurses
+
+% ======================================================================
+\section{New modules}
+
+winreg - Windows registry interface.
+Distutils - tools for distributing Python modules
+PyExpat - interface to Expat XML parser
+robotparser - parse a robots.txt file (for writing web spiders)
+linuxaudio - audio for Linux
+mmap - treat a file as a memory buffer
+filecmp - supersedes the old cmp.py and dircmp.py modules
+tabnanny - check Python sources for tab-width dependance
+sre -  regular expressions (fast, supports unicode)
+unicode - support for unicode
+codecs - support for Unicode encoders/decoders
+
+% ======================================================================
+\section{IDLE Improvements}
+
+XXX IDLE -- complete overhaul; what are the changes?
+
+% ======================================================================
+\section{Deleted and Deprecated Modules}
+
+stdwin
+
+\end{document}
+
