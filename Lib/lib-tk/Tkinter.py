@@ -1528,7 +1528,7 @@ class _setit:
 		self.__var = var
 
 	def __call__(self, *args):
-		self.__var.set(value)
+		self.__var.set(self.__value)
 
 class OptionMenu(Menubutton):
 	def __init__(self, master, variable, value, *values):
