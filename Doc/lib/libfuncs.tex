@@ -189,12 +189,15 @@ def my_import(name):
   dictionary.
   For example, these all return a dictionary equal to
   \code{\{1: 2, 2: 3\}}:
-  \code{dictionary(\{1: 2, 2: 3\})},
-  \code{dictionary(\{1: 2, 2: 3\}.items()},
-  \code{dictionary(\{1: 2, 2: 3\}.iteritems()},
-  \code{dictionary(zip((1, 2), (2, 3)))},
-  \code{dictionary([[2, 3], [1, 2]])}, and
-  \code{dictionary([(i-1, i) for i in (2, 3)])}.
+
+  \begin{itemize}
+    \item \code{dictionary(\{1: 2, 2: 3\})}
+    \item \code{dictionary(\{1: 2, 2: 3\}.items())}
+    \item \code{dictionary(\{1: 2, 2: 3\}.iteritems())}
+    \item \code{dictionary(zip((1, 2), (2, 3)))}
+    \item \code{dictionary([[2, 3], [1, 2]])}
+    \item \code{dictionary([(i-1, i) for i in (2, 3)])}
+  \end{itemize}
 \end{funcdesc}
 
 \begin{funcdesc}{dir}{\optional{object}}
