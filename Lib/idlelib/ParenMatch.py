@@ -14,7 +14,7 @@ import string
 
 import PyParse
 from AutoIndent import AutoIndent, index2line
-from IdleConf import idleconf
+from configHandler import idleConf
 
 class ParenMatch:
     """Highlight matching parentheses
@@ -44,12 +44,13 @@ class ParenMatch:
     so I haven't bothered.
     """
     menudefs = []
-    iconf = idleconf.getsection('ParenMatch')
-    STYLE = iconf.getdef('style', 'default')
-    FLASH_DELAY = iconf.getint('flash-delay')
-    HILITE_CONFIG = iconf.getcolor('hilite')
-    BELL = iconf.getboolean('bell')
-    del iconf
+    STYLE = idleConf.GetOption('extensions','ParenMatch','style',
+            default='expression')
+    FLASH_DELAY = idleConf.GetOption('extensions','ParenMatch','flash-delay',
+            type='int',default=500)
+    HILITE_CONFIG = idleConf.GetHighlight(idleConf.CurrentTheme(),'hilite')
+    BELL = idleConf.GetOption('extensions','ParenMatch','bell',
+            type='bool',default=1)
 
     def __init__(self, editwin):
         self.editwin = editwin
