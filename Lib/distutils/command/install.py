@@ -529,7 +529,11 @@ class install (Command):
         outputs = []
         for cmd_name in self.get_sub_commands():
             cmd = self.get_finalized_command(cmd_name)
-            outputs.extend(cmd.get_outputs())
+            # Add the contents of cmd.get_outputs(), ensuring
+            # that outputs doesn't contain duplicate entries
+            for filename in cmd.get_outputs():
+                if filename not in outputs:
+                    outputs.append(filename)
 
         return outputs
 

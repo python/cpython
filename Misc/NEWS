@@ -146,9 +146,12 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - urllib.py - provide simple recovery/escape from apparent redirect recursion
 
-- #129288 - urllib.py - chanign %02x to %02X in quoting
+- #129288 - urllib.py - changing %02x to %02X in quoting
 
 - urllib.py - HTTPS now works with string URLs
+
+- distutils/command/install.py - make .get_outputs() produce a list of unique 
+                                 filenames
 
 What's New in Python 2.0?
 =========================
