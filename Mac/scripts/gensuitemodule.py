@@ -15,7 +15,7 @@ import macfs
 from Res import *
 
 def main():
-	fss, ok = macfs.StandardGetFile()
+	fss, ok = macfs.PromptGetFile('Select file with aeut/aete resource:')
 	if not ok:
 		sys.exit(0)
 	process(fss.as_pathname())
