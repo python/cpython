@@ -702,6 +702,14 @@ PySequence_DelSlice:PyObject*:o:0:
 PySequence_DelSlice:int:i1::
 PySequence_DelSlice:int:i2::
 
+PySequence_Fast:PyObject*::+1:
+PySequence_Fast:PyObject*:v:0:
+PySequence_Fast:const char*:m::
+
+PySequence_Fast_GET_ITEM:PyObject*::0:
+PySequence_Fast_GET_ITEM:PyObject*:o:0:
+PySequence_Fast_GET_ITEM:int:i::
+
 PySequence_GetItem:PyObject*::+1:
 PySequence_GetItem:PyObject*:o:0:
 PySequence_GetItem:int:i::

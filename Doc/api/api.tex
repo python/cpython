@@ -1780,6 +1780,23 @@ otherwise a tuple will be constructed with the appropriate contents.
 \end{cfuncdesc}
 
 
+\begin{cfuncdesc}{PyObject*}{PySequence_Fast}{PyObject *o, const char *m}
+Returns the sequence \var{o} as a tuple, unless it is already a
+tuple or list, in which case \var{o} is returned.  Use
+\cfunction{PySequence_Fast_GET_ITEM()} to access the members of the
+result.  Returns \NULL{} on failure.  If the object is not a sequence,
+raises \exception{TypeError} with \var{m} as the message text.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySequence_Fast_GET_ITEM}{PyObject *o, int i}
+Return the \var{i}th element of \var{o}, assuming that \var{o} was
+returned by \cfunction{PySequence_Fast()}, and that \var{i} is within
+bounds.  The caller is expected to get the length of the sequence by
+calling \cfunction{PyObject_Size()} on \var{o}, since lists and tuples
+are guaranteed to always return their true length.
+\end{cfuncdesc}
+
+
 \section{Mapping Protocol \label{mapping}}
 
 \begin{cfuncdesc}{int}{PyMapping_Check}{PyObject *o}
