@@ -32,6 +32,9 @@ Error = "scantools.Error"
 
 class Scanner:
 
+	# Set to 1 in subclass to debug your scanner patterns.
+	debug = 0 
+
 	def __init__(self, input = None, output = None, defsoutput = None):
 		self.initsilent()
 		self.initblacklists()
@@ -119,6 +122,7 @@ if missing: raise "Missing Types"
 
 	def initrepairinstructions(self):
 		self.repairinstructions = self.makerepairinstructions()
+		self.inherentpointertypes = self.makeinherentpointertypes()
 
 	def makerepairinstructions(self):
 		"""Parse the repair file into repair instructions.
@@ -210,6 +214,9 @@ if missing: raise "Missing Types"
 				replacements.append(replacement)
 			list.append((fpat, patterns, replacements))
 		return list
+		
+	def makeinherentpointertypes(self):
+		return []
 	
 	def openrepairfile(self, filename = "REPAIR"):
 		try:
@@ -395,14 +402,24 @@ if missing: raise "Missing Types"
 			while 1:
 				try: line = self.getline()
 				except EOFError: break
+				if self.debug:
+					self.report("LINE: %s" % `line`)
 				if self.comment1.match(line) >= 0:
 					line = self.comment1.group('rest')
+					if self.debug:
+						self.report("\tafter comment1: %s" % `line`)
 				while self.comment2.match(line) >= 0:
 					line = self.comment2.group('rest1')+self.comment2.group('rest2')
+					if self.debug:
+						self.report("\tafter comment2: %s" % `line`)
 				if self.defsfile and self.sym.match(line) >= 0:
+					if self.debug:
+						self.report("\tmatches sym.")
 					self.dosymdef()
 					continue
 				if self.head.match(line) >= 0:
+					if self.debug:
+						self.report("\tmatches head.")
 					self.dofuncspec()
 					continue
 		except EOFError:
@@ -411,6 +428,8 @@ if missing: raise "Missing Types"
 
 	def dosymdef(self):
 		name, defn = self.sym.group('name', 'defn')
+		if self.debug:
+			self.report("\tsym: name=%s, defn=%s" % (`name`, `defn`))
 		if not name in self.blacklistnames:
 			self.defsfile.write("%s = %s\n" % (name, defn))
 		else:
@@ -421,16 +440,29 @@ if missing: raise "Missing Types"
 		raw = self.line
 		while self.tail.search(raw) < 0:
 			line = self.getline()
+			if self.debug:
+				self.report("* CONTINUATION LINE: %s" % `line`)
 			if self.comment1.match(line) >= 0:
 				line = self.comment1.group('rest')
+				if self.debug:
+					self.report("\tafter comment1: %s" % `line`)
 			while self.comment2.match(line) >= 0:
 				line = self.comment2.group('rest1')+self.comment2.group('rest2')
+				if self.debug:
+					self.report("\tafter comment1: %s" % `line`)
 			raw = raw + line
+		if self.debug:
+			self.report("* WHOLE LINE: %s" % `raw`)
 		self.processrawspec(raw)
 
 	def processrawspec(self, raw):
 		if self.whole.search(raw) < 0:
 			self.report("Bad raw spec: %s", `raw`)
+			if self.debug:
+				if self.type.search(raw) < 0:
+					self.report("(Type already doesn't match)")
+				else:
+					self.report("(Type matched: %s)" % `self.type.group('type')`)
 			return
 		type, name, args = self.whole.group('type', 'name', 'args')
 		type = regsub.gsub("\*", " ptr", type)
@@ -485,6 +517,8 @@ if missing: raise "Missing Types"
 			type = type[6:]
 		elif type[-4:] == "_ptr":
 			type = type[:-4]
+			mode = "OutMode"
+		elif type in self.inherentpointertypes:
 			mode = "OutMode"
 		if type[-4:] == "_far":
 			type = type[:-4]
