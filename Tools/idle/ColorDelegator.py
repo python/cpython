@@ -91,7 +91,9 @@ class ColorDelegator(Delegator):
             if __debug__: print "schedule colorizing"
             self.after_id = self.after(1, self.recolorize)
 
-    def close(self):
+    close_when_done = None # Window to be closed when done colorizing
+
+    def close(self, close_when_done=None):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
@@ -99,6 +101,11 @@ class ColorDelegator(Delegator):
             self.after_cancel(after_id)
         self.allow_colorizing = 0
         self.stop_colorizing = 1
+        if close_when_done:
+            if not self.colorizing:
+                close_when_done.destroy()
+            else:
+                self.close_when_done = close_when_done
 
     def toggle_colorize_event(self, event):
         if self.after_id:
@@ -140,6 +147,10 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
             if __debug__: print "reschedule colorizing"
             self.after_id = self.after(1, self.recolorize)
+        if self.close_when_done:
+            top = self.close_when_done
+            self.close_when_done = None
+            top.destroy()
 
     def recolorize_main(self):
         next = "1.0"
