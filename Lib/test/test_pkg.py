@@ -3,7 +3,7 @@
 import sys, os, string, tempfile, traceback
 from os import mkdir, rmdir             # Can't test if these fail
 del mkdir, rmdir
-from test_support import verbose
+from test_support import verbose, TestFailed
 
 # Helpers to create and destroy hierarchies.
 
@@ -212,3 +212,14 @@ for name, hier, code in tests:
         continue
     print "running test", name
     runtest(hier, code)
+
+# Test
+import sys
+import imp
+try:
+    import sys.imp
+except ImportError:
+    # This is what we expect
+    pass
+else:
+    raise TestFailed, "No ImportError exception on 'import sys.imp'"
