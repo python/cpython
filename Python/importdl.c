@@ -95,6 +95,8 @@ typedef FARPROC dl_funcptr;
 #ifdef NeXT
 #define DYNAMIC_LINK
 #define USE_RLD
+#define SHORT_EXT ".so"
+#define LONG_EXT "module.so"
 #endif
 
 #ifdef WITH_SGI_DL
