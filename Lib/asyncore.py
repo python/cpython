@@ -509,7 +509,7 @@ if os.name == 'posix':
         write = send
 
         def close(self):
-            return os.close(self.fd)
+            os.close(self.fd)
 
         def fileno(self):
             return self.fd
@@ -519,11 +519,11 @@ if os.name == 'posix':
         def __init__(self, fd, map=None):
             dispatcher.__init__(self, None, map)
             self.connected = True
+            self.set_file(fd)
             # set it to non-blocking mode
             flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
             flags = flags | os.O_NONBLOCK
             fcntl.fcntl(fd, fcntl.F_SETFL, flags)
-            self.set_file(fd)
 
         def set_file(self, fd):
             self._fileno = fd
