@@ -180,7 +180,11 @@ def fullmodname(path):
             if len(dir) > len(longest):
                 longest = dir
 
-    base = path[len(longest) + 1:].replace("/", ".")
+    if longest:
+        base = path[len(longest) + 1:]
+    else:
+        base = path
+    base = base.replace("/", ".")
     filename, ext = os.path.splitext(base)
     return filename
 
@@ -291,6 +295,9 @@ class CoverageResults:
     def write_results_file(self, path, lines, lnotab, lines_hit):
         """Return a coverage results file in path."""
 
+        print "path =", `path`
+        if "/arse" in path:
+            import pdb; pdb.set_trace()
         try:
             outfile = open(path, "w")
         except IOError, err:
