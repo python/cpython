@@ -1824,10 +1824,10 @@ builtin_sum(PyObject *self, PyObject *args)
 		if (PyObject_TypeCheck(result, &PyBaseString_Type)) {
 			PyErr_SetString(PyExc_TypeError,
 				"can't sum strings [use ''.join(seq) instead]");
-			Py_DECREF(result);
 			Py_DECREF(iter);
 			return NULL;
 		}
+		Py_INCREF(result);
 	}
 
 	for(;;) {
