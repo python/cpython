@@ -151,6 +151,11 @@ Library
   In standard mode, 'q' and 'Q' are supported on all platforms, and are
   8-byte integral types.
 
+- The site module installs a new built-in function 'help' that invokes
+  pydoc.help.  It must be invoked as 'help()'; when invoked as 'help',
+  it displays a message reminding the user to use 'help()' or
+  'help(object)'.
+
 Tests
 
 - New test_mutants.py runs dict comparisons where the key and value
