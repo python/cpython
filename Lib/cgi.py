@@ -790,7 +790,7 @@ class FieldStorage:
         self.strict_parsing = strict_parsing
         if environ.has_key('REQUEST_METHOD'):
             method = string.upper(environ['REQUEST_METHOD'])
-        if method == 'GET':
+        if method == 'GET' or method == 'HEAD':
             if environ.has_key('QUERY_STRING'):
                 qs = environ['QUERY_STRING']
             elif sys.argv[1:]:
