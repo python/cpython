@@ -43,6 +43,11 @@ CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
 DESTSHARED=	$(exec_prefix)/lib/python/$(MACHDEP)
 
+# Portable install script (configure doesn't always guess right)
+INSTALL=	@srcdir@/../install-sh -c
+INSTALL_PROGRAM=${INSTALL}
+INSTALL_DATA=	${INSTALL} -m 644
+
 # === Variables that are customizable by hand or by inclusion in Setup ===
 
 LINKCC=		$(CC)
@@ -164,10 +169,13 @@ yuvconvert.o: yuvconvert.c
 # Rules to build and install all shared modules
 sharedmods:	$(SHAREDMODS)
 sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
-		-for i in dummy $(SHAREDMODS); do \
-		    if test -f $$i; then mv $$i $(DESTSHARED)/$$i; fi; done
+		-for i in X $(SHAREDMODS); do \
+			if test $$i != X; \
+			then $(INSTALL_DATA) $$i $(DESTSHARED)/$$i; \
+			fi; \
+		done
 
 $(DESTSHARED):
-		mkdir $(DESTSHARED)
+		mkdir $(DESTSHARED); chmod 755 $(DESTSHARED)
 
 # Stuff is appended here by makesetup and make depend
