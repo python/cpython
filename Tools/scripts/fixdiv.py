@@ -23,24 +23,39 @@ Then run `python fixdiv.py warnings'.  This first reads the warnings,
 looking for classic division warnings, and sorts them by file name and
 line number.  Then, for each file that received at least one warning,
 it parses the file and tries to match the warnings up to the division
-operators found in the source code.  If it is successful, it writes a
-recommendation to stdout in the form of a context diff.  If it is not
-successful, it writes observations to stdout instead.
+operators found in the source code.  If it is successful, it writes
+its findings to stdout, preceded by a line of dashes and a line of the
+form:
 
-There are several possible recommendations and observations:
+  Index: <file>
 
-- A / operator was found that can remain unchanged.  This is the
-  recommendation when only float and/or complex arguments were seen.
+If the only findings found are suggestions to change a / operator into
+a // operator, the output is acceptable input for the Unix 'patch'
+program.
 
-- A / operator was found that should be changed to //.  This is the
+Here are the possible messages on stdout (N stands for a line number):
+
+- A plain-diff-style change ('NcN', a line marked by '<', a line
+  containing '---', and a line marked by '>'):
+
+  A / operator was found that should be changed to //.  This is the
   recommendation when only int and/or long arguments were seen.
 
-- A / operator was found for which int or long as well as float or
+- 'True division / operator at line N' and a line marked by '=':
+
+  A / operator was found that can remain unchanged.  This is the
+  recommendation when only float and/or complex arguments were seen.
+
+- 'Ambiguous / operator (..., ...) at line N', line marked by '?':
+
+  A / operator was found for which int or long as well as float or
   complex arguments were seen.  This is highly unlikely; if it occurs,
   you may have to restructure the code to keep the classic semantics,
   or maybe you don't care about the classic semantics.
 
-- A / operator was found for which no warnings were seen.  This could
+- 'No conclusive evidence on line N', line marked by '*':
+
+  A / operator was found for which no warnings were seen.  This could
   be code that was never executed, or code that was only executed with
   with user-defined objects as arguments.  You will have to
   investigate further.  Note that // can be overloaded separately from
@@ -50,19 +65,38 @@ There are several possible recommendations and observations:
   user-defined objects, to disambiguate this case from code that was
   never executed?)
 
-- A warning was seen for a line not containing a / operator.  This is
-  an anomaly that shouldn't happen; the most likely cause is a change
-  to the file between the time the test script was run to collect
-  warnings and the time fixdiv was run.
+- 'Phantom ... warnings for line N', line marked by '*':
 
-- More than one / operator was found on one line, or in a statement
-  split across multiple lines.  Because the warnings framework doesn't
-  (and can't) show the offset within the line, and the code generator
-  doesn't always give the correct line number for operations in a
-  multi-line statement, it's not clear whether both were executed.  In
-  practice, they usually are, so the default action is make the same
-  recommendation for all / operators, based on the above criteria.
-  The -m option issues warnings for these cases instead.
+  A warning was seen for a line not containing a / operator.  The most
+  likely cause is a warning about code executed by 'exec' or eval()
+  (see note below), or an indirect invocation of the / operator, for
+  example via the div() function in the operator module.  It could
+  also be caused by a change to the file between the time the test
+  script was run to collect warnings and the time fixdiv was run.
+
+- 'More than one / operator in line N'; or
+  'More than one / operator per statement in lines N-N':
+
+  The scanner found more than one / operator on a single line, or in a
+  statement split across multiple lines.  Because the warnings
+  framework doesn't (and can't) show the offset within the line, and
+  the code generator doesn't always give the correct line number for
+  operations in a multi-line statement, we can't be sure whether all
+  operators in the statement were executed.  To be on the safe side,
+  by default a warning is issued about this case.  In practice, these
+  cases are usually safe, and the -m option suppresses these warning.
+
+- 'Can't find the / operator in line N', line marked by '*':
+
+  This really shouldn't happen.  It means that the tokenize module
+  reported a '/' operator but the line it returns didn't contain a '/'
+  character at the indicated position.
+
+- 'Bad warning for line N: XYZ', line marked by '*':
+
+  This really shouldn't happen.  It means that a 'classic XYZ
+  division' warning was read with XYZ being something other than
+  'int', 'long', 'float', or 'complex'.
 
 Notes:
 
@@ -79,15 +113,17 @@ Notes:
   future division statement.
 
 - Warnings may be issued for code not read from a file, but executed
-  using an exec statement or the eval() function.  These will have
-  <string> in the filename position.  The fixdiv script will attempt
-  and fail to open a file named "<string>", and issue a warning about
-  this failure.  You're on your own to deal with this.  You could make
-  all recommended changes and add a future division statement to all
-  affected files, and then re-run the test script; it should not issue
-  any warnings.  If there are any, and you have a hard time tracking
-  down where they are generated, you can use the -Werror option to
-  force an error instead of a first warning, generating a traceback.
+  using an exec statement or the eval() function.  These may have
+  <string> in the filename position, in which case the fixdiv script
+  will attempt and fail to open a file named '<string>' and issue a
+  warning about this failure; or these may be reported as 'Phantom'
+  warnings (see above).  You're on your own to deal with these.  You
+  could make all recommended changes and add a future division
+  statement to all affected files, and then re-run the test script; it
+  should not issue any warnings.  If there are any, and you have a
+  hard time tracking down where they are generated, you can use the
+  -Werror option to force an error instead of a first warning,
+  generating a traceback.
 
 - The tool should be run from the same directory as that from which
   the original script was run, otherwise it won't be able to open
@@ -98,9 +134,8 @@ import sys
 import getopt
 import re
 import tokenize
-from pprint import pprint
 
-multi_ok = 1
+multi_ok = 0
 
 def main():
     try:
@@ -114,7 +149,7 @@ def main():
             return
         if o == "-m":
             global multi_ok
-            multi_ok = 0
+            multi_ok = 1
     if not args:
         usage("at least one file argument is required")
         return 2
@@ -204,8 +239,19 @@ def process(file, list):
         else:
             if len(slashes) > 1:
                 if not multi_ok:
-                    report(slashes, "More than one / operator per statement")
-                    continue
+                    rows = []
+                    lastrow = None
+                    for (row, col), line in slashes:
+                        if row == lastrow:
+                            continue
+                        rows.append(row)
+                        lastrow = row
+                    assert rows
+                    if len(rows) == 1:
+                        print "*** More than one / operator in line", rows[0]
+                    else:
+                        print "*** More than one / operator per statement",
+                        print "in lines %d-%d" % (rows[0], rows[-1])
             intlong = []
             floatcomplex = []
             bad = []
@@ -237,6 +283,10 @@ def process(file, list):
                 elif floatcomplex and not intlong:
                     print "True division / operator at line %d:" % row
                     print "=", line
+                elif intlong and floatcomplex:
+                    print "*** Ambiguous / operator (%s, %s) at line %d:" % (
+                        "|".join(intlong), "|".join(floatcomplex), row)
+                    print "?", line
     fp.close()
 
 def reportphantomwarnings(warnings, f):
