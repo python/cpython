@@ -3926,6 +3926,9 @@ compile_classdef(struct compiling *c, node *n)
 	/* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
 	c->c_name = STR(CHILD(n, 1));
 	c->c_private = c->c_name;
+	/* Initialize local __module__ from global __name__ */
+	com_addop_name(c, LOAD_GLOBAL, "__name__");
+	com_addop_name(c, STORE_NAME, "__module__");
 	ch = CHILD(n, NCH(n)-1); /* The suite */
 	doc = get_docstring(c, ch);
 	if (doc != NULL) {
