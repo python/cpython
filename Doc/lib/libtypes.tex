@@ -504,10 +504,13 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
   \lineiii{\var{a}[\var{k}] = \var{x}}{set \code{\var{a}[\var{k}]} to \var{x}}{}
   \lineiii{del \var{a}[\var{k}]}{remove \code{\var{a}[\var{k}]} from \var{a}}{(1)}
+  \lineiii{\var{a}.absorb(b)}{\code{for k, v in b.items(): a[k] = v}}{(3)}
+  \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
+  \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
+  \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
   \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (key, item) pairs}{(2)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
-  \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
@@ -523,6 +526,8 @@ Notes:
 \item[(1)] Raises an exception if \var{k} is not in the map.
 
 \item[(2)] Keys and values are listed in random order.
+
+\item[(3)] \code{b} must be of the same type as \code{a}.
 \end{description}
 
 \subsection{Other Built-in Types}
