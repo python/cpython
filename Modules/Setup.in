@@ -174,7 +174,7 @@ md5 md5module.c md5c.c
 # toplevel directory.
 
 #FORMS=/ufs/guido/src/forms/FORMS
-#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a
+#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a -lfm_s -lgl_s
 
 
 # SunOS specific modules -- off by default
