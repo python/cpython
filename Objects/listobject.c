@@ -180,6 +180,26 @@ PyList_Insert(PyObject *op, int where, PyObject *newitem)
 	return ins1((PyListObject *)op, where, newitem);
 }
 
+static int
+app1(PyListObject *self, PyObject *v)
+{
+	int n = PyList_GET_SIZE(self);
+
+	assert (v != NULL);
+	if (n == INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"cannot add more objects to list");
+		return -1;
+	}
+
+	if (list_resize(self, n+1) == -1)
+		return -1;
+
+	Py_INCREF(v);
+	PyList_SET_ITEM(self, n, v);
+	return 0;
+}
+
 int
 PyList_Append(PyObject *op, PyObject *newitem)
 {
@@ -187,8 +207,11 @@ PyList_Append(PyObject *op, PyObject *newitem)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	return ins1((PyListObject *)op,
-		(int) ((PyListObject *)op)->ob_size, newitem);
+	if (newitem == NULL) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return app1((PyListObject *)op, newitem);
 }
 
 /* Methods */
@@ -726,7 +749,7 @@ listextend(PyListObject *self, PyObject *b)
 		if (i < mn)
 			PyList_SET_ITEM(self, i, item); /* steals ref */
 		else {
-			int status = ins1(self, self->ob_size, item);
+			int status = app1(self, item);
 			Py_DECREF(item);  /* append creates a new ref */
 			if (status < 0)
 				goto error;
@@ -2684,8 +2707,12 @@ listiter_next(listiterobject *it)
 static int
 listiter_len(listiterobject *it)
 {
-	if (it->it_seq)
-		return PyList_GET_SIZE(it->it_seq) - it->it_index;
+	int len;
+	if (it->it_seq) {
+		len = PyList_GET_SIZE(it->it_seq) - it->it_index;
+		if (len >= 0)
+			return len;
+	}
 	return 0;
 }
 
@@ -2799,7 +2826,10 @@ listreviter_next(listreviterobject *it)
 static int
 listreviter_len(listreviterobject *it)
 {
-	return it->it_index + 1;
+	int len = it->it_index + 1;
+	if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
+		return 0;
+	return len;
 }
 
 static PySequenceMethods listreviter_as_sequence = {
