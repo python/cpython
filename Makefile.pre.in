@@ -474,7 +474,7 @@ test:		all platform
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
-		test_fork1 test_linuxaudiodev test_sunaudiodev test_zlib
+		test_linuxaudiodev test_sunaudiodev
 quicktest:	all platform
 		-rm -f $(srcdir)/Lib/test/*.py[co]
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
