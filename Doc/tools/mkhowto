@@ -43,7 +43,6 @@ import re
 import shutil
 import string
 import sys
-import tempfile
 
 
 if not hasattr(os.path, "abspath"):
@@ -265,10 +264,12 @@ class Job:
             self.log_filename = os.path.abspath(self.doc + ".how")
         if os.path.exists(self.log_filename):
             os.unlink(self.log_filename)
-        if os.path.exists(self.doc + ".l2h"):
-            self.l2h_aux_init_file = tempfile.mktemp()
-        else:
-            self.l2h_aux_init_file = self.doc + ".l2h"
+        l2hconf = self.doc + ".l2h"
+        if os.path.exists(l2hconf):
+            if os.path.exists(l2hconf + "~"):
+                os.unlink(l2hconf + "~")
+            os.rename(l2hconf, l2hconf + "~")
+        self.l2h_aux_init_file = self.doc + ".l2h"
         self.write_l2h_aux_init_file()
 
     def build(self):
