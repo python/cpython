@@ -48,7 +48,8 @@ void GUSISetupFactories()
 #ifdef GUSISetupFactories_BeginHook
 	GUSISetupFactories_BeginHook
 #endif
-	GUSIwithInetSockets();
+//	GUSIwithInetSockets();
+	GUSIwithMTInetSockets();
 #ifdef GUSISetupFactories_EndHook
 	GUSISetupFactories_EndHook
 #endif
