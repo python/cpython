@@ -220,7 +220,12 @@ class SymbolVisitor:
         self.visit(node.code, scope)
         self.handle_free_vars(scope, parent)
 
-    def visitLambda(self, node, parent):
+    def visitLambda(self, node, parent, assign=0):
+        # Lambda is an expression, so it could appear in an expression
+        # context where assign is passed.  The transformer should catch
+        # any code that has a lambda on the left-hand side.
+        assert not assign 
+        
         for n in node.defaults:
             self.visit(n, parent)
         scope = LambdaScope(self.module, self.klass)
