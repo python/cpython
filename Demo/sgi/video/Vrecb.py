@@ -245,7 +245,11 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 		#
 		# Construct header and write it
 		#
-		vout = VFile.VoutFile().init(filename)
+		try:
+			vout = VFile.VoutFile().init(filename)
+		except IOError, msg:
+			print filename, ':', msg
+			sys.exit(1)
 		if mono:
 			vout.format = 'mono'
 		elif grey and greybits == 8:
@@ -291,13 +295,15 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 			start = frameno*fieldsize
 			field = data[start:start+fieldsize]
 			if convertor:
-				field = convertor(field, x, y)
+				field = convertor(field, len(field), 1)
 			elif mono and monotreshold >= 0:
-				field = imageop.grey2mono(field, x, y, \
-					  1, monotreshold)
+				field = imageop.grey2mono( \
+					  field, len(field), 1, monotreshold)
 			elif mono:
-				field = imageop.dither2mono(field, x, y)
+				field = imageop.dither2mono( \
+					  field, len(field), 1)
 			vout.writeframe(int(realframeno*tpf), field, None)
+			realframeno = realframeno + 1
 		print 'Skipped',nskipped,'duplicate frames'
 		vout.close()
 			
