@@ -244,7 +244,7 @@ binding flag.
   \cfunction{Py_InitModule()} was used).  The second parameter
   (often called \var{args}) is a tuple object representing all
   arguments. This parameter is typically processed using
-  \cfunction{PyArg_ParseTuple()}.
+  \cfunction{PyArg_ParseTuple()} or \cfunction{PyArg_UnpackTuple}.
 \end{datadesc}
 
 \begin{datadesc}{METH_KEYWORDS}
@@ -259,10 +259,10 @@ binding flag.
 \begin{datadesc}{METH_NOARGS}
   Methods without parameters don't need to check whether arguments are
   given if they are listed with the \constant{METH_NOARGS} flag.  They
-  need to be of type \ctype{PyNoArgsFunction}: they expect a single
-  single \ctype{PyObject*} as a parameter.  When used with object
-  methods, this parameter is typically named \code{self} and will hold
-  a reference to the object instance.
+  need to be of type \ctype{PyCFunction}.  When used with object
+  methods, the first parameter is typically named \code{self} and will
+  hold a reference to the object instance.  In all cases the second
+  parameter will be \NULL.
 \end{datadesc}
 
 \begin{datadesc}{METH_O}
