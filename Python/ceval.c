@@ -783,13 +783,33 @@ eval_code(co, globals, locals, owner, arg)
 				u = w;
 				w = gettupleitem(u, 0);
 				INCREF(w);
+				INCREF(w);
 				DECREF(u);
 			}
-			if (!is_stringobject(w))
-				err_setstr(TypeError,
-					"exceptions must be strings");
-			else
+			if (is_stringobject(w)) {
 				err_setval(w, v);
+			} else if (is_classobject(w)) {
+				if (!is_instanceobject(v)
+				    || !issubclass((object*)((instanceobject*)v)->in_class,
+						   w))
+					err_setstr(TypeError,
+						   "a class exception must have a value that is an instance of the class");
+				else
+					err_setval(w,v);
+			} else if (is_instanceobject(w)) {
+				if (v != None)
+					err_setstr(TypeError,
+						   "an instance exception may not have a separate value");
+				else {
+					DECREF(v);
+					v = w;
+					w = (object*) ((instanceobject*)w)->in_class;
+					INCREF(w);
+					err_setval(w, v);
+				}
+			} else
+				err_setstr(TypeError,
+					"exceptions must be strings, classes, or instances");
 			DECREF(v);
 			DECREF(w);
 			why = WHY_EXCEPTION;
@@ -2393,6 +2413,8 @@ cmp_exception(err, v)
 		}
 		return 0;
 	}
+	if (is_classobject(v) && is_classobject(err))
+		return issubclass(err, v);
 	return err == v;
 }
 
