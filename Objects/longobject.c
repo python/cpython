@@ -277,6 +277,61 @@ PyLong_AsDouble(vv)
 	return x * sign;
 }
 
+/* Create a new long (or int) object from a C pointer */
+
+PyObject *
+PyLong_FromVoidPtr(p)
+	void *p;
+{
+#if SIZEOF_VOID_P == SIZEOF_LONG
+	return PyInt_FromLong((long)p);
+#else
+	/* optimize null pointers */
+	if ( p == NULL )
+		return PyInt_FromLong(0);
+
+	/* we can assume that HAVE_LONG_LONG is true. if not, then the
+	   configuration process should have bailed (having big pointers
+	   without long longs seems non-sensical) */
+	return PyLong_FromLongLong((LONG_LONG)p);
+#endif /* SIZEOF_VOID_P == SIZEOF_LONG */
+}
+
+/* Get a C pointer from a long object (or an int object in some cases) */
+
+void *
+PyLong_AsVoidPtr(vv)
+	PyObject *vv;
+{
+	/* This function will allow int or long objects. If vv is neither,
+	   then the PyLong_AsLong*() functions will raise the exception:
+	   PyExc_SystemError, "bad argument to internal function"
+	*/
+
+#if SIZEOF_VOID_P == SIZEOF_LONG
+	long x;
+
+	if ( PyInt_Check(vv) )
+		x = PyInt_AS_LONG(vv);
+	else
+		x = PyLong_AsLong(vv);
+#else
+	/* we can assume that HAVE_LONG_LONG is true. if not, then the
+	   configuration process should have bailed (having big pointers
+	   without long longs seems non-sensical) */
+	LONG_LONG x;
+
+	if ( PyInt_Check(vv) )
+		x = PyInt_AS_LONG(vv);
+	else
+		x = PyLong_AsLongLong(vv);
+#endif /* SIZEOF_VOID_P == SIZEOF_LONG */
+
+	if (x == -1 && PyErr_Occurred())
+		return NULL;
+	return (void *)x;
+}
+
 #ifdef HAVE_LONG_LONG
 /*
  * LONG_LONG support by Chris Herborth (chrish@qnx.com)

@@ -53,6 +53,8 @@ these can be preceded by a decimal repeat count:\n\
  l:long; L:unsigned long; f:float; d:double.\n\
 Special cases (preceding decimal count indicates length):\n\
  s:string (array of char); p: pascal string (w. count byte).\n\
+Special case (only available in native format):\n\
+ P:an integer type that is wide enough to hold a pointer.\n\
 Whitespace between formats is ignored.\n\
 \n\
 The variable struct.error is an exception raised on errors.";
@@ -86,12 +88,14 @@ typedef struct { char c; int x; } s_int;
 typedef struct { char c; long x; } s_long;
 typedef struct { char c; float x; } s_float;
 typedef struct { char c; double x; } s_double;
+typedef struct { char c; void *x; } s_void_p;
 
 #define SHORT_ALIGN (sizeof(s_short) - sizeof(short))
 #define INT_ALIGN (sizeof(s_int) - sizeof(int))
 #define LONG_ALIGN (sizeof(s_long) - sizeof(long))
 #define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
+#define VOID_P_ALIGN (sizeof(s_void_p) - sizeof(void *))
 
 #ifdef __powerc
 #pragma options align=reset
@@ -523,6 +527,14 @@ nu_double(p, f)
 	return PyFloat_FromDouble(x);
 }
 
+static PyObject *
+nu_void_p(p, f)
+	const char *p;
+	const formatdef *f;
+{
+	return PyLong_FromVoidPtr(*(void **)p);
+}
+
 static int
 np_byte(p, v, f)
 	char *p;
@@ -648,6 +660,24 @@ np_double(p, v, f)
 	return 0;
 }
 
+static int
+np_void_p(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	void *x = PyLong_AsVoidPtr(v);
+	if (x == NULL && PyErr_Occurred()) {
+		/* ### hrm. PyLong_AsVoidPtr raises SystemError */
+		if (PyErr_ExceptionMatches(PyExc_TypeError))
+			PyErr_SetString(StructError,
+					"required argument is not an integer");
+		return -1;
+	}
+	*(void **)p = x;
+	return 0;
+}
+
 static formatdef native_table[] = {
 	{'x',	sizeof(char),	0,		NULL},
 	{'b',	sizeof(char),	0,		nu_byte,	np_byte},
@@ -663,6 +693,7 @@ static formatdef native_table[] = {
 	{'L',	sizeof(long),	LONG_ALIGN,	nu_ulong,	np_ulong},
 	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
 	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
+	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
 	{0}
 };
 

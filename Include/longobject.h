@@ -49,6 +49,8 @@ extern PyObject *PyLong_FromDouble Py_PROTO((double));
 extern long PyLong_AsLong Py_PROTO((PyObject *));
 extern unsigned long PyLong_AsUnsignedLong Py_PROTO((PyObject *));
 extern double PyLong_AsDouble Py_PROTO((PyObject *));
+extern PyObject *PyLong_FromVoidPtr Py_PROTO((void *));
+extern void *PyLong_AsVoidPtr Py_PROTO((PyObject *));
 
 #ifdef HAVE_LONG_LONG
 #ifndef LONG_LONG
