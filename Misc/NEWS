@@ -70,6 +70,8 @@ Mac
 
 - A new method MacOS.WMAvailable() returns true if it is safe to access
   the window manager, false otherwise.
+  
+- EasyDialogs dialogs are now movable-modal.
 
 
 What's New in Python 2.3 alpha 2?
