@@ -45,7 +45,10 @@ def _reconstructor(cls, base, state):
 
 _HEAPTYPE = 1<<9
 
-def _reduce(self):
+# Python code for object.__reduce_ex__ for protocols 0 and 1
+
+def _reduce_ex(self, proto):
+    assert proto < 2
     for base in self.__class__.__mro__:
         if hasattr(base, '__flags__') and not base.__flags__ & _HEAPTYPE:
             break
@@ -75,50 +78,10 @@ def _reduce(self):
     else:
         return _reconstructor, args
 
-# A better version of _reduce, used by copy and pickle protocol 2
+# Helper for __reduce_ex__ protocol 2
 
 def __newobj__(cls, *args):
     return cls.__new__(cls, *args)
-
-def _reduce_2(obj):
-    cls = obj.__class__
-    getnewargs = getattr(obj, "__getnewargs__", None)
-    if getnewargs:
-        args = getnewargs()
-    else:
-        args = ()
-    getstate = getattr(obj, "__getstate__", None)
-    if getstate:
-        state = getstate()
-    else:
-        state = getattr(obj, "__dict__", None)
-        names = _slotnames(cls)
-        if names:
-            slots = {}
-            nil = []
-            for name in names:
-                value = getattr(obj, name, nil)
-                if value is not nil:
-                    slots[name] = value
-            if slots:
-                state = (state, slots)
-    listitems = dictitems = None
-    if isinstance(obj, list):
-        listitems = iter(obj)
-    elif isinstance(obj, dict):
-        dictitems = obj.iteritems()
-    return __newobj__, (cls,) + args, state, listitems, dictitems
-
-# Extended reduce:
-
-def _reduce_ex(obj, proto=0):
-    obj_reduce = getattr(obj, "__reduce__", None)
-    if obj_reduce and obj.__class__.__reduce__ is not object.__reduce__:
-        return obj_reduce()
-    elif proto < 2:
-        return _reduce(obj)
-    else:
-        return _reduce_2(obj)
 
 def _slotnames(cls):
     """Return a list of slot names for a given class.
