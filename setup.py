@@ -545,8 +545,7 @@ class PyBuildExt(build_ext):
         # prototype by Jack Jansen.
         #
         # The Expat dist includes Windows .lib and .dll files.  Home page is
-        # at http://www.jclark.com/xml/expat.html, the current production
-        # release is always ftp://ftp.jclark.com/pub/xml/expat.zip.
+        # at http://sourceforge.net/projects/expat/.
         #
         # EXPAT_DIR, below, should point to the expat/ directory created by
         # unpacking the Expat source distribution.
