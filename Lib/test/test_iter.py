@@ -467,6 +467,34 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+        self.assertEqual(zip(xrange(5)), [(i,) for i in range(5)])
+
+        # Classes that lie about their lengths.
+        class NoGuessLen5:
+            def __getitem__(self, i):
+                if i >= 5:
+                    raise IndexError
+                return i
+
+        class Guess3Len5(NoGuessLen5):
+            def __len__(self):
+                return 3
+
+        class Guess30Len5(NoGuessLen5):
+            def __len__(self):
+                return 30
+
+        self.assertEqual(len(Guess3Len5()), 3)
+        self.assertEqual(len(Guess30Len5()), 30)
+        self.assertEqual(zip(NoGuessLen5()), zip(range(5)))
+        self.assertEqual(zip(Guess3Len5()), zip(range(5)))
+        self.assertEqual(zip(Guess30Len5()), zip(range(5)))
+
+        expected = [(i, i) for i in range(5)]
+        for x in NoGuessLen5(), Guess3Len5(), Guess30Len5():
+            for y in NoGuessLen5(), Guess3Len5(), Guess30Len5():
+                self.assertEqual(zip(x, y), expected)
+
     # Test reduces()'s use of iterators.
     def test_builtin_reduce(self):
         from operator import add
