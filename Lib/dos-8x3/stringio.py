@@ -41,8 +41,12 @@ class StringIO:
 			self.closed = 1
 			del self.buf, self.pos
 	def isatty(self):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		return 0
 	def seek(self, pos, mode = 0):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
 			self.buf = self.buf + string.joinfields(self.buflist, '')
 			self.buflist = []
@@ -52,8 +56,12 @@ class StringIO:
 			pos = pos + self.len
 		self.pos = max(0, pos)
 	def tell(self):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		return self.pos
 	def read(self, n = -1):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
 			self.buf = self.buf + string.joinfields(self.buflist, '')
 			self.buflist = []
@@ -65,6 +73,8 @@ class StringIO:
 		self.pos = newpos
 		return r
 	def readline(self, length=None):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		if self.buflist:
 			self.buf = self.buf + string.joinfields(self.buflist, '')
 			self.buflist = []
@@ -87,6 +97,8 @@ class StringIO:
 			line = self.readline()
 		return lines
 	def write(self, s):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 		if not s: return
 		if self.pos > self.len:
 			self.buflist.append('\0'*(self.pos - self.len))
@@ -105,7 +117,8 @@ class StringIO:
 	def writelines(self, list):
 		self.write(string.joinfields(list, ''))
 	def flush(self):
-		pass
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
 	def getvalue(self):
 		if self.buflist:
 			self.buf = self.buf + string.joinfields(self.buflist, '')
