@@ -22,7 +22,7 @@ VERBOSE = 2
 try:
     class Canceled(Exception):
         "Exception used to cancel run()."
-except:
+except (NameError, TypeError):
     Canceled = __name__ + ".Canceled"
 
 
