@@ -122,7 +122,7 @@ PyObject *QdRGB_New(RGBColorPtr itself)
 	return Py_BuildValue("lll", (long)itself->red, (long)itself->green, (long)itself->blue);
 }
 
-QdRGB_Convert(PyObject *v, RGBColorPtr p_itself)
+int QdRGB_Convert(PyObject *v, RGBColorPtr p_itself)
 {
 	long red, green, blue;
 	

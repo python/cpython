@@ -13,7 +13,8 @@ if ( h == NULL ) {
 HLock(h);
 memcpy(*h, buf, len);
 HUnlock(h);
-return ResObj_New(h);
+_res = ResObj_New(h);
+return _res;
 """
 
 f = ManualGenerator("Resource", resource_body)
@@ -43,7 +44,8 @@ memcpy(*h, buf, len);
 HUnlock(h);
 rv = (ResourceObject *)ResObj_New(h);
 rv->ob_freeit = PyMac_AutoDisposeHandle;
-return (PyObject *)rv;
+_res = (PyObject *)rv;
+return _res;
 """
 
 f = ManualGenerator("Handle", handle_body)
@@ -92,7 +94,8 @@ if ( onoff )
 	_self->ob_freeit = PyMac_AutoDisposeHandle;
 else
 	_self->ob_freeit = NULL;
-return Py_BuildValue("i", old);
+_res = Py_BuildValue("i", old);
+return _res;
 """
 f = ManualGenerator("AutoDispose", AutoDispose_body)
 f.docstring = lambda: "(int)->int. Automatically DisposeHandle the object on Python object cleanup"

@@ -5,8 +5,20 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
+
+/* Macro to test whether a weak-loaded CFM function exists */
+#define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
+    	PyErr_SetString(PyExc_NotImplementedError, \
+    	"Not available in this shared library/OS version"); \
+    	return NULL; \
+    }} while(0)
+
 
 #include <WASTE.h>
 #include <WEObjectHandlers.h>
@@ -213,7 +225,7 @@ PyObject *WEOObj_New(WEObjectReference itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
+int WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
 {
 	if (!WEOObj_Check(v))
 	{
@@ -381,7 +393,7 @@ PyObject *wasteObj_New(WEReference itself)
 	WESetInfo(weRefCon, (void *)&it, itself);
 	return (PyObject *)it;
 }
-wasteObj_Convert(PyObject *v, WEReference *p_itself)
+int wasteObj_Convert(PyObject *v, WEReference *p_itself)
 {
 	if (!wasteObj_Check(v))
 	{
@@ -1061,7 +1073,6 @@ static PyObject *wasteObj_WEInsert(wasteObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- pText__error__: ;
 	return _res;
 }
 
