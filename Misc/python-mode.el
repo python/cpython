@@ -59,6 +59,7 @@
 (require 'comint)
 (require 'custom)
 (require 'cl)
+(require 'compile)
 
 
 ;; user definable variables
