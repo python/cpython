@@ -30,12 +30,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "frameobject.h"
 #include "opcode.h"
 #include "structmember.h"
+#include "bltinmodule.h"
 
 #define OFF(x) offsetof(frameobject, x)
 
 static struct memberlist frame_memberlist[] = {
 	{"f_back",	T_OBJECT,	OFF(f_back),	RO},
 	{"f_code",	T_OBJECT,	OFF(f_code),	RO},
+	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_locals",	T_OBJECT,	OFF(f_locals),	RO},
 	{"f_owner",	T_OBJECT,	OFF(f_owner),	RO},
@@ -45,6 +47,7 @@ static struct memberlist frame_memberlist[] = {
 	{"f_localmap",	T_OBJECT,	OFF(f_localmap),RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
 	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
+	{"f_restricted",T_INT,		OFF(f_restricted),RO},
 	{"f_trace",	T_OBJECT,	OFF(f_trace)},
 	{NULL}	/* Sentinel */
 };
@@ -97,6 +100,7 @@ frame_dealloc(f)
 {
 	XDECREF(f->f_back);
 	XDECREF(f->f_code);
+	XDECREF(f->f_builtins);
 	XDECREF(f->f_globals);
 	XDECREF(f->f_locals);
 	XDECREF(f->f_owner);
@@ -135,12 +139,18 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	int nblocks;
 {
 	frameobject *f;
+	object *builtins;
 	if ((back != NULL && !is_frameobject(back)) ||
 		code == NULL || !is_codeobject(code) ||
 		globals == NULL || !is_dictobject(globals) ||
 		locals == NULL || !is_dictobject(locals) ||
 		nvalues < 0 || nblocks < 0) {
 		err_badcall();
+		return NULL;
+	}
+	builtins = dictlookup(globals, "__builtins__");
+	if (builtins == NULL || !is_mappingobject(builtins)) {
+		err_setstr(TypeError, "bad __builtins__ dictionary");
 		return NULL;
 	}
 	if (free_list == NULL) {
@@ -156,11 +166,12 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		NEWREF(f);
 	}
 	if (f != NULL) {
-		if (back)
-			INCREF(back);
+		XINCREF(back);
 		f->f_back = back;
 		INCREF(code);
 		f->f_code = code;
+		XINCREF(builtins);
+		f->f_builtins = builtins;
 		INCREF(globals);
 		f->f_globals = globals;
 		INCREF(locals);
@@ -182,6 +193,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		f->f_iblock = 0;
 		f->f_lasti = 0;
 		f->f_lineno = -1;
+		f->f_restricted = (builtins != getbuiltindict());
 		f->f_trace = NULL;
 		if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
 			err_nomem();
