@@ -80,7 +80,8 @@ class ListViewer:
         self.__uoc.set(1)
         self.__uocbtn = Checkbutton(root,
                                     text='Update on Click',
-                                    variable=self.__uoc)
+                                    variable=self.__uoc,
+                                    command=self.__toggleupdate)
         self.__uocbtn.pack(expand=1, fill=BOTH)
         #
         # alias list
@@ -115,6 +116,11 @@ class ListViewer:
             self.__sb.update_views(red, green, blue)
         else:
             self.update_yourself(red, green, blue)
+            self.__red, self.__green, self.__blue = red, green, blue
+
+    def __toggleupdate(self, event=None):
+        if self.__uoc.get():
+            self.__sb.update_views(self.__red, self.__green, self.__blue)
 
     def __quit(self, event=None):
         sys.exit(0)
