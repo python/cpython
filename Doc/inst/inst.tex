@@ -168,22 +168,11 @@ cd c:\Temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Mac OS, you have to go through a bit more effort to supply
-command-line arguments to the setup script:
-\begin{itemize}
-\item hit option-double-click on the script's icon (or option-drop it
-  onto the Python interpreter's icon)
-\item press the ``Set unix-style command line'' button
-\item set the ``Keep stdio window open on termination'' if you're
-  interested in seeing the output of the setup script (which is usually
-  voluminous and often useful)
-\item when the command-line dialog pops up, enter ``install'' (you
-  can, of course, enter any Distutils command-line as described in this
-  document or in \citetitle[../dist/dist.html]{Distributing Python
-  Modules}: just leave off the initial \code{python setup.py} and
-  you'll be fine)
-\end{itemize}
-
+On Mac OS 9, you double-click the \file{setup.py} script. It will bring
+up a dialog where you can select the \command{install} command. Then
+selecting the \command{run} button will install your distribution.
+The dialog is built dynamically, so all commands and options for this
+specific distribution are listed.
 
 \subsection{Splitting the job up}
 \label{splitting-up}
@@ -320,7 +309,7 @@ installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
 Windows, choose \menuselection{Start \sub Programs \sub Python
-2.1 \sub Python (command line)}.  Under Mac OS, \XXX{???}.
+2.1 \sub Python (command line)}.  Under Mac OS 9, start \file{PythonInterpreter}.
 Once the interpreter is started, you type Python code at the
 prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
@@ -680,7 +669,7 @@ In fact, you can use environment variables in config files on
 platforms that have such a notion but the Distutils additionally
 define a few extra variables that may not be in your environment, such
 as \code{\$PLAT}.  (And of course, on systems that don't have
-environment variables, such as Mac OS (\XXX{true?}), the configuration
+environment variables, such as Mac OS 9, the configuration
 variables supplied by the Distutils are the only ones you can use.)
 See section~\ref{config-files} for details.
 
