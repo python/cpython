@@ -49,7 +49,6 @@
  */
 
 /* #undef WITH_MEMORY_LIMITS */		/* disable mem limit checks  */
-#define WITH_MALLOC_HOOKS		/* for profiling & debugging */
 
 /*==========================================================================*/
 
@@ -326,16 +325,6 @@ static block *arenalist = NULL;		/* list of allocated arenas */
 static block *arenabase = NULL;		/* free space start address in
 					   current arena */
 
-/*
- * Hooks
- */
-#ifdef WITH_MALLOC_HOOKS
-static void *(*malloc_hook)(size_t) = NULL;
-static void *(*calloc_hook)(size_t, size_t) = NULL;
-static void *(*realloc_hook)(void *, size_t) = NULL;
-static void (*free_hook)(void *) = NULL;
-#endif /* !WITH_MALLOC_HOOKS */
-
 /*==========================================================================*/
 
 /* malloc */
@@ -355,11 +344,6 @@ _PyMalloc_Malloc(size_t nbytes)
 	poolp pool;
 	poolp next;
 	uint size;
-
-#ifdef WITH_MALLOC_HOOKS	
-	if (malloc_hook != NULL)
-		return (*malloc_hook)(nbytes);
-#endif
 
 	/*
 	 * This implicitly redirects malloc(0)
@@ -523,13 +507,6 @@ _PyMalloc_Free(void *p)
 	uint size;
 	off_t offset;
 
-#ifdef WITH_MALLOC_HOOKS
-	if (free_hook != NULL) {
-		(*free_hook)(p);
-		return;
-	}
-#endif
-
 	if (p == NULL)	/* free(NULL) has no effect */
 		return;
 
@@ -601,11 +578,6 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 	poolp pool;
 	uint size;
 
-#ifdef WITH_MALLOC_HOOKS
-	if (realloc_hook != NULL)
-		return (*realloc_hook)(p, nbytes);
-#endif
-
 	if (p == NULL)
 		return _PyMalloc_Malloc(nbytes);
 
@@ -656,11 +628,6 @@ _PyMalloc_Calloc(size_t nbel, size_t elsz)
         void *p;
 	size_t nbytes;
 
-#ifdef WITH_MALLOC_HOOKS
-	if (calloc_hook != NULL)
-		return (*calloc_hook)(nbel, elsz);
-#endif
-
 	nbytes = nbel * elsz;
 	p = _PyMalloc_Malloc(nbytes);
 	if (p != NULL)
@@ -669,39 +636,3 @@ _PyMalloc_Calloc(size_t nbel, size_t elsz)
 }
 */
 
-/*==========================================================================*/
-
-/*
- * Hooks
- */
-
-#ifdef WITH_MALLOC_HOOKS
-
-void
-_PyMalloc_SetHooks( void *(*malloc_func)(size_t),
-		    void *(*calloc_func)(size_t, size_t),
-		    void *(*realloc_func)(void *, size_t),
-		    void (*free_func)(void *) )
-{
-	LOCK();
-	malloc_hook = malloc_func;
-	calloc_hook = calloc_func;
-	realloc_hook = realloc_func;
-	free_hook = free_func;
-	UNLOCK();
-}
-
-void
-_PyMalloc_FetchHooks( void *(**malloc_funcp)(size_t),
-		      void *(**calloc_funcp)(size_t, size_t),
-		      void *(**realloc_funcp)(void *, size_t),
-		      void (**free_funcp)(void *) )
-{
-	LOCK();
-	*malloc_funcp = malloc_hook;
-	*calloc_funcp = calloc_hook;
-	*realloc_funcp = realloc_hook;
-	*free_funcp = free_hook;
-	UNLOCK();
-}
-#endif /* !WITH_MALLOC_HOOKS */
