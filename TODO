@@ -1,3 +1,172 @@
+======================================================================
+Things to do before releasing Pyton 1.4 the final cut:
+
+Win/NT specific things:
+
+... get bsddb.c patch
+
+... pyc files remain open when imported???
+
+(*) no trailing separator on sys.path[0] please
+
+... no control-c or control-break in Windows Console mode???
+    (implement Mark's hacks)
+
+... add PC template for extensions, + instructions
+
+... segv on NT after ^Z after import _tkinter
+
+Bugs:
+
+... apply(<class>, (), {}) fails while apply(<class>, ()) succeeds
+
+... exception in __del__ when __builtins__ has been deleted
+
+(*) core dump on complex % or divmod
+
+Features:
+
+... simple threading support (with lock) for Tk
+
+... Create and distribute the generic Makefile.pre.in for outside extensions.
+
+Documentation:
+
+... Add section on filesystem interface to tutorial
+
+... New last chapter of tutorial explaining new things (use NEWS file)
+
+... Update tutorial for changes in the language & library
+
+... Update reference manual for complex, power, slice and ellipses
+
+... New sections for library reference manual (use NEWS file for hints)
+
+... Update Misc/FAQ
+
+... Update README for 1.4 final cut
+
+... Update documentation for httplib
+
+... add stuff to ext.tex about threads and embedded Python
+
+... mention that -2147483648 doesn't work
+
+... mention that 0e0 and 01.0 etc. don't work
+
+Maybe not (yet):
+
+... SyntaxErrors w/o line numbers
+
+... get rid of 'owner' passed around for newframeobject and evalcode
+
+... Get freeze working for NT?  (Sam has one)
+
+... rename init<module> to PyInit_<module>.
+
+... import ni seems to interpret the current directory as a package.
+
+... math.sqrt(1j) should raise TypeError!!!  (To fix in getargs 'd' format.)
+
+... add make target that does machdep install; use in "machdepinstall"
+
+... prototype for PyOS_CheckStack() somewhere
+
+... On some Linuxes, ``python -c "print 12" | wc'' produces no output???
+
+... Add INSTALL_ROOT variable to Makefile.in
+
+... More thread testing (Solaris?), wait for David Arnold
+
+... More NeXT patches (Bill Bumgarner)
+
+... Get rid of more modules: (stdwin, soundex, SGI specific?)
+
+... Use autoconf features to find X11 libraries
+
+... Use more modern autoconf features (e.g. for platform testing)
+
+Done:
+
+(*) fix file upload in cgi.py from Netscape
+
+(*) Tkinter.Variable.__del__ may cause (ignored) exceptions
+
+(*) Test for -lreadline *without* -lterm{cap,lib}
+
+(*) autotest fails on NT due to 1e-005 instead of 1e-05
+
+(*) Update 1.3 version number and date occurring in tutorial, Misc/FAQ,
+    Doc/texipre.dat, Doc/boilerplate.tex, Doc/tut.tex example
+
+(*) Fix the freeze script
+
+(*) merge Fred's changes to formatter.py and other stuff in Grail/pythonlib
+
+(*) urllib.py: open_http() has bogosity when proxy and auth used together
+
+(*) Update Misc/NEWS
+
+(*) Get rid of obsolete modules: objc, environment
+
+(*) Try threads on NT?
+
+(*) get rid of remains of access.c
+
+(*) document the fact that __del__ exceptions get lost
+
+(*) print warning when __del__ raises exception (no SystemExit though)
+
+(*) document all new features of string.py and regsub.py
+
+(*) add delitem, delslice to operator.c
+
+(*) get rid of 'or', 'and' in operator.c (or rename to 'or_', 'and_')
+
+(*) Pass LDFLAGS from configure to Makefile?
+
+(*) -L option for -lreadline comes too late
+
+(*) halfbinop PROTO(...) triggers error on Alpha compiler?
+
+(*) operator.c is not K&R C nor is it ANSI C
+
+(*) some complex numbers code is not K&R
+
+(*) More AIX sharedlibs patches (Manus Hand, Vlad)
+
+	Delete Modules/bindit
+	Add Modules/python.ext
+
+(*) #undef for fabs in mathmodule.c from Jack
+
+(*) Fix _tkinter.c for use on NT
+
+(*) Remove AIX shared libraries in make clean target
+    Remove *.sl in "make clean" targets
+
+(*) Sjoerd's optimizations
+
+(*) remove access stmt from docs
+
+(*) Lance's patches for SCO
+
+(*) Jim H's patch to fix power
+
+(*) rip out all traces of 'access'
+
+(*) New extref.tex from Richard Jones
+
+(*) ref.man patch by Anthony Baxter for lambda scope
+
+(*) Add extensions reference to ext.tex
+
+(*) generic/regen is bogus
+
+======================================================================
+======================================================================
+The following is old and I haven't checked whether it still applies:
+
 (-) many module should export their symbolic constants instead of
 relying on a module written in Python
 
