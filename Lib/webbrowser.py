@@ -98,6 +98,7 @@ class GenericBrowser:
         self.basename = os.path.basename(self.name)
 
     def open(self, url, new=0, autoraise=1):
+        assert "'" not in url
         command = "%s %s" % (self.name, self.args)
         os.system(command % url)
 
@@ -148,7 +149,8 @@ class Konqueror:
             self.name = self.basename = "kfm"
 
     def _remote(self, action):
-        cmd = "kfmclient %s >/dev/null 2>&1" % action
+        assert "'" not in action
+        cmd = "kfmclient '%s' >/dev/null 2>&1" % action
         rc = os.system(cmd)
         if rc:
             import time
@@ -163,7 +165,7 @@ class Konqueror:
     def open(self, url, new=1, autoraise=1):
         # XXX Currently I know no way to prevent KFM from
         # opening a new win.
-        self._remote("openURL %s" % url)
+        self._remote("openURL '%s'" % url)
 
     open_new = open
 
@@ -238,26 +240,26 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
     if os.environ.get("TERM"):
         # The Links browser <http://artax.karlin.mff.cuni.cz/~mikulas/links/>
         if _iscommand("links"):
-            register("links", None, GenericBrowser("links %s"))
+            register("links", None, GenericBrowser("links '%s'"))
         # The Lynx browser <http://lynx.browser.org/>
         if _iscommand("lynx"):
-            register("lynx", None, GenericBrowser("lynx %s"))
+            register("lynx", None, GenericBrowser("lynx '%s'"))
         # The w3m browser <http://ei5nazha.yz.yamagata-u.ac.jp/~aito/w3m/eng/>
         if _iscommand("w3m"):
-            register("w3m", None, GenericBrowser("w3m %s"))
+            register("w3m", None, GenericBrowser("w3m '%s'"))
 
     # X browsers have more in the way of options
     if os.environ.get("DISPLAY"):
         # First, the Netscape series
-        if _iscommand("netscape") or _iscommand("mozilla"):
-            if _iscommand("mozilla"):
-                register("mozilla", None, Netscape("mozilla"))
-            if _iscommand("netscape"):
-                register("netscape", None, Netscape("netscape"))
+        if _iscommand("mozilla"):
+            register("mozilla", None, Netscape("mozilla"))
+        if _iscommand("netscape"):
+            register("netscape", None, Netscape("netscape"))
 
         # Next, Mosaic -- old but still in use.
         if _iscommand("mosaic"):
-            register("mosaic", None, GenericBrowser("mosaic %s >/dev/null &"))
+            register("mosaic", None, GenericBrowser(
+                "mosaic '%s' >/dev/null &"))
 
         # Konqueror/kfm, the KDE browser.
         if _iscommand("kfm") or _iscommand("konqueror"):
@@ -318,7 +320,8 @@ if os.environ.has_key("BROWSER"):
 for cmd in _tryorder:
     if not _browsers.has_key(cmd.lower()):
         if _iscommand(cmd.lower()):
-            register(cmd.lower(), None, GenericBrowser("%s %%s" % cmd.lower()))
+            register(cmd.lower(), None, GenericBrowser(
+                "%s '%%s'" % cmd.lower()))
 
 _tryorder = filter(lambda x: _browsers.has_key(x.lower())
                    or x.find("%s") > -1, _tryorder)
