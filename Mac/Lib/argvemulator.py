@@ -18,8 +18,8 @@ class ArgvCollector:
 		self.quitting = 0
 		self.ae_handlers = {}
 		# Remove the funny -psn_xxx_xxx argument
-		if sys.argv[0][:4] == '-psn':
-			del sys.argv[0]
+		if len(sys.argv) > 1 and sys.argv[1][:4] == '-psn':
+			del sys.argv[1]
 		self.installaehandler('aevt', 'oapp', self.open_app)
 		self.installaehandler('aevt', 'odoc', self.open_file)
 	
