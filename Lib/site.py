@@ -122,6 +122,8 @@ for prefix in prefixes:
                                  "python" + sys.version[:3],
                                  "site-packages"),
                         makepath(prefix, "lib", "site-python")]
+        elif os.sep == ':':
+            sitedirs = [makepath(prefix, "lib", "site-packages")]
         else:
             sitedirs = [prefix]
         for sitedir in sitedirs:
