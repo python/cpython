@@ -231,18 +231,19 @@ Supported operations:
           {(1)}
   \lineiii{\var{t1} = \var{t2} // \var{i}}
           {The floor is computed and the remainder (if any) is thrown away.}
-          {(2)}
+          {(3)}
   \lineiii{+\var{t1}}
           {Returns a \class{timedelta} object with the same value.}
-          {}
+          {(2)}
   \lineiii{-\var{t1}}
           {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
            -\var{t1.microseconds}),and to \var{t1}* -1.}
-          {(1)(3)}
+          {(1)(4)}
   \lineiii{abs(\var{t})}
           {equivalent to +\var{t} when \code{t.days >= 0}, and to
-           -\var{t} when \code{t.days < 0}.}
-          {(1)}
+           -\var{t} when \code{t.days < 0}.
+           overflow.}
+          {(2)}
 \end{tableiii}
 \noindent
 Notes:
@@ -252,9 +253,12 @@ Notes:
   This is exact, but may overflow.
 
 \item[(2)]
-  Division by 0 raises \exception{ZeroDivisionError}.
+  This is exact, and cannot overflow.
 
 \item[(3)]
+  Division by 0 raises \exception{ZeroDivisionError}.
+
+\item[(4)]
   -\var{timedelta.max} is not representable as a \class{timedelta} object.
 \end{description}
 
@@ -883,11 +887,10 @@ implement all of them.
   \class{tzinfo} object represents both time zone and DST adjustments,
   \method{utcoffset()} should return their sum.  If the UTC offset
   isn't known, return \code{None}.  Else the value returned must be
-  an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
-  the magnitude of the offset must be less than one day), or a
-  \class{timedelta} object representing a whole number of minutes
-  in the same range.  Most implementations of \method{utcoffset()}
-  will probably look like one of these two:
+  a \class{timedelta} object specifying a whole number of minutes in the
+  range -1439 to 1439 inclusive (1440 = 24*60; the magnitude of the offset
+  must be less than one day).  Most implementations of
+  \method{utcoffset()} will probably look like one of these two:
 
 \begin{verbatim}
     return CONSTANT                 # fixed-offset class
@@ -896,8 +899,6 @@ implement all of them.
 
     If \method{utcoffset()} does not return \code{None},
     \method{dst()} should not return \code{None} either.
-
-
 \end{methoddesc}
 
 
@@ -905,7 +906,7 @@ implement all of them.
   Return the daylight savings time (DST) adjustment, in minutes east of
   UTC, or \code{None} if DST information isn't known.  Return \code{0} if
   DST is not in effect.
-  If DST is in effect, return the offset as an integer or
+  If DST is in effect, return the offset as a
   \class{timedelta} object (see \method{utcoffset()} for details).
   Note that DST offset, if applicable, has
   already been added to the UTC offset returned by

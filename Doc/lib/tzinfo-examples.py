@@ -1,16 +1,18 @@
-from datetime import tzinfo
+from datetime import tzinfo, timedelta
+
+ZERO = timedelta(0)
 
 class UTC(tzinfo):
     """UTC"""
 
     def utcoffset(self, dt):
-        return 0
+        return ZERO
 
     def tzname(self, dt):
         return "UTC"
 
     def dst(self, dt):
-        return 0
+        return ZERO
 
 class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
@@ -26,8 +28,7 @@ class FixedOffset(tzinfo):
         return self.__name
 
     def dst(self, dt):
-        # It depends on more than we know in an example.
-        return None # Indicate we don't know
+        return ZERO
 
 import time
 
@@ -43,9 +44,9 @@ class LocalTime(tzinfo):
 
     def utcoffset(self, dt):
         if self._isdst(dt):
-            return -time.timezone/60
+            return timedelta(seconds=-time.timezone)
         else:
-            return -time.altzone/60
+            return timedelta(seconds=-time.altzone)
 
     def tzname(self, dt):
         return time.tzname[self._isdst(dt)]

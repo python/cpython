@@ -27,9 +27,14 @@ Extension modules
   microsecond <http://www.python.org/sf/661086>.
 
   In dt.asdatetime(tz), if tz.utcoffset(dt) returns a duration,
-  ValueError is raised of tz.dst(dt) returns None (2.3a1 treated it
+  ValueError is raised if tz.dst(dt) returns None (2.3a1 treated it
   as 0 instead).
-  
+
+  The tzinfo methods utcoffset() and dst() must return a timedelta object 
+  (or None) now.  In 2.3a1 they could also return an int or long, but that 
+  was an unhelpfully redundant leftover from an earlier version wherein 
+  they couldn't return a timedelta.  TOOWTDI.
+
 Library
 -------
 

@@ -629,11 +629,9 @@ replace_tzinfo(PyObject *self, PyObject *newtzinfo)
 /* Call getattr(tzinfo, name)(tzinfoarg), and extract an int from the
  * result.  tzinfo must be an instance of the tzinfo class.  If the method
  * returns None, this returns 0 and sets *none to 1.  If the method doesn't
- * return a Python int or long or timedelta, TypeError is raised and this
- * returns -1.  If it returns an int or long, but is outside the valid
- * range for a UTC minute offset, or it returns a timedelta and the value is
- * out of range or isn't a whole number of minutes, ValueError is raised and
- * this returns -1.
+ * return None or timedelta, TypeError is raised and this returns -1.  If it
+ * returnsa timedelta and the value is out of range or isn't a whole number
+ * of minutes, ValueError is raised and this returns -1.
  * Else *none is set to 0 and the integer method result is returned.
  */
 static int
@@ -641,7 +639,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 		       int *none)
 {
 	PyObject *u;
-	long result = -1;	/* Py{Int,Long}_AsLong return long */
+	int result = -1;
 
 	assert(tzinfo != NULL);
 	assert(PyTZInfo_Check(tzinfo));
@@ -656,12 +654,6 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 		result = 0;
 		*none = 1;
 	}
-	else if (PyInt_Check(u))
-		result = PyInt_AS_LONG(u);
-
-	else if (PyLong_Check(u))
-		result = PyLong_AsLong(u);
-
 	else if (PyDelta_Check(u)) {
 		const int days = GET_TD_DAYS(u);
 		if (days < -1 || days > 0)
@@ -683,7 +675,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 	}
 	else {
 		PyErr_Format(PyExc_TypeError,
-			     "tzinfo.%s() must return None, integer or "
+			     "tzinfo.%s() must return None or "
 			     "timedelta, not '%s'",
 			     name, u->ob_type->tp_name);
 	}
@@ -696,16 +688,16 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 			     name, result);
 		result = -1;
 	}
-	return (int)result;
+	return result;
 }
 
 /* Call tzinfo.utcoffset(tzinfoarg), and extract an integer from the
  * result.  tzinfo must be an instance of the tzinfo class.  If utcoffset()
  * returns None, call_utcoffset returns 0 and sets *none to 1.  If uctoffset()
- & doesn't return a Python int or long, TypeError is raised and this
- * returns -1.  If utcoffset() returns an int outside the legitimate range
- * for a UTC offset, ValueError is raised and this returns -1.  Else
- * *none is set to 0 and the offset is returned.
+ * doesn't return None or timedelta, TypeError is raised and this returns -1.
+ * If utcoffset() returns an invalid timedelta (out of range, or not a whole
+ * # of minutes), ValueError is raised and this returns -1.  Else *none is
+ * set to 0 and the offset is returned (as int # of minutes east of UTC).
  */
 static int
 call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
@@ -745,10 +737,10 @@ offset_as_timedelta(PyObject *tzinfo, char *name, PyObject *tzinfoarg) {
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
  * result.  tzinfo must be an instance of the tzinfo class.  If dst()
  * returns None, call_dst returns 0 and sets *none to 1.  If dst()
- & doesn't return a Python int or long, TypeError is raised and this
- * returns -1.  If dst() returns an int outside the legitimate range
- * for a UTC offset, ValueError is raised and this returns -1.  Else
- * *none is set to 0 and the offset is returned.
+ & doesn't return None or timedelta, TypeError is raised and this
+ * returns -1.  If dst() returns an invalid timedelta for for a UTC offset,
+ * ValueError is raised and this returns -1.  Else *none is set to 0 and
+ * the offset is returned (as an int # of minutes east of UTC).
  */
 static int
 call_dst(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
