@@ -237,7 +237,20 @@ class Generator:
         # together, and then make sure that the boundary we've chosen isn't
         # present in the payload.
         msgtexts = []
-        for part in msg.get_payload():
+        # BAW: kludge for broken add_payload() semantics; watch out for
+        # multipart/* MIME types with None or scalar payloads.
+        subparts = msg.get_payload()
+        if subparts is None:
+            # Nothing has every been attached
+            boundary = msg.get_boundary(failobj=_make_boundary())
+            print >> self._fp, '--' + boundary
+            print >> self._fp, '\n'
+            print >> self._fp, '--' + boundary + '--'
+            return
+        elif not isinstance(subparts, ListType):
+            # Scalar payload
+            subparts = [subparts]
+        for part in subparts:
             s = StringIO()
             g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
             g(part, unixfrom=0)
@@ -369,7 +382,7 @@ class DecodedGenerator(Generator):
 
 
 # Helper
-def _make_boundary(self, text=None):
+def _make_boundary(text=None):
     # Craft a random boundary.  If text is given, ensure that the chosen
     # boundary doesn't appear in the text.
     boundary = ('=' * 15) + repr(random.random()).split('.')[1] + '=='
