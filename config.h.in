@@ -343,6 +343,9 @@
 /* Define if you have the <sys/wait.h> header file.  */
 #undef HAVE_SYS_WAIT_H
 
+/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
+#undef WANT_SIGFPE_HANDLER
+
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H
 
