@@ -207,7 +207,7 @@ from \module{M}'s globals are skipped, all names reached from
 \subsection{What's the Execution Context?}
 
 By default, each time testmod finds a docstring to test, it uses a
-{\em copy} of \module{M}'s globals, so that running tests on a module
+\emph{copy} of \module{M}'s globals, so that running tests on a module
 doesn't change the module's real globals, and so that one test in
 \module{M} can't leave behind crumbs that accidentally allow another test
 to work.  This means examples can freely use any names defined at top-level
