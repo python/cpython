@@ -290,19 +290,29 @@ convertenviron()
 		return NULL;
 	if (environ == NULL)
 		return d;
-	/* XXX This part ignores errors */
+	/* This part ignores errors */
 	for (e = environ; *e != NULL; e++) {
+		PyObject *k;
 		PyObject *v;
 		char *p = strchr(*e, '=');
 		if (p == NULL)
 			continue;
-		v = PyString_FromString(p+1);
-		if (v == NULL)
+		k = PyString_FromStringAndSize(*e, (int)(p-*e));
+		if (k == NULL) {
+			PyErr_Clear();
 			continue;
-		*p = '\0';
-		if (PyDict_GetItemString(d, *e) == NULL)
-			(void) PyDict_SetItemString(d, *e, v);
-		*p = '=';
+		}
+		v = PyString_FromString(p+1);
+		if (v == NULL) {
+			PyErr_Clear();
+			Py_DECREF(k);
+			continue;
+		}
+		if (PyDict_GetItem(d, k) == NULL) {
+			if (PyDict_SetItem(d, k, v) != 0)
+				PyErr_Clear();
+		}
+		Py_DECREF(k);
 		Py_DECREF(v);
 	}
 #if defined(PYOS_OS2)
