@@ -383,8 +383,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PyObject_Size(PyObject *o);
 
-#define PyObject_Length PyObject_Size
-
        /*
          Return the size of object o.  If the object, o, provides
 	 both sequence and mapping protocols, the sequence size is
@@ -392,6 +390,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 to the Python expression: len(o).
 
        */
+
+       /* For DLL compatibility */
+#undef PyObject_Length
+     DL_IMPORT(int) PyObject_Length(PyObject *o);
+#define PyObject_Length PyObject_Size
+
 
      DL_IMPORT(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);
 
@@ -685,12 +689,16 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PySequence_Size(PyObject *o);
 
-#define PySequence_Length PySequence_Size
-
        /*
          Return the size of sequence object o, or -1 on failure.
 
        */
+
+       /* For DLL compatibility */
+#undef PySequence_Length
+     DL_IMPORT(int) PySequence_Length(PyObject *o);
+#define PySequence_Length PySequence_Size
+
 
      DL_IMPORT(PyObject *) PySequence_Concat(PyObject *o1, PyObject *o2);
 
@@ -839,13 +847,17 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PyMapping_Size(PyObject *o);
 
-#define PyMapping_Length PyMapping_Size
-
        /*
          Returns the number of keys in object o on success, and -1 on
 	 failure.  For objects that do not provide sequence protocol,
 	 this is equivalent to the Python expression: len(o).
        */
+
+       /* For DLL compatibility */
+#undef PyMapping_Length
+     DL_IMPORT(int) PyMapping_Length(PyObject *o);
+#define PyMapping_Length PyMapping_Size
+
 
      /* implemented as a macro:
 
