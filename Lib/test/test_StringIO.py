@@ -14,23 +14,17 @@ def do_test(module):
     f.seek(10)
     f.truncate()
     print `f.getvalue()`
-    # This test fails for cStringIO; reported as SourceForge bug #115531;
-    # please uncomment this test when that bug is fixed.
-    # http://sourceforge.net/bugs/?func=detailbug&bug_id=115531&group_id=5470
-##     f.seek(0)
-##     f.truncate(5)
-##     print `f.getvalue()`
-
-    # This test fails for cStringIO; reported as SourceForge bug #115530;
-    # please uncomment this test when that bug is fixed.
-    # http://sourceforge.net/bugs/?func=detailbug&bug_id=115530&group_id=5470
-##     try:
-##         f.write("frobnitz")
-##     except ValueError, e:
-##         print "Caught expected ValueError writing to closed StringIO:"
-##         print e
-##     else:
-##         print "Failed to catch ValueError writing to closed StringIO."
+    f.seek(0)
+    f.truncate(5)
+    print `f.getvalue()`
+    f.close()
+    try:
+        f.write("frobnitz")
+    except ValueError, e:
+        print "Caught expected ValueError writing to closed StringIO:"
+        print e
+    else:
+        print "Failed to catch ValueError writing to closed StringIO."
 
 # Don't bother testing cStringIO without
 import StringIO, cStringIO
