@@ -56,6 +56,15 @@ extern PyObject *PyFunction_GetGlobals Py_PROTO((PyObject *));
 extern PyObject *PyFunction_GetDefaults Py_PROTO((PyObject *));
 extern int PyFunction_SetDefaults Py_PROTO((PyObject *, PyObject *));
 
+/* Macros for direct access to these values. Type checks are *not*
+   done, so use with care. */
+#define PyFunction_GET_CODE(func) \
+        (((PyFunctionObject *)func) -> func_code)
+#define PyFunction_GET_GLOBALS(func) \
+	(((PyFunctionObject *)func) -> func_globals)
+#define PyFunction_GET_DEFAULTS(func) \
+	(((PyFunctionObject *)func) -> func_defaults)
+
 #ifdef __cplusplus
 }
 #endif
