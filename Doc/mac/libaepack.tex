@@ -12,7 +12,7 @@
 The \module{aepack} module defines functions for converting (packing)
 Python variables to AppleEvent descriptors and back (unpacking).
 Within Python the AppleEvent descriptor is handled by Python objects
-of built-in type \class{AEDesc}, defined in module \refmodule{AE}.
+of built-in type \class{AEDesc}, defined in module \refmodule{Carbon.AE}.
 
 The \module{aepack} module defines the following functions:
 
@@ -38,7 +38,7 @@ Apple Event descriptor types is used, as follows:
  
 If \var{x} is a Python instance then this function attempts to call an
 \method{__aepack__()} method.  This method should return an
-\class{AE.AEDesc} object.
+\class{AEDesc} object.
 
 If the conversion \var{x} is not defined above, this function returns
 the Python string representation of a value (the repr() function)
