@@ -18,6 +18,8 @@ template = None
 
 def gettempdir():
     global tempdir
+    if tempdir is not None:
+	return tempdir
     attempdirs = ['/usr/tmp', '/tmp', os.getcwd(), os.curdir]
     if os.environ.has_key('TMPDIR'):
 	attempdirs.insert(0, os.environ['TMPDIR'])
