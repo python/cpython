@@ -257,8 +257,34 @@ test_longlong_api(PyObject* self, PyObject* args)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
+static PyObject *
+raise_exception(PyObject *self, PyObject *args)
+{
+	PyObject *exc;
+	PyObject *exc_args, *v;
+	int num_args, i;
+
+	if (!PyArg_ParseTuple(args, "Oi:raise_exception",
+			      &exc, &num_args))
+		return NULL;
+
+	exc_args = PyTuple_New(num_args);
+	if (exc_args == NULL)
+		return NULL;
+	for (i = 0; i < num_args; ++i) {
+		v = PyInt_FromLong(i);
+		if (v == NULL) {
+			Py_DECREF(exc_args);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(exc_args, i, v);
+	}
+	PyErr_SetObject(exc, exc_args);
+	return NULL;
+}
 
 static PyMethodDef TestMethods[] = {
+	{"raise_exception",	raise_exception,	METH_VARARGS},
 	{"test_config",		test_config,		METH_VARARGS},
 	{"test_list_api",	test_list_api,		METH_VARARGS},
 	{"test_dict_iteration",	test_dict_iteration,	METH_VARARGS},
