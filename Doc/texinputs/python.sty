@@ -15,16 +15,14 @@
 % for PDF output, use maximal compression & a lot of other stuff
 % (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
 %
-\newif\if@doing@page@targets
-\@doing@page@targetsfalse
+\newif\ifpy@doing@page@targets
+\py@doing@page@targetsfalse
 
 \ifx\pdfoutput\undefined\else\ifcase\pdfoutput
-  \let\LinkColor=\relax
-  \let\NormalColor=\relax
 \else
   \input{pdfcolor}
-  \let\LinkColor=\NavyBlue
-  \let\NormalColor=\Black
+  \let\py@LinkColor=\NavyBlue
+  \let\py@NormalColor=\Black
   \pdfcompresslevel=9
   %
   % Pad the number with '0' to 3 digits wide so no page name is a prefix
@@ -36,14 +34,14 @@
   % This definition allows the entries in the page-view of the ToC to be
   % active links.  Some work, some don't.
   %
-  \let\OldContentsline=\contentsline
+  \let\py@OldContentsline=\contentsline
   % Compute the padded page number separately since we end up with a pair of
   % \relax tokens; this gets the right string computed and works.
   \renewcommand{\contentsline}[3]{%
     \def\my@pageno{\py@targetno{#3}}%
-    \OldContentsline{#1}{%
+    \py@OldContentsline{#1}{%
       \pdfannotlink attr{/Border [0 0 0]} goto name{page\my@pageno}%
-        \LinkColor#2\NormalColor%
+        \py@LinkColor#2\py@NormalColor%
       \pdfendlink%
     }{#3}%
   }
@@ -55,13 +53,13 @@
     \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
   }
   \newcommand{\py@target}[1]{%
-    \if@doing@page@targets%
+    \ifpy@doing@page@targets%
       {\pdfdest name{#1} fit}%
     \fi%
   }
-  \let\OldLabel=\label
+  \let\py@OldLabel=\label
   \renewcommand{\label}[1]{%
-    \OldLabel{#1}%
+    \py@OldLabel{#1}%
     \py@target{label-#1}%
   }
   % This stuff adds a page# destination to every PDF page, where # has
@@ -112,7 +110,7 @@
 \raggedbottom
 \sloppy
 \parindent = 0mm
-\parskip =   2mm
+\parskip = 2mm
 \hbadness = 5000		% don't print trivial gripes
 
 \pagestyle{empty}		% start this way; change for
@@ -120,16 +118,16 @@
 \setcounter{secnumdepth}{1}
 
 % Use this to set the font family for headers and other decor:
-\newcommand{\HeaderFamily}{\sffamily}
+\newcommand{\py@HeaderFamily}{\sffamily}
 
 % Redefine the 'normal' header/footer style when using "fancyhdr" package:
 \@ifundefined{fancyhf}{}{
   % Use \pagestyle{normal} as the primary pagestyle for text.
   \fancypagestyle{normal}{
     \fancyhf{}
-    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}
-    \fancyfoot[LO]{{\HeaderFamily\nouppercase{\rightmark}}}
-    \fancyfoot[RE]{{\HeaderFamily\nouppercase{\leftmark}}}
+    \fancyfoot[LE,RO]{{\py@HeaderFamily\thepage}}
+    \fancyfoot[LO]{{\py@HeaderFamily\nouppercase{\rightmark}}}
+    \fancyfoot[RE]{{\py@HeaderFamily\nouppercase{\leftmark}}}
     \renewcommand{\headrulewidth}{0pt}
     \renewcommand{\footrulewidth}{0.4pt}
   }
@@ -138,7 +136,7 @@
   % page of a chapter and the blank page between chapters `clean.'
   \fancypagestyle{plain}{
     \fancyhf{}
-    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}
+    \fancyfoot[LE,RO]{{\py@HeaderFamily\thepage}}
     \renewcommand{\headrulewidth}{0pt}
     \renewcommand{\footrulewidth}{0.4pt}
   }
@@ -156,49 +154,41 @@
   }
 }
 
-% old code font selections:
-\let\codefont=\tt
-\let\sectcodefont=\tt
-
-% (Haven't found a new one that gets <, >, and _ right without being
-% monospaced.)
-
-
 % This sets up the {verbatim} environment to be indented and a minipage,
 % and to have all the other mostly nice properties that we want for
 % code samples.
 
 % Variable used by begin code command
-\newlength{\codewidth}
+\newlength{\py@codewidth}
 
-\newcommand{\examplevspace}{2mm}
-\newcommand{\exampleindent}{1cm}
+\newcommand{\py@examplevspace}{2mm}
+\newcommand{\py@exampleindent}{1cm}
 
-\let\OldVerbatim=\verbatim
-\let\OldEndVerbatim=\endverbatim
+\let\py@OldVerbatim=\verbatim
+\let\py@OldEndVerbatim=\endverbatim
 \renewcommand{\verbatim}{%
   \begingroup%
-  \setlength{\parindent}\exampleindent%
+  \setlength{\parindent}\py@exampleindent%
   % Calculate the text width for the minipage:
-  \setlength{\codewidth}{\linewidth}%
-  \addtolength{\codewidth}{-\parindent}%
+  \setlength{\py@codewidth}{\linewidth}%
+  \addtolength{\py@codewidth}{-\parindent}%
   %
   \par%
-  \vspace\examplevspace%
+  \vspace\py@examplevspace%
   \indent%
-  \begin{minipage}[t]{\codewidth}%
+  \begin{minipage}[t]{\py@codewidth}%
     \small%
-    \OldVerbatim%
+    \py@OldVerbatim%
 }
 \renewcommand{\endverbatim}{%
-    \OldEndVerbatim%
+    \py@OldEndVerbatim%
   \end{minipage}%
   \endgroup%
 }
 
 \newcommand{\reset@python}{
-  \global\let\@thisclass=\@undefined
-  \global\let\@thismodule=\@undefined
+  \global\let\py@thisclass=\@undefined
+  \global\let\py@thismodule=\@undefined
 }
 \reset@python
 
@@ -206,25 +196,25 @@
 % and reset some internal data items:
 \renewcommand{\section}{\reset@python%
                         \@startsection{section}{1}{\z@}%
-                                       {-3.5ex \@plus -1ex \@minus -.2ex}%
-                                       {2.3ex \@plus.2ex}%
-                                       {\reset@font\Large\HeaderFamily}}
+                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                    {2.3ex \@plus.2ex}%
+                                    {\reset@font\Large\py@HeaderFamily}}
 \renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
-                                       {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                       {1.5ex \@plus .2ex}%
-                                       {\reset@font\large\HeaderFamily}}
+                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                    {1.5ex \@plus .2ex}%
+                                    {\reset@font\large\py@HeaderFamily}}
 \renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
-                                       {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                       {1.5ex \@plus .2ex}%
-                                       {\reset@font\normalsize\HeaderFamily}}
+                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                    {1.5ex \@plus .2ex}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
 \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
-                                       {3.25ex \@plus1ex \@minus.2ex}%
-                                       {-1em}%
-                                       {\reset@font\normalsize\HeaderFamily}}
+                                    {3.25ex \@plus1ex \@minus.2ex}%
+                                    {-1em}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
 \renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
-                                       {3.25ex \@plus1ex \@minus .2ex}%
-                                       {-1em}%
-                                       {\reset@font\normalsize\HeaderFamily}}
+                                    {3.25ex \@plus1ex \@minus .2ex}%
+                                    {-1em}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
 
 
 % Underscore hack (only act like subscript operator if in math mode)
@@ -250,8 +240,8 @@
 % just keep the index entries in the roman font, uncomment the second
 % definition to use instead; it matches O'Reilly style more.
 %
-\newcommand{\idxcode}[1]{\codefont{#1}}
-%\renewcommand{\idxcode}[1]{#1}
+\newcommand{\py@idxcode}[1]{\texttt{#1}}
+%\renewcommand{\py@idxcode}[1]{#1}
 
 % Command to generate two index entries (using subentries)
 \newcommand{\indexii}[2]{\index{#1!#2}\index{#2!#1}}
@@ -269,51 +259,51 @@
 
 % Command to generate a reference to a function, statement, keyword,
 % operator.
-\newcommand{\stindex}[1]{\indexii{statement}{#1@{\idxcode{#1}}}}
-\newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
-\newcommand{\exindex}[1]{\indexii{exception}{#1@{\idxcode{#1}}}}
+\newcommand{\stindex}[1]{\indexii{statement}{#1@{\py@idxcode{#1}}}}
+\newcommand{\opindex}[1]{\indexii{operator}{#1@{\py@idxcode{#1}}}}
+\newcommand{\exindex}[1]{\indexii{exception}{#1@{\py@idxcode{#1}}}}
 \newcommand{\obindex}[1]{\indexii{object}{#1}}
 \newcommand{\bifuncindex}[1]{\withsubitem{(built-in function)}{\ttindex{#1()}}}
 
 % Add an index entry for a module
-\newcommand{\refmodule}[2]{\index{#1@{\idxcode{#1}} (#2module)}}
-\newcommand{\refmodindex}[1]{\refmodule{#1}{}}
-\newcommand{\refbimodindex}[1]{\refmodule{#1}{built-in }}
-\newcommand{\refexmodindex}[1]{\refmodule{#1}{extension }}
-\newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
+\newcommand{\py@refmodule}[2]{\index{#1@{\py@idxcode{#1}} (#2module)}}
+\newcommand{\refmodindex}[1]{\py@refmodule{#1}{}}
+\newcommand{\refbimodindex}[1]{\py@refmodule{#1}{built-in }}
+\newcommand{\refexmodindex}[1]{\py@refmodule{#1}{extension }}
+\newcommand{\refstmodindex}[1]{\py@refmodule{#1}{standard }}
 
 % support for the module index
-\newif\if@UseModuleIndex
-\@UseModuleIndexfalse
+\newif\ifpy@UseModuleIndex
+\py@UseModuleIndexfalse
 
 \newcommand{\makemodindex}{
   \newwrite\modindexfile
   \openout\modindexfile=mod\jobname.idx
-  \@UseModuleIndextrue
+  \py@UseModuleIndextrue
 }
 
 % Add the defining entry for a module
-\newcommand{\@modindex}[2]{%
-  \global\def\@thismodule{#1}
+\newcommand{\py@modindex}[2]{%
+  \global\def\py@thismodule{#1}
   \setindexsubitem{(in module #1)}%
-  \index{#1@{\idxcode{#1}} (#2module)|textbf}%
-  \if@UseModuleIndex%
+  \index{#1@{\py@idxcode{#1}} (#2module)|textbf}%
+  \ifpy@UseModuleIndex%
     \write\modindexfile{\protect\indexentry{#1@{\tt #1}}{\thepage}}%
   \fi%
 }
 
 % built-in & Python modules in the main distribution
-\newcommand{\bimodindex}[1]{\@modindex{#1}{built-in }}
-\newcommand{\stmodindex}[1]{\@modindex{#1}{standard }}
+\newcommand{\bimodindex}[1]{\py@modindex{#1}{built-in }}
+\newcommand{\stmodindex}[1]{\py@modindex{#1}{standard }}
 
 % Python & extension modules outside the main distribution
-\newcommand{\modindex}[1]{\@modindex{#1}{}}
-\newcommand{\exmodindex}[1]{\@modindex{#1}{extension }}
+\newcommand{\modindex}[1]{\py@modindex{#1}{}}
+\newcommand{\exmodindex}[1]{\py@modindex{#1}{extension }}
 
 % Additional string for an index entry
 \newcommand{\index@subitem}{}
 \newcommand{\setindexsubitem}[1]{\renewcommand{\index@subitem}{#1}}
-\newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \index@subitem}}
+\newcommand{\ttindex}[1]{\index{#1@{\py@idxcode{#1}} \index@subitem}}
 
 \newcommand{\withsubitem}[2]{%
   \begingroup%
@@ -340,6 +330,18 @@
 % \optional is mostly for use in the arguments parameters to the various
 % {*desc} environments defined below, but may be used elsewhere.  Known to
 % be used in the debugger chapter.
+%
+% Typical usage:
+%
+%     \begin{funcdesc}{myfunc}{reqparm\optional{, optparm}}
+%                                    ^^^       ^^^
+%                          No space here       No space here
+%
+% When a function has multiple optional parameters, \optional should be
+% nested, not chained.  This is right:
+%
+%     \begin{funcdesc}{myfunc}{\optional{parm1\optional{, parm2}}}
+%
 \newcommand{\optional}[1]{%
   {\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
 
@@ -347,14 +349,14 @@
 % \begin{cfuncdesc}{type}{name}{arglist}
 \newenvironment{cfuncdesc}[3]{
   \begin{fulllineitems}
-    \item[\code{#1 \bfcode{#2}(\py@varvars{#3})}\index{#2@{\idxcode{#2()}}}]
+    \item[\code{#1 \bfcode{#2}(\py@varvars{#3})}\index{#2@{\py@idxcode{#2()}}}]
 }{\end{fulllineitems}}
 
 % C variables ------------------------------------------------------------
 % \begin{cvardesc}{type}{name}
 \newenvironment{cvardesc}[2]{
   \begin{fulllineitems}
-    \item[\code{#1 \bfcode{#2}}\index{#2@{\idxcode{#2}}}]
+    \item[\code{#1 \bfcode{#2}}\index{#2@{\py@idxcode{#2}}}]
 }{\end{fulllineitems}}
 
 % C data types -----------------------------------------------------------
@@ -382,71 +384,69 @@
 % classes ----------------------------------------------------------------
 % \begin{classdesc}{name}{constructor args}
 \newenvironment{classdesc}[2]{
-  \global\def\@thisclass{#1}
+  \global\def\py@thisclass{#1}
   \begin{fulllineitems}
     \item[\code{\bfcode{#1}(\py@varvars{#2})}%
-      \withsubitem{(class in \@thismodule)}{\ttindex{#1}}]
-    \def\baseclasses##1{}
+      \withsubitem{(class in \py@thismodule)}{\ttindex{#1}}]
 }{\end{fulllineitems}}
 
 
-\newcommand{\@classbadkey}{--bad current class--}
-\let\@classbadkey=\@undefined
+\let\py@classbadkey=\@undefined
 
 % object method ----------------------------------------------------------
 % \begin{methoddesc}[classname]{methodname}{args}
-\newcommand{\methodline}[3][\@classbadkey]{
+\newcommand{\methodline}[3][\py@classbadkey]{
   \methodlineni{#2}{#3}
   \ifx#1\@undefined
-    \withsubitem{(\@thisclass\ method)}{\ttindex{#2()}}
+    \withsubitem{(\py@thisclass\ method)}{\ttindex{#2()}}
   \else
     \withsubitem{(#1 method)}{\ttindex{#2()}}
   \fi
 }
-\newenvironment{methoddesc}[3][\@classbadkey]{
+\newenvironment{methoddesc}[3][\py@classbadkey]{
   \begin{fulllineitems}
     \ifx#1\@undefined
       \methodline{#2}{#3}
     \else
-      \def\@thisclass{#1}
+      \def\py@thisclass{#1}
       \methodline[#1]{#2}{#3}
     \fi
 }{\end{fulllineitems}}
 
 % similar to {methoddesc}, but doesn't add to the index
 % (never actually uses the optional argument)
-\newcommand{\methodlineni}[3][\@classbadkey]{%
+\newcommand{\methodlineni}[3][\py@classbadkey]{%
   \item[\code{\bfcode{#2}(\py@varvars{#3})}]}
-\newenvironment{methoddescni}[3][\@classbadkey]{
+\newenvironment{methoddescni}[3][\py@classbadkey]{
   \begin{fulllineitems}
     \methodlineni{#2}{#3}
 }{\end{fulllineitems}}
 
 % object data attribute --------------------------------------------------
 % \begin{memberdesc}[classname]{membername}
-\newcommand{\memberline}[2][\@classbadkey]{%
+\newcommand{\memberline}[2][\py@classbadkey]{%
   \ifx#1\@undefined
     \memberlineni{#2}
-    \withsubitem{(\@thisclass\ attribute)}{\ttindex{#2}}
+    \withsubitem{(\py@thisclass\ attribute)}{\ttindex{#2}}
   \else
     \memberlineni{#2}
     \withsubitem{(#1 attribute)}{\ttindex{#2}}
   \fi
 }
-\newenvironment{memberdesc}[2][\@classbadkey]{
+\newenvironment{memberdesc}[2][\py@classbadkey]{
   \begin{fulllineitems}
     \ifx#1\@undefined
       \memberline{#2}
     \else
-      \def\@thisclass{#1}
+      \def\py@thisclass{#1}
       \memberline[#1]{#2}
     \fi
 }{\end{fulllineitems}}
 
 % similar to {memberdesc}, but doesn't add to the index
 % (never actually uses the optional argument)
-\newcommand{\memberlineni}[2][\@classbadkey]{\item[\bfcode{#2}]}
-\newenvironment{memberdescni}[2][\@classbadkey]{
+\newcommand{\memberlineni}[2][\py@classbadkey]{\item[\bfcode{#2}]}
+\newenvironment{memberdescni}[2][\py@classbadkey]{
   \begin{fulllineitems}
     \memberlineni{#2}
 }{\end{fulllineitems}}
@@ -483,9 +483,7 @@
 }{\end{fulllineitems}}
 
 
-\let\nodename=\label
-
-\newcommand{\sectcode}[1]{{\sectcodefont{#1}}}
+\newcommand{\nodename}[1]{\label{#1}}
 
 % For these commands, use \command{} to get the typography right, not 
 % {\command}.  This works better with the texinfo translation.
@@ -496,23 +494,22 @@
 \newcommand{\Cpp}{C\protect\raisebox{.18ex}{++}}
 \newcommand{\C}{C}
 \newcommand{\EOF}{{\sc eof}}
-\newcommand{\NULL}{\sectcode{NULL}}
+\newcommand{\NULL}{\constant{NULL}}
 
 % Also for consistency: spell Python "Python", not "python"!
 
 % code is the most difficult one...
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
-\mbox{\codefont{#1}}}}
+\texttt{#1}}}
 
 \newcommand{\bfcode}[1]{\code{\bfseries#1}} % bold-faced code font
-\newcommand{\kbd}[1]{\mbox{\tt #1}}
-\newcommand{\key}[1]{\mbox{\tt #1}}
-\newcommand{\samp}[1]{\mbox{`\code{#1}'}}
+\newcommand{\kbd}[1]{\tt #1}
+\newcommand{\samp}[1]{`\code{#1}'}
 % This weird definition of \var{} allows it to always appear in roman
 % italics, and won't get funky in code fragments when we play around
 % with fonts.
-\newcommand{\var}[1]{\mbox{\normalsize\textrm{\textit{#1\/}}}}
-\renewcommand{\emph}[1]{{\em #1\/}}
+\newcommand{\var}[1]{\normalsize\textrm{\textit{#1\/}}}
+\renewcommand{\emph}[1]{{\em #1}}
 \newcommand{\dfn}[1]{\emph{#1}}
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
@@ -525,9 +522,9 @@
 }{
   \newcommand{\py@url}[1]{{%
     \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
-    \LinkColor%				color of the link text
-    {\small\textsf{#1}}%
-    \NormalColor%			Turn it back off; these are declarative
+    \py@LinkColor%				color of the link text
+    \mbox{\small\textsf{#1}}%
+    \py@NormalColor%			Turn it back off; these are declarative
     \pdfendlink}%			and don't appear bound to the current
   }%					formatting "box".
 }
@@ -536,9 +533,11 @@
 \newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
 \newcommand{\py@varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
+% let's see if this breaks anything now; we may be able to simplify...
+\renewcommand{\py@varvars}[1]{\var{#1}}
 
+% I'd really like to get rid of this!
 \newif\iftexi\texifalse
-\newif\iflatex\latextrue
 
 % These should be used for all references to identifiers which are
 % used to refer to instances of specific language constructs.  See the
@@ -547,19 +546,19 @@
 % For now, don't do anything really fancy with them; just use them as
 % logical markup.  This might change in the future.
 %
-\let\module=\sectcode
-\let\keyword=\sectcode
-\let\exception=\sectcode
-\let\class=\sectcode
-\let\function=\sectcode
-\let\member=\sectcode
-\let\method=\sectcode
+\newcommand{\module}[1]{\texttt{#1}}
+\newcommand{\keyword}[1]{\texttt{#1}}
+\newcommand{\exception}[1]{\texttt{#1}}
+\newcommand{\class}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1}}
+\newcommand{\member}[1]{\texttt{#1}}
+\newcommand{\method}[1]{\texttt{#1}}
 
 \newcommand{\pytype}[1]{#1}		% built-in Python type
 
-\let\cfunction=\sectcode
-\let\ctype=\sectcode
-\let\cdata=\sectcode
+\newcommand{\cfunction}[1]{\texttt{#1}}
+\newcommand{\ctype}[1]{\texttt{#1}}	% C struct or typedef name
+\newcommand{\cdata}[1]{\texttt{#1}}	% C variable, typically global
 
 \newcommand{\mimetype}[1]{{\small\textsf{#1}}}
 % The \! is a "negative thin space" in math mode.
@@ -573,11 +572,11 @@
   \index{#1@{\$#1}}%                    $
   \index{environment variables!{\$#1}}% $
 }
-\newcommand{\makevar}[1]{#1}
-\let\character=\samp
+\newcommand{\makevar}[1]{#1}		% variable in a Makefile
+\newcommand{\character}[1]{\samp{#1}}
 
 % constants defined in Python modules or C headers, not language constants:
-\let\constant=\sectcode
+\newcommand{\constant}[1]{\code{#1}}	% manifest constant, not syntactic
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
@@ -593,8 +592,7 @@
 %
 % Example:
 %
-%  \deprecated {1.5.1}
-%    {Use \method{frobnicate()} instead.}
+%  \deprecated{1.5.1}{Use \method{frobnicate()} instead.}
 %
 \newcommand{\deprecated}[2]{%
   \strong{Deprecated since release #1.}  #2\par}
@@ -623,7 +621,7 @@
   \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
 }
 
-% Cross-referencing (AMK)
+% Cross-referencing (AMK, new impl. FLD)
 % Sample usage:
 %  \begin{seealso}
 %    \seemodule{rand}{Uniform random number generator}; % Module xref
@@ -634,20 +632,20 @@
 %
 %  \end{seealso}
 
-\newcommand{\@modulebadkey}{{--just-some-junk--}}
+\newcommand{\py@modulebadkey}{{--just-some-junk--}}
 
 \@ifundefined{pdfannotlink}{%
-  \newcommand{\seemodule}[3][\@modulebadkey]{%
-    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
-    \ref{module-\@modulekey}:\quad %
+  \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
+    \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
+    \ref{module-\py@modulekey}:\quad %
     Module \module{#2}%
     \quad (#3)%
   }
-}{\newcommand{\seemodule}[3][\@modulebadkey]{%
-    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
-    \ref{module-\@modulekey}:\quad %
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\@modulekey}%
-     \LinkColor Module \module{#2} \NormalColor%
+}{\newcommand{\py@seemodule}[3][\py@modulebadkey]{%
+    \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
+    \ref{module-\py@modulekey}:\quad %
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\py@modulekey}%
+     \py@LinkColor Module \module{#2} \py@NormalColor%
      \pdfendlink%
     }%
     \quad (#3)%
@@ -656,6 +654,7 @@
 \newenvironment{seealso}[0]{
   \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
+  \let\seemodule=\py@seemodule
 }{\par}
 
 
@@ -663,27 +662,27 @@
 % \date{}.  This allows the date to reflect the document's date and
 % release to specify the Python release that is documented.
 %
-\newcommand{\@release}{}
+\newcommand{\py@release}{}
 \newcommand{\version}{}
 \newcommand{\releasename}{Release}
 \newcommand{\release}[1]{%
-  \renewcommand{\@release}{\releasename\space\version}%
+  \renewcommand{\py@release}{\releasename\space\version}%
   \renewcommand{\version}{#1}}
 
 % Allow specification of the author's address separately from the
 % author's name.  This can be used to format them differently, which
 % is a good thing.
 %
-\newcommand{\@authoraddress}{}
-\newcommand{\authoraddress}[1]{\renewcommand{\@authoraddress}{#1}}
+\newcommand{\py@authoraddress}{}
+\newcommand{\authoraddress}[1]{\renewcommand{\py@authoraddress}{#1}}
 
 % This sets up the fancy chapter headings that make the documents look
 % at least a little better than the usual LaTeX output.
 %
 \@ifundefined{ChTitleVar}{}{
-  \ChNameVar{\raggedleft\normalsize\HeaderFamily}
-  \ChNumVar{\raggedleft \bfseries\Large\HeaderFamily}
-  \ChTitleVar{\raggedleft \rm\Huge\HeaderFamily}
+  \ChNameVar{\raggedleft\normalsize\py@HeaderFamily}
+  \ChNumVar{\raggedleft \bfseries\Large\py@HeaderFamily}
+  \ChTitleVar{\raggedleft \rm\Huge\py@HeaderFamily}
   % This creates chapter heads without the leading \vspace*{}:
   \def\@makechapterhead#1{%
     {\parindent \z@ \raggedright \normalfont
