@@ -303,8 +303,8 @@ platform: $(BUILDPYTHON)
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
 	case $$MAKEFLAGS in \
-	*-s*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
-	*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
+	*-s*) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
+	*) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
 
 # buildno should really depend on something like LIBRARY_SRC
