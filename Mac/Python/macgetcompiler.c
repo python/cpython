@@ -33,10 +33,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 
-#ifdef THINK_C
-#define COMPILER " [THINK C]"
-#endif
-
 #ifdef __MWERKS__
 #ifdef USE_GUSI1
 #define HASGUSI " w/GUSI1"
@@ -54,13 +50,19 @@ PERFORMANCE OF THIS SOFTWARE.
 #define HASTHREAD ""
 #endif
 
+#ifdef TARGET_API_MAC_CARBON
+#define TARGET_API " CARBON"
+#else
+#define TARGET_API ""
+#endif
+
 #ifdef __powerc
-#define COMPILER " [CW PPC" HASGUSI HASTHREAD"]"
+#define COMPILER " [CW PPC" TARGET_API HASGUSI HASTHREAD"]"
 #else
 #ifdef __CFM68K__
-#define COMPILER " [CW CFM68K" HASGUSI HASTHREAD"]"
+#define COMPILER " [CW CFM68K" TARGET_API HASGUSI HASTHREAD"]"
 #else
-#define COMPILER " [CW 68K" HASGUSI HASTHREAD"]"
+#define COMPILER " [CW 68K" TARGET_API HASGUSI HASTHREAD"]"
 #endif
 #endif
 #endif
