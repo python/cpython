@@ -966,6 +966,11 @@ string_repeat(register PyStringObject *a, register int n)
 	PyObject_INIT_VAR(op, &PyString_Type, size);
 	op->ob_shash = -1;
 	op->ob_sstate = SSTATE_NOT_INTERNED;
+	op->ob_sval[size] = '\0';
+	if (a->ob_size == 1 && n > 0) {
+		memset(op->ob_sval, a->ob_sval[0] , n);
+		return (PyObject *) op;
+	}
 	i = 0;
 	if (i < size) {
 		memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
@@ -976,7 +981,6 @@ string_repeat(register PyStringObject *a, register int n)
 		memcpy(op->ob_sval+i, op->ob_sval, j);
 		i += j;
 	}
-	op->ob_sval[size] = '\0';
 	return (PyObject *) op;
 }
 
