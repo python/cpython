@@ -782,6 +782,7 @@ parsenumber(co, s)
 	extern double atof PROTO((const char *));
 	char *end;
 	long x;
+	double dx;
 #ifndef WITHOUT_COMPLEX
 	Py_complex c;
 	int imflag;
@@ -810,12 +811,18 @@ parsenumber(co, s)
 #ifndef WITHOUT_COMPLEX
 	if (imflag) {
 		c.real = 0.;
+		PyFPE_START_PROTECT("atof", return 0)
 		c.imag = atof(s);
+		PyFPE_END_PROTECT
 		return newcomplexobject(c);
 	}
-	else
+	else {
 #endif
-		return newfloatobject(atof(s));
+		PyFPE_START_PROTECT("atof", return 0)
+		dx = atof(s);
+		PyFPE_END_PROTECT
+		return newfloatobject(dx);
+	}
 }
 
 static object *

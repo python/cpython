@@ -41,7 +41,7 @@ OBJS=		\
 		getplatform.o getversion.o graminit.o \
 		import.o importdl.o \
 		marshal.o modsupport.o mystrtoul.o \
-		pythonrun.o \
+		pyfpe.o pythonrun.o \
 		sigcheck.o structmember.o sysmodule.o \
 		traceback.o \
 		$(LIBOBJS)
@@ -107,6 +107,7 @@ marshal.o: marshal.c
 memmove.o: memmove.c
 modsupport.o: modsupport.c
 mystrtoul.o: mystrtoul.c
+pyfpe.o: pyfpe.c
 pythonrun.o: pythonrun.c
 sigcheck.o: sigcheck.c
 strerror.o: strerror.c

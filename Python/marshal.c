@@ -412,6 +412,7 @@ r_object(p)
 		{
 			extern double atof PROTO((const char *));
 			char buf[256];
+			double dx;
 			n = r_byte(p);
 			if (r_string(buf, (int)n, p) != n) {
 				err_setstr(EOFError,
@@ -419,7 +420,10 @@ r_object(p)
 				return NULL;
 			}
 			buf[n] = '\0';
-			return newfloatobject(atof(buf));
+			PyFPE_START_PROTECT("atof", return 0)
+			dx = atof(buf);
+			PyFPE_END_PROTECT
+			return newfloatobject(dx);
 		}
 	
 #ifndef WITHOUT_COMPLEX
@@ -435,7 +439,9 @@ r_object(p)
 				return NULL;
 			}
 			buf[n] = '\0';
+			PyFPE_START_PROTECT("atof", return 0)
 			c.real = atof(buf);
+			PyFPE_END_PROTECT
 			n = r_byte(p);
 			if (r_string(buf, (int)n, p) != n) {
 				err_setstr(EOFError,
@@ -443,7 +449,9 @@ r_object(p)
 				return NULL;
 			}
 			buf[n] = '\0';
+			PyFPE_START_PROTECT("atof", return 0)
 			c.imag = atof(buf);
+			PyFPE_END_PROTECT
 			return newcomplexobject(c);
 		}
 #endif
