@@ -101,7 +101,7 @@ class PyncheWidget:
         return self.__root
 
     def __popup_about(self, event=None):
-        from pynche import __version__
+        from Main import __version__
         tkMessageBox.showinfo('About Pynche ' + __version__,
                               '''\
 Pynche %s
