@@ -117,8 +117,17 @@ class build_py (Command):
                     tail.insert (0, pdir)
                     return apply (os.path.join, tail)
             else:
-                # arg! everything failed, we might as well have not even
-                # looked in package_dir -- oh well
+                # Oops, got all the way through 'path' without finding a
+                # match in package_dir.  If package_dir defines a directory
+                # for the root (nameless) package, then fallback on it;
+                # otherwise, we might as well have not consulted
+                # package_dir at all, as we just use the directory implied
+                # by 'tail' (which should be the same as the original value
+                # of 'path' at this point).
+                pdir = self.package_dir.get('')
+                if pdir is not None:
+                    tail.insert(0, pdir)
+
                 if tail:
                     return apply (os.path.join, tail)
                 else:
@@ -145,9 +154,16 @@ class build_py (Command):
         # Require __init__.py for all but the "root package"
         if package:
             init_py = os.path.join (package_dir, "__init__.py")
-            if not os.path.isfile (init_py):
+            if os.path.isfile (init_py):
+                return init_py
+            else:
                 self.warn (("package init file '%s' not found " +
                             "(or not a regular file)") % init_py)
+
+        # Either not in a package at all (__init__.py not expected), or
+        # __init__.py doesn't exist -- so don't return the filename.
+        return
+                
     # check_package ()
 
 
@@ -177,6 +193,15 @@ class build_py (Command):
 
 
     def find_modules (self):
+        """Finds individually-specified Python modules, ie. those listed by
+        module name in 'self.modules'.  Returns a list of tuples (package,
+        module_base, filename): 'package' is a tuple of the path through
+        package-space to the module; 'module_base' is the bare (no
+        packages, no dots) module name, and 'filename' is the path to the
+        ".py" file (relative to the distribution root) that implements the
+        module.
+        """
+
         # Map package names to tuples of useful info about the package:
         #    (package_dir, checked)
         # package_dir - the directory where we'll find source files for
@@ -185,7 +210,7 @@ class build_py (Command):
         #   is valid (exists, contains __init__.py, ... ?)
         packages = {}
 
-        # List of (module, package, filename) tuples to return
+        # List of (package, module, filename) tuples to return
         modules = []
 
         # We treat modules-in-packages almost the same as toplevel modules,
@@ -205,8 +230,10 @@ class build_py (Command):
                 checked = 0
 
             if not checked:
-                self.check_package (package, package_dir)
+                init_py = self.check_package (package, package_dir)
                 packages[package] = (package_dir, 1)
+                if init_py:
+                    modules.append((package, "__init__", init_py))
 
             # XXX perhaps we should also check for just .pyc files
             # (so greedy closed-source bastards can distribute Python
@@ -215,7 +242,7 @@ class build_py (Command):
             if not self.check_module (module, module_file):
                 continue
 
-            modules.append ((package, module, module_file))
+            modules.append ((package, module_base, module_file))
 
         return modules
 
