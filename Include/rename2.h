@@ -92,6 +92,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define KeyboardInterrupt PyExc_KeyboardInterrupt
 #define SystemExit PyExc_SystemExit
 #define Floattype PyFloat_Type
+#define Complextype PyComplex_Type
 #define Inttype PyInt_Type
 #define Longtype PyLong_Type
 #define Notype PyNothing_Type
@@ -112,6 +113,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define Frametype PyFrame_Type
 #define Rangetype PyRange_Type
 #define floatobject PyFloatObject
+#define complexobject PyComplexObject
 #define intobject PyIntObject
 #define longobject PyLongObject
 #define noobject PyNothingObject
@@ -150,6 +152,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define END_SAVE Py_END_ALLOW_THREADS
 #define callable PyCallable_Check
 #define is_floatobject PyFloat_Check
+#define is_complexobject PyComplex_Check
 #define is_intobject PyInt_Check
 #define is_longobject PyLong_Check
 #define is_stringobject PyString_Check
@@ -193,6 +196,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define getfloatvalue PyFloat_AsDouble
 #define GETFLOATVALUE PyFloat_AS_DOUBLE
 #define newfloatobject PyFloat_FromDouble
+#define newcomplexobject PyComplex_FromCComplex
 #define getintvalue PyInt_AsLong
 #define GETINTVALUE PyInt_AS_LONG
 #define getmaxint PyInt_GetMax
