@@ -428,6 +428,11 @@ class BaseTest(unittest.TestCase):
         )
 
         self.assertEqual(
+            a[2:1],
+            array.array(self.typecode)
+        )
+
+        self.assertEqual(
             a[1000:],
             array.array(self.typecode)
         )
