@@ -290,19 +290,31 @@ float_divmod(v, w)
 }
 
 static object *
-float_pow(v, w)
+float_pow(v, w, z)
 	floatobject *v;
 	floatobject *w;
+	floatobject *z;
 {
 	double iv, iw, ix;
 	iv = v->ob_fval;
 	iw = w->ob_fval;
+ /* XXX Doesn't handle overflows if z!=None yet; it may never do so :(
+  * The z parameter is really only going to be useful for integers and
+  * long integers.  Maybe something clever with logarithms could be done.
+  * [AMK]
+  */
 	/* Sort out special cases here instead of relying on pow() */
-	if (iw == 0.0)
-		return newfloatobject(1.0); /* x**0 is 1, even 0**0 */
+	if (iw == 0.0) { 		/* x**0 is 1, even 0**0 */
+	 	if ((object *)z!=None) {
+		 	ix=fmod(1.0, z->ob_fval);
+		 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
+		}
+	 	else ix=1.0;
+    		return newfloatobject(ix); 
+	}
 	if (iv == 0.0) {
 		if (iw < 0.0) {
-			err_setstr(ValueError, "0.0 to the negative power");
+			err_setstr(ValueError, "0.0 to a negative power");
 			return NULL;
 		}
 		return newfloatobject(0.0);
@@ -318,6 +330,13 @@ float_pow(v, w)
 		/* XXX could it be another type of error? */
 		err_errno(OverflowError);
 		return NULL;
+	}
+ 	if ((object *)z!=None) {
+	 	ix=fmod(ix, z->ob_fval);	/* XXX To Be Rewritten */
+	 	if ( ix!=0 &&
+		      ((iv<0 && z->ob_fval>0) || (iv>0 && z->ob_fval<0) )) {
+		     ix+=z->ob_fval;
+		    }
 	}
 	return newfloatobject(ix);
 }
@@ -407,7 +426,7 @@ static number_methods float_as_number = {
 	(binaryfunc)float_div, /*nb_divide*/
 	(binaryfunc)float_rem, /*nb_remainder*/
 	(binaryfunc)float_divmod, /*nb_divmod*/
-	(binaryfunc)float_pow, /*nb_power*/
+	(ternaryfunc)float_pow, /*nb_power*/
 	(unaryfunc)float_neg, /*nb_negative*/
 	(unaryfunc)float_pos, /*nb_positive*/
 	(unaryfunc)float_abs, /*nb_absolute*/
