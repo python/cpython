@@ -1876,11 +1876,15 @@ Return \code{1} if the object provides sequence protocol, and
 \code{0} otherwise.  This function always succeeds.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_Length}{PyObject *o}
+\begin{cfuncdesc}{int}{PySequence_Size}{PyObject *o}
 Returns the number of objects in sequence \var{o} on success, and
 \code{-1} on failure.  For objects that do not provide sequence
 protocol, this is equivalent to the Python expression
 \samp{len(\var{o})}.\bifuncindex{len}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_Length}{PyObject *o}
+Alternate name for \cfunction{PySequence_Size()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Concat}{PyObject *o1, PyObject *o2}
