@@ -238,9 +238,9 @@ def dict_constructor():
             return iter([self.first, self.last])
 
     d = dict([AddressBookEntry('Tim', 'Warsaw'),
-                    AddressBookEntry('Barry', 'Peters'),
-                    AddressBookEntry('Tim', 'Peters'),
-                    AddressBookEntry('Barry', 'Warsaw')])
+              AddressBookEntry('Barry', 'Peters'),
+              AddressBookEntry('Tim', 'Peters'),
+              AddressBookEntry('Barry', 'Warsaw')])
     vereq(d, {'Barry': 'Warsaw', 'Tim': 'Peters'})
 
     d = dict(zip(range(4), range(1, 5)))
