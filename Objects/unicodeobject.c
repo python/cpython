@@ -276,6 +276,7 @@ int PyUnicode_Resize(PyObject **unicode,
 	    return -1;
 	Py_UNICODE_COPY(w->str, v->str,
 			length < v->length ? length : v->length);
+	Py_DECREF(*unicode);
 	*unicode = (PyObject *)w;
 	return 0;
     }
