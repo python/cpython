@@ -123,6 +123,8 @@ EXTENSION_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":Extensions:Imaging:_imaging.ppc.µ",
 		":Extensions:Imaging:_imaging.CFM68K.µ",
+		":Extensions:Imaging:_tkinter.ppc.µ",
+		":Extensions:Imaging:_tkinter.CFM68K.µ",
 		":Extensions:NumPy:numpymodules.ppc.µ",
 		":Extensions:NumPy:numpymodules.CFM68K.µ",
 	])
