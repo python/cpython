@@ -1,6 +1,23 @@
 import test.test_support, unittest
 import sys, codecs, htmlentitydefs, unicodedata
 
+class PosReturn:
+    # this can be used for configurable callbacks
+
+    def __init__(self):
+        self.pos = 0
+
+    def handle(self, exc):
+        oldpos = self.pos
+        realpos = oldpos
+        if realpos<0:
+           realpos = len(exc.object) + realpos
+        # if we don't advance this time, terminate on the next call
+        # otherwise we'd get an endless loop
+        if realpos <= exc.start:
+            self.pos = len(exc.object)
+        return (u"<?>", oldpos)
+
 class CodecCallbackTest(unittest.TestCase):
 
     def test_xmlcharrefreplace(self):
@@ -543,18 +560,36 @@ class CodecCallbackTest(unittest.TestCase):
         codecs.register_error("test.baddecodereturn2", baddecodereturn2)
         self.assertRaises(TypeError, "\xff".decode, "ascii", "test.baddecodereturn2")
 
-        pos = [-42]
-        def negposreturn(exc):
-            pos[0] += 1 # use list to work around scoping problem
-            return (u"?", pos[0])
-        codecs.register_error("test.negposreturn", negposreturn)
-        "\xff".decode("ascii", "test.negposreturn")
+        handler = PosReturn()
+        codecs.register_error("test.posreturn", handler.handle)
 
-        def hugeposreturn(exc):
-            return (u"?", 424242)
-        codecs.register_error("test.hugeposreturn", hugeposreturn)
-        "\xff".decode("ascii", "test.hugeposreturn")
-        "\\uyyyy".decode("raw-unicode-escape", "test.hugeposreturn")
+        # Valid negative position
+        handler.pos = -1
+        self.assertEquals("\xff0".decode("ascii", "test.posreturn"), u"<?>0")
+
+        # Valid negative position
+        handler.pos = -2
+        self.assertEquals("\xff0".decode("ascii", "test.posreturn"), u"<?><?>")
+
+        # Negative position out of bounds
+        handler.pos = -3
+        self.assertRaises(IndexError, "\xff0".decode, "ascii", "test.posreturn")
+
+        # Valid positive position
+        handler.pos = 1
+        self.assertEquals("\xff0".decode("ascii", "test.posreturn"), u"<?>0")
+
+        # Largest valid positive position (one beyond end of input
+        handler.pos = 2
+        self.assertEquals("\xff0".decode("ascii", "test.posreturn"), u"<?>")
+
+        # Invalid positive position
+        handler.pos = 3
+        self.assertRaises(IndexError, "\xff0".decode, "ascii", "test.posreturn")
+
+        # Restart at the "0"
+        handler.pos = 6
+        self.assertEquals("\\uyyyy0".decode("raw-unicode-escape", "test.posreturn"), u"<?>0")
 
         class D(dict):
             def __getitem__(self, key):
@@ -579,22 +614,39 @@ class CodecCallbackTest(unittest.TestCase):
         codecs.register_error("test.badencodereturn2", badencodereturn2)
         self.assertRaises(TypeError, u"\xff".encode, "ascii", "test.badencodereturn2")
 
-        pos = [-42]
-        def negposreturn(exc):
-            pos[0] += 1 # use list to work around scoping problem
-            return (u"?", pos[0])
-        codecs.register_error("test.negposreturn", negposreturn)
-        u"\xff".encode("ascii", "test.negposreturn")
+        handler = PosReturn()
+        codecs.register_error("test.posreturn", handler.handle)
 
-        def hugeposreturn(exc):
-            return (u"?", 424242)
-        codecs.register_error("test.hugeposreturn", hugeposreturn)
-        u"\xff".encode("ascii", "test.hugeposreturn")
+        # Valid negative position
+        handler.pos = -1
+        self.assertEquals(u"\xff0".encode("ascii", "test.posreturn"), "<?>0")
+
+        # Valid negative position
+        handler.pos = -2
+        self.assertEquals(u"\xff0".encode("ascii", "test.posreturn"), "<?><?>")
+
+        # Negative position out of bounds
+        handler.pos = -3
+        self.assertRaises(IndexError, u"\xff0".encode, "ascii", "test.posreturn")
+
+        # Valid positive position
+        handler.pos = 1
+        self.assertEquals(u"\xff0".encode("ascii", "test.posreturn"), "<?>0")
+
+        # Largest valid positive position (one beyond end of input
+        handler.pos = 2
+        self.assertEquals(u"\xff0".encode("ascii", "test.posreturn"), "<?>")
+
+        # Invalid positive position
+        handler.pos = 3
+        self.assertRaises(IndexError, u"\xff0".encode, "ascii", "test.posreturn")
+
+        handler.pos = 0
 
         class D(dict):
             def __getitem__(self, key):
                 raise ValueError
-        for err in ("strict", "replace", "xmlcharrefreplace", "backslashreplace", "test.hugeposreturn"):
+        for err in ("strict", "replace", "xmlcharrefreplace", "backslashreplace", "test.posreturn"):
             self.assertRaises(UnicodeError, codecs.charmap_encode, u"\xff", err, {0xff: None})
             self.assertRaises(ValueError, codecs.charmap_encode, u"\xff", err, D())
             self.assertRaises(TypeError, codecs.charmap_encode, u"\xff", err, {0xff: 300})
