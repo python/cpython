@@ -91,8 +91,7 @@ for e in expectations:
     result = time.strftime(e[0], now)
     if result == e[1]: continue
     if result[0] == '%':
-	if verbose:
-	    print "Does not appear to support '%s' format" % e[0]
+	print "Does not appear to support '%s' format" % e[0]
     else:
 	print "Conflict for %s (%s):" % (e[0], e[2])
 	print "  Expected %s, but got %s" % (e[1], result)
