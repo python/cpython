@@ -30,3 +30,9 @@ python-lib.texi: lib1.texi ../tools/fix.el
 python-lib.info: python-lib.texi
 	$(MAKEINFO) --footnote-style end --fill-column 72 \
 		    --paragraph-indent 0 $<
+
+clean:
+	rm -f *~ *.texi
+
+clobber: clean
+	rm -f *.texi python-???.info python-???.info-[0-9]*
