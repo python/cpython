@@ -13,4 +13,4 @@ for i in range(-len(t), len(t)):
     for j in range(-len(t), len(t)):
         vereq(t[i:j], astuple[i:j])
 
-XXX more needed
+# XXX more needed
