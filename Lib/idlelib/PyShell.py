@@ -45,15 +45,16 @@ else:
         file.write(warnings.formatwarning(message, category, filename, lineno))
     warnings.showwarning = idle_showwarning
 
-def linecache_checkcache():
+def extended_linecache_checkcache(orig_checkcache=linecache.checkcache):
     """Extend linecache.checkcache to preserve the <pyshell#...> entries
 
-    Rather than repeating the linecache code, patch it by saving the pyshell#
-    entries, call linecache.checkcache(), and then restore the saved
-    entries.
+    Rather than repeating the linecache code, patch it to save the pyshell#
+    entries, call the original linecache.checkcache(), and then restore the
+    saved entries.  Assigning the orig_checkcache keyword arg freezes its value
+    at definition time to the (original) method linecache.checkcache(), i.e.
+    makes orig_checkcache lexical.
 
     """
-    orig_checkcache=linecache.checkcache
     cache = linecache.cache
     save = {}
     for filename in cache.keys():
@@ -62,7 +63,8 @@ def linecache_checkcache():
     orig_checkcache()
     cache.update(save)
     
-linecache.checkcache = linecache_checkcache
+# Patch linecache.checkcache():
+linecache.checkcache = extended_linecache_checkcache
 
 
 class PyShellEditorWindow(EditorWindow):
