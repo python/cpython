@@ -399,7 +399,7 @@ class Random:
         random = self.random
         while 1:
             u1 = random()
-            u2 = random()
+            u2 = 1.0 - random()
             z = NV_MAGICCONST*(u1-0.5)/u2
             zz = z*z/4.0
             if zz <= -_log(u2):
@@ -535,7 +535,9 @@ class Random:
 
             while 1:
                 u1 = random()
-                u2 = random()
+                if not 1e-7 < u1 < .9999999:
+                    continue
+                u2 = 1.0 - random()
                 v = _log(u1/(1.0-u1))/ainv
                 x = alpha*_exp(v)
                 z = u1*u1*u2
@@ -667,7 +669,7 @@ class Random:
         """Pareto distribution.  alpha is the shape parameter."""
         # Jain, pg. 495
 
-        u = self.random()
+        u = 1.0 - self.random()
         return 1.0 / pow(u, 1.0/alpha)
 
 ## -------------------- Weibull --------------------
@@ -680,7 +682,7 @@ class Random:
         """
         # Jain, pg. 499; bug fix courtesy Bill Arms
 
-        u = self.random()
+        u = 1.0 - self.random()
         return alpha * pow(-_log(u), 1.0/beta)
 
 ## -------------------- test program --------------------
