@@ -8,33 +8,33 @@ are always available.  They are listed here in alphabetical order.
 \setindexsubitem{(built-in function)}
 
 \begin{funcdesc}{__import__}{name\optional{, globals\optional{, locals\optional{, fromlist}}}}
-This function is invoked by the \code{import} statement.  It
+This function is invoked by the \keyword{import} statement.  It
 mainly exists so that you can replace it with another
 function that has a compatible interface, in order to change the
-semantics of the \code{import} statement.  For examples of why and
-how you would do this, see the standard library modules \code{ni},
-\code{ihooks} and \code{rexec}.  See also the built-in module
-\code{imp}, which defines some useful operations out of which you can
-build your own \code{__import__()} function.
+semantics of the \keyword{import} statement.  For examples of why and
+how you would do this, see the standard library modules \module{ni},
+\module{ihooks} and \module{rexec}.  See also the built-in module
+\module{imp}, which defines some useful operations out of which you can
+build your own \function{__import__()} function.
 \stindex{import}
 \refstmodindex{ni}
 \refstmodindex{ihooks}
 \refstmodindex{rexec}
 \refbimodindex{imp}
 
-For example, the statement \code{import} \code{spam} results in the
+For example, the statement `\code{import} \code{spam}' results in the
 following call:
 \code{__import__('spam',} \code{globals(),} \code{locals(), [])};
 the statement \code{from} \code{spam.ham import} \code{eggs} results
 in \code{__import__('spam.ham',} \code{globals(),} \code{locals(),}
 \code{['eggs'])}.
 Note that even though \code{locals()} and \code{['eggs']} are passed
-in as arguments, the \code{__import__()} function does not set the
+in as arguments, the \function{__import__()} function does not set the
 local variable named \code{eggs}; this is done by subsequent code that
 is generated for the import statement.  (In fact, the standard
 implementation does not use its \var{locals} argument at all, and uses
 its \var{globals} only to determine the package context of the
-\code{import} statement.)
+\keyword{import} statement.)
 
 When the \var{name} variable is of the form \code{package.module},
 normally, the top-level package (the name up till the first dot) is
@@ -42,8 +42,8 @@ returned, \emph{not} the module named by \var{name}.  However, when a
 non-empty \var{fromlist} argument is given, the module named by
 \var{name} is returned.  This is done for compatibility with the
 bytecode generated for the different kinds of import statement; when
-using \code{import spam.ham.eggs}, the top-level package \code{spam}
-must be placed in the importing namespace, but when using \code{from
+using \samp{import spam.ham.eggs}, the top-level package \code{spam}
+must be placed in the importing namespace, but when using \samp{from
 spam.ham import eggs}, the \code{spam.ham} subpackage must be used to
 find the \code{eggs} variable.
 \end{funcdesc}
@@ -72,13 +72,13 @@ Return true if the \var{object} argument appears callable, false if
 not.  If this returns true, it is still possible that a call fails,
 but if it is false, calling \var{object} will never succeed.  Note
 that classes are callable (calling a class returns a new instance);
-class instances are callable if they have an attribute \code{__call__}.
+class instances are callable if they have a \method{__call__()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{chr}{i}
   Return a string of one character whose \ASCII{} code is the integer
   \var{i}, e.g., \code{chr(97)} returns the string \code{'a'}.  This is the
-  inverse of \code{ord()}.  The argument must be in the range [0..255],
+  inverse of \function{ord()}.  The argument must be in the range [0..255],
   inclusive.
 \end{funcdesc}
 
@@ -97,8 +97,8 @@ class instances are callable if they have an attribute \code{__call__}.
 
 \begin{funcdesc}{compile}{string\, filename\, kind}
   Compile the \var{string} into a code object.  Code objects can be
-  executed by an \code{exec} statement or evaluated by a call to
-  \code{eval()}.  The \var{filename} argument should
+  executed by an \keyword{exec} statement or evaluated by a call to
+  \function{eval()}.  The \var{filename} argument should
   give the file from which the code was read; pass e.g. \code{'<string>'}
   if it wasn't read from a file.  The \var{kind} argument specifies
   what kind of code must be compiled; it can be \code{'exec'} if
@@ -113,12 +113,12 @@ class instances are callable if they have an attribute \code{__call__}.
   Create a complex number with the value \var{real} + \var{imag}*j.
   Each argument may be any numeric type (including complex).
   If \var{imag} is omitted, it defaults to zero and the function
-  serves as a numeric conversion function like \code{int}, \code{long}
-  and \code{float}.
+  serves as a numeric conversion function like \function{int()},
+  \function{long()} and \function{float()}.
 \end{funcdesc}
 
 \begin{funcdesc}{delattr}{object\, name}
-  This is a relative of \code{setattr}.  The arguments are an
+  This is a relative of \function{setattr()}.  The arguments are an
   object and a string.  The string must be the name
   of one of the object's attributes.  The function deletes
   the named attribute, provided the object allows it.  For example,
@@ -130,7 +130,7 @@ class instances are callable if they have an attribute \code{__call__}.
   Without arguments, return the list of names in the current local
   symbol table.  With an argument, attempts to return a list of valid
   attribute for that object.  This information is gleaned from the
-  object's \code{__dict__}, \code{__methods__} and \code{__members__}
+  object's \member{__dict__}, \member{__methods__} and \member{__members__}
   attributes, if defined.  The list is not necessarily complete; e.g.,
   for classes, attributes defined in base classes are not included,
   and for class instances, methods are not included.
@@ -163,7 +163,7 @@ class instances are callable if they have an attribute \code{__call__}.
   \var{globals} and \var{locals} dictionaries as global and local name
   space.  If the \var{locals} dictionary is omitted it defaults to
   the \var{globals} dictionary.  If both dictionaries are omitted, the
-  expression is executed in the environment where \code{eval} is
+  expression is executed in the environment where \keyword{eval} is
   called.  The return value is the result of the evaluated expression.
   Syntax errors are reported as exceptions.  Example:
 
@@ -173,28 +173,28 @@ class instances are callable if they have an attribute \code{__call__}.
 2
 >>> 
 \end{verbatim}
-%
+
   This function can also be used to execute arbitrary code objects
-  (e.g.\ created by \code{compile()}).  In this case pass a code
+  (e.g.\ created by \function{compile()}).  In this case pass a code
   object instead of a string.  The code object must have been compiled
   passing \code{'eval'} to the \var{kind} argument.
 
   Hints: dynamic execution of statements is supported by the
-  \code{exec} statement.  Execution of statements from a file is
-  supported by the \code{execfile()} function.  The \code{globals()}
-  and \code{locals()} functions returns the current global and local
-  dictionary, respectively, which may be useful
-  to pass around for use by \code{eval()} or \code{execfile()}.
-
+  \keyword{exec} statement.  Execution of statements from a file is
+  supported by the \function{execfile()} function.  The
+  \function{globals()} and \function{locals()} functions returns the
+  current global and local dictionary, respectively, which may be
+  useful to pass around for use by \function{eval()} or
+  \function{execfile()}.
 \end{funcdesc}
 
 \begin{funcdesc}{execfile}{file\optional{\, globals\optional{\, locals}}}
   This function is similar to the
-  \code{exec} statement, but parses a file instead of a string.  It is
-  different from the \code{import} statement in that it does not use
-  the module administration --- it reads the file unconditionally and
-  does not create a new module.\footnote{It is used relatively rarely
-  so does not warrant being made into a statement.}
+  \keyword{exec} statement, but parses a file instead of a string.  It
+  is different from the \keyword{import} statement in that it does not
+  use the module administration --- it reads the file unconditionally
+  and does not create a new module.\footnote{It is used relatively
+  rarely so does not warrant being made into a statement.}
 
   The arguments are a file name and two optional dictionaries.  The
   file is parsed and evaluated as a sequence of Python statements
@@ -202,7 +202,7 @@ class instances are callable if they have an attribute \code{__call__}.
   dictionaries as global and local name space.  If the \var{locals}
   dictionary is omitted it defaults to the \var{globals} dictionary.
   If both dictionaries are omitted, the expression is executed in the
-  environment where \code{execfile()} is called.  The return value is
+  environment where \function{execfile()} is called.  The return value is
   \code{None}.
 \end{funcdesc}
 
@@ -228,10 +228,9 @@ removed.
 
 \begin{funcdesc}{getattr}{object\, name}
   The arguments are an object and a string.  The string must be the
-  name
-  of one of the object's attributes.  The result is the value of that
-  attribute.  For example, \code{getattr(\var{x}, '\var{foobar}')} is equivalent to
-  \code{\var{x}.\var{foobar}}.
+  name of one of the object's attributes.  The result is the value of
+  that attribute.  For example, \code{getattr(\var{x},
+  '\var{foobar}')} is equivalent to \code{\var{x}.\var{foobar}}.
 \end{funcdesc}
 
 \begin{funcdesc}{globals}{}
@@ -244,8 +243,8 @@ module from which it is called).
 \begin{funcdesc}{hasattr}{object\, name}
   The arguments are an object and a string.  The result is 1 if the
   string is the name of one of the object's attributes, 0 if not.
-  (This is implemented by calling \code{getattr(object, name)} and
-  seeing whether it raises an exception or not.)
+  (This is implemented by calling \code{getattr(\var{object},
+  \var{name})} and seeing whether it raises an exception or not.)
 \end{funcdesc}
 
 \begin{funcdesc}{hash}{object}
@@ -263,21 +262,21 @@ module from which it is called).
   \code{'0xffffffff'}.  When evaluated on a machine with the same
   word size, this literal is evaluated as -1; at a different word
   size, it may turn up as a large positive number or raise an
-  \code{OverflowError} exception.
+  \exception{OverflowError} exception.
 \end{funcdesc}
 
 \begin{funcdesc}{id}{object}
   Return the `identity' of an object.  This is an integer which is
   guaranteed to be unique and constant for this object during its
   lifetime.  (Two objects whose lifetimes are disjunct may have the
-  same id() value.)  (Implementation note: this is the address of the
-  object.)
+  same \function{id()} value.)  (Implementation note: this is the
+  address of the object.)
 \end{funcdesc}
 
 \begin{funcdesc}{input}{\optional{prompt}}
   Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  Like
-  \code{raw_input()}, the \var{prompt} argument is optional, and the
-  \code{readline} module is used when loaded.  The difference
+  \function{raw_input()}, the \var{prompt} argument is optional, and the
+  \module{readline} module is used when loaded.  The difference
   is that a long input expression may be broken over multiple lines using
   the backslash convention.
 \end{funcdesc}
@@ -314,13 +313,14 @@ Also return true if \var{class} is a type object and \var{object} is
 an object of that type.  If \var{object} is not a class instance or a
 object of the given type, the function always returns false.  If
 \var{class} is neither a class object nor a type object, a
-\code{TypeError} exception is raised.
+\exception{TypeError} exception is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{issubclass}{class1, class2}
 Return true if \var{class1} is a subclass (direct or indirect) of
 \var{class2}.  A class is considered a subclass of itself.  If either
-argument is not a class object, a \code{TypeError} exception is raised.
+argument is not a class object, a \exception{TypeError} exception is
+raised.
 \end{funcdesc}
 
 \begin{funcdesc}{len}{s}
@@ -352,7 +352,7 @@ desired effect.
   long integer or a floating point number, and a long integer with
   the same value is returned.    Conversion of floating
   point numbers to integers is defined by the C semantics;
-  see the description of \code{int()}.
+  see the description of \function{int()}.
 \end{funcdesc}
 
 \begin{funcdesc}{map}{function\, list\, ...}
@@ -362,7 +362,7 @@ of the results.  If additional \var{list} arguments are passed,
 the items of all lists in parallel; if a list is shorter than another
 it is assumed to be extended with \code{None} items.  If
 \var{function} is \code{None}, the identity function is assumed; if
-there are multiple list arguments, \code{map} returns a list
+there are multiple list arguments, \function{map()} returns a list
 consisting of tuples containing the corresponding items from all lists
 (i.e. a kind of transpose operation).  The \var{list} arguments may be
 any kind of sequence; the result is always a list.
@@ -385,13 +385,13 @@ any kind of sequence; the result is always a list.
   \code{'037777777777'}.  When evaluated on a machine with the same
   word size, this literal is evaluated as -1; at a different word
   size, it may turn up as a large positive number or raise an
-  \code{OverflowError} exception.
+  \exception{OverflowError} exception.
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
   Return a new file object (described earlier under Built-in Types).
   The first two arguments are the same as for \code{stdio}'s
-  \code{fopen()}: \var{filename} is the file name to be opened,
+  \cfunction{fopen()}: \var{filename} is the file name to be opened,
   \var{mode} indicates how the file is to be opened: \code{'r'} for
   reading, \code{'w'} for writing (truncating an existing file), and
   \code{'a'} opens it for appending (which on \emph{some} \UNIX{}
@@ -401,8 +401,8 @@ any kind of sequence; the result is always a list.
   \code{'a+'} open the file for updating, provided the underlying
   \code{stdio} library understands this.  On systems that differentiate
   between binary and text files, \code{'b'} appended to the mode opens
-  the file in binary mode.  If the file cannot be opened, \code{IOError}
-  is raised.
+  the file in binary mode.  If the file cannot be opened,
+  \exception{IOError} is raised.
 If \var{mode} is omitted, it defaults to \code{'r'}.
 The optional \var{bufsize} argument specifies the file's desired
 buffer size: 0 means unbuffered, 1 means line buffered, any other
@@ -411,8 +411,8 @@ negative \var{bufsize} means to use the system default, which is
 usually line buffered for for tty devices and fully buffered for other
 files.%
 \footnote{Specifying a buffer size currently has no effect on systems
-that don't have \code{setvbuf()}.  The interface to specify the buffer
-size is not done using a method that calls \code{setvbuf()}, because
+that don't have \cfunction{setvbuf()}.  The interface to specify the buffer
+size is not done using a method that calls \cfunction{setvbuf()}, because
 that may dump core when called after any I/O has been performed, and
 there's no reliable way to determine whether this is the case.}
 \end{funcdesc}
@@ -420,7 +420,7 @@ there's no reliable way to determine whether this is the case.}
 \begin{funcdesc}{ord}{c}
   Return the \ASCII{} value of a string of one character.  E.g.,
   \code{ord('a')} returns the integer \code{97}.  This is the inverse of
-  \code{chr()}.
+  \function{chr()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pow}{x\, y\optional{\, z}}
@@ -437,7 +437,7 @@ there's no reliable way to determine whether this is the case.}
 
 \begin{funcdesc}{range}{\optional{start\,} stop\optional{\, step}}
   This is a versatile function to create lists containing arithmetic
-  progressions.  It is most often used in \code{for} loops.  The
+  progressions.  It is most often used in \keyword{for} loops.  The
   arguments must be plain integers.  If the \var{step} argument is
   omitted, it defaults to \code{1}.  If the \var{start} argument is
   omitted, it defaults to \code{0}.  The full form returns a list of
@@ -472,7 +472,7 @@ there's no reliable way to determine whether this is the case.}
   If the \var{prompt} argument is present, it is written to standard output
   without a trailing newline.  The function then reads a line from input,
   converts it to a string (stripping a trailing newline), and returns that.
-  When \EOF{} is read, \code{EOFError} is raised. Example:
+  When \EOF{} is read, \exception{EOFError} is raised. Example:
 
 \begin{verbatim}
 >>> s = raw_input('--> ')
@@ -482,8 +482,8 @@ there's no reliable way to determine whether this is the case.}
 >>> 
 \end{verbatim}
 
-If the \code{readline} module was loaded, then
-\code{raw_input()} will use it to provide elaborate
+If the \module{readline} module was loaded, then
+\function{raw_input()} will use it to provide elaborate
 line editing and history features.
 \end{funcdesc}
 
@@ -508,11 +508,11 @@ module object (i.e.\ the same as the \var{module} argument).
 There are a number of caveats:
 
 If a module is syntactically correct but its initialization fails, the
-first \code{import} statement for it does not bind its name locally,
+first \keyword{import} statement for it does not bind its name locally,
 but does store a (partially initialized) module object in
 \code{sys.modules}.  To reload the module you must first
-\code{import} it again (this will bind the name to the partially
-initialized module object) before you can \code{reload()} it.
+\keyword{import} it again (this will bind the name to the partially
+initialized module object) before you can \function{reload()} it.
 
 When a module is reloaded, its dictionary (containing the module's
 global variables) is retained.  Redefinitions of names will override
@@ -520,21 +520,21 @@ the old definitions, so this is generally not a problem.  If the new
 version of a module does not define a name that was defined by the old
 version, the old definition remains.  This feature can be used to the
 module's advantage if it maintains a global table or cache of objects
---- with a \code{try} statement it can test for the table's presence
+--- with a \keyword{try} statement it can test for the table's presence
 and skip its initialization if desired.
 
 It is legal though generally not very useful to reload built-in or
-dynamically loaded modules, except for \code{sys}, \code{__main__} and
-\code{__builtin__}.  In certain cases, however, extension modules are
-not designed to be initialized more than once, and may fail in
-arbitrary ways when reloaded.
+dynamically loaded modules, except for \module{sys}, \module{__main__}
+and \module{__builtin__}.  In certain cases, however, extension
+modules are not designed to be initialized more than once, and may
+fail in arbitrary ways when reloaded.
 
-If a module imports objects from another module using \code{from}
-\ldots{} \code{import} \ldots{}, calling \code{reload()} for the other
-module does not redefine the objects imported from it --- one way
-around this is to re-execute the \code{from} statement, another is to
-use \code{import} and qualified names (\var{module}.\var{name})
-instead.
+If a module imports objects from another module using \keyword{from}
+\ldots{} \keyword{import} \ldots{}, calling \function{reload()} for
+the other module does not redefine the objects imported from it ---
+one way around this is to re-execute the \keyword{from} statement,
+another is to use \keyword{import} and qualified names
+(\var{module}.\var{name}) instead.
 
 If a module instantiates instances of a class, reloading the module
 that defines the class does not affect the method definitions of the
@@ -548,7 +548,7 @@ This is the same value yielded by conversions (reverse quotes).
 It is sometimes useful to be able to access this operation as an
 ordinary function.  For many types, this function makes an attempt
 to return a string that would yield an object with the same value
-when passed to \code{eval()}.
+when passed to \function{eval()}.
 \end{funcdesc}
 
 \begin{funcdesc}{round}{x\, n}
@@ -561,7 +561,7 @@ when passed to \code{eval()}.
 \end{funcdesc}
 
 \begin{funcdesc}{setattr}{object\, name\, value}
-  This is the counterpart of \code{getattr}.  The arguments are an
+  This is the counterpart of \function{getattr()}.  The arguments are an
   object, a string and an arbitrary value.  The string must be the name
   of one of the object's attributes.  The function assigns the value to
   the attribute, provided the object allows it.  For example,
@@ -573,7 +573,7 @@ when passed to \code{eval()}.
 Return a slice object representing the set of indices specified by
 \code{range(\var{start}, \var{stop}, \var{step})}.  The \var{start}
 and \var{step} arguments default to None.  Slice objects have
-read-only data attributes \code{start}, \code{stop} and \code{step}
+read-only data attributes \member{start}, \member{stop} and \member{step}
 which merely return the argument values (or their default).  They have
 no other explicit functionality; however they are used by Numerical
 Python and other third party extensions.  Slice objects are also
@@ -585,7 +585,7 @@ generated when extended indexing syntax is used, e.g. for
 Return a string containing a nicely printable representation of an
 object.  For strings, this returns the string itself.  The difference
 with \code{repr(\var{object})} is that \code{str(\var{object})} does not
-always attempt to return a string that is acceptable to \code{eval()};
+always attempt to return a string that is acceptable to \function{eval()};
 its goal is to return a printable string.
 \end{funcdesc}
 
@@ -599,7 +599,7 @@ returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
 
 \begin{funcdesc}{type}{object}
 Return the type of an \var{object}.  The return value is a type
-object.  The standard module \code{types} defines names for all
+object.  The standard module \module{types} defines names for all
 built-in types.
 \refstmodindex{types}
 \obindex{type}
@@ -614,7 +614,7 @@ For instance:
 \begin{funcdesc}{vars}{\optional{object}}
 Without arguments, return a dictionary corresponding to the current
 local symbol table.  With a module, class or class instance object as
-argument (or anything else that has a \code{__dict__} attribute),
+argument (or anything else that has a \member{__dict__} attribute),
 returns a dictionary corresponding to the object's symbol table.
 The returned dictionary should not be modified: the effects on the
 corresponding symbol table are undefined.%
@@ -624,13 +624,13 @@ other scopes (e.g. modules) can be.  This may change.}
 \end{funcdesc}
 
 \begin{funcdesc}{xrange}{\optional{start\,} stop\optional{\, step}}
-This function is very similar to \code{range()}, but returns an
+This function is very similar to \function{range()}, but returns an
 ``xrange object'' instead of a list.  This is an opaque sequence type
 which yields the same values as the corresponding list, without
 actually storing them all simultaneously.  The advantage of
-\code{xrange()} over \code{range()} is minimal (since \code{xrange()}
-still has to create the values when asked for them) except when a very
-large range is used on a memory-starved machine (e.g. MS-DOS) or when all
-of the range's elements are never used (e.g. when the loop is usually
-terminated with \code{break}).
+\function{xrange()} over \function{range()} is minimal (since
+\function{xrange()} still has to create the values when asked for
+them) except when a very large range is used on a memory-starved
+machine (e.g. MS-DOS) or when all of the range's elements are never
+used (e.g. when the loop is usually terminated with \keyword{break}).
 \end{funcdesc}
