@@ -5,8 +5,6 @@ from types import ClassType
 import warnings
 import sys, traceback
 
-warnings.filterwarnings("error", "", OverflowWarning, __name__)
-
 print '5. Built-in exceptions'
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -86,6 +84,12 @@ try: x = undefined_variable
 except NameError: pass
 
 r(OverflowError)
+# XXX
+# Obscure:  this test relies on int+int raising OverflowError if the
+# ints are big enough.  But ints no longer do that by default.  This
+# test will have to go away someday.  For now, we can convert the
+# transitional OverflowWarning into an error.
+warnings.filterwarnings("error", "", OverflowWarning, __name__)
 x = 1
 try:
     while 1: x = x+x

@@ -1,7 +1,7 @@
 from test_support import verbose, sortdict
 import warnings
 warnings.filterwarnings("ignore", "the regex module is deprecated",
-                        DeprecationWarning, __name__)
+                        DeprecationWarning, r'test_regex$')
 import regex
 from regex_syntax import *
 
