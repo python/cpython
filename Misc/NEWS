@@ -12,6 +12,18 @@ Core
   now use the Python warning framework (which makes it possible to
   write filters for these warnings).
 
+Library
+
+- New function xml.sax.saxutils.quoteattr():  Quote an XML attribute
+  value using the minimal quoting required for the value; more
+  reliable than using xml.sax.saxutils.escape() for attribute values.
+
+- Readline completion support for cmd.Cmd was added.
+
+New platforms
+
+C API
+
 - Two new APIs PyOS_snprintf() and PyOS_vsnprintf() were added
   which provide a cross-platform implementations for the
   relatively new snprintf()/vsnprintf() C lib APIs. In contrast to
@@ -25,18 +37,6 @@ Core
   will result in an ImportError.  Unicode extensions writers must make
   sure to check the Unicode width compatibility in their extensions by
   using at least one of the mangled Unicode APIs in the extension.
-
-Library
-
-- New function xml.sax.saxutils.quoteattr():  Quote an XML attribute
-  value using the minimal quoting required for the value; more
-  reliable than using xml.sax.saxutils.escape() for attribute values.
-
-- Readline completion support for cmd.Cmd was added.
-
-New platforms
-
-C API
 
 
 What's New in Python 2.2a1?
