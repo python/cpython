@@ -671,18 +671,13 @@ class TarInfo(object):
             tarinfo.devminor = int(buf[337:345], 8)
         except ValueError:
             tarinfo.devmajor = tarinfo.devmajor = 0
+        tarinfo.prefix = buf[345:500]
 
         # The prefix field is used for filenames > 100 in
         # the POSIX standard.
-        # name = prefix + "/" + name
-        prefix = buf[345:500]
-        while prefix and prefix[-1] == NUL:
-            prefix = prefix[:-1]
-        if len(prefix.split(NUL)) == 1:
-            tarinfo.prefix = prefix
-            tarinfo.name = normpath(os.path.join(tarinfo.prefix, tarinfo.name))
-        else:
-            tarinfo.prefix = buf[345:500]
+        # name = prefix + '/' + name
+        if tarinfo.type != GNUTYPE_SPARSE:
+            tarinfo.name = normpath(os.path.join(nts(tarinfo.prefix), tarinfo.name))
 
         # Directory names should have a '/' at the end.
         if tarinfo.isdir() and tarinfo.name[-1:] != "/":
