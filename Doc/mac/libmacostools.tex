@@ -1,0 +1,39 @@
+
+\section{Standard module \sectcode{macostools}}
+\stmodindex{macostools}
+
+This module contains some convenience routines for file-manipulation
+on the Macintosh.
+
+The \code{macostools} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module macostools)}
+
+\begin{funcdesc}{copy}{src\, dst\optional{\, createpath}}
+Copy file \var{src} to \var{dst}. The files can be specified as
+pathnames or \code{FSSpec} objects. If \var{createpath} is non-zero
+\var{dst} must be a pathname and the folders leading to the
+destination are created if necessary.
+The method copies data and resource fork and some finder information
+(creator, type and flags). Custom icons, comments and icon position
+are not copied.
+\end{funcdesc}
+
+\begin{funcdesc}{copytree}{src\, dst}
+Recursively copy a file tree from \var{src} to \var{dst}, creating
+folders as needed. \var{Src} and \var{dst} should be specified as
+pathnames.
+\end{funcdesc}
+
+\begin{funcdesc}{mkalias}{src\, dst}
+Create a finder alias \var{dst} pointing to \var{src}. Both may be
+specified as pathnames or \var{FSSpec} objects.
+\end{funcdesc}
+
+\begin{datadesc}{BUFSIZ}
+The buffer size for \code{copy}, default 1 megabyte.
+\end{datadesc}
+
+Note that the process of creating finder aliases is not specified in
+the Apple documentation. Hence, aliases created with \code{mkalias}
+could conceivably have incompatible behaviour in some cases.
