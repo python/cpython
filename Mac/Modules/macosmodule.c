@@ -28,11 +28,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "macglue.h"
 #include "pythonresources.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Windows.h>
 #include <Files.h>
 #include <LowMem.h>
 #include <Sound.h>
 #include <Events.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
@@ -354,13 +358,13 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+#if TARGET_API_MAC_OS8
 /*----------------------------------------------------------------------*/
 /* STDWIN High Level Event interface */
 
 #include <EPPC.h>
 #include <Events.h>
 
-#if TARGET_API_MAC_OS8
 static char accepthle_doc[] = "Get arguments of pending high-level event";
 
 static PyObject *

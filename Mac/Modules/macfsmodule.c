@@ -25,12 +25,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "macglue.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Memory.h>
 #include <Files.h>
 #include <Folders.h>
 #include <StandardFile.h>
 #include <Aliases.h>
 #include <LowMem.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #include "getapplbycreator.h"
 
