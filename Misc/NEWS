@@ -12,7 +12,7 @@ Core and builtins
 
 Extension modules
 
-- dl is now build on every system that has dlfcn.h. Failure in case
+- dl now builds on every system that has dlfcn.h.  Failure in case
   of sizeof(int)!=sizeof(long)!=sizeof(void*) is delayed until dl.open
   is called.
 
