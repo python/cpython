@@ -882,7 +882,11 @@ def add_files(db):
             if not have_tcl:
                 continue
             tcltk.set_current()
-        elif dir in ['test', 'output']:
+        elif dir in ['test', 'tests', 'data', 'output']:
+            # test: Lib, Lib/email, Lib/bsddb
+            # tests: Lib/distutils
+            # data: Lib/email/test
+            # output: Lib/test
             testsuite.set_current()
         else:
             default_feature.set_current()
