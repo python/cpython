@@ -356,11 +356,11 @@ initsignal()
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 
-	x = DefaultHandler = PyInt_FromLong((long)SIG_DFL);
+	x = DefaultHandler = PyLong_FromVoidPtr(SIG_DFL);
         if (!x || PyDict_SetItemString(d, "SIG_DFL", x) < 0)
                 goto finally;
 
-	x = IgnoreHandler = PyInt_FromLong((long)SIG_IGN);
+	x = IgnoreHandler = PyLong_FromVoidPtr(SIG_IGN);
         if (!x || PyDict_SetItemString(d, "SIG_IGN", x) < 0)
                 goto finally;
 
