@@ -104,11 +104,13 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{geteuid}{}
+\index{user!effective id}
 Return the current process' effective user id.
 Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{getgid}{}
+\index{process!group}
 Return the current process' group id.
 Availability: \UNIX{}.
 \end{funcdesc}
@@ -132,7 +134,7 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{getuid}{}
-\index{user id}
+\index{user!id}
 Return the current process' user id.
 Availability: \UNIX{}.
 \end{funcdesc}
@@ -177,6 +179,7 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{setuid}{uid}
+\index{user!id, setting}
 Set the current process' user id.
 Availability: \UNIX{}.
 \end{funcdesc}
@@ -716,7 +719,7 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{waitpid}{pid, options}
-Wait for completion of a child process given by proces id, and return
+Wait for completion of a child process given by process id, and return
 a tuple containing its process id and exit status indication (encoded
 as for \function{wait()}).  The semantics of the call are affected by
 the value of the integer \var{options}, which should be \code{0} for
