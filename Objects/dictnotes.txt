@@ -28,13 +28,25 @@ Uniquification
     Dictionaries of any size.  Bulk of work is in creation.
     Repeated writes to a smaller set of keys.
     Single read of each key.
+    Some use cases have two consecutive accesses to the same key.
 
     * Removing duplicates from a sequence.
         dict.fromkeys(seqn).keys()
+
     * Counting elements in a sequence.
-        for e in seqn:  d[e]=d.get(e,0) + 1
-    * Accumulating items in a dictionary of lists.
-        for k, v in itemseqn:  d.setdefault(k, []).append(v)
+        for e in seqn:
+          d[e] = d.get(e,0) + 1
+
+    * Accumulating references in a dictionary of lists:
+
+        for pagenumber, page in enumerate(pages):
+          for word in page:
+            d.setdefault(word, []).append(pagenumber)
+
+    Note, the second example is a use case characterized by a get and set
+    to the same key.  There are similar used cases with a __contains__
+    followed by a get, set, or del to the same key.  Part of the
+    justification for d.setdefault is combining the two lookups into one.
 
 Membership Testing
     Dictionaries of any size.  Created once and then rarely changes.
@@ -44,7 +56,7 @@ Membership Testing
         such as with the % formatting operator.
 
 Dynamic Mappings
-    Characterized by deletions interspersed with adds and replacments.
+    Characterized by deletions interspersed with adds and replacements.
     Performance benefits greatly from the re-use of dummy entries.
 
 
@@ -141,6 +153,9 @@ distribution), then there will be more benefit for large dictionaries
 because any given key is no more likely than another to already be
 in cache.
 
+* In use cases with paired accesses to the same key, the second access
+is always in cache and gets no benefit from efforts to further improve
+cache locality.
 
 Optimizing the Search of Small Dictionaries
 -------------------------------------------
@@ -184,7 +199,7 @@ sizes and access patterns, the user may be able to provide useful hints.
    more quickly because the first half of the keys will be inserted into
    a more sparse environment than before.  The preconditions for this
    strategy arise whenever a dictionary is created from a key or item
-   sequence of known length.
+   sequence and the number of unique keys is known.
 
 3) If the key space is large and the access pattern is known to be random,
    then search strategies exploiting cache locality can be fruitful.
@@ -218,3 +233,13 @@ spend in the collision resolution loop).
 An additional possibility is to insert links into the empty spaces
 so that dictionary iteration can proceed in len(d) steps instead of
 (mp->mask + 1) steps.
+
+
+Caching Lookups
+---------------
+The idea is to exploit key access patterns by anticipating future lookups
+based of previous lookups.
+
+The simplest incarnation is to save the most recently accessed entry.
+This gives optimal performance for use cases where every get is followed
+by a set or del to the same key.
