@@ -207,7 +207,7 @@ class Random(_random.Random):
             j = int(random() * (i+1))
             x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k, int=int):
+    def sample(self, population, k):
         """Chooses k unique random elements from a population sequence.
 
         Returns a new list containing elements from the population while
@@ -240,19 +240,20 @@ class Random(_random.Random):
         if not 0 <= k <= n:
             raise ValueError, "sample larger than population"
         random = self.random
+        _int = int
         result = [None] * k
         if n < 6 * k:     # if n len list takes less space than a k len dict
             pool = list(population)
             for i in xrange(k):         # invariant:  non-selected at [0,n-i)
-                j = int(random() * (n-i))
+                j = _int(random() * (n-i))
                 result[i] = pool[j]
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             selected = {}
             for i in xrange(k):
-                j = int(random() * n)
+                j = _int(random() * n)
                 while j in selected:
-                    j = int(random() * n)
+                    j = _int(random() * n)
                 result[i] = selected[j] = population[j]
         return result
 
