@@ -501,12 +501,7 @@ class Editor(W.Window):
 			dir = os.path.dirname(self.path)
 			savedir = os.getcwd()
 			os.chdir(dir)
-			try:
-				cwdindex = sys.path.index(os.curdir)
-			except ValueError:
-				cwdindex = None
-			else:
-				sys.path[cwdindex] = dir
+			sys.path.insert(0, dir)
 		else:
 			cwdindex = None
 		try:
@@ -515,8 +510,7 @@ class Editor(W.Window):
 		finally:
 			if self.path:
 				os.chdir(savedir)
-				if cwdindex is not None:
-					sys.path[cwdindex] = os.curdir
+				del sys.path[0]
 	
 	def getenvironment(self):
 		if self.path:
