@@ -14,6 +14,8 @@ LONGSLEEP = 2
 
 SHORTSLEEP = 0.5
 
+NUM_THREADS = 4
+
 alive = {}
 
 def f(id):
@@ -25,14 +27,16 @@ def f(id):
             pass
 
 def main():
-    for i in range(4):
+    for i in range(NUM_THREADS):
         thread.start_new(f, (i,))
 
     time.sleep(LONGSLEEP)
 
     a = alive.keys()
     a.sort()
-    assert a == range(4)
+    assert a == range(NUM_THREADS)
+
+    prefork_lives = alive.copy()
 
     cpid = os.fork()
 
@@ -40,9 +44,8 @@ def main():
         # Child
         time.sleep(LONGSLEEP)
         n = 0
-        pid = os.getpid()
         for key in alive.keys():
-            if alive[key] == pid:
+            if alive[key] != prefork_lives[key]:
                 n = n+1
         os._exit(n)
     else:
