@@ -59,6 +59,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <errno.h>
 
+int Py_OptimizeFlag = 0;
+
 #define OP_DELETE 0
 #define OP_ASSIGN 1
 #define OP_APPLY 2
@@ -579,12 +581,13 @@ com_addoparg(c, op, arg)
 	int op;
 	int arg;
 {
-	if (op == SET_LINENO)
+	if (op == SET_LINENO) {
 		com_set_lineno(c, arg);
-	else {
-		com_addbyte(c, op);
-		com_addint(c, arg);
+		if (Py_OptimizeFlag)
+			return;
 	}
+	com_addbyte(c, op);
+	com_addint(c, arg);
 }
 
 static void
