@@ -576,27 +576,29 @@ class TestCopyingNested(TestCopying):
 
 def makeAllTests():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestSetOfSets))
-    suite.addTest(unittest.makeSuite(TestBasicOpsEmpty))
-    suite.addTest(unittest.makeSuite(TestBasicOpsSingleton))
-    suite.addTest(unittest.makeSuite(TestBasicOpsTuple))
-    suite.addTest(unittest.makeSuite(TestBasicOpsTriple))
-    suite.addTest(unittest.makeSuite(TestBinaryOps))
-    suite.addTest(unittest.makeSuite(TestUpdateOps))
-    suite.addTest(unittest.makeSuite(TestMutate))
-    suite.addTest(unittest.makeSuite(TestSubsetEqualEmpty))
-    suite.addTest(unittest.makeSuite(TestSubsetEqualNonEmpty))
-    suite.addTest(unittest.makeSuite(TestSubsetEmptyNonEmpty))
-    suite.addTest(unittest.makeSuite(TestSubsetPartial))
-    suite.addTest(unittest.makeSuite(TestSubsetNonOverlap))
-    suite.addTest(unittest.makeSuite(TestOnlySetsNumeric))
-    suite.addTest(unittest.makeSuite(TestOnlySetsDict))
-    suite.addTest(unittest.makeSuite(TestOnlySetsOperator))
-    suite.addTest(unittest.makeSuite(TestCopyingEmpty))
-    suite.addTest(unittest.makeSuite(TestCopyingSingleton))
-    suite.addTest(unittest.makeSuite(TestCopyingTriple))
-    suite.addTest(unittest.makeSuite(TestCopyingTuple))
-    suite.addTest(unittest.makeSuite(TestCopyingNested))
+    for klass in (TestSetOfSets,
+                  TestBasicOpsEmpty,
+                  TestBasicOpsSingleton,
+                  TestBasicOpsTuple,
+                  TestBasicOpsTriple,
+                  TestBinaryOps,
+                  TestUpdateOps,
+                  TestMutate,
+                  TestSubsetEqualEmpty,
+                  TestSubsetEqualNonEmpty,
+                  TestSubsetEmptyNonEmpty,
+                  TestSubsetPartial,
+                  TestSubsetNonOverlap,
+                  TestOnlySetsNumeric,
+                  TestOnlySetsDict,
+                  TestOnlySetsOperator,
+                  TestCopyingEmpty,
+                  TestCopyingSingleton,
+                  TestCopyingTriple,
+                  TestCopyingTuple,
+                  TestCopyingNested,
+                 ):
+        suite.addTest(unittest.makeSuite(klass))
     return suite
 
 #------------------------------------------------------------------------------
