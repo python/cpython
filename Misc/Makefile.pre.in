@@ -244,10 +244,11 @@ boot:
 	VERSION=`python -c "import sys; print sys.version[:3]"`; \
 	installdir=`python -c "import sys; print sys.prefix"`; \
 	exec_installdir=`python -c "import sys; print sys.exec_prefix"`; \
-	make -f Makefile.pre.in Makefile VPATH=$(VPATH) srcdir=$(srcdir) \
+	$(MAKE) -f $(srcdir)/Makefile.pre.in VPATH=$(VPATH) srcdir=$(srcdir) \
 		VERSION=$$VERSION \
 		installdir=$$installdir \
-		exec_installdir=$$exec_installdir
+		exec_installdir=$$exec_installdir \
+		Makefile
 
 # Handy target to remove intermediate files and backups
 clean:
