@@ -3,12 +3,15 @@
 These relnotes are relative to the last "official" MacPython release,
 not to the intermediate releases.
 - PPC python now uses a shared library organization. This allows the
-  creation of dynamically loadable extension modules (see XXXX) and
-  creation of python applets (see XXXX). A number of previously
+  creation of dynamically loadable extension modules (contact me) and
+  creation of python applets (see mkapplet.py). A number of previously
   builtin modules are now dynamically loaded. Dynamically loaded
   modules are distributed in the PlugIns folder.
-- All python versions now use 
-- new binhex module (partially working)
+- Python modules can live in 'PYC ' resources (with a name equal to the
+  module name, so many modules can live in a single file). If you put a
+  file (in stead of a folder) in sys.path its resources will be searched.
+  See the PackLibDir script for creating such a file.
+- new binhex module (partially working, hexbin has problems)
 - Python now has a Preferences file, editable with
   EditPythonPrefs. Remembered are the python 'home folder' and the
   initial value for sys.path. If no preferences file is found a simple
