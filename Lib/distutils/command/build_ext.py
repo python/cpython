@@ -278,7 +278,9 @@ class build_ext (Command):
                         'extra_objects',
                         'extra_compile_args',
                         'extra_link_args'):
-                setattr(ext, key, build_info.get(key))
+                val = build_info.get(key)
+                if val is not None:
+                    setattr(ext, key, val)
 
             # Medium-easy stuff: same syntax/semantics, different names.
             ext.runtime_library_dirs = build_info.get('rpath')
