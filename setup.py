@@ -622,8 +622,8 @@ class PyBuildExt(build_ext):
             iconv_libs = find_library_file(self.compiler, 'iconv', lib_dirs,
                                            ['/usr/local/lib', '/usr/pkg/lib'])
 
-            if (iconv_incs is not None):
-                if iconv_libs is not None:
+            if iconv_incs:
+                if iconv_libs:
                     iconv_libraries = ['iconv']
                 else:
                     iconv_libraries = [] # in libc
