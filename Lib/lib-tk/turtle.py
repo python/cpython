@@ -199,7 +199,7 @@ class RawPen:
         if self._filling:
             self._path.append(self._position)
         self._draw_turtle()
-            
+
     def heading(self):
         return self._angle
 
@@ -209,13 +209,13 @@ class RawPen:
 
     def window_width(self):
         width = self._canvas.winfo_width()
-        if width <= 1:	# the window isn't managed by a geometry manager
+        if width <= 1:  # the window isn't managed by a geometry manager
             width = self._canvas['width']
         return width
 
     def window_height(self):
         height = self._canvas.winfo_height()
-        if height <= 1:	# the window isn't managed by a geometry manager
+        if height <= 1: # the window isn't managed by a geometry manager
             height = self._canvas['height']
         return height
 
@@ -254,7 +254,7 @@ class RawPen:
         if self._filling:
             self._path.append(self._position)
         if self._drawing:
-            if self._tracing:                
+            if self._tracing:
                 dx = float(x1 - x0)
                 dy = float(y1 - y0)
                 distance = hypot(dx, dy)
