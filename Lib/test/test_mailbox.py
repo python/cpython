@@ -21,8 +21,8 @@ try:
 
 finally:
     try: os.rmdir(newdir)
-    except IOError: pass
+    except os.error: pass
     try: os.rmdir(curdir)
-    except IOError: pass
+    except os.error: pass
     try: os.rmdir(test_support.TESTFN)
-    except IOError: pass
+    except os.error: pass
