@@ -1,12 +1,11 @@
 \section{\module{errno} ---
-         Standard errno system symbols.}
-\declaremodule{standard}{errno}
+         Standard errno system symbols}
 
+\declaremodule{standard}{errno}
 \modulesynopsis{Standard errno system symbols.}
 
 
-
-This module makes available standard errno system symbols.
+This module makes available standard \code{errno} system symbols.
 The value of each symbol is the corresponding integer value.
 The names and descriptions are borrowed from \file{linux/include/errno.h},
 which should be pretty all-inclusive.
@@ -21,8 +20,9 @@ To translate a numeric error code to an error message, use
 \function{os.strerror()}.
 
 Of the following list, symbols that are not used on the current
-platform are not defined by the module.  Symbols available can
-include:
+platform are not defined by the module.  The specific list of defined
+symbols is available as \code{errno.errorcode.keys()}.  Symbols
+available can include:
 
 \begin{datadesc}{EPERM} Operation not permitted \end{datadesc}
 \begin{datadesc}{ENOENT} No such file or directory \end{datadesc}
