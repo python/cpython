@@ -54,8 +54,13 @@ class ReTests(unittest.TestCase):
 
         self.assertEqual(re.sub('^\s*', 'X', 'test'), 'Xtest')
 
-    def test_escaped_re_sub(self):
-        # Test for sub() on escaped characters, see SF bug #449000
+    def test_bug_449964(self):
+        # fails for group followed by other escape
+        self.assertEqual(re.sub(r'(?P<unk>x)', '\g<1>\g<1>\\b', 'xx'),
+                         'xx\bxx\b')
+
+    def test_bug_449000(self):
+        # Test for sub() on escaped characters
         self.assertEqual(re.sub(r'\r\n', r'\n', 'abc\r\ndef\r\n'),
                          'abc\ndef\n')
         self.assertEqual(re.sub('\r\n', r'\n', 'abc\r\ndef\r\n'),
@@ -68,6 +73,15 @@ class ReTests(unittest.TestCase):
     def test_qualified_re_sub(self):
         self.assertEqual(re.sub('a', 'b', 'aaaaa'), 'bbbbb')
         self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
+
+    def test_bug_114660(self):
+        self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
+                         'hello there')
+
+    def test_bug_462270(self):
+        # Test for empty sub() behaviour, see SF bug #462270
+        self.assertEqual(re.sub('x*', '-', 'abxd'), '-a-b-d-')
+        self.assertEqual(re.sub('x+', '-', 'abxd'), 'ab-d')
 
     def test_symbolic_refs(self):
         self.assertRaises(re.error, re.sub, '(?P<a>x)', '\g<a', 'xx')
@@ -200,6 +214,34 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r'(a)|(b)', 'b').start(1), -1)
         self.assertEqual(re.match(r'(a)|(b)', 'b').end(1), -1)
         self.assertEqual(re.match(r'(a)|(b)', 'b').span(1), (-1, -1))
+
+    def test_bug_527371(self):
+        # bug described in patches 527371/672491
+        self.assertEqual(re.match(r'(a)?a','a').lastindex, None)
+        self.assertEqual(re.match(r'(a)(b)?b','ab').lastindex, 1)
+        self.assertEqual(re.match(r'(?P<a>a)(?P<b>b)?b','ab').lastgroup, 'a')
+        self.assertEqual(re.match("(?P<a>a(b))", "ab").lastgroup, 'a')
+        self.assertEqual(re.match("((a))", "a").lastindex, 1)
+
+    def test_bug_545855(self):
+        # bug 545855 -- This pattern failed to cause a compile error as it
+        # should, instead provoking a TypeError.
+        self.assertRaises(re.error, re.compile, 'foo[a-')
+
+    def test_bug_418626(self):
+        # bugs 418626 at al. -- Testing Greg Chapman's addition of op code
+        # SRE_OP_MIN_REPEAT_ONE for eliminating recursion on simple uses of
+        # pattern '*?' on a long string.
+        self.assertEqual(re.match('.*?c', 10000*'ab'+'cd').end(0), 20001)
+        self.assertEqual(re.match('.*?cd', 5000*'ab'+'c'+5000*'ab'+'cde').end(0),
+                         20003)
+        self.assertEqual(re.match('.*?cd', 20000*'abc'+'de').end(0), 60001)
+        # non-simple '*?' still recurses and hits the recursion limit
+        self.assertRaises(RuntimeError, re.search, '(a|b)*?c', 10000*'ab'+'cd')
+
+    def test_bug_612074(self):
+        pat=u"["+re.escape(u"\u2039")+u"]"
+        self.assertEqual(re.compile(pat) and 1, 1)
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
