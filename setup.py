@@ -309,10 +309,11 @@ class PyBuildExt(build_ext):
 
         # fcntl(2) and ioctl(2)
         exts.append( Extension('fcntl', ['fcntlmodule.c']) )
-        # pwd(3)
-        exts.append( Extension('pwd', ['pwdmodule.c']) )
-        # grp(3)
-        exts.append( Extension('grp', ['grpmodule.c']) )
+        if platform not in ['mac']:
+                # pwd(3)
+                exts.append( Extension('pwd', ['pwdmodule.c']) )
+                # grp(3)
+                exts.append( Extension('grp', ['grpmodule.c']) )
         # posix (UNIX) errno values
         exts.append( Extension('errno', ['errnomodule.c']) )
         # select(2); not on ancient System V
@@ -338,14 +339,15 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cPickle', ['cPickle.c']) )
 
         # Memory-mapped files (also works on Win32).
-        if platform not in ['atheos']:
+        if platform not in ['atheos', 'mac']:
             exts.append( Extension('mmap', ['mmapmodule.c']) )
 
         # Lance Ellinghaus's modules:
         # enigma-inspired encryption
         exts.append( Extension('rotor', ['rotormodule.c']) )
-        # syslog daemon interface
-        exts.append( Extension('syslog', ['syslogmodule.c']) )
+        if platform not in ['mac']:
+                # syslog daemon interface
+                exts.append( Extension('syslog', ['syslogmodule.c']) )
 
         # George Neville-Neil's timing module:
         exts.append( Extension('timing', ['timingmodule.c']) )
@@ -381,14 +383,14 @@ class PyBuildExt(build_ext):
             exts.append( Extension('readline', ['readline.c'],
                                    library_dirs=['/usr/lib/termcap'],
                                    libraries=readline_libs) )
-
-        # crypt module.
-
-        if self.compiler.find_library_file(lib_dirs, 'crypt'):
-            libs = ['crypt']
-        else:
-            libs = []
-        exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
+        if platform not in ['mac']:
+                # crypt module.
+        
+                if self.compiler.find_library_file(lib_dirs, 'crypt'):
+                    libs = ['crypt']
+                else:
+                    libs = []
+                exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
@@ -535,7 +537,7 @@ class PyBuildExt(build_ext):
             dblib_dir = None
 
         # The standard Unix dbm module:
-        if platform not in ['cygwin']:
+        if platform not in ['cygwin', 'mac']:
             if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        libraries = ['ndbm'] ) )
