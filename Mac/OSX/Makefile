@@ -137,3 +137,6 @@ installmacsubtree:
 			esac; \
 		done; \
 	done
+	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
+	@echo '**' $(INSTALLDIR)/lib/python2.2/sitecustomize.py
+	
