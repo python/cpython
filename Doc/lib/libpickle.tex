@@ -305,14 +305,11 @@ the last location. The \method{__setstate__()} and
 \method{__getstate__()} methods are used to implement this behavior.
 
 \begin{verbatim}
-# illustrate __setstate__ and __getstate__  methods
-# used in pickling.
-
 class TextReader:
-    "Print and number lines in a text file."
-    def __init__(self,file):
+    """Print and number lines in a text file."""
+    def __init__(self, file):
         self.file = file
-        self.fh = open(file,'r')
+        self.fh = open(file)
         self.lineno = 0
 
     def readline(self):
@@ -320,24 +317,23 @@ class TextReader:
         line = self.fh.readline()
         if not line:
             return None
-        return "%d: %s" % (self.lineno,line[:-1])
+        if line.endswith("\n"):
+            line = line[:-1]
+        return "%d: %s" % (self.lineno, line)
 
-    # return data representation for pickled object
     def __getstate__(self):
-        odict = self.__dict__    # get attribute dictionary
-        del odict['fh']          # remove filehandle entry
+        odict = self.__dict__.copy() # copy the dict since we change it
+        del odict['fh']              # remove filehandle entry
         return odict
 
-    # restore object state from data representation generated 
-    # by __getstate__
     def __setstate__(self,dict):
-        fh = open(dict['file'])  # reopen file
-        count = dict['lineno']   # read from file...
-        while count:             # until line count is restored
+        fh = open(dict['file'])      # reopen file
+        count = dict['lineno']       # read from file...
+        while count:                 # until line count is restored
             fh.readline()
             count = count - 1
-        dict['fh'] = fh          # create filehandle entry
-        self.__dict__ = dict     # make dict our attribute dictionary
+        self.__dict__.update(dict)   # update attributes
+        self.fh = fh                 # save the file object
 \end{verbatim}
 
 A sample usage might be something like this:
@@ -352,9 +348,13 @@ A sample usage might be something like this:
 '7: class TextReader:'
 >>> import pickle
 >>> pickle.dump(obj,open('save.p','w'))
+\end{verbatim}
 
-  (start another Python session)
+If you want to see that \refmodule{pickle} works across Python
+processes, start another Python session, before continuing.  What
+follows can happen from either the same process or a new process.
 
+\begin{verbatim}
 >>> import pickle
 >>> reader = pickle.load(open('save.p'))
 >>> reader.readline()
