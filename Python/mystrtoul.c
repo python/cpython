@@ -26,6 +26,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+#ifdef WITH_THREAD
+#define _REENTRANT
+#endif
+
 /* Convert a possibly signed character to a nonnegative int */
 /* XXX This assumes characters are 8 bits wide */
 #ifdef __CHAR_UNSIGNED__
