@@ -442,8 +442,7 @@ class Displayer(VideoParams):
 		self.color0 = None
 		self.fixcolor0 = 0
 		if self.format in ('rgb', 'jpeg', 'compress'):
-			gl.RGBmode()
-			gl.gconfig()
+			self.set_rgbmode()
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
 			return
@@ -456,8 +455,7 @@ class Displayer(VideoParams):
 			gl.clear()
 			gl.pixmode(GL.PM_SIZE, 8)
 			return
-		gl.cmode()
-		gl.gconfig()
+		self.set_cmode()
 		self.skipchrom = 0
 		if self.offset == 0:
 			self.mask = 0x7ff
@@ -469,6 +467,18 @@ class Displayer(VideoParams):
 		gl.clear()
 		if not self.quiet:
 			sys.stderr.write(' Done.\n')
+
+	# Set the window in RGB mode (may be overridden for Glx window)
+
+	def set_rgbmode(self):
+		gl.RGBmode()
+		gl.gconfig()
+
+	# Set the window in colormap mode (may be overridden for Glx window)
+
+	def set_cmode(self):
+		gl.cmode()
+		gl.gconfig()
 
 	# Clear the window to a default color
 
