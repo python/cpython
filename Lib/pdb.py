@@ -234,6 +234,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			# now set the break point
 			err = self.set_break(filename, line, temporary, cond)
 			if err: print '***', err
+			else:
+				bp = self.get_breaks(filename, line)[-1]
+				print "Breakpoint %d at %s:%d" % (bp.number,
+								  bp.file,
+								  bp.line)
 
 	# To be overridden in derived debuggers
 	def defaultFile(self):
@@ -383,6 +388,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				print bpnum, 'is reached.'
 
 	def do_clear(self, arg):
+		# Three possibilities, tried in this order:
+		# clear -> clear all breaks, ask for confirmation
+		# clear file:lineno -> clear all breaks at file:lineno
+		# clear bpno bpno ... -> clear breakpoints by number
 		if not arg:
 			try:
 				reply = raw_input('Clear all breaks? ')
@@ -392,14 +401,47 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			if reply in ('y', 'yes'):
 				self.clear_all_breaks()
 			return
+		if ':' in arg:
+			# Make sure it works for "clear C:\foo\bar.py:12"
+			i = string.rfind(arg, ':')
+			filename = arg[:i]
+			arg = arg[i+1:]
+			try:
+				lineno = int(arg)
+			except:
+				err = "Invalid line number (%s)" % arg
+			else:
+				err = self.clear_break(filename, lineno)
+			if err: print '***', err
+			return
 		numberlist = string.split(arg)
 		for i in numberlist:
-			err = self.clear_break(i)
+			err = self.clear_bpbynumber(i)
 			if err:
-				print '***'+err
+				print '***', err
 			else:
 				print 'Deleted breakpoint %s ' % (i,)
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
+
+	def do_clear_break(self, arg):
+		if not arg:
+			self.do_clear("")
+			return
+		arg = string.strip(arg)
+		# First arg is file, second is line, ignore anything else
+		args = string.split(arg)
+		if len(args) < 2:
+			print '*** Specify file and line number.'
+			return
+		try:
+			line = int(args[1])
+		except:
+			print '*** line number must be an integer.'
+			return
+		result =self.clear_break(args[0], line)
+		if result:
+			print result
+	do_clb = do_clear_break
 	
 	def do_where(self, arg):
 		self.print_stack_trace()
@@ -657,10 +699,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.help_cl()
 
 	def help_cl(self):
+		print "cl(ear) filename:lineno"
 		print """cl(ear) [bpnumber [bpnumber...]]
 	With a space separated list of breakpoint numbers, clear
 	those breakpoints.  Without argument, clear all breaks (but
-	first ask confirmation).
+	first ask confirmation).  With a filename:lineno argument,
+	clear all breaks at that line in that file.
 
 	Note that the argument is different from previous versions of
 	the debugger (in python distributions 1.5.1 and before) where
