@@ -37,7 +37,7 @@ class Cmd:
 			return self.default(line)
 		else:
 			try:
-				func = eval('self.do_' + cmd)
+				func = getattr(self, 'do_' + cmd)
 			except AttributeError:
 				return self.default(line)
 			return func(arg)
@@ -49,7 +49,7 @@ class Cmd:
 		if arg:
 			# XXX check arg syntax
 			try:
-				func = eval('self.help_' + arg)
+				func = getattr(self, 'help_' + arg)
 			except:
 				print '*** No help on', `arg`
 				return

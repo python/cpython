@@ -46,6 +46,12 @@ def split(s):
 	return s[:colon], s[colon:]
 
 
+# Short interfaces to split()
+
+def dirname(s): return split(s)[0]
+def basename(s): return split(s)[1]
+
+
 # XXX This is undocumented and may go away!
 # Normalize a pathname: get rid of '::' sequences by backing up,
 # e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
@@ -112,3 +118,9 @@ def exists(s):
 	except mac.error:
 		return 0
 	return 1
+
+
+# Normalize path, removing things like ...:A:..:... (yet to be written)
+
+def normpath(s):
+	return s

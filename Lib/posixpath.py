@@ -75,6 +75,12 @@ def basename(p):
 	return split(p)[1]
 
 
+# Return the head (dirname) part of a path.
+
+def dirname(p):
+	return split(p)[0]
+
+
 # Return the longest prefix of all list elements.
 
 def commonprefix(m):
@@ -256,3 +262,31 @@ def expandvars(path):
 	if res[-1:] == '\n':
 		res = res[:-1]
 	return res
+
+
+# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
+# It should be understood that this may change the meaning of the path
+# if it contains symbolic links!
+
+def normpath(path):
+	import string
+	comps = string.splitfields(path, '/')
+	# If the path begins with '/', comps[0] is '', which we leave alone;
+	# we also leave leading multiple slashes alone for compatibility
+	# with certain networking naming schemes using //host/path
+	i = 0
+	while i < len(comps):
+		if comps[i] == '.':
+			del comps[i]
+		elif comps[i] == '..' and i > 0 and \
+					  comps[i-1] not in ('', '..'):
+			del comps[i-1:i+1]
+			i = i-1
+		elif comps[i] == '' and i > 0 and comps[i-1] <> '':
+			del comps[i]
+		else:
+			i = i+1
+	# If the path is now empty, substitute '.'
+	if not comps:
+		comps.append('.')
+	return string.joinfields(comps, '/')

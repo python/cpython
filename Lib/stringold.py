@@ -96,10 +96,18 @@ def joinfields(words, sep):
 
 # Find substring
 index_error = 'substring not found in string.index'
-def index(s, sub):
+def index(s, sub, *args):
+	if args:
+		if len(args) > 1:
+			raise TypeError, 'string.index(): too many args'
+		i = args[0]
+	else:
+		i = 0
 	n = len(sub)
-	for i in range(len(s) + 1 - n):
+	m = len(s) + 1 - n
+	while i < m:
 		if sub == s[i:i+n]: return i
+		i = i+1
 	raise index_error, (s, sub)
 
 # Convert string to integer
@@ -107,7 +115,7 @@ atoi_error = 'non-numeric argument to string.atoi'
 def atoi(str):
 	sign = ''
 	s = str
-	if s[:1] in '+-':
+	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
 	if not s: raise atoi_error, str
