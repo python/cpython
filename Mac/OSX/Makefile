@@ -24,7 +24,7 @@ INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 DIRMODE=755
 FILEMODE=644
 INSTALL=/usr/bin/install -c
-INSTALL_SYMLINK=ln -fs
+INSTALL_SYMLINK=ln -fsn
 INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m ${FILEMODE}
@@ -152,13 +152,13 @@ install_IDLE:
 		echo $(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
-			--extra $(srcdir)/Tools/idle \
-			$(srcdir)/Tools/idle/idle ; \
+			--extra $(srcdir)/Lib/idlelib \
+			$(srcdir)/Lib/idlelib/idle ; \
 		$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--python $(INSTALLED_PYTHONW) \
 			--output $(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app \
-			--extra $(srcdir)/Tools/idle:Contents/Resources/idlelib \
-			$(srcdir)/Tools/idle/idle ; \
+			--extra $(srcdir)/Lib/idlelib:Contents/Resources/idlelib \
+			$(srcdir)/Lib/idlelib/idle ; \
 	fi
 
 		
