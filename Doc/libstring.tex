@@ -82,6 +82,19 @@ meaning as for \code{atoi()}.  A trailing \samp{l} or \samp{L} is not
 allowed, except if the base is 0.
 \end{funcdesc}
 
+\begin{funcdesc}{capitalize}{word}
+Capitalize the first character of the argument.
+\end{funcdesc}
+
+\begin{funcdesc}{capwords}{s}
+Split the argument into words using \code{split}, capitalize each word
+using \code{capitalize}, and join the capitalized words using
+\code{join}.  Note that this replaces runs of whitespace characters by
+a single space.  (See also \code{regsub.capwords()} for a version
+that doesn't change the delimiters, and lets you specify a word
+separator.)
+\end{funcdesc}
+
 \begin{funcdesc}{expandtabs}{s\, tabsize}
 Expand tabs in a string, i.e.\ replace them by one or more spaces,
 depending on the current column and the given tab size.  The column
@@ -130,36 +143,52 @@ into the character at the same position in \var{to}; \var{from} and
 \var{to} must have the same length. 
 \end{funcdesc}
 
-\begin{funcdesc}{split}{s}
-Return a list of the whitespace-delimited words of the string
-\var{s}.
+\begin{funcdesc}{split}{s\optional{\, sep\optional{\, maxsplit}}}
+Return a list of the words of the string \var{s}.  If the optional
+second argument \var{sep} is absent or \code{None}, the words are
+separated by arbitrary strings of whitespace characters (space, tab,
+newline, return, formfeed).  If the second argument \var{sep} is
+present and not \code{None}, it specifies a string to be used as the
+word separator.  The returned list will then have one more items than
+the number of non-overlapping occurrences of the separator in the
+string.  The optional third argument \var{maxsplit} defaults to 0.  If
+it is nonzero, at most \var{maxsplit} number of splits occur, and the
+remainder of the string is returned as the final element of the list
+(thus, the list will have at most \code{\var{maxsplit}+1} elements).
+(See also \code{regsub.split()} for a version that allows specifying a
+regular expression as the separator.)
 \end{funcdesc}
 
-\begin{funcdesc}{splitfields}{s\, sep}
-  Return a list containing the fields of the string \var{s}, using
-  the string \var{sep} as a separator.  The list will have one more
-  items than the number of non-overlapping occurrences of the
-  separator in the string.  Thus, \code{string.splitfields(\var{s}, '
-  ')} is not the same as \code{string.split(\var{s})}, as the latter
-  only returns non-empty words.  As a special case,
-  \code{splitfields(\var{s}, '')} returns \code{[\var{s}]}, for any string
-  \var{s}.  (See also \code{regsub.split()}.)
+\begin{funcdesc}{splitfields}{s\optional{\, sep\optional{\, maxsplit}}}
+This function behaves identical to \code{split}.  (In the past,
+\code{split} was only used with one argument, while \code{splitfields}
+was only used with two arguments.)
 \end{funcdesc}
 
-\begin{funcdesc}{join}{words}
-Concatenate a list or tuple of words with intervening spaces.
-\end{funcdesc}
-
-\begin{funcdesc}{joinfields}{words\, sep}
-Concatenate a list or tuple of words with intervening separators.
+\begin{funcdesc}{join}{words\optional{\, sep}}
+Concatenate a list or tuple of words with intervening occurrences of
+\var{sep}.  The default value for \var{sep} is a single space character.
 It is always true that
-\code{string.joinfields(string.splitfields(\var{t}, \var{sep}), \var{sep})}
-equals \var{t}.
+\code{string.join(string.split(\var{s}, \var{sep}), \var{sep})}
+equals \var{s}.
+\end{funcdesc}
+
+\begin{funcdesc}{joinfields}{words\optional{\, sep}}
+This function behaves identical to \code{join}.  (In the past,
+\code{join} was only used with one argument, while \code{joinfields}
+was only used with two arguments.)
+\end{funcdesc}
+
+\begin{funcdesc}{lstrip}{s}
+Remove leading whitespace from the string \var{s}.
+\end{funcdesc}
+
+\begin{funcdesc}{rstrip}{s}
+Remove trailing whitespace from the string \var{s}.
 \end{funcdesc}
 
 \begin{funcdesc}{strip}{s}
-Remove leading and trailing whitespace from the string
-\var{s}.
+Remove leading and trailing whitespace from the string \var{s}.
 \end{funcdesc}
 
 \begin{funcdesc}{swapcase}{s}
