@@ -204,17 +204,27 @@ booleans.  The following macros are available, however.
   \versionadded{2.3}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{Py_RETURN_FALSE}
-Return Py_False from a function, properly incrementing its reference
-count.
-\versionadded{2.4}
-\end{cfuncdesc}
+\begin{cvardesc}{PyObject*}{Py_False}
+  The Python \code{False} object.  This object has no methods.  It needs to
+  be treated just like any other object with respect to reference counts.
+\end{cvardesc}
 
-\begin{cfuncdesc}{Py_RETURN_TRUE}
+\begin{cvardesc}{PyObject*}{Py_True}
+  The Python \code{True} object.  This object has no methods.  It needs to
+  be treated just like any other object with respect to reference counts.
+\end{cvardesc}
+
+\begin{csimplemacrodesc}{Py_RETURN_FALSE}
+  Return \constant{Py_False} from a function, properly incrementing its
+  reference count.
+\versionadded{2.4}
+\end{csimplemacrodesc}
+
+\begin{csimplemacrodesc}{Py_RETURN_TRUE}
 Return Py_True from a function, properly incrementing its reference
 count.
 \versionadded{2.4}
-\end{cfuncdesc}
+\end{csimplemacrodesc}
 
 \begin{cfuncdesc}{int}{PyBool_Check}{PyObject* o}
   Returns true if \var{o} is of type \cdata{PyBool_Type}.
