@@ -713,7 +713,7 @@ marshal_dump(self, args)
 	WFILE wf;
 	PyObject *x;
 	PyObject *f;
-	if (!PyArg_Parse(args, "(OO)", &x, &f))
+	if (!PyArg_ParseTuple(args, "OO:dump", &x, &f))
 		return NULL;
 	if (!PyFile_Check(f)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -741,7 +741,7 @@ marshal_load(self, args)
 	RFILE rf;
 	PyObject *f;
 	PyObject *v;
-	if (!PyArg_Parse(args, "O", &f))
+	if (!PyArg_ParseTuple(args, "O:load", &f))
 		return NULL;
 	if (!PyFile_Check(f)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -766,7 +766,7 @@ marshal_dumps(self, args)
 	PyObject *args;
 {
 	PyObject *x;
-	if (!PyArg_Parse(args, "O", &x))
+	if (!PyArg_ParseTuple(args, "O:dumps", &x))
 		return NULL;
 	return PyMarshal_WriteObjectToString(x);
 }
@@ -780,7 +780,7 @@ marshal_loads(self, args)
 	PyObject *v;
 	char *s;
 	int n;
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_ParseTuple(args, "s#:loads", &s, &n))
 		return NULL;
 	rf.fp = NULL;
 	rf.str = args;
@@ -796,10 +796,10 @@ marshal_loads(self, args)
 }
 
 static PyMethodDef marshal_methods[] = {
-	{"dump",	marshal_dump},
-	{"load",	marshal_load},
-	{"dumps",	marshal_dumps},
-	{"loads",	marshal_loads},
+	{"dump",	marshal_dump,	1},
+	{"load",	marshal_load,	1},
+	{"dumps",	marshal_dumps,	1},
+	{"loads",	marshal_loads,	1},
 	{NULL,		NULL}		/* sentinel */
 };
 
