@@ -1866,21 +1866,8 @@ instancemethod_setattro(register PyMethodObject *im, PyObject *name,
 {
 	char *sname = PyString_AsString(name);
 
-	if (PyEval_GetRestricted() ||
-	    strcmp(sname, "im_func") == 0 ||
-	    strcmp(sname, "im_self") == 0 ||
-	    strcmp(sname, "im_class") == 0)
-	{
-		PyErr_Format(PyExc_TypeError, "read-only attribute: %s",
-			     sname);
-		return -1;
-	}
-	if (im->im_self != NULL) {
-		PyErr_Format(PyExc_TypeError,
-			     "cannot set attributes through bound methods");
-		return -1;
-	}
-	return PyObject_SetAttr(im->im_func, name, v);
+	PyErr_Format(PyExc_TypeError, "read-only attribute: %s", sname);
+	return -1;
 }
  
 
