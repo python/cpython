@@ -360,20 +360,6 @@ static PyTypeObject Unpicklertype;
 static int save(Picklerobject *, PyObject *, int);
 static int put2(Picklerobject *, PyObject *);
 
-int
-cPickle_PyMapping_HasKey(PyObject *o, PyObject *key)
-{
-	PyObject *v;
-
-	if ((v = PyObject_GetItem(o,key))) {
-		Py_DECREF(v);
-		return 1;
-	}
-
-	PyErr_Clear();
-	return 0;
-}
-
 static
 PyObject *
 cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
@@ -3022,7 +3008,7 @@ load_counted_long(Unpicklerobject *self, int size)
 		/* Corrupt or hostile pickle -- we never write one like
 		 * this.
 		 */
-		PyErr_SetString(PyExc_ValueError, "LONG pickle has negative "
+		PyErr_SetString(UnpicklingError, "LONG pickle has negative "
 				"byte count");
 		return -1;
 	}
