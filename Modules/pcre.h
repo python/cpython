@@ -4,24 +4,32 @@
 
 /* Copyright (c) 1997 University of Cambridge */
 
-/* Have to include stdlib.h in order to ensure that size_t is defined;
-it is needed in there for malloc. */
+#ifndef _PCRE_H
+#define _PCRE_H
 
-#ifndef PCRE_H
-#define PCRE_H
-
-#include <stdlib.h>
 #ifdef FOR_PYTHON
 #include "Python.h"
 #endif
 
+/* Have to include stdlib.h in order to ensure that size_t is defined;
+it is needed here for malloc. */
+
+#include <stdlib.h>
+
 /* Options */
 
-#define PCRE_CASELESS     0x01
-#define PCRE_EXTENDED     0x02
-#define PCRE_ANCHORED     0x04
-#define PCRE_MULTILINE    0x08
-#define PCRE_DOTALL       0x10
+#define PCRE_CASELESS        0x0001
+#define PCRE_EXTENDED        0x0002
+#define PCRE_ANCHORED        0x0004
+#define PCRE_MULTILINE       0x0008
+#define PCRE_DOTALL          0x0010
+#define PCRE_DOLLAR_ENDONLY  0x0020
+#define PCRE_EXTRA           0x0040
+#define PCRE_NOTBOL          0x0080
+#define PCRE_NOTEOL          0x0100
+#ifdef FOR_PYTHON
+#define PCRE_LOCALE          0x0200
+#endif
 
 /* Exec-time error codes */
 
@@ -31,6 +39,7 @@ it is needed in there for malloc. */
 #define PCRE_ERROR_BADOPTION      (-4)
 #define PCRE_ERROR_BADMAGIC       (-5)
 #define PCRE_ERROR_UNKNOWN_NODE   (-6)
+#define PCRE_ERROR_NOMEMORY       (-7)
 
 /* Types */
 
@@ -46,14 +55,14 @@ extern void  (*pcre_free)(void *);
 /* Functions */
 
 #ifdef FOR_PYTHON
-extern pcre *pcre_compile(char *, int, char **, int *, PyObject *);
+extern pcre *pcre_compile(const char *, int, char **, int *, PyObject *);
 #else
-extern pcre *pcre_compile(char *, int, char **, int *);
+extern pcre *pcre_compile(const char *, int, char **, int *);
 #endif
-extern int pcre_exec(pcre *, pcre_extra *, char *, int, int, int *, int);
-extern int pcre_info(pcre *, int *, int *);
-extern pcre_extra *pcre_study(pcre *, int, char **);
+extern int pcre_exec(const pcre *, const pcre_extra *, const char *,
+  int, int, int *, int);
+extern int pcre_info(const pcre *, int *, int *);
+extern pcre_extra *pcre_study(const pcre *, int, char **);
 extern char *pcre_version(void);
 
-#endif /* ifndef PCRE_H */
-/* End of pcre.h */
+#endif /* End of pcre.h */
