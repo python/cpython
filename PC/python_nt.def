@@ -340,3 +340,17 @@ EXPORTS
  	PyThread_init_thread
  	PyThread_get_thread_ident
  	PyThread_exit_thread
+	PyThread_allocate_lock
+	PyThread_free_lock
+	PyThread_acquire_lock
+	PyThread_release_lock
+	PyThread_allocate_sema
+	PyThread_free_sema
+	PyThread_down_sema
+	PyThread_up_sema
+	PyThread_exit_prog
+	PyThread__exit_prog
+	PyThread_create_key
+	PyThread_delete_key
+	PyThread_get_key_value
+	PyThread_set_key_value
