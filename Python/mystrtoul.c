@@ -31,6 +31,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 
+#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
+#define _SGI_MP_SOURCE
+#endif
+
 /* Convert a possibly signed character to a nonnegative int */
 /* XXX This assumes characters are 8 bits wide */
 #ifdef __CHAR_UNSIGNED__
