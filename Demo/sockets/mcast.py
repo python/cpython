@@ -1,5 +1,7 @@
-# Send/receive UDP multicast packets (SGI)
-# After /usr/people/4Dgifts/examples/network/mcast.c
+# Send/receive UDP multicast packets.
+# Requires that your OS kernel supports IP multicast.
+# This is built-in on SGI, still optional for most other vendors.
+#
 # Usage:
 #   mcast -s (sender)
 #   mcast -b (sender, using broadcast instead multicast)
@@ -13,8 +15,6 @@ import time
 import struct
 import regsub
 from socket import *
-from SOCKET import *
-from IN import *			# SGI specific!!! (Sorry)
 
 
 # Main program
@@ -60,13 +60,10 @@ def receiver():
 def openmcastsock(group, port):
 	# Import modules used only here
 	import regsub
-	import socket
 	import struct
-	from SOCKET import *
-	from IN import *
 	#
 	# Create a socket
-	s = socket.socket(AF_INET, SOCK_DGRAM)
+	s = socket(AF_INET, SOCK_DGRAM)
 	#
 	# Allow multiple copies of this program on one machine
 	# (not strictly needed)
@@ -77,7 +74,7 @@ def openmcastsock(group, port):
 	#
 	# Look up multicast group address in name server
 	# (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
-	group = socket.gethostbyname(group)
+	group = gethostbyname(group)
 	#
 	# Construct binary group address
 	bytes = eval(regsub.gsub('\.', ',', group))

@@ -4,7 +4,6 @@ MYPORT = 50000
 
 import sys, time
 from socket import *
-from SOCKET import *
 
 s = socket(AF_INET, SOCK_DGRAM)
 s.bind(('', 0))
