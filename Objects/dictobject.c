@@ -1362,11 +1362,14 @@ dict_popitem(dictobject *mp, PyObject *args)
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	/* Allocate the result tuple first.  Believe it or not,
-	 * this allocation could trigger a garbage collection which
-	 * could resize the dict, which would invalidate the pointer
-	 * (ep) into the dict calculated below.
-	 * So we have to do this first.
+	/* Allocate the result tuple before checking the size.  Believe it
+	 * or not, this allocation could trigger a garbage collection which
+	 * could empty the dict, so if we checked the size first and that
+	 * happened, the result would be an infinite loop (searching for an
+	 * entry that no longer exists).  Note that the usual popitem()
+	 * idiom is "while d: k, v = d.popitem()". so needing to throw the
+	 * tuple away  if the dict *is* empty isn't a significant
+	 * inefficiency -- possible, but unlikely in practice.
 	 */
 	res = PyTuple_New(2);
 	if (res == NULL)
