@@ -74,6 +74,10 @@ PyTuple_New(size)
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
+#ifdef Py_TRACE_REFS
+		op->ob_type = &PyTuple_Type;
+		op->ob_size = size;
+#endif
 	}
 	else
 #endif
