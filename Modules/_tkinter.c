@@ -34,16 +34,12 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* TCL/TK VERSION INFO:
 
-   Unix:
-	Tcl/Tk 8.0 (even alpha or beta) or 7.6/4.2 are recommended.
-	Versions 7.5/4.1 are the earliest versions still supported.
-	Versions 7.4/4.0 or Tk 3.x are no longer supported.
+	Only Tcl/Tk 8.0 and later are supported.  Older versions are not
+	supported.  (Use Python 1.5.2 if you cannot upgrade your Tcl/Tk
+	libraries.)
+*/
 
-   Mac and Windows:
-	Use Tcl 8.0 if available (even alpha or beta).
-	The oldest usable version is 4.1p1/7.5p1.
-
-   XXX Further speed-up ideas, involving Tcl 8.0 features:
+/* XXX Further speed-up ideas, involving Tcl 8.0 features:
 
    - In Tcl_Call(), create Tcl objects from the arguments, possibly using
    intelligent mappings between Python objects and Tcl objects (e.g. ints,
@@ -80,18 +76,18 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
 
-#if TKMAJORMINOR < 4001
-	#error "Tk 4.0 or 3.x are not supported -- use 4.1 or higher"
+#if TKMAJORMINOR < 8000
+#error "Tk older than 8.0 not supported"
 #endif
 
-#if TKMAJORMINOR >= 8000 && defined(macintosh)
+#if defined(macintosh)
 /* Sigh, we have to include this to get at the tcl qd pointer */
 #include <tkMac.h>
 /* And this one we need to clear the menu bar */
 #include <Menus.h>
 #endif
 
-#if TKMAJORMINOR < 8000 || !defined(MS_WINDOWS)
+#if !defined(MS_WINDOWS)
 #define HAVE_CREATEFILEHANDLER
 #endif
 
@@ -106,14 +102,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #define FHANDLETYPE TCL_WIN_SOCKET
 #else
 #define FHANDLETYPE TCL_UNIX_FD
-#endif
-
-#if TKMAJORMINOR < 8000
-#define FHANDLE Tcl_File
-#define MAKEFHANDLE(fd) Tcl_GetFile((ClientData)(fd), FHANDLETYPE)
-#else
-#define FHANDLE int
-#define MAKEFHANDLE(fd) (fd)
 #endif
 
 /* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
@@ -219,10 +207,6 @@ static PyThreadState *tcl_tstate = NULL;
 #include <Events.h> /* For EventRecord */
 
 typedef int (*TclMacConvertEventPtr) Py_PROTO((EventRecord *eventPtr));
-/* They changed the name... */
-#if TKMAJORMINOR < 8000
-#define Tcl_MacSetEventProc TclMacSetEventProc
-#endif
 void Tcl_MacSetEventProc Py_PROTO((TclMacConvertEventPtr procPtr));
 int TkMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 
@@ -491,12 +475,8 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 	v->interp = Tcl_CreateInterp();
 
-#if TKMAJORMINOR == 8001
-	TclpInitLibraryPath(baseName);
-#endif /* TKMAJORMINOR */
-
-#if defined(macintosh) && TKMAJORMINOR >= 8000
-	/* This seems to be needed since Tk 8.0 */
+#if defined(macintosh)
+	/* This seems to be needed */
 	ClearMenuBar();
 	TkMacInitMenus(v->interp);
 #endif
@@ -1440,24 +1420,22 @@ Tkapp_CreateFileHandler(self, args)
 {
 	FileHandler_ClientData *data;
 	PyObject *file, *func;
-	int mask, id;
-	FHANDLE tfile;
+	int mask, tfile;
 
 	if (!PyArg_ParseTuple(args, "OiO:createfilehandler", &file, &mask, &func))
 		return NULL;
-	id = GetFileNo(file);
-	if (id < 0)
+	tfile = GetFileNo(file);
+	if (tfile < 0)
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError, "bad argument list");
 		return NULL;
 	}
 
-	data = NewFHCD(func, file, id);
+	data = NewFHCD(func, file, tfile);
 	if (data == NULL)
 		return NULL;
 
-	tfile = MAKEFHANDLE(id);
 	/* Ought to check for null Tcl_File object... */
 	ENTER_TCL
 	Tcl_CreateFileHandler(tfile, mask, FileHandler, (ClientData) data);
@@ -1473,18 +1451,16 @@ Tkapp_DeleteFileHandler(self, args)
 {
 	PyObject *file;
 	FileHandler_ClientData *data;
-	int id;
-	FHANDLE tfile;
+	int tfile;
   
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
-	id = GetFileNo(file);
-	if (id < 0)
+	tfile = GetFileNo(file);
+	if (tfile < 0)
 		return NULL;
 
-	DeleteFHCD(id);
+	DeleteFHCD(tfile);
 
-	tfile = MAKEFHANDLE(id);
 	/* Ought to check for null Tcl_File object... */
 	ENTER_TCL
 	Tcl_DeleteFileHandler(tfile);
@@ -1905,7 +1881,7 @@ static int
 EventHook()
 {
 #ifndef MS_WINDOWS
-	FHANDLE tfile;
+	int tfile;
 #endif
 #ifdef WITH_THREAD
 	PyEval_RestoreThread(event_tstate);
@@ -1913,7 +1889,7 @@ EventHook()
 	stdin_ready = 0;
 	errorInCmd = 0;
 #ifndef MS_WINDOWS
-	tfile = MAKEFHANDLE(fileno(stdin));
+	tfile = fileno(stdin);
 	Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
 #endif
 	while (!errorInCmd && !stdin_ready) {
@@ -2045,11 +2021,9 @@ init_tkinter()
 	Tktt_Type.ob_type = &PyType_Type;
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
-#if TKMAJORMINOR >= 8000
 	/* This helps the dynamic loader; in Unicode aware Tcl versions
 	   it also helps Tcl find its encodings. */
 	Tcl_FindExecutable(Py_GetProgramName());
-#endif
 
 	if (PyErr_Occurred())
 		return;
@@ -2058,9 +2032,7 @@ init_tkinter()
 	/* This was not a good idea; through <Destroy> bindings,
 	   Tcl_Finalize() may invoke Python code but at that point the
 	   interpreter and thread state have already been destroyed! */
-#if TKMAJORMINOR >= 8000
 	Py_AtExit(Tcl_Finalize);
-#endif
 #endif
 
 #ifdef macintosh
@@ -2069,9 +2041,7 @@ init_tkinter()
 	** Most of the initializations in that routine (toolbox init calls and
 	** such) have already been done for us, so we only need these.
 	*/
-#if TKMAJORMINOR >= 8000
 	tcl_macQdPtr = &qd;
-#endif
 
 	Tcl_MacSetEventProc(PyMacConvertEvent);
 #if GENERATINGCFM
@@ -2127,66 +2097,6 @@ PyMacConvertEvent(eventPtr)
 	}
 	return TkMacConvertEvent(eventPtr);
 }
-
-#if defined(USE_GUSI) && TKMAJORMINOR < 8000
-/*
- * For Python we have to override this routine (from TclMacNotify),
- * since we use GUSI for our sockets, not Tcl streams. Hence, we have
- * to use GUSI select to see whether our socket is ready. Note that
- * createfilehandler (above) sets the type to TCL_UNIX_FD for our
- * files and sockets.
- *
- * NOTE: this code was lifted from Tcl 7.6, it may need to be modified
- * for other versions.  */
-
-int
-Tcl_FileReady(file, mask)
-    Tcl_File file;		/* File handle for a stream. */
-    int mask;			/* OR'ed combination of TCL_READABLE,
-				 * TCL_WRITABLE, and TCL_EXCEPTION:
-				 * indicates conditions caller cares about. */
-{
-    int type;
-    int fd;
-
-    fd = (int) Tcl_GetFileInfo(file, &type);
-
-    if (type == TCL_MAC_SOCKET) {
-	return TclMacSocketReady(file, mask);
-    } else if (type == TCL_MAC_FILE) {
-	/*
-	 * Under the Macintosh, files are always ready, so we just 
-	 * return the mask that was passed in.
-	 */
-
-	return mask;
-    } else if (type == TCL_UNIX_FD) {
-	fd_set readset, writeset, excset;
-	struct timeval tv;
-	
-	FD_ZERO(&readset);
-	FD_ZERO(&writeset);
-	FD_ZERO(&excset);
-	
-	if ( mask & TCL_READABLE ) FD_SET(fd, &readset);
-	if ( mask & TCL_WRITABLE ) FD_SET(fd, &writeset);
-	if ( mask & TCL_EXCEPTION ) FD_SET(fd, &excset);
-	
-	tv.tv_sec = tv.tv_usec = 0;
-	if ( select(fd+1, &readset, &writeset, &excset, &tv) <= 0 )
-		return 0;
-	
-	mask = 0;
-	if ( FD_ISSET(fd, &readset) ) mask |= TCL_READABLE;
-	if ( FD_ISSET(fd, &writeset) ) mask |= TCL_WRITABLE;
-	if ( FD_ISSET(fd, &excset) ) mask |= TCL_EXCEPTION;
-
-	return mask;
-    }
-    
-    return 0;
-}
-#endif /* USE_GUSI */
 
 #if GENERATINGCFM
 
