@@ -89,8 +89,12 @@ class Play_Audio_mac:
 		import audioop
 		return audioop.ulaw2lin(data, 2)
 
-def test(fn = 'f:just samples:just.aif'):
+def test():
 	import aifc
+	import macfs
+	fss, ok = macfs.PromptGetFile("Select an AIFF soundfile", "AIFF")
+	if not ok: return
+	fn = fss.as_pathname()
 	af = aifc.open(fn, 'r')
 	print af.getparams()
 	p = Play_Audio_mac()
@@ -102,6 +106,7 @@ def test(fn = 'f:just samples:just.aif'):
 		data = af.readframes(BUFSIZ)
 		if not data: break
 		p.writeframes(data)
+		print 'wrote', len(data), 'space', p.getfillable()
 	p.wait()
 
 if __name__ == '__main__':
