@@ -227,6 +227,31 @@ class ReferencesTestCase(TestBase):
         self.assert_(p + 1.0 == 3.0)
         self.assert_(1.0 + p == 3.0)  # this used to SEGV
 
+    def test_callbacks_protected(self):
+        """Callbacks protected from already-set exceptions?"""
+        # Regression test for SF bug #478534.
+        class BogusError(Exception):
+            pass
+        data = {}
+        def remove(k):
+            del data[k]
+        def encapsulate():
+            f = lambda : ()
+            data[weakref.ref(f, remove)] = None
+            raise BogusError
+        try:
+            encapsulate()
+        except BogusError:
+            pass
+        else:
+            self.fail("exception not properly restored")
+        try:
+            encapsulate()
+        except BogusError:
+            pass
+        else:
+            self.fail("exception not properly restored")
+
 
 class Object:
     def __init__(self, arg):
