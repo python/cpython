@@ -29,6 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Types.h>
 #include <Files.h>
 #include <Events.h>
+#include <StandardFile.h>
 
 #ifdef GENERATINGCFM	/* Defined to 0 or 1 in Universal headers */
 #define HAVE_UNIVERSAL_HEADERS
@@ -54,12 +55,12 @@ void PyMac_HandleEvent Py_PROTO((EventRecord *)); /* Handle one event, if possib
 
 int PyMac_Idle(void);				/* Idle routine */
 
-char *PyMac_GetPythonDir();			/* Return the name of the python dir */
-
 int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
 
-int PyMac_GetDirectory(FSSpec *dirfss);		/* Ask user for a directory */
+int PyMac_GetDirectory(FSSpec *dirfss, char *prompt);		/* Ask user for a directory */
+void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList, 
+	StandardFileReply *reply, char *prompt);	/* Ask user for file, with prompt */
 
 int PyMac_GetOSType(PyObject *, OSType *);	/* argument parser for OSType */
 PyObject *PyMac_BuildOSType(OSType);		/* Convert OSType to PyObject */
