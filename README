@@ -265,6 +265,28 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	status of a module from static to shared, you must remove its
 	.o file or do a "make clean".)
 
+	Under RedHat Linux 5.0, if upgraded from a previous version,
+	remove the LinuxThreads packages.  This is needed because
+	LinuxThreads conflicts with the new thread support provided by
+	glibc.  Before running Python's configure script, use the
+	following commands as root (version numbers may differ; these
+	are from a stock 4.2 install):
+
+	% rpm -qa | grep ^linuxthread
+	linuxthreads-0.5-1
+	linuxthreads-devel-0.5-1
+	% rpm -e linuxthreads linuxthreads-devel
+
+	While Python only needs this to be done to allow thread
+	support to be included, the conflicts these packages create
+	with the new glibc may cause other packages which use threads
+	to fail as well, so their removal is a good idea regardless of
+	how you configure python.
+
+	Also under RedHat Linux 5.0, the crypt module now needs the
+	-lcrypt option.  Uncomment this flag in Modules/Setup, or
+	comment out the crypt module in the same file.
+
 DEC Unix: When enabling threads, use --with-dec-threads, not
 	--with-thread.
 
