@@ -566,7 +566,18 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 	int i;
 	char c;
 	int quote;
+
 	/* XXX Ought to check for interrupts when writing long strings */
+	if (! PyString_CheckExact(op)) {
+		int ret;
+		/* A str subclass may have its own __str__ method. */
+		op = (PyStringObject *) PyObject_Str((PyObject *)op);
+		if (op == NULL)
+			return -1;
+		ret = string_print(op, fp, flags);
+		Py_DECREF(op);
+		return ret;
+	}
 	if (flags & Py_PRINT_RAW) {
 		fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
 		return 0;
@@ -651,8 +662,16 @@ string_repr(register PyStringObject *op)
 static PyObject *
 string_str(PyObject *s)
 {
-	Py_INCREF(s);
-	return s;
+	assert(PyString_Check(s));
+	if (PyString_CheckExact(s)) {
+		Py_INCREF(s);
+		return s;
+	}
+	else {
+		/* Subtype -- return genuine string with the same value. */
+		PyStringObject *t = (PyStringObject *) s;
+		return PyString_FromStringAndSize(t->ob_sval, t->ob_size);
+	}
 }
 
 static int
