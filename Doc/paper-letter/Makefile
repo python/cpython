@@ -12,7 +12,7 @@ TOOLSDIR=	../tools
 TEXINPUTS=	.:../texinputs:
 
 MKDVI=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh
-MKHOWTO=	$(TOOLSDIR)/mkhowto.sh --keep
+MKHOWTO=	$(TOOLSDIR)/mkhowto --keep
 MKPDF=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --pdf
 
 
@@ -54,8 +54,8 @@ $(PDFFILES):	  ../tools/fix_hack ../tools/mkdvi.sh $(COMMONTEX)
 $(MANDVIFILES):	  $(MANSTYLES)
 $(MANPDFFILES):	  $(MANSTYLES)
 
-$(HOWTODVIFILES): ../tools/mkhowto.sh $(HOWTOSTYLES)
-$(HOWTOPDFFILES): ../tools/mkhowto.sh $(HOWTOSTYLES)
+$(HOWTODVIFILES): ../tools/mkhowto $(HOWTOSTYLES)
+$(HOWTOPDFFILES): ../tools/mkhowto $(HOWTOSTYLES)
 
 
 # Rules to build PostScript and PDF formats
