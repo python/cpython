@@ -1,7 +1,7 @@
 """Suite Metrowerks Shell Suite: Events supported by the Metrowerks Project Shell
 Level 1, version 1
 
-Generated from Sap:Codewarrior7:Metrowerks CodeWarrior:CodeWarrior IDE 1.3
+Generated from flap:CW9 Gold:Metrowerks CodeWarrior:CodeWarrior IDE 1.6.3
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -23,6 +23,8 @@ _Enum_ErrT = {
 	'definition' : 'ErDf',	# 
 	'linker_error' : 'ErLE',	# 
 	'linker_warning' : 'ErLW',	# 
+	'find_result' : 'ErFn',	# 
+	'browser_error' : 'ErBr',	# 
 }
 
 _Enum_Mode = {
@@ -42,8 +44,13 @@ _Enum_SrcT = {
 
 _Enum_PPrm = {
 	'absolute' : 'Abso',	# An absolute path name, including volume name.
-	'project_relative' : 'PRel',	# A path relative to the current project’s folder.
-	'shell_relative' : 'SRel',	# A path relative to the CodeWarrior™ folder.
+	'project_relative' : 'PRel',	# A path relative to the current projectπs folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarriorÅ folder.
+}
+
+_Enum_RefP = {
+	'Think_Reference' : 'DanR',	# 
+	'QuickView' : 'ALTV',	# 
 }
 
 class Metrowerks_Shell_Suite:
@@ -69,7 +76,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -95,7 +102,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -114,7 +121,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -140,7 +147,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -166,7 +173,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -191,7 +198,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -212,7 +219,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -232,7 +239,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -259,7 +266,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -285,7 +292,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -305,7 +312,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -325,7 +332,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -345,7 +352,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -365,7 +372,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -386,7 +393,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -411,7 +418,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -439,7 +446,33 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Preprocess = {
+		'ExternalEditor' : 'Errs',
+	}
+
+	def Preprocess(self, _object, _attributes={}, **_arguments):
+		"""Preprocess: Preprocesses the specified file(s)
+		Required argument: undocumented, typecode 'alis'
+		Keyword argument ExternalEditor: undocumented, typecode 'bool'
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Errors for each preprocessed file
+		"""
+		_code = 'MMPR'
+		_subcode = 'PreP'
+
+		aetools.keysubst(_arguments, self._argmap_Preprocess)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -458,7 +491,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -479,7 +512,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -498,7 +531,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -525,7 +558,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -545,7 +578,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -571,7 +604,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -597,7 +630,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -622,7 +655,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -647,7 +680,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -668,7 +701,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -693,7 +726,7 @@ class Metrowerks_Shell_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -709,11 +742,44 @@ class Metrowerks_Shell_Suite:
 #        property 'mode' ('Mode') 'Mode' -- 'The document\325s open mode' [enum]
 #        property 'disk file' ('file') 'fss ' -- 'The document\325s location on disk' []
 
+#    Class 'Editor' ('EDTR') -- ''
+#        property 'Syntax coloring' ('ED01') 'bool' -- 'Mark keywords and comments with color.' [mutable]
+#        property 'Text color' ('ED02') 'cRGB' -- 'The color for ordinary text.' [mutable]
+#        property 'Comment color' ('ED03') 'cRGB' -- 'The color for comments.' [mutable]
+#        property 'Keyword color' ('ED04') 'cRGB' -- 'The color for language keywords.' [mutable]
+#        property 'String color' ('ED05') 'cRGB' -- 'The color for strings.' [mutable]
+#        property 'Custom color' ('ED06') 'cRGB' -- 'The color for custom keywords.' [mutable]
+#        property 'Flash delay' ('ED07') 'long' -- 'The amount of time, in sixtieths of a second, the editor highlights a matching bracket.' [mutable]
+#        property 'Dynamic scroll' ('ED08') 'bool' -- 'Display a window\325s contents as you move the scroll box.' [mutable]
+#        property 'Balance' ('ED09') 'bool' -- 'Flash the matching opening bracket when you type a closing bracket.' [mutable]
+#        property 'Remember font' ('ED10') 'bool' -- 'Display a source file with its own font settings.' [mutable]
+#        property 'Remember window' ('ED11') 'bool' -- 'Restore the last size and position for a source file window when you open it.' [mutable]
+#        property 'Remember selection' ('ED12') 'bool' -- 'Restore the previous selection in a file when you open it.' [mutable]
+#        property 'Save on update' ('ED13') 'bool' -- 'Save all editor windows automatically when you choose the Update command.' [mutable]
+#        property 'Projector aware' ('ED14') 'bool' -- "Honor MPW Projector\325s 'CKID' resources in text files." [mutable]
+
 #    Class 'Error Information' ('ErrM') -- 'Describes a single error or warning from the compiler or the linker.'
 #        property 'kind' ('ErrT') 'ErrT' -- 'The type of error or warning.' [enum]
 #        property 'message' ('ErrS') 'TEXT' -- 'The error or warning message.' []
 #        property 'disk file' ('file') 'fss ' -- 'The file where the error occurred.  May not be returned for certain kinds of errors (eg, link errors).' []
 #        property 'line' ('ErrL') 'long' -- 'The line in the file where the error occurred.  May not be returned for certain kinds of errors (eg, link errors).' []
+
+#    Class 'Extras' ('EXTR') -- ''
+#        property 'Completion sound' ('EX01') 'bool' -- 'Play a sound when finished a Bring Up To Date or Make command.' [mutable]
+#        property 'Success sound' ('EX02') 'TEXT' -- 'The sound CodeWarrior plays when it successfully finishes a Bring Up To Date or Make command.' [mutable]
+#        property 'Failure sound' ('EX03') 'TEXT' -- 'The sound CodeWarrior plays when it cannot finish a Bring Up To Date or Make command.' [mutable]
+#        property 'Modification date caching' ('EX04') 'bool' -- '' [mutable]
+#        property 'Generate Map' ('EX05') 'bool' -- 'Generate a Pascal Make map file.' [mutable]
+#        property 'Store analysis results' ('EX06') 'bool' -- '' [mutable]
+#        property 'Full screen zoom' ('EX07') 'bool' -- 'Zoom windows to the full screen width.' [mutable]
+#        property 'External reference' ('EX08') 'RefP' -- 'Which on-line function reference to use.' [mutable enum]
+#        property 'Browser active' ('EX09') 'bool' -- 'Allow the collection of browser information.' [mutable]
+
+#    Class 'Font' ('mFNT') -- ''
+#        property 'Auto indent' ('FN01') 'bool' -- 'Indent new lines automatically.' [mutable]
+#        property 'Tab size' ('FN02') 'shor' -- '' []
+#        property 'Text font' ('ptxf') 'TEXT' -- 'The font used in editing windows.' [mutable]
+#        property 'Text size' ('ptps') 'shor' -- 'The size of the text in an editing window.' [mutable]
 
 #    Class 'Function Information' ('FDef') -- 'Describes the location of any function or global data definition within the current project.'
 #        property 'disk file' ('file') 'fss ' -- 'The location on disk of the file containing the definition.' []
@@ -733,6 +799,7 @@ class Metrowerks_Shell_Suite:
 #        property 'up to date' ('UpTD') 'bool' -- 'Has the file been compiled since its last modification ?' []
 #        property 'symbols' ('SymG') 'bool' -- 'Are debugging symbols generated for this file ?' [mutable]
 #        property 'weak link' ('Weak') 'bool' -- 'Is this file imported weakly into the project ? [PowerPC only]' [mutable]
+#        property 'initialize before' ('Bfor') 'bool' -- 'Intiailize the shared library before the main application.' [mutable]
 
 #    Class 'Segment' ('Seg ') -- 'A segment or group in the project'
 #        property 'name' ('pnam') 'TEXT' -- '' [mutable]
@@ -745,3 +812,13 @@ class Metrowerks_Shell_Suite:
 
 #    Class 'Target' ('TARG') -- 'Contains the definitions of a project\325s target.'
 #        property 'Current Target' ('TA01') 'TEXT' -- 'The name of the current target.' [mutable]
+#        property 'Mappings' ('TA08') 'TInf' -- '' [mutable list]
+
+#    Class 'Target Information' ('TInf') -- ''
+#        property 'File Type' ('PR04') 'TEXT' -- '' [mutable]
+#        property 'Extension' ('TA02') 'TEXT' -- '' [mutable]
+#        property 'Precompiled' ('TA03') 'bool' -- '' [mutable]
+#        property 'Resource File' ('TA04') 'bool' -- '' [mutable]
+#        property 'Launchable' ('TA05') 'bool' -- '' [mutable]
+#        property 'Ignored by Make' ('TA06') 'bool' -- '' [mutable]
+#        property 'Compiler' ('TA07') 'TEXT' -- '' [mutable]

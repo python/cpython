@@ -1,7 +1,7 @@
 """Suite Finder Suite: Objects and Events for the Finder
 Level 1, version 1
 
-Generated from Moes:System folder:Extensions:Finder Scripting Extension
+Generated from flap:Systeemmap:Extensies:Finder Script-extensie
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -43,14 +43,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fclu'
 
+		aetools.keysubst(_arguments, self._argmap_clean_up)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_clean_up)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -69,14 +69,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'gstl'
 
+		aetools.keysubst(_arguments, self._argmap_computer)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_computer)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -89,34 +89,34 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'ejct'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
 	def empty(self, _object=None, _attributes={}, **_arguments):
 		"""empty: Empty the trash
-		Required argument: “empty” and “empty trash” both do the same thing
+		Required argument: ≥empty≤ and ≥empty trash≤ both do the same thing
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
 		_subcode = 'empt'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -129,14 +129,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fera'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -155,14 +155,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'ptwy'
 
+		aetools.keysubst(_arguments, self._argmap_put_away)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_put_away)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -174,14 +174,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'rest'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -194,14 +194,14 @@ class Finder_Suite:
 		_code = 'misc'
 		_subcode = 'mvis'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -214,14 +214,14 @@ class Finder_Suite:
 		_code = 'misc'
 		_subcode = 'slct'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -233,14 +233,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'shut'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -252,14 +252,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'snoz'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -278,14 +278,14 @@ class Finder_Suite:
 		_code = 'DATA'
 		_subcode = 'SORT'
 
+		aetools.keysubst(_arguments, self._argmap_sort)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_sort)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -298,14 +298,14 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fupd'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
