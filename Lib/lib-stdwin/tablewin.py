@@ -229,7 +229,7 @@ def demo(): # Demonstration
 	col1 = [('a2', da), ('bbb2', da)]
 	col2 = [('a3', da), ('b3', da), ('c3', da), ('d4', da), ('d5', da)]
 	col3 = []
-	for i in range(1, 31): col3.append('xxx' + `i`, da)
+	for i in range(1, 31): col3.append(('xxx' + `i`, da))
 	data = [col0, col1, col2, col3]
 	w = open('tablewin.demo', data)
 	gwin.mainloop()
