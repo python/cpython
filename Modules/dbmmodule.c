@@ -140,18 +140,19 @@ PyObject *v, *w;
 		if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
 			PyErr_SetString(PyExc_KeyError,
-					PyString_AS_STRING((PyStringObject *)v));
+				      PyString_AS_STRING((PyStringObject *)v));
 			return -1;
 		}
 	} else {
 		if ( !PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize) ) {
 			PyErr_SetString(PyExc_TypeError,
-					"dbm mappings have string elements only");
+				     "dbm mappings have string elements only");
 			return -1;
 		}
 		if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
-			PyErr_SetString(DbmError, "Cannot add item to database");
+			PyErr_SetString(DbmError,
+					"Cannot add item to database");
 			return -1;
 		}
 	}
