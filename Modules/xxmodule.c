@@ -231,7 +231,11 @@ initxx(void)
 	m = Py_InitModule("xx", xx_methods);
 
 	/* Add some symbolic constants to the module */
-	d = PyModule_GetDict(m);
-	ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
-	PyDict_SetItemString(d, "error", ErrorObject);
+	if (ErrorObject == NULL) {
+		ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
+		if (ErrorObject == NULL)
+			return;
+	}
+	Py_INCREF(ErrorObject);
+	PyModule_AddObject(d, "error", ErrorObject);
 }
