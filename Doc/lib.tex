@@ -8,7 +8,9 @@
 
 \input{boilerplate}
 
-\makeindex			% tell \index to actually write the .idx file
+\makeindex			% tell \index to actually write the
+				% .idx file
+\makemodindex			% ... and the module index as well.
 
 
 \begin{document}
@@ -222,9 +224,11 @@ add new extensions to Python and how to embed it in other applications.
 \input{libundoc}
 
 \renewcommand{\indexname}{Module Index}
-\input{modlib.ind}		% Module Index
+\renewcommand{\indexlabel}{modindex}
+\inputindex{modlib.ind}		% Module Index
 
 \renewcommand{\indexname}{Index}
-\input{lib.ind}			% Index
+\renewcommand{\indexlabel}{genindex}
+\inputindex{lib.ind}			% Index
 
 \end{document}
