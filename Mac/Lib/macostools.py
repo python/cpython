@@ -26,11 +26,16 @@ BUFSIZ=0x80000		# Copy in 0.5Mb chunks
 # Not guaranteed to be correct or stay correct (Apple doesn't tell you
 # how to do this), but it seems to work.
 #
-def mkalias(src, dst):
+def mkalias(src, dst, relative=None):
 	"""Create a finder alias"""
 	srcfss = macfs.FSSpec(src)
 	dstfss = macfs.FSSpec(dst)
-	alias = srcfss.NewAlias()
+        if relative:
+                relativefss = macfs.FSSpec(relative)
+                # ik mag er geen None in stoppen :-(
+                alias = srcfss.NewAlias(relativefss)
+        else:
+                alias = srcfss.NewAlias()
 	srcfinfo = srcfss.GetFInfo()
 
 	Res.FSpCreateResFile(dstfss, srcfinfo.Creator, srcfinfo.Type, -1)
