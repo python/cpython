@@ -1,32 +1,31 @@
 \section{Standard Module \sectcode{os}}
 \label{module-os}
-
 \stmodindex{os}
+
 This module provides a more portable way of using operating system
 (OS) dependent functionality than importing an OS dependent built-in
-module like \code{posix}.
+module like \module{posix}.
 
-When the optional built-in module \code{posix} is available, this
-module exports the same functions and data as \code{posix}; otherwise,
-it searches for an OS dependent built-in module like \code{mac} and
+When the optional built-in module \module{posix} is available, this
+module exports the same functions and data as \module{posix}; otherwise,
+it searches for an OS dependent built-in module like \module{mac} and
 exports the same functions and data as found there.  The design of all
 Python's built-in OS dependent modules is such that as long as the same
 functionality is available, it uses the same interface; e.g., the
-function \code{os.stat(\var{file})} returns stat info about a \var{file} in a
-format compatible with the \POSIX{} interface.
+function \code{os.stat(\var{file})} returns stat info about \var{file}
+in a format compatible with the \POSIX{} interface.
 
 Extensions peculiar to a particular OS are also available through the
-\code{os} module, but using them is of course a threat to portability!
+\module{os} module, but using them is of course a threat to
+portability!
 
-Note that after the first time \code{os} is imported, there is \emph{no}
-performance penalty in using functions from \code{os} instead of
-directly from the OS dependent built-in module, so there should be
-\emph{no} reason not to use \code{os}!
+Note that after the first time \module{os} is imported, there is
+\emph{no} performance penalty in using functions from \module{os}
+instead of directly from the OS dependent built-in module, so there
+should be \emph{no} reason not to use \module{os}!
 
 In addition to whatever the correct OS dependent module exports, the
-following variables and functions are always exported by \code{os}:
-
-\setindexsubitem{(in module os)}
+following variables and functions are always exported by \module{os}:
 
 \begin{datadesc}{name}
 The name of the OS dependent module imported.  The following names
@@ -36,27 +35,27 @@ have currently been registered: \code{'posix'}, \code{'nt'},
 
 \begin{datadesc}{path}
 The corresponding OS dependent standard module for pathname
-operations, e.g., \code{posixpath} or \code{macpath}.  Thus, (given
+operations, e.g., \module{posixpath} or \module{macpath}.  Thus, (given
 the proper imports), \code{os.path.split(\var{file})} is equivalent to but
 more portable than \code{posixpath.split(\var{file})}.
 \end{datadesc}
 
 \begin{datadesc}{curdir}
 The constant string used by the OS to refer to the current directory,
-e.g. \code{'.'} for \POSIX{} or \code{':'} for the Mac.
+e.g. \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
 The constant string used by the OS to refer to the parent directory,
-e.g. \code{'..'} for \POSIX{} or \code{'::'} for the Mac.
+e.g. \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{sep}
 The character used by the OS to separate pathname components,
-e.g. \code{'/'} for \POSIX{} or \code{':'} for the Mac.  Note that
+e.g. \code{'/'} for \POSIX{} or \code{':'} for the Macintosh.  Note that
 knowing this is not sufficient to be able to parse or concatenate
-pathnames --- better use \code{os.path.split()} and
-\code{os.path.join()}---but it is occasionally useful.
+pathnames --- better use \function{os.path.split()} and
+\function{os.path.join()}---but it is occasionally useful.
 \end{datadesc}
 
 \begin{datadesc}{altsep}
@@ -72,40 +71,40 @@ components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or
 \end{datadesc}
 
 \begin{datadesc}{defpath}
-The default search path used by \code{os.exec*p*()} if the environment
+The default search path used by \code{exec*p*()} if the environment
 doesn't have a \code{'PATH'} key.
 \end{datadesc}
 
-\begin{funcdesc}{execl}{path\, arg0\, arg1\, ...}
+\begin{funcdesc}{execl}{path, arg0, arg1, ...}
 This is equivalent to
-\code{os.execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+\code{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
 \end{funcdesc}
 
-\begin{funcdesc}{execle}{path\, arg0\, arg1\, ...\, env}
+\begin{funcdesc}{execle}{path, arg0, arg1, ..., env}
 This is equivalent to
-\code{os.execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
+\code{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
 \end{funcdesc}
 
-\begin{funcdesc}{execlp}{path\, arg0\, arg1\, ...}
+\begin{funcdesc}{execlp}{path, arg0, arg1, ...}
 This is equivalent to
-\code{os.execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+\code{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
 \end{funcdesc}
 
-\begin{funcdesc}{execvp}{path\, args}
-This is like \code{os.execv(\var{path}, \var{args})} but duplicates
+\begin{funcdesc}{execvp}{path, args}
+This is like \code{execv(\var{path}, \var{args})} but duplicates
 the shell's actions in searching for an executable file in a list of
 directories.  The directory list is obtained from
-\code{os.environ['PATH']}.
+\code{environ['PATH']}.
 \end{funcdesc}
 
-\begin{funcdesc}{execvpe}{path\, args\, env}
-This is a cross between \code{os.execve()} and \code{os.execvp()}.
+\begin{funcdesc}{execvpe}{path, args, env}
+This is a cross between \function{execve()} and \function{execvp()}.
 The directory list is obtained from \code{\var{env}['PATH']}.
 \end{funcdesc}
 
-(The functions \code{os.execv()} and \code{execve()} are not
+(The functions \code{execv()} and \code{execve()} are not
 documented here, since they are implemented by the OS dependent
 module.  If the OS dependent module doesn't define either of these,
 the functions that rely on it will raise an exception.  They are
-documented in the section on module \code{posix}, together with all
-other functions that \code{os} imports from the OS dependent module.)
+documented in the section on module \module{posix}, together with all
+other functions that \module{os} imports from the OS dependent module.)
