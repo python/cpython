@@ -12,8 +12,6 @@ import traceback
 import types
 import exceptions
 
-import boolcheck
-
 import linecache
 from code import InteractiveInterpreter
 
@@ -217,7 +215,7 @@ class PyShellEditorWindow(EditorWindow):
                 lineno += 1
         return lines
 
-# XXX 13 Dec 2020 KBK Not used currently
+# XXX 13 Dec 2002 KBK Not used currently
 #    def saved_change_hook(self):
 #        "Extend base method - clear breaks if module is modified"
 #        if not self.get_saved():
@@ -395,15 +393,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
             elif how == "EXCEPTION":
                 mod, name, args, tb = what
                 print >>file, 'Traceback (most recent call last):'
-                while tb and tb[0][0] in ("run.py", "rpc.py"):
-                    del tb[0]
-                while tb and tb[-1][0] in ("run.py", "rpc.py"):
-                    del tb[-1]
-                for i in range(len(tb)):
-                    fn, ln, nm, line = tb[i]
-                    if not line and fn.startswith("<pyshell#"):
-                        line = linecache.getline(fn, ln)
-                        tb[i] = fn, ln, nm, line
+                exclude = ("run.py", "rpc.py")
+                self.cleanup_traceback(tb, exclude)
                 traceback.print_list(tb, file=file)
                 # try to reinstantiate the exception, stuff in the args:
                 try:
@@ -424,6 +415,30 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 print >>sys.__stderr__, errmsg, what
                 print >>file, errmsg, what
             self.tkconsole.endexecuting()
+
+    def cleanup_traceback(self, tb, exclude):
+        "Remove excluded traces from beginning/end of tb; get cached lines"
+        while tb:
+            for rpcfile in exclude:
+                if tb[0][0].count(rpcfile):
+                    break    # found an exclude, break for: and delete tb[0]
+            else:
+                break        # no excludes, have left RPC code, break while:
+            del tb[0]
+        while tb:
+            for rpcfile in exclude:
+                if tb[-1][0].count(rpcfile):
+                    break       
+            else:
+                break
+            del tb[-1]
+        for i in range(len(tb)):
+            fn, ln, nm, line = tb[i]
+            if nm == '?':
+                nm = "-toplevel-"
+            if not line and fn.startswith("<pyshell#"):
+                line = linecache.getline(fn, ln)
+            tb[i] = fn, ln, nm, line
 
     def kill_subprocess(self):
         clt = self.rpcclt
