@@ -26,7 +26,7 @@
 
 %define name python
 %define version 2.2.3
-%define release 1
+%define release 2
 %define __prefix /usr
 %define libvers %(echo "%{version}" | awk -F. '{ printf "%s.%s", $1, $2 }')
 
@@ -121,6 +121,11 @@ formats.
 %endif
 
 %changelog
+* Wed Jul 16 2003 Sean Reifschneider <jafo-rpms@tummy.com>
+[Release 2.2.3-2]
+- Removing .cvsignore files in the build, so that they don't cause problems
+  with the packaged file list.  Reported by David Hutchinson.
+
 * Sun Oct 06 2002 Sean Reifschneider <jafo-rpms@tummy.com>
 [Release 2.2.2b1-1]
 - Updated for the 2.2.2b1 release.
@@ -200,6 +205,9 @@ formats.
 %build
 ./configure %{ipv6} %{pymalloc} --prefix=%{__prefix}
 make
+
+#  remove .cvsignore files
+find . -name .cvsignore | xargs rm -f
 
 #  fix paths
 for file in \
