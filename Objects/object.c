@@ -56,6 +56,33 @@ dump_counts()
 		null_strings, one_strings);
 }
 
+PyObject *
+get_counts()
+{
+	PyTypeObject *tp;
+	PyObject *result;
+	PyObject *v;
+
+	result = PyList_New(0);
+	if (result == NULL)
+		return NULL;
+	for (tp = type_list; tp; tp = tp->tp_next) {
+		v = Py_BuildValue("(siii)", tp->tp_name, tp->tp_alloc,
+				  tp->tp_free, tp->tp_maxalloc);
+		if (v == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		if (PyList_Append(result, v) < 0) {
+			Py_DECREF(v);
+			Py_DECREF(result);
+			return NULL;
+		}
+		Py_DECREF(v);
+	}
+	return result;
+}
+
 void
 inc_count(tp)
 	typeobject *tp;
@@ -511,6 +538,37 @@ printrefs(fp)
 			err_clear();
 		putc('\n', fp);
 	}
+}
+
+PyObject *
+getobjects(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int i, n;
+	PyObject *t = NULL;
+	PyObject *res, *op;
+
+	if (!PyArg_ParseTuple(args, "i|O", &n, &t))
+		return NULL;
+	op = refchain._ob_next;
+	res = PyList_New(0);
+	if (res == NULL)
+		return NULL;
+	for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
+		while (op == self || op == args || op == res || op == t ||
+		       t != NULL && op->ob_type != (PyTypeObject *) t) {
+			op = op->_ob_next;
+			if (op == &refchain)
+				return res;
+		}
+		if (PyList_Append(res, op) < 0) {
+			Py_DECREF(res);
+			return NULL;
+		}
+		op = op->_ob_next;
+	}
+	return res;
 }
 
 #endif

@@ -154,8 +154,42 @@ sys_mdebug(self, args)
 }
 #endif /* USE_MALLOPT */
 
+static object *
+sys_getrefcount(self, args)
+	object *self;
+	object *args;
+{
+	object *arg;
+	if (!getargs(args, "O", &arg))
+		return NULL;
+	return newintobject((long) arg->ob_refcnt);
+}
+
+#ifdef COUNT_ALLOCS
+static PyObject *
+sys_getcounts(self, args)
+	PyObject *self, *args;
+{
+	extern PyObject *get_counts Py_PROTO((void));
+
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+	return get_counts();
+}
+#endif
+
+#ifdef TRACE_REFS
+extern PyObject *getobjects Py_PROTO((PyObject *, PyObject *));
+#endif
 static struct methodlist sys_methods[] = {
 	{"exit",	sys_exit, 0},
+	{"getrefcount",	sys_getrefcount, 0},
+#ifdef COUNT_ALLOCS
+	{"getcounts",	sys_getcounts, 0},
+#endif
+#ifdef TRACE_REFS
+	{"getobjects",	getobjects, 1},
+#endif
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 0},
 #endif
