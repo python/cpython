@@ -304,28 +304,28 @@ def test_boom2():
     expect(gc.collect(), 4, "boom2")
     expect(len(gc.garbage), garbagelen, "boom2")
 
-def test_get_referrents():
+def test_get_referents():
     alist = [1, 3, 5]
-    got = gc.get_referrents(alist)
+    got = gc.get_referents(alist)
     got.sort()
-    expect(got, alist, "get_referrents")
+    expect(got, alist, "get_referents")
 
     atuple = tuple(alist)
-    got = gc.get_referrents(atuple)
+    got = gc.get_referents(atuple)
     got.sort()
-    expect(got, alist, "get_referrents")
+    expect(got, alist, "get_referents")
 
     adict = {1: 3, 5: 7}
     expected = [1, 3, 5, 7]
-    got = gc.get_referrents(adict)
+    got = gc.get_referents(adict)
     got.sort()
-    expect(got, expected, "get_referrents")
+    expect(got, expected, "get_referents")
 
-    got = gc.get_referrents([1, 2], {3: 4}, (0, 0, 0))
+    got = gc.get_referents([1, 2], {3: 4}, (0, 0, 0))
     got.sort()
-    expect(got, [0, 0] + range(5), "get_referrents")
+    expect(got, [0, 0] + range(5), "get_referents")
 
-    expect(gc.get_referrents(1, 'a', 4j), [], "get_referrents")
+    expect(gc.get_referents(1, 'a', 4j), [], "get_referents")
 
 def test_all():
     gc.collect() # Delete 2nd generation garbage
@@ -347,7 +347,7 @@ def test_all():
     run_test("trashcan", test_trashcan)
     run_test("boom", test_boom)
     run_test("boom2", test_boom2)
-    run_test("get_referrents", test_get_referrents)
+    run_test("get_referents", test_get_referents)
 
 def test():
     if verbose:

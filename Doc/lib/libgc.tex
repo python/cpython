@@ -99,9 +99,9 @@ objects, call \function{collect()} before calling
 \versionadded{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{get_referrents}{*objs}
+\begin{funcdesc}{get_referents}{*objs}
 Return a list of objects directly referred to by any of the arguments.
-The referrents returned are those objects visited by the arguments'
+The referents returned are those objects visited by the arguments'
 C-level \cfunction{tp_traverse} methods (if any), and may not be all
 objects actually directly reachable.  \cfunction{tp_traverse} methods
 are supported only by objects that support garbage collection, and are
