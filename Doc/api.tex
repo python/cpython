@@ -24,6 +24,11 @@ to write extension modules or embed Python.  It is a companion to
 the general principles of extension writing but does not document the
 API functions in detail.
 
+\strong{Warning:} The current version of this document is incomplete.
+I hope that it is nevertheless useful.  I will continue to work on it,
+and release new versions from time to time, independent from Python
+source code releases.
+
 \end{abstract}
 
 \pagebreak
@@ -179,7 +184,7 @@ shared!  When a function owns a reference, it has to dispose of it
 properly -- either by passing ownership on (usually to its caller) or 
 by calling \code{Py_DECREF()} or \code{Py_XDECREF()}.  When a function 
 passes ownership of a reference on to its caller, the caller is said 
-to receive a \emph{new} reference.  When to ownership is transferred, 
+to receive a \emph{new} reference.  When no ownership is transferred, 
 the caller is said to \emph{borrow} the reference.  Nothing needs to 
 be done for a borrowed reference.
 
@@ -203,25 +208,26 @@ PyTuple_SetItem(t, 1, PyInt_FromLong(2L));
 PyTuple_SetItem(t, 2, PyString_FromString("three"));
 \end{verbatim}
 
-Incidentally, \code{PyTuple_SetItem()} is the \emph{only} way to set 
-tuple items; \code{PyObject_SetItem()} refuses to do this since tuples 
-are an immutable data type.  You should only use 
-\code{PyTuple_SetItem()} for tuples that you are creating yourself.
+Incidentally, \code{PyTuple_SetItem()} is the \emph{only} way to set
+tuple items; \code{PySequence_SetItem()} and \code{PyObject_SetItem()}
+refuse to do this since tuples are an immutable data type.  You should
+only use \code{PyTuple_SetItem()} for tuples that you are creating
+yourself.
 
 Equivalent code for populating a list can be written using 
 \code{PyList_New()} and \code{PyList_SetItem()}.  Such code can also 
 use \code{PySequence_SetItem()}; this illustrates the difference 
-between the two:
+between the two (the extra \code{Py_DECREF()} calls):
 
 \begin{verbatim}
 PyObject *l, *x;
 l = PyList_New(3);
 x = PyInt_FromLong(1L);
-PyObject_SetItem(l, 0, x); Py_DECREF(x);
+PySequence_SetItem(l, 0, x); Py_DECREF(x);
 x = PyInt_FromLong(2L);
-PyObject_SetItem(l, 1, x); Py_DECREF(x);
+PySequence_SetItem(l, 1, x); Py_DECREF(x);
 x = PyString_FromString("three");
-PyObject_SetItem(l, 2, x); Py_DECREF(x);
+PySequence_SetItem(l, 2, x); Py_DECREF(x);
 \end{verbatim}
 
 You might find it strange that the ``recommended'' approach takes more
@@ -276,7 +282,7 @@ It is important to realize that whether you own a reference returned
 by a function depends on which function you call only -- \emph{the 
 plumage} (i.e., the type of the type of the object passed as an 
 argument to the function) \emph{don't enter into it!}  Thus, if you 
-extract an item from a list using \code{PyList_GetItem()}, yo don't 
+extract an item from a list using \code{PyList_GetItem()}, you don't 
 own the reference -- but if you obtain the same item from the same 
 list using \code{PySequence_GetItem()} (which happens to take exactly 
 the same arguments), you do own a reference to the returned object.
@@ -318,7 +324,7 @@ long sum_sequence(PyObject *sequence)
             return -1; /* Not a sequence, or other failure */
         if (PyInt_Check(item))
             total += PyInt_AsLong(item);
-        Py_DECREF(item); /* Discared reference ownership */
+        Py_DECREF(item); /* Discard reference ownership */
     }
     return total;
 }
@@ -416,7 +422,7 @@ int incr_item(PyObject *dict, PyObject *key)
 {
     /* Objects all initialized to NULL for Py_XDECREF */
     PyObject *item = NULL, *const_one = NULL, *incremented_item = NULL;
-    int rv = -1; /* Return value initialized to -1 (faulure) */
+    int rv = -1; /* Return value initialized to -1 (failure) */
 
     item = PyObject_GetItem(dict, key);
     if (item == NULL) {
@@ -460,7 +466,7 @@ when confronted with a \NULL{} reference).  It is important that
 the variables used to hold owned references are initialized to 
 \NULL{} for this to work; likewise, the proposed return value is 
 initialized to \code{-1} (failure) and only set to success after
-the final call made is succesful.
+the final call made is successful.
 
 
 \section{Embedding Python}
@@ -611,7 +617,7 @@ but will set it to indicate the cause of the error on failure.  Most
 functions also return an error indicator, usually \NULL{} if they are
 supposed to return a pointer, or -1 if they return an integer
 (exception: the \code{PyArg_Parse*()} functions return 1 for success and
-0 for failure).  When a function must fail because of some function it
+0 for failure).  When a function must fail because some function it
 called failed, it generally doesn't set the error indicator; the
 function it called already set it.
 
@@ -935,13 +941,13 @@ Empty the module table.  For internal use only.
 Finalize the import mechanism.  For internal use only.
 \end{cfuncdesc}
 
-\begin{cvardesc}{extern PyObject *}{_PyImport_FindExtension}{char *, char *}
+\begin{cfuncdesc}{extern PyObject *}{_PyImport_FindExtension}{char *, char *}
 For internal use only.
-\end{cvardesc}
+\end{cfuncdesc}
 
-\begin{cvardesc}{extern PyObject *}{_PyImport_FixupExtension}{char *, char *}
+\begin{cfuncdesc}{extern PyObject *}{_PyImport_FixupExtension}{char *, char *}
 For internal use only.
-\end{cvardesc}
+\end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyImport_ImportFrozenModule}{char *}
 Load a frozen module.  Return \code{1} for success, \code{0} if the
@@ -1039,7 +1045,7 @@ This function always succeeds.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyObject_GetAttrString}{PyObject *o, char *attr_name}
-Retrieve an attributed named attr_name from object o.
+Retrieve an attribute named attr_name from object o.
 Returns the attribute value on success, or \NULL{} on failure.
 This is the equivalent of the Python expression: \code{o.attr_name}.
 \end{cfuncdesc}
@@ -1054,7 +1060,7 @@ This function always succeeds.
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_GetAttr}{PyObject *o, PyObject *attr_name}
-Retrieve an attributed named attr_name form object o.
+Retrieve an attribute named attr_name from object o.
 Returns the attribute value on success, or \NULL{} on failure.
 This is the equivalent of the Python expression: o.attr_name.
 \end{cfuncdesc}
@@ -1374,7 +1380,7 @@ This function always succeeds.
 
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Concat}{PyObject *o1, PyObject *o2}
-Return the concatination of \code{o1} and \code{o2} on success, and \NULL{} on
+Return the concatenation of \code{o1} and \code{o2} on success, and \NULL{} on
 failure.   This is the equivalent of the Python
 expression: \code{o1+o2}.
 \end{cfuncdesc}
@@ -2213,7 +2219,7 @@ call to \code{PyThreadState_Clear()}.
 \begin{cfuncdesc}{PyThreadState *}{PyThreadState_Get}{}
 Return the current thread state.  The interpreter lock must be held.
 When the current thread state is \NULL{}, this issues a fatal
-error (so that the caller needn't check for \NULL{}.
+error (so that the caller needn't check for \NULL{}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{PyThreadState_Swap}{PyThreadState *tstate}
@@ -2820,6 +2826,11 @@ writes object \code{obj} to file object \code{p}
 \begin{cfuncdesc}{int}{PyFile_WriteString}{char *s, PyFileObject *p}
 writes string \code{s} to file object \code{p}
 \end{cfuncdesc}
+
+
+\subsection{CObjects}
+
+XXX
 
 
 \input{api.ind}			% Index -- must be last
