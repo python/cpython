@@ -419,7 +419,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
   			 continue;
 			SETARG(codestr, i, (j^1));
 			codestr[i+3] = NOP;
-		
+			break;
+
 		/* Replace LOAD_GLOBAL/LOAD_NAME None with LOAD_CONST None */
 		case LOAD_NAME:
 		case LOAD_GLOBAL:
