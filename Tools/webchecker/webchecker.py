@@ -73,8 +73,7 @@ hyperlinks.  It does honor the <BASE> tag.
 - Checking external links is not done by default; use -x to enable
 this feature.  This is done because checking external links usually
 takes a lot of time.  When enabled, this check is executed during the
-report generation phase (so -x is ignored when -q is specified).  Even
-when -x is enabled, only ``http:'' URLs are checked.
+report generation phase (even when the report is silent).
 
 
 Usage: webchecker.py [option] ... [rooturl] ...
@@ -96,7 +95,7 @@ rooturl   -- URL to start checking
 
 """
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 
 import sys
@@ -283,26 +282,29 @@ class Checker:
 	print "Report (%d to do, %d done, %d external, %d bad)" % (
 	    len(self.todo), len(self.done),
 	    len(self.ext), len(self.bad))
-	if verbose > 0:
+	if verbose > 0 or checkext:
 	    self.report_extrefs(checkext)
 	# Report errors last because the output may get truncated
 	self.report_errors()
 
     def report_extrefs(self, checkext=0):
 	if not self.ext:
-	    print
-	    print "No external URLs"
+	    if verbose > 0:
+		print
+		print "No external URLs"
 	    return
-	print
-	if checkext:
-	    print "External URLs (checking validity):"
-	else:
-	    print "External URLs (not checked):"
-	print
+	if verbose > 0:
+	    print
+	    if checkext:
+		print "External URLs (checking validity):"
+	    else:
+		print "External URLs (not checked):"
+	    print
 	urls = self.ext.keys()
 	urls.sort()
 	for url in urls:
-	    show("HREF ", url, " from", self.ext[url])
+	    if verbose > 0:
+		show("HREF ", url, " from", self.ext[url])
 	    if not checkext:
 		continue
 	    if url[:7] == 'mailto:':
@@ -315,7 +317,7 @@ class Checker:
 		if verbose > 3: print "OK"
 	    except IOError, msg:
 		msg = sanitize(msg)
-		print "Error", msg
+		if verbose > 0: print "Error", msg
 		self.bad[url] = msg
 
     def report_errors(self):
@@ -487,6 +489,11 @@ class MyStringIO(StringIO.StringIO):
 class MyURLopener(urllib.FancyURLopener):
 
     http_error_default = urllib.URLopener.http_error_default
+
+    def __init__(*args):
+	self = args[0]
+	apply(urllib.FancyURLopener.__init__, args)
+	self.addheaders = [('User-agent', 'Python-webchecker/%s' % __version__)]
 
     def open_file(self, url):
 	path = urllib.url2pathname(urllib.unquote(url))
