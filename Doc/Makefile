@@ -199,7 +199,8 @@ pdf-$(PAPER)-$(RELEASE).tgz: pdf
 	(cd paper-$(PAPER); tar cf - *.pdf) | gzip -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps
-	(cd paper-$(PAPER); tar cf - *.ps) | gzip -9 >$@
+	(cd paper-$(PAPER); $(MAKE) README)
+	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
 
 html-$(RELEASE).tgz: $(HTMLDIR)/api/api.html $(HTMLDIR)/ext/ext.html \
 		     $(HTMLDIR)/lib/lib.html $(HTMLDIR)/mac/mac.html \
