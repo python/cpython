@@ -1008,11 +1008,12 @@ eval_code2(co, globals, locals,
 		
 		case PRINT_EXPR:
 			v = POP();
-			/* Print value except if procedure result */
-			/* Before printing, also assign to '_' */
+			/* Print value except if None */
+			/* After printing, also assign to '_' */
+			/* Before, set '_' to None to avoid recursion */
 			if (v != Py_None &&
 			    (err = PyDict_SetItemString(
-				    f->f_builtins, "_", v)) == 0) {
+				    f->f_builtins, "_", Py_None)) == 0) {
 				err = Py_FlushLine();
 				if (err == 0) {
 					x = PySys_GetObject("stdout");
@@ -1024,6 +1025,10 @@ eval_code2(co, globals, locals,
 				if (err == 0) {
 					PyFile_SoftSpace(x, 1);
 					err = Py_FlushLine();
+				}
+				if (err == 0) {
+					err = PyDict_SetItemString(
+						f->f_builtins, "_", v);
 				}
 			}
 			Py_DECREF(v);
