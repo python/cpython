@@ -1805,6 +1805,20 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	else if (PyType_Check(cls)) {
 		retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
 	}
+	else if (PyTuple_Check(cls)) {
+		/* Not a general sequence -- that opens up the road to
+		   recursion and stack overflow. */
+		int i, n;
+
+		n = PyTuple_GET_SIZE(cls);
+		for (i = 0; i < n; i++) {
+			retval = PyObject_IsInstance(
+				inst, PyTuple_GET_ITEM(cls, i));
+			if (retval != 0)
+				break;
+		}
+		return retval;
+	}
 	else if (!PyInstance_Check(inst)) {
 		if (__class__ == NULL) {
 			__class__ = PyString_FromString("__class__");
@@ -1827,7 +1841,8 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
 	if (retval < 0) {
 		PyErr_SetString(PyExc_TypeError,
-				"isinstance() arg 2 must be a class or type");
+				"isinstance() arg 2 must be a class or type "
+				"or tuple of those");
 	}
 	return retval;
 }

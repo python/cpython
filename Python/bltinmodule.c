@@ -1641,10 +1641,12 @@ builtin_isinstance(PyObject *self, PyObject *args)
 }
 
 static char isinstance_doc[] =
-"isinstance(object, class-or-type) -> Boolean\n\
+"isinstance(object, class-or-type-or-tuple) -> Boolean\n\
 \n\
 Return whether an object is an instance of a class or of a subclass thereof.\n\
-With a type as second argument, return whether that is the object's type.";
+With a type as second argument, return whether that is the object's type.\n\
+The form using a tuple, isinstance(x, (A, B, ...)), is a shortcut for\n\
+isinstance(x, A) or isinstance(x, B) or ... (etc.).";
 
 
 static PyObject *
