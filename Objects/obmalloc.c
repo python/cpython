@@ -260,7 +260,7 @@ typedef struct pool_header *poolp;
 /*
  * This malloc lock
  */
-SIMPLELOCK_DECL(_malloc_lock);
+SIMPLELOCK_DECL(_malloc_lock)
 #define LOCK()		SIMPLELOCK_LOCK(_malloc_lock)
 #define UNLOCK()	SIMPLELOCK_UNLOCK(_malloc_lock)
 #define LOCK_INIT()	SIMPLELOCK_INIT(_malloc_lock)
