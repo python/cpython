@@ -159,7 +159,7 @@ PyErr_NewException:char*:name::
 PyErr_NewException:PyObject*:base:0:
 PyErr_NewException:PyObject*:dict:0:
 
-PyErr_NoMemory:PyObject*::0:
+PyErr_NoMemory:PyObject*::null:
 
 PyErr_NormalizeException:void:::
 PyErr_NormalizeException:PyObject**:exc::???
@@ -175,7 +175,7 @@ PyErr_Restore:PyObject*:type:0:
 PyErr_Restore:PyObject*:value:0:
 PyErr_Restore:PyObject*:traceback:0:
 
-PyErr_SetFromErrno:PyObject*:::
+PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
 
 PyErr_SetInterrupt:void:::
