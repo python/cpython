@@ -15,6 +15,11 @@ Core and builtins
 Library
 -------
 
+- unittest.TestCase.run() and unittest.TestSuite.run() can now be successfully
+  extended or overridden by subclasses.  Formerly, the subclassed method would
+  be ignored by the rest of the module.  (Bug #1078905).
+
+
 Build
 -----
 
