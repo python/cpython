@@ -4,6 +4,8 @@
 """Various types of useful iterators and generators.
 """
 
+import sys
+
 try:
     from email._compat22 import body_line_iterator, typed_subpart_iterator
 except SyntaxError:
@@ -12,10 +14,12 @@ except SyntaxError:
 
 
 
-def _structure(msg, level=0):
+def _structure(msg, level=0, fp=None):
     """A handy debugging aid"""
+    if fp is None:
+        fp = sys.stdout
     tab = ' ' * (level * 4)
-    print tab + msg.get_type(msg.get_default_type())
+    print >> fp, tab + msg.get_type(msg.get_default_type())
     if msg.is_multipart():
         for subpart in msg.get_payload():
-            _structure(subpart, level+1)
+            _structure(subpart, level+1, fp)
