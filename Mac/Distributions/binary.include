@@ -20,6 +20,7 @@
 (':Extensions:Imaging', '')
 (':Extensions:Imaging:Tk', None)
 (':Extensions:Imaging:libImaging', None)
+(':Extensions:Numerical', None)
 (':Extensions:Numerical-old', None)
 (':Extensions:Pmw', None)
 (':Extensions:PyDOM', None)
@@ -206,4 +207,4 @@
 (':pystone.py', None)
 (':setup.py', None)
 (':site-packages', None)
-(':Extensions:Numerical', None)
+(':RISCOS', None)
