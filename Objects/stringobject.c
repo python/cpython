@@ -246,11 +246,23 @@ stringitem(a, i)
 	stringobject *a;
 	register int i;
 {
+	/* This is optimized since this is a common operation! */
+
+	register stringobject *op;
 	if (i < 0 || i >= a->ob_size) {
 		err_setstr(IndexError, "string index out of range");
 		return NULL;
 	}
-	return stringslice(a, i, i+1);
+	op = (stringobject *)
+		malloc(sizeof(stringobject) + sizeof(char));
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Stringtype;
+	op->ob_size = 1;
+	op->ob_sval[0] = a->ob_sval[i];
+	op->ob_sval[1] = '\0';
+	return (object *) op;
 }
 
 static int
