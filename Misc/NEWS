@@ -40,6 +40,10 @@ Extension modules
 Library
 -------
 
+- Bug #980327/Patch #988607: ntpath now compresses extra slashes between the
+  drive letter and the rest of the path properly.  Also removed ambiguity from
+  UNC paths.  Thanks Paul Moore.
+
 - Bug #679953: zipfile can now handle file sizes over 2 GB.  Previously the
   compressed and uncompressed file sizes were being stored as signed longs
   instead of unsigned as the ZIP spec specifies.

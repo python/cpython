@@ -99,12 +99,9 @@ tester("ntpath.normpath('C:A//B')", r'C:A\B')
 tester("ntpath.normpath('D:A/./B')", r'D:A\B')
 tester("ntpath.normpath('e:A/foo/../B')", r'e:A\B')
 
-# Next 3 seem dubious, and especially the 3rd, but normpath is possibly
-# trying to leave UNC paths alone without actually knowing anything about
-# them.
-tester("ntpath.normpath('C:///A//B')", r'C:\\\A\B')
-tester("ntpath.normpath('D:///A/./B')", r'D:\\\A\B')
-tester("ntpath.normpath('e:///A/foo/../B')", r'e:\\\A\B')
+tester("ntpath.normpath('C:///A//B')", r'C:\A\B')
+tester("ntpath.normpath('D:///A/./B')", r'D:\A\B')
+tester("ntpath.normpath('e:///A/foo/../B')", r'e:\A\B')
 
 tester("ntpath.normpath('..')", r'..')
 tester("ntpath.normpath('.')", r'.')
@@ -115,6 +112,8 @@ tester("ntpath.normpath('/../.././..')", '\\')
 tester("ntpath.normpath('c:/../../..')", 'c:\\')
 tester("ntpath.normpath('../.././..')", r'..\..\..')
 tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
+tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
 # ntpath.abspath() can only be used on a system with the "nt" module
 # (reasonably), so we protect this test with "import nt".  This allows
