@@ -39,6 +39,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "marshal.h"
 
+/* High water mark to determine when the marshalled object is dangerously deep
+ * and risks coring the interpreter.  When the object stack gets this deep,
+ * raise an exception instead of continuing.
+ */
+#define MAX_MARSHAL_STACK_DEPTH 5000
+
 #define TYPE_NULL	'0'
 #define TYPE_NONE	'N'
 #define TYPE_ELLIPSIS   '.'
@@ -58,6 +64,7 @@ PERFORMANCE OF THIS SOFTWARE.
 typedef struct {
 	FILE *fp;
 	int error;
+	int depth;
 	/* If fp == NULL, the following are valid: */
 	PyObject *str;
 	char *ptr;
@@ -144,8 +151,13 @@ w_object(v, p)
 {
 	int i, n;
 	PyBufferProcs *pb;
+
+	p->depth++;
 	
-	if (v == NULL) {
+	if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
+		p->error = 2;
+	} 
+	else if (v == NULL) {
 		w_byte(TYPE_NULL, p);
 	}
 	else if (v == Py_None) {
@@ -301,6 +313,7 @@ PyMarshal_WriteLongToFile(x, fp)
 	WFILE wf;
 	wf.fp = fp;
 	wf.error = 0;
+	wf.depth = 0;
 	w_long(x, &wf);
 }
 
@@ -690,6 +703,7 @@ PyMarshal_WriteObjectToString(x) /* wrs_object() */
 	wf.ptr = PyString_AS_STRING((PyStringObject *)wf.str);
 	wf.end = wf.ptr + PyString_Size(wf.str);
 	wf.error = 0;
+	wf.depth = 0;
 	w_object(x, &wf);
 	if (wf.str != NULL)
 		_PyString_Resize(&wf.str,
@@ -697,7 +711,9 @@ PyMarshal_WriteObjectToString(x) /* wrs_object() */
 			   PyString_AS_STRING((PyStringObject *)wf.str)));
 	if (wf.error) {
 		Py_XDECREF(wf.str);
-		PyErr_SetString(PyExc_ValueError, "unmarshallable object");
+		PyErr_SetString(PyExc_ValueError, 
+				(wf.error==1)?"unmarshallable object"
+				:"object too deeply nested to marshal");
 		return NULL;
 	}
 	return wf.str;
@@ -724,9 +740,12 @@ marshal_dump(self, args)
 	wf.str = NULL;
 	wf.ptr = wf.end = NULL;
 	wf.error = 0;
+	wf.depth = 0;
 	w_object(x, &wf);
 	if (wf.error) {
-		PyErr_SetString(PyExc_ValueError, "unmarshallable object");
+		PyErr_SetString(PyExc_ValueError, 
+				(wf.error==1)?"unmarshallable object"
+				:"object too deeply nested to marshal");
 		return NULL;
 	}
 	Py_INCREF(Py_None);
