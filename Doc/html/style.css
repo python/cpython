@@ -151,6 +151,19 @@ div.note .label         { margin-right: 0.5em;
 
 
 /*
+ * Additional styles for the distutils package.
+ */
+.du-command             { font-family: monospace; }
+.du-option              { font-family: avantgarde, sans-serif; }
+.du-filevar             { font-family: avantgarde, sans-serif;
+                          font-style: italic; }
+.du-xxx:before          { content: "** ";
+                          font-weight: bold; }
+.du-xxx:after           { content: " **";
+                          font-weight: bold; }
+
+
+/*
  * Some specialization for printed output.
  */
 @media print {
