@@ -11,20 +11,19 @@
 @if "%1"=="-q" shift
 @if "%1"=="-d" set _exe=python_d
 @if "%1"=="-d" shift
-@if "%_qmode%"=="yes" goto LeavePyc
+@if "%_qmode%"=="yes" goto Qmode
 @if "%1"=="-q" set _qmode=yes
 @if "%1"=="-q" shift
-@if "%_qmode%"=="yes" goto LeavePyc
+@if "%_qmode%"=="yes" goto Qmode
 @echo Deleting .pyc/.pyo files ...
 @del ..\Lib\*.pyc
 @del ..\Lib\*.pyo
 @del ..\Lib\test\*.pyc
 @del ..\Lib\test\*.pyo
-:LeavePyc
 %_exe% ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
-@if "%_qmode%"=="yes" goto Done
-@echo Running again without deleting .pyc/.pyo first:
+@echo About to run again without deleting .pyc/.pyo first:
+@pause
+:Qmode
 %_exe% ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
-:Done
 @set _exe=
 @set _qmode=
