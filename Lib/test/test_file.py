@@ -1,3 +1,5 @@
+import os
+
 from test_support import TESTFN
 from UserList import UserList
 
@@ -43,3 +45,5 @@ except TypeError:
 else:
     print "writelines accepted sequence of non-string objects"
 f.close()
+
+os.unlink(TESTFN)
