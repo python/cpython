@@ -1427,9 +1427,6 @@ def encode_long(x):
     binary = _binascii.unhexlify(ashex)
     return binary[::-1]
 
-# XXX OOPS!  This is still quadratic-time.  While hex(n) is linear-time
-# XXX in the # of digits in n, long(s, 16) is still quadratic-time
-# XXX in len(s).
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
 
@@ -1453,7 +1450,7 @@ def decode_long(data):
     if nbytes == 0:
         return 0L
     ashex = _binascii.hexlify(data[::-1])
-    n = long(ashex, 16) # quadratic time
+    n = long(ashex, 16) # quadratic time before Python 2.3; linear now
     if data[-1] >= '\x80':
         n -= 1L << (nbytes * 8)
     return n

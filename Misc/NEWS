@@ -12,6 +12,9 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- long(string, base) takes time linear in len(string) when base is a power
+  of 2 now.  It used to take time quadratic in len(string).
+
 - filter returns now Unicode results for Unicode arguments.
 
 - raw_input can now return Unicode objects.
