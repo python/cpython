@@ -19,7 +19,7 @@ Public functions:       Internaldate2tuple
 # GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
 
-__version__ = "2.54"
+__version__ = "2.55"
 
 import binascii, os, random, re, socket, sys, time
 
@@ -452,7 +452,7 @@ class IMAP4:
 
         (typ, [[QUOTAROOT responses...], [QUOTA responses]]) = <instance>.getquotaroot(mailbox)
         """
-        typ, dat = self._simple_command('GETQUOTA', mailbox)
+        typ, dat = self._simple_command('GETQUOTAROOT', mailbox)
         typ, quota = self._untagged_response(typ, dat, 'QUOTA')
         typ, quotaroot = self._untagged_response(typ, dat, 'QUOTAROOT')
         return typ, [quotaroot, quota]
@@ -611,8 +611,10 @@ class IMAP4:
         (typ, [data]) = <instance>.select(mailbox='INBOX', readonly=None)
 
         'data' is count of messages in mailbox ('EXISTS' response).
+
+        Mandated responses are ('FLAGS', 'EXISTS', 'RECENT', 'UIDVALIDITY'), so
+        other responses should be obtained via <instance>.response('FLAGS') etc.
         """
-        # Mandated responses are ('FLAGS', 'EXISTS', 'RECENT', 'UIDVALIDITY')
         self.untagged_responses = {}    # Flush old responses.
         self.is_readonly = readonly
         if readonly is not None:
