@@ -33,9 +33,9 @@ Numeric character references of the form \samp{\&\#\var{name};}.
 Entity references of the form \samp{\&\var{name};}.
 
 \item
-SGML comments of the form \samp{<!--\var{text}-->}.  Note that
+SGML comments of the form \samp{<!-\code{-}\var{text}-\code{-}>}.  Note that
 spaces, tabs, and newlines are allowed between the trailing
-\samp{>} and the immediately preceding \samp{--}.
+\samp{>} and the immediately preceding \samp{-\code{-}}.
 
 \end{itemize}
 \end{classdesc}
@@ -50,7 +50,7 @@ implicitly at instantiation time.
 
 \begin{methoddesc}{setnomoretags}{}
 Stop processing tags.  Treat all following input as literal input
-(CDATA).  (This is only provided so the HTML tag
+(CDATA).  (This is only provided so the archaic HTML tag
 \code{<PLAINTEXT>} can be implemented.)
 \end{methoddesc}
 
@@ -140,8 +140,8 @@ The default \member{entitydefs} defines translations for
 \begin{methoddesc}{handle_comment}{comment}
 This method is called when a comment is encountered.  The
 \var{comment} argument is a string containing the text between the
-\samp{<!--} and \samp{-->} delimiters, but not the delimiters
-themselves.  For example, the comment \samp{<!--text-->} will
+\samp{<!-\code{-}} and \samp{-\code{-}>} delimiters, but not the delimiters
+themselves.  For example, the comment \samp{<!-\code{-}text-\code{-}>} will
 cause this method to be called with the argument \code{'text'}.  The
 default method does nothing.
 \end{methoddesc}
