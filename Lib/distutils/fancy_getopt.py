@@ -66,6 +66,10 @@ class FancyGetopt:
         if self.option_table:
             self._build_index()
 
+        # 'alias' records (duh) alias options; {'foo': 'bar'} means
+        # --foo is an alias for --bar
+        self.alias = {}
+
         # 'negative_alias' keeps track of options that are the boolean
         # opposite of some other option
         self.negative_alias = {}
@@ -118,23 +122,29 @@ class FancyGetopt:
         return string.translate (long_option, longopt_xlate)
 
 
+    def _check_alias_dict (self, aliases, what):
+        assert type(aliases) is DictionaryType
+        for (alias, opt) in aliases.items():
+            if not self.option_index.has_key(alias):
+                raise DistutilsGetoptError, \
+                      ("invalid %s '%s': "
+                       "option '%s' not defined") % (what, alias, alias)
+            if not self.option_index.has_key(opt):
+                raise DistutilsGetoptError, \
+                      ("invalid %s '%s': "
+                       "aliased option '%s' not defined") % (what, alias, opt)
+        
+    def set_aliases (self, alias):
+        """Set the aliases for this option parser."""
+        self._check_alias_dict (alias, "alias")
+        self.alias = alias
+
     def set_negative_aliases (self, negative_alias):
         """Set the negative aliases for this option parser.
         'negative_alias' should be a dictionary mapping option names to
         option names, both the key and value must already be defined
         in the option table."""
-
-        assert type(negative_alias) is DictionaryType
-        for (negopt, opt) in negative_alias.items():
-            if not self.option_index.has_key(negopt):
-                raise DistutilsGetoptError, \
-                      ("invalid negative alias '%s': "
-                       "option '%s' not defined") % (negopt, negopt)
-            if not self.option_index.has_key(opt):
-                raise DistutilsGetoptError, \
-                      ("invalid negative alias '%s': "
-                       "aliased option '%s' not defined") % (negopt, opt)
-
+        self._check_alias_dict (negative_alias, "negative alias")
         self.negative_alias = negative_alias
 
 
@@ -185,6 +195,16 @@ class FancyGetopt:
 
                 else:
                     self.takes_arg[long] = 0
+
+            # If this is an alias option, make sure its "takes arg" flag is
+            # the same as the option it's aliased to.
+            alias_to = self.alias.get(long)
+            if alias_to is not None:
+                if self.takes_arg[long] != self.takes_arg[alias_to]:
+                    raise DistutilsGetoptError, \
+                          ("invalid alias '%s': inconsistent with "
+                           "aliased option '%s' (one of them takes a value, "
+                           "the other doesn't") % (long, alias_to)
 
 
             # Now enforce some bondage on the long option name, so we can
@@ -242,6 +262,10 @@ class FancyGetopt:
             else:
                 raise DistutilsInternalError, \
                       "this can't happen: bad option string '%s'" % opt
+
+            alias = self.alias.get(opt)
+            if alias:
+                opt = alias
 
             if not self.takes_arg[opt]:     # boolean option?
                 if val != '':               # shouldn't have a value!
