@@ -81,6 +81,8 @@ Library
 Tools/Demos
 -----------
 
+- pygettext.py: Generate POT-Creation-Date header in ISO format.
+
 Build
 -----
 
