@@ -24,9 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Python interpreter main program */
 
-#define HAVE_CONFIG_H
-#include "Python.h"
-#undef main
+extern int Py_Main(int, char **);
 
 int
 main(argc, argv)
