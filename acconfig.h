@@ -59,6 +59,9 @@
 /* Define this if you have the type long long */
 #undef HAVE_LONG_LONG
 
+/* Define this if you have the type uintptr_t */
+#undef HAVE_UINTPTR_T
+
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
 
