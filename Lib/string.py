@@ -356,7 +356,7 @@ def maketrans(fromstr, tostr):
     fromstr = map(ord, fromstr)
     for i in range(len(fromstr)):
         L[fromstr[i]] = tostr[i]
-    return joinfields(L, "")
+    return join(L, "")
 
 # Substring replacement (global)
 def replace(s, old, new, maxsplit=-1):
