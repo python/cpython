@@ -159,9 +159,9 @@ DL_EXPORT(void)
 initpwd(void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule4("pwd", pwd_methods, pwd__doc__,
-                       (PyObject *)NULL, PYTHON_API_VERSION);
-	d = PyModule_GetDict(m);
+	m = Py_InitModule3("pwd", pwd_methods, pwd__doc__);
+
 	PyStructSequence_InitType(&StructPwdType, &struct_pwd_type_desc);
-	PyDict_SetItemString(d, "struct_pwent", (PyObject *) &StructPwdType);
+	Py_INCREF((PyObject *) &StructPwdType);
+	PyModule_AddObject(m, "struct_pwent", (PyObject *) &StructPwdType);
 }
