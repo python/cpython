@@ -173,11 +173,25 @@ def process(infilename, outfilename):
 
 	scale = 0
 	flip = 0
+	decompress = 0
 
+	vinfmt = vin.format
+	if vinfmt == 'compress':
+		if not newtype or newtype == 'compress':
+			# compressed->compressed: copy compression header
+			vout.setcompressheader(vin.getcompressheader())
+		else:
+			# compressed->something else: go via rgb-24
+			decompress = 1
+			vinfmt = 'rgb'
+	elif newtype == 'compress':
+		# something else->compressed: not implemented
+		sys.stderr.write('Sorry, conversion to compressed not yet implemented\n')
+		return 1
 	if newtype:
 		vout.setformat(newtype)
 		try:
-			convert = imgconv.getconverter(vin.format, vout.format)
+			convert = imgconv.getconverter(vinfmt, vout.format)
 		except imgconv.error, msg:
 			sys.stderr.write(str(msg) + '\n')
 			return 1
@@ -236,6 +250,8 @@ def process(infilename, outfilename):
 			tin, data, cdata = vin.getnextframe()
 		except EOFError:
 			break
+		if decompress:
+			data = vin.decompress(data)
 		nin = nin + 1
 		if regen:
 			tout = nin * regen

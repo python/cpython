@@ -202,6 +202,7 @@ class VideoParams:
 		self.offset = 0		# colormap index offset (XXX ???)
 		self.chrompack = 0	# set if separate chrominance data
 		self.setderived()
+		self.decompressor = None
 		return self
 
 	# Freeze the parameters (disallow changes)
@@ -333,6 +334,31 @@ class VideoParams:
 		size = (size * self.bpp + 7) / 8
 		return size
 
+	# Decompress a possibly compressed frame. This method is here
+	# since you sometimes want to use it on a VFile instance and sometimes
+	# on a Displayer instance.
+	#
+	# XXXX This should also handle jpeg. Actually, the whole mechanism
+	# should be much more of 'ihave/iwant' style, also allowing you to
+	# read, say, greyscale images from a color movie.
+	
+	def decompress(self, data):
+		if self.format <> 'compress':
+			return data
+		if not self.decompressor:
+			import cl, CL
+			scheme = cl.QueryScheme(self.compressheader)
+			self.decompressor = cl.OpenDecompressor(scheme)
+			headersize = self.decompressor.ReadHeader(self.compressheader)
+			width = self.decompressor.GetParam(CL.IMAGE_WIDTH)
+			height = self.decompressor.GetParam(CL.IMAGE_HEIGHT)
+			params = [CL.ORIGINAL_FORMAT, CL.RGBX, \
+				  CL.ORIENTATION, CL.BOTTOM_UP, \
+				  CL.FRAME_BUFFER_SIZE, width*height*CL.BytesPerPixel(CL.RGBX)]
+			self.decompressor.SetParams(params)
+		data = self.decompressor.Decompress(1, data)
+		return data
+
 
 # Class to display video frames in a window.
 # It is the caller's responsibility to ensure that the correct window
@@ -360,7 +386,6 @@ class Displayer(VideoParams):
 		self.color0 = None	# magic, used by clearto()
 		self.fixcolor0 = 0	# don't need to fix color0
 		self.mustunpack = (not support_packed_pixels())
-		self.decompressor = None
 		return self
 
 	# setinfo() must reset some internal flags
@@ -390,18 +415,7 @@ class Displayer(VideoParams):
 			data, width, height, bytes = jpeg.decompress(data)
 			pmsize = bytes*8
 		elif self.format == 'compress':
-			if not self.decompressor:
-				import cl, CL
-				scheme = cl.QueryScheme(self.compressheader)
-				self.decompressor = cl.OpenDecompressor(scheme)
-				headersize = self.decompressor.ReadHeader(self.compressheader)
-				width = self.decompressor.GetParam(CL.IMAGE_WIDTH)
-				height = self.decompressor.GetParam(CL.IMAGE_HEIGHT)
-				params = [CL.ORIGINAL_FORMAT, CL.RGBX, \
-					  CL.ORIENTATION, CL.BOTTOM_UP, \
-					  CL.FRAME_BUFFER_SIZE, width*height*CL.BytesPerPixel(CL.RGBX)]
-				self.decompressor.SetParams(params)
-			data = self.decompressor.Decompress(1, data)
+			data = self.decompress(data)
 		elif self.format in ('mono', 'grey4'):
 			if self.mustunpack:
 				if self.format == 'mono':
