@@ -32,6 +32,7 @@ _output_comparison = 1
 def deny_output_comparison():
     global _output_comparison
     _output_comparison = 0
+    sys.stdout = sys.save_stdout
 
 # regrtest's interface to _output_comparison.
 def output_comparison_denied():
