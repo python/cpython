@@ -15,10 +15,9 @@ file by hand, or submit patches to it.
 The Python-specific PCRE distribution can be retrieved from
        http://starship.skyport.net/crew/amk/regex/
 
-The unmodified original PCRE distribution doesn't have a fixed URL
-yet; write Philip Hazel <ph10@cam.ac.uk> for the latest version.
-
-Written by:  Philip Hazel <ph10@cam.ac.uk>
+The unmodified original PCRE distribution is available at
+ftp://ftp.cus.cam.ac.uk/pub/software/programs/pcre/, and is originally
+written by: Philip Hazel <ph10@cam.ac.uk>
 
 Extensively modified by the Python String-SIG: <string-sig@python.org>
 Send bug reports to:                           <string-sig@python.org>
@@ -46,7 +45,7 @@ restrictions:
 
 
 #define FOR_PYTHON
-#include "pcre-internal.h"
+#include "pcre-int.h"
 #include "Python.h"
 #include "mymalloc.h"
 #include <ctype.h>
@@ -254,13 +253,13 @@ Returns:       TRUE if table built, FALSE otherwise
 */
 
 static BOOL
-set_start_bits(uschar *code, uschar *start_bits)
+set_start_bits(const uschar *code, uschar *start_bits)
 {
 register int c;
 
 do
   {
-  uschar *tcode = code + 3;
+  const uschar *tcode = code + 3;
   BOOL try_next = TRUE;
 
   while (try_next)
@@ -466,12 +465,12 @@ Returns:    pointer to a pcre_extra block,
 */
 
 pcre_extra *
-pcre_study(const pcre *external_re, int options, char **errorptr)
+pcre_study(const pcre *external_re, int options, const char **errorptr)
 {
 BOOL caseless;
 uschar start_bits[32];
 real_pcre_extra *extra;
-real_pcre *re = (real_pcre *)external_re;
+const real_pcre *re = (const real_pcre *)external_re;
 
 *errorptr = NULL;
 
@@ -592,7 +591,8 @@ static char rep_max[] = { 0, 0, 0, 0, 1, 1 };
 /* Text forms of OP_ values and things, for debugging */
 
 #ifdef DEBUG
-static char *OP_names[] = { "End", "\\A", "\\B", "\\b", "\\D", "\\d",
+static const char *OP_names[] = { 
+  "End", "\\A", "\\B", "\\b", "\\D", "\\d",
   "\\S", "\\s", "\\W", "\\w", "Cut", "\\Z", 
   "localized \\B", "localized \\b", "localized \\W", "localized \\w",
   "^", "$", "Any", "chars",
@@ -627,8 +627,8 @@ static short int escapes[] = {
 
 /* Definition to allow mutual recursion */
 
-static BOOL compile_regex(int, int *, uschar **, uschar **, 
-			   char **, PyObject *);
+static BOOL compile_regex(int, int *, uschar **, const uschar **, 
+			   const char **, PyObject *);
 
 /* Structure for passing "static" information around between the functions
 doing the matching, so that they are thread-safe. */
@@ -645,10 +645,10 @@ typedef struct match_data {
   BOOL   noteol;                /* NOTEOL flag */
   BOOL   dotall;                /* Dot matches any char */
   BOOL   endonly;               /* Dollar not before final \n */
-  uschar *start_subject;        /* Start of the subject string */
-  uschar *end_subject;          /* End of the subject string */
+  const uschar *start_subject;  /* Start of the subject string */
+  const uschar *end_subject;    /* End of the subject string */
   jmp_buf fail_env;             /* Environment for longjump() break out */
-  uschar *end_match_ptr;        /* Subject position at end match */
+  const uschar *end_match_ptr;  /* Subject position at end match */
   int     end_offset_top;       /* Highwater mark at end of match */
   jmp_buf error_env;          /* For longjmp() if an error occurs deep inside a 
 				   matching operation */
@@ -656,7 +656,7 @@ typedef struct match_data {
   int    point;                 /* Point to add next item pushed onto stacks */
   /* Pointers to the 6 stacks */
   int *off_num, *offset_top, *r1, *r2; 
-  uschar **eptr, **ecode; 
+  const uschar **eptr, **ecode; 
 } match_data;
 
 
@@ -680,7 +680,7 @@ void  (*pcre_free)(void *) = free;
 *          Return version string                 *
 *************************************************/
 
-char *
+const char *
 pcre_version(void)
 {
 return PCRE_VERSION;
@@ -710,7 +710,7 @@ Returns:        number of identifying extraction brackets
 int
 pcre_info(const pcre *external_re, int *optptr, int *first_char)
 {
-real_pcre *re = (real_pcre *)external_re;
+const real_pcre *re = (real_pcre *)external_re;
 if (re == NULL) return PCRE_ERROR_NULL;
 if (re->magic_number != MAGIC_NUMBER) return PCRE_ERROR_BADMAGIC;
 if (optptr != NULL) *optptr = (re->options & PUBLIC_OPTIONS);
@@ -906,9 +906,9 @@ Arguments:
 */
   
 static int 
-get_group_id(uschar *ptr, char finalchar, char **errorptr)
+get_group_id(const uschar *ptr, char finalchar, const char **errorptr)
 {
-  uschar *start = ptr;
+  const uschar *start = ptr;
 
   /* If the first character is not in \w, or is in \w but is a digit,
      report an error */
@@ -960,10 +960,10 @@ Returns:     zero or positive => a data character
 */
 
 static int
-check_escape(uschar **ptrptr, char **errorptr, int bracount, int options,
-  BOOL isclass)
+check_escape(const uschar **ptrptr, const char **errorptr, int bracount, 
+	     int options, BOOL isclass)
 {
-uschar *ptr = *ptrptr;
+const uschar *ptr = *ptrptr;
 int c = *(++ptr) & 255;   /* Ensure > 0 on signed-char systems */
 int i;
 
@@ -1092,7 +1092,7 @@ Returns:    TRUE or FALSE
 */
 
 static BOOL
-is_counted_repeat(uschar *p)
+is_counted_repeat(const uschar *p)
 {
 if ((pcre_ctypes[*p++] & ctype_digit) == 0) return FALSE;
 while ((pcre_ctypes[*p] & ctype_digit) != 0) p++;
@@ -1127,8 +1127,8 @@ Returns:     pointer to '}' on success;
              current ptr on error, with errorptr set
 */
 
-static uschar *
-read_repeat_counts(uschar *p, int *minp, int *maxp, char **errorptr)
+static const uschar *
+read_repeat_counts(const uschar *p, int *minp, int *maxp, const char **errorptr)
 {
 int min = 0;
 int max = -1;
@@ -1183,16 +1183,16 @@ Returns:     TRUE on success
 
 static BOOL
 compile_branch(int options, int *brackets, uschar **codeptr,
-	       uschar **ptrptr, char **errorptr, PyObject *dictionary)
+	       const uschar **ptrptr, const char **errorptr, PyObject *dictionary)
 {
 int repeat_type, op_type;
 int repeat_min, repeat_max;
 int bravalue, length;
 register int c;
 register uschar *code = *codeptr;
-uschar *ptr = *ptrptr;
+const uschar *ptr = *ptrptr;
+const uschar *oldptr;
 uschar *previous = NULL;
-uschar *oldptr;
 uschar class[32];
 uschar *class_flag;  /* Pointer to the single-byte flag for OP_CLASS_L */
 
@@ -1299,7 +1299,7 @@ for (;; ptr++)
       /* Backslash may introduce a single character, or it may introduce one
       of the specials, which just set a flag. Escaped items are checked for
       validity in the pre-compiling pass. The sequence \b is a special case.
-      Inside a class (and only there) it is treated as backslash. Elsewhere
+      Inside a class (and only there) it is treated as backspace. Elsewhere
       it marks a word boundary. Other escapes have preset maps ready to
       or into the one we are building. We assume they have more than one
       character in them, so set class_count bigger than one. */
@@ -1314,22 +1314,12 @@ for (;; ptr++)
           switch (-c)
             {
             case ESC_d:
-	    if (options & PCRE_LOCALE)
-	      {
-		*class_flag |= 4;
-	      }
-	    else
 	      {
 		for (c = 0; c < 32; c++) class[c] |= pcre_cbits[c+cbit_digit];
 	      }
             continue;
 
             case ESC_D:
-	    if (options & PCRE_LOCALE)
-	      {
-		*class_flag |= 8;
-	      }
-	    else
 	      {
 		for (c = 0; c < 32; c++) class[c] |= ~pcre_cbits[c+cbit_digit];
 	      }
@@ -1360,22 +1350,12 @@ for (;; ptr++)
             continue;
 
             case ESC_s:
-	    if (options & PCRE_LOCALE)
-	      {
-		*class_flag |= 32;
-	      }
-	    else
 	      {
 		for (c = 0; c < 32; c++) class[c] |= pcre_cbits[c+cbit_space];
 	      }
             continue;
 
             case ESC_S:
-	    if (options & PCRE_LOCALE)
-	      {
-		*class_flag |= 32;
-	      }
-	    else
 	      {
 		for (c = 0; c < 32; c++) class[c] |= ~pcre_cbits[c+cbit_space];
 	      }
@@ -1795,7 +1775,7 @@ for (;; ptr++)
 	      }
 	      string = PyString_FromStringAndSize((char*)ptr, idlen);
 	      intobj = PyInt_FromLong( brackets[0] + 1 );
-	      if (intobj == NULL || string==NULL)
+	      if (intobj == NULL || string == NULL)
 		{
 		  Py_XDECREF(string);
 		  Py_XDECREF(intobj);
@@ -1803,7 +1783,7 @@ for (;; ptr++)
 		  goto FAILED;
 		}
 	      PyDict_SetItem(dictionary, string, intobj);
-	      Py_DECREF(string); Py_DECREF(intobj);
+	      Py_DECREF(string); Py_DECREF(intobj); /* XXX DECREF commented out! */
 	      ptr += idlen+1;  /* Point to rest of expression */
 	      goto do_grouping_bracket;
 	    }
@@ -1820,7 +1800,6 @@ for (;; ptr++)
 	      }
 	      string = PyString_FromStringAndSize((char *)ptr, idlen);
 	      if (string==NULL)	{
-		  Py_XDECREF(string);
 		  *errorptr = "exception raised";
 		  goto FAILED;
 		}
@@ -1833,6 +1812,10 @@ for (;; ptr++)
 
 	      refnum = PyInt_AsLong(intobj);
 	      Py_DECREF(string); 
+	      /* The caller doesn't own the reference to the value
+		 returned from PyDict_GetItem, so intobj is not
+		 DECREF'ed. */
+
 	      *code++ = OP_REF;
 	      *code++ = refnum;
 	      /* The continue will cause the top-level for() loop to
@@ -1943,7 +1926,7 @@ for (;; ptr++)
       continue;
       }
 
-    /* Reset and fall through */
+    /* Data character: Reset and fall through */
 
     ptr = oldptr;
     c = '\\';
@@ -2035,9 +2018,9 @@ Returns:    TRUE on success
 
 static BOOL
 compile_regex(int options, int *brackets, uschar **codeptr,
-  uschar **ptrptr, char **errorptr, PyObject *dictionary)
+  const uschar **ptrptr, const char **errorptr, PyObject *dictionary)
 {
-uschar *ptr = *ptrptr;
+const uschar *ptr = *ptrptr;
 uschar *code = *codeptr;
 uschar *start_bracket = code;
 
@@ -2103,7 +2086,7 @@ Returns:   TRUE or FALSE
 */
 
 static BOOL
-is_anchored(register uschar *code, BOOL multiline)
+is_anchored(register const uschar *code, BOOL multiline)
 {
 do {
    int op = (int)code[3];
@@ -2132,7 +2115,7 @@ Returns:   TRUE or FALSE
 */
 
 static BOOL
-is_startline(uschar *code)
+is_startline(const uschar *code)
 {
 do {
    if ((int)code[3] >= OP_BRA || code[3] == OP_ASSERT)
@@ -2217,7 +2200,7 @@ Returns:       pointer to compiled data block, or NULL on error,
 */
 
 pcre *
-pcre_compile(const char *pattern, int options, char **errorptr, 
+pcre_compile(const char *pattern, int options, const char **errorptr, 
 	     int *erroroffset, PyObject *dictionary)
 {
 real_pcre *re;
@@ -2227,9 +2210,10 @@ int runlength;
 int c, size;
 int bracount = 0;
 int brastack[200];
-int brastackptr = 0;
 int top_backref = 0;
-uschar *code, *ptr;
+unsigned int brastackptr = 0;
+uschar *code;
+const uschar *ptr;
 
 #ifdef DEBUG
 uschar *code_base, *code_end;
@@ -2268,7 +2252,7 @@ internal flag settings. Make an attempt to correct for any counted white space
 if an "extended" flag setting appears late in the pattern. We can't be so
 clever for #-comments. */
 
-ptr = (uschar *)(pattern - 1);
+ptr = (const uschar *)(pattern - 1);
 while ((c = *(++ptr)) != 0)
   {
   int min, max;
@@ -2295,7 +2279,7 @@ while ((c = *(++ptr)) != 0)
 
     case '\\':
       {
-      uschar *save_ptr = ptr;
+      const uschar *save_ptr = ptr;
       c = check_escape(&ptr, errorptr, bracount, options, FALSE);
       if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
       if (c >= 0)
@@ -2585,7 +2569,7 @@ while ((c = *(++ptr)) != 0)
 
       if (c == '\\')
         {
-        uschar *saveptr = ptr;
+        const uschar *saveptr = ptr;
         c = check_escape(&ptr, errorptr, bracount, options, FALSE);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         if (c < 0) { ptr = saveptr; break; }
@@ -2633,7 +2617,7 @@ re->options = options;
 error, *errorptr will be set non-NULL, so we don't need to look at the result
 of the function here. */
 
-ptr = (uschar *)pattern;
+ptr = (const uschar *)pattern;
 code = re->code;
 *code = OP_BRA;
 bracount = 0;
@@ -2661,7 +2645,7 @@ if (*errorptr != NULL)
   {
   (pcre_free)(re);
   PCRE_ERROR_RETURN:
-  *erroroffset = ptr - (uschar *)pattern;
+  *erroroffset = ptr - (const uschar *)pattern;
   return NULL;
   }
 
@@ -2947,8 +2931,8 @@ switch(type)
   case OP_WHITESPACE:     return (pcre_ctypes[c] & ctype_space) != 0;
   case OP_NOT_WORDCHAR:   return (pcre_ctypes[c] & ctype_word) == 0;
   case OP_WORDCHAR:       return (pcre_ctypes[c] & ctype_word) != 0;
-  case OP_NOT_WORDCHAR_L: return (c!='_' && !isalpha(c));
-  case OP_WORDCHAR_L:     return (c=='_' || isalpha(c));
+  case OP_NOT_WORDCHAR_L: return (c!='_' && !isalnum(c));
+  case OP_WORDCHAR_L:     return (c=='_' || isalnum(c));
   }
 return FALSE;
 }
@@ -2971,9 +2955,9 @@ Returns:      TRUE if matched
 */
 
 static BOOL
-match_ref(int number, register uschar *eptr, int length, match_data *md)
+match_ref(int number, register const uschar *eptr, int length, match_data *md)
 {
-uschar *p = md->start_subject + md->offset_vector[number];
+const uschar *p = md->start_subject + md->offset_vector[number];
 
 #ifdef DEBUG
 if (eptr >= md->end_subject)
@@ -2992,7 +2976,7 @@ printf("\n");
 
 if (length > md->end_subject - p) return FALSE;
 
-/* Separate the caselesss case for speed */
+/* Separate the caseless case for speed */
 
 if (md->caseless)
   { while (length-- > 0) if (pcre_lcc[*p++] != pcre_lcc[*eptr++]) return FALSE; }
@@ -3027,8 +3011,8 @@ static int grow_stack(match_data *md)
       else {md->length = 80;}
     }
   PyMem_RESIZE(md->offset_top, int, md->length);
-  PyMem_RESIZE(md->eptr, uschar *, md->length);
-  PyMem_RESIZE(md->ecode, uschar *, md->length);
+  PyMem_RESIZE(md->eptr, const uschar *, md->length);
+  PyMem_RESIZE(md->ecode, const uschar *, md->length);
   PyMem_RESIZE(md->off_num, int, md->length);
   PyMem_RESIZE(md->r1, int, md->length);
   PyMem_RESIZE(md->r2, int, md->length);
@@ -3058,7 +3042,7 @@ Returns:       TRUE if matched
 */
 
 static BOOL
-match(register uschar *eptr, register uschar *ecode, int offset_top,
+match(register const uschar *eptr, register const uschar *ecode, int offset_top,
   match_data *md)
 {
   int save_stack_position = md->point;
@@ -3072,7 +3056,7 @@ for (;;)
   int min, max, ctype;
   register int i;
   register int c;
-  BOOL minimize;
+  BOOL minimize = FALSE;
 
   /* Opening bracket. Check the alternative branches in turn, failing if none
   match. We have to set the start offset if required and there is space
@@ -3085,7 +3069,7 @@ for (;;)
   if ((int)*ecode >= OP_BRA)
     {
     int number = (*ecode - OP_BRA) << 1;
-    int save_offset1, save_offset2;
+    int save_offset1 = 0, save_offset2 = 0;
 
 #ifdef DEBUG
     printf("start bracket %d\n", number/2);
@@ -3212,7 +3196,7 @@ for (;;)
 
     case OP_BRAZERO:
       {
-      uschar *next = ecode+1;
+      const uschar *next = ecode+1;
       if (match(eptr, next, offset_top, md)) SUCCEED;
       do next += (next[1] << 8) + next[2]; while (*next == OP_ALT);
       ecode = next + 3;
@@ -3221,7 +3205,7 @@ for (;;)
 
     case OP_BRAMINZERO:
       {
-      uschar *next = ecode+1;
+      const uschar *next = ecode+1;
       do next += (next[1] << 8) + next[2]; while (*next == OP_ALT);
       if (match(eptr, next+3, offset_top, md)) SUCCEED;
       ecode++;
@@ -3237,7 +3221,7 @@ for (;;)
     case OP_KETRMAX:
       {
       int number;
-      uschar *prev = ecode - (ecode[1] << 8) - ecode[2];
+      const uschar *prev = ecode - (ecode[1] << 8) - ecode[2];
 
       if (*prev == OP_ASSERT || *prev == OP_ASSERT_NOT || *prev == OP_ONCE)
         {
@@ -3279,11 +3263,10 @@ for (;;)
 
       if (*ecode == OP_KETRMIN)
         {
-	uschar *ptr;
+	const uschar *ptr;
 	if (match(eptr, ecode+3, offset_top, md)) goto succeed;
 	/* Handle alternation inside the BRA...KET; push the additional
-	   alternatives onto the stack 
-	   XXX this tries the alternatives backwards! */
+	   alternatives onto the stack */
 	ptr=prev;
 	do {
 	  ptr += (ptr[1]<<8)+ ptr[2];
@@ -3306,8 +3289,8 @@ for (;;)
         }
       else  /* OP_KETRMAX */
         {
-	uschar *ptr;
-	int points_pushed=0;
+	const uschar *ptr;
+	/*int points_pushed=0;*/
 
 	/* Push one failure point, that will resume matching at the code after 
 	   the KETRMAX opcode. */
@@ -3325,8 +3308,7 @@ for (;;)
 
 	md->offset_vector[number] = eptr - md->start_subject;
 	/* Handle alternation inside the BRA...KET; push each of the
-	   additional alternatives onto the stack 
-	   XXX this tries the alternatives backwards! */
+	   additional alternatives onto the stack */
 	ptr=prev;
 	do {
 	  ptr += (ptr[1]<<8)+ ptr[2];
@@ -3344,15 +3326,15 @@ for (;;)
 	      md->r2[md->point]         = 0; 
 	      md->off_num[md->point]    = 0; 
 	      md->point++;	      
-	      points_pushed++;
+	      /*points_pushed++;*/
 	    }
 	} while (*ptr==OP_ALT);
 	/* Jump to the first (or only) alternative and resume trying to match */
 	ecode=prev+3; goto match_loop;
         }
       }
-    FAIL;
-
+    break;
+    
     /* Start of subject unless notbol, or after internal newline if multiline */
 
     case OP_CIRC:
@@ -3419,9 +3401,9 @@ for (;;)
     case OP_WORD_BOUNDARY_L:
       {
 	BOOL prev_is_word = (eptr != md->start_subject) &&
-	  (isalpha(eptr[-1]) || eptr[-1]=='_');
+	  (isalnum(eptr[-1]) || eptr[-1]=='_');
 	BOOL cur_is_word = (eptr < md->end_subject) &&
-	  (isalpha(eptr[-1]) || eptr[-1]=='_');
+	  (isalnum(*eptr) || *eptr=='_');
 	if ((*ecode++ == OP_WORD_BOUNDARY_L)?
 	    cur_is_word == prev_is_word : cur_is_word != prev_is_word)
 	  FAIL;
@@ -3474,14 +3456,14 @@ for (;;)
     break;
 
     case OP_NOT_WORDCHAR_L:
-    if (eptr >= md->end_subject || (*eptr=='_' || isalpha(*eptr) ))
+    if (eptr >= md->end_subject || (*eptr=='_' || isalnum(*eptr) ))
       return FALSE;
     eptr++;
     ecode++;
     break;
 
     case OP_WORDCHAR_L:
-    if (eptr >= md->end_subject || (*eptr!='_' && !isalpha(*eptr) ))
+    if (eptr >= md->end_subject || (*eptr!='_' && !isalnum(*eptr) ))
       return FALSE;
     eptr++;
     ecode++;
@@ -3577,7 +3559,7 @@ for (;;)
 
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; i++)
           {
           if (!match_ref(number, eptr, length, md)) break;
@@ -3601,8 +3583,8 @@ for (;;)
 
     case OP_CLASS:
       {
-      uschar *data = ecode + 1;  /* Save for matching */
-      ecode += 33;               /* Advance past the item */
+      const uschar *data = ecode + 1;  /* Save for matching */
+      ecode += 33;                     /* Advance past the item */
 
       switch (*ecode)
         {
@@ -3685,7 +3667,7 @@ for (;;)
 
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; eptr++, i++)
           {
           if (eptr >= md->end_subject) break;
@@ -3710,8 +3692,8 @@ for (;;)
 
    case OP_CLASS_L:
      {
-     uschar *data = ecode + 1;  /* Save for matching */
-      uschar locale_flag = *data;
+      const uschar *data = ecode + 1;  /* Save for matching */
+      const uschar locale_flag = *data;
       ecode++; data++;		/* The localization support adds an extra byte */
 
       ecode += 33;               /* Advance past the item */
@@ -3744,8 +3726,8 @@ for (;;)
         if (eptr >= md->end_subject) FAIL;
         c = *eptr++;
         if ((data[c/8] & (1 << (c&7))) != 0) continue;    /* With main loop */
-	if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
 #if 0
 	if ( (locale_flag &  4) && isdigit(c) ) continue;    /* Locale \d */
 	if ( (locale_flag &  8) && !isdigit(c) ) continue;   /* Locale \D */
@@ -3758,8 +3740,8 @@ for (;;)
           c = pcre_fcc[c];
           if ((data[c/8] & (1 << (c&7))) != 0) continue;  /* With main loop */
 
-	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	  if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
           }
         FAIL;
         }
@@ -3771,15 +3753,15 @@ for (;;)
         if (eptr >= md->end_subject) FAIL;
         c = *eptr++;
         if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
 
         if (md->runtime_caseless)
           {
           c = pcre_fcc[c];
           if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	  if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
           }
         FAIL;
         }
@@ -3800,15 +3782,15 @@ for (;;)
           if (i >= max || eptr >= md->end_subject) FAIL;
           c = *eptr++;
           if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	  if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
 
           if (md->runtime_caseless)
             {
             c = pcre_fcc[c];
             if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	    if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	    if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	    if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	    if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
             }
           FAIL;
           }
@@ -3819,20 +3801,20 @@ for (;;)
 
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; eptr++, i++)
           {
           if (eptr >= md->end_subject) break;
           c = *eptr;
           if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	  if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
           if (md->runtime_caseless)
             {
             c = pcre_fcc[c];
             if ((data[c/8] & (1 << (c&7))) != 0) continue;
-	    if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
-	    if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+	    if ( (locale_flag &  1) && (isalnum(c) || c=='_') ) continue;   /* Locale \w */
+	    if ( (locale_flag &  2) && (!isalnum(c) && c!='_') ) continue;   /* Locale \W */
             }
           break;
           }
@@ -3941,7 +3923,7 @@ for (;;)
         }
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; i++)
           {
           if (eptr >= md->end_subject || c != pcre_lcc[*eptr]) break;
@@ -3971,7 +3953,7 @@ for (;;)
         }
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; i++)
           {
           if (eptr >= md->end_subject || c != *eptr) break;
@@ -4068,7 +4050,7 @@ for (;;)
         }
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; i++)
           {
           if (eptr >= md->end_subject || c == pcre_lcc[*eptr]) break;
@@ -4098,7 +4080,7 @@ for (;;)
         }
       else
         {
-        uschar *pp = eptr;
+        const uschar *pp = eptr;
         for (i = min; i < max; i++)
           {
           if (eptr >= md->end_subject || c == *eptr) break;
@@ -4191,12 +4173,12 @@ for (;;)
       break;
 
       case OP_NOT_WORDCHAR_L:
-      for (i = 1; i <= min; i++, eptr++) if (*eptr=='_' || isalpha(*eptr))
+      for (i = 1; i <= min; i++, eptr++) if (*eptr=='_' || isalnum(*eptr))
         return FALSE;
       break;
 
       case OP_WORDCHAR_L:
-      for (i = 1; i <= min; i++, eptr++) if (*eptr!='_' && !isalpha(*eptr))
+      for (i = 1; i <= min; i++, eptr++) if (*eptr!='_' && !isalnum(*eptr))
         return FALSE;
       break;
       }
@@ -4225,7 +4207,7 @@ for (;;)
 
     else
       {
-      uschar *pp = eptr;
+      const uschar *pp = eptr;
       switch(ctype)
         {
         case OP_ANY:
@@ -4301,7 +4283,7 @@ for (;;)
 	case OP_NOT_WORDCHAR_L:
 	  for (i = min; i < max; i++)
          {
-         if (eptr >= md->end_subject || (*eptr=='_' || isalpha(*eptr) ) )
+         if (eptr >= md->end_subject || (*eptr=='_' || isalnum(*eptr) ) )
            break;
          eptr++;
          }
@@ -4310,7 +4292,7 @@ for (;;)
        case OP_WORDCHAR_L:
        for (i = min; i < max; i++)
          {
-         if (eptr >= md->end_subject || (*eptr!='_' && !isalpha(*eptr) ) )
+         if (eptr >= md->end_subject || (*eptr!='_' && !isalnum(*eptr) ) )
              break;
           eptr++;
           }
@@ -4399,17 +4381,20 @@ int
 pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
   const char *subject, int length, int options, int *offsets, int offsetcount)
 {
-int resetcount;
-int ocount = offsetcount;
-int first_char = -1;
+  /* The "volatile" directives are to make gcc -Wall stop complaining
+     that these variables can be clobbered by the longjmp.  Hopefully
+     they won't cost too much performance. */ 
+volatile int resetcount;
+volatile int ocount = offsetcount;
+volatile int first_char = -1;
 match_data match_block;
-uschar *start_bits = NULL;
-uschar *start_match = (uschar *)subject;
-uschar *end_subject;
-real_pcre *re = (real_pcre *)external_re;
-real_pcre_extra *extra = (real_pcre_extra *)external_extra;
-BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
-BOOL startline = (re->options & PCRE_STARTLINE) != 0;
+volatile const uschar *start_bits = NULL;
+const uschar *start_match = (uschar *)subject;
+const uschar *end_subject;
+const real_pcre *re = (const real_pcre *)external_re;
+const real_pcre_extra *extra = (const real_pcre_extra *)external_extra;
+volatile BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
+volatile BOOL startline = (re->options & PCRE_STARTLINE) != 0;
 
 if ((options & ~PUBLIC_EXEC_OPTIONS) != 0) return PCRE_ERROR_BADOPTION;
 
@@ -4417,7 +4402,7 @@ if (re == NULL || subject == NULL ||
    (offsets == NULL && offsetcount > 0)) return PCRE_ERROR_NULL;
 if (re->magic_number != MAGIC_NUMBER) return PCRE_ERROR_BADMAGIC;
 
-match_block.start_subject = (uschar *)subject;
+match_block.start_subject = (const uschar *)subject;
 match_block.end_subject = match_block.start_subject + length;
 end_subject = match_block.end_subject;
 
@@ -4626,13 +4611,3 @@ return match_block.errorcode;
 }
 
 /* End of pcre.c */
-
-
-
-
-
-
-
-
-
-

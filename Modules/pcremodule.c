@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+Copyright 1997 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
 
                         All Rights Reserved
@@ -33,6 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#include <assert.h>
 #ifndef Py_eval_input
 /* For Python 1.4, graminit.h has to be explicitly included */
 #include "graminit.h"
@@ -44,7 +45,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include "pcre.h"
-#include "pcre-internal.h"
+#include "pcre-int.h"
 
 static PyObject *ErrorObject;
 
@@ -127,7 +128,9 @@ PyPcre_exec(self, args)
 	if (count==PCRE_ERROR_NOMATCH) {Py_INCREF(Py_None); return Py_None;}
 	if (count<0)
 	{
-		PyErr_SetObject(ErrorObject, Py_BuildValue("si", "Regex error", count));
+		PyObject *errval = Py_BuildValue("si", "Regex execution error", count);
+		PyErr_SetObject(ErrorObject, errval);
+		Py_XDECREF(errval);
 		return NULL;
 	}
 	
@@ -191,7 +194,7 @@ PyPcre_compile(self, args)
 	PcreObject *rv;
 	PyObject *dictionary;
 	char *pattern, *newpattern;
-	char *error;
+	const char *error;
 	int num_zeros, i, j;
 	
 	int patternlen, options, erroroffset;
@@ -203,12 +206,13 @@ PyPcre_compile(self, args)
 		return NULL;
 
 	/* PCRE doesn't like having null bytes in its pattern, so we have to replace 
-	   any zeros in the string with the characters '\0'. */
-	num_zeros=1;
+	   any zeros in the string with the characters '\000'. This increases the size
+	   of the string by 3*num_zeros, plus 1 byte for the terminating \0.  */
+	num_zeros=1;      /* Start at 1; this will give 3 extra bytes of leeway */
 	for(i=0; i<patternlen; i++) {
 		if (pattern[i]==0) num_zeros++;
 	}
-	newpattern=malloc(patternlen+num_zeros);
+	newpattern=malloc(patternlen + num_zeros*3 + 4); 
 	if (newpattern==NULL) {
 		PyErr_SetString(PyExc_MemoryError, "can't allocate memory for new pattern");
 		return NULL;
@@ -217,10 +221,16 @@ PyPcre_compile(self, args)
 	{
 		if (pattern[i]!=0) newpattern[j]=pattern[i];
 		else {
-			newpattern[j++]='\\';
-			newpattern[j]  ='0';
+			newpattern[j++] ='\\';
+			newpattern[j++] = '0';
+			newpattern[j++] = '0';
+			newpattern[j  ] = '0';
 		}
 	}
+	/* Keep purify happy; for pcre, one null byte is enough! */
+	newpattern[j++]='\0';
+	newpattern[j++]='\0';
+	newpattern[j++]='\0';
 	newpattern[j]='\0';
 
 	rv->regex = pcre_compile((char*)newpattern, options, 
@@ -231,21 +241,27 @@ PyPcre_compile(self, args)
 		PyMem_DEL(rv);
 		if (!PyErr_Occurred())
 		{
-			PyErr_SetObject(ErrorObject, Py_BuildValue("si", error, erroroffset));
+			PyObject *errval = Py_BuildValue("si", error, erroroffset);
+			PyErr_SetObject(ErrorObject, errval);
+			Py_XDECREF(errval);
 		}
 		return NULL;
 	}
 	rv->regex_extra=pcre_study(rv->regex, 0, &error);
 	if (rv->regex_extra==NULL && error!=NULL) 
 	{
+		PyObject *errval = Py_BuildValue("si", error, 0);
 		PyMem_DEL(rv);
-		PyErr_SetObject(ErrorObject, Py_BuildValue("si", error, 0));
+		PyErr_SetObject(ErrorObject, errval);
+		Py_XDECREF(errval);
 		return NULL;
 	}
         rv->num_groups = pcre_info(rv->regex, NULL, NULL);
 	if (rv->num_groups<0) 
 	{
-		PyErr_SetObject(ErrorObject, Py_BuildValue("si", "Regex error", rv->num_groups));
+		PyObject *errval = Py_BuildValue("si", error, rv->num_groups);
+		PyErr_SetObject(ErrorObject, errval);
+		Py_XDECREF(errval);
 		PyMem_DEL(rv);
 		return NULL;
 	}
@@ -526,7 +542,7 @@ PyPcre_expand(self, args)
 				Py_DECREF(r); Py_DECREF(tuple);
 				if (result==NULL)
 				{
-					/* The group() method trigged an exception of some sort */
+					/* The group() method triggered an exception of some sort */
 					Py_DECREF(results);
 					Py_DECREF(value);
 					return NULL;
