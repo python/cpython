@@ -753,6 +753,8 @@ tuple_iter(PyObject *seq)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
+	if (seq->ob_type->tp_as_sequence->sq_item != tupleitem)
+		return PySeqIter_New(seq);
 	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
 	if (it == NULL)
 		return NULL;
