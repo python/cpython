@@ -45,7 +45,7 @@ atol_error = ValueError
 def lower(s):
 	"""lower(s) -> string
 
-	Return a copy of the string s converted to lowercase
+	Return a copy of the string s converted to lowercase.
 
 	"""
 	res = ''
@@ -57,7 +57,7 @@ def lower(s):
 def upper(s):
 	"""upper(s) -> string
 
-	Return a copy of the string s converted to uppercase
+	Return a copy of the string s converted to uppercase.
 
 	"""
 	res = ''
@@ -67,10 +67,10 @@ def upper(s):
 
 # Swap lower case letters and UPPER CASE
 def swapcase(s):
-	"""swapcase(s) -> strng
+	"""swapcase(s) -> string
 
 	Return a copy of the string s with upper case characters
-	converted to lowercase and vice versa
+	converted to lowercase and vice versa.
 
 	"""
 	res = ''
@@ -83,7 +83,7 @@ def strip(s):
 	"""strip(s) -> string
 
 	Return a copy of the string s with leading and trailing
-	whitespace removed
+	whitespace removed.
 
 	"""
 	i, j = 0, len(s)
@@ -95,7 +95,7 @@ def strip(s):
 def lstrip(s):
 	"""lstrip(s) -> string
 
-	Return a copy of the string s with leading whitespace removed
+	Return a copy of the string s with leading whitespace removed.
 
 	"""
 	i, j = 0, len(s)
@@ -106,7 +106,8 @@ def lstrip(s):
 def rstrip(s):
 	"""rstrip(s) -> string
 
-	Return a copy of the string s with trailing whitespace removed
+	Return a copy of the string s with trailing whitespace
+	removed.
 
 	"""
 	i, j = 0, len(s)
@@ -174,7 +175,6 @@ def splitfields(s, sep=None, maxsplit=0):
 			res.append(s[i:j])
 			i = j = j + nsep
 			if count >= maxsplit: break
-			   
 		else:
 			j = j + 1
 	res.append(s[i:])
@@ -185,12 +185,12 @@ def join(words, sep = ' '):
 	"""join(list [,sep]) -> string
 
 	Return a string composed of the words in list, with
-	intervening occurences of sep.  The default separator is a
-	single space.
+	intervening occurences of sep.  Sep defaults to a single
+	space.
 
 	(joinfields and join are synonymous)
 
-	"""    
+	"""
 	return joinfields(words, sep)
 
 # Join fields with optional separator
@@ -306,7 +306,7 @@ def rfind(s, sub, i = 0, last=None):
 	such that sub is contained within s[start,end].  Optional
 	arguments start and end are interpreted as in slice notation.
 
-	Returns -1 on failure.
+	Return -1 on failure.
 
 	"""
 	Slen = len(s)  # cache this value, for speed
@@ -484,7 +484,7 @@ def expandtabs(s, tabsize=8):
 
 	Return a copy of the string s with all tab characters replaced
 	by the appropriate number of spaces, depending on the current
-	column, and the tabsize (default=8).
+	column, and the tabsize (default 8).
 
 	"""
 	res = line = ''

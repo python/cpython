@@ -32,9 +32,10 @@ PERFORMANCE OF THIS SOFTWARE.
 /* strop module */
 
 static char strop_module__doc__[] =
-"Common string manipulations, optimized for speed\n\
+"Common string manipulations, optimized for speed.\n\
+
 Always use \"import string\" rather than referencing\n\
-this module directly";
+this module directly.";
 
 #include "Python.h"
 
@@ -192,10 +193,10 @@ static char joinfields__doc__[] =
 joinfields(list [,sep]) -> string\n\
 \n\
 Return a string composed of the words in list, with\n\
-intervening occurences of sep.  The default separator is a\n\
-single space.\n\
+intervening occurences of sep.  Sep defaults to a single\n\
+space.\n\
 \n\
-(joinfields and join are synonymous)";
+(join and joinfields are synonymous)";
 
 static PyObject *
 strop_joinfields(self, args)
