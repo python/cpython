@@ -9,7 +9,9 @@
 #
 # Some problems remain:
 # - It's highly non-portable, since it knows about paths and libraries
-#   (there's a customization section though).
+#   (there's a customization section though, and it knows how to
+#   distinguish an SGI from a Sun SPARC system -- adding knowledge
+#   about more systems is left as an exercise for the reader).
 # - You need to have the Python source tree lying around as well as
 #   the "libpython.a" used to generate the Python binary.
 # - For scripts that use many modules it generates absurdly large
@@ -96,20 +98,21 @@ FMAIN = j(SRC, 'frozenmain.c')		# Special main source file
 libdeps_sgi = [ \
 	  ('stdwin',	j(STDWIN, 'Build/' + ARCH + '/x11/lib/lib.a')), \
 	  ('fl',	j(FORMS, 'FORMS/libforms.a'), '-lfm_s'), \
-	  ('*',		j(READLINE, 'libreadline.a')), \
-	  ('*',		'-lm'), \
-	  ('*',		'-lsun'), \
+	  ('*',		j(READLINE, 'libreadline.a'), '-ltermcap'), \
 	  ('al',	'-laudio'), \
 	  ('sv',	'-lsvideo', '-lXext'), \
 	  ('cd',	'-lcdaudio', '-lds'), \
 	  ('cl',	'-lcl'), \
 	  ('imgfile',	'-limage', '-lgutil', '-lm'), \
+	  ('mpz',	'/ufs/jh/src/gmp-1.2/libgmp.a'), \
+	  ('md5',	'/ufs/jh/src/md5/md5.o'), \
+	  ('*',		'-lsun'), \
 	  ('*',		j(DL, 'libdl.a'), '-lmld'), \
 	  ('*',		'-lmpc'), \
 	  ('fm',	'-lfm_s'), \
-	  ('gl',	'-lgl_s'), \
-	  ('*',		'-lX11_s'), \
-	  ('*',		'-ltermcap'), \
+	  ('gl',	'-lgl_s', '-lX11_s'), \
+	  ('stdwin',	'-lX11_s'), \
+	  ('*',		'-lm'), \
 	  ('*',		'-lc_s'), \
 	  ]
 libdeps_sun4 = [ \
@@ -222,9 +225,9 @@ def process(filename, addmodules):
 	#
 	if not dlmodules:
 		config = CONFIG
-		if not quiet: print 'Using', config, '...'
+		if not quiet: print 'Using existing', config, '...'
 	else:
-		config = 'config.c'
+		config = 'tmpconfig.c'
 		if nowrite:
 			if not quiet: print 'NOT writing config.c ...'
 		else:
@@ -248,8 +251,11 @@ def process(filename, addmodules):
 					for mod in dlmodules:
 						g.write('{"' + mod + \
 						  '", init' + mod + '},\n')
+			g.close()
 	#
-	if not quiet: print 'Readying for compilation ...'
+	if not quiet:
+		if noexec: print 'Generating compilation commands ...'
+		else: print 'Starting compilation ...'
 	defs = ['-DUSE_FROZEN', '-DPYTHONPATH=\'"."\'']
 	for mod in dict.keys():
 		if dict[mod] == '<builtin>' and mod <> 'sys':
