@@ -1,144 +1,131 @@
-from test.test_support import TestFailed, verbose
+doctests = """
 
-t = (1, 2, 3)
-l = [4, 5, 6]
+Unpack tuple
 
-class Seq:
-    def __getitem__(self, i):
-        if i >= 0 and i < 3: return i
-        raise IndexError
+    >>> t = (1, 2, 3)
+    >>> a, b, c = t
+    >>> a == 1 and b == 2 and c == 3
+    True
 
-a = -1
-b = -1
-c = -1
+Unpack list
 
-# unpack tuple
-if verbose:
-    print 'unpack tuple'
-a, b, c = t
-if a != 1 or b != 2 or c != 3:
-    raise TestFailed
+    >>> l = [4, 5, 6]
+    >>> a, b, c = l
+    >>> a == 4 and b == 5 and c == 6
+    True
 
-# unpack list
-if verbose:
-    print 'unpack list'
-a, b, c = l
-if a != 4 or b != 5 or c != 6:
-    raise TestFailed
+Unpack implied tuple
 
-# unpack implied tuple
-if verbose:
-    print 'unpack implied tuple'
-a, b, c = 7, 8, 9
-if a != 7 or b != 8 or c != 9:
-    raise TestFailed
+    >>> a, b, c = 7, 8, 9
+    >>> a == 7 and b == 8 and c == 9
+    True
 
-# unpack string... fun!
-if verbose:
-    print 'unpack string'
-a, b, c = 'one'
-if a != 'o' or b != 'n' or c != 'e':
-    raise TestFailed
+Unpack string... fun!
 
-# unpack generic sequence
-if verbose:
-    print 'unpack sequence'
-a, b, c = Seq()
-if a != 0 or b != 1 or c != 2:
-    raise TestFailed
+    >>> a, b, c = 'one'
+    >>> a == 'o' and b == 'n' and c == 'e'
+    True
 
-# single element unpacking, with extra syntax
-if verbose:
-    print 'unpack single tuple/list'
-st = (99,)
-sl = [100]
-a, = st
-if a != 99:
-    raise TestFailed
-b, = sl
-if b != 100:
-    raise TestFailed
+Unpack generic sequence
 
-# now for some failures
+    >>> class Seq:
+    ...     def __getitem__(self, i):
+    ...         if i >= 0 and i < 3: return i
+    ...         raise IndexError
+    ...
+    >>> a, b, c = Seq()
+    >>> a == 0 and b == 1 and c == 2
+    True
 
-# unpacking non-sequence
-if verbose:
-    print 'unpack non-sequence'
-try:
-    a, b, c = 7
-    raise TestFailed
-except TypeError:
-    pass
+Single element unpacking, with extra syntax
 
+    >>> st = (99,)
+    >>> sl = [100]
+    >>> a, = st
+    >>> a
+    99
+    >>> b, = sl
+    >>> b
+    100
 
-# unpacking tuple of wrong size
-if verbose:
-    print 'unpack tuple wrong size'
-try:
-    a, b = t
-    raise TestFailed
-except ValueError:
-    pass
+Now for some failures
 
-# unpacking list of wrong size
-if verbose:
-    print 'unpack list wrong size'
-try:
-    a, b = l
-    raise TestFailed
-except ValueError:
-    pass
+Unpacking non-sequence
 
+    >>> a, b, c = 7
+    Traceback (most recent call last):
+      ...
+    TypeError: unpack non-sequence
 
-# unpacking sequence too short
-if verbose:
-    print 'unpack sequence too short'
-try:
-    a, b, c, d = Seq()
-    raise TestFailed
-except ValueError:
-    pass
+Unpacking tuple of wrong size
 
+    >>> a, b = t
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack
 
-# unpacking sequence too long
-if verbose:
-    print 'unpack sequence too long'
-try:
-    a, b = Seq()
-    raise TestFailed
-except ValueError:
-    pass
+Unpacking tuple of wrong size
 
+    >>> a, b = l
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack
 
-# unpacking a sequence where the test for too long raises a different
-# kind of error
-class BozoError(Exception):
-    pass
+Unpacking sequence too short
 
-class BadSeq:
-    def __getitem__(self, i):
-        if i >= 0 and i < 3:
-            return i
-        elif i == 3:
-            raise BozoError
-        else:
-            raise IndexError
+    >>> a, b, c, d = Seq()
+    Traceback (most recent call last):
+      ...
+    ValueError: need more than 3 values to unpack
 
+Unpacking sequence too long
 
-# trigger code while not expecting an IndexError
-if verbose:
-    print 'unpack sequence too long, wrong error'
-try:
-    a, b, c, d, e = BadSeq()
-    raise TestFailed
-except BozoError:
-    pass
+    >>> a, b = Seq()
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack
 
-# trigger code while expecting an IndexError
-if verbose:
-    print 'unpack sequence too short, wrong error'
-try:
-    a, b, c = BadSeq()
-    raise TestFailed
-except BozoError:
-    pass
+Unpacking a sequence where the test for too long raises a different kind of
+error
+
+    >>> class BozoError(Exception):
+    ...     pass
+    ...
+    >>> class BadSeq:
+    ...     def __getitem__(self, i):
+    ...         if i >= 0 and i < 3:
+    ...             return i
+    ...         elif i == 3:
+    ...             raise BozoError
+    ...         else:
+    ...             raise IndexError
+    ...
+
+Trigger code while not expecting an IndexError (unpack sequence too long, wrong
+error)
+
+    >>> a, b, c, d, e = BadSeq()
+    Traceback (most recent call last):
+      ...
+    BozoError
+
+Trigger code while expecting an IndexError (unpack sequence too short, wrong
+error)
+
+    >>> a, b, c = BadSeq()
+    Traceback (most recent call last):
+      ...
+    BozoError
+
+"""
+
+__test__ = {'doctests' : doctests}
+
+def test_main(verbose=False):
+    import sys
+    from test import test_support
+    from test import test_unpack
+    test_support.run_doctest(test_unpack, verbose)
+
+if __name__ == "__main__":
+    test_main(verbose=True)
