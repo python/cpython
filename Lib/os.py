@@ -442,6 +442,17 @@ else:
                 return key.upper() in self.data
             def get(self, key, failobj=None):
                 return self.data.get(key.upper(), failobj)
+            def update(self, dict=None, **kwargs):
+                if dict:
+                    try:
+                        items = dict.items()
+                    except AttributeError:
+                        # List of (key, value)
+                        items = dict
+                    for k, v in items:
+                        self[k] = v
+                if kwargs:
+                    self.update(kwargs)
             def copy(self):
                 return dict(self)
 
@@ -453,6 +464,17 @@ else:
             def __setitem__(self, key, item):
                 putenv(key, item)
                 self.data[key] = item
+            def update(self,  dict=None, **kwargs):
+                if dict:
+                    try:
+                        items = dict.items()
+                    except AttributeError:
+                        # List of (key, value)
+                        items = dict
+                    for k, v in items:
+                        self[k] = v
+                if kwargs:
+                    self.update(kwargs)
             try:
                 unsetenv
             except NameError:
