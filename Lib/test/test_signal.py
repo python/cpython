@@ -29,7 +29,8 @@ def handlerA(*args):
     if verbose:
         print "handlerA", args
 
-HandlerBCalled = "HandlerBCalled"       # Exception
+class HandlerBCalled(Exception):
+    pass
 
 def handlerB(*args):
     if verbose:
