@@ -23,6 +23,7 @@ for machine-independent changes.
 - Handling of Dialogs and Windows that were not created by Python is a bit more graceful
   now, which may fix some crashes.
 - Ctl.SendControlMessage has gone. But it didn't work anyway.
+- Various problems with the TextEdit and Waste demos have been fixed.
 - Embedding/extending only: in preparation to allowing the use of MacPython modules in
   unix-Python on OSX the xxx_New and xxx_Convert routines are now optionally vectored via
   glue routines in macglue.c. The only change that may be needed for embedders/extenders is
@@ -63,3 +64,5 @@ http://www.cwi.nl/~jack/macpython.html.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
   PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially
   true under OSX.
+- AliasMenu 2.2 conflicts with the Carbon version of Python. This is most likely a problem
+  with AliasMenu (which is from 1999, and thus predates Carbon altogether).
