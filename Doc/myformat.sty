@@ -13,7 +13,7 @@
 \parskip =         2mm
 
 % Frequently used system name
-\newcommand{\UNIX}{U{\sc nix}}
+%\newcommand{\UNIX}{U{\sc nix}}
 
 % Variable used by begin code command
 \newlength{\codewidth}
@@ -40,7 +40,9 @@
 
 % Underscores are not magic throughout the Python documentation.
 % This still only gives the right effect in the tt font!!!
-\catcode`_=12
+\def\_{\ifnum\fam=\ttfam \char'137\else{\tt\char'137}\fi}
+\catcode`\_=12
+\catcode`\_=\active\def_{\ifnum\fam=\ttfam \char'137 \else{\tt\char'137}\fi}
 
 % Define \itembreak: force the text after an item to start on a new line
 \newcommand{\itembreak}{
@@ -94,22 +96,104 @@
 }
 
 % Define \funcitem{func}{args}: define a function item
-\newcommand{\funcitem}[2]{
-\ttindex{#1}
-\item[{\tt #1(#2)}]
+\newcommand{\funcitem}[2]{%
+\ttindex{#1}%
+%\item[{\tt #1(#2)}]
+\item[\code{#1(\varvars{#2})}]
 \ 
 }
 
+
+% from user-level, fulllineitems should be called as an environment
+\def\fulllineitems{\list{}{\labelwidth \leftmargin \labelsep 0pt
+\rightmargin 0pt \topsep -\parskip \partopsep \parskip
+\itemsep -\parsep
+\let\makelabel\itemnewline}}
+\let\endfulllineitems\endlist
+
+
+% funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
+\newcommand{\funcline}[2]{\item[\code{#1(\varvars{#2})}]\ttindex{#1}}
+\newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
+\let\endfuncdesc\endfulllineitems
+
+% same for excdesc
+\newcommand{\excline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\excdesc}[1]{\fulllineitems\excline{#1}}
+\let\endexcdesc\endfulllineitems
+
+% same for datadesc
+\newcommand{\dataline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\datadesc}[1]{\fulllineitems\dataline{#1}}
+\let\enddatadesc\endfulllineitems
+
+
 % Define \dataitem{name}: define a data item
-\newcommand{\dataitem}[1]{
-\ttindex{#1}
+\newcommand{\dataitem}[1]{%
+\ttindex{#1}%
 \item[{\tt #1}]
 \ 
 }
 
 % Define \excitem{name}: define an exception item
-\newcommand{\excitem}[1]{
-\ttindex{#1}
+\newcommand{\excitem}[1]{%
+\ttindex{#1}%
 \item[{\tt #1}]
 \itembreak
 }
+
+\let\nodename=\label
+
+\newcommand{\ABC}{{\sc abc}}
+\newcommand{\UNIX}{{\sc Unix}}
+\newcommand{\ASCII}{{\sc ascii}}
+%\newcommand{\C}{{\bf C}}
+\newcommand{\C}{C}
+\newcommand{\EOF}{{\sc eof}}
+
+% code is the most difficult one...
+%\frenchspacing removed, because \section, etc., can't handle it
+\newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
+\mbox{\tt #1}}}
+%This one does not work
+%%%% myspecials, same as dospecials, but without {, } and \
+%%%\def\myspecials{\do\ \do\$\do\&%
+%%%  \do\#\do\^\do\^^K\do\_\do\^^A\do\%\do\~}
+%%%\newcommand{\code}[1]{\begingroup \catcode``=13 \@noligs
+%%%\tt \let\do\@makeother \myspecials
+%%%#1\endgroup}
+\newcommand{\kbd}[1]{\mbox{\tt #1}}
+\newcommand{\key}[1]{\mbox{\tt #1}}
+\newcommand{\samp}[1]{\mbox{`\code{#1}'}}
+\newcommand{\var}[1]{\mbox{\it#1\/}}
+\let\file=\samp
+\newcommand{\dfn}[1]{{\sl #1\/}}
+\newcommand{\emph}[1]{{\em #1\/}}
+\newcommand{\strong}[1]{{\bf #1}}
+
+%\newcommand{\varvars}[1]{{\catcode`\,=\active\def,{\tt\char`\,\/tt}\var{#1}}}
+%\newcommand{\varvars}[1]{{\def\,{\/{\tt\char`\,}}\var{#1}}}
+\newcommand{\varvars}[1]{{\def\,{\/{\tt\char`\,}}\def\({\/{\tt\char`\(}}\def\){\/{\tt\char`\)}}\var{#1}}}
+
+\newif\iftexi\texifalse
+%not supported yet%\newif\iflatex\latextrue
+
+\newenvironment{tableiii}[5]{\begin{center}\def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}\begin{tabular}{#1}\hline#3&#4&#5\\
+\hline}{\hline\end{tabular}\end{center}}
+
+\newcommand{\itemnewline}[1]{\@tempdima\linewidth
+\advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}}
+
+\newcommand{\sectcode}[1]{{\tt #1}}
+%%%
+%%%\let\orgchapter\chapter
+%%%\def\chapter#1{{\let\code\sectcode\orgchapter{#1}}}
+%%%\let\orgsection\section
+%%%\def\section#1{{\let\code\sectcode\orgsection{#1}}}
+%%%\let\orgsubsection\subsection
+%%%\def\subsection#1{{\let\code\sectcode\orgsubsection{#1}}}
+%%%\let\orgsubsubsection\subsubsection
+%%%\def\subsubsection#1{{\let\code\sectcode\orgsubsubsection{#1}}}
+%%%\let\orgsubsubsubsection\subsubsubsection
+%%%\def\subsubsubsection#1{{\let\code\sectcode\orgsubsubsubsection{#1}}}
+
