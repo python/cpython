@@ -2252,7 +2252,7 @@ PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
 	PyObject *modules = PyImport_GetModuleDict();
-	PyObject *path = NULL;
+	PyObject *path = NULL, *loader = NULL;
 	char *name, *subname;
 	char buf[MAXPATHLEN+1];
 	struct filedescr *fdp;
@@ -2295,11 +2295,17 @@ PyImport_ReloadModule(PyObject *m)
 			PyErr_Clear();
 	}
 	buf[0] = '\0';
-	fdp = find_module(name, subname, path, buf, MAXPATHLEN+1, &fp, NULL);
+	fdp = find_module(name, subname, path, buf, MAXPATHLEN+1, &fp, &loader);
 	Py_XDECREF(path);
-	if (fdp == NULL)
+
+	if (fdp == NULL) {
+		Py_XDECREF(loader);
 		return NULL;
-	newm = load_module(name, fp, buf, fdp->type, NULL);
+	}
+
+	newm = load_module(name, fp, buf, fdp->type, loader);
+	Py_XDECREF(loader);
+
 	if (fp)
 		fclose(fp);
 	if (newm == NULL) {
