@@ -3185,7 +3185,7 @@ def slices():
 
 def subtype_resurrection():
     if verbose:
-        print "Testing resurrection of new-style instance."
+        print "Testing resurrection of new-style instance..."
 
     class C(object):
         container = []
@@ -3196,9 +3196,8 @@ def subtype_resurrection():
 
     c = C()
     c.attr = 42
-    # The only interesting thing here is whether this blows up in a
-    # debug build, due to flawed GC tracking logic in typeobject.c's
-    # call_finalizer() (a 2.2.1 bug).
+    # The only interesting thing here is whether this blows up, due to flawed
+    #  GC tracking logic in typeobject.c's call_finalizer() (a 2.2.1 bug).
     del c
     del C.container[-1]  # resurrect it again for the heck of it
     vereq(C.container[-1].attr, 42)
