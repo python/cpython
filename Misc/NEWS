@@ -12,7 +12,8 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
-TBD
+- On 64-bit systems, a dictionary could contain duplicate long/int keys
+  if the key value was larger than 2**32.  See SF bug #689659.
 
 Extension modules
 -----------------

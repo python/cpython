@@ -1490,11 +1490,13 @@ long_hash(PyLongObject *v)
 		sign = -1;
 		i = -(i);
 	}
+#define LONG_BIT_SHIFT	(8*sizeof(long) - SHIFT)
 	while (--i >= 0) {
-		/* Force a 32-bit circular shift */
-		x = ((x << SHIFT) & ~MASK) | ((x >> (32-SHIFT)) & MASK);
+		/* Force a native long #-bits (32 or 64) circular shift */
+		x = ((x << SHIFT) & ~MASK) | ((x >> LONG_BIT_SHIFT) & MASK);
 		x += v->ob_digit[i];
 	}
+#undef LONG_BIT_SHIFT
 	x = x * sign;
 	if (x == -1)
 		x = -2;
