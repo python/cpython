@@ -117,6 +117,10 @@ my_readline(prompt)
 	}
 	old_inthandler = signal(SIGINT, onintr);
 	if (setjmp(jbuf)) {
+#ifdef HAVE_SIGRELSE
+		/* This seems necessary on SunOS 4.1 (Rasmus Hahn) */
+		sigrelse(SIGINT);
+#endif
 		signal(SIGINT, old_inthandler);
 		return NULL;
 	}
@@ -140,8 +144,10 @@ my_readline(prompt)
 	n = 100;
 	if ((p = malloc(n)) == NULL)
 		return NULL;
+	fflush(stdout);
 	if (prompt)
 		fprintf(stderr, "%s", prompt);
+	fflush(stderr);
 	switch (my_fgets(p, n, stdin)) {
 	case 0: /* Normal case */
 		break;
