@@ -5,21 +5,20 @@
 import os
 import unittest
 import warnings
+from test import test_support
 
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
 warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
 
-from test.test_support import TESTFN, run_classtests
-
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
         self.files = []
-        os.mkdir(TESTFN)
+        os.mkdir(test_support.TESTFN)
 
     def tearDown(self):
         for name in self.files:
             os.unlink(name)
-        os.rmdir(TESTFN)
+        os.rmdir(test_support.TESTFN)
 
     def check_tempfile(self, name):
         # make sure it doesn't already exist:
@@ -36,10 +35,10 @@ class TemporaryFileTests(unittest.TestCase):
                                 r"test_os$")
         self.check_tempfile(os.tempnam())
 
-        name = os.tempnam(TESTFN)
+        name = os.tempnam(test_support.TESTFN)
         self.check_tempfile(name)
 
-        name = os.tempnam(TESTFN, "pfx")
+        name = os.tempnam(test_support.TESTFN, "pfx")
         self.assert_(os.path.basename(name)[:3] == "pfx")
         self.check_tempfile(name)
 
@@ -84,15 +83,15 @@ class TemporaryFileTests(unittest.TestCase):
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
     def setUp(self):
-        os.mkdir(TESTFN)
-        self.fname = os.path.join(TESTFN, "f1")
+        os.mkdir(test_support.TESTFN)
+        self.fname = os.path.join(test_support.TESTFN, "f1")
         f = open(self.fname, 'wb')
         f.write("ABC")
         f.close()
 
     def tearDown(self):
         os.unlink(self.fname)
-        os.rmdir(TESTFN)
+        os.rmdir(test_support.TESTFN)
 
     def test_stat_attributes(self):
         if not hasattr(os, "stat"):
@@ -238,10 +237,10 @@ class WalkTests(unittest.TestCase):
         #             SUB11/        no kids
         #         SUB2/             just a file kid
         #             tmp3
-        sub1_path = join(TESTFN, "SUB1")
+        sub1_path = join(test_support.TESTFN, "SUB1")
         sub11_path = join(sub1_path, "SUB11")
-        sub2_path = join(TESTFN, "SUB2")
-        tmp1_path = join(TESTFN, "tmp1")
+        sub2_path = join(test_support.TESTFN, "SUB2")
+        tmp1_path = join(test_support.TESTFN, "tmp1")
         tmp2_path = join(sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
 
@@ -254,39 +253,39 @@ class WalkTests(unittest.TestCase):
             f.close()
 
         # Walk top-down.
-        all = list(os.walk(TESTFN))
+        all = list(os.walk(test_support.TESTFN))
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
         # Not flipped:  TESTFN, SUB1, SUB11, SUB2
         #     flipped:  TESTFN, SUB2, SUB1, SUB11
         flipped = all[0][1][0] != "SUB1"
         all[0][1].sort()
-        self.assertEqual(all[0], (TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[0], (test_support.TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (sub11_path, [], []))
         self.assertEqual(all[3 - 2 * flipped], (sub2_path, [], ["tmp3"]))
 
         # Prune the search.
         all = []
-        for root, dirs, files in os.walk(TESTFN):
+        for root, dirs, files in os.walk(test_support.TESTFN):
             all.append((root, dirs, files))
             # Don't descend into SUB1.
             if 'SUB1' in dirs:
                 # Note that this also mutates the dirs we appended to all!
                 dirs.remove('SUB1')
         self.assertEqual(len(all), 2)
-        self.assertEqual(all[0], (TESTFN, ["SUB2"], ["tmp1"]))
+        self.assertEqual(all[0], (test_support.TESTFN, ["SUB2"], ["tmp1"]))
         self.assertEqual(all[1], (sub2_path, [], ["tmp3"]))
 
         # Walk bottom-up.
-        all = list(os.walk(TESTFN, topdown=False))
+        all = list(os.walk(test_support.TESTFN, topdown=False))
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
         # Not flipped:  SUB11, SUB1, SUB2, TESTFN
         #     flipped:  SUB2, SUB11, SUB1, TESTFN
         flipped = all[3][1][0] != "SUB1"
         all[3][1].sort()
-        self.assertEqual(all[3], (TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[3], (test_support.TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped], (sub11_path, [], []))
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 - 2 * flipped], (sub2_path, [], ["tmp3"]))
@@ -295,18 +294,20 @@ class WalkTests(unittest.TestCase):
         # Windows, which doesn't have a recursive delete command.  The
         # (not so) subtlety is that rmdir will fail unless the dir's
         # kids are removed first, so bottom up is essential.
-        for root, dirs, files in os.walk(TESTFN, topdown=False):
+        for root, dirs, files in os.walk(test_support.TESTFN, topdown=False):
             for name in files:
                 os.remove(join(root, name))
             for name in dirs:
                 os.rmdir(join(root, name))
-        os.rmdir(TESTFN)
+        os.rmdir(test_support.TESTFN)
 
 def test_main():
-    run_classtests(TemporaryFileTests,
-                   StatAttributeTests,
-                   EnvironTests,
-                   WalkTests)
+    test_support.run_unittest(
+        TemporaryFileTests,
+        StatAttributeTests,
+        EnvironTests,
+        WalkTests
+    )
 
 if __name__ == "__main__":
     test_main()

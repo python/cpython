@@ -119,10 +119,7 @@ class DirCompareTestCase(unittest.TestCase):
 
 
 def test_main():
-    suite = unittest.TestSuite()
-    for cls in FileCompareTestCase, DirCompareTestCase:
-        suite.addTest(unittest.makeSuite(cls))
-    test_support.run_suite(suite)
+    test_support.run_unittest(FileCompareTestCase, DirCompareTestCase)
 
 if __name__ == "__main__":
     test_main()

@@ -659,9 +659,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(TypeError, u"\xff".translate, {0xff: ()})
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(CodecCallbackTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(CodecCallbackTest)
 
 if __name__ == "__main__":
     test_main()

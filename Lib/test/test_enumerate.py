@@ -104,14 +104,8 @@ class SubclassTestCase(EnumerateTestCase):
 
     enum = MyEnum
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(EnumerateTestCase))
-    suite.addTest(unittest.makeSuite(SubclassTestCase))
-    return suite
-
 def test_main():
-    test_support.run_suite(suite())
+    test_support.run_unittest(EnumerateTestCase, SubclassTestCase)
 
 if __name__ == "__main__":
     test_main()

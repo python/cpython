@@ -247,9 +247,7 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(vi[4], int))
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(SysModuleTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(SysModuleTest)
 
 if __name__ == "__main__":
     test_main()

@@ -86,9 +86,7 @@ class PwdTest(unittest.TestCase):
         self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(PwdTest))
-    test_support.run_suite(suite)
+    test_support.run_unittest(PwdTest)
 
 if __name__ == "__main__":
     test_main()

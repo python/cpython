@@ -309,13 +309,12 @@ class FuncTest(BaseTest):
         self.assertRaises(ValueError, bz2.decompress, self.DATA[:-10])
 
 def test_main():
-    suite = unittest.TestSuite()
-    for test in (BZ2FileTest,
-                 BZ2CompressorTest,
-                 BZ2DecompressorTest,
-                 FuncTest):
-        suite.addTest(unittest.makeSuite(test))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        BZ2FileTest,
+        BZ2CompressorTest,
+        BZ2DecompressorTest,
+        FuncTest
+    )
 
 if __name__ == '__main__':
     test_main()

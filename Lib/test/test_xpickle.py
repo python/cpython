@@ -35,12 +35,10 @@ class DumpPickle_LoadCPickle(AbstractPickleTests):
         return cPickle.loads(buf)
 
 def test_main():
-    suite = unittest.TestSuite()
-    for test in (DumpCPickle_LoadPickle,
-                 DumpPickle_LoadCPickle,
-                ):
-        suite.addTest(unittest.makeSuite(test))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        DumpCPickle_LoadPickle,
+        DumpPickle_LoadCPickle
+    )
 
 if __name__ == "__main__":
     test_main()

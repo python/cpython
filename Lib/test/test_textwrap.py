@@ -352,11 +352,7 @@ some (including a hanging indent).'''
 
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(WrapTestCase))
-    suite.addTest(unittest.makeSuite(LongWordTestCase))
-    suite.addTest(unittest.makeSuite(IndentTestCases))
-    test_support.run_suite(suite)
+    test_support.run_unittest(WrapTestCase, LongWordTestCase, IndentTestCases)
 
 if __name__ == '__main__':
     test_main()

@@ -121,15 +121,15 @@ class TestProto2MemShelve(TestShelveBase):
     _in_mem = True
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestAsciiFileShelve))
-    suite.addTest(unittest.makeSuite(TestBinaryFileShelve))
-    suite.addTest(unittest.makeSuite(TestProto2FileShelve))
-    suite.addTest(unittest.makeSuite(TestAsciiMemShelve))
-    suite.addTest(unittest.makeSuite(TestBinaryMemShelve))
-    suite.addTest(unittest.makeSuite(TestProto2MemShelve))
-    suite.addTest(unittest.makeSuite(TestCase))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        TestAsciiFileShelve,
+        TestBinaryFileShelve,
+        TestProto2FileShelve,
+        TestAsciiMemShelve,
+        TestBinaryMemShelve,
+        TestProto2MemShelve,
+        TestCase
+    )
 
 if __name__ == "__main__":
     test_main()

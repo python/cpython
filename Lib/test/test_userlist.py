@@ -252,9 +252,7 @@ class UserListTest(unittest.TestCase):
         self.assertEqual(u, [0, 1, 0, 1, 0, 1])
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(UserListTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(UserListTest)
 
 if __name__ == "__main__":
     test_main()

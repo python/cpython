@@ -1219,9 +1219,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, zip, BadSeq(), BadSeq())
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(BuiltinTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(BuiltinTest)
 
 if __name__ == "__main__":
     test_main()

@@ -223,16 +223,14 @@ class LongLong_TestCase(unittest.TestCase):
         self.failUnlessEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Signed_TestCase))
-    suite.addTest(unittest.makeSuite(Unsigned_TestCase))
+    tests = [Signed_TestCase, Unsigned_TestCase]
     try:
         from _testcapi import getargs_L, getargs_K
     except ImportError:
         pass # PY_LONG_LONG not available
     else:
-        suite.addTest(unittest.makeSuite(LongLong_TestCase))
-    test_support.run_suite(suite)
+        tests.append(LongLong_TestCase)
+    test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()

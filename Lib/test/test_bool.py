@@ -321,7 +321,7 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(cPickle.dumps(False, True), "I00\n.")
 
 def test_main():
-    test_support.run_classtests(BoolTest)
+    test_support.run_unittest(BoolTest)
 
 if __name__ == "__main__":
     test_main()

@@ -408,14 +408,14 @@ class Pathname_Tests(unittest.TestCase):
 
 
 def test_main():
-    test_suite = unittest.TestSuite()
-    test_suite.addTest(unittest.makeSuite(urlopen_FileTests))
-    test_suite.addTest(unittest.makeSuite(urlretrieve_FileTests))
-    test_suite.addTest(unittest.makeSuite(QuotingTests))
-    test_suite.addTest(unittest.makeSuite(UnquotingTests))
-    test_suite.addTest(unittest.makeSuite(urlencode_Tests))
-    test_suite.addTest(unittest.makeSuite(Pathname_Tests))
-    test_support.run_suite(test_suite)
+    test_support.run_unittest(
+        urlopen_FileTests,
+        urlretrieve_FileTests,
+        QuotingTests,
+        UnquotingTests,
+        urlencode_Tests,
+        Pathname_Tests
+    )
 
 
 

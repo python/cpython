@@ -198,8 +198,7 @@ __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     from test import test_bisect
-    test_support.run_classtests(TestBisect,
-                                TestInsort)
+    test_support.run_unittest(TestBisect, TestInsort)
     test_support.run_doctest(test_bisect, verbose)
 
 if __name__ == "__main__":
