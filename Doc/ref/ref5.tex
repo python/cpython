@@ -439,8 +439,13 @@ series of arguments:
   \production{call}
              {\token{primary} "(" [\token{argument_list} [","]] ")"}
   \production{argument_list}
-             {\token{positional_arguments} ["," \token{keyword_arguments}]
-              | \token{keyword_arguments}}
+             {\token{positional_arguments} ["," \token{keyword_arguments} 
+		 ["," "*" \token{expression} ["," "**" \token{expression}]]]
+              | \token{keyword_arguments} ["," "*" \token{expression} 
+		["," "**" \token{expression}]]
+	      | "*" \token{expression} ["," "**" \token{expression}]
+	      | "**" \token{expression}
+	     }
   \production{positional_arguments}
              {\token{expression} ("," \token{expression})*}
   \production{keyword_arguments}
@@ -494,6 +499,44 @@ case, that formal parameter receives a dictionary containing the
 excess keyword arguments (using the keywords as keys and the argument
 values as corresponding values), or a (new) empty dictionary if there
 were no excess keyword arguments.
+
+If the syntax \samp{*expression} appears in the function call,
+\samp{expression} must evaluate to a sequence.  Elements from this
+sequence are treated as if they were additional positional arguments;
+if there are postional arguments \var{x1},...,\var{xN} , and
+\samp{expression} evaluates to a sequence \var{y1},...,\var{yM}, this
+is equivalent to a call with M+N positional arguments
+\var{x1},...,\var{xN},\var{y1},...,\var{yM}.
+
+A consequence of this is that although the \samp{*expression} syntax
+appears \emph{after} any keyword arguments, it is processed
+\emph{before} the keyword arguments (and the \samp{**expression}
+argument, if any -- see below).  So:
+
+\begin{verbatim}
+>>> def f(a, b):
+...  print a, b
+...
+>>> f(b=1, *(2,))
+2 1
+>>> f(a=1, *(2,))
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: f() got multiple values for keyword argument 'a'
+>>> f(1, *(2,))
+1 2
+\end{verbatim}
+
+It is unusual for both keyword arguments and the \samp{*expression}
+syntax to be used in the same call, so in practice this confusion does
+not arise.
+
+If the syntax \samp{**expression} appears in the function call,
+\samp{expression} must evaluate to a (subclass of) dictionary, the
+contents of which are treated as additional keyword arguments.  In the
+case of a keyword appearing in both \samp{expression} and as an
+explicit keyword argument, a \exception{TypeError} exception is
+raised.
 
 Formal parameters using the syntax \samp{*identifier} or
 \samp{**identifier} cannot be used as positional argument slots or
