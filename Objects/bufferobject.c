@@ -523,7 +523,7 @@ buffer_getreadbuf(self, idx, pp)
 {
 	if ( idx != 0 ) {
 		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent buffer segment");
+				"accessing non-existent buffer segment");
 		return -1;
 	}
 	*pp = self->b_ptr;
@@ -554,6 +554,21 @@ buffer_getsegcount(self, lenp)
 	return 1;
 }
 
+static int
+buffer_getcharbuf(self, idx, pp)
+	PyBufferObject *self;
+	int idx;
+	const char ** pp;
+{
+	if ( idx != 0 ) {
+		PyErr_SetString(PyExc_SystemError,
+				"accessing non-existent buffer segment");
+		return -1;
+	}
+	*pp = (const char *)self->b_ptr;
+	return self->b_size;
+}
+
 
 static PySequenceMethods buffer_as_sequence = {
 	(inquiry)buffer_length, /*sq_length*/
@@ -569,6 +584,7 @@ static PyBufferProcs buffer_as_buffer = {
 	(getreadbufferproc)buffer_getreadbuf,
 	(getwritebufferproc)buffer_getwritebuf,
 	(getsegcountproc)buffer_getsegcount,
+	(getcharbufferproc)buffer_getcharbuf,
 };
 
 PyTypeObject PyBuffer_Type = {
@@ -592,7 +608,7 @@ PyTypeObject PyBuffer_Type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	&buffer_as_buffer,	/*tp_as_buffer*/
-	0,		/*tp_xxx4*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 	0,		/*tp_doc*/
 };
 
