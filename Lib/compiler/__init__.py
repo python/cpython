@@ -3,7 +3,7 @@
 There are several functions defined at the top level that are imported
 from modules contained in the package.
 
-parse(buf) -> AST
+parse(buf, mode="exec") -> AST
     Converts a string containing Python source code to an abstract
     syntax tree (AST).  The AST is defined in compiler.ast.
 
@@ -14,11 +14,14 @@ walk(ast, visitor, verbose=None)
     Does a pre-order walk over the ast using the visitor instance.
     See compiler.visitor for details.
 
-compile(filename)
+compile(source, filename, mode, flags=None, dont_inherit=None)
+    Returns a code object.  A replacement for the builtin compile() function. 
+
+compileFile(filename)
     Generates a .pyc file by compilining filename.
 """
 
 from transformer import parse, parseFile
 from visitor import walk
-from pycodegen import compile
+from pycodegen import compile, compileFile
 
