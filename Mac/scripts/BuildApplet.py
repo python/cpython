@@ -31,6 +31,7 @@ RESTYPE = 'PYC '
 RESNAME = '__main__'
 
 # A resource with this name sets the "owner" (creator) of the destination
+# XXXX Should look for id=0
 OWNERNAME = "owner resource"
 
 # OpenResFile mode parameters
@@ -60,7 +61,8 @@ def main():
 	# (there's no point in proceeding if we can't find it)
 	
 	template = findtemplate()
-	print 'Using template', template
+	if DEBUG:
+		print 'Using template', template
 			
 	# Ask for source text if not specified in sys.argv[1:]
 	
@@ -82,8 +84,6 @@ def main():
 		# Loop over all files to be processed
 		for filename in sys.argv[1:]:
 			process(template, filename, '')
-
-undefs = ('Atmp', '????', '    ', '\0\0\0\0', 'BINA')
 
 def process(template, filename, output):
 	
@@ -113,11 +113,21 @@ def process(template, filename, output):
 	
 	if output:
 		destname = output
-	# Copy the data from the template (creating the file as well)
-	
+		
+	# Try removing the output file
+	try:
+		os.unlink(output)
+	except os.error:
+		pass
+		
+
+	# Create FSSpecs for the various files
+		
 	template_fss = macfs.FSSpec(template)
 	template_fss, d1, d2 = macfs.ResolveAliasFile(template_fss)
 	dest_fss = macfs.FSSpec(destname)
+	
+	# Copy data (not resources, yet) from the template
 	
 	tmpl = open(template, "rb")
 	dest = open(destname, "wb")
@@ -126,14 +136,6 @@ def process(template, filename, output):
 		dest.write(data)
 	dest.close()
 	tmpl.close()
-	
-	# Copy the creator of the template to the destination
-	# unless it already got one.  Set type to APPL
-	
-	tctor, ttype = template_fss.GetCreatorType()
-	ctor, type = dest_fss.GetCreatorType()
-	if type in undefs: type = 'APPL'
-	if ctor in undefs: ctor = tctor
 	
 	# Open the output resource fork
 	
@@ -144,30 +146,38 @@ def process(template, filename, output):
 			print "Creating resource fork..."
 		CreateResFile(destname)
 		output = FSpOpenResFile(dest_fss, WRITE)
+		
+	# Copy the resources from the target specific resource template, if any
+	typesfound, ownertype = [], None
+	try:
+		input = FSpOpenResFile(rsrcname, READ)
+	except (MacOS.Error, ValueError):
+		pass
+	else:
+		typesfound, ownertype = copyres(input, output, [], 0)
+		CloseResFile(input)
+		
+	# Check which resource-types we should not copy from the template
+	skiptypes = []
+	if 'SIZE' in typesfound: skiptypes.append('SIZE')
+	if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4', 
+			'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
+	skipowner = (ownertype <> None)
 	
 	# Copy the resources from the template
 	
 	input = FSpOpenResFile(template_fss, READ)
-	newctor = copyres(input, output)
+	dummy, tmplowner = copyres(input, output, skiptypes, skipowner)
+	if ownertype == None:
+		ownertype = tmplowner
 	CloseResFile(input)
-	if newctor: ctor = newctor
-	
-	# Copy the resources from the target specific resource template, if any
-	
-	try:
-		input = FSpOpenResFile(rsrcname, READ)
-	except (MacOS.Error, ValueError):
-		print 'No resource file', rsrcname
-		pass
-	else:
-		newctor = copyres(input, output)
-		CloseResFile(input)
-		if newctor: ctor = newctor
+	if ownertype == None:
+		die("No owner resource found in either resource file or template")	
 	
 	# Now set the creator, type and bundle bit of the destination
 	dest_finfo = dest_fss.GetFInfo()
-	dest_finfo.Creator = ctor
-	dest_finfo.Type = type
+	dest_finfo.Creator = ownertype
+	dest_finfo.Type = 'APPL'
 	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
 	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
 	dest_fss.SetFInfo(dest_finfo)
@@ -176,7 +186,7 @@ def process(template, filename, output):
 	
 	UseResFile(output)
 	
-	# Delete any existing 'PYC 'resource named __main__
+	# Delete any existing 'PYC ' resource named __main__
 	
 	try:
 		res = Get1NamedResource(RESTYPE, RESNAME)
@@ -210,16 +220,19 @@ def process(template, filename, output):
 
 
 # Copy resources between two resource file descriptors.
-# Exception: don't copy a __main__ resource.
-# If a resource's name is "owner resource", its type is returned
-# (so the caller can use it to set the destination's creator)
-
-def copyres(input, output):
+# skip a resource named '__main__' or (if skipowner is set) 'Owner resource'.
+# Also skip resources with a type listed in skiptypes.
+#
+def copyres(input, output, skiptypes, skipowner):
 	ctor = None
+	alltypes = []
 	UseResFile(input)
 	ntypes = Count1Types()
 	for itype in range(1, 1+ntypes):
 		type = Get1IndType(itype)
+		if type in skiptypes:
+			continue
+		alltypes.append(type)
 		nresources = Count1Resources(type)
 		for ires in range(1, 1+nresources):
 			res = Get1IndResource(type, ires)
@@ -227,7 +240,12 @@ def copyres(input, output):
 			lcname = string.lower(name)
 			if (type, lcname) == (RESTYPE, RESNAME):
 				continue # Don't copy __main__ from template
-			if lcname == OWNERNAME: ctor = type
+			# XXXX should look for id=0
+			if lcname == OWNERNAME:
+				if skipowner:
+					continue # Skip this one
+				else:
+					ctor = type
 			size = res.size
 			attrs = res.GetResAttrs()
 			if DEBUG:
@@ -250,7 +268,7 @@ def copyres(input, output):
 				print "New attrs =", hex(attrs)
 			res.SetResAttrs(attrs)
 			UseResFile(input)
-	return ctor
+	return alltypes, ctor
 
 
 # Show a message and exit
@@ -279,4 +297,3 @@ def message(str, id = 256):
 
 if __name__ == '__main__':
 	main()
-
