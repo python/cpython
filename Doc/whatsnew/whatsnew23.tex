@@ -1067,6 +1067,31 @@ in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding, by specifying an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
 
+\item The \function{stat} family of functions can now report fractions
+of a second in a time stamp. Similar to \function{time.time}, such
+time stamps are represented as floats.
+
+During testing, it was found that some applications break if time
+stamps are floats. For compatibility, when using the tuple interface
+of the \class{stat_result}, time stamps are represented as integers.
+When using named fields (first introduced in Python 2.2), time stamps
+are still represented as ints, unless \function{os.stat_float_times}
+is invoked:
+
+\begin{verbatim}
+>>> os.stat_float_times(True)
+>>> os.stat("/tmp").st_mtime
+1034791200.6335014
+\end{verbatim}
+
+In Python 2.4, the default will change to return floats.
+
+Application developers should use this feature only if all their
+libraries work properly when confronted with floating point time
+stamps (or use the tuple API). If used, the feature should be
+activated on application level, instead of trying to activate it on a
+per-use basis.
+
 \end{itemize}
 
 

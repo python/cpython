@@ -8,6 +8,10 @@
 static char visible_length_key[] = "n_sequence_fields";
 static char real_length_key[] = "n_fields";
 
+/* Fields with this name have only a field index, not a field name. 
+   They are only allowed for indices < n_visible_fields. */
+char *PyStructSequence_UnnamedField = "unnamed field";
+
 #define VISIBLE_SIZE(op) ((op)->ob_size)
 #define VISIBLE_SIZE_TP(tp) PyInt_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, visible_length_key))
@@ -332,10 +336,12 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 {
 	PyObject *dict;
 	PyMemberDef* members;
-	int n_members, i;
+	int n_members, n_unnamed_members, i, k;
 
+	n_unnamed_members = 0;
 	for (i = 0; desc->fields[i].name != NULL; ++i)
-		;
+		if (desc->fields[0].name == PyStructSequence_UnnamedField)
+			n_unnamed_members++;
 	n_members = i;
 
 	memcpy(type, &_struct_sequence_template, sizeof(PyTypeObject));
@@ -345,17 +351,20 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 		sizeof(PyObject*)*(n_members-1);
 	type->tp_itemsize = 0;
 
-	members = PyMem_NEW(PyMemberDef, n_members+1);
+	members = PyMem_NEW(PyMemberDef, n_members-n_unnamed_members+1);
 	
-	for (i = 0; i < n_members; ++i) {
-		members[i].name = desc->fields[i].name;
-		members[i].type = T_OBJECT;
-		members[i].offset = offsetof(PyStructSequence, ob_item)
+	for (i = k = 0; i < n_members; ++i) {
+		if (desc->fields[i].name == PyStructSequence_UnnamedField)
+			continue;
+		members[k].name = desc->fields[i].name;
+		members[k].type = T_OBJECT;
+		members[k].offset = offsetof(PyStructSequence, ob_item)
 		  + i * sizeof(PyObject*);
-		members[i].flags = READONLY;
-		members[i].doc = desc->fields[i].doc;
+		members[k].flags = READONLY;
+		members[k].doc = desc->fields[i].doc;
+		k++;
 	}
-	members[n_members].name = NULL;
+	members[k].name = NULL;
 
 	type->tp_members = members;
 

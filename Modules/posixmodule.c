@@ -678,6 +678,10 @@ static PyStructSequence_Field stat_result_fields[] = {
 	{"st_uid",     "user ID of owner"},
 	{"st_gid",     "group ID of owner"},
 	{"st_size",    "total size, in bytes"},
+	/* The NULL is replaced with PyStructSequence_UnnamedField later. */
+	{NULL,   "integer time of last access"},
+	{NULL,   "integer time of last modification"},
+	{NULL,   "integer time of last change"},
 	{"st_atime",   "time of last access"},
 	{"st_mtime",   "time of last modification"},
 	{"st_ctime",   "time of last change"},
@@ -694,9 +698,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 };
 
 #ifdef HAVE_ST_BLKSIZE
-#define ST_BLKSIZE_IDX 10
+#define ST_BLKSIZE_IDX 13
 #else
-#define ST_BLKSIZE_IDX 9
+#define ST_BLKSIZE_IDX 12
 #endif
 
 #ifdef HAVE_ST_BLOCKS
@@ -749,13 +753,73 @@ static PyStructSequence_Desc statvfs_result_desc = {
 
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
+static newfunc structseq_new;
+
+static PyObject *
+statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyStructSequence *result;
+	int i;
+
+	result = (PyStructSequence*)structseq_new(type, args, kwds);
+	if (!result)
+		return NULL;
+	/* If we have been initialized from a tuple,
+	   st_?time might be set to None. Initialize it
+	   from the int slots.  */
+	for (i = 7; i <= 9; i++) {
+		if (result->ob_item[i+3] == Py_None) {
+			Py_DECREF(Py_None);
+			Py_INCREF(result->ob_item[i]);
+			result->ob_item[i+3] = result->ob_item[i];
+		}
+	}
+	return (PyObject*)result;
+}
+
+
+
+/* If true, st_?time is float. */
+static int _stat_float_times = 0;
+
+PyDoc_STRVAR(stat_float_times__doc__,
+"stat_float_times([newval]) -> oldval\n\n\
+Determine whether os.[lf]stat represents time stamps as float objects.\n\
+If newval is True, future calls to stat() return floats, if it is False,\n\
+future calls return ints. \n\
+If newval is omitted, return the current setting.\n");
+
+static PyObject*
+stat_float_times(PyObject* self, PyObject *args)
+{
+	int newval = -1;
+	if (!PyArg_ParseTuple(args, "|i:stat_float_times", &newval))
+		return NULL;
+	if (newval == -1)
+		/* Return old value */
+		return PyBool_FromLong(_stat_float_times);
+	_stat_float_times = newval;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static void
 fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 {
-	PyObject *val;
-        val = PyFloat_FromDouble(sec + 1e-9*nsec);
-	PyStructSequence_SET_ITEM(v, index, val);
+	PyObject *fval,*ival;
+#if SIZEOF_TIME_T > SIZEOF_LONG
+	ival = PyLong_FromLongLong((LONG_LONG)sec);
+#else
+	ival = PyInt_FromLong((long)sec);
+#endif
+	if (_stat_float_times) {
+		fval = PyFloat_FromDouble(sec + 1e-9*nsec);
+	} else {
+		fval = ival;
+		Py_INCREF(fval);
+	}
+	PyStructSequence_SET_ITEM(v, index, ival);
+	PyStructSequence_SET_ITEM(v, index+3, fval);
 }
 
 /* pack a system stat C structure into the Python stat tuple
@@ -6802,6 +6866,7 @@ static PyMethodDef posix_methods[] = {
 	{"rename",	posix_rename, METH_VARARGS, posix_rename__doc__},
 	{"rmdir",	posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
 	{"stat",	posix_stat, METH_VARARGS, posix_stat__doc__},
+	{"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
 #ifdef HAVE_SYMLINK
 	{"symlink",	posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
@@ -7296,7 +7361,12 @@ INITFUNC(void)
 #endif
 
 	stat_result_desc.name = MODNAME ".stat_result";
+	stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
+	stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
+	stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
 	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+	structseq_new = StatResultType.tp_new;
+	StatResultType.tp_new = statresult_new;
 	Py_INCREF((PyObject*) &StatResultType);
 	PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
 
