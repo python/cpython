@@ -725,10 +725,8 @@ int_oct(v)
 	long x = v -> ob_ival;
 	if (x == 0)
 		strcpy(buf, "0");
-	else if (-x < 0)
-		sprintf(buf, "0%lo", x);
 	else
-		sprintf(buf, "-0%lo", -x);
+		sprintf(buf, "0%lo", x);
 	return newstringobject(buf);
 }
 
@@ -738,10 +736,7 @@ int_hex(v)
 {
 	char buf[20];
 	long x = v -> ob_ival;
-	if (-x <= 0)
-		sprintf(buf, "0x%lx", x);
-	else
-		sprintf(buf, "-0x%lx", -x);
+	sprintf(buf, "0x%lx", x);
 	return newstringobject(buf);
 }
 
