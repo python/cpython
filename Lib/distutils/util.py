@@ -82,6 +82,10 @@ def convert_path (pathname):
         raise ValueError, "path '%s' cannot end with '/'" % pathname
 
     paths = string.split(pathname, '/')
+    while '.' in paths:
+        paths.remove('.')
+    if not paths:
+        return os.curdir
     return apply(os.path.join, paths)
 
 # convert_path ()
