@@ -79,22 +79,10 @@ class UnixCCompiler(CCompiler):
     dylib_lib_extension = ".dylib"
     static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
 
-
-
-    def __init__(self,
-                 verbose=0,
-                 dry_run=0,
-                 force=0):
-        CCompiler.__init__(self, verbose, dry_run, force)
-
-    def preprocess(self,
-                   source,
-                   output_file=None,
-                   macros=None,
-                   include_dirs=None,
-                   extra_preargs=None,
-                   extra_postargs=None):
-        (_, macros, include_dirs) = \
+    def preprocess(self, source,
+                   output_file=None, macros=None, include_dirs=None,
+                   extra_preargs=None, extra_postargs=None):
+        ignore, macros, include_dirs = \
             self._fix_compile_args(None, macros, include_dirs)
         pp_opts = gen_preprocess_options(macros, include_dirs)
         pp_args = self.preprocessor + pp_opts
@@ -117,17 +105,12 @@ class UnixCCompiler(CCompiler):
             except DistutilsExecError, msg:
                 raise CompileError, msg
 
-    def compile(self,
-                sources,
-                output_dir=None,
-                macros=None,
-                include_dirs=None,
-                debug=0,
-                extra_preargs=None,
-                extra_postargs=None):
-        (output_dir, macros, include_dirs) = \
+    def compile(self, sources,
+                output_dir=None, macros=None, include_dirs=None, debug=0,
+                extra_preargs=None, extra_postargs=None):
+        output_dir, macros, include_dirs = \
             self._fix_compile_args(output_dir, macros, include_dirs)
-        (objects, skip_sources) = self._prep_compile(sources, output_dir)
+        objects, skip_sources = self._prep_compile(sources, output_dir)
 
         # Figure out the options for the compiler command line.
         pp_opts = gen_preprocess_options(macros, include_dirs)
@@ -142,27 +125,24 @@ class UnixCCompiler(CCompiler):
         # Compile all source files that weren't eliminated by
         # '_prep_compile()'.
         for i in range(len(sources)):
-            src = sources[i] ; obj = objects[i]
+            src = sources[i]
+            obj = objects[i]
             if skip_sources[src]:
                 log.debug("skipping %s (%s up-to-date)", src, obj)
             else:
                 self.mkpath(os.path.dirname(obj))
                 try:
                     self.spawn(self.compiler_so + cc_args +
-                               [src, '-o', obj] +
-                               extra_postargs)
+                               [src, '-o', obj] + extra_postargs)
                 except DistutilsExecError, msg:
                     raise CompileError, msg
 
         # Return *all* object filenames, not just the ones we just built.
         return objects
 
-    def create_static_lib(self,
-                          objects,
-                          output_libname,
-                          output_dir=None,
-                          debug=0):
-        (objects, output_dir) = self._fix_object_args(objects, output_dir)
+    def create_static_lib(self, objects, output_libname,
+                          output_dir=None, debug=0):
+        objects, output_dir = self._fix_object_args(objects, output_dir)
 
         output_filename = \
             self.library_filename(output_libname, output_dir=output_dir)
@@ -186,25 +166,16 @@ class UnixCCompiler(CCompiler):
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
 
-    def link(self,
-             target_desc,
-             objects,
-             output_filename,
-             output_dir=None,
-             libraries=None,
-             library_dirs=None,
-             runtime_library_dirs=None,
-             export_symbols=None,
-             debug=0,
-             extra_preargs=None,
-             extra_postargs=None,
-             build_temp=None):
-        (objects, output_dir) = self._fix_object_args(objects, output_dir)
-        (libraries, library_dirs, runtime_library_dirs) = \
+    def link(self, target_desc, objects,
+             output_filename, output_dir=None, libraries=None,
+             library_dirs=None, runtime_library_dirs=None,
+             export_symbols=None, debug=0, extra_preargs=None,
+             extra_postargs=None, build_temp=None):
+        objects, output_dir = self._fix_object_args(objects, output_dir)
+        libraries, library_dirs, runtime_library_dirs = \
             self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
 
-        lib_opts = gen_lib_options(self,
-                                   library_dirs, runtime_library_dirs,
+        lib_opts = gen_lib_options(self, library_dirs, runtime_library_dirs,
                                    libraries)
         if type(output_dir) not in (StringType, NoneType):
             raise TypeError, "'output_dir' must be a string or None"
@@ -261,14 +232,14 @@ class UnixCCompiler(CCompiler):
         return "-l" + lib
 
     def find_library_file(self, dirs, lib, debug=0):
+        shared_f = self.library_filename(lib, lib_type='shared')
+        dylib_f = self.library_filename(lib, lib_type='dylib')
+        static_f = self.library_filename(lib, lib_type='static')
+        
         for dir in dirs:
-            shared = os.path.join(
-                dir, self.library_filename(lib, lib_type='shared'))
-            dylib = os.path.join(
-                dir, self.library_filename(lib, lib_type='dylib'))
-            static = os.path.join(
-                dir, self.library_filename(lib, lib_type='static'))
-
+            shared = os.path.join(dir, shared_f)
+            dylib = os.path.join(dir, dylib_f)
+            static = os.path.join(dir, static_f)
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
             # assuming that *all* Unix C compilers do.  And of course I'm
@@ -279,7 +250,6 @@ class UnixCCompiler(CCompiler):
                 return shared
             elif os.path.exists(static):
                 return static
-
-        else:
-            # Oops, didn't find it in *any* of 'dirs'
-            return None
+            
+        # Oops, didn't find it in *any* of 'dirs'
+        return None
