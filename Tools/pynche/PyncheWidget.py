@@ -9,6 +9,8 @@ import os
 import string
 from Tkinter import *
 import tkMessageBox
+import tkFileDialog
+import ColorDB
 
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
@@ -165,12 +167,15 @@ email:   bwarsaw@python.org''' % __version__)
         self.__helpwin.deiconify()
 
     def __load(self, event=None):
-        import FileDialog
-        import ColorDB
         while 1:
-            d = FileDialog.FileDialog(self.__root)
-            file = d.go(pattern='*.txt', key=self.__dialogstate)
-            if file is None:
+            idir, ifile = os.path.split(self.__sb.colordb().filename())
+            file = tkFileDialog.askopenfilename(
+                filetypes=[('Text files', '*.txt'),
+                           ('All files', '*'),
+                           ],
+                initialdir=idir,
+                initialfile=ifile)
+            if not file:
                 # cancel button
                 return
             try:
