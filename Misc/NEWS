@@ -12,6 +12,11 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- A program can now set the environment variable PYTHONINSPECT to some
+  string value in Python, and cause the interpreter to enter the
+  interactive prompt at program exit, as if Python had been invoked
+  with the -i option.
+
 - list.index() now accepts optional start and stop arguments.  Similar
   changes were made to UserList.index(). SF feature request 754014.
 
