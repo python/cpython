@@ -272,8 +272,6 @@
 \newif\if@UseModuleIndex
 \@UseModuleIndexfalse
 
-\newcommand{\indexlabel}{genindex}
-
 % Fix the theindex environment to add an entry to the Table of
 % Contents; this is much nicer than just having to jump to the end of
 % the book and flip around, especially with multiple indexes.
@@ -283,7 +281,6 @@
   \cleardoublepage
   \OldTheindex
   \addcontentsline{toc}{chapter}{\indexname}
-  \label{\indexlabel}
 }
 
 % these should dump an error or warning to the transcript
