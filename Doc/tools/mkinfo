@@ -1,0 +1,41 @@
+#! /bin/sh
+#  -*- Ksh -*-
+
+
+PERL=${PERL:-perl}
+EMACS=${EMACS:-emacs}
+MAKEINFO=${MAKEINFO:-makeinfo}
+
+
+# Normalize file name since something called by html2texi.pl seems to
+# screw up with relative path names.
+FILENAME="$1"
+DOCDIR=`dirname "$FILENAME"`
+DOCFILE=`basename "$FILENAME"`
+DOCNAME=`basename "$FILENAME" .html`
+
+WORKDIR=`pwd`
+cd `dirname $0`
+TOOLSDIR=`pwd`
+cd $DOCDIR
+DOCDIR=`pwd`
+cd $WORKDIR
+
+
+run() {
+    echo "$@"
+    $* || exit $?
+}
+
+
+# generate the Texinfo file:
+
+run $PERL -I$TOOLSDIR $TOOLSDIR/html2texi.pl $DOCDIR/$DOCFILE
+run $EMACS -batch -l $TOOLSDIR/fixinfo.el $DOCNAME.texi
+rm -f $DOCNAME.texi~
+
+
+# generate the .info files:
+
+run $MAKEINFO --footnote-style end --fill-column 72 \
+	      --paragraph-indent 0 $DOCNAME.texi
