@@ -43,20 +43,16 @@ replyprog = regex.compile(replypat)
 
 class HTTP:
 
-	def __init__(self, *args):
+	def __init__(self, host = '', port = 0):
 		self.debuglevel = 0
-		if args: apply(self.connect, args)
+		if host: self.connect(host, port)
 
 	def set_debuglevel(self, debuglevel):
 		self.debuglevel = debuglevel
 
-	def connect(self, host, *args):
-		if args:
-			if args[1:]: raise TypeError, 'too many args'
-			port = args[0]
-		else:
+	def connect(self, host, port = 0):
+		if not port:
 			i = string.find(host, ':')
-			port = None
 			if i >= 0:
 				host, port = host[:i], host[i+1:]
 				try: port = string.atoi(port)

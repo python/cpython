@@ -54,14 +54,10 @@ CRLF = '\r\n'
 TAB = '\t'
 
 # Send a selector to a given host and port, return a file with the reply
-def send_selector(selector, host, *args):
+def send_selector(selector, host, port = 0):
 	import socket
 	import string
-	if args:
-		if args[1:]: raise TypeError, 'too many args'
-		port = args[0]
-	else:
-		port = None
+	if not port:
 		i = string.find(host, ':')
 		if i >= 0:
 			host, port = host[:i], string.atoi(host[i+1:])
@@ -76,8 +72,8 @@ def send_selector(selector, host, *args):
 	return s.makefile('r')
 
 # Send a selector and a query string
-def send_query(selector, query, host, *args):
-	return apply(send_selector, (selector + '\t' + query, host) + args)
+def send_query(selector, query, host, port = 0):
+	return send_selector(selector + '\t' + query, host, port)
 
 # The following functions interpret the data returned by the gopher
 # server according to the expected type, e.g. textfile or directory
