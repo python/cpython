@@ -16,8 +16,8 @@ import sys
 from errors import DistutilsPlatformError
 
 
-prefix = os.path.normpath(sys.prefix)
-exec_prefix = os.path.normpath(sys.exec_prefix)
+PREFIX = os.path.normpath(sys.prefix)
+EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
 
 def get_python_inc(plat_specific=0):
@@ -29,13 +29,13 @@ def get_python_inc(plat_specific=0):
     (namely config.h).
 
     """    
-    the_prefix = (plat_specific and exec_prefix or prefix)
+    prefix = (plat_specific and EXEC_PREFIX or PREFIX)
     if os.name == "posix":
-        return os.path.join(the_prefix, "include", "python" + sys.version[:3])
+        return os.path.join(prefix, "include", "python" + sys.version[:3])
     elif os.name == "nt":
-        return os.path.join(the_prefix, "Include") # include or Include?
+        return os.path.join(prefix, "Include") # include or Include?
     elif os.name == "mac":
-        return os.path.join(the_prefix, "Include")
+        return os.path.join(prefix, "Include")
     else:
         raise DistutilsPlatformError, \
               ("I don't know where Python installs its C header files " +
@@ -54,10 +54,10 @@ def get_python_lib(plat_specific=0, standard_lib=0):
     directory for site-specific modules.
 
     """
-    the_prefix = (plat_specific and exec_prefix or prefix)
+    prefix = (plat_specific and EXEC_PREFIX or PREFIX)
        
     if os.name == "posix":
-        libpython = os.path.join(the_prefix,
+        libpython = os.path.join(prefix,
                                  "lib", "python" + sys.version[:3])
         if standard_lib:
             return libpython
@@ -66,20 +66,20 @@ def get_python_lib(plat_specific=0, standard_lib=0):
 
     elif os.name == "nt":
         if standard_lib:
-            return os.path.join(the_prefix, "Lib")
+            return os.path.join(PREFIX, "Lib")
         else:
-            return the_prefix
+            return prefix
 
     elif os.name == "mac":
         if platform_specific:
             if standard_lib:
-                return os.path.join(exec_prefix, "Mac", "Plugins")
+                return os.path.join(EXEC_PREFIX, "Mac", "Plugins")
             else:
                 raise DistutilsPlatformError, \
                       "OK, where DO site-specific extensions go on the Mac?"
         else:
             if standard_lib:
-                return os.path.join(prefix, "Lib")
+                return os.path.join(PREFIX, "Lib")
             else:
                 raise DistutilsPlatformError, \
                       "OK, where DO site-specific modules go on the Mac?"
@@ -226,7 +226,7 @@ def _init_nt():
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
     g['SO'] = '.pyd'
-    g['exec_prefix'] = exec_prefix
+    g['exec_prefix'] = EXEC_PREFIX
 
 
 def _init_mac():
@@ -235,7 +235,7 @@ def _init_mac():
     # load the installed config.h (what if not installed? - still need to
     # be able to install packages which don't require compilation)
     parse_config_h(open(
-            os.path.join(sys.exec_prefix, "Mac", "Include", "config.h")), g)
+            os.path.join(EXEC_PREFIX, "Mac", "Include", "config.h")), g)
     # set basic install directories
     g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
     g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
@@ -244,12 +244,12 @@ def _init_mac():
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
     g['SO'] = '.ppc.slb'
-    g['exec_prefix'] = sys.exec_prefix
-    print sys.prefix
+    g['exec_prefix'] = EXEC_PREFIX
+    print sys.prefix, PREFIX
 
     # XXX are these used anywhere?
-    g['install_lib'] = os.path.join(sys.exec_prefix, "Lib")
-    g['install_platlib'] = os.path.join(sys.exec_prefix, "Mac", "Lib")
+    g['install_lib'] = os.path.join(EXEC_PREFIX, "Lib")
+    g['install_platlib'] = os.path.join(EXEC_PREFIX, "Mac", "Lib")
 
 
 try:
