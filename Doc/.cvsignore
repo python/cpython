@@ -1,6 +1,7 @@
 python-lib.info*
 lib.texi
 lib1.texi
+*.info*
 *.ind
 *.log
 *.aux
