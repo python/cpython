@@ -47,6 +47,16 @@ im()
 verify(c.get_yolks() == 1 and c.get_more_yolks() == 4,
        'Broken call of hand-crafted instance method')
 
+im = new.instancemethod(break_yolks, c)
+im()
+verify(c.get_yolks() == -1)
+try:
+    new.instancemethod(break_yolks, None)
+except TypeError:
+    pass
+else:
+    raise TestFailed, "dangerous instance method creation allowed"
+
 # It's unclear what the semantics should be for a code object compiled at
 # module scope, but bound and run in a function.  In CPython, `c' is global
 # (by accident?) while in Jython, `c' is local.  The intent of the test
