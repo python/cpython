@@ -699,20 +699,20 @@ static PyObject *CGContextRefObj_CGContextSetGrayStrokeColor(CGContextRefObject 
 static PyObject *CGContextRefObj_CGContextSetRGBFillColor(CGContextRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	float r;
-	float g;
-	float b;
+	float red;
+	float green;
+	float blue;
 	float alpha;
 	if (!PyArg_ParseTuple(_args, "ffff",
-	                      &r,
-	                      &g,
-	                      &b,
+	                      &red,
+	                      &green,
+	                      &blue,
 	                      &alpha))
 		return NULL;
 	CGContextSetRGBFillColor(_self->ob_itself,
-	                         r,
-	                         g,
-	                         b,
+	                         red,
+	                         green,
+	                         blue,
 	                         alpha);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -722,20 +722,20 @@ static PyObject *CGContextRefObj_CGContextSetRGBFillColor(CGContextRefObject *_s
 static PyObject *CGContextRefObj_CGContextSetRGBStrokeColor(CGContextRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	float r;
-	float g;
-	float b;
+	float red;
+	float green;
+	float blue;
 	float alpha;
 	if (!PyArg_ParseTuple(_args, "ffff",
-	                      &r,
-	                      &g,
-	                      &b,
+	                      &red,
+	                      &green,
+	                      &blue,
 	                      &alpha))
 		return NULL;
 	CGContextSetRGBStrokeColor(_self->ob_itself,
-	                           r,
-	                           g,
-	                           b,
+	                           red,
+	                           green,
+	                           blue,
 	                           alpha);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -745,23 +745,23 @@ static PyObject *CGContextRefObj_CGContextSetRGBStrokeColor(CGContextRefObject *
 static PyObject *CGContextRefObj_CGContextSetCMYKFillColor(CGContextRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	float c;
-	float m;
-	float y;
-	float k;
+	float cyan;
+	float magenta;
+	float yellow;
+	float black;
 	float alpha;
 	if (!PyArg_ParseTuple(_args, "fffff",
-	                      &c,
-	                      &m,
-	                      &y,
-	                      &k,
+	                      &cyan,
+	                      &magenta,
+	                      &yellow,
+	                      &black,
 	                      &alpha))
 		return NULL;
 	CGContextSetCMYKFillColor(_self->ob_itself,
-	                          c,
-	                          m,
-	                          y,
-	                          k,
+	                          cyan,
+	                          magenta,
+	                          yellow,
+	                          black,
 	                          alpha);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -771,24 +771,50 @@ static PyObject *CGContextRefObj_CGContextSetCMYKFillColor(CGContextRefObject *_
 static PyObject *CGContextRefObj_CGContextSetCMYKStrokeColor(CGContextRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	float c;
-	float m;
-	float y;
-	float k;
+	float cyan;
+	float magenta;
+	float yellow;
+	float black;
 	float alpha;
 	if (!PyArg_ParseTuple(_args, "fffff",
-	                      &c,
-	                      &m,
-	                      &y,
-	                      &k,
+	                      &cyan,
+	                      &magenta,
+	                      &yellow,
+	                      &black,
 	                      &alpha))
 		return NULL;
 	CGContextSetCMYKStrokeColor(_self->ob_itself,
-	                            c,
-	                            m,
-	                            y,
-	                            k,
+	                            cyan,
+	                            magenta,
+	                            yellow,
+	                            black,
 	                            alpha);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CGContextRefObj_CGContextGetInterpolationQuality(CGContextRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	int _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CGContextGetInterpolationQuality(_self->ob_itself);
+	_res = Py_BuildValue("i",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CGContextRefObj_CGContextSetInterpolationQuality(CGContextRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	int quality;
+	if (!PyArg_ParseTuple(_args, "i",
+	                      &quality))
+		return NULL;
+	CGContextSetInterpolationQuality(_self->ob_itself,
+	                                 quality);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1107,13 +1133,17 @@ static PyMethodDef CGContextRefObj_methods[] = {
 	{"CGContextSetGrayStrokeColor", (PyCFunction)CGContextRefObj_CGContextSetGrayStrokeColor, 1,
 	 PyDoc_STR("(float gray, float alpha) -> None")},
 	{"CGContextSetRGBFillColor", (PyCFunction)CGContextRefObj_CGContextSetRGBFillColor, 1,
-	 PyDoc_STR("(float r, float g, float b, float alpha) -> None")},
+	 PyDoc_STR("(float red, float green, float blue, float alpha) -> None")},
 	{"CGContextSetRGBStrokeColor", (PyCFunction)CGContextRefObj_CGContextSetRGBStrokeColor, 1,
-	 PyDoc_STR("(float r, float g, float b, float alpha) -> None")},
+	 PyDoc_STR("(float red, float green, float blue, float alpha) -> None")},
 	{"CGContextSetCMYKFillColor", (PyCFunction)CGContextRefObj_CGContextSetCMYKFillColor, 1,
-	 PyDoc_STR("(float c, float m, float y, float k, float alpha) -> None")},
+	 PyDoc_STR("(float cyan, float magenta, float yellow, float black, float alpha) -> None")},
 	{"CGContextSetCMYKStrokeColor", (PyCFunction)CGContextRefObj_CGContextSetCMYKStrokeColor, 1,
-	 PyDoc_STR("(float c, float m, float y, float k, float alpha) -> None")},
+	 PyDoc_STR("(float cyan, float magenta, float yellow, float black, float alpha) -> None")},
+	{"CGContextGetInterpolationQuality", (PyCFunction)CGContextRefObj_CGContextGetInterpolationQuality, 1,
+	 PyDoc_STR("() -> (int _rv)")},
+	{"CGContextSetInterpolationQuality", (PyCFunction)CGContextRefObj_CGContextSetInterpolationQuality, 1,
+	 PyDoc_STR("(int quality) -> None")},
 	{"CGContextSetCharacterSpacing", (PyCFunction)CGContextRefObj_CGContextSetCharacterSpacing, 1,
 	 PyDoc_STR("(float spacing) -> None")},
 	{"CGContextSetTextPosition", (PyCFunction)CGContextRefObj_CGContextSetTextPosition, 1,

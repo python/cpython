@@ -32,6 +32,7 @@ IconTransformType = Type("IconTransformType", "h")
 IconSelectorValue = Type("IconSelectorValue", "l")
 IconServicesUsageFlags = Type("IconServicesUsageFlags", "l")
 RGBColor = OpaqueType("RGBColor", "QdRGB")
+CGContextRef = OpaqueByValueType("CGContextRef", "CGContextRefObj")
 
 #WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 

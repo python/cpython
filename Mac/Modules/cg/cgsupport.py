@@ -114,6 +114,7 @@ CGLineCap = int
 CGLineJoin = int
 CGTextDrawingMode = int
 CGPathDrawingMode = int
+CGInterpolationQuality = int
 
 # The real objects
 CGContextRef = OpaqueByValueType("CGContextRef", "CGContextRefObj")

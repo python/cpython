@@ -24,22 +24,9 @@ LSAcceptanceFlags = Type("LSAcceptanceFlags", "l")
 LSInitializeFlags = Type("LSInitializeFlags", "l")
 LSRequestedInfo = Type("LSRequestedInfo", "l")
 LSRolesMask = Type("LSRolesMask", "l")
+UniCharCount = Type("UniCharCount", "l")
 OptCFStringRef = OpaqueByValueType("CFStringRef", "OptCFStringRefObj")
 LSItemInfoRecord = OpaqueType("LSItemInfoRecord", "LSItemInfoRecord")
-#MenuRef = OpaqueByValueType("MenuRef", "MenuObj")
-#MenuItemIndex = Type("MenuItemIndex", "H")
-
-#WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
-
-#RgnHandle = FakeType("(RgnHandle)0")
-# XXXX Should be next, but this will break a lot of code...
-# RgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
-
-#KeyMap = ArrayOutputBufferType("KeyMap")
-##MacOSEventKind = Type("MacOSEventKind", "h") # Old-style
-##MacOSEventMask = Type("MacOSEventMask", "h") # Old-style
-#EventMask = Type("EventMask", "H")
-#EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
 #include <ApplicationServices/ApplicationServices.h>

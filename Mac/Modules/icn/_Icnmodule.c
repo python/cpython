@@ -906,6 +906,32 @@ static PyObject *Icn_RegisterIconRefFromResource(PyObject *_self, PyObject *_arg
 	return _res;
 }
 
+static PyObject *Icn_RegisterIconRefFromFSRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType creator;
+	OSType iconType;
+	FSRef iconFile;
+	IconRef theIconRef;
+#ifndef RegisterIconRefFromFSRef
+	PyMac_PRECHECK(RegisterIconRefFromFSRef);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetOSType, &creator,
+	                      PyMac_GetOSType, &iconType,
+	                      PyMac_GetFSRef, &iconFile))
+		return NULL;
+	_err = RegisterIconRefFromFSRef(creator,
+	                                iconType,
+	                                &iconFile,
+	                                &theIconRef);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, theIconRef);
+	return _res;
+}
+
 static PyObject *Icn_UnregisterIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1381,6 +1407,26 @@ static PyObject *Icn_ReadIconFile(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Icn_ReadIconFromFSRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	FSRef ref;
+	IconFamilyHandle iconFamily;
+#ifndef ReadIconFromFSRef
+	PyMac_PRECHECK(ReadIconFromFSRef);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSRef, &ref))
+		return NULL;
+	_err = ReadIconFromFSRef(&ref,
+	                         &iconFamily);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, iconFamily);
+	return _res;
+}
+
 static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1479,6 +1525,8 @@ static PyMethodDef Icn_methods[] = {
 	 PyDoc_STR("(OSType creator, OSType iconType, IconFamilyHandle iconFamily) -> (IconRef theIconRef)")},
 	{"RegisterIconRefFromResource", (PyCFunction)Icn_RegisterIconRefFromResource, 1,
 	 PyDoc_STR("(OSType creator, OSType iconType, FSSpec resourceFile, SInt16 resourceID) -> (IconRef theIconRef)")},
+	{"RegisterIconRefFromFSRef", (PyCFunction)Icn_RegisterIconRefFromFSRef, 1,
+	 PyDoc_STR("(OSType creator, OSType iconType, FSRef iconFile) -> (IconRef theIconRef)")},
 	{"UnregisterIconRef", (PyCFunction)Icn_UnregisterIconRef, 1,
 	 PyDoc_STR("(OSType creator, OSType iconType) -> None")},
 	{"UpdateIconRef", (PyCFunction)Icn_UpdateIconRef, 1,
@@ -1521,6 +1569,8 @@ static PyMethodDef Icn_methods[] = {
 	 PyDoc_STR("(OSType creator, OSType iconType, FSSpec iconFile) -> (IconRef theIconRef)")},
 	{"ReadIconFile", (PyCFunction)Icn_ReadIconFile, 1,
 	 PyDoc_STR("(FSSpec iconFile) -> (IconFamilyHandle iconFamily)")},
+	{"ReadIconFromFSRef", (PyCFunction)Icn_ReadIconFromFSRef, 1,
+	 PyDoc_STR("(FSRef ref) -> (IconFamilyHandle iconFamily)")},
 	{"WriteIconFile", (PyCFunction)Icn_WriteIconFile, 1,
 	 PyDoc_STR("(IconFamilyHandle iconFamily, FSSpec iconFile) -> None")},
 	{NULL, NULL, 0}

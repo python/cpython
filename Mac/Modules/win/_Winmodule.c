@@ -1041,15 +1041,15 @@ static PyObject *WinObj_SetWindowProxyAlias(WindowObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	AliasHandle alias;
+	AliasHandle inAlias;
 #ifndef SetWindowProxyAlias
 	PyMac_PRECHECK(SetWindowProxyAlias);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &alias))
+	                      ResObj_Convert, &inAlias))
 		return NULL;
 	_err = SetWindowProxyAlias(_self->ob_itself,
-	                           alias);
+	                           inAlias);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1332,21 +1332,21 @@ static PyObject *WinObj_TransitionWindow(WindowObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	WindowTransitionEffect effect;
-	WindowTransitionAction action;
-	Rect rect;
+	WindowTransitionEffect inEffect;
+	WindowTransitionAction inAction;
+	Rect inRect;
 #ifndef TransitionWindow
 	PyMac_PRECHECK(TransitionWindow);
 #endif
 	if (!PyArg_ParseTuple(_args, "llO&",
-	                      &effect,
-	                      &action,
-	                      PyMac_GetRect, &rect))
+	                      &inEffect,
+	                      &inAction,
+	                      PyMac_GetRect, &inRect))
 		return NULL;
 	_err = TransitionWindow(_self->ob_itself,
-	                        effect,
-	                        action,
-	                        &rect);
+	                        inEffect,
+	                        inAction,
+	                        &inRect);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1357,24 +1357,24 @@ static PyObject *WinObj_TransitionWindowAndParent(WindowObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	WindowPtr parentWindow;
-	WindowTransitionEffect effect;
-	WindowTransitionAction action;
-	Rect rect;
+	WindowPtr inParentWindow;
+	WindowTransitionEffect inEffect;
+	WindowTransitionAction inAction;
+	Rect inRect;
 #ifndef TransitionWindowAndParent
 	PyMac_PRECHECK(TransitionWindowAndParent);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&llO&",
-	                      WinObj_Convert, &parentWindow,
-	                      &effect,
-	                      &action,
-	                      PyMac_GetRect, &rect))
+	                      WinObj_Convert, &inParentWindow,
+	                      &inEffect,
+	                      &inAction,
+	                      PyMac_GetRect, &inRect))
 		return NULL;
 	_err = TransitionWindowAndParent(_self->ob_itself,
-	                                 parentWindow,
-	                                 effect,
-	                                 action,
-	                                 &rect);
+	                                 inParentWindow,
+	                                 inEffect,
+	                                 inAction,
+	                                 &inRect);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1562,23 +1562,23 @@ static PyObject *WinObj_ResizeWindow(WindowObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	Point startPoint;
-	Rect sizeConstraints;
-	Rect newContentRect;
+	Point inStartPoint;
+	Rect inSizeConstraints;
+	Rect outNewContentRect;
 #ifndef ResizeWindow
 	PyMac_PRECHECK(ResizeWindow);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      PyMac_GetPoint, &startPoint,
-	                      PyMac_GetRect, &sizeConstraints))
+	                      PyMac_GetPoint, &inStartPoint,
+	                      PyMac_GetRect, &inSizeConstraints))
 		return NULL;
 	_rv = ResizeWindow(_self->ob_itself,
-	                   startPoint,
-	                   &sizeConstraints,
-	                   &newContentRect);
+	                   inStartPoint,
+	                   &inSizeConstraints,
+	                   &outNewContentRect);
 	_res = Py_BuildValue("bO&",
 	                     _rv,
-	                     PyMac_BuildRect, &newContentRect);
+	                     PyMac_BuildRect, &outNewContentRect);
 	return _res;
 }
 
@@ -1652,20 +1652,20 @@ static PyObject *WinObj_IsWindowInStandardState(WindowObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	Point idealSize;
-	Rect idealStandardState;
+	Point inIdealSize;
+	Rect outIdealStandardState;
 #ifndef IsWindowInStandardState
 	PyMac_PRECHECK(IsWindowInStandardState);
 #endif
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &inIdealSize))
 		return NULL;
 	_rv = IsWindowInStandardState(_self->ob_itself,
-	                              &idealSize,
-	                              &idealStandardState);
-	_res = Py_BuildValue("bO&O&",
+	                              &inIdealSize,
+	                              &outIdealStandardState);
+	_res = Py_BuildValue("bO&",
 	                     _rv,
-	                     PyMac_BuildPoint, idealSize,
-	                     PyMac_BuildRect, &idealStandardState);
+	                     PyMac_BuildRect, &outIdealStandardState);
 	return _res;
 }
 
@@ -1673,16 +1673,16 @@ static PyObject *WinObj_ZoomWindowIdeal(WindowObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	WindowPartCode partCode;
+	WindowPartCode inPartCode;
 	Point ioIdealSize;
 #ifndef ZoomWindowIdeal
 	PyMac_PRECHECK(ZoomWindowIdeal);
 #endif
 	if (!PyArg_ParseTuple(_args, "h",
-	                      &partCode))
+	                      &inPartCode))
 		return NULL;
 	_err = ZoomWindowIdeal(_self->ob_itself,
-	                       partCode,
+	                       inPartCode,
 	                       &ioIdealSize);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
@@ -1694,17 +1694,17 @@ static PyObject *WinObj_GetWindowIdealUserState(WindowObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	Rect userState;
+	Rect outUserState;
 #ifndef GetWindowIdealUserState
 	PyMac_PRECHECK(GetWindowIdealUserState);
 #endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetWindowIdealUserState(_self->ob_itself,
-	                               &userState);
+	                               &outUserState);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &userState);
+	                     PyMac_BuildRect, &outUserState);
 	return _res;
 }
 
@@ -1712,15 +1712,15 @@ static PyObject *WinObj_SetWindowIdealUserState(WindowObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	Rect userState;
+	Rect inUserState;
 #ifndef SetWindowIdealUserState
 	PyMac_PRECHECK(SetWindowIdealUserState);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetRect, &userState))
+	                      PyMac_GetRect, &inUserState))
 		return NULL;
 	_err = SetWindowIdealUserState(_self->ob_itself,
-	                               &userState);
+	                               &inUserState);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1992,6 +1992,21 @@ static PyObject *WinObj_GetWindowPort(WindowObject *_self, PyObject *_args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetWindowPort(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowStructurePort(WindowObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CGrafPtr _rv;
+#ifndef GetWindowStructurePort
+	PyMac_PRECHECK(GetWindowStructurePort);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowStructurePort(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     GrafObj_New, _rv);
 	return _res;
@@ -2412,7 +2427,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetWindowProxyFSSpec", (PyCFunction)WinObj_GetWindowProxyFSSpec, 1,
 	 PyDoc_STR("() -> (FSSpec outFile)")},
 	{"SetWindowProxyAlias", (PyCFunction)WinObj_SetWindowProxyAlias, 1,
-	 PyDoc_STR("(AliasHandle alias) -> None")},
+	 PyDoc_STR("(AliasHandle inAlias) -> None")},
 	{"GetWindowProxyAlias", (PyCFunction)WinObj_GetWindowProxyAlias, 1,
 	 PyDoc_STR("() -> (AliasHandle alias)")},
 	{"SetWindowProxyCreatorAndType", (PyCFunction)WinObj_SetWindowProxyCreatorAndType, 1,
@@ -2442,9 +2457,9 @@ static PyMethodDef WinObj_methods[] = {
 	{"HiliteWindowFrameForDrag", (PyCFunction)WinObj_HiliteWindowFrameForDrag, 1,
 	 PyDoc_STR("(Boolean hilited) -> None")},
 	{"TransitionWindow", (PyCFunction)WinObj_TransitionWindow, 1,
-	 PyDoc_STR("(WindowTransitionEffect effect, WindowTransitionAction action, Rect rect) -> None")},
+	 PyDoc_STR("(WindowTransitionEffect inEffect, WindowTransitionAction inAction, Rect inRect) -> None")},
 	{"TransitionWindowAndParent", (PyCFunction)WinObj_TransitionWindowAndParent, 1,
-	 PyDoc_STR("(WindowPtr parentWindow, WindowTransitionEffect effect, WindowTransitionAction action, Rect rect) -> None")},
+	 PyDoc_STR("(WindowPtr inParentWindow, WindowTransitionEffect inEffect, WindowTransitionAction inAction, Rect inRect) -> None")},
 	{"MacMoveWindow", (PyCFunction)WinObj_MacMoveWindow, 1,
 	 PyDoc_STR("(short hGlobal, short vGlobal, Boolean front) -> None")},
 	{"SizeWindow", (PyCFunction)WinObj_SizeWindow, 1,
@@ -2464,7 +2479,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetWindowBounds", (PyCFunction)WinObj_GetWindowBounds, 1,
 	 PyDoc_STR("(WindowRegionCode regionCode) -> (Rect globalBounds)")},
 	{"ResizeWindow", (PyCFunction)WinObj_ResizeWindow, 1,
-	 PyDoc_STR("(Point startPoint, Rect sizeConstraints) -> (Boolean _rv, Rect newContentRect)")},
+	 PyDoc_STR("(Point inStartPoint, Rect inSizeConstraints) -> (Boolean _rv, Rect outNewContentRect)")},
 	{"SetWindowBounds", (PyCFunction)WinObj_SetWindowBounds, 1,
 	 PyDoc_STR("(WindowRegionCode regionCode, Rect globalBounds) -> None")},
 	{"RepositionWindow", (PyCFunction)WinObj_RepositionWindow, 1,
@@ -2472,13 +2487,13 @@ static PyMethodDef WinObj_methods[] = {
 	{"MoveWindowStructure", (PyCFunction)WinObj_MoveWindowStructure, 1,
 	 PyDoc_STR("(short hGlobal, short vGlobal) -> None")},
 	{"IsWindowInStandardState", (PyCFunction)WinObj_IsWindowInStandardState, 1,
-	 PyDoc_STR("() -> (Boolean _rv, Point idealSize, Rect idealStandardState)")},
+	 PyDoc_STR("(Point inIdealSize) -> (Boolean _rv, Rect outIdealStandardState)")},
 	{"ZoomWindowIdeal", (PyCFunction)WinObj_ZoomWindowIdeal, 1,
-	 PyDoc_STR("(WindowPartCode partCode) -> (Point ioIdealSize)")},
+	 PyDoc_STR("(WindowPartCode inPartCode) -> (Point ioIdealSize)")},
 	{"GetWindowIdealUserState", (PyCFunction)WinObj_GetWindowIdealUserState, 1,
-	 PyDoc_STR("() -> (Rect userState)")},
+	 PyDoc_STR("() -> (Rect outUserState)")},
 	{"SetWindowIdealUserState", (PyCFunction)WinObj_SetWindowIdealUserState, 1,
-	 PyDoc_STR("(Rect userState) -> None")},
+	 PyDoc_STR("(Rect inUserState) -> None")},
 	{"GetWindowGreatestAreaDevice", (PyCFunction)WinObj_GetWindowGreatestAreaDevice, 1,
 	 PyDoc_STR("(WindowRegionCode inRegion) -> (GDHandle outGreatestDevice, Rect outGreatestDeviceRect)")},
 	{"ConstrainWindowToScreen", (PyCFunction)WinObj_ConstrainWindowToScreen, 1,
@@ -2506,6 +2521,8 @@ static PyMethodDef WinObj_methods[] = {
 	{"TrackGoAway", (PyCFunction)WinObj_TrackGoAway, 1,
 	 PyDoc_STR("(Point thePt) -> (Boolean _rv)")},
 	{"GetWindowPort", (PyCFunction)WinObj_GetWindowPort, 1,
+	 PyDoc_STR("() -> (CGrafPtr _rv)")},
+	{"GetWindowStructurePort", (PyCFunction)WinObj_GetWindowStructurePort, 1,
 	 PyDoc_STR("() -> (CGrafPtr _rv)")},
 	{"GetWindowKind", (PyCFunction)WinObj_GetWindowKind, 1,
 	 PyDoc_STR("() -> (short _rv)")},
@@ -2998,7 +3015,7 @@ static PyObject *Win_GetAvailableWindowPositioningBounds(PyObject *_self, PyObje
 	PyObject *_res = NULL;
 	OSStatus _err;
 	GDHandle inDevice;
-	Rect availableRect;
+	Rect outAvailableRect;
 #ifndef GetAvailableWindowPositioningBounds
 	PyMac_PRECHECK(GetAvailableWindowPositioningBounds);
 #endif
@@ -3006,10 +3023,10 @@ static PyObject *Win_GetAvailableWindowPositioningBounds(PyObject *_self, PyObje
 	                      ResObj_Convert, &inDevice))
 		return NULL;
 	_err = GetAvailableWindowPositioningBounds(inDevice,
-	                                           &availableRect);
+	                                           &outAvailableRect);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &availableRect);
+	                     PyMac_BuildRect, &outAvailableRect);
 	return _res;
 }
 
@@ -3166,7 +3183,7 @@ static PyMethodDef Win_methods[] = {
 	{"CollapseAllWindows", (PyCFunction)Win_CollapseAllWindows, 1,
 	 PyDoc_STR("(Boolean collapse) -> None")},
 	{"GetAvailableWindowPositioningBounds", (PyCFunction)Win_GetAvailableWindowPositioningBounds, 1,
-	 PyDoc_STR("(GDHandle inDevice) -> (Rect availableRect)")},
+	 PyDoc_STR("(GDHandle inDevice) -> (Rect outAvailableRect)")},
 	{"DisableScreenUpdates", (PyCFunction)Win_DisableScreenUpdates, 1,
 	 PyDoc_STR("() -> None")},
 	{"EnableScreenUpdates", (PyCFunction)Win_EnableScreenUpdates, 1,

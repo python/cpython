@@ -47,6 +47,7 @@ class MyScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
+			"OSALocalOrGlobal",
 			"OSACreateAppleEventUPP",
 			"OSAActiveUPP",
 			"AEEventHandlerUPP",
