@@ -58,11 +58,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* USE_GUSI */
 
 #ifdef USE_GUSI2
-#define sync bad_sync
 #include <unistd.h>
 #include <fcntl.h>
-#undef sync
-int sync(void);
 #else
 #define mode_t int
 #include <fcntl.h>
@@ -643,7 +640,12 @@ mac_sync(self, args)
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#ifdef USE_GUSI2
+	sync();
+	res = 0;
+#else
 	res = sync();
+#endif
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
