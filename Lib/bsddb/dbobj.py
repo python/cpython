@@ -39,6 +39,8 @@ class DBEnv:
         return apply(self._cobj.open, args, kwargs)
     def remove(self, *args, **kwargs):
         return apply(self._cobj.remove, args, kwargs)
+    def set_shm_key(self, *args, **kwargs):
+        return apply(self._cobj.set_shm_key, args, kwargs)
     def set_cachesize(self, *args, **kwargs):
         return apply(self._cobj.set_cachesize, args, kwargs)
     def set_data_dir(self, *args, **kwargs):
