@@ -5,7 +5,6 @@
 
 DOCFIXER=	$(TOOLSDIR)/sgmlconv/docfixer.py
 ESIS2ML=	$(TOOLSDIR)/sgmlconv/esis2sgml.py
-FIXGES=		$(TOOLSDIR)/sgmlconv/fixgenents.sh
 LATEX2ESIS=	$(TOOLSDIR)/sgmlconv/latex2esis.py
 CONVERSION=	$(TOOLSDIR)/sgmlconv/conversion.xml
 
@@ -26,8 +25,8 @@ ESISTOOLS=	$(TOOLSDIR)/sgmlconv/esistools.py
 $(ESISTARGETS): $(LATEX2ESIS) $(DOCFIXER) $(ESISTOOLS) $(CONVERSION)
 # This variant is easier to work with while debugging the conversion spec:
 #$(ESISTARGETS): $(LATEX2ESIS) $(DOCFIXER) $(ESISTOOLS)
-$(SGMLTARGETS): $(ESIS2ML) $(FIXGES)
-$(XMLTARGETS): $(ESIS2ML) $(FIXGES)
+$(SGMLTARGETS): $(ESIS2ML)
+$(XMLTARGETS): $(ESIS2ML)
 
 
 .SUFFIXES: .esis .sgml .tex .xml
@@ -38,10 +37,10 @@ $(XMLTARGETS): $(ESIS2ML) $(FIXGES)
 	rm temp.esis
 
 .esis.sgml:
-	$(ESIS2ML) --sgml --autoclose para $< | $(FIXGES) >$@
+	$(ESIS2ML) --sgml --autoclose para $< $@
 
 .esis.xml:
-	$(ESIS2ML) --xml $< | $(FIXGES) >$@
+	$(ESIS2ML) --xml $< $@
 
 
 clean:
