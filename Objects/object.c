@@ -1841,21 +1841,6 @@ PyObject_Free(void *p)
 }
 
 
-/* Hook to clear up weak references only once the _weakref module is
-   imported.  We use a dummy implementation to simplify the code at each
-   call site instead of requiring a test for NULL.
-*/
-
-static void
-empty_clear_weak_refs(PyObject *o)
-{
-    return;
-}
-
-void (*PyObject_ClearWeakRefs)(PyObject *) = empty_clear_weak_refs;
-
-
-
 /* These methods are used to control infinite recursion in repr, str, print,
    etc.  Container objects that may recursively contain themselves,
    e.g. builtin dictionaries and lists, should used Py_ReprEnter() and

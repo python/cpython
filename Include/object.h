@@ -345,7 +345,7 @@ extern DL_IMPORT(int) PyCallable_Check(PyObject *);
 extern DL_IMPORT(int) PyNumber_Coerce(PyObject **, PyObject **);
 extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
-extern DL_IMPORT(void) (*PyObject_ClearWeakRefs)(PyObject *);
+extern DL_IMPORT(void) PyObject_ClearWeakRefs(PyObject *);
 
 /* A slot function whose address we need to compare */
 extern int _PyObject_SlotCompare(PyObject *, PyObject *);
