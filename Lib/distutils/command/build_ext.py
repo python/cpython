@@ -188,8 +188,7 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler (#compiler=self.compiler,
-                                      compiler="msvc",
+        self.compiler = new_compiler (compiler=self.compiler,
                                       verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
@@ -393,7 +392,7 @@ class build_ext (Command):
             # The environment variable should take precedence, and
             # any sensible compiler will give precendence to later
             # command line args.  Hence we combine them in order:
-            extra_args = ext.extra_compile_args
+            extra_args = ext.extra_compile_args or []
 
             # XXX and if we support CFLAGS, why not CC (compiler
             # executable), CPPFLAGS (pre-processor options), and LDFLAGS
@@ -415,7 +414,7 @@ class build_ext (Command):
             # that go into the mix.
             if ext.extra_objects:
                 objects.extend (ext.extra_objects)
-            extra_args = ext.extra_link_args
+            extra_args = ext.extra_link_args or []
 
             # Bunch of fixing-up we have to do for Microsoft's linker.
             if self.compiler.compiler_type == 'msvc':
