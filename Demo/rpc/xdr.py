@@ -158,7 +158,7 @@ class Unpacker:
 		data = self.buf[i:j]
 		if len(data) < 8:
 			raise EOFError
-		return struct.unpack('8', data)[0]
+		return struct.unpack('d', data)[0]
 
 	def unpack_fstring(self, n):
 		if n < 0:
