@@ -324,14 +324,14 @@ class NNTP:
 		for line in lines:
 			elem = string.splitfields(line,"\t")
 			try:
-				xover_lines.append(elem[0],
-						   elem[1],
-						   elem[2],
-						   elem[3],
-						   elem[4],
-						   elem[5:-2],
-						   elem[-2],
-						   elem[-1])
+				xover_lines.append((elem[0],
+						    elem[1],
+						    elem[2],
+						    elem[3],
+						    elem[4],
+						    string.split(elem[5]),
+						    elem[6],
+						    elem[7]))
 			except IndexError:
 				raise error_data,line
 		return resp,xover_lines
