@@ -964,6 +964,29 @@ file_readline(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
+file_xreadlines(PyFileObject *f, PyObject *args)
+{
+	static PyObject* xreadlines_function = NULL;
+	
+	if (!PyArg_ParseTuple(args, ":xreadlines"))
+		return NULL;
+	
+	if (!xreadlines_function) {
+		PyObject *xreadlines_module =
+			PyImport_ImportModule("xreadlines");
+		if(!xreadlines_module)
+			return NULL;
+
+		xreadlines_function = PyObject_GetAttrString(xreadlines_module,
+							     "xreadlines");
+		Py_DECREF(xreadlines_module);
+		if(!xreadlines_function)
+			return NULL;
+	}
+	return PyObject_CallFunction(xreadlines_function, "(O)", f);
+}
+
+static PyObject *
 file_readlines(PyFileObject *f, PyObject *args)
 {
 	long sizehint = 0;
@@ -1009,7 +1032,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			buffersize *= 2;
 			if (buffersize > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-					"line is longer than a Python string can hold");
+			    "line is longer than a Python string can hold");
 				goto error;
 			}
 			if (big_buffer == NULL) {
@@ -1232,6 +1255,7 @@ static PyMethodDef file_methods[] = {
 	{"tell",	(PyCFunction)file_tell, 0},
 	{"readinto",	(PyCFunction)file_readinto, 0},
 	{"readlines",	(PyCFunction)file_readlines, 1},
+	{"xreadlines",	(PyCFunction)file_xreadlines, 1},
 	{"writelines",	(PyCFunction)file_writelines, 0},
 	{"flush",	(PyCFunction)file_flush, 0},
 	{"close",	(PyCFunction)file_close, 0},
