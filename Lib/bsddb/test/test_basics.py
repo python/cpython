@@ -604,6 +604,26 @@ class BasicTransactionTestCase(BasicTestCase):
         assert num == 0, "truncate on empty DB returned nonzero (%s)" % `num`
         txn.commit()
 
+    #----------------------------------------
+
+    def test08_TxnLateUse(self):
+        txn = self.env.txn_begin()
+        txn.abort()
+        try:
+            txn.abort()
+        except db.DBError, e:
+            pass
+        else:
+            raise RuntimeError, "DBTxn.abort() called after DB_TXN no longer valid w/o an exception"
+
+        txn = self.env.txn_begin()
+        txn.commit()
+        try:
+            txn.commit()
+        except db.DBError, e:
+            pass
+        else:
+            raise RuntimeError, "DBTxn.commit() called after DB_TXN no longer valid w/o an exception"
 
 
 class BTreeTransactionTestCase(BasicTransactionTestCase):
