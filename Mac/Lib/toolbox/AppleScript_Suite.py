@@ -43,9 +43,9 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'actv'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -63,9 +63,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'cmnt'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -82,9 +82,9 @@ class AppleScript_Suite:
 		_code = 'ToyS'
 		_subcode = 'log0'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -101,9 +101,9 @@ class AppleScript_Suite:
 		_code = 'ToyS'
 		_subcode = 'log1'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -120,9 +120,9 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'copy'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -141,9 +141,9 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'dosc'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -161,9 +161,9 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'idle'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -181,9 +181,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'noop'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -201,9 +201,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'tell'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -221,9 +221,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'tend'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -253,9 +253,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'err '
 
+		aetools.keysubst(_arguments, self._argmap_error)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_error)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -337,9 +337,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'psbr'
 
+		aetools.keysubst(_arguments, self._argmap_Call_a5_subroutine)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Call_a5_subroutine)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -358,9 +358,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '=   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -379,9 +379,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '\255   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -400,9 +400,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '+   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -421,9 +421,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '-   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -442,9 +442,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '*   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -463,9 +463,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '/   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -484,9 +484,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'div '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -505,9 +505,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'mod '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -526,9 +526,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '^   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -547,9 +547,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '>   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -568,9 +568,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '>=  '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -589,9 +589,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '<   '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -610,9 +610,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '<=  '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -631,9 +631,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'ccat'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -652,9 +652,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'bgwt'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -673,9 +673,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'ends'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -694,9 +694,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'cont'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -715,9 +715,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'AND '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -736,9 +736,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'OR  '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -757,9 +757,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'coer'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -778,9 +778,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'NOT '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -799,9 +799,9 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'neg '
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)

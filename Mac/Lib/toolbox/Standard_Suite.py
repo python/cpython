@@ -61,9 +61,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'qobj'
 
+		aetools.keysubst(_arguments, self._argmap_class_info)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_class_info)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -88,9 +88,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'clos'
 
+		aetools.keysubst(_arguments, self._argmap_close)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_close)
 		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -115,9 +115,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'cnte'
 
+		aetools.keysubst(_arguments, self._argmap_count)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_count)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -141,9 +141,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'dsiz'
 
+		aetools.keysubst(_arguments, self._argmap_data_size)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_data_size)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -161,9 +161,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'delo'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -187,9 +187,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'clon'
 
+		aetools.keysubst(_arguments, self._argmap_duplicate)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_duplicate)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -213,9 +213,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'gtei'
 
+		aetools.keysubst(_arguments, self._argmap_event_info)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_event_info)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -234,9 +234,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'doex'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -265,9 +265,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'crel'
 
+		aetools.keysubst(_arguments, self._argmap_make)
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		aetools.keysubst(_arguments, self._argmap_make)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -291,9 +291,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'move'
 
+		aetools.keysubst(_arguments, self._argmap_move)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_move)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -311,9 +311,9 @@ class Standard_Suite:
 		_code = 'aevt'
 		_subcode = 'odoc'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -331,9 +331,9 @@ class Standard_Suite:
 		_code = 'aevt'
 		_subcode = 'pdoc'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -355,9 +355,9 @@ class Standard_Suite:
 		_code = 'aevt'
 		_subcode = 'quit'
 
+		aetools.keysubst(_arguments, self._argmap_quit)
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		aetools.keysubst(_arguments, self._argmap_quit)
 		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -383,9 +383,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'save'
 
+		aetools.keysubst(_arguments, self._argmap_save)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_save)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -409,9 +409,9 @@ class Standard_Suite:
 		_code = 'core'
 		_subcode = 'gtsi'
 
+		aetools.keysubst(_arguments, self._argmap_suite_info)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_suite_info)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)

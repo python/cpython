@@ -1,7 +1,7 @@
 """Suite Metrowerks Shell Suite: Events supported by the Metrowerks Project Shell
 Level 1, version 1
 
-Generated from Sap:CodeWarrior6:Metrowerks C/C++:MW C/C++ PPC 1.2.2
+Generated from Sap:Codewarrior7:Metrowerks CodeWarrior:CodeWarrior IDE 1.3
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,39 +42,16 @@ _Enum_Mode = {
 
 _Enum_SrcT = {
 	'source' : 'FTxt',	# A source file (.c, .cp, .p, etc).
-	'library' : 'FLib',	# An object code library.
-	'shared_library' : 'FShl',	# A shared library.
-	'resource' : 'FRes',	# A resource file.
-	'xcoff' : 'FXco',	# An XCOFF library.
+	'unknown' : 'FUnk',	# An unknown file type.
+}
+
+_Enum_PPrm = {
+	'absolute' : 'Abso',	# An absolute path name, including volume name.
+	'project_relative' : 'PRel',	# A path relative to the current projectÕs folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarriorª folder.
 }
 
 class Metrowerks_Shell_Suite:
-
-	_argmap_Close_Window = {
-		'Saving' : 'savo',
-	}
-
-	def Close_Window(self, _object, _attributes={}, **_arguments):
-		"""Close Window: Close the windows showing the specified files
-		Required argument: The files to close
-		Keyword argument Saving: Whether to save changes to each file before closing its window
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'ClsW'
-
-		_arguments['----'] = _object
-
-		aetools.keysubst(_arguments, self._argmap_Close_Window)
-		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
 
 	_argmap_Add_Files = {
 		'To_Segment' : 'Segm',
@@ -90,51 +67,9 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'AddF'
 
-		_arguments['----'] = _object
-
 		aetools.keysubst(_arguments, self._argmap_Add_Files)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Remove_Files(self, _object, _attributes={}, **_arguments):
-		"""Remove Files: Remove the specified file(s) from the current project
-		Required argument: List of files to remove
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Error code for each file removed
-		"""
-		_code = 'MMPR'
-		_subcode = 'RemF'
-
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Touch(self, _object, _attributes={}, **_arguments):
-		"""Touch: Touch the modification date of the specified file(s)
-		Required argument: List of files to compile
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Error code for each file touched
-		"""
-		_code = 'MMPR'
-		_subcode = 'Toch'
-
-		_arguments['----'] = _object
-
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -158,9 +93,54 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Chek'
 
+		aetools.keysubst(_arguments, self._argmap_Check_Syntax)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Check_Syntax)
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Close_Project(self, _no_object=None, _attributes={}, **_arguments):
+		"""Close Project: Close the current project
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'ClsP'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Close_Window = {
+		'Saving' : 'savo',
+	}
+
+	def Close_Window(self, _object, _attributes={}, **_arguments):
+		"""Close Window: Close the windows showing the specified files
+		Required argument: The files to close
+		Keyword argument Saving: Whether to save changes to each file before closing its window
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'ClsW'
+
+		aetools.keysubst(_arguments, self._argmap_Close_Window)
+		_arguments['----'] = _object
+
+		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -184,9 +164,254 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Comp'
 
+		aetools.keysubst(_arguments, self._argmap_Compile)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Compile)
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Create_Project = {
+		'from_stationery' : 'Tmpl',
+	}
+
+	def Create_Project(self, _object, _attributes={}, **_arguments):
+		"""Create Project: Create a new project file
+		Required argument: New project file specifier
+		Keyword argument from_stationery: undocumented, typecode 'alis'
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'NewP'
+
+		aetools.keysubst(_arguments, self._argmap_Create_Project)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Get_Definition(self, _object, _attributes={}, **_arguments):
+		"""Get Definition: Returns the location(s) of a globally scoped function or data object.
+		Required argument: undocumented, typecode 'TEXT'
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'FDef'
+		"""
+		_code = 'MMPR'
+		_subcode = 'GDef'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Get_Open_Documents(self, _no_object=None, _attributes={}, **_arguments):
+		"""Get Open Documents: Returns the list of open documents
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: The list of documents
+		"""
+		_code = 'MMPR'
+		_subcode = 'GDoc'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Get_Preferences = {
+		'of' : 'PRec',
+		'from_panel' : 'PNam',
+	}
+
+	def Get_Preferences(self, _no_object=None, _attributes={}, **_arguments):
+		"""Get Preferences: Get the preferences for the current project
+		Keyword argument of: Names of requested preferences
+		Keyword argument from_panel: Name of the preference panel
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: The requested preferences
+		"""
+		_code = 'MMPR'
+		_subcode = 'Gref'
+
+		aetools.keysubst(_arguments, self._argmap_Get_Preferences)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Get_Project_File = {
+		'Segment' : 'Segm',
+	}
+
+	def Get_Project_File(self, _object, _attributes={}, **_arguments):
+		"""Get Project File: Returns a description of a file in the project window.
+		Required argument: The index of the file within its segment.
+		Keyword argument Segment: The segment containing the file.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'SrcF'
+		"""
+		_code = 'MMPR'
+		_subcode = 'GFil'
+
+		aetools.keysubst(_arguments, self._argmap_Get_Project_File)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Get_Project_Specifier(self, _no_object=None, _attributes={}, **_arguments):
+		"""Get Project Specifier: Return the File Specifier for the current project
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: File Specifier for the current project
+		"""
+		_code = 'MMPR'
+		_subcode = 'GetP'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Get_Segments(self, _no_object=None, _attributes={}, **_arguments):
+		"""Get Segments: Returns a description of each segment in the project.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: undocumented, typecode 'Seg '
+		"""
+		_code = 'MMPR'
+		_subcode = 'GSeg'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Goto_Function(self, _object, _attributes={}, **_arguments):
+		"""Goto Function: Goto Specified Function Name
+		Required argument: undocumented, typecode 'TEXT'
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'GoFn'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Goto_Line(self, _object, _attributes={}, **_arguments):
+		"""Goto Line: Goto Specified Line Number
+		Required argument: The requested source file line number
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'MMPR'
+		_subcode = 'GoLn'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Is_In_Project(self, _object, _attributes={}, **_arguments):
+		"""Is In Project: Whether or not the specified file(s) is in the current project
+		Required argument: List of files to check for project membership
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Result code for each file
+		"""
+		_code = 'MMPR'
+		_subcode = 'FInP'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Make_Project = {
+		'ExternalEditor' : 'Errs',
+	}
+
+	def Make_Project(self, _no_object=None, _attributes={}, **_arguments):
+		"""Make Project: Make the current project
+		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Errors that occurred while making the project
+		"""
+		_code = 'MMPR'
+		_subcode = 'Make'
+
+		aetools.keysubst(_arguments, self._argmap_Make_Project)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -212,53 +437,9 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'PreC'
 
-		_arguments['----'] = _object
-
 		aetools.keysubst(_arguments, self._argmap_Precompile)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_Create_Project = {
-		'from_stationery' : 'Tmpl',
-	}
-
-	def Create_Project(self, _object, _attributes={}, **_arguments):
-		"""Create Project: Create a new project file
-		Required argument: New project file specifier
-		Keyword argument from_stationery: undocumented, typecode 'alis'
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'NewP'
-
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Create_Project)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Close_Project(self, _no_object=None, _attributes={}, **_arguments):
-		"""Close Project: Close the current project
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'ClsP'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -275,9 +456,30 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'RemB'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Remove_Files(self, _object, _attributes={}, **_arguments):
+		"""Remove Files: Remove the specified file(s) from the current project
+		Required argument: List of files to remove
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Error code for each file removed
+		"""
+		_code = 'MMPR'
+		_subcode = 'RemF'
 
 		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -287,47 +489,16 @@ class Metrowerks_Shell_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_Update_Project = {
-		'ExternalEditor' : 'Errs',
-	}
-
-	def Update_Project(self, _no_object=None, _attributes={}, **_arguments):
-		"""Update Project: Update the current project
-		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
+	def Reset_File_Paths(self, _no_object=None, _attributes={}, **_arguments):
+		"""Reset File Paths: Resets access paths for all files belonging to open project.
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Errors that occurred while updating the project
 		"""
 		_code = 'MMPR'
-		_subcode = 'UpdP'
+		_subcode = 'ReFP'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		aetools.keysubst(_arguments, self._argmap_Update_Project)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_Make_Project = {
-		'ExternalEditor' : 'Errs',
-	}
-
-	def Make_Project(self, _no_object=None, _attributes={}, **_arguments):
-		"""Make Project: Make the current project
-		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Errors that occurred while making the project
-		"""
-		_code = 'MMPR'
-		_subcode = 'Make'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		aetools.keysubst(_arguments, self._argmap_Make_Project)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -352,158 +523,9 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'RunP'
 
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
 		aetools.keysubst(_arguments, self._argmap_Run_Project)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_Set_Preferences = {
-		'To' : 'PRec',
-	}
-
-	def Set_Preferences(self, _no_object=None, _attributes={}, **_arguments):
-		"""Set Preferences: Set the preferences for the current project
-		Keyword argument To: Preferences settings
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'Pref'
-
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		aetools.keysubst(_arguments, self._argmap_Set_Preferences)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_Get_Preferences = {
-		'Of' : 'PRec',
-	}
-
-	def Get_Preferences(self, _no_object=None, _attributes={}, **_arguments):
-		"""Get Preferences: Get the preferences for the current project
-		Keyword argument Of: Preferences settings
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: List of preferences
-		"""
-		_code = 'MMPR'
-		_subcode = 'Gref'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		aetools.keysubst(_arguments, self._argmap_Get_Preferences)
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Is_In_Project(self, _object, _attributes={}, **_arguments):
-		"""Is In Project: Whether or not the specified file(s) is in the current project
-		Required argument: List of files to check for project membership
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Result code for each file
-		"""
-		_code = 'MMPR'
-		_subcode = 'FInP'
-
-		_arguments['----'] = _object
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Get_Project_Specifier(self, _no_object=None, _attributes={}, **_arguments):
-		"""Get Project Specifier: Return the File Specifier for the current project
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: File Specifier for the current project
-		"""
-		_code = 'MMPR'
-		_subcode = 'GetP'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Reset_File_Paths(self, _no_object=None, _attributes={}, **_arguments):
-		"""Reset File Paths: Resets access paths for all files belonging to open project.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'ReFP'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Goto_Line(self, _object, _attributes={}, **_arguments):
-		"""Goto Line: Goto Specified Line Number
-		Required argument: The requested source file line number
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'GoLn'
-
-		_arguments['----'] = _object
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Goto_Function(self, _object, _attributes={}, **_arguments):
-		"""Goto Function: Goto Specified Function Name
-		Required argument: undocumented, typecode 'TEXT'
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'MMPR'
-		_subcode = 'GoFn'
-
-		_arguments['----'] = _object
-
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -521,9 +543,9 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'SvMs'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -533,62 +555,23 @@ class Metrowerks_Shell_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def Get_Open_Documents(self, _no_object=None, _attributes={}, **_arguments):
-		"""Get Open Documents: Returns the list of open documents
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: The list of documents
-		"""
-		_code = 'MMPR'
-		_subcode = 'GDoc'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def Get_Segments(self, _no_object=None, _attributes={}, **_arguments):
-		"""Get Segments: Returns a description of each segment in the project.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'Seg '
-		"""
-		_code = 'MMPR'
-		_subcode = 'GSeg'
-
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_Set_Segment = {
-		'to' : 'Segm',
+	_argmap_Set_Modification_Date = {
+		'to' : 'MDat',
 	}
 
-	def Set_Segment(self, _object, _attributes={}, **_arguments):
-		"""Set Segment: Changes the name and attributes of a segment.
-		Required argument: The segment to change
-		Keyword argument to: The new name and attributes for the segment.
+	def Set_Modification_Date(self, _object, _attributes={}, **_arguments):
+		"""Set Modification Date: Changes the internal modification date of the specified file(s)
+		Required argument: List of files
+		Keyword argument to: undocumented, typecode 'ldt '
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Error code for each modified file
 		"""
 		_code = 'MMPR'
-		_subcode = 'SSeg'
+		_subcode = 'SMod'
 
+		aetools.keysubst(_arguments, self._argmap_Set_Modification_Date)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Set_Segment)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -598,23 +581,23 @@ class Metrowerks_Shell_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_Get_Project_File = {
-		'Segment' : 'Segm',
+	_argmap_Set_Preferences = {
+		'of_panel' : 'PNam',
+		'to' : 'PRec',
 	}
 
-	def Get_Project_File(self, _object, _attributes={}, **_arguments):
-		"""Get Project File: Returns a description of a file in the project window.
-		Required argument: The index of the file within its segment.
-		Keyword argument Segment: The segment containing the file.
+	def Set_Preferences(self, _no_object=None, _attributes={}, **_arguments):
+		"""Set Preferences: Set the preferences for the current project
+		Keyword argument of_panel: Name of the preference panel
+		Keyword argument to: Preferences settings
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'SrcF'
 		"""
 		_code = 'MMPR'
-		_subcode = 'GFil'
+		_subcode = 'Pref'
 
-		_arguments['----'] = _object
+		aetools.keysubst(_arguments, self._argmap_Set_Preferences)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		aetools.keysubst(_arguments, self._argmap_Get_Project_File)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -637,9 +620,9 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'SFil'
 
+		aetools.keysubst(_arguments, self._argmap_Set_Project_File)
 		_arguments['----'] = _object
 
-		aetools.keysubst(_arguments, self._argmap_Set_Project_File)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -649,18 +632,68 @@ class Metrowerks_Shell_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def Get_Definition(self, _object, _attributes={}, **_arguments):
-		"""Get Definition: Returns the location(s) of a globally scoped function or data object.
-		Required argument: undocumented, typecode 'TEXT'
+	_argmap_Set_Segment = {
+		'to' : 'Segm',
+	}
+
+	def Set_Segment(self, _object, _attributes={}, **_arguments):
+		"""Set Segment: Changes the name and attributes of a segment.
+		Required argument: The segment to change
+		Keyword argument to: The new name and attributes for the segment.
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: undocumented, typecode 'FDef'
 		"""
 		_code = 'MMPR'
-		_subcode = 'GDef'
+		_subcode = 'SSeg'
 
+		aetools.keysubst(_arguments, self._argmap_Set_Segment)
 		_arguments['----'] = _object
 
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def Touch(self, _object, _attributes={}, **_arguments):
+		"""Touch: Force recompilation of the specified file(s)
+		Required argument: List of files to compile
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Error code for each file touched
+		"""
+		_code = 'MMPR'
+		_subcode = 'Toch'
+
 		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_Update_Project = {
+		'ExternalEditor' : 'Errs',
+	}
+
+	def Update_Project(self, _no_object=None, _attributes={}, **_arguments):
+		"""Update Project: Update the current project
+		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: Errors that occurred while updating the project
+		"""
+		_code = 'MMPR'
+		_subcode = 'UpdP'
+
+		aetools.keysubst(_arguments, self._argmap_Update_Project)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -671,116 +704,15 @@ class Metrowerks_Shell_Suite:
 			return _arguments['----']
 
 
-#    Class 'C/C++ Language' ('FECP') -- 'C/C++ Language specifics'
-#        property 'Activate CPlusPlus' ('FE01') 'bool' -- 'To compile \322.c\323 files that use C++ features.' [mutable]
-#        property 'ARM Conformance' ('FE02') 'bool' -- 'To enforce ARM conformance for your source code.' [mutable]
-#        property 'ANSI Keywords Only' ('FE03') 'bool' -- 'To allow only ANSI C and C++ keywords.' [mutable]
-#        property 'Require Function Prototypes' ('FE04') 'bool' -- 'To enforce prototype checking.' [mutable]
-#        property 'Expand Trigraph Sequences' ('FE05') 'bool' -- 'To allow ANSI trigraph expressions.' [mutable]
-#        property 'Enums Always Ints' ('FE06') 'bool' -- 'To interpret enumeration constants as integers.' [mutable]
-#        property 'MPW Pointer Type Rules' ('FE07') 'bool' -- 'To use MPW (relaxed) pointer type-checking rules.' [mutable]
-#        property 'Direct Destruction' ('FE09') 'bool' -- 'To remove local and temporary C++ class objects that have destructors with a direct destructor call.' [mutable]
-#        property 'Dont Inline' ('FE10') 'bool' -- 'To generate C++ functions and function calls instead of inline functions.' [mutable]
-#        property 'Pool Strings' ('FE11') 'bool' -- 'To group all character string constants into a single object.' [mutable]
-#        property 'Dont Reuse Strings' ('FE12') 'bool' -- 'To prevent merging identical character string literals.' [mutable]
-#        property 'ANSI Strict' ('FE13') 'bool' -- 'To enforce strict ANSI C and ANSI C++ rules.' [mutable]
-#        property 'MPW Newlines' ('FE14') 'bool' -- 'To convert \324\\n\325 to carriage returns (ASCII 13) and \324\\r\325 to line feeds (ASCII 10).' [mutable]
-#        property 'Illegal Pragmas' ('WA01') 'bool' -- 'To enforce illegal pragma checking.' [mutable]
-#        property 'Empty Declarations' ('WA02') 'bool' -- 'To enforce empty declaration checking.' [mutable]
-#        property 'Possible Errors' ('WA03') 'bool' -- 'To enforce possible error checking.' [mutable]
-#        property 'Extra Commas' ('WA06') 'bool' -- 'To enforce extra comma checking.' [mutable]
-#        property 'Extended Error Checking' ('WA07') 'bool' -- 'To enforce extended error checking.' [mutable]
-#        property 'Treat Warnings As Errors' ('WA08') 'bool' -- 'To treat the warnings as compiler errors.' [mutable]
-
-#    Class 'Pascal Language' ('FEPA') -- 'Pascal Language specifics'
-#        property 'Activate Range Checking' ('FP01') 'bool' -- 'To activate array index reference and variable assignment checking at compile and run time.' [mutable]
-#        property 'Use Propagation' ('FP03') 'bool' -- 'To propagate unit objects among imported objects.' [mutable]
-#        property 'Activate Overflow Checking' ('FP04') 'bool' -- 'To activate run-time overflow checking.' [mutable]
-#        property 'Generate Map' ('FP05') 'bool' -- 'To generate a Make map file.' [mutable]
-#        property 'Case Sensitive' ('FP06') 'bool' -- 'To support case sensitive identifier.' [mutable]
-#        property 'ANS Conformance' ('FP07') 'bool' -- 'To conform to the ANS standard.' [mutable]
-#        property 'Modified ForLoop Indexes' ('WP01') 'bool' -- 'To verify that for loop indexes are not overwritten.' [mutable]
-#        property 'Function Returns' ('WP02') 'bool' -- 'To verify that functions get at least one return value.' [mutable]
-#        property 'Undefined Routines' ('WP03') 'bool' -- 'To report routines declared but not defined.' [mutable]
-#        property 'GotoAndLabels' ('WP04') 'bool' -- 'To enable goto checking in for, with, case and if statements.' [mutable]
-#        property 'BranchingIntoWith' ('WP05') 'bool' -- 'Verify that labels in a WITH statement are referenced from within the same statement' [mutable]
-#        property 'BranchingIntoFor' ('WP06') 'bool' -- 'Verify that labels in a FOR statement are referenced from within the same statement' [mutable]
-#        property 'BranchingBetweenCase' ('WP07') 'bool' -- 'Verify that labels in a CASE statement leg are not referenced from within another leg of the same statement.' [mutable]
-#        property 'BranchingBetweenIfAndElse' ('WP08') 'bool' -- 'Verify that there\325s no jump between the IF and the ELSE part of the same IF statement.' [mutable]
-
-#    Class 'Common Language' ('FECO') -- 'Common to the C/C++ and Pascal language'
-#        property 'Prefix File' ('FE08') 'TEXT' -- 'The name of the prefix file you wish to include in all of your project files.' [mutable]
-#        property 'Unused Variables' ('WA04') 'bool' -- 'To enforce unused variable checking.' [mutable]
-#        property 'Unused Arguments' ('WA05') 'bool' -- 'To enforce unused argument checking.' [mutable]
-
-#    Class 'MC68K Linker' ('LN68') -- 'MC68K Linker specifics'
-#        property 'Code Model' ('BE01') 'shor' -- 'To select the type of object code you wish to generate. (0 : Small; 1 : Smart; 2 : Large)' [mutable]
-#        property 'MC68020 CodeGen' ('BE03') 'bool' -- 'To generate object code for computers with the MC68020, MC68030, or MC68040 processor.' [mutable]
-#        property 'MC68881 CodeGen' ('BE04') 'bool' -- 'To reroute all math calls from SANE directly to a MC68881 or MC68882 FPU.' [mutable]
-#        property 'Far Virtual Function Tables' ('BE08') 'bool' -- 'To make far branches in subroutines. (Not supported in Pascal)' [mutable]
-#        property 'Far String Constants' ('BE09') 'bool' -- 'To place all string constants into far data space.' [mutable]
-#        property 'Four Bytes Ints' ('BE10') 'bool' -- 'To force integers to occupy 4 bytes. (Not supported in Pascal)' [mutable]
-#        property 'Eight Byte Double' ('BE11') 'bool' -- 'To force doubles to occupy 8 bytes.' [mutable]
-#        property 'Far Data' ('BE12') 'bool' -- 'To remove the 68K limit on global data.' [mutable]
-#        property 'PC Relative Strings' ('BE14') 'bool' -- 'To reference string literals using PC-relative addressing.' [mutable]
-#        property 'MPW Calling Conventions' ('BE15') 'bool' -- 'To use MPW C calling conventions.' [mutable]
-#        property 'MacsBug Symbols' ('LN01') 'shor' -- 'To select the MacsBug version you are using. ( 0 : None; 1 : Old Style; 2 : New Style)' [mutable]
-#        property 'Generate A6 Stack Frames' ('LN05') 'bool' -- 'To be able to use the Metrowerks Debugger, The Debugger by Jasik Designs, or SourceBug\252 to examine your source code.' [mutable]
-#        property 'The Debugger Aware' ('LN06') 'bool' -- 'To allow Steve Jasik\325s The Debugger to debug multiple segment projects.' [mutable]
-#        property 'Link Single Segment' ('LN07') 'bool' -- 'To link all of your project segments into one segment.' [mutable]
-#        property 'Multi Segment' ('PR10') 'bool' -- 'To divide your resource into many code segments in your resource file.' [mutable]
-#        property 'Header Type' ('PR16') 'shor' -- 'To select the type of code resource to create. (Not supported yet)' [mutable]
-#        property 'A4 Relative Data' ('PR17') 'bool' -- 'To use A4 relative data.' [mutable]
-#        property 'Seg Type' ('PR18') 'shor' -- 'To set the segment type for your code resource.' [mutable]
-
-#    Class 'PowerPC Linker' ('LNCP') -- 'PowerPC Linker specifics'
-#        property 'Make String ReadOnly' ('B601') 'bool' -- 'To store string literals in the code section.' [mutable]
-#        property 'Instruction Scheduling' ('B602') 'bool' -- 'To rearrange instructions to take advantage of the RISC pipelined architecture.' [mutable]
-#        property 'Optimization Level' ('B603') 'shor' -- 'To select the level of optimization to be applied (from 1 to 4).' [mutable]
-#        property 'Global Optimization' ('B604') 'bool' -- 'To turn on the global optimizer.' [mutable]
-#        property 'Suppress Warnings' ('L601') 'bool' -- 'To suppress reporting of non-fatal linker errors.' [mutable]
-#        property 'Initialization Name' ('L602') 'TEXT' -- 'The name of the function to call, when the PEF fragment is loaded.' [mutable]
-#        property 'Main Name' ('L603') 'TEXT' -- 'The name of the main function.' [mutable]
-#        property 'Termination Name' ('L604') 'TEXT' -- 'The name of the last function to call, before the PEF fragment is unloaded.' [mutable]
-#        property 'Export Symbols' ('PE01') 'shor' -- 'To select which symbols to export from the PEF container.' [mutable]
-#        property 'Old Definition' ('PE02') 'long' -- 'The version number for the PEF container.' [mutable]
-#        property 'Old Implementation' ('PE03') 'long' -- 'The version number for the PEF container.' [mutable]
-#        property 'Current Version' ('PE04') 'long' -- 'The version number for the PEF container.' [mutable]
-#        property 'Order Code Section By Segment' ('PE05') 'bool' -- 'To order functions in the Code section of your program according to their #pragma segment names.' [mutable]
-#        property 'Share Data Section' ('PE06') 'bool' -- 'To share the Data section of a shared library between all applications that use it.' [mutable]
-#        property 'Expand Uninitialized Data' ('PE07') 'bool' -- 'To expand the zero-initialized portion of the Data section of your program at link time.' [mutable]
-#        property 'Fragment Name' ('PE08') 'TEXT' -- 'To specify the code fragment name. The default is the output file name.' [mutable]
-#        property 'Stack Size' ('P601') 'long' -- 'The minimum amount of stack your application needs when launched by the Finder.' [mutable]
-
-#    Class 'Common Linker' ('LNCO') -- 'Common for the MC68K and PowerPC Linker'
-#        property 'Struct Alignment' ('BE02') 'shor' -- 'To select how the fields of your structures will be aligned. (0 : 68K; 1 : 68K 4 bytes; 2 : PowerPC)' [mutable]
-#        property 'Peephole Optimizer' ('BE05') 'bool' -- 'To apply local optimizations to small sections of your code.' [mutable]
-#        property 'CSE Optimizer' ('BE06') 'bool' -- 'To activate common sub expression optimization.' [mutable]
-#        property 'Optimize For Size' ('BE07') 'bool' -- 'To minimize the size of your application or code resource.' [mutable]
-#        property 'Use Profiler' ('BE13') 'bool' -- 'To add profiler calls in the code.' [mutable]
-#        property 'Generate SYM File' ('LN02') 'bool' -- 'To create a SYM file for your project when it is built.' [mutable]
-#        property 'Full Path In Sym Files' ('LN03') 'bool' -- 'To put the full path of your application or code resource in your SYM files.' [mutable]
-#        property 'Generate Link Map' ('LN04') 'bool' -- 'To create a MAP file for your project when it is built.' [mutable]
-#        property 'Fast Link' ('LN08') 'bool' -- 'To link the code together in memory.' [mutable]
-#        property 'Project Type' ('PR01') 'shor' -- 'To select the type of binary you wish to create.\015\015for 68K : (0 : Application; 1 : Code Resource; 2 : Library; 3 : MPW Tool) for PowerPC : (0 : Application; 1 : Shared Library; 2 : Code Resource; 3 : Library)' [mutable]
-#        property 'File Name' ('PR02') 'TEXT' -- 'The name your binary will be given when created.' [mutable]
-#        property 'File Creator' ('PR03') 'TEXT' -- 'The creator name of your binary.' [mutable]
-#        property 'File Type' ('PR04') 'TEXT' -- 'The four character code type for your binary.' [mutable]
-#        property 'Minimum Size' ('PR05') 'long' -- 'The minimum amount of RAM your application needs when launched by the Finder.' [mutable]
-#        property 'Preferred Size' ('PR06') 'long' -- 'The preferred amount of RAM your application needs when launched by the Finder.' [mutable]
-#        property 'SIZE Flags' ('PR07') 'shor' -- 'To tell the Finder which type of events your application accepts.' [mutable]
-#        property 'SYM File' ('PR08') 'TEXT' -- 'The name of the SYM file to be generated when your binary is created.' [mutable]
-#        property 'Resource Name' ('PR09') 'TEXT' -- 'The name of the code resource to be created.' [mutable]
-#        property 'Display Dialog' ('PR11') 'bool' -- 'To display a dialog box which asks you where to save your built resource.' [mutable]
-#        property 'Merge To File' ('PR12') 'bool' -- 'To create and merge your resource into a file which already exists.' [mutable]
-#        property 'Resource Flags' ('PR13') 'bool' -- 'To select your resource flag options.' [mutable]
-#        property 'Resource Type' ('PR14') 'shor' -- 'The four character code type for your code resource.' [mutable]
-#        property 'Resource ID' ('PR15') 'shor' -- 'The ID to assign to your code resource.' [mutable]
-
-#    Class 'Common' ('COMM') -- 'Common to C/C++ and Pascal Language & MC68K and PowerPC Linker.'
-#        property 'User Paths' ('PA01') 'list' -- 'To add an access path for the source files.' [mutable]
+#    Class 'Access Paths' ('PATH') -- 'Contains the definitions of a project\325s access (search) paths.'
+#        property 'User Paths' ('PA01') 'PInf' -- 'To add an access path for the source files.' [mutable list]
+#        property 'System Paths' ('PA03') 'PInf' -- 'To add an access path for the include files. (Not supported in Pascal)' [mutable list]
 #        property 'Always Full Search' ('PA02') 'bool' -- 'To force the compiler to search for system includes like it searches for user includes.' [mutable]
-#        property 'System Paths' ('PA03') 'list' -- 'To add an access path for the include files. (Not supported in Pascal)' [mutable]
+
+#    Class 'Document' ('docu') -- 'An open text file'
+#        property 'name' ('pnam') 'TEXT' -- 'The document\325s name' []
+#        property 'mode' ('Mode') 'Mode' -- 'The document\325s open mode' [enum]
+#        property 'disk file' ('file') 'fss ' -- 'The document\325s location on disk' []
 
 #    Class 'Error Information' ('ErrM') -- 'Describes a single error or warning from the compiler or the linker.'
 #        property 'kind' ('ErrT') 'ErrT' -- 'The type of error or warning.' [enum]
@@ -788,19 +720,14 @@ class Metrowerks_Shell_Suite:
 #        property 'disk file' ('file') 'fss ' -- 'The file where the error occurred.  May not be returned for certain kinds of errors (eg, link errors).' []
 #        property 'line' ('ErrL') 'long' -- 'The line in the file where the error occurred.  May not be returned for certain kinds of errors (eg, link errors).' []
 
-#    Class 'Document' ('docu') -- 'An open text file'
-#        property 'name' ('pnam') 'TEXT' -- 'The document\325s name' []
-#        property 'mode' ('Mode') 'Mode' -- 'The document\325s open mode' [enum]
-#        property 'disk file' ('file') 'fss ' -- 'The document\325s location on disk' []
+#    Class 'Function Information' ('FDef') -- 'Describes the location of any function or global data definition within the current project.'
+#        property 'disk file' ('file') 'fss ' -- 'The location on disk of the file containing the definition.' []
+#        property 'line' ('ErrL') 'long' -- 'The line number where the definition begins.' []
 
-#    Class 'Segment' ('Seg ') -- 'A segment or group in the project'
-#        property 'name' ('pnam') 'TEXT' -- '' [mutable]
-#        property 'filecount' ('NumF') 'shor' -- '' []
-#        property 'preloaded' ('Prel') 'bool' -- 'Is the segment preloaded ? [68K only]' [mutable]
-#        property 'protected' ('Prot') 'bool' -- 'Is the segment protected ? [68K only]' [mutable]
-#        property 'locked' ('PLck') 'bool' -- 'Is the segment locked ? [68K only]' [mutable]
-#        property 'purgeable' ('Purg') 'bool' -- 'Is the segment purgeable ? [68K only]' [mutable]
-#        property 'system heap' ('SysH') 'bool' -- 'Is the segment loaded into the system heap ? [68K only]' [mutable]
+#    Class 'Path Information' ('PInf') -- 'Contains all of the parameters that describe an access path.'
+#        property 'name' ('pnam') 'TEXT' -- 'The actual path name.' [mutable]
+#        property 'recursive' ('Recu') 'bool' -- 'Will the path be searched recursively?  (Default is true)' [mutable]
+#        property 'origin' ('Orig') 'PPrm' -- '' [mutable enum]
 
 #    Class 'ProjectFile' ('SrcF') -- 'A file contained in a project'
 #        property 'filetype' ('SrcT') 'SrcT' -- 'What kind of file is this ?' [enum]
@@ -812,6 +739,14 @@ class Metrowerks_Shell_Suite:
 #        property 'symbols' ('SymG') 'bool' -- 'Are debugging symbols generated for this file ?' [mutable]
 #        property 'weak link' ('Weak') 'bool' -- 'Is this file imported weakly into the project ? [PowerPC only]' [mutable]
 
-#    Class 'Function Information' ('FDef') -- 'Describes the location of any function or global data definition within the current project.'
-#        property 'disk file' ('file') 'fss ' -- 'The location on disk of the file containing the definition.' []
-#        property 'line' ('ErrL') 'long' -- 'The line number where the definition begins.' []
+#    Class 'Segment' ('Seg ') -- 'A segment or group in the project'
+#        property 'name' ('pnam') 'TEXT' -- '' [mutable]
+#        property 'filecount' ('NumF') 'shor' -- '' []
+#        property 'preloaded' ('Prel') 'bool' -- 'Is the segment preloaded ? [68K only]' [mutable]
+#        property 'protected' ('Prot') 'bool' -- 'Is the segment protected ? [68K only]' [mutable]
+#        property 'locked' ('PLck') 'bool' -- 'Is the segment locked ? [68K only]' [mutable]
+#        property 'purgeable' ('Purg') 'bool' -- 'Is the segment purgeable ? [68K only]' [mutable]
+#        property 'system heap' ('SysH') 'bool' -- 'Is the segment loaded into the system heap ? [68K only]' [mutable]
+
+#    Class 'Target' ('TARG') -- 'Contains the definitions of a project\325s target.'
+#        property 'Current Target' ('TA01') 'TEXT' -- 'The name of the current target.' [mutable]
