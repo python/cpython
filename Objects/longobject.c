@@ -1605,6 +1605,8 @@ long_true_divide(PyObject *v, PyObject *w)
 	aexp -= bexp;
 	if (aexp > INT_MAX / SHIFT)
 		goto overflow;
+	else if (aexp < -(INT_MAX / SHIFT))
+		return PyFloat_FromDouble(0.0);	/* underflow to 0 */
 	errno = 0;
 	ad = ldexp(ad, aexp * SHIFT);
 	if (Py_OVERFLOWED(ad)) /* ignore underflow to 0.0 */
