@@ -9,7 +9,7 @@ from distutils.util import copy_tree
 class InstallPy (Command):
 
     options = [('dir=', 'd', "directory to install to"),
-               ('build-dir=' 'b', "build directory (where to install from)"),
+               ('build-dir=','b', "build directory (where to install from)"),
                ('compile', 'c', "compile .py to .pyc"),
                ('optimize', 'o', "compile .py to .pyo (optimized)"),
               ]
@@ -54,12 +54,15 @@ class InstallPy (Command):
 
             for f in outfiles:
                 # XXX can't assume this filename mapping!
-                out_fn = string.replace (f, '.py', '.pyc')
-                
-                self.make_file (f, out_fn, compile, (f,),
-                                "compiling %s -> %s" % (f, out_fn),
-                                "compilation of %s skipped" % f)
 
+                # only compile the file if it is actually a .py file
+                if f[-3:] == '.py':
+                    out_fn = string.replace (f, '.py', '.pyc')
+                    
+                    self.make_file (f, out_fn, compile, (f,),
+                                    "compiling %s -> %s" % (f, out_fn),
+                                    "compilation of %s skipped" % f)
+                    
         # XXX ignore self.optimize for now, since we don't really know if
         # we're compiling optimally or not, and couldn't pick what to do
         # even if we did know.  ;-(
