@@ -166,8 +166,64 @@ class TestCopy(unittest.TestCase):
         x = C(42)
         self.assertEqual(copy.copy(x), x)
 
-    # The deepcopy() method
+    # tests for copying extension types, iff module trycopy is installed
+    def test_copy_classictype(self):
+        from _testcapi import make_copyable
+        x = make_copyable([23])
+        y = copy.copy(x)
+        self.assertEqual(x, y)
+        self.assertEqual(x.tag, y.tag)
+        self.assert_(x is not y)
+        self.assert_(x.tag is y.tag)
 
+    def test_deepcopy_classictype(self):
+        from _testcapi import make_copyable
+        x = make_copyable([23])
+        y = copy.deepcopy(x)
+        self.assertEqual(x, y)
+        self.assertEqual(x.tag, y.tag)
+        self.assert_(x is not y)
+        self.assert_(x.tag is not y.tag)
+
+    # regression tests for metaclass-confusion
+    def test_copy_metaclassconfusion(self):
+        class MyOwnError(copy.Error):
+            pass
+        class Meta(type):
+            def __copy__(cls):
+                raise MyOwnError("can't copy classes w/this metaclass")
+        class C:
+            __metaclass__ = Meta
+            def __init__(self, tag):
+                self.tag = tag
+            def __cmp__(self, other):
+                return -cmp(other, self.tag)
+        # the metaclass can forbid shallow copying of its classes
+        self.assertRaises(MyOwnError, copy.copy, C)
+        # check that there is no interference with instances
+        x = C(23)
+        self.assertEqual(copy.copy(x), x)
+
+    def test_deepcopy_metaclassconfusion(self):
+        class MyOwnError(copy.Error):
+            pass
+        class Meta(type):
+            def __deepcopy__(cls, memo):
+                raise MyOwnError("can't deepcopy classes w/this metaclass")
+        class C:
+            __metaclass__ = Meta
+            def __init__(self, tag):
+                self.tag = tag
+            def __cmp__(self, other):
+                return -cmp(other, self.tag)
+        # types are ALWAYS deepcopied atomically, no matter what
+        self.assertEqual(copy.deepcopy(C), C)
+        # check that there is no interference with instances
+        x = C(23)
+        self.assertEqual(copy.deepcopy(x), x)
+
+
+    # The deepcopy() method
     def test_deepcopy_basic(self):
         x = 42
         y = copy.deepcopy(x)
