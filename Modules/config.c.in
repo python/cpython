@@ -299,6 +299,9 @@ extern void initXlib();
 #ifdef USE_PARSER
 extern void initparser();
 #endif
+#ifdef USE_RGBIMG
+extern void initrgbimg();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -480,6 +483,10 @@ struct {
 
 #ifdef USE_PARSER
        {"parser", initparser},
+#endif
+
+#ifdef USE_RGBIMG
+       {"rgbimg", initrgbimg},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */

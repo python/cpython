@@ -22,7 +22,13 @@ Each definition must be contained on one line:
 		argI
 		retval
 		N*argI
+		N*I
 		N*retval
+	In the case where the subscript consists of two parts
+	separated by *, the first part is the width of the matrix, and
+	the second part is the length of the matrix.  This order is
+	opposite from the order used in C to declare a two-dimensional
+	matrix.
 */
 
 /*
@@ -847,7 +853,7 @@ gl_gversion(self, args)
 %%
 
 long 	getshade
-void 	devport 	short s long s
+if !solaris	void 	devport 	short s long s
 void 	rdr2i 		long s long s
 void	rectfs 		short s short s short s short s
 void 	rects 		short s short s short s short s
@@ -888,7 +894,7 @@ void	textinit
 void	initnames
 void	pclos
 void	popname
-void	spclos
+if !solaris	void	spclos
 void	zclear
 void	screenspace
 void	reshapeviewport
@@ -896,9 +902,9 @@ void	winpush
 void	winpop
 void	foreground
 void	endfullscrn
-void	endpupmode
+if !solaris	void	endpupmode
 void	fullscrn
-void	pupmode
+if !solaris	void	pupmode
 void	winconstraints
 void	pagecolor 	short s
 void	textcolor 	short s
@@ -910,7 +916,7 @@ void    setlinestyle	short s
 void	setmap		short s
 void	swapinterval	short s
 void	writemask	short s
-void	textwritemask	short s
+if !solaris	void	textwritemask	short s
 void	qdevice		short s
 void	unqdevice	short s
 void	curvebasis	short s
@@ -919,9 +925,9 @@ void	loadname	short s
 void	passthrough	short s
 void	pushname	short s
 void	setmonitor	short s
-void	setshade	short s
+if !solaris	void	setshade	short s
 void	setpattern	short s
-void	pagewritemask	short s
+if !solaris	void	pagewritemask	short s
 #
 void	callobj		long s
 void	delobj		long s
@@ -942,7 +948,7 @@ void 	freepup		long s
 #
 void	backbuffer	long s
 void 	frontbuffer	long s
-void	lsbackup	long s
+if !solaris	void	lsbackup	long s
 void	resetls		long s
 void	lampon		long s
 void	lampoff		long s
@@ -1003,13 +1009,13 @@ void rpdr2		float s float s
 void rpmv2		float s float s
 void xfpt2		float s float s
 #
-void loadmatrix		float s[16]
+void loadmatrix		float s[4*4]
 # Really [4][4]
-void multmatrix		float s[16]
+void multmatrix		float s[4*4]
 # Really [4][4]
-void crv			float s[12]
+void crv			float s[3*4]
 # Really [4][3]
-void rcrv			float s[16]
+void rcrv			float s[4*4]
 # Really [4][4]
 #
 # Methods that have strings.  
@@ -1040,12 +1046,12 @@ void polfs		long s short s[3*arg1]
 void polys		long s short s[3*arg1]
 void poly2s		long s short s[2*arg1]
 #
-void defcursor		short s short s[128]
+void defcursor		short s u_short s[128]
 # Is this useful?
-void writepixels	short s short s[arg1]
+void writepixels	short s u_short s[arg1]
 # Should be unsigned short...
-void defbasis		long s float s[16]
-void gewrite		short s short s[arg1]
+void defbasis		long s float s[4*4]
+if !solaris	void gewrite		short s short s[arg1]
 #
 void rotate		short s char s
 # This is not in the library!?
@@ -1103,16 +1109,16 @@ void xfpts		short s short s short s
 void curorigin		short s short s short s
 void cyclemap		short s short s short s
 #
-void patch		float s[16] float s[16] float s[16]
-void splf		long s float s[3*arg1] short s[arg1]
-void splf2		long s float s[2*arg1] short s[arg1]
-void splfi		long s long s[3*arg1] short s[arg1]
-void splf2i		long s long s[2*arg1] short s[arg1]
-void splfs		long s short s[3*arg1] short s[arg1]
-void splf2s		long s short s[2*arg1] short s[arg1]
-###void defpattern		short s short s short s[arg2*arg2/16]
+void patch		float s[4*4] float s[4*4] float s[4*4]
+void splf		long s float s[3*arg1] u_short s[arg1]
+void splf2		long s float s[2*arg1] u_short s[arg1]
+void splfi		long s long s[3*arg1] u_short s[arg1]
+void splf2i		long s long s[2*arg1] u_short s[arg1]
+void splfs		long s short s[3*arg1] u_short s[arg1]
+void splf2s		long s short s[2*arg1] u_short s[arg1]
+###void defpattern		short s short s u_short s[arg2*arg2/16]
 #
-void rpatch		float s[16] float s[16] float s[16] float s[16]
+void rpatch		float s[4*4] float s[4*4] float s[4*4] float s[4*4]
 #
 # routines that send 4 floats
 #
@@ -1154,7 +1160,7 @@ void polarview		float s short s short s short s
 void arcfs		short s short s short s short s short s
 void arcs		short s short s short s short s short s
 void rectcopy		short s short s short s short s short s short s
-void RGBcursor		short s short s short s short s short s short s short s
+if !solaris	void RGBcursor		short s short s short s short s short s short s short s
 #
 long getbutton		short s
 long getcmmode
@@ -1198,7 +1204,7 @@ void getcpos		short r short r
 void getsize		long r long r
 void getorigin		long r long r
 void getviewport	short r short r short r short r
-void gettp		short r short r short r short r
+if !solaris	void gettp		short r short r short r short r
 void getgpos		float r float r float r float r
 void winposition	long s long s long s long s
 void gRGBcolor		short r short r short r
@@ -1210,7 +1216,7 @@ void mapw		long s short s short s float r float r float r float r float r float 
 void mapw2		long s short s short s float r float r
 ###void defrasterfont	short s short s short s Fontchar s[arg3] short s short s[4*arg5]
 ###long qread		short r
-void getcursor		short r short r short r long r
+void getcursor		short r u_short r u_short r long r
 #
 #   For these we receive arrays of stuff
 #
@@ -1241,7 +1247,7 @@ void mmode		long s
 void normal		float s[3]
 void overlay		long s
 void RGBrange		short s short s short s short s short s short s short s short s
-void setvideo 		long s long s
+if !solaris	void setvideo 		long s long s
 void shademodel		long s
 void underlay		long s
 #
