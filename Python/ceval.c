@@ -2001,18 +2001,18 @@ eval_frame(PyFrameObject *f)
 
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
-			continue;
+			goto fast_next_opcode;
 
 		PREDICTED_WITH_ARG(JUMP_IF_FALSE);
 		case JUMP_IF_FALSE:
 			w = TOP();
 			if (w == Py_True) {
 				PREDICT(POP_TOP);
-				continue;
+				goto fast_next_opcode;
 			}
 			if (w == Py_False) {
 				JUMPBY(oparg);
-				continue;
+				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0)
@@ -2028,11 +2028,11 @@ eval_frame(PyFrameObject *f)
 			w = TOP();
 			if (w == Py_False) {
 				PREDICT(POP_TOP);
-				continue;
+				goto fast_next_opcode;
 			}
 			if (w == Py_True) {
 				JUMPBY(oparg);
-				continue;
+				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0) {
