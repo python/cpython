@@ -6,8 +6,6 @@ import sys
 
 AS_IS = None
 
-whitespace = '[' + string.whitespace + ']+'
-
 
 class NullFormatter:
 
@@ -110,7 +108,19 @@ class AbstractFormatter:
 
     def add_flowing_data(self, data):
 	if not data: return
-	data = regsub.gsub(whitespace, ' ', data)
+	# The following looks a bit convoluted but is a great improvement over
+	# data = regsub.gsub('[' + string.whitespace + ']+', ' ', data)
+	if data[0] in string.whitespace:
+	    head = ' '
+	else:
+	    head = ''
+	if data[-1] in string.whitespace:
+	    tail = ' '
+	else:
+	    tail = ''
+	data = head + string.join(string.split(data))
+	if data != ' ': data = data + tail
+	#
 	if self.nospace and data[0] == ' ':
 	    data = data[1:]
 	    if not data: return
