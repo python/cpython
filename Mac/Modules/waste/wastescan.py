@@ -48,6 +48,8 @@ class MyScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("kPascalStackBased = None # workaround for header parsing\n")
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 	def makeblacklistnames(self):
 		return [
 			"WEDispose",
@@ -56,6 +58,22 @@ class MyScanner(Scanner):
 			"WEVersion", # Unfortunately...
 			"WEPut", # XXXX TBD: needs array of flavortypes.
 			"WEGetOneAttribute", # XXXX TBD: output buffer
+			# Incompatible constant definitions
+			"weDoAutoScroll",
+			"weDoOutlineHilite",
+			"weDoReadOnly",
+			"weDoUndo",
+			"weDoIntCutAndPaste",
+			"weDoDragAndDrop",
+			"weDoInhibitRecal",
+			"weDoUseTempMem",
+			"weDoDrawOffscreen",
+			"weDoInhibitRedraw",
+			"weDoMonoStyled",
+			"weDoMultipleUndo",
+			"weDoNoKeyboardSync",
+			"weDoInhibitICSupport",
+			"weDoInhibitColor",
 			]
 
 	def makeblacklisttypes(self):

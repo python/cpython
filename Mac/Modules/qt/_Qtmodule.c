@@ -140,6 +140,9 @@ static PyObject *MovieCtlObj_MCSetMovie(MovieControllerObject *_self, PyObject *
 	Movie theMovie;
 	WindowPtr movieWindow;
 	Point where;
+#ifndef MCSetMovie
+	PyMac_PRECHECK(MCSetMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      MovieObj_Convert, &theMovie,
 	                      WinObj_Convert, &movieWindow,
@@ -159,6 +162,9 @@ static PyObject *MovieCtlObj_MCGetIndMovie(MovieControllerObject *_self, PyObjec
 	PyObject *_res = NULL;
 	Movie _rv;
 	short index;
+#ifndef MCGetIndMovie
+	PyMac_PRECHECK(MCGetIndMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -173,6 +179,9 @@ static PyObject *MovieCtlObj_MCRemoveAllMovies(MovieControllerObject *_self, PyO
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCRemoveAllMovies
+	PyMac_PRECHECK(MCRemoveAllMovies);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCRemoveAllMovies(_self->ob_itself);
@@ -186,6 +195,9 @@ static PyObject *MovieCtlObj_MCRemoveAMovie(MovieControllerObject *_self, PyObje
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Movie m;
+#ifndef MCRemoveAMovie
+	PyMac_PRECHECK(MCRemoveAMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &m))
 		return NULL;
@@ -200,6 +212,9 @@ static PyObject *MovieCtlObj_MCRemoveMovie(MovieControllerObject *_self, PyObjec
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCRemoveMovie
+	PyMac_PRECHECK(MCRemoveMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCRemoveMovie(_self->ob_itself);
@@ -213,6 +228,9 @@ static PyObject *MovieCtlObj_MCIsPlayerEvent(MovieControllerObject *_self, PyObj
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	EventRecord e;
+#ifndef MCIsPlayerEvent
+	PyMac_PRECHECK(MCIsPlayerEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &e))
 		return NULL;
@@ -229,6 +247,9 @@ static PyObject *MovieCtlObj_MCDoAction(MovieControllerObject *_self, PyObject *
 	ComponentResult _rv;
 	short action;
 	void * params;
+#ifndef MCDoAction
+	PyMac_PRECHECK(MCDoAction);
+#endif
 	if (!PyArg_ParseTuple(_args, "hs",
 	                      &action,
 	                      &params))
@@ -246,6 +267,9 @@ static PyObject *MovieCtlObj_MCSetControllerAttached(MovieControllerObject *_sel
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Boolean attach;
+#ifndef MCSetControllerAttached
+	PyMac_PRECHECK(MCSetControllerAttached);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &attach))
 		return NULL;
@@ -260,6 +284,9 @@ static PyObject *MovieCtlObj_MCIsControllerAttached(MovieControllerObject *_self
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCIsControllerAttached
+	PyMac_PRECHECK(MCIsControllerAttached);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCIsControllerAttached(_self->ob_itself);
@@ -273,6 +300,9 @@ static PyObject *MovieCtlObj_MCSetControllerPort(MovieControllerObject *_self, P
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	CGrafPtr gp;
+#ifndef MCSetControllerPort
+	PyMac_PRECHECK(MCSetControllerPort);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      GrafObj_Convert, &gp))
 		return NULL;
@@ -287,6 +317,9 @@ static PyObject *MovieCtlObj_MCGetControllerPort(MovieControllerObject *_self, P
 {
 	PyObject *_res = NULL;
 	CGrafPtr _rv;
+#ifndef MCGetControllerPort
+	PyMac_PRECHECK(MCGetControllerPort);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetControllerPort(_self->ob_itself);
@@ -300,6 +333,9 @@ static PyObject *MovieCtlObj_MCSetVisible(MovieControllerObject *_self, PyObject
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Boolean visible;
+#ifndef MCSetVisible
+	PyMac_PRECHECK(MCSetVisible);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &visible))
 		return NULL;
@@ -314,6 +350,9 @@ static PyObject *MovieCtlObj_MCGetVisible(MovieControllerObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCGetVisible
+	PyMac_PRECHECK(MCGetVisible);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetVisible(_self->ob_itself);
@@ -327,6 +366,9 @@ static PyObject *MovieCtlObj_MCGetControllerBoundsRect(MovieControllerObject *_s
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Rect bounds;
+#ifndef MCGetControllerBoundsRect
+	PyMac_PRECHECK(MCGetControllerBoundsRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetControllerBoundsRect(_self->ob_itself,
@@ -342,6 +384,9 @@ static PyObject *MovieCtlObj_MCSetControllerBoundsRect(MovieControllerObject *_s
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Rect bounds;
+#ifndef MCSetControllerBoundsRect
+	PyMac_PRECHECK(MCSetControllerBoundsRect);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &bounds))
 		return NULL;
@@ -356,6 +401,9 @@ static PyObject *MovieCtlObj_MCGetControllerBoundsRgn(MovieControllerObject *_se
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef MCGetControllerBoundsRgn
+	PyMac_PRECHECK(MCGetControllerBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetControllerBoundsRgn(_self->ob_itself);
@@ -369,6 +417,9 @@ static PyObject *MovieCtlObj_MCGetWindowRgn(MovieControllerObject *_self, PyObje
 	PyObject *_res = NULL;
 	RgnHandle _rv;
 	WindowPtr w;
+#ifndef MCGetWindowRgn
+	PyMac_PRECHECK(MCGetWindowRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &w))
 		return NULL;
@@ -384,6 +435,9 @@ static PyObject *MovieCtlObj_MCMovieChanged(MovieControllerObject *_self, PyObje
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Movie m;
+#ifndef MCMovieChanged
+	PyMac_PRECHECK(MCMovieChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &m))
 		return NULL;
@@ -399,6 +453,9 @@ static PyObject *MovieCtlObj_MCSetDuration(MovieControllerObject *_self, PyObjec
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	TimeValue duration;
+#ifndef MCSetDuration
+	PyMac_PRECHECK(MCSetDuration);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &duration))
 		return NULL;
@@ -414,6 +471,9 @@ static PyObject *MovieCtlObj_MCGetCurrentTime(MovieControllerObject *_self, PyOb
 	PyObject *_res = NULL;
 	TimeValue _rv;
 	TimeScale scale;
+#ifndef MCGetCurrentTime
+	PyMac_PRECHECK(MCGetCurrentTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetCurrentTime(_self->ob_itself,
@@ -431,6 +491,9 @@ static PyObject *MovieCtlObj_MCNewAttachedController(MovieControllerObject *_sel
 	Movie theMovie;
 	WindowPtr w;
 	Point where;
+#ifndef MCNewAttachedController
+	PyMac_PRECHECK(MCNewAttachedController);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      MovieObj_Convert, &theMovie,
 	                      WinObj_Convert, &w,
@@ -450,6 +513,9 @@ static PyObject *MovieCtlObj_MCDraw(MovieControllerObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	WindowPtr w;
+#ifndef MCDraw
+	PyMac_PRECHECK(MCDraw);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &w))
 		return NULL;
@@ -466,6 +532,9 @@ static PyObject *MovieCtlObj_MCActivate(MovieControllerObject *_self, PyObject *
 	ComponentResult _rv;
 	WindowPtr w;
 	Boolean activate;
+#ifndef MCActivate
+	PyMac_PRECHECK(MCActivate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      WinObj_Convert, &w,
 	                      &activate))
@@ -482,6 +551,9 @@ static PyObject *MovieCtlObj_MCIdle(MovieControllerObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCIdle
+	PyMac_PRECHECK(MCIdle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCIdle(_self->ob_itself);
@@ -496,6 +568,9 @@ static PyObject *MovieCtlObj_MCKey(MovieControllerObject *_self, PyObject *_args
 	ComponentResult _rv;
 	SInt8 key;
 	long modifiers;
+#ifndef MCKey
+	PyMac_PRECHECK(MCKey);
+#endif
 	if (!PyArg_ParseTuple(_args, "bl",
 	                      &key,
 	                      &modifiers))
@@ -516,6 +591,9 @@ static PyObject *MovieCtlObj_MCClick(MovieControllerObject *_self, PyObject *_ar
 	Point where;
 	long when;
 	long modifiers;
+#ifndef MCClick
+	PyMac_PRECHECK(MCClick);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&ll",
 	                      WinObj_Convert, &w,
 	                      PyMac_GetPoint, &where,
@@ -537,6 +615,9 @@ static PyObject *MovieCtlObj_MCEnableEditing(MovieControllerObject *_self, PyObj
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Boolean enabled;
+#ifndef MCEnableEditing
+	PyMac_PRECHECK(MCEnableEditing);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &enabled))
 		return NULL;
@@ -551,6 +632,9 @@ static PyObject *MovieCtlObj_MCIsEditingEnabled(MovieControllerObject *_self, Py
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef MCIsEditingEnabled
+	PyMac_PRECHECK(MCIsEditingEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCIsEditingEnabled(_self->ob_itself);
@@ -563,6 +647,9 @@ static PyObject *MovieCtlObj_MCCopy(MovieControllerObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	Movie _rv;
+#ifndef MCCopy
+	PyMac_PRECHECK(MCCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCCopy(_self->ob_itself);
@@ -575,6 +662,9 @@ static PyObject *MovieCtlObj_MCCut(MovieControllerObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	Movie _rv;
+#ifndef MCCut
+	PyMac_PRECHECK(MCCut);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCCut(_self->ob_itself);
@@ -588,6 +678,9 @@ static PyObject *MovieCtlObj_MCPaste(MovieControllerObject *_self, PyObject *_ar
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Movie srcMovie;
+#ifndef MCPaste
+	PyMac_PRECHECK(MCPaste);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &srcMovie))
 		return NULL;
@@ -602,6 +695,9 @@ static PyObject *MovieCtlObj_MCClear(MovieControllerObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCClear
+	PyMac_PRECHECK(MCClear);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCClear(_self->ob_itself);
@@ -614,6 +710,9 @@ static PyObject *MovieCtlObj_MCUndo(MovieControllerObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCUndo
+	PyMac_PRECHECK(MCUndo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCUndo(_self->ob_itself);
@@ -629,6 +728,9 @@ static PyObject *MovieCtlObj_MCPositionController(MovieControllerObject *_self, 
 	Rect movieRect;
 	Rect controllerRect;
 	long someFlags;
+#ifndef MCPositionController
+	PyMac_PRECHECK(MCPositionController);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      PyMac_GetRect, &movieRect,
 	                      PyMac_GetRect, &controllerRect,
@@ -648,6 +750,9 @@ static PyObject *MovieCtlObj_MCGetControllerInfo(MovieControllerObject *_self, P
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	long someFlags;
+#ifndef MCGetControllerInfo
+	PyMac_PRECHECK(MCGetControllerInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetControllerInfo(_self->ob_itself,
@@ -664,6 +769,9 @@ static PyObject *MovieCtlObj_MCSetClip(MovieControllerObject *_self, PyObject *_
 	ComponentResult _rv;
 	RgnHandle theClip;
 	RgnHandle movieClip;
+#ifndef MCSetClip
+	PyMac_PRECHECK(MCSetClip);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &theClip,
 	                      ResObj_Convert, &movieClip))
@@ -682,6 +790,9 @@ static PyObject *MovieCtlObj_MCGetClip(MovieControllerObject *_self, PyObject *_
 	ComponentResult _rv;
 	RgnHandle theClip;
 	RgnHandle movieClip;
+#ifndef MCGetClip
+	PyMac_PRECHECK(MCGetClip);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCGetClip(_self->ob_itself,
@@ -700,6 +811,9 @@ static PyObject *MovieCtlObj_MCDrawBadge(MovieControllerObject *_self, PyObject 
 	ComponentResult _rv;
 	RgnHandle movieRgn;
 	RgnHandle badgeRgn;
+#ifndef MCDrawBadge
+	PyMac_PRECHECK(MCDrawBadge);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &movieRgn))
 		return NULL;
@@ -718,6 +832,9 @@ static PyObject *MovieCtlObj_MCSetUpEditMenu(MovieControllerObject *_self, PyObj
 	ComponentResult _rv;
 	long modifiers;
 	MenuHandle mh;
+#ifndef MCSetUpEditMenu
+	PyMac_PRECHECK(MCSetUpEditMenu);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &modifiers,
 	                      MenuObj_Convert, &mh))
@@ -737,6 +854,9 @@ static PyObject *MovieCtlObj_MCGetMenuString(MovieControllerObject *_self, PyObj
 	long modifiers;
 	short item;
 	Str255 aString;
+#ifndef MCGetMenuString
+	PyMac_PRECHECK(MCGetMenuString);
+#endif
 	if (!PyArg_ParseTuple(_args, "lhO&",
 	                      &modifiers,
 	                      &item,
@@ -757,6 +877,9 @@ static PyObject *MovieCtlObj_MCPtInController(MovieControllerObject *_self, PyOb
 	ComponentResult _rv;
 	Point thePt;
 	Boolean inController;
+#ifndef MCPtInController
+	PyMac_PRECHECK(MCPtInController);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &thePt))
 		return NULL;
@@ -775,6 +898,9 @@ static PyObject *MovieCtlObj_MCInvalidate(MovieControllerObject *_self, PyObject
 	ComponentResult _rv;
 	WindowPtr w;
 	RgnHandle invalidRgn;
+#ifndef MCInvalidate
+	PyMac_PRECHECK(MCInvalidate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      WinObj_Convert, &w,
 	                      ResObj_Convert, &invalidRgn))
@@ -794,6 +920,9 @@ static PyObject *MovieCtlObj_MCAdjustCursor(MovieControllerObject *_self, PyObje
 	WindowPtr w;
 	Point where;
 	long modifiers;
+#ifndef MCAdjustCursor
+	PyMac_PRECHECK(MCAdjustCursor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      WinObj_Convert, &w,
 	                      PyMac_GetPoint, &where,
@@ -814,6 +943,9 @@ static PyObject *MovieCtlObj_MCGetInterfaceElement(MovieControllerObject *_self,
 	ComponentResult _rv;
 	MCInterfaceElement whichElement;
 	void * element;
+#ifndef MCGetInterfaceElement
+	PyMac_PRECHECK(MCGetInterfaceElement);
+#endif
 	if (!PyArg_ParseTuple(_args, "ls",
 	                      &whichElement,
 	                      &element))
@@ -832,6 +964,9 @@ static PyObject *MovieCtlObj_MCAddMovieSegment(MovieControllerObject *_self, PyO
 	ComponentResult _rv;
 	Movie srcMovie;
 	Boolean scaled;
+#ifndef MCAddMovieSegment
+	PyMac_PRECHECK(MCAddMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      MovieObj_Convert, &srcMovie,
 	                      &scaled))
@@ -848,6 +983,9 @@ static PyObject *MovieCtlObj_MCTrimMovieSegment(MovieControllerObject *_self, Py
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef MCTrimMovieSegment
+	PyMac_PRECHECK(MCTrimMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MCTrimMovieSegment(_self->ob_itself);
@@ -1032,6 +1170,9 @@ static void TimeBaseObj_dealloc(TimeBaseObject *self)
 static PyObject *TimeBaseObj_DisposeTimeBase(TimeBaseObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef DisposeTimeBase
+	PyMac_PRECHECK(DisposeTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	DisposeTimeBase(_self->ob_itself);
@@ -1046,6 +1187,9 @@ static PyObject *TimeBaseObj_GetTimeBaseTime(TimeBaseObject *_self, PyObject *_a
 	TimeValue _rv;
 	TimeScale s;
 	TimeRecord tr;
+#ifndef GetTimeBaseTime
+	PyMac_PRECHECK(GetTimeBaseTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &s))
 		return NULL;
@@ -1062,6 +1206,9 @@ static PyObject *TimeBaseObj_SetTimeBaseTime(TimeBaseObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
+#ifndef SetTimeBaseTime
+	PyMac_PRECHECK(SetTimeBaseTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      QtTimeRecord_Convert, &tr))
 		return NULL;
@@ -1077,6 +1224,9 @@ static PyObject *TimeBaseObj_SetTimeBaseValue(TimeBaseObject *_self, PyObject *_
 	PyObject *_res = NULL;
 	TimeValue t;
 	TimeScale s;
+#ifndef SetTimeBaseValue
+	PyMac_PRECHECK(SetTimeBaseValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &t,
 	                      &s))
@@ -1093,6 +1243,9 @@ static PyObject *TimeBaseObj_GetTimeBaseRate(TimeBaseObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
+#ifndef GetTimeBaseRate
+	PyMac_PRECHECK(GetTimeBaseRate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseRate(_self->ob_itself);
@@ -1105,6 +1258,9 @@ static PyObject *TimeBaseObj_SetTimeBaseRate(TimeBaseObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	Fixed r;
+#ifndef SetTimeBaseRate
+	PyMac_PRECHECK(SetTimeBaseRate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFixed, &r))
 		return NULL;
@@ -1121,6 +1277,9 @@ static PyObject *TimeBaseObj_GetTimeBaseStartTime(TimeBaseObject *_self, PyObjec
 	TimeValue _rv;
 	TimeScale s;
 	TimeRecord tr;
+#ifndef GetTimeBaseStartTime
+	PyMac_PRECHECK(GetTimeBaseStartTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &s))
 		return NULL;
@@ -1137,6 +1296,9 @@ static PyObject *TimeBaseObj_SetTimeBaseStartTime(TimeBaseObject *_self, PyObjec
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
+#ifndef SetTimeBaseStartTime
+	PyMac_PRECHECK(SetTimeBaseStartTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      QtTimeRecord_Convert, &tr))
 		return NULL;
@@ -1153,6 +1315,9 @@ static PyObject *TimeBaseObj_GetTimeBaseStopTime(TimeBaseObject *_self, PyObject
 	TimeValue _rv;
 	TimeScale s;
 	TimeRecord tr;
+#ifndef GetTimeBaseStopTime
+	PyMac_PRECHECK(GetTimeBaseStopTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &s))
 		return NULL;
@@ -1169,6 +1334,9 @@ static PyObject *TimeBaseObj_SetTimeBaseStopTime(TimeBaseObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	TimeRecord tr;
+#ifndef SetTimeBaseStopTime
+	PyMac_PRECHECK(SetTimeBaseStopTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      QtTimeRecord_Convert, &tr))
 		return NULL;
@@ -1183,6 +1351,9 @@ static PyObject *TimeBaseObj_GetTimeBaseFlags(TimeBaseObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetTimeBaseFlags
+	PyMac_PRECHECK(GetTimeBaseFlags);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseFlags(_self->ob_itself);
@@ -1195,6 +1366,9 @@ static PyObject *TimeBaseObj_SetTimeBaseFlags(TimeBaseObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	long timeBaseFlags;
+#ifndef SetTimeBaseFlags
+	PyMac_PRECHECK(SetTimeBaseFlags);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &timeBaseFlags))
 		return NULL;
@@ -1210,6 +1384,9 @@ static PyObject *TimeBaseObj_SetTimeBaseMasterTimeBase(TimeBaseObject *_self, Py
 	PyObject *_res = NULL;
 	TimeBase master;
 	TimeRecord slaveZero;
+#ifndef SetTimeBaseMasterTimeBase
+	PyMac_PRECHECK(SetTimeBaseMasterTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      TimeBaseObj_Convert, &master,
 	                      QtTimeRecord_Convert, &slaveZero))
@@ -1226,6 +1403,9 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterTimeBase(TimeBaseObject *_self, Py
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
+#ifndef GetTimeBaseMasterTimeBase
+	PyMac_PRECHECK(GetTimeBaseMasterTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseMasterTimeBase(_self->ob_itself);
@@ -1239,6 +1419,9 @@ static PyObject *TimeBaseObj_SetTimeBaseMasterClock(TimeBaseObject *_self, PyObj
 	PyObject *_res = NULL;
 	Component clockMeister;
 	TimeRecord slaveZero;
+#ifndef SetTimeBaseMasterClock
+	PyMac_PRECHECK(SetTimeBaseMasterClock);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      CmpObj_Convert, &clockMeister,
 	                      QtTimeRecord_Convert, &slaveZero))
@@ -1255,6 +1438,9 @@ static PyObject *TimeBaseObj_GetTimeBaseMasterClock(TimeBaseObject *_self, PyObj
 {
 	PyObject *_res = NULL;
 	ComponentInstance _rv;
+#ifndef GetTimeBaseMasterClock
+	PyMac_PRECHECK(GetTimeBaseMasterClock);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseMasterClock(_self->ob_itself);
@@ -1268,6 +1454,9 @@ static PyObject *TimeBaseObj_GetTimeBaseStatus(TimeBaseObject *_self, PyObject *
 	PyObject *_res = NULL;
 	long _rv;
 	TimeRecord unpinnedTime;
+#ifndef GetTimeBaseStatus
+	PyMac_PRECHECK(GetTimeBaseStatus);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseStatus(_self->ob_itself,
@@ -1282,6 +1471,9 @@ static PyObject *TimeBaseObj_SetTimeBaseZero(TimeBaseObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	TimeRecord zero;
+#ifndef SetTimeBaseZero
+	PyMac_PRECHECK(SetTimeBaseZero);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      QtTimeRecord_Convert, &zero))
 		return NULL;
@@ -1296,6 +1488,9 @@ static PyObject *TimeBaseObj_GetTimeBaseEffectiveRate(TimeBaseObject *_self, PyO
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
+#ifndef GetTimeBaseEffectiveRate
+	PyMac_PRECHECK(GetTimeBaseEffectiveRate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTimeBaseEffectiveRate(_self->ob_itself);
@@ -1430,6 +1625,9 @@ static PyObject *UserDataObj_GetUserData(UserDataObject *_self, PyObject *_args)
 	Handle data;
 	OSType udType;
 	long index;
+#ifndef GetUserData
+	PyMac_PRECHECK(GetUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      ResObj_Convert, &data,
 	                      PyMac_GetOSType, &udType,
@@ -1451,6 +1649,9 @@ static PyObject *UserDataObj_AddUserData(UserDataObject *_self, PyObject *_args)
 	OSErr _err;
 	Handle data;
 	OSType udType;
+#ifndef AddUserData
+	PyMac_PRECHECK(AddUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &data,
 	                      PyMac_GetOSType, &udType))
@@ -1470,6 +1671,9 @@ static PyObject *UserDataObj_RemoveUserData(UserDataObject *_self, PyObject *_ar
 	OSErr _err;
 	OSType udType;
 	long index;
+#ifndef RemoveUserData
+	PyMac_PRECHECK(RemoveUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetOSType, &udType,
 	                      &index))
@@ -1488,6 +1692,9 @@ static PyObject *UserDataObj_CountUserDataType(UserDataObject *_self, PyObject *
 	PyObject *_res = NULL;
 	short _rv;
 	OSType udType;
+#ifndef CountUserDataType
+	PyMac_PRECHECK(CountUserDataType);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &udType))
 		return NULL;
@@ -1503,6 +1710,9 @@ static PyObject *UserDataObj_GetNextUserDataType(UserDataObject *_self, PyObject
 	PyObject *_res = NULL;
 	long _rv;
 	OSType udType;
+#ifndef GetNextUserDataType
+	PyMac_PRECHECK(GetNextUserDataType);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &udType))
 		return NULL;
@@ -1521,6 +1731,9 @@ static PyObject *UserDataObj_AddUserDataText(UserDataObject *_self, PyObject *_a
 	OSType udType;
 	long index;
 	short itlRegionTag;
+#ifndef AddUserDataText
+	PyMac_PRECHECK(AddUserDataText);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&lh",
 	                      ResObj_Convert, &data,
 	                      PyMac_GetOSType, &udType,
@@ -1546,6 +1759,9 @@ static PyObject *UserDataObj_GetUserDataText(UserDataObject *_self, PyObject *_a
 	OSType udType;
 	long index;
 	short itlRegionTag;
+#ifndef GetUserDataText
+	PyMac_PRECHECK(GetUserDataText);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&lh",
 	                      ResObj_Convert, &data,
 	                      PyMac_GetOSType, &udType,
@@ -1570,6 +1786,9 @@ static PyObject *UserDataObj_RemoveUserDataText(UserDataObject *_self, PyObject 
 	OSType udType;
 	long index;
 	short itlRegionTag;
+#ifndef RemoveUserDataText
+	PyMac_PRECHECK(RemoveUserDataText);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lh",
 	                      PyMac_GetOSType, &udType,
 	                      &index,
@@ -1590,6 +1809,9 @@ static PyObject *UserDataObj_PutUserDataIntoHandle(UserDataObject *_self, PyObje
 	PyObject *_res = NULL;
 	OSErr _err;
 	Handle h;
+#ifndef PutUserDataIntoHandle
+	PyMac_PRECHECK(PutUserDataIntoHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &h))
 		return NULL;
@@ -1707,6 +1929,9 @@ static PyObject *MediaObj_LoadMediaIntoRam(MediaObject *_self, PyObject *_args)
 	TimeValue time;
 	TimeValue duration;
 	long flags;
+#ifndef LoadMediaIntoRam
+	PyMac_PRECHECK(LoadMediaIntoRam);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &time,
 	                      &duration,
@@ -1726,6 +1951,9 @@ static PyObject *MediaObj_GetMediaTrack(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
+#ifndef GetMediaTrack
+	PyMac_PRECHECK(GetMediaTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaTrack(_self->ob_itself);
@@ -1738,6 +1966,9 @@ static PyObject *MediaObj_GetMediaCreationTime(MediaObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetMediaCreationTime
+	PyMac_PRECHECK(GetMediaCreationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaCreationTime(_self->ob_itself);
@@ -1750,6 +1981,9 @@ static PyObject *MediaObj_GetMediaModificationTime(MediaObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetMediaModificationTime
+	PyMac_PRECHECK(GetMediaModificationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaModificationTime(_self->ob_itself);
@@ -1762,6 +1996,9 @@ static PyObject *MediaObj_GetMediaTimeScale(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale _rv;
+#ifndef GetMediaTimeScale
+	PyMac_PRECHECK(GetMediaTimeScale);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaTimeScale(_self->ob_itself);
@@ -1774,6 +2011,9 @@ static PyObject *MediaObj_SetMediaTimeScale(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale timeScale;
+#ifndef SetMediaTimeScale
+	PyMac_PRECHECK(SetMediaTimeScale);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &timeScale))
 		return NULL;
@@ -1788,6 +2028,9 @@ static PyObject *MediaObj_GetMediaDuration(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
+#ifndef GetMediaDuration
+	PyMac_PRECHECK(GetMediaDuration);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaDuration(_self->ob_itself);
@@ -1800,6 +2043,9 @@ static PyObject *MediaObj_GetMediaLanguage(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetMediaLanguage
+	PyMac_PRECHECK(GetMediaLanguage);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaLanguage(_self->ob_itself);
@@ -1812,6 +2058,9 @@ static PyObject *MediaObj_SetMediaLanguage(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short language;
+#ifndef SetMediaLanguage
+	PyMac_PRECHECK(SetMediaLanguage);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &language))
 		return NULL;
@@ -1826,6 +2075,9 @@ static PyObject *MediaObj_GetMediaQuality(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetMediaQuality
+	PyMac_PRECHECK(GetMediaQuality);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaQuality(_self->ob_itself);
@@ -1838,6 +2090,9 @@ static PyObject *MediaObj_SetMediaQuality(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short quality;
+#ifndef SetMediaQuality
+	PyMac_PRECHECK(SetMediaQuality);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &quality))
 		return NULL;
@@ -1854,6 +2109,9 @@ static PyObject *MediaObj_GetMediaHandlerDescription(MediaObject *_self, PyObjec
 	OSType mediaType;
 	Str255 creatorName;
 	OSType creatorManufacturer;
+#ifndef GetMediaHandlerDescription
+	PyMac_PRECHECK(GetMediaHandlerDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, creatorName))
 		return NULL;
@@ -1871,6 +2129,9 @@ static PyObject *MediaObj_GetMediaUserData(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
+#ifndef GetMediaUserData
+	PyMac_PRECHECK(GetMediaUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaUserData(_self->ob_itself);
@@ -1883,6 +2144,9 @@ static PyObject *MediaObj_GetMediaHandler(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	MediaHandler _rv;
+#ifndef GetMediaHandler
+	PyMac_PRECHECK(GetMediaHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaHandler(_self->ob_itself);
@@ -1896,6 +2160,9 @@ static PyObject *MediaObj_SetMediaHandler(MediaObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	MediaHandlerComponent mH;
+#ifndef SetMediaHandler
+	PyMac_PRECHECK(SetMediaHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpObj_Convert, &mH))
 		return NULL;
@@ -1911,6 +2178,9 @@ static PyObject *MediaObj_BeginMediaEdits(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef BeginMediaEdits
+	PyMac_PRECHECK(BeginMediaEdits);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = BeginMediaEdits(_self->ob_itself);
@@ -1924,6 +2194,9 @@ static PyObject *MediaObj_EndMediaEdits(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef EndMediaEdits
+	PyMac_PRECHECK(EndMediaEdits);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = EndMediaEdits(_self->ob_itself);
@@ -1938,6 +2211,9 @@ static PyObject *MediaObj_SetMediaDefaultDataRefIndex(MediaObject *_self, PyObje
 	PyObject *_res = NULL;
 	OSErr _err;
 	short index;
+#ifndef SetMediaDefaultDataRefIndex
+	PyMac_PRECHECK(SetMediaDefaultDataRefIndex);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -1956,6 +2232,9 @@ static PyObject *MediaObj_GetMediaDataHandlerDescription(MediaObject *_self, PyO
 	OSType dhType;
 	Str255 creatorName;
 	OSType creatorManufacturer;
+#ifndef GetMediaDataHandlerDescription
+	PyMac_PRECHECK(GetMediaDataHandlerDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &index,
 	                      PyMac_GetStr255, creatorName))
@@ -1976,6 +2255,9 @@ static PyObject *MediaObj_GetMediaDataHandler(MediaObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	DataHandler _rv;
 	short index;
+#ifndef GetMediaDataHandler
+	PyMac_PRECHECK(GetMediaDataHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -1992,6 +2274,9 @@ static PyObject *MediaObj_SetMediaDataHandler(MediaObject *_self, PyObject *_arg
 	OSErr _err;
 	short index;
 	DataHandlerComponent dataHandler;
+#ifndef SetMediaDataHandler
+	PyMac_PRECHECK(SetMediaDataHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &index,
 	                      CmpObj_Convert, &dataHandler))
@@ -2009,6 +2294,9 @@ static PyObject *MediaObj_GetMediaSampleDescriptionCount(MediaObject *_self, PyO
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMediaSampleDescriptionCount
+	PyMac_PRECHECK(GetMediaSampleDescriptionCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaSampleDescriptionCount(_self->ob_itself);
@@ -2022,6 +2310,9 @@ static PyObject *MediaObj_GetMediaSampleDescription(MediaObject *_self, PyObject
 	PyObject *_res = NULL;
 	long index;
 	SampleDescriptionHandle descH;
+#ifndef GetMediaSampleDescription
+	PyMac_PRECHECK(GetMediaSampleDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &index,
 	                      ResObj_Convert, &descH))
@@ -2040,6 +2331,9 @@ static PyObject *MediaObj_SetMediaSampleDescription(MediaObject *_self, PyObject
 	OSErr _err;
 	long index;
 	SampleDescriptionHandle descH;
+#ifndef SetMediaSampleDescription
+	PyMac_PRECHECK(SetMediaSampleDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &index,
 	                      ResObj_Convert, &descH))
@@ -2057,6 +2351,9 @@ static PyObject *MediaObj_GetMediaSampleCount(MediaObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMediaSampleCount
+	PyMac_PRECHECK(GetMediaSampleCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaSampleCount(_self->ob_itself);
@@ -2069,6 +2366,9 @@ static PyObject *MediaObj_GetMediaSyncSampleCount(MediaObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMediaSyncSampleCount
+	PyMac_PRECHECK(GetMediaSyncSampleCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMediaSyncSampleCount(_self->ob_itself);
@@ -2083,6 +2383,9 @@ static PyObject *MediaObj_SampleNumToMediaTime(MediaObject *_self, PyObject *_ar
 	long logicalSampleNum;
 	TimeValue sampleTime;
 	TimeValue sampleDuration;
+#ifndef SampleNumToMediaTime
+	PyMac_PRECHECK(SampleNumToMediaTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &logicalSampleNum))
 		return NULL;
@@ -2103,6 +2406,9 @@ static PyObject *MediaObj_MediaTimeToSampleNum(MediaObject *_self, PyObject *_ar
 	long sampleNum;
 	TimeValue sampleTime;
 	TimeValue sampleDuration;
+#ifndef MediaTimeToSampleNum
+	PyMac_PRECHECK(MediaTimeToSampleNum);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &time))
 		return NULL;
@@ -2130,6 +2436,9 @@ static PyObject *MediaObj_AddMediaSample(MediaObject *_self, PyObject *_args)
 	long numberOfSamples;
 	short sampleFlags;
 	TimeValue sampleTime;
+#ifndef AddMediaSample
+	PyMac_PRECHECK(AddMediaSample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lllO&lh",
 	                      ResObj_Convert, &dataIn,
 	                      &inOffset,
@@ -2165,6 +2474,9 @@ static PyObject *MediaObj_AddMediaSampleReference(MediaObject *_self, PyObject *
 	long numberOfSamples;
 	short sampleFlags;
 	TimeValue sampleTime;
+#ifndef AddMediaSampleReference
+	PyMac_PRECHECK(AddMediaSampleReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "lllO&lh",
 	                      &dataOffset,
 	                      &size,
@@ -2202,6 +2514,9 @@ static PyObject *MediaObj_GetMediaSample(MediaObject *_self, PyObject *_args)
 	long maxNumberOfSamples;
 	long numberOfSamples;
 	short sampleFlags;
+#ifndef GetMediaSample
+	PyMac_PRECHECK(GetMediaSample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&llO&l",
 	                      ResObj_Convert, &dataOut,
 	                      &maxSizeToGrow,
@@ -2246,6 +2561,9 @@ static PyObject *MediaObj_GetMediaSampleReference(MediaObject *_self, PyObject *
 	long maxNumberOfSamples;
 	long numberOfSamples;
 	short sampleFlags;
+#ifndef GetMediaSampleReference
+	PyMac_PRECHECK(GetMediaSampleReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&l",
 	                      &time,
 	                      ResObj_Convert, &sampleDescriptionH,
@@ -2279,6 +2597,9 @@ static PyObject *MediaObj_SetMediaPreferredChunkSize(MediaObject *_self, PyObjec
 	PyObject *_res = NULL;
 	OSErr _err;
 	long maxChunkSize;
+#ifndef SetMediaPreferredChunkSize
+	PyMac_PRECHECK(SetMediaPreferredChunkSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &maxChunkSize))
 		return NULL;
@@ -2295,6 +2616,9 @@ static PyObject *MediaObj_GetMediaPreferredChunkSize(MediaObject *_self, PyObjec
 	PyObject *_res = NULL;
 	OSErr _err;
 	long maxChunkSize;
+#ifndef GetMediaPreferredChunkSize
+	PyMac_PRECHECK(GetMediaPreferredChunkSize);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMediaPreferredChunkSize(_self->ob_itself,
@@ -2311,6 +2635,9 @@ static PyObject *MediaObj_SetMediaShadowSync(MediaObject *_self, PyObject *_args
 	OSErr _err;
 	long frameDiffSampleNum;
 	long syncSampleNum;
+#ifndef SetMediaShadowSync
+	PyMac_PRECHECK(SetMediaShadowSync);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &frameDiffSampleNum,
 	                      &syncSampleNum))
@@ -2330,6 +2657,9 @@ static PyObject *MediaObj_GetMediaShadowSync(MediaObject *_self, PyObject *_args
 	OSErr _err;
 	long frameDiffSampleNum;
 	long syncSampleNum;
+#ifndef GetMediaShadowSync
+	PyMac_PRECHECK(GetMediaShadowSync);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &frameDiffSampleNum))
 		return NULL;
@@ -2348,6 +2678,9 @@ static PyObject *MediaObj_GetMediaDataSize(MediaObject *_self, PyObject *_args)
 	long _rv;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef GetMediaDataSize
+	PyMac_PRECHECK(GetMediaDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -2367,6 +2700,9 @@ static PyObject *MediaObj_GetMediaDataSize64(MediaObject *_self, PyObject *_args
 	TimeValue startTime;
 	TimeValue duration;
 	wide dataSize;
+#ifndef GetMediaDataSize64
+	PyMac_PRECHECK(GetMediaDataSize64);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -2389,6 +2725,9 @@ static PyObject *MediaObj_GetMediaNextInterestingTime(MediaObject *_self, PyObje
 	Fixed rate;
 	TimeValue interestingTime;
 	TimeValue interestingDuration;
+#ifndef GetMediaNextInterestingTime
+	PyMac_PRECHECK(GetMediaNextInterestingTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlO&",
 	                      &interestingTimeFlags,
 	                      &time,
@@ -2414,6 +2753,9 @@ static PyObject *MediaObj_GetMediaDataRef(MediaObject *_self, PyObject *_args)
 	Handle dataRef;
 	OSType dataRefType;
 	long dataRefAttributes;
+#ifndef GetMediaDataRef
+	PyMac_PRECHECK(GetMediaDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -2437,6 +2779,9 @@ static PyObject *MediaObj_SetMediaDataRef(MediaObject *_self, PyObject *_args)
 	short index;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef SetMediaDataRef
+	PyMac_PRECHECK(SetMediaDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&O&",
 	                      &index,
 	                      ResObj_Convert, &dataRef,
@@ -2458,6 +2803,9 @@ static PyObject *MediaObj_SetMediaDataRefAttributes(MediaObject *_self, PyObject
 	OSErr _err;
 	short index;
 	long dataRefAttributes;
+#ifndef SetMediaDataRefAttributes
+	PyMac_PRECHECK(SetMediaDataRefAttributes);
+#endif
 	if (!PyArg_ParseTuple(_args, "hl",
 	                      &index,
 	                      &dataRefAttributes))
@@ -2478,6 +2826,9 @@ static PyObject *MediaObj_AddMediaDataRef(MediaObject *_self, PyObject *_args)
 	short index;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef AddMediaDataRef
+	PyMac_PRECHECK(AddMediaDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
@@ -2497,6 +2848,9 @@ static PyObject *MediaObj_GetMediaDataRefCount(MediaObject *_self, PyObject *_ar
 	PyObject *_res = NULL;
 	OSErr _err;
 	short count;
+#ifndef GetMediaDataRefCount
+	PyMac_PRECHECK(GetMediaDataRefCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMediaDataRefCount(_self->ob_itself,
@@ -2512,6 +2866,9 @@ static PyObject *MediaObj_SetMediaPlayHints(MediaObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	long flags;
 	long flagsMask;
+#ifndef SetMediaPlayHints
+	PyMac_PRECHECK(SetMediaPlayHints);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &flags,
 	                      &flagsMask))
@@ -2528,6 +2885,9 @@ static PyObject *MediaObj_GetMediaPlayHints(MediaObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long flags;
+#ifndef GetMediaPlayHints
+	PyMac_PRECHECK(GetMediaPlayHints);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMediaPlayHints(_self->ob_itself,
@@ -2544,6 +2904,9 @@ static PyObject *MediaObj_GetMediaNextInterestingTimeOnly(MediaObject *_self, Py
 	TimeValue time;
 	Fixed rate;
 	TimeValue interestingTime;
+#ifndef GetMediaNextInterestingTimeOnly
+	PyMac_PRECHECK(GetMediaNextInterestingTimeOnly);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlO&",
 	                      &interestingTimeFlags,
 	                      &time,
@@ -2741,6 +3104,9 @@ static PyObject *TrackObj_LoadTrackIntoRam(TrackObject *_self, PyObject *_args)
 	TimeValue time;
 	TimeValue duration;
 	long flags;
+#ifndef LoadTrackIntoRam
+	PyMac_PRECHECK(LoadTrackIntoRam);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &time,
 	                      &duration,
@@ -2761,6 +3127,9 @@ static PyObject *TrackObj_GetTrackPict(TrackObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	PicHandle _rv;
 	TimeValue time;
+#ifndef GetTrackPict
+	PyMac_PRECHECK(GetTrackPict);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &time))
 		return NULL;
@@ -2775,6 +3144,9 @@ static PyObject *TrackObj_GetTrackClipRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetTrackClipRgn
+	PyMac_PRECHECK(GetTrackClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackClipRgn(_self->ob_itself);
@@ -2787,6 +3159,9 @@ static PyObject *TrackObj_SetTrackClipRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
+#ifndef SetTrackClipRgn
+	PyMac_PRECHECK(SetTrackClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theClip))
 		return NULL;
@@ -2801,6 +3176,9 @@ static PyObject *TrackObj_GetTrackDisplayBoundsRgn(TrackObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetTrackDisplayBoundsRgn
+	PyMac_PRECHECK(GetTrackDisplayBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackDisplayBoundsRgn(_self->ob_itself);
@@ -2813,6 +3191,9 @@ static PyObject *TrackObj_GetTrackMovieBoundsRgn(TrackObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetTrackMovieBoundsRgn
+	PyMac_PRECHECK(GetTrackMovieBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackMovieBoundsRgn(_self->ob_itself);
@@ -2825,6 +3206,9 @@ static PyObject *TrackObj_GetTrackBoundsRgn(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetTrackBoundsRgn
+	PyMac_PRECHECK(GetTrackBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackBoundsRgn(_self->ob_itself);
@@ -2837,6 +3221,9 @@ static PyObject *TrackObj_GetTrackMatte(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
+#ifndef GetTrackMatte
+	PyMac_PRECHECK(GetTrackMatte);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackMatte(_self->ob_itself);
@@ -2849,6 +3236,9 @@ static PyObject *TrackObj_SetTrackMatte(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle theMatte;
+#ifndef SetTrackMatte
+	PyMac_PRECHECK(SetTrackMatte);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theMatte))
 		return NULL;
@@ -2863,6 +3253,9 @@ static PyObject *TrackObj_GetTrackID(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetTrackID
+	PyMac_PRECHECK(GetTrackID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackID(_self->ob_itself);
@@ -2875,6 +3268,9 @@ static PyObject *TrackObj_GetTrackMovie(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
+#ifndef GetTrackMovie
+	PyMac_PRECHECK(GetTrackMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackMovie(_self->ob_itself);
@@ -2887,6 +3283,9 @@ static PyObject *TrackObj_GetTrackCreationTime(TrackObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetTrackCreationTime
+	PyMac_PRECHECK(GetTrackCreationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackCreationTime(_self->ob_itself);
@@ -2899,6 +3298,9 @@ static PyObject *TrackObj_GetTrackModificationTime(TrackObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetTrackModificationTime
+	PyMac_PRECHECK(GetTrackModificationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackModificationTime(_self->ob_itself);
@@ -2911,6 +3313,9 @@ static PyObject *TrackObj_GetTrackEnabled(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef GetTrackEnabled
+	PyMac_PRECHECK(GetTrackEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackEnabled(_self->ob_itself);
@@ -2923,6 +3328,9 @@ static PyObject *TrackObj_SetTrackEnabled(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean isEnabled;
+#ifndef SetTrackEnabled
+	PyMac_PRECHECK(SetTrackEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &isEnabled))
 		return NULL;
@@ -2937,6 +3345,9 @@ static PyObject *TrackObj_GetTrackUsage(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetTrackUsage
+	PyMac_PRECHECK(GetTrackUsage);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackUsage(_self->ob_itself);
@@ -2949,6 +3360,9 @@ static PyObject *TrackObj_SetTrackUsage(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long usage;
+#ifndef SetTrackUsage
+	PyMac_PRECHECK(SetTrackUsage);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &usage))
 		return NULL;
@@ -2963,6 +3377,9 @@ static PyObject *TrackObj_GetTrackDuration(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
+#ifndef GetTrackDuration
+	PyMac_PRECHECK(GetTrackDuration);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackDuration(_self->ob_itself);
@@ -2975,6 +3392,9 @@ static PyObject *TrackObj_GetTrackOffset(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
+#ifndef GetTrackOffset
+	PyMac_PRECHECK(GetTrackOffset);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackOffset(_self->ob_itself);
@@ -2987,6 +3407,9 @@ static PyObject *TrackObj_SetTrackOffset(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue movieOffsetTime;
+#ifndef SetTrackOffset
+	PyMac_PRECHECK(SetTrackOffset);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &movieOffsetTime))
 		return NULL;
@@ -3001,6 +3424,9 @@ static PyObject *TrackObj_GetTrackLayer(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetTrackLayer
+	PyMac_PRECHECK(GetTrackLayer);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackLayer(_self->ob_itself);
@@ -3013,6 +3439,9 @@ static PyObject *TrackObj_SetTrackLayer(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short layer;
+#ifndef SetTrackLayer
+	PyMac_PRECHECK(SetTrackLayer);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &layer))
 		return NULL;
@@ -3027,6 +3456,9 @@ static PyObject *TrackObj_GetTrackAlternate(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track _rv;
+#ifndef GetTrackAlternate
+	PyMac_PRECHECK(GetTrackAlternate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackAlternate(_self->ob_itself);
@@ -3039,6 +3471,9 @@ static PyObject *TrackObj_SetTrackAlternate(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Track alternateT;
+#ifndef SetTrackAlternate
+	PyMac_PRECHECK(SetTrackAlternate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TrackObj_Convert, &alternateT))
 		return NULL;
@@ -3053,6 +3488,9 @@ static PyObject *TrackObj_GetTrackVolume(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetTrackVolume
+	PyMac_PRECHECK(GetTrackVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackVolume(_self->ob_itself);
@@ -3065,6 +3503,9 @@ static PyObject *TrackObj_SetTrackVolume(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short volume;
+#ifndef SetTrackVolume
+	PyMac_PRECHECK(SetTrackVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &volume))
 		return NULL;
@@ -3080,6 +3521,9 @@ static PyObject *TrackObj_GetTrackDimensions(TrackObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	Fixed width;
 	Fixed height;
+#ifndef GetTrackDimensions
+	PyMac_PRECHECK(GetTrackDimensions);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetTrackDimensions(_self->ob_itself,
@@ -3096,6 +3540,9 @@ static PyObject *TrackObj_SetTrackDimensions(TrackObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	Fixed width;
 	Fixed height;
+#ifndef SetTrackDimensions
+	PyMac_PRECHECK(SetTrackDimensions);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetFixed, &width,
 	                      PyMac_GetFixed, &height))
@@ -3112,6 +3559,9 @@ static PyObject *TrackObj_GetTrackUserData(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
+#ifndef GetTrackUserData
+	PyMac_PRECHECK(GetTrackUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackUserData(_self->ob_itself);
@@ -3125,6 +3575,9 @@ static PyObject *TrackObj_GetTrackSoundLocalizationSettings(TrackObject *_self, 
 	PyObject *_res = NULL;
 	OSErr _err;
 	Handle settings;
+#ifndef GetTrackSoundLocalizationSettings
+	PyMac_PRECHECK(GetTrackSoundLocalizationSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetTrackSoundLocalizationSettings(_self->ob_itself,
@@ -3140,6 +3593,9 @@ static PyObject *TrackObj_SetTrackSoundLocalizationSettings(TrackObject *_self, 
 	PyObject *_res = NULL;
 	OSErr _err;
 	Handle settings;
+#ifndef SetTrackSoundLocalizationSettings
+	PyMac_PRECHECK(SetTrackSoundLocalizationSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &settings))
 		return NULL;
@@ -3159,6 +3615,9 @@ static PyObject *TrackObj_NewTrackMedia(TrackObject *_self, PyObject *_args)
 	TimeScale timeScale;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef NewTrackMedia
+	PyMac_PRECHECK(NewTrackMedia);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&O&",
 	                      PyMac_GetOSType, &mediaType,
 	                      &timeScale,
@@ -3179,6 +3638,9 @@ static PyObject *TrackObj_GetTrackMedia(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Media _rv;
+#ifndef GetTrackMedia
+	PyMac_PRECHECK(GetTrackMedia);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackMedia(_self->ob_itself);
@@ -3195,6 +3657,9 @@ static PyObject *TrackObj_InsertMediaIntoTrack(TrackObject *_self, PyObject *_ar
 	TimeValue mediaTime;
 	TimeValue mediaDuration;
 	Fixed mediaRate;
+#ifndef InsertMediaIntoTrack
+	PyMac_PRECHECK(InsertMediaIntoTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, "lllO&",
 	                      &trackStart,
 	                      &mediaTime,
@@ -3220,6 +3685,9 @@ static PyObject *TrackObj_InsertTrackSegment(TrackObject *_self, PyObject *_args
 	TimeValue srcIn;
 	TimeValue srcDuration;
 	TimeValue dstIn;
+#ifndef InsertTrackSegment
+	PyMac_PRECHECK(InsertTrackSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lll",
 	                      TrackObj_Convert, &dstTrack,
 	                      &srcIn,
@@ -3243,6 +3711,9 @@ static PyObject *TrackObj_InsertEmptyTrackSegment(TrackObject *_self, PyObject *
 	OSErr _err;
 	TimeValue dstIn;
 	TimeValue dstDuration;
+#ifndef InsertEmptyTrackSegment
+	PyMac_PRECHECK(InsertEmptyTrackSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &dstIn,
 	                      &dstDuration))
@@ -3262,6 +3733,9 @@ static PyObject *TrackObj_DeleteTrackSegment(TrackObject *_self, PyObject *_args
 	OSErr _err;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef DeleteTrackSegment
+	PyMac_PRECHECK(DeleteTrackSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -3282,6 +3756,9 @@ static PyObject *TrackObj_ScaleTrackSegment(TrackObject *_self, PyObject *_args)
 	TimeValue startTime;
 	TimeValue oldDuration;
 	TimeValue newDuration;
+#ifndef ScaleTrackSegment
+	PyMac_PRECHECK(ScaleTrackSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &startTime,
 	                      &oldDuration,
@@ -3301,6 +3778,9 @@ static PyObject *TrackObj_IsScrapMovie(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
+#ifndef IsScrapMovie
+	PyMac_PRECHECK(IsScrapMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsScrapMovie(_self->ob_itself);
@@ -3314,6 +3794,9 @@ static PyObject *TrackObj_CopyTrackSettings(TrackObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	Track dstTrack;
+#ifndef CopyTrackSettings
+	PyMac_PRECHECK(CopyTrackSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TrackObj_Convert, &dstTrack))
 		return NULL;
@@ -3333,6 +3816,9 @@ static PyObject *TrackObj_AddEmptyTrackToMovie(TrackObject *_self, PyObject *_ar
 	Handle dataRef;
 	OSType dataRefType;
 	Track dstTrack;
+#ifndef AddEmptyTrackToMovie
+	PyMac_PRECHECK(AddEmptyTrackToMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      MovieObj_Convert, &dstMovie,
 	                      ResObj_Convert, &dataRef,
@@ -3356,6 +3842,9 @@ static PyObject *TrackObj_AddClonedTrackToMovie(TrackObject *_self, PyObject *_a
 	Movie dstMovie;
 	long flags;
 	Track dstTrack;
+#ifndef AddClonedTrackToMovie
+	PyMac_PRECHECK(AddClonedTrackToMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      MovieObj_Convert, &dstMovie,
 	                      &flags))
@@ -3377,6 +3866,9 @@ static PyObject *TrackObj_AddTrackReference(TrackObject *_self, PyObject *_args)
 	Track refTrack;
 	OSType refType;
 	long addedIndex;
+#ifndef AddTrackReference
+	PyMac_PRECHECK(AddTrackReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      TrackObj_Convert, &refTrack,
 	                      PyMac_GetOSType, &refType))
@@ -3397,6 +3889,9 @@ static PyObject *TrackObj_DeleteTrackReference(TrackObject *_self, PyObject *_ar
 	OSErr _err;
 	OSType refType;
 	long index;
+#ifndef DeleteTrackReference
+	PyMac_PRECHECK(DeleteTrackReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetOSType, &refType,
 	                      &index))
@@ -3417,6 +3912,9 @@ static PyObject *TrackObj_SetTrackReference(TrackObject *_self, PyObject *_args)
 	Track refTrack;
 	OSType refType;
 	long index;
+#ifndef SetTrackReference
+	PyMac_PRECHECK(SetTrackReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      TrackObj_Convert, &refTrack,
 	                      PyMac_GetOSType, &refType,
@@ -3438,6 +3936,9 @@ static PyObject *TrackObj_GetTrackReference(TrackObject *_self, PyObject *_args)
 	Track _rv;
 	OSType refType;
 	long index;
+#ifndef GetTrackReference
+	PyMac_PRECHECK(GetTrackReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetOSType, &refType,
 	                      &index))
@@ -3455,6 +3956,9 @@ static PyObject *TrackObj_GetNextTrackReferenceType(TrackObject *_self, PyObject
 	PyObject *_res = NULL;
 	OSType _rv;
 	OSType refType;
+#ifndef GetNextTrackReferenceType
+	PyMac_PRECHECK(GetNextTrackReferenceType);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &refType))
 		return NULL;
@@ -3470,6 +3974,9 @@ static PyObject *TrackObj_GetTrackReferenceCount(TrackObject *_self, PyObject *_
 	PyObject *_res = NULL;
 	long _rv;
 	OSType refType;
+#ifndef GetTrackReferenceCount
+	PyMac_PRECHECK(GetTrackReferenceCount);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &refType))
 		return NULL;
@@ -3485,6 +3992,9 @@ static PyObject *TrackObj_GetTrackEditRate(TrackObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Fixed _rv;
 	TimeValue atTime;
+#ifndef GetTrackEditRate
+	PyMac_PRECHECK(GetTrackEditRate);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &atTime))
 		return NULL;
@@ -3501,6 +4011,9 @@ static PyObject *TrackObj_GetTrackDataSize(TrackObject *_self, PyObject *_args)
 	long _rv;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef GetTrackDataSize
+	PyMac_PRECHECK(GetTrackDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -3520,6 +4033,9 @@ static PyObject *TrackObj_GetTrackDataSize64(TrackObject *_self, PyObject *_args
 	TimeValue startTime;
 	TimeValue duration;
 	wide dataSize;
+#ifndef GetTrackDataSize64
+	PyMac_PRECHECK(GetTrackDataSize64);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -3539,6 +4055,9 @@ static PyObject *TrackObj_PtInTrack(TrackObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	Point pt;
+#ifndef PtInTrack
+	PyMac_PRECHECK(PtInTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &pt))
 		return NULL;
@@ -3557,6 +4076,9 @@ static PyObject *TrackObj_GetTrackNextInterestingTime(TrackObject *_self, PyObje
 	Fixed rate;
 	TimeValue interestingTime;
 	TimeValue interestingDuration;
+#ifndef GetTrackNextInterestingTime
+	PyMac_PRECHECK(GetTrackNextInterestingTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlO&",
 	                      &interestingTimeFlags,
 	                      &time,
@@ -3580,6 +4102,9 @@ static PyObject *TrackObj_GetTrackSegmentDisplayBoundsRgn(TrackObject *_self, Py
 	RgnHandle _rv;
 	TimeValue time;
 	TimeValue duration;
+#ifndef GetTrackSegmentDisplayBoundsRgn
+	PyMac_PRECHECK(GetTrackSegmentDisplayBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &time,
 	                      &duration))
@@ -3596,6 +4121,9 @@ static PyObject *TrackObj_GetTrackStatus(TrackObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentResult _rv;
+#ifndef GetTrackStatus
+	PyMac_PRECHECK(GetTrackStatus);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetTrackStatus(_self->ob_itself);
@@ -3611,6 +4139,9 @@ static PyObject *TrackObj_SetTrackLoadSettings(TrackObject *_self, PyObject *_ar
 	TimeValue preloadDuration;
 	long preloadFlags;
 	long defaultHints;
+#ifndef SetTrackLoadSettings
+	PyMac_PRECHECK(SetTrackLoadSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, "llll",
 	                      &preloadTime,
 	                      &preloadDuration,
@@ -3634,6 +4165,9 @@ static PyObject *TrackObj_GetTrackLoadSettings(TrackObject *_self, PyObject *_ar
 	TimeValue preloadDuration;
 	long preloadFlags;
 	long defaultHints;
+#ifndef GetTrackLoadSettings
+	PyMac_PRECHECK(GetTrackLoadSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetTrackLoadSettings(_self->ob_itself,
@@ -3848,6 +4382,9 @@ static PyObject *MovieObj_MoviesTask(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long maxMilliSecToUse;
+#ifndef MoviesTask
+	PyMac_PRECHECK(MoviesTask);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &maxMilliSecToUse))
 		return NULL;
@@ -3864,6 +4401,9 @@ static PyObject *MovieObj_PrerollMovie(MovieObject *_self, PyObject *_args)
 	OSErr _err;
 	TimeValue time;
 	Fixed Rate;
+#ifndef PrerollMovie
+	PyMac_PRECHECK(PrerollMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &time,
 	                      PyMac_GetFixed, &Rate))
@@ -3881,6 +4421,9 @@ static PyObject *MovieObj_AbortPrePrerollMovie(MovieObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	OSErr err;
+#ifndef AbortPrePrerollMovie
+	PyMac_PRECHECK(AbortPrePrerollMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &err))
 		return NULL;
@@ -3898,6 +4441,9 @@ static PyObject *MovieObj_LoadMovieIntoRam(MovieObject *_self, PyObject *_args)
 	TimeValue time;
 	TimeValue duration;
 	long flags;
+#ifndef LoadMovieIntoRam
+	PyMac_PRECHECK(LoadMovieIntoRam);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &time,
 	                      &duration,
@@ -3917,6 +4463,9 @@ static PyObject *MovieObj_SetMovieActive(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean active;
+#ifndef SetMovieActive
+	PyMac_PRECHECK(SetMovieActive);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &active))
 		return NULL;
@@ -3931,6 +4480,9 @@ static PyObject *MovieObj_GetMovieActive(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef GetMovieActive
+	PyMac_PRECHECK(GetMovieActive);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieActive(_self->ob_itself);
@@ -3942,6 +4494,9 @@ static PyObject *MovieObj_GetMovieActive(MovieObject *_self, PyObject *_args)
 static PyObject *MovieObj_StartMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef StartMovie
+	PyMac_PRECHECK(StartMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	StartMovie(_self->ob_itself);
@@ -3953,6 +4508,9 @@ static PyObject *MovieObj_StartMovie(MovieObject *_self, PyObject *_args)
 static PyObject *MovieObj_StopMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef StopMovie
+	PyMac_PRECHECK(StopMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	StopMovie(_self->ob_itself);
@@ -3964,6 +4522,9 @@ static PyObject *MovieObj_StopMovie(MovieObject *_self, PyObject *_args)
 static PyObject *MovieObj_GoToBeginningOfMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef GoToBeginningOfMovie
+	PyMac_PRECHECK(GoToBeginningOfMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GoToBeginningOfMovie(_self->ob_itself);
@@ -3975,6 +4536,9 @@ static PyObject *MovieObj_GoToBeginningOfMovie(MovieObject *_self, PyObject *_ar
 static PyObject *MovieObj_GoToEndOfMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef GoToEndOfMovie
+	PyMac_PRECHECK(GoToEndOfMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GoToEndOfMovie(_self->ob_itself);
@@ -3987,6 +4551,9 @@ static PyObject *MovieObj_IsMovieDone(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef IsMovieDone
+	PyMac_PRECHECK(IsMovieDone);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsMovieDone(_self->ob_itself);
@@ -3999,6 +4566,9 @@ static PyObject *MovieObj_GetMoviePreviewMode(MovieObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef GetMoviePreviewMode
+	PyMac_PRECHECK(GetMoviePreviewMode);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMoviePreviewMode(_self->ob_itself);
@@ -4011,6 +4581,9 @@ static PyObject *MovieObj_SetMoviePreviewMode(MovieObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	Boolean usePreview;
+#ifndef SetMoviePreviewMode
+	PyMac_PRECHECK(SetMoviePreviewMode);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &usePreview))
 		return NULL;
@@ -4024,6 +4597,9 @@ static PyObject *MovieObj_SetMoviePreviewMode(MovieObject *_self, PyObject *_arg
 static PyObject *MovieObj_ShowMoviePoster(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ShowMoviePoster
+	PyMac_PRECHECK(ShowMoviePoster);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ShowMoviePoster(_self->ob_itself);
@@ -4036,6 +4612,9 @@ static PyObject *MovieObj_GetMovieTimeBase(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
+#ifndef GetMovieTimeBase
+	PyMac_PRECHECK(GetMovieTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieTimeBase(_self->ob_itself);
@@ -4049,6 +4628,9 @@ static PyObject *MovieObj_SetMovieMasterTimeBase(MovieObject *_self, PyObject *_
 	PyObject *_res = NULL;
 	TimeBase tb;
 	TimeRecord slaveZero;
+#ifndef SetMovieMasterTimeBase
+	PyMac_PRECHECK(SetMovieMasterTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      TimeBaseObj_Convert, &tb,
 	                      QtTimeRecord_Convert, &slaveZero))
@@ -4066,6 +4648,9 @@ static PyObject *MovieObj_SetMovieMasterClock(MovieObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	Component clockMeister;
 	TimeRecord slaveZero;
+#ifndef SetMovieMasterClock
+	PyMac_PRECHECK(SetMovieMasterClock);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      CmpObj_Convert, &clockMeister,
 	                      QtTimeRecord_Convert, &slaveZero))
@@ -4083,6 +4668,9 @@ static PyObject *MovieObj_GetMovieGWorld(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CGrafPtr port;
 	GDHandle gdh;
+#ifndef GetMovieGWorld
+	PyMac_PRECHECK(GetMovieGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMovieGWorld(_self->ob_itself,
@@ -4099,6 +4687,9 @@ static PyObject *MovieObj_SetMovieGWorld(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CGrafPtr port;
 	GDHandle gdh;
+#ifndef SetMovieGWorld
+	PyMac_PRECHECK(SetMovieGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      GrafObj_Convert, &port,
 	                      OptResObj_Convert, &gdh))
@@ -4115,6 +4706,9 @@ static PyObject *MovieObj_GetMovieNaturalBoundsRect(MovieObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	Rect naturalBounds;
+#ifndef GetMovieNaturalBoundsRect
+	PyMac_PRECHECK(GetMovieNaturalBoundsRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMovieNaturalBoundsRect(_self->ob_itself,
@@ -4129,6 +4723,9 @@ static PyObject *MovieObj_GetNextTrackForCompositing(MovieObject *_self, PyObjec
 	PyObject *_res = NULL;
 	Track _rv;
 	Track theTrack;
+#ifndef GetNextTrackForCompositing
+	PyMac_PRECHECK(GetNextTrackForCompositing);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TrackObj_Convert, &theTrack))
 		return NULL;
@@ -4144,6 +4741,9 @@ static PyObject *MovieObj_GetPrevTrackForCompositing(MovieObject *_self, PyObjec
 	PyObject *_res = NULL;
 	Track _rv;
 	Track theTrack;
+#ifndef GetPrevTrackForCompositing
+	PyMac_PRECHECK(GetPrevTrackForCompositing);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TrackObj_Convert, &theTrack))
 		return NULL;
@@ -4159,6 +4759,9 @@ static PyObject *MovieObj_GetMoviePict(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	PicHandle _rv;
 	TimeValue time;
+#ifndef GetMoviePict
+	PyMac_PRECHECK(GetMoviePict);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &time))
 		return NULL;
@@ -4173,6 +4776,9 @@ static PyObject *MovieObj_GetMoviePosterPict(MovieObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	PicHandle _rv;
+#ifndef GetMoviePosterPict
+	PyMac_PRECHECK(GetMoviePosterPict);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMoviePosterPict(_self->ob_itself);
@@ -4185,6 +4791,9 @@ static PyObject *MovieObj_UpdateMovie(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef UpdateMovie
+	PyMac_PRECHECK(UpdateMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = UpdateMovie(_self->ob_itself);
@@ -4199,6 +4808,9 @@ static PyObject *MovieObj_InvalidateMovieRegion(MovieObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	OSErr _err;
 	RgnHandle invalidRgn;
+#ifndef InvalidateMovieRegion
+	PyMac_PRECHECK(InvalidateMovieRegion);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &invalidRgn))
 		return NULL;
@@ -4214,6 +4826,9 @@ static PyObject *MovieObj_GetMovieBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
+#ifndef GetMovieBox
+	PyMac_PRECHECK(GetMovieBox);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMovieBox(_self->ob_itself,
@@ -4227,6 +4842,9 @@ static PyObject *MovieObj_SetMovieBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
+#ifndef SetMovieBox
+	PyMac_PRECHECK(SetMovieBox);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &boxRect))
 		return NULL;
@@ -4241,6 +4859,9 @@ static PyObject *MovieObj_GetMovieDisplayClipRgn(MovieObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetMovieDisplayClipRgn
+	PyMac_PRECHECK(GetMovieDisplayClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieDisplayClipRgn(_self->ob_itself);
@@ -4253,6 +4874,9 @@ static PyObject *MovieObj_SetMovieDisplayClipRgn(MovieObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
+#ifndef SetMovieDisplayClipRgn
+	PyMac_PRECHECK(SetMovieDisplayClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theClip))
 		return NULL;
@@ -4267,6 +4891,9 @@ static PyObject *MovieObj_GetMovieClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetMovieClipRgn
+	PyMac_PRECHECK(GetMovieClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieClipRgn(_self->ob_itself);
@@ -4279,6 +4906,9 @@ static PyObject *MovieObj_SetMovieClipRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle theClip;
+#ifndef SetMovieClipRgn
+	PyMac_PRECHECK(SetMovieClipRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theClip))
 		return NULL;
@@ -4293,6 +4923,9 @@ static PyObject *MovieObj_GetMovieDisplayBoundsRgn(MovieObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetMovieDisplayBoundsRgn
+	PyMac_PRECHECK(GetMovieDisplayBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieDisplayBoundsRgn(_self->ob_itself);
@@ -4305,6 +4938,9 @@ static PyObject *MovieObj_GetMovieBoundsRgn(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
+#ifndef GetMovieBoundsRgn
+	PyMac_PRECHECK(GetMovieBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieBoundsRgn(_self->ob_itself);
@@ -4317,6 +4953,9 @@ static PyObject *MovieObj_SetMovieVideoOutput(MovieObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	ComponentInstance vout;
+#ifndef SetMovieVideoOutput
+	PyMac_PRECHECK(SetMovieVideoOutput);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &vout))
 		return NULL;
@@ -4332,6 +4971,9 @@ static PyObject *MovieObj_PutMovieIntoHandle(MovieObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	OSErr _err;
 	Handle publicMovie;
+#ifndef PutMovieIntoHandle
+	PyMac_PRECHECK(PutMovieIntoHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &publicMovie))
 		return NULL;
@@ -4350,6 +4992,9 @@ static PyObject *MovieObj_PutMovieIntoDataFork(MovieObject *_self, PyObject *_ar
 	short fRefNum;
 	long offset;
 	long maxSize;
+#ifndef PutMovieIntoDataFork
+	PyMac_PRECHECK(PutMovieIntoDataFork);
+#endif
 	if (!PyArg_ParseTuple(_args, "hll",
 	                      &fRefNum,
 	                      &offset,
@@ -4372,6 +5017,9 @@ static PyObject *MovieObj_PutMovieIntoDataFork64(MovieObject *_self, PyObject *_
 	long fRefNum;
 	wide offset;
 	unsigned long maxSize;
+#ifndef PutMovieIntoDataFork64
+	PyMac_PRECHECK(PutMovieIntoDataFork64);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&l",
 	                      &fRefNum,
 	                      PyMac_Getwide, &offset,
@@ -4391,6 +5039,9 @@ static PyObject *MovieObj_GetMovieCreationTime(MovieObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetMovieCreationTime
+	PyMac_PRECHECK(GetMovieCreationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieCreationTime(_self->ob_itself);
@@ -4403,6 +5054,9 @@ static PyObject *MovieObj_GetMovieModificationTime(MovieObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	unsigned long _rv;
+#ifndef GetMovieModificationTime
+	PyMac_PRECHECK(GetMovieModificationTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieModificationTime(_self->ob_itself);
@@ -4415,6 +5069,9 @@ static PyObject *MovieObj_GetMovieTimeScale(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale _rv;
+#ifndef GetMovieTimeScale
+	PyMac_PRECHECK(GetMovieTimeScale);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieTimeScale(_self->ob_itself);
@@ -4427,6 +5084,9 @@ static PyObject *MovieObj_SetMovieTimeScale(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeScale timeScale;
+#ifndef SetMovieTimeScale
+	PyMac_PRECHECK(SetMovieTimeScale);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &timeScale))
 		return NULL;
@@ -4441,6 +5101,9 @@ static PyObject *MovieObj_GetMovieDuration(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
+#ifndef GetMovieDuration
+	PyMac_PRECHECK(GetMovieDuration);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieDuration(_self->ob_itself);
@@ -4453,6 +5116,9 @@ static PyObject *MovieObj_GetMovieRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
+#ifndef GetMovieRate
+	PyMac_PRECHECK(GetMovieRate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieRate(_self->ob_itself);
@@ -4465,6 +5131,9 @@ static PyObject *MovieObj_SetMovieRate(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Fixed rate;
+#ifndef SetMovieRate
+	PyMac_PRECHECK(SetMovieRate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFixed, &rate))
 		return NULL;
@@ -4479,6 +5148,9 @@ static PyObject *MovieObj_GetMoviePreferredRate(MovieObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	Fixed _rv;
+#ifndef GetMoviePreferredRate
+	PyMac_PRECHECK(GetMoviePreferredRate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMoviePreferredRate(_self->ob_itself);
@@ -4491,6 +5163,9 @@ static PyObject *MovieObj_SetMoviePreferredRate(MovieObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	Fixed rate;
+#ifndef SetMoviePreferredRate
+	PyMac_PRECHECK(SetMoviePreferredRate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFixed, &rate))
 		return NULL;
@@ -4505,6 +5180,9 @@ static PyObject *MovieObj_GetMoviePreferredVolume(MovieObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetMoviePreferredVolume
+	PyMac_PRECHECK(GetMoviePreferredVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMoviePreferredVolume(_self->ob_itself);
@@ -4517,6 +5195,9 @@ static PyObject *MovieObj_SetMoviePreferredVolume(MovieObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	short volume;
+#ifndef SetMoviePreferredVolume
+	PyMac_PRECHECK(SetMoviePreferredVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &volume))
 		return NULL;
@@ -4531,6 +5212,9 @@ static PyObject *MovieObj_GetMovieVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetMovieVolume
+	PyMac_PRECHECK(GetMovieVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieVolume(_self->ob_itself);
@@ -4543,6 +5227,9 @@ static PyObject *MovieObj_SetMovieVolume(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short volume;
+#ifndef SetMovieVolume
+	PyMac_PRECHECK(SetMovieVolume);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &volume))
 		return NULL;
@@ -4558,6 +5245,9 @@ static PyObject *MovieObj_GetMoviePreviewTime(MovieObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	TimeValue previewTime;
 	TimeValue previewDuration;
+#ifndef GetMoviePreviewTime
+	PyMac_PRECHECK(GetMoviePreviewTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMoviePreviewTime(_self->ob_itself,
@@ -4574,6 +5264,9 @@ static PyObject *MovieObj_SetMoviePreviewTime(MovieObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	TimeValue previewTime;
 	TimeValue previewDuration;
+#ifndef SetMoviePreviewTime
+	PyMac_PRECHECK(SetMoviePreviewTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &previewTime,
 	                      &previewDuration))
@@ -4590,6 +5283,9 @@ static PyObject *MovieObj_GetMoviePosterTime(MovieObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	TimeValue _rv;
+#ifndef GetMoviePosterTime
+	PyMac_PRECHECK(GetMoviePosterTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMoviePosterTime(_self->ob_itself);
@@ -4602,6 +5298,9 @@ static PyObject *MovieObj_SetMoviePosterTime(MovieObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	TimeValue posterTime;
+#ifndef SetMoviePosterTime
+	PyMac_PRECHECK(SetMoviePosterTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &posterTime))
 		return NULL;
@@ -4617,6 +5316,9 @@ static PyObject *MovieObj_GetMovieSelection(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeValue selectionTime;
 	TimeValue selectionDuration;
+#ifndef GetMovieSelection
+	PyMac_PRECHECK(GetMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMovieSelection(_self->ob_itself,
@@ -4633,6 +5335,9 @@ static PyObject *MovieObj_SetMovieSelection(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeValue selectionTime;
 	TimeValue selectionDuration;
+#ifndef SetMovieSelection
+	PyMac_PRECHECK(SetMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &selectionTime,
 	                      &selectionDuration))
@@ -4650,6 +5355,9 @@ static PyObject *MovieObj_SetMovieActiveSegment(MovieObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef SetMovieActiveSegment
+	PyMac_PRECHECK(SetMovieActiveSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -4667,6 +5375,9 @@ static PyObject *MovieObj_GetMovieActiveSegment(MovieObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef GetMovieActiveSegment
+	PyMac_PRECHECK(GetMovieActiveSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMovieActiveSegment(_self->ob_itself,
@@ -4683,6 +5394,9 @@ static PyObject *MovieObj_GetMovieTime(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeValue _rv;
 	TimeRecord currentTime;
+#ifndef GetMovieTime
+	PyMac_PRECHECK(GetMovieTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieTime(_self->ob_itself,
@@ -4697,6 +5411,9 @@ static PyObject *MovieObj_SetMovieTime(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeRecord newtime;
+#ifndef SetMovieTime
+	PyMac_PRECHECK(SetMovieTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      QtTimeRecord_Convert, &newtime))
 		return NULL;
@@ -4711,6 +5428,9 @@ static PyObject *MovieObj_SetMovieTimeValue(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeValue newtime;
+#ifndef SetMovieTimeValue
+	PyMac_PRECHECK(SetMovieTimeValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newtime))
 		return NULL;
@@ -4725,6 +5445,9 @@ static PyObject *MovieObj_GetMovieUserData(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UserData _rv;
+#ifndef GetMovieUserData
+	PyMac_PRECHECK(GetMovieUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieUserData(_self->ob_itself);
@@ -4737,6 +5460,9 @@ static PyObject *MovieObj_GetMovieTrackCount(MovieObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMovieTrackCount
+	PyMac_PRECHECK(GetMovieTrackCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieTrackCount(_self->ob_itself);
@@ -4750,6 +5476,9 @@ static PyObject *MovieObj_GetMovieTrack(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Track _rv;
 	long trackID;
+#ifndef GetMovieTrack
+	PyMac_PRECHECK(GetMovieTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &trackID))
 		return NULL;
@@ -4765,6 +5494,9 @@ static PyObject *MovieObj_GetMovieIndTrack(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Track _rv;
 	long index;
+#ifndef GetMovieIndTrack
+	PyMac_PRECHECK(GetMovieIndTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &index))
 		return NULL;
@@ -4782,6 +5514,9 @@ static PyObject *MovieObj_GetMovieIndTrackType(MovieObject *_self, PyObject *_ar
 	long index;
 	OSType trackType;
 	long flags;
+#ifndef GetMovieIndTrackType
+	PyMac_PRECHECK(GetMovieIndTrackType);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&l",
 	                      &index,
 	                      PyMac_GetOSType, &trackType,
@@ -4803,6 +5538,9 @@ static PyObject *MovieObj_NewMovieTrack(MovieObject *_self, PyObject *_args)
 	Fixed width;
 	Fixed height;
 	short trackVolume;
+#ifndef NewMovieTrack
+	PyMac_PRECHECK(NewMovieTrack);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&h",
 	                      PyMac_GetFixed, &width,
 	                      PyMac_GetFixed, &height,
@@ -4821,6 +5559,9 @@ static PyObject *MovieObj_SetAutoTrackAlternatesEnabled(MovieObject *_self, PyOb
 {
 	PyObject *_res = NULL;
 	Boolean enable;
+#ifndef SetAutoTrackAlternatesEnabled
+	PyMac_PRECHECK(SetAutoTrackAlternatesEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &enable))
 		return NULL;
@@ -4834,6 +5575,9 @@ static PyObject *MovieObj_SetAutoTrackAlternatesEnabled(MovieObject *_self, PyOb
 static PyObject *MovieObj_SelectMovieAlternates(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef SelectMovieAlternates
+	PyMac_PRECHECK(SelectMovieAlternates);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	SelectMovieAlternates(_self->ob_itself);
@@ -4850,6 +5594,9 @@ static PyObject *MovieObj_InsertMovieSegment(MovieObject *_self, PyObject *_args
 	TimeValue srcIn;
 	TimeValue srcDuration;
 	TimeValue dstIn;
+#ifndef InsertMovieSegment
+	PyMac_PRECHECK(InsertMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lll",
 	                      MovieObj_Convert, &dstMovie,
 	                      &srcIn,
@@ -4873,6 +5620,9 @@ static PyObject *MovieObj_InsertEmptyMovieSegment(MovieObject *_self, PyObject *
 	OSErr _err;
 	TimeValue dstIn;
 	TimeValue dstDuration;
+#ifndef InsertEmptyMovieSegment
+	PyMac_PRECHECK(InsertEmptyMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &dstIn,
 	                      &dstDuration))
@@ -4892,6 +5642,9 @@ static PyObject *MovieObj_DeleteMovieSegment(MovieObject *_self, PyObject *_args
 	OSErr _err;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef DeleteMovieSegment
+	PyMac_PRECHECK(DeleteMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -4912,6 +5665,9 @@ static PyObject *MovieObj_ScaleMovieSegment(MovieObject *_self, PyObject *_args)
 	TimeValue startTime;
 	TimeValue oldDuration;
 	TimeValue newDuration;
+#ifndef ScaleMovieSegment
+	PyMac_PRECHECK(ScaleMovieSegment);
+#endif
 	if (!PyArg_ParseTuple(_args, "lll",
 	                      &startTime,
 	                      &oldDuration,
@@ -4931,6 +5687,9 @@ static PyObject *MovieObj_CutMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie _rv;
+#ifndef CutMovieSelection
+	PyMac_PRECHECK(CutMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CutMovieSelection(_self->ob_itself);
@@ -4943,6 +5702,9 @@ static PyObject *MovieObj_CopyMovieSelection(MovieObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	Movie _rv;
+#ifndef CopyMovieSelection
+	PyMac_PRECHECK(CopyMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CopyMovieSelection(_self->ob_itself);
@@ -4955,6 +5717,9 @@ static PyObject *MovieObj_PasteMovieSelection(MovieObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	Movie src;
+#ifndef PasteMovieSelection
+	PyMac_PRECHECK(PasteMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &src))
 		return NULL;
@@ -4969,6 +5734,9 @@ static PyObject *MovieObj_AddMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Movie src;
+#ifndef AddMovieSelection
+	PyMac_PRECHECK(AddMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &src))
 		return NULL;
@@ -4982,6 +5750,9 @@ static PyObject *MovieObj_AddMovieSelection(MovieObject *_self, PyObject *_args)
 static PyObject *MovieObj_ClearMovieSelection(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ClearMovieSelection
+	PyMac_PRECHECK(ClearMovieSelection);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ClearMovieSelection(_self->ob_itself);
@@ -5001,6 +5772,9 @@ static PyObject *MovieObj_PutMovieIntoTypedHandle(MovieObject *_self, PyObject *
 	TimeValue dur;
 	long flags;
 	ComponentInstance userComp;
+#ifndef PutMovieIntoTypedHandle
+	PyMac_PRECHECK(PutMovieIntoTypedHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&lllO&",
 	                      TrackObj_Convert, &targetTrack,
 	                      PyMac_GetOSType, &handleType,
@@ -5029,6 +5803,9 @@ static PyObject *MovieObj_CopyMovieSettings(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	Movie dstMovie;
+#ifndef CopyMovieSettings
+	PyMac_PRECHECK(CopyMovieSettings);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MovieObj_Convert, &dstMovie))
 		return NULL;
@@ -5052,6 +5829,9 @@ static PyObject *MovieObj_ConvertMovieToFile(MovieObject *_self, PyObject *_args
 	short resID;
 	long flags;
 	ComponentInstance userComp;
+#ifndef ConvertMovieToFile
+	PyMac_PRECHECK(ConvertMovieToFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&hlO&",
 	                      TrackObj_Convert, &onlyTrack,
 	                      PyMac_GetFSSpec, &outputFile,
@@ -5082,6 +5862,9 @@ static PyObject *MovieObj_GetMovieDataSize(MovieObject *_self, PyObject *_args)
 	long _rv;
 	TimeValue startTime;
 	TimeValue duration;
+#ifndef GetMovieDataSize
+	PyMac_PRECHECK(GetMovieDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -5101,6 +5884,9 @@ static PyObject *MovieObj_GetMovieDataSize64(MovieObject *_self, PyObject *_args
 	TimeValue startTime;
 	TimeValue duration;
 	wide dataSize;
+#ifndef GetMovieDataSize64
+	PyMac_PRECHECK(GetMovieDataSize64);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startTime,
 	                      &duration))
@@ -5120,6 +5906,9 @@ static PyObject *MovieObj_PtInMovie(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	Point pt;
+#ifndef PtInMovie
+	PyMac_PRECHECK(PtInMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &pt))
 		return NULL;
@@ -5134,6 +5923,9 @@ static PyObject *MovieObj_SetMovieLanguage(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long language;
+#ifndef SetMovieLanguage
+	PyMac_PRECHECK(SetMovieLanguage);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &language))
 		return NULL;
@@ -5154,6 +5946,9 @@ static PyObject *MovieObj_GetMovieNextInterestingTime(MovieObject *_self, PyObje
 	Fixed rate;
 	TimeValue interestingTime;
 	TimeValue interestingDuration;
+#ifndef GetMovieNextInterestingTime
+	PyMac_PRECHECK(GetMovieNextInterestingTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "hhO&lO&",
 	                      &interestingTimeFlags,
 	                      &numMediaTypes,
@@ -5182,6 +5977,9 @@ static PyObject *MovieObj_AddMovieResource(MovieObject *_self, PyObject *_args)
 	short resRefNum;
 	short resId;
 	Str255 resName;
+#ifndef AddMovieResource
+	PyMac_PRECHECK(AddMovieResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &resRefNum,
 	                      PyMac_GetStr255, resName))
@@ -5203,6 +6001,9 @@ static PyObject *MovieObj_UpdateMovieResource(MovieObject *_self, PyObject *_arg
 	short resRefNum;
 	short resId;
 	Str255 resName;
+#ifndef UpdateMovieResource
+	PyMac_PRECHECK(UpdateMovieResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "hhO&",
 	                      &resRefNum,
 	                      &resId,
@@ -5222,6 +6023,9 @@ static PyObject *MovieObj_HasMovieChanged(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef HasMovieChanged
+	PyMac_PRECHECK(HasMovieChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = HasMovieChanged(_self->ob_itself);
@@ -5233,6 +6037,9 @@ static PyObject *MovieObj_HasMovieChanged(MovieObject *_self, PyObject *_args)
 static PyObject *MovieObj_ClearMovieChanged(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ClearMovieChanged
+	PyMac_PRECHECK(ClearMovieChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ClearMovieChanged(_self->ob_itself);
@@ -5247,6 +6054,9 @@ static PyObject *MovieObj_SetMovieDefaultDataRef(MovieObject *_self, PyObject *_
 	OSErr _err;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef SetMovieDefaultDataRef
+	PyMac_PRECHECK(SetMovieDefaultDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
@@ -5266,6 +6076,9 @@ static PyObject *MovieObj_GetMovieDefaultDataRef(MovieObject *_self, PyObject *_
 	OSErr _err;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef GetMovieDefaultDataRef
+	PyMac_PRECHECK(GetMovieDefaultDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMovieDefaultDataRef(_self->ob_itself,
@@ -5286,6 +6099,9 @@ static PyObject *MovieObj_SetMovieAnchorDataRef(MovieObject *_self, PyObject *_a
 	OSErr _err;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef SetMovieAnchorDataRef
+	PyMac_PRECHECK(SetMovieAnchorDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType))
@@ -5309,6 +6125,9 @@ static PyObject *MovieObj_GetMovieAnchorDataRef(MovieObject *_self, PyObject *_a
 	Handle dataRef;
 	OSType dataRefType;
 	long outFlags;
+#ifndef GetMovieAnchorDataRef
+	PyMac_PRECHECK(GetMovieAnchorDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMovieAnchorDataRef(_self->ob_itself,
@@ -5329,6 +6148,9 @@ static PyObject *MovieObj_SetMovieColorTable(MovieObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	OSErr _err;
 	CTabHandle ctab;
+#ifndef SetMovieColorTable
+	PyMac_PRECHECK(SetMovieColorTable);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &ctab))
 		return NULL;
@@ -5345,6 +6167,9 @@ static PyObject *MovieObj_GetMovieColorTable(MovieObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	OSErr _err;
 	CTabHandle ctab;
+#ifndef GetMovieColorTable
+	PyMac_PRECHECK(GetMovieColorTable);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMovieColorTable(_self->ob_itself,
@@ -5365,6 +6190,9 @@ static PyObject *MovieObj_FlattenMovie(MovieObject *_self, PyObject *_args)
 	long createMovieFileFlags;
 	short resId;
 	Str255 resName;
+#ifndef FlattenMovie
+	PyMac_PRECHECK(FlattenMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&O&hlO&",
 	                      &movieFlattenFlags,
 	                      PyMac_GetFSSpec, &theFile,
@@ -5395,6 +6223,9 @@ static PyObject *MovieObj_FlattenMovieData(MovieObject *_self, PyObject *_args)
 	OSType creator;
 	ScriptCode scriptTag;
 	long createMovieFileFlags;
+#ifndef FlattenMovieData
+	PyMac_PRECHECK(FlattenMovieData);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&O&hl",
 	                      &movieFlattenFlags,
 	                      PyMac_GetFSSpec, &theFile,
@@ -5423,6 +6254,9 @@ static PyObject *MovieObj_MovieSearchText(MovieObject *_self, PyObject *_args)
 	Track searchTrack;
 	TimeValue searchTime;
 	long searchOffset;
+#ifndef MovieSearchText
+	PyMac_PRECHECK(MovieSearchText);
+#endif
 	if (!PyArg_ParseTuple(_args, "sll",
 	                      &text,
 	                      &size,
@@ -5447,6 +6281,9 @@ static PyObject *MovieObj_GetPosterBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
+#ifndef GetPosterBox
+	PyMac_PRECHECK(GetPosterBox);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetPosterBox(_self->ob_itself,
@@ -5460,6 +6297,9 @@ static PyObject *MovieObj_SetPosterBox(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect boxRect;
+#ifndef SetPosterBox
+	PyMac_PRECHECK(SetPosterBox);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &boxRect))
 		return NULL;
@@ -5476,6 +6316,9 @@ static PyObject *MovieObj_GetMovieSegmentDisplayBoundsRgn(MovieObject *_self, Py
 	RgnHandle _rv;
 	TimeValue time;
 	TimeValue duration;
+#ifndef GetMovieSegmentDisplayBoundsRgn
+	PyMac_PRECHECK(GetMovieSegmentDisplayBoundsRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &time,
 	                      &duration))
@@ -5493,6 +6336,9 @@ static PyObject *MovieObj_GetMovieStatus(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	Track firstProblemTrack;
+#ifndef GetMovieStatus
+	PyMac_PRECHECK(GetMovieStatus);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieStatus(_self->ob_itself,
@@ -5509,6 +6355,9 @@ static PyObject *MovieObj_GetMovieLoadState(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMovieLoadState
+	PyMac_PRECHECK(GetMovieLoadState);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMovieLoadState(_self->ob_itself);
@@ -5524,6 +6373,9 @@ static PyObject *MovieObj_NewMovieController(MovieObject *_self, PyObject *_args
 	MovieController _rv;
 	Rect movieRect;
 	long someFlags;
+#ifndef NewMovieController
+	PyMac_PRECHECK(NewMovieController);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetRect, &movieRect,
 	                      &someFlags))
@@ -5541,6 +6393,9 @@ static PyObject *MovieObj_PutMovieOnScrap(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	long movieScrapFlags;
+#ifndef PutMovieOnScrap
+	PyMac_PRECHECK(PutMovieOnScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &movieScrapFlags))
 		return NULL;
@@ -5557,6 +6412,9 @@ static PyObject *MovieObj_SetMoviePlayHints(MovieObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	long flags;
 	long flagsMask;
+#ifndef SetMoviePlayHints
+	PyMac_PRECHECK(SetMoviePlayHints);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &flags,
 	                      &flagsMask))
@@ -5574,6 +6432,9 @@ static PyObject *MovieObj_GetMaxLoadedTimeInMovie(MovieObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	TimeValue time;
+#ifndef GetMaxLoadedTimeInMovie
+	PyMac_PRECHECK(GetMaxLoadedTimeInMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMaxLoadedTimeInMovie(_self->ob_itself,
@@ -5589,6 +6450,9 @@ static PyObject *MovieObj_QTMovieNeedsTimeTable(MovieObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	OSErr _err;
 	Boolean needsTimeTable;
+#ifndef QTMovieNeedsTimeTable
+	PyMac_PRECHECK(QTMovieNeedsTimeTable);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = QTMovieNeedsTimeTable(_self->ob_itself,
@@ -5606,6 +6470,9 @@ static PyObject *MovieObj_QTGetDataRefMaxFileOffset(MovieObject *_self, PyObject
 	OSType dataRefType;
 	Handle dataRef;
 	long offset;
+#ifndef QTGetDataRefMaxFileOffset
+	PyMac_PRECHECK(QTGetDataRefMaxFileOffset);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &dataRefType,
 	                      ResObj_Convert, &dataRef))
@@ -5899,6 +6766,9 @@ static PyObject *Qt_CheckQuickTimeRegistration(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	void * registrationKey;
 	long flags;
+#ifndef CheckQuickTimeRegistration
+	PyMac_PRECHECK(CheckQuickTimeRegistration);
+#endif
 	if (!PyArg_ParseTuple(_args, "sl",
 	                      &registrationKey,
 	                      &flags))
@@ -5915,6 +6785,9 @@ static PyObject *Qt_EnterMovies(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef EnterMovies
+	PyMac_PRECHECK(EnterMovies);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = EnterMovies();
@@ -5927,6 +6800,9 @@ static PyObject *Qt_EnterMovies(PyObject *_self, PyObject *_args)
 static PyObject *Qt_ExitMovies(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ExitMovies
+	PyMac_PRECHECK(ExitMovies);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ExitMovies();
@@ -5939,6 +6815,9 @@ static PyObject *Qt_GetMoviesError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef GetMoviesError
+	PyMac_PRECHECK(GetMoviesError);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMoviesError();
@@ -5951,6 +6830,9 @@ static PyObject *Qt_GetMoviesError(PyObject *_self, PyObject *_args)
 static PyObject *Qt_ClearMoviesStickyError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ClearMoviesStickyError
+	PyMac_PRECHECK(ClearMoviesStickyError);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ClearMoviesStickyError();
@@ -5963,6 +6845,9 @@ static PyObject *Qt_GetMoviesStickyError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef GetMoviesStickyError
+	PyMac_PRECHECK(GetMoviesStickyError);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetMoviesStickyError();
@@ -5976,6 +6861,9 @@ static PyObject *Qt_DisposeMatte(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle theMatte;
+#ifndef DisposeMatte
+	PyMac_PRECHECK(DisposeMatte);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theMatte))
 		return NULL;
@@ -5990,6 +6878,9 @@ static PyObject *Qt_NewMovie(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Movie _rv;
 	long flags;
+#ifndef NewMovie
+	PyMac_PRECHECK(NewMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &flags))
 		return NULL;
@@ -6006,6 +6897,9 @@ static PyObject *Qt_GetDataHandler(PyObject *_self, PyObject *_args)
 	Handle dataRef;
 	OSType dataHandlerSubType;
 	long flags;
+#ifndef GetDataHandler
+	PyMac_PRECHECK(GetDataHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataHandlerSubType,
@@ -6032,6 +6926,9 @@ static PyObject *Qt_OpenADataHandler(PyObject *_self, PyObject *_args)
 	TimeBase tb;
 	long flags;
 	ComponentInstance dh;
+#ifndef OpenADataHandler
+	PyMac_PRECHECK(OpenADataHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&l",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataHandlerSubType,
@@ -6063,6 +6960,9 @@ static PyObject *Qt_PasteHandleIntoMovie(PyObject *_self, PyObject *_args)
 	Movie theMovie;
 	long flags;
 	ComponentInstance userComp;
+#ifndef PasteHandleIntoMovie
+	PyMac_PRECHECK(PasteHandleIntoMovie);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&lO&",
 	                      ResObj_Convert, &h,
 	                      PyMac_GetOSType, &handleType,
@@ -6089,6 +6989,9 @@ static PyObject *Qt_GetMovieImporterForDataRef(PyObject *_self, PyObject *_args)
 	Handle dataRef;
 	long flags;
 	Component importer;
+#ifndef GetMovieImporterForDataRef
+	PyMac_PRECHECK(GetMovieImporterForDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      PyMac_GetOSType, &dataRefType,
 	                      ResObj_Convert, &dataRef,
@@ -6113,6 +7016,9 @@ static PyObject *Qt_QTGetMIMETypeInfo(PyObject *_self, PyObject *_args)
 	OSType infoSelector;
 	void * infoDataPtr;
 	long infoDataSize;
+#ifndef QTGetMIMETypeInfo
+	PyMac_PRECHECK(QTGetMIMETypeInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, "shO&s",
 	                      &mimeStringStart,
 	                      &mimeStringLength,
@@ -6136,6 +7042,9 @@ static PyObject *Qt_TrackTimeToMediaTime(PyObject *_self, PyObject *_args)
 	TimeValue _rv;
 	TimeValue value;
 	Track theTrack;
+#ifndef TrackTimeToMediaTime
+	PyMac_PRECHECK(TrackTimeToMediaTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &value,
 	                      TrackObj_Convert, &theTrack))
@@ -6152,6 +7061,9 @@ static PyObject *Qt_NewUserData(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	UserData theUserData;
+#ifndef NewUserData
+	PyMac_PRECHECK(NewUserData);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = NewUserData(&theUserData);
@@ -6167,6 +7079,9 @@ static PyObject *Qt_NewUserDataFromHandle(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	Handle h;
 	UserData theUserData;
+#ifndef NewUserDataFromHandle
+	PyMac_PRECHECK(NewUserDataFromHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &h))
 		return NULL;
@@ -6188,6 +7103,9 @@ static PyObject *Qt_CreateMovieFile(PyObject *_self, PyObject *_args)
 	long createMovieFileFlags;
 	short resRefNum;
 	Movie newmovie;
+#ifndef CreateMovieFile
+	PyMac_PRECHECK(CreateMovieFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&hl",
 	                      PyMac_GetFSSpec, &fileSpec,
 	                      PyMac_GetOSType, &creator,
@@ -6214,6 +7132,9 @@ static PyObject *Qt_OpenMovieFile(PyObject *_self, PyObject *_args)
 	FSSpec fileSpec;
 	short resRefNum;
 	SInt8 permission;
+#ifndef OpenMovieFile
+	PyMac_PRECHECK(OpenMovieFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetFSSpec, &fileSpec,
 	                      &permission))
@@ -6232,6 +7153,9 @@ static PyObject *Qt_CloseMovieFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	short resRefNum;
+#ifndef CloseMovieFile
+	PyMac_PRECHECK(CloseMovieFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &resRefNum))
 		return NULL;
@@ -6247,6 +7171,9 @@ static PyObject *Qt_DeleteMovieFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	FSSpec fileSpec;
+#ifndef DeleteMovieFile
+	PyMac_PRECHECK(DeleteMovieFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFSSpec, &fileSpec))
 		return NULL;
@@ -6266,6 +7193,9 @@ static PyObject *Qt_NewMovieFromFile(PyObject *_self, PyObject *_args)
 	short resId;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
+#ifndef NewMovieFromFile
+	PyMac_PRECHECK(NewMovieFromFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hhh",
 	                      &resRefNum,
 	                      &resId,
@@ -6293,6 +7223,9 @@ static PyObject *Qt_NewMovieFromHandle(PyObject *_self, PyObject *_args)
 	Handle h;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
+#ifndef NewMovieFromHandle
+	PyMac_PRECHECK(NewMovieFromHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      ResObj_Convert, &h,
 	                      &newMovieFlags))
@@ -6317,6 +7250,9 @@ static PyObject *Qt_NewMovieFromDataFork(PyObject *_self, PyObject *_args)
 	long fileOffset;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
+#ifndef NewMovieFromDataFork
+	PyMac_PRECHECK(NewMovieFromDataFork);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlh",
 	                      &fRefNum,
 	                      &fileOffset,
@@ -6343,6 +7279,9 @@ static PyObject *Qt_NewMovieFromDataFork64(PyObject *_self, PyObject *_args)
 	wide fileOffset;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
+#ifndef NewMovieFromDataFork64
+	PyMac_PRECHECK(NewMovieFromDataFork64);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&h",
 	                      &fRefNum,
 	                      PyMac_Getwide, &fileOffset,
@@ -6369,6 +7308,9 @@ static PyObject *Qt_NewMovieFromDataRef(PyObject *_self, PyObject *_args)
 	short id;
 	Handle dataRef;
 	OSType dataRefType;
+#ifndef NewMovieFromDataRef
+	PyMac_PRECHECK(NewMovieFromDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&O&",
 	                      &flags,
 	                      ResObj_Convert, &dataRef,
@@ -6392,6 +7334,9 @@ static PyObject *Qt_RemoveMovieResource(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	short resRefNum;
 	short resId;
+#ifndef RemoveMovieResource
+	PyMac_PRECHECK(RemoveMovieResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &resRefNum,
 	                      &resId))
@@ -6414,6 +7359,9 @@ static PyObject *Qt_CreateShortcutMovieFile(PyObject *_self, PyObject *_args)
 	long createMovieFileFlags;
 	Handle targetDataRef;
 	OSType targetDataRefType;
+#ifndef CreateShortcutMovieFile
+	PyMac_PRECHECK(CreateShortcutMovieFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&hlO&O&",
 	                      PyMac_GetFSSpec, &fileSpec,
 	                      PyMac_GetOSType, &creator,
@@ -6445,6 +7393,9 @@ static PyObject *Qt_CanQuickTimeOpenFile(PyObject *_self, PyObject *_args)
 	Boolean outCanOpenAsMovie;
 	Boolean outPreferGraphicsImporter;
 	UInt32 inFlags;
+#ifndef CanQuickTimeOpenFile
+	PyMac_PRECHECK(CanQuickTimeOpenFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
 	                      PyMac_GetFSSpec, &fileSpec,
 	                      PyMac_GetOSType, &fileType,
@@ -6476,6 +7427,9 @@ static PyObject *Qt_CanQuickTimeOpenDataRef(PyObject *_self, PyObject *_args)
 	Boolean outCanOpenAsMovie;
 	Boolean outPreferGraphicsImporter;
 	UInt32 inFlags;
+#ifndef CanQuickTimeOpenDataRef
+	PyMac_PRECHECK(CanQuickTimeOpenDataRef);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      ResObj_Convert, &dataRef,
 	                      PyMac_GetOSType, &dataRefType,
@@ -6500,6 +7454,9 @@ static PyObject *Qt_NewMovieFromScrap(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Movie _rv;
 	long newMovieFlags;
+#ifndef NewMovieFromScrap
+	PyMac_PRECHECK(NewMovieFromScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newMovieFlags))
 		return NULL;
@@ -6516,6 +7473,9 @@ static PyObject *Qt_QTNewAlias(PyObject *_self, PyObject *_args)
 	FSSpec fss;
 	AliasHandle alias;
 	Boolean minimal;
+#ifndef QTNewAlias
+	PyMac_PRECHECK(QTNewAlias);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetFSSpec, &fss,
 	                      &minimal))
@@ -6535,6 +7495,9 @@ static PyObject *Qt_EndFullScreen(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	Ptr fullState;
 	long flags;
+#ifndef EndFullScreen
+	PyMac_PRECHECK(EndFullScreen);
+#endif
 	if (!PyArg_ParseTuple(_args, "sl",
 	                      &fullState,
 	                      &flags))
@@ -6554,6 +7517,9 @@ static PyObject *Qt_AddSoundDescriptionExtension(PyObject *_self, PyObject *_arg
 	SoundDescriptionHandle desc;
 	Handle extension;
 	OSType idType;
+#ifndef AddSoundDescriptionExtension
+	PyMac_PRECHECK(AddSoundDescriptionExtension);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      ResObj_Convert, &desc,
 	                      ResObj_Convert, &extension,
@@ -6575,6 +7541,9 @@ static PyObject *Qt_GetSoundDescriptionExtension(PyObject *_self, PyObject *_arg
 	SoundDescriptionHandle desc;
 	Handle extension;
 	OSType idType;
+#ifndef GetSoundDescriptionExtension
+	PyMac_PRECHECK(GetSoundDescriptionExtension);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &desc,
 	                      PyMac_GetOSType, &idType))
@@ -6594,6 +7563,9 @@ static PyObject *Qt_RemoveSoundDescriptionExtension(PyObject *_self, PyObject *_
 	OSErr _err;
 	SoundDescriptionHandle desc;
 	OSType idType;
+#ifndef RemoveSoundDescriptionExtension
+	PyMac_PRECHECK(RemoveSoundDescriptionExtension);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      ResObj_Convert, &desc,
 	                      PyMac_GetOSType, &idType))
@@ -6612,6 +7584,9 @@ static PyObject *Qt_QTIsStandardParameterDialogEvent(PyObject *_self, PyObject *
 	OSErr _err;
 	EventRecord pEvent;
 	QTParameterDialog createdDialog;
+#ifndef QTIsStandardParameterDialogEvent
+	PyMac_PRECHECK(QTIsStandardParameterDialogEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &createdDialog))
 		return NULL;
@@ -6628,6 +7603,9 @@ static PyObject *Qt_QTDismissStandardParameterDialog(PyObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	QTParameterDialog createdDialog;
+#ifndef QTDismissStandardParameterDialog
+	PyMac_PRECHECK(QTDismissStandardParameterDialog);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &createdDialog))
 		return NULL;
@@ -6645,6 +7623,9 @@ static PyObject *Qt_QTStandardParameterDialogDoAction(PyObject *_self, PyObject 
 	QTParameterDialog createdDialog;
 	long action;
 	void * params;
+#ifndef QTStandardParameterDialogDoAction
+	PyMac_PRECHECK(QTStandardParameterDialogDoAction);
+#endif
 	if (!PyArg_ParseTuple(_args, "lls",
 	                      &createdDialog,
 	                      &action,
@@ -6666,6 +7647,9 @@ static PyObject *Qt_QTRegisterAccessKey(PyObject *_self, PyObject *_args)
 	Str255 accessKeyType;
 	long flags;
 	Handle accessKey;
+#ifndef QTRegisterAccessKey
+	PyMac_PRECHECK(QTRegisterAccessKey);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
 	                      PyMac_GetStr255, accessKeyType,
 	                      &flags,
@@ -6687,6 +7671,9 @@ static PyObject *Qt_QTUnregisterAccessKey(PyObject *_self, PyObject *_args)
 	Str255 accessKeyType;
 	long flags;
 	Handle accessKey;
+#ifndef QTUnregisterAccessKey
+	PyMac_PRECHECK(QTUnregisterAccessKey);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
 	                      PyMac_GetStr255, accessKeyType,
 	                      &flags,
@@ -6708,6 +7695,9 @@ static PyObject *Qt_QTTextToNativeText(PyObject *_self, PyObject *_args)
 	Handle theText;
 	long encoding;
 	long flags;
+#ifndef QTTextToNativeText
+	PyMac_PRECHECK(QTTextToNativeText);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
 	                      ResObj_Convert, &theText,
 	                      &encoding,
@@ -6727,6 +7717,9 @@ static PyObject *Qt_VideoMediaResetStatistics(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	MediaHandler mh;
+#ifndef VideoMediaResetStatistics
+	PyMac_PRECHECK(VideoMediaResetStatistics);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -6741,6 +7734,9 @@ static PyObject *Qt_VideoMediaGetStatistics(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ComponentResult _rv;
 	MediaHandler mh;
+#ifndef VideoMediaGetStatistics
+	PyMac_PRECHECK(VideoMediaGetStatistics);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -6756,6 +7752,9 @@ static PyObject *Qt_VideoMediaGetStallCount(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	unsigned long stalls;
+#ifndef VideoMediaGetStallCount
+	PyMac_PRECHECK(VideoMediaGetStallCount);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -6777,6 +7776,9 @@ static PyObject *Qt_VideoMediaSetCodecParameter(PyObject *_self, PyObject *_args
 	long parameterChangeSeed;
 	void * dataPtr;
 	long dataSize;
+#ifndef VideoMediaSetCodecParameter
+	PyMac_PRECHECK(VideoMediaSetCodecParameter);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&lsl",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetOSType, &cType,
@@ -6804,6 +7806,9 @@ static PyObject *Qt_VideoMediaGetCodecParameter(PyObject *_self, PyObject *_args
 	CodecType cType;
 	OSType parameterID;
 	Handle outParameterData;
+#ifndef VideoMediaGetCodecParameter
+	PyMac_PRECHECK(VideoMediaGetCodecParameter);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetOSType, &cType,
@@ -6840,6 +7845,9 @@ static PyObject *Qt_TextMediaAddTextSample(PyObject *_self, PyObject *_args)
 	RGBColor rgbHiliteColor;
 	TimeValue duration;
 	TimeValue sampleTime;
+#ifndef TextMediaAddTextSample
+	PyMac_PRECHECK(TextMediaAddTextSample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&slhhbhllhhl",
 	                      CmpInstObj_Convert, &mh,
 	                      &text,
@@ -6897,6 +7905,9 @@ static PyObject *Qt_TextMediaAddTESample(PyObject *_self, PyObject *_args)
 	RGBColor rgbHiliteColor;
 	TimeValue duration;
 	TimeValue sampleTime;
+#ifndef TextMediaAddTESample
+	PyMac_PRECHECK(TextMediaAddTESample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&hllhhl",
 	                      CmpInstObj_Convert, &mh,
 	                      ResObj_Convert, &hTE,
@@ -6938,6 +7949,9 @@ static PyObject *Qt_TextMediaAddHiliteSample(PyObject *_self, PyObject *_args)
 	RGBColor rgbHiliteColor;
 	TimeValue duration;
 	TimeValue sampleTime;
+#ifndef TextMediaAddHiliteSample
+	PyMac_PRECHECK(TextMediaAddHiliteSample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hhl",
 	                      CmpInstObj_Convert, &mh,
 	                      &hiliteStart,
@@ -6967,6 +7981,9 @@ static PyObject *Qt_TextMediaDrawRaw(PyObject *_self, PyObject *_args)
 	void * data;
 	long dataSize;
 	TextDescriptionHandle tdh;
+#ifndef TextMediaDrawRaw
+	PyMac_PRECHECK(TextMediaDrawRaw);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&slO&",
 	                      CmpInstObj_Convert, &mh,
 	                      GWorldObj_Convert, &gw,
@@ -6995,6 +8012,9 @@ static PyObject *Qt_TextMediaSetTextProperty(PyObject *_self, PyObject *_args)
 	long propertyType;
 	void * data;
 	long dataSize;
+#ifndef TextMediaSetTextProperty
+	PyMac_PRECHECK(TextMediaSetTextProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&llsl",
 	                      CmpInstObj_Convert, &mh,
 	                      &atMediaTime,
@@ -7023,6 +8043,9 @@ static PyObject *Qt_TextMediaRawSetup(PyObject *_self, PyObject *_args)
 	long dataSize;
 	TextDescriptionHandle tdh;
 	TimeValue sampleDuration;
+#ifndef TextMediaRawSetup
+	PyMac_PRECHECK(TextMediaRawSetup);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&slO&l",
 	                      CmpInstObj_Convert, &mh,
 	                      GWorldObj_Convert, &gw,
@@ -7054,6 +8077,9 @@ static PyObject *Qt_TextMediaRawIdle(PyObject *_self, PyObject *_args)
 	TimeValue sampleTime;
 	long flagsIn;
 	long flagsOut;
+#ifndef TextMediaRawIdle
+	PyMac_PRECHECK(TextMediaRawIdle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&ll",
 	                      CmpInstObj_Convert, &mh,
 	                      GWorldObj_Convert, &gw,
@@ -7082,6 +8108,9 @@ static PyObject *Qt_TextMediaGetTextProperty(PyObject *_self, PyObject *_args)
 	long propertyType;
 	void * data;
 	long dataSize;
+#ifndef TextMediaGetTextProperty
+	PyMac_PRECHECK(TextMediaGetTextProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&llsl",
 	                      CmpInstObj_Convert, &mh,
 	                      &atMediaTime,
@@ -7111,6 +8140,9 @@ static PyObject *Qt_TextMediaFindNextText(PyObject *_self, PyObject *_args)
 	TimeValue foundTime;
 	TimeValue foundDuration;
 	long offset;
+#ifndef TextMediaFindNextText
+	PyMac_PRECHECK(TextMediaFindNextText);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&slhl",
 	                      CmpInstObj_Convert, &mh,
 	                      &text,
@@ -7143,6 +8175,9 @@ static PyObject *Qt_TextMediaHiliteTextSample(PyObject *_self, PyObject *_args)
 	short hiliteStart;
 	short hiliteEnd;
 	RGBColor rgbHiliteColor;
+#ifndef TextMediaHiliteTextSample
+	PyMac_PRECHECK(TextMediaHiliteTextSample);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lhh",
 	                      CmpInstObj_Convert, &mh,
 	                      &sampleTime,
@@ -7167,6 +8202,9 @@ static PyObject *Qt_TextMediaSetTextSampleData(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	void * data;
 	OSType dataType;
+#ifndef TextMediaSetTextSampleData
+	PyMac_PRECHECK(TextMediaSetTextSampleData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&sO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &data,
@@ -7188,6 +8226,9 @@ static PyObject *Qt_SpriteMediaSetProperty(PyObject *_self, PyObject *_args)
 	short spriteIndex;
 	long propertyType;
 	void * propertyValue;
+#ifndef SpriteMediaSetProperty
+	PyMac_PRECHECK(SpriteMediaSetProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hls",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteIndex,
@@ -7211,6 +8252,9 @@ static PyObject *Qt_SpriteMediaGetProperty(PyObject *_self, PyObject *_args)
 	short spriteIndex;
 	long propertyType;
 	void * propertyValue;
+#ifndef SpriteMediaGetProperty
+	PyMac_PRECHECK(SpriteMediaGetProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hls",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteIndex,
@@ -7234,6 +8278,9 @@ static PyObject *Qt_SpriteMediaHitTestSprites(PyObject *_self, PyObject *_args)
 	long flags;
 	Point loc;
 	short spriteHitIndex;
+#ifndef SpriteMediaHitTestSprites
+	PyMac_PRECHECK(SpriteMediaHitTestSprites);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &flags,
@@ -7255,6 +8302,9 @@ static PyObject *Qt_SpriteMediaCountSprites(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	short numSprites;
+#ifndef SpriteMediaCountSprites
+	PyMac_PRECHECK(SpriteMediaCountSprites);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7272,6 +8322,9 @@ static PyObject *Qt_SpriteMediaCountImages(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	short numImages;
+#ifndef SpriteMediaCountImages
+	PyMac_PRECHECK(SpriteMediaCountImages);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7290,6 +8343,9 @@ static PyObject *Qt_SpriteMediaGetIndImageDescription(PyObject *_self, PyObject 
 	MediaHandler mh;
 	short imageIndex;
 	ImageDescriptionHandle imageDescription;
+#ifndef SpriteMediaGetIndImageDescription
+	PyMac_PRECHECK(SpriteMediaGetIndImageDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &imageIndex,
@@ -7309,6 +8365,9 @@ static PyObject *Qt_SpriteMediaGetDisplayedSampleNumber(PyObject *_self, PyObjec
 	ComponentResult _rv;
 	MediaHandler mh;
 	long sampleNum;
+#ifndef SpriteMediaGetDisplayedSampleNumber
+	PyMac_PRECHECK(SpriteMediaGetDisplayedSampleNumber);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7327,6 +8386,9 @@ static PyObject *Qt_SpriteMediaGetSpriteName(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	QTAtomID spriteID;
 	Str255 spriteName;
+#ifndef SpriteMediaGetSpriteName
+	PyMac_PRECHECK(SpriteMediaGetSpriteName);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID,
@@ -7347,6 +8409,9 @@ static PyObject *Qt_SpriteMediaGetImageName(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	short imageIndex;
 	Str255 imageName;
+#ifndef SpriteMediaGetImageName
+	PyMac_PRECHECK(SpriteMediaGetImageName);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &imageIndex,
@@ -7368,6 +8433,9 @@ static PyObject *Qt_SpriteMediaSetSpriteProperty(PyObject *_self, PyObject *_arg
 	QTAtomID spriteID;
 	long propertyType;
 	void * propertyValue;
+#ifndef SpriteMediaSetSpriteProperty
+	PyMac_PRECHECK(SpriteMediaSetSpriteProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lls",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID,
@@ -7391,6 +8459,9 @@ static PyObject *Qt_SpriteMediaGetSpriteProperty(PyObject *_self, PyObject *_arg
 	QTAtomID spriteID;
 	long propertyType;
 	void * propertyValue;
+#ifndef SpriteMediaGetSpriteProperty
+	PyMac_PRECHECK(SpriteMediaGetSpriteProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lls",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID,
@@ -7414,6 +8485,9 @@ static PyObject *Qt_SpriteMediaHitTestAllSprites(PyObject *_self, PyObject *_arg
 	long flags;
 	Point loc;
 	QTAtomID spriteHitID;
+#ifndef SpriteMediaHitTestAllSprites
+	PyMac_PRECHECK(SpriteMediaHitTestAllSprites);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &flags,
@@ -7438,6 +8512,9 @@ static PyObject *Qt_SpriteMediaHitTestOneSprite(PyObject *_self, PyObject *_args
 	long flags;
 	Point loc;
 	Boolean wasHit;
+#ifndef SpriteMediaHitTestOneSprite
+	PyMac_PRECHECK(SpriteMediaHitTestOneSprite);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&llO&",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID,
@@ -7462,6 +8539,9 @@ static PyObject *Qt_SpriteMediaSpriteIndexToID(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	short spriteIndex;
 	QTAtomID spriteID;
+#ifndef SpriteMediaSpriteIndexToID
+	PyMac_PRECHECK(SpriteMediaSpriteIndexToID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteIndex))
@@ -7482,6 +8562,9 @@ static PyObject *Qt_SpriteMediaSpriteIDToIndex(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	QTAtomID spriteID;
 	short spriteIndex;
+#ifndef SpriteMediaSpriteIDToIndex
+	PyMac_PRECHECK(SpriteMediaSpriteIDToIndex);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID))
@@ -7502,6 +8585,9 @@ static PyObject *Qt_SpriteMediaSetActionVariable(PyObject *_self, PyObject *_arg
 	MediaHandler mh;
 	QTAtomID variableID;
 	float value;
+#ifndef SpriteMediaSetActionVariable
+	PyMac_PRECHECK(SpriteMediaSetActionVariable);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lf",
 	                      CmpInstObj_Convert, &mh,
 	                      &variableID,
@@ -7522,6 +8608,9 @@ static PyObject *Qt_SpriteMediaGetActionVariable(PyObject *_self, PyObject *_arg
 	MediaHandler mh;
 	QTAtomID variableID;
 	float value;
+#ifndef SpriteMediaGetActionVariable
+	PyMac_PRECHECK(SpriteMediaGetActionVariable);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &variableID))
@@ -7545,6 +8634,9 @@ static PyObject *Qt_SpriteMediaGetIndImageProperty(PyObject *_self, PyObject *_a
 	short imageIndex;
 	long imagePropertyType;
 	void * imagePropertyValue;
+#ifndef SpriteMediaGetIndImageProperty
+	PyMac_PRECHECK(SpriteMediaGetIndImageProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hls",
 	                      CmpInstObj_Convert, &mh,
 	                      &imageIndex,
@@ -7567,6 +8659,9 @@ static PyObject *Qt_SpriteMediaDisposeSprite(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	QTAtomID spriteID;
+#ifndef SpriteMediaDisposeSprite
+	PyMac_PRECHECK(SpriteMediaDisposeSprite);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &spriteID))
@@ -7585,6 +8680,9 @@ static PyObject *Qt_SpriteMediaSetActionVariableToString(PyObject *_self, PyObje
 	MediaHandler mh;
 	QTAtomID variableID;
 	Ptr theCString;
+#ifndef SpriteMediaSetActionVariableToString
+	PyMac_PRECHECK(SpriteMediaSetActionVariableToString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&ls",
 	                      CmpInstObj_Convert, &mh,
 	                      &variableID,
@@ -7605,6 +8703,9 @@ static PyObject *Qt_SpriteMediaGetActionVariableAsString(PyObject *_self, PyObje
 	MediaHandler mh;
 	QTAtomID variableID;
 	Handle theCString;
+#ifndef SpriteMediaGetActionVariableAsString
+	PyMac_PRECHECK(SpriteMediaGetActionVariableAsString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &variableID))
@@ -7625,6 +8726,9 @@ static PyObject *Qt_FlashMediaSetPan(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	short xPercent;
 	short yPercent;
+#ifndef FlashMediaSetPan
+	PyMac_PRECHECK(FlashMediaSetPan);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hh",
 	                      CmpInstObj_Convert, &mh,
 	                      &xPercent,
@@ -7644,6 +8748,9 @@ static PyObject *Qt_FlashMediaSetZoom(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	short factor;
+#ifndef FlashMediaSetZoom
+	PyMac_PRECHECK(FlashMediaSetZoom);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      CmpInstObj_Convert, &mh,
 	                      &factor))
@@ -7664,6 +8771,9 @@ static PyObject *Qt_FlashMediaSetZoomRect(PyObject *_self, PyObject *_args)
 	long top;
 	long right;
 	long bottom;
+#ifndef FlashMediaSetZoomRect
+	PyMac_PRECHECK(FlashMediaSetZoomRect);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&llll",
 	                      CmpInstObj_Convert, &mh,
 	                      &left,
@@ -7691,6 +8801,9 @@ static PyObject *Qt_FlashMediaGetRefConBounds(PyObject *_self, PyObject *_args)
 	long top;
 	long right;
 	long bottom;
+#ifndef FlashMediaGetRefConBounds
+	PyMac_PRECHECK(FlashMediaGetRefConBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &refCon))
@@ -7717,6 +8830,9 @@ static PyObject *Qt_FlashMediaGetRefConID(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	long refCon;
 	long refConID;
+#ifndef FlashMediaGetRefConID
+	PyMac_PRECHECK(FlashMediaGetRefConID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &refCon))
@@ -7737,6 +8853,9 @@ static PyObject *Qt_FlashMediaIDToRefCon(PyObject *_self, PyObject *_args)
 	MediaHandler mh;
 	long refConID;
 	long refCon;
+#ifndef FlashMediaIDToRefCon
+	PyMac_PRECHECK(FlashMediaIDToRefCon);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &refConID))
@@ -7756,6 +8875,9 @@ static PyObject *Qt_FlashMediaGetDisplayedFrameNumber(PyObject *_self, PyObject 
 	ComponentResult _rv;
 	MediaHandler mh;
 	long flashFrameNumber;
+#ifndef FlashMediaGetDisplayedFrameNumber
+	PyMac_PRECHECK(FlashMediaGetDisplayedFrameNumber);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7774,6 +8896,9 @@ static PyObject *Qt_FlashMediaFrameNumberToMovieTime(PyObject *_self, PyObject *
 	MediaHandler mh;
 	long flashFrameNumber;
 	TimeValue movieTime;
+#ifndef FlashMediaFrameNumberToMovieTime
+	PyMac_PRECHECK(FlashMediaFrameNumberToMovieTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &flashFrameNumber))
@@ -7794,6 +8919,9 @@ static PyObject *Qt_FlashMediaFrameLabelToMovieTime(PyObject *_self, PyObject *_
 	MediaHandler mh;
 	Ptr theLabel;
 	TimeValue movieTime;
+#ifndef FlashMediaFrameLabelToMovieTime
+	PyMac_PRECHECK(FlashMediaFrameLabelToMovieTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &theLabel))
@@ -7815,6 +8943,9 @@ static PyObject *Qt_FlashMediaGetFlashVariable(PyObject *_self, PyObject *_args)
 	char path;
 	char name;
 	Handle theVariableCStringOut;
+#ifndef FlashMediaGetFlashVariable
+	PyMac_PRECHECK(FlashMediaGetFlashVariable);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7839,6 +8970,9 @@ static PyObject *Qt_FlashMediaSetFlashVariable(PyObject *_self, PyObject *_args)
 	char name;
 	char value;
 	Boolean updateFocus;
+#ifndef FlashMediaSetFlashVariable
+	PyMac_PRECHECK(FlashMediaSetFlashVariable);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      CmpInstObj_Convert, &mh,
 	                      &updateFocus))
@@ -7864,6 +8998,9 @@ static PyObject *Qt_FlashMediaDoButtonActions(PyObject *_self, PyObject *_args)
 	char path;
 	long buttonID;
 	long transition;
+#ifndef FlashMediaDoButtonActions
+	PyMac_PRECHECK(FlashMediaDoButtonActions);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
 	                      CmpInstObj_Convert, &mh,
 	                      &buttonID,
@@ -7885,6 +9022,9 @@ static PyObject *Qt_FlashMediaGetSupportedSwfVersion(PyObject *_self, PyObject *
 	ComponentResult _rv;
 	MediaHandler mh;
 	UInt8 swfVersion;
+#ifndef FlashMediaGetSupportedSwfVersion
+	PyMac_PRECHECK(FlashMediaGetSupportedSwfVersion);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -7905,6 +9045,9 @@ static PyObject *Qt_MovieMediaGetCurrentMovieProperty(PyObject *_self, PyObject 
 	MediaHandler mh;
 	OSType whichProperty;
 	void * value;
+#ifndef MovieMediaGetCurrentMovieProperty
+	PyMac_PRECHECK(MovieMediaGetCurrentMovieProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetOSType, &whichProperty,
@@ -7929,6 +9072,9 @@ static PyObject *Qt_MovieMediaGetCurrentTrackProperty(PyObject *_self, PyObject 
 	long trackID;
 	OSType whichProperty;
 	void * value;
+#ifndef MovieMediaGetCurrentTrackProperty
+	PyMac_PRECHECK(MovieMediaGetCurrentTrackProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &trackID,
@@ -7958,6 +9104,9 @@ static PyObject *Qt_MovieMediaGetChildMovieDataReference(PyObject *_self, PyObje
 	Handle dataRef;
 	QTAtomID dataRefIDOut;
 	short dataRefIndexOut;
+#ifndef MovieMediaGetChildMovieDataReference
+	PyMac_PRECHECK(MovieMediaGetChildMovieDataReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lh",
 	                      CmpInstObj_Convert, &mh,
 	                      &dataRefID,
@@ -7990,6 +9139,9 @@ static PyObject *Qt_MovieMediaSetChildMovieDataReference(PyObject *_self, PyObje
 	QTAtomID dataRefID;
 	OSType dataRefType;
 	Handle dataRef;
+#ifndef MovieMediaSetChildMovieDataReference
+	PyMac_PRECHECK(MovieMediaSetChildMovieDataReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lO&O&",
 	                      CmpInstObj_Convert, &mh,
 	                      &dataRefID,
@@ -8014,6 +9166,9 @@ static PyObject *Qt_MovieMediaLoadChildMovieFromDataReference(PyObject *_self, P
 	ComponentResult _rv;
 	MediaHandler mh;
 	QTAtomID dataRefID;
+#ifndef MovieMediaLoadChildMovieFromDataReference
+	PyMac_PRECHECK(MovieMediaLoadChildMovieFromDataReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &mh,
 	                      &dataRefID))
@@ -8032,6 +9187,9 @@ static PyObject *Qt_Media3DGetCurrentGroup(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * group;
+#ifndef Media3DGetCurrentGroup
+	PyMac_PRECHECK(Media3DGetCurrentGroup);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &group))
@@ -8052,6 +9210,9 @@ static PyObject *Qt_Media3DTranslateNamedObjectTo(PyObject *_self, PyObject *_ar
 	Fixed x;
 	Fixed y;
 	Fixed z;
+#ifndef Media3DTranslateNamedObjectTo
+	PyMac_PRECHECK(Media3DTranslateNamedObjectTo);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetFixed, &x,
@@ -8078,6 +9239,9 @@ static PyObject *Qt_Media3DScaleNamedObjectTo(PyObject *_self, PyObject *_args)
 	Fixed xScale;
 	Fixed yScale;
 	Fixed zScale;
+#ifndef Media3DScaleNamedObjectTo
+	PyMac_PRECHECK(Media3DScaleNamedObjectTo);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetFixed, &xScale,
@@ -8104,6 +9268,9 @@ static PyObject *Qt_Media3DRotateNamedObjectTo(PyObject *_self, PyObject *_args)
 	Fixed xDegrees;
 	Fixed yDegrees;
 	Fixed zDegrees;
+#ifndef Media3DRotateNamedObjectTo
+	PyMac_PRECHECK(Media3DRotateNamedObjectTo);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
 	                      CmpInstObj_Convert, &mh,
 	                      PyMac_GetFixed, &xDegrees,
@@ -8127,6 +9294,9 @@ static PyObject *Qt_Media3DSetCameraData(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * cameraData;
+#ifndef Media3DSetCameraData
+	PyMac_PRECHECK(Media3DSetCameraData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &cameraData))
@@ -8144,6 +9314,9 @@ static PyObject *Qt_Media3DGetCameraData(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * cameraData;
+#ifndef Media3DGetCameraData
+	PyMac_PRECHECK(Media3DGetCameraData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &cameraData))
@@ -8162,6 +9335,9 @@ static PyObject *Qt_Media3DSetCameraAngleAspect(PyObject *_self, PyObject *_args
 	MediaHandler mh;
 	QTFloatSingle fov;
 	QTFloatSingle aspectRatioXToY;
+#ifndef Media3DSetCameraAngleAspect
+	PyMac_PRECHECK(Media3DSetCameraAngleAspect);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&ff",
 	                      CmpInstObj_Convert, &mh,
 	                      &fov,
@@ -8182,6 +9358,9 @@ static PyObject *Qt_Media3DGetCameraAngleAspect(PyObject *_self, PyObject *_args
 	MediaHandler mh;
 	QTFloatSingle fov;
 	QTFloatSingle aspectRatioXToY;
+#ifndef Media3DGetCameraAngleAspect
+	PyMac_PRECHECK(Media3DGetCameraAngleAspect);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &mh))
 		return NULL;
@@ -8201,6 +9380,9 @@ static PyObject *Qt_Media3DSetCameraRange(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * tQ3CameraRange;
+#ifndef Media3DSetCameraRange
+	PyMac_PRECHECK(Media3DSetCameraRange);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &tQ3CameraRange))
@@ -8218,6 +9400,9 @@ static PyObject *Qt_Media3DGetCameraRange(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * tQ3CameraRange;
+#ifndef Media3DGetCameraRange
+	PyMac_PRECHECK(Media3DGetCameraRange);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &tQ3CameraRange))
@@ -8237,6 +9422,9 @@ static PyObject *Qt_Media3DGetViewObject(PyObject *_self, PyObject *_args)
 	ComponentResult _rv;
 	MediaHandler mh;
 	void * tq3viewObject;
+#ifndef Media3DGetViewObject
+	PyMac_PRECHECK(Media3DGetViewObject);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s",
 	                      CmpInstObj_Convert, &mh,
 	                      &tq3viewObject))
@@ -8253,6 +9441,9 @@ static PyObject *Qt_NewTimeBase(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TimeBase _rv;
+#ifndef NewTimeBase
+	PyMac_PRECHECK(NewTimeBase);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = NewTimeBase();
@@ -8266,6 +9457,9 @@ static PyObject *Qt_ConvertTime(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeRecord theTime;
 	TimeBase newBase;
+#ifndef ConvertTime
+	PyMac_PRECHECK(ConvertTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      TimeBaseObj_Convert, &newBase))
 		return NULL;
@@ -8281,6 +9475,9 @@ static PyObject *Qt_ConvertTimeScale(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeRecord theTime;
 	TimeScale newScale;
+#ifndef ConvertTimeScale
+	PyMac_PRECHECK(ConvertTimeScale);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newScale))
 		return NULL;
@@ -8296,6 +9493,9 @@ static PyObject *Qt_AddTime(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeRecord dst;
 	TimeRecord src;
+#ifndef AddTime
+	PyMac_PRECHECK(AddTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      QtTimeRecord_Convert, &dst,
 	                      QtTimeRecord_Convert, &src))
@@ -8312,6 +9512,9 @@ static PyObject *Qt_SubtractTime(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TimeRecord dst;
 	TimeRecord src;
+#ifndef SubtractTime
+	PyMac_PRECHECK(SubtractTime);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      QtTimeRecord_Convert, &dst,
 	                      QtTimeRecord_Convert, &src))
@@ -8330,6 +9533,9 @@ static PyObject *Qt_MusicMediaGetIndexedTunePlayer(PyObject *_self, PyObject *_a
 	ComponentInstance ti;
 	long sampleDescIndex;
 	ComponentInstance tp;
+#ifndef MusicMediaGetIndexedTunePlayer
+	PyMac_PRECHECK(MusicMediaGetIndexedTunePlayer);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CmpInstObj_Convert, &ti,
 	                      &sampleDescIndex))
@@ -8348,6 +9554,9 @@ static PyObject *Qt_AlignWindow(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	WindowPtr wp;
 	Boolean front;
+#ifndef AlignWindow
+	PyMac_PRECHECK(AlignWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      WinObj_Convert, &wp,
 	                      &front))
@@ -8367,6 +9576,9 @@ static PyObject *Qt_DragAlignedWindow(PyObject *_self, PyObject *_args)
 	WindowPtr wp;
 	Point startPt;
 	Rect boundsRect;
+#ifndef DragAlignedWindow
+	PyMac_PRECHECK(DragAlignedWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      WinObj_Convert, &wp,
 	                      PyMac_GetPoint, &startPt,
@@ -8386,6 +9598,9 @@ static PyObject *Qt_MoviesTask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long maxMilliSecToUse;
+#ifndef MoviesTask
+	PyMac_PRECHECK(MoviesTask);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &maxMilliSecToUse))
 		return NULL;

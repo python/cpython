@@ -109,6 +109,9 @@ static PyObject *TEObj_TESetText(TEObject *_self, PyObject *_args)
 	char *text__in__;
 	long text__len__;
 	int text__in_len__;
+#ifndef TESetText
+	PyMac_PRECHECK(TESetText);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#",
 	                      &text__in__, &text__in_len__))
 		return NULL;
@@ -124,6 +127,9 @@ static PyObject *TEObj_TEGetText(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CharsHandle _rv;
+#ifndef TEGetText
+	PyMac_PRECHECK(TEGetText);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEGetText(_self->ob_itself);
@@ -135,6 +141,9 @@ static PyObject *TEObj_TEGetText(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEIdle(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEIdle
+	PyMac_PRECHECK(TEIdle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEIdle(_self->ob_itself);
@@ -148,6 +157,9 @@ static PyObject *TEObj_TESetSelect(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	long selStart;
 	long selEnd;
+#ifndef TESetSelect
+	PyMac_PRECHECK(TESetSelect);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &selStart,
 	                      &selEnd))
@@ -163,6 +175,9 @@ static PyObject *TEObj_TESetSelect(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEActivate(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEActivate
+	PyMac_PRECHECK(TEActivate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEActivate(_self->ob_itself);
@@ -174,6 +189,9 @@ static PyObject *TEObj_TEActivate(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEDeactivate(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEDeactivate
+	PyMac_PRECHECK(TEDeactivate);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEDeactivate(_self->ob_itself);
@@ -186,6 +204,9 @@ static PyObject *TEObj_TEKey(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CharParameter key;
+#ifndef TEKey
+	PyMac_PRECHECK(TEKey);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &key))
 		return NULL;
@@ -199,6 +220,9 @@ static PyObject *TEObj_TEKey(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TECut(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TECut
+	PyMac_PRECHECK(TECut);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TECut(_self->ob_itself);
@@ -210,6 +234,9 @@ static PyObject *TEObj_TECut(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TECopy(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TECopy
+	PyMac_PRECHECK(TECopy);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TECopy(_self->ob_itself);
@@ -221,6 +248,9 @@ static PyObject *TEObj_TECopy(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEPaste(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEPaste
+	PyMac_PRECHECK(TEPaste);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEPaste(_self->ob_itself);
@@ -232,6 +262,9 @@ static PyObject *TEObj_TEPaste(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEDelete(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEDelete
+	PyMac_PRECHECK(TEDelete);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEDelete(_self->ob_itself);
@@ -246,6 +279,9 @@ static PyObject *TEObj_TEInsert(TEObject *_self, PyObject *_args)
 	char *text__in__;
 	long text__len__;
 	int text__in_len__;
+#ifndef TEInsert
+	PyMac_PRECHECK(TEInsert);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#",
 	                      &text__in__, &text__in_len__))
 		return NULL;
@@ -261,6 +297,9 @@ static PyObject *TEObj_TESetAlignment(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short just;
+#ifndef TESetAlignment
+	PyMac_PRECHECK(TESetAlignment);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &just))
 		return NULL;
@@ -275,6 +314,9 @@ static PyObject *TEObj_TEUpdate(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect rUpdate;
+#ifndef TEUpdate
+	PyMac_PRECHECK(TEUpdate);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &rUpdate))
 		return NULL;
@@ -290,6 +332,9 @@ static PyObject *TEObj_TEScroll(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short dh;
 	short dv;
+#ifndef TEScroll
+	PyMac_PRECHECK(TEScroll);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &dh,
 	                      &dv))
@@ -305,6 +350,9 @@ static PyObject *TEObj_TEScroll(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TESelView(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TESelView
+	PyMac_PRECHECK(TESelView);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TESelView(_self->ob_itself);
@@ -318,6 +366,9 @@ static PyObject *TEObj_TEPinScroll(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short dh;
 	short dv;
+#ifndef TEPinScroll
+	PyMac_PRECHECK(TEPinScroll);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &dh,
 	                      &dv))
@@ -334,6 +385,9 @@ static PyObject *TEObj_TEAutoView(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean fAuto;
+#ifndef TEAutoView
+	PyMac_PRECHECK(TEAutoView);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &fAuto))
 		return NULL;
@@ -347,6 +401,9 @@ static PyObject *TEObj_TEAutoView(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TECalText(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TECalText
+	PyMac_PRECHECK(TECalText);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TECalText(_self->ob_itself);
@@ -360,6 +417,9 @@ static PyObject *TEObj_TEGetOffset(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	Point pt;
+#ifndef TEGetOffset
+	PyMac_PRECHECK(TEGetOffset);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &pt))
 		return NULL;
@@ -375,6 +435,9 @@ static PyObject *TEObj_TEGetPoint(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Point _rv;
 	short offset;
+#ifndef TEGetPoint
+	PyMac_PRECHECK(TEGetPoint);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &offset))
 		return NULL;
@@ -390,6 +453,9 @@ static PyObject *TEObj_TEClick(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Point pt;
 	Boolean fExtend;
+#ifndef TEClick
+	PyMac_PRECHECK(TEClick);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetPoint, &pt,
 	                      &fExtend))
@@ -406,6 +472,9 @@ static PyObject *TEObj_TESetStyleHandle(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TEStyleHandle theHandle;
+#ifndef TESetStyleHandle
+	PyMac_PRECHECK(TESetStyleHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theHandle))
 		return NULL;
@@ -420,6 +489,9 @@ static PyObject *TEObj_TEGetStyleHandle(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	TEStyleHandle _rv;
+#ifndef TEGetStyleHandle
+	PyMac_PRECHECK(TEGetStyleHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEGetStyleHandle(_self->ob_itself);
@@ -435,6 +507,9 @@ static PyObject *TEObj_TEGetStyle(TEObject *_self, PyObject *_args)
 	TextStyle theStyle;
 	short lineHeight;
 	short fontAscent;
+#ifndef TEGetStyle
+	PyMac_PRECHECK(TEGetStyle);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &offset))
 		return NULL;
@@ -453,6 +528,9 @@ static PyObject *TEObj_TEGetStyle(TEObject *_self, PyObject *_args)
 static PyObject *TEObj_TEStylePaste(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef TEStylePaste
+	PyMac_PRECHECK(TEStylePaste);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	TEStylePaste(_self->ob_itself);
@@ -467,6 +545,9 @@ static PyObject *TEObj_TESetStyle(TEObject *_self, PyObject *_args)
 	short mode;
 	TextStyle newStyle;
 	Boolean fRedraw;
+#ifndef TESetStyle
+	PyMac_PRECHECK(TESetStyle);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&b",
 	                      &mode,
 	                      TextStyle_Convert, &newStyle,
@@ -488,6 +569,9 @@ static PyObject *TEObj_TEReplaceStyle(TEObject *_self, PyObject *_args)
 	TextStyle oldStyle;
 	TextStyle newStyle;
 	Boolean fRedraw;
+#ifndef TEReplaceStyle
+	PyMac_PRECHECK(TEReplaceStyle);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&O&b",
 	                      &mode,
 	                      TextStyle_Convert, &oldStyle,
@@ -508,6 +592,9 @@ static PyObject *TEObj_TEGetStyleScrapHandle(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	StScrpHandle _rv;
+#ifndef TEGetStyleScrapHandle
+	PyMac_PRECHECK(TEGetStyleScrapHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEGetStyleScrapHandle(_self->ob_itself);
@@ -523,6 +610,9 @@ static PyObject *TEObj_TEStyleInsert(TEObject *_self, PyObject *_args)
 	long text__len__;
 	int text__in_len__;
 	StScrpHandle hST;
+#ifndef TEStyleInsert
+	PyMac_PRECHECK(TEStyleInsert);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#O&",
 	                      &text__in__, &text__in_len__,
 	                      ResObj_Convert, &hST))
@@ -542,6 +632,9 @@ static PyObject *TEObj_TEGetHeight(TEObject *_self, PyObject *_args)
 	long _rv;
 	long endLine;
 	long startLine;
+#ifndef TEGetHeight
+	PyMac_PRECHECK(TEGetHeight);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &endLine,
 	                      &startLine))
@@ -560,6 +653,9 @@ static PyObject *TEObj_TEContinuousStyle(TEObject *_self, PyObject *_args)
 	Boolean _rv;
 	short mode;
 	TextStyle aStyle;
+#ifndef TEContinuousStyle
+	PyMac_PRECHECK(TEContinuousStyle);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &mode,
 	                      TextStyle_Convert, &aStyle))
@@ -581,6 +677,9 @@ static PyObject *TEObj_TEUseStyleScrap(TEObject *_self, PyObject *_args)
 	long rangeEnd;
 	StScrpHandle newStyles;
 	Boolean fRedraw;
+#ifndef TEUseStyleScrap
+	PyMac_PRECHECK(TEUseStyleScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, "llO&b",
 	                      &rangeStart,
 	                      &rangeEnd,
@@ -603,6 +702,9 @@ static PyObject *TEObj_TENumStyles(TEObject *_self, PyObject *_args)
 	long _rv;
 	long rangeStart;
 	long rangeEnd;
+#ifndef TENumStyles
+	PyMac_PRECHECK(TENumStyles);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &rangeStart,
 	                      &rangeEnd))
@@ -621,6 +723,9 @@ static PyObject *TEObj_TEFeatureFlag(TEObject *_self, PyObject *_args)
 	short _rv;
 	short feature;
 	short action;
+#ifndef TEFeatureFlag
+	PyMac_PRECHECK(TEFeatureFlag);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &feature,
 	                      &action))
@@ -638,6 +743,9 @@ static PyObject *TEObj_TEGetHiliteRgn(TEObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	RgnHandle region;
+#ifndef TEGetHiliteRgn
+	PyMac_PRECHECK(TEGetHiliteRgn);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &region))
 		return NULL;
@@ -653,6 +761,9 @@ static PyObject *TEObj_as_Resource(TEObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef as_Resource
+	PyMac_PRECHECK(as_Resource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = as_Resource(_self->ob_itself);
@@ -818,6 +929,9 @@ static PyObject *TE_TEScrapHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef TEScrapHandle
+	PyMac_PRECHECK(TEScrapHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEScrapHandle();
@@ -830,6 +944,9 @@ static PyObject *TE_TEGetScrapLength(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef TEGetScrapLength
+	PyMac_PRECHECK(TEGetScrapLength);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEGetScrapLength();
@@ -844,6 +961,9 @@ static PyObject *TE_TENew(PyObject *_self, PyObject *_args)
 	TEHandle _rv;
 	Rect destRect;
 	Rect viewRect;
+#ifndef TENew
+	PyMac_PRECHECK(TENew);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetRect, &destRect,
 	                      PyMac_GetRect, &viewRect))
@@ -863,6 +983,9 @@ static PyObject *TE_TETextBox(PyObject *_self, PyObject *_args)
 	int text__in_len__;
 	Rect box;
 	short just;
+#ifndef TETextBox
+	PyMac_PRECHECK(TETextBox);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#O&h",
 	                      &text__in__, &text__in_len__,
 	                      PyMac_GetRect, &box,
@@ -883,6 +1006,9 @@ static PyObject *TE_TEStyleNew(PyObject *_self, PyObject *_args)
 	TEHandle _rv;
 	Rect destRect;
 	Rect viewRect;
+#ifndef TEStyleNew
+	PyMac_PRECHECK(TEStyleNew);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetRect, &destRect,
 	                      PyMac_GetRect, &viewRect))
@@ -898,6 +1024,9 @@ static PyObject *TE_TESetScrapLength(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long length;
+#ifndef TESetScrapLength
+	PyMac_PRECHECK(TESetScrapLength);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &length))
 		return NULL;
@@ -911,6 +1040,9 @@ static PyObject *TE_TEFromScrap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef TEFromScrap
+	PyMac_PRECHECK(TEFromScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TEFromScrap();
@@ -924,6 +1056,9 @@ static PyObject *TE_TEToScrap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef TEToScrap
+	PyMac_PRECHECK(TEToScrap);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = TEToScrap();
@@ -939,6 +1074,9 @@ static PyObject *TE_TEGetScrapHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef TEGetScrapHandle
+	PyMac_PRECHECK(TEGetScrapHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TEGetScrapHandle();
@@ -954,6 +1092,9 @@ static PyObject *TE_TESetScrapHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle value;
+#ifndef TESetScrapHandle
+	PyMac_PRECHECK(TESetScrapHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &value))
 		return NULL;
@@ -968,6 +1109,9 @@ static PyObject *TE_LMGetWordRedraw(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 _rv;
+#ifndef LMGetWordRedraw
+	PyMac_PRECHECK(LMGetWordRedraw);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = LMGetWordRedraw();
@@ -980,6 +1124,9 @@ static PyObject *TE_LMSetWordRedraw(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 value;
+#ifndef LMSetWordRedraw
+	PyMac_PRECHECK(LMSetWordRedraw);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &value))
 		return NULL;
@@ -994,6 +1141,9 @@ static PyObject *TE_as_TE(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	TEHandle _rv;
 	Handle h;
+#ifndef as_TE
+	PyMac_PRECHECK(as_TE);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &h))
 		return NULL;
