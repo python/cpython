@@ -473,9 +473,10 @@ produces some output.  You can generally ignore the messages about
 skipped tests due to an optional feature that can't be imported (if
 you want to test those modules, edit Modules/Setup to configure them).
 If a messages is printed about a failed test or a traceback or core
-dump is produced, something's wrong.  On some systems, test_strftime
-fails due to a non-standard implementation of strftime() in the C
-library.  This can be ignored (or you can complain to your vendor).
+dump is produced, something's wrong.  On some Linux systems (those
+that are not yet using glibc 6), test_strftime fails due to a
+non-standard-compliant implementation of strftime() in the C library.
+Please ignore this, or upgrade to glibc version 6.
 
 IMPORTANT: If the tests fail and you decide to mail a bug report,
 *don't* include the output of "make test".  It is useless.  Run the
