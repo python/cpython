@@ -126,6 +126,10 @@ void init_thread _P0()
 #include "thread_cthread.h"
 #endif
 
+#ifdef NT_THREADS
+#include "thread_nt.h"
+#endif
+
 /*
 #ifdef FOOBAR_THREADS
 #include "thread_foobar.h"
