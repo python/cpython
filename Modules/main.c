@@ -418,6 +418,15 @@ Py_Main(int argc, char **argv)
 			filename != NULL, &cf) != 0;
 	}
 
+	/* Check this environment variable at the end, to give programs the
+	 * opportunity to set it from Python.
+	 */
+	if (!saw_inspect_flag &&
+	    (p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+	{
+		inspect = 1;
+	}
+
 	if (inspect && stdin_is_interactive &&
 	    (filename != NULL || command != NULL))
 		/* XXX */
