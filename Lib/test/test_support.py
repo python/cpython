@@ -148,7 +148,7 @@ class BasicTestRunner:
         return result
 
 
-def run_suite(suite):
+def run_suite(suite, testclass=None):
     """Run tests from a unittest.TestSuite-derived class."""
     if verbose:
         runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
@@ -162,14 +162,18 @@ def run_suite(suite):
         elif len(result.failures) == 1 and not result.errors:
             err = result.failures[0][1]
         else:
-            raise TestFailed("errors occurred in %s.%s"
-                             % (testclass.__module__, testclass.__name__))
+            if testclass is None:
+                msg = "errors occurred; run in verbose mode for details"
+            else:
+                msg = "errors occurred in %s.%s" \
+                      % (testclass.__module__, testclass.__name__)
+            raise TestFailed(msg)
         raise TestFailed(err)
 
 
 def run_unittest(testclass):
     """Run tests from a unittest.TestCase-derived class."""
-    run_suite(unittest.makeSuite(testclass))
+    run_suite(unittest.makeSuite(testclass), testclass)
 
 
 #=======================================================================
