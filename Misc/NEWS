@@ -515,6 +515,9 @@ Tools/Demos
 Build
 -----
 
+- Profiling using gprof is now available if Python is configured with
+  --enable-profiling.
+
 - Profiling the VM using the Pentium TSC is now possible if Python
   is configured --with-tsc.
 
