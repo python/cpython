@@ -108,6 +108,28 @@ op_pow(PyObject *s, PyObject *a)
 }
 
 static PyObject*
+is_(PyObject *s, PyObject *a)
+{
+	PyObject *a1, *a2, *result = NULL;
+	if (PyArg_UnpackTuple(a,"is_", 2, 2, &a1, &a2)) {
+		result = (a1 == a2) ? Py_True : Py_False;
+		Py_INCREF(result);
+	}
+	return result;
+}
+
+static PyObject*
+is_not(PyObject *s, PyObject *a)
+{
+	PyObject *a1, *a2, *result = NULL;
+	if (PyArg_UnpackTuple(a,"is_not", 2, 2, &a1, &a2)) {
+		result = (a1 != a2) ? Py_True : Py_False;
+		Py_INCREF(result);
+	}
+	return result;
+}
+
+static PyObject*
 op_getslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
@@ -182,6 +204,8 @@ spam1(countOf,
 spam1o(isMappingType,
  "isMappingType(a) -- Return True if a has a mapping type, False otherwise.")
 
+spam1(is_, "is_(a, b) -- Same as a is b.")
+spam1(is_not, "is_not(a, b) -- Same as a is not b.")
 spam2(add,__add__, "add(a, b) -- Same as a + b.")
 spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")
 spam2(mul,__mul__, "mul(a, b) -- Same as a * b.")

@@ -48,7 +48,7 @@ for more informations about rich comparisons.
 
 
 The logical operations are also generally applicable to all objects,
-and support truth tests and Boolean operations:
+and support truth tests, identity tests, and Boolean operations:
 
 \begin{funcdesc}{not_}{o}
 \funcline{__not__}{o}
@@ -62,6 +62,14 @@ core defines this operation.  The result is affected by the
 Return \constant{True} if \var{o} is true, and \constant{False}
 otherwise.  This is equivalent to using the \class{bool}
 constructor.
+\end{funcdesc}
+
+\begin{funcdesc}{is_}{a, b}
+Return \code{\var{a} is \var{b}}.  Tests object identity.
+\end{funcdesc}
+
+\begin{funcdesc}{is_not}{a, b}
+Return \code{\var{a} is not \var{b}}.  Tests object identity.
 \end{funcdesc}
 
 
