@@ -270,6 +270,11 @@ Tests
 Windows
 -------
 
+- The _winreg module could segfault when reading very large registry
+  values, due to unchecked alloca() calls (SF bug 851056).  The fix is
+  uses either PyMem_Malloc(n) or PyString_FromStringAndSize(NULL, n),
+  as appropriate, followed by a size check.
+
 - file.truncate() could misbehave if the file was open for update
   (modes r+, rb+, w+, wb+), and the most recent file operation before
   the truncate() call was an input operation.  SF bug 801631.
