@@ -360,8 +360,9 @@ Extension modules
 Library
 -------
 
-- Bug #754449: threading.Thread objects will now print out a traceback even
-  when an exception is raised in a thread during interpreter shutdown.
+- Bug #754449: threading.Thread objects no longer mask exceptions raised during
+  interpreter shutdown with another exception from attempting to handle the
+  original exception.
 
 - Added Decimal.py per PEP 327.
 
