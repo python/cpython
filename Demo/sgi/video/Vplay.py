@@ -15,6 +15,7 @@ def help():
 	print '-d         : write some debug stuff on stderr'
 	print '-l         : loop, playing the movie over and over again'
 	print '-m delta   : drop frames closer than delta msec (default 0)'
+	print '-n         : don\'t wait after each file'
 	print '-q         : quiet, no informative messages'
 	print '-r delta   : regenerate input time base delta msec apart'
 	print '-s speed   : speed change factor (default 1.0)'
@@ -137,13 +138,7 @@ def process(filename):
 		return 1
 
 	if not quiet:
-		print 'File:    ', filename
-		print 'Version: ', vin.version
-		print 'Size:    ', vin.width, 'x', vin.height
-		print 'Pack:    ', vin.packfactor, '; chrom:', vin.chrompack
-		print 'Bits:    ', vin.c0bits, vin.c1bits, vin.c2bits
-		print 'Format:  ', vin.format
-		print 'Offset:  ', vin.offset
+		vin.printinfo()
 	
 	gl.foreground()
 
@@ -211,6 +206,8 @@ def playonce(vin):
 			time.millisleep(100)
 
 	tin = 0
+	toffset = 0
+	oldtin = 0
 	told = 0
 	nin = 0
 	nout = 0
@@ -247,11 +244,18 @@ def playonce(vin):
 			except EOFError:
 				break
 		nin = nin+1
+		if tin+toffset < oldtin:
+			print 'Fix reversed time:', oldtin, 'to', tin
+			toffset = oldtin - tin
+		tin = tin + toffset
+		oldtin = tin
 		if regen: tout = nin * regen
 		else: tout = tin
 		tout = int(tout / speed)
 		if tout - told < mindelta:
 			nskipped = nskipped + 1
+			if not threading:
+				vin.skipnextframedata(size, csize)
 		else:
 			if not threading:
 				try:

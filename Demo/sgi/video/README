@@ -26,7 +26,10 @@ a version of the Irix video library that supported capturing PAL
 format (in August 1992), Sjoerd added an interface to the video
 library to Python (sv) and Guido wrote Vrec.py (based upon a
 still frame grabber by Sjoerd, in turn based upon SGI demo code in C)
-to record a movie using it.
+to record a movie using it.  Vrec was soon followed by modernized
+versions of the other programs (Vinfo, Vplay, Vtime) and an
+interactive editor (Vedit).  Finally, VFile was rewritten for more
+modularity, functionality and robustness.
 
 	Guido van Rossum
 	Jack Jansen
@@ -35,6 +38,61 @@ to record a movie using it.
 
 Overview of files
 -----------------
+
+cmif-film.ms	description of the CMIF video file format
+
+
+These are programs with a command line interface:
+
+Vrec.py		record video movies using the Indigo video library and
+		board
+
+Vplay.py	play video movies
+
+Vinfo.py	show statistics on movies
+
+Vtime.py	(unrelated to vtime!!!) Copy a video file,
+		manipulating the time codes (e.g. faster/slower, or
+		regenerate time codes, or drop frames too close apart)
+
+Vedit.py	interactive video editing program
+
+
+These modules are used by the above programs:
+
+VFile.py	classes that read and write CMIF video files
+
+Viewer.py	two viewer classes used by Vedit
+
+
+The following are C programs, either for efficiency or because they
+need to link with a C library:
+
+squash.c	make a movie smaller by averaging pixels
+		usage: squash factor [bits] <moviefile >newmoviefile
+		factor		x and y compression factor
+		bits		#bits left per sample in result (default 8)
+
+squash2.c	make a movie smaller by dropping pixels
+		usage: squash2 factor <moviefile >newmoviefile
+		factor		x and y compression factor
+
+tomono.c	like squash2 but outputs a monochrome movie
+
+v2i.c		convert the first frame of a movie file to SGI .rgb format
+		link with -limage
+
+i2v.c		convert an rgb file to "lrectwrite" format (this was
+		used one time by the CMIF editor)
+
+
+These programs are obsolete, but kept around for sentimental reasons.
+Most either don't work any more because they don't use VFile and hence
+haven't followed the frequent changes in the CMIF video file format;
+or they are dependent upon hardware we don't have (SGI's previous
+generation framegrabber).  Except for cam.py / tv.py, their
+functionality is present in the suite of programs whose name begins
+with 'V' listed above.
 
 cam.py		network real-time tv broadcast; see tv.py
 		usage: cam [packfactor [host]]
@@ -53,11 +111,6 @@ camcorder.py	record video movies or make snapshots (in movie format)
 		r	start recording
 		p	pause recording (record single frame if paused)
 		ESC	quit
-
-Vrec.py		record video movies using the Indigo video library and
-		board
-
-colorsys.py	color conversions, used by video
 
 statit.py	various statistics operations on movie files
 
@@ -84,43 +137,12 @@ video.py	player for movies recorded by camcorder.py
 		soundfile	default is none (no sound)
 		skipbytes	byte offset in soundfile where sound starts
 
-Vplay.py	similar but more modern, using VFile.py
-
 vinfo.py	print summary of movie file(s)
 		usage: vinfo [-d] moviefile ...
 		-d		print delta times (default: print abs times)
-
-Vinfo.py	similar but more modern, using VFile.py
 
 vpregs.py	definition of VP registers
 
 vtime.py	virtual time module imported by syncaudio.py and camcorder.py
 
-Vtime.py	(unrelated to vtime!!!) Copy a video file,
-		manipulating the time codes (e.g. faster/slower, or
-		regenerate time codes, or drop frames too close apart)
-
-Vedit.py	interactive video editing program
-
-Viewer.py	two viewer classes used by Vedit
-
-
-The following are C programs, either for efficiency or because they
-need to link with a C library:
-
-squash.c	make a movie smaller by averaging pixels
-		usage: squash factor [bits] <moviefile >newmoviefile
-		factor		x and y compression factor
-		bits		#bits left per sample in result (default 8)
-
-squash2.c	make a movie smaller by dropping pixels
-		usage: squash2 factor <moviefile >newmoviefile
-		factor		x and y compression factor
-
-tomono.c	like squash2 but outputs a monochrome movie
-
-v2i.c		convert the first frame of a movie file to SGI .rgb format
-		link with -limage
-
-i2v.c		convert an rgb file to "lrectwrite" format (this was
-		used one time by the CMIF editor)
+colorsys.py	color system conversions (now part of std python lib)
