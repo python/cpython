@@ -3,13 +3,13 @@ What's New in Python 2.2a3?
 
 Core
 
-+ Overflowing operations on plain ints now return a long int rather
+- Overflowing operations on plain ints now return a long int rather
   than raising OverflowError.  This is a partial implementation of PEP
   237.  You can use -Wdefault::OverflowWarning to enable a warning for
   this situation, and -Werror::OverflowWarning to revert to the old
   OverflowError exception.
 
-+ A new command line option, -D<arg>, is added to control run-time
+- A new command line option, -D<arg>, is added to control run-time
   warnings for the use of classic division.  (See PEP 238.)  Possible
   values are -Dold, -Dwarn, and -Dnew.  The default is -Dold, meaning
   the / operator has its classic meaning and no warnings are issued.
@@ -20,7 +20,7 @@ Core
   gives the __main__ module new division, and warns about classic
   division everywhere else.
 
-+ Many built-in types can now be subclassed.  This applies to int,
+- Many built-in types can now be subclassed.  This applies to int,
   long, float, str, unicode, and tuple.  (The types complex, list and
   dictionary can also be subclassed; this was introduced earlier.)
   Note that restrictions apply when subclassing immutable built-in
@@ -30,36 +30,36 @@ Core
   (as implemented by the base class) of an immutable subclass instance
   once it is created.
 
-+ A new built-in type, super, has been added.  This facilitates making
+- A new built-in type, super, has been added.  This facilitates making
   "cooperative super calls" in a multiple inheritance setting.  For an
   explanation, see http://www.python.org/2.2/descrintro.html#cooperation
 
-+ A new built-in type, getset, has been added.  This enables the
+- A new built-in type, getset, has been added.  This enables the
   creation of "computed attributes".  Such attributes are implemented
   by getter and setter functions (or only one of these for read-only
   or write-only attributes), without the need to override
   __getattr__.  See http://www.python.org/2.2/descrintro.html#getset
 
-+ The syntax of floating-point and imaginary literals has been
+- The syntax of floating-point and imaginary literals has been
   liberalized, to allow leading zeroes.  Examples of literals now
   legal that were SyntaxErrors before:
 
       00.0    0e3   0100j   07.5   00000000000000000008.
 
-+ An old tokenizer bug allowed floating point literals with an incomplete
+- An old tokenizer bug allowed floating point literals with an incomplete
   exponent, such as 1e and 3.1e-.  Such literals now raise SyntaxError.
 
 Library
 
-+ A new function, imp.lock_held(), returns 1 when the import lock is
+- A new function, imp.lock_held(), returns 1 when the import lock is
   currently held.  See the docs for the imp module.
 
-+ pickle, cPickle and marshal on 32-bit platforms can now correctly read
+- pickle, cPickle and marshal on 32-bit platforms can now correctly read
   dumps containing ints written on platforms where Python ints are 8 bytes.
   When read on a box where Python ints are 4 bytes, such values are
   converted to Python longs.
 
-+ In restricted execution mode (using the rexec module), unmarshalling
+- In restricted execution mode (using the rexec module), unmarshalling
   code objects is no longer allowed.  This plugs a security hole.
 
 Tools
@@ -68,7 +68,7 @@ Build
 
 API
 
-+ The GC API has been changed.  Extensions that use the old API will still
+- The GC API has been changed.  Extensions that use the old API will still
   compile but will not participate in GC.  To upgrade an extension
   module:
 
@@ -84,18 +84,22 @@ API
 
     - remove calls to PyObject_AS_GC and PyObject_FROM_GC
 
-+ Two new functions: PyString_FromFormat() and PyString_FromFormatV().
+- Two new functions: PyString_FromFormat() and PyString_FromFormatV().
   These can be used safely to construct string objects from a
   sprintf-style format string (similar to the format string supported
   by PyErr_Format()).
 
 New platforms
 
+- Patches from Stephen Hansen for the Borland C compiler (under Windows)
+  are reported to yield a clean compile, but a Python that doesn't yet
+  run correctly.  Volunteers?
+
 Tests
 
 Windows
 
-+ The w9xpopen hack is now used on Windows NT and 2000 too when COMPSPEC
+- The w9xpopen hack is now used on Windows NT and 2000 too when COMPSPEC
   points to command.com (patch from Brian Quinlan).
 
 
@@ -435,11 +439,6 @@ Tests
 - New test_pprint.py verfies that pprint.isrecursive() and
   pprint.isreadable() return sensible results.  Also verifies that simple
   cases produce correct output.
-
-New platforms
-
-- Python should compile and run out of the box using the Borland C
-  compiler (under Windows), thanks to Stephen Hansen.
 
 C API
 
