@@ -98,7 +98,6 @@ class SMTPRecipientsRefused(SMTPException):
         self.args = ( recipients,)
 
 
-
 class SMTPDataError(SMTPResponseException):
     """The SMTP server didn't accept the data."""
 
@@ -107,6 +106,7 @@ class SMTPConnectError(SMTPResponseException):
 
 class SMTPHeloError(SMTPResponseException):
     """The server refused our HELO reply."""
+
 
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -132,6 +132,24 @@ def quotedata(data):
     """
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
+
+def _get_fqdn_hostname(name):
+    name = string.strip(name)
+    if len(name) == 0:
+        name = socket.gethostname()
+        try:
+            hostname, aliases, ipaddrs = socket.gethostbyaddr(name)
+        except socket.error:
+            pass
+        else:
+            aliases.insert(0, hostname)
+            for name in aliases:
+                if '.' in name:
+                    break
+            else:
+                name = hostname
+    return name
+
 
 class SMTP:
     """This class manages a connection to an SMTP or ESMTP server.
@@ -288,14 +306,7 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
-        name=string.strip(name)
-        if len(name)==0:
-            name = socket.gethostname()
-            try:
-                name = socket.gethostbyaddr(name)[0]
-            except socket.error:
-                pass
-        self.putcmd("helo",name)
+        self.putcmd("helo", _get_fqdn_hostname(name))
         (code,msg)=self.getreply()
         self.helo_resp=msg
         return (code,msg)
@@ -305,14 +316,7 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
-        name=string.strip(name)
-        if len(name)==0:
-            name = socket.gethostname()
-            try:
-                name = socket.gethostbyaddr(name)[0]
-            except socket.error:
-                pass
-        self.putcmd("ehlo",name)
+        self.putcmd("ehlo", _get_fqdn_hostname(name))
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written) 
         # MTA's will disconnect on an ehlo. Toss an exception if 
