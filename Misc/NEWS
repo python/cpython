@@ -34,7 +34,7 @@ Extension modules
 -----------------
 
 - Thanks to Scott David Daniels, a subtle bug in how the zlib
-  extension implemented flush() was fixed.  Scott also rewrite the
+  extension implemented flush() was fixed.  Scott also rewrote the
   zlib test suite using the unittest module.  (SF bug #640230 and
   patch #678531.)
 
