@@ -1,0 +1,98 @@
+#LaTeX2HTML Version 96.1 : dot.latex2html-init
+#
+
+$INFO = 0;              # 0 = do not make a "About this document..." section 
+$MAX_LINK_DEPTH = 3;
+
+# Python documentation uses section numbers to support references to match
+# in the printed and online versions.
+#
+$SHOW_SECTION_NUMBERS = 1;
+
+$HTML_VERSION = '3.0';
+$ICONSERVER = '../icons';
+
+# This replacement adds the "BORDER=0" attribute to the generated icon
+# markup.  This is done for no better reason than that it looks better.
+#
+sub img_tag {
+    local($icon) = @_;
+    ( ($icon =~ /(gif)/) ?
+     do {
+         $icon =~ /(up|next|previous|next_page|previous_page|change_begin|change_end|change_delete|contents|index)/;
+         join('','<IMG ',$iconsizes{$1},' ALIGN=BOTTOM ALT="',$1,
+	      '" SRC="',$ICONSERVER,"/$icon",'" BORDER=0>')
+         } :
+     $icon);
+}
+
+# This replacement for process_command() is need to add the case for
+# "\,"; it is unfortunate we need to do it this way.
+#
+sub process_command {
+    local ($cmd_rx, *ref_contents) = @_;
+    local($ref_before, $cmd, $after);
+    local($cmd_sub, $cmd_msub, $cmd_trans, $mathentity);
+    local (@open_font_tags,@open_size_tags);
+    $ref_contents = &convert_iso_latin_chars($ref_contents);
+    for (;;) {	# Do NOT use the o option
+	last unless ($ref_contents =~ /$cmd_rx/ );
+	($ref_before, $cmd, $after) = ($`, $1, "$2$'");
+	print(".");
+#	$after =~ s/^[ ]+/ /o;	 Collapse all spaces that follow a command
+	if ($cmd =~ /[a-zA-Z]$/) { # Eat redundant spaces that follow a command
+	    $after =~ s/^[ \t]+//o; }
+	else {
+	    $after =~ s/^[ \t]+/ /o; }
+	if ( $cmd = &normalize($cmd) ) {
+	    ($cmd_sub, $cmd_msub, $cmd_trans, $mathentity) =
+		("do_cmd_$cmd", "do_math_cmd_$cmd",
+		 $declarations{$cmd}, $mathentities{$cmd});
+	    if (defined &$cmd_sub) {
+		# $ref_before may also be modified ...
+		if ($cmd =~ /$sizechange_rx/o) {
+		    $after = &$cmd_sub($after, @open_size_tags);
+		} else {
+		    $after = &$cmd_sub($after, @open_font_tags);
+		};
+	    }
+	    elsif (defined &$cmd_msub) {
+		# $ref_before may also be modified ...
+		$after = &$cmd_msub($after, @open_font_tags);
+		if ( !$math_mode ) {
+		    $after = "<MATH>" . $after . "</MATH>";
+		    ++$commands_outside_math{$cmd};
+		};
+	    }
+	    elsif ($cmd_trans) {	# One to one transform
+		$cmd_trans =~ m|</.*$|;
+		$after = $` . $after . $&;
+		push(@open_font_tags, $cmd) if ($cmd =~ /$fontchange_rx/o);
+		push(@open_size_tags, $cmd) if ($cmd =~ /$sizechange_rx/o);}
+	    elsif ($mathentity) {
+		if ( $math_mode ) {
+		    $after = "&$mathentity;" . $after;
+		} else {
+		    $after = "<MATH>&$mathentity;</MATH>" . $after;
+		    ++$commands_outside_math{$cmd};
+		}; }
+	    # Here's the hack:
+	    elsif ($cmd == ',' && ! $AUX_FILE) {
+		$ref_before = $ref_before . ",";
+	    }
+	    elsif ($ignore{$cmd}) { # Ignored command
+		print "."}
+	    elsif ($cmd =~ /^the(.+)$/) { # Counter
+		$counter = $1;
+		$after = &do_cmd_thecounter($after);}
+	    else {
+		# Do not add if reading an auxiliary file
+		++$unknown_commands{$cmd} unless $AUX_FILE;
+	    }
+	}
+	$ref_contents = join('', $ref_before, $after);
+    }
+    $ref_contents;
+}
+
+1;	# This must be the last line
