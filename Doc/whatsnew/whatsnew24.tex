@@ -823,7 +823,6 @@ implementation required that the numeric locale remain set to the
 
 Not setting the numeric locale caused trouble for extensions that used
 third-party C libraries, however, because they wouldn't have the
-% XXX is it GTK or GTk?
 correct locale set.  The motivating example was GTK+, whose user
 interface widgets weren't displaying numbers in the current locale.
 
@@ -1393,7 +1392,6 @@ not it's a symbolic link.  This differs from the existing
 \item The \module{poplib} module now supports POP over SSL.
 
 \item The \module{profile} module can now profile C extension functions.
-% XXX more to say about this?
 (Contributed by Nick Bastin.)
 
 \item The \module{random} module has a new method called
