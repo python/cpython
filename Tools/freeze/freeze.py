@@ -2,7 +2,7 @@
 
 """Freeze a Python script into a binary.
 
-usage: freeze [options...] script.py [module]...
+usage: freeze [options...] script [module]...
 
 Options:
 
@@ -43,8 +43,7 @@ Options:
 
 Arguments:
 
-script.py:    The Python script to be executed by the resulting binary.
-              It *must* end with a .py suffix!
+script:       The Python script to be executed by the resulting binary.
 
 module ...:   Additional Python modules (referenced by pathname)
               that will be included in the resulting binary.  These
@@ -88,7 +87,7 @@ def main():
     prefix = None                       # settable with -p option
     exec_prefix = None                  # settable with -P option
     extensions = []
-    path = sys.path
+    path = sys.path[:]
     modargs = 0
     debug = 1
     odir = ''
@@ -195,16 +194,16 @@ def main():
     if not args:
         usage('at least one filename argument required')
 
-    # check that the script name ends in ".py"
-    if args[0][-3:] != ".py":
-        usage('the script name must have a .py suffix')
-
     # check that file arguments exist
     for arg in args:
+        if arg == '-m':
+            break
         if not os.path.exists(arg):
             usage('argument %s not found' % arg)
         if not os.path.isfile(arg):
             usage('%s: not a plain file' % arg)
+        if modargs:
+            break
 
     # process non-option arguments
     scriptfile = args[0]
@@ -238,6 +237,8 @@ def main():
     # Actual work starts here...
 
     # collect all modules of the program
+    dir = os.path.dirname(scriptfile)
+    path[0] = dir
     mf = modulefinder.ModuleFinder(path, debug)
     for mod in implicits:
         mf.import_hook(mod)
