@@ -70,6 +70,10 @@ typedef void (*dl_funcptr)();
 #define dlerror() "error in dynamic linking"
 #endif
 
+#ifdef __WIN32__
+#define NT
+#endif
+
 #ifdef NT
 #define DYNAMIC_LINK
 #include <windows.h>
@@ -165,7 +169,7 @@ typedef void (*dl_funcptr)();
 extern char *getprogramname();
 
 #ifndef FUNCNAME_PATTERN
-#if defined(__hp9000s300) || defined(__NetBSD__)
+#if defined(__hp9000s300) || defined(__NetBSD__) || defined(__BORLANDC__)
 #define FUNCNAME_PATTERN "_init%.200s"
 #else
 #define FUNCNAME_PATTERN "init%.200s"
