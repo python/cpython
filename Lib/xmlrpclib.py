@@ -2,6 +2,17 @@
 # XML-RPC CLIENT LIBRARY
 # $Id$
 #
+# an XML-RPC client interface for Python.
+#
+# the marshalling and response parser code can also be used to
+# implement XML-RPC servers.
+#
+# Notes:
+# this version is designed to work with Python 1.5.2 or newer.
+# unicode encoding support requires at least Python 1.6.
+# experimental HTTPS requires Python 2.0 built with SSL sockets.
+# expat parser support requires Python 2.0 with pyexpat support.
+#
 # History:
 # 1999-01-14 fl  Created
 # 1999-01-15 fl  Changed dateTime to use localtime
@@ -18,6 +29,8 @@
 # 2001-03-29 fl  Don't require empty params element (from Nicholas Riley)
 # 2001-06-10 fl  Folded in _xmlrpclib accelerator support (1.0b2)
 # 2001-08-20 fl  Base xmlrpclib.Error on built-in Exception (from Paul Prescod)
+# 2001-09-03 fl  Allow Transport subclass to override getparser
+# 2001-09-10 fl  Lazy import of urllib, cgi, xmllib (20x import speedup)
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -82,59 +95,47 @@ An XML-RPC client interface for Python.
 The marshalling and response parser code can also be used to
 implement XML-RPC servers.
 
-Notes:
-This version is designed to work with Python 1.5.2 or newer.
-Unicode encoding support requires at least Python 1.6.
-Experimental HTTPS requires Python 2.0 built with SSL sockets.
-Expat parser support requires Python 2.0 with pyexpat support.
-
 Exported exceptions:
 
-    Error          Base class for client errors
-    ProtocolError  Indicates an HTTP protocol error
-    ResponseError  Indicates a broken response package
-    Fault          Indicates a XML-RPC fault package
+  Error          Base class for client errors
+  ProtocolError  Indicates an HTTP protocol error
+  ResponseError  Indicates a broken response package
+  Fault          Indicates an XML-RPC fault package
 
 Exported classes:
 
-    Boolean        boolean wrapper to generate a "boolean" XML-RPC value
-    DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
-                   localtime integer value to generate a "dateTime.iso8601"
-                   XML-RPC value
-    Binary         binary data wrapper
+  ServerProxy    Represents a logical connection to an XML-RPC server
 
-    SlowParser     Slow but safe standard parser
-    Marshaller     Generate an XML-RPC params chunk from a Python data structure
-    Unmarshaller   Unmarshal an XML-RPC response from incoming XML event message
+  Boolean        boolean wrapper to generate a "boolean" XML-RPC value
+  DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
+                 localtime integer value to generate a "dateTime.iso8601"
+                 XML-RPC value
+  Binary         binary data wrapper
 
-    Transport      Handles an HTTP transaction to an XML-RPC server
-    SafeTransport  Handles an HTTPS transaction to an XML-RPC server
-    ServerProxy    Connect to a server through a proxy
-    Server         Same as ServerProxy
+  SlowParser     Slow but safe standard parser (based on xmllib)
+  Marshaller     Generate an XML-RPC params chunk from a Python data structure
+  Unmarshaller   Unmarshal an XML-RPC response from incoming XML event message
+  Transport      Handles an HTTP transaction to an XML-RPC server
+  SafeTransport  Handles an HTTPS transaction to an XML-RPC server
 
 Exported constants:
 
-    True
-    False
+  True
+  False
 
 Exported functions:
 
-    boolean        Convert any Python value to an XML-RPC boolean
-    datetime       Convert value to an XML-RPC datetime
-    binary         Convert value to an XML-RPC binary value
-    getparser      Create instance of the fastest available parser & attach
-                   to an unmarshalling object
-    dumps          Convert an argument tuple or a Fault instance to an XML-RPC
-                   request (or response, if the methodresponse option is used).
-    loads          Convert an XML-RPC packet to unmarshalled data plus a method
-                   name (None if not present).
-
+  boolean        Convert any Python value to an XML-RPC boolean
+  getparser      Create instance of the fastest available parser & attach
+                 to an unmarshalling object
+  dumps          Convert an argument tuple or a Fault instance to an XML-RPC
+                 request (or response, if the methodresponse option is used).
+  loads          Convert an XML-RPC packet to unmarshalled data plus a method
+                 name (None if not present).
 """
 
 import re, string, time, operator
-import urllib, xmllib
 from types import *
-from cgi import escape
 
 try:
     unicode
@@ -181,23 +182,22 @@ class ProtocolError(Error):
             )
 
 class ResponseError(Error):
-    """Indicates a broken response package"""
+    """Indicates a broken response package."""
     pass
 
 class Fault(Error):
-    """indicates a XML-RPC fault package"""
+    """Indicates an XML-RPC fault package."""
     def __init__(self, faultCode, faultString, **extra):
         self.faultCode = faultCode
         self.faultString = faultString
     def __repr__(self):
         return (
             "<Fault %s: %s>" %
-            (self.faultCode, repr(self.faultString))
+            (repr(self.faultCode), repr(self.faultString))
             )
 
 # --------------------------------------------------------------------
 # Special values
-
 
 class Boolean:
     """Boolean-value wrapper.
@@ -231,18 +231,14 @@ class Boolean:
 True, False = Boolean(1), Boolean(0)
 
 def boolean(value, truefalse=(False, True)):
-    """Convert any Python value to XML-RPC boolean."""
+    """Convert any Python value to XML-RPC 'boolean'."""
     return truefalse[operator.truth(value)]
 
-#
-# dateTime wrapper
-# wrap your iso8601 string or time tuple or localtime integer value
-# in this class to generate a "dateTime.iso8601" XML-RPC value
-
 class DateTime:
-    """DataTime wrapper for an ISO 8601 string or time tuple or
-    localtime integer value to generate a 'dateTime.iso8601' XML-RPC
-    value."""
+    """DateTime wrapper for an ISO 8601 string or time tuple or
+    localtime integer value to generate 'dateTime.iso8601' XML-RPC
+    value.
+    """
 
     def __init__(self, value=0):
         if not isinstance(value, StringType):
@@ -273,7 +269,6 @@ def datetime(data):
     value = DateTime()
     value.decode(data)
     return value
-
 
 class Binary:
     """Wrapper for binary data."""
@@ -354,6 +349,7 @@ else:
                 self.parser = self.feed = None # nuke circular reference
 
         def handle_proc(self, tag, attr):
+            import re
             m = re.search("encoding\s*=\s*['\"]([^\"']+)[\"']", attr)
             if m:
                 self.handle_xml(m.group(1), 1)
@@ -391,13 +387,14 @@ else:
             self._parser.Parse("", 1) # end of data
             del self._target, self._parser # get rid of circular references
 
-class SlowParser(xmllib.XMLParser):
-    """XML parser using xmllib.XMLParser.
-
-    This is about 10 times slower than sgmlop on roundtrip testing.
-    """
-
+class SlowParser:
+    """Default XML parser (based on xmllib.XMLParser)."""
+    # this is about 10 times slower than sgmlop, on roundtrip
+    # testing.
     def __init__(self, target):
+        import xmllib # lazy subclassing (!)
+        if xmllib.XMLParser not in SlowParser.__bases__:
+            SlowParser.__bases__ = (xmllib.XMLParser,)
         self.handle_xml = target.xml
         self.unknown_starttag = target.start
         self.handle_data = target.data
@@ -411,11 +408,11 @@ class SlowParser(xmllib.XMLParser):
 class Marshaller:
     """Generate an XML-RPC params chunk from a Python data structure.
 
-    Create a marshaller instance for each set of parameters, and use
-    "dumps" method to convert your data (represented as a tuple) to a
-    XML-RPC params chunk.  to write a fault response, pass a Fault
-    instance instead.  You may prefer to use the "dumps" convenience
-    function for this purpose (see below).
+    Create a Marshaller instance for each set of parameters, and use
+    the "dumps" method to convert your data (represented as a tuple)
+    to an XML-RPC params chunk.  To write a fault response, pass a
+    Fault instance instead.  You may prefer to use the "dumps" module
+    function for this purpose.
     """
 
     # by the way, if you don't understand what's going on in here,
@@ -470,12 +467,14 @@ class Marshaller:
     dispatch[FloatType] = dump_double
 
     def dump_string(self, value):
+        from cgi import escape
         self.write("<value><string>%s</string></value>\n" % escape(value))
     dispatch[StringType] = dump_string
 
     if unicode:
         def dump_unicode(self, value):
             value = value.encode(self.encoding)
+            from cgi import escape
             self.write("<value><string>%s</string></value>\n" % escape(value))
         dispatch[UnicodeType] = dump_unicode
 
@@ -504,6 +503,7 @@ class Marshaller:
             write("<member>\n")
             if type(k) is not StringType:
                 raise TypeError, "dictionary key must be string"
+            from cgi import escape
             write("<name>%s</name>\n" % escape(k))
             self.__dump(v)
             write("</member>\n")
@@ -521,7 +521,7 @@ class Marshaller:
 
 class Unmarshaller:
     """Unmarshal an XML-RPC response, based on incoming XML event
-    messages (start, data, end).  Call close() to get the resulting
+    messages (start, data, end).  Call close to get the resulting
     data structure.
 
     Note that this reader is fairly tolerant, and gladly accepts
@@ -802,7 +802,7 @@ class _Method:
 
 
 class Transport:
-    """Handles an HTTP transaction to an XML-RPC server"""
+    """Handles an HTTP transaction to an XML-RPC server."""
 
     # client identifier (may be overridden)
     user_agent = "xmlrpclib.py/%s (by www.pythonware.com)" % __version__
@@ -832,6 +832,10 @@ class Transport:
 
         return self.parse_response(h.getfile())
 
+    def getparser(self):
+        # get parser and unmarshaller
+        return getparser()
+
     def make_connection(self, host):
         # create a HTTP connection object from a host descriptor
         import httplib
@@ -856,7 +860,7 @@ class Transport:
     def parse_response(self, f):
         # read response from input file, and parse it
 
-        p, u = getparser()
+        p, u = self.getparser()
 
         while 1:
             response = f.read(1024)
@@ -872,7 +876,7 @@ class Transport:
         return u.close()
 
 class SafeTransport(Transport):
-    """Handles an HTTPS transaction to an XML-RPC server"""
+    """Handles an HTTPS transaction to an XML-RPC server."""
 
     def make_connection(self, host):
         # create a HTTPS connection object from a host descriptor
@@ -921,6 +925,7 @@ class ServerProxy:
         # establish a "logical" server connection
 
         # get the url
+        import urllib
         type, uri = urllib.splittype(uri)
         if type not in ("http", "https"):
             raise IOError, "unsupported XML-RPC protocol"
