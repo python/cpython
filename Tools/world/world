@@ -22,12 +22,13 @@ For example:
     us originated from United States
 
     %% world united
-    united matches 5 countries:
-	ae: United Arab Emirates
-	um: United States Minor Outlying Islands
-	us: United States
-	tz: Tanzania, United Republic of
-	gb: United Kingdom
+    united matches 6 countries:
+        ae: United Arab Emirates
+        uk: United Kingdom (common practice)
+        um: United States Minor Outlying Islands
+        us: United States
+        tz: Tanzania, United Republic of
+        gb: United Kingdom
 
 
  [*] Note that regular expressions must conform to Python 1.5's re.py module
