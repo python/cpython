@@ -41,6 +41,12 @@ class LogReader:
             self.cwd = self._info['current-directory']
         else:
             self.cwd = None
+
+        # This mirrors the call stack of the profiled code as the log
+        # is read back in.  It contains tuples of the form:
+        #
+        #   (file name, line number of function def, function name)
+        #
         self._stack = []
         self._append = self._stack.append
         self._pop = self._stack.pop
@@ -99,15 +105,15 @@ class LogReader:
 
             if what == WHAT_ENTER:
                 filename, funcname = self._decode_location(fileno, lineno)
-                self._append((filename, funcname, lineno))
-                return what, (filename, lineno, funcname), tdelta
+                t = (filename, lineno, funcname)
+                self._append(t)
+                return what, t, tdelta
 
             if what == WHAT_EXIT:
-                filename, funcname, lineno = self._pop()
-                return what, (filename, lineno, funcname), tdelta
+                return what, self._pop(), tdelta
 
             if what == WHAT_LINENO:
-                filename, funcname, firstlineno = self._stack[-1]
+                filename, firstlineno, funcname = self._stack[-1]
                 return what, (filename, lineno, funcname), tdelta
 
             if what == WHAT_DEFINE_FILE:
