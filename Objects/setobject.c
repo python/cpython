@@ -15,7 +15,7 @@ set_update(PySetObject *so, PyObject *other)
 	PyObject *item, *data, *it;
 
 	if (PyAnySet_Check(other)) {
-		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 0) == -1) 
+		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 1) == -1) 
 			return NULL;
 		Py_RETURN_NONE;
 	}
