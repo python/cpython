@@ -18,9 +18,9 @@ class PicklerTests(AbstractPickleTests):
 
     error = KeyError
 
-    def dumps(self, arg, bin=0):
+    def dumps(self, arg, proto=0):
         f = StringIO()
-        p = pickle.Pickler(f, bin)
+        p = pickle.Pickler(f, proto)
         p.dump(arg)
         f.seek(0)
         return f.read()
@@ -32,12 +32,12 @@ class PicklerTests(AbstractPickleTests):
 
 class PersPicklerTests(AbstractPersistentPicklerTests):
 
-    def dumps(self, arg, bin=0):
+    def dumps(self, arg, proto=0):
         class PersPickler(pickle.Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
         f = StringIO()
-        p = PersPickler(f, bin)
+        p = PersPickler(f, proto)
         p.dump(arg)
         f.seek(0)
         return f.read()
