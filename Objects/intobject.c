@@ -219,6 +219,19 @@ PyInt_FromUnicode(Py_UNICODE *s, int length, int base)
 
 /* Methods */
 
+/* Integers are seen as the "smallest" of all numeric types and thus
+   don't have any knowledge about conversion of other types to
+   integers. */
+
+#define CONVERT_TO_LONG(obj, lng)		\
+	if (PyInt_Check(obj)) {			\
+		lng = PyInt_AS_LONG(obj);	\
+	}					\
+	else {					\
+		Py_INCREF(Py_NotImplemented);	\
+		return Py_NotImplemented;	\
+	}
+
 /* ARGSUSED */
 static int
 int_print(PyIntObject *v, FILE *fp, int flags)
@@ -244,6 +257,16 @@ int_compare(PyIntObject *v, PyIntObject *w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+/* Needed for the new style number compare slots */
+static PyObject *
+int_cmp(PyObject *v, PyObject *w)
+{
+	register long a, b;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
+	return PyInt_FromLong((a < b) ? -1 : (a > b) ? 1 : 0);
+}
+
 static long
 int_hash(PyIntObject *v)
 {
@@ -259,8 +282,8 @@ static PyObject *
 int_add(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b, x;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	x = a + b;
 	if ((x^a) < 0 && (x^b) < 0)
 		return err_ovf("integer addition");
@@ -271,8 +294,8 @@ static PyObject *
 int_sub(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b, x;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	x = a - b;
 	if ((x^a) < 0 && (x^~b) < 0)
 		return err_ovf("integer subtraction");
@@ -309,13 +332,26 @@ guess the above is the preferred solution.
 */
 
 static PyObject *
-int_mul(PyIntObject *v, PyIntObject *w)
+int_mul(PyObject *v, PyObject *w)
 {
 	long a, b, ah, bh, x, y;
 	int s = 1;
 
-	a = v->ob_ival;
-	b = w->ob_ival;
+	if (v->ob_type->tp_as_sequence &&
+			v->ob_type->tp_as_sequence->sq_repeat) {
+		/* sequence * int */
+		a = PyInt_AsLong(w);
+		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, a);
+	}
+	else if (w->ob_type->tp_as_sequence &&
+			w->ob_type->tp_as_sequence->sq_repeat) {
+		/* int * sequence */
+		a = PyInt_AsLong(v);
+		return (*w->ob_type->tp_as_sequence->sq_repeat)(w, a);
+	}
+
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	ah = a >> (LONG_BIT/2);
 	bh = b >> (LONG_BIT/2);
 
@@ -408,11 +444,9 @@ int_mul(PyIntObject *v, PyIntObject *w)
 }
 
 static int
-i_divmod(register PyIntObject *x, register PyIntObject *y,
+i_divmod(register long xi, register long yi,
          long *p_xdivy, long *p_xmody)
 {
-	long xi = x->ob_ival;
-	long yi = y->ob_ival;
 	long xdivy, xmody;
 	
 	if (yi == 0) {
@@ -451,8 +485,11 @@ i_divmod(register PyIntObject *x, register PyIntObject *y,
 static PyObject *
 int_div(PyIntObject *x, PyIntObject *y)
 {
+	long xi, yi;
 	long d, m;
-	if (i_divmod(x, y, &d, &m) < 0)
+	CONVERT_TO_LONG(x, xi);
+	CONVERT_TO_LONG(y, yi);
+	if (i_divmod(xi, yi, &d, &m) < 0)
 		return NULL;
 	return PyInt_FromLong(d);
 }
@@ -460,8 +497,11 @@ int_div(PyIntObject *x, PyIntObject *y)
 static PyObject *
 int_mod(PyIntObject *x, PyIntObject *y)
 {
+	long xi, yi;
 	long d, m;
-	if (i_divmod(x, y, &d, &m) < 0)
+	CONVERT_TO_LONG(x, xi);
+	CONVERT_TO_LONG(y, yi);
+	if (i_divmod(xi, yi, &d, &m) < 0)
 		return NULL;
 	return PyInt_FromLong(m);
 }
@@ -469,8 +509,11 @@ int_mod(PyIntObject *x, PyIntObject *y)
 static PyObject *
 int_divmod(PyIntObject *x, PyIntObject *y)
 {
+	long xi, yi;
 	long d, m;
-	if (i_divmod(x, y, &d, &m) < 0)
+	CONVERT_TO_LONG(x, xi);
+	CONVERT_TO_LONG(y, yi);
+	if (i_divmod(xi, yi, &d, &m) < 0)
 		return NULL;
 	return Py_BuildValue("(ll)", d, m);
 }
@@ -480,8 +523,8 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 {
 #if 1
 	register long iv, iw, iz=0, ix, temp, prev;
-	iv = v->ob_ival;
-	iw = w->ob_ival;
+	CONVERT_TO_LONG(v, iv);
+	CONVERT_TO_LONG(w, iw);
 	if (iw < 0) {
 		if (iv)
 			PyErr_SetString(PyExc_ValueError,
@@ -492,7 +535,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 		return NULL;
 	}
  	if ((PyObject *)z != Py_None) {
-		iz = z->ob_ival;
+		CONVERT_TO_LONG(z, iz);
 		if (iz == 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"pow() arg 3 cannot be 0");
@@ -531,27 +574,16 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 		}
 	}
 	if (iz) {
-	 	PyObject *t1, *t2;
-	 	long int div, mod;
-	 	t1=PyInt_FromLong(ix); 
-		t2=PyInt_FromLong(iz);
-	 	if (t1==NULL || t2==NULL ||
-	 		i_divmod((PyIntObject *)t1,
-				 (PyIntObject *)t2, &div, &mod)<0)
-		{
-		 	Py_XDECREF(t1);
-		 	Py_XDECREF(t2);
+	 	long div, mod;
+	 	if (i_divmod(ix, iz, &div, &mod) < 0)
 			return(NULL);
-		}
-		Py_DECREF(t1);
-		Py_DECREF(t2);
 	 	ix=mod;
 	}
 	return PyInt_FromLong(ix);
 #else
 	register long iv, iw, ix;
-	iv = v->ob_ival;
-	iw = w->ob_ival;
+	CONVERT_TO_LONG(v, iv);
+	CONVERT_TO_LONG(w, iw);
 	if (iw < 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"integer to the negative power");
@@ -618,8 +650,8 @@ static PyObject *
 int_lshift(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	if (b < 0) {
 		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
@@ -639,8 +671,8 @@ static PyObject *
 int_rshift(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	if (b < 0) {
 		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
@@ -665,8 +697,8 @@ static PyObject *
 int_and(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	return PyInt_FromLong(a & b);
 }
 
@@ -674,8 +706,8 @@ static PyObject *
 int_xor(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	return PyInt_FromLong(a ^ b);
 }
 
@@ -683,8 +715,8 @@ static PyObject *
 int_or(PyIntObject *v, PyIntObject *w)
 {
 	register long a, b;
-	a = v->ob_ival;
-	b = w->ob_ival;
+	CONVERT_TO_LONG(v, a);
+	CONVERT_TO_LONG(w, b);
 	return PyInt_FromLong(a | b);
 }
 
@@ -729,29 +761,43 @@ int_hex(PyIntObject *v)
 }
 
 static PyNumberMethods int_as_number = {
-	(binaryfunc)int_add, /*nb_add*/
-	(binaryfunc)int_sub, /*nb_subtract*/
-	(binaryfunc)int_mul, /*nb_multiply*/
-	(binaryfunc)int_div, /*nb_divide*/
-	(binaryfunc)int_mod, /*nb_remainder*/
-	(binaryfunc)int_divmod, /*nb_divmod*/
-	(ternaryfunc)int_pow, /*nb_power*/
-	(unaryfunc)int_neg, /*nb_negative*/
-	(unaryfunc)int_pos, /*nb_positive*/
-	(unaryfunc)int_abs, /*nb_absolute*/
-	(inquiry)int_nonzero, /*nb_nonzero*/
-	(unaryfunc)int_invert, /*nb_invert*/
-	(binaryfunc)int_lshift, /*nb_lshift*/
-	(binaryfunc)int_rshift, /*nb_rshift*/
-	(binaryfunc)int_and, /*nb_and*/
-	(binaryfunc)int_xor, /*nb_xor*/
-	(binaryfunc)int_or, /*nb_or*/
-	0,		/*nb_coerce*/
-	(unaryfunc)int_int, /*nb_int*/
-	(unaryfunc)int_long, /*nb_long*/
-	(unaryfunc)int_float, /*nb_float*/
-	(unaryfunc)int_oct, /*nb_oct*/
-	(unaryfunc)int_hex, /*nb_hex*/
+	(binaryfunc)int_add,	/*nb_add*/
+	(binaryfunc)int_sub,	/*nb_subtract*/
+	(binaryfunc)int_mul,	/*nb_multiply*/
+	(binaryfunc)int_div,	/*nb_divide*/
+	(binaryfunc)int_mod,	/*nb_remainder*/
+	(binaryfunc)int_divmod,	/*nb_divmod*/
+	(ternaryfunc)int_pow,	/*nb_power*/
+	(unaryfunc)int_neg,	/*nb_negative*/
+	(unaryfunc)int_pos,	/*nb_positive*/
+	(unaryfunc)int_abs,	/*nb_absolute*/
+	(inquiry)int_nonzero,	/*nb_nonzero*/
+	(unaryfunc)int_invert,	/*nb_invert*/
+	(binaryfunc)int_lshift,	/*nb_lshift*/
+	(binaryfunc)int_rshift,	/*nb_rshift*/
+	(binaryfunc)int_and,	/*nb_and*/
+	(binaryfunc)int_xor,	/*nb_xor*/
+	(binaryfunc)int_or,	/*nb_or*/
+	0,			/*nb_coerce*/
+	(unaryfunc)int_int,	/*nb_int*/
+	(unaryfunc)int_long,	/*nb_long*/
+	(unaryfunc)int_float,	/*nb_float*/
+	(unaryfunc)int_oct,	/*nb_oct*/
+	(unaryfunc)int_hex, 	/*nb_hex*/
+	0,			/*nb_inplace_add*/
+	0,			/*nb_inplace_subtract*/
+	0,			/*nb_inplace_multiply*/
+	0,			/*nb_inplace_divide*/
+	0,			/*nb_inplace_remainder*/
+	0,			/*nb_inplace_power*/
+	0,			/*nb_inplace_lshift*/
+	0,			/*nb_inplace_rshift*/
+	0,			/*nb_inplace_and*/
+	0,			/*nb_inplace_xor*/
+	0,			/*nb_inplace_or*/
+	
+	/* New style slots: */
+	(binaryfunc)int_cmp,	/*nb_cmp*/
 };
 
 PyTypeObject PyInt_Type = {
@@ -770,6 +816,12 @@ PyTypeObject PyInt_Type = {
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	(hashfunc)int_hash, /*tp_hash*/
+        0,			/*tp_call*/
+        0,			/*tp_str*/
+	0,			/*tp_getattro*/
+	0,			/*tp_setattro*/
+	0,			/*tp_as_buffer*/
+	Py_TPFLAGS_NEWSTYLENUMBER /*tp_flags*/
 };
 
 void
