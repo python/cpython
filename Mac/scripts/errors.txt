@@ -316,7 +316,7 @@
 -10109	telDeviceNotFound	device not found
 -10108	telBadCodeResource	code resource not found
 -10107	telInitFailed	initialization failed
--10106	telNoCommFolder	Communications/Extensions ƒ not found
+-10106	telNoCommFolder	Communications/Extensions ü not found
 -10103	telUnknownErr	unable to set config
 -10102	telNoSuchTool	unable to find tool with name specified
 -10091	telBadFunction	bad msgCode specified
@@ -626,7 +626,7 @@
 -6227	kDMSWNotInitializedErr	Required software not initialized (eg windowmanager or display mgr).
 -6226	kSysSWTooOld	Missing critical pieces of System Software.
 -6225	kDMMirroringNotOn	Returned by all calls that need mirroring to be on to do their thing.
--6224	kDMCantBlock	Mirroring is already on, can’t Block now (call DMUnMirror() first).
+-6224	kDMCantBlock	Mirroring is already on, canπt Block now (call DMUnMirror() first).
 -6223	kDMMirroringBlocked	DMBlockMirroring() has been called.
 -6222	kDMWrongNumberOfDisplays	Can only handle 2 displays for now.
 -6221	kDMMirroringOnAlready	Returned by all calls that need mirroring to be off to do their thing.
@@ -653,7 +653,7 @@
 -5605	errUnrecognizedWindowClass	tried to create a window with a bad WindowClass
 -5604	errWindowPropertyNotFound	tried to get a nonexistent property
 -5603	errInvalidWindowProperty	tried to access a property tag with private creator
--5602	errWindowDoesNotHaveProxy	tried to do something requiring a proxy to a window which doesn’t have a proxy
+-5602	errWindowDoesNotHaveProxy	tried to do something requiring a proxy to a window which doesnπt have a proxy
 -5601	errUnsupportedWindowAttributesForClass	tried to create a window with WindowAttributes not supported by the WindowClass
 -5600	errInvalidWindowPtr	tried to pass a bad WindowRef argument
 -5553	gestaltLocationErr	gestalt function ptr wasn't in sysheap
@@ -847,7 +847,7 @@
 -3272	kEBADMSGErr	
 -3271	kENOSRErr	
 -3270	kETIMEErr	
--3269	kEPROTOErr	••• fill out missing codes •••
+-3269	kEPROTOErr	ÄÄÄ fill out missing codes ÄÄÄ
 -3264	kEHOSTUNREACHErr	No route to host
 -3263	kEHOSTDOWNErr	Host is down
 -3260	kECONNREFUSEDErr	Connection refused
@@ -1043,7 +1043,7 @@
 -2512	tsmUseInputWindowErr	not TSM aware because we are using input window
 -2511	tsmDocumentOpenErr	there are open documents
 -2510	tsmTextServiceNotFoundErr	no text service found
--2509	tsmCantOpenComponentErr	can’t open the component
+-2509	tsmCantOpenComponentErr	canπt open the component
 -2508	tsmNoOpenTSErr	no open text service
 -2507	tsmDocNotActiveErr	document is NOT active
 -2506	tsmTSMDocBusyErr	document is still active
@@ -1076,9 +1076,9 @@
 -2402	kernelCanceledErr	kernelCanceledErr
 -2401	kernelIncompleteErr	kernelIncompleteErr
 -2209	badCallOrderErr	Usually due to a status call being called prior to being setup first
--2208	noDMAErr	Can’t do DMA digitizing (i.e. can't go to requested dest
--2207	badDepthErr	Can’t digitize into this depth
--2206	notExactSizeErr	Can’t do exact size requested
+-2208	noDMAErr	Canπt do DMA digitizing (i.e. can't go to requested dest
+-2207	badDepthErr	Canπt digitize into this depth
+-2206	notExactSizeErr	Canπt do exact size requested
 -2205	noMoreKeyColorsErr	all key indexes in use
 -2204	notExactMatrixErr	warning of bad matrix, digitizer did its best
 -2203	matrixErr	bad matrix, digitizer did nothing
@@ -1428,7 +1428,7 @@
 -800	rcDBNull	rcDBNull
 -626	noMMUErr	no MMU present
 -625	cannotDeferErr	unable to defer additional functions
--624	interruptsMaskedErr	don’t call with interrupts masked
+-624	interruptsMaskedErr	donπt call with interrupts masked
 -623	notLockedErr	specified range of memory is not locked
 -622	cannotMakeContiguousErr	cannot make specified range contiguous
 -621	notHeldErr	specified range of memory is not held
@@ -1708,10 +1708,10 @@
 -19	readErr	I/O System Errors
 -18	statusErr	I/O System Errors
 -17	controlErr	I/O System Errors
--13	dsExtensionsDisabled	say “Extensions Disabled”
--12	dsHD20Installed	say “HD20 Startup”
--11	dsDisassemblerInstalled	say “Disassembler Installed”
--10	dsMacsBugInstalled	say “MacsBug Installed”
+-13	dsExtensionsDisabled	say ≥Extensions Disabled≤
+-12	dsHD20Installed	say ≥HD20 Startup≤
+-11	dsDisassemblerInstalled	say ≥Disassembler Installed≤
+-10	dsMacsBugInstalled	say ≥MacsBug Installed≤
 -8	seNoDB	no debugger installed to handle debugger command
 -5	SlpTypeErr	invalid queue element
 -4	unimpErr	unimplemented core routine
