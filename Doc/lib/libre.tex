@@ -364,10 +364,13 @@ leftmost such \character{\#} through the end of the line are ignored.
 \end{datadesc}
 
 
-\begin{funcdesc}{escape}{string}
-  Return \var{string} with all non-alphanumerics backslashed; this is
-  useful if you want to match an arbitrary literal string that may have
-  regular expression metacharacters in it.
+\begin{funcdesc}{search}{pattern, string\optional{, flags}}
+  Scan through \var{string} looking for a location where the regular
+  expression \var{pattern} produces a match, and return a
+  corresponding \class{MatchObject} instance.
+  Return \code{None} if no
+  position in the string matches the pattern; note that this is
+  different from finding a zero-length match at some point in the string.
 \end{funcdesc}
 
 \begin{funcdesc}{match}{pattern, string\optional{, flags}}
@@ -376,15 +379,6 @@ leftmost such \character{\#} through the end of the line are ignored.
   \class{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
-\end{funcdesc}
-
-\begin{funcdesc}{search}{pattern, string\optional{, flags}}
-  Scan through \var{string} looking for a location where the regular
-  expression \var{pattern} produces a match, and return a
-  corresponding \class{MatchObject} instance.
-  Return \code{None} if no
-  position in the string matches the pattern; note that this is
-  different from finding a zero-length match at some point in the string.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{pattern, string, \optional{, maxsplit\code{ = 0}}}
@@ -469,6 +463,12 @@ Perform the same operation as \function{sub()}, but return a tuple
 \code{(\var{new_string}, \var{number_of_subs_made})}.
 \end{funcdesc}
 
+\begin{funcdesc}{escape}{string}
+  Return \var{string} with all non-alphanumerics backslashed; this is
+  useful if you want to match an arbitrary literal string that may have
+  regular expression metacharacters in it.
+\end{funcdesc}
+
 \begin{excdesc}{error}
   Exception raised when a string passed to one of the functions here
   is not a valid regular expression (e.g., unmatched parentheses) or
@@ -481,6 +481,18 @@ Perform the same operation as \function{sub()}, but return a tuple
 
 Compiled regular expression objects support the following methods and
 attributes:
+
+\begin{methoddesc}[RegexObject]{search}{string\optional{, pos}\optional{,
+                                        endpos}}
+  Scan through \var{string} looking for a location where this regular
+  expression produces a match, and return a
+  corresponding \class{MatchObject} instance.  Return \code{None} if no
+  position in the string matches the pattern; note that this is
+  different from finding a zero-length match at some point in the string.
+  
+  The optional \var{pos} and \var{endpos} parameters have the same
+  meaning as for the \method{match()} method.
+\end{methoddesc}
 
 \begin{methoddesc}[RegexObject]{match}{string\optional{, pos}\optional{,
                                        endpos}}
@@ -501,18 +513,6 @@ attributes:
   be searched; it will be as if the string is \var{endpos} characters
   long, so only the characters from \var{pos} to \var{endpos} will be
   searched for a match.
-\end{methoddesc}
-
-\begin{methoddesc}[RegexObject]{search}{string\optional{, pos}\optional{,
-                                        endpos}}
-  Scan through \var{string} looking for a location where this regular
-  expression produces a match, and return a
-  corresponding \class{MatchObject} instance.  Return \code{None} if no
-  position in the string matches the pattern; note that this is
-  different from finding a zero-length match at some point in the string.
-  
-  The optional \var{pos} and \var{endpos} parameters have the same
-  meaning as for the \method{match()} method.
 \end{methoddesc}
 
 \begin{methoddesc}[RegexObject]{split}{string, \optional{,
