@@ -114,6 +114,8 @@ testit('log(1/e)', math.log(1/math.e), -1)
 testit('log(1)', math.log(1), 0)
 testit('log(e)', math.log(math.e), 1)
 testit('log(32,2)', math.log(32,2), 5)
+testit('log(10**40, 10)', math.log(10**40, 10), 40)
+testit('log(10**40, 10**20)', math.log(10**40, 10**20), 2)
 
 print 'log10'
 testit('log10(0.1)', math.log10(0.1), -1)
