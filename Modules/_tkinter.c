@@ -2416,10 +2416,20 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:mainloop", &threshold))
 		return NULL;
 
-	CHECK_TCL_APPARTMENT;
+	if (!self && !tcl_lock) {
+		/* We don't have the Tcl lock since Tcl is threaded. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"_tkinter.mainloop not supported "
+				"for threaded Tcl");
+		return NULL;
+	}
+
+	if (self) {
+		CHECK_TCL_APPARTMENT;
+		self->dispatching = 1;
+	}
 
 	quitMainLoop = 0;
-	self->dispatching = 1;
 	while (Tk_GetNumMainWindows() > threshold &&
 	       !quitMainLoop &&
 	       !errorInCmd)
@@ -2427,7 +2437,7 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 		int result;
 
 #ifdef WITH_THREAD
-		if (self->threaded) {
+		if (self && self->threaded) {
 			/* Allow other Python threads to run. */
 			ENTER_TCL
 			result = Tcl_DoOneEvent(0);
@@ -2449,13 +2459,15 @@ Tkapp_MainLoop(PyObject *_self, PyObject *args)
 #endif
 
 		if (PyErr_CheckSignals() != 0) {
-			self->dispatching = 0;
+			if (self)
+				self->dispatching = 0;
 			return NULL;
 		}
 		if (result < 0)
 			break;
 	}
-	self->dispatching = 0;
+	if (self)
+		self->dispatching = 0;
 	quitMainLoop = 0;
 
 	if (errorInCmd) {
@@ -2476,7 +2488,6 @@ Tkapp_DoOneEvent(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "|i:dooneevent", &flags))
 		return NULL;
-	CHECK_TCL_APPARTMENT;
 
 	ENTER_TCL
 	rv = Tcl_DoOneEvent(flags);
