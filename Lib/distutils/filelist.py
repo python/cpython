@@ -166,7 +166,7 @@ class FileList:
                              (dir, string.join(patterns)))
             for pattern in patterns:
                 if not self.include_pattern(pattern, prefix=dir):
-                    log.warn(("warngin: no files found matching '%s' " +
+                    log.warn(("warning: no files found matching '%s' " +
                                 "under directory '%s'"), 
                              pattern, dir)
 
