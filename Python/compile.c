@@ -381,41 +381,54 @@ int is_free(int v)
 	return 0;
 }
 
-/* Error message including line number */
+/* com_fetch_program_text will attempt to load the line of text that
+   the exception refers to.  If it fails, it will return NULL but will
+   not set an exception. 
 
-static void
-set_error_location(char *filename, int lineno)
+   XXX The functionality of this function is quite similar to the
+   functionality in tb_displayline() in traceback.c.
+*/
+
+static PyObject *
+fetch_program_text(char *filename, int lineno)
 {
-	PyObject *exc, *v, *tb, *tmp;
+	FILE *fp;
+	int i;
+	char linebuf[1000];
 
-	/* add attributes for the line number and filename for the error */
-	PyErr_Fetch(&exc, &v, &tb);
-	PyErr_NormalizeException(&exc, &v, &tb);
-	tmp = PyInt_FromLong(lineno);
-	if (tmp == NULL)
-		PyErr_Clear();
-	else {
-		if (PyObject_SetAttrString(v, "lineno", tmp))
-			PyErr_Clear();
-		Py_DECREF(tmp);
+	if (filename == NULL || lineno <= 0)
+		return NULL;
+	fp = fopen(filename, "r");
+	if (fp == NULL)
+		return NULL;
+	for (i = 0; i < lineno; i++) {
+		char *pLastChar = &linebuf[sizeof(linebuf) - 2];
+		do {
+			*pLastChar = '\0';
+			if (fgets(linebuf, sizeof linebuf, fp) == NULL)
+				break;
+			/* fgets read *something*; if it didn't get as
+			   far as pLastChar, it must have found a newline
+			   or hit the end of the file;	if pLastChar is \n,
+			   it obviously found a newline; else we haven't
+			   yet seen a newline, so must continue */
+		} while (*pLastChar != '\0' && *pLastChar != '\n');
 	}
-	if (filename != NULL) {
-		tmp = PyString_FromString(filename);
-		if (tmp == NULL)
-			PyErr_Clear();
-		else {
-			if (PyObject_SetAttrString(v, "filename", tmp))
-				PyErr_Clear();
-			Py_DECREF(tmp);
-		}
+	fclose(fp);
+	if (i == lineno) {
+		char *p = linebuf;
+		while (*p == ' ' || *p == '\t' || *p == '\014')
+			p++;
+		return PyString_FromString(p);
 	}
-	PyErr_Restore(exc, v, tb);
+	return NULL;
 }
 
 static void
 com_error(struct compiling *c, PyObject *exc, char *msg)
 {
-	PyObject *v;
+	PyObject *t = NULL, *v = NULL, *w = NULL, *line = NULL;
+
 	if (c == NULL) {
 		/* Error occurred via symtable call to
 		   is_constant_false */
@@ -423,18 +436,33 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 		return;
 	}
 	c->c_errors++;
-	if (c->c_lineno <= 1) {
-		/* Unknown line number or single interactive command */
+	if (c->c_lineno < 1 || c->c_interactive) { 
+		/* Unknown line number or interactive input */
 		PyErr_SetString(exc, msg);
 		return;
 	}
 	v = PyString_FromString(msg);
 	if (v == NULL)
 		return; /* MemoryError, too bad */
-	PyErr_SetObject(exc, v);
-	Py_DECREF(v);
 
-	set_error_location(c->c_filename, c->c_lineno);
+	line = fetch_program_text(c->c_filename, c->c_lineno);
+	if (line == NULL) {
+		Py_INCREF(Py_None);
+		line = Py_None;
+	}
+	t = Py_BuildValue("(ziOO)", c->c_filename, c->c_lineno,
+			  Py_None, line);
+	if (t == NULL)
+		goto exit;
+	w = Py_BuildValue("(OO)", v, t);
+	if (w == NULL)
+		goto exit;
+	PyErr_SetObject(exc, w);
+ exit:
+	Py_XDECREF(t);
+	Py_XDECREF(v);
+	Py_XDECREF(w);
+	Py_XDECREF(line);
 }
 
 /* Interface to the block stack */
@@ -3996,6 +4024,43 @@ get_ref_type(struct compiling *c, char *name)
 		Py_FatalError(buf);
 	}
 	return -1; /* can't get here */
+}
+
+/* Helper function for setting lineno and filename */
+
+static void
+set_error_location(char *filename, int lineno)
+{
+	PyObject *exc, *v, *tb, *tmp;
+
+	/* add attributes for the line number and filename for the error */
+	PyErr_Fetch(&exc, &v, &tb);
+	PyErr_NormalizeException(&exc, &v, &tb);
+	tmp = PyInt_FromLong(lineno);
+	if (tmp == NULL)
+		PyErr_Clear();
+	else {
+		if (PyObject_SetAttrString(v, "lineno", tmp))
+			PyErr_Clear();
+		Py_DECREF(tmp);
+	}
+	if (filename != NULL) {
+		tmp = PyString_FromString(filename);
+		if (tmp == NULL)
+			PyErr_Clear();
+		else {
+			if (PyObject_SetAttrString(v, "filename", tmp))
+				PyErr_Clear();
+			Py_DECREF(tmp);
+		}
+
+		tmp = fetch_program_text(filename, lineno);
+		if (tmp) {
+			PyObject_SetAttrString(v, "text", tmp);
+			Py_DECREF(tmp);
+		}
+	}
+	PyErr_Restore(exc, v, tb);
 }
 
 static int
