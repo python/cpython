@@ -196,8 +196,8 @@ class Pickler:
         """
         self.memo.clear()
 
-    def dump(self, object):
-        """Write a pickled representation of object to the open file object.
+    def dump(self, obj):
+        """Write a pickled representation of obj to the open file.
 
         Either the binary or ASCII format will be used, depending on the
         value of the bin flag passed to the constructor.
@@ -205,7 +205,7 @@ class Pickler:
         """
         if self.proto >= 2:
             self.write(PROTO + chr(self.proto))
-        self.save(object)
+        self.save(obj)
         self.write(STOP)
 
     def memoize(self, obj):
@@ -247,28 +247,25 @@ class Pickler:
 
         return GET + `i` + '\n'
 
-    def save(self, object):
-        memo = self.memo
-
-        pid = self.persistent_id(object)
+    def save(self, obj):
+        pid = self.persistent_id(obj)
         if pid is not None:
             self.save_pers(pid)
             return
 
-        d = id(object)
-
-        t = type(object)
-
+        memo = self.memo
+        d = id(obj)
         if d in memo:
             self.write(self.get(memo[d][0]))
             return
 
+        t = type(obj)
         try:
             f = self.dispatch[t]
         except KeyError:
             pass
         else:
-            f(self, object)
+            f(self, obj)
             return
 
         # The dispatch table doesn't know about type t.
@@ -277,25 +274,25 @@ class Pickler:
         except TypeError: # t is not a class
             issc = 0
         if issc:
-            self.save_global(object)
+            self.save_global(obj)
             return
 
         try:
             reduce = dispatch_table[t]
         except KeyError:
             try:
-                reduce = object.__reduce__
+                reduce = obj.__reduce__
             except AttributeError:
                 raise PicklingError, \
                     "can't pickle %s object: %s" % (`t.__name__`,
-                                                     `object`)
+                                                     `obj`)
             else:
                 tup = reduce()
         else:
-            tup = reduce(object)
+            tup = reduce(obj)
 
         if type(tup) is StringType:
-            self.save_global(object, tup)
+            self.save_global(obj, tup)
             return
 
         if type(tup) is not TupleType:
@@ -321,9 +318,9 @@ class Pickler:
                                  "by %s must be a tuple" % reduce
 
         self.save_reduce(callable, arg_tup, state)
-        self.memoize(object)
+        self.memoize(obj)
 
-    def persistent_id(self, object):
+    def persistent_id(self, obj):
         return None
 
     def save_pers(self, pid):
@@ -351,116 +348,116 @@ class Pickler:
 
     dispatch = {}
 
-    def save_none(self, object):
+    def save_none(self, obj):
         self.write(NONE)
     dispatch[NoneType] = save_none
 
-    def save_bool(self, object):
+    def save_bool(self, obj):
         if self.proto >= 2:
-            self.write(object and NEWTRUE or NEWFALSE)
+            self.write(obj and NEWTRUE or NEWFALSE)
         else:
-            self.write(object and TRUE or FALSE)
+            self.write(obj and TRUE or FALSE)
     dispatch[bool] = save_bool
 
-    def save_int(self, object, pack=struct.pack):
+    def save_int(self, obj, pack=struct.pack):
         if self.bin:
             # If the int is small enough to fit in a signed 4-byte 2's-comp
             # format, we can store it more efficiently than the general
             # case.
             # First one- and two-byte unsigned ints:
-            if object >= 0:
-                if object <= 0xff:
-                    self.write(BININT1 + chr(object))
+            if obj >= 0:
+                if obj <= 0xff:
+                    self.write(BININT1 + chr(obj))
                     return
-                if object <= 0xffff:
-                    self.write(BININT2 + chr(object&0xff) + chr(object>>8))
+                if obj <= 0xffff:
+                    self.write(BININT2 + chr(obj&0xff) + chr(obj>>8))
                     return
             # Next check for 4-byte signed ints:
-            high_bits = object >> 31  # note that Python shift sign-extends
+            high_bits = obj >> 31  # note that Python shift sign-extends
             if high_bits == 0 or high_bits == -1:
                 # All high bits are copies of bit 2**31, so the value
                 # fits in a 4-byte signed int.
-                self.write(BININT + pack("<i", object))
+                self.write(BININT + pack("<i", obj))
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
-        self.write(INT + `object` + '\n')
+        self.write(INT + `obj` + '\n')
     dispatch[IntType] = save_int
 
-    def save_long(self, object, pack=struct.pack):
+    def save_long(self, obj, pack=struct.pack):
         if self.proto >= 2:
-            bytes = encode_long(object)
+            bytes = encode_long(obj)
             n = len(bytes)
             if n < 256:
                 self.write(LONG1 + chr(n) + bytes)
             else:
                 self.write(LONG4 + pack("<i", n) + bytes)
-        self.write(LONG + `object` + '\n')
+        self.write(LONG + `obj` + '\n')
     dispatch[LongType] = save_long
 
-    def save_float(self, object, pack=struct.pack):
+    def save_float(self, obj, pack=struct.pack):
         if self.bin:
-            self.write(BINFLOAT + pack('>d', object))
+            self.write(BINFLOAT + pack('>d', obj))
         else:
-            self.write(FLOAT + `object` + '\n')
+            self.write(FLOAT + `obj` + '\n')
     dispatch[FloatType] = save_float
 
-    def save_string(self, object, pack=struct.pack):
+    def save_string(self, obj, pack=struct.pack):
         if self.bin:
-            n = len(object)
+            n = len(obj)
             if n < 256:
-                self.write(SHORT_BINSTRING + chr(n) + object)
+                self.write(SHORT_BINSTRING + chr(n) + obj)
             else:
-                self.write(BINSTRING + pack("<i", n) + object)
+                self.write(BINSTRING + pack("<i", n) + obj)
         else:
-            self.write(STRING + `object` + '\n')
-        self.memoize(object)
+            self.write(STRING + `obj` + '\n')
+        self.memoize(obj)
     dispatch[StringType] = save_string
 
-    def save_unicode(self, object, pack=struct.pack):
+    def save_unicode(self, obj, pack=struct.pack):
         if self.bin:
-            encoding = object.encode('utf-8')
+            encoding = obj.encode('utf-8')
             n = len(encoding)
             self.write(BINUNICODE + pack("<i", n) + encoding)
         else:
-            object = object.replace("\\", "\\u005c")
-            object = object.replace("\n", "\\u000a")
-            self.write(UNICODE + object.encode('raw-unicode-escape') + '\n')
-        self.memoize(object)
+            obj = obj.replace("\\", "\\u005c")
+            obj = obj.replace("\n", "\\u000a")
+            self.write(UNICODE + obj.encode('raw-unicode-escape') + '\n')
+        self.memoize(obj)
     dispatch[UnicodeType] = save_unicode
 
     if StringType == UnicodeType:
         # This is true for Jython
-        def save_string(self, object, pack=struct.pack):
-            unicode = object.isunicode()
+        def save_string(self, obj, pack=struct.pack):
+            unicode = obj.isunicode()
 
             if self.bin:
                 if unicode:
-                    object = object.encode("utf-8")
-                l = len(object)
+                    obj = obj.encode("utf-8")
+                l = len(obj)
                 if l < 256 and not unicode:
-                    self.write(SHORT_BINSTRING + chr(l) + object)
+                    self.write(SHORT_BINSTRING + chr(l) + obj)
                 else:
                     s = pack("<i", l)
                     if unicode:
-                        self.write(BINUNICODE + s + object)
+                        self.write(BINUNICODE + s + obj)
                     else:
-                        self.write(BINSTRING + s + object)
+                        self.write(BINSTRING + s + obj)
             else:
                 if unicode:
-                    object = object.replace("\\", "\\u005c")
-                    object = object.replace("\n", "\\u000a")
-                    object = object.encode('raw-unicode-escape')
-                    self.write(UNICODE + object + '\n')
+                    obj = obj.replace("\\", "\\u005c")
+                    obj = obj.replace("\n", "\\u000a")
+                    obj = obj.encode('raw-unicode-escape')
+                    self.write(UNICODE + obj + '\n')
                 else:
-                    self.write(STRING + `object` + '\n')
-            self.memoize(object)
+                    self.write(STRING + `obj` + '\n')
+            self.memoize(obj)
         dispatch[StringType] = save_string
 
-    def save_tuple(self, object):
+    def save_tuple(self, obj):
         write = self.write
         proto = self.proto
 
-        n = len(object)
+        n = len(obj)
         if n == 0 and proto:
             write(EMPTY_TUPLE)
             return
@@ -468,24 +465,24 @@ class Pickler:
         save = self.save
         memo = self.memo
         if n <= 3 and proto >= 2:
-            for element in object:
+            for element in obj:
                 save(element)
             # Subtle.  Same as in the big comment below.
-            if id(object) in memo:
-                get = self.get(memo[id(object)][0])
+            if id(obj) in memo:
+                get = self.get(memo[id(obj)][0])
                 write(POP * n + get)
             else:
                 write(_tuplesize2code[n])
-                self.memoize(object)
+                self.memoize(obj)
             return
 
         # proto 0, or proto 1 and tuple isn't empty, or proto > 1 and tuple
         # has more than 3 elements.
         write(MARK)
-        for element in object:
+        for element in obj:
             save(element)
 
-        if n and id(object) in memo:
+        if n and id(obj) in memo:
             # Subtle.  d was not in memo when we entered save_tuple(), so
             # the process of saving the tuple's elements must have saved
             # the tuple itself:  the tuple is recursive.  The proper action
@@ -493,7 +490,7 @@ class Pickler:
             # simply GET the tuple (it's already constructed).  This check
             # could have been done in the "for element" loop instead, but
             # recursive tuples are a rare thing.
-            get = self.get(memo[id(object)][0])
+            get = self.get(memo[id(obj)][0])
             if proto:
                 write(POP_MARK + get)
             else:   # proto 0 -- POP_MARK not available
@@ -502,51 +499,51 @@ class Pickler:
 
         # No recursion (including the empty-tuple case for protocol 0).
         self.write(TUPLE)
-        if object:                      # No need to memoize empty tuple
-            self.memoize(object)
+        if obj:                      # No need to memoize empty tuple
+            self.memoize(obj)
 
     dispatch[TupleType] = save_tuple
 
-    def save_empty_tuple(self, object):
+    def save_empty_tuple(self, obj):
         self.write(EMPTY_TUPLE)
 
-    def save_list(self, object):
+    def save_list(self, obj):
         write = self.write
         save  = self.save
 
         if self.bin:
             write(EMPTY_LIST)
-            self.memoize(object)
-            n = len(object)
+            self.memoize(obj)
+            n = len(obj)
             if n > 1:
                 write(MARK)
-                for element in object:
+                for element in obj:
                     save(element)
                 write(APPENDS)
             elif n:
                 assert n == 1
-                save(object[0])
+                save(obj[0])
                 write(APPEND)
             # else the list is empty, and we're already done
 
         else:   # proto 0 -- can't use EMPTY_LIST or APPENDS
             write(MARK + LIST)
-            self.memoize(object)
-            for element in object:
+            self.memoize(obj)
+            for element in obj:
                 save(element)
                 write(APPEND)
 
     dispatch[ListType] = save_list
 
-    def save_dict(self, object):
+    def save_dict(self, obj):
         write = self.write
         save  = self.save
-        items = object.iteritems()
+        items = obj.iteritems()
 
         if self.bin:
             write(EMPTY_DICT)
-            self.memoize(object)
-            if len(object) > 1:
+            self.memoize(obj)
+            if len(obj) > 1:
                 write(MARK)
                 for key, value in items:
                     save(key)
@@ -556,9 +553,9 @@ class Pickler:
 
         else:   # proto 0 -- can't use EMPTY_DICT or SETITEMS
             write(MARK + DICT)
-            self.memoize(object)
+            self.memoize(obj)
 
-        # proto 0 or len(object) < 2
+        # proto 0 or len(obj) < 2
         for key, value in items:
             save(key)
             save(value)
@@ -568,15 +565,15 @@ class Pickler:
     if not PyStringMap is None:
         dispatch[PyStringMap] = save_dict
 
-    def save_inst(self, object):
-        cls = object.__class__
+    def save_inst(self, obj):
+        cls = obj.__class__
 
         memo  = self.memo
         write = self.write
         save  = self.save
 
-        if hasattr(object, '__getinitargs__'):
-            args = object.__getinitargs__()
+        if hasattr(obj, '__getinitargs__'):
+            args = obj.__getinitargs__()
             len(args) # XXX Assert it's a sequence
             _keep_alive(args, memo)
         else:
@@ -594,12 +591,12 @@ class Pickler:
                 save(arg)
             write(INST + cls.__module__ + '\n' + cls.__name__ + '\n')
 
-        self.memoize(object)
+        self.memoize(obj)
 
         try:
-            getstate = object.__getstate__
+            getstate = obj.__getstate__
         except AttributeError:
-            stuff = object.__dict__
+            stuff = obj.__dict__
         else:
             stuff = getstate()
             _keep_alive(stuff, memo)
@@ -608,17 +605,17 @@ class Pickler:
 
     dispatch[InstanceType] = save_inst
 
-    def save_global(self, object, name = None):
+    def save_global(self, obj, name = None):
         write = self.write
         memo = self.memo
 
         if name is None:
-            name = object.__name__
+            name = obj.__name__
 
         try:
-            module = object.__module__
+            module = obj.__module__
         except AttributeError:
-            module = whichmodule(object, name)
+            module = whichmodule(obj, name)
 
         try:
             __import__(module)
@@ -627,15 +624,15 @@ class Pickler:
         except (ImportError, KeyError, AttributeError):
             raise PicklingError(
                 "Can't pickle %r: it's not found as %s.%s" %
-                (object, module, name))
+                (obj, module, name))
         else:
-            if klass is not object:
+            if klass is not obj:
                 raise PicklingError(
                     "Can't pickle %r: it's not the same object as %s.%s" %
-                    (object, module, name))
+                    (obj, module, name))
 
         write(GLOBAL + module + '\n' + name + '\n')
-        self.memoize(object)
+        self.memoize(obj)
 
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
@@ -700,18 +697,15 @@ class Unpickler:
         arguments.  Both methods should return a string.  Thus file-like
         object can be a file object opened for reading, a StringIO object,
         or any other custom object that meets this interface.
-
         """
         self.readline = file.readline
         self.read = file.read
         self.memo = {}
 
     def load(self):
-        """Read a pickled object representation from the open file object.
+        """Read a pickled object representation from the open file.
 
-        Return the reconstituted object hierarchy specified in the file
-        object.
-
+        Return the reconstituted object hierarchy specified in the file.
         """
         self.mark = object() # any new unique object
         self.stack = []
@@ -991,6 +985,13 @@ class Unpickler:
         self.append(value)
     dispatch[OBJ] = load_obj
 
+    def load_newobj(self):
+        args = self.stack.pop()
+        cls = self.stack[-1]
+        obj = cls.__new__(cls, *args)
+        self.stack[-1:] = obj
+    dispatch[NEWOBJ] = load_newobj
+
     def load_global(self):
         module = self.readline()[:-1]
         name = self.readline()[:-1]
@@ -1197,12 +1198,12 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(object, file, proto=1):
-    Pickler(file, proto).dump(object)
+def dump(obj, file, proto=1):
+    Pickler(file, proto).dump(obj)
 
-def dumps(object, proto=1):
+def dumps(obj, proto=1):
     file = StringIO()
-    Pickler(file, proto).dump(object)
+    Pickler(file, proto).dump(obj)
     return file.getvalue()
 
 def load(file):
