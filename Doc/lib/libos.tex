@@ -1226,8 +1226,8 @@ the individual parameters simply become additional parameters to the
 \function{execl*()} functions.  The \character{v} variants are good
 when the number of parameters is variable, with the arguments being
 passed in a list or tuple as the \var{args} parameter.  In either
-case, the arguments to the child process must start with the name of
-the command being run.
+case, the arguments to the child process should start with the name of
+the command being run, but this is not enforced.
 
 The variants which include a \character{p} near the end
 (\function{execlp()}, \function{execlpe()}, \function{execvp()},
