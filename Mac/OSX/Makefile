@@ -142,12 +142,8 @@ install_IDLE: $(INSTALLED_PYTHONW)
 			$(srcdir)/Tools/idle/idle ; \
 		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
 			--output $(PYTHONAPPSDIR)/IDLE.app \
-			--extra $(srcdir)/Tools/idle \
+			--extra $(srcdir)/Tools/idle:Contents/Resources/idlelib \
 			$(srcdir)/Tools/idle/idle ; \
-		echo mv $(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idle \
-			$(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idlelib; \
-		mv $(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idle \
-			$(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idlelib; \
 	fi
 
 		
