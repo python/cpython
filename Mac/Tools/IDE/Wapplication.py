@@ -123,6 +123,13 @@ class Application(FrameWork.Application):
 		del self._windows[wid]
 		self.makeopenwindowsmenu()
 	
+	def makeopenwindowsmenu(self):
+		# dummy; could be the full version from PythonIDEMain.py
+		self._openwindows = {}
+		self._openwindowscheckmark = 0
+		if not hasattr(self, "_menustocheck"):
+			self._menustocheck = []
+	
 	def do_key(self, event):
 		(what, message, when, where, modifiers) = event
 		ch = chr(message & FrameWork.charCodeMask)
