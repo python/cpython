@@ -398,7 +398,7 @@ This is exact, and cannot overflow.  timedelta.seconds and
 \item[(4)]
 In other words, \code{date1 < date2}
    if and only if \code{\var{date1}.toordinal() <
-   \var{date2}.toordinal()}. 
+   \var{date2}.toordinal()}.
 In order to stop comparison from falling back to the default
 scheme of comparing object addresses, date comparison
 normally raises \exception{TypeError} if the other comparand
@@ -423,7 +423,7 @@ Instance methods:
   Return a date with the same value, except for those members given
   new values by whichever keyword arguments are specified.  For
   example, if \code{d == date(2002, 12, 31)}, then
-  \code{d.replace(day=26) == date(2000, 12, 26)}.
+  \code{d.replace(day=26) == date(2002, 12, 26)}.
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
@@ -432,8 +432,8 @@ Instance methods:
   0, and the DST flag is -1.
   \code{\var{d}.timetuple()} is equivalent to
       \code{time.struct_time((\var{d}.year, \var{d}.month, \var{d}.day,
-             0, 0, 0, 
-             \var{d}.weekday(), 
+             0, 0, 0,
+             \var{d}.weekday(),
              \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
             -1))}
 \end{methoddesc}
@@ -475,7 +475,7 @@ Instance methods:
   year 2004 begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan
   2004, so that
   \code{date(2003, 12, 29).isocalendar() == (2004, 1, 1)}
-  and 
+  and
   \code{date(2004, 1, 4).isocalendar() == (2004, 1, 7)}.
 \end{methoddesc}
 
@@ -687,7 +687,7 @@ Supported operations:
   \lineii{\var{timedelta} = \var{datetime1} - \var{datetime2}}{(3)}
 
   \lineii{\var{datetime1} < \var{datetime2}}
-   {Compares \class{datetime} to \class{datetime}. 
+   {Compares \class{datetime} to \class{datetime}.
     (4)}
 
 \end{tableii}
@@ -736,7 +736,7 @@ Supported operations:
 \item[(4)]
 
 \var{datetime1} is considered less than \var{datetime2}
-when \var{datetime1} precedes \var{datetime2} in time.  
+when \var{datetime1} precedes \var{datetime2} in time.
 
 If one comparand is naive and
 the other is aware, \exception{TypeError} is raised.  If both
