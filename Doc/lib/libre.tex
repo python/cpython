@@ -164,10 +164,11 @@ class: \code{[(] [)]}.
 determines what the meaning and further syntax of the construct is.
 Following are the currently supported extensions.
 %
-\item[\code{(?ilmsx)}] (One or more letters from the set 'i', 'l', 'm', 's',
+\item[\code{(?iLmsx)}] (One or more letters from the set 'i', 'L', 'm', 's',
 'x'.) The group matches the empty string; the letters set the
 corresponding flags (re.I, re.L, re.M, re.S, re.X) for the entire regular
-expression.  This is useful if you wish include the flags as part of the regular
+expression.  (The flag 'L' is uppercase because it is not in standard Perl.)
+This is useful if you wish include the flags as part of the regular
 expression, instead of passing a \var{flag} argument to the \code{compile} function.
 %
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.

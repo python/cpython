@@ -1755,7 +1755,7 @@ for (;; ptr++)
         {
         case '#':
         case 'i':
-        case 'l':
+        case 'L':
         case 'm':
         case 's':
         case 'x':
@@ -2476,7 +2476,7 @@ while ((c = *(++ptr)) != 0)
           options |= PCRE_CASELESS;
           continue;
           }
-        else if ((c = *ptr) == 'l')
+        else if ((c = *ptr) == 'L')
           {
           options |= PCRE_LOCALE;
           continue;
