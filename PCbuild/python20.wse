@@ -30,9 +30,11 @@ item: Global
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
   Variable Flags1=00001000
-  Variable Name2=_TCLMINOR_
-  Variable Description2=Tcl/Tk Minor Version (e.g. the "4" in "8.4.1")
-  Variable Default2=4
+  Variable Name2=_TCLDIR_
+  Variable Description2=The directory in which the Tcl/Tk installation
+  Variable Description2=lives.  This must be a sibling of the Python
+  Variable Description2=directory.
+  Variable Default2=tcl84
   Variable Flags2=00001000
   Variable Name3=_DOC_
   Variable Description3=The unpacked HTML doc directory.
@@ -91,6 +93,14 @@ item: Remark
 end
 item: Remark
   Text=        Be sure to select Steps->All or you may not see these!
+end
+item: Remark
+end
+item: Remark
+  Text=When the version of Tcl/Tk changes, the compiler vrbl
+end
+item: Remark
+  Text=_TCLDIR_ may also need to be changed.
 end
 item: Remark
 end
@@ -2048,19 +2058,13 @@ item: Remark
   Text=Tcl/Tk
 end
 item: Install File
-  Source=..\..\tcl84\bin\tcl8%_tclminor_%.dll
-  Destination=%MAINDIR%\DLLs\tcl8%_TCLMINOR_%.dll
+  Source=..\..\%_tcldir_%\bin\*.dll
+  Destination=%MAINDIR%\DLLs
   Description=Tcl/Tk binaries and libraries
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\..\tcl84\bin\tk8%_tclminor_%.dll
-  Destination=%MAINDIR%\DLLs\tk8%_TCLMINOR_%.dll
-  Description=Tcl/Tk binaries and libraries
-  Flags=0000000000000010
-end
-item: Install File
-  Source=..\..\tcl84\lib\*.*
+  Source=..\..\%_tcldir_%\lib\*.*
   Destination=%MAINDIR%\tcl
   Description=Tcl/Tk binaries and libraries
   Flags=0000000100000010
