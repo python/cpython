@@ -368,6 +368,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.transfer_path()
         # annotate restart in shell window and mark it
         console = self.tkconsole
+        console.text.delete("iomark", "end-1c")
         halfbar = ((int(console.width) - 16) // 2) * '='
         console.write(halfbar + ' RESTART ' + halfbar)
         console.text.mark_set("restart", "end-1c")
@@ -659,6 +660,7 @@ class PyShell(OutputWindow):
         ("file", "_File"),
         ("edit", "_Edit"),
         ("shell", "_Shell"),
+        ("debug", "_Debug"),
         ("options", "_Options"),
         ("windows", "_Windows"),
         ("help", "_Help"),
@@ -1007,8 +1009,8 @@ class PyShell(OutputWindow):
         # Hack -- use the debugger hooks to be able to handle events
         # and interrupt execution at any time.
         # This slows execution down quite a bit, so you may want to
-        # disable this (by not calling settrace() in runcode() above)
-        # for full-bore (uninterruptable) speed.
+        # disable this (by not calling settrace() in beginexecuting() and
+        # endexecuting() for full-bore (uninterruptable) speed.)
         # XXX This should become a user option.
         if self.canceled:
             return
