@@ -424,7 +424,7 @@ finally:
 /* ---------------------------------------------------------------- */
 
 static char xmlparse_Parse__doc__[] = 
-"Parse(data[, isfinal])
+"Parse(data[, isfinal])\n\
 Parse XML data.  `isfinal' should be true at end of input.";
 
 static PyObject *
@@ -500,7 +500,7 @@ finally:
 }
 
 static char xmlparse_ParseFile__doc__[] = 
-"ParseFile(file)
+"ParseFile(file)\n\
 Parse XML data from file-like object.";
 
 static PyObject *
@@ -555,7 +555,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
 }
 
 static char xmlparse_SetBase__doc__[] = 
-"SetBase(base_url)
+"SetBase(base_url)\n\
 Set the base URL for the parser.";
 
 static PyObject *
@@ -573,7 +573,7 @@ xmlparse_SetBase(xmlparseobject *self, PyObject *args)
 }
 
 static char xmlparse_GetBase__doc__[] = 
-"GetBase() -> url
+"GetBase() -> url\n\
 Return base URL string for the parser.";
 
 static PyObject *
