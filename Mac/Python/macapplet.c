@@ -24,73 +24,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Macintosh Applet Python main program */
 
-#include "Python.h"
-#include "marshal.h"
-#include "import.h"
+#ifdef __CFM68K__
+#pragma lib_export on
+#endif
 
-#include <Memory.h>
-#include <Resources.h>
-#include <QuickDraw.h>
-#include <Fonts.h>
-#include <Windows.h>
-#include <TextEdit.h>
-#include <Dialogs.h>
-#include <Menus.h>
+extern void PyMac_InitApplet();
 
-static void
-init_mac_world()
-{
-	MaxApplZone();
-	InitGraf(&qd.thePort);
-	InitFonts();
-	InitWindows();
-	TEInit();
-	InitDialogs((long)0);
-	InitMenus();
-	InitCursor();
-}
-
-static int
-run_main_resource()
-{
-	Handle h;
-	long size;
-	PyObject *code;
-	PyObject *result;
-	
-	h = GetNamedResource('PYC ', "\p__main__");
-	if (h == NULL) {
-		fprintf(stderr, "No 'PYC ' resource named __main__ found\n");
-		return 1;
-	}
-	size = GetResourceSizeOnDisk(h);
-	HLock(h);
-	code = PyMarshal_ReadObjectFromString(*h + 8, (int)(size - 8));
-	HUnlock(h);
-	ReleaseResource(h);
-	if (code == NULL) {
-		PyErr_Print();
-		return 1;
-	}
-	result = PyImport_ExecCodeModule("__main__", code);
-	Py_DECREF(code);
-	if (result == NULL) {
-		PyErr_Print();
-		return 1;
-	}
-	Py_DECREF(result);
-	return 0;
-}
-
-main()
-{
-	static char *argv[] = {"__main__", NULL};
-	
-	init_mac_world();
-	Py_Initialize();
-	PySys_SetArgv((sizeof argv / sizeof argv[0]) - 1, argv);
-	run_main_resource();
-	fflush(stderr);
-	fflush(stdout);
-	/* XXX Should we bother to Py_Exit(sts)? */
+main() {
+	PyMac_InitApplet();
 }
