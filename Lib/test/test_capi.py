@@ -43,3 +43,7 @@ except AttributeError:
 
 if have_thread_state:
     TestThreadState()
+    import threading
+    t=threading.Thread(target=TestThreadState)
+    t.start()
+
