@@ -44,16 +44,34 @@ try:
 except ImportError:
     SIGTERM = 15
 
-# Change warnings module to write to sys.__stderr__
+# Override warnings module to write to warning_stream.  Initialize to send IDLE
+# internal warnings to the console.  ScriptBinding.check_syntax() will
+# temporarily redirect the stream to the shell window to display warnings when
+# checking user's code.
+global warning_stream
+warning_stream = sys.__stderr__
 try:
     import warnings
 except ImportError:
     pass
 else:
     def idle_showwarning(message, category, filename, lineno):
-        file = sys.__stderr__
-        file.write(warnings.formatwarning(message, category, filename, lineno))
+        file = warning_stream
+        try:
+            file.write(warnings.formatwarning(message, category, filename, lineno))
+        except IOError:
+            pass  ## file (probably __stderr__) is invalid, warning dropped.
     warnings.showwarning = idle_showwarning
+    def idle_formatwarning(message, category, filename, lineno):
+        """Format warnings the IDLE way"""
+        s = "\nWarning (from warnings module):\n"
+        s += '  File \"%s\", line %s\n' % (filename, lineno)
+        line = linecache.getline(filename, lineno).strip()
+        if line:
+            s += "    %s\n" % line
+        s += "%s: %s\n>>> " % (category.__name__, message)
+        return s
+    warnings.formatwarning = idle_formatwarning
 
 def extended_linecache_checkcache(orig_checkcache=linecache.checkcache):
     """Extend linecache.checkcache to preserve the <pyshell#...> entries
@@ -814,6 +832,13 @@ class PyShell(OutputWindow):
     canceled = False
     endoffile = False
     closing = False
+
+    def set_warning_stream(self, stream):
+	global warning_stream
+	warning_stream = stream
+
+    def get_warning_stream(self):
+        return warning_stream
 
     def toggle_debugger(self, event=None):
         if self.executing:

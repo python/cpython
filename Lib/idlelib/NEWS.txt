@@ -3,6 +3,10 @@ What's New in IDLE 1.1a0?
 
 *Release date: XX-XXX-2004*
 
+- Redirect the warning stream to the shell during the ScriptBinding check of
+  user code and format the warning similarly to an exception for both that
+  check and for runtime warnings raised in the subprocess.
+
 - CodeContext hint pane visibility state is now persistent across sessions.
   The pane no longer appears in the shell window.  Added capability to limit
   extensions to shell window or editor windows.  Noam Raphael addition
