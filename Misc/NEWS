@@ -108,7 +108,7 @@ Tools/Demos
 - Pynche was fixed to not crash when there is no ~/.pynche file and no
   -d option was given.
 
-- texcheck.py now checks for double word errors and erroneous \NULL markup.
+- texcheck.py now checks for double word errors and erroneous spacing markup.
 
 Build
 -----
