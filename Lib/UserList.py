@@ -1,4 +1,4 @@
-# A more or less complete user-defined wrapper around list objects
+"""A more or less complete user-defined wrapper around list objects."""
 
 class UserList:
     def __init__(self, list=None):
