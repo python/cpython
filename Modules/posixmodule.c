@@ -1994,7 +1994,7 @@ second form is used, set the access and modified times to the current time.");
 static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
-	char *path;
+	char *path = NULL;
 	long atime, mtime, ausec, musec;
 	int res;
 	PyObject* arg;
@@ -2087,10 +2087,8 @@ posix_utime(PyObject *self, PyObject *args)
 	}
 	if (res < 0) {
 #ifdef Py_WIN_WIDE_FILENAMES
-		if (have_unicode_filename) {
-			PyMem_Free(path);
+		if (have_unicode_filename)
 			return posix_error_with_unicode_filename(wpath);
-		}
 #endif /* Py_WIN_WIDE_FILENAMES */
 		return posix_error_with_allocated_filename(path);
 	}
