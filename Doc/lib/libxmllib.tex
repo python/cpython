@@ -92,6 +92,11 @@ Translate all entity and character references in \var{data} and
 return the translated string.
 \end{methoddesc}
 
+\begin{methoddesc}{getnamespace}{}
+Return a mapping of namespace abbreviations to namespace URIs that are
+currently in effect.
+\end{methoddesc}
+
 \begin{methoddesc}{handle_xml}{encoding, standalone}
 This method is called when the \samp{<?xml ...?>} tag is processed.
 The arguments are the values of the encoding and standalone attributes 

@@ -222,6 +222,13 @@ class XMLParser:
             else:
                 i = s + len(str)
 
+    # Interface - return a dictionary of all namespaces currently valid
+    def getnamespace(self):
+        nsdict = {}
+        for t, d, nst in self.stack:
+            nsdict.update(d)
+        return nsdict
+
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
     # true, force handling all data as if followed by EOF marker.
