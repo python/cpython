@@ -1444,6 +1444,25 @@ sub do_cmd_seerfc{
     return handle_rfclike_reference(@_[0], "RFC");
 }
 
+sub do_cmd_seetitle{
+    local($_) = @_;
+    my $url = next_optional_argument();
+    my $title = next_argument();
+    my $text = next_argument();
+    if ($url) {
+        return '<dl compact class="seetitle">'
+          . "\n    <dt><em class=\"citetitle\"><a href=\"$url\""
+          . "\n        class=\"url\">$title</a></em>"
+          . "\n    <dd>$text\n  </dl>"
+          . $_;
+    }
+    return '<dl compact class="seetitle">'
+      . "\n    <dt><em class=\"citetitle\""
+      . "\n        >$title</em>"
+      . "\n    <dd>$text\n  </dl>"
+      . $_;
+}
+
 sub do_cmd_seeurl{
     local($_) = @_;
     my $url = next_argument();
