@@ -60,6 +60,7 @@ class EditorWindow:
                 'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
+        self.width = idleConf.GetOption('main','EditorWindow','width')
         self.text = text = Text(text_frame, name='text', padx=5, wrap='none',
                 foreground=idleConf.GetHighlight(currentTheme,
                         'normal',fgBg='fg'),
@@ -71,7 +72,7 @@ class EditorWindow:
                         'hilite',fgBg='bg'),
                 insertbackground=idleConf.GetHighlight(currentTheme,
                         'cursor',fgBg='fg'),
-                width=idleConf.GetOption('main','EditorWindow','width'),
+                width=self.width,
                 height=idleConf.GetOption('main','EditorWindow','height') )
 
         self.createmenubar()
@@ -84,7 +85,6 @@ class EditorWindow:
         text.bind("<<paste>>", self.paste)
         text.bind("<<center-insert>>", self.center_insert_event)
         text.bind("<<help>>", self.help_dialog)
-        text.bind("<<good-advice>>", self.good_advice)
         text.bind("<<view-readme>>", self.view_readme)
         text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
@@ -213,7 +213,7 @@ class EditorWindow:
         ("edit", "_Edit"),
         ("format", "F_ormat"),
         ("run", "_Run"),
-        ("settings", "_Settings"),
+        ("options", "_Options"),
         ("windows", "_Windows"),
         ("help", "_Help"),
     ]
@@ -276,9 +276,6 @@ class EditorWindow:
 
     def config_dialog(self, event=None):
         configDialog.ConfigDialog(self.top,'Settings')
-
-    def good_advice(self, event=None):
-        tkMessageBox.showinfo('Advice', "Don't Panic!", master=self.text)
 
     def view_readme(self, event=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'README.txt')
@@ -665,6 +662,13 @@ class EditorWindow:
     def getlineno(self, mark="insert"):
         text = self.text
         return int(float(text.index(mark)))
+
+    def get_geometry(self):
+        "Return (width, height, x, y)"
+        geom = self.top.wm_geometry()
+        m = re.match(r"(\d+)x(\d+)\+(-?\d+)\+(-?\d+)", geom)
+        tuple = (map(int, m.groups()))
+        return tuple
 
     def close_event(self, event):
         self.close()

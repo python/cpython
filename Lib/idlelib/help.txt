@@ -1,4 +1,4 @@
-[See end for ** TIPS ]
+[See end for ** TIPS on using IDLE]
 
 Click on the dotted line at the top of a menu to "tear it off": a
 separate window containing the menu is created.
@@ -11,7 +11,7 @@ File Menu:
 	Open Module... -- open an existing module (searches sys.path)
 	Class Browser -- show classes and methods in current file
 	Path Browser -- show sys.path directories, modules, classes
-		        and methods
+			and methods
 	---
 	Save -- save current window to the associated file (unsaved
 		windows have a * before and after the window title)
@@ -64,7 +64,18 @@ Run Menu (only in Edit window):
 	Check Module -- Run a syntax check on the module
 	Run Script -- Execute the current file in the __main__ namespace
 
-Settings Menu:
+Shell Menu (only in Shell window):
+
+	View Last Restart -- Scroll the shell window to the last restart
+	Restart Shell -- Restart the interpreter with a fresh environment
+        ---
+	Go to File/Line -- look around the insert point for a filename
+		           and linenumber, open the file, and show the line
+	Debugger (toggle) -- Run commands in the shell under the debugger
+	Stack Viewer -- show the stack traceback of the last exception
+	Auto-open Stack Viewer (toggle) -- Open stack viewer on traceback
+
+Options Menu:
 
 	Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
 	                  keybindings, and color themes may be altered.
@@ -81,20 +92,11 @@ Windows Menu:
 	select one to bring it to the foreground (deiconifying it if
 	necessary).
 
-Debug Menu (in the Python Shell window only):
-
-	Go to File/Line -- look around the insert point for a filename
-		           and linenumber, open the file, and show the line
-	Stack Viewer -- show the stack traceback of the last exception
-	Debugger (toggle) -- Run commands in the shell under the debugger
-	Auto-open Stack Viewer (toggle) -- Open stack viewer on traceback
-
 Help Menu:
 
         IDLE Help -- Display this file
 	Python Documentation -- Access local Python documentation, if
                                 installed.  Otherwise access python.org.
-	Advice -- Emergency Only!
 	IDLE Readme -- Background discussion and change details
 	---
 	About IDLE --- Version, copyright, license, credits

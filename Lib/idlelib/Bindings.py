@@ -55,13 +55,16 @@ menudefs = [
  ('run',[
    ('Python Shell', '<<open-python-shell>>'),
  ]),
- ('debug', [
+ ('shell', [
+   ('_View Last Restart', '<<view-restart>>'),
+   ('_Restart Shell', '<<restart-shell>>'),
+   None,
    ('_Go to File/Line', '<<goto-file-line>>'),
-   ('_Stack Viewer', '<<open-stack-viewer>>'),
    ('!_Debugger', '<<toggle-debugger>>'),
+   ('_Stack Viewer', '<<open-stack-viewer>>'),
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>' ),
   ]),
- ('settings', [
+ ('options', [
    ('_Configure Idle...', '<<open-config-dialog>>'),
    None,
    ('Revert to _Default Settings', '<<revert-all-settings>>'),
@@ -69,7 +72,6 @@ menudefs = [
  ('help', [
    ('_IDLE Help...', '<<help>>'),
    ('Python _Documentation...', '<<python-docs>>'),
-   ('_Advice...', '<<good-advice>>'),
    ('View IDLE _Readme...', '<<view-readme>>'),
    None,
    ('_About IDLE...', '<<about-idle>>'),
