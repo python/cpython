@@ -173,6 +173,7 @@ l2htut: tut.dvi myformat.perl
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<tut/tut.html >tut/xxx
 	mv tut/xxx tut/tut.html
+	ln -s tut.html tut/index.html
 	mv tut python-tut
 
 l2hext: ext.dvi myformat.perl
@@ -180,6 +181,7 @@ l2hext: ext.dvi myformat.perl
 	@rm -rf python-ext
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<ext/ext.html >ext/xxx
+	ln -s ext.html ext/index.html
 	mv ext/xxx ext/ext.html
 	mv ext python-ext
 
@@ -190,6 +192,7 @@ l2hlib: lib.dvi myformat.perl
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<lib/lib.html >lib/xxx
 	mv lib/xxx lib/lib.html
+	ln -s lib.html lib/index.html
 	@rm -rf python-lib
 	mv lib python-lib
 
