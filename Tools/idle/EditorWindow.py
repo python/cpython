@@ -8,23 +8,7 @@ import tkSimpleDialog
 import tkMessageBox
 import idlever
 import WindowList
-
-# Customization of default window size and font
-# standard
-WIDTH = 80
-HEIGHT = 24
-if sys.platform[:3] == 'win':
-    FONT = ("courier new", 10)
-else:
-    FONT = ("courier", 10)
-if 0:
-    # for demos (on Windows)
-    WIDTH = 70
-    HEIGHT = 16
-    FONT = ("lucida console", 14)
-if 0:
-    # for Windows 98
-    FONT = ("lucida console", 8)
+from IdleConf import IdleConf
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -110,7 +94,8 @@ class EditorWindow:
     vars = {}
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
-        cprefs = self.ColorDelegator.cprefs
+        edconf = IdleConf.getsection('EditorWindow')
+        coconf = IdleConf.getsection('Colors')
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -121,13 +106,14 @@ class EditorWindow:
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.text = text = Text(text_frame, name='text', padx=5,
-                                foreground=cprefs.CNormal[0],
-                                background=cprefs.CNormal[1],
-                                highlightcolor=cprefs.CHilite[0],
-                                highlightbackground=cprefs.CHilite[1],
-                                insertbackground=cprefs.CCursor[1],
-                                width=WIDTH, height=HEIGHT,
-                                wrap="none")
+                      foreground=coconf.getdef('normal-foreground'),
+                      background=coconf.getdef('normal-background'),
+                      highlightcolor=coconf.getdef('hilite-foreground'),
+                      highlightbackground=coconf.getdef('hilite-background'),
+                      insertbackground=coconf.getdef('cursor-background'),
+                      width=edconf.getint('width'),
+                      height=edconf.getint('height'),
+                      wrap="none")
 
         self.createmenubar()
         self.apply_bindings()
@@ -156,7 +142,7 @@ class EditorWindow:
         vbar.pack(side=RIGHT, fill=Y)
 
         text['yscrollcommand'] = vbar.set
-        text['font'] = FONT
+        text['font'] = edconf.get('font-name'), edconf.get('font-size')
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
@@ -544,8 +530,7 @@ class EditorWindow:
                 traceback.print_exc()
 
     def get_standard_extension_names(self):
-        import extend
-        return extend.standard
+        return IdleConf.getextensions()
 
     def load_extension(self, name):
         mod = __import__(name, globals(), locals(), [])

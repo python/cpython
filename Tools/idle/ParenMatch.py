@@ -14,6 +14,7 @@ import string
 
 import PyParse
 from AutoIndent import AutoIndent, index2line
+from IdleConf import IdleConf
 
 class ParenMatch:
     """Highlight matching parentheses
@@ -55,12 +56,12 @@ class ParenMatch:
     windows_keydefs = {}
     unix_keydefs = {}
 
-    STYLE = "default" # or "expression"
-    FLASH_DELAY = 500
-    HILITE_CONFIG = {"foreground": "black",
-                     "background": "#43cd80", # SeaGreen3
-                     }
-    BELL = 1 # set to false for no bell
+    iconf = IdleConf.getsection('ParenMatch')
+    STYLE = iconf.get('style')
+    FLASH_DELAY = iconf.getint('flash-delay')
+    HILITE_CONFIG = iconf.getcolor('hilite')
+    BELL = iconf.getboolean('bell')
+    del iconf
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -156,9 +157,8 @@ class LastOpenBracketFinder:
             startat = max(lno - context, 1)
             startatindex = `startat` + ".0"
             # rawtext needs to contain everything up to the last
-            # character, which was the close paren.  also need to
-            # append "\n" to please the parser, which seems to expect
-            # a complete line
+            # character, which was the close paren.  the parser also
+	    # requires that the last line ends with "\n"
             rawtext = self.text.get(startatindex, "insert")[:-1] + "\n"
             y.set_str(rawtext)
             bod = y.find_good_parse_start(
@@ -174,9 +174,8 @@ class LastOpenBracketFinder:
         """Return the location of the last open paren"""
         lno = index2line(self.text.index("insert"))
         i, buf = self._find_offset_in_buf(lno)
-        if i is None:
-            return i
-        if keysym_type(buf[i]) != right_keysym_type:
+        if i is None \
+	   or keysym_type(buf[i]) != right_keysym_type:
             return None
         lines_back = buf[i:].count("\n") - 1
         # subtract one for the "\n" added to please the parser
