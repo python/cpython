@@ -891,6 +891,8 @@ of the first definition found."
 	  (setq def-name
 		(buffer-substring-no-properties (match-beginning cur-paren)
 						(match-end  cur-paren))))
+	(save-match-data
+	  (py-beginning-of-def-or-class))
 	(beginning-of-line)
 	(setq cur-indent (current-indentation)))
 
