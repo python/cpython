@@ -876,13 +876,30 @@ def _slotnames(cls):
     __slots__ attribute to misrepresent their slots after the class is
     defined.)
     """
-    if not hasattr(cls, "__slots__"):
-        return []
+
+    # Get the value from a cache in the class if possible
+    names = cls.__dict__.get("__slotnames__")
+    if names is not None:
+        return names
+
+    # Not cached -- calculate the value
     names = []
-    for c in cls.__mro__:
-        if "__slots__" in c.__dict__:
-            names += [name for name in c.__dict__["__slots__"]
-                           if name not in ("__dict__", "__weakref__")]
+    if not hasattr(cls, "__slots__"):
+        # This class has no slots
+        pass
+    else:
+        # Slots found -- gather slot names from all base classes
+        for c in cls.__mro__:
+            if "__slots__" in c.__dict__:
+                names += [name for name in c.__dict__["__slots__"]
+                               if name not in ("__dict__", "__weakref__")]
+
+    # Cache the outcome in the class if at all possible
+    try:
+        cls.__slotnames__ = names
+    except:
+        pass # But don't die if we can't
+
     return names
 
 def _keep_alive(x, memo):
