@@ -312,13 +312,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
         self.restarting = False
+        self.subprocess_arglist = self.build_subprocess_arglist()
 
     port = 8833
     rpcclt = None
     rpcpid = None
 
     def spawn_subprocess(self):
-        args = self.build_subprocess_arglist()
+        args = self.subprocess_arglist
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
 
     def build_subprocess_arglist(self):
@@ -326,10 +327,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # Maybe IDLE is installed and is being accessed via sys.path,
         # or maybe it's not installed and the idle.py script is being
         # run from the IDLE source directory.
+        del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
+                                       default=False, type='bool')
         if __name__ == 'idlelib.PyShell':
-            command = "__import__('idlelib.run').run.main()"
+            command = "__import__('idlelib.run').run.main(" + `del_exitf` +")"
         else:
-            command = "__import__('run').main()"
+            command = "__import__('run').main(" + `del_exitf` + ")"
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
