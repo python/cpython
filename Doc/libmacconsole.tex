@@ -1,0 +1,108 @@
+\section{Built-in module \sectcode{macconsole}}
+\bimodindex{macconsole}
+
+This module is available on the Macintosh, provided Python has been
+built using the Think C compiler. It provides an interface to the
+Think console package, with which basic text windows can be created.
+
+\begin{datadesc}{options}
+An object allowing you to set various options when creating windows,
+see below.
+\end{datadesc}
+
+\begin{datadesc}{C_ECHO}
+\dataline{C_NOECHO}
+\dataline{C_CBREAK}
+\dataline{C_RAW}
+Options for the \code{setmode} method. \var{C_ECHO} and \var{C_CBREAK}
+enable character echo, the other two disable it, \var{C_ECHO} and
+\var{C_NOECHO} enable line-oriented input (erase/kill processing,
+etc).
+\end{datadesc}
+
+\begin{funcdesc}{copen}{}
+Open a new console window. Returns a console window object.
+\end{funcdesc}
+
+\begin{funcdesc}{fopen}{fp}
+Return the console window object corresponding with the given file
+object. \var{Fp} should be one of \var{sys.stdin}, \var{sys.stdout} or
+\var{sys.stderr}.
+\end{funcdesc}
+
+\subsection{macconsole options object}
+These options are examined when a window is created:
+
+\renewcommand{\indexsubitem}{(macconsole option)}
+\begin{datadesc}{top}
+\dataline{left}
+The origin of the window.
+\end{datadesc}
+
+\begin{datadesc}{nrows}
+\dataline{ncols}
+The size of the window.
+\end{datadesc}
+
+\begin{datadesc}{txFont}
+\dataline{txSize}
+\dataline{txStyle}
+The font, fontsize and fontstyle to be used in the window.
+\end{datadesc}
+
+\begin{datadesc}{title}
+The title of the window.
+\end{datadesc}
+
+\begin{datadesc}{pause_atexit}
+If set non-zero, the window will wait for user action before closing
+the window.
+\end{datadesc}
+
+\subsection{console window object}
+
+\renewcommand{\indexsubitem}{(console window method)}
+
+\begin{datadesc}{file}
+The file object corresponding to this console window. If the file is
+buffered, you should call \code{file.flush()} between \code{write()}
+and \code{read()} calls.
+\end{datadesc}
+
+\begin{funcdesc}{setmode}{mode}
+Set the input mode of the console to \var{C_ECHO}, etc.
+\end{funcdesc}
+
+\begin{funcdesc}{settabs}{n}
+Set the tabsize to \var{n} spaces.
+\end{funcdesc}
+
+\begin{funcdesc}{cleos}{}
+Clear to end-of-screen.
+\end{funcdesc}
+
+\begin{funcdesc}{cleol}{}
+Clear to end-of-line.
+\end{funcdesc}
+
+\begin{funcdesc}{inverse}{onoff}
+Enable inverse-video mode: characters with the high bit set are
+displayed in inverse video (this disables the upper half of a
+non-ascii character set).
+\end{funcdesc}
+
+\begin{funcdesc}{gotoxy}{x\, y}
+Set the cursor to position \code{(x, y)}.
+\end{funcdesc}
+
+\begin{funcdesc}{hide}{}
+Hide the window, remembering the contents.
+\end{funcdesc}
+
+\begin{funcdesc}{show}{}
+Show the window again.
+\end{funcdesc}
+
+\begin{funcdesc}{echo2printer}{}
+Copy everything written to the window to the printer as well.
+\end{funcdesc}

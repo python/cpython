@@ -1,0 +1,120 @@
+\section{Built-in module \sectcode{macfs}}
+\bimodindex{macfs}
+
+This module provides access to macintosh FSSpec handling, the Alias
+Manager, finder aliases and the Standard File package.
+
+Whenever a function or method expects a \var{file} argument, this
+argument can be one of three things: (1) a full or partial macintosh
+pathname, (2) an FSSpec object or (3) a 3-tuple \code{(wdRefNum,
+parID, name)} as described in Inside Mac VI. A description of aliases
+and the standard file package can also be found there.
+
+\begin{funcdesc}{FSSpec}{file}
+Create an FSSpec object for the specified file.
+\end{funcdesc}
+
+\begin{funcdesc}{RawFSSpec}{data}
+Create an FSSpec object given the raw data for the C structure for the
+FSSpec.
+\end{funcdesc}
+
+\begin{funcdesc}{RawAlias}{data}
+Create an Alias object given the raw data for the alias.
+\end{funcdesc}
+
+\begin{funcdesc}{ResolveAliasFile}{file}
+Resolve an alias file. Returns a 3-tuple \code{(fsspec, isfolder,
+aliased)} where \var{fsspec} is the resulting FSSpec object,
+\var{isfolder} is true if \var{fsspec} points to a folder and
+\var{aliased} is true if the file was an alias in the first place
+(otherwise the FSSpec object for the file itself is returned).
+\end{funcdesc}
+
+\begin{funcdesc}{StandardGetFile}{\optional{type\, ...}}
+Present the user with a standard ``open onput file''
+dialog. Optionally, you can pass up to four 4-char file types to limit
+the files the user can choose from. The function returns an FSSpec
+object and a flag indicating that the user completed the dialog
+without cancelling.
+\end{funcdesc}
+
+\begin{funcdesc}{StandardPutFile}{prompt\, \optional{default}}
+Present the user with a standard ``open output file''
+dialog. \var{prompt} is the prompt string, and the optional
+\var{default} argument initialized the output file name. The function
+returns an FSSpec object and a flag indicating that the user completed
+the dialog without cancelling.
+\end{funcdesc}
+
+\begin{funcdesc}{GetDirectory}{}
+Present the user with a non-standard ``select a directory''
+dialog. Returns an FSSpec object and a success-indicator.
+\end{funcdesc}
+
+\subsection{FSSpec objects}
+
+\renewcommand{\indexsubitem}{(FSSpec object method)}
+\begin{datadesc}{data}
+The raw data from the FSSpec object, suitable for passing
+to other applications, for instance.
+\end{datadesc}
+
+\begin{funcdesc}{as_pathname}{}
+Return the full pathname of the file described by the FSSpec object.
+\end{funcdesc}
+
+\begin{funcdesc}{as_tuple}{}
+Return the \code{(wdRefNum, parID, name)} tuple of the file described
+by the FSSpec object.
+\end{funcdesc}
+
+\begin{funcdesc}{NewAlias}{\optional{file}}
+Create an Alias object pointing to the file described by this
+FSSpec. If the optional \code{file} parameter is present the alias
+will be relative to that file, otherwise it will be absolute.
+\end{funcdesc}
+
+\begin{funcdesc}{NewAliasMinimal}{}
+Create a minimal alias pointing to this file.
+\end{funcdesc}
+
+\begin{funcdesc}{GetCreatorType}{}
+Return the 4-char creator and type of the file.
+\end{funcdesc}
+
+\begin{funcdesc}{SetCreatorType}{creator\, type}
+Set the 4-char creator and type of the file.
+\end{funcdesc}
+
+\subsection{alias objects}
+
+\renewcommand{\indexsubitem}{(alias object method)}
+\begin{datadesc}{data}
+The raw data for the Alias record, suitable for storing in a resource
+or transmitting to other programs.
+\end{datadesc}
+
+\begin{funcdesc}{Resolve}{\optional{file}}
+Resolve the alias. If the alias was created as a relative alias you
+should pass the file relative to which it is. Returns the FSSpec for
+the file pointed to and a flag indicating whether the alias object
+itself was modified during the search process. 
+\end{funcdesc}
+
+\begin{funcdesc}{GetInfo}{num}
+An interface to the C routine \code{GetAliasInfo()}.
+\end{funcdesc}
+
+\begin{funcdesc}{Update}{file\, \optional{file2}}
+Update the alias to point to the \var{file} given. If \var{file2} is
+present a relative alias will be created.
+\end{funcdesc}
+
+Note that is currently not possible to directly manipulate a resource
+as an alias object. Hence, after calling \var{Update} or after
+\var{Resolve} indicates that the alias has changed the python program
+is responsible for getting the \var{data} from the alias object and
+modifying the resource.
+
+
