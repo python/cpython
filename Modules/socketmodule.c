@@ -195,6 +195,13 @@ Socket methods:
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #include "openssl/rand.h"
+
+#if OPENSSL_VERSION_NUMBER < 0x0090510fL
+/* RAND_status was added in OpenSSL 0.9.5. If it is not available,
+   we assume that seeding the RNG is necessary every time. */
+#define RAND_status()	0
+#endif
+
 #endif /* USE_SSL */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
