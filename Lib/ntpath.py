@@ -42,11 +42,12 @@ def join(a, *p):
     """Join two or more pathname components, inserting "\\" as needed"""
     path = a
     for b in p:
-        # If path is a raw drive letter (e.g. "C:"), and b doesn't start
-        # with a drive letter, path+b is correct, and regardless of whether
-        # b is absolute on its own.
-        if len(path) == 2 and path[-1] == ":" and splitdrive(b)[0] == "":
-            pass
+        # If path starts with a raw drive letter (e.g. "C:"), and b doesn't
+        # start with a drive letter, path+b is correct, and regardless of\
+        # whether b is absolute on its own.
+        if len(path) >= 2 and path[1] == ":" and splitdrive(b)[0] == "":
+            if path[-1] in "/\\" and b[:1] in "/\\":
+                b = b[1:]
 
         # In any other case, if b is absolute it wipes out the path so far.
         elif isabs(b) or path == "":
