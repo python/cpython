@@ -329,6 +329,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libmmap.tex \
 	lib/tkinter.tex \
 	lib/libturtle.tex \
+	lib/libtarfile.tex \
 	lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.

@@ -63,6 +63,10 @@ Library
   It is also exported for ntpath, macpath, and os2emxpath.
   See SF bug #659228.
 
+- New module tarfile from Lars Gustäbel provides a comprehensive interface
+  to tar archive files with transparent gzip and bzip2 compression.
+  See SF patch #651082.
+
 
 Tools/Demos
 -----------
