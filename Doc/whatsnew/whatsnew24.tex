@@ -179,6 +179,67 @@ generator expressions in this respect.
 implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
 \end{seealso}
 
+
+%======================================================================
+\section{PEP 292: Simpler String Substitutions}
+
+Some new classes in the standard library provide a
+alternative mechanism for substituting variables into strings that's 
+better-suited for applications where untrained users need to edit templates.
+
+The usual way of substituting variables by name is the \code{\%}
+operator:
+
+\begin{verbatim}
+>>> '%(page)i: %(title)s' % {'page':2, 'title': 'The Best of Times'}
+'2: The Best of Times'
+\end{verbatim}
+
+When writing the template string, it can be easy to forget the
+\samp{i} or \samp{s} after the closing parenthesis.  This isn't a big
+problem if the template is in a Python module, because you run the
+code, get an ``Unsupported format character'' \exception{ValueError},
+and fix the problem.  However, consider an application such as Mailman
+where template strings or translations are being edited by users who
+aren't aware of the Python language; the syntax is complicated to
+explain to such users, and if they make a mistake, it's difficult to
+provide helpful feedback to them.
+
+PEP 292 adds a \class{Template} class to the \module{string} module
+that uses \samp{\$} to indicate a substitution.  \class{Template} is a
+subclass of the built-in Unicode type, so the result is always a
+Unicode string:
+
+\begin{verbatim}
+>>> import string
+>>> t = string.Template('$page: $title')
+>>> t % {'page':2, 'title': 'The Best of Times'}
+u'2: The Best of Times'
+>>> t2 % {'cost':42.50, 'action':'polish'}
+u'$ 42.5: polishing'
+\end{verbatim}
+
+% $ Terminate $-mode for Emacs
+
+If a key is missing from the dictionary, the \class{Template} class 
+will raise a \exception{KeyError}.  There's also a \class{SafeTemplate}
+class that ignores missing keys:
+
+\begin{verbatim}
+>>> t = string.SafeTemplate('$page: $title')
+>>> t % {'page':3}
+u'3: $title'
+\end{verbatim}
+
+Because templates are Unicode strings, you can use a template with the
+\module{gettext} module to look up translated versions of a message.
+
+\begin{seealso}
+\seepep{292}{Simpler String Substitutions}{Written and implemented 
+by Barry Warsaw.}
+\end{seealso}
+
+
 %======================================================================
 \section{PEP 318: Decorators for Functions, Methods and Classes}
 
@@ -305,6 +366,11 @@ f = _deco(B(A(f)))
 
 Getting this right can be slightly brain-bending, but it's not too
 difficult.
+
+A small related change makes the \member{func_name} attribute of
+functions writable.  This attribute is used to display function names
+in tracebacks, so decorators should change the name of any new
+function that's constructed and returned.
 
 The new syntax was provisionally added in 2.4alpha2, and is subject to
 change during the 2.4alpha release cycle depending on the Python
@@ -744,6 +810,9 @@ red 1
 yellow 5
 \end{verbatim}
 
+\item Integer operations will no longer trigger an \exception{OverflowWarning}.
+The \exception{OverflowWarning} warning will disappear in Python 2.5.
+
 \item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
 and \function{execfile(\var{filename}, \var{globals}, \var{locals})}
 functions and the \keyword{exec} statement now accept any mapping type
@@ -869,7 +938,8 @@ euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
  \item Korean: cp949, euc-kr, johab, iso-2022-kr
 \end{itemize} 
 
-\item Some other new encodings were added: ISO_8859-11, ISO_8859-16, PCTP-154, 
+\item Some other new encodings were added: HP Roman8, 
+ISO_8859-11, ISO_8859-16, PCTP-154, 
 and TIS-620.
 
 \item There is a new \module{collections} module for 
@@ -1071,10 +1141,19 @@ be replaced by the option's default value.
    the group didn't match, the pattern \var{B} will be used instead.
 
 \item A new \function{socketpair()} function was added to the
-   \module{socket} module, returning a pair of connected sockets. 
-   (Contributed by Dave Cole.)
+\module{socket} module, returning a pair of connected sockets. 
+(Contributed by Dave Cole.)
 
 % XXX sre is now non-recursive.
+
+\item The \function{sys.exitfunc()} function has been deprecated.  Code
+should be using the existing \module{atexit} module, which correctly
+handles calling multiple exit functions.  Eventually
+\function{sys.exitfunc()} will become a purely internal interface,
+accessed only by \module{atexit}.
+
+\item The \module{tarfile} module now generates GNU-format tar files
+by default.
 
 \item The \module{threading} module now has an elegantly simple way to support 
 thread-local data.  The module contains a \class{local} class whose
@@ -1125,6 +1204,13 @@ one that stores cookies in the same format as the Perl libwww libary.
 \class{HTTPCookieProcessor} manages a cookie jar that is used when
 accessing URLs.
 
+\subsection{doctest}
+
+The \module{doctest} module underwent considerable refactoring thanks
+to Edward Loper and Tim Peters.
+
+% XXX describe this
+
 % ======================================================================
 \section{Build and C API Changes}
 
@@ -1158,13 +1244,16 @@ Changes to Python's build process and to the C API include:
   same name.  This can halve the access time for a method such as
   \method{set.__contains__()}.
 
-  \item Python can now be built with additional profiling for the interpreter
-   itself.  This is intended for people developing on the Python core.  
-   Providing \longprogramopt{--enable-profiling} to the  
-   \program{configure} script will let you profile the interpreter with 
-   \program{gprof}, and providing the \longprogramopt{--with-tsc} switch 
-   enables profiling using the Pentium's Time-Stamp-Counter register.
-
+  \item Python can now be built with additional profiling for the
+  interpreter itself.  This is intended for people developing on the
+  Python core.  Providing \longprogramopt{--enable-profiling} to the
+  \program{configure} script will let you profile the interpreter with
+  \program{gprof}, and providing the \longprogramopt{--with-tsc}
+  switch enables profiling using the Pentium's Time-Stamp-Counter
+  register.  The switch is slightly misnamed, because the profiling
+  feature also works on the PowerPC platform, though that processor
+  architecture doesn't called that register the TSC.
+   
   \item The \ctype{tracebackobject} type has been renamed to \ctype{PyTracebackObject}.
 
 \end{itemize}
@@ -1225,6 +1314,9 @@ changes to your code:
 
 \item \function{fcntl.ioctl} now warns if the \var{mutate} 
  argument is omitted and relevant.
+
+\item The \module{tarfile} module now generates GNU-format tar files
+by default.
 
 \end{itemize}
 
