@@ -14,15 +14,15 @@ the language, see the Python Tutorial.  The Python Reference Manual
 gives a more formal definition of the language.  (These manuals are not
 yet available in INFO or Texinfo format.)
 
-Copyright (C) 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright (C) 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
 Centrum or CWI not be used in advertising or publicity pertaining to
 distribution of the software without specific, written prior permission.
@@ -43,7 +43,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 @c  The following two commands start the copyright page.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Copyright @copyright{} 1991-1995 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
 @center All Rights Reserved
@@ -77,7 +77,7 @@ the language, see the @cite{Python Tutorial}.  The @cite{Python
 Reference Manual} gives a more formal definition of the language.
 (These manuals are not yet available in INFO or Texinfo format.)
 
-This version corresponds to Python version 1.1.
+This version corresponds to Python version 1.2.
 
 @end ifinfo
 
