@@ -10,6 +10,10 @@
 
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
+#ifndef PYTHON_DLL_NAME
+#define PYTHON_DLL_NAME "Python14.dll"
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
@@ -32,14 +36,12 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "PSA\0"
+            VALUE "CompanyName", "Corporation for National Research Initatives\0"
             VALUE "FileDescription", "Python Core\0"
             VALUE "FileVersion", PYTHON_VERSION
             VALUE "InternalName", "Python DLL\0"
             VALUE "LegalCopyright", "Copyright © 1991-1996 Stichting Mathematisch Centrum, Amsterdam\0"
-#ifdef PYTHON_DLL_NAME
             VALUE "OriginalFilename", PYTHON_DLL_NAME "\0"
-#endif
             VALUE "ProductName", "Python\0"
             VALUE "ProductVersion", PYTHON_VERSION
         END

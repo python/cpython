@@ -44,10 +44,6 @@ compiler specific".  Therefore, these should be very rare.
 #define PREFIX ""
 #define EXEC_PREFIX ""
 
-#ifndef WIN32_PATCH_LEVEL
-#define WIN32_PATCH_LEVEL "14"
-#endif
-
 /* Microsoft C defines _MSC_VER */
 
 #if defined(_MSC_VER) && _MSC_VER > 850
