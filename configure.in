@@ -106,6 +106,8 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 	case $ac_sys_system in
 	OSF1)	CC=cc
 		without_gcc=;;
+	BeOS*)	CC=cc
+		without_gcc=;;
 	*)	without_gcc=no;;
 	esac])
 AC_MSG_RESULT($without_gcc)
@@ -124,10 +126,15 @@ hp*|HP*)
     case $CC in
     cc|*/cc) CC="$CC -Aa -D_HPUX_SOURCE";;
     esac;;
+BeOS*)
+	case $CC in
+	cc) CC=cc;;
+	esac;;
 esac
 
 # LINKCC is the command that links the python executable -- default is $(CC).
-# This is altered for AIX in order to build the export list before linking.
+# This is altered for AIX and BeOS in order to build the export list before 
+# linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
@@ -135,6 +142,9 @@ then
 	case $ac_sys_system in
 	AIX*)
 	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	BeOS*)
+	   LINKCC="\$(srcdir)/../BeOS/linkcc \$(LIBRARY) \$(PURIFY) \$(CC) -nodup \$(OPT)"
+	   REALLIBRARY='libpython$(VERSION).so';;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	*) LINKCC="\$(PURIFY) \$(CC)";;
@@ -158,6 +168,15 @@ then
 else
 	INSTALL_PROGRAM="$INSTALL"
 	INSTALL_DATA="$INSTALL -m 644"
+fi
+
+# Not every filesystem supports hard links
+AC_SUBST(LN)
+if test -z "$LN" ; then
+	case $ac_sys_system in
+		BeOS*) LN="ln -s";;
+		*) LN=ln;;
+	esac
 fi
 
 # Optimizer/debugger flags passed between Makefiles
@@ -261,6 +280,14 @@ AC_TYPE_UID_T
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 
+AC_MSG_CHECKING(for long long support)
+have_long_long=no
+AC_TRY_COMPILE([], [long long x; x = (long long)0;], AC_DEFINE(HAVE_LONG_LONG) have_long_long=yes)
+AC_MSG_RESULT($have_long_long)
+if test $have_long_long = yes ; then
+AC_CHECK_SIZEOF(long long)
+fi
+
 # Set info about shared libraries.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
@@ -284,6 +311,7 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
+	BeOS*) LDSHARED="\$(srcdir)/../BeOS/linkmodule -L.. -lpython\$(VERSION)";;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
@@ -349,11 +377,15 @@ AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 AC_CHECK_LIB(m, pow)		# Std math lib -- assume needed if it exists
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 # However on SGI IRIX, these exist but are broken.
-case "$ac_sys_system" in IRIX*) ;;
+# BeOS' sockets are stashed in libnet.
+case "$ac_sys_system" in
+IRIX*) ;;
 *)
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
-;; esac
+AC_CHECK_LIB(net, socket, [LIBS="-lnet $LIBS"], [], $LIBS) # BeOS
+;;
+esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs, [--with-libs='lib1 ...'    link against additional libs], [
@@ -401,6 +433,9 @@ AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
+AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(BEOS_THREADS)
+LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lpthreads"
@@ -421,7 +456,7 @@ AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lcma"
 LIBOBJS="$LIBOBJS thread.o"])
-])])])])])
+])])])])])])
 
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"
@@ -589,6 +624,7 @@ fi])
 AC_SUBST(LIBM)
 case $ac_sys_system in
 next) ;;
+BeOS) ;;
 *) LIBM=-lm
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)

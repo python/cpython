@@ -134,6 +134,9 @@ INSTALL=	@srcdir@/install-sh -c
 INSTALL_PROGRAM=${INSTALL} -m $(EXEMODE)
 INSTALL_DATA=	${INSTALL} -m $(FILEMODE)
 
+# Use this to make a link between python$(VERSION) and python in $(BINDIR)
+LN=@LN@
+
 # --with-PACKAGE options for configure script
 # e.g. --with-readline --with-svr5 --with-solaris --with-thread
 # (see README for an explanation)
@@ -237,7 +240,7 @@ bininstall:	altbininstall
 		then rm -f $(BINDIR)/python; \
 		else true; \
 		fi
-		(cd $(BINDIR); ln python$(VERSION)$(EXE) python$(EXE))
+		(cd $(BINDIR); $(LN) python$(VERSION)$(EXE) python$(EXE))
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)

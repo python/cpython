@@ -251,33 +251,51 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	ftp.qnx.com in /usr/free.  I used the following process to build,
 	test and install Python 1.5 under QNX:
 
-	1) SHELL=/usr/local/bin/bash CC=cc CFLAGS="-5 -O" RANLIB=: \
-	    bash ./configure --verbose --without-gcc --with-libm=""
+	1) CONFIG_SHELL=/usr/local/bin/bash CC=cc RANLIB=: \
+	    ./configure --verbose --without-gcc --with-libm=""
 
 	2) copy Modules/Setup.in to Modules/Setup; edit Modules/Setup to
 	   activate everything that makes sense for your system... tested
 	   here at QNX with the following modules:
 
-		regex reop pcre posix signal readline array cmath math strop
-		struct time operator _locale fcntl pwd grp crypt select socket
-		errno termios audioop imageop rgbimg md5 timing rotor syslog
-		new gdbm soundex binascii parser cStringIO cPickle zlib curses
+		array, audioop, binascii, cPickle, cStringIO, cmath, crypt, curses,
+		errno, fcntl, gdbm, grp, imageop, _locale, math, md5, new, operator,
+		parser, pcre, posix, pwd, readline, regex, reop, rgbimg, rotor,
+		select, signal, socket, soundex, strop, struct, syslog, termios,
+		time, timing, zlib
 
-	3) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash
+		Newly compiled/tested in 1.5.1:
 
-	4) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash test
+		audioop, imageop, rgbimgmodule
 
-	   The socket, strftime and possibly gdbm tests might fail in the
-	   test harness; going through them by hand shows that they work.
-	   A good exercise for the reader: make these work "out of the box".
+	3) make SHELL=/usr/local/bin/bash 
+	
+	   or, if you feel the need for speed:
+	   
+	   make SHELL=/usr/local/bin/bash OPT="-5 -Oil+nrt"
 
-	5) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash install
+	4) make SHELL=/usr/local/bin/bash test
+
+	   The socket test might fail in the test harness; going through it by 
+	   hand shows that they work.
+
+	   A good exercise for the reader: make this work "out of the box".
+	   
+	   Using GNU readline 2.2 seems to behave strangely, but I think that's
+	   a problem with my readline 2.2 port.  :-\
+
+	5) make SHELL=/usr/local/bin/bash install
 
 	If you get SIGSEGVs while running Python (I haven't yet, but I've
 	only run small programs and the test cases), you're probably running
 	out of stack; the default 32k could be a little tight.  To increase
 	the stack size, edit the Makefile in the Modules directory to read:
 	LDFLAGS = -N 48k
+
+BeOS:	Chris Herborth (chrish@qnx.com) writes:
+	See BeOS/README for notes about compiling/installing Python on
+	BeOS R3 or later.  Note that only the PowerPC platform is supported
+	at this time, but feel free to try building it on x86.
 
 Cray T3E: Konrad Hinsen writes:
 	1) Don't use gcc. It compiles Python/graminit.c into something that
