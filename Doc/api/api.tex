@@ -3782,6 +3782,7 @@ Empties an existing dictionary of all key-value pairs.
 \begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
 Returns a new dictionary that contains the same key-value pairs as p.
 Empties an existing dictionary of all key-value pairs.
+\versionadded{1.6}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_SetItem}{PyObject *p, PyObject *key,
@@ -3874,7 +3875,8 @@ while (PyDict_Next(self->dict, &pos, &key, &value)) {
 
 The dictionary \var{p} should not be mutated during iteration.  It is
 safe (since Python 2.1) to modify the values of the keys as you
-iterate over the dictionary, for example:
+iterate over the dictionary, but only so long as the set of keys does
+not change.  For example:
 
 \begin{verbatim}
 PyObject *key, *value;
@@ -3892,6 +3894,22 @@ while (PyDict_Next(self->dict, &pos, &key, &value)) {
     Py_DECREF(o);
 }
 \end{verbatim}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDict_Merge}{PyObject *a, PyObject *b, int override}
+Iterate over dictionary \var{b} adding key-value pairs to dictionary
+\var{a}.  If \var{override} is true, existing pairs in \var{a} will be
+replaced if a matching key is found in \var{b}, otherwise pairs will
+only be added if there is not a matching key in \var{a}.  Returns
+\code{0} on success or \code{-1} if an exception was raised.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDict_Update}{PyObject *a, PyObject *b}
+This is the same as \code{PyDict_Merge(\var{a}, \var{b}, 1)} in C, or
+\code{\var{a}.update(\var{b})} in Python.  Returns \code{0} on success
+or \code{-1} if an exception was raised.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 
