@@ -2949,10 +2949,9 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 PyObject *
 PyEval_GetBuiltins(void)
 {
-	PyThreadState *tstate = PyThreadState_Get();
-	PyFrameObject *current_frame = tstate->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
-		return tstate->interp->builtins;
+		return PyThreadState_Get()->interp->builtins;
 	else
 		return current_frame->f_builtins;
 }
@@ -2960,7 +2959,7 @@ PyEval_GetBuiltins(void)
 PyObject *
 PyEval_GetLocals(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
 		return NULL;
 	PyFrame_FastToLocals(current_frame);
@@ -2970,7 +2969,7 @@ PyEval_GetLocals(void)
 PyObject *
 PyEval_GetGlobals(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
 		return NULL;
 	else
@@ -2980,21 +2979,21 @@ PyEval_GetGlobals(void)
 PyObject *
 PyEval_GetFrame(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
-	return (PyObject *)current_frame;
+	PyThreadState *tstate = PyThreadState_Get();
+	return _PyThreadState_GetFrame((PyObject *)tstate);
 }
 
 int
 PyEval_GetRestricted(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	return current_frame == NULL ? 0 : current_frame->f_restricted;
 }
 
 int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	int result = 0;
 
 	if (current_frame != NULL) {

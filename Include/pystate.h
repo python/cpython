@@ -109,6 +109,9 @@ DL_IMPORT(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 DL_IMPORT(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 DL_IMPORT(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
+/* hook for PyEval_GetFrame(), requested for Psyco */
+extern DL_IMPORT(unaryfunc) _PyThreadState_GetFrame;
+
 #ifdef __cplusplus
 }
 #endif
