@@ -324,13 +324,20 @@ raise_stmt:     "raise" condition ["," condition]
 \end{verbatim}
 
 \verb@raise@ evaluates its first condition, which must yield
-a string object.  If there is a second condition, this is evaluated,
-else \verb@None@ is substituted.
+a string, class, or instance object.  If there is a second condition,
+this is evaluated, else \verb@None@ is substituted.  If the first
+condition is a class object, then the second condition must be an
+instance of that class or one of its derivatives.  If the first
+condition is an instance object, the second condition must be
+\verb@None@.
 \index{exception}
 \indexii{raising}{exception}
 
-It then raises the exception identified by the first object,
-with the second one (or \verb@None@) as its parameter.
+If the first object is a class or string, it then raises the exception
+identified by the first object, with the second one (or \verb@None@)
+as its parameter.  If the first object is an instance, it raises the
+exception identified by the class of the object, with the instance as
+its parameter.
 
 \section{The {\tt break} statement}
 \stindex{break}

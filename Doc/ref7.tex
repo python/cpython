@@ -201,10 +201,11 @@ clause, if present, must be last; it matches any exception.  For an
 except clause with a condition, that condition is evaluated, and the
 clause matches the exception if the resulting object is ``compatible''
 with the exception.  An object is compatible with an exception if it
-is either the object that identifies the exception or it is a tuple
-containing an item that is compatible with the exception.  Note that
-the object identities must match, i.e. it must be the same object, not
-just an object with the same value.
+is either the object that identifies the exception, or (for exceptions
+that are classes) it is a base class of the exception, or it is a
+tuple containing an item that is compatible with the exception.  Note
+that the object identities must match, i.e. it must be the same
+object, not just an object with the same value.
 \kwindex{except}
 
 If no except clause matches the exception, the search for an exception
