@@ -23,7 +23,7 @@ class Repr:
         else:
             s = `x`
             if len(s) > self.maxother:
-                i = max(0, (self.maxother-3)/2)
+                i = max(0, (self.maxother-3)//2)
                 j = max(0, self.maxother-3-i)
                 s = s[:i] + '...' + s[len(s)-j:]
             return s
