@@ -1,19 +1,20 @@
 \section{Built-in Module \sectcode{regex}}
 \label{module-regex}
-
 \bimodindex{regex}
+
 This module provides regular expression matching operations similar to
 those found in Emacs.
 
 \strong{Obsolescence note:}
 This module is obsolete as of Python version 1.5; it is still being
 maintained because much existing code still uses it.  All new code in
-need of regular expressions should use the new \code{re} module, which
-supports the more powerful and regular Perl-style regular expressions.
-Existing code should be converted.  The standard library module
-\code{reconvert} helps in converting \code{regex} style regular
-expressions to \code{re} style regular expressions.  (For more
-conversion help, see the URL
+need of regular expressions should use the new
+\code{re}\refstmodindex{re} module, which supports the more powerful
+and regular Perl-style regular expressions.  Existing code should be
+converted.  The standard library module
+\code{reconvert}\refstmodindex{reconvert} helps in converting
+\code{regex} style regular expressions to \code{re}\refstmodindex{re}
+style regular expressions.  (For more conversion help, see the URL
 \file{http://starship.skyport.net/crew/amk/regex/regex-to-re.html}.)
 
 By default the patterns are Emacs-style regular expressions
@@ -154,7 +155,8 @@ whitespace or a non-alphanumeric character.
 beginning or end of a word.
 %
 \item[\code{\e v}] Must be followed by a two digit decimal number, and
-matches the contents of the group of the same number.  The group number must be between 1 and 99, inclusive.
+matches the contents of the group of the same number.  The group
+number must be between 1 and 99, inclusive.
 %
 \item[\code{\e w}]Matches any alphanumeric character; this is
 equivalent to the set \code{[a-zA-Z0-9]}.
@@ -174,8 +176,8 @@ word.
 % Python they seem to be synonyms for ^$.
 \item[\code{\e `}] Like \code{\^}, this only matches at the start of the
 string.
-\item[\code{\e \e '}] Like \code{\$}, this only matches at the end of the
-string.
+\item[\code{\e \e '}] Like \code{\$}, this only matches at the end of
+the string.
 % end of buffer
 \end{itemize}
 
@@ -201,13 +203,13 @@ The module defines these functions, and an exception:
 
 \begin{funcdesc}{compile}{pattern\optional{\, translate}}
   Compile a regular expression pattern into a regular expression
-  object, which can be used for matching using its \code{match} and
-  \code{search} methods, described below.  The optional argument
+  object, which can be used for matching using its \code{match()} and
+  \code{search()} methods, described below.  The optional argument
   \var{translate}, if present, must be a 256-character string
   indicating how characters (both of the pattern and of the strings to
-  be matched) are translated before comparing them; the \code{i}-th
+  be matched) are translated before comparing them; the \var{i}-th
   element of the string gives the translation for the character with
-  \ASCII{} code \code{i}.  This can be used to implement
+  \ASCII{} code \var{i}.  This can be used to implement
   case-insensitive matching; see the \code{casefold} data item below.
 
   The sequence
@@ -222,7 +224,7 @@ is equivalent to
 \bcode\begin{verbatim}
 result = regex.match(pat, str)
 \end{verbatim}\ecode
-%
+
 but the version using \code{compile()} is more efficient when multiple
 regular expressions are used concurrently in a single program.  (The
 compiled version of the last pattern passed to \code{regex.match()} or
@@ -232,13 +234,13 @@ expressions.)
 \end{funcdesc}
 
 \begin{funcdesc}{set_syntax}{flags}
-  Set the syntax to be used by future calls to \code{compile},
-  \code{match} and \code{search}.  (Already compiled expression objects
-  are not affected.)  The argument is an integer which is the OR of
-  several flag bits.  The return value is the previous value of
-  the syntax flags.  Names for the flags are defined in the standard
-  module \code{regex_syntax}; read the file \file{regex_syntax.py} for
-  more information.
+  Set the syntax to be used by future calls to \code{compile()},
+  \code{match()} and \code{search()}.  (Already compiled expression
+  objects are not affected.)  The argument is an integer which is the
+  OR of several flag bits.  The return value is the previous value of
+  the syntax flags.  Names for the flags are defined in the standard 
+  module \code{regex_syntax}\refstmodindex{regex_syntax}; read the
+  file \file{regex_syntax.py} for more information.
 \end{funcdesc}
 
 \begin{funcdesc}{get_syntax}{}
@@ -246,10 +248,10 @@ expressions.)
 \end{funcdesc}
 
 \begin{funcdesc}{symcomp}{pattern\optional{\, translate}}
-This is like \code{compile}, but supports symbolic group names: if a
+This is like \code{compile()}, but supports symbolic group names: if a
 parenthesis-enclosed group begins with a group name in angular
 brackets, e.g. \code{'\e(<id>[a-z][a-z0-9]*\e)'}, the group can
-be referenced by its name in arguments to the \code{group} method of
+be referenced by its name in arguments to the \code{group()} method of
 the resulting compiled regular expression object, like this:
 \code{p.group('id')}.  Group names may contain alphanumeric characters
 and \code{'_'} only.
@@ -263,8 +265,8 @@ and \code{'_'} only.
 \end{excdesc}
 
 \begin{datadesc}{casefold}
-A string suitable to pass as \var{translate} argument to
-\code{compile} to map all upper case characters to their lowercase
+A string suitable to pass as the \var{translate} argument to
+\code{compile()} to map all upper case characters to their lowercase
 equivalents.
 \end{datadesc}
 
@@ -278,7 +280,7 @@ Compiled regular expression objects support these methods:
   does not match the pattern (this is different from a zero-length
   match!).
   
-  The optional second parameter \var{pos} gives an index in the string
+  The optional second parameter, \var{pos}, gives an index in the string
   where the search is to start; it defaults to \code{0}.  This is not
   completely equivalent to slicing the string; the \code{'\^'} pattern
   character matches at the real begin of the string and at positions
@@ -293,12 +295,12 @@ Compiled regular expression objects support these methods:
   match anywhere!).
   
   The optional second parameter has the same meaning as for the
-  \code{match} method.
+  \code{match()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{group}{index\, index\, ...}
-This method is only valid when the last call to the \code{match}
-or \code{search} method found a match.  It returns one or more
+This method is only valid when the last call to the \code{match()}
+or \code{search()} method found a match.  It returns one or more
 groups of the match.  If there is a single \var{index} argument,
 the result is a single string; if there are multiple arguments, the
 result is a tuple with one item per argument.  If the \var{index} is
@@ -308,8 +310,8 @@ the corresponding parenthesized group (using the default syntax,
 groups are parenthesized using \code{{\e}(} and \code{{\e})}).  If no
 such group exists, the corresponding result is \code{None}.
 
-If the regular expression was compiled by \code{symcomp} instead of
-\code{compile}, the \var{index} arguments may also be strings
+If the regular expression was compiled by \code{symcomp()} instead of
+\code{compile()}, the \var{index} arguments may also be strings
 identifying groups by their group name.
 \end{funcdesc}
 
@@ -319,41 +321,41 @@ Compiled regular expressions support these data attributes:
 \renewcommand{\indexsubitem}{(regex attribute)}
 
 \begin{datadesc}{regs}
-When the last call to the \code{match} or \code{search} method found a
-match, this is a tuple of pairs of indices corresponding to the
+When the last call to the \code{match()} or \code{search()} method found a
+match, this is a tuple of pairs of indexes corresponding to the
 beginning and end of all parenthesized groups in the pattern.  Indices
-are relative to the string argument passed to \code{match} or
-\code{search}.  The 0-th tuple gives the beginning and end or the
+are relative to the string argument passed to \code{match()} or
+\code{search()}.  The 0-th tuple gives the beginning and end or the
 whole pattern.  When the last match or search failed, this is
 \code{None}.
 \end{datadesc}
 
 \begin{datadesc}{last}
-When the last call to the \code{match} or \code{search} method found a
+When the last call to the \code{match()} or \code{search()} method found a
 match, this is the string argument passed to that method.  When the
 last match or search failed, this is \code{None}.
 \end{datadesc}
 
 \begin{datadesc}{translate}
 This is the value of the \var{translate} argument to
-\code{regex.compile} that created this regular expression object.  If
-the \var{translate} argument was omitted in the \code{regex.compile}
+\code{regex.compile()} that created this regular expression object.  If
+the \var{translate} argument was omitted in the \code{regex.compile()}
 call, this is \code{None}.
 \end{datadesc}
 
 \begin{datadesc}{givenpat}
-The regular expression pattern as passed to \code{compile} or
-\code{symcomp}.
+The regular expression pattern as passed to \code{compile()} or
+\code{symcomp()}.
 \end{datadesc}
 
 \begin{datadesc}{realpat}
 The regular expression after stripping the group names for regular
-expressions compiled with \code{symcomp}.  Same as \code{givenpat}
+expressions compiled with \code{symcomp()}.  Same as \code{givenpat}
 otherwise.
 \end{datadesc}
 
 \begin{datadesc}{groupindex}
 A dictionary giving the mapping from symbolic group names to numerical
-group indices for regular expressions compiled with \code{symcomp}.
+group indexes for regular expressions compiled with \code{symcomp()}.
 \code{None} otherwise.
 \end{datadesc}
