@@ -161,7 +161,7 @@ hassignal:
 		done
 
 Setup:		$(srcdir)/Setup.dist
-		echo "-----------------------------------------------"; \
+		@echo "-----------------------------------------------"; \
 		echo "Modules/Setup.dist is newer than Modules/Setup;"; \
 		echo "check to make sure you have all the updates you"; \
 		echo "need in your Modules/Setup file."; \
