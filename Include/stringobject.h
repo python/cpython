@@ -47,6 +47,9 @@ functions should be applied to nil objects.
 
 /* NB The type is revealed here only because it is used in dictobject.c */
 
+/* Take this out to save 4 bytes per string object and to lose 2% speedup */
+#define CACHE_HASH
+
 typedef struct {
 	PyObject_VAR_HEAD
 #ifdef CACHE_HASH
