@@ -91,9 +91,9 @@ Build
 
 - On Unix, a shared libpython2.3.so can be created with --enable-shared.
 
-- References to the CACHE_HASH and INTERN_STRINGS preprocessor symbols
-  were eliminated.  They were always defined, and the internal features
-  they enabled stopped being experimental long ago.
+- All uses of the CACHE_HASH, INTERN_STRINGS, and DONT_SHARE_SHORT_STRINGS
+  preprocessor symbols were eliminated.  The internal decisions they
+  controlled stopped being experimental long ago.
 
 C API
 
