@@ -75,6 +75,10 @@ This section describes Python type objects and the singleton object
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_Ready}{PyTypeObject *type}
+  Finalize a type object.  This should be called on all type objects
+  to finish their initialization.  This function is responsible for
+  adding inherited slots from a type's base class.  Returns \code{0}
+  on success, or returns \code{-1} and sets an exception on error.
   \versionadded{2.2}
 \end{cfuncdesc}
 
