@@ -148,8 +148,6 @@ char *bitmap_bytes;
 /* wParam: number of this file */
 /* lParam: points to pathname */
 
-enum { UNSPECIFIED, ALWAYS, NEVER } allow_overwrite = UNSPECIFIED;
-
 static BOOL notify(int code, char *fmt, ...);
 
 /* Note: If scheme.prefix is nonempty, it must end with a '\'! */
@@ -684,28 +682,6 @@ static BOOL SystemError(int error, char *msg)
 	return FALSE;
 }
 
-static BOOL AskOverwrite(char *filename)
-{
-	int result;
-  again:
-	if (allow_overwrite == ALWAYS)
-		return TRUE;
-	if (allow_overwrite == NEVER)
-		return FALSE;
-	result = MessageBox(hDialog,
-			     "Overwrite existing files?\n"
-			     "\n"
-			     "Press YES to ALWAYS overwrite existing files,\n"
-			     "press NO to NEVER overwrite existing files.",
-			     "Overwrite options",
-			     MB_YESNO | MB_ICONQUESTION);
-	if (result == IDYES)
-		allow_overwrite = ALWAYS;
-	else if (result == IDNO)
-		allow_overwrite = NEVER;
-	goto again;
-}
-
 static BOOL notify (int code, char *fmt, ...)
 {
 	char Buffer[1024];
@@ -720,7 +696,6 @@ static BOOL notify (int code, char *fmt, ...)
 	switch (code) {
 /* Questions */
 	case CAN_OVERWRITE:
-		result = AskOverwrite(Buffer);
 		break;
 
 /* Information notification */
