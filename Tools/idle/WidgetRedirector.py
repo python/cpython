@@ -18,11 +18,9 @@ class WidgetRedirector:
         return "WidgetRedirector(%s<%s>)" % (self.widget.__class__.__name__,
                                              self.widget._w)
 
-    def __del__(self):
-        self.close()
-
     def close(self):
-        self.dict = {}
+        for name in self.dict.keys():
+            self.unregister(name)
         widget = self.widget; del self.widget
         orig = self.orig; del self.orig
         tk = widget.tk
@@ -38,6 +36,16 @@ class WidgetRedirector:
         self.dict[name] = function
         setattr(self.widget, name, function)
         return previous
+
+    def unregister(self, name):
+        if self.dict.has_key(name):
+            function = self.dict[name]
+            del self.dict[name]
+            if hasattr(self.widget, name):
+                delattr(self.widget, name)
+            return function
+        else:
+            return None
 
     def dispatch(self, cmd, *args):
         m = self.dict.get(cmd)
