@@ -1105,7 +1105,8 @@ builtin_raw_input(self, args)
 	if (!newgetargs(args, "|O:[raw_]input", &v))
 		return NULL;
 	if (getfilefile(sysget("stdin")) == stdin &&
-	    getfilefile(sysget("stdout")) == stdout) {
+	    getfilefile(sysget("stdout")) == stdout &&
+	    isatty(fileno(stdin)) && isatty(fileno(stdout))) {
 		object *po;
 		char *prompt;
 		char *s;
@@ -1366,7 +1367,12 @@ builtin_vars(self, args)
 		return NULL;
 	if (v == NULL) {
 		d = getlocals();
-		INCREF(d);
+		if (d == NULL) {
+			if (!err_occurred())
+				err_setstr(SystemError, "no locals!?");
+		}
+		else
+			INCREF(d);
 	}
 	else {
 		d = getattr(v, "__dict__");
