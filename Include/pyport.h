@@ -411,6 +411,39 @@ extern int fdatasync(int);
 extern double hypot(double, double);
 #endif
 
+
+/*******************************************************************
+On 4.4BSD-descendants, ctype functions serves the whole range of
+wchar_t character set rather than single byte code points only.
+This characteristic can break some operations of string object
+including str.upper() and str.split() on UTF-8 locales.  This
+workaround was provided by Tim Robbins of FreeBSD project.  He said
+the incompatibility will be fixed in FreeBSD 6.
+********************************************************************/
+
+#ifdef __FreeBSD__
+#include <osreldate.h>
+#if __FreeBSD_version > 500039
+#include <ctype.h>
+#include <wctype.h>
+#undef isalnum
+#define isalnum(c) iswalnum(btowc(c))
+#undef isalpha
+#define isalpha(c) iswalpha(btowc(c))
+#undef islower
+#define islower(c) iswlower(btowc(c))
+#undef isspace
+#define isspace(c) iswspace(btowc(c))
+#undef isupper
+#define isupper(c) iswupper(btowc(c))
+#undef tolower
+#define tolower(c) towlower(btowc(c))
+#undef toupper
+#define toupper(c) towupper(btowc(c))
+#endif
+#endif
+
+
 /* Declarations for symbol visibility.
 
   PyAPI_FUNC(type): Declares a public Python API function and return type
