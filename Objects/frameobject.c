@@ -98,6 +98,15 @@ static void
 frame_dealloc(f)
 	frameobject *f;
 {
+	int i;
+	PyObject **fastlocals;
+
+	/* Kill all local variables */
+	fastlocals = f->f_localsplus;
+	for (i = f->f_nlocals; --i >= 0; ++fastlocals) {
+		XDECREF(*fastlocals);
+	}
+
 	XDECREF(f->f_back);
 	XDECREF(f->f_code);
 	XDECREF(f->f_builtins);
@@ -168,7 +177,8 @@ newframeobject(back, code, globals, locals)
 		f = free_list;
 		free_list = free_list->f_back;
 		if (f->f_nlocals + f->f_stacksize < extras) {
-			f = realloc(f, sizeof(frameobject) + extras*sizeof(object *));
+			f = realloc(f, sizeof(frameobject) +
+				       extras*sizeof(object *));
 			if (f == NULL)
 				return (PyFrameObject *)err_nomem();
 		}
