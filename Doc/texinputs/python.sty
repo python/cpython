@@ -6,6 +6,12 @@
 \ProvidesPackage{python}
              [1998/01/11 LaTeX package (Python markup)]
 
+% These packages can be used to add marginal annotations which indicate
+% index entries and labels; useful for reviewing this messy documentation!
+%
+%\RequirePackage{showkeys}
+%\RequirePackage{showidx}
+
 % for PDF output, use maximal compression & a lot of other stuff
 % (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
 %
@@ -526,6 +532,7 @@
 }
 \let\url=\pythonurl
 \newcommand{\email}[1]{{\small\textsf{#1}}}
+\newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
