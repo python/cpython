@@ -297,6 +297,10 @@ a *= 0
 if a != []:
     raise TestFailed, "list inplace repeat"
 
+a = []
+a[:] = tuple(range(10))
+if a != range(10):
+    raise TestFailed, "assigning tuple to slice"
 
 print '6.5.3a Additional list operations'
 a = [0,1,2,3,4]
