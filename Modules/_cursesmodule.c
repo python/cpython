@@ -122,6 +122,7 @@ None              clear()
 None              clrtobot()
 None              clrtoeol()
 None              scroll()
+                  scroll(nlines)
 None              touchwin()
 None              touchline(start,count)
 IntObject         getch(y,x)
@@ -841,9 +842,24 @@ PyCursesWindow_Scroll(self,arg)
      PyCursesWindowObject *self;
      PyObject * arg;
 {
-  if (!PyArg_NoArgs(arg))
+  int nlines;
+  int use_nlines = FALSE;
+  switch (ARG_COUNT(arg)) {
+  case 0:
+    break;
+  case 1:
+    if (!PyArg_Parse(arg, "i;nlines", &nlines))
       return NULL;
-  return PyCursesCheckERR(scroll(self->win), "scroll");
+    use_nlines = TRUE;
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError, "scroll requires 0 or 1 arguments");
+    return NULL;
+  }
+  if (use_nlines)
+    return PyCursesCheckERR(wscrl(self->win, nlines), "scroll");
+  else
+    return PyCursesCheckERR(scroll(self->win), "scroll");
 }
 
 static PyObject *
