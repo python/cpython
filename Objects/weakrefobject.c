@@ -220,6 +220,13 @@ proxy_checkref(PyWeakReference *proxy)
             o = PyWeakref_GET_OBJECT(o); \
         }
 
+#define UNWRAP_I(o) \
+        if (PyWeakref_CheckProxy(o)) { \
+            if (!proxy_checkref((PyWeakReference *)o)) \
+                return -1; \
+            o = PyWeakref_GET_OBJECT(o); \
+        }
+
 #define WRAP_UNARY(method, generic) \
     static PyObject * \
     method(PyObject *proxy) { \
@@ -284,11 +291,11 @@ proxy_setattr(PyWeakReference *proxy, PyObject *name, PyObject *value)
 }
 
 static int
-proxy_compare(PyWeakReference *proxy, PyObject *v)
+proxy_compare(PyObject *proxy, PyObject *v)
 {
-    if (!proxy_checkref(proxy))
-        return -1;
-    return PyObject_Compare(PyWeakref_GET_OBJECT(proxy), v);
+    UNWRAP_I(proxy);
+    UNWRAP_I(v);
+    return PyObject_Compare(proxy, v);
 }
 
 /* number slots */
@@ -451,7 +458,7 @@ _PyWeakref_ProxyType = {
     (printfunc)proxy_print,     /*tp_print*/
     0,				/*tp_getattr*/
     0, 				/*tp_setattr*/
-    (cmpfunc)proxy_compare,	/*tp_compare*/
+    proxy_compare,		/*tp_compare*/
     (unaryfunc)proxy_repr,	/*tp_repr*/
     &proxy_as_number,		/*tp_as_number*/
     &proxy_as_sequence,		/*tp_as_sequence*/
@@ -482,7 +489,7 @@ _PyWeakref_CallableProxyType = {
     (printfunc)proxy_print,     /*tp_print*/
     0,				/*tp_getattr*/
     0, 				/*tp_setattr*/
-    (cmpfunc)proxy_compare,	/*tp_compare*/
+    proxy_compare,		/*tp_compare*/
     (unaryfunc)proxy_repr,	/*tp_repr*/
     &proxy_as_number,		/*tp_as_number*/
     &proxy_as_sequence,		/*tp_as_sequence*/
