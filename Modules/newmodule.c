@@ -70,12 +70,17 @@ new_function(PyObject* unused, PyObject* args)
 	PyObject* defaults = Py_None;
 	PyFunctionObject* newfunc;
 
-	if (!PyArg_ParseTuple(args, "O!O!|SO!:function",
+	if (!PyArg_ParseTuple(args, "O!O!|OO!:function",
 			      &PyCode_Type, &code,
 			      &PyDict_Type, &globals,
 			      &name,
 			      &PyTuple_Type, &defaults))
 		return NULL;
+	if (name != Py_None && !PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"arg 3 (name) must be None or string");
+		return NULL;
+	}
 
 	newfunc = (PyFunctionObject *)PyFunction_New(code, globals);
 	if (newfunc == NULL)
