@@ -1,12 +1,12 @@
 r"""Utilities to compile possibly incomplete Python source code.
 
 This module provides two interfaces, broadly similar to the builtin
-function compile(), that take progam text, a filename and a 'mode'
+function compile(), that takes program text, a filename and a 'mode'
 and:
 
-- Return a code object if the command is complete and valid
-- Return None if the command is incomplete
-- Raise SyntaxError, ValueError or OverflowError if the command is a
+- Returns code object if the command is complete and valid
+- Returns None if the command is incomplete
+- Raises SyntaxError, ValueError or OverflowError if the command is a
   syntax error (OverflowError and ValueError can be produced by
   malformed literals).
 
