@@ -15,10 +15,7 @@ def basic(src):
 
     # The use of spaces in the section names serves as a regression test for
     # SourceForge bug #115357.
-    #
     # http://sourceforge.net/bugs/?func=detailbug&group_id=5470&bug_id=115357
-    #
-    print "test for SourceForge bug #115357"
     print `cf.get('Foo Bar', 'foo', raw=1)`
     print `cf.get('Spacey Bar', 'foo', raw=1)`
     print `cf.get('Commented Bar', 'foo', raw=1)`
