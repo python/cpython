@@ -40,7 +40,7 @@ class AbstractChild():
 	def destroy(self): unimpl()
 	#
 	def realize(self): return unimpl()
-	def minsize(self, m): return unimpl()
+	def getminsize(self, (m, (width, height))): return unimpl()
 	def getbounds(self): return unimpl()
 	def setbounds(self, bounds): unimpl()
 	def draw(self, (d, area)): unimpl()
