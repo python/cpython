@@ -40,17 +40,18 @@ class MyScanner(Scanner):
 			"DisposeUserData",		# ditto
 			"DisposeTimeBase",		# ditto
 			"DisposeMovieController", # ditto
-			"GetMovieCreationTime",	# type "unsigned long" in C, inparseable
-			"GetMovieModificationTime",	# Ditto
-			"GetTrackCreationTime",		# ditto
-			"GetTrackModificationTime",	# Ditto
-			"GetMediaCreationTime",		# ditto
-			"GetMediaModificationTime",	# Ditto
+#			"GetMovieCreationTime",	# type "unsigned long" in C, inparseable
+#			"GetMovieModificationTime",	# Ditto
+#			"GetTrackCreationTime",		# ditto
+#			"GetTrackModificationTime",	# Ditto
+#			"GetMediaCreationTime",		# ditto
+#			"GetMediaModificationTime",	# Ditto
 			# The following 4 use 'void *' in an uncontrolled way
 			# TBD when I've read the manual...
 			"GetUserDataItem",
 			"SetUserDataItem",
 			"SetTextSampleData",
+			"BeginFullScreen",
 			# bgen gets the argument in/out wrong..
 			"AddTextSample",
 			"AddTESample",
@@ -105,8 +106,8 @@ class MyScanner(Scanner):
 #			"TextDescription",
 #			"MusicDescription",
 			# I dont know yet how to do these.
-			"CGrafPtr",
-			"GDHandle",
+#			"CGrafPtr",
+#			"GDHandle",
 			# Routine pointers, not yet.
 			"MoviesErrorUPP",
 			"MoviePreviewCallOutUPP",
@@ -119,6 +120,7 @@ class MyScanner(Scanner):
 			"MCActionFilterWithRefConUPP",
 			"GetMovieUPP",
 			"ModalFilterUPP",
+			"TrackTransferUPP",
 			"QTAtomContainer",
 			"SpriteWorld",
 			"Sprite",
@@ -134,7 +136,7 @@ class MyScanner(Scanner):
 			 
 			# NewMovieFromFile
 			([('short', 'resId', 'OutMode'), ('StringPtr', 'resName', 'InMode')],
-			 [('dummyshortptr', 'resId', 'InMode'), ('dummyStringPtr', 'resName', 'InMode')]),
+			 [('short', 'resId', 'InOutMode'), ('dummyStringPtr', 'resName', 'InMode')]),
 			 
 			# MCDoAction and more
 			([('void', '*', 'OutMode')], [('mcactionparams', '*', 'InMode')]),

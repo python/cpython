@@ -71,6 +71,8 @@ PixMapHandle = OpaqueByValueType("PixMapHandle", "ResObj")
 SampleDescriptionHandle = OpaqueByValueType("SampleDescriptionHandle", "ResObj")
 ImageDescriptionHandle = OpaqueByValueType("ImageDescriptionHandle", "ResObj")
 TEHandle = OpaqueByValueType("TEHandle", "ResObj")
+CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
+GDHandle = OpaqueByValueType("GDHandle", "ResObj")
 # Silly Apple, passing an OStype by reference...
 OSType_ptr = OpaqueType("OSType", "PyMac_BuildOSType", "PyMac_GetOSType")
 
