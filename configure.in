@@ -824,7 +824,7 @@ then
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/$(PYTHON)'
 		fi ;;
-	Linux*) LDSHARED="gcc -shared";;
+	Linux*) LDSHARED='$(CC) -shared';;
 	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	OpenBSD*|FreeBSD*)

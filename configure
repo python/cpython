@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.288.6.13 
+# From configure.in Revision: 1.288.6.14 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -3210,7 +3210,7 @@ then
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/$(PYTHON)'
 		fi ;;
-	Linux*) LDSHARED="gcc -shared";;
+	Linux*) LDSHARED='$(CC) -shared';;
 	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	OpenBSD*|FreeBSD*)
