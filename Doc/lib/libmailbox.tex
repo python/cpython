@@ -101,8 +101,9 @@ messages start with the EOOH line and end with a line containing only
 
 \subsection{Mailbox Objects \label{mailbox-objects}}
 
-All implementations of Mailbox objects are iterator objects, and so
-have one externally visible method:
+All implementations of mailbox objects are iterable objects, and
+have one externally visible method.  This method is used by iterators
+created from mailbox objects and may also be used directly.
 
 \begin{methoddesc}[mailbox]{next}{}
 Return the next message in the mailbox, created with the optional
