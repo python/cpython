@@ -51,6 +51,7 @@ class Editor(W.Window):
 				_scriptuntitledcounter = _scriptuntitledcounter + 1
 			text = ""
 			self._creator = W._signature
+			self._eoln = os.linesep
 		elif os.path.exists(path):
 			path = resolvealiases(path)
 			dir, name = os.path.split(path)
@@ -67,18 +68,14 @@ class Editor(W.Window):
 		if '\n' in text:
 			import EasyDialogs
 			if string.find(text, '\r\n') >= 0:
-				sourceOS = 'DOS'
-				searchString = '\r\n'
+				self._eoln = '\r\n'
 			else:
-				sourceOS = 'UNIX'
-				searchString = '\n'
-			change = EasyDialogs.AskYesNoCancel('"%s" contains %s-style line feeds. '
-					'Change them to MacOS carriage returns?' % (self.title, sourceOS), 1)
-			# bug: Cancel is treated as No
-			if change > 0:
-				text = string.replace(text, searchString, '\r')
+				self._eoln = '\n'
+			text = string.replace(text, self._eoln, '\r')
+			change = 0
 		else:
 			change = 0
+			self._eoln = '\r'
 		
 		self.settings = {}
 		if self.path:
@@ -318,10 +315,11 @@ class Editor(W.Window):
 			self.editgroup.editor.settabsettings(tabsettings)
 	
 	def domenu_options(self, *args):
-		rv = SaveOptions(self._creator)
-		if rv:
+		rvcreator, rveoln = SaveOptions(self._creator, self._eoln)
+		if rvcreator != self._creator or rveoln != self._eoln:
 			self.editgroup.editor.selectionchanged() # ouch...
-			self._creator = rv
+			self._creator = rvcreator
+			self._eoln = rveoln
 	
 	def clicklinefield(self):
 		if self._currentwidget <> self.linefield:
@@ -383,6 +381,8 @@ class Editor(W.Window):
 			# Will call us recursively
 			return self.domenu_save_as()
 		data = self.editgroup.editor.get()
+		if self._eoln != '\r':
+			data = string.replace(data, '\r', self._eoln)
 		fp = open(self.path, 'wb')  # open file in binary mode, data has '\r' line-endings
 		fp.write(data)
 		fp.close()
@@ -744,15 +744,18 @@ class Editor(W.Window):
 
 class _saveoptions:
 	
-	def __init__(self, creator):
+	def __init__(self, creator, eoln):
 		self.rv = None
-		self.w = w = W.ModalDialog((240, 140), 'Save options')
+		self.eoln = eoln
+		self.w = w = W.ModalDialog((260, 160), 'Save options')
 		radiobuttons = []
 		w.label = W.TextBox((8, 8, 80, 18), "File creator:")
 		w.ide_radio = W.RadioButton((8, 22, 160, 18), "This application", radiobuttons, self.ide_hit)
-		w.interp_radio = W.RadioButton((8, 42, 160, 18), "Python Interpreter", radiobuttons, self.interp_hit)
-		w.other_radio = W.RadioButton((8, 62, 50, 18), "Other:", radiobuttons)
-		w.other_creator = W.EditText((62, 62, 40, 20), creator, self.otherselect)
+		w.interp_radio = W.RadioButton((8, 42, 160, 18), "MacPython Interpreter", radiobuttons, self.interp_hit)
+		w.interpx_radio = W.RadioButton((8, 62, 160, 18), "OSX PythonW Interpreter", radiobuttons, self.interpx_hit)
+		w.other_radio = W.RadioButton((8, 82, 50, 18), "Other:", radiobuttons)
+		w.other_creator = W.EditText((62, 82, 40, 20), creator, self.otherselect)
+		w.none_radio = W.RadioButton((8, 102, 160, 18), "None", radiobuttons, self.none_hit)
 		w.cancelbutton = W.Button((-180, -30, 80, 16), "Cancel", self.cancelbuttonhit)
 		w.okbutton = W.Button((-90, -30, 80, 16), "Done", self.okbuttonhit)
 		w.setdefaultbutton(w.okbutton)
@@ -760,8 +763,25 @@ class _saveoptions:
 			w.interp_radio.set(1)
 		elif creator == W._signature:
 			w.ide_radio.set(1)
+		elif creator == 'PytX':
+			w.interpx_radio.set(1)
+		elif creator == '\0\0\0\0':
+			w.none_radio.set(1)
 		else:
 			w.other_radio.set(1)
+			
+		w.eolnlabel = W.TextBox((168, 8, 80, 18), "Newline style:")
+		radiobuttons = []
+		w.unix_radio = W.RadioButton((168, 22, 80, 18), "Unix", radiobuttons, self.unix_hit)
+		w.mac_radio = W.RadioButton((168, 42, 80, 18), "Macintosh", radiobuttons, self.mac_hit)
+		w.win_radio = W.RadioButton((168, 62, 80, 18), "Windows", radiobuttons, self.win_hit)
+		if self.eoln == '\n':
+			w.unix_radio.set(1)
+		elif self.eoln == '\r\n':
+			w.win_radio.set(1)
+		else:
+			w.mac_radio.set(1)
+		
 		w.bind("cmd.", w.cancelbutton.push)
 		w.open()
 	
@@ -771,6 +791,12 @@ class _saveoptions:
 	def interp_hit(self):
 		self.w.other_creator.set("Pyth")
 	
+	def interpx_hit(self):
+		self.w.other_creator.set("PytX")
+	
+	def none_hit(self):
+		self.w.other_creator.set("\0\0\0\0")
+	
 	def otherselect(self, *args):
 		sel_from, sel_to = self.w.other_creator.getselection()
 		creator = self.w.other_creator.get()[:4]
@@ -779,16 +805,25 @@ class _saveoptions:
 		self.w.other_creator.setselection(sel_from, sel_to)
 		self.w.other_radio.set(1)
 	
+	def mac_hit(self):
+		self.eoln = '\r'
+		
+	def unix_hit(self):
+		self.eoln = '\n'
+		
+	def win_hit(self):
+		self.eoln = '\r\n'
+		
 	def cancelbuttonhit(self):
 		self.w.close()
 	
 	def okbuttonhit(self):
-		self.rv = self.w.other_creator.get()[:4]
+		self.rv = (self.w.other_creator.get()[:4], self.eoln)
 		self.w.close()
 
 
-def SaveOptions(creator):
-	s = _saveoptions(creator)
+def SaveOptions(creator, eoln):
+	s = _saveoptions(creator, eoln)
 	return s.rv
 
 
