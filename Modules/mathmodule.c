@@ -28,22 +28,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
-#include "modsupport.h"
-
 #define getdoublearg(v, a) getargs(v, "d", a)
 #define get2doublearg(v, a, b) getargs(v, "(dd)", a, b)
 
 #include <math.h>
 
+#ifndef __STDC__
+extern double fmod PROTO((double, double));
+extern double frexp PROTO((double, int *));
+extern double ldexp PROTO((double, int));
+extern double modf PROTO((double, double *));
+#endif
+
+#ifdef HAVE_HYPOT
+extern double hypot PROTO((double, double));
+#endif
+
 #ifdef i860
 /* Cray APP has bogus definition of HUGE_VAL in <math.h> */
 #undef HUGE_VAL
-#endif
-
-#ifndef macintosh
-#ifndef __STDC__
-extern double fmod PROTO((double, double));
-#endif
 #endif
 
 #ifdef HUGE_VAL
@@ -139,9 +142,6 @@ FUNC1(math_tanh, tanh)
 
 #ifndef macintosh
 
-double	frexp PROTO((double, int *));
-double	ldexp PROTO((double, int));
-double	modf PROTO((double, double *));
 
 #endif
 
