@@ -655,15 +655,15 @@ onintr(int sig)
 static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
+	size_t n;
+	char *p, *q;
+	PyOS_sighandler_t old_inthandler;
 #ifdef SAVE_LOCALE
 	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
 	if (!saved_locale)
 		Py_FatalError("not enough memory to save locale");
 	setlocale(LC_CTYPE, "");
 #endif
-	size_t n;
-	char *p, *q;
-	PyOS_sighandler_t old_inthandler;
 
 	old_inthandler = PyOS_setsig(SIGINT, onintr);
 	if (setjmp(jbuf)) {
