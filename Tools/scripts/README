@@ -18,6 +18,7 @@ fixheader.py		Add some cpp magic to a C include file
 fixnotice.py		Fix the copyright notice in source files
 fixps.py		Fix Python scripts' first line (if #!)
 ftpmirror.py		FTP mirror script
+gencodec.py		Create Python codecs from Unicode mapping files
 h2py.py			Translate #define's into Python assignments
 ifdef.py		Remove #if(n)def groups from C sources
 lfcr.py			Change LF line endings to CRLF (Unix to Windows)
