@@ -73,6 +73,8 @@ class TestStringIO(TestGenericStringIO):
 
     def test_unicode(self):
 
+        if not test_support.have_unicode: return
+
         # The StringIO module also supports concatenating Unicode
         # snippets to larger Unicode strings. This is tested by this
         # method. Note that cStringIO does not support this extension.
