@@ -309,7 +309,7 @@ _Translator       = {
     }
 
 def _quote(str, LegalChars=_LegalChars,
-	   join=string.join, idmap=string._idmap, translate=string.translate):
+    join=string.join, idmap=string._idmap, translate=string.translate):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -317,9 +317,9 @@ def _quote(str, LegalChars=_LegalChars,
     # special characters.
     #
     if "" == translate(str, idmap, LegalChars):
-	return str
+        return str
     else:
-	return '"' + join( map(_Translator.get, str, str), "" ) + '"'    
+        return '"' + join( map(_Translator.get, str, str), "" ) + '"'    
 # end _quote
 
 
@@ -339,7 +339,7 @@ def _unquote(str, join=string.join, atoi=string.atoi):
 
     # Remove the "s
     str = str[1:-1]
-        
+
     # Check for special sequences.  Examples:
     #    \012 --> \n
     #    \"   --> "
@@ -421,7 +421,7 @@ class Morsel(UserDict):
                    "version" : "Version",
                    }
     _reserved_keys = _reserved.keys()
-    
+
     def __init__(self):
         # Set defaults
         self.key = self.value = self.coded_value = None
@@ -440,7 +440,7 @@ class Morsel(UserDict):
     # end __setitem__
 
     def isReservedKey(self, K):
-	return string.lower(K) in self._reserved_keys
+        return string.lower(K) in self._reserved_keys
     # end isReservedKey
 
     def set(self, key, val, coded_val,
@@ -467,7 +467,7 @@ class Morsel(UserDict):
     def __repr__(self):
         return '<%s: %s=%s>' % (self.__class__.__name__,
                                 self.key, repr(self.value) )
-    
+
     def js_output(self, attrs=None):
         # Print javascript
         return """
@@ -484,7 +484,7 @@ class Morsel(UserDict):
         #
         result = []
         RA = result.append
-        
+
         # First, the key=value pair
         RA("%s=%s;" % (self.key, self.coded_value))
 
@@ -502,7 +502,7 @@ class Morsel(UserDict):
                 RA("%s;" % self._reserved[K])
             else:
                 RA("%s=%s;" % (self._reserved[K], V))
-                
+
         # Return the result
         return string.join(result, " ")
     # end OutputString
@@ -542,7 +542,7 @@ _CookiePattern = re.compile(
 class BaseCookie(UserDict):
     # A container class for a set of Morsels
     #
-    
+
     def value_decode(self, val):
         """real_value, coded_value = value_decode(STRING)
         Called prior to setting a cookie's value from the network
@@ -562,7 +562,7 @@ class BaseCookie(UserDict):
         strval = str(val)
         return strval, strval
     # end value_encode
-    
+
     def __init__(self, input=None):
         UserDict.__init__(self)
         if input: self.load(input)
@@ -596,7 +596,7 @@ class BaseCookie(UserDict):
         for K,V in self.items():
             L.append( '%s=%s' % (K,repr(V.value) ) )
         return '<%s: %s>' % (self.__class__.__name__, string.join(L))
-    
+
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
@@ -617,7 +617,7 @@ class BaseCookie(UserDict):
             self.update(rawdata)
         return
     # end load()
-        
+
     def __ParseString(self, str, patt=_CookiePattern):
         i = 0            # Our starting point
         n = len(str)     # Length of string
@@ -645,8 +645,6 @@ class BaseCookie(UserDict):
                 rval, cval = self.value_decode(V)
                 self.__set(K, rval, cval)
                 M = self[K]
-                    
-	return
     # end __ParseString
 # end BaseCookie class
 
@@ -674,7 +672,7 @@ class SerialCookie(BaseCookie):
 
     Note: Large cookie values add overhead because they must be
     retransmitted on every HTTP transaction.
-    
+
     Note: HTTP has a 2k limit on the size of a cookie.  This class
     does not check for this limit, so be careful!!!
     """
@@ -694,7 +692,7 @@ class SmartCookie(BaseCookie):
 
     Note: Large cookie values add overhead because they must be
     retransmitted on every HTTP transaction.
-    
+
     Note: HTTP has a 2k limit on the size of a cookie.  This class
     does not check for this limit, so be careful!!!
     """
@@ -722,10 +720,6 @@ Cookie = SmartCookie
 ###########################################################
 
 
-
-#
-# should add a test routine?
-#
 
 #Local Variables:
 #tab-width: 4
