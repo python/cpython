@@ -76,23 +76,23 @@ unpack into new subdirectories of dist\.
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.1:
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.3:
 
     Get source
     ----------
     Go to
         http://prdownloads.sourceforge.net/tcl/
     and download
-        tcl841-src.zip
-        tk841-src.zip
+        tcl843-src.zip
+        tk843-src.zip
     Unzip into
-        dist\tcl8.4.1\
-        dist\tk8.4.1\
+        dist\tcl8.4.3\
+        dist\tk8.4.3\
     respectively.
 
-    Build Tcl first (done here w/ MSVC 6 on Win2K; also Win98SE)
+    Build Tcl first (done here w/ MSVC 6 on Win98SE)
     ---------------
-    cd dist\tcl8.4.1\win
+    cd dist\tcl8.4.3\win
     run vcvars32.bat [necessary even on Win2K]
     nmake -f makefile.vc
     nmake -f makefile.vc INSTALLDIR=..\..\tcl84 install
@@ -100,16 +100,19 @@ _tkinter
     XXX Should we compile with OPTS=threads?
 
     XXX Some tests failed in "nmake -f makefile.vc test".
+    XXX all.tcl:  Total 10480   Passed 9743    Skipped 719     Failed 18
 
     Build Tk
     --------
-    cd dist\tk8.4.1\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1 INSTALLDIR=..\..\tcl84 install
+    cd dist\tk8.4.3\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.3
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.3 INSTALLDIR=..\..\tcl84 install
 
     XXX Should we compile with OPTS=threads?
 
-    XXX Some tests failed in "nmake -f makefile.vc test".
+    XXX I have no idea whether "nmake -f makefile.vc test" passed or
+    XXX failed.  It popped up tons of little windows, and did lots of
+    XXX stuff, and nothing blew up.
 
     XXX Our installer copies a lot of stuff out of the Tcl/Tk install
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
