@@ -298,16 +298,25 @@ class Message:
     
     def getaddrlist(self, name):
         """Get a list of addresses from a header.
-        
-        Retrieves a list of addresses from a header, where each
-        address is a tuple as returned by getaddr().
+
+        Retrieves a list of addresses from a header, where each address is a
+        tuple as returned by getaddr().  Scans all named headers, so it works
+        properly with multiple To: or Cc: headers for example.
+
         """
-        # New, by Ben Escoto
-        try:
-            data = self[name]
-        except KeyError:
-            return []
-        a = AddrlistClass(data)
+        raw = []
+        for h in self.getallmatchingheaders(name):
+	    if h[0] in ' \t':
+	        raw.append(h)
+	    else:
+	        if raw:
+		    raw.append(', ')
+                i = string.find(h, ':')
+                if i > 0:
+                    addr = h[i+1:]
+                raw.append(addr)
+        alladdrs = string.join(raw, '')
+        a = AddrlistClass(alladdrs)
         return a.getaddrlist()
     
     def getdate(self, name):
@@ -465,9 +474,8 @@ class AddrlistClass:
         self.specials = '()<>@,:;.\"[]'
         self.pos = 0
         self.LWS = ' \t'
-        self.CR = '\r'
+        self.CR = '\r\n'
         self.atomends = self.specials + self.LWS + self.CR
-        
         self.field = field
         self.commentlist = []
     
@@ -539,6 +547,8 @@ class AddrlistClass:
         else:
             if plist:
                 returnlist = [(string.join(self.commentlist), plist[0])]
+            elif self.field[self.pos] in self.specials:
+                self.pos = self.pos + 1
         
         self.gotonext()
         if self.pos < len(self.field) and self.field[self.pos] == ',':
@@ -618,7 +628,6 @@ class AddrlistClass:
             elif self.field[self.pos] in self.atomends:
                 break
             else: sdlist.append(self.getatom())
-        
         return string.join(sdlist, '')
     
     def getdelimited(self, beginchar, endchars, allowcomments = 1):
