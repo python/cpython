@@ -305,9 +305,9 @@ default value, the corresponding argument may be omitted from a call,
 in which case the parameter's default value is substituted.  If a
 parameter has a default value, all following parameters must also have
 a default value --- this is a syntactic restriction that is not
-expressed by the grammar.%
-\footnote{Currently this is not checked; instead,
-\code{def f(a=1, b)} is interpreted as \code{def f(a=1, b=None)}.}
+expressed by the grammar.\footnote{
+Currently this is not checked; instead, \code{def f(a=1, b)} is
+interpreted as \code{def f(a=1, b=None)}.}
 \indexiii{default}{parameter}{value}
 
 \strong{Default parameter values are evaluated when the function

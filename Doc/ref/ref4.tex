@@ -70,12 +70,12 @@ bind the class or function name in the defining block), and targets
 that are identifiers if occurring in an assignment, \keyword{for} loop
 header, or in the second position of an \keyword{except} clause
 header.  Local names are searched only on the local namespace; global
-names are searched only in the global and built-in namespace.%
-%
-\footnote{If the code block contains \keyword{exec} statements or the
-construct ``\samp{from \ldots import *}'', the semantics of local
-names change: local name lookup first searches the local namespace,
-then the global namespace and the built-in namespace.}
+names are searched only in the global and built-in
+namespace.\footnote{
+If the code block contains \keyword{exec} statements or the construct
+``\samp{from \ldots import *}'', the semantics of local names change:
+local name lookup first searches the local namespace, then the global
+namespace and the built-in namespace.}
 
 A target occurring in a \keyword{del} statement is also considered bound
 for this purpose (though the actual semantics are to ``unbind'' the
@@ -159,11 +159,11 @@ it is used for both.
 The built-in functions \function{globals()} and \function{locals()} returns a
 dictionary representing the current global and local namespace,
 respectively.  The effect of modifications to this dictionary on the
-namespace are undefined.%
-\footnote{The current implementations return the dictionary actually 
-used to implement the namespace, \emph{except} for functions, where
-the optimizer may cause the local namespace to be implemented
-differently, and \function{locals()} returns a read-only dictionary.}
+namespace are undefined.\footnote{
+The current implementations return the dictionary actually used to
+implement the namespace, \emph{except} for functions, where the
+optimizer may cause the local namespace to be implemented differently,
+and \function{locals()} returns a read-only dictionary.}
 
 \section{Exceptions\label{exceptions}}
 
