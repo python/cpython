@@ -194,10 +194,17 @@ class VideoBagOfTricks:
 		if not self.window:
 			return
 		gl.winset(self.window)
+		x, y = self.maxx, self.maxy
+		gl.keepaspect(x, y)
+		gl.stepunit(8, 6)
 		if not self.use_24:
+			gl.maxsize(x, y)
 			gl.winconstraints()
 			return
-		gl.prefsize(self.maxx, self.maxy)
+		left, bottom = gl.getorigin()
+		width, height = gl.getsize()
+		bottom = bottom+height-y
+		gl.prefposition(left, left+x-1, bottom, bottom+y-1)
 		gl.winconstraints()
 		self.bindvideo()
 
@@ -502,12 +509,16 @@ class VideoBagOfTricks:
 	def vcr_capture(self):
 		if not self.vcr:
 			try:
+				print 'Connecting to VCR ...'
 				self.vcr = VCR.VCR().init()
+				print 'Waiting for VCR to come online ...'
 				self.vcr.wait()
+				print 'Preparing VCR ...'
 				if not (self.vcr.fmmode('dnr') and \
 					  self.vcr.dmcontrol('digital slow')):
 					self.vcr_error('digital slow failed')
 					return
+				print 'VCR OK.'
 			except VCR.error, msg:
 				self.vcr = None
 				self.vcr_error(msg)
@@ -515,8 +526,6 @@ class VideoBagOfTricks:
 		if not self.vcr.still():
 			self.vcr_error('still failed')
 			return
-		# XXX for some reason calling where() too often hangs the VCR,
-		# XXX so we insert sleep(0.1) before every sense() call.
 		self.open_if_closed()
 		rate = self.getint(self.in_rate_vcr, 1)
 		rate = max(rate, 1)
@@ -541,12 +550,11 @@ class VideoBagOfTricks:
 					rate = rate - (here - addr)
 				addr = here
 			return
-		if not self.vcr.fwdshuttle(vcrspeed):	# one tenth speed
+		if not self.vcr.fwdshuttle(vcrspeed):
 			self.vcr_error('fwd shuttle failed')
 			return
 		cycle = 0
 		while count > 0:
-			time.sleep(0.1)
 			try:
 				here = self.vcr.sense()
 			except VCR.error, msg:
