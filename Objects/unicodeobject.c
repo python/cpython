@@ -117,6 +117,16 @@ static PyUnicodeObject *unicode_empty = NULL;
 static PyUnicodeObject *unicode_freelist = NULL;
 static int unicode_freelist_size = 0;
 
+/* Default encoding to use and assume when NULL is passed as encoding
+   parameter; it is initialized by _PyUnicode_Init().
+
+   Always use the PyUnicode_SetDefaultEncoding() and
+   PyUnicode_GetDefaultEncoding() APIs to access this global. 
+
+*/
+
+static char unicode_default_encoding[100];
+
 /* --- Unicode Object ----------------------------------------------------- */
 
 static
@@ -366,7 +376,7 @@ PyObject *PyUnicode_FromObject(register PyObject *obj)
 	Py_INCREF(unicode_empty);
 	return (PyObject *)unicode_empty;
     }
-    return PyUnicode_DecodeUTF8(s, len, "strict");
+    return PyUnicode_Decode(s, len, NULL, "strict");
 }
 
 PyObject *PyUnicode_Decode(const char *s,
@@ -376,10 +386,16 @@ PyObject *PyUnicode_Decode(const char *s,
 {
     PyObject *buffer = NULL, *unicode;
     
-    /* Shortcut for the default encoding UTF-8 */
-    if (encoding == NULL || 
-        (strcmp(encoding, "utf-8") == 0))
+    if (encoding == NULL) 
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Shortcuts for common default encodings */
+    if (strcmp(encoding, "utf-8") == 0)
         return PyUnicode_DecodeUTF8(s, size, errors);
+    else if (strcmp(encoding, "latin-1") == 0)
+        return PyUnicode_DecodeLatin1(s, size, errors);
+    else if (strcmp(encoding, "ascii") == 0)
+        return PyUnicode_DecodeASCII(s, size, errors);
 
     /* Decode via the codec registry */
     buffer = PyBuffer_FromMemory((void *)s, size);
@@ -428,11 +444,19 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
         PyErr_BadArgument();
         goto onError;
     }
-    /* Shortcut for the default encoding UTF-8 */
-    if ((encoding == NULL || 
-	 (strcmp(encoding, "utf-8") == 0)) &&
-	errors == NULL)
+
+    if (encoding == NULL) 
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Shortcuts for common default encodings */
+    if (errors == NULL) {
+	if (strcmp(encoding, "utf-8") == 0)
         return PyUnicode_AsUTF8String(unicode);
+	else if (strcmp(encoding, "latin-1") == 0)
+	    return PyUnicode_AsLatin1String(unicode);
+	else if (strcmp(encoding, "ascii") == 0)
+	    return PyUnicode_AsASCIIString(unicode);
+    }
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(unicode, encoding, errors);
@@ -471,6 +495,30 @@ int PyUnicode_GetSize(PyObject *unicode)
         goto onError;
     }
     return PyUnicode_GET_SIZE(unicode);
+
+ onError:
+    return -1;
+}
+
+const char *PyUnicode_GetDefaultEncoding()
+{
+    return unicode_default_encoding;
+}
+
+int PyUnicode_SetDefaultEncoding(const char *encoding)
+{
+    PyObject *v;
+    
+    /* Make sure the encoding is valid. As side effect, this also
+       loads the encoding into the codec registry cache. */
+    v = _PyCodec_Lookup(encoding);
+    if (v == NULL)
+	goto onError;
+    Py_DECREF(v);
+    strncpy(unicode_default_encoding,
+	    encoding, 
+	    sizeof(unicode_default_encoding));
+    return 0;
 
  onError:
     return -1;
@@ -772,7 +820,8 @@ int utf16_decoding_error(const Py_UNICODE **source,
     }
     else {
         PyErr_Format(PyExc_ValueError,
-                     "UTF-16 decoding error; unknown error handling code: %.400s",
+                     "UTF-16 decoding error; "
+		     "unknown error handling code: %.400s",
                      errors);
         return -1;
     }
@@ -3057,10 +3106,10 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
 static char encode__doc__[] =
 "S.encode([encoding[,errors]]) -> string\n\
 \n\
-Return an encoded string version of S. Default encoding is 'UTF-8'.\n\
-errors may be given to set a different error handling scheme. Default\n\
-is 'strict' meaning that encoding errors raise a ValueError. Other\n\
-possible values are 'ignore' and 'replace'.";
+Return an encoded string version of S. Default encoding is the current\n\
+default string encoding. errors may be given to set a different error\n\
+handling scheme. Default is 'strict' meaning that encoding errors raise\n\
+a ValueError. Other possible values are 'ignore' and 'replace'.";
 
 static PyObject *
 unicode_encode(PyUnicodeObject *self, PyObject *args)
@@ -3816,7 +3865,7 @@ unicode_splitlines(PyUnicodeObject *self, PyObject *args)
 static
 PyObject *unicode_str(PyUnicodeObject *self)
 {
-    return PyUnicode_AsUTF8String((PyObject *)self);
+    return PyUnicode_AsEncodedString((PyObject *)self, NULL, NULL);
 }
 
 static char strip__doc__[] =
@@ -4246,6 +4295,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 	return NULL;
     }
     uformat = PyUnicode_FromObject(format);
+    if (uformat == NULL)
+	return NULL;
     fmt = PyUnicode_AS_UNICODE(uformat);
     fmtcnt = PyUnicode_GET_SIZE(uformat);
 
@@ -4322,13 +4373,10 @@ PyObject *PyUnicode_Format(PyObject *format,
 				    "incomplete format key");
 		    goto onError;
 		}
-		/* keys are converted to strings (using UTF-8) and
+		/* keys are converted to strings using UTF-8 and
 		   then looked up since Python uses strings to hold
 		   variables names etc. in its namespaces and we
-		   wouldn't want to break common idioms.  The
-		   alternative would be using Unicode objects for the
-		   lookup but u"abc" and "abc" have different hash
-		   values (on purpose). */
+		   wouldn't want to break common idioms. */
 		key = PyUnicode_EncodeUTF8(keystart,
 					   keylen,
 					   NULL);
@@ -4472,8 +4520,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 					"%s argument has non-string str()");
 			goto onError;
 		    }
-		    unicode = PyUnicode_DecodeUTF8(PyString_AS_STRING(temp),
+		    unicode = PyUnicode_Decode(PyString_AS_STRING(temp),
 						   PyString_GET_SIZE(temp),
+					       NULL,
 						   "strict");
 		    Py_DECREF(temp);
 		    temp = unicode;
@@ -4659,7 +4708,9 @@ void _PyUnicode_Init()
         Py_FatalError("Unicode configuration error: "
 		      "sizeof(Py_UNICODE) != 2 bytes");
 
+    /* Init the implementation */
     unicode_empty = _PyUnicode_New(0);
+    strcpy(unicode_default_encoding, "utf-8");
 }
 
 /* Finalize the Unicode implementation */
