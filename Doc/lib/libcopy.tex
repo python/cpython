@@ -4,9 +4,9 @@
 
 \modulesynopsis{Shallow and deep copy operations.}
 
-\setindexsubitem{(copy function)}
-\ttindex{copy}
-\ttindex{deepcopy}
+\withsubitem{(in module copy)}{%
+  \ttindex{copy}%
+  \ttindex{deepcopy}}
 
 This module provides generic (shallow and deep) copying operations.
 
@@ -19,7 +19,7 @@ x = copy.copy(y)        # make a shallow copy of y
 x = copy.deepcopy(y)    # make a deep copy of y
 \end{verbatim}
 %
-For module specific errors, \code{copy.error} is raised.
+For module specific errors, \exception{copy.error} is raised.
 
 The difference between shallow and deep copying is only relevant for
 compound objects (objects that contain other objects, like lists or
@@ -49,13 +49,13 @@ Recursive objects (compound objects that, directly or indirectly,
 contain a reference to themselves) may cause a recursive loop.
 
 \item
-Because deep copy copies \emph{everything} it may copy too much, e.g.\
-administrative data structures that should be shared even between
-copies.
+Because deep copy copies \emph{everything} it may copy too much,
+e.g., administrative data structures that should be shared even
+between copies.
 
 \end{itemize}
 
-Python's \code{deepcopy()} operation avoids these problems by:
+The \function{deepcopy()} function avoids these problems by:
 
 \begin{itemize}
 
@@ -75,24 +75,30 @@ any similar types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called
-\code{__getinitargs__()}, \code{__getstate__()} and
-\code{__setstate__()}.  See the description of module \code{pickle}
-for information on these methods.
-The copy module does not use the \module{copy_reg} registration
-module.
-\refstmodindex{pickle}
-\setindexsubitem{(copy protocol)}
-\ttindex{__getinitargs__}
-\ttindex{__getstate__}
-\ttindex{__setstate__}
+\method{__getinitargs__()}, \method{__getstate__()} and
+\method{__setstate__()}.  See the description of module
+\module{pickle}\refstmodindex{pickle} for information on these
+methods.  The \module{copy} module does not use the \module{copy_reg}
+registration module.
+\withsubitem{(copy protocol)}{%
+  \ttindex{__getinitargs__()}%
+  \ttindex{__getstate__()}%
+  \ttindex{__setstate__()}}
 
 In order for a class to define its own copy implementation, it can
-define special methods \method{__copy__()}\ttindex{__copy__} and
-\method{__deepcopy__()}\ttindex{__deepcopy__}.  The former is called to
-implement the shallow copy operation; no additional arguments are
-passed.  The latter is called to implement the deep copy operation; it
-is passed one argument, the memo dictionary.  If the
-\method{__deepcopy__()} implementation needs to make a deep copy of a
-component, it should call the \function{deepcopy()} function with the
-component as first argument and the memo dictionary as second
-argument.
+define special methods \method{__copy__()} and
+\method{__deepcopy__()}.  The former is called to implement the
+shallow copy operation; no additional arguments are passed.  The
+latter is called to implement the deep copy operation; it is passed
+one argument, the memo dictionary.  If the \method{__deepcopy__()}
+implementation needs to make a deep copy of a component, it should
+call the \function{deepcopy()} function with the component as first
+argument and the memo dictionary as second argument.
+\withsubitem{(copy protocol)}{%
+  \ttindex{__copy__()}%
+  \ttindex{__deepcopy__()}}
+
+\begin{seealso}
+\seemodule{pickle}{Discussion of the special disciplines used to
+support object state retrieval and restoration.}
+\end{seealso}
