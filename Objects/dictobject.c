@@ -15,7 +15,7 @@
 
 /*
 Table of irreducible polynomials to efficiently cycle through
-GF(2^n)-{0}, 2<=n<=30.
+GF(2^n)-{0}, 2<=n<=30.  A table size is always a power of 2.
 */
 static long polys[] = {
 	4 + 3,
@@ -54,13 +54,26 @@ static long polys[] = {
 static PyObject *dummy; /* Initialized by first call to newdictobject() */
 
 /*
-Invariant for entries: when in use, me_value is not NULL and me_key is
-not NULL and not dummy; when not in use, me_value is NULL and me_key
-is either NULL or dummy.  A dummy key value cannot be replaced by
-NULL, since otherwise other keys may be lost.
+There are three kinds of slots in the table:
+
+1. Unused.  me_key == me_value == NULL
+   Does not hold an active (key, value) pair now and never did.  Unused can
+   transition to Active upon key insertion.  This is the only case in which
+   me_key is NULL, and is each slot's initial state.
+
+2. Active.  me_key != NULL and me_key != dummy and me_value != NULL
+   Holds an active (key, value) pair.  Active can transition to Dummy upon
+   key deletion.  This is the only case in which me_value != NULL.
+
+3. Dummy.  me_key == dummy && me_value == NULL
+   Previously held an active (key, value) pair, but that was deleted and an
+   active pair has not yet overwritten the slot.  Dummy can transition to
+   Active upon key insertion.  Dummy slots cannot be made Unused again
+   (cannot have me_key set to NULL), else the probe sequence in case of
+   collision would have no way to know they were once active.
 */
 typedef struct {
-	long me_hash;
+	long me_hash;      /* cached hash code of me_key */
 	PyObject *me_key;
 	PyObject *me_value;
 #ifdef USE_CACHE_ALIGNED
@@ -69,20 +82,21 @@ typedef struct {
 } dictentry;
 
 /*
-To ensure the lookup algorithm terminates, the table size must be a
-prime number and there must be at least one NULL key in the table.
-The value ma_fill is the number of non-NULL keys; ma_used is the number
-of non-NULL, non-dummy keys.
-To avoid slowing down lookups on a near-full table, we resize the table
-when it is more than half filled.
+To ensure the lookup algorithm terminates, there must be at least one Unsused
+slot (NULL key) in the table.
+The value ma_fill is the number of non-NULL keys (sum of Active and Dummy);
+ma_used is the number of non-NULL, non-dummy keys (== the number of non-NULL
+values == the number of Active items).
+To avoid slowing down lookups on a near-full table, we resize the table when
+it is more than half filled.
 */
 typedef struct dictobject dictobject;
 struct dictobject {
 	PyObject_HEAD
-	int ma_fill;
-	int ma_used;
-	int ma_size;
-	int ma_poly;
+	int ma_fill;  /* # Active + # Dummy */
+	int ma_used;  /* # Active */
+	int ma_size;  /* total # slots in ma_table */
+	int ma_poly;  /* appopriate entry from polys vector */
 	dictentry *ma_table;
 	dictentry *(*ma_lookup)(dictobject *mp, PyObject *key, long hash);
 };
@@ -138,12 +152,12 @@ This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
 Open addressing is preferred over chaining since the link overhead for
 chaining would be substantial (100% with typical malloc overhead).
 However, instead of going through the table at constant steps, we cycle
-through the values of GF(2^n)-{0}. This avoids modulo computations, being
+through the values of GF(2^n).  This avoids modulo computations, being
 much cheaper on RISC machines, without leading to clustering.
 
 The initial probe index is computed as hash mod the table size.
-Subsequent probe indices use the values of x^i in GF(2^n) as an offset,
-where x is a root. The initial value is derived from hash, too.
+Subsequent probe indices use the values of x^i in GF(2^n)-{0} as an offset,
+where x is a root. The initial offset is derived from hash, too.
 
 All arithmetic on hash should ignore overflow.
 
@@ -168,11 +182,14 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
-	   and 0 < incr < ma_size and both are a function of hash */
+	   and 0 < incr < ma_size and both are a function of hash.
+	   i is the initial table index and incr the initial probe offset. */
 	i = (~hash) & mask;
 	/* We use ~hash instead of hash, as degenerate hash functions, such
 	   as for ints <sigh>, can have lots of leading zeros. It's not
-	   really a performance risk, but better safe than sorry. */
+	   really a performance risk, but better safe than sorry.
+	   12-Dec-00 tim:  so ~hash produces lots of leading ones instead --
+	   what's the gain? */
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
@@ -514,8 +531,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 	old_value = ep->me_value;
 	ep->me_value = NULL;
 	mp->ma_used--;
-	Py_DECREF(old_value); 
-	Py_DECREF(old_key); 
+	Py_DECREF(old_value);
+	Py_DECREF(old_key);
 	return 0;
 }
 
