@@ -493,6 +493,12 @@ $THIS_CLASS = '';
 sub define_module{
     my($word,$name) = @_;
     my $section_tag = join('', @curr_sec_id);
+    if ($word ne "built-in" && $word ne "extension"
+	&& $word ne "standard" && $word ne "") {
+	write_warnings("Bad module type '$word'"
+		       . " for \\declaremodule (module $name)");
+	$word = "";
+    }
     $word = "$word " if $word;
     $THIS_MODULE = "$name";
     $INDEX_SUBITEM = "(in $name)";
