@@ -9,7 +9,7 @@
 
 \modulesynopsis{A framework for verifying interactive Python examples.}
 
-The \module{doctest} module searches for pieces of text that look like
+The \refmodule{doctest} module searches for pieces of text that look like
 interactive Python sessions, and then executes those sessions to
 verify that they work exactly as shown.  There are several common ways to
 use doctest:
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 \end{verbatim}
 
 If you run \file{example.py} directly from the command line,
-\module{doctest} works its magic:
+\refmodule{doctest} works its magic:
 
 \begin{verbatim}
 $ python example.py
@@ -106,7 +106,7 @@ $
 \end{verbatim}
 
 There's no output!  That's normal, and it means all the examples
-worked.  Pass \programopt{-v} to the script, and \module{doctest}
+worked.  Pass \programopt{-v} to the script, and \refmodule{doctest}
 prints a detailed log of what it's trying, and prints a summary at the
 end:
 
@@ -151,7 +151,7 @@ $
 \end{verbatim}
 
 That's all you need to know to start making productive use of
-\module{doctest}!  Jump in.  The following sections provide full
+\refmodule{doctest}!  Jump in.  The following sections provide full
 details.  Note that there are many examples of doctests in
 the standard Python test suite and libraries.  Especially useful examples
 can be found in the standard test file \file{Lib/test/test_doctest.py}.
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     _test()
 \end{verbatim}
 
-\module{doctest} then examines docstrings in module \module{M}.
+\refmodule{doctest} then examines docstrings in module \module{M}.
 
 Running the module as a script causes the examples in the docstrings
 to get executed and verified:
@@ -392,7 +392,7 @@ that started the example.
 
 \subsubsection{What's the Execution Context?\label{doctest-execution-context}}
 
-By default, each time \module{doctest} finds a docstring to test, it
+By default, each time \refmodule{doctest} finds a docstring to test, it
 uses a \emph{shallow copy} of \module{M}'s globals, so that running tests
 doesn't change the module's real globals, and so that one test in
 \module{M} can't leave behind crumbs that accidentally allow another test
@@ -711,7 +711,7 @@ can be useful.
     were added]{2.4}
 
 There's also a way to register new option flag names, although this
-isn't useful unless you intend to extend \module{doctest} internals
+isn't useful unless you intend to extend \refmodule{doctest} internals
 via subclassing:
 
 \begin{funcdesc}{register_optionflag}{name}
@@ -731,7 +731,7 @@ via subclassing:
 
 \subsubsection{Warnings\label{doctest-warnings}}
 
-\module{doctest} is serious about requiring exact matches in expected
+\refmodule{doctest} is serious about requiring exact matches in expected
 output.  If even a single character doesn't match, the test fails.  This
 will probably surprise you a few times, as you learn exactly what Python
 does and doesn't guarantee about output.  For example, when printing a
@@ -977,16 +977,16 @@ to deprecate it, but it's rarely useful:
 \subsection{Unittest API\label{doctest-unittest-api}}
 
 As your collection of doctest'ed modules grows, you'll want a way to run
-all their doctests systematically.  Prior to Python 2.4, \module{doctest}
+all their doctests systematically.  Prior to Python 2.4, \refmodule{doctest}
 had a barely documented \class{Tester} class that supplied a rudimentary
 way to combine doctests from multiple modules. \class{Tester} was feeble,
 and in practice most serious Python testing frameworks build on the
-\module{unittest} module, which supplies many flexible ways to combine
-tests from multiple sources.  So, in Python 2.4, \module{doctest}'s
-\class{Tester} class is deprecated, and \module{doctest} provides two
-functions that can be used to create \module{unittest} test suites from
+\refmodule{unittest} module, which supplies many flexible ways to combine
+tests from multiple sources.  So, in Python 2.4, \refmodule{doctest}'s
+\class{Tester} class is deprecated, and \refmodule{doctest} provides two
+functions that can be used to create \refmodule{unittest} test suites from
 modules and text files containing doctests.  These test suites can then be
-run using \module{unittest} test runners:
+run using \refmodule{unittest} test runners:
 
 \begin{verbatim}
 import unittest
@@ -1000,19 +1000,18 @@ runner = unittest.TextTestRunner()
 runner.run(suite)
 \end{verbatim}
 
-There are two main functions for creating \class{unittest.TestSuite}
+There are two main functions for creating \class{\refmodule{unittest}.TestSuite}
 instances from text files and modules with doctests:
 
 \begin{funcdesc}{DocFileSuite}{*paths, **kw}
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
 
-  The returned \class{unittest.TestSuite} is to be run by the unittest
-  framework and runs the interactive examples in each file.  If an
-  example in any file fails, then the synthesized unit test fails, and
-  a \exception{failureException} exception is raised showing the
-  name of the file containing the test and a (sometimes approximate)
-  line number.
+  The returned \class{\refmodule{unittest}.TestSuite} is to be run by the
+  unittest framework and runs the interactive examples in each file.  If an
+  example in any file fails, then the synthesized unit test fails, and a
+  \exception{failureException} exception is raised showing the name of the
+  file containing the test and a (sometimes approximate) line number.
 
   Pass one or more paths (as strings) to text files to be examined.
 
@@ -1076,9 +1075,9 @@ instances from text files and modules with doctests:
   Convert doctest tests for a module to a
   \class{\refmodule{unittest}.TestSuite}.
 
-  The returned \class{unittest.TestSuite} is to be run by the unittest
-  framework and runs each doctest in the module.  If any of the doctests
-  fail, then the synthesized unit test fails, and a
+  The returned \class{\refmodule{unittest}.TestSuite} is to be run by the
+  unittest framework and runs each doctest in the module.  If any of the
+  doctests fail, then the synthesized unit test fails, and a
   \exception{failureException} exception is raised showing the name of the
   file containing the test and a (sometimes approximate) line number.
 
@@ -1111,50 +1110,50 @@ instances from text files and modules with doctests:
 \end{funcdesc}
 
 Under the covers, \function{DocTestSuite()} creates a
-\class{unittest.TestSuite} out of \class{doctest.DocTestCase} instances,
-and \class{DocTestCase} is a subclass of \class{unittest.TestCase}.
-\class{DocTestCase} isn't documented here (it's an internal detail), but
-studying its code can answer questions about the exact details of
-\module{unittest} integration.
+\class{\refmodule{unittest}.TestSuite} out of \class{doctest.DocTestCase}
+instances, and \class{DocTestCase} is a subclass of
+\class{\refmodule{unittest}.TestCase}. \class{DocTestCase} isn't documented
+here (it's an internal detail), but studying its code can answer questions
+about the exact details of \refmodule{unittest} integration.
 
-Similarly, \function{DocFileSuite()} creates a \class{unittest.TestSuite}
-out of \class{doctest.DocFileCase} instances, and \class{DocFileCase}
-is a subclass of \class{DocTestCase}.
+Similarly, \function{DocFileSuite()} creates a
+\class{\refmodule{unittest}.TestSuite} out of \class{doctest.DocFileCase}
+instances, and \class{DocFileCase} is a subclass of \class{DocTestCase}.
 
-So both ways of creating a \class{unittest.TestSuite} run instances of
-\class{DocTestCase}.  This is important for a subtle reason:  when you
-run \module{doctest} functions yourself, you can control the
-\module{doctest} options in use directly, by passing option flags to
-\module{doctest} functions.  However, if you're writing a \module{unittest}
-framework, \module{unittest} ultimately controls when and how tests
-get run.  The framework author typically wants to control \module{doctest}
-reporting options (perhaps, e.g., specified by command line options),
-but there's no way to pass options through \module{unittest} to
-\module{doctest} test runners.
+So both ways of creating a \class{\refmodule{unittest}.TestSuite} run
+instances of \class{DocTestCase}.  This is important for a subtle reason:
+when you run \refmodule{doctest} functions yourself, you can control the
+\refmodule{doctest} options in use directly, by passing option flags to
+\refmodule{doctest} functions.  However, if you're writing a
+\refmodule{unittest} framework, \refmodule{unittest} ultimately controls
+when and how tests get run.  The framework author typically wants to
+control \refmodule{doctest} reporting options (perhaps, e.g., specified by
+command line options), but there's no way to pass options through
+\refmodule{unittest} to \refmodule{doctest} test runners.
 
-For this reason, \module{doctest} also supports a notion of
-\module{doctest} reporting flags specific to \module{unittest} support,
-via this function:
+For this reason, \refmodule{doctest} also supports a notion of
+\refmodule{doctest} reporting flags specific to \refmodule{unittest}
+support, via this function:
 
 \begin{funcdesc}{set_unittest_reportflags}{flags}
-  Set the \module{doctest} reporting flags to use.
+  Set the \refmodule{doctest} reporting flags to use.
 
   Argument \var{flags} or's together option flags.  See
   section~\ref{doctest-options}.  Only "reporting flags" can be used.
 
-  This is a module-global setting, and affects all future doctests run
-  by module \module{unittest}:  the \method{runTest()} method of
-  \class{DocTestCase} looks at the option flags specified for the test
-  case when the \class{DocTestCase} instance was constructed.  If no
-  reporting flags were specified (which is the typical and expected case),
-  \module{doctest}'s \module{unittest} reporting flags are or'ed into the
-  option flags, and the option flags so augmented are passed to the
+  This is a module-global setting, and affects all future doctests run by
+  module \refmodule{unittest}:  the \method{runTest()} method of
+  \class{DocTestCase} looks at the option flags specified for the test case
+  when the \class{DocTestCase} instance was constructed.  If no reporting
+  flags were specified (which is the typical and expected case),
+  \refmodule{doctest}'s \refmodule{unittest} reporting flags are or'ed into
+  the option flags, and the option flags so augmented are passed to the
   \class{DocTestRunner} instance created to run the doctest.  If any
-  reporting flags were specified when the \class{DocTestCase} instance
-  was constructed, \module{doctest}'s \module{unittest} reporting flags
+  reporting flags were specified when the \class{DocTestCase} instance was
+  constructed, \refmodule{doctest}'s \refmodule{unittest} reporting flags
   are ignored.
 
-  The value of the \module{unittest} reporting flags in effect before the
+  The value of the \refmodule{unittest} reporting flags in effect before the
   function was called is returned by the function.
 
   \versionadded{2.4}
@@ -1587,11 +1586,11 @@ Doctest provides several mechanisms for debugging doctest examples:
       failing example, containing information about that example.
       This information can be used to perform post-mortem debugging on
       the example.
-\item The \module{unittest} cases generated by \function{DocTestSuite()}
+\item The \refmodule{unittest} cases generated by \function{DocTestSuite()}
       support the \method{debug()} method defined by
-      \class{unittest.TestCase}.
-\item You can add a call to \function{pdb.set_trace()} in a doctest
-      example, and you'll drop into the Python debugger when that
+      \class{\refmodule{unittest}.TestCase}.
+\item You can add a call to \function{\refmodule{pdb}.set_trace()} in a
+      doctest example, and you'll drop into the Python debugger when that
       line is executed.  Then you can inspect current values of variables,
       and so on.  For example, suppose \file{a.py} contains just this
       module docstring:
@@ -1642,8 +1641,8 @@ Doctest provides several mechanisms for debugging doctest examples:
 >>>
 \end{verbatim}
 
-    \versionchanged[The ability to use \code{pdb.set_trace()} usefully
-                    inside doctests was added]{2.4}
+    \versionchanged[The ability to use \code{\refmodule{pdb}.set_trace()}
+                    usefully inside doctests was added]{2.4}
 \end{itemize}
 
 Functions that convert doctests to Python code, and possibly run
@@ -1709,13 +1708,13 @@ the synthesized code under the debugger:
   and global execution context.
 
   Optional argument \var{pm} controls whether post-mortem debugging is
-  used.  If \var{pm} has a true value, the script file is run directly,
-  and the debugger gets involved only if the script terminates via raising
-  an unhandled exception.  If it does, then post-mortem debugging is
-  invoked, via \code{pdb.post_mortem()}, passing the traceback object
+  used.  If \var{pm} has a true value, the script file is run directly, and
+  the debugger gets involved only if the script terminates via raising an
+  unhandled exception.  If it does, then post-mortem debugging is invoked,
+  via \code{\refmodule{pdb}.post_mortem()}, passing the traceback object
   from the unhandled exception.  If \var{pm} is not specified, or is false,
   the script is run under the debugger from the start, via passing an
-  appropriate \function{execfile()} call to \code{pdb.run()}.
+  appropriate \function{execfile()} call to \code{\refmodule{pdb}.run()}.
 
   \versionadded{2.3}
 
@@ -1801,7 +1800,7 @@ instances:
 
 \subsection{Soapbox\label{doctest-soapbox}}
 
-As mentioned in the introduction, \module{doctest} has grown to have
+As mentioned in the introduction, \refmodule{doctest} has grown to have
 three primary uses:
 
 \begin{enumerate}
