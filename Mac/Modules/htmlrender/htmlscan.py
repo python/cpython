@@ -14,7 +14,7 @@ OBJECT = "HRReference"
 
 def main():
 ##	input = LONG + ".h"
-	input = "Macintosh HD:SWdev:Jack:Universal:Interfaces:CIncludes:HTMLRendering.h"
+	input = "Macintosh HD:ufs:jack:SWdev:Universal:Interfaces:CIncludes:HTMLRendering.h"
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -38,6 +38,7 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
+			"HRDisposeReference",
 			]
 
 	def makeblacklisttypes(self):
