@@ -1268,10 +1268,10 @@ class Helper:
                 self.docdir = dir
 
     def __repr__(self):
-        if len(inspect.stack()) <= 2:
+        if inspect.stack()[1][3] == '?':
             self()
             return ''
-        return '<pydoc.Helper instance at %p>' % id(self)
+        return '<pydoc.Helper instance>'
 
     def __call__(self, request=None):
         if request is not None:
