@@ -1,3 +1,22 @@
+What's New in Python 2.2.2?
+Release date: dd-mmm-2002
+===========================
+
+Core and builtins
+
+- Repaired a slow memory leak possible only in programs creating a
+  great many cyclic structures involving frames.  Reported on
+  SourceForge as bug 543148.
+
+Library
+
+
+C API
+
+
+Windows
+
+
 What's New in Python 2.2.1 final?
 Release date: 10-Apr-2002
 =================================
