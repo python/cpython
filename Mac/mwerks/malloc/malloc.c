@@ -61,6 +61,8 @@ static char *rcsid = "$Id$";
 #define VCHECK
 #endif /* USE_MALLOC_DEBUG */
 
+#define USE_CACHE_ALIGN		/* Define for aligning everything on 16-byte boundaries */
+
 typedef unsigned char u_char;
 typedef unsigned long u_long;
 typedef unsigned int u_int;
@@ -102,6 +104,11 @@ union	overhead {
 #define	ov_index	ovu.ovu_index
 #define	ov_rmagic	ovu.ovu_rmagic
 #define	ov_size		ovu.ovu_size
+#ifdef USE_CACHE_ALIGN
+	struct cachealigner {
+		u_long	ovalign_1, ovalign_2, ovalign_3, ovalign_4;
+	};
+#endif /* USE_CACHE_ALIGN */
 };
 
 #define	MAGIC		0xef		/* magic # on accounting info */
