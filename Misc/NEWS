@@ -13,7 +13,7 @@ Core and builtins
 -----------------
 
 - Removed PendingDeprecationWarning from apply().  apply() remains
-  deprecated, but the nuissance warning will not be issued.
+  deprecated, but the nuisance warning will not be issued.
 
 - At Python shutdown time (Py_Finalize()), 2.3 called cyclic garbage
   collection twice, both before and after tearing down modules.  The
@@ -114,9 +114,9 @@ Core and builtins
   When comparing containers with cyclic references to themselves it
   will now just hit the recursion limit.  See SF patch 825639.
 
-- str and unicode builtin types now have s.rsplit() method that is
-  same as s.split() except that it scans the string from the end
-  working forward.  See SF feature request 801847.
+- str and unicode builtin types now have rsplit() method that is
+  same as split() except that it scans the string from the end
+  working towards the beginning.  See SF feature request 801847.
 
 Extension modules
 -----------------
