@@ -655,6 +655,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\Misc\NEWS
+  Destination=%MAINDIR%\NEWS.txt
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\PCbuild\python.exe
   Destination=%MAINDIR%\python.exe
   Flags=0000000000000010
