@@ -1721,14 +1721,14 @@ failure.  This is the equivalent of the Python expression
 \begin{cfuncdesc}{PyObject*}{PyNumber_Lshift}{PyObject *o1, PyObject *o2}
 Returns the result of left shifting \var{o1} by \var{o2} on success,
 or \NULL{} on failure.  This is the equivalent of the Python
-expression \samp{\var{o1} << \var{o2}}.
+expression \samp{\var{o1} <\code{<} \var{o2}}.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Rshift}{PyObject *o1, PyObject *o2}
 Returns the result of right shifting \var{o1} by \var{o2} on success,
 or \NULL{} on failure.  This is the equivalent of the Python
-expression \samp{\var{o1} >> \var{o2}}.
+expression \samp{\var{o1} >\code{>} \var{o2}}.
 \end{cfuncdesc}
 
 
@@ -1802,7 +1802,7 @@ would cause an illegal memory access).
 Returns the result of left shifting \var{o1} by \var{o2} on success, or
 \NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
 supports it.  This is the equivalent of the Python expression \samp{\var{o1}
-<<= \var{o2}}.
+<\code{<=} \var{o2}}.
 \end{cfuncdesc}
 
 
@@ -1810,7 +1810,7 @@ supports it.  This is the equivalent of the Python expression \samp{\var{o1}
 Returns the result of right shifting \var{o1} by \var{o2} on success, or
 \NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
 supports it.  This is the equivalent of the Python expression \samp{\var{o1}
->>= \var{o2}}.
+>\code{>=} \var{o2}}.
 \end{cfuncdesc}
 
 
