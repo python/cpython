@@ -46,6 +46,7 @@ includestuff = includestuff + """
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
+#define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
@@ -100,6 +101,7 @@ PyObject *CtlObj_NewUnmanaged(itself)
 	it = PyObject_NEW(ControlObject, &Control_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
+	it->ob_callbackdict = NULL;
 	return (PyObject *)it;
 }
 

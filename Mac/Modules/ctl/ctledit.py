@@ -5,6 +5,9 @@ functions.append(f)
 f = Method(Handle, 'as_Resource', (ControlHandle, 'ctl', InMode))
 methods.append(f)
 
+f = Method(void, 'GetControlRect', (ControlHandle, 'ctl', InMode), (Rect, 'rect', OutMode))
+methods.append(f)
+
 DisposeControl_body = """
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
