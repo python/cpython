@@ -104,6 +104,9 @@ _tkinter
     XXX
     XXX That was on Win98SE.  On Win2K:
     XXX all.tcl   Total 10480   Passed 9781    Skipped 698     Failed  1
+    XXX
+    XXX On WinXP:
+    XXX all.tcl:  Total 10480   Passed 9768    Skipped 710     Failed  2
 
     Build Tk
     --------
@@ -127,6 +130,43 @@ _tkinter
     above).  This is needed so the installer can copy various Tcl/Tk
     files into the Python distribution.
 
+tix
+    Tix, the Tk Interface eXtension, is a powerful set of user
+    interface components that expands the capabilities of your Tcl/Tk
+    and Python applications.
+
+    Get source
+    ----------
+    Go to
+        http://tix.sourceforge.net/
+    and download tix-8.1.4.tar.gz from the files section.
+    Unpack into
+        dist\tix-8.1.4
+
+    Edit win\common.mak in this directory, to set the following variables:
+        TCL_VER=8.4
+	INSTALLDIR=..\..\tix-8.1.4
+	TCL_PATCH=3
+	RMDIR=$(TKDIR)\win\rmd.bat
+	MKDIR=$(TKDIR)\win\mkd.bat
+
+    Edit win\makefile.vc:
+        TOOLS32 = <directory of bin\cl.exe>
+	TOOLS32_rc = <directory of bin\rc.exe>
+
+    Edit win\tk8.4\pkgindex.tcl, to replace
+        lappend dirs ../../Dlls
+    with
+	lappend dirs [file join [file dirname [info nameofexe]] DLLs]
+
+    nmake -f makefile.vc
+    nmake -f makefile.vc install
+
+    The tix8184.dll goes to DLLs, the tix8.1 subdirectory goes to 
+    tcl. It differs from the standard tix8.1 subdirectory only in 
+    fixing the path to the DLLs directory.
+
+    To test whether this works, execute Demo/tix/tixwidgets.py.
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
@@ -308,7 +348,6 @@ readme.txt there first.
 
 HTML Help
 ---------
-
 The compiled HTML help file is built from the HTML pages by the script
 Doc/tools/prechm.py. This creates project files which must be compiled
 with MS HTML Help Workshop.
