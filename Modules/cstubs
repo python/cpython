@@ -78,11 +78,8 @@ extern int gewrite();
 extern int gettp();
 #endif
 
-#include "allobjects.h"
-#include "import.h"
-#include "modsupport.h"
+#include "Python.h"
 #include "cgensupport.h"
-#include "ceval.h"
 
 /*
 Some stubs are too complicated for the stub generator.
@@ -93,20 +90,20 @@ generator can include it in the table of functions.
 
 % qread
 
-static object *
+static PyObject *
 gl_qread(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long retval;
 	short arg1 ;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	retval = qread( & arg1 );
-	END_SAVE
-	{ object *v = newtupleobject( 2 );
+	Py_END_ALLOW_THREADS
+	{ PyObject *v = PyTuple_New( 2 );
 	  if (v == NULL) return NULL;
-	  settupleitem(v, 0, mknewlongobject(retval));
-	  settupleitem(v, 1, mknewshortobject(arg1));
+	  PyTuple_SetItem(v, 0, mknewlongobject(retval));
+	  PyTuple_SetItem(v, 1, mknewshortobject(arg1));
 	  return v;
 	}
 }
@@ -125,35 +122,35 @@ and for each point v3d() is called.
 
 % varray
 
-static object *
+static PyObject *
 gl_varray(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v, *w=NULL;
+	PyObject *v, *w=NULL;
 	int i, n, width;
 	double vec[3];
-	object * (*getitem) FPROTO((object *, int));
+	PyObject * (*getitem) Py_FPROTO((PyObject *, int));
 	
-	if (!getiobjectarg(args, 1, 0, &v))
+	if (!PyArg_GetObject(args, 1, 0, &v))
 		return NULL;
 	
-	if (is_listobject(v)) {
-		n = getlistsize(v);
-		getitem = getlistitem;
+	if (PyList_Check(v)) {
+		n = PyList_Size(v);
+		getitem = PyList_GetItem;
 	}
-	else if (is_tupleobject(v)) {
-		n = gettuplesize(v);
-		getitem = gettupleitem;
+	else if (PyTuple_Check(v)) {
+		n = PyTuple_Size(v);
+		getitem = PyTuple_GetItem;
 	}
 	else {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	
 	if (n == 0) {
-		INCREF(None);
-		return None;
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	if (n > 0)
 		w = (*getitem)(v, 0);
@@ -161,11 +158,11 @@ gl_varray(self, args)
 	width = 0;
 	if (w == NULL) {
 	}
-	else if (is_listobject(w)) {
-		width = getlistsize(w);
+	else if (PyList_Check(w)) {
+		width = PyList_Size(w);
 	}
-	else if (is_tupleobject(w)) {
-		width = gettuplesize(w);
+	else if (PyTuple_Check(w)) {
+		width = PyTuple_Size(w);
 	}
 	
 	switch (width) {
@@ -175,19 +172,19 @@ gl_varray(self, args)
 	case 3:
 		break;
 	default:
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	
 	for (i = 0; i < n; i++) {
 		w = (*getitem)(v, i);
-		if (!getidoublearray(w, 1, 0, width, vec))
+		if (!PyArg_GetDoubleArray(w, 1, 0, width, vec))
 			return NULL;
 		v3d(vec);
 	}
 	
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /*
@@ -203,24 +200,24 @@ vnarray and nvarray differ only in the order of the vector and normal in
 the pair: vnarray expects (v, n) while nvarray expects (n, v).
 */
 
-static object *gen_nvarray(); /* Forward */
+static PyObject *gen_nvarray(); /* Forward */
 
 % nvarray
 
-static object *
+static PyObject *
 gl_nvarray(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return gen_nvarray(args, 0);
 }
 
 % vnarray
 
-static object *
+static PyObject *
 gl_vnarray(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return gen_nvarray(args, 1);
 }
@@ -228,49 +225,49 @@ gl_vnarray(self, args)
 /* Generic, internal version of {nv,nv}array: inorm indicates the
    argument order, 0: normal first, 1: vector first. */
 
-static object *
+static PyObject *
 gen_nvarray(args, inorm)
-	object *args;
+	PyObject *args;
 	int inorm;
 {
-	object *v, *w, *wnorm, *wvec;
+	PyObject *v, *w, *wnorm, *wvec;
 	int i, n;
 	float norm[3], vec[3];
-	object * (*getitem) FPROTO((object *, int));
+	PyObject * (*getitem) Py_FPROTO((PyObject *, int));
 	
-	if (!getiobjectarg(args, 1, 0, &v))
+	if (!PyArg_GetObject(args, 1, 0, &v))
 		return NULL;
 	
-	if (is_listobject(v)) {
-		n = getlistsize(v);
-		getitem = getlistitem;
+	if (PyList_Check(v)) {
+		n = PyList_Size(v);
+		getitem = PyList_GetItem;
 	}
-	else if (is_tupleobject(v)) {
-		n = gettuplesize(v);
-		getitem = gettupleitem;
+	else if (PyTuple_Check(v)) {
+		n = PyTuple_Size(v);
+		getitem = PyTuple_GetItem;
 	}
 	else {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	
 	for (i = 0; i < n; i++) {
 		w = (*getitem)(v, i);
-		if (!is_tupleobject(w) || gettuplesize(w) != 2) {
-			err_badarg();
+		if (!PyTuple_Check(w) || PyTuple_Size(w) != 2) {
+			PyErr_BadArgument();
 			return NULL;
 		}
-		wnorm = gettupleitem(w, inorm);
-		wvec = gettupleitem(w, 1 - inorm);
-		if (!getifloatarray(wnorm, 1, 0, 3, norm) ||
-			!getifloatarray(wvec, 1, 0, 3, vec))
+		wnorm = PyTuple_GetItem(w, inorm);
+		wvec = PyTuple_GetItem(w, 1 - inorm);
+		if (!PyArg_GetFloatArray(wnorm, 1, 0, 3, norm) ||
+			!PyArg_GetFloatArray(wvec, 1, 0, 3, vec))
 			return NULL;
 		n3f(norm);
 		v3f(vec);
 	}
 	
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* nurbssurface(s_knots[], t_knots[], ctl[][], s_order, t_order, type).
@@ -280,10 +277,10 @@ gen_nvarray(args, inorm)
 
 % nurbssurface
 
-static object *
+static PyObject *
 gl_nurbssurface(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long arg1 ;
 	double * arg2 ;
@@ -297,58 +294,58 @@ gl_nurbssurface(self, args)
 	long s_byte_stride, t_byte_stride;
 	long s_nctl, t_nctl;
 	long s, t;
-	object *v, *w, *pt;
+	PyObject *v, *w, *pt;
 	double *pnext;
-	if (!getilongarraysize(args, 6, 0, &arg1))
+	if (!PyArg_GetLongArraySize(args, 6, 0, &arg1))
 		return NULL;
-	if ((arg2 = NEW(double, arg1 )) == NULL) {
-		return err_nomem();
+	if ((arg2 = PyMem_NEW(double, arg1 )) == NULL) {
+		return PyErr_NoMemory();
 	}
-	if (!getidoublearray(args, 6, 0, arg1 , arg2))
+	if (!PyArg_GetDoubleArray(args, 6, 0, arg1 , arg2))
 		return NULL;
-	if (!getilongarraysize(args, 6, 1, &arg3))
+	if (!PyArg_GetLongArraySize(args, 6, 1, &arg3))
 		return NULL;
-	if ((arg4 = NEW(double, arg3 )) == NULL) {
-		return err_nomem();
+	if ((arg4 = PyMem_NEW(double, arg3 )) == NULL) {
+		return PyErr_NoMemory();
 	}
-	if (!getidoublearray(args, 6, 1, arg3 , arg4))
+	if (!PyArg_GetDoubleArray(args, 6, 1, arg3 , arg4))
 		return NULL;
-	if (!getilongarg(args, 6, 3, &arg6))
+	if (!PyArg_GetLong(args, 6, 3, &arg6))
 		return NULL;
-	if (!getilongarg(args, 6, 4, &arg7))
+	if (!PyArg_GetLong(args, 6, 4, &arg7))
 		return NULL;
-	if (!getilongarg(args, 6, 5, &arg8))
+	if (!PyArg_GetLong(args, 6, 5, &arg8))
 		return NULL;
 	if (arg8 == N_XYZ)
 		ncoords = 3;
 	else if (arg8 == N_XYZW)
 		ncoords = 4;
 	else {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	s_nctl = arg1 - arg6;
 	t_nctl = arg3 - arg7;
-	if (!getiobjectarg(args, 6, 2, &v))
+	if (!PyArg_GetObject(args, 6, 2, &v))
 		return NULL;
-	if (!is_listobject(v) || getlistsize(v) != s_nctl) {
-		err_badarg();
+	if (!PyList_Check(v) || PyList_Size(v) != s_nctl) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	if ((arg5 = NEW(double, s_nctl*t_nctl*ncoords )) == NULL) {
-		return err_nomem();
+	if ((arg5 = PyMem_NEW(double, s_nctl*t_nctl*ncoords )) == NULL) {
+		return PyErr_NoMemory();
 	}
 	pnext = arg5;
 	for (s = 0; s < s_nctl; s++) {
-		w = getlistitem(v, s);
-		if (w == NULL || !is_listobject(w) ||
-					getlistsize(w) != t_nctl) {
-			err_badarg();
+		w = PyList_GetItem(v, s);
+		if (w == NULL || !PyList_Check(w) ||
+					PyList_Size(w) != t_nctl) {
+			PyErr_BadArgument();
 			return NULL;
 		}
 		for (t = 0; t < t_nctl; t++) {
-			pt = getlistitem(w, t);
-			if (!getidoublearray(pt, 1, 0, ncoords, pnext))
+			pt = PyList_GetItem(w, t);
+			if (!PyArg_GetDoubleArray(pt, 1, 0, ncoords, pnext))
 				return NULL;
 			pnext += ncoords;
 		}
@@ -357,11 +354,11 @@ gl_nurbssurface(self, args)
 	t_byte_stride = s_byte_stride * s_nctl;
 	nurbssurface( arg1 , arg2 , arg3 , arg4 ,
 		s_byte_stride , t_byte_stride , arg5 , arg6 , arg7 , arg8 );
-	DEL(arg2);
-	DEL(arg4);
-	DEL(arg5);
-	INCREF(None);
-	return None;
+	PyMem_DEL(arg2);
+	PyMem_DEL(arg4);
+	PyMem_DEL(arg5);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* nurbscurve(knots, ctlpoints, order, type).
@@ -369,10 +366,10 @@ gl_nurbssurface(self, args)
 
 %nurbscurve
 
-static object *
+static PyObject *
 gl_nurbscurve(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long arg1 ;
 	double * arg2 ;
@@ -382,49 +379,49 @@ gl_nurbscurve(self, args)
 	long arg6 ;
 	int ncoords, npoints;
 	int i;
-	object *v;
+	PyObject *v;
 	double *pnext;
-	if (!getilongarraysize(args, 4, 0, &arg1))
+	if (!PyArg_GetLongArraySize(args, 4, 0, &arg1))
 		return NULL;
-	if ((arg2 = NEW(double, arg1 )) == NULL) {
-		return err_nomem();
+	if ((arg2 = PyMem_NEW(double, arg1 )) == NULL) {
+		return PyErr_NoMemory();
 	}
-	if (!getidoublearray(args, 4, 0, arg1 , arg2))
+	if (!PyArg_GetDoubleArray(args, 4, 0, arg1 , arg2))
 		return NULL;
-	if (!getilongarg(args, 4, 2, &arg5))
+	if (!PyArg_GetLong(args, 4, 2, &arg5))
 		return NULL;
-	if (!getilongarg(args, 4, 3, &arg6))
+	if (!PyArg_GetLong(args, 4, 3, &arg6))
 		return NULL;
 	if (arg6 == N_ST)
 		ncoords = 2;
 	else if (arg6 == N_STW)
 		ncoords = 3;
 	else {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	npoints = arg1 - arg5;
-	if (!getiobjectarg(args, 4, 1, &v))
+	if (!PyArg_GetObject(args, 4, 1, &v))
 		return NULL;
-	if (!is_listobject(v) || getlistsize(v) != npoints) {
-		err_badarg();
+	if (!PyList_Check(v) || PyList_Size(v) != npoints) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	if ((arg4 = NEW(double, npoints*ncoords )) == NULL) {
-		return err_nomem();
+	if ((arg4 = PyMem_NEW(double, npoints*ncoords )) == NULL) {
+		return PyErr_NoMemory();
 	}
 	pnext = arg4;
 	for (i = 0; i < npoints; i++) {
-		if (!getidoublearray(getlistitem(v, i), 1, 0, ncoords, pnext))
+		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i), 1, 0, ncoords, pnext))
 			return NULL;
 		pnext += ncoords;
 	}
 	arg3 = (sizeof(double)) * ncoords;
 	nurbscurve( arg1 , arg2 , arg3 , arg4 , arg5 , arg6 );
-	DEL(arg2);
-	DEL(arg4);
-	INCREF(None);
-	return None;
+	PyMem_DEL(arg2);
+	PyMem_DEL(arg4);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* pwlcurve(points, type).
@@ -432,44 +429,44 @@ gl_nurbscurve(self, args)
 
 %pwlcurve
 
-static object *
+static PyObject *
 gl_pwlcurve(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 	long type;
 	double *data, *pnext;
 	long npoints, ncoords;
 	int i;
-	if (!getiobjectarg(args, 2, 0, &v))
+	if (!PyArg_GetObject(args, 2, 0, &v))
 		return NULL;
-	if (!getilongarg(args, 2, 1, &type))
+	if (!PyArg_GetLong(args, 2, 1, &type))
 		return NULL;
-	if (!is_listobject(v)) {
-		err_badarg();
+	if (!PyList_Check(v)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	npoints = getlistsize(v);
+	npoints = PyList_Size(v);
 	if (type == N_ST)
 		ncoords = 2;
 	else {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
-	if ((data = NEW(double, npoints*ncoords)) == NULL) {
-		return err_nomem();
+	if ((data = PyMem_NEW(double, npoints*ncoords)) == NULL) {
+		return PyErr_NoMemory();
 	}
 	pnext = data;
 	for (i = 0; i < npoints; i++) {
-		if (!getidoublearray(getlistitem(v, i), 1, 0, ncoords, pnext))
+		if (!PyArg_GetDoubleArray(PyList_GetItem(v, i), 1, 0, ncoords, pnext))
 			return NULL;
 		pnext += ncoords;
 	}
 	pwlcurve(npoints, data, sizeof(double)*ncoords, type);
-	DEL(data);
-	INCREF(None);
-	return None;
+	PyMem_DEL(data);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
@@ -478,37 +475,37 @@ gl_pwlcurve(self, args)
 static short *pickbuffer = NULL;
 static long pickbuffersize;
 
-static object *
+static PyObject *
 pick_select(args, func)
-	object *args;
+	PyObject *args;
 	void (*func)();
 {
-	if (!getilongarg(args, 1, 0, &pickbuffersize))
+	if (!PyArg_GetLong(args, 1, 0, &pickbuffersize))
 		return NULL;
 	if (pickbuffer != NULL) {
-		err_setstr(RuntimeError,
+		PyErr_SetString(PyExc_RuntimeError,
 			"pick/gselect: already picking/selecting");
 		return NULL;
 	}
-	if ((pickbuffer = NEW(short, pickbuffersize)) == NULL) {
-		return err_nomem();
+	if ((pickbuffer = PyMem_NEW(short, pickbuffersize)) == NULL) {
+		return PyErr_NoMemory();
 	}
 	(*func)(pickbuffer, pickbuffersize);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 endpick_select(args, func)
-	object *args;
+	PyObject *args;
 	long (*func)();
 {
-	object *v, *w;
+	PyObject *v, *w;
 	int i, nhits, n;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (pickbuffer == NULL) {
-		err_setstr(RuntimeError,
+		PyErr_SetString(PyExc_RuntimeError,
 			"endpick/endselect: not in pick/select mode");
 		return NULL;
 	}
@@ -521,20 +518,20 @@ endpick_select(args, func)
 	for (; nhits > 0; nhits--) {
 		n += 1 + pickbuffer[n];
 	}
-	v = newlistobject(n);
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
 	/* XXX Could do it nicer and interpret the data structure here,
 	   returning a list of lists. But this can be done in Python... */
 	for (i = 0; i < n; i++) {
-		w = newintobject((long)pickbuffer[i]);
+		w = PyInt_FromLong((long)pickbuffer[i]);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		PyList_SetItem(v, i, w);
 	}
-	DEL(pickbuffer);
+	PyMem_DEL(pickbuffer);
 	pickbuffer = NULL;
 	return v;
 }
@@ -543,22 +540,22 @@ extern void pick(), gselect();
 extern long endpick(), endselect();
 
 %pick
-static object *gl_pick(self, args) object *self, *args; {
+static PyObject *gl_pick(self, args) PyObject *self, *args; {
 	return pick_select(args, pick);
 }
 
 %endpick
-static object *gl_endpick(self, args) object *self, *args; {
+static PyObject *gl_endpick(self, args) PyObject *self, *args; {
 	return endpick_select(args, endpick);
 }
 
 %gselect
-static object *gl_gselect(self, args) object *self, *args; {
+static PyObject *gl_gselect(self, args) PyObject *self, *args; {
 	return pick_select(args, gselect);
 }
 
 %endselect
-static object *gl_endselect(self, args) object *self, *args; {
+static PyObject *gl_endselect(self, args) PyObject *self, *args; {
 	return endpick_select(args, endselect);
 }
 
@@ -569,26 +566,26 @@ static object *gl_endselect(self, args) object *self, *args; {
 
 % getmatrix float r[16]
 
-static object *
+static PyObject *
 gl_getmatrix(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	Matrix arg1;
-	object *v, *w;
+	PyObject *v, *w;
 	int i, j;
 	getmatrix( arg1 );
-	v = newlistobject(16);
+	v = PyList_New(16);
 	if (v == NULL) {
-		return err_nomem();
+		return PyErr_NoMemory();
 	}
 	for (i = 0; i < 4; i++) for (j = 0; j < 4; j++) {
 		w = mknewfloatobject(arg1[i][j]);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i*4+j, w);
+		PyList_SetItem(v, i*4+j, w);
 	}
 	return v;
 }
@@ -599,35 +596,35 @@ gl_getmatrix(self, args)
 
 % altgetmatrix float r[4][4]
 
-static object *
+static PyObject *
 gl_altgetmatrix(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	Matrix arg1;
-	object *v, *w;
+	PyObject *v, *w;
 	int i, j;
 	getmatrix( arg1 );
-	v = newlistobject(4);
+	v = PyList_New(4);
 	if (v == NULL) {
 		return NULL;
 	}
 	for (i = 0; i < 4; i++) {
-		w = newlistobject(4);
+		w = PyList_New(4);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		PyList_SetItem(v, i, w);
 	}
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
 			w = mknewfloatobject(arg1[i][j]);
 			if (w == NULL) {
-				DECREF(v);
+				Py_DECREF(v);
 				return NULL;
 			}
-			setlistitem(getlistitem(v, i), j, w);
+			PyList_SetItem(PyList_GetItem(v, i), j, w);
 		}
 	}
 	return v;
@@ -635,99 +632,99 @@ gl_altgetmatrix(self, args)
 
 % lrectwrite
 
-static object *
+static PyObject *
 gl_lrectwrite(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	short x1 ;
 	short y1 ;
 	short x2 ;
 	short y2 ;
 	string parray ;
-	object *s;
+	PyObject *s;
 #if 0
 	int pixcount;
 #endif
-	if (!getishortarg(args, 5, 0, &x1))
+	if (!PyArg_GetShort(args, 5, 0, &x1))
 		return NULL;
-	if (!getishortarg(args, 5, 1, &y1))
+	if (!PyArg_GetShort(args, 5, 1, &y1))
 		return NULL;
-	if (!getishortarg(args, 5, 2, &x2))
+	if (!PyArg_GetShort(args, 5, 2, &x2))
 		return NULL;
-	if (!getishortarg(args, 5, 3, &y2))
+	if (!PyArg_GetShort(args, 5, 3, &y2))
 		return NULL;
-	if (!getistringarg(args, 5, 4, &parray))
+	if (!PyArg_GetString(args, 5, 4, &parray))
 		return NULL;
-	if (!getiobjectarg(args, 5, 4, &s))
+	if (!PyArg_GetObject(args, 5, 4, &s))
 		return NULL;
 #if 0
 /* Don't check this, it breaks experiments with pixmode(PM_SIZE, ...) */
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
-	if (!is_stringobject(s) || getstringsize(s) != pixcount*sizeof(long)) {
-		err_setstr(RuntimeError,
+	if (!PyString_Check(s) || PyString_Size(s) != pixcount*sizeof(long)) {
+		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to lrectwrite has wrong size");
 		return NULL;
 	}
 #endif
 	lrectwrite( x1 , y1 , x2 , y2 , (unsigned long *) parray );
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 % lrectread
 
-static object *
+static PyObject *
 gl_lrectread(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	short x1 ;
 	short y1 ;
 	short x2 ;
 	short y2 ;
-	object *parray;
+	PyObject *parray;
 	int pixcount;
-	if (!getishortarg(args, 4, 0, &x1))
+	if (!PyArg_GetShort(args, 4, 0, &x1))
 		return NULL;
-	if (!getishortarg(args, 4, 1, &y1))
+	if (!PyArg_GetShort(args, 4, 1, &y1))
 		return NULL;
-	if (!getishortarg(args, 4, 2, &x2))
+	if (!PyArg_GetShort(args, 4, 2, &x2))
 		return NULL;
-	if (!getishortarg(args, 4, 3, &y2))
+	if (!PyArg_GetShort(args, 4, 3, &y2))
 		return NULL;
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
-	parray = newsizedstringobject((char *)NULL, pixcount*sizeof(long));
+	parray = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (parray == NULL)
 		return NULL; /* No memory */
-	lrectread(x1, y1, x2, y2, (unsigned long *) getstringvalue(parray));
+	lrectread(x1, y1, x2, y2, (unsigned long *) PyString_AsString(parray));
 	return parray;
 }
 
 % readdisplay
 
-static object *
+static PyObject *
 gl_readdisplay(self, args)
-	object *self;
-        object *args;
+	PyObject *self;
+        PyObject *args;
 {
         short x1, y1, x2, y2;
 	unsigned long *parray, hints;
 	long size, size_ret;
-	object *rv;
+	PyObject *rv;
 
-	if ( !getargs(args, "hhhhl", &x1, &y1, &x2, &y2, &hints) )
+	if ( !PyArg_Parse(args, "hhhhl", &x1, &y1, &x2, &y2, &hints) )
 	  return 0;
 	size = (long)(x2+1-x1) * (long)(y2+1-y1);
-	rv = newsizedstringobject((char *)NULL, size*sizeof(long));
+	rv = PyString_FromStringAndSize((char *)NULL, size*sizeof(long));
 	if ( rv == NULL )
 	  return NULL;
-	parray = (unsigned long *)getstringvalue(rv);
+	parray = (unsigned long *)PyString_AsString(rv);
 	size_ret = readdisplay(x1, y1, x2, y2, parray, hints);
 	if ( size_ret != size ) {
 	    printf("gl_readdisplay: got %ld pixels, expected %ld\n",
 		   size_ret, size);
-	    err_setstr(RuntimeError, "readdisplay returned unexpected length");
+	    PyErr_SetString(PyExc_RuntimeError, "readdisplay returned unexpected length");
 	    return NULL;
 	}
 	return rv;
@@ -751,45 +748,45 @@ gl_readdisplay(self, args)
 
 % packrect
 
-static object *
+static PyObject *
 gl_packrect(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long width, height, packfactor;
 	char *s;
-	object *unpacked, *packed;
+	PyObject *unpacked, *packed;
 	int pixcount, packedcount, x, y, r, g, b;
 	unsigned long pixel;
 	unsigned char *p;
 	unsigned long *parray;
-	if (!getilongarg(args, 4, 0, &width))
+	if (!PyArg_GetLong(args, 4, 0, &width))
 		return NULL;
-	if (!getilongarg(args, 4, 1, &height))
+	if (!PyArg_GetLong(args, 4, 1, &height))
 		return NULL;
-	if (!getilongarg(args, 4, 2, &packfactor))
+	if (!PyArg_GetLong(args, 4, 2, &packfactor))
 		return NULL;
-	if (!getistringarg(args, 4, 3, &s)) /* For type checking only */
+	if (!PyArg_GetString(args, 4, 3, &s)) /* For type checking only */
 		return NULL;
-	if (!getiobjectarg(args, 4, 3, &unpacked))
+	if (!PyArg_GetObject(args, 4, 3, &unpacked))
 		return NULL;
 	if (width <= 0 || height <= 0 || packfactor <= 0) {
-		err_setstr(RuntimeError, "packrect args must be > 0");
+		PyErr_SetString(PyExc_RuntimeError, "packrect args must be > 0");
 		return NULL;
 	}
 	pixcount = width*height;
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
-	if (getstringsize(unpacked) != pixcount*sizeof(long)) {
-		err_setstr(RuntimeError,
+	if (PyString_Size(unpacked) != pixcount*sizeof(long)) {
+		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to packrect has wrong size");
 		return NULL;
 	}
-	packed = newsizedstringobject((char *)NULL, packedcount);
+	packed = PyString_FromStringAndSize((char *)NULL, packedcount);
 	if (packed == NULL)
 		return NULL;
-	parray = (unsigned long *) getstringvalue(unpacked);
-	p = (unsigned char *) getstringvalue(packed);
+	parray = (unsigned long *) PyString_AsString(unpacked);
+	p = (unsigned char *) PyString_AsString(packed);
 	for (y = 0; y < height; y += packfactor, parray += packfactor*width) {
 		for (x = 0; x < width; x += packfactor) {
 			pixel = parray[x];
@@ -807,14 +804,14 @@ gl_packrect(self, args)
 static unsigned long unpacktab[256];
 static int unpacktab_inited = 0;
 
-static object *
+static PyObject *
 gl_unpackrect(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long width, height, packfactor;
 	char *s;
-	object *unpacked, *packed;
+	PyObject *unpacked, *packed;
 	int pixcount, packedcount;
 	register unsigned char *p;
 	register unsigned long *parray;
@@ -824,33 +821,33 @@ gl_unpackrect(self, args)
 			unpacktab[white] = white * 0x010101L;
 		unpacktab_inited++;
 	}
-	if (!getilongarg(args, 4, 0, &width))
+	if (!PyArg_GetLong(args, 4, 0, &width))
 		return NULL;
-	if (!getilongarg(args, 4, 1, &height))
+	if (!PyArg_GetLong(args, 4, 1, &height))
 		return NULL;
-	if (!getilongarg(args, 4, 2, &packfactor))
+	if (!PyArg_GetLong(args, 4, 2, &packfactor))
 		return NULL;
-	if (!getistringarg(args, 4, 3, &s)) /* For type checking only */
+	if (!PyArg_GetString(args, 4, 3, &s)) /* For type checking only */
 		return NULL;
-	if (!getiobjectarg(args, 4, 3, &packed))
+	if (!PyArg_GetObject(args, 4, 3, &packed))
 		return NULL;
 	if (width <= 0 || height <= 0 || packfactor <= 0) {
-		err_setstr(RuntimeError, "packrect args must be > 0");
+		PyErr_SetString(PyExc_RuntimeError, "packrect args must be > 0");
 		return NULL;
 	}
 	pixcount = width*height;
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
-	if (getstringsize(packed) != packedcount) {
-		err_setstr(RuntimeError,
+	if (PyString_Size(packed) != packedcount) {
+		PyErr_SetString(PyExc_RuntimeError,
 			   "string arg to unpackrect has wrong size");
 		return NULL;
 	}
-	unpacked = newsizedstringobject((char *)NULL, pixcount*sizeof(long));
+	unpacked = PyString_FromStringAndSize((char *)NULL, pixcount*sizeof(long));
 	if (unpacked == NULL)
 		return NULL;
-	parray = (unsigned long *) getstringvalue(unpacked);
-	p = (unsigned char *) getstringvalue(packed);
+	parray = (unsigned long *) PyString_AsString(unpacked);
+	p = (unsigned char *) PyString_AsString(packed);
 	if (packfactor == 1 && width*height > 0) {
 		/* Just expand bytes to longs */
 		register int x = width * height;
@@ -878,14 +875,14 @@ gl_unpackrect(self, args)
 }
 
 % gversion
-static object *
+static PyObject *
 gl_gversion(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char buf[20];
 	gversion(buf);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 
