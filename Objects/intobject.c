@@ -434,38 +434,32 @@ int_mul(PyObject *v, PyObject *w)
 }
 
 static int
-i_divmod(register long xi, register long yi,
+i_divmod(register long x, register long y,
          long *p_xdivy, long *p_xmody)
 {
 	long xdivy, xmody;
 	
-	if (yi == 0) {
+	if (y == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
 				"integer division or modulo by zero");
 		return -1;
 	}
-	if (yi < 0) {
-		if (xi < 0) {
-			if (yi == -1 && -xi < 0) {
-				/* most negative / -1 */
-				err_ovf("integer division");
-				return -1;
-			}
-			xdivy = -xi / -yi;
-		}
-		else
-			xdivy = - (xi / -yi);
+	/* (-sys.maxint-1)/-1 is the only overflow case. */
+	if (y == -1 && x < 0 && x == -x) {
+		err_ovf("integer division");
+		return -1;
 	}
-	else {
-		if (xi < 0)
-			xdivy = - (-xi / yi);
-		else
-			xdivy = xi / yi;
-	}
-	xmody = xi - xdivy*yi;
-	if ((xmody < 0 && yi > 0) || (xmody > 0 && yi < 0)) {
-		xmody += yi;
-		xdivy -= 1;
+	xdivy = x / y;
+	xmody = x - xdivy * y;
+	/* If the signs of x and y differ, and the remainder is non-0,
+	 * C89 doesn't define whether xdivy is now the floor or the
+	 * ceiling of the infinitely precise quotient.  We want the floor,
+	 * and we have it iff the remainder's sign matches y's.
+	 */
+	if (xmody && ((y ^ xmody) < 0) /* i.e. and signs differ */) {
+		xmody += y;
+		--xdivy;
+		assert(xmody && ((y ^ xmody) >= 0));
 	}
 	*p_xdivy = xdivy;
 	*p_xmody = xmody;
