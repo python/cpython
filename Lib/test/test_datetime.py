@@ -2592,6 +2592,13 @@ class TestTimezoneConversions(unittest.TestCase):
 
             for during in dston, dston + delta, dstoff - delta:
                 self.assertEqual(during.dst(), HOUR)
+
+                # Conversion to our own timezone is always an identity.
+                self.assertEqual(during.astimezone(tz), during)
+                # Conversion to None is always the same as stripping tzinfo.
+                self.assertEqual(during.astimezone(None),
+                                 during.replace(tzinfo=None))
+
                 asutc = during.astimezone(utc)
                 there_and_back = asutc.astimezone(tz)
 
@@ -2648,6 +2655,12 @@ class TestTimezoneConversions(unittest.TestCase):
                 self.assertEqual(outside.dst(), ZERO)
                 there_and_back = outside.astimezone(utc).astimezone(tz)
                 self.assertEqual(outside, there_and_back)
+
+                # Conversion to our own timezone is always an identity.
+                self.assertEqual(outside.astimezone(tz), outside)
+                # Conversion to None is always the same as stripping tzinfo.
+                self.assertEqual(outside.astimezone(None),
+                                 outside.replace(tzinfo=None))
 
     def test_easy(self):
         # Despite the name of this test, the endcases are excruciating.
