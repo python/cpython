@@ -150,6 +150,7 @@ typedef int (*getreadbufferproc) Py_PROTO((PyObject *, int, void **));
 typedef int (*getwritebufferproc) Py_PROTO((PyObject *, int, void **));
 typedef int (*getsegcountproc) Py_PROTO((PyObject *, int *));
 typedef int (*getcharbufferproc) Py_PROTO((PyObject *, int, const char **));
+typedef int (*objobjproc) Py_PROTO((PyObject *, PyObject *));
 
 typedef struct {
 	binaryfunc nb_add;
@@ -185,6 +186,7 @@ typedef struct {
 	intintargfunc sq_slice;
 	intobjargproc sq_ass_item;
 	intintobjargproc sq_ass_slice;
+	objobjproc sq_contains;
 } PySequenceMethods;
 
 typedef struct {
@@ -317,7 +319,11 @@ given type object has a specified feature.
 /* PyBufferProcs contains bf_getcharbuffer */
 #define Py_TPFLAGS_HAVE_GETCHARBUFFER  (1L<<0)
 
-#define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER)
+/* PySequenceMethods contains sq_contains */
+#define Py_TPFLAGS_HAVE_SEQUENCE_IN (1L<<1)
+
+#define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
+                             Py_TPFLAGS_HAVE_SEQUENCE_IN)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
 
