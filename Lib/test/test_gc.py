@@ -171,6 +171,34 @@ def test_del():
     gc.disable()
     apply(gc.set_threshold, thresholds)
 
+class Ouch:
+    n = 0
+    def __del__(self):
+        Ouch.n = Ouch.n + 1
+        if Ouch.n % 7 == 0:
+            gc.collect()
+
+def test_trashcan():
+    # "trashcan" is a hack to prevent stack overflow when deallocating
+    # very deeply nested tuples etc.  It works in part by abusing the
+    # type pointer and refcount fields, and that can yield horrible
+    # problems when gc tries to traverse the structures.
+    # If this test fails (as it does in 2.0, 2.1 and 2.2), it will
+    # most likely die via segfault.
+
+    gc.enable()
+    N = 200
+    for i in range(3):
+        t = []
+        for i in range(N):
+            t = [t, Ouch()]
+        u = []
+        for i in range(N):
+            u = [u, Ouch()]
+        v = {}
+        for i in range(N):
+            v = {1: v, 2: Ouch()}
+    gc.disable()
 
 def test_all():
     gc.collect() # Delete 2nd generation garbage
@@ -187,6 +215,7 @@ def test_all():
     run_test("finalizers", test_finalizer)
     run_test("__del__", test_del)
     run_test("saveall", test_saveall)
+    run_test("trashcan", test_trashcan)
 
 def test():
     if verbose:
