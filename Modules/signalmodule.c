@@ -99,7 +99,7 @@ signal_default_int_handler(PyObject *self, PyObject *args)
 PyDoc_STRVAR(default_int_handler_doc,
 "default_int_handler(...)\n\
 \n\
-The default handler for SIGINT instated by Python.\n\
+The default handler for SIGINT installed by Python.\n\
 It raises KeyboardInterrupt.");
 
 
