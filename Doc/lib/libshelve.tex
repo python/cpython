@@ -33,6 +33,10 @@ list = d.keys() # a list of all existing keys (slow!)
 d.close()       # close it
 \end{verbatim}
 
+In addition to the above, shelve supports all methods that are
+supported by dictionaries.  This eases the transition from dictionary
+based scripts to those requiring persistent storage.
+
 Restrictions:
 
 \begin{itemize}
