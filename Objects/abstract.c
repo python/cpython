@@ -1235,7 +1235,11 @@ PySequence_Tuple(PyObject *v)
 		return null_error();
 
 	/* Special-case the common tuple and list cases, for efficiency. */
-	if (PyTuple_Check(v)) {
+	if (PyTuple_CheckExact(v)) {
+		/* Note that we can't know whether it's safe to return
+		   a tuple *subclass* instance as-is, hence the restriction
+		   to exact tuples here.  In contrasts, lists always make
+		   a copy, so there's need for exactness below. */
 		Py_INCREF(v);
 		return v;
 	}

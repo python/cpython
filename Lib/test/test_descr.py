@@ -1416,7 +1416,7 @@ def inherits():
         verify(v == t)
     a = madtuple((1,2,3,4,5))
     verify(tuple(a) == (1,2,3,4,5))
-    #XXX verify(tuple(a).__class__ is tuple)
+    verify(tuple(a).__class__ is tuple)
     a = madtuple(())
     verify(tuple(a) == ())
     #XXX verify(tuple(a).__class__ is tuple)
