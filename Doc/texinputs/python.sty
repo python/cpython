@@ -261,7 +261,11 @@
   \setindexsubitem{(in module #1)}%
   \index{#1@{\py@idxcode{#1}} (#2module)|textbf}%
   \ifpy@UseModuleIndex%
-    \write\modindexfile{\protect\indexentry{#1@{\texttt {#1}}}{\thepage}}%
+    \@ifundefined{py@modplat@\py@thismodulekey}{
+      \write\modindexfile{\protect\indexentry{#1@{\texttt{#1}}}{\thepage}}%
+    }{\write\modindexfile{\protect\indexentry{#1@{\texttt{#1} %
+        \emph{(\platformof[\py@thismodulekey]{})}}}{\thepage}}%
+    }
   \fi%
 }
 
@@ -287,27 +291,56 @@
 
 % Module synopsis processing -----------------------------------------------
 %
+\newcommand{\py@thisclass}{}
+\newcommand{\py@thismodule}{}
+\newcommand{\py@thismodulekey}{}
+\newcommand{\py@thismoduletype}{}
+
 \newcommand{\py@standardIndexModule}[1]{\stmodindex{#1}}
 \newcommand{\py@builtinIndexModule}[1]{\bimodindex{#1}}
 \newcommand{\py@extensionIndexModule}[1]{\exmodindex{#1}}
 \newcommand{\py@IndexModule}[1]{\modindex{#1}}
 
-\newif\ifpy@HaveModSynopsis\py@HaveModSynopsisfalse
-\newif\ifpy@ModSynopsisFileIsOpen\py@ModSynopsisFileIsOpenfalse
+\newif\ifpy@HaveModSynopsis       \py@HaveModSynopsisfalse
+\newif\ifpy@ModSynopsisFileIsOpen \py@ModSynopsisFileIsOpenfalse
+\newif\ifpy@HaveModPlatform       \py@HaveModPlatformfalse
 
 % \declaremodule[key]{type}{name}
 \newcommand{\declaremodule}[3][\py@modulebadkey]{
   \py@openModSynopsisFile
   \renewcommand{\py@thismoduletype}{#2}
-  \csname py@#2IndexModule\endcsname{#3}
   \ifx\py@modulebadkey#1
     \renewcommand{\py@thismodulekey}{#3}
   \else
     \renewcommand{\py@thismodulekey}{#1}
   \fi
+  \csname py@#2IndexModule\endcsname{#3}
   \label{module-\py@thismodulekey}
-  \py@HaveModSynopsistrue
 }
+\newif\ifpy@ModPlatformFileIsOpen \py@ModPlatformFileIsOpenfalse
+\newcommand{\py@ModPlatformFilename}{\jobname.pla}
+\newcommand{\platform}[1]{
+  \ifpy@ModPlatformFileIsOpen\else
+    \newwrite\py@ModPlatformFile
+    \openout\py@ModPlatformFile=\py@ModPlatformFilename
+    \py@ModPlatformFileIsOpentrue
+  \fi
+  \@ifundefined{py@modplat@\py@thismodulekey}{
+    \py@writeModPlatformFile{%
+      \newcommand{\csname py@modplat@\py@thismodulekey\endcsname}{#1}}%
+  }{\py@writeModPlatformFile{%
+      \newcommand{\string\py@modplat@\py@thismodulekey}{#1}%
+    }
+  }
+}
+\InputIfFileExists{\jobname.pla}{}{}
+\newcommand{\platformof}[2][\py@modulebadkey]{%
+  \ifx\py@modulebadkey#1 \def\py@key{#2}%
+  \else \def\py@key{#1}%
+  \fi%
+  \csname py@modplat@\py@key\endcsname%
+}
+\newcommand{\ignorePlatformAnnotation}[1]{}
 
 % \moduleauthor{name}{email}
 \newcommand{\moduleauthor}[2]{}
@@ -319,6 +352,7 @@
 \newcommand{\py@defsynopsis}{Module has no synopsis.}
 \newcommand{\py@modulesynopsis}{\py@defsynopsis}
 \newcommand{\modulesynopsis}[1]{
+  \py@HaveModSynopsistrue
   \renewcommand{\py@modulesynopsis}{#1}
 }
 
@@ -355,6 +389,14 @@
 }
 \AtEndDocument{\py@ProcessModSynopsis\py@closeModSynopsisFile}
 
+
+\long\def\py@writeModPlatformFile#1{%
+  \protected@write\py@ModPlatformFile%
+    {\let\label\@gobble \let\index\@gobble \let\glossary\@gobble}%
+    {\string#1}%
+}
+
+
 \newcommand{\localmoduletable}{
   \IfFileExists{\py@ModSynopsisFilename}{
     \begin{synopsistable}
@@ -380,11 +422,6 @@
 %
 % --------------------------------------------------------------------------
 
-
-\newcommand{\py@thisclass}{}
-\newcommand{\py@thismodule}{}
-\newcommand{\py@thismodulekey}{}
-\newcommand{\py@thismoduletype}{}
 
 \newcommand{\py@reset}{
   \py@ProcessModSynopsis
