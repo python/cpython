@@ -46,7 +46,7 @@ main(int argc, char **argv)
 
 /* 'self' is not used */
 static PyObject *
-xyzzy_foo(PyObject *self, PyObjecT *args)
+xyzzy_foo(PyObject *self, PyObject* args)
 {
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
