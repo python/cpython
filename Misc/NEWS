@@ -3,6 +3,9 @@ What's New in Python 2.2a2?
 
 Build
 
+- Tim Peters developed a brand new Windows installer using Wise 8.1,
+  generously donated to us by Wise Solutions.
+
 - configure supports a new option --enable-unicode, with the values
   ucs2 and ucs4 (new in 2.2a1). With --disable-unicode, the Unicode
   type and supporting code is completely removed from the interpreter.
