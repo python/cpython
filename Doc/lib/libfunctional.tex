@@ -44,6 +44,7 @@ the \function{int} function where the \var{base} argument defaults to
 two:
   \begin{verbatim}
         >>> basetwo = partial(int, base=2)
+        >>> basetwo.__doc__('Convert base 2 string to an int.')
         >>> basetwo('10010')
         18
   \end{verbatim}
@@ -71,3 +72,10 @@ positional arguments provided to a \class{partial} object call.
 The keyword arguments that will be supplied when the \class{partial} object
 is called.
 \end{memberdesc}
+
+\class{partial} objects are like \class{function} objects in that they are
+callable, weak referencable, and can have attributes.  There are some
+important differences.  For instance, the \member{__name__} and
+\member{__doc__} attributes are not created automatically.  Also,
+\class{partial} objects defined in classes behave like static methods and
+do not transform into bound methods during instance attribute look-up.
