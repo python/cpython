@@ -32,15 +32,7 @@ RUNNING=[]
 
 def buildmwproject(top, creator, projects):
 	"""Build projects with an MW compiler"""
-	if not creator in RUNNING:
-		print 'Please start project mgr with signature', creator,'-'
-		sys.stdin.readline()
-		RUNNING.append(creator)
-	try:
-		mgr = MwShell(creator)
-	except 'foo':
-		print 'Not handled:', creator
-		return
+	mgr = MwShell(creator, start=1)
 	mgr.send_timeout = AppleEvents.kNoTimeOut
 	
 	for file in projects:
@@ -50,8 +42,8 @@ def buildmwproject(top, creator, projects):
 		mgr.open(fss)
 		try:
 			mgr.Make_Project()
-		except MacOS.Error, arg:
-			print '** Failed. Possible error:', arg
+		except aetools.Error, arg:
+			print '** Failed:', arg
 		mgr.Close_Project()
 ##	mgr.quit()
 	

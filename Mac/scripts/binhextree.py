@@ -70,10 +70,8 @@ project_files = {}
 
 def hexbincwprojects(creator):
 	"""Compact and hexbin all files remembered with a given creator"""
-	print 'Please start project mgr with signature', creator,'-'
-	sys.stdin.readline()
 	try:
-		mgr = MwShell(creator)
+		mgr = MwShell(creator, start=1)
 	except 'foo':
 		print 'Not handled:', creator
 		return
