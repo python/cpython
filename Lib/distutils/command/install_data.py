@@ -17,7 +17,7 @@ class install_data (install_misc):
         self._install_dir_from('install_data')
 
     def run (self):
-        self._copy_files(self.distribution.data)
+        self._copy_files(self.distribution.data_files)
 
     def get_inputs (self):
-        return self.distribution.data or []
+        return self.distribution.data_files or []
