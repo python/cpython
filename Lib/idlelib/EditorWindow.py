@@ -16,7 +16,8 @@ import tkMessageBox
 import webbrowser
 import idlever
 import WindowList
-from IdleConf import idleconf
+#from IdleConf import idleconf
+from configHandler import idleConf
 import aboutDialog, textView, configDialog
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -79,7 +80,6 @@ TK_TABWIDTH_DEFAULT = 8
 #$ unix <Control-x>
 
 class EditorWindow:
-
     from Percolator import Percolator
     from ColorDelegator import ColorDelegator
     from UndoDelegator import UndoDelegator
@@ -91,8 +91,7 @@ class EditorWindow:
     vars = {}
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
-        edconf = idleconf.getsection('EditorWindow')
-        coconf = idleconf.getsection('Colors')
+        currentTheme=idleConf.CurrentTheme()
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -102,15 +101,19 @@ class EditorWindow:
         self.top = top = self.Toplevel(root, menu=self.menubar)
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
-        self.text = text = Text(text_frame, name='text', padx=5,
-                      foreground=coconf.getdef('normal-foreground'),
-                      background=coconf.getdef('normal-background'),
-                      highlightcolor=coconf.getdef('hilite-foreground'),
-                      highlightbackground=coconf.getdef('hilite-background'),
-                      insertbackground=coconf.getdef('cursor-background'),
-                      width=edconf.getint('width'),
-                      height=edconf.getint('height'),
-                      wrap="none")
+        self.text = text = Text(text_frame, name='text', padx=5, wrap=None,
+                foreground=idleConf.GetHighlight(currentTheme,
+                        'normal',fgBg='fg'),
+                background=idleConf.GetHighlight(currentTheme,
+                        'normal',fgBg='bg'),
+                highlightcolor=idleConf.GetHighlight(currentTheme,
+                        'hilite',fgBg='fg'),
+                highlightbackground=idleConf.GetHighlight(currentTheme,
+                        'hilite',fgBg='bg'),
+                insertbackground=idleConf.GetHighlight(currentTheme,
+                        'cursor',fgBg='fg'),
+                width=idleConf.GetOption('main','EditorWindow','width'),
+                height=idleConf.GetOption('main','EditorWindow','height') )
 
         self.createmenubar()
         self.apply_bindings()
@@ -144,7 +147,8 @@ class EditorWindow:
         vbar.pack(side=RIGHT, fill=Y)
 
         text['yscrollcommand'] = vbar.set
-        text['font'] = edconf.get('font-name'), edconf.get('font-size')
+        text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
+                idleConf.GetOption('main','EditorWindow','font-size')))
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
@@ -539,7 +543,7 @@ class EditorWindow:
                 traceback.print_exc()
 
     def get_standard_extension_names(self):
-        return idleconf.getextensions()
+        return idleConf.GetExtensions()
 
     def load_extension(self, name):
         mod = __import__(name, globals(), locals(), [])
