@@ -458,6 +458,14 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.values(), ['One Hundred', 'Twenty', 'Three', 'Eleven'])
         self.assertRaises(KeyError, msg.replace_header, 'Fourth', 'Missing')
 
+    def test_broken_base64_payload(self):
+        x = 'AwDp0P7//y6LwKEAcPa/6Q=9'
+        msg = Message()
+        msg['content-type'] = 'audio/x-midi'
+        msg['content-transfer-encoding'] = 'base64'
+        msg.set_payload(x)
+        self.assertEqual(msg.get_payload(decode=True), x)
+
 
 
 # Test the email.Encoders module
