@@ -32,9 +32,6 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \-u
 ]
-[
-.B \-U
-]
 .br
        [
 .B \-v
