@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verbose, verify
 import rfc822, sys
 try:
     from cStringIO import StringIO
@@ -124,3 +124,21 @@ test''', [('', 'goit@lip.com')])
 test('''To: guido@[132.151.1.21]
 
 foo''', [('', 'guido@[132.151.1.21]')])
+
+
+msg = rfc822.Message(StringIO('''To: "last, first" <userid@foo.net>
+
+test
+'''))
+verify(msg.get("to") == '"last, first" <userid@foo.net>')
+verify(msg.get("TO") == '"last, first" <userid@foo.net>')
+verify(msg.get("No-Such-Header") is None)
+verify(msg.get("No-Such-Header", "No-Such-Value") == "No-Such-Value")
+
+verify(not msg.has_key("New-Header"))
+verify(msg.setdefault("New-Header", "New-Value") == "New-Value")
+verify(msg.setdefault("New-Header", "Different-Value") == "New-Value")
+verify(msg["new-header"] == "New-Value")
+
+verify(msg.setdefault("Another-Header") == "")
+verify(msg["another-header"] == "")
