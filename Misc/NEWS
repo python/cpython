@@ -823,7 +823,9 @@ New platforms
 Tests
 -----
 
-Yet to be written.
+- The regrtest.py script's -u option now provides a way to say "allow
+  all resources except this one."  For example, to allow everything
+  except bsddb, give the option '-uall,-bsddb'.
 
 Windows
 -------

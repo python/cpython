@@ -58,6 +58,10 @@ resources to test.  Currently only the following are defined:
 
     bsddb -     It is okay to run the bsddb testsuite, which takes
                 a long time to complete.
+
+To enable all resources except one, use '-uall,-<resource>'.  For
+example, to run all the tests except for the bsddb tests, give the
+option '-uall,-bsddb'.
 """
 
 import sys
@@ -155,11 +159,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             u = [x.lower() for x in a.split(',')]
             for r in u:
                 if r == 'all':
-                    use_resources = RESOURCE_NAMES
-                    break
+                    use_resources[:] = RESOURCE_NAMES
+                    continue
+                remove = False
+                if r[0] == '-':
+                    remove = True
+                    r = r[1:]
                 if r not in RESOURCE_NAMES:
                     usage(1, 'Invalid -u/--use option: ' + a)
-                if r not in use_resources:
+                if remove:
+                    if r in use_resources:
+                        use_resources.remove(r)
+                elif r not in use_resources:
                     use_resources.append(r)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
