@@ -942,6 +942,32 @@ text_move(self, args)
 }
 
 static object *
+text_replace(self, args)
+	textobject *self;
+	object *args;
+{
+	object *text;
+	if (!getstrarg(args, &text))
+		return NULL;
+	tereplace(self->t_text, getstringvalue(text));
+	INCREF(None);
+	return None;
+}
+
+static object *
+text_setactive(self, args)
+	textobject *self;
+	object *args;
+{
+	int flag;
+	if (!getintarg(args, &flag))
+		return NULL;
+	tesetactive(self->t_text, flag);
+	INCREF(None);
+	return None;
+}
+
+static object *
 text_setfocus(self, args)
 	textobject *self;
 	object *args;
@@ -976,14 +1002,18 @@ text_settext(self, args)
 }
 
 static object *
-text_replace(self, args)
+text_setview(self, args)
 	textobject *self;
 	object *args;
 {
-	object *text;
-	if (!getstrarg(args, &text))
-		return NULL;
-	tereplace(self->t_text, getstringvalue(text));
+	int a[4];
+	if (args == None)
+		tenoview(self->t_text);
+	else {
+		if (!getrectarg(args, a))
+			return NULL;
+		tesetview(self->t_text, a[0], a[1], a[2], a[3]);
+	}
 	INCREF(None);
 	return None;
 }
@@ -998,8 +1028,10 @@ static struct methodlist text_methods[] = {
 	"gettext",	text_gettext,
 	"move",		text_move,
 	"replace",	text_replace,
+	"setactive",	text_setactive,
 	"setfocus",	text_setfocus,
 	"settext",	text_settext,
+	"setview",	text_setview,
 	{NULL,		NULL}		/* sentinel */
 };
 
