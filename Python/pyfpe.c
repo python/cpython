@@ -11,14 +11,14 @@
 #ifdef WANT_SIGFPE_HANDLER
 jmp_buf PyFPE_jbuf;
 int PyFPE_counter = 0;
-double PyFPE_dummy(void *dummy){ return 1.0; }
-#else
-#ifdef __MWERKS__
-/*
- * Metrowerks fails when compiling an empty file, at least in strict ANSI
- * mode. - [cjh]
- */
-static double PyFPE_dummy( void * );
-static double PyFPE_dummy( void *dummy ) { return 1.0; }
 #endif
-#endif
+
+/* Have this outside the above #ifdef, since some picky ANSI compilers issue a 
+   warning when compiling an empty file. */
+
+double
+PyFPE_dummy(dummy)
+	void *dummy;
+{
+	return 1.0;
+}
