@@ -432,7 +432,7 @@ SHA_digest(self, args)
 
 	SHAcopy(self, &temp);
 	sha_final(digest, &temp);
-	return PyString_FromStringAndSize(digest, sizeof(digest));
+	return PyString_FromStringAndSize((const char *)digest, sizeof(digest));
 }
 
 static char SHA_hexdigest__doc__[] = 
@@ -503,7 +503,7 @@ static PyMethodDef SHA_methods[] = {
 
 static PyObject *
 SHA_getattr(self, name)
-	SHAobject *self;
+	PyObject *self;
 	char *name;
 {
 	if (strcmp(name, "blocksize")==0)
@@ -511,7 +511,7 @@ SHA_getattr(self, name)
 	if (strcmp(name, "digestsize")==0)
 		return PyInt_FromLong(20);
 	
-	return Py_FindMethod(SHA_methods, (PyObject *)self, name);
+	return Py_FindMethod(SHA_methods, self, name);
 }
 
 static PyTypeObject SHAtype = {
