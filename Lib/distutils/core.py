@@ -87,7 +87,7 @@ def setup (**attrs):
         klass = Distribution
 
     if not attrs.has_key('script_name'):
-        attrs['script_name'] = sys.argv[0]
+        attrs['script_name'] = os.path.basename(sys.argv[0])
     if not attrs.has_key('script_args'):
         attrs['script_args'] = sys.argv[1:]
 
