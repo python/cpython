@@ -4,6 +4,7 @@
 
 import rand
 import posix
+import stat
 import path
 
 
@@ -40,14 +41,7 @@ def getstatusoutput(cmd):
 # Return a string containing a file's contents.
 #
 def readfile(fn):
-	fp = open(fn, 'r')
-	a = ''
-	n = 8096
-	while 1:
-		b = fp.read(n)
-		if not b: break
-		a = a + b
-	return a
+	return open(fn, 'r').read(posix.stat(fn)[stat.ST_SIZE])
 
 
 # Make command argument from directory and pathname (prefix space, add quotes).
