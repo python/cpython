@@ -58,7 +58,7 @@ def DeadlockWrap(function, *_args, **_kwargs):
     while 1:
         try:
             return apply(function, _args, _kwargs)
-        except _db.DBLockDeadlockError:
+        except _bsddb.DBLockDeadlockError:
             if _deadlock_VerboseFile:
                 _deadlock_VerboseFile.write('dbutils.DeadlockWrap: sleeping %1.3f\n' % sleeptime)
             _sleep(sleeptime)
