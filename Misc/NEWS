@@ -319,6 +319,8 @@ Extension modules
 Library
 -------
 
+- asyncore.loop now has repeat count parameter that defaults to infinity.
+
 - The distutils sdist command now ignores all .svn directories, in
   addition to CVS and RCS directories.  .svn directories hold
   administrative files for the Subversion source control system.
