@@ -769,8 +769,13 @@ Blah blah blah
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
     def setUp(self):
-        # In Python, audiotest.au lives in Lib/test not Lib/test/data
-        fp = open(findfile('audiotest.au'), 'rb')
+        # Make sure we pick up the audiotest.au that lives in email/test/data.
+        # In Python, there's an audiotest.au living in Lib/test but that isn't
+        # included in some binary distros that don't include the test
+        # package.  The trailing empty string on the .join() is significant
+        # since findfile() will do a dirname().
+        datadir = os.path.join(os.path.dirname(landmark), 'data', '')
+        fp = open(findfile('audiotest.au', datadir), 'rb')
         try:
             self._audiodata = fp.read()
         finally:
