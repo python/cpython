@@ -185,9 +185,9 @@ class ArgumentDescriptor(object):
 from struct import unpack as _unpack
 
 def read_uint1(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_uint1(StringIO.StringIO('\\xff'))
+    >>> read_uint1(StringIO.StringIO('\xff'))
     255
     """
 
@@ -204,11 +204,11 @@ uint1 = ArgumentDescriptor(
 
 
 def read_uint2(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_uint2(StringIO.StringIO('\\xff\\x00'))
+    >>> read_uint2(StringIO.StringIO('\xff\x00'))
     255
-    >>> read_uint2(StringIO.StringIO('\\xff\\xff'))
+    >>> read_uint2(StringIO.StringIO('\xff\xff'))
     65535
     """
 
@@ -225,11 +225,11 @@ uint2 = ArgumentDescriptor(
 
 
 def read_int4(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_int4(StringIO.StringIO('\\xff\\x00\\x00\\x00'))
+    >>> read_int4(StringIO.StringIO('\xff\x00\x00\x00'))
     255
-    >>> read_int4(StringIO.StringIO('\\x00\\x00\\x00\\x80')) == -(2**31)
+    >>> read_int4(StringIO.StringIO('\x00\x00\x00\x80')) == -(2**31)
     True
     """
 
@@ -246,20 +246,20 @@ int4 = ArgumentDescriptor(
 
 
 def read_stringnl(f, decode=True, stripquotes=True):
-    """
+    r"""
     >>> import StringIO
-    >>> read_stringnl(StringIO.StringIO("'abcd'\\nefg\\n"))
+    >>> read_stringnl(StringIO.StringIO("'abcd'\nefg\n"))
     'abcd'
 
-    >>> read_stringnl(StringIO.StringIO("\\n"))
+    >>> read_stringnl(StringIO.StringIO("\n"))
     Traceback (most recent call last):
     ...
     ValueError: no string quotes around ''
 
-    >>> read_stringnl(StringIO.StringIO("\\n"), stripquotes=False)
+    >>> read_stringnl(StringIO.StringIO("\n"), stripquotes=False)
     ''
 
-    >>> read_stringnl(StringIO.StringIO("''\\n"))
+    >>> read_stringnl(StringIO.StringIO("''\n"))
     ''
 
     >>> read_stringnl(StringIO.StringIO('"abcd"'))
@@ -268,8 +268,8 @@ def read_stringnl(f, decode=True, stripquotes=True):
     ValueError: no newline found when trying to read stringnl
 
     Embedded escapes are undone in the result.
-    >>> read_stringnl(StringIO.StringIO("'a\\\\nb\\x00c\\td'\\n'e'"))
-    'a\\nb\\x00c\\td'
+    >>> read_stringnl(StringIO.StringIO(r"'a\n\\b\x00c\td'" + "\n'e'"))
+    'a\n\\b\x00c\td'
     """
 
     data = f.readline()
@@ -319,9 +319,9 @@ stringnl_noescape = ArgumentDescriptor(
                         """)
 
 def read_stringnl_noescape_pair(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_stringnl_noescape_pair(StringIO.StringIO("Queue\\nEmpty\\njunk"))
+    >>> read_stringnl_noescape_pair(StringIO.StringIO("Queue\nEmpty\njunk"))
     'Queue Empty'
     """
 
@@ -341,13 +341,13 @@ stringnl_noescape_pair = ArgumentDescriptor(
                              """)
 
 def read_string4(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_string4(StringIO.StringIO("\\x00\\x00\\x00\\x00abc"))
+    >>> read_string4(StringIO.StringIO("\x00\x00\x00\x00abc"))
     ''
-    >>> read_string4(StringIO.StringIO("\\x03\\x00\\x00\\x00abcdef"))
+    >>> read_string4(StringIO.StringIO("\x03\x00\x00\x00abcdef"))
     'abc'
-    >>> read_string4(StringIO.StringIO("\\x00\\x00\\x00\\x03abcdef"))
+    >>> read_string4(StringIO.StringIO("\x00\x00\x00\x03abcdef"))
     Traceback (most recent call last):
     ...
     ValueError: expected 50331648 bytes in a string4, but only 6 remain
@@ -375,11 +375,11 @@ string4 = ArgumentDescriptor(
 
 
 def read_string1(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_string1(StringIO.StringIO("\\x00"))
+    >>> read_string1(StringIO.StringIO("\x00"))
     ''
-    >>> read_string1(StringIO.StringIO("\\x03abcdef"))
+    >>> read_string1(StringIO.StringIO("\x03abcdef"))
     'abc'
     """
 
@@ -404,10 +404,10 @@ string1 = ArgumentDescriptor(
 
 
 def read_unicodestringnl(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_unicodestringnl(StringIO.StringIO("abc\\uabcd\\njunk"))
-    u'abc\\uabcd'
+    >>> read_unicodestringnl(StringIO.StringIO("abc\uabcd\njunk"))
+    u'abc\uabcd'
     """
 
     data = f.readline()
@@ -429,12 +429,12 @@ unicodestringnl = ArgumentDescriptor(
                       """)
 
 def read_unicodestring4(f):
-    """
+    r"""
     >>> import StringIO
-    >>> s = u'abcd\\uabcd'
+    >>> s = u'abcd\uabcd'
     >>> enc = s.encode('utf-8')
     >>> enc
-    'abcd\\xea\\xaf\\x8d'
+    'abcd\xea\xaf\x8d'
     >>> n = chr(len(enc)) + chr(0) * 3  # little-endian 4-byte length
     >>> t = read_unicodestring4(StringIO.StringIO(n + enc + 'junk'))
     >>> s == t
@@ -469,12 +469,12 @@ unicodestring4 = ArgumentDescriptor(
 
 
 def read_decimalnl_short(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_decimalnl_short(StringIO.StringIO("1234\\n56"))
+    >>> read_decimalnl_short(StringIO.StringIO("1234\n56"))
     1234
 
-    >>> read_decimalnl_short(StringIO.StringIO("1234L\\n56"))
+    >>> read_decimalnl_short(StringIO.StringIO("1234L\n56"))
     Traceback (most recent call last):
     ...
     ValueError: trailing 'L' not allowed in '1234L'
@@ -498,20 +498,20 @@ def read_decimalnl_short(f):
         return long(s)
 
 def read_decimalnl_long(f):
-    """
+    r"""
     >>> import StringIO
 
-    >>> read_decimalnl_long(StringIO.StringIO("1234\\n56"))
+    >>> read_decimalnl_long(StringIO.StringIO("1234\n56"))
     Traceback (most recent call last):
     ...
     ValueError: trailing 'L' required in '1234'
 
     Someday the trailing 'L' will probably go away from this output.
 
-    >>> read_decimalnl_long(StringIO.StringIO("1234L\\n56"))
+    >>> read_decimalnl_long(StringIO.StringIO("1234L\n56"))
     1234L
 
-    >>> read_decimalnl_long(StringIO.StringIO("123456789012345678901234L\\n6"))
+    >>> read_decimalnl_long(StringIO.StringIO("123456789012345678901234L\n6"))
     123456789012345678901234L
     """
 
@@ -546,9 +546,9 @@ decimalnl_long = ArgumentDescriptor(
 
 
 def read_floatnl(f):
-    """
+    r"""
     >>> import StringIO
-    >>> read_floatnl(StringIO.StringIO("-1.25\\n6"))
+    >>> read_floatnl(StringIO.StringIO("-1.25\n6"))
     -1.25
     """
     s = read_stringnl(f, decode=False, stripquotes=False)
@@ -568,12 +568,12 @@ floatnl = ArgumentDescriptor(
               """)
 
 def read_float8(f):
-    """
+    r"""
     >>> import StringIO, struct
     >>> raw = struct.pack(">d", -1.25)
     >>> raw
-    '\\xbf\\xf4\\x00\\x00\\x00\\x00\\x00\\x00'
-    >>> read_float8(StringIO.StringIO(raw + "\\n"))
+    '\xbf\xf4\x00\x00\x00\x00\x00\x00'
+    >>> read_float8(StringIO.StringIO(raw + "\n"))
     -1.25
     """
 
