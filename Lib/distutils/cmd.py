@@ -12,7 +12,7 @@ __revision__ = "$Id$"
 import sys, os, string, re
 from types import *
 from distutils.errors import *
-from distutils import util
+from distutils import util, dir_util, file_util, archive_util, dep_util
 
 
 class Command:
@@ -322,8 +322,8 @@ class Command:
 
 
     def mkpath (self, name, mode=0777):
-        util.mkpath (name, mode,
-                     self.verbose, self.dry_run)
+        dir_util.mkpath(name, mode,
+                        self.verbose, self.dry_run)
 
 
     def copy_file (self, infile, outfile,
@@ -332,12 +332,13 @@ class Command:
         former two default to whatever is in the Distribution object, and
         the latter defaults to false for commands that don't define it.)"""
 
-        return util.copy_file (infile, outfile,
-                               preserve_mode, preserve_times,
-                               not self.force,
-                               link,
-                               self.verbose >= level,
-                               self.dry_run)
+        return file_util.copy_file(
+            infile, outfile,
+            preserve_mode, preserve_times,
+            not self.force,
+            link,
+            self.verbose >= level,
+            self.dry_run)
 
 
     def copy_tree (self, infile, outfile,
@@ -346,18 +347,19 @@ class Command:
         """Copy an entire directory tree respecting verbose, dry-run,
         and force flags.
         """
-        return util.copy_tree (infile, outfile, 
-                               preserve_mode,preserve_times,preserve_symlinks,
-                               not self.force,
-                               self.verbose >= level,
-                               self.dry_run)
+        return dir_util.copy_tree(
+            infile, outfile, 
+            preserve_mode,preserve_times,preserve_symlinks,
+            not self.force,
+            self.verbose >= level,
+            self.dry_run)
 
 
     def move_file (self, src, dst, level=1):
         """Move a file respecting verbose and dry-run flags."""
-        return util.move_file (src, dst,
-                               self.verbose >= level,
-                               self.dry_run)
+        return file_util.move_file (src, dst,
+                                    self.verbose >= level,
+                                    self.dry_run)
 
 
     def spawn (self, cmd, search_path=1, level=1):
@@ -370,8 +372,9 @@ class Command:
 
     def make_archive (self, base_name, format,
                       root_dir=None, base_dir=None):
-        return util.make_archive (base_name, format, root_dir, base_dir,
-                                  self.verbose, self.dry_run)
+        return archive_util.make_archive(
+            base_name, format, root_dir, base_dir,
+            self.verbose, self.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,
@@ -401,7 +404,7 @@ class Command:
         # If 'outfile' must be regenerated (either because it doesn't
         # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if self.force or util.newer_group (infiles, outfile):
+        if self.force or dep_util.newer_group (infiles, outfile):
             self.execute (func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
