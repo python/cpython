@@ -80,6 +80,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a[0], a[1])
         self.assertRaises(TypeError, a.insert)
         self.assertRaises(TypeError, a.insert, None)
+        self.assertRaises(TypeError, a.insert, 0, None)
 
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
