@@ -2,7 +2,7 @@
 
 # Released to the public domain, by Tim Peters, 03 October 2000.
 
-"""reindent [-d][-r][-v] path ...
+"""reindent [-d][-r][-v] [ path ... ]
 
 -d  Dry run.  Analyze, but don't make any changes to, files.
 -r  Recurse.  Search for all .py files in subdirectories too.
@@ -12,14 +12,20 @@ Change Python (.py) files to use 4-space indents and no hard tab characters.
 Also trim excess spaces and tabs from ends of lines, and remove empty lines
 at the end of files.  Also ensure the last line ends with a newline.
 
-Pass one or more file and/or directory paths.  When a directory path, all
-.py files within the directory will be examined, and, if the -r option is
-given, likewise recursively for subdirectories.
+If no paths are given on the command line, reindent operates as a filter,
+reading a single source file from standard input and writing the transformed
+source to standard output.  In this case, the -d, -r and -v flags are
+ignored.
 
-Overwrites files in place, renaming the originals with a .bak extension.
-If reindent finds nothing to change, the file is left alone.  If reindent
-does change a file, the changed file is a fixed-point for reindent (i.e.,
-running reindent on the resulting .py file won't change it again).
+You can pass one or more file and/or directory paths.  When a directory
+path, all .py files within the directory will be examined, and, if the -r
+option is given, likewise recursively for subdirectories.
+
+If output is not to standard output, reindent overwrites files in place,
+renaming the originals with a .bak extension.  If it finds nothing to
+change, the file is left alone.  If reindent does change a file, the changed
+file is a fixed-point for future runs (i.e., running reindent on the
+resulting .py file won't change it again).
 
 The hard part of reindenting is figuring out what to do with comment
 lines.  So long as the input files get a clean bill of health from
@@ -59,7 +65,9 @@ def main():
         elif o == '-v':
             verbose += 1
     if not args:
-        errprint("Usage:", __doc__)
+        r = Reindenter(sys.stdin)
+        r.run()
+        r.write(sys.stdout)
         return
     for arg in args:
         check(arg)
