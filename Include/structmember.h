@@ -55,6 +55,14 @@ struct memberlist {
 #define T_DOUBLE	4
 #define T_STRING	5
 #define T_OBJECT	6
+/* XXX the ordering here is weird for binary compatibility */
+#define T_CHAR		7	/* 1-character string */
+#define T_BYTE		8	/* 8-bit signed int */
+/* unsigned variants: */
+#define T_UBYTE		9
+#define T_USHORT	10
+#define T_UINT		11
+#define T_ULONG		12
 
 /* Readonly flag */
 #define READONLY	1
