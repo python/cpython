@@ -2,12 +2,12 @@ from Tkinter import *
 import string
 import re
 
-class TypeinViewer
+class TypeinViewer:
     def __init__(self, switchboard, parent=None):
         # non-gui ivars
         self.__sb = switchboard
         self.__hexp = 0
-        self.__update_white_typing = 0
+        self.__update_while_typing = 0
         # create the gui
         self.__frame = Frame(parent)
         self.__frame.pack()
@@ -18,25 +18,19 @@ class TypeinViewer
         self.__x.grid(row=0, column=1)
         self.__x.bindtags(self.__x.bindtags() + ('Normalize', 'Update'))
         self.__x.bind_class('Normalize', '<Key>', self.__normalize)
-        self.__x.bind_class('Update'   , '<Key>', self.__update)
-        self.__x.bind('Return', self.__update)
-        self.__x.bind('Tab', self.__update)
+        self.__x.bind_class('Update'   , '<Key>', self.__maybeupdate)
         # Green
         self.__yl = Label(self.__frame, text='Green:')
         self.__yl.grid(row=1, column=0, sticky=E)
         self.__y = Entry(self.__frame, width=4)
         self.__y.grid(row=1, column=1)
         self.__y.bindtags(self.__y.bindtags() + ('Normalize', 'Update'))
-        self.__y.bind('Return', self.__update)
-        self.__y.bind('Tab', self.__update)
         # Blue
         self.__zl = Label(self.__frame, text='Blue:')
         self.__zl.grid(row=2, column=0, sticky=E)
         self.__z = Entry(self.__frame, width=4)
         self.__z.grid(row=2, column=1)
         self.__z.bindtags(self.__z.bindtags() + ('Normalize', 'Update'))
-        self.__z.bind('Return', self.__update)
-        self.__z.bind('Tab', self.__update)
 
     def __normalize(self, event=None):
         ew = event.widget
@@ -61,6 +55,10 @@ class TypeinViewer
             contents = int(v)
         ew.delete(0, END)
         ew.insert(0, contents)
+
+    def __maybeupdate(self, event=None):
+        if self.__update_while_typing or event.keysym in ('Return', 'Tab'):
+            self.__update(event)
 
     def __update(self, event=None):
         redstr = self.__x.get()
