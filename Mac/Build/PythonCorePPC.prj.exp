@@ -374,7 +374,6 @@ _PyCompareState_Key
 _PyTrash_delete_later
 _PyTrash_delete_nesting
 _PyCompareState_nesting
-_PyTrash_destroy_list
 _PyTrash_deposit_object
 Py_ReprLeave
 Py_ReprEnter
