@@ -298,17 +298,19 @@ months for the past four years.
 
 A.  Without warranty that any of this will actually be realized: I am
 currently thinking about mechanisms for built-in on-line help and a
-switch/case statement.  A pthreads interface has been contributed
-which I would like to merge into the latest release.  The X interface
-needs improving.  There are also some people (independently) working
-on a windowing interface based on STDWIN but with the power and ease
-of use of the average modern widget set.  I still hope to get some
-help in producing a Windows version.  It would be nice if there were a
-window-based class browser (Someone at CWI has contributed one using
-Motif but it needs some work).  Also: improved support for embedding
-Python in other applications, e.g. by renaming most global symbols to
-have a "Py" prefix and providing more documentation and threading
-support.
+switch/case statement.  There have been some discussions on
+hierarchical module names which might solve the problem of the
+development of large packages.  A pthreads interface has been
+contributed which I would like to merge into the latest release.  The
+X interface needs improving.  There are also some people
+(independently) working on a windowing interface based on STDWIN but
+with the power and ease of use of the average modern widget set.  I
+still hope to get some help in producing a Windows version.  It would
+be nice if there were a window-based class browser (Someone at CWI has
+contributed one using Motif but it needs some work).  Also: improved
+support for embedding Python in other applications, e.g. by renaming
+most global symbols to have a "Py" prefix and providing more
+documentation and threading support.
 
 
 3. Building Python
