@@ -1,19 +1,24 @@
 # This file is transmogrified into Setup.config by config.status.
 
 # The purpose of this file is to conditionally enable certain modules
-# based on configure-time options.  Currently thread support, garbage
-# collection support, and the BSD DB modules are the only modules so
-# enabled.
-
-@USE_THREAD_MODULE@thread threadmodule.c
+# based on configure-time options.
 
 # Garbage collection enabled with --with-cycle-gc
 @USE_GC_MODULE@gc gcmodule.c
 
-# You may want this to be built as a dynamically loaded module; uncomment
-# the following line in that case:
+# Threading
+@USE_THREAD_MODULE@thread threadmodule.c
 
-#*shared*
+# You may want the following to be built as statically loaded modules;
+# comment out the *shared* line in that case:
+
+*shared*
+
+# Readline
+@USE_READLINE_MODULE@readline readline.c -lreadline -ltermcap
+
+# The ncurses library, under Linux
+@USE_NCURSES_MODULE@_curses _cursesmodule.c -lncurses -ltermcap
 
 # bsddb module enabled by --with-libdb or presence of db.h
 @USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@

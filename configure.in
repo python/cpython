@@ -734,6 +734,21 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
+# This is used to generate Setup.config
+AC_SUBST(USE_NCURSES_MODULE)
+AC_CHECK_LIB(ncurses, initscr, 
+	[USE_NCURSES_MODULE=""],
+	[USE_NCURSES_MODULE="#"],
+	-ltermcap)
+
+# This is used to generate Setup.config
+AC_SUBST(USE_READLINE_MODULE)
+AC_CHECK_LIB(readline, readline, 
+	[USE_READLINE_MODULE=""],
+	[USE_READLINE_MODULE="#"], 
+	-ltermcap)
+
+# This is used to generate Setup.config
 AC_SUBST(USE_THREAD_MODULE)
 USE_THREAD_MODULE=""
 
