@@ -73,25 +73,29 @@ class Hash:
       key = str(key)
       if self.caseInsensitive:
         key = string.upper(key)
-      x = perfhash.hash(self.seed, len(self.junk), key) % self.N
-      #h = hash(self.junk + key) % self.N
-      #assert x == h
+      x = perfhash.hash(self.seed, len(self.junk), key, self.N) 
       return x
       
     def generate_code(self):
       s = """{
     register int len;
     register unsigned char *p;
-    register long x;
+    register unsigned long x;
 
     len = cch;
     p = (unsigned char *) key;
-    x = %(junkSeed)d;
+    x = %(junkSeed)s;
     while (--len >= 0)
-        x = (1000003*x) ^ """ % \
+    {   
+        /* (1000003 * x) ^ toupper(*(p++)) 
+         * translated to handle > 32 bit longs 
+         */
+        x = (0xf4243 * x);
+        x = x & 0xFFFFFFFF;
+        x = x ^ """ % \
       {
         "lenJunk" : len(self.junk),
-        "junkSeed" : self.seed,
+        "junkSeed" : hex(self.seed),
       }
       
       if self.caseInsensitive:
@@ -99,20 +103,29 @@ class Hash:
       else:
         s = s + "*(p++);"
       s = s + """
+    }
     x ^= cch + %(lenJunk)d;
-    if (x == -1)
-        x = -2;
-    x %%= k_cHashElements;
-    /* ensure the returned value is positive so we mimic Python's %% operator */
-    if (x < 0)
-      x += k_cHashElements;
+    if (x == 0xFFFFFFFF)
+        x = 0xfffffffe;
+    if (x & 0x80000000) 
+    {
+        /* Emulate 32-bit signed (2's complement) modulo operation */
+        x = (~x & 0xFFFFFFFF) + 1;
+        x %%= k_cHashElements;
+        if (x != 0)
+        {
+            x = x + (~k_cHashElements & 0xFFFFFFFF) + 1;
+            x = (~x & 0xFFFFFFFF) + 1;
+        }
+    }
+    else
+        x %%= k_cHashElements;
     return x;
 }
 """ % { "lenJunk" : len(self.junk),
-        "junkSeed" : self.seed, }
+        "junkSeed" : hex(self.seed), }
       return s
         
-
 WHITE, GREY, BLACK = 0,1,2
 class Graph:
     """Graph class.  This class isn't particularly efficient or general,
@@ -139,8 +152,8 @@ class Graph:
         value 'value'"""
         
         if vertex1 > vertex2: vertex1, vertex2 = vertex2, vertex1
-#        if self.edges.has_key( (vertex1, vertex2) ):
-#            raise ValueError, 'Collision: vertices already connected'
+        if self.edges.has_key( (vertex1, vertex2) ):
+            raise ValueError, 'Collision: vertices already connected'
         self.edges[ (vertex1, vertex2) ] = value
 
         # Add vertices to each other's reachable list
@@ -341,8 +354,8 @@ typedef struct %(structName)s
 """ % (self.cHashElements, self.cchMax, self.cKeys)
     
     code = code + """
-static const %s G[k_cHashElements]; 
-static const %s %s[k_cKeys];   
+staticforward const %s G[k_cHashElements]; 
+staticforward const %s %s[k_cKeys];   
 """ % (self.type, dataArrayType, dataArrayName)
     
     code = code + """
@@ -553,7 +566,7 @@ def generate_hash(keys, caseInsensitive=0,
         # edge.
         for k, v in keys:
             h1 = f1(k) ; h2 = f2(k)
-            G.connect( h1,h2, v)
+            G.connect( h1, h2, v)
 
         # Check if the resulting graph is acyclic; if it is,
         # we're done with step 1.
@@ -598,8 +611,9 @@ def generate_hash(keys, caseInsensitive=0,
     sys.stderr.write('Found perfect hash function!\n')
     sys.stderr.write('\nIn order to regenerate this hash function, \n')
     sys.stderr.write('you need to pass these following values back in:\n')
-    sys.stderr.write('f1 seed: %s\n' % repr(f1.seed))
-    sys.stderr.write('f2 seed: %s\n' % repr(f2.seed))
+    sys.stderr.write('f1 seed: %s\n' % hex(f1.seed))
+    sys.stderr.write('f2 seed: %s\n' % hex(f2.seed))
     sys.stderr.write('initial multipler: %s\n' % c)
 
     return PerfectHash(cchMaxKey, f1, f2, G, N, len(keys), maxHashValue)
+
