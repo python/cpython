@@ -110,7 +110,11 @@ def resolve(rawaddr):
 	return rawaddr
     addr = parts[-1]
     if nameorgs.has_key(addr):
-	print rawaddr, 'is from a', nameorgs[addr], 'organization'
+        if string.lower(nameorgs[addr][0]) in 'aeiou':
+            ana = 'an'
+        else:
+            ana = 'a'
+	print rawaddr, 'is from', ana, nameorgs[addr], 'organization'
 	return None
     elif countries.has_key(addr):
 	print rawaddr, 'originated from', countries[addr]
