@@ -190,8 +190,10 @@ class Generator:
 
     def _handle_text(self, msg):
         payload = msg.get_payload()
+        if payload is None:
+            return
         if not isinstance(payload, StringType):
-            raise TypeError, 'string payload expected'
+            raise TypeError, 'string payload expected: %s' % type(payload)
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
         self._fp.write(payload)
@@ -206,7 +208,7 @@ class Generator:
         msgtexts = []
         for part in msg.get_payload():
             s = StringIO()
-            g = self.__class__(s)
+            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
             g(part, unixfrom=0)
             msgtexts.append(s.getvalue())
         # Now make sure the boundary we've selected doesn't appear in any of
@@ -245,9 +247,30 @@ class Generator:
     def _handle_multipart_digest(self, msg):
         self._handle_multipart(msg, isdigest=1)
 
-    def _handle_message_rfc822(self, msg):
+    def _handle_message_delivery_status(self, msg):
+        # We can't just write the headers directly to self's file object
+        # because this will leave an extra newline between the last header
+        # block and the boundary.  Sigh.
+        blocks = []
+        for part in msg.get_payload():
+            s = StringIO()
+            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
+            g(part, unixfrom=0)
+            text = s.getvalue()
+            lines = text.split('\n')
+            # Strip off the unnecessary trailing empty line
+            if lines and lines[-1] == '':
+                blocks.append(NL.join(lines[:-1]))
+            else:
+                blocks.append(text)
+        # Now join all the blocks with an empty line.  This has the lovely
+        # effect of separating each block with an empty line, but not adding
+        # an extra one after the last one.
+        self._fp.write(NL.join(blocks))
+
+    def _handle_message(self, msg):
         s = StringIO()
-        g = self.__class__(s)
+        g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
         # A message/rfc822 should contain a scalar payload which is another
         # Message object.  Extract that object, stringify it, and write that
         # out.
@@ -292,8 +315,12 @@ class DecodedGenerator(Generator):
 
     def _dispatch(self, msg):
         for part in msg.walk():
-            if part.get_main_type('text') == 'text':
+            maintype = part.get_main_type('text')
+            if maintype == 'text':
                 print >> self, part.get_payload(decode=1)
+            elif maintype == 'multipart':
+                # Just skip this
+                pass
             else:
                 print >> self, self._fmt % {
                     'type'       : part.get_type('[no MIME type]'),
