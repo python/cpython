@@ -155,7 +155,7 @@ run_tty_loop(fp, filename)
 	for (;;) {
 		ret = run_tty_1(fp, filename);
 #ifdef REF_DEBUG
-		fprintf(stderr, "[%ld refs]\n", ref_total);
+		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 		if (ret == E_EOF)
 			return 0;
@@ -664,7 +664,7 @@ goaway(sts)
 	err_clear();
 
 #ifdef REF_DEBUG
-	fprintf(stderr, "[%ld refs]\n", ref_total);
+	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 
 #ifdef TRACE_REFS

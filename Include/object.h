@@ -306,17 +306,17 @@ extern void inc_count Py_PROTO((PyTypeObject *));
 #endif
 
 #ifdef Py_REF_DEBUG
-extern long ref_total;
+extern long _Py_RefTotal;
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
-#define _Py_NewReference(op) (inc_count((op)->ob_type), ref_total++, (op)->ob_refcnt = 1)
+#define _Py_NewReference(op) (inc_count((op)->ob_type), _Py_RefTotal++, (op)->ob_refcnt = 1)
 #else
-#define _Py_NewReference(op) (ref_total++, (op)->ob_refcnt = 1)
+#define _Py_NewReference(op) (_Py_RefTotal++, (op)->ob_refcnt = 1)
 #endif
 #endif
-#define Py_INCREF(op) (ref_total++, (op)->ob_refcnt++)
+#define Py_INCREF(op) (_Py_RefTotal++, (op)->ob_refcnt++)
 #define Py_DECREF(op) \
-	if (--ref_total, --(op)->ob_refcnt != 0) \
+	if (--_Py_RefTotal, --(op)->ob_refcnt != 0) \
 		; \
 	else \
 		_Py_Dealloc(op)

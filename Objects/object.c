@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
-#ifdef REF_DEBUG
+#if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
 long ref_total;
 #endif
 

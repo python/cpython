@@ -288,7 +288,7 @@ eval_code(co, globals, locals, owner, arg)
 #ifdef LLTRACE
 	int lltrace;
 #endif
-#ifdef DEBUG
+#if defined( DEBUG ) || defined( LLTRACE )
 	/* Make it easier to find out where we are with dbx */
 	char *filename = getstringvalue(co->co_filename);
 #endif
