@@ -37,16 +37,36 @@ def testGetElementsByTagName():
     dom.unlink()
 
 def testInsertBefore():
-    dom = parse(tstfile)
-    docel = dom.documentElement
-    #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
-    #                        docel.childNodes[1])
-
-    #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
-    #                        docel.childNodes[0])
-
-    #confirm( docel.childNodes[0].tet == "a")
-    #confirm( docel.childNodes[2].tet == "a")
+    dom = parseString("<doc><foo/></doc>")
+    root = dom.documentElement
+    elem = root.childNodes[0]
+    nelem = dom.createElement("element")
+    root.insertBefore(nelem, elem)
+    confirm(len(root.childNodes) == 2
+            and root.childNodes[0] is nelem
+            and root.childNodes[1] is elem
+            and root.firstChild is nelem
+            and root.lastChild is elem
+            and root.toxml() == "<doc><element/><foo/></doc>"
+            , "testInsertBefore -- node properly placed in tree")
+    nelem = dom.createElement("element")
+    root.insertBefore(nelem, None)
+    confirm(len(root.childNodes) == 3
+            and root.childNodes[1] is elem
+            and root.childNodes[2] is nelem
+            and root.lastChild is nelem
+            and nelem.previousSibling is elem
+            and root.toxml() == "<doc><element/><foo/><element/></doc>"
+            , "testInsertBefore -- node properly placed in tree")
+    nelem2 = dom.createElement("bar")
+    root.insertBefore(nelem2, nelem)
+    confirm(len(root.childNodes) == 4
+            and root.childNodes[2] is nelem2
+            and root.childNodes[3] is nelem
+            and nelem2.nextSibling is nelem
+            and nelem.previousSibling is nelem2
+            and root.toxml() == "<doc><element/><foo/><bar/><element/></doc>"
+            , "testInsertBefore -- node properly placed in tree")
     dom.unlink()
 
 def testAppendChild():
@@ -77,6 +97,7 @@ def testAAA():
     dom = parseString("<abc/>")
     el = dom.documentElement
     el.setAttribute("spam", "jam2")
+    confirm(el.toxml() == '<abc spam="jam2"/>', "testAAA")
     dom.unlink()
 
 def testAAB():
@@ -84,6 +105,7 @@ def testAAB():
     el = dom.documentElement
     el.setAttribute("spam", "jam")
     el.setAttribute("spam", "jam2")
+    confirm(el.toxml() == '<abc spam="jam2"/>', "testAAB")
     dom.unlink()
 
 def testAddAttr():
@@ -242,7 +264,18 @@ def testWriteText(): pass
 
 def testDocumentElement(): pass
 
-def testTooManyDocumentElements(): pass
+def testTooManyDocumentElements():
+    doc = parseString("<doc/>")
+    elem = doc.createElement("extra")
+    try:
+        doc.appendChild(elem)
+    except TypeError:
+        print "Caught expected exception when adding extra document element."
+    else:
+        print "Failed to catch expected exception when" \
+              " adding extra document element."
+    elem.unlink()
+    doc.unlink()
 
 def testCreateElementNS(): pass
 
@@ -290,11 +323,54 @@ def testFirstChild(): pass
 
 def testHasChildNodes(): pass
 
-def testCloneElementShallow(): pass
+def testCloneElementShallow():
+    dom, clone = _setupCloneElement(0)
+    confirm(len(clone.childNodes) == 0
+            and clone.parentNode is None
+            and clone.toxml() == '<doc attr="value"/>'
+            , "testCloneElementShallow")
+    dom.unlink()
 
-def testCloneElementShallowCopiesAttributes(): pass
+def testCloneElementDeep():
+    dom, clone = _setupCloneElement(1)
+    confirm(len(clone.childNodes) == 1
+            and clone.parentNode is None
+            and clone.toxml() == '<doc attr="value"><foo/></doc>'
+            , "testCloneElementDeep")
+    dom.unlink()
 
-def testCloneElementDeep(): pass
+def _setupCloneElement(deep):
+    dom = parseString("<doc attr='value'><foo/></doc>")
+    root = dom.documentElement
+    clone = root.cloneNode(deep)
+    _testCloneElementCopiesAttributes(
+        root, clone, "testCloneElement" + (deep and "Deep" or "Shallow"))
+    # mutilate the original so shared data is detected
+    root.tagName = root.nodeName = "MODIFIED"
+    root.setAttribute("attr", "NEW VALUE")
+    root.setAttribute("added", "VALUE")
+    return dom, clone
+
+def _testCloneElementCopiesAttributes(e1, e2, test):
+    attrs1 = e1.attributes
+    attrs2 = e2.attributes
+    keys1 = attrs1.keys()
+    keys2 = attrs2.keys()
+    keys1.sort()
+    keys2.sort()
+    confirm(keys1 == keys2, "clone of element has same attribute keys")
+    for i in range(len(keys1)):
+        a1 = attrs1.item(i)
+        a2 = attrs2.item(i)
+        confirm(a1 is not a2
+                and a1.value == a2.value
+                and a1.nodeValue == a2.nodeValue
+                and a1.namespaceURI == a2.namespaceURI
+                and a1.localName == a2.localName
+                , "clone of attribute node has proper attribute values")
+        confirm(a2.ownerElement is e2,
+                "clone of attribute node correctly owned")
+    
 
 def testCloneDocumentShallow(): pass
 
@@ -307,6 +383,19 @@ def testCloneAttributeDeep(): pass
 def testClonePIShallow(): pass
 
 def testClonePIDeep(): pass
+
+def testNormalize():
+    doc = parseString("<doc/>")
+    root = doc.documentElement
+    root.appendChild(doc.createTextNode("first"))
+    root.appendChild(doc.createTextNode("second"))
+    confirm(len(root.childNodes) == 2, "testNormalize -- preparation")
+    doc.normalize()
+    confirm(len(root.childNodes) == 1
+            and root.firstChild is root.lastChild
+            and root.firstChild.data == "firstsecond"
+            , "testNormalize -- result")
+    doc.unlink()
 
 def testSiblings():
     doc = parseString("<doc><?pi?>text?<elm/></doc>")
