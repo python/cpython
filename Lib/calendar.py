@@ -131,7 +131,7 @@ def month(theyear, themonth, w=0, l=0):
     """Return a month's calendar string (multi-line)."""
     w = max(2, w)
     l = max(1, l)
-    s = (_center(month_name[themonth] + ' ' + `theyear`, 
+    s = (_center(month_name[themonth] + ' ' + `theyear`,
                  7 * (w + 1) - 1).rstrip() +
          '\n' * l + weekheader(w).rstrip() + '\n' * l)
     for aweek in monthcalendar(theyear, themonth):
@@ -167,7 +167,7 @@ def calendar(year, w=0, l=0, c=_spacing):
     for q in range(January, January+12, 3):
         s = (s + '\n' * l +
              format3cstring(month_name[q], month_name[q+1], month_name[q+2],
-                            colwidth, c).rstrip() + 
+                            colwidth, c).rstrip() +
              '\n' * l + header + '\n' * l)
         data = []
         height = 0
@@ -183,7 +183,7 @@ def calendar(year, w=0, l=0, c=_spacing):
                     weeks.append('')
                 else:
                     weeks.append(week(cal[i], w))
-            s = s + format3cstring(weeks[0], weeks[1], weeks[2], 
+            s = s + format3cstring(weeks[0], weeks[1], weeks[2],
                                    colwidth, c).rstrip() + '\n' * l
     return s[:-l] + '\n'
 

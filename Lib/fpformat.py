@@ -138,4 +138,3 @@ def test():
             print x, fix(x, digs), sci(x, digs)
     except (EOFError, KeyboardInterrupt):
         pass
-
