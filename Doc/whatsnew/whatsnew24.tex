@@ -109,8 +109,8 @@ iterators.  If you want to reverse an iterator, first convert it to
 a list with \function{list()}.
 
 \begin{verbatim}
->>> data = open('/etc/passwd', 'r')
->>> for line in reversed(list(data)):
+>>> input= open('/etc/passwd', 'r')
+>>> for line in reversed(list(input)):
 ...   print line
 ... 
 root:*:0:0:System Administrator:/var/root:/bin/tcsh
@@ -137,8 +137,7 @@ fill character other than a space.
 
 \item Strings also gained an \method{rsplit()} method that
 works like the \method{split()} method but splits from the end of
-the string.  Possible applications include splitting a filename
-from a path or a domain name from URL.
+the string.  
 
 \begin{verbatim}
 >>> 'a b c'.split(None, 1)
@@ -236,7 +235,7 @@ yellow 5
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return an empty list instead of raising a \exception{TypeError}
-  exception if called with no arguments.  This makes the function more
+  exception if called with no arguments.  This makes them more
   suitable for use with variable length argument lists:
 
 \begin{verbatim}
@@ -354,9 +353,9 @@ default is 2.
 
 Note that \function{tee()} has to keep copies of the values returned 
 by the iterator; in the worst case, it may need to keep all of them.  
-This should therefore be used carefully if there the leading iterator
+This should therefore be used carefully if the leading iterator
 can run far ahead of the trailing iterator in a long stream of inputs.
-If the separation is large, then it becomes preferrable to use
+If the separation is large, then it becomes preferable to use
 \function{list()} instead.  When the iterators track closely with one
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
@@ -385,8 +384,7 @@ For example:
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
    which returns an N-bit long integer.  This method supports the existing
    \method{randrange()} method, making it possible to efficiently generate
-   arbitrarily large random numbers (suitable for prime number generation in
-   RSA applications for example).
+   arbitrarily large random numbers.
 
 \item The regular expression language accepted by the \module{re} module
    was extended with simple conditional expressions, written as
