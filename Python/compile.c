@@ -5025,6 +5025,14 @@ symtable_add_def(struct symtable *st, char *name, int flag)
 	char buffer[MANGLE_LEN];
 	int ret;
 
+	/* Warn about None, except inside a tuple (where the assignment
+	   code already issues a warning). */
+	if ((flag & DEF_PARAM) && !(flag & DEF_INTUPLE) &&
+	    *name == 'N' && strcmp(name, "None") == 0)
+	{
+		if (symtable_warn(st, "argument named None"))
+			return -1;
+	}
 	if (_Py_Mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if ((s = PyString_InternFromString(name)) == NULL)
@@ -5310,7 +5318,7 @@ symtable_funcdef(struct symtable *st, node *n)
 }
 
 /* The next two functions parse the argument tuple.
-   symtable_default_arg() checks for names in the default arguments,
+   symtable_default_args() checks for names in the default arguments,
    which are references in the defining scope.  symtable_params()
    parses the parameter names, which are defined in the function's
    body. 
