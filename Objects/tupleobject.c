@@ -306,7 +306,9 @@ static PyObject *
 tupleslice(register PyTupleObject *a, register int ilow, register int ihigh)
 {
 	register PyTupleObject *np;
+	PyObject **src, **dest;
 	register int i;
+	int len;
 	if (ilow < 0)
 		ilow = 0;
 	if (ihigh > a->ob_size)
@@ -317,13 +319,16 @@ tupleslice(register PyTupleObject *a, register int ilow, register int ihigh)
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
-	np = (PyTupleObject *)PyTuple_New(ihigh - ilow);
+	len = ihigh - ilow;
+	np = (PyTupleObject *)PyTuple_New(len);
 	if (np == NULL)
 		return NULL;
-	for (i = ilow; i < ihigh; i++) {
-		PyObject *v = a->ob_item[i];
+	src = a->ob_item + ilow;
+	dest = np->ob_item;
+	for (i = 0; i < len; i++) {
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i - ilow] = v;
+		dest[i] = v;
 	}
 	return (PyObject *)np;
 }
