@@ -56,4 +56,4 @@ class install_data (Command):
         return self.data_files or []
 
     def get_outputs (self):
-        return self.outfiles
+        return self.outfiles or []
