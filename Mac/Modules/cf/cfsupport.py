@@ -273,6 +273,7 @@ class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("if (self->ob_freeit && self->ob_itself)")
 		OutLbrace()
 		Output("self->ob_freeit((CFTypeRef)self->ob_itself);")
+		Output("self->ob_itself = NULL;")
 		OutRbrace()
 		
 	def outputCompare(self):
