@@ -1415,13 +1415,34 @@ builtin_range(self, args)
 		PyErr_SetString(PyExc_ValueError, "zero step for range()");
 		return NULL;
 	}
-	/* XXX ought to check overflow of subtraction */
-	if (istep > 0)
-		n = (ihigh - ilow + istep - 1) / istep;
-	else
-		n = (ihigh - ilow + istep + 1) / istep;
-	if (n < 0)
-		n = 0;
+	/* A bit convoluted because this might overflow; due to Tim Peters */
+	if (istep > 0) {
+		if (ihigh <= ilow)
+			n = 0;
+		else {
+			unsigned long hi = (unsigned long)ihigh;
+			unsigned long lo = (unsigned long)ilow;
+			unsigned long diff = hi - lo - 1;
+			n = (long)(diff / istep + 1);
+		}
+	}
+	else {
+		/* But any errors in this branch are my own --Guido */
+		if (ihigh >= ilow)
+			n = 0;
+		else {
+			/* Swap lo and hi; use abs(istep) */
+			unsigned long hi = (unsigned long)ilow;
+			unsigned long lo = (unsigned long)ihigh;
+			unsigned long diff = hi - lo - 1;
+			n = (long)(diff / (-istep) + 1);
+		}
+	}
+	if (n < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"range() has more than sys.maxint items");
+		return NULL;
+	}
 	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
