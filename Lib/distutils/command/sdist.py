@@ -64,6 +64,9 @@ class sdist (Command):
         ('keep-tree', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),
+        ('dist-dir=', 'd',
+         "directory to put the source distribution archive(s) in "
+         "[default: dist]"),
         ]
 
 
@@ -94,6 +97,7 @@ class sdist (Command):
 
         self.formats = None
         self.keep_tree = 0
+        self.dist_dir = None
 
         self.archive_files = None
 
@@ -117,6 +121,9 @@ class sdist (Command):
         if bad_format:
             raise DistutilsOptionError, \
                   "unknown archive format '%s'" % bad_format
+
+        if self.dist_dir is None:
+            self.dist_dir = "dist"
 
 
     def run (self):
@@ -667,11 +674,14 @@ class sdist (Command):
         # Don't warn about missing meta-data here -- should be (and is!)
         # done elsewhere.
         base_dir = self.distribution.get_fullname()
+        base_name = os.path.join(self.dist_dir, base_dir)
 
         self.make_release_tree (base_dir, self.files)
         archive_files = []              # remember names of files we create
+        if self.dist_dir:
+            self.mkpath(self.dist_dir)
         for fmt in self.formats:
-            file = self.make_archive (base_dir, fmt, base_dir=base_dir)
+            file = self.make_archive (base_name, fmt, base_dir=base_dir)
             archive_files.append(file)
 
         self.archive_files = archive_files
