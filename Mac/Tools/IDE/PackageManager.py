@@ -181,6 +181,8 @@ class PackageManagerMain(Wapplication.Application):
         filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
         if filename:
             filename = urllib.pathname2url(filename)
+            if filename[:5] != 'file:':
+                filename = 'file:' + filename
             self.opendoc(filename)
 
     def domenu_openURL(self, *args):
