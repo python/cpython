@@ -30,6 +30,8 @@ typedef struct {
 
 #define CHECK_STATUS(name)  if (status == -1) { printf("%d ", status); perror(name); error = 1; }
 
+pth_attr_t PyThread_attr;
+
 /*
  * Initialization.
  */
@@ -37,6 +39,9 @@ typedef struct {
 static void PyThread__init_thread(void)
 {
 	pth_init();
+	PyThread_attr = pth_attr_new();
+	pth_attr_set(PyThread_attr, PTH_ATTR_STACK_SIZE, 1<<18);
+	pth_attr_set(PyThread_attr, PTH_ATTR_JOINABLE, FALSE);
 }
 
 /*
@@ -51,7 +56,7 @@ long PyThread_start_new_thread(void (*func)(void *), void *arg)
 	if (!initialized)
 		PyThread_init_thread();
 
-	th = pth_spawn(PTH_ATTR_DEFAULT,
+	th = pth_spawn(PyThread_attr,
 				 (void* (*)(void *))func,
 				 (void *)arg
 				 );
