@@ -252,6 +252,49 @@ class instances are callable if they have a \method{__call__()} method.
   \code{None}.
 \end{funcdesc}
 
+\begin{funcdesc}{file}{filename\optional{, mode\optional{, bufsize}}}
+  Return a new file object (described earlier under Built-in Types).
+  The first two arguments are the same as for \code{stdio}'s
+  \cfunction{fopen()}: \var{filename} is the file name to be opened,
+  \var{mode} indicates how the file is to be opened: \code{'r'} for
+  reading, \code{'w'} for writing (truncating an existing file), and
+  \code{'a'} opens it for appending (which on \emph{some} \UNIX{}
+  systems means that \emph{all} writes append to the end of the file,
+  regardless of the current seek position).
+
+  Modes \code{'r+'}, \code{'w+'} and \code{'a+'} open the file for
+  updating (note that \code{'w+'} truncates the file).  Append
+  \code{'b'} to the mode to open the file in binary mode, on systems
+  that differentiate between binary and text files (else it is
+  ignored).  If the file cannot be opened, \exception{IOError} is
+  raised.
+
+  If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
+  binary file, you should append \code{'b'} to the \var{mode} value
+  for improved portability.  (It's useful even on systems which don't
+  treat binary and text files differently, where it serves as
+  documentation.)
+  \index{line-buffered I/O}\index{unbuffered I/O}\index{buffer size, I/O}
+  \index{I/O control!buffering}
+  The optional \var{bufsize} argument specifies the
+  file's desired buffer size: 0 means unbuffered, 1 means line
+  buffered, any other positive value means use a buffer of
+  (approximately) that size.  A negative \var{bufsize} means to use
+  the system default, which is usually line buffered for for tty
+  devices and fully buffered for other files.  If omitted, the system
+  default is used.\footnote{
+    Specifying a buffer size currently has no effect on systems that
+    don't have \cfunction{setvbuf()}.  The interface to specify the
+    buffer size is not done using a method that calls
+    \cfunction{setvbuf()}, because that may dump core when called
+    after any I/O has been performed, and there's no reliable way to
+    determine whether this is the case.}
+
+  The \function{file()} constructor is new in Python 2.2.  The previous
+  spelling, \function{open()}, is retained for compatibility, and is an
+  alias for \function{file()}.
+\end{funcdesc}
+
 \begin{funcdesc}{filter}{function, list}
   Construct a list from those elements of \var{list} for which
   \var{function} returns true.  \var{list} may be either a sequence, a
@@ -479,42 +522,7 @@ the interpreter.
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
-  Return a new file object (described earlier under Built-in Types).
-  The first two arguments are the same as for \code{stdio}'s
-  \cfunction{fopen()}: \var{filename} is the file name to be opened,
-  \var{mode} indicates how the file is to be opened: \code{'r'} for
-  reading, \code{'w'} for writing (truncating an existing file), and
-  \code{'a'} opens it for appending (which on \emph{some} \UNIX{}
-  systems means that \emph{all} writes append to the end of the file,
-  regardless of the current seek position).
-
-  Modes \code{'r+'}, \code{'w+'} and \code{'a+'} open the file for
-  updating (note that \code{'w+'} truncates the file).  Append
-  \code{'b'} to the mode to open the file in binary mode, on systems
-  that differentiate between binary and text files (else it is
-  ignored).  If the file cannot be opened, \exception{IOError} is
-  raised.
-
-  If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
-  binary file, you should append \code{'b'} to the \var{mode} value
-  for improved portability.  (It's useful even on systems which don't
-  treat binary and text files differently, where it serves as
-  documentation.)
-  \index{line-buffered I/O}\index{unbuffered I/O}\index{buffer size, I/O}
-  \index{I/O control!buffering}
-  The optional \var{bufsize} argument specifies the
-  file's desired buffer size: 0 means unbuffered, 1 means line
-  buffered, any other positive value means use a buffer of
-  (approximately) that size.  A negative \var{bufsize} means to use
-  the system default, which is usually line buffered for for tty
-  devices and fully buffered for other files.  If omitted, the system
-  default is used.\footnote{
-    Specifying a buffer size currently has no effect on systems that
-    don't have \cfunction{setvbuf()}.  The interface to specify the
-    buffer size is not done using a method that calls
-    \cfunction{setvbuf()}, because that may dump core when called
-    after any I/O has been performed, and there's no reliable way to
-    determine whether this is the case.}
+  An alias for the \function{file()} function above.
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}
@@ -538,7 +546,7 @@ the interpreter.
   \code{10**-2} returns \code{0.01}.  (This last feature was added in
   Python 2.2.  In Python 2.1 and before, if both arguments were of integer
   types and the second argument was negative, an exception was raised.)
-  If the second argument is negative, the third argument must be omitted. 
+  If the second argument is negative, the third argument must be omitted.
   If \var{z} is present, \var{x} and \var{y} must be of integer types,
   and \var{y} must be non-negative.  (This restriction was added in
   Python 2.2.  In Python 2.1 and before, floating 3-argument \code{pow()}
