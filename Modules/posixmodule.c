@@ -408,6 +408,11 @@ posix_listdir(self, args)
 		return posix_error();
 	}
 	do {
+		if (FileData.cFileName[0] == '.' &&
+		    (FileData.cFileName[1] == '\0' ||
+		     FileData.cFileName[1] == '.' &&
+		     FileData.cFileName[2] == '\0'))
+			continue;
 		v = newstringobject(FileData.cFileName);
 		if (v == NULL) {
 			DECREF(d);
@@ -449,6 +454,10 @@ posix_listdir(self, args)
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
+		if (ep->d_name[0] == '.' &&
+		    (NAMLEN(ep) == 1 ||
+		     ep->d_name[1] == '.' && NAMLEN(ep) == 2))
+			continue;
 		v = newsizedstringobject(ep->d_name, NAMLEN(ep));
 		if (v == NULL) {
 			DECREF(d);
