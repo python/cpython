@@ -873,12 +873,12 @@ _PyObject_GC_Resize(PyVarObject *op, int nitems)
 	const size_t basicsize = _PyObject_VAR_SIZE(op->ob_type, nitems);
 #ifdef WITH_CYCLE_GC
 	PyGC_Head *g = AS_GC(op);
-	g = PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
+	g = _PyMalloc_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
 	op = (PyVarObject *) FROM_GC(g);
 #else
-	op = PyObject_REALLOC(op, basicsize);
+	op = _PyMalloc_REALLOC(op, basicsize);
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
 #endif
