@@ -290,6 +290,14 @@ Tools/Demos
 Build
 -----
 
+- Support for DGUX, SunOS 4, IRIX 4 and Minix was removed (see PEP 11).
+
+- Support for systems requiring --with-dl-dld or --with-sgi-dl was removed
+  (see PEP 11).
+
+- Tests for sizeof(char) were removed since ANSI C mandates that
+  sizeof(char) must be 1.
+
 C API
 -----
 
