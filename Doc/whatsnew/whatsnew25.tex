@@ -120,7 +120,17 @@ Example:
 
 (Contributed by Raymond Hettinger.)
 
-% itertools.islice() now accepts None for the start and step arguments.
+\item The \function{itertools.islice()} function now accepts
+\code{None} for the start and step arguments.  This makes it more
+compatible with the attributes of slice objects, so that you can now write
+the following:
+
+\begin{verbatim}
+s = slice(5)     # Create slice object
+itertools.islice(iterable, s.start, s.stop, s.step)
+\end{verbatim}
+
+(Contributed by Raymond Hettinger.)
 
 \item New module: \module{spwd} provides functions for accessing the
 shadow password database on systems that support it.  
