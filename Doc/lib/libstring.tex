@@ -59,11 +59,15 @@ The functions defined in this module are:
 \begin{funcdesc}{atof}{s}
   Convert a string to a floating point number.  The string must have
   the standard syntax for a floating point literal in Python,
-  optionally preceded by a sign (\samp{+} or \samp{-}), or be
-  \code{'NaN'} (case insensitive) to indicate the IEEE ``Not a
-  Number'' value.  Note that this behaves identical to the built-in
-  function \function{float()}\bifuncindex{float} when passed a
-  string.
+  optionally preceded by a sign (\samp{+} or \samp{-}).  Note that
+  this behaves identical to the built-in function
+  \function{float()}\bifuncindex{float} when passed a string.
+
+  \strong{Note:} When passing in a string, values for NaN\index{NaN}
+  and Infinity\index{Infinity} may be returned, depending on the
+  underlying C library.  The specific set of strings accepted which
+  cause these values to be returned depends entirely on the C library
+  and is known to vary.
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{s\optional{, base}}
