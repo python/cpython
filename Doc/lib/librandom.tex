@@ -34,15 +34,17 @@ Else, because no critical sections are implemented internally, calls
 from different threads may see the same return values.
 
 The functions supplied by this module are actually bound methods of a
-hidden instance of the \var{random.Random} class.  You can instantiate your
-own instances of \var{Random} to get generators that don't share state.
-This is especially useful for multi-threaded programs, creating a different
-instance of \var{Random} for each thread, and using the \method{jumpahead()}
-method to ensure that the generated sequences seen by each thread don't
-overlap (see example below).
-Class \var{Random} can also be subclassed if you want to use a different
-basic generator of your own devising:  in that case, override the
-\method{random()}, \method{seed()}, \method{getstate()},
+hidden instance of the \class{random.Random} class.  You can
+instantiate your own instances of \class{Random} to get generators
+that don't share state.  This is especially useful for multi-threaded
+programs, creating a different instance of \class{Random} for each
+thread, and using the \method{jumpahead()} method to ensure that the
+generated sequences seen by each thread don't overlap (see example
+below).
+
+Class \class{Random} can also be subclassed if you want to use a
+different basic generator of your own devising: in that case, override
+the \method{random()}, \method{seed()}, \method{getstate()},
 \method{setstate()} and \method{jumpahead()} methods.
 
 Here's one way to create threadsafe distinct and non-overlapping generators:
@@ -117,27 +119,29 @@ Bookkeeping functions:
 \end{funcdesc}
 
 \begin{funcdesc}{getstate}{}
-  Return an object capturing the current internal state of the generator.
-  This object can be passed to \code{setstate()} to restore the state.
+  Return an object capturing the current internal state of the
+  generator.  This object can be passed to \function{setstate()} to
+  restore the state.
   \versionadded{2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{setstate}{state}
   \var{state} should have been obtained from a previous call to
-  \code{getstate()}, and \code{setstate()} restores the internal state
-  of the generator to what it was at the time \code{setstate()} was called.
+  \function{getstate()}, and \function{setstate()} restores the
+  internal state of the generator to what it was at the time
+  \function{setstate()} was called.
   \versionadded{2.1}
- \end{funcdesc}
+\end{funcdesc}
 
 \begin{funcdesc}{jumpahead}{n}
-  Change the internal state to what it would be if \code{random()} were
-  called n times, but do so quickly.  \var{n} is a non-negative integer.
-  This is most useful in multi-threaded programs, in conjuction with
-  multiple instances of the \var{Random} class:  \method{setstate()} or
-  \method{seed()} can be used to force all instances into the same
-  internal state, and then \method{jumpahead()} can be used to force the
-  instances' states as far apart as you like (up to the period of the
-  generator).
+  Change the internal state to what it would be if \function{random()}
+  were called \var{n} times, but do so quickly.  \var{n} is a
+  non-negative integer.  This is most useful in multi-threaded
+  programs, in conjuction with multiple instances of the \var{Random}
+  class: \method{setstate()} or \method{seed()} can be used to force
+  all instances into the same internal state, and then
+  \method{jumpahead()} can be used to force the instances' states as
+  far apart as you like (up to the period of the generator).
   \versionadded{2.1}
  \end{funcdesc}
 
