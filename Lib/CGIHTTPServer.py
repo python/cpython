@@ -177,12 +177,11 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if co:
             env['HTTP_COOKIE'] = ', '.join(co)
         # XXX Other HTTP_* headers
-        if not self.have_fork:
-            # Since we're setting the env in the parent, provide empty
-            # values to override previously set values
-            for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
-                      'HTTP_USER_AGENT', 'HTTP_COOKIE'):
-                env.setdefault(k, "")
+        # Since we're setting the env in the parent, provide empty
+        # values to override previously set values
+        for k in ('QUERY_STRING', 'REMOTE_HOST', 'CONTENT_LENGTH',
+                  'HTTP_USER_AGENT', 'HTTP_COOKIE'):
+            env.setdefault(k, "")
         os.environ.update(env)
 
         self.send_response(200, "Script output follows")
