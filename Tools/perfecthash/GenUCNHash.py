@@ -50,7 +50,7 @@ typedef struct
   out = open(headerFileName, "w")
   out.write(header)
   out = open(cFileName, "w")
-  out.write("#include "%s"\n" % headerFileName)
+  out.write("#include \"%s\"\n" % headerFileName)
   out.write(code)
   perfHash.generate_graph(out)
   out.write("""
