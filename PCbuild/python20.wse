@@ -2825,7 +2825,7 @@ item: Custom Dialog Set
       Text=LettError, Erik van Blokland, for the Python for Windows graphic.
       Text=    http://www.letterror.com/
       Text=
-      Text=Mark Hammond, without whose years of freely shared Windows expertise Python for Windows would still be Python for DOS.
+      Text=Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
     end
     item: Static
       Rectangle=86 66 239 67
