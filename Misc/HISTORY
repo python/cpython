@@ -6,6 +6,161 @@ This file contains the release messages for previous Python releases
 read on you go back to the dark ages of Python's history.
 
 
+=====================================
+==> Release 1.3 (13 October 1995) <==
+=====================================
+
+Major change
+============
+
+Two words: Keyword Arguments.  See the first section of Chapter 12 of
+the Tutorial.
+
+(The rest of this file is textually the same as the remaining sections
+of that chapter.)
+
+
+Changes to the WWW and Internet tools
+=====================================
+
+The "htmllib" module has been rewritten in an incompatible fashion.
+The new version is considerably more complete (HTML 2.0 except forms,
+but including all ISO-8859-1 entity definitions), and easy to use.
+Small changes to "sgmllib" have also been made, to better match the
+tokenization of HTML as recognized by other web tools.
+
+A new module "formatter" has been added, for use with the new
+"htmllib" module.
+
+The "urllib"and "httplib" modules have been changed somewhat to allow
+overriding unknown URL types and to support authentication.  They now
+use "mimetools.Message" instead of "rfc822.Message" to parse headers.
+The "endrequest()" method has been removed from the HTTP class since
+it breaks the interaction with some servers.
+
+The "rfc822.Message" class has been changed to allow a flag to be
+passed in that says that the file is unseekable.
+
+The "ftplib" module has been fixed to be (hopefully) more robust on
+Linux.
+
+Several new operations that are optionally supported by servers have
+been added to "nntplib": "xover", "xgtitle", "xpath" and "date".
+
+Other Language Changes
+======================
+
+The "raise" statement now takes an optional argument which specifies
+the traceback to be used when printing the exception's stack trace.
+This must be a traceback object, such as found in "sys.exc_traceback".
+When omitted or given as "None", the old behavior (to generate a stack
+trace entry for the current stack frame) is used.
+
+The tokenizer is now more tolerant of alien whitespace.  Control-L in
+the leading whitespace of a line resets the column number to zero,
+while Control-R just before the end of the line is ignored.
+
+Changes to Built-in Operations
+==============================
+
+For file objects, "f.read(0)" and "f.readline(0)" now return an empty
+string rather than reading an unlimited number of bytes.  For the
+latter, omit the argument altogether or pass a negative value.
+
+A new system variable, "sys.platform", has been added.  It specifies
+the current platform, e.g. "sunos5" or "linux1".
+
+The built-in functions "input()" and "raw_input()" now use the GNU
+readline library when it has been configured (formerly, only
+interactive input to the interpreter itself was read using GNU
+readline).  The GNU readline library provides elaborate line editing
+and history.  The Python debugger ("pdb") is the first beneficiary of
+this change.
+
+Two new built-in functions, "globals()" and "locals()", provide access
+to dictionaries containming current global and local variables,
+respectively.  (These augment rather than replace "vars()", which
+returns the current local variables when called without an argument,
+and a module's global variables when called with an argument of type
+module.)
+
+The built-in function "compile()" now takes a third possible value for
+the kind of code to be compiled: specifying "'single'" generates code
+for a single interactive statement, which prints the output of
+expression statements that evaluate to something else than "None".
+
+Library Changes
+===============
+
+There are new module "ni" and "ihooks" that support importing modules
+with hierarchical names such as "A.B.C".  This is enabled by writing
+"import ni; ni.ni()" at the very top of the main program.  These
+modules are amply documented in the Python source.
+
+The module "rexec" has been rewritten (incompatibly) to define a class
+and to use "ihooks".
+
+The "string.split()" and "string.splitfields()" functions are now the
+same function (the presence or absence of the second argument
+determines which operation is invoked); similar for "string.join()"
+and "string.joinfields()".
+
+The "Tkinter" module and its helper "Dialog" have been revamped to use
+keyword arguments.  Tk 4.0 is now the standard.  A new module
+"FileDialog" has been added which implements standard file selection
+dialogs.
+
+The optional built-in modules "dbm" and "gdbm" are more coordinated
+--- their "open()" functions now take the same values for their "flag"
+argument, and the "flag" and "mode" argument have default values (to
+open the database for reading only, and to create the database with
+mode "0666" minuse the umask, respectively).  The memory leaks have
+finally been fixed.
+
+A new dbm-like module, "bsddb", has been added, which uses the BSD DB
+package's hash method.
+
+A portable (though slow) dbm-clone, implemented in Python, has been
+added for systems where none of the above is provided.  It is aptly
+dubbed "dumbdbm".
+
+The module "anydbm" provides a unified interface to "bsddb", "gdbm",
+"dbm", and "dumbdbm", choosing the first one available.
+
+A new extension module, "binascii", provides a variety of operations
+for conversion of text-encoded binary data.
+
+There are three new or rewritten companion modules implemented in
+Python that can encode and decode the most common such formats: "uu"
+(uuencode), "base64" and "binhex".
+
+A module to handle the MIME encoding quoted-printable has also been
+added: "quopri".
+
+The parser module (which provides an interface to the Python parser's
+abstract syntax trees) has been rewritten (incompatibly) by Fred
+Drake.  It now lets you change the parse tree and compile the result!
+
+The \code{syslog} module has been upgraded and documented.
+
+Other Changes
+=============
+
+The dynamic module loader recognizes the fact that different filenames
+point to the same shared library and loads the library only once, so
+you can have a single shared library that defines multiple modules.
+(SunOS / SVR4 style shared libraries only.)
+
+Jim Fulton's ``abstract object interface'' has been incorporated into
+the run-time API.  For more detailes, read the files
+"Include/abstract.h" and "Objects/abstract.c".
+
+The Macintosh version is much more robust now.
+
+Numerous things I have forgotten or that are so obscure no-one will
+notice them anyway :-)
+
+
 ===================================
 ==> Release 1.2 (13 April 1995) <==
 ===================================
