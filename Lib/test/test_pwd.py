@@ -1,6 +1,5 @@
 from test_support import verbose
 import pwd
-import string
 
 print 'pwd.getpwall()'
 entries = pwd.getpwall()
@@ -50,7 +49,7 @@ while bynames.has_key(fakename):
         except IndexError:
             # should never happen... if so, just forget it
             break
-    fakename = string.join(map(None, chars), '')
+    fakename = ''.join(map(None, chars))
 
 try:
     pwd.getpwnam(fakename)

@@ -1,5 +1,4 @@
 import posixpath
-import string
 
 errors = 0
 
