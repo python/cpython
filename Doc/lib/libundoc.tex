@@ -77,23 +77,12 @@ ihooks.py -- Import hook support (for ni and rexec)
 \section{Parsing Python}
 
 (One could argue that these should all be documented together with the
-parser module; in fact the parser module section already references
-the token and symbol modules.)
-
-token.py -- Tokens (from ``token.h'')
-
-symbol.py -- Symbols (from ``graminit.h'')
-
-keyword.py -- Keywords (from ``graminit.c'')
+parser module.)
 
 tokenize.py -- regular expression that recognizes Python tokens; also
 contains helper code for colorizing Python source code.
 
 pyclbr.py -- Parse a Python file and retrieve classes and methods
-
-code.py -- Deal with Python code objects: code.compile_command() can
-determine whether an interactively entered command is complete or not,
-distinguishing incomplete from invalid input.
 
 
 \section{Platform specific modules}
