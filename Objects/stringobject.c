@@ -1407,6 +1407,129 @@ string_split(PyStringObject *self, PyObject *args)
 	return NULL;
 }
 
+static PyObject *
+rsplit_whitespace(const char *s, int len, int maxsplit)
+{
+	int i, j, err;
+	PyObject* item;
+	PyObject *list = PyList_New(0);
+
+	if (list == NULL)
+		return NULL;
+
+	for (i = j = len - 1; i >= 0; ) {
+		while (i >= 0 && isspace(Py_CHARMASK(s[i])))
+			i--;
+		j = i;
+		while (i >= 0 && !isspace(Py_CHARMASK(s[i])))
+			i--;
+		if (j > i) {
+			if (maxsplit-- <= 0)
+				break;
+			item = PyString_FromStringAndSize(s+i+1, (int)(j-i));
+			if (item == NULL)
+				goto finally;
+			err = PyList_Insert(list, 0, item);
+			Py_DECREF(item);
+			if (err < 0)
+				goto finally;
+			while (i >= 0 && isspace(Py_CHARMASK(s[i])))
+				i--;
+			j = i;
+		}
+	}
+	if (j >= 0) {
+		item = PyString_FromStringAndSize(s, (int)(j + 1));
+		if (item == NULL)
+			goto finally;
+		err = PyList_Insert(list, 0, item);
+		Py_DECREF(item);
+		if (err < 0)
+			goto finally;
+	}
+	return list;
+  finally:
+	Py_DECREF(list);
+	return NULL;
+}
+
+
+PyDoc_STRVAR(rsplit__doc__,
+"S.rsplit([sep [,maxsplit]]) -> list of strings\n\
+\n\
+Return a list of the words in the string S, using sep as the\n\
+delimiter string, starting at the end of the string and working\n\
+to the front.  If maxsplit is given, at most maxsplit splits are\n\
+done. If sep is not specified or is None, any whitespace string\n\
+is a separator.");
+
+static PyObject *
+string_rsplit(PyStringObject *self, PyObject *args)
+{
+	int len = PyString_GET_SIZE(self), n, i, j, err;
+	int maxsplit = -1;
+	const char *s = PyString_AS_STRING(self), *sub;
+	PyObject *list, *item, *subobj = Py_None;
+
+	if (!PyArg_ParseTuple(args, "|Oi:rsplit", &subobj, &maxsplit))
+		return NULL;
+	if (maxsplit < 0)
+		maxsplit = INT_MAX;
+	if (subobj == Py_None)
+		return rsplit_whitespace(s, len, maxsplit);
+	if (PyString_Check(subobj)) {
+		sub = PyString_AS_STRING(subobj);
+		n = PyString_GET_SIZE(subobj);
+	}
+#ifdef Py_USING_UNICODE
+	else if (PyUnicode_Check(subobj))
+		return PyUnicode_RSplit((PyObject *)self, subobj, maxsplit);
+#endif
+	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
+		return NULL;
+	if (n == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty separator");
+		return NULL;
+	}
+
+	list = PyList_New(0);
+	if (list == NULL)
+		return NULL;
+
+	j = len;
+	i = j - n;
+	while (i >= 0) {
+		if (s[i] == sub[0] && memcmp(s+i, sub, n) == 0) {
+			if (maxsplit-- <= 0)
+				break;
+			item = PyString_FromStringAndSize(s+i+n, (int)(j-i-n));
+			if (item == NULL)
+				goto fail;
+			err = PyList_Insert(list, 0, item);
+			Py_DECREF(item);
+			if (err < 0)
+				goto fail;
+			j = i;
+			i -= n;
+		}
+		else
+			i--;
+	}
+	item = PyString_FromStringAndSize(s, j);
+	if (item == NULL)
+		goto fail;
+	err = PyList_Insert(list, 0, item);
+	Py_DECREF(item);
+	if (err < 0)
+		goto fail;
+
+	return list;
+
+ fail:
+	Py_DECREF(list);
+	return NULL;
+}
+
 
 PyDoc_STRVAR(join__doc__,
 "S.join(sequence) -> string\n\
@@ -3064,6 +3187,7 @@ string_methods[] = {
 	   string.maketrans(). */
 	{"join", (PyCFunction)string_join, METH_O, join__doc__},
 	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
+	{"rsplit", (PyCFunction)string_rsplit, METH_VARARGS, rsplit__doc__},
 	{"lower", (PyCFunction)string_lower, METH_NOARGS, lower__doc__},
 	{"upper", (PyCFunction)string_upper, METH_NOARGS, upper__doc__},
 	{"islower", (PyCFunction)string_islower, METH_NOARGS, islower__doc__},

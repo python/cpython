@@ -4053,10 +4053,21 @@ PyUnicodeObject *pad(PyUnicodeObject *self,
 }
 
 #define SPLIT_APPEND(data, left, right)					\
-	str = PyUnicode_FromUnicode(data + left, right - left);		\
+	str = PyUnicode_FromUnicode((data) + (left), (right) - (left));	\
 	if (!str)							\
 	    goto onError;						\
 	if (PyList_Append(list, str)) {					\
+	    Py_DECREF(str);						\
+	    goto onError;						\
+	}								\
+        else								\
+            Py_DECREF(str);
+
+#define SPLIT_INSERT(data, left, right)					\
+	str = PyUnicode_FromUnicode((data) + (left), (right) - (left));	\
+	if (!str)							\
+	    goto onError;						\
+	if (PyList_Insert(list, 0, str)) {				\
 	    Py_DECREF(str);						\
 	    goto onError;						\
 	}								\
@@ -4214,7 +4225,106 @@ PyObject *split_substring(PyUnicodeObject *self,
     return NULL;
 }
 
+static
+PyObject *rsplit_whitespace(PyUnicodeObject *self,
+			    PyObject *list,
+			    int maxcount)
+{
+    register int i;
+    register int j;
+    int len = self->length;
+    PyObject *str;
+
+    for (i = j = len - 1; i >= 0; ) {
+	/* find a token */
+	while (i >= 0 && Py_UNICODE_ISSPACE(self->str[i]))
+	    i--;
+	j = i;
+	while (i >= 0 && !Py_UNICODE_ISSPACE(self->str[i]))
+	    i--;
+	if (j > i) {
+	    if (maxcount-- <= 0)
+		break;
+	    SPLIT_INSERT(self->str, i + 1, j + 1);
+	    while (i >= 0 && Py_UNICODE_ISSPACE(self->str[i]))
+		i--;
+	    j = i;
+	}
+    }
+    if (j >= 0) {
+	SPLIT_INSERT(self->str, 0, j + 1);
+    }
+    return list;
+
+ onError:
+    Py_DECREF(list);
+    return NULL;
+}
+
+static 
+PyObject *rsplit_char(PyUnicodeObject *self,
+		      PyObject *list,
+		      Py_UNICODE ch,
+		      int maxcount)
+{
+    register int i;
+    register int j;
+    int len = self->length;
+    PyObject *str;
+
+    for (i = j = len - 1; i >= 0; ) {
+	if (self->str[i] == ch) {
+	    if (maxcount-- <= 0)
+		break;
+	    SPLIT_INSERT(self->str, i + 1, j + 1);
+	    j = i = i - 1;
+	} else
+	    i--;
+    }
+    if (j >= 0) {
+	SPLIT_INSERT(self->str, 0, j + 1);
+    }
+    return list;
+
+ onError:
+    Py_DECREF(list);
+    return NULL;
+}
+
+static 
+PyObject *rsplit_substring(PyUnicodeObject *self,
+			   PyObject *list,
+			   PyUnicodeObject *substring,
+			   int maxcount)
+{
+    register int i;
+    register int j;
+    int len = self->length;
+    int sublen = substring->length;
+    PyObject *str;
+
+    for (i = len - sublen, j = len; i >= 0; ) {
+	if (Py_UNICODE_MATCH(self, i, substring)) {
+	    if (maxcount-- <= 0)
+		break;
+	    SPLIT_INSERT(self->str, i + sublen, j);
+	    j = i;
+	    i -= sublen;
+	} else
+	    i--;
+    }
+    if (j >= 0) {
+	SPLIT_INSERT(self->str, 0, j);
+    }
+    return list;
+
+ onError:
+    Py_DECREF(list);
+    return NULL;
+}
+
 #undef SPLIT_APPEND
+#undef SPLIT_INSERT
 
 static
 PyObject *split(PyUnicodeObject *self,
@@ -4243,6 +4353,35 @@ PyObject *split(PyUnicodeObject *self,
     }
     else
 	return split_substring(self,list,substring,maxcount);
+}
+
+static
+PyObject *rsplit(PyUnicodeObject *self,
+		 PyUnicodeObject *substring,
+		 int maxcount)
+{
+    PyObject *list;
+
+    if (maxcount < 0)
+        maxcount = INT_MAX;
+
+    list = PyList_New(0);
+    if (!list)
+        return NULL;
+
+    if (substring == NULL)
+	return rsplit_whitespace(self,list,maxcount);
+
+    else if (substring->length == 1)
+	return rsplit_char(self,list,substring->str[0],maxcount);
+
+    else if (substring->length == 0) {
+	Py_DECREF(list);
+	PyErr_SetString(PyExc_ValueError, "empty separator");
+	return NULL;
+    }
+    else
+	return rsplit_substring(self,list,substring,maxcount);
 }
 
 static
@@ -5675,6 +5814,56 @@ unicode_split(PyUnicodeObject *self, PyObject *args)
 	return PyUnicode_Split((PyObject *)self, substring, maxcount);
 }
 
+PyObject *PyUnicode_RSplit(PyObject *s,
+			   PyObject *sep,
+			   int maxsplit)
+{
+    PyObject *result;
+    
+    s = PyUnicode_FromObject(s);
+    if (s == NULL)
+	return NULL;
+    if (sep != NULL) {
+	sep = PyUnicode_FromObject(sep);
+	if (sep == NULL) {
+	    Py_DECREF(s);
+	    return NULL;
+	}
+    }
+
+    result = rsplit((PyUnicodeObject *)s, (PyUnicodeObject *)sep, maxsplit);
+
+    Py_DECREF(s);
+    Py_XDECREF(sep);
+    return result;
+}
+
+PyDoc_STRVAR(rsplit__doc__,
+"S.rsplit([sep [,maxsplit]]) -> list of strings\n\
+\n\
+Return a list of the words in S, using sep as the\n\
+delimiter string, starting at the end of the string and\n\
+working to the front.  If maxsplit is given, at most maxsplit\n\
+splits are done. If sep is not specified, any whitespace string\n\
+is a separator.");
+
+static PyObject*
+unicode_rsplit(PyUnicodeObject *self, PyObject *args)
+{
+    PyObject *substring = Py_None;
+    int maxcount = -1;
+
+    if (!PyArg_ParseTuple(args, "|Oi:rsplit", &substring, &maxcount))
+        return NULL;
+
+    if (substring == Py_None)
+	return rsplit(self, NULL, maxcount);
+    else if (PyUnicode_Check(substring))
+	return rsplit(self, (PyUnicodeObject *)substring, maxcount);
+    else
+	return PyUnicode_RSplit((PyObject *)self, substring, maxcount);
+}
+
 PyDoc_STRVAR(splitlines__doc__,
 "S.splitlines([keepends]]) -> list of strings\n\
 \n\
@@ -5870,6 +6059,7 @@ static PyMethodDef unicode_methods[] = {
     {"encode", (PyCFunction) unicode_encode, METH_VARARGS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
+    {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
     {"join", (PyCFunction) unicode_join, METH_O, join__doc__},
     {"capitalize", (PyCFunction) unicode_capitalize, METH_NOARGS, capitalize__doc__},
     {"title", (PyCFunction) unicode_title, METH_NOARGS, title__doc__},
