@@ -303,6 +303,10 @@ Extension modules
 Library
 -------
 
+- Bug #926075: Fixed a bug that returns a wrong pattern object
+  for a string or unicode object in sre.compile() when a different
+  type pattern with the same value exists.
+
 - Added countcallers arg to trace.Trace class (--trackcalls command line arg
   when run from the command prompt).
 
