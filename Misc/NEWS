@@ -30,6 +30,13 @@ Standard library
   has an hasAttributes method, and the handling of namespaces was
   improved.
 
+- Ka-Ping Yee contributed two new modules: inspect.py, a module for
+  getting information about live Python code, and pydoc.py, a module
+  for interactively converting docstrings to HTML or text.
+  Tools/scripts/pydoc, which is now automatically installed into
+  <prefix>/bin, uses pydoc.py to display documentation; try running 
+  'pydoc' for the instructions.
+
 Windows changes
 
 - Build:  Subproject _test (effectively) renamed to _testcapi.
