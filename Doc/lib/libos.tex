@@ -586,20 +586,23 @@ The following data items are available for use in constructing the
 \begin{datadesc}{O_RDONLY}
 \dataline{O_WRONLY}
 \dataline{O_RDWR}
-\dataline{O_NDELAY}
-\dataline{O_NONBLOCK}
 \dataline{O_APPEND}
-\dataline{O_DSYNC}
-\dataline{O_RSYNC}
-\dataline{O_SYNC}
-\dataline{O_NOCTTY}
 \dataline{O_CREAT}
 \dataline{O_EXCL}
 \dataline{O_TRUNC}
 Options for the \var{flag} argument to the \function{open()} function.
 These can be bit-wise OR'd together.
 Availability: Macintosh, \UNIX, Windows.
-% XXX O_NDELAY, O_NONBLOCK, O_DSYNC, O_RSYNC, O_SYNC, O_NOCTTY are not on Windows.
+\end{datadesc}
+
+begin{datadesc}{O_DSYNC}
+\dataline{O_RSYNC}
+\dataline{O_SYNC}
+\dataline{O_NDELAY}
+\dataline{O_NONBLOCK}
+\dataline{O_NOCTTY}
+More options for the \var{flag} argument to the \function{open()} function.
+Availability: Macintosh, \UNIX.
 \end{datadesc}
 
 \begin{datadesc}{O_BINARY}
