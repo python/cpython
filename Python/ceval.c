@@ -2683,7 +2683,7 @@ build_class(methods, bases, name)
 	PyObject *bases;  /* tuple containing classes */
 	PyObject *name;   /* string */
 {
-	int i;
+	int i, n;
 	if (!PyTuple_Check(bases)) {
 		PyErr_SetString(PyExc_SystemError,
 				"build_class with non-tuple bases");
@@ -2699,9 +2699,8 @@ build_class(methods, bases, name)
 				"build_class witn non-string name");
 		return NULL;
 	}
-	for (i = PyTuple_Size(bases); --i >= 0; ) {
-		/* XXX Is it intentional that the *last* base gets a
-		   chance at this first? */
+	n = PyTuple_Size(bases);
+	for (i = 0; i < n; i++) {
 		PyObject *base = PyTuple_GET_ITEM(bases, i);
 		if (!PyClass_Check(base)) {
 			/* Call the base's *type*, if it is callable.
