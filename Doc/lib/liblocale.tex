@@ -203,7 +203,7 @@ implementation are broken in such a way that frequent locale changes
 may cause core dumps.  This makes the locale somewhat painful to use
 correctly.
 
-Initially, when a program is started, the locale is the "C" locale, no
+Initially, when a program is started, the locale is the \samp{C} locale, no
 matter what the user's preferred locale is.  The program must
 explicitly say that it wants the user's preferred locale settings by
 calling \code{setlocale(LC_ALL, "")}.
@@ -219,8 +219,8 @@ independent version of an operation that is affected by the locale
 \function{time.strftime()})), you will have to find a way to do it
 without using the standard library routine.  Even better is convincing
 yourself that using locale settings is okay.  Only as a last resort
-should you document that your module is not compatible with non-C
-locale settings.
+should you document that your module is not compatible with
+non-\samp{C} locale settings.
 
 The case conversion functions in the
 \module{string}\refstmodindex{string} and
@@ -240,30 +240,31 @@ is to use the special functions defined by this module:
 \function{str()}.
 
 \subsection{For extension writers and programs that embed Python}
+\label{embedding-locale}
 
 Extension modules should never call \function{setlocale()}, except to
 find out what the current locale is.  But since the return value can
 only be used portably to restore it, that is not very useful (except
-perhaps to find out whether or not the locale is ``C'').
+perhaps to find out whether or not the locale is \samp{C}).
 
 When Python is embedded in an application, if the application sets the
 locale to something specific before initializing Python, that is
 generally okay, and Python will use whatever locale is set,
-\strong{except} that the \constant{LC_NUMERIC} locale should always be
-``C''.
+\emph{except} that the \constant{LC_NUMERIC} locale should always be
+\samp{C}.
 
 The \function{setlocale()} function in the \module{locale} module contains
 gives the Python progammer the impression that you can manipulate the
-\constant{LC_NUMERIC} locale setting, but this not the case at the C
-level: C code will always find that the \constant{LC_NUMERIC} locale
-setting is ``C''.  This is because too much would break when the
+\constant{LC_NUMERIC} locale setting, but this not the case at the \C{}
+level: \C{} code will always find that the \constant{LC_NUMERIC} locale
+setting is \samp{C}.  This is because too much would break when the
 decimal point character is set to something else than a period
 (e.g. the Python parser would break).  Caveat: threads that run
 without holding Python's global interpreter lock may occasionally find
 that the numeric locale setting differs; this is because the only
 portable way to implement this feature is to set the numeric locale
 settings to what the user requests, extract the relevant
-characteristics, and then restore the ``C'' numeric locale.
+characteristics, and then restore the \samp{C} numeric locale.
 
 When Python code uses the \module{locale} module to change the locale,
 this also affect the embedding application.  If the embedding
