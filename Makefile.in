@@ -308,6 +308,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 				*.py[co]) ;; \
 				*~) ;; \
 				*) \
+					if test -d $$i; then continue; fi; \
 					if test -x $$i; then \
 					    echo $(INSTALL_PROGRAM) $$i $$b; \
 					    $(INSTALL_PROGRAM) $$i $$b; \
