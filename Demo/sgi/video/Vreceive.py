@@ -1,4 +1,4 @@
-#!/ufs/guido/bin/sgi/python-405
+#!/ufs/guido/bin/sgi/python
 
 # Receive live video UDP packets.
 # Usage: Vreceive [port]
