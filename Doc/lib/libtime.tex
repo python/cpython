@@ -224,6 +224,22 @@ Notes:
     seconds and the (very rare) double leap seconds.
 \end{description}
 
+Here is an example, a format for dates compatible with that specified 
+in the \rfc{822} Internet email standard.
+	\footnote{The use of \%Z is now
+	deprecated, but the \%z escape that expands to the preferred 
+	hour/minute offset is not supported by all ANSI C libraries. Also,
+	a strict reading of the original 1982 \rfc{822} standard calls for
+	a two-digit year (\%y rather than \%Y), but practice moved to
+	4-digit years long before the year 2000.}
+
+\begin{verbatim}
+>>> from time import *
+>>> strftime("\%a, \%d \%b \%Y \%H:\%M:\%S \%Z", localtime())
+'Sat, 27 Jan 2001 05:15:05 EST'
+>>>
+\end{verbatim}
+
 Additional directives may be supported on certain platforms, but
 only the ones listed here have a meaning standardized by ANSI C.
 
