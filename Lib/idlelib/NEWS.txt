@@ -3,6 +3,10 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- The GUI was hanging if the shell window was closed while a raw_input() 
+  was pending.  Restored the quit() of the readline() mainloop().
+  http://mail.python.org/pipermail/idle-dev/2004-December/002307.html
+
 - The remote procedure call module rpc.py can now access data attributes of
   remote registered objects.  Changes to these attributes are local, however.
 

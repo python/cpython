@@ -910,6 +910,9 @@ class PyShell(OutputWindow):
                 parent=self.text)
             if response == False:
                 return "cancel"
+        if self.reading:
+            self.top.quit()
+        self.canceled = True
         self.closing = True
         # Wait for poll_subprocess() rescheduling to stop
         self.text.after(2 * self.pollinterval, self.close2)
@@ -974,10 +977,12 @@ class PyShell(OutputWindow):
         save = self.reading
         try:
             self.reading = 1
-            self.top.mainloop()
+            self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
         line = self.text.get("iomark", "end-1c")
+        if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
+            line = "\n"
         if isinstance(line, unicode):
             import IOBinding
             try:
@@ -987,10 +992,11 @@ class PyShell(OutputWindow):
         self.resetoutput()
         if self.canceled:
             self.canceled = 0
-            raise KeyboardInterrupt
+            if not use_subprocess:
+                raise KeyboardInterrupt
         if self.endoffile:
             self.endoffile = 0
-            return ""
+            line = ""
         return line
 
     def isatty(self):
@@ -1009,13 +1015,13 @@ class PyShell(OutputWindow):
             return "break"
         self.endoffile = 0
         self.canceled = 1
-        if self.reading:
-            self.top.quit()
-        elif (self.executing and self.interp.rpcclt):
+        if (self.executing and self.interp.rpcclt):
             if self.interp.getdebugger():
                 self.interp.restart_subprocess()
             else:
                 self.interp.interrupt_subprocess()
+        if self.reading:
+            self.top.quit()  # exit the nested mainloop() in readline()
         return "break"
 
     def eof_callback(self, event):
