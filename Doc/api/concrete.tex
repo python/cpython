@@ -179,7 +179,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \versionadded{2.3}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{unsigned long}{PyInt_AsUnsignedLongLongMask}{PyObject *io}
+\begin{cfuncdesc}{unsigned long long}{PyInt_AsUnsignedLongLongMask}{PyObject *io}
   Will first attempt to cast the object to a \ctype{PyIntObject} or
   \ctype{PyLongObject}, if it is not already one, and then return its
   value as unsigned long long, without checking for overflow.
