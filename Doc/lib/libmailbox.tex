@@ -69,10 +69,18 @@ mailbox specified by \var{dirname} is made available.
 \end{classdesc}
 
 \begin{classdesc}{BabylMailbox}{fp\optional{, factory}}
-Access a Babyl mailbox, which is similar to an MMDF mailbox.  Mail
-messages start with a line containing only \code{'*** EOOH ***'} and
-end with a line containing only \code{'\e{}037\e{}014'}.
-\var{factory} is as with the \class{UnixMailbox} class.
+Access a Babyl mailbox, which is similar to an MMDF mailbox.  In
+Babyl format, each message has two sets of headers, the
+\emph{original} headers and the \emph{visible} headers.  The original
+headers appear before a a line containing only \code{'*** EOOH ***'}
+(End-Of-Original-Headers) and the visible headers appear after the
+\code{EOOH} line.  Babyl-compliant mail readers will show you only the
+visible headers, and \class{BabylMailbox} objects will return messages
+containing only the visible headers.  You'll have to do your own
+parsing of the mailbox file to get at the original headers.  Mail
+messages start with the EOOH line and end with a line containing only
+\code{'\e{}037\e{}014'}.  \var{factory} is as with the
+\class{UnixMailbox} class.
 \end{classdesc}
 
 
