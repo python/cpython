@@ -63,7 +63,7 @@ class ExceptionTestCase(unittest.TestCase):
 
     def test_badcompressobj(self):
         # verify failure on building compress object with bad params
-        self.assertRaises(ValueError, zlib.compressobj, 1, 8, 0)
+        self.assertRaises(ValueError, zlib.compressobj, 1, zlib.DEFLATED, 0)
 
     def test_baddecompressobj(self):
         # verify failure on building decompress object with bad params
@@ -104,11 +104,11 @@ class CompressObjectTestCase(unittest.TestCase):
     def test_pairsmall(self):
         # use compress object in straightforward manner, decompress w/ object
         data = hamlet_scene
-        co = zlib.compressobj(8, 8, -15)
+        co = zlib.compressobj()
         x1 = co.compress(data)
         x2 = co.flush()
         self.assertRaises(zlib.error, co.flush) # second flush should not work
-        dco = zlib.decompressobj(-15)
+        dco = zlib.decompressobj()
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(data, y1 + y2)
@@ -116,26 +116,41 @@ class CompressObjectTestCase(unittest.TestCase):
     def test_pair(self):
         # straightforward compress/decompress objects, more compression
         data = hamlet_scene * 8 * 16
-        co = zlib.compressobj(8, 8, -15)
+        co = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED)
         x1 = co.compress(data)
         x2 = co.flush()
         self.assertRaises(zlib.error, co.flush) # second flush should not work
-        dco = zlib.decompressobj(-15)
+        dco = zlib.decompressobj()
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(data, y1 + y2)
 
+    def test_compressoptions(self):
+        # specify lots of options to compressobj()
+        level = 2
+        method = zlib.DEFLATED
+        wbits = -12
+        memlevel = 9
+        strategy = zlib.Z_FILTERED
+        co = zlib.compressobj(level, method, wbits, memlevel, strategy)
+        x1 = co.compress(hamlet_scene)
+        x2 = co.flush()
+        dco = zlib.decompressobj(wbits)
+        y1 = dco.decompress(x1 + x2)
+        y2 = dco.flush()
+        self.assertEqual(hamlet_scene, y1 + y2)
+
     def test_compressincremental(self):
         # compress object in steps, decompress object as one-shot
         data = hamlet_scene * 8 * 16
-        co = zlib.compressobj(2, 8, -12, 9, 1)
+        co = zlib.compressobj()
         bufs = []
         for i in range(0, len(data), 256):
             bufs.append(co.compress(data[i:i+256]))
         bufs.append(co.flush())
         combuf = ''.join(bufs)
 
-        dco = zlib.decompressobj(-15)
+        dco = zlib.decompressobj()
         y1 = dco.decompress(''.join(bufs))
         y2 = dco.flush()
         self.assertEqual(data, y1 + y2)
@@ -143,16 +158,16 @@ class CompressObjectTestCase(unittest.TestCase):
     def test_decompressincremental(self):
         # compress object in steps, decompress object in steps
         data = hamlet_scene * 8 * 16
-        co = zlib.compressobj(2, 8, -12, 9, 1)
+        co = zlib.compressobj()
         bufs = []
         for i in range(0, len(data), 256):
             bufs.append(co.compress(data[i:i+256]))
         bufs.append(co.flush())
         combuf = ''.join(bufs)
 
-        self.assertEqual(data, zlib.decompress(combuf, -12, -5))
+        self.assertEqual(data, zlib.decompress(combuf))
 
-        dco = zlib.decompressobj(-12)
+        dco = zlib.decompressobj()
         bufs = []
         for i in range(0, len(combuf), 128):
             bufs.append(dco.decompress(combuf[i:i+128]))
@@ -171,16 +186,16 @@ class CompressObjectTestCase(unittest.TestCase):
         source = source or hamlet_scene
         for reps in sizes:
             data = source * reps
-            co = zlib.compressobj(2, 8, -12, 9, 1)
+            co = zlib.compressobj()
             bufs = []
             for i in range(0, len(data), cx):
                 bufs.append(co.compress(data[i:i+cx]))
             bufs.append(co.flush())
             combuf = ''.join(bufs)
 
-            self.assertEqual(data, zlib.decompress(combuf, -12, -5))
+            self.assertEqual(data, zlib.decompress(combuf))
 
-            dco = zlib.decompressobj(-12)
+            dco = zlib.decompressobj()
             bufs = []
             for i in range(0, len(combuf), dcx):
                 bufs.append(dco.decompress(combuf[i:i+dcx]))
@@ -208,16 +223,16 @@ class CompressObjectTestCase(unittest.TestCase):
         for reps in sizes:
             # Check a decompression object with max_length specified
             data = source * reps
-            co = zlib.compressobj(2, 8, -12, 9, 1)
+            co = zlib.compressobj()
             bufs = []
             for i in range(0, len(data), cx):
                 bufs.append(co.compress(data[i:i+cx]))
             bufs.append(co.flush())
             combuf = ''.join(bufs)
-            self.assertEqual(data, zlib.decompress(combuf, -12, -5),
+            self.assertEqual(data, zlib.decompress(combuf),
                              'compressed data failure')
 
-            dco = zlib.decompressobj(-12)
+            dco = zlib.decompressobj()
             bufs = []
             cb = combuf
             while cb:
@@ -244,16 +259,16 @@ class CompressObjectTestCase(unittest.TestCase):
     def test_decompressmaxlen(self):
         # Check a decompression object with max_length specified
         data = hamlet_scene * 8 * 16
-        co = zlib.compressobj(2, 8, -12, 9, 1)
+        co = zlib.compressobj()
         bufs = []
         for i in range(0, len(data), 256):
             bufs.append(co.compress(data[i:i+256]))
         bufs.append(co.flush())
         combuf = ''.join(bufs)
-        self.assertEqual(data, zlib.decompress(combuf, -12, -5),
+        self.assertEqual(data, zlib.decompress(combuf),
                          'compressed data failure')
 
-        dco = zlib.decompressobj(-12)
+        dco = zlib.decompressobj()
         bufs = []
         cb = combuf
         while cb:
@@ -271,16 +286,16 @@ class CompressObjectTestCase(unittest.TestCase):
         # identical to test_decompressmaxlen except flush is replaced
         # with an equivalent.  This works and other fails on (eg) 2.2.2
         data = hamlet_scene * 8 * 16
-        co = zlib.compressobj(2, 8, -12, 9, 1)
+        co = zlib.compressobj()
         bufs = []
         for i in range(0, len(data), 256):
             bufs.append(co.compress(data[i:i+256]))
         bufs.append(co.flush())
         combuf = ''.join(bufs)
-        self.assertEqual(data, zlib.decompress(combuf, -12, -5),
+        self.assertEqual(data, zlib.decompress(combuf),
                          'compressed data mismatch')
 
-        dco = zlib.decompressobj(-12)
+        dco = zlib.decompressobj()
         bufs = []
         cb = combuf
         while cb:
@@ -302,7 +317,7 @@ class CompressObjectTestCase(unittest.TestCase):
 
     def test_maxlenmisc(self):
         # Misc tests of max_length
-        dco = zlib.decompressobj(-12)
+        dco = zlib.decompressobj()
         self.assertRaises(ValueError, dco.decompress, "", -1)
         self.assertEqual('', dco.unconsumed_tail)
 
