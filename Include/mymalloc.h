@@ -78,14 +78,22 @@ extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 #define NULL ((ANY *)0)
 #endif
 
+#ifdef MALLOC_ZERO_RETURNS_NULL
 /* XXX Always allocate one extra byte, since some malloc's return NULL
    XXX for malloc(0) or realloc(p, 0). */
-#define PyMem_NEW(type, n) ( (type *) malloc(1 + (n) * sizeof(type)) )
+#define _PyMem_EXTRA 1
+#else
+#define _PyMem_EXTRA 0
+#endif
+
+#define PyMem_NEW(type, n) \
+	( (type *) malloc(_PyMem_EXTRA + (n) * sizeof(type)) )
 #define PyMem_RESIZE(p, type, n) \
 	if ((p) == NULL) \
-		(p) =  (type *) malloc(1 + (n) * sizeof(type)); \
+		(p) =  (type *) malloc(_PyMem_EXTRA + (n) * sizeof(type)); \
 	else \
-		(p) = (type *) realloc((ANY *)(p), 1 + (n) * sizeof(type))
+		(p) = (type *) realloc((ANY *)(p), \
+				       _PyMem_EXTRA + (n) * sizeof(type))
 #define PyMem_DEL(p) free((ANY *)p)
 #define PyMem_XDEL(p) if ((p) == NULL) ; else PyMem_DEL(p)
 
