@@ -1720,6 +1720,16 @@ must return an integer or long integer, which is returned as the file
 descriptor value.  Returns \code{-1} on failure.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyObject_Dir}{PyObject *o}
+This is equivalent to the Python expression \samp{dir(\var{o})},
+returning a (possibly empty) list of strings appropriate for the
+object argument, or \NULL{} in case of error.
+If the argument is \NULL{}, this is like the Python \samp{dir()},
+returning the names of the current locals; in this case, if no
+execution frame is active then \NULL{} is returned but
+\cfunction{PyErr_Occurred()} will return false.
+\end{cfuncdesc}
+
 
 \section{Number Protocol \label{number}}
 
