@@ -34,8 +34,8 @@ def get(using=None):
 
 # Please note: the following definition hides a builtin function.
 
-def open(url, new=0):
-    get().open(url, new)
+def open(url, new=0, autoraise=1):
+    get().open(url, new, autoraise)
 
 def open_new(url):	# Marked deprecated.  May be removed in 2.1.
     get().open(url, 1)
@@ -99,13 +99,11 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         if _iscommand("netscape") or _iscommand("mozilla"):
             class Netscape:
                 "Launcher class for Netscape browsers."
-                autoRaise = 1
-
                 def __init__(self, name):
                     self.name = name
 
-                def _remote(self, action):
-                    raise_opt = ("-noraise", "-raise")[self.autoRaise]
+                def _remote(self, action, autoraise):
+                    raise_opt = ("-noraise", "-raise")[autoraise]
                     cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name, raise_opt, action)
                     rc = os.system(cmd)
                     if rc:
@@ -115,11 +113,11 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                         rc = os.system(cmd)
                     return not rc
 
-                def open(self, url, new=0):
+                def open(self, url, new=0, autoraise=1):
                     if new:
-                        self._remote("openURL(%s, new-window)" % url)
+                        self._remote("openURL(%s, new-window)"%url, autoraise)
                     else:
-                        self._remote("openURL(%s)" % url)
+                        self._remote("openURL(%s)" % url, autoraise)
 
                 # Deprecated.  May be removed in 2.1.
                 def open_new(self, url):
@@ -159,7 +157,6 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
                 # Deprecated.  May be removed in 2.1.
                 open_new = open
-                    
 
             register("kfm", Konqueror, None)
 
