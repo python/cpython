@@ -309,6 +309,26 @@ class CommonTest(seq_tests.CommonTest):
         a = self.type2test([0, 1, 2, 3])
         self.assertRaises(BadExc, a.remove, BadCmp())
 
+        class BadCmp2:
+            def __eq__(self, other):
+                raise BadExc()
+
+        d = self.type2test('abcdefghcij')
+        d.remove('c')
+        self.assertEqual(d, self.type2test('abdefghcij'))
+        d.remove('c')
+        self.assertEqual(d, self.type2test('abdefghij'))
+        self.assertRaises(ValueError, d.remove, 'c')
+        self.assertEqual(d, self.type2test('abdefghij'))
+
+        # Handle comparison errors
+        d = self.type2test(['a', 'b', BadCmp2(), 'c'])
+        e = self.type2test(d)
+        self.assertRaises(BadExc, d.remove, 'c')
+        for x, y in zip(d, e):
+            # verify that original order and values are retained.
+            self.assert_(x is y)
+
     def test_count(self):
         a = self.type2test([0, 1, 2])*3
         self.assertEqual(a.count(0), 3)
