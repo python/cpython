@@ -100,17 +100,23 @@ class ReadonlyOption(Option):
 	def addoption(self):
 		self.label = Label(self.frame,
 				   {'textvariable': self.var,
+				    'anchor': 'e',
 				    Pack: {'side': 'right'}})
 
 class Dialog:
 
 	def __init__(self, master):
 		self.master = master
+		self.fixclasses()
 		self.refresh()
 		self.top = Toplevel(self.master)
 		self.top.title(self.__class__.__name__)
 		self.top.minsize(1, 1)
 		self.addchoices()
+
+	def refresh(self): pass		# Must override
+
+	def fixclasses(self): pass	# May override
 
 	def addchoices(self):
 		self.choices = {}
@@ -133,6 +139,11 @@ class Dialog:
 				cl = self.stringoption
 			self.choices[k] = cl(self, k)
 
+	# Must override:
+	options = {}
+	classes = {}
+
+	# May override:
 	booleanoption = BooleanOption
 	stringoption = StringOption
 	enumoption = EnumOption
@@ -155,7 +166,8 @@ class PackDialog(Dialog):
 			try:
 				Pack.config(self.dialog.widget,
 					    {self.option: self.current})
-			except TclError:
+			except TclError, msg:
+				print msg
 				self.refresh()
 
 	class booleanoption(packoption, BooleanOption): pass
@@ -211,7 +223,7 @@ class RemotePackDialog(PackDialog):
 						 'newinfo',
 						 self.widget))
 		except TclError, msg:
-			print 'send pack newinfo', self.widget, ':', msg
+			print msg
 			return
 		dict = {}
 		for i in range(0, len(words), 2):
@@ -231,10 +243,14 @@ class RemotePackDialog(PackDialog):
 			try:
 				self.dialog.master.send(
 					self.dialog.app,
-					'pack', 'config', self.dialog.widget,
-					'-'+self.option, self.current)
+					'pack',
+					'config',
+					self.dialog.widget,
+					'-'+self.option,
+					self.dialog.master.tk.merge(
+						self.current))
 			except TclError, msg:
-				print 'send pack config ... :', msg
+				print msg
 				self.refresh()
 
 	class booleanoption(remotepackoption, BooleanOption): pass
@@ -246,14 +262,17 @@ class WidgetDialog(Dialog):
 
 	def __init__(self, widget):
 		self.widget = widget
-		if self.addclasses.has_key(self.widget.widgetName):
+		self.klass = widget.winfo_class()
+		Dialog.__init__(self, widget)
+
+	def fixclasses(self):
+		if self.addclasses.has_key(self.klass):
 			classes = {}
 			for c in (self.classes,
-				  self.addclasses[self.widget.widgetName]):
+				  self.addclasses[self.klass]):
 				for k in c.keys():
 					classes[k] = c[k]
 			self.classes = classes
-		Dialog.__init__(self, widget)
 
 	def refresh(self):
 		self.configuration = self.widget.config()
@@ -276,7 +295,8 @@ class WidgetDialog(Dialog):
 			self.current = self.var.get()
 			try:
 				self.dialog.widget[self.option] = self.current
-			except TclError:
+			except TclError, msg:
+				print msg
 				self.refresh()
 
 	class booleanoption(widgetoption, BooleanOption): pass
@@ -338,26 +358,25 @@ class WidgetDialog(Dialog):
 	_tristate = {'State': ('normal', 'active', 'disabled')}
 	_bistate = {'State': ('normal', 'disabled')}
 	addclasses = {
-		'button': _tristate,
-		'radiobutton': _tristate,
-		'checkbutton': _tristate,
-		'entry': _bistate,
-		'text': _bistate,
-		'menubutton': _tristate,
-		'slider': _bistate,
+		'Button': _tristate,
+		'Radiobutton': _tristate,
+		'Checkbutton': _tristate,
+		'Entry': _bistate,
+		'Text': _bistate,
+		'Menubutton': _tristate,
+		'Slider': _bistate,
 		}
 
 class RemoteWidgetDialog(WidgetDialog):
 
 	def __init__(self, master, app, widget):
-		self.master = master
 		self.app = app
 		self.widget = widget
-		self.refresh()
-		self.top = Toplevel(self.master)
-		self.top.title(self.app + ' WidgetDialog')
-		self.top.minsize(1, 1)
-		self.addchoices()
+		self.klass = master.send(self.app,
+					 'winfo',
+					 'class',
+					 self.widget)
+		Dialog.__init__(self, master)
 
 	def refresh(self):
 		try:
@@ -366,7 +385,7 @@ class RemoteWidgetDialog(WidgetDialog):
 						 self.widget,
 						 'config'))
 		except TclError, msg:
-			print 'send widget config', self.widget, ':', msg
+			print msg
 			return
 		dict = {}
 		for item in items:
@@ -376,10 +395,7 @@ class RemoteWidgetDialog(WidgetDialog):
 			dict[key] = value
 		self.configuration = dict
 		self.update()
-		self.current['.class'] = self.master.send(self.app,
-							  'winfo',
-							  'class',
-							  self.widget)
+		self.current['.class'] = self.klass
 		self.current['.name'] = self.widget
 
 	class remotewidgetoption: # Mix-in class
@@ -393,7 +409,7 @@ class RemoteWidgetDialog(WidgetDialog):
 					'-'+self.option,
 					self.current)
 			except TclError, msg:
-				print 'send widget config :', msg
+				print msg
 				self.refresh()
 
 	class booleanoption(remotewidgetoption, BooleanOption): pass

@@ -1,4 +1,4 @@
-# Print a remote app's widget tree (names and classes only)
+# List a remote app's widget tree (names and classes only)
 
 import sys
 import string
