@@ -581,12 +581,23 @@
 % something else.
 \newcommand{\py@unspecified}{...}
 
+
+\newlength{\py@argswidth}
+\newcommand{\py@sigparams}[1]{%
+  \parbox[t]{\py@argswidth}{\py@varvars{#1}\code{)}}}
+\newcommand{\py@sigline}[2]{%
+  \settowidth{\py@argswidth}{#1\code{(}}%
+  \addtolength{\py@argswidth}{-2\py@argswidth}%
+  \addtolength{\py@argswidth}{\textwidth}%
+  \item[#1\code{(}\py@sigparams{#2}]}
+
 % C functions ------------------------------------------------------------
 % \begin{cfuncdesc}[refcount]{type}{name}{arglist}
 % Note that the [refcount] slot should only be filled in by
 % tools/anno-api.py; it pulls the value from the refcounts database.
 \newcommand{\cfuncline}[3]{
-  \item[\code{#1 \bfcode{#2}(\py@varvars{#3})}\index{#2@{\py@idxcode{#2()}}}]
+  \py@sigline{\code{#1 \bfcode{#2}}}{#3}%
+  \index{#2@{\py@idxcode{#2()}}}
 }
 \newenvironment{cfuncdesc}[4][\py@badkey]{
   \begin{fulllineitems}
@@ -645,7 +656,8 @@
 }{\end{fulllineitems}}
 
 % similar to {funcdesc}, but doesn't add to the index
-\newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\py@varvars{#2})}]}
+\newcommand{\funclineni}[2]{%
+  \py@sigline{\bfcode{#1}}{#2}}
 \newenvironment{funcdescni}[2]{
   \begin{fulllineitems}
     \funclineni{#1}{#2}
@@ -657,8 +669,8 @@
   % Using \renewcommand doesn't work for this, for unknown reasons:
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
-    \item[\strong{class }\code{\bfcode{#1}(\py@varvars{#2})}%
-      \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
+    \py@sigline{\strong{class }\bfcode{#1}}{#2}%
+    \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}
 }{\end{fulllineitems}}
 
 % \begin{classdesc*}{name}
@@ -676,8 +688,8 @@
   % Using \renewcommand doesn't work for this, for unknown reasons:
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
-    \item[\strong{exception }\code{\bfcode{#1}(\py@varvars{#2})}%
-      \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
+    \py@sigline{\strong{exception }\bfcode{#1}}{#2}%
+    \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}
 }{\end{fulllineitems}}
 
 % There is no corresponding {excclassdesc*} environment.  To describe
@@ -709,7 +721,7 @@
 % similar to {methoddesc}, but doesn't add to the index
 % (never actually uses the optional argument)
 \newcommand{\methodlineni}[3][\py@classbadkey]{%
-  \item[\code{\bfcode{#2}(\py@varvars{#3})}]}
+  \py@sigline{\bfcode{#2}}{#3}}
 \newenvironment{methoddescni}[3][\py@classbadkey]{
   \begin{fulllineitems}
     \methodlineni{#2}{#3}
