@@ -78,6 +78,7 @@ MAX_SPLIT_DEPTH=6
 
 build_html() {
     TEXFILE=`kpsewhich $1.tex`
+    TEXFILE="${TEXFILE#./}"
     BUILDDIR=${2:-$1}
     latex2html \
      -init_file $L2H_INIT_FILE \
