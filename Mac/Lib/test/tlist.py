@@ -19,20 +19,16 @@ class ListWindow(Window):
 		r = (40, 40, 400, 300)
 		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
 		r2 = (0, 0, 345, 245)
+		Qd.SetPort(w)
+		self.wid = w
 		self.list = List.LNew(r2, (0, 0, 1, 1), (0,0), 0, w, 0, 1, 1, 1)
 		self.filllist()
 		w.DrawGrowIcon()
-		self.wid = w
 		self.do_postopen()
 		
 	def do_activate(self, onoff, evt):
 		self.list.LActivate(onoff)
 
-	def do_rawupdate(self, window, event):
-		window.BeginUpdate()
-		self.do_update(window, event)
-		window.EndUpdate()
-		
 	def do_update(self, *args):
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		

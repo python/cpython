@@ -19,6 +19,7 @@ class TEWindow(Window):
 		r2 = (0, 0, 345, 245)
 		Qd.SetPort(w)
 		self.ted = TE.TENew(r2, r2)
+		self.ted.TEAutoView(1)
 		w.DrawGrowIcon()
 		self.wid = w
 		self.do_postopen()
@@ -32,21 +33,16 @@ class TEWindow(Window):
 		else:
 			self.ted.TEDeactivate()
 
-	def do_rawupdate(self, window, event):
-		window.BeginUpdate()
-		self.do_update(window, event)
-		window.EndUpdate()
-		
-	def do_update(self, *args):
-		Qd.EraseRect(self.wid.GetWindowPort().portRect)
-		self.ted.TEUpdate(self.wid.GetWindowPort().portRect)
+	def do_update(self, wid, event):
+		Qd.EraseRect(wid.GetWindowPort().portRect)
+		self.ted.TEUpdate(wid.GetWindowPort().portRect)
 		
 	def do_contentclick(self, local, modifiers, evt):
 		shifted = (modifiers & 0x200)
 		self.ted.TEClick(local, shifted)
 
 	def do_char(self, ch, event):
-		self.ted.TEKey(ch)
+		self.ted.TEKey(ord(ch))
 
 class TestList(Application):
 	def __init__(self):
