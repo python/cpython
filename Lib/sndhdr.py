@@ -40,7 +40,7 @@ def what(filename):
 
 def whathdr(filename):
     """Recognize sound headers"""
-    f = open(filename, 'r')
+    f = open(filename, 'rb')
     h = f.read(512)
     for tf in tests:
         res = tf(h, f)
