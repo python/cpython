@@ -44,7 +44,7 @@ def realwork(vars, files, target):
         print "-I$(pythonhome)/Include  -I$(pythonhome)/PC \\"
         print "\t\t$(cflags) $(cdebug) $(cinclude) \\"
         print "\t\t", file
-	print
+        print
 
     print "$(target).exe:",
     for obj in objects: print obj,
