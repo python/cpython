@@ -440,7 +440,8 @@ static PyObject *ResObj_AutoDispose(ResourceObject *_self, PyObject *_args)
 		_self->ob_freeit = PyMac_AutoDisposeHandle;
 	else
 		_self->ob_freeit = NULL;
-	return Py_BuildValue("i", old);
+	_res = Py_BuildValue("i", old);
+	return _res;
 
 }
 
@@ -1378,7 +1379,8 @@ static PyObject *Res_Resource(PyObject *_self, PyObject *_args)
 	HLock(h);
 	memcpy(*h, buf, len);
 	HUnlock(h);
-	return ResObj_New(h);
+	_res = ResObj_New(h);
+	return _res;
 
 }
 
@@ -1403,7 +1405,8 @@ static PyObject *Res_Handle(PyObject *_self, PyObject *_args)
 	HUnlock(h);
 	rv = (ResourceObject *)ResObj_New(h);
 	rv->ob_freeit = PyMac_AutoDisposeHandle;
-	return (PyObject *)rv;
+	_res = (PyObject *)rv;
+	return _res;
 
 }
 
