@@ -324,7 +324,7 @@ static PyObject *WEOObj_WEGetObjectRefCon(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	SInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WEGetObjectRefCon(_self->ob_itself);
@@ -338,7 +338,7 @@ static PyObject *WEOObj_WESetObjectRefCon(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long refCon;
+	SInt32 refCon;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &refCon))
 		return NULL;
@@ -359,9 +359,9 @@ static PyMethodDef WEOObj_methods[] = {
 	{"WEGetObjectOwner", (PyCFunction)WEOObj_WEGetObjectOwner, 1,
 	 "() -> (WEReference _rv)"},
 	{"WEGetObjectRefCon", (PyCFunction)WEOObj_WEGetObjectRefCon, 1,
-	 "() -> (long _rv)"},
+	 "() -> (SInt32 _rv)"},
 	{"WESetObjectRefCon", (PyCFunction)WEOObj_WESetObjectRefCon, 1,
-	 "(long refCon) -> None"},
+	 "(SInt32 refCon) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -456,8 +456,8 @@ static PyObject *wasteObj_WEGetChar(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	long offset;
+	SInt16 _rv;
+	SInt32 offset;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
 		return NULL;
@@ -473,7 +473,7 @@ static PyObject *wasteObj_WEGetTextLength(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	SInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WEGetTextLength(_self->ob_itself);
@@ -487,7 +487,7 @@ static PyObject *wasteObj_WECountLines(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	SInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WECountLines(_self->ob_itself);
@@ -501,9 +501,9 @@ static PyObject *wasteObj_WEGetHeight(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
-	long startLine;
-	long endLine;
+	SInt32 _rv;
+	SInt32 startLine;
+	SInt32 endLine;
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &startLine,
 	                      &endLine))
@@ -521,8 +521,8 @@ static PyObject *wasteObj_WEGetSelection(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long selStart;
-	long selEnd;
+	SInt32 selStart;
+	SInt32 selEnd;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	WEGetSelection(&selStart,
@@ -583,8 +583,8 @@ static PyObject *wasteObj_WEOffsetToLine(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
-	long offset;
+	SInt32 _rv;
+	SInt32 offset;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
 		return NULL;
@@ -600,9 +600,9 @@ static PyObject *wasteObj_WEGetLineRange(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long lineNo;
-	long lineStart;
-	long lineEnd;
+	SInt32 lineNo;
+	SInt32 lineStart;
+	SInt32 lineEnd;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &lineNo))
 		return NULL;
@@ -616,13 +616,27 @@ static PyObject *wasteObj_WEGetLineRange(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEGetClickCount(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WEGetClickCount(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *wasteObj_WESetSelection(_self, _args)
 	wasteObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long selStart;
-	long selEnd;
+	SInt32 selStart;
+	SInt32 selEnd;
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &selStart,
 	                      &selEnd))
@@ -693,7 +707,7 @@ static PyObject *wasteObj_WEGetRunInfo(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long offset;
+	SInt32 offset;
 	WERunInfo runInfo;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
@@ -711,16 +725,16 @@ static PyObject *wasteObj_WEGetOffset(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	SInt32 _rv;
 	LongPt thePoint;
-	char edge;
+	WEEdge edge;
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      LongPt_Convert, &thePoint))
 		return NULL;
 	_rv = WEGetOffset(&thePoint,
 	                  &edge,
 	                  _self->ob_itself);
-	_res = Py_BuildValue("lc",
+	_res = Py_BuildValue("lb",
 	                     _rv,
 	                     edge);
 	return _res;
@@ -731,13 +745,16 @@ static PyObject *wasteObj_WEGetPoint(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long offset;
+	SInt32 offset;
+	SInt16 direction;
 	LongPt thePoint;
-	short lineHeight;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &offset))
+	SInt16 lineHeight;
+	if (!PyArg_ParseTuple(_args, "lh",
+	                      &offset,
+	                      &direction))
 		return NULL;
 	WEGetPoint(offset,
+	           direction,
 	           &thePoint,
 	           &lineHeight,
 	           _self->ob_itself);
@@ -752,11 +769,11 @@ static PyObject *wasteObj_WEFindWord(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long offset;
-	char edge;
-	long wordStart;
-	long wordEnd;
-	if (!PyArg_ParseTuple(_args, "lc",
+	SInt32 offset;
+	WEEdge edge;
+	SInt32 wordStart;
+	SInt32 wordEnd;
+	if (!PyArg_ParseTuple(_args, "lb",
 	                      &offset,
 	                      &edge))
 		return NULL;
@@ -776,11 +793,11 @@ static PyObject *wasteObj_WEFindLine(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long offset;
-	char edge;
-	long lineStart;
-	long lineEnd;
-	if (!PyArg_ParseTuple(_args, "lc",
+	SInt32 offset;
+	WEEdge edge;
+	SInt32 lineStart;
+	SInt32 lineEnd;
+	if (!PyArg_ParseTuple(_args, "lb",
 	                      &offset,
 	                      &edge))
 		return NULL;
@@ -801,8 +818,8 @@ static PyObject *wasteObj_WECopyRange(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	long rangeStart;
-	long rangeEnd;
+	SInt32 rangeStart;
+	SInt32 rangeEnd;
 	Handle hText;
 	StScrpHandle hStyles;
 	WESoupHandle hSoup;
@@ -891,8 +908,8 @@ static PyObject *wasteObj_WEScroll(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long hOffset;
-	long vOffset;
+	SInt32 hOffset;
+	SInt32 vOffset;
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &hOffset,
 	                      &vOffset))
@@ -949,7 +966,7 @@ static PyObject *wasteObj_WEKey(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short key;
+	SInt16 key;
 	EventModifiers modifiers;
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &key,
@@ -970,7 +987,7 @@ static PyObject *wasteObj_WEClick(_self, _args)
 	PyObject *_res = NULL;
 	Point hitPt;
 	EventModifiers modifiers;
-	unsigned long clickTime;
+	UInt32 clickTime;
 	if (!PyArg_ParseTuple(_args, "O&hl",
 	                      PyMac_GetPoint, &hitPt,
 	                      &modifiers,
@@ -1010,7 +1027,7 @@ static PyObject *wasteObj_WEIdle(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	unsigned long maxSleep;
+	UInt32 maxSleep;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	WEIdle(&maxSleep,
@@ -1184,7 +1201,7 @@ static PyObject *wasteObj_WEGetModCount(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	unsigned long _rv;
+	UInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WEGetModCount(_self->ob_itself);
@@ -1252,8 +1269,8 @@ static PyObject *wasteObj_WEFindNextObject(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
-	long offset;
+	SInt32 _rv;
+	SInt32 offset;
 	WEObjectReference obj;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
@@ -1350,8 +1367,8 @@ static PyObject *wasteObj_WEGetHiliteRgn(_self, _args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
-	long rangeStart;
-	long rangeEnd;
+	SInt32 rangeStart;
+	SInt32 rangeEnd;
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &rangeStart,
 	                      &rangeEnd))
@@ -1369,8 +1386,8 @@ static PyObject *wasteObj_WECharByte(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	long offset;
+	SInt16 _rv;
+	SInt32 offset;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
 		return NULL;
@@ -1386,8 +1403,8 @@ static PyObject *wasteObj_WECharType(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	long offset;
+	SInt16 _rv;
+	SInt32 offset;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &offset))
 		return NULL;
@@ -1416,9 +1433,9 @@ static PyObject *wasteObj_WEFeatureFlag(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	short feature;
-	short action;
+	SInt16 _rv;
+	SInt16 feature;
+	SInt16 action;
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &feature,
 	                      &action))
@@ -1435,15 +1452,15 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEGetText", (PyCFunction)wasteObj_WEGetText, 1,
 	 "() -> (Handle _rv)"},
 	{"WEGetChar", (PyCFunction)wasteObj_WEGetChar, 1,
-	 "(long offset) -> (short _rv)"},
+	 "(SInt32 offset) -> (SInt16 _rv)"},
 	{"WEGetTextLength", (PyCFunction)wasteObj_WEGetTextLength, 1,
-	 "() -> (long _rv)"},
+	 "() -> (SInt32 _rv)"},
 	{"WECountLines", (PyCFunction)wasteObj_WECountLines, 1,
-	 "() -> (long _rv)"},
+	 "() -> (SInt32 _rv)"},
 	{"WEGetHeight", (PyCFunction)wasteObj_WEGetHeight, 1,
-	 "(long startLine, long endLine) -> (long _rv)"},
+	 "(SInt32 startLine, SInt32 endLine) -> (SInt32 _rv)"},
 	{"WEGetSelection", (PyCFunction)wasteObj_WEGetSelection, 1,
-	 "() -> (long selStart, long selEnd)"},
+	 "() -> (SInt32 selStart, SInt32 selEnd)"},
 	{"WEGetDestRect", (PyCFunction)wasteObj_WEGetDestRect, 1,
 	 "() -> (LongRect destRect)"},
 	{"WEGetViewRect", (PyCFunction)wasteObj_WEGetViewRect, 1,
@@ -1451,11 +1468,13 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEIsActive", (PyCFunction)wasteObj_WEIsActive, 1,
 	 "() -> (Boolean _rv)"},
 	{"WEOffsetToLine", (PyCFunction)wasteObj_WEOffsetToLine, 1,
-	 "(long offset) -> (long _rv)"},
+	 "(SInt32 offset) -> (SInt32 _rv)"},
 	{"WEGetLineRange", (PyCFunction)wasteObj_WEGetLineRange, 1,
-	 "(long lineNo) -> (long lineStart, long lineEnd)"},
+	 "(SInt32 lineNo) -> (SInt32 lineStart, SInt32 lineEnd)"},
+	{"WEGetClickCount", (PyCFunction)wasteObj_WEGetClickCount, 1,
+	 "() -> (UInt16 _rv)"},
 	{"WESetSelection", (PyCFunction)wasteObj_WESetSelection, 1,
-	 "(long selStart, long selEnd) -> None"},
+	 "(SInt32 selStart, SInt32 selEnd) -> None"},
 	{"WESetDestRect", (PyCFunction)wasteObj_WESetDestRect, 1,
 	 "(LongRect destRect) -> None"},
 	{"WESetViewRect", (PyCFunction)wasteObj_WESetViewRect, 1,
@@ -1463,17 +1482,17 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEContinuousStyle", (PyCFunction)wasteObj_WEContinuousStyle, 1,
 	 "(WEStyleMode mode) -> (Boolean _rv, WEStyleMode mode, TextStyle ts)"},
 	{"WEGetRunInfo", (PyCFunction)wasteObj_WEGetRunInfo, 1,
-	 "(long offset) -> (WERunInfo runInfo)"},
+	 "(SInt32 offset) -> (WERunInfo runInfo)"},
 	{"WEGetOffset", (PyCFunction)wasteObj_WEGetOffset, 1,
-	 "(LongPt thePoint) -> (long _rv, char edge)"},
+	 "(LongPt thePoint) -> (SInt32 _rv, WEEdge edge)"},
 	{"WEGetPoint", (PyCFunction)wasteObj_WEGetPoint, 1,
-	 "(long offset) -> (LongPt thePoint, short lineHeight)"},
+	 "(SInt32 offset, SInt16 direction) -> (LongPt thePoint, SInt16 lineHeight)"},
 	{"WEFindWord", (PyCFunction)wasteObj_WEFindWord, 1,
-	 "(long offset, char edge) -> (long wordStart, long wordEnd)"},
+	 "(SInt32 offset, WEEdge edge) -> (SInt32 wordStart, SInt32 wordEnd)"},
 	{"WEFindLine", (PyCFunction)wasteObj_WEFindLine, 1,
-	 "(long offset, char edge) -> (long lineStart, long lineEnd)"},
+	 "(SInt32 offset, WEEdge edge) -> (SInt32 lineStart, SInt32 lineEnd)"},
 	{"WECopyRange", (PyCFunction)wasteObj_WECopyRange, 1,
-	 "(long rangeStart, long rangeEnd, Handle hText, StScrpHandle hStyles, WESoupHandle hSoup) -> None"},
+	 "(SInt32 rangeStart, SInt32 rangeEnd, Handle hText, StScrpHandle hStyles, WESoupHandle hSoup) -> None"},
 	{"WEGetAlignment", (PyCFunction)wasteObj_WEGetAlignment, 1,
 	 "() -> (WEAlignment _rv)"},
 	{"WESetAlignment", (PyCFunction)wasteObj_WESetAlignment, 1,
@@ -1483,7 +1502,7 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEUpdate", (PyCFunction)wasteObj_WEUpdate, 1,
 	 "(RgnHandle updateRgn) -> None"},
 	{"WEScroll", (PyCFunction)wasteObj_WEScroll, 1,
-	 "(long hOffset, long vOffset) -> None"},
+	 "(SInt32 hOffset, SInt32 vOffset) -> None"},
 	{"WESelView", (PyCFunction)wasteObj_WESelView, 1,
 	 "() -> None"},
 	{"WEActivate", (PyCFunction)wasteObj_WEActivate, 1,
@@ -1491,13 +1510,13 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEDeactivate", (PyCFunction)wasteObj_WEDeactivate, 1,
 	 "() -> None"},
 	{"WEKey", (PyCFunction)wasteObj_WEKey, 1,
-	 "(short key, EventModifiers modifiers) -> None"},
+	 "(SInt16 key, EventModifiers modifiers) -> None"},
 	{"WEClick", (PyCFunction)wasteObj_WEClick, 1,
-	 "(Point hitPt, EventModifiers modifiers, unsigned long clickTime) -> None"},
+	 "(Point hitPt, EventModifiers modifiers, UInt32 clickTime) -> None"},
 	{"WEAdjustCursor", (PyCFunction)wasteObj_WEAdjustCursor, 1,
 	 "(Point mouseLoc, RgnHandle mouseRgn) -> (Boolean _rv)"},
 	{"WEIdle", (PyCFunction)wasteObj_WEIdle, 1,
-	 "() -> (unsigned long maxSleep)"},
+	 "() -> (UInt32 maxSleep)"},
 	{"WEInsert", (PyCFunction)wasteObj_WEInsert, 1,
 	 "(Buffer pText, StScrpHandle hStyles, WESoupHandle hSoup) -> None"},
 	{"WEDelete", (PyCFunction)wasteObj_WEDelete, 1,
@@ -1517,7 +1536,7 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEIsTyping", (PyCFunction)wasteObj_WEIsTyping, 1,
 	 "() -> (Boolean _rv)"},
 	{"WEGetModCount", (PyCFunction)wasteObj_WEGetModCount, 1,
-	 "() -> (unsigned long _rv)"},
+	 "() -> (UInt32 _rv)"},
 	{"WEResetModCount", (PyCFunction)wasteObj_WEResetModCount, 1,
 	 "() -> None"},
 	{"WEInsertObject", (PyCFunction)wasteObj_WEInsertObject, 1,
@@ -1525,7 +1544,7 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WEGetSelectedObject", (PyCFunction)wasteObj_WEGetSelectedObject, 1,
 	 "() -> (WEObjectReference obj)"},
 	{"WEFindNextObject", (PyCFunction)wasteObj_WEFindNextObject, 1,
-	 "(long offset) -> (long _rv, WEObjectReference obj)"},
+	 "(SInt32 offset) -> (SInt32 _rv, WEObjectReference obj)"},
 	{"WEUseSoup", (PyCFunction)wasteObj_WEUseSoup, 1,
 	 "(WESoupHandle hSoup) -> None"},
 	{"WECut", (PyCFunction)wasteObj_WECut, 1,
@@ -1537,15 +1556,15 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WECanPaste", (PyCFunction)wasteObj_WECanPaste, 1,
 	 "() -> (Boolean _rv)"},
 	{"WEGetHiliteRgn", (PyCFunction)wasteObj_WEGetHiliteRgn, 1,
-	 "(long rangeStart, long rangeEnd) -> (RgnHandle _rv)"},
+	 "(SInt32 rangeStart, SInt32 rangeEnd) -> (RgnHandle _rv)"},
 	{"WECharByte", (PyCFunction)wasteObj_WECharByte, 1,
-	 "(long offset) -> (short _rv)"},
+	 "(SInt32 offset) -> (SInt16 _rv)"},
 	{"WECharType", (PyCFunction)wasteObj_WECharType, 1,
-	 "(long offset) -> (short _rv)"},
+	 "(SInt32 offset) -> (SInt16 _rv)"},
 	{"WEStopInlineSession", (PyCFunction)wasteObj_WEStopInlineSession, 1,
 	 "() -> None"},
 	{"WEFeatureFlag", (PyCFunction)wasteObj_WEFeatureFlag, 1,
-	 "(short feature, short action) -> (short _rv)"},
+	 "(SInt16 feature, SInt16 action) -> (SInt16 _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -1584,7 +1603,7 @@ static PyObject *waste_WENew(_self, _args)
 	OSErr _err;
 	LongRect destRect;
 	LongRect viewRect;
-	unsigned long flags;
+	UInt32 flags;
 	WEReference we;
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      LongRect_Convert, &destRect,
@@ -1671,10 +1690,10 @@ static PyObject *waste_WESetLongRect(_self, _args)
 {
 	PyObject *_res = NULL;
 	LongRect lr;
-	long left;
-	long top;
-	long right;
-	long bottom;
+	SInt32 left;
+	SInt32 top;
+	SInt32 right;
+	SInt32 bottom;
 	if (!PyArg_ParseTuple(_args, "llll",
 	                      &left,
 	                      &top,
@@ -1731,8 +1750,8 @@ static PyObject *waste_WEOffsetLongRect(_self, _args)
 {
 	PyObject *_res = NULL;
 	LongRect lr;
-	long hOffset;
-	long vOffset;
+	SInt32 hOffset;
+	SInt32 vOffset;
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &hOffset,
 	                      &vOffset))
@@ -1851,7 +1870,7 @@ static PyObject *waste_WEInstallObjectHandler(_self, _args)
 
 static PyMethodDef waste_methods[] = {
 	{"WENew", (PyCFunction)waste_WENew, 1,
-	 "(LongRect destRect, LongRect viewRect, unsigned long flags) -> (WEReference we)"},
+	 "(LongRect destRect, LongRect viewRect, UInt32 flags) -> (WEReference we)"},
 	{"WEInstallTSMHandlers", (PyCFunction)waste_WEInstallTSMHandlers, 1,
 	 "() -> None"},
 	{"WERemoveTSMHandlers", (PyCFunction)waste_WERemoveTSMHandlers, 1,
@@ -1861,13 +1880,13 @@ static PyMethodDef waste_methods[] = {
 	{"WEPointToLongPoint", (PyCFunction)waste_WEPointToLongPoint, 1,
 	 "(Point p) -> (LongPt lp)"},
 	{"WESetLongRect", (PyCFunction)waste_WESetLongRect, 1,
-	 "(long left, long top, long right, long bottom) -> (LongRect lr)"},
+	 "(SInt32 left, SInt32 top, SInt32 right, SInt32 bottom) -> (LongRect lr)"},
 	{"WELongRectToRect", (PyCFunction)waste_WELongRectToRect, 1,
 	 "(LongRect lr) -> (Rect r)"},
 	{"WERectToLongRect", (PyCFunction)waste_WERectToLongRect, 1,
 	 "(Rect r) -> (LongRect lr)"},
 	{"WEOffsetLongRect", (PyCFunction)waste_WEOffsetLongRect, 1,
-	 "(long hOffset, long vOffset) -> (LongRect lr)"},
+	 "(SInt32 hOffset, SInt32 vOffset) -> (LongRect lr)"},
 	{"WELongPointInLongRect", (PyCFunction)waste_WELongPointInLongRect, 1,
 	 "(LongPt lp, LongRect lr) -> (Boolean _rv)"},
 	{"STDObjectHandlers", (PyCFunction)waste_STDObjectHandlers, 1,

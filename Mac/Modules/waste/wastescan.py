@@ -5,7 +5,7 @@ addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 
-WASTEDIR=":::::Waste 1.2a5:"
+WASTEDIR=":::::Waste 1.2 distribution:"
 
 OBJECT = "TEHandle"
 SHORT = "waste"
@@ -25,11 +25,6 @@ def main():
 	print "=== Done.  It's up to you to compile it now! ==="
 
 class MyScanner(Scanner):
-
-	def initpatterns(self):
-		# Waste doesn't use 'extern':
-		Scanner.initpatterns(self)
-		self.head_pat = "^pascal[ \t]+"
 
 	def destination(self, type, name, arglist):
 		classname = "Function"
@@ -52,6 +47,7 @@ class MyScanner(Scanner):
 			"WEDispose",
 			"WESetInfo", # Argument type unknown...
 			"WEGetInfo",
+			"WEVersion", # Unfortunately...
 			]
 
 	def makeblacklisttypes(self):
@@ -62,7 +58,7 @@ class MyScanner(Scanner):
 
 	def makerepairinstructions(self):
 		return [
-			([("void_ptr", "*", "InMode"), ("long", "*", "InMode")],
+			([("void_ptr", "*", "InMode"), ("SInt32", "*", "InMode")],
 			 [("InBuffer", "*", "*")]),
 
 			# WEContinuousStyle

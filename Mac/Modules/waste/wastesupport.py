@@ -38,6 +38,7 @@ OptStScrpHandle = OpaqueByValueType("StScrpHandle", "OptResObj")
 WEStyleMode = Type("WEStyleMode", "h")
 WEActionKind = Type("WEActionKind", "h")
 WEAlignment = Type("WEAlignment", "b")
+WEEdge = Type("WEEdge", "b")
 WESoupHandle = OpaqueByValueType("WESoupHandle", "ResObj")
 WERunInfo = OpaqueType("WERunInfo", "RunInfo")
 
