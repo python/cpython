@@ -480,10 +480,35 @@ class TestDateOnly(unittest.TestCase):
         self.assertEqual(dt2, dt - days)
 
     def test_subclass_date(self):
+
+        # XXX When datetime becomes usably subclassable, uncomment the
+        # XXX "self.theclass" lines and move this into TestDate.
+        # class C(self.theclass):
         class C(date):
             theAnswer = 42
-        dt = C(2003, 4, 14)
-        self.assertEqual(dt.__class__, C)
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                # result = self.theclass.__new__(cls, *args, **temp)
+                result = date.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.year + self.month
+
+        args = 2003, 4, 14
+
+        # dt1 = self.theclass(*args)
+        dt1 = date(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.toordinal(), dt2.toordinal())
+        self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
 
 class TestDate(HarmlessMixedComparison):
     # Tests here should pass for both dates and datetimes, except for a
@@ -976,6 +1001,7 @@ class TestDate(HarmlessMixedComparison):
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+
 
 #############################################################################
 # datetime tests
