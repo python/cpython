@@ -1,9 +1,7 @@
 # Tests StringIO and cStringIO
 
-import string
-
 def do_test(module):
-    s = (string.letters+'\n')*5
+    s = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"+'\n')*5
     f = module.StringIO(s)
     print f.read(10)
     print f.readline()
