@@ -338,6 +338,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define init_frozen PyImport_ImportFrozenModule
 #define initimport PyImport_Init
 #define reload_module PyImport_ReloadModule
+#define frozen_modules PyImport_FrozenModules
 #define coerce PyNumber_Coerce
 #define getbuiltin PyBuiltin_GetObject
 #define initbuiltin PyBuiltin_Init
@@ -427,7 +428,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Misc. Internals */
 #define askyesno _Py_AskYesNo
-#define frozen_modules _PyImport_FrozenModules
 #define import_filetab _PyImport_Filetab
 #define import_maxsuffixsize _PyImport_MaxSuffixSize
 #define load_dynamic_module _PyImport_LoadDynamicModule
