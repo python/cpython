@@ -16,18 +16,18 @@ def tester(fn, wantResult):
 		errors = errors + 1
 
 tester('ntpath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
-tester('ntpath.splitdrive("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint', '\\foo\\bar'))
+tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint', '\\foo\\bar'))
 tester('ntpath.splitdrive("c:/foo/bar")', ('c:', '/foo/bar'))
-tester('ntpath.splitdrive("//conky/mountpoint/foo/bar")', ('//conky/mountpoint', '/foo/bar'))
+tester('ntpath.splitunc("//conky/mountpoint/foo/bar")', ('//conky/mountpoint', '/foo/bar'))
 
 tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
 tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint\\foo', 'bar'))
 
 tester('ntpath.split("c:\\")', ('c:\\', ''))
-tester('ntpath.split("\\\\conky\\mountpoint\\")', ('\\\\conky\\mountpoint\\', ''))
+tester('ntpath.split("\\\\conky\\mountpoint\\")', ('\\\\conky\\mountpoint', ''))
 
 tester('ntpath.split("c:/")', ('c:/', ''))
-tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
+tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint', ''))
 
 tester('ntpath.isabs("c:\\")', 1)
 tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
