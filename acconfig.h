@@ -19,6 +19,13 @@
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
 
+/* Define if your compiler supports variable length function prototypes
+   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
+#undef HAVE_STDARG_PROTOTYPES
+
+/* Define to empty if the keyword does not work.  */
+#undef signed
+
 /* Define for SOLARIS 2.x */
 #undef SOLARIS
 
