@@ -283,7 +283,7 @@ Extension modules
   into groups sharing the same key (as determined by a key function).
   It offers some of functionality of SQL's groupby keyword and of
   the Unix uniq filter.
-                                                                  
+
 - itertools now has a new function, tee() which produces two independent
   iterators from a single iterable.
 
@@ -295,6 +295,9 @@ Extension modules
 
 Library
 -------
+
+- Fixed a caching bug in platform.platform() where the argument of 'terse' was
+  not taken into consideration when caching value.
 
 - Added two new command-line arguments for profile (output file and
   default sort).

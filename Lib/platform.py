@@ -1135,8 +1135,8 @@ def python_compiler():
 
 ### The Opus Magnum of platform strings :-)
 
-_platform_cache = None
-_platform_aliased_cache = None
+_platform_cache = {True:None, False:None}
+_platform_aliased_cache = {True:None, False:None}
 
 def platform(aliased=0, terse=0):
 
@@ -1159,10 +1159,10 @@ def platform(aliased=0, terse=0):
     """
     global _platform_cache,_platform_aliased_cache
 
-    if not aliased and (_platform_cache is not None):
-        return _platform_cache
-    elif _platform_aliased_cache is not None:
-        return _platform_aliased_cache
+    if not aliased and (_platform_cache[bool(terse)] is not None):
+        return _platform_cache[bool(terse)]
+    elif _platform_aliased_cache[bool(terse)] is not None:
+        return _platform_aliased_cache[bool(terse)]
 
     # Get uname information and then apply platform specific cosmetics
     # to it...
@@ -1219,11 +1219,11 @@ def platform(aliased=0, terse=0):
             platform = _platform(system,release,machine,processor,bits,linkage)
 
     if aliased:
-        _platform_aliased_cache = platform
+        _platform_aliased_cache[bool(terse)] = platform
     elif terse:
         pass
     else:
-        _platform_cache = platform
+        _platform_cache[bool(terse)] = platform
     return platform
 
 ### Command line interface
