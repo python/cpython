@@ -11,7 +11,7 @@
 
    ------------------------------------------------------------------------ */
 
-#include <stdlib.h>
+#include "Python.h"
 #include "unicodedatabase.h"
 
 /* read the actual data from a separate file! */
