@@ -627,6 +627,8 @@ reference to it.  It may then be called at a later time when this new
 reference is deleted.  It is not guaranteed that
 \code{__del__} methods are called for objects that still exist when
 the interpreter exits.
+If an exception occurs in a \code{__del__} method, it is ignored, and
+a warning is printed on stderr.
 \ttindex{__del__}
 \stindex{del}
 
