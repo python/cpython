@@ -322,8 +322,11 @@ mappingremove(op, key)
 	if (hash == -1)
 		return -1;
 	mp = (mappingobject *)op;
+	if (((mappingobject *)op)->ma_table == NULL)
+		goto empty;
 	ep = lookmapping(mp, key, hash);
 	if (ep->me_value == NULL) {
+	empty:
 		err_setval(KeyError, key);
 		return -1;
 	}
