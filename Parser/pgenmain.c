@@ -165,7 +165,7 @@ guesstabsize(char *path)
 /* No-nonsense my_readline() for tokenizer.c */
 
 char *
-PyOS_Readline(char *prompt)
+PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 	size_t n = 1000;
 	char *p = PyMem_MALLOC(n);
@@ -173,7 +173,7 @@ PyOS_Readline(char *prompt)
 	if (p == NULL)
 		return NULL;
 	fprintf(stderr, "%s", prompt);
-	q = fgets(p, n, stdin);
+	q = fgets(p, n, sys_stdin);
 	if (q == NULL) {
 		*p = '\0';
 		return p;
