@@ -215,7 +215,7 @@ def mergecfmfiles(inputs, output):
 			if (tp, id) in resources_done:
 				continue
 			i.saveresto(tp, id, rfork)
-			resources_done.append(tp, id)
+			resources_done.append((tp, id))
 			
 def main():
 	list = []

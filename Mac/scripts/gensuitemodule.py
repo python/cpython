@@ -494,7 +494,7 @@ class ObjectCompiler:
 			if not name:
 				self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
 			else:
-				elist.append(name, ename)
+				elist.append((name, ename))
 			
 		self.fp.write("%s._propdict = {\n"%cname)
 		for n in plist:

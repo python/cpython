@@ -77,7 +77,7 @@ def readscript(file):
 	for i in range(len(lines)):
 		tp, data = parseline(lines[i])
 		if tp == NEWSCENE:
-			acts.append(actor_dict.keys(), lines[prev_act:i])
+			acts.append((actor_dict.keys(), lines[prev_act:i]))
 			prev_act = i
 			actor_dict = {}
 		elif tp == TEXT:
