@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Pages Modified=00010000011101000000000100000010
+  Pages Modified=00010000011101000000000100000011
   Extra Pages=00000000000000000000000010110010
   Disk Filename=SETUP
   Patch Flags=0000000000000001
@@ -54,8 +54,8 @@ item: Global
   Variable Flags6=00001000
 end
 item: Set Variable
-  Variable=APPTITLE
-  Value=Python 2.2a1
+  Variable=PYVER_STRING
+  Value=2.2a1
 end
 item: Remark
 end
@@ -72,7 +72,7 @@ item: Remark
   Text=Other things that need fiddling:
 end
 item: Remark
-  Text=    The APPTITLE setting above.
+  Text=    PYVER_STRING above.
 end
 item: Remark
   Text=    The "Title:" in the upper left corner of the GUI.
@@ -84,6 +84,10 @@ item: Remark
   Text=        Be sure to select Steps->All or you may not see these!
 end
 item: Remark
+end
+item: Set Variable
+  Variable=APPTITLE
+  Value=Python %PYVER_STRING%
 end
 item: Remark
   Text=PY_VERSION should be major.minor only; used to create the registry key; must match MS_DLL_ID in python_nt.rc
@@ -754,25 +758,25 @@ item: Custom Dialog Set
       Text=Python test suite (Lib/test/)
       Text=Register file extensons (requires Admin privs)
       Text=
-      Text French=Python interpreter, library and Tcl/Tk
+      Text French=Python interpreter, library and IDLE
       Text French=Python HTML docs
       Text French=Python utility scripts (Tools/)
       Text French=Python test suite (Lib/test/)
       Text French=Register file extensons (requires Admin privs)
       Text French=
-      Text German=Python interpreter, library and Tcl/Tk
+      Text German=Python interpreter, library and IDLE
       Text German=Python HTML docs
       Text German=Python utility scripts (Tools/)
       Text German=Python test suite (Lib/test/)
       Text German=Register file extensons (requires Admin privs)
       Text German=
-      Text Spanish=Python interpreter, library and Tcl/Tk
+      Text Spanish=Python interpreter, library and IDLE
       Text Spanish=Python HTML docs
       Text Spanish=Python utility scripts (Tools/)
       Text Spanish=Python test suite (Lib/test/)
       Text Spanish=Register file extensons (requires Admin privs)
       Text Spanish=
-      Text Italian=Python interpreter, library and Tcl/Tk
+      Text Italian=Python interpreter, library and IDLE
       Text Italian=Python HTML docs
       Text Italian=Python utility scripts (Tools/)
       Text Italian=Python test suite (Lib/test/)
@@ -1736,8 +1740,8 @@ item: Remark
   Text=Windows pydoc driver
 end
 item: Install File
-  Source=..\tools\scripts\pydoc.pyw
-  Destination=%MAINDIR%\Tools\Scripts\pydoc.pyw
+  Source=..\tools\scripts\*.pyw
+  Destination=%MAINDIR%\Tools\Scripts
   Description=Windows pydoc driver
   Flags=0000000000000010
 end
@@ -1795,12 +1799,6 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\tools\scripts\*.pyw
-  Destination=%MAINDIR%\Tools\Scripts
-  Description=Utility Scripts
-  Flags=0000000000000010
-end
-item: Install File
   Source=..\tools\scripts\*.doc
   Destination=%MAINDIR%\Tools\Scripts
   Description=Utility Scripts
@@ -1811,6 +1809,24 @@ item: Install File
   Destination=%MAINDIR%\Tools\Scripts\README.txt
   Description=Utility Scripts
   Flags=0000000000000010
+end
+item: Remark
+  Text=*.pyw is installed by the main component; if we install it twice, a copy gets made
+end
+item: Remark
+  Text= in BACKUP, and then a rollback-uninstall will copy back the first one.
+end
+item: Check if File/Dir Exists
+  Pathname=%MAINDIR%\Tools\Scripts\pydoc.pyw
+  Flags=00000101
+end
+item: Install File
+  Source=..\tools\scripts\*.pyw
+  Destination=%MAINDIR%\Tools\Scripts
+  Description=Utility Scripts
+  Flags=0000000000000010
+end
+item: End Block
 end
 item: Remark
 end
@@ -1950,7 +1966,7 @@ item: Remark
   Text=DONE with file copying.
 end
 item: Remark
-  Text=The rest is Start menu and registry fiddling.
+  Text=The rest is registry and Start Menu fiddling.
 end
 item: Remark
 end
@@ -1958,6 +1974,9 @@ item: If/While Statement
   Variable=COMPONENTS
   Value=A
   Flags=00001010
+end
+item: Remark
+  Text=Register file extensions.
 end
 item: Remark
   Text=Registering file extensions requires Admin privs.
@@ -1968,18 +1987,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Remark
-  Text=Register file extensions.
-end
-item: Edit Registry
-  Total Keys=1
-  Key=.py
-  New Value=Python.File
-end
-item: Edit Registry
-  Total Keys=1
-  Key=.py
-  New Value=text/plain
-  Value Name=Content Type
+  Text=File types.
 end
 item: Edit Registry
   Total Keys=1
@@ -1996,16 +2004,7 @@ item: Edit Registry
   Key=Python.File\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
-item: Edit Registry
-  Total Keys=1
-  Key=.pyw
-  New Value=Python.NoConFile
-end
-item: Edit Registry
-  Total Keys=1
-  Key=.pyw
-  New Value=text/plain
-  Value Name=Content Type
+item: Remark
 end
 item: Edit Registry
   Total Keys=1
@@ -2022,15 +2021,7 @@ item: Edit Registry
   Key=Python.NoConFile\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
-item: Edit Registry
-  Total Keys=1
-  Key=.pyc
-  New Value=Python.CompiledFile
-end
-item: Edit Registry
-  Total Keys=1
-  Key=.pyo
-  New Value=Python.CompiledFile
+item: Remark
 end
 item: Edit Registry
   Total Keys=1
@@ -2046,6 +2037,47 @@ item: Edit Registry
   Total Keys=1
   Key=Python.CompiledFile\DefaultIcon
   New Value=%MAINDIR%\pyc.ico
+end
+item: Remark
+end
+item: Remark
+  Text=File extensions.
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.py
+  New Value=Python.File
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.py
+  New Value=text/plain
+  Value Name=Content Type
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.pyw
+  New Value=Python.NoConFile
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.pyw
+  New Value=text/plain
+  Value Name=Content Type
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.pyc
+  New Value=Python.CompiledFile
+end
+item: Edit Registry
+  Total Keys=1
+  Key=.pyo
+  New Value=Python.CompiledFile
 end
 item: End Block
 end
@@ -2141,13 +2173,13 @@ end
 item: Remark
   Text=Registry fiddling for docs.
 end
+item: Remark
+  Text=Write to HKLM for admin, else HKCU.  Keep these blocks otherwise identical!
+end
 item: If/While Statement
   Variable=COMPONENTS
   Value=B
   Flags=00001010
-end
-item: Remark
-  Text=Write to HKLM for admin, else HKCU.  Keep these blocks otherwise identical!
 end
 item: Check Configuration
   Flags=10111111
@@ -2173,75 +2205,80 @@ end
 item: Remark
 end
 item: Remark
-  Text=Well, *this* is cryptic!  It's setting up the app publisher and URL entries for Win2K add/remove.
+  Text=Set the app publisher and URL entries for Win2K add/remove.
 end
 item: Remark
-  Text=Ack, and "Win2K" isn't enough either -- you can't actually do this without Admin privs too.
+  Text=It doesn't hurt on other systems.
+end
+item: Remark
+  Text=As usual, write to HKLM or HKCU depending on Admin privs.
+end
+item: Remark
+  Text=CAUTION:  If you set this info on the "Windows 2000" page (step 6) of the
+end
+item: Remark
+  Text=Installation Expert, it only shows up in the "If" block below.  Keep in synch!
 end
 item: Check Configuration
   Flags=10111111
 end
 item: Edit Registry
-  Total Keys=3
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=HelpLink
-    Root=2
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=PythonLabs at Zope Corporation
-    Value Name=Publisher
-    Root=2
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=URLInfoAbout
-    Root=2
-  end
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=http://www.python.org/
+  Value Name=HelpLink
+  Root=2
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=PythonLabs at Zope Corporation
+  Value Name=Publisher
+  Root=2
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=http://www.python.org/
+  Value Name=URLInfoAbout
+  Root=2
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=%PYVER_STRING%
+  Value Name=DisplayVersion
+  Root=2
 end
 item: Else Statement
 end
-item: Remark
-  Text=Same thing, except write to HKCU instead.
-end
-item: Remark
-  Text=Damn -- this "edit keys" cmd was created by the Installation Expert view, and I duplicated and
-end
-item: Remark
-  Text=edited it by hand.  The info comes from the "Windows 2000" section of the Properties view,
-end
-item: Remark
-  Text=and if you change it there it will only show up in the "if" block above.
-end
-item: Remark
-  Text=Easiest to make corresponding changes in *this* block by editing this script in
-end
-item: Remark
-  Text=a plain text editor.
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=http://www.python.org/
+  Value Name=HelpLink
+  Root=1
 end
 item: Edit Registry
-  Total Keys=3
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=HelpLink
-    Root=1
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=PythonLabs at Zope Corporation
-    Value Name=Publisher
-    Root=1
-  end
-  item: Key
-    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
-    New Value=http://www.python.org/
-    Value Name=URLInfoAbout
-    Root=1
-  end
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=PythonLabs at Zope Corporation
+  Value Name=Publisher
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=http://www.python.org/
+  Value Name=URLInfoAbout
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=%PYVER_STRING%
+  Value Name=DisplayVersion
+  Root=1
 end
 item: End Block
 end
@@ -2249,6 +2286,8 @@ item: Remark
 end
 item: Remark
   Text=Populate Start Menu
+end
+item: Remark
 end
 item: If/While Statement
   Variable=COMPONENTS
