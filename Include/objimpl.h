@@ -262,12 +262,18 @@ extern PyGC_Head *_PyGC_generation0;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
+#define _PyGC_REFS_UNTRACKED			(-2)
+#define _PyGC_REFS_REACHABLE			(-3)
+#define _PyGC_REFS_TENTATIVELY_UNREACHABLE	(-4)
+
 /* Tell the GC to track this object.  NB: While the object is tracked the
  * collector it must be safe to call the ob_traverse method. */
 #define _PyObject_GC_TRACK(o) do { \
 	PyGC_Head *g = _Py_AS_GC(o); \
-	if (g->gc.gc_next != NULL) \
-		Py_FatalError("GC object already in linked list"); \
+	if (g->gc.gc_refs != _PyGC_REFS_UNTRACKED) \
+		Py_FatalError("GC object already tracked"); \
+	assert(g->gc.gc_refs == _PyGC_REFS_UNTRACKED); \
+	g->gc.gc_refs = _PyGC_REFS_REACHABLE; \
 	g->gc.gc_next = _PyGC_generation0; \
 	g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
 	g->gc.gc_prev->gc.gc_next = g; \
@@ -277,6 +283,8 @@ extern PyGC_Head *_PyGC_generation0;
 /* Tell the GC to stop tracking this object. */
 #define _PyObject_GC_UNTRACK(o) do { \
 	PyGC_Head *g = _Py_AS_GC(o); \
+	assert(g->gc.gc_refs != _PyGC_REFS_UNTRACKED); \
+	g->gc.gc_refs = _PyGC_REFS_UNTRACKED; \
 	g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
 	g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
 	g->gc.gc_next = NULL; \
