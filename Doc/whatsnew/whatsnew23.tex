@@ -12,6 +12,12 @@
 \tableofcontents
 
 % To do:
+% PYTHONINSPECT
+% list.index
+% file.encoding
+% doctest extensions
+% new version of IDLE
+% XML-RPC nil extension
 % MacOS framework-related changes (section of its own, probably)
 
 %\section{Introduction \label{intro}}
@@ -1201,6 +1207,8 @@ applications by reducing the switching overhead.  Some multithreaded
 applications may suffer slower response time, but that's easily fixed
 by setting the limit back to a lower number using
 \function{sys.setcheckinterval(\var{N})}.
+The limit can be retrieved with the new 
+\function{sys.getcheckinterval()} function.
 
 \item One minor but far-reaching change is that the names of extension
 types defined by the modules included with Python now contain the
@@ -1617,7 +1625,7 @@ to make it work reliably across platforms.
 can call the \method{settimeout(\var{t})} method on a socket object to
 set a timeout of \var{t} seconds.  Subsequent socket operations that
 take longer than \var{t} seconds to complete will abort and raise a
-\exception{socket.error} exception.
+\exception{socket.timeout} exception.
 
 The original timeout implementation was by Tim O'Malley.  Michael
 Gilfix integrated it into the Python \module{socket} module and
