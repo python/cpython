@@ -51,65 +51,107 @@ Using the cgi module
 --------------------
 
 Begin by writing "import cgi".  Don't use "from cgi import *" -- the
-module defines all sorts of names for its own use that you don't want
-in your namespace.
+module defines all sorts of names for its own use or for backward 
+compatibility that you don't want in your namespace.
 
-If you have a standard form, it's best to use the SvFormContentDict
-class.  Instantiate the SvFormContentDict class exactly once: it
-consumes any input on standard input, which can't be wound back (it's
-a network connection, not a disk file).
+It's best to use the FieldStorage class.  The other classes define in this 
+module are provided mostly for backward compatibility.  Instantiate it 
+exactly once, without arguments.  This reads the form contents from 
+standard input or the environment (depending on the value of various 
+environment variables set according to the CGI standard).  Since it may 
+consume standard input, it should be instantiated only once.
 
-The SvFormContentDict instance can be accessed as if it were a Python
-dictionary.  For instance, the following code checks that the fields
-"name" and "addr" are both set to a non-empty string:
+The FieldStorage instance can be accessed as if it were a Python 
+dictionary.  For instance, the following code (which assumes that the 
+Content-type header and blank line have already been printed) checks that 
+the fields "name" and "addr" are both set to a non-empty string:
 
-	form = SvFormContentDict()
+	form = FieldStorage()
 	form_ok = 0
 	if form.has_key("name") and form.has_key("addr"):
-		if form["name"] != "" and form["addr"] != "":
+		if form["name"].value != "" and form["addr"].value != "":
 			form_ok = 1
 	if not form_ok:
 		print "<H1>Error</H1>"
 		print "Please fill in the name and addr fields."
 		return
-	...actual form processing here...
+	...further form processing here...
 
-If you have an input item of type "file" in your form and the client
-supports file uploads, the value for that field, if present in the
-form, is not a string but a tuple of (filename, content-type, data).
+If your form contains multiple fields with the same name, the value 
+attribute will be a list when multiple fields were actually filled by the 
+user.  In order to test for this, use the type() function.  If this is the 
+case, the value attribute is a list of FieldStorage items.  For example, 
+here's code that concatenates all fields with the same name with 
+intervening commas:
 
-A more flexible alternative to [Sv]FormContentDict is the class
-FieldStorage.  See that class's doc string.
+	username = form["username"].value
+	if type(username) is type([]):
+		# Multiple username fields specified
+		usernames = ""
+		for item in username:
+			if usernames:
+				# Next item -- insert comma
+				usernames = usernames + "," + item.value
+			else:
+				# First item -- don't insert comma
+				usernames = item.value
+	else:
+		# Single username field specified
+		usernames = username
+
+If a field represents an uploaded file, the value attribute reads the 
+entire file in memory as a string.  This may not be what you want.  You can 
+test for an uploaded file by testing either the filename attribute or the 
+file attribute.  You can then read the data at leasure from the file 
+attribute:
+
+	fileitem = form["userfile"]
+	if fileitem.file:
+		# It's an uploaded file; count lines
+		linecount = 0
+		while 1:
+			line = fileitem.file.readline()
+			if not line: break
+			linecount = linecount + 1
+
+When a form is submitted in the "old" format (as the query string or as a 
+single data part of type application/x-www-form-urlencoded), the items 
+will actually be instances of the class MiniFieldStorage.  In this case,
+the list, file and filename attributes are always None.
 
 
-Overview of classes
--------------------
+Old classes
+-----------
 
-FieldStorage: new more flexible class; described above.
+These classes, present in earlier versions of the cgi module, are still 
+supported for backward compatibility.  New applications should use the 
 
-SvFormContentDict: single value form content as dictionary; described
-above.
+SvFormContentDict: single value form content as dictionary; assumes each 
+field name occurs in the form only once.
 
 FormContentDict: multiple value form content as dictionary (the form
 items are lists of values).  Useful if your form contains multiple
 fields with the same name.
 
 Other classes (FormContent, InterpFormContentDict) are present for
-backwards compatibility only.
+backwards compatibility with really old applications only.  If you still 
+use these and would be inconvenienced when they disappeared from a next 
+version of this module, drop me a note.
 
 
-Overview of functions
----------------------
+Functions
+---------
 
 These are useful if you want more control, or if you want to employ
 some of the algorithms implemented in this module in other
 circumstances.
 
-parse(): parse a form into a Python dictionary.
+parse(fp): parse a form into a Python dictionary.
 
-parse_qs(qs): parse a query string.
+parse_qs(qs): parse a query string (data of type 
+application/x-www-form-urlencoded).
 
-parse_multipart(...): parse input of type multipart/form-data (for
+parse_multipart(fp, pdict): parse input of type multipart/form-data (for 
 file uploads).
 
 parse_header(string): parse a header like Content-type into a main
@@ -336,17 +378,22 @@ parsing was inspired by code submitted by Andreas Paepcke.  Guido van
 Rossum rewrote, reformatted and documented the module and is currently
 responsible for its maintenance.
 
+
+XXX The module is getting pretty heavy with all those docstrings.
+Perhaps there should be a slimmed version that doesn't contain all those 
+backwards compatible and debugging classes and functions?
+
 """
+
+__version__ = "2.0a3"
 
 
 # Imports
 # =======
 
 import string
-import regsub
 import sys
 import os
-import urllib
 
 
 # A shorthand for os.environ
@@ -365,12 +412,12 @@ def parse(fp=None):
     if environ['REQUEST_METHOD'] == 'POST':
 	ctype, pdict = parse_header(environ['CONTENT_TYPE'])
 	if ctype == 'multipart/form-data':
-	    return parse_multipart(fp, ctype, pdict)
+	    return parse_multipart(fp, pdict)
 	elif ctype == 'application/x-www-form-urlencoded':
 	    clength = string.atoi(environ['CONTENT_LENGTH'])
 	    qs = fp.read(clength)
 	else:
-	    qs = ''		# Bad content-type
+	    qs = ''			# Unknown content-type
 	environ['QUERY_STRING'] = qs	# XXX Shouldn't, really
     elif environ.has_key('QUERY_STRING'):
 	qs = environ['QUERY_STRING']
@@ -385,6 +432,7 @@ def parse(fp=None):
 
 def parse_qs(qs):
     """Parse a query given as a string argument"""
+    import urllib, regsub
     name_value_pairs = string.splitfields(qs, '&')
     dict = {}
     for name_value in name_value_pairs:
@@ -401,22 +449,25 @@ def parse_qs(qs):
     return dict
 
 
-def parse_multipart(fp, ctype, pdict):
+def parse_multipart(fp, pdict):
     """Parse multipart input.
 
     Arguments:
     fp   : input file
-    ctype: content-type
     pdict: dictionary containing other parameters of conten-type header
 
-    Returns a dictionary just like parse_qs() (keys are the field
-    names, each value is a list of values for that field) except that
-    if the value was an uploaded file, it is a tuple of the form
-    (filename, content-type, data).  Note that content-type is the
-    raw, unparsed contents of the content-type header.
-
-    XXX Should we parse further when the content-type is
-    multipart/*?
+    Returns a dictionary just like parse_qs(): keys are the field names, each 
+    value is a list of values for that field.  This is easy to use but not 
+    much good if you are expecting megabytes to be uploaded -- in that case, 
+    use the FieldStorage class instead which is much more flexible.  Note 
+    that content-type is the raw, unparsed contents of the content-type 
+    header.
+    
+    XXX This does not parse nested multipart parts -- use FieldStorage for 
+    that.
+    
+    XXX This should really be subsumed by FieldStorage altogether -- no 
+    point in having two implementations of the same parsing algorithm.
 
     """
     import mimetools
@@ -476,9 +527,6 @@ def parse_multipart(fp, ctype, pdict):
 	    name = params['name']
 	else:
 	    continue
-	if params.has_key('filename'):
-	    data = (params['filename'],
-		    headers.getheader('content-type'), data)
 	if partdict.has_key(name):
 	    partdict[name].append(data)
 	else:
@@ -513,7 +561,7 @@ def parse_header(line):
 
 class MiniFieldStorage:
 
-    """Internal: dummy FieldStorage, used with query string format."""
+    """Like FieldStorage, for use when no file uploads are possible."""
 
     # Dummy attributes
     filename = None
@@ -551,7 +599,7 @@ class FieldStorage:
 
     filename: the filename, if specified; otherwise None; this is the
 	client side filename, *not* the file name on which it is
-	stored (that's a temporary you don't deal with)
+	stored (that's a temporary file you don't deal with)
 
     value: the value as a *string*; for file uploads, this
 	transparently reads the file every time you request the value
@@ -682,7 +730,10 @@ class FieldStorage:
 	    if item.name == key: found.append(item)
 	if not found:
 	    raise KeyError, key
-	return found
+	if len(found) == 1:
+	    return found[0]
+	else:
+	    return found
 
     def keys(self):
 	"""Dictionary style keys() method."""
@@ -692,6 +743,14 @@ class FieldStorage:
 	for item in self.list:
 	    if item.name not in keys: keys.append(item.name)
 	return keys
+
+    def has_key(self, key):
+	"""Dictionary style has_key() method."""
+	if self.list is None:
+	    raise TypeError, "not indexable"
+	for item in self.list:
+	    if item.name == key: return 1
+	return 0
 
     def read_urlencoded(self):
 	"""Internal: read data in query string format."""
@@ -929,22 +988,22 @@ class InterpFormContentDict(SvFormContentDict):
 
 class FormContent(FormContentDict):
     """This class is present for backwards compatibility only.""" 
-    def values(self,key):
-	if self.dict.has_key(key):return self.dict[key]
+    def values(self, key):
+	if self.dict.has_key(key) :return self.dict[key]
 	else: return None
-    def indexed_value(self,key, location):
+    def indexed_value(self, key, location):
 	if self.dict.has_key(key):
 	    if len (self.dict[key]) > location:
 		return self.dict[key][location]
 	    else: return None
 	else: return None
-    def value(self,key):
-	if self.dict.has_key(key):return self.dict[key][0]
+    def value(self, key):
+	if self.dict.has_key(key): return self.dict[key][0]
 	else: return None
-    def length(self,key):
-	return len (self.dict[key])
-    def stripped(self,key):
-	if self.dict.has_key(key):return string.strip(self.dict[key][0])
+    def length(self, key):
+	return len(self.dict[key])
+    def stripped(self, key):
+	if self.dict.has_key(key): return string.strip(self.dict[key][0])
 	else: return None
     def pars(self):
 	return self.dict
@@ -965,7 +1024,8 @@ def test():
     print
     sys.stderr = sys.stdout
     try:
-	print_form(FieldStorage())
+	form = FieldStorage()	# Replace with other classes to test those
+	print_form(form)
 	print_environ()
 	print_directory()
 	print_environ_usage()
@@ -1061,6 +1121,7 @@ environment as well.  Here are some common variable names:
 
 def escape(s):
     """Replace special characters '&', '<' and '>' by SGML entities."""
+    import regsub
     s = regsub.gsub("&", "&amp;", s)	# Must be done first!
     s = regsub.gsub("<", "&lt;", s)
     s = regsub.gsub(">", "&gt;", s)
