@@ -908,6 +908,16 @@ class C:
   \versionadded{2.2}
 \end{funcdesc}
 
+\begin{funcdesc}{str}{\optional{object}}
+  Return a string containing a nicely printable representation of an
+  object.  For strings, this returns the string itself.  The
+  difference with \code{repr(\var{object})} is that
+  \code{str(\var{object})} does not always attempt to return a string
+  that is acceptable to \function{eval()}; its goal is to return a
+  printable string.  If no argument is given, returns the empty
+  string, \code{''}.
+\end{funcdesc}
+
 \begin{funcdesc}{sum}{sequence\optional{, start}}
   Sums \var{start} and the items of a \var{sequence}, from left to
   right, and returns the total.  \var{start} defaults to \code{0}.
@@ -934,16 +944,6 @@ class C(B):
         super(C, self).meth(arg)
 \end{verbatim}
 \versionadded{2.2}
-\end{funcdesc}
-
-\begin{funcdesc}{str}{\optional{object}}
-  Return a string containing a nicely printable representation of an
-  object.  For strings, this returns the string itself.  The
-  difference with \code{repr(\var{object})} is that
-  \code{str(\var{object})} does not always attempt to return a string
-  that is acceptable to \function{eval()}; its goal is to return a
-  printable string.  If no argument is given, returns the empty
-  string, \code{''}.
 \end{funcdesc}
 
 \begin{funcdesc}{tuple}{\optional{sequence}}
