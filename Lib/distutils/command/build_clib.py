@@ -190,9 +190,9 @@ class build_clib (Command):
             # Now "link" the object files together into a static library.
             # (On Unix at least, this isn't really linking -- it just
             # builds an archive.  Whatever.)
-            self.compiler.link_static_lib (objects, lib_name,
-                                           output_dir=self.build_clib,
-                                           debug=self.debug)
+            self.compiler.create_static_lib (objects, lib_name,
+                                             output_dir=self.build_clib,
+                                             debug=self.debug)
 
         # for libraries
 
