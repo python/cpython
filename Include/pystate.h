@@ -73,6 +73,8 @@ typedef struct _ts {
 	int ticker;
 	int tracing;
 
+	PyObject *dict;
+
 	PyObject *sys_profilefunc;
 	PyObject *sys_tracefunc;
 
@@ -99,6 +101,7 @@ void PyThreadState_Delete Py_PROTO((PyThreadState *));
 
 PyThreadState *PyThreadState_Get Py_PROTO((void));
 PyThreadState *PyThreadState_Swap Py_PROTO((PyThreadState *));
+PyObject *PyThreadState_GetDict Py_PROTO((void));
 
 #ifdef __cplusplus
 }
