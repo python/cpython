@@ -122,13 +122,18 @@ def getfqdn(name=''):
 # These are not actually used on other platforms.
 #
 
+_socketmethods = (
+    'bind', 'connect', 'connect_ex', 'fileno', 'listen',
+    'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
+    'recv', 'recvfrom', 'send', 'sendto', 'setblocking', 'shutdown')
+
 class _socketobject:
 
     def __init__(self, sock):
         self._sock = sock
 
     def close(self):
-        self._sock = 0
+        self._sock = _closedsocket()
 
     def __del__(self):
         self.close()
@@ -143,14 +148,19 @@ class _socketobject:
     def makefile(self, mode='r', bufsize=-1):
         return _fileobject(self._sock, mode, bufsize)
 
-    _s = "def %s(self, *args): return apply(self._sock.%s, args)\n\n"
-    for _m in ('bind', 'connect', 'connect_ex', 'fileno', 'listen',
-               'getpeername', 'getsockname',
-               'getsockopt', 'setsockopt',
-               'recv', 'recvfrom', 'send', 'sendto',
-               'setblocking',
-               'shutdown'):
+    _s = "def %s(self, *args): return self._sock.%s(*args)\n\n"
+    for _m in _socketmethods:
         exec _s % (_m, _m)
+
+
+class _closedsocket:
+
+    def _bummer(self):
+        raise error(9, 'Bad file descriptor')
+
+    _s = "def %s(self, *args): self._bummer()\n\n"
+    for _m in _socketmethods:
+        exec _s % _m
 
 
 class _fileobject:
