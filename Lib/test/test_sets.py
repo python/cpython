@@ -596,6 +596,7 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
             self.set.difference(self.other)
         else:
             self.assertRaises(TypeError, self.set.difference, self.other)
+
 #------------------------------------------------------------------------------
 
 class TestOnlySetsNumeric(TestOnlySetsInBinaryOps):
@@ -645,6 +646,14 @@ class TestOnlySetsGenerator(TestOnlySetsInBinaryOps):
                 yield i
         self.set   = Set((1, 2, 3))
         self.other = gen()
+        self.otherIsIterable = True
+
+#------------------------------------------------------------------------------
+
+class TestOnlySetsofSets(TestOnlySetsInBinaryOps):
+    def setUp(self):
+        self.set   = Set((1, 2, 3))
+        self.other = [Set('ab'), ImmutableSet('cd')]
         self.otherIsIterable = True
 
 #==============================================================================
@@ -801,6 +810,7 @@ def test_main(verbose=None):
         TestOnlySetsTuple,
         TestOnlySetsString,
         TestOnlySetsGenerator,
+        TestOnlySetsofSets,
         TestCopyingEmpty,
         TestCopyingSingleton,
         TestCopyingTriple,
