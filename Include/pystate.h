@@ -42,15 +42,19 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #define NEXITFUNCS 32
 
+struct _ts; /* Forward */
+struct _is; /* Forward */
+
 typedef struct _is {
 
-	PyObject *import_modules;
+	struct _is *next;
+	struct _ts *tstate_head;
+
+	PyObject *modules;
 	PyObject *sysdict;
+	PyObject *builtins;
 
-	int nthreads;
-
-	void (*exitfuncs[NEXITFUNCS])();
-	int nexitfuncs;
+	int checkinterval;
 
 } PyInterpreterState;
 
@@ -61,7 +65,8 @@ struct _frame; /* Avoid including frameobject.h */
 
 typedef struct _ts {
 
-	PyInterpreterState *interpreter_state;
+	struct _ts *next;
+	PyInterpreterState *interp;
 
 	struct _frame *frame;
 	int recursion_depth;
@@ -70,7 +75,6 @@ typedef struct _ts {
 
 	PyObject *sys_profilefunc;
 	PyObject *sys_tracefunc;
-	int sys_checkinterval;
 
 	PyObject *curexc_type;
 	PyObject *curexc_value;
@@ -80,53 +84,21 @@ typedef struct _ts {
 	PyObject *exc_value;
 	PyObject *exc_traceback;
 
-	/* XXX Other state that should be here:
-	   - signal handlers
-	   - low-level "pending calls"
-	   Problem with both is that they may be referenced from
-	   interrupt handlers where there is no clear concept of a
-	   "current thread"???
-	*/
+	/* XXX signal handlers should also be here */
 
 } PyThreadState;
 
 
 PyInterpreterState *PyInterpreterState_New Py_PROTO((void));
+void PyInterpreterState_Clear Py_PROTO((PyInterpreterState *));
 void PyInterpreterState_Delete Py_PROTO((PyInterpreterState *));
 
 PyThreadState *PyThreadState_New Py_PROTO((PyInterpreterState *));
+void PyThreadState_Clear Py_PROTO((PyThreadState *));
 void PyThreadState_Delete Py_PROTO((PyThreadState *));
 
 PyThreadState *PyThreadState_Get Py_PROTO((void));
 PyThreadState *PyThreadState_Swap Py_PROTO((PyThreadState *));
-
-/* Some background.
-
-   There are lots of issues here.
-
-   First, we can build Python without threads, with threads, or (when
-   Greg Stein's mods are out of beta, on some platforms) with free
-   threading.
-
-   Next, assuming some form of threading is used, there can be several
-   kinds of threads.  Python code can create threads with the thread
-   module.  C code can create threads with the interface defined in
-   python's "thread.h".  Or C code can create threads directly with
-   the OS threads interface (e.g. Solaris threads, SGI threads or
-   pthreads, whatever is being used, as long as it's the same that
-   Python is configured for).
-
-   Next, let's discuss sharing of interpreter state between threads.
-   The exception state (sys.exc_* currently) should never be shared
-   between threads, because it is stack frame specific.  The contents
-   of the sys module, in particular sys.modules and sys.path, are
-   generally shared between threads.  But occasionally it is useful to
-   have separate module collections, e.g. when threads originate in C
-   code and are used to execute unrelated Python scripts.
-   (Traditionally, one would use separate processes for this, but
-   there are lots of reasons why threads are attractive.)
-
-*/
 
 #ifdef __cplusplus
 }

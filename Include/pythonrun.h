@@ -40,8 +40,9 @@ PERFORMANCE OF THIS SOFTWARE.
 void Py_SetProgramName Py_PROTO((char *));
 char *Py_GetProgramName Py_PROTO((void));
 
-void Py_Setup Py_PROTO((void));
 void Py_Initialize Py_PROTO((void));
+PyThreadState *Py_NewInterpreter Py_PROTO((void));
+void Py_EndInterpreter Py_PROTO((PyThreadState *));
 
 int PyRun_AnyFile Py_PROTO((FILE *, char *));
 
@@ -64,11 +65,6 @@ int Py_AtExit Py_PROTO((void (*func) Py_PROTO((void))));
 
 void Py_Exit Py_PROTO((int));
 
-void Py_Cleanup Py_PROTO((void));
-
-void PyImport_Init	Py_PROTO((void));
-void PyBuiltin_Init	Py_PROTO((void));
-
 int Py_FdIsInteractive Py_PROTO((FILE *, char *));
 
 /* In getpath.c */
@@ -83,6 +79,12 @@ const char *Py_GetPlatform Py_PROTO((void));
 const char *Py_GetCopyright Py_PROTO((void));
 const char *Py_GetCompiler Py_PROTO((void));
 const char *Py_GetBuildInfo Py_PROTO((void));
+
+/* Internal -- various one-time initializations */
+
+PyObject *_PyBuiltin_Init Py_PROTO((void));
+PyObject *_PySys_Init Py_PROTO((void));
+void _PyImport_Init Py_PROTO((void));
 
 #ifdef __cplusplus
 }

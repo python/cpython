@@ -37,7 +37,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Module definition and import interface */
 
-void PyImport_Init Py_PROTO((void));
 long PyImport_GetMagicNumber Py_PROTO((void));
 PyObject *PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
 PyObject *PyImport_GetModuleDict Py_PROTO((void));
@@ -46,6 +45,9 @@ PyObject *PyImport_ImportModule Py_PROTO((char *name));
 PyObject *PyImport_ReloadModule Py_PROTO((PyObject *m));
 void PyImport_Cleanup Py_PROTO((void));
 int PyImport_ImportFrozenModule Py_PROTO((char *));
+
+extern PyObject *_PyImport_FindExtension Py_PROTO((char *, char *));
+extern PyObject *_PyImport_FixupExtension Py_PROTO((char *, char *));
 
 struct _inittab {
 	char *name;

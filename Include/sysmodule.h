@@ -40,7 +40,6 @@ PERFORMANCE OF THIS SOFTWARE.
 PyObject *PySys_GetObject Py_PROTO((char *));
 int PySys_SetObject Py_PROTO((char *, PyObject *));
 FILE *PySys_GetFile Py_PROTO((char *, FILE *));
-void PySys_Init Py_PROTO((void));
 void PySys_SetArgv Py_PROTO((int, char **));
 void PySys_SetPath Py_PROTO((char *));
 
