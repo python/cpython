@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.1 alpha 1
+  Title=Python 2.1 alpha 2
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -64,7 +64,7 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.1 alpha 1
+  Value=Python 2.1 alpha 2
 end
 item: Set Variable
   Variable=GROUP
@@ -72,7 +72,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=PY_VERSION
-  Value=2.1a1
+  Value=2.1a2
 end
 item: Set Variable
   Variable=MAINDIR
@@ -727,11 +727,6 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PCbuild\ucnhash.pyd
-  Destination=%MAINDIR%\DLLs\ucnhash.pyd
-  Flags=0000000000000010
-end
-item: Install File
   Source=%_SRC_%\PCbuild\unicodedata.pyd
   Destination=%MAINDIR%\DLLs\unicodedata.pyd
   Flags=0000000000000010
@@ -794,11 +789,6 @@ end
 item: Install File
   Source=%_SRC_%\PCbuild\select.lib
   Destination=%MAINDIR%\libs\select.lib
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\PCbuild\ucnhash.lib
-  Destination=%MAINDIR%\libs\ucnhash.lib
   Flags=0000000000000010
 end
 item: Install File
