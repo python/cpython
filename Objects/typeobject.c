@@ -5,24 +5,6 @@
 
 #include <ctype.h>
 
-/* The *real* layout of a type object when allocated on the heap */
-/* XXX Should we publish this in a header file? */
-typedef struct {
-	/* Note: there's a dependency on the order of these members
-	   in slotptr() below. */
-	PyTypeObject type;
-	PyNumberMethods as_number;
-	PyMappingMethods as_mapping;
-	PySequenceMethods as_sequence; /* as_sequence comes after as_mapping,
-					  so that the mapping wins when both
-					  the mapping and the sequence define
-					  a given operator (e.g. __getitem__).
-					  see add_operators() below. */
-	PyBufferProcs as_buffer;
-	PyObject *name, *slots;
-	PyMemberDef members[1];
-} etype;
-
 static PyMemberDef type_members[] = {
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
@@ -42,7 +24,7 @@ type_name(PyTypeObject *type, void *context)
 	char *s;
 
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-		etype* et = (etype*)type;
+		PyHeapTypeObject* et = (PyHeapTypeObject*)type;
 
 		Py_INCREF(et->name);
 		return et->name;
@@ -60,7 +42,7 @@ type_name(PyTypeObject *type, void *context)
 static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
-	etype* et;
+	PyHeapTypeObject* et;
 
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 		PyErr_Format(PyExc_TypeError,
@@ -85,7 +67,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 		return -1;
 	}
 
-	et = (etype*)type;
+	et = (PyHeapTypeObject*)type;
 
 	Py_INCREF(value);
 
@@ -449,7 +431,8 @@ PyObject *
 PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
 	PyObject *obj;
-	const size_t size = _PyObject_VAR_SIZE(type, nitems);
+	const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
+	/* note that we need to add one, for the sentinel */
 
 	if (PyType_IS_GC(type))
 		obj = _PyObject_GC_Malloc(size);
@@ -489,7 +472,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
 	PyMemberDef *mp;
 
 	n = type->ob_size;
-	mp = ((etype *)type)->members;
+	mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
 	for (i = 0; i < n; i++, mp++) {
 		if (mp->type == T_OBJECT_EX) {
 			char *addr = (char *)self + mp->offset;
@@ -554,7 +537,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
 	PyMemberDef *mp;
 
 	n = type->ob_size;
-	mp = ((etype *)type)->members;
+	mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
 	for (i = 0; i < n; i++, mp++) {
 		if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
 			char *addr = (char *)self + mp->offset;
@@ -1534,7 +1517,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	static char *kwlist[] = {"name", "bases", "dict", 0};
 	PyObject *slots, *tmp, *newslots;
 	PyTypeObject *type, *base, *tmptype, *winner;
-	etype *et;
+	PyHeapTypeObject *et;
 	PyMemberDef *mp;
 	int i, nbases, nslots, slotoffset, add_dict, add_weak;
 	int j, may_add_dict, may_add_weak;
@@ -1649,7 +1632,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 		/* Are slots allowed? */
 		nslots = PyTuple_GET_SIZE(slots);
-		if (nslots > 0 && base->tp_itemsize != 0) {
+		if (nslots > 0 && base->tp_itemsize != 0 && !PyType_Check(base)) {
+			/* for the special case of meta types, allow slots */
 			PyErr_Format(PyExc_TypeError,
 				     "nonempty __slots__ "
 				     "not supported for subtype of '%s'",
@@ -1770,7 +1754,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Keep name and slots alive in the extended type object */
-	et = (etype *)type;
+	et = (PyHeapTypeObject *)type;
 	Py_INCREF(name);
 	et->name = name;
 	et->slots = slots;
@@ -1850,7 +1834,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Add descriptors for custom slots from __slots__, or for __dict__ */
-	mp = et->members;
+	mp = PyHeapType_GET_MEMBERS(et);
 	slotoffset = base->tp_basicsize;
 	if (slots != NULL) {
 		for (i = 0; i < nslots; i++, mp++) {
@@ -1882,7 +1866,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 	type->tp_basicsize = slotoffset;
 	type->tp_itemsize = base->tp_itemsize;
-	type->tp_members = et->members;
+	type->tp_members = PyHeapType_GET_MEMBERS(et);
 
 	if (type->tp_weaklistoffset && type->tp_dictoffset)
 		type->tp_getset = subtype_getsets_full;
@@ -2052,13 +2036,13 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 static void
 type_dealloc(PyTypeObject *type)
 {
-	etype *et;
+	PyHeapTypeObject *et;
 
 	/* Assert this is a heap-allocated type object */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 	_PyObject_GC_UNTRACK(type);
 	PyObject_ClearWeakRefs((PyObject *)type);
-	et = (etype *)type;
+	et = (PyHeapTypeObject *)type;
 	Py_XDECREF(type->tp_base);
 	Py_XDECREF(type->tp_dict);
 	Py_XDECREF(type->tp_bases);
@@ -2134,7 +2118,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 	VISIT(type->tp_base);
 
 	/* There's no need to visit type->tp_subclasses or
-	   ((etype *)type)->slots, because they can't be involved
+	   ((PyHeapTypeObject *)type)->slots, because they can't be involved
 	   in cycles; tp_subclasses is a list of weak references,
 	   and slots is a tuple of strings. */
 
@@ -2180,7 +2164,7 @@ type_clear(PyTypeObject *type)
 	       A list of weak references can't be part of a cycle; and
 	       lists have their own tp_clear.
 
-	   slots (in etype):
+	   slots (in PyHeapTypeObject):
 	       A tuple of strings can't be part of a cycle.
 	*/
 
@@ -2201,7 +2185,7 @@ PyTypeObject PyType_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"type",					/* tp_name */
-	sizeof(etype),				/* tp_basicsize */
+	sizeof(PyHeapTypeObject),		/* tp_basicsize */
 	sizeof(PyMemberDef),			/* tp_itemsize */
 	(destructor)type_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
@@ -4686,9 +4670,10 @@ slot_tp_del(PyObject *self)
 
 
 /* Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper
-   functions.  The offsets here are relative to the 'etype' structure, which
-   incorporates the additional structures used for numbers, sequences and
-   mappings.  Note that multiple names may map to the same slot (e.g. __eq__,
+   functions.  The offsets here are relative to the 'PyHeapTypeObject' 
+   structure, which incorporates the additional structures used for numbers,
+   sequences and mappings.
+   Note that multiple names may map to the same slot (e.g. __eq__,
    __ne__ etc. all map to tp_richcompare) and one name may map to multiple
    slots (e.g. __str__ affects tp_str as well as tp_repr). The table is
    terminated with an all-zero entry.  (This table is further initialized and
@@ -4714,7 +4699,7 @@ typedef struct wrapperbase slotdef;
 	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
 	 PyDoc_STR(DOC), FLAGS}
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
-	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER, \
+	{NAME, offsetof(PyHeapTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
 	 PyDoc_STR(DOC)}
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
 	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER, DOC)
@@ -4928,20 +4913,20 @@ slotptr(PyTypeObject *type, int offset)
 {
 	char *ptr;
 
-	/* Note: this depends on the order of the members of etype! */
+	/* Note: this depends on the order of the members of PyHeapTypeObject! */
 	assert(offset >= 0);
-	assert(offset < offsetof(etype, as_buffer));
-	if (offset >= offsetof(etype, as_sequence)) {
+	assert(offset < offsetof(PyHeapTypeObject, as_buffer));
+	if (offset >= offsetof(PyHeapTypeObject, as_sequence)) {
 		ptr = (void *)type->tp_as_sequence;
-		offset -= offsetof(etype, as_sequence);
+		offset -= offsetof(PyHeapTypeObject, as_sequence);
 	}
-	else if (offset >= offsetof(etype, as_mapping)) {
+	else if (offset >= offsetof(PyHeapTypeObject, as_mapping)) {
 		ptr = (void *)type->tp_as_mapping;
-		offset -= offsetof(etype, as_mapping);
+		offset -= offsetof(PyHeapTypeObject, as_mapping);
 	}
-	else if (offset >= offsetof(etype, as_number)) {
+	else if (offset >= offsetof(PyHeapTypeObject, as_number)) {
 		ptr = (void *)type->tp_as_number;
-		offset -= offsetof(etype, as_number);
+		offset -= offsetof(PyHeapTypeObject, as_number);
 	}
 	else {
 		ptr = (void *)type;
@@ -5216,9 +5201,9 @@ update_all_slots(PyTypeObject* type)
    mp_subscript generate a __getitem__ descriptor).
 
    In the latter case, the first slotdef entry encoutered wins.  Since
-   slotdef entries are sorted by the offset of the slot in the etype
-   struct, this gives us some control over disambiguating between
-   competing slots: the members of struct etype are listed from most
+   slotdef entries are sorted by the offset of the slot in the 
+   PyHeapTypeObject, this gives us some control over disambiguating
+   between competing slots: the members of PyHeapTypeObject are listed from most
    general to least general, so the most general slot is preferred.  In
    particular, because as_mapping comes before as_sequence, for a type
    that defines both mp_subscript and sq_item, mp_subscript wins.
