@@ -54,7 +54,7 @@ static PyMethodDef noddy_methods[] = {
     {NULL}  /* Sentinel */
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initnoddy(void) 
 {
     noddy_NoddyType.ob_type = &PyType_Type;
