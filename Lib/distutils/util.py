@@ -297,9 +297,10 @@ def byte_compile (py_files,
                   prefix=None, base_dir=None,
                   verbose=1, dry_run=0,
                   direct=None):
-    """Byte-compile a collection of Python source files to either
-    .pyc or .pyo files in the same directory.  'optimize' must be
-    one of the following:
+    """Byte-compile a collection of Python source files to either .pyc
+    or .pyo files in the same directory.  'py_files' is a list of files
+    to compile; any files that don't end in ".py" are silently skipped.
+    'optimize' must be one of the following:
       0 - don't optimize (generate .pyc)
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
@@ -378,8 +379,9 @@ byte_compile(files, optimize=%s, force=%s,
 
         for file in py_files:
             if file[-3:] != ".py":
-                raise ValueError, \
-                      "invalid filename: %s doesn't end with '.py'" % `file`
+                # This lets us be lazy and not filter filenames in
+                # the "install_lib" command.
+                continue
 
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
