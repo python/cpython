@@ -1400,20 +1400,21 @@ varies across platforms.  Regardless of platform, years before 1900
 cannot be used.
 
 
-\begin{comment}
-
 \subsection{C API}
 
 Struct typedefs:
 
+\begin{verbatim}
     PyDateTime_Date
     PyDateTime_DateTime
     PyDateTime_Time
     PyDateTime_Delta
     PyDateTime_TZInfo
+\end{verbatim}
 
 Type-check macros:
 
+\begin{verbatim}
     PyDate_Check(op)
     PyDate_CheckExact(op)
 
@@ -1428,27 +1429,31 @@ Type-check macros:
 
     PyTZInfo_Check(op)
     PyTZInfo_CheckExact(op)
+\end{verbatim}
 
 Accessor macros:
 
 All objects are immutable, so accessors are read-only.  All macros
-return ints:
+return ints.  For \class{date} and \class{datetime} instances:
+\begin{verbatim}
+    PyDateTime_GET_YEAR(o)
+    PyDateTime_GET_MONTH(o)
+    PyDateTime_GET_DAY(o)
+\end{verbatim}
 
-    For \class{date} and \class{datetime} instances:
-        PyDateTime_GET_YEAR(o)
-        PyDateTime_GET_MONTH(o)
-        PyDateTime_GET_DAY(o)
+For \class{datetime} instances:
+\begin{verbatim}
+    PyDateTime_DATE_GET_HOUR(o)
+    PyDateTime_DATE_GET_MINUTE(o)
+    PyDateTime_DATE_GET_SECOND(o)
+    PyDateTime_DATE_GET_MICROSECOND(o)
+\end{verbatim}
 
-    For \class{datetime} instances:
-        PyDateTime_DATE_GET_HOUR(o)
-        PyDateTime_DATE_GET_MINUTE(o)
-        PyDateTime_DATE_GET_SECOND(o)
-        PyDateTime_DATE_GET_MICROSECOND(o)
+For \class{time} instances:
+\begin{verbatim}
+    PyDateTime_TIME_GET_HOUR(o)
+    PyDateTime_TIME_GET_MINUTE(o)
+    PyDateTime_TIME_GET_SECOND(o)
+    PyDateTime_TIME_GET_MICROSECOND(o)
+\end{verbatim}
 
-    For \class{time} instances:
-        PyDateTime_TIME_GET_HOUR(o)
-        PyDateTime_TIME_GET_MINUTE(o)
-        PyDateTime_TIME_GET_SECOND(o)
-        PyDateTime_TIME_GET_MICROSECOND(o)
-
-\end{comment}
