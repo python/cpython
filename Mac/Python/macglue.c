@@ -63,10 +63,12 @@ PyErr_Mac(PyObject *eobj, int err)
 	char *msg;
 	PyObject *v;
 	
-	if (err == 0) {
+	if (err == 0 && !PyErr_Occurred()) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
+	if (err == -1 && PyErr_Occurred())
+		return NULL;
 	msg = macstrerror(err);
 	v = Py_BuildValue("(is)", err, msg);
 	PyErr_SetObject(eobj, v);
@@ -102,7 +104,7 @@ PyMac_Idle()
 
 /* Convert a ResType argument */
 int
-GetOSType(PyObject *v, ResType *pr)
+PyMac_GetOSType(PyObject *v, ResType *pr)
 {
 	if (!PyString_Check(v) || PyString_Size(v) != 4) {
 		PyErr_SetString(PyExc_TypeError,
@@ -115,7 +117,7 @@ GetOSType(PyObject *v, ResType *pr)
 
 /* Convert a Str255 argument */
 int
-GetStr255(PyObject *v, Str255 pbuf)
+PyMac_GetStr255(PyObject *v, Str255 pbuf)
 {
 	int len;
 	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
@@ -136,7 +138,7 @@ GetStr255(PyObject *v, Str255 pbuf)
 ** this is probably sys7 dependent anyway).
 */
 int
-GetFSSpec(PyObject *v, FSSpec *fs)
+PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 {
 	Str255 path;
 	short refnum;
@@ -171,4 +173,11 @@ PyObject *
 PyMac_BuildFSSpec(FSSpec *fs)
 {
 	return Py_BuildValue("(iis#)", fs->vRefNum, fs->parID, &fs->name[1], fs->name[0]);
+}
+
+/* Convert an OSType value to a 4-char string object */
+PyObject *
+PyMac_BuildOSType(OSType t)
+{
+	return PyString_FromStringAndSize((char *)&t, 4);
 }
