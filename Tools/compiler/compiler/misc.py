@@ -1,3 +1,14 @@
+import types
+
+def flatten(tup):
+    elts = []
+    for elt in tup:
+        if type(elt) == types.TupleType:
+            elts = elts + flatten(elt)
+        else:
+            elts.append(elt)
+    return elts
+
 class Set:
     def __init__(self):
 	self.elts = {}
