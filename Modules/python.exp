@@ -54,6 +54,8 @@ PyCallable_Check
 PyClass_IsSubclass
 PyClass_New
 PyClass_Type
+PyCObject_FromVoidPtr
+PyCObject_AsVoidPtr
 PyCode_New
 PyCode_Type
 PyComplex_AsCComplex
@@ -183,8 +185,10 @@ PyList_Sort
 PyList_Type
 PyLong_AsDouble
 PyLong_AsLong
+PyLong_AsUnsignedLong
 PyLong_FromDouble
 PyLong_FromLong
+PyLong_FromUnsignedLong
 PyLong_FromString
 PyLong_Type
 PyMapping_Check

@@ -83,8 +83,10 @@ EXPORTS
 	PyLong_AsDouble
 	PyLong_FromDouble
 	PyLong_AsLong
+	PyLong_AsUnsignedLong
 	PyLong_FromString
 	PyLong_FromLong
+	PyLong_FromUnsignedLong
 	PyString_Format
 	PyString_Size
 	PyString_AsString
@@ -349,3 +351,5 @@ EXPORTS
 	_Py_c_sum
 	_Py_c_prod
 	_Py_c_diff
+	PyCObject_FromVoidPtr
+	PyCObject_AsVoidPtr
