@@ -11,8 +11,6 @@ skip_expected = not (test_support.is_resource_enabled('network') and
 
 def test_basic():
     test_support.requires('network')
-    if not hasattr(socket, "ssl"):
-        raise test_support.TestSkipped("socket module has no ssl support")
 
     import urllib
 
@@ -61,6 +59,8 @@ def test_rude_shutdown():
     connector()
 
 def test_main():
+    if not hasattr(socket, "ssl"):
+        raise test_support.TestSkipped("socket module has no ssl support")
     test_rude_shutdown()
     test_basic()
 
