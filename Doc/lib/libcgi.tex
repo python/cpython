@@ -119,7 +119,7 @@ code concatenates any number of username fields, separated by
 commas:
 
 \begin{verbatim}
-ListType = type([])
+from types import ListType
 
 value = form.getvalue("username", "")
 if isinstance(value, ListType):
@@ -165,6 +165,97 @@ be instances of the class \class{MiniFieldStorage}.  In this case, the
 always \code{None}.
 
 
+\subsection{Higher Level Interface}
+
+\versionadded{2.2}  % XXX: Is this true ? 
+
+The previous section explains how to read CGI form data using the
+\class{FieldStorage} class.  This section describes a higher level
+interface which was added to this class to allow one to do it in a
+more readable and intuitive way.  The interface doesn't make the
+techniques described in previous sections obsolete --- they are still
+useful to process file uploads efficiently, for example.
+
+The interface consists of two simple methods. Using the methods
+you can process form data in a generic way, without the need to worry
+whether only one or more values were posted under one name.
+
+In the previous section, you learned to write following code anytime
+you expected a user to post more than one value under one name:
+
+\begin{verbatim}
+from types import ListType
+
+item = form.getvalue("item")
+if isinstance(item, ListType):
+    # The user is requesting more than one item.
+else:
+    # The user is requesting only one item.
+\end{verbatim}
+
+This situation is common for example when a form contains a group of
+multiple checkboxes with the same name:
+
+\begin{verbatim}
+<input type="checkbox" name="item" value="1" />
+<input type="checkbox" name="item" value="2" />
+\end{verbatim}
+
+In most situations, however, there's only one form control with a
+particular name in a form and then you expect and need only one value
+associated with this name.  So you write a script containing for
+example this code:
+
+\begin{verbatim}
+user = form.getvalue("user").toupper()
+\end{verbatim}
+
+The problem with the code is that you should never expect that a
+client will provide valid input to your scripts.  For example, if a
+curious user appends another \samp{user=foo} pair to the query string,
+then the script would crash, because in this situation the
+\code{getvalue("user")} method call returns a list instead of a
+string.  Calling the \method{toupper()} method on a list is not valid
+(since lists do not have a method of this name) and results in an
+\exception{AttributeError} exception.
+
+Therefore, the appropriate way to read form data values was to always
+use the code which checks whether the obtained value is a single value
+or a list of values.  That's annoying and leads to less readable
+scripts.
+
+A more convenient approach is to use the methods \method{getfirst()}
+and \method{getlist()} provided by this higher level interface.
+
+\begin{methoddesc}[FieldStorage]{getfirst}{name\optional{, default}}
+  Thin method always returns only one value associated with form field
+  \var{name}.  The method returns only the first value in case that
+  more values were posted under such name.  Please note that the order
+  in which the values are received may vary from browser to browser
+  and should not be counted on.  If no such form field or value exists
+  then the method returns the value specified by the optional
+  parameter \var{default}.  This parameter defaults to \code{None} if
+  not specified.
+\end{methoddesc}
+
+\begin{methoddesc}[FieldStorage]{getlist}{name}
+  This method always returns a list of values associated with form
+  field \var{name}.  The method returns an empty list if no such form
+  field or value exists for \var{name}.  It returns a list consisting
+  of one item if only one such value exists.
+\end{methoddesc}
+
+Using these methods you can write nice compact code:
+
+\begin{verbatim}
+import cgi
+form = cgi.FieldStorage()
+user = form.getfirst("user").toupper()    # This way it's safe.
+for item in form.getlist("item"):
+    do_something(item)
+\end{verbatim}
+
+
 \subsection{Old classes}
 
 These classes, present in earlier versions of the \module{cgi} module,
@@ -191,12 +282,16 @@ These are useful if you want more control, or if you want to employ
 some of the algorithms implemented in this module in other
 circumstances.
 
-\begin{funcdesc}{parse}{fp}
-Parse a query in the environment or from a file (default
-\code{sys.stdin}).
+\begin{funcdesc}{parse}{fp\optional{, keep_blank_values\optional{,
+                        strict_parsing}}}
+  Parse a query in the environment or from a file (the file defaults
+  to \code{sys.stdin}).  The \var{keep_blank_values} and
+  \var{strict_parsing} parameters are passed to \function{parse_qs()}
+  unchanged.
 \end{funcdesc}
 
-\begin{funcdesc}{parse_qs}{qs\optional{, keep_blank_values, strict_parsing}}
+\begin{funcdesc}{parse_qs}{qs\optional{, keep_blank_values\optional{,
+                           strict_parsing}}}
 Parse a query string given as a string argument (data of type 
 \mimetype{application/x-www-form-urlencoded}).  Data are
 returned as a dictionary.  The dictionary keys are the unique query
@@ -216,7 +311,8 @@ are silently ignored.  If true, errors raise a ValueError
 exception.
 \end{funcdesc}
 
-\begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values, strict_parsing}}
+\begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values\optional{,
+                            strict_parsing}}}
 Parse a query string given as a string argument (data of type 
 \mimetype{application/x-www-form-urlencoded}).  Data are
 returned as a list of name, value pairs.
