@@ -25,9 +25,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """Simple HTTP request handler with GET and HEAD commands.
 
     This serves files from the current directory and any of its
-    subdirectories.  It assumes that all files are plain text files
-    unless they have the extension ".html" in which case it assumes
-    they are HTML files.
+    subdirectories.  The MIME type for files is determined by
+    calling the .guess_type() method.
 
     The GET and HEAD requests are identical except that the HEAD
     request omits the actual contents of the file.
@@ -168,7 +167,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         usable for a MIME Content-type header.
 
         The default implementation looks the file's extension
-        up in the table self.extensions_map, using text/plain
+        up in the table self.extensions_map, using application/octet-stream
         as a default; however it would be permissible (if
         slow) to look inside the data to make a better guess.
 
