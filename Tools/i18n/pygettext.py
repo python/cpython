@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# Originally written by Barry Warsaw <bwarsaw@python.org>
 
 """pygettext -- Python equivalent of xgettext(1)
 
