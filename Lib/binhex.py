@@ -27,7 +27,8 @@ import struct
 import string
 import binascii
     
-Error = 'binhex.Error'
+class Error(Exception):
+    pass
 
 # States (what have we written)
 [_DID_HEADER, _DID_DATA, _DID_RSRC] = range(3)
