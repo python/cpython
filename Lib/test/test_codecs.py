@@ -454,9 +454,23 @@ class CodecsModuleTest(unittest.TestCase):
     def test_decode(self):
         self.assertEquals(codecs.decode('\xe4\xf6\xfc', 'latin-1'),
                           u'\xe4\xf6\xfc')
+        self.assertRaises(TypeError, codecs.decode)
+        self.assertEquals(codecs.decode('abc'), u'abc')
+        self.assertRaises(UnicodeDecodeError, codecs.decode, '\xff', 'ascii')
+
     def test_encode(self):
         self.assertEquals(codecs.encode(u'\xe4\xf6\xfc', 'latin-1'),
                           '\xe4\xf6\xfc')
+        self.assertRaises(TypeError, codecs.encode)
+        self.assertEquals(codecs.encode(u'abc'), 'abc')
+        self.assertRaises(UnicodeEncodeError, codecs.encode, u'\xffff', 'ascii')
+
+    def test_register(self):
+        self.assertRaises(TypeError, codecs.register)
+
+    def test_lookup(self):
+        self.assertRaises(TypeError, codecs.lookup)
+        self.assertRaises(LookupError, codecs.lookup, "__spam__")
 
 class StreamReaderTest(unittest.TestCase):
 
