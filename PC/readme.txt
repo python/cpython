@@ -1,4 +1,5 @@
 Welcome to the "PC" subdirectory of the Python distribution!
+************************************************************
 
 
 This "PC" subdirectory contains complete project files to make
@@ -46,18 +47,6 @@ src         A subdirectory used only for VC++ version 1.5 Python
             use it.  They reference the actual distribution
             directories instead.
 
-Watcom C++ Version 10.6
-=======================
-
-The project file for the Watcom compiler is ./python.wpj.
-It will build Watcom versions in the directories wat_*.
-
-wat_dos     A 32-bit extended DOS Python (console-mode) using the
-            dos4gw DOS extender.  Sockets are not included.
-
-wat_os2     A 32-bit OS/2 Python (console-mode).
-            Sockets are not included.
-
 
 Microsoft Visual C++ Version 4.0 (32-bit Windows)
 =================================================
@@ -71,19 +60,20 @@ To convert the Makefile into a project file, start Developer Studio,
 choose Open Workspace, change the file name pattern to *.mak, find and
 select the file vc40.mak, and click OK.  Developer Studio will create
 additional project files vc40.ncb and vc40.mdp when you use the
-project.  The project contains three targets, which should be built in
+project.  The project contains six targets, which should be built in
 this order:
 
 python14    The Python core as a DLL, named python14.dll.
 
-python	    The Python main program, named python.exe.  This should
-	    work as a console program under Windows 95 or NT, as well
-	    as under Windows 3.1(1) when using win32s.  It uses
-	    python14.dll.
+python      The Python main program, named python.exe.  This should
+            work as a console program under Windows 95 or NT, as well
+            as under Windows 3.1(1) when using win32s.  It uses
+            python14.dll.
 
 _tkinter    The optional _tkinter extension, _tkinter.dll; see below.
 
-NumPy, multiarray, fast_umath    projects to build Numerical Python.
+NumPy, multiarray, fast_umath
+            Optional projects to build Numerical Python.
 
 ALl end products of the compilation are placed in the subdirectory
 vc40 (which Developer Studio creates); object files are placed in
@@ -114,6 +104,32 @@ in that order.  To use Numerical Python you have to append NumPy/Lib
 to sys.path.
 
 
+Additional files and subdirectories for 32-bit Windows
+======================================================
+
+python_nt.def  Exports definition file for python14.dll.
+
+python_nt.rc   Resource compiler input for python14.dll.
+
+dl_nt.c, getpath_nt.c, import_nt.c
+               Additional sources used for 32-bit Windows features.
+
+main_nt.c      Source for python.exe.
+
+dllbase_nt.txt A (manually maintained) list of base addresses for
+               various DLLs, to avoid run-time relocation.
+
+_tkinter.def   The export definitions file for _tkinter.dll.
+
+make_nt.in     Include file for nmake-based builds (unsupported).
+
+example_nt     A subdirectory showing how to build an extension as a
+               DLL.
+
+setup_nt       A subdirectory containing an experimental installer
+               using Python only.
+
+
 Microsoft Visual C++ Version 1.5 (16-bit Windows)
 =================================================
 
@@ -139,3 +155,16 @@ vc15_lib    A static Python library.  Create this first because is
 
 vc15_w31    A Windows 3.1x Python QuickWin (console-mode)
             Python including sockets.  Requires vc15_lib.
+
+
+Watcom C++ Version 10.6
+=======================
+
+The project file for the Watcom compiler is ./python.wpj.
+It will build Watcom versions in the directories wat_*.
+
+wat_dos     A 32-bit extended DOS Python (console-mode) using the
+            dos4gw DOS extender.  Sockets are not included.
+
+wat_os2     A 32-bit OS/2 Python (console-mode).
+            Sockets are not included.
