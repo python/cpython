@@ -23,7 +23,6 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 
 """
 
-import string
 import posixpath
 import urllib
 
@@ -64,11 +63,11 @@ def guess_type(url):
         # data      := *urlchar
         # parameter := attribute "=" value
         # type/subtype defaults to "text/plain"
-        comma = string.find(url, ',')
+        comma = url.find(',')
         if comma < 0:
             # bad data URL
             return None, None
-        semi = string.find(url, ';', 0, comma)
+        semi = url.find(';', 0, comma)
         if semi >= 0:
             type = url[:semi]
         else:
@@ -86,8 +85,8 @@ def guess_type(url):
         encoding = None
     if types_map.has_key(ext):
         return types_map[ext], encoding
-    elif types_map.has_key(string.lower(ext)):
-        return types_map[string.lower(ext)], encoding
+    elif types_map.has_key(ext.lower()):
+        return types_map[ext.lower()], encoding
     else:
         return None, encoding
 
@@ -103,7 +102,7 @@ def guess_extension(type):
     global inited
     if not inited:
         init()
-    type = string.lower(type)
+    type = type.lower()
     for ext, stype in types_map.items():
         if type == stype:
             return ext
@@ -127,7 +126,7 @@ def read_mime_types(file):
     while 1:
         line = f.readline()
         if not line: break
-        words = string.split(line)
+        words = line.split()
         for i in range(len(words)):
             if words[i][0] == '#':
                 del words[i:]
@@ -237,3 +236,7 @@ types_map = {
     '.xwd': 'image/x-xwindowdump',
     '.zip': 'application/zip',
     }
+
+if __name__ == '__main__':
+    import sys
+    print guess_type(sys.argv[1])
