@@ -3203,13 +3203,13 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 		case testlist_gexp:
 			if (NCH(n) > 1) {
 				if (TYPE(CHILD(n, 1)) == gen_for) {
-					com_error(c, PyExc_SystemError,
+					com_error(c, PyExc_SyntaxError,
 				  "assign to generator expression not possible");
 					return;
 				}
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
-				  "augmented assign to tuple not possible");
+				  "augmented assign to generator expression not possible");
 					return;
 				}
 				com_assign_sequence(c, n, assigning);
