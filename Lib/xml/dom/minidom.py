@@ -136,6 +136,8 @@ class Node:
             self.childNodes[-1].unlink()
             del self.childNodes[-1] # probably not most efficient!
         self.childNodes = None
+        self.previousSibling = None
+        self.nextSibling = None
         if self.attributes:
             for attr in self._attrs.values():
                 self.removeAttributeNode(attr)
