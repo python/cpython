@@ -1724,6 +1724,7 @@ static PyMethodDef builtin_methods[] = {
 
 /* Predefined exceptions */
 
+PyObject *PyExc_Exception;
 PyObject *PyExc_StandardError;
 PyObject *PyExc_NumberError;
 PyObject *PyExc_LookupError;
@@ -1757,6 +1758,7 @@ static struct
 	int leaf_exc;
 }
 bltin_exc[] = {
+	{"Exception",          &PyExc_Exception,          0},
 	{"StandardError",      &PyExc_StandardError,      0},
 	{"NumberError",        &PyExc_NumberError,        0},
 	{"LookupError",        &PyExc_LookupError,        0},
@@ -1901,6 +1903,11 @@ initerrors(dict)
 		PyTuple_SET_ITEM(PyExc_StandardError, i-1, exc);
 	}
 	PyDict_SetItemString(dict, "StandardError", PyExc_StandardError);
+
+	/* Exception is treated differently; for now, it's == StandardError */
+	PyExc_Exception = PyExc_StandardError;
+	Py_INCREF(PyExc_Exception);
+	PyDict_SetItemString(dict, "Exception", PyExc_Exception);
 	
 	if (PyErr_Occurred())
 	      Py_FatalError("Could not initialize built-in string exceptions");

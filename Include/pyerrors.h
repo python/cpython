@@ -53,6 +53,7 @@ void PyErr_NormalizeException Py_PROTO((PyObject**, PyObject**, PyObject**));
 
 /* Predefined exceptions */
 
+extern DL_IMPORT(PyObject *) PyExc_Exception;
 extern DL_IMPORT(PyObject *) PyExc_StandardError;
 extern DL_IMPORT(PyObject *) PyExc_NumberError;
 extern DL_IMPORT(PyObject *) PyExc_LookupError;
