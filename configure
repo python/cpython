@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.203 
+# From configure.in Revision: 1.204 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -2889,7 +2889,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) 
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -G'
+		then LDSHARED='$(CC) -shared'
 		else LDSHARED="ld -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
