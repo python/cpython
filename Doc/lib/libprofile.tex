@@ -449,7 +449,7 @@ now that ascending vs descending order is properly selected based on
 the sort key of choice.
 \end{methoddesc}
 
-\begin{methoddesc}[Stats]{print_stats}{restriction\optional{, ...}}
+\begin{methoddesc}[Stats]{print_stats}{\optional{restriction, \moreargs}}
 This method for the \class{Stats} class prints out a report as described
 in the \function{profile.run()} definition.
 
@@ -484,7 +484,7 @@ and then proceed to only print the first 10\% of them.
 \end{methoddesc}
 
 
-\begin{methoddesc}[Stats]{print_callers}{restrictions\optional{, ...}}
+\begin{methoddesc}[Stats]{print_callers}{\optional{restriction, \moreargs}}
 This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \method{print_stats()}, and the definition
@@ -494,7 +494,7 @@ times this specific call was made.  A second non-parenthesized number
 is the cumulative time spent in the function at the right.
 \end{methoddesc}
 
-\begin{methoddesc}[Stats]{print_callees}{restrictions\optional{, ...}}
+\begin{methoddesc}[Stats]{print_callees}{\optional{restriction, \moreargs}}
 This method for the \class{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and
