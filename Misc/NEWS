@@ -103,6 +103,10 @@ Extension modules
 Library
 -------
 
+- htmlentitydefs has two new dictionaries: name2codepoint maps
+  HTML entity names to Unicode codepoints (as integers).
+  codepoint2name is the reverse mapping. See SF patch #722017.
+
 - pdb has a new command, "debug", which lets you step through
   arbitrary code from the debugger's (pdb) prompt.
 
