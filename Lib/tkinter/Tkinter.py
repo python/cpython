@@ -43,8 +43,12 @@ def _cnfmerge(cnfs):
 	else:
 		cnf = {}
 		for c in _flatten(cnfs):
-			for k, v in c.items():
-				cnf[k] = v
+			try:
+				cnf.update(c)
+			except (AttributeError, TypeError), msg:
+				print "_cnfmerge: fallback due to:", msg
+				for k, v in c.items():
+					cnf[k] = v
 		return cnf
 
 class Event:
