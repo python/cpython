@@ -1,4 +1,13 @@
-/* config.h for Macintosh THINK C 6.0, CodeWarrior 4 and MPW 3.2.  */
+/* config.h for Macintosh.
+   Most recently tested with CodeWarrior C (define: __MWERKS__),
+   but there are some provisions for Think C (define: THINK_C),
+   Apple C for MPW (define: applec), or Symantec C for MPW (define: __SC__).
+   There's no point in giving exact version numbers of the compilers
+   since we don't update this file as each compiler comes out;
+   with CodeWarrior, we generally use the most recent version.
+*/
+
+#define USE_STACKCHECK
 
 #ifdef applec
 #define MPW
