@@ -44,7 +44,7 @@ directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with version 11 of CodeWarrior. Ordering information is
+been built with CodeWarrior Pro 1. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. You might still be able to build Python with MPW or
 Think/Symantec C but you are basically on your own.
@@ -54,7 +54,7 @@ Neeracher. The original CWGUSI is
 obtainable from <A
 HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
 ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
-At the moment Python is built with a rather hacked-up version of GUSI,
+At the moment Python is built with a slightly modified version of GUSI 1.8.1fc2,
 these modifications are available in folder <code>Python:Mac:GUSI-mods</code>.
 
 </UL>
@@ -121,65 +121,41 @@ Top-level-folder:
 		zlib
 		libpng
 	gdbm
-	MoreFiles 1.4.3 (not needed by Python, only by tcl/tk)
 	Python
-	Tcl 7.6
-	Tk 4.2
+	Tcl/Tk Folder
+		tcl8.0
+		tk8.0
+		MoreFiles 1.4.3
 	Waste 1.2 distribution (if you want waste)
 </PRE>
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
 move the files from the "CWGUSI-mods" to the right
-place in the CWGUSI distribution folder. Build the
-projects <code>MSLGUSI.68K.µ</code>, <code>MSLGUSI.CFM68K.µ</code> and
-<code>MSLGUSI.PPC.µ</code>. <p>
+place in the CWGUSI distribution folder. Build the MSL target for your
+platform (MSLGUSI PPC, MSLGUSI 68K or MSLGUSI CFM68K). <p>
 
-If you have a CWGUSI version more recent than
-1.8 it could be that the fixes are already included, check it. 
 Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
 <code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
-and<code>libtiff</code> you build all projects. Sometimes the projects are in "mac"
+and<code>libtiff</code> you build all projects. The projects are in "mac"
 subfolders, sometimes they are in the main folder. Tcl/tk is a special
 case, see below. Of course, if you are only interested in one of
 static 68K, CFM68K or PPC you can skip building the other libraries.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
-You need to make some minor changes to the Tcl/Tk
-distribution. The current instructions are for the
-<code>tcl7.6</code> and <code>tk4.2</code> distribution:
-
+You need to make some minor changes to the Tcl/Tk 8.0 beta2
+distribution. You should make the CW Pro projects TclLibraries.¹ and
+TkLibraries.¹ (in the mac subfolders).
 <UL>
 
-<LI> You have to change the access path setting and such to use the MSL
-libraries (this tcl/tk ditribution predates MSL).
+<LI> There are no cfm68k targets. You make these by copying the 68k targets,
+setting the "68k target" to "cfm68k library" and changing the output filename,
+and changing the prefix
+header filename in the C/C++ settings panel to "MW_???HeaderCFM68K".
 
-<LI> Rename the <code>compat</code> folders to <code>(compat)</code>
-in both the Tcl and Tk folders.
-
-<LI> In the Tcl folder, move <code>strncasecmp.c</code> and
-<code>tclErrno.h</code> from <code>(compat)</code> to the main Tcl
-folder.
-
-<LI> Fix <code>dnr.c</code> as provided by MetroWerks by inserting
-<pre><code> #pragma ANSI_strict off </code></pre> at the
-beginning. The tcl library is built with strict ANSI on, and this file
-uses C++ style comments.
-
-<LI> If you want to build <code>SimpleTcl</code> and
-<code>SimpleTk</code> you may  have to remove the references
-to <code>libmoto</code> from the project, not everyone has this library.
-
-<LI> If you want to build for CFM68K you have to create the projects
-for the libraries yourself. Take the 68K library projects, set the C++ header
-file to "MW_TclHeaderCFM68K", the project type to "cfm68K library" and the
-filename to "Tcl-CFM68K.Lib" (and similarly for Tk).
-You may also have to modify <code>TclMacNotify.c</code>
-because there is an error in the Apple Universal headers (sic!). Read the
-comments at the beginning of <code>Mac:Python:macglue.c</code> and copy the
-code to <code>TclMacNotify.c</code>. If you get linker errors on <code>GetEvQHdr</code>
-you have not done this correctly. <em>XXXX Is this still needed?</em>
+<LI> I had to add Search.c (from MoreFiles) to the tcl library projects. I don't
+understand why this is, but it seemed to cure the problems I had.
 
 <LI> Note that if you use a different release of Tcl and Tk than the ones
 I have used you may have to adapt the Python <code>tkresources.rsrc</code> file.
@@ -215,19 +191,14 @@ the Python source tree.  At the top level, we find the following
 folders:
 
 <DL>
-<DT> build.mac68k.stand
-<DD> This is where you build static 68K interpreters.
+<DT> build.mac
+<DD> This is where you build the PPC, CFM68K and Fat shared libraries,
+interpreter and applet framework. The Fat versions, which are derived
+from the other two, are deposited in the parent folder.
 
-<DT> build.mac68k.shared
-<DD> This is where you build the CFM68K shared library, interpreter
-and applet framework.
-
-<DT> build.macppc.shared
-<DD> This is where you build the PPC shared library, interpreter and
-applet framework. You can also build the fat applet framework here.
-
-<DT> build.macppc.stand
-<DD> This is where you build a nonshared PPC interpreter (optional).
+<DT> build.macstand
+<DD> This is where you build static 68K interpreters, and possibly static
+PPC interpreters (but you probably won't need those).
 
 <DT> Demo
 <DD> Demo programs that are not Mac-specific. Some of these may not
