@@ -17,8 +17,8 @@
 #endif
 #define DEF_WBITS MAX_WBITS
 
-/* The output buffer will be increased in chunks of ADDCHUNK bytes. */
-#define DEFAULTALLOC 16*1024
+/* The output buffer will be increased in chunks of DEFAULTALLOC bytes. */
+#define DEFAULTALLOC (16*1024)
 #define PyInit_zlib initzlib
 
 staticforward PyTypeObject Comptype;
@@ -643,11 +643,14 @@ PyZlib_unflush(self, args)
   self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   length = self->zst.avail_out = DEFAULTALLOC;
 
+  /* I suspect that Z_BUF_ERROR is the only error code we need to check for 
+     in the following loop, but will leave the Z_OK in for now to avoid
+     destabilizing this function. --amk */
   err = Z_OK;
-  while (err == Z_OK)
+  while ( err == Z_OK )
   {
       err = inflate(&(self->zst), Z_FINISH);
-      if (err == Z_OK && self->zst.avail_out == 0) 
+      if ( ( err == Z_OK || err == Z_BUF_ERROR ) && self->zst.avail_out == 0)
       {
 	  if (_PyString_Resize(&RetVal, length << 1) == -1)
 	  {
@@ -658,6 +661,7 @@ PyZlib_unflush(self, args)
 	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
 	  self->zst.avail_out = length;
 	  length = length << 1;
+	  err = Z_OK;
       }
   }
   if (err!=Z_STREAM_END) 
