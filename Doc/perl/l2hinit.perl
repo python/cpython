@@ -182,6 +182,14 @@ sub make_nav_panel {
     return $s;
 }
 
+sub add_child_links {
+    my $toc = add_real_child_links(@_);
+    $toc =~ s|\s*</[aA]>|</a>|g;
+    $toc =~ s/ NAME=\"tex2html\d+\"\s*href=/ href=/gi;
+    $toc =~ s|</UL>(\s*<BR>)?|</ul>|gi;
+    return $toc;
+}
+
 sub get_version_text {
     if ($PACKAGE_VERSION ne '' && $t_date) {
         return ("<span class=\"release-info\">"
