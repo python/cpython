@@ -617,33 +617,45 @@ class ControlsWindow(Window):
 class ScrolledWindow(ControlsWindow):
 	def __init__(self, parent):
 		self.barx = self.bary = None
+		self.barx_enabled = self.bary_enabled = 1
+		self.activated = 1
 		ControlsWindow.__init__(self, parent)
 
 	def scrollbars(self, wantx=1, wanty=1):
 		SetPort(self.wid)
 		self.barx = self.bary = None
+		self.barx_enabled = self.bary_enabled = 1
 		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
 		vx, vy = self.getscrollbarvalues()
+		if vx == None: self.barx_enabled, vx = 0, 0
+		if vy == None: self.bary_enabled, vy = 0, 0
 		if wantx:
 			rect = x0-1, y1-(SCROLLBARWIDTH-1), x1-(SCROLLBARWIDTH-2), y1+1
 			self.barx = NewControl(self.wid, rect, "", 1, vx, 0, 32767, 16, 0)
+			if not self.barx_enabled: self.barx.HiliteControl(255)
+##			InvalRect(rect)
 		if wanty:
 			rect = x1-(SCROLLBARWIDTH-1), y0-1, x1+1, y1-(SCROLLBARWIDTH-2)
 			self.bary = NewControl(self.wid, rect, "", 1, vy, 0, 32767, 16, 0)
+			if not self.bary_enabled: self.bary.HiliteControl(255)
+##			InvalRect(rect)
 			
 	def do_postclose(self):
 		self.barx = self.bary = None
 		ControlsWindow.do_postclose(self)
 		
 	def do_activate(self, onoff, event):
+		self.activated = onoff
 		if onoff:
-			onoff = 0
+			if self.barx and self.barx_enabled:
+				self.barx.HiliteControl(0)
+			if self.bary and self.bary_enabled:
+				self.bary.HiliteControl(0)
 		else:
-			onoff = 255
-		if self.barx:
-			self.barx.HiliteControl(onoff)
-		if self.bary:
-			self.bary.HiliteControl(onoff)
+			if self.barx:
+				self.barx.HiliteControl(255)
+			if self.bary:
+				self.bary.HiliteControl(255)
 			
 	def do_postresize(self, width, height, window):
 		l, t, r, b = self.wid.GetWindowPort().portRect
@@ -684,9 +696,37 @@ class ScrolledWindow(ControlsWindow):
 		SetPort(self.wid)
 		vx, vy = self.getscrollbarvalues()
 		if self.barx:
-			self.barx.SetControlValue(vx)
+			if vx == None:
+				self.barx.HiliteControl(255)
+				self.barx_enabled = 0
+			else:
+				if not self.barx_enabled:
+					self.barx_enabled = 1
+					if self.activated:
+						self.barx.HiliteControl(0)
+				self.barx.SetControlValue(vx)
 		if self.bary:
-			self.bary.SetControlValue(vy)
+			if vy == None:
+				self.bary.HiliteControl(255)
+				self.bary_enabled = 0
+			else:
+				if not self.bary_enabled:
+					self.bary_enabled = 1
+					if self.activated:
+						self.bary.HiliteControl(0)
+				self.bary.SetControlValue(vy)
+			
+	# Auxiliary function: convert standard text/image/etc coordinate
+	# to something palatable as getscrollbarvalues() return
+	def scalebarvalue(self, absmin, absmax, curmin, curmax):
+		if curmin <= absmin and curmax >= absmax:
+			return None
+		if curmin <= absmin:
+			return 0
+		if curmax >= absmax:
+			return 32767
+		perc = float(curmin-absmin)/float(absmax-absmin)
+		return int(perc*32767)
 			
 	# To be overridden:
 	
