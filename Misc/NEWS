@@ -1,3 +1,191 @@
+==================================
+==> Release 1.0.2 (4 May 1994) <==
+==================================
+
+Overview of the most visible changes.  Bug fixes are not listed.  See
+also ChangeLog.
+
+Tokens
+------
+
+* String literals follow Standard C rules: they may be continued on
+the next line using a backslash; adjacent literals are concatenated
+at compile time.
+
+* A new kind of string literals, surrounded by triple quotes (""" or
+'''), can be continued on the next line without a backslash.
+
+Syntax
+------
+
+* Function arguments may have a default value, e.g. def f(a, b=1);
+defaults are evaluated at function definition time.  This also applies
+to lambda.
+
+* The try-except statement has an optional else clause, which is
+executed when no exception occurs in the try clause.
+
+Interpreter
+-----------
+
+* The result of a statement-level expression is no longer printed,
+except_ for expressions entered interactively.  Consequently, the -k
+command line option is gone.
+
+* The result of the last printed interactive expression is assigned to
+the variable '_'.
+
+* Access to implicit global variables has been speeded up by removing
+an always-failing dictionary lookup in the dictionary of local
+variables (mod suggested by Steve Makewski and Tim Peters).
+
+* There is a new command line option, -u, to force stdout and stderr
+to be unbuffered.
+
+* Incorporated Steve Majewski's mods to import.c for dynamic loading
+under AIX.
+
+* Fewer chances of dumping core when trying to reload or re-import
+static built-in, dynamically loaded built-in, or frozen modules.
+
+* Loops over sequences now don't ask for the sequence's length when
+they start, but try to access items 0, 1, 2, and so on until they hit
+an IndexError.  This makes it possible to create classes that generate
+infinite or indefinite sequences a la Steve Majewski.  This affects
+for loops, the (not) in operator, and the built-in functions filter(),
+map(), max(), min(), reduce().
+
+Changed Built-in operations
+---------------------------
+
+* The '%' operator on strings (printf-style formatting) supports a new
+feature (adapted from a patch by Donald Beaudry) to allow
+'%(<key>)<format>' % {...} to take values from a dictionary by name
+instead of from a tuple by position (see also the new function
+vars()).
+
+* The '%s' formatting operator is changed to accept any type and
+convert it to a string using str().
+
+* Dictionaries with more than 20,000 entries can now be created
+(thanks to Steve Kirsch).
+
+New Built-in Functions
+----------------------
+
+* vars() returns a dictionary containing the local variables; vars(m)
+returns a dictionary containing the variables of module m.  Note:
+dir(x) is now equivalent to vars(x).keys().
+
+Changed Built-in Functions
+--------------------------
+
+* open() has an optional third argument to specify the buffer size: 0
+for unbuffered, 1 for line buffered, >1 for explicit buffer size, <0
+for default.
+
+* open()'s second argument is now optional; it defaults to "r".
+
+* apply() now checks that its second argument is indeed a tuple.
+
+New Built-in Modules
+--------------------
+
+Changed Built-in Modules
+------------------------
+
+The thread module no longer supports exit_prog().
+
+New Python Modules
+------------------
+
+* Module addpack contains a standard interface to modify sys.path to
+find optional packages (groups of related modules).
+
+* Module urllib contains a number of functions to access
+World-Wide-Web files specified by their URL.
+
+* Module httplib implements the client side of the HTTP protocol used
+by World-Wide-Web servers.
+
+* Module gopherlib implements the client side of the Gopher protocol.
+
+* Module mailbox (by Jack Jansen) contains a parser for UNIX and MMDF
+style mailbox files.
+
+* Module random contains various random distributions, e.g. gauss().
+
+* Module lockfile locks and unlocks open files using fcntl (inspired
+by a similar module by Andy Bensky).
+
+* Module ntpath (by Jaap Vermeulen) implements path operations for
+Windows/NT.
+
+* Module test_thread (in Lib/test) contains a small test set for the
+thread module.
+
+Changed Python Modules
+----------------------
+
+* The string module's expandvars() function is now documented and is
+implemented in Python (using regular expressions) instead of forking
+off a shell process.
+
+* Module rfc822 now supports accessing the header fields using the
+mapping/dictionary interface, e.g. h['subject'].
+
+* Module pdb now makes it possible to set a break on a function
+(syntax: break <expression>, where <expression> yields a function
+object).
+
+Changed Demos
+-------------
+
+* The Demo/scripts/freeze.py script is working again (thanks to Jaap
+Vermeulen).
+
+New Demos
+---------
+
+* Demo/threads/Generator.py is a proposed interface for restartable
+functions a la Tim Peters.
+
+* Demo/scripts/newslist.py, by Quentin Stafford-Fraser, generates a
+directory full of HTML pages which between them contain links to all
+the newsgroups available on your server.
+
+* Demo/dns contains a DNS (Domain Name Server) client.
+
+* Demo/lutz contains miscellaneous demos by Mark Lutz (e.g. psh.py, a
+nice enhanced Python shell!!!).
+
+* Demo/turing contains a Turing machine by Amrit Prem.
+
+Documentation
+-------------
+
+* Documented new language features mentioned above (but not all new
+modules).
+
+* Added a chapter to the Tutorial describing recent additions to
+Python.
+
+* Clarified some sentences in the reference manual,
+e.g. break/continue, local/global scope, slice assignment.
+
+Source Structure
+----------------
+
+* Moved Include/tokenizer.h to Parser/tokenizer.h.
+
+* Added Python/getopt.c for systems that don't have it.
+
+Emacs mode
+----------
+
+* Indentation of continuated lines is done more intelligently;
+consequently the variable py-continuation-offset is gone.
+
 ========================================
 ==> Release 1.0.1 (15 February 1994) <==
 ========================================
