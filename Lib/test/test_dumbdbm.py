@@ -3,35 +3,70 @@
    Original by Roger E. Masse
 """
 
-# XXX This test is a disgrace.  It doesn't test that it works.
-
-import dumbdbm as dbm
-from dumbdbm import error
-from test_support import verbose, TESTFN as filename
-
-d = dbm.open(filename, 'c')
-d['a'] = 'b'
-d['12345678910'] = '019237410982340912840198242'
-d.keys()
-if d.has_key('a'):
-    if verbose:
-        print 'Test dbm keys: ', d.keys()
-
-d.close()
-d = dbm.open(filename, 'r')
-d.close()
-d = dbm.open(filename, 'w')
-d.close()
-d = dbm.open(filename, 'n')
-d.close()
-
 import os
-def rm(fn):
-    try:
-        os.unlink(fn)
-    except os.error:
-        pass
+import test_support
+import unittest
+import dumbdbm
+import tempfile
 
-rm(filename + '.dir')
-rm(filename + '.dat')
-rm(filename + '.bak')
+class DumbDBMTestCase(unittest.TestCase):
+    _fname = tempfile.mktemp()
+    _dict = {'0': '',
+             'a': 'Python:',
+             'b': 'Programming',
+             'c': 'the',
+             'd': 'way',
+             'f': 'Guido',
+             'g': 'intended'
+             }
+
+    def __init__(self, *args):
+        unittest.TestCase.__init__(self, *args)
+        self._dkeys = self._dict.keys()
+        self._dkeys.sort()
+        
+    def test_dumbdbm_creation(self):
+        for ext in [".dir", ".dat", ".bak"]:
+            try: os.unlink(self._fname+ext)
+            except OSError: pass
+
+        f = dumbdbm.open(self._fname, 'c')
+        self.assertEqual(f.keys(), [])
+        for key in self._dict:
+            f[key] = self._dict[key]
+        self.read_helper(f)
+        f.close()
+
+    def test_dumbdbm_modification(self):
+        f = dumbdbm.open(self._fname, 'w')
+        self._dict['g'] = f['g'] = "indented"
+        self.read_helper(f)
+        f.close()
+
+    def test_dumbdbm_read(self):
+        f = dumbdbm.open(self._fname, 'r')
+        self.read_helper(f)
+        f.close()
+
+    def test_dumbdbm_keys(self):
+        f = dumbdbm.open(self._fname)
+        keys = self.keys_helper(f)
+        f.close()
+
+    def read_helper(self, f):
+        keys = self.keys_helper(f)
+        for key in self._dict:
+            self.assertEqual(self._dict[key], f[key])
+        
+    def keys_helper(self, f):
+        keys = f.keys()
+        keys.sort()
+        self.assertEqual(keys, self._dkeys)
+        return keys
+
+def test_main():
+    test_support.run_unittest(DumbDBMTestCase)
+
+
+if __name__ == "__main__":
+    test_main()
