@@ -743,9 +743,6 @@ def _test_generator(n, funccall):
     print 'avg %g, stddev %g, min %g, max %g' % \
               (avg, stddev, smallest, largest)
 
-def _sample_generator(n, k):
-    # Return a fixed element from the sample.  Validates random ordering.
-    return sample(xrange(n), k)[k//2]
 
 def _test(N=2000):
     _test_generator(N, 'random()')
@@ -764,8 +761,6 @@ def _test(N=2000):
     _test_generator(N, 'gammavariate(200.0, 1.0)')
     _test_generator(N, 'gauss(0.0, 1.0)')
     _test_generator(N, 'betavariate(3.0, 3.0)')
-    _test_generator(N, '_sample_generator(50, 5)')  # expected s.d.: 14.4
-    _test_generator(N, '_sample_generator(50, 45)') # expected s.d.: 14.4
 
 # Create one instance, seeded from current time, and export its methods
 # as module-level functions.  The functions share state across all uses

@@ -4,6 +4,7 @@ import unittest
 import random
 import time
 from math import log, exp, sqrt, pi
+from sets import Set
 from test import test_support
 
 class TestBasicOps(unittest.TestCase):
@@ -61,10 +62,28 @@ class TestBasicOps(unittest.TestCase):
         for k in xrange(N+1):
             s = self.gen.sample(population, k)
             self.assertEqual(len(s), k)
-            uniq = dict.fromkeys(s)
+            uniq = Set(s)
             self.assertEqual(len(uniq), k)
-            self.failIf(None in uniq)
+            self.failUnless(uniq <= Set(population))
         self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
+
+    def test_sample_distribution(self):
+        # For the entire allowable range of 0 <= k <= N, validate that
+        # sample generates all possible permutations
+        n = 5
+        pop = range(n)
+        trials = 10000  # large num prevents false negatives without slowing normal case
+        def factorial(n):
+            return n==0 and 1 or n * factorial(n-1)
+        for k in xrange(n):
+            expected = factorial(n) / factorial(n-k)
+            perms = {}
+            for i in xrange(trials):
+                perms[tuple(self.gen.sample(pop, k))] = None
+                if len(perms) == expected:
+                    break
+            else:
+                self.fail()
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
@@ -250,9 +269,7 @@ class TestModule(unittest.TestCase):
 
     def test__all__(self):
         # tests validity but not completeness of the __all__ list
-        defined = dict.fromkeys(dir(random))
-        for entry in random.__all__:
-            self.failUnless(entry in defined)
+        self.failUnless(Set(random.__all__) <= Set(dir(random)))
 
 def test_main():
     suite = unittest.TestSuite()
