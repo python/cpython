@@ -1,12 +1,13 @@
 /* config.h for Macintosh THINK C 6.0, CodeWarrior 4 and MPW 3.2.  */
 
-#ifdef MPW
-/* This must be is MPW 3.x */
-#define MPW_3 1
+#ifdef applec
+#define MPW
 #endif
 
 /* Define if on Macintosh (THINK_C, MPW or __MWERKS__ should also be defined) */
+#ifndef macintosh
 #define macintosh
+#endif
 
 #ifdef THINK_C
 #define HAVE_FOPENRF
@@ -16,102 +17,102 @@
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
 #ifndef _ALL_SOURCE
-#undef _ALL_SOURCE
+/* #undef _ALL_SOURCE */
 #endif
 
 /* Define if type char is unsigned and you are not using gcc.  */
-#undef __CHAR_UNSIGNED__
+/* #undef __CHAR_UNSIGNED__ */
 
 /* Define to empty if the keyword does not work.  */
-#undef const
+/* #undef const */
 
 /* Define if you have dirent.h.  */
-#undef DIRENT
+/* #undef DIRENT */
 
 /* Define to the type of elements in the array set by `getgroups'.
    Usually this is either `int' or `gid_t'.  */
-#undef GETGROUPS_T
+/* #undef GETGROUPS_T */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-#undef gid_t
+/* #undef gid_t */
 
 /* Define if your struct tm has tm_zone.  */
-#undef HAVE_TM_ZONE
+/* #undef HAVE_TM_ZONE */
 
 /* Define if you don't have tm_zone but do have the external array
    tzname.  */
-#undef HAVE_TZNAME
+/* #undef HAVE_TZNAME */
 
 /* Define if on MINIX.  */
-#undef _MINIX
+/* #undef _MINIX */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-#undef mode_t
+/* #undef mode_t */
 
 /* Define if you don't have dirent.h, but have ndir.h.  */
-#undef NDIR
+/* #undef NDIR */
 
 /* Define to `long' if <sys/types.h> doesn't define.  */
-#undef off_t
+/* #undef off_t */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-#undef pid_t
+/* #undef pid_t */
 
 /* Define if the system does not provide POSIX.1 features except
    with this defined.  */
-#undef _POSIX_1_SOURCE
+/* #undef _POSIX_1_SOURCE */
 
 /* Define if you need to in order for stat and other things to work.  */
-#undef _POSIX_SOURCE
+/* #undef _POSIX_SOURCE */
 
 /* Define as the return type of signal handlers (int or void).  */
 #define RETSIGTYPE void
 
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
-#undef size_t
+/* #undef size_t */
 
 /* Define if you have the ANSI C header files.  */
 #define STDC_HEADERS
 
 /* Define if you don't have dirent.h, but have sys/dir.h.  */
-#undef SYSDIR
+/* #undef SYSDIR */
 
 /* Define if you don't have dirent.h, but have sys/ndir.h.  */
-#undef SYSNDIR
+/* #undef SYSNDIR */
 
 /* Define if you can safely include both <sys/time.h> and <time.h>.  */
-#undef TIME_WITH_SYS_TIME
+/* #undef TIME_WITH_SYS_TIME */
 
 /* Define if your <sys/time.h> declares struct tm.  */
-#undef TM_IN_SYS_TIME
+/* #undef TM_IN_SYS_TIME */
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
-#undef uid_t
+/* #undef uid_t */
 
 /* Define if the closedir function returns void instead of int.  */
-#undef VOID_CLOSEDIR
+/* #undef VOID_CLOSEDIR */
 
 /* Define if your <unistd.h> contains bad prototypes for exec*()
    (as it does on SGI IRIX 4.x) */
-#undef BAD_EXEC_PROTOTYPES
+/* #undef BAD_EXEC_PROTOTYPES */
 
-/* Define if your compiler botches static forward declarations
-   (as it does on SCI ODT 3.0) */
+/* Define if your compiler botches static forward declarations */
 #ifdef __MWERKS__
 #define BAD_STATIC_FORWARD
-#else /* MPW and THINK */
-#undef BAD_STATIC_FORWARD
+#endif
+#ifdef __SC__
+#define BAD_STATIC_FORWARD
 #endif
 
 /* Define to `long' if <time.h> doesn't define.  */
-#undef clock_t
+/* #undef clock_t */
 
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
-#undef GETPGRP_HAVE_ARG
+/* #undef GETPGRP_HAVE_ARG */
 
 /* Define this if your time.h defines altzone */
-#undef HAVE_ALTZONE
+/* #undef HAVE_ALTZONE */
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES
@@ -121,21 +122,21 @@
 #define HAVE_STDARG_PROTOTYPES
 
 /* Define if you have POSIX threads */
-#undef _POSIX_THREADS
+/* #undef _POSIX_THREADS */
 
 /* Define to empty if the keyword does not work.  */
-#undef signed
+/* #undef signed */
 
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
-#undef SYS_SELECT_WITH_SYS_TIME
+/* #undef SYS_SELECT_WITH_SYS_TIME */
 
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
    Don't bother on IRIX 5, it already has dynamic linking using SunOS
    style shared libraries */ 
-#undef WITH_SGI_DL
+/* #undef WITH_SGI_DL */
 
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
@@ -146,100 +147,100 @@
    ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
    Don't bother on SunOS 4 or 5, they already have dynamic linking using
    shared libraries */ 
-#undef WITH_DL_DLD
+/* #undef WITH_DL_DLD */
 
 /* Define if you want to compile in rudimentary thread support */
-#undef WITH_THREAD
+/* #undef WITH_THREAD */
 
 /* Define if you want to use the GNU readline library */
-#undef WITH_READLINE
+/* #undef WITH_READLINE */
 
 /* Define if you have chown.  */
-#undef HAVE_CHOWN
+/* #undef HAVE_CHOWN */
 
 /* Define if you have clock.  */
 #define HAVE_CLOCK
 
 /* Define if you have dlopen.  */
-#undef HAVE_DLOPEN
+/* #undef HAVE_DLOPEN */
 
 /* Define if you have ftime.  */
-#undef HAVE_FTIME
+/* #undef HAVE_FTIME */
 
 /* Define if you have getpeername.  */
-#undef HAVE_GETPEERNAME
+/* #undef HAVE_GETPEERNAME */
 
 /* Define if you have getpgrp.  */
-#undef HAVE_GETPGRP
+/* #undef HAVE_GETPGRP */
 
 /* Define if you have getpid.  */
-#undef HAVE_GETPID
+/* #undef HAVE_GETPID */
 
 /* Define if you have gettimeofday.  */
-#undef HAVE_GETTIMEOFDAY
+/* #undef HAVE_GETTIMEOFDAY */
 
 /* Define if you have getwd.  */
-#undef HAVE_GETWD
+/* #undef HAVE_GETWD */
 
 /* Define if you have link.  */
-#undef HAVE_LINK
+/* #undef HAVE_LINK */
 
 /* Define if you have lstat.  */
-#undef HAVE_LSTAT
+/* #undef HAVE_LSTAT */
 
 /* Define if you have nice.  */
-#undef HAVE_NICE
+/* #undef HAVE_NICE */
 
 /* Define if you have readlink.  */
-#undef HAVE_READLINK
+/* #undef HAVE_READLINK */
 
 /* Define if you have select.  */
-#undef HAVE_SELECT
+/* #undef HAVE_SELECT */
 
 /* Define if you have setgid.  */
-#undef HAVE_SETGID
+/* #undef HAVE_SETGID */
 
 /* Define if you have setpgid.  */
-#undef HAVE_SETPGID
+/* #undef HAVE_SETPGID */
 
 /* Define if you have setpgrp.  */
-#undef HAVE_SETPGRP
+/* #undef HAVE_SETPGRP */
 
 /* Define if you have setsid.  */
-#undef HAVE_SETSID
+/* #undef HAVE_SETSID */
 
 /* Define if you have setuid.  */
-#undef HAVE_SETUID
+/* #undef HAVE_SETUID */
 
 /* Define if you have setvbuf.  */
 #define HAVE_SETVBUF
 
 /* Define if you have siginterrupt.  */
-#undef HAVE_SIGINTERRUPT
+/* #undef HAVE_SIGINTERRUPT */
 
 /* Define if you have symlink.  */
-#undef HAVE_SYMLINK
+/* #undef HAVE_SYMLINK */
 
 /* Define if you have tcgetpgrp.  */
-#undef HAVE_TCGETPGRP
+/* #undef HAVE_TCGETPGRP */
 
 /* Define if you have tcsetpgrp.  */
-#undef HAVE_TCSETPGRP
+/* #undef HAVE_TCSETPGRP */
 
 /* Define if you have times.  */
-#undef HAVE_TIMES
+/* #undef HAVE_TIMES */
 
 /* Define if you have uname.  */
-#undef HAVE_UNAME
+/* #undef HAVE_UNAME */
 
 /* Define if you have waitpid.  */
-#undef HAVE_WAITPID
+/* #undef HAVE_WAITPID */
 
 /* Define if you have the <dlfcn.h> header file.  */
-#undef HAVE_DLFCN_H
+/* #undef HAVE_DLFCN_H */
 
 /* Define if you have the <fcntl.h> header file.  */
-#undef HAVE_FCNTL_H
+/* #undef HAVE_FCNTL_H */
 
 /* Define if you have the <signal.h> header file.  */
 #define HAVE_SIGNAL_H
@@ -251,64 +252,64 @@
 #define HAVE_STDLIB_H
 
 /* Define if you have the <sys/audioio.h> header file.  */
-#undef HAVE_SYS_AUDIOIO_H
+/* #undef HAVE_SYS_AUDIOIO_H */
 
 /* Define if you have the <sys/param.h> header file.  */
-#undef HAVE_SYS_PARAM_H
+/* #undef HAVE_SYS_PARAM_H */
 
 /* Define if you have the <sys/select.h> header file.  */
-#undef HAVE_SYS_SELECT_H
+/* #undef HAVE_SYS_SELECT_H */
 
 /* Define if you have the <sys/time.h> header file.  */
-#undef HAVE_SYS_TIME_H
+/* #undef HAVE_SYS_TIME_H */
 
 /* Define if you have the <sys/times.h> header file.  */
-#undef HAVE_SYS_TIMES_H
+/* #undef HAVE_SYS_TIMES_H */
 
 /* Define if you have the <sys/un.h> header file.  */
-#undef HAVE_SYS_UN_H
+/* #undef HAVE_SYS_UN_H */
 
 /* Define if you have the <sys/utsname.h> header file.  */
-#undef HAVE_SYS_UTSNAME_H
+/* #undef HAVE_SYS_UTSNAME_H */
 
 /* Define if you have the <thread.h> header file.  */
-#undef HAVE_THREAD_H
+/* #undef HAVE_THREAD_H */
 
 /* Define if you have the <unistd.h> header file.  */
-#undef HAVE_UNISTD_H
+/* #undef HAVE_UNISTD_H */
 
 /* Define if you have the <utime.h> header file.  */
-#undef HAVE_UTIME_H
+/* #undef HAVE_UTIME_H */
 
 /* Define if you have the dl library (-ldl).  */
-#undef HAVE_LIBDL
+/* #undef HAVE_LIBDL */
 
 /* Define if you have the inet library (-linet).  */
-#undef HAVE_LIBINET
+/* #undef HAVE_LIBINET */
 
 /* Define if you have the mpc library (-lmpc).  */
-#undef HAVE_LIBMPC
+/* #undef HAVE_LIBMPC */
 
 /* Define if you have the nsl library (-lnsl).  */
-#undef HAVE_LIBNSL
+/* #undef HAVE_LIBNSL */
 
 /* Define if you have the pthreads library (-lpthreads).  */
-#undef HAVE_LIBPTHREADS
+/* #undef HAVE_LIBPTHREADS */
 
 /* Define if you have the seq library (-lseq).  */
-#undef HAVE_LIBSEQ
+/* #undef HAVE_LIBSEQ */
 
 /* Define if you have the socket library (-lsocket).  */
-#undef HAVE_LIBSOCKET
+/* #undef HAVE_LIBSOCKET */
 
 /* Define if you have the sun library (-lsun).  */
-#undef HAVE_LIBSUN
+/* #undef HAVE_LIBSUN */
 
 /* Define if you have the termcap library (-ltermcap).  */
-#undef HAVE_LIBTERMCAP
+/* #undef HAVE_LIBTERMCAP */
 
 /* Define if you have the termlib library (-ltermlib).  */
-#undef HAVE_LIBTERMLIB
+/* #undef HAVE_LIBTERMLIB */
 
 /* Define if you have the thread library (-lthread).  */
-#undef HAVE_LIBTHREAD
+/* #undef HAVE_LIBTHREAD */
