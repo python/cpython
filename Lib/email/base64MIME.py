@@ -27,6 +27,13 @@ import re
 from binascii import b2a_base64, a2b_base64
 from email.Utils import fix_eols
 
+try:
+    from email._compat22 import _floordiv
+except SyntaxError:
+    # Python 2.1 spells integer division differently
+    from email._compat21 import _floordiv
+
+
 CRLF = '\r\n'
 NL = '\n'
 EMPTYSTRING = ''
@@ -87,7 +94,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
     # length, after the RFC chrome is added in.
     base64ed = []
     max_encoded = maxlinelen - len(charset) - MISC_LEN
-    max_unencoded = max_encoded * 3 // 4
+    max_unencoded = _floordiv(max_encoded * 3, 4)
 
     # BAW: Ben's original code used a step of max_unencoded, but I think it
     # ought to be max_encoded.  Otherwise, where's max_encoded used?  I'm
@@ -131,7 +138,7 @@ def encode(s, binary=1, maxlinelen=76, eol=NL):
         s = fix_eols(s)
 
     encvec = []
-    max_unencoded = maxlinelen * 3 // 4
+    max_unencoded = _floordiv(maxlinelen * 3, 4)
     for i in range(0, len(s), max_unencoded):
         # BAW: should encode() inherit b2a_base64()'s dubious behavior in
         # adding a newline to the encoded string?
