@@ -18,8 +18,8 @@ CFG=bsddb - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "bsddb - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "bsddb - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "bsddb - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "bsddb - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "bsddb - Win32 Alpha Debug" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE "bsddb - Win32 Alpha Release" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE 
@@ -29,7 +29,7 @@ CFG=bsddb - Win32 Alpha Debug
 # PROP Scc_ProjName "bsddb"
 # PROP Scc_LocalPath ".."
 
-!IF  "$(CFG)" == "bsddb - Win32 x86 Release"
+!IF  "$(CFG)" == "bsddb - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -60,7 +60,7 @@ LINK32=link.exe
 # ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\..\bsddb\port\win32\db.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"./bsddb.pyd" /libpath:"Release" /export:initbsddb
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "bsddb - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "bsddb - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -159,17 +159,17 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "bsddb - Win32 x86 Release"
-# Name "bsddb - Win32 x86 Debug"
+# Name "bsddb - Win32 Release"
+# Name "bsddb - Win32 Debug"
 # Name "bsddb - Win32 Alpha Debug"
 # Name "bsddb - Win32 Alpha Release"
 # Begin Source File
 
 SOURCE=..\Modules\bsddbmodule.c
 
-!IF  "$(CFG)" == "bsddb - Win32 x86 Release"
+!IF  "$(CFG)" == "bsddb - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "bsddb - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "bsddb - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Alpha Debug"
 
