@@ -2807,6 +2807,22 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+  
+static PyObject *
+wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
+{
+	descrsetfunc func = (descrsetfunc)wrapped;
+	PyObject *obj;
+	int ret;
+
+	if (!PyArg_ParseTuple(args, "O", &obj))
+		return NULL;
+	ret = (*func)(self, obj, NULL);
+	if (ret < 0)
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
@@ -3883,6 +3899,8 @@ static slotdef slotdefs[] = {
 	       "descr.__get__(obj[, type]) -> value"),
 	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
 	       "descr.__set__(obj, value)"),
+	TPSLOT("__delete__", tp_descr_set, slot_tp_descr_set,
+	       wrap_descr_delete, "descr.__delete__(obj)"),
 	FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
 	       "x.__init__(...) initializes x; "
 	       "see x.__class__.__doc__ for signature",
