@@ -32,6 +32,9 @@
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
+/* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
+#undef HAVE_GETC_UNLOCKED
+
 /* Define this if you have gethostbyname() */
 #undef HAVE_GETHOSTBYNAME
 

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.180 
+# From configure.in Revision: 1.182 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -5948,6 +5948,46 @@ EOF
 
 fi
 
+# check for getc_unlocked and related locking functions
+echo $ac_n "checking for getc_unlocked() and friends""... $ac_c" 1>&6
+echo "configure:5954: checking for getc_unlocked() and friends" >&5
+if eval "test \"`echo '$''{'ac_cv_have_getc_unlocked'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+cat > conftest.$ac_ext <<EOF
+#line 5960 "configure"
+#include "confdefs.h"
+#include <stdio.h>
+int main() {
+
+	FILE *f = fopen("/dev/null", "r");
+	flockfile(f);
+	getc_unlocked(f);
+	funlockfile(f);
+
+; return 0; }
+EOF
+if { (eval echo configure:5972: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  ac_cv_have_getc_unlocked=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_have_getc_unlocked=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$ac_cv_have_getc_unlocked" 1>&6
+if test "$ac_cv_have_getc_unlocked" = yes
+then
+  cat >> confdefs.h <<\EOF
+#define HAVE_GETC_UNLOCKED 1
+EOF
+
+fi
 
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
@@ -5957,12 +5997,12 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 echo $ac_n "checking for socklen_t""... $ac_c" 1>&6
-echo "configure:5961: checking for socklen_t" >&5
+echo "configure:6001: checking for socklen_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_socklen_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5966 "configure"
+#line 6006 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -5991,7 +6031,7 @@ fi
 
 
 echo $ac_n "checking for Modules/Setup""... $ac_c" 1>&6
-echo "configure:5995: checking for Modules/Setup" >&5
+echo "configure:6035: checking for Modules/Setup" >&5
 if test ! -f Modules/Setup ; then
     if test ! -d Modules ; then
         mkdir Modules
