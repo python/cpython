@@ -150,6 +150,27 @@ LO_ORI = 0xd
 LO_NAND = 0xe
 LO_ONE = 0xf
 
+# defines for pixmode
+PM_SHIFT =		0
+PM_EXPAND =		1
+PM_C0 =			2
+PM_C1 =			3
+PM_ADD24 =		4
+PM_SIZE =		5
+PM_OFFSET =		6
+PM_STRIDE =		7
+PM_TTOB =		8
+PM_RTOL =		9
+PM_ZDATA =		10
+PM_WARP =		11
+PM_RDX =		12
+PM_RDY =		13
+PM_CDX =		14
+PM_CDY =		15
+PM_XSTART =		16
+PM_YSTART =		17
+PM_VO1 =		1000	# internal use only
+
 
 #
 # START defines for getgdesc 
