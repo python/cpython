@@ -699,14 +699,13 @@ class MixinStrUserStringTest:
 
 
 class MixinStrUnicodeTest:
-    # Additional tests that only work with
-    # str and unicode
+    # Additional tests that only work with str and unicode.
 
     def test_bug1001011(self):
         # Make sure join returns a NEW object for single item sequences
-        # involving a subclass
-        # Make sure that it is of the appropriate type
-        # Check the optimisation still occurs for standard objects
+        # involving a subclass.
+        # Make sure that it is of the appropriate type.
+        # Check the optimisation still occurs for standard objects.
         t = self.type2test
         class subclass(t):
             pass
@@ -714,3 +713,32 @@ class MixinStrUnicodeTest:
         s2 = t().join([s1])
         self.assert_(s1 is not s2)
         self.assert_(type(s2) is t)
+
+        s1 = t("abcd")
+        s2 = t().join([s1])
+        self.assert_(s1 is s2)
+
+        # Should also test mixed-type join.
+        if t is unicode:
+            s1 = subclass("abcd")
+            s2 = "".join([s1])
+            self.assert_(s1 is not s2)
+            self.assert_(type(s2) is t)
+
+            s1 = t("abcd")
+            s2 = "".join([s1])
+            self.assert_(s1 is s2)
+
+        elif t is str:
+            s1 = subclass("abcd")
+            s2 = u"".join([s1])
+            self.assert_(s1 is not s2)
+            self.assert_(type(s2) is unicode) # promotes!
+
+            s1 = t("abcd")
+            s2 = u"".join([s1])
+            self.assert_(s1 is not s2)
+            self.assert_(type(s2) is unicode) # promotes!
+
+        else:
+            self.fail("unexpected type for MixinStrUnicodeTest %r" % t)
