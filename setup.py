@@ -311,6 +311,8 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=math_libs) )
+        exts.append( Extension('datetime', ['datetimemodule.c'],
+                               libraries=math_libs) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
         # Python C API test module
