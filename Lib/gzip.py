@@ -20,7 +20,7 @@ def write32(output, value):
 def read32(input):
     return struct.unpack("<l", input.read(4))[0]
 
-def open(filename, mode="r", compresslevel=9):
+def open(filename, mode="rb", compresslevel=9):
     return GzipFile(filename, mode, compresslevel)
 
 class GzipFile:
