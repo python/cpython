@@ -1,3 +1,22 @@
+Fri May  6 11:25:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* various files: micro changes needed to compile on Mac;
+	Grouped more Mac-specific files in Mac subdirectory
+
+	* Lib/*.py: rewrote many functions to use default arguments
+	instead of arbitrary argument lists
+
+Thu May  5 12:33:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/{cryptmodule.c,Setup.*}: new crypt(3) interface (Steve M)
+
+	* Python/bltinmodule.c, Include/bltinmodule.h: new fn setbuiltin()
+	to set a built-in variable
+
+	* Python/ceval.c (eval_code): place '_' variable in __builtin__
+	instead of in local dictionary, to avoid endless recursion when
+	printing vars()
+
 ========================================================================
 Release 1.0.2 (4 May 1994)
 ========================================================================
