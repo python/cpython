@@ -1289,7 +1289,7 @@ PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
 	PyTypeObject *tp = obj->ob_type;
-	PyObject *descr;
+	PyObject *descr = NULL;
 	PyObject *res = NULL;
 	descrgetfunc f;
 	long dictoffset;
@@ -1321,7 +1321,31 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 			goto done;
 	}
 
-	descr = _PyType_Lookup(tp, name);
+	/* Inline _PyType_Lookup */
+	{
+		int i, n;
+		PyObject *mro, *base, *dict;
+
+		/* Look in tp_dict of types in MRO */
+		mro = tp->tp_mro;
+		assert(mro != NULL);
+		assert(PyTuple_Check(mro));
+		n = PyTuple_GET_SIZE(mro);
+		for (i = 0; i < n; i++) {
+			base = PyTuple_GET_ITEM(mro, i);
+			if (PyClass_Check(base))
+				dict = ((PyClassObject *)base)->cl_dict;
+			else {
+				assert(PyType_Check(base));
+				dict = ((PyTypeObject *)base)->tp_dict;
+			}
+			assert(dict && PyDict_Check(dict));
+			descr = PyDict_GetItem(dict, name);
+			if (descr != NULL)
+				break;
+		}
+	}
+
 	f = NULL;
 	if (descr != NULL) {
 		f = descr->ob_type->tp_descr_get;
