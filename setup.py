@@ -18,7 +18,7 @@ def add_dir_to_list(dirlist, dir):
     """Add the directory 'dir' to the list 'dirlist' (at the front) if
     1) 'dir' is not already in 'dirlist'
     2) 'dir' actually exists, and is a directory."""
-    if os.path.isdir(dir) and dir not in dirlist:
+    if dir is not None and os.path.isdir(dir) and dir not in dirlist:
         dirlist.insert(0, dir)
 
 def find_file(filename, std_dirs, paths):
@@ -99,7 +99,7 @@ class PyBuildExt(build_ext):
 
         # Platform-dependent module source and include directories
         platform = self.get_platform()
-        if platform == 'darwin':
+        if platform in ('darwin', 'mac'):
             # Mac OS X also includes some mac-specific modules
             macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
             moddirlist.append(macmoddir)
@@ -126,20 +126,21 @@ class PyBuildExt(build_ext):
             if ext.name in sys.builtin_module_names:
                 self.extensions.remove(ext)
 
-        # Parse Modules/Setup to figure out which modules are turned
-        # on in the file.
-        input = text_file.TextFile('Modules/Setup', join_lines=1)
-        remove_modules = []
-        while 1:
-            line = input.readline()
-            if not line: break
-            line = line.split()
-            remove_modules.append( line[0] )
-        input.close()
-
-        for ext in self.extensions[:]:
-            if ext.name in remove_modules:
-                self.extensions.remove(ext)
+        if platform != 'mac':
+            # Parse Modules/Setup to figure out which modules are turned
+            # on in the file.
+            input = text_file.TextFile('Modules/Setup', join_lines=1)
+            remove_modules = []
+            while 1:
+                line = input.readline()
+                if not line: break
+                line = line.split()
+                remove_modules.append( line[0] )
+            input.close()
+    
+            for ext in self.extensions[:]:
+                if ext.name in remove_modules:
+                    self.extensions.remove(ext)
 
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
@@ -258,7 +259,7 @@ class PyBuildExt(build_ext):
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
-        if platform in ['darwin', 'beos']:
+        if platform in ['darwin', 'beos', 'mac']:
             math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
