@@ -376,6 +376,7 @@ complex_remainder(v, w)
 	complexobject *w;
 {
         Py_complex div, mod;
+	c_error = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
 	if (c_error == 1) {
 		err_setstr(ZeroDivisionError, "complex remainder");
@@ -396,6 +397,7 @@ complex_divmod(v, w)
 {
         Py_complex div, mod;
 	PyObject *d, *m, *z;
+	c_error = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
 	if (c_error == 1) {
 		err_setstr(ZeroDivisionError, "complex divmod()");
