@@ -158,7 +158,6 @@ class build_ext (Command):
         # also Python's library directory must be appended to library_dirs
         if os.name == 'nt':
             self.library_dirs.append (os.path.join(sys.exec_prefix, 'libs'))
-            self.implib_dir = self.build_temp
             if self.debug:
                 self.build_temp = os.path.join (self.build_temp, "Debug")
             else:
@@ -543,15 +542,6 @@ class build_ext (Command):
             return apply (os.path.join, ext_path) + '_d' + so_ext
         return apply (os.path.join, ext_path) + so_ext
 
-    def get_ext_libname (self, ext_name):
-        # create a filename for the (unneeded) lib-file.
-        # extensions in debug_mode are named 'module_d.pyd' under windows
-        ext_path = string.split (ext_name, '.')
-        if os.name == 'nt' and self.debug:
-            return apply (os.path.join, ext_path) + '_d.lib'
-        return apply (os.path.join, ext_path) + '.lib'
-
-
     def get_export_symbols (self, ext):
         """Return the list of symbols that a shared extension has to
         export.  This either uses 'ext.export_symbols' or, if it's not
@@ -573,9 +563,15 @@ class build_ext (Command):
         # is redundant, since the library is mentioned in a pragma in
         # config.h that MSVC groks.  The other Windows compilers all seem
         # to need it mentioned explicitly, though, so that's what we do.
-        if sys.platform == "win32": 
-            pythonlib = ("python%d%d" %
-                 (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+        # Append '_d' to the python import library on debug builds.
+        from distutils.msvccompiler import MSVCCompiler
+        if sys.platform == "win32" and \
+           not isinstance(self.compiler, MSVCCompiler):
+            template = "python%d%d"
+            if self.debug:
+                template = template + '_d'
+            pythonlib = (template %
+                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
             # don't extend ext.libraries, it may be shared with other
             # extensions, it is a reference to the original list
             return ext.libraries + [pythonlib]
