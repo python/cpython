@@ -1,7 +1,6 @@
 \section{Standard Module \sectcode{htmllib}}
 \label{module-htmllib}
 \stmodindex{htmllib}
-\rfcindex{1866}
 \index{HTML}
 \index{hypertext}
 
@@ -12,32 +11,33 @@ files formatted in the HyperText Mark-up Language (HTML).  The class
 is not directly concerned with I/O --- it must be provided with input
 in string form via a method, and makes calls to methods of a
 ``formatter'' object in order to produce output.  The
-\code{HTMLParser} class is designed to be used as a base class for
+\class{HTMLParser} class is designed to be used as a base class for
 other classes in order to add functionality, and allows most of its
 methods to be extended or overridden.  In turn, this class is derived
-from and extends the \code{SGMLParser} class defined in module
-\code{sgmllib}.  Two implementations of formatter objects are
-provided in the \code{formatter} module; refer to the documentation
-for that module for information on the formatter interface.
+from and extends the \class{SGMLParser} class defined in module
+\module{sgmllib}\refstmodindex{sgmllib}.  The \class{HTMLParser}
+implementation supports the HTML 2.0 language as described in
+\rfc{1866}.  Two implementations of formatter objects are provided in
+the \module{formatter}\refstmodindex{formatter} module; refer to the
+documentation for that module for information on the formatter
+interface.
 \index{SGML}
-\refstmodindex{sgmllib}
 \ttindex{SGMLParser}
 \index{formatter}
-\refstmodindex{formatter}
 
 The following is a summary of the interface defined by
-\code{sgmllib.SGMLParser}:
+\class{sgmllib.SGMLParser}:
 
 \begin{itemize}
 
 \item
-The interface to feed data to an instance is through the \code{feed()}
+The interface to feed data to an instance is through the \method{feed()}
 method, which takes a string argument.  This can be called with as
-little or as much text at a time as desired; \code{p.feed(a);
-p.feed(b)} has the same effect as \code{p.feed(a+b)}.  When the data
+little or as much text at a time as desired; \samp{p.feed(a);
+p.feed(b)} has the same effect as \samp{p.feed(a+b)}.  When the data
 contains complete HTML tags, these are processed immediately;
 incomplete elements are saved in a buffer.  To force processing of all
-unprocessed data, call the \code{close()} method.
+unprocessed data, call the \method{close()} method.
 
 For example, to parse the entire contents of a file, use:
 \bcode\begin{verbatim}
@@ -50,13 +50,13 @@ The interface to define semantics for HTML tags is very simple: derive
 a class and define methods called \code{start_\var{tag}()},
 \code{end_\var{tag}()}, or \code{do_\var{tag}()}.  The parser will
 call these at appropriate moments: \code{start_\var{tag}} or
-\code{do_\var{tag}} is called when an opening tag of the form
-\code{<\var{tag} ...>} is encountered; \code{end_\var{tag}} is called
+\code{do_\var{tag}()} is called when an opening tag of the form
+\code{<\var{tag} ...>} is encountered; \code{end_\var{tag}()} is called
 when a closing tag of the form \code{<\var{tag}>} is encountered.  If
 an opening tag requires a corresponding closing tag, like \code{<H1>}
-... \code{</H1>}, the class should define the \code{start_\var{tag}}
+... \code{</H1>}, the class should define the \code{start_\var{tag}()}
 method; if a tag requires no closing tag, like \code{<P>}, the class
-should define the \code{do_\var{tag}} method.
+should define the \code{do_\var{tag}()} method.
 
 \end{itemize}
 
@@ -68,10 +68,10 @@ required by the HTML 2.0 specification (\rfc{1866}).  It also defines
 handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
 \end{funcdesc}
 
-In addition to tag methods, the \code{HTMLParser} class provides some
+In addition to tag methods, the \class{HTMLParser} class provides some
 additional methods and instance variables for use within tag methods.
 
-\renewcommand{\indexsubitem}{(HTMLParser method)}
+\renewcommand{\indexsubitem}{(HTMLParser attribute)}
 
 \begin{datadesc}{formatter}
 This is the formatter instance associated with the parser.
@@ -82,40 +82,42 @@ Boolean flag which should be true when whitespace should not be
 collapsed, or false when it should be.  In general, this should only
 be true when character data is to be treated as ``preformatted'' text,
 as within a \code{<PRE>} element.  The default value is false.  This
-affects the operation of \code{handle_data()} and \code{save_end()}.
+affects the operation of \method{handle_data()} and \method{save_end()}.
 \end{datadesc}
+
+\renewcommand{\indexsubitem}{(HTMLParser method)}
 
 \begin{funcdesc}{anchor_bgn}{href\, name\, type}
 This method is called at the start of an anchor region.  The arguments
 correspond to the attributes of the \code{<A>} tag with the same
 names.  The default implementation maintains a list of hyperlinks
-(defined by the \code{href} argument) within the document.  The list
+(defined by the \code{href} attribute) within the document.  The list
 of hyperlinks is available as the data attribute \code{anchorlist}.
 \end{funcdesc}
 
 \begin{funcdesc}{anchor_end}{}
 This method is called at the end of an anchor region.  The default
 implementation adds a textual footnote marker using an index into the
-list of hyperlinks created by \code{anchor_bgn()}.
+list of hyperlinks created by \method{anchor_bgn()}.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_image}{source\, alt\optional{\, ismap\optional{\, align\optional{\, width\optional{\, height}}}}}
 This method is called to handle images.  The default implementation
-simply passes the \code{alt} value to the \code{handle_data()}
+simply passes the \var{alt} value to the \method{handle_data()}
 method.
 \end{funcdesc}
 
 \begin{funcdesc}{save_bgn}{}
 Begins saving character data in a buffer instead of sending it to the
-formatter object.  Retrieve the stored data via \code{save_end()}
-Use of the \code{save_bgn()} / \code{save_end()} pair may not be
+formatter object.  Retrieve the stored data via \method{save_end()}.
+Use of the \method{save_bgn()} / \method{save_end()} pair may not be
 nested.
 \end{funcdesc}
 
 \begin{funcdesc}{save_end}{}
 Ends buffering character data and returns all data saved since the
-preceeding call to \code{save_bgn()}.  If \code{nofill} flag is false,
-whitespace is collapsed to single spaces.  A call to this method
-without a preceeding call to \code{save_bgn()} will raise a
-\code{TypeError} exception.
+preceeding call to \method{save_bgn()}.  If the \code{nofill} flag is
+false, whitespace is collapsed to single spaces.  A call to this
+method without a preceeding call to \method{save_bgn()} will raise a
+\exception{TypeError} exception.
 \end{funcdesc}
