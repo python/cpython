@@ -1,4 +1,4 @@
-How to install Python 2.2a3 on your Macintosh
+How to install Python 2.2b1 on your Macintosh
 ---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
@@ -6,15 +6,13 @@ onwards) and natively on MacOSX. The installer tries to work out whether you can
 use the Carbon version or not.
 
 You should definitely read the Relnotes file too, and the section below about
-toolbox module reorganization.
+toolbox module reorganization. You should also read :Misc:NEWS, which lists
+the general (non-mac-dependent) new features of this Python release.
 
 A special note about the active installer: do not background it, it may hang
 your machine. This is a general problem with Vise active installers, MindVision
 are working on it.
 
-Aside from the general new Python 2.2a3 listed in the general relnotes file
-there is some other new machine-independent stuff in this release as well, as
-it was built from newer sources than unix/windows 2.2a3.
 ------
 
 If this is your first encounter with Python: you definitely need the
@@ -64,27 +62,6 @@ Note that although the package is called Carbon the modules work fine under
 classic PPC, and they are normal classic modules. Also note that some
 modules you may think of as toolbox modules (such as Waste) really are not,
 and they are not in the Carbon package.
-
-Some open issues I would like to discuss on the PythonMac-SIG, please join
-in if you have views on the matter:
-- Is this all a good idea?
-- Some modules are not in the Carbon package (icglue, for instance, or
-  supporting module such as aetools and aepack) and maybe they should be,
-  some are (ControlAccessors) which arguably should not. Opinions are welcome.
-- I'm tempted to put Qt and QuickTime into their own package, especially
-  since I'm also working on porting it to Windows. It would also be in line
-  with Apple's organization. Opinions?
-- Should we get rid of the Res/Resource dichotomy, where the first is the
-  extension module and the second is the Python module with the constants?
-  We could simply import the extension module functionality into the Python
-  module, at the expense of a rather large namespace.
-- Should we have a Carbon.Carbon module that simply imports the whole world,
-  so that "from Carbon.Carbon import *" is pretty much equivalent to the C
-  #include <Carbon/Carbon.h>?
-- Should we put all the other Mac modules into a Mac package? This will make
-  MacPython programs a lot more verbose, but that is a good thing too if people
-  try to port Mac Python scripts to other platforms.
-  Should the Carbon package then be a sub-package of the Mac package?
   
 Another change related to the OSX growth path is that there is a new module
 macresource that you can use to easily open a resource file accompanying your
@@ -94,10 +71,7 @@ turned into an applet) the given resource file will be opened. This method will
 eventually also contain the magic needed to open the resource file on
 OSX MachO Python.
 
-... and more
-------------
-
-A feature that I am not sure about (so: feedback!) is that if you open a textfile
+Another feature to help with the OSX transition is that if you open a textfile
 for reading MacPython will now accept either unix linefeeds (LF, '\n') or
 Macintosh linefeeds (CR, '\r') and present both of them as '\n'. This is done on
 a low level, so it works for files opened by scripts as well as for your scripts
@@ -151,12 +125,12 @@ It is probably a good idea to run the automatic tests. Start
 Python and "import test.regrtest ; test.regrtest.main()". 
 
 test_time will fail because MacPython accepts bogus values for mktime(), this
-will be fixed later.
+will be fixed later (it is not a very serious problem).
 
 test_descrtut will fail because of a problem with the test itself.
 
 Three tests will fail on MacOS9 with MemoryErrors:
-test_longexp, test_sha and test_zlib (on MacOSX nothing should fail).
+test_longexp, test_sha and test_zlib (on MacOSX these should pass).
 
 If you increase the PythonInterpreter memory
 partition size they will pass (but for longexp you have to increase it by an
@@ -181,7 +155,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.2a3 Preferences" file in the Python subfolder in the
+"Python 2.2b1 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
@@ -230,9 +204,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2a3 works as expected you can trash
+After you are satisfied that 2.2b1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2a3".
+"2.2b1".
 
 The ConfigurePython... applets will try to detect incompatible preferences
 files and offer to remove them. This means that re-running ConfigurePython after
