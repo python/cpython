@@ -48,7 +48,7 @@ class FileWrapper(FileBase):
 
 TEMPLATE = """
 def %s(self, *args):
-        return apply(getattr(self.mod, self.name).%s, args)
+        return getattr(self.mod, self.name).%s(*args)
 """
 
 class FileDelegate(FileBase):
@@ -407,14 +407,11 @@ class RExec(ihooks._Verbose):
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
 
-    def s_apply(self, func, args=(), kw=None):
+    def s_apply(self, func, args=(), kw={}):
         self.save_files()
         try:
             self.set_files()
-            if kw:
-                r = apply(func, args, kw)
-            else:
-                r = apply(func, args)
+            r = func(*args, **kw)
         finally:
             self.restore_files()
         return r

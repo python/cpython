@@ -246,7 +246,7 @@ def _test():
     for method, args in packtest:
         print 'pack test', count,
         try:
-            apply(method, args)
+            method(*args)
             print 'succeeded'
         except ConversionError, var:
             print 'ConversionError:', var.msg
@@ -272,7 +272,7 @@ def _test():
         print 'unpack test', count,
         try:
             if succeedlist[count]:
-                x = apply(method, args)
+                x = method(*args)
                 print pred(x) and 'succeeded' or 'failed', ':', x
             else:
                 print 'skipping'

@@ -140,7 +140,7 @@ def _copy_inst(x):
         return x.__copy__()
     if hasattr(x, '__getinitargs__'):
         args = x.__getinitargs__()
-        y = apply(x.__class__, args)
+        y = x.__class__(*args)
     else:
         y = _EmptyClass()
         y.__class__ = x.__class__
@@ -293,7 +293,7 @@ def _deepcopy_inst(x, memo):
     if hasattr(x, '__getinitargs__'):
         args = x.__getinitargs__()
         args = deepcopy(args, memo)
-        y = apply(x.__class__, args)
+        y = x.__class__(*args)
     else:
         y = _EmptyClass()
         y.__class__ = x.__class__

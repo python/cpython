@@ -102,5 +102,5 @@ class scheduler:
                 self.delayfunc(time - now)
             else:
                 del q[0]
-                void = apply(action, argument)
+                void = action(*argument)
                 self.delayfunc(0)   # Let other threads run

@@ -77,7 +77,7 @@ class UserList:
     def count(self, item): return self.data.count(item)
     def index(self, item): return self.data.index(item)
     def reverse(self): self.data.reverse()
-    def sort(self, *args): apply(self.data.sort, args)
+    def sort(self, *args): self.data.sort(*args)
     def extend(self, other):
         if isinstance(other, UserList):
             self.data.extend(other.data)

@@ -720,7 +720,7 @@ class Unmarshaller:
         if self._type is None or self._marks:
             raise ResponseError()
         if self._type == "fault":
-            raise apply(Fault, (), self._stack[0])
+            raise Fault(**self._stack[0])
         return tuple(self._stack)
 
     def getmethodname(self):
@@ -1213,7 +1213,7 @@ class SafeTransport(Transport):
                 "your version of httplib doesn't support HTTPS"
                 )
         else:
-            return apply(HTTPS, (host, None), x509 or {})
+            return HTTPS(host, None, **(x509 or {}))
 
 ##
 # Standard server proxy.  This class establishes a virtual connection

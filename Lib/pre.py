@@ -505,7 +505,7 @@ class RegexObject:
         self.pattern = statetuple[0]
         self.flags = statetuple[1]
         self.groupindex = statetuple[2]
-        self.code = apply(pcre_compile, statetuple)
+        self.code = pcre_compile(*statetuple)
 
 class _Dummy:
     # Dummy class used by _subn_string().  Has 'group' to avoid core dump.

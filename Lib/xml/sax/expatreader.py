@@ -401,7 +401,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 # ---
 
 def create_parser(*args, **kwargs):
-    return apply(ExpatParser, args, kwargs)
+    return ExpatParser(*args, **kwargs)
 
 # ---
 

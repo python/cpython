@@ -66,7 +66,7 @@ class DOMException(Exception):
         if self.__class__ is DOMException:
             raise RuntimeError(
                 "DOMException should not be instantiated directly")
-        apply(Exception.__init__, (self,) + args, kw)
+        Exception.__init__(self, *args, **kw)
 
     def _get_code(self):
         return self.code

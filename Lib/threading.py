@@ -57,7 +57,7 @@ else:
 Lock = _allocate_lock
 
 def RLock(*args, **kwargs):
-    return apply(_RLock, args, kwargs)
+    return _RLock(*args, **kwargs)
 
 class _RLock(_Verbose):
 
@@ -128,7 +128,7 @@ class _RLock(_Verbose):
 
 
 def Condition(*args, **kwargs):
-    return apply(_Condition, args, kwargs)
+    return _Condition(*args, **kwargs)
 
 class _Condition(_Verbose):
 
@@ -240,7 +240,7 @@ class _Condition(_Verbose):
 
 
 def Semaphore(*args, **kwargs):
-    return apply(_Semaphore, args, kwargs)
+    return _Semaphore(*args, **kwargs)
 
 class _Semaphore(_Verbose):
 
@@ -282,7 +282,7 @@ class _Semaphore(_Verbose):
 
 
 def BoundedSemaphore(*args, **kwargs):
-    return apply(_BoundedSemaphore, args, kwargs)
+    return _BoundedSemaphore(*args, **kwargs)
 
 class _BoundedSemaphore(_Semaphore):
     """Semaphore that checks that # releases is <= # acquires"""
@@ -297,7 +297,7 @@ class _BoundedSemaphore(_Semaphore):
 
 
 def Event(*args, **kwargs):
-    return apply(_Event, args, kwargs)
+    return _Event(*args, **kwargs)
 
 class _Event(_Verbose):
 
@@ -396,7 +396,7 @@ class Thread(_Verbose):
 
     def run(self):
         if self.__target:
-            apply(self.__target, self.__args, self.__kwargs)
+            self.__target(*self.__args, **self.__kwargs)
 
     def __bootstrap(self):
         try:

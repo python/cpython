@@ -115,7 +115,7 @@ class TestResult:
 
     def _exc_info_to_string(self, err):
         """Converts a sys.exc_info()-style tuple of values into a string."""
-        return string.join(apply(traceback.format_exception, err), '')
+        return string.join(traceback.format_exception(*err), '')
 
     def __repr__(self):
         return "<%s run=%i errors=%i failures=%i>" % \
@@ -276,7 +276,7 @@ class TestCase:
            unexpected exception.
         """
         try:
-            apply(callableObj, args, kwargs)
+            callableObj(*args, **kwargs)
         except excClass:
             return
         else:
@@ -561,7 +561,7 @@ class _WritelnDecorator:
         return getattr(self.stream,attr)
 
     def writeln(self, *args):
-        if args: apply(self.write, args)
+        if args: self.write(*args)
         self.write('\n') # text-mode streams translate to \r\n if needed
 
 

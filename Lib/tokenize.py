@@ -42,8 +42,8 @@ tok_name[NL] = 'NL'
 N_TOKENS += 2
 
 def group(*choices): return '(' + '|'.join(choices) + ')'
-def any(*choices): return apply(group, choices) + '*'
-def maybe(*choices): return apply(group, choices) + '?'
+def any(*choices): return group(*choices) + '*'
+def maybe(*choices): return group(*choices) + '?'
 
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
@@ -157,7 +157,7 @@ def tokenize(readline, tokeneater=printtoken):
 # backwards compatible interface
 def tokenize_loop(readline, tokeneater):
     for token_info in generate_tokens(readline):
-        apply(tokeneater, token_info)
+        tokeneater(*token_info)
 
 def generate_tokens(readline):
     """

@@ -948,7 +948,7 @@ def runctx(statement, globals, locals):
     run(statement, globals, locals)
 
 def runcall(*args):
-    return apply(Pdb().runcall, args)
+    return Pdb().runcall(*args)
 
 def set_trace():
     Pdb().set_trace()

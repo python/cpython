@@ -415,7 +415,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
         """
 
-        apply(self.log_message, args)
+        self.log_message(*args)
 
     def log_message(self, format, *args):
         """Log an arbitrary message.
