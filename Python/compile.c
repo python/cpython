@@ -3983,6 +3983,22 @@ get_ref_type(struct compiling *c, char *name)
 	return -1; /* can't get here */
 }
 
+/* Helper function to issue symbol table warnings */
+
+static void
+symtable_warn(struct symtable *st, char *msg)
+{
+	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
+			       st->st_cur->ste_lineno, NULL, NULL) < 0)	{
+		if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+			PyErr_SetString(PyExc_SyntaxError, msg);
+			PyErr_SyntaxLocation(st->st_filename,
+					     st->st_cur->ste_lineno);
+		}
+		st->st_errors++;
+	}
+}
+
 /* Helper function for setting lineno and filename */
 
 static int
@@ -4837,22 +4853,7 @@ symtable_global(struct symtable *st, node *n)
 						name);
 				else
 					sprintf(buf, GLOBAL_AFTER_USE, name);
-				if (PyErr_WarnExplicit(PyExc_SyntaxWarning,
-						       buf, st->st_filename,
-						       st->st_cur->ste_lineno,
-						       NULL, NULL) < 0)
-				{
-					if (PyErr_ExceptionMatches(
-						PyExc_SyntaxWarning))
-					{
-						PyErr_SetString(
-						    PyExc_SyntaxError, buf);
-						PyErr_SyntaxLocation(
-						    st->st_filename,
-						    st->st_cur->ste_lineno);
-					}
-					st->st_errors++;
-				}
+				symtable_warn(st, buf);
 			}
 		}
 		symtable_add_def(st, name, DEF_GLOBAL);
