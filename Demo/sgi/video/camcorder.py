@@ -9,7 +9,7 @@ import posix
 import vtime
 
 # Preallocation parameter
-PREALLOC = 8 # Megabyte
+PREALLOC = 4 # Megabyte
 
 # Sync audio parameters
 SYNCPORT = 10000
@@ -44,7 +44,6 @@ def prealloc(w, h):
 	print 'Done.'
 
 def grabframe(f,x,y,w,h,pf):
-####    saveframes(f, w, h, pf)
     readsource(SRC_FRONT)
     if pf:
     	w = w/pf*pf
@@ -143,7 +142,7 @@ def main():
     f = open(filename, 'w')
     w, h = getsize()
     realw, realh = w, h
-    #doublebuffer()
+    ####doublebuffer()
     RGBmode()
     gconfig()
     qdevice(LEFTMOUSE)
@@ -247,7 +246,7 @@ def main():
 			rectcopy(vidx+x,vidy+y,vidx+x+w-1,vidy+y+h-1,x,y)
 	    	else:
 			rectcopy(vidx,vidy,vidx+realw-1,vidx+realh-1,0,0)
-	        #swapbuffers()
+	        ####swapbuffers()
 	    if outrunning or outsingle:
 		nframe = nframe + 1
 		if not sizewritten:
