@@ -98,7 +98,7 @@ glmodule.c:	$(srcdir)/cgen.py $(srcdir)/cstubs
 
 almodule.o: almodule.c
 arraymodule.o: arraymodule.c
-audioopmodule.o: audioopmodule.c
+audioop.o: audioop.c
 cdmodule.o: cdmodule.c
 clmodule.o: clmodule.c
 dbmmodule.o: dbmmodule.c
@@ -106,8 +106,8 @@ fcntlmodule.o: fcntlmodule.c
 flmodule.o: flmodule.c
 fmmodule.o: fmmodule.c
 glmodule.o: glmodule.c
-imageopmodule.o: imageopmodule.c
-imgfilemodule.o: imgfilemodule.c
+imageop.o: imageop.c
+imgfile.o: imgfile.c
 mathmodule.o: mathmodule.c
 md5c.o: md5c.c
 md5module.o: md5module.c
@@ -126,7 +126,7 @@ socketmodule.o: socketmodule.c
 stdwinmodule.o: stdwinmodule.c
 stropmodule.o: stropmodule.c
 structmodule.o: structmodule.c
-sunaudiodevmodule.o: sunaudiodevmodule.c
+sunaudiodev.o: sunaudiodev.c
 svmodule.o: svmodule.c
 threadmodule.o: threadmodule.c
 timemodule.o: timemodule.c

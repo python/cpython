@@ -93,8 +93,8 @@ socket socketmodule.o	# socket(2); not on ancient System V
 # Multimedia modules -- on by default.
 # These represent audio samples or images as strings
 
-audioop audioopmodule.o # Operations on audio samples
-imageop imageopmodule.o # Operations on images
+audioop audioop.o	# Operations on audio samples
+imageop imageop.o	# Operations on images
 rgbimg rgbimgmodule.o   # Read SGI RGB image files (but coded portably)
 
 
@@ -148,7 +148,7 @@ rotor rotormodule.o
 #cl clmodule.o -lcl		# -lawareaudio
 #fm fmmodule.o -lfm_s -lgl_s
 #gl glmodule.o -lgl_s -lX11_s
-#imgfile imgfilemodule.o -limage -lgutil
+#imgfile imgfile.o -limage -lgutil
 #sgi sgimodule.o
 #sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
 
@@ -165,7 +165,7 @@ rotor rotormodule.o
 
 # SunOS specific modules -- off by default
 
-# sunaudiodev sunaudiodevmodule.o
+# sunaudiodev sunaudiodev.o
 
 
 # Thread module -- works on SGI IRIX and on SunOS 5.x (SOLARIS) only.
@@ -196,7 +196,7 @@ rotor rotormodule.o
 
 
 # Jack Jansen's imgformat module
-# imgformat imgformatmodule.o
+# imgformat imgformat.o
 
 
 # Lance Ellinghouse's syslog module

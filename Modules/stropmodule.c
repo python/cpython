@@ -256,7 +256,7 @@ strop_rindex(self, args)
 	}
 
 	if (n == 0)
-		return newintobject((long)i);
+		return newintobject((long)len);
 
 	for (j = len-n; j >= i; --j)
 		if (s[j] == sub[0] &&
