@@ -211,3 +211,30 @@ PyOS_Readline(prompt)
 		p[n-1] = '\n';
 	return realloc(p, n+1);
 }
+
+#ifdef HAVE_STDARG_PROTOTYPES
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#ifdef HAVE_STDARG_PROTOTYPES
+PySys_WriteStderr(const char *format, ...)
+#else
+PySys_WriteStderr(va_alist)
+	va_dcl
+#endif
+{
+	va_list va;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(va, format);
+#else
+	char *format;
+	va_start(va);
+	format = va_arg(va, char *);
+#endif
+	vfprintf(stderr, format, va);
+	va_end(va);
+}
