@@ -20,12 +20,12 @@
 ;; This file will self-install on your c-style-alist variable,
 ;; although you will have to install it on a per-file basis with:
 ;;
-;; M-x c-set-style RET python
+;; M-x c-set-style RET python RET
 
 ;;; Code:
 
 (defconst python-cc-style
-  '((indent-tabs-mode . nil)
+  '((indent-tabs-mode . t)
     (c-basic-offset   . 8)
     )
   "Standard Python C coding style.")
