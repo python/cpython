@@ -16,6 +16,7 @@
 # 2002-09-11 wd   use string methods
 # 2002-10-18 mvl  update to Unicode 3.2
 # 2002-10-22 mvl  generate NFC tables
+# 2002-11-24 mvl  expand all ranges, sort names version-independently
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -403,10 +404,13 @@ def makeunicodename(unicode, trace):
 
     wordlist = words.items()
 
-    # sort on falling frequency
-    # XXX: different Python versions produce a different order
-    # for words with equal frequency
-    wordlist.sort(lambda a, b: len(b[1])-len(a[1]))
+    # sort on falling frequency, then by name
+    def cmpwords((aword, alist),(bword, blist)):
+        r = -cmp(len(alist),len(blist))
+        if r:
+            return r
+        return cmp(aword, bword)
+    wordlist.sort(cmpwords)
 
     # figure out how many phrasebook escapes we need
     escapes = 0
@@ -541,10 +545,10 @@ class UnicodeData:
             char = int(s[0], 16)
             table[char] = s
 
-        # expand first-last ranges (ignore surrogates and private use)
+        # expand first-last ranges
         if expand:
             field = None
-            for i in range(0, 0xD800):
+            for i in range(0, 0x110000):
                 s = table[i]
                 if s:
                     if s[1][-6:] == "First>":
@@ -587,7 +591,7 @@ def myhash(s, magic):
     h = 0
     for c in map(ord, s.upper()):
         h = (h * magic) + c
-        ix = h & 0xff000000
+        ix = h & 0xff000000L
         if ix:
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff
     return h
