@@ -598,7 +598,9 @@ class PyBuildExt(build_ext):
                 # XXX should we -ever- look for a dbX name?  Do any
                 # systems really not name their library by version and
                 # symlink to more general names?
-                for dblib in (('db-%d.%d' % db_ver), ('db%d' % db_ver[0])):
+                for dblib in (('db-%d.%d' % db_ver),
+                              ('db%d%d' % db_ver),
+                              ('db%d' % db_ver[0])):
                     dblib_file = self.compiler.find_library_file(
                                     db_dirs_to_check + lib_dirs, dblib )
                     if dblib_file:
