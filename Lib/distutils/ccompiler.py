@@ -11,6 +11,7 @@ import os
 from types import *
 from copy import copy
 from distutils.errors import *
+from distutils.spawn import spawn
 
 
 class CCompiler:
@@ -41,30 +42,31 @@ class CCompiler:
     #     parameter to the compile/link_* methods, or both?
     #   * can't completely override the include or library searchg
     #     path, ie. no "cc -I -Idir1 -Idir2" or "cc -L -Ldir1 -Ldir2".
-    #     I'm not sure how widely supported this is even by POSIX
+    #     I'm not sure how widely supported this is even by Unix
     #     compilers, much less on other platforms.  And I'm even less
-    #     sure how useful it is; probably for cross-compiling, but I
-    #     have no intention of supporting that.
+    #     sure how useful it is; maybe for cross-compiling, but
+    #     support for that is a ways off.  (And anyways, cross
+    #     compilers probably have a dedicated binary with the
+    #     right paths compiled in.  I hope.)
     #   * can't do really freaky things with the library list/library
     #     dirs, e.g. "-Ldir1 -lfoo -Ldir2 -lfoo" to link against
     #     different versions of libfoo.a in different locations.  I
     #     think this is useless without the ability to null out the
     #     library search path anyways.
-    #   * don't deal with verbose and dry-run flags -- probably a
-    #     CCompiler object should just drag them around the way the
-    #     Distribution object does (either that or we have to drag
-    #     around a Distribution object, which is what Command objects
-    #     do... but might be kind of annoying)
     
 
-    def __init__ (self):
+    def __init__ (self,
+                  verbose=0,
+                  dry_run=0):
+
+        self.verbose = verbose
+        self.dry_run = dry_run
 
         # 'macros': a list of macro definitions (or undefinitions).  A
         # macro definition is a 2-tuple (name, value), where the value is
         # either a string or None (no explicit value).  A macro
         # undefinition is a 1-tuple (name,).
         self.macros = []
-
 
         # 'include_dirs': a list of directories to search for include files
         self.include_dirs = []
@@ -75,6 +77,10 @@ class CCompiler:
 
         # 'library_dirs': a list of directories to search for libraries
         self.library_dirs = []
+
+        # 'runtime_library_dirs': a list of directories to search for
+        # shared libraries/objects at runtime
+        self.runtime_library_dirs = []
 
         # 'objects': a list of object files (or similar, such as explicitly
         # named library files) to include on any link
@@ -205,6 +211,19 @@ class CCompiler:
         self.library_dirs = copy (dirs)
 
 
+    def add_runtime_library_dir (self, dir):
+        """Add 'dir' to the list of directories that will be searched for
+           shared libraries at runtime."""
+        self.runtime_library_dirs.append (dir)
+
+    def set_runtime_library_dirs (self, dirs):
+        """Set the list of directories to search for shared libraries
+           at runtime to 'dirs' (a list of strings).  This does not affect
+           any standard search path that the runtime linker may search by
+           default."""
+        self.runtime_library_dirs = copy (dirs)
+
+
     def add_link_object (self, object):
         """Add 'object' to the list of object files (or analogues, such
            as explictly named library files or the output of "resource
@@ -271,9 +290,6 @@ class CCompiler:
         pass
     
 
-    # XXX what's better/more consistent/more universally understood
-    # terminology: "shared library" or "dynamic library"?
-
     def link_shared_lib (self,
                          objects,
                          output_libname,
@@ -296,10 +312,43 @@ class CCompiler:
            filename is explicitly supplied as 'output_filename'."""
         pass
 
+
+    # -- Filename mangling methods -------------------------------------
+
+    def object_filenames (source_filenames):
+        """Return the list of object filenames corresponding to each
+           specified source filename."""
+        pass
+
+    def shared_object_filename (source_filename):
+        """Return the shared object filename corresponding to a
+           specified source filename."""
+        pass    
+
+    def library_filename (libname):
+        """Return the static library filename corresponding to the
+           specified library name."""
+        
+        pass
+
+    def shared_library_filename (libname):
+        """Return the shared library filename corresponding to the
+           specified library name."""
+        pass
+
+
+    # -- Utility methods -----------------------------------------------
+
+    def spawn (self, cmd):
+        spawn (cmd, verbose=self.verbose, dry_run=self.dry_run)
+
+
 # class CCompiler
 
 
-def new_compiler (plat=None):
+def new_compiler (plat=None,
+                  verbose=0,
+                  dry_run=0):
     """Generate a CCompiler instance for platform 'plat' (or the
        current platform, if 'plat' not supplied).  Really instantiates
        some concrete subclass of CCompiler, of course."""
@@ -307,7 +356,7 @@ def new_compiler (plat=None):
     if plat is None: plat = os.name
     if plat == 'posix':
         from unixccompiler import UnixCCompiler
-        return UnixCCompiler ()
+        return UnixCCompiler (verbose, dry_run)
     else:
         raise DistutilsPlatformError, \
               "don't know how to compile C/C++ code on platform %s" % plat
