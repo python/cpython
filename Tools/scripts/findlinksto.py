@@ -6,21 +6,21 @@
 
 import os
 import sys
-import regex
+import re
 import getopt
 
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], '')
         if len(args) < 2:
-            raise getopt.error, 'not enough arguments'
-    except getopt.error, msg:
+            raise getopt.GetoptError('not enough arguments', None)
+    except getopt.GetoptError, msg:
         sys.stdout = sys.stderr
         print msg
         print 'usage: findlinksto pattern directory ...'
         sys.exit(2)
     pat, dirs = args[0], args[1:]
-    prog = regex.compile(pat)
+    prog = re.compile(pat)
     for dirname in dirs:
         os.path.walk(dirname, visit, prog)
 
@@ -34,7 +34,7 @@ def visit(prog, dirname, names):
         name = os.path.join(dirname, name)
         try:
             linkto = os.readlink(name)
-            if prog.search(linkto) >= 0:
+            if prog.search(linkto) is not None:
                 print name, '->', linkto
         except os.error:
             pass
