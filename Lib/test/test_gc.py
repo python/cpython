@@ -75,6 +75,11 @@ def test_function():
 
 
 def test_all():
+
+    enabled = gc.isenabled()
+    gc.disable()
+    assert not gc.isenabled()
+
     test_list()
     test_dict()
     test_tuple()
@@ -83,5 +88,12 @@ def test_all():
     test_method()
     test_finalizer()
     test_function()
+
+    # test gc.enable() even if GC is disabled by default
+    gc.enable()
+    assert gc.isenabled()
+    if not enabled:
+        gc.disable()
+
 
 test_all()
