@@ -34,9 +34,6 @@ def join(s, t):
 	return s + t
 
 
-cat = join # For compatibility
-
-
 # Split a pathname in two parts: the directory leading up to the final bit,
 # and the basename (the filename, without colons, in that directory).
 # The result (s, t) is such that join(s, t) yields the original argument.
@@ -49,6 +46,7 @@ def split(s):
 	return s[:colon], s[colon:]
 
 
+# XXX This is undocumented and may go away!
 # Normalize a pathname: get rid of '::' sequences by backing up,
 # e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
 # Raise the exception norm_error below if backing up is impossible,
