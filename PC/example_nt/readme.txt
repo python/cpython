@@ -1,26 +1,22 @@
-*** WARNING -- THIS DIRECTORY IS OUT OF DATE.
-*** It has not been updated since Python 1.4beta3.
-
-
 Example Python extension for Windows NT
 =======================================
 
 This directory contains everything you need to build a Python
 extension module using Microsoft VC++ 4.x ("Developer Studio"), except
-for the Python distribution.  It has only been tested with version
-4.0, but should work with higher versions.
+for the Python distribution.  It has been tested most recently with
+version 4.2.
 
-The "example" subdirectory should be an immediate subdirectory of the
-Python source directory -- a direct sibling of Include and PC, in
-particular, which are referenced as "..\Include" and "..\PC".
-In other words, it should *not* be used "as is".  Copy or move it up
-one level or you will regret it!  (This is done to keep all the PC
+The "example_nt" subdirectory should be an immediate subdirectory of
+the Python source directory -- a direct sibling of Include and PC, in
+particular, which are referenced as "..\Include" and "..\PC".  In
+other words, it should *not* be used "as is".  Copy or move it up one
+level or you will regret it!  (This is done to keep all the PC
 specific files inside the PC subdirectory of the distribution, where
 they belong.)
 
 It is also assumed that the build results of Python are in the
-directory ..\vc40.  In particular, the python14.lib file is referred
-to as "..\vc40\python14.lib".
+directory ..\vc40.  In particular, the python15.lib file is referred
+to as "..\vc40\python15.lib".
 
 In order to use the example project from Developer Studio, use the
 "File->Open Workspace..." dialog (*not* the "File->Open..." dialog!).
@@ -63,7 +59,7 @@ Python interface).
 
 Now your options are:
 
-1) Clone example.mak.  Start by copying example\example.mak to
+1) Clone example.mak.  Start by copying example_nt\example.mak to
 spam\spam.mak.  Do a global edit on spam.mak, replacing all
 occurrences of the string "example" by "spam", and all occurrences of
 "DEP_CPP_EXAMP" by something like "DEP_CPP_SPAM".  You can now use
@@ -72,9 +68,9 @@ this makefile to create a project file by opening it as a workspace
 
 2) Create a brand new project; instructions are below.
 
-In both cases, copy example\example.def to spam\spam.def, and edit
-spam\spam.def so its second line contains the string "initspam".
-If you created a new project yourself, add the file spam.def to the
+In both cases, copy example_nt\example.def to spam\spam.def, and edit
+spam\spam.def so its second line contains the string "initspam".  If
+you created a new project yourself, add the file spam.def to the
 project now.
 
 You are now all set to build your extension, unless it requires other
@@ -97,12 +93,19 @@ Win32 as the platform (in my version, this is the only choice).  Click
 
 Now open the "Build->Settings..." dialog.  (Impressive, isn't it?  :-)
 You only need to change a few settings.  Make sure you have both the
-Debug and the Release configuration selected when you make these
-changes.  Select the "C/C++" tab.  Choose the "Preprocessor" category
+Debug and the Release configuration selected when you make the first
+change.  Select the "C/C++" tab.  Choose the "Preprocessor" category
 in the popup menu at the top.  Type the following text in the entry
 box labeled "Addditional include directories:"
 
 	..\Include,..\PC
+
+You must also change the run-time library.  This must be done
+separately for the Release and Debug configurations.  Choose the "Code
+Generation" category in the C/C++ tab.  In the box labeled "Use
+run-time library", choose "Multithreaded DLL" for the Release
+configuration, and "Debug Multithreaded DLL" for the Debug
+configuration.  That's all.
 
 You should now first create the file spam.def as instructed in the
 previous section.
@@ -110,4 +113,4 @@ previous section.
 Now chose the "Insert->Files into Project..." dialog.  Set the pattern
 to *.* and select both spam.c and spam.def and click OK.  (Inserting
 them one by one is fine too.)  Using the same dialog, choose the file
-..\vc40\python14.lib and insert it into the project.
+..\vc40\python15.lib and insert it into the project.
