@@ -81,22 +81,6 @@ information from Internet\index{Internet Config} Config.
 
 Proxies which require authentication for use are not currently
 supported; this is considered an implementation limitation.
-
-The \function{urlopen()} function works transparently with proxies.
-In a \UNIX{} or Windows environment, set the \envvar{http_proxy},
-\envvar{ftp_proxy} or \envvar{gopher_proxy} environment variables to a
-URL that identifies the proxy server before starting the Python
-interpreter, e.g.:
-
-\begin{verbatim}
-% http_proxy="http://www.someproxy.com:3128"
-% export http_proxy
-% python
-...
-\end{verbatim}
-
-In a Macintosh environment, \function{urlopen()} will retrieve proxy
-information from Internet Config.
 \end{funcdesc}
 
 \begin{funcdesc}{urlretrieve}{url\optional{, filename\optional{, hook}}}
