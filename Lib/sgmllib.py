@@ -354,7 +354,7 @@ class SGMLParser:
     def handle_charref(self, name):
         try:
             n = int(name)
-        except string.atoi_error:
+        except ValueError:
             self.unknown_charref(name)
             return
         if not 0 <= n <= 255:
