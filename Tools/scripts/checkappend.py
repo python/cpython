@@ -52,7 +52,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "v")
     except getopt.error, msg:
-        errprint(msg + "\n\n" + __doc__)
+        errprint(str(msg) + "\n\n" + __doc__)
         return
     for opt, optarg in opts:
         if opt == '-v':
