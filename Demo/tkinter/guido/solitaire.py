@@ -580,14 +580,16 @@ class Solitaire:
     def win(self):
 	"""Stupid animation when you win."""
 	cards = []
-	for s in self.suits:
+	for s in self.openstacks:
 	    cards = cards + s.cards
-	if not cards:
-	    return
-	for i in range(1000):
+	while cards:
 	    card = random.choice(cards)
-	    dx = random.randint(-50, 50)
-	    dy = random.randint(-50, 50)
+	    cards.remove(card)
+	    self.animatedmoveto(card, self.deck)
+
+    def animatedmoveto(self, card, dest):
+	for i in range(10, 0, -1):
+	    dx, dy = (dest.x-card.x)/i, (dest.y-card.y)/i
 	    card.moveby(dx, dy)
 	    self.master.update_idletasks()
 
