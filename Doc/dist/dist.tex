@@ -254,7 +254,7 @@ distribute, install, etc.) all pure Python modules found in each package
 mentioned in the \option{packages} list.  In order to do this, of
 course, there has to be a correspondence between package names and
 directories in the filesystem.  The default correspondence is the most
-obvious one, i.e. package \package{distutils} is found in the directory
+obvious one, i.e. package \module{distutils} is found in the directory
 \file{distutils} relative to the distribution root.  Thus, when you say
 \code{packages = ['foo']} in your setup script, you are promising that
 the Distutils will find a file \file{foo/\_\_init\_\_.py} (which might
@@ -267,7 +267,7 @@ If you use a different convention to lay out your source directory,
 that's no problem: you just have to supply the \option{package\_dir}
 option to tell the Distutils about your convention.  For example, say
 you keep all Python source under \file{lib}, so that modules not in any
-package are right in \file{lib}, modules in the \package{foo} package
+package are right in \file{lib}, modules in the \module{foo} package
 are in \file{lib/foo}, and so forth.  Then you would put
 \begin{verbatim}
 package_dir = {'': 'lib'}
@@ -279,15 +279,15 @@ distribution root.)  In this case, when you say
 \code{packages = ['foo']}, you are promising that the file
 \file{lib/foo/\_\_init\_\_.py} exists.
 
-Another possible convention is to put the \package{foo} package right in 
-\file{lib}, the \package{foo.bar} package in \file{lib/bar}, etc.  This
+Another possible convention is to put the \module{foo} package right in 
+\file{lib}, the \module{foo.bar} package in \file{lib/bar}, etc.  This
 would be written in the setup script as
 \begin{verbatim}
 package_dir = {'foo': 'lib'}
 \end{verbatim}
 Note that a \code{\var{package}: \var{dir}} entry in the
 \option{package\_dir} option implicitly applies to all packages below
-\var{package}, so the \package{foo.bar} case is automatically handled
+\var{package}, so the \module{foo.bar} case is automatically handled
 here.  In this example, having \code{packages = ['foo', 'foo.bar']}
 tells the Distutils to look for \file{lib/\_\_init\_\_.py} and
 \file{lib/bar/\_\_init\_\_.py}.
@@ -305,7 +305,7 @@ slightly more involved example:
 py_modules = ['mod1', 'pkg.mod2']
 \end{verbatim}
 This describes two modules, one of them in the ``root'' package, the
-other in the \package{pkg} package.  Again, the default
+other in the \module{pkg} package.  Again, the default
 package/directory layout implies that these two modules can be found in
 \file{mod1.py} and \file{pkg/mod2.py}, and that \file{pkg/\_\_init\_\_.py}
 exists as well.  And again, you can override the package/directory
