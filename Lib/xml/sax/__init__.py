@@ -7,42 +7,42 @@ documented at <...>.
 
 This package contains the following modules:
 
-saxutils -- Implementation of the convenience functions normally used
-            to work with SAX.
+handler -- Base classes and constants which define the SAX 2 API for
+           the 'client-side' of SAX for Python.
 
-saxlib -- Implementation of the shared SAX 2 classes.
+saxutils -- Implementation of the convenience classes commonly used to
+            work with SAX.
 
-drv_pyexpat -- Driver that allows use of the Expat parser with the classes
-               defined in saxlib.
+xmlreader -- Base classes and constants which define the SAX 2 API for
+             the parsers used with SAX for Python.
+
+expatreader -- Driver that allows use of the Expat parser with the
+               classes defined in saxlib.
 
 """
 
 from handler import ContentHandler, ErrorHandler
 from expatreader import ExpatParser
 from _exceptions import SAXException, SAXNotRecognizedException, \
-			SAXParseException, SAXNotSupportedException
-import xmlreader
-import saxutils
+                        SAXParseException, SAXNotSupportedException
 
-def parse( filename_or_stream, handler, errorHandler=ErrorHandler() ):
-    parser=ExpatParser()
-    parser.setContentHandler( handler )
-    parser.setErrorHandler( errorHandler )
-    parser.parse( filename_or_stream )
 
-def parseString( string, handler, errorHandler=ErrorHandler() ):
+def parse(filename_or_stream, handler, errorHandler=ErrorHandler()):
+    parser = ExpatParser()
+    parser.setContentHandler(handler)
+    parser.setErrorHandler(errorHandler)
+    parser.parse(filename_or_stream)
+
+
+def parseString(string, handler, errorHandler=ErrorHandler()):
     try:
-        import cStringIO
-        stringio=cStringIO.StringIO
+        from cStringIO import StringIO
     except ImportError:
-        import StringIO
-        stringio=StringIO.StringIO
+        from StringIO import StringIO
         
-    bufsize=len( string )
-    buf=stringio( string )
- 
-    parser=ExpatParser()
-    parser.setContentHandler( handler )
-    parser.setErrorHandler( errorHandler )
-    parser.parse( buf )
-
+    if errorHandler is None:
+        errorHandler = ErrorHandler()
+    parser = ExpatParser()
+    parser.setContentHandler(handler)
+    parser.setErrorHandler(errorHandler)
+    parser.parse(StringIO(string))
