@@ -41,7 +41,8 @@ import string
 
 # Import SOCKS module if it exists, else standard socket module socket
 try:
-	import SOCKS; socket = SOCKS
+	import SOCKS; socket = SOCKS; del SOCKS # import SOCKS as socket
+	from socket import getfqdn; socket.getfqdn = getfqdn; del getfqdn
 except ImportError:
 	import socket
 
@@ -291,17 +292,8 @@ class FTP:
 		if not passwd: passwd = ''
 		if not acct: acct = ''
 		if user == 'anonymous' and passwd in ('', '-'):
-			thishost = socket.gethostname()
-			# Make sure it is fully qualified
-			if not '.' in thishost:
-				thisaddr = socket.gethostbyname(thishost)
-				firstname, names, unused = \
-					   socket.gethostbyaddr(thisaddr)
-				names.insert(0, firstname)
-				for name in names:
-					if '.' in name:
-						thishost = name
-						break
+			# get fully qualified domain name of local host
+			thishost = socket.getfqdn()
 			try:
 				if os.environ.has_key('LOGNAME'):
 					realuser = os.environ['LOGNAME']
