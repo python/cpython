@@ -23,6 +23,9 @@ typedef struct _is {
     PyObject *builtins;
 
     int checkinterval;
+#ifdef HAVE_DLOPEN
+    int dlopenflags;
+#endif
 
 } PyInterpreterState;
 

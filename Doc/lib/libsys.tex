@@ -180,6 +180,13 @@ way to exit a program when an error occurs.
   \versionadded{2.0}
 \end{funcdesc}
 
+\begin{funcdesc}{getdlopenflags}{}
+ Return the current value of the flags that are used for \code{dlopen}
+ calls. The flag constants are defined in the \refmodule{dl} and
+ \module{DLFCN} modules.
+ \versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{getrefcount}{object}
 Return the reference count of the \var{object}.  The count returned is
 generally one higher than you might expect, because it includes the
@@ -331,6 +338,20 @@ maximizing responsiveness as well as overhead.
 %  the \programopt{-S} option is passed to the interpreter, in which
 %  case this function will remain available.
   \versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{sertdlopenflags}{n}
+ Set the flags that will be used for \code{dlopen()} calls, i.e. when
+ the interpreter loads extension modules. Among other things, this
+ will enable a lazy resolving of symbols when imporing a module, if
+ called as \code{sys.setdlopenflags(0)}. To share symols across
+ extension modules, call as
+ \code{sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)}.  The symbolic
+ names for the flag modules can be either found in the \refmodule{dl}
+ module, or in the \module{DLFCN} module. If \module{DLFCN} is not
+ available, it can be generated from \code{/usr/include/dlfcn.h} using
+ the \code{h2py} script.
+ \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{setprofile}{profilefunc}

@@ -394,6 +394,48 @@ Return the current value of the recursion limit, the maximum depth\n\
 of the Python interpreter stack.  This limit prevents infinite\n\
 recursion from causing an overflow of the C stack and crashing Python.";
 
+#ifdef HAVE_DLOPEN
+static PyObject *
+sys_setdlopenflags(PyObject *self, PyObject *args)
+{
+	int new_val;
+        PyThreadState *tstate = PyThreadState_Get();
+	if (!PyArg_ParseTuple(args, "i:setdlopenflags", &new_val))
+		return NULL;
+        if (!tstate)
+		return NULL;
+        tstate->interp->dlopenflags = new_val;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char setdlopenflags_doc[] =
+"setdlopenflags(n) -> None\n\
+\n\
+Set the flags that will be used for dlopen() calls. Among other\n\
+things, this will enable a lazy resolving of symbols when imporing\n\
+a module, if called as sys.setdlopenflags(0)\n\
+To share symols across extension modules, call as\n\
+sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)";
+
+static PyObject *
+sys_getdlopenflags(PyObject *self, PyObject *args)
+{
+        PyThreadState *tstate = PyThreadState_Get();
+	if (!PyArg_ParseTuple(args, ":getdlopenflags"))
+		return NULL;
+        if (!tstate)
+		return NULL;
+        return PyInt_FromLong(tstate->interp->dlopenflags);
+}
+
+static char getdlopenflags_doc[] =
+"getdlopenflags() -> int\n\
+\n\
+Return the current value of the flags that are used for dlopen()\n\
+calls. The flag constants are defined in the dl module.";
+#endif
+
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
 #include <malloc.h>
@@ -501,6 +543,10 @@ static PyMethodDef sys_methods[] = {
 	{"exit",	sys_exit, 0, exit_doc},
 	{"getdefaultencoding", sys_getdefaultencoding, 1,
 	 getdefaultencoding_doc}, 
+#ifdef HAVE_DLOPEN
+        {"getdlopenflags", sys_getdlopenflags, 1, 
+         getdlopenflags_doc},
+#endif
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 1},
 #endif
@@ -522,6 +568,10 @@ static PyMethodDef sys_methods[] = {
 	 setdefaultencoding_doc}, 
 	{"setcheckinterval",	sys_setcheckinterval, 1,
 	 setcheckinterval_doc}, 
+#ifdef HAVE_DLOPEN
+        {"setdlopenflags", sys_setdlopenflags, 1, 
+         setdlopenflags_doc},
+#endif
 	{"setprofile",	sys_setprofile, 0, setprofile_doc},
 	{"setrecursionlimit", sys_setrecursionlimit, 1,
 	 setrecursionlimit_doc},
@@ -659,9 +709,11 @@ displayhook() -- print an object to the screen, and save it in __builtin__._\n\
 excepthook() -- print an exception and its traceback to sys.stderr\n\
 exc_info() -- return thread-safe information about the current exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\
+getdlopenflags() -- returns flags to be used for dlopen() calls\n\
 getrefcount() -- return the reference count for an object (plus one :-)\n\
 getrecursionlimit() -- return the max recursion depth for the interpreter\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
+setdlopenflags() -- set the flags to be used for dlopen() calls\n\
 setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
