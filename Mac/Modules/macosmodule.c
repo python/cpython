@@ -71,7 +71,6 @@ Rsrc_FromHandle(Handle h)
 static void
 Rsrc_Dealloc(RsrcObject *r)
 {
-	/* XXXX Note by Jack: shouldn't we ReleaseResource here? */
 	PyMem_DEL(r);
 }
 
@@ -120,8 +119,8 @@ Rsrc_AsString(RsrcObject *r, PyObject *args)
 }
 
 static PyMethodDef Rsrc_Methods[] = {
-	{"GetResInfo",	(PyCFunction)Rsrc_GetResInfo, 1},
-	{"AsString",	(PyCFunction)Rsrc_AsString, 1},
+	{"GetResInfo",		(PyCFunction)Rsrc_GetResInfo, 1},
+	{"AsString",		(PyCFunction)Rsrc_AsString, 1},
 	{"AsBytes",		(PyCFunction)Rsrc_AsBytes, 1},
 	{NULL,			NULL}		 /* Sentinel */
 };
@@ -179,51 +178,42 @@ MacOS_GetNamedResource(PyObject *self, PyObject *args)
 /* Miscellaneous File System Operations */
 
 static PyObject *
-MacOS_GetFileType(PyObject *self, PyObject *args)
+MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 {
 	Str255 name;
 	FInfo info;
-	PyObject *type, *creator, *res;
+	PyObject *creator, *type, *res;
 	OSErr err;
 	
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, &name))
 		return NULL;
-	if ((err = GetFInfo(name, 0, &info)) != noErr) {
-		errno = err;
-		PyErr_SetFromErrno(MacOS_Error);
-		return NULL;
-	}
-	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
+	if ((err = GetFInfo(name, 0, &info)) != noErr)
+		return PyErr_Mac(MacOS_Error, err);
 	creator = PyString_FromStringAndSize((char *)&info.fdCreator, 4);
-	res = Py_BuildValue("OO", type, creator);
-	Py_DECREF(type);
+	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
+	res = Py_BuildValue("OO", creator, type);
 	Py_DECREF(creator);
+	Py_DECREF(type);
 	return res;
 }
 
 static PyObject *
-MacOS_SetFileType(PyObject *self, PyObject *args)
+MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 {
 	Str255 name;
-	ResType type, creator;
+	ResType creator, type;
 	FInfo info;
 	OSErr err;
 	
 	if (!PyArg_ParseTuple(args, "O&O&O&",
-			PyMac_GetStr255, &name, PyMac_GetOSType, &type, PyMac_GetOSType, &creator))
+			PyMac_GetStr255, &name, PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
 		return NULL;
-	if ((err = GetFInfo(name, 0, &info)) != noErr) {
-		errno = err;
-		PyErr_SetFromErrno(MacOS_Error);
-		return NULL;
-	}
-	info.fdType = type;
+	if ((err = GetFInfo(name, 0, &info)) != noErr)
+		return PyErr_Mac(MacOS_Error, err);
 	info.fdCreator = creator;
-	if ((err = SetFInfo(name, 0, &info)) != noErr) {
-		errno = err;
-		PyErr_SetFromErrno(MacOS_Error);
-		return NULL;
-	}
+	info.fdType = type;
+	if ((err = SetFInfo(name, 0, &info)) != noErr)
+		return PyErr_Mac(MacOS_Error, err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -411,19 +401,11 @@ MySafeCallback(arg)
 }
 
 static pascal void
-#ifdef __MWERKS__
 MyUserRoutine(SndChannelPtr chan, SndCommand *cmd)
-#else
-MyUserRoutine(SndChannelPtr chan, SndCommand cmd)
-#endif
 {
 	cbinfo *p = (cbinfo *)chan->userInfo;
 	long A5 = SetA5(p->A5);
-#ifdef __MWERKS__
 	p->cmd = *cmd;
-#else
-	p->cmd = cmd;
-#endif
 	Py_AddPendingCall(MySafeCallback, (void *)p);
 	SetA5(A5);
 }
@@ -589,8 +571,8 @@ static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetResource",			MacOS_GetResource, 1},
 	{"GetNamedResource",		MacOS_GetNamedResource, 1},
-	{"GetFileType",			MacOS_GetFileType, 1},
-	{"SetFileType",			MacOS_SetFileType, 1},
+	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
+	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1},
 	{"SndNewChannel",		MacOS_SndNewChannel, 1},
 	{"SndPlay",			MacOS_SndPlay, 1},
 	{"SndControl",			MacOS_SndControl, 1},
