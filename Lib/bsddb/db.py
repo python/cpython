@@ -37,7 +37,7 @@
 # case we ever want to augment the stuff in _db in any way.  For now
 # it just simply imports everything from _db.
 
-if __name__[:len('bsddb3.')] == 'bsddb3.':
+if __name__.startswith('bsddb3.'):
     # import _pybsddb binary as it should be the more recent version from
     # a standalone pybsddb addon package than the version included with
     # python as bsddb._bsddb.
