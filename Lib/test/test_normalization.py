@@ -33,10 +33,8 @@ def test_main():
         raise TestSkipped(TESTDATAFILE + " not found, download from " +
                     "http://www.unicode.org/Public/UNIDATA/" + TESTDATAFILE)
 
-    data = open(TESTDATAFILE).readlines()
-
     part1_data = {}
-    for line in data:
+    for line in open(TESTDATAFILE):
         if '#' in line:
             line = line.split('#')[0]
         line = line.strip()
