@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #951851: Python crashed when reading import table of certain
+  Windows DLLs.
+
 - Bug #215126.  The locals argument to eval() now accepts any mapping type.
 
 - marshal now shares interned strings. This change introduces
