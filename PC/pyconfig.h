@@ -273,10 +273,12 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
    If some compiler does not provide them, modify the #if appropriately. */
-#if _MSC_VER != 1200
+#if defined(_MSC_VER)
+#if _MSC_VER > 1200
 #define HAVE_UINTPTR_T 1
 #define HAVE_INTPTR_T 1
-#endif
+#endif  /* _MSC_VER > 1200  */ 
+#endif  /* _MSC_VER */
 
 #endif
 
