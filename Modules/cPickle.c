@@ -1,5 +1,5 @@
 /*
- * cPickle.c,v 1.61 1998/11/10 00:48:51 jim Exp
+ * cPickle.c,v 1.63 1999/02/05 01:40:06 jim Exp
  * 
  * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
  * All rights reserved.
@@ -49,7 +49,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.61 1998/11/10 00:48:51 jim Exp\n"
+"cPickle.c,v 1.63 1999/02/05 01:40:06 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -2330,6 +2330,11 @@ load_none(Unpicklerobject *self) {
     return 0;
 }
 
+static int
+bad_readline() {
+    PyErr_SetString(UnpicklingError, "pickle data was truncated");
+    return -1;
+}
 
 static int
 load_int(Unpicklerobject *self) {
@@ -2339,6 +2344,7 @@ load_int(Unpicklerobject *self) {
     long l;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (s=pystrndup(s,len)) return -1;
 
     errno = 0;
@@ -2440,6 +2446,7 @@ load_long(Unpicklerobject *self) {
     int len, res = -1;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (s=pystrndup(s,len)) return -1;
 
     UNLESS (l = PyLong_FromString(s, &end, 0))
@@ -2464,6 +2471,7 @@ load_float(Unpicklerobject *self) {
     double d;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (s=pystrndup(s,len)) return -1;
 
     errno = 0;
@@ -2562,6 +2570,7 @@ load_string(Unpicklerobject *self) {
     static PyObject *eval_dict = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (s=pystrndup(s,len)) return -1;
 
     /* Check for unquoted quotes (evil strings) */
@@ -2823,9 +2832,11 @@ load_inst(Unpicklerobject *self) {
     if ((i = marker(self)) < 0) return -1;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (module_name = PyString_FromStringAndSize(s, len - 1)) return -1;
 
     if ((len = (*self->readline_func)(self, &s)) >= 0) {
+        if (len < 2) return bad_readline();
         if (class_name = PyString_FromStringAndSize(s, len - 1)) {
             class = find_class(module_name, class_name);
             Py_DECREF(class_name);
@@ -2855,9 +2866,11 @@ load_global(Unpicklerobject *self) {
     char *s;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (module_name = PyString_FromStringAndSize(s, len - 1)) return -1;
 
     if ((len = (*self->readline_func)(self, &s)) >= 0) {
+        if (len < 2) return bad_readline();
         if (class_name = PyString_FromStringAndSize(s, len - 1)) {
             class = find_class(module_name, class_name);
             Py_DECREF(class_name);
@@ -2879,6 +2892,7 @@ load_persid(Unpicklerobject *self) {
 
     if (self->pers_func) {
         if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+	if (len < 2) return bad_readline();
   
         UNLESS (pid = PyString_FromStringAndSize(s, len - 1)) return -1;
 
@@ -2994,6 +3008,7 @@ load_get(Unpicklerobject *self) {
     char *s;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
 
     UNLESS (py_str = PyString_FromStringAndSize(s, len - 1)) return -1;
 
@@ -3072,6 +3087,7 @@ load_put(Unpicklerobject *self) {
     char *s;
 
     if ((l = (*self->readline_func)(self, &s)) < 0) return -1;
+    if (len < 2) return bad_readline();
     UNLESS (len=self->stack->length) return stackUnderflow();
     UNLESS (py_str = PyString_FromStringAndSize(s, l - 1)) return -1;
     value=self->stack->data[len-1];
@@ -4275,10 +4291,13 @@ init_stuff(PyObject *module, PyObject *module_dict) {
     return 0;
 }
 
+#ifndef DL_EXPORT	/* declarations for DLL import/export */
+#define DL_EXPORT(RTYPE) RTYPE
+#endif
 DL_EXPORT(void)
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.61";
+    char *rev="1.63";
     PyObject *format_version;
     PyObject *compatible_formats;
 
