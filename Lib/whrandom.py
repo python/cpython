@@ -39,7 +39,7 @@ class whrandom:
 		if not xyz:
 			# Initialize from current time
 			import time
-			t = time.time()
+			t = int(time.time())
 			t, x = divmod(t, 256)
 			t, y = divmod(t, 256)
 			t, z = divmod(t, 256)

@@ -31,6 +31,7 @@ error = 'calendar error'
 # Turn seconds since epoch into calendar time
 def gmtime(secs):
 	if secs < 0: raise error, 'negative input to gmtime()'
+	secs = int(secs)
 	mins, secs = divmod(secs, 60)
 	hours, mins = divmod(mins, 60)
 	days, hours = divmod(hours, 24)
@@ -146,7 +147,7 @@ def monthcalendar(year, month):
 	key = `year` + month_abbr[month]
 	try:
 		return mc_cache[key]
-	except IOError:
+	except KeyError:
 		mc_cache[key] = ret = _monthcalendar(year, month)
 		return ret
 

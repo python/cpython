@@ -60,12 +60,12 @@ class TransParent(ManageOneChild):
 	def realize(self):
 		if self.child:
 			self.child.realize()
-	def draw(self, args):
+	def draw(self, d, area):
 		if self.child:
-			self.child.draw(args)
-	def altdraw(self, args):
+			self.child.draw(d, area)
+	def altdraw(self, area):
 		if self.child:
-			self.child.altdraw(args)
+			self.child.altdraw(area)
 	#
 	# Downcalls only made after certain upcalls
 	#
@@ -117,7 +117,7 @@ class TransParent(ManageOneChild):
 	#
 	def change(self, area):
 		self.parent.change(area)
-	def scroll(self, args):
-		self.parent.scroll(args)
+	def scroll(self, area, vector):
+		self.parent.scroll(area, vector)
 	def settimer(self, itimer):
 		self.parent.settimer(itimer)
