@@ -31,7 +31,6 @@ def match(pattern, string, flags=0):
     return compile(pattern, _fixflags(flags)).match(string)
 
 def search(pattern, string, flags=0):
-    assert flags == 0
     return compile(pattern, _fixflags(flags)).search(string)
 
 # FIXME: etc
@@ -41,6 +40,6 @@ def search(pattern, string, flags=0):
 
 def _fixflags(flags):
     # convert flag bitmask to sequence
-    assert flags == 0
+    assert not flags
     return ()
 
