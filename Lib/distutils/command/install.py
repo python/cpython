@@ -85,8 +85,9 @@ class install (Command):
         ('install-data=', None,
          "installation directory for data files"),
 
-        # For lazy debuggers who just want to test the install
-        # commands without rerunning "build" all the time
+        # Miscellaneous control options
+        ('force', 'f',
+         "force installation (overwrite any existing files)"),
         ('skip-build', None,
          "skip rebuilding everything (for testing/debugging)"),
 
@@ -146,6 +147,7 @@ class install (Command):
         self.extra_path = None
         self.install_path_file = 0
 
+        self.force = 0
         self.skip_build = 0
 
         # These are only here as a conduit from the 'build' command to the
