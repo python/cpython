@@ -417,7 +417,7 @@ GLHACK=-Dclear=__GLclear
 #DBLIBVER=4.0
 #DBINC=$(DB)/include
 #DBLIB=$(DB)/lib
-#_bsddb _bsddb.c -I$(DBINC) -L$(DBLIB) -ldb-$(DBLIBVER
+#_bsddb _bsddb.c -I$(DBINC) -L$(DBLIB) -ldb-$(DBLIBVER)
 
 # Historical Berkeley DB 1.85
 #
