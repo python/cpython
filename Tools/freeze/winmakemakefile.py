@@ -120,7 +120,3 @@ def realwork(vars, moddefns, target):
     print "clean:"
     print "\t-rm -f *.obj"
     print "\t-rm -f $(target).exe"
-
-# Local Variables:
-# indent-tabs-mode: nil
-# End:
