@@ -30,9 +30,9 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
-libal.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
+libal.tex libaifc.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
 libbltin.tex \
-libcrypto.tex \
+libcopy.tex libcrypto.tex \
 libdbm.tex \
 libexcs.tex \
 libfcntl.tex libfl.tex libfm.tex libfuncs.tex \
@@ -42,13 +42,14 @@ libjpeg.tex \
 libmac.tex libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmm.tex libmods.tex libmpz.tex \
 libobjs.tex libos.tex \
-libpanel.tex libposix.tex libposixfile.tex libppath.tex libpwd.tex \
+libpanel.tex libposix.tex libposixfile.tex libppath.tex libpickle.tex \
+	libpwd.tex \
 librand.tex libregex.tex libregsub.tex librgbimg.tex librotor.tex \
-libselect.tex libsgi.tex libsocket.tex libstd.tex libstdwin.tex \
+libselect.tex libsgi.tex libshelve.tex libsocket.tex libstd.tex libstdwin.tex \
 	libstring.tex libstruct.tex libsun.tex libsys.tex \
 libthread.tex libtime.tex libtypes.tex \
 libunix.tex \
-libwhrandom.tex libaifc.tex
+libwhrandom.tex libwww.tex
 
 lib.dvi: $(LIBFILES)
 	touch lib.ind
