@@ -132,9 +132,6 @@ stringrepr(op)
 		register int i;
 		register char c;
 		register char *p;
-		NEWREF(v);
-		v->ob_type = &Stringtype;
-		((stringobject *)v)->ob_size = newsize;
 		p = ((stringobject *)v)->ob_sval;
 		*p++ = '\'';
 		for (i = 0; i < op->ob_size; i++) {
