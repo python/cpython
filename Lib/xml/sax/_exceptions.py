@@ -91,8 +91,13 @@ class SAXParseException(SAXException):
         sysid = self.getSystemId()
         if sysid is None:
             sysid = "<unknown>"
-        return "%s:%d:%d: %s" % (sysid, self.getLineNumber(),
-                                 self.getColumnNumber(), self._msg)
+        linenum = self.getLineNumber()
+        if linenum is None:
+           linenum = "?"
+        colnum = self.getColumnNumber()
+        if colnum is None:
+           colnum = "?"
+        return "%s:%s:%s: %s" % (sysid, linenum, colnum, self._msg)
 
 
 # ===== SAXNOTRECOGNIZEDEXCEPTION =====
