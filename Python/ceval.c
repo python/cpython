@@ -1231,7 +1231,10 @@ eval_frame(PyFrameObject *f)
 			err = PyList_Append(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			if (err == 0) continue;
+			if (err == 0) {
+				PREDICT(JUMP_ABSOLUTE);
+				continue;
+			}
 			break;
 
 		case INPLACE_POWER:
@@ -2061,6 +2064,7 @@ eval_frame(PyFrameObject *f)
 				break;
 			continue;
 
+		PREDICTED_WITH_ARG(JUMP_ABSOLUTE);
 		case JUMP_ABSOLUTE:
 			JUMPTO(oparg);
 			continue;
