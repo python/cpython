@@ -3,6 +3,7 @@
 import os
 import string
 
+__all__ = ["getcaps","findmatch"]
 
 # Part 1: top-level interface.
 

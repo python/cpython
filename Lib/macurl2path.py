@@ -6,6 +6,8 @@ import string
 import urllib
 import os
 
+__all__ = ["url2pathname","pathname2url"]
+
 def url2pathname(pathname):
     "Convert /-delimited pathname to mac pathname"
     #

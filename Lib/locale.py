@@ -18,6 +18,11 @@ import string, sys
 # If this fails, fall back on a basic 'C' locale emulation.
 #
 
+__all__ = ["setlocale","Error","localeconv","strcoll","strxfrm",
+           "format","str","atof","atoi","LC_CTYPE","LC_COLLATE",
+           "LC_TIME","LC_MONETARY","LC_NUMERIC","LC_MESSAGES",
+           "LC_ALL","CHAR_MAX"]
+
 try:
 
     from _locale import *
