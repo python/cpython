@@ -40,7 +40,7 @@ CFG=_tkinter - Win32 Alpha Debug
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "alpha-temp-debug"
+# PROP Intermediate_Dir "alpha-temp-debug\_tkinter"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 CPP=cl.exe
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "alpha-temp-release"
+# PROP Intermediate_Dir "alpha-temp-release\_tkinter"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 CPP=cl.exe
@@ -103,7 +103,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "x86-temp-debug"
+# PROP Intermediate_Dir "x86-temp-debug\_tkinter"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe
@@ -134,7 +134,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "x86-temp-release"
+# PROP Intermediate_Dir "x86-temp-release\_tkinter"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe

@@ -39,7 +39,7 @@ CFG=parser - Win32 Alpha Debug
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "x86-temp-release"
+# PROP Intermediate_Dir "x86-temp-release\parser"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe
@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /out:"./parser.pyd" /libpath:"Release" /export:initparser
+# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x1eA00000" /subsystem:windows /dll /debug /machine:I386 /out:"./parser.pyd" /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "parser - Win32 Debug"
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "x86-temp-debug"
+# PROP Intermediate_Dir "x86-temp-debug\parser"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 F90=df.exe
@@ -88,7 +88,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /out:"./parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
+# ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x1eA00000" /subsystem:windows /dll /debug /machine:I386 /out:"./parser_d.pyd" /pdbtype:sept /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "parser - Win32 Alpha Debug"
@@ -102,7 +102,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "alpha-temp-debug"
+# PROP Intermediate_Dir "alpha-temp-debug\parser"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 CPP=cl.exe
@@ -118,9 +118,9 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser_d.pyd" /pdbtype:sept /export:initparser
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-debug/parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1eA00000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-debug/parser_d.pyd" /pdbtype:sept /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "parser - Win32 Alpha Release"
@@ -134,7 +134,7 @@ LINK32=link.exe
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "."
-# PROP Intermediate_Dir "alpha-temp-release"
+# PROP Intermediate_Dir "alpha-temp-release\parser"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 CPP=cl.exe
@@ -150,9 +150,9 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser.pyd" /libpath:"Release" /export:initparser
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser.pyd" /export:initparser
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release/parser.pyd" /libpath:"Release" /export:initparser
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1eA00000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release/parser.pyd" /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
