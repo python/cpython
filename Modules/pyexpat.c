@@ -925,8 +925,10 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if ((bytes = PyInt_FromLong(buf_size)) == NULL)
         goto finally;
 
-    if ((arg = PyTuple_New(1)) == NULL)
+    if ((arg = PyTuple_New(1)) == NULL) {
+        Py_DECREF(bytes);
         goto finally;
+    }
 
     PyTuple_SET_ITEM(arg, 0, bytes);
 
@@ -946,7 +948,6 @@ readinst(char *buf, int buf_size, PyObject *meth)
                      "read() returned too much data: "
                      "%i bytes requested, %i returned",
                      buf_size, len);
-        Py_DECREF(str);
         goto finally;
     }
     memcpy(buf, PyString_AsString(str), len);
@@ -987,8 +988,10 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
     for (;;) {
         int bytes_read;
         void *buf = XML_GetBuffer(self->itself, BUF_SIZE);
-        if (buf == NULL)
+        if (buf == NULL) {
+            Py_DECREF(readmethod);
             return PyErr_NoMemory();
+        }
 
         if (fp) {
             bytes_read = fread(buf, sizeof(char), BUF_SIZE, fp);
@@ -999,16 +1002,21 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
         }
         else {
             bytes_read = readinst(buf, BUF_SIZE, readmethod);
-            if (bytes_read < 0)
+            if (bytes_read < 0) {
+                Py_DECREF(readmethod);
                 return NULL;
+            }
         }
         rv = XML_ParseBuffer(self->itself, bytes_read, bytes_read == 0);
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
+            Py_XDECREF(readmethod);
             return NULL;
+        }
 
         if (!rv || bytes_read == 0)
             break;
     }
+    Py_XDECREF(readmethod);
     return get_parse_result(self, rv);
 }
 
