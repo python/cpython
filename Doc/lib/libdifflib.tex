@@ -320,7 +320,7 @@ The \class{SequenceMatcher} class has this constructor:
   Optional argument \var{isjunk} must be \code{None} (the default) or
   a one-argument function that takes a sequence element and returns
   true if and only if the element is ``junk'' and should be ignored.
-  Passing \code{None} for \var{b} is equivalent to passing
+  Passing \code{None} for \var{isjunk} is equivalent to passing
   \code{lambda x: 0}; in other words, no elements are ignored.  For
   example, pass:
 
