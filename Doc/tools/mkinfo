@@ -17,7 +17,12 @@ MAKEINFO=${MAKEINFO:-makeinfo}
 FILENAME="$1"
 DOCDIR=`dirname "$FILENAME"`
 DOCFILE=`basename "$FILENAME"`
-DOCNAME=`basename "$FILENAME" .html`
+DOCNAME=`basename "$FILENAME" .tex`
+if [ $# -gt 1 ]; then
+    INFONAME="$2"
+else
+    INFONAME="python-$DOCNAME.info"
+fi
 
 # Now build the real directory names, and locate our support stuff:
 WORKDIR=`pwd`
@@ -31,18 +36,20 @@ cd $WORKDIR
 run() {
     # show what we're doing, like make does:
     echo "$*"
-    $* || exit $?
+    "$@" || exit $?
 }
 
 
 # generate the Texinfo file:
 
-run $PERL -I$TOOLSDIR $TOOLSDIR/html2texi.pl $DOCDIR/$DOCFILE
-run $EMACS -batch -l $TOOLSDIR/fixinfo.el $DOCNAME.texi
-rm -f $DOCNAME.texi~
+run $EMACS -batch -q --no-site-file -l $TOOLSDIR/py2texi.el \
+    --eval "(setq py2texi-dirs '(\"./\" \"../texinputs/\" \"$DOCDIR\"))" \
+    --eval "(py2texi \"$DOCDIR/$DOCFILE\")" \
+    -f kill-emacs
+echo Done
 
 
 # generate the .info files:
 
 run $MAKEINFO --footnote-style end --fill-column 72 \
-	      --paragraph-indent 0 $DOCNAME.texi
+	      --paragraph-indent 0 --output=$INFONAME $DOCNAME.texi

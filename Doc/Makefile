@@ -88,6 +88,9 @@ BUILDINDEX=$(TOOLSDIR)/buildindex.py
 PYTHONDOCS="See <i><a href=\"about.html\">About this document...</a></i> for information on suggesting changes."
 HTMLBASE=  file:`pwd`
 
+# The emacs binary used to build the info docs. GNU Emacs 21 is required.
+EMACS=     emacs
+
 # The end of this should reflect the major/minor version numbers of
 # the release:
 WHATSNEW=whatsnew23
@@ -287,7 +290,7 @@ paper-$(PAPER)/$(WHATSNEW).pdf:
 # conversions, as described above.  See also the README file.
 
 info:
-	cd $(INFODIR) && $(MAKE)
+	cd $(INFODIR) && $(MAKE) EMACS=$(EMACS)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
