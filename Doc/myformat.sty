@@ -114,6 +114,11 @@
 \let\endfulllineitems\endlist
 
 
+% cfuncdesc should be called as an \begin{cfuncdesc} ... \end{cfuncdesc}
+\newcommand{\cfuncline}[3]{\item[\code{#1 #2(\varvars{#3})}]\ttindex{#2}}
+\newcommand{\cfuncdesc}[3]{\fulllineitems\cfuncline{#1}{#2}{#3}}
+\let\endcfuncdesc\endfulllineitems
+
 % funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
 \newcommand{\funcline}[2]{\item[\code{#1(\varvars{#2})}]\ttindex{#1}}
 \newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
