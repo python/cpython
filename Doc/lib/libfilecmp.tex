@@ -1,0 +1,40 @@
+\section{\module{filecmp} ---
+         File Comparisons}
+
+\declaremodule{standard}{filecmp}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{Compare files efficiently.}
+
+The \module{filecmp} module defines a function to compare files, taking all
+sort of short-cuts to make it a highly efficient operation.
+
+The \module{filecmp} module defines the following function:
+
+\begin{funcdesc}{cmp}{f1, f2\optional{, shallow\optional{, use_statcache}}}
+Compare the files named \var{f1} and \var{f2}, returning \code{1}
+if they seem equal, \code{0} otherwise.
+
+Unless \var{shallow} is given and is false, files with identical
+\function{os.stat()} signatures are taken to be equal. If
+\var{use_statcache} is given and is true,
+\function{statcache.stat()} will be called rather then \var{os.stat()}.
+
+Files that were compared using this function will not be compared again
+unless their \function{os.stat()} signature changes. Note that using
+\var{use_statcache} true will cause the cache invalidation mechanism to 
+fail --- the stale stat value will be used from \refmodule{statcache}'s 
+cache.
+
+Note that no external programs are called from this module giving it
+portability and efficiency.
+\end{funcdesc}
+
+Example:
+
+\begin{verbatim}
+>>> import filecmp
+>>> filecmp.cmp('libundoc.tex', 'libundoc.tex')
+1
+>>> filecmp.cmp('libundoc.tex', 'lib.tex')
+0
+\end{verbatim}
