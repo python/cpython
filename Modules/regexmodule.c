@@ -130,7 +130,8 @@ regobj_match(re, args)
 	}
 	Py_XDECREF(re->re_lastok);
 	re->re_lastok = NULL;
-	result = re_match(&re->re_patbuf, buffer, size, offset, &re->re_regs);
+	result = _Py_re_match(&re->re_patbuf, buffer, size, offset,
+			      &re->re_regs);
 	if (result < -1) {
 		/* Serious failure of some sort; if re_match didn't 
 		   set an exception, raise a generic error */
@@ -173,7 +174,7 @@ regobj_search(re, args)
 	range = size - offset;
 	Py_XDECREF(re->re_lastok);
 	re->re_lastok = NULL;
-	result = re_search(&re->re_patbuf, buffer, size, offset, range,
+	result = _Py_re_search(&re->re_patbuf, buffer, size, offset, range,
 			   &re->re_regs);
 	if (result < -1) {
 		/* Serious failure of some sort; if re_match didn't 
