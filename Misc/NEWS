@@ -228,6 +228,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- time module code that deals with time_t timestamps will now raise a
+  ValueError if more than a second is lost in precision from time_t being less
+  precise than a double.  Closes bug #919012.
+
 - fcntl.ioctl now warns if the mutate flag is not specified.
 
 - nt now properly allows to refer to UNC roots, e.g. in nt.stat().
