@@ -7,57 +7,61 @@ import basewin
 WIDTH = 40
 MAXHEIGHT = 24
 
-class SourceWindow(basewin.BaseWindow):
+
+class TextWindow(basewin.BaseWindow):
 	
-	def init(self, filename):
-		self.filename = filename
-		#
-		f = open(self.filename, 'r') # raise exception if not found
-		self.contents = f.read()
-		f.seek(0)
-		self.linecount = len(f.readlines())
-		f.close()
+	def init(self, title, contents):
+		self.contents = contents
+		self.linecount = countlines(self.contents)
 		#
 		self.lineheight = lh = stdwin.lineheight()
-		self.leftmargin = stdwin.textwidth('00000000')
+		self.leftmargin = self.getmargin()
+		self.top = 0
 		self.rightmargin = 30000 # Infinity
 		self.bottom = lh * self.linecount
 		#
-		stdwin.setdefwinpos(0, 0)
 		width = WIDTH*stdwin.textwidth('0')
 		height = lh*min(MAXHEIGHT, self.linecount)
 		stdwin.setdefwinsize(width, height)
-		self = basewin.BaseWindow.init(self, filename)
+		self = basewin.BaseWindow.init(self, title)
 		#
-		self.win.setdocsize(0, self.bottom + lh)
+		self.win.setdocsize(0, self.bottom)
 		self.initeditor()
 		return self
 	
 	def initeditor(self):
-		r = (self.leftmargin, 0), (self.rightmargin, self.bottom)
+		r = (self.leftmargin, self.top), (self.rightmargin, self.bottom)
 		self.editor = self.win.textcreate(r)
 		self.editor.settext(self.contents)
 	
 	def closeeditor(self):
 		self.editor.close()
 	
-	def reopen(self):
-		self.closeeditor()
-		basewin.BaseWindow.reopen(self)
-		self.initeditor()
+#	def reopen(self):
+#		self.closeeditor()
+#		basewin.BaseWindow.reopen(self)
+#		self.initeditor()
 	
-	def close(self):
-		self.closeeditor()
-		basewin.BaseWindow.close(self)
+	# Override the following two methods to format line numbers differently
 	
-	# Override this method to format line numbers differently
 	def getmark(self, lineno):
 		return `lineno`
+	
+	def getmargin(self):
+		return stdwin.textwidth(`self.linecount + 1` + ' ')
+	
+	# Event dispatcher, called from mainloop.mainloop()
 	
 	def dispatch(self, event):
 		if event[0] == WE_NULL: return # Dummy tested by mainloop
 		if event[0] == WE_DRAW or not self.editor.event(event):
 			basewin.BaseWindow.dispatch(self, event)
+	
+	# Event handlers
+	
+	def close(self):
+		self.closeeditor()
+		basewin.BaseWindow.close(self)
 	
 	def draw(self, detail):
 		dummy = self.editor.draw(detail)
@@ -75,7 +79,9 @@ class SourceWindow(basewin.BaseWindow):
 		finally:
 			d.close()
 	
-	def changemark(self, lineno):
+	# Calls from outside
+	
+	def changemark(self, lineno): # redraw the mark for a line
 		left = 0
 		top = (lineno-1) * self.lineheight
 		right = self.leftmargin
@@ -87,13 +93,34 @@ class SourceWindow(basewin.BaseWindow):
 		finally:
 			d.close()
 
-	def showline(self, lineno):
+	def showline(self, lineno): # scroll to make a line visible
 		left = 0
 		top = (lineno-1) * self.lineheight
 		right = self.leftmargin
 		bottom = lineno * self.lineheight
 		self.win.show((left, top), (right, bottom))
 
+
+# Subroutine to count the number of lines in a string
+
+def countlines(text):
+	n = 0
+	for c in text:
+		if c == '\n': n = n+1
+	if text and text[-1] != '\n': n = n+1 # Partial last line
+	return n
+
+
+class SourceWindow(TextWindow):
+
+	def init(self, filename):
+		self.filename = filename
+		f = open(self.filename, 'r')
+		contents = f.read()
+		f.close()
+		return TextWindow.init(self, self.filename, contents)
+
+# ------------------------------ testing ------------------------------
 
 TESTFILE = 'srcwin.py'
 
