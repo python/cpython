@@ -2,7 +2,8 @@
 #
 # Drive HTML generation for a Python manual.
 #
-# This is probably *not* useful outside of the standard Python documentation.
+# This is probably *not* useful outside of the standard Python documentation,
+# but suggestions are welcome and should be sent to <python-docs@python.org>.
 #
 # The first arg is required and is the designation for which manual to build;
 # api, ext, lib, ref, or tut.  All other args are passed on to latex2html.
@@ -28,8 +29,8 @@ latex2html \
  -address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' \
  -dir $part \
  ${1:+$@} \
- $srcdir/$part/$part.tex
+ $srcdir/$part/$part.tex || exit $?
 
-echo '(cd '$part'; '$srcdir'/tools/node2label.pl *.html)'
+echo "(cd $part; $srcdir/tools/node2label.pl \*.html)"
 cd $part
-$srcdir/tools/node2label.pl *.html
+$srcdir/tools/node2label.pl *.html || exit $?
