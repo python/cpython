@@ -6,9 +6,10 @@ getuser() - get the user name from the environment or password database
 On Windows, the msvcrt module will be used.
 On the Mac EasyDialogs.AskPassword is used, if available.
 
-Authors: Piers Lauder (original)
-         Guido van Rossum (Windows support and cleanup)
 """
+
+# Authors: Piers Lauder (original)
+#          Guido van Rossum (Windows support and cleanup)
 
 import sys
 

@@ -2,14 +2,6 @@
 
 """SMTP/ESMTP client class.
 
-Author: The Dragon De Monsyne <dragondm@integral.org>
-ESMTP support, test code and doc fixes added by
-    Eric S. Raymond <esr@thyrsus.com>
-Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
-    by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
-   
-This was modified from the Python 1.5 library HTTP lib.
-
 This should follow RFC 821 (SMTP) and RFC 1869 (ESMTP).
 
 Notes:
@@ -38,6 +30,14 @@ Example:
   (250, "Somebody OverHere <somebody@here.my.org>")
   >>> s.quit()
 """
+
+# Author: The Dragon De Monsyne <dragondm@integral.org>
+# ESMTP support, test code and doc fixes added by
+#     Eric S. Raymond <esr@thyrsus.com>
+# Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
+#     by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
+#    
+# This was modified from the Python 1.5 library HTTP lib.
 
 import socket
 import string

@@ -3,10 +3,6 @@
 
 Based on RFC 2060.
 
-Author: Piers Lauder <piers@cs.su.oz.au> December 1997.
-
-Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
-
 Public class:		IMAP4
 Public variable:	Debug
 Public functions:	Internaldate2tuple
@@ -14,6 +10,10 @@ Public functions:	Internaldate2tuple
 			ParseFlags
 			Time2Internaldate
 """
+
+# Author: Piers Lauder <piers@cs.su.oz.au> December 1997.
+# 
+# Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
 
 __version__ = "2.32"
 
