@@ -36,6 +36,8 @@ int getargs PROTO((object *, char *, ...));
 int newgetargs PROTO((object *, char *, ...));
 int vgetargs PROTO((object *, char *, va_list));
 
+int PyArg_ParseTupleAndKeywords PROTO((object *, object *,
+				       char *, char **, ...));
 
 /* Forward */
 static int vgetargs1 PROTO((object *, char *, va_list *, int));
@@ -46,6 +48,9 @@ static char *converttuple PROTO((object *, char **, va_list *,
 static char *convertsimple PROTO((object *, char **, va_list *, char *));
 static char *convertsimple1 PROTO((object *, char **, va_list *));
 
+static int vgetargskeywords PROTO((object *, object *,
+				   char *, char **, va_list *));
+static char *skipitem PROTO((char **, va_list *));
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
@@ -502,7 +507,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'D': /* complex double */
 		{
 			Py_complex *p = va_arg(*p_va, Py_complex *);
-			Py_complex cval = PyComplex_AsCComplex(arg);
+			Py_complex cval;
+			cval = PyComplex_AsCComplex(arg);
 			if (err_occurred())
 				return "complex<D>";
 			else
@@ -555,7 +561,8 @@ convertsimple1(arg, p_format, p_va)
 					*q = getstringsize(arg);
 				format++;
 			}
-			else if (*p != NULL && strlen(*p) != getstringsize(arg))
+			else if (*p != NULL &&
+				 strlen(*p) != getstringsize(arg))
 				return "None or string without null bytes";
 			break;
 		}
@@ -593,7 +600,8 @@ convertsimple1(arg, p_format, p_va)
 				}
 			}
 			else if (*format == '&') {
-				typedef int (*converter) PROTO((object *, void *));
+				typedef int (*converter)
+					PROTO((object *, void *));
 				converter convert = va_arg(*p_va, converter);
 				void *addr = va_arg(*p_va, void *);
 				format++;
@@ -603,6 +611,378 @@ convertsimple1(arg, p_format, p_va)
 			else {
 				p = va_arg(*p_va, object **);
 				*p = arg;
+			}
+			break;
+		}
+	
+	default:
+		return "impossible<bad format char>";
+	
+	}
+	
+	*p_format = format;
+	return NULL;
+}
+
+
+/* Support for keyword arguments donated by
+   Geoff Philbrick <philbric@delphi.hks.com> */
+
+#ifdef HAVE_STDARG_PROTOTYPES
+/* VARARGS2 */
+int PyArg_ParseTupleAndKeywords(object *args,
+				object *keywords,
+				char *format, 
+				char **kwlist, ...)
+#else
+/* VARARGS */
+int PyArg_ParseTupleAndKeywords(va_alist) va_dcl
+#endif
+{
+	int retval;
+	va_list va;
+#ifdef HAVE_STDARG_PROTOTYPES
+	
+	va_start(va, kwlist);
+#else
+	object *args;
+	object *keywords;
+	char *format;
+	char **kwlist;
+	
+	va_start(va);
+	args = va_arg(va, object *);
+	keywords = va_arg(va, object *);
+	format = va_arg(va, char *);
+	kwlist = va_arg(va, char **);
+#endif
+	retval = vgetargskeywords(args, keywords, format, kwlist, &va);	
+	va_end(va);
+	return retval;
+}
+
+
+static int
+vgetargskeywords(args, keywords, format, kwlist, p_va)
+	object *args;
+	object *keywords;
+	char *format;
+	char **kwlist;
+	va_list *p_va;
+{
+	char msgbuf[256];
+	int levels[32];
+	char *fname = NULL;
+	char *message = NULL;
+	int min = -1;
+	int max = 0;
+	int level = 0;
+	char *formatsave = format;
+	int i, len, tplen, kwlen;
+	char *msg, *ks, **p;
+	int nkwds, pos, match, converted;
+	object *key, *value, *item;
+	
+	/* nested tuples cannot be parsed when using keyword arguments */
+	
+	for (;;) {
+		int c = *format++;
+		if (c == '(') {
+			PyErr_SetString(PyExc_SystemError,
+		      "tuple found in format when using keyword arguments");
+			return 0;
+		}
+		else if (c == '\0')
+			break;
+		else if (c == ':') {
+			fname = format;
+			break;
+		}
+		else if (c == ';') {
+			message = format;
+			break;
+		}
+		else if (isalpha(c))
+			max++;
+		else if (c == '|')
+			min = max;
+	}	
+	
+	if (min < 0)
+		min = max;
+	
+	format = formatsave;
+	
+	if (!PyTuple_Check(args)) {
+		PyErr_SetString(PyExc_SystemError,
+		    "new style getargs format but argument is not a tuple");
+		return 0;
+	}	
+	
+	tplen = PyTuple_Size(args);
+	
+	/* do a cursory check of the keywords just to see how many we got */
+	   
+	if (keywords) { 	
+		if (!PyDict_Check(keywords)) {
+			PyErr_SetString(PyExc_SystemError,
+	  "non-dictionary object received when keyword dictionary expected");
+			return 0;
+		}	
+		kwlen = PyDict_Size(keywords);
+	}
+	else {
+		kwlen = 0;
+	}
+			
+	/* make sure there are no duplicate values for an argument;
+	   its not clear when to use the term "keyword argument vs. 
+	   keyword parameter in messages */
+	
+	if (keywords) {
+		for (i = 0; i < tplen; i++) {
+			if (PyMapping_HasKeyString(keywords, kwlist[i])) {
+				sprintf(msgbuf,
+					"keyword parameter %s redefined",
+					kwlist[i]);
+				PyErr_SetString(PyExc_TypeError, msgbuf);
+				return 0;
+			}
+		}
+	}
+	PyErr_Clear(); /* I'm not which Py functions set the error string */
+		
+	/* required arguments missing from args can be supplied by keyword 
+	   arguments */
+	
+	len = tplen;
+	if (keywords && tplen < min) {
+		for (i = tplen; i < min; i++) {
+		  if (PyMapping_HasKeyString(keywords, kwlist[i])) {
+				len++;
+		  }
+		}
+	}
+	PyErr_Clear();	
+	
+	/* make sure we got an acceptable number of arguments; the message
+	   is a little confusing with keywords since keyword arguments
+	   which are supplied, but don't match the required arguments
+	   are not included in the "%d given" part of the message */
+
+	if (len < min || max < len) {
+		if (message == NULL) {
+			sprintf(msgbuf,
+				"%s requires %s %d argument%s; %d given",
+				fname==NULL ? "function" : fname,
+				min==max ? "exactly"
+				         : len < min ? "at least" : "at most",
+				len < min ? min : max,
+				(len < min ? min : max) == 1 ? "" : "s",
+				len);
+			message = msgbuf;
+		}
+		PyErr_SetString(PyExc_TypeError, message);
+		return 0;
+	}
+	
+	for (i = 0; i < tplen; i++) {
+		if (*format == '|')
+			format++;
+		msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
+				 levels, msgbuf);
+		if (msg) {
+			seterror(i+1, msg, levels, fname, message);
+			return 0;
+		}
+	}
+
+	/* handle no keyword parameters in call  */	
+	   	   
+	if (!keywords) return 1; 
+		
+	/* make sure the number of keywords in the keyword list matches the 
+	   number of items in the format string */
+	  
+	nkwds = 0;
+	p =  kwlist;
+	for (;;) {
+		if (!*(p++)) break;
+		nkwds++;
+	}
+
+	if (nkwds != max) {
+		PyErr_SetString(PyExc_SystemError,
+	  "number of items in format string and keyword list do not match");
+		return 0;
+	}	  	  
+			
+	/* convert the keyword arguments; this uses the format 
+	   string where it was left after processing args */
+	
+	converted = 0;
+	for (i = tplen; i < nkwds; i++) {
+		if (*format == '|')
+			format++;
+		if (item = PyMapping_GetItemString(keywords, kwlist[i])) {
+			msg = convertitem(item, &format, p_va, levels, msgbuf);
+			if (msg) {
+				seterror(i+1, msg, levels, fname, message);
+				return 0;
+			}
+			converted++;
+		}
+		else {
+			PyErr_Clear();
+			msg = skipitem(&format, p_va);
+			if (msg) {
+				seterror(i+1, msg, levels, fname, message);
+				return 0;
+			}
+		}
+	}
+	
+	/* make sure there are no extraneous keyword arguments */
+	
+	pos = 0;
+	if (converted < kwlen) {
+		while (PyDict_Next(keywords, &pos, &key, &value)) {
+			match = 0;
+			ks = PyString_AsString(key);
+			for (i = 0; i < nkwds; i++) {
+				if (!strcmp(ks, kwlist[i])) {
+					match = 1;
+					break;
+				}
+			}
+			if (!match) {
+				sprintf(msgbuf,
+		         "%s is an invalid keyword argument for this function",
+					ks);
+				PyErr_SetString(PyExc_TypeError, msgbuf);
+				return 0;
+			}
+		}
+	}
+	
+	return 1;
+}
+
+
+static char *
+skipitem(p_format, p_va)
+	char **p_format;
+	va_list *p_va;
+{
+	char *format = *p_format;
+	char c = *format++;
+	
+	switch (c) {
+	
+	case 'b': /* byte -- very short int */
+		{
+			va_arg(*p_va, char *);
+			break;
+		}
+	
+	case 'h': /* short int */
+		{
+			va_arg(*p_va, short *);
+			break;
+		}
+	
+	case 'i': /* int */
+		{
+			va_arg(*p_va, int *);
+			break;
+		}
+	
+	case 'l': /* long int */
+		{
+			va_arg(*p_va, long *);
+			break;
+		}
+	
+	case 'f': /* float */
+		{
+			va_arg(*p_va, float *);
+			break;
+		}
+	
+	case 'd': /* double */
+		{
+			va_arg(*p_va, double *);
+			break;
+		}
+	
+#ifndef WITHOUT_COMPLEX
+	case 'D': /* complex double */
+		{
+			va_arg(*p_va, Py_complex *);
+			break;
+		}
+#endif /* WITHOUT_COMPLEX */
+	
+	case 'c': /* char */
+		{
+			va_arg(*p_va, char *);
+			break;
+		}
+	
+	case 's': /* string */
+		{
+			va_arg(*p_va, char **);
+			if (*format == '#') {
+				va_arg(*p_va, int *);
+				format++;
+			}
+			break;
+		}
+	
+	case 'z': /* string */
+		{
+			va_arg(*p_va, char **);
+			if (*format == '#') {
+				va_arg(*p_va, int *);
+				format++;
+			}
+			break;
+		}
+	
+	case 'S': /* string object */
+		{
+			va_arg(*p_va, object **);
+			break;
+		}
+	
+	case 'O': /* object */
+		{
+			typeobject *type;
+			object **p;
+			if (*format == '!') {
+				format++;
+				va_arg(*p_va, typeobject*);
+				va_arg(*p_va, object **);
+			}
+#if 0
+/* I don't know what this is for */
+			else if (*format == '?') {
+				inquiry pred = va_arg(*p_va, inquiry);
+				format++;
+				if ((*pred)(arg)) {
+					va_arg(*p_va, object **);
+				}
+			}
+#endif
+			else if (*format == '&') {
+				typedef int (*converter)
+					PROTO((object *, void *));
+				va_arg(*p_va, converter);
+				va_arg(*p_va, void *);
+				format++;
+			}
+			else {
+				va_arg(*p_va, object **);
 			}
 			break;
 		}
