@@ -1,7 +1,7 @@
 """Suite URL Suite: Standard suite for Uniform Resource Locators
 Level 1, version 1
 
-Generated from Macintosh HD:Internet:Internet-programma's:Internet Explorer 4.5-map:Internet Explorer 4.5
+Generated from Moes:Applications (Mac OS 9):Internet Explorer 5:Internet Explorer
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -18,8 +18,8 @@ class URL_Suite_Events:
 
 	def GetURL(self, _object, _attributes={}, **_arguments):
 		"""GetURL: Open the URL (and optionally save it to disk)
-		Required argument: The URL
-		Keyword argument to: Save the resolved URL contents to this file.
+		Required argument: URL to open
+		Keyword argument to: File into which to save resource located at URL.
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'GURL'
@@ -31,7 +31,7 @@ class URL_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):

@@ -1,7 +1,7 @@
 """Suite Type Definitions: Definitions of records used in scripting the Finder
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -221,46 +221,46 @@ alias_list._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'clbl' : label,
-	'ifam' : icon_family,
-	'alst' : alias_list,
 	'cprf' : preferences,
+	'alst' : alias_list,
+	'ifam' : icon_family,
+	'clbl' : label,
 }
 
 _propdeclarations = {
-	'ics#' : small_monochrome_icon_and_mask,
-	'scda' : shows_creation_date,
-	'uswg' : uses_wide_grid,
-	'sprg' : spring_open_folders,
-	'is32' : small_32_bit_icon,
-	'ICN#' : large_monochrome_icon_and_mask,
-	'cwin' : window,
-	'sdat' : shows_modification_date,
-	'iisz' : spatial_view_icon_size,
-	'barr' : button_view_arrangement,
-	'il32' : large_32_bit_icon,
-	'l8mk' : large_8_bit_mask,
-	'scom' : shows_comments,
-	'bisz' : button_view_icon_size,
-	'lisz' : list_view_icon_size,
-	'slbl' : shows_label,
-	'icl4' : large_4_bit_icon,
-	'usme' : uses_simple_menus,
-	'urdt' : uses_relative_dates,
-	'vfnt' : view_font,
-	'sfsz' : calculates_folder_sizes,
-	'pidx' : index,
-	'icl8' : large_8_bit_icon,
-	'ssiz' : shows_size,
-	'ics8' : small_8_bit_mask,
-	'colr' : color,
-	'svrs' : shows_version,
-	'pnam' : name,
-	'sknd' : shows_kind,
-	'vfsz' : view_font_size,
-	'iarr' : spatial_view_arrangement,
-	'ics4' : small_4_bit_icon,
 	'dela' : delay_before_springing,
+	'ics4' : small_4_bit_icon,
+	'iarr' : spatial_view_arrangement,
+	'barr' : button_view_arrangement,
+	'ics#' : small_monochrome_icon_and_mask,
+	'sknd' : shows_kind,
+	'svrs' : shows_version,
+	'colr' : color,
+	'ics8' : small_8_bit_mask,
+	'icl8' : large_8_bit_icon,
+	'sprg' : spring_open_folders,
+	'vfsz' : view_font_size,
+	'sfsz' : calculates_folder_sizes,
+	'l8mk' : large_8_bit_mask,
+	'vfnt' : view_font,
+	'urdt' : uses_relative_dates,
+	'usme' : uses_simple_menus,
+	'icl4' : large_4_bit_icon,
+	'slbl' : shows_label,
+	'lisz' : list_view_icon_size,
+	'scda' : shows_creation_date,
+	'bisz' : button_view_icon_size,
+	'pidx' : index,
+	'scom' : shows_comments,
+	'iisz' : spatial_view_icon_size,
+	'sdat' : shows_modification_date,
+	'cwin' : window,
+	'ICN#' : large_monochrome_icon_and_mask,
+	'is32' : small_32_bit_icon,
+	'pnam' : name,
+	'il32' : large_32_bit_icon,
+	'uswg' : uses_wide_grid,
+	'ssiz' : shows_size,
 }
 
 _compdeclarations = {

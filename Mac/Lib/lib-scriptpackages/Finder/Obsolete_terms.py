@@ -1,7 +1,7 @@
 """Suite Obsolete terms: Terms that have been deprecated
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -175,31 +175,31 @@ status_window._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'ccdv' : control_panel,
-	'iwnd' : information_window,
-	'ctnr' : container,
+	'qwnd' : status_window,
 	'capp' : application,
+	'swnd' : sharing_window,
+	'ccdv' : control_panel,
+	'prcs' : process,
+	'cobj' : item,
+	'file' : file,
 	'sctr' : sharable_container,
 	'cwnd' : container_window,
-	'prcs' : process,
-	'file' : file,
-	'cobj' : item,
-	'qwnd' : status_window,
-	'swnd' : sharing_window,
+	'ctnr' : container,
+	'iwnd' : information_window,
 }
 
 _propdeclarations = {
-	'crtd' : creation_date_obsolete,
-	'cfol' : folder_obsolete,
-	'ctnr' : container,
-	'cwnd' : container_window,
-	'pvwp' : view_preferences,
-	'swnd' : sharing_window,
-	'sctr' : sharable_container,
-	'cobj' : item,
-	'modd' : modification_date_obsolete,
-	'islk' : locked_obsolete,
 	'fitp' : file_type_obsolete,
+	'swnd' : sharing_window,
+	'cfol' : folder_obsolete,
+	'crtd' : creation_date_obsolete,
+	'islk' : locked_obsolete,
+	'modd' : modification_date_obsolete,
+	'sctr' : sharable_container,
+	'pvwp' : view_preferences,
+	'cwnd' : container_window,
+	'ctnr' : container,
+	'cobj' : item,
 }
 
 _compdeclarations = {
