@@ -149,6 +149,9 @@ Core
 
 Library
 
+- The flags used in dlopen calls can now be configured using
+  sys.setdlopenflags and queried using sys.getdlopenflags.
+
 - Fredrik Lundh's xmlrpclib is now a standard library module.  This
   provides full client-side XML-RPC support.  In addition,
   Demo/xmlrpc/ contains two server frameworks (one SocketServer-based,

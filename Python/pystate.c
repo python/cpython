@@ -3,6 +3,16 @@
 
 #include "Python.h"
 
+#ifdef HAVE_DLOPEN
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+#ifndef RTLD_LAZY
+#define RTLD_LAZY 1
+#endif
+#endif
+
+
 #define ZAP(x) { \
 	PyObject *tmp = (PyObject *)(x); \
 	(x) = NULL; \
@@ -39,6 +49,13 @@ PyInterpreterState_New(void)
 		interp->builtins = NULL;
 		interp->checkinterval = 10;
 		interp->tstate_head = NULL;
+#ifdef HAVE_DLOPEN
+#ifdef RTLD_NOW
+                interp->dlopenflags = RTLD_NOW;
+#else
+		interp->dlopenflags = RTLD_LAZY;
+#endif
+#endif
 
 		HEAD_LOCK();
 		interp->next = interp_head;
