@@ -77,9 +77,9 @@ class FileDialog:
     def go(self, directory=os.curdir, pattern="*", default=""):
 	self.directory = directory
 	self.set_filter(directory, pattern)
+	self.filter_command()
 	self.set_selection(default)
 	self.selection.focus_set()
-	self.filter_command()
 	self.top.grab_set()
 	try:
 	    self.master.mainloop()
@@ -136,6 +136,9 @@ class FileDialog:
 	self.files.delete(0, END)
 	for name in matchingfiles:
 	    self.files.insert(END, name)
+	head, tail = os.path.split(self.selection.get())
+	if tail == os.curdir: tail = ''
+	self.set_selection(tail)
 
     def get_filter(self):
 	filter = self.filter.get()
