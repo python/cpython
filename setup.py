@@ -472,8 +472,7 @@ class PyBuildExt(build_ext):
                                    libraries = curses_libs) )
 
         # If the curses module is enabled, check for the panel module
-        if (os.path.exists('Modules/_curses_panel.c') and
-            module_enabled(exts, '_curses') and
+        if (module_enabled(exts, '_curses') and
             self.compiler.find_library_file(lib_dirs, 'panel')):
             exts.append( Extension('_curses_panel', ['_curses_panel.c'],
                                    libraries = ['panel'] + curses_libs) )
