@@ -3,6 +3,7 @@
 
 # Standard/builtin Python modules
 import string
+from string import joinfields, splitfields, find, rfind
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
@@ -18,17 +19,23 @@ uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 # Characters valid in scheme names
 scheme_chars = string.letters + string.digits + '+-.'
 
+_parse_cache = {}
+
+def clear_cache():
+    global _parse_cache
+    _parse_cache = {}
+
+
 # Parse a URL into 6 components:
 # <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 # Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
 # Note that we don't break the components up in smaller bits
 # (e.g. netloc is a single string) and we don't expand % escapes.
 def urlparse(url, scheme = '', allow_framents = 1):
-	netloc = ''
-	path = ''
-	params = ''
-	query = ''
-	fragment = ''
+	key = url, scheme, allow_framents
+	if _parse_cache.has_key(key):
+	    return _parse_cache[key]
+	netloc = path = params = query = fragment = ''
 	i = string.find(url, ':')
 	if i > 0:
 		for c in url[:i]:
@@ -54,7 +61,9 @@ def urlparse(url, scheme = '', allow_framents = 1):
 		i = string.find(url, ';')
 		if i >= 0:
 			url, params = url[:i], url[i+1:]
-	return scheme, netloc, url, params, query, fragment
+	tuple = scheme, netloc, url, params, query, fragment
+	_parse_cache[key] = tuple
+	return tuple
 
 # Put a parsed URL back together again.  This may result in a slightly
 # different, but equivalent URL, if the URL that was parsed originally
@@ -80,7 +89,7 @@ def urljoin(base, url, allow_framents = 1):
 	if not base:
 		return url
 	bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
-		  urlparse(base, '', allow_framents)
+		urlparse(base, '', allow_framents)
 	scheme, netloc, path, params, query, fragment = \
 		urlparse(url, bscheme, allow_framents)
 	# XXX Unofficial hack: default netloc to bnetloc even if
@@ -90,9 +99,9 @@ def urljoin(base, url, allow_framents = 1):
 	   scheme in uses_netloc and bscheme in uses_netloc:
 	   netloc = bnetloc
 	   # Strip the port number
-	   i = string.find(netloc, '@')
+	   i = find(netloc, '@')
 	   if i < 0: i = 0
-	   i = string.find(netloc, ':', i)
+	   i = find(netloc, ':', i)
 	   if i >= 0:
 		   netloc = netloc[:i]
 	if scheme != bscheme or scheme not in uses_relative:
@@ -107,15 +116,12 @@ def urljoin(base, url, allow_framents = 1):
 		return urlunparse((scheme, netloc, path,
 				   params, query, fragment))
 	if not path:
-		path = bpath
-		if not query:
-			query = bquery
-		return urlunparse((scheme, netloc, path,
-				   params, query, fragment))
-	i = string.rfind(bpath, '/')
+		return urlunparse((scheme, netloc, bpath,
+				   params, query or bquery, fragment))
+	i = rfind(bpath, '/')
 	if i >= 0:
 		path = bpath[:i] + '/' + path
-	segments = string.splitfields(path, '/')
+	segments = splitfields(path, '/')
 	if segments[-1] == '.':
 		segments[-1] = ''
 	while '.' in segments:
@@ -132,9 +138,20 @@ def urljoin(base, url, allow_framents = 1):
 			break
 	if len(segments) >= 2 and segments[-1] == '..':
 		segments[-2:] = ['']
-	path = string.joinfields(segments, '/')
-	return urlunparse((scheme, netloc, path,
+	return urlunparse((scheme, netloc, joinfields(segments, '/'),
 			   params, query, fragment))
+
+def urldefrag(url):
+    """Removes any existing fragment from URL.
+
+    Returns a tuple of the defragmented URL and the fragment.  If
+    the URL contained no fragments, the second element is the
+    empty string.
+    """
+    s, n, p, a, q, frag = urlparse(url)
+    defrag = urlunparse((s, n, p, a, q, ''))
+    return defrag, frag
+
 
 test_input = """
       http://a/b/c/d
