@@ -552,7 +552,9 @@ x_divrem(v1, w1, prem)
 		}
 	} /* for j, k */
 	
-	if (a != NULL) {
+	if (a == NULL)
+		*prem = NULL;
+	else {
 		a = long_normalize(a);
 		*prem = divrem1(v, d, &d);
 		/* d receives the (unused) remainder */
@@ -1001,7 +1003,7 @@ long_pow(a, b, c)
 				break;
 			}
 		}
-		if (a == NULL)
+		if (a == NULL || z == NULL)
 			break;
 	}
 	XDECREF(a);
