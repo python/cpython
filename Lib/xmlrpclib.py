@@ -566,11 +566,12 @@ class Marshaller:
     # by the way, if you don't understand what's going on in here,
     # that's perfectly ok.
 
-    def __init__(self, encoding=None):
+    def __init__(self, encoding=None, allow_none=0):
         self.memo = {}
         self.data = None
         self.encoding = encoding
-
+        self.allow_none = allow_none
+        
     dispatch = {}
 
     def dumps(self, values):
@@ -606,6 +607,12 @@ class Marshaller:
         else:
             f(self, value, write)
 
+    def dump_nil (self, value, write):
+        if not self.allow_none:
+            raise TypeError, "cannot marshal None unless allow_none is enabled"
+        write("<value><nil/></value>")
+    dispatch[NoneType] = dump_nil
+    
     def dump_int(self, value, write):
         # in case ints are > 32 bits
         if value > MAXINT or value < MININT:
@@ -773,6 +780,11 @@ class Unmarshaller:
 
     dispatch = {}
 
+    def end_nil (self, data):
+        self.append(None)
+        self._value = 0
+    dispatch["nil"] = end_nil
+    
     def end_boolean(self, data):
         if data == "0":
             self.append(False)
@@ -899,7 +911,8 @@ def getparser():
 # @keyparam encoding The packet encoding.
 # @return A string containing marshalled data.
 
-def dumps(params, methodname=None, methodresponse=None, encoding=None):
+def dumps(params, methodname=None, methodresponse=None, encoding=None,
+          allow_none=0):
     """data [,options] -> marshalled data
 
     Convert an argument tuple or a Fault instance to an XML-RPC
@@ -935,7 +948,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None):
     if FastMarshaller:
         m = FastMarshaller(encoding)
     else:
-        m = Marshaller(encoding)
+        m = Marshaller(encoding, allow_none)
 
     data = m.dumps(params)
 
@@ -1258,7 +1271,8 @@ class ServerProxy:
     the given encoding.
     """
 
-    def __init__(self, uri, transport=None, encoding=None, verbose=0):
+    def __init__(self, uri, transport=None, encoding=None, verbose=0,
+                 allow_none=0):
         # establish a "logical" server connection
 
         # get the url
@@ -1279,11 +1293,13 @@ class ServerProxy:
 
         self.__encoding = encoding
         self.__verbose = verbose
-
+        self.__allow_none = allow_none
+        
     def __request(self, methodname, params):
         # call a method on the remote server
 
-        request = dumps(params, methodname, encoding=self.__encoding)
+        request = dumps(params, methodname, encoding=self.__encoding,
+                        allow_none=self.__allow_none)
 
         response = self.__transport.request(
             self.__host,
@@ -1324,7 +1340,7 @@ if __name__ == "__main__":
     # simple test program (from the XML-RPC specification)
 
     # server = ServerProxy("http://localhost:8000") # local server
-    server = ServerProxy("http://betty.userland.com")
+    server = ServerProxy("http://betty.userland.com") 
 
     print server
 
