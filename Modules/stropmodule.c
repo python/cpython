@@ -547,30 +547,78 @@ strop_atof(self, args)
 }
 
 
+static PyObject *
+strop_maketrans(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
+{
+	unsigned char c[256], *from=NULL, *to=NULL;
+	int i, fromlen=0, tolen=0;
+
+	if (PyTuple_Size(args)!=0) {
+		if (!PyArg_ParseTuple(args, "s#s#", &from, &fromlen, 
+			         &to, &tolen)) 
+			return NULL;	
+	}
+
+	if (fromlen!=tolen) {
+		PyErr_SetString(ValueError,
+				"maketrans arguments must have same length");
+		return NULL;
+	}
+	for(i=0; i<256; i++)
+		c[i]=(unsigned char)i;
+	for(i=0; i<fromlen; i++) {
+		c[from[i]]=to[i];
+	}
+	return PyString_FromStringAndSize((char *)c, 256);
+}
+
+
 static object *
 strop_translate(self, args)
 	object *self;
 	object *args;
 {
-	char *input, *table, *output;
-	int inlen, tablen;
-	object *result;
-	int i;
+	char *input, *table, *output, *output_start, *delete=NULL;
+	int inlen, tablen, dellen;
+	PyObject *result;
+	int i, trans_table[256];
 
-	if (!newgetargs(args, "s#s#", &input, &inlen, &table, &tablen))
+	if (!PyArg_ParseTuple(args, "s#s#|s#", &input, &inlen,
+			      &table, &tablen, &delete, &dellen))
 		return NULL;
 	if (tablen != 256) {
-		err_setstr(ValueError,
+		PyErr_SetString(ValueError,
 			   "translation table must be 256 characters long");
 		return NULL;
 	}
-	result = newsizedstringobject((char *)NULL, inlen);
+	for(i=0; i<256; i++)
+		trans_table[i]=Py_CHARMASK(table[i]);
+	if (delete!=NULL) {
+		for(i=0; i<dellen; i++) 
+			trans_table[delete[i]]=-1;
+	}
+
+	result = PyString_FromStringAndSize((char *)NULL, inlen);
 	if (result == NULL)
 		return NULL;
-	output = getstringvalue(result);
-	for (i = 0; i < inlen; i++) {
-		int c = Py_CHARMASK(*input++);
-		*output++ = table[c];
+	output_start = output = PyString_AsString(result);
+        if (delete!=NULL && dellen!=0) {
+		for (i = 0; i < inlen; i++) {
+			int c = Py_CHARMASK(*input++);
+			if (trans_table[c]!=-1) 
+				*output++ = (char)trans_table[c];
+		}
+		/* Fix the size of the resulting string */
+		if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
+			return NULL; 
+	} else {
+                /* If no deletions are required, use a faster loop */
+		for (i = 0; i < inlen; i++) {
+			int c = Py_CHARMASK(*input++);
+                        *output++ = (char)trans_table[c];
+                }
 	}
 	return result;
 }
@@ -592,6 +640,7 @@ static struct methodlist strop_methods[] = {
 	{"splitfields",	strop_splitfields, 1},
 	{"strip",	strop_strip},
 	{"swapcase",	strop_swapcase},
+	{"maketrans",	strop_maketrans, 1},
 	{"translate",	strop_translate, 1},
 	{"upper",	strop_upper},
 	{NULL,		NULL}	/* sentinel */
