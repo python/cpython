@@ -300,7 +300,8 @@ sub add_module_idx{
 	my $plat = '';
 	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
 	if ($ModulePlatforms{$key} && !$allthesame) {
-	    $plat = " <em>($ModulePlatforms{$key})</em>";
+	    $plat = (" <em>(<span class=platform>$ModulePlatforms{$key}"
+		     . '</span>)</em>');
 	}
 	print MODIDXFILE
 	  $moditem
