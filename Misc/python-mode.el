@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "3.51"
+(defconst py-version "$Revision$"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
