@@ -24,14 +24,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* POSIX module implementation */
 
-/* This file is also used for Windows NT.  In that case the module
+/* This file is also used for Windows NT and MS-Win.  In that case the module
    actually calls itself 'nt', not 'posix', and a few functions are
    either unimplemented or implemented differently.  The source
    assumes that for Windows NT, the macro 'NT' is defined independent
    of the compiler used.  Different compilers define their own feature
-   test macro, e.g. '__BORLANDC__' or '_MSCVER'. */
+   test macro, e.g. '__BORLANDC__' or '_MSC_VER'. */
 
-/* For MS-DOS and Windows 3.x, use ../Dos/dosmodule.c */
+/* See also ../Dos/dosmodule.c */
 
 #include "allobjects.h"
 #include "modsupport.h"
@@ -51,26 +51,61 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
-#ifndef NT
-#define HAVE_FORK	1
+/* Various compilers have only certain posix functions */
+#ifdef __WATCOMC__		/* Watcom compiler */
+#define HAVE_GETCWD     1
+#define HAVE_OPENDIR    1
+#define HAVE_SYSTEM	1
+#if defined(__OS2__)
+#define HAVE_EXECV      1
+#define HAVE_WAIT       1
 #endif
+#include <process.h>
+#else
+#ifdef __BORLANDC__		/* Borland compiler */
+#define HAVE_EXECV      1
+#define HAVE_GETCWD     1
+#define HAVE_GETEGID    1
+#define HAVE_GETEUID    1
+#define HAVE_GETGID     1
+#define HAVE_GETPPID    1
+#define HAVE_GETUID     1
+#define HAVE_KILL       1
+#define HAVE_OPENDIR    1
+#define HAVE_PIPE       1
+#define HAVE_POPEN      1
+#define HAVE_SYSTEM	1
+#define HAVE_WAIT       1
+#else
+#ifdef _MSC_VER		/* Microsoft compiler */
+#ifdef NT
+#define HAVE_EXECV      1
+#define HAVE_PIPE       1
+#define HAVE_POPEN      1
+#define HAVE_SYSTEM	1
+#else /* 16-bit Windows */
+#endif /* NT */
+#else			/* all other compilers */
+/* Unix functions that the configure script doesn't check for */
+#define HAVE_EXECV      1
+#define HAVE_FORK       1
+#define HAVE_GETCWD     1
+#define HAVE_GETEGID    1
+#define HAVE_GETEUID    1
+#define HAVE_GETGID     1
+#define HAVE_GETPPID    1
+#define HAVE_GETUID     1
+#define HAVE_KILL       1
+#define HAVE_OPENDIR    1
+#define HAVE_PIPE       1
+#define HAVE_POPEN      1
+#define HAVE_SYSTEM	1
+#define HAVE_WAIT       1
+#endif  /* _MSC_VER */
+#endif  /* __BORLANDC__ */
+#endif  /* ! __WATCOMC__ */
 
-#if !defined(NT) || defined(__BORLANDC__)
-/* Unix functions that the configure script doesn't check for
-   and that aren't easily available under NT except with Borland C */
-#define HAVE_GETEGID	1
-#define HAVE_GETEUID	1
-#define HAVE_GETGID	1
-#define HAVE_GETPPID	1
-#define HAVE_GETUID	1
-#define HAVE_KILL	1
-#define HAVE_WAIT	1
-#define HAVE_OPENDIR	1
-#define HAVE_PIPE	1
-#define HAVE_GETCWD	1
-#endif
-
-#ifndef NT
+#ifndef _MSC_VER
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -90,7 +125,11 @@ extern int pclose();
 extern int lstat();
 extern int symlink();
 #else /* !HAVE_UNISTD_H */
+#if defined(__WATCOMC__)
+extern int mkdir PROTO((const char *));
+#else
 extern int mkdir PROTO((const char *, mode_t));
+#endif
 extern int chdir PROTO((const char *));
 extern int rmdir PROTO((const char *));
 extern int chmod PROTO((const char *, mode_t));
@@ -110,7 +149,7 @@ extern int lstat PROTO((const char *, struct stat *));
 #endif /* HAVE_LSTAT */
 #endif /* !HAVE_UNISTD_H */
 
-#endif /* !NT */
+#endif /* !_MSC_VER */
 
 #ifdef HAVE_UTIME_H
 #include <utime.h>
@@ -141,8 +180,13 @@ extern int lstat PROTO((const char *, struct stat *));
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
+#ifdef __WATCOMC__
+#include <direct.h>
+#define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
 #define dirent direct
 #define NAMLEN(dirent) (dirent)->d_namlen
+#endif
 #ifdef HAVE_SYS_NDIR_H
 #include <sys/ndir.h>
 #endif
@@ -154,14 +198,19 @@ extern int lstat PROTO((const char *, struct stat *));
 #endif
 #endif
 
-#ifdef NT
+#ifdef _MSC_VER
 #include <direct.h>
 #include <io.h>
 #include <process.h>
 #include <windows.h>
-#define popen   _popen
+#ifdef NT
+#define popen	_popen
 #define pclose	_pclose
+#else /* 16-bit Windows */
+#include <dos.h>
+#include <ctype.h>
 #endif /* NT */
+#endif /* _MSC_VER */
 
 #ifdef OS2
 #include <io.h>
@@ -169,9 +218,9 @@ extern int lstat PROTO((const char *, struct stat *));
 
 /* Return a dictionary corresponding to the POSIX environment table */
 
-#ifndef NT
+#if !defined(_MSC_VER) && !defined(__WATCOMC__)
 extern char **environ;
-#endif /* !NT */
+#endif /* !_MSC_VER */
 
 static object *
 convertenviron()
@@ -436,6 +485,67 @@ posix_listdir(self, args)
 	return d;
 
 #else /* !NT */
+#ifdef _MSC_VER /* 16-bit Windows */
+
+#ifndef MAX_PATH
+#define MAX_PATH	250
+#endif
+	char *name, *pt;
+	int len;
+	object *d, *v;
+	char namebuf[MAX_PATH+5];
+	struct _find_t ep;
+
+	if (!getargs(args, "s#", &name, &len))
+		return NULL;
+	if (len >= MAX_PATH) {
+		err_setstr(ValueError, "path too long");
+		return NULL;
+	}
+	strcpy(namebuf, name);
+	for (pt = namebuf; *pt; pt++)
+		if (*pt == '/')
+			*pt = '\\';
+	if (namebuf[len-1] != '\\')
+		namebuf[len++] = '\\';
+	strcpy(namebuf + len, "*.*");
+
+	if ((d = newlistobject(0)) == NULL)
+		return NULL;
+
+	if (_dos_findfirst(namebuf, _A_RDONLY |
+			_A_HIDDEN | _A_SYSTEM | _A_SUBDIR, &ep) != 0){
+		errno = ENOENT;
+		return posix_error();
+	}
+	do {
+		if (ep.name[0] == '.' &&
+		    (ep.name[1] == '\0' ||
+		     ep.name[1] == '.' &&
+		     ep.name[2] == '\0'))
+			continue;
+		strcpy(namebuf, ep.name);
+		for (pt = namebuf; *pt; pt++)
+			if (isupper(*pt))
+				*pt = tolower(*pt);
+		v = newstringobject(namebuf);
+		if (v == NULL) {
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		if (addlistitem(d, v) != 0) {
+			DECREF(v);
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		DECREF(v);
+	} while (_dos_findnext(&ep) == 0);
+
+	return d;
+
+#else
 
 	char *name;
 	object *d, *v;
@@ -477,6 +587,7 @@ posix_listdir(self, args)
 
 	return d;
 
+#endif /* !_MSC_VER */
 #endif /* !NT */
 }
 
@@ -487,11 +598,15 @@ posix_mkdir(self, args)
 {
 	int res;
 	char *path;
-	int mode = 0777; /* Unused */
+	int mode = 0777;
 	if (!newgetargs(args, "s|i", &path, &mode))
 		return NULL;
 	BGN_SAVE
+#if defined(__WATCOMC__)
+	res = mkdir(path);
+#else
 	res = mkdir(path, mode);
+#endif
 	END_SAVE
 	if (res < 0)
 		return posix_error();
@@ -540,6 +655,7 @@ posix_stat(self, args)
 	return posix_do_stat(self, args, stat);
 }
 
+#ifdef HAVE_SYSTEM
 static object *
 posix_system(self, args)
 	object *self;
@@ -554,6 +670,7 @@ posix_system(self, args)
 	END_SAVE
 	return newintobject(sts);
 }
+#endif
 
 static object *
 posix_umask(self, args)
@@ -654,6 +771,7 @@ posix__exit(self, args)
 	/* NOTREACHED */
 }
 
+#ifdef HAVE_EXECV
 static object *
 posix_execv(self, args)
 	object *self;
@@ -801,6 +919,7 @@ posix_execve(self, args)
 
 	return NULL;
 }
+#endif /* HAVE_EXECV */
 
 #ifdef HAVE_FORK
 static object *
@@ -940,6 +1059,7 @@ posix_kill(self, args)
 }
 #endif
 
+#ifdef HAVE_POPEN
 static object *
 posix_popen(self, args)
 	object *self;
@@ -962,6 +1082,7 @@ posix_popen(self, args)
 		setfilebufsize(f, bufsize);
 	return f;
 }
+#endif /* HAVE_POPEN */
 
 #ifdef HAVE_SETUID
 static object *
@@ -1374,12 +1495,13 @@ posix_fdopen(self, args)
 	return f;
 }
 
+#ifdef HAVE_PIPE
 static object *
 posix_pipe(self, args)
 	object *self;
 	object *args;
 {
-#if !defined(NT) || defined(HAVE_PIPE)
+#if !defined(NT)
 	int fds[2];
 	int res;
 	if (!getargs(args, ""))
@@ -1403,6 +1525,53 @@ posix_pipe(self, args)
 	return mkvalue("(ii)", read, write);
 #endif /* NT */
 }
+#endif  /* HAVE_PIPE */
+
+#ifdef HAVE_MKFIFO
+static object *
+posix_mkfifo(self, args)
+	object *self;
+	object *args;
+{
+	char *file;
+	int mode = 0666;
+	int res;
+	if (!newgetargs(args, "s|i", &file, &mode))
+		return NULL;
+	BGN_SAVE
+	res = mkfifo(file, mode);
+	END_SAVE
+	if (res < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+#endif
+
+#ifdef HAVE_FTRUNCATE
+static object *
+posix_ftruncate(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	int fd;
+	long length;
+	int res;
+
+	if (!getargs(args, "(il)", &fd, &length))
+		return NULL;
+
+	BGN_SAVE
+	res = ftruncate(fd, length);
+	END_SAVE
+	if (res < 0) {
+		err_errno(IOError);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+#endif
 
 static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
@@ -1431,7 +1600,9 @@ static struct methodlist posix_methods[] = {
 #ifdef HAVE_SYMLINK
 	{"symlink",	posix_symlink},
 #endif /* HAVE_SYMLINK */
+#ifdef HAVE_SYSTEM
 	{"system",	posix_system},
+#endif
 	{"umask",	posix_umask},
 #ifdef HAVE_UNAME
 	{"uname",	posix_uname},
@@ -1443,8 +1614,10 @@ static struct methodlist posix_methods[] = {
 	{"times",	posix_times},
 #endif /* HAVE_TIMES */
 	{"_exit",	posix__exit},
+#ifdef HAVE_EXECV
 	{"execv",	posix_execv},
 	{"execve",	posix_execve},
+#endif /* HAVE_EXECV */
 #ifdef HAVE_FORK
 	{"fork",	posix_fork},
 #endif /* HAVE_FORK */
@@ -1470,7 +1643,9 @@ static struct methodlist posix_methods[] = {
 #ifdef HAVE_KILL
 	{"kill",	posix_kill},
 #endif /* HAVE_KILL */
+#ifdef HAVE_POPEN
 	{"popen",	posix_popen,	1},
+#endif /* HAVE_POPEN */
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid},
 #endif /* HAVE_SETUID */
@@ -1507,7 +1682,15 @@ static struct methodlist posix_methods[] = {
 	{"write",	posix_write},
 	{"fstat",	posix_fstat},
 	{"fdopen",	posix_fdopen,	1},
+#ifdef HAVE_PIPE
 	{"pipe",	posix_pipe},
+#endif
+#ifdef HAVE_MKFIFO
+	{"mkfifo",	posix_mkfifo, 1},
+#endif
+#ifdef HAVE_FTRUNCATE
+	{"ftruncate",	posix_ftruncate, 1},
+#endif
 	{NULL,		NULL}		 /* Sentinel */
 };
 
@@ -1532,7 +1715,7 @@ initnt()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define nt.error");
 }
-#else /* !NT */
+#else /* !_MSC_VER */
 void
 initposix()
 {
@@ -1560,4 +1743,4 @@ initposix()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define posix.error");
 }
-#endif /* !NT */
+#endif /* !_MSC_VER */
