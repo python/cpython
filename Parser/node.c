@@ -45,3 +45,26 @@ addchild(n1, type, str)
 	n->n_child = NULL;
 	return n;
 }
+
+static void
+freechildren(n)
+	node *n;
+{
+	int i;
+	for (i = NCH(n); --i >= 0; )
+		freechildren(CHILD(n, i));
+	if (n->n_child != NULL)
+		DEL(n->n_child);
+	if (STR(n) != NULL)
+		DEL(STR(n));
+}
+
+void
+freenode(n)
+	node *n;
+{
+	if (n != NULL) {
+		freechildren(n);
+		DEL(n);
+	}
+}
