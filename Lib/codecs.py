@@ -705,8 +705,6 @@ if _false:
 
 if __name__ == '__main__':
 
-    import sys
-
     # Make stdout translate Latin-1 output into UTF-8 output
     sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
 
