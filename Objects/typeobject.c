@@ -712,6 +712,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		if (slots == NULL)
 			return NULL;
 		nslots = PyTuple_GET_SIZE(slots);
+		if (nslots > 0 && base->tp_itemsize != 0) {
+			PyErr_Format(PyExc_TypeError,
+				     "nonempty __slots__ "
+				     "not supported for subtype of '%s'",
+				     base->tp_name);
+			return NULL;
+		}
 		for (i = 0; i < nslots; i++) {
 			if (!PyString_Check(PyTuple_GET_ITEM(slots, i))) {
 				PyErr_SetString(PyExc_TypeError,
@@ -728,7 +735,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		nslots++;
 		add_dict++;
 	}
-	if (slots == NULL && base->tp_weaklistoffset == 0) {
+	if (slots == NULL && base->tp_weaklistoffset == 0 &&
+	    base->tp_itemsize == 0) {
 		nslots++;
 		add_weak++;
 	}
