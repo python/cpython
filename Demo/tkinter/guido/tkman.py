@@ -27,20 +27,25 @@ class SelectionBox:
 		self.choices = []
 
 		self.frame = Frame(master, {
+			'name': 'frame',
 			Pack: {'expand': 1, 'fill': 'both'}})
 		self.master = self.frame.master
 		self.subframe = Frame(self.frame, {
+			'name': 'subframe',
 			Pack: {'expand': 0, 'fill': 'both'}})
 		self.leftsubframe = Frame(self.subframe, {
+			'name': 'leftsubframe',
 			Pack: {'side': 'left', 'expand': 1, 'fill': 'both'}})
 		self.rightsubframe = Frame(self.subframe, {
+			'name': 'rightsubframe',
 			Pack: {'side': 'right', 'expand': 1, 'fill': 'both'}})
 		self.chaptervar = StringVar(master)
 		self.chapter = Menubutton(self.rightsubframe,
-					  {'text': 'Directory',
+					  {'name': 'chapter',
+					   'text': 'Directory',
 					   'relief': 'raised', 'bd': 2,
 					   Pack: {'side': 'top'}})
-		self.chaptermenu = Menu(self.chapter)
+		self.chaptermenu = Menu(self.chapter, {'name': 'chaptermenu'})
 		self.chaptermenu.add_radiobutton({'label': 'C functions',
 						  'value': MAN3DIR,
 						  'variable': self.chaptervar,
@@ -51,39 +56,48 @@ class SelectionBox:
 						  'command': self.newchapter})
 		self.chapter['menu'] = self.chaptermenu
 		self.listbox = Listbox(self.rightsubframe,
-				       {'relief': 'sunken', 'bd': 2,
+				       {'name': 'listbox',
+					'relief': 'sunken', 'bd': 2,
 					'geometry': '20x5',
 					Pack: {'expand': 1, 'fill': 'both'}})
 		self.l1 = Button(self.leftsubframe,
-				{'text': 'Display manual page named:',
+				{'name': 'l1',
+				 'text': 'Display manual page named:',
 				 'command': self.entry_cb,
 				 Pack: {'side': 'top'}})
 		self.entry = Entry(self.leftsubframe,
-				   {'relief': 'sunken', 'bd': 2,
+				   {'name': 'entry',
+				    'relief': 'sunken', 'bd': 2,
 				    'width': 20,
 				    Pack: {'side': 'top',
 					   'expand': 0, 'fill': 'x'}})
-		self.l2frame = Frame(self.leftsubframe, {
-			Pack: {'expand': 0, 'fill': 'none'}})
+		self.l2frame = Frame(self.leftsubframe,
+				     {'name': 'l2frame',
+				      Pack: {'expand': 0, 'fill': 'none'}})
 		self.l2 = Button(self.l2frame,
-				{'text': 'Search regexp:',
+				{'name': 'l2',
+				 'text': 'Search regexp:',
 				 'command': self.search_cb,
 				 Pack: {'side': 'left'}})
 		self.casesense = Checkbutton(self.l2frame,
-					     {'text': 'Case sensitive',
+					     {'name': 'casesense',
+					      'text': 'Case sensitive',
 					      'variable': 'casesense',
 					      'relief': 'flat',
 					      Pack: {'side': 'left'}})
 		self.search = Entry(self.leftsubframe,
-				   {'relief': 'sunken', 'bd': 2,
+				   {'name': 'search',
+				    'relief': 'sunken', 'bd': 2,
 				    'width': 20,
 				    Pack: {'side': 'top',
 					   'expand': 0, 'fill': 'x'}})
 		self.title = Label(self.leftsubframe,
-				   {'text': '(none)',
+				   {'name': 'title',
+				    'text': '(none)',
 				    Pack: {'side': 'bottom'}})
 		self.text = ManPage(self.frame,
-					 {'relief': 'sunken', 'bd': 2,
+					 {'name': 'text',
+					  'relief': 'sunken', 'bd': 2,
 					  'wrap': 'none', 'width': 72,
 					  Pack: {'expand': 1, 'fill': 'both'}})
 
