@@ -39,7 +39,7 @@ class EHType(Type):
 	def __init__(self, name = 'EventHandler', format = ''):
 		Type.__init__(self, name, format)
 	def declare(self, name):
-		Output("AEEventHandlerProcPtr %s__proc__ = GenericEventHandler;", name)
+		Output("AEEventHandlerUPP %s__proc__ = upp_GenericEventHandler;", name)
 		Output("PyObject *%s;", name)
 	def getargsFormat(self):
 		return "O"
@@ -53,19 +53,21 @@ class EHType(Type):
 		return "O"
 	def mkvalueArgs(self, name):
 		return name
+	def cleanup(self, name):
+		Output("Py_INCREF(%s); /* XXX leak, but needed */", name)
 
 class EHNoRefConType(EHType):
 	def passInput(self, name):
-		return "GenericEventHandler"
+		return "upp_GenericEventHandler"
 
 EventHandler = EHType()
 EventHandlerNoRefCon = EHNoRefConType()
 
 
-IdleProcPtr = FakeType("AEIdleProc")
-EventFilterProcPtr = FakeType("(AEFilterProcPtr)0")
+IdleProcPtr = FakeType("upp_AEIdleProc")
+EventFilterProcPtr = FakeType("(AEFilterUPP)0")
 NMRecPtr = FakeType("(NMRecPtr)0")
-EventHandlerProcPtr = FakeType("GenericEventHandler")
+EventHandlerProcPtr = FakeType("upp_GenericEventHandler")
 AlwaysFalse = FakeType("0")
 
 
@@ -77,16 +79,39 @@ includestuff = includestuff + """
 #include <AppleEvents.h>
 
 #ifdef THINK_C
+#define AEIdleProcPtr IdleProcPtr
 #define AEFilterProcPtr EventFilterProcPtr
 #define AEEventHandlerProcPtr EventHandlerProcPtr
 #endif
 
+#ifndef __MWERKS__
+/* Actually, this is "if not universal headers".
+** I'm trying to setup the code here so that is easily automated,
+** as follows:
+** - Use the UPP in the source
+** - for pre-universal headers, #define each UPP as the corresponding ProcPtr
+** - for each routine we pass we declare a upp_xxx that
+**   we initialize to the correct value in the init routine.
+*/
+#define AEIdleUPP AEIdleProcPtr
+#define AEFilterUPP AEFilterProcPtr
+#define AEEventHandlerUPP AEEventHandlerProcPtr
+#define NewAEIdleProc(x) (x)
+#define NewAEFilterProc(x) (x)
+#define NewAEEventHandlerProc(x) (x)
+#endif
+
 static pascal OSErr GenericEventHandler(); /* Forward */
+
+AEEventHandlerUPP upp_GenericEventHandler;
 
 static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHandle *mouseRgn)
 {
-	return !PyMac_Idle();
+	(void) PyMac_Idle();
+	return 0;
 }
+
+AEIdleUPP upp_AEIdleProc;
 """
 
 finalstuff = finalstuff + """
@@ -119,6 +144,11 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, long refcon)
 	Py_DECREF(res);
 	return noErr;
 }
+"""
+
+initstuff = initstuff + """
+	upp_AEIdleProc = NewAEIdleProc(AEIdleProc);
+	upp_GenericEventHandler = NewAEEventHandlerProc(GenericEventHandler);
 """
 
 module = MacModule('AE', 'AE', includestuff, finalstuff, initstuff)
