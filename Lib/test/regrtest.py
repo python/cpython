@@ -753,16 +753,19 @@ _expectations = {
     'darwin':
         """
         test_al
+        test_bsddb3
         test_cd
         test_cl
         test_curses
         test_dl
+        test_email_codecs
         test_gdbm
         test_gl
         test_imgfile
         test_largefile
         test_linuxaudiodev
         test_minidom
+        test_mpz
         test_nis
         test_ntpath
         test_poll
