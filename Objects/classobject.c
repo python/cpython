@@ -52,7 +52,7 @@ newclassobject(bases, dict, name)
 	static object *getattrstr, *setattrstr, *delattrstr;
 	static object *docstr;
 	if (docstr == NULL) {
-		docstr= newstringobject("__doc__");
+		docstr= PyString_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
@@ -78,9 +78,9 @@ newclassobject(bases, dict, name)
 	XINCREF(name);
 	op->cl_name = name;
 	if (getattrstr == NULL) {
-		getattrstr = newstringobject("__getattr__");
-		setattrstr = newstringobject("__setattr__");
-		delattrstr = newstringobject("__delattr__");
+		getattrstr = PyString_InternFromString("__getattr__");
+		setattrstr = PyString_InternFromString("__setattr__");
+		delattrstr = PyString_InternFromString("__delattr__");
 	}
 	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
 	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
@@ -349,7 +349,7 @@ newinstanceobject(class, arg, kw)
 		return NULL;
 	}
 	if (initstr == NULL)
-		initstr = newstringobject("__init__");
+		initstr = PyString_InternFromString("__init__");
 	init = instance_getattr1(inst, initstr);
 	if (init == NULL) {
 		err_clear();
@@ -408,7 +408,7 @@ instance_dealloc(inst)
 #endif /* !Py_TRACE_REFS */
 	err_fetch(&error_type, &error_value, &error_traceback);
 	if (delstr == NULL)
-		delstr = newstringobject("__del__");
+		delstr = PyString_InternFromString("__del__");
 	if ((del = instance_getattr1(inst, delstr)) != NULL) {
 		object *res = call_object(del, (object *)NULL);
 		if (res == NULL) {
@@ -610,7 +610,7 @@ instance_repr(inst)
 	static object *reprstr;
 
 	if (reprstr == NULL)
-		reprstr = newstringobject("__repr__");
+		reprstr = PyString_InternFromString("__repr__");
 	func = instance_getattr(inst, reprstr);
 	if (func == NULL) {
 		char buf[140];
@@ -667,14 +667,14 @@ instance_hash(inst)
 	static object *hashstr, *cmpstr;
 
 	if (hashstr == NULL)
-		hashstr = newstringobject("__hash__");
+		hashstr = PyString_InternFromString("__hash__");
 	func = instance_getattr(inst, hashstr);
 	if (func == NULL) {
 		/* If there is no __cmp__ method, we hash on the address.
 		   If a __cmp__ method exists, there must be a __hash__. */
 		err_clear();
 		if (cmpstr == NULL)
-			cmpstr = newstringobject("__cmp__");
+			cmpstr = PyString_InternFromString("__cmp__");
 		func = instance_getattr(inst, cmpstr);
 		if (func == NULL) {
 			err_clear();
@@ -714,7 +714,7 @@ instance_length(inst)
 	int outcome;
 
 	if (lenstr == NULL)
-		lenstr = newstringobject("__len__");
+		lenstr = PyString_InternFromString("__len__");
 	func = instance_getattr(inst, lenstr);
 	if (func == NULL)
 		return -1;
@@ -745,7 +745,7 @@ instance_subscript(inst, key)
 	object *res;
 
 	if (getitemstr == NULL)
-		getitemstr = newstringobject("__getitem__");
+		getitemstr = PyString_InternFromString("__getitem__");
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
@@ -772,12 +772,12 @@ instance_ass_subscript(inst, key, value)
 
 	if (value == NULL) {
 		if (delitemstr == NULL)
-			delitemstr = newstringobject("__delitem__");
+			delitemstr = PyString_InternFromString("__delitem__");
 		func = instance_getattr(inst, delitemstr);
 	}
 	else {
 		if (setitemstr == NULL)
-			setitemstr = newstringobject("__setitem__");
+			setitemstr = PyString_InternFromString("__setitem__");
 		func = instance_getattr(inst, setitemstr);
 	}
 	if (func == NULL)
@@ -813,7 +813,7 @@ instance_item(inst, i)
 	object *func, *arg, *res;
 
 	if (getitemstr == NULL)
-		getitemstr = newstringobject("__getitem__");
+		getitemstr = PyString_InternFromString("__getitem__");
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
@@ -837,7 +837,7 @@ instance_slice(inst, i, j)
 	static object *getslicestr;
 
 	if (getslicestr == NULL)
-		getslicestr = newstringobject("__getslice__");
+		getslicestr = PyString_InternFromString("__getslice__");
 	func = instance_getattr(inst, getslicestr);
 	if (func == NULL)
 		return NULL;
@@ -862,12 +862,12 @@ instance_ass_item(inst, i, item)
 
 	if (item == NULL) {
 		if (delitemstr == NULL)
-			delitemstr = newstringobject("__delitem__");
+			delitemstr = PyString_InternFromString("__delitem__");
 		func = instance_getattr(inst, delitemstr);
 	}
 	else {
 		if (setitemstr == NULL)
-			setitemstr = newstringobject("__setitem__");
+			setitemstr = PyString_InternFromString("__setitem__");
 		func = instance_getattr(inst, setitemstr);
 	}
 	if (func == NULL)
@@ -900,12 +900,12 @@ instance_ass_slice(inst, i, j, value)
 
 	if (value == NULL) {
 		if (delslicestr == NULL)
-			delslicestr = newstringobject("__delslice__");
+			delslicestr = PyString_InternFromString("__delslice__");
 		func = instance_getattr(inst, delslicestr);
 	}
 	else {
 		if (setslicestr == NULL)
-			setslicestr = newstringobject("__setslice__");
+			setslicestr = PyString_InternFromString("__setslice__");
 		func = instance_getattr(inst, setslicestr);
 	}
 	if (func == NULL)
@@ -1006,7 +1006,7 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	if (!is_instanceobject(v))
 		return 1;
 	if (coerce_obj == NULL) {
-		coerce_obj = newstringobject("__coerce__");
+		coerce_obj = PyString_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return -1;
 	}
@@ -1083,7 +1083,7 @@ instance_coerce(pv, pw)
 	object *coerced;
 
 	if (coerce_obj == NULL) {
-		coerce_obj = newstringobject("__coerce__");
+		coerce_obj = PyString_InternFromString("__coerce__");
 		if (coerce_obj == NULL)
 			return -1;
 	}
@@ -1132,7 +1132,7 @@ instance_coerce(pv, pw)
 #define UNARY(funcname, methodname) \
 static object *funcname(self) instanceobject *self; { \
 	static object *o; \
-	if (o == NULL) o = newstringobject(methodname); \
+	if (o == NULL) o = PyString_InternFromString(methodname); \
 	return generic_unary_op(self, o); \
 }
 
@@ -1149,11 +1149,11 @@ instance_nonzero(self)
 	static object *nonzerostr;
 
 	if (nonzerostr == NULL)
-		nonzerostr = newstringobject("__nonzero__");
+		nonzerostr = PyString_InternFromString("__nonzero__");
 	if ((func = instance_getattr(self, nonzerostr)) == NULL) {
 		err_clear();
 		if (lenstr == NULL)
-			lenstr = newstringobject("__len__");
+			lenstr = PyString_InternFromString("__len__");
 		if ((func = instance_getattr(self, lenstr)) == NULL) {
 			err_clear();
 			/* Fall back to the default behavior:
@@ -1200,7 +1200,7 @@ instance_pow(v, w, z)
 	static object *powstr;
 
 	if (powstr == NULL)
-		powstr = newstringobject("__pow__");
+		powstr = PyString_InternFromString("__pow__");
 	func = getattro(v, powstr);
 	if (func == NULL)
 		return NULL;
