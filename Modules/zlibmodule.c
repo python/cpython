@@ -136,14 +136,9 @@ PyZlib_compress(PyObject *self, PyObject *args)
     Byte *input, *output;
     int length, level=Z_DEFAULT_COMPRESSION, err;
     z_stream zst;
-    PyObject * inputString;
   
     /* require Python string object, optional 'level' arg */
-    if (!PyArg_ParseTuple(args, "S|i:compress", &inputString, &level))
-	return NULL;
-
-    /* now get a pointer to the internal string */
-    if (PyString_AsStringAndSize(inputString, (char**)&input, &length) == -1)
+    if (!PyArg_ParseTuple(args, "s#|i:compress", &input, &length, &level))
 	return NULL;
 
     zst.avail_out = length + length/1000 + 12 + 1;
@@ -157,8 +152,6 @@ PyZlib_compress(PyObject *self, PyObject *args)
 
     /* Past the point of no return.  From here on out, we need to make sure
        we clean up mallocs & INCREFs. */
-
-    Py_INCREF(inputString);	/* increment so that we hold ref */
 
     zst.zalloc = (alloc_func)NULL;
     zst.zfree = (free_func)Z_NULL;
@@ -203,7 +196,6 @@ PyZlib_compress(PyObject *self, PyObject *args)
 
  error:
     free(output);
-    Py_DECREF(inputString);
 
     return ReturnVal;
 }
@@ -222,12 +214,9 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     int length, err;
     int wsize=DEF_WBITS, r_strlen=DEFAULTALLOC;
     z_stream zst;
-    PyObject * inputString;
 
-    if (!PyArg_ParseTuple(args, "S|ii:decompress", 
-			  &inputString, &wsize, &r_strlen))
-	return NULL;
-    if (PyString_AsStringAndSize(inputString, (char**)&input, &length) == -1)
+    if (!PyArg_ParseTuple(args, "s#|ii:decompress", 
+			  &input, &length, &wsize, &r_strlen))
 	return NULL;
 
     if (r_strlen <= 0)
@@ -239,14 +228,9 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     if (!(result_str = PyString_FromStringAndSize(NULL, r_strlen)))
 	return NULL;
 
-    /* Past the point of no return.  From here on out, we need to make sure
-       we clean up mallocs & INCREFs. */
-
-    Py_INCREF(inputString);	/* increment so that we hold ref */
-
     zst.zalloc = (alloc_func)NULL;
     zst.zfree = (free_func)Z_NULL;
-    zst.next_out = (Byte *)PyString_AsString(result_str);
+    zst.next_out = (Byte *)PyString_AS_STRING(result_str);
     zst.next_in = (Byte *)input;
     err = inflateInit2(&zst, wsize);
 
@@ -291,7 +275,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 		result_str = NULL;
 		goto error;
 	    }
-	    zst.next_out = (unsigned char *)PyString_AsString(result_str) \
+	    zst.next_out = (unsigned char *)PyString_AS_STRING(result_str) \
 		+ r_strlen;
 	    zst.avail_out = r_strlen;
 	    r_strlen = r_strlen << 1;
@@ -306,15 +290,13 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     err = inflateEnd(&zst);
     if (err != Z_OK) {
 	zlib_error(zst, err, "while finishing data decompression");
-	return NULL;
+	goto error;
     }
 
     _PyString_Resize(&result_str, zst.total_out);
-    Py_DECREF(inputString);
     return result_str;
 
  error:
-    Py_DECREF(inputString);
     Py_XDECREF(result_str);
     return NULL;
 }
@@ -433,12 +415,8 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     PyObject *RetVal;
     Byte *input;
     unsigned long start_total_out;
-    PyObject *inputString;
   
-    if (!PyArg_ParseTuple(args, "S:compress", &inputString))
-	return NULL;
-
-    if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
+    if (!PyArg_ParseTuple(args, "s#:compress", &input, &inplen))
 	return NULL;
 
     if (!(RetVal = PyString_FromStringAndSize(NULL, length)))
@@ -446,13 +424,11 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 
     ENTER_ZLIB
 
-    Py_INCREF(inputString);
-  
     start_total_out = self->zst.total_out;
     self->zst.avail_in = inplen;
     self->zst.next_in = input;
     self->zst.avail_out = length;
-    self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
+    self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal);
 
     Py_BEGIN_ALLOW_THREADS
     err = deflate(&(self->zst), Z_NO_FLUSH);
@@ -465,7 +441,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 	    RetVal = NULL;
 	    goto error;
 	}
-	self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) \
+	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + length;
 	self->zst.avail_out = length;
 	length = length << 1;
@@ -490,7 +466,6 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 	RetVal = NULL;
 
  error:
-    Py_DECREF(inputString);
     LEAVE_ZLIB
     return RetVal;
 }
@@ -514,18 +489,15 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     PyObject *RetVal;
     Byte *input;
     unsigned long start_total_out;
-    PyObject * inputString;
 
-    if (!PyArg_ParseTuple(args, "S|i:decompress", &inputString, &max_length))
+    if (!PyArg_ParseTuple(args, "s#|i:decompress", &input, 
+			  &inplen, &max_length))
 	return NULL;
     if (max_length < 0) {
 	PyErr_SetString(PyExc_ValueError,
 			"max_length must be greater than zero");
 	return NULL;
     }
-
-    if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
-	return NULL;
 
     /* limit amount of data allocated to max_length */
     if (max_length && length > max_length) 
@@ -535,13 +507,11 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 
     ENTER_ZLIB
 
-    Py_INCREF(inputString);
-
     start_total_out = self->zst.total_out;
     self->zst.avail_in = inplen;
     self->zst.next_in = input;
     self->zst.avail_out = length;
-    self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
+    self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal);
 
     Py_BEGIN_ALLOW_THREADS
     err = inflate(&(self->zst), Z_SYNC_FLUSH);
@@ -567,7 +537,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	    RetVal = NULL;
 	    goto error;
 	}
-	self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) \
+	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + old_length;
 	self->zst.avail_out = length - old_length;
 
@@ -618,8 +588,6 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	RetVal = NULL;
 
  error:
-    Py_DECREF(inputString);
-
     LEAVE_ZLIB
 
     return RetVal;
@@ -658,7 +626,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     start_total_out = self->zst.total_out;
     self->zst.avail_in = 0;
     self->zst.avail_out = length;
-    self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
+    self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal);
 
     Py_BEGIN_ALLOW_THREADS
     err = deflate(&(self->zst), flushmode);
@@ -671,7 +639,7 @@ PyZlib_flush(compobject *self, PyObject *args)
 	    RetVal = NULL;
 	    goto error;
 	}
-	self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) \
+	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + length;
 	self->zst.avail_out = length;
 	length = length << 1;
