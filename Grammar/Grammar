@@ -1,4 +1,8 @@
-# Grammar for Python, version 7
+# Grammar for Python, version 8
+
+# Changes since version 7:
+#	New syntax to specify base classes (but old syntax retained for now)
+#	'global' statement (valid only in functions but not enforced here)
 
 # Changes since version 6:
 #	Add logical operators '|', '^', '&' and '~'
@@ -52,7 +56,7 @@ fpdef: NAME | '(' fplist ')'
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt
+small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt
 expr_stmt: (exprlist '=')* exprlist
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
@@ -64,6 +68,7 @@ continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
 raise_stmt: 'raise' test [',' test]
 import_stmt: 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
+global_stmt: 'global' NAME (',' NAME)*
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
@@ -91,6 +96,9 @@ exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
 
-classdef: 'class' NAME parameters ['=' baselist] ':' suite
+# New class syntax should be:
+#	classdef: class NAME ['(' testlist ')'] ':' suite
+# but merged with old syntax for compatibility it becomes:
+classdef: 'class' NAME ['(' testlist ')' |'(' ')' ['=' baselist]] ':' suite
 baselist: atom arguments (',' atom arguments)*
-arguments: '(' [testlist] ')'
+arguments: '(' ')'
