@@ -219,14 +219,29 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
+/* Py_IS_NAN(X)
+ * Return 1 if float or double arg is a NaN, else 0.
+ * Caution:
+ *     X is evaluated more than once.
+ *     This may not work on all platforms.  Each platform has *some*
+ *     way to spell this, though -- override in pyconfig.h if you have
+ *     a platform where it doesn't work.
+ */
+#ifndef Py_IS_NAN
+#define Py_IS_NAN(X) ((X) != (X))
+#endif
+
 /* Py_IS_INFINITY(X)
  * Return 1 if float or double arg is an infinity, else 0.
  * Caution:
  *    X is evaluated more than once.
  *    This implementation may set the underflow flag if |X| is very small;
  *    it really can't be implemented correctly (& easily) before C99.
+ *    Override in pyconfig.h if you have a better spelling on your platform.
  */
+#ifndef Py_IS_INFINITY
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
+#endif
 
 /* HUGE_VAL is supposed to expand to a positive double infinity.  Python
  * uses Py_HUGE_VAL instead because some platforms are broken in this
@@ -257,12 +272,12 @@ extern "C" {
  * Some platforms have better way to spell this, so expect some #ifdef'ery.
  *
  * OpenBSD uses 'isinf()' because a compiler bug on that platform causes
- * the longer macro version to be mis-compiled. This isn't optimal, and 
+ * the longer macro version to be mis-compiled. This isn't optimal, and
  * should be removed once a newer compiler is available on that platform.
  * The system that had the failure was running OpenBSD 3.2 on Intel, with
  * gcc 2.95.3.
  *
- * According to Tim's checkin, the FreeBSD systems use isinf() to work 
+ * According to Tim's checkin, the FreeBSD systems use isinf() to work
  * around a FPE bug on that platform.
  */
 #if defined(__FreeBSD__) || defined(__OpenBSD__)

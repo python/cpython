@@ -118,6 +118,10 @@ MS_CORE_DLL.
 typedef int pid_t;
 #define hypot _hypot
 
+#include <float.h>
+#define Py_IS_NAN _isnan
+#define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
+
 #endif /* _MSC_VER */
 
 /* define some ANSI types that are not defined in earlier Win headers */
