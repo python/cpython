@@ -6,18 +6,35 @@
 cd `dirname $0`/..
 
 PAPER=${PAPER:-letter}
+TOTAL=0
 
+getpagecount() {
+    PAGECOUNT=`grep -c '^%%Page:' paper-$PAPER/$1.ps`
+    echo "$2    $1.ps ($PAGECOUNT pages)"
+    TOTAL=`expr $TOTAL + $PAGECOUNT`
+}
 
 cat <<EOF
 This is the PostScript version of the standard Python documentation.
 If you plan to print this, be aware that some of the documents are
-long.  These files have the following page counts:
+long.  The following manuals are included:
 
 EOF
 
+getpagecount api "Python/C API                                  "
+getpagecount ext "Extending and Embedding the Python Interpreter"
+getpagecount lib "Python Library Reference                      "
+getpagecount mac "Macintosh Module Reference                    "
+getpagecount ref "Python Reference Manual                       "
+getpagecount tut "Python Tutorial                               "
 
-for PART in api ext lib mac ref tut ; do
-    FILE=paper-$PAPER/$PART.ps
-    PAGECOUNT=`grep -c '^%%Page:' $FILE`
-    echo "	$PART.ps -- $PAGECOUNT pages"
-done
+echo
+echo "  Total page count:   $TOTAL"
+
+cat <<EOF
+
+
+If you have any questions, comments, or suggestions regarding these
+documents, please send them via email to python-docs@python.org.
+
+EOF
