@@ -42,7 +42,8 @@ sub tohtml{
     my $name;
     foreach $name (split /,/, $self->{names}) {
 	my($key,$type,$synopsis) = $self->get($name);
-	$data .= "<dt><b><tt>$name</tt></b>\n<dd>$synopsis\n";
+	$data .= ("<dt><b><tt><a href=\"module-$key.html\">$name</a></tt></b>"
+		  . "\n<dd>$synopsis\n");
     }
     $data .= "</dl>\n";
     $data;
