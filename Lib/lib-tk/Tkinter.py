@@ -2103,7 +2103,7 @@ class Canvas(Widget):
         self.tk.call(self._w, 'select', 'from', tagOrId, index)
     def select_item(self):
         """Return the item which has the selection."""
-        self.tk.call(self._w, 'select', 'item')
+        return self.tk.call(self._w, 'select', 'item') or None
     def select_to(self, tagOrId, index):
         """Set the variable end of a selection in item TAGORID to INDEX."""
         self.tk.call(self._w, 'select', 'to', tagOrId, index)
