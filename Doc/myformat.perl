@@ -141,7 +141,6 @@ sub my_typed_index_helper{
 }
 
 sub do_cmd_stindex{ &my_typed_index_helper('statement', @_); }
-sub do_cmd_kwindex{ &my_typed_index_helper('keyword', @_); }
 sub do_cmd_opindex{ &my_typed_index_helper('operator', @_); }
 sub do_cmd_exindex{ &my_typed_index_helper('exception', @_); }
 sub do_cmd_obindex{ &my_typed_index_helper('object', @_); }
