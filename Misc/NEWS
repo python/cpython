@@ -38,7 +38,10 @@ Extension modules
 Library
 -------
 
-TBD
+- realpath is now exported when doing from poxixpath import *.
+  It is also exported for ntpath, macpath, and os2emxpath.
+  See SF bug #659228.
+
 
 Tools/Demos
 -----------
