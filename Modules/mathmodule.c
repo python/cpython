@@ -35,6 +35,26 @@ extern int errno;
 
 #include <math.h>
 
+#ifdef HUGE_VAL
+#define CHECK(x) if (errno != 0) ; \
+	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
+	else errno = ERANGE
+#else
+#define CHECK(x) /* Don't know how to check */
+#endif
+
+static object *
+math_error()
+{
+	if (errno == EDOM)
+		err_setstr(ValueError, "math domain error");
+	else if (errno == ERANGE)
+		err_setstr(OverflowError, "math range error");
+	else
+		err_errno(RuntimeError);
+	return NULL;
+}
+
 static object *
 math_1(args, func)
 	object *args;
@@ -45,8 +65,9 @@ math_1(args, func)
 		return NULL;
 	errno = 0;
 	x = (*func)(x);
+	CHECK(x);
 	if (errno != 0)
-		return err_errno(RuntimeError);
+		return math_error();
 	else
 		return newfloatobject(x);
 }
@@ -61,8 +82,9 @@ math_2(args, func)
 		return NULL;
 	errno = 0;
 	x = (*func)(x, y);
+	CHECK(x);
 	if (errno != 0)
-		return err_errno(RuntimeError);
+		return math_error();
 	else
 		return newfloatobject(x);
 }
@@ -120,8 +142,9 @@ math_frexp(self, args)
 		return NULL;
 	errno = 0;
 	x = frexp(x, &i);
+	CHECK(x);
 	if (errno != 0)
-		return err_errno(RuntimeError);
+		return math_error();
 	v = newtupleobject(2);
 	if (v != NULL) {
 		settupleitem(v, 0, newfloatobject(x));
@@ -145,8 +168,9 @@ math_ldexp(self, args)
 		return NULL;
 	errno = 0;
 	x = ldexp(x, (int)y);
+	CHECK(x);
 	if (errno != 0)
-		return err_errno(RuntimeError);
+		return math_error();
 	else
 		return newfloatobject(x);
 }
@@ -162,8 +186,9 @@ math_modf(self, args)
 		return NULL;
 	errno = 0;
 	x = modf(x, &y);
+	CHECK(x);
 	if (errno != 0)
-		return err_errno(RuntimeError);
+		return math_error();
 	v = newtupleobject(2);
 	if (v != NULL) {
 		settupleitem(v, 0, newfloatobject(x));
