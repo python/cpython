@@ -270,6 +270,12 @@ def create_module_info(doc, section):
     if lastchild.nodeType == xml.dom.core.TEXT \
        and lastchild.data[-1:] == ".":
         lastchild.data = lastchild.data[:-1]
+    modauthor = extract_first_element(section, "moduleauthor")
+    if modauthor:
+        modauthor._node.name = "author"
+        modauthor.appendChild(doc.createTextNode(
+            modauthor.getAttribute("name")))
+        modauthor.removeAttribute("name")
     if section.tagName == "section":
         modinfo_pos = 2
         modinfo = doc.createElement("moduleinfo")
@@ -320,6 +326,9 @@ def create_module_info(doc, section):
             # and needs to be stored:
             modinfo.appendChild(doc.createTextNode("\n    "))
             modinfo.appendChild(title)
+        if modauthor:
+            modinfo.appendChild(doc.createTextNode("\n    "))
+            modinfo.appendChild(modauthor)
         modinfo.appendChild(doc.createTextNode("\n  "))
         section.insertBefore(modinfo, section.childNodes[modinfo_pos])
         section.insertBefore(doc.createTextNode("\n  "), modinfo)
@@ -434,11 +443,16 @@ def move_elements_by_name(doc, source, dest, name, sep=None):
 FIXUP_PARA_ELEMENTS = (
     "chapter",
     "section", "subsection", "subsubsection",
-    "paragraph", "subparagraph")
+    "paragraph", "subparagraph", "description",
+    "opcodedesc", "classdesc",
+    "funcdesc", "methoddesc", "excdesc", "datadesc",
+    "funcdescni", "methoddescni", "excdescni", "datadescni",
+    )
 
 PARA_LEVEL_ELEMENTS = (
-    "moduleinfo", "title", "opcodedesc",
-    "verbatim", "funcdesc", "methoddesc", "excdesc", "datadesc",
+    "moduleinfo", "title", "verbatim",
+    "opcodedesc", "classdesc",
+    "funcdesc", "methoddesc", "excdesc", "datadesc",
     "funcdescni", "methoddescni", "excdescni", "datadescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
     "sectionauthor",
@@ -468,24 +482,8 @@ def fixup_paras_helper(doc, container):
     children = container.childNodes
     start = 0
     start_fixed = 0
-    i = 0
+    i = len(children)
     SKIP_ELEMENTS = PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS
-    for child in children:
-        if child.nodeType == xml.dom.core.ELEMENT:
-            if child.tagName in FIXUP_PARA_ELEMENTS:
-                fixup_paras_helper(doc, child)
-                break
-            elif child.tagName in SKIP_ELEMENTS:
-                if not start_fixed:
-                    start = i + 1
-            elif not start_fixed:
-                start_fixed = 1
-            i = i + 1
-        else:
-            if child.nodeType == xml.dom.core.TEXT \
-               and string.strip(child.data) and not start_fixed:
-                start_fixed = 1
-            i = i + 1
     if DEBUG_PARA_FIXER:
         sys.stderr.write("fixup_paras_helper() called on <%s>; %d, %d\n"
                          % (container.tagName, start, i))
