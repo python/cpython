@@ -9,15 +9,15 @@ Boolean type; use integers instead.
 
 Some operations are supported by several object types; in particular,
 all objects can be compared, tested for truth value, and converted to
-a string (with the \code{`{\rm \ldots}`} notation).  The latter conversion is
-implicitly used when an object is written by the \code{print} statement.
-\stindex{print}
+a string (with the \code{`\textrm{\ldots}`} notation).  The latter
+conversion is implicitly used when an object is written by the
+\keyword{print}\stindex{print} statement.
 
 
 \subsection{Truth Value Testing \label{truth}}
 
-Any object can be tested for truth value, for use in an \code{if} or
-\code{while} condition or as operand of the Boolean operations below.
+Any object can be tested for truth value, for use in an \keyword{if} or
+\keyword{while} condition or as operand of the Boolean operations below.
 The following values are considered false:
 \stindex{if}
 \stindex{while}
@@ -150,9 +150,9 @@ Two more operations with the same syntactic priority, \samp{in} and
 There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
 \dfn{floating point numbers}, and \dfn{complex numbers}.
 Plain integers (also just called \dfn{integers})
-are implemented using \code{long} in \C{}, which gives them at least 32
+are implemented using \ctype{long} in \C{}, which gives them at least 32
 bits of precision.  Long integers have unlimited precision.  Floating
-point numbers are implemented using \code{double} in \C{}.  All bets on
+point numbers are implemented using \ctype{double} in \C{}.  All bets on
 their precision are off unless you happen to know the machine you are
 working with.
 \indexii{numeric}{types}
@@ -164,7 +164,7 @@ working with.
 \indexii{C@\C{}}{language}
 
 Complex numbers have a real and imaginary part, which are both
-implemented using \code{double} in \C{}.  To extract these parts from
+implemented using \ctype{double} in \C{}.  To extract these parts from
 a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
 
 Numbers are created by numeric literals or as the result of built-in
@@ -190,9 +190,9 @@ integer is smaller than long integer is smaller than floating point is
 smaller than complex.
 Comparisons between numbers of mixed type use the same rule.%
 \footnote{As a consequence, the list \code{[1, 2]} is considered equal
-	to \code{[1.0, 2.0]}, and similar for tuples.}
-The functions \code{int()}, \code{long()}, \code{float()},
-and \code{complex()} can be used
+          to \code{[1.0, 2.0]}, and similar for tuples.}
+The functions \function{int()}, \function{long()}, \function{float()},
+and \function{complex()} can be used
 to coerce numbers to a specific type.
 \index{arithmetic}
 \bifuncindex{int}
@@ -240,10 +240,11 @@ The result is always rounded towards minus infinity: 1/2 is 0,
 
 \item[(2)]
 Conversion from floating point to (long or plain) integer may round or
-truncate as in \C{}; see functions \code{floor()} and \code{ceil()} in
-module \code{math} for well-defined conversions.
-\bifuncindex{floor}
-\bifuncindex{ceil}
+truncate as in \C{}; see functions \function{floor()} and \function{ceil()} in
+module \module{math} for well-defined conversions.
+\withsubitem{(in module math)}{%
+  \ttindex{floor()}%
+  \ttindex{ceil()}}
 \indexii{numeric}{conversions}
 \refbimodindex{math}
 \indexii{C@\C{}}{language}
@@ -331,7 +332,7 @@ and \var{j} are integers:
 equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
+  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
   \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
@@ -491,17 +492,17 @@ Notes:
 \begin{description}
 \item[(1)] Raises an exception when \var{x} is not found in \var{s}.
   
-\item[(2)] The \code{sort()} method takes an optional argument
+\item[(2)] The \method{sort()} method takes an optional argument
   specifying a comparison function of two arguments (list items) which
   should return \code{-1}, \code{0} or \code{1} depending on whether the
   first argument is considered smaller than, equal to, or larger than the
   second argument.  Note that this slows the sorting process down
   considerably; e.g. to sort a list in reverse order it is much faster
-  to use calls to \code{sort()} and \code{reverse()} than to use
-  \code{sort()} with a comparison function that reverses the ordering of
-  the elements.
+  to use calls to the methods \method{sort()} and \method{reverse()}
+  than to use the built-in function \function{sort()} with a
+  comparison function that reverses the ordering of the elements.
 
-\item[(3)] The \code{sort()} and \code{reverse()} methods modify the
+\item[(3)] The \method{sort()} and \method{reverse()} methods modify the
 list in place for economy of space when sorting or reversing a large
 list.  They don't return the sorted or reversed list to remind you of
 this side effect.
@@ -593,16 +594,16 @@ Most of these support only one or two operations.
 The only special operation on a module is attribute access:
 \code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
 accesses a name defined in \var{m}'s symbol table.  Module attributes
-can be assigned to.  (Note that the \code{import} statement is not,
+can be assigned to.  (Note that the \keyword{import} statement is not,
 strictly speaking, an operation on a module object; \code{import
 \var{foo}} does not require a module object named \var{foo} to exist,
 rather it requires an (external) \emph{definition} for a module named
 \var{foo} somewhere.)
 
-A special member of every module is \code{__dict__}.
+A special member of every module is \member{__dict__}.
 This is the dictionary containing the module's symbol table.
 Modifying this dictionary will actually change the module's symbol
-table, but direct assignment to the \code{__dict__} attribute is not
+table, but direct assignment to the \member{__dict__} attribute is not
 possible (i.e., you can write \code{\var{m}.__dict__['a'] = 1}, which
 defines \code{\var{m}.a} to be \code{1}, but you can't write
 \code{\var{m}.__dict__ = \{\}}.
@@ -637,7 +638,7 @@ the function \var{f} was defined).
 \obindex{method}
 
 Methods are functions that are called using the attribute notation.
-There are two flavors: built-in methods (such as \code{append()} on
+There are two flavors: built-in methods (such as \method{append()} on
 lists) and class instance methods.  Built-in methods are described
 with the types that support them.
 
@@ -645,9 +646,9 @@ The implementation adds two special read-only attributes to class
 instance methods: \code{\var{m}.im_self} is the object on which the
 method operates, and \code{\var{m}.im_func} is the function
 implementing the method.  Calling \code{\var{m}(\var{arg-1},
-\var{arg-2}, {\rm \ldots}, \var{arg-n})} is completely equivalent to
+\var{arg-2}, \textrm{\ldots}, \var{arg-n})} is completely equivalent to
 calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
-\var{arg-2}, {\rm \ldots}, \var{arg-n})}.
+\var{arg-2}, \textrm{\ldots}, \var{arg-n})}.
 
 See the \emph{Python Reference Manual} for more information.
 
@@ -659,15 +660,15 @@ Code objects are used by the implementation to represent
 ``pseudo-compiled'' executable Python code such as a function body.
 They differ from function objects because they don't contain a
 reference to their global execution environment.  Code objects are
-returned by the built-in \code{compile()} function and can be
-extracted from function objects through their \code{func_code}
+returned by the built-in \function{compile()} function and can be
+extracted from function objects through their \member{func_code}
 attribute.
 \bifuncindex{compile}
 \withsubitem{(function object attribute)}{\ttindex{func_code}}
 
 A code object can be executed or evaluated by passing it (instead of a
-source string) to the \code{exec} statement or the built-in
-\code{eval()} function.
+source string) to the \keyword{exec} statement or the built-in
+\function{eval()} function.
 \stindex{exec}
 \bifuncindex{eval}
 
@@ -677,8 +678,8 @@ See the \emph{Python Reference Manual} for more information.
 \subsubsection{Type Objects \label{bltin-type-objects}}
 
 Type objects represent the various object types.  An object's type is
-accessed by the built-in function \code{type()}.  There are no special
-operations on types.  The standard module \code{types} defines names
+accessed by the built-in function \function{type()}.  There are no special
+operations on types.  The standard module \module{types} defines names
 for all standard built-in types.
 \bifuncindex{type}
 \refstmodindex{types}
@@ -716,8 +717,8 @@ by some other built-in functions and methods, e.g.,
 \refbimodindex{socket}
 
 When a file operation fails for an I/O-related reason, the exception
-\code{IOError} is raised.  This includes situations where the
-operation is not defined for some reason, like \code{seek()} on a tty
+\exception{IOError} is raised.  This includes situations where the
+operation is not defined for some reason, like \method{seek()} on a tty
 device or writing a file opened for reading.
 
 Files have the following methods:
@@ -728,7 +729,7 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{flush}{}
-  Flush the internal buffer, like \code{stdio}'s \code{fflush()}.
+  Flush the internal buffer, like \code{stdio}'s \cfunction{fflush()}.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{isatty}{}
@@ -740,7 +741,7 @@ Files have the following methods:
 Return the integer ``file descriptor'' that is used by the underlying
 implementation to request I/O operations from the operating system.
 This can be useful for other, lower level interfaces that use file
-descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
+descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
 \refbimodindex{fcntl}
 \end{methoddesc}
 
