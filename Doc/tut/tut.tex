@@ -299,13 +299,24 @@ executable, like shell scripts, by putting the line
 
 (assuming that the interpreter is on the user's \envvar{PATH}) at the
 beginning of the script and giving the file an executable mode.  The
-\samp{\#!} must be the first two characters of the file.  Note that
+\samp{\#!} must be the first two characters of the file.  On some
+platforms, this first line must end with a \UNIX-style line ending
+(\character{\e n}), not a Mac OS (\character{\e r}) or Windows
+(\character{\e r\e n}) line ending.  Note that
 the hash, or pound, character, \character{\#}, is used to start a
 comment in Python.
 
+The script can be given a executable mode, or permission, using the
+\program{chmod} command:
+
+\begin{verbatim}
+$ chmod +x myscript.py
+\end{verbatim} % $ <-- bow to font-lock
+
+
 \subsection{Source Code Encoding}
 
-It is possible to use encodings different than ASCII in Python source
+It is possible to use encodings different than \ASCII{} in Python source
 files. The best way to do it is to put one more special comment line
 right after the \code{\#!} line to define the source file encoding:
 
