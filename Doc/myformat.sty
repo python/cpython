@@ -26,8 +26,16 @@
 \RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
 
 
-% for PDF output, use maximal compression:
-\@ifundefined{pdfannotlink}{}{\pdfcompresslevel=9}
+% for PDF output, use maximal compression, revise \label{} to support named
+% targets for later linking operations.
+\@ifundefined{pdfannotlink}{}{%
+  \pdfcompresslevel=9
+  \let\OldLabel=\label
+  \renewcommand{\label}[1]{%
+    \OldLabel{#1}%
+    {\pdfdest name {#1} fit}%
+  }
+}
 
 % Increase printable page size (copied from fullpage.sty)
 \topmargin 0pt
@@ -324,7 +332,7 @@
     \Black%				Turn it back off; these are declarative
     \pdfendlink}}%			and don't appear bound to the current
 }%					formatting "box".
-\let\email=\code
+\newcommand{\email}[1]{\mbox{\small\textsf{#1}}}
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
