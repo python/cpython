@@ -646,8 +646,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                         doc = self.markup(value.__doc__, self.preformat,
                                           funcs, classes, mdict)
                         push('<dd><tt>%s</tt></dd>\n' % doc)
-                    for attr, tag in [("fset", " setter"),
-                                      ("fget", " getter"),
+                    for attr, tag in [("fget", " getter"),
+                                      ("fset", " setter"),
                                       ("fdel", " deleter")]:
                         func = getattr(value, attr)
                         if func is not None:
@@ -713,7 +713,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                           lambda t: t[1] == 'static method')
             attrs = spillproperties("Properties %s" % tag, attrs,
                                     lambda t: t[1] == 'property')
-            attrs = spilldata("Data %s" % tag, attrs,
+            attrs = spilldata("Data and non-method functions %s" % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
 
@@ -1030,8 +1030,8 @@ class TextDoc(Doc):
                     if doc:
                         push(self.indent(doc))
                         need_blank_after_doc = 1
-                    for attr, tag in [("fset", " setter"),
-                                      ("fget", " getter"),
+                    for attr, tag in [("fget", " getter"),
+                                      ("fset", " setter"),
                                       ("fdel", " deleter")]:
                         func = getattr(value, attr)
                         if func is not None:
@@ -1081,8 +1081,8 @@ class TextDoc(Doc):
                           lambda t: t[1] == 'static method')
             attrs = spillproperties("Properties %s:\n" % tag, attrs,
                                     lambda t: t[1] == 'property')
-            attrs = spilldata("Data %s:\n" % tag, attrs,
-                              lambda t: t[1] == 'data')
+            attrs = spilldata("Data and non-method functions %s:\n" % tag,
+                              attrs, lambda t: t[1] == 'data')
             assert attrs == []
 
             # Split off the attributes inherited from the next class (note
