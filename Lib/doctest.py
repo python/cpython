@@ -735,22 +735,18 @@ class DocTestParser:
         # indented; and then strip their indentation & prompts.
         source_lines = m.group('source').split('\n')
         self._check_prompt_blank(source_lines, indent, name, lineno)
-        self._check_prefix(source_lines[1:], ' '*indent+'.', name, lineno)
+        self._check_prefix(source_lines[1:], ' '*indent + '.', name, lineno)
         source = '\n'.join([sl[indent+4:] for sl in source_lines])
 
-        # Divide want into lines; check that it's properly
-        # indented; and then strip the indentation.
+        # Divide want into lines; check that it's properly indented; and
+        # then strip the indentation.  Spaces before the last newline should
+        # be preserved, so plain rstrip() isn't good enough.
         want = m.group('want')
-
-        # Strip trailing newline and following spaces
-        l = len(want.rstrip())
-        l = want.find('\n', l)
-        if l >= 0:
-            want = want[:l]
-            
         want_lines = want.split('\n')
+        if len(want_lines) > 1 and re.match(r' *$', want_lines[-1]):
+            del want_lines[-1]  # forget final newline & spaces after it
         self._check_prefix(want_lines, ' '*indent, name,
-                           lineno+len(source_lines))
+                           lineno + len(source_lines))
         want = '\n'.join([wl[indent:] for wl in want_lines])
 
         return source, want
@@ -1581,7 +1577,7 @@ class OutputChecker:
         compare `want` and `got`.  `indent` is the indentation of the
         original example.
         """
-        
+
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
