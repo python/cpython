@@ -234,9 +234,8 @@ svmodule.o: svmodule.c
 threadmodule.o: threadmodule.c
 timemodule.o: timemodule.c
 timingmodule.o: timingmodule.c
-unicodedata.o: unicodedata.c unicodedatabase.o
-unicodedatabase.o: unicodedatabase.c unicodedatabase.h unicodedata_db.h
-ucnhash.o: ucnhash.c
+unicodedata.o: unicodedata.c unicodedata_db.h
+ucnhash.o: ucnhash.c unicodename_db.h
 xxmodule.o: xxmodule.c
 yuvconvert.o: yuvconvert.c
 
