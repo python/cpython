@@ -183,8 +183,8 @@ class MainListWindow(ListWindow):
 		if item == MAIN_LIST:
 			self.do_listhit(event)
 		if item == MAIN_MKDISTR:
-## XXXX This somehow stopped working...
-##			fss, ok = macfs.StandardPutFile('Destination folder:')
+## XXXX Why doesn't this work??!?!?
+##			fss, ok = macfs.StandardPutFile('Destination folder?')
 ##			if not ok:
 ##				return
 ##			dest = fss.as_pathname()
