@@ -1,20 +1,5 @@
 # Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
-f = Function(void, 'OpenPort',
-    (GrafPtr, 'port', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'InitPort',
-    (GrafPtr, 'port', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'ClosePort',
-    (GrafPtr, 'port', InMode),
-)
-functions.append(f)
-
 f = Function(void, 'SetPort',
     (GrafPtr, 'port', InMode),
 )

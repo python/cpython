@@ -25,8 +25,6 @@ from macsupport import *
 
 # Create the type objects
 
-GrafPtr = WindowPtr
-
 class TextThingieClass(FixedInputBufferType):
 	def getargsCheck(self, name):
 		pass
@@ -34,7 +32,6 @@ class TextThingieClass(FixedInputBufferType):
 TextThingie = TextThingieClass(None)
 
 # These are temporary!
-Fixed = long
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 PolyHandle = OpaqueByValueType("PolyHandle", "ResObj")
@@ -42,6 +39,8 @@ PixMapHandle = OpaqueByValueType("PixMapHandle", "ResObj")
 PixPatHandle = OpaqueByValueType("PixPatHandle", "ResObj")
 PatHandle = OpaqueByValueType("PatHandle", "ResObj")
 CursHandle = OpaqueByValueType("CursHandle", "ResObj")
+CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
+GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
@@ -49,28 +48,45 @@ includestuff = includestuff + """
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 """
+## not yet...
+##
+##class Region_ObjectDefinition(GlobalObjectDefinition):
+##	def outputCheckNewArg(self):
+##		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+##	def outputFreeIt(self, itselfname):
+##		Output("DisposeRegion(%s);", itselfname)
+##
+##class Polygon_ObjectDefinition(GlobalObjectDefinition):
+##	def outputCheckNewArg(self):
+##		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+##	def outputFreeIt(self, itselfname):
+##		Output("KillPoly(%s);", itselfname)
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyGRObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputCheckConvertArg(self):
-		OutLbrace("if (DlgObj_Check(v))")
-		Output("*p_itself = ((WindowObject *)v)->ob_itself;")
+		OutLbrace("if (DlgObj_Check(v) || WinObj_Check(v))")
+		Output("*p_itself = ((GrafPortObject *)v)->ob_itself;")
 		Output("return 1;")
 		OutRbrace()
-		Out("""
-		if (v == Py_None) { *p_itself = NULL; return 1; }
-		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
+	def outputGetattrHook(self):
+		Output("""if ( strcmp(name, "device") == 0 )
+			return PyInt_FromLong((long)self->ob_itself->device);
+		if ( strcmp(name, "portRect") == 0 )
+			return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
+		/* XXXX Add more, as needed */
 		""")
-	def outputFreeIt(self, itselfname):
-		Output("DisposeWindow(%s);", itselfname)
-
-# From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
-##object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
-##module.addobject(object)
+##r_object = Region_ObjectDefinition('Region', 'QdRgn', 'RgnHandle')
+##po_object = Polygon_ObjectDefinition('Polygon', 'QdPgn', 'PolyHandle')
+##module.addobject(r_object)
+##module.addobject(po_object)
+gr_object = MyGRObjectDefinition("GrafPort", "GrafObj", "GrafPtr")
+module.addobject(gr_object)
+
 
 # Create the generator classes used to populate the lists
 Function = OSErrFunctionGenerator
@@ -85,7 +101,8 @@ execfile(INPUTFILE)
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
-for f in methods: object.add(f)
+##for f in r_methods: r_object.add(f)
+##for f in po_methods: po_object.add(f)
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
