@@ -211,8 +211,7 @@ function calls leading up to the error, in the order they occurred.
             done[name] = 1
             if value is not __UNDEF__:
                 if where == 'global': name = 'global ' + name
-                elif where == 'local': name = name
-                else: name = where + name.split('.')[-1]
+                elif where != 'local': name = where + name.split('.')[-1]
                 dump.append('%s = %s' % (name, pydoc.text.repr(value)))
             else:
                 dump.append(name + ' undefined')
