@@ -272,7 +272,7 @@ static int CFTypeRefObj_compare(CFTypeRefObject *self, CFTypeRefObject *other)
 static PyObject * CFTypeRefObj_repr(CFTypeRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", CFGetTypeID(self->ob_itself), (unsigned long)self, (unsigned long)self->ob_itself);
 	return PyString_FromString(buf);
 }
 

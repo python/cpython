@@ -190,7 +190,7 @@ class MyGlobalObjectDefinition(GlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%8.8x for 0x%%8.8x>", CFGetTypeID(self->ob_itself), (unsigned long)self, (unsigned long)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
