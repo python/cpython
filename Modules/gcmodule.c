@@ -531,7 +531,7 @@ Py_collect(PyObject *self, PyObject *args)
 {
 	long n;
 
-	if(!PyArg_ParseTuple(args, ""))	/* check no args */
+	if (!PyArg_ParseTuple(args, ":collect"))	/* check no args */
 		return NULL;
 
 	generation = 2;
@@ -561,7 +561,7 @@ static char set_debug__doc__[] =
 static PyObject *
 Py_set_debug(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "l", &debug))
+	if (!PyArg_ParseTuple(args, "l:get_debug", &debug))
 		return NULL;
 
 	Py_INCREF(Py_None);
@@ -577,7 +577,7 @@ static char get_debug__doc__[] =
 static PyObject *
 Py_get_debug(PyObject *self, PyObject *args)
 {
-	if(!PyArg_ParseTuple(args, ""))	/* no args */
+	if (!PyArg_ParseTuple(args, ":get_debug"))	/* no args */
 		return NULL;
 
 	return Py_BuildValue("i", debug);
@@ -593,7 +593,7 @@ static char set_thresh__doc__[] =
 static PyObject *
 Py_set_thresh(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "i|ii", &threshold0, 
+	if (!PyArg_ParseTuple(args, "i|ii:set_threshold", &threshold0, 
 				&threshold1, &threshold2))
 		return NULL;
 
@@ -610,7 +610,7 @@ static char get_thresh__doc__[] =
 static PyObject *
 Py_get_thresh(PyObject *self, PyObject *args)
 {
-	if(!PyArg_ParseTuple(args, ""))	/* no args */
+	if (!PyArg_ParseTuple(args, ":get_threshold"))	/* no args */
 		return NULL;
 
 	return Py_BuildValue("(iii)", threshold0, threshold1, threshold2);
