@@ -3276,7 +3276,8 @@ In this release, the built-in exceptions are still strings.
 Two new modules, \code{pickle} and \code{shelve}, support storage and
 retrieval of (almost) arbitrary Python objects on disk, using the
 \code{dbm} package.  A third module, \code{copy}, provides flexible
-object copying operations.
+object copying operations.  More information on these modules is
+provided in the Library Reference Manual.
 
 \subsection{Persistent Objects}
 
@@ -3308,9 +3309,6 @@ on files.  The operation \code{shelve.open(filename)} returns a
 dictionary-like interface.  Database keys are strings, objects stored
 in the database can be anything that \code{pickle} will handle.
 
-More information on these modules can be glanced from their
-documentation strings (see below).
-
 \subsection{Copying Objects}
 
 The module \code{copy} exports two functions: \code{copy()} and
@@ -3337,8 +3335,6 @@ Both functions have the same restrictions and use the same protocols
 as \code{pickle} --- user-defined classes can control how they are
 copied by providing methods named \code{__getinitargs__()},
 \code{__getstate__()} and \code{__setstate__()}.
-
-More info in the module's documentation string.
 
 
 \section{Documentation Strings}
@@ -3496,21 +3492,21 @@ this forms the basis for a future restricted execution mode.
 
 There is a growing number of modules available for writing WWW tools.
 The previous release already sported modules \code{gopherlib},
-\code{ftplib}, \code{httplib} and \code{urllib} (unifying the previous
-three) for accessing data through the commonest WWW protocols.  This
-release also provides \code{cgi}, to ease the writing of server-side
-scripts that use the Common Gateway Interface protocol, supported by
-most WWW servers.  The module \code{urlparse} provides precise parsing
-of a URL string into its components (address scheme, network location,
-path, parameters, query, and fragment identifier).
+\code{ftplib}, \code{httplib} and \code{urllib} (which unifies the
+other three) for accessing data through the commonest WWW protocols.
+This release also provides \code{cgi}, to ease the writing of
+server-side scripts that use the Common Gateway Interface protocol,
+supported by most WWW servers.  The module \code{urlparse} provides
+precise parsing of a URL string into its components (address scheme,
+network location, path, parameters, query, and fragment identifier).
 
-There is no complete parser for HTML files yet, although the
-\code{Demo/www} directory in the distribution contains some old code
-that should be a start if you wanted to contribute one.
-Unfortunately Python seems to be too slow for real-time parsing and
-formatting of HTML such as required by interactive WWW browsers --- but
-it's ideal for writing a ``robot'' (an automated WWW browser that
-searches the web for information).
+A rudimentary, parser for HTML files is available in the module
+\code{htmllib}.  It currently supports a subset of HTML 1.0 (if you
+bring it up to date, I'd love to receive your fixes!).  Unfortunately
+Python seems to be too slow for real-time parsing and formatting of
+HTML such as required by interactive WWW browsers --- but it's ideal
+for writing a ``robot'' (an automated WWW browser that searches the
+web for information).
 
 
 \section{Miscellaneous}
