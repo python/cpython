@@ -36,7 +36,8 @@ class MiniApplication:
 		Menu.ClearMenuBar()
 		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
 		applemenu.AppendMenu("%s;(-" % self.getaboutmenutext())
-		applemenu.AppendResMenu('DRVR')
+		if MacOS.runtimemodel == 'ppc':
+			applemenu.AppendResMenu('DRVR')
 		applemenu.InsertMenu(0)
 		self.quitmenu = Menu.NewMenu(self.quitid, "File")
 		self.quitmenu.AppendMenu("Quit")
@@ -93,7 +94,7 @@ class MiniApplication:
 				if id == self.appleid:
 					if item == 1:
 						EasyDialogs.Message(self.getabouttext())
-					elif item > 1:
+					elif item > 1 and hasattr(Menu, 'OpenDeskAcc'):
 						name = self.applemenu.GetMenuItemText(item)
 						Menu.OpenDeskAcc(name)
 				elif id == self.quitid and item == 1:

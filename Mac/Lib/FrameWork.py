@@ -674,12 +674,13 @@ class AppleMenu(Menu):
 		Menu.__init__(self, bar, "\024")
 		self.additem(abouttext, None, aboutcallback)
 		self.addseparator()
-		self.menu.AppendResMenu('DRVR')
+		if MacOS.runtimemodel == 'ppc':
+			self.menu.AppendResMenu('DRVR')
 	
 	def dispatch(self, id, item, window, event):
 		if item == 1:
 			Menu.dispatch(self, id, item, window, event)
-		else:
+		elif MacOS.runtimemodel == 'ppc':
 			name = self.menu.GetMenuItemText(item)
 			OpenDeskAcc(name)
 
