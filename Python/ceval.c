@@ -1734,6 +1734,10 @@ eval_frame(PyFrameObject *f)
 			x = freevars[oparg];
 			w = PyCell_Get(x);
 			if (w == NULL) {
+				err = -1;
+				/* Don't stomp existing exception */
+				if (PyErr_Occurred())
+					break;
 				if (oparg < f->f_ncells) {
 					v = PyTuple_GetItem(co->co_cellvars,
 							       oparg);
@@ -1750,7 +1754,6 @@ eval_frame(PyFrameObject *f)
 					       UNBOUNDFREE_ERROR_MSG,
 					       v);
 				}
-				err = -1;
 				break;
 			}
 			PUSH(w);
