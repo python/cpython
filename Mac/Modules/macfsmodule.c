@@ -979,7 +979,7 @@ initmacfs()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyErr_NewException("macfs.error", NULL, NULL);
+	ErrorObject = PyMac_GetOSErrException();
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	Mfsatype.ob_type = &PyType_Type;
