@@ -231,13 +231,17 @@ Currently-active file is at the head of the list.")
 	    ("\C-c\C-n"  . py-next-statement)
 	    ("\C-c\C-p"  . py-previous-statement)
 	    ("\C-c\C-u"  . py-goto-block-up)
-	    ("\C-c\C-b"  . py-mark-block)
+	    ("\C-c\C-m"  . py-mark-block)
 	    ("\C-c#"	 . py-comment-region)
 	    ("\C-c?"	 . py-describe-mode)
 	    ("\C-c\C-hm" . py-describe-mode)
 	    ("\e\C-a"	 . beginning-of-python-def-or-class)
 	    ("\e\C-e"	 . end-of-python-def-or-class)
-	    ( "\e\C-h"	 . mark-python-def-or-class))))
+	    ( "\e\C-h"	 . mark-python-def-or-class)))
+  ;; should do all keybindings this way
+  (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
+  (define-key py-mode-map "\C-c\C-v" 'py-version)
+  )
 
 (defvar py-mode-syntax-table nil
   "Syntax table used in `python-mode' buffers.")
@@ -1766,8 +1770,53 @@ local bindings to py-newline-and-indent."))
 
 
 
-;; initializations
+(defconst py-version "$Revision$"
+  "`python-mode' version number.")
+(defconst py-help-address "bwarsaw@cnri.reston.va.us"
+  "Address accepting submission of bug reports.")
 
+(defun py-version ()
+  "Echo the current version of `python-mode' in the minibuffer."
+  (interactive)
+  (message "Using `python-mode' version %s" py-version)
+  (py-keep-region-active))
+
+;; only works under Emacs 19
+;(eval-when-compile
+;  (require 'reporter))
+
+(defun py-submit-bug-report (enhancement-p)
+  "Submit via mail a bug report on `python-mode'.
+With \\[universal-argument] just submit an enhancement request."
+  (interactive
+   (list (not (y-or-n-p
+	       "Is this a bug report? (hit `n' to send other comments) "))))
+  (let ((reporter-prompt-for-summary-p (not enhancement-p)))
+    (require 'reporter)
+    (reporter-submit-bug-report
+     py-help-address			;address
+     "python-mode"			;pkgname
+     ;; varlist
+     (if enhancement-p nil
+       '(py-python-command
+	 py-indent-offset
+	 py-block-comment-prefix
+	 py-scroll-process-buffer
+	 py-temp-directory
+	 py-beep-if-tab-change))
+     nil				;pre-hooks
+     nil				;post-hooks
+     "Dear Barry,")			;salutation
+    (if enhancement-p nil
+      (set-mark (point))
+      (insert 
+"Please replace this text with a sufficiently large code sample\n\
+and an exact recipe so that I can reproduce your problem.  Failure\n\
+to do so may mean a greater delay in fixing your bug.\n\n")
+      (exchange-point-and-mark)
+      (py-keep-region-active))))
+
+
 ;; arrange to kill temp files when Emacs exists
 (if (or py-this-is-emacs-19-p py-this-is-lucid-emacs-p)
     (add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
