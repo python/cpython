@@ -3603,7 +3603,15 @@ def mutable_names():
     class C(object):
         pass
 
-    C.__name__ = 'C'
+    # C.__module__ could be 'test_descr' or '__main__'
+    mod = C.__module__
+    
+    C.__name__ = 'D'
+    vereq((C.__module__, C.__name__), (mod, 'D'))
+
+    C.__name__ = 'D.E'
+    vereq((C.__module__, C.__name__), (mod, 'D.E'))
+    
 
 def test_main():
     do_this_first()
