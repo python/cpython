@@ -2,13 +2,16 @@
          Subprocesses with accessible I/O streams}
 
 \declaremodule{standard}{popen2}
-  \platform{Unix, Windows}
+  \platform{Unix}
 \modulesynopsis{Subprocesses with accessible standard I/O streams.}
 \sectionauthor{Drew Csillag}{drew_csillag@geocities.com}
 
 
 This module allows you to spawn processes and connect their 
-input/output/error pipes and obtain their return codes.
+input/output/error pipes and obtain their return codes under \UNIX.
+Similar functionality exists for Windows platforms using the
+\module{win32pipe} module provided as part of Mark Hammond's Windows
+extensions.
 
 The primary interface offered by this module is a pair of factory
 functions:
