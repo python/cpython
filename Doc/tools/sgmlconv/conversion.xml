@@ -460,10 +460,14 @@
     </macro>
 
   <!-- These are handled at a later translation stage, at least for now. -->
-  <macro name="Cpp"/>
+  <macro name="Cpp" outputname="">
+    <text>C++</text>
+    </macro>
   <macro name="geq"/>
   <macro name="LaTeX"/>
-  <macro name="ldots"/>
+  <macro name="ldots" outputname="">
+    <text>...</text>
+    </macro>
   <macro name="leq"/>
   <macro name="TeX"/>
   <macro name="version"/>
@@ -596,7 +600,7 @@
   <macro name="e" outputname="">
     <text>\</text>
     </macro>
-  <macro name="NULL" outputname="">
+  <macro name="NULL" outputname="constant">
     <text>NULL</text>
     </macro>
   <macro name="POSIX" outputname="">
