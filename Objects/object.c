@@ -347,8 +347,21 @@ PyObject_Compare(v, w)
 				return cmp;
 			}
 		}
-		else if (PyUnicode_Check(v) || PyUnicode_Check(w))
-			return PyUnicode_Compare(v, w);
+		else if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
+			int result = PyUnicode_Compare(v, w);
+			if (result == -1 && PyErr_Occurred() && 
+			    PyErr_ExceptionMatches(PyExc_TypeError))
+				/* TypeErrors are ignored: if Unicode coercion
+				fails due to one of the arguments not
+			 	having the right type, we continue as
+				defined by the coercion protocol (see
+				above). Luckily, decoding errors are
+				reported as ValueErrors and are not masked
+				by this technique. */
+				PyErr_Clear();
+			else
+				return result;
+		}
 		else if (vtp->tp_as_number != NULL)
 			vname = "";
 		else if (wtp->tp_as_number != NULL)
