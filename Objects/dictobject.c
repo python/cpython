@@ -1242,33 +1242,19 @@ dict_copy(register dictobject *mp)
 PyObject *
 PyDict_Copy(PyObject *o)
 {
-	register dictobject *mp;
-	register int i;
-	dictobject *copy;
-	dictentry *entry;
+	PyObject *copy;
 
 	if (o == NULL || !PyDict_Check(o)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	mp = (dictobject *)o;
-	copy = (dictobject *)PyDict_New();
+	copy = PyDict_New();
 	if (copy == NULL)
 		return NULL;
-	if (mp->ma_used > 0) {
-		if (dictresize(copy, mp->ma_used*2) != 0)
-			return NULL;
-		for (i = 0; i <= mp->ma_mask; i++) {
-			entry = &mp->ma_table[i];
-			if (entry->me_value != NULL) {
-				Py_INCREF(entry->me_key);
-				Py_INCREF(entry->me_value);
-				insertdict(copy, entry->me_key, entry->me_hash,
-					   entry->me_value);
-			}
-		}
-	}
-	return (PyObject *)copy;
+	if (PyDict_Merge(copy, o, 1) == 0)
+		return copy;
+	Py_DECREF(copy);
+	return copy;
 }
 
 int
