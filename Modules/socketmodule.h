@@ -156,7 +156,7 @@ typedef struct {
 /* --- C API ----------------------------------------------------*/
 
 /* Interfacestructure to C API for other modules.
-   Call PySocket_ImportModuleAPI() to initialize this
+   Call PySocketModule_ImportModuleAndAPI() to initialize this
    structure. After that usage is simple:
 
    if (!PyArg_ParseTuple(args, "O!|zz:ssl",
