@@ -21,6 +21,7 @@ import string, re, os
 from types import *
 from copy import copy
 from distutils import sysconfig
+from distutils.dep_util import newer
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 from distutils.errors import \
@@ -102,6 +103,37 @@ class UnixCCompiler (CCompiler):
         self.ld_exec = self.cc
 
     # __init__ ()
+
+
+    def preprocess (self,
+                    source,
+                    output_file=None,
+                    macros=None,
+                    include_dirs=None,
+                    extra_preargs=None,
+                    extra_postargs=None):
+
+        (_, macros, include_dirs) = \
+            self._fix_compile_args (None, macros, include_dirs)
+        pp_opts = gen_preprocess_options (macros, include_dirs)
+        cc_args = ['-E'] + pp_opts
+        if output_file:
+            cc_args.extend(['-o', output_file])
+        if extra_preargs:
+            cc_args[:0] = extra_preargs
+        if extra_postargs:
+            extra_postargs.extend(extra_postargs)
+
+        # We need to preprocess: either we're being forced to, or the
+        # source file is newer than the target (or the target doesn't
+        # exist).
+        if self.force or (output_file and newer(source, output_file)):
+            if output_file:
+                self.mkpath(os.path.dirname(output_file))
+            try:
+                self.spawn ([self.cc] + cc_args)
+            except DistutilsExecError, msg:
+                raise CompileError, msg
 
 
     def compile (self,
