@@ -204,6 +204,9 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 			id = Res.Unique1ID(RESTYPE)
 		res = Res.Resource(data)
 		res.AddResource(RESTYPE, id, RESNAME)
+		attrs = res.GetResAttrs()
+		attrs = attrs | 0x04	# set preload
+		res.SetResAttrs(attrs)
 		res.WriteResource()
 		res.ReleaseResource()
 	
