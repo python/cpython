@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -106,7 +106,7 @@ class_getattr(op, name)
 		int i;
 		for (i = 0; i < n; i++) {
 			v = class_getattr((classobject *)
-					  gettupleitem(op->cl_bases, i), name);
+					gettupleitem(op->cl_bases, i), name);
 			if (v != NULL)
 				return v;
 			err_clear();
@@ -122,6 +122,13 @@ class_setattr(op, name, v)
 	char *name;
 	object *v;
 {
+	if (name[0] == '_' && name[1] == '_') {
+		int n = strlen(name);
+		if (name[n-1] == '_' && name[n-2] == '_') {
+			err_setstr(TypeError, "read-only special attribute");
+			return -1;
+		}
+	}
 	if (v == NULL)
 		return dictremove(op->cl_methods, name);
 	else
@@ -226,6 +233,13 @@ instance_setattr(inst, name, v)
 	char *name;
 	object *v;
 {
+	if (name[0] == '_' && name[1] == '_') {
+		int n = strlen(name);
+		if (name[n-1] == '_' && name[n-2] == '_') {
+			err_setstr(TypeError, "read-only special attribute");
+			return -1;
+		}
+	}
 	if (v == NULL)
 		return dictremove(inst->in_attr, name);
 	else
