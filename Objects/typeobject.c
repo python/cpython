@@ -1067,7 +1067,8 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 		}
 		for (j = 0; j < to_merge_size; j++) {
 			PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
-			if (PyList_GET_ITEM(j_lst, remain[j]) == candidate) {
+			if (remain[j] < PyList_GET_SIZE(j_lst) &&
+			    PyList_GET_ITEM(j_lst, remain[j]) == candidate) {
 				remain[j]++;
 			}
 		}
