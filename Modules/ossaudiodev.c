@@ -87,7 +87,7 @@ newladobject(PyObject *arg)
     char *basedev = NULL;
     char *mode = NULL;
 
-    /* Two ways to call linuxaudiodev.open():
+    /* Two ways to call open():
          open(device, mode) (for consistency with builtin open())
          open(mode)         (for backwards compatibility)
        because the *first* argument is optional, parsing args is
@@ -607,7 +607,7 @@ lad_getattr(lad_t *xp, char *name)
 static PyTypeObject Ladtype = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,				/*ob_size*/
-    "linuxaudiodev.linux_audio_device", /*tp_name*/
+    "ossaudiodev.oss_audio_device", /*tp_name*/
     sizeof(lad_t),		/*tp_size*/
     0,				/*tp_itemsize*/
     /* methods */
@@ -620,13 +620,13 @@ static PyTypeObject Ladtype = {
 };
 
 static PyObject *
-ladopen(PyObject *self, PyObject *args)
+ossopen(PyObject *self, PyObject *args)
 {
     return (PyObject *)newladobject(args);
 }
 
-static PyMethodDef linuxaudiodev_methods[] = {
-    { "open", ladopen, METH_VARARGS },
+static PyMethodDef ossaudiodev_methods[] = {
+    { "open", ossopen, METH_VARARGS },
     { 0, 0 },
 };
 
@@ -635,11 +635,11 @@ static PyMethodDef linuxaudiodev_methods[] = {
   if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) return;
 
 void
-initlinuxaudiodev(void)
+initossaudiodev(void)
 {
     PyObject *m;
   
-    m = Py_InitModule("linuxaudiodev", linuxaudiodev_methods);
+    m = Py_InitModule("ossaudiodev", ossaudiodev_methods);
 
     OSSAudioError = PyErr_NewException("ossaudiodev.error", NULL, NULL);
     if (OSSAudioError)
