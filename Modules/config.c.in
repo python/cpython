@@ -126,6 +126,8 @@ extern void inittime();
 extern void initmath();
 extern void initregexp();
 extern void initposix();
+extern void initpwd();
+extern void initgrp();
 #ifdef USE_AUDIO
 extern void initaudio();
 #endif
@@ -156,6 +158,8 @@ struct {
 	{"math",	initmath},
 	{"regexp",	initregexp},
 	{"posix",	initposix},
+	{"pwd",		initpwd},
+	{"grp",		initgrp},
 
 
 	/* Optional modules */
