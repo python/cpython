@@ -61,7 +61,7 @@ class EditorWindow:
         self.break_set = False
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
-        self.text = text = Text(text_frame, name='text', padx=5, wrap=None,
+        self.text = text = Text(text_frame, name='text', padx=5, wrap='none',
                 foreground=idleConf.GetHighlight(currentTheme,
                         'normal',fgBg='fg'),
                 background=idleConf.GetHighlight(currentTheme,
