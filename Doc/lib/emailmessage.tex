@@ -33,9 +33,9 @@ The constructor takes no arguments.
 \end{classdesc}
 
 \begin{methoddesc}[Message]{as_string}{\optional{unixfrom}}
-Return the entire formatted message as a string.  Optional
-\var{unixfrom}, when true, specifies to include the \emph{Unix-From}
-envelope header; it defaults to \code{False}.
+Return the entire message flatten as a string.  When optional
+\var{unixfrom} is \code{True}, the envelope header is included in the
+returned string.  \var{unixfrom} defaults to \code{False}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{__str__}{}
@@ -59,7 +59,7 @@ envelope header was never set.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{attach}{payload}
-Add the given payload to the current payload, which must be
+Add the given \var{payload} to the current payload, which must be
 \code{None} or a list of \class{Message} objects before the call.
 After the call, the payload will always be a list of \class{Message}
 objects.  If you want to set the payload to a scalar object (e.g. a
@@ -95,7 +95,7 @@ returned.  The default for \var{decode} is \code{False}.
 \begin{methoddesc}[Message]{set_payload}{payload\optional{, charset}}
 Set the entire message object's payload to \var{payload}.  It is the
 client's responsibility to ensure the payload invariants.  Optional
-\var{charset} sets the message's default character set (see
+\var{charset} sets the message's default character set; see
 \method{set_charset()} for details.
 
 \versionchanged[\var{charset} argument added]{2.2.2}
@@ -103,7 +103,7 @@ client's responsibility to ensure the payload invariants.  Optional
 
 \begin{methoddesc}[Message]{set_charset}{charset}
 Set the character set of the payload to \var{charset}, which can
-either be a \class{Charset} instance (see \refmodule{email.Charset}, a
+either be a \class{Charset} instance (see \refmodule{email.Charset}), a
 string naming a character set,
 or \code{None}.  If it is a string, it will be converted to a
 \class{Charset} instance.  If \var{charset} is \code{None}, the
@@ -128,14 +128,18 @@ Return the \class{Charset} instance associated with the message's payload.
 \end{methoddesc}
 
 The following methods implement a mapping-like interface for accessing
-the message object's \rfc{2822} headers.  Note that there are some
+the message's \rfc{2822} headers.  Note that there are some
 semantic differences between these methods and a normal mapping
 (i.e. dictionary) interface.  For example, in a dictionary there are
 no duplicate keys, but here there may be duplicate message headers.  Also,
 in dictionaries there is no guaranteed order to the keys returned by
-\method{keys()}, but in a \class{Message} object, there is an explicit
-order.  These semantic differences are intentional and are biased
-toward maximal convenience.
+\method{keys()}, but in a \class{Message} object, headers are always
+returned in the order they appeared in the original message, or were
+added to the message later.  Any header deleted and then re-added are
+always appended to the end of the header list.
+
+These semantic differences are intentional and are biased toward
+maximal convenience.
 
 Note that in all cases, any envelope header present in the message is
 not included in the mapping interface.
@@ -175,8 +179,7 @@ fields.
 Note that this does \emph{not} overwrite or delete any existing header
 with the same name.  If you want to ensure that the new header is the
 only one present in the message with field name
-\var{name}, first use \method{__delitem__()} to delete all named
-fields, e.g.:
+\var{name}, delete the field first, e.g.:
 
 \begin{verbatim}
 del msg['subject']
@@ -196,27 +199,16 @@ otherwise return false.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{keys}{}
-Return a list of all the message's header field names.  These keys
-will be sorted in the order in which they appeared in the original
-message, or were added to the message and may contain
-duplicates.  Any fields deleted and then subsequently re-added are
-always appended to the end of the header list.
+Return a list of all the message's header field names.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{values}{}
-Return a list of all the message's field values.  These will be sorted
-in the order in which they appeared in the original message, or were
-added to the message, and may contain
-duplicates.  Any fields deleted and then subsequently re-added are
-always appended to the end of the header list.
+Return a list of all the message's field values.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{items}{}
 Return a list of 2-tuples containing all the message's field headers
-and values.  These will be sorted in the order in which they appeared
-in the original message, or were added to the message, and may contain
-duplicates.  Any fields deleted and then subsequently re-added are
-always appended to the end of the header list.
+and values.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get}{name\optional{, failobj}}
@@ -228,11 +220,7 @@ if the named header is missing (defaults to \code{None}).
 Here are some additional useful methods:
 
 \begin{methoddesc}[Message]{get_all}{name\optional{, failobj}}
-Return a list of all the values for the field named \var{name}.  These
-will be sorted in the order in which they appeared in the original
-message, or were added to the message.  Any fields deleted and then
-subsequently re-added are always appended to the end of the list.
-
+Return a list of all the values for the field named \var{name}.
 If there are no such named headers in the message, \var{failobj} is
 returned (defaults to \code{None}).
 \end{methoddesc}
@@ -351,10 +339,10 @@ instead of \mailheader{Content-Type}.
 Parameter keys are always compared case insensitively.  The return
 value can either be a string, or a 3-tuple if the parameter was
 \rfc{2231} encoded.  When it's a 3-tuple, the elements of the value are of
-the form \samp{(CHARSET, LANGUAGE, VALUE)}, where \var{LANGUAGE} may
+the form \code{(CHARSET, LANGUAGE, VALUE)}, where \code{LANGUAGE} may
 be the empty string.  Your application should be prepared to deal with
-3-tuple return values, which it can convert the parameter to a Unicode
-string like so:
+3-tuple return values, which it can convert to a Unicode string like
+so:
 
 \begin{verbatim}
 param = msg.get_param('foo')
@@ -363,7 +351,7 @@ if isinstance(param, tuple):
 \end{verbatim}
 
 In any case, the parameter value (either the returned string, or the
-\var{VALUE} item in the 3-tuple) is always unquoted, unless
+\code{VALUE} item in the 3-tuple) is always unquoted, unless
 \var{unquote} is set to \code{False}.
 
 \versionchanged[\var{unquote} argument added, and 3-tuple return value
@@ -398,7 +386,7 @@ Remove the given parameter completely from the
 \mailheader{Content-Type} header.  The header will be re-written in
 place without the parameter or its value.  All values will be quoted
 as necessary unless \var{requote} is \code{False} (the default is
-\code{True}).  Optional \var{header} specifies an alterative to
+\code{True}).  Optional \var{header} specifies an alternative to
 \mailheader{Content-Type}.
 
 \versionadded{2.2.2}
@@ -417,8 +405,8 @@ leaves the existing header's quoting as is, otherwise the parameters
 will be quoted (the default).
 
 An alternative header can be specified in the \var{header} argument.
-When the \mailheader{Content-Type} header is set, we'll always also
-add a \mailheader{MIME-Version} header.
+When the \mailheader{Content-Type} header is set a
+\mailheader{MIME-Version} header is also added.
 
 \versionadded{2.2.2}
 \end{methoddesc}
@@ -440,11 +428,10 @@ returned string will always be unquoted as per
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{set_boundary}{boundary}
-Set the \code{boundary} parameter of the \mailheader{Content-Type} header
-to \var{boundary}.  \method{set_boundary()} will always quote
-\var{boundary} so you should not quote it yourself.  A
-\exception{HeaderParseError} is raised if the message object has no
-\mailheader{Content-Type} header.
+Set the \code{boundary} parameter of the \mailheader{Content-Type}
+header to \var{boundary}.  \method{set_boundary()} will always quote
+\var{boundary} if necessary.  A \exception{HeaderParseError} is raised
+if the message object has no \mailheader{Content-Type} header.
 
 Note that using this method is subtly different than deleting the old
 \mailheader{Content-Type} header and adding a new one with the new boundary
@@ -459,9 +446,9 @@ Return the \code{charset} parameter of the \mailheader{Content-Type}
 header.  If there is no \mailheader{Content-Type} header, or if that
 header has no \code{charset} parameter, \var{failobj} is returned.
 
-Note that this method differs from \method{get_charset} which returns
-the \class{Charset} instance for the default encoding of the message
-body.
+Note that this method differs from \method{get_charset()} which
+returns the \class{Charset} instance for the default encoding of the
+message body.
 
 \versionadded{2.2.2}
 \end{methoddesc}
@@ -484,15 +471,15 @@ will be \var{failobj}.
 The \method{walk()} method is an all-purpose generator which can be
 used to iterate over all the parts and subparts of a message object
 tree, in depth-first traversal order.  You will typically use
-\method{walk()} as the iterator in a \code{for ... in} loop; each
+\method{walk()} as the iterator in a \code{for} loop; each
 iteration returns the next subpart.
 
-Here's an example that prints the MIME type of every part of a message
-object tree:
+Here's an example that prints the MIME type of every part of a
+multipart message structure:
 
 \begin{verbatim}
 >>> for part in msg.walk():
->>>     print part.get_type('text/plain')
+>>>     print part.get_content_type()
 multipart/report
 text/plain
 message/delivery-status

@@ -39,14 +39,13 @@ and parsing message field values, creating RFC-compliant dates, etc.
 The following sections describe the functionality of the
 \module{email} package.  The ordering follows a progression that
 should be common in applications: an email message is read as flat
-text from a file or other source, the text is parsed to produce an
-object model representation of the email message, this model is
-manipulated, and finally the model is rendered back into
-flat text.
+text from a file or other source, the text is parsed to produce the
+object structure of the email message, this structure is manipulated,
+and finally rendered back into flat text.
 
-It is perfectly feasible to create the object model out of whole cloth
---- i.e. completely from scratch.  From there, a similar progression
-can be taken as above.  
+It is perfectly feasible to create the object structure out of whole
+cloth --- i.e. completely from scratch.  From there, a similar
+progression can be taken as above.
 
 Also included are detailed specifications of all the classes and
 modules that the \module{email} package provides, the exception
@@ -71,8 +70,11 @@ package, a section on differences and porting is provided.
 \subsection{Creating email and MIME objects from scratch}
 \input{emailmimebase}
 
-\subsection{Headers, Character sets, and Internationalization}
+\subsection{Internationalized headers}
 \input{emailheaders}
+
+\subsection{Representing character sets}
+\input{emailcharsets}
 
 \subsection{Encoders}
 \input{emailencoders}
@@ -92,7 +94,7 @@ Version 1 of the \module{email} package was bundled with Python
 releases up to Python 2.2.1.  Version 2 was developed for the Python
 2.3 release, and backported to Python 2.2.2.  It was also available as
 a separate distutils based package.  \module{email} version 2 is
-almost entirely backwards compatible with version 1, with the
+almost entirely backward compatible with version 1, with the
 following differences:
 
 \begin{itemize}
@@ -100,31 +102,31 @@ following differences:
       have been added.
 \item The pickle format for \class{Message} instances has changed.
       Since this was never (and still isn't) formally defined, this
-      isn't considered a backwards incompatibility.  However if your
+      isn't considered a backward incompatibility.  However if your
       application pickles and unpickles \class{Message} instances, be
       aware that in \module{email} version 2, \class{Message}
       instances now have private variables \var{_charset} and
       \var{_default_type}.
 \item Several methods in the \class{Message} class have been
-      deprecated, or their signatures changes.  Also, many new methods
+      deprecated, or their signatures changed.  Also, many new methods
       have been added.  See the documentation for the \class{Message}
-      class for deatils.  The changes should be completely backwards
+      class for details.  The changes should be completely backward
       compatible.
 \item The object structure has changed in the face of
       \mimetype{message/rfc822} content types.  In \module{email}
       version 1, such a type would be represented by a scalar payload,
       i.e. the container message's \method{is_multipart()} returned
-      false, \method{get_payload()} was not a list object, and was
-      actually a \class{Message} instance.
+      false, \method{get_payload()} was not a list object, but a single
+      \class{Message} instance.
 
       This structure was inconsistent with the rest of the package, so
       the object representation for \mimetype{message/rfc822} content
-      types was changed.  In module{email} version 2, the container
+      types was changed.  In \module{email} version 2, the container
       \emph{does} return \code{True} from \method{is_multipart()}, and
       \method{get_payload()} returns a list containing a single
       \class{Message} item.
 
-      Note that this is one place that backwards compatibility could
+      Note that this is one place that backward compatibility could
       not be completely maintained.  However, if you're already
       testing the return type of \method{get_payload()}, you should be
       fine.  You just need to make sure your code doesn't do a
@@ -142,7 +144,7 @@ following differences:
       \module{email.Generator} module was added.
 \item The intermediate base classes \class{MIMENonMultipart} and
       \class{MIMEMultipart} have been added, and interposed in the
-      class heirarchy for most of the other MIME-related derived
+      class hierarchy for most of the other MIME-related derived
       classes.
 \item The \var{_encoder} argument to the \class{MIMEText} constructor
       has been deprecated.  Encoding  now happens implicitly based
@@ -167,7 +169,9 @@ method names are more consistent, and some methods or modules have
 either been added or removed.  The semantics of some of the methods
 have also changed.  For the most part, any functionality available in
 \module{mimelib} is still available in the \refmodule{email} package,
-albeit often in a different way.
+albeit often in a different way.  Backward compatibility between
+the \module{mimelib} package and the \module{email} package was not a
+priority.
 
 Here is a brief description of the differences between the
 \module{mimelib} and the \refmodule{email} packages, along with hints on
