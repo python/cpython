@@ -11,13 +11,7 @@ Error = "bgenlocations.Error"
 #
 # Where bgen is. For unix-Python bgen isn't installed, so you have to refer to
 # the source tree here.
-if sys.platform == 'mac':
-    # For MacPython we know where it is
-    def _pardir(p): return os.path.split(p)[0]
-    BGENDIR=os.path.join(sys.prefix, "Tools", "bgen", "bgen")
-else:
-    # for unix-Python we don't know, please set it yourself.
-    BGENDIR="/Users/jack/src/python/Tools/bgen/bgen"
+BGENDIR="/Users/jack/src/python/Tools/bgen/bgen"
 
 #
 # Where to find the Universal Header include files. If you have CodeWarrior
@@ -25,21 +19,14 @@ else:
 # download them from the Apple website. Bgen can handle both unix- and mac-style
 # end of lines, so don't worry about that.
 #
-if sys.platform == 'mac':
-    _MWERKSDIR="Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
-else:
-    _MWERKSDIR="/Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
-INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", "CIncludes")
+INCLUDEDIR="/Users/jack/src/Universal/Interfaces/CIncludes"
 
 #
 # Where to put the python definitions files. Note that, on unix-Python,
 # if you want to commit your changes to the CVS repository this should refer to
 # your source directory, not your installed directory.
 #
-if sys.platform == 'mac':
-    TOOLBOXDIR=os.path.join(sys.prefix, "Lib", "plat-mac", "Carbon")
-else:
-    TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
+TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 
 # Creator for C files:
 CREATOR="CWIE"
