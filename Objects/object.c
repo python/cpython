@@ -550,6 +550,12 @@ default_3way_compare(PyObject *v, PyObject *w)
 		PyErr_Clear();
 	}
 
+	/* None is smaller than anything */
+	if (v == Py_None)
+		return -1;
+	if (w == Py_None)
+		return 1;
+
 	/* different type: compare type names */
 	if (v->ob_type->tp_as_number)
 		vname = "";
