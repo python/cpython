@@ -176,7 +176,6 @@ eval_code(co, globals, locals, arg)
 	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
-	FILE *fp;		/* Used by print operations */
 #ifdef LLTRACE
 	int lltrace = dictlookup(globals, "__lltrace__") != NULL;
 #endif
@@ -598,12 +597,12 @@ eval_code(co, globals, locals, arg)
 		
 		case PRINT_EXPR:
 			v = POP();
-			fp = sysgetfile("stdout", stdout);
 			/* Print value except if procedure result */
 			if (v != None) {
 				flushline();
-				softspace(sysget("stdout"), 1);
-				err = printobject(v, fp, 0);
+				x = sysget("stdout");
+				softspace(x, 1);
+				err = writeobject(v, x, 0);
 				flushline();
 			}
 			DECREF(v);
@@ -611,30 +610,30 @@ eval_code(co, globals, locals, arg)
 		
 		case PRINT_ITEM:
 			v = POP();
-			fp = sysgetfile("stdout", stdout);
-			if (softspace(sysget("stdout"), 1))
-				fprintf(fp, " ");
+			w = sysget("stdout");
+			if (softspace(w, 1))
+				writestring(" ", w);
 			if (is_stringobject(v)) {
 				char *s = getstringvalue(v);
 				int len = getstringsize(v);
-				fwrite(s, 1, len, fp);
-				if (ferror(fp)) {
-					err_errno(IOError);
-					err = -1;
-				}
-				else if (len > 0 && s[len-1] == '\n')
-					softspace(sysget("stdout"), 0);
+				err = writeobject(v, w, PRINT_RAW);
+				if (err == 0 && len > 0 && s[len-1] == '\n')
+					softspace(w, 0);
 			}
 			else {
-				err = printobject(v, fp, 0);
+				err = writeobject(v, w, 0);
 			}
 			DECREF(v);
 			break;
 		
 		case PRINT_NEWLINE:
-			fp = sysgetfile("stdout", stdout);
-			fprintf(fp, "\n");
-			softspace(sysget("stdout"), 0);
+			x = sysget("stdout");
+			if (x == NULL)
+				err_setstr(RuntimeError, "lost sys.stdout");
+			else {
+				writestring("\n", x);
+				softspace(x, 0);
+			}
 			break;
 		
 		case BREAK_LOOP:
@@ -1395,13 +1394,13 @@ getglobals()
 }
 
 void
-printtraceback(fp)
-	FILE *fp;
+printtraceback(f)
+	object *f;
 {
 	object *v = tb_fetch();
 	if (v != NULL) {
-		fprintf(fp, "Stack backtrace (innermost last):\n");
-		tb_print(v, fp);
+		writestring("Stack backtrace (innermost last):\n", f);
+		tb_print(v, f);
 		DECREF(v);
 	}
 }
@@ -1410,8 +1409,9 @@ printtraceback(fp)
 void
 flushline()
 {
-	if (softspace(sysget("stdout"), 0))
-		fprintf(sysgetfile("stdout", stdout), "\n");
+	object *f = sysget("stdout");
+	if (softspace(f, 0))
+		writestring("\n", f);
 }
 
 

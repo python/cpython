@@ -214,7 +214,7 @@ run_command(command)
 void
 print_error()
 {
-	object *exception, *v;
+	object *exception, *v, *f;
 	err_get(&exception, &v);
 	if (exception == SystemExit) {
 		if (v == NULL || v == None)
@@ -222,6 +222,7 @@ print_error()
 		if (is_intobject(v))
 			goaway((int)getintvalue(v));
 		else {
+			/* OK to use real stderr here */
 			printobject(v, stderr, PRINT_RAW);
 			fprintf(stderr, "\n");
 			goaway(1);
@@ -229,17 +230,22 @@ print_error()
 	}
 	sysset("last_type", exception);
 	sysset("last_value", v);
-	if (printobject(exception, stderr, PRINT_RAW) != 0)
-		err_clear();
-	if (v != NULL && v != None) {
-		fprintf(stderr, ": ");
-		if (printobject(v, stderr, PRINT_RAW) != 0)
+	f = sysget("stderr");
+	if (f == NULL)
+		fprintf(stderr, "lost sys.stderr\n");
+	else {
+		if (writeobject(exception, f, PRINT_RAW) != 0)
 			err_clear();
+		if (v != NULL && v != None) {
+			writestring(": ", f);
+			if (writeobject(v, f, PRINT_RAW) != 0)
+				err_clear();
+		}
+		writestring("\n", f);
+		printtraceback(f);
 	}
-	fprintf(stderr, "\n");
 	XDECREF(exception);
 	XDECREF(v);
-	printtraceback(stderr);
 }
 
 object *

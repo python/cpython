@@ -62,7 +62,7 @@ sysgetfile(name, def)
 {
 	FILE *fp = NULL;
 	object *v = sysget(name);
-	if (v != NULL)
+	if (v != NULL && is_fileobject(v))
 		fp = getfilefile(v);
 	if (fp == NULL)
 		fp = def;
