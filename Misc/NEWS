@@ -180,7 +180,9 @@ Core and builtins
 Extension modules
 -----------------
 
-- array objects now support the copy module
+- array objects now support the copy module.  Also, their resizing
+  scheme has been updated the same as for list objects.  The improves
+  performance for append() operations.
 
 - cStringIO.writelines() now accepts any iterable argument and writes
   the lines one at a time rather than joining them and writing once.
