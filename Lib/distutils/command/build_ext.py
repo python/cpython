@@ -289,11 +289,13 @@ class build_ext (Command):
             # precedent!)
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
+            extra_args = build_info.get ('extra_compile_args')
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
                                              macros=macros,
                                              include_dirs=include_dirs,
-                                             debug=self.debug)
+                                             debug=self.debug,
+                                             extra_postargs=extra_args)
 
             # Now link the object files together into a "shared object" --
             # of course, first we have to figure out all the other things
