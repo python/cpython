@@ -358,8 +358,9 @@ class UnicodeTest(
             self.assertEqual(u"%r, %r" % (u"abc", "abc"), u"u'abc', 'abc'")
         self.assertEqual(u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"}, u'abc, def')
         self.assertEqual(u"%(x)s, %(\xfc)s" % {'x':u"abc", u'\xfc':"def"}, u'abc, def')
+
         self.assertEqual(u'%c' % 0x1234, u'\u1234')
-        self.assertRaises(ValueError, u'%c'.__mod__, sys.maxunicode+1)
+        self.assertRaises(ValueError, u"%c".__mod__, (sys.maxunicode+1,))
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':u"abc"}, u'...abc...')
@@ -379,7 +380,6 @@ class UnicodeTest(
         self.assertEqual('%i%s %*.*s' % (10, 3, 5, 3, u'abc',), u'103   abc')
         self.assertEqual('%c' % u'a', u'a')
 
-        self.assertRaises(ValueError, u"%c".__mod__, (sys.maxunicode+1,))
 
     def test_constructor(self):
         # unicode(obj) tests (this maps to PyObject_Unicode() at C level)
