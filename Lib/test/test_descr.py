@@ -847,6 +847,23 @@ def overloading():
     del a[0:10]
     verify(a.delslice == (0, 10))
 
+def methods():
+    if verbose: print "testing methods..."
+    class C(object):
+        def __init__(self, x):
+            self.x = x
+        def foo(self):
+            return self.x
+    c1 = C(1)
+    verify(c1.foo() == 1)
+    class D(C):
+        boo = C.foo
+        goo = c1.foo
+    d2 = D(2)
+    verify(d2.foo() == 2)
+    verify(d2.boo() == 2)
+    verify(d2.goo() == 2)
+
 def all():
     lists()
     dicts()
@@ -873,6 +890,7 @@ def all():
     newslot()
     altmro()
     overloading()
+    methods()
 
 all()
 
