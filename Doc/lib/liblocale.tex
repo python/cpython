@@ -3,6 +3,8 @@
 
 \declaremodule{standard}{locale}
 \modulesynopsis{Internationalization services.}
+\moduleauthor{Martin von Loewis}{loewis@informatik.hu-berlin.de}
+\sectionauthor{Martin von Loewis}{loewis@informatik.hu-berlin.de}
 
 
 The \module{locale} module opens access to the \POSIX{} locale database
@@ -255,7 +257,7 @@ generally okay, and Python will use whatever locale is set,
 \emph{except} that the \constant{LC_NUMERIC} locale should always be
 \samp{C}.
 
-The \function{setlocale()} function in the \module{locale} module contains
+The \function{setlocale()} function in the \module{locale} module
 gives the Python progammer the impression that you can manipulate the
 \constant{LC_NUMERIC} locale setting, but this not the case at the C
 level: C code will always find that the \constant{LC_NUMERIC} locale
