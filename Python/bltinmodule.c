@@ -315,7 +315,7 @@ builtin_unichr(PyObject *self, PyObject *args)
 
 	if (x < 0 || x > 0x10ffff) {
 		PyErr_SetString(PyExc_ValueError,
-				"unichr() arg not in range(0x10ffff)");
+				"unichr() arg not in range(0x110000)");
 		return NULL;
 	}
 
@@ -323,17 +323,19 @@ builtin_unichr(PyObject *self, PyObject *args)
 		/* UCS-2 character */
 		s[0] = (Py_UNICODE) x;
 		return PyUnicode_FromUnicode(s, 1);
-	} else {
+	}
+	else {
 #if Py_UNICODE_SIZE == 2
 		/* UCS-4 character.  store as two surrogate characters */
 		x -= 0x10000L;
 		s[0] = 0xD800 + (Py_UNICODE) (x >> 10);
 		s[1] = 0xDC00 + (Py_UNICODE) (x & 0x03FF);
 		return PyUnicode_FromUnicode(s, 2);
+#else
+		s[0] = (Py_UNICODE)x;
+		return PyUnicode_FromUnicode(s, 1);
 #endif
 	}
-	s[0] = (Py_UNICODE)x;
-	return PyUnicode_FromUnicode(s, 1);
 }
 
 static char unichr_doc[] =
