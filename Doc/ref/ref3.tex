@@ -634,6 +634,10 @@ Note that \code{del x} doesn't directly call \code{x.__del__} --- the
 former decrements the reference count for \code{x} by one, but
 \code{x.__del__} is only called when its reference count reaches zero.
 
+\strong{Warning:} due to the precarious circumstances under which
+\code{__del__} methods are executed, exceptions that occur during
+their execution are \emph{ignored}.
+
 \item[{\tt __repr__(self)}]
 Called by the \verb@repr()@ built-in function and by string conversions
 (reverse or backward quotes) to compute the string representation of an object.
