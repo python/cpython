@@ -124,7 +124,7 @@ err_set(exception)
 void
 err_setstr(exception, string)
 	object *exception;
-	char *string;
+	const char *string;
 {
 	object *value = newstringobject(string);
 	err_setval(exception, value);
