@@ -1,4 +1,4 @@
-fo
+
 /* Built-in functions */
 
 #include "Python.h"
