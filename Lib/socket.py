@@ -155,12 +155,8 @@ class _socketobject:
 
 class _closedsocket:
 
-    def _bummer(self):
+    def __getattr__(self, name):
         raise error(9, 'Bad file descriptor')
-
-    _s = "def %s(self, *args): self._bummer()\n\n"
-    for _m in _socketmethods:
-        exec _s % _m
 
 
 class _fileobject:
