@@ -15,11 +15,8 @@
 
 % Optik (or whatever it gets called)
 %
-% New dependency argument to distutils.Extension
+% Bug #580462: changes to GC API
 %
-% The assert statement no longer tests __debug__ at runtime. 
-%
-% 
 
 %\section{Introduction \label{intro}}
 
@@ -440,6 +437,8 @@ u'\u4001abc'
 >>>
 \end{verbatim}
 
+(Contributed by Simon Brunning.)
+
 \item The \method{startswith()} and \method{endswith()}
 string methods now accept negative numbers for the start and end
 parameters.
@@ -458,6 +457,13 @@ than \method{zfill()}.
 >>> 'goofy'.zfill(6)
 '0goofy'
 \end{verbatim}
+
+(Contributed by Walter D\"orwald.)
+
+\item The \keyword{assert} statement no longer  checks the \code{__debug__}
+flag, so you can no longer disable assertions by assigning to \code{__debug__}.
+Running Python with the \programopt{-O} switch will still generate 
+code that doesn't execute any assertions.
 
 \item A new type object, \class{basestring}, has been added.  
    Both 8-bit strings and Unicode strings inherit from this type, so
@@ -516,9 +522,9 @@ In 2.3, you get this:
 
 An experimental feature added to Python 2.1 was a specialized object
 allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
-was intended to be faster than the system \function{malloc()} and have
+was intended to be faster than the system \cfunction{malloc()} and have
 less memory overhead for typical allocation patterns of Python
-programs.  The allocator uses C's \function{malloc()} function to get
+programs.  The allocator uses C's \cfunction{malloc()} function to get
 large pools of memory, and then fulfills smaller memory requests from
 these pools.
 
@@ -534,14 +540,14 @@ pymalloc may expose bugs in C extensions.  Authors of C extension
 modules should test their code with the object allocator enabled,
 because some incorrect code may cause core dumps at runtime.  There
 are a bunch of memory allocation functions in Python's C API that have
-previously been just aliases for the C library's \function{malloc()}
-and \function{free()}, meaning that if you accidentally called
+previously been just aliases for the C library's \cfunction{malloc()}
+and \cfunction{free()}, meaning that if you accidentally called
 mismatched functions, the error wouldn't be noticeable.  When the
 object allocator is enabled, these functions aren't aliases of
-\function{malloc()} and \function{free()} any more, and calling the
+\cfunction{malloc()} and \cfunction{free()} any more, and calling the
 wrong function to free memory may get you a core dump.  For example,
-if memory was allocated using \function{PyObject_Malloc()}, it has to
-be freed using \function{PyObject_Free()}, not \function{free()}.  A
+if memory was allocated using \cfunction{PyObject_Malloc()}, it has to
+be freed using \cfunction{PyObject_Free()}, not \cfunction{free()}.  A
 few modules included with Python fell afoul of this and had to be
 fixed; doubtless there are more third-party modules that will have the
 same problem.
@@ -687,9 +693,26 @@ An abstract binary packager class,
 easier to write binary packaging commands.  (Contributed by Mark
 Alexander.)
 
+\item The Distutils \class{Extension} class now supports 
+an extra constructor argument named \samp{depends} for listing
+additional source files that an extension depends on.  This lets
+Distutils recompile the module if any of the dependency files are
+modified.  For example, if \samp{sampmodule.c} includes the header
+file \file{sample.h}, you would create the \class{Extension} object like
+this:
+
+\begin{verbatim}
+ext = Extension("samp",
+                sources=["sampmodule.c"],
+                depends=["sample.h"])
+\end{verbatim}
+
+Modifying \file{sample.h} would then cause the module to be recompiled.
+(Contributed by Jeremy Hylton.)
+
 \item The \module{array} module now supports arrays of Unicode
-characters using the \samp{u} format character.  Arrays also 
-now support using the \code{+=} assignment operator to add another array's
+characters using the \samp{u} format character.  Arrays also now
+support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
 (Contributed by Jason Orendorff.)
 
@@ -717,6 +740,12 @@ unavoidable race conditions.
 in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding, by specifying an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
+
+\item The parser objects provided by the \module{pyexpat} module 
+can now optionally buffer character data, resulting in fewer calls to
+your character data handler and therefore faster performance.  Setting
+the parser object's \member{buffer_text} attribute to \constant{True} 
+will enable buffering.
 
 \end{itemize}
 
@@ -773,6 +802,10 @@ measurement.
 extension type by setting either the \constant{METH_CLASS} or
 \constant{METH_STATIC} flags in a method's \ctype{PyMethodDef}
 structure.
+
+\item Python now includes a copy of the Expat XML parser's source code,
+removing any dependence on a system version or local installation of
+Expat.  
 
 \end{itemize}
 
