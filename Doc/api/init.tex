@@ -357,15 +357,8 @@ requests the I/O is waiting for the I/O operation to complete.
 
 The Python interpreter needs to keep some bookkeeping information
 separate per thread --- for this it uses a data structure called
-\ctype{PyThreadState}\ttindex{PyThreadState}.  This is new in Python
-1.5; in earlier versions, such state was stored in global variables,
-and switching threads could cause problems.  In particular, exception
-handling is now thread safe, when the application uses
-\withsubitem{(in module sys)}{\ttindex{exc_info()}}
-\function{sys.exc_info()} to access the exception last raised in the
-current thread.
-
-There's one global variable left, however: the pointer to the current
+\ctype{PyThreadState}\ttindex{PyThreadState}.  There's one global
+variable, however: the pointer to the current
 \ctype{PyThreadState}\ttindex{PyThreadState} structure.  While most
 thread packages have a way to store ``per-thread global data,''
 Python's internal platform independent thread abstraction doesn't
