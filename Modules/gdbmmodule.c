@@ -32,7 +32,12 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
+/*****************************************************************
+  Modification History:
 
+  Added support for 'gdbm_sync' method.  Roger E. Masse 3/25/97
+
+  *****************************************************************/
 /* DBM module using dictionary interface */
 
 
@@ -310,6 +315,18 @@ PyObject *args;
 	return Py_None;
 }
 
+static PyObject *
+dbm_sync(dp, args)
+	register dbmobject *dp;
+                PyObject *args;
+{
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	gdbm_sync(dp->di_dbm);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef dbm_methods[] = {
 	{"close",	(PyCFunction)dbm_close},
 	{"keys",	(PyCFunction)dbm_keys},
@@ -317,6 +334,7 @@ static PyMethodDef dbm_methods[] = {
 	{"firstkey",	(PyCFunction)dbm_firstkey},
 	{"nextkey",	(PyCFunction)dbm_nextkey},
 	{"reorganize",	(PyCFunction)dbm_reorganize},
+	{"sync",                    (PyCFunction)dbm_sync},
 	{NULL,		NULL}		/* sentinel */
 };
 
