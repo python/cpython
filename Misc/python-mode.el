@@ -376,6 +376,38 @@ Currently-active file is at the head of the list.")
   "Regexp matching lines to not outdent after.")
 
 
+;; Menu definitions, only relevent if you have the easymenu.el package
+;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
+(if (condition-case nil
+	(require 'easymenu)
+      (error nil))
+    (easy-menu-define
+     py-menu py-mode-map "Python Mode menu"
+     '("Python"
+       ["Comment Out Region"   comment-region  (mark)]
+       ["Uncomment Region"     (comment-region (point) (mark) '(4)) (mark)]
+       "-"
+       ["Mark current block"   py-mark-block t]
+       ["Mark current def"     mark-python-def-or-class t]
+       ["Mark current class"   (mark-python-def-or-class t) t]
+       "-"
+       ["Shift region left"    py-shift-region-left (mark)]
+       ["Shift region right"   py-shift-region-right (mark)]
+       "-"
+       ["Execute buffer"       py-execute-buffer t]
+       ["Execute region"       py-execute-region (mark)]
+       ["Start interpreter..." py-shell t]
+       "-"
+       ["Go to start of block" py-goto-block-up t]
+       ["Go to start of class" (beginning-of-python-def-or-class t) t]
+       ["Move to end of class" (end-of-python-def-or-class t) t]
+       ["Move to start of def" beginning-of-python-def-or-class t]
+       ["Move to end of def"   end-of-python-def-or-class t]
+       "-"
+       ["Describe mode"        py-describe-mode t]
+       )))
+
+
 ;;;###autoload
 (defun python-mode ()
   "Major mode for editing Python files.
@@ -391,12 +423,12 @@ COMMANDS
 \\{py-mode-map}
 VARIABLES
 
-py-indent-offset\tindentation increment
-py-block-comment-prefix\tcomment string used by py-comment-region
-py-python-command\tshell command to invoke Python interpreter
-py-scroll-process-buffer\talways scroll Python process buffer
-py-temp-directory\tdirectory used for temp files (if needed)
-py-beep-if-tab-change\tring the bell if tab-width is changed"
+py-indent-offset\t\tindentation increment
+py-block-comment-prefix\t\tcomment string used by comment-region
+py-python-command\t\tshell command to invoke Python interpreter
+py-scroll-process-buffer\t\talways scroll Python process buffer
+py-temp-directory\t\tdirectory used for temp files (if needed)
+py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (interactive)
   (kill-all-local-variables)
   (set-syntax-table py-mode-syntax-table)
@@ -404,6 +436,9 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	mode-name "Python"
 	local-abbrev-table python-mode-abbrev-table)
   (use-local-map py-mode-map)
+  ;; add the menu
+  (if py-menu
+      (easy-menu-add py-menu))
   ;; Emacs 19 requires this
   (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
       (setq comment-multi-line nil))
@@ -1518,7 +1553,7 @@ variable docs begin with `->'.
 @VARIABLES
 
 py-indent-offset\tindentation increment
-py-block-comment-prefix\tcomment string used by py-comment-region
+py-block-comment-prefix\tcomment string used by comment-region
 
 py-python-command\tshell command to invoke Python interpreter
 py-scroll-process-buffer\talways scroll Python process buffer
@@ -1675,11 +1710,11 @@ the block structure:
 \\[py-mark-block]\t mark block of lines
 \\[mark-python-def-or-class]\t mark smallest enclosing def
 \\[universal-argument] \\[mark-python-def-or-class]\t mark smallest enclosing class
-\\[py-comment-region]\t comment out region of code
-\\[universal-argument] \\[py-comment-region]\t uncomment region of code
+\\[comment-region]\t comment out region of code
+\\[universal-argument] \\[comment-region]\t uncomment region of code
 %c:py-mark-block
 %c:mark-python-def-or-class
-%c:py-comment-region
+%c:comment-region
 
 @MOVING POINT
 
