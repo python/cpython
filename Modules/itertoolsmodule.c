@@ -118,11 +118,11 @@ Afterwards, return every element until the iterable is exhausted.");
 PyTypeObject dropwhile_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.dropwhile",		 /* tp_name */
-	sizeof(dropwhileobject),		 /* tp_basicsize */
+	"itertools.dropwhile",		/* tp_name */
+	sizeof(dropwhileobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)dropwhile_dealloc,	   /* tp_dealloc */
+	(destructor)dropwhile_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -139,13 +139,13 @@ PyTypeObject dropwhile_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	dropwhile_doc,			   /* tp_doc */
+	dropwhile_doc,			/* tp_doc */
 	(traverseproc)dropwhile_traverse,    /* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)dropwhile_getiter,	   /* tp_iter */
-	(iternextfunc)dropwhile_next,	   /* tp_iternext */
+	(getiterfunc)dropwhile_getiter,	/* tp_iter */
+	(iternextfunc)dropwhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -156,7 +156,7 @@ PyTypeObject dropwhile_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	dropwhile_new,			 /* tp_new */
+	dropwhile_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -271,11 +271,11 @@ predicate evaluates to true for each entry.");
 PyTypeObject takewhile_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.takewhile",		 /* tp_name */
-	sizeof(takewhileobject),		 /* tp_basicsize */
+	"itertools.takewhile",		/* tp_name */
+	sizeof(takewhileobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)takewhile_dealloc,	   /* tp_dealloc */
+	(destructor)takewhile_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -292,13 +292,13 @@ PyTypeObject takewhile_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	takewhile_doc,			   /* tp_doc */
+	takewhile_doc,			/* tp_doc */
 	(traverseproc)takewhile_traverse,    /* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)takewhile_getiter,	   /* tp_iter */
-	(iternextfunc)takewhile_next,	   /* tp_iternext */
+	(getiterfunc)takewhile_getiter,	/* tp_iter */
+	(iternextfunc)takewhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -309,7 +309,7 @@ PyTypeObject takewhile_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	takewhile_new,			 /* tp_new */
+	takewhile_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -449,7 +449,7 @@ PyTypeObject islice_type = {
 	sizeof(isliceobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)islice_dealloc,	  /* tp_dealloc */
+	(destructor)islice_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -466,13 +466,13 @@ PyTypeObject islice_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	islice_doc,			  /* tp_doc */
-	(traverseproc)islice_traverse,	  /* tp_traverse */
+	islice_doc,			/* tp_doc */
+	(traverseproc)islice_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)islice_getiter,	  /* tp_iter */
-	(iternextfunc)islice_next,	  /* tp_iternext */
+	(getiterfunc)islice_getiter,	/* tp_iter */
+	(iternextfunc)islice_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -589,11 +589,11 @@ with a argument tuple taken from the given sequence.");
 PyTypeObject starmap_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.starmap",		 /* tp_name */
-	sizeof(starmapobject),		 /* tp_basicsize */
+	"itertools.starmap",		/* tp_name */
+	sizeof(starmapobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)starmap_dealloc,	   /* tp_dealloc */
+	(destructor)starmap_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -610,13 +610,13 @@ PyTypeObject starmap_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	starmap_doc,			   /* tp_doc */
-	(traverseproc)starmap_traverse,    /* tp_traverse */
+	starmap_doc,			/* tp_doc */
+	(traverseproc)starmap_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)starmap_getiter,	   /* tp_iter */
-	(iternextfunc)starmap_next,	   /* tp_iternext */
+	(getiterfunc)starmap_getiter,	/* tp_iter */
+	(iternextfunc)starmap_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -627,7 +627,7 @@ PyTypeObject starmap_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	starmap_new,			 /* tp_new */
+	starmap_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -783,8 +783,8 @@ iterables.");
 PyTypeObject imap_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.imap",	      /* tp_name */
-	sizeof(imapobject),	      /* tp_basicsize */
+	"itertools.imap",		/* tp_name */
+	sizeof(imapobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)imap_dealloc,	/* tp_dealloc */
@@ -821,7 +821,7 @@ PyTypeObject imap_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	imap_new,		      /* tp_new */
+	imap_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -908,8 +908,8 @@ instances of obj (default is None).");
 PyTypeObject times_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.times",	       /* tp_name */
-	sizeof(timesobject),	       /* tp_basicsize */
+	"itertools.times",		/* tp_name */
+	sizeof(timesobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)times_dealloc,	/* tp_dealloc */
@@ -929,13 +929,13 @@ PyTypeObject times_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	times_doc,			 /* tp_doc */
+	times_doc,			/* tp_doc */
 	(traverseproc)times_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)times_getiter,	 /* tp_iter */
-	(iternextfunc)times_next,	 /* tp_iternext */
+	(getiterfunc)times_getiter,	/* tp_iter */
+	(iternextfunc)times_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -957,7 +957,6 @@ typedef struct {
 	PyObject_HEAD
 	PyObject *func;
 	PyObject *it;
-	long	 invert;
 } ifilterobject;
 
 PyTypeObject ifilter_type;
@@ -965,16 +964,12 @@ PyTypeObject ifilter_type;
 static PyObject *
 ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *func, *seq, *invert=NULL;
+	PyObject *func, *seq;
 	PyObject *it;
 	ifilterobject *lz;
-	long inv=0;
 
-	if (!PyArg_UnpackTuple(args, "ifilter", 2, 3, &func, &seq, &invert))
+	if (!PyArg_UnpackTuple(args, "ifilter", 2, 2, &func, &seq))
 		return NULL;
-
-	if (invert != NULL  &&	PyObject_IsTrue(invert))
-		inv = 1;
 
 	/* Get iterator. */
 	it = PyObject_GetIter(seq);
@@ -990,7 +985,6 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_INCREF(func);
 	lz->func = func;
 	lz->it = it;
-	lz->invert = inv;
 
 	return (PyObject *)lz;
 }
@@ -1046,7 +1040,7 @@ ifilter_next(ifilterobject *lz)
 			ok = PyObject_IsTrue(good);
 			Py_DECREF(good);
 		}
-		if (ok ^ lz->invert)
+		if (ok)
 			return item;
 		Py_DECREF(item);
 	}
@@ -1060,20 +1054,19 @@ ifilter_getiter(PyObject *lz)
 }
 
 PyDoc_STRVAR(ifilter_doc,
-"ifilter(function or None, sequence [, invert]) --> ifilter object\n\
+"ifilter(function or None, sequence) --> ifilter object\n\
 \n\
-Return those items of sequence for which function(item) is true.  If\n\
-invert is set to True, return items for which function(item) if False.\n\
-If function is None, return the items that are true (unless invert is set).");
+Return those items of sequence for which function(item) is true.\n\
+If function is None, return the items that are true.");
 
 PyTypeObject ifilter_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.ifilter",		 /* tp_name */
-	sizeof(ifilterobject),		 /* tp_basicsize */
+	"itertools.ifilter",		/* tp_name */
+	sizeof(ifilterobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)ifilter_dealloc,	   /* tp_dealloc */
+	(destructor)ifilter_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -1090,13 +1083,13 @@ PyTypeObject ifilter_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	ifilter_doc,			   /* tp_doc */
-	(traverseproc)ifilter_traverse,    /* tp_traverse */
+	ifilter_doc,			/* tp_doc */
+	(traverseproc)ifilter_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)ifilter_getiter,	   /* tp_iter */
-	(iternextfunc)ifilter_next,	   /* tp_iternext */
+	(getiterfunc)ifilter_getiter,	/* tp_iter */
+	(iternextfunc)ifilter_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -1107,7 +1100,161 @@ PyTypeObject ifilter_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	ifilter_new,			 /* tp_new */
+	ifilter_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
+
+/* ifilterfalse object ************************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *func;
+	PyObject *it;
+} ifilterfalseobject;
+
+PyTypeObject ifilterfalse_type;
+
+static PyObject *
+ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *func, *seq, *invert=NULL;
+	PyObject *it;
+	ifilterfalseobject *lz;
+
+	if (!PyArg_UnpackTuple(args, "ifilterfalse", 2, 2, &func, &seq))
+		return NULL;
+
+	/* Get iterator. */
+	it = PyObject_GetIter(seq);
+	if (it == NULL)
+		return NULL;
+
+	/* create ifilterfalseobject structure */
+	lz = (ifilterfalseobject *)type->tp_alloc(type, 0);
+	if (lz == NULL) {
+		Py_DECREF(it);
+		return NULL;
+	}
+	Py_INCREF(func);
+	lz->func = func;
+	lz->it = it;
+
+	return (PyObject *)lz;
+}
+
+static void
+ifilterfalse_dealloc(ifilterfalseobject *lz)
+{
+	PyObject_GC_UnTrack(lz);
+	Py_XDECREF(lz->func);
+	Py_XDECREF(lz->it);
+	lz->ob_type->tp_free(lz);
+}
+
+static int
+ifilterfalse_traverse(ifilterfalseobject *lz, visitproc visit, void *arg)
+{
+	int err;
+
+	if (lz->it) {
+		err = visit(lz->it, arg);
+		if (err)
+			return err;
+	}
+	if (lz->func) {
+		err = visit(lz->func, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
+static PyObject *
+ifilterfalse_next(ifilterfalseobject *lz)
+{
+	PyObject *item;
+	long ok;
+
+	for (;;) {
+		item = PyIter_Next(lz->it);
+		if (item == NULL)
+			return NULL;
+
+		if (lz->func == Py_None) {
+			ok = PyObject_IsTrue(item);
+		} else {
+			PyObject *good;
+			good = PyObject_CallFunctionObjArgs(lz->func,
+							    item, NULL);
+			if (good == NULL) {
+				Py_DECREF(item);
+				return NULL;
+			}
+			ok = PyObject_IsTrue(good);
+			Py_DECREF(good);
+		}
+		if (!ok)
+			return item;
+		Py_DECREF(item);
+	}
+}
+
+static PyObject *
+ifilterfalse_getiter(PyObject *lz)
+{
+	Py_INCREF(lz);
+	return lz;
+}
+
+PyDoc_STRVAR(ifilterfalse_doc,
+"ifilterfalse(function or None, sequence) --> ifilterfalse object\n\
+\n\
+Return those items of sequence for which function(item) is false.\n\
+If function is None, return the items that are false.");
+
+PyTypeObject ifilterfalse_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"itertools.ifilterfalse",	/* tp_name */
+	sizeof(ifilterfalseobject),	/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)ifilterfalse_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	ifilterfalse_doc,		/* tp_doc */
+	(traverseproc)ifilterfalse_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	(getiterfunc)ifilterfalse_getiter,	/* tp_iter */
+	(iternextfunc)ifilterfalse_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	ifilterfalse_new,		/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -1161,8 +1308,8 @@ integers starting from zero or, if specified, from firstval.");
 PyTypeObject count_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.count",	       /* tp_name */
-	sizeof(countobject),	       /* tp_basicsize */
+	"itertools.count",		/* tp_name */
+	sizeof(countobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)PyObject_Del,	/* tp_dealloc */
@@ -1181,13 +1328,13 @@ PyTypeObject count_type = {
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,		/* tp_flags */
-	count_doc,			 /* tp_doc */
+	count_doc,			/* tp_doc */
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)count_getiter,	 /* tp_iter */
-	(iternextfunc)count_next,	 /* tp_iternext */
+	(getiterfunc)count_getiter,	/* tp_iter */
+	(iternextfunc)count_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -1349,11 +1496,11 @@ a list.");
 PyTypeObject izip_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.izip",		 /* tp_name */
-	sizeof(izipobject),		 /* tp_basicsize */
+	"itertools.izip",		/* tp_name */
+	sizeof(izipobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)izip_dealloc,	   /* tp_dealloc */
+	(destructor)izip_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -1370,13 +1517,13 @@ PyTypeObject izip_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	izip_doc,			   /* tp_doc */
+	izip_doc,			/* tp_doc */
 	(traverseproc)izip_traverse,    /* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)izip_getiter,	   /* tp_iter */
-	(iternextfunc)izip_next,	   /* tp_iternext */
+	(getiterfunc)izip_getiter,	/* tp_iter */
+	(iternextfunc)izip_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -1387,7 +1534,7 @@ PyTypeObject izip_type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
-	izip_new,			 /* tp_new */
+	izip_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
 
@@ -1458,7 +1605,7 @@ PyTypeObject repeat_type = {
 	sizeof(repeatobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)repeat_dealloc,	  /* tp_dealloc */
+	(destructor)repeat_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
@@ -1475,13 +1622,13 @@ PyTypeObject repeat_type = {
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
-	repeat_doc,			  /* tp_doc */
-	(traverseproc)repeat_traverse,	  /* tp_traverse */
+	repeat_doc,			/* tp_doc */
+	(traverseproc)repeat_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)repeat_getiter,	  /* tp_iter */
-	(iternextfunc)repeat_next,	  /* tp_iternext */
+	(getiterfunc)repeat_getiter,	/* tp_iter */
+	(iternextfunc)repeat_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
@@ -1508,8 +1655,8 @@ repeat(elem) --> elem, elem, elem, ...\n\
 \n\
 Iterators terminating on the shortest input sequence:\n\
 izip(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ... \n\
-ifilter(pred, seq, invert=False) --> elements of seq where\n\
-       pred(elem) is True (or False if invert is set)\n\
+ifilter(pred, seq) --> elements of seq where pred(elem) is True\n\
+ifilterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 imap(fun, p, q, ...) --> fun(p0, q0), fun(p1, q1), ...\n\
@@ -1523,56 +1670,33 @@ dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 PyMODINIT_FUNC
 inititertools(void)
 {
+	int i;
 	PyObject *m;
+	char *name;
+	PyTypeObject *typelist[] = {
+		&dropwhile_type,
+		&takewhile_type,
+		&islice_type,
+		&starmap_type,
+		&imap_type,
+		&times_type,
+		&ifilter_type,
+		&ifilterfalse_type,
+		&count_type,
+		&izip_type,
+		&repeat_type,
+		NULL
+	};
+
 	m = Py_InitModule3("itertools", NULL, module_doc);
 
-	PyModule_AddObject(m, "dropwhile", (PyObject *)&dropwhile_type);
-	if (PyType_Ready(&dropwhile_type) < 0)
-		return;
-	Py_INCREF(&dropwhile_type);
-
-	PyModule_AddObject(m, "takewhile", (PyObject *)&takewhile_type);
-	if (PyType_Ready(&takewhile_type) < 0)
-		return;
-	Py_INCREF(&takewhile_type);
-
-	PyModule_AddObject(m, "islice", (PyObject *)&islice_type);
-	if (PyType_Ready(&islice_type) < 0)
-		return;
-	Py_INCREF(&islice_type);
-
-	PyModule_AddObject(m, "starmap", (PyObject *)&starmap_type);
-	if (PyType_Ready(&starmap_type) < 0)
-		return;
-	Py_INCREF(&starmap_type);
-
-	PyModule_AddObject(m, "imap", (PyObject *)&imap_type);
-	if (PyType_Ready(&imap_type) < 0)
-		return;
-	Py_INCREF(&imap_type);
-
-	PyModule_AddObject(m, "times", (PyObject *)&times_type);
-	if (PyType_Ready(&times_type) < 0)
-		return;
-	Py_INCREF(&times_type);
-
-	if (PyType_Ready(&ifilter_type) < 0)
-		return;
-	Py_INCREF(&ifilter_type);
-	PyModule_AddObject(m, "ifilter", (PyObject *)&ifilter_type);
-
-	if (PyType_Ready(&count_type) < 0)
-		return;
-	Py_INCREF(&count_type);
-	PyModule_AddObject(m, "count", (PyObject *)&count_type);
-
-	if (PyType_Ready(&izip_type) < 0)
-		return;
-	Py_INCREF(&izip_type);
-	PyModule_AddObject(m, "izip", (PyObject *)&izip_type);
-
-	if (PyType_Ready(&repeat_type) < 0)
-		return;
-	Py_INCREF(&repeat_type);
-	PyModule_AddObject(m, "repeat", (PyObject *)&repeat_type);
+	for (i=0 ; typelist[i] != NULL ; i++) {
+		if (PyType_Ready(typelist[i]) < 0)
+			return;
+		name = strchr(typelist[i]->tp_name, '.') + 1;
+		if (name == NULL)
+			return;
+		Py_INCREF(typelist[i]);
+		PyModule_AddObject(m, name, (PyObject *)typelist[i]);
+	}
 }

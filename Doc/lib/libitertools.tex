@@ -12,45 +12,43 @@ This module implements a number of iterator building blocks inspired
 by constructs from the Haskell and SML programming languages.  Each
 has been recast in a form suitable for Python.
 
-With the advent of iterators and generators in Python 2.3, each of
-these tools can be expressed easily and succinctly in pure python.
-Rather duplicating what can already be done, this module emphasizes
-providing value in other ways:
+The module standardizes a core set of fast, memory efficient tools
+that are useful by themselves or in combination.  Standardization helps
+avoid the readability and reliability problems which arise when many
+different individuals create their own slightly varying implementations,
+each with their own quirks and naming conventions.
 
-\begin{itemize}
+The tools are designed to combine readily with each another.  This makes
+it easy to construct more specialized tools succinctly and efficiently
+in pure Python.
 
-    \item Instead of constructing an over-specialized toolset, this module
-        provides basic building blocks that can be readily combined.
+For instance, SML provides a tabulation tool: \code{tabulate(\var{f})}
+which produces a sequence \code{f(0), f(1), ...}.  This toolbox
+provides \function{imap()} and \function{count()} which can be combined
+to form \code{imap(\var{f}, count())} and produce an equivalent result.
 
-        For instance, SML provides a tabulation tool: \code{tabulate(\var{f})}
-        which produces a sequence \code{f(0), f(1), ...}.  This toolbox
-        takes a different approach of providing \function{imap()} and
-        \function{count()} which can be combined to form
-        \code{imap(\var{f}, count())} and produce an equivalent result.
+Whether cast in pure python form or C code, tools that use iterators
+are more memory efficient (and faster) than their list based counterparts.
+Adopting the principles of just-in-time manufacturing, they create
+data when and where needed instead of consuming memory with the
+computer equivalent of ``inventory''.
 
-    \item Some tools were dropped because they offer no advantage over their
-        pure python counterparts or because their behavior was too
-        surprising.
+Some tools were omitted from the module because they offered no
+advantage over their pure python counterparts or because their behavior
+was too surprising.
 
-        For instance, SML provides a tool:  \code{cycle(\var{seq})} which
-        loops over the sequence elements and then starts again when the
-        sequence is exhausted.  The surprising behavior is the need for
-        significant auxiliary storage (unusual for iterators).  Also, it
-        is trivially implemented in python with almost no performance
-        penalty.
+For instance, SML provides a tool:  \code{cycle(\var{seq})} which
+loops over the sequence elements and then starts again when the
+sequence is exhausted.  The surprising behavior is the need for
+significant auxiliary storage (which is unusual for an iterator).
+If needed, the tool is readily constructible using pure Python.
 
-    \item Another source of value comes from standardizing a core set of tools
-        to avoid the readability and reliability problems that arise when many
-        different individuals create their own slightly varying implementations
-        each with their own quirks and naming conventions.
-
-    \item Whether cast in pure python form or C code, tools that use iterators
-        are more memory efficient (and faster) than their list based counterparts.
-        Adopting the principles of just-in-time manufacturing, they create
-        data when and where needed instead of consuming memory with the
-        computer equivalent of ``inventory''.
-
-\end{itemize}
+Other tools are being considered for inclusion in future versions of the
+module.  For instance, the function
+\function{chain(\var{it0}, \var{it1}, ...})} would return elements from
+the first iterator until it was exhausted and then move on to each
+successive iterator.  The module author welcomes suggestions for other
+basic building blocks.
 
 \begin{seealso}
   \seetext{The Standard ML Basis Library,
@@ -107,24 +105,36 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{ifilter}{predicate, iterable \optional{, invert}}
+\begin{funcdesc}{ifilter}{predicate, iterable}
   Make an iterator that filters elements from iterable returning only
-  those for which the predicate is \code{True}.  If
-  \var{invert} is \code{True}, then reverse the process and pass through
-  only those elements for which the predicate is \code{False}.
-  If \var{predicate} is \code{None}, return the items that are true
-  (or false if \var{invert} has been set).  Equivalent to:
+  those for which the predicate is \code{True}.
+  If \var{predicate} is \code{None}, return the items that are true.
+  Equivalent to:
 
   \begin{verbatim}
-     def ifilter(predicate, iterable, invert=False):
-         iterable = iter(iterable)
-         while True:
-             x = iterable.next()
-             if predicate is None:
-                  b = bool(x)
-             else:
-                  b = bool(predicate(x))
-             if not invert and b or invert and not b:
+     def ifilter(predicate, iterable):
+         if predicate is None:
+             def predicate(x):
+                 return x
+         for x in iterable:
+             if predicate(x):
+                 yield x
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{ifilterfalse}{predicate, iterable}
+  Make an iterator that filters elements from iterable returning only
+  those for which the predicate is \code{False}.
+  If \var{predicate} is \code{None}, return the items that are false.
+  Equivalent to:
+
+  \begin{verbatim}
+     def ifilterfalse(predicate, iterable):
+         if predicate is None:
+             def predicate(x):
+                 return x
+         for x in iterable:
+             if not predicate(x):
                  yield x
   \end{verbatim}
 \end{funcdesc}
@@ -169,21 +179,17 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def islice(iterable, *args):
-         iterable = iter(iterable)
          s = slice(*args)
          next = s.start or 0
          stop = s.stop
          step = s.step or 1
-         cnt = 0
-         while True:
-              while cnt < next:
-                   dummy = iterable.next()
-                   cnt += 1
-              if cnt >= stop:
-                   break
-              yield iterable.next()
-              cnt += 1
-              next += step
+         for cnt, element in enumerate(iterable):
+             if cnt < next:
+                 continue
+             if cnt >= stop:
+                 break
+             yield element
+             next += step
   \end{verbatim}
 \end{funcdesc}
 
@@ -324,6 +330,18 @@ from building blocks.
 
 >>> def nth(iterable, n):
 ...     "Returns the nth item"
-...     return islice(iterable, n, n+1).next()
+...     return list(islice(iterable, n, n+1))
+
+>>> def all(pred, seq):
+...     "Returns True if pred(x) is True for every element in the iterable"
+...     return not nth(ifilterfalse(pred, seq), 0)
+
+>>> def some(pred, seq):
+...     "Returns True if pred(x) is True at least one element in the iterable"
+...     return bool(nth(ifilter(pred, seq), 0))
+
+>>> def no(pred, seq):
+...     "Returns True if pred(x) is False for every element in the iterable"
+...     return not nth(ifilter(pred, seq), 0)
 
 \end{verbatim}
