@@ -23,8 +23,7 @@ from email import Errors
 from email import Encoders
 from email import Iterators
 
-import test_email
-from test_support import findfile
+from test_support import findfile, __file__ as test_support_file
 
 
 NL = '\n'
@@ -34,7 +33,7 @@ SPACE = ' '
 
 
 def openfile(filename):
-    path = os.path.join(os.path.dirname(test_email.__file__), 'data', filename)
+    path = os.path.join(os.path.dirname(test_support_file), 'data', filename)
     return open(path)
 
 
@@ -1041,8 +1040,9 @@ def suite():
 
 
 
-if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
-else:
+def test_main():
     from test_support import run_suite
     run_suite(suite())
+
+if __name__ == '__main__':
+    test_main()
