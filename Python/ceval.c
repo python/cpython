@@ -1556,8 +1556,12 @@ eval_frame(PyFrameObject *f)
 			else if (unpack_iterable(v, oparg,
 						 stack_pointer + oparg))
 				stack_pointer += oparg;
-			else
+			else {
+				if (PyErr_ExceptionMatches(PyExc_TypeError))
+					PyErr_SetString(PyExc_TypeError,
+						"unpack non-sequence");
 				why = WHY_EXCEPTION;
+			}
 			Py_DECREF(v);
 			break;
 

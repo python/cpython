@@ -3261,7 +3261,7 @@ slot_tp_iter(PyObject *self)
 	PyErr_Clear();
 	func = lookup_method(self, "__getitem__", &getitem_str);
 	if (func == NULL) {
-		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		PyErr_SetString(PyExc_TypeError, "iteration over non-sequence");
 		return NULL;
 	}
 	Py_DECREF(func);
