@@ -94,10 +94,12 @@ static PyObject *
 dbm_subscript(dbmobject *dp, register PyObject *key)
 {
 	datum drec, krec;
+	int tmp_size;
 	
-	if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
+	if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size) )
 		return NULL;
 	
+	krec.dsize = tmp_size;
         check_dbmobject_open(dp);
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
@@ -117,12 +119,14 @@ static int
 dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
         datum krec, drec;
+	int tmp_size;
 	
-        if ( !PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
+        if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
 		PyErr_SetString(PyExc_TypeError,
 				"dbm mappings have string indices only");
 		return -1;
 	}
+	krec.dsize = tmp_size;
         if (dp->di_dbm == NULL) {
                  PyErr_SetString(DbmError, "DBM object has already been closed"); 
                  return -1;
@@ -136,11 +140,12 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 			return -1;
 		}
 	} else {
-		if ( !PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize) ) {
+		if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
 			PyErr_SetString(PyExc_TypeError,
 				     "dbm mappings have string elements only");
 			return -1;
 		}
+		drec.dsize = tmp_size;
 		if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
 			PyErr_SetString(DbmError,
@@ -208,9 +213,11 @@ static PyObject *
 dbm_has_key(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
+	int tmp_size;
 	
-	if (!PyArg_ParseTuple(args, "s#:has_key", &key.dptr, &key.dsize))
+	if (!PyArg_ParseTuple(args, "s#:has_key", &key.dptr, &tmp_size))
 		return NULL;
+	key.dsize = tmp_size;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	return PyInt_FromLong(val.dptr != NULL);
@@ -221,10 +228,12 @@ dbm_get(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	PyObject *defvalue = Py_None;
+	int tmp_size;
 
 	if (!PyArg_ParseTuple(args, "s#|O:get",
-                              &key.dptr, &key.dsize, &defvalue))
+                              &key.dptr, &tmp_size, &defvalue))
 		return NULL;
+	key.dsize = tmp_size;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
@@ -240,10 +249,12 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	PyObject *defvalue = NULL;
+	int tmp_size;
 
 	if (!PyArg_ParseTuple(args, "s#|S:setdefault",
-                              &key.dptr, &key.dsize, &defvalue))
+                              &key.dptr, &tmp_size, &defvalue))
 		return NULL;
+	key.dsize = tmp_size;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
