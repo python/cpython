@@ -12,9 +12,10 @@
 \section{Introduction}
 
 {\large This document is a draft, and is subject to change until the
-final version of Python 2.2 is released.  Currently it's not up to
-date at all.  Please send any comments, bug reports, or questions, no
-matter how minor, to \email{akuchlin@mems-exchange.org}.  }
+final version of Python 2.2 is released.  Currently it's up to date
+for Python 2.2 alpha 1.  Please send any comments, bug reports, or
+questions, no matter how minor, to \email{akuchlin@mems-exchange.org}.
+}
 
 This article explains the new features in Python 2.2.  Python 2.2
 includes some significant changes that go far toward cleaning up the
@@ -135,9 +136,7 @@ means you can do things like this:
 >>>
 \end{verbatim}
 
-Iterator support has been added to some of Python's basic types.  The
-\keyword{in} operator now works on dictionaries, so \code{\var{key} in
-dict} is now equivalent to \code{dict.has_key(\var{key})}.
+Iterator support has been added to some of Python's basic types.  
 Calling \function{iter()} on a dictionary will return an iterator
 which loops over its keys:
 
@@ -164,9 +163,13 @@ Oct 10
 That's just the default behaviour.  If you want to iterate over keys,
 values, or key/value pairs, you can explicitly call the
 \method{iterkeys()}, \method{itervalues()}, or \method{iteritems()}
-methods to get an appropriate iterator.  
+methods to get an appropriate iterator.  In a minor related change,
+the \keyword{in} operator now works on dictionaries, so
+\code{\var{key} in dict} is now equivalent to
+\code{dict.has_key(\var{key})}.
 
-Files also provide an iterator, which calls its \method{readline()}
+
+Files also provide an iterator, which calls the \method{readline()}
 method until there are no more lines in the file.  This means you can
 now read each line of a file using code like this:
 
@@ -331,6 +334,76 @@ structure.
 \seepep{255}{Simple Generators}{Written by Neil Schemenauer, Tim
 Peters, Magnus Lie Hetland.  Implemented mostly by Neil Schemenauer
 and Tim Peters, with other fixes from the Python Labs crew.}
+
+\end{seealso}
+
+
+%======================================================================
+\section{PEP 238: Changing the Division Operator}
+
+The most controversial change in Python 2.2 is the start of an effort
+to fix an old design flaw that's been in Python from the beginning.
+Currently Python's division operator, \code{/}, behaves like C's
+division operator when presented with two integer arguments.  It
+returns an integer result that's truncated down when there would be
+fractional part.  For example, \code{3/2} is 1, not 1.5, and
+\code{(-1)/2} is -1, not -0.5.  This means that the results of divison
+can vary unexpectedly depending on the type of the two operands and
+because Python is dynamically typed, it can be difficult to determine
+the possible types of the operands.
+
+(The controversy is over whether this is \emph{really} a design flaw,
+and whether it's worth breaking existing code to fix this.  It's
+caused endless discussions on python-dev and in July erupted into an
+storm of acidly sarcastic postings on \newsgroup{comp.lang.python}. I
+won't argue for either side here; read PEP 238 for a summary of
+arguments and counter-arguments.)
+
+Because this change might break code, it's being introduced very
+gradually.  Python 2.2 begins the transition, but the switch won't be
+complete until Python 3.0.
+
+First, some terminology from PEP 238.  ``True division'' is the
+division that most non-programmers are familiar with: 3/2 is 1.5, 1/4
+is 0.25, and so forth.  ``Floor division'' is what Python's \code{/}
+operator currently does when given integer operands; the result is the
+floor of the value returned by true division.  ``Classic division'' is
+the current mixed behaviour of \code{/}; it returns the result of
+floor division when the operands are integers, and returns the result
+of true division when one of the operands is a floating-point number.
+
+Here are the changes 2.2 introduces:
+
+\begin{itemize}
+
+\item A new operator, \code{//}, is the floor division operator.
+(Yes, we know it looks like \Cpp's comment symbol.)  \code{//}
+\emph{always} returns the floor divison no matter what the types of
+its operands are, so \code{1 // 2} is 0 and \code{1.0 // 2.0} is also
+0.0.
+
+\code{//} is always available in Python 2.2; you don't need to enable
+it using a \code{__future__} statement.  
+
+\item By including a \code{from __future__ import true_division} in a
+module, the \code{/} operator will be changed to return the result of
+true division, so \code{1/2} is 0.5.  Without the \code{__future__}
+statement, \code{/} still means classic division.  The default meaning
+of \code{/} will not change until Python 3.0.  
+
+\item Classes can define methods called \method{__truediv__} and
+\method{__floordiv__} to overload the two division operators.  At the
+C level, there are also slots in the \code{PyNumberMethods} structure
+so extension types can define the two operators.
+
+% XXX a warning someday?
+
+\end{itemize}
+
+\begin{seealso}
+
+\seepep{238}{Changing the Division Operator}{Written by Moshe Zadka and 
+Guido van Rossum.  Implemented by Guido van Rossum..}
 
 \end{seealso}
 
@@ -732,7 +805,8 @@ changes are:
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Keith Briggs, Fred L. Drake, Jr., Mark Hammond, Marc-Andr\'e
-Lemburg, Tim Peters, Neil Schemenauer, Guido van Rossum.
+Bremmer, Keith Briggs, Fred L. Drake, Jr., Carel Fellinger, Mark
+Hammond, Marc-Andr\'e Lemburg, Tim Peters, Neil Schemenauer, Guido van
+Rossum.
 
 \end{document}
