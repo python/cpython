@@ -12,7 +12,7 @@ def main():
 		makedirs(p)
 
 def makedirs(p):
-	if not os.path.isdir(p):
+	if p and not os.path.isdir(p):
 		head, tail = os.path.split(p)
 		makedirs(head)
 		os.mkdir(p, 0777)
