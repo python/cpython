@@ -138,6 +138,28 @@ generally one higher than you might expect, because it includes the
 (temporary) reference as an argument to \function{getrefcount()}.
 \end{funcdesc}
 
+\begin{datadesc}{hexversion}
+The version number encoded as a single integer.  This is guaranteed to
+increase with each version, including proper support for
+non-production releases.  For example, to test that the Python
+interpreter is at least version 1.5.2, use:
+
+\begin{verbatim}
+if sys.hexversion >= 0x010502F0:
+    # use some advanced feature
+    ...
+else:
+    # use an alternative implementation or warn the user
+    ...
+\end{verbatim}
+
+This is called \samp{hexversion} since it only really looks meaningful
+when viewed as the result of passing it to the built-in
+\function{hex()} function.  The \code{version_info} value may be used
+for a more human-friendly encoding of the same information.
+\versionadded{1.5.2}
+\end{datadesc}
+
 \begin{datadesc}{last_type}
 \dataline{last_value}
 \dataline{last_traceback}
@@ -302,6 +324,16 @@ directories (where appropriate on each platform).  An example:
 >>> sys.version
 '1.5.2 (#0 Apr 13 1999, 10:51:12) [MSC 32 bit (Intel)]'
 \end{verbatim}
+\end{datadesc}
+
+\begin{datadesc}{version_info}
+A tuple containing the four components of the version number:
+\var{major}, \var{minor}, \var{micro} as integers, and
+\var{releaselevel} as a string.  The \var{releaselevel} value will be
+an empty string for a final release.  The \code{version_info} value
+corresponding to the \code{version} string shown above is
+\code{(1, 5, 2, '')}.
+\versionadded{1.6}
 \end{datadesc}
 
 \begin{datadesc}{winver}
