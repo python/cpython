@@ -36,7 +36,7 @@ Core and builtins
 
 - "%c" % u"a" now returns a unicode string instead of raising a
   TypeError. u"%c" % 0xffffffff now raises a OverflowError instead
-  of a TypeError to be consistent with "%c" % 256. See SF patch #710127.
+  of a ValueError to be consistent with "%c" % 256. See SF patch #710127.
 
 Extension modules
 -----------------
