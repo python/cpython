@@ -644,6 +644,36 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(first, second)
 
 
+    def test_sf_950057(self):
+        # Make sure that chain() and cycle() catch exceptions immediately
+        # rather than when shifting between input sources
+
+        def gen1():
+            hist.append(0)
+            yield 1
+            hist.append(1)
+            assert False
+            hist.append(2)
+
+        def gen2(x):
+            hist.append(3)
+            yield 2
+            hist.append(4)
+            if x:
+                raise StopIteration
+
+        hist = []
+        self.assertRaises(AssertionError, list, chain(gen1(), gen2(False)))
+        self.assertEqual(hist, [0,1])
+
+        hist = []
+        self.assertRaises(AssertionError, list, chain(gen1(), gen2(True)))
+        self.assertEqual(hist, [0,1])
+
+        hist = []
+        self.assertRaises(AssertionError, list, cycle(gen1()))
+        self.assertEqual(hist, [0,1])
+
 libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 

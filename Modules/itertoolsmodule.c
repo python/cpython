@@ -699,6 +699,12 @@ cycle_next(cycleobject *lz)
 				PyList_Append(lz->saved, item);
 			return item;
 		}
+		if (PyErr_Occurred()) {
+			if (PyErr_ExceptionMatches(PyExc_StopIteration))
+				PyErr_Clear();
+			else
+				return NULL;
+		}
 		if (PyList_Size(lz->saved) == 0) 
 			return NULL;
 		it = PyObject_GetIter(lz->saved);
@@ -1658,6 +1664,12 @@ chain_next(chainobject *lz)
 		item = PyIter_Next(it);
 		if (item != NULL)
 			return item;
+		if (PyErr_Occurred()) {
+			if (PyErr_ExceptionMatches(PyExc_StopIteration))
+				PyErr_Clear();
+			else
+				return NULL;
+		}
 		lz->iternum++;
 	}
 	return NULL;
