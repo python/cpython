@@ -573,17 +573,11 @@ init_builtin(name)
 
 /* Frozen modules */
 
-extern struct frozen {
-	char *name;
-	char *code;
-	int size;
-} frozen_modules[];
-
-static struct frozen *
+static struct _frozen *
 find_frozen(name)
 	char *name;
 {
-	struct frozen *p;
+	struct _frozen *p;
 
 	for (p = frozen_modules; ; p++) {
 		if (p->name == NULL)
@@ -598,7 +592,7 @@ static object *
 get_frozen_object(name)
 	char *name;
 {
-	struct frozen *p = find_frozen(name);
+	struct _frozen *p = find_frozen(name);
 
 	if (p == NULL) {
 		err_setstr(ImportError, "No such frozen object");
@@ -616,7 +610,7 @@ int
 init_frozen(name)
 	char *name;
 {
-	struct frozen *p = find_frozen(name);
+	struct _frozen *p = find_frozen(name);
 	object *co;
 	object *m;
 
@@ -875,7 +869,7 @@ imp_is_frozen(self, args)
 	object *self;
 	object *args;
 {
-	struct frozen *p;
+	struct _frozen *p;
 	char *name;
 	if (!newgetargs(args, "s", &name))
 		return NULL;
