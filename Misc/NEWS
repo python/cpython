@@ -19,6 +19,11 @@ Extension modules
   fatal internal refcount confusion when the module got initialized more
   than once.  This has been fixed.
 
+- Fixed memory leak in pyexpat; using the parser's ParseFile() method
+  with open files that aren't instances of the standard file type
+  caused an instance of the bound .read() method to be leaked on every
+  call.
+
 Library
 -------
 
