@@ -723,7 +723,7 @@ class Place:
 	place_slaves = slaves
 
 class Grid:
-	# Thanks to Masa Yoshikawa (yosikawa@isi.edu)
+	# Thanks to Masazumi Yoshikawa (yosikawa@isi.edu)
 	def config(self, cnf={}, **kw):
 		apply(self.tk.call, 
 		      ('grid', 'configure', self._w) 
@@ -736,14 +736,18 @@ class Grid:
 			self.tk.call(
 				'grid', 'bbox', self._w, column, row)) or None
 	grid_bbox = bbox
-	def columnconfigure(self, index, *args):
+	def columnconfigure(self, index, cnf={}, **kw):
+		if type(cnf) is not DictionaryType and not kw:
+			options = self._options({cnf: None})
+		else:
+			options = self._options(cnf, kw)
 		res = apply(self.tk.call, 
-			      ('grid', 'columnconfigure', self._w) 
-			      + args)
-		if args == ['minsize']:
-			return self._getint(res) or None
-		elif args == ['wieght']:
-			return self._getdouble(res) or None
+			      ('grid', 'columnconfigure', self._w, index) 
+			      + options)
+		if options == ('-minsize', None):
+			return self.tk.getint(res) or None
+		elif options == ('-weight', None):
+			return self.tk.getdouble(res) or None
 	def forget(self):
 		self.tk.call('grid', 'forget', self._w)
 	grid_forget = forget
@@ -771,14 +775,18 @@ class Grid:
 		else:
 			self.tk.call('grid', 'propagate', self._w, flag)
 	grid_propagate = propagate
-	def rowconfigure(self, index, *args):
+	def rowconfigure(self, index, cnf={}, **kw):
+		if type(cnf) is not DictionaryType and not kw:
+			options = self._options({cnf: None})
+		else:
+			options = self._options(cnf, kw)
 		res = apply(self.tk.call, 
-			      ('grid', 'rowconfigure', self._w) 
-			      + args)
-		if args == ['minsize']:
-			return self._getint(res) or None
-		elif args == ['wieght']:
-			return self._getdouble(res) or None
+			      ('grid', 'rowconfigure', self._w, index) 
+			      + options)
+		if options == ('-minsize', None):
+			return self.tk.getint(res) or None
+		elif options == ('-weight', None):
+			return self.tk.getdouble(res) or None
 	def size(self):
 		return self._getints(
 			self.tk.call('grid', 'size', self._w)) or None
@@ -844,8 +852,9 @@ class Widget(Misc, Pack, Place, Grid):
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
 	configure = config
-	def __getitem__(self, key):
+	def cget(self, key):
 		return self.tk.call(self._w, 'cget', '-' + key)
+	__getitem__ = cget
 	def __setitem__(self, key, value):
 		Widget.config(self, {key: value})
 	def keys(self):
@@ -1097,21 +1106,31 @@ class Entry(Widget):
 		self.tk.call(self._w, 'scan', 'mark', x)
 	def scan_dragto(self, x):
 		self.tk.call(self._w, 'scan', 'dragto', x)
-	def select_adjust(self, index):
-		self.tk.call(self._w, 'select', 'adjust', index)
-	def select_clear(self):
-		self.tk.call(self._w, 'select', 'clear')
-	def select_from(self, index):
-		self.tk.call(self._w, 'select', 'set', index)
-	def select_present(self):
+	def selection_adjust(self, index):
+		self.tk.call(self._w, 'selection', 'adjust', index)
+	select_adjust = selection_adjust
+	def selection_clear(self):
+		self.tk.call(self._w, 'selection', 'clear')
+	select_clear = selection_clear
+	def selection_from(self, index):
+		self.tk.call(self._w, 'selection', 'set', index)
+	select_from = selection_from
+	def selection_present(self):
 		return self.tk.getboolean(
-			self.tk.call(self._w, 'select', 'present'))
-	def select_range(self, start, end):
-		self.tk.call(self._w, 'select', 'range', start, end)
-	def select_to(self, index):
-		self.tk.call(self._w, 'select', 'to', index)
-	def view(self, index):
-		self.tk.call(self._w, 'view', index)
+			self.tk.call(self._w, 'selection', 'present'))
+	select_present = selection_present
+	def selection_range(self, start, end):
+		self.tk.call(self._w, 'selection', 'range', start, end)
+	select_range = selection_range
+	def selection_to(self, index):
+		self.tk.call(self._w, 'selection', 'to', index)
+	select_to = selection_to
+	def xview(self, index):
+		self.tk.call(self._w, 'xview', index)
+	def xview_moveto(self, fraction):
+		self.tk.call(self._w, 'xview', 'moveto', fraction)
+	def xview_scroll(self, number, what):
+		self.tk.call(self._w, 'xview', 'scroll', number, what)
 
 class Frame(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
