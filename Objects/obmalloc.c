@@ -812,7 +812,7 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 			return p;
 		/* We need more memory. */
 		assert(nbytes != 0);
-		bp = (block *)_PyMalloc_Malloc(nbytes);
+		bp = _PyMalloc_Malloc(nbytes);
 		if (bp != NULL) {
 			memcpy(bp, p, size);
 			_PyMalloc_Free(p);
