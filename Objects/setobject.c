@@ -12,48 +12,44 @@
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
-	PyObject *data;
+	PyObject *data = NULL;
 	PyObject *it = NULL;
 	PyObject *item;
-	PySetObject *so;
+	PySetObject *so = NULL;
 
 	/* Get iterator. */
 	if (iterable != NULL) {
 		it = PyObject_GetIter(iterable);
 		if (it == NULL)
-			return NULL;
+			goto done;
 	}
 
 	data = PyDict_New();
-	if (data == NULL) {
-		Py_DECREF(it);
-		return NULL;
-	}
+	if (data == NULL) 
+		goto done;
 
 	while (it != NULL && (item = PyIter_Next(it)) != NULL) {
                 if (PyDict_SetItem(data, item, Py_True) == -1) {
-			Py_DECREF(it);
-			Py_DECREF(data);
 			Py_DECREF(item);
-			return NULL;
+			goto done;
                 } 
 		Py_DECREF(item);
 	}
-	Py_XDECREF(it);
-	if (PyErr_Occurred()) {
-		Py_DECREF(data);
-		return NULL;
-	}
+	if (PyErr_Occurred())
+		goto done;
 
 	/* create PySetObject structure */
 	so = (PySetObject *)type->tp_alloc(type, 0);
-	if (so == NULL) {
-		Py_DECREF(data);
-		return NULL;
-	}
+	if (so == NULL) 
+		goto done;
+
+	Py_INCREF(data);
 	so->data = data;
 	so->hash = -1;
 
+done:
+	Py_XDECREF(data);
+	Py_XDECREF(it);
 	return (PyObject *)so;
 }
 
@@ -64,7 +60,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
 		return NULL;
-	if (iterable != NULL && iterable->ob_type == &PyFrozenSet_Type) {
+	if (iterable != NULL && PyFrozenSet_CheckExact(iterable)) {
 		Py_INCREF(iterable);
 		return iterable;
 	}
@@ -161,7 +157,7 @@ set_copy(PySetObject *so)
 static PyObject *
 frozenset_copy(PySetObject *so)
 {
-	if (so->ob_type == &PyFrozenSet_Type) {
+	if (PyFrozenSet_CheckExact(so)) {
 		Py_INCREF(so);
 		return (PyObject *)so;
 	}
@@ -171,52 +167,6 @@ frozenset_copy(PySetObject *so)
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a set.");
 
 static PyObject *
-set_union(PySetObject *so, PyObject *other)
-{
-	PySetObject *result;
-	PyObject *item, *data, *it;
-
-	result = (PySetObject *)set_copy(so);
-	if (result == NULL)
-		return NULL;
-
-	if (PyAnySet_Check(other)) {
-		if (PyDict_Merge(result->data, ((PySetObject *)other)->data, 0) == -1) {
-			Py_DECREF(result);
-			return NULL;
-		}
-		return (PyObject *)result;
-	}
-
-	it = PyObject_GetIter(other);
-	if (it == NULL) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	data = result->data;
-	while ((item = PyIter_Next(it)) != NULL) {
-                if (PyDict_SetItem(data, item, Py_True) == -1) {
-			Py_DECREF(it);
-			Py_DECREF(result);
-			Py_DECREF(item);
-			return NULL;
-                } 
-		Py_DECREF(item);
-	}
-	Py_DECREF(it);
-	if (PyErr_Occurred()) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	return (PyObject *)result;
-}
-
-PyDoc_STRVAR(union_doc,
- "Return the union of two sets as a new set.\n\
-\n\
-(i.e. all elements that are in either set.)");
-
-static PyObject *
 set_union_update(PySetObject *so, PyObject *other)
 {
 	PyObject *item, *data, *it;
@@ -224,8 +174,7 @@ set_union_update(PySetObject *so, PyObject *other)
 	if (PyAnySet_Check(other)) {
 		if (PyDict_Merge(so->data, ((PySetObject *)other)->data, 0) == -1) 
 			return NULL;
-		Py_INCREF(so);
-		return (PyObject *)so;
+		Py_RETURN_NONE;
 	}
 
 	it = PyObject_GetIter(other);
@@ -249,6 +198,29 @@ set_union_update(PySetObject *so, PyObject *other)
 
 PyDoc_STRVAR(union_update_doc, 
 "Update a set with the union of itself and another.");
+
+static PyObject *
+set_union(PySetObject *so, PyObject *other)
+{
+	PySetObject *result;
+	PyObject *rv;
+
+	result = (PySetObject *)set_copy(so);
+	if (result == NULL)
+		return NULL;
+	rv = set_union_update(result, other);
+	if (rv == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+	Py_DECREF(rv);
+	return (PyObject *)result;
+}
+
+PyDoc_STRVAR(union_doc,
+ "Return the union of two sets as a new set.\n\
+\n\
+(i.e. all elements that are in either set.)");
 
 static PyObject *
 set_or(PySetObject *so, PyObject *other)
@@ -286,15 +258,25 @@ set_intersection(PySetObject *so, PyObject *other)
 	result = (PySetObject *)make_new_set(so->ob_type, NULL);
 	if (result == NULL)
 		return NULL;
-	
+	tgtdata = result->data;
+	selfdata = so->data;
+
+	if (PyAnySet_Check(other) && 
+		PyDict_Size(((PySetObject *)other)->data) > PyDict_Size(selfdata)) {
+		selfdata = ((PySetObject *)other)->data;
+		other = (PyObject *)so;
+	} else if (PyDict_Check(other) &&
+		PyDict_Size(other) > PyDict_Size(selfdata)) {
+		selfdata = other;
+		other = so->data;
+	}
+
 	it = PyObject_GetIter(other);
 	if (it == NULL) {
 		Py_DECREF(result);
 		return NULL;
 	}
 
-	selfdata = so->data;
-	tgtdata = result->data;
 	while ((item = PyIter_Next(it)) != NULL) {
 		if (PySequence_Contains(selfdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
@@ -390,27 +372,39 @@ set_iand(PySetObject *so, PyObject *other)
 static PyObject *
 set_difference(PySetObject *so, PyObject *other)
 {
-	PySetObject *result;
-	PyObject *item, *tgtdata, *it;
+	PySetObject *result, *otherset=NULL;
+	PyObject *item, *otherdata, *tgtdata, *it;
 
-	result = (PySetObject *)set_copy(so);
+	result = (PySetObject *)make_new_set(so->ob_type, NULL);
 	if (result == NULL)
 		return NULL;
-	
-	it = PyObject_GetIter(other);
+	tgtdata = result->data;
+
+	if (PyDict_Check(other))
+		otherdata = other;
+	else if (PyAnySet_Check(other))
+		otherdata = ((PySetObject *)other)->data;
+	else {
+		otherset = (PySetObject *)make_new_set(so->ob_type, other);
+		if (otherset == NULL) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		otherdata = otherset->data;
+	}	
+
+	it = PyObject_GetIter(so->data);
 	if (it == NULL) {
+		Py_XDECREF(otherset);
 		Py_DECREF(result);
 		return NULL;
 	}
 
-	tgtdata = result->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (PyDict_DelItem(tgtdata, item) == -1) {
-			if (PyErr_ExceptionMatches(PyExc_KeyError))
-				PyErr_Clear();
-			else {
+		if (!PySequence_Contains(otherdata, item)) {
+			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
+				Py_XDECREF(otherset);
 				Py_DECREF(it);
-				Py_DECREF(result);
 				Py_DECREF(item);
 				return NULL;
 			}
@@ -418,6 +412,7 @@ set_difference(PySetObject *so, PyObject *other)
 		Py_DECREF(item);
 	}
 	Py_DECREF(it);
+	Py_XDECREF(otherset);
 	if (PyErr_Occurred()) {
 		Py_DECREF(result);
 		return NULL;
@@ -489,66 +484,6 @@ set_isub(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_symmetric_difference(PySetObject *so, PyObject *other)
-{
-	PySetObject *result, *otherset=NULL;
-	PyObject *item, *selfdata, *otherdata, *tgtdata, *it;
-
-	selfdata = so->data;
-
-	result = (PySetObject *)set_copy(so);
-	if (result == NULL)
-		return NULL;
-	tgtdata = result->data;
-
-	if (PyDict_Check(other))
-		otherdata = other;
-	else if (PyAnySet_Check(other))
-		otherdata = ((PySetObject *)other)->data;
-	else {
-		otherset = (PySetObject *)make_new_set(so->ob_type, other);
-		if (otherset == NULL) {
-			Py_DECREF(result);
-			return NULL;
-		}
-		otherdata = otherset->data;
-	}	
-
-	it = PyObject_GetIter(otherdata);
-	if (it == NULL) {
-		Py_XDECREF(otherset);
-		Py_DECREF(result);
-		return NULL;
-	}
-
-	while ((item = PyIter_Next(it)) != NULL) {
-		if (PyDict_DelItem(tgtdata, item) == -1) {
-			PyErr_Clear();
-			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
-				Py_DECREF(it);
-				Py_XDECREF(otherset);
-				Py_DECREF(result);
-				Py_DECREF(item);
-				return NULL;
-			} 
-		}
-		Py_DECREF(item);
-	}
-	Py_DECREF(it);
-	Py_XDECREF(otherset);
-	if (PyErr_Occurred()) {
-		Py_DECREF(result);
-		return NULL;
-	}
-	return (PyObject *)result;
-}
-
-PyDoc_STRVAR(symmetric_difference_doc,
-"Return the symmetric difference of two sets as a new set.\n\
-\n\
-(i.e. all elements that are in exactly one of the sets.)");
-
-static PyObject *
 set_symmetric_difference_update(PySetObject *so, PyObject *other)
 {
 	PyObject *item, *selfdata, *it, *otherdata;
@@ -598,6 +533,83 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 
 PyDoc_STRVAR(symmetric_difference_update_doc,
 "Update a set with the symmetric difference of itself and another.");
+
+static PyObject *
+set_symmetric_difference(PySetObject *so, PyObject *other)
+{
+	PySetObject *result;
+	PyObject *item, *selfdata, *otherdata, *tgtdata, *it, *rv, *otherset;
+
+	if (PyDict_Check(other))
+		otherdata = other;
+	else if (PyAnySet_Check(other))
+		otherdata = ((PySetObject *)other)->data;
+	else {
+		otherset = make_new_set(so->ob_type, other);
+		if (otherset == NULL)
+			return NULL;
+		rv = set_symmetric_difference_update((PySetObject *)otherset, (PyObject *)so);
+		if (rv == NULL)
+			return NULL;
+		Py_DECREF(rv);
+		return otherset;
+	}	
+
+	result = (PySetObject *)make_new_set(so->ob_type, NULL);
+	if (result == NULL)
+		return NULL;
+	tgtdata = result->data;
+	selfdata = so->data;
+
+	it = PyObject_GetIter(otherdata);
+	if (it == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+	while ((item = PyIter_Next(it)) != NULL) {
+		if (!PySequence_Contains(selfdata, item)) {
+			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
+				Py_DECREF(it);
+				Py_DECREF(item);
+				return NULL;
+			}
+		}
+		Py_DECREF(item);
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred()) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	it = PyObject_GetIter(selfdata);
+	if (it == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+	while ((item = PyIter_Next(it)) != NULL) {
+		if (!PySequence_Contains(otherdata, item)) {
+			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
+				Py_DECREF(it);
+				Py_DECREF(item);
+				return NULL;
+			}
+		}
+		Py_DECREF(item);
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred()) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	return (PyObject *)result;
+}
+
+PyDoc_STRVAR(symmetric_difference_doc,
+"Return the symmetric difference of two sets as a new set.\n\
+\n\
+(i.e. all elements that are in exactly one of the sets.)");
 
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
@@ -1012,7 +1024,7 @@ static PyMethodDef set_methods[] = {
 	 symmetric_difference_update_doc},
 	{"union",	(PyCFunction)set_union,		METH_O,
 	 union_doc},
-	{"union_update",(PyCFunction)set_union_update,	METH_O,
+	{"update",	(PyCFunction)set_union_update,	METH_O,
 	 union_update_doc},
 	{NULL,		NULL}	/* sentinel */
 };
@@ -1159,8 +1171,7 @@ PyTypeObject PyFrozenSet_Type = {
 	0,				/* ob_size */
 	"frozenset",			/* tp_name */
 	sizeof(PySetObject),		/* tp_basicsize */
-	0,				/* tp_itemsize */
-	/* methods */
+	0,				/* tp_itemsize */	/* methods */
 	(destructor)set_dealloc,	/* tp_dealloc */
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
