@@ -436,9 +436,8 @@ class Set(BaseSet):
         """Remove all elements of another set from this set."""
         self._binary_sanity_check(other)
         data = self._data
-        for elt in other:
-            if elt in data:
-                del data[elt]
+        for elt in ifilter(data.has_key, other):
+            del data[elt]
         return self
 
     def difference_update(self, other):
