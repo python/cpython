@@ -857,9 +857,9 @@ class Wobj:
 # ignore these commands
 ignoredcommands = ('bcode', 'ecode')
 # map commands like these to themselves as plaintext
-wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF')
+wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX')
 # \{ --> {,  \} --> }, etc
-themselves = ('{', '}', '.', '@') + wordsselves
+themselves = ('{', '}', '.', '@', ' ', '\n') + wordsselves
 # these ones also themselves (see argargs macro in myformat.sty)
 inargsselves = (',', '[', ']', '(', ')')
 # this is how *I* would show the difference between emph and strong
@@ -871,8 +871,8 @@ markcmds = {'code': ('', ''), 'var': 1, 'emph': ('_', '_'), \
 fontchanges = {'rm': 'r', 'it': 'i', 'em': 'emph', 'bf': 'b', 'tt': 't'}
 
 # transparent for these commands
-for_texi = ('emph', 'var', 'strong', 'code', 'kbd', 'key', 'dfn', 'samp', \
-	  'r', 'i', 't')
+for_texi = ('emph', 'var', 'strong', 'code', 'kbd', 'key', 'dfn', 'samp',
+	    'file', 'r', 'i', 't')
 
 
 # try to remove macros and return flat text
@@ -1754,6 +1754,24 @@ def changeit(buf, pp):
 				ingroupch.append(chunk(GROUP, ch.where, [\
 					  chunk(PLAIN, ch.where, \
 					  '(built-in function)')]))
+
+				pp.insert(i, chunk(GROUP, ch.where, ingroupch))
+				length, i = length+1, i+1
+				
+				
+			elif s(buf, ch.data) == 'obindex':
+				ch.chtype = chunk_type(CSLINE)
+				ch.data = 'findex'
+				length, newi = getnextarg(length, buf, pp, i)
+				ingroupch = pp[i:newi]
+				del pp[i:newi]
+				length = length - (newi-i)
+
+				ingroupch.append(chunk(PLAIN, ch.where, ' '))
+				ingroupch.append(chunk(CSNAME, ch.where, 'r'))
+				ingroupch.append(chunk(GROUP, ch.where, [\
+					  chunk(PLAIN, ch.where, \
+					  '(object)')]))
 
 				pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 				length, i = length+1, i+1
