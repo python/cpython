@@ -98,6 +98,16 @@ class HotShotTestCase(unittest.TestCase):
                   ]
         self.run_test(g, events, self.new_profiler(lineevents=1))
 
+    def test_start_stop(self):
+        # Make sure we don't return NULL in the start() and stop()
+        # methods when there isn't an error.  Bug in 2.2 noted by
+        # Anthony Baxter.
+        profiler = self.new_profiler()
+        profiler.start()
+        profiler.stop()
+        profiler.close()
+        os.unlink(self.logfn)
+
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)
