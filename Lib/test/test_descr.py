@@ -1,6 +1,6 @@
 # Test descriptor-related enhancements
 
-from test_support import verify, verbose
+from test_support import verify, verbose, TestFailed
 from copy import deepcopy
 
 def testunop(a, res, expr="len(a)", meth="__len__"):
@@ -122,6 +122,55 @@ def dicts():
     verify(eval(repr(d), {}) == d)
     verify(eval(d.__repr__(), {}) == d)
     testset2op({1:2,3:4}, 2, 3, {1:2,2:3,3:4}, "a[b]=c", "__setitem__")
+
+def dict_constructor():
+    if verbose:
+        print "Testing dictionary constructor ..."
+    d = dictionary()
+    verify(d == {})
+    d = dictionary({})
+    verify(d == {})
+    d = dictionary(mapping={})
+    verify(d == {})
+    d = dictionary({1: 2, 'a': 'b'})
+    verify(d == {1: 2, 'a': 'b'})
+    for badarg in 0, 0L, 0j, "0", [0], (0,):
+        try:
+            dictionary(badarg)
+        except TypeError:
+            pass
+        else:
+            raise TestFailed("no TypeError from dictionary(%r)" % badarg)
+    try:
+        dictionary(senseless={})
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("no TypeError from dictionary(senseless={}")
+
+    try:
+        dictionary({}, {})
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("no TypeError from dictionary({}, {})")
+
+    class Mapping:
+        dict = {1:2, 3:4, 'a':1j}
+
+        def __getitem__(self, i):
+            return self.dict[i]
+
+    try:
+        dictionary(Mapping())
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("no TypeError from dictionary(incomplete mapping)")
+
+    Mapping.keys = lambda self: self.dict.keys()
+    d = dictionary(mapping=Mapping())
+    verify(d == Mapping.dict)
 
 binops = {
     'add': '+',
@@ -1299,6 +1348,7 @@ def inherits():
 def all():
     lists()
     dicts()
+    dict_constructor()
     ints()
     longs()
     floats()

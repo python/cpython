@@ -1692,11 +1692,38 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return self;
 }
 
+static int
+dict_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyObject *arg = NULL;
+	static char *kwlist[] = {"mapping", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:dictionary",
+					 kwlist, &arg))
+		return -1;
+	if (arg != NULL) {
+		if (PyDict_Merge(self, arg, 1) < 0) {
+			/* An error like "AttibuteError: keys" is too
+			   cryptic in this context. */
+			if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+				PyErr_SetString(PyExc_TypeError,
+					"argument must be of a mapping type");
+			}
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static PyObject *
 dict_iter(dictobject *dict)
 {
 	return dictiter_new(dict, select_key);
 }
+
+static char dictionary_doc[] =
+"dictionary() -> new empty dictionary\n"
+"dictionary(mapping) -> new dict initialized from mapping's key+value pairs";
 
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1721,7 +1748,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
-	"dictionary type",			/* tp_doc */
+	dictionary_doc,				/* tp_doc */
 	(traverseproc)dict_traverse,		/* tp_traverse */
 	(inquiry)dict_tp_clear,			/* tp_clear */
 	dict_richcompare,			/* tp_richcompare */
@@ -1736,7 +1763,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	0,					/* tp_init */
+	(initproc)dict_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	dict_new,				/* tp_new */
 };
