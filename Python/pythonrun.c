@@ -1033,6 +1033,9 @@ err_input(err)
 	case E_INDENT:
 		msg = "inconsistent use of tabs and spaces in indentation";
 		break;
+	case E_OVERFLOW:
+		msg = "expression too long";
+		break;
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
 		msg = "unknown parsing error";

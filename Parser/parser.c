@@ -153,11 +153,11 @@ shift(s, type, str, newstate, lineno)
 	int newstate;
 	int lineno;
 {
+	int err;
 	assert(!s_empty(s));
-	if (PyNode_AddChild(s->s_top->s_parent, type, str, lineno) == NULL) {
-		fprintf(stderr, "shift: no mem in addchild\n");
-		return -1;
-	}
+	err = PyNode_AddChild(s->s_top->s_parent, type, str, lineno);
+	if (err)
+		return err;
 	s->s_top->s_state = newstate;
 	return 0;
 }
@@ -172,13 +172,13 @@ push(s, type, d, newstate, lineno)
 	int newstate;
 	int lineno;
 {
+	int err;
 	register node *n;
 	n = s->s_top->s_parent;
 	assert(!s_empty(s));
-	if (PyNode_AddChild(n, type, (char *)NULL, lineno) == NULL) {
-		fprintf(stderr, "push: no mem in addchild\n");
-		return -1;
-	}
+	err = PyNode_AddChild(n, type, (char *)NULL, lineno);
+	if (err)
+		return err;
 	s->s_top->s_state = newstate;
 	return s_push(s, d, CHILD(n, NCH(n)-1));
 }
@@ -233,6 +233,7 @@ PyParser_AddToken(ps, type, str, lineno)
 	int lineno;
 {
 	register int ilabel;
+	int err;
 	
 	D(printf("Token %s/'%s' ... ", _PyParser_TokenNames[type], str));
 	
@@ -260,20 +261,20 @@ PyParser_AddToken(ps, type, str, lineno)
 					int arrow = x & ((1<<7)-1);
 					dfa *d1 = PyGrammar_FindDFA(
 						ps->p_grammar, nt);
-					if (push(&ps->p_stack, nt, d1,
-						arrow, lineno) < 0) {
+					if ((err = push(&ps->p_stack, nt, d1,
+						arrow, lineno)) > 0) {
 						D(printf(" MemError: push\n"));
-						return E_NOMEM;
+						return err;
 					}
 					D(printf(" Push ...\n"));
 					continue;
 				}
 				
 				/* Shift the token */
-				if (shift(&ps->p_stack, type, str,
-						x, lineno) < 0) {
+				if ((err = shift(&ps->p_stack, type, str,
+						x, lineno)) > 0) {
 					D(printf(" MemError: shift.\n"));
-					return E_NOMEM;
+					return err;
 				}
 				D(printf(" Shift.\n"));
 				/* Pop while we are in an accept-only state */
