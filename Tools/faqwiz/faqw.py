@@ -3,9 +3,10 @@ import posix
 t1 = posix.times()
 try:
     FAQDIR = "/usr/people/guido/python/FAQ"
+    SRCDIR = "/usr/people/guido/python/Tools/faqwiz"
     import os, sys, time, operator
     os.chdir(FAQDIR)
-    sys.path.insert(0, FAQDIR)
+    sys.path.insert(0, SRCDIR)
     import faqwiz
 except SystemExit, n:
     sys.exit(n)
