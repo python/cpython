@@ -12,7 +12,10 @@ except ImportError:
         if idledir != os.getcwd():
             # We're not in the IDLE directory, help the subprocess find run.py
             pypath = os.environ.get('PYTHONPATH', '')
-            os.environ['PYTHONPATH'] = pypath + ':' + idledir
+            if pypath:
+                os.environ['PYTHONPATH'] = pypath + ':' + idledir
+            else:
+                os.environ['PYTHONPATH'] = idledir
         PyShell.main()
 else:
     idlelib.PyShell.main()
