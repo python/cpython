@@ -43,7 +43,6 @@ from warnings import warn as _warn
 from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
-from math import floor as _floor
 from os import urandom as _urandom
 from binascii import hexlify as _hexlify
 
