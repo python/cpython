@@ -664,6 +664,108 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 float(o).
        */
 	 
+/*  In-place variants of (some of) the above number protocol functions */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceAdd(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of adding o2 to o1, possibly in-place, or null
+	 on failure.  This is the equivalent of the Python expression:
+	 o1 += o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceSubtract(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of subtracting o2 from o1, possibly in-place or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 -= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceMultiply(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of multiplying o1 by o2, possibly in-place, or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 *= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceDivide(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of dividing o1 by o2, possibly in-place, or null
+	 on failure.  This is the equivalent of the Python expression:
+	 o1 /= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the remainder of dividing o1 by o2, possibly in-place, or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 %= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlacePower(PyObject *o1, PyObject *o2,
+     						 PyObject *o3);
+
+       /*
+	 Returns the result of raising o1 to the power of o2, possibly
+	 in-place, or null on failure.  This is the equivalent of the Python
+	 expression: o1 **= o2, or pow(o1, o2, o3) if o3 is present.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceLshift(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of left shifting o1 by o2, possibly in-place, or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 <<= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceRshift(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of right shifting o1 by o2, possibly in-place or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 >>= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceAnd(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of bitwise and of o1 and o2, possibly in-place,
+	 or null on failure. This is the equivalent of the Python
+	 expression: o1 &= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceXor(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the bitwise exclusive or of o1 by o2, possibly in-place, or
+	 null on failure.  This is the equivalent of the Python expression:
+	 o1 ^= o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
+
+       /*
+	 Returns the result of bitwise or or o1 and o2, possibly in-place,
+	 or null on failure.  This is the equivalent of the Python
+	 expression: o1 |= o2.
+
+       */
+
 
 /*  Sequence protocol:*/
 
@@ -822,6 +924,26 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 Return the first index for which o[i]=value.  On error,
 	 return -1.    This is equivalent to the Python
 	 expression: o.index(value).
+       */
+
+/* In-place versions of some of the above Sequence functions. */
+
+     DL_IMPORT(PyObject *) PySequence_InPlaceConcat(PyObject *o1, PyObject *o2);
+
+       /*
+	 Append o2 to o1, in-place when possible. Return the resulting
+	 object, which could be o1, or NULL on failure.  This is the
+	 equivalent of the Python expression: o1 += o2.
+
+       */
+
+     DL_IMPORT(PyObject *) PySequence_InPlaceRepeat(PyObject *o, int count);
+
+       /*
+	 Repeat o1 by count, in-place when possible. Return the resulting
+	 object, which could be o1, or NULL on failure.  This is the
+	 equivalent of the Python expression: o1 *= count.
+
        */
 
 /*  Mapping protocol:*/

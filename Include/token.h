@@ -53,10 +53,21 @@ extern "C" {
 #define LEFTSHIFT	34
 #define RIGHTSHIFT	35
 #define DOUBLESTAR	36
+#define PLUSEQUAL	37
+#define MINEQUAL	38
+#define STAREQUAL	39
+#define SLASHEQUAL	40
+#define PERCENTEQUAL	41
+#define AMPEREQUAL	42
+#define VBAREQUAL	43
+#define CIRCUMFLEXEQUAL	44
+#define LEFTSHIFTEQUAL	45
+#define RIGHTSHIFTEQUAL	46
+#define DOUBLESTAREQUAL	47
 /* Don't forget to update the table _PyParser_TokenNames in tokenizer.c! */
-#define OP		37
-#define ERRORTOKEN	38
-#define N_TOKENS	39
+#define OP		48
+#define ERRORTOKEN	49
+#define N_TOKENS	50
 
 /* Special definitions for cooperation with parser */
 
