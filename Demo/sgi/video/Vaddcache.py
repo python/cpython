@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /ufs/guido/bin/sgi/python
 
 # Add a cache to each of the files given as command line arguments
 

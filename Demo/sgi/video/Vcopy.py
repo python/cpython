@@ -27,8 +27,8 @@ def usage():
 	print '-h height  : output image height (default width*3/4 if -w used)'
 	print
 	print '-p pf      : new x and y packfactor (default unchanged)'
-	print '-x xpf     : new x packfactor (default 1 if -y used)'
-	print '-y ypf     : new y packfactor (default 1 if -x used)'
+	print '-x xpf     : new x packfactor (default unchanged)'
+	print '-y ypf     : new y packfactor (default unchanged)'
 	print
 	print '-m delta   : drop frames closer than delta msec (default 0)'
 	print '-r delta   : regenerate input time base delta msec apart'
@@ -112,8 +112,6 @@ def main():
 		sys.exit(2)
 
 	if xpf or ypf:
-		if not xpf: xpf = 1
-		if not ypf: ypf = 1
 		newpf = (xpf, ypf)
 
 	if newwidth or newheight:
@@ -148,7 +146,7 @@ def main():
 # Copy one file to another
 
 def process(infilename, outfilename):
-	global newwidth, newheight
+	global newwidth, newheight, newpf
 
 	try:
 		vin = VFile.BasicVinFile().init(infilename)
@@ -168,6 +166,8 @@ def process(infilename, outfilename):
 		sys.stderr.write(outfilename + ': I/O error: ' + `msg` + '\n')
 		return 1
 
+	vin.printinfo()
+
 	vout.setinfo(vin.getinfo())
 
 	scale = 0
@@ -182,6 +182,10 @@ def process(infilename, outfilename):
 			return 1
 
 	if newpf:
+		xpf, ypf = newpf
+		if not xpf: xpf = vin.xpf
+		if not ypf: ypf = vout.ypf
+		newpf = (xpf, ypf)
 		vout.setpf(newpf)
 		scale = 1
 
@@ -217,6 +221,7 @@ def process(infilename, outfilename):
 	newwidth = newwidth / vout.xpf
 	newheight = newheight / vout.ypf
 
+	vout.printinfo()
 	vout.writeheader()
 
 	told = 0
@@ -241,11 +246,10 @@ def process(infilename, outfilename):
 		told = tout
 		if newtype:
 			data = convert(data, inwidth, inheight)
-		if newwidth and newheight:
+		if scale:
 			data = imageop.scale(data, vout.bpp/8, \
 				  inwidth, inheight, newwidth, newheight)
-		if vin.upside_down <> vout.upside_down or \
-			  vin.mirror_image <> vout.mirror_image:
+		if flip:
 			x0, y0 = 0, 0
 			x1, y1 = newwidth-1, neheight-1
 			if vin.upside_down <> vout.upside_down:
