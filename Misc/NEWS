@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- SF patch #1007189: ``from ... import ...`` statements now allow the name 
+  list to be surrounded by parentheses.
+
 - Some speedups for long arithmetic, thanks to Trevor Perrin.  Gradeschool
   multiplication was sped a little by optimizing the C code.  Gradeschool
   squaring was sped by about a factor of 2, by exploiting that about half
@@ -889,7 +892,7 @@ Library
   API matches math.log().
 
 - Bug #957381: distutils bdist_rpm no longer fails on recent RPM versions
-  that generate a *-debuginfo.rpm.
+  that generate a -debuginfo.rpm
 
 - os.path.devnull has been added for all supported platforms.
 

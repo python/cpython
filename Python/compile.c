@@ -3490,42 +3490,53 @@ com_from_import(struct compiling *c, node *n)
 static void
 com_import_stmt(struct compiling *c, node *n)
 {
+	node *nn;
 	int i;
 	REQ(n, import_stmt);
-	/* 'import' dotted_name (',' dotted_name)* |
-	   'from' dotted_name 'import' ('*' | NAME (',' NAME)*) */
-	if (STR(CHILD(n, 0))[0] == 'f') {
+	n = CHILD(n, 0);
+	/* import_stmt: import_name | import_from */
+	if (TYPE(n) == import_from) {
+		/* 'from' dotted_name 'import' ('*' |
+		     '(' import_as_names ')' | import_as_names) */
 		PyObject *tup;
-		/* 'from' dotted_name 'import' ... */
 		REQ(CHILD(n, 1), dotted_name);
-		
-		if (TYPE(CHILD(n, 3)) == STAR) {
+		nn = CHILD(n, 3 + (TYPE(CHILD(n, 3)) == LPAR));
+		if (TYPE(nn) == STAR)
 			tup = Py_BuildValue("(s)", "*");
-		} else {
-			tup = PyTuple_New((NCH(n) - 2)/2);
-			for (i = 3; i < NCH(n); i += 2) {
-				PyTuple_SET_ITEM(tup, (i-3)/2, 
-					PyString_FromString(STR(
-						CHILD(CHILD(n, i), 0))));
+		else {
+			if (TYPE(CHILD(nn, NCH(nn) - 1)) == COMMA &&
+			    TYPE(CHILD(n, 3)) != LPAR) {
+				com_error(c, PyExc_SyntaxError,
+				    "trailing comma not allowed "
+				    "without surrounding parentheses");
+				return;
 			}
+			REQ(nn, import_as_names);
+			tup = PyTuple_New((NCH(nn) + 1) / 2);
+			for (i = 0; i < NCH(nn); i += 2)
+				PyTuple_SET_ITEM(tup, i / 2,
+					PyString_FromString(STR(
+						CHILD(CHILD(nn, i), 0))));
 		}
 		com_addoparg(c, LOAD_CONST, com_addconst(c, tup));
 		Py_DECREF(tup);
 		com_push(c, 1);
 		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
-		if (TYPE(CHILD(n, 3)) == STAR) 
+		if (TYPE(nn) == STAR)
 			com_addbyte(c, IMPORT_STAR);
 		else {
-			for (i = 3; i < NCH(n); i += 2) 
-				com_from_import(c, CHILD(n, i));
+			for (i = 0; i < NCH(nn); i += 2)
+				com_from_import(c, CHILD(nn, i));
 			com_addbyte(c, POP_TOP);
 		}
 		com_pop(c, 1);
 	}
 	else {
-		/* 'import' ... */
-		for (i = 1; i < NCH(n); i += 2) {
-			node *subn = CHILD(n, i);
+		/* 'import' dotted_as_names */
+		nn = CHILD(n, 1);
+		REQ(nn, dotted_as_names);
+		for (i = 0; i < NCH(nn); i += 2) {
+			node *subn = CHILD(nn, i);
 			REQ(subn, dotted_as_name);
 			com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 			com_push(c, 1);
@@ -6291,14 +6302,15 @@ symtable_gen_iter(struct symtable *st, node *n)
 static void
 symtable_import(struct symtable *st, node *n)
 {
+	node *nn;
 	int i;
-	/* import_stmt: 'import' dotted_as_name (',' dotted_as_name)* 
-              | 'from' dotted_name 'import' 
-                                ('*' | import_as_name (',' import_as_name)*)
-	   import_as_name: NAME [NAME NAME]
-	*/
-	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
+	/* import_stmt: import_name | import_from */
+	n = CHILD(n, 0);
+	if (TYPE(n) == import_from) {
+		/* import_from: 'from' dotted_name 'import' ('*' |
+		     | '(' import_as_names ')' | import_as_names) */
 		node *dotname = CHILD(n, 1);
+		REQ(dotname, dotted_name);
 		if (strcmp(STR(CHILD(dotname, 0)), "__future__") == 0) {
 			/* check for bogus imports */
 			if (n->n_lineno >= st->st_future->ff_last_lineno) {
@@ -6308,7 +6320,8 @@ symtable_import(struct symtable *st, node *n)
 				return;
 			}
 		}
-		if (TYPE(CHILD(n, 3)) == STAR) {
+		nn = CHILD(n, 3 + (TYPE(CHILD(n, 3)) == LPAR));
+		if (TYPE(nn) == STAR) {
 			if (st->st_cur->ste_type != TYPE_MODULE) {
 				if (symtable_warn(st,
 				  "import * only allowed at module level") < 0)
@@ -6317,8 +6330,9 @@ symtable_import(struct symtable *st, node *n)
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
 			st->st_cur->ste_opt_lineno = n->n_lineno;
 		} else {
-			for (i = 3; i < NCH(n); i += 2) {
-				node *c = CHILD(n, i);
+			REQ(nn, import_as_names);
+			for (i = 0; i < NCH(nn); i += 2) {
+				node *c = CHILD(nn, i);
 				if (NCH(c) > 1) /* import as */
 					symtable_assign(st, CHILD(c, 2),
 							DEF_IMPORT);
@@ -6327,10 +6341,12 @@ symtable_import(struct symtable *st, node *n)
 							DEF_IMPORT);
 			}
 		}
-	} else { 
-		for (i = 1; i < NCH(n); i += 2) {
-			symtable_assign(st, CHILD(n, i), DEF_IMPORT);
-		}
+	} else {
+		/* 'import' dotted_as_names */
+		nn = CHILD(n, 1);
+		REQ(nn, dotted_as_names);
+		for (i = 0; i < NCH(nn); i += 2)
+			symtable_assign(st, CHILD(nn, i), DEF_IMPORT);
 	}
 }
 
