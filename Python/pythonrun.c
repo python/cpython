@@ -33,13 +33,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "errcode.h"
 #include "sysmodule.h"
 #include "compile.h"
+#include "eval.h"
 #include "ceval.h"
 #include "pythonrun.h"
 #include "import.h"
-
-#ifdef USE_THREAD
-extern void *save_thread();
-#endif
 
 extern char *getpythonpath();
 
@@ -127,7 +124,6 @@ run_tty_1(fp, filename)
 	FILE *fp;
 	char *filename;
 {
-	void *save, *save_thread(), restore_thread();
 	object *m, *d, *v, *w;
 	node *n;
 	char *ps1, *ps2;
@@ -150,9 +146,9 @@ run_tty_1(fp, filename)
 		w = NULL;
 		ps2 = "";
 	}
-	save = save_thread();
+	BGN_SAVE
 	err = parsefile(fp, filename, &gram, single_input, ps1, ps2, &n);
-	restore_thread(save);
+	END_SAVE
 	XDECREF(v);
 	XDECREF(w);
 	if (err == E_EOF)
@@ -330,8 +326,12 @@ parse_file(fp, filename, start, n_ret)
 	int start;
 	node **n_ret;
 {
-	return parsefile(fp, filename, &gram, start,
+	int ret;
+	BGN_SAVE
+	ret = parsefile(fp, filename, &gram, start,
 				(char *)0, (char *)0, n_ret);
+	END_SAVE
+	return ret;
 }
 
 /* Simplified interface to parsestring */
@@ -366,6 +366,18 @@ goaway(sts)
 	int sts;
 {
 	flushline();
+
+#ifdef USE_THREAD
+
+	/* Other threads may still be active, so skip most of the
+	   cleanup actions usually done (these are mostly for
+	   debugging anyway). */
+	
+	(void *) save_thread();
+	donecalls();
+	exit_prog(sts);
+	
+#else /* USE_THREAD */
 	
 	/* XXX Call doneimport() before donecalls(), since donecalls()
 	   calls wdone(), and doneimport() may close windows */
@@ -384,12 +396,8 @@ goaway(sts)
 	}
 #endif /* TRACE_REFS */
 
-#ifdef USE_THREAD
-	(void) save_thread();
-	exit_prog(sts);
-#else
 	exit(sts);
-#endif
+#endif /* USE_THREAD */
 	/*NOTREACHED*/
 }
 

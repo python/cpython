@@ -27,14 +27,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
-#include "compile.h"
 #include "ceval.h"
 
 #include "thread.h"
-
-extern void init_save_thread PROTO((void));
-extern void* save_thread PROTO((void));
-extern void restore_thread PROTO((void *));
 
 object *ThreadError;
 
@@ -83,7 +78,6 @@ lock_acquire_lock(self, args)
 	lockobject *self;
 	object *args;
 {
-	void *save;
 	int i;
 
 	if (args != NULL) {
@@ -93,11 +87,9 @@ lock_acquire_lock(self, args)
 	else
 		i = 1;
 
-	save = save_thread();
-
+	BGN_SAVE
 	i = acquire_lock(self->lock_lock, i);
-
-	restore_thread(save);
+	END_SAVE
 
 	if (args == NULL) {
 		INCREF(None);
@@ -193,8 +185,6 @@ t_bootstrap(args_raw)
 	if (res == NULL) {
 		fprintf(stderr, "Unhandled exception in thread:\n");
 		print_error(); /* From pythonmain.c */
-		fprintf(stderr, "Exiting the entire program\n");
-		goaway(1);
 	}
 	(void) save_thread();
 	exit_thread();
@@ -251,7 +241,7 @@ thread_allocate_lock(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
-	return newlockobject();
+	return (object *) newlockobject();
 }
 
 static struct methodlist thread_methods[] = {

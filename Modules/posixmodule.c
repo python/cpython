@@ -73,6 +73,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "ceval.h"
 
 extern char *strerror PROTO((int));
 
@@ -128,9 +129,13 @@ posix_1str(args, func)
 	int (*func) FPROTO((const char *));
 {
 	char *path1;
+	int res;
 	if (!getstrarg(args, &path1))
 		return NULL;
-	if ((*func)(path1) < 0)
+	BGN_SAVE
+	res = (*func)(path1);
+	END_SAVE
+	if (res < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -142,9 +147,13 @@ posix_2str(args, func)
 	int (*func) FPROTO((const char *, const char *));
 {
 	char *path1, *path2;
+	int res;
 	if (!getstrstrarg(args, &path1, &path2))
 		return NULL;
-	if ((*func)(path1, path2) < 0)
+	BGN_SAVE
+	res = (*func)(path1, path2);
+	END_SAVE
+	if (res < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -157,9 +166,13 @@ posix_strint(args, func)
 {
 	char *path;
 	int i;
+	int res;
 	if (!getstrintarg(args, &path, &i))
 		return NULL;
-	if ((*func)(path, i) < 0)
+	BGN_SAVE
+	res = (*func)(path, i);
+	END_SAVE
+	if (res < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -174,9 +187,13 @@ posix_do_stat(self, args, statfunc)
 	struct stat st;
 	char *path;
 	object *v;
+	int res;
 	if (!getstrarg(args, &path))
 		return NULL;
-	if ((*statfunc)(path, &st) != 0)
+	BGN_SAVE
+	res = (*statfunc)(path, &st);
+	END_SAVE
+	if (res != 0)
 		return posix_error();
 	v = newtupleobject(10);
 	if (v == NULL)
@@ -227,10 +244,14 @@ posix_getcwd(self, args)
 	object *args;
 {
 	char buf[1026];
+	char *res;
 	extern char *getcwd PROTO((char *, int));
 	if (!getnoarg(args))
 		return NULL;
-	if (getcwd(buf, sizeof buf) == NULL)
+	BGN_SAVE
+	res = getcwd(buf, sizeof buf);
+	END_SAVE
+	if (res == NULL)
 		return posix_error();
 	return newstringobject(buf);
 }
@@ -284,10 +305,14 @@ posix_listdir(self, args)
 	struct direct *ep;
 	if (!getstrarg(args, &name))
 		return NULL;
-	if ((dirp = opendir(name)) == NULL)
+	BGN_SAVE
+	if ((dirp = opendir(name)) == NULL) {
+		RET_SAVE
 		return posix_error();
+	}
 	if ((d = newlistobject(0)) == NULL) {
 		closedir(dirp);
+		RET_SAVE
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
@@ -306,6 +331,7 @@ posix_listdir(self, args)
 		DECREF(v);
 	}
 	closedir(dirp);
+	END_SAVE
 #endif /* !MSDOS */
 
 	return d;
@@ -368,11 +394,13 @@ posix_system(self, args)
 	object *args;
 {
 	char *command;
-	int sts;
+	long sts;
 	if (!getstrarg(args, &command))
 		return NULL;
+	BGN_SAVE
 	sts = system(command);
-	return newintobject((long)sts);
+	END_SAVE
+	return newintobject(sts);
 }
 
 #ifndef MSDOS
@@ -411,9 +439,13 @@ posix_uname(self, args)
 	extern int uname PROTO((struct utsname *));
 	struct utsname u;
 	object *v;
+	int res;
 	if (!getnoarg(args))
 		return NULL;
-	if (uname(&u) < 0)
+	BGN_SAVE
+	res = uname(&u);
+	END_SAVE
+	if (res < 0)
 		return posix_error();
 	v = newtupleobject(5);
 	if (v == NULL)
@@ -443,6 +475,7 @@ posix_utime(self, args)
 	object *args;
 {
 	char *path;
+	int res;
 
 #ifdef UTIME_STRUCT
 	struct utimbuf buf;
@@ -459,7 +492,10 @@ posix_utime(self, args)
 
 	if (!getargs(args, "(s(ll))", &path, &ATIME, &MTIME))
 		return NULL;
-	if (utime(path, UTIME_ARG) < 0)
+	BGN_SAVE
+	res = utime(path, UTIME_ARG);
+	END_SAVE
+	if (res < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -648,7 +684,9 @@ posix_popen(self, args)
 	FILE *fp;
 	if (!getargs(args, "(ss)", &name, &mode))
 		return NULL;
+	BGN_SAVE
 	fp = popen(name, mode);
+	END_SAVE
 	if (fp == NULL)
 		return posix_error();
 	/* From now on, ignore SIGPIPE and let the error checking
@@ -664,8 +702,11 @@ posix_wait(self, args) /* Also waitpid() */
 {
 	object *v;
 	int pid, sts;
-	if (args == NULL)
+	if (args == NULL) {
+		BGN_SAVE
 		pid = wait(&sts);
+		END_SAVE
+	}
 	else {
 #ifdef NO_WAITPID
 		err_setstr(PosixError,
@@ -674,7 +715,9 @@ posix_wait(self, args) /* Also waitpid() */
 		int options;
 		if (!getintintarg(args, &pid, &options))
 			return NULL;
+		BGN_SAVE
 		pid = waitpid(pid, &sts, options);
+		END_SAVE
 #endif
 	}
 	if (pid == -1)
@@ -719,7 +762,9 @@ posix_readlink(self, args)
 	int n;
 	if (!getstrarg(args, &path))
 		return NULL;
+	BGN_SAVE
 	n = readlink(path, buf, (int) sizeof buf);
+	END_SAVE
 	if (n < 0)
 		return posix_error();
 	return newsizedstringobject(buf, n);

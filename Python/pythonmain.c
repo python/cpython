@@ -26,8 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
-extern char *getpythonpath();
-
 extern int debugging; /* Needed by parser.c */
 extern int verbose; /* Needed by import.c */
 

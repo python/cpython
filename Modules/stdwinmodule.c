@@ -63,10 +63,28 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "allobjects.h"
-
 #include "modsupport.h"
+#include "ceval.h"
 
 #include "stdwin.h"
+
+#ifdef USE_THREAD
+
+#include "thread.h"
+
+static type_lock StdwinLock; /* Lock held when interpreter not locked */
+
+#define BGN_STDWIN BGN_SAVE acquire_lock(StdwinLock, 1);
+#define RET_STDWIN release_lock(StdwinLock); RET_SAVE
+#define END_STDWIN release_lock(StdwinLock); END_SAVE
+
+#else
+
+#define BGN_STDWIN BGN_SAVE
+#define RET_STDWIN RET_SAVE
+#define END_STDWIN END_SAVE
+
+#endif
 
 static object *StdwinError; /* Exception stdwin.error */
 
@@ -1727,14 +1745,17 @@ stdwin_get_poll_event(poll, args)
 		return NULL;
 	}
  again:
+	BGN_STDWIN
 	if (poll) {
 		if (!wpollevent(&e)) {
+			RET_STDWIN
 			INCREF(None);
 			return None;
 		}
 	}
 	else
 		wgetevent(&e);
+	END_STDWIN
 	if (e.type == WE_COMMAND && e.u.command == WC_CANCEL) {
 		/* Turn keyboard interrupts into exceptions */
 		err_set(KeyboardInterrupt);
@@ -1919,7 +1940,9 @@ stdwin_askfile(self, args)
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
+	BGN_STDWIN
 	ret = waskfile(prompt, buf, sizeof buf, new);
+	END_STDWIN
 	if (!ret) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -1936,7 +1959,9 @@ stdwin_askync(self, args)
 	int new, ret;
 	if (!getstrintarg(args, &prompt, &new))
 		return NULL;
+	BGN_STDWIN
 	ret = waskync(prompt, new);
+	END_STDWIN
 	if (ret < 0) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -1956,7 +1981,9 @@ stdwin_askstr(self, args)
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
+	BGN_STDWIN
 	ret = waskstr(prompt, buf, sizeof buf);
+	END_STDWIN
 	if (!ret) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -1972,7 +1999,9 @@ stdwin_message(self, args)
 	char *msg;
 	if (!getstrarg(args, &msg))
 		return NULL;
+	BGN_STDWIN
 	wmessage(msg);
+	END_STDWIN
 	INCREF(None);
 	return None;
 }
@@ -2185,4 +2214,9 @@ initstdwin()
 	StdwinError = newstringobject("stdwin.error");
 	if (StdwinError == NULL || dictinsert(d, "error", StdwinError) != 0)
 		fatal("can't define stdwin.error");
+#ifdef USE_THREAD
+	StdwinLock = allocate_lock();
+	if (StdwinLock == NULL)
+		fatal("can't allocate stdwin lock");
+#endif
 }

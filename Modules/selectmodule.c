@@ -26,7 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
-#include "compile.h"
 #include "ceval.h"
 
 #include "myselect.h"
@@ -154,7 +153,9 @@ select_select(self, args)
     if ( omax > max ) max = omax;
     if ( emax > max ) max = emax;
 
+    BGN_SAVE
     n = select(max, &ifdset, &ofdset, &efdset, tvp);
+    END_SAVE
 
     if ( n < 0 ) {
 	err_errno(SelectError);

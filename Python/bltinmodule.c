@@ -33,7 +33,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "bltinmodule.h"
 #include "import.h"
 #include "pythonrun.h"
-#include "compile.h" /* For ceval.h */
 #include "ceval.h"
 #include "modsupport.h"
 
@@ -218,13 +217,17 @@ builtin_execfile(self, v)
 		    "execfile arguments must be filename[,dict[,dict]]");
 		return NULL;
 	}
+	BGN_SAVE
 	fp = fopen(getstringvalue(str), "r");
+	END_SAVE
 	if (fp == NULL) {
 		err_setstr(IOError, "execfile cannot open the file argument");
 		return NULL;
 	}
 	w = run_file(fp, getstringvalue(str), file_input, globals, locals);
+	BGN_SAVE
 	fclose(fp);
+	END_SAVE
 	return w;
 }
 
@@ -324,9 +327,11 @@ builtin_input(self, v)
 	}
 	m = add_module("__main__");
 	d = getmoduledict(m);
+	BGN_SAVE
 	while ((c = getc(in)) != EOF && (c == ' ' || c == '\t'))
 		;
 	ungetc(c, in);
+	END_SAVE
 	return run_file(in, "<stdin>", expr_input, d, d);
 }
 

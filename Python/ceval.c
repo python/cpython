@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "sysmodule.h"
 #include "compile.h"
 #include "frameobject.h"
+#include "eval.h"
 #include "ceval.h"
 #include "opcode.h"
 #include "bltinmodule.h"
@@ -83,47 +84,27 @@ static object *build_class PROTO((object *, object *));
 
 static frameobject *current_frame;
 
-
-/* Interface for threads.
-
-   A module that plans to do a blocking system call (or something else
-   that lasts a long time and doesn't touch Python data) can allow other
-   threads to run as follows:
-
-	void *x;
-
-	...preparations here...
-	x = save_thread();
-	...blocking system call here...
-	restore_thread(x);
-	...interpretr result here...
-
-   For convenience, that the value of 'errno' is restored across the
-   the call to restore_thread().
-
-   The function init_save_thread() should be called only from
-   initthread() in "threadmodule.c".
-
-   Note that not yet all candidates have been converted to use this
-   mechanism!
-*/
-
 #ifdef USE_THREAD
+
 #include <errno.h>
 #include "thread.h"
+
 static type_lock interpreter_lock;
 
 void
 init_save_thread()
 {
-#ifdef USE_THREAD
 	if (interpreter_lock)
 		fatal("2nd call to init_save_thread");
 	interpreter_lock = allocate_lock();
 	acquire_lock(interpreter_lock, 1);
-#endif
 }
+
 #endif
+
+/* Functions save_thread and restore_thread are always defined so
+   dynamically loaded modules needn't be compiled separately for use
+   with and without threads: */
 
 void *
 save_thread()

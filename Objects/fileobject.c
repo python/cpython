@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "ceval.h"
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
 
@@ -93,7 +94,11 @@ newfileobject(name, mode)
 	}
 	else
 #endif
-	f->f_fp = fopen(name, mode);
+	{
+		BGN_SAVE
+		f->f_fp = fopen(name, mode);
+		END_SAVE
+	}
 	if (f->f_fp == NULL) {
 		err_errno(IOError);
 		DECREF(f);
@@ -115,8 +120,11 @@ static void
 file_dealloc(f)
 	fileobject *f;
 {
-	if (f->f_fp != NULL && f->f_close != NULL)
+	if (f->f_fp != NULL && f->f_close != NULL) {
+		BGN_SAVE
 		(*f->f_close)(f->f_fp);
+		END_SAVE
+	}
 	if (f->f_name != NULL)
 		DECREF(f->f_name);
 	if (f->f_mode != NULL)
@@ -162,10 +170,13 @@ file_close(f, args)
 	int sts = 0;
 	if (!getnoarg(args))
 		return NULL;
-	errno = 0;
 	if (f->f_fp != NULL) {
-		if (f->f_close != NULL)
+		if (f->f_close != NULL) {
+			BGN_SAVE
+			errno = 0;
 			sts = (*f->f_close)(f->f_fp);
+			END_SAVE
+		}
 		f->f_fp = NULL;
 	}
 	if (sts == EOF)
@@ -183,6 +194,7 @@ file_seek(f, args)
 {
 	long offset;
 	int whence;
+	int ret;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -192,8 +204,11 @@ file_seek(f, args)
 		if (!getargs(args, "(li)", &offset, &whence))
 			return NULL;
 	}
+	BGN_SAVE
 	errno = 0;
-	if (fseek(f->f_fp, offset, whence) != 0) {
+	ret = fseek(f->f_fp, offset, whence);
+	END_SAVE
+	if (ret != 0) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
 		return NULL;
@@ -212,8 +227,10 @@ file_tell(f, args)
 		return err_closed();
 	if (!getnoarg(args))
 		return NULL;
+	BGN_SAVE
 	errno = 0;
 	offset = ftell(f->f_fp);
+	END_SAVE
 	if (offset == -1L) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
@@ -239,12 +256,17 @@ file_flush(f, args)
 	fileobject *f;
 	object *args;
 {
+	int res;
+	
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!getnoarg(args))
 		return NULL;
+	BGN_SAVE
 	errno = 0;
-	if (fflush(f->f_fp) != 0) {
+	res = fflush(f->f_fp);
+	END_SAVE
+	if (res != 0) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
 		return NULL;
@@ -258,11 +280,15 @@ file_isatty(f, args)
 	fileobject *f;
 	object *args;
 {
+	long res;
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!getnoarg(args))
 		return NULL;
-	return newintobject((long)isatty((int)fileno(f->f_fp)));
+	BGN_SAVE
+	res = isatty((int)fileno(f->f_fp));
+	END_SAVE
+	return newintobject(res);
 }
 
 static object *
@@ -290,6 +316,7 @@ file_read(f, args)
 	if (v == NULL)
 		return NULL;
 	n1 = 0;
+	BGN_SAVE
 	for (;;) {
 		n3 = fread(BUF(v)+n1, 1, n2-n1, f->f_fp);
 		/* XXX Error check? */
@@ -300,10 +327,13 @@ file_read(f, args)
 			break;
 		if (n == 0) {
 			n2 = n1 + BUFSIZ;
+			RET_SAVE
 			if (resizestring(&v, n2) < 0)
 				return NULL;
+			RES_SAVE
 		}
 	}
+	END_SAVE
 	if (n1 != n2)
 		resizestring(&v, n1);
 	return v;
@@ -321,7 +351,6 @@ getline(f, n)
 	fileobject *f;
 	int n;
 {
-	void *save, *save_thread(), restore_thread();
 	register FILE *fp;
 	register int c;
 	register char *buf, *end;
@@ -336,18 +365,18 @@ getline(f, n)
 	buf = BUF(v);
 	end = buf + n2;
 
-	save = save_thread();
+	BGN_SAVE
 	for (;;) {
 		if ((c = getc(fp)) == EOF) {
 			clearerr(fp);
 			if (intrcheck()) {
-				restore_thread(save);
+				RET_SAVE
 				DECREF(v);
 				err_set(KeyboardInterrupt);
 				return NULL;
 			}
 			if (n < 0 && buf == BUF(v)) {
-				restore_thread(save);
+				RET_SAVE
 				DECREF(v);
 				err_setstr(EOFError,
 					   "EOF when reading a line");
@@ -365,15 +394,15 @@ getline(f, n)
 				break;
 			n1 = n2;
 			n2 += 1000;
-			restore_thread(save);
+			RET_SAVE
 			if (resizestring(&v, n2) < 0)
 				return NULL;
-			save = save_thread();
+			RES_SAVE
 			buf = BUF(v) + n1;
 			end = BUF(v) + n2;
 		}
 	}
-	restore_thread(save);
+	END_SAVE
 
 	n1 = buf - BUF(v);
 	if (n1 != n2)
@@ -464,8 +493,10 @@ file_write(f, args)
 	if (!getargs(args, "s#", &s, &n))
 		return NULL;
 	f->f_softspace = 0;
+	BGN_SAVE
 	errno = 0;
 	n2 = fwrite(s, 1, n, f->f_fp);
+	END_SAVE
 	if (n2 != n) {
 		err_errno(IOError);
 		clearerr(f->f_fp);
