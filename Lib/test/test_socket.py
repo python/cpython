@@ -546,7 +546,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.cli_file.write(MSG)
         self.cli_file.flush()
 
-def main():
+def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(GeneralModuleTests))
     suite.addTest(unittest.makeSuite(BasicTCPTest))
@@ -556,4 +556,4 @@ def main():
     test_support.run_suite(suite)
 
 if __name__ == "__main__":
-    main()
+    test_main()
