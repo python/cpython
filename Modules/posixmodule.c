@@ -2787,6 +2787,10 @@ Change or add an environment variable.";
 int putenv( const char *str );
 #endif
 
+/* Save putenv() parameters as values here, so we can collect them when they
+ * get re-set with another call for the same key. */
+static PyObject *posix_putenv_garbage;
+
 static PyObject * 
 posix_putenv(self, args)
 	PyObject *self;
@@ -2794,6 +2798,7 @@ posix_putenv(self, args)
 {
         char *s1, *s2;
         char *new;
+	PyObject *newstr;
 
 	if (!PyArg_ParseTuple(args, "ss", &s1, &s2))
 		return NULL;
@@ -2821,13 +2826,27 @@ posix_putenv(self, args)
     } else {
 #endif
 
-	/* XXX This leaks memory -- not easy to fix :-( */
-	if ((new = malloc(strlen(s1) + strlen(s2) + 2)) == NULL)
-                return PyErr_NoMemory();
+	/* XXX This can leak memory -- not easy to fix :-( */
+	newstr = PyString_FromStringAndSize(NULL, strlen(s1) + strlen(s2) + 2);
+	if (newstr == NULL)
+		return PyErr_NoMemory();
+	new = PyString_AS_STRING(newstr);
 	(void) sprintf(new, "%s=%s", s1, s2);
 	if (putenv(new)) {
                 posix_error();
                 return NULL;
+	}
+	/* Install the first arg and newstr in posix_putenv_garbage;
+	 * this will cause previous value to be collected.  This has to
+	 * happen after the real putenv() call because the old value
+	 * was still accessible until then. */
+	if (PyDict_SetItem(posix_putenv_garbage,
+			   PyTuple_GET_ITEM(args, 0), newstr)) {
+		/* really not much we can do; just leak */
+		PyErr_Clear();
+	}
+	else {
+		Py_DECREF(newstr);
 	}
 
 #if defined(PYOS_OS2)
@@ -3500,4 +3519,6 @@ INITFUNC()
                 return;
 
 	PyDict_SetItemString(d, "error", PyExc_OSError);
+
+	posix_putenv_garbage = PyDict_New();
 }
