@@ -84,6 +84,7 @@
 
 /* --------------------------------------------------------------------- */
 
+#include <stddef.h>   /* for offsetof() */
 #include <Python.h>
 #include <db.h>
 
@@ -92,8 +93,11 @@
 
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
+#if DB_VERSION_MINOR > 9
+#error "eek! DBVER can't handle minor versions > 9"
+#endif
 
-#define PY_BSDDB_VERSION "4.2.3"
+#define PY_BSDDB_VERSION "4.2.4"
 static char *rcs_id = "$Id$";
 
 
@@ -184,6 +188,12 @@ static PyObject* DBPermissionsError;    /* EPERM  */
 /* --------------------------------------------------------------------- */
 /* Structure definitions */
 
+#if PYTHON_API_VERSION >= 1010       /* python >= 2.1 support weak references */
+#define HAVE_WEAKREF
+#else
+#undef HAVE_WEAKREF
+#endif
+
 struct behaviourFlags {
     /* What is the default behaviour when DB->get or DBCursor->get returns a
        DB_NOTFOUND error?  Return None or raise an exception? */
@@ -194,7 +204,7 @@ struct behaviourFlags {
 };
 
 #define DEFAULT_GET_RETURNS_NONE                1
-#define DEFAULT_CURSOR_SET_RETURNS_NONE         0   /* 0 in pybsddb < 4.2, python < 2.4 */
+#define DEFAULT_CURSOR_SET_RETURNS_NONE         1   /* 0 in pybsddb < 4.2, python < 2.4 */
 
 typedef struct {
     PyObject_HEAD
@@ -224,6 +234,9 @@ typedef struct {
     PyObject_HEAD
     DBC*            dbc;
     DBObject*       mydb;
+#ifdef HAVE_WEAKREF
+    PyObject        *in_weakreflist; /* List of weak references */
+#endif
 } DBCursorObject;
 
 
@@ -760,6 +773,9 @@ newDBCursorObject(DBC* dbc, DBObject* db)
 
     self->dbc = dbc;
     self->mydb = db;
+#ifdef HAVE_WEAKREF
+    self->in_weakreflist = NULL;
+#endif
     Py_INCREF(self->mydb);
     return self;
 }
@@ -769,6 +785,13 @@ static void
 DBCursor_dealloc(DBCursorObject* self)
 {
     int err;
+
+#ifdef HAVE_WEAKREF
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *) self);
+    }
+#endif
+
     if (self->dbc != NULL) {
         MYDB_BEGIN_ALLOW_THREADS;
 	/* If the underlying database has been closed, we don't
@@ -4252,6 +4275,19 @@ statichere PyTypeObject DBCursor_Type = {
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
     0,                  /*tp_hash*/
+#ifdef HAVE_WEAKREF
+    0,			/* tp_call */
+    0,			/* tp_str */
+    0,  		/* tp_getattro */
+    0,                  /* tp_setattro */
+    0,			/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_WEAKREFS,      /* tp_flags */
+    0,                  /* tp_doc */
+    0,		        /* tp_traverse */
+    0,			/* tp_clear */
+    0,			/* tp_richcompare */
+    offsetof(DBCursorObject, in_weakreflist),   /* tp_weaklistoffset */
+#endif
 };
 
 
