@@ -430,7 +430,8 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
-        raise ValueError("time data did not match format")
+        raise ValueError("time data did not match format:  data=%s  fmt=%s" %
+                         (data_string, format))
     if len(data_string) != found.end():
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
