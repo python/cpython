@@ -109,6 +109,7 @@ tok_new()
 	tok->pendin = 0;
 	tok->prompt = tok->nextprompt = NULL;
 	tok->lineno = 0;
+	tok->level = 0;
 	return tok;
 }
 
@@ -390,7 +391,7 @@ tok_get(tok, p_start, p_end)
 			/* We can't jump back right here since we still
 			   may need to skip to the end of a comment */
 		}
-		if (!blankline) {
+		if (!blankline && tok->level == 0) {
 			if (col == tok->indstack[tok->indent]) {
 				/* No change */
 			}
@@ -483,7 +484,7 @@ tok_get(tok, p_start, p_end)
 	/* Newline */
 	if (c == '\n') {
 		tok->atbol = 1;
-		if (blankline)
+		if (blankline || tok->level > 0)
 			goto nextline;
 		*p_end = tok->cur - 1; /* Leave '\n' out of the string */
 		return NEWLINE;
@@ -610,6 +611,20 @@ tok_get(tok, p_start, p_end)
 			return token;
 		}
 		tok_backup(tok, c2);
+	}
+	
+	/* Keep track of parenteses nesting level */
+	switch (c) {
+	case '(':
+	case '[':
+	case '{':
+		tok->level++;
+		break;
+	case ')':
+	case ']':
+	case '}':
+		tok->level--;
+		break;
 	}
 	
 	/* Punctuation character */
