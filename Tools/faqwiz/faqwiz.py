@@ -410,7 +410,7 @@ class FaqWizard:
 		emit(ONE_HIT, count=1)
 	    else:
 		emit(FEW_HITS, count=len(hits))
-	    self.format_all(hits)
+	    self.format_all(hits, headers=0)
 	else:
 	    emit(MANY_HITS, count=len(hits))
 	    self.format_index(hits)
@@ -441,9 +441,22 @@ class FaqWizard:
 	print time.strftime(LAST_CHANGED,
 			    time.localtime(time.time()))
 
-    def format_all(self, files, edit=1):
+    def format_all(self, files, edit=1, headers=1):
+	sec = 0
 	for file in files:
-	    self.dir.show(file, edit=edit)
+	    try:
+		entry = self.dir.open(file)
+	    except NoSuchFile:
+		continue
+	    if headers and entry.sec != sec:
+		sec = entry.sec
+		try:
+		    title = SECTION_TITLES[sec]
+		except KeyError:
+		    title = "Untitled"
+		emit("\n<HR>\n<H1>%(sec)s. %(title)s</H1>\n",
+		     sec=sec, title=title)
+	    entry.show(edit=edit)
 
     def do_index(self):
 	self.prologue(T_INDEX)
@@ -462,7 +475,11 @@ class FaqWizard:
 			emit(INDEX_ADDSECTION, sec=sec)
 		    emit(INDEX_ENDSECTION, sec=sec)
 		sec = entry.sec
-		emit(INDEX_SECTION, sec=sec, title=SECTION_TITLES[sec])
+		try:
+		    title = SECTION_TITLES[sec]
+		except KeyError:
+		    title = "Untitled"
+		emit(INDEX_SECTION, sec=sec, title=title)
 	    emit(INDEX_ENTRY, entry)
 	if sec:
 	    if add:
