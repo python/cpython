@@ -63,6 +63,12 @@ class bdist_wininst (Command):
 
 
     def run (self):
+        if (sys.platform != "win32" and
+            (self.distribution.has_ext_modules() or
+             self.distribution.has_c_libraries())):
+            raise DistutilsPlatformError, \
+                  ("distribution contains extensions and/or C libraries; "
+                   "must be compiled on a Windows 32 platform")
 
         self.run_command ('build')
 
@@ -103,21 +109,16 @@ class bdist_wininst (Command):
 
     # run()
 
-    def create_inifile (self):
-        # Create an inifile containing data describing the installation.
-        # This could be done without creating a real file, but
-        # a file is (at least) useful for debugging bdist_wininst.
+    def get_inidata (self):
+        # Return data describing the installation.
 
+        lines = []
         metadata = self.distribution.metadata
-        ini_name = "%s.ini" % metadata.get_fullname()
-
-        self.announce ("creating %s" % ini_name)
-        inifile = open (ini_name, "w")
 
         # Write the [metadata] section.  Values are written with
         # repr()[1:-1], so they do not contain unprintable characters, and
         # are not surrounded by quote chars.
-        inifile.write ("[metadata]\n")
+        lines.append ("[metadata]")
 
         # 'info' will be displayed in the installer's dialog box,
         # describing the items to be installed.
@@ -129,27 +130,28 @@ class bdist_wininst (Command):
                 if data:
                    info = info + ("\n    %s: %s" % \
                                   (string.capitalize (name), data))
-                   inifile.write ("%s=%s\n" % (name, repr (data)[1:-1]))
+                   lines.append ("%s=%s" % (name, repr (data)[1:-1]))
 
         # The [setup] section contains entries controlling
         # the installer runtime.
-        inifile.write ("\n[Setup]\n")
-        inifile.write ("info=%s\n" % repr (info)[1:-1])
-        inifile.write ("pthname=%s.%s\n" % (metadata.name, metadata.version))
+        lines.append ("\n[Setup]")
+        lines.append ("info=%s" % repr (info)[1:-1])
+        lines.append ("pthname=%s.%s" % (metadata.name, metadata.version))
         if self.target_version:
-            inifile.write ("target_version=%s\n" % self.target_version)
+            lines.append ("target_version=%s" % self.target_version)
 
         title = self.distribution.get_fullname()
-        inifile.write ("title=%s\n" % repr (title)[1:-1])
-        inifile.close()
-        return ini_name
+        lines.append ("title=%s" % repr (title)[1:-1])
+        return string.join (lines, "\n")
 
-    # create_inifile()
+    # get_inidata()
 
     def create_exe (self, arcname, fullname):
-        import struct#, zlib
+        import struct
 
-        cfgdata = open (self.create_inifile()).read()
+        self.mkpath(self.dist_dir)
+
+        cfgdata = self.get_inidata()
 
         installer_name = os.path.join(self.dist_dir,
                                       "%s.win32.exe" % fullname)
