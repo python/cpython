@@ -215,7 +215,57 @@ PyMac_SetGUSISpin() {
 	GUSISetHook(GUSI_SpinHook, (GUSIHook)PyMac_GUSISpin);
 }
 
-#endif
+/* Called at exit() time thru atexit(), to stop event processing */
+void
+PyMac_StopGUSISpin() {
+	PyMac_ConsoleIsDead = 1;
+}
+
+/*
+** Replacement routines for the PLstr... functions so we don't need
+** StdCLib. Moreover, that implementation is broken under cfm68k...
+*/
+void
+PLstrcpy(to, fr)
+	unsigned char *to, *fr;
+{
+	memcpy(to, fr, fr[0]+1);
+}
+
+int
+PLstrcmp(s1, s2)
+	unsigned char *s1, *s2;
+{
+	int res;
+	int l = s1[0] < s2[0] ? s1[0] : s2[0];
+	
+	res = memcmp(s1+1, s2+1, l);
+	if ( res != 0 )
+		return res;
+	
+	if ( s1 < s2 )
+		return -1;
+	else if ( s1 > s2 )
+		return 1;
+	else
+		return 0;
+}
+
+unsigned char *
+PLstrrchr(str, chr)
+	unsigned char *str;
+	unsigned char chr;
+{
+	unsigned char *ptr = 0;
+	unsigned char *p;
+	
+	for(p=str+1; p<str+str[0]; p++)
+		if ( *p == chr )
+			ptr = p;
+	return ptr;
+}
+	
+#endif /* USE_GUSI */
 
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */

@@ -209,6 +209,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	GUSIDefaultSetup();
 	PyMac_SetGUSISpin();
 	PyMac_SetGUSIOptions();
+	atexit(PyMac_StopGUSISpin);
 #endif
 
 #ifdef USE_SIOUX
@@ -464,13 +465,6 @@ PyMac_Exit(status)
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
-#ifdef USE_GUSI
-	/*
-	** Workaround for Sioux/GUSI combo: we should not call
-	** SiouxHandleOneEvent after the window is closed
-	*/
-	PyMac_ConsoleIsDead = 1;
-#endif /* USE_GUSI */
 #endif /* USE_SIOUX */
 #ifdef THINK_C
 	console_options.pause_atexit = keep;
@@ -485,6 +479,13 @@ char *
 Py_GetProgramName()
 {
 	return orig_argv[0];
+}
+
+/* The same, but used differently */
+char *
+Py_GetProgramFullPath()
+{
+	return Py_GetProgramName();
 }
 
 
