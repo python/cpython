@@ -104,6 +104,9 @@ Library
   addition to CVS and RCS directories.  .svn directories hold
   administrative files for the Subversion source control system.
 
+- Bug #902501: fix unicode value of CYRILLIC CAPITAL LETTER UKRAINIAN IE
+  in KOI8-U to unicode convertion table.
+
 Tools/Demos
 -----------
 
