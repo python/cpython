@@ -1193,12 +1193,6 @@ generic_unary_op(PyInstanceObject *self, PyObject *methodname)
 }
 
 
-/* Forward */
-static int
-halfbinop(PyObject *, PyObject *, char *, PyObject **,
-          PyObject * (*)(PyObject *, PyObject *), int);
-
-
 /* Implement a binary operator involving at least one class instance. */
 
 PyObject *
@@ -1208,9 +1202,9 @@ PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
 	char buf[256];
 	PyObject *result = NULL;
 
-	if (halfbinop(v, w, opname, &result, thisfunc, 0) <= 0)
+	if (PyInstance_HalfBinOp(v, w, opname, &result, thisfunc, 0) <= 0)
 		return result;
-	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
+	if (PyInstance_HalfBinOp(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
 	/* Sigh -- special case for comparisons */
 	if (strcmp(opname, "__cmp__") == 0) {
@@ -1234,9 +1228,9 @@ PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
 
 static PyObject *coerce_obj;
 
-static int
-halfbinop(PyObject *v, PyObject *w, char *opname, PyObject **r_result,
-          PyObject * (*thisfunc)(PyObject *, PyObject *), int swapped)
+int
+PyInstance_HalfBinOp(PyObject *v, PyObject *w, char *opname, PyObject **r_result,
+		     PyObject * (*thisfunc)(PyObject *, PyObject *), int swapped)
 {
 	PyObject *func;
 	PyObject *args;
@@ -1451,6 +1445,35 @@ instance_pow(PyObject *v, PyObject *w, PyObject *z)
 	return result;
 }
 
+static PyObject *
+instance_inplace_pow(PyObject *v, PyObject *w, PyObject *z)
+{
+	/* XXX Doesn't do coercions... */
+	PyObject *func;
+	PyObject *args;
+	PyObject *result;
+	static PyObject *ipowstr;
+
+	if (ipowstr == NULL)
+		ipowstr = PyString_InternFromString("__ipow__");
+	func = PyObject_GetAttr(v, ipowstr);
+	if (func == NULL) {
+		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+			return NULL;
+		return instance_pow(v, w, z);
+	}
+	args = Py_BuildValue("(OO)", w, z);
+	if (args == NULL) {
+		Py_DECREF(func);
+		return NULL;
+	}
+	result = PyEval_CallObject(func, args);
+	Py_DECREF(func);
+	Py_DECREF(args);
+	return result;
+}
+
+
 static PyNumberMethods instance_as_number = {
 	0, /*nb_add*/
 	0, /*nb_subtract*/
@@ -1475,6 +1498,17 @@ static PyNumberMethods instance_as_number = {
 	(unaryfunc)instance_float, /*nb_float*/
 	(unaryfunc)instance_oct, /*nb_oct*/
 	(unaryfunc)instance_hex, /*nb_hex*/
+	0, /*nb_inplace_add*/
+	0, /*nb_inplace_subtract*/
+	0, /*nb_inplace_multiply*/
+	0, /*nb_inplace_divide*/
+	0, /*nb_inplace_remainder*/
+	(ternaryfunc)instance_inplace_pow, /*nb_inplace_power*/
+	0, /*nb_inplace_lshift*/
+	0, /*nb_inplace_rshift*/
+	0, /*nb_inplace_and*/
+	0, /*nb_inplace_xor*/
+	0, /*nb_inplace_or*/
 };
 
 PyTypeObject PyInstance_Type = {
