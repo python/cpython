@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.152 
+# From configure.in Revision: 1.153 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -2666,7 +2666,7 @@ then
 			LDSHARED="ld -Bshareable"
 		fi;;
 	FreeBSD*)
-		if  "`$CC -dM -E - </dev/null | grep __ELF__`" != "" 
+		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
 		then
 			LDSHARED="cc -shared ${LDFLAGS}"
 		else
