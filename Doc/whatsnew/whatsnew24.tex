@@ -1085,6 +1085,14 @@ you want to efficiently glue a large number of strings together.
 \end{itemize}
 
 % XXX fill in these figures
+% pystone is almost useless for comparing different versions of Python;
+% instead, it excels at predicting relative Python performance on
+% different machines.
+% So, this section would be more informative if it used other tools
+% such as pybench and parrotbench.  For a more application oriented
+% benchmark, try comparing the timings of test_decimal.py under 2.3
+% and 2.4.
+       
 The net result of the 2.4 optimizations is that Python 2.4 runs the
 pystone benchmark around XX\% faster than Python 2.3 and YY\% faster
 than Python 2.2.
