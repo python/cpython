@@ -1332,6 +1332,25 @@ Content-Transfer-Encoding: 7Bit
 ----961284236552522269--
 ''')
 
+    def test_boundary_with_leading_space(self):
+        eq = self.assertEqual
+        msg = email.message_from_string('''\
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="    XXXX"
+
+--    XXXX
+Content-Type: text/plain
+
+
+--    XXXX
+Content-Type: text/plain
+
+--    XXXX--
+''')
+        self.failUnless(msg.is_multipart())
+        eq(msg.get_boundary(), '    XXXX')
+        eq(len(msg.get_payload()), 2)
+
 
 
 # Test some badly formatted messages
