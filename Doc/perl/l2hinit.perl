@@ -240,18 +240,6 @@ sub gen_index_id {
     sprintf('%s###%s%010d', $str, $extra, ++$global{'max_id'});
 }
 
-sub make_index_entry {
-    my($br_id,$str) = @_;
-    # If TITLE is not yet available (i.e the \index command is in the title of the
-    # current section), use $ref_before.
-    $TITLE = $ref_before unless $TITLE;
-    # Save the reference
-    $str = gen_index_id($str, '');
-    $index{$str} .= make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
-}
-
-
 sub insert_index{
     my($mark,$datafile,$columns,$letters,$prefix) = @_;
     my $prog = "$myrootdir/tools/buildindex.py";
