@@ -38,7 +38,7 @@ big.xhuge               { font-size : xx-large; }
 body                    { color: #000000;
                           background-color: #ffffff; }
 
-a:active                { color: #ff0000; }
+a:link:active           { color: #ff0000; }
 a:link:hover            { background-color: #bbeeff; }
 a:visited:hover         { background-color: #bbeeff; }
 a:visited               { color: #551a8b; }
