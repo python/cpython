@@ -361,11 +361,13 @@ html/index.html: html/index.html.in $(BOILERPLATE) tools/rewrite.py
 		<$< >$@
 
 html/modindex.html: $(TOOLSDIR)/support.py $(TOOLSDIR)/mkmodindex
+html/modindex.html: html/dist/dist.html
 html/modindex.html: html/lib/lib.html html/mac/mac.html
 	cd html && \
-	 $(PYTHON) ../$(TOOLSDIR)/mkmodindex --columns 4 \
+	 $(PYTHON) ../$(TOOLSDIR)/mkmodindex --columns 3 \
 		--output modindex.html --address $(PYTHONDOCS) \
 		--favicon icons/pyfav.gif \
+		dist/modindex.html \
 		lib/modindex.html mac/modindex.html
 
 html:	$(ALLHTMLFILES) $(HTMLCSSFILES)
