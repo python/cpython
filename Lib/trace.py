@@ -157,7 +157,26 @@ class Ignore:
 
 def modname(path):
     """Return a plausible module name for the patch."""
+
     base = os.path.basename(path)
+    filename, ext = os.path.splitext(base)
+    return filename
+
+def fullmodname(path):
+    """Return a plausible module name for the patch."""
+
+    # If the file 'path' is part of a package, then the filename isn't
+    # enough to uniquely identify it.  Try to do the right thing by
+    # looking in sys.path for the longest matching prefix.  We'll
+    # assume that the rest is the package name.
+
+    longest = ""
+    for dir in sys.path:
+        if path.startswith(dir) and path[len(dir)] == os.path.sep:
+            if len(dir) > len(longest):
+                longest = dir
+
+    base = path[len(longest) + 1:].replace("/", ".")
     filename, ext = os.path.splitext(base)
     return filename
 
@@ -225,7 +244,7 @@ class CoverageResults:
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue
-            modulename = modname(filename)
+            modulename = fullmodname(filename)
 
             if filename.endswith(".pyc") or filename.endswith(".pyo"):
                 filename = filename[:-1]
@@ -470,6 +489,8 @@ class Trace:
             code = frame.f_code
             filename = code.co_filename
             if filename:
+                # XXX modname() doesn't work right for packages, so
+                # the ignore support won't work right for packages
                 modulename = modname(filename)
                 if modulename is not None:
                     ignore_it = self.ignore.names(filename, modulename)
