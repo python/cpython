@@ -34,24 +34,56 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <pthread.h>
 
-#ifdef _AIX
 
-#ifndef SCHED_BG_NP
+/* try to determine what version of the Pthread Standard is installed.
+ * this is important, since all sorts of parameter types changed from
+ * draft to draft and there are several (incompatible) drafts in
+ * common use.  these macros are a start, at least. 
+ * 12 May 1997 -- david arnold <davida@pobox.com>
+ */
+
+#if defined(__ultrix) && defined(__mips) && defined(_DECTHREADS_)
+/* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
+#  define PY_PTHREAD_D4
+
+#elif defined(__osf__) && defined (__alpha)
+/* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
+#  if !defined(_PTHREAD_ENV_ALPHA) || defined(_PTHREAD_USE_D4) || defined(PTHREAD_USE_D4)
+#    define PY_PTHREAD_D4
+#  else
+#    define PY_PTHREAD_STD
+#  endif
+
+#elif defined(_AIX)
 /* SCHED_BG_NP is defined if using AIX DCE pthreads
  * but it is unsupported by AIX 4 pthreads. Default
  * attributes for AIX 4 pthreads equal to NULL. For
  * AIX DCE pthreads they should be left unchanged.
  */
-#define pthread_attr_default NULL
-#define pthread_mutexattr_default NULL
-#define pthread_condattr_default NULL
+#  if !defined(SCHED_BG_NP)
+#    define PY_PTHREAD_STD
+#  else
+#    define PY_PTHREAD_D7
+#  endif
+
+#elif defined(__unix) && defined(__sparc)
+#  define PY_PTHREAD_STD
+
 #endif
 
-#else
-#define pthread_attr_default ((pthread_attr_t *)0)
-#define pthread_mutexattr_default ((pthread_mutexattr_t *)0)
-#define pthread_condattr_default ((pthread_condattr_t *)0)
+
+/* set default attribute object for different versions */
+
+#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
+#  define pthread_attr_default pthread_attr_default
+#  define pthread_mutexattr_default pthread_mutexattr_default
+#  define pthread_condattr_default pthread_condattr_default
+#elif defined(PY_PTHREAD_STD)
+#  define pthread_attr_default ((pthread_attr_t *)NULL)
+#  define pthread_mutexattr_default ((pthread_mutexattr_t *)NULL)
+#  define pthread_condattr_default ((pthread_condattr_t *)NULL)
 #endif
+
 
 /* A pthread mutex isn't sufficient to model the Python lock type
  * because, according to Draft 5 of the docs (P1003.4a/D5), both of the
@@ -96,10 +128,30 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
-	success = pthread_create(&th, pthread_attr_default,
-				 (void* (*) _P((void *)))func, arg);
-	if (success >= 0)
+
+	success = pthread_create(&th, 
+#if defined(PY_PTHREAD_D4)
+				 pthread_attr_default,
+				 (pthread_startroutine_t)func, 
+				 (pthread_addr_t)arg
+#elif defined(PY_PTHREAD_D7)
+				 pthread_attr_default,
+				 func,
+				 arg
+#elif defined(PY_PTHREAD_STD)
+				 (pthread_attr_t*)NULL,
+				 (void* (*)_P((void *)))func,
+				 (void *)arg
+#endif
+				 );
+
+	if (success >= 0) {
+#if defined(PY_THREAD_D4) || defined(PY_PTHREAD_D7)
+		pthread_detach(&th);
+#elif defined(PY_PTHREAD_STD)
 		pthread_detach(th);
+#endif
+	}
 	return success < 0 ? 0 : 1;
 }
 
