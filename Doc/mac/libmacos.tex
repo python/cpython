@@ -60,6 +60,9 @@ value of this function is a tuple with the old values of these options.
 Initial defaults are that all processing is enabled, checking is done every
 quarter second and the processor is given up for a quarter second when in the
 background.
+
+The most common use case is to call \code{SchedParams(0, 0)} to completely disable
+event handling in the interpreter mainloop.
 \end{funcdesc}
 
 \begin{funcdesc}{HandleEvent}{ev}
