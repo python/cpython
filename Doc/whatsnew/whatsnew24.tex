@@ -213,26 +213,21 @@ Unicode string:
 \begin{verbatim}
 >>> import string
 >>> t = string.Template('$page: $title')
->>> t % {'page':2, 'title': 'The Best of Times'}
+>>> t.substitute({'page':2, 'title': 'The Best of Times'})
 u'2: The Best of Times'
->>> t2 % {'cost':42.50, 'action':'polish'}
-u'$ 42.5: polishing'
 \end{verbatim}
 
 % $ Terminate $-mode for Emacs
 
-If a key is missing from the dictionary, the \class{Template} class 
-will raise a \exception{KeyError}.  There's also a \class{SafeTemplate}
-class that ignores missing keys:
+If a key is missing from the dictionary, the \method{substitute} method
+will raise a \exception{KeyError}.  There's also a \method{safe_substitute}
+method that ignores missing keys:
 
 \begin{verbatim}
 >>> t = string.SafeTemplate('$page: $title')
->>> t % {'page':3}
+>>> t.safe_substitute({'page':3})
 u'3: $title'
 \end{verbatim}
-
-Because templates are Unicode strings, you can use a template with the
-\module{gettext} module to look up translated versions of a message.
 
 \begin{seealso}
 \seepep{292}{Simpler String Substitutions}{Written and implemented 
