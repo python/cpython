@@ -1,5 +1,7 @@
 \documentclass{howto}
 
+% $Id$
+
 \title{What's New in Python 2.0}
 \release{0.05}
 \author{A.M. Kuchling and Moshe Zadka}
@@ -114,6 +116,13 @@ value causes an exception to be raised on any encoding error, while
 \code{'replace'} uses U+FFFD, the official replacement character, in
 case of any problems.
 
+\item The \keyword{exec} statement, and various built-ins such as
+\code{eval()}, \code{getattr()}, and \code{setattr()} will also
+accept Unicode strings as well as regular strings.  (It's possible
+that the process of fixing this missed some built-ins; if you find a
+built-in function that accepts strings but doesn't accept Unicode
+strings at all, please report it as a bug.)
+
 \end{itemize}
 
 A new module, \module{unicodedata}, provides an interface to Unicode
@@ -141,7 +150,7 @@ how much of the Unicode string was converted.
 an 8-bit string and returning a 2-tuple \code{(\var{ustring},
 \var{length})}, consisting of the resulting Unicode string
 \var{ustring} and the integer \var{length} telling how much of the
-string was consumed.
+8-bit string was consumed.
 
 \item \var{stream_reader} is a class that supports decoding input from
 a stream.  \var{stream_reader(\var{file_obj})} returns an object that
@@ -670,8 +679,11 @@ the result to multiply a sequence or slice a string, but this raised a
 or slice a sequence, and it'll behave as you'd intuitively expect it
 to; \code{3L * 'abc'} produces 'abcabcabc', and \code{
 (0,1,2,3)[2L:4L]} produces (2,3). Long integers can also be used in
-various new places where previously only integers were accepted, such
-as in the \method{seek()} method of file objects.
+various contexts where previously only integers were accepted, such
+as in the \method{seek()} method of file objects, and in the formats
+supported by the \verb|%| operator (\verb|%d|, \verb|%i|, \verb|%x|,
+etc.).  For example, \code{"\%d" \% 2L**64} will produce the string
+\samp{18446744073709551616}.
 
 The subtlest long integer change of all is that the \function{str()}
 of a long integer no longer has a trailing 'L' character, though
@@ -770,9 +782,22 @@ only supports K\&R C.
 Previously the Python virtual machine used 16-bit numbers in its
 bytecode, limiting the size of source files.  In particular, this
 affected the maximum size of literal lists and dictionaries in Python
-source; occasionally people who are generating Python code would run into this limit.
-A patch by Charles G. Waldman raises the limit from \verb|2^16| to \verb|2^{32}|.
+source; occasionally people who are generating Python code would run
+into this limit.  A patch by Charles G. Waldman raises the limit from
+\verb|2^16| to \verb|2^{32}|.
 
+Three new convenience functions intended for adding constants to a
+module's dictionary at module initialization time were added:
+\function{PyModule_AddObject()}, \function{PyModule_AddIntConstant()},
+and \function{PyModule_AddStringConstant()}.  Each of these functions
+takes a module object, a null-terminated C string containing the name
+to be added, and a third argument for the value to be assigned to the
+name.  This third argument is, respectively, a Python object, a C
+long, or a C string.
+
+A wrapper API was added for Unix-style signal handlers.
+\function{PyOS_getsig()} gets a signal handler and
+\function{PyOS_setsig()} will set a new handler.
 
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
@@ -782,8 +807,10 @@ was no way to figure out automatically where Python is installed, or
 what compiler options to use for extension modules.  Software authors
 had to go through an arduous ritual of editing Makefiles and
 configuration files, which only really work on Unix and leave Windows
-and MacOS unsupported.  Software users faced wildly differing
-installation instructions 
+and MacOS unsupported.  Python users faced wildly differing
+installation instructions which varied between different extension
+packages, which made adminstering a Python installation something of a
+chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has
 created the Distutils, a system to make package installation much
