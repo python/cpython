@@ -35,7 +35,7 @@ commentopen = re.compile('<!--')
 commentclose = re.compile('--[%s]*>' % string.whitespace)
 tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9]*')
 attrfind = re.compile(
-    '[%s]+([a-zA-Z_][-.a-zA-Z_0-9]*)' % string.whitespace
+    '[%s]*([a-zA-Z_][-.a-zA-Z_0-9]*)' % string.whitespace
     + ('([%s]*=[%s]*' % (string.whitespace, string.whitespace))
     + r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:+*%?!\(\)_#=~]*))?')
 
