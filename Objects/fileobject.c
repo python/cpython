@@ -121,13 +121,17 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	if (f->f_fp == NULL) {
 #ifdef NO_FOPEN_ERRNO
 		/* Metroworks only, not testable, so unchanged */
-		if ( errno == 0 ) {
+		if (errno == 0) {
 			PyErr_SetString(PyExc_IOError, "Cannot open file");
 			Py_DECREF(f);
 			return NULL;
 		}
 #endif
-		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+		if (errno == EINVAL)
+			PyErr_Format(PyExc_IOError, "invalid argument: %s",
+				     mode);
+		else
+			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 		f = NULL;
 	}
 	return (PyObject *)f;
