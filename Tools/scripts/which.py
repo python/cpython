@@ -2,6 +2,7 @@
 
 # Variant of "which".
 # On stderr, near and total misses are reported.
+# '-l<flags>' argument adds ls -l<flags> of each file found.
 
 import sys, posix, string, path
 from stat import *
@@ -12,6 +13,11 @@ def msg(str):
 pathlist = string.splitfields(posix.environ['PATH'], ':')
 
 sts = 0
+longlist = ''
+
+if sys.argv[1:] and sys.argv[1][:2] == '-l':
+	longlist = sys.argv[1]
+	del sys.argv[1]
 
 for prog in sys.argv[1:]:
 	ident = ()
@@ -19,24 +25,27 @@ for prog in sys.argv[1:]:
 		file = path.join(dir, prog)
 		try:
 			st = posix.stat(file)
-			if S_ISREG(st[ST_MODE]):
-				mode = S_IMODE(st[ST_MODE])
-				if mode % 2 or mode/8 % 2 or mode/64 % 2:
-					if ident:
-						if st[:3] == ident:
-							s = ': same as '
-						else:
-							s = ': also '
-						msg(prog + s + file)
-					else:
-						print file
-						ident = st[:3]
-				else:
-					msg(file + ': not executable')
-			else:
-				msg(file + ': not a disk file')
 		except posix.error:
-			pass
+			continue
+		if not S_ISREG(st[ST_MODE]):
+			msg(file + ': not a disk file')
+		else:
+			mode = S_IMODE(st[ST_MODE])
+			if mode & 0111:
+				if not ident:
+					print file
+					ident = st[:3]
+				else:
+					if st[:3] == ident:
+						s = 'same as: '
+					else:
+						s = 'also: '
+					msg(s + file)
+			else:
+				msg(file + ': not executable')
+		if longlist:
+			sts = posix.system('ls ' + longlist + ' ' + file)
+			if sts: msg('"ls -l" exit status: ' + `sts`)
 	if not ident:
 		msg(prog + ': not found')
 		sts = 1
