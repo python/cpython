@@ -71,10 +71,13 @@ def guess_extension(type):
 
     Return value is a string giving a filename extension, including the
     leading dot ('.').  The extension is not guaranteed to have been
-    associated with any particular data stream, but has been known to be
-    used for streams of the MIME type given by `type'.  If `type' is not
-    known, None is returned.
+    associated with any particular data stream, but would be mapped to the
+    MIME type `type' by guess_type().  If no extension can be guessed for
+    `type', None is returned.
     """
+    global inited
+    if not inited:
+        init()
     type = string.lower(type)
     for ext, stype in types_map.items():
         if type == stype:
