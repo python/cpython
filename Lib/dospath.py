@@ -10,6 +10,12 @@ import string
 # backslashes and maps invalid consecutive characters to a single '_'.
 # Other normalizations (such as optimizing '../' away) are not allowed
 # (this is done by normpath).
+#
+# Amrit: Things that can be valid regular expressions cannot be normalized
+#        away.  (which is pretty much all special characters)
+#
+#        I am assuming that at least these chars may be used:
+#				[, ], |, *, +, ?
 
 mapchar = '_'
 
@@ -20,7 +26,7 @@ def normcase(s):
 			res = res + os.sep
 		elif c == '.' and res[-1:] == os.sep:
 			res = res + mapchar + c
-		elif ord(c) < 32 or c in ' "*+,:;<=>?[]|':
+		elif ord(c) < 32 or c in ' ",:;<=>':
 			if res[-1:] != mapchar:
 				res = res + mapchar
 		else:
