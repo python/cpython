@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -1566,7 +1566,11 @@ com_try_stmt(c, n)
 	int finally_anchor = 0;
 	int except_anchor = 0;
 	REQ(n, try_stmt);
-	/* 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite] */
+	/* 'try' ':' suite (except_clause ':' suite)*
+	 | 'try' ':' 'finally' ':' suite */
+
+	/* XXX This can be simplified because except and finally can
+	   no longer be mixed in a single try statement */
 	
 	if (NCH(n) > 3 && TYPE(CHILD(n, NCH(n)-3)) != except_clause) {
 		/* Have a 'finally' clause */
@@ -1958,12 +1962,12 @@ com_arglist(c, n)
 	int i, nargs, op;
 	REQ(n, varargslist);
 	/* varargslist:
-	   (fpdef ',')* ('+'|'*') NAME | fpdef (',' fpdef)* [','] */
+	   (fpdef ',')* '*' NAME | fpdef (',' fpdef)* [','] */
 	op = UNPACK_ARG;
 	nargs = (NCH(n) + 1) / 2;
 	for (i = 0; i < NCH(n); i += 2) {
 		int t = TYPE(CHILD(n, i));
-		if (t == PLUS || t == STAR) {
+		if (t == STAR) {
 			op = UNPACK_VARARG;
 			nargs = i/2;
 			break;
