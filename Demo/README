@@ -12,7 +12,13 @@ ibrowse		An Emacs info file browser (uses stdwin).
 		See also ../doc (the Python library documentation can
 		be converted to info format).
 
+lutz		Some demos written by Mark Lutz -- includes a nice
+		enhanced Python shell!!!
+
 md5test		Test program for the optional md5 module.
+
+mpzpi.py	Currently the only test for mpz -- print digits of pi
+		(compare scripts/pi.py).
 
 rpc		A set of classes for building clients and servers for
 		Sun RPC.
@@ -21,6 +27,8 @@ rsa		An RSA public-key cryptosystem (needs mpz and md5).
 
 scripts		Some useful Python scripts that I put in my bin
 		directory.  No optional built-in modules needed.
+
+stoffel		Some games written by Stoffel Erasmus.
 
 sockets		Examples for the new built-in module 'socket'.
 
