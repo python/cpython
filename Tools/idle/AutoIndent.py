@@ -171,7 +171,7 @@ class AutoIndent:
         expand, tabwidth = string.expandtabs, self.tabwidth
         have = len(expand(chars, tabwidth))
         assert have > 0
-        want = int((have - 1) // self.indentwidth) * self.indentwidth
+        want = ((have - 1) // self.indentwidth) * self.indentwidth
         ncharsdeleted = 0
         while 1:
             chars = chars[:-1]
