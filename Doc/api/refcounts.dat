@@ -21,6 +21,27 @@
 # The parameter names are as they appear in the API manual, not the source
 # code. 
 
+PyBuffer_FromObject:PyObject*::+1:
+PyBuffer_FromObject:PyObject*:base:+1:
+PyBuffer_FromObject:int:offset::
+PyBuffer_FromObject:int:size::
+
+PyBuffer_FromReadWriteObject:PyObject*::+1:
+PyBuffer_FromReadWriteObject:PyObject*:base:+1:
+PyBuffer_FromReadWriteObject:int:offset::
+PyBuffer_FromReadWriteObject:int:size::
+
+PyBuffer_FromMemory:PyObject*::+1:
+PyBuffer_FromMemory:void*:ptr::
+PyBuffer_FromMemory:int:size::
+
+PyBuffer_FromReadWriteMemory:PyObject*::+1:
+PyBuffer_FromReadWriteMemory:void*:ptr::
+PyBuffer_FromReadWriteMemory:int:size::
+
+PyBuffer_New:PyObject*::+1:
+PyBuffer_New:int:size::
+
 PyCObject_AsVoidPtr:void*:::
 PyCObject_AsVoidPtr:PyObject*:self:0:
 
@@ -259,16 +280,16 @@ PyImport_Import:PyObject*:name:0:
 PyImport_ImportFrozenModule:int:::
 PyImport_ImportFrozenModule:char*:::
 
-PyImport_ImportModule:PyObject*::1:not sure...
+PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:char*:name::
 
-PyImport_ImportModuleEx:PyObject*::0:???
+PyImport_ImportModuleEx:PyObject*::+1:
 PyImport_ImportModuleEx:char*:name::
 PyImport_ImportModuleEx:PyObject*:globals:0:???
 PyImport_ImportModuleEx:PyObject*:locals:0:???
 PyImport_ImportModuleEx:PyObject*:fromlist:0:???
 
-PyImport_ReloadModule:PyObject*::0:
+PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
 PyInt_AS_LONG:long:::
