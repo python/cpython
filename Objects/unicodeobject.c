@@ -2887,11 +2887,11 @@ int PyUnicode_Find(PyObject *str,
     
     str = PyUnicode_FromObject(str);
     if (str == NULL)
-	return -1;
+	return -2;
     substr = PyUnicode_FromObject(substr);
     if (substr == NULL) {
 	Py_DECREF(substr);
-	return -1;
+	return -2;
     }
     
     result = findstring((PyUnicodeObject *)str,

@@ -983,7 +983,8 @@ extern DL_IMPORT(int) PyUnicode_Tailmatch(
     );
 
 /* Return the first position of substr in str[start:end] using the
-   given search direction or -1 if not found. */
+   given search direction or -1 if not found. -2 is returned in case
+   an error occurred and an exception is set. */
 
 extern DL_IMPORT(int) PyUnicode_Find(
     PyObject *str,		/* String */ 
