@@ -38,6 +38,7 @@ extern int read_history(char *);
 extern int write_history(char *);
 extern int history_truncate_file(char *, int);
 extern Function *rl_event_hook;
+extern char *rl_library_version;
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */
