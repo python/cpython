@@ -232,6 +232,15 @@ do_mklist(p_format, p_va, endchar, n)
 	return v;
 }
 
+static int
+_ustrlen(Py_UNICODE *u)
+{
+	int i = 0;
+	Py_UNICODE *v = u;
+	while (*v != 0) { i++; v++; } 
+	return i;
+}
+
 static PyObject *
 do_mktuple(p_format, p_va, endchar, n)
 	char **p_format;
@@ -295,7 +304,28 @@ do_mkvalue(p_format, p_va)
 		case 'L':
 			return PyLong_FromLongLong((LONG_LONG)va_arg(*p_va, LONG_LONG));
 #endif
-
+		case 'u':
+		{
+			PyObject *v;
+			Py_UNICODE *u = va_arg(*p_va, Py_UNICODE *);
+			int n;
+			if (**p_format == '#') {
+				++*p_format;
+				n = va_arg(*p_va, int);
+			}
+			else
+				n = -1;
+			if (u == NULL) {
+				v = Py_None;
+				Py_INCREF(v);
+			}
+			else {
+				if (n < 0)
+					n = _ustrlen(u);
+				v = PyUnicode_FromUnicode(u, n);
+			}
+			return v;
+		}
 		case 'f':
 		case 'd':
 			return PyFloat_FromDouble(
