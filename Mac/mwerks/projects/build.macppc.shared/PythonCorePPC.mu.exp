@@ -1,5 +1,4 @@
 inittab
-PyMac_Initialize
 PyExc_ZeroDivisionError
 PyExc_ValueError
 PyExc_TypeError
@@ -15,6 +14,7 @@ PyExc_KeyError
 PyExc_IndexError
 PyExc_ImportError
 PyExc_IOError
+PyExc_FloatingPointError
 PyExc_EOFError
 PyExc_ConflictError
 PyExc_AttributeError
@@ -27,7 +27,6 @@ PyEval_CallObject
 Py_FlushLine
 PyEval_GetRestricted
 PyEval_GetFrame
-PyEval_GetOwner
 PyEval_GetGlobals
 PyEval_GetLocals
 PyEval_GetBuiltins
@@ -48,6 +47,7 @@ PyArg_GetFloat
 PyArg_GetShort
 PyArg_GetLong
 PyArg_GetObject
+PyErr_Format
 PyErr_BadInternalCall
 PyErr_SetFromErrno
 PyErr_NoMemory
@@ -100,9 +100,11 @@ Py_BuildValue
 Py_InitModule4
 PyOS_strtol
 PyOS_strtoul
+Py_InteractiveFlag
 Py_SuppressPrintingFlag
 Py_VerboseFlag
 Py_DebugFlag
+Py_FdIsInteractive
 Py_Exit
 Py_Cleanup
 Py_AtExit
@@ -137,6 +139,7 @@ PyTraceBack_Store
 PyTraceBack_Fetch
 PyTraceBack_Here
 PyCode_Type
+PyCode_Addr2Line
 PyNode_Compile
 PyCode_New
 PyMapping_SetItemString
@@ -151,6 +154,7 @@ PyMapping_Check
 PySequence_Index
 PySequence_In
 PySequence_Count
+PySequence_List
 PySequence_Tuple
 PySequence_DelSlice
 PySequence_SetSlice
@@ -188,7 +192,6 @@ PyObject_GetItem
 PyObject_Length
 PyObject_Type
 PyObject_Cmp
-Py_ReturnNullError
 PyClass_Type
 PyInstance_Type
 PyMethod_Type
@@ -200,6 +203,10 @@ PyInstance_DoBinOp
 PyInstance_New
 PyClass_IsSubclass
 PyClass_New
+PyCObject_Type
+PyCObject_Import
+PyCObject_AsVoidPtr
+PyCObject_FromVoidPtr
 PyComplex_Type
 PyComplex_AsCComplex
 PyComplex_ImagAsDouble
@@ -231,7 +238,6 @@ PyFrame_LocalsToFast
 PyFrame_FastToLocals
 PyFrame_BlockPop
 PyFrame_BlockSetup
-PyFrame_ExtendStack
 PyFrame_New
 PyFunction_Type
 PyFunction_SetDefaults
@@ -260,8 +266,10 @@ PyList_New
 PyLong_Type
 PyLong_FromString
 PyLong_AsDouble
+PyLong_AsUnsignedLong
 PyLong_AsLong
 PyLong_FromDouble
+PyLong_FromUnsignedLong
 PyLong_FromLong
 _PyLong_New
 PyDict_Type
@@ -292,6 +300,8 @@ PyModule_GetName
 PyModule_GetDict
 PyModule_New
 _Py_NoneStruct
+_Py_cobject_hack
+_Py_abstract_hack
 PyCallable_Check
 PyNumber_Coerce
 PyObject_IsTrue
@@ -312,6 +322,8 @@ PySlice_Type
 PySlice_GetIndices
 PySlice_New
 PyString_Type
+PyString_InternFromString
+PyString_InternInPlace
 PyString_Format
 _PyString_Resize
 PyString_ConcatAndDel
@@ -351,6 +363,8 @@ initarray
 initaudioop
 initbinascii
 initcmath
+initerrno
+Py_GetBuildInfo
 initimageop
 initmath
 myfabs
@@ -360,6 +374,7 @@ _Py_MD5Init
 initmd5
 new_doc
 initnew
+initoperator
 PyAST_Type
 initparser
 initregex
@@ -375,6 +390,7 @@ initrgbimg
 initrotor
 initselect
 initsocket
+initsoundex
 initstrop
 initstruct
 inittime
@@ -440,6 +456,7 @@ Py_GetArgcArgv
 Py_GetProgramName
 PyMac_Exit
 PyMac_InitApplication
+PyMac_Initialize
 PyMac_InitApplet
 getfiletype
 setfiletype
@@ -601,6 +618,7 @@ inet_addr
 inet_ntoa
 gethostbyaddr
 gethostbyname
+DNRDone
 MXInfo
 HInfo
 AddrToName
@@ -823,6 +841,8 @@ __ct__9PAPSocketFv		# PAPSocket::PAPSocket()
 __dt__5PAPIDFv		# PAPID::~PAPID()
 __ct__5PAPIDFv		# PAPID::PAPID()
 GetPAPCode__5PAPIDFslPUc		# PAPID::GetPAPCode(short,long,unsigned char*)
+PAPWriteHellHound
+PAPReadHellHound
 PAPUnload__FPc		# PAPUnload(char*)
 PAPClose__FsPc		# PAPClose(short,char*)
 PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,AddrBlock*,char*)
@@ -858,6 +878,9 @@ Alloc__9PPCSocketFv		# PPCSocket::Alloc()
 __dt__9PPCSocketFv		# PPCSocket::~PPCSocket()
 __ct__9PPCSocketFRC9PPCSocket		# PPCSocket::PPCSocket(const PPCSocket&)
 __ct__9PPCSocketFv		# PPCSocket::PPCSocket()
+PPCWriteHellHound
+PPCReadHellHound
+PPCInit_P
 __vt__6Socket		# Socket::__vt
 post_select__6SocketFUcUcUc		# Socket::post_select(unsigned char,unsigned char,unsigned char)
 select__6SocketFPUcPUcPUc		# Socket::select(unsigned char*,unsigned char*,unsigned char*)
@@ -905,6 +928,7 @@ tcp_send_done__FP11AnnotatedPB		# tcp_send_done(AnnotatedPB*)
 tcp_recv_done__FP11AnnotatedPB		# tcp_recv_done(AnnotatedPB*)
 tcp_listen_done__FP11AnnotatedPB		# tcp_listen_done(AnnotatedPB*)
 tcp_connect_done__FP11AnnotatedPB		# tcp_connect_done(AnnotatedPB*)
+tcp_notify
 u_udp_read_ahead_done
 u_udp_send_done
 __vt__9UDPSocket		# UDPSocket::__vt
@@ -1059,6 +1083,11 @@ fwalk
 fdopen
 exit
 abort
+__dc_arr
+__del_arr
+__new_arr
+__init_arr
+__copy
 __end__catch
 __throw
 __unexpected
@@ -1090,6 +1119,7 @@ __throw_bad_alloc__Fv		# __throw_bad_alloc()
 __destroy_new_array
 __destroy_arr
 __construct_array
+__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
 __construct_new_array
 __throw_catch_compare
 unexpected__Fv		# unexpected()
@@ -1122,6 +1152,49 @@ what__13bad_exceptionCFv		# bad_exception::what() const
 what__10bad_typeidCFv		# bad_typeid::what() const
 what__8bad_castCFv		# bad_cast::what() const
 what__9exceptionCFv		# exception::what() const
+atan
+atan2
+memmove
+memcpy
+pow
+exp
+log
+log10
+sqrt
+strcmp
+strlen
+strncmp
+sin
+cos
+atan_d_d
+atan2_d_dd
+atan_d_pd
+atan2_d_pdpd
+atan_r_r
+atan2_r_rr
+atan_r_pr
+atan2_r_prpr
+power_d_dd
+exp_d_d
+exp_d_pd
+exp_r_r
+exp_r_pr
+log_d_d
+log_d_pd
+log10_d_d
+log10_d_pd
+sqrt_d_d
+sqrt_d_pd
+sqrt_r_r
+sqrt_r_pr
+sin_d_d
+sin_d_pd
+sin_r_r
+sin_r_pr
+cos_d_d
+cos_d_pd
+cos_r_r
+cos_r_pr
 _atexit
 atexit
 _Atcount
@@ -1276,18 +1349,13 @@ _Wctomb
 strerror
 memchr
 memcmp
-memcpy
-memmove
 memset
 strcat
 strchr
-strcmp
 strcoll
 strcpy
 strcspn
-strlen
 strncat
-strncmp
 strncpy
 strpbrk
 strrchr
