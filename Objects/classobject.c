@@ -826,7 +826,6 @@ instancebinop(v, w, opname, ropname, thisfunc)
 	char *ropname;
 	object * (*thisfunc) PROTO((object *, object *));
 {
-	object *v1, *w1;
 	char buf[256];
 	object *result = NULL;
 	if (halfbinop(v, w, opname, &result, thisfunc, 0) <= 0)
