@@ -30,13 +30,27 @@ def relpath(base, path):
 	rv = string.join(pathfields, os.sep)
 	return rv
 
-def genpluginproject(module,
+def genpluginproject(architecture, module,
 		project=None, projectdir=None,
 		sources=[], sourcedirs=[],
 		libraries=[], extradirs=[],
 		extraexportsymbols=[]):
+	if architecture == "all":
+		# For the time being we generate two project files. Not as nice as
+		# a single multitarget project, but easier to implement for now.
+		genpluginproject("ppc", module, project, projectdir, sources, sourcedirs,
+				libraries, extradirs, extraexportsymbols)
+		genpluginproject("carbon", module, project, projectdir, sources, sourcedirs,
+				libraries, extradirs, extraexportsymbols)
+		return
+	templatename = "template-%s" % architecture
+	targetname = "%s.%s" % (module, architecture)
+	dllname = "%s.%s.slb" % (module, architecture)
 	if not project:
-		project = module + '.mcp'
+		if architecture != "ppc":
+			project = "%s.%s.mcp"%(module, architecture)
+		else:
+			project = "%s.mcp"%module
 	if not projectdir:
 		projectdir = PROJECTDIR
 	if not sources:
@@ -54,6 +68,10 @@ def genpluginproject(module,
 		else:
 			print "Warning: %s: sourcefile not found: %s"%(module, sources[0])
 			sourcedirs = []
+	if architecture == "carbon":
+		prefixname = "mwerks_carbonplugin_config.h"
+	else:
+		prefixname = "mwerks_plugin_config.h"
 	dict = {
 		"sysprefix" : relpath(projectdir, sys.prefix),
 		"sources" : sources,
@@ -61,28 +79,33 @@ def genpluginproject(module,
 		"libraries": libraries,
 		"mac_outputdir" : "::Plugins",
 		"extraexportsymbols" : extraexportsymbols,
+		"mac_targetname" : targetname,
+		"mac_dllname" : dllname,
+		"prefixname" : prefixname,
 	}
-	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict, force=FORCEREBUILD)
+	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict, 
+			force=FORCEREBUILD, templatename=templatename)
 
 def	genallprojects(force=0):
 	global FORCEREBUILD
 	FORCEREBUILD = force
 	# Standard Python modules
-	genpluginproject("ucnhash", sources=["ucnhash.c"])
-	genpluginproject("pyexpat", 
+	genpluginproject("all", "ucnhash", sources=["ucnhash.c"])
+	genpluginproject("all", "pyexpat", 
 		sources=["pyexpat.c"], 
 		libraries=["libexpat.ppc.lib"], 
 		extradirs=["::::expat:*"])
-	genpluginproject("zlib", 
+	genpluginproject("all", "zlib", 
 		libraries=["zlib.ppc.Lib"], 
 		extradirs=["::::imglibs:zlib:mac", "::::imglibs:zlib"])
-	genpluginproject("gdbm", 
+	genpluginproject("all", "gdbm", 
 		libraries=["gdbm.ppc.gusi.lib"], 
 		extradirs=["::::gdbm:mac", "::::gdbm"])
 	
 	# bgen-generated Toolbox modules
-	genpluginproject("App", libraries=["AppearanceLib"])
-	genpluginproject("Cm",
+	genpluginproject("ppc", "App", libraries=["AppearanceLib"])
+	genpluginproject("carbon", "App")
+	genpluginproject("ppc", "Cm",
 		libraries=["QuickTimeLib"],
 		extraexportsymbols=[
 			"CmpObj_New",
@@ -90,23 +113,36 @@ def	genallprojects(force=0):
 			"CmpInstObj_New",
 			"CmpInstObj_Convert",
 		])
-	genpluginproject("Fm")
-	genpluginproject("Help")
-	genpluginproject("Icn", libraries=["IconServicesLib"])
-	genpluginproject("List")
-	genpluginproject("Qt", libraries=["QuickTimeLib", "Cm.ppc.slb", "Qdoffs.ppc.slb"], extradirs=["::Plugins"])
-	genpluginproject("Qdoffs",
+	genpluginproject("carbon", "Cm",
+		extraexportsymbols=[
+			"CmpObj_New",
+			"CmpObj_Convert",
+			"CmpInstObj_New",
+			"CmpInstObj_Convert",
+		])
+	genpluginproject("all", "Fm")
+	genpluginproject("ppc", "Help")
+	genpluginproject("ppc", "Icn", libraries=["IconServicesLib"])
+	genpluginproject("carbon", "Icn")
+	genpluginproject("all", "List")
+	genpluginproject("ppc", "Qt", libraries=["QuickTimeLib", "Cm.ppc.slb", "Qdoffs.ppc.slb"], 
+			extradirs=["::Plugins"])
+	genpluginproject("carbon", "Qt", libraries=["Cm.carbon.slb", "Qdoffs.carbon.slb"],
+			extradirs=["::Plugins"])
+	genpluginproject("all", "Qdoffs",
 		extraexportsymbols=["GWorldObj_New", "GWorldObj_Convert"])
-	genpluginproject("Scrap")
-	genpluginproject("Snd", libraries=["SoundLib"])
-	genpluginproject("Sndihooks", sources=[":snd:Sndihooks.c"])
-	genpluginproject("TE", libraries=["DragLib"])
+	genpluginproject("ppc", "Scrap")
+	genpluginproject("ppc", "Snd", libraries=["SoundLib"])
+	genpluginproject("carbon", "Snd")
+	genpluginproject("all", "Sndihooks", sources=[":snd:Sndihooks.c"])
+	genpluginproject("ppc", "TE", libraries=["DragLib"])
+	genpluginproject("carbon", "TE")
 	
 	# Other Mac modules
-	genpluginproject("calldll", sources=["calldll.c"])
-	genpluginproject("ColorPicker")
-	genpluginproject("Printing")
-	genpluginproject("waste",
+	genpluginproject("all", "calldll", sources=["calldll.c"])
+	genpluginproject("all", "ColorPicker")
+	genpluginproject("ppc", "Printing")
+	genpluginproject("ppc", "waste",
 		sources=[
 			"wastemodule.c",
 			'WEAccessors.c', 'WEBirthDeath.c', 'WEDebug.c',
@@ -122,11 +158,11 @@ def	genallprojects(force=0):
 			'::::Waste 1.3 Distribution:*',
 			'::::ICProgKit1.4:APIs']
 		)
-	genpluginproject("ctb")
-	genpluginproject("icglue", sources=["icgluemodule.c"], 
+	genpluginproject("ppc", "ctb")
+	genpluginproject("ppc", "icglue", sources=["icgluemodule.c"], 
 		libraries=["ICGlueCFM-PPC.lib"], 
 		extradirs=["::::ICProgKit1.4:APIs"])
-	genpluginproject("macspeech", libraries=["SpeechLib"])
+	genpluginproject("ppc", "macspeech", libraries=["SpeechLib"])
 
 if __name__ == '__main__':
 	genallprojects()
