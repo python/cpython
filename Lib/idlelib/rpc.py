@@ -86,6 +86,16 @@ class RPCServer(SocketServer.TCPServer):
         "Override TCPServer method, return already connected socket"
         return self.socket, self.server_address
 
+    def handle_error(self, request, client_address):
+        """Override TCPServer method, no error message if exiting"""
+        try:
+            raise
+        except SystemExit:
+            raise
+        else:
+            TCPServer.handle_error(request, client_address)
+
+
 objecttable = {}
 
 class SocketIO:
@@ -100,9 +110,10 @@ class SocketIO:
         if objtable is None:
             objtable = objecttable
         self.objtable = objtable
-        self.statelock = threading.Lock()
+        self.cvar = threading.Condition()
         self.responses = {}
         self.cvars = {}
+        self.interrupted = False
 
     def close(self):
         sock = self.sock
@@ -153,13 +164,16 @@ class SocketIO:
             if isinstance(ret, RemoteObject):
                 ret = remoteref(ret)
             return ("OK", ret)
+        except SystemExit:
+            raise
         except:
             self.debug("localcall:EXCEPTION")
+            if self.debugging: traceback.print_exc(file=sys.__stderr__)
             efile = sys.stderr
             typ, val, tb = info = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = info
             tbe = traceback.extract_tb(tb)
-            print >>efile, 'Traceback (most recent call last):'
+            print >>efile, '\nTraceback (most recent call last):'
             exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
             self.cleanup_traceback(tbe, exclude)
             traceback.print_list(tbe, file=efile)
@@ -186,9 +200,9 @@ class SocketIO:
                 break
             del tb[-1]
         if len(tb) == 0:
-            # error was in RPC internals, don't prune!
+            # exception was in RPC internals, don't prune!
             tb[:] = orig_tb[:]
-            print>>sys.stderr, "** RPC Internal Error: ", tb
+            print>>sys.stderr, "** IDLE RPC Internal Exception: "
         for i in range(len(tb)):
             fn, ln, nm, line = tb[i]
             if nm == '?':
@@ -199,7 +213,12 @@ class SocketIO:
             tb[i] = fn, ln, nm, line
 
     def remotecall(self, oid, methodname, args, kwargs):
-        self.debug("calling asynccall via remotecall")
+        self.debug("remotecall:asynccall: ", oid, methodname)
+        # XXX KBK 06Feb03 self.interrupted logic may not be necessary if
+        #                 subprocess is threaded.
+        if self.interrupted:
+            self.interrupted = False
+            raise KeyboardInterrupt
         seq = self.asynccall(oid, methodname, args, kwargs)
         return self.asyncreturn(seq)
 
@@ -221,7 +240,8 @@ class SocketIO:
         if how == "OK":
             return what
         if how == "EXCEPTION":
-            raise Exception, "RPC SocketIO.decoderesponse exception"
+            self.debug("decoderesponse: EXCEPTION")
+            return None
         if how == "ERROR":
             self.debug("decoderesponse: Internal ERROR:", what)
             raise RuntimeError, what
@@ -266,16 +286,15 @@ class SocketIO:
                     return response
         else:
             # Auxiliary thread: wait for notification from main thread
-            cvar = threading.Condition(self.statelock)
-            self.statelock.acquire()
-            self.cvars[myseq] = cvar
+            self.cvar.acquire()
+            self.cvars[myseq] = self.cvar
             while not self.responses.has_key(myseq):
-                cvar.wait()
+                self.cvar.wait()
             response = self.responses[myseq]
             del self.responses[myseq]
             del self.cvars[myseq]
-            self.statelock.release()
-            return response  # might be None
+            self.cvar.release()
+            return response
 
     def newseq(self):
         self.nextseq = seq = self.nextseq + 2
@@ -290,8 +309,13 @@ class SocketIO:
             raise
         s = struct.pack("<i", len(s)) + s
         while len(s) > 0:
-            n = self.sock.send(s)
-            s = s[n:]
+            try:
+                n = self.sock.send(s)
+            except AttributeError:
+                # socket was closed
+                raise IOError
+            else:
+                s = s[n:]
 
     def ioready(self, wait=0.0):
         r, w, x = select.select([self.sock.fileno()], [], [], wait)
@@ -374,12 +398,14 @@ class SocketIO:
             elif seq == myseq:
                 return resq
             else:
-                self.statelock.acquire()
-                self.responses[seq] = resq
+                self.cvar.acquire()
                 cv = self.cvars.get(seq)
+                # response involving unknown sequence number is discarded,
+                # probably intended for prior incarnation
                 if cv is not None:
+                    self.responses[seq] = resq
                     cv.notify()
-                self.statelock.release()
+                self.cvar.release()
                 continue
 
 #----------------- end class SocketIO --------------------

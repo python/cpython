@@ -71,6 +71,11 @@ class Executive:
     def runcode(self, code):
         exec code in self.locals
 
+    def interrupt_the_server(self):
+        # XXX KBK 05Feb03 Windows requires this be done with messages and
+        #                 threads....
+        self.rpchandler.interrupted = True
+
     def start_the_debugger(self, gui_adap_oid):
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
 
