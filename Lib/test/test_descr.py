@@ -896,6 +896,19 @@ def dynamics():
     d.foo = 1
     verify(d.foo == 1)
 
+    # Test handling of int*seq and seq*int
+    class I(int):
+        __dynamic__ = 1
+    verify("a"*I(2) == "aa")
+    verify(I(2)*"a" == "aa")
+
+    # Test handling of long*seq and seq*long
+    class L(long):
+        __dynamic__ = 1
+    verify("a"*L(2L) == "aa")
+    verify(L(2L)*"a" == "aa")
+    
+
 def errors():
     if verbose: print "Testing errors..."
 

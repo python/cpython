@@ -183,6 +183,8 @@ PyLong_AsLong(PyObject *vv)
 	int i, sign;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
+		if (vv != NULL && PyInt_Check(vv))
+			return PyInt_AsLong(vv);
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -1448,17 +1450,19 @@ long_mul(PyLongObject *v, PyLongObject *w)
 	int size_a;
 	int size_b;
 	int i;
-	
-	if (v->ob_type->tp_as_sequence &&
-			v->ob_type->tp_as_sequence->sq_repeat) {
-		return long_repeat((PyObject *)v, w);
-	}
-	else if (w->ob_type->tp_as_sequence &&
-			w->ob_type->tp_as_sequence->sq_repeat) {
-		return long_repeat((PyObject *)w, v);
-	}
 
-	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
+	if (!convert_binop((PyObject *)v, (PyObject *)w, &a, &b)) {
+		if (!PyLong_Check(v) &&
+		    v->ob_type->tp_as_sequence &&
+		    v->ob_type->tp_as_sequence->sq_repeat)
+			return long_repeat((PyObject *)v, w);
+		if (!PyLong_Check(w) &&
+			 w->ob_type->tp_as_sequence &&
+			 w->ob_type->tp_as_sequence->sq_repeat)
+			return long_repeat((PyObject *)w, v);
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
 
 	size_a = ABS(a->ob_size);
 	size_b = ABS(b->ob_size);
