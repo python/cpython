@@ -181,13 +181,121 @@ strop_strip(self, args)
 }
 
 
+#include <ctype.h>
+
+static object *
+strop_lower(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int i, n;
+	object *new;
+	int changed;
+
+	if (!getargs(args, "s#", &s, &n))
+		return NULL;
+	new = newsizedstringobject(s, n);
+	if (new == NULL)
+		return NULL;
+	s = getstringvalue(new);
+	changed = 0;
+	for (i = 0; i < n; i++) {
+		char c = s[i];
+		if (isupper(c)) {
+			changed = 1;
+			s[i] = tolower(c);
+		}
+	}
+	if (!changed) {
+		DECREF(new);
+		INCREF(args);
+		return args;
+	}
+	return new;
+}
+
+
+static object *
+strop_upper(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int i, n;
+	object *new;
+	int changed;
+
+	if (!getargs(args, "s#", &s, &n))
+		return NULL;
+	new = newsizedstringobject(s, n);
+	if (new == NULL)
+		return NULL;
+	s = getstringvalue(new);
+	changed = 0;
+	for (i = 0; i < n; i++) {
+		char c = s[i];
+		if (islower(c)) {
+			changed = 1;
+			s[i] = toupper(c);
+		}
+	}
+	if (!changed) {
+		DECREF(new);
+		INCREF(args);
+		return args;
+	}
+	return new;
+}
+
+
+static object *
+strop_swapcase(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s;
+	int i, n;
+	object *new;
+	int changed;
+
+	if (!getargs(args, "s#", &s, &n))
+		return NULL;
+	new = newsizedstringobject(s, n);
+	if (new == NULL)
+		return NULL;
+	s = getstringvalue(new);
+	changed = 0;
+	for (i = 0; i < n; i++) {
+		char c = s[i];
+		if (islower(c)) {
+			changed = 1;
+			s[i] = toupper(c);
+		}
+		else if (isupper(c)) {
+			changed = 1;
+			s[i] = tolower(c);
+		}
+	}
+	if (!changed) {
+		DECREF(new);
+		INCREF(args);
+		return args;
+	}
+	return new;
+}
+
+
 /* List of functions defined in the module */
 
 static struct methodlist strop_methods[] = {
 	{"index",	strop_index},
+	{"lower",	strop_lower},
 	{"split",	strop_split},
 	{"splitfields",	strop_splitfields},
 	{"strip",	strop_strip},
+	{"swapcase",	strop_swapcase},
+	{"upper",	strop_upper},
 	{NULL,		NULL}	/* sentinel */
 };
 
