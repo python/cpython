@@ -397,7 +397,9 @@ intern_strings(PyObject *tuple)
    The consts table must still be in list form so that the
        new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
-   Bails out with no change if one or more of the LOAD_CONSTs is missing. */
+   Bails out with no change if one or more of the LOAD_CONSTs is missing. 
+   Also works for BUILD_LIST when followed by an "in" or "not in" test.
+*/
 static int
 tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
 {
@@ -406,7 +408,7 @@ tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
-	assert(codestr[n*3] == BUILD_TUPLE);
+	assert(codestr[n*3] == BUILD_TUPLE || codestr[n*3] == BUILD_LIST);
 	assert(GETARG(codestr, (n*3)) == n);
 	for (i=0 ; i<n ; i++)
 		assert(codestr[i*3] == LOAD_CONST);
@@ -753,24 +755,28 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			cumlc = 0;
 			break;
 
-		/* Try to fold tuples of constants.
+		/* Try to fold tuples of constants (includes a case for lists
+		      which are only used for "in" and "not in" tests).
 		   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
 		   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
 		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
 		case BUILD_TUPLE:
+		case BUILD_LIST:
 			j = GETARG(codestr, i);
 			h = i - 3 * j;
 			if (h >= 0  &&
 			    j <= lastlc  &&
-			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
+			    (opcode == BUILD_TUPLE && 
+			     ISBASICBLOCK(blocks, h, 3*(j+1)) ||
+			     opcode == BUILD_LIST && 
+			     codestr[i+3]==COMPARE_OP && 
+			     ISBASICBLOCK(blocks, h, 3*(j+2)) &&
+			     (GETARG(codestr,i+3)==6 || GETARG(codestr,i+3)==7)) &&
 			    tuple_of_constants(&codestr[h], j, consts)) {
 				assert(codestr[i] == LOAD_CONST);
 				cumlc = 1;
 				break;
 			}
-			/* Intentional fallthrough */
-		case BUILD_LIST:
-			j = GETARG(codestr, i);
 			if (codestr[i+3] != UNPACK_SEQUENCE  ||
 			    !ISBASICBLOCK(blocks,i,6) ||
 			    j != GETARG(codestr, i+3))
