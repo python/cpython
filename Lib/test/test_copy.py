@@ -174,13 +174,15 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
 
     def test_deepcopy_memo(self):
+        # Tests of reflexive objects are under type-specific sections below.
+        # This tests only repetitions of objects.
         x = []
-        x.append(x)
+        x = [x, x]
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assert_(y is not x)
         self.assert_(y[0] is not x[0])
-        self.assert_(y is y[0])
+        self.assert_(y[0] is y[1])
 
     def test_deepcopy_issubclass(self):
         # XXX Note: there's no way to test the TypeError coming out of
@@ -266,6 +268,15 @@ class TestCopy(unittest.TestCase):
         self.assert_(x is not y)
         self.assert_(x[0] is not y[0])
 
+    def test_deepcopy_reflexive_list(self):
+        x = []
+        x.append(x)
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assert_(y is not x)
+        self.assert_(y[0] is not x[0])
+        self.assert_(y is y[0])
+
     def test_deepcopy_tuple(self):
         x = ([1, 2], 3)
         y = copy.deepcopy(x)
@@ -273,12 +284,30 @@ class TestCopy(unittest.TestCase):
         self.assert_(x is not y)
         self.assert_(x[0] is not y[0])
 
+    def test_deepcopy_reflexive_tuple(self):
+        x = ([],)
+        x[0].append(x)
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assert_(y is not x)
+        self.assert_(y[0] is not x[0])
+        self.assert_(y[0][0] is y)
+
     def test_deepcopy_dict(self):
         x = {"foo": [1, 2], "bar": 3}
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assert_(x is not y)
         self.assert_(x["foo"] is not y["foo"])
+
+    def test_deepcopy_reflexive_dict(self):
+        x = {}
+        x['foo'] = x
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assert_(y is not x)
+        self.assert_(y['foo'] is y)
+        self.assertEqual(y, {'foo': y})
 
     def test_deepcopy_keepalive(self):
         memo = {}
@@ -369,6 +398,15 @@ class TestCopy(unittest.TestCase):
         self.assert_(y is not x)
         self.assert_(y.foo is not x.foo)
 
+    def test_deepcopy_reflexive_inst(self):
+        class C:
+            pass
+        x = C()
+        x.foo = x
+        y = copy.deepcopy(x)
+        self.assert_(y is not x)
+        self.assert_(y.foo is y)
+
     # _reconstruct()
 
     def test_reconstruct_string(self):
@@ -421,6 +459,15 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assert_(y.foo is not x.foo)
+
+    def test_reconstruct_reflexive(self):
+        class C(object):
+            pass
+        x = C()
+        x.foo = x
+        y = copy.deepcopy(x)
+        self.assert_(y is not x)
+        self.assert_(y.foo is y)
 
     # Additions for Python 2.3 and pickle protocol 2
 

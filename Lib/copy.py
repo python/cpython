@@ -334,6 +334,7 @@ def _reconstruct(x, info, deep, memo=None):
     if deep:
         args = deepcopy(args, memo)
     y = callable(*args)
+    memo[id(x)] = y
     if listiter is not None:
         for item in listiter:
             if deep:
