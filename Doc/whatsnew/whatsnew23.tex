@@ -1,5 +1,4 @@
 \documentclass{howto}
-
 % $Id$
 
 \title{What's New in Python 2.3}
@@ -14,7 +13,7 @@
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for some
-random version of the CVS tree around March 26 2002.  Please send any
+random version of the CVS tree around May 26 2002.  Please send any
 additions, comments or errata to the author.}
 
 This article explains the new features in Python 2.3.  The tentative
@@ -34,6 +33,7 @@ a particular new feature.
 
 %======================================================================
 \section{PEP 255: Simple Generators}
+\label{section-generators}
 
 In Python 2.2, generators were added as an optional feature, to be
 enabled by a \code{from __future__ import generators} directive.  In
@@ -184,12 +184,30 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 %======================================================================
 \section{PEP 278: Universal Newline Support}
 
-XXX write this section
+The three major operating systems used today are Microsoft Windows,
+Apple's Macintosh OS, and the various Unix derivatives.  A minor
+irritation is that these three platforms all use different characters
+to mark the ends of lines in text files.  Unix uses character 10, the
+ASCII linefeed, MacOS uses character 13, the ASCII carriage return,
+and Windows uses a two-character sequence of carriage return plus a
+newline.
 
-%Highlights: import and friends will understand any of \r, \n and \r\n
-%as end of line. Python file input will do the same if you use mode 'U'.
-%Everything can be disabled by configuring with --without-universal-newlines.
+Python's file objects can now support end of line conventions other
+than the one followed by the platform on which Python is running.
+Opening a file with the mode \samp{U} or \samp{rU} will open a file
+for reading in universal newline mode.  All three line ending
+conventions will be translated to a \samp{\e n} in the strings
+returned by the various file methods such as \method{read()} and
+\method{readline()}. 
 
+Universal newline support is also used when importing modules and when
+executing a file with the \function{execfile()} function.  This means
+that Python modules can be shared between all three operating systems
+without needing to convert the line-endings.
+
+This feature can be disabled at compile-time by specifying the
+\longprogramopt{without-universal-newlines} when running Python's
+configure script.
 
 \begin{seealso}
 
@@ -200,8 +218,72 @@ and implemented by Jack Jansen.}
 
 %======================================================================
 \section{PEP 285: The \class{bool} Type}
+\label{section-bool}
 
-XXX write this section
+A Boolean type was added to Python 2.3.  Two new constants were added
+to the \module{__builtin__} module, \constant{True} and
+\constant{False}.  The type object for this new type is named
+\class{bool}; the constructor for it takes any Python value and
+converts it to \constant{True} or \constant{False}.
+
+\begin{verbatim}
+>>> bool(1)
+True
+>>> bool(0)
+False
+>>> bool([])
+False
+>>> bool( (1,) )
+True
+\end{verbatim}
+
+Most of the standard library modules and built-in functions have been
+changed to return Booleans.
+
+\begin{verbatim}
+>>> o = []
+>>> hasattr(o, 'append')
+True
+>>> isinstance(o, list)
+True
+>>> isinstance(o, tuple)
+False
+\end{verbatim}
+
+Python's Booleans were added with the primary goal of making code
+clearer.  For example, if you're reading a function and encounter the
+statement \code{return 1}, you might wonder whether the \samp{1}
+represents a truth value, or whether it's an index, or whether it's a
+coefficient that multiplies some other quantity.  If the statement is
+\code{return True}, however, the meaning of the return value is quite
+clearly a truth value.
+
+Python's Booleans were not added for the sake of strict type-checking.
+A very strict language such as Pascal
+% XXX is Pascal the right example here?
+would also prevent you performing arithmetic with Booleans, and would
+require that the expression in an \keyword{if} statement always
+evaluate to a Boolean.  Python is not this strict, and it never will
+be.  (\pep{285} explicitly says this.)  So you can still use any
+expression in an \keyword{if}, even ones that evaluate to a list or
+tuple or some random object, and the Boolean type is a subclass of the
+\class{int} class, so arithmetic using a Boolean still works.
+
+\begin{verbatim}
+>>> True + 1
+2
+>>> False + 1
+1
+>>> False * 75
+0
+>>> True * 75
+75
+\end{verbatim}
+
+To sum up \constant{True} and \constant{False} in a sentence: they're
+alternative ways to spell the integer values 1 and 0, with the single
+difference that \function{str()} and \function{repr()} return the
+strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 
 \begin{seealso}
 
@@ -213,60 +295,158 @@ XXX write this section
 %======================================================================
 \section{New and Improved Modules}
 
-arraymodule.c: - add Py_UNICODE arrays
-- support +=, *=
+As usual, Python's standard modules had a number of enhancements and
+bug fixes.  Here's a partial list; consult the \file{Misc/NEWS} file
+in the source tree, or the CVS logs, for a more complete list.
+
+\begin{itemize}
+
+\item One minor but far-reaching change is that the names of extension
+types defined by the modules included with Python now contain the
+module and a \samp{.} in front of the type name.  For example, in
+Python 2.2, if you created a socket and printed its
+\member{__class__}, you'd get this output:
+
+\begin{verbatim}
+>>> s = socket.socket()
+>>> s.__class__
+<type 'socket'>
+\end{verbatim}
+
+In 2.3, you get this:
+\begin{verbatim}
+>>> s.__class__
+<type '_socket.socket'>
+\end{verbatim}
+
+\item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
+string methods now have an optional argument for specifying the
+characters to strip.  The default is still to remove all whitespace
+characters:
+
+\begin{verbatim}
+>>> '   abc '.strip()
+'abc'
+>>> '><><abc<><><>'.strip('<>')
+'abc'
+>>> '><><abc<><><>\n'.strip('<>')
+'abc<><><>\n'
+>>> u'\u4000\u4001abc\u4000'.strip(u'\u4000')
+u'\u4001abc'
+>>>
+\end{verbatim}
+
+\item Another new string method is \method{zfill()}, originally a
+function in the \module{string} module.  \method{zfill()} pads a
+numeric string with zeros on the left until it's the specified width.
+Note that the \code{\%} operator is still more flexible and powerful
+than \method{zfill()}.
+
+\begin{verbatim}
+>>> '45'.zfill(4)
+'0045'
+>>> '12345'.zfill(4)
+'12345'
+>>> 'goofy'.zfill(4)
+'0goofy'
+\end{verbatim}
+
+\item Dictionaries have a new method, method{pop(\var{key})}, that
+returns the value corresponding to \var{key} and removes that
+key/value pair from the dictionary.  \method{pop()} will raise a
+\exception{KeyError} if the requsted key isn't present in the
+dictionary:
+
+\begin{verbatim}
+>>> d = {1:2}
+>>> d
+{1: 2}
+>>> d.pop(4)
+Traceback (most recent call last):
+  File ``<stdin>'', line 1, in ?
+KeyError: 4
+>>> d.pop(1)
+2
+>>> d.pop(1)
+Traceback (most recent call last):
+  File ``<stdin>'', line 1, in ?
+KeyError: pop(): dictionary is empty
+>>> d
+{}
+>>>
+\end{verbatim}
 
 distutils: command/bdist_packager, support for Solaris pkgtool 
 and HP-UX swinstall
 
-Return enhanced tuples in grpmodule
 
-posixmodule: killpg, mknod, fchdir, 
+\item Two new functions, \function{killpg()} and \function{mknod()},
+were added to the \module{posix} module that underlies the \module{os}
+module.
 
-Expat is now included with the Python source
+\item (XXX write this) arraymodule.c: - add Py_UNICODE arrays 
+- support +=, *=
 
-Readline: Add get_history_item, get_current_history_length, and
-redisplay functions.
+\item The \module{grp} module now returns enhanced tuples:
 
-Add optional arg to string methods strip(), lstrip(), rstrip().
-The optional arg specifies characters to delete.
+\begin{verbatim}
+>>> import grp
+>>> g = grp.getgrnam('amk')
+>>> g.gr_name, g.gr_gid
+('amk', 500)
+\end{verbatim}
 
-New method: string.zfill()
+\item The \module{readline} module also gained a number of new
+functions: \function{get_history_item()},
+\function{get_current_history_length()}, and \function{redisplay()}.
 
-Add dict method pop().
+\end{itemize}
+
 
 New enumerate() built-in.
 
 %======================================================================
 \section{Interpreter Changes and Fixes}
 
-file object can now be subtyped (did this not work before?)
+Here are the changes that Python 2.3 makes to the core language.
 
-yield is now always available
+\begin{itemize}
+\item The \keyword{yield} statement is now always a keyword, as
+described in section~\ref{section-generators}.
 
-This adds the module name and a dot in front of the type name in every
-type object initializer, except for built-in types (and those that
-already had this).  Note that it touches lots of Mac modules -- I have
-no way to test these but the changes look right.  Apologies if they're
-not.  This also touches the weakref docs, which contains a sample type
-object initializer.  It also touches the mmap test output, because the
-mmap type's repr is included in that output.  It touches object.h to
-put the correct description in a comment.
+\item Two new constants, \constant{True} and \constant{False} were
+added along with the built-in \class{bool} type, as described in
+section~\ref{section-bool}.
 
-File objects: Grow the string buffer at a mildly exponential rate for
-the getc version of get_line.  This makes test_bufio finish in 1.7
-seconds instead of 57 seconds on my machine (with Py_DEBUG defined).
+\item The \class{file} type can now be subtyped.  (XXX did this not work
+before?  Thought I used it in an example in the 2.2 What's New document...)
+
+\item File objects also manage their internal string buffer
+differently by increasing it exponentially when needed.  
+This results in the benchmark tests in \file{Lib/test/test_bufio.py} 
+speeding up from 57 seconds to 1.7 seconds, according to one
+measurement.
+
+\end{itemize}
+
 
 %======================================================================
 \section{Other Changes and Fixes}
 
+XXX write this
+
 The tools used to build the documentation now work under Cygwin as
 well as \UNIX.
 
-% ======================================================================
-\section{C Interface Changes}
 
-Patch \#527027: Allow building python as shared library with
+% ======================================================================
+\section{Build and C API Changes}
+
+XXX write this
+
+\begin{itemize}
+
+\item Patch \#527027: Allow building python as shared library with
 --enable-shared
 
 pymalloc is now enabled by default (also mention debug-mode pymalloc)
@@ -276,6 +456,10 @@ Memory API reworking -- which functions are deprecated?
 PyObject_DelItemString() added
 
 PyArg_NoArgs macro is now deprecated
+
+\item The source code for the Expat XML parser is now included with
+the Python source, so the \module{pyexpat} module is no longer
+dependent on having a system library containing Expat.
 
 ===
 Introduce two new flag bits that can be set in a PyMethodDef method
@@ -297,7 +481,11 @@ these special method types are not meaningful in that case; a
 ValueError will be raised if these flags are found in that context.
 ===
 
-Ports:
+\end{itemize}
+
+\subsection{Port-Specific Changes}
+
+XXX write this
 
 OS/2 EMX port
 
@@ -319,6 +507,3 @@ suggestions, corrections and assistance with various drafts of this
 article: Fred~L. Drake, Jr.
 
 \end{document}
-
-
-
