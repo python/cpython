@@ -26,6 +26,9 @@ compatability calls yourself and send me the results.
 
 If you don't have enough memory: the sizes choosen are somewhat arbitrary.
 Try lowering them and seeing whether the resulting python is still usable.
+Note, however, that python running out of memory may result in your mac
+freezing. I don't fully understand yet why the mac freezes instead of doing
+something a little less drastic.
 
 PowerPC Macintosh instructions
 ------------------------------
@@ -73,6 +76,8 @@ Common instructions
 
 You should now have a functioning python. It is probably a good idea to run
 "testall.py" from :Lib:test at this point, this should not give any errors.
+Running testall.py is done by double-clicking it or dropping it onto the
+interpreter.
 Next, try "compileall.py" from :Lib to create all .pyc files (but this isn't
 really important).
 
