@@ -225,6 +225,20 @@ PyMac_Error(OSErr err)
 	return PyErr_Mac(PyMac_GetOSErrException(), err);
 }
 
+#ifdef USE_STACKCHECK
+/* Check for stack overflow */
+int
+PyOS_CheckStack()
+{
+	long left;
+	
+	left = StackSpace();
+	if ( left < 4000 )
+		return -1;
+	return 0;
+}
+#endif /* USE_STACKCHECK */
+
 /* The catcher routine (which may not be used for all compilers) */
 static RETSIGTYPE
 intcatcher(sig)
