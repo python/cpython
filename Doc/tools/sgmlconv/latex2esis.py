@@ -315,7 +315,11 @@ def main():
         sys.exit(2)
     convert(ifp, ofp, {
         # entries have the form:
-        # name: ([attribute names], first_is_optional, empty, isenv, nocontent)
+        # name: ([attribute names], is1stOptional, isEmpty, isEnv, nocontent)
+        # attribute names can be:
+        #   "string" -- normal attribute
+        #   ("string",) -- sub-element with content of macro; like for \section
+        #   ["string"] -- sub-element
         "appendix": ([], 0, 1, 0, 0),
         "bifuncindex": (["name"], 0, 1, 0, 0),
         "catcode": ([], 0, 1, 0, 0),
