@@ -15,7 +15,7 @@ TESTPASSWORD = "_passwd_"
 
 # Imports
 
-import regex, socket, string
+import re, socket, string
 
 # Exception raised when an error or invalid response is received:
 
@@ -263,7 +263,7 @@ class POP3:
         return self._shortcmd('RPOP %s' % user)
 
 
-    timestamp = regex.compile('\+OK.*\(<[^>]+>\)')
+    timestamp = re.compile(r'\+OK.*(<[^>]+>)')
 
     def apop(self, user, secret):
         """Authorisation
@@ -276,10 +276,11 @@ class POP3:
 
         NB: mailbox is locked by server from here to 'quit()'
         """
-        if self.timestamp.match(self.welcome) <= 0:
+        m = self.timestamp.match(self.welcome)
+        if not m:
             raise error_proto('-ERR APOP not supported by server')
         import md5
-        digest = md5.new(self.timestamp.group(1)+secret).digest()
+        digest = md5.new(m.group(1)+secret).digest()
         digest = string.join(map(lambda x:'%02x'%ord(x), digest), '')
         return self._shortcmd('APOP %s %s' % (user, digest))
 
