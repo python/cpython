@@ -113,6 +113,61 @@ _PyImport_Fini()
 }
 
 
+/* Locking primitives to prevent parallel imports of the same module
+   in different threads to return with a partially loaded module.
+   These calls are serialized by the global interpreter lock. */
+
+#ifdef WITH_THREAD
+
+#include "thread.h"
+
+static type_lock import_lock = 0;
+static long import_lock_thread = -1;
+static int import_lock_level = 0;
+
+static void
+lock_import()
+{
+	long me = get_thread_ident();
+	if (me == -1)
+		return; /* Too bad */
+	if (import_lock == NULL)
+		import_lock = allocate_lock();
+	if (import_lock_thread == me) {
+		import_lock_level++;
+		return;
+	}
+	if (import_lock_thread != -1 || !acquire_lock(import_lock, 0)) {
+		PyThreadState *tstate = PyEval_SaveThread();
+		acquire_lock(import_lock, 1);
+		PyEval_RestoreThread(tstate);
+	}
+	import_lock_thread = me;
+	import_lock_level = 1;
+}
+
+static void
+unlock_import()
+{
+	long me = get_thread_ident();
+	if (me == -1)
+		return; /* Too bad */
+	if (import_lock_thread != me)
+		Py_FatalError("unlock_import: not holding the import lock");
+	import_lock_level--;
+	if (import_lock_level == 0) {
+		import_lock_thread = -1;
+		release_lock(import_lock);
+	}
+}
+
+#else
+
+#define lock_import()
+#define unlock_import()
+
+#endif
+
 /* Helper for sys */
 
 PyObject *
@@ -1259,14 +1314,8 @@ static PyObject * import_submodule Py_PROTO((PyObject *mod,
 
 /* The Magnum Opus of dotted-name import :-) */
 
-/* XXX TO DO:
-   - Remember misses in package directories so package submodules
-     that all import the same toplevel module don't keep hitting on the
-     package directory first
-*/
-
-PyObject *
-PyImport_ImportModuleEx(name, globals, locals, fromlist)
+static PyObject *
+import_module_ex(name, globals, locals, fromlist)
 	char *name;
 	PyObject *globals;
 	PyObject *locals;
@@ -1313,6 +1362,20 @@ PyImport_ImportModuleEx(name, globals, locals, fromlist)
 	}
 
 	return tail;
+}
+
+PyObject *
+PyImport_ImportModuleEx(name, globals, locals, fromlist)
+	char *name;
+	PyObject *globals;
+	PyObject *locals;
+	PyObject *fromlist;
+{
+	PyObject *result;
+	lock_import();
+	result = import_module_ex(name, globals, lock_import, fromlist);
+	unlock_import();
+	return result;
 }
 
 static PyObject *
