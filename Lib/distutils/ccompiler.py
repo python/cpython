@@ -414,6 +414,22 @@ class CCompiler:
     # -- Worker methods ------------------------------------------------
     # (must be implemented by subclasses)
 
+    def preprocess (self,
+                    source,
+                    output_file=None,
+                    macros=None,
+                    include_dirs=None,
+                    extra_preargs=None,
+                    extra_postargs=None):
+        """Preprocess a single C/C++ source file, named in 'source'.
+        Output will be written to file named 'output_file', or stdout if
+        'output_file' not supplied.  'macros' is a list of macro
+        definitions as for 'compile()', which will augment the macros set
+        with 'define_macro()' and 'undefine_macro()'.  'include_dirs' is a
+        list of directory names that will be added to the default list.
+        """
+        pass
+
     def compile (self,
                  sources,
                  output_dir=None,
