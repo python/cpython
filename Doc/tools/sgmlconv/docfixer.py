@@ -22,13 +22,28 @@ class ConversionError(Exception):
     pass
 
 
+ewrite = sys.stderr.write
+try:
+    # We can only do this trick on Unix (if tput is on $PATH)!
+    if sys.platform != "posix" or not sys.stderr.isatty():
+        raise ImportError
+    import curses
+    import commands
+except ImportError:
+    bwrite = ewrite
+else:
+    def bwrite(s, BOLDON=commands.getoutput("tput bold"),
+               BOLDOFF=commands.getoutput("tput sgr0")):
+        ewrite("%s%s%s" % (BOLDON, s, BOLDOFF))
+
+
 PARA_ELEMENT = "para"
 
 DEBUG_PARA_FIXER = 0
 
 if DEBUG_PARA_FIXER:
     def para_msg(s):
-        sys.stderr.write("*** %s\n" % s)
+        ewrite("*** %s\n" % s)
 else:
     def para_msg(s):
         pass
@@ -81,14 +96,23 @@ def find_all_elements(doc, gi):
                 nodes.append(node)
     return nodes
 
-def find_all_elements_from_set(doc, gi_set, nodes=None):
-    if nodes is None:
-        nodes = []
+def find_all_child_elements(doc, gi):
+    nodes = []
+    for child in doc.childNodes:
+        if child.nodeType == ELEMENT:
+            if child.tagName == gi:
+                nodes.append(child)
+    return nodes
+
+def find_all_elements_from_set(doc, gi_set):
+    return __find_all_elements_from_set(doc, gi_set, [])
+
+def __find_all_elements_from_set(doc, gi_set, nodes):
     if doc.nodeType == ELEMENT and doc.tagName in gi_set:
         nodes.append(doc)
     for child in doc.childNodes:
         if child.nodeType == ELEMENT:
-            find_all_elements_from_set(child, gi_set, nodes)
+            __find_all_elements_from_set(child, gi_set, nodes)
     return nodes
 
 
@@ -165,7 +189,7 @@ def find_and_fix_descriptors(doc, container):
 def rewrite_descriptor(doc, descriptor):
     #
     # Do these things:
-    #   1. Add an "index=noindex" attribute to the element if the tagName
+    #   1. Add an "index='no'" attribute to the element if the tagName
     #      ends in 'ni', removing the 'ni' from the name.
     #   2. Create a <signature> from the name attribute and <args>.
     #   3. Create additional <signature>s from <*line{,ni}> elements,
@@ -179,7 +203,7 @@ def rewrite_descriptor(doc, descriptor):
     index = 1
     if descname[-2:] == "ni":
         descname = descname[:-2]
-        descriptor.setAttribute("index", "noindex")
+        descriptor.setAttribute("index", "no")
         descriptor._node.name = descname
         index = 0
     desctype = descname[:-4] # remove 'desc'
@@ -459,12 +483,10 @@ def create_module_info(doc, section):
                 title.removeChild(children[0])
                 modinfo_pos = 0
             else:
-                sys.stderr.write(
-                    "module name in title doesn't match"
-                    " <declaremodule>; no <short-synopsis>\n")
+                ewrite("module name in title doesn't match"
+                       " <declaremodule/>; no <short-synopsis/>\n")
         else:
-            sys.stderr.write(
-                "Unexpected condition: <section> without <title>\n")
+            ewrite("Unexpected condition: <section/> without <title/>\n")
         modinfo.appendChild(doc.createTextNode("\n    "))
         modinfo.appendChild(node)
         if title and not contents_match(title, node):
@@ -484,7 +506,7 @@ def create_module_info(doc, section):
         #
         # The rest of this removes extra newlines from where we cut out
         # a lot of elements.  A lot of code for minimal value, but keeps
-        # keeps the generated SGML from being too funny looking.
+        # keeps the generated *ML from being too funny looking.
         #
         section.normalize()
         children = section.childNodes
@@ -499,8 +521,8 @@ def create_module_info(doc, section):
                         nextnode.data = "\n\n\n" + string.lstrip(data)
 
 
-def cleanup_synopses(doc):
-    for node in find_all_elements(doc, "section"):
+def cleanup_synopses(doc, fragment):
+    for node in find_all_elements(fragment, "section"):
         create_module_info(doc, node)
 
 
@@ -624,7 +646,7 @@ PARA_LEVEL_PRECEEDERS = (
     "index", "indexii", "indexiii", "indexiv", "setindexsubitem",
     "stindex", "obindex", "COMMENT", "label", "input", "title",
     "versionadded", "versionchanged", "declaremodule", "modulesynopsis",
-    "moduleauthor",
+    "moduleauthor", "indexterm",
     )
 
 
@@ -710,9 +732,19 @@ def build_para(doc, parent, start, i):
         prev = node
     if have_last:
         parent.appendChild(para)
+        parent.appendChild(doc.createTextNode("\n\n"))
         return len(parent.childNodes)
     else:
-        parent.insertBefore(para, parent.childNodes[start])
+        nextnode = parent.childNodes[start]
+        if nextnode.nodeType == TEXT:
+            if nextnode.data and nextnode.data[0] != "\n":
+                nextnode.data = "\n" + nextnode.data
+        else:
+            newnode = doc.createTextNode("\n")
+            parent.insertBefore(newnode, nextnode)
+            nextnode = newnode
+            start = start + 1
+        parent.insertBefore(para, nextnode)
         return start + 1
 
 
@@ -838,7 +870,7 @@ def fixup_refmodindexes(fragment):
 def fixup_refmodindexes_chunk(container):
     # node is probably a <para>; let's see how often it isn't:
     if container.tagName != PARA_ELEMENT:
-        sys.stderr.write("--- fixup_refmodindexes_chunk(%s)\n" % container)
+        bwrite("--- fixup_refmodindexes_chunk(%s)\n" % container)
     module_entries = find_all_elements(container, "module")
     if not module_entries:
         return
@@ -847,10 +879,9 @@ def fixup_refmodindexes_chunk(container):
     for entry in index_entries:
         children = entry.childNodes
         if len(children) != 0:
-            sys.stderr.write(
-                "--- unexpected number of children for %s node:\n"
-                % entry.tagName)
-            sys.stderr.write(entry.toxml() + "\n")
+            bwrite("--- unexpected number of children for %s node:\n"
+                   % entry.tagName)
+            ewrite(entry.toxml() + "\n")
             continue
         found = 0
         module_name = entry.getAttribute("name")
@@ -860,7 +891,7 @@ def fixup_refmodindexes_chunk(container):
             this_name = node.childNodes[0].data
             if this_name == module_name:
                 found = 1
-                node.setAttribute("index", "index")
+                node.setAttribute("index", "yes")
         if found:
             removes.append(entry)
     for node in removes:
@@ -870,6 +901,7 @@ def fixup_refmodindexes_chunk(container):
 def fixup_bifuncindexes(fragment):
     nodes = find_all_elements(fragment, 'bifuncindex')
     d = {}
+    # make sure that each parent is only processed once:
     for node in nodes:
         parent = node.parentNode
         d[parent._node.node_id] = parent
@@ -879,8 +911,8 @@ def fixup_bifuncindexes(fragment):
 
 def fixup_bifuncindexes_chunk(container):
     removes = []
-    entries = find_all_elements(container, "bifuncindex")
-    function_entries = find_all_elements(container, "function")
+    entries = find_all_child_elements(container, "bifuncindex")
+    function_entries = find_all_child_elements(container, "function")
     for entry in entries:
         function_name = entry.getAttribute("name")
         found = 0
@@ -890,12 +922,11 @@ def fixup_bifuncindexes_chunk(container):
                 continue
             t2 = t2[:-2]
             if t2 == function_name:
-                
-                func_entry.setAttribute("index", "index")
+                func_entry.setAttribute("index", "yes")
                 func_entry.setAttribute("module", "__builtin__")
                 if not found:
-                    removes.append(entry)
                     found = 1
+                    removes.append(entry)
     for entry in removes:
         container.removeChild(entry)
 
@@ -948,8 +979,8 @@ def convert(ifp, ofp):
         "subparagraph": "\n\n",
         })
     cleanup_root_text(doc)
-    cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
-    cleanup_synopses(doc)
+    cleanup_trailing_parens(fragment, ["function", "method", "cfunction"])
+    cleanup_synopses(doc, fragment)
     fixup_descriptors(doc, fragment)
     fixup_verbatims(fragment)
     normalize(fragment)
