@@ -42,6 +42,7 @@ Exception(*)
       +-- NameError
       |    |
       |    +-- UnboundLocalError(*)
+      |
       +-- AttributeError
       +-- SyntaxError
       +-- TypeError
