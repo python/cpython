@@ -4,14 +4,6 @@ Python main documentation -- in LaTeX
 This directory contains the LaTeX sources to the Python documentation.
 They now require LaTeX2e (LaTeX 2.09 compatibility is dropped).
 
-The Python Reference Manual is no longer maintained in LaTeX.  It is
-now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
-ref*.doc) as well as PostScript generated (ref.ps) from it are in the
-subdirectory ref/.  (See <ftp://ftp.adobe.com/pub/adobe/framereader>
-for a free reader for FrameMaker documents, for some platforms.)  Many 
-thanks to Robin Friedrich for the conversion of the Reference Manual
-to FrameMaker and his work on its index.
-
 If you don't have LaTeX, or if you'd rather not format the
 documentation yourself, you can ftp a tar file containing HTML, PDF,
 or PostScript versions of all documents.  Additional formats may be
@@ -21,10 +13,11 @@ main Python distribution (try <http://www.python.org> or
 
 The following are the LaTeX source files:
 
-	tut.tex				The tutorial
-	lib.tex, lib*.tex		The library reference
-	ext.tex				How to extend Python
-	api.tex				Reference for the Python/C API
+	api/*.tex	Python/C API Reference Manual
+	ext/*.tex	Extending and Embedding the Python Interpreter
+	lib/*.tex	Python Library Reference
+	ref/*.tex	Python Reference Manual
+	tut/*.tex	Python Tutorial
 
 All use the "manual" document class and "python" package, derived from 
 the old "myformat.sty" style file.  These contains many macro
@@ -37,9 +30,9 @@ by the same Makefile target that produces the DVI files.  This uses
 the dvips tool.  Printing depends on local conventions; at our site,
 we use lpr.  For example:
 
-	make lib			# create lib.dvi and lib.ps
-	xdvi lib			# preview lib.dvi
-	lpr lib.ps			# print on default printer
+	make lib	# create lib.dvi and lib.ps
+	xdvi lib	# preview lib.dvi
+	lpr lib.ps	# print on default printer
 
 
 What if I find a bug?
@@ -67,15 +60,15 @@ You need to install Python; some of the scripts used to produce the
 documentation are written in Python.
 
 The simplest way to get the rest of the tools in the configuration we
-used is to install the teTeX TeX distribution, version 0.9.  More
+used is to install the teTeX TeX distribution, version 0.4 or 0.9.  More
 information is available on teTeX at <http://www.tug.org/tetex/>.
 This is a UNIX-only TeX distribution at this time.  Note that the 0.9
 release is still in testing; this documentation release was tested
-with the 18 Mar 1998 release.  We'll be upgrading to the final version 
-when it becomes available.
+with the 21 Apr 1998 release.  We'll be upgrading to the final version 
+when it becomes available.  Except for the PDF generation, it also works
+with the (stable) teTeX 0.4 release.
 
-If you don't want to get teTeX, or if you're not using UNIX, here is
-what you'll need:
+If you don't want to get teTeX, here is what you'll need:
 
 To create DVI, PDF, or PostScript files:
 
@@ -88,10 +81,9 @@ To create DVI, PDF, or PostScript files:
 To create PDF files:
 
 	- pdflatex.  We used the one in the teTeX 0.9 distribution
-	  (version 0.12f at the time of this writing).  Versions even
-	  a couple of patchlevels different are highly likely to
-	  fail due to syntax changes for some of the pdftex
-	  primitives.
+	  (version 0.12h at the time of this writing).  Versions even
+	  a couple of patchlevels earlier are highly likely to fail
+	  due to syntax changes for some of the pdftex primitives.
 
 To create PostScript files:
 
@@ -136,15 +128,9 @@ file.
 What if I want to use A4 paper?
 -------------------------------
 
-Edit the file texinputs/manual.cls.  Change the line that reads:
-
-    \LoadClass[twoside,openright]{report}
-
-to say:
-
-    \LoadClass[a4paper,twoside,openright]{report}
-
-Now do a "make clean all" to generate PostScript files.
+Instead of building the PostScript by giving the command "make", give
+the command "make PAPER=a4"; the output will be produced in the
+paper-a4/ subdirectory.
 
 
 Making HTML files
@@ -154,10 +140,6 @@ The LaTeX documents can be converted to HTML using Nikos Drakos'
 LaTeX2HTML converter.  See the Makefile; after some twiddling, "make
 l2h" should do the trick.
 
-For the reference manual, we use Harlequin's webmaker.  We're not very 
-happy with it and hope that eventually FrameMaker will be able to
-produce HTML without third party help.
-
 
 What else is in here?
 ---------------------
@@ -165,7 +147,7 @@ What else is in here?
 There is a new LaTeX document class called "howto".  This is used for
 the new series of Python HOWTO documents which is being coordinated by 
 Andrew Kuchling <amk@acm.org>.  The file howto.tex is a commented
-template which may be used an example.  A script to "do the right
+example which may be used a template.  A script to "do the right
 thing" to format a howto document is included as tools/mkhowto.sh.
 Support for this document class is still new, but is expected to
 evolve rapidly.  Use "mkhowto.sh --help" for information on using the
