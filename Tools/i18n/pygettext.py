@@ -137,6 +137,7 @@ escapes[ord('\\')] = '\\\\'
 escapes[ord('\t')] = '\\t'
 escapes[ord('\r')] = '\\r'
 escapes[ord('\n')] = '\\n'
+escapes[ord('\"')] = '\\"'
 
 def escape(s):
     s = list(s)
