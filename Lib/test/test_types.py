@@ -86,6 +86,10 @@ if 0 != 0L or 0 != 0.0 or 0L != 0.0: raise TestFailed, 'mixed comparisons'
 if 1 != 1L or 1 != 1.0 or 1L != 1.0: raise TestFailed, 'mixed comparisons'
 if -1 != -1L or -1 != -1.0 or -1L != -1.0:
     raise TestFailed, 'int/long/float value not equal'
+# calling built-in types without argument must return 0
+if int() != 0: raise TestFailed, 'int() does not return 0'
+if long() != 0L: raise TestFailed, 'long() does not return 0L'
+if float() != 0.0: raise TestFailed, 'float() does not return 0.0'
 if int(1.9) == 1 == int(1.1) and int(-1.1) == -1 == int(-1.9): pass
 else: raise TestFailed, 'int() does not round properly'
 if long(1.9) == 1L == long(1.1) and long(-1.1) == -1L == long(-1.9): pass
@@ -214,6 +218,8 @@ if have_unicode:
 
 
 print '6.5.2 Tuples'
+# calling built-in types without argument must return empty
+if tuple() != (): raise TestFailed,'tuple() does not return ()'
 if len(()) != 0: raise TestFailed, 'len(())'
 if len((1,)) != 1: raise TestFailed, 'len((1,))'
 if len((1,2,3,4,5,6)) != 6: raise TestFailed, 'len((1,2,3,4,5,6))'
@@ -251,6 +257,8 @@ def f():
 vereq(list(tuple(f())), range(1000))
 
 print '6.5.3 Lists'
+# calling built-in types without argument must return empty
+if list() != []: raise TestFailed,'list() does not return []'
 if len([]) != 0: raise TestFailed, 'len([])'
 if len([1,]) != 1: raise TestFailed, 'len([1,])'
 if len([1,2,3,4,5,6]) != 6: raise TestFailed, 'len([1,2,3,4,5,6])'
@@ -441,6 +449,8 @@ vereq(a, [0, 1, 1, 3, 2, 5, 3, 7, 4, 9])
 
 
 print '6.6 Mappings == Dictionaries'
+# calling built-in types without argument must return empty
+if dict() != {}: raise TestFailed,'dict() does not return {}'
 d = {}
 if d.keys() != []: raise TestFailed, '{}.keys()'
 if d.values() != []: raise TestFailed, '{}.values()'
