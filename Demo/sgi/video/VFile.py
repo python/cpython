@@ -21,10 +21,10 @@ import sys
 try:
 	import gl
 	import GL
+	import GET
 	no_gl = 0
 except ImportError:
 	no_gl = 1
-import GET
 import colorsys
 import imageop
 
