@@ -23,14 +23,23 @@ def parse(path):
     t = transformer.Transformer()
     return t.parsesuite(src)
 
-def walk(tree, visitor, verbose=None):
+def walk(tree, visitor, verbose=None, walker=None):
     print visitor, "start"
-    w = ASTVisitor()
+    if walker:
+        w = walker()
+    else:
+        w = ASTVisitor()
     if verbose is not None:
         w.VERBOSE = verbose
     w.preorder(tree, visitor)
     print visitor, "finish"
     return w.visitor
+
+def dumpNode(node):
+    print node.__class__
+    for attr in dir(node):
+        if attr[0] != '_':
+            print "\t", "%-10.10s" % attr, getattr(node, attr)
 
 class ASTVisitor:
     """Performs a depth-first walk of the AST
@@ -112,6 +121,35 @@ class ASTVisitor:
         if meth:
             return meth(node)
 
+class ExampleASTVisitor(ASTVisitor):
+    """Prints examples of the nodes that aren't visited"""
+    examples = {}
+    
+    def dispatch(self, node):
+        self.node = node
+        className = node.__class__.__name__
+        meth = getattr(self.visitor, 'visit' + className, None)
+        if self.VERBOSE > 0:
+            if self.VERBOSE == 1:
+                if meth is None:
+                    print "dispatch", className
+            else:
+                print "dispatch", className, (meth and meth.__name__ or '')
+        if meth:
+            return meth(node)
+        else:
+            klass = node.__class__
+            if self.VERBOSE < 2:
+                if self.examples.has_key(klass):
+                    return
+            self.examples[klass] = klass
+            print
+            print klass
+            for attr in dir(node):
+                if attr[0] != '_':
+                    print "\t", "%-12.12s" % attr, getattr(node, attr)
+            print
+
 class CodeGenerator:
     def __init__(self, filename=None):
         self.filename = filename
@@ -122,6 +160,26 @@ class CodeGenerator:
         # XXX does this belong here or in the PythonVMCode?
         self.curStack = 0
         self.maxStack = 0
+
+    def generateFunctionCode(self, func, filename='<?>'):
+        """Generate code for a function body"""
+        self.name = func.name
+        self.filename = filename
+        args = func.argnames
+	self.code = PythonVMCode(len(args), name=func.name,
+                                 filename=filename, args=args) 
+        if func.varargs:
+            self.code.setVarArgs()
+        if func.kwargs:
+            self.code.setKWArgs()
+        lnf = walk(func.code, LocalNameFinder(args), 0)
+        self.locals.push(lnf.getLocals())
+##        print func.name, "(", func.argnames, ")"
+##        print lnf.getLocals().items()
+	self.code.setLineNo(func.lineno)
+        walk(func.code, self)
+        self.code.emit('LOAD_CONST', None)
+        self.code.emit('RETURN_VALUE')
 
     def emit(self):
         """Create a Python code object
@@ -149,8 +207,21 @@ class CodeGenerator:
         if self.curStack != 0:
             print "warning: stack should be empty"
 
+    def visitNULL(self, node):
+        """Method exists only to stop warning in -v mode"""
+        pass
+
+    visitStmt = visitNULL
+    visitGlobal = visitNULL
+
     def visitDiscard(self, node):
+        self.visit(node.expr)
+        self.code.emit('POP_TOP')
+        self.pop(1)
         return 1
+
+    def visitPass(self, node):
+        self.code.setLineNo(node.lineno)
 
     def visitModule(self, node):
 	lnf = walk(node.node, LocalNameFinder(), 0)
@@ -160,12 +231,31 @@ class CodeGenerator:
         self.code.emit('RETURN_VALUE')
         return 1
 
-    def visitFunction(self, node):
-        codeBody = NestedCodeGenerator(node, filename=self.filename)
-        walk(node, codeBody)
+    def visitImport(self, node):
         self.code.setLineNo(node.lineno)
+        for name in node.names:
+            self.code.emit('IMPORT_NAME', name)
+            if self.isLocalName(name):
+                self.code.emit('STORE_FAST', name)
+            else:
+                self.code.emit('STORE_GLOBAL', name)
+
+    def visitFrom(self, node):
+        self.code.setLineNo(node.lineno)
+        self.code.emit('IMPORT_NAME', node.modname)
+        for name in node.names:
+            self.code.emit('IMPORT_FROM', name)
+        self.code.emit('POP_TOP')
+
+    def visitFunction(self, node):
+        codeBody = CodeGenerator()
+        codeBody.generateFunctionCode(node, filename=self.filename)
+        self.code.setLineNo(node.lineno)
+        for default in node.defaults:
+            self.visit(default)
         self.code.emit('LOAD_CONST', codeBody)
-        self.code.emit('MAKE_FUNCTION', 0)
+        self.code.emit('MAKE_FUNCTION', len(node.defaults))
+        # XXX nested functions break here!
         self.code.emit('STORE_NAME', node.name)
         return 1
 
@@ -283,12 +373,48 @@ class CodeGenerator:
 	    l2.bind(self.code.getCurInst())
 	return 1
 
+    def visitGetattr(self, node):
+        self.visit(node.expr)
+        self.code.emit('LOAD_ATTR', node.attrname)
+        return 1
+
+    def visitSubscript(self, node):
+        self.visit(node.expr)
+        for sub in node.subs[:-1]:
+            self.visit(sub)
+            self.code.emit('BINARY_SUBSCR')
+        self.visit(node.subs[-1])
+        if node.flags == 'OP_APPLY':
+            self.code.emit('BINARY_SUBSCR')
+        else:
+            self.code.emit('STORE_SUBSCR')
+            
+        return 1
+
+    def visitSlice(self, node):
+        self.visit(node.expr)
+        slice = 0
+        if node.lower:
+            self.visit(node.lower)
+            slice = slice | 1
+            self.pop(1)
+        if node.upper:
+            self.visit(node.upper)
+            slice = slice | 2
+            self.pop(1)
+        if node.flags == 'OP_APPLY':
+            self.code.emit('SLICE+%d' % slice)
+        elif node.flags == 'OP_ASSIGN':
+            self.code.emit('STORE_SLICE+%d' % slice)
+        elif node.flags == 'OP_DELETE':
+            self.code.emit('DELETE_SLICE+%d' % slice)
+        else:
+            print node.flags
+            raise
+        return 1
+
     def visitAssign(self, node):
         self.code.setLineNo(node.lineno)
-        print "Assign"
-        print node.nodes
-        print node.expr
-        print
         self.visit(node.expr)
         for elt in node.nodes:
             if isinstance(elt, ast.Node):
@@ -303,6 +429,22 @@ class CodeGenerator:
         else:
             self.code.emit('STORE_GLOBAL', node.name)
         self.pop(1)
+
+    def visitAssAttr(self, node):
+        if node.flags != 'OP_ASSIGN':
+            print "warning: unexpected flags:", node.flags
+            print node
+        self.visit(node.expr)
+        self.code.emit('STORE_ATTR', node.attrname)
+        return 1
+
+    def visitAssTuple(self, node):
+        self.code.emit('UNPACK_TUPLE', len(node.nodes))
+        for child in node.nodes:
+            self.visit(child)
+        return 1
+
+    visitAssList = visitAssTuple
 
     def binaryOp(self, node, op):
 	self.visit(node.left)
@@ -328,6 +470,9 @@ class CodeGenerator:
     def visitDiv(self, node):
 	return self.binaryOp(node, 'BINARY_DIVIDE')
 
+    def visitMod(self, node):
+	return self.binaryOp(node, 'BINARY_MODULO')
+
     def visitUnarySub(self, node):
         return self.unaryOp(node, 'UNARY_NEGATIVE')
 
@@ -337,8 +482,27 @@ class CodeGenerator:
     def visitUnaryInvert(self, node):
         return self.unaryOp(node, 'UNARY_INVERT')
 
+    def visitNot(self, node):
+        return self.unaryOp(node, 'UNARY_NOT')
+
     def visitBackquote(self, node):
         return self.unaryOp(node, 'UNARY_CONVERT')
+
+    def visitTest(self, node, jump):
+        end = StackRef()
+        for child in node.nodes[:-1]:
+            self.visit(child)
+            self.code.emit(jump, end)
+            self.code.emit('POP_TOP')
+        self.visit(node.nodes[-1])
+        end.bind(self.code.getCurInst())
+        return 1
+
+    def visitAnd(self, node):
+        return self.visitTest(node, 'JUMP_IF_FALSE')
+
+    def visitOr(self, node):
+        return self.visitTest(node, 'JUMP_IF_TRUE')
 
     def visitName(self, node):
         if self.isLocalName(node.name):
@@ -356,6 +520,13 @@ class CodeGenerator:
         for elt in node.nodes:
             self.visit(elt)
         self.code.emit('BUILD_TUPLE', len(node.nodes))
+        self.pop(len(node.nodes))
+        return 1
+
+    def visitList(self, node):
+        for elt in node.nodes:
+            self.visit(elt)
+        self.code.emit('BUILD_LIST', len(node.nodes))
         self.pop(len(node.nodes))
         return 1
 
@@ -395,54 +566,23 @@ class CodeGenerator:
 	self.code.emit('PRINT_NEWLINE')
 	return 1
 
-class NestedCodeGenerator(CodeGenerator):
-    """Generate code for a function object within another scope
-
-    XXX not clear that this subclass is needed
-    """
-    super_init = CodeGenerator.__init__
-    
-    def __init__(self, func, filename='<?>'):
-        """code and args of function or class being walked
-
-        XXX need to separately pass to ASTVisitor.  the constructor
-        only uses the code object to find the local names
-
-        Copies code form parent __init__ rather than calling it.
-        """
-        self.name = func.name
-        self.super_init(filename)
-        args = func.argnames
-	self.code = PythonVMCode(len(args), name=func.name,
-                                 filename=filename) 
-        if func.varargs:
-            self.code.setVarArgs()
-        if func.kwargs:
-            self.code.setKWArgs()
-        lnf = walk(func.code, LocalNameFinder(args), 0)
-        self.locals.push(lnf.getLocals())
-
-    def __repr__(self):
-        return "<NestedCodeGenerator: %s>" % self.name
-
-    def visitFunction(self, node):
-	lnf = walk(node.code, LocalNameFinder(node.argnames), 0)
-	self.locals.push(lnf.getLocals())
-        # XXX need to handle def foo((a, b)):
-	self.code.setLineNo(node.lineno)
-        self.visit(node.code)
-        self.code.emit('LOAD_CONST', None)
-        self.code.emit('RETURN_VALUE')
-        return 1
-
 class LocalNameFinder:
     def __init__(self, names=()):
 	self.names = misc.Set()
+        self.globals = misc.Set()
 	for name in names:
 	    self.names.add(name)
 
     def getLocals(self):
+        for elt in self.globals.items():
+            if self.names.has_elt(elt):
+                self.names.remove(elt)
 	return self.names
+
+    def visitGlobal(self, node):
+        for name in node.names:
+            self.globals.add(name)
+        return 1
 
     def visitFunction(self, node):
         self.names.add(node.name)
@@ -542,7 +682,7 @@ class PythonVMCode:
     KWARGS = 0x08
 
     def __init__(self, argcount=0, name='?', filename='<?>',
-                 docstring=None):
+                 docstring=None, args=()):
         # XXX why is the default value for flags 3?
 	self.insts = []
         # used by makeCodeObject
@@ -553,7 +693,7 @@ class PythonVMCode:
         self.flags = 3
         self.name = name
         self.names = []
-        self.varnames = []
+        self.varnames = list(args) or []
         # lnotab support
         self.firstlineno = 0
         self.lastlineno = 0
@@ -603,7 +743,6 @@ class PythonVMCode:
           6 LOAD_CONST          0 (<code object fact at 8115878 [...]
           9 MAKE_FUNCTION       0
          12 STORE_NAME          0 (fact)
-
         """
         
         self._findOffsets()
@@ -682,7 +821,7 @@ class PythonVMCode:
                 return self._lookupName(arg, self.varnames, self.names)
         if op in self.globalOps:
             return self._lookupName(arg, self.names)
-        if op == 'STORE_NAME':
+        if op in self.nameOps:
             return self._lookupName(arg, self.names)
         if op == 'COMPARE_OP':
             return self.cmp_op.index(arg)
@@ -692,6 +831,8 @@ class PythonVMCode:
             return self.offsets[arg.resolve()]
         return arg
 
+    nameOps = ('STORE_NAME', 'IMPORT_NAME', 'IMPORT_FROM',
+               'STORE_ATTR', 'LOAD_ATTR')
     localOps = ('LOAD_FAST', 'STORE_FAST')
     globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL')
 
@@ -867,7 +1008,7 @@ class CompiledModule:
         t = transformer.Transformer()
         self.ast = t.parsesuite(self.source)
         cg = CodeGenerator(self.filename)
-        walk(self.ast, cg)
+        walk(self.ast, cg, walker=ExampleASTVisitor)
         self.code = cg.emit()
 
     def dump(self, path):
@@ -890,11 +1031,14 @@ class CompiledModule:
 if __name__ == "__main__":
     import getopt
 
-    opts, args = getopt.getopt(sys.argv[1:], 'v')
+    opts, args = getopt.getopt(sys.argv[1:], 'vq')
     for k, v in opts:
         if k == '-v':
             ASTVisitor.VERBOSE = ASTVisitor.VERBOSE + 1
             print k
+        if k == '-q':
+            f = open('/dev/null', 'wb')
+            sys.stdout = f
     if args:
         filename = args[0]
     else:
