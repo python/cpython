@@ -7,17 +7,17 @@
 
 \module{anydbm} is a generic interface to variants of the DBM
 database --- \module{dbhash}\refbimodindex{dbhash},
-\module{gdbm}\refbimodindex{gdbm}, or \module{dbm}\refbimodindex{dbm}.
-If none of these modules is installed, the slow-but-simple
-implementation in module \module{dumbdbm}\refstmodindex{dumbdbm} will
-be used.
+\refmodule{gdbm}\refbimodindex{gdbm}, or
+\refmodule{dbm}\refbimodindex{dbm}.  If none of these modules is
+installed, the slow-but-simple implementation in module
+\refmodule{dumbdbm}\refstmodindex{dumbdbm} will be used.
 
 \begin{funcdesc}{open}{filename\optional{, flag\optional{, mode}}}
 Open the database file \var{filename} and return a corresponding object.
 
-If the database file already exists, the \module{whichdb} module is
+If the database file already exists, the \refmodule{whichdb} module is 
 used to determine its type and the appropriate module is used; if it
-doesn't exist, the first module listed above that can be imported is
+does not exist, the first module listed above that can be imported is
 used.
 
 The optional \var{flag} argument can be
@@ -45,6 +45,18 @@ be stored, retrieved, and deleted, and the \method{has_key()} and
 \method{keys()} methods are available.  Keys and values must always be
 strings.
 
+
+\begin{seealso}
+  \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
+  % Should include entry for dbhash, but that isn't documented.
+  \seemodule{dbm}{Standard \UNIX{} database interface.}
+  \seemodule{dumbdbm}{Portable implementation of the \code{dbm} interface.}
+  \seemodule{gdbm}{GNU database interface, based on the \code{dbm} interface.}
+  \seemodule{shelve}{General object persistence built on top of 
+                     the Python \code{dbm} interface.}
+  \seemodule{whichdb}{Utility module used to determine the type of an
+                      existing database.}
+\end{seealso}
 
 
 \section{\module{dumbdbm} ---
