@@ -24,32 +24,53 @@ kernel 2.4) and FreeBSD.
 \module{ossaudiodev} defines the following variables and functions:
 
 \begin{excdesc}{error}
-This exception is raised on errors.  The argument is a string describing
-what went wrong.
+This exception is raised on certain errors.  The argument is a string
+describing what went wrong.
+
+(If \module{ossaudiodev} receives an error from a system call such as
+\cfunction{open()}, \cfunction{write()}, or \cfunction{ioctl()}, it
+raises \exception{IOError}.  Errors detected directly by
+\module{ossaudiodev} result in \exception{ossaudiodev.error}.)
 \end{excdesc}
 
 \begin{funcdesc}{open}{\optional{device, }mode}
-This function opens the audio device and returns an OSS audio device
-object.  This object can then be used to do I/O on.  The \var{device}
-parameter is the audio device filename to use.  If it is not specified,
-this module first looks in the environment variable \envvar{AUDIODEV} for
-a device to use.  If not found, it falls back to \file{/dev/dsp}.
+Open an audio device and return an OSS audio device object.  This
+object supports many file-like methods, such as \method{read()},
+\method{write()}, and \method{fileno()} (although there are subtle
+differences between conventional Unix read/write semantics and those of
+OSS audio devices).  It also supports a number of audio-specific
+methods; see below for the complete list of methods.
 
-The \var{mode} parameter is one of \code{'r'} for record-only access,
-\code{'w'} for play-only access and \code{'rw'} for both.  Since many
-soundcards only allow one process to have the recorder or player open at
-a time it is a good idea to open the device only for the activity
-needed.  Further, some soundcards are half-duplex: they can be opened
-for reading or writing, but not both at once.
+Note the unusual calling syntax: the \emph{first} argument is optional,
+and the second is required.  This is a historical artifact for
+compatibility with the older \module{linuxaudiodev} module which
+\module{ossaudiodev} supersedes.  % XXX it might also be motivated
+% by my unfounded-but-still-possibly-true belief that the default
+% audio device varies unpredictably across operating systems.  -GW
+
+\var{device} is the audio device filename to use.  If it is not
+specified, this module first looks in the environment variable
+\envvar{AUDIODEV} for a device to use.  If not found, it falls back to
+\file{/dev/dsp}.
+
+\var{mode} is one of \code{'r'} for read-only (record) access,
+\code{'w'} for write-only (playback) access and \code{'rw'} for both.
+Since many soundcards only allow one process to have the recorder or
+player open at a time it is a good idea to open the device only for the
+activity needed.  Further, some soundcards are half-duplex: they can be
+opened for reading or writing, but not both at once.
 \end{funcdesc}
 
-\begin{funcdesc}{openmixer}{\optional{device\optional{, mode}}} This function
-opens the mixer device and returns an OSS mixer device object.  The
-\var{device} parameter is the mixer device filename to use.  If it is
+\begin{funcdesc}{openmixer}{\optional{device\optional{, mode}}}
+Open a mixer device and return an OSS mixer device object.  
+\var{device} is the mixer device filename to use.  If it is
 not specified, this module first looks in the environment variable
 \envvar{MIXERDEV} for a device to use.  If not found, it falls back to
 \file{/dev/mixer}.  You may specify \code{'r'}, \code{'rw'} or
 \code{'w'} for \var{mode}; the default is \code{'r'}.
+
+% XXX I suspect 'mode' is irrelevant, ie. that OSS doesn't care.
+% If so this argument and the code that handles it should be ripped out.
 
 \end{funcdesc}
 
