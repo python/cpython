@@ -4,14 +4,16 @@ TO DO:
 - improve debugger:
     - manage breakpoints globally, allow bp deletion, tbreak, cbreak etc.
     - real object browser
-    - slidable panel separators
     - help on how to use it (a simple help button will do wonders)
     - performance?  (updates of large sets of locals are slow)
     - better integration of "debug module"
 - insert the initial current directory into sys.path
 - default directory attribute for each window instead of only for windows
   that have an associated filename
-- "GO" command
+- "GO" commands (execute whole buffer, selection, current line
+  in the context of the Python Shell window)
+  Rename Run -> Load, Go -> Execute
+- output from module execution should go to Python Shell (?)
 - command expansion from keywords, module contents, other buffers, etc.
 - "Recent documents" menu item
 - more emacsisms:
@@ -110,7 +112,7 @@ Comparison to PTUI
 
 - PTUI lacks an integrated debugger
 
-- PTUI lacks a class browser
+- PTUI lacks path and class browsers
 
 - PTUI lacks many of IDLE's features:
   - expand word
