@@ -522,7 +522,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static char tuple_doc[] =
-"tuple(sequence) -> list\n\
+"tuple(sequence) -> tuple\n\
 \n\
 Return a tuple whose items are the same as those of the argument sequence.\n\
 If the argument is a tuple, the return value is the same object.";
