@@ -1,7 +1,7 @@
 """Text wrapping and filling.
 """
 
-# Copyright (C) 2001 Gregory P. Ward.
+# Copyright (C) 1999-2001 Gregory P. Ward.
 # Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
@@ -56,7 +56,7 @@ class TextWrapper:
     # (after stripping out empty strings).
     wordsep_re = re.compile(r'(\s+|'                  # any whitespace
                             r'-*\w{2,}-(?=\w{2,})|'   # hyphenated words
-                            r'(?<=\S)-{2,}(?=\S))')   # em-dash
+                            r'(?<=\S)-{2,}(?=\w))')   # em-dash
 
     # XXX will there be a locale-or-charset-aware version of
     # string.lowercase in 2.3?
