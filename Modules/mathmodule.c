@@ -2,6 +2,11 @@
 
 #include "allobjects.h"
 
+#include <errno.h>
+#ifndef errno
+extern int errno;
+#endif
+
 #include "modsupport.h"
 
 #include <math.h>
