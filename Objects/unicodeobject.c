@@ -2737,6 +2737,49 @@ onError:
     return -1;
 }
 
+int PyUnicode_Contains(PyObject *container,
+		       PyObject *element)
+{
+    PyUnicodeObject *u = NULL, *v = NULL;
+    int result;
+    register const Py_UNICODE *p, *e;
+    register Py_UNICODE ch;
+
+    /* Coerce the two arguments */
+    u = (PyUnicodeObject *)PyUnicode_FromObject(container);
+    if (u == NULL)
+	goto onError;
+    v = (PyUnicodeObject *)PyUnicode_FromObject(element);
+    if (v == NULL)
+	goto onError;
+
+    /* Check v in u */
+    if (PyUnicode_GET_SIZE(v) != 1) {
+	PyErr_SetString(PyExc_TypeError,
+			"string member test needs char left operand");
+	goto onError;
+    }
+    ch = *PyUnicode_AS_UNICODE(v);
+    p = PyUnicode_AS_UNICODE(u);
+    e = p + PyUnicode_GET_SIZE(u);
+    result = 0;
+    while (p < e) {
+	if (*p++ == ch) {
+	    result = 1;
+	    break;
+	}
+    }
+
+    Py_DECREF(u);
+    Py_DECREF(v);
+    return result;
+
+onError:
+    Py_XDECREF(u);
+    Py_XDECREF(v);
+    return -1;
+}
+
 /* Concat to string or Unicode object giving a new Unicode object. */
 
 PyObject *PyUnicode_Concat(PyObject *left,
@@ -3817,6 +3860,7 @@ static PySequenceMethods unicode_as_sequence = {
     (intintargfunc) unicode_slice, 	/* sq_slice */
     0, 					/* sq_ass_item */
     0, 					/* sq_ass_slice */
+    (objobjproc)PyUnicode_Contains, 	/*sq_contains*/
 };
 
 static int
