@@ -207,16 +207,16 @@
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
-/* Define to 1 if you have the `hstrerror' function. */
+/* Define if you have the 'hstrerror' function. */
 #undef HAVE_HSTRERROR
 
 /* Define to 1 if you have the `hypot' function. */
 #undef HAVE_HYPOT
 
-/* Define to 1 if you have the `inet_aton' function. */
+/* Define if you have the 'inet_aton' function. */
 #undef HAVE_INET_ATON
 
-/* Define to 1 if you have the `inet_pton' function. */
+/* Define if you have the 'inet_pton' function. */
 #undef HAVE_INET_PTON
 
 /* Define to 1 if you have the <inttypes.h> header file. */

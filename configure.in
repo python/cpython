@@ -1857,7 +1857,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  fchdir fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getwd \
- hstrerror inet_aton inet_pton kill killpg lchown lstat mkfifo mknod mktime \
+ kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
  select setegid seteuid setgid \
@@ -1919,6 +1919,40 @@ AC_TRY_COMPILE([
 #include <unistd.h>
 ], void* p = getpagesize,
   AC_DEFINE(HAVE_GETPAGESIZE, 1, Define if you have the 'getpagesize' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for hstrerror)
+AC_TRY_COMPILE([
+#include "confdefs.h" 
+#include <netdb.h>
+], void* p = hstrerror,
+  AC_DEFINE(HAVE_HSTRERROR, 1, Define if you have the 'hstrerror' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for inet_aton)
+AC_TRY_COMPILE([
+#include "confdefs.h" 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+], void* p = inet_aton,
+  AC_DEFINE(HAVE_INET_ATON, 1, Define if you have the 'inet_aton' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for inet_pton)
+AC_TRY_COMPILE([
+#include "confdefs.h" 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+], void* p = inet_pton,
+  AC_DEFINE(HAVE_INET_PTON, 1, Define if you have the 'inet_pton' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
