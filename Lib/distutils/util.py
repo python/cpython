@@ -18,16 +18,6 @@ from distutils.dep_util import *
 from distutils.archive_util import *
 
 
-# Need to define 'abspath()', because it was new with Python 1.5.2
-if hasattr (os.path, 'abspath'):
-    abspath = os.path.abspath
-else:
-    def abspath(path):
-        if not os.path.isabs(path):
-            path = os.path.join(os.getcwd(), path)
-        return os.path.normpath(path)
-
-
 # More backwards compatibility hacks
 def extend (list, new_list):
     """Appends the list 'new_list' to 'list', just like the 'extend()'
