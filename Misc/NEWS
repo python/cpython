@@ -30,6 +30,8 @@ Extension modules
 Library
 -------
 
+- sets.py now runs under Py2.2
+
 - random.seed() with no arguments or None uses time.time() as a default
   seed.  Modified to match Py2.2 behavior and use fractional seconds so
   that successive runs are more likely to produce different sequences.
