@@ -292,10 +292,10 @@ class Transformer:
             n.lineno = exprNode.lineno
             return n
         if nodelist[1][0] == token.EQUAL:
-            nodes = []
+            nodesl = []
             for i in range(0, len(nodelist) - 2, 2):
-                nodes.append(self.com_assign(nodelist[i], OP_ASSIGN))
-            n = Assign(nodes, exprNode)
+                nodesl.append(self.com_assign(nodelist[i], OP_ASSIGN))
+            n = Assign(nodesl, exprNode)
             n.lineno = nodelist[1][2]
         else:
             lval = self.com_augassign(nodelist[0])
