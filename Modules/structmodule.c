@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -290,7 +290,7 @@ struct_pack(self, args)
 					res += sizeof(float);
 					break;
 				case 'd':
-					*(double*)res = fval;
+					memcpy(res, (char*)&fval, sizeof fval);
 					res += sizeof(double);
 					break;
 				}
@@ -415,9 +415,13 @@ struct_unpack(self, args)
 				break;
 
 			case 'd':
-				v = newfloatobject(*(double*)str);
+			    {
+				double d;
+				memcpy((char *)&d, str, sizeof d);
+				v = newfloatobject(d);
 				str += sizeof(double);
 				break;
+			    }
 
 			default:
 				err_setstr(StructError, "bad char in fmt");
