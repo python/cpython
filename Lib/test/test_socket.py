@@ -332,7 +332,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('\x00\x00\x00\x00', g('0.0.0.0'))
         self.assertEquals('\xff\x00\xff\x00', g('255.0.255.0'))
         self.assertEquals('\xaa\xaa\xaa\xaa', g('170.170.170.170'))
-    
+
     def testIPv6toString(self):
         if not hasattr(socket, 'inet_pton'):
             return # No inet_pton() on this platform
@@ -351,7 +351,7 @@ class GeneralModuleTests(unittest.TestCase):
             '\x45\xef\x76\xcb\x00\x1a\x56\xef\xaf\xeb\x0b\xac\x19\x24\xae\xae',
             f('45ef:76cb:1a:56ef:afeb:bac:1924:aeae')
         )
-    
+
     def testStringToIPv4(self):
         if not hasattr(socket, 'inet_ntop'):
             return # No inet_ntop() on this platform
@@ -362,7 +362,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('170.85.170.85', f('\xaa\x55\xaa\x55'))
         self.assertEquals('255.255.255.255', f('\xff\xff\xff\xff'))
         self.assertEquals('1.2.3.4', f('\x01\x02\x03\x04'))
-    
+
         self.assertEquals('1.0.1.0', g('\x01\x00\x01\x00'))
         self.assertEquals('170.85.170.85', g('\xaa\x55\xaa\x55'))
         self.assertEquals('255.255.255.255', g('\xff\xff\xff\xff'))

@@ -318,7 +318,7 @@ def dedent(text):
 
     This can be used e.g. to make triple-quoted strings line up with
     the left edge of screen/whatever, while still presenting it in the
-    source code in indented form. 
+    source code in indented form.
 
     For example:
 

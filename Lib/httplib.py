@@ -768,7 +768,7 @@ class HTTPConnection:
 
         if self.debuglevel > 0:
             response = self.response_class(self.sock, self.debuglevel,
-                                           strict=self.strict, 
+                                           strict=self.strict,
                                            method=self._method)
         else:
             response = self.response_class(self.sock, strict=self.strict,

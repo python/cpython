@@ -258,8 +258,8 @@ vereq(list(tuple(f())), range(1000))
 
 # Verify that __getitem__ overrides are not recognized by __iter__
 class T(tuple):
-  def __getitem__(self, key):
-     return str(key) + '!!!'
+    def __getitem__(self, key):
+        return str(key) + '!!!'
 vereq(iter(T((1,2))).next(), 1)
 
 print '6.5.3 Lists'
@@ -455,8 +455,8 @@ vereq(a, [0, 1, 1, 3, 2, 5, 3, 7, 4, 9])
 
 # Verify that __getitem__ overrides are not recognized by __iter__
 class L(list):
-  def __getitem__(self, key):
-     return str(key) + '!!!'
+    def __getitem__(self, key):
+        return str(key) + '!!!'
 vereq(iter(L([1,2])).next(), 1)
 
 

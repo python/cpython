@@ -139,14 +139,14 @@ class urlretrieve_FileTests(unittest.TestCase):
 
 class QuotingTests(unittest.TestCase):
     """Tests for urllib.quote() and urllib.quote_plus()
-    
+
     According to RFC 2396 ("Uniform Resource Identifiers), to escape a
     character you write it as '%' + <2 character US-ASCII hex value>.  The Python
     code of ``'%' + hex(ord(<character>))[2:]`` escapes a character properly.
     Case does not matter on the hex letters.
 
     The various character sets specified are:
-    
+
     Reserved characters : ";/?:@&=+$,"
         Have special meaning in URIs and must be escaped if not being used for
         their special meaning
@@ -160,7 +160,7 @@ class QuotingTests(unittest.TestCase):
         Must be escaped
     Unwise : "{}|\^[]`"
         Must be escaped
-    
+
     """
 
     def test_never_quote(self):
@@ -206,7 +206,7 @@ class QuotingTests(unittest.TestCase):
             result = urllib.quote_plus(char)
             self.assertEqual(hexescape(char), result,
                              "using quote_plus(): "
-                             "%s should be escapes to %s, not %s" % 
+                             "%s should be escapes to %s, not %s" %
                              (char, hexescape(char), result))
         del should_quote
         partial_quote = "ab[]cd"
@@ -238,7 +238,7 @@ class QuotingTests(unittest.TestCase):
 
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
-    
+
     See the doc string for quoting_Tests for details on quoting and such.
 
     """
@@ -279,7 +279,7 @@ class UnquotingTests(unittest.TestCase):
         result = urllib.unquote_plus(given)
         self.assertEqual(expect, result,
                          "using unquote_plus(): %s != %s" % (expect, result))
-        
+
     def test_unquoting_plus(self):
         # Test difference between unquote() and unquote_plus()
         given = "are+there+spaces..."
@@ -297,15 +297,15 @@ class urlencode_Tests(unittest.TestCase):
 
     def help_inputtype(self, given, test_type):
         """Helper method for testing different input types.
-        
+
         'given' must lead to only the pairs:
             * 1st, 1
             * 2nd, 2
             * 3rd, 3
-        
+
         Test cannot assume anything about order.  Docs make no guarantee and
         have possible dictionary input.
-        
+
         """
         expect_somewhere = ["1st=1", "2nd=2", "3rd=3"]
         result = urllib.urlencode(given)
@@ -404,7 +404,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
-        
+
 
 
 def test_main():
