@@ -47,8 +47,7 @@ newmd5object()
 /* MD5 methods */
 
 static void
-md5_dealloc(md5p)
-	md5object *md5p;
+md5_dealloc(md5object *md5p)
 {
 	PyObject_Del(md5p);
 }
@@ -57,9 +56,7 @@ md5_dealloc(md5p)
 /* MD5 methods-as-attributes */
 
 static PyObject *
-md5_update(self, args)
-	md5object *self;
-	PyObject *args;
+md5_update(md5object *self, PyObject *args)
 {
 	unsigned char *cp;
 	int len;
@@ -82,9 +79,7 @@ arguments.";
 
 
 static PyObject *
-md5_digest(self, args)
-	md5object *self;
-	PyObject *args;
+md5_digest(md5object *self, PyObject *args)
 {
 
 	MD5_CTX mdContext;
@@ -109,9 +104,7 @@ including null bytes.";
 
 
 static PyObject *
-md5_copy(self, args)
-	md5object *self;
-	PyObject *args;
+md5_copy(md5object *self, PyObject *args)
 {
 	md5object *md5p;
 
@@ -140,9 +133,7 @@ static PyMethodDef md5_methods[] = {
 };
 
 static PyObject *
-md5_getattr(self, name)
-	md5object *self;
-	char *name;
+md5_getattr(md5object *self, char *name)
 {
 	return Py_FindMethod(md5_methods, (PyObject *)self, name);
 }
@@ -208,9 +199,7 @@ statichere PyTypeObject MD5type = {
 /* MD5 functions */
 
 static PyObject *
-MD5_new(self, args)
-	PyObject *self;
-	PyObject *args;
+MD5_new(PyObject *self, PyObject *args)
 {
 	md5object *md5p;
 	unsigned char *cp = NULL;

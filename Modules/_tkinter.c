@@ -265,7 +265,6 @@ Sleep(int milli)
 {
 	/* XXX Too bad if you don't have select(). */
 	struct timeval t;
-	double frac;
 	t.tv_sec = milli/1000;
 	t.tv_usec = (milli%1000) * 1000;
 	select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
@@ -1503,7 +1502,6 @@ static PyObject *
 Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 {
 	PyObject *file;
-	FileHandler_ClientData *data;
 	int tfile;
   
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
