@@ -1,4 +1,4 @@
-"""Proposed new threading module, emulating a subset of Java's threading model."""
+"""Thread module emulating a subset of Java's threading model."""
 
 import sys
 import time
