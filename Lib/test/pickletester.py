@@ -1,4 +1,4 @@
-# test_pick and test_cpickle both use this.
+# test_pickle and test_cpickle both use this.
 
 # break into multiple strings to please font-lock-mode
 DATA = """(lp0
