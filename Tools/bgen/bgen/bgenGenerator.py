@@ -22,7 +22,7 @@ class Generator:
 	def __init__(self, *argumentList):
 		apply(self.parseArguments, argumentList)
 		self.prefix     = "XXX"    # Will be changed by setprefix() call
-		self.objecttype = "object" # Type of _self argument to function
+		self.objecttype = "PyObject" # Type of _self argument to function
 		self.itselftype = None     # Type of _self->ob_itself, if defined
 
 	def setprefix(self, prefix):
@@ -92,12 +92,13 @@ class Generator:
 	def getargs(self):
 		fmt = ""
 		lst = ""
+		sep = ",\n" + ' '*len("if (!PyArg_ParseTuple(")
 		for arg in self.argumentList:
 			if arg.flags == SelfMode:
 				continue
 			if arg.mode in (InMode, InOutMode):
 				fmt = fmt + arg.getargsFormat()
-				lst = lst + ", " + arg.getargsArgs()
+				lst = lst + sep + arg.getargsArgs()
 		Output("if (!PyArg_ParseTuple(_args, \"%s\"%s))", fmt, lst)
 		IndentLevel()
 		Output("return NULL;")
@@ -110,11 +111,12 @@ class Generator:
 
 	def callit(self):
 		args = ""
+		sep = ",\n" + ' '*len("%s = %s(" % (self.rv.name, self.name))
 		for arg in self.argumentList:
 			if arg is self.rv:
 				continue
 			s = arg.passArgument()
-			if args: s = ", " + s
+			if args: s = sep + s
 			args = args + s
 		if self.rv:
 			Output("%s = %s(%s);",
@@ -129,12 +131,13 @@ class Generator:
 	def returnvalue(self):
 		fmt = ""
 		lst = ""
+		sep = ",\n" + ' '*len("return Py_BuildValue(")
 		for arg in self.argumentList:
 			if not arg: continue
 			if arg.flags == ErrorMode: continue
 			if arg.mode in (OutMode, InOutMode):
 				fmt = fmt + arg.mkvalueFormat()
-				lst = lst + ", " + arg.mkvalueArgs()
+				lst = lst + sep + arg.mkvalueArgs()
 		if fmt == "":
 			Output("Py_INCREF(Py_None);")
 			Output("return Py_None;");

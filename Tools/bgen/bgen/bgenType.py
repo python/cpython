@@ -39,6 +39,9 @@ class Type:
 		"""
 		Output("%s %s;", self.typeName, name)
 
+	def getargs(self):
+		return self.getargsFormat(), self.getargsArgs()
+
 	def getargsFormat(self):
 		"""Return the format for this type for use with [new]getargs().
 
@@ -85,6 +88,9 @@ class Type:
 		"""
 		Output("/* XXX no err check for %s %s */", self.typeName, name)
 
+	def mkvalue(self):
+		return self.mkvalueFormat(), self.mkvalueArgs()
+
 	def mkvalueFormat(self):
 		"""Return the format for this type for use with mkvalue().
 
@@ -113,8 +119,8 @@ char = Type("char", "c")
 
 
 # Some Python related types.
-objectptr = Type("object*", "O")
-stringobjectptr = Type("stringobject*", "S")
+objectptr = Type("PyObject*", "O")
+stringobjectptr = Type("PyStringObject*", "S")
 # Etc.
 
 
@@ -125,7 +131,7 @@ class SizedInputBuffer:
 
 	"Sized input buffer -- buffer size is an input parameter"
 
-	def __init__(self, size):
+	def __init__(self, size = ''):
 		self.size = size
 
 	def declare(self, name):
@@ -136,7 +142,7 @@ class SizedInputBuffer:
 		return "s#"
 
 	def getargsArgs(self, name):
-		return "%s, %s__len__" % (name, name)
+		return "&%s, &%s__len__" % (name, name)
 
 	def getargsCheck(self, name):
 		pass
@@ -151,13 +157,27 @@ class FixedInputBuffer(SizedInputBuffer):
 
 	def getargsCheck(self, name):
 		Output("if (%s__len__ != %s)", name, str(self.size))
-		IndentLevel()
-		Output('err_setstr(TypeError, "bad string length");')
-		DedentLevel()
+		OutLbrace()
+		Output('PyErr_SetString(PyExc_TypeError, "bad string length");')
+		Output('return NULL;')
+		OutRbrace()
 
 	def passInput(self, name):
 		return name
 
+
+class RecordBuffer(FixedInputBuffer):
+
+	"Like fixed input buffer -- but declared as a record type pointer"
+
+	def __init__(self, type):
+		self.type = type
+		self.size = "sizeof(%s)" % type
+
+	def declare(self, name):
+		Output("%s *%s;", self.type, name)
+		Output("int %s__len__;", name)
+	
 
 class SizedOutputBuffer:
 
@@ -181,6 +201,23 @@ class SizedOutputBuffer:
 
 	def mkvalueArgs(self, name):
 		return "%s, %s__len__" % (name, name)
+
+
+class VarSizedOutputBuffer(SizedOutputBuffer):
+
+	"Variable Sized output buffer -- buffer size is an input and an output parameter"
+
+	def getargsFormat(self):
+		return "i"
+		
+	def getargsArgs(self, name):
+		return "&%s__len__" % name
+		
+	def getargsCheck(self, name):
+		pass
+
+	def passOutput(self, name):
+		return "%s, %s__len__, &%s__len__" % (name, name, name)
 
 
 class FixedOutputBuffer:
@@ -266,7 +303,7 @@ class StructureByValue:
 	def getargsCheck(self, name):
 		Output("if (%s__len__ != sizeof %s)", name, name)
 		IndentLevel()
-		Output('err_setstr(TypeError, "bad structure length");')
+		Output('PyErr_SetString(PyExc_TypeError, "bad structure length");')
 		DedentLevel()
 		Output("memcpy(&%s, %s__str__, %s__len__);",
 		       name, name, name)
