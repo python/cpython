@@ -60,7 +60,7 @@ Core language, builtins, and interpreter
 
 - A 'continue' statement can now appear in a try block within the body
   of a loop.  It is still not possible to use continue in a finally
-  clause. 
+  clause.
 
 Standard library
 
@@ -94,12 +94,21 @@ Standard library
 - The socket module now supports raw packets on Linux.  The socket
   family is AF_PACKET.
 
+- test_capi.py is a start at running tests of the Python C API.  The tests
+  are implemented by the new Modules/_testmodule.c.
+
 Windows changes
 
 - Build procedure:  the zlib project is built in a different way that
   ensures the zlib header files used can no longer get out of synch with
-  the zlib binary used.  See PCbuild\readme.txt for details.
+  the zlib binary used.  See PCbuild\readme.txt for details.  Your old
+  zlib-related directories can be deleted; you'll need to download fresh
+  source for zlib and unpack it into a new directory.
 
+- Build:  New subproject _test for the benefit of test_capi.py (see above).
+
+- Build:  subproject ucnhash is gone, since the code was folded into the
+  unicodedata subproject.
 
 What's New in Python 2.1 alpha 1?
 =================================

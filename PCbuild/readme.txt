@@ -55,6 +55,9 @@ winreg
     Windows registry API
 winsound
     play sounds (typically .wav files) under Windows
+_test
+    tests of the Python C API, run via Lib/test/test_capi.py, and
+    implemented by module Modules/_testmodule.c
 
 The following subprojects will generally NOT build out of the box.  They
 wrap code Python doesn't control, and you'll need to download the base
