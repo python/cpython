@@ -944,81 +944,65 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 {
         DialectObj *dialect = self->dialect;
 	int i, rec_len;
+	char *lineterm;
+
+#define ADDCH(c) \
+	do {\
+		if (copy_phase) \
+			self->rec[rec_len] = c;\
+		rec_len++;\
+	} while(0)
+
+	lineterm = PyString_AsString(dialect->lineterminator);
+	if (lineterm == NULL)
+		return -1;
 
 	rec_len = self->rec_len;
 
-	/* If this is not the first field we need a field separator.
-	 */
-	if (self->num_fields > 0) {
-		if (copy_phase)
-			self->rec[rec_len] = dialect->delimiter;
-		rec_len++;
-	}
-	/* Handle preceding quote.
-	 */
-	switch (dialect->quoting) {
-	case QUOTE_ALL:
-		*quoted = 1;
-		if (copy_phase)
-			self->rec[rec_len] = dialect->quotechar;
-		rec_len++;
-		break;
-	case QUOTE_MINIMAL:
-	case QUOTE_NONNUMERIC:
-		/* We only know about quoted in the copy phase.
-		 */
-		if (copy_phase && *quoted) {
-			self->rec[rec_len] = dialect->quotechar;
-			rec_len++;
-		}
-		break;
-	case QUOTE_NONE:
-		break;
-	}
-	/* Copy/count field data.
-	 */
+	/* If this is not the first field we need a field separator */
+	if (self->num_fields > 0)
+		ADDCH(dialect->delimiter);
+
+	/* Handle preceding quote */
+	if (copy_phase && *quoted)
+		ADDCH(dialect->quotechar);
+
+	/* Copy/count field data */
 	for (i = 0;; i++) {
 		char c = field[i];
+		int want_escape = 0;
 
 		if (c == '\0')
 			break;
-		/* If in doublequote mode we escape quote chars with a
-		 * quote.
-		 */
-		if (dialect->quoting != QUOTE_NONE && 
-                    c == dialect->quotechar && dialect->doublequote) {
-			if (copy_phase)
-				self->rec[rec_len] = dialect->quotechar;
-			*quoted = 1;
-			rec_len++;
-		}
 
-		/* Some special characters need to be escaped.  If we have a
-		 * quote character switch to quoted field instead of escaping
-		 * individual characters.
-		 */
-		if (!*quoted
-		    && (c == dialect->delimiter || 
-                        c == dialect->escapechar || 
-                        c == '\n' || c == '\r')) {
-			if (dialect->quoting != QUOTE_NONE)
-				*quoted = 1;
-			else if (dialect->escapechar) {
-				if (copy_phase)
-					self->rec[rec_len] = dialect->escapechar;
-				rec_len++;
-			}
+		if (c == dialect->delimiter ||
+		    c == dialect->escapechar ||
+		    c == dialect->quotechar ||
+		    strchr(lineterm, c)) {
+			if (dialect->quoting == QUOTE_NONE)
+				want_escape = 1;
 			else {
-				PyErr_Format(error_obj, 
-                                             "delimiter must be quoted or escaped");
-				return -1;
+				if (c == dialect->quotechar) {
+					if (dialect->doublequote)
+						ADDCH(dialect->quotechar);
+					else
+						want_escape = 1;
+				}
+				if (!want_escape)
+					*quoted = 1;
+			}
+			if (want_escape) {
+				if (!dialect->escapechar) {
+					PyErr_Format(error_obj, 
+						     "need to escape, but no escapechar set");
+					return -1;
+				}
+				ADDCH(dialect->escapechar);
 			}
 		}
 		/* Copy field character into record buffer.
 		 */
-		if (copy_phase)
-			self->rec[rec_len] = c;
-		rec_len++;
+		ADDCH(c);
 	}
 
 	/* If field is empty check if it needs to be quoted.
@@ -1033,20 +1017,14 @@ join_append_data(WriterObj *self, char *field, int quote_empty,
 			*quoted = 1;
 	}
 
-	/* Handle final quote character on field.
-	 */
 	if (*quoted) {
 		if (copy_phase)
-			self->rec[rec_len] = dialect->quotechar;
+			ADDCH(dialect->quotechar);
 		else
-			/* Didn't know about leading quote until we found it
-			 * necessary in field data - compensate for it now.
-			 */
-			rec_len++;
-		rec_len++;
+			rec_len += 2;
 	}
-
 	return rec_len;
+#undef ADDCH
 }
 
 static int
@@ -1146,18 +1124,16 @@ csv_writerow(WriterObj *self, PyObject *seq)
 		if (field == NULL)
 			return NULL;
 
-		quoted = 0;
-		if (dialect->quoting == QUOTE_NONNUMERIC) {
-			PyObject *num;
-
-			num = PyNumber_Float(field);
-			if (num == NULL) {
-				quoted = 1;
-				PyErr_Clear();
-			}
-			else {
-				Py_DECREF(num);
-			}
+		switch (dialect->quoting) {
+		case QUOTE_NONNUMERIC:
+			quoted = !PyNumber_Check(field);
+			break;
+		case QUOTE_ALL:
+			quoted = 1;
+			break;
+		default:
+			quoted = 0;
+			break;
 		}
 
 		if (PyString_Check(field)) {

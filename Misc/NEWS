@@ -45,6 +45,9 @@ Library
   + quotechar=None and quoting=QUOTE_NONE now work the way PEP 305
     dictates.
   + the parser now removes the escapechar prefix from escaped characters.
+  + QUOTE_NONNUMERIC now tests for numeric objects, rather than attempting
+    to cast to float.
+  + writer doublequote handling improved.
   + Dialect classes passed to the module are no longer instantiated by
     the module before being parsed (the former validation scheme required
     this, but the mechanism was unreliable).
