@@ -570,6 +570,7 @@ RECURSE_INTO_PARA_CONTAINERS = (
 
 PARA_LEVEL_ELEMENTS = (
     "moduleinfo", "title", "verbatim", "enumerate", "item",
+    "interpreter-session",
     "opcodedesc", "classdesc", "datadesc",
     "funcdesc", "methoddesc", "excdesc",
     "funcdescni", "methoddescni", "excdescni",
@@ -757,6 +758,15 @@ def fixup_sectionauthors(doc):
         section.insertBefore(sectauth, after)
 
 
+def fixup_verbatims(doc):
+    for verbatim in find_all_elements(doc, "verbatim"):
+        child = verbatim.childNodes[0]
+        if child.nodeType == xml.dom.core.TEXT \
+           and string.lstrip(child.data)[:3] == ">>>":
+            verbatim._node.name = "interpreter-session"
+            #verbatim.setAttribute("interactive", "interactive")
+
+
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 
 def write_esis(doc, ofp, knownempty):
@@ -806,6 +816,7 @@ def convert(ifp, ofp):
     cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
     cleanup_synopses(doc)
     fixup_descriptors(doc)
+    fixup_verbatims(doc)
     normalize(doc)
     fixup_paras(doc)
     fixup_sectionauthors(doc)
