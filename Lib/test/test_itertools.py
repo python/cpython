@@ -652,7 +652,7 @@ class RegressionTests(unittest.TestCase):
             hist.append(0)
             yield 1
             hist.append(1)
-            assert False
+            raise AssertionError
             hist.append(2)
 
         def gen2(x):
