@@ -57,7 +57,7 @@ def _unquotevalue(value):
         return Utils.unquote(value)
 
 
- 
+
 class Message:
     """Basic message object for use inside the object tree.
 
