@@ -222,7 +222,7 @@ def _readmodule(module, path, inpackage=None):
                         else:
                             super.append(token)
                     inherit = names
-                cur_class = Class(module, class_name, inherit, file, lineno)
+                cur_class = Class(fullmodule, class_name, inherit, file, lineno)
                 if not stack:
                     dict[class_name] = cur_class
                 stack.append((cur_class, thisindent))

@@ -22,7 +22,9 @@ PyAPI_FUNC(void) PyNode_Free(node *n);
 
 /* Node access functions */
 #define NCH(n)		((n)->n_nchildren)
+	
 #define CHILD(n, i)	(&(n)->n_child[i])
+#define RCHILD(n, i)	(CHILD(n, NCH(n) + i))
 #define TYPE(n)		((n)->n_type)
 #define STR(n)		((n)->n_str)
 

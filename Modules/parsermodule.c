@@ -824,6 +824,7 @@ static int validate_terminal(node *terminal, int type, char *string);
 #define validate_vbar(ch)       validate_terminal(ch,       VBAR, "|")
 #define validate_doublestar(ch) validate_terminal(ch, DOUBLESTAR, "**")
 #define validate_dot(ch)        validate_terminal(ch,        DOT, ".")
+#define validate_at(ch)         validate_terminal(ch,         AT, "@")
 #define validate_name(ch, str)  validate_terminal(ch,       NAME, str)
 
 #define VALIDATER(n)    static int validate_##n(node *tree)
@@ -2362,20 +2363,72 @@ validate_testlist_gexp(node *tree)
     return ok;
 }
 
+/*  decorator:
+ *    '@' dotted_name [ '(' [arglist] ')' ]
+ */
+static int
+validate_decorator(node *tree)
+{
+    int ok;
+    int nch = NCH(tree);
+    ok = (validate_ntype(tree, decorator) &&
+	  (nch == 2 || nch == 4 || nch == 5) &&
+	  validate_at(CHILD(tree, 0)) &&
+	  validate_dotted_name(CHILD(tree, 1)));
+
+    if (ok && nch != 2) {
+	    ok = (validate_lparen(CHILD(tree, 2)) &&
+		  validate_rparen(RCHILD(tree, -1)));
+
+	    if (ok && nch == 5)
+		ok = validate_arglist(CHILD(tree, 3));
+    }
+
+    return ok;
+}
+    
+/*  decorators:
+ *    decorator ([NEWLINE] decorator)* NEWLINE
+ */
+static int
+validate_decorators(node *tree)
+{
+    int i, nch, ok; 
+    nch = NCH(tree);
+    ok = validate_ntype(tree, decorators) && nch >= 2;
+
+    i = 0;
+    while (ok && i < nch - 1) {
+	ok = validate_decorator(CHILD(tree, i));
+	if (TYPE(CHILD(tree, i + 1)) == NEWLINE)
+	    ++i;
+	++i;
+    }
+
+    return ok;
+}			       
+
 /*  funcdef:
- *      'def' NAME parameters ':' suite
- *
+ *      
+ *            -6   -5    -4         -3  -2 -1
+ *  [decorators] 'def' NAME parameters ':' suite
  */
 static int
 validate_funcdef(node *tree)
 {
-    return (validate_ntype(tree, funcdef)
-            && validate_numnodes(tree, 5, "funcdef")
-            && validate_name(CHILD(tree, 0), "def")
-            && validate_ntype(CHILD(tree, 1), NAME)
-            && validate_colon(CHILD(tree, 3))
-            && validate_parameters(CHILD(tree, 2))
-            && validate_suite(CHILD(tree, 4)));
+    int nch = NCH(tree);
+    int ok = (validate_ntype(tree, funcdef)
+	       && ((nch == 5) || (nch == 6))
+	       && validate_name(RCHILD(tree, -5), "def")
+	       && validate_ntype(RCHILD(tree, -4), NAME)
+	       && validate_colon(RCHILD(tree, -2))
+	       && validate_parameters(RCHILD(tree, -3))
+	       && validate_suite(RCHILD(tree, -1)));
+
+    if (ok && (nch == 6))
+	ok = validate_decorators(CHILD(tree, 0));
+
+    return ok;
 }
 
 

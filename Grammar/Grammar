@@ -28,7 +28,9 @@ single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 eval_input: testlist NEWLINE* ENDMARKER
 
-funcdef: 'def' NAME parameters ':' suite
+decorator: '@' dotted_name [ '(' [arglist] ')' ]
+decorators: decorator ([NEWLINE] decorator)* NEWLINE
+funcdef: [decorators] 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
 varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME] | '**' NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 fpdef: NAME | '(' fplist ')'

@@ -173,3 +173,6 @@ x = -1*1/1 + 1*1 - ---1*1
 import sys, time
 x = sys.modules['time'].time()
 
+@staticmethod
+def foo(): pass
+

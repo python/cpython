@@ -109,9 +109,13 @@ def my_import(name):
 
 \begin{verbatim}
 class C:
+    @classmethod
     def f(cls, arg1, arg2, ...): ...
-    f = classmethod(f)
 \end{verbatim}
+
+  The \code{@classmethod} form is a function decorator -- see the description
+  of function definitions in chapter 7 of the
+  \citetitle[../ref/ref.html]{Python Reference Manual} for details.
 
   It can be called either on the class (such as \code{C.f()}) or on an
   instance (such as \code{C().f()}).  The instance is ignored except for
@@ -122,6 +126,7 @@ class C:
   Class methods are different than \Cpp{} or Java static methods.
   If you want those, see \function{staticmethod()} in this section.
   \versionadded{2.2}
+  Function decorator syntax added in version 2.4.
 \end{funcdesc}
 
 \begin{funcdesc}{cmp}{x, y}
@@ -936,9 +941,13 @@ except NameError:
 
 \begin{verbatim}
 class C:
+    @staticmethod
     def f(arg1, arg2, ...): ...
-    f = staticmethod(f)
 \end{verbatim}
+
+  The \code{@staticmethod} form is a function decorator -- see the description
+  of function definitions in chapter 7 of the
+  \citetitle[../ref/ref.html]{Python Reference Manual} for details.
 
   It can be called either on the class (such as \code{C.f()}) or on an
   instance (such as \code{C().f()}).  The instance is ignored except

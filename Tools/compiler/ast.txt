@@ -8,7 +8,8 @@
 #  = ... a default value for the node constructor (optional args)
 Module: doc*, node
 Stmt: nodes!
-Function: name*, argnames*, defaults!, flags*, doc*, code
+Decorators: nodes!
+Function: decorators&, name*, argnames*, defaults!, flags*, doc*, code
 Lambda: argnames*, defaults!, flags*, code
 Class: name*, bases!, doc*, code
 Pass: 

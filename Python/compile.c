@@ -1876,6 +1876,7 @@ com_testlist_gexp(struct compiling *c, node *n)
 	else com_list(c, n, 0);
 }
 
+
 static void
 com_dictmaker(struct compiling *c, node *n)
 {
@@ -3963,8 +3964,9 @@ com_argdefs(struct compiling *c, node *n)
 		n = CHILD(n, 1);
 	}
 	else {
-		REQ(n, funcdef); /* funcdef: 'def' NAME parameters ... */
-		n = CHILD(n, 2);
+		REQ(n, funcdef);
+		/* funcdef: [decorators] 'def' NAME parameters ':' suite */
+		n = RCHILD(n, -3);
 		REQ(n, parameters); /* parameters: '(' [varargslist] ')' */
 		n = CHILD(n, 1);
 	}
@@ -4009,15 +4011,89 @@ com_argdefs(struct compiling *c, node *n)
 }
 
 static void
+com_decorator_name(struct compiling *c, node *n)
+{
+	/* dotted_name: NAME ('.' NAME)* */
+	
+	int i, nch;
+	node *varname;
+
+	REQ(n, dotted_name);
+	nch = NCH(n);
+	assert(nch >= 1 && nch % 2 == 1);
+
+	varname = CHILD(n, 0);
+	REQ(varname, NAME);
+	com_addop_varname(c, VAR_LOAD, STR(varname));
+		
+	for (i = 1; i < nch; i += 2) {
+		node *attrname;
+		
+		REQ(CHILD(n, i), DOT);
+
+		attrname = CHILD(n, i + 1);
+		REQ(attrname, NAME);
+		com_addop_name(c, LOAD_ATTR, STR(attrname));
+	}
+}
+
+static void
+com_decorator(struct compiling *c, node *n)
+{
+	/* decorator: '@' dotted_name [ '(' [arglist] ')' ] */
+	int nch = NCH(n);
+	assert(nch >= 2);
+	REQ(CHILD(n, 0), AT);
+	com_decorator_name(c, CHILD(n, 1));
+
+	if (nch > 2) {
+		assert(nch == 4 || nch == 5);
+		REQ(CHILD(n, 2), LPAR);
+		REQ(CHILD(n, nch - 1), RPAR);
+		com_call_function(c, CHILD(n, 3));
+	}
+}
+
+static int
+com_decorators(struct compiling *c, node *n)
+{
+	int i, nch, ndecorators;
+	
+	/* decorator ([NEWLINE] decorator)* NEWLINE */
+	nch = NCH(n);
+	assert(nch >= 2);
+	REQ(CHILD(n, nch - 1), NEWLINE);
+
+	ndecorators = 0;
+	for (i = NCH(n) - 1; i >= 0; --i) {
+		node *ch = CHILD(n, i);
+		if (TYPE(ch) != NEWLINE) {
+			com_decorator(c, ch);
+			++ndecorators;
+		}
+	}
+
+	return ndecorators;
+}
+
+static void
 com_funcdef(struct compiling *c, node *n)
 {
 	PyObject *co;
-	int ndefs;
-	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
+	int ndefs, ndecorators;
+	REQ(n, funcdef);
+	/*          -6            -5   -4   -3         -2  -1
+	   funcdef: [decorators] 'def' NAME parameters ':' suite */
+
+	if (NCH(n) == 6)
+		ndecorators = com_decorators(c, CHILD(n, 0));
+	else
+		ndecorators = 0;
+	
 	ndefs = com_argdefs(c, n);
 	if (ndefs < 0)
 		return;
-	symtable_enter_scope(c->c_symtable, STR(CHILD(n, 1)), TYPE(n),
+	symtable_enter_scope(c->c_symtable, STR(RCHILD(n, -4)), TYPE(n),
 			     n->n_lineno);
 	co = (PyObject *)icompile(n, c);
 	symtable_exit_scope(c->c_symtable);
@@ -4033,7 +4109,12 @@ com_funcdef(struct compiling *c, node *n)
 		else
 			com_addoparg(c, MAKE_FUNCTION, ndefs);
 		com_pop(c, ndefs);
-		com_addop_varname(c, VAR_STORE, STR(CHILD(n, 1)));
+		while (ndecorators > 0) {
+			com_addoparg(c, CALL_FUNCTION, 1);
+			com_pop(c, 1);
+			ndecorators--;
+		}
+		com_addop_varname(c, VAR_STORE, STR(RCHILD(n, -4)));
 		com_pop(c, 1);
 		Py_DECREF(co);
 	}
@@ -4112,7 +4193,7 @@ com_node(struct compiling *c, node *n)
 	switch (TYPE(n)) {
 	
 	/* Definition nodes */
-	
+
 	case funcdef:
 		com_funcdef(c, n);
 		break;
@@ -4377,21 +4458,23 @@ compile_funcdef(struct compiling *c, node *n)
 {
 	PyObject *doc;
 	node *ch;
-	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
-	c->c_name = STR(CHILD(n, 1));
-	doc = get_docstring(c, CHILD(n, 4));
+	REQ(n, funcdef);
+	/*          -6            -5   -4   -3         -2  -1
+	   funcdef: [decorators] 'def' NAME parameters ':' suite */
+	c->c_name = STR(RCHILD(n, -4));
+	doc = get_docstring(c, RCHILD(n, -1));
 	if (doc != NULL) {
 		(void) com_addconst(c, doc);
 		Py_DECREF(doc);
 	}
 	else
 		(void) com_addconst(c, Py_None); /* No docstring */
-	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
+	ch = RCHILD(n, -3); /* parameters: '(' [varargslist] ')' */
 	ch = CHILD(ch, 1); /* ')' | varargslist */
 	if (TYPE(ch) == varargslist)
 		com_arglist(c, ch);
 	c->c_infunction = 1;
-	com_node(c, CHILD(n, 4));
+	com_node(c, RCHILD(n, -1));
 	c->c_infunction = 0;
 	com_strip_lnotab(c);
 	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
@@ -5587,9 +5670,12 @@ symtable_node(struct symtable *st, node *n)
  loop:
 	switch (TYPE(n)) {
 	case funcdef: {
-		char *func_name = STR(CHILD(n, 1));
+		char *func_name;
+		if (NCH(n) == 6)
+			symtable_node(st, CHILD(n, 0));
+		func_name = STR(RCHILD(n, -4));
 		symtable_add_def(st, func_name, DEF_LOCAL);
-		symtable_default_args(st, CHILD(n, 2));
+		symtable_default_args(st, RCHILD(n, -3));
 		symtable_enter_scope(st, func_name, TYPE(n), n->n_lineno);
 		symtable_funcdef(st, n);
 		symtable_exit_scope(st);
@@ -5734,6 +5820,17 @@ symtable_node(struct symtable *st, node *n)
 	   to be coded with great care, even though they look like
 	   rather innocuous.  Each case must double-check TYPE(n).
 	*/
+	case decorator:
+		if (TYPE(n) == decorator) {
+			/* decorator: '@' dotted_name [ '(' [arglist] ')' ] */
+			node *name, *varname;
+			name = CHILD(n, 1);
+			REQ(name, dotted_name);
+			varname = CHILD(name, 0);
+			REQ(varname, NAME);
+			symtable_add_use(st, STR(varname));
+		}
+		/* fall through */
 	case argument:
 		if (TYPE(n) == argument && NCH(n) == 3) {
 			n = CHILD(n, 2);
@@ -5787,7 +5884,7 @@ symtable_funcdef(struct symtable *st, node *n)
 		if (NCH(n) == 4)
 			symtable_params(st, CHILD(n, 1));
 	} else
-		symtable_params(st, CHILD(n, 2));
+		symtable_params(st, RCHILD(n, -3));
 	body = CHILD(n, NCH(n) - 1);
 	symtable_node(st, body);
 }

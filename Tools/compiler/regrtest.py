@@ -47,6 +47,8 @@ def compile_files(dir):
                 continue
             # make sure the .pyc file is not over-written
             os.chmod(source + "c", 444)
+        elif file == 'CVS':
+            pass
         else:
             path = os.path.join(dir, file)
             if os.path.isdir(path):

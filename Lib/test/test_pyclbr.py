@@ -8,6 +8,9 @@ from types import ClassType, FunctionType, MethodType
 import pyclbr
 from unittest import TestCase
 
+StaticMethodType = type(staticmethod(lambda: None))
+ClassMethodType = type(classmethod(lambda c: None))
+
 # This next line triggers an error on old versions of pyclbr.
 
 from commands import getstatus
@@ -43,11 +46,10 @@ class PyclbrTest(TestCase):
             print >>sys.stderr, "***",key
         self.failUnless(obj.has_key(key))
 
-    def assertEquals(self, a, b, ignore=None):
+    def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
-        if (ignore == None) or (a in ignore) or (b in ignore): return
-
-        unittest.TestCase.assertEquals(self, a, b)
+        if a not in ignore and b not in ignore:
+            self.assertEquals(a, b)
 
     def checkModule(self, moduleName, module=None, ignore=()):
         ''' succeed iff pyclbr.readmodule_ex(modulename) corresponds
@@ -62,11 +64,22 @@ class PyclbrTest(TestCase):
 
         dict = pyclbr.readmodule_ex(moduleName)
 
-        def ismethod(obj, name):
-            if not  isinstance(obj, MethodType):
-                return False
-            if obj.im_self is not None:
-                return False
+        def ismethod(oclass, obj, name):
+            classdict = oclass.__dict__
+            if isinstance(obj, FunctionType):
+                if not isinstance(classdict[name], StaticMethodType):
+                    return False
+            else:
+                if not  isinstance(obj, MethodType):
+                    return False
+                if obj.im_self is not None:
+                    if (not isinstance(classdict[name], ClassMethodType) or
+                        obj.im_self is not oclass):
+                        return False
+                else:
+                    if not isinstance(classdict[name], FunctionType):
+                        return False
+
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
                 objname = "_%s%s" % (obj.im_class.__name__, objname)
@@ -81,7 +94,7 @@ class PyclbrTest(TestCase):
             if isinstance(value, pyclbr.Function):
                 self.assertEquals(type(py_item), FunctionType)
             else:
-                self.assertEquals(type(py_item), ClassType)
+                self.failUnless(isinstance(py_item, (ClassType, type)))
                 real_bases = [base.__name__ for base in py_item.__bases__]
                 pyclbr_bases = [ getattr(base, 'name', base)
                                  for base in value.super ]
@@ -94,7 +107,7 @@ class PyclbrTest(TestCase):
 
                 actualMethods = []
                 for m in py_item.__dict__.keys():
-                    if ismethod(getattr(py_item, m), m):
+                    if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
                 foundMethods = []
                 for m in value.methods.keys():
@@ -107,7 +120,8 @@ class PyclbrTest(TestCase):
                     self.assertListEq(foundMethods, actualMethods, ignore)
                     self.assertEquals(py_item.__module__, value.module)
 
-                    self.assertEquals(py_item.__name__, value.name, ignore)
+                    self.assertEqualsOrIgnored(py_item.__name__, value.name,
+                                               ignore)
                     # can't check file or lineno
                 except:
                     print >>sys.stderr, "class=%s" % py_item
@@ -132,6 +146,12 @@ class PyclbrTest(TestCase):
         self.checkModule('rfc822')
         self.checkModule('difflib')
 
+    def test_decorators(self):
+        # XXX: See comment in pyclbr_input.py for a test that would fail
+        #      if it were not commented out.
+        #
+        self.checkModule('test.pyclbr_input')
+        
     def test_others(self):
         cm = self.checkModule
 
