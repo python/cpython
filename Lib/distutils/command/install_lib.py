@@ -71,8 +71,6 @@ class install_lib (Command):
         if self.optimize is None:
             self.optimize = 0
 
-        print "install_lib: compile=%s, optimize=%s" % \
-              (`self.compile`, `self.optimize`)
         if type(self.optimize) is not IntType:
             try:
                 self.optimize = int(self.optimize)
