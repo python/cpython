@@ -663,7 +663,7 @@ frozenset_hash(PyObject *self)
 	PySetObject *so = (PySetObject *)self;
 	PyObject *key, *value;
 	int pos = 0;
-	long hash = 0;
+	long hash = 1905176217L;
 
 	if (so->hash != -1)
 		return so->hash;
@@ -676,6 +676,9 @@ frozenset_hash(PyObject *self)
 		   collapse to only a handful of distinct hash values. */
 		hash ^= PyObject_Hash(key) * 3644798167u;
 	}
+	hash *= 69069L;
+	if (hash == -1)
+		hash = 590923713L;
 	so->hash = hash;
 	return hash;
 }
