@@ -1268,7 +1268,7 @@ of the Python statement \samp{\var{o}[\var{key}] = \var{v}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{int}{PyObject_DelItem}{PyObject *o, PyObject *key, PyObject *v}
+\begin{cfuncdesc}{int}{PyObject_DelItem}{PyObject *o, PyObject *key}
 Delete the mapping for \var{key} from \var{o}.  Returns \code{-1} on
 failure. This is the equivalent of the Python statement \samp{del
 \var{o}[\var{key}]}.
