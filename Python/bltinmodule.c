@@ -638,6 +638,21 @@ builtin_setattr(self, args)
 }
 
 static object *
+builtin_delattr(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	object *name;
+	if (!getargs(args, "(OS)", &v, &name))
+		return NULL;
+	if (setattro(v, name, (object *)NULL) != 0)
+		return NULL;
+	INCREF(None);
+	return None;
+}
+
+static object *
 builtin_hash(self, args)
 	object *self;
 	object *args;
@@ -1264,6 +1279,7 @@ static struct methodlist builtin_methods[] = {
 	{"cmp",		builtin_cmp},
 	{"coerce",	builtin_coerce},
 	{"compile",	builtin_compile},
+	{"delattr",	builtin_delattr},
 	{"dir",		builtin_dir},
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
