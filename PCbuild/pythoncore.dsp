@@ -105,6 +105,10 @@ SOURCE=..\Modules\_localemodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\_randommodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\_weakref.c
 # End Source File
 # Begin Source File
