@@ -207,7 +207,7 @@ get_ulong(v, p)
    Point Arithmetic).  See the following URL:
    http://www.psc.edu/general/software/packages/ieee/ieee.html */
 
-/* XXX Signed zero, infinity, underflow, NaN are not handled quite right? */
+/* XXX Inf/NaN are not handled quite right (but underflow is!) */
 
 static int
 pack_float(x, p, incr)
@@ -217,8 +217,8 @@ pack_float(x, p, incr)
 {
 	int s;
 	int e;
-	double fl;
-	long f;
+	double f;
+	long fbits;
 
 	if (x < 0) {
 		s = 1;
@@ -226,13 +226,15 @@ pack_float(x, p, incr)
 	}
 	else
 		s = 0;
-	fl = frexp(x, &e);
-	/* Normalize fl to be in the range [1.0, 2.0) */
-	if (0.5 <= fl && fl < 1.0) {
-		fl *= 2.0;
+
+	f = frexp(x, &e);
+
+	/* Normalize f to be in the range [1.0, 2.0) */
+	if (0.5 <= f && f < 1.0) {
+		f *= 2.0;
 		e--;
 	}
-	else if (fl == 0.0) {
+	else if (f == 0.0) {
 		e = 0;
 	}
 	else {
@@ -240,41 +242,40 @@ pack_float(x, p, incr)
 				"frexp() result out of range");
 		return -1;
 	}
-	e += 127;
-	if (e >= 255) {
-		/* XXX 255 itself is reserved for Inf/NaN */
+
+	if (e >= 128) {
+		/* XXX 128 itself is reserved for Inf/NaN */
 		PyErr_SetString(PyExc_OverflowError,
 				"float too large to pack with f format");
 		return -1;
 	}
-	else if (e <= 0) {
-		/* XXX Underflow -- could do better, but who cares? */
-		fl = 0.0;
+	else if (e < -126) {
+		/* Gradual underflow */
+		f = ldexp(f, 126 + e);
 		e = 0;
 	}
-	if (fl == 0.0) {
-		f = 0;
-	}
 	else {
-		fl -= 1.0; /* Get rid of leading 1 */
-		fl *= 8388608.0; /* 2**23 */
-		f = (long) floor(fl + 0.5); /* Round */
+		e += 127;
+		f -= 1.0; /* Get rid of leading 1 */
 	}
+
+	f *= 8388608.0; /* 2**23 */
+	fbits = (long) floor(f + 0.5); /* Round */
 
 	/* First byte */
 	*p = (s<<7) | (e>>1);
 	p += incr;
 
 	/* Second byte */
-	*p = ((e&1)<<7) | (f>>16);
+	*p = ((e&1)<<7) | (fbits>>16);
 	p += incr;
 
 	/* Third byte */
-	*p = (f>>8) & 0xFF;
+	*p = (fbits>>8) & 0xFF;
 	p += incr;
 
 	/* Fourth byte */
-	*p = f&0xFF;
+	*p = fbits&0xFF;
 
 	/* Done */
 	return 0;
@@ -288,7 +289,7 @@ pack_double(x, p, incr)
 {
 	int s;
 	int e;
-	double fl;
+	double f;
 	long fhi, flo;
 
 	if (x < 0) {
@@ -297,13 +298,15 @@ pack_double(x, p, incr)
 	}
 	else
 		s = 0;
-	fl = frexp(x, &e);
-	/* Normalize fl to be in the range [1.0, 2.0) */
-	if (0.5 <= fl && fl < 1.0) {
-		fl *= 2.0;
+
+	f = frexp(x, &e);
+
+	/* Normalize f to be in the range [1.0, 2.0) */
+	if (0.5 <= f && f < 1.0) {
+		f *= 2.0;
 		e--;
 	}
-	else if (fl == 0.0) {
+	else if (f == 0.0) {
 		e = 0;
 	}
 	else {
@@ -311,30 +314,29 @@ pack_double(x, p, incr)
 				"frexp() result out of range");
 		return -1;
 	}
-	e += 1023;
-	if (e >= 2047) {
-		/* XXX 2047 itself is reserved for Inf/NaN */
+
+	if (e >= 1024) {
+		/* XXX 1024 itself is reserved for Inf/NaN */
 		PyErr_SetString(PyExc_OverflowError,
 				"float too large to pack with d format");
 		return -1;
 	}
-	else if (e <= 0) {
-		/* XXX Underflow -- could do better, but who cares? */
-		fl = 0.0;
+	else if (e < -1022) {
+		/* Gradual underflow */
+		f = ldexp(f, 1022 + e);
 		e = 0;
 	}
-	if (fl == 0.0) {
-		fhi = flo = 0;
-	}
 	else {
-		/* fhi receives the high 28 bits; flo the low 24 bits */
-		fl -= 1.0;
-		fl *= 268435456.0; /* 2**28 */
-		fhi = (long) floor(fl); /* Truncate */
-		fl -= (double)fhi;
-		fl *= 16777216.0; /* 2**24 */
-		flo = (long) floor(fl + 0.5); /* Round */
+		e += 1023;
+		f -= 1.0; /* Get rid of leading 1 */
 	}
+
+	/* fhi receives the high 28 bits; flo the low 24 bits (== 52 bits) */
+	f *= 268435456.0; /* 2**28 */
+	fhi = (long) floor(f); /* Truncate */
+	f -= (double)fhi;
+	f *= 16777216.0; /* 2**24 */
+	flo = (long) floor(f + 0.5); /* Round */
 
 	/* First byte */
 	*p = (s<<7) | (e>>4);
