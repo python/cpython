@@ -355,13 +355,17 @@ also have a number of specialized methods:
 \end{methoddesc}
 
 \begin{methoddesc}{max}{other\optional{, context}}
-  Like \samp{max(self, other)} but returns \constant{NaN} if either is a
-  \constant{NaN}.  Applies the context rounding rule before returning.
+  Like \samp{max(self, other)} except that the context rounding rule
+  is applied before returning and that \constant{NaN} values are
+  either signalled or ignored (depending on the context and whether
+  they are signaling or quiet).
 \end{methoddesc}
 
 \begin{methoddesc}{min}{other\optional{, context}}
-  Like \samp{min(self, other)} but returns \constant{NaN} if either is a
-  \constant{NaN}.  Applies the context rounding rule before returning.
+  Like \samp{min(self, other)} except that the context rounding rule
+  is applied before returning and that \constant{NaN} values are
+  either signalled or ignored (depending on the context and whether
+  they are signaling or quiet).
 \end{methoddesc}
 
 \begin{methoddesc}{normalize}{\optional{context}}
