@@ -29,7 +29,7 @@ except ImportError:
 try:
     import locale
     locale.setlocale(locale.LC_CTYPE, "")
-except (ImportError, locale.error):
+except (ImportError, locale.Error):
     pass
 
 encoding = "ascii"
