@@ -2022,17 +2022,32 @@ _Py_Dealloc(PyObject *op)
 	(*dealloc)(op);
 }
 
+/* Print all live objects.  Because PyObject_Print is called, the
+ * interpreter must be in a healthy state.
+ */
 void
 _Py_PrintReferences(FILE *fp)
 {
 	PyObject *op;
 	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		fprintf(fp, "[%d] ", op->ob_refcnt);
+		fprintf(fp, "%p [%d] ", op, op->ob_refcnt);
 		if (PyObject_Print(op, fp, 0) != 0)
 			PyErr_Clear();
 		putc('\n', fp);
 	}
+}
+
+/* Print the addresses of all live objects.  Unlike _Py_PrintReferences, this
+ * doesn't make any calls to the Python C API, so is always safe to call.
+ */
+void
+_Py_PrintReferenceAddresses(FILE *fp)
+{
+	PyObject *op;
+	fprintf(fp, "Remaining object addresses:\n");
+	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
+		fprintf(fp, "%p [%d]\n", op, op->ob_refcnt);
 }
 
 PyObject *
