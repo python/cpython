@@ -39,15 +39,14 @@ DT_VERY_RECENT = 24*3600		# 24 hours
 DT_RECENT = 7*24*3600			# 7 days
 
 EXPLAIN_MARKS = """
-<P>
-(Entries marked with ** were changed within the last 24 hours;
+<P>(Entries marked with ** were changed within the last 24 hours;
 entries marked with * were changed within the last 7 days.)
 <P>
 """
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.3 (alpha)"		# FAQ Wizard version
+WIZVERSION = "0.4"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
