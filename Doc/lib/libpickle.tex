@@ -448,8 +448,8 @@ for more details.
 
 When a pickled class instance is unpickled, its \method{__init__()}
 method is normally \emph{not} invoked.  If it is desirable that the
-\method{__init__()} method be called on unpickling, a class can define
-a method \method{__getinitargs__()}, which should return a
+\method{__init__()} method be called on unpickling, an old-style class
+can define a method \method{__getinitargs__()}, which should return a
 \emph{tuple} containing the arguments to be passed to the class
 constructor (i.e. \method{__init__()}).  The
 \method{__getinitargs__()} method is called at
@@ -457,6 +457,23 @@ pickle time; the tuple it returns is incorporated in the pickle for
 the instance.
 \withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}}
 \withsubitem{(instance constructor)}{\ttindex{__init__()}}
+
+\withsubitem{(copy protocol)}{\ttindex{__getnewargs__()}}
+
+New-style types can provide a \method{__getnewargs__()} method that is
+used for protocol 2.  Implementing this method is needed if the type
+establishes some internal invariants when the instance is created, or
+if the memory allocation is affected by the values passed to the
+\method{__new__()} method for the type (as it is for tuples and
+strings).  Instances of a new-style type \class{C} are created using
+
+\begin{alltt}
+obj = C.__new__(C, *\var{args})
+\end{alltt}
+
+where \var{args} is the result of calling \method{__getnewargs__()} on
+the original object; if there is no \method{__getnewargs__()}, an
+empty tuple is assumed.
 
 \withsubitem{(copy protocol)}{
   \ttindex{__getstate__()}\ttindex{__setstate__()}}
