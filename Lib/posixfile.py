@@ -75,12 +75,16 @@ class _posixfile_:
         return self.fileopen(__builtin__.open(name, mode, bufsize))
 
     def fileopen(self, file):
+        import types
         if `type(file)` != "<type 'file'>":
             raise TypeError, 'posixfile.fileopen() arg must be file object'
         self._file_  = file
         # Copy basic file methods
-        for method in file.__methods__:
-            setattr(self, method, getattr(file, method))
+        for maybemethod in dir(file):
+            if not maybemethod.startswith('_'):
+                attr = getattr(file, maybemethod)
+                if isinstance(attr, types.BuiltinMethodType):
+                    setattr(self, maybemethod, attr)
         return self
 
     #
