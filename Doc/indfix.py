@@ -40,7 +40,8 @@ def dump_entries(write, entries):
 	write("    \subitem %s%s\n" % (subitem, pages))
 
 
-breakable_re = re.compile(r"  \\item (.*) [(](.*)[)]((?:, \d+)+)")
+breakable_re = re.compile(
+    r"  \\item (.*) [(](.*)[)]((?:(?:, \d+)|(?:, \\[a-z]*\{\d+\}))+)")
 
 def main():
     import getopt
