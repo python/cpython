@@ -404,8 +404,11 @@ instance_dealloc(inst)
 		object *res = call_object(del, (object *)NULL);
 		DECREF(del);
 		if (res == NULL) {
-			writestring("exception in __del__ method ignored\n",
-				    sysget("stderr"));
+			PyObject *f = sysget("stderr");
+			err_clear();
+			if (f != NULL)
+				writestring(
+				  "exception in __del__ method ignored\n", f);
 		}
 		else
 			DECREF(res);
