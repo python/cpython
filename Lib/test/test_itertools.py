@@ -200,7 +200,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, dropwhile(errfunc, [(4,5)]).next)
 
     def test_tee(self):
-        n = 100
+        n = 200
         def irange(n):
             for i in xrange(n):
                 yield i
@@ -217,16 +217,16 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(b), range(n))
 
         a, b = tee(irange(n)) # test dealloc of leading iterator
-        self.assertEqual(a.next(), 0)
-        self.assertEqual(a.next(), 1)
+        for i in xrange(100):
+            self.assertEqual(a.next(), i)
         del a
         self.assertEqual(list(b), range(n))
 
         a, b = tee(irange(n)) # test dealloc of trailing iterator
-        self.assertEqual(a.next(), 0)
-        self.assertEqual(a.next(), 1)
+        for i in xrange(100):
+            self.assertEqual(a.next(), i)
         del b
-        self.assertEqual(list(a), range(2, n))
+        self.assertEqual(list(a), range(100, n))
 
         for j in xrange(5):   # test randomly interleaved
             order = [0]*n + [1]*n
@@ -239,21 +239,31 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(lists[0], range(n))
             self.assertEqual(lists[1], range(n))
 
+        # test argument format checking
         self.assertRaises(TypeError, tee)
         self.assertRaises(TypeError, tee, 3)
         self.assertRaises(TypeError, tee, [1,2], 'x')
+        self.assertRaises(TypeError, tee, [1,2], 3, 'x')
 
-        try:
-            class A(tee): pass
-        except TypeError:
-            pass
-        else:
-            self.fail("tee constructor should not be subclassable")
+        # tee object should be instantiable
+        a, b = tee('abc')
+        c = type(a)('def')
+        self.assertEqual(list(c), list('def'))
 
-        # tee_iterator should not be instantiable
-        a, b = tee(xrange(10))
-        self.assertRaises(TypeError, type(a))
-        self.assert_(a is iter(a))  # tee_iterator should support __iter__
+        # test long-lagged and multi-way split
+        a, b, c = tee(xrange(2000), 3)
+        for i in xrange(100):
+            self.assertEqual(a.next(), i)
+        self.assertEqual(list(b), range(2000))
+        self.assertEqual([c.next(), c.next()], range(2))
+        self.assertEqual(list(a), range(100,2000))
+        self.assertEqual(list(c), range(2,2000))
+
+        # tee pass-through to copyable iterator
+        a, b = tee('abc')
+        c, d = tee(a)
+        self.assert_(a is c)
+
 
     def test_StopIteration(self):
         self.assertRaises(StopIteration, izip().next)
@@ -316,13 +326,6 @@ class TestGC(unittest.TestCase):
     def test_starmap(self):
         a = []
         self.makecycle(starmap(lambda *t: t, [(a,a)]*2), a)
-
-    def test_tee(self):
-        a = []
-        p, q = t = tee([a]*2)
-        a += [a, p, q, t]
-        p.next()
-        del a, p, q, t
 
 def R(seqn):
     'Regular generator'
@@ -626,7 +629,11 @@ Samuele
 >>> def pairwise(iterable):
 ...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
 ...     a, b = tee(iterable)
-...     return izip(a, islice(b, 1, None))
+...     try:
+...         b.next()
+...     except StopIteration:
+...         pass
+...     return izip(a, b)
 
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.

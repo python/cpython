@@ -281,9 +281,9 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{tee}{iterable}
-  Return two independent iterators from a single iterable.
-  Equivalent to:
+\begin{funcdesc}{tee}{iterable\optional{, n=2}}
+  Return \var{n} independent iterators from a single iterable.
+  The case where \var{n} is two is equivalent to:
 
   \begin{verbatim}
      def tee(iterable):
@@ -298,6 +298,10 @@ by functions or loops that truncate the stream.
          it = iter(iterable)
          return (gen(it.next), gen(it.next))
   \end{verbatim}
+
+  Note, once \function{tee()} has made a split, the original \var{iterable}
+  should not be used anywhere else; otherwise, the \var{iterable} could get
+  advanced without the tee objects being informed.
 
   Note, this member of the toolkit may require significant auxiliary
   storage (depending on how much temporary data needs to be stored).
@@ -408,6 +412,10 @@ def repeatfunc(func, times=None, *args):
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
-    return izip(a, islice(b, 1, None))
+    try:
+        b.next()
+    except StopIteration:
+        pass
+    return izip(a, b)
 
 \end{verbatim}
