@@ -2156,7 +2156,7 @@ static PyObject *MenuObj_getattr(MenuObject *self, char *name)
 PyTypeObject Menu_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Menu", /*tp_name*/
+	"_Menu.Menu", /*tp_name*/
 	sizeof(MenuObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

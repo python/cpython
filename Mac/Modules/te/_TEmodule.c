@@ -791,7 +791,7 @@ static PyObject *TEObj_getattr(TEObject *self, char *name)
 PyTypeObject TE_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"TE", /*tp_name*/
+	"_TE.TE", /*tp_name*/
 	sizeof(TEObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

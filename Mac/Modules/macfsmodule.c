@@ -233,7 +233,7 @@ mfsa_dealloc(mfsaobject *self)
 statichere PyTypeObject Mfsatype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"Alias",			/*tp_name*/
+	"macfs.Alias",			/*tp_name*/
 	sizeof(mfsaobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -332,7 +332,7 @@ mfsi_setattr(mfsiobject *self, char *name, PyObject *v)
 static PyTypeObject Mfsitype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FInfo",			/*tp_name*/
+	"macfs.FInfo",			/*tp_name*/
 	sizeof(mfsiobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -735,7 +735,7 @@ mfss_compare(mfssobject *v, mfssobject *w)
 statichere PyTypeObject Mfsstype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FSSpec",			/*tp_name*/
+	"macfs.FSSpec",			/*tp_name*/
 	sizeof(mfssobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -834,7 +834,7 @@ mfsr_dealloc(mfsrobject *self)
 statichere PyTypeObject Mfsrtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FSRef",			/*tp_name*/
+	"macfs.FSRef",			/*tp_name*/
 	sizeof(mfsrobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

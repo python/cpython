@@ -136,7 +136,7 @@ dl_getattr(dlobject *xp, char *name)
 static PyTypeObject Dltype = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"dl",			/*tp_name*/
+	"dl.dl",		/*tp_name*/
 	sizeof(dlobject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

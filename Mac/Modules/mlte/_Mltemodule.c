@@ -1148,7 +1148,7 @@ static PyObject *TXNObj_getattr(TXNObjectObject *self, char *name)
 PyTypeObject TXNObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"TXNObject", /*tp_name*/
+	"_Mlte.TXNObject", /*tp_name*/
 	sizeof(TXNObjectObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1264,7 +1264,7 @@ static PyObject *TXNFontMenuObj_getattr(TXNFontMenuObjectObject *self, char *nam
 PyTypeObject TXNFontMenuObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"TXNFontMenuObject", /*tp_name*/
+	"_Mlte.TXNFontMenuObject", /*tp_name*/
 	sizeof(TXNFontMenuObjectObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

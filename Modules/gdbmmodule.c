@@ -382,7 +382,7 @@ dbm_getattr(dbmobject *dp, char *name)
 static PyTypeObject Dbmtype = {
     PyObject_HEAD_INIT(0)
     0,
-    "gdbm",
+    "gdbm.gdbm",
     sizeof(dbmobject),
     0,
     (destructor)dbm_dealloc,            /*tp_dealloc*/

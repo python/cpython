@@ -331,7 +331,7 @@ statichere PyTypeObject forkRefObject_Type = {
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"openfile",			/*tp_name*/
+	"hfsplus.openfile",		/*tp_name*/
 	sizeof(forkRefObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */
@@ -505,7 +505,7 @@ statichere PyTypeObject iteratorObject_Type = {
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"iterator",			/*tp_name*/
+	"hfsplus.iterator",		/*tp_name*/
 	sizeof(iteratorObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */
@@ -1024,7 +1024,7 @@ statichere PyTypeObject fsRefObject_Type = {
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"fsref",			/*tp_name*/
+	"hfsplus.fsref",		/*tp_name*/
 	sizeof(fsRefObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

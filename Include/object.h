@@ -219,7 +219,7 @@ typedef PyObject *(*allocfunc)(struct _typeobject *, int);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
-	char *tp_name; /* For printing */
+	char *tp_name; /* For printing, in format "<module>.<name>" */
 	int tp_basicsize, tp_itemsize; /* For allocation */
 	
 	/* Methods to implement standard operations */

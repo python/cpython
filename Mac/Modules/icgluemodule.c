@@ -502,7 +502,7 @@ static char Icitype__doc__[] =
 static PyTypeObject Icitype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"ic_instance",			/*tp_name*/
+	"icglue.ic_instance",		/*tp_name*/
 	sizeof(iciobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

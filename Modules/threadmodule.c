@@ -156,7 +156,7 @@ lock_getattr(lockobject *self, char *name)
 static PyTypeObject Locktype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"lock",				/*tp_name*/
+	"thread.lock",			/*tp_name*/
 	sizeof(lockobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */

@@ -98,7 +98,7 @@ statichere PyTypeObject Xxo_Type = {
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"Xxo",			/*tp_name*/
+	"Xxmodule.Xxo",		/*tp_name*/
 	sizeof(XxoObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -289,7 +289,7 @@ static PyObject *CmpInstObj_getattr(ComponentInstanceObject *self, char *name)
 PyTypeObject ComponentInstance_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"ComponentInstance", /*tp_name*/
+	"_Cm.ComponentInstance", /*tp_name*/
 	sizeof(ComponentInstanceObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -616,7 +616,7 @@ static PyObject *CmpObj_getattr(ComponentObject *self, char *name)
 PyTypeObject Component_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Component", /*tp_name*/
+	"_Cm.Component", /*tp_name*/
 	sizeof(ComponentObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

@@ -223,7 +223,7 @@ static PyStructSequence_Field struct_time_type_fields[] = {
 };
 
 static PyStructSequence_Desc struct_time_type_desc = {
-	"struct_time",
+	"time.struct_time",
 	NULL,
 	struct_time_type_fields,
 	9,

@@ -1,5 +1,5 @@
 test_mmap
-<type 'mmap'>
+<type 'mmap.mmap'>
   Position of foo: 1.0 pages
   Length of file: 2.0 pages
   Contents of byte 0: '\x00'

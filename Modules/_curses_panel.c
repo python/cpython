@@ -352,7 +352,7 @@ PyCursesPanel_GetAttr(PyCursesPanelObject *self, char *name)
 PyTypeObject PyCursesPanel_Type = {
     PyObject_HEAD_INIT(NULL)
     0,			/*ob_size*/
-    "curses panel",	/*tp_name*/
+    "_curses_panel.curses panel",	/*tp_name*/
     sizeof(PyCursesPanelObject),	/*tp_basicsize*/
     0,			/*tp_itemsize*/
     /* methods */

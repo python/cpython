@@ -314,7 +314,7 @@ static PyObject *SndCh_getattr(SndChannelObject *self, char *name)
 staticforward PyTypeObject SndChannel_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"SndChannel", /*tp_name*/
+	"_Snd.SndChannel", /*tp_name*/
 	sizeof(SndChannelObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -442,7 +442,7 @@ static int SPBObj_setattr(SPBObject *self, char *name, PyObject *value)
 staticforward PyTypeObject SPB_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"SPB", /*tp_name*/
+	"_Snd.SPB", /*tp_name*/
 	sizeof(SPBObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

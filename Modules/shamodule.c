@@ -467,7 +467,7 @@ SHA_getattr(PyObject *self, char *name)
 static PyTypeObject SHAtype = {
     PyObject_HEAD_INIT(NULL)
     0,			/*ob_size*/
-    "SHA",		/*tp_name*/
+    "sha.SHA",		/*tp_name*/
     sizeof(SHAobject),	/*tp_size*/
     0,			/*tp_itemsize*/
     /* methods */

@@ -2313,7 +2313,7 @@ static long CtlObj_hash(ControlObject *self)
 PyTypeObject Control_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Control", /*tp_name*/
+	"_Ctl.Control", /*tp_name*/
 	sizeof(ControlObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

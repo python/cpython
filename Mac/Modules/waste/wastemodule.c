@@ -346,7 +346,7 @@ static PyObject *WEOObj_getattr(WEOObject *self, char *name)
 PyTypeObject WEO_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"WEO", /*tp_name*/
+	"waste.WEO", /*tp_name*/
 	sizeof(WEOObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1711,7 +1711,7 @@ static PyObject *wasteObj_getattr(wasteObject *self, char *name)
 PyTypeObject waste_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"waste", /*tp_name*/
+	"waste.waste", /*tp_name*/
 	sizeof(wasteObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

@@ -673,7 +673,7 @@ static PyObject *DragObj_getattr(DragObjObject *self, char *name)
 PyTypeObject DragObj_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"DragObj", /*tp_name*/
+	"_Drag.DragObj", /*tp_name*/
 	sizeof(DragObjObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

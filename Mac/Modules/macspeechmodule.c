@@ -258,7 +258,7 @@ sc_getattr(self, name)
 static PyTypeObject sctype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"MacSpeechChannel",			/*tp_name*/
+	"macspeech.MacSpeechChannel", /*tp_name*/
 	sizeof(scobject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */
@@ -375,7 +375,7 @@ mv_getattr(self, name)
 static PyTypeObject mvtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"MacVoice",			/*tp_name*/
+	"macspeech.MacVoice",	/*tp_name*/
 	sizeof(mvobject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -128,7 +128,7 @@ PyPcre_getattr(PcreObject *self, char *name)
 staticforward PyTypeObject Pcre_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"Pcre",			/*tp_name*/
+	"pcre.Pcre",		/*tp_name*/
 	sizeof(PcreObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -932,7 +932,7 @@ static PyObject *MovieCtlObj_getattr(MovieControllerObject *self, char *name)
 PyTypeObject MovieController_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"MovieController", /*tp_name*/
+	"_Qt.MovieController", /*tp_name*/
 	sizeof(MovieControllerObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1326,7 +1326,7 @@ static PyObject *TimeBaseObj_getattr(TimeBaseObject *self, char *name)
 PyTypeObject TimeBase_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"TimeBase", /*tp_name*/
+	"_Qt.TimeBase", /*tp_name*/
 	sizeof(TimeBaseObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1603,7 +1603,7 @@ static PyObject *UserDataObj_getattr(UserDataObject *self, char *name)
 PyTypeObject UserData_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"UserData", /*tp_name*/
+	"_Qt.UserData", /*tp_name*/
 	sizeof(UserDataObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -2637,7 +2637,7 @@ static PyObject *MediaObj_getattr(MediaObject *self, char *name)
 PyTypeObject Media_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Media", /*tp_name*/
+	"_Qt.Media", /*tp_name*/
 	sizeof(MediaObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -3724,7 +3724,7 @@ static PyObject *TrackObj_getattr(TrackObject *self, char *name)
 PyTypeObject Track_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Track", /*tp_name*/
+	"_Qt.Track", /*tp_name*/
 	sizeof(TrackObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -5796,7 +5796,7 @@ static PyObject *MovieObj_getattr(MovieObject *self, char *name)
 PyTypeObject Movie_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Movie", /*tp_name*/
+	"_Qt.Movie", /*tp_name*/
 	sizeof(MovieObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
