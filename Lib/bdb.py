@@ -96,7 +96,7 @@ class Bdb: # Basic Debugger
 		if bp:
 			self.currentbp = bp.number
 			if (flag and bp.temporary):
-				self.do_delete(str(bp.number))
+				self.do_clear(str(bp.number))
 			return 1
 		else:
 			return 0
