@@ -1786,12 +1786,11 @@ least 2*shift+2 digits, and there's not obviously enough room for the
 extra two bits.  We need a sharper analysis in this case.  The major
 laziness was in the "the same is true of ah+al" clause:  ah+al can't actually
 have shift+1 digits + 1 bit unless bsize is odd and asize == bsize.  In that
-case, we actually have (2*shift+1)*2 - shift = 3*shift + 2 allocated digits
-remaining, and that's obviously plenty to hold 2*shift + 2 digits + 2 bits.
+case, we actually have (2*shift+1)*2 - shift = 3*shift+2 allocated digits
+remaining, and that's obviously plenty to hold 2*shift+2 digits + 2 bits.
 Else (bsize is odd and asize < bsize) ah and al each have at most shift digits,
 so ah+al has at most shift digits + 1 bit, and (ah+al)*(bh+bl) has at most
-2*shift+1 digits + 2 bits, and again 2*shift+2 digits + 2 bits is
-enough to hold it.
+2*shift+1 digits + 2 bits, and again 2*shift+2 digits is enough to hold it.
 */
 
 /* b has at least twice the digits of a, and a is big enough that Karatsuba
