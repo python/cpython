@@ -7,10 +7,16 @@ threads (a.k.a.\ \dfn{light-weight processes} or \dfn{tasks}) --- multiple
 threads of control sharing their global data space.  For
 synchronization, simple locks (a.k.a.\ \dfn{mutexes} or \dfn{binary
 semaphores}) are provided.
+\index{light-weight processes}
+\index{processes, light-weight}
+\index{binary semaphores}
+\index{semaphores, binary}
 
 The module is optional.  It is supported on Windows NT and '95, SGI
 IRIX, Solaris 2.x, as well as on systems that have a POSIX thread
 (a.k.a. ``pthread'') implementation.
+\index{pthreads}
+\indexii{threads}{posix}
 
 It defines the following constant and functions:
 
@@ -87,8 +93,8 @@ thread, 0 if not.
 \item
 Threads interact strangely with interrupts: the
 \code{KeyboardInterrupt} exception will be received by an arbitrary
-thread.  (When the \code{signal} module is available, interrupts
-always go to the main thread.)
+thread.  (When the \code{signal}\refbimodindex{signal} module is
+available, interrupts always go to the main thread.)
 
 \item
 Calling \code{sys.exit()} or raising the \code{SystemExit} exception is
@@ -96,8 +102,8 @@ equivalent to calling \code{thread.exit_thread()}.
 
 \item
 Not all built-in functions that may block waiting for I/O allow other
-threads to run.  (The most popular ones (\code{sleep}, \code{read},
-\code{select}) work as expected.)
+threads to run.  (The most popular ones (\code{sleep()}, \code{read()},
+\code{select()}) work as expected.)
 
 \item
 It is not possible to interrupt the \code{acquire()} method on a lock
@@ -109,6 +115,7 @@ When the main thread exits, it is system defined whether the other
 threads survive.  On SGI IRIX using the native thread implementation,
 they survive.  On most other systems, they are killed without
 executing ``try-finally'' clauses or executing object destructors.
+\indexii{threads}{IRIX}
 
 \item
 When the main thread exits, it doesn't do any of its usual cleanup
