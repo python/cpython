@@ -374,7 +374,7 @@ def atoi(str, base=10):
 		# We only get here if strop doesn't define atoi()
 		raise ValueError, "this string.atoi doesn't support base != 10"
 	sign = ''
-	s = str
+	s = strip(str)
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
@@ -403,7 +403,7 @@ def atol(str, base=10):
 		# We only get here if strop doesn't define atol()
 		raise ValueError, "this string.atol doesn't support base != 10"
 	sign = ''
-	s = str
+	s = strip(str)
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
