@@ -209,6 +209,15 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	-lcrypt option.  Uncomment this flag in Modules/Setup, or
 	comment out the crypt module in the same file.
 
+FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
+	similar: When using cursesmodule, the linking is not done in
+	the correct order with the defaults.  Remove "-ltermcap" from
+	the readline entry in Setup, and use as curses entry: "curses
+	cursesmodule.c -lmytinfo -lncurses -ltermcap" - "mytinfo" (so
+	called on FreeBSD) should be the name of the auxiliary library
+	required on your platform.  Normally, it would be linked
+	automatically, but not necessarily in the correct order.
+
 DEC Unix: When enabling threads, use --with-dec-threads, not
 	--with-thread.  When using GCC, it is possible to get an
 	internal compiler error if optimization is used.  This was
