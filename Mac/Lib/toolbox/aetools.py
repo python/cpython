@@ -1,38 +1,79 @@
+"""Tools for use in AppleEvent clients and servers.
+
+pack(x) converts a Python object to an AEDesc object
+unpack(desc) does the reverse
+
+packevent(event, parameters, attributes) sets params and attrs in an AEAppleEvent record
+unpackevent(event) returns the parameters and attributes from an AEAppleEvent record
+
+Plus...  Lots of classes and routines that help representing AE objects,
+ranges, conditionals, logicals, etc., so you can write, e.g.:
+
+	x = Character(1, Document("foobar"))
+
+and pack(x) will create an AE object reference equivalent to AppleScript's
+
+	character 1 of document "foobar"
+
+"""
+
+
 import struct
-import types
+import string
+from string import strip
+from types import *
 import AE
 import MacOS
+import macfs
 import StringIO
+
 
 AEDescType = type(AE.AECreateDesc('TEXT', ''))
 
-def pack(x):
+FSSType = type(macfs.FSSpec(':'))
+
+
+def pack(x, forcetype = None):
+	if forcetype:
+		if type(x) is StringType:
+			return AE.AECreateDesc(forcetype, x)
+		else:
+			return pack(x).AECoerceDesc(forcetype)
 	if x == None:
 		return AE.AECreateDesc('null', '')
 	t = type(x)
 	if t == AEDescType:
 		return x
-	if t == types.IntType:
+	if t == FSSType:
+		vol, dir, filename = x.as_tuple()
+		fnlen = len(filename)
+		header = struct.pack('hlb', vol, dir, fnlen)
+		padding = '\0'*(63-fnlen)
+		return AE.AECreateDesc('fss ', header + filename + padding)
+	if t == IntType:
 		return AE.AECreateDesc('long', struct.pack('l', x))
-	if t == types.FloatType:
+	if t == FloatType:
+		# XXX Weird thing -- Think C's "double" is 10 bytes, but
+		# struct.pack('d') return 12 bytes (and struct.unpack requires
+		# them, too).  The first 2 bytes seem to be repeated...
+		# Probably an alignment problem
 		return AE.AECreateDesc('exte', struct.pack('d', x)[2:])
-	if t == types.StringType:
+	if t == StringType:
 		return AE.AECreateDesc('TEXT', x)
-	if t == types.ListType:
+	if t == ListType:
 		list = AE.AECreateList('', 0)
 		for item in x:
 			list.AEPutDesc(0, pack(item))
 		return list
-	if t == types.TupleType:
-		t, d = x
-		return AE.AECreateDesc(t, d)
-	if t == types.DictionaryType:
+	if t == DictionaryType:
 		record = AE.AECreateList('', 1)
 		for key, value in x.items():
 			record.AEPutKeyDesc(key, pack(value))
-	if t == types.InstanceType and hasattr(x, '__aepack__'):
+		return record
+	if t == InstanceType and hasattr(x, '__aepack__'):
 		return x.__aepack__()
 	return AE.AECreateDesc('TEXT', repr(x)) # Copout
+
 
 def unpack(desc):
 	t = desc.type
@@ -42,6 +83,10 @@ def unpack(desc):
 		return 0
 	if t == 'true':
 		return 1
+	if t == 'enum':
+		return mkenum(desc.data)
+	if t == 'type':
+		return mktype(desc.data)
 	if t == 'long':
 		return struct.unpack('l', desc.data)[0]
 	if t == 'shor':
@@ -50,11 +95,10 @@ def unpack(desc):
 		return struct.unpack('f', desc.data)[0]
 	if t == 'exte':
 		data = desc.data
+		# XXX See corresponding note for pack()
 		return struct.unpack('d', data[:2] + data)[0]
 	if t in ('doub', 'comp', 'magn'):
 		return unpack(desc.AECoerceDesc('exte'))
-	if t == 'enum':
-		return ('enum', desc.data)
 	if t == 'null':
 		return None
 	if t == 'list':
@@ -70,178 +114,376 @@ def unpack(desc):
 			d[keyword] = unpack(item)
 		return d
 	if t == 'obj ':
-		return unpackobject(desc.data)
-	return desc.type, desc.data # Copout
+		record = desc.AECoerceDesc('reco')
+		return mkobject(unpack(record))
+	if t == 'rang':
+		record = desc.AECoerceDesc('reco')
+		return mkrange(unpack(record))
+	if t == 'cmpd':
+		record = desc.AECoerceDesc('reco')
+		return mkcomparison(unpack(record))
+	if t == 'logi':
+		record = desc.AECoerceDesc('reco')
+		return mklogical(unpack(record))
+	if t == 'targ':
+		return mktargetid(desc.data)
+	if t == 'alis':
+		# XXX Can't handle alias records yet, so coerce to FS spec...
+		return unpack(desc.AECoerceDesc('fss '))
+	if t == 'fss ':
+		return mkfss(desc.data)
+	return mkunknown(desc.type, desc.data)
 
-class Object:
-	def __init__(self, dict = {}):
-		self.dict = dict
-		for key, value in dict.items():
-			self.dict[key] = value
-	def __repr__(self):
-		return "Object(%s)" % `self.dict`
-	def __str__(self):
-		want = self.dict['want']
-		form = self.dict['form']
-		seld = self.dict['seld']
-		s = "%s %s %s" % (nicewant(want), niceform(form), niceseld(seld))
-		fr   = self.dict['from']
-		if fr:
-			s = s + " of " + str(fr)
-		return s
-	def __aepack__(self):
-		f = StringIO.StringIO()
-		putlong(f, len(self.dict))
-		putlong(f, 0)
-		for key, value in self.dict.items():
-			putcode(f, key)
-			desc = pack(value)
-			putcode(f, desc.type)
-			data = desc.data
-			putlong(f, len(data))
-			f.write(data)
-		return AE.AECreateDesc('obj ', f.getvalue())
 
-def nicewant(want):
-	if type(want) == types.TupleType and len(want) == 2:
-		return reallynicewant(want)
+def mkfss(data):
+	vol, dir, fnlen = struct.unpack('hlb', data[:7])
+	filename = data[7:7+fnlen]
+	return macfs.FSSpec((vol, dir, filename))
+
+
+def mktargetid(data):
+	sessionID = getlong(data[:4])
+	name = mkppcportrec(data[4:4+72])
+	print len(name), `name`
+	location = mklocationnamerec(data[76:76+36])
+	rcvrName = mkppcportrec(data[112:112+72])
+	return sessionID, name, location, rcvrName
+
+def mkppcportrec(rec):
+	namescript = getword(rec[:2])
+	name = getpstr(rec[2:2+33])
+	portkind = getword(rec[36:38])
+	if portkind == 1:
+		ctor = rec[38:42]
+		type = rec[42:46]
+		identity = (ctor, type)
 	else:
-		return `want`
+		identity = getpstr(rec[38:38+33])
+	return namescript, name, portkind, identity
 
-def reallynicewant((t, w)):
-	if t != 'type': return `t, w`
-	# These should be taken from the "elements" of the 'aete' resource
-	if w == 'cins': return 'insertion point'
-	if w == 'cha ': return 'character'
-	if w == 'word': return 'word'
-	if w == 'para': return 'paragraph'
-	if w == 'ccel': return 'cell'
-	if w == 'ccol': return 'column'
-	if w == 'crow': return 'row'
-	if w == 'crng': return 'range'
-	if w == 'wind': return 'window'
-	if w == 'docu': return 'document'
-	return `w`
+def mklocationnamerec(rec):
+	kind = getword(rec[:2])
+	stuff = rec[2:]
+	if kind == 0: stuff = None
+	if kind == 2: stuff = getpstr(stuff)
+	return kind, stuff
 
-def niceform(form):
-	if type(form) == types.TupleType and len(form) == 2:
-		return reallyniceform(form)
-	else:
-		return `form`
+def getpstr(s):
+	return s[1:1+ord(s[0])]
 
-def reallyniceform((t, f)):
-	if t <> 'enum': return `t, f`
-	if f == 'indx': return ''
-	if f == 'name': return ''
-	if f == 'rele': return ''
-	return `f`
-
-def niceseld(seld):
-	if type(seld) == types.TupleType and len(seld) == 2:
-		return reallyniceseld(seld)
-	else:
-		return `seld`
-
-def reallyniceseld((t, s)):
-	if t == 'long': return `s`
-	if t == 'TEXT': return `s`
-	if t == 'enum':
-		if s == 'next': return 'after'
-		if s == 'prev': return 'before'
-	return `t, s`
-
-def unpackobject(data):
-	f = StringIO.StringIO(data)
-	nkey = getlong(f)
-	dumm = getlong(f)
-	dict = {}
-	for i in range(nkey):
-		keyw = getcode(f)
-		type = getcode(f)
-		size = getlong(f)
-		if size:
-			data = f.read(size)
-		else:
-			data = ''
-		desc = AE.AECreateDesc(type, data)
-		dict[keyw] = unpack(desc)
-	return Object(dict)
-
-
-# --- get various data types from a "file"
-
-def getword(f, *args):
-	getalgn(f)
-	s = f.read(2)
-	if len(s) < 2:
-		raise EOFError, 'in getword' + str(args)
-	return (ord(s[0])<<8) | ord(s[1])
-
-def getlong(f, *args):
-	getalgn(f)
-	s = f.read(4)
-	if len(s) < 4:
-		raise EOFError, 'in getlong' + str(args)
+def getlong(s):
 	return (ord(s[0])<<24) | (ord(s[1])<<16) | (ord(s[2])<<8) | ord(s[3])
 
-def getcode(f, *args):
-	getalgn(f)
-	s = f.read(4)
-	if len(s) < 4:
-		raise EOFError, 'in getcode' + str(args)
-	return s
-
-def getpstr(f, *args):
-	c = f.read(1)
-	if len(c) < 1:
-		raise EOFError, 'in getpstr[1]' + str(args)
-	nbytes = ord(c)
-	if nbytes == 0: return ''
-	s = f.read(nbytes)
-	if len(s) < nbytes:
-		raise EOFError, 'in getpstr[2]' + str(args)
-	return s
-
-def getalgn(f):
-	if f.tell() & 1:
-		c = f.read(1)
-		##if c <> '\0':
-		##	print 'align:', `c`
-
-# ---- end get routines
+def getword(s):
+	return (ord(s[0])<<8) | (ord(s[1])<<0)
 
 
-# ---- put various data types to a "file"
+def mkunknown(type, data):
+	return Unknown(type, data)
 
-def putlong(f, value):
-	putalgn(f)
-	f.write(chr((value>>24)&0xff))
-	f.write(chr((value>>16)&0xff))
-	f.write(chr((value>>8)&0xff))
-	f.write(chr(value&0xff))
+class Unknown:
+	
+	def __init__(self, type, data):
+		self.type = type
+		self.data = data
+	
+	def __repr__(self):
+		return "Unknown(%s, %s)" % (`self.type`, `self.data`)
+	
+	def __aepack__(self):
+		return pack(self.data, self.type)
 
-def putword(f, value):
-	putalgn(f)
-	f.write(chr((value>>8)&0xff))
-	f.write(chr(value&0xff))
 
-def putcode(f, value):
-	if type(value) != types.StringType or len(value) != 4:
-		raise TypeError, "ostype must be 4-char string"
-	putalgn(f)
-	f.write(value)
+def IsSubclass(cls, base):
+	"""Test whether CLASS1 is the same as or a subclass of CLASS2"""
+	# Loop to optimize for single inheritance
+	while 1:
+		if cls is base: return 1
+		if len(cls.__bases__) <> 1: break
+		cls = cls.__bases__[0]
+	# Recurse to cope with multiple inheritance
+	for c in cls.__bases__:
+		if IsSubclass(c, base): return 1
+	return 0
 
-def putpstr(f, value):
-	if type(value) != types.StringType or len(value) > 255:
-		raise TypeError, "pstr must be string <= 255 chars"
-	f.write(chr(len(value)) + value)
+def IsInstance(x, cls):
+	"""Test whether OBJECT is an instance of (a subclass of) CLASS"""
+	return type(x) is InstanceType and IsSubclass(x.__class__, cls)
 
-def putalgn(f):
-	if f.tell() & 1:
-		f.write('\0')
 
-# ---- end put routines
+def nice(s):
+	if type(s) is StringType: return repr(s)
+	else: return str(s)
 
+
+def mkenum(enum):
+	if IsEnum(enum): return enum
+	return Enum(enum)
+
+class Enum:
+	
+	def __init__(self, enum):
+		self.enum = "%-4.4s" % str(enum)
+	
+	def __repr__(self):
+		return "Enum(%s)" % `self.enum`
+	
+	def __str__(self):
+		return strip(self.enum)
+	
+	def __aepack__(self):
+		return pack(self.enum, 'enum')
+
+def IsEnum(x):
+	return IsInstance(x, Enum)
+
+
+def mktype(type):
+	if IsType(type): return type
+	return Type(type)
+
+class Type:
+	
+	def __init__(self, type):
+		self.type = "%-4.4s" % str(type)
+	
+	def __repr__(self):
+		return "Type(%s)" % `self.type`
+	
+	def __str__(self):
+		return strip(self.type)
+	
+	def __aepack__(self):
+		return pack(self.type, 'type')
+
+def IsType(x):
+	return IsInstance(x, Type)
+
+
+def mkrange(dict):
+	return Range(dict['star'], dict['stop'])
+
+class Range:
+	
+	def __init__(self, start, stop):
+		self.start = start
+		self.stop = stop
+	
+	def __repr__(self):
+		return "Range(%s, %s)" % (`self.start`, `self.stop`)
+	
+	def __str__(self):
+		return "%s thru %s" % (nice(self.start), nice(self.stop))
+	
+	def __aepack__(self):
+		return pack({'star': self.start, 'stop': self.stop}, 'rang')
+
+def IsRange(x):
+	return IsInstance(x, Range)
+
+
+def mkcomparison(dict):
+	return Comparison(dict['obj1'], dict['relo'].enum, dict['obj2'])
+
+class Comparison:
+	
+	def __init__(self, obj1, relo, obj2):
+		self.obj1 = obj1
+		self.relo = "%-4.4s" % str(relo)
+		self.obj2 = obj2
+	
+	def __repr__(self):
+		return "Comparison(%s, %s, %s)" % (`self.obj1`, `self.relo`, `self.obj2`)
+	
+	def __str__(self):
+		return "%s %s %s" % (nice(self.obj1), strip(self.relo), nice(self.obj2))
+	
+	def __aepack__(self):
+		return pack({'obj1': self.obj1,
+			     'relo': mkenum(self.relo),
+			     'obj2': self.obj2},
+			    'cmpd')
+
+def IsComparison(x):
+	return IsInstance(x, Comparison)
+
+
+def mklogical(dict):
+	return Logical(dict['logc'], dict['term'])
+
+class Logical:
+	
+	def __init__(self, logc, term):
+		self.logc = "%-4.4s" % str(logc)
+		self.term = term
+	
+	def __repr__(self):
+		return "Logical(%s, %s)" % (`self.logc`, `self.term`)
+	
+	def __str__(self):
+		if type(self.term) == ListType and len(self.term) == 2:
+			return "%s %s %s" % (nice(self.term[0]),
+			                     strip(self.logc),
+			                     nice(self.term[1]))
+		else:
+			return "%s(%s)" % (strip(self.logc), nice(self.term))
+	
+	def __aepack__(self):
+		return pack({'logc': mkenum(self.logc), 'term': self.term}, 'logi')
+
+def IsLogical(x):
+	return IsInstance(x, Logical)
+
+
+class ObjectSpecifier:
+	
+	"""A class for constructing and manipulation AE object specifiers in python.
+	
+	An object specifier is actually a record with four fields:
+	
+	key	type	description
+	---	----	-----------
+	
+	'want'	type	what kind of thing we want,
+			e.g. word, paragraph or property
+	
+	'form'	enum	how we specify the thing(s) we want,
+			e.g. by index, by range, by name, or by property specifier
+	
+	'seld'	any	which thing(s) we want,
+			e.g. its index, its name, or its property specifier
+	
+	'from'	object	the object in which it is contained,
+			or null, meaning look for it in the application
+	
+	Note that we don't call this class plain "Object", since that name
+	is likely to be used by the application.
+	"""
+	
+	def __init__(self, want, form, seld, fr = None):
+		self.want = want
+		self.form = form
+		self.seld = seld
+		self.fr = fr
+	
+	def __repr__(self):
+		s = "ObjectSpecifier(%s, %s, %s" % (`self.want`, `self.form`, `self.seld`)
+		if self.fr:
+			s = s + ", %s)" % `self.fr`
+		else:
+			s = s + ")"
+		return s
+	
+	def __aepack__(self):
+		return pack({'want': mktype(self.want),
+			     'form': mkenum(self.form),
+			     'seld': self.seld,
+			     'from': self.fr},
+			    'obj ')
+
+
+def IsObjectSpecifier(x):
+	return IsInstance(x, ObjectSpecifier)
+
+
+class Property(ObjectSpecifier):
+
+	def __init__(self, which, fr = None):
+		ObjectSpecifier.__init__(self, 'prop', 'prop', mkenum(which), fr)
+
+	def __repr__(self):
+		if self.fr:
+			return "Property(%s, %s)" % (`self.seld.enum`, `self.fr`)
+		else:
+			return "Property(%s)" % `self.seld.enum`
+	
+	def __str__(self):
+		if self.fr:
+			return "Property %s of %s" % (str(self.seld), str(self.fr))
+		else:
+			return "Property %s" % str(self.seld)
+
+
+class SelectableItem(ObjectSpecifier):
+	
+	def __init__(self, want, seld, fr = None):
+		t = type(seld)
+		if t == StringType:
+			form = 'name'
+		elif IsRange(seld):
+			form = 'rang'
+		elif IsComparison(seld) or IsLogical(seld):
+			form = 'test'
+		else:
+			form = 'indx'
+		ObjectSpecifier.__init__(self, want, form, seld, fr)
+
+
+class ComponentItem(SelectableItem):
+	# Derived classes *must* set the *class attribute* 'want' to some constant
+	
+	def __init__(self, which, fr = None):
+		SelectableItem.__init__(self, self.want, which, fr)
+	
+	def __repr__(self):
+		if not self.fr:
+			return "%s(%s)" % (self.__class__.__name__, `self.seld`)
+		return "%s(%s, %s)" % (self.__class__.__name__, `self.seld`, `self.fr`)
+	
+	def __str__(self):
+		seld = self.seld
+		if type(seld) == StringType:
+			ss = repr(seld)
+		elif IsRange(seld):
+			start, stop = seld.start, seld.stop
+			if type(start) == InstanceType == type(stop) and \
+			   start.__class__ == self.__class__ == stop.__class__:
+				ss = str(start.seld) + " thru " + str(stop.seld)
+			else:
+				ss = str(seld)
+		else:
+			ss = str(seld)
+		s = "%s %s" % (self.__class__.__name__, ss)
+		if self.fr: s = s + " of %s" % str(self.fr)
+		return s
+
+
+template = """
+class %s(ComponentItem): want = '%s'
+"""
+
+exec template % ("Text", 'text')
+exec template % ("Character", 'cha ')
+exec template % ("Word", 'cwor')
+exec template % ("Line", 'clin')
+exec template % ("Paragraph", 'cpar')
+exec template % ("Window", 'cwin')
+exec template % ("Document", 'docu')
+exec template % ("File", 'file')
+exec template % ("InsertionPoint", 'cins')
+
+
+def mkobject(dict):
+	want = dict['want'].type
+	form = dict['form'].enum
+	seld = dict['seld']
+	fr   = dict['from']
+	if form in ('name', 'indx', 'rang', 'test'):
+		if want == 'text': return Text(seld, fr)
+		if want == 'cha ': return Character(seld, fr)
+		if want == 'cwor': return Word(seld, fr)
+		if want == 'clin': return Line(seld, fr)
+		if want == 'cpar': return Paragraph(seld, fr)
+		if want == 'cwin': return Window(seld, fr)
+		if want == 'docu': return Document(seld, fr)
+		if want == 'file': return File(seld, fr)
+		if want == 'cins': return InsertionPoint(seld, fr)
+	if want == 'prop' and form == 'prop' and IsType(seld):
+		return Property(seld.type, fr)
+	return ObjectSpecifier(want, form, seld, fr)
+
+
+# Special code to unpack an AppleEvent (which is *not* a disguised record!)
 
 aekeywords = [
 	'tran',
@@ -287,10 +529,22 @@ def packevent(ae, parameters = {}, attributes = {}):
 	for key, value in attributes.items():
 		ae.AEPutAttributeDesc(key, pack(value))
 
+
+# Test program
+
 def test():
 	target = AE.AECreateDesc('sign', 'KAHL')
 	ae = AE.AECreateAppleEvent('aevt', 'oapp', target, -1, 0)
 	print unpackevent(ae)
+	raw_input(":")
+	ae = AE.AECreateAppleEvent('core', 'getd', target, -1, 0)
+	obj = Character(2, Word(1, Document(1)))
+	print obj
+	print repr(obj)
+	packevent(ae, {'----': obj})
+	params, attrs = unpackevent(ae)
+	print params['----']
+	raw_input(":")
 
 if __name__ == '__main__':
 	test()
