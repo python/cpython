@@ -83,6 +83,7 @@ Socket methods:
 #include <fcntl.h>
 #else
 #include <winsock.h>
+#include <fcntl.h>
 #endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
@@ -103,7 +104,7 @@ Socket methods:
 #ifdef NT
 /* seem to be a few differences in the API */
 #define close closesocket
-#define NO_DUP	/* I wont trust passing a socket to NT's RTL!!  */
+#define NO_DUP	/* Define for NT 3.1, Win3.1 and Win95, Undefine for NT3.5 */
 #define FORCE_ANSI_FUNC_DEFS
 #endif
 
@@ -364,6 +365,7 @@ getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_
 		}
 		addr->sun_family = AF_UNIX;
 		memcpy(addr->sun_path, path, len);
+		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
 		*len_ret = len + sizeof addr->sun_family;
 		return 1;
@@ -484,32 +486,32 @@ BUILD_FUNC_DEF_2(PySocketSock_allowbroadcast,PySocketSockObject *,s, PyObject *,
 #endif
 
 
-#ifndef NT
-
 /* s.setblocking(1 | 0) method */
 
 static PyObject *
-PySocketSock_setblocking(s, args)
-	PySocketSockObject *s;
-	PyObject *args;
+BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 {
 	int block;
 	int delay_flag;
 	if (!PyArg_GetInt(args, &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#ifndef NT
 	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NDELAY);
 	else
 		delay_flag |= O_NDELAY;
 	fcntl (s->sock_fd, F_SETFL, delay_flag);
+#else
+	block = !block;
+	ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
+#endif
 	Py_END_ALLOW_THREADS
 
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif
 
 
 /* s.setsockopt() method.
@@ -740,8 +742,13 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 
 	if (!PyArg_ParseTuple(args, "|si", &mode, &bufsize))
 		return NULL;
+#ifdef NT
+   if ( ((fd =  _open_osfhandle( s->sock_fd, _O_BINARY )) < 0) ||
+        ((fd = dup(fd)) < 0) || ((fp = fdopen(fd, mode)) == NULL)) {
+#else
 	if ((fd = dup(s->sock_fd)) < 0 ||
 	    (fp = fdopen(fd, mode)) == NULL) {
+#endif
 		if (fd >= 0)
 			close(fd);
 		return PySocket_Err();
@@ -893,9 +900,7 @@ static PyMethodDef PySocketSock_methods[] = {
 #if 0
 	{"allowbroadcast",	(PyCFunction)PySocketSock_allowbroadcast},
 #endif
-#ifndef NT
 	{"setblocking",		(PyCFunction)PySocketSock_setblocking},
-#endif
 	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt},
 	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt},
 	{"bind",		(PyCFunction)PySocketSock_bind},
@@ -1461,15 +1466,31 @@ BOOL	WINAPI	DllMain (HANDLE hInst,
 			ULONG ul_reason_for_call,
 			LPVOID lpReserved)
 {
+	const int opt = SO_SYNCHRONOUS_NONALERT;
 	switch (ul_reason_for_call)
 	{
-		case DLL_PROCESS_ATTACH:
+		case DLL_PROCESS_ATTACH: {
 			WSADATA WSAData;
-			if (WSAStartup(MAKEWORD(2,0), &WSAData)) {
-				OutputDebugString("Python can't initialize Windows Sockets DLL!");
+			BOOL ok = TRUE;
+			char buf[100] = "Python can't initialize Windows Sockets Module!\n\r";
+			if (WSAStartup(MAKEWORD(1,1), &WSAData)) {
+				wsprintf(buf+strlen(buf), "WSAStartup failed (%d)",WSAGetLastError());
+				ok = FALSE;
+			}
+			/*
+			** Setup sockets in non-overlapped mode by default
+			*/
+			if (ok && setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,(const char *)&opt,sizeof(opt)) != 0) {
+				wsprintf(buf+strlen(buf),"setsockopt failed (%d)",WSAGetLastError());
+				ok = FALSE;
+			}
+			if (!ok) {
+				MessageBox(NULL,buf,"WinSock Error",MB_OK|MB_SETFOREGROUND);
 				return FALSE;
 			}
 			break;
+		}
+
 		case DLL_PROCESS_DETACH:
 			WSACleanup();
 			break;
