@@ -108,10 +108,13 @@
 (require 'custom)
 (eval-when-compile
   (require 'cl)
-  (require 'custom)
-  ;; Stock Emacs 19.34 has a broken/old Custom library that does more
-  ;; harm than good
-  (or (fboundp 'defcustom)
+  (if (not (and (condition-case nil
+		    (require 'custom)
+		  (error nil))
+		;; Stock Emacs 19.34 has a broken/old Custom library
+		;; that does more harm than good.  Fortunately, it is
+		;; missing defcustom
+		(fboundp 'defcustom)))
       (error "STOP! STOP! STOP! STOP!
 
 The Custom library was not found or is out of date.  A more current
