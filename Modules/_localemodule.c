@@ -24,7 +24,7 @@ This software comes with no warranty. Use at your own risk.
 #endif
 
 #ifdef macintosh
-char *strdup(char *);
+#include "macglue.h"
 #endif
 
 static char locale__doc__[] = "Support for POSIX locales.";
@@ -380,12 +380,20 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
 }
 #endif
 
+#if defined(macintosh)
+static PyObject*
+PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("Os", Py_None, PyMac_getscript());
+}
+#endif
+
 static struct PyMethodDef PyLocale_Methods[] = {
   {"setlocale", (PyCFunction) PyLocale_setlocale, 1, setlocale__doc__},
   {"localeconv", (PyCFunction) PyLocale_localeconv, 0, localeconv__doc__},
   {"strcoll", (PyCFunction) PyLocale_strcoll, 1, strcoll__doc__},
   {"strxfrm", (PyCFunction) PyLocale_strxfrm, 1, strxfrm__doc__},
-#if defined(MS_WIN32)
+#if defined(MS_WIN32) || defined(macintosh)
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, 0},
 #endif
   {NULL, NULL}
