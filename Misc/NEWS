@@ -10,6 +10,9 @@ What's New in Python 2.4.2a
 Extension Modules
 -----------------
 
+- Bug #1166660: The readline module could segfault if hook functions
+  were set in a different thread than that which called readline.
+
 - weakref proxy has incorrect __nonzero__ behavior.  SF bug #1770766.
 
 
