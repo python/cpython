@@ -100,6 +100,10 @@ Vtime.py	(unrelated to vtime!!!) Copy a video file,
 		manipulating the time codes (e.g. faster/slower, or
 		regenerate time codes, or drop frames too close apart)
 
+Vedit.py	interactive video editing program
+
+Viewer.py	two viewer classes used by Vedit
+
 
 The following are C programs, either for efficiency or because they
 need to link with a C library:
