@@ -2,6 +2,10 @@
 
 # Change log:
 
+# 18-Oct-93:
+#	Use testlist instead of exprlist in expr_stmt
+#	Add exec statement
+
 # 19-May-93:
 #	Add access statement
 
@@ -87,8 +91,8 @@ fplist: fpdef (',' fpdef)* [',']
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | access_stmt
-expr_stmt: (exprlist '=')* exprlist
+small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
+expr_stmt: (testlist '=')* testlist
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
 del_stmt: 'del' exprlist
@@ -104,6 +108,7 @@ access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype (',' accesstype)*
 accesstype: NAME+
 # accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 # but can't be because that would create undesirable reserved words!
+exec_stmt: 'exec' expr ['in' expr [',' expr]]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]

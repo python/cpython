@@ -35,6 +35,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "opcode.h"
 #include "bltinmodule.h"
 #include "traceback.h"
+#include "graminit.h"
+#include "pythonrun.h"
 
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1  	/**/
@@ -91,6 +93,7 @@ static object *build_class PROTO((object *, object *, object *));
 static void locals_2_fast PROTO((frameobject *, int));
 static void fast_2_locals PROTO((frameobject *));
 static int access_statement PROTO((object *, object *, frameobject *));
+static int exec_statement PROTO((object *, object *, object *));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -711,6 +714,22 @@ eval_code(co, globals, locals, owner, arg)
 		case RETURN_VALUE:
 			retval = POP();
 			why = WHY_RETURN;
+			break;
+
+		case LOAD_GLOBALS:
+			v = f->f_locals;
+			INCREF(v);
+			PUSH(v);
+			break;
+
+		case EXEC_STMT:
+			w = POP();
+			v = POP();
+			u = POP();
+			err = exec_statement(u, v, w);
+			DECREF(u);
+			DECREF(v);
+			DECREF(w);
 			break;
 		
 		case BUILD_FUNCTION:
@@ -2488,4 +2507,63 @@ access_statement(name, vmode, f)
 		DECREF(ac);
 	}
 	return ret;
+}
+
+static int
+exec_statement(prog, globals, locals)
+	object *prog;
+	object *globals;
+	object *locals;
+{
+	char *s;
+	int n;
+
+	if (is_tupleobject(prog) && globals == None && locals == None &&
+	    ((n = gettuplesize(prog)) == 2 || n == 3)) {
+		/* Backward compatibility hack */
+		globals = gettupleitem(prog, 1);
+		if (n == 3)
+			locals = gettupleitem(prog, 2);
+		prog = gettupleitem(prog, 0);
+	}
+	if (globals == None) {
+		globals = getglobals();
+		if (locals == None)
+			locals = getlocals();
+	}
+	else if (locals == None)
+		locals = globals;
+	if (!is_stringobject(prog) &&
+	    !is_codeobject(prog) &&
+	    !is_fileobject(prog)) {
+		err_setstr(TypeError,
+			   "exec 1st arg must be string, code or file object");
+		return -1;
+	}
+	if (!is_dictobject(globals) || !is_dictobject(locals)) {
+		err_setstr(TypeError,
+		    "exec 2nd/3rd args must be dict or None");
+		return -1;
+	}
+	if (is_codeobject(prog)) {
+		if (eval_code((codeobject *) prog, globals, locals,
+				 (object *)NULL, (object *)NULL) == NULL)
+			return -1;
+		return 0;
+	}
+	if (is_fileobject(prog)) {
+		FILE *fp = getfilefile(prog);
+		char *name = getstringvalue(getfilename(prog));
+		if (run_file(fp, name, file_input, globals, locals) == NULL)
+			return -1;
+		return 0;
+	}
+	s = getstringvalue(prog);
+	if (strlen(s) != getstringsize(prog)) {
+		err_setstr(ValueError, "embedded '\\0' in exec string");
+		return -1;
+	}
+	if (run_string(s, file_input, globals, locals) == NULL)
+		return -1;
+	return 0;
 }

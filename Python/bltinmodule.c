@@ -233,14 +233,6 @@ builtin_eval(self, v)
 }
 
 static object *
-builtin_exec(self, v)
-	object *self;
-	object *v;
-{
-	return exec_eval(v, file_input);
-}
-
-static object *
 builtin_execfile(self, v)
 	object *self;
 	object *v;
@@ -755,7 +747,6 @@ static struct methodlist builtin_methods[] = {
 	{"dir",		builtin_dir},
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
-	{"exec",	builtin_exec},
 	{"execfile",	builtin_execfile},
 	{"float",	builtin_float},
 	{"getattr",	builtin_getattr},

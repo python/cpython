@@ -38,6 +38,7 @@ extern object *newfileobject PROTO((char *, char *));
 extern object *newopenfileobject
 	PROTO((FILE *, char *, char *, int (*)FPROTO((FILE *))));
 extern FILE *getfilefile PROTO((object *));
+extern object *getfilename PROTO((object *));
 extern object *filegetline PROTO((object *, int));
 
 #ifdef __cplusplus
