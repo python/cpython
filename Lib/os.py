@@ -23,6 +23,10 @@ _osindex = {
 	  'mac':   (':', '::', ':', ' ', ':'),
 }
 
+# For freeze.py script:
+if 0:
+	import posix
+
 import sys
 for name in _osindex.keys():
 	if name in sys.builtin_module_names:
