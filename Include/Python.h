@@ -1,5 +1,5 @@
-#ifndef Py_ALLOBJECTS_H
-#define Py_ALLOBJECTS_H
+#ifndef Py_PYTHON_H
+#define Py_PYTHON_H
 /* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
 /***********************************************************
@@ -64,7 +64,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "pydebug.h"
 
-#include "accessobject.h"
 #include "intobject.h"
 #include "longobject.h"
 #include "floatobject.h"
@@ -96,8 +95,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "import.h"
 #include "bltinmodule.h"
 
-#include "pystate.h"
-
 #include "abstract.h"
 
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
@@ -113,4 +110,4 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "pyfpe.h"
 
-#endif /* !Py_ALLOBJECTS_H */
+#endif /* !Py_PYTHON_H */
