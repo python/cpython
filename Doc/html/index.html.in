@@ -5,7 +5,7 @@
     <meta name="description"
           content="Top-level index to the standard documentation for
                    Python @RELEASE@.">
-    <link rel="SHORTCUT ICON" href="icons/pyfav.gif" type="image/gif">
+    <link rel="SHORTCUT ICON" href="icons/pyfav.png" type="image/png">
     <link rel="STYLESHEET" href="lib/lib.css" type="text/css">
     <link rel="author" href="acks.html" title="Acknowledgements">
     <link rel="help" href="about.html" title="About the Python Documentation">
@@ -23,20 +23,20 @@
 	<table align="center" width="100%" cellpadding="0" cellspacing="2">
 	<tr>
 	  <td><img width="32" height="32" align="bottom" border="0" alt=""
-	      src="icons/blank.gif"></td>
+	      src="icons/blank.png"></td>
 	  <td><img width="32" height="32" align="bottom" border="0" alt=""
-	      src="icons/blank.gif"></td>
+	      src="icons/blank.png"></td>
 	  <td><img width="32" height="32" align="bottom" border="0" alt=""
-	      src="icons/blank.gif"></td>
+	      src="icons/blank.png"></td>
 	  <td align="center" width="100%">
 	    <b class="title">Python Documentation</b></td>
 	  <td><img width="32" height="32" align="bottom" border="0" alt=""
-	      src="icons/blank.gif"></td>
+	      src="icons/blank.png"></td>
 	  <td><a href="modindex.html"><img width="32" height="32"
 		align="bottom" border="0" alt="Module Index"
-		src="icons/modules.gif"></a></td>
+		src="icons/modules.png"></a></td>
 	  <td><img width="32" height="32" align="bottom" border="0" alt=""
-	      src="icons/blank.gif"></A></td>
+	      src="icons/blank.png"></A></td>
 	</tr>
 	</table>
         <hr>
