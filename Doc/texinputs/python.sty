@@ -746,15 +746,15 @@
 % This should be used to mark things which have been added to the
 % development tree but that aren't in the release, but are documented.
 % This allows release of documentation that already includes updated
-% descriptions.
+% descriptions.  Place at end of descriptor environment.
 %
 % Example:
 %  \versionadded{1.5.2}
 %
 \newcommand{\versionadded}[1]{%
-  \strong{New in version #1.}\par}
+  {  New in version #1.  }}
 \newcommand{\versionchanged}[1]{%
-  \strong{Changed in version #1.}\par}
+  {  Changed in version #1.  }}
 
 
 % Tables.
