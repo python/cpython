@@ -1160,7 +1160,8 @@ def main():
           ext_modules=[Extension('struct', ['structmodule.c'])],
 
           # Scripts to install
-          scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle']
+          scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
+                     'Lib/smtpd.py']
         )
 
 # --install-platlib
