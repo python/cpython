@@ -31,7 +31,7 @@ def _floordiv(i, j):
 
 
 def _isstring(obj):
-    return isinstance(obj, StringType) or isinstance(obj, UnicodeType)    
+    return isinstance(obj, StringType) or isinstance(obj, UnicodeType)
 
 
 

@@ -15,7 +15,7 @@ def tester(fn, wantResult):
         print " returned: " + str(gotResult)
         print ""
         errors = errors + 1
-        
+
 tester('ntpath.splitext("foo.ext")', ('foo', '.ext'))
 tester('ntpath.splitext("/foo/foo.ext")', ('/foo/foo', '.ext'))
 tester('ntpath.splitext(".ext")', ('', '.ext'))

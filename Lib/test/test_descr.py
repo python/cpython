@@ -3447,7 +3447,7 @@ def test_mutable_bases():
             if attr == 'a':
                 return 2
             else:
-                return super(C2, self).__getattribute__(attr)        
+                return super(C2, self).__getattribute__(attr)
         def meth(self):
             return 1
     class D(C):
@@ -3576,7 +3576,7 @@ def test_mutable_bases_with_failing_mro():
     # Immediate subclasses have their mro's adjusted in alphabetical
     # order, so E's will get adjusted before adjusting F's fails.  We
     # check here that E's gets restored.
-    
+
     E_mro_before = E.__mro__
     D_mro_before = D.__mro__
 
@@ -3610,20 +3610,20 @@ def test_mutable_bases_catch_mro_conflict():
         pass
     else:
         raise TestFailed, "didn't catch MRO conflict"
-    
+
 def mutable_names():
     class C(object):
         pass
 
     # C.__module__ could be 'test_descr' or '__main__'
     mod = C.__module__
-    
+
     C.__name__ = 'D'
     vereq((C.__module__, C.__name__), (mod, 'D'))
 
     C.__name__ = 'D.E'
     vereq((C.__module__, C.__name__), (mod, 'D.E'))
-    
+
 
 def test_main():
     do_this_first()
