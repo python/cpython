@@ -516,7 +516,7 @@ fastwebcheck: $(ALLHTMLFILES)
 # Release packaging targets:
 
 paper-$(PAPER)/README: $(PSFILES) $(TOOLSDIR)/getpagecounts
-	cd paper-$(PAPER) && ../$(TOOLSDIR)/getpagecounts >../$@
+	cd paper-$(PAPER) && ../$(TOOLSDIR)/getpagecounts -r $(RELEASE) >../$@
 
 info-$(RELEASE).tgz: info
 	cd $(INFODIR) && tar cf - README python.dir python-*.info* \
