@@ -56,7 +56,7 @@ whose size is determined when the object is allocated.
 #ifdef TRACE_REFS
 #define OB_HEAD \
 	struct _object *_ob_next, *_ob_prev; \
-	unsigned int ob_refcnt; \
+	int ob_refcnt; \
 	struct _typeobject *ob_type;
 #define OB_HEAD_INIT(type) 0, 0, 1, type,
 #else
@@ -200,7 +200,7 @@ extern long ref_total;
 #endif
 #define INCREF(op) (ref_total++, (op)->ob_refcnt++)
 #define DECREF(op) \
-	if (--ref_total, --(op)->ob_refcnt != 0) \
+	if (--ref_total, --(op)->ob_refcnt > 0) \
 		; \
 	else \
 		DELREF(op)
@@ -208,7 +208,7 @@ extern long ref_total;
 #define NEWREF(op) ((op)->ob_refcnt = 1)
 #define INCREF(op) ((op)->ob_refcnt++)
 #define DECREF(op) \
-	if (--(op)->ob_refcnt != 0) \
+	if (--(op)->ob_refcnt > 0) \
 		; \
 	else \
 		DELREF(op)
