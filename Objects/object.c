@@ -476,7 +476,7 @@ adjust_tp_compare(int c)
                          ? (t)->tp_richcompare : NULL)
 
 /* Map rich comparison operators to their swapped version, e.g. LT --> GT */
-extern int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
+int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
 /* Try a genuine rich comparison, returning an object.  Return:
    NULL for exception;
