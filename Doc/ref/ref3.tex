@@ -407,7 +407,7 @@ comparison: if two numbers compare equal (e.g., \code{1} and
 dictionary entry.
 
 Dictionaries are mutable; they can be created by the
-\code{\{...\}} notation (see section \ref{dict}, ``Dictionary
+\code{\{...\}} notation (see section~\ref{dict}, ``Dictionary
 Displays'').
 
 The extension modules \module{dbm}\refstmodindex{dbm},
@@ -418,7 +418,7 @@ provide additional examples of mapping types.
 
 \item[Callable types]
 These\obindex{callable} are the types to which the function call
-operation (see section \ref{calls}, ``Calls'') can be applied:
+operation (see section~\ref{calls}, ``Calls'') can be applied:
 \indexii{function}{call}
 \index{invocation}
 \indexii{function}{argument}
@@ -427,7 +427,7 @@ operation (see section \ref{calls}, ``Calls'') can be applied:
 
 \item[User-defined functions]
 A user-defined function object is created by a function definition
-(see section \ref{function}, ``Function definitions'').  It should be
+(see section~\ref{function}, ``Function definitions'').  It should be
 called with an argument
 list containing the same number of items as the function's formal
 parameter list.
@@ -601,8 +601,8 @@ is a shorthand for \code{x.__call__(arguments)}.
 \end{description}
 
 \item[Modules]
-Modules are imported by the \keyword{import} statement (see section
-\ref{import}, ``The \keyword{import} statement'').
+Modules are imported by the \keyword{import} statement (see
+section~\ref{import}, ``The \keyword{import} statement'').
 A module object has a namespace implemented by a dictionary object
 (this is the dictionary referenced by the func_globals attribute of
 functions defined in the module).  Attribute references are translated
@@ -637,8 +637,8 @@ library file.
 \indexii{module}{namespace}
 
 \item[Classes]
-Class objects are created by class definitions (see section
-\ref{class}, ``Class definitions'').
+Class objects are created by class definitions (see
+section~\ref{class}, ``Class definitions'').
 A class has a namespace implemented by a dictionary object.
 Class attribute references are translated to
 lookups in this dictionary,
@@ -708,7 +708,7 @@ instance dictionary directly.
 
 Class instances can pretend to be numbers, sequences, or mappings if
 they have methods with certain special names.  See
-section \ref{specialnames}, ``Special method names.''
+section~\ref{specialnames}, ``Special method names.''
 \obindex{numeric}
 \obindex{sequence}
 \obindex{mapping}
@@ -865,7 +865,7 @@ for an exception handler unwinds the execution stack, at each unwound
 level a traceback object is inserted in front of the current
 traceback.  When an exception handler is entered, the stack trace is
 made available to the program.
-(See section \ref{try}, ``The \code{try} statement.'')
+(See section~\ref{try}, ``The \code{try} statement.'')
 It is accessible as \code{sys.exc_traceback}, and also as the third
 item of the tuple returned by \code{sys.exc_info()}.  The latter is
 the preferred interface, since it works correctly when the program is
@@ -1211,21 +1211,21 @@ This method should return the (computed) attribute
 value or raise an \exception{AttributeError} exception.
 In order to avoid infinite recursion in this method, its
 implementation should always call the base class method with the same
-name to access any attributes it needs to access, for example,
+name to access any attributes it needs, for example,
 \samp{object.__getattribute__(self, name)}.
 \end{methoddesc}
 
 \subsubsection{Implementing Descriptors \label{descriptors}}
 
 The following methods only apply when an instance of the class
-containing the method (a so-called \emph{descriptor} class) is in
+containing the method (a so-called \emph{descriptor} class) appears in
 the class dictionary of another new-style class, known as the
 \emph{owner} class. In the examples below, ``the attribute'' refers to
-the attribute whose name is the key of the property in the accessed
+the attribute whose name is the key of the property in the owner
 class' \code{__dict__}.
 
 \begin{methoddesc}[object]{__get__}{self, instance, owner}
-Called to get the attribute of the owner class (class attribute acess)
+Called to get the attribute of the owner class (class attribute access)
 or of an instance of that class (instance attribute acces).
 \var{owner} is always the owner class, while \var{instance} is the
 instance that the attribute was accessed through, or \code{None} when
