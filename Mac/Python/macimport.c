@@ -407,7 +407,7 @@ error:
 ** pathname of the module found (if any).
 */
 struct filedescr *
-PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
+PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 {
 	struct filedescr *fdp;
 	unsigned char fnbuf[64];
