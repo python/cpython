@@ -8,7 +8,12 @@ Standard library
 - random.py is now self-contained, and offers all the functionality of
   the now-deprecated whrandom.py.  See the docs for details.  random.py
   also supports new functions getstate() and setstate(), for saving
-  and restoring the internal state of all the generators.
+  and restoring the internal state of the generator; and jumpahead(n),
+  for quickly forcing the internal state to be the same as if n calls to
+  random() had been made.  The latter is particularly useful for multi-
+  threaded programs, creating one instance of the random.Random() class for
+  each thread, then using .jumpahead() to force each instance to use a
+  non-overlapping segment of the full period.
 
 
 What's New in Python 2.1 alpha 1?
@@ -107,12 +112,12 @@ Core language, builtins, and interpreter
   a complicated (but still thread-safe) method using fgets() is used by
   default.
 
-  You can force use of the fgets() method by #define'ing 
-  USE_FGETS_IN_GETLINE at build time (it may be faster than 
+  You can force use of the fgets() method by #define'ing
+  USE_FGETS_IN_GETLINE at build time (it may be faster than
   getc_unlocked()).
 
-  You can force fgets() not to be used by #define'ing 
-  DONT_USE_FGETS_IN_GETLINE (this is the first thing to try if std test 
+  You can force fgets() not to be used by #define'ing
+  DONT_USE_FGETS_IN_GETLINE (this is the first thing to try if std test
   test_bufio.py fails -- and let us know if it does!).
 
 - In addition, the fileinput module, while still slower than the other

@@ -72,8 +72,8 @@ class Random:
         self.gauss_next = None
 
     # Specific to Wichmann-Hill generator.  Subclasses wishing to use a
-    # different core generator should override seed(), random(),  getstate()
-    # and setstate().
+    # different core generator should override the seed(), random(),
+    # getstate(), setstate(), and jumpahead() methods.
 
     def __whseed(self, x=0, y=0, z=0):
         """Set the Wichmann-Hill seed from (x, y, z).
@@ -104,6 +104,7 @@ class Random:
 
         if a is None:
             self.__whseed()
+            return
         a = hash(a)
         a, x = divmod(a, 256)
         a, y = divmod(a, 256)
@@ -115,11 +116,10 @@ class Random:
 
     def getstate(self):
         """Return internal state; can be passed to setstate() later."""
-
         return self.VERSION, self._seed, self.gauss_next
 
     def __getstate__(self): # for pickle
-        self.getstate()
+        return self.getstate()
 
     def setstate(self, state):
         """Restore internal state from object returned by getstate()."""
@@ -133,6 +133,28 @@ class Random:
 
     def __setstate__(self, state):  # for pickle
         self.setstate(state)
+
+    def jumpahead(self, n):
+        """Act as if n calls to random() were made, but quickly.
+
+        n is an int, greater than or equal to 0.
+
+        Example use:  If you have 2 threads and know that each will
+        consume no more than a million random numbers, create two Random
+        objects r1 and r2, then do
+            r2.setstate(r1.getstate())
+            r2.jumpahead(1000000)
+        Then r1 and r2 will use guaranteed-disjoint segments of the full
+        period.
+        """
+
+        if not n >= 0:
+            raise ValueError("n must be >= 0")
+        x, y, z = self._seed
+        x = int(x * pow(171, n, 30269)) % 30269
+        y = int(y * pow(172, n, 30307)) % 30307
+        z = int(z * pow(170, n, 30323)) % 30323
+        self._seed = x, y, z
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
@@ -471,6 +493,17 @@ def _test_generator(n, funccall):
     print 'avg %g, stddev %g, min %g, max %g' % \
               (avg, stddev, smallest, largest)
 
+    s = getstate()
+    N = 1019
+    jumpahead(N)
+    r1 = random()
+    setstate(s)
+    for i in range(N):  # now do it the slow way
+        random()
+    r2 = random()
+    if r1 != r2:
+        raise ValueError("jumpahead test failed " + `(N, r1, r2)`)
+
 def _test(N=200):
     print 'TWOPI         =', TWOPI
     print 'LOG4          =', LOG4
@@ -515,6 +548,7 @@ paretovariate = _inst.paretovariate
 weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
+jumpahead = _inst.jumpahead
 
 if __name__ == '__main__':
     _test()

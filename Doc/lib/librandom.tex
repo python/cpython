@@ -33,14 +33,15 @@ Else, because no critical sections are implemented internally, calls
 from different threads may see the same return values.
 
 The functions supplied by this module are actually bound methods of a
-hidden instance of the \var{random.Random} class.  You can instantiate
-your own instances of \var{Random} to get generators that don't share state.
-This may be especially useful for multi-threaded programs, although there's
-no simple way to seed the distinct generators to ensure that the generated
-sequences won't overlap.  Class \var{Random} can also be subclassed if you
-want to use a different basic generator of your own devising:  in that
-case, override the \method{random()}, \method{seed()}, \method{getstate()}
-and \method{setstate()} methods.
+hidden instance of the \var{random.Random} class.  You can instantiate your
+own instances of \var{Random} to get generators that don't share state.
+This is especially useful for multi-threaded programs, creating a different
+instance of \var{Random} for each thread, and using the \method{jumpahead()}
+method to ensure that the generated sequences seen by each thread don't
+overlap.  Class \var{Random} can also be subclassed if you want to use a
+different basic generator of your own devising:  in that case, override the
+\method{random()}, \method{seed()}, \method{getstate()},
+\method{setstate()} and \method{jumpahead()} methods.
 
 
 Bookkeeping functions:
@@ -68,6 +69,16 @@ Bookkeeping functions:
   of the generate to what it was at the time \code{setstate()} was called.
  \end{funcdesc}
 
+\begin{funcdesc}{jumpahead}{n}
+  Change the internal state to what it would be if \code{random()} were
+  called n times, but do so quickly.  \var{n} is a non-negative integer.
+  This is most useful in multi-threaded programs, in conjuction with
+  multiple instances of the \var{Random} class:  \method{setstate()} or
+  \method{seed()} can be used to force all instances into the same
+  internal state, and then \method{jumpahead()} can be used to force the
+  instances' states as far apart as you like (up to the period of the
+  generator).
+ \end{funcdesc}
 
 Functions for integers:
 
