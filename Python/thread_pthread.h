@@ -120,6 +120,9 @@ typedef struct {
  */
 static void _init_thread _P0()
 {
+#if defined(_AIX) && defined(__GNUC__)
+	pthread_init();
+#endif
 }
 
 /*
