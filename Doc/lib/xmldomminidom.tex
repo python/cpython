@@ -180,8 +180,10 @@ following mapping rules apply:
 
 \item The type \code{DOMString} maps to Python strings.
       \refmodule{xml.dom.minidom} supports either byte or Unicode
-      strings, but will normally produce Unicode strings.  Attributes
-      of type \code{DOMString} may also be \code{None}.
+      strings, but will normally produce Unicode strings.  Values
+      of type \code{DOMString} may also be \code{None} where allowed
+      to have the IDL \code{null} value by the DOM specification from
+      the W3C.
 
 \item \keyword{const} declarations map to variables in their
       respective scope
@@ -193,9 +195,12 @@ following mapping rules apply:
       \refmodule{xml.dom.minidom} uses standard Python exceptions such
       as \exception{TypeError} and \exception{AttributeError}.
 
-\item \class{NodeList} objects are implemented as Python's built-in
-      list type, so don't support the official API, but are much more
-      ``Pythonic.''
+\item \class{NodeList} objects are implemented using Python's built-in
+      list type.  Starting with Python 2.2, these objects provide the
+      interface defined in the DOM specification, but with earlier
+      versions of Python they do not support the official API.  They
+      are, however, much more ``Pythonic'' than the interface defined
+      in the W3C recommendations.
 \end{itemize}
 
 
@@ -203,23 +208,23 @@ The following interfaces have no implementation in
 \refmodule{xml.dom.minidom}:
 
 \begin{itemize}
-\item DOMTimeStamp
+\item \class{DOMTimeStamp}
 
-\item DocumentType (added in Python 2.1)
+\item \class{DocumentType} (added in Python 2.1)
 
-\item DOMImplementation (added in Python 2.1)
+\item \class{DOMImplementation} (added in Python 2.1)
 
-\item CharacterData
+\item \class{CharacterData}
 
-\item CDATASection
+\item \class{CDATASection}
 
-\item Notation
+\item \class{Notation}
 
-\item Entity
+\item \class{Entity}
 
-\item EntityReference
+\item \class{EntityReference}
 
-\item DocumentFragment
+\item \class{DocumentFragment}
 \end{itemize}
 
 Most of these reflect information in the XML document that is not of

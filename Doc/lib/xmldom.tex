@@ -114,8 +114,15 @@ raise an \exception{ImportError}. The features list must be a sequence of
 
 % Should the Node documentation go here?
 
-In addition, \module{xml.dom} contains the \class{Node}, and the DOM
-exceptions.
+In addition, \module{xml.dom} contains a base \class{Node} class and
+the DOM exception classes.  The \class{Node} class provided by this
+module does not implement any of the methods or attributes defined by
+the DOM specification; concrete DOM implementations must provide
+those.  The \class{Node} class provided as part of this module does
+provide the constants used for the \member{nodeType} attribute on
+concrete \class{Node} objects; they are located within the class
+rather than at the module level to conform with the DOM
+specifications.
 
 \subsection{Objects in the DOM \label{dom-objects}}
 
@@ -358,7 +365,10 @@ Information about the notations and entities declared by a document
 (including the external subset if the parser uses it and can provide
 the information) is available from a \class{DocumentType} object.  The
 \class{DocumentType} for a document is available from the
-\class{Document} object's \member{doctype} attribute.
+\class{Document} object's \member{doctype} attribute; if there is no
+\code{DOCTYPE} declaration for the document, the document's
+\member{doctype} attribute will be set to \code{None} instead of an
+instance of this interface.
 
 \class{DocumentType} is a specialization of \class{Node}, and adds the
 following attributes:
@@ -381,8 +391,7 @@ following attributes:
 
 \begin{memberdesc}[DocumentType]{name}
   The name of the root element as given in the \code{DOCTYPE}
-  declaration, if present.  If the was no \code{DOCTYPE} declaration,
-  this will be \code{None}.
+  declaration, if present.
 \end{memberdesc}
 
 \begin{memberdesc}[DocumentType]{entities}
@@ -589,7 +598,8 @@ DOM.  Each item is an attribute node.  Get its value with the
 
 There are also experimental methods that give this class more mapping
 behavior.  You can use them or you can use the standardized
-\method{getAttribute*()}-family methods on the \class{Element} objects.
+\method{getAttribute*()} family of methods on the \class{Element}
+objects.
 
 
 \subsubsection{Comment Objects \label{dom-comment-objects}}
