@@ -134,9 +134,6 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *read_str, *readline_str, *__main___str, *__basicnew___str,
   *copy_reg_str, *dispatch_table_str, *safe_constructors_str, *empty_str;
 
-static int save();
-static int put2();
-
 #ifndef PyList_SET_ITEM
 #define PyList_SET_ITEM(op, i, v) (((PyListObject *)(op))->ob_item[i] = (v))
 #endif
@@ -353,6 +350,10 @@ typedef struct Unpicklerobject {
 } Unpicklerobject;
  
 staticforward PyTypeObject Unpicklertype;
+
+/* Forward decls that need the above structs */
+static int save(Picklerobject *, PyObject *, int);
+static int put2(Picklerobject *, PyObject *);
 
 int 
 cPickle_PyMapping_HasKey(PyObject *o, PyObject *key) {
