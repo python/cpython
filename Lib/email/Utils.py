@@ -106,13 +106,16 @@ def encode(s, charset='iso-8859-1', encoding='q'):
 
 
 def formatdate(timeval=None, localtime=0):
-    """Returns a formatted time as specified by RFC 2822, e.g.:
+    """Returns a date string as specified by RFC 2822, e.g.:
 
     Fri, 09 Nov 2001 01:08:47 -0000
 
-    Optional timeval if given is a float time as accepted by localtime() or
-    gmtime().  Optional localtime is a flag that when true, interprets and
-    returns a time relative to the local timezone instead of UTC.
+    Optional timeval if given is a floating point time value as accepted by
+    gmtime() and localtime(), otherwise the current time is used.
+
+    Optional localtime is a flag that when true, interprets timeval, and
+    returns a date relative to the local timezone instead of UTC, properly
+    taking daylight savings time into account.
     """
     # Note: we cannot use strftime() because that honors the locale and RFC
     # 2822 requires that day and month names be the English abbreviations.
