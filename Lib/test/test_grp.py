@@ -4,38 +4,53 @@ import grp
 import unittest
 from test import test_support
 
-
 class GroupDatabaseTestCase(unittest.TestCase):
+
+    def check_value(self, value):
+        # check that a grp tuple has the entries and
+        # attributes promised by the docs
+        self.assertEqual(len(value), 4)
+        self.assertEqual(value[0], value.gr_name)
+        self.assert_(isinstance(value.gr_name, basestring))
+        self.assertEqual(value[1], value.gr_passwd)
+        self.assert_(isinstance(value.gr_passwd, basestring))
+        self.assertEqual(value[2], value.gr_gid)
+        self.assert_(isinstance(value.gr_gid, int))
+        self.assertEqual(value[3], value.gr_mem)
+        self.assert_(isinstance(value.gr_mem, list))
+
+    def valueseq(self, value1, value2):
+        # are two grp tuples equal (don't compare passwords)
+        return value1.gr_name==value2.gr_name and \
+            value1.gr_gid==value2.gr_gid and value1.gr_mem==value2.gr_mem
 
     def test_values(self):
         entries = grp.getgrall()
-        entriesbyname = {}
         entriesbygid = {}
+        entriesbyname = {}
+
+        # we can't use the same strategy as in test_pwd, because
+        # we can't compare gr_passwd (Mac OS X returns
+        # "*" in getgrall() and "" in getgrgid())
 
         for e in entries:
-            self.assertEqual(len(e), 4)
-            self.assertEqual(e[0], e.gr_name)
-            self.assert_(isinstance(e.gr_name, basestring))
-            self.assertEqual(e[1], e.gr_passwd)
-            self.assert_(isinstance(e.gr_passwd, basestring))
-            self.assertEqual(e[2], e.gr_gid)
-            self.assert_(isinstance(e.gr_gid, int))
-            self.assertEqual(e[3], e.gr_mem)
-            self.assert_(isinstance(e.gr_mem, list))
-
-            # The following won't work, because of duplicate entries
-            # for one gid
-            #    self.assertEqual(grp.getgrgid(e.gr_gid), e)
-            # instead of this collect all entries for one gid/name
-            # and check afterwards
-            entriesbyname.setdefault(e.gr_name, []).append(e)
+            self.check_value(e)
             entriesbygid.setdefault(e.gr_gid, []).append(e)
+            entriesbyname.setdefault(e.gr_name, []).append(e)
 
-        # check whether the entry returned by getgrgid()
-        # for each uid is among those from getgrall() for this uid
         for e in entries:
-            self.assert_(grp.getgrgid(e.gr_gid) in entriesbygid[e.gr_gid])
-            self.assert_(grp.getgrnam(e.gr_name) in entriesbyname[e.gr_name])
+            e2 = grp.getgrgid(e.gr_gid)
+            self.check_value(e2)
+            # make sure that at least one of the entries
+            # for this gid compares equal to e2
+            self.assert_(max([self.valueseq(e2, x) \
+                for x in entriesbygid[e.gr_gid]]))
+            e2 = grp.getgrnam(e.gr_name)
+            self.check_value(e2)
+            # make sure that at least one of the entries
+            # for this name compares equal to e2
+            self.assert_(max([self.valueseq(e2, x) \
+                for x in entriesbyname[e.gr_name]]))
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
