@@ -2136,33 +2136,6 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item The C-level interface to the garbage collector has been changed
-to make it easier to write extension types that support garbage
-collection and to debug misuses of the functions.
-Various functions have slightly different semantics, so a bunch of
-functions had to be renamed.  Extensions that use the old API will
-still compile but will \emph{not} participate in garbage collection,
-so updating them for 2.3 should be considered fairly high priority.
-
-To upgrade an extension module to the new API, perform the following
-steps:
-
-\begin{itemize}
-
-\item Rename \cfunction{Py_TPFLAGS_GC} to \cfunction{PyTPFLAGS_HAVE_GC}.
-
-\item Use \cfunction{PyObject_GC_New} or \cfunction{PyObject_GC_NewVar} to
-allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
-
-\item Rename \cfunction{PyObject_GC_Init} to \cfunction{PyObject_GC_Track} and
-\cfunction{PyObject_GC_Fini} to \cfunction{PyObject_GC_UnTrack}.
-
-\item Remove \cfunction{PyGC_HEAD_SIZE} from object size calculations.
-
-\item Remove calls to \cfunction{PyObject_AS_GC} and \cfunction{PyObject_FROM_GC}.
-
-\end{itemize}
-
 \item The cycle detection implementation used by the garbage collection
 has proven to be stable, so it's now been made mandatory.  You can no
 longer compile Python without it, and the
