@@ -10,6 +10,8 @@ configuration dialog
 from Tkinter import *
 import tkMessageBox
 
+import IdleConf
+
 class ConfigDialog(Toplevel):
     """
     configuration dialog for idle
@@ -22,7 +24,7 @@ class ConfigDialog(Toplevel):
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+20,
                 parent.winfo_rooty()+30))
-        self.config=configDict
+        self.LoadConfig()
         #elguavas - config placeholders til config stuff completed
         self.bg=self.cget('bg')
         self.fg=None
@@ -38,7 +40,6 @@ class ConfigDialog(Toplevel):
         self.parent = parent
         self.framePages.focus_set()
         #key bindings for this dialog
-#    self.bind('<Return>',self.Ok) #dismiss dialog
         self.bind('<Escape>',self.CancelBinding) #dismiss dialog, no save
         self.bind('<Alt-s>',self.SaveBinding) #dismiss dialog, save
         self.bind('<F1>',self.HelpBinding) #context help
@@ -47,6 +48,17 @@ class ConfigDialog(Toplevel):
         self.bind('<Alt-k>',self.ChangePageBinding)
         self.bind('<Alt-g>',self.ChangePageBinding)
         self.wait_window()
+        
+    def LoadConfig(self):
+        #self.configParser=IdleConf.idleconf
+        #self.loadedConfig={}        
+        #self.workingConfig={}
+        #for key in .keys():        
+        #print self.configParser.getsection('Colors').options()
+        self.workingTestColours={
+                'Foo-Bg': '#ffffff',
+                'Foo-Fg': '#000000',
+                'Bar-Bg': '#777777'}
         
     def Cancel(self):
         self.destroy()
@@ -68,7 +80,7 @@ class ConfigDialog(Toplevel):
     
     def ChangePage(self):
         self.pages[self.pageNum.get()].lift()
-        self.title('Settings -'+self.pageButtons[self.pageNum.get()].cget('text'))
+        self.title('Settings - '+self.pageButtons[self.pageNum.get()].cget('text'))
 
     def ChangePageBinding(self,event):
         pageKeys=('f','h','k','g')
@@ -84,11 +96,21 @@ class ConfigDialog(Toplevel):
         if self.themeType.get()==0:
             self.optMenuThemeBuiltin.config(state=NORMAL)
             self.optMenuThemeCustom.config(state=DISABLED)
-            self.buttonDeleteCustom.config(state=DISABLED)
+            self.buttonDeleteCustomTheme.config(state=DISABLED)
         elif self.themeType.get()==1:
             self.optMenuThemeBuiltin.config(state=DISABLED)
             self.optMenuThemeCustom.config(state=NORMAL)
-            self.buttonDeleteCustom.config(state=NORMAL)
+            self.buttonDeleteCustomTheme.config(state=NORMAL)
+
+    def SetKeysType(self):
+        if self.keysType.get()==0:
+            self.optMenuKeysBuiltin.config(state=NORMAL)
+            self.optMenuKeysCustom.config(state=DISABLED)
+            self.buttonDeleteCustomKeys.config(state=DISABLED)
+        elif self.keysType.get()==1:
+            self.optMenuKeysBuiltin.config(state=DISABLED)
+            self.optMenuKeysCustom.config(state=NORMAL)
+            self.buttonDeleteCustomKeys.config(state=NORMAL)
     
     def CreateWidgets(self):
         self.framePages = Frame(self)
@@ -104,7 +126,7 @@ class ConfigDialog(Toplevel):
         #page buttons
         self.pageNum=IntVar()
         self.pageNum.set(0)
-        buttonPageFonts = Radiobutton(framePageButtons,value=0,
+        buttonPageFontTab = Radiobutton(framePageButtons,value=0,
                 text='Font/Tabs',padx=5,pady=5)
         buttonPageHighlight = Radiobutton(framePageButtons,value=1,
                 text='Highlighting',padx=5,pady=5)
@@ -112,7 +134,7 @@ class ConfigDialog(Toplevel):
                 text='Keys',padx=5,pady=5)
         buttonPageGeneral = Radiobutton(framePageButtons,value=3,
                 text='General',padx=5,pady=5)
-        self.pageButtons=(buttonPageFonts,buttonPageHighlight,
+        self.pageButtons=(buttonPageFontTab,buttonPageHighlight,
                 buttonPageKeys,buttonPageGeneral)
         for button in self.pageButtons:
             button.config(command=self.ChangePage,underline=0,takefocus=FALSE,
@@ -120,7 +142,7 @@ class ConfigDialog(Toplevel):
             selectcolor=self.bg,borderwidth=1)
             button.pack(side=LEFT)
         #pages
-        self.pages=(self.CreatePageFonts(),
+        self.pages=(self.CreatePageFontTab(),
                     self.CreatePageHighlight(),
                     self.CreatePageKeys(),
                     self.CreatePageGeneral())
@@ -135,14 +157,14 @@ class ConfigDialog(Toplevel):
         frameActionButtons.pack(side=BOTTOM)
         self.framePages.pack(side=TOP,expand=TRUE,fill=BOTH)
         
-    def CreatePageFonts(self):
+    def CreatePageFontTab(self):
         frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
-        Button(frame,text='fonts page test').pack(padx=30,pady=30)
+        Button(frame,text='font/tabs page test').pack(padx=90,pady=90)
         return frame
 
     def CreatePageHighlight(self):
         #tkVars
-        self.target=StringVar()
+        self.highlightTarget=StringVar()
         self.builtinTheme=StringVar()
         self.customTheme=StringVar()
         self.colour=StringVar()
@@ -157,19 +179,19 @@ class ConfigDialog(Toplevel):
         #body section frames
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
-
         #frameCustom
         frameTarget=Frame(frameCustom)
-        frameSample=Frame(frameCustom,relief=SOLID,borderwidth=1)
+        frameSample=Frame(frameCustom,relief=SOLID,borderwidth=1,
+                bg=self.workingTestColours['Foo-Bg'])
         frameSet=Frame(frameCustom)
-        frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1)
+        frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1,
+                bg=self.workingTestColours['Foo-Bg'])
         frameFontSet=Frame(frameSet)
-        
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
         labelTargetTitle=Label(frameTarget,text='for : ')
         optMenuTarget=OptionMenu(frameTarget,
-            self.target,'test target interface item','test target interface item 2')
-        self.target.set('test target interface item')
+            self.highlightTarget,'test target interface item','test target interface item 2')
+        self.highlightTarget.set('test target interface item')
         buttonSetColour=Button(frameColourSet,text='Set Colour')
         labelFontTitle=Label(frameFontSet,text='Set Font Style')
         checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
@@ -177,10 +199,10 @@ class ConfigDialog(Toplevel):
         checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
             onvalue='Italic',offvalue='',text='Italic')
         labelTestSample=Label(frameSample,justify=LEFT,
-            text='def Ahem(foo,bar):\n    test=foo\n    text=bar\n    return')        
-        buttonSaveCustom=Button(frameCustom, 
+            text='def Ahem(foo,bar):\n    test=foo\n    text=bar\n    return',
+            bg=self.workingTestColours['Foo-Bg'])        
+        buttonSaveCustomTheme=Button(frameCustom, 
             text='Save as a Custom Theme')
-        
         #frameTheme
         #frameDivider=Frame(frameTheme,relief=SUNKEN,borderwidth=1,
         #    width=2,height=10)
@@ -197,13 +219,12 @@ class ConfigDialog(Toplevel):
             self.customTheme,'test custom junk','test custom junk 2')
         self.customTheme.set('test custom junk')
         self.themeType.set(0)
-        self.buttonDeleteCustom=Button(frameTheme,text='Delete Custom Theme')
+        self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme')
         self.SetThemeType()
-        
         ##widget packing
         #body
-        frameCustom.pack(side=LEFT,padx=5,pady=10,fill=Y)
-        frameTheme.pack(side=RIGHT,padx=5,pady=10,fill=Y)
+        frameCustom.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
+        frameTheme.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         frameTarget.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=X)
@@ -218,8 +239,7 @@ class ConfigDialog(Toplevel):
         checkFontBold.pack(side=LEFT,anchor=W,pady=2)
         checkFontItalic.pack(side=RIGHT,anchor=W)
         labelTestSample.pack()
-        buttonSaveCustom.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
-                
+        buttonSaveCustomTheme.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         #frameTheme
         #frameDivider.pack(side=LEFT,fill=Y,padx=5,pady=5)
         labelThemeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
@@ -228,13 +248,83 @@ class ConfigDialog(Toplevel):
         radioThemeCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
         self.optMenuThemeBuiltin.pack(side=TOP,fill=X,padx=5,pady=5)
         self.optMenuThemeCustom.pack(side=TOP,fill=X,anchor=W,padx=5,pady=5)
-        self.buttonDeleteCustom.pack(side=TOP,fill=X,padx=5,pady=5)
-        
+        self.buttonDeleteCustomTheme.pack(side=TOP,fill=X,padx=5,pady=5)
         return frame
 
     def CreatePageKeys(self):
+        #tkVars
+        self.bindingTarget=StringVar()
+        self.builtinKeys=StringVar()
+        self.customKeys=StringVar()
+        self.keyChars=StringVar()
+        self.keyCtrl=StringVar()
+        self.keyAlt=StringVar()
+        self.keyShift=StringVar()
+        self.keysType=IntVar() 
+        ##widget creation
+        #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
-        Button(frame,text='keys page test').pack(padx=90,pady=90)
+        #body section frames
+        frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameKeySets=Frame(frame,borderwidth=2,relief=GROOVE)
+        #frameCustom
+        frameTarget=Frame(frameCustom)
+        frameSet=Frame(frameCustom)
+        labelCustomTitle=Label(frameCustom,text='Set Custom Key Bindings')
+        labelTargetTitle=Label(frameTarget,text='Action')
+        scrollTarget=Scrollbar(frameTarget)
+        listTarget=Listbox(frameTarget)
+        labelKeyBindTitle=Label(frameSet,text='Binding')
+        labelModifierTitle=Label(frameSet,text='Modifier:')
+        checkCtrl=Checkbutton(frameSet,text='Ctrl')
+        checkAlt=Checkbutton(frameSet,text='Alt')
+        checkShift=Checkbutton(frameSet,text='Shift')
+        labelKeyEntryTitle=Label(frameSet,text='Key:')        
+        entryKey=Entry(frameSet,width=4)
+        buttonSaveCustomKeys=Button(frameCustom,text='Save as a Custom Key Set')
+        #frameKeySets
+        labelKeysTitle=Label(frameKeySets,text='Select a Key Binding Set')
+        labelTypeTitle=Label(frameKeySets,text='Select : ')
+        radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysType,
+            value=0,command=self.SetKeysType,text='a Built-in Key Set')
+        radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysType,
+            value=1,command=self.SetKeysType,text='a Custom Key Set')
+        self.optMenuKeysBuiltin=OptionMenu(frameKeySets,
+            self.builtinKeys,'test builtin junk','test builtin junk 2')
+        self.builtinKeys.set('test builtin junk')
+        self.optMenuKeysCustom=OptionMenu(frameKeySets,
+            self.customKeys,'test custom junk','test custom junk 2')
+        self.customKeys.set('test custom junk')
+        self.keysType.set(0)
+        self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set')
+        self.SetKeysType()
+        ##widget packing
+        #body
+        frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        frameKeySets.pack(side=LEFT,padx=5,pady=5,fill=Y)
+        #frameCustom
+        labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        buttonSaveCustomKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
+        frameTarget.pack(side=LEFT,padx=5,pady=5,fill=Y)
+        frameSet.pack(side=LEFT,padx=5,pady=5,fill=Y)
+        labelTargetTitle.pack(side=TOP,anchor=W)
+        scrollTarget.pack(side=RIGHT,anchor=W,fill=Y)
+        listTarget.pack(side=TOP,anchor=W,expand=TRUE,fill=BOTH)
+        labelKeyBindTitle.pack(side=TOP,anchor=W)
+        labelModifierTitle.pack(side=TOP,anchor=W,pady=5)
+        checkCtrl.pack(side=TOP,anchor=W)
+        checkAlt.pack(side=TOP,anchor=W,pady=2)
+        checkShift.pack(side=TOP,anchor=W)
+        labelKeyEntryTitle.pack(side=TOP,anchor=W,pady=5)
+        entryKey.pack(side=TOP,anchor=W)
+        #frameKeySets
+        labelKeysTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        radioKeysBuiltin.pack(side=TOP,anchor=W,padx=5)
+        radioKeysCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
+        self.optMenuKeysBuiltin.pack(side=TOP,fill=X,padx=5,pady=5)
+        self.optMenuKeysCustom.pack(side=TOP,fill=X,anchor=W,padx=5,pady=5)
+        self.buttonDeleteCustomKeys.pack(side=TOP,fill=X,padx=5,pady=5)
         return frame
 
     def CreatePageGeneral(self):
