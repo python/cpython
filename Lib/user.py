@@ -26,6 +26,8 @@ import os
 home = os.curdir                        # Default
 if os.environ.has_key('HOME'):
     home = os.environ['HOME']
+elif os.name == 'posix':
+    home = os.path.expanduser("~/")
 elif os.name == 'nt':                   # Contributed by Jeff Bauer
     if os.environ.has_key('HOMEPATH'):
         if os.environ.has_key('HOMEDRIVE'):
