@@ -268,10 +268,11 @@ PyObject_Repr(v)
 		if (PyUnicode_Check(res)) {
 			PyObject* str;
 			str = PyUnicode_AsEncodedString(res, NULL, NULL);
-			if (str) {
-				Py_DECREF(res);
+			Py_DECREF(res);
+			if (str)
 				res = str;
-			}
+			else
+				return NULL;
 		}
 		if (!PyString_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
@@ -310,14 +311,15 @@ PyObject_Str(v)
 	}
 	if (res == NULL)
 		return NULL;
-    if (PyUnicode_Check(res)) {
-        PyObject* str;
-        str = PyUnicode_AsEncodedString(res, NULL, NULL);
-        if (str) {
-            Py_DECREF(res);
-            res = str;
-        }
-    }
+	if (PyUnicode_Check(res)) {
+		PyObject* str;
+		str = PyUnicode_AsEncodedString(res, NULL, NULL);
+		Py_DECREF(res);
+		if (str)
+			res = str;
+		else
+		    	return NULL;
+	}
 	if (!PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
