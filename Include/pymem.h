@@ -20,39 +20,14 @@ extern "C" {
 
    The PyCore_* macros can be defined to make the interpreter use a
    custom allocator. Note that they are for internal use only. Both
-   the core and extension modules should use the PyMem_* API.
-
-   See the comment block at the end of this file for two scenarios
-   showing how to use this to use a different allocator. */
-
-#ifndef PyCore_MALLOC_FUNC
-#undef PyCore_REALLOC_FUNC
-#undef PyCore_FREE_FUNC
-#define PyCore_MALLOC_FUNC      malloc
-#define PyCore_REALLOC_FUNC     realloc
-#define PyCore_FREE_FUNC        free
-#endif
-
-#ifndef PyCore_MALLOC_PROTO
-#undef PyCore_REALLOC_PROTO
-#undef PyCore_FREE_PROTO
-#define PyCore_MALLOC_PROTO    (size_t)
-#define PyCore_REALLOC_PROTO   (void *, size_t)
-#define PyCore_FREE_PROTO      (void *)
-#endif
-
-#ifdef NEED_TO_DECLARE_MALLOC_AND_FRIEND
-extern void *PyCore_MALLOC_FUNC PyCore_MALLOC_PROTO;
-extern void *PyCore_REALLOC_FUNC PyCore_REALLOC_PROTO;
-extern void PyCore_FREE_FUNC PyCore_FREE_PROTO;
-#endif
+   the core and extension modules should use the PyMem_* API. */
 
 #ifndef PyCore_MALLOC
 #undef PyCore_REALLOC
 #undef PyCore_FREE
-#define PyCore_MALLOC(n)        PyCore_MALLOC_FUNC(n)
-#define PyCore_REALLOC(p, n)    PyCore_REALLOC_FUNC((p), (n))
-#define PyCore_FREE(p)          PyCore_FREE_FUNC(p)
+#define PyCore_MALLOC(n)      malloc(n)
+#define PyCore_REALLOC(p, n)  realloc((p), (n))
+#define PyCore_FREE(p)        free(p)
 #endif
 
 /* BEWARE:
@@ -132,44 +107,5 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 #ifdef __cplusplus
 }
 #endif
-
-/* SCENARIOS
-
-   Here are two scenarios by Vladimir Marangozov (the author of the
-   memory allocation redesign).
-
-   1) Scenario A
-
-   Suppose you want to use a debugging malloc library that collects info on
-   where the malloc calls originate from. Assume the interface is:
-
-   d_malloc(size_t n, char* src_file, unsigned long src_line) c.s.
-
-   In this case, you would define (for example in pyconfig.h) :
-
-   #define PyCore_MALLOC_FUNC      d_malloc
-   ...
-   #define PyCore_MALLOC_PROTO	(size_t, char *, unsigned long)
-   ...
-   #define NEED_TO_DECLARE_MALLOC_AND_FRIEND
-
-   #define PyCore_MALLOC(n)	PyCore_MALLOC_FUNC((n), __FILE__, __LINE__)
-   ...
-
-   2) Scenario B
-
-   Suppose you want to use malloc hooks (defined & initialized in a 3rd party
-   malloc library) instead of malloc functions.  In this case, you would
-   define:
-
-   #define PyCore_MALLOC_FUNC	(*malloc_hook)
-   ...
-   #define NEED_TO_DECLARE_MALLOC_AND_FRIEND
-
-   and ignore the previous definitions about PyCore_MALLOC_FUNC, etc.
-
-
-*/
-
 
 #endif /* !Py_PYMEM_H */

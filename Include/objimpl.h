@@ -77,40 +77,20 @@ recommended to use PyObject_{New, NewVar, Del}. */
    modules should use the PyObject_* API. */
 
 #ifdef WITH_PYMALLOC
-#define PyCore_OBJECT_MALLOC_FUNC    _PyCore_ObjectMalloc
-#define PyCore_OBJECT_REALLOC_FUNC   _PyCore_ObjectRealloc
-#define PyCore_OBJECT_FREE_FUNC      _PyCore_ObjectFree
-#define NEED_TO_DECLARE_OBJECT_MALLOC_AND_FRIEND
+void *_PyCore_ObjectMalloc(size_t nbytes);
+void *_PyCore_ObjectRealloc(void *p, size_t nbytes);
+void _PyCore_ObjectFree(void *p);
+#define PyCore_OBJECT_MALLOC    _PyCore_ObjectMalloc
+#define PyCore_OBJECT_REALLOC   _PyCore_ObjectRealloc
+#define PyCore_OBJECT_FREE      _PyCore_ObjectFree
 #endif /* !WITH_PYMALLOC */
-
-#ifndef PyCore_OBJECT_MALLOC_FUNC
-#undef PyCore_OBJECT_REALLOC_FUNC
-#undef PyCore_OBJECT_FREE_FUNC
-#define PyCore_OBJECT_MALLOC_FUNC    PyCore_MALLOC_FUNC
-#define PyCore_OBJECT_REALLOC_FUNC   PyCore_REALLOC_FUNC
-#define PyCore_OBJECT_FREE_FUNC      PyCore_FREE_FUNC
-#endif
-
-#ifndef PyCore_OBJECT_MALLOC_PROTO
-#undef PyCore_OBJECT_REALLOC_PROTO
-#undef PyCore_OBJECT_FREE_PROTO
-#define PyCore_OBJECT_MALLOC_PROTO   PyCore_MALLOC_PROTO
-#define PyCore_OBJECT_REALLOC_PROTO  PyCore_REALLOC_PROTO
-#define PyCore_OBJECT_FREE_PROTO     PyCore_FREE_PROTO
-#endif
-
-#ifdef NEED_TO_DECLARE_OBJECT_MALLOC_AND_FRIEND
-extern void *PyCore_OBJECT_MALLOC_FUNC PyCore_OBJECT_MALLOC_PROTO;
-extern void *PyCore_OBJECT_REALLOC_FUNC PyCore_OBJECT_REALLOC_PROTO;
-extern void PyCore_OBJECT_FREE_FUNC PyCore_OBJECT_FREE_PROTO;
-#endif
 
 #ifndef PyCore_OBJECT_MALLOC
 #undef PyCore_OBJECT_REALLOC
 #undef PyCore_OBJECT_FREE
-#define PyCore_OBJECT_MALLOC(n)      PyCore_OBJECT_MALLOC_FUNC(n)
-#define PyCore_OBJECT_REALLOC(p, n)  PyCore_OBJECT_REALLOC_FUNC((p), (n))
-#define PyCore_OBJECT_FREE(p)        PyCore_OBJECT_FREE_FUNC(p)
+#define PyCore_OBJECT_MALLOC(n)     PyCore_MALLOC(n)
+#define PyCore_OBJECT_REALLOC(p, n) PyCore_REALLOC((p), (n))
+#define PyCore_OBJECT_FREE(p)       PyCore_FREE(p)
 #endif
 
 /*
