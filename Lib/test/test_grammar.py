@@ -1,6 +1,13 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
+# NOTE: When you run this test as a script from the command line, you
+# get warnings about certain hex/oct constants.  Since those are
+# issued by the parser, you can't suppress them by adding a
+# filterwarnings() call to this module.  Therefore, to shut up the
+# regression test, the filterwarnings() call has been added to
+# regrtest.py.
+
 from test.test_support import TestFailed, verify, check_syntax
 import sys
 
@@ -32,8 +39,8 @@ except ImportError:
 if maxint == 2147483647:
     if -2147483647-1 != -020000000000: raise TestFailed, 'max negative int'
     # XXX -2147483648
-    #if 037777777777 != -1: raise TestFailed, 'oct -1'
-    #if 0xffffffff != -1: raise TestFailed, 'hex -1'
+    if 037777777777 != -1: raise TestFailed, 'oct -1'
+    if 0xffffffff != -1: raise TestFailed, 'hex -1'
     for s in '2147483648', '040000000000', '0x100000000':
         try:
             x = eval(s)
