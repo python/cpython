@@ -128,7 +128,7 @@ FUNC1(math_asin, asin, math_asin_doc,
 FUNC1(math_atan, atan, math_atan_doc,
       "atan(x)\n\nReturn the arc tangent of x.")
 FUNC2(math_atan2, atan2, math_atan2_doc,
-      "atan2(x)\n\nReturn atan(x /y).")
+      "atan2(y, x)\n\nReturn atan(y/x).")
 FUNC1(math_ceil, ceil, math_ceil_doc,
       "ceil(x)\n\nReturn the ceiling of x as a real.")
 FUNC1(math_cos, cos, math_cos_doc,
