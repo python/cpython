@@ -20,6 +20,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #797447: Correct confusing error message for unsupported locales.
+
 - Patch #798534:  fixed memory leak in os.popen().
 
 - Bug #793826:  re-ordered the reference counting code in
