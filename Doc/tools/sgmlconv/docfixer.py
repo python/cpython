@@ -1022,6 +1022,10 @@ def convert(ifp, ofp):
     # Take care of ugly hacks in the LaTeX markup to avoid LaTeX and
     # LaTeX2HTML screwing with GNU-style long options (the '--' problem).
     join_adjacent_elements(fragment, "option")
+    # Attempt to avoid trailing blank lines:
+    fragment.normalize()
+    if fragment.lastChild.data[-1:] == "\n":
+        fragment.lastChild.data = fragment.lastChild.data.rstrip() + "\n"
     #
     d = {}
     for gi in events.parser.get_empties():
