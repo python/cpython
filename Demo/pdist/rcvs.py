@@ -81,6 +81,7 @@ class MyFile(File):
 
 	def update(self):
 		code = self.action()
+		if code == '=': return
 		print code, self.file
 		if code in ('U', 'N'):
 			self.get()
@@ -143,19 +144,23 @@ class MyFile(File):
 		messages = self.proxy.put(self.file, data, message)
 		if messages:
 			print messages
+		self.setentry(self.proxy.head(self.file), self.lsum)
 	
 	def get(self):
 		data = self.proxy.get(self.file)
 		f = open(self.file, 'w')
 		f.write(data)
 		f.close()
-		self.eseen = 1
-		self.esum = self.rsum
+		self.setentry(self.rrev, self.rsum)
+
+	def setentry(self, erev, esum):
+		self.eseen = 0		# While we're hacking...
+		self.esum = esum
 		self.emtime, self.ectime = os.stat(self.file)[-2:]
-		self.erev = self.rrev
+		self.erev = erev
 		self.enew = 0
 		self.edeleted = 0
-		# XXX anything else?
+		self.eseen = 1		# Done
 
 
 class RCVS(CVS):
