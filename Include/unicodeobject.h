@@ -459,10 +459,11 @@ extern DL_IMPORT(PyObject*) PyUnicode_EncodeUTF8(
 	*byteorder == 0:  native order
 	*byteorder == 1:  big endian
 
-   and then switches according to all BOM marks it finds in the input
-   data. BOM marks are not copied into the resulting Unicode string.
-   After completion, *byteorder is set to the current byte order at
-   the end of input data.
+   In native mode, the first two bytes of the stream are checked for a
+   BOM mark. If found, the BOM mark is analysed, the byte order
+   adjusted and the BOM skipped.  In the other modes, no BOM mark
+   interpretation is done. After completion, *byteorder is set to the
+   current byte order at the end of input data.
 
    If byteorder is NULL, the codec starts in native order mode.
 
