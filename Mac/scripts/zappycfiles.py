@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-"""Recursively zap all .pyc files"""
+"""Recursively zap all .pyc and .pyo files"""
 import os
 import sys
 
@@ -27,7 +27,7 @@ def zappyc(dir):
 	
 def walker(dummy, top, names):
 	for name in names:
-		if name[-4:] == '.pyc':
+		if name[-4:] in ('.pyc', '.pyo'):
 			path = os.path.join(top, name)
 			print 'Zapping', path
 			if doit:
