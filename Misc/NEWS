@@ -103,6 +103,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - mpzmodule.c - make .binary() work on 64-bit system, make it compile with 
   Cygwin
 
+- #127718 - '@' were '`' seem to be confused.
+
 What's New in Python 2.0?
 =========================
 
