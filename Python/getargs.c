@@ -471,6 +471,16 @@ convertsimple1(arg, p_format, p_va)
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<b>";
+			else if (ival < CHAR_MIN) {
+				PyErr_SetString(PyExc_OverflowError,
+					"byte integer is less than minimum");
+				return "integer<b>";
+			}
+			else if (ival > CHAR_MAX && ival >= 256) {
+				PyErr_SetString(PyExc_OverflowError,
+				    "byte integer is greater than maximum");
+				return "integer<b>";
+			}
 			else
 				*p = (char) ival;
 			break;
@@ -482,6 +492,16 @@ convertsimple1(arg, p_format, p_va)
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<h>";
+			else if (ival < SHRT_MIN) {
+				PyErr_SetString(PyExc_OverflowError,
+					"short integer is less than minimum");
+				return "integer<h>";
+			}
+			else if (ival > SHRT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+				  "short integer is greater than maximum");
+				return "integer<h>";
+			}
 			else
 				*p = (short) ival;
 			break;
@@ -493,6 +513,16 @@ convertsimple1(arg, p_format, p_va)
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<i>";
+			else if (ival < INT_MIN) {
+				PyErr_SetString(PyExc_OverflowError,
+					"integer is less than minimum");
+				return "integer<i>";
+			}
+			else if (ival > INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+				  "integer is greater than maximum");
+				return "integer<i>";
+			}
 			else
 				*p = ival;
 			break;
@@ -572,8 +602,8 @@ convertsimple1(arg, p_format, p_va)
 	case 's': /* string */
 		{
 			if (*format == '#') { /* any buffer-like object */
-			        void **p = (void **)va_arg(*p_va, char **);
-			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				void **p = (void **)va_arg(*p_va, char **);
+				PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
 				int count;
 
@@ -589,9 +619,9 @@ convertsimple1(arg, p_format, p_va)
 				*q = count;
 				format++;
 			} else {
-			        char **p = va_arg(*p_va, char **);
+				char **p = va_arg(*p_va, char **);
 			
-			        if (PyString_Check(arg))
+				if (PyString_Check(arg))
 				    *p = PyString_AS_STRING(arg);
 				else if (PyUnicode_Check(arg)) {
 				    arg = _PyUnicode_AsUTF8String(arg, NULL);
@@ -610,8 +640,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'z': /* string, may be NULL (None) */
 		{
 			if (*format == '#') { /* any buffer-like object */
-			        void **p = (void **)va_arg(*p_va, char **);
-			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				void **p = (void **)va_arg(*p_va, char **);
+				PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
 				int count;
 
@@ -632,9 +662,9 @@ convertsimple1(arg, p_format, p_va)
 				}
 				format++;
 			} else {
-			        char **p = va_arg(*p_va, char **);
+				char **p = va_arg(*p_va, char **);
 			
-			        if (arg == Py_None)
+				if (arg == Py_None)
 				  *p = 0;
 				else if (PyString_Check(arg))
 				  *p = PyString_AsString(arg);
@@ -780,8 +810,8 @@ convertsimple1(arg, p_format, p_va)
 	case 'u': /* raw unicode buffer (Py_UNICODE *) */
 		{
 			if (*format == '#') { /* any buffer-like object */
-			        void **p = (void **)va_arg(*p_va, char **);
-			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				void **p = (void **)va_arg(*p_va, char **);
+				PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
 				int count;
 
@@ -799,9 +829,9 @@ convertsimple1(arg, p_format, p_va)
 				*q = count/(sizeof(Py_UNICODE)); 
 				format++;
 			} else {
-			        Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
+				Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
 			
-			        if (PyUnicode_Check(arg))
+				if (PyUnicode_Check(arg))
 				    *p = PyUnicode_AS_UNICODE(arg);
 				else
 				  return "unicode";
@@ -850,7 +880,7 @@ convertsimple1(arg, p_format, p_va)
 				if ((*pred)(arg)) 
 					*p = arg;
 				else
-				         return "(unspecified)";
+					return "(unspecified)";
 				
 			}
 			else if (*format == '&') {
@@ -1161,7 +1191,7 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 			}
 			if (!match) {
 				sprintf(msgbuf,
-		         "%s is an invalid keyword argument for this function",
+			"%s is an invalid keyword argument for this function",
 					ks);
 				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
