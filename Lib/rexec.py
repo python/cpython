@@ -107,22 +107,9 @@ class RHooks(ihooks.Hooks):
         return self.rexec.modules['sys'].path
 
 
-class RModuleLoader(ihooks.FancyModuleLoader):
-
-    def load_module(self, name, stuff):
-        file, filename, info = stuff
-        m = ihooks.FancyModuleLoader.load_module(self, name, stuff)
-        m.__filename__ = filename
-        return m
-
-
-class RModuleImporter(ihooks.ModuleImporter):
-
-    def reload(self, module, path=None):
-        if path is None and hasattr(module, '__filename__'):
-            head, tail = os.path.split(module.__filename__)
-            path = [os.path.join(head, '')]
-        return ihooks.ModuleImporter.reload(self, module, path)
+# XXX Backwards compatibility
+RModuleLoader = ihooks.FancyModuleLoader
+RModuleImporter = ihooks.ModuleImporter
 
 
 class RExec(ihooks._Verbose):
