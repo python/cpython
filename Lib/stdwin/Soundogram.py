@@ -1,7 +1,6 @@
 # Module 'Soundogram'
 
 import audio
-from minmax import min, max
 from Histogram import Histogram
 
 class Soundogram() = Histogram():
