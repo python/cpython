@@ -145,6 +145,10 @@ class TestReversed(unittest.TestCase):
         s = 'hello'
         self.assertEqual(list(reversed(reversed(s))), list(s))
 
+    def test_len(self):
+        s = 'hello'
+        self.assertEqual(len(reversed(s)), len(s))
+
 def test_main(verbose=None):
     testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,
                    TestReversed)
