@@ -9,8 +9,6 @@ idle_name = "idle"
 # Name of 'package' to be installed in site-packages:
 pkgname = idle_name + "lib"
 
-pkg_dir = "."
-
 try:
     pos = sys.argv.index("--check-tkinter")
 except ValueError:
@@ -23,6 +21,11 @@ else:
         print >>sys.stderr, "Cannot install IDLE without _tkinter"
         raise SystemExit
 
+try:
+    pkg_dir = os.path.join(os.environ['SRCDIR'], 'Tools', idle_name)
+except KeyError:
+    pkg_dir = "."
+
 # the normal build_py would not incorporate anything but .py files
 txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'HISTORY.txt',
              'INSTALL.txt', 'LICENSE.txt', 'NEWS.txt', 'README.txt']
@@ -30,7 +33,7 @@ txt_files += ['config-extensions.def', 'config-highlight.def',
               'config-keys.def', 'config-main.def']
 txt_files += [idle_name + '.bat', idle_name + '.pyw']
 
-Icons = glob.glob1("Icons","*.gif")
+Icons = glob.glob1(os.path.join(pkg_dir, "Icons"), "*.gif")
 
 class IDLE_Builder(build_py):
     def get_plain_outfile(self, build_dir, package, file):
@@ -52,7 +55,7 @@ class IDLE_Builder(build_py):
                                              [pkgname, "Icons"], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
-            self.copy_file(os.path.join("Icons", name),
+            self.copy_file(os.path.join(pkg_dir, "Icons", name),
                            outfile, preserve_mode = 0)
 
     def get_source_files(self):
