@@ -321,3 +321,19 @@ which occurs.}
   Return a list of frame records for the stack below the current
   exception.
 \end{funcdesc}
+
+Stackframes stored directly or indirectly in local variables can
+easily cause reference cycles.  Though the cycle detector will catch
+these, destruction of the frames (and local variables) can be made
+deterministic by removing the cycle in a \keyword{finally} clause.
+This is also important if the cycle detector was disabled when Python
+was compiled or using \function{gc.disable()}.  For example:
+
+\begin{verbatim}
+def handle_stackframe_without_leak():
+    frame = inspect.currentframe()
+    try:
+        # do something with the frame
+    finally:
+        del frame
+\end{verbatim}
