@@ -204,8 +204,7 @@ t_bootstrap(void *boot_raw)
 	else
 		Py_DECREF(res);
 	PyThreadState_Clear(tstate);
-	PyEval_ReleaseThread(tstate);
-	PyThreadState_Delete(tstate);
+	PyThreadState_DeleteCurrent();
 	PyThread_exit_thread();
 }
 
