@@ -219,10 +219,14 @@ class sdist (Command):
         #      do nothing (unless --force or --manifest-only)
         #   4) no manifest, no template: generate w/ warning ("defaults only")
 
-        # Regenerate the manifest if necessary (or if explicitly told to)
-        if ((template_exists and (template_newer or setup_newer)) or
-            self.force_manifest or self.manifest_only):
+        manifest_outofdate = (template_exists and
+                              (template_newer or setup_newer))
+        force_regen = self.force_manifest or self.manifest_only
+        manifest_exists = os.path.isfile(self.manifest)
+        neither_exists = (not template_exists and not manifest_exists)
 
+        # Regenerate the manifest if necessary (or if explicitly told to)
+        if manifest_outofdate or neither_exists or force_regen:
             if not template_exists:
                 self.warn(("manifest template '%s' does not exist " +
                            "(using default file list)") %
@@ -273,10 +277,7 @@ class sdist (Command):
         else is optional.
         """
 
-        # XXX name of setup script and config file should be taken
-        # programmatically from the Distribution object (except
-        # it doesn't have that capability... yet!)
-        standards = [('README', 'README.txt'), 'setup.py']
+        standards = [('README', 'README.txt'), self.distribution.script_name]
         for fn in standards:
             if type (fn) is TupleType:
                 alts = fn
