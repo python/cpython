@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -62,6 +62,9 @@ typedef struct {
 staticforward typeobject Mfsstype;
 
 #define is_mfssobject(v)		((v)->ob_type == &Mfsstype)
+
+
+mfssobject *newmfssobject(FSSpec *fss); /* Forward */
 
 /* ---------------------------------------------------------------- */
 
@@ -134,9 +137,9 @@ mfsa_Update(self, args)
 }
 
 static struct methodlist mfsa_methods[] = {
-	{"Resolve",	mfsa_Resolve,	1},
-	{"GetInfo",	mfsa_GetInfo,	1},
-	{"Update",	mfsa_Update,	1},
+	{"Resolve",	(method)mfsa_Resolve,	1},
+	{"GetInfo",	(method)mfsa_GetInfo,	1},
+	{"Update",	(method)mfsa_Update,	1},
  
 	{NULL,		NULL}		/* sentinel */
 };
@@ -286,10 +289,10 @@ mfss_NewAliasMinimal(self, args)
 }
 
 static struct methodlist mfss_methods[] = {
-	{"as_pathname",		mfss_as_pathname,			1},
-	{"as_tuple",		mfss_as_tuple,				1},
-	{"NewAlias",		mfss_NewAlias,				1},
-	{"NewAliasMinimal",	mfss_NewAliasMinimal,		1},
+	{"as_pathname",		(method)mfss_as_pathname,			1},
+	{"as_tuple",		(method)mfss_as_tuple,				1},
+	{"NewAlias",		(method)mfss_NewAlias,				1},
+	{"NewAliasMinimal",	(method)mfss_NewAliasMinimal,		1},
  
 	{NULL,			NULL}		/* sentinel */
 };
