@@ -35,7 +35,7 @@ def genpluginproject(architecture, module,
 		project=None, projectdir=None,
 		sources=[], sourcedirs=[],
 		libraries=[], extradirs=[],
-		extraexportsymbols=[]):
+		extraexportsymbols=[], outputdir=":::Lib:lib-dynload"):
 	if architecture == "all":
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
@@ -78,7 +78,7 @@ def genpluginproject(architecture, module,
 		"sources" : sources,
 		"extrasearchdirs" : sourcedirs + extradirs,
 		"libraries": libraries,
-		"mac_outputdir" : "::Plugins",
+		"mac_outputdir" : outputdir,
 		"extraexportsymbols" : extraexportsymbols,
 		"mac_targetname" : targetname,
 		"mac_dllname" : dllname,
@@ -106,43 +106,47 @@ def	genallprojects(force=0):
 	genpluginproject("all", "_testcapi")
 	
 	# bgen-generated Toolbox modules
-	genpluginproject("carbon", "AE")
-	genpluginproject("ppc", "AE", libraries=["ObjectSupportLib"])
-	genpluginproject("ppc", "App", libraries=["AppearanceLib"])
-	genpluginproject("carbon", "App")
-	genpluginproject("ppc", "Cm", libraries=["QuickTimeLib"])
-	genpluginproject("carbon", "Cm")
-	genpluginproject("carbon", "Ctl")
-	genpluginproject("ppc", "Ctl", libraries=["ControlsLib", "AppearanceLib"])
-	genpluginproject("carbon", "Dlg")
-	genpluginproject("ppc", "Dlg", libraries=["DialogsLib", "AppearanceLib"])
-	genpluginproject("carbon", "Drag")
-	genpluginproject("ppc", "Drag", libraries=["DragLib"])
-	genpluginproject("all", "Evt")
-	genpluginproject("all", "Fm")
-	genpluginproject("ppc", "Help")
+	genpluginproject("carbon", "AE", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "AE", libraries=["ObjectSupportLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "App", libraries=["AppearanceLib"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "App", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Cm", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Cm", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Ctl", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Ctl", libraries=["ControlsLib", "AppearanceLib"], 
+			outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Dlg", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Dlg", libraries=["DialogsLib", "AppearanceLib"],
+			outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Drag", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Drag", libraries=["DragLib"], outputdir="::Lib:Carbon")
+	genpluginproject("all", "Evt", outputdir="::Lib:Carbon")
+	genpluginproject("all", "Fm", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Help", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "Icn", libraries=["IconServicesLib"])
-	genpluginproject("carbon", "Icn")
-	genpluginproject("all", "List")
-	genpluginproject("carbon", "Menu")
-	genpluginproject("ppc", "Menu", libraries=["MenusLib", "ContextualMenu", "AppearanceLib"])
-	genpluginproject("all", "Qd")
-	genpluginproject("ppc", "Qt", libraries=["QuickTimeLib"])
-	genpluginproject("carbon", "Qt")
-	genpluginproject("all", "Qdoffs")
-	genpluginproject("all", "Res")
-	genpluginproject("all", "Scrap")
-	genpluginproject("ppc", "Snd", libraries=["SoundLib"])
-	genpluginproject("carbon", "Snd")
-	genpluginproject("all", "Sndihooks", sources=[":snd:Sndihooks.c"])
-	genpluginproject("ppc", "TE", libraries=["DragLib"])
-	genpluginproject("carbon", "TE")
-	genpluginproject("ppc", "Mlte", libraries=["Textension"])
-	genpluginproject("carbon", "Mlte")
-	genpluginproject("carbon", "Win")
-	genpluginproject("ppc", "Win", libraries=["WindowsLib", "AppearanceLib"])
+	genpluginproject("carbon", "Icn", outputdir="::Lib:Carbon")
+	genpluginproject("all", "List", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Menu", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Menu", libraries=["MenusLib", "ContextualMenu", "AppearanceLib"],
+			outputdir="::Lib:Carbon")
+	genpluginproject("all", "Qd", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Qt", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Qt", outputdir="::Lib:Carbon")
+	genpluginproject("all", "Qdoffs", outputdir="::Lib:Carbon")
+	genpluginproject("all", "Res", outputdir="::Lib:Carbon")
+	genpluginproject("all", "Scrap", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Snd", libraries=["SoundLib"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Snd", outputdir="::Lib:Carbon")
+	genpluginproject("all", "Sndihooks", sources=[":snd:Sndihooks.c"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "TE", libraries=["DragLib"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "TE", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Mlte", libraries=["Textension"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Mlte", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "Win", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "Win", libraries=["WindowsLib", "AppearanceLib"],
+			outputdir="::Lib:Carbon")
 	# Carbon Only?
-	genpluginproject("carbon", "CF")
+	genpluginproject("carbon", "CF", outputdir="::Lib:Carbon")
 	
 	# Other Mac modules
 	genpluginproject("all", "calldll", sources=["calldll.c"])
