@@ -242,7 +242,8 @@ architecture, and in each directory run the configure script (on the
 appropriate machine with the appropriate options).  This creates the
 necessary subdirectories and the Makefiles therein.  The Makefiles
 contain a line VPATH=... which points to directory containing the
-actual sources.
+actual sources.  (On SGI systems, use "smake" instead of "make" if you
+use VPATH -- don't try gnumake.)
 
 For example, the following is all you need to build a minimal Python
 in /usr/tmp/python (assuming ~guido/src/python is the toplevel
@@ -255,13 +256,6 @@ directory and you want to build in /usr/tmp/python):
 	$ make
 	[...]
 	$
-
-To use the readline library in this case, you will have to create a
-subdirectory of your build directory called readline, copy
-readline/Makefile into it, edit the Makefile to contain a proper VPATH
-line (and possibly edit the compiler flags set in the Makefile), and
-pass the configure script a --with-readline=DIRECTORY option giving it
-the absolute (!) pathname of the readline build directory.
 
 Note that Modules/Makefile copies the original Setup file to the build
 directory if it finds no Setup file there.  This means that you can
