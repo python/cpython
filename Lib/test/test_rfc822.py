@@ -118,6 +118,14 @@ class MessageTestCase(unittest.TestCase):
              ])
 
         self.check(
+            'To: Some One <someone@dom.ain>\n'
+            'From: Anudder Persin <subuddy.else@dom.ain>\n'
+            'Date:\n'
+            '\n'
+            'test',
+            [('Some One', 'someone@dom.ain')])
+
+        self.check(
             'To: person@dom.ain (User J. Person)\n\n',
             [('User J. Person', 'person@dom.ain')])
 
