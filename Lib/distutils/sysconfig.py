@@ -137,8 +137,13 @@ def _init_nt():
             os.path.join(sys.exec_prefix, "include", "config.h")), g)
     # set basic install directories
     g['LIBDEST']=os.path.join(sys.exec_prefix, "Lib")
-    g['BINLIBDEST']=os.path.join(sys.exec_prefix, "Lib")
+    g['BINLIBDEST']= os.path.join(sys.exec_prefix, "Lib")
 
+    # XXX hmmm.. a normal install puts include files here
+    g['INCLUDEPY'] = os.path.join (sys.prefix, 'include' )
+
+    g['SO'] = '.dll'
+    g['exec_prefix'] = sys.exec_prefix
 
 try:
     exec "_init_" + os.name
