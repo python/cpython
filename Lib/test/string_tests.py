@@ -628,3 +628,7 @@ class MixinStrUserStringTest:
             data = 'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
             self.checkequal(data, 'hello world', 'encode', 'zlib')
             self.checkequal('hello world', data, 'decode', 'zlib')
+
+        self.checkraises(TypeError, 'xyz', 'decode', 42)
+        self.checkraises(TypeError, 'xyz', 'encode', 42)
+
