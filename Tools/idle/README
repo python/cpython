@@ -8,8 +8,14 @@ features:
 - multi-window text editor with multiple undo and Python colorizing
 - Python shell (a.k.a. interactive interpreter) window subclass
 - debugger
+- 100% pure Python
+- works on Windows and Unix (should work on Mac too)
 
-It requires Python 1.5.2, so it is currently only usable for PSA
+The main program is in the file "idle"; on Windows you can use
+idle.pyw to avoid popping up a DOS console.  Any arguments passed are
+interpreted as files that will be opened for editing.
+
+IDLE requires Python 1.5.2, so it is currently only usable for PSA
 members who have the latest 1.5.2 alpha release (a public beta release
 is due shortly).
 
@@ -44,7 +50,7 @@ TO DO:
 - better help?
 
 Details:
-    
+
 - when there's a selection, left/right arrow should go to either
   end of the selection
 - ^O should honor autoindent
