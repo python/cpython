@@ -52,8 +52,6 @@ def _open_formfile(filename):
     if filename[0] = '/':
 	try:
 	    fp = open(filename,'r')
-	except RuntimeError: #BCOMPAT
-	    fp = None
 	except IOError:
 	    fp = None
     else:
@@ -62,8 +60,6 @@ def _open_formfile(filename):
 	    try:
 		fp = open(pn, 'r')
 		break
-	    except RuntimeError: #BCOMPAT
-		fp = None
 	    except IOError:
 		fp = None
     if fp = None:
@@ -107,7 +103,7 @@ def _parse_fd_form(file, name):
 #
 # Internal class: a convient place to store object info fields
 #
-class _newobj():
+class _newobj:
     def init(self):
 	return self
     def add(self, (name, value)):
@@ -158,8 +154,6 @@ def _parse_line(line):
     value = line[a[2][0]:]
     try:
 	pf = _parse_func[name]
-    except RuntimeError:	# BCOMPAT
-	pf = _parse_num
     except KeyError:
 	pf = _parse_num
     value = pf(value)
