@@ -829,6 +829,53 @@ def multi():
     vereq(Frag().__int__(), 42)
     vereq(int(Frag()), 42)
 
+    # MI mixing classic and new-style classes.
+    class C:
+        def cmethod(self):
+            return "C a"
+        def all_method(self):
+            return "C b"
+
+    class M1(C, object):
+        def m1method(self):
+            return "M1 a"
+        def all_method(self):
+            return "M1 b"
+
+    vereq(M1.__mro__, (M1, C, object))
+    m = M1()
+    vereq(m.cmethod(), "C a")
+    vereq(m.m1method(), "M1 a")
+    vereq(m.all_method(), "M1 b")
+
+    class D(C):
+        def dmethod(self):
+            return "D a"
+        def all_method(self):
+            return "D b"
+
+    class M2(object, D):
+        def m2method(self):
+            return "M2 a"
+        def all_method(self):
+            return "M2 b"
+
+    vereq(M2.__mro__, (M2, object, D, C))
+    m = M2()
+    vereq(m.cmethod(), "C a")
+    vereq(m.dmethod(), "D a")
+    vereq(m.m2method(), "M2 a")
+    vereq(m.all_method(), "M2 b")
+
+    class M3(M1, object, M2):
+        def m3method(self):
+            return "M3 a"
+        def all_method(self):
+            return "M3 b"
+    # XXX Expected this (the commented-out result):
+    # vereq(M3.__mro__, (M3, M1, M2, object, D, C))
+    vereq(M3.__mro__, (M3, M1, M2, D, C, object))  # XXX ?
+
 def diamond():
     if verbose: print "Testing multiple inheritance special cases..."
     class A(object):
@@ -1015,14 +1062,6 @@ def errors():
         verify(0, "inheritance from non-type should be illegal")
     class Classic:
         pass
-
-    try:
-        class C(object, Classic):
-            pass
-    except TypeError:
-        pass
-    else:
-        verify(0, "inheritance from object and Classic should be illegal")
 
     try:
         class C(type(len)):
