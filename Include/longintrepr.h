@@ -15,7 +15,8 @@ extern "C" {
    (at most (BASE-1)*(2*BASE+1) == MASK*(2*MASK+3)).
    Also, x_sub assumes that 'digit' is an unsigned type, and overflow
    is handled by taking the result mod 2**N for some N > SHIFT.
-   And, at some places it is assumed that MASK fits in an int, as well. */
+   And, at some places it is assumed that MASK fits in an int, as well.
+   long_pow() requires that SHIFT be divisible by 5. */
 
 typedef unsigned short digit;
 typedef unsigned int wdigit; /* digit widened to parameter size */
@@ -26,6 +27,10 @@ typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
 #define SHIFT	15
 #define BASE	((digit)1 << SHIFT)
 #define MASK	((int)(BASE - 1))
+
+#if SHIFT % 5 != 0
+#error "longobject.c requires that SHIFT be divisible by 5"
+#endif
 
 /* Long integer representation.
    The absolute value of a number is equal to

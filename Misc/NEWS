@@ -20,7 +20,11 @@ Core and builtins
   to compute 17**1000000 dropped from about 14 seconds to 9 on my box due
   to this much.  The cutoff for Karatsuba multiplication was raised,
   since gradeschool multiplication got quicker, and the cutoff was
-  aggressively small regardless.
+  aggressively small regardless.  The exponentiation algorithm was switched
+  from right-to-left to left-to-right, which is more efficient for small
+  bases.  In addition, if the exponent is large, the algorithm now does
+  5 bits (instead of 1 bit) at a time.  That cut the time to compute
+  17**1000000 on my box in half again, down to about 4.5 seconds.
 
 - OverflowWarning is no longer generated.  PEP 237 scheduled this to
   occur in Python 2.3, but since OverflowWarning was disabled by default,
@@ -155,6 +159,14 @@ Tools/Demos
 
 Build
 -----
+
+- Backward incompatibility:  longintrepr.h now triggers a compile-time
+  error if SHIFT (the number of bits in a Python long "digit") isn't
+  divisible by 5.  This new requirement allows simple code for the new
+  5-bits-at-a-time long_pow() implementation.  If necessary, the
+  restriction could be removed (by complicating long_pow(), or by
+  falling back to the 1-bit-at-a-time algorithm), but there are no
+  plans to do so.
 
 - bug #991962: When building with --disable-toolbox-glue on Darwin no
   attempt to build Mac-specific modules occurs.
