@@ -283,11 +283,12 @@ dictresize(mp, minused)
 			break;
 		}
 	}
-	newtable = (dictentry *) calloc(sizeof(dictentry), newsize);
+	newtable = (dictentry *) malloc(sizeof(dictentry) * newsize);
 	if (newtable == NULL) {
 		PyErr_NoMemory();
 		return -1;
 	}
+	memset(newtable, '\0', sizeof(dictentry) * newsize);
 	mp->ma_size = newsize;
 	mp->ma_poly = newpoly;
 	mp->ma_table = newtable;
