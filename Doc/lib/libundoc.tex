@@ -182,9 +182,6 @@ library
 \item[packmail.py]
 --- create a self-unpacking \UNIX{} shell archive
 
-\item[poly.py]
---- Polynomials
-
 \item[sched.py]
 --- event scheduler class
 
@@ -193,9 +190,6 @@ library
 
 \item[util.py]
 --- useful functions that don't fit elsewhere
-
-\item[zmod.py]
---- Compute properties of mathematical "fields"
 
 \item[tzparse.py]
 --- Parse a timezone specification (unfinished)
@@ -218,6 +212,11 @@ possibly using \envvar{PYTHONPATH}.
 \item[addpack.py]
 --- standard support for "packages"
 
+\item[codehack.py]
+--- Extract function name or line number from a function
+code object (these are now accessible as attributes: co.co_name,
+func.func_name, co.co_firstlineno).
+
 \item[fmt.py]
 --- text formatting abstractions (too slow)
 
@@ -228,18 +227,19 @@ possibly using \envvar{PYTHONPATH}.
 --- wrapper around FCNTL file locking (use
 \function{fcntl.lockf()}/\function{flock()} intead)
 
+\item[poly.py]
+--- Polynomials
+
 \item[tb.py]
 --- Print tracebacks, with a dump of local variables (use
 \function{pdb.pm()} or \module{traceback} instead)
 
-\item[codehack.py]
---- Extract function name or line number from a function
-code object (these are now accessible as attributes: co.co_name,
-func.func_name, co.co_firstlineno).
-
 \item[timingmodule]
 --- Measure time intervals to high resolution (use
 \function{time.clock()} instead).  (This is an extension module.)
+
+\item[zmod.py]
+--- Compute properties of mathematical "fields"
 \end{description}
 
 The following modules were documented in previous versions of this
