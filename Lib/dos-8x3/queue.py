@@ -19,28 +19,28 @@ class Queue:
         self._init(maxsize)
         self.mutex = thread.allocate_lock()
         self.esema = thread.allocate_lock()
-        self.esema.acquire_lock()
+        self.esema.acquire()
         self.fsema = thread.allocate_lock()
 
     def qsize(self):
         """Returns the approximate size of the queue (not reliable!)."""
-        self.mutex.acquire_lock()
+        self.mutex.acquire()
         n = self._qsize()
-        self.mutex.release_lock()
+        self.mutex.release()
         return n
 
     def empty(self):
         """Returns 1 if the queue is empty, 0 otherwise (not reliable!)."""
-        self.mutex.acquire_lock()
+        self.mutex.acquire()
         n = self._empty()
-        self.mutex.release_lock()
+        self.mutex.release()
         return n
 
     def full(self):
         """Returns 1 if the queue is full, 0 otherwise (not reliable!)."""
-        self.mutex.acquire_lock()
+        self.mutex.acquire()
         n = self._full()
-        self.mutex.release_lock()
+        self.mutex.release()
         return n
 
     def put(self, item):
@@ -48,30 +48,30 @@ class Queue:
 
 	If the queue is full, block until a free slot is avaiable.
 	"""
-        self.fsema.acquire_lock()
-        self.mutex.acquire_lock()
+        self.fsema.acquire()
+        self.mutex.acquire()
         was_empty = self._empty()
         self._put(item)
         if was_empty:
-            self.esema.release_lock()
+            self.esema.release()
         if not self._full():
-            self.fsema.release_lock()
-        self.mutex.release_lock()
+            self.fsema.release()
+        self.mutex.release()
 
     def get(self):
         """Gets and returns an item from the queue.
 
         This method blocks if necessary until an item is available.
         """
-        self.esema.acquire_lock()
-        self.mutex.acquire_lock()
+        self.esema.acquire()
+        self.mutex.acquire()
         was_full = self._full()
         item = self._get()
         if was_full:
-            self.fsema.release_lock()
+            self.fsema.release()
         if not self._empty():
-            self.esema.release_lock()
-        self.mutex.release_lock()
+            self.esema.release()
+        self.mutex.release()
         return item
 
     # Get an item from the queue if one is immediately available,
@@ -83,27 +83,27 @@ class Queue:
         this raises the Empty exception if the queue is empty or
         temporarily unavailable.
         """
-        locked = self.esema.acquire_lock(0)
-        self.mutex.acquire_lock()
+        locked = self.esema.acquire(0)
+        self.mutex.acquire()
         if self._empty():
             # The queue is empty -- we can't have esema
-            self.mutex.release_lock()
+            self.mutex.release()
             raise Empty
         if not locked:
-            locked = self.esema.acquire_lock(0)
+            locked = self.esema.acquire(0)
             if not locked:
                 # Somebody else has esema
                 # but we have mutex --
                 # go out of their way
-                self.mutex.release_lock()
+                self.mutex.release()
                 raise Empty
         was_full = self._full()
         item = self._get()
         if was_full:
-            self.fsema.release_lock()
+            self.fsema.release()
         if not self._empty():
-            self.esema.release_lock()
-        self.mutex.release_lock()
+            self.esema.release()
+        self.mutex.release()
         return item
 
     # XXX Need to define put_nowait() as well.

@@ -4,7 +4,7 @@
    Roger E. Masse
 """
 
-from test_support import verbose, unlink
+from test_support import verbose, unlink, findfile
 
 import imgfile, uu, os
 
@@ -22,14 +22,6 @@ def main():
 
     unlink('test.rgb')
     unlink('greytest.rgb')
-
-def findfile(file):
-        if os.path.isabs(file): return file
-        import sys
-        for dn in sys.path:
-                fn = os.path.join(dn, file)
-                if os.path.exists(fn): return fn
-        return file
 
 def testimage(name):
     """Run through the imgfile's battery of possible methods

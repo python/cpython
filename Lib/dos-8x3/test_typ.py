@@ -78,6 +78,18 @@ if (-12L) + 24L <> 12L: raise TestFailed, 'long op'
 if (-12L) + (-24L) <> -36L: raise TestFailed, 'long op'
 if not 12L < 24L: raise TestFailed, 'long op'
 if not -24L < -12L: raise TestFailed, 'long op'
+x = sys.maxint
+if int(long(x)) != x: raise TestFailed, 'long op'
+try: int(long(x)+1L)
+except OverflowError: pass
+else:raise TestFailed, 'long op'
+x = -x
+if int(long(x)) != x: raise TestFailed, 'long op'
+x = x-1
+if int(long(x)) != x: raise TestFailed, 'long op'
+try: int(long(x)-1L)
+except OverflowError: pass
+else:raise TestFailed, 'long op'
 print '6.4.3 Floating point numbers'
 if 12.0 + 24.0 <> 36.0: raise TestFailed, 'float op'
 if 12.0 + (-24.0) <> -12.0: raise TestFailed, 'float op'
@@ -122,6 +134,19 @@ if 0*[1,2,3] <> []: raise TestFailed, 'list repetition 0*'
 if min([1,2]) <> 1 or max([1,2]) <> 2: raise TestFailed, 'min/max list'
 if 0 in [0,1,2] and 1 in [0,1,2] and 2 in [0,1,2] and 3 not in [0,1,2]: pass
 else: raise TestFailed, 'in/not in list'
+a = [1, 2, 3, 4, 5]
+a[:-1] = a
+if a != [1, 2, 3, 4, 5, 5]:
+	raise TestFailed, "list self-slice-assign (head)"
+a = [1, 2, 3, 4, 5]
+a[1:] = a
+if a != [1, 1, 2, 3, 4, 5]:
+	raise TestFailed, "list self-slice-assign (tail)"
+a = [1, 2, 3, 4, 5]
+a[1:-1] = a
+if a != [1, 1, 2, 3, 4, 5, 5]:
+	raise TestFailed, "list self-slice-assign (center)"
+
 
 print '6.5.3a Additional list operations'
 a = [0,1,2,3,4]

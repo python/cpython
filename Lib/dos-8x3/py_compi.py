@@ -65,4 +65,3 @@ def compile(file, cfile=None, dfile=None):
     if os.name == 'mac':
         import macfs
         macfs.FSSpec(cfile).SetCreatorType('Pyth', 'PYC ')
-        macfs.FSSpec(file).SetCreatorType('Pyth', 'TEXT')

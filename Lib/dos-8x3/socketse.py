@@ -265,7 +265,12 @@ class UDPServer(TCPServer):
     max_packet_size = 8192
 
     def get_request(self):
-        return self.socket.recvfrom(self.max_packet_size)
+        data, client_addr = self.socket.recvfrom(self.max_packet_size)
+        return (data, self.socket), client_addr
+
+    def server_activate(self):
+        # No need to call listen() for UDP.
+        pass
 
 
 if hasattr(socket, 'AF_UNIX'):
@@ -411,4 +416,4 @@ class DatagramRequestHandler(BaseRequestHandler):
         self.wfile = StringIO.StringIO(self.packet)
 
     def finish(self):
-        self.socket.send(self.wfile.getvalue())
+        self.socket.sendto(self.wfile.getvalue(), self.client_address)

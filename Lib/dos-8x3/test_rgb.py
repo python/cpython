@@ -2,24 +2,11 @@
 
 import rgbimg, os, uu
 
-from test_support import verbose, unlink
+from test_support import verbose, unlink, findfile
 
 error = 'test_rgbimg.error'
 
 print 'RGBimg test suite:'
-
-def findfile(file):
-        if os.path.isabs(file): return file
-        import sys
-        path = sys.path
-        try:
-            path = [os.path.dirname(__file__)] + path
-        except NameError:
-            pass
-        for dn in path:
-                fn = os.path.join(dn, file)
-                if os.path.exists(fn): return fn
-        return file
 
 def testimg(rgb_file, raw_file):
         rgb_file = findfile(rgb_file)

@@ -3,12 +3,12 @@
 # Create a bunch of threads, let each do some work, wait until all are done
 
 from test_support import verbose
-import whrandom
+import random
 import thread
 import time
 
 mutex = thread.allocate_lock()
-whmutex = thread.allocate_lock() # for calls to whrandom
+rmutex = thread.allocate_lock() # for calls to random
 running = 0
 done = thread.allocate_lock()
 done.acquire()
@@ -17,9 +17,9 @@ numtasks = 10
 
 def task(ident):
 	global running
-	whmutex.acquire()
-	delay = whrandom.random() * numtasks
-	whmutex.release()
+	rmutex.acquire()
+	delay = random.random() * numtasks
+	rmutex.release()
 	if verbose:
 	    print 'task', ident, 'will run for', round(delay, 1), 'sec'
 	time.sleep(delay)
@@ -85,9 +85,9 @@ def task2(ident):
 			# of the current one
 			delay = 0.001
 		else:
-			whmutex.acquire()
-			delay = whrandom.random() * numtasks
-			whmutex.release()
+			rmutex.acquire()
+			delay = random.random() * numtasks
+			rmutex.release()
 		if verbose:
 		    print 'task', ident, 'will run for', round(delay, 1), 'sec'
 		time.sleep(delay)
