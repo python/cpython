@@ -952,6 +952,10 @@ class TestMiscellaneous(unittest.TestCase):
     def test_parsedate_none(self):
         self.assertEqual(Utils.parsedate(''), None)
 
+    def test_parseaddr_empty(self):
+        self.assertEqual(Utils.parseaddr('<>'), ('', ''))
+        self.assertEqual(Utils.dump_address_pair(Utils.parseaddr('<>')), '')
+
 
 
 # Test the iterator/generators
