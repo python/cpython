@@ -920,6 +920,9 @@ Py_ReprLeave(obj)
 
   CT 2k0309
   modified to restore a possible error.
+
+  CT 2k0325
+  added better safe than sorry check for threadstate
 */
 
 int _PyTrash_delete_nesting = 0;
@@ -930,14 +933,17 @@ _PyTrash_deposit_object(op)
 	PyObject *op;
 {
 	PyObject *error_type, *error_value, *error_traceback;
-	PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+	if (PyThreadState_GET() != NULL)
+	    PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
 	if (!_PyTrash_delete_later)
 		_PyTrash_delete_later = PyList_New(0);
 	if (_PyTrash_delete_later)
 		PyList_Append(_PyTrash_delete_later, (PyObject *)op);
 
-	PyErr_Restore(error_type, error_value, error_traceback);
+	if (PyThreadState_GET() != NULL)
+	    PyErr_Restore(error_type, error_value, error_traceback);
 }
 
 void
