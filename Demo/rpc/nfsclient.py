@@ -3,6 +3,7 @@
 # (See mountclient.py for some hints on how to write RPC clients in
 # Python in general)
 
+import rpc
 from rpc import UDPClient, TCPClient
 from mountclient import FHSIZE, MountPacker, MountUnpacker
 
@@ -123,6 +124,11 @@ class NFSClient(UDPClient):
 	def addpackers(self):
 		self.packer = NFSPacker().init()
 		self.unpacker = NFSUnpacker().init('')
+
+	def mkcred(self, proc):
+		if self.cred == None:
+			self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
+		return self.cred
 
 	def Getattr(self, fh):
 		self.start_call(1)
