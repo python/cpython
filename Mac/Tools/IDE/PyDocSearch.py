@@ -1,7 +1,3 @@
-import aetools
-import Standard_Suite
-import Required_Suite
-import WWW_Suite
 import re
 import W
 import macfs
@@ -9,25 +5,10 @@ import os
 import MacPrefs
 import MacOS
 import string
+import webbrowser
 
-if hasattr(WWW_Suite, "WWW_Suite"):
-	WWW = WWW_Suite.WWW_Suite
-else:
-	WWW = WWW_Suite.WorldWideWeb_suite_2c__as_defined_in_Spyglass_spec_2e_
-
-class WebBrowser(aetools.TalkTo, 
-		Standard_Suite.Standard_Suite, 
-		WWW):
-	
-	def openfile(self, path, activate = 1):
-		if activate:
-			self.activate()
-		self.OpenURL("file:///" + string.join(string.split(path,':'), '/'))
 
 app = W.getapplication()
-
-#SIGNATURE='MSIE' # MS Explorer
-SIGNATURE='MOSS' # Netscape
 
 _titlepat = re.compile('<title>\([^<]*\)</title>')
 
@@ -35,7 +16,7 @@ def sucktitle(path):
 	f = open(path)
 	text = f.read(1024) # assume the title is in the first 1024 bytes
 	f.close()
-	lowertext = string.lower(text)
+	lowertext = text.lower()
 	matcher = _titlepat.search(lowertext)
 	if matcher:
 		return matcher.group(1)
@@ -84,25 +65,25 @@ class Results:
 				map(lambda (c, p): "%s (%d)" % (p, c), hits), ', '), hits)
 		nicehits.sort()
 		self.w = W.Window((440, 300), "Search results %d" % _resultscounter, minsize = (200, 100))
-		self.w.results = TwoLineList((-1, -1, 1, -14), nicehits, self.listhit)
+		self.w.results = W.TwoLineList((-1, -1, 1, -14), nicehits, self.listhit)
 		self.w.open()
 		self.w.bind('return', self.listhit)
 		self.w.bind('enter', self.listhit)
 		_resultscounter = _resultscounter + 1
-		self.browser = None
 	
 	def listhit(self, isdbl = 1):
 		if isdbl:
 			for i in self.w.results.getselection():
-				if self.browser is None:
-					self.browser = WebBrowser(SIGNATURE, start = 1)
-				self.browser.openfile(self.hits[i][1])
+				path = self.hits[i][1]
+				url = "file://" + "/".join(path.split(":"))
+				webbrowser.open(url)
+
 
 class Status:
 	
 	def __init__(self):
 		self.w = W.Dialog((440, 64), "Searching\xc9")
-		self.w.searching = W.TextBox((4, 4, -4, 16), "DevDev:PyPyDoc 1.5.1:ext:parseTupleAndKeywords.html")
+		self.w.searching = W.TextBox((4, 4, -4, 16), "")
 		self.w.hits = W.TextBox((4, 24, -4, 16), "Hits: 0")
 		self.w.canceltip = W.TextBox((4, 44, -4, 16), "Type cmd-period (.) to cancel.")
 		self.w.open()
@@ -130,6 +111,7 @@ def match(text, patterns, all):
 	hits.sort()
 	hits.reverse()
 	return hits
+
 
 def dosearch(docpath, searchstring, settings):
 	(docpath, kind, case, word, tut, lib, ref, ext, api) = settings
@@ -219,7 +201,7 @@ class PyDocSearch:
 		self.w.extending = W.CheckBox((bookstart, 98, -10, 16), "Extending & embedding")
 		self.w.api = W.CheckBox((bookstart, 118, -10, 16), "C/C++ API")
 		
-		self.w.setdocfolderbutton = W.Button((10, -30, 80, 16), "Set doc folder", self.setdocpath)
+		self.w.setdocfolderbutton = W.Button((10, -30, 100, 16), "Set doc folder", self.setdocpath)
 		
 		if docpath:
 			self.w.setdefaultbutton(self.w.searchbutton)
@@ -229,7 +211,7 @@ class PyDocSearch:
 		self.docpath = docpath
 		if not docpath:
 			docpath = "(please select the Python html documentation folder)"
-		self.w.docfolder = W.TextBox((100, -28, -10, 16), docpath)
+		self.w.docfolder = W.TextBox((120, -28, -10, 16), docpath)
 		
 		[self.w.phraseradio, self.w.allwordsradio, self.w.anywordsradio][kind].set(1)
 		
@@ -252,8 +234,6 @@ class PyDocSearch:
 			Results(hits)
 		elif hasattr(MacOS, 'SysBeep'):
 			MacOS.SysBeep(0)
-		#import PyBrowser
-		#PyBrowser.Browser(hits)
 	
 	def setdocpath(self):
 		fss, ok = macfs.GetDirectory()
