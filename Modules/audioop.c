@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
-/* Code shamelessly stealen from sox,
+/* Code shamelessly stolen from sox,
 ** (c) Craig Reese, Joe Campbell and Jeff Poskanzer 1989 */
 
 #define MINLIN -32768
@@ -270,44 +270,187 @@ audioop_rms(self, args)
     return newintobject(val);
 }
 
+double _sum2(a, b, len)
+    short *a;
+    short *b;
+    int len;
+{
+    int i;
+    double sum = 0.0;
+
+    for( i=0; i<len; i++) {
+	sum = sum + (double)a[i]*(double)b[i];
+    }
+    return sum;
+}
+
+/*
+** Findfit tries to locate a sample within another sample. Its main use
+** is in echo-cancellation (to find the feedback of the output signal in
+** the input signal).
+** The method used is as follows:
+**
+** let R be the reference signal (length n) and A the input signal (length N)
+** with N > n, and let all sums be over i from 0 to n-1.
+**
+** Now, for each j in {0..N-n} we compute a factor fj so that -fj*R matches A
+** as good as possible, i.e. sum( (A[j+i]+fj*R[i])^2 ) is minimal. This
+** equation gives fj = sum( A[j+i]R[i] ) / sum(R[i]^2).
+**
+** Next, we compute the relative distance between the original signal and
+** the modified signal and minimize that over j:
+** vj = sum( (A[j+i]-fj*R[i])^2 ) / sum( A[j+i]^2 )  =>
+** vj = ( sum(A[j+i]^2)*sum(R[i]^2) - sum(A[j+i]R[i])^2 ) / sum( A[j+i]^2 )
+**
+** In the code variables correspond as follows:
+** cp1		A
+** cp2		R
+** len1		N
+** len2		n
+** aj_m1	A[j-1]
+** aj_lm1	A[j+n-1]
+** sum_ri_2	sum(R[i]^2)
+** sum_aij_2	sum(A[i+j]^2)
+** sum_aij_ri	sum(A[i+j]R[i])
+**
+** sum_ri is calculated once, sum_aij_2 is updated each step and sum_aij_ri
+** is completely recalculated each step.
+*/
 static object *
-audioop_rms2(self, args)
+audioop_findfit(self, args)
     object *self;
     object *args;
 {
-    signed char *cp1, *cp2;
-    int len1, len2, size, val1, val2;
-    int i;
-    float sum_squares = 0.0;
+    short *cp1, *cp2;
+    int len1, len2;
+    int j, best_j;
+    double aj_m1, aj_lm1;
+    double sum_ri_2, sum_aij_2, sum_aij_ri, result, best_result, factor;
 
-    if ( !getargs(args, "(s#s#i)", &cp1, &len1, &cp2, &len2, &size) )
+    if ( !getargs(args, "(s#s#)", &cp1, &len1, &cp2, &len2) )
       return 0;
-    if ( size != 1 && size != 2 && size != 4 ) {
-	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+    if ( len1 & 1 || len2 & 1 ) {
+	err_setstr(AudioopError, "Strings should be even-sized");
+	return 0;
+    }
+    len1 >>= 1;
+    len2 >>= 1;
+    
+    if ( len1 < len2 ) {
+	err_setstr(AudioopError, "First sample should be longer");
+	return 0;
+    }
+    sum_ri_2 = _sum2(cp2, cp2, len2);
+    sum_aij_2 = _sum2(cp1, cp1, len2);
+    sum_aij_ri = _sum2(cp1, cp2, len2);
+
+    result = (sum_ri_2*sum_aij_2 - sum_aij_ri*sum_aij_ri) / sum_aij_2;
+
+    best_result = result;
+    best_j = 0;
+    j = 0;
+
+    for ( j=1; j<=len1-len2; j++) {
+	aj_m1 = (double)cp1[j-1];
+	aj_lm1 = (double)cp1[j+len2-1];
+
+	sum_aij_2 = sum_aij_2 + aj_lm1*aj_lm1 - aj_m1*aj_m1;
+	sum_aij_ri = _sum2(cp1+j, cp2, len2);
+
+	result = (sum_ri_2*sum_aij_2 - sum_aij_ri*sum_aij_ri) / sum_aij_2;
+
+	if ( result < best_result ) {
+	    best_result = result;
+	    best_j = j;
+	}
+	
+    }
+
+    factor = _sum2(cp1+best_j, cp2, len2) / sum_ri_2;
+    
+    return mkvalue("(if)", best_j, factor);
+}
+
+/*
+** findfactor finds a factor f so that the energy in A-fB is minimal.
+** See the comment for findfit for details.
+*/
+static object *
+audioop_findfactor(self, args)
+    object *self;
+    object *args;
+{
+    short *cp1, *cp2;
+    int len1, len2;
+    double sum_ri_2, sum_aij_ri, result;
+
+    if ( !getargs(args, "(s#s#)", &cp1, &len1, &cp2, &len2) )
+      return 0;
+    if ( len1 & 1 || len2 & 1 ) {
+	err_setstr(AudioopError, "Strings should be even-sized");
 	return 0;
     }
     if ( len1 != len2 ) {
 	err_setstr(AudioopError, "Samples should be same size");
 	return 0;
     }
-    for ( i=0; i<len1; i+= size) {
-	if ( size == 1 ) {
-	    val1 = (int)*CHARP(cp1, i);
-	    val2 = (int)*CHARP(cp2, i);
-	} else if ( size == 2 ) {
-	    val1 = (int)*SHORTP(cp1, i);
-	    val2 = (int)*SHORTP(cp2, i);
-	} else if ( size == 4 ) {
-	    val1 = (int)*LONGP(cp1, i);
-	    val2 = (int)*LONGP(cp2, i);
-	}
-	sum_squares += (float)val1*(float)val2;
+    len2 >>= 1;
+    sum_ri_2 = _sum2(cp2, cp2, len2);
+    sum_aij_ri = _sum2(cp1, cp2, len2);
+
+    result = sum_aij_ri / sum_ri_2;
+
+    return newfloatobject(result);
+}
+
+/*
+** findmax returns the index of the n-sized segment of the input sample
+** that contains the most energy.
+*/
+static object *
+audioop_findmax(self, args)
+    object *self;
+    object *args;
+{
+    short *cp1;
+    int len1, len2;
+    int j, best_j;
+    double aj_m1, aj_lm1;
+    double result, best_result;
+
+    if ( !getargs(args, "(s#i)", &cp1, &len1, &len2) )
+      return 0;
+    if ( len1 & 1 ) {
+	err_setstr(AudioopError, "Strings should be even-sized");
+	return 0;
     }
-    if ( len1 == 0 )
-      val1 = 0;
-    else
-      val1 = (int)sqrt(sum_squares / (float)(len1/size));
-    return newintobject(val1);
+    len1 >>= 1;
+    
+    if ( len1 < len2 ) {
+	err_setstr(AudioopError, "Input sample should be longer");
+	return 0;
+    }
+
+    result = _sum2(cp1, cp1, len2);
+
+    best_result = result;
+    best_j = 0;
+    j = 0;
+
+    for ( j=1; j<=len1-len2; j++) {
+	aj_m1 = (double)cp1[j-1];
+	aj_lm1 = (double)cp1[j+len2-1];
+
+	result = result + aj_lm1*aj_lm1 - aj_m1*aj_m1;
+
+	if ( result > best_result ) {
+	    best_result = result;
+	    best_j = j;
+	}
+	
+    }
+
+    return newintobject(best_j);
 }
 
 static object *
@@ -674,6 +817,44 @@ audioop_bias(self, args)
 	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val+bias);
 	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val+bias);
 	else if ( size == 4 ) *LONGP(ncp, i) = (long)(val+bias);
+    }
+    return rv;
+}
+
+static object *
+audioop_lin2lin(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    unsigned char *ncp;
+    int len, size, size2, val;
+    object *rv;
+    int i, j;
+
+    if ( !getargs(args, "(s#ii)",
+		  &cp, &len, &size, &size2) )
+      return 0;
+
+    if ( (size != 1 && size != 2 && size != 4) ||
+	                       (size2 != 1 && size2 != 2 && size2 != 4)) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, (len/size)*size2);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+    
+    for ( i=0, j=0; i < len; i += size, j += size2 ) {
+	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
+
+	if ( size2 == 1 )      *CHARP(ncp, j) = (signed char)(val >> 8);
+	else if ( size2 == 2 ) *SHORTP(ncp, j) = (short)(val);
+	else if ( size2 == 4 ) *LONGP(ncp, j) = (long)(val<<16);
     }
     return rv;
 }
@@ -1088,13 +1269,16 @@ static struct methodlist audioop_methods[] = {
     { "maxpp", audioop_maxpp },
     { "avgpp", audioop_avgpp },
     { "rms", audioop_rms },
-    { "rms2", audioop_rms2 },
+    { "findfit", audioop_findfit },
+    { "findmax", audioop_findmax },
+    { "findfactor", audioop_findfactor },
     { "cross", audioop_cross },
     { "mul", audioop_mul },
     { "add", audioop_add },
     { "bias", audioop_bias },
     { "ulaw2lin", audioop_ulaw2lin },
     { "lin2ulaw", audioop_lin2ulaw },
+    { "lin2lin", audioop_lin2lin },
     { "adpcm2lin", audioop_adpcm2lin },
     { "lin2adpcm", audioop_lin2adpcm },
     { "adpcm32lin", audioop_adpcm32lin },
