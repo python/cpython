@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-#define PyCF_MASK (CO_GENERATOR_ALLOWED | CO_FUTURE_DIVISION)
-#define PyCF_MASK_OBSOLETE (CO_NESTED)
+#define PyCF_MASK (CO_FUTURE_DIVISION)
+#define PyCF_MASK_OBSOLETE (CO_GENERATOR_ALLOWED | CO_NESTED)
 
 typedef struct {
 	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */

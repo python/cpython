@@ -40,7 +40,7 @@ typedef struct {
    compiled *by* a code object knows whether to allow yield stmts.  In
    effect, this passes on the "from __future__ import generators" state
    in effect when the code block was compiled. */
-#define CO_GENERATOR_ALLOWED    0x1000
+#define CO_GENERATOR_ALLOWED    0x1000 /* no longer used in an essential way */
 #define CO_FUTURE_DIVISION    	0x2000
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
