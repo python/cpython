@@ -1959,7 +1959,7 @@ static void
 com_assign_sequence(struct compiling *c, node *n, int assigning)
 {
 	int i;
-	if (TYPE(n) != testlist)
+	if (TYPE(n) != testlist && TYPE(n) != listmaker)
 		REQ(n, exprlist);
 	if (assigning) {
 		i = (NCH(n)+1)/2;
