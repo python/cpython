@@ -4,7 +4,7 @@
 
 \input{boilerplate}
 
-\makeindex                      % tell \index to actually write the .idx file
+\makeindex			% tell \index to actually write the .idx file
 
 
 \begin{document}
@@ -3788,14 +3788,14 @@ Returns true if its argument is a \ctype{PyCObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtr}{void* cobj, 
-        void (*destr)(void *)}
+	void (*destr)(void *)}
 Creates a \ctype{PyCObject} from the \code{void *}\var{cobj}.  The
 \var{destr} function will be called when the object is reclaimed, unless
 it is \NULL.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
-        void* desc, void (*destr)(void *, void *) }
+	void* desc, void (*destr)(void *, void *) }
 Creates a \ctype{PyCObject} from the \ctype{void *}\var{cobj}.  The
 \var{destr} function will be called when the object is reclaimed.  The
 \var{desc} argument can be used to pass extra callback data for the
@@ -4669,11 +4669,11 @@ implementing new object types in C.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyObject_Init}{PyObject *op,
-                                                PyTypeObject *type}
+						PyTypeObject *type}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyVarObject*}{PyObject_InitVar}{PyVarObject *op,
-                                                PyTypeObject *type, int size}
+						PyTypeObject *type, int size}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{\var{TYPE}*}{PyObject_New}{TYPE, PyTypeObject *type}
@@ -4917,6 +4917,6 @@ The function cannot fail.
 \chapter{Reporting Bugs}
 \input{reportingbugs}
 
-\input{api.ind}                 % Index -- must be last
+\input{api.ind}			% Index -- must be last
 
 \end{document}
