@@ -317,19 +317,14 @@ class Pickler:
         if type(rv) is not TupleType:
             raise PicklingError("%s must return string or tuple" % reduce)
 
-        # Assert that it returned a 2-tuple or 3-tuple, and unpack it
+        # Assert that it returned an appropriately sized tuple
         l = len(rv)
-        if l == 2:
-            func, args = rv
-            state = None
-        elif l == 3:
-            func, args, state = rv
-        else:
+        if not (2 <= l <= 5):
             raise PicklingError("Tuple returned by %s must have "
-                                "exactly two or three elements" % reduce)
+                                "two to five elements" % reduce)
 
         # Save the reduce() output and finally memoize the object
-        self.save_reduce(func, args, state, obj)
+        self.save_reduce(obj=obj, *rv)
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
@@ -343,7 +338,8 @@ class Pickler:
         else:
             self.write(PERSID + str(pid) + '\n')
 
-    def save_reduce(self, func, args, state=None, obj=None):
+    def save_reduce(self, func, args, state=None,
+                    listitems=None, dictitems=None, obj=None):
         # This API is be called by some subclasses
 
         # Assert that args is a tuple or None
@@ -411,6 +407,17 @@ class Pickler:
         if obj is not None:
             self.memoize(obj)
 
+        # More new special cases (that work with older protocols as
+        # well): when __reduce__ returns a tuple with 4 or 5 items,
+        # the 4th and 5th item should be iterators that provide list
+        # items and dict items (as (key, value) tuples), or None.
+
+        if listitems is not None:
+            self._batch_appends(listitems)
+
+        if dictitems is not None:
+            self._batch_setitems(dictitems)
+
         if state is not None:
             save(state)
             write(BUILD)
@@ -434,28 +441,9 @@ class Pickler:
         self.memoize(obj)
 
         if isinstance(obj, list):
-            n = len(obj)
-            if n > 1:
-                write(MARK)
-                for x in obj:
-                    save(x)
-                write(APPENDS)
-            elif n == 1:
-                save(obj[0])
-                write(APPEND)
+            self._batch_appends(iter(obj))
         elif isinstance(obj, dict):
-            n = len(obj)
-            if n > 1:
-                write(MARK)
-                for k, v in obj.iteritems():
-                    save(k)
-                    save(v)
-                write(SETITEMS)
-            elif n == 1:
-                k, v = obj.items()[0]
-                save(k)
-                save(v)
-                write(SETITEM)
+            self._batch_setitems(obj.iteritems())
 
         getstate = getattr(obj, "__getstate__", None)
 
@@ -683,62 +671,99 @@ class Pickler:
 
     def save_list(self, obj):
         write = self.write
-        save  = self.save
 
         if self.bin:
             write(EMPTY_LIST)
-            self.memoize(obj)
-            n = len(obj)
-            if n > 1:
-                write(MARK)
-                for element in obj:
-                    save(element)
-                write(APPENDS)
-            elif n:
-                assert n == 1
-                save(obj[0])
-                write(APPEND)
-            # else the list is empty, and we're already done
-
-        else:   # proto 0 -- can't use EMPTY_LIST or APPENDS
+        else:   # proto 0 -- can't use EMPTY_LIST
             write(MARK + LIST)
-            self.memoize(obj)
-            for element in obj:
-                save(element)
-                write(APPEND)
+
+        self.memoize(obj)
+        self._batch_appends(iter(obj))
 
     dispatch[ListType] = save_list
 
+    _BATCHSIZE = 1000
+
+    def _batch_appends(self, items):
+        # Helper to batch up APPENDS sequences
+        save = self.save
+        write = self.write
+
+        if not self.bin:
+            for x in items:
+                save(x)
+                write(APPEND)
+            return
+
+        r = xrange(self._BATCHSIZE)
+        while items is not None:
+            tmp = []
+            for i in r:
+                try:
+                    tmp.append(items.next())
+                except StopIteration:
+                    items = None
+                    break
+            n = len(tmp)
+            if n > 1:
+                write(MARK)
+                for x in tmp:
+                    save(x)
+                write(APPENDS)
+            elif n:
+                save(tmp[0])
+                write(APPEND)
+            # else tmp is empty, and we're done
+
     def save_dict(self, obj):
         write = self.write
-        save  = self.save
-        items = obj.iteritems()
 
         if self.bin:
             write(EMPTY_DICT)
-            self.memoize(obj)
-            if len(obj) > 1:
-                write(MARK)
-                for key, value in items:
-                    save(key)
-                    save(value)
-                write(SETITEMS)
-                return
-            # else (dict is empty or a singleton), fall through to the
-            # SETITEM code at the end
-        else:   # proto 0 -- can't use EMPTY_DICT or SETITEMS
+        else:   # proto 0 -- can't use EMPTY_DICT
             write(MARK + DICT)
-            self.memoize(obj)
 
-        # proto 0 or len(obj) < 2
-        for key, value in items:
-            save(key)
-            save(value)
-            write(SETITEM)
+        self.memoize(obj)
+        self._batch_setitems(obj.iteritems())
 
     dispatch[DictionaryType] = save_dict
     if not PyStringMap is None:
         dispatch[PyStringMap] = save_dict
+
+    def _batch_setitems(self, items):
+        # Helper to batch up SETITEMS sequences; proto >= 1 only
+        save = self.save
+        write = self.write
+
+        if not self.bin:
+            for k, v in items:
+                save(k)
+                save(v)
+                write(SETITEM)
+            return
+
+        r = xrange(self._BATCHSIZE)
+        while items is not None:
+            tmp = []
+            for i in r:
+                try:
+                    tmp.append(items.next())
+                except StopIteration:
+                    items = None
+                    break
+            n = len(tmp)
+            if n > 1:
+                write(MARK)
+                for k, v in tmp:
+                    save(k)
+                    save(v)
+                write(SETITEMS)
+            elif n:
+                k, v = tmp[0]
+                save(k)
+                save(v)
+                write(SETITEM)
+            # else tmp is empty, and we're done
 
     def save_inst(self, obj):
         cls = obj.__class__
