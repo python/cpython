@@ -368,10 +368,10 @@ class Pickler:
             # case.
             # First one- and two-byte unsigned ints:
             if object >= 0:
-                if object < 0xff:
+                if object <= 0xff:
                     self.write(BININT1 + chr(object))
                     return
-                if object < 0xffff:
+                if object <= 0xffff:
                     self.write(BININT2 + chr(object&0xff) + chr(object>>8))
                     return
             # Next check for 4-byte signed ints:
