@@ -78,20 +78,19 @@ Debian package for users of Debian-based Linux systems (Debian proper,
 Caldera, Corel, etc.), and so forth.
 
 In that case, you would download the installer appropriate to your
-platform and do the usual thing with it: run it if it's an executable
-installer, \code{rpm -I} it if it's an RPM, etc.  You don't need to run
-Python or a setup script, you don't need to compile anything---you might
-not even need to read any instructions (although it's always a good idea
-to do so anyways).
+platform and do the obvious thing with it: run it if it's an executable
+installer, \code{rpm --install} it if it's an RPM, etc.  You don't need
+to run Python or a setup script, you don't need to compile
+anything---you might not even need to read any instructions (although
+it's always a good idea to do so anyways).
 
 Of course, things will not always be that easy.  You might be interested
-in a module distribution that nobody has created an easy-to-use
-installer for use on your platform.  In that case, you'll have to start
-with the source distribution released by the module's
-author/maintainer.  Installing from a source distribution is not too
-hard, as long as the modules are packaged in the standard way.  The bulk 
-of this document is about building and installing modules that were
-packaged in the standard way.
+in a module distribution that doesn't have an easy-to-use installer for
+your platform.  In that case, you'll have to start with the source
+distribution released by the module's author/maintainer.  Installing
+from a source distribution is not too hard, as long as the modules are
+packaged in the standard way.  The bulk of this document is about
+building and installing modules from standard source distributions.
 
 
 \subsection{The new standard: Distutils}
@@ -125,15 +124,17 @@ Before the Distutils, there was no infrastructure to support installing
 third-party modules in a consistent, standardized way.  Thus, it's not
 really possible to write a general manual for installing Python modules
 that don't use the Distutils; the only truly general statement that can
-be made is, ``Read the module's own documentation on installation.''
+be made is, ``Read the module's own installation instructions.''
 
-However, such documentation is often woefully inadequate, assuming that
-you are familiar with how the Python library is laid out and will
-somehow just know where to copy various files in order for Python to
-find them.  Also, since there is only one way to lay out the Python
-library on a given platform, this manual is a good place to learn that
-layout.  That way, if you do have to manually install an old,
-pre-Distutils module distribution, you won't be completely on your own.
+However, if such instructions exists at all, they are often woefully
+inadequate and targeted at experienced Python developers.  Such users
+are already familiar with how the Python library is laid out on their
+platform, and know where to copy various files in order for Python to
+find them.  This document makes no such assumptions, and explains how
+the Python library is laid out on three major platforms (Unix, Windows,
+and Mac~OS), so that you can understand what happens when the Distutils
+do their job \emph{and} know how to install modules manually when the
+module author fails to provide a setup script.
 
 Additionally, while there has not previously been a standard
 installation mechanism, Python has had some standard machinery for
@@ -158,8 +159,8 @@ a module distribution using the Distutils is usually one simple command:
 python setup.py install
 \end{verbatim}
 On Unix, you'd run this command from a shell prompt; on Windows, you
-have to open a command prompt window and do it there; on Mac OS ...
-\XXX{what the heck do you do on Mac OS?}.
+have to open a command prompt window and do it there; on Mac~OS ...
+\XXX{what the heck do you do on Mac~OS?}.
 
 
 \subsection{Platform variations}
@@ -175,17 +176,20 @@ cd foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Windows, you'd probably unpack the archive before opening the command 
-prompt.  If you downloaded the archive file to \file{C:\bslash{}Temp}, then
-it probably unpacked (depending on your software) into
-\file{C:\bslash{}Temp\bslash{}foo-1.0}; from the command prompt window, you would
-then run
+On Windows, you'd probably unpack the archive before opening the command
+prompt.  If you downloaded the archive file to \file{C:\bslash{}Temp},
+then it probably unpacked (depending on your software) into
+\file{C:\bslash{}Temp\bslash{}foo-1.0}; from the command prompt window,
+you would then run
 \begin{verbatim}
 cd c:\temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Mac OS, ... \XXX{again, how do you run Python scripts on Mac OS?}
+On Mac~OS, ... \XXX{again, how do you run Python scripts on Mac~OS?}
+
+\XXX{arg, my lovely ``bslash'' macro doesn't work in non-tt fonts! help
+  me \LaTeX, you're my only hope...}
 
 
 \subsection{Splitting the job up}
@@ -202,27 +206,119 @@ python setup.py build
 python setup.py install
 \end{verbatim}
 (If you do this, you will notice that running the \command{install}
-command first runs the \command{build} command, which will quickly
-notice that it has nothing to do, since everything in the \file{build}
-directory is up-to-date.
+command first runs the \command{build} command, which quickly notices
+that it has nothing to do, since everything in the \file{build}
+directory is up-to-date.)
 
-% This will cover:
-%   * setup.py install        (the usual thing)
-%   * setup.py build          (if you like doing things one-at-a-time)
-%   * setup.py build install  (not necessary unless you need to supply
-%                              build options--ref. next section)
-%   * where things are installed, on Unix and Windows (Mac...?)
-%   * simple custom install: "install --prefix=$HOME"
-\comingsoon
+\XXX{concrete reason for splitting things up?}
 
 
+\subsection{How building works}
 
-% takes eight args (four pairs):
-%   pure module distribution base + directory
-%   non-pure module distribution base + directory
-%   script base + directory
-%   data base + directory
-% ...and will no doubt take more args in future!
+As implied above, the \command{build} command is responsible for putting
+the files to install into a \emph{build directory}.  By default, this is
+\file{build} under the distribution root; if you're excessively
+concerned with speed, or want to keep the source tree pristine, you can
+change the build directory with the \option{--build-base} option.  For
+example:
+\begin{verbatim}
+python setup.py build --build-base=/tmp/pybuild/foo-1.0
+\end{verbatim}
+(Or you could do this permanently with a directive in your system or
+personal Distutils configuration file; see
+section~\ref{sec:config-files}.)  Normally, this isn't necessary.
+
+The default layout for the build tree is as follows:
+\begin{verbatim}
+--- build/ --- lib/
+or
+--- build/ --- lib.<plat>/
+               temp.<plat>/
+\end{verbatim}
+where \code{<plat>} expands to a brief description of the current
+OS/hardware platform.  The first form, with just a \file{lib} directory,
+is used for ``pure module distributions''---that is, module
+distributions that include only pure Python modules.  If a module
+distribution contains any extensions (modules written in C/C++, or Java
+for JPython), then the second form, with two \code{<plat>} directories,
+is used.  In that case, the \file{temp.\filevar{plat}} directory holds
+temporary files generated by the compile/link process that don't
+actually get installed.  In either case, the \file{lib} (or
+\file{lib.\filevar{plat}}) directory contains all Python modules (pure
+Python and extensions) that will be installed.
+
+In the future, more directories will be added to handle Python scripts,
+documentation, binary executables, and whatever else is needed to handle
+the job of installing Python modules and applicatins.
+
+
+\subsection{How installation works}
+
+After the \command{build} command runs (whether you run it explicitly,
+or the \command{install} command does it for you), the work of the
+\command{install} command is relatively simple: all it has to do is copy
+everything under \file{build/lib} (or \file{build/lib.\filevar{plat}})
+to your chosen installation directory.
+
+If you don't choose an installation directory---i.e., if you just run
+\code{setup.py install}---then the \command{install} command installs to
+the standard location for third-party Python modules.  This location
+varies by platform and by how you built/installed Python itself.  On
+Unix and Mac OS, it also depends on whether the module distribution
+being installed is pure Python or contains extensions (``non-pure''):
+\begin{tableiii}{lll}{textrm}%
+  {Platform}{Standard installation location}{Default value}
+  \lineiii{Unix (pure Python modules)}
+          {\file{\filevar{prefix}/lib/python1.6/site-packages}}
+          {\file{/usr/local/lib/python1.6/site-packages}}
+  \lineiii{Unix (non-pure distribution)}
+          {\file{\filevar{exec-prefix}/lib/python1.6/site-packages}}
+          {\file{/usr/local/lib/python1.6/site-packages}}
+  \lineiii{Windows}
+          {\filevar{prefix}}
+          {\file{C:\bslash{}Python}
+            \footnote{\file{C:\bslash{}Program Files\bslash{}Python}
+            under Python 1.6a1 and earlier}}
+  \lineiii{Mac~OS (pure Python modules)}
+          {\file{\filevar{prefix}}:Lib}
+          {\file{Python:Lib}\XXX{???}}
+  \lineiii{Mac~OS (non-pure distribution)}
+          {\file{\filevar{prefix}}:Mac:PlugIns}
+          {\file{Python:Mac:PlugIns}\XXX{???}}
+\end{tableiii}
+\filevar{prefix} and \filevar{exec-prefix} stand for the directories
+that Python is installed to, and where it finds its libraries at
+run-time.  They are always the same under Windows and Mac~OS, and very
+often the same under Unix.  You can find out what your Python
+installation uses for \filevar{prefix} and \filevar{exec-prefix} by
+running Python in interactive mode and typing a few simple commands.
+Under Unix, just type \code{python} at the shell prompt; under Windows,
+run ``Python 1.6 (interpreter)'' \XXX{right?}; under Mac~OS, \XXX{???}.
+Once the interpreter is started, you type Python code at the \code{>>>}
+prompt.  For example, on my Linux system, I type the three Python
+statements shown below, and get the output as shown, to find out my
+\filevar{prefix} and \filevar{exec-prefix}:
+\begin{verbatim}
+Python 1.5.2 (#1, Apr 18 1999, 16:03:16)  [GCC pgcc-2.91.60 19981201 (egcs-1.1.1  on linux2
+Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
+>>> import sys
+>>> sys.prefix
+'/usr'
+>>> sys.exec_prefix
+'/usr'
+\end{verbatim}
+
+If you don't want to install to the standard location, or if you don't
+have permission to write there, then you need to read about alternate
+installations in the next section.
+
+
+% This rather nasty macro is used to generate the tables that describe
+% each installation scheme.  It's nasty because it takes two arguments
+% for each "slot" in an installation scheme, there will soon be more
+% than five of these slots, and TeX has a limit of 10 arguments to a
+% macro.  Uh-oh.
+
 \newcommand{\installscheme}[8]
   {\begin{tableiii}{lll}{textrm}
           {Type of file}
@@ -230,20 +326,17 @@ directory is up-to-date.
           {Override option}
      \lineiii{pure module distribution}
              {\filevar{#1}\filenq{#2}}
-             {\option{install-purelib}}
+             {\option{--install-purelib}}
      \lineiii{non-pure module distribution}
              {\filevar{#3}\filenq{#4}}
-             {\option{install-platlib}}
+             {\option{--install-platlib}}
      \lineiii{scripts}
              {\filevar{#5}\filenq{#6}}
-             {\option{install-scripts}}
+             {\option{--install-scripts}}
      \lineiii{data}
              {\filevar{#7}\filenq{#8}}
-             {\option{install-data}}
+             {\option{--install-data}}
    \end{tableiii}}
-
-
-
 
 \section{Alternate Installation}
 \label{sec:alt-install}
@@ -271,25 +364,22 @@ of the following section applies to you.
 
 Under Unix, there are two ways to perform an alternate installation.
 The ``prefix scheme'' is similar to how alternate installation works
-under Windows and Mac OS, but is not necessarily the most useful way to
+under Windows and Mac~OS, but is not necessarily the most useful way to
 maintain a personal Python library.  Hence, we document the more
 convenient and commonly useful ``home scheme'' first.
 
-The idea behind the ``home scheme'' is that you are building and
-maintaining a personal stash of Python modules, probably under your home 
-directory.  Installing a new module distribution is as simple as
-\begin{verbatim}
-python setup.py install --home        # arg, doesn't work (getopt)
-\end{verbatim}
-or
+The idea behind the ``home scheme'' is that you build and maintain a
+personal stash of Python modules, probably under your home directory.
+Installing a new module distribution is as simple as
 \begin{verbatim}
 python setup.py install --home=<dir>
 \end{verbatim}
 where you can supply any directory you like for the \option{home}
-option.  If you don't supply a directory (as in the first example
-above), the \command{install} command uses the \code{HOME} environment
-variable (or your official home directory as supplied by the password
-file, if \code{HOME} is not defined).
+option.  Lazy typists can just type a tilde (\code{\tilde}); the
+\command{install} command will expand this to your home directory:
+\begin{verbatim}
+python setup.py install --home=~
+\end{verbatim}
 
 The \option{home} option defines the installation base directory.  Files
 are installed to the following directories under the installation base
@@ -363,10 +453,10 @@ header files (\file{Python.h} and friends) installed with the Python
 interpreter used to run the setup script will be used in compiling
 extensions.  It is your responsibility to ensure that the interpreter
 used to run extensions installed in this way is compatibile with the
-interpreter used to build them.  The best way to ensure this is that the
-two interpreters are the same version of Python (possibly different
-builds, or possibly copies of the same build).  (Of course, if your
-\option{prefix} and \option{exec-prefix} don't even point to an
+interpreter used to build them.  The best way to do this is to ensure
+that the two interpreters are the same version of Python (possibly
+different builds, or possibly copies of the same build).  (Of course, if
+your \option{prefix} and \option{exec-prefix} don't even point to an
 alternate Python installation, this is immaterial.)
 
 
@@ -393,10 +483,10 @@ installed as follows:
               {prefix}{\bslash{}Data}
 
 
-\subsection{Alternate installation: Mac OS}
+\subsection{Alternate installation: Mac~OS}
 \label{sec:alt-macos}
 
-Like Windows, Mac OS has no notion of home directories (or even of
+Like Windows, Mac~OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
 \option{prefix} option is needed.  It defines the installation base, and 
 files are installed under it as follows:
@@ -478,13 +568,13 @@ Python's module search path, e.g. by putting a \file{.pth} file in
 
 If you want to define an entire installation scheme, you just have to
 supply all of the installation directory options.  The recommended way
-to do this is to supply relative paths; for example, if want to maintain
-all Python module-related files under \file{python} in your home
-directory, and you want a separate directory for each platform that you
-use your home directory from, you might define the following
+to do this is to supply relative paths; for example, if you want to
+maintain all Python module-related files under \file{python} in your
+home directory, and you want a separate directory for each platform that
+you use your home directory from, you might define the following
 installation scheme:
 \begin{verbatim}
-python setup.py install --home \
+python setup.py install --home=~ \
                         --install-purelib=python/lib \
                         --install-platlib=python/lib.$PLAT \
                         --install-scripts=python/scripts
@@ -536,27 +626,29 @@ case, you probably want to supply an installation base of
 You probably noticed the use of \code{\$HOME} and \code{\$PLAT} in the
 sample configuration file input.  These are Distutils configuration
 variables, which bear a strong resemblance to environment variables.  In
-fact, you can use environment variables in config files, but the
-Distutils additionally define a few extra variables that may not be in
-your environment, such as \code{\$PATH}.  See
+fact, you can use environment variables in config files---on platforms
+that have such a notion---but the Distutils additionally define a few
+extra variables that may not be in your environment, such as
+\code{\$PLAT}.  (And of course, you can only use the configuration
+variables supplied by the Distutils on systems that don't have
+environment variables, such as Mac~OS (\XXX{true?}).)  See
 section~\ref{sec:config-files} for details.
 
-\XXX{need some Windows and Mac OS examples---when would custom
+\XXX{need some Windows and Mac~OS examples---when would custom
   installation schemes be needed on those platforms?}
 
 
 \section{Distutils Configuration Files}
 \label{sec:config-files}
 
-\comingsoon
-
+\XXX{not even implemented yet, much less documented!}
 
 
 \section{Pre-Distutils Conventions}
 \label{sec:pre-distutils}
 
 
-\subsection{The \protect\file{Makefile.pre.in} file}
+\subsection{The Makefile.pre.in file}
 \label{sec:makefile-pre-in}
 
 
