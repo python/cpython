@@ -1,3 +1,6 @@
+import unittest
+from test import test_support
+
 from test.test_support import verify, verbose
 import sys
 import warnings
@@ -9,166 +12,189 @@ warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
 warnings.filterwarnings("ignore", ".* statcache .*", DeprecationWarning,
                         r'statcache$')
 
-def check_all(modname):
-    names = {}
-    try:
-        exec "import %s" % modname in names
-    except ImportError:
-        # Silent fail here seems the best route since some modules
-        # may not be available in all environments.
-        # Since an ImportError may leave a partial module object in
-        # sys.modules, get rid of that first.  Here's what happens if
-        # you don't:  importing pty fails on Windows because pty tries to
-        # import FCNTL, which doesn't exist.  That raises an ImportError,
-        # caught here.  It also leaves a partial pty module in sys.modules.
-        # So when test_pty is called later, the import of pty succeeds,
-        # but shouldn't.  As a result, test_pty crashes with an
-        # AttributeError instead of an ImportError, and regrtest interprets
-        # the latter as a test failure (ImportError is treated as "test
-        # skipped" -- which is what test_pty should say on Windows).
+class AllTest(unittest.TestCase):
+
+    def check_all(self, modname):
+        names = {}
         try:
-            del sys.modules[modname]
-        except KeyError:
-            pass
-        return
-    verify(hasattr(sys.modules[modname], "__all__"),
-           "%s has no __all__ attribute" % modname)
-    names = {}
-    exec "from %s import *" % modname in names
-    if names.has_key("__builtins__"):
-        del names["__builtins__"]
-    keys = names.keys()
-    keys.sort()
-    all = list(sys.modules[modname].__all__) # in case it's a tuple
-    all.sort()
-    verify(keys==all, "%s != %s" % (keys, all))
+            exec "import %s" % modname in names
+        except ImportError:
+            # Silent fail here seems the best route since some modules
+            # may not be available in all environments.
+            # Since an ImportError may leave a partial module object in
+            # sys.modules, get rid of that first.  Here's what happens if
+            # you don't:  importing pty fails on Windows because pty tries to
+            # import FCNTL, which doesn't exist.  That raises an ImportError,
+            # caught here.  It also leaves a partial pty module in sys.modules.
+            # So when test_pty is called later, the import of pty succeeds,
+            # but shouldn't.  As a result, test_pty crashes with an
+            # AttributeError instead of an ImportError, and regrtest interprets
+            # the latter as a test failure (ImportError is treated as "test
+            # skipped" -- which is what test_pty should say on Windows).
+            try:
+                del sys.modules[modname]
+            except KeyError:
+                pass
+            return
+        verify(hasattr(sys.modules[modname], "__all__"),
+               "%s has no __all__ attribute" % modname)
+        names = {}
+        exec "from %s import *" % modname in names
+        if names.has_key("__builtins__"):
+            del names["__builtins__"]
+        keys = names.keys()
+        keys.sort()
+        all = list(sys.modules[modname].__all__) # in case it's a tuple
+        all.sort()
+        verify(keys==all, "%s != %s" % (keys, all))
 
-if not sys.platform.startswith('java'):
-    # In case _socket fails to build, make this test fail more gracefully
-    # than an AttributeError somewhere deep in CGIHTTPServer.
-    import _socket
+    def test_all(self):
+        if not sys.platform.startswith('java'):
+            # In case _socket fails to build, make this test fail more gracefully
+            # than an AttributeError somewhere deep in CGIHTTPServer.
+            import _socket
 
-check_all("BaseHTTPServer")
-check_all("CGIHTTPServer")
-check_all("ConfigParser")
-check_all("Cookie")
-check_all("MimeWriter")
-check_all("SimpleHTTPServer")
-check_all("SocketServer")
-check_all("StringIO")
-check_all("UserString")
-check_all("aifc")
-check_all("atexit")
-check_all("audiodev")
-check_all("base64")
-check_all("bdb")
-check_all("binhex")
-check_all("calendar")
-check_all("cgi")
-check_all("cmd")
-check_all("code")
-check_all("codecs")
-check_all("codeop")
-check_all("colorsys")
-check_all("commands")
-check_all("compileall")
-check_all("copy")
-check_all("copy_reg")
-check_all("dbhash")
-check_all("dircache")
-check_all("dis")
-check_all("doctest")
-check_all("dospath")
-check_all("filecmp")
-check_all("fileinput")
-check_all("fnmatch")
-check_all("fpformat")
-check_all("ftplib")
-check_all("getopt")
-check_all("getpass")
-check_all("gettext")
-check_all("glob")
-check_all("gopherlib")
-check_all("gzip")
-check_all("htmllib")
-check_all("httplib")
-check_all("ihooks")
-check_all("imaplib")
-check_all("imghdr")
-check_all("imputil")
-check_all("keyword")
-check_all("linecache")
-check_all("locale")
-check_all("macpath")
-check_all("macurl2path")
-check_all("mailbox")
-check_all("mhlib")
-check_all("mimetools")
-check_all("mimetypes")
-check_all("mimify")
-check_all("multifile")
-check_all("netrc")
-check_all("nntplib")
-check_all("ntpath")
-check_all("os")
-check_all("pdb")
-check_all("pickle")
-check_all("pipes")
-check_all("popen2")
-check_all("poplib")
-check_all("posixpath")
-check_all("pprint")
-check_all("pre")  # deprecated
-check_all("profile")
-check_all("pstats")
-check_all("pty")
-check_all("py_compile")
-check_all("pyclbr")
-check_all("quopri")
-check_all("random")
-check_all("re")
-check_all("reconvert")
-check_all("regsub")
-check_all("repr")
-check_all("rexec")
-check_all("rfc822")
-check_all("robotparser")
-check_all("sched")
-check_all("sgmllib")
-check_all("shelve")
-check_all("shlex")
-check_all("shutil")
-check_all("smtpd")
-check_all("smtplib")
-check_all("sndhdr")
-check_all("socket")
-check_all("sre")
-check_all("stat_cache")
-check_all("tabnanny")
-check_all("telnetlib")
-check_all("tempfile")
-check_all("toaiff")
-check_all("tokenize")
-check_all("traceback")
-check_all("tty")
-check_all("urllib")
-check_all("urlparse")
-check_all("uu")
-check_all("warnings")
-check_all("wave")
-check_all("weakref")
-check_all("webbrowser")
-check_all("xdrlib")
-check_all("zipfile")
+        self.check_all("BaseHTTPServer")
+        self.check_all("CGIHTTPServer")
+        self.check_all("ConfigParser")
+        self.check_all("Cookie")
+        self.check_all("MimeWriter")
+        self.check_all("SimpleHTTPServer")
+        self.check_all("SocketServer")
+        self.check_all("StringIO")
+        self.check_all("UserString")
+        self.check_all("aifc")
+        self.check_all("atexit")
+        self.check_all("audiodev")
+        self.check_all("base64")
+        self.check_all("bdb")
+        self.check_all("binhex")
+        self.check_all("calendar")
+        self.check_all("cgi")
+        self.check_all("cmd")
+        self.check_all("code")
+        self.check_all("codecs")
+        self.check_all("codeop")
+        self.check_all("colorsys")
+        self.check_all("commands")
+        self.check_all("compileall")
+        self.check_all("copy")
+        self.check_all("copy_reg")
+        self.check_all("dbhash")
+        self.check_all("difflib")
+        self.check_all("dircache")
+        self.check_all("dis")
+        self.check_all("doctest")
+        self.check_all("dummy_thread")
+        self.check_all("dummy_threading")
+        self.check_all("filecmp")
+        self.check_all("fileinput")
+        self.check_all("fnmatch")
+        self.check_all("fpformat")
+        self.check_all("ftplib")
+        self.check_all("getopt")
+        self.check_all("getpass")
+        self.check_all("gettext")
+        self.check_all("glob")
+        self.check_all("gopherlib")
+        self.check_all("gzip")
+        self.check_all("heapq")
+        self.check_all("htmllib")
+        self.check_all("httplib")
+        self.check_all("ihooks")
+        self.check_all("imaplib")
+        self.check_all("imghdr")
+        self.check_all("imputil")
+        self.check_all("keyword")
+        self.check_all("linecache")
+        self.check_all("locale")
+        self.check_all("macpath")
+        self.check_all("macurl2path")
+        self.check_all("mailbox")
+        self.check_all("mailcap")
+        self.check_all("mhlib")
+        self.check_all("mimetools")
+        self.check_all("mimetypes")
+        self.check_all("mimify")
+        self.check_all("multifile")
+        self.check_all("netrc")
+        self.check_all("nntplib")
+        self.check_all("ntpath")
+        self.check_all("opcode")
+        self.check_all("os")
+        self.check_all("os2emxpath")
+        self.check_all("pdb")
+        self.check_all("pickle")
+        self.check_all("pipes")
+        self.check_all("popen2")
+        self.check_all("poplib")
+        self.check_all("posixpath")
+        self.check_all("pprint")
+        self.check_all("pre")  # deprecated
+        self.check_all("profile")
+        self.check_all("pstats")
+        self.check_all("pty")
+        self.check_all("py_compile")
+        self.check_all("pyclbr")
+        self.check_all("quopri")
+        self.check_all("random")
+        self.check_all("re")
+        self.check_all("reconvert")
+        self.check_all("regsub")
+        self.check_all("repr")
+        self.check_all("rexec")
+        self.check_all("rfc822")
+        self.check_all("robotparser")
+        self.check_all("sched")
+        self.check_all("sets")
+        self.check_all("sgmllib")
+        self.check_all("shelve")
+        self.check_all("shlex")
+        self.check_all("shutil")
+        self.check_all("smtpd")
+        self.check_all("smtplib")
+        self.check_all("sndhdr")
+        self.check_all("socket")
+        self.check_all("sre")
+        self.check_all("statcache")
+        self.check_all("symtable")
+        self.check_all("tabnanny")
+        self.check_all("tarfile")
+        self.check_all("telnetlib")
+        self.check_all("tempfile")
+        self.check_all("textwrap")
+        self.check_all("threading")
+        self.check_all("toaiff")
+        self.check_all("tokenize")
+        self.check_all("traceback")
+        self.check_all("tty")
+        self.check_all("urllib")
+        self.check_all("urlparse")
+        self.check_all("uu")
+        self.check_all("warnings")
+        self.check_all("wave")
+        self.check_all("weakref")
+        self.check_all("webbrowser")
+        self.check_all("xdrlib")
+        self.check_all("zipfile")
 
-# rlcompleter needs special consideration; it import readline which
-# initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
-try:
-    check_all("rlcompleter")
-finally:
-    try:
-        import locale
-    except ImportError:
-        pass
-    else:
-        locale.setlocale(locale.LC_CTYPE, 'C')
+        # rlcompleter needs special consideration; it import readline which
+        # initializes GNU readline which calls setlocale(LC_CTYPE, "")... :-(
+        try:
+            self.check_all("rlcompleter")
+        finally:
+            try:
+                import locale
+            except ImportError:
+                pass
+            else:
+                locale.setlocale(locale.LC_CTYPE, 'C')
+
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(AllTest))
+    test_support.run_suite(suite)
+
+if __name__ == "__main__":
+    test_main()
