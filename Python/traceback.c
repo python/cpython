@@ -212,7 +212,7 @@ tb_displayline(f, filename, lineno, name)
 	}
 	if (i == lineno) {
 		char *p = linebuf;
-		while (*p == ' ' || *p == '\t')
+		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
 		writestring("    ", f);
 		writestring(p, f);
