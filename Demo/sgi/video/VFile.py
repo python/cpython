@@ -50,7 +50,7 @@ def conv_rgb8(rgb,d1,d2):
 # xorigin, yorigin
 # fallback
 
-class VinFile():
+class VinFile:
 
 	# init() and initfp() raise Error if the header is bad.
 	# init() raises whatever open() raises if the file can't be opened.
@@ -60,7 +60,7 @@ class VinFile():
 			return self.initfp(sys.stdin, filename)
 		return self.initfp(open(filename, 'r'), filename)
 
-	def initfp(self, (fp, filename)):
+	def initfp(self, fp, filename):
 		self.colormapinited = 0
 		self.magnify = 1.0
 		self.xorigin = self.yorigin = 0
@@ -400,7 +400,7 @@ def grab_hsv(w, h, pf):
 # Notably it will accept almost any garbage and write it to the video
 # output file
 #
-class VoutFile():
+class VoutFile:
 	def init(self, filename):
 		if filename == '-':
 			return self.initfp(sys.stdout, filename)
@@ -421,7 +421,7 @@ class VoutFile():
 
 	def close(self):
 		self.fp.close()
-		self.initfp(None, None)
+		self = self.initfp(None, None)
 
 	def setinfo(self, values):
 		self.format, self.width, self.height, self.packfactor,\
