@@ -250,8 +250,15 @@ Py_FindMethodInChain(chain, self, name)
 	PyObject *self;
 	char *name;
 {
-	if (strcmp(name, "__methods__") == 0)
-		return listmethodchain(chain);
+	if (name[0] == '_' && name[1] == '_') {
+		if (strcmp(name, "__methods__") == 0)
+			return listmethodchain(chain);
+		if (strcmp(name, "__doc__") == 0) {
+			char *doc = self->ob_type->tp_doc;
+			if (doc != NULL)
+				return PyString_FromString(doc);
+		}
+	}
 	while (chain != NULL) {
 		PyMethodDef *ml = chain->methods;
 		for (; ml->ml_name != NULL; ml++) {
