@@ -99,11 +99,12 @@ meth_dealloc(m)
 	free((char *)m);
 }
 
+/* ARGSUSED */
 static int
 meth_print(m, fp, flags)
 	methodobject *m;
 	FILE *fp;
-	int flags;
+	int flags; /* Not used but required by interface */
 {
 	if (m->m_self == NULL)
 		fprintf(fp, "<built-in function '%s'>", m->m_name);
