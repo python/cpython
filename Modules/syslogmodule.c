@@ -205,6 +205,9 @@ initsyslog()
 	ins(d, "LOG_MAIL",	LOG_MAIL);
 	ins(d, "LOG_DAEMON",	LOG_DAEMON);
 	ins(d, "LOG_AUTH",	LOG_AUTH);
+#ifdef LOG_SYSLOG
+	ins(d, "LOG_SYSLOG",    LOG_SYSLOG);
+#endif
 	ins(d, "LOG_LPR",	LOG_LPR);
 #ifdef LOG_NEWS
 	ins(d, "LOG_NEWS",	LOG_NEWS);
