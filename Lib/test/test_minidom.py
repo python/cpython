@@ -229,7 +229,7 @@ def _testElementReprAndStrUnicode():
 def _testElementReprAndStrUnicodeNS():
     dom=Document()
     el=dom.appendChild(
-	 dom.createElementNS( u"http://www.slashdot.org", u"slash:abc" ))
+        dom.createElementNS( u"http://www.slashdot.org", u"slash:abc" ))
     string1=repr( el )
     string2=str( el )
     confirm( string1==string2 )
