@@ -183,9 +183,18 @@ Py_Finalize(void)
 
 	if (!initialized)
 		return;
-	initialized = 0;
 
+	/* The interpreter is still entirely intact at this point, and the
+	 * exit funcs may be relying on that.  In particular, if some thread
+	 * or exit func is still waiting to do an import, the import machinery
+	 * expects Py_IsInitialized() to return true.  So don't say the
+	 * interpreter is uninitialized until after the exit funcs have run.
+	 * Note that Threading.py uses an exit func to do a join on all the
+	 * threads created thru it, so this also protects pending imports in
+	 * the threads created via Threading.
+	 */
 	call_sys_exitfunc();
+	initialized = 0;
 
 	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_Get();

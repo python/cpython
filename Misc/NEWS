@@ -105,6 +105,11 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #127718 - '@' were '`' seem to be confused.
 
+- #119862 - getargs.c - patched memory leak
+
+- #128475 - pythonrun.c - In Py_Finalize, don't reset initialized flag
+            until after the exit funcs have run
+
 What's New in Python 2.0?
 =========================
 

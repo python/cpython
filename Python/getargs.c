@@ -1124,6 +1124,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 				return 0;
 			}
 			converted++;
+			Py_DECREF(item);
 		}
 		else {
 			PyErr_Clear();
