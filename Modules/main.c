@@ -94,7 +94,7 @@ PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
 
 /* Main program */
 
-int
+DL_EXPORT(int)
 Py_Main(argc, argv)
 	int argc;
 	char **argv;
