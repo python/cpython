@@ -33,9 +33,6 @@ This document describes the document classes and special markup used
 in the Python documentation.  Authors may use this guide, in
 conjunction with the template files provided with the
 distribution, to create or maintain whole documents or sections.
-
-[Notes and questions in brackets, like this, are notes to myself while 
- developing this document.]
 \end{abstract}
 
 \tableofcontents
@@ -116,13 +113,42 @@ distribution, to create or maintain whole documents or sections.
   \end{definitions}
 
 
-\section{\LaTeX{} Syntax Primer \label{latex-primer}}
+\section{\LaTeX{} Primer \label{latex-primer}}
 
-  [This section will discuss what the markup looks like, and explain
-   the difference between an environment and a macro.]
+  This section is a brief introduction to \LaTeX{} concepts and
+  syntax, to provide authors enough information to author documents
+  productively without having to become ``\TeX{}nicians.''
+
+  \LaTeX{} documents contain two parts: the preamble and the body.
+  The preamble is used to specify certain metadata about the document
+  itself, such as the title, the list of authors, the date, and the
+  \emph{class} the document belongs to.  Additional information used
+  to control index generation and the use of bibliographic databases
+  can also be placed in the preamble.  For most users, the preamble
+  can be most easily created by copying it from an existing document
+  and modifying a few key pieces of information.
+
+  The \dfn{class} of a document is used to place a document within a
+  broad category of documents and set some fundamental formatting
+  properties.  For Python documentation, two classes are used: the
+  \code{manual} class and the \code{howto} class.  These classes also
+  define the additional markup used to document Python concepts and
+  structures.  Specific information about these classes is provided in
+  Section \ref{classes}, ``Document Classes,'' below.  The first thing
+  in the preamble is the declaration of the document's class.
+
+  After the class declaration, a number of \emph{macros} are used to
+  provide further information about the document and setup any
+  additional markup that is needed.
+
+  The document body follows the preamble.  This contains all the
+  printed components of the document marked up structurally.  
+
+  XXX This section will discuss what the markup looks like, and
+   explain the difference between an environment and a macro.
 
 
-\section{Document Classes}
+\section{Document Classes \label{classes}}
 
   Two \LaTeX{} document classes are defined specifically for use with
   the Python documentation.  The \code{manual} class is for large
@@ -132,7 +158,8 @@ distribution, to create or maintain whole documents or sections.
   The \code{manual} documents are larger and are used for most of the
   standard documents.  This document class is based on the standard
   \LaTeX{} \code{report} class and is formatted very much like a long
-  technical report.
+  technical report.  The \emph{Python Reference Manual} is a good
+  example of a \code{manual} document.
 
   The \code{howto} documents are shorter, and don't have the large
   structure of the \code{manual} documents.  This class is based on
@@ -158,38 +185,91 @@ distribution, to create or maintain whole documents or sections.
 
   \subsection{Information Units \label{info-units}}
 
-    Most of the environments should be described here: \env{excdesc},
-    \env{funcdesc}, etc.
+    XXX Check Maler's book for proper terminology.
 
-    \begin{envdesc}{datadesc}{\{\var{name}\}}
+    There are a number of environments used to describe specific
+    features provided by modules.  Each environment requires
+    parameters needed to provide basic information about what is being
+    described, and the environment content should be the description.
+    Most of these environments make entries in the general index (if
+    one is being produced for the document); if no index entry is
+    desired, non-indexing variants are available for many of these
+    environments.  The environments have names of the form
+    \code{\var{feature}desc}, and the non-indexing variants are named
+    \code{\var{feature}descni}.  The available variants are explicitly
+    included in the list below.
+
+    For each of these environments, the first parameter, \var{name},
+    provides the name by which the feature is accessed.
+
+    Environments which describe features of objects within a module,
+    such as object methods or data attributes, allow an optional
+    \var{type name} parameter.  When the feature is an attribute of
+    class instances, \var{type name} only needs to be given if the
+    class was not the most recently described class in the module; the
+    \var{name} value from the most recent \env{classdesc} is implied.
+    For features of built-in or extension types, the \var{type name}
+    value should always be provided.  Another special case which
+    deserves mention are the methods and members of general
+    ``protocols,'' such as the formatter and writer protocols
+    described for the \module{formatter} module: these may be
+    documented without any specific implementation classes, and will
+    always require the \var{type name} parameter to be provided.
+
+    \begin{envdesc}{datadesc}{\p{name}}
+      This environment is used to document global data in a module,
+      including both variables and values used as ``defined
+      constants.''  Class and object attributes are not documented
+      using this environment.
     \end{envdesc}
-    \begin{envdesc}{datadesc}{\{\var{name}\}}
+    \begin{envdesc}{datadesc}{\p{name}}
       Like \env{datadesc}, but without creating any index entries.
     \end{envdesc}
 
-    \begin{envdesc}{excdesc}{\{\var{name}\}}
+    \begin{envdesc}{excdesc}{\p{name}}
       Describe an exception.  This may be either a string exception or
       a class exception.
     \end{envdesc}
 
-    \begin{envdesc}{funcdesc}{\{\var{name}\}\{\var{parameter list}\}}
+    \begin{envdesc}{funcdesc}{\p{name}\p{parameters}}
+      Describe a module-level function.  \var{parameters} should
+      not include the parentheses used in the call syntax.  Object
+      methods are not documented using this environment.  Bound object
+      methods placed in the module namespace as part of the public
+      interface of the module are documented using this, as they are
+      equivalent to normal functions for most purposes.
+
+      The description should include information about the parameters
+      required and how they are used (especially whether mutable
+      objects passed as parameters are modified), side effects, and
+      possible exceptions.  A small example may be provided.
     \end{envdesc}
-    \begin{envdesc}{funcdescni}{\{\var{name}\}\{\var{parameter list}\}}
+    \begin{envdesc}{funcdescni}{\p{name}\p{parameters}}
       Like \env{funcdesc}, but without creating any index entries.
     \end{envdesc}
 
-    \begin{envdesc}{classdesc}{\{\var{name}\}\{\var{constructor parameter list}\}}
+    \begin{envdesc}{classdesc}{\p{name}\p{constructor parameters}}
+      Describe a class and its constructor.  \var{constructor
+      parameters} should not include the \var{self} parameter or
+      the parentheses used in the call syntax.
     \end{envdesc}
 
-    \begin{envdesc}{memberdesc}{\{\var{name}\}}
+    \begin{envdesc}{memberdesc}{\op{type name}\p{name}}
+      Describe an object data attribute.  The description should
+      include information about the type of the data to be expected
+      and whether it may be changed directly.
     \end{envdesc}
-    \begin{envdesc}{memberdescni}{\{\var{name}\}}
+    \begin{envdesc}{memberdescni}{\op{type name}\p{name}}
       Like \env{memberdesc}, but without creating any index entries.
     \end{envdesc}
 
-    \begin{envdesc}{methoddesc}{{[}\var{class name}{]}\{\var{name}\}\{\var{parameter list}\}}
+    \begin{envdesc}{methoddesc}{\op{type name}\p{name}\p{parameters}}
+      Describe an object method.  \var{parameters} should not include
+      the \var{self} parameter or the parentheses used in the call
+      syntax.  The description should include similar information to
+      that described for \env{funcdesc}.
     \end{envdesc}
-    \begin{envdesc}{methoddescni}{{[}\var{class name}{]}\{\var{name}\}\{\var{parameter list}\}}
+    \begin{envdesc}{methoddescni}{\op{type name}\p{name}\p{parameters}}
       Like \env{methoddesc}, but without creating any index entries.
     \end{envdesc}
 
@@ -213,11 +293,11 @@ distribution, to create or maintain whole documents or sections.
 
 \declaremodule{extension}{spam}
   \platform{Unix}
-\modulesynopsis{Access to the SPAM facility of Unix.}
+\modulesynopsis{Access to the SPAM facility of \UNIX{}.}
 \moduleauthor{Jane Doe}{jane.doe@frobnitz.org}
 \end{verbatim}
 
-  \begin{macrodesc}{declaremodule}{{[}\var{key}{]}\{\var{type}\}\{\var{name}\}}
+  \begin{macrodesc}{declaremodule}{\op{key}\p{type}\p{name}}
     Requires two parameters: module type (standard, builtin,
     extension), and the module name.  An optional parameter should be
     given as the basis for the module's ``key'' used for linking to or
@@ -227,7 +307,7 @@ distribution, to create or maintain whole documents or sections.
     after the \macro{section} used to introduce the module.
   \end{macrodesc}
 
-  \begin{macrodesc}{platform}{\{\var{specifier}\}}
+  \begin{macrodesc}{platform}{\p{specifier}}
     Specifies the portability of the module.  \var{specifier} is a
     comma-separated list of keys that specify what platforms the
     module is available on.  The keys are short identifiers;
@@ -236,16 +316,16 @@ distribution, to create or maintain whole documents or sections.
     which has already been used when applicable.
   \end{macrodesc}
 
-  \begin{macrodesc}{modulesynopsis}{\{\var{text}\}}
+  \begin{macrodesc}{modulesynopsis}{\p{text}}
     The \var{text} is a short, ``one line'' description of the
     module that can be used as part of the chapter introduction.
-    This is typically placed just after \macro{declaremodule}.
+    This is must be placed after \macro{declaremodule}.
     The synopsis is used in building the contents of the table
     inserted as the \macro{localmoduletable}.  No text is
     produced at the point of the markup.
   \end{macrodesc}
 
-  \begin{macrodesc}{moduleauthor}{\{\var{name}\}\{\var{email}\}}
+  \begin{macrodesc}{moduleauthor}{\p{name}\p{email}}
     This macro is used to encode information about who authored a
     module.  This is currently not used to generate output, but can be
     used to help determine the origin of the module.
@@ -290,7 +370,7 @@ distribution, to create or maintain whole documents or sections.
     \code{ii}, \code{iii}, and \code{iv}.  These environments are all
     built on top of the \env{tabular} environment.
 
-    \begin{envdesc}{tableii}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}}
+    \begin{envdesc}{tableii}{\p{colspec}\p{col1font}\p{heading1}\p{heading2}}
       Create a two-column table using the \LaTeX{} column specifier
       \var{colspec}.  The column specifier should indicate vertical
       bars between columns as appropriate for the specific table, but
@@ -299,34 +379,34 @@ distribution, to create or maintain whole documents or sections.
       parameter is used as a stylistic treatment of the first column
       of the table: the first column is presented as
       \code{\e\var{col1font}\{column1\}}.  To avoid treating the first
-      column specially, \var{col1font} may be \code{textrm}.  The
+      column specially, \var{col1font} may be \samp{textrm}.  The
       column headings are taken from the values \var{heading1} and
       \var{heading2}.
     \end{envdesc}
 
-    \begin{macrodesc}{lineii}{\{\var{column1}\}\{\var{column2}\}}
+    \begin{macrodesc}{lineii}{\p{column1}\p{column2}}
       Create a single table row within a \env{tableii} environment.
       The text for the first column will be generated by applying the
       macro named by the \var{col1font} value when the \env{tableii}
       was opened.
     \end{macrodesc}
 
-    \begin{envdesc}{tableiii}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}\{\var{heading3}\}}
+    \begin{envdesc}{tableiii}{\p{colspec}\p{col1font}\p{heading1}\p{heading2}\p{heading3}}
       Like the \env{tableii} environment, but with a third column.
       The heading for the third column is given by \var{heading3}.
     \end{envdesc}
 
-    \begin{macrodesc}{lineiii}{\{\var{column1}\}\{\var{column2}\}\{\var{column3}\}}
+    \begin{macrodesc}{lineiii}{\p{column1}\p{column2}\p{column3}}
       Like the \macro{lineii} macro, but with a third column.  The
       text for the third column is given by \var{column3}.
     \end{macrodesc}
 
-    \begin{envdesc}{tableiv}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}\{\var{heading3}\}\{\var{heading4}\}}
+    \begin{envdesc}{tableiv}{\p{colspec}\p{col1font}\p{heading1}\p{heading2}\p{heading3}\p{heading4}}
       Like the \env{tableiii} environment, but with a fourth column.
       The heading for the fourth column is given by \var{heading4}.
     \end{envdesc}
 
-    \begin{macrodesc}{lineiv}{\{\var{column1}\}\{\var{column2}\}\{\var{column3}\}\{\var{column4}\}}
+    \begin{macrodesc}{lineiv}{\p{column1}\p{column2}\p{column3}\p{column4}}
       Like the \macro{lineiii} macro, but with a fourth column.  The
       text for the fourth column is given by \var{column4}.
     \end{macrodesc}
@@ -352,15 +432,17 @@ distribution, to create or maintain whole documents or sections.
       markup used to describe individual references.
     \end{envdesc}
 
-    \begin{macrodesc}{seemodule}{{[}\var{key}{]}\{\var{name}\}\{\var{why}\}}
+    \begin{macrodesc}{seemodule}{\op{key}\p{name}\p{why}}
       Refer to another module.  \var{why} should be a brief
       explanation of why the reference may be interesting.  The module
       name is given in \var{name}, with the link key given in
       \var{key} if necessary.  In the HTML and PDF conversions, the
       module name will be a hyperlink to the referred-to module.
+      \strong{Note:}  The module must be documented in the same
+      document (the corresponding \macro{declaremodule} is required).
     \end{macrodesc}
 
-    \begin{macrodesc}{seetext}{\{\var{text}\}}
+    \begin{macrodesc}{seetext}{\p{text}}
       Add arbitrary text \var{text} to the ``See also:'' list.  This
       can be used to refer to off-line materials or on-line materials
       using the \macro{url} macro.
@@ -387,10 +469,10 @@ distribution, to create or maintain whole documents or sections.
     generate appropriate entries into the general and module indexes.
 
     The following macro can be used to control the generation of index
-    data, and should be used in the document prologue:
+    data, and should be used in the document preamble:
 
     \begin{macrodesc}{makemodindex}{}
-      This should be used in the document prologue if a ``Module
+      This should be used in the document preamble if a ``Module
       Index'' is desired for a document containing reference material
       on many modules.  This causes a data file
       \code{lib\macro{jobname}.idx} to be created from the
@@ -404,31 +486,31 @@ distribution, to create or maintain whole documents or sections.
     entries for particular concepts, many of which are specific to
     programming languages or even Python.
 
-    \begin{macrodesc}{bifuncindex}{\{\var{name}\}}
+    \begin{macrodesc}{bifuncindex}{\p{name}}
       Add a index entry referring to a built-in function named
       \var{name}; parenthesis should not be included after
       \var{name}.
     \end{macrodesc}
 
-    \begin{macrodesc}{exindex}{\{\var{exception}\}}
+    \begin{macrodesc}{exindex}{\p{exception}}
       Add a reference to an exception named \var{exception}.  The
       exception may be either string- or class-based.
     \end{macrodesc}
 
-    \begin{macrodesc}{kwindex}{\{\var{keyword}\}}
+    \begin{macrodesc}{kwindex}{\p{keyword}}
       Add a reference to a language keyword (not a keyword parameter
       in a function or method call).
     \end{macrodesc}
 
-    \begin{macrodesc}{obindex}{\{\var{object type}\}}
+    \begin{macrodesc}{obindex}{\p{object type}}
       Add an index entry for a built-in object type.
     \end{macrodesc}
 
-    \begin{macrodesc}{opindex}{\{\var{operator}\}}
+    \begin{macrodesc}{opindex}{\p{operator}}
       Add a reference to an operator, such as \samp{+}.
     \end{macrodesc}
 
-    \begin{macrodesc}{refmodindex}{{[}\var{key}{]}\{\var{module}\}}
+    \begin{macrodesc}{refmodindex}{\op{key}\p{module}}
       Add an index entry for module \var{module}; if \var{module}
       contains an underscore, the optional parameter \var{key} should
       be provided as the same string with underscores removed.  An
@@ -437,28 +519,29 @@ distribution, to create or maintain whole documents or sections.
       Python.
     \end{macrodesc}
 
-    \begin{macrodesc}{refexmodindex}{{[}\var{key}{]}\{\var{module}\}}
+    \begin{macrodesc}{refexmodindex}{\op{key}\p{module}}
       As for \macro{refmodindex}, but the index entry will be
       ``\var{module} (extension module).''  This is intended for use
       with non-standard modules not implemented in Python.
     \end{macrodesc}
 
-    \begin{macrodesc}{refbimodindex}{{[}\var{key}{]}\{\var{module}\}}
+    \begin{macrodesc}{refbimodindex}{\op{key}\p{module}}
       As for \macro{refmodindex}, but the index entry will be
       ``\var{module} (built-in module).''  This is intended for use
       with standard modules not implemented in Python.
     \end{macrodesc}
 
-    \begin{macrodesc}{refstmodindex}{{[}\var{key}{]}\{\var{module}\}}
+    \begin{macrodesc}{refstmodindex}{\op{key}\p{module}}
       As for \macro{refmodindex}, but the index entry will be
       ``\var{module} (standard module).''  This is intended for use
       with standard modules implemented in Python.
     \end{macrodesc}
 
-    \begin{macrodesc}{stindex}{\{\var{statement}\}}
+    \begin{macrodesc}{stindex}{\p{statement}}
       Add an index entry for a statement type, such as \keyword{print}
-      or \keyword{try}/\keyword{finally}.  [XXX Need better examples
-      of difference from \macro{kwindex}.
+      or \keyword{try}/\keyword{finally}.
+
+      XXX Need better examples of difference from \macro{kwindex}.
     \end{macrodesc}
 
 
@@ -469,20 +552,20 @@ distribution, to create or maintain whole documents or sections.
     entries.  Index entries build using these macros contain both
     primary and secondary text.
 
-    \begin{macrodesc}{indexii}{\{\var{word1}\}\{\var{word2}\}}
+    \begin{macrodesc}{indexii}{\p{word1}\p{word2}}
       Build two index entries.  This is exactly equivalent to using
       \code{\e index\{\var{word1}!\var{word2}\}} and 
       \code{\e index\{\var{word2}!\var{word1}\}}.
     \end{macrodesc}
 
-    \begin{macrodesc}{indexiii}{\{\var{word1}\}\{\var{word2}\}\{\var{word3}\}}
+    \begin{macrodesc}{indexiii}{\p{word1}\p{word2}\p{word3}}
       Build three index entries.  This is exactly equivalent to using
       \code{\e index\{\var{word1}!\var{word2} \var{word3}\}},
       \code{\e index\{\var{word2}!\var{word3}, \var{word1}\}}, and
       \code{\e index\{\var{word3}!\var{word1} \var{word2}\}}.
     \end{macrodesc}
 
-    \begin{macrodesc}{indexiv}{\{\var{word1}\}\{\var{word2}\}\{\var{word3}\}\{\var{word4}\}}
+    \begin{macrodesc}{indexiv}{\p{word1}\p{word2}\p{word3}\p{word4}}
       Build four index entries.  This is exactly equivalent to using
       \code{\e index\{\var{word1}!\var{word2} \var{word3} \var{word4}\}},
       \code{\e index\{\var{word2}!\var{word3} \var{word4}, \var{word1}\}},
@@ -520,7 +603,9 @@ distribution, to create or maintain whole documents or sections.
 
     Many tools are needed to be able to process the Python
     documentation if all supported formats are required.  This
-    section lists the tools used and when each is required.
+    section lists the tools used and when each is required.  Consult
+    the \file{Doc/README} file to see if there are specific version
+    requirements for any of these.
 
     \begin{description}
       \item[\program{dvips}]
@@ -666,7 +751,7 @@ distribution, to create or maintain whole documents or sections.
     related standards is not immediate.  Many tools are likely to be
     free.
 
-    [Eventual migration to SGML/XML.]
+    XXX Eventual migration to SGML/XML.
 
   \subsection{Discussion Forums \label{discussion}}
 
@@ -679,6 +764,7 @@ distribution, to create or maintain whole documents or sections.
 
     Comments and bug reports on the standard documents should be sent
     to \email{python-docs@python.org}.  This may include comments
-    about formatting, content, grammatical errors, or this document.
+    about formatting, content, grammatical and spelling errors, or
+    this document.
 
 \end{document}
