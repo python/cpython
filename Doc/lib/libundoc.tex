@@ -9,69 +9,70 @@ posting by Fredrik Lundh; I have revised some modules' status.)
 
 \section{Fundamental, and pretty straightforward to document}
 
-cPickle.c -- mostly the same as pickle but no subclassing
+cPickle.c --- mostly the same as pickle but no subclassing
 
-cStringIO.c -- mostly the same as StringIO but no subclassing
+cStringIO.c --- mostly the same as StringIO but no subclassing
 
 
 \section{Frameworks; somewhat harder to document, but well worth the effort}
 
-Tkinter.py -- Interface to Tcl/Tk for graphical user interfaces;
+Tkinter.py --- Interface to Tcl/Tk for graphical user interfaces;
 Fredrik Lundh is working on this one!
 
-CGIHTTPServer.py -- CGI-savvy HTTP Server
+CGIHTTPServer.py --- CGI-savvy HTTP Server
 
-SimpleHTTPServer.py -- Simple HTTP Server
+SimpleHTTPServer.py --- Simple HTTP Server
 
 
 \section{Stuff useful to a lot of people, including the CGI crowd}
 
-MimeWriter.py -- Generic MIME writer
+MimeWriter.py --- Generic MIME writer
 
-multifile.py -- make each part of a multipart message ``feel'' like
-
-fileinput.py -- convenient loop over the lines in a list of input files.
+multifile.py --- make each part of a multipart message ``feel'' like
 
 
 \section{Miscellaneous useful utilities}
 
 Some of these are very old and/or not very robust; marked with ``hmm''.
 
-calendar.py -- Calendar printing functions
+calendar.py --- Calendar printing functions
 
-ConfigParser.py -- Parse a file of sectioned configuration parameters
+ConfigParser.py --- Parse a file of sectioned configuration parameters
 
-cmp.py -- Efficiently compare files
+cmp.py --- Efficiently compare files
 
-cmpcache.py -- Efficiently compare files (uses statcache)
+cmpcache.py --- Efficiently compare files (uses statcache)
 
-dircache.py -- like os.listdir, but caches results
+dircache.py --- like os.listdir, but caches results
 
-dircmp.py -- class to build directory diff tools on
+dircmp.py --- class to build directory diff tools on
 
-linecache.py -- Cache lines from files (used by pdb)
+linecache.py --- Cache lines from files (used by pdb)
 
-pipes.py -- Conversion pipeline templates (hmm)
+pipes.py --- Conversion pipeline templates (hmm)
 
-popen2.py -- improved popen, can read AND write simultaneously
+popen2.py --- improved popen, can read AND write simultaneously
 
-statcache.py -- Maintain a cache of file stats
+statcache.py --- Maintain a cache of file stats
 
-colorsys.py -- Conversion between RGB and other color systems
+colorsys.py --- Conversion between RGB and other color systems
 
-dbhash.py -- (g)dbm-like wrapper for bsdhash.hashopen
+dbhash.py --- (g)dbm-like wrapper for bsdhash.hashopen
 
-mhlib.py -- MH interface
+mhlib.py --- MH interface
 
-pty.py -- Pseudo terminal utilities
+pty.py --- Pseudo terminal utilities
 
-tty.py -- Terminal utilities
+tty.py --- Terminal utilities
 
-cmd.py -- build line-oriented command interpreters (used by pdb)
+cmd.py --- build line-oriented command interpreters (used by pdb)
 
-bdb.py -- A generic Python debugger base class (used by pdb)
+bdb.py --- A generic Python debugger base class (used by pdb)
 
-ihooks.py -- Import hook support (for ni and rexec)
+ihooks.py --- Import hook support (for rexec)
+
+bisect.py --- Bisection algorithms (this is actually useful at times,
+especially as reference material)
 
 
 \section{Parsing Python}
@@ -79,132 +80,136 @@ ihooks.py -- Import hook support (for ni and rexec)
 (One could argue that these should all be documented together with the
 parser module.)
 
-tokenize.py -- regular expression that recognizes Python tokens; also
+tokenize.py --- regular expression that recognizes Python tokens; also
 contains helper code for colorizing Python source code.
 
-pyclbr.py -- Parse a Python file and retrieve classes and methods
+pyclbr.py --- Parse a Python file and retrieve classes and methods
 
 
 \section{Platform specific modules}
 
-ntpath.py -- equivalent of posixpath on 32-bit Windows
+ntpath.py --- equivalent of posixpath on 32-bit Windows
 
-dospath.py -- equivalent of posixpath on MS-DOS
+dospath.py --- equivalent of posixpath on MS-DOS
 
 
 \section{Code objects and files, debugger etc.}
 
-compileall.py -- force "compilation" of all .py files in a directory
+compileall.py --- force "compilation" of all .py files in a directory
 
-py_compile.py -- "compile" a .py file to a .pyc file
+py_compile.py --- "compile" a .py file to a .pyc file
 
-repr.py -- Redo the `...` (representation) but with limits on most
+repr.py --- Redo the `...` (representation) but with limits on most
 sizes (used by pdb)
 
 
 \section{Multimedia}
 
-audiodev.py -- Plays audio files
+audiodev.py --- Plays audio files
 
-sunau.py -- parse Sun and NeXT audio files
+sunau.py --- parse Sun and NeXT audio files
 
-sunaudio.py -- interpret sun audio headers
+sunaudio.py --- interpret sun audio headers
 
-toaiff.py -- Convert "arbitrary" sound files to AIFF files
+toaiff.py --- Convert "arbitrary" sound files to AIFF files
 
-sndhdr.py -- recognizing sound files
+sndhdr.py --- recognizing sound files
 
-wave.py -- parse WAVE files
+wave.py --- parse WAVE files
 
-whatsound.py -- recognizing sound files
+whatsound.py --- recognizing sound files
 
 
 \section{Oddities}
 
 These modules are probably also obsolete, or just not very useful.
 
-bisect.py -- Bisection algorithms (this is actually useful at times)
+dump.py --- Print python code that reconstructs a variable
 
-dump.py -- Print python code that reconstructs a variable
+find.py --- find files matching pattern in directory tree
 
-find.py -- find files matching pattern in directory tree
+fpformat.py --- General floating point formatting functions ---
+interesting demonstration of how to do this without using the \C{}
+library
 
-fpformat.py -- General floating point formatting functions -- obsolete
+grep.py --- grep
 
-grep.py -- grep
+mutex.py --- Mutual exclusion --- for use with module sched
 
-mutex.py -- Mutual exclusion -- for use with module sched
+packmail.py --- create a self-unpacking \UNIX{} shell archive
 
-packmail.py -- create a self-unpacking \UNIX{} shell archive
+poly.py --- Polynomials
 
-poly.py -- Polynomials
+sched.py --- event scheduler class
 
-sched.py -- event scheduler class
+shutil.py --- utility functions usable in a shell-like program
 
-shutil.py -- utility functions usable in a shell-like program
+util.py --- useful functions that don't fit elsewhere
 
-util.py -- useful functions that don't fit elsewhere
+zmod.py --- Compute properties of mathematical "fields"
 
-zmod.py -- Compute properties of mathematical "fields"
-
-tzparse.py -- Parse a timezone specification (unfinished)
+tzparse.py --- Parse a timezone specification (unfinished)
 
 
 \section{Obsolete}
 
-newdir.py -- New dir() function (the standard dir() is now just as good)
+These modules are not on the standard module search path;
+\indexiii{module}{search}{path}
+but are available in the directory \file{lib-old/} installed  under
+\file{\textrm{\$prefix}/lib/python\version/}.  To use any of these
+modules, add that directory to \code{sys.path}, possibly using
+\envvar{PYTHONPATH}.
 
-addpack.py -- standard support for "packages" (use ni instead)
+newdir.py --- New dir() function (the standard dir() is now just as good)
 
-fmt.py -- text formatting abstractions (too slow)
+addpack.py --- standard support for "packages"
 
-Para.py -- helper for fmt.py
+fmt.py --- text formatting abstractions (too slow)
 
-lockfile.py -- wrapper around FCNTL file locking (use
+Para.py --- helper for fmt.py
+
+lockfile.py --- wrapper around FCNTL file locking (use
 fcntl.lockf/flock intead)
 
-tb.py -- Print tracebacks, with a dump of local variables (use
+tb.py --- Print tracebacks, with a dump of local variables (use
 pdb.pm() or traceback.py instead)
 
-codehack.py -- extract function name or line number from a function
+codehack.py --- extract function name or line number from a function
 code object (these are now accessible as attributes: co.co_name,
 func.func_name, co.co_firstlineno)
 
 
 \section{Extension modules}
 
-bsddbmodule.c -- Interface to the Berkeley DB interface (yet another
+bsddbmodule.c --- Interface to the Berkeley DB interface (yet another
 dbm clone).
 
-cursesmodule.c -- Curses interface.
+cursesmodule.c --- Curses interface.
 
-dbhashmodule.c -- Obsolete; this functionality is now provided by
-bsddbmodule.c.
-
-dlmodule.c --  A highly experimental and dangerous device for calling
+dlmodule.c ---  A highly experimental and dangerous device for calling
 arbitrary C functions in arbitrary shared libraries.
 
-newmodule.c -- Tommy Burnette's `new' module (creates new empty
-objects of certain kinds) -- dangerous.
+newmodule.c --- Tommy Burnette's `new' module (creates new empty
+objects of certain kinds) --- dangerous.
 
-nismodule.c -- NIS (a.k.a. Sun's Yellow Pages) interface.
+nismodule.c --- NIS (a.k.a. Sun's Yellow Pages) interface.
 
-timingmodule.c -- Measure time intervals to high resolution (obsolete
--- use time.clock() instead).
+timingmodule.c --- Measure time intervals to high resolution (obsolete
+--- use time.clock() instead).
 
-stdwinmodule.c -- Interface to STDWIN (an old, unsupported
+stdwinmodule.c --- Interface to STDWIN (an old, unsupported
 platform-independent GUI package).  Obsolete; use Tkinter for a
 platform-independent GUI instead.
 
 The following are SGI specific:
 
-clmodule.c -- Interface to the SGI compression library.
+clmodule.c --- Interface to the SGI compression library.
 
-svmodule.c -- Interface to the ``simple video'' board on SGI Indigo
+svmodule.c --- Interface to the ``simple video'' board on SGI Indigo
 (obsolete hardware).
 
 The following is Windows specific:
 
-msvcrtmodule.c (in directory PC) -- define a number of Windows
+msvcrtmodule.c (in directory PC) --- define a number of Windows
 specific goodies like \code{khbit()}, \code{getch()} and
 \code{setmode()}.  (Windows 95 and NT only.)
