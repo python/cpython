@@ -1,78 +1,196 @@
 \section{\module{tempfile} ---
-         Generate temporary file names}
+         Generate temporary files and directories}
+\sectionauthor{Zack Weinberg}{zack@codesourcery.com}
 
 \declaremodule{standard}{tempfile}
-\modulesynopsis{Generate temporary file names.}
+\modulesynopsis{Generate temporary files and directories.}
 
 \indexii{temporary}{file name}
 \indexii{temporary}{file}
 
+This module generates temporary files and directories.  It works on
+all supported platforms.
 
-This module generates temporary file names.  It is not \UNIX{} specific,
-but it may require some help on non-\UNIX{} systems.
+In version 2.3 of Python, this module was overhauled for enhanced
+security.  It now provides three new functions,
+\function{NamedTemporaryFile}, \function{mkstemp}, and
+\function{mkdtemp}, which should eliminate all remaining need to use
+the insecure \function{mktemp} function.  Temporary file names created
+by this module no longer contain the process ID; instead a string of
+six random characters is used.
+
+Also, all the user-callable functions now take additional arguments
+which allow direct control over the location and name of temporary
+files.  It is no longer necessary to use the global \var{tempdir} and
+\var{template} variables.  To maintain backward compatibility, the
+argument order is somewhat odd; it is recommended to use keyword
+arguments for clarity.
 
 The module defines the following user-callable functions:
 
-\begin{funcdesc}{mktemp}{\optional{suffix}}
-Return a unique temporary filename.  This is an absolute pathname of a
-file that does not exist at the time the call is made.  No two calls
-will return the same filename.  \var{suffix}, if provided, is used as
-the last part of the generated file name.  This can be used to provide
-a filename extension or other identifying information that may be
-useful on some platforms.
-\end{funcdesc}
-
-\begin{funcdesc}{TemporaryFile}{\optional{mode\optional{,
-                                bufsize\optional{, suffix}}}}
+\begin{funcdesc}{TemporaryFile}{\optional{mode='w+b'}
+				\optional{, bufsize=-1}
+				\optional{, suffix}
+				\optional{, prefix}
+				\optional{, dir}}
 Return a file (or file-like) object that can be used as a temporary
-storage area.  The file is created in the most secure manner available
-in the appropriate temporary directory for the host platform.  Under
-\UNIX, the directory entry to the file is removed so that it is secure
-against attacks which involve creating symbolic links to the file or
-replacing the file with a symbolic link to some other file.  For other
-platforms, which don't allow removing the directory entry while the
-file is in use, the file is automatically deleted as soon as it is
-closed (including an implicit close when it is garbage-collected).
+storage area.  The file is created using \function{mkstemp}. It will
+be destroyed as soon as it is closed (including an implicit close when
+the object is garbage collected).  Under \UNIX, the directory entry
+for the file is removed immediately after the file is created.  Other
+platforms do not support this; your code should not rely on a
+\class{TemporaryFile} having or not having a visible name in the file
+system.
 
 The \var{mode} parameter defaults to \code{'w+b'} so that the file
 created can be read and written without being closed.  Binary mode is
 used so that it behaves consistently on all platforms without regard
 for the data that is stored.  \var{bufsize} defaults to \code{-1},
-meaning that the operating system default is used.  \var{suffix} is
-passed to \function{mktemp()}.
+meaning that the operating system default is used.
+
+The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
+\function{mkstemp}.
+\end{funcdesc}
+
+\begin{funcdesc}{NamedTemporaryFile}{\optional{mode='w+b'}
+				     \optional{, bufsize=-1}
+				     \optional{, suffix}
+				     \optional{, prefix}
+				     \optional{, dir}}
+This function operates exactly as \function{TemporaryFile} does,
+except that the file is guaranteed to have a visible name in the file
+system.  That name can be retrieved from the \member{name} member of
+the file object.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{mkstemp}{\optional{suffix}
+			  \optional{, prefix}
+			  \optional{, dir}
+			  \optional{, binary=1}}
+Creates a temporary file in the most secure manner possible.  There
+are no race conditions in the file's creation, assuming that the
+platform properly implements the \constant{O_EXCL} flag for
+\function{os.open}.  The file is readable and writable only by the
+creating user ID.  If the platform uses permission bits to indicate
+whether a file is executable, the file is executable by no one.  The
+file descriptor is not inherited by child processes.
+
+Unlike \function{TemporaryFile}, the user of \function{mkstemp} is
+responsible for deleting the temporary file when done with it.
+
+If \var{suffix} is specified, the file name will end with that suffix,
+otherwise there will be no suffix.  \function{mkstemp} does not put a
+dot between the file name and the suffix; if you need one, put it at
+the beginning of \var{suffix}.
+
+If \var{prefix} is specified, the file name will begin with that
+prefix; otherwise, a default prefix is used.
+
+If \var{dir} is specified, the file will be created in that directory;
+otherwise, a default directory is used.
+
+If \var{binary} is specified, it indicates whether to open the file in
+binary mode (the default) or text mode.  On some platforms, this makes
+no difference.
+
+\function{mkstemp} returns a tuple containing an OS-level handle to
+an open file (as would be returned by \function{os.open}) and the
+absolute pathname of that file, in that order.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{mkdtemp}{\optional{suffix}
+			  \optional{, prefix}
+			  \optional{, dir}}
+Creates a temporary directory in the most secure manner possible.
+There are no race conditions in the directory's creation.  The
+directory is readable, writable, and searchable only by the
+creating user ID.
+
+The user of \function{mkdtemp} is responsible for deleting the
+temporary directory and its contents when done with it.
+
+The \var{prefix}, \var{suffix}, and \var{dir} arguments are the same
+as for \function{mkstemp}.
+
+\function{mkdtemp} returns the absolute pathname of the new directory.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{mktemp}{\optional{suffix}
+			 \optional{, prefix}
+			 \optional{, dir}}
+\deprecated{2.3}{Use \function{mkstemp()} instead.}
+Return an absolute pathname of a file that did not exist at the time
+the call is made.  The \var{prefix}, \var{suffix}, and \var{dir}
+arguments are the same as for \function{mkstemp}.
+
+\warning{Use of this function may introduce a security hole in your
+program.  By the time you get around to doing anything with the file
+name it returns, someone else may have beaten you to the punch.}
 \end{funcdesc}
 
 The module uses two global variables that tell it how to construct a
-temporary name.  The caller may assign values to them; by default they
-are initialized at the first call to \function{mktemp()}.
+temporary name.  They are initialized at the first call to any of the
+functions above.  The caller may change them, but this is discouraged;
+use the appropriate function arguments, instead.
 
 \begin{datadesc}{tempdir}
 When set to a value other than \code{None}, this variable defines the
-directory in which filenames returned by \function{mktemp()} reside.
-The default is taken from the environment variable \envvar{TMPDIR}; if
-this is not set, either \file{/usr/tmp} is used (on \UNIX), or the
-current working directory (all other systems).  No check is made to
-see whether its value is valid.
+default value for the \var{dir} argument to all the functions defined
+in this module.
+
+If \var{tempdir} is unset or \code{None} at any call to any of the
+above functions, Python searches a standard list of directories and
+sets \var{tempdir} to the first one which the calling user can create
+files in.  The list is:
+
+\begin{enumerate}
+\item The directory named by the \envvar{TMPDIR} environment variable.
+\item The directory named by the \envvar{TEMP} environment variable.
+\item The directory named by the \envvar{TMP} environment variable.
+\item A platform-specific location:
+    \begin{itemize}
+    \item On Macintosh, the \file{Temporary Items} folder.
+    \item On RiscOS, the directory named by the
+          \envvar{Wimp\$ScrapDir} environment variable.
+    \item On Windows, the directories
+          \file{C:$\backslash$TEMP},
+          \file{C:$\backslash$TMP},
+          \file{$\backslash$TEMP}, and
+          \file{$\backslash$TMP}, in that order.
+    \item On all other platforms, the directories
+          \file{/tmp}, \file{/var/tmp}, and \file{/usr/tmp}, in that order.
+    \end{itemize}
+\item As a last resort, the current working directory.
+\end{enumerate}
 \end{datadesc}
 
-\begin{funcdesc}{gettempprefix}{}
-Return the filename prefix used to create temporary files.  This does
-not contain the directory component.  Using this function is preferred
-over using the \code{template} variable directly.
-\versionadded{1.5.2}
+\begin{funcdesc}{gettempdir}{}
+Return the directory currently selected to create temporary files in.
+If \var{tempdir} is not None, this simply returns its contents;
+otherwise, the search described above is performed, and the result
+returned.
 \end{funcdesc}
 
 \begin{datadesc}{template}
 \deprecated{2.0}{Use \function{gettempprefix()} instead.}
 When set to a value other than \code{None}, this variable defines the
 prefix of the final component of the filenames returned by
-\function{mktemp()}.  A string of decimal digits is added to generate
-unique filenames.  The default is either \file{@\var{pid}.} where
-\var{pid} is the current process ID (on \UNIX),
-\file{\textasciitilde\var{pid}-} on Windows NT, \file{Python-Tmp-} on
-MacOS, or \file{tmp} (all other systems).
+\function{mktemp()}.  A string of six random letters and digits is
+appended to the prefix to make the filename unique.  On Windows,
+the default prefix is \file{\textasciitilde{}T}; on all other systems
+it is \file{tmp}.
 
 Older versions of this module used to require that \code{template} be
 set to \code{None} after a call to \function{os.fork()}; this has not
 been necessary since version 1.5.2.
 \end{datadesc}
+
+\begin{funcdesc}{gettempprefix}{}
+Return the filename prefix used to create temporary files.  This does
+not contain the directory component.  Using this function is preferred
+over reading the \var{template} variable directly.
+\versionadded{1.5.2}
+\end{funcdesc}
