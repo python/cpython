@@ -29,15 +29,17 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Readline interface for tokenizer.c.
-   By default, we have a super simple my_readline function.
-   Optionally, we can use the GNU readline library (to be found in the
-   bash distribution).
+/* Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
+   By default, or when stdin is not a tty device, we have a super
+   simple my_readline function using fgets.
+   Optionally, we can use the GNU readline library.
    my_readline() has a different return value from GNU readline():
    - NULL if an interrupt occurred or if an error occurred
    - a malloc'ed empty string if EOF was read
    - a malloc'ed string ending in \n normally
 */
+
+#define Py_USE_NEW_NAMES 1
 
 #include "config.h"
 
@@ -48,6 +50,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "mymalloc.h"
 #include "intrcheck.h"
+
 
 #ifdef WITH_READLINE
 
@@ -71,46 +74,6 @@ onintr(sig)
 	longjmp(jbuf, 1);
 }
 
-#else /* !WITH_READLINE */
-
-/* This function restarts a fgets() after an EINTR error occurred
-   except if intrcheck() returns true. */
-
-static int
-my_fgets(buf, len, fp)
-	char *buf;
-	int len;
-	FILE *fp;
-{
-	char *p;
-	for (;;) {
-		errno = 0;
-		p = fgets(buf, len, fp);
-		if (p != NULL)
-			return 0; /* No error */
-		if (feof(fp)) {
-			return -1; /* EOF */
-		}
-#ifdef EINTR
-		if (errno == EINTR) {
-			if (intrcheck()) {
-				return 1; /* Interrupt */
-			}
-			continue;
-		}
-#endif
-		if (intrcheck()) {
-			return 1; /* Interrupt */
-		}
-		return -2; /* Error */
-	}
-	/* NOTREACHED */
-}
-
-#endif /* WITH_READLINE */
-
-
-#ifdef WITH_READLINE
 void
 PyOS_ReadlineInit()
 {
@@ -123,16 +86,13 @@ PyOS_ReadlineInit()
 		been_here++;
 	}
 }
-#endif
-
 
 char *
-my_readline(prompt)
+PyOS_GnuReadline(prompt)
 	char *prompt;
 {
 	int n;
 	char *p;
-#ifdef WITH_READLINE
 	RETSIGTYPE (*old_inthandler)();
 	PyOS_ReadlineInit();
 	old_inthandler = signal(SIGINT, onintr);
@@ -160,7 +120,54 @@ my_readline(prompt)
 		p[n+1] = '\0';
 	}
 	return p;
-#else /* !WITH_READLINE */
+}
+
+#endif /* !WITH_READLINE */
+
+
+/* This function restarts a fgets() after an EINTR error occurred
+   except if PyOS_InterruptOccurred() returns true. */
+
+static int
+my_fgets(buf, len, fp)
+	char *buf;
+	int len;
+	FILE *fp;
+{
+	char *p;
+	for (;;) {
+		errno = 0;
+		p = fgets(buf, len, fp);
+		if (p != NULL)
+			return 0; /* No error */
+		if (feof(fp)) {
+			return -1; /* EOF */
+		}
+#ifdef EINTR
+		if (errno == EINTR) {
+			if (PyOS_InterruptOccurred()) {
+				return 1; /* Interrupt */
+			}
+			continue;
+		}
+#endif
+		if (PyOS_InterruptOccurred()) {
+			return 1; /* Interrupt */
+		}
+		return -2; /* Error */
+	}
+	/* NOTREACHED */
+}
+
+
+/* Readline implementation using fgets() */
+
+char *
+PyOS_StdioReadline(prompt)
+	char *prompt;
+{
+	int n;
+	char *p;
 	n = 100;
 	if ((p = malloc(n)) == NULL)
 		return NULL;
@@ -198,5 +205,30 @@ my_readline(prompt)
 		n += strlen(p+n);
 	}
 	return realloc(p, n+1);
-#endif /* !WITH_READLINE */
+}
+
+
+/* By initializing this function pointer, systems embedding Python can
+   override the readline function. */
+
+char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
+
+
+/* Interface used by tokenizer.c and bltinmodule.c */
+
+char *
+PyOS_Readline(prompt)
+	char *prompt;
+{
+	int n;
+	char *p;
+	if (PyOS_ReadlineFunctionPointer == NULL) {
+#ifdef WITH_READLINE
+		if (isatty(fileno(stdin)))
+			PyOS_ReadlineFunctionPointer = PyOS_GnuReadline;
+		else
+#endif
+			PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
+	}
+	return (*PyOS_ReadlineFunctionPointer)(prompt);
 }
