@@ -68,7 +68,6 @@ def makeproject(xmlfile, projectfile):
 	cw.send_timeout = AppleEvents.kNoTimeOut
 	xmlfss = macfs.FSSpec(xmlfile)
 	prjfss = macfs.FSSpec(projectfile)
-	cw.activate()
 	cw.my_mkproject(prjfss, xmlfss)
 	
 def buildproject(projectfile):
