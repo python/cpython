@@ -288,9 +288,9 @@ class RExec(ihooks._Verbose):
     # Add a module -- return an existing module or create one
 
     def add_module(self, mname):
-        if mname in self.modules:
-            return self.modules[mname]
-        self.modules[mname] = m = self.hooks.new_module(mname)
+        m = self.modules.get(mname)
+        if m is None:
+            self.modules[mname] = m = self.hooks.new_module(mname)
         m.__builtins__ = self.modules['__builtin__']
         return m
 
@@ -552,13 +552,17 @@ def test():
             print "%s: can't open file %s" % (sys.argv[0], `args[0]`)
             return 1
     if fp.isatty():
-        import code
         try:
-            code.interact(
-                "*** RESTRICTED *** Python %s on %s\n"
-                'Type "help", "copyright", "credits" or "license" '
-                "for more information." % (sys.version, sys.platform),
-                local=r.modules['__main__'].__dict__)
+            import readline
+        except ImportError:
+            pass
+        import code
+        class RestrictedConsole(code.InteractiveConsole):
+            def runcode(self, co):
+                self.locals['__builtins__'] = r.modules['__builtin__']
+                r.s_apply(code.InteractiveConsole.runcode, (self, co))
+        try:
+            RestrictedConsole(r.modules['__main__'].__dict__).interact()
         except SystemExit, n:
             return n
     else:
