@@ -289,7 +289,6 @@ def _escape(source, escape, state):
             return LITERAL, atoi(escape[1:], 8) & 0xff
         elif escape[1:2] in DIGITS:
             # octal escape *or* decimal group reference (sigh)
-            here = source.tell()
             if source.next in DIGITS:
                 escape = escape + source.get()
                 if (escape[1] in OCTDIGITS and escape[2] in OCTDIGITS and
