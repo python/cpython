@@ -1,6 +1,5 @@
 """Test cases for the fnmatch module."""
 
-import re
 import test_support
 import unittest
 
