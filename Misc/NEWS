@@ -30,6 +30,9 @@ Core and builtins
 - zip() with no arguments now returns an empty list instead of raising
   a TypeError exception.
 
+- obj.__contains__() now returns True/False instead of 1/0.  SF patch
+  820195.
+
 Extension modules
 -----------------
 
