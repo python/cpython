@@ -91,7 +91,7 @@ alpha, beta, final), but to the DEC/COMPAQ Alpha processor.  Ignore them if
 you're not building on an Alpha box.
 
 
-YOUR OWN EXTENSION DDLs
+YOUR OWN EXTENSION DLLs
 -----------------------
 If you want to create your own extension module DLL, there's an example
 with easy-to-follow instructions in ../PC/example/; read the file
