@@ -214,6 +214,7 @@ PyErr_Clear
 PyErr_Fetch
 PyErr_Format
 PyErr_Mac
+PyErr_NewException
 PyErr_NoMemory
 PyErr_Occurred
 PyErr_Print
@@ -234,7 +235,6 @@ PyEval_GetLocals
 PyEval_GetRestricted
 PyEval_RestoreThread
 PyEval_SaveThread
-PyExc_AccessError
 PyExc_AssertionError
 PyExc_AttributeError
 PyExc_EOFError
@@ -497,6 +497,7 @@ PySys_GetObject
 PySys_SetArgv
 PySys_SetObject
 PySys_SetPath
+PyThreadState_Clear
 PyThreadState_Delete
 PyThreadState_Get
 PyThreadState_New
