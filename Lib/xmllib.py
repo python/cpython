@@ -100,6 +100,7 @@ class XMLParser:
         self.__at_start = 1
         self.__seen_doctype = None
         self.__seen_starttag = 0
+        self.__use_namespaces = 0
         self.__namespaces = {'xml':None}   # xml is implicitly declared
 
     # For derived classes only -- enter literal mode (CDATA) till EOF
@@ -183,10 +184,10 @@ class XMLParser:
             else:
                     j = n
             if i < j:
-                if self.__at_start:
+                data = rawdata[i:j]
+                if self.__at_start and space.match(data) is None:
                     self.syntax_error('illegal data at start of file')
                 self.__at_start = 0
-                data = rawdata[i:j]
                 if not self.stack and space.match(data) is None:
                     self.syntax_error('data not in content')
                 if illegal.search(data):
@@ -439,6 +440,7 @@ class XMLParser:
         name = res.group(0)
         if name == 'xml:namespace':
             self.syntax_error('old-fashioned namespace declaration')
+            self.__use_namespaces = -1
             # namespace declaration
             # this must come after the <?xml?> declaration (if any)
             # and before the <!DOCTYPE> (if any).
@@ -489,6 +491,8 @@ class XMLParser:
                 # namespace declaration
                 ncname = res.group('ncname')
                 namespace[ncname or ''] = attrvalue or None
+                if not self.__use_namespaces:
+                    self.__use_namespaces = len(self.stack)+1
                 continue
             if '<' in attrvalue:
                 self.syntax_error("`<' illegal in attribute value")
@@ -518,7 +522,10 @@ class XMLParser:
         k, j = tag.span('attrs')
         attrdict, nsdict, k = self.parse_attributes(tagname, k, j)
         self.stack.append((tagname, nsdict, nstag))
-        res = qname.match(tagname)
+        if self.__use_namespaces:
+            res = qname.match(tagname)
+        else:
+            res = None
         if res is not None:
             prefix, nstag = res.group('prefix', 'local')
             if prefix is None:
@@ -535,27 +542,28 @@ class XMLParser:
                 nstag = prefix + ':' + nstag # undo split
             self.stack[-1] = tagname, nsdict, nstag
         # translate namespace of attributes
-        nattrdict = {}
-        for key, val in attrdict.items():
-            res = qname.match(key)
-            if res is not None:
-                aprefix, key = res.group('prefix', 'local')
-                if aprefix is None:
-                    aprefix = ''
-                ans = None
-                for t, d, nst in self.stack:
-                    if d.has_key(aprefix):
-                        ans = d[aprefix]
-                if ans is None and aprefix != '':
-                    ans = self.__namespaces.get(aprefix)
-                if ans is not None:
-                    key = ans + ' ' + key
-                elif aprefix != '':
-                    key = aprefix + ':' + key
-                elif ns is not None:
-                    key = ns + ' ' + key
-            nattrdict[key] = val
-        attrdict = nattrdict
+        if self.__use_namespaces:
+            nattrdict = {}
+            for key, val in attrdict.items():
+                res = qname.match(key)
+                if res is not None:
+                    aprefix, key = res.group('prefix', 'local')
+                    if aprefix is None:
+                        aprefix = ''
+                    ans = None
+                    for t, d, nst in self.stack:
+                        if d.has_key(aprefix):
+                            ans = d[aprefix]
+                    if ans is None and aprefix != '':
+                        ans = self.__namespaces.get(aprefix)
+                    if ans is not None:
+                        key = ans + ' ' + key
+                    elif aprefix != '':
+                        key = aprefix + ':' + key
+                    elif ns is not None:
+                        key = ns + ' ' + key
+                nattrdict[key] = val
+            attrdict = nattrdict
         attributes = self.attributes.get(nstag)
         if attributes is not None:
             for key in attrdict.keys():
@@ -634,6 +642,8 @@ class XMLParser:
                 self.handle_endtag(nstag, method)
             else:
                 self.unknown_endtag(nstag)
+            if self.__use_namespaces == len(self.stack):
+                self.__use_namespaces = 0
             del self.stack[-1]
 
     # Overridable -- handle xml processing instruction
