@@ -917,6 +917,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 			   prot, flags,
 			   fd, 0);
 	if (m_obj->data == (char *)-1) {
+	        m_obj->data = NULL;
 		Py_DECREF(m_obj);
 		PyErr_SetFromErrno(mmap_module_error);
 		return NULL;
