@@ -21,3 +21,4 @@ SystemExit
 TypeError
 ValueError
 ZeroDivisionError
+Exception
