@@ -36,6 +36,7 @@ compiler specific".  Therefore, these should be very rare.
 
 #include <io.h>
 #define HAVE_LIMITS_H
+#define HAVE_SYS_UTIME_H
 #define HAVE_HYPOT
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
@@ -177,6 +178,10 @@ typedef int pid_t;
 #define LONG_LONG __int64
 
 #undef HAVE_HYPOT
+#undef HAVE_SYS_UTIME_H
+#define HAVE_UTIME_H
+#define HAVE_DIRENT_H
+#define HAVE_CLOCK
 
 #else /* !_WIN32 */
 #error "Only Win32 and later are supported"
@@ -593,7 +598,7 @@ typedef unsigned long uintptr_t;
 /* #define HAVE_SYS_UN_H 1 */
 
 /* Define if you have the <sys/utime.h> header file.  */
-#define HAVE_SYS_UTIME_H 1
+/* #define HAVE_SYS_UTIME_H 1 */
 
 /* Define if you have the <sys/utsname.h> header file.  */
 /* #define HAVE_SYS_UTSNAME_H 1 */

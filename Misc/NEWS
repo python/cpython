@@ -105,6 +105,10 @@ Tests
   pprint.isreadable() return sensible results.  Also verifies that simple
   cases produce correct output.
 
+New platforms
+
+- Python should compile and run out of the box using the Borland C
+  compiler (under Windows), thanks to Stephen Hansen.
 
 What's New in Python 2.1 (final)?
 =================================
