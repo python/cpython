@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.11}
+\release{0.90}
 \author{A.M.\ Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -13,17 +13,12 @@
 
 % To do:
 % PYTHONINSPECT
-% file.encoding
 % doctest extensions
 % new version of IDLE
 % XML-RPC nil extension
 % MacOS framework-related changes (section of its own, probably)
 
 %\section{Introduction \label{intro}}
-
-{\large This article is a draft, and is currently up to date for
-Python 2.3rc1.  Please send any additions, comments or errata to the
-author.}
 
 This article explains the new features in Python 2.3.  The tentative
 release date of Python 2.3 is currently scheduled for August 2003.
@@ -1189,6 +1184,15 @@ now trigger \exception{PendingDeprecationWarning}.
 \exception{SyntaxWarning} warning.  In a future version of Python,
 \code{None} may finally become a keyword.
 
+\item The \method{xreadlines()} method of file objects, introduced in
+Python 2.1, is no longer necessary because files now behave as their
+own iterator.  \method{xreadlines()} was originally introduced as a
+faster way to loop over all the lines in a file, but now you can
+simply write \code{for line in file_obj}.  File objects also have a
+new read-only \member{encoding} attribute that gives the encoding used
+by the file; Unicode strings written to the file will be automatically 
+converted to bytes using the given encoding.
+
 \item The method resolution order used by new-style classes has
 changed, though you'll only notice the difference if you have a really
 complicated inheritance hierarchy.  Classic classes are unaffected by
@@ -1288,7 +1292,7 @@ u'\u4001abc'
 (Suggested by Simon Brunning and implemented by Walter D\"orwald.)
 
 \item The \method{startswith()} and \method{endswith()}
-string methods now accept negative numbers for the start and end
+string methods now accept negative numbers for the \var{start} and \var{end}
 parameters.
 
 \item Another new string method is \method{zfill()}, originally a
@@ -1314,7 +1318,7 @@ than \method{zfill()}.
    either kind of string.  It's a completely abstract type, so you
    can't create \class{basestring} instances.
 
-\item Interned strings are no longer immortal, and will now be
+\item Interned strings are no longer immortal and will now be
 garbage-collected in the usual way when the only reference to them is
 from the internal dictionary of interned strings.  (Implemented by
 Oren Tirosh.)
@@ -1350,11 +1354,14 @@ See section~\ref{section-other} for a longer explanation.
 \code{for i in range(n)}.  (Patch by Raymond Hettinger.)
 
 \item A number of small rearrangements have been made in various
-hotspots to improve performance, inlining a function here, removing
-some code there.  (Implemented mostly by GvR, but lots of people have
-contributed single changes.)
+hotspots to improve performance, such as inlining a function or removing
+some code.  (Implemented mostly by GvR, but lots of people have
+contributed single changes.)    
 
 \end{itemize}
+
+The net result of the 2.3 optimizations is that Python 2.3 runs the 
+pystone benchmark around 25\% faster than Python 2.2.
 
 
 %======================================================================
@@ -1379,25 +1386,29 @@ contents, and the \code{*=} assignment operator to repeat an array.
 of the \ulink{PyBSDDB}{http://pybsddb.sourceforge.net} package,
 providing a more complete interface to the transactional features of
 the BerkeleyDB library.
+
 The old version of the module has been renamed to 
 \module{bsddb185} and is no longer built automatically; you'll 
 have to edit \file{Modules/Setup} to enable it.  Note that the new
 \module{bsddb} package is intended to be compatible with the 
 old module, so be sure to file bugs if you discover any
-incompatibilities.  When upgrading to Python 2.3, if you also change
+incompatibilities.  When upgrading to Python 2.3, if the new interpreter is compiled
+with a new version of 
 the underlying BerkeleyDB library, you will almost certainly have to
 convert your database files to the new version.  You can do this
 fairly easily with the new scripts \file{db2pickle.py} and
 \file{pickle2db.py} which you will find in the distribution's
-Tools/scripts directory.  If you've already been using the PyBSDDB
+\file{Tools/scripts} directory.  If you've already been using the PyBSDDB
 package and importing it as \module{bsddb3}, you will have to change your
-\code{import} statements.
+\code{import} statements to import it as \module{bsddb}.
 
 \item The new \module{bz2} module is an interface to the bz2 data
-compression library.  bz2 usually produces output that's smaller than
-the compressed output from the \module{zlib} module, meaning that it
-compresses data more highly.  (Contributed by Gustavo Niemeyer.)
+compression library.  bz2-compressed data is usually smaller than 
+corresponding \module{zlib}-compressed data. (Contributed by Gustavo Niemeyer.)
  
+\item A set of standard date/type types has been added in the new \module{datetime}
+module.  See the following section for more details.
+
 \item The Distutils \class{Extension} class now supports
 an extra constructor argument named \var{depends} for listing
 additional source files that an extension depends on.  This lets
@@ -1420,6 +1431,12 @@ it now checks for the \envvar{CC}, \envvar{CFLAGS}, \envvar{CPP},
 \envvar{LDFLAGS}, and \envvar{CPPFLAGS} environment variables, using
 them to override the settings in Python's configuration (contributed
 by Robert Weber).
+
+\item Previously the \module{doctest} module would only search the
+docstrings of public methods and functions for test cases, but it now
+also examines private ones as well.  The \function{DocTestSuite(}
+function creates a \class{unittest.TestSuite} object from a set of
+\module{doctest} tests.
 
 \item The new \function{gc.get_referents(\var{object})} function returns a
 list of all the objects referenced by \var{object}.
@@ -1466,7 +1483,7 @@ information about the priority queue data structure.)
 The \module{heapq} module provides \function{heappush()} and
 \function{heappop()} functions for adding and removing items while
 maintaining the heap property on top of some other mutable Python
-sequence type.  For example:
+sequence type.  Here's an example that uses a Python list:
 
 \begin{verbatim}
 >>> import heapq
@@ -1510,15 +1527,16 @@ radians.  Also, an optional \var{base} argument was added to
 bases other than \code{e} and \code{10}.  (Contributed by Raymond
 Hettinger.)
 
-\item Several new functions (\function{getpgid()}, \function{killpg()},
+\item Several new POSIX functions (\function{getpgid()}, \function{killpg()},
 \function{lchown()}, \function{loadavg()}, \function{major()}, \function{makedev()},
 \function{minor()}, and \function{mknod()}) were added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S. Otkidach.)
 
-\item In the \module{os} module, the \function{*stat()} family of functions can now report
-fractions of a second in a timestamp.  Such time stamps are
-represented as floats, similar to \function{time.time()}.
+\item In the \module{os} module, the \function{*stat()} family of
+functions can now report fractions of a second in a timestamp.  Such
+time stamps are represented as floats, similar to
+the value returned by \function{time.time()}.
 
 During testing, it was found that some applications will break if time
 stamps are floats.  For compatibility, when using the tuple interface
@@ -1544,6 +1562,11 @@ stamps, or if they use the tuple API. If used, the feature should be
 activated on an application level instead of trying to enable it on a
 per-use basis.
 
+\item The \module{optparse} module contains a new parser for command-line arguments 
+that can convert option values to a particular Python type 
+and will automatically generate a usage message.  See the following section for 
+more details.
+
 \item The old and never-documented \module{linuxaudiodev} module has
 been deprecated, and a new version named \module{ossaudiodev} has been
 added.  The module was renamed because the OSS sound drivers can be
@@ -1554,7 +1577,7 @@ Ward and Nicholas FitzRoy-Dale.)
 \item The new \module{platform} module contains a number of functions
 that try to determine various properties of the platform you're
 running on.  There are functions for getting the architecture, CPU
-type, the Windows OS version, and even  the Linux distribution version.
+type, the Windows OS version, and even the Linux distribution version.
 (Contributed by Marc-Andr\'e Lemburg.)
 
 \item The parser objects provided by the \module{pyexpat} module
@@ -1564,12 +1587,11 @@ the parser object's \member{buffer_text} attribute to \constant{True}
 will enable buffering.
 
 \item The \function{sample(\var{population}, \var{k})} function was
-added to the \module{random} module.  \var{population} is a sequence
-or \class{xrange} object containing the elements of a population, and
-\function{sample()}
-chooses \var{k} elements from the population without replacing chosen
-elements.  \var{k} can be any value up to \code{len(\var{population})}.
-For example:
+added to the \module{random} module.  \var{population} is a sequence or
+\class{xrange} object containing the elements of a population, and
+\function{sample()} chooses \var{k} elements from the population without
+replacing chosen elements.  \var{k} can be any value up to
+\code{len(\var{population})}. For example:
 
 \begin{verbatim}
 >>> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'St', 'Sn']
@@ -1697,14 +1719,14 @@ except ImportError:
     import dummy_threading as _threading
 \end{verbatim}
 
-Code can then call functions and use classes in \module{_threading}
-whether or not threads are supported, avoiding an \keyword{if}
-statement and making the code slightly clearer.  This module will not
-magically make multithreaded code run without threads; code that waits
-for another thread to return or to do something will simply hang
-forever.  (In this example, \module{_threading} is used as the module
-name to make it clear that the module being used is not necessarily
-the actual \module{threading} module.)
+In this example, \module{_threading} is used as the module name to make
+it clear that the module being used is not necessarily the actual
+\module{threading} module. Code can call functions and use classes in
+\module{_threading} whether or not threads are supported, avoiding an
+\keyword{if} statement and making the code slightly clearer.  This
+module will not magically make multithreaded code run without threads;
+code that waits for another thread to return or to do something will
+simply hang forever. 
 
 \item The \module{time} module's \function{strptime()} function has
 long been an annoyance because it uses the platform C library's
@@ -1736,59 +1758,6 @@ print timer2.repeat(repeat=3, number=100000)
 # [0.17574405670166016, 0.18193507194519043, 0.17565798759460449]
 \end{verbatim}
 
-
-\item The \module{UserDict} module has a new \class{DictMixin} class which
-defines all dictionary methods for classes that already have a minimum
-mapping interface.  This greatly simplifies writing classes that need
-to be substitutable for dictionaries, such as the classes in 
-the \module{shelve} module.
- 
-Adding the mixin as a superclass provides the full dictionary
-interface whenever the class defines \method{__getitem__},
-\method{__setitem__}, \method{__delitem__}, and \method{keys}.
-For example:
- 
-\begin{verbatim}
->>> import UserDict
->>> class SeqDict(UserDict.DictMixin):
-    """Dictionary lookalike implemented with lists."""
-    def __init__(self):
-        self.keylist = []
-        self.valuelist = []
-    def __getitem__(self, key):
-        try:
-            i = self.keylist.index(key)
-        except ValueError:
-            raise KeyError
-        return self.valuelist[i]
-    def __setitem__(self, key, value):
-        try:
-            i = self.keylist.index(key)
-            self.valuelist[i] = value
-        except ValueError:
-            self.keylist.append(key)
-            self.valuelist.append(value)
-    def __delitem__(self, key):
-        try:
-            i = self.keylist.index(key)
-        except ValueError:
-            raise KeyError
-        self.keylist.pop(i)
-        self.valuelist.pop(i)
-    def keys(self):
-        return list(self.keylist)
-
->>> s = SeqDict()
->>> dir(s)      # See that other dictionary methods are implemented
-['__cmp__', '__contains__', '__delitem__', '__doc__', '__getitem__',
- '__init__', '__iter__', '__len__', '__module__', '__repr__',
- '__setitem__', 'clear', 'get', 'has_key', 'items', 'iteritems',
- 'iterkeys', 'itervalues', 'keylist', 'keys', 'pop', 'popitem',
- 'setdefault', 'update', 'valuelist', 'values']
-\end{verbatim}
-
-(Contributed by Raymond Hettinger.)
-
 \item The \module{Tix} module has received various bug fixes and
 updates for the current version of the Tix package.
 
@@ -1801,7 +1770,7 @@ when a widget is accessed from a different thread by marshalling a
 command, passing it to the correct thread, and waiting for the
 results.  Other interfaces can't be handled automatically but
 \module{Tkinter} will now raise an exception on such an access so that
-at least you can find out about the problem.  See
+you can at least find out about the problem.  See
 \url{http://mail.python.org/pipermail/python-dev/2002-December/031107.html} %
 for a more detailed explanation of this change.  (Implemented by
 Martin von~L\"owis.)
@@ -1828,6 +1797,59 @@ Tkinter.wantobjects = 0
 \end{verbatim}
 
 Any breakage caused by this change should be reported as a bug.
+
+\item The \module{UserDict} module has a new \class{DictMixin} class which
+defines all dictionary methods for classes that already have a minimum
+mapping interface.  This greatly simplifies writing classes that need
+to be substitutable for dictionaries, such as the classes in 
+the \module{shelve} module.
+ 
+Adding the mix-in as a superclass provides the full dictionary
+interface whenever the class defines \method{__getitem__},
+\method{__setitem__}, \method{__delitem__}, and \method{keys}.
+For example:
+ 
+\begin{verbatim}
+>>> import UserDict
+>>> class SeqDict(UserDict.DictMixin):
+...     """Dictionary lookalike implemented with lists."""
+...     def __init__(self):
+...         self.keylist = []
+...         self.valuelist = []
+...     def __getitem__(self, key):
+...         try:
+...             i = self.keylist.index(key)
+...         except ValueError:
+...             raise KeyError
+...         return self.valuelist[i]
+...     def __setitem__(self, key, value):
+...         try:
+...             i = self.keylist.index(key)
+...             self.valuelist[i] = value
+...         except ValueError:
+...             self.keylist.append(key)
+...             self.valuelist.append(value)
+...     def __delitem__(self, key):
+...         try:
+...             i = self.keylist.index(key)
+...         except ValueError:
+...             raise KeyError
+...         self.keylist.pop(i)
+...         self.valuelist.pop(i)
+...     def keys(self):
+...         return list(self.keylist)
+... 
+>>> s = SeqDict()
+>>> dir(s)      # See that other dictionary methods are implemented
+['__cmp__', '__contains__', '__delitem__', '__doc__', '__getitem__',
+ '__init__', '__iter__', '__len__', '__module__', '__repr__',
+ '__setitem__', 'clear', 'get', 'has_key', 'items', 'iteritems',
+ 'iterkeys', 'itervalues', 'keylist', 'keys', 'pop', 'popitem',
+ 'setdefault', 'update', 'valuelist', 'values']
+\end{verbatim}
+
+(Contributed by Raymond Hettinger.)
+
 
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
@@ -1860,8 +1882,8 @@ version of the domain name.  \module{urllib} supports Unicode URLs
 with non-ASCII host names as long as the \code{path} part of the URL
 is ASCII only.
 
-To implement this change, the module \module{stringprep}, the tool
-\code{mkstringprep} and the \code{punycode} encoding have been added.  
+To implement this change, the \module{stringprep} module, the 
+\code{mkstringprep} tool and the \code{punycode} encoding have been added.  
 
 \end{itemize}
 
@@ -1904,7 +1926,7 @@ objects:
 \end{verbatim}
 
 The \method{replace()} method allows modifying one or more fields 
-of a \class{date} or \class{datetime} instance:
+of a \class{date} or \class{datetime} instance, returning a new instance:
 
 \begin{verbatim}
 >>> d = datetime.datetime.now()
@@ -1919,7 +1941,7 @@ Instances can be compared, hashed, and converted to strings (the
 result is the same as that of \method{isoformat()}).  \class{date} and
 \class{datetime} instances can be subtracted from each other, and
 added to \class{timedelta} instances.  The largest missing feature is
-that there's no support for parsing strings and getting back a
+that there's no standard library support for parsing strings and getting back a
 \class{date} or \class{datetime}.
 
 For more information, refer to the \ulink{module's reference
@@ -1956,14 +1978,12 @@ Parsing a command line is then done by calling the \method{parse_args()}
 method.
 
 \begin{verbatim}
-import optparse 
-
-options, args = optparse.parse_args(sys.argv[1:])
+options, args = op.parse_args(sys.argv[1:])
 print options
 print args
 \end{verbatim}
 
-This returns an object containing all of the option values, 
+This returns an object containing all of the option values,
 and a list of strings containing the remaining arguments. 
 
 Invoking the script with the various arguments now works as you'd
@@ -2045,7 +2065,7 @@ As part of this change, the confusing multiple interfaces for
 allocating memory have been consolidated down into two API families.
 Memory allocated with one family must not be manipulated with
 functions from the other family.  There is one family for allocating
-chunks of memory, and another family of functions specifically for
+chunks of memory and another family of functions specifically for
 allocating Python objects.
 
 \begin{itemize}
@@ -2094,9 +2114,9 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item The C-level interface to the garbage collector has been changed,
+\item The C-level interface to the garbage collector has been changed
 to make it easier to write extension types that support garbage
-collection, and to make it easier to debug misuses of the functions.
+collection and to debug misuses of the functions.
 Various functions have slightly different semantics, so a bunch of
 functions had to be renamed.  Extensions that use the old API will
 still compile but will \emph{not} participate in garbage collection,
@@ -2122,7 +2142,7 @@ allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
 \end{itemize}
 
 \item The cycle detection implementation used by the garbage collection
-has proven to be stable, so it's now being made mandatory; you can no
+has proven to be stable, so it's now been made mandatory.  You can no
 longer compile Python without it, and the
 \longprogramopt{with-cycle-gc} switch to \program{configure} has been removed.
 
@@ -2155,15 +2175,8 @@ pre-2.2 versions of Python is important, the code could use
 than using \constant{METH_NOARGS}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
-char *\var{key})} was added
-as shorthand for
+char *\var{key})} was added as shorthand for
 \code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key}))}.
-
-\item The \method{xreadlines()} method of file objects, introduced in
-Python 2.1, is no longer necessary because files now behave as their
-own iterator.  \method{xreadlines()} was originally introduced as a
-faster way to loop over all the lines in a file, but now you can
-simply write \code{for line in file_obj}.
 
 \item File objects now manage their internal string buffer
 differently, increasing it exponentially when needed.  This results in
@@ -2314,9 +2327,9 @@ For example, to clear just the top bit (bit 31), you could write
 
 \item The Distutils \function{setup()} function has gained various new
 keyword arguments such as \var{depends}.  Old versions of the
-Distutils will abort if passed unknown keywords.  The fix is to check
+Distutils will abort if passed unknown keywords.  A solution is to check
 for the presence of the new \function{get_distutil_options()} function
-in your \file{setup.py} if you want to only support the new keywords
+in your \file{setup.py} and only uses the new keywords
 with a version of the Distutils that supports them:
 
 \begin{verbatim}
