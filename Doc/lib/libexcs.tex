@@ -11,15 +11,17 @@ and users are encouraged to do the same.  The source code for those
 exceptions is present in the standard library module
 \module{exceptions}; this module never needs to be imported explicitly.
 
-For backward compatibility, when Python is invoked with the \code{-X}
-option, most of the standard exceptions are strings\footnote{For
-forward-compatibility the new exceptions \exception{Exception},
-\exception{LookupError},
-\exception{ArithmeticError}, \exception{EnvironmentError}, and
-\exception{StandardError} are tuples.}.  This option may be used to
-run code that breaks because of the different semantics of class based
-exceptions.  The \code{-X} option will become obsolete in future
-Python versions, so the recommended solution is to fix the code.
+For backward compatibility, when Python is invoked with the
+\programopt{-X} option, most of the standard exceptions are
+strings\footnote{
+  For forward-compatibility the new exceptions \exception{Exception},
+  \exception{LookupError}, \exception{ArithmeticError},
+  \exception{EnvironmentError}, and \exception{StandardError} are
+  tuples.
+}.  This option may be used to run code that breaks because of the
+different semantics of class based exceptions.  The
+\programopt{-X} option will become obsolete in future Python versions,
+so the recommended solution is to fix the code.
 
 Two distinct string objects with the same value are considered different
 exceptions.  This is done to force programmers to use exception names
@@ -122,8 +124,8 @@ created with other than 2 or 3 arguments.  In this last case,
 \setindexsubitem{(built-in exception)}
 
 The following exceptions are the exceptions that are actually raised.
-They are class objects, except when the \code{-X} option is used to
-revert back to string-based standard exceptions.
+They are class objects, except when the \programopt{-X} option is used
+to revert back to string-based standard exceptions.
 
 \begin{excdesc}{AssertionError}
 Raised when an \keyword{assert} statement fails.
@@ -150,7 +152,7 @@ Raised when an \keyword{assert} statement fails.
 \begin{excdesc}{FloatingPointError}
   Raised when a floating point operation fails.  This exception is
   always defined, but can only be raised when Python is configured
-  with the \code{--with-fpectl} option, or the
+  with the \programopt{-}\programopt{-with-fpectl} option, or the
   \constant{WANT_SIGFPE_HANDLER} symbol is defined in the
   \file{config.h} file.
 \end{excdesc}

@@ -48,11 +48,12 @@ Python interpreter handy for hands-on experience, but all examples are
 self-contained, so the tutorial can be read off-line as well.
 
 For a description of standard objects and modules, see the
-\emph{Python Library Reference} document.  The \emph{Python Reference
-Manual} gives a more formal definition of the language.  To write
-extensions in C or \Cpp{}, read the \emph{Extending and Embedding} and
-\emph{Python/C API} manuals.  There are also several books covering
-Python in depth.
+\citetitle[../lib/lib.html]{Python Library Reference} document.  The
+\citetitle[../ref/ref.html]{Python Reference Manual} gives a more
+formal definition of the language.  To write extensions in C or
+\Cpp{}, read \citetitle[../ext/ext.html]{Extending and Embedding the
+Python Interpreter} and \citetitle[../api/api.html]{Python/C API
+Reference}.  There are also several books covering Python in depth.
 
 This tutorial does not attempt to be comprehensive and cover every
 single feature, or even every commonly used feature.  Instead, it
@@ -60,7 +61,8 @@ introduces many of Python's most noteworthy features, and will give
 you a good idea of the language's flavor and style.  After reading it,
 you will be able to read and write Python modules and programs, and
 you will be ready to learn more about the various Python library
-modules described in the \emph{Python Library Reference}.
+modules described in the \citetitle[../lib/lib.html]{Python Library
+Reference}.
 
 \end{abstract}
 
@@ -196,11 +198,11 @@ a file as standard input, it reads and executes a \emph{script} from
 that file. 
 
 A third way of starting the interpreter is
-\samp{python -c command [arg] ...}, which
-executes the statement(s) in \code{command}, analogous to the shell's
-\code{-c} option.  Since Python statements often contain spaces or other
-characters that are special to the shell, it is best to quote
-\code{command} in its entirety with double quotes.
+\samp{\program{python} \programopt{-c} \var{command} [arg] ...}, which
+executes the statement(s) in \var{command}, analogous to the shell's
+\programopt{-c} option.  Since Python statements often contain spaces
+or other characters that are special to the shell, it is best to quote 
+\var{command} in its entirety with double quotes.
 
 Note that there is a difference between \samp{python file} and
 \samp{python <file}.  In the latter case, input requests from the
@@ -213,9 +215,9 @@ is connected to standard input of the Python interpreter.
 
 When a script file is used, it is sometimes useful to be able to run
 the script and enter interactive mode afterwards.  This can be done by
-passing \code{-i} before the script.  (This does not work if the script
-is read from standard input, for the same reason as explained in the
-previous paragraph.)
+passing \programopt{-i} before the script.  (This does not work if the
+script is read from standard input, for the same reason as explained
+in the previous paragraph.)
 
 \subsection{Argument Passing \label{argPassing}}
 
@@ -224,11 +226,11 @@ arguments thereafter are passed to the script in the variable
 \code{sys.argv}, which is a list of strings.  Its length is at least
 one; when no script and no arguments are given, \code{sys.argv[0]} is
 an empty string.  When the script name is given as \code{'-'} (meaning 
-standard input), \code{sys.argv[0]} is set to \code{'-'}.  When \code{-c
-command} is used, \code{sys.argv[0]} is set to \code{'-c'}.  Options
-found after \code{-c command} are not consumed by the Python
-interpreter's option processing but left in \code{sys.argv} for the
-command to handle.
+standard input), \code{sys.argv[0]} is set to \code{'-'}.  When
+\programopt{-c} \var{command} is used, \code{sys.argv[0]} is set to
+\code{'-c'}.  Options found after \programopt{-c} \var{command} are
+not consumed by the Python interpreter's option processing but left in
+\code{sys.argv} for the command to handle.
 
 \subsection{Interactive Mode \label{interactive}}
 
@@ -1845,11 +1847,9 @@ If you intend to use a function often you can assign it to a local name:
 \section{More on Modules \label{moreModules}}
 
 A module can contain executable statements as well as function
-definitions.
-These statements are intended to initialize the module.
-They are executed only the
-\emph{first}
-time the module is imported somewhere.\footnote{
+definitions.  These statements are intended to initialize the module.
+They are executed only the \emph{first} time the module is imported
+somewhere.\footnote{
         In fact function definitions are also `statements' that are
         `executed'; the execution enters the function name in the
         module's global symbol table.
@@ -1944,22 +1944,22 @@ Some tips for experts:
 \begin{itemize}
 
 \item
-When the Python interpreter is invoked with the \code{-O} flag,
+When the Python interpreter is invoked with the \programopt{-O} flag,
 optimized code is generated and stored in \file{.pyo} files.
 The optimizer currently doesn't help much; it only removes
 \keyword{assert} statements and \code{SET_LINENO} instructions.
-When \code{-O} is used, \emph{all} bytecode is optimized; \code{.pyc}
-files are ignored and \code{.py} files are compiled to optimized
-bytecode.
+When \programopt{-O} is used, \emph{all} bytecode is optimized;
+\code{.pyc} files are ignored and \code{.py} files are compiled to
+optimized bytecode.
 
 \item
-Passing two \code{-O} flags to the Python interpreter (\code{-OO})
-will cause the bytecode compiler to perform optimizations that could
-in some rare cases result in malfunctioning programs.  Currently only
-\code{__doc__} strings are removed from the bytecode, resulting in more 
-compact \file{.pyo} files.  Since some programs may rely on having
-these available, you should only use this option if you know what
-you're doing.
+Passing two \programopt{-O} flags to the Python interpreter
+(\programopt{-OO}) will cause the bytecode compiler to perform
+optimizations that could in some rare cases result in malfunctioning
+programs.  Currently only \code{__doc__} strings are removed from the
+bytecode, resulting in more compact \file{.pyo} files.  Since some
+programs may rely on having these available, you should only use this
+option if you know what you're doing.
 
 \item
 A program doesn't run any faster when it is read from a
@@ -1976,14 +1976,14 @@ script that imports that module.
 
 \item
 It is possible to have a file called \file{spam.pyc} (or
-\file{spam.pyo} when \code{-O} is used) without a module
+\file{spam.pyo} when \programopt{-O} is used) without a module
 \file{spam.py} in the same module.  This can be used to distribute
 a library of Python code in a form that is moderately hard to reverse
 engineer.
 
 \item
 The module \module{compileall}\refstmodindex{compileall} can create
-\file{.pyc} files (or \file{.pyo} files when \code{-O} is used) for
+\file{.pyc} files (or \file{.pyo} files when \programopt{-O} is used) for
 all modules in a directory.
 
 \end{itemize}
@@ -1992,13 +1992,13 @@ all modules in a directory.
 \section{Standard Modules \label{standardModules}}
 
 Python comes with a library of standard modules, described in a separate
-document, the \emph{Python Library Reference} (``Library Reference''
-hereafter).  Some modules are built into the interpreter; these
-provide access to operations that are not part of the core of the
-language but are nevertheless built in, either for efficiency or to
-provide access to operating system primitives such as system calls.
-The set of such modules is a configuration option; e.g., the
-\module{amoeba} module is  only provided on systems that somehow
+document, the \citetitle[../lib/lib.html]{Python Library Reference}
+(``Library Reference'' hereafter).  Some modules are built into the
+interpreter; these provide access to operations that are not part of
+the core of the language but are nevertheless built in, either for
+efficiency or to provide access to operating system primitives such as
+system calls. The set of such modules is a configuration option; e.g.,
+the \module{amoeba} module is only provided on systems that somehow
 support Amoeba primitives.  One particular module deserves some
 attention: \module{sys}\refstmodindex{sys}, which is built into every
 Python interpreter.  The variables \code{sys.ps1} and
