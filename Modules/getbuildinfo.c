@@ -1,5 +1,9 @@
 #include "config.h"
 
+#ifdef macintosh
+#include "macbuildno.h"
+#endif
+
 #include <stdio.h>
 
 #ifndef DATE
