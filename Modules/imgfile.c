@@ -29,6 +29,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** image files in a neater way (so you can get rgb images off a greyscale
 ** file, for instance, or do a straight display without having to get the
 ** image bits into python, etc).
+**
+** Warning: this module is very non-reentrant (esp. the readscaled stuff)
 */
 
 #include "allobjects.h"
@@ -36,6 +38,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <gl/image.h>
 #include <errno.h>
+
+#include <izoom.h>
 
 static object * ImgfileError; /* Exception we raise for various trouble */
 
@@ -158,6 +162,78 @@ imgfile_read(self, args)
     return rv;
 }
 
+IMAGE *glob_image;
+long *glob_datap;
+int glob_width, glob_z;
+
+static
+xs_get(buf, y)
+    short *buf;
+    int y;
+{
+    getrow(glob_image, buf, y, glob_z);
+}
+
+static
+xs_put_c(buf, y)
+    short *buf;
+    int y;
+{
+    char *datap = (char *)glob_datap + y*glob_width;
+    int width = glob_width;
+
+    while ( width-- )
+      *datap++ = (*buf++) & 0xff;
+}
+
+static
+xs_put_0(buf, y)
+    short *buf;
+    int y;
+{
+    long *datap = glob_datap + y*glob_width;
+    int width = glob_width;
+
+    while ( width-- )
+      *datap++ = (*buf++) & 0xff;
+}
+static
+xs_put_12(buf, y)
+    short *buf;
+    int y;
+{
+    long *datap = glob_datap + y*glob_width;
+    int width = glob_width;
+
+    while ( width-- )
+      *datap++ |= ((*buf++) & 0xff) << (glob_z*8);
+}
+
+static void
+xscale(image, xsize, ysize, zsize, datap, xnew, ynew, fmode, blur)
+    IMAGE *image;
+    int xsize, ysize, zsize;
+    long *datap;
+    int xnew, ynew;
+    int fmode;
+    double blur;
+{
+    glob_image = image;
+    glob_datap = datap;
+    glob_width = xnew;
+    if ( zsize == 1 ) {
+	glob_z = 0;
+	filterzoom(xs_get, xs_put_c, xsize, ysize, xnew, ynew, fmode, blur);
+    } else {
+	glob_z = 0;
+	filterzoom(xs_get, xs_put_0, xsize, ysize, xnew, ynew, fmode, blur);
+	glob_z = 1;
+	filterzoom(xs_get, xs_put_12, xsize, ysize, xnew, ynew, fmode, blur);
+	glob_z = 2;
+	filterzoom(xs_get, xs_put_12, xsize, ysize, xnew, ynew, fmode, blur);
+    }
+}
+
 
 static object *
 imgfile_readscaled(self, args)
@@ -175,10 +251,45 @@ imgfile_readscaled(self, args)
     float xfac, yfac;
     int cnt;
     IMAGE *image;
-    
-    if ( !getargs(args, "(sii)", &fname, &xwtd, &ywtd) )
+    char *filter;
+    double blur;
+    int extended;
+    int fmode;
+
+    /*
+     ** Parse args. Funny, since arg 4 and 5 are optional
+     ** (filter name and blur factor). Also, 4 or 5 arguments indicates
+     ** extended scale algorithm in stead of simple-minded pixel drop/dup.
+     */
+    extended = 0;
+    cnt = gettuplesize(args);
+    if ( cnt == 5 ) {
+	extended = 1;
+	if ( !getargs(args, "(siisd)", &fname, &xwtd, &ywtd, &filter, &blur) )
+	  return NULL;
+    } else if ( cnt == 4 ) {
+	extended = 1;
+	if ( !getargs(args, "(siis)", &fname, &xwtd, &ywtd, &filter) )
+	  return NULL;
+	blur = 1.0;
+    } else if ( !getargs(args, "(sii)", &fname, &xwtd, &ywtd) )
       return NULL;
 
+    /*
+     ** Check parameters, open file and check type, rows, etc.
+     */
+    if ( extended ) {
+	if ( strcmp(filter, "impulse") == 0 ) fmode = IMPULSE;
+	else if ( strcmp( filter, "box") == 0 ) fmode = BOX;
+	else if ( strcmp( filter, "triangle") == 0 ) fmode = TRIANGLE;
+	else if ( strcmp( filter, "quadratic") == 0 ) fmode = QUADRATIC;
+	else if ( strcmp( filter, "gaussian") == 0 ) fmode = GAUSSIAN;
+	else {
+	    err_setstr(ImgfileError, "Unknown filter type");
+	    return NULL;
+	}
+    }
+    
     if ( (image = imgfile_open(fname)) == NULL )
       return NULL;
     
@@ -209,30 +320,35 @@ imgfile_readscaled(self, args)
     if ( zsize == 3 ) zsize = 4;
     rv = newsizedstringobject(NULL, xwtd*ywtd*zsize);
     if ( rv == NULL ) {
-      iclose(image);
-      return NULL;
+	iclose(image);
+	return NULL;
     }
     xfac = (float)xsize/(float)xwtd;
     yfac = (float)ysize/(float)ywtd;
     cdatap = getstringvalue(rv);
     idatap = (long *)cdatap;
-    for ( y=0; y < ywtd && !error_called; y++ ) {
-	yorig = (int)(y*yfac);
-	if ( zsize == 1 ) {
-	    getrow(image, rs, yorig, 0);
-	    for(x=0; x<xwtd; x++ ) {
-		*cdatap++ = rs[(int)(x*xfac)];	
-	  }
-	} else {
-	    getrow(image, rs, yorig, 0);
-	    getrow(image, gs, yorig, 1);
-	    getrow(image, bs, yorig, 2);
-	    for(x=0; x<xwtd; x++ ) {
-		xorig = (int)(x*xfac);
-		*idatap++ = (rs[xorig] & 0xff)     |
-		           ((gs[xorig] & 0xff)<<8) |
-			   ((bs[xorig] & 0xff)<<16);
-	  }
+
+    if ( extended ) {
+	xscale(image, xsize, ysize, zsize, idatap, xwtd, ywtd, fmode, blur);
+    } else {
+	for ( y=0; y < ywtd && !error_called; y++ ) {
+	    yorig = (int)(y*yfac);
+	    if ( zsize == 1 ) {
+		getrow(image, rs, yorig, 0);
+		for(x=0; x<xwtd; x++ ) {
+		    *cdatap++ = rs[(int)(x*xfac)];	
+		}
+	    } else {
+		getrow(image, rs, yorig, 0);
+		getrow(image, gs, yorig, 1);
+		getrow(image, bs, yorig, 2);
+		for(x=0; x<xwtd; x++ ) {
+		    xorig = (int)(x*xfac);
+		    *idatap++ = (rs[xorig] & 0xff)     |
+		      ((gs[xorig] & 0xff)<<8) |
+			((bs[xorig] & 0xff)<<16);
+		}
+	    }
 	}
     }
     iclose(image);
@@ -242,7 +358,6 @@ imgfile_readscaled(self, args)
     }
     return rv;
 }
-
 
 static object *
 imgfile_getsizes(self, args)
@@ -262,7 +377,6 @@ imgfile_getsizes(self, args)
     iclose(image);
     return rv;
 }
-
 
 static object *
 imgfile_write(self, args)
@@ -343,7 +457,7 @@ imgfile_write(self, args)
 static struct methodlist imgfile_methods[] = {
     { "getsizes",	imgfile_getsizes },
     { "read",		imgfile_read },
-    { "readscaled",	imgfile_readscaled },
+    { "readscaled",	imgfile_readscaled, 1},
     { "write",		imgfile_write },
     { NULL,		NULL } /* Sentinel */
 };
