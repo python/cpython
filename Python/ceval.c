@@ -2733,7 +2733,8 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		/* Raising builtin string is deprecated but still allowed --
 		 * do nothing.  Raising an instance of a new-style str
 		 * subclass is right out. */
-		;
+		PyErr_Warn(PyExc_PendingDeprecationWarning,
+			   "raising a string exception is deprecated");
 
 	else if (PyClass_Check(type))
 		PyErr_NormalizeException(&type, &value, &tb);
@@ -2757,8 +2758,9 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
 		PyErr_Format(PyExc_TypeError,
-			     "exceptions must be strings, classes, or "
-			     "instances, not %s", type->ob_type->tp_name);
+			     "exceptions must be classes, instances, or "
+			     "strings (deprecated), not %s",
+			     type->ob_type->tp_name);
 		goto raise_error;
 	}
 	PyErr_Restore(type, value, tb);
