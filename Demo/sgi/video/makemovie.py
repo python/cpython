@@ -1,15 +1,62 @@
-# Capture a movie using the Indigo video library and board
+#! /ufs/guido/src/video/py
+# XXX for now, you need this special version of Python
 
+# Capture a CMIF movie using the Indigo video library and board
+
+
+# Usage:
+#
+# makemovie [-q queuesize] [-t recordtime] [-a] [moviefile [audiofile]]
+
+
+# Options:
+#
+# -q queuesize  : set the capture queue size (default and max 16)
+# -t recordtime : set the record time in seconds (default 5 seconds)
+# -a            : record audio as well
+# moviefile     : here goes the movie data (default film.video);
+#                 the format is documented in cmif-film.ms
+# audiofile     : with -a, here goes the audio data (default film.aiff);
+#                 audio data is recorded in AIFF format, using the
+#                 input sampling rate, source and volume set by the
+#                 audio panel, in mono, 8 bits/sample
+
+
+# User interface:
+#
+# Start the application.  Resize the window to the desired movie size.
+# Click the left mouse button to start recording (recording starts
+# when you release the mouse button).  Recording time is specified by
+# the -t option (XXX this should change).
+#
+# Press ESC or select the window manager Quit or Close window option
+# to quit.  (You can do this without recording -- then the output
+# files are untouched.)
+#
+# (It is possible to record more than once; but this doesn't set the
+# time stamps correctly yet, and doesn't work at all with audio.  So
+# don't use.)
+
+
+# XXX To do:
+#
+# fix timestamps for second and further recordings
+# fix audio      "   "      "   "       "
+# flush audio buffer when recording starts
+# make code more readable
+
+
+import sys
+sys.path.append('/ufs/guido/src/video')
 import sv, SV
 import VFile
 import gl, GL, DEVICE
 import al, AL
-
 import time
-import sys
 import posix
 import getopt
 import string
+
 
 def main():
 	QSIZE = 16
