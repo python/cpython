@@ -122,6 +122,13 @@ fi
 
 AC_PROG_CC
 
+case $MACHDEP in
+bsdos*)
+    case $CC in
+    gcc) CC="$CC -D_HAVE_BSDI";;
+    esac;;
+esac
+
 case $ac_sys_system in
 hp*|HP*)
     case $CC in
