@@ -2560,16 +2560,7 @@ class USTimeZone(tzinfo):
             # An exception instead may be sensible here, in one or more of
             # the cases.
             return ZERO
-
-        convert_endpoints_to_utc = False
-        if dt.tzinfo is not self:
-            # Convert dt to UTC.
-            offset = dt.utcoffset()
-            if offset is None:
-                # Again, an exception instead may be sensible.
-                return ZERO
-            convert_endpoints_to_utc = True
-            dt -= offset
+        assert dt.tzinfo is self
 
         # Find first Sunday in April.
         start = first_sunday_on_or_after(DSTSTART.replace(year=dt.year))
@@ -2579,10 +2570,6 @@ class USTimeZone(tzinfo):
         end = first_sunday_on_or_after(DSTEND.replace(year=dt.year))
         assert end.weekday() == 6 and end.month == 10 and end.day >= 25
 
-        if convert_endpoints_to_utc:
-            start -= self.stdoffset    # start is in std time
-            end -= self.stdoffset + HOUR # end is in DST time
-
         # Can't compare naive to aware objects, so strip the timezone from
         # dt first.
         if start <= dt.astimezone(None) < end:
@@ -2590,8 +2577,10 @@ class USTimeZone(tzinfo):
         else:
             return ZERO
 
-Eastern = USTimeZone(-5, "Eastern", "EST", "EDT")
-Pacific = USTimeZone(-8, "Pacific", "PST", "PDT")
+Eastern  = USTimeZone(-5, "Eastern",  "EST", "EDT")
+Central  = USTimeZone(-6, "Central",  "CST", "CDT")
+Mountain = USTimeZone(-7, "Mountain", "MST", "MDT")
+Pacific  = USTimeZone(-8, "Pacific",  "PST", "PDT")
 utc_real = FixedOffset(0, "UTC", 0)
 # For better test coverage, we want another flavor of UTC that's west of
 # the Eastern and Pacific timezones.
@@ -2602,6 +2591,78 @@ class TestTimezoneConversions(unittest.TestCase):
     dston = datetimetz(2002, 4, 7, 2)
     dstoff = datetimetz(2002, 10, 27, 2)
 
+
+    # Check a time that's inside DST.
+    def checkinside(self, dt, tz, utc, dston, dstoff):
+        self.assertEqual(dt.dst(), HOUR)
+
+        # Conversion to our own timezone is always an identity.
+        self.assertEqual(dt.astimezone(tz), dt)
+        # Conversion to None is always the same as stripping tzinfo.
+        self.assertEqual(dt.astimezone(None), dt.replace(tzinfo=None))
+
+        asutc = dt.astimezone(utc)
+        there_and_back = asutc.astimezone(tz)
+
+        # Conversion to UTC and back isn't always an identity here,
+        # because there are redundant spellings (in local time) of
+        # UTC time when DST begins:  the clock jumps from 1:59:59
+        # to 3:00:00, and a local time of 2:MM:SS doesn't really
+        # make sense then.  The classes above treat 2:MM:SS as
+        # daylight time then (it's "after 2am"), really an alias
+        # for 1:MM:SS standard time.  The latter form is what
+        # conversion back from UTC produces.
+        if dt.date() == dston.date() and dt.hour == 2:
+            # We're in the redundant hour, and coming back from
+            # UTC gives the 1:MM:SS standard-time spelling.
+            self.assertEqual(there_and_back + HOUR, dt)
+            # Although during was considered to be in daylight
+            # time, there_and_back is not.
+            self.assertEqual(there_and_back.dst(), ZERO)
+            # They're the same times in UTC.
+            self.assertEqual(there_and_back.astimezone(utc),
+                             dt.astimezone(utc))
+        else:
+            # We're not in the redundant hour.
+            self.assertEqual(dt, there_and_back)
+
+        # Because we have a redundant spelling when DST begins,
+        # there is (unforunately) an hour when DST ends that can't
+        # be spelled at all in local time.  When DST ends, the
+        # clock jumps from 1:59:59 back to 1:00:00 again.  The
+        # hour beginning then has no spelling in local time:
+        # 1:MM:SS is taken to be daylight time, and 2:MM:SS as
+        # standard time.  The hour 1:MM:SS standard time ==
+        # 2:MM:SS daylight time can't be expressed in local time.
+        nexthour_utc = asutc + HOUR
+        if dt.date() == dstoff.date() and dt.hour == 1:
+            # We're in the hour before DST ends.  The hour after
+            # is ineffable.
+            # For concreteness, picture Eastern.  during is of
+            # the form 1:MM:SS, it's daylight time, so that's
+            # 5:MM:SS UTC.  Adding an hour gives 6:MM:SS UTC.
+            # Daylight time ended at 2+4 == 6:00:00 UTC, so
+            # 6:MM:SS is (correctly) taken to be standard time.
+            # But standard time is at offset -5, and that maps
+            # right back to the 1:MM:SS Eastern we started with.
+            # That's correct, too, *if* 1:MM:SS were taken as
+            # being standard time.  But it's not -- on this day
+            # it's taken as daylight time.
+            self.assertRaises(ValueError,
+                              nexthour_utc.astimezone, tz)
+        else:
+            nexthour_tz = nexthour_utc.astimezone(utc)
+            self.assertEqual(nexthour_tz - dt, HOUR)
+
+    # Check a time that's outside DST.
+    def checkoutside(self, dt, tz, utc):
+        self.assertEqual(dt.dst(), ZERO)
+
+        # Conversion to our own timezone is always an identity.
+        self.assertEqual(dt.astimezone(tz), dt)
+        # Conversion to None is always the same as stripping tzinfo.
+        self.assertEqual(dt.astimezone(None), dt.replace(tzinfo=None))
+
     def convert_between_tz_and_utc(self, tz, utc):
         dston = self.dston.replace(tzinfo=tz)
         dstoff = self.dstoff.replace(tzinfo=tz)
@@ -2611,77 +2672,13 @@ class TestTimezoneConversions(unittest.TestCase):
                       timedelta(minutes=1),
                       timedelta(microseconds=1)):
 
-            for during in dston, dston + delta, dstoff - delta:
-                self.assertEqual(during.dst(), HOUR)
+            self.checkinside(dston, tz, utc, dston, dstoff)
+            for during in dston + delta, dstoff - delta:
+                self.checkinside(during, tz, utc, dston, dstoff)
 
-                # Conversion to our own timezone is always an identity.
-                self.assertEqual(during.astimezone(tz), during)
-                # Conversion to None is always the same as stripping tzinfo.
-                self.assertEqual(during.astimezone(None),
-                                 during.replace(tzinfo=None))
-
-                asutc = during.astimezone(utc)
-                there_and_back = asutc.astimezone(tz)
-
-                # Conversion to UTC and back isn't always an identity here,
-                # because there are redundant spellings (in local time) of
-                # UTC time when DST begins:  the clock jumps from 1:59:59
-                # to 3:00:00, and a local time of 2:MM:SS doesn't really
-                # make sense then.  The classes above treat 2:MM:SS as
-                # daylight time then (it's "after 2am"), really an alias
-                # for 1:MM:SS standard time.  The latter form is what
-                # conversion back from UTC produces.
-                if during.date() == dston.date() and during.hour == 2:
-                    # We're in the redundant hour, and coming back from
-                    # UTC gives the 1:MM:SS standard-time spelling.
-                    self.assertEqual(there_and_back + HOUR, during)
-                    # Although during was considered to be in daylight
-                    # time, there_and_back is not.
-                    self.assertEqual(there_and_back.dst(), ZERO)
-                    # They're the same times in UTC.
-                    self.assertEqual(there_and_back.astimezone(utc),
-                                     during.astimezone(utc))
-                else:
-                    # We're not in the redundant hour.
-                    self.assertEqual(during, there_and_back)
-
-                # Because we have a redundant spelling when DST begins,
-                # there is (unforunately) an hour when DST ends that can't
-                # be spelled at all in local time.  When DST ends, the
-                # clock jumps from 1:59:59 back to 1:00:00 again.  The
-                # hour beginning then has no spelling in local time:
-                # 1:MM:SS is taken to be daylight time, and 2:MM:SS as
-                # standard time.  The hour 1:MM:SS standard time ==
-                # 2:MM:SS daylight time can't be expressed in local time.
-                nexthour_utc = asutc + HOUR
-                nexthour_tz = nexthour_utc.astimezone(tz)
-                if during.date() == dstoff.date() and during.hour == 1:
-                    # We're in the hour before DST ends.  The hour after
-                    # is ineffable.
-                    # For concreteness, picture Eastern.  during is of
-                    # the form 1:MM:SS, it's daylight time, so that's
-                    # 5:MM:SS UTC.  Adding an hour gives 6:MM:SS UTC.
-                    # Daylight time ended at 2+4 == 6:00:00 UTC, so
-                    # 6:MM:SS is (correctly) taken to be standard time.
-                    # But standard time is at offset -5, and that maps
-                    # right back to the 1:MM:SS Eastern we started with.
-                    # That's correct, too, *if* 1:MM:SS were taken as
-                    # being standard time.  But it's not -- on this day
-                    # it's taken as daylight time.
-                    self.assertEqual(during, nexthour_tz)
-                else:
-                    self.assertEqual(nexthour_tz - during, HOUR)
-
-            for outside in dston - delta, dstoff, dstoff + delta:
-                self.assertEqual(outside.dst(), ZERO)
-                there_and_back = outside.astimezone(utc).astimezone(tz)
-                self.assertEqual(outside, there_and_back)
-
-                # Conversion to our own timezone is always an identity.
-                self.assertEqual(outside.astimezone(tz), outside)
-                # Conversion to None is always the same as stripping tzinfo.
-                self.assertEqual(outside.astimezone(None),
-                                 outside.replace(tzinfo=None))
+            self.checkoutside(dstoff, tz, utc)
+            for outside in dston - delta, dstoff + delta:
+                self.checkoutside(outside, tz, utc)
 
     def test_easy(self):
         # Despite the name of this test, the endcases are excruciating.
@@ -2694,6 +2691,9 @@ class TestTimezoneConversions(unittest.TestCase):
         # hours" don't overlap.
         self.convert_between_tz_and_utc(Eastern, Pacific)
         self.convert_between_tz_and_utc(Pacific, Eastern)
+        # XXX These fail!
+        #self.convert_between_tz_and_utc(Eastern, Central)
+        #self.convert_between_tz_and_utc(Central, Eastern)
 
 
 def test_suite():
