@@ -6,9 +6,6 @@
 #
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
-# This code can only be used for 1.6 alpha testing.  All other use
-# require explicit permission from Secret Labs AB.
-#
 # Portions of this engine have been developed in cooperation with
 # CNRI.  Hewlett-Packard provided funding for 1.6 integration and
 # other compatibility work.
@@ -20,21 +17,18 @@ import _sre
 
 from sre_constants import *
 
-# FIXME: <fl> should be 65535, but the array module currently chokes
-# on unsigned integers larger than 32767 [fixed in 1.6b1?]
-MAXREPEAT = int(2L**(_sre.getcodesize()*8-1))-1
+# FIXME: should be 65535, but the arraymodule is still broken
+MAXREPEAT = 32767
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
-# FIXME: <fl> string in tuple tests may explode with if char is
-# unicode [fixed in 1.6b1?]
-DIGITS = tuple(string.digits)
+DIGITS = string.digits
 
-OCTDIGITS = tuple("01234567")
-HEXDIGITS = tuple("0123456789abcdefABCDEF")
+OCTDIGITS = "01234567"
+HEXDIGITS = "0123456789abcdefABCDEF"
 
-WHITESPACE = tuple(string.whitespace)
+WHITESPACE = string.whitespace
 
 ESCAPES = {
     "\\a": (LITERAL, chr(7)),
@@ -194,13 +188,13 @@ def _class_escape(source, escape):
 	return code
     try:
 	if escape[1:2] == "x":
-	    while source.next in HEXDIGITS:
+	    while source.next and source.next in HEXDIGITS:
 		escape = escape + source.get()
 	    escape = escape[2:]
 	    # FIXME: support unicode characters!
 	    return LITERAL, chr(int(escape[-4:], 16) & 0xff)
 	elif str(escape[1:2]) in OCTDIGITS:
-	    while source.next in OCTDIGITS:
+	    while source.next and source.next in OCTDIGITS:
 		escape = escape + source.get()
 	    escape = escape[1:]
 	    # FIXME: support unicode characters!
@@ -221,7 +215,7 @@ def _escape(source, escape, state):
 	return code
     try:
 	if escape[1:2] == "x":
-	    while source.next in HEXDIGITS:
+	    while source.next and source.next in HEXDIGITS:
 		escape = escape + source.get()
 	    escape = escape[2:]
 	    # FIXME: support unicode characters!
@@ -234,7 +228,7 @@ def _escape(source, escape, state):
 			not _group(escape + source.next, state)):
 		        return GROUP, group
 		    escape = escape + source.get()
-		elif source.next in OCTDIGITS:
+		elif source.next and source.next in OCTDIGITS:
 		    escape = escape + source.get()
 		else:
 		    break
@@ -297,7 +291,7 @@ def _parse(source, state, flags=0):
 
     while 1:
 
-	if str(source.next) in ("|", ")"):
+	if source.next in ("|", ")"):
 	    break # end of subpattern
 	this = source.get()
 	if this is None:
@@ -378,10 +372,10 @@ def _parse(source, state, flags=0):
 	    elif this == "{":
 		min, max = 0, MAXREPEAT
 		lo = hi = ""
-		while str(source.next) in DIGITS:
+		while source.next and source.next in DIGITS:
 		    lo = lo + source.get()
 		if source.match(","):
-		    while str(source.next) in DIGITS:
+		    while source.next and source.next in DIGITS:
 			hi = hi + source.get()
 		else:
 		    hi = lo
@@ -571,30 +565,3 @@ def expand_template(template, match):
 		raise error, "empty group"
 	    a(s)
     return match.string[:0].join(p)
-
-if __name__ == "__main__":
-    from pprint import pprint
-    from testpatterns import PATTERNS
-    a = b = c = 0
-    for pattern, flags in PATTERNS:
-	if flags:
-	    continue
-	print "-"*68
-	try:
-	    p = parse(pattern)
-	    print repr(pattern), "->"
-	    pprint(p.data)
-	    import sre_compile
-	    try:
-		code = sre_compile.compile(p)
-		c = c + 1
-	    except:
-		pass
-	    a = a + 1
-	except error, v:
-	    print "**", repr(pattern), v
-	b = b + 1
-    print "-"*68
-    print a, "of", b, "patterns successfully parsed"
-    print c, "of", b, "patterns successfully compiled"
-

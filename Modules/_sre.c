@@ -3,7 +3,7 @@
  * Secret Labs' Regular Expression Engine
  * $Id$
  *
-n * simple regular expression matching engine
+ * regular expression matching engine
  *
  * partial history:
  * 99-10-24 fl	created (based on existing template matcher code)
@@ -22,19 +22,10 @@ n * simple regular expression matching engine
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
- * This code can only be used for 1.6 alpha testing.  All other use
- * require explicit permission from Secret Labs AB.
- *
  * Portions of this engine have been developed in cooperation with
  * CNRI.  Hewlett-Packard provided funding for 1.6 integration and
  * other compatibility work.
  */
-
-/*
- * FIXME: repeated groups don't work (they're usually come out empty)
- * FIXME: rename to 're'
- * FIXME: enable repeat_one optimization
- */   
 
 #ifndef SRE_RECURSIVE
 
