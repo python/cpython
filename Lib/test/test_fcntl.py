@@ -9,6 +9,13 @@ from test_support import verbose, TESTFN
 
 filename = TESTFN
 
+try:
+    os.O_LARGEFILE
+except AttributeError:
+    start_len = "ll"
+else:
+    start_len = "qq"
+
 if sys.platform in ('netbsd1', 'Darwin1.2', 'darwin1',
                     'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                     'bsdos2', 'bsdos3', 'bsdos4',
@@ -17,7 +24,7 @@ if sys.platform in ('netbsd1', 'Darwin1.2', 'darwin1',
 elif sys.platform in ['aix3', 'aix4', 'hp-uxB', 'unixware7']:
     lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
 else:
-    lockdata = struct.pack('hhllhh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
+    lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
 if verbose:
     print 'struct.pack: ', `lockdata`
 
