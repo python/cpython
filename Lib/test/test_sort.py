@@ -59,8 +59,6 @@ class Complains(object):
         return "Complains(%d)" % self.i
 
 class Stable(object):
-    maybe_complain = True
-
     def __init__(self, key, i):
         self.key = key
         self.index = i
