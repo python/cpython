@@ -389,7 +389,7 @@ libainstall:	all
 		$(INSTALL_PROGRAM) $(srcdir)/install-sh $(LIBPL)/install-sh
 		$(INSTALL_DATA) $(srcdir)/Misc/Makefile.pre.in $(LIBPL)/Makefile.pre.in
 		@if [ -s Modules/python.exp -a \
-			"`echo $(MACHDEP) | cut -c 1-3`" = "aix" ]; then \
+			"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 			echo; echo "Installing support files for building shared extension modules on AIX:"; \
 			$(INSTALL_DATA) Modules/python.exp		\
 					$(LIBPL)/python.exp;		\
