@@ -46,7 +46,13 @@ except KeyError:
 	try:
 		searchdirs=string.splitfields(os.environ['INCLUDE'],';')
 	except KeyError:
-		searchdirs=['/usr/include']
+		try:
+			if string.find( sys.platform, "beos" ) == 0:
+				searchdirs=string.splitfields(os.environ['BEINCLUDES'],';')
+			else:
+				raise KeyError
+		except KeyError:
+			searchdirs=['/usr/include']
 
 def main():
 	global filedict
