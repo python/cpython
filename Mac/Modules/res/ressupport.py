@@ -15,8 +15,8 @@ class ResMixIn:
 			OutRbrace()
 		FunctionGenerator.checkit(self) # XXX
 
-class ResFunction(ResMixIn, OSErrFunctionGenerator): pass
-class ResMethod(ResMixIn, OSErrMethodGenerator): pass
+class ResFunction(ResMixIn, OSErrWeakLinkFunctionGenerator): pass
+class ResMethod(ResMixIn, OSErrWeakLinkMethodGenerator): pass
 
 RsrcChainLocation = Type("RsrcChainLocation", "h")
 FSCatalogInfoBitmap = FakeType("0") # Type("FSCatalogInfoBitmap", "l")
