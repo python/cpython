@@ -93,6 +93,10 @@ Library
 
 Tools/Demos
 
+- freeze.py now produces binaries which can import shared modules,
+  unlike before when this failed due to missing symbol exports in
+  the generated binary.
+
 Build
 
 - On Unix, a shared libpython2.3.so can be created with --enable-shared.
