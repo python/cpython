@@ -368,7 +368,7 @@ getcode(const char* name, int namelen, Py_UCS4* code)
         i = (i + incr) & mask;
         v = code_hash[i];
         if (!v)
-            return -1;
+            return 0;
         if (cmpname(v, name, namelen)) {
             *code = v;
             return 1;
