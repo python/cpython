@@ -634,10 +634,10 @@ Example from the Library Reference:  Doc/lib/libsets.tex
 ...         return Base._repr(self, sorted=True)
 >>> engineers = Set(['John', 'Jane', 'Jack', 'Janice'])
 >>> programmers = Set(['Jack', 'Sam', 'Susan', 'Janice'])
->>> management = Set(['Jane', 'Jack', 'Susan', 'Zack'])
->>> employees = engineers | programmers | management           # union
->>> engineering_management = engineers & programmers           # intersection
->>> fulltime_management = management - engineers - programmers # difference
+>>> managers = Set(['Jane', 'Jack', 'Susan', 'Zack'])
+>>> employees = engineers | programmers | managers           # union
+>>> engineering_management = engineers & managers            # intersection
+>>> fulltime_management = managers - engineers - programmers # difference
 >>> engineers.add('Marvin')
 >>> print engineers
 Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin'])
@@ -646,7 +646,7 @@ False
 >>> employees.update(engineers)               # update from another set
 >>> employees.issuperset(engineers)
 True
->>> for group in [engineers, programmers, management, employees]:
+>>> for group in [engineers, programmers, managers, employees]:
 ...     group.discard('Susan')                # unconditionally remove element
 ...     print group
 ...
