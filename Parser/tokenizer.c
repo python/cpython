@@ -228,8 +228,8 @@ get_coding_spec(const char *s, int size)
 			} while (t[0] == '\x20' || t[0] == '\t');
 
 			begin = t;
-			while (isalnum(t[0]) || t[0] == '-' || t[0] == '_' ||
-			       t[0] == '.')
+			while (isalnum((int)t[0]) ||
+			       t[0] == '-' || t[0] == '_' || t[0] == '.')
 				t++;
 
 			if (begin < t) {
