@@ -13,6 +13,7 @@ import os
 import string
 import posixpath
 import BaseHTTPServer
+import urllib
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -77,7 +78,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         probably be diagnosed.)
 
         """
-        path = posixpath.normpath(path)
+        path = posixpath.normpath(urllib.unquote(path))
         words = string.splitfields(path, '/')
         words = filter(None, words)
         path = os.getcwd()
