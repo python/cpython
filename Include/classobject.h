@@ -31,7 +31,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *im_func;   /* The callable object implementing the method */
     PyObject *im_self;   /* The instance it is bound to, or NULL */
-    PyObject *im_class;  /* The class that defined the method */
+    PyObject *im_class;  /* The class that asked for the method */
     PyObject *im_weakreflist; /* List of weak references */
 } PyMethodObject;
 
