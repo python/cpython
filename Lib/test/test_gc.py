@@ -180,16 +180,14 @@ def test_saveall():
     l.append(l)
     id_l = id(l)
     del l
+
     gc.collect()
-    vereq(len(gc.garbage), 1)
     try:
-        for obj in gc.garbage:
-            if id(obj) == id_l:
-                del obj[:]
-                break
+        vereq(len(gc.garbage), 1)
+        if id(gc.garbage[0]) == id_l:
+            del gc.garbage[0]
         else:
             raise TestFailed, "didn't find obj in garbage (saveall)"
-        gc.garbage.remove(obj)
     finally:
         gc.set_debug(debug)
 
