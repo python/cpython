@@ -1328,7 +1328,9 @@ regexp_registers_t regs;
 	  /*NOTREACHED*/
 	}
     }
+#if 0 /* This line is never reached */
   abort();
+#endif
   /*NOTREACHED*/
 
  fail:
