@@ -587,7 +587,7 @@ distpdf:	tarpdf bzippdf zippdf
 distlatex:	tarlatex bziplatex ziplatex
 
 paperdist:	distpdf distps
-edist:		disthtml
+edist:		disthtml zipisilo
 
 distfiles:	paperdist edist
 	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
