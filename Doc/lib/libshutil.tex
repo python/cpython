@@ -21,7 +21,9 @@ file type and creator codes will not be correct.
 \begin{funcdesc}{copyfile}{src, dst}
   Copy the contents of the file named \var{src} to a file named
   \var{dst}.  If \var{dst} exists, it will be replaced, otherwise it
-  will be created.
+  will be created.  Special files such as character or block devices
+  and pipes cannot not be copied with this function.  \var{src} and
+  \var{dst} are path names given as strings.
 \end{funcdesc}
 
 \begin{funcdesc}{copyfileobj}{fsrc, fdst\optional{, length}}
@@ -35,20 +37,23 @@ file type and creator codes will not be correct.
 
 \begin{funcdesc}{copymode}{src, dst}
   Copy the permission bits from \var{src} to \var{dst}.  The file
-  contents, owner, and group are unaffected.
+  contents, owner, and group are unaffected.  \var{src} and \var{dst}
+  are path names given as strings.
 \end{funcdesc}
 
 \begin{funcdesc}{copystat}{src, dst}
   Copy the permission bits, last access time, and last modification
   time from \var{src} to \var{dst}.  The file contents, owner, and
-  group are unaffected.
+  group are unaffected.  \var{src} and \var{dst} are path names given
+  as strings.
 \end{funcdesc}
 
 \begin{funcdesc}{copy}{src, dst}
   Copy the file \var{src} to the file or directory \var{dst}.  If
   \var{dst} is a directory, a file with the same basename as \var{src} 
   is created (or overwritten) in the directory specified.  Permission
-  bits are copied.
+  bits are copied.  \var{src} and \var{dst} are path names given as
+  strings.
 \end{funcdesc}
 
 \begin{funcdesc}{copy2}{src, dst}
