@@ -47,6 +47,8 @@ newmoduleobject(name)
 		goto fail;
 	if (dictinsert(m->md_dict, "__name__", nameobj) != 0)
 		goto fail;
+	if (dictinsert(m->md_dict, "__doc__", None) != 0)
+		goto fail;
 	DECREF(nameobj);
 	return (object *)m;
 
