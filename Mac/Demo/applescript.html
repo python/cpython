@@ -161,6 +161,23 @@ AppleScript calls: <CODE>MacOS.Error</CODE> is raised for
 all of the errors that are known to be <CODE>OSErr</CODE>-type errors,
 server generated errors raise <CODE>aetools.Error</CODE>. <p>
 
+<H2>Scripting Additions</H2>
+
+If you want to use any of the scripting additions (or OSAXen, in
+everyday speech) from a Python program you can use the same method
+as for applications, i.e. run <CODE>gensuitemodule</CODE> on the
+OSAX (commonly found in <CODE>System Folder:Extensions:Scripting Additions</CODE>
+or something similar), define a class which inherits the generated
+class and <CODE>aetools.TalkTo</CODE> and instantiate it. The application
+signature to use is <CODE>'MACS'</CODE>. <P>
+
+There are two minor points to watch out for when using gensuitemodule
+on OSAXen: they appear all to define the class <CODE>System_Object_Suite</CODE>,
+and a lot of them have the command set in multiple dialects. You have to
+watch out for name conflicts, so, and make sure you select a reasonable dialect
+(some of the non-english dialects cause gensuitemodule to generate incorrect
+Python code). <P>
+
 That concludes our simple example. Again, let me emphasize that
 scripting support in Python is not very complete at the moment, and
 the details of how to use AppleEvents will definitely change in the
