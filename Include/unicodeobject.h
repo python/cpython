@@ -78,7 +78,9 @@ Copyright (c) Corporation for National Research Initiatives.
    PyUnicode_AsWideChar(). */
 
 #ifdef HAVE_USABLE_WCHAR_T
-# define HAVE_WCHAR_H
+# ifndef HAVE_WCHAR_H
+#  define HAVE_WCHAR_H
+# endif
 #endif
 
 #ifdef HAVE_WCHAR_H
