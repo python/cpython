@@ -37,8 +37,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DELIM '\n'
 #endif
 
-#if defined(MSDOS) || defined(NT) || defined(__BORLANDC__) || defined(__WATCOMC__)
+#if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__)
 #define SEP '\\'
+#define ALTSEP '/'
 #define MAXPATHLEN 256
 #define DELIM ';'
 #endif
