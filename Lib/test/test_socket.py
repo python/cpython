@@ -248,15 +248,19 @@ class GeneralModuleTests(unittest.TestCase):
         except socket.error:
             pass
 
-    def testNtoH(self):
-        for func in socket.htonl, socket.ntohl:
-            for i in (0, 1, ~0xffff, 2L):
-                self.assertEqual(i, func(func(i)))
+    def testNtoHL(self):
+        # This just checks that htons etc. are their own inverse,
+        # when looking at the lower 16 or 32 bits.
+        sizes = {socket.htonl: 32, socket.ntohl: 32,
+                 socket.htons: 16, socket.ntohs: 16}
+        for func, size in sizes.items():
+            mask = (1L<<size) - 1
+            for i in (0, 1, 0xffff, ~0xffff, 2, 0x01234567, 0x76543210):
+                self.assertEqual(i & mask, func(func(i&mask)) & mask)
 
-            biglong = 2**32L - 1
-            swapped = func(biglong)
-            self.assert_(swapped == biglong or swapped == -1)
-            self.assertRaises(OverflowError, func, 2L**34)
+            swapped = func(mask)
+            self.assertEqual(swapped & mask, mask)
+            self.assertRaises(OverflowError, func, 1L<<34)
 
     def testGetServByName(self):
         # Testing getservbyname()
