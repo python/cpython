@@ -1985,9 +1985,11 @@ forms_do_or_check_forms(dummy, args, func)
 		}
 		g = findgeneric(generic);
 		if (g == NULL) {
-			err_setstr(RuntimeError,
-				   "{do|check}_forms returns unknown object");
-			return NULL;
+			/* XXX What kind of weird object is this? */
+			/* XXX Maybe caused by a bug here */
+			fprintf(stderr, "weird object: class %d, label '%s'\n",
+				generic->objclass, generic->label);
+			continue; /* Ignore it */
 		}
 		if (g->ob_callback == NULL) {
 			INCREF(g);
@@ -2274,6 +2276,44 @@ forms_show_message(f, args)
 }
 
 static object *
+forms_show_choice(f, args)
+     object *f;
+     object *args;
+{
+	char *m1, *m2, *m3, *b1, *b2, *b3;
+	int nb;
+	char *format;
+
+	if (args == NULL || !is_tupleobject(args)) {
+		err_badarg();
+		return NULL;
+	}
+	nb = gettuplesize(args) - 3;
+	if (nb <= 0) {
+		err_setstr(TypeError, "need at least one button label");
+		return NULL;
+	}
+	if (is_intobject(gettupleitem(args, 3))) {
+		err_setstr(TypeError,
+			   "'number-of-buttons' argument not needed");
+		return NULL;
+	}
+	switch (nb) {
+	case 1: format = "(ssss)"; break;
+	case 2: format = "(sssss)"; break;
+	case 3: format = "(ssssss)"; break;
+	default:
+		err_setstr(TypeError, "too many button labels");
+		return NULL;
+	}
+
+        if (!getargs(args, format, &m1, &m2, &m3, &b1, &b2, &b3))
+		return NULL;
+
+	return newintobject(fl_show_choice(m1, m2, m3, nb, b1, b2, b3));
+}
+
+static object *
 forms_show_question(f, args)
      object *f;
      object *args;
@@ -2392,7 +2432,10 @@ static struct methodlist forms_methods[] = {
 /* goodies */
 	{"show_message",        forms_show_message},
 	{"show_question",       forms_show_question},
-	{"file_selector",       forms_file_selector},
+	{"show_choice",         forms_show_choice},
+	{"show_input",          forms_show_input},
+	{"show_file_selector",  forms_file_selector},
+	{"file_selector",       forms_file_selector}, /* BW compat */
 	{"get_directory",       forms_get_directory},
 	{"get_pattern",         forms_get_pattern},
 	{"get_filename",        forms_get_filename},
@@ -2400,11 +2443,6 @@ static struct methodlist forms_methods[] = {
 	{"set_graphics_mode",	forms_set_graphics_mode},
 	{"get_rgbmode",		forms_get_rgbmode},
 #endif /* !FL_V15 */
-/*
-	{"show_choice",         forms_show_choice},
-	XXX - draw.c
-*/
-	{"show_input",          forms_show_input},
 	{NULL,			NULL}		/* sentinel */
 };
 
