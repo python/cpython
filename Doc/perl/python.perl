@@ -51,7 +51,7 @@ sub get_link_icon($){
                    ? " width=\"$OFF_SITE_LINK_ICON_WIDTH\""
                    : '')
                 . " alt=\"[off-site link]\"\n"
-                . "  >");
+                . "  />");
     }
     return '';
 }
@@ -345,8 +345,8 @@ sub do_cmd_pep{
     # Save the reference
     my $nstr = gen_index_id("Python Enhancement Proposals!PEP $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">PEP $rfcnumber"
-            . "$icon</a>" . $_);
+    return ("<a class=\"rfc\" name=\"$id\" id='$id'\n"
+            . "href=\"$href\">PEP $rfcnumber$icon</a>" . $_);
 }
 
 sub do_cmd_rfc{
@@ -358,8 +358,8 @@ sub do_cmd_rfc{
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">RFC $rfcnumber"
-            . "$icon</a>" . $_);
+    return ("<a class=\"rfc\" name=\"$id\" id='$id'\nhref=\"$href\">"
+            . "RFC $rfcnumber$icon</a>" . $_);
 }
 
 sub do_cmd_ulink{
@@ -394,7 +394,7 @@ sub do_cmd_deprecated{
     my $reason = next_argument();
     return ('<div class="versionnote">'
             . "<b>Deprecated since release $release.</b>"
-            . "\n$reason</div><p>"
+            . "\n$reason</div><p></p>"
             . $_);
 }
 
@@ -512,7 +512,7 @@ sub add_index_entry($$){
 
 sub new_link_info(){
     my $name = "l2h-" . ++$globals{'max_id'};
-    my $aname = "<a name=\"$name\">";
+    my $aname = "<a name=\"$name\" id='$name'>";
     my $ahref = gen_link($CURRENT_FILE, $name);
     return ($name, $aname, $ahref);
 }
@@ -810,7 +810,8 @@ sub do_cmd_production{
     }
     $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"} = $target;
     return ("<tr valign=\"baseline\">\n"
-            . "    <td><code><a name=\"tok-$token\">$token</a></code></td>\n"
+            . "    <td><code><a name=\"tok-$token\" id='tok-$token'>"
+            . "$token</a></code></td>\n"
             . "    <td>&nbsp;::=&nbsp;</td>\n"
             . "    <td><code>"
             . translate_commands($defn)
@@ -962,10 +963,10 @@ sub do_env_cfuncdesc{
                    . "\n  <span class=\"value\">$rcinfo.</span>"
                    . "\n</div>");
     }
-    return "<dl><dt>$siginfo\n<dd>"
+    return "<dl><dt>$siginfo</dt>\n<dd>"
            . $rcinfo
            . $_
-           . '</dl>';
+           . '</dd></dl>';
 }
 
 sub do_cmd_cmemberline{
@@ -976,7 +977,7 @@ sub do_cmd_cmemberline{
     my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
                                    . " ($container member)");
     $idx =~ s/ \(.*\)//;
-    return "<dt>$type <b>$idx</b>\n<dd>"
+    return "<dt>$type <b>$idx</b></dt>\n<dd>"
            . $_;
 }
 sub do_env_cmemberdesc{
@@ -987,7 +988,7 @@ sub do_env_cmemberdesc{
     my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
                                    . " ($container member)");
     $idx =~ s/ \(.*\)//;
-    return "<dl><dt>$type <b>$idx</b>\n<dd>"
+    return "<dl><dt>$type <b>$idx</b></dt>\n<dd>"
            . $_
            . '</dl>';
 }
@@ -996,7 +997,7 @@ sub do_env_csimplemacrodesc{
     local($_) = @_;
     my $name = next_argument();
     my $idx = make_str_index_entry("<tt class=\"macro\">$name</tt>");
-    return "<dl><dt><b>$idx</b>\n<dd>"
+    return "<dl><dt><b>$idx</b></dt>\n<dd>"
            . $_
            . '</dl>'
 }
@@ -1009,7 +1010,8 @@ sub do_env_ctypedesc{
       unless $index_name;
     my($name, $aname, $ahref) = new_link_info();
     add_index_entry("<tt class=\"ctype\">$index_name</tt> (C type)", $ahref);
-    return "<dl><dt><b><tt class=\"ctype\">$aname$type_name</a></tt></b>\n<dd>"
+    return "<dl><dt><b><tt class=\"ctype\">$aname$type_name</a></tt></b></dt>"
+           . "\n<dd>"
            . $_
            . '</dl>'
 }
@@ -1021,10 +1023,10 @@ sub do_env_cvardesc{
     my $idx = make_str_index_entry("<tt class=\"cdata\">$var_name</tt>"
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    return "<dl><dt>$var_type <b>$idx</b>\n"
+    return "<dl><dt>$var_type <b>$idx</b></dt>\n"
            . '<dd>'
            . $_
-           . '</dl>';
+           . '</dd></dl>';
 }
 
 sub convert_args($){
@@ -1038,7 +1040,7 @@ sub funcline_helper($$$){
     return (($first ? '<dl>' : '')
             . '<dt><table cellpadding="0" cellspacing="0"><tr valign="baseline">'
             . "\n  <td><nobr><b>$idxitem</b>(</nobr></td>"
-            . "\n  <td><var>$arglist</var>)</td></tr></table>\n<dd>");
+            . "\n  <td><var>$arglist</var>)</td></tr></table></dt>\n<dd>");
 }
 
 sub do_env_funcdesc{
@@ -1104,7 +1106,7 @@ sub do_env_opcodedesc{
     if ($arg_list) {
 	$stuff .= "&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
     }
-    return $stuff . "\n<dd>" . $_ . '</dl>';
+    return $stuff . "</dt>\n<dd>" . $_ . '</dt></dl>';
 }
 
 sub do_env_datadesc{
@@ -1112,9 +1114,9 @@ sub do_env_datadesc{
     my $dataname = next_argument();
     my $idx = make_str_index_entry("<tt>$dataname</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    return "<dl><dt><b>$idx</b>\n<dd>"
+    return "<dl><dt><b>$idx</b></dt>\n<dd>"
            . $_
-	   . '</dl>';
+	   . '</dd></dl>';
 }
 
 sub do_env_datadescni{
@@ -1123,7 +1125,7 @@ sub do_env_datadescni{
     if (! $STRING_INDEX_TT) {
 	$idx = "<tt>$idx</tt>";
     }
-    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b></dt>\n<dd>" . $_ . '</dd></dl>';
 }
 
 sub do_cmd_dataline{
@@ -1131,23 +1133,23 @@ sub do_cmd_dataline{
     my $data_name = next_argument();
     my $idx = make_str_index_entry("<tt>$data_name</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    return "<dt><b>$idx</b><dd>" . $_;
+    return "<dt><b>$idx</b></dt><dd>" . $_;
 }
 
 sub do_cmd_datalineni{
     local($_) = @_;
     my $data_name = next_argument();
-    return "<dt><b><tt>$data_name</tt></b><dd>" . $_;
+    return "<dt><b><tt>$data_name</tt></b></dt><dd>" . $_;
 }
 
 sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
     my $idx = make_str_index_entry("<tt class=\"exception\">$excname</tt>");
-    return ("<dl><dt><b>${TLSTART}exception$TLEND$idx</b>"
+    return ("<dl><dt><b>${TLSTART}exception$TLEND$idx</b></dt>"
             . "\n<dd>"
             . $_
-            . '</dl>');
+            . '</dd></dl>');
 }
 
 sub do_env_fulllineitems{ return do_env_itemize(@_); }
@@ -1251,7 +1253,7 @@ sub do_env_memberdesc{
     my $idx = make_str_index_entry("<tt class=\"member\">$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b></dt>\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -1267,7 +1269,7 @@ sub do_cmd_memberline{
     my $idx = make_str_index_entry("<tt class=\"member\">$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dt><b>$idx</b><dd>" . $_;
+    return "<dt><b>$idx</b></dt><dd>" . $_;
 }
 
 
@@ -1275,9 +1277,9 @@ sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dl><dt><b><tt class=\"member\">$member</tt></b>\n<dd>"
+    return "<dl><dt><b><tt class=\"member\">$member</tt></b></dt>\n<dd>"
            . $_
-           . '</dl>';
+           . '</dd></dl>';
 }
 
 
@@ -1285,7 +1287,7 @@ sub do_cmd_memberlineni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dt><b><tt class=\"member\">$member</tt></b><dd>" . $_;
+    return "<dt><b><tt class=\"member\">$member</tt></b></dt>\n<dd>" . $_;
 }
 
 
@@ -1635,7 +1637,7 @@ sub make_my_titlepage(){
 	$the_title .= "\n<p>";
 	if ($PACKAGE_VERSION) {
 	    $the_title .= ('<strong>Release '
-                           . "$PACKAGE_VERSION$RELEASE_INFO</strong><br>\n");
+                           . "$PACKAGE_VERSION$RELEASE_INFO</strong><br />\n");
         }
 	$the_title .= "<strong>$t_date</strong></p>"
     }
@@ -1643,7 +1645,7 @@ sub make_my_titlepage(){
 	$the_title .= "\n<p>$t_address</p>";
     }
     else {
-        $the_title .= "\n<p>";
+        $the_title .= "\n<p></p>";
     }
     if ($t_email) {
 	$the_title .= "\n<p>$t_email</p>";
@@ -1661,7 +1663,7 @@ sub make_my_titlegraphic(){
       if ($TITLE_PAGE_GRAPHIC_WIDTH);
     $graphic .= " height=\"$TITLE_PAGE_GRAPHIC_HEIGHT\""
       if ($TITLE_PAGE_GRAPHIC_HEIGHT);
-    $graphic .= "\n  src=\"$filename\"></td>\n";
+    $graphic .= "\n  src=\"$filename\" /></td>\n";
     return $graphic;
 }
 
@@ -1669,14 +1671,14 @@ sub do_cmd_maketitle{
     local($_) = @_;
     my $the_title = "\n";
     if ($EXTERNAL_UP_LINK) {
-        # This generates a <LINK> element in the wrong place (the
+        # This generates a <link> element in the wrong place (the
         # body), but I don't see any other way to get this generated
         # at all.  Browsers like Mozilla, that support navigation
         # links, can make use of this.
         $the_title .= ("<link rel='up' href='$EXTERNAL_UP_LINK'"
                        . ($EXTERNAL_UP_TITLE
                           ? " title='$EXTERNAL_UP_TITLE'" : '')
-                       . ">\n");
+                       . " />\n");
     }
     $the_title .= '<div class="titlepage">';
     if ($TITLE_PAGE_GRAPHIC) {
@@ -1897,14 +1899,14 @@ sub do_cmd_seetitle{
         my $icon = get_link_icon($url);
         return '<dl compact class="seetitle">'
           . "\n    <dt><em class=\"citetitle\"><a href=\"$url\""
-          . "\n        >$title$icon</a></em>"
-          . "\n    <dd>$text\n  </dl>"
+          . "\n        >$title$icon</a></em></dt>"
+          . "\n    <dd>$text</dd>\n  </dl>"
           . $_;
     }
     return '<dl compact class="seetitle">'
       . "\n    <dt><em class=\"citetitle\""
-      . "\n        >$title</em>"
-      . "\n    <dd>$text\n  </dl>"
+      . "\n        >$title</em></dt>"
+      . "\n    <dd>$text</dd>\n  </dl>"
       . $_;
 }
 
@@ -1915,15 +1917,15 @@ sub do_cmd_seeurl{
     my $icon = get_link_icon($url);
     return '<dl compact class="seeurl">'
       . "\n    <dt><a href=\"$url\""
-      . "\n        class=\"url\">$url$icon</a>"
-      . "\n    <dd>$text\n  </dl>"
+      . "\n        class=\"url\">$url$icon</a></dt>"
+      . "\n    <dd>$text</dd>\n  </dl>"
       . $_;
 }
 
 sub do_cmd_seetext{
     local($_) = @_;
     my $content = next_argument();
-    return '<div class="seetext"><p>' . $content . '</div>' . $_;
+    return '<div class="seetext"><p>' . $content . '</p></div>' . $_;
 }
 
 
@@ -1932,7 +1934,7 @@ sub do_cmd_seetext{
 #
 
 sub do_env_definitions{
-    return "<dl class=\"definitions\">" . $_[0] . "</dl>\n";
+    return '<dl class="definitions">' . $_[0] . "</dl>\n";
 }
 
 sub do_cmd_term{
@@ -1940,7 +1942,7 @@ sub do_cmd_term{
     my $term = next_argument();
     my($name, $aname, $ahref) = new_link_info();
     # could easily add an index entry here...
-    return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
+    return "<dt><b>$aname" . $term . "</a></b></dt>\n<dd>" . $_;
 }
 
 
