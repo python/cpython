@@ -1,7 +1,11 @@
-# Test descriptor-related enhancements
+# Test enhancements related to descriptors and new-style classes
 
 from test_support import verify, verbose, TestFailed, TESTFN
 from copy import deepcopy
+
+def vereq(a, b):
+    if a != b:
+        raise TestFailed, "%r != %r" % (a, b)
 
 def testunop(a, res, expr="len(a)", meth="__len__"):
     if verbose: print "checking", expr
@@ -2133,6 +2137,36 @@ def copies():
     a.bar.append(4)
     verify(d.bar == [1,2,3])
 
+def binopoverride():
+    if verbose: print "Testing overrides of binary operations..."
+    class I(int):
+        def __repr__(self):
+            return "I(%r)" % int(self)
+        def __add__(self, other):
+            return I(int(self) + int(other))
+        __radd__ = __add__
+        def __pow__(self, other, mod=None):
+            if mod is None:
+                return I(pow(int(self), int(other)))
+            else:
+                return I(pow(int(self), int(other), int(mod)))
+        def __rpow__(self, other, mod=None):
+            if mod is None:
+                return I(pow(int(other), int(self), mod))
+            else:
+                return I(pow(int(other), int(self), int(mod)))
+            
+    vereq(`I(1) + I(2)`, "I(3)")
+    vereq(`I(1) + 2`, "I(3)")
+    vereq(`1 + I(2)`, "I(3)")
+    vereq(`I(2) ** I(3)`, "I(8)")
+    vereq(`2 ** I(3)`, "I(8)")
+    vereq(`I(2) ** 3`, "I(8)")
+    vereq(`pow(I(2), I(3), I(5))`, "I(3)")
+    class S(str):
+        def __eq__(self, other):
+            return self.lower() == other.lower()
+
 
 def test_main():
     lists()
@@ -2178,6 +2212,7 @@ def test_main():
     setclass()
     pickles()
     copies()
+    binopoverride()
     if verbose: print "All OK"
 
 if __name__ == "__main__":

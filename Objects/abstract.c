@@ -300,10 +300,13 @@ PyNumber_Check(PyObject *o)
 
   v	w	Action
   -------------------------------------------------------------------
-  new	new	v.op(v,w), w.op(v,w)
+  new	new	w.op(v,w)[*], v.op(v,w), w.op(v,w)
   new	old	v.op(v,w), coerce(v,w), v.op(v,w)
   old	new	w.op(v,w), coerce(v,w), v.op(v,w)
   old	old	coerce(v,w), v.op(v,w)
+
+  [*] only when v->ob_type != w->ob_type && w->ob_type is a subclass of
+      v->ob_type
 
   Legend:
   -------
@@ -318,29 +321,35 @@ static PyObject *
 binary_op1(PyObject *v, PyObject *w, const int op_slot)
 {
 	PyObject *x;
-	binaryfunc *slot;
-	if (v->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(v)) {
-		slot = NB_BINOP(v->ob_type->tp_as_number, op_slot);
-		if (*slot) {
-			x = (*slot)(v, w);
-			if (x != Py_NotImplemented) {
-				return x;
-			}
-			Py_DECREF(x); /* can't do it */
-		}
-		if (v->ob_type == w->ob_type) {
-			goto binop_error;
-		}
+	binaryfunc slotv = NULL;
+	binaryfunc slotw = NULL;
+
+	if (v->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(v))
+		slotv = *NB_BINOP(v->ob_type->tp_as_number, op_slot);
+	if (w->ob_type != v->ob_type &&
+	    w->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(w)) {
+		slotw = *NB_BINOP(w->ob_type->tp_as_number, op_slot);
+		if (slotw == slotv)
+			slotw = NULL;
 	}
-	if (w->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(w)) {
-		slot = NB_BINOP(w->ob_type->tp_as_number, op_slot);
-		if (*slot) {
-			x = (*slot)(v, w);
-			if (x != Py_NotImplemented) {
-				return x;
-			}
-			Py_DECREF(x); /* can't do it */
-		}
+	if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
+		x = slotw(v, w);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
+		slotw = NULL;
+	}
+	if (slotv) {
+		x = slotv(v, w);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
+	}
+	if (slotw) {
+		x = slotw(v, w);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
 	}
 	if (!NEW_STYLE_NUMBER(v) || !NEW_STYLE_NUMBER(w)) {
 		int err = PyNumber_CoerceEx(&v, &w);
@@ -350,9 +359,10 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 		if (err == 0) {
 			PyNumberMethods *mv = v->ob_type->tp_as_number;
 			if (mv) {
-				slot = NB_BINOP(mv, op_slot);
-				if (*slot) {
-					PyObject *x = (*slot)(v, w);
+				binaryfunc slot;
+				slot = *NB_BINOP(mv, op_slot);
+				if (slot) {
+					PyObject *x = slot(v, w);
 					Py_DECREF(v);
 					Py_DECREF(w);
 					return x;
@@ -363,7 +373,6 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 			Py_DECREF(w);
 		}
 	}
-binop_error:
 	Py_INCREF(Py_NotImplemented);
 	return Py_NotImplemented;
 }
@@ -420,6 +429,18 @@ ternary_op(PyObject *v,
 	register ternaryfunc *slot;
 	
 	mv = v->ob_type->tp_as_number;
+	mw = w->ob_type->tp_as_number;
+	if (v->ob_type != w->ob_type && mw && NEW_STYLE_NUMBER(w)) {
+		slot = NB_TERNOP(mw, op_slot);
+		if (*slot && *slot != *NB_TERNOP(mv, op_slot) &&
+		    PyType_IsSubtype(w->ob_type, v->ob_type)) {
+			x = (*slot)(v, w, z);
+			if (x != Py_NotImplemented)
+				return x;
+			/* Can't do it... fall through */
+			Py_DECREF(x);
+		}
+	}
 	if (mv != NULL && NEW_STYLE_NUMBER(v)) {
 		/* try v.op(v,w,z) */
 		slot = NB_TERNOP(mv, op_slot);
@@ -435,7 +456,6 @@ ternary_op(PyObject *v,
 			goto ternary_error;
 		}
 	}
-	mw = w->ob_type->tp_as_number;
 	if (mw != NULL && NEW_STYLE_NUMBER(w)) {
 		/* try w.op(v,w,z) */
 		slot = NB_TERNOP(mw,op_slot);
