@@ -231,7 +231,10 @@ class SMTP:
  
     def putcmd(self, cmd, args=""):
         """Send a command to the server."""
-        str = '%s %s%s' % (cmd, args, CRLF)
+        if args == "":
+            str = '%s%s' % (cmd, CRLF)
+        else:
+            str = '%s %s%s' % (cmd, args, CRLF)
         self.send(str)
     
     def getreply(self):
@@ -345,8 +348,8 @@ class SMTP:
         """SMTP 'mail' command -- begins mail xfer session."""
         optionlist = ''
         if options and self.does_esmtp:
-            optionlist = string.join(options, ' ')
-        self.putcmd("mail", "FROM:%s %s" % (quoteaddr(sender) ,optionlist))
+            optionlist = ' ' + string.join(options, ' ')
+        self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender) ,optionlist))
         return self.getreply()
 
     def rcpt(self,recip,options=[]):
