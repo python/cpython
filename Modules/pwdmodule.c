@@ -67,7 +67,7 @@ static object *pwd_getpwuid(self, args)
 	if (!getintarg(args, &uid))
 		return NULL;
 	if ((p = getpwuid(uid)) == NULL) {
-		err_setstr(RuntimeError, "getpwuid(): uid not found");
+		err_setstr(KeyError, "getpwuid(): uid not found");
 		return NULL;
 	}
 	return mkpwent(p);
@@ -81,7 +81,7 @@ static object *pwd_getpwnam(self, args)
 	if (!getstrarg(args, &name))
 		return NULL;
 	if ((p = getpwnam(getstringvalue(name))) == NULL) {
-		err_setstr(RuntimeError, "getpwnam(): name not found");
+		err_setstr(KeyError, "getpwnam(): name not found");
 		return NULL;
 	}
 	return mkpwent(p);
@@ -167,7 +167,7 @@ static object *grp_getgrgid(self, args)
 	if (!getintarg(args, &gid))
 		return NULL;
 	if ((p = getgrgid(gid)) == NULL) {
-		err_setstr(RuntimeError, "getgrgid(): gid not found");
+		err_setstr(KeyError, "getgrgid(): gid not found");
 		return NULL;
 	}
 	return mkgrent(p);
@@ -181,7 +181,7 @@ static object *grp_getgrnam(self, args)
 	if (!getstrarg(args, &name))
 		return NULL;
 	if ((p = getgrnam(getstringvalue(name))) == NULL) {
-		err_setstr(RuntimeError, "getgrnam(): name not found");
+		err_setstr(KeyError, "getgrnam(): name not found");
 		return NULL;
 	}
 	return mkgrent(p);
