@@ -383,13 +383,14 @@ class ZipFile:
             zinfo.compress_type = compress_type
         self._writecheck(zinfo)
         fp = open(filename, "rb")
-        zinfo.flag_bits = 0x08
+        zinfo.flag_bits = 0x00
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
+        # Must overwrite CRC and sizes with correct data later
+        zinfo.CRC = CRC = 0
+        zinfo.compress_size = compress_size = 0
+        zinfo.file_size = file_size = 0
         self.fp.write(zinfo.FileHeader())
         zinfo.file_offset = self.fp.tell()      # Start of file bytes
-        CRC = 0
-        compress_size = 0
-        file_size = 0
         if zinfo.compress_type == ZIP_DEFLATED:
             cmpr = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
                  zlib.DEFLATED, -15)
@@ -415,9 +416,12 @@ class ZipFile:
             zinfo.compress_size = file_size
         zinfo.CRC = CRC
         zinfo.file_size = file_size
-        # Write CRC and file sizes after the file data
+        # Seek backwards and write CRC and file sizes
+        position = self.fp.tell()	# Preserve current position in file
+        self.fp.seek(zinfo.header_offset + 14, 0)
         self.fp.write(struct.pack("<lll", zinfo.CRC, zinfo.compress_size,
               zinfo.file_size))
+        self.fp.seek(position, 0)
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
