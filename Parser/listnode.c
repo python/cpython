@@ -40,7 +40,7 @@ listtree(n)
 
 static int level, atbol;
 
-void
+static void
 listnode(fp, n)
 	FILE *fp;
 	node *n;

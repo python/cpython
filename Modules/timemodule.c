@@ -71,13 +71,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #endif /* !unix */
 
-/* XXX This is bogus -- times() is defined in posixmodule.c */
-#ifdef DO_TIMES
-#include <sys/times.h>
-#include <sys/param.h>
-#include <errno.h>
-#endif
-
 #ifdef SYSV
 /* Access timezone stuff */
 #ifdef OLDTZ				/* ANSI prepends underscore to these */
@@ -227,32 +220,6 @@ time_millitimer(self, args)
 
 #endif /* DO_MILLI */
 
-#ifdef DO_TIMES
-
-static object *
-time_times(self, args)
-	object *self;
-	object *args;
-{
-	struct tms t;
-	clock_t c;
-	if (!getnoarg(args))
-		return NULL;
-	errno = 0;
-	c = times(&t);
-	if (c == (clock_t) -1) {
-		err_errno(IOError);
-		return NULL;
-	}
-	return mkvalue("(dddd)",
-		       (double)t.tms_utime / HZ,
-		       (double)t.tms_stime / HZ,
-		       (double)t.tms_cutime / HZ,
-		       (double)t.tms_cstime / HZ);
-}
-
-#endif
-
 
 static object *
 time_convert(when, function)
@@ -268,7 +235,7 @@ time_convert(when, function)
 		       p->tm_min,
 		       p->tm_sec,
 		       (p->tm_wday + 6) % 7, /* Want Monday == 0 */
-		       p->tm_yday,
+		       p->tm_yday + 1, /* Want January, 1 == 1 */
 		       p->tm_isdst);
 }
 
@@ -294,6 +261,62 @@ time_localtime(self, args)
 	return time_convert((time_t)when, localtime);
 }
 
+static int
+gettmarg(args, p)
+	object *args;
+	struct tm *p;
+{
+	if (!getargs(args, "(iiiiiiiii)",
+		     &p->tm_year,
+		     &p->tm_mon,
+		     &p->tm_mday,
+		     &p->tm_hour,
+		     &p->tm_min,
+		     &p->tm_sec,
+		     &p->tm_wday,
+		     &p->tm_yday,
+		     &p->tm_isdst))
+		return 0;
+	if (p->tm_year >= 1900)
+		p->tm_year -= 1900;
+	p->tm_mon--;
+	p->tm_wday = (p->tm_wday + 1) % 7;
+	p->tm_yday--;
+	return 1;
+}
+
+static object *
+time_asctime(self, args)
+	object *self;
+	object *args;
+{
+	struct tm buf;
+	char *p;
+	if (!gettmarg(args, &buf))
+		return NULL;
+	p = asctime(&buf);
+	if (p[24] == '\n')
+		p[24] = '\0';
+	return newstringobject(p);
+}
+
+static object *
+time_ctime(self, args)
+	object *self;
+	object *args;
+{
+	double dt;
+	time_t tt;
+	char *p;
+	if (!getargs(args, "d", &dt))
+		return NULL;
+	tt = dt;
+	p = ctime(&tt);
+	if (p[24] == '\n')
+		p[24] = '\0';
+	return newstringobject(p);
+}
+
 /* Some very old systems may not have mktime().  Comment it out then! */
 
 static object *
@@ -302,20 +325,8 @@ time_mktime(self, args)
 	object *args;
 {
 	struct tm buf;
-	if (!getargs(args, "(iiiiiiiii)",
-		     &buf.tm_year,
-		     &buf.tm_mon,
-		     &buf.tm_mday,
-		     &buf.tm_hour,
-		     &buf.tm_min,
-		     &buf.tm_sec,
-		     &buf.tm_wday,
-		     &buf.tm_yday,
-		     &buf.tm_isdst))
+	if (!gettmarg(args, &buf))
 		return NULL;
-	if (buf.tm_year >= 1900)
-		buf.tm_year -= 1900;
-	buf.tm_mon--;
 	return newintobject((long)mktime(&buf));
 }
 
@@ -324,13 +335,12 @@ static struct methodlist time_methods[] = {
 	{"millisleep",	time_millisleep},
 	{"millitimer",	time_millitimer},
 #endif /* DO_MILLI */
-#ifdef DO_TIMES
-	{"times",	time_times},
-#endif
 	{"sleep",	time_sleep},
 	{"time",	time_time},
 	{"gmtime",	time_gmtime},
 	{"localtime",	time_localtime},
+	{"asctime",	time_asctime},
+	{"ctime",	time_ctime},
 	{"mktime",	time_mktime},
 	{NULL,		NULL}		/* sentinel */
 };

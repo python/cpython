@@ -30,28 +30,43 @@ extern char *getenv();
 
 extern int debugging;
 extern int verbose;
+extern int killprint;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	char *p;
+	int n, inspect, sts;
 	int n;
+
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		debugging = 1;
 	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
 		verbose = 1;
-	initargs(&argc, &argv); /* Defined in config*.c */
+	if ((p = getenv("PYTHONINSPECT")) && *p != '\0')
+		inspect = 1;
+	if ((p = getenv("PYTHONKILLPRINT")) && *p != '\0')
+		killprint = 1;
+
+	initargs(&argc, &argv);
 	initall();
 	setpythonargv(argc, argv);
+
 	n = init_frozen("__main__");
 	if (n == 0)
 		fatal("__main__ not frozen");
 	if (n < 0) {
 		print_error();
-		goaway(1);
+		sts = 1;
 	}
 	else
-		goaway(0);
+		sts = 0;
+
+	if (inspect && isatty((int)fileno(stdin)) &&
+	    (filename != NULL || command != NULL))
+		sts = run(stdin, "<stdin>") != 0;
+
+	goaway(sts);
 	/*NOTREACHED*/
 }
