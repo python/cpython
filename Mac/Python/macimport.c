@@ -230,7 +230,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 		shortname = lastdot+1;
 	}
 	sprintf(funcname, FUNCNAME_PATTERN, shortname);
-	if( !findnamedresource((PyStringObject *)0, shortname, pathname, 'PYD ', fragmentname)) {
+	if( !findnamedresource((PyStringObject *)0, name, pathname, 'PYD ', fragmentname)) {
 		PyErr_SetString(PyExc_ImportError, "PYD resource not found");
 		return NULL;
 	}
