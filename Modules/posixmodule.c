@@ -4348,6 +4348,11 @@ posix_popen(PyObject *self, PyObject *args)
 	PyObject *f;
 	if (!PyArg_ParseTuple(args, "s|si:popen", &name, &mode, &bufsize))
 		return NULL;
+	/* Strip mode of binary or text modifiers */
+	if (strcmp(mode, "rb") == 0 || strcmp(mode, "rt") == 0)
+		mode = "r";
+	else if (strcmp(mode, "wb") == 0 || strcmp(mode, "wt") == 0)
+		mode = "w";
 	Py_BEGIN_ALLOW_THREADS
 	fp = popen(name, mode);
 	Py_END_ALLOW_THREADS
