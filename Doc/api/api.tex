@@ -3020,7 +3020,11 @@ errors. These parameters encoding and errors have the same semantics
 as the ones of the builtin unicode() Unicode object constructor.
 
 Setting encoding to NULL causes the default encoding to be used which
-is UTF-8.
+is \ASCII{}. The file system calls should use
+\var{Py_FileSystemDefaultEncoding} as the encoding for file
+names. This variable should be treated as read-only: On some systems,
+it will be a pointer to a static string, on others, it will change at
+run-time, e.g. when the application invokes setlocale.
 
 Error handling is set by errors which may also be set to NULL meaning
 to use the default handling defined for the codec. Default error
