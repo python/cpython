@@ -142,24 +142,37 @@ exec_prefix=DIRECTORY) overrides the prefix set at configuration time;
 this may be more convenient than re-running the configure script if
 you change your mind about the install prefix...
 
-- You can use the GNU readline library to improve the interactive
-user interface: this gives you line editing and command history when
-calling python interactively.  You need to build the GNU readline
-library before running the configure script.  Its sources are
-distributed with Python.  This may involve some editing of the
-Makefile there -- I'm sorry, but I don't feel responsible for making
-it more portable or adapting it to autoconf...  Pass the configure
-script the option --with-readline=DIRECTORY where DIRECTORY is the
-absolute pathname of the directory where you've built the readline
-library.  A known problem with the readline library is that it
-contains entry points which cause conflicts with the STDWIN and SGI GL
-libraries.  The stdwin conflict can be solved (and will be, in some
-future release of stdwin) by adding a line saying '#define werase
-w_erase' to the stdwin.h file (in the stdwin distribution,
-subdirectory H).  The GL conflict may be solvable by reordering the -l
-options on the final link command, but it appears unsafe...  Another
-hint: you may have to add -Dindex=strchr -Drindex=strrchr to
-readline's CFLAGS if your system doesn't have index and rindex.
+- You can use the GNU readline library to improve the interactive user
+interface: this gives you line editing and command history when
+calling python interactively.  You need to configure build the GNU
+readline library before running the configure script.  Its sources are
+no longer distributed with Python; you can ftp them from any GNU
+mirror site, or from its home site:
+ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or a higher
+version number -- using version 1.x is not recommended).  Pass the
+Python configure script the option --with-readline=DIRECTORY where
+DIRECTORY is the absolute pathname of the directory where you've built
+the readline library.  Some hints on building and using the readline
+library:
+
+    - On SGI IRIX 5, you may have to add the following
+    to rldefs.h:
+
+	#ifndef sigmask
+	#define sigmask(sig)	(1L << ((sig)-1))
+	#endif
+
+    - The readline library requires use of the termcap library.  A
+    known problem with this is that it contains entry points which
+    cause conflicts with the STDWIN and SGI GL libraries.  The stdwin
+    conflict can be solved (and will be, in the next release of
+    stdwin) by adding a line saying '#define werase w_erase' to the
+    stdwin.h file (in the stdwin distribution, subdirectory H).  The
+    GL conflict has been solved in the Python configure script by a
+    hack that forces use of the static version of the termcap library.
+
+    - Check the newsgroup gnu.bash.bugs for specific problems with the
+    readline library.
 
 - On SGI IRIX, and on Sun SOLARIS 2, you can use multiple threads.  To
 enable this, pass --with-thread.  In the Modules/Setup file, enable
@@ -339,30 +352,22 @@ readline/	Source code for the GNU readline library
 Ftp access
 ----------
 
-The latest Python source distribution can be ftp'ed from site
-ftp.cwi.nl, directory /pub/python, file python<version>.tar.Z.  You
-can also find PostScript of the main Python documentation there,
-Macintosh and PC binaries, and the latest STDWIN source distribution
-(in directory /pub/stdwin).  Mirror sites are gatekeeper.dec.com
-(/pub/plan/python/cwi), ftp.wustl.edu
-(/graphics/graphics/sgi-stuff/python) and ftp.uu.net
-(/languages/python) -- try these sites first if you are on the US
-continent, or at least closer to it than to Europe.  These mirror
-sites are at most a day behind on the European archive!
-
-If you don't have ftp access, send mail containing only the word HELP
-to ftpmail@decwrl.dec.com or bitftp@pucc.princeton.edu, and the
-server will send you instructions on how to make requests.
+The latest Python source distribution can be ftp'ed from
+ftp://ftp.cwi.nl/pub/python/python<version>.tar.gz.  You can also find
+PostScript of the main Python documentation there, Macintosh and PC
+binaries, and the latest STDWIN source distribution (in directory
+/pub/stdwin).  oFr mirror sites, see the list in the FAQ (Misc/FAQ
+this directory).
 
 
-Mailing list
-------------
+Mailing list and Newsgroup
+--------------------------
 
-There is a mailing list devoted to Python programming, design and
-bugs.  To subscribe, send mail containing your real name and e-mail
-address in Internet form to "python-list-request@cwi.nl".  If you have
-built and installed Python, you are urgently to subscribe to this
-mailing list.
+There are a mailing list and a newsgroup devoted to Python
+programming, design and bugs.  The newsgroup, comp.lang.python,
+contains exactly the same messages as the mailing list.  To subscribe
+to the mailing list, send mail containing your real name and e-mail
+address in Internet form to "python-list-request@cwi.nl".
 
 
 Author
