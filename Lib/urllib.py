@@ -596,6 +596,23 @@ def splitport(host):
 	if _portprog.match(host) >= 0: return _portprog.group(1, 2)
 	return host, None
 
+# Split host and port, returning numeric port.
+# Return given default port if no ':' found; defaults to -1.
+# Return numerical port if digits are found after ':'.
+# Return None if ':' but no digits.
+_nportprog = regex.compile('^\(.*\):\([^0-9]*\([0-9]*\).*\)$')
+def splitnport(host, defport=-1):
+	if _nportprog.match(host) >= 0:
+	    host, port = _nportprog.group(1, 3)
+	    nport = None
+	    if port:
+		try:
+		    nport = string.atoi(port)
+		except string.atoi_error:
+		    pass
+	    return host, nport
+	return host, defport
+
 _queryprog = regex.compile('^\(.*\)\?\([^?]*\)$')
 def splitquery(url):
 	if _queryprog.match(url) >= 0: return _queryprog.group(1, 2)
