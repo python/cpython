@@ -30,6 +30,7 @@ import VFile
 import VGrabber
 import imageop
 sys.path.append('/ufs/jack/src/av/vcr')
+import VCR
 
 ARROW = 0
 WATCH = 1
@@ -500,7 +501,6 @@ class VideoBagOfTricks:
 
 	def vcr_capture(self):
 		if not self.vcr:
-			import VCR
 			try:
 				self.vcr = VCR.VCR().init()
 				self.vcr.wait()
@@ -787,7 +787,6 @@ class VideoBagOfTricks:
 		self.aout.setnchannels(nch)
 		self.aout.setsampwidth(width)
 		self.aout.setframerate(rate)
-		self.aout.writeframes('')
 		c = al.newconfig()
 		c.setqueuesize(8000)
 		c.setchannels(nch)
@@ -809,7 +808,7 @@ class VideoBagOfTricks:
 		while not self.audio_stop:
 			data = self.aport.readsamps(4000)
 			if self.audio_ok:
-				self.aout.writeframesraw(data)
+				self.aout.writeframes(data)
 			data = None
 		self.audio_busy = 0
 
