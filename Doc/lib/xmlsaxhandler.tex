@@ -200,9 +200,10 @@ appropriate events in the input document:
   Note that start/endPrefixMapping events are not guaranteed to be
   properly nested relative to each-other: all
   \method{startPrefixMapping()} events will occur before the
-  corresponding startElement event, and all \method{endPrefixMapping()}
-  events will occur after the corresponding \method{endElement()} event,
-  but their order is not guaranteed.
+  corresponding \method{startElement()} event, and all
+  \method{endPrefixMapping()} events will occur after the
+  corresponding \method{endElement()} event, but their order is not
+  guaranteed.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{endPrefixMapping}{prefix}
@@ -219,7 +220,10 @@ appropriate events in the input document:
   The \var{name} parameter contains the raw XML 1.0 name of the
   element type as a string and the \var{attrs} parameter holds an
   instance of the \class{Attributes} class containing the attributes
-  of the element.
+  of the element.  The object passed as \var{attrs} may be re-used by
+  the parser; holding on to a reference to it is not a reliable way to
+  keep a copy of the attributes.  To keep a copy of the attributes,
+  use the \method{copy()} method of the \var{attrs} object.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{endElement}{name}
@@ -233,10 +237,16 @@ appropriate events in the input document:
   Signals the start of an element in namespace mode.
 
   The \var{name} parameter contains the name of the element type as a
-  (uri, localname) tuple, the \var{qname} parameter the raw XML 1.0
-  name used in the source document, and the \var{attrs} parameter
-  holds an instance of the \class{AttributesNS} class containing the
-  attributes of the element.
+  \code{(\var{uri}, \var{localname})} tuple, the \var{qname} parameter
+  contains the raw XML 1.0 name used in the source document, and the
+  \var{attrs} parameter holds an instance of the \class{AttributesNS}
+  class containing the attributes of the element.  If no namespace is
+  associated with the element, the \var{uri} component of \var{name}
+  will be \code{None}.  The object passed as \var{attrs} may be
+  re-used by the parser; holding on to a reference to it is not a
+  reliable way to keep a copy of the attributes.  To keep a copy of
+  the attributes, use the \method{copy()} method of the \var{attrs}
+  object.
 
   Parsers may set the \var{qname} parameter to \code{None}, unless the
   \code{feature_namespace_prefixes} feature is activated.
