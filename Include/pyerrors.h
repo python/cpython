@@ -32,9 +32,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 void err_set PROTO((object *));
 void err_setval PROTO((object *, object *));
+void err_restore PROTO((object *, object *, object *));
 void err_setstr PROTO((object *, char *));
 object *err_occurred PROTO((void));
-void err_get PROTO((object **, object **));
+void err_fetch PROTO((object **, object **, object **));
 void err_clear PROTO((void));
 
 /* Predefined exceptions */

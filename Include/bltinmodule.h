@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Built-in module interface */
 
 extern object *getbuiltin PROTO((object *));
+extern object *getbuiltins PROTO((char *));
 extern int setbuiltin PROTO((char *, object *));
 
 #ifdef __cplusplus

@@ -37,7 +37,6 @@ object *getlocals PROTO((void));
 object *getowner PROTO((void));
 object *getframe PROTO((void));
 
-void printtraceback PROTO((object *));
 void flushline PROTO((void));
 
 int Py_AddPendingCall PROTO((int (*func) PROTO((ANY *)), ANY *arg));
@@ -54,7 +53,7 @@ int Py_MakePendingCalls PROTO((void));
 	BGN_SAVE
 	...blocking system call here...
 	END_SAVE
-	...interpretr result here...
+	...interpret result here...
 
    The BGN_SAVE/END_SAVE pair expands to a {}-surrounded block.
    To leave the block in the middle (e.g., with return), you must insert
