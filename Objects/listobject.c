@@ -283,9 +283,8 @@ static int
 list_compare(v, w)
 	PyListObject *v, *w;
 {
-	int len = (v->ob_size < w->ob_size) ? v->ob_size : w->ob_size;
 	int i;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < v->ob_size && i < w->ob_size; i++) {
 		int cmp = PyObject_Compare(v->ob_item[i], w->ob_item[i]);
 		if (cmp != 0)
 			return cmp;
@@ -587,11 +586,14 @@ listappend(self, args)
    function is NULL. */
 
 static int
-docompare(x, y, compare)
+docompare(x, y, compare, list)
 	PyObject *x;
 	PyObject *y;
 	PyObject *compare;
+	PyListObject *list;
 {
+	int size = list->ob_size; /* Number of elements to sort */
+	PyObject **array = list->ob_item; /* Start of array to sort */
 	PyObject *args, *res;
 	int i;
 
@@ -599,6 +601,11 @@ docompare(x, y, compare)
 		i = PyObject_Compare(x, y);
 		if (i && PyErr_Occurred())
 			i = CMPERROR;
+		else if (size != list->ob_size || array != list->ob_item) {
+			PyErr_SetString(PyExc_SystemError,
+					"list changed size during sort");
+			i = CMPERROR;
+		}
 		return i;
 	}
 
@@ -613,6 +620,11 @@ docompare(x, y, compare)
 		Py_DECREF(res);
 		PyErr_SetString(PyExc_TypeError,
 				"comparison function should return int");
+		return CMPERROR;
+	}
+	if (size != list->ob_size || array != list->ob_item) {
+		PyErr_SetString(PyExc_SystemError,
+				"list changed size during sort");
 		return CMPERROR;
 	}
 	i = PyInt_AsLong(res);
@@ -643,11 +655,12 @@ docompare(x, y, compare)
    (i.e. no items have been removed or duplicated). */
 
 static int
-quicksort(array, size, compare)
-	PyObject **array;       /* Start of array to sort */
-	int size;       /* Number of elements to sort */
+quicksort(list, compare)
+	PyListObject *list; /* List to sort */
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
+	int size = list->ob_size; /* Number of elements to sort */
+	PyObject **array = list->ob_item; /* Start of array to sort */
 	register PyObject *tmp, *pivot;
 	register PyObject **l, **r, **p;
 	PyObject **lo, **hi, **notp;
@@ -675,7 +688,8 @@ quicksort(array, size, compare)
 				pivot = *r;
 				do {
 					p = l + ((r - l) >> 1);
-					k = docompare(pivot, *p, compare);
+					k = docompare(pivot, *p,
+						      compare, list);
 					if (k == CMPERROR)
 						return -1;
 					if (k < 0)
@@ -699,19 +713,19 @@ quicksort(array, size, compare)
 		p = lo + (n>>1); /* Middle */
 		r = hi - 1;      /* Last   */
 
-		k = docompare(*p, *l, compare);
+		k = docompare(*p, *l, compare, list);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
 			{ tmp = *p; *p = *l; *l = tmp; }
 
-		k = docompare(*r, *p, compare);
+		k = docompare(*r, *p, compare, list);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
 			{ tmp = *r; *r = *p; *p = tmp; }
 
-		k = docompare(*p, *l, compare);
+		k = docompare(*p, *l, compare, list);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
@@ -727,7 +741,7 @@ quicksort(array, size, compare)
 
 			/* Move left index to element >= pivot */
 			while (l < p) {
-				k = docompare(*l, pivot, compare);
+				k = docompare(*l, pivot, compare, list);
 				if (k == CMPERROR)
 					return -1;
 				if (k < 0)
@@ -739,7 +753,7 @@ quicksort(array, size, compare)
 			}
 			/* Move right index to element <= pivot */
 			while (r > p) {
-				k = docompare(pivot, *r, compare);
+				k = docompare(pivot, *r, compare, list);
 				if (k == CMPERROR)
 					return -1;
 				if (k < 0)
@@ -804,7 +818,7 @@ quicksort(array, size, compare)
 		 * This wastes a compare if it fails, but can win big
 		 * when there are runs of duplicates.
 		 */
-		k = docompare(pivot, *l, compare);
+		k = docompare(pivot, *l, compare, list);
 		if (k == CMPERROR)
 			return -1;
 		if (!(k < 0)) {
@@ -817,7 +831,7 @@ quicksort(array, size, compare)
 			*/
 			while (r > lo) {
 				/* because r-1 < p, *(r-1) <= pivot is known */
-				k = docompare(*(r-1), pivot, compare);
+				k = docompare(*(r-1), pivot, compare, list);
 				if (k == CMPERROR)
 					return -1;
 				if (k < 0)
@@ -829,7 +843,7 @@ quicksort(array, size, compare)
 			l++;
 			while (l < hi) {
 				/* because l > p, pivot <= *l is known */
-				k = docompare(pivot, *l, compare);
+				k = docompare(pivot, *l, compare, list);
 				if (k == CMPERROR)
 					return -1;
 				if (k < 0)
@@ -866,8 +880,7 @@ listsort(self, compare)
 	PyListObject *self;
 	PyObject *compare;
 {
-	/* XXX Don't you *dare* changing the list's length in compare()! */
-	if (quicksort(self->ob_item, self->ob_size, compare) < 0)
+	if (quicksort(self, compare) < 0)
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -922,11 +935,7 @@ PyList_Sort(v)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	v = listsort((PyListObject *)v, (PyObject *)NULL);
-	if (v == NULL)
-		return -1;
-	Py_DECREF(v);
-	return 0;
+	return quicksort((PyListObject *)v, (PyObject *)NULL);
 }
 
 PyObject *
