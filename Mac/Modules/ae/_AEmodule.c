@@ -71,7 +71,7 @@ PyObject *AEDesc_New(AEDesc *itself)
 	it->ob_itself = *itself;
 	return (PyObject *)it;
 }
-AEDesc_Convert(PyObject *v, AEDesc *p_itself)
+int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 {
 	if (!AEDesc_Check(v))
 	{

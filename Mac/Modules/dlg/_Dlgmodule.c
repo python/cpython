@@ -158,7 +158,7 @@ PyObject *DlgObj_New(DialogPtr itself)
 	SetWRefCon(GetDialogWindow(itself), (long)it);
 	return (PyObject *)it;
 }
-DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
+int DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 {
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyInt_Check(v)) { *p_itself = (DialogPtr)PyInt_AsLong(v);

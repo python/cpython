@@ -82,7 +82,7 @@ PyObject *WinObj_New(WindowPtr itself)
 	}
 	return (PyObject *)it;
 }
-WinObj_Convert(PyObject *v, WindowPtr *p_itself)
+int WinObj_Convert(PyObject *v, WindowPtr *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }

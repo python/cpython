@@ -112,7 +112,7 @@ PyObject *MovieCtlObj_New(MovieController itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
+int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 {
 	if (!MovieCtlObj_Check(v))
 	{
@@ -974,7 +974,7 @@ PyObject *TimeBaseObj_New(TimeBase itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
+int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 {
 	if (!TimeBaseObj_Check(v))
 	{
@@ -1368,7 +1368,7 @@ PyObject *UserDataObj_New(UserData itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-UserDataObj_Convert(PyObject *v, UserData *p_itself)
+int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 {
 	if (!UserDataObj_Check(v))
 	{
@@ -1645,7 +1645,7 @@ PyObject *MediaObj_New(Media itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MediaObj_Convert(PyObject *v, Media *p_itself)
+int MediaObj_Convert(PyObject *v, Media *p_itself)
 {
 	if (!MediaObj_Check(v))
 	{
@@ -2679,7 +2679,7 @@ PyObject *TrackObj_New(Track itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-TrackObj_Convert(PyObject *v, Track *p_itself)
+int TrackObj_Convert(PyObject *v, Track *p_itself)
 {
 	if (!TrackObj_Check(v))
 	{
@@ -3766,7 +3766,7 @@ PyObject *MovieObj_New(Movie itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MovieObj_Convert(PyObject *v, Movie *p_itself)
+int MovieObj_Convert(PyObject *v, Movie *p_itself)
 {
 	if (!MovieObj_Check(v))
 	{

@@ -67,7 +67,7 @@ PyObject *MenuObj_New(MenuHandle itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
+int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 {
 	if (!MenuObj_Check(v))
 	{

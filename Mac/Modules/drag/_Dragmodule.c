@@ -66,7 +66,7 @@ PyObject *DragObj_New(DragRef itself)
 	it->sendproc = NULL;
 	return (PyObject *)it;
 }
-DragObj_Convert(PyObject *v, DragRef *p_itself)
+int DragObj_Convert(PyObject *v, DragRef *p_itself)
 {
 	if (!DragObj_Check(v))
 	{

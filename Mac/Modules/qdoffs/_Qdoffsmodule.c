@@ -55,7 +55,7 @@ PyObject *GWorldObj_New(GWorldPtr itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
+int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 {
 	if (!GWorldObj_Check(v))
 	{
