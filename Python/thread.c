@@ -1,7 +1,8 @@
 #include "thread.h"
 
 #ifdef DEBUG
-#define dprintf(args)	printf args
+static int thread_debug = 0;
+#define dprintf(args)	(thread_debug && printf args)
 #else
 #define dprintf(args)
 #endif
@@ -102,6 +103,9 @@ void init_thread _P0()
 	struct sigaction s;
 #endif
 
+#ifdef DEBUG
+	thread_debug = getenv("THREADDEBUG") != 0;
+#endif
 	dprintf(("init_thread called\n"));
 	if (initialized)
 		return;
@@ -112,7 +116,7 @@ void init_thread _P0()
 	atexit(maybe_exit);
 	s.sa_handler = exit_sig;
 	sigemptyset(&s.sa_mask);
-	sigaddset(&s.sa_mask, SIGUSR1);
+	/*sigaddset(&s.sa_mask, SIGUSR1);*/
 	s.sa_flags = 0;
 	sigaction(SIGUSR1, &s, 0);
 	prctl(PR_SETEXITSIG, SIGUSR1);
@@ -189,8 +193,12 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 			int i;
 
 			/* notify other threads */
-			for (i = 0; i < maxpidindex; i++)
-				(void) kill(pidlist[i], SIGUSR1);
+			if (nthreads >= 0) {
+				dprintf(("kill other threads\n"));
+				for (i = 0; i < maxpidindex; i++)
+					(void) kill(pidlist[i], SIGKILL);
+				_exit(exit_status);
+			}
 		}
 		waiting_for_threads = 1;
 		ussetlock(wait_lock);
@@ -212,7 +220,8 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 	if (waiting_for_threads) {
 		dprintf(("main thread is waiting\n"));
 		usunsetlock(wait_lock);
-	}
+	} else if (do_exit)
+		(void) kill(my_pid, SIGUSR1);
 	(void) usunsetlock(count_lock);
 	_exit(0);
 #endif
@@ -361,6 +370,8 @@ type_sema allocate_sema _P1(value, int value)
 #endif
 
 	dprintf(("allocate_sema called\n"));
+	if (!initialized)
+		init_thread();
 
 #ifdef __sgi
 	sema = usnewsema(shared_arena, value);
