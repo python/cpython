@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"		/* For getargs() etc. */
+#include "rename1.h"
 #include <assert.h>
 #include <sys/types.h>		/* For size_t */
 
@@ -573,14 +574,26 @@ mpz_div_and_mod(a, b)
 } /* mpz_div_and_mod() */
 
 static object *
-mpz_power(a, b)
+mpz_power(a, b, m)
 	mpzobject *a;
 	mpzobject *b;
+        mpzobject *m;
 {
 	mpzobject *z;
 	int cmpres;
 	long int longtmp1, longtmp2;
 
+ 	if ((object *)m!=Py_None)
+ 	  {
+ 	    mpzobject *z2;
+	    INCREF(Py_None);
+ 	    z=mpz_power(a, b, (mpzobject *)Py_None);
+	    DECREF(Py_None);
+ 	    if (z==NULL) return(z);
+ 	    z2=mpz_remainder(z, m);
+ 	    DECREF(z);
+ 	    return((object *)z2);
+ 	  }	    
 
 	if ((cmpres = mpz_cmp_ui(&b->mpz, (unsigned long int)0)) == 0) {
 		/* the gnu-mp lib sets pow(0,0) to 0, we to 1 */
@@ -1607,6 +1620,7 @@ mpz_repr(v)
 
 #define UF (unaryfunc)
 #define BF (binaryfunc)
+#define TF (ternaryfunc)
 #define IF (inquiry)
 #define CF (coercion)
 
@@ -1617,7 +1631,7 @@ static number_methods mpz_as_number = {
 	BF mpz_divide,		/*nb_divide*/
 	BF mpz_remainder,	/*nb_remainder*/
 	BF mpz_div_and_mod,	/*nb_divmod*/
-	BF mpz_power,		/*nb_power*/
+	TF mpz_power,		/*nb_power*/
 	UF mpz_negative,	/*nb_negative*/
 	UF mpz_positive,	/*tp_positive*/
 	UF mpz_absolute,	/*tp_absolute*/
@@ -1779,15 +1793,15 @@ initmpz()
 
 	/* create some frequently used constants */
 	if ((mpz_value_zero = newmpzobject()) == NULL)
-		fatal("initmpz: can't initialize mpz contstants");
+		fatal("initmpz: can't initialize mpz constants");
 	mpz_set_ui(&mpz_value_zero->mpz, (unsigned long int)0);
 
 	if ((mpz_value_one = newmpzobject()) == NULL)
-		fatal("initmpz: can't initialize mpz contstants");
+		fatal("initmpz: can't initialize mpz constants");
 	mpz_set_ui(&mpz_value_one->mpz, (unsigned long int)1);
 
 	if ((mpz_value_mone = newmpzobject()) == NULL)
-		fatal("initmpz: can't initialize mpz contstants");
+		fatal("initmpz: can't initialize mpz constants");
 	mpz_set_si(&mpz_value_mone->mpz, (long)-1);
 
 } /* initmpz() */

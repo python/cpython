@@ -136,9 +136,6 @@ int sample;
     }
 /* End of code taken from sox */
 
-/* ADPCM-3 step variation table */
-static float newstep[5] = { 0.8, 0.9, 1.0, 1.75, 1.75 };
-
 /* Intel ADPCM step variation table */
 static int indexTable[16] = {
     -1, -1, -1, -1, 2, 4, 6, 8,
@@ -603,7 +600,7 @@ audioop_cross(self, args)
     signed char *cp;
     int len, size, val;
     int i;
-    int cross, prevval, ncross;
+    int prevval, ncross;
 
     if ( !getargs(args, "(s#i)", &cp, &len, &size) )
       return 0;
@@ -1117,7 +1114,7 @@ audioop_adpcm2lin(self, args)
 {
     signed char *cp;
     signed char *ncp;
-    int len, size, val, valpred, step, delta, index, sign, vpdiff;
+    int len, size, valpred, step, delta, index, sign, vpdiff;
     object *rv, *str, *state;
     int i, inputbuffer, bufferstep;
 

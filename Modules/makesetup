@@ -28,9 +28,9 @@
 #
 # Copying Makefile.pre to Makefile:
 # - insert an identifying comment at the start
-# - replace @MODOBJS@ by the list of objects from Setup (except for
+# - replace _MODOBJS_ by the list of objects from Setup (except for
 #   Setup files after a -n option)
-# - replace @MODLIBS@ by the list of libraries from Setup
+# - replace _MODLIBS_ by the list of libraries from Setup
 # - for each object file mentioned in Setup, append a rule
 #   '<file>.o: <file>.c; <build commands>' to the end of the Makefile
 # - for each module mentioned in Setup, append a rule
@@ -227,8 +227,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "1i\\" >$sedf
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
-		echo "s%@MODOBJS@%$OBJS%" >>$sedf
-		echo "s%@MODLIBS@%$LIBS%" >>$sedf
+		echo "s%_MODOBJS_%$OBJS%" >>$sedf
+		echo "s%_MODLIBS_%$LIBS%" >>$sedf
 		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile

@@ -97,23 +97,22 @@ extern int symlink();
 #define MAXPATHLEN 1024
 #endif /* MAXPATHLEN */
 
-/* unistd.h defines _POSIX_VERSION on POSIX.1 systems.  */
-#if defined(DIRENT) || defined(_POSIX_VERSION)
+#ifdef HAVE_DIRENT_H
 #include <dirent.h>
-#define NLENGTH(dirent) (strlen((dirent)->d_name))
-#else /* not (DIRENT or _POSIX_VERSION) */
+#define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
 #define dirent direct
-#define NLENGTH(dirent) ((dirent)->d_namlen)
-#ifdef SYSNDIR
+#define NAMLEN(dirent) (dirent)->d_namlen
+#ifdef HAVE_SYS_NDIR_H
 #include <sys/ndir.h>
-#endif /* SYSNDIR */
-#ifdef SYSDIR
+#endif
+#ifdef HAVE_SYS_DIR_H
 #include <sys/dir.h>
-#endif /* SYSDIR */
-#ifdef NDIR
+#endif
+#ifdef HAVE_NDIR_H
 #include <ndir.h>
-#endif /* NDIR */
-#endif /* not (DIRENT or _POSIX_VERSION) */
+#endif
+#endif
 
 #ifdef NT
 #include <direct.h>
@@ -406,7 +405,7 @@ posix_listdir(self, args)
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
-		v = newstringobject(ep->d_name);
+		v = newsizedstringobject(ep->d_name, NAMLEN(ep));
 		if (v == NULL) {
 			DECREF(d);
 			d = NULL;

@@ -133,7 +133,7 @@ imageop_tovideo(self, args)
 {
     int maxx, maxy, x, y, len;
     int i;
-    unsigned char *cp, *ncp, cdata;
+    unsigned char *cp, *ncp;
     int width;
     object *rv;
    
@@ -404,9 +404,8 @@ imageop_mono2grey(self, args)
 {
     int v0, v1, x, y, len, nlen;
     unsigned char *cp, *ncp;
-    unsigned char ovalue;
     object *rv;
-    int i, bit, value;
+    int i, bit;
     
     if ( !getargs(args, "(s#iiii)", &cp, &len, &x, &y, &v0, &v1) )
       return 0;
@@ -444,7 +443,6 @@ imageop_grey22grey(self, args)
 {
     int x, y, len, nlen;
     unsigned char *cp, *ncp;
-    unsigned char ovalue;
     object *rv;
     int i, pos, value, nvalue;
     
@@ -482,7 +480,6 @@ imageop_grey42grey(self, args)
 {
     int x, y, len, nlen;
     unsigned char *cp, *ncp;
-    unsigned char ovalue;
     object *rv;
     int i, pos, value, nvalue;
     

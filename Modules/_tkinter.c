@@ -41,6 +41,7 @@ static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
 static PyObject *valInCmd;
+static PyObject *trbInCmd;
 
 static PyObject *
 Tkinter_Error (v)
@@ -55,7 +56,7 @@ PythonCmd_Error (interp)
      Tcl_Interp *interp;
 {
   errorInCmd = 1;
-  PyErr_GetAndClear (&excInCmd, &valInCmd);
+  PyErr_Fetch (&excInCmd, &valInCmd, &trbInCmd);
   return TCL_ERROR;
 }
 
@@ -759,7 +760,7 @@ FileHandler (clientData, mask)
   if (res == NULL)
     {
       errorInCmd = 1;
-      PyErr_GetAndClear (&excInCmd, &valInCmd);
+      PyErr_Fetch (&excInCmd, &valInCmd, &trbInCmd);
     }
   Py_XDECREF (res);
 }
@@ -964,9 +965,10 @@ TimerHandler (clientData)
   if (res == NULL)
     {
       errorInCmd = 1;
-      PyErr_GetAndClear (&excInCmd, &valInCmd);
+      PyErr_Fetch (&excInCmd, &valInCmd, &trbInCmd);
     }
-  Py_DECREF (res);
+  else
+    Py_DECREF (res);
 }
 
 static PyObject *
@@ -1020,7 +1022,8 @@ Tkapp_MainLoop (self, args)
   if (errorInCmd)
     {
       errorInCmd = 0;
-      PyErr_SetObject (excInCmd, valInCmd);
+      PyErr_Restore (excInCmd, valInCmd, trbInCmd);
+      excInCmd = valInCmd = trbInCmd = NULL;
       return NULL;
     }
   Py_INCREF (Py_None);
@@ -1173,7 +1176,8 @@ EventHook ()
   if (errorInCmd)		/* XXX Reset tty */
     {
       errorInCmd = 0;
-      PyErr_SetObject (excInCmd, valInCmd);
+      PyErr_Restore (excInCmd, valInCmd, trbInCmd);
+      excInCmd = valInCmd = trbInCmd = NULL;
       PyErr_Print ();
      }
   if (tk_NumMainWindows > 0)

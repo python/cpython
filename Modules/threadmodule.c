@@ -205,7 +205,9 @@ t_bootstrap(args_raw)
 		fprintf(stderr, "Unhandled exception in thread:\n");
 		print_error(); /* From pythonmain.c */
 	}
-	(void) save_thread();
+	else
+		DECREF(res);
+	(void) save_thread(); /* Should always be NULL */
 	exit_thread();
 }
 
@@ -236,9 +238,11 @@ thread_exit_thread(self, args)
 	object *self; /* Not used */
 	object *args;
 {
+	object *frame;
 	if (!getnoarg(args))
 		return NULL;
-	(void) save_thread();
+	frame = save_thread(); /* Should never be NULL */
+	DECREF(frame);
 	exit_thread();
 	for (;;) { } /* Should not be reached */
 }

@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Signal module -- many thanks to Lance Ellinghouse */
+/* Signal module -- many thanks to Lance Ellinghaus */
 
 #include "Python.h"
 #include "intrcheck.h"
@@ -33,6 +33,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef SIG_ERR
 #define SIG_ERR ((RETSIGTYPE (*)())-1)
 #endif
+
+#ifndef NSIG
+#define NSIG (_SIGMAX + 1)	/* For QNX */
+#endif
+
 
 /*
    NOTES ON THE INTERACTION BETWEEN SIGNALS AND THREADS
@@ -119,7 +124,6 @@ PySignal_Alarm(self, args)
 	PyObject *args;
 {
 	int t;
-	int rtn;
 	if (!PyArg_Parse(args, "i", &t))
 		return (PyObject *)NULL;
 	/* alarm() returns the number of seconds remaining */
@@ -218,7 +222,6 @@ void
 initsignal()
 {
 	PyObject *m, *d, *x;
-	PyObject *b_dict;
 	int i;
 
 #ifdef WITH_THREAD

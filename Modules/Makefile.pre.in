@@ -8,8 +8,8 @@
 
 # === Variables set by makesetup ===
 
-MODOBJS=	@MODOBJS@
-MODLIBS=	@MODLIBS@
+MODOBJS=	_MODOBJS_
+MODLIBS=	_MODLIBS_
 
 # === Definitions added by makesetup ===
 
@@ -30,15 +30,18 @@ LIBC=		@LIBC@
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
 
-# Install prefix, may be changed by configure
-prefix=		/usr/local
+# Install prefix for architecture-independent files
+prefix=		@prefix@
+
+# Install prefix for architecture-dependent files
+exec_prefix=	@exec_prefix@
 
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(prefix)/lib/python/$(MACHDEP)
+DESTSHARED=	$(exec_prefix)/lib/python/$(MACHDEP)
 
 
 # === Variables that are customizable by hand ===
@@ -150,6 +153,7 @@ yuvconvert.o: yuvconvert.c
 # Rules to build and install all shared modules
 sharedmods:	$(SHAREDMODS)
 sharedinstall:	$(SHAREDMODS)
-		for i in $(SHAREDMODS); do mv $$i $(DESTSHARED)/$$i; done
+		for i in dummy $(SHAREDMODS); do \
+		    if test -f $$i; then mv $$i $(DESTSHARED)/$$i; fi; done
 
 # Stuff is appended here by makesetup and make depend

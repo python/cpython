@@ -78,7 +78,6 @@ parser_parsefile(self, args)
 	char *filename;
 	FILE *fp;
 	node *n = NULL;
-	int err;
 	object *res;
 	if (!getargs(args, "s", &filename))
 		return NULL;

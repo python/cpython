@@ -38,6 +38,7 @@ Interface:
 
 - socket.gethostname() --> host name (string)
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
+- socket.gethostbyaddr(IP address) --> (hostname, [alias, ...], [IP addr, ...])
 - socket.getservbyname(servername, protocolname) --> port number
 - socket.socket(family, type [, proto]) --> new socket object
 - family and type constants from <socket.h> are accessed as socket.AF_INET etc.
@@ -66,6 +67,7 @@ Socket methods:
 - s.setblocking(1 | 0) --> Py_None
 - s.shutdown(how) --> Py_None
 - s.close() --> Py_None
+- repr(s) --> "<socket object, fd=%d, family=%d, type=%d, protocol=%d>"
 
 */
 
@@ -88,6 +90,11 @@ Socket methods:
 #else
 #undef AF_UNIX
 #endif
+
+#ifndef O_NDELAY
+#define O_NDELAY O_NONBLOCK	/* For QNX only? */
+#endif
+
 
 /* Here we have some hacks to choose between K&R or ANSI style function
    definitions.  For NT to build this as an extension module (ie, DLL)
@@ -177,6 +184,12 @@ typedef struct {
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
+	union sock_addr {
+		struct sockaddr_in in;
+#ifdef AF_UNIX
+		struct sockaddr_un un;
+#endif
+	} sock_addr;
 } PySocketSockObject;
 
 
@@ -194,7 +207,7 @@ staticforward PyTypeObject PySocketSock_Type;
    in NEWOBJ()). */
 
 static PySocketSockObject *
-BUILD_FUNC_DEF_4(PySocketSock_New, int, fd, int, family, int, type, int, proto)
+BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 {
 	PySocketSockObject *s;
 	s = PyObject_NEW(PySocketSockObject, &PySocketSock_Type);
@@ -215,11 +228,17 @@ BUILD_FUNC_DEF_4(PySocketSock_New, int, fd, int, family, int, type, int, proto)
    an error occurred; then an exception is raised. */
 
 static int
-BUILD_FUNC_DEF_2(setipaddr, char*, name, struct sockaddr_in *, addr_ret)
+BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 {
 	struct hostent *hp;
 	int d1, d2, d3, d4;
 	char ch;
+#ifdef HAVE_GETHOSTBYNAME_R
+	struct hostent hp_allocated;
+	char buf[1001];
+	int buf_len = (sizeof buf) - 1;
+	int errnop;
+#endif /* HAVE_GETHOSTBYNAME_R */
 
 	if (name[0] == '\0') {
 		addr_ret->sin_addr.s_addr = INADDR_ANY;
@@ -237,11 +256,22 @@ BUILD_FUNC_DEF_2(setipaddr, char*, name, struct sockaddr_in *, addr_ret)
 			((long) d3 << 8) | ((long) d4 << 0));
 		return 4;
 	}
+#ifdef HAVE_GETHOSTBYNAME_R
 	Py_BEGIN_ALLOW_THREADS
-	hp = gethostbyname(name);
+	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 	Py_END_ALLOW_THREADS
+#else /* not HAVE_GETHOSTBYNAME_R */
+	hp = gethostbyname(name);
+#endif /* HAVE_GETHOSTBYNAME_R */
+
 	if (hp == NULL) {
+#ifndef NT
+	        /* Let's get real error message to return */
+	        extern int h_errno;
+		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
+#else
 		PyErr_SetString(PySocket_Error, "host not found");
+#endif
 		return -1;
 	}
 	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
@@ -272,7 +302,7 @@ BUILD_FUNC_DEF_1(makeipaddr, struct sockaddr_in *,addr)
 
 /*ARGSUSED*/
 static PyObject *
-BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
+BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *,addr, int,addrlen)
 {
 	if (addrlen == 0) {
 		/* No address -- may be recvfrom() from known socket */
@@ -323,36 +353,38 @@ getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_
 #ifdef AF_UNIX
 	case AF_UNIX:
 	{
-		static struct sockaddr_un addr;
+		struct sockaddr_un* addr;
 		char *path;
 		int len;
+		addr = (struct sockaddr_un* )&(s->sock_addr).un;
 		if (!PyArg_Parse(args, "s#", &path, &len))
 			return 0;
-		if (len > sizeof addr.sun_path) {
+		if (len > sizeof addr->sun_path) {
 			PyErr_SetString(PySocket_Error, "AF_UNIX path too long");
 			return 0;
 		}
-		addr.sun_family = AF_UNIX;
-		memcpy(addr.sun_path, path, len);
-		*addr_ret = (struct sockaddr *) &addr;
-		*len_ret = len + sizeof addr.sun_family;
+		addr->sun_family = AF_UNIX;
+		memcpy(addr->sun_path, path, len);
+		*addr_ret = (struct sockaddr *) addr;
+		*len_ret = len + sizeof addr->sun_family;
 		return 1;
 	}
 #endif /* AF_UNIX */
 
 	case AF_INET:
 	{
-		static struct sockaddr_in addr;
+		struct sockaddr_in* addr;
 		char *host;
 		int port;
+ 		addr=(struct sockaddr_in*)&(s->sock_addr).in;
 		if (!PyArg_Parse(args, "(si)", &host, &port))
 			return 0;
-		if (setipaddr(host, &addr) < 0)
+		if (setipaddr(host, addr) < 0)
 			return 0;
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(port);
-		*addr_ret = (struct sockaddr *) &addr;
-		*len_ret = sizeof addr;
+		addr->sin_family = AF_INET;
+		addr->sin_port = htons(port);
+		*addr_ret = (struct sockaddr *) addr;
+		*len_ret = sizeof *addr;
 		return 1;
 	}
 
@@ -764,7 +796,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 #ifndef NT
 		     (ANY *)addrbuf, &addrlen);
 #else
-     		     (struct sockaddr *)addrbuf, &addrlen);
+		     (struct sockaddr *)addrbuf, &addrlen);
 #endif
 	Py_END_ALLOW_THREADS
 	if (n < 0)
@@ -854,7 +886,7 @@ static PyMethodDef PySocketSock_methods[] = {
 	{"allowbroadcast",	(PyCFunction)PySocketSock_allowbroadcast},
 #endif
 #ifndef NT
-	{"setblocking",         (PyCFunction)PySocketSock_setblocking},
+	{"setblocking",		(PyCFunction)PySocketSock_setblocking},
 #endif
 	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt},
 	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt},
@@ -883,7 +915,7 @@ static PyMethodDef PySocketSock_methods[] = {
    First close the file description. */
 
 static void
-BUILD_FUNC_DEF_1(PySocketSock_dealloc, PySocketSockObject *,s)
+BUILD_FUNC_DEF_1(PySocketSock_dealloc,PySocketSockObject *,s)
 {
 	(void) close(s->sock_fd);
 	PyMem_DEL(s);
@@ -896,6 +928,22 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_getattr,PySocketSockObject *,s, char *,name)
 {
 	return Py_FindMethod(PySocketSock_methods, (PyObject *) s, name);
+}
+
+
+static PyObject *
+BUILD_FUNC_DEF_1(PySocketSock_repr,PySocketSockObject *,s)
+{
+	PyObject *addro;
+	struct sockaddr *addr;
+	char buf[512];
+	object *t, *comma, *v;
+	int i, len;
+	sprintf(buf, 
+		"<socket object, fd=%d, family=%d, type=%d, protocol=%d>", 
+		s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
+	t = newstringobject(buf);
+	return t;
 }
 
 
@@ -912,7 +960,7 @@ static PyTypeObject PySocketSock_Type = {
 	(getattrfunc)PySocketSock_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(reprfunc)PySocketSock_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -954,6 +1002,65 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname,PyObject *,self, PyObject *,args)
 	return makeipaddr(&addrbuf);
 }
 
+/* Python interface to gethostbyaddr(IP). */
+
+/*ARGSUSED*/
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
+{
+        struct sockaddr_in addr;
+	char *ip_num;
+	struct hostent *h;
+	int d1,d2,d3,d4;
+	char ch, **pch;
+	PyObject *rtn_tuple = (PyObject *)NULL;
+	PyObject *name_list = (PyObject *)NULL;
+	PyObject *addr_list = (PyObject *)NULL;
+	PyObject *tmp;
+
+	if (!PyArg_Parse(args, "s", &ip_num))
+		return NULL;
+	if (setipaddr(ip_num, &addr) < 0)
+		return NULL;
+	h = gethostbyaddr((char *)&addr.sin_addr,
+			  sizeof(addr.sin_addr),
+			  AF_INET);
+	if (h == NULL) {
+#ifndef NT
+	        /* Let's get real error message to return */
+	        extern int h_errno;
+		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
+#else
+		PyErr_SetString(PySocket_Error, "host not found");
+#endif
+		return NULL;
+	}
+	if ((name_list = PyList_New(0)) == NULL)
+		goto err;
+	if ((addr_list = PyList_New(0)) == NULL)
+		goto err;
+	for (pch = h->h_aliases; *pch != NULL; pch++) {
+		tmp = PyString_FromString(*pch);
+		if (tmp == NULL)
+			goto err;
+		PyList_Append(name_list, tmp);
+		Py_DECREF(tmp);
+	}
+	for (pch = h->h_addr_list; *pch != NULL; pch++) {
+		memcpy((char *) &addr.sin_addr, *pch, h->h_length);
+		tmp = makeipaddr(&addr);
+		if (tmp == NULL)
+			goto err;
+		PyList_Append(addr_list, tmp);
+		Py_DECREF(tmp);
+	}
+	rtn_tuple = Py_BuildValue("sOO", h->h_name, name_list, addr_list);
+ err:
+	Py_XDECREF(name_list);
+	Py_XDECREF(addr_list);
+	return rtn_tuple;
+}
+
 
 /* Python interface to getservbyname(name).
    This only returns the port number, since the other info is already
@@ -984,7 +1091,7 @@ BUILD_FUNC_DEF_2(PySocket_getservbyname,PyObject *,self, PyObject *,args)
 
 /*ARGSUSED*/
 static PyObject *
-BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self,PyObject *,args)
+BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
 	int fd, family, type, proto;
@@ -1019,7 +1126,7 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self,PyObject *,args)
 
 /*ARGSUSED*/
 static PyObject *
-BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self,PyObject *,args)
+BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
 	int fd, family, type, proto;
@@ -1047,6 +1154,7 @@ BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self,PyObject *,args)
 
 static PyMethodDef PySocket_methods[] = {
 	{"gethostbyname",	PySocket_gethostbyname},
+	{"gethostbyaddr",	PySocket_gethostbyaddr},
 	{"gethostname",		PySocket_gethostname},
 	{"getservbyname",	PySocket_getservbyname},
 	{"socket",		PySocket_socket},
@@ -1061,7 +1169,7 @@ static PyMethodDef PySocket_methods[] = {
    For simplicity, errors (which are unlikely anyway) are ignored. */
 
 static void
-BUILD_FUNC_DEF_3(insint,PyObject *,d,char *,name,int,value)
+BUILD_FUNC_DEF_3(insint,PyObject *,d, char *,name, int,value)
 {
 	PyObject *v = PyInt_FromLong((long) value);
 	if (v == NULL) {
