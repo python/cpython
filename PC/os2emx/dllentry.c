@@ -19,20 +19,25 @@ extern void __ctordtorTerm (void);
 
 unsigned long _DLL_InitTerm (unsigned long mod_handle, unsigned long flag)
 {
-  switch (flag)
-  {
-    case 0:
-      if (_CRT_init ()) return 0;
-      __ctordtorInit ();
-      /* Ignore fatal signals */
-      signal (SIGSEGV, SIG_IGN);
-      signal (SIGFPE, SIG_IGN);
-      return 1;
-    case 1:
-      __ctordtorTerm ();
-      _CRT_term ();
-      return 1;
-    default:
-      return 0;
-  }
+	switch (flag)
+	{
+		case 0:
+			if (_CRT_init ())
+				return 0;
+			__ctordtorInit ();
+
+			/* Ignore fatal signals */
+			signal (SIGSEGV, SIG_IGN);
+			signal (SIGFPE, SIG_IGN);
+
+			return 1;
+
+		case 1:
+			__ctordtorTerm ();
+			_CRT_term ();
+			return 1;
+
+		default:
+			return 0;
+	}
 }
