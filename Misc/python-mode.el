@@ -518,6 +518,29 @@ Currently-active file is at the head of the list.")
     )
    ))
 
+(defun py-in-literal (&optional lim)
+  ;; Determine if point is in a Python literal, defined as a comment
+  ;; or string.  This is the version used for non-XEmacs, which has a
+  ;; nicer interface.
+  ;;
+  ;; WARNING: Watch out for infinite recursion.
+  (let* ((lim (or lim (c-point 'bod)))
+	 (state (parse-partial-sexp lim (point))))
+    (cond
+     ((nth 3 state) 'string)
+     ((nth 4 state) 'comment)
+     (t nil))))
+
+;; XEmacs has a built-in function that should make this much quicker.
+;; In this case, lim is ignored
+(defun py-fast-in-literal (&optional lim)
+  ;; don't have to worry about context == 'block-comment
+  (buffer-syntactic-context))
+
+(if (fboundp 'buffer-syntactic-context)
+    (defalias 'c-in-literal 'c-fast-in-literal))
+
+
 
 ;; Major mode boilerplate
 
@@ -1652,41 +1675,39 @@ it's tried again going backward."
   (interactive "P")			; raw prefix arg
   (let (new-value
 	(start (point))
-	restart
+	(restart (point))
 	(found nil)
 	colon-indent)
     (py-goto-initial-line)
     (while (not (or found (eobp)))
-      (if (re-search-forward ":[ \t]*\\($\\|[#\\]\\)" nil 'move)
-	  (progn
-	    (setq restart (point))
-	    (py-goto-initial-line)
-	    (if (py-statement-opens-block-p)
-		(setq found t)
-	      (goto-char restart)))))
-    (if found
-	()
+      (when (and (re-search-forward ":[ \t]*\\($\\|[#\\]\\)" nil 'move)
+		 (not (py-in-literal restart)))
+	(setq restart (point))
+	(py-goto-initial-line)
+	(if (py-statement-opens-block-p)
+	    (setq found t)
+	  (goto-char restart))))
+    (unless found
       (goto-char start)
       (py-goto-initial-line)
       (while (not (or found (bobp)))
-	(setq found
-	      (and
-	       (re-search-backward ":[ \t]*\\($\\|[#\\]\\)" nil 'move)
-	       (or (py-goto-initial-line) t) ; always true -- side effect
-	       (py-statement-opens-block-p)))))
+	(setq found (and
+		     (re-search-backward ":[ \t]*\\($\\|[#\\]\\)" nil 'move)
+		     (or (py-goto-initial-line) t) ; always true -- side effect
+		     (py-statement-opens-block-p)))))
     (setq colon-indent (current-indentation)
 	  found (and found (zerop (py-next-statement 1)))
 	  new-value (- (current-indentation) colon-indent))
     (goto-char start)
-    (if found
-	(progn
-	  (funcall (if global 'kill-local-variable 'make-local-variable)
-		   'py-indent-offset)
-	  (setq py-indent-offset new-value)
-	  (message "%s value of py-indent-offset set to %d"
-		   (if global "Global" "Local")
-		   py-indent-offset))
-      (error "Sorry, couldn't guess a value for py-indent-offset"))))
+    (if (not found)
+	(error "Sorry, couldn't guess a value for py-indent-offset")
+      (funcall (if global 'kill-local-variable 'make-local-variable)
+	       'py-indent-offset)
+      (setq py-indent-offset new-value)
+      (message "%s value of py-indent-offset set to %d"
+	       (if global "Global" "Local")
+	       py-indent-offset))
+    ))
 
 (defun py-shift-region (start end count)
   (save-excursion
