@@ -12,7 +12,7 @@ additional features:
 
 __rcsid__ = "$Id$"
 
-import string, re
+import sys, string, re
 from types import *
 import getopt
 from distutils.errors import *
@@ -33,7 +33,7 @@ neg_alias_re = re.compile ("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
 longopt_xlate = string.maketrans ('-', '_')
 
 
-def fancy_getopt (options, object, args):
+def fancy_getopt (options, negative_opt, object, args):
 
     # The 'options' table is a list of 3-tuples:
     #   (long_option, short_option, help_string)
@@ -51,7 +51,6 @@ def fancy_getopt (options, object, args):
     short2long = {}
     attr_name = {}
     takes_arg = {}
-    neg_alias = {}
 
     for option in options:
         try:
@@ -81,18 +80,15 @@ def fancy_getopt (options, object, args):
         else:
 
             # Is option is a "negative alias" for some other option (eg.
-            # "quiet=!verbose")?
-            match = neg_alias_re.match (long)
-            if match:
-                (alias_from, alias_to) = match.group (1,2)
+            # "quiet" == "!verbose")?
+            alias_to = negative_opt.get(long)
+            if alias_to is not None:
                 if not takes_arg.has_key(alias_to) or takes_arg[alias_to]:
                     raise DistutilsGetoptError, \
                           ("option '%s' is a negative alias for '%s', " +
                            "which either hasn't been defined yet " +
-                           "or takes an argument") % (alias_from, alias_to)
+                           "or takes an argument") % (long, alias_to)
 
-                long = alias_from
-                neg_alias[long] = alias_to
                 long_opts[-1] = long
                 takes_arg[long] = 0
 
@@ -137,7 +133,7 @@ def fancy_getopt (options, object, args):
             setattr (object, attr, val)
         else:
             if val == '':
-                alias = neg_alias.get (opt)
+                alias = negative_opt.get (opt)
                 if alias:
                     setattr (object, attr_name[alias], 0)
                 else:
@@ -149,4 +145,167 @@ def fancy_getopt (options, object, args):
 
     return args
 
-# end fancy_getopt()
+# fancy_getopt()
+
+
+WS_TRANS = string.maketrans (string.whitespace, ' ' * len (string.whitespace))
+
+def wrap_text (text, width):
+
+    if text is None:
+        return []
+    if len (text) <= width:
+        return [text]
+
+    text = string.expandtabs (text)
+    text = string.translate (text, WS_TRANS)
+    chunks = re.split (r'( +|-+)', text)
+    chunks = filter (None, chunks)      # ' - ' results in empty strings
+    lines = []
+
+    while chunks:
+
+        cur_line = []                   # list of chunks (to-be-joined)
+        cur_len = 0                     # length of current line
+
+        while chunks:
+            l = len (chunks[0])
+            if cur_len + l <= width:    # can squeeze (at least) this chunk in
+                cur_line.append (chunks[0])
+                del chunks[0]
+                cur_len = cur_len + l
+            else:                       # this line is full
+                # drop last chunk if all space
+                if cur_line and cur_line[-1][0] == ' ':
+                    del cur_line[-1]
+                break
+
+        if chunks:                      # any chunks left to process?
+
+            # if the current line is still empty, then we had a single
+            # chunk that's too big too fit on a line -- so we break
+            # down and break it up at the line width
+            if cur_len == 0:
+                cur_line.append (chunks[0][0:width])
+                chunks[0] = chunks[0][width:]
+
+            # all-whitespace chunks at the end of a line can be discarded
+            # (and we know from the re.split above that if a chunk has
+            # *any* whitespace, it is *all* whitespace)
+            if chunks[0][0] == ' ':
+                del chunks[0]
+
+        # and store this line in the list-of-all-lines -- as a single
+        # string, of course!
+        lines.append (string.join (cur_line, ''))
+
+    # while chunks
+
+    return lines
+
+# wrap_text ()
+        
+
+def generate_help (options, header=None):
+    """Generate help text (a list of strings, one per suggested line of
+       output) from an option table."""
+
+    # Blithely assume the option table is good: probably wouldn't call
+    # 'generate_help()' unless you've already called 'fancy_getopt()'.
+
+    # First pass: determine maximum length of long option names
+    max_opt = 0
+    for option in options:
+        long = option[0]
+        short = option[1]
+        l = len (long)
+        if long[-1] == '=':
+            l = l - 1
+        if short is not None:
+            l = l + 5                   # " (-x)" where short == 'x'
+        if l > max_opt:
+            max_opt = l
+            
+    opt_width = max_opt + 2 + 2 + 2     # room for indent + dashes + gutter
+
+    # Typical help block looks like this:
+    #   --foo       controls foonabulation
+    # Help block for longest option looks like this:
+    #   --flimflam  set the flim-flam level
+    # and with wrapped text:
+    #   --flimflam  set the flim-flam level (must be between
+    #               0 and 100, except on Tuesdays)
+    # Options with short names will have the short name shown (but
+    # it doesn't contribute to max_opt):
+    #   --foo (-f)  controls foonabulation
+    # If adding the short option would make the left column too wide,
+    # we push the explanation off to the next line
+    #   --flimflam (-l)
+    #               set the flim-flam level
+    # Important parameters:
+    #   - 2 spaces before option block start lines
+    #   - 2 dashes for each long option name
+    #   - min. 2 spaces between option and explanation (gutter)
+    #   - 5 characters (incl. space) for short option name
+
+    # Now generate lines of help text.
+    line_width = 78                     # if 80 columns were good enough for
+    text_width = line_width - opt_width # Jesus, then 78 are good enough for me
+    big_indent = ' ' * opt_width
+    if header:
+        lines = [header]
+    else:
+        lines = ['Option summary:']
+
+    for (long,short,help) in options:
+       
+        text = wrap_text (help, text_width)
+        if long[-1] == '=':
+            long = long[0:-1]
+
+        # Case 1: no short option at all (makes life easy)
+        if short is None:
+            if text:
+                lines.append ("  --%-*s  %s" % (max_opt, long, text[0]))
+            else:
+                lines.append ("  --%-*s  " % (max_opt, long))
+
+            for l in text[1:]:
+                lines.append (big_indent + l)
+
+        # Case 2: we have a short option, so we have to include it
+        # just after the long option
+        else:
+            opt_names = "%s (-%s)" % (long, short)
+            if text:
+                lines.append ("  --%-*s  %s" %
+                              (max_opt, opt_names, text[0]))
+            else:
+                lines.append ("  --%-*s" % opt_names)
+
+    # for loop over options
+
+    return lines
+
+# generate_help ()
+
+
+def print_help (options, file=None, header=None):
+    if file is None:
+        file = sys.stdout
+    for line in generate_help (options, header):
+        file.write (line + "\n")
+# print_help ()
+    
+
+if __name__ == "__main__":
+    text = """\
+Tra-la-la, supercalifragilisticexpialidocious.
+How *do* you spell that odd word, anyways?
+(Someone ask Mary -- she'll know [or she'll
+say, "How should I know?"].)"""
+
+    for w in (10, 20, 30, 40):
+        print "width: %d" % w
+        print string.join (wrap_text (text, w), "\n")
+        print
