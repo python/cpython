@@ -1041,6 +1041,8 @@ str(object)         printablerepresentation of an object. Class overridable
                     (__str__).See also repr().
 super(type)         Create an unbound super object.  Used to call cooperative
                     superclass methods.
+sum(sequence,       Add the values in the sequence and return the sum.
+    [start]) 
 tuple(sequence)     Creates a tuple with same elements as sequence. If already
                     a tuple, return itself (not a copy).
                     Returns a type object [see module types] representing
@@ -1862,6 +1864,7 @@ compileall       Force "compilation" of all .py files in a directory.
 ConfigParser     Configuration file parser (much like windows .ini files)
 copy             Generic shallow and deep copying operations.
 copy_reg         Helper to provide extensibility for pickle/cPickle.
+csv              Read and write files with comma separated values.
 dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.
 [DEL:dircmp:DEL] [DEL:Defines a class to build directory diff tools on.:DEL]
