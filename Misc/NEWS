@@ -38,6 +38,9 @@ Core and builtins
 Library
 -------
 
+- Fixed a caching bug in platform.platform() where the argument of 'terse' was
+  not taken into consideration when caching value.
+
 - Bug #920575: A problem that _locale module segfaults on
   nl_langinfo(ERA) caused by GNU libc's illegal NULL return is fixed.
 
