@@ -296,13 +296,6 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &p2)) < 0 )
 		return NULL;
 
-	/* optimize special case */
-	if ( count == 0 )
-	{
-	    Py_INCREF(self);
-	    return (PyObject *)self;
-	}
-
 	ob = PyString_FromStringAndSize(NULL, self->b_size + count);
 	p1 = PyString_AS_STRING(ob);
 	memcpy(p1, self->b_ptr, self->b_size);
@@ -361,12 +354,6 @@ buffer_slice(PyBufferObject *self, int left, int right)
 		right = 0;
 	if ( right > self->b_size )
 		right = self->b_size;
-	if ( left == 0 && right == self->b_size )
-	{
-		/* same as self */
-		Py_INCREF(self);
-		return (PyObject *)self;
-	}
 	if ( right < left )
 		right = left;
 	return PyString_FromStringAndSize((char *)self->b_ptr + left,
