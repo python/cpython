@@ -74,6 +74,19 @@ QdRGB_Convert(v, p_itself)
 	return 1;
 }
 
+/*
+** Generate FontInfo records
+*/
+static
+PyObject *QdFI_New(itself)
+	FontInfo *itself;
+{
+
+	return Py_BuildValue("hhhh", itself->ascent, itself->descent,
+			itself->widMax, itself->leading);
+}
+
+
 
 static PyObject *Qd_Error;
 
@@ -132,21 +145,70 @@ static PyObject *GrafObj_getattr(self, name)
 	GrafPortObject *self;
 	char *name;
 {
-	if ( strcmp(name, "device") == 0 )
-				return PyInt_FromLong((long)self->ob_itself->device);
-			if ( strcmp(name, "portBits") == 0 ) {
-				CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-				
-				if ( (itself_color->portVersion&0xc000) == 0xc000 )
-					/* XXXX Do we need HLock() stuff here?? */
-					return BMObj_New((BitMapPtr)*itself_color->portPixMap);
-				else
-					return BMObj_New(&self->ob_itself->portBits);
-			}
-			if ( strcmp(name, "portRect") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
-			/* XXXX Add more, as needed */
+
+			{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
 			
+				if ( strcmp(name, "data") == 0 )
+					return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(GrafPort));
+					
+				if ( (itself_color->portVersion&0xc000) == 0xc000 ) {
+					/* Color-only attributes */
+				
+					if ( strcmp(name, "portBits") == 0 )
+						/* XXXX Do we need HLock() stuff here?? */
+						return BMObj_New((BitMapPtr)*itself_color->portPixMap);
+					if ( strcmp(name, "grafVars") == 0 )
+						return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->visRgn);
+					if ( strcmp(name, "chExtra") == 0 )
+						return Py_BuildValue("h", itself_color->chExtra);
+					if ( strcmp(name, "pnLocHFrac") == 0 )
+						return Py_BuildValue("h", itself_color->pnLocHFrac);
+				} else {
+					/* Mono-only attributes */
+					if ( strcmp(name, "portBits") == 0 )
+						return BMObj_New(&self->ob_itself->portBits);
+				}
+				/*
+				** Accessible for both color/mono windows.
+				** portVersion is really color-only, but we put it here
+				** for convenience
+				*/
+				if ( strcmp(name, "portVersion") == 0 )
+					return Py_BuildValue("h", itself_color->portVersion);
+				if ( strcmp(name, "device") == 0 )
+					return PyInt_FromLong((long)self->ob_itself->device);
+				if ( strcmp(name, "portRect") == 0 )
+					return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
+				if ( strcmp(name, "visRgn") == 0 )
+					return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->visRgn);
+				if ( strcmp(name, "clipRgn") == 0 )
+					return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->clipRgn);
+				if ( strcmp(name, "bkPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->bkPat, sizeof(Pattern));
+				if ( strcmp(name, "fillPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->fillPat, sizeof(Pattern));
+				if ( strcmp(name, "pnLoc") == 0 )
+					return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnLoc);
+				if ( strcmp(name, "pnSize") == 0 )
+					return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnSize);
+				if ( strcmp(name, "pnMode") == 0 )
+					return Py_BuildValue("h", self->ob_itself->pnMode);
+				if ( strcmp(name, "pnPat") == 0 )
+					return Py_BuildValue("s#", (char *)&self->ob_itself->pnPat, sizeof(Pattern));
+				if ( strcmp(name, "pnVis") == 0 )
+					return Py_BuildValue("h", self->ob_itself->pnVis);
+				if ( strcmp(name, "txFont") == 0 )
+					return Py_BuildValue("h", self->ob_itself->txFont);
+				if ( strcmp(name, "txFace") == 0 )
+					return Py_BuildValue("h", (short)self->ob_itself->txFace);
+				if ( strcmp(name, "txMode") == 0 )
+					return Py_BuildValue("h", self->ob_itself->txMode);
+				if ( strcmp(name, "txSize") == 0 )
+					return Py_BuildValue("h", self->ob_itself->txSize);
+				if ( strcmp(name, "spExtra") == 0 )
+					return Py_BuildValue("O&", PyMac_BuildFixed, self->ob_itself->spExtra);
+				/* XXXX Add more, as needed */
+			}
 	return Py_FindMethodInChain(&GrafObj_chain, (PyObject *)self, name);
 }
 
@@ -3323,6 +3385,20 @@ static PyObject *Qd_TextWidth(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_GetFontInfo(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	FontInfo info;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetFontInfo(&info);
+	_res = Py_BuildValue("O&",
+	                     QdFI_New, &info);
+	return _res;
+}
+
 static PyObject *Qd_CharExtra(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -3738,6 +3814,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Str255 s) -> (short _rv)"},
 	{"TextWidth", (PyCFunction)Qd_TextWidth, 1,
 	 "(Buffer textBuf, short firstByte, short byteCount) -> (short _rv)"},
+	{"GetFontInfo", (PyCFunction)Qd_GetFontInfo, 1,
+	 "() -> (FontInfo info)"},
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
 	 "(Fixed extra) -> None"},
 	{"BitMap", (PyCFunction)Qd_BitMap, 1,
