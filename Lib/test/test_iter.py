@@ -479,7 +479,6 @@ class TestCase(unittest.TestCase):
                 self.assert_(i in sc5)
             for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
                 self.assert_(i not in sc5)
-            del sc5
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
@@ -494,7 +493,6 @@ class TestCase(unittest.TestCase):
         for k, v in d.iteritems():
             self.assert_((k, v) in d.iteritems())
             self.assert_((v, k) not in d.iteritems())
-        del d
 
         f = open(TESTFN, "w")
         try:
