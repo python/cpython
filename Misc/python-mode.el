@@ -2,9 +2,9 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995 Barry A. Warsaw <bwarsaw@cnri.reston.va.us>
-;;         1992-1994 Tim Peters <tim@ksr.com>
-;; Maintainer:    bwarsaw@cnri.reston.va.us
+;; Author: 1995 Barry A. Warsaw
+;;         1992-1994 Tim Peters
+;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
 ;; Version:       $Revision$
 ;; Last Modified: $Date$
@@ -68,7 +68,7 @@
 ;; patches.
 
 ;; LCD Archive Entry:
-;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
+;; python-mode|Barry A. Warsaw|python-mode@python.org
 ;; |Major mode for editing Python programs
 ;; |$Date$|$Revision$|
 
@@ -1966,7 +1966,7 @@ local bindings to py-newline-and-indent."))
 
 (defconst py-version "$Revision$"
   "`python-mode' version number.")
-(defconst py-help-address "bwarsaw@cnri.reston.va.us"
+(defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
 
 (defun py-version ()
