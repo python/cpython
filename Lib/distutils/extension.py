@@ -73,11 +73,6 @@ class Extension:
         used on all platforms, and not generally necessary for Python
         extensions, which typically export exactly one symbol: "init" +
         extension_name.
-      export_symbol_file : string
-        name of file that lists symbols to export; the format of this
-        file is platform- and compiler-specific.  This is even more
-        gratuitous and unnecessary than 'export_symbols'; I'll be happy
-        when it goes away forever.
     """
 
     def __init__ (self, name, sources,
@@ -91,7 +86,6 @@ class Extension:
                   extra_compile_args=None,
                   extra_link_args=None,
                   export_symbols=None,
-                  export_symbol_file=None,
                  ):
 
         assert type(name) is StringType, "'name' must be a string"
@@ -111,7 +105,6 @@ class Extension:
         self.extra_objects = extra_objects or []
         self.extra_compile_args = extra_compile_args or []
         self.extra_link_args = extra_link_args or []
-        self.export_symbols = export_symbols or []
-        self.export_symbol_file = export_symbol_file
+        self.export_symbols = export_symbols
 
 # class Extension
