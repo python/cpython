@@ -2095,8 +2095,8 @@ def dumpit(buf, wm, pp):
 			
 		elif ch.chtype == chunk_type(COMMENT):
 ##			print 'COMMENT: previous chunk =', pp[i-2]
-			if pp[i-2].chtype == chunk_type(PLAIN):
-				print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
+##			if pp[i-2].chtype == chunk_type(PLAIN):
+##				print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
 			if s(buf, ch.data) and \
 				  regex.match('^[ \t]*$', s(buf, ch.data)) < 0:
 				if i >= 2 and pp[i-2].chtype not in \
