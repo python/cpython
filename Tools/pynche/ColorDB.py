@@ -17,6 +17,7 @@ import sys
 import string
 import re
 from types import *
+import operator
 
 class BadColor(Exception):
     pass
@@ -143,17 +144,21 @@ def get_colordb(file, filetype=X_RGB_TXT):
 
 
 
+_namedict = {}
 def rrggbb_to_triplet(color):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
-    if color[0] <> '#':
-	raise BadColor(color)
+    rgbtuple = _namedict.get(color)
+    if rgbtuple is None:
+	assert color[0] == '#'
+	red = color[1:3]
+	green = color[3:5]
+	blue = color[5:7]
+	rgbtuple = tuple(map(lambda v: string.atoi(v, 16), (red, green, blue)))
+	_namedict[color] = rgbtuple
+    return rgbtuple
 
-    red = color[1:3]
-    green = color[3:5]
-    blue = color[5:7]
-    return tuple(map(lambda v: string.atoi(v, 16), (red, green, blue)))
 
-
+_tripdict = {}
 def triplet_to_rrggbb(rgbtuple):
     """Converts a (red, green, blue) tuple to #rrggbb."""
     def hexify(v):
@@ -161,12 +166,16 @@ def triplet_to_rrggbb(rgbtuple):
 	if len(hexstr) < 2:
 	    hexstr = '0' + hexstr
 	return hexstr
-    return '#%s%s%s' % tuple(map(hexify, rgbtuple))
+    hexname = _tripdict.get(rgbtuple)
+    if hexname is None:
+	hexname = '#%s%s%s' % tuple(map(hexify, rgbtuple))
+	_tripdict[rgbtuple] = hexname
+    return hexname
 
 
-def triplet_to_pmwrgb(rgbtuple, MAX=256.0):
-    r, g, b = rgbtuple
-    return r/MAX, g/MAX, b/MAX
+_maxtuple = (256.0,) * 3
+def triplet_to_pmwrgb(rgbtuple):
+    return map(operator.__div__, rgbtuple, _maxtuple)
 
 
 
