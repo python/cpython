@@ -129,9 +129,15 @@ def main():
 	dict = findmodules.findmodules(scriptfile, modules, path)
 
 	builtins = []
-	for mod in dict.keys():
+	mods = dict.keys()
+	mods.sort()
+	for mod in mods:
 		if dict[mod] == '<builtin>':
 			builtins.append(mod)
+		elif dict[mod] == '<unknown>':
+			sys.stderr.write(
+				'Warning: module %s not found anywhere\n' %
+				mod)
 
 	outfp = open(frozen_c, 'w')
 	try:
