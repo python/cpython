@@ -1287,10 +1287,8 @@ eval_code2(co, globals, locals,
 			}
 			x = PyDict_GetItem(x, w);
 			if (x == NULL) {
-				PyErr_Clear();
 				x = PyDict_GetItem(f->f_globals, w);
 				if (x == NULL) {
-					PyErr_Clear();
 					x = PyDict_GetItem(f->f_builtins, w);
 					if (x == NULL) {
 						PyErr_SetObject(
@@ -1307,7 +1305,6 @@ eval_code2(co, globals, locals,
 			w = GETNAMEV(oparg);
 			x = PyDict_GetItem(f->f_globals, w);
 			if (x == NULL) {
-				PyErr_Clear();
 				x = PyDict_GetItem(f->f_builtins, w);
 				if (x == NULL) {
 					PyErr_SetObject(PyExc_NameError, w);
