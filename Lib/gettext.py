@@ -125,7 +125,7 @@ class NullTranslations:
 class GNUTranslations(NullTranslations):
     # Magic number of .mo files
     LE_MAGIC = 0x950412de
-    BE_MAGIC = struct.unpack('>i', struct.pack('<i', LE_MAGIC))[0]
+    BE_MAGIC = 0xde120495
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
