@@ -734,32 +734,71 @@ Instance methods:
 
 \begin{methoddesc}{astimezone}{tz}
   Return a \class{datetime} object with new \member{tzinfo} member
-  \var{tz}.
-  \var{tz} must be \code{None}, or an instance of a \class{tzinfo} subclass.
-  If \var{tz} is \code{None}, \var{self} is naive,
-  or \code{self.tzinfo}\ is \var{tz},
-  \code{self.astimezone(tz)} is equivalent to
-  \code{self.replace(tzinfo=tz)}:  a new time zone object is attached
-  without any conversion of date or time members.  Else \code{self.tzinfo}
-  and \var{tz} must implement the \method{utcoffset()} and \method{dst()}
-  \class{tzinfo} methods, and the date and time members are adjusted so
-  that the result is local time in time zone \var{tz}, representing the
-  same UTC time as \var{self}:  after \code{astz = dt.astimezone(tz)},
-  \code{astz - astz.utcoffset()} will usually have the same date and time
-  members as \code{dt - dt.utcoffset()}.  The discussion of class
-  \class{tzinfo} explains the cases at Daylight Saving Time
-  transition boundaries where this cannot be achieved (an issue only if
-  \var{tz} models both standard and daylight time).
+  \var{tz}, adjusting the date and time members so the result is the
+  same UTC time as \var{self}, but in \var{tz}'s local time.
+
+  \var{tz} must be an instance of a \class{tzinfo} subclass, and its
+  \method{utcoffset()} and \method{dst()} methods must not return
+  \code{None}.  \var{self} must be aware (\code{\var{self}.tzinfo} must
+  not be \code{None}, and \code{\var{self}.utcoffset()} must not return
+  \code{None}).
+
+  If code{\var{self}.tzinfo} is \var{tz},
+  \code{\var{self}.astimezone(\var{tz})} is equal to \var{self}:  no
+  adjustment of date or time members is performed.
+  Else the result is local time in time zone \var{tz}, representing the
+  same UTC time as \var{self}:  after \code{\var{astz} =
+  \var{dt}.astimezone(\var{tz})},
+  \code{\var{astz} - \var{astz}.utcoffset()} will usually have the same
+  date and time members as \code{\var{dt} - \var{dt}.utcoffset()}.
+  The discussion of class \class{tzinfo} explains the cases at Daylight
+  Saving Time transition boundaries where this cannot be achieved (an issue
+  only if \var{tz} models both standard and daylight time).
+
+  If you merely want to attach a time zone object \var{tz} to a
+  datetime \var{dt} without adjustment of date and time members,
+  use \code{\var{dt}.replace(tzinfo=\var{tz})}.  If
+  you merely want to remove the time zone object from an aware datetime
+  \var{dt} without conversion of date and time members, use
+  \code{\var{dt}.replace(tzinfo=None)}.
+
+  Note that the default \method{tzinfo.fromutc()} method can be overridden
+  in a \class{tzinfo} subclass to effect the result returned by
+  \method{astimezone()}.  Ignoring error cases, \method{astimezone()}
+  acts like:
+
+  \begin{verbatim}
+  def astimezone(self, tz):
+      if self.tzinfo is tz:
+          return self
+      # Convert self to UTC, and attach the new time zone object.
+      utc = (self - self.utcoffset()).replace(tzinfo=tz)
+      # Convert from UTC to tz's local time.
+      return tz.fromutc(utc)
+  \end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}
   If \member{tzinfo} is \code{None}, returns \code{None}, else
-  returns \code{tzinfo.utcoffset(self)}.
+  returns \code{\var{self}.tzinfo.utcoffset(\var{self})}, and
+  raises an exception if the latter doesn't return \code{None}, or
+  a \class{timedelta} object representing a whole number of minutes
+  with magnitude less than one day.
+\end{methoddesc}
+
+\begin{methoddesc}{dst}{}
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  returns \code{\var{self}.tzinfo.dst(\var{self})}, and
+  raises an exception if the latter doesn't return \code{None}, or
+  a \class{timedelta} object representing a whole number of minutes
+  with magnitude less than one day.
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{}
   If \member{tzinfo} is \code{None}, returns \code{None}, else
-  returns \code{tzinfo.tzname(self)}.
+  returns \code{\var{self}.tzinfo.tzname(\var{self})},
+  raises an exception if the latter doesn't return \code{None} or
+  a string object,
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
@@ -989,17 +1028,25 @@ Instance methods:
 
 \begin{methoddesc}{utcoffset}{}
   If \member{tzinfo} is \code{None}, returns \code{None}, else
-  returns \code{tzinfo.utcoffset(self)}.
+  returns \code{\var{self}.tzinfo.utcoffset(None)}, and
+  raises an exception if the latter doesn't return \code{None} or
+  a \class{timedelta} object representing a whole number of minutes
+  with magnitude less than one day.
 \end{methoddesc}
 
 \begin{methoddesc}{dst}{}
   If \member{tzinfo} is \code{None}, returns \code{None}, else
-  returns \code{tzinfo.dst(self)}.
+  returns \code{\var{self}.tzinfo.dst(None)}, and
+  raises an exception if the latter doesn't return \code{None}, or
+  a \class{timedelta} object representing a whole number of minutes
+  with magnitude less than one day.
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{}
   If \member{tzinfo} is \code{None}, returns \code{None}, else
-  returns \code{tzinfo.tzname(self)}.
+  returns \code{\var{self}.tzinfo.tzname(None)}, or
+  raises an exception if the latter doesn't return \code{None} or
+  a string object.
 \end{methoddesc}
 
 
@@ -1066,37 +1113,58 @@ implement all of them.
   example, \method{datetime.timetuple()} calls its \member{tzinfo}
   member's \method{dst()} method to determine how the
   \member{tm_isdst} flag should be set, and
-  \method{datetime.astimezone()} calls \method{dst()} to account for
+  \method{tzinfo.fromutc()} calls \method{dst()} to account for
   DST changes when crossing time zones.
 
   An instance \var{tz} of a \class{tzinfo} subclass that models both
   standard and daylight times must be consistent in this sense:
 
-      \code{tz.utcoffset(dt) - tz.dst(dt)}
+      \code{\var{tz}.utcoffset(\var{dt}) - \var{tz}.dst(\var{dt})}
 
   must return the same result for every \class{datetime} \var{dt}
-  with \code{dt.tzinfo==tz}  For sane \class{tzinfo} subclasses, this
-  expression yields the time zone's "standard offset", which should not
-  depend on the date or the time, but only on geographic location.  The
-  implementation of \method{datetime.astimezone()} relies on this, but
-  cannot detect violations; it's the programmer's responsibility to
-  ensure it.
+  with \code{\var{dt}.tzinfo==\var{tz}}  For sane \class{tzinfo}
+  subclasses, this expression yields the time zone's "standard offset",
+  which should not depend on the date or the time, but only on geographic
+  location.  The implementation of \method{datetime.astimezone()} relies
+  on this, but cannot detect violations; it's the programmer's
+  responsibility to ensure it.  If a \class{tzinfo} subclass cannot
+  guarantee this, it may be able to override the default implementation
+  of \method{tzinfo.fromutc()} to work correctly with \method{astimezone()}
+  regardless.
+
+  Most implementations of \method{dst()} will probably look like one
+  of these two:
+
+\begin{verbatim}
+    return timedelta(0)   # a fixed-offset class:  doesn't account for DST
+
+  or
+
+    # Code to set dston and dstoff to the time zone's DST transition
+    # times based on the input dt.year, and expressed in standard local
+    # time.  Then
+
+    if dston <= dt.replace(tzinfo=None) < dstoff:
+        return timedelta(hours=1)
+    else:
+        return timedelta(0)
+\end{verbatim}
 
   The default implementation of \method{dst()} raises
   \exception{NotImplementedError}.
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{self, dt}
-  Return the timezone name corresponding to the \class{datetime}
-  object represented
-  by \var{dt}, as a string.  Nothing about string names is defined by the
-  \module{datetime} module, and there's no requirement that it mean anything
-  in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
-  "US/Eastern", "America/New York" are all valid replies.  Return
+  Return the time zone name corresponding to the \class{datetime}
+  object \var{dt}, as a string.
+  Nothing about string names is defined by the
+  \module{datetime} module, and there's no requirement that it mean
+  anything in particular.  For example, "GMT", "UTC", "-500", "-5:00",
+  "EDT", "US/Eastern", "America/New York" are all valid replies.  Return
   \code{None} if a string name isn't known.  Note that this is a method
-  rather than a fixed string primarily because some \class{tzinfo} objects
-  will wish to return different names depending on the specific value
-  of \var{dt} passed, especially if the \class{tzinfo} class is
+  rather than a fixed string primarily because some \class{tzinfo}
+  subclasses will wish to return different names depending on the specific
+  value of \var{dt} passed, especially if the \class{tzinfo} class is
   accounting for daylight time.
 
   The default implementation of \method{tzname()} raises
@@ -1113,7 +1181,7 @@ class \class{datetime}.
 When \code{None} is passed, it's up to the class designer to decide the
 best response.  For example, returning \code{None} is appropriate if the
 class wishes to say that time objects don't participate in the
-\class{tzinfo} protocol.  It may be more useful for \code{utcoffset(None)}
+\class{tzinfo} protocols.  It may be more useful for \code{utcoffset(None)}
 to return the standard UTC offset, as there is no other convention for
 discovering the standard offset.
 
@@ -1123,6 +1191,50 @@ When a \class{datetime} object is passed in response to a
 user code calls \class{tzinfo} methods directly.  The intent is that
 the \class{tzinfo} methods interpret \var{dt} as being in local time,
 and not need worry about objects in other timezones.
+
+There is one more \class{tzinfo} method that a subclass may wish to
+override:
+
+\begin{methoddesc}{fromutc}{self, dt}
+  This is called from the default \class{datetime.astimezone()}
+  implementation.  When called from that, \code{\var{dt}.tzinfo} is
+  \var{self}, and \var{dt}'s date and time members are to be viewed as
+  expressing a UTC time.  The purpose of \method{fromutc()} is to
+  adjust the date and time members, returning an equivalent datetime in
+  \var{self}'s local time.
+
+  Most \class{tzinfo} subclasses should be able to inherit the default
+  \method{fromutc()} implementation without problems.  It's strong enough
+  to handle fixed-offset time zones, and time zones accounting for both
+  standard and daylight time, and the latter even if the DST transition
+  times differ in different years.  An example of a time zone the default
+  \method{fromutc()} implementation may not handle correctly in all cases
+  is one where the standard offset (from UTC) depends on the specific date
+  and time passed, which can happen for political reasons.
+  The default implementations of \method{astimezone()} and
+  \method{fromutc()} may not produce the result you want if the result is
+  one of the hours straddling the moment the standard offset changes.
+
+  Skipping code for error cases, the default \method{fromutc()}
+  implementation acts like:
+
+  \begin{verbatim}
+  def fromutc(self, dt):
+      # raise ValueError error if dt.tzinfo is not self
+      dtoff = dt.utcoffset()
+      dtdst = dt.dst()
+      # raise ValueError if dtoff is None or dtdst is None
+      delta = dtoff - dtdst  # this is self's standard offset
+      if delta:
+          dt += delta   # convert to standard local time
+          dtdst = dt.dst()
+          # raise ValueError if dtdst is None
+      if dtdst:
+          return dt + dtdst
+      else:
+          return dt
+  \end{verbatim}
+\end{methoddesc}
 
 Example \class{tzinfo} classes:
 
@@ -1150,7 +1262,7 @@ to 3:00.  A wall time of the form 2:MM doesn't really make sense on that
 day, so \code{astimezone(Eastern)} won't deliver a result with
 \code{hour==2} on the
 day DST begins.  In order for \method{astimezone()} to make this
-guarantee, the \class{tzinfo} \method{dst()} method must consider times
+guarantee, the \method{rzinfo.dst()} method must consider times
 in the "missing hour" (2:MM for Eastern) to be in daylight time.
 
 When DST ends (the "end" line), there's a potentially worse problem:
@@ -1162,8 +1274,8 @@ Local times of the form 1:MM are ambiguous.  \method{astimezone()} mimics
 the local clock's behavior by mapping two adjacent UTC hours into the
 same local hour then.  In the Eastern example, UTC times of the form
 5:MM and 6:MM both map to 1:MM when converted to Eastern.  In order for
-\method{astimezone()} to make this guarantee, the \class{tzinfo}
-\method{dst()} method must consider times in the "repeated hour" to be in
+\method{astimezone()} to make this guarantee, the \method{tzinfo.dst()}
+method must consider times in the "repeated hour" to be in
 standard time.  This is easily arranged, as in the example, by expressing
 DST switch times in the time zone's standard local time.
 
@@ -1235,9 +1347,7 @@ Struct typedefs:
 
     PyDateTime_Date
     PyDateTime_DateTime
-    PyDateTime_DateTimeTZ
     PyDateTime_Time
-    PyDateTime_TimeTZ
     PyDateTime_Delta
     PyDateTime_TZInfo
 
@@ -1249,14 +1359,8 @@ Type-check macros:
     PyDateTime_Check(op)
     PyDateTime_CheckExact(op)
 
-    PyDateTimeTZ_Check(op)
-    PyDateTimeTZ_CheckExact(op)
-
     PyTime_Check(op)
     PyTime_CheckExact(op)
-
-    PyTimeTZ_Check(op)
-    PyTimeTZ_CheckExact(op)
 
     PyDelta_Check(op)
     PyDelta_CheckExact(op)
@@ -1269,18 +1373,18 @@ Accessor macros:
 All objects are immutable, so accessors are read-only.  All macros
 return ints:
 
-    For \class{date}, \class{datetime}, and \class{datetimetz} instances:
+    For \class{date} and \class{datetime} instances:
         PyDateTime_GET_YEAR(o)
         PyDateTime_GET_MONTH(o)
         PyDateTime_GET_DAY(o)
 
-    For \class{datetime} and \class{datetimetz} instances:
+    For \class{datetime} instances:
         PyDateTime_DATE_GET_HOUR(o)
         PyDateTime_DATE_GET_MINUTE(o)
         PyDateTime_DATE_GET_SECOND(o)
         PyDateTime_DATE_GET_MICROSECOND(o)
 
-    For \class{time} and \class{timetz} instances:
+    For \class{time} instances:
         PyDateTime_TIME_GET_HOUR(o)
         PyDateTime_TIME_GET_MINUTE(o)
         PyDateTime_TIME_GET_SECOND(o)
