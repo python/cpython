@@ -1218,6 +1218,12 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 
 	/* Look in tp_dict of types in MRO */
 	mro = type->tp_mro;
+	if (mro == NULL) {
+		if (PyType_Ready(type) < 0)
+			return NULL;
+		mro = type->tp_mro;
+		assert(mro != NULL);
+	}
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
 	for (i = 0; i < n; i++) {
