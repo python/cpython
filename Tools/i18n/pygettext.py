@@ -369,7 +369,7 @@ def main():
         opts, args = getopt.getopt(
             sys.argv[1:],
             'ad:DEhk:Kno:p:S:Vvw:x:',
-            ['extract-all', 'default-domain', 'escape', 'help',
+            ['extract-all', 'default-domain=', 'escape', 'help',
              'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
