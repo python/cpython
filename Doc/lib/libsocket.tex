@@ -107,6 +107,8 @@ The accompanying value is a pair \code{(\var{error}, \var{string})}
 representing an error returned by a library call.
 \var{string} represents the description of \var{error}, as returned
 by the \cfunction{gai_strerror()} C function.
+The \var{error} value will match one of the \constant{EAI_*} constants
+defined in this module.
 \end{excdesc}
 
 \begin{excdesc}{timeout}
