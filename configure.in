@@ -1081,7 +1081,7 @@ then
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
-			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/$(PYTHON)'
+			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Linux*|GNU*) LDSHARED='$(CC) -shared';;
 	dgux*) LDSHARED="ld -G";;
