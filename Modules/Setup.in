@@ -423,7 +423,7 @@ cPickle cPickle.c
 # do this manually while we try convince the author to add it.  To do so,
 # cd to EXPAT_DIR, run "make" if you have not done so, then run:
 #
-#    ar cr xmltok/*.o xmlparse/*.o
+#    ar cr libexpat.a xmltok/*.o xmlparse/*.o
 #
 #EXPAT_DIR=/usr/local/src/expat
 #pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
