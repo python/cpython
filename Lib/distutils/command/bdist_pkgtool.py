@@ -6,7 +6,7 @@ Author: Mark W. Alexander <slash@dotnet.net>
 Implements the Distutils 'bdist_pkgtool' command (create Solaris pkgtool
 distributions)."""
 
-import os, string, sys, pwd, grp
+import os, string, sys
 from types import *
 from distutils.util import get_platform
 from distutils.file_util import write_file
@@ -281,6 +281,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
 
 
     def _make_prototype(self):
+        import pwd, grp
         proto_file = ["i pkginfo"]
         if self.request:
             proto_file.extend(['i request'])
