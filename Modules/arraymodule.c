@@ -1772,7 +1772,7 @@ static PyObject *
 array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	char c;
-	PyObject *initial = NULL;
+	PyObject *initial = NULL, *it = NULL;
 	struct arraydescr *descr;
 
 	if (kwds != NULL) {
@@ -1793,9 +1793,15 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!(initial == NULL || PyList_Check(initial)
 	      || PyString_Check(initial) || PyTuple_Check(initial)
 	      || (c == 'u' && PyUnicode_Check(initial)))) {
-		PyErr_SetString(PyExc_TypeError,
-		    "array initializer must be list or string");
-		return NULL;
+		it = PyObject_GetIter(initial);
+		if (it == NULL)
+			return NULL;
+		/* We set initial to NULL so that the subsequent code
+		   will create an empty array of the appropriate type
+		   and afterwards we can use array_iter_extend to populate
+		   the array.
+		*/
+		initial = NULL;
 	}
 	for (descr = descriptors; descr->typecode != '\0'; descr++) {
 		if (descr->typecode == c) {
@@ -1859,6 +1865,14 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				}
 #endif
 			}
+			if (it != NULL) {
+				if (array_iter_extend((arrayobject *)a, it) == -1) {
+					Py_DECREF(it);
+					Py_DECREF(a);
+					return NULL;
+				}
+				Py_DECREF(it);
+			}
 			return a;
 		}
 	}
@@ -1899,8 +1913,8 @@ PyDoc_STRVAR(arraytype_doc,
 "array(typecode [, initializer]) -> array\n\
 \n\
 Return a new array whose items are restricted by typecode, and\n\
-initialized from the optional initializer value, which must be a list\n\
-or a string.\n\
+initialized from the optional initializer value, which must be a list,\n\
+string. or iterable over elements of the appropriate type.\n\
 \n\
 Arrays represent basic values and behave very much like lists, except\n\
 the type of objects stored in them is constrained.\n\
