@@ -67,6 +67,7 @@ printobject(op, fp, flags)
 	FILE *fp;
 	int flags;
 {
+	int ret = 0;
 	if (intrcheck()) {
 		err_set(KeyboardInterrupt);
 		return -1;
@@ -81,9 +82,16 @@ printobject(op, fp, flags)
 			fprintf(fp, "<%s object at %lx>",
 				op->ob_type->tp_name, (long)op);
 		else
-			return (*op->ob_type->tp_print)(op, fp, flags);
+			ret = (*op->ob_type->tp_print)(op, fp, flags);
 	}
-	return 0;
+	if (ret == 0) {
+		if (ferror(fp)) {
+			err_errno(RuntimeError);
+			clearerr(fp);
+			ret = -1;
+		}
+	}
+	return ret;
 }
 
 object *
