@@ -596,7 +596,7 @@ get_frozen_object(name)
 		err_setstr(ImportError, "No such frozen object");
 		return NULL;
 	}
-	return rds_object(p->code, p->size);
+	return rds_object((char *)p->code, p->size);
 }
 
 /* Initialize a frozen module.
@@ -616,7 +616,7 @@ init_frozen(name)
 		return 0;
 	if (verbose)
 		fprintf(stderr, "import %s # frozen\n", name);
-	co = rds_object(p->code, p->size);
+	co = rds_object((char *)p->code, p->size);
 	if (co == NULL)
 		return -1;
 	if (!is_codeobject(co)) {
