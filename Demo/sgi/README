@@ -1,0 +1,22 @@
+Demonstrations of Python that use various features of the Silicon
+Graphics IRIS machines.
+
+al		Demonstrations of the audio capabilities of the
+		Indigo. Require the built-in module 'al'.  One program
+		also needs the build-in module 'fl' (the FORMS
+		library by Mark Overmars.)
+
+cd		Demonstrations of the CD-ROM player's audio interface,
+		built-in module 'cd'.
+
+flp		Demonstrations of using the 'flp' standard module,
+		which enables you to quickly create forms using the
+		'fl' built-in module (available if you use the FORMS
+		library by Mark Overmars).
+
+gl		Demonstrations of the Graphics Library (GL).
+		Require the built-in module 'gl'.
+
+sv		Demonstrations of the Indigo Video module.
+		Requires the built-in module 'sv'.  See also the
+		following directory.
