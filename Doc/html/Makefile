@@ -54,21 +54,12 @@ tut: tut/tut.html
 
 $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
+# The index.html target is at the end since it screws up font-lock.
+
 modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 	$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
 		--address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
-
-# This is really ugly, but we're not dependent on $(RELEASE), which isn't
-# defined here.  It also maintains the proper dependency on boilerplate.tex.
-
-BOILERPLATE=$(TOPDIR)/texinputs/boilerplate.tex
-index.html: index.html.in $(BOILERPLATE)
-	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'` ; \
-		sed "s/@RELEASE@/$$REL/g" $< >TEMP
-	DATE=`grep '\\date{' $(BOILERPLATE) | sed 's/.*\\date{\(.*\)}.*$$/\1/'` ; \
-		sed "s/@DATE@/$$DATE/g" TEMP >$@
-	rm -f TEMP
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
 	$(MKHTML) api $(L2HARGS)
@@ -93,7 +84,7 @@ ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
 	$(MKHTML) ref $(L2HARGS)
 
 tut/tut.html:  $(PAPERDIR)/tut.aux
-	$(MKHTML) tut $(L2HARGS)
+	$(MKHTML) tut $(L2HARGS) -split 4
 
 
 include ../Makefile.deps
@@ -127,4 +118,19 @@ clean:
 	rm -rf @webchecker.pickle
 
 clobber: clean
-	rm -rf api/ doc/ ext/ lib/ mac/ ref/ tut/
+	rm -rf index.html api/ doc/ ext/ lib/ mac/ ref/ tut/
+
+
+# This is really ugly, but we're not dependent on $(RELEASE), which isn't
+# defined here.  It also maintains the proper dependency on boilerplate.tex.
+
+# It's at the end of the file since it wedges font-lock in XEmacs.
+
+BOILERPLATE=$(TOPDIR)/texinputs/boilerplate.tex
+index.html: index.html.in $(BOILERPLATE)
+	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'` ; \
+		sed "s/@RELEASE@/$$REL/g" $< >TEMP
+	DATE=`grep '\\date{' $(BOILERPLATE) | sed 's/.*\\date{\(.*\)}.*$$/\1/'` ; \
+		sed "s/@DATE@/$$DATE/g" TEMP >$@
+	rm -f TEMP
+
