@@ -32,7 +32,6 @@ Limitations:
 - only AF_INET and AF_UNIX address families are supported
 - no asynchronous I/O (but read polling: avail)
 - no read/write operations (use send/recv or makefile instead)
-- no flags on recvfrom operations
 - setsockopt() and getsockopt() only support integer options
 
 Interface:
@@ -62,7 +61,7 @@ Socket methods:
 - s.listen(n) --> None
 - s.makefile(mode) --> file object
 - s.recv(nbytes [,flags]) --> string
-- s.recvfrom(nbytes) --> string, sockaddr
+- s.recvfrom(nbytes [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> None
 - s.sendto(string, [flags,] sockaddr) --> None
 - s.shutdown(how) --> None
@@ -714,7 +713,11 @@ sock_recvfrom(s, args)
 		if (!getargs(args, "(ii)", &len, &flags))
 		    return NULL;
 	}
+	if (!getsockaddrlen(s, &addrlen))
+		return NULL;
 	buf = newsizedstringobject((char *) 0, len);
+	if (buf == NULL)
+		return NULL;
 	BGN_SAVE
 	n = recvfrom(s->sock_fd, getstringvalue(buf), len, flags,
 		     addrbuf, &addrlen);
