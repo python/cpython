@@ -379,7 +379,9 @@ static struct constant {
 	{"IXON", IXON},
 	{"IXANY", IXANY},
 	{"IXOFF", IXOFF},
+#ifdef IMAXBEL
 	{"IMAXBEL", IMAXBEL},
+#endif
 
 	/* struct termios.c_oflag constants */
 	{"OPOST", OPOST},
@@ -505,12 +507,18 @@ static struct constant {
 	{"ECHOE", ECHOE},
 	{"ECHOK", ECHOK},
 	{"ECHONL", ECHONL},
+#ifdef ECHOCTL
 	{"ECHOCTL", ECHOCTL},
+#endif
 #ifdef ECHOPRT
 	{"ECHOPRT", ECHOPRT},
 #endif
+#ifdef ECHOKE
 	{"ECHOKE", ECHOKE},
+#endif
+#endif FLUSHO
 	{"FLUSHO", FLUSHO},
+#endif
 	{"NOFLSH", NOFLSH},
 	{"TOSTOP", TOSTOP},
 #ifdef PENDIN
@@ -545,7 +553,9 @@ static struct constant {
 #ifdef VWERASE
 	{"VWERASE", VWERASE},
 #endif
+#ifdef VLNEXT
 	{"VLNEXT", VLNEXT},
+#endif
 	{"VEOL2", VEOL2},
 
 
