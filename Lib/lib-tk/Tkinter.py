@@ -119,6 +119,7 @@ def getdouble(s):
 def getboolean(s):
 	return _default_root.tk.getboolean(s)
 
+# Methods defined on both toplevel and interior widgets
 class Misc:
 	_tclCommands = None
 	def destroy(self):
@@ -568,7 +569,7 @@ class Misc:
 		root = self._root()
 		root.report_callback_exception(exc, val, tb)
 	# These used to be defined in Widget:
-	def config(self, cnf=None, **kw):
+	def configure(self, cnf=None, **kw):
 		# XXX ought to generalize this so tag_config etc. can use it
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
@@ -586,17 +587,117 @@ class Misc:
 			return (x[0][1:],) + x[1:]
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
-	configure = config
+	config = configure
 	def cget(self, key):
 		return self.tk.call(self._w, 'cget', '-' + key)
 	__getitem__ = cget
 	def __setitem__(self, key, value):
-		Widget.config(self, {key: value})
+		self.configure({key: value})
 	def keys(self):
 		return map(lambda x: x[0][1:],
 			   self.tk.split(self.tk.call(self._w, 'configure')))
 	def __str__(self):
 		return self._w
+	# Pack methods that apply to the master
+	_noarg_ = ['_noarg_']
+	def pack_propagate(self, flag=_noarg_):
+		if flag is Misc._noarg_:
+			return self._getboolean(self.tk.call(
+				'pack', 'propagate', self._w))
+		else:
+			self.tk.call('pack', 'propagate', self._w, flag)
+	propagate = pack_propagate
+	def pack_slaves(self):
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   self.tk.call('pack', 'slaves', self._w)))
+	slaves = pack_slaves
+	# Place method that applies to the master
+	def place_slaves(self):
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   self.tk.call(
+					   'place', 'slaves', self._w)))
+	# Grid methods that apply to the master
+	def grid_bbox(self, column, row):
+		return self._getints(
+			self.tk.call(
+				'grid', 'bbox', self._w, column, row)) or None
+	bbox = grid_bbox
+	def grid_columnconfigure(self, index, cnf={}, **kw):
+		if type(cnf) is not DictionaryType and not kw:
+			options = self._options({cnf: None})
+		else:
+			options = self._options(cnf, kw)
+		if not options:
+			res = self.tk.call('grid',
+					   'columnconfigure', self._w, index)
+			words = self.tk.splitlist(res)
+			dict = {}
+			for i in range(0, len(words), 2):
+				key = words[i][1:]
+				value = words[i+1]
+				if not value:
+					value = None
+				elif '.' in value:
+					value = self.tk.getdouble(value)
+				else:
+					value = self.tk.getint(value)
+				dict[key] = value
+			return dict
+		res = apply(self.tk.call, 
+			      ('grid', 'columnconfigure', self._w, index) 
+			      + options)
+		if options == ('-minsize', None):
+			return self.tk.getint(res) or None
+		elif options == ('-weight', None):
+			return self.tk.getdouble(res) or None
+	columnconfigure = grid_columnconfigure
+	def grid_propagate(self, flag=_noarg_):
+		if flag is Misc._noarg_:
+			return self._getboolean(self.tk.call(
+				'grid', 'propagate', self._w))
+		else:
+			self.tk.call('grid', 'propagate', self._w, flag)
+	def grid_rowconfigure(self, index, cnf={}, **kw):
+		if type(cnf) is not DictionaryType and not kw:
+			options = self._options({cnf: None})
+		else:
+			options = self._options(cnf, kw)
+		if not options:
+			res = self.tk.call('grid',
+					   'rowconfigure', self._w, index)
+			words = self.tk.splitlist(res)
+			dict = {}
+			for i in range(0, len(words), 2):
+				key = words[i][1:]
+				value = words[i+1]
+				if not value:
+					value = None
+				elif '.' in value:
+					value = self.tk.getdouble(value)
+				else:
+					value = self.tk.getint(value)
+				dict[key] = value
+			return dict
+		res = apply(self.tk.call, 
+			      ('grid', 'rowconfigure', self._w, index) 
+			      + options)
+		if len(options) == 2 and options[-1] is None:
+			if not res: return None
+			# In Tk 7.5, -width can be a float
+			if '.' in res: return self.tk.getdouble(res)
+			return self.tk.getint(res)
+	rowconfigure = grid_rowconfigure
+	def grid_size(self):
+		return self._getints(
+			self.tk.call('grid', 'size', self._w)) or None
+	size = grid_size
+	def grid_slaves(self, *args):
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   apply(self.tk.call,
+					 ('grid', 'slaves', self._w) + args)))
 
 class CallWrapper:
 	def __init__(self, func, subst, widget):
@@ -767,19 +868,30 @@ class Tk(Misc, Wm):
 		print "Exception in Tkinter callback"
 		traceback.print_exception(exc, val, tb)
 
+# Ideally, the classes Pack, Place and Grid disappear, the
+# pack/place/grid methods are defined on the Widget class, and
+# everybody uses w.pack_whatever(...) instead of Pack.whatever(w,
+# ...), with pack(), place() and grid() being short for
+# pack_configure(), place_configure() and grid_columnconfigure(), and
+# forget() being short for pack_forget().  As a practical matter, I'm
+# afraid that there is too much code out there that may be using the
+# Pack, Place or Grid class, so I leave them intact -- but only as
+# backwards compatibility features.  Also note that those methods that
+# take a master as argument (e.g. pack_propagate) have been moved to
+# the Misc class (which now incorporates all methods common between
+# toplevel and interior widgets).  Again, for compatibility, these are
+# copied into the Pack, Place or Grid class.
+
 class Pack:
-	def config(self, cnf={}, **kw):
+	def pack_configure(self, cnf={}, **kw):
 		apply(self.tk.call, 
 		      ('pack', 'configure', self._w) 
 		      + self._options(cnf, kw))
-	configure = config
-	pack = config
-	def __setitem__(self, key, value):
-		Pack.config({key: value})
-	def forget(self):
+	pack = configure = config = pack_configure
+	def pack_forget(self):
 		self.tk.call('pack', 'forget', self._w)
-	pack_forget = forget
-	def info(self):
+	forget = pack_forget
+	def pack_info(self):
 		words = self.tk.splitlist(
 			self.tk.call('pack', 'info', self._w))
 		dict = {}
@@ -790,23 +902,12 @@ class Pack:
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
-	pack_info = info
-	_noarg_ = ['_noarg_']
-	def propagate(self, flag=_noarg_):
-		if flag is Pack._noarg_:
-			return self._getboolean(self.tk.call(
-				'pack', 'propagate', self._w))
-		else:
-			self.tk.call('pack', 'propagate', self._w, flag)
-	pack_propagate = propagate
-	def slaves(self):
-		return map(self._nametowidget,
-			   self.tk.splitlist(
-				   self.tk.call('pack', 'slaves', self._w)))
-	pack_slaves = slaves
+	info = pack_info
+	propagate = pack_propagate = Misc.pack_propagate
+	slaves = pack_slaves = Misc.pack_slaves
 
 class Place:
-	def config(self, cnf={}, **kw):
+	def place_configure(self, cnf={}, **kw):
 		for k in ['in_']:
 			if kw.has_key(k):
 				kw[k[:-1]] = kw[k]
@@ -814,14 +915,11 @@ class Place:
 		apply(self.tk.call, 
 		      ('place', 'configure', self._w) 
 		      + self._options(cnf, kw))
-	configure = config
-	place = config
-	def __setitem__(self, key, value):
-		Place.config({key: value})
-	def forget(self):
+	place = configure = config = place_configure
+	def place_forget(self):
 		self.tk.call('place', 'forget', self._w)
-	place_forget = forget
-	def info(self):
+	forget = place_forget
+	def place_info(self):
 		words = self.tk.splitlist(
 			self.tk.call('place', 'info', self._w))
 		dict = {}
@@ -832,44 +930,22 @@ class Place:
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
-	place_info = info
-	def slaves(self):
-		return map(self._nametowidget,
-			   self.tk.splitlist(
-				   self.tk.call(
-					   'place', 'slaves', self._w)))
-	place_slaves = slaves
+	info = place_info
+	slaves = place_slaves = Misc.place_slaves
 
 class Grid:
 	# Thanks to Masazumi Yoshikawa (yosikawa@isi.edu)
-	def config(self, cnf={}, **kw):
+	def grid_configure(self, cnf={}, **kw):
 		apply(self.tk.call, 
 		      ('grid', 'configure', self._w) 
 		      + self._options(cnf, kw))
-	grid = config
-	def __setitem__(self, key, value):
-		Grid.config({key: value})
-	def bbox(self, column, row):
-		return self._getints(
-			self.tk.call(
-				'grid', 'bbox', self._w, column, row)) or None
-	grid_bbox = bbox
-	def columnconfigure(self, index, cnf={}, **kw):
-		if type(cnf) is not DictionaryType and not kw:
-			options = self._options({cnf: None})
-		else:
-			options = self._options(cnf, kw)
-		res = apply(self.tk.call, 
-			      ('grid', 'columnconfigure', self._w, index) 
-			      + options)
-		if options == ('-minsize', None):
-			return self.tk.getint(res) or None
-		elif options == ('-weight', None):
-			return self.tk.getdouble(res) or None
-	def forget(self):
+	grid = configure = config = grid_configure
+	bbox = grid_bbox = Misc.grid_bbox
+	columnconfigure = grid_columnconfigure = Misc.grid_columnconfigure
+	def grid_forget(self):
 		self.tk.call('grid', 'forget', self._w)
-	grid_forget = forget
-	def info(self):
+	forget = grid_forget
+	def grid_info(self):
 		words = self.tk.splitlist(
 			self.tk.call('grid', 'info', self._w))
 		dict = {}
@@ -880,42 +956,18 @@ class Grid:
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
-	grid_info = info
-	def location(self, x, y):
+	info = grid_info
+	def grid_location(self, x, y):
 		return self._getints(
 			self.tk.call(
 				'grid', 'location', self._w, x, y)) or None
-	_noarg_ = ['_noarg_']
-	def propagate(self, flag=_noarg_):
-		if flag is Grid._noarg_:
-			return self._getboolean(self.tk.call(
-				'grid', 'propagate', self._w))
-		else:
-			self.tk.call('grid', 'propagate', self._w, flag)
-	grid_propagate = propagate
-	def rowconfigure(self, index, cnf={}, **kw):
-		if type(cnf) is not DictionaryType and not kw:
-			options = self._options({cnf: None})
-		else:
-			options = self._options(cnf, kw)
-		res = apply(self.tk.call, 
-			      ('grid', 'rowconfigure', self._w, index) 
-			      + options)
-		if options == ('-minsize', None):
-			return self.tk.getint(res) or None
-		elif options == ('-weight', None):
-			return self.tk.getdouble(res) or None
-	def size(self):
-		return self._getints(
-			self.tk.call('grid', 'size', self._w)) or None
-	def slaves(self, *args):
-		return map(self._nametowidget,
-			   self.tk.splitlist(
-				   apply(self.tk.call,
-					 ('grid', 'slaves', self._w) + args)))
-	grid_slaves = slaves
+	location = grid_location
+	propagate = grid_propagate = Misc.grid_propagate
+	rowconfigure = grid_rowconfigure = Misc.grid_rowconfigure
+	size = grid_size = Misc.grid_size
+	slaves = grid_slaves = Misc.grid_slaves
 
-class Widget(Misc, Pack, Place, Grid):
+class BaseWidget(Misc):
 	def _setup(self, master, cnf):
 		global _default_root
 		if not master:
@@ -945,7 +997,7 @@ class Widget(Misc, Pack, Place, Grid):
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
-		Widget._setup(self, master, cnf)
+		BaseWidget._setup(self, master, cnf)
 		classes = []
 		for k in cnf.keys():
 			if type(k) is ClassType:
@@ -954,7 +1006,7 @@ class Widget(Misc, Pack, Place, Grid):
 		apply(self.tk.call,
 		      (widgetName, self._w) + extra + self._options(cnf))
 		for k, v in classes:
-			k.config(self, v)
+			k.configure(self, v)
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		if self.master.children.has_key(self._name):
@@ -964,7 +1016,10 @@ class Widget(Misc, Pack, Place, Grid):
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args)
 
-class Toplevel(Widget, Wm):
+class Widget(BaseWidget, Pack, Place, Grid):
+	pass
+
+class Toplevel(BaseWidget, Wm):
 	def __init__(self, master=None, cnf={}, **kw):
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
@@ -979,7 +1034,7 @@ class Toplevel(Widget, Wm):
 				else: opt = '-'+wmkey
 				extra = extra + (opt, val)
 				del cnf[wmkey]
-		Widget.__init__(self, master, 'toplevel', cnf, {}, extra)
+		BaseWidget.__init__(self, master, 'toplevel', cnf, {}, extra)
 		root = self._root()
 		self.iconname(root.iconname())
 		self.title(root.title())
@@ -1119,7 +1174,7 @@ class Canvas(Widget):
 		self._do('insert', args)
 	def itemcget(self, tagOrId, option):
 		return self._do('itemcget', (tagOrId, '-'+option))
-	def itemconfig(self, tagOrId, cnf=None, **kw):
+	def itemconfigure(self, tagOrId, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
 			for x in self.tk.split(
@@ -1132,7 +1187,7 @@ class Canvas(Widget):
 			return (x[0][1:],) + x[1:]
 		self._do('itemconfigure', (tagOrId,)
 			 + self._options(cnf, kw))
-	itemconfigure = itemconfig
+	itemconfig = itemconfigure
 	def lower(self, *args):
 		self._do('lower', args)
 	def move(self, *args):
@@ -1360,7 +1415,7 @@ class Menu(Widget):
 		self.insert(index, 'separator', cnf or kw)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
-	def entryconfig(self, index, cnf=None, **kw):
+	def entryconfigure(self, index, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
 			for x in self.tk.split(apply(self.tk.call,
@@ -1373,7 +1428,7 @@ class Menu(Widget):
 			return (x[0][1:],) + x[1:]
 		apply(self.tk.call, (self._w, 'entryconfigure', index)
 		      + self._options(cnf, kw))
-	entryconfigure = entryconfig
+	entryconfig = entryconfigure
 	def index(self, index):
 		i = self.tk.call(self._w, 'index', index)
 		if i == 'none': return None
@@ -1512,7 +1567,7 @@ class Text(Widget):
 		if option[-1:] == '_':
 			option = option[:-1]
 		return self.tk.call(self._w, 'tag', 'cget', tagName, option)
-	def tag_config(self, tagName, cnf={}, **kw):
+	def tag_configure(self, tagName, cnf={}, **kw):
 		if type(cnf) == StringType:
 			x = self.tk.split(self.tk.call(
 				self._w, 'tag', 'configure', tagName, '-'+cnf))
@@ -1520,7 +1575,7 @@ class Text(Widget):
 		apply(self.tk.call, 
 		      (self._w, 'tag', 'configure', tagName)
 		      + self._options(cnf, kw))
-	tag_configure = tag_config
+	tag_config = tag_configure
 	def tag_delete(self, *tagNames):
 		apply(self.tk.call, (self._w, 'tag', 'delete') + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
@@ -1542,7 +1597,7 @@ class Text(Widget):
 			self._w, 'tag', 'remove', tagName, index1, index2)
 	def window_cget(self, index, option):
 		return self.tk.call(self._w, 'window', 'cget', index, option)
-	def window_config(self, index, cnf={}, **kw):
+	def window_configure(self, index, cnf={}, **kw):
 		if type(cnf) == StringType:
 			x = self.tk.split(self.tk.call(
 				self._w, 'window', 'configure',
@@ -1551,7 +1606,7 @@ class Text(Widget):
 		apply(self.tk.call, 
 		      (self._w, 'window', 'configure', index)
 		      + self._options(cnf, kw))
-	window_configure = window_config
+	window_config = window_configure
 	def window_create(self, index, cnf={}, **kw):
 		apply(self.tk.call, 
 		      (self._w, 'window', 'create', index)
@@ -1629,7 +1684,7 @@ class Image:
 		self.tk.call(self.name, 'configure', '-'+key, value)
 	def __getitem__(self, key):
 		return self.tk.call(self.name, 'configure', '-'+key)
-	def config(self, **kw):
+	def configure(self, **kw):
 		res = ()
 		for k, v in _cnfmerge(kw).items():
 			if v is not None:
@@ -1638,7 +1693,7 @@ class Image:
 					v = self._register(v)
 				res = res + ('-'+k, v)
 		apply(self.tk.call, (self.name, 'config') + res)
-	configure = config
+	config = configure
 	def height(self):
 		return self.tk.getint(
 			self.tk.call('image', 'height', self.name))
@@ -1724,7 +1779,7 @@ def _test():
 	label = Label(root, text="Proof-of-existence test for Tk")
 	label.pack()
 	test = Button(root, text="Click me!",
-		      command=lambda root=root: root.test.config(
+		      command=lambda root=root: root.test.configure(
 			      text="[%s]" % root.test['text']))
 	test.pack()
 	root.test = test
