@@ -29,12 +29,13 @@ APIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	api/refcounting.tex \
 	api/utilities.tex \
 	api/veryhigh.tex \
+	texinputs/typestruct.h \
 	texinputs/reportingbugs.tex
 
 # These files are generated from those listed above, and are used to
 # generate the typeset versions of the manuals.  The list is defined
 # here to make it easier to ensure parallelism.
-ANNOAPIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
+ANNOAPIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) api/refcounts.dat \
 	paper-$(PAPER)/api.tex \
 	paper-$(PAPER)/abstract.tex \
 	paper-$(PAPER)/concrete.tex \
@@ -59,6 +60,10 @@ EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ext/building.tex \
 	ext/windows.tex \
 	ext/embedding.tex \
+	ext/cycle-gc.c \
+	ext/noddy.c \
+	ext/run-func.c \
+	texinputs/typestruct.h \
 	texinputs/reportingbugs.tex
 
 TUTFILES= tut/tut.tex $(MANSTYLES) $(COMMONTEX)
