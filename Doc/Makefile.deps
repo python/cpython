@@ -56,7 +56,7 @@ DOCFILES= $(HOWTOSTYLES) \
 EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ext/extending.tex \
 	ext/newtypes.tex \
-	ext/unix.tex \
+	ext/building.tex \
 	ext/windows.tex \
 	ext/embedding.tex \
 	texinputs/reportingbugs.tex
