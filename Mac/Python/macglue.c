@@ -115,7 +115,12 @@ static long yield_bg = 12;
 static long lastyield;
 static int in_foreground;
 
-int PyMac_DoYieldEnabled = 1;	/* Don't do eventloop when false */
+/* 
+** When > 0, do full scanning for events (program is not event aware)
+** when == 0, only scan for Command-period
+** when < 0, don't do any event scanning 
+*/
+int PyMac_DoYieldEnabled = 1;
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */
 unsigned char *
@@ -238,6 +243,8 @@ scan_event_queue(flush)
 int
 PyOS_InterruptOccurred()
 {
+	if (PyMac_DoYieldEnabled < 0)
+		return 0;
 #ifdef THINK_C
 	scan_event_queue(1);
 #endif
@@ -882,3 +889,4 @@ PyMac_InitApplication()
 	}
 	Py_Main(argc, argv);
 }
+
