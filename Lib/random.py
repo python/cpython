@@ -58,9 +58,9 @@ SG_MAGICCONST = 1.0 + _log(4.5)
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
 # the Mersenne Twister core generator.
 
-from _random import Random as CoreGenerator
+import _random
 
-class Random(CoreGenerator):
+class Random(_random.Random):
     """Random number generator base class used by bound module functions.
 
     Used to instantiate instances of Random to get generators that don't
@@ -94,19 +94,19 @@ class Random(CoreGenerator):
         If a is not None or an int or long, hash(a) is used instead.
         """
 
-        CoreGenerator.seed(self, a)
+        super(Random, self).seed(a)
         self.gauss_next = None
 
     def getstate(self):
         """Return internal state; can be passed to setstate() later."""
-        return self.VERSION, CoreGenerator.getstate(self), self.gauss_next
+        return self.VERSION, super(Random, self).getstate(), self.gauss_next
 
     def setstate(self, state):
         """Restore internal state from object returned by getstate()."""
         version = state[0]
         if version == 2:
             version, internalstate, self.gauss_next = state
-            CoreGenerator.setstate(self, internalstate)
+            super(Random, self).setstate(internalstate)
         else:
             raise ValueError("state with version %s passed to "
                              "Random.setstate() of version %s" %
