@@ -1209,10 +1209,9 @@ static int
 instancemethod_compare(a, b)
 	instancemethodobject *a, *b;
 {
-	int cmp = cmpobject(a->im_self, b->im_self);
-	if (cmp == 0)
-		cmp = cmpobject(a->im_func, b->im_func);
-	return cmp;
+	if (a->im_self != b->im_self)
+		return (a->im_self < b->im_self) ? -1 : 1;
+	return cmpobject(a->im_func, b->im_func);
 }
 
 static object *
