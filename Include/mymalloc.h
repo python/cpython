@@ -93,7 +93,4 @@ extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 }
 #endif
 
-#ifndef Py_USE_NEW_NAMES
-#include "rename2.h"
-#endif
 #endif /* !Py_MYMALLOC_H */

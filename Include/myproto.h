@@ -49,8 +49,4 @@ PERFORMANCE OF THIS SOFTWARE.
 }
 #endif
 
-#ifndef Py_USE_NEW_NAMES
-#include "rename2.h"
-#endif
-
 #endif /* !Py_PROTO_H */
