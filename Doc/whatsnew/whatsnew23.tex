@@ -17,8 +17,6 @@
 %
 % Bug #580462: changes to GC API
 %
-% Pure Python strptime implementation by Brett Cannon.  See SF patch 474274.
-%
 
 %\section{Introduction \label{intro}}
 
@@ -603,88 +601,6 @@ In 2.3, you get this:
 
 
 %======================================================================
-\section{Specialized Object Allocator (pymalloc)\label{section-pymalloc}}
-
-An experimental feature added to Python 2.1 was a specialized object
-allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
-was intended to be faster than the system \cfunction{malloc()} and have
-less memory overhead for typical allocation patterns of Python
-programs.  The allocator uses C's \cfunction{malloc()} function to get
-large pools of memory, and then fulfills smaller memory requests from
-these pools.
-
-In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
-enabled by default; you had to explicitly turn it on by providing the
-\longprogramopt{with-pymalloc} option to the \program{configure}
-script.  In 2.3, pymalloc has had further enhancements and is now
-enabled by default; you'll have to supply
-\longprogramopt{without-pymalloc} to disable it.
-
-This change is transparent to code written in Python; however,
-pymalloc may expose bugs in C extensions.  Authors of C extension
-modules should test their code with the object allocator enabled,
-because some incorrect code may cause core dumps at runtime.  There
-are a bunch of memory allocation functions in Python's C API that have
-previously been just aliases for the C library's \cfunction{malloc()}
-and \cfunction{free()}, meaning that if you accidentally called
-mismatched functions, the error wouldn't be noticeable.  When the
-object allocator is enabled, these functions aren't aliases of
-\cfunction{malloc()} and \cfunction{free()} any more, and calling the
-wrong function to free memory may get you a core dump.  For example,
-if memory was allocated using \cfunction{PyObject_Malloc()}, it has to
-be freed using \cfunction{PyObject_Free()}, not \cfunction{free()}.  A
-few modules included with Python fell afoul of this and had to be
-fixed; doubtless there are more third-party modules that will have the
-same problem.
-
-As part of this change, the confusing multiple interfaces for
-allocating memory have been consolidated down into two API families.
-Memory allocated with one family must not be manipulated with
-functions from the other family.
-
-There is another family of functions specifically for allocating
-Python \emph{objects} (as opposed to memory).
-
-\begin{itemize}
-  \item To allocate and free an undistinguished chunk of memory use
-  the ``raw memory'' family: \cfunction{PyMem_Malloc()},
-  \cfunction{PyMem_Realloc()}, and \cfunction{PyMem_Free()}.
-
-  \item The ``object memory'' family is the interface to the pymalloc
-  facility described above and is biased towards a large number of
-  ``small'' allocations: \cfunction{PyObject_Malloc},
-  \cfunction{PyObject_Realloc}, and \cfunction{PyObject_Free}.
-
-  \item To allocate and free Python objects, use the ``object'' family
-  \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and
-  \cfunction{PyObject_Del()}.
-\end{itemize}
-
-Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
-debugging features to catch memory overwrites and doubled frees in
-both extension modules and in the interpreter itself.  To enable this
-support, turn on the Python interpreter's debugging code by running
-\program{configure} with \longprogramopt{with-pydebug}.  
-
-To aid extension writers, a header file \file{Misc/pymemcompat.h} is
-distributed with the source to Python 2.3 that allows Python
-extensions to use the 2.3 interfaces to memory allocation and compile
-against any version of Python since 1.5.2.  You would copy the file
-from Python's source distribution and bundle it with the source of
-your extension.
-
-\begin{seealso}
-
-\seeurl{http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/python/python/dist/src/Objects/obmalloc.c}
-{For the full details of the pymalloc implementation, see
-the comments at the top of the file \file{Objects/obmalloc.c} in the
-Python source code.  The above link points to the file within the
-SourceForge CVS browser.}
-
-\end{seealso}
-
-
-%======================================================================
 \section{New and Improved Modules}
 
 As usual, Python's standard modules had a number of enhancements and
@@ -831,6 +747,13 @@ documentation for details.
 % XXX add a link to the module docs?
 (Contributed by Greg Ward.)
 
+\item The \module{time} module's \function{strptime()} function has
+long been an annoyance because it uses the platform C library's 
+\function{strptime()} implementation, and different platforms
+sometimes have odd bugs.  Brett Cannon contributed a portable
+implementation that's written in pure Python, which should behave
+identically on all platforms.
+
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding, by specifying an optional encoding argument to
@@ -839,12 +762,121 @@ the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
 \end{itemize}
 
 
+%======================================================================
+\section{Specialized Object Allocator (pymalloc)\label{section-pymalloc}}
+
+An experimental feature added to Python 2.1 was a specialized object
+allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
+was intended to be faster than the system \cfunction{malloc()} and have
+less memory overhead for typical allocation patterns of Python
+programs.  The allocator uses C's \cfunction{malloc()} function to get
+large pools of memory, and then fulfills smaller memory requests from
+these pools.
+
+In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
+enabled by default; you had to explicitly turn it on by providing the
+\longprogramopt{with-pymalloc} option to the \program{configure}
+script.  In 2.3, pymalloc has had further enhancements and is now
+enabled by default; you'll have to supply
+\longprogramopt{without-pymalloc} to disable it.
+
+This change is transparent to code written in Python; however,
+pymalloc may expose bugs in C extensions.  Authors of C extension
+modules should test their code with the object allocator enabled,
+because some incorrect code may cause core dumps at runtime.  There
+are a bunch of memory allocation functions in Python's C API that have
+previously been just aliases for the C library's \cfunction{malloc()}
+and \cfunction{free()}, meaning that if you accidentally called
+mismatched functions, the error wouldn't be noticeable.  When the
+object allocator is enabled, these functions aren't aliases of
+\cfunction{malloc()} and \cfunction{free()} any more, and calling the
+wrong function to free memory may get you a core dump.  For example,
+if memory was allocated using \cfunction{PyObject_Malloc()}, it has to
+be freed using \cfunction{PyObject_Free()}, not \cfunction{free()}.  A
+few modules included with Python fell afoul of this and had to be
+fixed; doubtless there are more third-party modules that will have the
+same problem.
+
+As part of this change, the confusing multiple interfaces for
+allocating memory have been consolidated down into two API families.
+Memory allocated with one family must not be manipulated with
+functions from the other family.
+
+There is another family of functions specifically for allocating
+Python \emph{objects} (as opposed to memory).
+
+\begin{itemize}
+  \item To allocate and free an undistinguished chunk of memory use
+  the ``raw memory'' family: \cfunction{PyMem_Malloc()},
+  \cfunction{PyMem_Realloc()}, and \cfunction{PyMem_Free()}.
+
+  \item The ``object memory'' family is the interface to the pymalloc
+  facility described above and is biased towards a large number of
+  ``small'' allocations: \cfunction{PyObject_Malloc},
+  \cfunction{PyObject_Realloc}, and \cfunction{PyObject_Free}.
+
+  \item To allocate and free Python objects, use the ``object'' family
+  \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and
+  \cfunction{PyObject_Del()}.
+\end{itemize}
+
+Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
+debugging features to catch memory overwrites and doubled frees in
+both extension modules and in the interpreter itself.  To enable this
+support, turn on the Python interpreter's debugging code by running
+\program{configure} with \longprogramopt{with-pydebug}.  
+
+To aid extension writers, a header file \file{Misc/pymemcompat.h} is
+distributed with the source to Python 2.3 that allows Python
+extensions to use the 2.3 interfaces to memory allocation and compile
+against any version of Python since 1.5.2.  You would copy the file
+from Python's source distribution and bundle it with the source of
+your extension.
+
+\begin{seealso}
+
+\seeurl{http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/python/python/dist/src/Objects/obmalloc.c}
+{For the full details of the pymalloc implementation, see
+the comments at the top of the file \file{Objects/obmalloc.c} in the
+Python source code.  The above link points to the file within the
+SourceForge CVS browser.}
+
+\end{seealso}
+
+
 % ======================================================================
 \section{Build and C API Changes}
 
 Changes to Python's build process and to the C API include:
 
 \begin{itemize}
+
+\item The C-level interface to the garbage collector has been changed,
+to make it easier to write extension types that support garbage
+collection, and to make it easier to debug misuses of the functions.
+Various functions have slightly different semantics, so a bunch of
+functions had to be renamed.  Extensions that use the old API will
+still compile but will \emph{not} participate in garbage collection,
+so updating them for 2.3 should be considered fairly high priority.
+
+To upgrade an extension module to the new API, perform the following
+steps:
+
+\begin{itemize}
+
+\item Rename \cfunction{Py_TPFLAGS_GC} to \cfunction{PyTPFLAGS_HAVE_GC}.
+
+\item Use \cfunction{PyObject_GC_New} or \cfunction{PyObject_GC_NewVar} to
+allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
+
+\item Rename \cfunction{PyObject_GC_Init} to \cfunction{PyObject_GC_Track} and
+\cfunction{PyObject_GC_Fini} to \cfunction{PyObject_GC_UnTrack}.
+
+\item Remove \cfunction{PyGC_HEAD_SIZE} from object size calculations.
+
+\item Remove calls to \cfunction{PyObject_AS_GC} and \cfunction{PyObject_FROM_GC}.
+
+\end{itemize}
 
 \item Python can now optionally be built as a shared library
 (\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
