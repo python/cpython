@@ -189,7 +189,7 @@ webcheck:
 
 # Release packaging targets:
 
-lib-info-$(RELEASE).tgz: info
+info-$(RELEASE).tgz: info
 	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
 
 latex-$(RELEASE).tgz:
@@ -213,7 +213,7 @@ html-$(RELEASE).tgz:
 # convenience targets:
 
 tarhtml:	html-$(RELEASE).tgz
-tarinfo:	lib-info-$(RELEASE).tgz
+tarinfo:	info-$(RELEASE).tgz
 tarps:		postscript-$(PAPER)-$(RELEASE).tgz
 tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
 tarlatex:	latex-$(RELEASE).tgz
@@ -232,10 +232,11 @@ clean:
 	(cd $(INFODIR); $(MAKE) clean)
 
 l2hclean:
-	(cd $(HTMLDIR); rm -rf api ext lib ref tut)
+	(cd $(HTMLDIR); $(MAKE) clean)
 
 # Remove temporaries as well as final products
-clobber: l2hclean
+clobber:
+	(cd $(HTMLDIR); $(MAKE) clobber)
 	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
 	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
 	rm -f latex-$(RELEASE).tgz
