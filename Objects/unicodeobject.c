@@ -4,7 +4,7 @@ Unicode implementation based on original code by Fredrik Lundh,
 modified by Marc-Andre Lemburg <mal@lemburg.com> according to the
 Unicode Integration Proposal (see file Misc/unicode.txt).
 
-(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+Copyright (c) Corporation for National Research Initiatives.
 
 
  Original header:
