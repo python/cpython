@@ -18,7 +18,7 @@ fopenRF(name, mode)
 	int fd;
 	FILE *fp;
 	int modebits = -1;
-	int extramodebits;
+	int extramodebits = 0;
 	char *modep;
 	
 	for(modep=mode; *modep; modep++) {
@@ -38,6 +38,10 @@ fopenRF(name, mode)
 				  errno = EINVAL;
 				  return NULL;
 		}
+	}
+	if ( modebits == -1 ) {
+		errno = EINVAL;
+		return NULL;
 	}
 	fd = open(name, modebits|extramodebits|O_RSRC);
 	if ( fd < 0 )
