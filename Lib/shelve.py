@@ -53,7 +53,7 @@ class Shelf(UserDict.DictMixin):
 
     def __init__(self, dict, binary=False):
         self.dict = dict
-        self.binary = binary
+        self._binary = binary
 
     def keys(self):
         return self.dict.keys()
@@ -78,7 +78,7 @@ class Shelf(UserDict.DictMixin):
 
     def __setitem__(self, key, value):
         f = StringIO()
-        p = Pickler(f, self.binary)
+        p = Pickler(f, self._binary)
         p.dump(value)
         self.dict[key] = f.getvalue()
 
