@@ -40,10 +40,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define methodlist PyMethodDef
 #define methodchain PyMethodChain
 
-#define None Py_None
-#define False Py_False
-#define True Py_True
-
 #define Accesstype PyAccess_Type
 #define is_accessobject PyAccess_Check
 #define newaccessobject PyAccess_FromValue
