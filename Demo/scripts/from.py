@@ -4,11 +4,22 @@
 # Extension to multiple mailboxes and other bells & whistles are left
 # as exercises for the reader.
 
-import posix
+import sys, posix
 
 # Open mailbox file.  Exits with exception when this fails.
 
-mail = open(posix.environ['MAIL'], 'r')
+try:
+	mailbox = posix.environ['MAIL']
+except RuntimeError:
+	sys.stderr.write \
+		('Please set environment variable MAIL to your mailbox\n')
+	sys.exit(2)
+
+try:
+	mail = open(mailbox, 'r')
+except RuntimeError:
+	sys.stderr.write('Cannot open mailbox file: ' + mailbox + '\n')
+	sys.exit(2)
 
 while 1:
 	line = mail.readline()
