@@ -121,8 +121,9 @@ class BuildExt (Command):
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
         self.compiler = new_compiler (plat=os.environ.get ('PLAT'),
-                                      verbose=self.distribution.verbose,
-                                      dry_run=self.distribution.dry_run)
+                                      verbose=self.verbose,
+                                      dry_run=self.dry_run,
+                                      force=self.force)
         if self.include_dirs is not None:
             self.compiler.set_include_dirs (self.include_dirs)
         if self.define is not None:
