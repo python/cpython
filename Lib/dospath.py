@@ -15,13 +15,7 @@ import string
 # possibly be added as a new function.
 
 def normcase(s):
-	res, s = splitdrive(s)
-	for c in s:
-		if c in '/\\':
-			res = res + os.sep
-		else:
-			res = res + c
-	return string.lower(res)
+	return string.lower(string.replace(s, "/", "\\"))
 
 
 # Return wheter a path is absolute.
@@ -316,7 +310,7 @@ def expandvars(path):
 # Also, components of the path are silently truncated to 8+3 notation.
 
 def normpath(path):
-	path = normcase(path)
+	path = string.replace(path, "/", "\\")
 	prefix, path = splitdrive(path)
 	while path[:1] == os.sep:
 		prefix = prefix + os.sep
