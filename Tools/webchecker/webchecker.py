@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 
+# Original code by Guido van Rossum; extensive changes by Sam Bayer,
+# including code to check URL fragments.
+
 """Web tree checker.
 
 This utility is handy to check a subweb of the world-wide web for
@@ -64,14 +67,18 @@ directory) has a built-in table mapping most currently known suffixes,
 and in addition attempts to read the mime.types configuration files in
 the default locations of Netscape and the NCSA HTTP daemon.
 
-- We follows links indicated by <A>, <FRAME> and <IMG> tags.  We also
+- We follow links indicated by <A>, <FRAME> and <IMG> tags.  We also
 honor the <BASE> tag.
+
+- We now check internal NAME anchor links, as well as toplevel links.
 
 - Checking external links is now done by default; use -x to *disable*
 this feature.  External links are now checked during normal
 processing.  (XXX The status of a checked link could be categorized
 better.  Later...)
 
+- If external links are not checked, you can use the -t flag to
+provide specific overrides to -x.
 
 Usage: webchecker.py [option] ... [rooturl] ...
 
@@ -83,8 +90,10 @@ Options:
 -n        -- reports only, no checking (use with -R)
 -q        -- quiet operation (also suppresses external links report)
 -r number -- number of links processed per round (default %(ROUNDSIZE)d)
+-t root   -- specify root dir which should be treated as internal (can repeat)
 -v        -- verbose operation; repeating -v will increase verbosity
 -x        -- don't check external links (these are often slow to check)
+-a        -- don't check name anchors
 
 Arguments:
 
@@ -127,6 +136,7 @@ MAXPAGE = 150000                        # Ignore files bigger than this
 ROUNDSIZE = 50                          # Number of links processed per round
 DUMPFILE = "@webchecker.pickle"         # Pickled checkpoint
 AGENTNAME = "webchecker"                # Agent name for robots.txt parser
+NONAMES = 0                             # Force name anchor checking
 
 
 # Global variables
@@ -142,12 +152,17 @@ def main():
     norun = 0
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:nqr:vx')
+        opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:nqr:t:vxa')
     except getopt.error, msg:
         sys.stdout = sys.stderr
         print msg
         print __doc__%globals()
         sys.exit(2)
+
+    # The extra_roots variable collects extra roots.
+    extra_roots = []
+    nonames = NONAMES
+
     for o, a in opts:
         if o == '-R':
             restart = 1
@@ -161,6 +176,10 @@ def main():
             verbose = 0
         if o == '-r':
             roundsize = string.atoi(a)
+        if o == '-t':
+            extra_roots.append(a)
+        if o == '-a':
+            nonames = not nonames
         if o == '-v':
             verbose = verbose + 1
         if o == '-x':
@@ -175,13 +194,26 @@ def main():
         c = Checker()
 
     c.setflags(checkext=checkext, verbose=verbose,
-               maxpage=maxpage, roundsize=roundsize)
+               maxpage=maxpage, roundsize=roundsize,
+               nonames=nonames
+               )
 
     if not restart and not args:
         args.append(DEFROOT)
 
     for arg in args:
         c.addroot(arg)
+
+    # The -t flag is only needed if external links are not to be
+    # checked. So -t values are ignored unless -x was specified.
+    if not checkext:
+        for root in extra_roots:
+            # Make sure it's terminated by a slash,
+            # so that addroot doesn't discard the last
+            # directory component.
+            if root[-1] != "/":
+                root = root + "/"
+            c.addroot(root, add_to_do = 0)
 
     try:
 
@@ -225,6 +257,7 @@ class Checker:
     verbose = VERBOSE
     maxpage = MAXPAGE
     roundsize = ROUNDSIZE
+    nonames = NONAMES
 
     validflags = tuple(dir())
 
@@ -243,19 +276,24 @@ class Checker:
         self.todo = {}
         self.done = {}
         self.bad = {}
+
+        # Add a name table, so that the name URLs can be checked. Also
+        # serves as an implicit cache for which URLs are done.
+        self.name_table = {}
+
         self.round = 0
         # The following are not pickled:
         self.robots = {}
         self.errors = {}
         self.urlopener = MyURLopener()
         self.changed = 0
-        
+
     def note(self, level, format, *args):
         if self.verbose > level:
             if args:
                 format = format%args
             self.message(format)
-    
+
     def message(self, format, *args):
         if args:
             format = format%args
@@ -272,7 +310,7 @@ class Checker:
         for url in self.bad.keys():
             self.markerror(url)
 
-    def addroot(self, root):
+    def addroot(self, root, add_to_do = 1):
         if root not in self.roots:
             troot = root
             scheme, netloc, path, params, query, fragment = \
@@ -284,7 +322,8 @@ class Checker:
                                              params, query, fragment))
             self.roots.append(troot)
             self.addrobot(root)
-            self.newlink(root, ("<root>", root))
+            if add_to_do:
+                self.newlink((root, ""), ("<root>", root))
 
     def addrobot(self, root):
         root = urlparse.urljoin(root, "/")
@@ -336,24 +375,53 @@ class Checker:
                 self.message("%d Errors in %s", len(triples), source)
             else:
                 self.message("Error in %s", source)
-            for url, rawlink, msg in triples:
-                if rawlink != url: s = " (%s)" % rawlink
+            # Call self.format_url() instead of referring
+            # to the URL directly, since the URLs in these
+            # triples is now a (URL, fragment) pair. The value
+            # of the "source" variable comes from the list of
+            # origins, and is a URL, not a pair.
+            for url, rawlink, msg in triples:           
+                if rawlink != self.format_url(url): s = " (%s)" % rawlink
                 else: s = ""
-                self.message("  HREF %s%s\n    msg %s", url, s, msg)
+                self.message("  HREF %s%s\n    msg %s",
+                             self.format_url(url), s, msg)
 
-    def dopage(self, url):
+    def dopage(self, url_pair):
+
+        # All printing of URLs uses format_url(); argument changed to
+        # url_pair for clarity.
         if self.verbose > 1:
             if self.verbose > 2:
-                self.show("Check ", url, "  from", self.todo[url])
+                self.show("Check ", self.format_url(url_pair),
+                          "  from", self.todo[url_pair])
             else:
-                self.message("Check %s", url)
-        page = self.getpage(url)
+                self.message("Check %s", self.format_url(url_pair))
+        url, local_fragment = url_pair
+        if local_fragment and self.nonames:
+            self.markdone(url_pair)
+            return
+        page = self.getpage(url_pair)
         if page:
+            # Store the page which corresponds to this URL.
+            self.name_table[url] = page
+            # If there is a fragment in this url_pair, and it's not
+            # in the list of names for the page, call setbad(), since
+            # it's a missing anchor.
+            if local_fragment and local_fragment not in page.getnames():
+                self.setbad(url_pair, ("Missing name anchor `%s'" % local_fragment))
             for info in page.getlinkinfos():
-                link, rawlink = info
+                # getlinkinfos() now returns the fragment as well,
+                # and we store that fragment here in the "todo" dictionary.
+                link, rawlink, fragment = info
+                # However, we don't want the fragment as the origin, since
+                # the origin is logically a page.
                 origin = url, rawlink
-                self.newlink(link, origin)
-        self.markdone(url)
+                self.newlink((link, fragment), origin)
+        else:
+            # If no page has been created yet, we want to
+            # record that fact.
+            self.name_table[url_pair[0]] = None
+        self.markdone(url_pair)
 
     def newlink(self, url, origin):
         if self.done.has_key(url):
@@ -362,21 +430,34 @@ class Checker:
             self.newtodolink(url, origin)
 
     def newdonelink(self, url, origin):
-        self.done[url].append(origin)
-        self.note(3, "  Done link %s", url)
+        if origin not in self.done[url]:
+            self.done[url].append(origin)
+
+        # Call self.format_url(), since the URL here
+        # is now a (URL, fragment) pair.
+        self.note(3, "  Done link %s", self.format_url(url))
+
+        # Make sure that if it's bad, that the origin gets added.
         if self.bad.has_key(url):
             source, rawlink = origin
             triple = url, rawlink, self.bad[url]
             self.seterror(source, triple)
 
     def newtodolink(self, url, origin):
+        # Call self.format_url(), since the URL here
+        # is now a (URL, fragment) pair.
         if self.todo.has_key(url):
             if origin not in self.todo[url]:
                 self.todo[url].append(origin)
-            self.note(3, "  Seen todo link %s", url)
+            self.note(3, "  Seen todo link %s", self.format_url(url))
         else:
             self.todo[url] = [origin]
-            self.note(3, "  New todo link %s", url)
+            self.note(3, "  New todo link %s", self.format_url(url))
+
+    def format_url(self, url):  
+        link, fragment = url
+        if fragment: return link + "#" + fragment
+        else: return link
 
     def markdone(self, url):
         self.done[url] = self.todo[url]
@@ -388,41 +469,57 @@ class Checker:
             if url[:len(root)] == root:
                 return self.isallowed(root, url)
         return 0
-    
+
     def isallowed(self, root, url):
         root = urlparse.urljoin(root, "/")
         return self.robots[root].can_fetch(AGENTNAME, url)
 
-    def getpage(self, url):
+    def getpage(self, url_pair):
+        # Incoming argument name is a (URL, fragment) pair.
+        # The page may have been cached in the name_table variable.
+        url, fragment = url_pair
+        if self.name_table.has_key(url):
+            return self.name_table[url]
+
         if url[:7] == 'mailto:' or url[:5] == 'news:':
             self.note(1, " Not checking mailto/news URL")
             return None
         isint = self.inroots(url)
+
+        # Ensure that openpage gets the URL pair to
+        # print out its error message and record the error pair
+        # correctly.
         if not isint:
             if not self.checkext:
                 self.note(1, " Not checking ext link")
                 return None
-            f = self.openpage(url)
+            f = self.openpage(url_pair)
             if f:
                 self.safeclose(f)
             return None
-        text, nurl = self.readhtml(url)
+        text, nurl = self.readhtml(url_pair)
+
         if nurl != url:
             self.note(1, " Redirected to %s", nurl)
             url = nurl
         if text:
             return Page(text, url, maxpage=self.maxpage, checker=self)
 
-    def readhtml(self, url):
+    # These next three functions take (URL, fragment) pairs as
+    # arguments, so that openpage() receives the appropriate tuple to
+    # record error messages.
+    def readhtml(self, url_pair):
+        url, fragment = url_pair
         text = None
-        f, url = self.openhtml(url)
+        f, url = self.openhtml(url_pair)
         if f:
             text = f.read()
             f.close()
         return text, url
 
-    def openhtml(self, url):
-        f = self.openpage(url)
+    def openhtml(self, url_pair):
+        url, fragment = url_pair
+        f = self.openpage(url_pair)
         if f:
             url = f.geturl()
             info = f.info()
@@ -431,15 +528,16 @@ class Checker:
                 f = None
         return f, url
 
-    def openpage(self, url):
+    def openpage(self, url_pair):
+        url, fragment = url_pair
         try:
             return self.urlopener.open(url)
         except IOError, msg:
             msg = self.sanitize(msg)
             self.note(0, "Error %s", msg)
             if self.verbose > 0:
-                self.show(" HREF ", url, "  from", self.todo[url])
-            self.setbad(url, msg)
+                self.show(" HREF ", url, "  from", self.todo[url_pair])
+            self.setbad(url_pair, msg)
             return None
 
     def checkforhtml(self, info, url):
@@ -468,7 +566,7 @@ class Checker:
         self.bad[url] = msg
         self.changed = 1
         self.markerror(url)
-        
+
     def markerror(self, url):
         try:
             origins = self.todo[url]
@@ -480,7 +578,13 @@ class Checker:
 
     def seterror(self, url, triple):
         try:
-            self.errors[url].append(triple)
+            # Because of the way the URLs are now processed, I need to
+            # check to make sure the URL hasn't been entered in the
+            # error list.  The first element of the triple here is a
+            # (URL, fragment) pair, but the URL key is not, since it's
+            # from the list of origins.
+            if triple not in self.errors[url]:
+                self.errors[url].append(triple)
         except KeyError:
             self.errors[url] = [triple]
 
@@ -551,6 +655,21 @@ class Page:
         self.maxpage = maxpage
         self.checker = checker
 
+        # The parsing of the page is done in the __init__() routine in
+        # order to initialize the list of names the file
+        # contains. Stored the parser in an instance variable. Passed
+        # the URL to MyHTMLParser().
+        size = len(self.text)
+        if size > self.maxpage:
+            self.note(0, "Skip huge file %s (%.0f Kbytes)", self.url, (size*0.001))
+            self.parser = None
+            return
+        self.checker.note(2, "  Parsing %s (%d bytes)", self.url, size)
+        self.parser = MyHTMLParser(url, verbose=self.verbose,
+                                   checker=self.checker)
+        self.parser.feed(self.text)
+        self.parser.close()
+
     def note(self, level, msg, *args):
         if self.checker:
             apply(self.checker.note, (level, msg) + args)
@@ -560,24 +679,30 @@ class Page:
                     msg = msg%args
                 print msg
 
+    # Method to retrieve names.
+    def getnames(self):
+        return self.parser.names
+
     def getlinkinfos(self):
-        size = len(self.text)
-        if size > self.maxpage:
-            self.note(0, "Skip huge file %s (%.0f Kbytes)", self.url, (size*0.001))
-            return []
-        self.checker.note(2, "  Parsing %s (%d bytes)", self.url, size)
-        parser = MyHTMLParser(verbose=self.verbose, checker=self.checker)
-        parser.feed(self.text)
-        parser.close()
-        rawlinks = parser.getlinks()
-        base = urlparse.urljoin(self.url, parser.getbase() or "")
+        # File reading is done in __init__() routine.  Store parser in
+        # local variable to indicate success of parsing.
+
+        # If no parser was stored, fail.
+        if not self.parser: return []
+
+        rawlinks = self.parser.getlinks()
+        base = urlparse.urljoin(self.url, self.parser.getbase() or "")
         infos = []
         for rawlink in rawlinks:
             t = urlparse.urlparse(rawlink)
+            # DON'T DISCARD THE FRAGMENT! Instead, include
+            # it in the tuples which are returned. See Checker.dopage().
+            fragment = t[-1]
             t = t[:-1] + ('',)
             rawlink = urlparse.urlunparse(t)
             link = urlparse.urljoin(base, rawlink)
-            infos.append((link, rawlink))
+            infos.append((link, rawlink, fragment))     
+
         return infos
 
 
@@ -635,15 +760,29 @@ class MyURLopener(urllib.FancyURLopener):
 
 class MyHTMLParser(sgmllib.SGMLParser):
 
-    def __init__(self, verbose=VERBOSE, checker=None):
+    def __init__(self, url, verbose=VERBOSE, checker=None):
         self.myverbose = verbose # now unused
         self.checker = checker
         self.base = None
         self.links = {}
+        self.names = []
+        self.url = url
         sgmllib.SGMLParser.__init__(self)
 
     def start_a(self, attributes):
         self.link_attr(attributes, 'href')
+
+        # We must rescue the NAME
+        # attributes from the anchor, in order to
+        # cache the internal anchors which are made
+        # available in the page.
+        for name, value in attributes:
+            if name == "name":
+                if value in self.names:
+                    self.checker.message("WARNING: duplicate name %s in %s",
+                                         value, self.url)
+                else: self.names.append(value)
+                break
 
     def end_a(self): pass
 
