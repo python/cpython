@@ -21,9 +21,12 @@ def gettempdir():
     if tempdir is not None:
 	return tempdir
     attempdirs = ['/usr/tmp', '/tmp', os.getcwd(), os.curdir]
+    if os.name == 'nt':
+	attempdirs.insert(0, 'C:\\TEMP')
+	attempdirs.insert(0, '\\TEMP')
     if os.environ.has_key('TMPDIR'):
 	attempdirs.insert(0, os.environ['TMPDIR'])
-    testfile = gettempprefix() + '-*-writetest-*-'
+    testfile = gettempprefix() + 'test'
     for dir in attempdirs:
 	try:
 	    filename = os.path.join(dir, testfile)
