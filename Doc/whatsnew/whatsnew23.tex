@@ -1812,6 +1812,14 @@ of the URL is ASCII only.
 To implement this change, the module \module{stringprep}, the tool
 \code{mkstringprep} and the \code{punycode} encoding have been added.
 
+\item The new \module{DocXMLRPCServer} allows to write 
+self-documenting XML-RPC servers. Run it in demo mode (as a program)
+to see it in action: Pointing the Web browser to the RPC server
+produces pydoc-style documentation; pointing xmlrpclib to the
+server allows to invoke the actual methods.
+
+Contributed by Brian Quinlan.
+
 \end{itemize}
 
 
