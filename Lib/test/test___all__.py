@@ -13,7 +13,8 @@ def check_all(modname):
            "%s has no __all__ attribute" % modname)
     names = {}
     exec "from %s import *" % modname in names
-    del names["__builtins__"]
+    if names.has_key("__builtins__"):
+        del names["__builtins__"]
     keys = names.keys()
     keys.sort()
     all = list(sys.modules[modname].__all__) # in case it's a tuple
