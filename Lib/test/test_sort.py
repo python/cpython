@@ -150,6 +150,23 @@ class TestBugs(unittest.TestCase):
         L.sort(None)
         self.assertEqual(L, range(50))
 
+    def test_undetected_mutation(self):
+        # Python 2.4a1 did not always detect mutation
+        memorywaster = []
+        for i in range(20):
+            def mutating_cmp(x, y):
+                L.append(3)
+                L.pop()
+                return cmp(x, y)
+            L = [1,2]
+            self.assertRaises(ValueError, L.sort, mutating_cmp)
+            def mutating_cmp(x, y):
+                L.append(3)
+                del L[:]
+                return cmp(x, y)
+            self.assertRaises(ValueError, L.sort, mutating_cmp)
+            memorywaster = [memorywaster]
+
 #==============================================================================
 
 class TestDecorateSortUndecorate(unittest.TestCase):
