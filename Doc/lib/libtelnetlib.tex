@@ -10,11 +10,17 @@
 The \module{telnetlib} module provides a \class{Telnet} class that
 implements the Telnet protocol.  See \rfc{854} for details about the
 protocol. In addition, it provides symbolic constants for the protocol
-characters (IAC/DONT/DO/WONT/WILL), and for the telnet options. The
+characters (see below), and for the telnet options. The
 symbolic names of the telnet options follow the definitions in
 \code{arpa/telnet.h}, with the leading \code{TELOPT_} removed. For
 symbolic names of options which are traditionally not included in
 \code{arpa/telnet.h}, see the module source itself.
+
+The symbolic constants for the telnet commands are: IAC, DONT, DO,
+WONT, WILL, SE (Subnegotiation End), NOP (No Operation), DM (Data
+Mark), BRK (Break), IP (Interrupt process), AO (Abort output), AYT
+(Are You There), EC (Erase Character), EL (Erase Line), GA (Go Ahead),
+SB (Subnegotiation Begin).
 
 
 \begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
