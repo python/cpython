@@ -24,7 +24,7 @@ class LaTeXFormatError(Error):
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
 _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
 _begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
-_comment_rx = re.compile("%+[ \t]*(.*)\n")
+_comment_rx = re.compile("%+ ?(.*)\n")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
 _parameter_rx = re.compile("[ \n]*{([^}]*)}")
