@@ -117,8 +117,9 @@ class bdist_dumb (Command):
                                    ensure_relative(install.install_base))
 
         # Make the archive
-        self.make_archive(pseudoinstall_root,
-                          self.format, root_dir=archive_root)
+        filename = self.make_archive(pseudoinstall_root,
+                                     self.format, root_dir=archive_root)
+        self.distribution.dist_files.append(('bdist_dumb', filename))
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)

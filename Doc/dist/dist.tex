@@ -1715,7 +1715,37 @@ By default PyPI will list all versions of a given package. To hide certain
 versions, the Hidden property should be set to yes. This must be edited
 through the web interface.
 
+\section{The .pypirc file}
+\label{pypirc}
 
+The format of the \file{.pypirc} file is formated as follows:
+
+\begin{verbatim}
+[server-login]
+repository: <repository-url>
+username: <username>
+password: <password>
+\end{verbatim}
+
+\var{repository} can be ommitted and defaults to
+\code{http://www.python.org/pypi}.
+
+\chapter{Uploading Packages to the Package Index}
+\label{package-upload}
+
+The Python Package Index (PyPI) not only stores the package info, but also 
+the package data if the author of the package wishes to. The distutils
+command \command{upload} pushes the distribution files to PyPI.
+
+The command is invokes immediately after building one or more distribution
+files, e.g. as
+
+\begin{verbatim}
+python setup.py sdist bdist_wininst upload
+\end{verbatim}
+
+The \command{upload} command uses the username and password stored in
+in the file \file{$HOME/.pypirc}, see \ref{pypirc}.
 
 \chapter{Examples}
 \label{examples}
@@ -2055,6 +2085,11 @@ line option above, the command \command{bdist\_openpkg} could be
 implemented by the class \class{distcmds.bdist_openpkg.bdist_openpkg}
 or \class{buildcmds.bdist_openpkg.bdist_openpkg}.
 
+\section{Adding new distribution types}
+
+Commands that create distributions (i.e. files in the dist directory)
+need to add (command, filename) pairs to \var{self.distribution.dist_files}
+so that \command{upload} can upload it to PyPI.
 
 \chapter{Command Reference}
 \label{reference}

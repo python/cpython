@@ -449,6 +449,7 @@ class sdist (Command):
         for fmt in self.formats:
             file = self.make_archive(base_name, fmt, base_dir=base_dir)
             archive_files.append(file)
+            self.distribution.dist_files.append(('sdist',file))
 
         self.archive_files = archive_files
 

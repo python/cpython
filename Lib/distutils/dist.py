@@ -177,6 +177,11 @@ Common commands: (see '--help-commands' for more)
         #   command_options = { command_name : { option : (source, value) } }
         self.command_options = {}
 
+        # 'dist_files' is the list of (command, file) that have been created
+        # by any dist commands run so far. This is filled regardless
+        # of whether the run is dry or not.
+        self.dist_files = []
+
         # These options are really the business of various commands, rather
         # than of the Distribution itself.  We provide aliases for them in
         # Distribution as a convenience to the developer.

@@ -162,6 +162,8 @@ class bdist_wininst (Command):
                                     root_dir=self.bdist_dir)
         # create an exe containing the zip-file
         self.create_exe(arcname, fullname, self.bitmap)
+        self.distribution.dist_files.append(('bdist_wininst', 
+                                             self.get_installer_filename()))
         # remove the zip-file again
         log.debug("removing temporary file '%s'", arcname)
         os.remove(arcname)
