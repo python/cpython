@@ -15,6 +15,12 @@ TclVersion = _string.atof(_tkinter.TCL_VERSION)
 READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
 EXCEPTION = _tkinter.EXCEPTION
+
+# These are not always defined, e.g. not on Win32 with Tk 8.0 :-(
+try: _tkinter.createfilehandler
+except AttributeError: _tkinter.createfilehandler = None
+try: _tkinter.deletefilehandler
+except AttributeError: _tkinter.deletefilehandler = None
     
     
 def _flatten(tuple):
