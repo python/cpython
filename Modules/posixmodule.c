@@ -1540,10 +1540,10 @@ posix_spawnv(PyObject *self, PyObject *args)
 	if (spawnval == -1)
 		return posix_error();
 	else
-#if SIZEOF_LONG == SIZE_VOID_P
-		return Py_BuildValue("l", spawnval);
+#if SIZEOF_LONG == SIZEOF_VOID_P
+		return Py_BuildValue("l", (long) spawnval);
 #else
-		return Py_BuildValue("L", spawnval);
+		return Py_BuildValue("L", (LONG_LONG) spawnval);
 #endif
 }
 
@@ -1648,10 +1648,10 @@ posix_spawnve(PyObject *self, PyObject *args)
 	if (spawnval == -1)
 		(void) posix_error();
 	else
-#if SIZEOF_LONG == SIZE_VOID_P
-		res = Py_BuildValue("l", spawnval);
+#if SIZEOF_LONG == SIZEOF_VOID_P
+		res = Py_BuildValue("l", (long) spawnval);
 #else
-		res = Py_BuildValue("L", spawnval);
+		res = Py_BuildValue("L", (LONG_LONG) spawnval);
 #endif
 
  fail_2:
