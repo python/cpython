@@ -43,7 +43,7 @@ class Editor(W.Window):
 			if title:
 				self.title = title
 			else:
-				self.title = "Untitled Script " + `_scriptuntitledcounter`
+				self.title = "Untitled Script %r" % (_scriptuntitledcounter,)
 				_scriptuntitledcounter = _scriptuntitledcounter + 1
 			text = ""
 			self._creator = W._signature
@@ -444,7 +444,7 @@ class Editor(W.Window):
 		try:
 			code = compile(pytext, filename, "exec")
 		except (SyntaxError, EOFError):
-			raise buildtools.BuildError, "Syntax error in script %s" % `filename`
+			raise buildtools.BuildError, "Syntax error in script %r" % (filename,)
 			
 		import tempfile
 		tmpdir = tempfile.mkdtemp()
@@ -540,14 +540,17 @@ class Editor(W.Window):
 
 	def _run_with_cl_interpreter(self):
 		import Terminal
-		interp_path = os.path.join(sys.exec_prefix, "bin", "python")
+		interp_path = os.path.join(sys.exec_prefix, 
+			"Resources", "Python.app", "Contents", "MacOS", "Python")
+		if not os.path.exists(interp_path):
+			interp_path = os.path.join(sys.exec_prefix, "bin", "python")
 		file_path = self.path
 		if not os.path.exists(interp_path):
 			# This "can happen" if we are running IDE under MacPython-OS9.
 			raise W.AlertError, "Can't find command-line Python"
 		cmd = '"%s" "%s" ; exit' % (interp_path, file_path)
 		t = Terminal.Terminal()
-		t.do_script(with_command=cmd)
+		t.do_script(cmd)
 	
 	def runselection(self):
 		self._runselection()
@@ -1262,8 +1265,8 @@ class _EditorDefaultSettings:
 		self.w.picksizebutton = W.Button((8, 50, 80, 16), "Front window", self.picksize)
 		self.w.xsizelabel = W.TextBox((98, 32, 40, 14), "Width:")
 		self.w.ysizelabel = W.TextBox((148, 32, 40, 14), "Height:")
-		self.w.xsize = W.EditText((98, 48, 40, 20), `self.windowsize[0]`)
-		self.w.ysize = W.EditText((148, 48, 40, 20), `self.windowsize[1]`)
+		self.w.xsize = W.EditText((98, 48, 40, 20), repr(self.windowsize[0]))
+		self.w.ysize = W.EditText((148, 48, 40, 20), repr(self.windowsize[1]))
 		
 		self.w.cancelbutton = W.Button((-180, -26, 80, 16), "Cancel", self.cancel)
 		self.w.okbutton = W.Button((-90, -26, 80, 16), "Done", self.ok)
@@ -1276,8 +1279,8 @@ class _EditorDefaultSettings:
 		editor = findeditor(self)
 		if editor is not None:
 			width, height = editor._parentwindow._bounds[2:]
-			self.w.xsize.set(`width`)
-			self.w.ysize.set(`height`)
+			self.w.xsize.set(repr(width))
+			self.w.ysize.set(repr(height))
 		else:
 			raise W.AlertError, "No edit window found"
 	
