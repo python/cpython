@@ -27,6 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
 #include <Files.h>
 #include <Events.h>
@@ -40,6 +41,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Menus.h>
 #include <Dialogs.h>
 #include <Windows.h>
+#else
+#include <Carbon/Carbon.h>
+#endif /* WITHOUT_FRAMEWORKS */
 
 #if UNIVERSAL_INTERFACES_VERSION >= 0x0340
 typedef long refcontype;
@@ -54,7 +58,6 @@ static int arg_count;
 static char *arg_vector[256];
 FSSpec PyMac_ApplicationFSSpec;
 char PyMac_ApplicationPath[256];
-static int applocation_inited;
 
 /* Duplicate a string to the heap. We also export this since it isn't standard
 ** and others use it
@@ -70,14 +73,33 @@ strdup(const char *src)
 }
 #endif
 
+#if TARGET_API_MAC_OSX
+OSErr
+PyMac_GetFullPath(FSSpec *fss, char *path)
+{
+	FSRef fsr;
+	OSErr err;
+	
+	*path = '\0';
+	err = FSpMakeFSRef(fss, &fsr);
+	if ( err ) return err;
+	err = (OSErr)FSRefMakePath(&fsr, path, 1024);
+	if ( err ) return err;
+	return 0;
+}
+#endif /* TARGET_API_MAC_OSX */
+
+
+#if !TARGET_API_MAC_OSX
 /* Initialize FSSpec and full name of current application */
 
 OSErr
-PyMac_init_process_location()
+PyMac_init_process_location(void)
 {
 	ProcessSerialNumber currentPSN;
 	ProcessInfoRec info;
 	OSErr err;
+	static int applocation_inited;
 	
 	if ( applocation_inited ) return 0;
 	currentPSN.highLongOfPSN = 0;
@@ -92,6 +114,7 @@ PyMac_init_process_location()
 	applocation_inited = 1;
 	return 0;
 }
+#endif /* !TARGET_API_MAC_OSX */
 
 /* Check that there aren't any args remaining in the event */
 
@@ -147,15 +170,15 @@ handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype r
 	DescType rttype;
 	long i, ndocs, size;
 	FSSpec fss;
-	char path[256];
+	char path[1024];
 	
 	got_one = 1;
-	if (err = AEGetParamDesc(theAppleEvent,
-				 keyDirectObject, typeAEList, &doclist))
+	if ((err = AEGetParamDesc(theAppleEvent,
+				 keyDirectObject, typeAEList, &doclist)))
 		return err;
-	if (err = get_missing_params(theAppleEvent))
+	if ((err = get_missing_params(theAppleEvent)))
 		return err;
-	if (err = AECountItems(&doclist, &ndocs))
+	if ((err = AECountItems(&doclist, &ndocs)))
 		return err;
 	for(i = 1; i <= ndocs; i++) {
 		err = AEGetNthPtr(&doclist, i, typeFSS,
@@ -174,7 +197,7 @@ AEEventHandlerUPP open_app_upp;
 AEEventHandlerUPP not_upp;
 
 static void
-set_ae_handlers()
+set_ae_handlers(void)
 {
 	open_doc_upp = NewAEEventHandlerUPP(&handle_open_doc);
 	open_app_upp = NewAEEventHandlerUPP(&handle_open_app);
@@ -193,7 +216,7 @@ set_ae_handlers()
 /* Uninstall standard core event handlers */
 
 static void
-reset_ae_handlers()
+reset_ae_handlers(void)
 {
 	AERemoveEventHandler(kCoreEventClass, kAEOpenApplication,
 			     open_app_upp, false);
@@ -208,7 +231,7 @@ reset_ae_handlers()
 /* Wait for events until a core event has been handled */
 
 static void 
-event_loop()
+event_loop(void)
 {
 	EventRecord event;
 	int n;
@@ -229,14 +252,16 @@ event_loop()
 /* Get the argv vector, return argc */
 
 int
-PyMac_GetArgv(pargv, noevents)
-	char ***pargv;
-	int noevents;
+PyMac_GetArgv(char ***pargv, int noevents)
 {
-	
 	arg_count = 0;
+#if TARGET_API_MAC_OSX
+	/* In an OSX bundle argv[0] is okay */
+	arg_count++;
+#else
 	(void)PyMac_init_process_location();
 	arg_vector[arg_count++] = strdup(PyMac_ApplicationPath);
+#endif /* TARGET_API_MAC_OSX */
 	
 	if( !noevents ) {
 		set_ae_handlers();
