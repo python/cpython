@@ -2598,6 +2598,37 @@ validate_file_input(tree)
 }   /* validate_file_input() */
 
 
+static PyObject*
+pickle_constructor = NULL;
+
+
+static PyObject*
+parser__pickler(self, args)
+    PyObject *self;
+    PyObject *args;
+{
+    PyObject *result = NULL;
+    PyObject *ast = NULL;
+
+    if (PyArg_ParseTuple(args, "O!:_pickler", &PyAST_Type, &ast)) {
+	PyObject *newargs;
+	PyObject *tuple;
+
+	if ((newargs = Py_BuildValue("Oi", ast, 1)) == NULL)
+	    goto finally;
+	tuple = parser_ast2tuple(NULL, newargs);
+	if (tuple != NULL) {
+	    result = Py_BuildValue("O(O)", pickle_constructor, tuple);
+	    Py_DECREF(tuple);
+	}
+	Py_XDECREF(newargs);
+    }
+  finally:
+    return (result);
+
+}   /* parser__pickler() */
+
+
 /*  Functions exported by this module.  Most of this should probably
  *  be converted into an AST object with methods, but that is better
  *  done directly in Python, allowing subclasses to be created directly.
@@ -2605,24 +2636,28 @@ validate_file_input(tree)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"ast2tuple",	parser_ast2tuple,	1,
+    {"ast2tuple",	parser_ast2tuple,	METH_VARARGS,
 	"Creates a tuple-tree representation of an AST."},
-    {"ast2list",	parser_ast2list,	1,
+    {"ast2list",	parser_ast2list,	METH_VARARGS,
 	"Creates a list-tree representation of an AST."},
-    {"compileast",	parser_compileast,	1,
+    {"compileast",	parser_compileast,	METH_VARARGS,
 	"Compiles an AST object into a code object."},
-    {"expr",		parser_expr,		1,
+    {"expr",		parser_expr,		METH_VARARGS,
 	"Creates an AST object from an expression."},
-    {"isexpr",		parser_isexpr,		1,
+    {"isexpr",		parser_isexpr,		METH_VARARGS,
 	"Determines if an AST object was created from an expression."},
-    {"issuite",		parser_issuite,		1,
+    {"issuite",		parser_issuite,		METH_VARARGS,
 	"Determines if an AST object was created from a suite."},
-    {"suite",		parser_suite,		1,
+    {"suite",		parser_suite,		METH_VARARGS,
 	"Creates an AST object from a suite."},
-    {"sequence2ast",	parser_tuple2ast,	1,
+    {"sequence2ast",	parser_tuple2ast,	METH_VARARGS,
 	"Creates an AST object from a tree representation."},
-    {"tuple2ast",	parser_tuple2ast,	1,
+    {"tuple2ast",	parser_tuple2ast,	METH_VARARGS,
 	"Creates an AST object from a tree representation."},
+
+    /* private stuff: support pickle module */
+    {"_pickler",	parser__pickler,	METH_VARARGS,
+        "Returns the pickle magic to allow ast objects to be pickled."},
 
     {0, 0, 0}
     };
@@ -2633,6 +2668,7 @@ initparser()
  {
     PyObject* module;
     PyObject* dict;
+    PyObject *temp;
 	
     PyAST_Type.ob_type = &PyType_Type;
     module = Py_InitModule("parser", parser_functions);
@@ -2660,9 +2696,24 @@ initparser()
     PyDict_SetItemString(dict, "__version__",
 			 PyString_FromString(parser_version_string));
 
+    /* register to support pickling */
+    module = PyImport_ImportModule("copy_reg");
+    if (module != NULL) {
+	PyObject *func, *constructor, *pickler;
+
+	func = PyObject_GetAttrString(module, "pickle");
+	pickle_constructor = PyDict_GetItemString(dict, "sequence2ast");
+	pickler = PyDict_GetItemString(dict, "_pickler");
+	Py_XINCREF(pickle_constructor);
+	if ((func != NULL) && (pickle_constructor != NULL)
+	    && (pickler != NULL)) {
+	    PyObject *res;
+
+	    res = PyObject_CallFunction(
+		    func, "OOO", &PyAST_Type, pickler, pickle_constructor);
+	    Py_XDECREF(res);
+	}
+	Py_XDECREF(func);
+	Py_DECREF(module);
+    }
 }   /* initparser() */
-
-
-/*
- *  end of parsermodule.c
- */
