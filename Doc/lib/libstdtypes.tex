@@ -530,8 +530,9 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
   \code{\var{x} = \var{i} + \var{n}*\var{k}} such that \code{0}
   \code{<=} \var{n} \code{<} \code{abs(i-j)}.  If \var{i} or \var{j}
   is greater than \code{len(\var{s})}, use \code{len(\var{s})}.  If
-  \var{i} or \var{j} are ommitted then they become ``end'' values
-  (which end depends on the sign of \var{k}).
+  \var{i} or \var{j} are omitted then they become ``end'' values
+  (which end depends on the sign of \var{k}).  Note, \var{k} cannot
+  be zero.
 
 \end{description}
 
