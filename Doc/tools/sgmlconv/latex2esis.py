@@ -80,10 +80,8 @@ def popping(name, point, depth):
 
 
 class _Stack(UserList.UserList):
-    StringType = type('')
-
     def append(self, entry):
-        if type(entry) is not self.StringType:
+        if type(entry) is not StringType:
             raise LaTeXFormatError("cannot push non-string on stack: "
                                    + `entry`)
         sys.stderr.write("%s<%s>\n" % (" "*len(self.data), entry))
@@ -106,25 +104,13 @@ def new_stack():
     return []
 
 
-class BaseConversion:
-    def __init__(self, ifp, ofp, table={}, discards=(), autoclosing=()):
-        self.ofp_stack = [ofp]
-        self.pop_output()
+class Conversion:
+    def __init__(self, ifp, ofp, table):
+        self.write = ofp.write
+        self.ofp = ofp
         self.table = table
-        self.discards = discards
-        self.autoclosing = autoclosing
         self.line = string.join(map(string.rstrip, ifp.readlines()), "\n")
         self.preamble = 1
-        self.stack = new_stack()
-
-    def push_output(self, ofp):
-        self.ofp_stack.append(self.ofp)
-        self.ofp = ofp
-        self.write = ofp.write
-
-    def pop_output(self):
-        self.ofp = self.ofp_stack.pop()
-        self.write = self.ofp.write
 
     def err_write(self, msg):
         if DEBUG:
@@ -132,12 +118,6 @@ class BaseConversion:
 
     def convert(self):
         self.subconvert()
-
-
-class Conversion(BaseConversion):
-    def __init__(self, ifp, ofp, table={}):
-        BaseConversion.__init__(self, ifp, ofp, table)
-        self.discards = []
 
     def subconvert(self, endchar=None, depth=0):
         #
@@ -206,9 +186,6 @@ class Conversion(BaseConversion):
                 if entry.outputname:
                     if entry.empty:
                         self.write("e\n")
-                    self.push_output(self.ofp)
-                else:
-                    self.push_output(StringIO.StringIO())
                 #
                 params, optional, empty, environ = self.start_macro(macroname)
                 # rip off the macroname
@@ -226,10 +203,10 @@ class Conversion(BaseConversion):
                     if pentry.type == "attribute":
                         if pentry.optional:
                             m = _optional_rx.match(line)
-                            if m:
+                            if m and entry.outputname:
                                 line = line[m.end():]
                                 self.dump_attr(pentry, m.group(1))
-                        elif pentry.text:
+                        elif pentry.text and entry.outputname:
                             # value supplied by conversion spec:
                             self.dump_attr(pentry, pentry.text)
                         else:
@@ -238,9 +215,8 @@ class Conversion(BaseConversion):
                                 raise LaTeXFormatError(
                                     "could not extract parameter %s for %s: %s"
                                     % (pentry.name, macroname, `line[:100]`))
-                            self.dump_attr(pentry, m.group(1))
-##                            if entry.name == "label":
-##                                sys.stderr.write("[%s]" % m.group(1))
+                            if entry.outputname:
+                                self.dump_attr(pentry, m.group(1))
                             line = line[m.end():]
                     elif pentry.type == "child":
                         if pentry.optional:
@@ -283,13 +259,13 @@ class Conversion(BaseConversion):
                             line = self.subconvert("}", len(stack) + depth + 1)
                             if line and line[0] == "}":
                                 line = line[1:]
-                    elif pentry.type == "text":
-                        if pentry.text:
-                            if entry.outputname and not opened:
-                                opened = 1
-                                stack.append(entry.name)
-                                self.write("(%s\n" % entry.outputname)
-                            self.write("-%s\n" % encode(pentry.text))
+                    elif pentry.type == "text" and pentry.text:
+                        if entry.outputname and not opened:
+                            opened = 1
+                            stack.append(entry.name)
+                            self.write("(%s\n" % entry.outputname)
+                        self.err_write("--- text: %s\n" % `pentry.text`)
+                        self.write("-%s\n" % encode(pentry.text))
                 if entry.outputname:
                     if not opened:
                         self.write("(%s\n" % entry.outputname)
@@ -297,7 +273,6 @@ class Conversion(BaseConversion):
                     if not implied_content:
                         self.write(")%s\n" % entry.outputname)
                         stack.pop()
-                self.pop_output()
                 continue
             if line[0] == endchar and not stack:
                 self.line = line[1:]
@@ -359,11 +334,6 @@ class Conversion(BaseConversion):
         conversion = self.get_entry(name)
         parameters = conversion.parameters
         optional = parameters and parameters[0].optional
-##         empty = not len(parameters)
-##         if empty:
-##             self.write("e\n")
-##         elif conversion.empty:
-##             empty = 1
         return parameters, optional, conversion.empty, conversion.environment
 
     def get_entry(self, name):
@@ -441,8 +411,10 @@ class Parameter:
 
 
 class TableParser(XMLParser):
-    def __init__(self):
-        self.__table = {}
+    def __init__(self, table=None):
+        if table is None:
+            table = {}
+        self.__table = table
         self.__current = None
         self.__buffer = ''
         XMLParser.__init__(self)
@@ -473,8 +445,6 @@ class TableParser(XMLParser):
         if attrs.has_key("outputname"):
             self.__current.outputname = attrs.get("outputname")
     def end_macro(self):
-##        if self.__current.parameters and not self.__current.outputname:
-##            raise ValueError, "markup with parameters must have an output name"
         self.__table[self.__current.name] = self.__current
         self.__current = None
 
@@ -506,6 +476,7 @@ class TableParser(XMLParser):
         self.__current.empty = 0
 
     def start_text(self, attrs):
+        self.__current.empty = 0
         self.__buffer = ''
     def end_text(self):
         p = Parameter("text")
@@ -516,8 +487,8 @@ class TableParser(XMLParser):
         self.__buffer = self.__buffer + data
 
 
-def load_table(fp):
-    parser = TableParser()
+def load_table(fp, table=None):
+    parser = TableParser(table=table)
     parser.feed(fp.read())
     parser.close()
     return parser.get_table()
