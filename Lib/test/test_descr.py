@@ -1,11 +1,7 @@
 # Test enhancements related to descriptors and new-style classes
 
-from test_support import verify, verbose, TestFailed, TESTFN
+from test_support import verify, vereq, verbose, TestFailed, TESTFN
 from copy import deepcopy
-
-def vereq(a, b):
-    if not (a == b):
-        raise TestFailed, "%r == %r" % (a, b)
 
 def veris(a, b):
     if a is not b:
