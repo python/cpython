@@ -168,7 +168,7 @@ MAKESETUP=	$(LIBPL)/makesetup
 MAKEFILE=	$(LIBPL)/Makefile
 CONFIGC=	$(LIBPL)/config.c
 CONFIGCIN=	$(LIBPL)/config.c.in
-SETUP=		$(LIBPL)/Setup
+SETUP=		$(LIBPL)/Setup.thread $(LIBPL)/Setup.local $(LIBPL)/Setup
 
 SYSLIBS=	$(LIBM) $(LIBC)
 
