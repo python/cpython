@@ -1,32 +1,34 @@
 #! /usr/bin/env python
 """Test dlmodule.c
-   Roger E. Masse
+   Roger E. Masse  revised strategy by Barry Warsaw
 """
-filename = '/usr/lib/libresolv.so'
-try:
-    import dl
-except ImportError:
-    # No test if no library
-    raise SystemExit
+verbose = 0
+if __name__ == '__main__':
+    verbose = 1
 
-try:
-    import os
-    n = os.popen('/bin/uname','r')
-    if n.readlines()[0][:-1] != 'SunOS':
-	raise SystemExit
-    l = dl.open('/usr/lib/libresolv.so')
-except:
-    # No test if not SunOS (or Solaris)
-    raise SystemExit
+import dl
 
-# Try to open a shared library that should be available
-# on SunOS and Solaris in a default place
-try:
-    open(filename,'r')
-except IOError:
-    # No test if I can't even open the test file with builtin open
-    raise SystemExit
+sharedlibs = [
+    # SunOS/Solaris
+    ('/usr/lib/libresolv.so', 'gethostent'),
+    ]
 
-l = dl.open(filename)
-a = l.call('gethostent')
-l.close()
+for s, func in sharedlibs:
+    try:
+	if verbose:
+	    print 'trying to open:', s,
+	l = dl.open(s)
+    except dl.error:
+	if verbose:
+	    print 'failed'
+	pass
+    else:
+	if verbose:
+	    print 'succeeded...',
+	l.call(func)
+	l.close()
+	if verbose:
+	    print 'worked!'
+	break
+else:
+    print 'Could not open any shared libraries'
