@@ -835,10 +835,17 @@ floatsleep(double secs)
 	}
 #else /* !MSDOS */
 #ifdef MS_WIN32
-	/* XXX Can't interrupt this sleep */
-	Py_BEGIN_ALLOW_THREADS
-	Sleep((int)(secs*1000));
-	Py_END_ALLOW_THREADS
+	{
+		double millisecs = secs * 1000.0;
+		if (millisecs > (double)ULONG_MAX) {
+			PyErr_SetString(PyExc_OverflowError, "sleep length is too large");
+			return -1;
+		}
+		/* XXX Can't interrupt this sleep */
+		Py_BEGIN_ALLOW_THREADS
+		Sleep((unsigned long)millisecs);
+		Py_END_ALLOW_THREADS
+	}
 #else /* !MS_WIN32 */
 #ifdef PYOS_OS2
 	/* This Sleep *IS* Interruptable by Exceptions */
