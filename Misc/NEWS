@@ -44,6 +44,9 @@ Extension modules
 Library
 -------
 
+- Patch #1006219: let inspect.getsource handle '@' decorators. Thanks Simon
+  Percivall.
+
 - logging.handlers.SMTPHandler.date_time has been removed;
   the class now uses email.Utils.formatdate to generate the time stamp.
 

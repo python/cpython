@@ -433,7 +433,7 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise IOError('could not find function definition')
         lnum = object.co_firstlineno - 1
-        pat = re.compile(r'^(\s*def\s)|(.*\slambda(:|\s))')
+        pat = re.compile(r'^(\s*def\s)|(.*\slambda(:|\s))|^(\s*@)')
         while lnum > 0:
             if pat.match(lines[lnum]): break
             lnum = lnum - 1
@@ -509,7 +509,8 @@ class BlockFinder:
 
     def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
         if not self.started:
-            if type == tokenize.NAME: self.started = 1
+            if '@' in line: pass
+            elif type == tokenize.NAME: self.started = 1
         elif type == tokenize.NEWLINE:
             self.last = srow
         elif type == tokenize.INDENT:
