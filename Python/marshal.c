@@ -234,8 +234,9 @@ w_object(v, p)
 	        PyObject *utf8;
 		utf8 = PyUnicode_AsUTF8String(v);
 		if (utf8 == NULL) {
-		    p->error = 1;
-		    return;
+			p->depth--;
+			p->error = 1;
+			return;
 		}
 		w_byte(TYPE_UNICODE, p);
 		n = PyString_GET_SIZE(utf8);
@@ -303,6 +304,8 @@ w_object(v, p)
 		w_byte(TYPE_UNKNOWN, p);
 		p->error = 1;
 	}
+
+	p->depth--;
 }
 
 void
@@ -325,6 +328,7 @@ PyMarshal_WriteObjectToFile(x, fp)
 	WFILE wf;
 	wf.fp = fp;
 	wf.error = 0;
+	wf.depth = 0;
 	w_object(x, &wf);
 }
 
