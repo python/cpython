@@ -894,6 +894,6 @@ funny:
 
 # Dependencies
 
-Python/thread.o: $(srcdir)/Python/thread_*.h
+Python/thread.o: @THREADHEADERS@
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY

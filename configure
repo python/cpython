@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.281 
+# From configure.in Revision: 1.282 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -7513,9 +7513,16 @@ done
 #fi
 
 
+
+for h in `(cd $srcdir;echo Python/thread_*.h)`
+do
+  THREADHEADERS="$THREADHEADERS \$(srcdir)/$h"
+done
+
+
 SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
-echo "configure:7519: checking for build directories" >&5
+echo "configure:7526: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir
@@ -7706,6 +7713,7 @@ s%@HAVE_GETHOSTBYNAME@%$HAVE_GETHOSTBYNAME%g
 s%@LIBM@%$LIBM%g
 s%@LIBC@%$LIBC%g
 s%@UNICODE_OBJS@%$UNICODE_OBJS%g
+s%@THREADHEADERS@%$THREADHEADERS%g
 s%@SRCDIRS@%$SRCDIRS%g
 
 CEOF
