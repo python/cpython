@@ -101,17 +101,17 @@ class RPCServer(SocketServer.TCPServer):
         except EOFError:
             pass
         except:
-            erf = 'sys.__stderr__'
-            print>>erf, '-'*40
+            erf = sys.__stderr__
+            print>>erf, '\n' + '-'*40
             print>>erf, 'Unhandled server exception!'
             print>>erf, 'Thread: %s' % threading.currentThread().getName()
-            print>>erf, 'Client Address: ', address
+            print>>erf, 'Client Address: ', client_address
             print>>erf, 'Request: ', repr(request)
             traceback.print_exc(file=erf)
             print>>erf, '\n*** Unrecoverable, server exiting!'
             print>>erf, '-'*40
             import os
-            os._exit
+            os._exit(0)
 
 
 objecttable = {}
