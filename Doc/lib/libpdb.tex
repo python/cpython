@@ -163,7 +163,8 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[b(reak) \optional{\var{lineno}\code{\Large|}\var{function}%
+\item[b(reak) \optional{\optional{\var{filename}:}\var{lineno}%
+              \code{\Large|}\var{function}%
               \optional{, \code{'}\var{condition}\code{'}}}]
 
 With a \var{lineno} argument, set a break there in the current
@@ -173,10 +174,18 @@ If a second argument is present, it is a string (included in string
 quotes!) specifying an expression which must evaluate to true before
 the breakpoint is honored.
 
-\item[cl(ear) \optional{\var{lineno}}]
+The line number may be prefixed with a filename and a colon,
+to specify a breakpoint in another file (probably one that
+hasn't been loaded yet).  The file is searched on \code{sys.path}.
+
+\item[cl(ear) \optional{\optional{\var{filename}:}\var{lineno}}]
 
 With a \var{lineno} argument, clear that break in the current file.
 Without argument, clear all breaks (but first ask confirmation).
+
+The line number may be prefixed with a filename and a colon,
+to specify a breakpoint in another file (probably one that
+hasn't been loaded yet).  The file is searched on \code{sys.path}.
 
 \item[s(tep)]
 
@@ -201,7 +210,7 @@ Continue execution until the current function returns.
 Continue execution, only stop when a breakpoint is encountered.
 
 \item[l(ist) \optional{\var{first\optional{, last}}}]
-
+ppp
 List source code for the current file.  Without arguments, list 11
 lines around the current line or continue the previous listing.  With
 one argument, list 11 lines around at that line.  With two arguments,
