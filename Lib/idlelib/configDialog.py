@@ -112,6 +112,16 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysCustom.config(state=NORMAL)
             self.buttonDeleteCustomKeys.config(state=NORMAL)
     
+    def SetFgBg(self):
+        if self.fgHilite.get()==0:
+            self.labelFontTypeTitle.config(state=DISABLED)
+            self.checkFontBold.config(state=DISABLED)
+            self.checkFontItalic.config(state=DISABLED)
+        elif self.fgHilite.get()==1:
+            self.labelFontTypeTitle.config(state=NORMAL)
+            self.checkFontBold.config(state=NORMAL)
+            self.checkFontItalic.config(state=NORMAL)
+    
     def GetColour(self):
         rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
                 title='Pick new colour for : '+self.highlightTarget.get(),
@@ -132,11 +142,28 @@ class ConfigDialog(Toplevel):
         self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
             family=self.listFontName.get(self.listFontName.curselection()[0]))
 
-    def SetHighlightSampleBinding(self,event):
-        self.SetHighlightSample()
+    def SetHighlightTargetBinding(self,event):
+        self.SetHighlightTarget()
         
-    def SetHighlightSample(self):
-        pass    
+    def SetHighlightTarget(self):
+        if self.highlightTarget.get() in ('Cursor','Error Background'): 
+            #only bg colour selection is possible
+            self.radioFg.config(state=DISABLED)
+            self.radioBg.config(state=DISABLED)
+            self.fgHilite.set(0)
+            self.SetFgBg()
+        elif self.highlightTarget.get() in ('Shell Foreground',
+                'Shell Stdout Foreground','Shell Stderr Foreground'):
+            #fg and font style selection possible
+            self.radioFg.config(state=DISABLED)
+            self.radioBg.config(state=DISABLED)
+            self.fgHilite.set(1)
+            self.SetFgBg()
+        else: #full fg/bg and font style selection possible
+            self.radioFg.config(state=NORMAL)
+            self.radioBg.config(state=NORMAL)
+            self.fgHilite.set(1) #default to setting foreground properties
+            self.SetFgBg()
     
     def CreateWidgets(self):
         self.framePages = Frame(self)
@@ -273,6 +300,7 @@ class ConfigDialog(Toplevel):
         self.highlightTarget=StringVar()
         self.builtinTheme=StringVar()
         self.customTheme=StringVar()
+        self.fgHilite=IntVar()
         self.colour=StringVar()
         self.fontName=StringVar()
         self.fontBold=StringVar()
@@ -290,17 +318,23 @@ class ConfigDialog(Toplevel):
                 borderwidth=1,cursor='hand2')
         frameSet=Frame(frameCustom)
         self.frameColourSet=Frame(frameSet,relief=SOLID,borderwidth=1)
+        frameFgBg=Frame(frameCustom)
         frameFontSet=Frame(frameSet)
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
         labelTargetTitle=Label(self.frameHighlightTarget,text='for : ')
         self.optMenuHighlightTarget=DynOptionMenu(self.frameHighlightTarget,
-            self.highlightTarget,None,command=None)
-        buttonSetColour=Button(self.frameColourSet,text='Set Colour',
+            self.highlightTarget,None,command=self.SetHighlightTargetBinding)
+        self.radioFg=Radiobutton(frameFgBg,variable=self.fgHilite,
+            value=1,command=self.SetFgBg,text='Foreground')
+        self.radioBg=Radiobutton(frameFgBg,variable=self.fgHilite,
+            value=0,command=self.SetFgBg,text='Background')
+        self.fgHilite.set(1)
+        buttonSetColour=Button(self.frameColourSet,text='Choose Colour',
                 command=self.GetColour)
-        labelFontTitle=Label(frameFontSet,text='Set Font Style')
-        checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
+        self.labelFontTypeTitle=Label(frameFontSet,text='Font Style :')
+        self.checkFontBold=Checkbutton(frameFontSet,variable=self.fontBold,
             onvalue='Bold',offvalue='',text='Bold')
-        checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
+        self.checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
             onvalue='Italic',offvalue='',text='Italic')
         self.labelTestSample=Label(self.frameHighlightSample,justify=LEFT,font=('courier',12,''),
             text='#when finished, this\n#sample area will\n#be interactive\n'+
@@ -319,9 +353,9 @@ class ConfigDialog(Toplevel):
         self.radioThemeCustom=Radiobutton(frameTheme,variable=self.themeType,
             value=1,command=self.SetThemeType,text='a Custom Theme')
         self.optMenuThemeBuiltin=DynOptionMenu(frameTheme,
-            self.builtinTheme,None,command=self.SetHighlightSampleBinding)
+            self.builtinTheme,None,command=None)
         self.optMenuThemeCustom=DynOptionMenu(frameTheme,
-            self.customTheme,None,command=self.SetHighlightSampleBinding)
+            self.customTheme,None,command=None)
  #       self.themeType.set(0)
         self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme')
  #       self.SetThemeType()
@@ -332,16 +366,19 @@ class ConfigDialog(Toplevel):
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         self.frameHighlightTarget.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameFgBg.pack(side=TOP,padx=5,pady=0)
         self.frameHighlightSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         frameSet.pack(side=TOP,fill=X)
         self.frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
         frameFontSet.pack(side=RIGHT,padx=5,pady=5,anchor=W)
         labelTargetTitle.pack(side=LEFT,anchor=E)
         self.optMenuHighlightTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
+        self.radioFg.pack(side=LEFT,anchor=E)
+        self.radioBg.pack(side=RIGHT,anchor=W)
         buttonSetColour.pack(expand=TRUE,fill=BOTH,padx=10,pady=10)
-        labelFontTitle.pack(side=TOP,anchor=W)
-        checkFontBold.pack(side=LEFT,anchor=W,pady=2)
-        checkFontItalic.pack(side=RIGHT,anchor=W)
+        self.labelFontTypeTitle.pack(side=TOP,anchor=W)
+        self.checkFontBold.pack(side=LEFT,anchor=W,pady=2)
+        self.checkFontItalic.pack(side=RIGHT,anchor=W)
         self.labelTestSample.pack(anchor=CENTER,expand=TRUE,fill=BOTH)
         buttonSaveCustomTheme.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         #frameTheme
@@ -544,7 +581,7 @@ class ConfigDialog(Toplevel):
         self.themeType.set(idleConf.GetOption('main','Theme','user',type='int'))
         ##currently set theme
         currentOption=idleConf.GetOption('main','Theme','name')
-        ##load option menus
+        ##load available theme option menus
         if self.themeType.get() == 0: #default theme selected
             itemList=idleConf.GetSectionList('default','highlight')
             self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
@@ -559,14 +596,20 @@ class ConfigDialog(Toplevel):
             self.optMenuThemeCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','highlight')
             self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
-        self.SetThemeType()   
+        self.SetThemeType()
+        ##load theme element option menu
+        elements=('Normal Text','Python Keywords','Python Definitions',
+                'Python Comments','Python Strings','Selected Text',
+                'Search Hits','Cursor','Error Background','Shell Foreground',
+                'Shell Stdout Foreground','Shell Stderr Foreground')
+        self.optMenuHighlightTarget.SetMenu(elements,elements[0])   
     
     def LoadKeyLists(self):
         ##current keys type radiobutton
         self.keysType.set(idleConf.GetOption('main','Keys','user',type='int'))
         ##currently set keys
         currentOption=idleConf.GetOption('main','Keys','name')
-        ##load option menus
+        ##load available keyset option menus
         if self.keysType.get() == 0: #default theme selected
             itemList=idleConf.GetSectionList('default','keys')
             self.optMenuKeysBuiltin.SetMenu(itemList,currentOption)
@@ -582,6 +625,7 @@ class ConfigDialog(Toplevel):
             itemList=idleConf.GetSectionList('default','keys')
             self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
         self.SetKeysType()   
+        ##load keyset element option menu   
         
     def LoadConfigs(self):
         """
