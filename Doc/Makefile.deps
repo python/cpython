@@ -150,6 +150,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libstat.tex \
 	lib/libstringio.tex \
 	lib/libtoken.tex \
+	lib/libkeyword.tex \
 	lib/libundoc.tex \
 	lib/libmailcap.tex \
 	lib/libglob.tex \
