@@ -3145,8 +3145,12 @@ slot_sq_item(PyObject *self, int i)
 	if (func != NULL) {
 		if ((f = func->ob_type->tp_descr_get) == NULL)
 			Py_INCREF(func);
-		else
+		else {
 			func = f(func, self, (PyObject *)(self->ob_type));
+			if (func == NULL) {
+				return NULL;
+			}
+		}
 		ival = PyInt_FromLong(i);
 		if (ival != NULL) {
 			args = PyTuple_New(1);
