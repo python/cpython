@@ -49,6 +49,7 @@ class build_ext (Command):
     #     takes care of both command-line and client options
     #     in between initialize_options() and finalize_options())
 
+    sep_by = " (separated by '%s')" % os.pathsep
     user_options = [
         ('build-lib=', 'b',
          "directory for compiled extension modules"),
@@ -58,7 +59,7 @@ class build_ext (Command):
          "ignore build-lib and put compiled extensions into the source " +
          "directory alongside your pure Python modules"),
         ('include-dirs=', 'I',
-         "list of directories to search for header files"),
+         "list of directories to search for header files" + sep_by),
         ('define=', 'D',
          "C preprocessor macros to define"),
         ('undef=', 'U',
@@ -66,7 +67,7 @@ class build_ext (Command):
         ('libraries=', 'l',
          "external C libraries to link with"),
         ('library-dirs=', 'L',
-         "directories to search for external C libraries"),
+         "directories to search for external C libraries" + sep_by),
         ('rpath=', 'R',
          "directories to search for shared C libraries at runtime"),
         ('link-objects=', 'O',
