@@ -15,7 +15,7 @@ MACBUILDNO=":Mac:Include:macbuildno.h"
 
 import os
 import sys
-import macfs
+import Carbon.File
 import MacOS
 import EasyDialogs
 import re
@@ -96,7 +96,7 @@ def buildmwproject(top, creator, projects):
 			target = ''
 		file = os.path.join(top, file)
 		try:
-			fss = macfs.FSSpec(file)
+			fss = Carbon.File.FSSpec(file)
 		except MacOS.Error:
 			print '** file not found:', file
 			continue
@@ -194,6 +194,7 @@ def buildcarbonplugins(top, dummy1, dummy2):
 ##                '--install-platlib=%s' % os.path.join(sys.prefix, 'Lib', 'lib-dynload')
 ##		])
 	buildmwproject(top, "CWIE", [
+		(":Mac:Build:_csv.carbon.mcp", "_csv.carbon"),
 		(":Mac:Build:_weakref.carbon.mcp", "_weakref.carbon"),
 		(":Mac:Build:_symtable.carbon.mcp", "_symtable.carbon"),
 		(":Mac:Build:_testcapi.carbon.mcp", "_testcapi.carbon"),

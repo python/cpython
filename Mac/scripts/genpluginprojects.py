@@ -109,6 +109,7 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "gdbm", 
 		libraries=["gdbm.ppc.gusi.lib"], 
 		extradirs=["::::gdbm:mac", "::::gdbm"])
+	genpluginproject("carbon", "_csv", sources=["_csv.c"])
 	genpluginproject("carbon", "_weakref", sources=["_weakref.c"])
 	genpluginproject("carbon", "_symtable", sources=["symtablemodule.c"])
 	# Example/test modules
