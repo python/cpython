@@ -31,6 +31,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* SV module -- interface to the Indigo video board */
 
+/* WARNING! This module is for hardware that we don't have any more,
+   so it hasn't been tested.  It has been converted to the new coding
+   style, and it is possible that this conversion has broken something
+   -- user beware! */
+
 #include <sys/time.h>
 #include <svideo.h>
 #include "Python.h"
@@ -593,7 +598,7 @@ sv_CaptureBurst(self, args)
 	void *bitvector = NULL;
 	PyObject *videodata = NULL;
 	PyObject *bitvecobj = NULL;
-	PyObject* *res = NULL;
+	PyObject *res = NULL;
 	static PyObject *evenitem, *odditem;
 
 	if (!PyArg_Parse(args, "(iiiii)", &info.format,
@@ -686,6 +691,7 @@ sv_CaptureOneFrame(self, args)
 	int bytes;
 	PyObject *videodata = NULL;
 	PyObject *res = NULL;
+	char *str;
 	
 	if (!PyArg_Parse(args, "(iii)", &format, &width, &height))
 		return NULL;
@@ -701,10 +707,9 @@ sv_CaptureOneFrame(self, args)
 	if (!(videodata = PyString_FromStringAndSize(NULL, bytes)))
 		return NULL;
 	
-	{
-		char* str = PyString_AsString(videodata);
-		if (!str)
-			goto finally;
+	str = PyString_AsString(videodata);
+	if (!str)
+		goto finally;
 
 	if (svCaptureOneFrame(self->ob_svideo, format, &width, &height, str)) {
 		res = sv_error();
