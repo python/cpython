@@ -254,7 +254,7 @@ class Au_read:
 			if nframes == AUDIO_UNKNOWN_SIZE:
 				data = self._file.read()
 			else:
-				data = self._file.read(nframes * self._sampwidth * self._nchannels)
+				data = self._file.read(nframes * self._framesize * self._nchannels)
 			if self._encoding == AUDIO_FILE_ENCODING_MULAW_8:
 				import audioop
 				data = audioop.ulaw2lin(data, self._sampwidth)
