@@ -1106,6 +1106,13 @@ typedef struct PyGetSetDef {
 \begin{cmemberdesc}{PyTypeObject}{descrgetfunc}{tp_descr_get}
   An optional pointer to a "descriptor get" function.
 
+
+  The function signature is
+
+\begin{verbatim}
+PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
+\end{verbatim}
+
   XXX blah, blah.
 
   This field is inherited by subtypes.
@@ -1114,9 +1121,16 @@ typedef struct PyGetSetDef {
 \begin{cmemberdesc}{PyTypeObject}{descrsetfunc}{tp_descr_set}
   An optional pointer to a "descriptor set" function.
 
-  XXX blah, blah.
+  The function signature is
+
+\begin{verbatim}
+int tp_descr_set(PyObject *self, PyObject *obj, PyObject *value);
+\end{verbatim}
 
   This field is inherited by subtypes.
+
+  XXX blah, blah.
+
 \end{cmemberdesc}
 
 \begin{cmemberdesc}{PyTypeObject}{long}{tp_dictoffset}
