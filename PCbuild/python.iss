@@ -189,9 +189,10 @@ Source: Tools\idle\idle.pyw;  DestDir: "{app}\Tools\idle";       CopyMode: alway
 Source: Tools\idle\*.txt;     DestDir: "{app}\Tools\idle";       CopyMode: alwaysoverwrite; Components: tools
 Source: Tools\idle\Icons\*.*; DestDir: "{app}\Tools\idle\Icons"; CopyMode: alwaysoverwrite; Components: tools
 
-Source: Tools\compiler\*.py;           DestDir: "{app}\Tools\compiler";          CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\compiler\compiler\*.py;  DestDir: "{app}\Tools\compiler\compiler"; CopyMode: alwaysoverwrite; Components: tools
-Source: Tools\compiler\compiler\*.txt; DestDir: "{app}\Tools\compiler\compiler"; CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\compiler\*.py;           DestDir: "{app}\Tools\compiler";                       CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\compiler\README;         DestDir: "{app}\Tools\compiler"; DestName: README.txt; CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\compiler\compiler\*.py;  DestDir: "{app}\Tools\compiler\compiler";              CopyMode: alwaysoverwrite; Components: tools
+Source: Tools\compiler\compiler\*.txt; DestDir: "{app}\Tools\compiler\compiler";              CopyMode: alwaysoverwrite; Components: tools
 
 Source: Tools\pynche\*.py;       DestDir: "{app}\Tools\pynche";   CopyMode: alwaysoverwrite; Components: tools
 Source: Tools\pynche\pynche.pyw; DestDir: "{app}\Tools\pynche";   CopyMode: alwaysoverwrite; Components: tools

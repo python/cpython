@@ -1069,7 +1069,7 @@ item: Custom Dialog Set
       Rectangle=9 9 257 42
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
-      Text=By default, the install records settings in the per-machine area of the registry (HKLM), and installs the Python and C runtime DLLs to the system directory.  Choose "Non-Admin install" if you would prefer settings made in the per-user registry (HKCU), and DLLs installed in %MAINDIR%.
+      Text=By default, the install records settings in the per-machine area of the registry (HKLM), and installs the Python and C runtime DLLs to %SYS32%.  Choose "Non-Admin install" if you would prefer settings made in the per-user registry (HKCU), and DLLs installed in %MAINDIR%.
     end
     item: Static
       Rectangle=4 82 261 144
@@ -2046,6 +2046,12 @@ end
 item: Install File
   Source=..\tools\compiler\*.py
   Destination=%MAINDIR%\Tools\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\tools\compiler\README
+  Destination=%MAINDIR%\Tools\compiler\README.txt
   Description=Python compiler written in Python
   Flags=0000000000000010
 end
