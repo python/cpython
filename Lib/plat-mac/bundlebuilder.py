@@ -54,13 +54,13 @@ class Defaults:
 
     def _getDefaults(cls):
         defaults = {}
+        for base in cls.__bases__:
+            if hasattr(base, "_getDefaults"):
+                defaults.update(base._getDefaults())
         for name, value in cls.__dict__.items():
             if name[0] != "_" and not isinstance(value,
                     (function, classmethod)):
                 defaults[name] = deepcopy(value)
-        for base in cls.__bases__:
-            if hasattr(base, "_getDefaults"):
-                defaults.update(base._getDefaults())
         return defaults
     _getDefaults = classmethod(_getDefaults)
 
