@@ -1787,61 +1787,8 @@ imp_new_module(self, args)
 	return PyModule_New(name);
 }
 
-static PyObject *
-imp_find_module_in_package(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	char *name;
-	PyObject *packagename = NULL;
-	PyObject *package;
-	PyObject *modules;
-	PyObject *path;
-
-	if (!PyArg_ParseTuple(args, "s|S", &name, &packagename))
-		return NULL;
-	if (packagename == NULL || PyString_GET_SIZE(packagename) == 0) {
-		return call_find_module(name, (PyObject *)NULL);
-	}
-	modules = PyImport_GetModuleDict();
-	package = PyDict_GetItem(modules, packagename);
-	if (package == NULL) {
-		PyErr_Format(PyExc_ImportError,
-			     "No package named %.200s",
-			     PyString_AS_STRING(packagename));
-		return NULL;
-	}
-	path = PyObject_GetAttrString(package, "__path__");
-	if (path == NULL) {
-		PyErr_Format(PyExc_ImportError,
-			     "Package %.200s has no __path__ attribute",
-			     PyString_AS_STRING(packagename));
-		return NULL;
-	}
-	return call_find_module(name, path);
-}
-
-static PyObject *
-imp_find_module_in_directory(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	char *name;
-	PyObject *directory;
-	PyObject *path;
-
-	if (!PyArg_ParseTuple(args, "sS", &name, &directory))
-		return NULL;
-	path = Py_BuildValue("[O]", directory);
-	if (path == NULL)
-		return NULL;
-	return call_find_module(name, path);
-}
-
 static PyMethodDef imp_methods[] = {
 	{"find_module",		imp_find_module,	1},
-	{"find_module_in_directory",	imp_find_module_in_directory,	1},
-	{"find_module_in_package",	imp_find_module_in_package,	1},
 	{"get_frozen_object",	imp_get_frozen_object,	1},
 	{"get_magic",		imp_get_magic,		1},
 	{"get_suffixes",	imp_get_suffixes,	1},
