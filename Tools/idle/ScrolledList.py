@@ -1,7 +1,7 @@
 from Tkinter import *
 
 class ScrolledList:
-    
+
     default = "(None)"
 
     def __init__(self, master, **options):

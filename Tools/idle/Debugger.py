@@ -17,7 +17,7 @@ class Debugger(bdb.Bdb):
         bdb.Bdb.__init__(self)
         self.pyshell = pyshell
         self.make_gui()
-    
+
     def canonic(self, filename):
         # Canonicalize filename -- called by Bdb
         return os.path.normcase(os.path.abspath(filename))
@@ -299,10 +299,10 @@ class Debugger(bdb.Bdb):
         import linecache # Import as late as possible
         line = linecache.getline(filename, lineno)
         if not line:
-                return 'That line does not exist!'
+            return 'That line does not exist!'
         if not self.breaks.has_key(filename):
-                self.breaks[filename] = []
+            self.breaks[filename] = []
         list = self.breaks[filename]
         if not lineno in list:
-                list.append(lineno)
+            list.append(lineno)
         bp = bdb.Breakpoint(filename, lineno, temporary, cond)

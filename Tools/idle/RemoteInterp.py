@@ -9,7 +9,7 @@ VERBOSE = None
 class SocketProtocol:
     """A simple protocol for sending strings across a socket"""
     BUF_SIZE = 8192
-    
+
     def __init__(self, sock):
         self.sock = sock
         self._buffer = ''
@@ -176,11 +176,11 @@ class CommandProtocol:
 
     def decode_seqno(self, buf):
         return struct.unpack("I", buf)[0]
-                
+
 
 class StdioRedirector:
     """Redirect sys.std{in,out,err} to a set of file-like objects"""
-    
+
     def __init__(self, stdin, stdout, stderr):
         self.stdin = stdin
         self.stdout = stdout
@@ -292,7 +292,7 @@ class RIClient:
                 self._cmd.dispatch()
         except EOFError:
             pass
-        
+
     def handle_stdout(self, buf):
         sys.stdout.write(buf)
 ##        sys.stdout.flush()
@@ -339,5 +339,4 @@ if __name__ == "__main__":
         startRemoteInterp(id)
     else:
         file = args[1]
-        riExec(id, file)        
-    
+        riExec(id, file)

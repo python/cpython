@@ -92,7 +92,7 @@ class ModuleBrowserTreeItem(TreeItem):
 
     def IsExpandable(self):
         return os.path.normcase(self.file[-3:]) == ".py"
-    
+
     def listclasses(self):
         dir, file = os.path.split(self.file)
         name, ext = os.path.splitext(file)

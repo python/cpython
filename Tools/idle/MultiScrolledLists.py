@@ -10,7 +10,7 @@ from Separator import HSeparator
 from ScrolledList import ScrolledList
 
 class MultiScrolledLists:
-    
+
     def __init__(self, root, nlists=2):
         assert nlists >= 1
         self.root = root
@@ -51,17 +51,17 @@ class MultiScrolledLists:
         self.fill(0)
         # XXX one after_idle isn't enough; two are...
         top.after_idle(self.call_pack_propagate_1)
-    
+
     def call_pack_propagate_1(self):
         self.top.after_idle(self.call_pack_propagate)
-    
+
     def call_pack_propagate(self):
         for frame in self.frames:
             frame.pack_propagate(0)
-    
+
     def close(self, event=None):
         self.top.destroy()
-    
+
     def settitle(self):
         short = self.shorttitle()
         long = self.longtitle()
@@ -80,23 +80,23 @@ class MultiScrolledLists:
     def longtitle(self):
         # override this
         return "Multi Scrolled Lists"
-    
+
     def shorttitle(self):
         # override this
         return None
-    
+
     def width(self, i):
         # override this
         return 20
-    
+
     def height(self, i):
         # override this
         return 10
-    
+
     def subtitle(self, i):
         # override this
         return "Column %d" % i
-     
+
     def fill(self, i):
         for k in range(i, self.nlists):
             self.lists[k].clear()
@@ -105,14 +105,14 @@ class MultiScrolledLists:
         l = self.items(i)
         for s in l:
             list.append(s)
-        
+
     def on_select(self, index, i):
         item = self.lists[i].get(index)
         del self.path[i:]
         self.path.append(item)
         if i+1 < self.nlists:
             self.fill(i+1)
-   
+
     def items(self, i):
         # override this
         l = []
@@ -122,7 +122,7 @@ class MultiScrolledLists:
                 s = self.path[i-1] + "." + s
             l.append(s)
         return l
-    
+
     def on_double(self, index, i):
         pass
 

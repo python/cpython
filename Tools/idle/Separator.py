@@ -1,7 +1,7 @@
 from Tkinter import *
 
 class Separator:
-    
+
     def __init__(self, master, orient, min=10, thickness=5, bg=None):
         self.min = max(1, min)
         self.thickness = max(1, thickness)
@@ -10,14 +10,14 @@ class Separator:
             self.dim = "width"
             self.dir = "x"
             self.cursor = "sb_h_double_arrow"
-    	elif orient in ("v", "vertical"):
-    	    self.side = "top"
-    	    self.dim = "height"
-    	    self.dir = "y"
+        elif orient in ("v", "vertical"):
+            self.side = "top"
+            self.dim = "height"
+            self.dir = "y"
             self.cursor = "sb_v_double_arrow"
-    	else:
-    	    raise ValueError, "Separator: orient should be h or v"
-    	self.winfo_dim = "winfo_" + self.dim
+        else:
+            raise ValueError, "Separator: orient should be h or v"
+        self.winfo_dim = "winfo_" + self.dim
         self.master = master = Frame(master)
         master.pack(expand=1, fill="both")
         self.f1 = Frame(master)

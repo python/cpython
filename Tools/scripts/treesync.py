@@ -17,7 +17,7 @@ entry in the master tree are synchronized.  This means:
                 copy the slave to the master
         else (the master is newer):
             copy the master to the slave
-    
+
     normalizing the slave means replacing CRLF with LF when the master
     doesn't use CRLF
 
@@ -59,7 +59,7 @@ def main():
         print "slavedir masterdir"
         return
     process(slave, master)
-    
+
 def process(slave, master):
     cvsdir = os.path.join(master, "CVS")
     if not os.path.isdir(cvsdir):
