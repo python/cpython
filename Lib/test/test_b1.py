@@ -184,6 +184,23 @@ if filter(None, Squares(10)) != [1, 4, 9, 16, 25, 36, 49, 64, 81]:
     raise TestFailed, 'filter(None, Squares(10))'
 if filter(lambda x: x%2, Squares(10)) != [1, 9, 25, 49, 81]:
     raise TestFailed, 'filter(oddp, Squares(10))'
+class StrSquares:
+    def __init__(self, max):
+        self.max = max
+        self.sofar = []
+    def __len__(self):
+        return len(self.sofar)
+    def __getitem__(self, i):
+        if not 0 <= i < self.max:
+            raise IndexError
+        n = len(self.sofar)
+        while n <= i:
+            self.sofar.append(str(n*n))
+            n = n+1
+        return self.sofar[i]
+def identity(item):
+    return 1
+filter(identity, Squares(5))
 
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
