@@ -188,14 +188,16 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 		deque->len++;
 		if (deque->rightindex == BLOCKLEN) {
 			block *b = newblock(deque->rightblock, NULL);
-			if (b == NULL)
+			if (b == NULL) {
+				Py_DECREF(item);
+				Py_DECREF(it);
 				return NULL;
+			}
 			assert(deque->rightblock->rightlink == NULL);
 			deque->rightblock->rightlink = b;
 			deque->rightblock = b;
 			deque->rightindex = 0;
 		}
-		Py_INCREF(item);
 		deque->rightblock->data[deque->rightindex] = item;
 	}
 	Py_DECREF(it);
@@ -221,14 +223,16 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 		deque->len++;
 		if (deque->leftindex == -1) {
 			block *b = newblock(NULL, deque->leftblock);
-			if (b == NULL)
+			if (b == NULL) {
+				Py_DECREF(item);
+				Py_DECREF(it);
 				return NULL;
+			}
 			assert(deque->leftblock->leftlink == NULL);
 			deque->leftblock->leftlink = b;
 			deque->leftblock = b;
 			deque->leftindex = BLOCKLEN - 1;
 		}
-		Py_INCREF(item);
 		deque->leftblock->data[deque->leftindex] = item;
 	}
 	Py_DECREF(it);
@@ -444,6 +448,9 @@ static PySequenceMethods deque_as_sequence = {
 /* deque object ********************************************************/
 
 static PyObject *deque_iter(dequeobject *deque);
+static PyObject *deque_reviter(dequeobject *deque);
+PyDoc_STRVAR(reversed_doc, 
+	"D.__reversed__() -- return a reverse iterator over the deque");
 
 static PyMethodDef deque_methods[] = {
 	{"append",		(PyCFunction)deque_append,	
@@ -460,6 +467,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 popleft_doc},
 	{"__reduce__",	(PyCFunction)deque_reduce,	
 		METH_NOARGS,	 reduce_doc},
+	{"__reversed__",	(PyCFunction)deque_reviter,	
+		METH_NOARGS,	 reversed_doc},
 	{"extend",		(PyCFunction)deque_extend,	
 		METH_O,		 extend_doc},
 	{"extendleft",	(PyCFunction)deque_extendleft,	
@@ -608,6 +617,83 @@ PyTypeObject dequeiter_type = {
 	0,
 };
 
+/*********************** Deque Reverse Iterator **************************/
+
+PyTypeObject dequereviter_type;
+
+static PyObject *
+deque_reviter(dequeobject *deque)
+{
+	dequeiterobject *it;
+
+	it = PyObject_New(dequeiterobject, &dequereviter_type);
+	if (it == NULL)
+		return NULL;
+	it->b = deque->rightblock;
+	it->index = deque->rightindex;
+	Py_INCREF(deque);
+	it->deque = deque;
+	it->len = deque->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+dequereviter_next(dequeiterobject *it)
+{
+	PyObject *item;
+	if (it->b == it->deque->leftblock && it->index < it->deque->leftindex)
+		return NULL;
+
+	if (it->len != it->deque->len) {
+		it->len = -1; /* Make this state sticky */
+		PyErr_SetString(PyExc_RuntimeError,
+				"deque changed size during iteration");
+		return NULL;
+	}
+
+	item = it->b->data[it->index];
+	it->index--;
+	if (it->index == -1 && it->b->leftlink != NULL) {
+		it->b = it->b->leftlink;
+		it->index = BLOCKLEN - 1;
+	}
+	Py_INCREF(item);
+	return item;
+}
+
+PyTypeObject dequereviter_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,					/* ob_size */
+	"deque_reverse_iterator",		/* tp_name */
+	sizeof(dequeiterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)dequeiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)dequereviter_next,	/* tp_iternext */
+	0,
+};
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -628,6 +714,9 @@ initcollections(void)
 
 	if (PyType_Ready(&dequeiter_type) < 0)
 		return;	
+
+	if (PyType_Ready(&dequereviter_type) < 0)
+		return;
 
 	return;
 }

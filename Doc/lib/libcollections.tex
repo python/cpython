@@ -60,7 +60,7 @@ Deque objects support the following methods:
 
 In addition to the above, deques support iteration, membership testing
 using the \keyword{in} operator, \samp{len(d)}, \samp{copy.copy(d)},
-\samp{copy.deepcopy(d)}, and pickling.
+\samp{copy.deepcopy(d)}, \samp{reversed(d)} and pickling.
 
 Example:
 
@@ -84,6 +84,8 @@ deque(['f', 'g', 'h', 'i', 'j'])
 'f'
 >>> list(d)                 # list the contents of the deque
 ['g', 'h', 'i']
+>>> list(reversed(d))       # list the contents of a deque in reverse
+['i', 'h', 'g']
 >>> 'h' in d                # search the deque
 True
 >>> d.extend('jkl')         # extend() will append many elements at once
