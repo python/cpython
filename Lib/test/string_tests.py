@@ -227,6 +227,16 @@ def run_method_tests(test):
     test('endswith', 'ab', 0, 'ab', 0, 1)
     test('endswith', 'ab', 0, 'ab', 0, 0)
 
+    test('zfill', '123', '123', 2)
+    test('zfill', '123', '123', 3)
+    test('zfill', '123', '0123', 4)
+    test('zfill', '+123', '+123', 3)
+    test('zfill', '+123', '+123', 4)
+    test('zfill', '+123', '+0123', 5)
+    test('zfill', '-123', '-123', 3)
+    test('zfill', '-123', '-123', 4)
+    test('zfill', '-123', '-0123', 5)
+    test('zfill', '', '000', 3)
     test('zfill', '34', '34', 1)
     test('zfill', '34', '0034', 4)
     

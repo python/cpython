@@ -190,7 +190,10 @@ def rfind(s, *args):
 _float = float
 _int = int
 _long = long
-_StringTypes = (str, unicode)
+try:
+    _StringTypes = (str, unicode)
+except NameError:
+    _StringTypes = (str,)
 
 # Convert string to float
 def atof(s):
@@ -277,13 +280,8 @@ def zfill(x, width):
 
     """
     if not isinstance(x, _StringTypes):
-        x = str(x)
-    n = len(x)
-    if n >= width: return x
-    sign = ''
-    if x[0] in '-+':
-        sign, x = x[0], x[1:]
-    return sign + '0'*(width-n) + x
+        x = repr(x)
+    return x.zfill(width)
 
 # Expand tabs in a string.
 # Doesn't take non-printing chars into account, but does understand \n.

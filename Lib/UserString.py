@@ -128,6 +128,7 @@ class UserString:
     def translate(self, *args):
         return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
+    def zfill(self, width): return self.__class__(self.data.zfill(width))
 
 class MutableString(UserString):
     """mutable string objects

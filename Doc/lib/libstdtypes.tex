@@ -694,6 +694,12 @@ must be a string of length 256.
 Return a copy of the string converted to uppercase.
 \end{methoddesc}
 
+\begin{methoddesc}[string]{zfill}{width}
+Return the numeric string left filled with zeros in a string
+of length \var{width}. The original string is returned if
+\var{width} is less than \code{len(\var{s})}.
+\end{methoddesc}
+
 
 \subsubsection{String Formatting Operations \label{typesseq-strings}}
 
