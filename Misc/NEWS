@@ -822,7 +822,9 @@ Windows
   improvement over the previous Berkeley DB 1.85, which had many
   bugs.
   XXX What are the licensing issues here?
-  XXX The debug Python still blows up (see PCbuild/readme.txt).
+  XXX If a user has a database created with a previous verion of
+  XXX     Python, what must they do to convert it?
+  XXX I'm still not sure how to link this thing (see PCbuild/readme.txt).
   XXX The version # is likely to change before 2.3a1.
 
 - The Windows distribution now ships with Tcl/Tk version 8.4.1 (it

@@ -161,6 +161,8 @@ bz2
 
 
 _bsddb
+    XXX The Sleepycat release we use will probably change before
+    XXX 2.3a1.
     Go to Sleepycat's patches page:
         http://www.sleepycat.com/update/index.html
     and download
@@ -182,19 +184,21 @@ _bsddb
     yes, of course).  Choose configuration "db_buildall - Win32 Release",
     and build db_buildall.exe.
 
-    XXX You have to copy
-    XXX     dist\db-4.0.14\build_win32\Release\libdb40.dll
-    XXX into PCbuild (or elsewhere on your path) before the tests
-    XXX will run.
+    XXX We're actually linking against Release_static\libdb40s.lib.
+    XXX This yields the following warnings:
+"""
+Compiling...
+_bsddb.c
+Linking...
+   Creating library ./_bsddb.lib and object ./_bsddb.exp
+LINK : warning LNK4049: locally defined symbol "_malloc" imported
+LINK : warning LNK4049: locally defined symbol "_free" imported
+LINK : warning LNK4049: locally defined symbol "_fclose" imported
+LINK : warning LNK4049: locally defined symbol "_fopen" imported
+_bsddb.pyd - 0 error(s), 4 warning(s)
+"""
+    XXX This isn't encouraging, but I don't know what to do about it.
 
-    XXX A debug-mode build blows up when running this, presumably because
-    XXX I'm mixing debug-mode MS stuff with Sleepycat's release-mode
-    XXX DLL.  This gives me a headache.  I would *like* to, as the old
-    XXX bsddb 1.85 project apparently managed to do, link the Berkeley
-    XXX DLL into the guts of our _bsddb.pyd.  I don't know how to.
-
-    XXX The Sleepycat release we use will probably change before
-    XXX 2.3a1.
 
 
 YOUR OWN EXTENSION DLLs

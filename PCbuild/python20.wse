@@ -1853,17 +1853,6 @@ item: Install File
 end
 item: Remark
 end
-item: Remark
-  Text=Oddball -- the Sleepcat DLL
-end
-item: Install File
-  Source=..\..\db-4.0.14\build_win32\Release\libdb40.dll
-  Destination=%MAINDIR%\DLLs\libdb40.dll
-  Description=Sleepycat Berekely DB DLL
-  Flags=0000000000000010
-end
-item: Remark
-end
 item: Install File
   Source=.\python%_pymajor_%%_pyminor_%.lib
   Destination=%MAINDIR%\libs\python%_PYMAJOR_%%_PYMINOR_%.lib
