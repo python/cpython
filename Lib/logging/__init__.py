@@ -19,7 +19,7 @@ Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python, and influenced by Apache's log4j system.
 
 Should work under Python versions >= 1.5.2, except that source line
-information is not available unless 'inspect' is.
+information is not available unless 'sys._getframe()' is.
 
 Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 
@@ -33,10 +33,6 @@ try:
     import threading
 except ImportError:
     thread = None
-try:
-    import inspect
-except ImportError:
-    inspect = None
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "alpha"
@@ -55,6 +51,13 @@ if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
 else:
     _srcfile = __file__
 _srcfile = os.path.normcase(_srcfile)
+
+# _srcfile is only used in conjunction with sys._getframe().
+# To provide compatibility with older versions of Python, set _srcfile
+# to None if _getframe() is not available; this value will prevent
+# findCaller() from being called.
+if not hasattr(sys, "_getframe"):
+    _srcfile = None
 
 #
 #_startTime is used as the base when calculating the relative time of events
@@ -927,19 +930,14 @@ class Logger(Filterer):
         Find the stack frame of the caller so that we can note the source
         file name and line number.
         """
-        rv = (None, None)
-        frame = inspect.currentframe().f_back
-        while frame:
-            sfn = inspect.getsourcefile(frame)
-            if sfn:
-                sfn = os.path.normcase(sfn)
-            if sfn != _srcfile:
-                #print frame.f_code.co_code
-                lineno = inspect.getlineno(frame)
-                rv = (sfn, lineno)
-                break
-            frame = frame.f_back
-        return rv
+        f = sys._getframe(1)
+        while 1:
+            co = f.f_code
+            filename = os.path.normcase(co.co_filename)
+            if filename == _srcfile:
+                f = f.f_back
+                continue
+            return filename, f.f_lineno
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info):
         """
@@ -953,12 +951,8 @@ class Logger(Filterer):
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
         """
-        if inspect and _srcfile:
-            _acquireLock()
-            try:
-                fn, lno = self.findCaller()
-            finally:
-                _releaseLock()
+        if _srcfile:
+            fn, lno = self.findCaller()
         else:
             fn, lno = "<unknown file>", 0
         if exc_info:
