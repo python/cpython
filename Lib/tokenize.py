@@ -1,13 +1,26 @@
 """Tokenization help for Python programs.
 
-This module exports a function called 'tokenize()' that breaks a stream of
+generate_tokens(readline) is a generator that breaks a stream of
 text into Python tokens.  It accepts a readline-like method which is called
-repeatedly to get the next line of input (or "" for EOF) and a "token-eater"
-function which is called once for each token found.  The latter function is
-passed the token type, a string containing the token, the starting and
-ending (row, column) coordinates of the token, and the original line.  It is
-designed to match the working of the Python tokenizer exactly, except that
-it produces COMMENT tokens for comments and gives type OP for all operators."""
+repeatedly to get the next line of input (or "" for EOF).  It generates
+5-tuples with these members:
+
+    the token type (see token.py)
+    the token (a string)
+    the starting (row, column) indices of the token (a 2-tuple of ints)
+    the ending (row, column) indices of the token (a 2-tuple of ints)
+    the original line (string)
+
+It is designed to match the working of the Python tokenizer exactly, except
+that it produces COMMENT tokens for comments and gives type OP for all
+operators
+
+Older entry points
+    tokenize_loop(readline, tokeneater)
+    tokenize(readline, tokeneater=printtoken)
+are the same, except instead of generating tokens, tokeneater is a callback
+function to which the 5 fields described above are passed as 5 arguments,
+each time a new token is found."""
 
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = \
@@ -111,7 +124,7 @@ def tokenize(readline, tokeneater=printtoken):
     except StopTokenizing:
         pass
 
-# backwards compatible interface, probably not used
+# backwards compatible interface
 def tokenize_loop(readline, tokeneater):
     for token_info in generate_tokens(readline):
         apply(tokeneater, token_info)
