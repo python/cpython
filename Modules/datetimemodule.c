@@ -3682,8 +3682,7 @@ datetime_now(PyObject *cls, PyObject *args, PyObject *kw)
 	if (self != NULL && tzinfo != Py_None) {
 		/* Convert UTC to tzinfo's zone. */
 		PyObject *temp = self;
-		self = PyObject_CallMethod(tzinfo, "fromutc",
-					   "O", self);
+		self = PyObject_CallMethod(tzinfo, "fromutc", "O", self);
 		Py_DECREF(temp);
 	}
 	return self;
@@ -3702,17 +3701,26 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
 static PyObject *
 datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 {
-	PyObject *self = NULL;
+	PyObject *self;
 	double timestamp;
 	PyObject *tzinfo = Py_None;
-	static char *keywords[] = {"timestamp", "tzinfo", NULL};
+	static char *keywords[] = {"timestamp", "tz", NULL};
 
-	if (PyArg_ParseTupleAndKeywords(args, kw, "d|O:fromtimestamp",
-					keywords, &timestamp, &tzinfo)) {
-		if (check_tzinfo_subclass(tzinfo) < 0)
-			return NULL;
-		self = datetime_from_timestamp(cls, localtime, timestamp,
-					       tzinfo);
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "d|O:fromtimestamp",
+					  keywords, &timestamp, &tzinfo))
+		return NULL;
+	if (check_tzinfo_subclass(tzinfo) < 0)
+		return NULL;
+
+	self = datetime_from_timestamp(cls,
+				       tzinfo == Py_None ? localtime : gmtime,
+				       timestamp,
+				       tzinfo);
+	if (self != NULL && tzinfo != Py_None) {
+		/* Convert UTC to tzinfo's zone. */
+		PyObject *temp = self;
+		self = PyObject_CallMethod(tzinfo, "fromutc", "O", self);
+		Py_DECREF(temp);
 	}
 	return self;
 }
@@ -4404,7 +4412,7 @@ static PyMethodDef datetime_methods[] = {
 
 	{"now",         (PyCFunction)datetime_now,
 	 METH_KEYWORDS | METH_CLASS,
-	 PyDoc_STR("[tzinfo] -> new datetime with local day and time.")},
+	 PyDoc_STR("[tz] -> new datetime with tz's locl day and time.")},
 
 	{"utcnow",         (PyCFunction)datetime_utcnow,
 	 METH_NOARGS | METH_CLASS,
@@ -4412,7 +4420,7 @@ static PyMethodDef datetime_methods[] = {
 
 	{"fromtimestamp", (PyCFunction)datetime_fromtimestamp,
 	 METH_KEYWORDS | METH_CLASS,
-	 PyDoc_STR("timestamp[, tzinfo] -> local time from POSIX timestamp.")},
+	 PyDoc_STR("timestamp[, tz] -> tz's local time from POSIX timestamp.")},
 
 	{"utcfromtimestamp", (PyCFunction)datetime_utcfromtimestamp,
 	 METH_VARARGS | METH_CLASS,

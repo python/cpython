@@ -93,6 +93,10 @@ Extension modules
   a tz argument, now() continues to return the current local date and time,
   as a naive datetime object.
 
+  datetime.fromtimestamp():  Like datetime.now() above, this had less than
+  useful behavior when the optional tinzo argument was specified.  See
+  also SF bug report <http://www.python.org/sf/660872>.
+
   The constructors building a datetime from a timestamp could raise
   ValueError if the platform C localtime()/gmtime() inserted "leap
   seconds".  Leap seconds are ignored now.  On such platforms, it's
