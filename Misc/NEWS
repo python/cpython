@@ -4,6 +4,24 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4.1c2?
+=============================
+
+*Release date: DD-MAR-2005*
+
+Library
+-------
+
+- Bug #1160802: can't build Zope on Windows with 2.4.1c1.  The
+  ``MSVCCompiler`` class in distutils forgot to record that it was
+  initialized, and continued adding redundant entries to the system
+  ``PATH`` environment variable until ``putenv()`` complained about the
+  size.  This only affected building projects with many C extensions,
+  and only on Windows using Microsoft's compiler.  This wasn't visible
+  before because a bugfix first included in 2.4.1c1 provoked it (bug
+  #1110478: revert os.environ.update to do putenv again).
+
+
 What's New in Python 2.4.1c1?
 =============================
 
@@ -20,7 +38,7 @@ Core and builtins
 - Bug #1124295: the __name__ attribute of file objects was
   inadvertently made inaccessible in restricted mode.
 
-- Bug #1074011: closing sys.std{out,err} now causes a flush() and 
+- Bug #1074011: closing sys.std{out,err} now causes a flush() and
   an ferror() call.
 
 - Bug #1085744:  Add missing overflow check to PySequence_Tuple().
@@ -124,9 +142,9 @@ Macintosh
 
 - On 10.3 and later extensions are built with -undefined dynamic_lookup.
   This ensures that extensions can be built in older versions of Python after
-  a newer framework has been installed. In addition, an extension will not 
+  a newer framework has been installed. In addition, an extension will not
   accidentally pull in another copy of the Python interpreter.
-  
+
   On 10.2 and earlier (or if MACOSX_DEPLOYMENT_TARGET is set to a value <= 10.2)
   extensions are linked directly to the dylib in the framework, in stead
   of against the framework itself. This ensures that extensions can be built
@@ -144,7 +162,7 @@ Documentation
   Mac OS 9 and change to reflect the state for OS X.
   Closes patch #1095802.  Thanks Jack Jansen.
 
- 
+
 What's New in Python 2.4 final?
 ===============================
 
