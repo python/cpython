@@ -1,161 +1,67 @@
 ===================================
-==> Release 1.1.1 (10 Nov 1994) <==
+==> Release 1.2 <==
 ===================================
 
-This is a pure bugfix release again.  See the ChangeLog file for details.
 
-One exception: a few new features were added to tkinter.
+- Most known bugs have been fixed.  For example the pow(2,2,3L) bug on
+Linux has been fixed.  Also the re-entrancy problems with __del__ have
+been fixed.
 
+- Most known memory leaks have been fixed.
 
-=================================
-==> Release 1.1 (11 Oct 1994) <==
-=================================
+- Phase 2 of the Great Renaming has been executed.  The header files
+now use the new names (PyObject instead of object, etc.).  The linker
+also sees the new names.  Most source files still use the old names,
+by virtue of the rename2.h header file.  If you include Python.h, you
+only see the new names.  Dynamically linked modules have to be
+recompiled.
 
-This release adds several new features, improved configuration and
-portability, and fixes more bugs than I can list here (including some
-memory leaks).
+- The hooks for implementing "safe-python" (better called "restricted
+execution") are in place.  Specifically, the import statement is
+implemented by calling the built-in function __import__, and the
+built-in names used in a particular scope are taken from the
+dictionary __builtins__ in that scope's global dictionary.  See also
+the new module rexec.py.
 
-The source compiles and runs out of the box on more platforms than
-ever -- including Windows NT.  Makefiles or projects for a variety of
-non-UNIX platforms are provided.
+- The import statement now supports the syntax "import a.b.c" and
+"from a.b.c import name".  No meaningful implementation exists, but
+one can be prototyped by replacing the built-in __import__ function.
 
-APOLOGY: some new features are badly documented or not at all.  I had
-the choice -- postpone the new release indefinitely, or release it
-now, with working code but some undocumented areas.  The problem with
-postponing the release is that people continue to suffer from existing
-bugs, and send me patches based on the previous release -- which I
-can't apply directly because my own source has changed.  Also, some
-new modules (like signal) have been ready for release for quite some
-time, and people are anxiously waiting for them.  In the case of
-signal, the interface is simple enough to figure out without
-documentation (if you're anxious enough :-).  In this case it was not
-simple to release the module on its own, since it relies on many small
-patches elsewhere in the source.
+- All machinery used by the import statement (or the built-in
+__import__ function) is now exposed through the new built-in module
+"imp".  All dynamic loading machinery is moved to the new file
+importdl.c.
 
-For most new Python modules, the source code contains comments that
-explain how to use them.  Documentation for the Tk interface, written
-by Matt Conway, is available as tkinter-doc.tar.gz from the Python
-home and mirror ftp sites (see Misc/FAQ for ftp addresses).  For the
-new operator overloading facilities, have a look at Demo/classes:
-Complex.py and Rat.py show how to implement a numeric type without and
-with __coerce__ method.  Also have a look at the end of the Tutorial
-document (Doc/tut.tex).  If you're still confused: use the newsgroup
-or mailing list.
+- Persistent storage is supported through the use of the module
+"pickle" and "shelve" (implemented in Python).  Read the .py files for
+more info.  There's also a "copy" module implementing deepcopy and
+normal (shallow) copy operations.
 
+- Documentation strings for many objects types are accessible through
+the __doc__ attribute.  Modules, classes and functions support special
+syntax to initialize the __doc__ attribute: if the first statement
+consists of just a string literal, that string literal becomes the
+value of the __doc__ attribute.  The default __doc__ attribute is
+None.  Documentation strings are also supported for built-in
+functions, types and modules; however this feature hasn't been widely
+used yet.  See the 'new' module for an example.
 
-New language features:
+- The __coerce__ and __cmp__ methods for user-defined classes once
+again work as expected.  As an example, there's a new standard class
+Complex in the library.
 
-    - More flexible operator overloading for user-defined classes
-    (INCOMPATIBLE WITH PREVIOUS VERSIONS!)  See end of tutorial.
+- The functions posix.popen() and posix.fdopen() now have an optional
+third argument to specify the buffer size, and default their second
+(mode) argument to 'r' -- in analogy to the builtin open() function.
 
-    - Classes can define methods named __getattr__, __setattr__ and
-    __delattr__ to trap attribute accesses.  See end of tutorial.
+- Improved support for the Apple Macintosh, e.g. interfaces to (a few)
+resource mananger functions, get/set file type and creator, gestalt,
+sound manager, speech manager, MacTCP, comm toolbox, and the think C
+console library.  (Sorry, no Mac binary yet.  Will try to produce one
+shortly, plus instructions on how to compile with THINK C 6.0.)
 
-    - Classes can define method __call__ so instances can be called
-    directly.  See end of tutorial.
-
-
-New support facilities:
-
-    - The Makefiles (for the base interpreter as well as for extensions)
-    now support creating dynamically loadable modules if the platform
-    supports shared libraries.
-
-    - Passing the interpreter a .pyc file as script argument will execute
-    the code in that file.  (On the Mac such files can be double-clicked!)
-
-    - New Freeze script, to create independently distributable "binaries"
-    of Python programs -- look in Demo/freeze
-
-    - Improved h2py script (in Demo/scripts) follows #includes and
-    supports macros with one argument
-
-    - New module compileall generates .pyc files for all modules in a
-    directory (tree) without also executing them
-
-    - Threads should work on more platforms
-
-
-New built-in modules:
-
-    - tkinter (support for Tcl's Tk widget set) is now part of the base
-    distribution
-
-    - signal allows catching or ignoring UNIX signals (unfortunately still
-    undocumented -- any taker?)
-
-    - termios provides portable access to POSIX tty settings
-
-    - curses provides an interface to the System V curses library
-
-    - syslog provides an interface to the (BSD?) syslog daemon
-
-    - 'new' provides interfaces to create new built-in object types
-    (e.g. modules and functions)
-
-    - sybase provides an interface to SYBASE database
-
-
-New/obsolete built-in methods:
-
-    - callable(x) tests whether x can be called
-
-    - sockets now have a setblocking() method
-
-    - sockets no longer have an allowbroadcast() method
-
-    - socket methods send() and sendto() return byte count
-
-
-New standard library modules:
-
-    - types.py defines standard names for built-in types, e.g. StringType
-
-    - urlparse.py parses URLs according to the latest Internet draft
-
-    - uu.py does uuencode/uudecode (not the fastest in the world, but
-    quicker than installing uuencode on a non-UNIX machine :-)
-
-    - New, faster and more powerful profile module.py
-
-    - mhlib.py provides interface to MH folders and messages
-
-
-New facilities for extension writers (unfortunately still
-undocumented):
-
-    - newgetargs() supports optional arguments and improved error messages
-
-    - O!, O& O? formats for getargs allow more versatile type checking of
-    non-standard types
-
-    - can register pending asynchronous callback, to be called the next
-    time the Python VM begins a new instruction (Py_AddPendingCall)
-
-    - can register cleanup routines to be called when Python exits
-    (Py_AtExit)
-
-    - makesetup script understands C++ files in Setup file (use file.C
-    or file.cc)
-
-    - Make variable OPT is passed on to sub-Makefiles
-
-    - An init<module>() routine may signal an error by not entering
-    the module in the module table and raising an exception instead
-
-    - For long module names, instead of foobarbletchmodule.c you can
-    use foobarbletch.c
-
-    - getintvalue() and getfloatvalue() try to convert any object
-    instead of requiring an "intobject" or "floatobject"
-
-    - All the [new]getargs() formats that retrieve an integer value
-    will now also work if a float is passed
-
-    - C function listtuple() converts list to tuple, fast
-
-    - You should now call sigcheck() instead of intrcheck();
-    sigcheck() also sets an exception when it returns nonzero
+- Used autoconf 2.0 to generate the configure script.  Adapted
+configure.in to use the new features in autoconf 2.0.
 
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
