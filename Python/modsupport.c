@@ -278,6 +278,9 @@ do_mkvalue(p_format, p_va)
 		case 'h':
 		case 'i':
 			return PyInt_FromLong((long)va_arg(*p_va, int));
+			
+		case 'H':
+			return PyInt_FromLong((long)va_arg(*p_va, unsigned int));
 
 		case 'l':
 			return PyInt_FromLong((long)va_arg(*p_va, long));
