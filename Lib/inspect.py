@@ -127,8 +127,7 @@ def isbuiltin(object):
 
 def isroutine(object):
     """Return true if the object is any kind of function or method."""
-    return type(object) in [types.FunctionType, types.LambdaType,
-                            types.MethodType, types.BuiltinFunctionType]
+    return isbuiltin(object) or isfunction(object) or ismethod(object)
 
 def getmembers(object, predicate=None):
     """Return all members of an object as (name, value) pairs sorted by name.
