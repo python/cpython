@@ -36,28 +36,22 @@ otherwise use the Software alone or in any derivative version,
 provided, however, that the BeOpen Python License is retained in the
 Software, alone or in any derivative version prepared by Licensee.
 
-3. Instead of using this License, you can redistribute and/or modify
-the Software under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2, or (at
-your option) any later version.  For a copy of the GPL, see
-http://www.gnu.org/copyleft/gpl.html.
-
-4. BeOpen is making the Software available to Licensee on an "AS IS"
+3. BeOpen is making the Software available to Licensee on an "AS IS"
 basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
 IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO AND
 DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
 FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE WILL NOT
 INFRINGE ANY THIRD PARTY RIGHTS.
 
-5. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
 SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS
 AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE, OR ANY
 DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
-6. This License Agreement will automatically terminate upon a material
+5. This License Agreement will automatically terminate upon a material
 breach of its terms and conditions.
 
-7. This License Agreement shall be governed by and interpreted in all
+6. This License Agreement shall be governed by and interpreted in all
 respects by the law of the State of California, excluding conflict of
 law provisions.  Nothing in this License Agreement shall be deemed to
 create any relationship of agency, partnership, or joint venture
@@ -68,7 +62,7 @@ third party.  As an exception, the "BeOpen Python" logos available at
 http://www.pythonlabs.com/logos.html may be used according to the
 permissions granted on that web page.
 
-8. By copying, installing or otherwise using the software, Licensee
+7. By copying, installing or otherwise using the software, Licensee
 agrees to be bound by the terms and conditions of this License
 Agreement.
 
