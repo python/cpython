@@ -92,7 +92,12 @@ elif os.name != 'riscos':
     TESTFN = '@test'
     # Unicode name only used if TEST_FN_ENCODING exists for the platform.
     if have_unicode:
-        TESTFN_UNICODE=unicode("@test-\xe0\xf2", "latin-1") # 2 latin characters.
+        if isinstance('', unicode):
+            # python -U
+            # XXX perhaps unicode() should accept Unicode strings?
+            TESTFN_UNICODE="@test-\xe0\xf2"
+        else:
+            TESTFN_UNICODE=unicode("@test-\xe0\xf2", "latin-1") # 2 latin characters.
         if os.name=="nt":
             TESTFN_ENCODING="mbcs"
 else:
