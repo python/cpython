@@ -3553,10 +3553,26 @@ PyString_InternInPlace(PyObject **p)
 		Py_DECREF(s);
 		return;
 	}
-	t = (PyObject *)s;
-	if (PyDict_SetItem(interned, t, t) == 0) {
-		s->ob_sinterned = t;
-		return;
+	/* Ensure that only true string objects appear in the intern dict,
+	   and as the value of ob_sinterned. */
+	if (PyString_CheckExact(s)) {
+		t = (PyObject *)s;
+		if (PyDict_SetItem(interned, t, t) == 0) {
+			s->ob_sinterned = t;
+			return;
+		}
+	}
+	else {
+		t = PyString_FromStringAndSize(PyString_AS_STRING(s),
+						PyString_GET_SIZE(s));
+		if (t != NULL) {
+			if (PyDict_SetItem(interned, t, t) == 0) {
+				*p = s->ob_sinterned = t;
+				Py_DECREF(s);
+				return;
+			}
+			Py_DECREF(t);
+		}
 	}
 	PyErr_Clear();
 }
