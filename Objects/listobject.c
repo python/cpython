@@ -26,6 +26,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "modsupport.h"
+#include "compile.h" /* Needed by ceval.h */
+#include "ceval.h" /* For call_object() */
 
 object *
 newlistobject(size)
@@ -471,11 +473,46 @@ listappend(self, args)
 	return ins(self, (int) self->ob_size, args);
 }
 
+static object *cmpfunc;
+
 static int
 cmp(v, w)
 	char *v, *w;
 {
-	return cmpobject(* (object **) v, * (object **) w);
+	object *t, *res;
+	long i;
+
+	if (err_occurred())
+		return 0;
+
+	if (cmpfunc == NULL)
+		return cmpobject(* (object **) v, * (object **) w);
+
+	/* Call the user-supplied comparison function */
+	t = newtupleobject(2);
+	if (t == NULL)
+		return 0;
+	INCREF(* (object **) v);
+	settupleitem(t, 0, * (object **) v);
+	INCREF(* (object **) w);
+	settupleitem(t, 1, * (object **) w);
+	res = call_object(cmpfunc, t);
+	DECREF(t);
+	if (res == NULL)
+		return 0;
+	if (!is_intobject(res)) {
+		err_setstr(TypeError, "comparison function should return int");
+		i = 0;
+	}
+	else {
+		i = getintvalue(res);
+		if (i < 0)
+			i = -1;
+		else if (i > 0)
+			i = 1;
+	}
+	DECREF(res);
+	return (int) i;
 }
 
 static object *
@@ -483,14 +520,24 @@ listsort(self, args)
 	listobject *self;
 	object *args;
 {
-	if (args != NULL) {
-		err_badarg();
-		return NULL;
+	object *save_cmpfunc;
+	if (self->ob_size <= 1) {
+		INCREF(None);
+		return None;
 	}
-	err_clear();
-	if (self->ob_size > 1)
-		qsort((char *)self->ob_item,
+	save_cmpfunc = cmpfunc;
+	cmpfunc = args;
+	if (cmpfunc != NULL) {
+		/* Test the comparison function for obvious errors */
+		(void) cmp(&self->ob_item[0], &self->ob_item[1]);
+		if (err_occurred()) {
+			cmpfunc = save_cmpfunc;
+			return NULL;
+		}
+	}
+	qsort((char *)self->ob_item,
 				(int) self->ob_size, sizeof(object *), cmp);
+	cmpfunc = save_cmpfunc;
 	if (err_occurred())
 		return NULL;
 	INCREF(None);
