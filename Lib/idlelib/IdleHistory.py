@@ -86,4 +86,3 @@ class History:
         self.text.mark_set("insert", "end-1c")
         self.text.insert("insert", s)
         self.text.see("insert")
-
