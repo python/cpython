@@ -264,6 +264,11 @@ class XMLParser:
                     i = k
                     continue
             elif rawdata[i] == '&':
+                if self.literal:
+                    data = rawdata[i]
+                    self.handle_data(data)
+                    i = i+1
+                    continue
                 res = charref.match(rawdata, i)
                 if res is not None:
                     i = res.end(0)
@@ -292,6 +297,11 @@ class XMLParser:
                     self.lineno = self.lineno + string.count(res.group(0), '\n')
                     continue
             elif rawdata[i] == ']':
+                if self.literal:
+                    data = rawdata[i]
+                    self.handle_data(data)
+                    i = i+1
+                    continue
                 if n-i < 3:
                     break
                 if cdataclose.match(rawdata, i):
