@@ -72,6 +72,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef macintosh
+#ifndef __MSL__
 /* Replace strerror with a Mac specific routine.
    XXX PROBLEM: some positive errors have a meaning for MacOS,
    but some library routines set Unix error numbers...
@@ -79,6 +80,7 @@ PERFORMANCE OF THIS SOFTWARE.
 extern char *PyMac_StrError PROTO((int));
 #undef strerror
 #define strerror PyMac_StrError
+#endif
 #endif /* macintosh */
 
 #ifndef __STDC__
