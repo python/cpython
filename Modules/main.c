@@ -20,7 +20,8 @@
 #include "pygetopt.h"
 
 #define COPYRIGHT \
-    "Type \"copyright\", \"credits\" or \"license\" for more information."
+    "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
+    "for more information."
 
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
