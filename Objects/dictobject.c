@@ -87,9 +87,6 @@ typedef struct {
 	int ma_fill;
 	int ma_used;
 	int ma_size;
-#ifdef INTERN_STRINGS
-	int ma_fast;
-#endif
 	mappingentry *ma_table;
 } mappingobject;
 
@@ -109,9 +106,6 @@ newmappingobject()
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
-#ifdef INTERN_STRINGS
-	mp->ma_fast = 1;
-#endif
 	return (object *)mp;
 }
 
@@ -169,79 +163,37 @@ lookmapping(mp, key, hash)
 	unsigned long sum;
 	int incr;
 	int size;
-#ifdef INTERN_STRINGS
-	int fast;
-#endif
 
 	ep = &mp->ma_table[(unsigned long)hash%mp->ma_size];
 	ekey = ep->me_key;
 	if (ekey == NULL)
 		return ep;
 #ifdef INTERN_STRINGS
-	if ((fast = mp->ma_fast)) {
+	{
 		object *ikey;
-		if (!is_stringobject(key) ||
-		    (ikey = ((stringobject *)key)->ob_sinterned) == NULL)
-			fast = 0;
-		else
+		if (is_stringobject(key) &&
+		    (ikey = ((stringobject *)key)->ob_sinterned) != NULL)
 			key = ikey;
 	}
 #endif
 	if (ekey == dummy)
 		freeslot = ep;
 	else {
-#ifdef INTERN_STRINGS
-		if (fast) {
-			if (ekey == key)
-				return ep;
-		}
-		else
-#endif
-		{
-			if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
-				return ep;
-		}
+		if (ekey == key)
+			return ep;
+		if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
+			return ep;
 		freeslot = NULL;
 	}
 
 	size = mp->ma_size;
 	sum = hash;
 	do {
-		sum = 3*sum + 1;
+		sum += sum + sum + 1;
 		incr = sum % size;
 	} while (incr == 0);
 
 	end = mp->ma_table + size;
-
-#ifdef INTERN_STRINGS
-	if (fast) {
-		if (freeslot == NULL) {
-			for (;;) {
-				ep += incr;
-				if (ep >= end)
-					ep -= size;
-				ekey = ep->me_key;
-				if (ekey == NULL || ekey == key)
-					return ep;
-				if (ekey == dummy) {
-					freeslot = ep;
-					break;
-				}
-			}
-		}
-
-		for (;;) {
-			ep += incr;
-			if (ep >= end)
-				ep -= size;
-			ekey = ep->me_key;
-			if (ekey == NULL)
-				return freeslot;
-			if (ekey == key)
-				return ep;
-		}
-	}
-#endif
 
 	if (freeslot == NULL) {
 		for (;;) {
@@ -255,7 +207,8 @@ lookmapping(mp, key, hash)
 				freeslot = ep;
 				break;
 			}
-			if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
+			if (ekey == key || (ep->me_hash == hash &&
+					    cmpobject(ekey, key) == 0))
 				return ep;
 		}
 	}
@@ -267,8 +220,9 @@ lookmapping(mp, key, hash)
 		ekey = ep->me_key;
 		if (ekey == NULL)
 			return freeslot;
-		if (ekey != dummy &&
-		    ep->me_hash == hash && cmpobject(ekey, key) == 0)
+		if (ekey == key ||
+		    (ekey != dummy &&
+		     ep->me_hash == hash && cmpobject(ekey, key) == 0))
 			return ep;
 	}
 }
@@ -378,11 +332,14 @@ mappinglookup(op, key)
 	if (((mappingobject *)op)->ma_table == NULL)
 		return NULL;
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!is_stringobject(key) ||
+	    (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
-	hash = hashobject(key);
-	if (hash == -1)
-		return NULL;
+	{
+		hash = hashobject(key);
+		if (hash == -1)
+			return NULL;
+	}
 	return lookmapping((mappingobject *)op, key, hash) -> me_value;
 }
 
@@ -412,9 +369,6 @@ mappinginsert(op, key, value)
 			hash = ((stringobject *)key)->ob_shash;
 			if (hash == -1)
 				hash = hashobject(key);
-#ifdef INTERN_STRINGS
-			mp->ma_fast = 0;
-#endif
 		}
 	}
 	else
@@ -423,9 +377,6 @@ mappinginsert(op, key, value)
 		hash = hashobject(key);
 		if (hash == -1)
 			return -1;
-#ifdef INTERN_STRINGS
-		mp->ma_fast = 0;
-#endif
 	}
 	/* if fill >= 2/3 size, resize */
 	if (mp->ma_fill*3 >= mp->ma_size*2) {
@@ -455,11 +406,14 @@ mappingremove(op, key)
 		return -1;
 	}
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!is_stringobject(key) ||
+	    (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
-	hash = hashobject(key);
-	if (hash == -1)
-		return -1;
+	{
+		hash = hashobject(key);
+		if (hash == -1)
+			return -1;
+	}
 	mp = (mappingobject *)op;
 	if (((mappingobject *)op)->ma_table == NULL)
 		goto empty;
@@ -621,11 +575,14 @@ mapping_subscript(mp, key)
 		return NULL;
 	}
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!is_stringobject(key) ||
+	    (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
-	hash = hashobject(key);
-	if (hash == -1)
-		return NULL;
+	{
+		hash = hashobject(key);
+		if (hash == -1)
+			return NULL;
+	}
 	v = lookmapping(mp, key, hash) -> me_value;
 	if (v == NULL)
 		err_setval(KeyError, key);
@@ -877,17 +834,23 @@ mapping_compare(a, b)
 		if (res != 0)
 			break;
 #ifdef CACHE_HASH
-		if (!is_stringobject(akey) || (ahash = ((stringobject *) akey)->ob_shash) == -1)
+		if (!is_stringobject(akey) ||
+		    (ahash = ((stringobject *) akey)->ob_shash) == -1)
 #endif
-		ahash = hashobject(akey);
-		if (ahash == -1)
-			err_clear(); /* Don't want errors here */
+		{
+			ahash = hashobject(akey);
+			if (ahash == -1)
+				err_clear(); /* Don't want errors here */
+		}
 #ifdef CACHE_HASH
-		if (!is_stringobject(bkey) || (bhash = ((stringobject *) bkey)->ob_shash) == -1)
+		if (!is_stringobject(bkey) ||
+		    (bhash = ((stringobject *) bkey)->ob_shash) == -1)
 #endif
-		bhash = hashobject(bkey);
-		if (bhash == -1)
-			err_clear(); /* Don't want errors here */
+		{
+			bhash = hashobject(bkey);
+			if (bhash == -1)
+				err_clear(); /* Don't want errors here */
+		}
 		aval = lookmapping(a, akey, ahash) -> me_value;
 		bval = lookmapping(b, bkey, bhash) -> me_value;
 		res = cmpobject(aval, bval);
@@ -918,11 +881,14 @@ mapping_has_key(mp, args)
 	if (!getargs(args, "O", &key))
 		return NULL;
 #ifdef CACHE_HASH
-	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
+	if (!is_stringobject(key) ||
+	    (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
-	hash = hashobject(key);
-	if (hash == -1)
-		return NULL;
+	{
+		hash = hashobject(key);
+		if (hash == -1)
+			return NULL;
+	}
 	ok = mp->ma_size != 0 && lookmapping(mp, key, hash)->me_value != NULL;
 	return newintobject(ok);
 }
