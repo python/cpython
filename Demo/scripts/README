@@ -2,6 +2,7 @@ Contents of this directory:
 
 byteyears.py		Print product of a file's size and age
 checkpyc.py		Check presence and validity of ".pyc" files
+classfix.py		Convert old class syntax to new
 copytime.py		Copy one file's atime and mtime to another
 eptags.py		Create Emacs TAGS file for Python modules
 fact.py			Factorize numbers
