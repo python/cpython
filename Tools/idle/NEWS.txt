@@ -1,3 +1,41 @@
+(For a more detailed change log, see the file ChangeLog.)
+
+----------------------------------------------------------------------
+
+New in IDLE 0.3 (2/17/99)
+-------------------------
+
+Most important changes:
+
+- Enabled support for running a module, with or without the debugger.
+Output goes to a new window.  Pressing F5 in a module is effectively a
+reload of that module; Control-F5 loads it under the debugger.
+
+- Re-enable tearing off the Windows menu, and make a torn-off Windows
+menu update itself whenever a window is opened or closed.
+
+- Menu items can now be have a checkbox (when the menu label starts
+with "!"); use this for the Debugger and "Auto-open stack viewer"
+(was: JIT stack viewer) menu items.
+
+- Added a Quit button to the Debugger API.
+
+- The current directory is explicitly inserted into sys.path.
+
+- Fix the debugger (when using Python 1.5.2b2) to use canonical
+filenames for breakpoints, so these actually work.  (There's still a
+lot of work to be done to the management of breakpoints in the
+debugger though.)
+
+- Closing a window that is still colorizing now actually works.
+
+- Allow dragging of the separator between the two list boxes in the
+class browser.
+
+- Bind ESC to "close window" of the debugger, stack viewer and class
+browser.  It removes the selection highlighting in regular text
+windows.  (These are standard Windows conventions.)
+
 ----------------------------------------------------------------------
 
 New in IDLE 0.2 (1/8/99)
