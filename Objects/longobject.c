@@ -1567,7 +1567,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	 * been reduced to 3 multiplies on numbers half the size.
 	 */
 
-	/* We want to split based on the larger number; fiddle so that a
+	/* We want to split based on the larger number; fiddle so that b
 	 * is largest.
 	 */
 	if (ABS(a->ob_size) > ABS(b->ob_size)) {
