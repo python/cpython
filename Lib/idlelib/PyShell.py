@@ -12,6 +12,8 @@ import traceback
 import types
 import exceptions
 
+import boolcheck
+
 import linecache
 from code import InteractiveInterpreter
 

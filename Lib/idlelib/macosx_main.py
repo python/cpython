@@ -27,20 +27,15 @@ idlelib = join(split(__file__)[0], 'idlelib')
 if isdir(idlelib):
   sys.path.append(idlelib)
 
-# Make sure True, False, bool() builtins exist.
-# - preserves 2.2 compatibility - 2.2.1 includes bool, 2.2 does not.
-# - important for Mac OS X because it ships python 2.2
-import boolcheck
-
 # see if we are being asked to execute the subprocess code
 if '-p' in sys.argv:
     # run expects only the port number in sys.argv
     sys.argv.remove('-p')
 
-    # this module will become the namepsace used by the interactive
+    # this module will become the namespace used by the interactive
     # interpreter; remove all variables we have defined.
     del sys, __file__, boolcheck, split, join, isdir
     __import__('run').main()
 else:
     # Load idlelib/idle.py which starts the application.
-    import idle 
+    import idle
