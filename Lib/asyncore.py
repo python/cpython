@@ -510,7 +510,6 @@ def close_all (map=None):
 #
 # Regardless, this is useful for pipes, and stdin/stdout...
 
-import os
 if os.name == 'posix':
     import fcntl
 
