@@ -414,7 +414,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.tkconsole.executing:
             display_executing_dialog()
             return
-        #
         self.checklinecache()
         if self.save_warnings_filters is not None:
             warnings.filters[:] = self.save_warnings_filters
@@ -425,7 +424,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.active_seq = self.rpcclt.asynccall("exec", "runcode",
                                                     (code,), {})
             return
-        #
         try:
             self.tkconsole.beginexecuting()
             try:
@@ -444,7 +442,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     self.showtraceback()
             except:
                 self.showtraceback()
-        #        
         finally:
             self.tkconsole.endexecuting()
 
@@ -480,14 +477,14 @@ class PyShell(OutputWindow):
             fixwordbreaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
-
+        #
         OutputWindow.__init__(self, flist, None, None)
-
+        #
         import __builtin__
         __builtin__.quit = __builtin__.exit = "To exit, type Ctrl-D."
-
+        #
         self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
-
+        #
         text = self.text
         text.configure(wrap="char")
         text.bind("<<newline-and-indent>>", self.enter_callback)
@@ -499,7 +496,7 @@ class PyShell(OutputWindow):
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
-
+        #
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
@@ -510,9 +507,9 @@ class PyShell(OutputWindow):
             sys.stdout = self.stdout
             sys.stderr = self.stderr
             sys.stdin = self
-
+        #
         self.history = self.History(self.text)
-
+        #
         if use_subprocess:
             self.interp.start_subprocess()
 
