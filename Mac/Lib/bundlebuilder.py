@@ -237,7 +237,6 @@ class AppBuilder(BundleBuilder):
 			self.name = os.path.splitext(os.path.basename(self.executable))[0]
 		if self.name[-4:] != ".app":
 			self.name += ".app"
-		self.plist.CFBundleExecutable = self.name
 
 		if self.nibname:
 			self.plist.NSMainNibFile = self.nibname
@@ -247,6 +246,7 @@ class AppBuilder(BundleBuilder):
 		BundleBuilder.setup(self)
 
 	def preProcess(self):
+		self.plist.CFBundleExecutable = self.name
 		resdir = pathjoin("Contents", "Resources")
 		if self.executable is not None:
 			if self.mainprogram is None:
