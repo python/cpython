@@ -705,6 +705,10 @@ strop_atoi(self, args)
 		x = (long) PyOS_strtoul(s, &end, base);
 	else
 		x = PyOS_strtol(s, &end, base);
+	if (end == s || !isxdigit(end[-1])) {
+		PyErr_SetString(PyExc_ValueError, "no digits in int constant");
+		return NULL;
+	}
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
