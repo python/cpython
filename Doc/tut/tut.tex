@@ -4059,14 +4059,51 @@ import rlcompleter, readline
 readline.parse_and_bind('tab: complete')
 \end{verbatim}
 
-This binds the TAB key to the completion function, so hitting the TAB
-key twice suggests completions; it looks at Python statement names,
-the current local variables, and the available module names.  For
-dotted expressions such as \code{string.a}, it will evaluate the the
-expression up to the final \character{.} and then suggest completions
-from the attributes of the resulting object.  Note that this may
-execute application-defined code if an object with a
+This binds the \kbd{Tab} key to the completion function, so hitting
+the \kbd{Tab} key twice suggests completions; it looks at Python
+statement names, the current local variables, and the available module
+names.  For dotted expressions such as \code{string.a}, it will
+evaluate the the expression up to the final \character{.} and then
+suggest completions from the attributes of the resulting object.  Note
+that this may execute application-defined code if an object with a
 \method{__getattr__()} method is part of the expression.
+
+A more capable startup file might look like this example.  Note that
+this deletes the names it creates once they are no longer needed; this
+is done since the startup file is executed in the same namespace as
+the interactive commands, and removing the names avoids creating side
+effects in the interactive environments.  You may find it convenient
+to keep some of the imported modules, such as \module{os}, which turn
+out to be needed in most sessions with the interpreter.
+
+\begin{verbatim}
+# Add auto-completion and a stored history file of commands to your Python
+# interactive interpreter. Requires Python 2.0+, readline. Autocomplete is
+# bound to the Esc key by default (you can change it - see readline docs).
+#
+# Store the file in ~/.pystartup, and set an environment variable to point
+# to it, e.g. "export PYTHONSTARTUP=/max/home/itamar/.pystartup" in bash.
+#
+# Note that PYTHONSTARTUP does *not* expand "~", so you have to put in the
+# full path to your home directory.
+
+import atexit
+import os
+import readline
+import rlcompleter
+
+historyPath = os.path.expanduser("~/.pyhistory")
+
+def save_history(historyPath=historyPath):
+    import readline
+    readline.write_history_file(historyPath)
+
+if os.path.exists(historyPath):
+    readline.read_history_file(historyPath)
+
+atexit.register(save_history)
+del os, atexit, readline, rlcompleter, save_history, historyPath
+\end{verbatim}
 
 
 \section{Commentary \label{commentary}}
