@@ -3,6 +3,14 @@
 
 from test_support import *
 
+def check_syntax(statement):
+    try:
+        compile(statement, '<string>', 'exec')
+    except SyntaxError:
+        print 'SyntaxError expected for "%s"' % statement
+    else:
+        print 'Missing SyntaxError: "%s"' % statement
+
 print '1. Parser'
 
 print '1.1 Tokens'
@@ -83,9 +91,6 @@ x = 3.1e4
 
 print '1.1.3 String literals'
 
-##def verify(s):
-##      if not s: raise TestFailed, 'see traceback'
-
 x = ''; y = ""; verify(len(x) == 0 and x == y)
 x = '\''; y = "'"; verify(len(x) == 1 and x == y and ord(x) == 39)
 x = '"'; y = "\""; verify(len(x) == 1 and x == y and ord(x) == 34)
@@ -154,12 +159,20 @@ f1(*(), **{})
 def f2(one_argument): pass
 def f3(two, arguments): pass
 def f4(two, (compound, (argument, list))): pass
+def f5((compound, first), two): pass
+verify(f2.func_code.co_varnames == ('one_argument',))
+verify(f3.func_code.co_varnames == ('two', 'arguments'))
+verify(f4.func_code.co_varnames == ('two', '.2', 'compound', 'argument',
+                                    'list'))
+verify(f5.func_code.co_varnames == ('.0', 'two', 'compound', 'first'))
 def a1(one_arg,): pass
 def a2(two, args,): pass
 def v0(*rest): pass
 def v1(a, *rest): pass
 def v2(a, b, *rest): pass
-def v3(a, (b, c), *rest): pass
+def v3(a, (b, c), *rest): return a, b, c, rest
+verify(v3.func_code.co_varnames == ('a', '.2', 'rest', 'b', 'c'))
+verify(v3(1, (2, 3), 4) == (1, 2, 3, (4,)))
 def d01(a=1): pass
 d01()
 d01(1)
@@ -302,13 +315,6 @@ def tellme(file=None):
 driver()
 
 # syntax errors
-def check_syntax(statement):
-    try:
-        compile(statement, '<string>', 'exec')
-    except SyntaxError:
-        pass
-    else:
-        print 'Missing SyntaxError: "%s"' % statement
 check_syntax('print ,')
 check_syntax('print >> x,')
 
@@ -618,17 +624,8 @@ def test_in_func(l):
 
 print test_in_func(nums)
 
-try:
-    eval("[i, s for i in nums for s in strs]")
-    print "FAIL: should have raised a SyntaxError!"
-except SyntaxError:
-    print "good: got a SyntaxError as expected"
-
-try:
-    eval("[x if y]")
-    print "FAIL: should have raised a SyntaxError!"
-except SyntaxError:
-    print "good: got a SyntaxError as expected"
+check_syntax("[i, s for i in nums for s in strs]")
+check_syntax("[x if y]")
 
 suppliers = [
   (1, "Boeing"),
