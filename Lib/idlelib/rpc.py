@@ -55,25 +55,48 @@ class RPCServer(SocketServer.TCPServer):
     def __init__(self, addr, handlerclass=None):
         if handlerclass is None:
             handlerclass = RPCHandler
-        self.objtable = objecttable 
+# XXX KBK 25Jun02 Not used in Idlefork, see register/unregister note below.
+#        self.objtable = objecttable 
         SocketServer.TCPServer.__init__(self, addr, handlerclass)
 
-    def verify_request(self, request, client_address):
-        host, port = client_address
-        if host != "127.0.0.1":
-            print "Disallowed host:", host
-            return 0
-        else:
-            return 1
+    # XXX KBK 25Jun02 Following method is not used (yet)
+#      def verify_request(self, request, client_address):
+#          host, port = client_address
+#          if host != "127.0.0.1":
+#              print "Disallowed host:", host
+#              return 0
+#          else:
+#              return 1
 
-    def register(self, oid, object):
-        self.objtable[oid] = object
+# XXX KBK 25Jun02 The handlerclass is expected to provide register/unregister
+#                 methods.  In Idle, RPCServer is instantiated with
+#                 handlerclass MyHandler, which in turn inherits the
+#                 register/unregister methods from the mix-in class SocketIO.
+#                 It is true that this is asymmetric with the RPCClient's use
+#                 of register/unregister, but I guess that's how a SocketServer
+#                 is supposed to work.
 
-    def unregister(self, oid):
-        try:
-            del self.objtable[oid]
-        except KeyError:
-            pass
+#                 Exactly how this gets set up is convoluted.  When the
+#                 TCPServer is instantiated, it creates an instance of
+#                 run.MyHandler and calls its handle() method.  handle()
+#                 instantiates a run.Executive, passing it a reference to the
+#                 MyHandler object.  That reference is saved as an attribute of
+#                 the Executive instance.  The Executive methods have access to
+#                 the reference and can pass it on to entities that they
+#                 command (e.g. RemoteDebugger.Debugger.start_debugger()).  The
+#                 latter, in turn, can call MyHandler(SocketIO)
+#                 register/unregister methods via the reference to register and
+#                 unregister themselves.  Whew.
+
+    # The following two methods are not currently used in Idlefork.
+#      def register(self, oid, object):
+#          self.objtable[oid] = object
+
+#      def unregister(self, oid):
+#          try:
+#              del self.objtable[oid]
+#          except KeyError:
+#              pass
 
 
 objecttable = {}
@@ -198,11 +221,6 @@ class SocketIO:
                         pass
                     else:
                         raise getattr(__import__(mod), name)(*args)
-# XXX KBK 15Jun02  mod is False here, also want to raise remaining exceptions
-#           else:
-#               if mod:
-#                   name = mod + "." + name
-#               raise name, args
             raise name, args
         if how == "ERROR":
             raise RuntimeError, what
