@@ -20,7 +20,7 @@ Type/class unification and new-style classes
 - doctest now finds and runs docstrings attached to new-style classes,
   class methods, static methods, and properties.
 
-Core
+Core and builtins
 
 - A very subtle syntactical pitfall in list comprehensions was fixed.
   For example: [a+b for a in 'abc', for b in 'def'].  The comma in
@@ -31,15 +31,26 @@ Core
   Note that [a for a in <singleton>] is a convoluted way to say
   [<singleton>] anyway, so it's not like any expressiveness is lost.
 
+- getattr(obj, name, default) now only catches AttributeError, as
+  documented, rather than returning the default value for all
+  exceptions (which could mask bugs in a __getattr__ hook, for
+  example).
+
+Extension modules
+
+- thread.start_new_thread() now returns the thread ID (previously None).
+
 - binascii has now two quopri support functions, a2b_qp and b2a_qp.
 
 - readline now supports setting the startup_hook and the pre_event_hook.
 
 - posix supports chroot where available.
 
-Library
+- Decompression objects in the zlib module now accept an optional
+  second parameter to decompress() that specifies the maximum amount
+  of memory to use for the uncompressed data.
 
-- thread.start_new_thread() now returns the thread ID (previously None).
+Library
 
 - doctest now excludes functions and classes not defined by the module
   being tested, thanks to Tim Hochberg.
@@ -74,10 +85,6 @@ Library
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q'
   encoding.
-
-- Decompression objects in the zlib module now accept an optional
-  second parameter to decompress() that specifies the maximum amount
-  of memory to use for the uncompressed data.
 
 Tools/Demos
 
