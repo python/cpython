@@ -142,6 +142,12 @@
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
 
+/* The number of bytes in a int.  */
+#undef SIZEOF_INT
+
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
 /* Define if you have the chown function.  */
 #undef HAVE_CHOWN
 
@@ -291,6 +297,9 @@
 
 /* Define if you have the <sys/dir.h> header file.  */
 #undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/file.h> header file.  */
+#undef HAVE_SYS_FILE_H
 
 /* Define if you have the <sys/lock.h> header file.  */
 #undef HAVE_SYS_LOCK_H
