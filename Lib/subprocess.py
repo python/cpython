@@ -27,10 +27,9 @@
 
 """subprocess - Subprocesses with accessible I/O streams
 
-This module allows you to spawn processes and connect to their
-input/output/error pipes and obtain their return codes under Unix.
-This module intends to replace several other, older modules and
-functions, like:
+This module allows you to spawn processes, connect to their
+input/output/error pipes, and obtain their return codes.  This module
+intends to replace several other, older modules and functions, like:
 
 os.system
 os.spawn*
