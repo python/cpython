@@ -19,7 +19,7 @@ usage: freeze [-p prefix] [-e extension] ... script [module] ...
 -p prefix:    This is the prefix used when you ran
               'Make inclinstall libainstall' in the Python build directory.
               (If you never ran this, freeze won't work.)
-               The default is /usr/local.
+              The default is /usr/local.
 
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
@@ -227,11 +227,23 @@ def main():
 		addfiles + libs + \
 		['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
+	backup = makefile + '~'
+	try:
+		os.rename(makefile, backup)
+	except os.error:
+		backup = None
 	outfp = open(makefile, 'w')
 	try:
 		makemakefile.makemakefile(outfp, somevars, files, target)
 	finally:
 		outfp.close()
+	if backup:
+		if not cmp.cmp(backup, makefile):
+			print 'previous Makefile saved as', backup
+		else:
+			sys.stderr.write('%s not changed, not written\n' %
+					 makefile)
+			os.rename(backup, makefile)
 
 	# Done!
 
