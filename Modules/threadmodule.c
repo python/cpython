@@ -224,6 +224,7 @@ t_bootstrap(boot_raw)
 	}
 	else
 		Py_DECREF(res);
+	PyThreadState_Clear(tstate);
 	PyEval_ReleaseThread(tstate);
 	PyThreadState_Delete(tstate);
 	exit_thread();
@@ -257,7 +258,7 @@ thread_start_new_thread(self, fargs)
 	boot = PyMem_NEW(struct bootstate, 1);
 	if (boot == NULL)
 		return PyErr_NoMemory();
-	boot->interp = PyThreadState_Get()->interpreter_state;
+	boot->interp = PyThreadState_Get()->interp;
 	boot->func = func;
 	boot->args = args;
 	boot->keyw = keyw;
