@@ -106,7 +106,7 @@ node2tuple(node *n,                     /* node to convert               */
             }
             (void) addelem(v, i+1, w);
         }
-	
+
         if (TYPE(n) == encoding_decl)
             (void) addelem(v, i+1, PyString_FromString(STR(n)));
         return (v);
@@ -2904,11 +2904,19 @@ initparser(void)
     if (parser_error == 0)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
 
-    if ((parser_error == 0)
-        || (PyModule_AddObject(module, "ParserError", parser_error) != 0)) {
+    if (parser_error == 0)
         /* caller will check PyErr_Occurred() */
         return;
-    }
+    /* CAUTION:  The code next used to skip bumping the refcount on
+     * parser_error.  That's a disaster if initparser() gets called more
+     * than once.  By incref'ing, we ensure that each module dict that
+     * gets created owns its reference to the shared parser_error object,
+     * and the file static parser_error vrbl owns a reference too.
+     */
+    Py_INCREF(parser_error);
+    if (PyModule_AddObject(module, "ParserError", parser_error) != 0)
+        return;
+
     Py_INCREF(&PyST_Type);
     PyModule_AddObject(module, "ASTType", (PyObject*)&PyST_Type);
     Py_INCREF(&PyST_Type);

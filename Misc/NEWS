@@ -4,6 +4,40 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 release candidate 2?
+=============================================
+
+*Release date: DD-MMM-YYYY*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+- A longstanding bug in the parser module's initialization could cause
+  fatal internal refcount confusion when the module got initialized more
+  than once.  This has been fixed.
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.3 release candidate 1?
 =============================================
 
@@ -26,7 +60,7 @@ Core and builtins
 
 - A warning about assignments to module attributes that shadow
   builtins, present in earlier releases of 2.3, has been removed.
-  
+
 - It is not possible to create subclasses of builtin types like str
   and tuple that define an itemsize.  Earlier releases of Python 2.3
   allowed this by mistake, leading to crashes and other problems.
@@ -58,7 +92,7 @@ Extension modules
 - The cPickle Pickler garbage collection support was fixed to traverse
   the find_class attribute, if present.
 
-- There are several fixes for the bsddb3 wrapper module.  
+- There are several fixes for the bsddb3 wrapper module.
 
   bsddb3 no longer crashes if an environment is closed before a cursor
   (SF bug 763298).
