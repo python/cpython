@@ -85,9 +85,7 @@ typedef PY_LONG_LONG		Py_intptr_t;
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."
 #endif /* HAVE_UINTPTR_T */
 
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 
 #include <math.h> /* Moved here from the math section, before extern "C" */
 

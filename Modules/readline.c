@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <errno.h>
 
-#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
+#if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
  * This is evil.  Only the user or the app's main() should do this!
  * We must save and restore the locale around the rl_initialize() call.

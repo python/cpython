@@ -7,9 +7,7 @@ extern "C" {
 
 /* Interface to map C struct members to Python object attributes */
 
-#ifdef HAVE_STDDEF_H
 #include <stddef.h> /* For offsetof */
-#endif
 
 /* The offsetof() macro calculates the offset of a structure member
    in its structure.  Unfortunately this cannot be written down

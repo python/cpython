@@ -11,13 +11,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#else
-#ifdef Py_DEBUG
-extern char *getenv(const char *);
-#endif
-#endif
 
 #ifdef __sgi
 #ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.in */

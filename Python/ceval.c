@@ -806,17 +806,6 @@ eval_frame(PyFrameObject *f)
 					goto on_error;
 				}
 			}
-#if !defined(HAVE_SIGNAL_H)
-			/* If we have true signals, the signal handler
-			   will call Py_AddPendingCall() so we don't
-			   have to call PyErr_CheckSignals().  On the 
-			   Mac and DOS, alas, we have to call it. */
-			if (PyErr_CheckSignals()) {
-				why = WHY_EXCEPTION;
-				goto on_error;
-			}
-#endif
-
 #ifdef WITH_THREAD
 			if (interpreter_lock) {
 				/* Give another thread a chance */

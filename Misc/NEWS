@@ -334,6 +334,9 @@ Tools/Demos
 Build
 -----
 
+- Support for missing ANSI C header files (limits.h, stddef.h, etc) was
+  removed.
+
 - Systems requiring the D4, D6 or D7 variants of pthreads are no longer
   supported (see PEP 11).
 

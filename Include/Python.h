@@ -15,11 +15,7 @@
 #define WITH_CYCLE_GC 1
 #endif
 
-#ifdef HAVE_LIMITS_H
 #include <limits.h>
-#else
-#error "limits.h is required by std C -- why isn't HAVE_LIMITS_H defined?"
-#endif
 
 #ifndef UCHAR_MAX
 #error "Something's broken.  UCHAR_MAX should be defined in limits.h."
@@ -40,9 +36,7 @@
 
 #include <string.h>
 #include <errno.h>
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
