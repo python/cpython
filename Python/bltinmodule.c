@@ -409,6 +409,7 @@ builtin_complex(self, args)
 				return NULL;
 			r = PyEval_CallObject(f, args);
 			Py_DECREF(args);
+			Py_DECREF(f);
 			if (r == NULL)
 				return NULL;
 			own_r = 1;
