@@ -27,9 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    and is slow and inaccurate.
    But it's good enough for the occasional string literal... */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <ctype.h>
 

@@ -30,9 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Include files and extern declarations used by most of the parser. */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 /* config.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */

@@ -1,6 +1,4 @@
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 /* comp.sources.misc strtod(), as posted in comp.lang.tcl,
    with bugfix for "123000.0" and acceptance of space after 'e' sign nuked.

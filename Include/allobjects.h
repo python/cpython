@@ -28,9 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Include nearly all Python header files */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 /* config.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */

@@ -24,9 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Portable fmod(x, y) implementation for systems that don't have it */
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include "mymath.h"
 #include <errno.h>
