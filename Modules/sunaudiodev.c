@@ -271,7 +271,11 @@ sad_obufcount(self, args)
 		PyErr_SetFromErrno(SunAudioError);
 		return NULL;
 	}
-	return PyInt_FromLong(self->x_ocount - ai.play.samples);
+	/* x_ocount is in bytes, wheras play.samples is in frames */
+	/* we want frames */
+	return PyInt_FromLong(self->x_ocount / (ai.play.channels *
+						ai.play.precision / 8) -
+			      ai.play.samples);
 }
 
 static PyObject *
