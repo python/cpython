@@ -253,7 +253,7 @@ the particular type of callback, and \var{data} is the data returned
 for this \var{type} of callback.  The type of the data depends on the
 \var{type} of callback as follows:
 
-\begin{tableii}{|l|l|}{code}{Type}{Value}
+\begin{tableii}{|l|p{4in}|}{code}{Type}{Value}
   \lineii{audio}{String which can be passed unmodified to
 \function{al.writesamps()}.}
   \lineii{pnum}{Integer giving the program (track) number.}
@@ -265,10 +265,9 @@ seconds, and frames.}
   \lineii{catalog}{String of 13 characters, giving the catalog number
 of the CD.}
   \lineii{ident}{String of 12 characters, giving the ISRC
-identification number of the recording. \\
-&The string consists of two characters country code, three characters
-owner code, \\
-&two characters giving the year, and five characters giving a serial number.}
+identification number of the recording.  The string consists of two
+characters country code, three characters owner code, two characters
+giving the year, and five characters giving a serial number.}
   \lineii{control}{Integer giving the control bits from the CD
 subcode data}
 \end{tableii}
