@@ -53,48 +53,6 @@ new_instancemethod(PyObject* unused, PyObject* args)
 	return PyMethod_New(func, self, classObj);
 }
 
-static char new_function_doc[] =
-"Create a function object from (CODE, GLOBALS, [NAME [, ARGDEFS]]).";
-
-static PyObject *
-new_function(PyObject* unused, PyObject* args)
-{
-	PyObject* code;
-	PyObject* globals;
-	PyObject* name = Py_None;
-	PyObject* defaults = Py_None;
-	PyFunctionObject* newfunc;
-
-	if (!PyArg_ParseTuple(args, "O!O!|OO!:function",
-			      &PyCode_Type, &code,
-			      &PyDict_Type, &globals,
-			      &name,
-			      &PyTuple_Type, &defaults))
-		return NULL;
-	if (name != Py_None && !PyString_Check(name)) {
-		PyErr_SetString(PyExc_TypeError,
-				"arg 3 (name) must be None or string");
-		return NULL;
-	}
-
-	newfunc = (PyFunctionObject *)PyFunction_New(code, globals);
-	if (newfunc == NULL)
-		return NULL;
-
-	if (name != Py_None) {
-		Py_XINCREF(name);
-		Py_XDECREF(newfunc->func_name);
-		newfunc->func_name = name;
-	}
-	if (defaults != Py_None) {
-		Py_XINCREF(defaults);
-		Py_XDECREF(newfunc->func_defaults);
-		newfunc->func_defaults  = defaults;
-	}
-
-	return (PyObject *)newfunc;
-}
-
 static char new_code_doc[] =
 "Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING,\n"
 "CONSTANTS, NAMES, VARNAMES, FILENAME, NAME, FIRSTLINENO, LNOTAB, FREEVARS,\n"
@@ -191,8 +149,6 @@ static PyMethodDef new_methods[] = {
 	 METH_VARARGS, new_instance_doc},
 	{"instancemethod",	new_instancemethod,	
 	 METH_VARARGS, new_im_doc},
-	{"function",		new_function,		
-	 METH_VARARGS, new_function_doc},
 	{"code",		new_code,		
 	 METH_VARARGS, new_code_doc},
 	{"module",		new_module,		
@@ -210,6 +166,9 @@ You need to know a great deal about the interpreter to use this!";
 DL_EXPORT(void)
 initnew(void)
 {
-	Py_InitModule4("new", new_methods, new_doc, (PyObject *)NULL,
-		       PYTHON_API_VERSION);
+	PyObject *m;
+	m = Py_InitModule4("new", new_methods, new_doc, (PyObject *)NULL,
+			   PYTHON_API_VERSION);
+	if (m)
+		PyModule_AddObject(m, "function", &PyFunction_Type);
 }
