@@ -129,6 +129,9 @@ newcodeobject(code, consts, names, filename)
 
 
 /* Data structure used internally */
+
+#define MAXBLOCKS 20 /* Max static block nesting within a function */
+
 struct compiling {
 	object *c_code;		/* string */
 	object *c_consts;	/* list of objects */
@@ -137,10 +140,45 @@ struct compiling {
 	int c_errors;		/* counts errors occurred */
 	int c_infunction;	/* set when compiling a function */
 	int c_loops;		/* counts nested loops */
+	int c_begin;		/* begin of current loop, for 'continue' */
+	int c_block[MAXBLOCKS];	/* stack of block types */
+	int c_nblocks;		/* current block stack level */
 	char *c_filename;	/* filename of current node */
 };
 
+
+/* Interface to the block stack */
+
+static void
+block_push(c, type)
+	struct compiling *c;
+	int type;
+{
+	if (c->c_nblocks >= MAXBLOCKS) {
+		err_setstr(TypeError, "too many statically nested blocks");
+		c->c_errors++;
+	}
+	else {
+		c->c_block[c->c_nblocks++] = type;
+	}
+}
+
+static void
+block_pop(c, type)
+	struct compiling *c;
+	int type;
+{
+	if (c->c_nblocks > 0)
+		c->c_nblocks--;
+	if (c->c_block[c->c_nblocks] != type && c->c_errors == 0) {
+		err_setstr(SystemError, "bad block pop");
+		c->c_errors++;
+	}
+}
+
+
 /* Prototypes */
+
 static int com_init PROTO((struct compiling *, char *));
 static void com_free PROTO((struct compiling *));
 static void com_done PROTO((struct compiling *));
@@ -170,6 +208,8 @@ com_init(c, filename)
 	c->c_errors = 0;
 	c->c_infunction = 0;
 	c->c_loops = 0;
+	c->c_begin = 0;
+	c->c_nblocks = 0;
 	c->c_filename = filename;
 	return 1;
 	
@@ -463,6 +503,24 @@ com_list_constructor(c, n)
 }
 
 static void
+com_dictmaker(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	/* dictmaker: test ':' test (',' test ':' value)* [','] */
+	for (i = 0; i+2 < NCH(n); i += 4) {
+		/* We must arrange things just right for STORE_SUBSCR.
+		   It wants the stack to look like (value) (dict) (key) */
+		com_addbyte(c, DUP_TOP);
+		com_node(c, CHILD(n, i+2)); /* value */
+		com_addbyte(c, ROT_TWO);
+		com_node(c, CHILD(n, i)); /* key */
+		com_addbyte(c, STORE_SUBSCR);
+	}
+}
+
+static void
 com_atom(c, n)
 	struct compiling *c;
 	node *n;
@@ -485,8 +543,10 @@ com_atom(c, n)
 		else
 			com_list_constructor(c, CHILD(n, 1));
 		break;
-	case LBRACE:
+	case LBRACE: /* '{' [dictmaker] '}' */
 		com_addoparg(c, BUILD_MAP, 0);
+		if (TYPE(CHILD(n, 1)) != RBRACE)
+			com_dictmaker(c, CHILD(n, 1));
 		break;
 	case BACKQUOTE:
 		com_node(c, CHILD(n, 1));
@@ -1111,15 +1171,15 @@ com_expr_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, expr_stmt); /* exprlist ('=' exprlist)* NEWLINE */
-	com_node(c, CHILD(n, NCH(n)-2));
-	if (NCH(n) == 2) {
+	REQ(n, expr_stmt); /* exprlist ('=' exprlist)* */
+	com_node(c, CHILD(n, NCH(n)-1));
+	if (NCH(n) == 1) {
 		com_addbyte(c, PRINT_EXPR);
 	}
 	else {
 		int i;
-		for (i = 0; i < NCH(n)-3; i+=2) {
-			if (i+2 < NCH(n)-3)
+		for (i = 0; i < NCH(n)-2; i+=2) {
+			if (i+2 < NCH(n)-2)
 				com_addbyte(c, DUP_TOP);
 			com_assign(c, CHILD(n, i), 1/*assign*/);
 		}
@@ -1132,12 +1192,12 @@ com_print_stmt(c, n)
 	node *n;
 {
 	int i;
-	REQ(n, print_stmt); /* 'print' (test ',')* [test] NEWLINE */
-	for (i = 1; i+1 < NCH(n); i += 2) {
+	REQ(n, print_stmt); /* 'print' (test ',')* [test] */
+	for (i = 1; i < NCH(n); i += 2) {
 		com_node(c, CHILD(n, i));
 		com_addbyte(c, PRINT_ITEM);
 	}
-	if (TYPE(CHILD(n, NCH(n)-2)) != COMMA)
+	if (TYPE(CHILD(n, NCH(n)-1)) != COMMA)
 		com_addbyte(c, PRINT_NEWLINE);
 		/* XXX Alternatively, LOAD_CONST '\n' and then PRINT_ITEM */
 }
@@ -1147,12 +1207,12 @@ com_return_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, return_stmt); /* 'return' [testlist] NEWLINE */
+	REQ(n, return_stmt); /* 'return' [testlist] */
 	if (!c->c_infunction) {
 		err_setstr(TypeError, "'return' outside function");
 		c->c_errors++;
 	}
-	if (NCH(n) == 2)
+	if (NCH(n) < 2)
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 	else
 		com_node(c, CHILD(n, 1));
@@ -1164,7 +1224,7 @@ com_raise_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, raise_stmt); /* 'raise' expr [',' expr] NEWLINE */
+	REQ(n, raise_stmt); /* 'raise' test [',' test] */
 	com_node(c, CHILD(n, 1));
 	if (NCH(n) > 3)
 		com_node(c, CHILD(n, 3));
@@ -1180,8 +1240,8 @@ com_import_stmt(c, n)
 {
 	int i;
 	REQ(n, import_stmt);
-	/* 'import' NAME (',' NAME)* NEWLINE |
-	   'from' NAME 'import' ('*' | NAME (',' NAME)*) NEWLINE */
+	/* 'import' NAME (',' NAME)* |
+	   'from' NAME 'import' ('*' | NAME (',' NAME)*) */
 	if (STR(CHILD(n, 0))[0] == 'f') {
 		/* 'from' NAME 'import' ... */
 		REQ(CHILD(n, 1), NAME);
@@ -1233,10 +1293,11 @@ com_while_stmt(c, n)
 {
 	int break_anchor = 0;
 	int anchor = 0;
-	int begin;
+	int save_begin = c->c_begin;
 	REQ(n, while_stmt); /* 'while' test ':' suite ['else' ':' suite] */
 	com_addfwref(c, SETUP_LOOP, &break_anchor);
-	begin = c->c_nexti;
+	block_push(c, SETUP_LOOP);
+	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_node(c, CHILD(n, 1));
 	com_addfwref(c, JUMP_IF_FALSE, &anchor);
@@ -1244,10 +1305,12 @@ com_while_stmt(c, n)
 	c->c_loops++;
 	com_node(c, CHILD(n, 3));
 	c->c_loops--;
-	com_addoparg(c, JUMP_ABSOLUTE, begin);
+	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
+	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
 	com_addbyte(c, POP_TOP);
 	com_addbyte(c, POP_BLOCK);
+	block_pop(c, SETUP_LOOP);
 	if (NCH(n) > 4)
 		com_node(c, CHILD(n, 6));
 	com_backpatch(c, break_anchor);
@@ -1261,26 +1324,29 @@ com_for_stmt(c, n)
 	object *v;
 	int break_anchor = 0;
 	int anchor = 0;
-	int begin;
+	int save_begin = c->c_begin;
 	REQ(n, for_stmt);
 	/* 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite] */
 	com_addfwref(c, SETUP_LOOP, &break_anchor);
+	block_push(c, SETUP_LOOP);
 	com_node(c, CHILD(n, 3));
 	v = newintobject(0L);
 	if (v == NULL)
 		c->c_errors++;
 	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
 	XDECREF(v);
-	begin = c->c_nexti;
+	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
 	com_assign(c, CHILD(n, 1), 1/*assigning*/);
 	c->c_loops++;
 	com_node(c, CHILD(n, 5));
 	c->c_loops--;
-	com_addoparg(c, JUMP_ABSOLUTE, begin);
+	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
+	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
 	com_addbyte(c, POP_BLOCK);
+	block_pop(c, SETUP_LOOP);
 	if (NCH(n) > 8)
 		com_node(c, CHILD(n, 8));
 	com_backpatch(c, break_anchor);
@@ -1383,10 +1449,12 @@ com_try_stmt(c, n)
 	if (NCH(n) > 3 && TYPE(CHILD(n, NCH(n)-3)) != except_clause) {
 		/* Have a 'finally' clause */
 		com_addfwref(c, SETUP_FINALLY, &finally_anchor);
+		block_push(c, SETUP_FINALLY);
 	}
 	if (NCH(n) > 3 && TYPE(CHILD(n, 3)) == except_clause) {
 		/* Have an 'except' clause */
 		com_addfwref(c, SETUP_EXCEPT, &except_anchor);
+		block_push(c, SETUP_EXCEPT);
 	}
 	com_node(c, CHILD(n, 2));
 	if (except_anchor) {
@@ -1394,6 +1462,7 @@ com_try_stmt(c, n)
 		int i;
 		node *ch;
 		com_addbyte(c, POP_BLOCK);
+		block_pop(c, SETUP_EXCEPT);
 		com_addfwref(c, JUMP_FORWARD, &end_anchor);
 		com_backpatch(c, except_anchor);
 		for (i = 3;
@@ -1434,12 +1503,15 @@ com_try_stmt(c, n)
 	if (finally_anchor) {
 		node *ch;
 		com_addbyte(c, POP_BLOCK);
+		block_pop(c, SETUP_FINALLY);
+		block_push(c, END_FINALLY);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 		com_backpatch(c, finally_anchor);
 		ch = CHILD(n, NCH(n)-1);
 		com_addoparg(c, SET_LINENO, ch->n_lineno);
 		com_node(c, ch);
 		com_addbyte(c, END_FINALLY);
+		block_pop(c, END_FINALLY);
 	}
 }
 
@@ -1461,6 +1533,23 @@ com_suite(c, n)
 				com_node(c, ch);
 		}
 	}
+}
+
+static void
+com_continue_stmt(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i = c->c_nblocks;
+	if (i-- > 0 && c->c_block[i] == SETUP_LOOP) {
+		com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
+	}
+	else {
+		err_setstr(TypeError, "'continue' not properly in loop");
+		c->c_errors++;
+	}
+	/* XXX Could allow it inside a 'finally' clause
+	   XXX if we could pop the exception still on the stack */
 }
 
 static void
@@ -1547,11 +1636,21 @@ com_node(c, n)
 	/* Trivial parse tree nodes */
 	
 	case stmt:
+	case small_stmt:
 	case flow_stmt:
 		com_node(c, CHILD(n, 0));
 		break;
 
 	case simple_stmt:
+		/* small_stmt (';' small_stmt)* [';'] NEWLINE */
+		com_addoparg(c, SET_LINENO, n->n_lineno);
+		{
+			int i;
+			for (i = 0; i < NCH(n)-1; i += 2)
+				com_node(c, CHILD(n, i));
+		}
+		break;
+	
 	case compound_stmt:
 		com_addoparg(c, SET_LINENO, n->n_lineno);
 		com_node(c, CHILD(n, 0));
@@ -1565,7 +1664,7 @@ com_node(c, n)
 	case print_stmt:
 		com_print_stmt(c, n);
 		break;
-	case del_stmt: /* 'del' exprlist NEWLINE */
+	case del_stmt: /* 'del' exprlist */
 		com_assign(c, CHILD(n, 1), 0/*delete*/);
 		break;
 	case pass_stmt:
@@ -1576,6 +1675,9 @@ com_node(c, n)
 			c->c_errors++;
 		}
 		com_addbyte(c, BREAK_LOOP);
+		break;
+	case continue_stmt:
+		com_continue_stmt(c, n);
 		break;
 	case return_stmt:
 		com_return_stmt(c, n);
