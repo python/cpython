@@ -37,6 +37,14 @@ extern int errno;
 #include <ctype.h>
 #include <math.h>
 
+#ifdef HUGE_VAL
+#define CHECK(x) if (errno != 0) ; \
+	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
+	else errno = ERANGE
+#else
+#define CHECK(x) /* Don't know how to check */
+#endif
+
 #ifndef THINK_C
 extern double fmod PROTO((double, double));
 extern double pow PROTO((double, double));
@@ -262,6 +270,7 @@ float_pow(v, w)
 	}
 	errno = 0;
 	ix = pow(iv, iw);
+	CHECK(ix);
 	if (errno != 0) {
 		/* XXX could it be another type of error? */
 		err_errno(OverflowError);
