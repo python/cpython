@@ -372,6 +372,7 @@ libainstall:	all
 		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
 		$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
+		$(INSTALL_DATA) Modules/Setup.thread $(LIBPL)/Setup.thread
 		$(INSTALL_PROGRAM) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
 		$(INSTALL_PROGRAM) $(srcdir)/install-sh $(LIBPL)/install-sh
 		$(INSTALL_DATA) $(srcdir)/Misc/Makefile.pre.in $(LIBPL)/Makefile.pre.in
