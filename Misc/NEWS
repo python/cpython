@@ -47,6 +47,10 @@ Library
   that's a worthy goal we intend to meet via a different approach (but
   without losing information).
 
+- Profile.calibrate() has a new implementation that should deliver
+  a better system-specific calibration constant.  Calibration must still
+  be done manually (see the docs for the profile module).
+
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 
