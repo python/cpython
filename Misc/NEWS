@@ -274,6 +274,8 @@ Core and builtins
 
 Extension modules
 
+- cPickle.BadPickleGet is now a class.
+
 - The time stamps in os.stat_result are floating point numbers now.
 
 - If the size passed to mmap.mmap() is larger than the length of the

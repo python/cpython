@@ -4760,6 +4760,10 @@ init_stuff(PyObject *module_dict)
 						    PickleError, NULL))) 
 		return -1;
 
+        if (!( BadPickleGet = PyErr_NewException("cPickle.BadPickleGet",
+						 UnpicklingError, NULL)))
+                return -1;
+ 
 	if (PyDict_SetItemString(module_dict, "PickleError",
 				 PickleError) < 0)
 		return -1;
@@ -4774,9 +4778,6 @@ init_stuff(PyObject *module_dict)
 
 	if (PyDict_SetItemString(module_dict, "UnpickleableError",
 				 UnpickleableError) < 0)
-		return -1;
-
-	if (!( BadPickleGet = PyString_FromString("cPickle.BadPickleGet"))) 
 		return -1;
 
 	if (PyDict_SetItemString(module_dict, "BadPickleGet",
