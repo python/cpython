@@ -28,6 +28,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #1005568: Use _SC_PAGESIZE on Irix in resourcemoudle.
+
 - Patch #924294: Do no check for AF_INET6 if it is not defined.
 
 - Patch #954115: Properly handle UNC roots in nt.stat.

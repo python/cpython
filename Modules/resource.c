@@ -202,7 +202,12 @@ resource_getpagesize(PyObject *self, PyObject *args)
 #if defined(HAVE_GETPAGESIZE)
 	pagesize = getpagesize();
 #elif defined(HAVE_SYSCONF)
+#if defined(_SC_PAGE_SIZE)
 	pagesize = sysconf(_SC_PAGE_SIZE);
+#else
+	/* Irix 5.3 has _SC_PAGESIZE, but not _SC_PAGE_SIZE */
+	pagesize = sysconf(_SC_PAGESIZE);
+#endif
 #endif
 	return Py_BuildValue("i", pagesize);
 
