@@ -863,10 +863,15 @@ Supported operations:
 
 \begin{itemize}
   \item
-    comparison of \class{timetz} to timetz, where timetz1 is considered
-    less than timetz2 when timetz1 precedes timetz2 in time, and
-    where the \class{timetz} objects are first adjusted by subtracting
-    their UTC offsets (obtained from \method{utcoffset()}).
+    comparison of \class{timetz} to \class{time} or \class{timetz},
+    where \var{a} is considered less than \var{b} when \var{a} precedes
+    \var{b} in time.  If one comparand is naive and the other is aware,
+    \exception{TypeError} is raised.  If both comparands are aware, and
+    have the same \member{tzinfo} member, the common \member{tzinfo}
+    member is ignored and the base times are compared.  If both
+    comparands are aware and have different \member{tzinfo} members,
+    the comparands are first adjusted by subtracting their UTC offsets
+    (obtained from \code{self.utcoffset()}).
 
   \item
     hash, use as dict key
@@ -1011,11 +1016,13 @@ Supported operations:
   \item
     datetimetz1 + timedelta -> datetimetz2
     timedelta + datetimetz1 -> datetimetz2
+
     The same as addition of \class{datetime} objects, except that
     datetimetz2.tzinfo is set to datetimetz1.tzinfo.
 
   \item
     datetimetz1 - timedelta -> datetimetz2
+
     The same as addition of \class{datetime} objects, except that
     datetimetz2.tzinfo is set to datetimetz1.tzinfo.
 
@@ -1025,32 +1032,31 @@ Supported operations:
     \naive\_datetimetz1 - datetime2 -> timedelta
     datetime1 - \naive\_datetimetz2 -> timedelta
 
-  \item
-    Subtraction of a \class{datetime} or datetimetz, from a
+    Subtraction of a \class{datetime} or \class{datetimetz}, from a
     \class{datetime} or \class{datetimetz}, is defined only if both
-    operands are \naive, or if both are aware.  If one is aware and
-    the other is \naive, \exception{TypeError} is raised.
+    operands are \naive, or if both are aware.  If one is aware and the
+    other is \naive, \exception{TypeError} is raised.
 
-  \item
-    If both are \naive, subtraction acts as for \class{datetime}
-    subtraction.
+    If both are \naive, or both are aware and have the same \member{tzinfo}
+    member, subtraction acts as for \class{datetime} subtraction.
 
-  \item
-    If both are aware \class{datetimetz} objects, a-b acts as if a and b were
-    first converted to UTC datetimes (by subtracting \code{a.utcoffset()}
-    minutes from a, and \code{b.utcoffset()} minutes from b), and then doing
+    If both are aware and have different \member{tzinfo} members,
+    \code{a-b} acts as if \var{a} and \var{b} were first converted to UTC
+    datetimes (by subtracting \code{a.utcoffset()} minutes from \var{a},
+    and \code{b.utcoffset()} minutes from \var{b}), and then doing
     \class{datetime} subtraction, except that the implementation never
     overflows.
 
   \item
-    Comparison of \class{datetimetz} to \class{datetime} or datetimetz.  As for
-    subtraction, comparison is defined only if both operands are
-    \naive\ or both are aware.  If both are \naive, comparison is as
-    for \class{datetime} objects with the same date and time components.
-    If both are aware, comparison acts as if both were converted to
-    UTC datetimes first, except the the implementation never
-    overflows.  If one comparand is \naive\ and the other aware,
-    \exception{TypeError} is raised.
+    comparison of \class{datetimetz} to \class{datetime} or
+    \class{datetimetz}, where \var{a} is considered less than \var{b}
+    when \var{a} precedes \var{b} in time.  If one comparand is naive and
+    the other is aware, \exception{TypeError} is raised.  If both
+    comparands are aware, and have the same \member{tzinfo} member,
+    the common \member{tzinfo} member is ignored and the base datetimes
+    are compared.  If both comparands are aware and have different
+    \member{tzinfo} members, the comparands are first adjusted by
+    subtracting their UTC offsets (obtained from \code{self.utcoffset()}).
 
   \item
     hash, use as dict key
