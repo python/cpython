@@ -57,6 +57,11 @@ f = Function(void, 'InitCursor',
 )
 functions.append(f)
 
+f = Function(void, 'SetCursor',
+    (Cursor_ptr, 'crsr', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'HideCursor',
 )
 functions.append(f)

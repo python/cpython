@@ -45,6 +45,8 @@ GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
+Cursor = StructInputBufferType('Cursor')
+Cursor_ptr = Cursor
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
@@ -77,6 +79,17 @@ QdRGB_Convert(v, p_itself)
 }
 
 """
+
+variablestuff = """
+{
+	PyObject *o;
+	
+	o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
+	if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
+		Py_FatalError("can't initialize Qd.arrow");
+}
+"""
+
 ## not yet...
 ##
 ##class Region_ObjectDefinition(GlobalObjectDefinition):
@@ -147,7 +160,7 @@ class MyBMObjectDefinition(GlobalObjectDefinition):
 		""")
 
 # Create the generator groups and link them
-module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
+module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)
 ##r_object = Region_ObjectDefinition('Region', 'QdRgn', 'RgnHandle')
 ##po_object = Polygon_ObjectDefinition('Polygon', 'QdPgn', 'PolyHandle')
 ##module.addobject(r_object)
