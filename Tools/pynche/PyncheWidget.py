@@ -227,6 +227,7 @@ class Helpwin:
 
         self.__text = text = Text(root, relief=SUNKEN,
                                   width=80, height=24)
+        self.__text.focus_set()
         text.insert(0.0, contents)
         scrollbar = Scrollbar(root)
         scrollbar.pack(fill=Y, side=RIGHT)
