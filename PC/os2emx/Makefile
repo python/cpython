@@ -470,7 +470,7 @@ endif
 HARDEXTMODULES+=	pyexpat
 EXPAT.INC=	-I../../Modules/expat
 EXPAT.DEF=	-DHAVE_EXPAT_H -DXML_NS=1 -DXML_DTD=1 -DXML_BYTE_ORDER=12 \
-		-DXML_CONTENT_BYTES=1024
+		-DXML_CONTENT_BYTES=1024 -DHAVE_MEMMOVE=1 -DHAVE_BCOPY=1
 EXPAT.SRC=	$(addprefix ../../Modules/expat/, \
 		xmlparse.c \
 		xmlrole.c \
