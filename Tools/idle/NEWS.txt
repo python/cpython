@@ -1,0 +1,47 @@
+----------------------------------------------------------------------
+
+New in IDLE 0.2 (1/8/99)
+------------------------
+
+Lots of changes; here are the highlights:
+
+General:
+
+- You can now write and configure your own IDLE extension modules; see
+extend.txt.
+
+
+File menu:
+
+The command to open the Python shell window is now in the File menu.
+
+
+Edit menu:
+
+New Find dialog with more options; replace dialog; find in files dialog.
+
+Commands to tabify or untabify a region.
+
+Command to format a paragraph.
+
+
+Debug menu:
+
+JIT (Just-In-Time) stack viewer toggle -- if set, the stack viewer
+automaticall pops up when you get a traceback.
+
+Windows menu:
+
+Zoom height -- make the window full height.
+
+
+Help menu:
+
+The help text now show up in a regular window so you can search and
+even edit it if you like.
+
+----------------------------------------------------------------------
+
+IDLE 0.1 was distributed with the Python 1.5.2b1 release on 12/22/98.
+
+======================================================================
