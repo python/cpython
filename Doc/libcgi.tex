@@ -20,7 +20,7 @@ written in Python.
 A CGI script is invoked by an HTTP server, usually to process user
 input submitted through an HTML \code{<FORM>} or \code{<ISINPUT>} element.
 
-Most often, CGI scripts live in the server's special \code{cgi-bin}
+Most often, CGI scripts live in the server's special \file{cgi-bin}
 directory.  The HTTP server places all sorts of information about the
 request (such as the client's hostname, the requested URL, the query
 string, and lots of other goodies) in the script's shell environment,
@@ -28,7 +28,7 @@ executes the script, and sends the script's output back to the client.
 
 The script's input is connected to the client too, and sometimes the
 form data is read this way; at other times the form data is passed via
-the ``query string'' part of the URL.  This module (\code{cgi.py}) is intended
+the ``query string'' part of the URL.  This module (\file{cgi.py}) is intended
 to take care of the different cases and provide a simpler interface to
 the Python script.  It also provides a number of utilities that help
 in debugging scripts, and the latest addition is support for file
@@ -260,7 +260,7 @@ alphanumeric characters, dashes, underscores, and periods.
 
 Read the documentation for your HTTP server and check with your local
 system administrator to find the directory where CGI scripts should be
-installed; usually this is in a directory \code{cgi-bin} in the server tree.
+installed; usually this is in a directory \file{cgi-bin} in the server tree.
 
 Make sure that your script is readable and executable by ``others''; the
 Unix file mode should be 755 (use \code{chmod 755 filename}).  Make sure
@@ -321,10 +321,10 @@ First of all, check for trivial installation errors -- reading the
 section above on installing your CGI script carefully can save you a
 lot of time.  If you wonder whether you have understood the
 installation procedure correctly, try installing a copy of this module
-file (\code{cgi.py}) as a CGI script.  When invoked as a script, the file
+file (\file{cgi.py}) as a CGI script.  When invoked as a script, the file
 will dump its environment and the contents of the form in HTML form.
 Give it the right mode etc, and send it a request.  If it's installed
-in the standard \code{cgi-bin} directory, it should be possible to send it a
+in the standard \file{cgi-bin} directory, it should be possible to send it a
 request by entering a URL into your browser of the form:
 
 \bcode\begin{verbatim}
@@ -337,19 +337,20 @@ gives another error (e.g.  500), there's an installation problem that
 you should fix before trying to go any further.  If you get a nicely
 formatted listing of the environment and form content (in this
 example, the fields should be listed as ``addr'' with value ``At Home''
-and ``name'' with value ``Joe Blow''), the \code{cgi.py} script has been
+and ``name'' with value ``Joe Blow''), the \file{cgi.py} script has been
 installed correctly.  If you follow the same procedure for your own
 script, you should now be able to debug it.
 
-The next step could be to call the \code{cgi} module's test() function from
-your script: replace its main code with the single statement
+The next step could be to call the \code{cgi} module's \code{test()}
+function from your script: replace its main code with the single
+statement
 
 \bcode\begin{verbatim}
 cgi.test()
 \end{verbatim}\ecode
 %
 This should produce the same results as those gotten from installing
-the \code{cgi.py} file itself.
+the \file{cgi.py} file itself.
 
 When an ordinary Python script raises an unhandled exception
 (e.g. because of a typo in a module name, a file that can't be opened,
