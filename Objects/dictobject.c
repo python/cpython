@@ -1733,7 +1733,7 @@ dict_iteritems(dictobject *dict)
 
 
 PyDoc_STRVAR(has_key__doc__,
-"D.has_key(k) -> 1 if D has a key k, else 0");
+"D.has_key(k) -> True if D has a key k, else False");
 
 PyDoc_STRVAR(get__doc__,
 "D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");

@@ -765,7 +765,7 @@ proxy_copy(proxyobject *pp)
 
 static PyMethodDef proxy_methods[] = {
 	{"has_key",   (PyCFunction)proxy_has_key,    METH_O,
-	 PyDoc_STR("D.has_key(k) -> 1 if D has a key k, else 0")},
+	 PyDoc_STR("D.has_key(k) -> True if D has a key k, else False")},
 	{"get",       (PyCFunction)proxy_get,        METH_VARARGS,
 	 PyDoc_STR("D.get(k[,d]) -> D[k] if D.has_key(k), else d."
 	 				"  d defaults to None.")},
