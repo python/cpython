@@ -1,4 +1,4 @@
-from test_support import verify, verbose
+from test_support import verbose
 import strop, sys
 
 def test(name, input, output, *args):

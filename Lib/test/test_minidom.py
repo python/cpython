@@ -7,7 +7,7 @@ import xml.parsers.expat
 import os.path
 import sys
 import traceback
-from test_support import verify, verbose
+from test_support import verbose
 
 if __name__ == "__main__":
     base = sys.argv[0]
@@ -81,7 +81,7 @@ def testLegalChildren():
     dom = Document()
     elem = dom.createElement('element')
     text = dom.createTextNode('text')
-    
+
     try: dom.appendChild(text)
     except HierarchyRequestErr: pass
     else:
@@ -99,7 +99,7 @@ def testLegalChildren():
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     elem.appendChild(text)
-    dom.unlink() 
+    dom.unlink()
 
 def testNonZero():
     dom = parse(tstfile)
@@ -395,7 +395,7 @@ def _testCloneElementCopiesAttributes(e1, e2, test):
                 , "clone of attribute node has proper attribute values")
         confirm(a2.ownerElement is e2,
                 "clone of attribute node correctly owned")
-    
+
 
 def testCloneDocumentShallow(): pass
 

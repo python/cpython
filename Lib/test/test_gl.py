@@ -3,7 +3,7 @@
     taken mostly from the documentation.
     Roger E. Masse
 """
-from test_support import verify, verbose, TestSkipped
+from test_support import verbose, TestSkipped
 import gl, GL, time
 
 glattrs = ['RGBcolor', 'RGBcursor', 'RGBmode', 'RGBrange', 'RGBwritemask',

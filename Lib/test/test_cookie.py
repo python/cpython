@@ -2,6 +2,7 @@
 
 from test_support import verify
 import Cookie
+from test_support import verify, verbose
 
 # Currently this only tests SimpleCookie
 

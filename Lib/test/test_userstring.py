@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, string
-from test_support import verify, verbose
+from test_support import verbose
 import string_tests
 # UserString is a wrapper around the native builtin string type.
 # UserString instances should behave similar to builtin string objects.

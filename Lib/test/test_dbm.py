@@ -4,7 +4,7 @@
 """
 import dbm
 from dbm import error
-from test_support import verify, verbose
+from test_support import verbose
 
 filename = '/tmp/delete_me'
 

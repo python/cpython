@@ -6,7 +6,7 @@
 import os
 import bsddb
 import tempfile
-from test_support import verify, verbose
+from test_support import verbose
 
 def test(openmethod, what):
 

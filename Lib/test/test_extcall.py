@@ -1,6 +1,5 @@
-from test_support import verify, verbose
+from test_support import verify, verbose, TestFailed
 from UserList import UserList
-from test_support import TestFailed
 import string
 
 def f(*a, **k):

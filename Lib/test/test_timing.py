@@ -1,4 +1,4 @@
-from test_support import verify, verbose
+from test_support import verbose
 import timing
 
 r = range(100000)

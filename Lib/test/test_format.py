@@ -1,4 +1,4 @@
-from test_support import verify, verbose
+from test_support import verbose
 import string, sys
 
 # test string formatting operator (I am not sure if this is being tested
@@ -184,7 +184,7 @@ def test_exc(formatstr, args, exception, excmsg):
         testformat(formatstr, args)
     except exception, exc:
         if str(exc) == excmsg:
-            if verbose: 
+            if verbose:
                 print "yes"
         else:
             if verbose: print 'no'
