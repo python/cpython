@@ -22,7 +22,7 @@ Exponent = '[eE][-+]?[0-9]+'
 Pointfloat = '\([0-9]+\.[0-9]*\|\.[0-9]+\)\(' + Exponent + '\)?'
 Expfloat = '[0-9]+' + Exponent
 Floatnumber = Pointfloat + '\|' + Expfloat
-Number = Intnumber + '\|' + Floatnumber
+Number = Floatnumber + '\|' + Intnumber
 
 String = '\'\(\\\\.\|[^\\\n\']\)*\''
 
@@ -39,7 +39,8 @@ try:
 	save_syntax = regex.set_syntax(0) # Use default syntax
 	tokenprog = regex.compile(Token)
 finally:
-	dummy = regex.set_syntax(save_syntax) # Restore original syntax
+	if save_syntax != 0:
+		dummy = regex.set_syntax(save_syntax) # Restore original syntax
 
 
 def test(file):
