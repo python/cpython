@@ -1324,11 +1324,12 @@ then
 	Darwin/*)
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
-		if test ${MACOSX_DEPLOYMENT_TARGET-10.1} '>' 10.2
+		cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
+		if test ${MACOSX_DEPLOYMENT_TARGET-${cur_target}} '>' 10.2
 		then
 			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
-			CONFIGURE_MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET
+			CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
 		else
 			LDSHARED='$(CC) $(LDFLAGS) -bundle'
 			if test "$enable_framework" ; then

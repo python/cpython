@@ -360,11 +360,13 @@ def _init_posix():
     # On MacOSX we need to check the setting of the environment variable
     # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
     # it needs to be compatible.
-    # An alternative would be to force MACOSX_DEPLOYMENT_TARGET to be
-    # the same as during configure.
+    # If it isn't set we set it to the configure-time value
     if sys.platform == 'darwin' and g.has_key('CONFIGURE_MACOSX_DEPLOYMENT_TARGET'):
         cfg_target = g['CONFIGURE_MACOSX_DEPLOYMENT_TARGET']
         cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
+        if cur_target == '':
+            cur_target = cfg_target
+            os.putenv('MACOSX_DEPLOYMENT_TARGET', cfg_target)
         if cfg_target != cur_target:
             my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" during configure'
                 % (cur_target, cfg_target))
