@@ -343,6 +343,8 @@ class RawConfigParser:
 
     def set(self, section, option, value):
         """Set an option."""
+        if not isinstance(value, basestring):
+            raise TypeError("option values must be strings")
         if not section or section == DEFAULTSECT:
             sectdict = self._defaults
         else:

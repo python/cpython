@@ -211,6 +211,37 @@ class TestCaseBase(unittest.TestCase):
             "\n"
             )
 
+    def test_set_string_types(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1=foo\n")
+        # Check that we don't get an exception when setting values in
+        # an existing section using strings:
+        class mystr(str):
+            pass
+        cf.set("sect", "option1", "splat")
+        cf.set("sect", "option1", mystr("splat"))
+        cf.set("sect", "option2", "splat")
+        cf.set("sect", "option2", mystr("splat"))
+        try:
+            unicode
+        except NameError:
+            pass
+        else:
+            cf.set("sect", "option1", unicode("splat"))
+            cf.set("sect", "option2", unicode("splat"))
+
+    def test_set_nonstring_types(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1=foo\n")
+        # Check that we get a TypeError when setting non-string values
+        # in an existing section:
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", object())
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", object())
+
     # shared by subclasses
     def get_interpolation_config(self):
         return self.fromstring(
