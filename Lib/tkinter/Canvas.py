@@ -43,6 +43,8 @@ class CanvasItem:
 		return (x1, y1), (x2, y2)
 	def bind(self, sequence=None, command=None):
 		return self.canvas.tag_bind(self.id, sequence, command)
+	def unbind(self, sequence):
+		self.canvas.tag_bind(self.id, sequence, '')
 	def config(self, cnf={}, **kw):
 		return self.canvas.itemconfig(self.id, _cnfmerge((cnf, kw)))
 	def coords(self, pts = ()):
@@ -140,8 +142,10 @@ class Group:
 		self._do('addtag', 'withtag', tagOrId)
 	def bbox(self):
 		return self._getints(self._do('bbox'))
-	def bind(self, sequence=None, command=None): # XXX args?
-		return self._do('bind', sequence, command)
+	def bind(self, sequence=None, command=None):
+		return self.canvas.tag_bind(self.id, sequence, command)
+	def unbind(self, sequence):
+		self.canvas.tag_bind(self.id, sequence, '')
 	def coords(self, *pts):
 		return self._do('coords', pts)
 	def dchars(self, first, last=None):
