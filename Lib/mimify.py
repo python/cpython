@@ -29,8 +29,10 @@ QUOTE = '> '		# string replies are quoted with
 
 import regex, regsub, string
 
-qp = regex.compile('^content-transfer-encoding:[\000-\377]*quoted-printable',
+qp = regex.compile('^content-transfer-encoding:[ \t]*quoted-printable',
 		   regex.casefold)
+base64 = regex.compile('^content-transfer-encoding:[ \t]*base64',
+		       regex.casefold)
 mp = regex.compile('^content-type:[\000-\377]*multipart/[\000-\377]*boundary="?\\([^;"\n]*\\)',
 		   regex.casefold)
 chrset = regex.compile('^\\(content-type:.*charset="\\)\\(us-ascii\\|iso-8859-[0-9]+\\)\\("[\000-\377]*\\)',
@@ -261,7 +263,7 @@ iso_char = regex.compile('[\240-\377]')
 
 def mimify_part(ifile, ofile, is_mime):
 	'''Convert an 8bit part of a MIME mail message to quoted-printable.'''
-	has_cte = is_qp = 0
+	has_cte = is_qp = is_base64 = 0
 	multipart = None
 	must_quote_body = must_quote_header = has_iso_chars = 0
 
@@ -283,6 +285,8 @@ def mimify_part(ifile, ofile, is_mime):
 			has_cte = 1
 			if qp.match(line) >= 0:
 				is_qp = 1
+			elif base64.match(line) >= 0:
+				is_base64 = 1
 		if mp.match(line) >= 0:
 			multipart = '--' + mp.group(1)
 		if he.match(line) >= 0:
@@ -302,6 +306,9 @@ def mimify_part(ifile, ofile, is_mime):
 			if line == multipart + '\n':
 				message_end = line
 				break
+		if is_base64:
+			message.append(line)
+			continue
 		if is_qp:
 			while line[-2:] == '=\n':
 				line = line[:-2]
@@ -333,7 +340,9 @@ def mimify_part(ifile, ofile, is_mime):
 				line = chrset.group(1) + 'us-ascii' + chrset.group(3)
 		if has_cte and cte.match(line) >= 0:
 			line = 'Content-Transfer-Encoding: '
-			if must_quote_body:
+			if is_base64:
+				line = line + 'base64\n'
+			elif must_quote_body:
 				line = line + 'quoted-printable\n'
 			else:
 				line = line + '7bit\n'
