@@ -27,8 +27,8 @@
 (defconst python-cc-style
   '((indent-tabs-mode . t)
     (c-basic-offset   . 8)
-    (c-offset-alist   . ((substatement-open . 0)
-			 ))
+    (c-offsets-alist   . ((substatement-open . 0)
+			  ))
     )
   "Standard Python C coding style.")
 
