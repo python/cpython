@@ -9,6 +9,9 @@
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD
 
+/* Define to `long' if <time.h> doesn't define.  */
+#undef clock_t
+
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
 #undef GETPGRP_HAVE_ARG
