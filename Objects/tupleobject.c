@@ -263,14 +263,13 @@ tuplecontains(PyTupleObject *a, PyObject *el)
 {
 	int i, cmp;
 
-	for (i = 0; i < a->ob_size; ++i) {
+	for (i = 0, cmp = 0 ; cmp == 0 && i < a->ob_size; ++i)
 		cmp = PyObject_RichCompareBool(el, PyTuple_GET_ITEM(a, i),
-					       Py_EQ);
-		if (cmp > 0)
-			return 1;
-		else if (cmp < 0)
-			return -1;
-	}
+						   Py_EQ);
+	if (cmp > 0)
+		return 1;
+	if (cmp < 0)
+		return -1;
 	return 0;
 }
 
