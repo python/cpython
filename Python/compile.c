@@ -767,7 +767,6 @@ com_addopname(struct compiling *c, int op, node *n)
 static PyObject *
 parsenumber(struct compiling *co, char *s)
 {
-	extern double atof(const char *);
 	char *end;
 	long x;
 	double dx;
