@@ -13,7 +13,9 @@ the \code{posix} interface.  On non-\UNIX{} operating systems the
 \code{posix} module is not available, but a subset is always available
 through the \code{os} interface.  Once \code{os} is imported, there is
 \emph{no} performance penalty in using it instead of
-\code{posix}.
+\code{posix}.  In addition, \code{os} provides some additional
+functionality, such as automatically calling \code{putenv()}
+when an entry is \code{os.environ} is changed.
 \stmodindex{os}
 
 The descriptions below are very terse; refer to the
@@ -35,13 +37,17 @@ For example,
 is the pathname of your home directory, equivalent to
 \code{getenv("HOME")}
 in C.
+
 Modifying this dictionary does not affect the string environment
 passed on by \code{execv()}, \code{popen()} or \code{system()}; if you
 need to change the environment, pass \code{environ} to \code{execve()}
 or add variable assignments and export statements to the command
-string for \code{system()} or \code{popen()}.%
-\footnote{The problem with automatically passing on \code{environ} is
-that there is no portable way of changing the environment.}
+string for \code{system()} or \code{popen()}.
+
+\emph{However:} If you are using this module via the \code{os} module
+(as you should -- see the introduction above), \code{environ} is a
+a mapping object that behaves almost like a dictionary but invokes
+\code{putenv()} automatically called whenever an item is changed.
 \end{datadesc}
 
 \renewcommand{\indexsubitem}{(exception in module posix)}
@@ -237,6 +243,10 @@ Open the file \var{file} and set various flags according to
 The default \var{mode} is 0777 (octal), and the current umask value is
 first masked out.  Return the file descriptor for the newly opened
 file.
+
+For a description of the flag and mode values, see the \UNIX{} or C
+run-time documentation; flag constants (like \code{O_RDONLY} and
+\code{O_WRONLY}) are defined in this module too (see below).
 
 Note: this function is intended for low-level I/O.  For normal usage,
 use the built-in function \code{open}, which returns a ``file object''
