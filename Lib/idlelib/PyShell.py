@@ -605,6 +605,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if ok:
             try:
                 msg, (dummy_filename, lineno, offset, line) = value
+                if not offset:
+                    offset = 0
             except:
                 ok = 0
         if ok:
