@@ -114,7 +114,27 @@ def main():
             os.environ["PATH"] = os.path.split(perl)[0] + \
                                           os.pathsep + \
                                           os.environ["PATH"]
-            rc = os.system("ms\\32all.bat")
+            # ms\32all.bat will reconfigure OpenSSL and then try to build
+            # all outputs (debug/nondebug/dll/lib).  So we filter the file
+            # to exclude any "nmake" commands and then execute.
+            tempname = "ms\\32all_py.bat"
+            
+            in_bat  = open("ms\\32all.bat")
+            temp_bat = open(tempname,"w")
+            while 1:
+                cmd = in_bat.readline()
+                print 'cmd', repr(cmd)
+                if not cmd: break
+                if cmd.strip()[:5].lower() == "nmake":
+                    continue
+                temp_bat.write(cmd)
+            in_bat.close()
+            temp_bat.close()
+            os.system(tempname)
+            try:
+                os.remove(tempname)
+            except:
+                pass
 
         # Now run make.
         print "Executing nmake over the ssl makefiles..."
