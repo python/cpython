@@ -140,7 +140,22 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
-#ifdef USE_GETHOSTBYNAME_LOCK
+/* On systems on which getaddrinfo() is believed to not be thread-safe,
+   protect access with a lock. */
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
+    defined(__NetBSD__)
+#define USE_GETADDRINFO_LOCK
+#endif
+
+#ifdef USE_GETADDRINFO_LOCK
+#define ACQUIRE_GETADDRINFO_LOCK PyThread_acquire_lock(netdb_lock, 1);
+#define RELEASE_GETADDRINFO_LOCK PyThread_release_lock(netdb_lock);
+#else
+#define ACQUIRE_GETADDRINFO_LOCK
+#define RELEASE_GETADDRINFO_LOCK
+#endif
+
+#if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
 # include "pythread.h"
 #endif
 
@@ -619,9 +634,9 @@ new_sockobject(SOCKET_T fd, int family, int type, int proto)
 
 
 /* Lock to allow python interpreter to continue, but only allow one
-   thread to be in gethostbyname */
-#ifdef USE_GETHOSTBYNAME_LOCK
-PyThread_type_lock gethostbyname_lock;
+   thread to be in gethostbyname or getaddrinfo */
+#if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
+PyThread_type_lock netdb_lock;
 #endif
 
 
@@ -646,7 +661,15 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 		hints.ai_family = af;
 		hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
 		hints.ai_flags = AI_PASSIVE;
+		Py_BEGIN_ALLOW_THREADS
+		ACQUIRE_GETADDRINFO_LOCK
 		error = getaddrinfo(NULL, "0", &hints, &res);
+		Py_END_ALLOW_THREADS
+		/* We assume that those thread-unsafe getaddrinfo() versions
+		   *are* safe regarding their return value, ie. that a
+		   subsequent call to getaddrinfo() does not destroy the
+		   outcome of the first call. */
+		RELEASE_GETADDRINFO_LOCK
 		if (error) {
 			set_gaierror(error);
 			return -1;
@@ -710,6 +733,8 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 	}
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = af;
+	Py_BEGIN_ALLOW_THREADS
+	ACQUIRE_GETADDRINFO_LOCK
 	error = getaddrinfo(name, NULL, &hints, &res);
 #if defined(__digital__) && defined(__unix__)
 	if (error == EAI_NONAME && af == AF_UNSPEC) {
@@ -719,6 +744,8 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 		error = getaddrinfo(name, NULL, &hints, &res);
 	}
 #endif
+	Py_END_ALLOW_THREADS
+	RELEASE_GETADDRINFO_LOCK  /* see comment in setipaddr() */
 	if (error) {
 		set_gaierror(error);
 		return -1;
@@ -2410,7 +2437,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_acquire_lock(gethostbyname_lock, 1);
+	PyThread_acquire_lock(netdb_lock, 1);
 #endif
 	h = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -2423,7 +2450,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr),
 			     sa->sa_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_release_lock(gethostbyname_lock);
+	PyThread_release_lock(netdb_lock);
 #endif
 	return ret;
 }
@@ -2506,14 +2533,14 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_acquire_lock(gethostbyname_lock, 1);
+	PyThread_acquire_lock(netdb_lock, 1);
 #endif
 	h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
 	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_release_lock(gethostbyname_lock);
+	PyThread_release_lock(netdb_lock);
 #endif
 	return ret;
 }
@@ -2966,7 +2993,11 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	hints.ai_socktype = socktype;
 	hints.ai_protocol = protocol;
 	hints.ai_flags = flags;
+	Py_BEGIN_ALLOW_THREADS
+	ACQUIRE_GETADDRINFO_LOCK
 	error = getaddrinfo(hptr, pptr, &hints, &res0);
+	Py_END_ALLOW_THREADS
+	RELEASE_GETADDRINFO_LOCK  /* see comment in setipaddr() */
 	if (error) {
 		set_gaierror(error);
 		return NULL;
@@ -3035,7 +3066,11 @@ socket_getnameinfo(PyObject *self, PyObject *args)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;	/* make numeric port happy */
+	Py_BEGIN_ALLOW_THREADS
+	ACQUIRE_GETADDRINFO_LOCK
 	error = getaddrinfo(hostp, pbuf, &hints, &res);
+	Py_END_ALLOW_THREADS
+	RELEASE_GETADDRINFO_LOCK  /* see comment in setipaddr() */
 	if (error) {
 		set_gaierror(error);
 		goto fail;
@@ -3940,8 +3975,8 @@ init_socket(void)
 #endif
 
 	/* Initialize gethostbyname lock */
-#ifdef USE_GETHOSTBYNAME_LOCK
-	gethostbyname_lock = PyThread_allocate_lock();
+#if defined(USE_GETHOSTBYNAME_LOCK) || defined(USE_GETADDRINFO_LOCK)
+	netdb_lock = PyThread_allocate_lock();
 #endif
 }
 
