@@ -1,6 +1,6 @@
 # module 're' -- A collection of regular expression operations
 
-"""Support for regular expressions (RE).
+r"""Support for regular expressions (RE).
 
 This module provides regular expression matching operations similar to
 those found in Perl. It's 8-bit clean: the strings being processed may
