@@ -462,7 +462,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         print 'Content-Type: text/xml'
         print 'Content-Length: %d' % len(response)
         print
-        print response
+        sys.stdout.write(response)
 
     def handle_get(self):
         """Handle a single HTTP GET request.
@@ -485,7 +485,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         print 'Content-Type: text/html'
         print 'Content-Length: %d' % len(response)
         print
-        print response
+        sys.stdout.write(reponse)
 
     def handle_request(self, request_text = None):
         """Handle a single XML-RPC request passed through a CGI post method.
