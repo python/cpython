@@ -50,7 +50,7 @@ class Outputter:
 
     def ExternalEntityRefHandler(self, *args):
         context, base, sysId, pubId = args
-        print 'External entity ref:', args
+        print 'External entity ref:', args[1:]
         return 1
 
     def DefaultHandler(self, userData):
@@ -150,3 +150,34 @@ except expat.error:
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
+
+
+# Tests that make sure we get errors when the namespace_separator value
+# is illegal, and that we don't for good values:
+print
+print "Testing constructor for proper handling of namespace_separator values:"
+expat.ParserCreate()
+expat.ParserCreate(namespace_separator=None)
+expat.ParserCreate(namespace_separator=' ')
+print "Legal values tested o.k."
+try:
+    expat.ParserCreate(namespace_separator=42)
+except TypeError, e:
+    print "Caught expected TypeError:"
+    print e
+else:
+    print "Failed to catch expected TypeError."
+try:
+    expat.ParserCreate(namespace_separator='too long')
+except ValueError, e:
+    print "Caught expected ValueError:"
+    print e
+else:
+    print "Failed to catch expected ValueError."
+try:
+    expat.ParserCreate(namespace_separator='') # too short
+except ValueError, e:
+    print "Caught expected ValueError:"
+    print e
+else:
+    print "Failed to catch expected ValueError."
