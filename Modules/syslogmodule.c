@@ -155,14 +155,17 @@ static PyMethodDef syslog_methods[] = {
 
 /* Initialization function for the module */
 
-void ins(d, s, x)
+static void
+ins(d, s, x)
 	PyObject *d;
 	char *s;
 	long x;
 {
-	PyObject *xl = PyInt_FromLong(x);
-	PyDict_SetItemString(d, s, xl);
-	Py_XDECREF(xl);
+	PyObject *v = PyInt_FromLong(x);
+	if (v) {
+		PyDict_SetItemString(d, s, v);
+		Py_DECREF(v);
+	}
 }
 
 
