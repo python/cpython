@@ -41,8 +41,6 @@ tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
 tester('ntpath.isabs("\\foo")', 1)
 tester('ntpath.isabs("\\foo\\bar")', 1)
 
-tester('ntpath.abspath("C:\\")', "C:\\")
-
 tester('ntpath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
        "/home/swen")
 tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
@@ -107,6 +105,18 @@ tester("ntpath.normpath('/../.././..')", '\\')
 tester("ntpath.normpath('c:/../../..')", 'c:\\')
 tester("ntpath.normpath('../.././..')", r'..\..\..')
 tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
+
+# ntpath.abspath() can only be used on a system with the "nt" module
+# (reasonably), so we protect this test with "import nt".  This allows
+# the rest of the tests for the ntpath module to be run to completion
+# on any platform, since most of the module is intended to be usable
+# from any platform.
+try:
+    import nt
+except ImportError:
+    pass
+else:
+    tester('ntpath.abspath("C:\\")', "C:\\")
 
 if errors:
     raise TestFailed(str(errors) + " errors.")
