@@ -362,6 +362,9 @@ class PyBuildExt(build_ext):
             if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        libraries = ['ndbm'] ) )
+            elif self.compiler.find_library_file(lib_dirs, 'db1'):
+                exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       libraries = ['db1'] ) )
             else:
                 exts.append( Extension('dbm', ['dbmmodule.c']) )
 
@@ -384,6 +387,8 @@ class PyBuildExt(build_ext):
         dblib = []
         if self.compiler.find_library_file(lib_dirs, 'db-3.1'):
             dblib = ['db-3.1']
+        elif self.compiler.find_library_file(lib_dirs, 'db3'):
+            dblib = ['db3']
         elif self.compiler.find_library_file(lib_dirs, 'db2'):
             dblib = ['db2']
         elif self.compiler.find_library_file(lib_dirs, 'db1'):
