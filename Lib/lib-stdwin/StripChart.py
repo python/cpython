@@ -18,6 +18,9 @@ class StripChart() = LabelAppearance(), NoReactivity():
 		self.resetbounds()
 		return self
 	#
+	def destroy(self):
+		self.parent = 0
+	#
 	def setbounds(self, bounds):
 		LabelAppearance.setbounds(self, bounds)
 		self.resetbounds()
