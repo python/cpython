@@ -208,7 +208,7 @@ Supported operations:
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{t1} = \var{t2} + \var{t3}}
-          {Sum of \var{t2} and \var{t3}. 
+          {Sum of \var{t2} and \var{t3}.
            Afterwards \var{t1}-\var{t2} == \var{t3} and \var{t1}-\var{t3}
            == \var{t2} are true.}
           {(1)}
@@ -231,13 +231,13 @@ Supported operations:
   \lineiii{-\var{t1}}
 	  {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
 	   -\var{t1.microseconds}),and to \var{t1}* -1.}
-	  {(1)(3)}	  
+	  {(1)(3)}
   \lineiii{abs(\var{t})}
           {equivalent to +\var{t} when \code{t.days >= 0}, and to -\var{t} when
            \code{t.days < 0}.}
           {(1)}
 
-    
+
 \end{tableiii}
 \noindent
 Notes:
@@ -1258,13 +1258,10 @@ These are the same as the \class{datetime} methods of the same names.
     without any conversion of date or time fields.  If self is aware and
     \code{tz.utcoffset(self)} does not return \code{None}, the date and
     time fields are adjusted so that the result is local time in timezone
-    tz, representing the same UTC time as self.  \code{self.astimezone(tz)}
-    is then equivalent to
-    \begin{verbatim}
-        (self - (self.utcoffset() - tz.utcoffset(self)).replace(tzinfo=tz)
-    \end{verbatim}
-    where the result of \code{tz.utcoffset(self)} is converted to a
-    \class{timedelta} if it's an integer.
+    tz, representing the same UTC time as self.
+    XXX [The treatment of endcases remains unclear:  for DST-aware
+    classes, one hour per year has two spellings in local time, and
+    another hour has no spelling in local time.] XXX
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}
