@@ -28,9 +28,9 @@ class PopupMenu:
         rmenu = Menu(self.text, tearoff=0)
         rmenu.add_command(label="Go to line from traceback",
                           command=self.goto_traceback_line)
-        rmenu.add_command(label="Open stack viewer",
-                          command=self.open_stack_viewer)
-        rmenu.add_command(label="Help", command=self.help)
+        #rmenu.add_command(label="Open stack viewer",
+        #                  command=self.open_stack_viewer)
+        #rmenu.add_command(label="Help", command=self.help)
         self.rmenu = rmenu
     
     file_line_pats = [
