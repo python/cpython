@@ -43,8 +43,11 @@ returned.
 Performs the same function as \code{parsedate()}, but returns either
 \code{None} or a 10-tuple; the first 9 elements make up a tuple that
 can be passed directly to \code{time.mktime()}, and the tenth is the
-offset of the date's time zone from UTC (which is the official term
-for Greenwich Mean Time).
+offset of the date's timezone from UTC (which is the official term
+for Greenwich Mean Time).  (Note that the sign of the timezone offset
+is the opposite of the sign of the \code{time.timezone} variable for
+the same timezone; the latter variable follows the \POSIX{} standard
+while this module follows \rfc{822}.)
 \end{funcdesc}
 
 \begin{funcdesc}{mktime_tz}{tuple}
@@ -131,7 +134,7 @@ function may occasionally yield an incorrect result.
 Retrieve a header using \code{getheader} and parse it into a 10-tuple;
 the first 9 elements will make a tuple compatible with
 \code{time.mktime()}, and the 10th is a number giving the offset of
-the date's time zone from UTC.  Similarly to \code{getdate()}, if
+the date's timezone from UTC.  Similarly to \code{getdate()}, if
 there is no header matching \var{name}, or it is unparsable, return
 \code{None}. 
 \end{funcdesc}
