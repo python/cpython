@@ -61,14 +61,22 @@ class SAXParseException(SAXException):
         SAXException.__init__(self, msg, exception)
         self._locator = locator
 
+        # We need to cache this stuff at construction time.
+        # If this exception is thrown, the objects through which we must
+        # traverse to get this information may be deleted by the time
+        # it gets caught.
+        self._systemId = self._locator.getSystemId()
+        self._colnum = self._locator.getColumnNumber()
+        self._linenum = self._locator.getLineNumber()
+
     def getColumnNumber(self):
         """The column number of the end of the text where the exception
         occurred."""
-        return self._locator.getColumnNumber()
+        return self._colnum
 
     def getLineNumber(self):
         "The line number of the end of the text where the exception occurred."
-        return self._locator.getLineNumber()
+        return self._linenum
 
     def getPublicId(self):
         "Get the public identifier of the entity where the exception occurred."
@@ -76,7 +84,7 @@ class SAXParseException(SAXException):
 
     def getSystemId(self):
         "Get the system identifier of the entity where the exception occurred."
-        return self._locator.getSystemId()
+        return self._systemId
 
     def __str__(self):
         "Create a string representation of the exception."
