@@ -31,6 +31,7 @@ from configHandler import idleConf
 import idlever
 
 import rpc
+import Debugger
 import RemoteDebugger
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
@@ -160,9 +161,10 @@ class PyShellEditorWindow(EditorWindow):
         #     a temporary file save feature the save breaks functionality
         #     needs to be re-verified, since the breaks at the time the
         #     temp file is created may differ from the breaks at the last
-        #     permanent save of the file.  A break introduced after a save
-        #     will be effective,  but not persistent.  This is necessary to
-        #     keep the saved breaks synched with the saved file.
+        #     permanent save of the file.  Currently, a break introduced
+        #     after a save will be effective, but not persistent.
+        #     This is necessary to keep the saved breaks synched with the
+        #     saved file.
         #
         #     Breakpoints are set as tagged ranges in the text.  Certain
         #     kinds of edits cause these ranges to be deleted: Inserting
@@ -361,17 +363,18 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # Kill subprocess, spawn a new one, accept connection.
         self.rpcclt.close()
         self.unix_terminate()
-        self.tkconsole.executing = False
+        console = self.tkconsole
+        console.executing = False
         self.spawn_subprocess()
         self.rpcclt.accept()
         self.transfer_path()
         # annotate restart in shell window and mark it
-        console = self.tkconsole
         console.text.delete("iomark", "end-1c")
         halfbar = ((int(console.width) - 16) // 2) * '='
         console.write(halfbar + ' RESTART ' + halfbar)
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
+        console.showprompt()
         # restart subprocess debugger
         if debug:
             # Restarted debugger connects to current instance of debug GUI
@@ -489,8 +492,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
-            console = self.tkconsole.console
-            print >>console, 'Traceback (most recent call last):'
+            tkerr = self.tkconsole.stderr
+            print>>tkerr, '*** Error in script or command!\n'
+            print>>tkerr, 'Traceback (most recent call last):'
             InteractiveInterpreter.showsyntaxerror(self, filename)
             self.tkconsole.showprompt()
         else:
@@ -608,30 +612,34 @@ class ModifiedInterpreter(InteractiveInterpreter):
             warnings.filters[:] = self.save_warnings_filters
             self.save_warnings_filters = None
         debugger = self.debugger
-        self.tkconsole.beginexecuting()
         try:
-            if not debugger and self.rpcclt is not None:
-                self.active_seq = self.rpcclt.asyncqueue("exec", "runcode",
-                                                        (code,), {})
-            elif debugger:
-                debugger.run(code, self.locals)
-            else:
-                exec code in self.locals
-        except SystemExit:
-            if tkMessageBox.askyesno(
-                "Exit?",
-                "Do you want to exit altogether?",
-                default="yes",
-                master=self.tkconsole.text):
-                raise
-            else:
+            self.tkconsole.beginexecuting()
+            try:
+                if not debugger and self.rpcclt is not None:
+                    self.active_seq = self.rpcclt.asyncqueue("exec", "runcode",
+                                                            (code,), {})
+                elif debugger:
+                    debugger.run(code, self.locals)
+                else:
+                    exec code in self.locals
+            except SystemExit:
+                if tkMessageBox.askyesno(
+                    "Exit?",
+                    "Do you want to exit altogether?",
+                    default="yes",
+                    master=self.tkconsole.text):
+                    raise
+                else:
+                    self.showtraceback()
+            except:
                 self.showtraceback()
-        except:
-            self.showtraceback()
+        finally:
+            if not use_subprocess:
+                self.tkconsole.endexecuting()
 
     def write(self, s):
         "Override base class method"
-        self.tkconsole.console.write(s)
+        self.tkconsole.stderr.write(s)
 
 class PyShell(OutputWindow):
 
@@ -741,22 +749,13 @@ class PyShell(OutputWindow):
         self.set_debugger_indicator()
 
     def open_debugger(self):
-        # XXX KBK 13Jun02 An RPC client always exists now? Open remote
-        # debugger and return...dike the rest of this fcn and combine
-        # with open_remote_debugger?
         if self.interp.rpcclt:
-            return self.open_remote_debugger()
-        import Debugger
-        self.interp.setdebugger(Debugger.Debugger(self))
-        sys.ps1 = "[DEBUG ON]\n>>> "
-        self.showprompt()
-        self.set_debugger_indicator()
-
-    def open_remote_debugger(self):
-        gui = RemoteDebugger.start_remote_debugger(self.interp.rpcclt, self)
-        self.interp.setdebugger(gui)
-        # Load all PyShellEditorWindow breakpoints:
-        gui.load_breakpoints()
+            dbg_gui = RemoteDebugger.start_remote_debugger(self.interp.rpcclt,
+                                                           self)
+        else:
+            dbg_gui = Debugger.Debugger(self)
+        self.interp.setdebugger(dbg_gui)
+        dbg_gui.load_breakpoints()
         sys.ps1 = "[DEBUG ON]\n>>> "
         self.showprompt()
         self.set_debugger_indicator()
@@ -779,18 +778,22 @@ class PyShell(OutputWindow):
                 "Kill?",
                 "The program is still running!\n Do you want to kill it?",
                 default="ok",
-                master=self.text)
+                parent=self.text)
             if response == False:
                 return "cancel"
             # interrupt the subprocess
-            self.closing = True
-            self.endexecuting()
-        return EditorWindow.close(self)
+            self.canceled = True
+            if use_subprocess:
+                self.interp.interrupt_subprocess()
+            return "cancel"
+        else:
+            return EditorWindow.close(self)
 
     def _close(self):
         "Extend EditorWindow._close(), shut down debugger and execution server"
         self.close_debugger()
-        self.interp.kill_subprocess()
+        if use_subprocess:
+            self.interp.kill_subprocess()
         # Restore std streams
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
@@ -814,9 +817,13 @@ class PyShell(OutputWindow):
 
     def begin(self):
         self.resetoutput()
-        self.write("Python %s on %s\n%s\nIDLEfork %s\n" %
+        if use_subprocess:
+            nosub = ''
+        else:
+            nosub = "==== No Subprocess ===="
+        self.write("Python %s on %s\n%s\nIDLEfork %s      %s\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
-                    idlever.IDLE_VERSION))
+                    idlever.IDLE_VERSION, nosub))
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None
@@ -853,7 +860,7 @@ class PyShell(OutputWindow):
             pass
         if not (self.executing or self.reading):
             self.resetoutput()
-            self.write("KeyboardInterrupt\n")
+            self.interp.write("KeyboardInterrupt\n")
             self.showprompt()
             return "break"
         self.endoffile = 0
@@ -997,8 +1004,16 @@ class PyShell(OutputWindow):
         self.text.see("restart")
 
     def restart_shell(self, event=None):
-        self.interp.restart_subprocess()
-        self.showprompt()
+        if self.executing:
+            self.cancel_callback()
+            # Wait for subprocess to interrupt and restart
+            # This can be a long time if shell is scrolling on a slow system
+            # XXX 14 May 03 KBK This delay (and one in ScriptBinding) could be
+            #     shorter if we didn't print the KeyboardInterrupt on
+            #     restarting while user code is running....
+            self.text.after(2000, self.interp.restart_subprocess)
+        else:
+            self.interp.restart_subprocess()
 
     def showprompt(self):
         self.resetoutput()
@@ -1030,6 +1045,8 @@ class PyShell(OutputWindow):
             pass
         if self.canceled:
             self.canceled = 0
+            if not use_subprocess:
+                raise KeyboardInterrupt
 
 class PseudoFile:
 

@@ -22,6 +22,7 @@ import string
 import tabnanny
 import tokenize
 import tkMessageBox
+import PyShell
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
@@ -37,8 +38,6 @@ how many spaces a tab is worth.
 To fix case 2, change all tabs to spaces by using Select All followed \
 by Untabify Region (both in the Edit menu)."""
 
-
-# XXX 11Jun02 KBK TBD Implement stop-execution
 
 class ScriptBinding:
 
@@ -124,7 +123,19 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
-        interp.restart_subprocess()
+        if PyShell.use_subprocess:
+            shell.restart_shell()
+            if shell.executing:
+                delay = 2700
+            else:
+                delay = 500
+            # Wait for the interrupt and reset to finish
+            shell.text.after(delay, self.run_module_event2, interp,
+                             filename, code)
+        else:
+            self.run_module_event2(interp, filename, code)
+
+    def run_module_event2(self, interp, filename, code):
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s
