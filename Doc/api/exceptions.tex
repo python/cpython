@@ -194,26 +194,27 @@ for each thread.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromWindowsErr}{int ierr}
-  This is a convenience function to raise
-  \exception{PyExc_WindowsError}.  If called with \var{ierr} of
-  \cdata{0}, the error code returned by a call to
-  \cfunction{GetLastError()} is used instead.  It calls the win32
-  function \cfunction{FormatMessage()} to retrieve the Windows
-  description of error code \var{ierr}, then it constructs a tuple object
-  whose first item is the integer \cdata{ierr} value and whose second
-  item is the corresponding error message (gotten from
+  This is a convenience function to raise \exception{WindowsError}.
+  If called with \var{ierr} of \cdata{0}, the error code returned by a
+  call to \cfunction{GetLastError()} is used instead.  It calls the
+  Win32 function \cfunction{FormatMessage()} to retrieve the Windows
+  description of error code given by \var{ierr} or
+  \cfunction{GetLastError()}, then it constructs a tuple object whose
+  first item is the \var{ierr} value and whose second item is the
+  corresponding error message (gotten from
   \cfunction{FormatMessage()}), and then calls
   \samp{PyErr_SetObject(\var{PyExc_WindowsError}, \var{object})}.
-  This function always returns \NULL.  This function is only available
-  on Windows.
+  This function always returns \NULL.
+  Availability: Windows.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromWindowsErrWithFilename}{int ierr,
-                                                                  char *filename}
+                                                                char *filename}
   Similar to \cfunction{PyErr_SetFromWindowsErr()}, with the
   additional behavior that if \var{filename} is not \NULL, it is
   passed to the constructor of \exception{WindowsError} as a third
-  parameter.  This function is only available on Windows.
+  parameter.
+  Availability: Windows.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_BadInternalCall}{}
