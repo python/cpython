@@ -3,8 +3,9 @@
 
 from test_support import *
 
-eps=1e-5
-print 'math module, testing with eps', eps
+seps='1e-05'
+eps = eval(seps)
+print 'math module, testing with eps', seps
 import math
 
 def testit(name, value, expected):
