@@ -530,7 +530,7 @@ class ComponentItem(SelectableItem):
 		if self._elemdict.has_key(name):
 			cls = self._elemdict[name]
 			return DelayedComponentItem(cls, self)
-	   	if self._propdict.has_key(name):
+		if self._propdict.has_key(name):
 	   		cls = self._propdict[name]
 	   		return cls(self)
 		raise AttributeError, name

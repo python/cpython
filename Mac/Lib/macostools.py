@@ -30,12 +30,12 @@ def mkalias(src, dst, relative=None):
 	"""Create a finder alias"""
 	srcfss = macfs.FSSpec(src)
 	dstfss = macfs.FSSpec(dst)
-        if relative:
-                relativefss = macfs.FSSpec(relative)
-                # ik mag er geen None in stoppen :-(
-                alias = srcfss.NewAlias(relativefss)
-        else:
-                alias = srcfss.NewAlias()
+	if relative:
+		relativefss = macfs.FSSpec(relative)
+		# ik mag er geen None in stoppen :-(
+		alias = srcfss.NewAlias(relativefss)
+	else:
+		alias = srcfss.NewAlias()
 	srcfinfo = srcfss.GetFInfo()
 
 	Res.FSpCreateResFile(dstfss, srcfinfo.Creator, srcfinfo.Type, -1)
