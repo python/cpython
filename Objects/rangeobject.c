@@ -36,6 +36,7 @@ PyRange_New(long start, long len, long step, int reps)
 		    (last < (-1 - PyInt_GetMax() - step))) {
 			PyErr_SetString(PyExc_OverflowError,
 					"integer addition");
+			Py_DECREF(obj);
 			return NULL;
 		}			
 	}
