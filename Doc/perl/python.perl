@@ -158,6 +158,9 @@ sub do_cmd_hackscore{
 
 sub codetext($){
     my $text = "$_[0]";
+    # Make sure that "---" is not converted to "--" later when
+    # LaTeX2HTML tries converting em-dashes based on the conventional
+    # TeX font ligatures:
     $text =~ s/--/-\&#45;/go;
     return $text;
 }
