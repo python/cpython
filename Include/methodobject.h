@@ -14,6 +14,7 @@ extern DL_IMPORT(PyTypeObject) PyCFunction_Type;
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
 					     PyObject *);
+typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
 extern DL_IMPORT(PyCFunction) PyCFunction_GetFunction(PyObject *);
 extern DL_IMPORT(PyObject *) PyCFunction_GetSelf(PyObject *);
@@ -27,6 +28,7 @@ extern DL_IMPORT(int) PyCFunction_GetFlags(PyObject *);
 	(((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
 	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+extern DL_IMPORT(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
     char	*ml_name;
@@ -44,6 +46,9 @@ extern DL_IMPORT(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define METH_OLDARGS  0x0000
 #define METH_VARARGS  0x0001
 #define METH_KEYWORDS 0x0002
+/* METH_NOARGS and METH_O must not be combined with any other flag. */
+#define METH_NOARGS   0x0004
+#define METH_O        0x0008
 
 typedef struct PyMethodChain {
     PyMethodDef *methods;		/* Methods of this type */
