@@ -645,7 +645,7 @@ def unquote(s):
 		if j < 0:
 			res = res + s[i:]
 			break
-		res = res + (s[i:j] + chr(eval('0x' + s[j+1:j+3])))
+		res = res + (s[i:j] + chr(string.atoi(s[j+1:j+3], 16)))
 		i = j+3
 	return res
 
