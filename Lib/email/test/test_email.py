@@ -2080,6 +2080,13 @@ two line""")
 
 # Test the Charset class
 class TestCharset(unittest.TestCase):
+    def tearDown(self):
+        from email import Charset as CharsetModule
+        try:
+            del CharsetModule.CHARSETS['fake']
+        except KeyError:
+            pass
+
     def test_idempotent(self):
         eq = self.assertEqual
         # Make sure us-ascii = no Unicode conversion
@@ -2114,6 +2121,13 @@ class TestCharset(unittest.TestCase):
         except LookupError:
             # We probably don't have the Japanese codecs installed
             pass
+        # Testing SF bug #625509, which we have to fake, since there are no
+        # built-in encodings where the header encoding is QP but the body
+        # encoding is not.
+        from email import Charset as CharsetModule
+        CharsetModule.add_charset('fake', CharsetModule.QP, None)
+        c = Charset('fake')
+        eq('hello w\xf6rld', c.body_encode('hello w\xf6rld'))
 
 
 
