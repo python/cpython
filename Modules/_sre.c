@@ -1800,6 +1800,11 @@ join(PyObject* list, PyObject* pattern)
         return NULL;
     }
     args = PyTuple_New(1);
+    if (!args) {
+        Py_DECREF(function);
+        Py_DECREF(joiner);
+        return NULL;
+    }
     PyTuple_SET_ITEM(args, 0, list);
     result = PyObject_CallObject(function, args);
     Py_DECREF(args); /* also removes list */
@@ -1896,6 +1901,10 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
         return NULL;
 
     list = PyList_New(0);
+    if (!list) {
+        state_fini(&state);
+        return NULL;
+    }
 
     while (state.start <= state.end) {
 
@@ -1995,6 +2004,10 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
         return NULL;
 
     list = PyList_New(0);
+    if (!list) {
+        state_fini(&state);
+        return NULL;
+    }
 
     n = 0;
     last = state.start;
@@ -2110,6 +2123,10 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
         return NULL;
 
     list = PyList_New(0);
+    if (!list) {
+        state_fini(&state);
+        return NULL;
+    }
 
     n = i = 0;
 
