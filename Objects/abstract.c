@@ -1139,7 +1139,14 @@ PySequence_Contains(w, v) /* v in w */
 		}
 		return 0;
 	}
-
+	if(PyType_HasFeature(w->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
+		sq = w->ob_type->tp_as_sequence;
+	        if(sq != NULL && sq->sq_contains != NULL)
+			return (*sq->sq_contains)(w, v);
+	}
+	
+	/* If there is no better way to check whether an item is is contained,
+	   do it the hard way */
 	sq = w->ob_type->tp_as_sequence;
 	if (sq == NULL || sq->sq_item == NULL) {
 		PyErr_SetString(PyExc_TypeError,
