@@ -1120,7 +1120,7 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 			return
 		else:
 			tracebackwindow.traceback(1, filename)
-		if not uthread2:
+		if uthread2:
 			uthread2.globalUnlock()
 	if debugging:
 		sys.settrace(None)
