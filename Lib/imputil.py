@@ -56,6 +56,9 @@ class Importer:
     ### returns a context regardless of Importer used. generate an
     ### fqname and look in sys.modules for it.
 
+    ### note that given module a.b which imports c, if c is already
+    ### loaded, python still wants to look for a.c
+
     # determine the context of this import
     parent = self._determine_import_context(globals)
 
@@ -323,6 +326,146 @@ class Importer:
 
 ######################################################################
 #
+# Some handy stuff for the Importers
+#
+
+# byte-compiled file suffic character
+_suffix_char = __debug__ and 'c' or 'o'
+
+# byte-compiled file suffix
+_suffix = '.py' + _suffix_char
+
+
+def _compile(pathname, timestamp):
+  """Compile (and cache) a Python source file.
+
+  The file specified by <pathname> is compiled to a code object and
+  returned.
+
+  Presuming the appropriate privileges exist, the bytecodes will be
+  saved back to the filesystem for future imports. The source file's
+  modification timestamp must be provided as a Long value.
+  """
+  codestring = open(pathname, 'r').read()
+  if codestring and codestring[-1] != '\n':
+    codestring = codestring + '\n'
+  code = __builtin__.compile(codestring, pathname, 'exec')
+
+  # try to cache the compiled code
+  try:
+    f = open(pathname + _suffix_char, 'wb')
+  except IOError:
+    pass
+  else:
+    f.write('\0\0\0\0')
+    f.write(struct.pack('<I', timestamp))
+    marshal.dump(code, f)
+    f.flush()
+    f.seek(0, 0)
+    f.write(imp.get_magic())
+    f.close()
+
+  return code
+
+_os_stat = _os_path_join = None
+def _os_bootstrap():
+  "Set up 'os' module replacement functions for use during import bootstrap."
+
+  names = sys.builtin_module_names
+
+  join = None
+  if 'posix' in names:
+    sep = '/'
+    from posix import stat
+  elif 'nt' in names:
+    sep = '\\'
+    from nt import stat
+  elif 'dos' in names:
+    sep = '\\'
+    from dos import stat
+  elif 'os2' in names:
+    sep = '\\'
+    from os2 import stat
+  elif 'mac' in names:
+    from mac import stat
+    def join(a, b):
+      if a == '':
+        return b
+      path = s
+      if ':' not in a:
+        a = ':' + a
+      if a[-1:] <> ':':
+        a = a + ':'
+      return a + b
+  else:
+    raise ImportError, 'no os specific module found'
+  
+  if join is None:
+    def join(a, b, sep=sep):
+      if a == '':
+        return b
+      lastchar = a[-1:]
+      if lastchar == '/' or lastchar == sep:
+        return a + b
+      return a + sep + b
+
+  global _os_stat
+  _os_stat = stat
+
+  global _os_path_join
+  _os_path_join = join
+
+def _os_path_isdir(pathname):
+  "Local replacement for os.path.isdir()."
+  try:
+    s = _os_stat(pathname)
+  except OSError:
+    return None
+  return (s[0] & 0170000) == 0040000
+
+def _timestamp(pathname):
+  "Return the file modification time as a Long."
+  try:
+    s = _os_stat(pathname)
+  except OSError:
+    return None
+  return long(s[8])
+
+def _fs_import(dir, modname):
+  "Fetch a module from the filesystem."
+
+  pathname = _os_path_join(dir, modname)
+  if _os_path_isdir(pathname):
+    values = { '__pkgdir__' : pathname }
+    ispkg = 1
+    pathname = _os_path_join(pathname, '__init__')
+  else:
+    values = { }
+    ispkg = 0
+
+  t_py = _timestamp(pathname + '.py')
+  t_pyc = _timestamp(pathname + _suffix)
+  if t_py is None and t_pyc is None:
+    return None
+  code = None
+  if t_py is None or (t_pyc is not None and t_pyc >= t_py):
+    file = pathname + _suffix
+    f = open(file, 'rb')
+    if f.read(4) == imp.get_magic():
+      t = struct.unpack('<I', f.read(4))[0]
+      if t == t_py:
+        code = marshal.load(f)
+    f.close()
+  if code is None:
+    file = pathname + '.py'
+    code = _compile(file, t_py)
+
+  values['__file__'] = file
+  return ispkg, code, values
+
+
+######################################################################
+#
 # Simple function-based importer
 #
 class FuncImporter(Importer):
@@ -341,10 +484,23 @@ def install_with(func):
 # Base class for archive-based importing
 #
 class PackageArchiveImporter(Importer):
-  "Importer subclass to import from (file) archives."
+  """Importer subclass to import from (file) archives.
+
+  This Importer handles imports of the style <archive>.<subfile>, where
+  <archive> can be located using a subclass-specific mechanism and the
+  <subfile> is found in the archive using a subclass-specific mechanism.
+
+  This class defines two hooks for subclasses: one to locate an archive
+  (and possibly return some context for future subfile lookups), and one
+  to locate subfiles.
+  """
 
   def get_code(self, parent, modname, fqname):
     if parent:
+      # the Importer._finish_import logic ensures that we handle imports
+      # under the top level module (package / archive).
+      assert parent.__importer__ == self
+
       # if a parent "package" is provided, then we are importing a sub-file
       # from the archive.
       result = self.get_subfile(parent.__archive__, modname)
@@ -406,14 +562,11 @@ class PackageArchive(PackageArchiveImporter):
 #
 # Emulate the standard directory-based import mechanism
 #
-
 class DirectoryImporter(Importer):
   "Importer subclass to emulate the standard importer."
 
   def __init__(self, dir):
     self.dir = dir
-    self.ext_char = __debug__ and 'c' or 'o'
-    self.ext = '.py' + self.ext_char
 
   def get_code(self, parent, modname, fqname):
     if parent:
@@ -421,67 +574,13 @@ class DirectoryImporter(Importer):
     else:
       dir = self.dir
 
-    # pull the os module from our instance data. we don't do this at the
-    # top-level, because it isn't a builtin module (and we want to defer
-    # loading non-builtins until as late as possible).
-    try:
-      os = self.os
-    except AttributeError:
-      import os
-      self.os = os
+    # defer the loading of OS-related facilities
+    if not _os_stat:
+      _os_bootstrap()
 
-    pathname = os.path.join(dir, modname)
-    if os.path.isdir(pathname):
-      values = { '__pkgdir__' : pathname }
-      ispkg = 1
-      pathname = os.path.join(pathname, '__init__')
-    else:
-      values = { }
-      ispkg = 0
-
-    t_py = self._timestamp(pathname + '.py')
-    t_pyc = self._timestamp(pathname + self.ext)
-    if t_py is None and t_pyc is None:
-      return None
-    code = None
-    if t_py is None or (t_pyc is not None and t_pyc >= t_py):
-      f = open(pathname + self.ext, 'rb')
-      if f.read(4) == imp.get_magic():
-        t = struct.unpack('<I', f.read(4))[0]
-        if t == t_py:
-          code = marshal.load(f)
-      f.close()
-    if code is None:
-      code = self._compile(pathname + '.py', t_py)
-    return ispkg, code, values
-
-  def _timestamp(self, pathname):
-    try:
-      s = self.os.stat(pathname)
-    except OSError:
-      return None
-    return long(s[8])
-
-  def _compile(self, pathname, timestamp):
-    codestring = open(pathname, 'r').read()
-    if codestring and codestring[-1] != '\n':
-      codestring = codestring + '\n'
-    code = __builtin__.compile(codestring, pathname, 'exec')
-
-    # try to cache the compiled code
-    try:
-      f = open(pathname + self.ext_char, 'wb')
-      f.write('\0\0\0\0')
-      f.write(struct.pack('<I', timestamp))
-      marshal.dump(code, f)
-      f.flush()
-      f.seek(0, 0)
-      f.write(imp.get_magic())
-      f.close()
-    except OSError:
-      pass
-
-    return code
+    # Return the module (and other info) if found in the specified
+    # directory. Otherwise, return None.
+    return _fs_import(dir, modname)
 
   def __repr__(self):
     return '<%s.%s for "%s" at 0x%x>' % (self.__class__.__module__,
@@ -489,11 +588,79 @@ class DirectoryImporter(Importer):
                                          self.dir,
                                          id(self))
 
+######################################################################
+#
+# Emulate the standard sys.path import mechanism
+#
+class SysPathImporter(Importer):
+  def __init__(self):
+
+    # we're definitely going to be importing something in the future,
+    # so let's just load the OS-related facilities.
+    if not _os_stat:
+      _os_bootstrap()
+
+  def get_code(self, parent, modname, fqname):
+    if parent:
+      # we are looking for a module inside of a specific package
+      return _fs_import(parent.__pkgdir__, modname)
+
+    # scan sys.path, looking for the requested module
+    for dir in sys.path:
+      result = _fs_import(dir, modname)
+      if result:
+        result[2]['__path__'] = [ dir ]		# backwards compat
+        return result
+
+    # not found
+    return None
+
+
+######################################################################
+#
+# Emulate the import mechanism for builtin and frozen modules
+#
+class BuiltinImporter(Importer):
+  def get_code(self, parent, modname, fqname):
+    if parent:
+      # these modules definitely do not occur within a package context
+      return None
+
+    # look for the module
+    if imp.is_builtin(modname):
+      type = imp.C_BUILTIN
+    elif imp.is_frozen(modname):
+      type = imp.PY_FROZEN
+    else:
+      # not found
+      return None
+
+    # got it. now load and return it.
+    module = imp.load_module(modname, None, modname, ('', '', type))
+    return 0, module, { }
+
+
+######################################################################
+
 def _test_dir():
   "Debug/test function to create DirectoryImporters from sys.path."
   path = sys.path[:]
   path.reverse()
   for d in path:
     DirectoryImporter(d).install()
+
+def _test_revamp():
+  "Debug/test function for the revamped import system."
+  BuiltinImporter().install()
+  SysPathImporter().install()
+
+def _print_importers():
+  items = sys.modules.items()
+  items.sort()
+  for name, module in items:
+    if module:
+      print name, module.__dict__.get('__importer__', '-- no importer')
+    else:
+      print name, '-- non-existent module'
 
 ######################################################################
