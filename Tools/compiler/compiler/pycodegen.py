@@ -193,6 +193,18 @@ class CodeGenerator:
         else:
             self.emit(prefix + '_GLOBAL', name)
 
+    def _implicitNameOp(self, prefix, name):
+        """Emit name ops for names generated implicitly by for loops
+
+        The interpreter generates names that start with a period or
+        dollar sign.  The symbol table ignores these names because
+        they aren't present in the program text.
+        """
+        if self.optimized:
+            self.emit(prefix + '_FAST', name)
+        else:
+            self.emit(prefix + '_NAME', name)
+
     def set_lineno(self, node, force=0):
         """Emit SET_LINENO if node has lineno attribute and it is 
         different than the last lineno emitted.
@@ -221,6 +233,7 @@ class CodeGenerator:
     ClassGen = None
 
     def visitModule(self, node):
+        self.emit('SET_LINENO', 0)
         lnf = walk(node.node, self.NameFinder(), 0)
         self.locals.push(lnf.getLocals())
         if node.doc:
@@ -421,7 +434,7 @@ class CodeGenerator:
         self.emit('BUILD_LIST', 0)
         self.emit('DUP_TOP')
         self.emit('LOAD_ATTR', 'append')
-        self.emit('STORE_FAST', append)
+        self._implicitNameOp('STORE', append)
         
         stack = []
         for i, for_ in zip(range(len(node.quals)), node.quals):
@@ -433,7 +446,7 @@ class CodeGenerator:
                 self.visit(if_, cont)
             stack.insert(0, (start, cont, anchor))
 
-        self.emit('LOAD_FAST', append)
+        self._implicitNameOp('LOAD', append)
         self.visit(node.expr)
         self.emit('CALL_FUNCTION', 1)
         self.emit('POP_TOP')
@@ -447,7 +460,7 @@ class CodeGenerator:
                 self.nextBlock(skip_one)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
-        self.emit('DELETE_FAST', append)
+        self._implicitNameOp('DELETE', append)
         
         self.__list_count = self.__list_count - 1
 
@@ -457,8 +470,8 @@ class CodeGenerator:
 
         self.visit(node.list)
         self.visit(ast.Const(0))
-        self.emit('SET_LINENO', node.lineno)
         self.nextBlock(start)
+        self.emit('SET_LINENO', node.lineno)
         self.emit('FOR_LOOP', anchor)
         self.nextBlock()
         self.visit(node.assign)
