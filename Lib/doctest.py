@@ -743,8 +743,10 @@ class Parser:
 
     def _comment_line(self, line):
         line = line.rstrip()
-        if line: return '#  '+line
-        else: return '#'
+        if line:
+            return '#  '+line
+        else:
+            return '#'
 
     def _check_prompt_blank(self, lines, indent, lineno):
         for i, line in enumerate(lines):
