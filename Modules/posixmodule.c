@@ -491,21 +491,71 @@ posix_do_stat(self, args, statfunc)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error_with_filename(path);
+#if !defined(HAVE_LARGEFILE_SUPPORT)
 	return Py_BuildValue("(llllllllll)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (long)st.st_atime,
-		    (long)st.st_mtime,
-		    (long)st.st_ctime);
+			     (long)st.st_mode,
+			     (long)st.st_ino,
+			     (long)st.st_dev,
+			     (long)st.st_nlink,
+			     (long)st.st_uid,
+			     (long)st.st_gid,
+			     (long)st.st_size,
+			     (long)st.st_atime,
+			     (long)st.st_mtime,
+			     (long)st.st_ctime);
+#else
+	return Py_BuildValue("(lLllllLlll)",
+			     (long)st.st_mode,
+			     (LONG_LONG)st.st_ino,
+			     (long)st.st_dev,
+			     (long)st.st_nlink,
+			     (long)st.st_uid,
+			     (long)st.st_gid,
+			     (LONG_LONG)st.st_size,
+			     (long)st.st_atime,
+			     (long)st.st_mtime,
+			     (long)st.st_ctime);
+#endif
 }
 
 
 /* POSIX methods */
+
+static char posix_access__doc__[] =
+"access(path, mode) -> None\n\
+Test for access to a file.";
+
+static PyObject *
+posix_access(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	return posix_strint(args, access);
+}
+
+static char posix_ttyname__doc__[] =
+"ttyname(fd, mode) -> String\n\
+Return the name of the terminal device connected to 'fd'.";
+
+static PyObject *
+posix_ttyname(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *file;
+	int id;
+	char *ret;
+
+
+	if (!PyArg_Parse(args, "i", &id))
+		return NULL;
+
+	/* XXX Use ttyname_r if it exists? */
+	ret = ttyname(id);
+	if (ret == NULL)
+		return(posix_error());
+	return(PyString_FromString(ret));
+}
 
 static char posix_chdir__doc__[] =
 "chdir(path) -> None\n\
@@ -2061,8 +2111,9 @@ posix_lseek(self, args)
 	PyObject *args;
 {
 	int fd, how;
-	long pos, res;
-	if (!PyArg_Parse(args, "(ili)", &fd, &pos, &how))
+	off_t pos, res;
+	PyObject *posobj;
+	if (!PyArg_Parse(args, "(iOi)", &fd, &posobj, &how))
 		return NULL;
 #ifdef SEEK_SET
 	/* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -2072,12 +2123,27 @@ posix_lseek(self, args)
 	case 2: how = SEEK_END; break;
 	}
 #endif /* SEEK_END */
+
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	pos = PyInt_AsLong(posobj);
+#else
+	pos = PyLong_Check(posobj) ?
+		PyLong_AsLongLong(posobj) : PyInt_AsLong(posobj);
+#endif
+	if (PyErr_Occurred())
+		return NULL;
+
 	Py_BEGIN_ALLOW_THREADS
 	res = lseek(fd, pos, how);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return posix_error();
+
+#if !defined(HAVE_LARGEFILE_SUPPORT)
 	return PyInt_FromLong(res);
+#else
+	return PyLong_FromLongLong(res);
+#endif
 }
 
 
@@ -2151,6 +2217,7 @@ posix_fstat(self, args)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error();
+#if !defined(HAVE_LARGEFILE_SUPPORT)
 	return Py_BuildValue("(llllllllll)",
 			     (long)st.st_mode,
 			     (long)st.st_ino,
@@ -2162,6 +2229,19 @@ posix_fstat(self, args)
 			     (long)st.st_atime,
 			     (long)st.st_mtime,
 			     (long)st.st_ctime);
+#else
+	return Py_BuildValue("(lLllllLlll)",
+			     (long)st.st_mode,
+			     (LONG_LONG)st.st_ino,
+			     (long)st.st_dev,
+			     (long)st.st_nlink,
+			     (long)st.st_uid,
+			     (long)st.st_gid,
+			     (LONG_LONG)st.st_size,
+			     (long)st.st_atime,
+			     (long)st.st_mtime,
+			     (long)st.st_ctime);
+#endif
 }
 
 
@@ -2288,10 +2368,20 @@ posix_ftruncate(self, args)
 	PyObject *args;
 {
 	int fd;
-	long length;
+	off_t length;
 	int res;
+	PyObject *lenobj;
 
-	if (!PyArg_Parse(args, "(il)", &fd, &length))
+	if (!PyArg_Parse(args, "(iO)", &fd, &lenobj))
+		return NULL;
+
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	length = PyInt_AsLong(lenobj);
+#else
+	length = PyLong_Check(lenobj) ?
+		PyLong_AsLongLong(lenobj) : PyInt_AsLong(lenobj);
+#endif
+	if (PyErr_Occurred())
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
@@ -2602,7 +2692,116 @@ posix_WSTOPSIG(self, args)
 #endif /* HAVE_SYS_WAIT_H */
 
 
+#if defined(HAVE_FSTATVFS)
+#include <sys/statvfs.h>
+
+static char posix_fstatvfs__doc__[] =
+"fstatvfs(fd) -> \
+(bsize,frsize,blocks,bfree,bavail,files,ffree,favail,fsid,flag, namemax)\n\
+Perform an fstatvfs system call on the given fd.";
+
+static PyObject *
+posix_fstatvfs(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int fd, res;
+	struct statvfs st;
+	if (!PyArg_ParseTuple(args, "i", &fd))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = fstatvfs(fd, &st);
+	Py_END_ALLOW_THREADS
+	if (res != 0)
+		return posix_error();
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	return Py_BuildValue("(lllllllllll)",
+		    (long) st.f_bsize,
+		    (long) st.f_frsize,
+		    (long) st.f_blocks,
+		    (long) st.f_bfree,
+		    (long) st.f_bavail,
+		    (long) st.f_files,
+		    (long) st.f_ffree,
+		    (long) st.f_favail,
+		    (long) st.f_fsid,
+		    (long) st.f_flag,
+		    (long) st.f_namemax);
+#else
+	return Py_BuildValue("(llLLLLLLlll)",
+		    (long) st.f_bsize,
+		    (long) st.f_frsize,
+		    (LONG_LONG) st.f_blocks,
+		    (LONG_LONG) st.f_bfree,
+		    (LONG_LONG) st.f_bavail,
+		    (LONG_LONG) st.f_files,
+		    (LONG_LONG) st.f_ffree,
+		    (LONG_LONG) st.f_favail,
+		    (long) st.f_fsid,
+		    (long) st.f_flag,
+		    (long) st.f_namemax);
+#endif
+}
+#endif /* HAVE_FSTATVFS */
+
+
+#if defined(HAVE_STATVFS)
+#include <sys/statvfs.h>
+
+static char posix_statvfs__doc__[] =
+"statvfs(path) -> \
+(bsize,frsize,blocks,bfree,bavail,files,ffree,favail,fsid,flag, namemax)\n\
+Perform a statvfs system call on the given path.";
+
+static PyObject *
+posix_statvfs(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *path;
+	int res;
+	struct statvfs st;
+	if (!PyArg_ParseTuple(args, "s", &path))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = statvfs(path, &st);
+	Py_END_ALLOW_THREADS
+	if (res != 0)
+		return posix_error_with_filename(path);
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	return Py_BuildValue("(lllllllllll)",
+		    (long) st.f_bsize,
+		    (long) st.f_frsize,
+		    (long) st.f_blocks,
+		    (long) st.f_bfree,
+		    (long) st.f_bavail,
+		    (long) st.f_files,
+		    (long) st.f_ffree,
+		    (long) st.f_favail,
+		    (long) st.f_fsid,
+		    (long) st.f_flag,
+		    (long) st.f_namemax);
+#else	/* HAVE_LARGEFILE_SUPPORT */
+	return Py_BuildValue("(llLLLLLLlll)",
+		    (long) st.f_bsize,
+		    (long) st.f_frsize,
+		    (LONG_LONG) st.f_blocks,
+		    (LONG_LONG) st.f_bfree,
+		    (LONG_LONG) st.f_bavail,
+		    (LONG_LONG) st.f_files,
+		    (LONG_LONG) st.f_ffree,
+		    (LONG_LONG) st.f_favail,
+		    (long) st.f_fsid,
+		    (long) st.f_flag,
+		    (long) st.f_namemax);
+#endif
+}
+#endif /* HAVE_STATVFS */
+
+
 static PyMethodDef posix_methods[] = {
+	{"access",	posix_access, 0, posix_access__doc__},
+	{"ttyname",	posix_ttyname, 0, posix_ttyname__doc__},
 	{"chdir",	posix_chdir, 0, posix_chdir__doc__},
 	{"chmod",	posix_chmod, 0, posix_chmod__doc__},
 #ifdef HAVE_CHOWN
@@ -2749,6 +2948,12 @@ static PyMethodDef posix_methods[] = {
         {"WSTOPSIG",	posix_WSTOPSIG, 0, posix_WSTOPSIG__doc__},
 #endif /* WSTOPSIG */
 #endif /* HAVE_SYS_WAIT_H */
+#ifdef HAVE_FSTATVFS
+	{"fstatvfs",	posix_fstatvfs, 1, posix_fstatvfs__doc__},
+#endif
+#ifdef HAVE_STATVFS
+	{"statvfs",	posix_statvfs, 1, posix_statvfs__doc__},
+#endif
 	{NULL,		NULL}		 /* Sentinel */
 };
 
@@ -2830,6 +3035,18 @@ static int
 all_ins(d)
         PyObject* d;
 {
+#ifdef F_OK
+        if (ins(d, "F_OK", (long)F_OK)) return -1;
+#endif        
+#ifdef R_OK
+        if (ins(d, "R_OK", (long)R_OK)) return -1;
+#endif        
+#ifdef W_OK
+        if (ins(d, "W_OK", (long)W_OK)) return -1;
+#endif        
+#ifdef X_OK
+        if (ins(d, "X_OK", (long)X_OK)) return -1;
+#endif        
 #ifdef WNOHANG
         if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
 #endif        
