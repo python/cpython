@@ -370,12 +370,12 @@ class build_ext (Command):
                 ext_filename = os.path.join (self.build_lib,
                                              self.get_ext_filename(fullname))
 
-	    if not (self.force or newer_group(sources, ext_filename, 'newer')):
-	    	self.announce ("skipping '%s' extension (up-to-date)" %
+            if not (self.force or newer_group(sources, ext_filename, 'newer')):
+                self.announce ("skipping '%s' extension (up-to-date)" %
                                ext.name)
-		continue # 'for' loop over all extensions
-	    else:
-        	self.announce ("building '%s' extension" % ext.name)
+                continue # 'for' loop over all extensions
+            else:
+                self.announce ("building '%s' extension" % ext.name)
 
             # First, scan the sources for SWIG definition files (.i), run
             # SWIG on 'em to create .c files, and modify the sources list
