@@ -11,8 +11,10 @@
 #include "modsupport.h"
 #include "sysmodule.h"
 
+#ifndef PyObject
 #define PyObject object
 typedef struct methodlist PyMethodDef;
+#endif
 #define PyInit_tkinter inittkinter
 
 #undef Py_True
@@ -785,7 +787,42 @@ FileHandler (clientData, mask)
       errorInCmd = 1;
       PyErr_GetAndClear (&excInCmd, &valInCmd);
     }
-  Py_DECREF (res);
+  Py_XDECREF (res);
+}
+
+static int
+GetFileNo (file)
+	PyObject *file; /* Either an int >= 0 or an object with a
+			   .fileno() method that returns an int >= 0 */
+{
+	object *meth, *args, *res;
+	int id;
+	if (PyInt_Check(file)) {
+		id = PyInt_AsLong(file);
+		if (id < 0)
+			PyErr_SetString(PyExc_ValueError, "invalid file id");
+		return id;
+	}
+	meth = PyObject_GetAttrString(file, "fileno");
+	if (meth == NULL)
+		return -1;
+	args = PyTuple_New(0);
+	if (args == NULL)
+		return -1;
+	res = PyEval_CallObject(meth, args);
+	Py_DECREF(args);
+	Py_DECREF(meth);
+	if (res == NULL)
+		return -1;
+	if (PyInt_Check(res))
+		id = PyInt_AsLong(res);
+	else
+		id = -1;
+	if (id < 0)
+		PyErr_SetString(PyExc_ValueError,
+				"invalid fileno() return value");
+	Py_DECREF(res);
+	return id;
 }
 
 static PyObject *
@@ -798,8 +835,10 @@ Tkapp_CreateFileHandler (self, args)
 
   if (!PyArg_Parse (args, "(OiO)", &file, &mask, &func))
     return NULL;
-  if (!PyFile_Check (file) 
-      || !(PyMethod_Check(func) || PyFunction_Check(func)))
+  id = GetFileNo (file);
+  if (id < 0)
+    return NULL;
+  if (!(PyMethod_Check(func) || PyFunction_Check(func)))
     {
       PyErr_SetString (PyExc_TypeError, "bad argument list");
       return NULL;
@@ -808,7 +847,6 @@ Tkapp_CreateFileHandler (self, args)
   /* ClientData is: (func, file) */
   data = Py_BuildValue ("(OO)", func, file);
 
-  id = fileno (PyFile_AsFile (file));
   Tk_CreateFileHandler (id, mask, FileHandler, (ClientData) data);
   /* XXX fileHandlerDict */
 
@@ -821,15 +859,15 @@ Tkapp_DeleteFileHandler (self, args)
      PyObject *self;
      PyObject *args;		/* Args: file */
 {
+  PyObject *file;
   int id;
 
-  if (!PyFile_Check (args))
-    {
-      PyErr_SetString (PyExc_TypeError, "bad argument list");
-      return NULL;
-    }
+  if (!PyArg_Parse (args, "O", &file))
+    return NULL;
+  id = GetFileNo (file);
+  if (id < 0)
+    return NULL;
 
-  id = fileno (PyFile_AsFile (args));
   Tk_DeleteFileHandler (id);
   /* XXX fileHandlerDict */
   Py_INCREF (Py_None);
