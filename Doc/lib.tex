@@ -1,4 +1,5 @@
-\documentstyle[twoside,myformat]{report}
+\documentclass[twoside]{report}
+\usepackage{myformat}
 
 % NOTE: this file controls which chapters/sections of the library
 % manual are actually printed.  It is easy to customize your manual
@@ -13,6 +14,7 @@
 
 \begin{document}
 
+\pagestyle{empty}
 \pagenumbering{roman}
 
 \maketitle
@@ -54,14 +56,7 @@ to Python and how to embed it in other applications.
 
 \end{abstract}
 
-\pagebreak
-
-{
-\parskip = 0mm
-\tableofcontents
-}
-
-\pagebreak
+\mytableofcontents
 
 \pagenumbering{arabic}
 
