@@ -719,13 +719,6 @@ do { \
     state->data_stack_base += sizeof(type); \
 } while (0)
 
-#define DATA_STACK_LOOKUP(state, type, ptr) \
-do { \
-    TRACE(("looking up %s in %d (%d)\n", SFY(type), \
-           state->data_stack_base-sizeof(type), sizeof(type))); \
-    ptr = (type*)(state->data_stack+state->data_stack_base-sizeof(type)); \
-} while (0)
-
 #define DATA_STACK_LOOKUP_AT(state, type, ptr, pos) \
 do { \
     TRACE(("looking up %s at %d\n", SFY(type), pos)); \
@@ -766,14 +759,10 @@ do { \
     DATA_STACK_PUSH(state, (x), sizeof(*(x)))
 #define DATA_POP(x) \
     DATA_STACK_POP(state, (x), sizeof(*(x)), 1)
-#define DATA_POP_KEEP(x) \
-    DATA_STACK_POP(state, (x), sizeof(*(x)), 0)
 #define DATA_POP_DISCARD(x) \
     DATA_STACK_POP_DISCARD(state, sizeof(*(x)))
 #define DATA_ALLOC(t,p) \
     DATA_STACK_ALLOC(state, t, p)
-#define DATA_LOOKUP(t,p) \
-    DATA_STACK_LOOKUP(state, t, p)
 #define DATA_LOOKUP_AT(t,p,pos) \
     DATA_STACK_LOOKUP_AT(state,t,p,pos)
 
