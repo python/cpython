@@ -2,7 +2,7 @@
 
 from test.test_support import verify, vereq, verbose, TestFailed
 
-from heapq import heappush, heappop, heapify
+from heapq import heappush, heappop, heapify, heapreplace
 import random
 
 def check_invariant(heap):
@@ -68,8 +68,7 @@ def test_main():
     heapify(heap)
     for item in data[10:]:
         if item > heap[0]:  # this gets rarer the longer we run
-            heappop(heap)       # we know heap[0] isn't in best 10 anymore
-            heappush(heap, item)
+            heapreplace(heap, item)
     vereq(list(heapiter(heap)), data_sorted[-10:])
     # Make user happy
     if verbose:

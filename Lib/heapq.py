@@ -14,6 +14,8 @@ heappush(heap, item) # pushes a new item on the heap
 item = heappop(heap) # pops the smallest item from the heap
 item = heap[0]       # smallest item on the heap without popping it
 heapify(x)           # transforms list into a heap, in-place, in linear time
+item = heapreplace(heap, item) # pops and returns smallest item, and adds
+                               # new item; the heap size is unchanged
 
 Our API differs from textbook heap algorithms as follows:
 
@@ -139,6 +141,22 @@ def heappop(heap):
     else:
         returnitem = lastelt
     return returnitem
+
+def heapreplace(heap, item):
+    """Pop and return the current smallest value, and add the new item.
+
+    This is more efficient than heappop() followed by heappush(), and can be
+    more appropriate when using a fixed-size heap.  Note that the value
+    returned may be larger than item!  That constrains reasonable uses of
+    this routine.
+    """
+
+    if heap:
+        returnitem = heap[0]
+        heap[0] = item
+        _siftup(heap, 0)
+        return returnitem
+    heap.pop()  # raise IndexError
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(heap)) time."""
