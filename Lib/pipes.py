@@ -3,8 +3,8 @@
 The problem:
 ------------
 
-Suppose you have some data that you want to convert to another format
-(e.g. from GIF image format to PPM image format).  Maybe the
+Suppose you have some data that you want to convert to another format,
+such as from GIF image format to PPM image format.  Maybe the
 conversion involves several steps (e.g. piping it through compress or
 uuencode).  Some of the conversion steps may require that their input
 is a disk file, others may be able to read standard input; similar for
@@ -264,7 +264,7 @@ def makepipeline(infile, steps, outfile):
 
 # Reliably quote a string as a single argument for /bin/sh
 
-_safechars = string.letters + string.digits + '!@%_-+=:,./'     # Safe unquoted
+_safechars = string.ascii_letters + string.digits + '!@%_-+=:,./' # Safe unquoted
 _funnychars = '"`$\\'                           # Unsafe inside "double quotes"
 
 def quote(file):
