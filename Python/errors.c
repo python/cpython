@@ -218,7 +218,6 @@ PyErr_Format(exception, format, va_alist)
 {
 	va_list vargs;
 	char buffer[500]; /* Caller is responsible for limiting the format */
-	PyObject *s;
 
 #ifdef HAVE_STDARG_PROTOTYPES
 	va_start(vargs, format);
