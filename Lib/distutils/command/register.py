@@ -15,7 +15,7 @@ from distutils.errors import *
 
 class register(Command):
 
-    description = "register the distribution with the repository"
+    description = ("register the distribution with the Python package index")
 
     DEFAULT_REPOSITORY = 'http://www.python.org/pypi'
 
