@@ -1968,7 +1968,8 @@ posix_utime(PyObject *self, PyObject *args)
 #endif /* Py_WIN_WIDE_FILENAMES */
 
 	if (!have_unicode_filename && \
-		!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
+		!PyArg_ParseTuple(args, "etO:utime",
+				  Py_FileSystemDefaultEncoding, &path, &arg))
 		return NULL;
 	if (arg == Py_None) {
 		/* optional time values not given */
