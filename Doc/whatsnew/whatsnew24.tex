@@ -79,8 +79,8 @@ on how the arguments compare.
 
 \var{key} should be a single-argument function that takes a list
 element and returns a comparison key for the element.  The list is
-then sorted using the comparison keys.  The following example sorts a list
-case-insensitively:
+then sorted using the comparison keys.  The following example sorts a
+list case-insensitively:
 
 \begin{verbatim}
 >>> L = ['A', 'b', 'c', 'D']
@@ -101,31 +101,71 @@ using a \var{key} parameter.  Using \var{key} results in calling the
 \method{lower()} method once for each element in the list while using
 \var{cmp} will call the method twice for each comparison.
 
+Note, for simple key functions and comparison functions, it is often
+possible to avoid the \keyword{lambda} expression by using an unbound
+method instead.  For example, the above case-insensitive sort is best
+coded as:
+
+\begin{verbatim}
+>>> L.sort(key=str.lower)
+>>> L
+['A', 'b', 'c', 'D']
+\end{verbatim}       
+
 The \var{reverse} parameter should have a Boolean value.  If the value is
 \constant{True}, the list will be sorted into reverse order.  Instead
-of \code{L.sort() ; L.reverse()}, you can now write
-\code{L.sort(reverse=True)}.
+of \code{L.sort(lambda x,y: cmp(y.score, x.score))}, you can now write:
+\code{L.sort(key = lambda x: x.score, reverse=True)}.
 
-\item The list type gained a \method{sorted(iterable)} method that
-returns the elements of the iterable as a sorted list.  It also accepts 
-the \var{cmp}, \var{key}, and \var{reverse} keyword arguments, same as 
-the \method{sort()} method.  An  example usage:
+The results of sorting are now guaranteed to be stable.  This means that
+two entries with equal keys will be returned in the same order as
+they were input.
+
+
+\item The list type gained a \method{sorted(iterable)} method that works
+like the in-place \method{sort()} method but has been made suitable for
+use in expressions.  The differences are:
+  \begin{itemize}
+  \item the input make be any iterable;
+  \item a copy is sorted, leaving the original intact; and
+  \item the expression returns the new sorted copy
+  \end{itemize}
 
 \begin{verbatim}
 >>> L = [9,7,8,3,2,4,1,6,5]
->>> list.sorted(L)
-[1, 2, 3, 4, 5, 6, 7, 8, 9]
->>> L
-[9, 7, 8, 3, 2, 4, 1, 6, 5]
->>> 
+>>> [10+i for i in list.sorted(L)]  # usable in a list comprehension
+[11, 12, 13, 14, 15, 16, 17, 18, 19]
+>>> L = [9,7,8,3,2,4,1,6,5]         # original is left unchanged
+[9,7,8,3,2,4,1,6,5]   
+>>> list.sorted('Monte Python')     # any iterable may be an input
+[' ', 'M', 'P', 'e', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y']
+>>> colormap = dict(red=1, blue=2, green=3, black=4, yellow=5)
+>>> for k, v in list.sorted(colormap.iteritems()):
+...     print k, v
+...
+black 4
+blue 2
+green 3
+red 1
+yellow 5
+
 \end{verbatim}
 
-Note that the original list is unchanged; the list returned by
-\method{sorted()} is a newly-created one.
 
-\item The \function{zip()} built-in function and \function{itertools.izip()} now return  an empty list 
-  instead of raising a \exception{TypeError} exception if called
-  with no arguments.
+\item The \function{zip()} built-in function and \function{itertools.izip()}
+  now return an empty list instead of raising a \exception{TypeError}
+  exception if called with no arguments.  This makes the functions more
+  suitable for use with variable length argument lists:
+
+\begin{verbatim}
+>>> def transpose(array):
+...    return zip(*array)
+...
+>>> transpose([(1,2,3), (4,5,6)])
+[(1, 4), (2, 5), (3, 6)]
+>>> transpose([])
+[]
+\end{verbatim}
 
 \end{itemize}
 
@@ -161,11 +201,15 @@ details.
    supports transparency, this makes it possible to use a transparent background.
    (Contributed by J\"org Lehmann.)
 
-\item The \module{heapq} module is no longer implemented in Python,
-      having been converted into C.
+\item The \module{heapq} module has been converted to C.  The resulting
+   ten-fold improvement in speed makes the module suitable for handling
+   high volumes of data.
 
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
-   which returns an N-bit long integer.
+   which returns an N-bit long integer.  This method supports the existing
+   \method{randrange()} method, making it possible to efficiently generate
+   arbitrarily large random numbers (suitable for prime number generation in
+   RSA applications).
 
 \item The regular expression language accepted by the \module{re} module
    was extended with simple conditional expressions, written as
@@ -231,9 +275,9 @@ changes to your code:
 
 \begin{itemize}
 
-\item The \function{zip()} built-in function and \function{itertools.izip()} now return  an empty list 
-  instead of raising a \exception{TypeError} exception if called
-  with no arguments.
+\item The \function{zip()} built-in function and \function{itertools.izip()}
+  now return  an empty list instead of raising a \exception{TypeError}
+  exception if called with no arguments.
 
 \item \function{dircache.listdir()} now passes exceptions to the caller
       instead of returning empty lists.
