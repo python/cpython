@@ -202,11 +202,9 @@ filldialogoptions(PyObject *d,
 		} else if( eventProcP && strcmp(keystr, "eventProc") == 0 ) {
 			*eventProcP = my_eventProcUPP;
 		} else if( previewProcP && strcmp(keystr, "previewProc") == 0 ) {
-			PyErr_SetString(ErrorObject, "No callbacks implemented yet");
-			return 0;
+			*previewProcP = my_previewProcUPP;
 		} else if( filterProcP && strcmp(keystr, "filterProc") == 0 ) {
-			PyErr_SetString(ErrorObject, "No callbacks implemented yet");
-			return 0;
+			*filterProcP = my_filterProcUPP;
 		} else if( typeListP && strcmp(keystr, "typeList") == 0 ) {
 			if ( !PyArg_Parse(value, "O&", ResObj_Convert, typeListP) )
 				return 0;
