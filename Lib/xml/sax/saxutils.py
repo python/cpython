@@ -3,9 +3,11 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
-import os, urlparse, urllib
+import os, urlparse, urllib, types
 import handler
 import xmlreader
+
+_StringTypes = [types.StringType, types.UnicodeType]
 
 def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
@@ -189,8 +191,12 @@ def prepare_input_source(source, base = ""):
     """This function takes an InputSource and an optional base URL and
     returns a fully resolved InputSource object ready for reading."""
     
-    if type(source) == type(""):
+    if type(source) in _StringTypes:
         source = xmlreader.InputSource(source)
+    elif hasattr(source, "read"):
+        f = source
+        source = xmlreader.InputSource(source)
+        source.setByteStream(f)
 
     if source.getByteStream() == None:
         sysid = source.getSystemId()
