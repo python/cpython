@@ -96,9 +96,10 @@ To create DVI, PDF, or PostScript files:
 To create PDF files:
 
 	- pdflatex.  We used the one in the teTeX 0.9 distribution
-	  (version 0.12h at the time of this writing).  Versions even
-	  a couple of patchlevels earlier are highly likely to fail
-	  due to syntax changes for some of the pdftex primitives.
+	  (pdfTeX version 3.14159-13b (Web2C 7.3beta4) at the time of
+	  this writing).  Versions even a couple of patchlevels
+	  earlier are highly likely to fail due to syntax changes for
+	  some of the pdftex primitives.
 
 To create PostScript files:
 
