@@ -630,14 +630,18 @@ class Misc:
 			self.tk.call(
 				'grid', 'bbox', self._w, column, row)) or None
 	bbox = grid_bbox
-	def grid_columnconfigure(self, index, cnf={}, **kw):
-		if type(cnf) is not DictionaryType and not kw:
-			options = self._options({cnf: None})
+	def _grid_configure(self, command, index, cnf, kw):
+		if type(cnf) is StringType and not kw:
+			if cnf[-1:] == '_':
+				cnf = cnf[:-1]
+			if cnf[:1] != '-':
+				cnf = '-'+cnf
+			options = (cnf,)
 		else:
 			options = self._options(cnf, kw)
 		if not options:
 			res = self.tk.call('grid',
-					   'columnconfigure', self._w, index)
+					   command, self._w, index)
 			words = self.tk.splitlist(res)
 			dict = {}
 			for i in range(0, len(words), 2):
@@ -652,12 +656,15 @@ class Misc:
 				dict[key] = value
 			return dict
 		res = apply(self.tk.call, 
-			      ('grid', 'columnconfigure', self._w, index) 
+			      ('grid', command, self._w, index) 
 			      + options)
-		if options == ('-minsize', None):
-			return self.tk.getint(res) or None
-		elif options == ('-weight', None):
-			return self.tk.getdouble(res) or None
+		if len(options) == 1:
+			if not res: return None
+			# In Tk 7.5, -width can be a float
+			if '.' in res: return self.tk.getdouble(res)
+			return self.tk.getint(res)
+	def grid_columnconfigure(self, index, cnf={}, **kw):
+		return self._grid_configure('columnconfigure', index, cnf, kw)
 	columnconfigure = grid_columnconfigure
 	def grid_propagate(self, flag=_noarg_):
 		if flag is Misc._noarg_:
@@ -666,40 +673,18 @@ class Misc:
 		else:
 			self.tk.call('grid', 'propagate', self._w, flag)
 	def grid_rowconfigure(self, index, cnf={}, **kw):
-		if type(cnf) is not DictionaryType and not kw:
-			options = self._options({cnf: None})
-		else:
-			options = self._options(cnf, kw)
-		if not options:
-			res = self.tk.call('grid',
-					   'rowconfigure', self._w, index)
-			words = self.tk.splitlist(res)
-			dict = {}
-			for i in range(0, len(words), 2):
-				key = words[i][1:]
-				value = words[i+1]
-				if not value:
-					value = None
-				elif '.' in value:
-					value = self.tk.getdouble(value)
-				else:
-					value = self.tk.getint(value)
-				dict[key] = value
-			return dict
-		res = apply(self.tk.call, 
-			      ('grid', 'rowconfigure', self._w, index) 
-			      + options)
-		if len(options) == 2 and options[-1] is None:
-			if not res: return None
-			# In Tk 7.5, -width can be a float
-			if '.' in res: return self.tk.getdouble(res)
-			return self.tk.getint(res)
+		return self._grid_configure('rowconfigure', index, cnf, kw)
 	rowconfigure = grid_rowconfigure
 	def grid_size(self):
 		return self._getints(
 			self.tk.call('grid', 'size', self._w)) or None
 	size = grid_size
-	def grid_slaves(self, *args):
+	def grid_slaves(self, master, row=None, column=None):
+		args = (master,)
+		if row:
+			args = args + ('-row', row)
+		if column:
+			args = args + ('-column', column)
 		return map(self._nametowidget,
 			   self.tk.splitlist(
 				   apply(self.tk.call,
@@ -1085,7 +1070,7 @@ class Button(Widget):
 	def flash(self):
 		self.tk.call(self._w, 'flash')
 	def invoke(self):
-		self.tk.call(self._w, 'invoke')
+		return self.tk.call(self._w, 'invoke')
 
 # Indices:
 # XXX I don't like these -- take them away
@@ -1238,7 +1223,7 @@ class Canvas(Widget):
 	def select_clear(self):
 		self.tk.call(self._w, 'select', 'clear')
 	def select_from(self, tagOrId, index):
-		self.tk.call(self._w, 'select', 'set', tagOrId, index)
+		self.tk.call(self._w, 'select', 'from', tagOrId, index)
 	def select_item(self):
 		self.tk.call(self._w, 'select', 'item')
 	def select_to(self, tagOrId, index):
@@ -1262,7 +1247,7 @@ class Checkbutton(Widget):
 	def flash(self):
 		self.tk.call(self._w, 'flash')
 	def invoke(self):
-		self.tk.call(self._w, 'invoke')
+		return self.tk.call(self._w, 'invoke')
 	def select(self):
 		self.tk.call(self._w, 'select')
 	def toggle(self):
@@ -1445,6 +1430,8 @@ class Menu(Widget):
 		self.insert(index, 'separator', cnf or kw)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
+	def entrycget(self, index, option):
+		return self.tk.call(self._w, 'entrycget', '-' + option)
 	def entryconfigure(self, index, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
@@ -1467,6 +1454,8 @@ class Menu(Widget):
 		return self.tk.call(self._w, 'invoke', index)
 	def post(self, x, y):
 		self.tk.call(self._w, 'post', x, y)
+	def type(self, index):
+		return self.tk.call(self._w, 'type', index)
 	def unpost(self):
 		self.tk.call(self._w, 'unpost')
 	def yposition(self, index):
@@ -1489,7 +1478,7 @@ class Radiobutton(Widget):
 	def flash(self):
 		self.tk.call(self._w, 'flash')
 	def invoke(self):
-		self.tk.call(self._w, 'invoke')
+		return self.tk.call(self._w, 'invoke')
 	def select(self):
 		self.tk.call(self._w, 'select')
 
