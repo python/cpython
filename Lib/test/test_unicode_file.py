@@ -140,7 +140,8 @@ class TestUnicodeFiles(unittest.TestCase):
     def test_single_files(self):
         self._test_single(TESTFN_ENCODED)
         self._test_single(TESTFN_UNICODE)
-        self._test_single(TESTFN_UNICODE_UNENCODEABLE)
+        if TESTFN_UNICODE_UNENCODEABLE is not None:
+            self._test_single(TESTFN_UNICODE_UNENCODEABLE)
 
     def test_equivalent_files(self):
         self._test_equivalent(TESTFN_ENCODED, TESTFN_UNICODE)
@@ -156,9 +157,10 @@ class TestUnicodeFiles(unittest.TestCase):
         self._do_directory(TESTFN_UNICODE+ext, TESTFN_ENCODED+ext, os.getcwdu)
         self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext, os.getcwdu)
         # Our directory name that can't use a non-unicode name.
-        self._do_directory(TESTFN_UNICODE_UNENCODEABLE+ext,
-                           TESTFN_UNICODE_UNENCODEABLE+ext,
-                           os.getcwdu)
+        if TESTFN_UNICODE_UNENCODEABLE is not None:
+            self._do_directory(TESTFN_UNICODE_UNENCODEABLE+ext,
+                               TESTFN_UNICODE_UNENCODEABLE+ext,
+                               os.getcwdu)
 
 def test_main():
     suite = unittest.TestSuite()
