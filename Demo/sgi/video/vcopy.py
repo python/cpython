@@ -4,27 +4,7 @@ import sys
 import getopt
 from gl import *
 from DEVICE import *
-
-def loadframe(f, w, h, pf):
-	line = f.readline()
-	if not line or line == '\n':
-		raise EOFError
-	x = eval(line[:-1])
-	if type(x) == type(0):
-		if pf: size = w*h*4
-		else: size = w*h*pf
-	else:
-		time, size = x
-	data = f.read(size)
-	if len(data) <> size:
-		raise EOFError
-	if pf:
-		windata = unpackrect(w/pf, h/pf, 1, data)
-		rectzoom(pf, pf)
-		lrectwrite(0, 0, w/pf-1, h/pf-1, windata)
-	else:
-		lrectwrite(0, 0, w-1, h-1, data)
-	return time, data
+import VFile
 
 def report(time, iframe):
 	print 'Frame', iframe, ': t =', time
@@ -39,70 +19,87 @@ def help():
 	print 'w   write current image to output'
 
 def main():
-	opts, args = getopt.getopt(sys.argv[1:], '')
+	foreground()
+	opts, args = getopt.getopt(sys.argv[1:], 't:a')
 	if len(args) <> 2:
 		usage()
 	[ifile, ofile] = args
-	ifp = open(ifile, 'r')
-	ofp = open(ofile, 'w')
+	print 'open film ', ifile
+	ifilm = VFile.VinFile().init(ifile)
+	print 'open output ', ofile
+	ofilm = VFile.VoutFile().init(ofile)
+	
+	ofilm.setinfo(ifilm.getinfo())
+
+	use_grabber = 0
+	continuous = 0
+	for o, a in opts:
+		if o == '-t':
+			ofilm.format = a
+			use_grabber = 1
+		if o == '-a':
+			continuous = 1
+	ofilm.writeheader()
 	#
-	line = ifp.readline()
-	if line[:4] == 'CMIF':
-		line = ifp.readline()
-	x = eval(line[:-1])
-	if len(x) == 3:
-		w, h, pf = x
-	else:
-		w, h = x
-		pf = 2
-	if pf:
-		w = (w/pf)*pf
-		h = (h/pf)*pf
-	#
-	ofp.write('CMIF video 1.0\n')
-	ofp.write(`w, h, pf` + '\n')
-	#
-	foreground()
-	prefsize(w, h)
-	wid = winopen(ifile + ' -> ' + ofile)
-	RGBmode()
-	gconfig()
+	prefsize(ifilm.width, ifilm.height)
+	w = winopen(ifile)
 	qdevice(KEYBD)
 	qdevice(ESCKEY)
 	qdevice(WINQUIT)
 	qdevice(WINSHUT)
+	print 'qdevice calls done'
 	#
 	help()
 	#
-	time, data = loadframe(ifp, w, h, pf)
+	time, data, cdata = ifilm.getnextframe()
+	ifilm.showframe(data, cdata)
 	iframe = 1
 	report(time, iframe)
 	#
 	while 1:
-		dev, val = qread()
+		if continuous:
+			dev = KEYBD
+		else:
+			dev, val = qread()
 		if dev in (ESCKEY, WINQUIT, WINSHUT):
 			break
 		if dev == REDRAW:
 			reshapeviewport()
 		elif dev == KEYBD:
-			c = chr(val)
-			if c == 'n':
+			if continuous:
+				c = '0'
+			else:
+				c = chr(val)
+			#XXX Debug
+			if c == 'R':
+				c3i(255,0,0)
+				clear()
+			if c == 'G':
+				c3i(0,255,0)
+				clear()
+			if c == 'B':
+				c3i(0,0,255)
+				clear()
+			if c == 'w' or continuous:
+				if use_grabber:
+					data, cdata = ofilm.grabframe()
+				ofilm.writeframe(time, data, cdata)
+				print 'Frame', iframe, 'written.'
+			if c == 'n' or continuous:
 				try:
-					time, data = loadframe(ifp, w, h, pf)
+					time,data,cdata = ifilm.getnextframe()
+					ifilm.showframe(data, cdata)
 					iframe = iframe+1
 					report(time, iframe)
 				except EOFError:
 					print 'EOF'
+					if continuous:
+						break
 					ringbell()
-			elif c == 'w':
-				ofp.write(`time, len(data)` + '\n')
-				ofp.write(data)
-				print 'Frame', iframe, 'written.'
-			else:
-				print 'Character', `c`, 'ignored'
 		elif dev == INPUTCHANGE:
 			pass
 		else:
 			print '(dev, val) =', (dev, val)
+	ofilm.close()
 
 main()
