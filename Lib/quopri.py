@@ -63,7 +63,7 @@ def decode(input, output):
         if n > 0 and line[n-1] == '\n':
             partial = 0; n = n-1
             # Strip trailing whitespace
-            while n > 0 and line[n-1] in (' ', '\t'):
+            while n > 0 and line[n-1] in " \t\r":
                 n = n-1
         else:
             partial = 1
