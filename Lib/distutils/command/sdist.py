@@ -502,7 +502,7 @@ class sdist (Command):
 
         # Don't warn about missing meta-data here -- should be (and is!)
         # done elsewhere.
-        base_dir = self.distribution.get_full_name()
+        base_dir = self.distribution.get_fullname()
 
         # Remove any files that match "base_dir" from the fileset -- we
         # don't want to go distributing the distribution inside itself!
