@@ -1,5 +1,11 @@
 #include "thread.h"
 
+#ifdef DEBUG
+#define dprintf(args)	printf args
+#else
+#define dprintf(args)
+#endif
+
 #ifdef __sgi
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,16 +14,25 @@
 #include <sys/prctl.h>
 #include <ulocks.h>
 
+#define MAXPROC		100	/* max # of threads that can be started */
+
 static usptr_t *shared_arena;
+static ulock_t count_lock;	/* protection for some variables */
+static ulock_t wait_lock;	/* lock used to wait for other threads */
+static int waiting_for_threads;	/* protected by count_lock */
+static int nthreads;		/* protected by count_lock */
 static int exit_status;
 static int do_exit;
-static int exiting;
+static int exiting;		/* we're already exiting (for maybe_exit) */
+static pid_t my_pid;		/* PID of main thread */
+static pid_t pidlist[MAXPROC];	/* PIDs of other threads */
+static int maxpidindex;		/* # of PIDs in pidlist */
 #endif
 #ifdef sun
 #include <lwp/lwp.h>
 #include <lwp/stackdep.h>
 
-#define STACKSIZE	16000	/* stacksize for a thread */
+#define STACKSIZE	1000	/* stacksize for a thread */
 #define NSTACKS		2	/* # stacks to be put in cache initialy */
 
 struct lock {
@@ -44,52 +59,161 @@ struct lock {
 
 static int initialized;
 
+#ifdef __sgi
+/*
+ * This routine is called as a signal handler when another thread
+ * exits.  When that happens, we must see whether we have to exit as
+ * well (because of an exit_prog()) or whether we should continue on.
+ */
+static void exit_sig _P0()
+{
+	dprintf(("exit_sig called\n"));
+	if (exiting && getpid() == my_pid) {
+		dprintf(("already exiting\n"));
+		return;
+	}
+	if (do_exit) {
+		dprintf(("exiting in exit_sig\n"));
+		exit_thread();
+	}
+}
+
+/*
+ * This routune is called when a process calls exit().  If that wasn't
+ * done from the library, we do as if an exit_prog() was intended.
+ */
+static void maybe_exit _P0()
+{
+	dprintf(("maybe_exit called\n"));
+	if (exiting) {
+		dprintf(("already exiting\n"));
+		return;
+	}
+	exit_prog(0);
+}
+#endif
+
+/*
+ * Initialization.
+ */
+void init_thread _P0()
+{
+#ifdef __sgi
+	struct sigaction s;
+#endif
+
+	dprintf(("init_thread called\n"));
+	if (initialized)
+		return;
+	initialized = 1;
+
+#ifdef __sgi
+	my_pid = getpid();	/* so that we know which is the main thread */
+	atexit(maybe_exit);
+	s.sa_handler = exit_sig;
+	sigemptyset(&s.sa_mask);
+	sigaddset(&s.sa_mask, SIGUSR1);
+	s.sa_flags = 0;
+	sigaction(SIGUSR1, &s, 0);
+	prctl(PR_SETEXITSIG, SIGUSR1);
+	usconfig(CONF_ARENATYPE, US_SHAREDONLY);
+	/*usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);*/
+	shared_arena = usinit(tmpnam(0));
+	count_lock = usnewlock(shared_arena);
+	(void) usinitlock(count_lock);
+	wait_lock = usnewlock(shared_arena);
+#endif
+#ifdef sun
+	lwp_setstkcache(STACKSIZE, NSTACKS);
+#endif
+#ifdef C_THREADS
+	cthread_init();
+#endif
+}
+
+/*
+ * Thread support.
+ */
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
 #ifdef sun
 	thread_t tid;
 #endif
-#ifdef DEBUG
-	printf("start_new_thread called\n");
-#endif
+	int success = 0;	/* init not needed when SOLARIS and */
+				/* C_THREADS implemented properly */
+
+	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
 #ifdef __sgi
-	if (sproc(func, PR_SALL, arg) < 0)
+	if (ussetlock(count_lock) == 0)
 		return 0;
-	return 1;
+	if (maxpidindex >= MAXPROC)
+		success = -1;
+	else {
+		success = sproc(func, PR_SALL, arg);
+		if (success >= 0) {
+			nthreads++;
+			pidlist[maxpidindex++] = success;
+		}
+	}
+	(void) usunsetlock(count_lock);
 #endif
 #ifdef SOLARIS
 	(void) thread_create(0, 0, func, arg, THREAD_NEW_LWP);
 #endif
 #ifdef sun
-	if (lwp_create(&tid, func, MINPRIO, 0, lwp_newstk(), 1, arg) < 0)
-		return 0;
-	return 1;
+	success = lwp_create(&tid, func, MINPRIO, 0, lwp_newstk(), 1, arg);
 #endif
 #ifdef C_THREADS
 	(void) cthread_fork(func, arg);
 #endif
+	return success < 0 ? 0 : 1;
 }
 
-#ifdef __sgi
-void maybe_exit _P0()
+static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 {
-	if (exiting)
-		return;
-	exit_prog(0);
-}
-#endif
-
-void exit_thread _P0()
-{
-#ifdef DEBUG
-	printf("exit_thread called\n");
-#endif
+	dprintf(("exit_thread called\n"));
 	if (!initialized)
-		exit(0);
+		if (no_cleanup)
+			_exit(0);
+		else
+			exit(0);
 #ifdef __sgi
-	exiting = 1;
+	(void) ussetlock(count_lock);
+	nthreads--;
+	if (getpid() == my_pid) {
+		/* main thread; wait for other threads to exit */
+		exiting = 1;
+		if (do_exit) {
+			int i;
+
+			/* notify other threads */
+			for (i = 0; i < maxpidindex; i++)
+				(void) kill(pidlist[i], SIGUSR1);
+		}
+		waiting_for_threads = 1;
+		ussetlock(wait_lock);
+		for (;;) {
+			if (nthreads < 0) {
+				dprintf(("really exit (%d)\n", exit_status));
+				if (no_cleanup)
+					_exit(exit_status);
+				else
+					exit(exit_status);
+			}
+			usunsetlock(count_lock);
+			dprintf(("waiting for other threads (%d)\n", nthreads));
+			ussetlock(wait_lock);
+			ussetlock(count_lock);
+		}
+	}
+	/* not the main thread */
+	if (waiting_for_threads) {
+		dprintf(("main thread is waiting\n"));
+		usunsetlock(wait_lock);
+	}
+	(void) usunsetlock(count_lock);
 	_exit(0);
 #endif
 #ifdef SOLARIS
@@ -103,52 +227,47 @@ void exit_thread _P0()
 #endif
 }
 
-#ifdef __sgi
-static void exit_sig _P0()
+void exit_thread _P0()
 {
-#ifdef DEBUG
-	printf("exit_sig called\n");
-#endif
-	if (do_exit) {
-#ifdef DEBUG
-		printf("exiting in exit_sig\n");
-#endif
-		_exit(exit_status);
-	}
+	do_exit_thread(0);
 }
-#endif
 
-void init_thread _P0()
+void _exit_thread _P0()
 {
-#ifdef __sgi
-	struct sigaction s;
-#endif
+	do_exit_thread(1);
+}
 
-#ifdef DEBUG
-	printf("init_thread called\n");
-#endif
-	initialized = 1;
-
+static void do_exit_prog _P2(status, int status, no_cleanup, int no_cleanup)
+{
+	dprintf(("exit_prog(%d) called\n", status));
+	if (!initialized)
+		if (no_cleanup)
+			_exit(status);
+		else
+			exit(status);
 #ifdef __sgi
-	atexit(maybe_exit);
-	s.sa_handler = exit_sig;
-	sigemptyset(&s.sa_mask);
-	sigaddset(&s.sa_mask, SIGUSR1);
-	s.sa_flags = 0;
-	sigaction(SIGUSR1, &s, 0);
-	prctl(PR_SETEXITSIG, SIGUSR1);
-	usconfig(CONF_ARENATYPE, US_SHAREDONLY);
-	/*usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);*/
-	shared_arena = usinit(tmpnam(0));
+	do_exit = 1;
+	exit_status = status;
+	do_exit_thread(no_cleanup);
 #endif
 #ifdef sun
-	lwp_setstkcache(STACKSIZE, NSTACKS);
-#endif
-#ifdef C_THREADS
-	cthread_init();
+	pod_exit(status);
 #endif
 }
 
+void exit_prog _P1(status, int status)
+{
+	do_exit_prog(status, 0);
+}
+
+void _exit_prog _P1(status, int status)
+{
+	do_exit_prog(status, 1);
+}
+
+/*
+ * Lock support.
+ */
 type_lock allocate_lock _P0()
 {
 #ifdef __sgi
@@ -159,9 +278,7 @@ type_lock allocate_lock _P0()
 	extern char *malloc();
 #endif
 
-#ifdef DEBUG
-	printf("allocate_lock called\n");
-#endif
+	dprintf(("allocate_lock called\n"));
 	if (!initialized)
 		init_thread();
 
@@ -175,17 +292,13 @@ type_lock allocate_lock _P0()
 	(void) mon_create(&lock->lock_monitor);
 	(void) cv_create(&lock->lock_condvar, lock->lock_monitor);
 #endif
-#ifdef DEBUG
-	printf("allocate_lock() -> %lx\n", (long)lock);
-#endif
+	dprintf(("allocate_lock() -> %lx\n", (long)lock));
 	return (type_lock) lock;
 }
 
 void free_lock _P1(lock, type_lock lock)
 {
-#ifdef DEBUG
-	printf("free_lock(%lx) called\n", (long)lock);
-#endif
+	dprintf(("free_lock(%lx) called\n", (long)lock));
 #ifdef __sgi
 	usfreelock((ulock_t) lock, shared_arena);
 #endif
@@ -199,9 +312,7 @@ int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 {
 	int success;
 
-#ifdef DEBUG
-	printf("acquire_lock(%lx, %d) called\n", (long)lock, waitflag);
-#endif
+	dprintf(("acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
 #ifdef __sgi
 	if (waitflag)
 		success = ussetlock((ulock_t) lock);
@@ -222,17 +333,13 @@ int acquire_lock _P2(lock, type_lock lock, waitflag, int waitflag)
 	cv_broadcast(((struct lock *) lock)->lock_condvar);
 	mon_exit(((struct lock *) lock)->lock_monitor);
 #endif
-#ifdef DEBUG
-	printf("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success);
-#endif
+	dprintf(("acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
 	return success;
 }
 
 void release_lock _P1(lock, type_lock lock)
 {
-#ifdef DEBUG
-	printf("release lock(%lx) called\n", (long)lock);
-#endif
+	dprintf(("release_lock(%lx) called\n", (long)lock));
 #ifdef __sgi
 	(void) usunsetlock((ulock_t) lock);
 #endif
@@ -244,20 +351,45 @@ void release_lock _P1(lock, type_lock lock)
 #endif
 }
 
-void exit_prog _P1(status, int status)
+/*
+ * Semaphore support.
+ */
+type_sema allocate_sema _P1(value, int value)
 {
-#ifdef DEBUG
-	printf("exit_prog(%d) called\n", status);
-#endif
-	if (!initialized)
-		exit(status);
 #ifdef __sgi
-	exiting = 1;
-	do_exit = 1;
-	exit_status = status;
-	_exit(status);
+	usema_t *sema;
 #endif
-#ifdef sun
-	pod_exit(status);
+
+	dprintf(("allocate_sema called\n"));
+
+#ifdef __sgi
+	sema = usnewsema(shared_arena, value);
+	dprintf(("allocate_sema() -> %lx\n", (long) sema));
+	return (type_sema) sema;
+#endif
+}
+
+void free_sema _P1(sema, type_sema sema)
+{
+	dprintf(("free_sema(%lx) called\n", (long) sema));
+#ifdef __sgi
+	usfreesema((usema_t *) sema, shared_arena);
+#endif
+}
+
+void down_sema _P1(sema, type_sema sema)
+{
+	dprintf(("down_sema(%lx) called\n", (long) sema));
+#ifdef __sgi
+	(void) uspsema((usema_t *) sema);
+#endif
+	dprintf(("down_sema(%lx) return\n", (long) sema));
+}
+
+void up_sema _P1(sema, type_sema sema)
+{
+	dprintf(("up_sema(%lx)\n", (long) sema));
+#ifdef __sgi
+	(void) usvsema((usema_t *) sema);
 #endif
 }

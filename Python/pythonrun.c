@@ -361,6 +361,10 @@ fatal(msg)
 
 /* Clean up and exit */
 
+#ifdef USE_THREAD
+extern int threads_started;
+#endif
+
 void
 goaway(sts)
 	int sts;
@@ -375,7 +379,10 @@ goaway(sts)
 	
 	(void) save_thread();
 	donecalls();
-	exit_prog(sts);
+	if (threads_started)
+		_exit_prog(sts);
+	else
+		exit_prog(sts);
 	
 #else /* USE_THREAD */
 	
