@@ -54,7 +54,7 @@ from SUNAUDIODEV import *
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 
@@ -278,10 +278,19 @@ Email:   bwarsaw@python.org''' % __version__)
             self.__update()
 
     def __update(self, num=None, frame=None):
-        # We have to poll because the device could have changed state and the
-        # underlying module does not support the SIGPOLL notification
-        # interface.
-        info = self.__devctl.getinfo()
+        # It's possible (although I have never seen it) to get an interrupted
+        # system call during the getinfo() call.  If so, and we're polling,
+        # don't sweat it because we'll come around again later.  Otherwise,
+        # we'll give it a couple of tries and then give up until next time.
+        tries = 0
+        while 1:
+            try:
+                info = self.__devctl.getinfo()
+                break
+            except sunaudiodev.error:
+                if self.__needtopoll or tries > 3:
+                    return
+                tries = tries + 1
         # input
         self.__inputvar.set(info.i_port)
         # output
