@@ -212,6 +212,22 @@ def betavariate(alpha, beta):
 	z = expovariate(1.0/beta)
 	return z/(y+z)
 
+# -------------------- pareto --------------------
+
+def paretovariate(alpha):
+	# Jain, pg. 495
+
+	u = random()
+	return 1.0 / pow(u, 1.0/alpha)
+
+# -------------------- pareto --------------------
+
+def weibullvariate(alpha, beta):
+	# Jain, pg. 499; bug fix courtesy Bill Arms
+
+	u = random()
+	return alpha * pow(-log(u), 1.0/beta)
+
 # -------------------- test program --------------------
 
 def test(N = 200):
@@ -233,6 +249,8 @@ def test(N = 200):
 	test_generator(N, 'gammavariate(200.0, 1.0)')
 	test_generator(N, 'gauss(0.0, 1.0)')
 	test_generator(N, 'betavariate(3.0, 3.0)')
+	test_generator(N, 'paretovariate(1.0)')
+	test_generator(N, 'weibullvariate(1.0, 1.0)')
 
 def test_generator(n, funccall):
 	import time
