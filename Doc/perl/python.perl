@@ -906,6 +906,17 @@ sub do_env_classdesc{
     return handle_classlike_descriptor(@_[0], "class");
 }
 
+sub do_env_classdescstar{
+    local($_) = @_;
+    $THIS_CLASS = next_argument();
+    $idx = make_str_index_entry(
+		"<tt class='class'>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
+    $idx =~ s/ \(.*\)//;
+    return ("<dl><dt><b>class $idx</b>\n<dd>"
+            . $_
+            . '</dl>');
+}
+
 sub do_env_excclassdesc{
     return handle_classlike_descriptor(@_[0], "exception");
 }
