@@ -15,7 +15,7 @@ deleteKey( keyname )
     delete a key if it exists
     Note: deleteKey may not be recursive on all platforms.
 
->>> key=createKey( r"HKLM\SOFTWARE\Python\Test" )
+>>> key=deleteKey( r"HKLM\SOFTWARE\Python\Test" )
 
 RemoteKey( machine, top_level_key ): 
     open a key on another machine.
@@ -139,7 +139,7 @@ def _getName( item, nameFromNum ):
         except (WindowsError, EnvironmentError):
             raise IndexError, item
 
-    elif type( item )==StringType: 
+    elif type( item ) in [StringType, UnicodeType]: 
         keyname=item
     else:
         raise exceptions.TypeError, \
@@ -300,13 +300,17 @@ class RegKey:
         if regtype:
             typeint=regtype.intval
         else:
-            if type( data )==StringType:
+            if type( data ) in [StringType, UnicodeType]:
                 typeint=_winreg.REG_SZ
+            elif type( data )==ListType:
+                 # XXX - _winreg currently only supports lists
+                 # Also, probably should check each element is
+                 # string/unicode.
+                 typeint = _winreg.REG_MULTI_SZ
             elif type( data )==IntType:
                 typeint=_winreg.REG_DWORD
             elif type( data )==array.ArrayType:
                 typeint=_winreg.REG_BINARY
-                data=data.tostring()
         _winreg.SetValueEx( self.handle, valname, 0, typeint, data )
 
     def flush(self ):
