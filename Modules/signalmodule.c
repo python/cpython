@@ -279,7 +279,8 @@ static PyMethodDef signal_methods[] = {
 	{"signal",	        signal_signal, METH_OLDARGS, signal_doc},
 	{"getsignal",	        signal_getsignal, METH_OLDARGS, getsignal_doc},
 #ifdef HAVE_PAUSE
-	{"pause",	        signal_pause, METH_NOARGS, pause_doc},
+	{"pause",	        (PyCFunction)signal_pause,
+	 METH_NOARGS,pause_doc},
 #endif
 	{"default_int_handler", signal_default_int_handler, 
 	 METH_OLDARGS, default_int_handler_doc},
