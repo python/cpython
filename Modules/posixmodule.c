@@ -129,6 +129,12 @@ extern int lstat(const char *, struct stat *);
 extern int symlink(const char *, const char *);
 #endif
 
+#if defined(__sgi)&&_COMPILER_VERSION>=700
+/* declare ctermid_r if compiling with MIPSPro 7.x in ANSI C mode
+   (default) */
+extern char        *ctermid_r(char *);
+#endif
+
 #ifndef HAVE_UNISTD_H
 #if defined(PYCC_VACPP)
 extern int mkdir(char *);
