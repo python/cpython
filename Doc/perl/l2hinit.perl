@@ -616,7 +616,7 @@ sub make_head_and_body {
                 . "charset=$CHARSET\">\n")
              : ''),
             ($BASE ? "<base href=\"$BASE\">\n" : ''),
-            "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">\n",
+            "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>\n",
             "<link rel=\"first\" href=\"$FILE.html\">\n",
             ($HAVE_TABLE_OF_CONTENTS
              ? ('<link rel="contents" href="contents.html" title="Contents">'
