@@ -723,7 +723,7 @@ ttob(self, args)
 {
     int order, oldorder;
 
-    if (!getargs(args, "d", &order))
+    if (!getargs(args, "i", &order))
 	return NULL;
     oldorder = reverse_order;
     reverse_order = order;
