@@ -434,7 +434,8 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.index(\var{x})}
 	{return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(1)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
-	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}}{}
+	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
+	  if \code{\var{i} >= 0}}{}
   \lineiii{\var{s}.remove(\var{x})}
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
   \lineiii{\var{s}.reverse()}
