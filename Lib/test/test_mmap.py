@@ -290,31 +290,26 @@ def test_both():
                 slice = data[start : finish]
                 vereq(m.find(slice), data.find(slice))
                 vereq(m.find(slice + 'x'), -1)
+        m.close()
 
     finally:
-        try:
-            os.unlink(TESTFN)
-        except OSError:
-            pass
+        os.unlink(TESTFN)
 
     # make sure a double close doesn't crash on Solaris (Bug# 665913)
     f = open(TESTFN, 'w+')
 
     try:    # unlink TESTFN no matter what
-        f.write(2**24 * 'a') # Arbitrary character
+        f.write(2**16 * 'a') # Arbitrary character
         f.close()
 
         f = open(TESTFN)
-        mf = mmap.mmap(f.fileno(), 2**24, access=mmap.ACCESS_READ)
+        mf = mmap.mmap(f.fileno(), 2**16, access=mmap.ACCESS_READ)
         mf.close()
         mf.close()
         f.close()
 
     finally:
-        try:
-            os.unlink(TESTFN)
-        except OSError:
-            pass
+        os.unlink(TESTFN)
 
 
     print ' Test passed'
