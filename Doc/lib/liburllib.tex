@@ -94,8 +94,8 @@ required for unquoting HTML form values.
 Convert a dictionary to a ``url-encoded'' string, suitable to pass to
 \function{urlopen()} above as the optional \var{data} argument.  This
 is useful to pass a dictionary of form fields to a \code{POST}
-request.  The resulting string is a series of \var{key}=\var{value}
-pairs separated by \code{&} characters, where both \var{key} and
+request.  The resulting string is a series of \var{key}\code{=}\var{value}
+pairs separated by \code{\&} characters, where both \var{key} and
 \var{value} are quoted using \function{quote_plus()} above.
 \end{funcdesc}
 
