@@ -96,6 +96,7 @@ extern "C" void GUSISetupConfig()
 		resource_id = GUSIOPTIONSOVERRIDE_ID;
 	} else {
 		/* Next try normal resource from preference file */
+		UseResFile(oldrh);
 		prefrh = PyMac_OpenPrefFile();
 		h = Get1Resource('GU\267I', GUSIOPTIONS_ID);
 		if ( h ) {
