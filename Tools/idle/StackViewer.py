@@ -21,6 +21,11 @@ class StackViewer:
         self.root = root
         self.top = top
         top.wm_title("Stack viewer")
+        # Create help label
+        self.helplabel = Label(top,
+            text="Click once to view variables; twice for source",
+            borderwidth=2, relief="groove")
+        self.helplabel.pack(fill="x")
         # Create top frame, with scrollbar and listbox
         self.topframe = Frame(top)
         self.topframe.pack(fill="both", expand=1)
@@ -38,10 +43,14 @@ class StackViewer:
         self.listbox.bind("<ButtonPress-3>", self.popup_event)
         self.listbox.bind("<Key-Up>", self.up_event)
         self.listbox.bind("<Key-Down>", self.down_event)
+        # Create status label
+        self.statuslabel = Label(top, text="status")
+        self.statuslabel.pack(fill="x")
         # Load the stack
         linecache.checkcache()
         stack = getstack()
         self.load_stack(stack)
+        self.statuslabel.config(text=getexception())
 
     def load_stack(self, stack):
         self.stack = stack
@@ -230,6 +239,18 @@ def getstack(t=None, f=None):
         stack.append((t.tb_frame, t.tb_lineno))
         t = t.tb_next
     return stack
+
+
+def getexception(type=None, value=None):
+    if type is None:
+        type = sys.last_type
+        value = sys.last_value
+    if hasattr(type, "__name__"):
+        type = type.__name__
+    s = str(type)
+    if value is not None:
+        s = s + ": " + str(value)
+    return s
 
 
 class NamespaceViewer:
