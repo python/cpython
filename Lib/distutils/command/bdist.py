@@ -20,9 +20,9 @@ class bdist (Command):
 
     user_options = [('bdist-base=', 'b',
                      "temporary directory for creating built distributions"),
-                    ('format=', 'f',
-                     "format for distribution " +
-                     "(tar, ztar, gztar, bztar, zip, ... )"),
+                    ('formats=', None,
+                     "formats for distribution " +
+                     "(gztar, bztar, zip, rpm, ... )"),
                    ]
 
     # The following commands do not take a format option from bdist
@@ -43,7 +43,7 @@ class bdist (Command):
 
     def initialize_options (self):
         self.bdist_base = None
-        self.format = None
+        self.formats = None
 
     # initialize_options()
 
@@ -57,31 +57,32 @@ class bdist (Command):
             plat = get_platform()
             self.bdist_base = os.path.join (build_base, 'bdist.' + plat)
 
-        if self.format is None:
+        self.ensure_string_list('formats')
+        if self.formats is None:
             try:
-                self.format = self.default_format[os.name]
+                self.formats = [self.default_format[os.name]]
             except KeyError:
                 raise DistutilsPlatformError, \
                       "don't know how to create built distributions " + \
                       "on platform %s" % os.name
-        #elif type (self.format) is StringType:
-        #    self.format = string.split (self.format, ',')
             
     # finalize_options()
 
 
     def run (self):
 
-        try:
-            cmd_name = self.format_command[self.format]
-        except KeyError:
-            raise DistutilsOptionError, \
-                  "invalid archive format '%s'" % self.format
+        for format in self.formats:
 
-        if cmd_name not in self.no_format_option:
-            sub_cmd = self.get_finalized_command (cmd_name)
-            sub_cmd.format = self.format
-        self.run_command (cmd_name)
+            try:
+                cmd_name = self.format_command[self.format]
+            except KeyError:
+                raise DistutilsOptionError, \
+                      "invalid format '%s'" % self.format
+
+            sub_cmd = self.reinitialize_command(cmd_name)
+            if cmd_name not in self.no_format_option:
+                sub_cmd.format = self.format
+            self.run_command (cmd_name)
 
     # run()
 
