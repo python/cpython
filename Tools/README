@@ -24,8 +24,6 @@ i18n		Tools for internationalization. pygettext.py
 		and msgfmt.py generates a binary message catalog 
 		from a catalog in text format.
 
-idle		A Tkinter-based Python IDE.
-
 modulator	Interactively generate boiler plate for an extension
 		module.	 Works easiest if you have Tk.
 
