@@ -52,7 +52,6 @@ instructions.
 """
 
 import sys
-import math
 import time
 try:
     import itertools
