@@ -592,7 +592,9 @@ class HTMLDoc(Doc):
 
         classes, cdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isclass):
-            if (inspect.getmodule(value) or object) is object:
+            # if __all__ exists, believe it.  Otherwise use old heuristic.
+            if (all is not None or
+                (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all):
                     classes.append((key, value))
                     cdict[key] = cdict[value] = '#' + key
@@ -606,7 +608,9 @@ class HTMLDoc(Doc):
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
+            # if __all__ exists, believe it.  Otherwise use old heuristic.
+            if (all is not None or
+                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
                 if visiblename(key, all):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
@@ -1015,12 +1019,16 @@ class TextDoc(Doc):
 
         classes = []
         for key, value in inspect.getmembers(object, inspect.isclass):
-            if (inspect.getmodule(value) or object) is object:
+            # if __all__ exists, believe it.  Otherwise use old heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all):
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
+            # if __all__ exists, believe it.  Otherwise use old heuristic.
+            if (all is not None or
+                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
                 if visiblename(key, all):
                     funcs.append((key, value))
         data = []
