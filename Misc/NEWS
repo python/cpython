@@ -178,6 +178,9 @@ Release date: 22-May-2003
 
 - Distutils: Translate spaces in the machine name to underscores
   (Power Macintosh -> Power_Macintosh)
+  
+- Distutils: on Mac OS X don't use -R for runtime_library_dirs, use
+  -L in stead (#723495). 
 
 - Backported SF #658233, continuation lines in .mo file metadata
   crashed gettext.GNUTranslations parsing.  Also, export more symbols
