@@ -149,7 +149,7 @@ def _write_u32(file, x):
 class Au_read:
 	access _file, _soundpos, _hdr_size, _data_size, _encoding, \
 		  _sampwidth, _framesize, _framerate, _nchannels, \
-		  _framesize, _info: private
+		  _info: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
