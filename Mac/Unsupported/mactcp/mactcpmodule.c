@@ -30,7 +30,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Desk.h>
 
+/* State of a tcp stream, in the connectionState field */
+#define STATE_CLOSED	0
+#define STATE_LISTEN	2
+#define STATE_ESTAB		8
+#define STATE_CWAIT		18
+
 static object *ErrorObject;
+
+TCPIOCompletionUPP	upp_tcp_done;
+TCPNotifyUPP		upp_tcp_asr;
+#if 0
+UDPIOCompletionUPP	upp_udp_done;
+#endif
+UDPNotifyUPP		upp_udp_asr;
 
 /* ----------------------------------------------------- */
 /* Declarations for objects of type MacTCP connection status */
@@ -64,6 +77,8 @@ staticforward typeobject Tcpgstype;
 typedef struct {
 	OB_HEAD
 	TCPiopb iop;
+	long localhost;			/* Our IP address */
+	short localport;		/* Our port number */
 	object *asr;			/* Optional async notification routine */
 	int asr_ec;				/* error code parameter to asr */
 	int asr_reason;			/* detail for some errors */
@@ -242,6 +257,34 @@ static typeobject Tcpgstype = {
 /* -------------------------------------------------------- */
 
 static int
+tcps_checkstate(self, state, state2)
+	tcpsobject *self;
+	int state, state2;
+{
+	OSErr err;
+	TCPStatusPB *pb;
+	char buf[80];
+	
+	if ( self->async_busy ) {
+		err_setstr(ErrorObject, "Operation not allowed, PassiveOpen in progress");
+		return -1;
+	}
+	if ( state < 0 && state2 < 0 )
+		return 0;
+	err = xTCPStatus(&self->iop, &pb);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return -1;
+	}
+	if ( state == pb->connectionState ||
+		 state2 == pb->connectionState )
+		 return 0;
+	sprintf(buf, "Operation not allowed, connection state=%d", pb->connectionState);
+	err_setstr(ErrorObject, buf);
+	return -1;
+}
+
+static int
 tcps_asr_safe(arg)
 	void *arg;
 {
@@ -276,14 +319,14 @@ tcps_asr(str, ec, self, reason, icmp)
 }
 
 static void
-tcps_opendone(pb)
+tcps_done(pb)
 	TCPiopb *pb;
 {
 	tcpsobject *self = (tcpsobject *)pb->csParam.open.userDataPtr;
 	
 	if ( pb != &self->iop || !self->async_busy ) {
 		/* Oops... problems */
-		printf("tcps_opendone: unexpected call\n");
+		printf("tcps_done: unexpected call\n");
 		return;
 	}
 	self->async_busy = 0;
@@ -339,15 +382,19 @@ tcps_PassiveOpen(self, args)
 	
 	if (!newgetargs(args, "h", &port))
 		return NULL;
+	if ( tcps_checkstate(self, -1, -1) < 0 )
+		return NULL;
 	self->async_busy = 1;
 	self->async_err = 0;
-	err = xTCPPassiveOpen(&self->iop, port, (TCPIOCompletionProc)tcps_opendone,
+	err = xTCPPassiveOpen(&self->iop, port, upp_tcp_done,
 						 (void *)self);
 	if ( err ) {
 		self->async_busy = 0;
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
+	self->localhost = self->iop.csParam.open.localHost;
+	self->localport = self->iop.csParam.open.localPort;
 	INCREF(None);
 	return None;
 }
@@ -363,11 +410,15 @@ tcps_ActiveOpen(self, args)
 	
 	if (!newgetargs(args, "hlh", &lport, &rhost, &rport))
 		return NULL;
-	err = xTCPActiveOpen(&self->iop, lport, rhost, rport, (TCPIOCompletionProc)0);
+	if ( tcps_checkstate(self, -1, -1) < 0 )
+		return NULL;
+	err = xTCPActiveOpen(&self->iop, lport, rhost, rport, (TCPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}	
+	self->localhost = self->iop.csParam.open.localHost;
+	self->localport = self->iop.csParam.open.localPort;
 	INCREF(None);
 	return None;
 }
@@ -385,11 +436,13 @@ tcps_Send(self, args)
 	
 	if (!newgetargs(args, "s#|ii", &buf, &bufsize, &push, &urgent))
 		return NULL;
+	if ( tcps_checkstate(self, STATE_ESTAB, STATE_CWAIT) < 0 )
+		return NULL;
 	wds.length = bufsize;
 	wds.ptr = buf;
 	wds.terminus = 0;
 	err = xTCPSend(&self->iop, (wdsEntry *)&wds, (Boolean)push, (Boolean)urgent,
-					(TCPIOCompletionProc)0);
+					(TCPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -412,8 +465,10 @@ tcps_Rcv(self, args)
 	
 	if (!newgetargs(args, "i", &timeout))
 		return NULL;
+	if ( tcps_checkstate(self, -1, -1) < 0 )
+		return NULL;
 	memset((char *)&rds, 0, sizeof(rds));
-	err = xTCPNoCopyRcv(&self->iop, rds, 1, timeout, (TCPIOCompletionProc)0);
+	err = xTCPNoCopyRcv(&self->iop, rds, 1, timeout, (TCPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -421,7 +476,7 @@ tcps_Rcv(self, args)
 	urgent = self->iop.csParam.receive.urgentFlag;
 	mark = self->iop.csParam.receive.markFlag;
 	rv = newsizedstringobject((char *)rds[0].ptr, rds[0].length);
-	err = xTCPBufReturn(&self->iop, rds, (TCPIOCompletionProc)0);
+	err = xTCPBufReturn(&self->iop, rds, (TCPIOCompletionUPP)0);
 	if ( err ) {
 		/* Should not happen */printf("mactcp module: BufReturn failed?\n");
 		PyErr_Mac(ErrorObject, err);
@@ -440,7 +495,7 @@ tcps_Close(self, args)
 	
 	if (!newgetargs(args, ""))
 		return NULL;
-	err = xTCPClose(&self->iop, (TCPIOCompletionProc)0);
+	err = xTCPClose(&self->iop, (TCPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -477,12 +532,29 @@ tcps_Status(self, args)
 	
 	if (!newgetargs(args, ""))
 		return NULL;
+	if ( tcps_checkstate(self, -1, -1) < 0 )
+		return NULL;
 	err = xTCPStatus(&self->iop, &pb);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
 	return (object *)newtcpcsobject(pb);
+}
+
+static object *
+tcps_GetSockName(self, args)
+	tcpsobject *self;
+	object *args;
+{
+	/* This routine is needed so we can get at the local port even when
+	** a PassiveOpen is in progress (when we can't do a Status call).
+	** This is needed for socket listen(); getsockname(); accept() emulation
+	** as used by ftp and the like.
+	*/	
+	if (!newgetargs(args, ""))
+		return NULL;
+	return mkvalue("(lh)", self->localhost, self->localport);
 }
 
 static struct methodlist tcps_methods[] = {
@@ -495,6 +567,7 @@ static struct methodlist tcps_methods[] = {
 	{"Close",	(method)tcps_Close,	1},
 	{"Abort",	(method)tcps_Abort,	1},
 	{"Status",	(method)tcps_Status,	1},
+	{"GetSockName", (method)tcps_GetSockName, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -535,7 +608,7 @@ newtcpsobject(bufsize)
 	if (self == NULL)
 		return NULL;
 	memset((char *)&self->iop, 0, sizeof(self->iop));
-	err= xTCPCreate(bufsize, (TCPNotifyProc)tcps_asr, (void *)self, &self->iop);
+	err= xTCPCreate(bufsize, upp_tcp_asr, (void *)self, &self->iop);
 	if ( err ) {
 		DEL(self);
 		PyErr_Mac(ErrorObject, err);
@@ -626,7 +699,7 @@ udps_Read(self, args)
 	
 	if (!newgetargs(args, "i", &timeout))
 		return NULL;
-	err = xUDPRead(&self->iop, timeout, (UDPIOCompletionProc)0);
+	err = xUDPRead(&self->iop, timeout, (UDPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -659,7 +732,7 @@ udps_Write(self, args)
 	wds.length = bufsize;
 	wds.ptr = buf;
 	wds.terminus = 0;
-	err = xUDPWrite(&self->iop, host, port, &wds, (UDPIOCompletionProc)0);
+	err = xUDPWrite(&self->iop, host, port, &wds, (UDPIOCompletionUPP)0);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
@@ -715,7 +788,7 @@ newudpsobject(bufsize, port)
 		return NULL;
 	memset((char *)&self->iop, 0, sizeof(self->iop));
 	self->port = port;
-	err= xUDPCreate(&self->iop, bufsize, &self->port, (UDPNotifyProc)udps_asr,
+	err= xUDPCreate(&self->iop, bufsize, &self->port, upp_udp_asr,
 					 (void *)self);
 	if ( err ) {
 		DEL(self);
@@ -899,6 +972,13 @@ initmactcp()
 	d = getmoduledict(m);
 	ErrorObject = newstringobject("mactcp.error");
 	dictinsert(d, "error", ErrorObject);
+	
+	upp_tcp_done = NewTCPIOCompletionProc(tcps_done);
+	upp_tcp_asr = NewTCPNotifyProc(tcps_asr);
+#if 0
+	upp_udp_done = NewUDPIOCompletionProc(udps_done);
+#endif
+	upp_udp_asr = NewUDPNotifyProc(udps_asr);
 
 	/* XXXX Add constants here */
 	
