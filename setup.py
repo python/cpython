@@ -836,6 +836,8 @@ class PyBuildExt(build_ext):
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_OSA', ['osa/_OSAmodule.c'],
+                    extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
