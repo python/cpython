@@ -600,7 +600,6 @@ inet_addr
 inet_ntoa
 gethostbyaddr
 gethostbyname
-DNRDone
 MXInfo
 HInfo
 AddrToName
@@ -823,8 +822,6 @@ __ct__9PAPSocketFv		# PAPSocket::PAPSocket()
 __dt__5PAPIDFv		# PAPID::~PAPID()
 __ct__5PAPIDFv		# PAPID::PAPID()
 GetPAPCode__5PAPIDFslPUc		# PAPID::GetPAPCode(short,long,unsigned char*)
-PAPWriteHellHound
-PAPReadHellHound
 PAPUnload__FPc		# PAPUnload(char*)
 PAPClose__FsPc		# PAPClose(short,char*)
 PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,AddrBlock*,char*)
@@ -860,9 +857,6 @@ Alloc__9PPCSocketFv		# PPCSocket::Alloc()
 __dt__9PPCSocketFv		# PPCSocket::~PPCSocket()
 __ct__9PPCSocketFRC9PPCSocket		# PPCSocket::PPCSocket(const PPCSocket&)
 __ct__9PPCSocketFv		# PPCSocket::PPCSocket()
-PPCWriteHellHound
-PPCReadHellHound
-PPCInit_P
 __vt__6Socket		# Socket::__vt
 post_select__6SocketFUcUcUc		# Socket::post_select(unsigned char,unsigned char,unsigned char)
 select__6SocketFPUcPUcPUc		# Socket::select(unsigned char*,unsigned char*,unsigned char*)
@@ -910,7 +904,6 @@ tcp_send_done__FP11AnnotatedPB		# tcp_send_done(AnnotatedPB*)
 tcp_recv_done__FP11AnnotatedPB		# tcp_recv_done(AnnotatedPB*)
 tcp_listen_done__FP11AnnotatedPB		# tcp_listen_done(AnnotatedPB*)
 tcp_connect_done__FP11AnnotatedPB		# tcp_connect_done(AnnotatedPB*)
-tcp_notify
 u_udp_read_ahead_done
 u_udp_send_done
 __vt__9UDPSocket		# UDPSocket::__vt
@@ -1048,6 +1041,7 @@ read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
 ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
 __dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
 __ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
+DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
 __vt__16NullSocketDomain		# NullSocketDomain::__vt
 __vt__10NullSocket		# NullSocket::__vt
 __dt__10NullSocketFv		# NullSocket::~NullSocket()
@@ -1064,11 +1058,6 @@ fwalk
 fdopen
 exit
 abort
-__dc_arr
-__del_arr
-__new_arr
-__init_arr
-__copy
 __end__catch
 __throw
 __unexpected
@@ -1086,18 +1075,20 @@ before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
 __ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
 __eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
 __dl__FPv		# operator delete(void*)
+__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
 __nw__FUl		# operator new(unsigned long)
 _prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
 _set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
 _set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-new_handler
+__new_handler
+__throws_bad_alloc
 __del_hdl
 __new_hdl
 set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
+__throw_bad_alloc__Fv		# __throw_bad_alloc()
 __destroy_new_array
 __destroy_arr
 __construct_array
-__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
 __construct_new_array
 __throw_catch_compare
 unexpected__Fv		# unexpected()
@@ -1105,28 +1096,16 @@ set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
 terminate__Fv		# terminate()
 set_terminate__FPFv_v		# set_terminate(void (*)(void))
 qd
-__RTTI__9exception		# exception::__RTTI
-__RTTI__13runtime_error		# runtime_error::__RTTI
-__RTTI__14overflow_error		# overflow_error::__RTTI
 __vt__14overflow_error		# overflow_error::__vt
-__RTTI__11range_error		# range_error::__RTTI
 __vt__11range_error		# range_error::__vt
 __vt__13runtime_error		# runtime_error::__vt
-__RTTI__11logic_error		# logic_error::__RTTI
-__RTTI__12out_of_range		# out_of_range::__RTTI
 __vt__12out_of_range		# out_of_range::__vt
-__RTTI__12length_error		# length_error::__RTTI
 __vt__12length_error		# length_error::__vt
-__RTTI__16invalid_argument		# invalid_argument::__RTTI
 __vt__16invalid_argument		# invalid_argument::__vt
-__RTTI__12domain_error		# domain_error::__RTTI
 __vt__12domain_error		# domain_error::__vt
 __vt__11logic_error		# logic_error::__vt
-__RTTI__13bad_exception		# bad_exception::__RTTI
 __vt__13bad_exception		# bad_exception::__vt
-__RTTI__10bad_typeid		# bad_typeid::__RTTI
 __vt__10bad_typeid		# bad_typeid::__vt
-__RTTI__8bad_cast		# bad_cast::__RTTI
 __vt__8bad_cast		# bad_cast::__vt
 __vt__9exception		# exception::__vt
 __priv_throwbadcast__Fv		# __priv_throwbadcast()
