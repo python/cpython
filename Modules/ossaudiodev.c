@@ -9,7 +9,7 @@
  * Renamed to ossaudiodev and rearranged/revised/hacked up
  * by Greg Ward <gward@python.net>, November 2002.
  * Mixer interface by Nicholas FitzRoy-Dale <wzdd@lardcave.net>, Dec 2002.
- *              
+ *
  * (c) 2000 Peter Bosch.  All Rights Reserved.
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
@@ -161,11 +161,11 @@ newossmixerobject(PyObject *arg)
     char *basedev = NULL;
     int fd;
     oss_mixer_t *self;
-    
+
     if (!PyArg_ParseTuple(arg, "|s", &basedev)) {
         return NULL;
     }
-    
+
     if (basedev == NULL) {
         basedev = getenv("MIXERDEV");
         if (basedev == NULL)            /* MIXERDEV not set */
@@ -181,9 +181,9 @@ newossmixerobject(PyObject *arg)
         close(fd);
         return NULL;
     }
-    
+
     self->fd = fd;
-    
+
     return self;
 }
 
@@ -340,13 +340,13 @@ oss_sync(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
 }
-    
+
 static PyObject *
 oss_reset(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_0(self->fd, args, "reset", SNDCTL_DSP_RESET);
 }
-    
+
 static PyObject *
 oss_post(oss_audio_t *self, PyObject *args)
 {
@@ -363,7 +363,7 @@ oss_read(oss_audio_t *self, PyObject *args)
     int size, count;
     char *cp;
     PyObject *rv;
-        
+
     if (!PyArg_ParseTuple(args, "i:read", &size))
         return NULL;
     rv = PyString_FromStringAndSize(NULL, size);
@@ -414,7 +414,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
     int rv, size;
     fd_set write_set_fds;
     int select_rv;
-    
+
     /* NB. writeall() is only useful in non-blocking mode: according to
        Guenter Geiger <geiger@xdv.org> on the linux-audio-dev list
        (http://eca.cx/lad/2002/11/0380.html), OSS guarantees that
@@ -422,7 +422,7 @@ oss_writeall(oss_audio_t *self, PyObject *args)
        mode, the behaviour of write() and writeall() from Python is
        indistinguishable. */
 
-    if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) 
+    if (!PyArg_ParseTuple(args, "s#:write", &cp, &size))
         return NULL;
 
     /* use select to wait for audio device to be available */
@@ -475,7 +475,7 @@ oss_close(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_fileno(oss_audio_t *self, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":fileno")) 
+    if (!PyArg_ParseTuple(args, ":fileno"))
         return NULL;
     return PyInt_FromLong(self->fd);
 }
@@ -528,7 +528,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
              "unable to set requested rate (wanted %d, got %d)",
              wanted_rate, rate);
     }
-    
+
     /* Construct the return value: a (fmt, channels, rate) tuple that
        tells what the audio hardware was actually set to. */
     rv = PyTuple_New(3);
@@ -546,7 +546,7 @@ _ssize(oss_audio_t *self, int *nchannels, int *ssize)
     int fmt;
 
     fmt = 0;
-    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, &fmt) < 0) 
+    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, &fmt) < 0)
         return -errno;
 
     switch (fmt) {
@@ -574,7 +574,7 @@ _ssize(oss_audio_t *self, int *nchannels, int *ssize)
 }
 
 
-/* bufsize returns the size of the hardware audio buffer in number 
+/* bufsize returns the size of the hardware audio buffer in number
    of samples */
 static PyObject *
 oss_bufsize(oss_audio_t *self, PyObject *args)
@@ -595,7 +595,7 @@ oss_bufsize(oss_audio_t *self, PyObject *args)
     return PyInt_FromLong((ai.fragstotal * ai.fragsize) / (nchannels * ssize));
 }
 
-/* obufcount returns the number of samples that are available in the 
+/* obufcount returns the number of samples that are available in the
    hardware for playing */
 static PyObject *
 oss_obufcount(oss_audio_t *self, PyObject *args)
@@ -614,7 +614,7 @@ oss_obufcount(oss_audio_t *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    return PyInt_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) / 
+    return PyInt_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) /
                           (ssize * nchannels));
 }
 
@@ -648,7 +648,7 @@ oss_getptr(oss_audio_t *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, ":getptr"))
         return NULL;
-    
+
     if (self->mode == O_RDONLY)
         req = SNDCTL_DSP_GETIPTR;
     else
@@ -682,7 +682,7 @@ oss_mixer_close(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 {
-    if (!PyArg_ParseTuple(args, ":fileno")) 
+    if (!PyArg_ParseTuple(args, ":fileno"))
         return NULL;
     return PyInt_FromLong(self->fd);
 }
@@ -714,19 +714,19 @@ static PyObject *
 oss_mixer_get(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume;
-    
+
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
     if (!PyArg_ParseTuple(args, "i:get", &channel))
         return NULL;
-    
+
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
         PyErr_SetString(OSSAudioError, "Invalid mixer channel specified.");
         return NULL;
     }
-    
+
     if (ioctl(self->fd, MIXER_READ(channel), &volume) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    
+
     return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }
 
@@ -734,26 +734,26 @@ static PyObject *
 oss_mixer_set(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume, leftVol, rightVol;
-    
+
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
     if (!PyArg_ParseTuple(args, "i(ii):set", &channel, &leftVol, &rightVol))
         return NULL;
-            
+
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
         PyErr_SetString(OSSAudioError, "Invalid mixer channel specified.");
         return NULL;
     }
-    
+
     if (leftVol < 0 || rightVol < 0 || leftVol > 100 || rightVol > 100) {
         PyErr_SetString(OSSAudioError, "Volumes must be between 0 and 100.");
         return NULL;
     }
 
     volume = (rightVol << 8) | leftVol;
-    
+
     if (ioctl(self->fd, MIXER_WRITE(channel), &volume) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-   
+
     return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }
 
@@ -809,18 +809,18 @@ static PyMethodDef oss_methods[] = {
 
 static PyMethodDef oss_mixer_methods[] = {
     /* Regular file method - OSS mixers are ioctl-only interface */
-    { "close",          (PyCFunction)oss_mixer_close, METH_VARARGS },   
+    { "close",          (PyCFunction)oss_mixer_close, METH_VARARGS },
     { "fileno",         (PyCFunction)oss_mixer_fileno, METH_VARARGS },
 
     /* Simple ioctl wrappers */
-    { "controls",       (PyCFunction)oss_mixer_controls, METH_VARARGS }, 
+    { "controls",       (PyCFunction)oss_mixer_controls, METH_VARARGS },
     { "stereocontrols", (PyCFunction)oss_mixer_stereocontrols, METH_VARARGS},
-    { "reccontrols",    (PyCFunction)oss_mixer_reccontrols, METH_VARARGS},   
+    { "reccontrols",    (PyCFunction)oss_mixer_reccontrols, METH_VARARGS},
     { "get",            (PyCFunction)oss_mixer_get, METH_VARARGS },
     { "set",            (PyCFunction)oss_mixer_set, METH_VARARGS },
     { "get_recsrc",     (PyCFunction)oss_mixer_get_recsrc, METH_VARARGS },
     { "set_recsrc",     (PyCFunction)oss_mixer_set_recsrc, METH_VARARGS },
-    
+
     { NULL,             NULL}
 };
 
@@ -913,7 +913,7 @@ build_namelists (PyObject *module)
         if (s == NULL)
             return -1;
         PyList_SET_ITEM(labels, i, s);
-   
+
         s = PyString_FromString(control_names[i]);
         if (s == NULL)
             return -1;
@@ -926,21 +926,22 @@ build_namelists (PyObject *module)
         return -1;
 
     return 0;
-}   
+}
 
 
 void
 initossaudiodev(void)
 {
     PyObject *m;
-  
+
     m = Py_InitModule("ossaudiodev", ossaudiodev_methods);
 
-    OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError", NULL, NULL);
+    OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError",
+				       NULL, NULL);
     if (OSSAudioError) {
-	/* Each call to PyModule_AddObject decrefs it; compensate: */
-	Py_INCREF(OSSAudioError);
-	Py_INCREF(OSSAudioError);
+        /* Each call to PyModule_AddObject decrefs it; compensate: */
+        Py_INCREF(OSSAudioError);
+        Py_INCREF(OSSAudioError);
         PyModule_AddObject(m, "error", OSSAudioError);
         PyModule_AddObject(m, "OSSAudioError", OSSAudioError);
     }
@@ -968,7 +969,7 @@ initossaudiodev(void)
 #ifdef AFMT_S16_NE
     _EXPORT_INT(m, AFMT_S16_NE);
 #endif
-        
+
     /* Expose the sound mixer device numbers. */
     _EXPORT_INT(m, SOUND_MIXER_NRDEVICES);
     _EXPORT_INT(m, SOUND_MIXER_VOLUME);
