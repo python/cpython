@@ -1027,7 +1027,7 @@ static int
 vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	         char **kwlist, va_list *p_va)
 {
-	char msgbuf[256];
+	char msgbuf[512];
 	int levels[32];
 	char *fname, *message;
 	int min, max;
@@ -1138,7 +1138,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	if (len < min || max < len) {
 		if (message == NULL) {
 			sprintf(msgbuf,
-				"%s%s takes %s %d argument%s (%d given)",
+				"%.200s%s takes %s %d argument%s (%d given)",
 				fname==NULL ? "function" : fname,
 				fname==NULL ? "" : "()",
 				min==max ? "exactly"
