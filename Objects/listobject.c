@@ -1819,8 +1819,8 @@ static PyTypeObject immutable_list_type = {
 
 typedef struct {
         PyObject_HEAD
-        long      it_index;
-        PyObject *it_seq;
+        long it_index;
+        PyListObject *it_seq;
 } listiterobject;
 
 PyTypeObject PyListIter_Type;
@@ -1839,7 +1839,7 @@ list_iter(PyObject *seq)
                 return NULL;
         it->it_index = 0;
         Py_INCREF(seq);
-        it->it_seq = seq;
+        it->it_seq = (PyListObject *)seq;
         _PyObject_GC_TRACK(it);
         return (PyObject *)it;
 }
@@ -1855,7 +1855,7 @@ listiter_dealloc(listiterobject *it)
 static int
 listiter_traverse(listiterobject *it, visitproc visit, void *arg)
 {
-        return visit(it->it_seq, arg);
+        return visit((PyObject *)it->it_seq, arg);
 }
 
 
@@ -1867,16 +1867,18 @@ listiter_getiter(PyObject *it)
 }
 
 static PyObject *
-listiter_next(PyObject *it)
+listiter_next(listiterobject *it)
 {
-        PyObject *seq;
+        PyListObject *seq;
         PyObject *item;
 
-        assert(PyList_Check(it));
-        seq = ((listiterobject *)it)->it_seq;
+	assert(it != NULL);
+        seq = it->it_seq;
+        assert(PyList_Check(seq));
 
-        if (((listiterobject *)it)->it_index < PyList_GET_SIZE(seq)) {
-		item = ((PyListObject *)(seq))->ob_item[((listiterobject *)it)->it_index++];
+        if (it->it_index < PyList_GET_SIZE(seq)) {
+		item = PyList_GET_ITEM(seq, it->it_index);
+		++it->it_index;
                 Py_INCREF(item);
                 return item;
         }
