@@ -76,6 +76,7 @@ int PyMac_SetEventHandler(PyObject *);	/* set python-coded event handler */
 
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
+void PyMac_RaiseConsoleWindow();		/* Bring console window to front, if it exists */
 
 int PyMac_FindResourceModule(PyStringObject *, char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
