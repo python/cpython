@@ -168,56 +168,59 @@ assert 'abc' < u'abcd'
 assert u'abc' < u'abcd'
 print 'done.'
 
-print 'Testing UTF-16 code point order comparisons...',
-#No surrogates, no fixup required.
-assert u'\u0061' < u'\u20ac'
-# Non surrogate below surrogate value, no fixup required
-assert u'\u0061' < u'\ud800\udc02'
+if 0:
+    # Move these tests to a Unicode collation module test...
 
-# Non surrogate above surrogate value, fixup required
-def test_lecmp(s, s2):
-  assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
-  
-def test_fixup(s):
-  s2 = u'\ud800\udc01'
-  test_lecmp(s, s2)
-  s2 = u'\ud900\udc01'
-  test_lecmp(s, s2)
-  s2 = u'\uda00\udc01'
-  test_lecmp(s, s2)
-  s2 = u'\udb00\udc01'
-  test_lecmp(s, s2)
-  s2 = u'\ud800\udd01'
-  test_lecmp(s, s2)
-  s2 = u'\ud900\udd01'
-  test_lecmp(s, s2)
-  s2 = u'\uda00\udd01'
-  test_lecmp(s, s2)
-  s2 = u'\udb00\udd01'
-  test_lecmp(s, s2)
-  s2 = u'\ud800\ude01'
-  test_lecmp(s, s2)
-  s2 = u'\ud900\ude01'
-  test_lecmp(s, s2)
-  s2 = u'\uda00\ude01'
-  test_lecmp(s, s2)
-  s2 = u'\udb00\ude01'
-  test_lecmp(s, s2)
-  s2 = u'\ud800\udfff'
-  test_lecmp(s, s2)
-  s2 = u'\ud900\udfff'
-  test_lecmp(s, s2)
-  s2 = u'\uda00\udfff'
-  test_lecmp(s, s2)
-  s2 = u'\udb00\udfff'
-  test_lecmp(s, s2)
+    print 'Testing UTF-16 code point order comparisons...',
+    #No surrogates, no fixup required.
+    assert u'\u0061' < u'\u20ac'
+    # Non surrogate below surrogate value, no fixup required
+    assert u'\u0061' < u'\ud800\udc02'
 
-test_fixup(u'\ue000')
-test_fixup(u'\uff61')
+    # Non surrogate above surrogate value, fixup required
+    def test_lecmp(s, s2):
+      assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
 
-# Surrogates on both sides, no fixup required
-assert u'\ud800\udc02' < u'\ud84d\udc56'
-print 'done.'
+    def test_fixup(s):
+      s2 = u'\ud800\udc01'
+      test_lecmp(s, s2)
+      s2 = u'\ud900\udc01'
+      test_lecmp(s, s2)
+      s2 = u'\uda00\udc01'
+      test_lecmp(s, s2)
+      s2 = u'\udb00\udc01'
+      test_lecmp(s, s2)
+      s2 = u'\ud800\udd01'
+      test_lecmp(s, s2)
+      s2 = u'\ud900\udd01'
+      test_lecmp(s, s2)
+      s2 = u'\uda00\udd01'
+      test_lecmp(s, s2)
+      s2 = u'\udb00\udd01'
+      test_lecmp(s, s2)
+      s2 = u'\ud800\ude01'
+      test_lecmp(s, s2)
+      s2 = u'\ud900\ude01'
+      test_lecmp(s, s2)
+      s2 = u'\uda00\ude01'
+      test_lecmp(s, s2)
+      s2 = u'\udb00\ude01'
+      test_lecmp(s, s2)
+      s2 = u'\ud800\udfff'
+      test_lecmp(s, s2)
+      s2 = u'\ud900\udfff'
+      test_lecmp(s, s2)
+      s2 = u'\uda00\udfff'
+      test_lecmp(s, s2)
+      s2 = u'\udb00\udfff'
+      test_lecmp(s, s2)
+
+    test_fixup(u'\ue000')
+    test_fixup(u'\uff61')
+
+    # Surrogates on both sides, no fixup required
+    assert u'\ud800\udc02' < u'\ud84d\udc56'
+    print 'done.'
 
 test('ljust', u'abc',  u'abc       ', 10)
 test('rjust', u'abc',  u'       abc', 10)

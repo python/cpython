@@ -1,6 +1,5 @@
 test_unicode
 Testing Unicode comparisons... done.
-Testing UTF-16 code point order comparisons... done.
 Testing Unicode contains method... done.
 Testing Unicode formatting strings... done.
 Testing builtin codecs... done.
