@@ -338,34 +338,34 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 static PyObject *
 PyZlib_compressobj(PyObject *selfptr, PyObject *args)
 {
-  compobject *self;
-  int level=Z_DEFAULT_COMPRESSION, method=DEFLATED;
-  int wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=0, err;
+    compobject *self;
+    int level=Z_DEFAULT_COMPRESSION, method=DEFLATED;
+    int wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=0, err;
 
-  if (!PyArg_ParseTuple(args, "|iiiii:compressobj", &level, &method, &wbits,
-			&memLevel, &strategy))
-      return NULL;
+    if (!PyArg_ParseTuple(args, "|iiiii:compressobj", &level, &method, &wbits,
+			  &memLevel, &strategy))
+	return NULL;
 
-  self = newcompobject(&Comptype);
-  if (self==NULL) return(NULL);
-  self->zst.zalloc = (alloc_func)NULL;
-  self->zst.zfree = (free_func)Z_NULL;
-  err = deflateInit2(&self->zst, level, method, wbits, memLevel, strategy);
-  switch(err)
-    {
+    self = newcompobject(&Comptype);
+    if (self==NULL) 
+	return(NULL);
+    self->zst.zalloc = (alloc_func)NULL;
+    self->zst.zfree = (free_func)Z_NULL;
+    err = deflateInit2(&self->zst, level, method, wbits, memLevel, strategy);
+    switch(err) {
     case (Z_OK):
-      self->is_initialised = 1;
-      return (PyObject*)self;
+	self->is_initialised = 1;
+	return (PyObject*)self;
     case (Z_MEM_ERROR):
-      Py_DECREF(self);
-      PyErr_SetString(PyExc_MemoryError,
-                      "Can't allocate memory for compression object");
-      return NULL;
+	Py_DECREF(self);
+	PyErr_SetString(PyExc_MemoryError,
+			"Can't allocate memory for compression object");
+	return NULL;
     case(Z_STREAM_ERROR):
-      Py_DECREF(self);
-      PyErr_SetString(PyExc_ValueError,
-                      "Invalid initialization option");
-      return NULL;
+	Py_DECREF(self);
+	PyErr_SetString(PyExc_ValueError,
+			"Invalid initialization option");
+	return NULL;
     default:
 	zlib_error(self->zst, err, "while creating compression object");
         Py_DECREF(self);
@@ -376,37 +376,36 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args)
 static PyObject *
 PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
 {
-  int wbits=DEF_WBITS, err;
-  compobject *self;
-  if (!PyArg_ParseTuple(args, "|i:decompressobj", &wbits))
-    {
-     return NULL;
-    }  
-  self=newcompobject(&Decomptype);
-  if (self==NULL) return(NULL);
-  self->zst.zalloc=(alloc_func)NULL;
-  self->zst.zfree=(free_func)Z_NULL;
-  err=inflateInit2(&self->zst, wbits);
-  switch(err)
-  {
+    int wbits=DEF_WBITS, err;
+    compobject *self;
+    if (!PyArg_ParseTuple(args, "|i:decompressobj", &wbits))
+	return NULL;
+
+    self = newcompobject(&Decomptype);
+    if (self==NULL) 
+	return(NULL);
+    self->zst.zalloc = (alloc_func)NULL;
+    self->zst.zfree = (free_func)Z_NULL;
+    err = inflateInit2(&self->zst, wbits);
+    switch(err) {
     case (Z_OK):
-      self->is_initialised = 1;
-      return (PyObject*)self;
+	self->is_initialised = 1;
+	return (PyObject*)self;
     case(Z_STREAM_ERROR):
-      Py_DECREF(self);
-      PyErr_SetString(PyExc_ValueError,
-                      "Invalid initialization option");
-      return NULL;
+	Py_DECREF(self);
+	PyErr_SetString(PyExc_ValueError,
+			"Invalid initialization option");
+	return NULL;
     case (Z_MEM_ERROR):
-      Py_DECREF(self);
-      PyErr_SetString(PyExc_MemoryError,
-                      "Can't allocate memory for decompression object");
-      return NULL;
+	Py_DECREF(self);
+	PyErr_SetString(PyExc_MemoryError,
+			"Can't allocate memory for decompression object");
+	return NULL;
     default:
 	zlib_error(self->zst, err, "while creating decompression object");
         Py_DECREF(self);
 	return NULL;
-  }
+    }
 }
 
 static void
@@ -415,7 +414,7 @@ Comp_dealloc(compobject *self)
     ENTER_ZLIB
 
     if (self->is_initialised)
-      deflateEnd(&self->zst);
+	deflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
@@ -429,7 +428,7 @@ Decomp_dealloc(compobject *self)
     ENTER_ZLIB
 
     if (self->is_initialised)
-      inflateEnd(&self->zst);
+	inflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
