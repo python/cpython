@@ -87,11 +87,18 @@ concatenated to the output produced by any preceding calls to the
 for later processing.
 \end{methoddesc}
 
-\begin{methoddesc}[Compress]{flush}{}
-All pending input is processed, and an string containing the remaining
-compressed output is returned.  After calling \method{flush()}, the
+\begin{methoddesc}[Compress]{flush}{\optional{mode}}
+All pending input is processed, and a string containing the remaining
+compressed output is returned.  \var{mode} can be selected from the
+constants \constant{Z_SYNC_FLUSH},  \constant{Z_FULL_FLUSH},  or 
+\constant{Z_FINISH}, defaulting to \constant{Z_FINISH}.  \constant{Z_SYNC_FLUSH} and 
+\constant{Z_FULL_FLUSH} allow compressing further strings of data and
+are used to allow partial error recovery on decompression, while
+\constant{Z_FINISH} finishes the compressed stream and 
+prevents compressing any more data.  After calling
+\method{flush()} with \var{mode} set to \constant{Z_FINISH}, the
 \method{compress()} method cannot be called again; the only realistic
-action is to delete the object.
+action is to delete the object.  
 \end{methoddesc}
 
 Decompression objects support the following methods:
