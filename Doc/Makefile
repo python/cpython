@@ -161,21 +161,28 @@ qua.ps:	qua.dvi
 # source at the appropriate place.  Change the definition of
 # $ICONSERVER in .latex2html-init to point to a different location.
 
+# The sed hack rips out a superfluous comma which I haven't found the source
+# of; the prominent location makes it worth the extra step.  This affects the
+# title pages!
+
 l2h: l2htut l2hext l2hlib
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
 	@rm -rf python-tut
+	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
+		<tut/tut.html >tut/xxx
+	mv tut/xxx tut/tut.html
 	mv tut python-tut
 
 l2hext: ext.dvi myformat.perl
 	$(L2H) $(L2HARGS) ext.tex
 	@rm -rf python-ext
+	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
+		<ext/ext.html >ext/xxx
+	mv ext/xxx ext/ext.html
 	mv ext python-ext
 
-# The sed hack rips out a superfluous comma which I haven't found the source
-# of; the prominent location makes it worth the extra step.  This affects the
-# title page!
 l2hlib: lib.dvi myformat.perl
 	./fix_libaux.sed <lib.aux >@lib.aux
 	mv @lib.aux lib.aux
