@@ -75,6 +75,9 @@ Extension modules
 Library
 -------
 
+- Bug #849662:  UserDict.DictMixin had performance issues when
+  an instance was tested for equality with None.
+
 - Bug #848614: distutils' msvccompiler fails to find the MSVC6
   compiler because of incomplete registry entries.
 
