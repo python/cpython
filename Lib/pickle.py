@@ -561,7 +561,7 @@ class Pickler:
         # This method does not use memoize() so that it can handle
         # the special case for non-binary mode.
         # XXX What did that comment mean?  That is, what "special case for
-        # XXX non-binary mode?  It sure *looks* like nothing special is
+        # XXX non-binary mode"?  It sure *looks* like nothing special is
         # XXX happening in the INST case.
         memo_len = len(memo)
         if self.bin:
@@ -699,6 +699,14 @@ class Unpickler:
         except _Stop, stopinst:
             return stopinst.value
 
+    # Return largest index k such that self.stack[k] is self.mark.
+    # If the stack doesn't contain a mark, eventually raises IndexError.
+    # This could be sped by maintaining another stack, of indices at which
+    # the mark appears.  For that matter, the latter stack would suffice,
+    # and we wouldn't need to push mark objects on self.stack at all.
+    # Doing so is probably a good thing, though, since if the pickle is
+    # corrupt (or hostile) we may get a clue from finding self.mark embedded
+    # in unpickled objects.
     def marker(self):
         stack = self.stack
         mark = self.mark
