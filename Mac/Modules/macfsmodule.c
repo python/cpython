@@ -824,7 +824,7 @@ mfs_RawFSSpec(self, args)
 	FSSpec *fssp;
 	int size;
 
-	if (!PyArg_ParseTuple(args, "m#", &fssp, &size))
+	if (!PyArg_ParseTuple(args, "s#", &fssp, &size))
 		return NULL;
 	if ( size != sizeof(FSSpec) ) {
 		PyErr_SetString(PyExc_TypeError, "Incorrect size for FSSpec record");
@@ -842,7 +842,7 @@ mfs_RawAlias(self, args)
 	Handle h;
 	int size;
 
-	if (!PyArg_ParseTuple(args, "m#", &dataptr, &size))
+	if (!PyArg_ParseTuple(args, "s#", &dataptr, &size))
 		return NULL;
 	h = NewHandle(size);
 	if ( h == NULL ) {
