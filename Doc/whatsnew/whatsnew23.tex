@@ -3,7 +3,7 @@
 
 \title{What's New in Python 2.3}
 \release{0.08}
-\author{A.M. Kuchling}
+\author{A.M.\ Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
 \begin{document}
@@ -173,11 +173,11 @@ preserved.  On the next call to the generator's \code{.next()} method,
 the function will resume executing immediately after the
 \keyword{yield} statement.  (For complicated reasons, the
 \keyword{yield} statement isn't allowed inside the \keyword{try} block
-of a \code{try...finally} statement; read \pep{255} for a full
+of a \keyword{try}...\keyword{finally} statement; read \pep{255} for a full
 explanation of the interaction between \keyword{yield} and
 exceptions.)
 
-Here's a sample usage of the \function{generate_ints} generator:
+Here's a sample usage of the \function{generate_ints()} generator:
 
 \begin{verbatim}
 >>> gen = generate_ints(3)
@@ -472,7 +472,7 @@ string resulting from \code{\var{msg} \% (\var{arg1}, \var{arg2},
 There's also an \function{exception()} function that records the most
 recent traceback.  Any of the other functions will also record the
 traceback if you specify a true value for the keyword argument
-\code{exc_info}.
+\var{exc_info}.
 
 \begin{verbatim}
 def f():
@@ -510,7 +510,7 @@ log.critical('Disk full')
 Log records are usually propagated up the hierarchy, so a message
 logged to \samp{server.auth} is also seen by \samp{server} and
 \samp{root}, but a handler can prevent this by setting its
-\member{propagate} attribute to \code{False}.
+\member{propagate} attribute to \constant{False}.
 
 There are more classes provided by the \module{logging} package that
 can be customized.  When a \class{Logger} instance is told to log a
@@ -683,10 +683,10 @@ Python 2.3a0 (#1, Dec 30 2002, 19:54:32)
 
 An entry in \code{sys.path} can now be the filename of a ZIP archive.
 The ZIP archive can contain any kind of files, but only files named
-\code{*.py}, \code{*.pyc}, or \code{*.pyo} can be imported.  If an
-archive only contains \code{*.py} files, Python will not attempt to
-modify the archive by adding the corresponding \code{*.pyc} file, meaning
-that if a ZIP archive doesn't contain \code{*.pyc} files, importing may be
+\file{*.py}, \file{*.pyc}, or \file{*.pyo} can be imported.  If an
+archive only contains \file{*.py} files, Python will not attempt to
+modify the archive by adding the corresponding \file{*.pyc} file, meaning
+that if a ZIP archive doesn't contain \file{*.pyc} files, importing may be
 rather slow.
 
 A path within the archive can also be specified to only import from a
@@ -767,14 +767,14 @@ are added to the \module{sys} module:
 
 \begin{itemize}
   \item \code{sys.path_hooks} is a list of callable objects; most 
-often they'll be classes.  Each callable takes a string containing
-a path and either returns an importer object that will handle imports
-from this path or raises an \exception{ImportError} exception if it
-can't handle this path.
+  often they'll be classes.  Each callable takes a string containing a
+  path and either returns an importer object that will handle imports
+  from this path or raises an \exception{ImportError} exception if it
+  can't handle this path.
 
   \item \code{sys.path_importer_cache} caches importer objects for
-each path, so \code{sys.path_hooks} will only need to be traversed
-once for each path.
+  each path, so \code{sys.path_hooks} will only need to be traversed
+  once for each path.
 
   \item \code{sys.meta_path} is a list of importer objects that will
   be traversed before \code{sys.path} is checked.  This list is
@@ -927,8 +927,9 @@ Or use slice objects directly in subscripts:
 
 To simplify implementing sequences that support extended slicing,
 slice objects now have a method \method{indices(\var{length})} which,
-given the length of a sequence, returns a \code{(start, stop, step)}
-tuple that can be passed directly to \function{range()}.
+given the length of a sequence, returns a \code{(\var{start},
+\var{stop}, \var{step})} tuple that can be passed directly to
+\function{range()}.
 \method{indices()} handles omitted and out-of-bounds indices in a
 manner consistent with regular slices (and this innocuous phrase hides
 a welter of confusing details!).  The method is intended to be used
@@ -1118,7 +1119,7 @@ In 2.3, you get this:
 
 \begin{itemize}
 
-\item The \code{in} operator now works differently for strings.
+\item The \keyword{in} operator now works differently for strings.
 Previously, when evaluating \code{\var{X} in \var{Y}} where \var{X}
 and \var{Y} are strings, \var{X} could only be a single character.
 That's now changed; \var{X} can be a string of any length, and
@@ -1405,7 +1406,8 @@ will enable buffering.
 
 \item The \function{sample(\var{population}, \var{k})} function was
 added to the \module{random} module.  \var{population} is a sequence
-or \code{xrange} object containing the elements of a population, and \function{sample()}
+or \class{xrange} object containing the elements of a population, and
+\function{sample()}
 chooses \var{k} elements from the population without replacing chosen
 elements.  \var{k} can be any value up to \code{len(\var{population})}.
 For example:
@@ -1933,7 +1935,7 @@ definition table can specify the
 \constant{METH_NOARGS} flag, signalling that there are no arguments, and
 the argument checking can then be removed.  If compatibility with
 pre-2.2 versions of Python is important, the code could use
-\code{PyArg_ParseTuple(args, "")} instead, but this will be slower
+\code{PyArg_ParseTuple(\var{args}, "")} instead, but this will be slower
 than using \constant{METH_NOARGS}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
