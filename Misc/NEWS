@@ -23,6 +23,9 @@ Extension modules
 Library
 -------
 
+- itertools.izip() with no arguments now returns an empty iterator instead
+  of raising a TypeError exception.
+
 - _strptime.py now has a behind-the-scenes caching mechanism for the most
   recent TimeRE instance used along with the last five unique directive
   patterns.  The overall module was also made more thread-safe.
