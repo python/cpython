@@ -728,6 +728,10 @@ class Decimal(object):
         # Decimal integers must hash the same as the ints
         # Non-integer decimals are normalized and hashed as strings
         # Normalization assures that hast(100E-1) == hash(10)
+        if self._is_special:
+            if self._isnan():
+                raise TypeError('Cannot hash a NaN value.')
+            return hash(str(self))
         i = int(self)
         if self == Decimal(i):
             return hash(i)

@@ -12,6 +12,9 @@ What's New in Python 2.4.1c2?
 Library
 -------
 
+- Bug #1163325:  Decimal infinities failed to hash.  Attempting to
+  hash a NaN raised an InvalidOperation instead of a TypeError.
+
 - Bug #1160802: can't build Zope on Windows with 2.4.1c1.  The
   ``MSVCCompiler`` class in distutils forgot to record that it was
   initialized, and continued adding redundant entries to the system
