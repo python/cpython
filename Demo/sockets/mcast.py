@@ -14,14 +14,23 @@ import struct
 import regsub
 from socket import *
 from SOCKET import *
-from IN import *			# Local module, SGI specific!!!
+from IN import *			# SGI specific!!! (Sorry)
 
-sender = sys.argv[1:]
 
-s = socket(AF_INET, SOCK_DGRAM)
+# Main program
+def main():
+	flags = sys.argv[1:]
+	#
+	if flags:
+		sender(flags[0])
+	else:
+		receiver()
 
-if sender:
-	if sys.argv[1] == '-b':
+
+# Sender subroutine (only one per local area network)
+def sender(flag):
+	s = socket(AF_INET, SOCK_DGRAM)
+	if flag == '-b':
 		s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 		mygroup = '<broadcast>'
 	else:
@@ -33,27 +42,56 @@ if sender:
 ##		data = data + (1400 - len(data)) * '\0'
 		s.sendto(data, (mygroup, MYPORT))
 		time.sleep(1)
-else:
-	# Allow multiple copies of this program on one machine
-	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1) # (Not strictly needed)
 
-	# Bind the socket to my port
-	s.bind('', MYPORT)
 
-	# Construct binary group address from MYGROUP converted to bytes
-	bytes = eval(regsub.gsub('\.', ',', MYGROUP))
-	grpaddr = 0
-	for byte in bytes: grpaddr = (grpaddr << 8) | byte
-
-	# Construct struct mreq from grpaddr and ifaddr
-	ifaddr = INADDR_ANY
-	mreq = struct.pack('ll', grpaddr, ifaddr)
-
-	# Add group membership
-	s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
-
+# Receiver subroutine (as many as you like)
+def receiver():
+	# Open and initialize the socket
+	s = openmcastsock(MYGROUP, MYPORT)
+	#
 	# Loop, printing any data we receive
 	while 1:
 		data, sender = s.recvfrom(1500)
 		while data[-1:] == '\0': data = data[:-1] # Strip trailing \0's
 		print sender, ':', `data`
+
+
+# Open a UDP socket, bind it to a port and select a multicast group
+def openmcastsock(group, port):
+	# Import modules used only here
+	import regsub
+	import socket
+	import struct
+	from SOCKET import *
+	from IN import *
+	#
+	# Create a socket
+	s = socket.socket(AF_INET, SOCK_DGRAM)
+	#
+	# Allow multiple copies of this program on one machine
+	# (not strictly needed)
+	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+	#
+	# Bind it to the port
+	s.bind('', port)
+	#
+	# Look up multicast group address in name server
+	# (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
+	group = socket.gethostbyname(group)
+	#
+	# Construct binary group address
+	bytes = eval(regsub.gsub('\.', ',', group))
+	grpaddr = 0
+	for byte in bytes: grpaddr = (grpaddr << 8) | byte
+	#
+	# Construct struct mreq from grpaddr and ifaddr
+	ifaddr = INADDR_ANY
+	mreq = struct.pack('ll', grpaddr, ifaddr)
+	#
+	# Add group membership
+	s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
+	#
+	return s
+
+
+main()
