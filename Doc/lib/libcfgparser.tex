@@ -163,9 +163,11 @@ A convenience method which coerces the \var{option} in the specified
 
 \begin{methoddesc}{getboolean}{section, option}
 A convenience method which coerces the \var{option} in the specified
-\var{section} to a Boolean value.  Note that the only accepted values
-for the option are \samp{0} and \samp{1}, any others will raise
-\exception{ValueError}.
+\var{section} to a Boolean value.  Note that the accepted values
+for the option are \code{1}, \code{yes}, \code{true}, and \code{on},
+which cause this method to return true, and \code{0}, \code{no},
+\code{false}, and \code{off}, which cause it to return false.  Any
+other value will cause it to raise \exception{ValueError}.
 \end{methoddesc}
 
 \begin{methoddesc}{set}{section, option, value}
