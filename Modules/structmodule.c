@@ -874,6 +874,8 @@ bp_longlong(char *p, PyObject *v, const formatdef *f)
 {
 	int res;
 	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	res = _PyLong_AsByteArray((PyLongObject *)v,
 			   	  (unsigned char *)p,
 				  8,
@@ -888,6 +890,8 @@ bp_ulonglong(char *p, PyObject *v, const formatdef *f)
 {
 	int res;
 	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	res = _PyLong_AsByteArray((PyLongObject *)v,
 			   	  (unsigned char *)p,
 				  8,
@@ -1036,6 +1040,8 @@ lp_longlong(char *p, PyObject *v, const formatdef *f)
 {
 	int res;
 	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	res = _PyLong_AsByteArray((PyLongObject*)v,
 			   	  (unsigned char *)p,
 				  8,
@@ -1050,6 +1056,8 @@ lp_ulonglong(char *p, PyObject *v, const formatdef *f)
 {
 	int res;
 	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	res = _PyLong_AsByteArray((PyLongObject*)v,
 			   	  (unsigned char *)p,
 				  8,
