@@ -918,7 +918,7 @@ This function is also available as \"hexlify()\".";
 
 
 static int
-to_int(char c) 
+to_int(int c) 
 {
 	if (isdigit(c))
 		return c - '0';
