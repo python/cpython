@@ -319,15 +319,28 @@ getargs_l(PyObject *self, PyObject *args)
 {
 	PyObject *ob, *result = NULL, *argtuple;
 	char *fmt;
-	long value = 0;
 
 	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
 		return NULL;
 	argtuple = PyTuple_New(1);
 	Py_INCREF(ob);
 	PyTuple_SET_ITEM(argtuple, 0, ob);
-	if (PyArg_ParseTuple(argtuple, fmt, &value))
-		result = PyLong_FromLong(value);
+	/* It's necessary to distinguish between ints and longs, since
+	   sizeof(int) != sizeof(long) on some (64 bit) platforms.
+	   value must be an int for: PyArg_ParseTuple(t, 'i', &value)
+	   value must be an long for: PyArg_ParseTuple(t, 'l', &value)
+	*/
+	if (*fmt == 'i') {
+		int value;
+		if (PyArg_ParseTuple(argtuple, fmt, &value))
+			result = PyLong_FromLong(value);
+	} else if (*fmt == 'l') {
+		long value;
+		if (PyArg_ParseTuple(argtuple, fmt, &value))
+			result = PyLong_FromLong(value);
+	} else {
+		PyErr_SetString(PyExc_TypeError, "format was not i or l");
+	}
 	Py_DECREF(argtuple);
 	return result;
 }
@@ -384,13 +397,13 @@ test_k_code(PyObject *self)
         if (tuple == NULL)
         	return NULL;
 
-	/* a number larger than UINT_MAX even on 64-bit platforms */
+	/* a number larger than ULONG_MAX even on 64-bit platforms */
         num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
         if (num == NULL)
         	return NULL;
 
 	value = PyInt_AsUnsignedLongMask(num);
-	if (value != UINT_MAX)
+	if (value != ULONG_MAX)
         	return raiseTestError("test_k_code",
 	    "PyInt_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
 
@@ -399,7 +412,7 @@ test_k_code(PyObject *self)
         value = -1;
         if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
         	return NULL;
-        if (value != UINT_MAX)
+        if (value != ULONG_MAX)
         	return raiseTestError("test_k_code",
 			"k code returned wrong value for long 0xFFF...FFF");
 
