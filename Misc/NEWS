@@ -219,14 +219,13 @@ Internals
 - Several of the internal Unicode tables are much smaller now, and
   the source code should be much friendlier to weaker compilers.
 
-- Fixed GC bug that caused some instances to be removed from the
-  container set while they were still live.
+- In the garbage collector: Fixed bug in collection of tuples.  Fixed
+  bug that caused some instances to be removed from the container set
+  while they were still live.  Fixed parsing in gc.set_debug() for
+  platforms where sizeof(long) > sizeof(int).
 
 - Fixed refcount problem in instance deallocation that only occurred
   when Py_REF_DEBUG was defined and Py_TRACE_REFS was not.
-
-- In the garbage collector: No longer sets an object's type slot to
-  NULL.  Fix bug in collection of tuples.  
 
 - On Windows, getpythonregpath is now protected against null data in
   registry key.
