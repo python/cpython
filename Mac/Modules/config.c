@@ -289,6 +289,18 @@ extern void initRes();
 extern void initSnd();
 extern void initWin();
 
+#define HAVE_IMG
+#ifdef HAVE_IMG
+extern void initimgcolormap();
+extern void initimgformat();
+extern void initimggif();
+extern void initimgjpeg();
+extern void initimgppm();
+extern void initimgpgm();
+extern void initimgtiff();
+extern void initimgop();
+#endif
+
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void initmarshal();
@@ -345,6 +357,17 @@ struct {
 	{"Snd", initSnd},
 	{"Win", initWin},
 	{"Res", initRes},
+
+#ifdef HAVE_IMG
+	{"imgcolormap",	initimgcolormap},
+	{"imgformat",	initimgformat},
+	{"imggif",	initimggif},
+	{"imgjpeg",	initimgjpeg},
+	{"imgppm",	initimgppm},
+	{"imgpgm",	initimgpgm},
+	{"imgtiff",	initimgtiff},
+	{"imgop",	initimgop},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
