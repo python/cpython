@@ -33,7 +33,7 @@ The module defines the following functions:
   the return value of this function is the integer return value of the
   C \cfunction{fcntl()} call.  When the argument is a string it
   represents a binary structure, e.g.\ created by
-  \function{struct.pack()}. The binary data is copied to a buffer
+  \function{\refmodule{struct}.pack()}. The binary data is copied to a buffer
   whose address is passed to the C \cfunction{fcntl()} call.  The
   return value after a successful call is the contents of the buffer,
   converted to a string object.  The length of the returned string
@@ -72,10 +72,10 @@ The module defines the following functions:
   If \var{mutate_flag} is true, then the buffer is (in effect) passed
   to the underlying \function{ioctl()} system call, the latter's
   return code is passed back to the calling Python, and the buffer's
-  new contents reflect the action of the \function{ioctl}.  This is a
+  new contents reflect the action of the \function{ioctl()}.  This is a
   slight simplification, because if the supplied buffer is less than
   1024 bytes long it is first copied into a static buffer 1024 bytes
-  long which is then passed to \function{ioctl} and copied back into
+  long which is then passed to \function{ioctl()} and copied back into
   the supplied buffer.
   
   If \var{mutate_flag} is not supplied, then in 2.3 it defaults to
@@ -167,9 +167,9 @@ system dependent --- therefore using the \function{flock()} call may be
 better.
 
 \begin{seealso}
-  \seemodule{os}{The \function{os.open} function supports locking flags
-                 and is available on a wider variety of platforms than 
-                 the \function{fcntl.lockf} and \function{fcntl.flock}
+  \seemodule{os}{The \function{os.open()} function supports locking flags
+                 and is available on a wider variety of platforms than
+                 the \function{lockf()} and \function{flock()}
                  functions, providing a more platform-independent file
                  locking facility.}
 \end{seealso}
