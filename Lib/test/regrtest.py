@@ -220,6 +220,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     for test in tests:
         if not quiet:
             print test
+            sys.stdout.flush()
         ok = runtest(test, generate, verbose, quiet, testdir)
         if ok > 0:
             good.append(test)
@@ -364,17 +365,21 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
             print "test", test, "skipped --", msg
+            sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
         raise
     except test_support.TestFailed, msg:
         print "test", test, "failed --", msg
+        sys.stdout.flush()
         return 0
     except:
         type, value = sys.exc_info()[:2]
         print "test", test, "crashed --", str(type) + ":", value
+        sys.stdout.flush()
         if verbose:
             traceback.print_exc(file=sys.stdout)
+            sys.stdout.flush()
         return 0
     else:
         if not cfp:
@@ -404,7 +409,9 @@ def runtest(test, generate, verbose, quiet, testdir = None):
         if output == expected:
             return 1
         print "test", test, "produced unexpected output:"
+        sys.stdout.flush()
         reportdiff(expected, output)
+        sys.stdout.flush()
         return 0
 
 def reportdiff(expected, output):
