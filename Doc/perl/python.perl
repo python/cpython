@@ -20,7 +20,7 @@ sub next_argument{
 }
 
 sub next_optional_argument{
-    my($param,$rx) = ('', "^\\s*(\\[([^]]*)\\])?");
+    my($param, $rx) = ('', "^\\s*(\\[([^]]*)\\])?");
     s/$rx/$param=$2;''/eo;
     return $param;
 }
@@ -150,7 +150,7 @@ sub do_cmd_hackscore{
     return '_' . $_;
 }
 
-sub use_wrappers{
+sub use_wrappers($$$){
     local($_,$before,$after) = @_;
     my $stuff = next_argument();
     return $before . $stuff . $after . $_;
@@ -297,7 +297,7 @@ sub do_cmd_newsgroup{
 sub do_cmd_envvar{
     local($_) = @_;
     my $envvar = next_argument();
-    my($name,$aname,$ahref) = new_link_info();
+    my($name, $aname, $ahref) = new_link_info();
     # The <tt> here is really to keep buildindex.py from making
     # the variable name case-insensitive.
     add_index_entry("environment variables!$envvar@<tt>$envvar</tt>",
@@ -395,7 +395,7 @@ sub do_cmd_deprecated{
             . $_);
 }
 
-sub versionnote{
+sub versionnote($$){
     # one or two parameters:  \versionnote[explanation]{version}
     my $type = @_[0];
     local $_ = @_[1];
@@ -409,11 +409,11 @@ sub versionnote{
 }
 
 sub do_cmd_versionadded{
-    return versionnote('New', @_);
+    return versionnote('New', @_[0]);
 }
 
 sub do_cmd_versionchanged{
-    return versionnote('Changed', @_);
+    return versionnote('Changed', @_[0]);
 }
 
 #
@@ -441,7 +441,7 @@ sub do_cmd_ignorePlatformAnnotation{
 
 $INDEX_SUBITEM = "";
 
-sub get_indexsubitem{
+sub get_indexsubitem(){
     return $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
 }
 
@@ -487,27 +487,27 @@ print INTLABELS "1;		# hack in case there are no entries\n\n";
 #
 $IDXFILE_FIELD_SEP = "\1";
 
-sub write_idxfile{
-    my ($ahref, $str) = @_;
+sub write_idxfile($$){
+    my($ahref, $str) = @_;
     print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
 }
 
 
-sub gen_link{
-    my($node,$target) = @_;
+sub gen_link($$){
+    my($node, $target) = @_;
     print INTLABELS "\$internal_labels{\"$target\"} = \"$URL/$node\";\n";
     return "<a href=\"$node#$target\">";
 }
 
-sub add_index_entry{
+sub add_index_entry($$){
     # add an entry to the index structures; ignore the return value
-    my($str,$ahref) = @_;
+    my($str, $ahref) = @_;
     $str = gen_index_id($str, '');
     $index{$str} .= $ahref;
     write_idxfile($ahref, $str);
 }
 
-sub new_link_info{
+sub new_link_info(){
     my $name = "l2h-" . ++$globals{'max_id'};
     my $aname = "<a name=\"$name\">";
     my $ahref = gen_link($CURRENT_FILE, $name);
@@ -515,7 +515,7 @@ sub new_link_info{
 }
 
 $IndexMacroPattern = '';
-sub define_indexing_macro{
+sub define_indexing_macro(@){
     my $count = @_;
     my $i = 0;
     for (; $i < $count; ++$i) {
@@ -535,11 +535,11 @@ sub define_indexing_macro{
 }
 
 $DEBUG_INDEXING = 0;
-sub process_index_macros{
+sub process_index_macros($$){
     local($_) = @_;
     my $cmdname = @_[1];	# This is what triggered us in the first place;
 				# we know it's real, so just process it.
-    my($name,$aname,$ahref) = new_link_info();
+    my($name, $aname, $ahref) = new_link_info();
     my $cmd = "idx_cmd_$cmdname";
     print "\nIndexing: \\$cmdname"
       if $DEBUG_INDEXING;
@@ -564,20 +564,20 @@ sub process_index_macros{
 }
 
 define_indexing_macro('index');
-sub idx_cmd_index{
+sub idx_cmd_index($){
     my $str = next_argument();
     add_index_entry("$str", @_[0]);
 }
 
 define_indexing_macro('kwindex');
-sub idx_cmd_kwindex{
+sub idx_cmd_kwindex($){
     my $str = next_argument();
     add_index_entry("<tt>$str</tt>!keyword", @_[0]);
     add_index_entry("keyword!<tt>$str</tt>", @_[0]);
 }
 
 define_indexing_macro('indexii');
-sub idx_cmd_indexii{
+sub idx_cmd_indexii($){
     my $str1 = next_argument();
     my $str2 = next_argument();
     add_index_entry("$str1!$str2", @_[0]);
@@ -585,7 +585,7 @@ sub idx_cmd_indexii{
 }
 
 define_indexing_macro('indexiii');
-sub idx_cmd_indexiii{
+sub idx_cmd_indexiii($){
     my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
@@ -595,7 +595,7 @@ sub idx_cmd_indexiii{
 }
 
 define_indexing_macro('indexiv');
-sub idx_cmd_indexiv{
+sub idx_cmd_indexiv($){
     my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
@@ -607,36 +607,36 @@ sub idx_cmd_indexiv{
 }
 
 define_indexing_macro('ttindex');
-sub idx_cmd_ttindex{
+sub idx_cmd_ttindex($){
     my $str = next_argument();
     my $entry = $str . get_indexsubitem();
     add_index_entry($entry, @_[0]);
 }
 
-sub my_typed_index_helper{
-    my($word,$ahref) = @_;
+sub my_typed_index_helper($$){
+    my($word, $ahref) = @_;
     my $str = next_argument();
     add_index_entry("$str $word", $ahref);
     add_index_entry("$word!$str", $ahref);
 }
 
 define_indexing_macro('stindex', 'opindex', 'exindex', 'obindex');
-sub idx_cmd_stindex{ my_typed_index_helper('statement', @_[0]); }
-sub idx_cmd_opindex{ my_typed_index_helper('operator', @_[0]); }
-sub idx_cmd_exindex{ my_typed_index_helper('exception', @_[0]); }
-sub idx_cmd_obindex{ my_typed_index_helper('object', @_[0]); }
+sub idx_cmd_stindex($){ my_typed_index_helper('statement', @_[0]); }
+sub idx_cmd_opindex($){ my_typed_index_helper('operator', @_[0]); }
+sub idx_cmd_exindex($){ my_typed_index_helper('exception', @_[0]); }
+sub idx_cmd_obindex($){ my_typed_index_helper('object', @_[0]); }
 
 define_indexing_macro('bifuncindex');
-sub idx_cmd_bifuncindex{
+sub idx_cmd_bifuncindex($){
     my $str = next_argument();
     add_index_entry("<tt class=\"function\">$str()</tt> (built-in function)",
                     @_[0]);
 }
 
 
-sub make_mod_index_entry{
-    my($str,$define) = @_;
-    my($name,$aname,$ahref) = new_link_info();
+sub make_mod_index_entry($$){
+    my($str, $define) = @_;
+    my($name, $aname, $ahref) = new_link_info();
     # equivalent of add_index_entry() using $define instead of ''
     $ahref =~ s/\#[-_a-zA-Z0-9]*\"/\"/
       if ($define eq 'DEF');
@@ -657,8 +657,8 @@ sub make_mod_index_entry{
 $THIS_MODULE = '';
 $THIS_CLASS = '';
 
-sub define_module{
-    my($word,$name) = @_;
+sub define_module($$){
+    my($word, $name) = @_;
     my $section_tag = join('', @curr_sec_id);
     if ($word ne "built-in" && $word ne "extension"
 	&& $word ne "standard" && $word ne "") {
@@ -674,7 +674,7 @@ sub define_module{
         "<tt class=\"module\">$name</tt> (${word}module)", 'DEF');
 }
 
-sub my_module_index_helper{
+sub my_module_index_helper($$){
     local($word, $_) = @_;
     my $name = next_argument();
     return define_module($word, $name) . $_;
@@ -685,7 +685,7 @@ sub do_cmd_bimodindex{ return my_module_index_helper('built-in', @_); }
 sub do_cmd_exmodindex{ return my_module_index_helper('extension', @_); }
 sub do_cmd_stmodindex{ return my_module_index_helper('standard', @_); }
 
-sub ref_module_index_helper{
+sub ref_module_index_helper($$){
     my($word, $ahref) = @_;
     my $str = next_argument();
     $word = "$word " if $word;
@@ -700,14 +700,14 @@ sub ref_module_index_helper{
 # these should be adjusted a bit....
 define_indexing_macro('refmodindex', 'refbimodindex',
 		      'refexmodindex', 'refstmodindex');
-sub idx_cmd_refmodindex{ return ref_module_index_helper('', @_); }
-sub idx_cmd_refbimodindex{ return ref_module_index_helper('built-in', @_); }
-sub idx_cmd_refexmodindex{ return ref_module_index_helper('extension', @_); }
-sub idx_cmd_refstmodindex{ return ref_module_index_helper('standard', @_); }
+sub idx_cmd_refmodindex($){ return ref_module_index_helper('', @_); }
+sub idx_cmd_refbimodindex($){ return ref_module_index_helper('built-in', @_); }
+sub idx_cmd_refexmodindex($){ return ref_module_index_helper('extension', @_);}
+sub idx_cmd_refstmodindex($){ return ref_module_index_helper('standard', @_); }
 
 sub do_cmd_nodename{ return do_cmd_label(@_); }
 
-sub init_myformat{
+sub init_myformat(){
     $anchor_invisible_mark = '&nbsp;';
     $anchor_invisible_mark2 = '';
     $anchor_mark = '';
@@ -718,9 +718,9 @@ init_myformat();
 # Create an index entry, but include the string in the target anchor
 # instead of the dummy filler.
 #
-sub make_str_index_entry{
-    my($str) = @_;
-    my($name,$aname,$ahref) = new_link_info();
+sub make_str_index_entry($){
+    my $str = @_[0];
+    my($name, $aname, $ahref) = new_link_info();
     add_index_entry($str, $ahref);
     return "$aname$str</a>";
 }
@@ -819,7 +819,7 @@ sub do_cmd_productioncont{
             . $_);
 }
 
-sub process_grammar_files{
+sub process_grammar_files(){
     my $lang;
     my $filename;
     local($_);
@@ -857,7 +857,7 @@ sub process_grammar_files{
     }
 }
 
-sub strip_grammar_markup{
+sub strip_grammar_markup($){
     local($_) = @_;
     s/\\productioncont/              /g;
     s/\\production(<<\d+>>)(.+)\1/\n\2 ::= /g;
@@ -873,7 +873,7 @@ sub strip_grammar_markup{
 
 $REFCOUNTS_LOADED = 0;
 
-sub load_refcounts{
+sub load_refcounts(){
     $REFCOUNTS_LOADED = 1;
 
     my $myname, $mydir, $myext;
@@ -896,8 +896,8 @@ sub load_refcounts{
     }
 }
 
-sub get_refcount{
-    my ($func, $param) = @_;
+sub get_refcount($$){
+    my($func, $param) = @_;
     load_refcounts()
         unless $REFCOUNTS_LOADED;
     return $REFCOUNTS{"$func:$param"};
@@ -907,8 +907,8 @@ sub get_refcount{
 $TLSTART = '<span class="typelabel">';
 $TLEND   = '</span>';
 
-sub cfuncline_helper{
-    my ($type, $name, $args) = @_;
+sub cfuncline_helper($$$){
+    my($type, $name, $args) = @_;
     my $idx = make_str_index_entry(
         "<tt class=\"cfunction\">$name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
@@ -991,7 +991,7 @@ sub do_env_ctypedesc{
     my $type_name = next_argument();
     $index_name = $type_name
       unless $index_name;
-    my($name,$aname,$ahref) = new_link_info();
+    my($name, $aname, $ahref) = new_link_info();
     add_index_entry("<tt class=\"ctype\">$index_name</tt> (C type)", $ahref);
     return "<dl><dt><b><tt class=\"ctype\">$aname$type_name</a></tt></b>\n<dd>"
            . $_
@@ -1132,7 +1132,7 @@ sub do_env_excdesc{
 sub do_env_fulllineitems{ return do_env_itemize(@_); }
 
 
-sub handle_classlike_descriptor{
+sub handle_classlike_descriptor($$){
     local($_, $what) = @_;
     $THIS_CLASS = next_argument();
     my $arg_list = convert_args(next_argument());
@@ -1290,7 +1290,7 @@ sub do_cmd_memberlineni{
                     'textrm' => '',
                     );
 
-sub fix_font{
+sub fix_font($){
     # do a little magic on a font name to get the right behavior in the first
     # column of the output table
     my $font = @_[0];
@@ -1300,7 +1300,7 @@ sub fix_font{
     return $font;
 }
 
-sub figure_column_alignment{
+sub figure_column_alignment($){
     my $a = @_[0];
     my $mark = substr($a, 0, 1);
     my $r = '';
@@ -1315,9 +1315,9 @@ sub figure_column_alignment{
     return $r;
 }
 
-sub setup_column_alignments{
+sub setup_column_alignments($){
     local($_) = @_;
-    my($s1,$s2,$s3,$s4,$a5) = split(/[|]/,$_);
+    my($s1, $s2, $s3, $s4, $a5) = split(/[|]/,$_);
     my $a1 = figure_column_alignment($s1);
     my $a2 = figure_column_alignment($s2);
     my $a3 = figure_column_alignment($s3);
@@ -1332,9 +1332,9 @@ sub setup_column_alignments{
     return ("<th$a1>", "<th$a2>", "<th$a3>", "<th$a4>", "<th$a5>");
 }
 
-sub get_table_col1_fonts{
+sub get_table_col1_fonts(){
     my $font = $globals{'lineifont'};
-    my ($sfont,$efont) = ('', '');
+    my($sfont, $efont) = ('', '');
     if ($font) {
         $sfont = "<$font>";
         $efont = "</$font>";
@@ -1345,7 +1345,8 @@ sub get_table_col1_fonts{
 
 sub do_env_tableii{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
+    my $arg = next_argument();
+    my($th1, $th2, $th3, $th4, $th5) = setup_column_alignments($arg);
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1377,9 +1378,9 @@ sub do_cmd_lineii{
     my $c1 = next_argument();
     my $c2 = next_argument();
     s/[\s\n]+//;
-    my($sfont,$efont) = get_table_col1_fonts();
+    my($sfont, $efont) = get_table_col1_fonts();
     $c2 = '&nbsp;' if ($c2 eq '');
-    my($c1align,$c2align) = split('\|', $aligns);
+    my($c1align, $c2align) = split('\|', $aligns);
     my $padding = '';
     if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
@@ -1391,7 +1392,8 @@ sub do_cmd_lineii{
 
 sub do_env_tableiii{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
+    my $arg = next_argument();
+    my($th1, $th2, $th3, $th4, $th5) = setup_column_alignments($arg);
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1427,9 +1429,9 @@ sub do_cmd_lineiii{
     my $c2 = next_argument();
     my $c3 = next_argument();
     s/[\s\n]+//;
-    my($sfont,$efont) = get_table_col1_fonts();
+    my($sfont, $efont) = get_table_col1_fonts();
     $c3 = '&nbsp;' if ($c3 eq '');
-    my($c1align,$c2align,$c3align) = split('\|', $aligns);
+    my($c1align, $c2align, $c3align) = split('\|', $aligns);
     my $padding = '';
     if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
@@ -1442,7 +1444,8 @@ sub do_cmd_lineiii{
 
 sub do_env_tableiv{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
+    my $arg = next_argument();
+    my($th1, $th2, $th3, $th4, $th5) = setup_column_alignments($arg);
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1482,9 +1485,9 @@ sub do_cmd_lineiv{
     my $c3 = next_argument();
     my $c4 = next_argument();
     s/[\s\n]+//;
-    my($sfont,$efont) = get_table_col1_fonts();
+    my($sfont, $efont) = get_table_col1_fonts();
     $c4 = '&nbsp;' if ($c4 eq '');
-    my($c1align,$c2align,$c3align,$c4align) = split('\|', $aligns);
+    my($c1align, $c2align, $c3align, $c4align) = split('\|', $aligns);
     my $padding = '';
     if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
@@ -1498,7 +1501,8 @@ sub do_cmd_lineiv{
 
 sub do_env_tablev{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
+    my $arg = next_argument();
+    my($th1, $th2, $th3, $th4, $th5) = setup_column_alignments($arg);
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1542,9 +1546,9 @@ sub do_cmd_linev{
     my $c4 = next_argument();
     my $c5 = next_argument();
     s/[\s\n]+//;
-    my($sfont,$efont) = get_table_col1_fonts();
+    my($sfont, $efont) = get_table_col1_fonts();
     $c5 = '&nbsp;' if ($c5 eq '');
-    my($c1align,$c2align,$c3align,$c4align,$c5align) = split('\|', $aligns);
+    my($c1align, $c2align, $c3align, $c4align, $c5align) = split('\|',$aligns);
     my $padding = '';
     if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
@@ -1576,7 +1580,7 @@ sub do_cmd_linev{
 # $TITLE_PAGE_GRAPHIC_HEIGHT = 150;
 # $TITLE_PAGE_GRAPHIC_ON_RIGHT = 0;
 
-sub make_my_titlepage() {
+sub make_my_titlepage(){
     my $the_title = "";
     if ($t_title) {
 	$the_title .= "\n<h1>$t_title</h1>";
@@ -1629,7 +1633,7 @@ sub make_my_titlepage() {
     return $the_title;
 }
 
-sub make_my_titlegraphic() {
+sub make_my_titlegraphic(){
     my $filename = make_icon_filename($TITLE_PAGE_GRAPHIC);
     my $graphic = "<td class=\"titlegraphic\"";
     $graphic .= " width=\"$TITLE_PAGE_GRAPHIC_COLWIDTH\""
@@ -1643,7 +1647,7 @@ sub make_my_titlegraphic() {
     return $graphic;
 }
 
-sub do_cmd_maketitle {
+sub do_cmd_maketitle{
     local($_) = @_;
     my $the_title = "\n<div class=\"titlepage\">";
     if ($TITLE_PAGE_GRAPHIC) {
@@ -1692,7 +1696,7 @@ sub get_chapter_id(){
 %ModuleSynopses = ();
 
 sub get_synopsis_table($){
-    my($chap) = @_;
+    my $chap = @_[0];
     my $key;
     foreach $key (keys %ModuleSynopses) {
 	if ($key eq $chap) {
@@ -1747,7 +1751,7 @@ sub do_cmd_localmoduletable{
     return "<tex2html-localmoduletable><$chap>\\tableofchildlinks[off]" . $_;
 }
 
-sub process_all_localmoduletables{
+sub process_all_localmoduletables(){
     my $key;
     my $st, $file;
     foreach $key (keys %ModuleSynopses) {
@@ -1762,7 +1766,7 @@ sub process_all_localmoduletables{
     }
 }
 
-sub process_localmoduletables_in_file{
+sub process_localmoduletables_in_file($){
     my $file = @_[0];
     open(MYFILE, "<$file");
     local($_);
@@ -1780,7 +1784,7 @@ sub process_localmoduletables_in_file{
     print MYFILE $_;
     close(MYFILE);
 }
-sub process_python_state{
+sub process_python_state(){
     process_all_localmoduletables();
     process_grammar_files();
 }
@@ -1831,7 +1835,7 @@ sub strip_html_markup($){
     return $s;
 }
 
-sub handle_rfclike_reference{
+sub handle_rfclike_reference($$$){
     local($_, $what, $format) = @_;
     my $rfcnum = next_argument();
     my $title = next_argument();
@@ -1905,7 +1909,7 @@ sub do_env_definitions{
 sub do_cmd_term{
     local($_) = @_;
     my $term = next_argument();
-    my($name,$aname,$ahref) = new_link_info();
+    my($name, $aname, $ahref) = new_link_info();
     # could easily add an index entry here...
     return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
 }
@@ -1931,7 +1935,7 @@ _RAW_ARG_DEFERRED_CMDS_
 $alltt_start = '<div class="verbatim"><pre>';
 $alltt_end = '</pre></div>';
 
-sub do_env_alltt {
+sub do_env_alltt{
     local ($_) = @_;
     local($closures,$reopens,@open_block_tags);
 
