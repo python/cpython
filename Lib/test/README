@@ -145,6 +145,10 @@ provides the following useful objects:
     * TestFailed - raise this exception when your regression test detects a
       failure.
 
+    * TestSkipped - raise this if the test could not be run because the
+      platform doesn't offer all the required facilities (like large
+      file support), even if all the required modules are available.
+
     * findfile(file) - you can call this function to locate a file somewhere
       along sys.path or in the Lib/test tree - see test_linuxaudiodev.py for
       an example of its use.
