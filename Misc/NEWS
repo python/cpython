@@ -90,6 +90,9 @@ Library
 Tools/Demos
 -----------
 
+- diff.py is a new script for print file diffs in context, unified, or ndiff
+  formats.  Provides an alternate command line interface to difflib.py.
+
 - texcheck.py is a new script for making a rough validation of Python LaTeX
   files.
 
