@@ -53,7 +53,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
    * We attempt to locate the "Python Home" - if the PYTHONHOME env var
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
-     to try and locate our "landmark" (lib\\string.py) and deduce our home.
+     to try and locate our "landmark" (lib\\os.py) and deduce our home.
      - If we DO have a Python Home: The relevant sub-directories (Lib, 
        plat-win, lib-tk, etc) are based on the Python Home
      - If we DO NOT have a Python Home, the core Python Path is
@@ -110,7 +110,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef LANDMARK
-#define LANDMARK "lib\\string.py"
+#define LANDMARK "lib\\os.py"
 #endif
 
 static char prefix[MAXPATHLEN+1];

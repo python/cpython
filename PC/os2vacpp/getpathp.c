@@ -68,14 +68,14 @@ extern BOOL PyWin_IsWin32s();
  *
  * Otherwise, if there is a PYTHONPATH environment variable, we return that.
  *
- * Otherwise we try to find $progpath/lib/string.py, and if found, then
+ * Otherwise we try to find $progpath/lib/os.py, and if found, then
  * root is $progpath/lib, and we return Python path as compiled PYTHONPATH
  * with all "./lib" replaced by $root (as above).
  *
  */
 
 #ifndef LANDMARK
-#define LANDMARK "lib\\string.py"
+#define LANDMARK "lib\\os.py"
 #endif
 
 static char prefix[MAXPATHLEN+1];

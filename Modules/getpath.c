@@ -87,7 +87,7 @@ PERFORMANCE OF THIS SOFTWARE.
  * Modules/Setup.  If the landmark is found, we're done.
  *
  * For the remaining steps, the prefix landmark will always be
- * lib/python$VERSION/string.py and the exec_prefix will always be
+ * lib/python$VERSION/os.py and the exec_prefix will always be
  * lib/python$VERSION/lib-dynload, where $VERSION is Python's version
  * number as supplied by the Makefile.  Note that this means that no more
  * build directory checking is performed; if the first step did not find
@@ -150,7 +150,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifndef LANDMARK
-#define LANDMARK "string.py"
+#define LANDMARK "os.py"
 #endif
 
 static char prefix[MAXPATHLEN+1];
@@ -265,6 +265,18 @@ search_for_prefix(argv0_path, home)
 	int n;
 	char *vpath;
 
+	/* If PYTHONHOME is set, we believe it unconditionally */
+	if (home) {
+		char *delim;
+		strcpy(prefix, home);
+		delim = strchr(prefix, DELIM);
+		if (delim)
+			*delim = '\0';
+		joinpath(prefix, lib_python);
+		joinpath(prefix, LANDMARK);
+		return 1;
+	}
+
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(prefix, argv0_path);
 	joinpath(prefix, "Modules/Setup");
@@ -288,19 +300,6 @@ search_for_prefix(argv0_path, home)
 		joinpath(prefix, LANDMARK);
 		if (ismodule(prefix))
 			return -1;
-	}
-
-	if (home) {
-		/* Check $PYTHONHOME */
-		char *delim;
-		strcpy(prefix, home);
-		delim = strchr(prefix, DELIM);
-		if (delim)
-			*delim = '\0';
-		joinpath(prefix, lib_python);
-		joinpath(prefix, LANDMARK);
-		if (ismodule(prefix))
-			return 1;
 	}
 
 	/* Search from argv0_path, until root is found */
@@ -334,16 +333,8 @@ search_for_exec_prefix(argv0_path, home)
 {
 	int n;
 
-	/* Check to see if argv[0] is in the build directory */
-	strcpy(exec_prefix, argv0_path);
-	joinpath(exec_prefix, "Modules/Setup");
-	if (isfile(exec_prefix)) {
-		reduce(exec_prefix);
-		return -1;
-	}
-
+	/* If PYTHONHOME is set, we believe it unconditionally */
 	if (home) {
-		/* Check $PYTHONHOME */
 		char *delim;
 		delim = strchr(home, DELIM);
 		if (delim)
@@ -352,8 +343,15 @@ search_for_exec_prefix(argv0_path, home)
 			strcpy(exec_prefix, home);
 		joinpath(exec_prefix, lib_python);
 		joinpath(exec_prefix, "lib-dynload");
-		if (isdir(exec_prefix))
 			return 1;
+	}
+
+	/* Check to see if argv[0] is in the build directory */
+	strcpy(exec_prefix, argv0_path);
+	joinpath(exec_prefix, "Modules/Setup");
+	if (isfile(exec_prefix)) {
+		reduce(exec_prefix);
+		return -1;
 	}
 
 	/* Search from argv0_path, until root is found */
