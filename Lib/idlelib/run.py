@@ -111,7 +111,8 @@ def manage_socket(address):
 def print_exception():
     flush_stdout()
     efile = sys.stderr
-    typ, val, tb = sys.exc_info()
+    typ, val, tb = excinfo = sys.exc_info()
+    sys.last_type, sys.last_value, sys.last_traceback = excinfo
     tbe = traceback.extract_tb(tb)
     print >>efile, '\nTraceback (most recent call last):'
     exclude = ("run.py", "rpc.py", "threading.py", "Queue.py",
