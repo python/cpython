@@ -75,6 +75,11 @@ sys_displayhook(PyObject *self, PyObject *args)
 	PyObject *modules = interp->modules;
 	PyObject *builtins = PyDict_GetItemString(modules, "__builtin__");
 
+	if (builtins == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "lost __builtin__");
+		return NULL;
+	}
+
 	/* parse arguments */
 	if (!PyArg_ParseTuple(args, "O:displayhook", &o))
 		return NULL;
