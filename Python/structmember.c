@@ -130,5 +130,5 @@ setmember(addr, mlist, name, v)
 	}
 	
 	err_setstr(NameError, name);
-	return NULL;
+	return -1;
 }
