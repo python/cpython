@@ -1555,7 +1555,7 @@ def inherits():
             self._rev = self.__class__("".join(L))
             return self._rev
     s = madstring("abcdefghijklmnopqrstuvwxyz")
-    #XXX verify(s == "abcdefghijklmnopqrstuvwxyz")
+    verify(s == "abcdefghijklmnopqrstuvwxyz")
     verify(s.rev() == madstring("zyxwvutsrqponmlkjihgfedcba"))
     verify(s.rev().rev() == madstring("abcdefghijklmnopqrstuvwxyz"))
     for i in range(256):
@@ -1569,12 +1569,12 @@ def inherits():
 
     base = "\x00" * 5
     s = madstring(base)
-    #XXX verify(s == base)
+    verify(s == base)
     verify(str(s) == base)
     verify(str(s).__class__ is str)
     verify(hash(s) == hash(base))
-    #XXX verify({s: 1}[base] == 1)
-    #XXX verify({base: 1}[s] == 1)
+    verify({s: 1}[base] == 1)
+    verify({base: 1}[s] == 1)
     verify((s + "").__class__ is str)
     verify(s + "" == base)
     verify(("" + s).__class__ is str)
@@ -1613,14 +1613,14 @@ def inherits():
     verify(s.lower() == base)
 
     s = madstring("x y")
-    #XXX verify(s == "x y")
+    verify(s == "x y")
     verify(intern(s).__class__ is str)
     verify(intern(s) is intern("x y"))
     verify(intern(s) == "x y")
 
     i = intern("y x")
     s = madstring("y x")
-    #XXX verify(s == i)
+    verify(s == i)
     verify(intern(s).__class__ is str)
     verify(intern(s) is i)
 
