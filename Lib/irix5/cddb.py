@@ -14,7 +14,7 @@
 # You can then use c.write() to write out the changed values to the
 # .cdplayerrc file.
 
-import string, posix
+import string, posix, os
 
 _cddbrc = '.cddb'
 _DB_ID_NTRACKS = 5
@@ -56,15 +56,87 @@ def tochash(toc):
 	
 class Cddb:
 	def __init__(self, tracklist):
-		if posix.environ.has_key('CDDB_PATH'):
-			path = posix.environ['CDDB_PATH']
+		if os.environ.has_key('CDDB_PATH'):
+			path = os.environ['CDDB_PATH']
 			cddb_path = string.splitfields(path, ',')
 		else:
-			home = posix.environ['HOME']
+			home = os.environ['HOME']
 			cddb_path = [home + '/' + _cddbrc]
+
+		self._get_id(tracklist)
+
+		for dir in cddb_path:
+			file = dir + '/' + self.id + '.rdb'
+			try:
+				f = open(file, 'r')
+				self.file = file
+				break
+			except IOError:
+				pass
+		ntracks = string.atoi(self.id[:2], 16)
 		self.artist = ''
 		self.title = ''
+		self.track = [None] + [''] * ntracks
+		if not hasattr(self, 'file'):
+			return
+		import regex
+		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):\t\\(.*\\)')
+		while 1:
+			line = f.readline()
+			if not line:
+				break
+			if reg.match(line) == -1:
+				print 'syntax error in ' + file
+				continue
+			name1 = line[reg.regs[1][0]:reg.regs[1][1]]
+			name2 = line[reg.regs[2][0]:reg.regs[2][1]]
+			value = line[reg.regs[3][0]:reg.regs[3][1]]
+			if name1 == 'album':
+				if name2 == 'artist':
+					self.artist = value
+				elif name2 == 'title':
+					self.title = value
+				elif name2 == 'toc':
+					if not self.toc:
+						self.toc = value
+					if self.toc != value:
+						print 'toc\'s don\'t match'
+			elif name1[:5] == 'track':
+				try:
+					trackno = string.atoi(name1[5:])
+				except strings.atoi_error:
+					print 'syntax error in ' + file
+					continue
+				if trackno > ntracks:
+					print 'track number ' + `trackno` + \
+						  ' in file ' + file + \
+						  ' out of range'
+					continue
+				self.track[trackno] = value
+		f.close()
+		for i in range(2, len(self.track)):
+			track = self.track[i]
+			# if track title starts with `,', use initial part
+			# of previous track's title
+			if track and track[0] == ',':
+				try:
+					off = string.index(self.track[i - 1],
+							   ',')
+				except string.index_error:
+					pass
+				else:
+					self.track[i] = self.track[i-1][:off] \
+							+ track
+
+	def _get_id(self, tracklist):
+		# fill in self.id and self.toc.
+		# if the argument is a string ending in .rdb, the part
+		# upto the suffix is taken as the id.
 		if type(tracklist) == type(''):
+			if tracklist[-4:] == '.rdb':
+				self.id = tracklist[:-4]
+				self.toc = ''
+				return
 			t = []
 			for i in range(2, len(tracklist), 4):
 				t.append((None, \
@@ -72,7 +144,6 @@ class Cddb:
 					   string.atoi(tracklist[i+2:i+4]))))
 			tracklist = t
 		ntracks = len(tracklist)
-		self.track = [None] + [''] * ntracks
 		self.id = _dbid((ntracks >> 4) & 0xF) + _dbid(ntracks & 0xF)
 		if ntracks <= _DB_ID_NTRACKS:
 			nidtracks = ntracks
@@ -95,69 +166,13 @@ class Cddb:
 			start, length = track
 			self.toc = self.toc + string.zfill(length[0], 2) + \
 				  string.zfill(length[1], 2)
-		for dir in cddb_path:
-			file = dir + '/' + self.id + '.rdb'
-			try:
-				f = open(file, 'r')
-				self.file = file
-				break
-			except IOError:
-				pass
-		if not hasattr(self, 'file'):
-			return
-		import regex
-		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):\t\\(.*\\)')
-		while 1:
-			line = f.readline()
-			if not line:
-				break
-			if reg.match(line) == -1:
-				print 'syntax error in ' + file
-				continue
-			name1 = line[reg.regs[1][0]:reg.regs[1][1]]
-			name2 = line[reg.regs[2][0]:reg.regs[2][1]]
-			value = line[reg.regs[3][0]:reg.regs[3][1]]
-			if name1 == 'album':
-				if name2 == 'artist':
-					self.artist = value
-				elif name2 == 'title':
-					self.title = value
-				elif name2 == 'toc':
-					if self.toc != value:
-						print 'toc\'s don\'t match'
-			elif name1[:5] == 'track':
-				try:
-					trackno = string.atoi(name1[5:])
-				except strings.atoi_error:
-					print 'syntax error in ' + file
-					continue
-				if trackno > ntracks:
-					print 'track number ' + `trackno` + \
-						  ' in file ' + file + \
-						  ' out of range'
-					continue
-				self.track[trackno] = value
-		f.close()
-		for i in range(2, len(self.track)):
-			track = self.track[i]
-			# if track title starts with `,', use initial part
-			# of previous track's title
-			if track[0] == ',':
-				try:
-					off = string.index(self.track[i - 1],
-							   ',')
-				except string.index_error:
-					pass
-				else:
-					self.track[i] = self.track[i-1][:off] \
-							+ track
 
 	def write(self):
 		import posixpath
-		if posix.environ.has_key('CDDB_WRITE_DIR'):
-			dir = posix.environ['CDDB_WRITE_DIR']
+		if os.environ.has_key('CDDB_WRITE_DIR'):
+			dir = os.environ['CDDB_WRITE_DIR']
 		else:
-			dir = posix.environ['HOME'] + '/' + _cddbrc
+			dir = os.environ['HOME'] + '/' + _cddbrc
 		file = dir + '/' + self.id + '.rdb'
 		if posixpath.exists(file):
 			# make backup copy
