@@ -36,6 +36,7 @@ typedef struct {
 	int ob_isCompressor;	/* Compressor or Decompressor */
 	CL_CompressorHdl ob_compressorHdl;
 	long ob_dataMaxSize;
+	long ob_frameSize;
 	object *ob_callbackFunc;
 	object *ob_callbackID;
 	object *ob_data; 
@@ -59,25 +60,32 @@ cl_ErrorHandler(long errnum, const char *fmt, ...)
 {
 	va_list ap;
 	char errbuf[BUFSIZ];	/* hopefully big enough */
+	char *p;
 
+	if (err_occurred())	/* don't change existing error */
+		return;
 	error_handler_called = 1;
 	va_start(ap, fmt);
 	vsprintf(errbuf, fmt, ap);
 	va_end(ap);
+	p = &errbuf[strlen(errbuf) - 1]; /* swat the line feed */
+	if (*p == '\n')
+		*p = 0;
 	err_setstr(ClError, errbuf);
 }
 
 static object *
-cl_CloseCompressor(self, args)
+doClose(self, args, close_func)
 	clobject *self;
 	object *args;
+	long (*close_func) PROTO((CL_CompressorHdl));
 {
 	CheckCompressor(self);
 
 	if (!getnoarg(args))
 		return NULL;
 
-	if (clCloseCompressor(self->ob_compressorHdl) == FAILURE) {
+	if ((*close_func)(self->ob_compressorHdl) == FAILURE) {
 		if (!error_handler_called)
 			err_setstr(ClError, "CloseCompressor failed");
 		return NULL;
@@ -90,29 +98,23 @@ cl_CloseCompressor(self, args)
 }
 
 static object *
-cl_CloseDecompressor(self, args)
+clm_CloseCompressor(self, args)
 	clobject *self;
 	object *args;
 {
-	CheckCompressor(self);
-
-	if (!getnoarg(args))
-		return NULL;
-
-	if (clCloseDecompressor(self->ob_compressorHdl) == FAILURE) {
-		if (!error_handler_called)
-			err_setstr(ClError, "CloseDecompressor failed");
-		return NULL;
-	}
-
-	self->ob_compressorHdl = NULL;
-
-	INCREF(None);
-	return None;
+	return doClose(self, args, clCloseCompressor);
 }
 
 static object *
-cl_Compress(self, args)
+clm_CloseDecompressor(self, args)
+	clobject *self;
+	object *args;
+{
+	return doClose(self, args, clCloseDecompressor);
+}
+
+static object *
+clm_Compress(self, args)
 	clobject *self;
 	object *args;
 {
@@ -124,31 +126,36 @@ cl_Compress(self, args)
 	if (!getargs(args, "(ii)", &frameIndex, &numberOfFrames))
 		return NULL;
 
-	data = newsizedstringobject(NULL,
-				    numberOfFrames * self->ob_dataMaxSize);
+	dataSize = self->ob_dataMaxSize;
+	data = newsizedstringobject(NULL, dataSize);
 	if (data == NULL)
 		return NULL;
-
-	dataSize = numberOfFrames * self->ob_dataMaxSize;
 
 	error_handler_called = 0;
 	if (clCompress(self->ob_compressorHdl, frameIndex, numberOfFrames,
 		       &dataSize, (void *) getstringvalue(data)) == FAILURE) {
 		DECREF(data);
-		if (!error_handler_called)
+		if (!error_handler_called && !err_occurred())
 			err_setstr(ClError, "compress failed");
 		return NULL;
 	}
 
-	if (dataSize < numberOfFrames * self->ob_dataMaxSize)
+	if (dataSize < self->ob_dataMaxSize)
 		if (resizestring(&data, dataSize))
 			return NULL;
+
+	if (dataSize > self->ob_dataMaxSize) {
+		/* we didn't get all data */
+		DECREF(data);
+		err_setstr(ClError, "buffer too small for compressed image");
+		return NULL;
+	}
 
 	return data;
 }	
 
 static object *
-cl_Decompress(self, args)
+clm_Decompress(self, args)
 	clobject *self;
 	object *args;
 {
@@ -161,7 +168,7 @@ cl_Decompress(self, args)
 		return NULL;
 
 	data = newsizedstringobject(NULL,
-				    numberOfFrames * self->ob_dataMaxSize);
+				    numberOfFrames * self->ob_frameSize);
 	if (data == NULL)
 		return NULL;
 
@@ -169,7 +176,7 @@ cl_Decompress(self, args)
 	if (clDecompress(self->ob_compressorHdl, frameIndex, numberOfFrames,
 			 (void *) getstringvalue(data)) == FAILURE) {
 		DECREF(data);
-		if (!error_handler_called)
+		if (!error_handler_called && !err_occurred())
 			err_setstr(ClError, "decompress failed");
 		return NULL;
 	}
@@ -178,7 +185,7 @@ cl_Decompress(self, args)
 }	
 
 static object *
-cl_GetCompressorInfo(self, args)
+clm_GetCompressorInfo(self, args)
 	clobject *self;
 	object *args;
 {
@@ -202,7 +209,7 @@ cl_GetCompressorInfo(self, args)
 }
 
 static object *
-cl_GetDefault(self, args)
+clm_GetDefault(self, args)
 	clobject *self;
 	object *args;
 {
@@ -222,7 +229,7 @@ cl_GetDefault(self, args)
 }
 
 static object *
-cl_GetMinMax(self, args)
+clm_GetMinMax(self, args)
 	clobject *self;
 	object *args;
 {
@@ -242,7 +249,7 @@ cl_GetMinMax(self, args)
 }
 
 static object *
-cl_GetName(self, args)
+clm_GetName(self, args)
 	clobject *self;
 	object *args;
 {
@@ -317,21 +324,21 @@ doParams(self, args, func, modified)
 }
 
 static object *
-cl_GetParams(self, args)
+clm_GetParams(self, args)
 	object *self, *args;
 {
 	return doParams(self, args, clGetParams, 1);
 }
 
 static object *
-cl_SetParams(self, args)
+clm_SetParams(self, args)
 	object *self, *args;
 {
 	return doParams(self, args, clSetParams, 0);
 }
 
 static object *
-cl_QueryParams(self, args)
+clm_QueryParams(self, args)
 	clobject *self;
 	object *args;
 {
@@ -380,27 +387,27 @@ cl_QueryParams(self, args)
 }
 
 static struct methodlist compressor_methods[] = {
-	{"CloseCompressor",	cl_CloseCompressor},
-	{"Compress",		cl_Compress},
-	{"GetCompressorInfo",	cl_GetCompressorInfo},
-	{"GetDefault",		cl_GetDefault},
-	{"GetMinMax",		cl_GetMinMax},
-	{"GetName",		cl_GetName},
-	{"GetParams",		cl_GetParams},
-	{"QueryParams",		cl_QueryParams},
-	{"SetParams",		cl_SetParams},
+	{"CloseCompressor",	clm_CloseCompressor},
+	{"Compress",		clm_Compress},
+	{"GetCompressorInfo",	clm_GetCompressorInfo},
+	{"GetDefault",		clm_GetDefault},
+	{"GetMinMax",		clm_GetMinMax},
+	{"GetName",		clm_GetName},
+	{"GetParams",		clm_GetParams},
+	{"QueryParams",		clm_QueryParams},
+	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
 };
 
 static struct methodlist decompressor_methods[] = {
-	{"CloseDecompressor",	cl_CloseDecompressor},
-	{"Decompress",		cl_Decompress},
-	{"GetDefault",		cl_GetDefault},
-	{"GetMinMax",		cl_GetMinMax},
-	{"GetName",		cl_GetName},
-	{"GetParams",		cl_GetParams},
-	{"QueryParams",		cl_QueryParams},
-	{"SetParams",		cl_SetParams},
+	{"CloseDecompressor",	clm_CloseDecompressor},
+	{"Decompress",		clm_Decompress},
+	{"GetDefault",		clm_GetDefault},
+	{"GetMinMax",		clm_GetMinMax},
+	{"GetName",		clm_GetName},
+	{"GetParams",		clm_GetParams},
+	{"QueryParams",		clm_QueryParams},
+	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -460,19 +467,10 @@ GetFrame(callbackID, frameIndex, numberOfFrames, data)
 	clobject *self = (clobject *) callbackID;
 	object *result;
 
-	args = newtupleobject(3);
+	args = mkvalue("(Oii)", self->ob_callbackID, frameIndex,
+		       numberOfFrames);
 	if (args == NULL)
 		return FAILURE;
-
-	XINCREF(self->ob_callbackID);
-	settupleitem(args, 0, self->ob_callbackID);
-	settupleitem(args, 1, newintobject(frameIndex));
-	settupleitem(args, 2, newintobject(numberOfFrames));
-
-	if (err_occurred()) {
-		XDECREF(self->ob_callbackID);
-		return FAILURE;
-	}
 
 	result = call_object(self->ob_callbackFunc, args);
 	DECREF(args);
@@ -503,19 +501,10 @@ GetData(callbackID, frameIndex, numberOfFrames, dataSize, data)
 	object *args, *result;
 	clobject *self = (clobject *) callbackID;
 
-	args = newtupleobject(3);
+	args = mkvalue("(Oii)", self->ob_callbackID, frameIndex,
+		       numberOfFrames);
 	if (args == NULL)
 		return FAILURE;
-
-	XINCREF(self->ob_callbackID);
-	settupleitem(args, 0, self->ob_callbackID);
-	settupleitem(args, 1, newintobject(frameIndex));
-	settupleitem(args, 2, newintobject(numberOfFrames));
-
-	if (err_occurred()) {
-		XDECREF(self->ob_callbackID);
-		return FAILURE;
-	}
 
 	result = call_object(self->ob_callbackFunc, args);
 	DECREF(args);
@@ -587,6 +576,7 @@ cl_OpenCompressor(self, args)
 	INCREF(new->ob_callbackID);
 	new->ob_data = NULL;
 	new->ob_dataMaxSize = compressionFormat.dataMaxSize;
+	new->ob_frameSize = compressionFormat.frameSize;
 
 	return new;
 }
@@ -645,6 +635,7 @@ cl_OpenDecompressor(self, args)
 	XINCREF(new->ob_callbackID);
 	new->ob_data = NULL;
 	new->ob_dataMaxSize = compressionFormat.dataMaxSize;
+	new->ob_frameSize = compressionFormat.frameSize;
 
 	return new;
 }
@@ -669,10 +660,56 @@ cl_AddParam(self, args)
 	return newintobject(paramID);
 }
 
+static object *
+cl_QueryParams(self, args)
+	object *self, *args;
+{
+	long handle, *PVbuffer, bufferlength;
+	object *list;
+	int i;
+
+	if (!getargs(args, "i", &handle))
+		return NULL;
+
+	error_handler_called = 0;
+	bufferlength = clQueryParams((CL_CompressorHdl) handle, 0, 0);
+	if (error_handler_called)
+		return NULL;
+
+	PVbuffer = NEW(long, bufferlength);
+	if (PVbuffer == NULL)
+		return err_nomem();
+
+	bufferlength = clQueryParams((CL_CompressorHdl) handle, PVbuffer,
+				     bufferlength);
+	if (error_handler_called) {
+		DEL(PVbuffer);
+		return NULL;
+	}
+
+	list = newlistobject(bufferlength);
+	if (list == NULL) {
+		DEL(PVbuffer);
+		return NULL;
+	}
+
+	for (i = 0; i < bufferlength; i++) {
+		if (i & 1)
+			setlistitem(list, i, newintobject(PVbuffer[i]));
+		else
+			setlistitem(list, i, newstringobject((char *) PVbuffer[i]));
+	}
+
+	DEL(PVbuffer);
+
+	return list;
+}
+
 static struct methodlist cl_methods[] = {
 	{"AddParam",		cl_AddParam},
 	{"OpenCompressor",	cl_OpenCompressor},
 	{"OpenDecompressor",	cl_OpenDecompressor},
+	{"QueryParams",		cl_QueryParams},
 	{NULL,			NULL} /* Sentinel */
 };
 
