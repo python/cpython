@@ -1795,6 +1795,8 @@ eval_code2(co, globals, locals,
 					   Python main loop.  Don't do
 					   this for 'finally'. */
 					if (b->b_type == SETUP_EXCEPT) {
+						PyErr_NormalizeException(
+							&exc, &val, &tb);
 						set_exc_info(tstate,
 							     exc, val, tb);
 					}
@@ -1874,8 +1876,6 @@ set_exc_info(tstate, type, value, tb)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
-
-	PyErr_NormalizeException(&type, &value, &tb);
 
 	frame = tstate->frame;
 	if (frame->f_exc_type == NULL) {
