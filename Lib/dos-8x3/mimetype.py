@@ -48,49 +48,49 @@ def guess_type(url):
 
     """
     if not inited:
-	init()
+        init()
     base, ext = posixpath.splitext(url)
     while suffix_map.has_key(ext):
-	base, ext = posixpath.splitext(base + suffix_map[ext])
+        base, ext = posixpath.splitext(base + suffix_map[ext])
     if encodings_map.has_key(ext):
-	encoding = encodings_map[ext]
-	base, ext = posixpath.splitext(base)
+        encoding = encodings_map[ext]
+        base, ext = posixpath.splitext(base)
     else:
-	encoding = None
+        encoding = None
     if types_map.has_key(ext):
-	return types_map[ext], encoding
+        return types_map[ext], encoding
     elif types_map.has_key(string.lower(ext)):
-	return types_map[string.lower(ext)], encoding
+        return types_map[string.lower(ext)], encoding
     else:
-	return None, encoding
+        return None, encoding
 
 def init(files=None):
     global inited
     for file in files or knownfiles:
-	s = read_mime_types(file)
-	if s:
-	    for key, value in s.items():
-		types_map[key] = value
+        s = read_mime_types(file)
+        if s:
+            for key, value in s.items():
+                types_map[key] = value
     inited = 1
 
 def read_mime_types(file):
     try:
-	f = open(file)
+        f = open(file)
     except IOError:
-	return None
+        return None
     map = {}
     while 1:
-	line = f.readline()
-	if not line: break
-	words = string.split(line)
-	for i in range(len(words)):
-	    if words[i][0] == '#':
-		del words[i:]
-		break
-	if not words: continue
-	type, suffixes = words[0], words[1:]
-	for suff in suffixes:
-	    map['.'+suff] = type
+        line = f.readline()
+        if not line: break
+        words = string.split(line)
+        for i in range(len(words)):
+            if words[i][0] == '#':
+                del words[i:]
+                break
+        if not words: continue
+        type, suffixes = words[0], words[1:]
+        for suff in suffixes:
+            map['.'+suff] = type
     f.close()
     return map
 

@@ -161,6 +161,11 @@ if a <> [-2,-1,0,1,2]: raise TestFailed, 'list sort'
 def revcmp(a, b): return cmp(b, a)
 a.sort(revcmp)
 if a <> [2,1,0,-1,-2]: raise TestFailed, 'list sort with cmp func'
+# The following dumps core in unpatched Python 1.5:
+def myComparison(x,y):
+    return cmp(x%3, y%7)
+z = range(12)
+z.sort(myComparison)
 
 print '6.6 Mappings == Dictionaries'
 d = {}

@@ -80,7 +80,7 @@ _state = None
 def input(files=(), inplace=0, backup=""):
     global _state
     if _state and _state._file:
-	raise RuntimeError, "input() already active"
+        raise RuntimeError, "input() already active"
     _state = FileInput(files, inplace, backup)
     return _state
 
@@ -89,151 +89,151 @@ def close():
     state = _state
     _state = None
     if state:
-	state.close()
+        state.close()
 
 def nextfile():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.nextfile()
 
 def filename():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.filename()
 
 def lineno():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.lineno()
 
 def filelineno():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.filelineno()
 
 def isfirstline():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.isfirstline()
 
 def isstdin():
     if not _state:
-	raise RuntimeError, "no active input()"
+        raise RuntimeError, "no active input()"
     return _state.isstdin()
 
 class FileInput:
 
     def __init__(self, files=(), inplace=0, backup=""):
-	if type(files) == type(''):
-	    files = (files,)
-	else:
-	    files = tuple(files)
-	    if not files:
-		files = tuple(sys.argv[1:])
-		if not files:
-		    files = ('-',)
-	self._files = files
-	self._inplace = inplace
-	self._backup = backup
-	self._savestdout = None
-	self._output = None
-	self._filename = None
-	self._lineno = 0
-	self._filelineno = 0
-	self._file = None
-	self._isstdin = 0
+        if type(files) == type(''):
+            files = (files,)
+        else:
+            files = tuple(files)
+            if not files:
+                files = tuple(sys.argv[1:])
+                if not files:
+                    files = ('-',)
+        self._files = files
+        self._inplace = inplace
+        self._backup = backup
+        self._savestdout = None
+        self._output = None
+        self._filename = None
+        self._lineno = 0
+        self._filelineno = 0
+        self._file = None
+        self._isstdin = 0
 
     def __del__(self):
-	self.close()
+        self.close()
 
     def close(self):
-	self.nextfile()
-	self._files = ()
+        self.nextfile()
+        self._files = ()
 
     def __getitem__(self, i):
-	if i != self._lineno:
-	    raise RuntimeError, "accessing lines out of order"
-	line = self.readline()
-	if not line:
-	    raise IndexError, "end of input reached"
-	return line
+        if i != self._lineno:
+            raise RuntimeError, "accessing lines out of order"
+        line = self.readline()
+        if not line:
+            raise IndexError, "end of input reached"
+        return line
 
     def nextfile(self):
-	savestdout = self._savestdout
-	self._savestdout = 0
-	if savestdout:
-	    sys.stdout = savestdout
+        savestdout = self._savestdout
+        self._savestdout = 0
+        if savestdout:
+            sys.stdout = savestdout
 
-	output = self._output
-	self._output = 0
-	if output:
-	    output.close()
+        output = self._output
+        self._output = 0
+        if output:
+            output.close()
 
-	file = self._file
-	self._file = 0
-	if file and not self._isstdin:
-	    file.close()
+        file = self._file
+        self._file = 0
+        if file and not self._isstdin:
+            file.close()
 
-	backupfilename = self._backupfilename
-	self._backupfilename = 0
-	if backupfilename and not self._backup:
-	    try: os.unlink(backupfilename)
-	    except: pass
+        backupfilename = self._backupfilename
+        self._backupfilename = 0
+        if backupfilename and not self._backup:
+            try: os.unlink(backupfilename)
+            except: pass
 
-	self._isstdin = 0
+        self._isstdin = 0
 
     def readline(self):
-	if not self._file:
-	    if not self._files:
-		return ""
-	    self._filename = self._files[0]
-	    self._files = self._files[1:]
-	    self._filelineno = 0
-	    self._file = None
-	    self._isstdin = 0
-	    self._backupfilename = 0
-	    if self._filename == '-':
-		self._filename = '<stdin>'
-		self._file = sys.stdin
-		self._isstdin = 1
-	    else:
-		if self._inplace:
-		    self._backupfilename = (
-			self._filename + (self._backup or ".bak"))
-		    try: os.unlink(self._backupfilename)
-		    except os.error: pass
-		    # The next three lines may raise IOError
-		    os.rename(self._filename, self._backupfilename)
-		    self._file = open(self._backupfilename, "r")
-		    self._output = open(self._filename, "w")
-		    self._savestdout = sys.stdout
-		    sys.stdout = self._output
-		else:
-		    # This may raise IOError
-		    self._file = open(self._filename, "r")
-	line = self._file.readline()
-	if line:
-	    self._lineno = self._lineno + 1
-	    self._filelineno = self._filelineno + 1
-	    return line
-	self.nextfile()
-	# Recursive call
-	return self.readline()
+        if not self._file:
+            if not self._files:
+                return ""
+            self._filename = self._files[0]
+            self._files = self._files[1:]
+            self._filelineno = 0
+            self._file = None
+            self._isstdin = 0
+            self._backupfilename = 0
+            if self._filename == '-':
+                self._filename = '<stdin>'
+                self._file = sys.stdin
+                self._isstdin = 1
+            else:
+                if self._inplace:
+                    self._backupfilename = (
+                        self._filename + (self._backup or ".bak"))
+                    try: os.unlink(self._backupfilename)
+                    except os.error: pass
+                    # The next three lines may raise IOError
+                    os.rename(self._filename, self._backupfilename)
+                    self._file = open(self._backupfilename, "r")
+                    self._output = open(self._filename, "w")
+                    self._savestdout = sys.stdout
+                    sys.stdout = self._output
+                else:
+                    # This may raise IOError
+                    self._file = open(self._filename, "r")
+        line = self._file.readline()
+        if line:
+            self._lineno = self._lineno + 1
+            self._filelineno = self._filelineno + 1
+            return line
+        self.nextfile()
+        # Recursive call
+        return self.readline()
 
     def filename(self):
-	return self._filename
+        return self._filename
 
     def lineno(self):
-	return self._lineno
+        return self._lineno
 
     def filelineno(self):
-	return self._filelineno
+        return self._filelineno
 
     def isfirstline(self):
-	return self._filelineno == 1
+        return self._filelineno == 1
 
     def isstdin(self):
-	return self._isstdin
+        return self._isstdin
 
 def _test():
     import getopt
@@ -241,13 +241,13 @@ def _test():
     backup = 0
     opts, args = getopt.getopt(sys.argv[1:], "ib:")
     for o, a in opts:
-	if o == '-i': inplace = 1
-	if o == '-b': backup = a
+        if o == '-i': inplace = 1
+        if o == '-b': backup = a
     for line in input(args, inplace=inplace, backup=backup):
-	if line[-1:] == '\n': line = line[:-1]
-	if line[-1:] == '\r': line = line[:-1]
-	print "%d: %s[%d]%s %s" % (lineno(), filename(), filelineno(),
-				   isfirstline() and "*" or "", line)
+        if line[-1:] == '\n': line = line[:-1]
+        if line[-1:] == '\r': line = line[:-1]
+        print "%d: %s[%d]%s %s" % (lineno(), filename(), filelineno(),
+                                   isfirstline() and "*" or "", line)
     print "%d: %s[%d]" % (lineno(), filename(), filelineno())
 
 if __name__ == '__main__':
