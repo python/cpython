@@ -171,7 +171,7 @@ extern "C" {
  *    This implementation may set the underflow flag if |X| is very small;
  *    it really can't be implemented correctly (& easily) before C99.
  */
- #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
+#define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 
 /**************************************************************************
 Prototypes that are missing from the standard include files on some systems
