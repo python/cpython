@@ -1,7 +1,6 @@
 // Resource script for Python core DLL.
 // Currently only holds version information.
 //
-#include "ver.h"
 #include "winver.h"
 
 #define MS_WINDOWS
