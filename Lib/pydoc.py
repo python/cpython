@@ -1143,7 +1143,7 @@ def writedocs(dir, pkgpath='', done=None):
 class Helper:
     keywords = {
         'and': 'BOOLEAN',
-        'assert': 'ASSERT',
+        'assert': ('ref/assert', ''),
         'break': ('ref/break', 'while for'),
         'class': ('ref/class', 'CLASSES SPECIALMETHODS'),
         'continue': ('ref/continue', 'while for'),
@@ -1167,27 +1167,27 @@ class Helper:
         'pass': 'PASS',
         'print': ('ref/print', ''),
         'raise': ('ref/raise', 'EXCEPTIONS'),
-        'return': ('ref/return', ''),
+        'return': ('ref/return', 'FUNCTIONS'),
         'try': ('ref/try', 'EXCEPTIONS'),
         'while': ('ref/while', 'break continue if TRUTHVALUE'),
     }
 
     topics = {
         'TYPES': ('ref/types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS FUNCTIONS CLASSES MODULES FILES inspect'),
-        'STRINGS': ('ref/strings', 'UNICODE SEQUENCES STRINGMETHODS FORMATTING TYPES'),
+        'STRINGS': ('ref/strings', 'str UNICODE SEQUENCES STRINGMETHODS FORMATTING TYPES'),
         'STRINGMETHODS': ('lib/string-methods', 'STRINGS FORMATTING'),
         'FORMATTING': ('lib/typesseq-strings', 'OPERATORS'),
-        'UNICODE': ('ref/unicode', 'TYPES STRING'),
+        'UNICODE': ('ref/unicode', 'encodings unicode TYPES STRING'),
         'NUMBERS': ('ref/numbers', 'INTEGER FLOAT COMPLEX TYPES'),
         'INTEGER': ('ref/integers', 'int range'),
         'FLOAT': ('ref/floating', 'float math'),
         'COMPLEX': ('ref/imaginary', 'complex cmath'),
-        'SEQUENCES': ('lib/typesseq', 'LISTS'),
+        'SEQUENCES': ('lib/typesseq', 'STRINGMETHODS FORMATTING xrange LISTS'),
         'MAPPINGS': 'DICTIONARIES',
         'FUNCTIONS': ('lib/typesfunctions', 'def TYPES'),
         'METHODS': ('lib/typesmethods', 'class def CLASSES TYPES'),
         'CODEOBJECTS': ('lib/bltin-code-objects', 'compile FUNCTIONS TYPES'),
-        'TYPEOBJECTS': ('lib/bltin-type-objects', 'TYPES'),
+        'TYPEOBJECTS': ('lib/bltin-type-objects', 'types TYPES'),
         'FRAMEOBJECTS': 'TYPES',
         'TRACEBACKS': 'TYPES',
         'NONE': ('lib/bltin-null-object', ''),
@@ -1202,13 +1202,13 @@ class Helper:
         'PRECEDENCE': 'EXPRESSIONS',
         'OBJECTS': ('ref/objects', 'TYPES'),
         'SPECIALMETHODS': ('ref/specialnames', 'BASICMETHODS ATTRIBUTEMETHODS CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
-        'BASICMETHODS': ('ref/customization', 'SPECIALMETHODS'),
-        'ATTRIBUTEMETHODS': ('ref/attribute-access', 'SPECIALMETHODS'),
-        'CALLABLEMETHODS': ('ref/callable-types', 'SPECIALMETHODS'),
-        'SEQUENCEMETHODS1': ('ref/sequence-types', 'SEQUENCEMETHODS2'),
-        'SEQUENCEMETHODS2': ('ref/sequence-methods', 'SEQUENCEMETHODS1'),
-        'MAPPINGMETHODS': ('ref/sequence-types', 'SPECIALMETHODS'),
-        'NUMBERMETHODS': ('ref/numeric-types', 'SPECIALMETHODS'),
+        'BASICMETHODS': ('ref/customization', 'cmp hash repr str SPECIALMETHODS'),
+        'ATTRIBUTEMETHODS': ('ref/attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
+        'CALLABLEMETHODS': ('ref/callable-types', 'CALLS SPECIALMETHODS'),
+        'SEQUENCEMETHODS1': ('ref/sequence-types', 'SEQUENCES SEQUENCEMETHODS2 SPECIALMETHODS'),
+        'SEQUENCEMETHODS2': ('ref/sequence-methods', 'SEQUENCES SEQUENCEMETHODS1 SPECIALMETHODS'),
+        'MAPPINGMETHODS': ('ref/sequence-types', 'MAPPINGS SPECIALMETHODS'),
+        'NUMBERMETHODS': ('ref/numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT SPECIALMETHODS'),
         'EXECUTION': ('ref/execframes', ''),
         'NAMESPACES': ('ref/execframes', 'global ASSIGNMENT DELETION'),
         'SCOPING': 'NAMESPACES',
@@ -1218,15 +1218,15 @@ class Helper:
         'CONVERSIONS': ('ref/conversions', ''),
         'IDENTIFIERS': ('ref/identifiers', 'keywords SPECIALIDENTIFIERS'),
         'SPECIALIDENTIFIERS': ('ref/id-classes', ''),
-        'PRIVATENAMES': ('ref/identifiers', ''),
+        'PRIVATENAMES': ('ref/atom-identifiers', ''),
         'LITERALS': ('ref/atom-literals', 'STRINGS BACKQUOTES NUMBERS TUPLELITERALS LISTLITERALS DICTIONARYLITERALS'),
         'TUPLES': 'SEQUENCES',
-        'TUPLELITERALS': ('ref/exprlists', 'LITERALS'),
+        'TUPLELITERALS': ('ref/exprlists', 'TUPLES LITERALS'),
         'LISTS': ('lib/typesseq-mutable', 'LISTLITERALS'),
-        'LISTLITERALS': ('ref/lists', 'LITERALS'),
+        'LISTLITERALS': ('ref/lists', 'LISTS LITERALS'),
         'DICTIONARIES': ('lib/typesmapping', 'DICTIONARYLITERALS'),
-        'DICTIONARYLITERALS': ('ref/dict', 'LITERALS'),
-        'BACKQUOTES': ('ref/string-conversions', 'LITERALS'),
+        'DICTIONARYLITERALS': ('ref/dict', 'DICTIONARIES LITERALS'),
+        'BACKQUOTES': ('ref/string-conversions', 'repr str STRINGS LITERALS'),
         'ATTRIBUTES': ('ref/attribute-references', 'getattr hasattr setattr ATTRIBUTEMETHODS'),
         'SUBSCRIPTS': ('ref/subscriptions', 'SEQUENCEMETHODS1'),
         'SLICINGS': ('ref/slicings', 'SEQUENCEMETHODS2'),
@@ -1237,10 +1237,10 @@ class Helper:
         'SHIFTING': ('ref/shifting', 'EXPRESSIONS'),
         'BITWISE': ('ref/bitwise', 'EXPRESSIONS'),
         'COMPARISON': ('ref/comparisons', 'EXPRESSIONS BASICMETHODS'),
-        'BOOLEAN': ('ref/lambda', 'EXPRESSIONS'),
+        'BOOLEAN': ('ref/lambda', 'EXPRESSIONS TRUTHVALUE'),
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('ref/assignment', 'AUGMENTEDASSIGNMENT'),
-        'AUGMENTEDASSIGNMENT': ('ref/augassign', ''),
+        'AUGMENTEDASSIGNMENT': ('ref/augassign', 'NUMBERMETHODS'),
         'DELETION': 'del',
         'PRINTING': 'print',
         'RETURNING': 'return',
@@ -1248,6 +1248,7 @@ class Helper:
         'CONDITIONAL': 'if',
         'LOOPING': ('ref/compound', 'for while break continue'),
         'TRUTHVALUE': ('lib/truth', 'if while and or not BASICMETHODS'),
+        'DEBUGGING': ('lib/module-pdb', 'pdb'),
     }
 
     def __init__(self, input, output):
@@ -1265,6 +1266,12 @@ class Helper:
                     '/usr/doc/python-' + sys.version[:3]]:
             if dir and os.path.isdir(os.path.join(dir, 'lib')):
                 self.docdir = dir
+
+    def __repr__(self):
+        if len(inspect.stack()) <= 2:
+            self()
+            return ''
+        return '<pydoc.Helper instance at %p>' % id(self)
 
     def __call__(self, request=None):
         if request is not None:
