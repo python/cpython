@@ -527,7 +527,7 @@ from a \ctype{stat} structure.
 
 \begin{funcdesc}{statvfs}{path}
 Perform a \cfunction{statvfs()} system call on the given path.  The
-return value is a tuple of 11 integers giving the most common
+return value is a tuple of 10 integers giving the most common
 members of the \ctype{statvfs} structure, in the order
 \code{f_bsize},
 \code{f_frsize},
@@ -537,7 +537,6 @@ members of the \ctype{statvfs} structure, in the order
 \code{f_files},
 \code{f_ffree},
 \code{f_favail},
-\code{f_fsid},
 \code{f_flag},
 \code{f_namemax}.
 Availability: \UNIX{}.
