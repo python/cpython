@@ -1005,12 +1005,8 @@ Tkapp_MainLoop (self, args)
 {
   int threshold = 0;
 
-  if (!PyArg_Parse (args, ""))
-    {
-      PyErr_Clear();
-      if (!PyArg_Parse (args, "i", &threshold))
-        return NULL;
-    }
+  if (!PyArg_ParseTuple (args, "|i", &threshold))
+    return NULL;
 
   quitMainLoop = 0;
   while (tk_NumMainWindows > threshold && !quitMainLoop && !errorInCmd)
@@ -1039,17 +1035,11 @@ Tkapp_DoOneEvent (self, args)
     PyObject *self;
     PyObject *args;
 {
-    int	flags;
+    int	flags = TK_ALL_EVENTS;
     int rv;
 
-    if (PyArg_Parse (args, ""))
-	flags = TK_ALL_EVENTS;
-    else
-      {
-        PyErr_Clear();
-	if (!PyArg_Parse (args, "i", &flags))
-	  return NULL;
-      }
+    if (!PyArg_ParseTuple (args, "|i", &flags))
+      return NULL;
     rv = Tk_DoOneEvent(flags);
     return Py_BuildValue ("i", rv);
 }
@@ -1099,8 +1089,8 @@ static PyMethodDef Tkapp_methods[] =
   {"createfilehandler", Tkapp_CreateFileHandler},
   {"deletefilehandler", Tkapp_DeleteFileHandler},
   {"createtimerhandler", Tkapp_CreateTimerHandler},
-  {"mainloop", Tkapp_MainLoop},
-  {"dooneevent", Tkapp_DoOneEvent},
+  {"mainloop", Tkapp_MainLoop, 1},
+  {"dooneevent", Tkapp_DoOneEvent, 1},
   {"quit", Tkapp_Quit},
   {NULL, NULL}
 };
@@ -1151,8 +1141,8 @@ Tkinter_Create (self, args)
      PyObject *args;
 {
   char *screenName = NULL;
-  char *baseName;
-  char *className;
+  char *baseName = NULL;
+  char *className = NULL;
   int interactive = 0;
 
   baseName = strrchr (getprogramname (), '/');
@@ -1162,21 +1152,8 @@ Tkinter_Create (self, args)
     baseName = getprogramname ();
   className = "Tk";
   
-  if (PyArg_Parse (args, ""))
-    /* VOID */ ;
-  else if (PyArg_Parse (args, "z", 
-			&screenName))
-    /* VOID */ ;
-  else if (PyArg_Parse (args, "(zs)", 
-			&screenName, &baseName))
-    /* VOID */ ;
-  else if (PyArg_Parse (args, "(zss)", 
-			&screenName, &baseName, &className))
-    /* VOID */ ;
-  else if (PyArg_Parse (args, "(zssi)", 
-			&screenName, &baseName, &className, &interactive))
-    /* VOID */ ;
-  else
+  if (!PyArg_ParseTuple (args, "|zssi",
+			 &screenName, &baseName, &className, &interactive))
     return NULL;
 
   return (PyObject *) Tkapp_New (screenName, baseName, className, 
@@ -1185,12 +1162,12 @@ Tkinter_Create (self, args)
 
 static PyMethodDef moduleMethods[] =
 {
-  {"create", Tkinter_Create},
-  {"createfilehandler", Tkapp_CreateFileHandler},
-  {"deletefilehandler", Tkapp_DeleteFileHandler},
-  {"createtimerhandler", Tkapp_CreateTimerHandler},
-  {"mainloop", Tkapp_MainLoop},
-  {"dooneevent", Tkapp_DoOneEvent},
+  {"create", Tkinter_Create, 1},
+  {"createfilehandler", Tkapp_CreateFileHandler, 0},
+  {"deletefilehandler", Tkapp_DeleteFileHandler, 0},
+  {"createtimerhandler", Tkapp_CreateTimerHandler, 0},
+  {"mainloop", Tkapp_MainLoop, 1},
+  {"dooneevent", Tkapp_DoOneEvent, 1},
   {"quit", Tkapp_Quit},
   {NULL, NULL}
 };
