@@ -504,7 +504,7 @@ _PySys_Init()
 	Py_XDECREF(v);
 #ifdef MS_COREDLL
 	PyDict_SetItemString(sysdict, "dllhandle",
-			     v = PyInt_FromLong((int)PyWin_DLLhModule));
+			     v = PyLong_FromVoidPtr(PyWin_DLLhModule));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "winver",
 			     v = PyString_FromString(PyWin_DLLVersionString));

@@ -355,8 +355,15 @@ do_mkvalue(p_format, p_va)
 				Py_INCREF(v);
 			}
 			else {
-				if (n < 0)
-					n = strlen(str);
+				if (n < 0) {
+					size_t m = strlen(str);
+					if (m > INT_MAX) {
+						PyErr_SetString(PyExc_OverflowError,
+							"string too long for Python string");
+						return NULL;
+					}
+					n = (int)m;
+				}
 				v = PyString_FromStringAndSize(str, n);
 			}
 			return v;
