@@ -18,7 +18,7 @@ if fname[1:2] == ":":
 # And more hacking to get it to work on MacOS. This assumes
 # urllib.pathname2url works, unfortunately...
 if os.name == 'mac':
-	fname = '/' + fname.replace(':', '/')
+    fname = '/' + fname.replace(':', '/')
 file_url = "file://%s" % fname
 f = urllib2.urlopen(file_url)
 
