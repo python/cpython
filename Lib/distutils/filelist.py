@@ -17,6 +17,7 @@ from types import *
 from glob import glob
 from distutils.util import convert_path
 from distutils.errors import DistutilsTemplateError, DistutilsInternalError
+from distutils import log
 
 class FileList:
 
