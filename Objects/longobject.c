@@ -253,7 +253,8 @@ divrem1(a, n, prem)
 }
 
 /* Convert a long int object to a string, using a given conversion base.
-   Return a string object. */
+   Return a string object.
+   If base is 8 or 16, add the proper prefix '0' or '0x'. */
 
 stringobject *
 long_format(a, base)
@@ -276,7 +277,7 @@ long_format(a, base)
 		++bits;
 		i >>= 1;
 	}
-	i = 1 + (size_a*SHIFT + bits-1) / bits;
+	i = 3 + (size_a*SHIFT + bits-1) / bits;
 	str = (stringobject *) newsizedstringobject((char *)0, i);
 	if (str == NULL)
 		return NULL;
@@ -310,6 +311,12 @@ long_format(a, base)
 		})
 	} while (a->ob_size != 0);
 	DECREF(a);
+	if (base == 8)
+		*--p = '0';
+	else if (base == 16) {
+		*--p = 'x';
+		*--p = '0';
+	}
 	if (sign)
 		*--p = sign;
 	if (p != GETSTRINGVALUE(str)) {
@@ -992,6 +999,12 @@ static number_methods long_as_number = {
 	long_pos,	/*tp_positive*/
 	long_abs,	/*tp_absolute*/
 	long_nonzero,	/*tp_nonzero*/
+	0,		/*nb_invert*/
+	0,		/*nb_lshift*/
+	0,		/*nb_rshift*/
+	0,		/*nb_and*/
+	0,		/*nb_xor*/
+	0,		/*nb_or*/
 };
 
 typeobject Longtype = {
