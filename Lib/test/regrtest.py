@@ -595,7 +595,10 @@ _expectations = {
    'mac':
         """
         test_al
+        test_atexit
         test_bsddb
+        test_bsddb3
+        test_bz2
         test_cd
         test_cl
         test_commands
@@ -603,6 +606,7 @@ _expectations = {
         test_curses
         test_dbm
         test_dl
+        test_email_codecs
         test_fcntl
         test_fork1
         test_gl
@@ -612,13 +616,17 @@ _expectations = {
         test_linuxaudiodev
         test_locale
         test_mmap
+        test_mpz
         test_nis
         test_ntpath
         test_openpty
+        test_ossaudiodev
         test_poll
+        test_popen
         test_popen2
         test_pty
         test_pwd
+        test_resource
         test_signal
         test_socketserver
         test_sunaudiodev
