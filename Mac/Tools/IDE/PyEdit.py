@@ -586,6 +586,9 @@ class Editor(W.Window):
 	
 	def getclasslist(self):
 		from string import find, strip
+		import re
+		methodRE = re.compile(r"\r[ \t]+def ")
+		findMethod = methodRE.search
 		editor = self.editgroup.editor
 		text = editor.get()
 		list = []
@@ -613,10 +616,12 @@ class Editor(W.Window):
 			append((pos + 7, classtag))
 		pos = 0
 		while 1:
-			pos = find(text, '\r\tdef ', pos + 1)
-			if pos < 0:
+			m = findMethod(text, pos + 1)
+			if m is None:
 				break
-			append((pos + 6, methodtag))
+			pos = m.regs[0][0]
+			#pos = find(text, '\r\tdef ', pos + 1)
+			append((m.regs[0][1], methodtag))
 		list.sort()
 		classlist = []
 		methodlistappend = None
