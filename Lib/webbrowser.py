@@ -313,7 +313,7 @@ if sys.platform[:3] == "os2" and _iscommand("netscape.exe"):
 if os.environ.has_key("BROWSER"):
     # It's the user's responsibility to register handlers for any unknown
     # browser referenced by this value, before calling open().
-    _tryorder = os.environ["BROWSER"].split(":")
+    _tryorder = os.environ["BROWSER"].split(os.pathsep)
 
 for cmd in _tryorder:
     if not _browsers.has_key(cmd.lower()):
