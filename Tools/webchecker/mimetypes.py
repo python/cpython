@@ -128,6 +128,7 @@ types_map = {
     '.hdf': 'application/x-hdf',
     '.htm': 'text/html',
     '.html': 'text/html',
+    '.shtml': 'text/html',
     '.ief': 'image/ief',
     '.jpe': 'image/jpeg',
     '.jpeg': 'image/jpeg',
