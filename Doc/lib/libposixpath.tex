@@ -137,6 +137,13 @@ case (use \function{normcase()} for that).  On Windows, it converts
 forward slashes to backward slashes.
 \end{funcdesc}
 
+\begin{funcdesc}{realpath}{path}
+Return the canonical path of the specified filename, eliminating any
+symbolic links encountered in the path.
+Availability:  \UNIX{}.
+\versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{samefile}{path1, path2}
 Return true if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).

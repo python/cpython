@@ -315,6 +315,10 @@ def abspath(p):
     return normpath(join(os.getcwd(), p))
 
 
+# realpath is a no-op on systems without islink support
+realpath = abspath
+
+
 # Normalize a path. Only special path element under RISC OS is "^" for "..".
 
 def normpath(p):
