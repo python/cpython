@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Limit the nested depth of a tuple for the second argument to isinstance()
+  and issubclass() to the recursion limit of the interpreter.
+  Fixes bug  #858016 .
+
 - Optimized dict iterators, creating separate types for each
   and having them reveal their length.  Also optimized the
   methods:  keys(), values(), and items().

@@ -1992,8 +1992,8 @@ check_class(PyObject *cls, const char *error)
 	return -1;
 }
 
-int
-PyObject_IsInstance(PyObject *inst, PyObject *cls)
+static int
+recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 {
 	PyObject *icls;
 	static PyObject *__class__ = NULL;
@@ -2028,14 +2028,20 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		}
 	}
 	else if (PyTuple_Check(cls)) {
-		/* Not a general sequence -- that opens up the road to
-		   recursion and stack overflow. */
 		int i, n;
+
+                if (!recursion_depth) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "nest level of tuple too deep");
+                    return NULL;
+                }
 
 		n = PyTuple_GET_SIZE(cls);
 		for (i = 0; i < n; i++) {
-			retval = PyObject_IsInstance(
-				inst, PyTuple_GET_ITEM(cls, i));
+			retval = recursive_isinstance(
+                                    inst,
+                                    PyTuple_GET_ITEM(cls, i),
+                                    recursion_depth-1);
 			if (retval != 0)
 				break;
 		}
@@ -2060,7 +2066,13 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 }
 
 int
-PyObject_IsSubclass(PyObject *derived, PyObject *cls)
+PyObject_IsInstance(PyObject *inst, PyObject *cls)
+{
+    return recursive_isinstance(inst, cls, Py_GetRecursionLimit());
+}
+
+static  int
+recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 {
 	int retval;
 
@@ -2072,9 +2084,17 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 		if (PyTuple_Check(cls)) {
 			int i;
 			int n = PyTuple_GET_SIZE(cls);
+
+                        if (!recursion_depth) {
+                            PyErr_SetString(PyExc_RuntimeError,
+                                            "nest level of tuple too deep");
+                            return NULL;
+                        }
 			for (i = 0; i < n; ++i) {
-				retval = PyObject_IsSubclass(
-					derived, PyTuple_GET_ITEM(cls, i));
+				retval = recursive_issubclass(
+                                            derived,
+                                            PyTuple_GET_ITEM(cls, i),
+                                            recursion_depth-1);
 				if (retval != 0) {
 					/* either found it, or got an error */
 					return retval;
@@ -2099,6 +2119,13 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
 	return retval;
 }
+
+int
+PyObject_IsSubclass(PyObject *derived, PyObject *cls)
+{
+    return recursive_issubclass(derived, cls, Py_GetRecursionLimit());
+}
+
 
 PyObject *
 PyObject_GetIter(PyObject *o)
