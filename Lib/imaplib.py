@@ -15,7 +15,7 @@ Public functions:	Internaldate2tuple
 # 
 # Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
 
-__version__ = "2.32"
+__version__ = "2.33"
 
 import binascii, re, socket, string, time, random, sys
 
@@ -128,6 +128,7 @@ class IMAP4:
 		self.tagged_commands = {}	# Tagged commands awaiting response
 		self.untagged_responses = {}	# {typ: [data, ...], ...}
 		self.continuation_response = ''	# Last continuation response
+		self.is_readonly = None		# READ-ONLY desired state
 		self.tagnum = 0
 
 		# Open socket to server.
@@ -470,6 +471,7 @@ class IMAP4:
 		"""
 		# Mandated responses are ('FLAGS', 'EXISTS', 'RECENT', 'UIDVALIDITY')
 		self.untagged_responses = {}	# Flush old responses.
+		self.is_readonly = readonly
 		if readonly:
 			name = 'EXAMINE'
 		else:
@@ -479,7 +481,7 @@ class IMAP4:
 			self.state = 'AUTH'	# Might have been 'SELECTED'
 			return typ, dat
 		self.state = 'SELECTED'
-		if not self.untagged_responses.has_key('READ-WRITE') \
+		if self.untagged_responses.has_key('READ-ONLY') \
 			and not readonly:
 			if __debug__:
 				if self.debug >= 1:
@@ -594,9 +596,8 @@ class IMAP4:
 			if self.untagged_responses.has_key(typ):
 				del self.untagged_responses[typ]
 
-		if self.untagged_responses.has_key('READ-WRITE') \
-		and self.untagged_responses.has_key('READ-ONLY'):
-			del self.untagged_responses['READ-WRITE']
+		if self.untagged_responses.has_key('READ-ONLY') \
+		and not self.is_readonly:
 			raise self.readonly('mailbox status changed to READ-ONLY')
 
 		tag = self._new_tag()
