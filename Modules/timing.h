@@ -37,9 +37,12 @@
  * Author: George V. Neville-Neil
  *
  * Update History: $Log$
- * Update History: Revision 2.1  1994/01/02 23:22:19  guido
- * Update History: Added George Neville-Neil's timing module
+ * Update History: Revision 2.2  1994/01/14 16:55:47  guido
+ * Update History: Make more robust against Minix and Mac
  * Update History:
+ * Revision 2.1  1994/01/02  23:22:19  guido
+ * Added George Neville-Neil's timing module
+ *
  * Revision 1.1  93/12/28  13:14:19  gnn
  * Initial revision
  * 
@@ -62,7 +65,16 @@
 #ifndef _TIMING_H_
 #define _TIMING_H_
 
+#ifdef TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else /* !TIME_WITH_SYS_TIME */
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif /* !HAVE_SYS_TIME_H */
+#endif /* !TIME_WITH_SYS_TIME */
 
 static struct timeval aftertp, beforetp;
 
