@@ -1199,7 +1199,7 @@ static PyObject *File_FSPathMakeRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	char* path;
+	UInt8 * path;
 	FSRef ref;
 	Boolean isDirectory;
 	if (!PyArg_ParseTuple(_args, "s",
@@ -1214,6 +1214,8 @@ static PyObject *File_FSPathMakeRef(PyObject *_self, PyObject *_args)
 	                     isDirectory);
 	return _res;
 }
+
+#if TARGET_API_MAC_OSX
 
 static PyObject *File_FNNotify(PyObject *_self, PyObject *_args)
 {
@@ -1235,12 +1237,15 @@ static PyObject *File_FNNotify(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#if TARGET_API_MAC_OSX
 
 static PyObject *File_FNNotifyByPath(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	char* path;
+	UInt8 * path;
 	FNMessage message;
 	OptionBits flags;
 	if (!PyArg_ParseTuple(_args, "sll",
@@ -1256,6 +1261,9 @@ static PyObject *File_FNNotifyByPath(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#if TARGET_API_MAC_OSX
 
 static PyObject *File_FNNotifyAll(PyObject *_self, PyObject *_args)
 {
@@ -1274,6 +1282,7 @@ static PyObject *File_FNNotifyAll(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *File_FSRefMakePath(PyObject *_self, PyObject *_args)
 {
@@ -1411,13 +1420,22 @@ static PyMethodDef File_methods[] = {
 	{"FSGetResourceForkName", (PyCFunction)File_FSGetResourceForkName, 1,
 	 PyDoc_STR("() -> (HFSUniStr255 resourceForkName)")},
 	{"FSPathMakeRef", (PyCFunction)File_FSPathMakeRef, 1,
-	 PyDoc_STR("(char* path) -> (FSRef ref, Boolean isDirectory)")},
+	 PyDoc_STR("(UInt8 * path) -> (FSRef ref, Boolean isDirectory)")},
+
+#if TARGET_API_MAC_OSX
 	{"FNNotify", (PyCFunction)File_FNNotify, 1,
 	 PyDoc_STR("(FSRef ref, FNMessage message, OptionBits flags) -> None")},
+#endif
+
+#if TARGET_API_MAC_OSX
 	{"FNNotifyByPath", (PyCFunction)File_FNNotifyByPath, 1,
-	 PyDoc_STR("(char* path, FNMessage message, OptionBits flags) -> None")},
+	 PyDoc_STR("(UInt8 * path, FNMessage message, OptionBits flags) -> None")},
+#endif
+
+#if TARGET_API_MAC_OSX
 	{"FNNotifyAll", (PyCFunction)File_FNNotifyAll, 1,
 	 PyDoc_STR("(FNMessage message, OptionBits flags) -> None")},
+#endif
 	{"FSRefMakePath", (PyCFunction)File_FSRefMakePath, 1,
 	 PyDoc_STR("(FSRef) -> string")},
 	{NULL, NULL, 0}
