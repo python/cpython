@@ -97,10 +97,10 @@ class bdist_rpm (Command):
          "capabilities made obsolete by this package"),
 
         # Actions to take when building RPM
-        ('clean', None,
-         "clean up RPM build directory [default]"),
-        ('no-clean', None,
+        ('keep-temp', 'k',
          "don't clean up RPM build directory"),
+        ('no-keep-temp', None,
+         "clean up RPM build directory [default]"),
         ('use-rpm-opt-flags', None,
          "compile with RPM_OPT_FLAGS when building from source RPM"),
         ('no-rpm-opt-flags', None,
@@ -111,7 +111,7 @@ class bdist_rpm (Command):
          "RPM 2 compatibility mode"),
        ]
 
-    negative_opt = {'no-clean': 'clean',
+    negative_opt = {'no-keep-temp': 'keep-temp',
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
                     'rpm2-mode': 'rpm3-mode'}
 
@@ -152,7 +152,7 @@ class bdist_rpm (Command):
         self.build_requires = None
         self.obsoletes = None
 
-        self.clean = 1
+        self.keep_temp = 0
         self.use_rpm_opt_flags = 1
         self.rpm3_mode = 1
 
@@ -303,7 +303,7 @@ class bdist_rpm (Command):
         if self.rpm3_mode:
             rpm_cmd.extend(['--define',
                              '_topdir %s/%s' % (os.getcwd(), self.rpm_base),])
-        if self.clean:
+        if not self.keep_temp:
             rpm_cmd.append('--clean')
         rpm_cmd.append(spec_path)
         self.spawn(rpm_cmd)
