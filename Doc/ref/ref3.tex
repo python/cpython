@@ -481,8 +481,8 @@ function).
 
 Special read-only attributes: \member{im_self} is the class instance
 object, \member{im_func} is the function object;
-\member{im_class} is the class of \member{im_self} for bound methods,
-or the class that asked for the method for unbound methods);
+\member{im_class} is the class of \member{im_self} for bound methods
+or the class that asked for the method for unbound methods;
 \member{__doc__} is the method's documentation (same as
 \code{im_func.__doc__}); \member{__name__} is the method name (same as
 \code{im_func.__name__}); \member{__module__} is the name of the
@@ -907,7 +907,7 @@ except clause or with a finally clause.
 Slice objects are used to represent slices when \emph{extended slice
 syntax} is used.  This is a slice using two colons, or multiple slices
 or ellipses separated by commas, e.g., \code{a[i:j:step]}, \code{a[i:j,
-k:l]}, or \code{a[..., i:j])}.  They are also created by the built-in
+k:l]}, or \code{a[..., i:j]}.  They are also created by the built-in
 \function{slice()}\bifuncindex{slice} function.
 
 Special read-only attributes: \member{start} is the lower bound;
@@ -1247,6 +1247,66 @@ class to a new value, \var{value}.
 Called to delete the attribute on an instance \var{instance} of the
 owner class.
 \end{methoddesc}
+
+
+\subsubsection{Invoking Descriptors \label{descriptor_invocation}}
+
+In general, a descriptor is an object attribute with ``binding behavior'',
+one whose attribute access has been overridden by methods in the descriptor
+protocol:  \method{__get__}, \method{__set__}, and \method{__delete__}.
+If any of those methods are defined for an object, it is said to be a
+descriptor.
+
+The default behavior for attribute access is to get, set, or delete the
+attribute from an object's dictionary. For instance, \code{a.x} has a
+lookup chain starting with \code{a.__dict__['x']}, then
+\code{type(a).__dict__['x']}, and continuing 
+through the base classes of \code{type(a)} excluding metaclasses.
+
+However, if the looked-up value is an object defining one of the descriptor
+methods, then Python may override the default behavior and invoke the
+descriptor method instead.  Where this occurs in the precedence chain depends
+on which descriptor methods were defined and how they were called.  Note that
+descriptors are only invoked for new style objects or classes
+(ones that subclass \class{object} or \class{type}).
+
+The starting point for descriptor invocation is a binding, \code{a.x}.
+How the arguments are assembled depends on \code{a}:
+
+\begin{itemize}
+                      
+  \item[Direct Call] The simplest and least common call is when user code
+    directly invokes a descriptor method:    \code{x.__get__(a)}.
+
+  \item[Instance Binding]  If binding to a new-style object instance,
+    \code{a.x} is transformed into the call:
+    \code{type(a).__dict__['x'].__get__(a, type(a))}.
+                     
+  \item[Class Binding]  If binding to a new-style class, \code{A.x}
+    is transformed into the call: \code{A.__dict__['x'].__get__(None, A)}.
+
+  \item[Super Binding] If \code{a} is an instance of \class{super},
+    then the binding \code{super(B, obj).m()} searches
+    \code{obj.__class__.__mro__} for the base class \code{A} immediately
+    preceding \code{B} and then invokes the descriptor with the call:
+    \code{A.__dict__['m'].__get__(obj, A)}.
+                     
+\end{itemize}
+
+For instance bindings, the precedence of descriptor invocation depends
+on the which descriptor methods are defined.  Data descriptors define
+both \method{__get__} and \method{__set__}.  Non-data descriptors have
+just the \method{__get__} method.  Data descriptors always override
+a redefinition in an instance dictionary.  In contrast, non-data
+descriptors can be overridden by instances.
+
+Python methods (including \function{staticmethod} and \function{classmethod})
+are implemented as non-data descriptors.  Accordingly, instances can
+redefine and override methods.  This allows individual instances to acquire
+behaviors that differ from other instances of the same class.                     
+
+The \function{property} function is implemented as a data descriptor.
+Accordingly, instances cannot override the behavior a property.
 
 
 \subsection{Emulating callable objects\label{callable-types}}
