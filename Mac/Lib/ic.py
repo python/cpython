@@ -162,7 +162,8 @@ class IC:
 			self.ic = ic
 		else:
 			self.ic = icglue.ICStart(signature)
-			self.ic.ICFindConfigFile()
+			if hasattr(self.ic, 'ICFindConfigFile'):
+				self.ic.ICFindConfigFile()
 		self.h = Res.Resource('')
 			
 	def keys(self):

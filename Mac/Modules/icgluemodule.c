@@ -69,6 +69,7 @@ staticforward PyTypeObject Icitype;
 
 /* ---------------------------------------------------------------- */
 
+#if !TARGET_API_MAC_CARBON
 static char ici_ICFindConfigFile__doc__[] = 
 "()->None; Find config file in standard places"
 ;
@@ -128,6 +129,7 @@ ici_ICChooseConfig(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif /* !TARGET_API_MAC_CARBON */
 
 
 static char ici_ICChooseNewConfig__doc__[] = 
@@ -458,10 +460,12 @@ ici_ICMapTypeCreator(self, args)
 
 
 static struct PyMethodDef ici_methods[] = {
-	{"ICFindConfigFile",	(PyCFunction)ici_ICFindConfigFile,	METH_VARARGS,	ici_ICFindConfigFile__doc__},
+#if !TARGET_API_MAC_CARBON
+ {"ICFindConfigFile",	(PyCFunction)ici_ICFindConfigFile,	METH_VARARGS,	ici_ICFindConfigFile__doc__},
  {"ICFindUserConfigFile",	(PyCFunction)ici_ICFindUserConfigFile,	METH_VARARGS,	ici_ICFindUserConfigFile__doc__},
  {"ICChooseConfig",	(PyCFunction)ici_ICChooseConfig,	METH_VARARGS,	ici_ICChooseConfig__doc__},
  {"ICChooseNewConfig",	(PyCFunction)ici_ICChooseNewConfig,	METH_VARARGS,	ici_ICChooseNewConfig__doc__},
+#endif /* !TARGET_API_MAC_CARBON */
  {"ICGetSeed",	(PyCFunction)ici_ICGetSeed,	METH_VARARGS,	ici_ICGetSeed__doc__},
  {"ICBegin",	(PyCFunction)ici_ICBegin,	METH_VARARGS,	ici_ICBegin__doc__},
  {"ICFindPrefHandle",	(PyCFunction)ici_ICFindPrefHandle,	METH_VARARGS,	ici_ICFindPrefHandle__doc__},
