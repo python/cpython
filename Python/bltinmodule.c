@@ -553,7 +553,7 @@ builtin_execfile(PyObject *self, PyObject *args)
         }
 
 	if (!exists) {
-		PyErr_SetFromErrno(PyExc_IOError);
+		PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
 		return NULL;
 	}
 	cf.cf_flags = 0;
