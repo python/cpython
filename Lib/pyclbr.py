@@ -52,7 +52,8 @@ _modules = {}				# cache of modules we've seen
 # each Python class is represented by an instance of this class
 class Class:
 	'''Class to represent a Python class.'''
-	def __init__(self, name, super, file, lineno):
+	def __init__(self, module, name, super, file, lineno):
+		self.module = module
 		self.name = name
 		if super is None:
 			super = []
@@ -187,7 +188,7 @@ def readmodule(module, path = []):
 					names.append(n)
 				inherit = names
 			# remember this class
-			cur_class = Class(class_name, inherit, file, lineno)
+			cur_class = Class(module, class_name, inherit, file, lineno)
 			dict[class_name] = cur_class
 			continue
 		if is_method.match(line) >= 0:
