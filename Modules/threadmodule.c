@@ -200,8 +200,12 @@ t_bootstrap(args_raw)
 	res = call_object(func, arg);
 	DECREF(args); /* Matches the INCREF(args) in thread_start_new_thread */
 	if (res == NULL) {
-		fprintf(stderr, "Unhandled exception in thread:\n");
-		print_error(); /* From pythonmain.c */
+		if (err_occurred() == SystemExit)
+			err_clear();
+		else {
+			fprintf(stderr, "Unhandled exception in thread:\n");
+			print_error(); /* From pythonmain.c */
+		}
 	}
 	else
 		DECREF(res);
@@ -236,13 +240,10 @@ thread_exit_thread(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	object *frame;
 	if (!getnoarg(args))
 		return NULL;
-	frame = save_thread(); /* Should never be NULL */
-	DECREF(frame);
-	exit_thread();
-	for (;;) { } /* Should not be reached */
+	err_set(SystemExit);
+	return NULL;
 }
 
 #ifndef NO_EXIT_PROG
