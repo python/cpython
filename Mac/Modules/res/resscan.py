@@ -19,6 +19,8 @@ def main():
 	scanner = ResourcesScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	print "=== Testing definitions output code ==="
+	execfile(defsoutput, {}, {})
 	print "=== Done scanning and generating, now doing 'import ressupport' ==="
 	import ressupport
 	print "=== Done 'import ressupport'.  It's up to you to compile Resmodule.c ==="

@@ -17,6 +17,8 @@ def main():
 	scanner = IBCarbon_Scanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	print "=== Testing definitions output code ==="
+	execfile(defsoutput, {}, {})
 	print "--done scanning, importing--"
 	import IBCarbonsupport
 	print "done"
