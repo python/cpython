@@ -32,8 +32,9 @@ p_macro = regex.compile(
 p_include = regex.compile('^[\t ]*#[\t ]*include[\t ]+<\([a-zA-Z0-9_/\.]+\)')
 
 p_comment = regex.compile('/\*\([^*]+\|\*+[^/]\)*\(\*+/\)?')
+p_cpp_comment = regex.compile('//.*')
 
-ignores = [p_comment]
+ignores = [p_comment, p_cpp_comment]
 
 p_char = regex.compile("'\(\\\\.[^\\\\]*\|[^\\\\]\)'")
 
@@ -48,6 +49,7 @@ except KeyError:
 		searchdirs=['/usr/include']
 
 def main():
+	global filedict
 	opts, args = getopt.getopt(sys.argv[1:], 'i:')
 	for o, a in opts:
 		if o == '-i':
