@@ -305,6 +305,7 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
     int i;
     int len;
     int err;
+    int ch;
     char *buf;
     
     if ((err = unpack_packed_int(self, &len, 0)))
@@ -312,7 +313,9 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
 
     buf = malloc(len);
     for (i=0; i < len; i++) {
-        if ((buf[i] = fgetc(self->logfp)) == EOF) {
+        ch = fgetc(self->logfp);
+	buf[i] = ch;
+        if (ch == EOF) {
             free(buf);
             return ERR_EOF;
         }
