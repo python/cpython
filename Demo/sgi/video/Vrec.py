@@ -12,9 +12,8 @@
 # Options:
 #
 # -a            : record audio as well
-# -q queuesize  : set the capture queue size (default and max 16)
-# -r n/d        : capture n out of every d frames (default 1/1)
-#                 XXX doesn't work yet
+# -q queuesize  : set the capture queue size (default 2)
+# -r rate       : capture 1 out of every n frames (default and min 2)
 # 
 # moviefile     : here goes the movie data (default film.video);
 #                 the format is documented in cmif-film.ms
@@ -28,19 +27,13 @@
 #
 # Start the application.  Resize the window to the desired movie size.
 # Press the left mouse button to start recording, release it to end
-# recording.  XXX For now, you must restart the program to record again.
-# You can't resize the window once you have made a recording.
+# recording.  You can record as many times as you wish, but each time
+# you overwrite the output file(s), so only the last recording is
+# kept.
 #
 # Press ESC or select the window manager Quit or Close window option
-# to quit.  (You can do this without recording -- then the output
-# files are untouched.)  XXX Don't press ESC before the program has
-# finished writing the output file -- it prints "Done writing" when it
-# is done.
-
-
-# XXX To do:
-#
-# add audio
+# to quit.  If you quit before recording anything, the output file(s)
+# are not touched.
 
 
 import sys
@@ -58,22 +51,22 @@ import string
 # Main program
 
 def main():
-	QSIZE = 16
-	TIME = 5
+	format = SV.RGB8_FRAMES
+	qsize = 2
 	audio = 0
-	num, den = 1, 1
+	rate = 2
 
-	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:t:')
+	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:')
 	for opt, arg in opts:
 		if opt == '-a':
 			audio = 1
 		elif opt == '-q':
-			QSIZE = string.atoi(arg)
+			qsize = string.atoi(arg)
 		elif opt == '-r':
-			[nstr, dstr] = string.splitfields(arg, '/')
-			num, den = string.atoi(nstr), string.atoi(dstr)
-		elif opt == '-t':
-			TIME = string.atoi(arg)
+			rate = string.atoi(arg)
+			if rate < 2:
+				sys.stderr.write('-r rate must be >= 2\n')
+				sys.exit(2)
 
 	if args[2:]:
 		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
@@ -98,6 +91,8 @@ def main():
 
 	gl.foreground()
 
+	# XXX should remove PAL dependencies
+
 	x, y = SV.PAL_XMAX / 4, SV.PAL_YMAX / 4
 	print x, 'x', y
 
@@ -110,20 +105,8 @@ def main():
 	print x, 'x', y
 
 	v = sv.OpenVideo()
-	v.BindGLWindow(win, SV.IN_REPLACE)
 	v.SetSize(x, y)
 	v.BindGLWindow(win, SV.IN_REPLACE)
-
-	v.SetCaptureFormat(SV.RGB_FRAMES)
-	v.SetCaptureMode(SV.BLOCKING_CAPTURE)
-	v.SetQueueSize(QSIZE)
-
-	v.InitCapture()
-	if v.GetQueueSize() != QSIZE:
-		QSIZE = v.GetQueueSize()
-		print 'Warning: QSIZE reduced to', QSIZE
-
-###	v.SetSamplingRate(num, den) # XXX dumps core
 
 	gl.qdevice(DEVICE.LEFTMOUSE)
 	gl.qdevice(DEVICE.WINQUIT)
@@ -132,35 +115,20 @@ def main():
 
 	print 'Press left mouse to start recording, release it to stop'
 
-	recorded = 0
-
 	while 1:
 		dev, val = gl.qread()
 		if dev == DEVICE.LEFTMOUSE:
 			if val == 1:
-				if recorded:
-					# XXX This would dump core
-					gl.ringbell()
-					continue
-				# Fix the window's size now
-				gl.prefsize(x, y)
-				gl.winconstraints()
-				record(v, filename, audiofilename)
-				recorded = 1
-				print 'Wait until "Done writing" is printed!'
+				info = format, x, y, qsize, rate
+				record(v, info, filename, audiofilename)
 		elif dev == DEVICE.REDRAW:
 			# Window resize (or move)
-			if not recorded:
-				x, y = gl.getsize()
-				print x, 'x', y
-				v.SetSize(x, y)
-				v.BindGLWindow(win, SV.IN_REPLACE)
+			x, y = gl.getsize()
+			print x, 'x', y
+			v.SetSize(x, y)
+			v.BindGLWindow(win, SV.IN_REPLACE)
 		elif dev in (DEVICE.ESCKEY, DEVICE.WINQUIT, DEVICE.WINSHUT):
 			# Quit
-			if not recorded:
-				# XXX Avoid core dump in EndCapture
-				posix._exit(0)
-			v.EndCapture()
 			v.CloseVideo()
 			gl.winclose(win)
 			break
@@ -169,64 +137,78 @@ def main():
 # Record until the mouse is released (or any other GL event)
 # XXX audio not yet supported
 
-def record(v, filename, audiofilename):
+def record(v, info, filename, audiofilename):
 	import thread
-	x, y = gl.getsize()
+	format, x, y, qsize, rate = info
+	fps = 59.64 # Fields per second
+	# XXX (Strange: need fps of Indigo monitor, not of PAL or NTSC!)
+	tpf = 1000.0 / fps # Time per field in msec
 	vout = VFile.VoutFile().init(filename)
 	vout.format = 'rgb8'
 	vout.width = x
 	vout.height = y
 	vout.writeheader()
-	buffer = []
-	thread.start_new_thread(saveframes, (vout, buffer))
+	MAXSIZE = 20 # XXX should be a user option
+	import Queue
+	queue = Queue.Queue().init(MAXSIZE)
+	done = thread.allocate_lock()
+	done.acquire_lock()
+	thread.start_new_thread(saveframes, (vout, queue, done))
 	if audiofilename:
-		initaudio(audiofilename, buffer)
+		audiodone = thread.allocate_lock()
+		audiodone.acquire_lock()
+		audiostop = []
+		initaudio(audiofilename, audiostop, audiodone)
 	gl.wintitle('(rec) ' + filename)
-	v.StartCapture()
+	lastid = 0
 	t0 = time.millitimer()
+	v.InitContinuousCapture(info)
 	while not gl.qtest():
-		if v.GetCaptured() > 2:
-			t = time.millitimer() - t0
-			cd, st = v.GetCaptureData()
-			data = cd.interleave(x, y)
-			cd.UnlockCaptureData()
-			buffer.append(data, t)
-		else:
-			time.millisleep(10)
-	v.StopCapture()
-	while v.GetCaptured() > 0:
-		t = time.millitimer() - t0
-		cd, st = v.GetCaptureData()
-		data = cd.interleave(x, y)
+		try:
+			cd, id = v.GetCaptureData()
+		except RuntimeError:
+			time.millisleep(10) # XXX is this necessary?
+			continue
+		id = id + 2*rate
+##		if id <> lastid + 2*rate:
+##			print lastid, id
+		lastid = id
+		data = cd.InterleaveFields(1)
 		cd.UnlockCaptureData()
-		buffer.append(data, t)
-	buffer.append(None) # Sentinel
+		queue.put(data, int(id*tpf))
+	t1 = time.millitimer()
+	gl.wintitle('(busy) ' + filename)
+	print lastid, 'fields in', t1-t0, 'msec',
+	print '--', 0.1 * int(lastid * 10000.0 / (t1-t0)), 'fields/sec'
+	if audiofilename:
+		audiostop.append(None)
+		audiodone.acquire_lock()
+	v.EndContinuousCapture()
+	queue.put(None) # Sentinel
+	done.acquire_lock()
 	gl.wintitle('(done) ' + filename)
 
 
 # Thread to save the frames to the file
 
-def saveframes(vout, buffer):
+def saveframes(vout, queue, done):
 	while 1:
-		if not buffer:
-			time.millisleep(10)
-		else:
-			x = buffer[0]
-			if not x:
-				break
-			del buffer[0]
-			data, t = x
-			vout.writeframe(t, data, None)
-			del data
-	sys.stderr.write('Done writing\n')
+		x = queue.get()
+		if not x:
+			break
+		data, t = x
+		vout.writeframe(t, data, None)
+		del data
+	sys.stderr.write('Done writing video\n')
 	vout.close()
+	done.release_lock()
 
 
 # Initialize audio recording
 
-AQSIZE = 8000
+AQSIZE = 8000 # XXX should be a user option
 
-def initaudio(filename, buffer):
+def initaudio(filename, stop, done):
 	import thread, aiff
 	afile = aiff.Aiff().init(filename, 'w')
 	afile.nchannels = AL.MONO
@@ -240,7 +222,7 @@ def initaudio(filename, buffer):
 	c.setqueuesize(AQSIZE)
 	c.setwidth(AL.SAMPLE_8)
 	aport = al.openport(filename, 'r', c)
-	thread.start_new_thread(audiorecord, (afile, aport, buffer))
+	thread.start_new_thread(audiorecord, (afile, aport, stop, done))
 
 
 # Thread to record audio samples
@@ -248,14 +230,15 @@ def initaudio(filename, buffer):
 # XXX should use writesampsraw for efficiency, but then destroy doesn't
 # XXX seem to set the #samples in the header correctly
 
-def audiorecord(afile, aport, buffer):
-	while buffer[-1:] <> [None]:
+def audiorecord(afile, aport, stop, done):
+	while not stop:
 		data = aport.readsamps(AQSIZE/2)
 ##		afile.writesampsraw(data)
 		afile.writesamps(data)
 		del data
 	afile.destroy()
 	print 'Done writing audio'
+	done.release_lock()
 
 
 # Don't forget to call the main program
