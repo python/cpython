@@ -726,8 +726,8 @@ of the first definition found."
 	(let ((cur-paren (if (match-beginning class-paren)
 			     class-paren def-paren)))
 	  (setq def-name
-		(buffer-substring (match-beginning cur-paren)
-				  (match-end  cur-paren))))
+		(buffer-substring-no-properties (match-beginning cur-paren)
+						(match-end  cur-paren))))
 	(beginning-of-line)
 	(setq cur-indent (current-indentation)))
 
@@ -772,7 +772,7 @@ of the first definition found."
 	    ;; we put the last element on the index-alist on the start
 	    ;; of the submethod alist so the user can still get to it.
 	    (let ((save-elmt (pop index-alist)))
-	      (push (cons (imenu-create-submenu-name prev-name)
+	      (push (cons prev-name
 			  (cons save-elmt sub-method-alist))
 		    index-alist))))
 
@@ -875,6 +875,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
     (goto-char start))
 
   ;; install imenu
+  (make-variable-buffer-local 'imenu-create-index-function)
   (setq imenu-create-index-function
 	(function imenu-example--create-python-index))
   (setq imenu-generic-expression
