@@ -49,9 +49,9 @@ FILE *PyWin_FindRegisteredModule(const char *moduleName,
 	 * also no heap fragmentation!
 	 */
 	moduleKey = alloca(bufSize); 
-	sprintf(moduleKey,
-		"Software\\Python\\PythonCore\\%s\\Modules\\%s%s",
-	        PyWin_DLLVersionString, moduleName, debugString);
+	PyOS_snprintf(moduleKey, bufSize,
+		      "Software\\Python\\PythonCore\\%s\\Modules\\%s%s",
+		      PyWin_DLLVersionString, moduleName, debugString);
 
 	modNameSize = pathLen;
 	regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
