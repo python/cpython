@@ -46,8 +46,10 @@ APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
 compileall=$(srcdir)/Lib/compileall.py
+bundlebuilder=$(srcdir)/Lib/plat-mac/bundlebuilder.py
 
-installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE install_IDLE
+installapps: install_PythonLauncher install_Python install_BuildApplet \
+		install_PackageManager install_IDE install_IDLE
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
@@ -102,12 +104,37 @@ install_IDE: $(INSTALLED_PYTHONW)
 		echo PythonIDE needs the \"waste\" extension module; \
 		echo See Mac/OSX/README for details; \
 	else \
-		echo $(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
-			$(srcdir)/Mac/Tools/IDE/PythonIDE.py ; \
-		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
-			$(srcdir)/Mac/Tools/IDE/PythonIDE.py; \
+		echo $(INSTALLED_PYTHONW) $(bundlebuilder) \
+			--builddir $(PYTHONAPPSDIR)/ \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PythonIDE.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PythonIDE.icns \
+			--creator Pide build; \
+		$(INSTALLED_PYTHONW) $(bundlebuilder) \
+			--builddir $(PYTHONAPPSDIR)/ \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PythonIDE.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PythonIDE.icns \
+			--creator Pide build; \
+	fi
+
+install_PackageManager: $(INSTALLED_PYTHONW)
+	@if ! $(INSTALLED_PYTHONW) -c "import waste"; then  \
+		echo PackageManager needs the \"waste\" extension module; \
+		echo See Mac/OSX/README for details; \
+	else \
+		echo $(INSTALLED_PYTHONW) $(bundlebuilder) \
+			--builddir $(PYTHONAPPSDIR)/ \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--creator Pimp build; \
+		$(INSTALLED_PYTHONW) $(bundlebuilder) \
+			--builddir $(PYTHONAPPSDIR)/ \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--creator Pimp build; \
 	fi
 
 install_IDLE: $(INSTALLED_PYTHONW)
