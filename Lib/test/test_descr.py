@@ -760,6 +760,9 @@ def classic():
     verify(d.goo(1) == (D, 1))
     verify(d.foo(1) == (d, 1))
     verify(D.foo(d, 1) == (d, 1))
+    class E: # *not* subclassing from C
+        foo = C.foo
+    verify(E().foo == C.foo) # i.e., unbound
 
 def compattr():
     if verbose: print "Testing computed attributes..."
@@ -901,6 +904,9 @@ def methods():
     verify(d2.foo() == 2)
     verify(d2.boo() == 2)
     verify(d2.goo() == 1)
+    class E(object):
+        foo = C.foo
+    verify(E().foo == C.foo) # i.e., unbound
 
 def specials():
     # Test operators like __hash__ for which a built-in default exists
