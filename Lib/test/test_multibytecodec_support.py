@@ -164,8 +164,13 @@ class TestBase_Mapping(unittest.TestCase):
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
         if not os.path.exists(self.mapfilename):
-            raise test_support.TestSkipped('%s not found, download from %s' %
-                    (self.mapfilename, self.mapfileurl))
+            parent = os.path.join(os.pardir, self.mapfilename)
+            if not os.path.exists(parent):
+                format = '%s not found, download from %s'
+                raise test_support.TestSkipped(format % 
+                        (self.mapfilename, self.mapfileurl))
+            else:
+                self.mapfilename = parent
 
     def test_mapping_file(self):
         unichrs = lambda s: u''.join(map(unichr, map(eval, s.split('+'))))
