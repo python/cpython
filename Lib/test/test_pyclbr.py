@@ -33,7 +33,8 @@ class PyclbrTest(unittest.TestCase):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
         if attr in ignore: return
         if not hasattr(obj, attr): print "???", attr
-        self.failUnless(hasattr(obj, attr))
+        self.failUnless(hasattr(obj, attr),
+                        'expected hasattr(%r, %r)' % (obj, attr))
 
 
     def assertHaskey(self, obj, key, ignore):
@@ -139,6 +140,8 @@ class PyclbrTest(unittest.TestCase):
         cm('aifc', ignore=('openfp',))    # set with =
 
         cm('httplib', ignore=('error',    # set with =
+                              'sendall',  # set with =
+                              '_closedsocket', # it's a nested class
                               'HTTPS',
                               'HTTP11'))   # not on all platforms
 
