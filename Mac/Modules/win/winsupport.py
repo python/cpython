@@ -49,6 +49,11 @@ RGBColor = OpaqueType("RGBColor", "QdRGB")
 RGBColor_ptr = RGBColor
 ScrollWindowOptions = Type("ScrollWindowOptions", "l")
 WindowPartCode = Type("WindowPartCode", "h")
+WindowDefPartCode = Type("WindowDefPartCode", "h")
+WindowModality = Type("WindowModality", "l")
+CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
+GDHandle = OpaqueByValueType("GDHandle", "ResObj")
+WindowConstrainOptions = Type("WindowConstrainOptions", "l")
 
 PropertyCreator = OSTypeType("PropertyCreator")
 PropertyTag = OSTypeType("PropertyTag")

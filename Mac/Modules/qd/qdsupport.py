@@ -63,6 +63,7 @@ Pattern = StructOutputBufferType('Pattern')
 Pattern_ptr = StructInputBufferType('Pattern')
 PenState = StructOutputBufferType('PenState')
 PenState_ptr = StructInputBufferType('PenState')
+TruncCode = Type("TruncCode", "h")
 
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS

@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -1357,6 +1361,51 @@ static PyObject *Res_GetNextResourceFile(PyObject *_self, PyObject *_args)
 }
 #endif
 
+static PyObject *Res_FSOpenResFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short _rv;
+	FSRef ref;
+	SignedByte permission;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      PyMac_GetFSRef, &ref,
+	                      &permission))
+		return NULL;
+	_rv = FSOpenResFile(&ref,
+	                    permission);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Res_FSResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	FSRef resourceFileRef;
+	Boolean inChain;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSRef, &resourceFileRef))
+		return NULL;
+	_rv = FSResourceFileAlreadyOpen(&resourceFileRef,
+	                                &inChain,
+	                                &refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("bbh",
+	                     _rv,
+	                     inChain,
+	                     refNum);
+	return _res;
+}
+
 static PyObject *Res_Resource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1518,6 +1567,10 @@ static PyMethodDef Res_methods[] = {
 	{"GetNextResourceFile", (PyCFunction)Res_GetNextResourceFile, 1,
 	 "(SInt16 curRefNum) -> (OSErr _rv, SInt16 nextRefNum)"},
 #endif
+	{"FSOpenResFile", (PyCFunction)Res_FSOpenResFile, 1,
+	 "(FSRef ref, SignedByte permission) -> (short _rv)"},
+	{"FSResourceFileAlreadyOpen", (PyCFunction)Res_FSResourceFileAlreadyOpen, 1,
+	 "(FSRef resourceFileRef) -> (Boolean _rv, Boolean inChain, SInt16 refNum)"},
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n"},
 	{"Handle", (PyCFunction)Res_Handle, 1,

@@ -144,6 +144,11 @@ class MyScanner(Scanner):
 			
 			# AddTime and SubtractTime
 			([('TimeRecord', 'dst', 'OutMode')], [('TimeRecord', 'dst', 'InOutMode')]),
+			
+			# Funny definitions
+			([('char_ptr', '*', 'InMode')], [('stringptr', '*', 'InMode')]),
+			([('FSSpecPtr', '*', 'InMode')], [('FSSpec_ptr', '*', 'InMode')]),
+			([('unsigned_char', 'swfVersion', 'OutMode')], [('UInt8', 'swfVersion', 'OutMode')]),
 			]
 			
 if __name__ == "__main__":

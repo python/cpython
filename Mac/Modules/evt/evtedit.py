@@ -4,3 +4,7 @@ f = Function(void, 'SystemClick',
 )
 functions.append(f)
 
+f = Function(UInt32, 'TickCount',
+)
+functions.append(f)
+

@@ -125,6 +125,7 @@ OptRgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 GWorldPtr = OpaqueByValueType("GWorldPtr", "GWorldObj")
 OptGWorldPtr = OpaqueByValueType("GWorldPtr", "OptGWorldObj")
 MlteInBuffer = VarInputBufferType('void *', 'ByteCount', 'l')
+CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 
 OptFSSpecPtr = OpaqueByValueType("FSSpec *", "OptFSSpecPtr")
 OptRectPtr = OpaqueByValueType("Rect *", "OptRectPtr")
