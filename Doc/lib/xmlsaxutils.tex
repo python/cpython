@@ -14,11 +14,31 @@ functions that are commonly useful when creating SAX applications,
 either in direct use, or as base classes.
 
 \begin{funcdesc}{escape}{data\optional{, entities}}
-  Escape \&, <, and > in a string of data.
+  Escape \character{\&}, \character{<}, and \character{>} in a string
+  of data.
 
   You can escape other strings of data by passing a dictionary as the
-  optional entities parameter.  The keys and values must all be
+  optional \var{entities} parameter.  The keys and values must all be
   strings; each key will be replaced with its corresponding value.
+\end{funcdesc}
+
+\begin{funcdesc}{quoteattr}{data\optional{, entities}}
+  Similar to \function{escape()}, but also prepares \var{data} to be
+  used as an attribute value.  The return value is a quoted version of
+  \var{data} with any additional required replacements.
+  \function{quoteattr()} will select a quote character based on the
+  content of \var{data}, attempting to avoid encoding any quote
+  characters in the string.  If both single- and double-quote
+  characters are already in \var{data}, the double-quote characters
+  will be encoded and \var{data} will be wrapped in doule-quotes.  The
+  resulting string can be used directly as an attribute value:
+
+\begin{verbatim}
+>>> print "<element attr=%s>" % quoteattr("ab ' cd \" ef")
+<element attr="ab ' cd &quot; ef">
+\end{verbatim}
+
+  \versionadded{2.2}
 \end{funcdesc}
 
 \begin{classdesc}{XMLGenerator}{\optional{out\optional{, encoding}}}

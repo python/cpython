@@ -8,7 +8,7 @@ try:
 except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise ImportError("no XML parsers available")
-from xml.sax.saxutils import XMLGenerator, escape, XMLFilterBase
+from xml.sax.saxutils import XMLGenerator, escape, quoteattr, XMLFilterBase
 from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
@@ -68,6 +68,25 @@ def test_escape_all():
 
 def test_escape_extra():
     return escape("Hei på deg", {"å" : "&aring;"}) == "Hei p&aring; deg"
+
+# ===== quoteattr
+
+def test_quoteattr_basic():
+    return quoteattr("Donald Duck & Co") == '"Donald Duck &amp; Co"'
+
+def test_single_quoteattr():
+    return (quoteattr('Includes "double" quotes')
+            == '\'Includes "double" quotes\'')
+
+def test_double_quoteattr():
+    return (quoteattr("Includes 'single' quotes")
+            == "\"Includes 'single' quotes\"")
+
+def test_single_double_quoteattr():
+    return (quoteattr("Includes 'single' and \"double\" quotes")
+            == "\"Includes 'single' and &quot;double&quot; quotes\"")
+
+# ===== make_parser
 
 def test_make_parser():
     try:
