@@ -68,6 +68,13 @@ buffer of (approximately) that size.  A negative \var{bufsize} means to
 use the system default, which usually means fully buffered.  The default
 value for \var{bufsize} is \constant{0} (unbuffered).
 
+The \var{executable} argument specifies the program to execute. It is
+very seldom needed: Usually, the program to execute is defined by the
+\var{args} argument. If \var{shell=True}, the \var{executable}
+argument specifies which shell to use. On \UNIX{}, the default shell
+is /bin/sh.  On Windows, the default shell is specified by the COMSPEC
+environment variable.
+
 \var{stdin}, \var{stdout} and \var{stderr} specify the executed
 programs' standard input, standard output and standard error file
 handles, respectively.  Valid values are \code{PIPE}, an existing file
