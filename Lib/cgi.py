@@ -783,17 +783,20 @@ class FieldStorage:
 	    If true, errors raise a ValueError exception.
 
 	"""
-	method = None
+	method = 'GET'
 	self.keep_blank_values = keep_blank_values
 	self.strict_parsing = strict_parsing
 	if environ.has_key('REQUEST_METHOD'):
 	    method = string.upper(environ['REQUEST_METHOD'])
 	if not fp and method == 'GET':
-	    qs = None
 	    if environ.has_key('QUERY_STRING'):
 		qs = environ['QUERY_STRING']
+	    elif sys.argv[1:]:
+		qs = sys.argv[1]
+	    else:
+		qs = ""
 	    from StringIO import StringIO
-	    fp = StringIO(qs or "")
+	    fp = StringIO(qs)
 	    if headers is None:
 		headers = {'content-type':
 			   "application/x-www-form-urlencoded"}
