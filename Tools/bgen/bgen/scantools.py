@@ -558,6 +558,7 @@ if missing: raise "Missing Types"
 class Scanner_PreUH3(Scanner):
 	"""Scanner for Universal Headers before release 3"""
 	def initpatterns(self):
+		Scanner.initpatterns(self)
 		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
 		self.tail_pat = "[;={}]"
 		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
