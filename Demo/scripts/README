@@ -24,6 +24,7 @@ fixheader.py		Add some cpp magic to a C include file
 freeze.py		Convert a Python script into a free-standing binary
 from.py			Summarize mailbox
 ftpstats.py		Summarize ftp daemon log file
+ifdef.py		Remove #if(n)def groups from C sources
 linktree.py		Make a copy of a tree with links to original files
 lll.py			Find and list symbolic links in current directory
 lpwatch.py		Watch BSD line printer queues
