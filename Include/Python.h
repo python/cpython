@@ -128,4 +128,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #define Py_file_input 257
 #define Py_eval_input 258
 
+#ifdef _GNU_PTH
+/* GNU pth user-space thread support */
+#include <pth.h>
+#endif
 #endif /* !Py_PYTHON_H */
