@@ -321,7 +321,7 @@ lib-info-$(RELEASE).tar.gz: info
 	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
 
 latex-$(RELEASE).tar.gz:
-	$(srcdir)/tools/mktarball.sh
+	$(srcdir)/tools/mktarball.sh $(RELEASE)
 
 pdf-$(RELEASE).tar.gz: all-pdf
 	(cd paper-$(PAPER); tar cf - $(PDFFILES)) | gzip -9 >$@
@@ -330,8 +330,8 @@ postscript-$(RELEASE).tar.gz: all-ps
 	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
 
 html-$(RELEASE).tar.gz:
-	tar cf - -C $(HTMLDIR) index.html ???/???.css ???/*.html */*.gif \
-		| gzip -9 >html-$(RELEASE).tar.gz
+	(cd html; tar cf - index.html ???/???.css ???/*.html */*.gif) \
+		| gzip -9 >$@
 
 # convenience targets:
 
