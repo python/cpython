@@ -609,6 +609,12 @@ PyObject_Hash:PyObject*:o:0:
 PyObject_IsTrue:int:::
 PyObject_IsTrue:PyObject*:o:0:
 
+PyObject_Init:PyObject*::0:
+PyObject_Init:PyObject*:op:0:
+
+PyObject_InitVar:PyVarObject*::0:
+PyObject_InitVar:PyVarObject*:op:0:
+
 PyObject_Length:int:::
 PyObject_Length:PyObject*:o:0:
 
@@ -1212,10 +1218,13 @@ _PyImport_FixupExtension:char*:::
 
 _PyImport_Init:void:::
 
+_PyObject_Del:void:::
+_PyObject_Del:PyObject*:op:0:
+
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:
 
-_PyObject_NewVar:PyObject*::+1:
+_PyObject_NewVar:PyVarObject*::+1:
 _PyObject_NewVar:PyTypeObject*:type:0:
 _PyObject_NewVar:int:size::
 
