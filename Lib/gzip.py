@@ -24,6 +24,10 @@ def U32(i):
         i += 1L << 32
     return i
 
+def LOWU32(i):
+    """Return the low-order 32 bits of an int, as a non-negative int."""
+    return i & 0xFFFFFFFFL
+
 def write32(output, value):
     output.write(struct.pack("<l", value))
 
@@ -295,21 +299,22 @@ class GzipFile:
         # We've read to the end of the file, so we have to rewind in order
         # to reread the 8 bytes containing the CRC and the file size.
         # We check the that the computed CRC and size of the
-        # uncompressed data matches the stored values.
+        # uncompressed data matches the stored values.  Note that the size
+        # stored is the true file size mod 2**32.
         self.fileobj.seek(-8, 1)
         crc32 = read32(self.fileobj)
         isize = U32(read32(self.fileobj))   # may exceed 2GB
         if U32(crc32) != U32(self.crc):
             raise ValueError, "CRC check failed"
-        elif isize != self.size:
+        elif isize != LOWU32(self.size):
             raise ValueError, "Incorrect length of data produced"
 
     def close(self):
         if self.mode == WRITE:
             self.fileobj.write(self.compress.flush())
             write32(self.fileobj, self.crc)
-            # self.size may exceed 2GB
-            write32u(self.fileobj, self.size)
+            # self.size may exceed 2GB, or even 4GB
+            write32u(self.fileobj, LOWU32(self.size))
             self.fileobj = None
         elif self.mode == READ:
             self.fileobj = None

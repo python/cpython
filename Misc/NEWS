@@ -355,9 +355,12 @@ Extension modules
 Library
 -------
 
-- gzip.py now handles files exceeding 2GB.  Note that 4GB is still a
-  fundamental limitation of the underlying gzip file format (it only
-  has 32 bits to record the file size).
+- gzip.py now handles files exceeding 2GB.  Files over 4GB also work
+  now (provided the OS supports it, and Python is configured with large
+  file support), but in that case the underlying gzip file format can
+  record only the least-significant 32 bits of the file size, so that
+  some tools working with gzipped files may report an incorrect file
+  size.
 
 - xml.sax.saxutils.unescape has been added, to replace entity references
   with their entity value.
