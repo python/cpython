@@ -45,7 +45,7 @@ badnames = ['tags', 'TAGS', 'xyzzy', 'nohup.out', 'core']
 badprefixes = ['.', ',', '@', '#', 'o.']
 badsuffixes = \
 	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not', \
-	 '.pyc', '.fdc', '.rgb', '.elc']
+	 '.pyc', '.fdc', '.rgb', '.elc', ',v']
 ignore = []
 
 def setup():
