@@ -237,6 +237,25 @@ extern DL_IMPORT(int) PyUnicode_GetSize(
     PyObject *unicode	 	/* Unicode object */
     );
 
+/* Resize an already allocated Unicode object to the new size length.
+
+   *unicode is modified to point to the new (resized) object and 0
+   returned on success.
+
+   This API may only be called by the function which also called the
+   Unicode constructor. The refcount on the object must be 1. Otherwise,
+   an error is returned.
+
+   Error handling is implemented as follows: an exception is set, -1
+   is returned and *unicode left untouched.
+
+*/
+
+extern DL_IMPORT(int) PyUnicode_Resize(
+    PyObject **unicode,		/* Pointer to the Unicode object */
+    int length			/* New length */
+    );
+
 /* Coerce obj to an Unicode object and return a reference with
    *incremented* refcount.
 
