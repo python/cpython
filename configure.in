@@ -122,7 +122,7 @@ AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h \
+AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h \
 sys/param.h sys/select.h sys/time.h sys/times.h \
@@ -175,7 +175,8 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="ld_so_aix \$(CC)";;
-	IRIX*) LDSHARED="ld -shared";;
+	IRIX/5*) LDSHARED="ld -shared";;
+	IRIX/6*) LDSHARED="ld -n32 -shared -all"; OPT="$OPT -n32";;
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
 	hp*|HP*) LDSHARED="ld -b";;
@@ -194,7 +195,7 @@ AC_MSG_RESULT($LDSHARED)
 AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
-	case $ac_sys_system in
+	case $ac_sys_system/$ac_sys_release in
 	hp*|HP*) if test "$GCC" = yes;
 		 then CCSHARED="-fpic";
 		 else CCSHARED="+z";
@@ -202,6 +203,7 @@ then
 	Linux*) CCSHARED="-fpic";;
 	FreeBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
+	IRIX/6*) CCSHARED="-n32 -all";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -210,13 +212,14 @@ AC_MSG_RESULT($CCSHARED)
 AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
-	case $ac_sys_system in
+	case $ac_sys_system/$ac_sys_release in
 	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp -lld";;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
 	Linux*) LINKFORSHARED="-rdynamic";;
 	next) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
+	IRIX/6*) LINKFORSHARED="-n32 -all";;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
