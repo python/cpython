@@ -48,12 +48,11 @@ CRLF = '\r\n'
 
 
 # Next port to be used by makeport(), with PORT_OFFSET added
+# (This is now only used when the python interpreter doesn't support
+# the getsockname() method yet)
 nextport = 0
 PORT_OFFSET = 40000
 PORT_CYCLE = 1000
-# XXX This is a nuisance: when using the program several times in a row,
-# reusing the port doesn't work and you have to edit the first port
-# assignment...  We need getsockname()!
 
 
 # The class itself
@@ -152,11 +151,10 @@ class FTP:
 		self.putcmd(cmd)
 		return self.getresp()
 
-	# Send a command and ignore the response, which must begin with '2'
+	# Send a command and expect a response beginning with '2'
 	def voidcmd(self, cmd):
-		resp = self.sendcmd(cmd)
-		if resp[0] <> '2':
-			raise error_reply, resp
+		self.putcmd(cmd)
+		self.voidresp()
 
 	# Send a PORT command with the current host and the given port number
 	def sendport(self, port):
@@ -171,11 +169,20 @@ class FTP:
 	# Create a new socket and send a PORT command for it
 	def makeport(self):
 		global nextport
-		port = nextport + PORT_OFFSET
-		nextport = (nextport + 1) % PORT_CYCLE
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.bind('', port)
-		sock.listen(0)
+		try:
+			getsockname = sock.getsockname
+		except AttributeError:
+			if self.debugging > 1:
+				print '*** getsockname not supported',
+				print '-- using manual port assignment ***'
+			port = nextport + PORT_OFFSET
+			nextport = (nextport + 1) % PORT_CYCLE
+			sock.bind('', port)
+			getsockname = None
+		sock.listen(0) # Assigns the port if not explicitly bound
+		if getsockname:
+			host, port = getsockname()
 		resp = self.sendport(port)
 		return sock
 
