@@ -116,7 +116,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 /* The STR resource that holds the preference file name */
-/* #define PREFFILENAME_ID 228 */
+#define PREFFILENAME_ID 228		/* For Rez only */
+#define PREFFILENAME_PASCAL_NAME "PythonPreferenceFileName"
 #define PREFFILENAME_NAME "\pPythonPreferenceFileName"
 
 /* The STR# resource for sys.path initialization */
@@ -142,6 +143,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define POPT_VERSION_CURRENT	4	/* Current version number */
 
+#ifndef rez
 typedef struct PyMac_PrefRecord {
 	unsigned char	version;
 	unsigned char	inspect;
@@ -156,11 +158,14 @@ typedef struct PyMac_PrefRecord {
 	unsigned char	oldexc;
 	unsigned char	nosite;
 } PyMac_PrefRecord;
+#endif
 
 /* The GUSI options resources */
 #define GUSIOPTIONS_ID	10240
 #define GUSIOPTIONSOVERRIDE_ID 10241
 
+#ifndef rez
 /* From macgetpath.c: */
 void PyMac_PreferenceOptions Py_PROTO((PyMac_PrefRecord *));
 char * PyMac_GetPythonDir Py_PROTO((void));
+#endif
