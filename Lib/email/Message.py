@@ -5,13 +5,15 @@
 """
 
 import re
+import uu
+import binascii
 import warnings
 from cStringIO import StringIO
 from types import ListType, TupleType, StringType
 
 # Intrapackage imports
-from email import Errors
 from email import Utils
+from email import Errors
 from email import Charset
 
 SEMISPACE = '; '
@@ -164,14 +166,18 @@ class Message:
         the list object, you modify the message's payload in place.  Optional
         i returns that index into the payload.
 
-        Optional decode is a flag (defaulting to False) indicating whether the
-        payload should be decoded or not, according to the
-        Content-Transfer-Encoding header.  When True and the message is not a
-        multipart, the payload will be decoded if this header's value is
-        `quoted-printable' or `base64'.  If some other encoding is used, or
-        the header is missing, the payload is returned as-is (undecoded).  If
-        the message is a multipart and the decode flag is True, then None is
-        returned.
+        Optional decode is a flag indicating whether the payload should be
+        decoded or not, according to the Content-Transfer-Encoding header
+        (default is False).
+
+        When True and the message is not a multipart, the payload will be
+        decoded if this header's value is `quoted-printable' or `base64'.  If
+        some other encoding is used, or the header is missing, or if the
+        payload has bogus data (i.e. bogus base64 or uuencoded data), the
+        payload is returned as-is.
+
+        If the message is a multipart and the decode flag is True, then None
+        is returned.
         """
         if i is None:
             payload = self._payload
@@ -182,11 +188,23 @@ class Message:
         if decode:
             if self.is_multipart():
                 return None
-            cte = self.get('content-transfer-encoding', '')
-            if cte.lower() == 'quoted-printable':
+            cte = self.get('content-transfer-encoding', '').lower()
+            if cte == 'quoted-printable':
                 return Utils._qdecode(payload)
-            elif cte.lower() == 'base64':
-                return Utils._bdecode(payload)
+            elif cte == 'base64':
+                try:
+                    return Utils._bdecode(payload)
+                except binascii.Error:
+                    # Incorrect padding
+                    return payload
+            elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
+                sfp = StringIO()
+                try:
+                    uu.decode(StringIO(payload+'\n'), sfp)
+                    payload = sfp.getvalue()
+                except uu.Error:
+                    # Some decoding problem
+                    return payload
         # Everything else, including encodings with 8bit or 7bit are returned
         # unchanged.
         return payload

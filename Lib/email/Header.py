@@ -4,10 +4,12 @@
 """Header encoding and decoding functionality."""
 
 import re
+import binascii
 from types import StringType, UnicodeType
 
 import email.quopriMIME
 import email.base64MIME
+from email.Errors import HeaderParseError
 from email.Charset import Charset
 
 try:
@@ -25,8 +27,11 @@ except NameError:
 CRLFSPACE = '\r\n '
 CRLF = '\r\n'
 NL = '\n'
+SPACE = ' '
+USPACE = u' '
 SPACE8 = ' ' * 8
 EMPTYSTRING = ''
+UEMPTYSTRING = u''
 
 MAXLINELEN = 76
 
@@ -47,6 +52,13 @@ ecre = re.compile(r'''
   \?=                   # literal ?=
   ''', re.VERBOSE | re.IGNORECASE)
 
+pcre = re.compile('([,;])')
+
+# Field name regexp, including trailing colon, but not separating whitespace,
+# according to RFC 2822.  Character range is from tilde to exclamation mark.
+# For use with .match()
+fcre = re.compile(r'[\041-\176]+:$')
+
 
 
 # Helpers
@@ -61,6 +73,9 @@ def decode_header(header):
     decoded parts of the header.  Charset is None for non-encoded parts of the
     header, otherwise a lower-case string containing the name of the character
     set specified in the encoded string.
+
+    An email.Errors.HeaderParseError may be raised when certain decoding error
+    occurs (e.g. a base64 decoding exception).
     """
     # If no encoding, just return the header
     header = str(header)
@@ -79,18 +94,24 @@ def decode_header(header):
             if unenc:
                 # Should we continue a long line?
                 if decoded and decoded[-1][1] is None:
-                    decoded[-1] = (decoded[-1][0] + dec, None)
+                    decoded[-1] = (decoded[-1][0] + SPACE + unenc, None)
                 else:
                     decoded.append((unenc, None))
             if parts:
                 charset, encoding = [s.lower() for s in parts[0:2]]
                 encoded = parts[2]
-                dec = ''
+                dec = None
                 if encoding == 'q':
                     dec = email.quopriMIME.header_decode(encoded)
                 elif encoding == 'b':
-                    dec = email.base64MIME.decode(encoded)
-                else:
+                    try:
+                        dec = email.base64MIME.decode(encoded)
+                    except binascii.Error:
+                        # Turn this into a higher level exception.  BAW: Right
+                        # now we throw the lower level exception away but
+                        # when/if we get exception chaining, we'll preserve it.
+                        raise HeaderParseError
+                if dec is None:
                     dec = encoded
 
                 if decoded and decoded[-1][1] == charset:
@@ -126,8 +147,9 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
 
 
 class Header:
-    def __init__(self, s=None, charset=None, maxlinelen=None, header_name=None,
-                 continuation_ws=' '):
+    def __init__(self, s=None, charset=None,
+                 maxlinelen=None, header_name=None,
+                 continuation_ws=' ', errors='strict'):
         """Create a MIME-compliant header that can contain many character sets.
 
         Optional s is the initial header value.  If None, the initial header
@@ -150,6 +172,8 @@ class Header:
         continuation_ws must be RFC 2822 compliant folding whitespace (usually
         either a space or a hard tab) which will be prepended to continuation
         lines.
+
+        errors is passed through to the .append() call.
         """
         if charset is None:
             charset = USASCII
@@ -161,7 +185,7 @@ class Header:
         # BAW: I believe `chunks' and `maxlinelen' should be non-public.
         self._chunks = []
         if s is not None:
-            self.append(s, charset)
+            self.append(s, charset, errors)
         if maxlinelen is None:
             maxlinelen = MAXLINELEN
         if header_name is None:
@@ -182,9 +206,24 @@ class Header:
 
     def __unicode__(self):
         """Helper for the built-in unicode function."""
-        # charset item is a Charset instance so we need to stringify it.
-        uchunks = [unicode(s, str(charset)) for s, charset in self._chunks]
-        return u''.join(uchunks)
+        uchunks = []
+        lastcs = None
+        for s, charset in self._chunks:
+            # We must preserve spaces between encoded and non-encoded word
+            # boundaries, which means for us we need to add a space when we go
+            # from a charset to None/us-ascii, or from None/us-ascii to a
+            # charset.  Only do this for the second and subsequent chunks.
+            nextcs = charset
+            if uchunks:
+                if lastcs is not None:
+                    if nextcs is None or nextcs == 'us-ascii':
+                        uchunks.append(USPACE)
+                        nextcs = None
+                elif nextcs is not None and nextcs <> 'us-ascii':
+                    uchunks.append(USPACE)
+            lastcs = nextcs
+            uchunks.append(unicode(s, str(charset)))
+        return UEMPTYSTRING.join(uchunks)
 
     # Rich comparison operators for equality only.  BAW: does it make sense to
     # have or explicitly disable <, <=, >, >= operators?
@@ -196,7 +235,7 @@ class Header:
     def __ne__(self, other):
         return not self == other
 
-    def append(self, s, charset=None):
+    def append(self, s, charset=None, errors='strict'):
         """Append a string to the MIME header.
 
         Optional charset, if given, should be a Charset instance or the name
@@ -213,6 +252,9 @@ class Header:
         using RFC 2047 rules, the Unicode string will be encoded using the
         following charsets in order: us-ascii, the charset hint, utf-8.  The
         first character set not to provoke a UnicodeError is used.
+
+        Optional `errors' is passed as the third argument to any unicode() or
+        ustr.encode() call.
         """
         if charset is None:
             charset = self._charset
@@ -227,12 +269,12 @@ class Header:
                 # Possibly raise UnicodeError if the byte string can't be
                 # converted to a unicode with the input codec of the charset.
                 incodec = charset.input_codec or 'us-ascii'
-                ustr = unicode(s, incodec)
+                ustr = unicode(s, incodec, errors)
                 # Now make sure that the unicode could be converted back to a
                 # byte string with the output codec, which may be different
                 # than the iput coded.  Still, use the original byte string.
                 outcodec = charset.output_codec or 'us-ascii'
-                ustr.encode(outcodec)
+                ustr.encode(outcodec, errors)
             elif isinstance(s, UnicodeType):
                 # Now we have to be sure the unicode string can be converted
                 # to a byte string with a reasonable output codec.  We want to
@@ -240,7 +282,7 @@ class Header:
                 for charset in USASCII, charset, UTF8:
                     try:
                         outcodec = charset.output_codec or 'us-ascii'
-                        s = s.encode(outcodec)
+                        s = s.encode(outcodec, errors)
                         break
                     except UnicodeError:
                         pass
@@ -248,13 +290,13 @@ class Header:
                     assert False, 'utf-8 conversion failed'
         self._chunks.append((s, charset))
 
-    def _split(self, s, charset, firstline=False):
+    def _split(self, s, charset, maxlinelen, splitchars):
         # Split up a header safely for use with encode_chunks.
         splittable = charset.to_splittable(s)
-        encoded = charset.from_splittable(splittable)
+        encoded = charset.from_splittable(splittable, True)
         elen = charset.encoded_header_len(encoded)
-
-        if elen <= self._maxlinelen:
+        # If the line's encoded length first, just return it
+        if elen <= maxlinelen:
             return [(encoded, charset)]
         # If we have undetermined raw 8bit characters sitting in a byte
         # string, we really don't know what the right thing to do is.  We
@@ -262,7 +304,7 @@ class Header:
         # could break if we split it between pairs.  The least harm seems to
         # be to not split the header at all, but that means they could go out
         # longer than maxlinelen.
-        elif charset == '8bit':
+        if charset == '8bit':
             return [(s, charset)]
         # BAW: I'm not sure what the right test here is.  What we're trying to
         # do is be faithful to RFC 2822's recommendation that ($2.2.3):
@@ -275,101 +317,31 @@ class Header:
         # For now, I can only imagine doing this when the charset is us-ascii,
         # although it's possible that other charsets may also benefit from the
         # higher-level syntactic breaks.
-        #
         elif charset == 'us-ascii':
-            return self._ascii_split(s, charset, firstline)
+            return self._split_ascii(s, charset, maxlinelen, splitchars)
         # BAW: should we use encoded?
         elif elen == len(s):
             # We can split on _maxlinelen boundaries because we know that the
             # encoding won't change the size of the string
-            splitpnt = self._maxlinelen
+            splitpnt = maxlinelen
             first = charset.from_splittable(splittable[:splitpnt], False)
             last = charset.from_splittable(splittable[splitpnt:], False)
         else:
-            # Divide and conquer.
-            halfway = _floordiv(len(splittable), 2)
-            first = charset.from_splittable(splittable[:halfway], False)
-            last = charset.from_splittable(splittable[halfway:], False)
-        # Do the split
-        return self._split(first, charset, firstline) + \
-               self._split(last, charset)
+            # Binary search for split point
+            first, last = _binsplit(splittable, charset, maxlinelen)
+        # first is of the proper length so just wrap it in the appropriate
+        # chrome.  last must be recursively split.
+        fsplittable = charset.to_splittable(first)
+        fencoded = charset.from_splittable(fsplittable, True)
+        chunk = [(fencoded, charset)]
+        return chunk + self._split(last, charset, self._maxlinelen, splitchars)
 
-    def _ascii_split(self, s, charset, firstline):
-        # Attempt to split the line at the highest-level syntactic break
-        # possible.  Note that we don't have a lot of smarts about field
-        # syntax; we just try to break on semi-colons, then whitespace.
-        rtn = []
-        lines = s.splitlines()
-        while lines:
-            line = lines.pop(0)
-            if firstline:
-                maxlinelen = self._firstlinelen
-                firstline = False
-            else:
-                #line = line.lstrip()
-                maxlinelen = self._maxlinelen
-            # Short lines can remain unchanged
-            if len(line.replace('\t', SPACE8)) <= maxlinelen:
-                rtn.append(line)
-            else:
-                oldlen = len(line)
-                # Try to break the line on semicolons, but if that doesn't
-                # work, try to split on folding whitespace.
-                while len(line) > maxlinelen:
-                    i = line.rfind(';', 0, maxlinelen)
-                    if i < 0:
-                        break
-                    rtn.append(line[:i] + ';')
-                    line = line[i+1:]
-                # Is the remaining stuff still longer than maxlinelen?
-                if len(line) <= maxlinelen:
-                    # Splitting on semis worked
-                    rtn.append(line)
-                    continue
-                # Splitting on semis didn't finish the job.  If it did any
-                # work at all, stick the remaining junk on the front of the
-                # `lines' sequence and let the next pass do its thing.
-                if len(line) <> oldlen:
-                    lines.insert(0, line)
-                    continue
-                # Otherwise, splitting on semis didn't help at all.
-                parts = re.split(r'(\s+)', line)
-                if len(parts) == 1 or (len(parts) == 3 and
-                                       parts[0].endswith(':')):
-                    # This line can't be split on whitespace.  There's now
-                    # little we can do to get this into maxlinelen.  BAW:
-                    # We're still potentially breaking the RFC by possibly
-                    # allowing lines longer than the absolute maximum of 998
-                    # characters.  For now, let it slide.
-                    #
-                    # len(parts) will be 1 if this line has no `Field: '
-                    # prefix, otherwise it will be len(3).
-                    rtn.append(line)
-                    continue
-                # There is whitespace we can split on.
-                first = parts.pop(0)
-                sublines = [first]
-                acc = len(first)
-                while parts:
-                    len0 = len(parts[0])
-                    len1 = len(parts[1])
-                    if acc + len0 + len1 <= maxlinelen:
-                        sublines.append(parts.pop(0))
-                        sublines.append(parts.pop(0))
-                        acc += len0 + len1
-                    else:
-                        # Split it here, but don't forget to ignore the
-                        # next whitespace-only part
-                        if first <> '':
-                            rtn.append(EMPTYSTRING.join(sublines))
-                        del parts[0]
-                        first = parts.pop(0)
-                        sublines = [first]
-                        acc = len(first)
-                rtn.append(EMPTYSTRING.join(sublines))
-        return [(chunk, charset) for chunk in rtn]
+    def _split_ascii(self, s, charset, firstlen, splitchars):
+        chunks = _split_ascii(s, firstlen, self._maxlinelen,
+                              self._continuation_ws, splitchars)
+        return zip(chunks, [charset]*len(chunks))
 
-    def _encode_chunks(self, newchunks):
+    def _encode_chunks(self, newchunks, maxlinelen):
         # MIME-encode a header with many different charsets and/or encodings.
         #
         # Given a list of pairs (string, charset), return a MIME-encoded
@@ -387,19 +359,24 @@ class Header:
         #
         # =?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
         #  =?charset2?b?SvxyZ2VuIEL2aW5n?="
-        #
         chunks = []
         for header, charset in newchunks:
+            if not header:
+                continue
             if charset is None or charset.header_encoding is None:
-                # There's no encoding for this chunk's charsets
-                _max_append(chunks, header, self._maxlinelen)
+                s = header
             else:
-                _max_append(chunks, charset.header_encode(header),
-                            self._maxlinelen, ' ')
+                s = charset.header_encode(header)
+            # Don't add more folding whitespace than necessary
+            if chunks and chunks[-1].endswith(' '):
+                extra = ''
+            else:
+                extra = ' '
+            _max_append(chunks, s, maxlinelen, extra)
         joiner = NL + self._continuation_ws
         return joiner.join(chunks)
 
-    def encode(self):
+    def encode(self, splitchars=';, '):
         """Encode a message header into an RFC-compliant format.
 
         There are many issues involved in converting a given string for use in
@@ -416,8 +393,123 @@ class Header:
 
         If the given charset is not known or an error occurs during
         conversion, this function will return the header untouched.
+
+        Optional splitchars is a string containing characters to split long
+        ASCII lines on, in rough support of RFC 2822's `highest level
+        syntactic breaks'.  This doesn't affect RFC 2047 encoded lines.
         """
         newchunks = []
+        maxlinelen = self._firstlinelen
+        lastlen = 0
         for s, charset in self._chunks:
-            newchunks += self._split(s, charset, True)
-        return self._encode_chunks(newchunks)
+            # The first bit of the next chunk should be just long enough to
+            # fill the next line.  Don't forget the space separating the
+            # encoded words.
+            targetlen = maxlinelen - lastlen - 1
+            if targetlen < charset.encoded_header_len(''):
+                # Stick it on the next line
+                targetlen = maxlinelen
+            newchunks += self._split(s, charset, targetlen, splitchars)
+            lastchunk, lastcharset = newchunks[-1]
+            lastlen = lastcharset.encoded_header_len(lastchunk)
+        return self._encode_chunks(newchunks, maxlinelen)
+
+
+
+def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
+    lines = []
+    maxlen = firstlen
+    for line in s.splitlines():
+        # Ignore any leading whitespace (i.e. continuation whitespace) already
+        # on the line, since we'll be adding our own.
+        line = line.lstrip()
+        if len(line) < maxlen:
+            lines.append(line)
+            maxlen = restlen
+            continue
+        # Attempt to split the line at the highest-level syntactic break
+        # possible.  Note that we don't have a lot of smarts about field
+        # syntax; we just try to break on semi-colons, then commas, then
+        # whitespace.
+        for ch in splitchars:
+            if line.find(ch) >= 0:
+                break
+        else:
+            # There's nothing useful to split the line on, not even spaces, so
+            # just append this line unchanged
+            lines.append(line)
+            maxlen = restlen
+            continue
+        # Now split the line on the character plus trailing whitespace
+        cre = re.compile(r'%s\s*' % ch)
+        if ch in ';,':
+            eol = ch
+        else:
+            eol = ''
+        joiner = eol + ' '
+        joinlen = len(joiner)
+        wslen = len(continuation_ws.replace('\t', SPACE8))
+        this = []
+        linelen = 0
+        for part in cre.split(line):
+            curlen = linelen + max(0, len(this)-1) * joinlen
+            partlen = len(part)
+            onfirstline = not lines
+            # We don't want to split after the field name, if we're on the
+            # first line and the field name is present in the header string.
+            if ch == ' ' and onfirstline and \
+                   len(this) == 1 and fcre.match(this[0]):
+                this.append(part)
+                linelen += partlen
+            elif curlen + partlen > maxlen:
+                if this:
+                    lines.append(joiner.join(this) + eol)
+                # If this part is longer than maxlen and we aren't already
+                # splitting on whitespace, try to recursively split this line
+                # on whitespace.
+                if partlen > maxlen and ch <> ' ':
+                    subl = _split_ascii(part, maxlen, restlen,
+                                        continuation_ws, ' ')
+                    lines.extend(subl[:-1])
+                    this = [subl[-1]]
+                else:
+                    this = [part]
+                linelen = wslen + len(this[-1])
+                maxlen = restlen
+            else:
+                this.append(part)
+                linelen += partlen
+        # Put any left over parts on a line by themselves
+        if this:
+            lines.append(joiner.join(this))
+    return lines
+
+
+
+def _binsplit(splittable, charset, maxlinelen):
+    i = 0
+    j = len(splittable)
+    while i < j:
+        # Invariants:
+        # 1. splittable[:k] fits for all k <= i (note that we *assume*,
+        #    at the start, that splittable[:0] fits).
+        # 2. splittable[:k] does not fit for any k > j (at the start,
+        #    this means we shouldn't look at any k > len(splittable)).
+        # 3. We don't know about splittable[:k] for k in i+1..j.
+        # 4. We want to set i to the largest k that fits, with i <= k <= j.
+        #
+        m = (i+j+1) >> 1  # ceiling((i+j)/2); i < m <= j
+        chunk = charset.from_splittable(splittable[:m], True)
+        chunklen = charset.encoded_header_len(chunk)
+        if chunklen <= maxlinelen:
+            # m is acceptable, so is a new lower bound.
+            i = m
+        else:
+            # m is not acceptable, so final i must be < m.
+            j = m - 1
+    # i == j.  Invariant #1 implies that splittable[:i] fits, and
+    # invariant #2 implies that splittable[:i+1] does not fit, so i
+    # is what we're looking for.
+    first = charset.from_splittable(splittable[:i], False)
+    last  = charset.from_splittable(splittable[i:], False)
+    return first, last

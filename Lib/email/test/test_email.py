@@ -1,15 +1,15 @@
-# Copyright (C) 2001,2002 Python Software Foundation
+# Copyright (C) 2001,2002,2003 Python Software Foundation
 # email package unit tests
 
-import sys
 import os
+import sys
 import time
-import unittest
 import base64
 import difflib
+import unittest
+import warnings
 from cStringIO import StringIO
 from types import StringType, ListType
-import warnings
 
 import email
 
@@ -42,11 +42,17 @@ SPACE = ' '
 # We don't care about DeprecationWarnings
 warnings.filterwarnings('ignore', '', DeprecationWarning, __name__)
 
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
 
 
-def openfile(filename):
+def openfile(filename, mode='r'):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
-    return open(path, 'r')
+    return open(path, mode)
 
 
 
@@ -67,10 +73,10 @@ class TestEmailBase(unittest.TestCase):
         # Python 2.1
         ndiffAssertEqual = unittest.TestCase.assertEqual
 
-    def _msgobj(self, filename):
+    def _msgobj(self, filename, strict=False):
         fp = openfile(findfile(filename))
         try:
-            msg = email.message_from_file(fp)
+            msg = email.message_from_file(fp, strict=strict)
         finally:
             fp.close()
         return msg
@@ -184,19 +190,30 @@ class TestMessageAPI(TestEmailBase):
         eq = self.assertEqual
         msg = self._msgobj('msg_10.txt')
         # The outer message is a multipart
-        eq(msg.get_payload(decode=1), None)
+        eq(msg.get_payload(decode=True), None)
         # Subpart 1 is 7bit encoded
-        eq(msg.get_payload(0).get_payload(decode=1),
+        eq(msg.get_payload(0).get_payload(decode=True),
            'This is a 7bit encoded message.\n')
         # Subpart 2 is quopri
-        eq(msg.get_payload(1).get_payload(decode=1),
+        eq(msg.get_payload(1).get_payload(decode=True),
            '\xa1This is a Quoted Printable encoded message!\n')
         # Subpart 3 is base64
-        eq(msg.get_payload(2).get_payload(decode=1),
+        eq(msg.get_payload(2).get_payload(decode=True),
            'This is a Base64 encoded message.')
         # Subpart 4 has no Content-Transfer-Encoding: header.
-        eq(msg.get_payload(3).get_payload(decode=1),
+        eq(msg.get_payload(3).get_payload(decode=True),
            'This has no Content-Transfer-Encoding: header.\n')
+
+    def test_get_decoded_uu_payload(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg.set_payload('begin 666 -\n+:&5L;&\\@=V]R;&0 \n \nend\n')
+        for cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
+            msg['content-transfer-encoding'] = cte
+            eq(msg.get_payload(decode=True), 'hello world')
+        # Now try some bogus data
+        msg.set_payload('foo')
+        eq(msg.get_payload(decode=True), 'foo')
 
     def test_decoded_generator(self):
         eq = self.assertEqual
@@ -310,11 +327,11 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_param('charset'), 'iso-2022-jp')
         msg.set_param('importance', 'high value')
         eq(msg.get_param('importance'), 'high value')
-        eq(msg.get_param('importance', unquote=0), '"high value"')
+        eq(msg.get_param('importance', unquote=False), '"high value"')
         eq(msg.get_params(), [('text/plain', ''),
                               ('charset', 'iso-2022-jp'),
                               ('importance', 'high value')])
-        eq(msg.get_params(unquote=0), [('text/plain', ''),
+        eq(msg.get_params(unquote=False), [('text/plain', ''),
                                        ('charset', '"iso-2022-jp"'),
                                        ('importance', '"high value"')])
         msg.set_param('charset', 'iso-9999-xx', header='X-Jimmy')
@@ -452,6 +469,14 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.values(), ['One Hundred', 'Twenty', 'Three', 'Eleven'])
         self.assertRaises(KeyError, msg.replace_header, 'Fourth', 'Missing')
 
+    def test_broken_base64_payload(self):
+        x = 'AwDp0P7//y6LwKEAcPa/6Q=9'
+        msg = Message()
+        msg['content-type'] = 'audio/x-midi'
+        msg['content-transfer-encoding'] = 'base64'
+        msg.set_payload(x)
+        self.assertEqual(msg.get_payload(decode=True), x)
+
 
 
 # Test the email.Encoders module
@@ -459,21 +484,21 @@ class TestEncoders(unittest.TestCase):
     def test_encode_noop(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_noop)
-        eq(msg.get_payload(), 'hello world\n')
+        eq(msg.get_payload(), 'hello world')
 
     def test_encode_7bit(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello world\n')
+        eq(msg.get_payload(), 'hello world')
         eq(msg['content-transfer-encoding'], '7bit')
         msg = MIMEText('hello \x7f world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x7f world\n')
+        eq(msg.get_payload(), 'hello \x7f world')
         eq(msg['content-transfer-encoding'], '7bit')
 
     def test_encode_8bit(self):
         eq = self.assertEqual
         msg = MIMEText('hello \x80 world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x80 world\n')
+        eq(msg.get_payload(), 'hello \x80 world')
         eq(msg['content-transfer-encoding'], '8bit')
 
     def test_encode_empty_payload(self):
@@ -485,13 +510,13 @@ class TestEncoders(unittest.TestCase):
     def test_encode_base64(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_base64)
-        eq(msg.get_payload(), 'aGVsbG8gd29ybGQK\n')
+        eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=')
         eq(msg['content-transfer-encoding'], 'base64')
 
     def test_encode_quoted_printable(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_quopri)
-        eq(msg.get_payload(), 'hello=20world\n')
+        eq(msg.get_payload(), 'hello=20world')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
     def test_default_cte(self):
@@ -560,7 +585,7 @@ bug demonstration
         g_head = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
         cz_head = "Finan\xe8ni metropole se hroutily pod tlakem jejich d\xf9vtipu.. "
         utf8_head = u"\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
-        h = Header(g_head, g)
+        h = Header(g_head, g, header_name='Subject')
         h.append(cz_head, cz)
         h.append(utf8_head, utf8)
         msg = Message()
@@ -568,40 +593,32 @@ bug demonstration
         sfp = StringIO()
         g = Generator(sfp)
         g.flatten(msg)
-        eq(sfp.getvalue(), '''\
-Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
- =?iso-8859-1?q?m_Foerderband_komfortabel_den_Korridor_ent?=
- =?iso-8859-1?q?lang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei?=
- =?iso-8859-1?q?=2C_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=
- =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutil?=
- =?iso-8859-2?q?y_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv?=
- =?utf-8?b?44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
- =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
- =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
- =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?q?s_Nunstuck_git_und?=
- =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
- =?utf-8?q?r_die_Flipperwaldt?=
- =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=
+        eq(sfp.getvalue(), """\
+Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
+ =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
+ =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
+ =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
+ =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
+ =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
+ =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
+ =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
+ =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
+ =?utf-8?b?44Gm44GE44G+44GZ44CC?=
 
-''')
-        eq(h.encode(), '''\
-=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
- =?iso-8859-1?q?m_Foerderband_komfortabel_den_Korridor_ent?=
- =?iso-8859-1?q?lang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei?=
- =?iso-8859-1?q?=2C_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=
- =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutil?=
- =?iso-8859-2?q?y_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv?=
- =?utf-8?b?44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
- =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
- =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
- =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?q?s_Nunstuck_git_und?=
- =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
- =?utf-8?q?r_die_Flipperwaldt?=
- =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=''')
+""")
+        eq(h.encode(), """\
+=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
+ =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
+ =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
+ =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
+ =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
+ =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
+ =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
+ =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
+ =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
+ =?utf-8?b?44Gm44GE44G+44GZ44CC?=""")
 
     def test_long_header_encode(self):
         eq = self.ndiffAssertEqual
@@ -706,12 +723,13 @@ from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
     def test_long_8bit_header(self):
         eq = self.ndiffAssertEqual
         msg = Message()
-        h = Header('Britische Regierung gibt', 'iso-8859-1')
+        h = Header('Britische Regierung gibt', 'iso-8859-1',
+                    header_name='Subject')
         h.append('gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte')
         msg['Subject'] = h
         eq(msg.as_string(), """\
-Subject: =?iso-8859-1?q?Britische_Regierung_gibt?=
- =?iso-8859-1?q?gr=FCnes_Licht_f=FCr_Offshore-Windkraftprojekte?=
+Subject: =?iso-8859-1?q?Britische_Regierung_gibt?= =?iso-8859-1?q?gr=FCnes?=
+ =?iso-8859-1?q?_Licht_f=FCr_Offshore-Windkraftprojekte?=
 
 """)
 
@@ -721,6 +739,121 @@ Subject: =?iso-8859-1?q?Britische_Regierung_gibt?=
         msg['Reply-To'] = 'Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>'
         eq(msg.as_string(), """\
 Reply-To: Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>
+
+""")
+
+    def test_long_to_header(self):
+        eq = self.ndiffAssertEqual
+        to = '"Someone Test #A" <someone@eecs.umich.edu>,<someone@eecs.umich.edu>,"Someone Test #B" <someone@umich.edu>, "Someone Test #C" <someone@eecs.umich.edu>, "Someone Test #D" <someone@eecs.umich.edu>'
+        msg = Message()
+        msg['To'] = to
+        eq(msg.as_string(0), '''\
+To: "Someone Test #A" <someone@eecs.umich.edu>, <someone@eecs.umich.edu>,
+\t"Someone Test #B" <someone@umich.edu>,
+\t"Someone Test #C" <someone@eecs.umich.edu>,
+\t"Someone Test #D" <someone@eecs.umich.edu>
+
+''')
+
+    def test_long_line_after_append(self):
+        eq = self.ndiffAssertEqual
+        s = 'This is an example of string which has almost the limit of header length.'
+        h = Header(s)
+        h.append('Add another line.')
+        eq(h.encode(), """\
+This is an example of string which has almost the limit of header length.
+ Add another line.""")
+
+    def test_shorter_line_with_append(self):
+        eq = self.ndiffAssertEqual
+        s = 'This is a shorter line.'
+        h = Header(s)
+        h.append('Add another sentence. (Surprise?)')
+        eq(h.encode(),
+           'This is a shorter line. Add another sentence. (Surprise?)')
+
+    def test_long_field_name(self):
+        eq = self.ndiffAssertEqual
+        fn = 'X-Very-Very-Very-Long-Header-Name'
+        gs = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
+        h = Header(gs, 'iso-8859-1', header_name=fn)
+        # BAW: this seems broken because the first line is too long
+        eq(h.encode(), """\
+=?iso-8859-1?q?Die_Mieter_treten_hier_?=
+ =?iso-8859-1?q?ein_werden_mit_einem_Foerderband_komfortabel_den_Korridor_?=
+ =?iso-8859-1?q?entlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C_g?=
+ =?iso-8859-1?q?egen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
+
+    def test_long_received_header(self):
+        h = 'from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP; Wed, 05 Mar 2003 18:10:18 -0700'
+        msg = Message()
+        msg['Received-1'] = Header(h, continuation_ws='\t')
+        msg['Received-2'] = h
+        self.assertEqual(msg.as_string(), """\
+Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+\throthgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+\tWed, 05 Mar 2003 18:10:18 -0700
+Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+\throthgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+\tWed, 05 Mar 2003 18:10:18 -0700
+
+""")
+
+    def test_string_headerinst_eq(self):
+        h = '<15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de> (David Bremner\'s message of "Thu, 6 Mar 2003 13:58:21 +0100")'
+        msg = Message()
+        msg['Received-1'] = Header(h, header_name='Received-1',
+                                   continuation_ws='\t')
+        msg['Received-2'] = h
+        self.assertEqual(msg.as_string(), """\
+Received-1: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
+\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
+\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+
+""")
+
+    def test_long_unbreakable_lines_with_continuation(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        t = """\
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp"""
+        msg['Face-1'] = t
+        msg['Face-2'] = Header(t, header_name='Face-2')
+        eq(msg.as_string(), """\
+Face-1: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+\tlocQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
+Face-2: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
+
+""")
+
+    def test_another_long_multiline_header(self):
+        eq = self.ndiffAssertEqual
+        m = '''\
+Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with Microsoft SMTPSVC(5.0.2195.4905);
+	Wed, 16 Oct 2002 07:41:11 -0700'''
+        msg = email.message_from_string(m)
+        eq(msg.as_string(), '''\
+Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
+	Microsoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
+
+''')
+
+    def test_long_lines_with_different_header(self):
+        eq = self.ndiffAssertEqual
+        h = """\
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+        <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>"""
+        msg = Message()
+        msg['List'] = h
+        msg['List'] = Header(h, header_name='List')
+        eq(msg.as_string(), """\
+List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+	<mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
+List: List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/spamassassin-talk>,
+ <mailto:spamassassin-talk-request@lists.sourceforge.net?subject=unsubscribe>
 
 """)
 
@@ -738,7 +871,7 @@ Blah blah blah
 
     def test_mangled_from(self):
         s = StringIO()
-        g = Generator(s, mangle_from_=1)
+        g = Generator(s, mangle_from_=True)
         g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
@@ -749,7 +882,7 @@ Blah blah blah
 
     def test_dont_mangle_from(self):
         s = StringIO()
-        g = Generator(s, mangle_from_=0)
+        g = Generator(s, mangle_from_=False)
         g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
@@ -763,8 +896,13 @@ Blah blah blah
 # Test the basic MIMEAudio class
 class TestMIMEAudio(unittest.TestCase):
     def setUp(self):
-        # In Python, audiotest.au lives in Lib/test not Lib/test/data
-        fp = open(findfile('audiotest.au'), 'rb')
+        # Make sure we pick up the audiotest.au that lives in email/test/data.
+        # In Python, there's an audiotest.au living in Lib/test but that isn't
+        # included in some binary distros that don't include the test
+        # package.  The trailing empty string on the .join() is significant
+        # since findfile() will do a dirname().
+        datadir = os.path.join(os.path.dirname(landmark), 'data', '')
+        fp = open(findfile('audiotest.au', datadir), 'rb')
         try:
             self._audiodata = fp.read()
         finally:
@@ -883,7 +1021,7 @@ class TestMIMEText(unittest.TestCase):
                is missing)
 
     def test_payload(self):
-        self.assertEqual(self._msg.get_payload(), 'hello there\n')
+        self.assertEqual(self._msg.get_payload(), 'hello there')
         self.failUnless(not self._msg.is_multipart())
 
     def test_charset(self):
@@ -895,7 +1033,7 @@ class TestMIMEText(unittest.TestCase):
 
 
 # Test a more complicated multipart/mixed type message
-class TestMultipartMixed(unittest.TestCase):
+class TestMultipartMixed(TestEmailBase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
         try:
@@ -978,6 +1116,7 @@ From: bperson@dom.ain
 ''')
 
     def test_one_part_in_a_multipart(self):
+        eq = self.ndiffAssertEqual
         outer = MIMEBase('multipart', 'mixed')
         outer['Subject'] = 'A subject'
         outer['To'] = 'aperson@dom.ain'
@@ -987,7 +1126,7 @@ From: bperson@dom.ain
         outer.set_boundary('BOUNDARY')
         msg = MIMEText('hello world')
         outer.attach(msg)
-        self.assertEqual(outer.as_string(), '''\
+        eq(outer.as_string(), '''\
 Content-Type: multipart/mixed; boundary="BOUNDARY"
 MIME-Version: 1.0
 Subject: A subject
@@ -1000,11 +1139,11 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
-
 --BOUNDARY--
 ''')
 
     def test_seq_parts_in_a_multipart(self):
+        eq = self.ndiffAssertEqual
         outer = MIMEBase('multipart', 'mixed')
         outer['Subject'] = 'A subject'
         outer['To'] = 'aperson@dom.ain'
@@ -1014,7 +1153,7 @@ hello world
         msg = MIMEText('hello world')
         outer.attach(msg)
         outer.set_boundary('BOUNDARY')
-        self.assertEqual(outer.as_string(), '''\
+        eq(outer.as_string(), '''\
 Content-Type: multipart/mixed; boundary="BOUNDARY"
 MIME-Version: 1.0
 Subject: A subject
@@ -1027,7 +1166,6 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
-
 --BOUNDARY--
 ''')
 
@@ -1048,7 +1186,7 @@ class TestNonConformant(TestEmailBase):
             data = fp.read()
         finally:
             fp.close()
-        p = Parser(strict=1)
+        p = Parser(strict=True)
         # Note, under a future non-strict parsing mode, this would parse the
         # message into the intended message tree.
         self.assertRaises(Errors.BoundaryError, p.parsestr, data)
@@ -1099,6 +1237,20 @@ message 2
 --BOUNDARY--
 """)
 
+    def test_no_separating_blank_line(self):
+        eq = self.ndiffAssertEqual
+        msg = self._msgobj('msg_35.txt')
+        eq(msg.as_string(), """\
+From: aperson@dom.ain
+To: bperson@dom.ain
+Subject: here's something interesting
+
+counter to RFC 2822, there's no separating newline here
+""")
+        # strict=True should raise an exception
+        self.assertRaises(Errors.HeaderParseError,
+                          self._msgobj, 'msg_35.txt', True)
+
 
 
 # Test RFC 2047 header encoding and decoding
@@ -1132,6 +1284,31 @@ class TestRFC2047(unittest.TestCase):
            '=?iso-8859-1?b?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=')
         eq(Utils.encode(s2, charset='iso-8859-2', encoding='b'),
            '=?iso-8859-2?b?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=')
+
+    def test_rfc2047_multiline(self):
+        eq = self.assertEqual
+        s = """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz
+ foo bar =?mac-iceland?q?r=8Aksm=9Arg=8Cs?="""
+        dh = decode_header(s)
+        eq(dh, [
+            ('Re:', None),
+            ('r\x8aksm\x9arg\x8cs', 'mac-iceland'),
+            ('baz foo bar', None),
+            ('r\x8aksm\x9arg\x8cs', 'mac-iceland')])
+        eq(str(make_header(dh)),
+           """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar
+ =?mac-iceland?q?r=8Aksm=9Arg=8Cs?=""")
+
+    def test_whitespace_eater_unicode(self):
+        eq = self.assertEqual
+        s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
+        dh = decode_header(s)
+        eq(dh, [('Andr\xe9', 'iso-8859-1'), ('Pirard <pirard@dom.ain>', None)])
+        # Python 2.1's unicode() builtin doesn't call the object's
+        # __unicode__() method.  Use the following alternative instead.
+        #hu = unicode(make_header(dh)).encode('latin-1')
+        hu = make_header(dh).__unicode__().encode('latin-1')
+        eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
 
 
@@ -1263,6 +1440,7 @@ Your message cannot be delivered to the following recipients:
            '<002001c144a6$8752e060$56104586@oxy.edu>')
 
     def test_epilogue(self):
+        eq = self.ndiffAssertEqual
         fp = openfile('msg_21.txt')
         try:
             text = fp.read()
@@ -1282,7 +1460,42 @@ Your message cannot be delivered to the following recipients:
         sfp = StringIO()
         g = Generator(sfp)
         g.flatten(msg)
-        self.assertEqual(sfp.getvalue(), text)
+        eq(sfp.getvalue(), text)
+
+    def test_no_nl_preamble(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        msg['From'] = 'aperson@dom.ain'
+        msg['To'] = 'bperson@dom.ain'
+        msg['Subject'] = 'Test'
+        msg.preamble = 'MIME message'
+        msg.epilogue = ''
+        msg1 = MIMEText('One')
+        msg2 = MIMEText('Two')
+        msg.add_header('Content-Type', 'multipart/mixed', boundary='BOUNDARY')
+        msg.attach(msg1)
+        msg.attach(msg2)
+        eq(msg.as_string(), """\
+From: aperson@dom.ain
+To: bperson@dom.ain
+Subject: Test
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+MIME message
+--BOUNDARY
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+One
+--BOUNDARY
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+Two
+--BOUNDARY--
+""")
 
     def test_default_type(self):
         eq = self.assertEqual
@@ -1494,6 +1707,10 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_33.txt')
         self._idempotent(msg, text)
 
+    def test_text_plain_in_a_multipart_digest(self):
+        msg, text = self._msgobj('msg_34.txt')
+        self._idempotent(msg, text)
+
     def test_content_type(self):
         eq = self.assertEquals
         unless = self.failUnless
@@ -1640,11 +1857,16 @@ class TestMiscellaneous(unittest.TestCase):
     def test_formatdate_localtime(self):
         now = time.time()
         self.assertEqual(
-            Utils.parsedate(Utils.formatdate(now, localtime=1))[:6],
+            Utils.parsedate(Utils.formatdate(now, localtime=True))[:6],
             time.localtime(now)[:6])
 
     def test_parsedate_none(self):
         self.assertEqual(Utils.parsedate(''), None)
+
+    def test_parsedate_compact(self):
+        # The FWS after the comma is optional
+        self.assertEqual(Utils.parsedate('Wed,3 Apr 2002 14:58:26 +0800'),
+                         Utils.parsedate('Wed, 3 Apr 2002 14:58:26 +0800'))
 
     def test_parseaddr_empty(self):
         self.assertEqual(Utils.parseaddr('<>'), ('', ''))
@@ -1662,6 +1884,23 @@ class TestMiscellaneous(unittest.TestCase):
         a = r'A \(Special\) Person'
         b = 'person@dom.ain'
         self.assertEqual(Utils.parseaddr(Utils.formataddr((a, b))), (a, b))
+
+    def test_escape_backslashes(self):
+        self.assertEqual(
+            Utils.formataddr(('Arthur \Backslash\ Foobar', 'person@dom.ain')),
+            r'"Arthur \\Backslash\\ Foobar" <person@dom.ain>')
+        a = r'Arthur \Backslash\ Foobar'
+        b = 'person@dom.ain'
+        self.assertEqual(Utils.parseaddr(Utils.formataddr((a, b))), (a, b))
+
+    def test_name_with_dot(self):
+        x = 'John X. Doe <jxd@example.com>'
+        y = '"John X. Doe" <jxd@example.com>'
+        a, b = ('John X. Doe', 'jxd@example.com')
+        self.assertEqual(Utils.parseaddr(x), (a, b))
+        self.assertEqual(Utils.parseaddr(y), (a, b))
+        # formataddr() quotes the name if there's a dot in it
+        self.assertEqual(Utils.formataddr((a, b)), y)
 
     def test_quote_dump(self):
         self.assertEqual(
@@ -1702,6 +1941,16 @@ class TestMiscellaneous(unittest.TestCase):
                                'Bud Person <bperson@dom.ain>']),
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
+
+    def test_getaddresses_nasty(self):
+        eq = self.assertEqual
+        eq(Utils.getaddresses(['foo: ;']), [('', '')])
+        eq(Utils.getaddresses(
+           ['[]*-- =~$']),
+           [('', ''), ('', ''), ('', '*--')])
+        eq(Utils.getaddresses(
+           ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
+           [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
 
     def test_utils_quote_unquote(self):
         eq = self.assertEqual
@@ -1839,11 +2088,8 @@ Here's the message body
         eq(msg.get_payload(), "Here's the message body\n")
 
     def test_crlf_separation(self):
-        if sys.platform == 'mac':
-            # Skipped in MacPython 2.2.X due to line-end problems
-            return
         eq = self.assertEqual
-        fp = openfile('msg_26.txt')
+        fp = openfile('msg_26.txt', mode='rb')
         try:
             msg = Parser().parse(fp)
         finally:
@@ -1950,7 +2196,7 @@ eHh4eCB4eHh4IA==\r
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?b?aGVsbG8=?=')
         # Test the keep_eols flag
-        eq(he('hello\nworld', keep_eols=1),
+        eq(he('hello\nworld', keep_eols=True),
            '=?iso-8859-1?b?aGVsbG8Kd29ybGQ=?=')
         # Test the maxlinelen argument
         eq(he('xxxx ' * 20, maxlinelen=40), """\
@@ -2029,7 +2275,7 @@ class TestQuopri(unittest.TestCase):
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?q?hello?=')
         # Test the keep_eols flag
-        eq(he('hello\nworld', keep_eols=1), '=?iso-8859-1?q?hello=0Aworld?=')
+        eq(he('hello\nworld', keep_eols=True), '=?iso-8859-1?q?hello=0Aworld?=')
         # Test a non-ASCII character
         eq(he('hello\xc7there'), '=?iso-8859-1?q?hello=C7there?=')
         # Test the maxlinelen argument
@@ -2083,6 +2329,13 @@ two line""")
 
 # Test the Charset class
 class TestCharset(unittest.TestCase):
+    def tearDown(self):
+        from email import Charset as CharsetModule
+        try:
+            del CharsetModule.CHARSETS['fake']
+        except KeyError:
+            pass
+
     def test_idempotent(self):
         eq = self.assertEqual
         # Make sure us-ascii = no Unicode conversion
@@ -2095,6 +2348,36 @@ class TestCharset(unittest.TestCase):
         sp = c.to_splittable(s)
         eq(s, c.from_splittable(sp))
 
+    def test_body_encode(self):
+        eq = self.assertEqual
+        # Try a charset with QP body encoding
+        c = Charset('iso-8859-1')
+        eq('hello w=F6rld', c.body_encode('hello w\xf6rld'))
+        # Try a charset with Base64 body encoding
+        c = Charset('utf-8')
+        eq('aGVsbG8gd29ybGQ=\n', c.body_encode('hello world'))
+        # Try a charset with None body encoding
+        c = Charset('us-ascii')
+        eq('hello world', c.body_encode('hello world'))
+        # Try the convert argument, where input codec <> output codec
+        c = Charset('euc-jp')
+        # With apologies to Tokio Kikuchi ;)
+        try:
+            eq('\x1b$B5FCO;~IW\x1b(B',
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
+            eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
+        except LookupError:
+            # We probably don't have the Japanese codecs installed
+            pass
+        # Testing SF bug #625509, which we have to fake, since there are no
+        # built-in encodings where the header encoding is QP but the body
+        # encoding is not.
+        from email import Charset as CharsetModule
+        CharsetModule.add_charset('fake', CharsetModule.QP, None)
+        c = Charset('fake')
+        eq('hello w\xf6rld', c.body_encode('hello w\xf6rld'))
+
 
 
 # Test multilingual MIME headers.
@@ -2104,14 +2387,14 @@ class TestHeader(TestEmailBase):
         h = Header('Hello World!')
         eq(h.encode(), 'Hello World!')
         h.append(' Goodbye World!')
-        eq(h.encode(), 'Hello World! Goodbye World!')
+        eq(h.encode(), 'Hello World!  Goodbye World!')
 
     def test_simple_surprise(self):
         eq = self.ndiffAssertEqual
         h = Header('Hello World!')
         eq(h.encode(), 'Hello World!')
         h.append('Goodbye World!')
-        eq(h.encode(), 'Hello World!Goodbye World!')
+        eq(h.encode(), 'Hello World! Goodbye World!')
 
     def test_header_needs_no_decoding(self):
         h = 'no decoding needed'
@@ -2120,7 +2403,7 @@ class TestHeader(TestEmailBase):
     def test_long(self):
         h = Header("I am the very model of a modern Major-General; I've information vegetable, animal, and mineral; I know the kings of England, and I quote the fights historical from Marathon to Waterloo, in order categorical; I'm very well acquainted, too, with matters mathematical; I understand equations, both the simple and quadratical; about binomial theorem I'm teeming with a lot o' news, with many cheerful facts about the square of the hypotenuse.",
                    maxlinelen=76)
-        for l in h.encode().split('\n '):
+        for l in h.encode(splitchars=' ').split('\n '):
             self.failUnless(len(l) <= 76)
 
     def test_multilingual(self):
@@ -2135,21 +2418,18 @@ class TestHeader(TestEmailBase):
         h.append(cz_head, cz)
         h.append(utf8_head, utf8)
         enc = h.encode()
-        eq(enc, """=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
- =?iso-8859-1?q?m_Foerderband_komfortabel_den_Korridor_ent?=
- =?iso-8859-1?q?lang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei?=
- =?iso-8859-1?q?=2C_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=
- =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutil?=
- =?iso-8859-2?q?y_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv?=
- =?utf-8?b?44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
- =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
- =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
- =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?q?s_Nunstuck_git_und?=
- =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
- =?utf-8?q?r_die_Flipperwaldt?=
- =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=""")
+        eq(enc, """\
+=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerderband_ko?=
+ =?iso-8859-1?q?mfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen_Wan?=
+ =?iso-8859-1?q?dgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef=F6?=
+ =?iso-8859-1?q?rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutily?=
+ =?iso-8859-2?q?_pod_tlakem_jejich_d=F9vtipu=2E=2E_?= =?utf-8?b?5q2j56K6?=
+ =?utf-8?b?44Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb44KT44CC?=
+ =?utf-8?b?5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go44Gv44Gn?=
+ =?utf-8?b?44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGFz?=
+ =?utf-8?q?_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das_Oder_die_Fl?=
+ =?utf-8?b?aXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBo+OBpuOBhOOBvuOBmQ==?=
+ =?utf-8?b?44CC?=""")
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
@@ -2230,6 +2510,41 @@ A very long line that must get split to something other than at the
         h = Header(u'\u83ca\u5730\u6642\u592b', 'utf-8')
         eq(h.encode(), '=?utf-8?b?6I+K5Zyw5pmC5aSr?=')
 
+    def test_bad_8bit_header(self):
+        raises = self.assertRaises
+        eq = self.assertEqual
+        x = 'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
+        raises(UnicodeError, Header, x)
+        h = Header()
+        raises(UnicodeError, h.append, x)
+        eq(str(Header(x, errors='replace')), x)
+        h.append(x, errors='replace')
+        eq(str(h), x)
+
+    def test_encoded_adjacent_nonencoded(self):
+        eq = self.assertEqual
+        h = Header()
+        h.append('hello', 'iso-8859-1')
+        h.append('world')
+        s = h.encode()
+        eq(s, '=?iso-8859-1?q?hello?= world')
+        h = make_header(decode_header(s))
+        eq(h.encode(), s)
+
+    def test_whitespace_eater(self):
+        eq = self.assertEqual
+        s = 'Subject: =?koi8-r?b?8NLP18XSy8EgzsEgxsnOwczYztk=?= =?koi8-r?q?=CA?= zz.'
+        parts = decode_header(s)
+        eq(parts, [('Subject:', None), ('\xf0\xd2\xcf\xd7\xc5\xd2\xcb\xc1 \xce\xc1 \xc6\xc9\xce\xc1\xcc\xd8\xce\xd9\xca', 'koi8-r'), ('zz.', None)])
+        hdr = make_header(parts)
+        eq(hdr.encode(),
+           'Subject: =?koi8-r?b?8NLP18XSy8EgzsEgxsnOwczYztnK?= zz.')
+
+    def test_broken_base64_header(self):
+        raises = self.assertRaises
+        s = 'Subject: =?EUC-KR?B?CSixpLDtKSC/7Liuvsax4iC6uLmwMcijIKHaILzSwd/H0SC8+LCjwLsgv7W/+Mj3IQ?='
+        raises(Errors.HeaderParseError, decode_header, s)
+
 
 
 # Test RFC 2231 header parameters (en/de)coding
@@ -2239,7 +2554,7 @@ class TestRFC2231(TestEmailBase):
         msg = self._msgobj('msg_29.txt')
         eq(msg.get_param('title'),
            ('us-ascii', 'en', 'This is even more ***fun*** isn\'t it!'))
-        eq(msg.get_param('title', unquote=0),
+        eq(msg.get_param('title', unquote=False),
            ('us-ascii', 'en', '"This is even more ***fun*** isn\'t it!"'))
 
     def test_set_param(self):
@@ -2313,6 +2628,17 @@ Do you like this message?
         eq = self.assertEqual
         msg = self._msgobj('msg_32.txt')
         eq(msg.get_content_charset(), 'us-ascii')
+
+    def test_rfc2231_no_language_or_charset(self):
+        m = '''\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename="file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm"
+Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEM; NAME*1=P_nsmail.htm
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_param('NAME'),
+                         (None, None, 'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm'))
 
 
 

@@ -4,14 +4,16 @@
 """Classes to generate plain text from a message object tree.
 """
 
-import time
 import re
+import time
+import locale
 import random
 
 from types import ListType, StringType
 from cStringIO import StringIO
 
 from email.Header import Header
+from email.Parser import NLCRE
 
 try:
     from email._compat22 import _isstring
@@ -159,43 +161,28 @@ class Generator:
 
     def _write_headers(self, msg):
         for h, v in msg.items():
-            # RFC 2822 says that lines SHOULD be no more than maxheaderlen
-            # characters wide, so we're well within our rights to split long
-            # headers.
-            text = '%s: %s' % (h, v)
-            if self.__maxheaderlen > 0 and len(text) > self.__maxheaderlen:
-                text = self._split_header(text)
-            print >> self._fp, text
+            print >> self._fp, '%s:' % h,
+            if self.__maxheaderlen == 0:
+                # Explicit no-wrapping
+                print >> self._fp, v
+            elif isinstance(v, Header):
+                # Header instances know what to do
+                print >> self._fp, v.encode()
+            elif _is8bitstring(v):
+                # If we have raw 8bit data in a byte string, we have no idea
+                # what the encoding is.  There is no safe way to split this
+                # string.  If it's ascii-subset, then we could do a normal
+                # ascii split, but if it's multibyte then we could break the
+                # string.  There's no way to know so the least harm seems to
+                # be to not split the string and risk it being too long.
+                print >> self._fp, v
+            else:
+                # Header's got lots of smarts, so use it.
+                print >> self._fp, Header(
+                    v, maxlinelen=self.__maxheaderlen,
+                    header_name=h, continuation_ws='\t').encode()
         # A blank line always separates headers from body
         print >> self._fp
-
-    def _split_header(self, text):
-        maxheaderlen = self.__maxheaderlen
-        # Find out whether any lines in the header are really longer than
-        # maxheaderlen characters wide.  There could be continuation lines
-        # that actually shorten it.  Also, replace hard tabs with 8 spaces.
-        lines = [s.replace('\t', SPACE8) for s in text.splitlines()]
-        for line in lines:
-            if len(line) > maxheaderlen:
-                break
-        else:
-            # No line was actually longer than maxheaderlen characters, so
-            # just return the original unchanged.
-            return text
-        # If we have raw 8bit data in a byte string, we have no idea what the
-        # encoding is.  I think there is no safe way to split this string.  If
-        # it's ascii-subset, then we could do a normal ascii split, but if
-        # it's multibyte then we could break the string.  There's no way to
-        # know so the least harm seems to be to not split the string and risk
-        # it being too long.
-        if _is8bitstring(text):
-            return text
-        # The `text' argument already has the field name prepended, so don't
-        # provide it here or the first line will get folded too short.
-        h = Header(text, maxlinelen=maxheaderlen,
-                   # For backwards compatibility, we use a hard tab here
-                   continuation_ws='\t')
-        return h.encode()
 
     #
     # Handlers for writing types and subtypes
@@ -258,6 +245,14 @@ class Generator:
         # Write out any preamble
         if msg.preamble is not None:
             self._fp.write(msg.preamble)
+            # If preamble is the empty string, the length of the split will be
+            # 1, but the last element will be the empty string.  If it's
+            # anything else but does not end in a line separator, the length
+            # will be > 1 and not end in an empty string.  We need to
+            # guarantee a newline after the preamble, but don't add too many.
+            plines = NLCRE.split(msg.preamble)
+            if plines <> [''] and plines[-1] <> '':
+                self._fp.write('\n')
         # First boundary is a bit different; it doesn't have a leading extra
         # newline.
         print >> self._fp, '--' + boundary
@@ -364,7 +359,8 @@ class DecodedGenerator(Generator):
 def _make_boundary(text=None):
     # Craft a random boundary.  If text is given, ensure that the chosen
     # boundary doesn't appear in the text.
-    boundary = ('=' * 15) + repr(random.random()).split('.')[1] + '=='
+    dp = locale.localeconv().get('decimal_point', '.')
+    boundary = ('=' * 15) + repr(random.random()).split(dp)[1] + '=='
     if text is None:
         return boundary
     b = boundary

@@ -13,13 +13,13 @@ import warnings
 from cStringIO import StringIO
 from types import ListType
 
-from rfc822 import quote
-from rfc822 import AddressList as _AddressList
-from rfc822 import mktime_tz
+from email._parseaddr import quote
+from email._parseaddr import AddressList as _AddressList
+from email._parseaddr import mktime_tz
 
 # We need wormarounds for bugs in these methods in older Pythons (see below)
-from rfc822 import parsedate as _parsedate
-from rfc822 import parsedate_tz as _parsedate_tz
+from email._parseaddr import parsedate as _parsedate
+from email._parseaddr import parsedate_tz as _parsedate_tz
 
 try:
     True, False
@@ -54,8 +54,8 @@ EMPTYSTRING = ''
 UEMPTYSTRING = u''
 CRLF = '\r\n'
 
-specialsre = re.compile(r'[][\()<>@,:;".]')
-escapesre = re.compile(r'[][\()"]')
+specialsre = re.compile(r'[][\\()<>@,:;".]')
+escapesre = re.compile(r'[][\\()"]')
 
 
 
@@ -66,8 +66,6 @@ def _identity(s):
 
 
 def _bdecode(s):
-    if not s:
-        return s
     # We can't quite use base64.encodestring() since it tacks on a "courtesy
     # newline".  Blech!
     if not s:
@@ -280,9 +278,11 @@ def unquote(str):
 def decode_rfc2231(s):
     """Decode string according to RFC 2231"""
     import urllib
-    charset, language, s = s.split("'", 2)
-    s = urllib.unquote(s)
-    return charset, language, s
+    parts = s.split("'", 2)
+    if len(parts) == 1:
+        return None, None, s
+    charset, language, s = parts
+    return charset, language, urllib.unquote(s)
 
 
 def encode_rfc2231(s, charset=None, language=None):
@@ -335,6 +335,6 @@ def decode_params(params):
             for num, continuation in continuations:
                 value.append(continuation)
             charset, language, value = decode_rfc2231(EMPTYSTRING.join(value))
-            new_params.append((name,
-                               (charset, language, '"%s"' % quote(value))))
+            new_params.append(
+                (name, (charset, language, '"%s"' % quote(value))))
     return new_params
