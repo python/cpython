@@ -134,6 +134,8 @@ class DB(DictMixin):
         return apply(self._cobj.fd, args, kwargs)
     def get(self, *args, **kwargs):
         return apply(self._cobj.get, args, kwargs)
+    def pget(self, *args, **kwargs):
+        return apply(self._cobj.pget, args, kwargs)
     def get_both(self, *args, **kwargs):
         return apply(self._cobj.get_both, args, kwargs)
     def get_byteswapped(self, *args, **kwargs):
