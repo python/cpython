@@ -189,12 +189,38 @@ Socket methods:
 #endif
 
 #ifdef USE_SSL
+enum py_ssl_error {
+	/* these mirror ssl.h */
+	PY_SSL_ERROR_NONE,                 
+	PY_SSL_ERROR_SSL,                   
+	PY_SSL_ERROR_WANT_READ,             
+	PY_SSL_ERROR_WANT_WRITE,            
+	PY_SSL_ERROR_WANT_X509_LOOKUP,      
+	PY_SSL_ERROR_SYSCALL,     /* look at error stack/return value/errno */
+	PY_SSL_ERROR_ZERO_RETURN,           
+	PY_SSL_ERROR_WANT_CONNECT,
+	/* start of non ssl.h errorcodes */ 
+	PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
+	PY_SSL_ERROR_INVALID_ERROR_CODE
+};
+
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
 #include "openssl/x509.h"
 #include "openssl/pem.h"
 #include "openssl/ssl.h"
 #include "openssl/err.h"
+
+#define X509_NAME_MAXLEN 256
+
+/* RAND_* APIs got added to OpenSSL in 0.9.5 */
+#if OPENSSL_VERSION_NUMBER >= 0x0090500fL
+# define HAVE_OPENSSL_RAND 1
+#include "openssl/rand.h"
+#else
+# undef HAVE_OPENSSL_RAND
+#endif
+
 #endif /* USE_SSL */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
@@ -233,7 +259,7 @@ typedef int SOCKET_T;
 static PyObject *PySocket_Error;
 
 #ifdef USE_SSL
-static PyObject *SSLErrorObject;
+static PyObject *PySSLErrorObject;
 #endif /* USE_SSL */
 
 
@@ -397,21 +423,20 @@ typedef struct {
 typedef struct {
 	PyObject_HEAD
 	PySocketSockObject *Socket;	/* Socket on which we're layered */
-	PyObject 	*x_attr;	/* Attributes dictionary */
 	SSL_CTX* 	ctx;
 	SSL*     	ssl;
 	X509*    	server_cert;
 	BIO*		sbio;
-	char    	server[256];
-	char		issuer[256];
+	char    	server[X509_NAME_MAXLEN];
+	char		issuer[X509_NAME_MAXLEN];
 
-} SSLObject;
+} PySSLObject;
 
-staticforward PyTypeObject SSL_Type;
-staticforward PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args);
-staticforward PyObject *SSL_SSLread(SSLObject *self, PyObject *args);
+staticforward PyTypeObject PySSL_Type;
+staticforward PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args);
+staticforward PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
 
-#define SSLObject_Check(v)	((v)->ob_type == &SSL_Type)
+#define PySSLObject_Check(v)	((v)->ob_type == &PySSL_Type)
 
 #endif /* USE_SSL */
 
@@ -2162,59 +2187,142 @@ PySocket_inet_ntoa(PyObject *self, PyObject *args)
 
 #ifdef USE_SSL
 
-/* This is a C function to be called for new object initialization */
-static SSLObject *
-newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
-{
-	SSLObject *self;
+/* XXX It might be helpful to augment the error message generated
+   below with the name of the SSL function that generated the error.
+   I expect it's obvious most of the time.
+*/
 
-	self = PyObject_New(SSLObject, &SSL_Type); /* Create new object */
-	if (self == NULL){
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("newSSLObject error"));
+static PyObject *
+PySSL_SetError(PySSLObject *obj, int ret)
+{
+	PyObject *v, *n, *s;
+	char *errstr;
+	int err;
+	enum py_ssl_error p;
+
+	assert(ret <= 0);
+    
+	err = SSL_get_error(obj->ssl, ret);
+
+	switch (err) {
+	case SSL_ERROR_ZERO_RETURN:
+		errstr = "TLS/SSL connection has been closed";
+		p = PY_SSL_ERROR_ZERO_RETURN;
+		break;
+	case SSL_ERROR_WANT_READ:
+		errstr = "The operation did not complete (read)";
+		p = PY_SSL_ERROR_WANT_READ;
+		break;
+	case SSL_ERROR_WANT_WRITE:
+		p = PY_SSL_ERROR_WANT_WRITE;
+		errstr = "The operation did not complete (write)";
+		break;
+	case SSL_ERROR_WANT_X509_LOOKUP:
+		p = PY_SSL_ERROR_WANT_X509_LOOKUP;
+		errstr = "The operation did not complete (X509 lookup)";
+		break;
+	case SSL_ERROR_WANT_CONNECT:
+		p = PY_SSL_ERROR_WANT_CONNECT;
+		errstr = "The operation did not complete (connect)";
+		break;
+	case SSL_ERROR_SYSCALL:
+	{
+		unsigned long e = ERR_get_error();
+		if (e == 0) {
+			if (ret == 0) {
+				p = PY_SSL_ERROR_EOF;
+				errstr = "EOF occurred in violation of protocol";
+			} else if (ret == -1) {
+				/* the underlying BIO reported an I/O error */
+				return PySocket_Err();
+			} else {  /* possible? */
+				p = PY_SSL_ERROR_SYSCALL;
+				errstr = "Some I/O error occurred";
+			}
+		} else {
+			p = PY_SSL_ERROR_SYSCALL;
+			/* XXX Protected by global interpreter lock */
+			errstr = ERR_error_string(e, NULL);
+		}
+		break;
+	}   
+	case SSL_ERROR_SSL:
+	{
+		unsigned long e = ERR_get_error();
+		p = PY_SSL_ERROR_SSL;
+		if (e != 0) 
+			/* XXX Protected by global interpreter lock */
+			errstr = ERR_error_string(e, NULL);
+		else { /* possible? */
+			errstr = "A failure in the SSL library occurred";
+		}
+		break;
+	}
+	default:
+		p = PY_SSL_ERROR_INVALID_ERROR_CODE;
+		errstr = "Invalid error code";
+	}
+	n = PyInt_FromLong((long) p);
+	if (n == NULL)
+		return NULL;
+	v = PyTuple_New(2);
+	if (v == NULL) {
+		Py_DECREF(n);
 		return NULL;
 	}
-	memset(self->server, '\0', sizeof(char) * 256);
-	memset(self->issuer, '\0', sizeof(char) * 256);
 
-	self->x_attr = PyDict_New();
+	s = PyString_FromString(errstr);
+	if (s == NULL) {
+		Py_DECREF(v);
+		Py_DECREF(n);
+	}
+	PyTuple_SET_ITEM(v, 0, n);
+	PyTuple_SET_ITEM(v, 1, s);
+	PyErr_SetObject(PySSLErrorObject, v);
+	return NULL;
+}
+
+static PySSLObject *
+newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
+{
+	PySSLObject *self;
+	char *errstr = NULL;
+	int ret;
+
+	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
+	if (self == NULL){
+		errstr = "newPySSLObject error";
+		goto fail;
+	}
+	memset(self->server, '\0', sizeof(char) * X509_NAME_MAXLEN);
+	memset(self->issuer, '\0', sizeof(char) * X509_NAME_MAXLEN);
+	self->server_cert = NULL;
+	self->ssl = NULL;
+	self->ctx = NULL;
+	self->Socket = NULL;
+
+	if ((key_file && !cert_file) || (!key_file && cert_file)) {
+		errstr = "Both the key & certificate files must be specified";
+		goto fail;
+	}
+
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
 	if (self->ctx == NULL) {
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("SSL_CTX_new error"));
-		PyObject_Del(self);
-		return NULL;
+		errstr = "SSL_CTX_new error";
+		goto fail;
 	}
 
-	if ( (key_file && !cert_file) || (!key_file && cert_file) )
-	{
-		PyErr_SetObject(SSLErrorObject,
-		      PyString_FromString(
-			"Both the key & certificate files must be specified"));
-		PyObject_Del(self);
-		return NULL;
-	}
-
-	if (key_file && cert_file)
-	{
+	if (key_file) {
 		if (SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
-						SSL_FILETYPE_PEM) < 1)
-		{
-			PyErr_SetObject(SSLErrorObject,
-				PyString_FromString(
-				  "SSL_CTX_use_PrivateKey_file error"));
-			PyObject_Del(self);
-			return NULL;
+						SSL_FILETYPE_PEM) < 1) {
+			errstr = "SSL_CTX_use_PrivateKey_file error";
+			goto fail;
 		}
 
 		if (SSL_CTX_use_certificate_chain_file(self->ctx,
-						       cert_file) < 1)
-		{
-			PyErr_SetObject(SSLErrorObject,
-				PyString_FromString(
-				  "SSL_CTX_use_certificate_chain_file error"));
-			PyObject_Del(self);
-			return NULL;
+						       cert_file) < 1) {
+			errstr = "SSL_CTX_use_certificate_chain_file error";
+			goto fail;
 		}
 	}
 
@@ -2224,99 +2332,160 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
 	SSL_set_connect_state(self->ssl);
 
-	if ((SSL_connect(self->ssl)) == -1) {
-		/* Actually negotiate SSL connection */
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("SSL_connect error"));
-		PyObject_Del(self);
-		return NULL;
+	/* Actually negotiate SSL connection */
+	/* XXX If SSL_connect() returns 0, it's also a failure. */
+	ret = SSL_connect(self->ssl);
+	if (ret <= 0) {
+		PySSL_SetError(self, ret);
+		goto fail;
 	}
 	self->ssl->debug = 1;
 
 	if ((self->server_cert = SSL_get_peer_certificate(self->ssl))) {
 		X509_NAME_oneline(X509_get_subject_name(self->server_cert),
-				  self->server, 256);
+				  self->server, X509_NAME_MAXLEN);
 		X509_NAME_oneline(X509_get_issuer_name(self->server_cert),
-				  self->issuer, 256);
+				  self->issuer, X509_NAME_MAXLEN);
 	}
-	self->x_attr = NULL;
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
 	return self;
+ fail:
+	if (errstr)
+		PyErr_SetString(PySSLErrorObject, errstr);
+	Py_DECREF(self);
+	return NULL;
 }
 
-/* This is the Python function called for new object initialization */
+
 static PyObject *
 PySocket_ssl(PyObject *self, PyObject *args)
 {
-	SSLObject *rv;
+	PySSLObject *rv;
 	PySocketSockObject *Sock;
-	char *key_file;
-	char *cert_file;
+	char *key_file = NULL;
+	char *cert_file = NULL;
 
-	if (!PyArg_ParseTuple(args, "O!zz:ssl",
-			      &PySocketSock_Type, (PyObject*)&Sock,
-			      &key_file, &cert_file) )
+	if (!PyArg_ParseTuple(args, "O!|zz:ssl", &PySocketSock_Type, 
+			      (PyObject*)&Sock, &key_file, &cert_file))
 		return NULL;
 
-	rv = newSSLObject(Sock, key_file, cert_file);
-	if ( rv == NULL )
+	rv = newPySSLObject(Sock, key_file, cert_file);
+	if (rv == NULL)
 		return NULL;
 	return (PyObject *)rv;
 }
 
-static char ssl_doc[] =
-"ssl(socket, keyfile, certfile) -> sslobject";
+static char ssl_doc[] = "ssl(socket, [keyfile, certfile]) -> sslobject";
+
+/* SSL object methods */
 
 static PyObject *
-SSL_server(SSLObject *self, PyObject *args)
+PySSL_server(PySSLObject *self, PyObject *args)
 {
+	if (!PyArg_ParseTuple(args, ":server"))
+		return NULL;
 	return PyString_FromString(self->server);
 }
 
 static PyObject *
-SSL_issuer(SSLObject *self, PyObject *args)
+PySSL_issuer(PySSLObject *self, PyObject *args)
 {
+	if (!PyArg_ParseTuple(args, ":issuer"))
+		return NULL;
 	return PyString_FromString(self->issuer);
 }
 
 
-/* SSL object methods */
-
-static PyMethodDef SSLMethods[] = {
-	{ "write", (PyCFunction)SSL_SSLwrite, 1 },
-	{ "read", (PyCFunction)SSL_SSLread, 1 },
-	{ "server", (PyCFunction)SSL_server, 1 },
-	{ "issuer", (PyCFunction)SSL_issuer, 1 },
-	{ NULL, NULL}
-};
-
-static void SSL_dealloc(SSLObject *self)
+static void PySSL_dealloc(PySSLObject *self)
 {
 	if (self->server_cert)	/* Possible not to have one? */
 		X509_free (self->server_cert);
-	SSL_CTX_free(self->ctx);
-	SSL_free(self->ssl);
-	Py_XDECREF(self->x_attr);
+	if (self->ssl)
+	    SSL_free(self->ssl);
+	if (self->ctx)
+	    SSL_CTX_free(self->ctx);
 	Py_XDECREF(self->Socket);
 	PyObject_Del(self);
 }
 
-static PyObject *SSL_getattr(SSLObject *self, char *name)
+static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 {
-	return Py_FindMethod(SSLMethods, (PyObject *)self, name);
+	char *data;
+	int len;
+
+	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+	len = SSL_write(self->ssl, data, len);
+	Py_END_ALLOW_THREADS
+	if (len > 0)
+		return PyInt_FromLong(len);
+	else
+		return PySSL_SetError(self, len);
 }
 
-staticforward PyTypeObject SSL_Type = {
+static char PySSL_SSLwrite_doc[] = \
+"write(s) -> len\n\
+\n\
+Writes the string s into the SSL object.  Returns the number\n\
+of bytes written.";
+
+static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
+{
+	PyObject *buf;
+	int count = 0;
+	int len = 1024;
+
+	if (!PyArg_ParseTuple(args, "|i:read", &len))
+		return NULL;
+
+	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+	count = SSL_read(self->ssl, PyString_AsString(buf), len);
+	Py_END_ALLOW_THREADS
+ 	if (count <= 0) {
+		Py_DECREF(buf);
+		return PySSL_SetError(self, count);
+	}
+	if (count != len)
+		_PyString_Resize(&buf, count);
+	return buf;
+}
+
+static char PySSL_SSLread_doc[] = \
+"read([len]) -> string\n\
+\n\
+Read up to len bytes from the SSL socket.";
+
+static PyMethodDef PySSLMethods[] = {
+	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
+	          PySSL_SSLwrite_doc},
+	{"read", (PyCFunction)PySSL_SSLread, METH_VARARGS,
+	          PySSL_SSLread_doc},
+	{"server", (PyCFunction)PySSL_server, METH_VARARGS},
+	{"issuer", (PyCFunction)PySSL_issuer, METH_VARARGS},
+	{NULL, NULL}
+};
+
+static PyObject *PySSL_getattr(PySSLObject *self, char *name)
+{
+	return Py_FindMethod(PySSLMethods, (PyObject *)self, name);
+}
+
+staticforward PyTypeObject PySSL_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
-	"SSL",			/*tp_name*/
-	sizeof(SSLObject),		/*tp_basicsize*/
+	"socket.SSL",			/*tp_name*/
+	sizeof(PySSLObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
-	(destructor)SSL_dealloc,	/*tp_dealloc*/
+	(destructor)PySSL_dealloc,	/*tp_dealloc*/
 	0,				/*tp_print*/
-	(getattrfunc)SSL_getattr,	/*tp_getattr*/
+	(getattrfunc)PySSL_getattr,	/*tp_getattr*/
 	0,				/*tp_setattr*/
 	0,				/*tp_compare*/
 	0,				/*tp_repr*/
@@ -2326,62 +2495,69 @@ staticforward PyTypeObject SSL_Type = {
 	0,				/*tp_hash*/
 };
 
+#ifdef HAVE_OPENSSL_RAND
 
-
-static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
+/* helper routines for seeding the SSL PRNG */
+static PyObject *
+PySSL_RAND_add(PyObject *self, PyObject *args)
 {
-	char *data;
-	size_t len;
+    char *buf;
+    int len;
+    double entropy;
 
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
-		return NULL;
-
-	Py_BEGIN_ALLOW_THREADS
-	len = SSL_write(self->ssl, data, len);
-	Py_END_ALLOW_THREADS
-	return PyInt_FromLong((long)len);
+    if (!PyArg_ParseTuple(args, "s#d:RAND_add", &buf, &len, &entropy))
+	return NULL;
+    RAND_add(buf, len, entropy);
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
-static PyObject *SSL_SSLread(SSLObject *self, PyObject *args)
+static char PySSL_RAND_add_doc[] = \
+"RAND_add(string, entropy)\n\
+\n\
+Mix string into the OpenSSL PRNG state.  entropy (a float) is a lower\n\
+bound on the entropy contained in string.";
+
+static PyObject *
+PySSL_RAND_status(PyObject *self)
 {
-	PyObject *buf;
-	int count = 0;
-	int len = 1024;
-	int res;
-
-	PyArg_ParseTuple(args, "|i:read", &len);
-
-	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
-		return NULL;	/* Error object should already be set */
-
-	Py_BEGIN_ALLOW_THREADS
-	count = SSL_read(self->ssl, PyString_AsString(buf), len);
-	Py_END_ALLOW_THREADS
-	res = SSL_get_error(self->ssl, count);
-
-	switch (res) {
-	case SSL_ERROR_NONE:
-		assert(count > 0);
-		break;
-	case SSL_ERROR_ZERO_RETURN: /* normal EOF */
-		assert(count == 0);
-		break;
-	default:
-		Py_DECREF(buf);
-		return PyErr_SetFromErrno(SSLErrorObject);
-	}
-
-	fflush(stderr);
-
-	if (count < 0) {
-		Py_DECREF(buf);
-		return PyErr_SetFromErrno(SSLErrorObject);
-	}
-
-	if (count != len && _PyString_Resize(&buf, count) < 0)
-		return NULL;
-	return buf;
+    return PyInt_FromLong(RAND_status());
 }
+
+static char PySSL_RAND_status_doc[] = \
+"RAND_status() -> 0 or 1\n\
+\n\
+Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
+It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
+using the ssl() function.";
+
+static PyObject *
+PySSL_RAND_egd(PyObject *self, PyObject *args)
+{
+    int bytes;
+    char *s;
+
+    if (!PyArg_ParseTuple(args, "s:RAND_egd", &s))
+	    return NULL;
+
+    bytes = RAND_egd(s);
+    if (bytes == -1) {
+	PyErr_SetString(PySSLErrorObject,
+			"EGD connection failed or EGD did not return "
+			"enough data to seed the PRNG");
+	return NULL;
+    }
+    return PyInt_FromLong(bytes);
+}
+
+static char PySSL_RAND_egd_doc[] = \
+"RAND_egd(path) -> bytes\n\
+\n\
+Queries the entropy gather daemon (EGD) on socket path.  Returns number\n\
+of bytes read.  Raises socket.sslerror if connection to EGD fails or\n\
+if it does provide enough data to seed PRNG.";
+
+#endif
 
 #endif /* USE_SSL */
 
@@ -2422,6 +2598,14 @@ static PyMethodDef PySocket_methods[] = {
 #ifdef USE_SSL
 	{"ssl",			PySocket_ssl,
 	 METH_VARARGS, ssl_doc},
+#ifdef HAVE_OPENSSL_RAND
+	{"RAND_add",            PySSL_RAND_add, METH_VARARGS, 
+	 PySSL_RAND_add_doc},
+	{"RAND_egd",            PySSL_RAND_egd, METH_VARARGS,
+	 PySSL_RAND_egd_doc},
+	{"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_VARARGS,
+	 PySSL_RAND_status_doc},
+#endif
 #endif /* USE_SSL */
 	{NULL,			NULL}		 /* Sentinel */
 };
@@ -2582,7 +2766,7 @@ init_socket(void)
 #endif /* MS_WINDOWS */
 #endif /* RISCOS */
 #ifdef USE_SSL
-	SSL_Type.ob_type = &PyType_Type;
+	PySSL_Type.ob_type = &PyType_Type;
 #endif
 	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
 	d = PyModule_GetDict(m);
@@ -2592,13 +2776,13 @@ init_socket(void)
 #ifdef USE_SSL
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
-	SSLErrorObject = PyErr_NewException("socket.sslerror", NULL, NULL);
-	if (SSLErrorObject == NULL)
+	PySSLErrorObject = PyErr_NewException("socket.sslerror", NULL, NULL);
+	if (PySSLErrorObject == NULL)
 		return;
-	PyDict_SetItemString(d, "sslerror", SSLErrorObject);
-	Py_INCREF(&SSL_Type);
+	PyDict_SetItemString(d, "sslerror", PySSLErrorObject);
+	Py_INCREF(&PySSL_Type);
 	if (PyDict_SetItemString(d, "SSLType",
-				 (PyObject *)&SSL_Type) != 0)
+				 (PyObject *)&PySSL_Type) != 0)
 		return;
 #endif /* USE_SSL */
 	PyDict_SetItemString(d, "error", PySocket_Error);
@@ -2967,6 +3151,28 @@ init_socket(void)
 	/* IPX options */
 #ifdef	IPX_TYPE
 	insint(d, "IPX_TYPE", IPX_TYPE);
+#endif
+
+#ifdef USE_SSL
+	PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
+				PY_SSL_ERROR_ZERO_RETURN);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
+				PY_SSL_ERROR_WANT_READ);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_WRITE",
+				PY_SSL_ERROR_WANT_WRITE);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_X509_LOOKUP",
+				PY_SSL_ERROR_WANT_X509_LOOKUP);
+	PyModule_AddIntConstant(m, "SSL_ERROR_SYSCALL",
+				PY_SSL_ERROR_SYSCALL);
+	PyModule_AddIntConstant(m, "SSL_ERROR_SSL",
+				PY_SSL_ERROR_SSL);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_CONNECT",
+				PY_SSL_ERROR_WANT_CONNECT);
+	/* non ssl.h errorcodes */
+	PyModule_AddIntConstant(m, "SSL_ERROR_EOF",
+				PY_SSL_ERROR_EOF);
+	PyModule_AddIntConstant(m, "SSL_ERROR_INVALID_ERROR_CODE",
+				PY_SSL_ERROR_INVALID_ERROR_CODE);
 #endif
 
 	/* Initialize gethostbyname lock */
