@@ -109,6 +109,11 @@ class MyScanner(Scanner):
 			  ('short', 'byteCount', 'InMode')],
 			 [('TextThingie', '*', '*'), ('*', '*', '*'), ('*', '*', '*')]),
 			
+			# GetPen and SetPt use a point-pointer as output-only:
+			('GetPen', [('Point', '*', 'OutMode')], [('*', '*', 'OutMode')]),
+			('SetPt', [('Point', '*', 'OutMode')], [('*', '*', 'OutMode')]),
+			
+			# All others use it as input/output:
 			([('Point', '*', 'OutMode')],
 			 [('*', '*', 'InOutMode')]),
 			 

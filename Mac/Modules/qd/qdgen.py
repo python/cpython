@@ -88,7 +88,7 @@ f = Function(void, 'ShowPen',
 functions.append(f)
 
 f = Function(void, 'GetPen',
-    (Point, 'pt', InOutMode),
+    (Point, 'pt', OutMode),
 )
 functions.append(f)
 
@@ -570,7 +570,7 @@ f = Function(void, 'FillPoly',
 functions.append(f)
 
 f = Function(void, 'SetPt',
-    (Point, 'pt', InOutMode),
+    (Point, 'pt', OutMode),
     (short, 'h', InMode),
     (short, 'v', InMode),
 )
