@@ -8,6 +8,7 @@ import string
 # Declarations that change for each manager
 #MACHEADERFILE = 'Files.h'		# The Apple header file
 MODNAME = '_File'				# The name of the module
+LONGMODNAME = 'Carbon.File'		# The "normal" external name of the module
 
 # The following is *usually* unchanged but may still require tuning
 MODPREFIX = 'File'			# The prefix for module-wide routines
@@ -175,17 +176,18 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 static int
 myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
+	OSStatus err;
+	
 	if (FSRef_Check(v)) {
 		*fsr = ((FSRefObject *)v)->ob_itself;
 		return 1;
 	}
 
-#if !TARGET_API_MAC_OSX
+#if TARGET_API_MAC_OSX
 	/* On OSX we now try a pathname */
-	if ( PyString_Check(args) ) {
-		OSStatus err;
+	if ( PyString_Check(v) ) {
 		if ( (err=FSPathMakeRef(PyString_AsString(v), fsr, NULL)) ) {
-			PyErr_Mac(ErrorObject, err);
+			PyMac_Error(err);
 			return 0;
 		}
 		return 1;
@@ -194,19 +196,29 @@ myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 #endif
 	/* Otherwise we try to go via an FSSpec */
 	if (FSSpec_Check(v)) {
-		if (FSpMakeFSRef(&((FSSpecObject *)v)->ob_itself, fsr))
+		if ((err=FSpMakeFSRef(&((FSSpecObject *)v)->ob_itself, fsr)) == 0)
 			return 1;
+		PyMac_Error(err);
 		return 0;
 	}
 	PyErr_SetString(PyExc_TypeError, "FSRef, FSSpec or pathname required");
 	return 0;
 }
+
 """
 
 execfile(string.lower(MODPREFIX) + 'typetest.py')
 
 # Our object types:
 class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
+	getsetlist = [
+		("data",
+		 "return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));",
+		 None,
+		 "Raw data of the FSSpec object"
+		)
+	]
+		 
 	def __init__(self, name, prefix, itselftype):
 		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
 		self.argref = "*"	# Store FSSpecs, but pass them by address
@@ -231,7 +243,28 @@ class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("if (myPyMac_GetFSSpec(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
 		Output("return -1;")
 	
+	def outputRepr(self):
+		Output()
+		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
+		OutLbrace()
+		Output("char buf[512];")
+		Output("""PyOS_snprintf(buf, sizeof(buf), \"%%s((%%d, %%ld, '%%.*s'))\",
+		self->ob_type->tp_name,
+		self->ob_itself.vRefNum, 
+		self->ob_itself.parID,
+		self->ob_itself.name[0], self->ob_itself.name+1);""")
+		Output("return PyString_FromString(buf);")
+		OutRbrace()
+		
 class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
+	getsetlist = [
+		("data",
+		 "return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));",
+		 None,
+		 "Raw data of the FSRef object"
+		)
+	]
+		 
 	def __init__(self, name, prefix, itselftype):
 		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
 		self.argref = "*"	# Store FSRefs, but pass them by address
@@ -258,7 +291,22 @@ class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
 	
 class AliasDefinition(PEP253Mixin, GlobalObjectDefinition):
 	# XXXX Should inherit from resource?
-
+	getsetlist = [
+		("data",
+		 """int size;
+			PyObject *rv;
+			
+			size = GetHandleSize((Handle)self->ob_itself);
+			HLock((Handle)self->ob_itself);
+			rv = PyString_FromStringAndSize(*(Handle)self->ob_itself, size);
+			HUnlock((Handle)self->ob_itself);
+			return rv;
+		""",
+		 None,
+		 "Raw data of the alias object"
+		)
+	]
+		 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 		
@@ -314,7 +362,8 @@ class Arg2MethodGenerator(MethodGenerator):
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
-module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
+module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff,
+	longname=LONGMODNAME)
 
 aliasobject = AliasDefinition('Alias', 'Alias', 'AliasHandle')
 fsspecobject = FSSpecDefinition('FSSpec', 'FSSpec', 'FSSpec')
@@ -342,6 +391,8 @@ OSStatus _err;
 UInt8 path[MAXPATHNAME];
 UInt32 maxPathSize = MAXPATHNAME;
 
+if (!PyArg_ParseTuple(_args, ""))
+	return NULL;
 _err = FSRefMakePath(&_self->ob_itself,
 					 path,
 					 maxPathSize);
@@ -352,6 +403,43 @@ return _res;
 f = ManualGenerator("FSRefMakePath", FSRefMakePath_body)
 f.docstring = lambda: "() -> string"
 fsref_methods.append(f)
+
+FSRef_as_pathname_body = """
+_res = FSRef_FSRefMakePath(_self, _args);
+return _res;
+"""
+f = ManualGenerator("as_pathname", FSRef_as_pathname_body)
+f.docstring = lambda: "() -> string"
+fsref_methods.append(f)
+
+FSSpec_as_pathname_body = """
+char strbuf[1024];
+OSErr err;
+
+if (!PyArg_ParseTuple(_args, ""))
+	return NULL;
+err = PyMac_GetFullPathname(&_self->ob_itself, strbuf, sizeof(strbuf));
+if ( err ) {
+	PyMac_Error(err);
+	return NULL;
+}
+_res = PyString_FromString(strbuf);
+return _res;
+"""
+f = ManualGenerator("as_pathname", FSSpec_as_pathname_body)
+f.docstring = lambda: "() -> string"
+fsspec_methods.append(f)
+
+FSSpec_as_tuple_body = """
+if (!PyArg_ParseTuple(_args, ""))
+	return NULL;
+_res = Py_BuildValue("(iis#)", _self->ob_itself.vRefNum, _self->ob_itself.parID, 
+					&_self->ob_itself.name[1], _self->ob_itself.name[0]);
+return _res;
+"""
+f = ManualGenerator("as_tuple", FSSpec_as_tuple_body)
+f.docstring = lambda: "() -> (vRefNum, dirID, name)"
+fsspec_methods.append(f)
 
 
 # add the populated lists to the generator groups
