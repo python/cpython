@@ -126,10 +126,14 @@ typedef void (*dl_funcptr)();
 
 #ifdef _AIX
 #define DYNAMIC_LINK
+#define SHORT_EXT ".so"
+#define LONG_EXT "module.so"
 #include <sys/ldr.h>
 typedef void (*dl_funcptr)();
 #define _DL_FUNCPTR_DEFINED
-static void aix_loaderror(char *name);
+static int  aix_getoldmodules(void **);
+static int  aix_bindnewmodule(void *, void *);
+static void aix_loaderror(char *);
 #endif
 
 #ifdef DYNAMIC_LINK
@@ -335,10 +339,29 @@ load_dynamic_module(name, pathname, fp)
 	}
 #endif /* USE_SHLIB */
 #ifdef _AIX
-	p = (dl_funcptr) load(pathname, 1, 0);
-	if (p == NULL) {
-		aix_loaderror(pathname);
-		return NULL;
+	/*
+	-- Invoke load() with L_NOAUTODEFER leaving the imported symbols
+	-- of the shared module unresolved. Thus we have to resolve them
+	-- explicitely with loadbind. The new module is loaded, then we
+	-- resolve its symbols using the list of already loaded modules
+	-- (only those that belong to the python executable). Get these
+	-- with loadquery(L_GETINFO).
+	*/
+	{
+		static void *staticmodlistptr = NULL;
+
+		if (!staticmodlistptr)
+			if (aix_getoldmodules(&staticmodlistptr) == -1)
+				return NULL;
+		p = (dl_funcptr) load(pathname, L_NOAUTODEFER, 0);
+		if (p == NULL) {
+			aix_loaderror(pathname);
+			return NULL;
+		}
+		if (aix_bindnewmodule((void *)p, staticmodlistptr) == -1) {
+			aix_loaderror(pathname);
+			return NULL;
+		}
 	}
 #endif /* _AIX */
 #ifdef NT
@@ -490,18 +513,101 @@ load_dynamic_module(name, pathname, fp)
 
 #ifdef _AIX
 
-#include <ctype.h>	/* for isdigit()	*/
-#include <errno.h>	/* for global errno	*/
-#include <string.h>	/* for strerror()	*/
+#include <ctype.h>	/*  for isdigit()	  */
+#include <errno.h>	/*  for global errno      */
+#include <string.h>	/*  for strerror()        */
+#include <stdlib.h>	/*  for malloc(), free()  */
 
-void aix_loaderror(char *pathname)
+typedef struct Module {
+	struct Module *next;
+	void          *entry;
+} Module, *ModulePtr;
+
+static int
+aix_getoldmodules(modlistptr)
+	void **modlistptr;
+{
+	register ModulePtr       modptr, prevmodptr;
+	register struct ld_info  *ldiptr;
+	register char            *ldibuf;
+	register int             errflag, bufsize = 1024;
+	register unsigned int    offset;
+	
+	/*
+	-- Get the list of loaded modules into ld_info structures.
+	*/
+	if ((ldibuf = malloc(bufsize)) == NULL) {
+		err_setstr(ImportError, strerror(errno));
+		return -1;
+	}
+	while ((errflag = loadquery(L_GETINFO, ldibuf, bufsize)) == -1
+	       && errno == ENOMEM) {
+		free(ldibuf);
+		bufsize += 1024;
+		if ((ldibuf = malloc(bufsize)) == NULL) {
+			err_setstr(ImportError, strerror(errno));
+			return -1;
+		}
+	}
+	if (errflag == -1) {
+		err_setstr(ImportError, strerror(errno));
+		return -1;
+	}
+	/*
+	-- Make the modules list from the ld_info structures.
+	*/
+	ldiptr = (struct ld_info *)ldibuf;
+	prevmodptr = NULL;
+	do {
+		if ((modptr = (ModulePtr)malloc(sizeof(Module))) == NULL) {
+			err_setstr(ImportError, strerror(errno));
+			while (*modlistptr) {
+				modptr = (ModulePtr)*modlistptr;
+				*modlistptr = (void *)modptr->next;
+				free(modptr);
+			}
+			return -1;
+		}
+		modptr->entry = ldiptr->ldinfo_dataorg;
+		modptr->next  = NULL;
+		if (prevmodptr == NULL)
+			*modlistptr = (void *)modptr;
+		else
+			prevmodptr->next = modptr;
+		prevmodptr = modptr;
+		offset = (unsigned int)ldiptr->ldinfo_next;
+		ldiptr = (struct ld_info *)((unsigned int)ldiptr + offset);
+	} while (offset);
+	free(ldibuf);
+	return 0;
+}
+
+static int
+aix_bindnewmodule(newmoduleptr, modlistptr)
+	void *newmoduleptr;
+	void *modlistptr;        
+{
+	register ModulePtr modptr;
+
+	/*
+	-- Bind the new module with the list of loaded modules.
+	*/
+	for (modptr = (ModulePtr)modlistptr; modptr; modptr = modptr->next)
+		if (loadbind(0, modptr->entry, newmoduleptr) != 0)
+			return -1;
+	return 0;
+}
+
+static void
+aix_loaderror(pathname)
+	char *pathname;
 {
 
 	char *message[1024], errbuf[1024];
-	int i,j;
+	register int i,j;
 
 	struct errtab { 
-		int errno;
+		int errNo;
 		char *errstr;
 	} load_errtab[] = {
 		{L_ERROR_TOOMANY,	"too many errors, rest skipped."},
@@ -521,16 +627,16 @@ void aix_loaderror(char *pathname)
 #define LOAD_ERRTAB_LEN	(sizeof(load_errtab)/sizeof(load_errtab[0]))
 #define ERRBUF_APPEND(s) strncat(errbuf, s, sizeof(errbuf)-strlen(errbuf)-1)
 
-	sprintf(errbuf, " from module %.200s ", pathname);
+	sprintf(errbuf, "from module %.200s ", pathname);
 
-	if (!loadquery(1, &message[0], sizeof(message))) {
+	if (!loadquery(L_GETMESSAGES, &message[0], sizeof(message))) {
 		ERRBUF_APPEND(strerror(errno));
 		ERRBUF_APPEND("\n");
 	}
 	for(i = 0; message[i] && *message[i]; i++) {
 		int nerr = atoi(message[i]);
 		for (j=0; j<LOAD_ERRTAB_LEN ; j++) {
-		    if (nerr == load_errtab[j].errno && load_errtab[j].errstr)
+		    if (nerr == load_errtab[j].errNo && load_errtab[j].errstr)
 			ERRBUF_APPEND(load_errtab[j].errstr);
 		}
 		while (isdigit(*message[i])) message[i]++ ; 
