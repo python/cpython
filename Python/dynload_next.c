@@ -92,7 +92,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 #ifdef USE_DYLD_GLOBAL_NAMESPACE
 	if (!NSIsSymbolNameDefined(funcname)) {
 		/* UnlinkModule() isn't implemented in current versions, but calling it does no harm */
-		NSUnLinkModule(newModule, FALSE);
+		/* NSUnLinkModule(newModule, FALSE); removed: causes problems for ObjC code */
 		PyErr_Format(PyExc_ImportError,
 				 "Loaded module does not contain symbol %.200s",
 				 funcname);
@@ -102,7 +102,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 #else
 	theSym = NSLookupSymbolInModule(newModule, funcname);
 	if ( theSym == NULL ) {
-		NSUnLinkModule(newModule, FALSE);
+		/* NSUnLinkModule(newModule, FALSE); removed: causes problems for ObjC code */
 		PyErr_Format(PyExc_ImportError,
 				 "Loaded module does not contain symbol %.200s",
 				 funcname);
