@@ -67,6 +67,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sysexits.h>
 #endif /* HAVE_SYSEXITS_H */
 
+#ifdef HAVE_SYS_LOADAVG_H
+#include <sys/loadavg.h>
+#endif
+
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
