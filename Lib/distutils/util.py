@@ -100,22 +100,23 @@ def newer (source, target):
 
 
 def newer_pairwise (sources, targets):
-    """Walk two filename lists in parallel, testing if each 'target' is
-       up-to-date relative to its corresponding 'source'.  If so, both
-       are deleted from their respective lists.  Return a list of tuples
-       containing the deleted (source,target) pairs."""
+    """Walk two filename lists in parallel, testing if each source is newer
+       than its corresponding target.  Return a pair of lists (sources,
+       targets) where source is newer than target, according to the
+       semantics of 'newer()'."""
 
     if len (sources) != len (targets):
         raise ValueError, "'sources' and 'targets' must be same length"
 
-    goners = []
-    for i in range (len (sources)-1, -1, -1):
-        if not newer (sources[i], targets[i]):
-            goners.append ((sources[i], targets[i]))
-            del sources[i]
-            del targets[i]
-    goners.reverse()
-    return goners
+    # build a pair of lists (sources, targets) where  source is newer
+    n_sources = []
+    n_targets = []
+    for i in range (len (sources)):
+        if newer (sources[i], targets[i]):
+            n_sources.append (sources[i])
+            n_targets.append (targets[i])
+
+    return (n_sources, n_targets)
 
 # newer_pairwise ()
 
