@@ -294,6 +294,7 @@ class SMTP:
                 while sendptr < len(str):
                     sendptr = sendptr + self.sock.send(str[sendptr:])
             except socket.error:
+                self.close()
                 raise SMTPServerDisconnected('Server not connected')
         else:
             raise SMTPServerDisconnected('please run connect() first')
@@ -380,6 +381,7 @@ class SMTP:
         # MTA's will disconnect on an ehlo. Toss an exception if
         # that happens -ddm
         if code == -1 and len(msg) == 0:
+            self.close()
             raise SMTPServerDisconnected("Server not connected")
         self.ehlo_resp=msg
         if code != 250:
