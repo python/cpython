@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{1.00}
+\release{1.01}
 \author{A.M.\ Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -2168,6 +2168,11 @@ the argument checking can then be removed.  If compatibility with
 pre-2.2 versions of Python is important, the code could use
 \code{PyArg_ParseTuple(\var{args}, "")} instead, but this will be slower
 than using \constant{METH_NOARGS}.
+
+\item \cfunction{PyArg_ParseTuple()} accepts new format characters for various sizes of unsigned integers: \samp{B} for \ctype{unsigned char},
+\samp{H} for \ctype{unsigned short int}, 
+\samp{I} for \ctype{unsigned int}, 
+and \samp{K} for \ctype{unsigned long long}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
 char *\var{key})} was added as shorthand for
