@@ -927,10 +927,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
         *out++ = '-';
     }
 
-    if (_PyString_Resize(&v, out - start)) {
-        Py_DECREF(v);
-        return NULL;
-    }
+    _PyString_Resize(&v, out - start);
     return v;
 }
 
@@ -1778,7 +1775,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 	    /* Resize the string if necessary */
 	    if (offset + 12 > PyString_GET_SIZE(repr)) {
 		if (_PyString_Resize(&repr, PyString_GET_SIZE(repr) + 100))
-		    goto onError;
+		    return NULL;
 		p = PyString_AS_STRING(repr) + offset;
 	    }
 
@@ -1861,14 +1858,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         *p++ = PyString_AS_STRING(repr)[1];
 
     *p = '\0';
-    if (_PyString_Resize(&repr, p - PyString_AS_STRING(repr)))
-	goto onError;
-
+    _PyString_Resize(&repr, p - PyString_AS_STRING(repr));
     return repr;
-
- onError:
-    Py_DECREF(repr);
-    return NULL;
 }
 
 PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
@@ -1999,14 +1990,8 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
             *p++ = (char) ch;
     }
     *p = '\0';
-    if (_PyString_Resize(&repr, p - q))
-	goto onError;
-
+    _PyString_Resize(&repr, p - q);
     return repr;
-
- onError:
-    Py_DECREF(repr);
-    return NULL;
 }
 
 PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
@@ -2106,8 +2091,7 @@ PyObject *PyUnicode_EncodeLatin1(const Py_UNICODE *p,
     }
     /* Resize if error handling skipped some characters */
     if (s - start < PyString_GET_SIZE(repr))
-	if (_PyString_Resize(&repr, s - start))
-	    goto onError;
+	_PyString_Resize(&repr, s - start);
     return repr;
 
  onError:
@@ -2254,8 +2238,7 @@ PyObject *PyUnicode_EncodeASCII(const Py_UNICODE *p,
     }
     /* Resize if error handling skipped some characters */
     if (s - start < PyString_GET_SIZE(repr))
-	if (_PyString_Resize(&repr, s - start))
-	    goto onError;
+	_PyString_Resize(&repr, s - start);
     return repr;
 
  onError:
@@ -2602,12 +2585,11 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	Py_DECREF(x);
     }
     if (s - PyString_AS_STRING(v) < PyString_GET_SIZE(v))
-	if (_PyString_Resize(&v, (int)(s - PyString_AS_STRING(v))))
-	    goto onError;
+	_PyString_Resize(&v, (int)(s - PyString_AS_STRING(v)));
     return v;
 
  onError:
-    Py_DECREF(v);
+    Py_XDECREF(v);
     return NULL;
 }
 

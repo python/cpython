@@ -1166,9 +1166,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			goto error;
 	}
   cleanup:
-	if (big_buffer) {
-		Py_DECREF(big_buffer);
-	}
+	Py_XDECREF(big_buffer);
 	return list;
 }
 
