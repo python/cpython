@@ -32,7 +32,7 @@ else:
     try:
         v = _xmlplus.version_info
     except AttributeError:
-        # _xmlplue is too old; ignore it
+        # _xmlplus is too old; ignore it
         pass
     else:
         if v >= _MINIMUM_XMLPLUS_VERSION:
