@@ -866,6 +866,50 @@ static PyObject *CtlObj_TrackControl(_self, _args)
 
 }
 
+static PyObject *CtlObj_GetPopupData(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	PopupPrivateDataHandle hdl;
+
+	if ( (*_self->ob_itself)->contrlData == NULL ) {
+		PyErr_SetString(Ctl_Error, "No contrlData handle in control");
+		return 0;
+	}
+	hdl = (PopupPrivateDataHandle)(*_self->ob_itself)->contrlData;
+	HLock((Handle)hdl);
+	_res = Py_BuildValue("O&i", MenuObj_New, (*hdl)->mHandle, (int)(*hdl)->mID);
+	HUnlock((Handle)hdl);
+	return _res;
+
+}
+
+static PyObject *CtlObj_SetPopupData(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	PopupPrivateDataHandle hdl;
+	MenuHandle mHandle;
+	short mID;
+
+	if (!PyArg_ParseTuple(_args, "O&h", MenuObj_Convert, &mHandle, &mID) )
+		return 0;
+	if ( (*_self->ob_itself)->contrlData == NULL ) {
+		PyErr_SetString(Ctl_Error, "No contrlData handle in control");
+		return 0;
+	}
+	hdl = (PopupPrivateDataHandle)(*_self->ob_itself)->contrlData;
+	(*hdl)->mHandle = mHandle;
+	(*hdl)->mID = mID;
+	Py_INCREF(Py_None);
+	return Py_None;
+
+}
+
 static PyMethodDef CtlObj_methods[] = {
 	{"HiliteControl", (PyCFunction)CtlObj_HiliteControl, 1,
 	 "(ControlPartCode hiliteState) -> None"},
@@ -952,6 +996,10 @@ static PyMethodDef CtlObj_methods[] = {
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
+	 NULL},
+	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
+	 NULL},
+	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,
 	 NULL},
 	{NULL, NULL, 0}
 };
