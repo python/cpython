@@ -34,7 +34,11 @@ Core and builtins
 Library
 -------
 
-- bug 700055: .pth files can now have any type of line endings.
+- Bug #858016: isinstance() and issubclass() can have their second
+  argument be a tuple whose nested depth is capped at the interpreter's
+  recursion limit.  Raises RuntimeError if the limit reached.
+
+- Bug #700055: .pth files can now have any type of line endings.
 
 - Patch 817379: Allow absolute ftp paths in urllib2.
 
