@@ -9,6 +9,9 @@ import tkMessageBox
 import idlever
 import WindowList
 
+# The default tab setting for a Text widget, in average-width characters.
+TK_TABWIDTH_DEFAULT = 8
+
 # File menu
 
 #$ event <<open-module>>
@@ -599,13 +602,30 @@ class EditorWindow:
 
     # If a selection is defined in the text widget, return (start,
     # end) as Tkinter text indices, otherwise return (None, None)
-    def get_selection_index(self):
+    def get_selection_indices(self):
         try:
             first = self.text.index("sel.first")
             last = self.text.index("sel.last")
             return first, last
         except TclError:
             return None, None
+
+    # Return the text widget's current view of what a tab stop means
+    # (equivalent width in spaces).
+
+    def get_tabwidth(self):
+        current = self.text['tabs'] or TK_TABWIDTH_DEFAULT
+        return int(current)
+
+    # Set the text widget's current view of what a tab stop means.
+
+    def set_tabwidth(self, newtabwidth):
+        text = self.text
+        if self.get_tabwidth() != newtabwidth:
+            pixels = text.tk.call("font", "measure", text["font"],
+                                  "-displayof", text.master,
+                                  "n" * newtabwith)
+            text.configure(tabs=pixels)
 
 def prepstr(s):
     # Helper to extract the underscore from a string, e.g.

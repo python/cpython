@@ -38,7 +38,7 @@ class FormatParagraph:
 
     def format_paragraph_event(self, event):
         text = self.editwin.text
-        first, last = self.editwin.get_selection_index()
+        first, last = self.editwin.get_selection_indices()
         if first and last:
             data = text.get(first, last)
             comment_header = ''
