@@ -765,6 +765,7 @@ _expectations = {
         """,
     'darwin':
         """
+        test__locale
         test_al
         test_bsddb
         test_bsddb3
