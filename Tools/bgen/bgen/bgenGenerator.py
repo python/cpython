@@ -12,17 +12,84 @@ OUT = "out"
 INOUT = IN_OUT = "in-out"
 
 
-class FunctionGenerator:
+class BaseFunctionGenerator:
+
+	def __init__(self, name):
+		print "<--", name
+		self.name = name
+		self.prefix = name
+		self.objecttype = "PyObject" # Type of _self argument to function
+
+	def setprefix(self, prefix):
+		self.prefix = prefix
+
+	def generate(self):
+		print "-->", self.name
+		self.functionheader()
+		self.functionbody()
+		self.functiontrailer()
+
+	def functionheader(self):
+		Output()
+		Output("static PyObject *%s_%s(_self, _args)",
+		       self.prefix, self.name)
+		IndentLevel()
+		Output("%s *_self;", self.objecttype)
+		Output("PyObject *_args;")
+		DedentLevel()
+		OutLbrace()
+		Output("PyObject *_res = NULL;")
+
+	def functionbody(self):
+		Output("/* XXX To be provided */")
+
+	def functiontrailer(self):
+		OutRbrace()
+
+	def reference(self, name = None):
+		if name is None:
+			name = self.name
+		docstring = self.docstring()
+		Output("{\"%s\", (PyCFunction)%s_%s, 1,", name, self.prefix, self.name)
+		Output(" %s},", stringify(docstring))
+
+	def docstring(self):
+		return None
+
+
+_stringify_map = {'\n': '\\n', '\t': '\\t', '\r': '\\r', '\b': '\\b',
+                  '\e': '\\e', '\a': '\\a', '\f': '\\f', '"': '\\"'}
+def stringify(str):
+	if str is None: return "NULL"
+	res = '"'
+	map = _stringify_map
+	for c in str:
+		if map.has_key(c): res = res + map[c]
+		elif ' ' <= c <= '~': res = res + c
+		else: res = res + '\\%03o' % ord(c)
+	res = res + '"'
+	return res
+
+
+class ManualGenerator(BaseFunctionGenerator):
+
+	def __init__(self, name, body):
+		BaseFunctionGenerator.__init__(self, name)
+		self.body = body
+
+	def functionbody(self):
+		Output("%s", self.body)
+
+
+class FunctionGenerator(BaseFunctionGenerator):
 
 	def __init__(self, returntype, name, *argumentList):
-		print "<--", name
+		BaseFunctionGenerator.__init__(self, name)
 		self.returntype = returntype
-		self.name = name
 		self.argumentList = []
 		self.setreturnvar()
 		self.parseArgumentList(argumentList)
 		self.prefix     = "XXX"    # Will be changed by setprefix() call
-		self.objecttype = "PyObject" # Type of _self argument to function
 		self.itselftype = None     # Type of _self->ob_itself, if defined
 
 	def setreturnvar(self):
@@ -35,9 +102,6 @@ class FunctionGenerator:
 	def makereturnvar(self):
 		return Variable(self.returntype, "_rv", OutMode)
 
-	def setprefix(self, prefix):
-		self.prefix = prefix
-
 	def setselftype(self, selftype, itselftype):
 		self.objecttype = selftype
 		self.itselftype = itselftype
@@ -49,13 +113,6 @@ class FunctionGenerator:
 			if name is None: name = "_arg%d" % iarg
 			arg = Variable(type, name, mode)
 			self.argumentList.append(arg)
-
-	def reference(self, name = None):
-		if name is None:
-			name = self.name
-		docstring = self.docstring()
-		Output("{\"%s\", (PyCFunction)%s_%s, 1,", name, self.prefix, self.name)
-		Output(" %s},", stringify(docstring))
 	
 	def docstring(self):
 		import string
@@ -89,27 +146,13 @@ class FunctionGenerator:
 		else:
 			outstr = "(%s)" % string.joinfields(output, ", ")
 		return instr + " -> " + outstr
-
-	def generate(self):
-		print "-->", self.name
-		self.functionheader()
+	
+	def functionbody(self):
 		self.declarations()
 		self.getargs()
 		self.callit()
 		self.checkit()
 		self.returnvalue()
-		self.functiontrailer()
-
-	def functionheader(self):
-		Output()
-		Output("static PyObject *%s_%s(_self, _args)",
-		       self.prefix, self.name)
-		IndentLevel()
-		Output("%s *_self;", self.objecttype)
-		Output("PyObject *_args;")
-		DedentLevel()
-		OutLbrace()
-		Output("PyObject *_res = NULL;")
 
 	def declarations(self):
 		for arg in self.argumentList:
@@ -182,9 +225,6 @@ class FunctionGenerator:
 			arg.cleanup()
 		Output("return _res;")
 
-	def functiontrailer(self):
-		OutRbrace()
-
 
 class MethodGenerator(FunctionGenerator):
 
@@ -197,29 +237,6 @@ class MethodGenerator(FunctionGenerator):
 		self.argumentList.append(self.itself)
 		FunctionGenerator.parseArgumentList(self, args)
 
-class ManualGenerator(FunctionGenerator):
-
-	def __init__(self, name, body):
-		self.name = name
-		self.body = body
-
-	def definition(self):
-		self.functionheader()
-		Output("%s", self.body)
-		self.functiontrailer()
-
-_stringify_map = {'\n': '\\n', '\t': '\\t', '\r': '\\r', '\b': '\\b',
-                  '\e': '\\e', '\a': '\\a', '\f': '\\f', '"': '\\"'}
-def stringify(str):
-	if str is None: return "None"
-	res = '"'
-	map = _stringify_map
-	for c in str:
-		if map.has_key(c): res = res + map[c]
-		elif ' ' <= c <= '~': res = res + c
-		else: res = res + '\\%03o' % ord(c)
-	res = res + '"'
-	return res
 
 def _test():
 	void = None
@@ -232,6 +249,7 @@ def _test():
 	eggs.setprefix("spam")
 	print "/* START */"
 	eggs.generate()
+
 
 if __name__ == "__main__":
 	_test()
