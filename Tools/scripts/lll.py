@@ -1,0 +1,25 @@
+#! /usr/local/python
+
+# Find symbolic links and show where they point to.
+# Arguments are directories to search; default is current directory.
+# No recursion.
+# (This is a totally different program from "findsymlinks.py"!)
+
+import sys, posix, path
+
+def lll(dirname):
+	for name in posix.listdir(dirname):
+		if name not in ['.', '..']:
+			full = path.join(dirname, name)
+			if path.islink(full):
+				print name, '->', posix.readlink(full)
+
+args = sys.argv[1:]
+if not args: args = ['.']
+first = 1
+for arg in args:
+	if len(args) > 1:
+		if not first: print
+		first = 0
+		print arg + ':'
+	lll(arg)
