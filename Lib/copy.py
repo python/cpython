@@ -215,7 +215,7 @@ def _keep_alive(x, memo):
 
 def _deepcopy_inst(x, memo):
 	if hasattr(x, '__deepcopy__'):
-		return x.__deepcopy__()
+		return x.__deepcopy__(memo)
 	if hasattr(x, '__getinitargs__'):
 		args = x.__getinitargs__()
 		_keep_alive(args, memo)
