@@ -736,14 +736,14 @@ determination.
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Fast_GET_ITEM}{PyObject *o, int i}
   Return the \var{i}th element of \var{o}, assuming that \var{o} was
-  returned by \cfunction{PySequence_Fast()}, \var{o} is not \NULL{},
+  returned by \cfunction{PySequence_Fast()}, \var{o} is not \NULL,
   and that \var{i} is within bounds.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySequence_Fast_GET_SIZE}{PyObject *o}
   Returns the length of \var{o}, assuming that \var{o} was
   returned by \cfunction{PySequence_Fast()} and that \var{o} is
-  not \NULL{}.  The size can also be gotten by calling
+  not \NULL.  The size can also be gotten by calling
   \cfunction{PySequence_Size()} on \var{o}, but
   \cfunction{PySequence_Fast_GET_SIZE()} is faster because it can
   assume \var{o} is a list or tuple.

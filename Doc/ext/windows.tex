@@ -3,7 +3,7 @@
 
 
 This chapter briefly explains how to create a Windows extension module
-for Python using Microsoft Visual \Cpp{}, and follows with more
+for Python using Microsoft Visual \Cpp, and follows with more
 detailed background information on how it works.  The explanatory
 material is useful for both the Windows programmer learning to build
 Python extensions and the \UNIX{} programmer interested in producing
@@ -66,7 +66,7 @@ on why you must do this.
 loading of code.  Before you try to build a module that can be
 dynamically loaded, be aware of how your system works.
 
-In \UNIX{}, a shared object (\file{.so}) file contains code to be used by the
+In \UNIX, a shared object (\file{.so}) file contains code to be used by the
 program, and also the names of functions and data that it expects to
 find in the program.  When the file is joined to the program, all
 references to those functions and data in the file's code are changed
@@ -80,7 +80,7 @@ to refer to the program's memory; instead, the code already uses the
 DLL's lookup table, and the lookup table is modified at runtime to
 point to the functions and data.
 
-In \UNIX{}, there is only one type of library file (\file{.a}) which
+In \UNIX, there is only one type of library file (\file{.a}) which
 contains code from several object files (\file{.o}).  During the link
 step to create a shared object file (\file{.so}), the linker may find
 that it doesn't know where an identifier is defined.  The linker will
@@ -99,7 +99,7 @@ an import library may be generated, which will need to be used for all
 future DLLs that depend on the symbols in the application or DLL.
 
 Suppose you are building two dynamic-load modules, B and C, which should
-share another block of code A.  On \UNIX{}, you would \emph{not} pass
+share another block of code A.  On \UNIX, you would \emph{not} pass
 \file{A.a} to the linker for \file{B.so} and \file{C.so}; that would
 cause it to be included twice, so that B and C would each have their
 own copy.  In Windows, building \file{A.dll} will also build
@@ -109,14 +109,14 @@ which will be used at runtime to access A's code.
 
 In Windows, using an import library is sort of like using \samp{import
 spam}; it gives you access to spam's names, but does not create a
-separate copy.  On \UNIX{}, linking with a library is more like
+separate copy.  On \UNIX, linking with a library is more like
 \samp{from spam import *}; it does create a separate copy.
 
 
 \section{Using DLLs in Practice \label{win-dlls}}
 \sectionauthor{Chris Phoenix}{cphoenix@best.com}
 
-Windows Python is built in Microsoft Visual \Cpp{}; using other
+Windows Python is built in Microsoft Visual \Cpp; using other
 compilers may or may not work (though Borland seems to).  The rest of
 this section is MSV\Cpp{} specific.
 

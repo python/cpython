@@ -128,7 +128,7 @@ Notes:
 \code{<>} and \code{!=} are alternate spellings for the same operator.
 (I couldn't choose between \ABC{} and C! :-)
 \index{ABC language@\ABC{} language}
-\index{language!ABC@\ABC{}}
+\index{language!ABC@\ABC}
 \indexii{C}{language}
 \code{!=} is the preferred spelling; \code{<>} is obsolescent.
 
@@ -1105,7 +1105,7 @@ Files have the following methods:
 \begin{methoddesc}[file]{readlines}{\optional{sizehint}}
   Read until \EOF{} using \method{readline()} and return a list containing
   the lines thus read.  If the optional \var{sizehint} argument is
-  present, instead of reading up to \EOF{}, whole lines totalling
+  present, instead of reading up to \EOF, whole lines totalling
   approximately \var{sizehint} bytes (possibly after rounding up to an
   internal buffer size) are read.  Objects implementing a file-like
   interface may choose to ignore \var{sizehint} if it cannot be
