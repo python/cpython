@@ -44,9 +44,8 @@ class Test(Frame):
 	fred = self.draw.create_oval(0, 0, 20, 20,
 				     {"fill" : "green", "tag" : "selected"})
 
-	self.draw.bind(fred, "<Any-Enter>", self.mouseEnter)
-	self.draw.bind(fred, "<Any-Leave>", self.mouseLeave)
-	    
+	self.draw.tag_bind(fred, "<Any-Enter>", self.mouseEnter)
+	self.draw.tag_bind(fred, "<Any-Leave>", self.mouseLeave)
 
 	Widget.bind(self.draw, "<1>", self.mouseDown)
 	Widget.bind(self.draw, "<B1-Motion>", self.mouseMove)
