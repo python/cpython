@@ -1,8 +1,7 @@
-
 # Test case for the os.poll() function
     
 import sys, os, select, random
-from test.test_support import verbose, TestSkipped, TESTFN
+from test_support import verbose, TestSkipped, TESTFN
 
 try:
     select.poll
@@ -168,4 +167,3 @@ def test_poll2():
 
 test_poll1()
 test_poll2()
-
