@@ -61,7 +61,7 @@ VERSION=1.5
 
 # These must be declared phony since there
 # are directories with matching names:
-.PHONY: api ext lib mac ref tut
+.PHONY: api doc ext lib mac ref tut
 .PHONY: html info
 
 
