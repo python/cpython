@@ -81,7 +81,7 @@ def main():
 		elif dev == DEVICE.TIMER0:
 			try:
 				captureData, fieldID = v.GetCaptureData()
-			except RuntimeError, val:
+			except sv.error, val:
 				if val <> 'no data available':
 					print val
 				continue
