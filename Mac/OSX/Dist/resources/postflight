@@ -67,7 +67,7 @@ if [ "$DEST" = "/" ]; then
 fi
 
 
-# The link in the app bundles needs updated.
+# The link in the app bundles and in pydoc need updating.
 installed_python=$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python
 for app in BuildApplet IDLE PackageManager PythonIDE; do
     ln -fsh  $installed_python \
@@ -79,5 +79,11 @@ for app in BuildApplet IDLE PackageManager PythonIDE; do
 w
 q
 xyzzy
-    
+ed -s $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/bin/pydoc << xyzzy
+1c
+#!$installed_python
+.
+w
+q
+xyzzy
 done
