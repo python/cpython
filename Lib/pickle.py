@@ -23,11 +23,11 @@ Misc variables:
 
 """
 
-__version__ = "1.9"                     # Code version
+__version__ = "$Revision$"       # Code version
 
 from types import *
 from copy_reg import dispatch_table, safe_constructors
-import string, marshal
+import string, marshal, sys
 
 format_version = "1.2"                  # File format version we write
 compatible_formats = ["1.0", "1.1"]     # Old format versions we can read
@@ -465,7 +465,6 @@ def whichmodule(cls, clsname):
     """
     if classmap.has_key(cls):
         return classmap[cls]
-    import sys
 
     for name, module in sys.modules.items():
         if name != '__main__' and \
@@ -620,7 +619,11 @@ class Unpickler:
                 # prohibited
                 pass
         if not instantiated:
-            value = apply(klass, args)
+            try:
+                value = apply(klass, args)
+            except TypeError, err:
+                raise TypeError, "in constructor for %s: %s" % (
+                    klass.__name__, str(err)), sys.exc_info()[2]
         self.append(value)
     dispatch[INST] = load_inst
 
