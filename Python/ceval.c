@@ -2773,9 +2773,11 @@ exec_statement(f, prog, globals, locals)
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL)
 		PyDict_SetItemString(globals, "__builtins__", f->f_builtins);
 	if (PyCode_Check(prog)) {
-		if (PyEval_EvalCode((PyCodeObject *) prog,
-				    globals, locals) == NULL)
+		v = PyEval_EvalCode((PyCodeObject *) prog,
+				    globals, locals);
+		if (v == NULL)
 			return -1;
+		Py_DECREF(v);
 		return 0;
 	}
 	if (PyFile_Check(prog)) {
