@@ -78,8 +78,9 @@ operations are applied to it.
 
 \begin{methoddesc}[array]{byteswap}{x}
 ``Byteswap'' all items of the array.  This is only supported for
-integer values.  It is useful when reading data from a file written
-on a machine with a different byte order.
+integer values; for other types of values, \exception{RuntimeError} is
+raised.  It is useful when reading data from a file written on a
+machine with a different byte order.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{fromfile}{f, n}
