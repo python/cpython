@@ -8,7 +8,7 @@
   Based on a post on the python-dev list.  Ideas from Guido van Rossum,
   Eric Tiedemann, and various others.
 
-  http://www.arctrix.com/nas/python/gc.html
+  http://www.arctrix.com/nas/python/gc/
   http://www.python.org/pipermail/python-dev/2000-March/003869.html
   http://www.python.org/pipermail/python-dev/2000-March/004010.html
   http://www.python.org/pipermail/python-dev/2000-March/004022.html
@@ -18,18 +18,21 @@
 
 */
 
-
 #include "Python.h"
 
 #ifdef WITH_CYCLE_GC
 
-/* magic gc_refs value */
-#define GC_MOVED -1
+/* Get an object's GC head */
+#define AS_GC(o) ((PyGC_Head *)(o)-1)
+
+/* Get the object given the GC head */
+#define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+
 
 /*** Global GC state ***/
 
 /* linked lists of container objects */
-static PyGC_Head generation0 = {&generation0, &generation0, 0};
+PyGC_Head _PyGC_generation0 = {&_PyGC_generation0, &_PyGC_generation0, 0};
 static PyGC_Head generation1 = {&generation1, &generation1, 0};
 static PyGC_Head generation2 = {&generation2, &generation2, 0};
 static int generation = 0; /* current generation being collected */
@@ -42,6 +45,9 @@ static int threshold2 = 10;  /* generation1 collections before collecting 2 */
 
 /* net new objects allocated since last collection */
 static int allocated;
+
+/* true if we are currently running the collector */
+static int collecting;
 
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
@@ -56,6 +62,9 @@ static int allocated;
 				DEBUG_OBJECTS | \
 				DEBUG_SAVEALL
 static int debug;
+
+/* Special gc_refs value */
+#define GC_MOVED  -123
 
 /* list of uncollectable objects */
 static PyObject *garbage;
@@ -86,10 +95,7 @@ gc_list_remove(PyGC_Head *node)
 {
 	node->gc_prev->gc_next = node->gc_next;
 	node->gc_next->gc_prev = node->gc_prev;
-#ifdef Py_DEBUG
-	node->gc_prev = NULL;
-	node->gc_next = NULL;
-#endif
+	node->gc_next = NULL; /* object is not currently tracked */
 }
 
 static void 
@@ -137,13 +143,14 @@ gc_list_size(PyGC_Head *list)
 /*** end of list stuff ***/
 
 
+
 /* Set all gc_refs = ob_refcnt */
 static void
 update_refs(PyGC_Head *containers)
 {
 	PyGC_Head *gc = containers->gc_next;
 	for (; gc != containers; gc=gc->gc_next) {
-		gc->gc_refs = PyObject_FROM_GC(gc)->ob_refcnt;
+		gc->gc_refs = FROM_GC(gc)->ob_refcnt;
 	}
 }
 
@@ -151,7 +158,9 @@ static int
 visit_decref(PyObject *op, void *data)
 {
 	if (op && PyObject_IS_GC(op)) {
-		PyObject_AS_GC(op)->gc_refs--;
+		PyGC_Head *gc = AS_GC(op);
+		if (gc->gc_next != NULL)
+			AS_GC(op)->gc_refs--;
 	}
 	return 0;
 }
@@ -163,8 +172,8 @@ subtract_refs(PyGC_Head *containers)
 	traverseproc traverse;
 	PyGC_Head *gc = containers->gc_next;
 	for (; gc != containers; gc=gc->gc_next) {
-		traverse = PyObject_FROM_GC(gc)->ob_type->tp_traverse;
-		(void) traverse(PyObject_FROM_GC(gc),
+		traverse = FROM_GC(gc)->ob_type->tp_traverse;
+		(void) traverse(FROM_GC(gc),
 			       (visitproc)visit_decref,
 			       NULL);
 	}
@@ -188,13 +197,13 @@ move_roots(PyGC_Head *containers, PyGC_Head *roots)
 }
 
 static int
-visit_reachable(PyObject *op, PyGC_Head *roots)
+visit_move(PyObject *op, PyGC_Head *tolist)
 {
 	if (PyObject_IS_GC(op)) {
-		PyGC_Head *gc = PyObject_AS_GC(op);
-		if (gc && gc->gc_refs != GC_MOVED) {
+		PyGC_Head *gc = AS_GC(op);
+		if (gc->gc_next != NULL && gc->gc_refs != GC_MOVED) {
 			gc_list_remove(gc);
-			gc_list_append(gc, roots);
+			gc_list_append(gc, tolist);
 			gc->gc_refs = GC_MOVED;
 		}
 	}
@@ -209,15 +218,15 @@ move_root_reachable(PyGC_Head *reachable)
 	PyGC_Head *gc = reachable->gc_next;
 	for (; gc != reachable; gc=gc->gc_next) {
 		/* careful, reachable list is growing here */
-		PyObject *op = PyObject_FROM_GC(gc);
+		PyObject *op = FROM_GC(gc);
 		traverse = op->ob_type->tp_traverse;
 		(void) traverse(op,
-			       (visitproc)visit_reachable,
+			       (visitproc)visit_move,
 			       (void *)reachable);
 	}
 }
 
-/* move all objects with finalizers (instances with __del__) */
+/* Move all objects with finalizers (instances with __del__) */
 static void
 move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 {
@@ -230,29 +239,13 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 			Py_FatalError("PyGC: can't initialize __del__ string");
 	}
 	for (; gc != unreachable; gc=next) {
-		PyObject *op = PyObject_FROM_GC(gc);
+		PyObject *op = FROM_GC(gc);
 		next = gc->gc_next;
 		if (PyInstance_Check(op) && PyObject_HasAttr(op, delstr)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 		}
 	}
-}
-
-
-/* called by tp_traverse */
-static int
-visit_finalizer_reachable(PyObject *op, PyGC_Head *finalizers)
-{
-	if (PyObject_IS_GC(op)) {
-		PyGC_Head *gc = PyObject_AS_GC(op);
-		if (gc && gc->gc_refs != GC_MOVED) {
-			gc_list_remove(gc);
-			gc_list_append(gc, finalizers);
-			gc->gc_refs = GC_MOVED;
-		}
-	}
-	return 0;
 }
 
 /* Move objects referenced from roots to roots */
@@ -263,9 +256,9 @@ move_finalizer_reachable(PyGC_Head *finalizers)
 	PyGC_Head *gc = finalizers->gc_next;
 	for (; gc != finalizers; gc=gc->gc_next) {
 		/* careful, finalizers list is growing here */
-		traverse = PyObject_FROM_GC(gc)->ob_type->tp_traverse;
-		(void) traverse(PyObject_FROM_GC(gc), 
-			       (visitproc)visit_finalizer_reachable,
+		traverse = FROM_GC(gc)->ob_type->tp_traverse;
+		(void) traverse(FROM_GC(gc), 
+			       (visitproc)visit_move,
 			       (void *)finalizers);
 	}
 }
@@ -306,7 +299,7 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 	}
 	for (gc = finalizers->gc_next; gc != finalizers;
 			gc = finalizers->gc_next) {
-		PyObject *op = PyObject_FROM_GC(gc);
+		PyObject *op = FROM_GC(gc);
 		if ((debug & DEBUG_SAVEALL) || PyInstance_Check(op)) {
 			/* If SAVEALL is not set then just append
 			 * instances to the list of garbage.  We assume
@@ -330,7 +323,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 
 	while (unreachable->gc_next != unreachable) {
 		PyGC_Head *gc = unreachable->gc_next;
-		PyObject *op = PyObject_FROM_GC(gc);
+		PyObject *op = FROM_GC(gc);
 		if (debug & DEBUG_SAVEALL) {
 			PyList_Append(garbage, op);
 		}
@@ -366,7 +359,7 @@ collect(PyGC_Head *young, PyGC_Head *old)
 			"gc: collecting generation %d...\n"
 			"gc: objects in each generation: %ld %ld %ld\n",
 			generation,
-			gc_list_size(&generation0),
+			gc_list_size(&_PyGC_generation0),
 			gc_list_size(&generation1),
 			gc_list_size(&generation2));
 	}
@@ -407,7 +400,7 @@ collect(PyGC_Head *young, PyGC_Head *old)
 			gc = gc->gc_next) {
 		m++;
 		if (debug & DEBUG_COLLECTABLE) {
-			debug_cycle("collectable", PyObject_FROM_GC(gc));
+			debug_cycle("collectable", FROM_GC(gc));
 		}
 	}
 	/* call tp_clear on objects in the collectable set.  This will cause
@@ -421,7 +414,7 @@ collect(PyGC_Head *young, PyGC_Head *old)
 			gc = gc->gc_next) {
 		n++;
 		if (debug & DEBUG_UNCOLLECTABLE) {
-			debug_cycle("uncollectable", PyObject_FROM_GC(gc));
+			debug_cycle("uncollectable", FROM_GC(gc));
 		}
 	}
 	if (debug & DEBUG_STATS) {
@@ -461,7 +454,7 @@ collect_generations(void)
 
 	if (collections1 > threshold2) {
 		generation = 2;
-		gc_list_merge(&generation0, &generation2);
+		gc_list_merge(&_PyGC_generation0, &generation2);
 		gc_list_merge(&generation1, &generation2);
 		if (generation2.gc_next != &generation2) {
 			n = collect(&generation2, &generation2);
@@ -471,7 +464,7 @@ collect_generations(void)
 	else if (collections0 > threshold1) {
 		generation = 1;
 		collections1++;
-		gc_list_merge(&generation0, &generation1);
+		gc_list_merge(&_PyGC_generation0, &generation1);
 		if (generation1.gc_next != &generation1) {
 			n = collect(&generation1, &generation2);
 		}
@@ -480,50 +473,11 @@ collect_generations(void)
 	else {
 		generation = 0;
 		collections0++;
-		if (generation0.gc_next != &generation0) {
-			n = collect(&generation0, &generation1);
+		if (_PyGC_generation0.gc_next != &_PyGC_generation0) {
+			n = collect(&_PyGC_generation0, &generation1);
 		}
 	}
 	return n;
-}
-
-void
-_PyGC_Insert(PyObject *op)
-{
-	/* collection lock since collecting may cause allocations */
-	static int collecting = 0;
-
-#ifdef Py_DEBUG
-	if (!PyObject_IS_GC(op)) {
-		abort();
-	}
-#endif
-	if (allocated > threshold0 &&
-	    enabled &&
-	    threshold0 &&
-	    !collecting &&
-	    !PyErr_Occurred()) {
-		collecting++;
-		collect_generations();
-		collecting--;
-	}
-	allocated++;
-	gc_list_append(PyObject_AS_GC(op), &generation0);
-}
-
-void
-_PyGC_Remove(PyObject *op)
-{
-	PyGC_Head *g = PyObject_AS_GC(op);
-#ifdef Py_DEBUG
-	if (!PyObject_IS_GC(op)) {
-		abort();
-	}
-#endif
-	gc_list_remove(g);
-	if (allocated > 0) {
-		allocated--;
-	}
 }
 
 static char gc_enable__doc__[] =
@@ -595,7 +549,7 @@ gc_collect(PyObject *self, PyObject *args)
 		return NULL;
 
 	generation = 2;
-	gc_list_merge(&generation0, &generation2);
+	gc_list_merge(&_PyGC_generation0, &generation2);
 	gc_list_merge(&generation1, &generation2);
 	n = collect(&generation2, &generation2);
 
@@ -693,7 +647,7 @@ gc_referents_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 	PyObject *obj;
 	traverseproc traverse;
 	for (gc = list->gc_next; gc != list; gc = gc->gc_next) {
-		obj = PyObject_FROM_GC(gc);
+		obj = FROM_GC(gc);
 		traverse = obj->ob_type->tp_traverse;
 		if (obj == objs || obj == resultlist)
 			continue;
@@ -713,7 +667,7 @@ static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
 	PyObject *result = PyList_New(0);
-	if (!(gc_referents_for(args, &generation0, result) &&
+	if (!(gc_referents_for(args, &_PyGC_generation0, result) &&
 	      gc_referents_for(args, &generation1, result) &&
 	      gc_referents_for(args, &generation2, result))) {
 		Py_DECREF(result);
@@ -735,7 +689,7 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
 {
 	PyGC_Head *gc;
 	for (gc = gc_list->gc_next; gc != gc_list; gc = gc->gc_next) {
-		PyObject *op = PyObject_FROM_GC(gc);
+		PyObject *op = FROM_GC(gc);
 		if (op != py_list) {
 			Py_INCREF(op);
 			PyList_Append(py_list, op);
@@ -751,7 +705,7 @@ gc_get_objects(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
 		return NULL;
 	result = PyList_New(0);
-	append_objects(result, &generation0);
+	append_objects(result, &_PyGC_generation0);
 	append_objects(result, &generation1);
 	append_objects(result, &generation2);
 	return result;
@@ -820,4 +774,105 @@ initgc(void)
 			PyInt_FromLong(DEBUG_LEAK));
 }
 
+/* for debugging */
+void _PyGC_Dump(PyGC_Head *g)
+{
+	_PyObject_Dump(FROM_GC(g));
+}
+
 #endif /* WITH_CYCLE_GC */
+
+/* extension modules might be compiled with GC support so these
+   functions must always be available */
+
+void
+_PyObject_GC_Track(PyObject *op)
+{
+	_PyObject_GC_TRACK(op);
+}
+
+void
+_PyObject_GC_UnTrack(PyObject *op)
+{
+	_PyObject_GC_UNTRACK(op);
+}
+
+PyObject *
+_PyObject_GC_Malloc(PyTypeObject *tp, int size)
+{
+	PyObject *op;
+#ifdef WITH_CYCLE_GC
+	PyGC_Head *g = PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size) +
+						sizeof(PyGC_Head));
+	if (g == NULL)
+		return (PyObject *)PyErr_NoMemory();
+	g->gc_next = NULL;
+	allocated++;
+ 	if (allocated > threshold0 &&
+ 	    enabled &&
+ 	    threshold0 &&
+ 	    !collecting &&
+ 	    !PyErr_Occurred()) {
+		collecting = 1;
+ 		collect_generations();
+		collecting = 0;
+	}
+	op = FROM_GC(g);
+#else
+	op = PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
+	if (op == NULL)
+		return (PyObject *)PyErr_NoMemory();
+
+#endif
+	return op;
+}
+
+PyObject *
+_PyObject_GC_New(PyTypeObject *tp)
+{
+	PyObject *op = _PyObject_GC_Malloc(tp, 0);
+	return PyObject_INIT(op, tp);
+}
+
+PyVarObject *
+_PyObject_GC_NewVar(PyTypeObject *tp, int size)
+{
+	PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(tp, size);
+	return PyObject_INIT_VAR(op, tp, size);
+}
+
+PyVarObject *
+_PyObject_GC_Resize(PyVarObject *op, int size)
+{
+#ifdef WITH_CYCLE_GC
+	PyGC_Head *g = AS_GC(op);
+	g = PyObject_REALLOC(g, _PyObject_VAR_SIZE(op->ob_type, size) +
+						sizeof(PyGC_Head));
+	if (g == NULL)
+		return (PyVarObject *)PyErr_NoMemory();
+	op = (PyVarObject *) FROM_GC(g);
+#else
+	op = PyObject_REALLOC(op, _PyObject_VAR_SIZE(op->ob_type, size));
+	if (op == NULL)
+		return (PyVarObject *)PyErr_NoMemory();
+#endif
+	op->ob_size = size;
+	return op;
+}
+
+void
+_PyObject_GC_Del(PyObject *op)
+{
+#ifdef WITH_CYCLE_GC
+	PyGC_Head *g = AS_GC(op);
+	if (g->gc_next != NULL)
+		gc_list_remove(g);
+	if (allocated > 0) {
+		allocated--;
+	}
+	PyObject_FREE(g);
+#else
+	PyObject_FREE(op);
+#endif
+}
+
