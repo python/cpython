@@ -4,7 +4,7 @@ The TextViewer allows you to see how the selected color would affect various
 characteristics of a Tk text widget.  This is an output viewer only.
 
 In the top part of the window is a standard text widget with some sample text
-in it.  You are free to edit this text in any way you want (TBD: allow you to
+in it.  You are free to edit this text in any way you want (BAW: allow you to
 change font characteristics).  If you want changes in other viewers to update
 text characteristics, turn on Track color changes.
 
@@ -20,6 +20,8 @@ import ColorDB
 
 ADDTOVIEW = 'Text Window...'
 
+
+
 class TextViewer:
     def __init__(self, switchboard, master=None):
         self.__sb = switchboard
@@ -91,13 +93,13 @@ and choosing a color.'''))
             l = Label(frame, text=text)
             l.grid(row=row, column=0, sticky=E)
             self.__labels.append(l)
-            row = row + 1
+            row += 1
         col = 1
         for text in ('Foreground', 'Background'):
             l = Label(frame, text=text)
             l.grid(row=1, column=col)
             self.__labels.append(l)
-            col = col + 1
+            col += 1
         #
         # radios
         self.__radios = []
