@@ -619,6 +619,7 @@ class Aifc_write:
 		self._nframes = 0
 		self._nframeswritten = 0
 		self._datawritten = 0
+		self._datalength = 0
 		self._markers = []
 		self._marklength = 0
 		self._aifc = 1		# AIFF-C is default
@@ -743,19 +744,7 @@ class Aifc_write:
 		return self._markers
 				
 	def writeframesraw(self, data):
-		if not self._nframeswritten:
-			if self._comptype in ('ULAW', 'ALAW'):
-				if not self._sampwidth:
-					self._sampwidth = AL.SAMPLE_16
-				if self._sampwidth != AL.SAMPLE_16:
-					raise Error, 'sample width must be 2 when compressing with ULAW or ALAW'
-			if not self._nchannels:
-				raise Error, '# channels not specified'
-			if not self._sampwidth:
-				raise Error, 'sample width not specified'
-			if not self._framerate:
-				raise Error, 'sampling rate not specified'
-			self._write_header(len(data))
+		self._ensure_header_written(len(data))
 		nframes = len(data) / (self._sampwidth * self._nchannels)
 		if self._comp:
 			dummy = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, \
@@ -774,6 +763,7 @@ class Aifc_write:
 			self._patchheader()
 
 	def close(self):
+		self._ensure_header_written(0)
 		if self._datawritten & 1:
 			# quick pad to even size
 			self._file.write(chr(0))
@@ -792,6 +782,21 @@ class Aifc_write:
 	#
 	# Internal methods.
 	#
+	def _ensure_header_written(self, datasize):
+		if not self._nframeswritten:
+			if self._comptype in ('ULAW', 'ALAW'):
+				if not self._sampwidth:
+					self._sampwidth = AL.SAMPLE_16
+				if self._sampwidth != AL.SAMPLE_16:
+					raise Error, 'sample width must be 2 when compressing with ULAW or ALAW'
+			if not self._nchannels:
+				raise Error, '# channels not specified'
+			if not self._sampwidth:
+				raise Error, 'sample width not specified'
+			if not self._framerate:
+				raise Error, 'sampling rate not specified'
+			self._write_header(datasize)
+
 	def _write_header(self, initlength):
 		if self._aifc and self._comptype != 'NONE':
 			try:

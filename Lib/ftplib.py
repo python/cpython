@@ -68,16 +68,31 @@ PORT_CYCLE = 1000
 # The class itself
 class FTP:
 
-	# Initialize an instance.  Arguments:
-	# - host: hostname to connect to
-	# - port: port to connect to (default the standard FTP port)
-	def init(self, host, *args):
-		if len(args) > 1: raise TypeError, 'too many args'
-		if args: port = args[0]
-		else: port = FTP_PORT
-		self.host = host
-		self.port = port
+	# New initialization method (called by class instantiation)
+	# Initialize host to localhost, port to standard ftp port
+	def __init__(self, *args):
+		# Initialize the instance to something mostly harmless
 		self.debugging = 0
+		self.host = ''
+		self.port = FTP_PORT
+		self.sock = None
+		self.file = None
+		self.welcome = None
+		if args:
+			apply(self.connect, args)
+
+	# Old init method (explicitly called by caller)
+	def init(self, *args):
+		if args:
+			apply(self.connect, args)
+
+	# Connect to host.  Arguments:
+	# - host: hostname to connect to (default previous host)
+	# - port: port to connect to (default previous port)
+	def init(self, *args):
+		if args: self.host = args[0]
+		if args[1:]: self.port = args[1]
+		if args[2:]: raise TypeError, 'too many args'
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect(self.host, self.port)
 		self.file = self.sock.makefile('r')
