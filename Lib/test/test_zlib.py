@@ -76,6 +76,36 @@ if decomp2 != buf:
 else:
     print "decompressobj with init options succeeded"
 
+print "should be '':", `deco.unconsumed_tail`
+
+# Check a decompression object with max_length specified
+deco = zlib.decompressobj(-12)
+cb = combuf
+bufs = []
+while cb:
+    max_length = 1 + len(cb)/10
+    chunk = deco.decompress(cb, max_length)
+    if len(chunk) > max_length:
+        print 'chunk too big (%d>%d)' % (len(chunk),max_length)
+    bufs.append(chunk)
+    cb = deco.unconsumed_tail
+bufs.append(deco.flush())
+decomp2 = ''.join(buf)
+if decomp2 != buf:
+    print "max_length decompressobj failed"
+else:
+    print "max_length decompressobj succeeded"
+    
+# Misc tests of max_length
+deco = zlib.decompressobj(-12)
+try:
+    deco.decompress("", -1)
+except ValueError:
+    pass
+else:
+    print "failed to raise value error on bad max_length"
+print "unconsumed_tail should be '':", `deco.unconsumed_tail`
+
 # Test flush() with the various options, using all the different levels
 # in order to provide more variations.
 sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH']

@@ -120,7 +120,7 @@ prevents compressing any more data.  After calling
 action is to delete the object.  
 \end{methoddesc}
 
-Decompression objects support the following methods, and a single attribute:
+Decompression objects support the following methods, and two attributes:
 
 \begin{memberdesc}{unused_data}
 A string which contains any unused data from the last string fed to
@@ -135,13 +135,27 @@ reading data and feeding it into a decompression object's
 no longer the empty string.  
 \end{memberdesc}
 
-\begin{methoddesc}[Decompress]{decompress}{string}
+\begin{memberdesc}{unconsumed_tail}
+A string that contains any data that was not consumed by the last
+\method{decompress} call because it exceeded the limit for the
+uncompressed data buffer.
+\end{memberdesc}
+
+\begin{methoddesc}[Decompress]{decompress}{string}{\optional{max_length}}
 Decompress \var{string}, returning a string containing the
 uncompressed data corresponding to at least part of the data in
 \var{string}.  This data should be concatenated to the output produced
 by any preceding calls to the
 \method{decompress()} method.  Some of the input data may be preserved
 in internal buffers for later processing.
+
+If the optional parameter \var{max_length} is supplied then the return value
+will be no longer than \var{max_length}. This may mean that not all of the
+compressed input can be processed; and unconsumed data will be stored
+in the attribute \member{unconsumed_tail}. This string must be passed
+to a subsequent call to \method{decompress()} if decompression is to
+continue.  If \var{max_length} is not supplied then the whole input is
+decompressed, and \member{unconsumed_tail} is an empty string.
 \end{methoddesc}
 
 \begin{methoddesc}[Decompress]{flush}{}

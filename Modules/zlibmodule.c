@@ -78,6 +78,7 @@ typedef struct
   PyObject_HEAD
   z_stream zst;
   PyObject *unused_data;
+  PyObject *unconsumed_tail;
   int is_initialised;
 } compobject;
 
@@ -100,6 +101,15 @@ newcompobject(PyTypeObject *type)
                 return NULL;
 	self->is_initialised = 0;
 	self->unused_data = PyString_FromString("");
+	if (self->unused_data == NULL) {
+	    Py_DECREF(self);
+	    return NULL;
+	}
+	self->unconsumed_tail = PyString_FromString("");
+	if (self->unconsumed_tail == NULL) {
+	    Py_DECREF(self);
+	    return NULL;
+	}
         return self;
 }
 
@@ -485,6 +495,7 @@ Comp_dealloc(compobject *self)
     if (self->is_initialised)
       deflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
+    Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
 
     LEAVE_ZLIB
@@ -498,6 +509,7 @@ Decomp_dealloc(compobject *self)
     if (self->is_initialised)
       inflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
+    Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
 
     LEAVE_ZLIB
@@ -595,27 +607,41 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 }
 
 static char decomp_decompress__doc__[] =
-"decompress(data) -- Return a string containing the decompressed version of the data.\n\n"
+"decompress(data, max_length) -- Return a string containing\n"
+"the decompressed version of the data.\n\n"
 "After calling this function, some of the input data may still\n"
 "be stored in internal buffers for later processing.\n"
-"Call the flush() method to clear these buffers."
+"Call the flush() method to clear these buffers.\n"
+"If the max_length parameter is specified then the return value will be\n"
+"no longer than max_length.  Unconsumed input data will be stored in\n"
+"the unconsumed_tail attribute."
 ;
 
 static PyObject *
 PyZlib_objdecompress(compobject *self, PyObject *args)
 {
-  int err, inplen, length = DEFAULTALLOC;
+  int err, inplen, old_length, length = DEFAULTALLOC;
+  int max_length = 0;
   PyObject *RetVal;
   Byte *input;
   unsigned long start_total_out;
   int return_error;
   PyObject * inputString;
 
-  if (!PyArg_ParseTuple(args, "S:decompress", &inputString))
+  if (!PyArg_ParseTuple(args, "S|i:decompress", &inputString, &max_length))
     return NULL;
+  if (max_length < 0) {
+    PyErr_SetString(PyExc_ValueError,
+		    "max_length must be greater than zero");
+    return NULL;
+  }
+
   if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
     return NULL;
 
+  /* limit amount of data allocated to max_length */
+  if (max_length && length > max_length) 
+    length = max_length;
   if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
     PyErr_SetString(PyExc_MemoryError,
 		    "Can't allocate memory to compress data");
@@ -637,21 +663,44 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
   err = inflate(&(self->zst), Z_SYNC_FLUSH);
   Py_END_ALLOW_THREADS
 
-  /* while Z_OK and the output buffer is full, there might be more output,
-    so extend the output buffer and try again */
+  /* While Z_OK and the output buffer is full, there might be more output.
+     So extend the output buffer and try again.
+  */
   while (err == Z_OK && self->zst.avail_out == 0) { 
-    if (_PyString_Resize(&RetVal, length << 1) == -1) {
+    /* If max_length set, don't continue decompressing if we've already
+        reached the limit.
+    */
+    if (max_length && length >= max_length)
+      break;
+
+    /* otherwise, ... */
+    old_length = length;
+    length = length << 1;
+    if (max_length && length > max_length) 
+      length = max_length;
+
+    if (_PyString_Resize(&RetVal, length) == -1) {
       PyErr_SetString(PyExc_MemoryError,
                       "Can't allocate memory to compress data");
       return_error = 1;
       break;
     }
-    self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
-    self->zst.avail_out = length;
-    length = length << 1;
+    self->zst.next_out = (unsigned char *)PyString_AsString(RetVal)+old_length;
+    self->zst.avail_out = length - old_length;
+
     Py_BEGIN_ALLOW_THREADS
     err = inflate(&(self->zst), Z_SYNC_FLUSH);
     Py_END_ALLOW_THREADS
+  }
+
+  /* Not all of the compressed data could be accomodated in the output buffer
+    of specified size. Return the unconsumed tail in an attribute.*/
+  if(max_length) {
+    Py_DECREF(self->unconsumed_tail);
+    self->unconsumed_tail = PyString_FromStringAndSize(self->zst.next_in, 
+						       self->zst.avail_in);
+    if(!self->unconsumed_tail)
+      return_error = 1;
   }
 
   /* The end of the compressed data has been reached, so set the unused_data 
@@ -884,6 +933,11 @@ Decomp_getattr(compobject *self, char *name)
 	  {  
 	    Py_INCREF(self->unused_data);
             retval = self->unused_data;
+	  }
+	else if (strcmp(name, "unconsumed_tail") == 0) 
+	  {  
+	    Py_INCREF(self->unconsumed_tail);
+	    retval = self->unconsumed_tail;
 	  }
 	else 
 	  retval = Py_FindMethod(Decomp_methods, (PyObject *)self, name);
