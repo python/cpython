@@ -230,7 +230,13 @@ run_script(fp, filename)
 		return -1;
 	d = getmoduledict(m);
 	ext = filename + strlen(filename) - 4;
+#ifdef macintosh
+	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
+	if ( strcmp(ext, ".pyc") == 0 || getfiletype(filename) == 'PYC ' ||
+					getfiletype(filename) == 'APPL' ) {
+#else
 	if ( strcmp(ext, ".pyc") == 0 ) {
+#endif /* macintosh */
 		/* Try to run a pyc file. First, re-open in binary */
 		/* Don't close, done in main: fclose(fp); */
 		if( (fp = fopen(filename, "rb")) == NULL ) {
@@ -667,6 +673,8 @@ goaway(sts)
 #ifdef __MWERKS__
 	if (sts == 0)
 		SIOUXSettings.autocloseonquit = 1;
+	else
+		SIOUXSettings.showstatusline = 1;
 #endif
 	exit(sts);
 #endif /* WITH_THREAD */
