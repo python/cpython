@@ -1,3 +1,4 @@
+import sys
 import os
 from array import array
 
@@ -88,7 +89,11 @@ f.close()
 if not f.closed:
     raise TestFailed, 'file.closed should be true'
 
-for methodname in ['fileno', 'flush', 'isatty', 'read', 'readinto', 'readline', 'readlines', 'seek', 'tell', 'truncate', 'write', 'xreadlines' ]:
+methods = ['fileno', 'flush', 'isatty', 'read', 'readinto', 'readline', 'readlines', 'seek', 'tell', 'truncate', 'write', 'xreadlines' ]
+if sys.platform.startswith('atheos'):
+    methods.remove('truncate')
+
+for methodname in methods:
     method = getattr(f, methodname)
     try:
         method()

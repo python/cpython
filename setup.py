@@ -214,6 +214,8 @@ class PyBuildExt(build_ext):
             platform = 'beos'
         elif platform[:6] == 'darwin':
             platform = 'darwin'
+        elif platform[:6] == 'atheos':
+            platform = 'atheos'
 
         return platform
 
@@ -241,6 +243,13 @@ class PyBuildExt(build_ext):
 
         platform = self.get_platform()
         (srcdir,) = sysconfig.get_config_vars('srcdir')
+
+        # Check for AtheOS which has libraries in non-standard locations
+        if platform == 'atheos':
+            lib_dirs += ['/system/libs', '/atheos/autolnk/lib']
+            lib_dirs += os.getenv('LIBRARY_PATH', '').split(os.pathsep)
+            inc_dirs += ['/system/include', '/atheos/autolnk/include']
+            inc_dirs += os.getenv('C_INCLUDE_PATH', '').split(os.pathsep)
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
@@ -323,7 +332,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('cPickle', ['cPickle.c']) )
 
         # Memory-mapped files (also works on Win32).
-        exts.append( Extension('mmap', ['mmapmodule.c']) )
+        if platform not in ['atheos']:
+            exts.append( Extension('mmap', ['mmapmodule.c']) )
 
         # Lance Ellinghaus's modules:
         # enigma-inspired encryption
@@ -479,10 +489,11 @@ class PyBuildExt(build_ext):
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
-            exts.append( Extension('resource', ['resource.c']) )
+	    if platform not in ['atheos']:
+                exts.append( Extension('resource', ['resource.c']) )
 
             # Sun yellow pages. Some systems have the functions in libc.
-            if platform not in ['cygwin']:
+            if platform not in ['cygwin', 'atheos']:
                 if (self.compiler.find_library_file(lib_dirs, 'nsl')):
                     libs = ['nsl']
                 else:
@@ -593,7 +604,7 @@ class PyBuildExt(build_ext):
 
         # Dynamic loading module
         dl_inc = find_file('dlfcn.h', [], inc_dirs)
-        if dl_inc is not None:
+        if (dl_inc is not None) and (platform not in ['atheos']):
             exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Platform-specific libraries

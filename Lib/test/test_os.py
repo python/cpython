@@ -139,7 +139,13 @@ class StatAttributeTests(unittest.TestCase):
             return
 
         import statvfs
-        result = os.statvfs(self.fname)
+        try:
+            result = os.statvfs(self.fname)
+        except OSError, e:
+            # On AtheOS, glibc always returns ENOSYS
+            import errno
+            if e.errno == errno.ENOSYS:
+                return
 
         # Make sure direct access works
         self.assertEquals(result.f_bfree, result[statvfs.F_BFREE])
