@@ -1,7 +1,7 @@
-/* this idea of this file is that you bundle it with your extension,
+/* The idea of this file is that you bundle it with your extension,
    #include it, program to Python 2.3's memory API and have your
    extension build with any version of Python from 1.5.2 through to
-   2.3 (and hopefully beyond) */
+   2.3 (and hopefully beyond). */
 
 #ifndef Py_PYMEMCOMPAT_H
 #define Py_PYMEMCOMPAT_H
