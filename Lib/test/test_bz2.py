@@ -28,11 +28,11 @@ class BZ2FileTest(BaseTest):
 
 	def setUp(self):
 		self.filename = tempfile.mktemp("bz2")
-		
+
 	def tearDown(self):
 		if os.path.isfile(self.filename):
 			os.unlink(self.filename)
-	
+
 	def createTempFile(self, crlf=0):
 		f = open(self.filename, "wb")
 		if crlf:
@@ -41,14 +41,14 @@ class BZ2FileTest(BaseTest):
 			data = self.DATA
 		f.write(data)
 		f.close()
-	
+
 	def testRead(self):
 		"Test BZ2File.read()"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		self.assertEqual(bz2f.read(), self.TEXT)
 		bz2f.close()
-	
+
 	def testReadChunk10(self):
 		"Test BZ2File.read() in chunks of 10 bytes"
 		self.createTempFile()
@@ -61,14 +61,14 @@ class BZ2FileTest(BaseTest):
 			text += str
 		self.assertEqual(text, text)
 		bz2f.close()
-	
+
 	def testRead100(self):
 		"Test BZ2File.read(100)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		self.assertEqual(bz2f.read(100), self.TEXT[:100])
 		bz2f.close()
-	
+
 	def testReadLine(self):
 		"Test BZ2File.readline()"
 		self.createTempFile()
@@ -77,7 +77,7 @@ class BZ2FileTest(BaseTest):
 		for line in sio.readlines():
 			self.assertEqual(bz2f.readline(), line)
 		bz2f.close()
-	
+
 	def testReadLines(self):
 		"Test BZ2File.readlines()"
 		self.createTempFile()
@@ -85,7 +85,7 @@ class BZ2FileTest(BaseTest):
 		sio = StringIO(self.TEXT)
 		self.assertEqual(bz2f.readlines(), sio.readlines())
 		bz2f.close()
-	
+
 	def testIterator(self):
 		"Test iter(BZ2File)"
 		self.createTempFile()
@@ -93,7 +93,7 @@ class BZ2FileTest(BaseTest):
 		sio = StringIO(self.TEXT)
 		self.assertEqual(list(iter(bz2f)), sio.readlines())
 		bz2f.close()
-	
+
 	def testXReadLines(self):
 		"Test BZ2File.xreadlines()"
 		self.createTempFile()
@@ -101,7 +101,7 @@ class BZ2FileTest(BaseTest):
 		sio = StringIO(self.TEXT)
 		self.assertEqual(list(bz2f.xreadlines()), sio.readlines())
 		bz2f.close()
-	
+
 	def testUniversalNewlinesLF(self):
 		"Test BZ2File.read() with universal newlines (\\n)"
 		self.createTempFile()
@@ -109,7 +109,7 @@ class BZ2FileTest(BaseTest):
 		self.assertEqual(bz2f.read(), self.TEXT)
 		self.assertEqual(bz2f.newlines, "\n")
 		bz2f.close()
-	
+
 	def testUniversalNewlinesCRLF(self):
 		"Test BZ2File.read() with universal newlines (\\r\\n)"
 		self.createTempFile(crlf=1)
@@ -117,7 +117,7 @@ class BZ2FileTest(BaseTest):
 		self.assertEqual(bz2f.read(), self.TEXT)
 		self.assertEqual(bz2f.newlines, "\r\n")
 		bz2f.close()
-	
+
 	def testWrite(self):
 		"Test BZ2File.write()"
 		bz2f = BZ2File(self.filename, "w")
@@ -151,7 +151,7 @@ class BZ2FileTest(BaseTest):
 		f = open(self.filename)
 		self.assertEqual(self.decompress(f.read()), self.TEXT)
 		f.close()
-	
+
 	def testSeekForward(self):
 		"Test BZ2File.seek(150, 0)"
 		self.createTempFile()
@@ -173,7 +173,7 @@ class BZ2FileTest(BaseTest):
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(-150, 2)
 		self.assertEqual(bz2f.read(), self.TEXT[len(self.TEXT)-150:])
-	
+
 	def testSeekPostEnd(self):
 		"Test BZ2File.seek(150000)"
 		self.createTempFile()
@@ -258,7 +258,7 @@ class BZ2DecompressorTest(BaseTest):
 
 class FuncTest(BaseTest):
 	"Test module functions"
-	
+
 	def testCompress(self):
 		"Test compress() function"
 		data = compress(self.TEXT)
@@ -268,7 +268,7 @@ class FuncTest(BaseTest):
 		"Test decompress() function"
 		text = decompress(self.DATA)
 		self.assertEqual(text, self.TEXT)
-	
+
 	def testDecompressEmpty(self):
 		"Test decompress() function with empty string"
 		text = decompress("")

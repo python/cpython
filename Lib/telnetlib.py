@@ -399,12 +399,12 @@ class Telnet:
         if not buf and self.eof and not self.rawq:
             raise EOFError, 'telnet connection closed'
         return buf
-    
+
     def read_sb_data(self):
         """Return any data available in the SB ... SE queue.
 
-        Return '' if no SB ... SE available. Should only be called 
-        after seeing a SB or SE command. When a new SB command is 
+        Return '' if no SB ... SE available. Should only be called
+        after seeing a SB or SE command. When a new SB command is
         found, old unread SB data will be discarded. Don't block.
 
         """
@@ -442,7 +442,7 @@ class Telnet:
                     if c in (DO, DONT, WILL, WONT):
                         self.iacseq += c
                         continue
-                    
+
                     self.iacseq = ''
                     if c == IAC:
                         buf[self.sb] = buf[self.sb] + c
@@ -468,7 +468,7 @@ class Telnet:
                     self.iacseq = ''
                     opt = c
                     if cmd in (DO, DONT):
-                        self.msg('IAC %s %d', 
+                        self.msg('IAC %s %d',
                             cmd == DO and 'DO' or 'DONT', ord(opt))
                         if self.option_callback:
                             self.option_callback(self.sock, cmd, opt)
