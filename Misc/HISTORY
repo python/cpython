@@ -5,6 +5,663 @@ This file contains the release messages for previous Python releases
 (slightly edited to adapt them to the format of this file).  As you
 read on you go back to the dark ages of Python's history.
 
+
+====================================
+==> Release 1.0.3 (14 July 1994) <==
+====================================
+
+This release consists entirely of bug fixes to the C sources; see the
+head of ../ChangeLog for a complete list.  Most important bugs fixed:
+
+- Sometimes the format operator (string%expr) would drop the last
+character of the format string
+
+- Tokenizer looped when last line did not end in \n
+
+- Bug when triple-quoted string ended in quote plus newline
+
+- Typo in socketmodule (listen) (== instead of =)
+
+- typing vars() at the >>> prompt would cause recursive output
+
+
+==================================
+==> Release 1.0.2 (4 May 1994) <==
+==================================
+
+Overview of the most visible changes.  Bug fixes are not listed.  See
+also ChangeLog.
+
+Tokens
+------
+
+* String literals follow Standard C rules: they may be continued on
+the next line using a backslash; adjacent literals are concatenated
+at compile time.
+
+* A new kind of string literals, surrounded by triple quotes (""" or
+'''), can be continued on the next line without a backslash.
+
+Syntax
+------
+
+* Function arguments may have a default value, e.g. def f(a, b=1);
+defaults are evaluated at function definition time.  This also applies
+to lambda.
+
+* The try-except statement has an optional else clause, which is
+executed when no exception occurs in the try clause.
+
+Interpreter
+-----------
+
+* The result of a statement-level expression is no longer printed,
+except_ for expressions entered interactively.  Consequently, the -k
+command line option is gone.
+
+* The result of the last printed interactive expression is assigned to
+the variable '_'.
+
+* Access to implicit global variables has been speeded up by removing
+an always-failing dictionary lookup in the dictionary of local
+variables (mod suggested by Steve Makewski and Tim Peters).
+
+* There is a new command line option, -u, to force stdout and stderr
+to be unbuffered.
+
+* Incorporated Steve Majewski's mods to import.c for dynamic loading
+under AIX.
+
+* Fewer chances of dumping core when trying to reload or re-import
+static built-in, dynamically loaded built-in, or frozen modules.
+
+* Loops over sequences now don't ask for the sequence's length when
+they start, but try to access items 0, 1, 2, and so on until they hit
+an IndexError.  This makes it possible to create classes that generate
+infinite or indefinite sequences a la Steve Majewski.  This affects
+for loops, the (not) in operator, and the built-in functions filter(),
+map(), max(), min(), reduce().
+
+Changed Built-in operations
+---------------------------
+
+* The '%' operator on strings (printf-style formatting) supports a new
+feature (adapted from a patch by Donald Beaudry) to allow
+'%(<key>)<format>' % {...} to take values from a dictionary by name
+instead of from a tuple by position (see also the new function
+vars()).
+
+* The '%s' formatting operator is changed to accept any type and
+convert it to a string using str().
+
+* Dictionaries with more than 20,000 entries can now be created
+(thanks to Steve Kirsch).
+
+New Built-in Functions
+----------------------
+
+* vars() returns a dictionary containing the local variables; vars(m)
+returns a dictionary containing the variables of module m.  Note:
+dir(x) is now equivalent to vars(x).keys().
+
+Changed Built-in Functions
+--------------------------
+
+* open() has an optional third argument to specify the buffer size: 0
+for unbuffered, 1 for line buffered, >1 for explicit buffer size, <0
+for default.
+
+* open()'s second argument is now optional; it defaults to "r".
+
+* apply() now checks that its second argument is indeed a tuple.
+
+New Built-in Modules
+--------------------
+
+Changed Built-in Modules
+------------------------
+
+The thread module no longer supports exit_prog().
+
+New Python Modules
+------------------
+
+* Module addpack contains a standard interface to modify sys.path to
+find optional packages (groups of related modules).
+
+* Module urllib contains a number of functions to access
+World-Wide-Web files specified by their URL.
+
+* Module httplib implements the client side of the HTTP protocol used
+by World-Wide-Web servers.
+
+* Module gopherlib implements the client side of the Gopher protocol.
+
+* Module mailbox (by Jack Jansen) contains a parser for UNIX and MMDF
+style mailbox files.
+
+* Module random contains various random distributions, e.g. gauss().
+
+* Module lockfile locks and unlocks open files using fcntl (inspired
+by a similar module by Andy Bensky).
+
+* Module ntpath (by Jaap Vermeulen) implements path operations for
+Windows/NT.
+
+* Module test_thread (in Lib/test) contains a small test set for the
+thread module.
+
+Changed Python Modules
+----------------------
+
+* The string module's expandvars() function is now documented and is
+implemented in Python (using regular expressions) instead of forking
+off a shell process.
+
+* Module rfc822 now supports accessing the header fields using the
+mapping/dictionary interface, e.g. h['subject'].
+
+* Module pdb now makes it possible to set a break on a function
+(syntax: break <expression>, where <expression> yields a function
+object).
+
+Changed Demos
+-------------
+
+* The Demo/scripts/freeze.py script is working again (thanks to Jaap
+Vermeulen).
+
+New Demos
+---------
+
+* Demo/threads/Generator.py is a proposed interface for restartable
+functions a la Tim Peters.
+
+* Demo/scripts/newslist.py, by Quentin Stafford-Fraser, generates a
+directory full of HTML pages which between them contain links to all
+the newsgroups available on your server.
+
+* Demo/dns contains a DNS (Domain Name Server) client.
+
+* Demo/lutz contains miscellaneous demos by Mark Lutz (e.g. psh.py, a
+nice enhanced Python shell!!!).
+
+* Demo/turing contains a Turing machine by Amrit Prem.
+
+Documentation
+-------------
+
+* Documented new language features mentioned above (but not all new
+modules).
+
+* Added a chapter to the Tutorial describing recent additions to
+Python.
+
+* Clarified some sentences in the reference manual,
+e.g. break/continue, local/global scope, slice assignment.
+
+Source Structure
+----------------
+
+* Moved Include/tokenizer.h to Parser/tokenizer.h.
+
+* Added Python/getopt.c for systems that don't have it.
+
+Emacs mode
+----------
+
+* Indentation of continuated lines is done more intelligently;
+consequently the variable py-continuation-offset is gone.
+
+========================================
+==> Release 1.0.1 (15 February 1994) <==
+========================================
+
+* Many portability fixes should make it painless to build Python on
+several new platforms, e.g. NeXT, SEQUENT, WATCOM, DOS, and Windows.
+
+* Fixed test for <stdarg.h> -- this broke on some platforms.
+
+* Fixed test for shared library dynalic loading -- this broke on SunOS
+4.x using the GNU loader.
+
+* Changed order and number of SVR4 networking libraries (it is now
+-lsocket -linet -lnsl, if these libraries exist).
+
+* Installing the build intermediate stages with "make libainstall" now
+also installs config.c.in, Setup and makesetup, which are used by the
+new Extensions mechanism.
+
+* Improved README file contains more hints and new troubleshooting
+section.
+
+* The built-in module strop now defines fast versions of three more
+functions of the standard string module: atoi(), atol() and atof().
+The strop versions of atoi() and atol() support an optional second
+argument to specify the base (default 10).  NOTE: you don't have to
+explicitly import strop to use the faster versions -- the string
+module contains code to let versions from stop override the default
+versions.
+
+* There is now a working Lib/dospath.py for those who use Python under
+DOS (or Windows).  Thanks, Jaap!
+
+* There is now a working Modules/dosmodule.c for DOS (or Windows)
+system calls.
+
+* Lib.os.py has been reorganized (making it ready for more operating
+systems).
+
+* Lib/ospath.py is now obsolete (use os.path instead).
+
+* Many fixes to the tutorial to make it match Python 1.0.  Thanks,
+Tim!
+
+* Fixed Doc/Makefile, Doc/README and various scripts there.
+
+* Added missing description of fdopen to Doc/libposix.tex.
+
+* Made cleanup() global, for the benefit of embedded applications.
+
+* Added parsing of addresses and dates to Lib/rfc822.py.
+
+* Small fixes to Lib/aifc.py, Lib/sunau.py, Lib/tzparse.py to make
+them usable at all.
+
+* New module Lib/wave.py reads RIFF (*.wav) audio files.
+
+* Module Lib/filewin.py moved to Lib/stdwin/filewin.py where it
+belongs.
+
+* New options and comments for Modules/makesetup (used by new
+Extension mechanism).
+
+* Misc/HYPE contains text of announcement of 1.0.0 in comp.lang.misc
+and elsewhere.
+
+* Fixed coredump in filter(None, 'abcdefg').
+
+
+=======================================
+==> Release 1.0.0 (26 January 1994) <==
+=======================================
+
+As is traditional, so many things have changed that I can't pretend to
+be complete in these release notes, but I'll try anyway :-)
+
+Note that the very last section is labeled "remaining bugs".
+
+
+Source organization and build process
+-------------------------------------
+
+* The sources have finally been split: instead of a single src
+subdirectory there are now separate directories Include, Parser,
+Grammar, Objects, Python and Modules.  Other directories also start
+with a capital letter: Misc, Doc, Lib, Demo.
+
+* A few extensions (notably Amoeba and X support) have been moved to a
+separate subtree Extensions, which is no longer in the core
+distribution, but separately ftp'able as extensions.tar.Z.  (The
+distribution contains a placeholder Ext-dummy with a description of
+the Extensions subtree as well as the most recent versions of the
+scripts used there.)
+
+* A few large specialized demos (SGI video and www) have been
+moved to a separate subdirectory Demo2, which is no longer in the core
+distribution, but separately ftp'able as demo2.tar.Z.
+
+* Parts of the standard library have been moved to subdirectories:
+there are now standard subdirectories stdwin, test, sgi and sun4.
+
+* The configuration process has radically changed: I now use GNU
+autoconf.  This makes it much easier to build on new Unix flavors, as
+well as fully supporting VPATH (if your Make has it).  The scripts
+Configure.py and Addmodule.sh are no longer needed.  Many source files
+have been adapted in order to work with the symbols that the configure
+script generated by autoconf defines (or not); the resulting source is
+much more portable to different C compilers and operating systems,
+even non Unix systems (a Mac port was done in an afternoon).  See the
+toplevel README file for a description of the new build process.
+
+* GNU readline (a slightly newer version) is now a subdirectory of the
+Python toplevel.  It is still not automatically configured (being
+totally autoconf-unaware :-).  One problem has been solved: typing
+Control-C to a readline prompt will now work.  The distribution no
+longer contains a "super-level" directory (above the python toplevel
+directory), and dl, dl-dld and GNU dld are no longer part of the
+Python distribution (you can still ftp them from
+ftp.cwi.nl:/pub/dynload).
+
+* The DOS functions have been taken out of posixmodule.c and moved
+into a separate file dosmodule.c.
+
+* There's now a separate file version.c which contains nothing but
+the version number.
+
+* The actual main program is now contained in config.c (unless NO_MAIN
+is defined); pythonmain.c now contains a function realmain() which is
+called from config.c's main().
+
+* All files needed to use the built-in module md5 are now contained in
+the distribution.  The module has been cleaned up considerably.
+
+
+Documentation
+-------------
+
+* The library manual has been split into many more small latex files,
+so it is easier to edit Doc/lib.tex file to create a custom library
+manual, describing only those modules supported on your system.  (This
+is not automated though.)
+
+* A fourth manual has been added, titled "Extending and Embedding the
+Python Interpreter" (Doc/ext.tex), which collects information about
+the interpreter which was previously spread over several files in the
+misc subdirectory.
+
+* The entire documentation is now also available on-line for those who
+have a WWW browser (e.g. NCSA Mosaic).  Point your browser to the URL
+"http://www.cwi.nl/~guido/Python.html".
+
+
+Syntax
+------
+
+* Strings may now be enclosed in double quotes as well as in single
+quotes.  There is no difference in interpretation.  The repr() of
+string objects will use double quotes if the string contains a single
+quote and no double quotes.  Thanks to Amrit Prem for these changes!
+
+* There is a new keyword 'exec'.  This replaces the exec() built-in
+function.  If a function contains an exec statement, local variable
+optimization is not performed for that particular function, thus
+making assignment to local variables in exec statements less
+confusing.  (As a consequence, os.exec and python.exec have been
+renamed to execv.)
+
+* There is a new keyword 'lambda'.  An expression of the form
+
+	lambda <parameters> : <expression>
+
+yields an anonymous function.  This is really only syntactic sugar;
+you can just as well define a local function using
+
+	def some_temporary_name(<parameters>): return <expression>
+
+Lambda expressions are particularly useful in combination with map(),
+filter() and reduce(), described below.  Thanks to Amrit Prem for
+submitting this code (as well as map(), filter(), reduce() and
+xrange())!
+
+
+Built-in functions
+------------------
+
+* The built-in module containing the built-in functions is called
+__builtin__ instead of builtin.
+
+* New built-in functions map(), filter() and reduce() perform standard
+functional programming operations (though not lazily):
+
+- map(f, seq) returns a new sequence whose items are the items from
+seq with f() applied to them.
+
+- filter(f, seq) returns a subsequence of seq consisting of those
+items for which f() is true.
+
+- reduce(f, seq, initial) returns a value computed as follows:
+	acc = initial
+	for item in seq: acc = f(acc, item)
+	return acc
+
+* New function xrange() creates a "range object".  Its arguments are
+the same as those of range(), and when used in a for loop a range
+objects also behaves identical.  The advantage of xrange() over
+range() is that its representation (if the range contains many
+elements) is much more compact than that of range().  The disadvantage
+is that the result cannot be used to initialize a list object or for
+the "Python idiom" [RED, GREEN, BLUE] = range(3).  On some modern
+architectures, benchmarks have shown that "for i in range(...): ..."
+actually executes *faster* than "for i in xrange(...): ...", but on
+memory starved machines like PCs running DOS range(100000) may be just
+too big to be represented at all...
+
+* Built-in function exec() has been replaced by the exec statement --
+see above.
+
+
+The interpreter
+---------------
+
+* Syntax errors are now not printed to stderr by the parser, but
+rather the offending line and other relevant information are packed up
+in the SyntaxError exception argument.  When the main loop catches a
+SyntaxError exception it will print the error in the same format as
+previously, but at the proper position in the stack traceback.
+
+* You can now set a maximum to the number of traceback entries
+printed by assigning to sys.tracebacklimit.  The default is 1000.
+
+* The version number in .pyc files has changed yet again.
+
+* It is now possible to have a .pyc file without a corresponding .py
+file.  (Warning: this may break existing installations if you have an
+old .pyc file lingering around somewhere on your module search path
+without a corresponding .py file, when there is a .py file for a
+module of the same name further down the path -- the new interpreter
+will find the first .pyc file and complain about it, while the old
+interpreter would ignore it and use the .py file further down.)
+
+* The list sys.builtin_module_names is now sorted and also contains
+the names of a few hardwired built-in modules (sys, __main__ and
+__builtin__).
+
+* A module can now find its own name by accessing the global variable
+__name__.  Assigning to this variable essentially renames the module
+(it should also be stored under a different key in sys.modules).
+A neat hack follows from this: a module that wants to execute a main
+program when called as a script no longer needs to compare
+sys.argv[0]; it can simply do "if __name__ == '__main__': main()".
+
+* When an object is printed by the print statement, its implementation
+of str() is used.  This means that classes can define __str__(self) to
+direct how their instances are printed.  This is different from
+__repr__(self), which should define an unambigous string
+representation of the instance.  (If __str__() is not defined, it
+defaults to __repr__().)
+
+* Functions and code objects can now be compared meaningfully.
+
+* On systems supporting SunOS or SVR4 style shared libraries, dynamic
+loading of modules using shared libraries is automatically configured.
+Thanks to Bill Jansen and Denis Severson for contributing this change!
+
+
+Built-in objects
+----------------
+
+* File objects have acquired a new method writelines() which is the
+reverse of readlines().  (It does not actually write lines, just a
+list of strings, but the symmetry makes the choice of name OK.)
+
+
+Built-in modules
+----------------
+
+* Socket objects no longer support the avail() method.  Use the select
+module instead, or use this function to replace it:
+
+	def avail(f):
+		import select
+		return f in select.select([f], [], [], 0)[0]
+
+* Initialization of stdwin is done differently.  It actually modifies
+sys.argv (taking out the options the X version of stdwin recognizes)
+the first time it is imported.
+
+* A new built-in module parser provides a rudimentary interface to the
+python parser.  Corresponding standard library modules token and symbol
+defines the numeric values of tokens and non-terminal symbols.
+
+* The posix module has aquired new functions setuid(), setgid(),
+execve(), and exec() has been renamed to execv().
+
+* The array module is extended with 8-byte object swaps, the 'i'
+format character, and a reverse() method.  The read() and write()
+methods are renamed to fromfile() and tofile().
+
+* The rotor module has freed of portability bugs.  This introduces a
+backward compatibility problem: strings encoded with the old rotor
+module can't be decoded by the new version.
+
+* For select.select(), a timeout (4th) argument of None means the same
+as leaving the timeout argument out.
+
+* Module strop (and hence standard library module string) has aquired
+a new function: rindex().  Thanks to Amrit Prem!
+
+* Module regex defines a new function symcomp() which uses an extended
+regular expression syntax: parenthesized subexpressions may be labeled
+using the form "\(<labelname>...\)", and the group() method can return
+sub-expressions by name.  Thanks to Tracy Tims for these changes!
+
+* Multiple threads are now supported on Solaris 2.  Thanks to Sjoerd
+Mullender!
+
+
+Standard library modules
+------------------------
+
+* The library is now split in several subdirectories: all stuff using
+stdwin is in Lib/stdwin, all SGI specific (or SGI Indigo or GL) stuff
+is in Lib/sgi, all Sun Sparc specific stuff is in Lib/sun4, and all
+test modules are in Lib/test.  The default module search path will
+include all relevant subdirectories by default.
+
+* Module os now knows about trying to import dos.  It defines
+functions execl(), execle(), execlp() and execvp().
+
+* New module dospath (should be attacked by a DOS hacker though).
+
+* All modules defining classes now define __init__() constructors
+instead of init() methods.  THIS IS AN INCOMPATIBLE CHANGE!
+
+* Some minor changes and bugfixes module ftplib (mostly Steve
+Majewski's suggestions); the debug() method is renamed to
+set_debuglevel().
+
+* Some new test modules (not run automatically by testall though):
+test_audioop, test_md5, test_rgbimg, test_select.
+
+* Module string now defines rindex() and rfind() in analogy of index()
+and find().  It also defines atof() and atol() (and corresponding
+exceptions) in analogy to atoi().
+
+* Added help() functions to modules profile and pdb.
+
+* The wdb debugger (now in Lib/stdwin) now shows class or instance
+variables on a double click.  Thanks to Sjoerd Mullender!
+
+* The (undocumented) module lambda has gone -- you couldn't import it
+any more, and it was basically more a demo than a library module...
+
+
+Multimedia extensions
+---------------------
+
+* The optional built-in modules audioop and imageop are now standard
+parts of the interpreter.  Thanks to Sjoerd Mullender and Jack Jansen
+for contributing this code!
+
+* There's a new operation in audioop: minmax().
+
+* There's a new built-in module called rgbimg which supports portable
+efficient reading of SGI RCG image files.  Thanks also to Paul
+Haeberli for the original code!  (Who will contribute a GIF reader?)
+
+* The module aifc is gone -- you should now always use aifc, which has
+received a facelift.
+
+* There's a new module sunau., for reading Sun (and NeXT) audio files.
+
+* There's a new module audiodev which provides a uniform interface to
+(SGI Indigo and Sun Sparc) audio hardware.
+
+* There's a new module sndhdr which recognizes various sound files by
+looking in their header and checking for various magic words.
+
+
+Optimizations
+-------------
+
+* Most optimizations below can be configured by compile-time flags.
+Thanks to Sjoerd Mullender for submitting these optimizations!
+
+* Small integers (default -1..99) are shared -- i.e. if two different
+functions compute the same value it is possible (but not
+guaranteed!!!) that they return the same *object*.  Python programs
+can detect this but should *never* rely on it.
+
+* Empty tuples (which all compare equal) are shared in the same
+manner.
+
+* Tuples of size up to 20 (default) are put in separate free lists
+when deallocated.
+
+* There is a compile-time option to cache a string's hash function,
+but this appeared to have a negligeable effect, and as it costs 4
+bytes per string it is disabled by default.
+
+
+Embedding Python
+----------------
+
+* The initialization interface has been simplified somewhat.  You now
+only call "initall()" to initialize the interpreter.
+
+* The previously announced renaming of externally visible identifiers
+has not been carried out.  It will happen in a later release.  Sorry.
+
+
+Miscellaneous bugs that have been fixed
+---------------------------------------
+
+* All known portability bugs.
+
+* Version 0.9.9 dumped core in <listobject>.sort() which has been
+fixed.  Thanks to Jaap Vermeulen for fixing this and posting the fix
+on the mailing list while I was away!
+
+* Core dump on a format string ending in '%', e.g. in the expression
+'%' % None.
+
+* The array module yielded a bogus result for concatenation (a+b would
+yield a+a).
+
+* Some serious memory leaks in strop.split() and strop.splitfields().
+
+* Several problems with the nis module.
+
+* Subtle problem when copying a class method from another class
+through assignment (the method could not be called).
+
+
+Remaining bugs
+--------------
+
+* One problem with 64-bit machines remains -- since .pyc files are
+portable and use only 4 bytes to represent an integer object, 64-bit
+integer literals are silently truncated when written into a .pyc file.
+Work-around: use eval('123456789101112').
+
+* The freeze script doesn't work any more.  A new and more portable
+one can probably be cooked up using tricks from Extensions/mkext.py.
+
+* The dos support hasn't been tested yet.  (Really Soon Now we should
+have a PC with a working C compiler!)
+
+
 ===================================
 ==> Release 0.9.9 (29 Jul 1993) <==
 ===================================
@@ -368,6 +1025,7 @@ SGI specific changes
 --------------------
 
 * Read src/ChangeLog for full details.
+
 
 ==================================
 ==> Release 0.9.8 (9 Jan 1993) <==
@@ -954,6 +1612,7 @@ In structmember.[ch], new member types BYTE, CHAR and unsigned
 variants have been added
 
 New file xxmodule.c is a template for new extension modules.
+
 
 ==================================
 ==> RELEASE 0.9.6 (6 Apr 1992) <==
