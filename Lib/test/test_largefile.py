@@ -12,7 +12,7 @@ import os, struct, stat, sys
 
 
 # only run if the current system support large files
-f = open(test_support.TESTFN, 'w')
+f = open(test_support.TESTFN, 'wb')
 try:
     # 2**31 == 2147483648
     f.seek(2147483649L)
@@ -58,13 +58,13 @@ def expect(got_this, expect_this):
 
 if test_support.verbose:
     print 'create large file via seek (may be sparse file) ...'
-f = open(name, 'w')
+f = open(name, 'wb')
 f.seek(size)
 f.write('a')
 f.flush()
-expect(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
 if test_support.verbose:
     print 'check file size with os.fstat'
+expect(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
 f.close()
 if test_support.verbose:
     print 'check file size with os.stat'
@@ -72,7 +72,7 @@ expect(os.stat(name)[stat.ST_SIZE], size+1)
 
 if test_support.verbose:
     print 'play around with seek() and read() with the built largefile'
-f = open(name, 'r')
+f = open(name, 'rb')
 expect(f.tell(), 0)
 expect(f.read(1), '\000')
 expect(f.tell(), 1)
