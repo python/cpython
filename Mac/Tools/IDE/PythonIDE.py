@@ -1,9 +1,9 @@
-# copyright 1996-1999 Just van Rossum, Letterror. just@letterror.com
+# copyright 1996-2001 Just van Rossum, Letterror. just@letterror.com
 
 # keep this (__main__) as clean as possible, since we are using 
 # it like the "normal" interpreter.
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 
 def init():
