@@ -310,7 +310,11 @@ zipps:		postscript-$(PAPER)-$(RELEASE).zip
 zippdf:		pdf-$(PAPER)-$(RELEASE).zip
 ziplatex:	latex-$(RELEASE).zip
 
-zips:		zippdf zipps ziphtml ziplonghtml
+# Only build the longhtml version for final releases; use the second
+# version of this for pre-release versions.
+#
+#zips:		zippdf zipps ziphtml ziplonghtml
+zips:		zippdf zipps ziphtml
 
 bziphtml:	html-$(RELEASE).tar.bz2
 bzipinfo:	info-$(RELEASE).tar.bz2
