@@ -114,18 +114,18 @@ class Lambda(Node):
   def __repr__(self):
     return "Lambda(%s,%s,%s,%s)" % self._children[1:]
 
-class Classdef(Node):
-  nodes['classdef'] = 'Classdef'
+class Class(Node):
+  nodes['class'] = 'Class'
 
   def __init__(self, name, bases, doc, code):
     self.name = name
     self.bases = bases
     self.doc = doc
     self.code = code
-    self._children = ('classdef', name, bases, doc, code)
+    self._children = ('class', name, bases, doc, code)
 
   def __repr__(self):
-    return "Classdef(%s,%s,%s,%s)" % self._children[1:]
+    return "Class(%s,%s,%s,%s)" % self._children[1:]
 
 class Pass(EmptyNode):
   nodes['pass'] = 'Pass'
