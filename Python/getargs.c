@@ -179,6 +179,13 @@ vgetargs1(args, format, va, compat)
 			return 0;
 		}
 		else if (min == 1 && max == 1) {
+			if (args == NULL) {
+				sprintf(msgbuf,
+					"%s requires at least one argument",
+					fname==NULL ? "function" : fname);
+				err_setstr(TypeError, msgbuf);
+				return 0;
+			}
 			msg = convertitem(args, &format, &va, levels, msgbuf);
 			if (msg == NULL)
 				return 1;
