@@ -140,8 +140,7 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def ifilter(predicate, iterable):
          if predicate is None:
-             def predicate(x):
-                 return x
+             predicate = bool
          for x in iterable:
              if predicate(x):
                  yield x
@@ -157,8 +156,7 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def ifilterfalse(predicate, iterable):
          if predicate is None:
-             def predicate(x):
-                 return x
+             predicate = bool
          for x in iterable:
              if not predicate(x):
                  yield x
