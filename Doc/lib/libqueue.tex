@@ -54,35 +54,47 @@ semantics, this number is not reliable.
 \end{methoddesc}
 
 \begin{methoddesc}{empty}{}
-Return \code{1} if the queue is empty, \code{0} otherwise.  Because
-of multithreading semantics, this is not reliable.
+Return \code{True} if the queue is empty, \code{False} otherwise.
+Becauseof multithreading semantics, this is not reliable.
 \end{methoddesc}
 
 \begin{methoddesc}{full}{}
-Return \code{1} if the queue is full, \code{0} otherwise.  Because of
-multithreading semantics, this is not reliable.
+Return \code{True} if the queue is full, \code{False} otherwise.
+Because of multithreading semantics, this is not reliable.
 \end{methoddesc}
 
-\begin{methoddesc}{put}{item\optional{, block}}
-Put \var{item} into the queue.  If optional argument \var{block} is 1
-(the default), block if necessary until a free slot is available.
-Otherwise (\var{block} is 0), put \var{item} on the queue if a free
+\begin{methoddesc}{put}{item\optional{, block\optional{, timeout}}}
+Put \var{item} into the queue. If optional args \var{block} is true
+and \var{timeout} is None (the default), block if necessary until a
+free slot is available. If \var{timeout} is a positive number, it
+blocks at most \var{timeout} seconds and raises the \exception{Full}
+exception if no free slot was available within that time.
+Otherwise (\var{block} is false), put an item on the queue if a free
 slot is immediately available, else raise the \exception{Full}
-exception.
+exception (\var{timeout} is ignored in that case).
+
+\versionadded[the timeout parameter]{2.3}
+
 \end{methoddesc}
 
 \begin{methoddesc}{put_nowait}{item}
-Equivalent to \code{put(\var{item}, 0)}.
+Equivalent to \code{put(\var{item}, False)}.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{\optional{block}}
-Remove and return an item from the queue.  If optional argument
-\var{block} is 1 (the default), block if necessary until an item is
-available.  Otherwise (\var{block} is 0), return an item if one is
-immediately available, else raise the
-\exception{Empty} exception.
+\begin{methoddesc}{get}{\optional{block\optional{, timeout}}}
+Remove and return an item from the queue. If optional args
+\var{block} is true and \var{timeout} is None (the default),
+block if necessary until an item is available. If \var{timeout} is
+a positive number, it blocks at most \var{timeout} seconds and raises
+the \exception{Empty} exception if no item was available within that
+time. Otherwise (\var{block} is false), return an item if one is
+immediately available, else raise the \exception{Empty} exception
+(\var{timeout} is ignored in that case).
+
+\versionadded[the timeout parameter]{2.3}
+
 \end{methoddesc}
 
 \begin{methoddesc}{get_nowait}{}
-Equivalent to \code{get(0)}.
+Equivalent to \code{get(False)}.
 \end{methoddesc}

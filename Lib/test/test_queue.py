@@ -60,19 +60,35 @@ def FailingQueueTest(q):
         raise RuntimeError, "Call this function with an empty queue"
     for i in range(queue_size-1):
         q.put(i)
-    q.fail_next_put = True
     # Test a failing non-blocking put.
+    q.fail_next_put = True
     try:
         q.put("oops", block=0)
         raise TestFailed("The queue didn't fail when it should have")
     except FailingQueueException:
         pass
+    q.fail_next_put = True
+    try:
+        q.put("oops", timeout=0.1)
+        raise TestFailed("The queue didn't fail when it should have")
+    except FailingQueueException:
+        pass
     q.put("last")
     verify(q.full(), "Queue should be full")
-    q.fail_next_put = True
     # Test a failing blocking put
+    q.fail_next_put = True
     try:
         _doBlockingTest( q.put, ("full",), q.get, ())
+        raise TestFailed("The queue didn't fail when it should have")
+    except FailingQueueException:
+        pass
+    # Check the Queue isn't damaged.
+    # put failed, but get succeeded - re-add
+    q.put("last")
+    # Test a failing timeout put
+    q.fail_next_put = True
+    try:
+        _doBlockingTest( q.put, ("full", True, 0.2), q.get, ())
         raise TestFailed("The queue didn't fail when it should have")
     except FailingQueueException:
         pass
@@ -94,6 +110,13 @@ def FailingQueueTest(q):
     q.fail_next_get = True
     try:
         q.get()
+        raise TestFailed("The queue didn't fail when it should have")
+    except FailingQueueException:
+        pass
+    verify(not q.empty(), "Queue should not be empty")
+    q.fail_next_get = True
+    try:
+        q.get(timeout=0.1)
         raise TestFailed("The queue didn't fail when it should have")
     except FailingQueueException:
         pass
@@ -128,8 +151,14 @@ def SimpleQueueTest(q):
         raise TestFailed("Didn't appear to block with a full queue")
     except Queue.Full:
         pass
+    try:
+        q.put("full", timeout=0.1)
+        raise TestFailed("Didn't appear to time-out with a full queue")
+    except Queue.Full:
+        pass
     # Test a blocking put
     _doBlockingTest( q.put, ("full",), q.get, ())
+    _doBlockingTest( q.put, ("full", True, 0.2), q.get, ())
     # Empty it
     for i in range(queue_size):
         q.get()
@@ -139,8 +168,14 @@ def SimpleQueueTest(q):
         raise TestFailed("Didn't appear to block with an empty queue")
     except Queue.Empty:
         pass
+    try:
+        q.get(timeout=0.1)
+        raise TestFailed("Didn't appear to time-out with an empty queue")
+    except Queue.Empty:
+        pass
     # Test a blocking get
     _doBlockingTest( q.get, (), q.put, ('empty',))
+    _doBlockingTest( q.get, (True, 0.2), q.put, ('empty',))
 
 def test():
     q=Queue.Queue(queue_size)
