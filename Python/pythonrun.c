@@ -1437,6 +1437,12 @@ PyOS_getsig(int sig)
 {
 #ifdef HAVE_SIGACTION
 	struct sigaction context;
+	/* Initialize context.sa_handler to SIG_ERR which makes about as
+	 * much sense as anything else.  It should get overwritten if
+	 * sigaction actually succeeds and otherwise we avoid an
+	 * uninitialized memory read.
+	 */
+	context.sa_handler = SIG_ERR;
 	sigaction(sig, NULL, &context);
 	return context.sa_handler;
 #else
@@ -1453,6 +1459,12 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
 #ifdef HAVE_SIGACTION
 	struct sigaction context;
 	PyOS_sighandler_t oldhandler;
+	/* Initialize context.sa_handler to SIG_ERR which makes about as
+	 * much sense as anything else.  It should get overwritten if
+	 * sigaction actually succeeds and otherwise we avoid an
+	 * uninitialized memory read.
+	 */
+	context.sa_handler = SIG_ERR;
 	sigaction(sig, NULL, &context);
 	oldhandler = context.sa_handler;
 	context.sa_handler = handler;
