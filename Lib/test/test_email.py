@@ -924,16 +924,18 @@ class TestMiscellaneous(unittest.TestCase):
         gdate = Utils.formatdate(now)
         ldate = Utils.formatdate(now, localtime=1)
         self.assertEqual(gdate, 'Fri, 09 Nov 2001 17:33:52 -0000')
-        # It's a little tougher to test for localtime, but we'll try
-        gtime = time.strptime(gdate.split()[4], '%H:%M:%S')
-        ltime = time.strptime(ldate.split()[4], '%H:%M:%S')
-        zone = ldate.split()[5]
-        offset = int(zone[:3]) * -3600 + int(zone[-2:])
-        if time.daylight and time.localtime(now)[-1]:
-            toff = time.altzone
-        else:
-            toff = time.timezone
-        self.assertEqual(offset, toff)
+        # It's a little tougher to test for localtime, but we'll try.  Skip if
+        # we don't have strptime().
+        if hasattr(time, 'striptime'):
+            gtime = time.strptime(gdate.split()[4], '%H:%M:%S')
+            ltime = time.strptime(ldate.split()[4], '%H:%M:%S')
+            zone = ldate.split()[5]
+            offset = int(zone[:3]) * -3600 + int(zone[-2:])
+            if time.daylight and time.localtime(now)[-1]:
+                toff = time.altzone
+            else:
+                toff = time.timezone
+            self.assertEqual(offset, toff)
 
 
 
