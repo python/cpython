@@ -67,7 +67,7 @@ lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX)
 	$(MKHTML) lib $(L2HARGS)
 
 mac/mac.html:  $(MACFILES) $(BUILDINDEX)
-	$(TOOLSDIR)/mkhowto.sh --address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' --html $(TOPDIR)/mac/mac.tex
+	$(TOOLSDIR)/mkhowto --address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' --html $(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
 	$(MKHTML) ref $(L2HARGS)
