@@ -675,13 +675,15 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 			return NULL;
 		return PyInt_FromLong(0L);
 	}
-	c = (long)((unsigned long)a << b);
-	if ((c >> b) != a || (c < 0 && a > 0)) {
+	c = a < 0 ? ~a : a;
+	c >>= LONG_BIT - 1 - b;
+	if (c) {
 		if (PyErr_Warn(PyExc_DeprecationWarning,
 			       "x<<y losing bits or changing sign "
 			       "will return a long in Python 2.4 and up") < 0)
 			return NULL;
 	}
+	c = (long)((unsigned long)a << b);
 	return PyInt_FromLong(c);
 }
 
