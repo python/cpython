@@ -2403,13 +2403,23 @@ _PyPopenCreateProcess(char *cmdstring,
 	int x;
 
 	if (i = GetEnvironmentVariable("COMSPEC",NULL,0)) {
+		char *comshell;
+
 		s1 = (char *)_alloca(i);
 		if (!(x = GetEnvironmentVariable("COMSPEC", s1, i)))
 			return x;
-		if (GetVersion() < 0x80000000) {
-			/*
-			 * NT/2000
-			 */
+
+		/* Explicitly check if we are using COMMAND.COM.  If we are
+		 * then use the w9xpopen hack.
+		 */
+		comshell = s1 + x;
+		while (comshell >= s1 && *comshell != '\\')
+			--comshell;
+		++comshell;
+
+		if (GetVersion() < 0x80000000 &&
+		    _stricmp(comshell, "command.com") != 0) {
+			/* NT/2000 and not using command.com. */
 			x = i + strlen(s3) + strlen(cmdstring) + 1;
 			s2 = (char *)_alloca(x);
 			ZeroMemory(s2, x);
@@ -2417,8 +2427,8 @@ _PyPopenCreateProcess(char *cmdstring,
 		}
 		else {
 			/*
-			 * Oh gag, we're on Win9x. Use the workaround listed in
-			 * KB: Q150956
+			 * Oh gag, we're on Win9x or using COMMAND.COM. Use
+			 * the workaround listed in KB: Q150956
 			 */
 			char modulepath[_MAX_PATH];
 			struct stat statinfo;
@@ -2454,7 +2464,8 @@ _PyPopenCreateProcess(char *cmdstring,
 				if (stat(modulepath, &statinfo) != 0) {
 					PyErr_Format(PyExc_RuntimeError, 
 					    "Can not locate '%s' which is needed "
-					    "for popen to work on this platform.",
+					    "for popen to work with your shell "
+					    "or platform.",
 					    szConsoleSpawn);
 					return FALSE;
 				}
@@ -2478,7 +2489,9 @@ _PyPopenCreateProcess(char *cmdstring,
 	/* Could be an else here to try cmd.exe / command.com in the path
 	   Now we'll just error out.. */
 	else {
-		PyErr_SetString(PyExc_RuntimeError, "Can not locate a COMSPEC environment variable to use as the shell");
+		PyErr_SetString(PyExc_RuntimeError,
+			"Cannot locate a COMSPEC environment variable to "
+			"use as the shell");
 		return FALSE;
 	}
   
@@ -2507,7 +2520,7 @@ _PyPopenCreateProcess(char *cmdstring,
 		*hProcess = piProcInfo.hProcess;
 		return TRUE;
 	}
-	win32_error("CreateProcess", NULL);
+	win32_error("CreateProcess", s2);
 	return FALSE;
 }
 
