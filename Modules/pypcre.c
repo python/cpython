@@ -809,6 +809,13 @@ do {
       case OP_KETRMIN:
       return TRUE;
 
+      /* Skip over entire bracket groups with zero lower bound */
+
+      case OP_BRAZERO:
+      case OP_BRAMINZERO:
+      cc++;
+      /* Fall through */
+
       /* Skip over assertive subpatterns */
 
       case OP_ASSERT:
@@ -823,8 +830,6 @@ do {
       case OP_EOD:
       case OP_CIRC:
       case OP_DOLL:
-      case OP_BRAZERO:
-      case OP_BRAMINZERO:
       case OP_NOT_WORD_BOUNDARY:
       case OP_WORD_BOUNDARY:
       case OP_NOT_WORD_BOUNDARY_L:
