@@ -57,6 +57,14 @@ Library
 
 - Patch 711838: Support non-anonymous ftp URLs in urllib2.
 
+Windows
+-------
+
+- The Windows installer now includes tix, the Tk Interface eXtension,
+  a powerful set of user  interface components that expands the capabilities
+  of your Tcl/Tk and Python applications.
+
+
 What's New in Python 2.3.3 (final)?
 ===================================
 
