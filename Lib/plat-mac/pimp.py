@@ -26,7 +26,8 @@ import tarfile
 import tempfile
 import shutil
 
-__all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main"]
+__all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main", 
+    "PIMP_VERSION", "main"]
 
 _scriptExc_NotInstalled = "pimp._scriptExc_NotInstalled"
 _scriptExc_OldInstalled = "pimp._scriptExc_OldInstalled"
@@ -34,7 +35,7 @@ _scriptExc_BadInstalled = "pimp._scriptExc_BadInstalled"
 
 NO_EXECUTE=0
 
-PIMP_VERSION="0.1"
+PIMP_VERSION="0.2"
 
 # Flavors:
 # source: setup-based package
@@ -252,10 +253,17 @@ class PimpDatabase:
         fp = urllib2.urlopen(url).fp
         dict = plistlib.Plist.fromFile(fp)
         # Test here for Pimp version, etc
-        if not included:
-            self._version = dict.get('Version', '0.1')
-            if self._version != PIMP_VERSION:
-                sys.stderr.write("Warning: database version %s does not match %s\n" 
+        if included:
+            version = dict.get('Version')
+            if version and version > self._version:
+                sys.stderr.write("Warning: included database %s is for pimp version %s\n" %
+                    (url, version))
+        else:
+            self._version = dict.get('Version')
+            if not self._version:
+                sys.stderr.write("Warning: database has no Version information\n")
+            elif self._version > PIMP_VERSION:
+                sys.stderr.write("Warning: database version %s newer than pimp version %s\n" 
                     % (self._version, PIMP_VERSION))
             self._maintainer = dict.get('Maintainer', '')
             self._description = dict.get('Description', '')
@@ -885,15 +893,19 @@ def main():
         print "       pimp [options] -l [package ...]  Show package information"
         print "       pimp [options] -i package ...    Install packages"
         print "       pimp -d                          Dump database to stdout"
+        print "       pimp -V                          Print version number"
         print "Options:"
         print "       -v     Verbose"
         print "       -f     Force installation"
-        print "       -D dir Set destination directory (default: site-packages)"
+        print "       -D dir Set destination directory"
+        print "              (default: %s)" % DEFAULT_INSTALLDIR
+        print "       -u url URL for database"
+        print "              (default: %s)" % DEFAULT_PIMPDATABASE
         sys.exit(1)
         
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "slifvdD:")
-    except getopt.Error:
+        opts, args = getopt.getopt(sys.argv[1:], "slifvdD:Vu:")
+    except getopt.GetoptError:
         _help()
     if not opts and not args:
         _help()
@@ -914,6 +926,10 @@ def main():
             if mode:
                 _help()
             mode = 'dump'
+        if o == '-V':
+            if mode:
+                _help()
+            mode = 'version'
         if o == '-i':
             mode = 'install'
         if o == '-f':
@@ -922,10 +938,32 @@ def main():
             verbose = 1
         if o == '-D':
             prefargs['installDir'] = a
+        if o == '-u':
+            prefargs['pimpDatabase'] = a
     if not mode:
         _help()
-    _run(mode, verbose, force, args, prefargs)
-                
+    if mode == 'version':
+        print 'Pimp version %s; module name is %s' % (PIMP_VERSION, __name__)
+    else:
+        _run(mode, verbose, force, args, prefargs)
+
+# Finally, try to update ourselves to a newer version.
+# If the end-user updates pimp through pimp the new version
+# will be called pimp_update and live in site-packages
+# or somewhere similar
+if __name__ != 'pimp_update':
+    try:
+        import pimp_update
+    except ImportError:
+        pass
+    else:
+        if pimp_update.PIMP_VERSION <= PIMP_VERSION:
+            import warnings
+            warnings.warn("pimp_update is version %s, not newer than pimp version %s" %
+                (pimp_update.PIMP_VERSION, PIMP_VERSION))
+        else:
+            from pimp_update import *
+    
 if __name__ == '__main__':
     main()
     
