@@ -8,5 +8,9 @@ You can also import dnslib and write your own, more sophisticated
 client code; use the test program as an example (there is currently no
 documentation :-).
 
+Anthony Baxter maintains an enhanced version of this code at
+
+    http://alumni.dgs.monash.edu.au/~anthony/python/
+
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
 URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
