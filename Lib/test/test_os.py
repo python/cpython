@@ -301,12 +301,47 @@ class WalkTests(unittest.TestCase):
                 os.rmdir(join(root, name))
         os.rmdir(test_support.TESTFN)
 
+class MakedirTests (unittest.TestCase):
+    def setUp(self):
+        os.mkdir(test_support.TESTFN)
+
+    def test_makedir(self):
+        base = test_support.TESTFN
+        path = os.path.join(base, 'dir1', 'dir2', 'dir3')
+        os.makedirs(path)             # Should work
+        path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4')
+        os.makedirs(path)
+
+        # Try paths with a '.' in them
+        self.failUnlessRaises(OSError, os.makedirs, os.curdir)
+        path = os.path.join(base, 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', os.curdir)
+        os.makedirs(path)
+        path = os.path.join(base, 'dir1', os.curdir, 'dir2', 'dir3', 'dir4',
+                            'dir5', 'dir6')
+        os.makedirs(path)
+        
+
+    
+        
+    def tearDown(self):
+        path = os.path.join(test_support.TESTFN, 'dir1', 'dir2', 'dir3',
+                            'dir4', 'dir5', 'dir6')
+        # If the tests failed, the bottom-most directory ('../dir6')
+        # may not have been created, so we look for the outermost directory
+        # that exists.
+        while not os.path.exists(path) and path != test_support.TESTFN:
+            path = os.path.dirname(path)
+
+        os.removedirs(path)
+
+
 def test_main():
     test_support.run_unittest(
         TemporaryFileTests,
         StatAttributeTests,
         EnvironTests,
-        WalkTests
+        WalkTests,
+        MakedirTests,
     )
 
 if __name__ == "__main__":
