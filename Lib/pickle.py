@@ -508,29 +508,28 @@ class Pickler:
     def save_dict(self, object):
         write = self.write
         save  = self.save
+        items = object.iteritems()
 
         if self.bin:
             write(EMPTY_DICT)
-        else:
+            self.memoize(object)
+            if len(object) > 1:
+                write(MARK)
+                for key, value in items:
+                    save(key)
+                    save(value)
+                write(SETITEMS)
+                return
+
+        else:   # proto 0 -- can't use EMPTY_DICT or SETITEMS
             write(MARK + DICT)
+            self.memoize(object)
 
-        self.memoize(object)
-
-        using_setitems = (self.bin and (len(object) > 1))
-
-        if using_setitems:
-            write(MARK)
-
-        items = object.items()
+        # proto 0 or len(object) < 2
         for key, value in items:
             save(key)
             save(value)
-
-            if not using_setitems:
-                write(SETITEM)
-
-        if using_setitems:
-            write(SETITEMS)
+            write(SETITEM)
 
     dispatch[DictionaryType] = save_dict
     if not PyStringMap is None:
