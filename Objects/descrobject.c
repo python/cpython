@@ -644,18 +644,38 @@ proxy_items(proxyobject *pp)
 }
 
 static PyObject *
+proxy_iterkeys(proxyobject *pp)
+{
+	return PyObject_CallMethod(pp->dict, "iterkeys", NULL);
+}
+
+static PyObject *
+proxy_itervalues(proxyobject *pp)
+{
+	return PyObject_CallMethod(pp->dict, "itervalues", NULL);
+}
+
+static PyObject *
+proxy_iteritems(proxyobject *pp)
+{
+	return PyObject_CallMethod(pp->dict, "iteritems", NULL);
+}
+static PyObject *
 proxy_copy(proxyobject *pp)
 {
 	return PyObject_CallMethod(pp->dict, "copy", NULL);
 }
 
 static PyMethodDef proxy_methods[] = {
-	{"has_key", (PyCFunction)proxy_has_key, METH_O, "XXX"},
-	{"get",	    (PyCFunction)proxy_get,     METH_VARARGS, "XXX"},
-	{"keys",    (PyCFunction)proxy_keys,    METH_NOARGS, "XXX"},
-	{"values",  (PyCFunction)proxy_values,  METH_NOARGS, "XXX"},
-	{"items",   (PyCFunction)proxy_items,   METH_NOARGS, "XXX"},
-	{"copy",    (PyCFunction)proxy_copy,    METH_NOARGS, "XXX"},
+	{"has_key",   (PyCFunction)proxy_has_key,    METH_O, "D.has_key(k) -> 1 if D has a key k, else 0"},
+	{"get",       (PyCFunction)proxy_get,        METH_VARARGS, "D.get(k[,d]) -> D[k] if D.has_key(k), else d.  d defaults to None."},
+	{"keys",      (PyCFunction)proxy_keys,       METH_NOARGS, "D.keys() -> list of D's keys"},
+	{"values",    (PyCFunction)proxy_values,     METH_NOARGS, "D.values() -> list of D's values"},
+	{"items",     (PyCFunction)proxy_items,      METH_NOARGS, "D.items() -> list of D's (key, value) pairs, as 2-tuples"},
+	{"iterkeys",  (PyCFunction)proxy_iterkeys,   METH_NOARGS, "D.iterkeys() -> an iterator over the keys of D"},
+	{"itervalues",(PyCFunction)proxy_itervalues, METH_NOARGS, "D.itervalues() -> an iterator over the values of D"},
+	{"iteritems", (PyCFunction)proxy_iteritems,  METH_NOARGS, "D.iteritems() -> an iterator over the (key, value) items of D"},
+	{"copy",      (PyCFunction)proxy_copy,       METH_NOARGS, "D.copy() -> a shallow copy of D"},
 	{0}
 };
 
