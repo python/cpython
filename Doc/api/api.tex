@@ -918,8 +918,9 @@ be created in this case).
 \begin{cfuncdesc}{PyObject *}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
 \strong{(NEW in 1.5a4!)}
 Import a module.  This is best described by referring to the built-in
-Python function \function{__import__()}, as the standard
-\function{__import__()} function calls this function directly.
+Python function \function{__import__()}\bifuncindex{__import__}, as
+the standard \function{__import__()} function calls this function
+directly.
 
 The return value is a new reference to the imported module or
 top-level package, or \NULL{} with an exception set on failure
@@ -939,7 +940,7 @@ current environment, e.g. by \module{rexec} or \module{ihooks}.
 
 \begin{cfuncdesc}{PyObject *}{PyImport_ReloadModule}{PyObject *m}
 Reload a module.  This is best described by referring to the built-in
-Python function \function{reload()}, as the standard
+Python function \function{reload()}\bifuncindex{reload}, as the standard
 \function{reload()} function calls this function directly.  Return a
 new reference to the reloaded module, or \NULL{} with an exception set
 on failure (the module still exists in this case).
@@ -958,10 +959,11 @@ exception set on failure.
 \begin{cfuncdesc}{PyObject *}{PyImport_ExecCodeModule}{char *name, PyObject *co}
 Given a module name (possibly of the form \code{package.module}) and a
 code object read from a Python bytecode file or obtained from the
-built-in function \function{compile()}, load the module.  Return a new
-reference to the module object, or \NULL{} with an exception set
-if an error occurred (the module may still be created in this case).
-(This function would reload the module if it was already imported.)
+built-in function \function{compile()}\bifuncindex{compile}, load the
+module.  Return a new reference to the module object, or \NULL{} with
+an exception set if an error occurred (the module may still be created
+in this case).  (This function would reload the module if it was
+already imported.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
@@ -1200,6 +1202,7 @@ This function always succeeds.
 On success, returns a type object corresponding to the object
 type of object \var{o}. On failure, returns \NULL{}.  This is
 equivalent to the Python expression \samp{type(\var{o})}.
+\bifuncindex{type}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
@@ -1277,15 +1280,15 @@ failure.  This is the equivalent of the Python expression
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Divmod}{PyObject *o1, PyObject *o2}
-See the built-in function \function{divmod()}.  Returns \NULL{} on
-failure.  This is the equivalent of the Python expression
-\samp{divmod(\var{o1}, \var{o2})}.
+See the built-in function \function{divmod()}\bifuncindex{divmod}.
+Returns \NULL{} on failure.  This is the equivalent of the Python
+expression \samp{divmod(\var{o1}, \var{o2})}.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_Power}{PyObject *o1, PyObject *o2, PyObject *o3}
-See the built-in function \function{pow()}.  Returns \NULL{} on
-failure. This is the equivalent of the Python expression
+See the built-in function \function{pow()}\bifuncindex{pow}.  Returns
+\NULL{} on failure. This is the equivalent of the Python expression
 \samp{pow(\var{o1}, \var{o2}, \var{o3})}, where \var{o3} is optional.
 If \var{o3} is to be ignored, pass \code{Py_None} in its place.
 \end{cfuncdesc}
