@@ -73,81 +73,6 @@ typedef struct { char c; double x; } s_double;
 #pragma options align=reset
 #endif
 
-
-/* Global that will contain 2**<bits-per-long> */
-
-static PyObject *offset = NULL;
-
-
-/* Helper to create 2**<bits-per-long> */
-/* XXX This assumes 2's complement arithmetic */
-
-static PyObject *
-init_offset()
-{
-	PyObject *result = NULL;
-	PyObject *one = PyLong_FromLong(1L);
-	PyObject *shiftcount = PyLong_FromLong(8 * sizeof(long));
-	if (one == NULL || shiftcount == NULL)
-		goto finally;
-	result = PyNumber_Lshift(one, shiftcount);
-  finally:
-	Py_XDECREF(one);
-	Py_XDECREF(shiftcount);
-	return result;
-}
-
-
-/* Helper to add offset to a number */
-
-static PyObject *
-add_offset(v)
-	PyObject *v;
-{
-	PyObject *result = NULL;
-	if (offset == NULL) {
-		if ((offset = init_offset()) == NULL)
-			goto finally;
-	}
-	result = PyNumber_Add(v, offset);
-  finally:
-	return result;
-}
-
-
-/* Same, but subtracting */
-
-static PyObject *
-sub_offset(v)
-	PyObject *v;
-{
-	PyObject *result = NULL;
-	if (offset == NULL) {
-		if ((offset = init_offset()) == NULL)
-			goto finally;
-	}
-	result = PyNumber_Subtract(v, offset);
-  finally:
-	return result;
-}
-
-
-/* Helper routine to turn a (signed) long into an unsigned long */
-
-static PyObject *
-make_ulong(x)
-	long x;
-{
-	PyObject *v = PyLong_FromLong(x);
-	if (x < 0 && v != NULL) {
-		PyObject *w = add_offset(v);
-		Py_DECREF(v);
-		return w;
-	}
-	else
-		return v;
-}
-
 /* Helper routine to get a Python integer and raise the appropriate error
    if it isn't one */
 
@@ -175,29 +100,16 @@ get_ulong(v, p)
 	PyObject *v;
 	unsigned long *p;
 {
-	long x = PyInt_AsLong(v);
-	PyObject *exc;
-	if (x == -1 && (exc = PyErr_Occurred()) != NULL) {
-		if (exc == PyExc_OverflowError) {
-			/* Try again after subtracting offset */
-			PyObject *w;
-			PyErr_Clear();
-			if ((w = sub_offset(v)) == NULL)
-				return -1;
-			x = PyInt_AsLong(w);
-			Py_DECREF(w);
-			if (x != -1 || (exc = PyErr_Occurred()) == NULL)
-				goto okay;
-		}
-		if (exc == PyExc_TypeError)
-			PyErr_SetString(StructError,
-					"required argument is not an integer");
-		else
+	if (PyLong_Check(v)) {
+		unsigned long x = PyLong_AsUnsignedLong(v);
+		if (x == (unsigned long)(-1) && PyErr_Occurred())
 			return -1;
+		*p = x;
+		return 0;
 	}
-  okay:
-	*p = x;
-	return 0;
+	else {
+		return get_long(v, (long *)p);
+	}
 }
 
 
@@ -548,11 +460,7 @@ nu_uint(p, f)
 	const formatdef *f;
 {
 	unsigned int x = *(unsigned int *)p;
-#if INT_MAX == LONG_MAX
-	return make_ulong((long)x);
-#else
-	return PyInt_FromLong((long)x);
-#endif
+	return PyLong_FromUnsignedLong((unsigned long)x);
 }
 
 static PyObject *
@@ -568,7 +476,7 @@ nu_ulong(p, f)
 	const char *p;
 	const formatdef *f;
 {
-	return make_ulong(*(long *)p);
+	return PyLong_FromUnsignedLong(*(unsigned long *)p);
 }
 
 static PyObject *
@@ -756,15 +664,12 @@ bu_uint(p, f)
 	const char *p;
 	const formatdef *f;
 {
-	long x = 0;
+	unsigned long x = 0;
 	int i = f->size;
 	do {
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
-	if (f->size == sizeof(long))
-		return make_ulong(x);
-	else
-		return PyLong_FromLong(x);
+	return PyLong_FromUnsignedLong(x);
 }
 
 static PyObject *
@@ -889,15 +794,12 @@ lu_uint(p, f)
 	const char *p;
 	const formatdef *f;
 {
-	long x = 0;
+	unsigned long x = 0;
 	int i = f->size;
 	do {
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
-	if (f->size == sizeof(long))
-		return make_ulong(x);
-	else
-		return PyLong_FromLong(x);
+	return PyLong_FromUnsignedLong(x);
 }
 
 static PyObject *
