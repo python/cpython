@@ -38,7 +38,7 @@ class CommandTests(unittest.TestCase):
                                #     be named anything.
                   \s+\d+       # It has a size.
                   [^/]*        # Skip the date.
-                  /.           # and end with the name of the file.
+                  /\.          # and end with the name of the file.
                '''
 
         self.assert_(re.match(pat, getstatus("/."), re.VERBOSE))
