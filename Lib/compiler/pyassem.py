@@ -613,16 +613,16 @@ def twobyte(val):
 class LineAddrTable:
     """lnotab
     
-    This class builds the lnotab, which is undocumented but described
-    by com_set_lineno in compile.c.  Here's an attempt at explanation:
+    This class builds the lnotab, which is documented in compile.c.
+    Here's a brief recap:
 
     For each SET_LINENO instruction after the first one, two bytes are
     added to lnotab.  (In some cases, multiple two-byte entries are
     added.)  The first byte is the distance in bytes between the
     instruction for the last SET_LINENO and the current SET_LINENO.
     The second byte is offset in line numbers.  If either offset is
-    greater than 255, multiple two-byte entries are added -- one entry
-    for each factor of 255.
+    greater than 255, multiple two-byte entries are added -- see
+    compile.c for the delicate details.
     """
 
     def __init__(self):
@@ -657,19 +657,16 @@ class LineAddrTable:
             # compiler because it only generates a SET_LINENO instruction
             # for the assignment.
             if line > 0:
-                while addr > 0 or line > 0:
-                    # write the values in 1-byte chunks that sum
-                    # to desired value
-                    trunc_addr = addr
-                    trunc_line = line
-                    if trunc_addr > 255:
-                        trunc_addr = 255
-                    if trunc_line > 255:
-                        trunc_line = 255
-                    self.lnotab.append(trunc_addr)
-                    self.lnotab.append(trunc_line)
-                    addr = addr - trunc_addr
-                    line = line - trunc_line
+                push = self.lnotab.append
+                while addr > 255:
+                    push(255); push(0)
+                    addr -= 255
+                while line > 255:
+                    push(addr); push(255)
+                    line -= 255
+                    addr = 0
+                if addr > 0 or line > 0:
+                    push(addr); push(line)
                 self.lastline = lineno
                 self.lastoff = self.codeOffset
 
