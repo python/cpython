@@ -51,6 +51,12 @@ static object *rem();
 static object *neg();
 static object *pos();
 static object *not();
+static object *invert();
+static object *lshift();
+static object *rshift();
+static object *and();
+static object *xor();
+static object *or();
 static object *call_builtin();
 static object *call_function();
 static object *apply_subscript();
@@ -273,6 +279,13 @@ eval_code(co, globals, locals, arg)
 			DECREF(v);
 			PUSH(x);
 			break;
+			
+		case UNARY_INVERT:
+			v = POP();
+			x = invert(v);
+			DECREF(v);
+			PUSH(x);
+			break;
 		
 		case BINARY_MULTIPLY:
 			w = POP();
@@ -335,6 +348,51 @@ eval_code(co, globals, locals, arg)
 				x = call_function(v, w);
 			else
 				x = call_builtin(v, w);
+			DECREF(v);
+			DECREF(w);
+			PUSH(x);
+			break;
+		
+		case BINARY_LSHIFT:
+			w = POP();
+			v = POP();
+			x = lshift(v, w);
+			DECREF(v);
+			DECREF(w);
+			PUSH(x);
+			break;
+		
+		case BINARY_RSHIFT:
+			w = POP();
+			v = POP();
+			x = rshift(v, w);
+			DECREF(v);
+			DECREF(w);
+			PUSH(x);
+			break;
+		
+		case BINARY_AND:
+			w = POP();
+			v = POP();
+			x = and(v, w);
+			DECREF(v);
+			DECREF(w);
+			PUSH(x);
+			break;
+		
+		case BINARY_XOR:
+			w = POP();
+			v = POP();
+			x = xor(v, w);
+			DECREF(v);
+			DECREF(w);
+			PUSH(x);
+			break;
+		
+		case BINARY_OR:
+			w = POP();
+			v = POP();
+			x = or(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -1002,6 +1060,106 @@ testbool(v)
 }
 
 static object *
+or(v, w)
+	object *v, *w;
+{
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		object * (*f) FPROTO((object *, object *));
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_or) != NULL)
+			x = (*f)(v, w);
+		DECREF(v);
+		DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+	err_setstr(TypeError, "bad operand type(s) for |");
+	return NULL;
+}
+
+static object *
+xor(v, w)
+	object *v, *w;
+{
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		object * (*f) FPROTO((object *, object *));
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_xor) != NULL)
+			x = (*f)(v, w);
+		DECREF(v);
+		DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+	err_setstr(TypeError, "bad operand type(s) for ^");
+	return NULL;
+}
+
+static object *
+and(v, w)
+	object *v, *w;
+{
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		object * (*f) FPROTO((object *, object *));
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_and) != NULL)
+			x = (*f)(v, w);
+		DECREF(v);
+		DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+	err_setstr(TypeError, "bad operand type(s) for &");
+	return NULL;
+}
+
+static object *
+lshift(v, w)
+	object *v, *w;
+{
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		object * (*f) FPROTO((object *, object *));
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_lshift) != NULL)
+			x = (*f)(v, w);
+		DECREF(v);
+		DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+	err_setstr(TypeError, "bad operand type(s) for <<");
+	return NULL;
+}
+
+static object *
+rshift(v, w)
+	object *v, *w;
+{
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		object * (*f) FPROTO((object *, object *));
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_rshift) != NULL)
+			x = (*f)(v, w);
+		DECREF(v);
+		DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+	err_setstr(TypeError, "bad operand type(s) for >>");
+	return NULL;
+}
+
+static object *
 add(v, w)
 	object *v, *w;
 {
@@ -1124,6 +1282,18 @@ pos(v)
 	if (v->ob_type->tp_as_number != NULL)
 		return (*v->ob_type->tp_as_number->nb_positive)(v);
 	err_setstr(TypeError, "bad operand type(s) for unary +");
+	return NULL;
+}
+
+static object *
+invert(v)
+	object *v;
+{
+	object * (*f) FPROTO((object *, object *));
+	if (v->ob_type->tp_as_number != NULL &&
+		(f = v->ob_type->tp_as_number->nb_invert) != NULL)
+		return (*f)(v);
+	err_setstr(TypeError, "bad operand type(s) for unary ~");
 	return NULL;
 }
 

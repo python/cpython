@@ -208,13 +208,30 @@ int_div(v, w)
 	intobject *v;
 	register object *w;
 {
+	register long a, b, x;
 	if (!is_intobject(w)) {
 		err_badarg();
 		return NULL;
 	}
 	if (((intobject *)w) -> ob_ival == 0)
 		return err_zdiv();
-	return newintobject(v->ob_ival / ((intobject *)w) -> ob_ival);
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	/* Make sure we always truncate towards zero */
+	/* XXX What if a == -0x80000000? */
+	if (a < 0) {
+		if (b < 0)
+			x = -a / -b;
+		else
+			x = -(-a / b);
+	}
+	else {
+		if (b < 0)
+			x = -(a / -b);
+		else
+			x = a / b;
+	}
+	return newintobject(x);
 }
 
 static object *
@@ -228,6 +245,7 @@ int_rem(v, w)
 	}
 	if (((intobject *)w) -> ob_ival == 0)
 		return err_zdiv();
+	/* XXX Need to fix this similar to int_div */
 	return newintobject(v->ob_ival % ((intobject *)w) -> ob_ival);
 }
 
@@ -336,6 +354,88 @@ int_nonzero(v)
 	return v->ob_ival != 0;
 }
 
+static object *
+int_invert(v)
+	intobject *v;
+{
+	return newintobject(~v->ob_ival);
+}
+
+static object *
+int_lshift(v, w)
+	intobject *v;
+	register object *w;
+{
+	register long a, b;
+	if (!is_intobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	return newintobject((unsigned long)a << b);
+}
+
+static object *
+int_rshift(v, w)
+	intobject *v;
+	register object *w;
+{
+	register long a, b;
+	if (!is_intobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	return newintobject((unsigned long)a >> b);
+}
+
+static object *
+int_and(v, w)
+	intobject *v;
+	register object *w;
+{
+	register long a, b;
+	if (!is_intobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	return newintobject(a & b);
+}
+
+static object *
+int_xor(v, w)
+	intobject *v;
+	register object *w;
+{
+	register long a, b;
+	if (!is_intobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	return newintobject(a ^ b);
+}
+
+static object *
+int_or(v, w)
+	intobject *v;
+	register object *w;
+{
+	register long a, b;
+	if (!is_intobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	a = v->ob_ival;
+	b = ((intobject *)w) -> ob_ival;
+	return newintobject(a | b);
+}
+
 static number_methods int_as_number = {
 	int_add,	/*nb_add*/
 	int_sub,	/*nb_subtract*/
@@ -348,6 +448,12 @@ static number_methods int_as_number = {
 	int_pos,	/*nb_positive*/
 	int_abs,	/*nb_absolute*/
 	int_nonzero,	/*nb_nonzero*/
+	int_invert,	/*nb_invert*/
+	int_lshift,	/*nb_lshift*/
+	int_rshift,	/*nb_rshift*/
+	int_and,	/*nb_and*/
+	int_xor,	/*nb_xor*/
+	int_or,		/*nb_or*/
 };
 
 typeobject Inttype = {
