@@ -23,6 +23,12 @@ Extension Modules
 
 - weakref proxy has incorrect __nonzero__ behavior.  SF bug #1770766.
 
+Library
+-------
+
+- distutils.commands.register now encodes the data as UTF-8 before posting
+  them to PyPI.
+
 
 What's New in Python 2.4.1 final?
 =================================

@@ -248,7 +248,7 @@ Your selection [default 1]: ''',
             if type(value) != type([]):
                 value = [value]
             for value in value:
-                value = str(value)
+                value = unicode(value).encode("utf-8")
                 body.write(sep_boundary)
                 body.write('\nContent-Disposition: form-data; name="%s"'%key)
                 body.write("\n\n")
@@ -261,7 +261,7 @@ Your selection [default 1]: ''',
 
         # build the Request
         headers = {
-            'Content-type': 'multipart/form-data; boundary=%s'%boundary,
+            'Content-type': 'multipart/form-data; boundary=%s; charset=utf-8'%boundary,
             'Content-length': str(len(body))
         }
         req = urllib2.Request(self.repository, body, headers)
