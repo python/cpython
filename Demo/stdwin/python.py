@@ -26,7 +26,6 @@
 
 
 import sys
-import builtin
 import stdwin
 from stdwinevents import *
 import rand
