@@ -52,10 +52,21 @@ Basic editing and navigation:
 	Control-Home/End go to begin/end of file
 	Some Emacs bindings may also work, e.g. ^F/^B/^P/^N/^A/^E
 
+    Word completion:
+
+	Alt-/ expands the word you have typed to match another word in
+	the same buffer.  Repeat to get a different expansion.
+
 Python Shell window:
 
 	^C interrupts executing command
 	^D sends end-of-file; closes window if typed at >>> prompt
+
+    Command history:
+
+	Alt-p retrieves previous command matching what you have typed
+	Alt-n retrieves next
+	Hit return while on any previous command retrieves that command
 
 Python syntax colors: the coloring is applied in a background thread
 
