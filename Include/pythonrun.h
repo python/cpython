@@ -88,7 +88,7 @@ extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
    to a 8k margin. */
 #define PYOS_STACK_MARGIN 2048
 
-#if defined(WIN32) && defined(_MSC_VER)
+#if defined(WIN32) && !defined(MS_WIN64) && defined(_MSC_VER)
 /* Enable stack checking under Microsoft C */
 #define USE_STACKCHECK
 #endif
