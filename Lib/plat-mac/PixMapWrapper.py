@@ -204,11 +204,10 @@ class PixMapWrapper:
 
 def test():
 	import MacOS
-	import macfs
+	import EasyDialogs
 	import Image
-	fsspec, ok = macfs.PromptGetFile("Image File:")
-	if not ok: return
-	path = fsspec.as_pathname()
+	path = EasyDialogs.AskFileForOpen("Image File:")
+	if not path: return
 	pm = PixMapWrapper()
 	pm.fromImage( Image.open(path) )
 	pm.blit(20,20)

@@ -6,7 +6,6 @@ import sys
 import os
 from Carbon import Res
 import Carbon.File
-import macfs
 import macostools
 
 error=icglue.error
