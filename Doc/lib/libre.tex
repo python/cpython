@@ -857,17 +857,17 @@ of backtracking, you may encounter a RuntimeError exception with the message
 \code{maximum recursion limit exceeded}.  For example,
 
 \begin{verbatim}
-    >>> s = "<" + "that's a very big string!"*1000 + ">"
-    >>> re.match('<.*?>', s)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-      File "/usr/local/lib/python2.3/sre.py", line 132, in match
-	return _compile(pattern, flags).match(string)
-    RuntimeError: maximum recursion limit exceeded
+>>> s = "<" + "that's a very big string!"*1000 + ">"
+>>> re.match('<.*?>', s)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "/usr/local/lib/python2.3/sre.py", line 132, in match
+    return _compile(pattern, flags).match(string)
+RuntimeError: maximum recursion limit exceeded
 \end{verbatim}
 
 You can often restructure your regular expression to avoid backtracking.
-The above regular expression can be recast as \regexp{\textless
-[\textasciicircum \textgreater]*\textgreater}.  As a further
-benefit, such regular expressions will run faster than their backtracking
-equivalents.
+The above regular expression can be recast as
+\regexp{\textless[\textasciicircum \textgreater]*\textgreater}.  As a
+further benefit, such regular expressions will run faster than their
+backtracking equivalents.
