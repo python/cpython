@@ -16,7 +16,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #ifdef MS_WIN32
 #include <windows.h>
-extern BOOL PyWin_IsWin32s();
+extern BOOL PyWin_IsWin32s(void);
 #endif
 
 #include <sys/types.h>
@@ -242,7 +242,7 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 static void
 get_progpath(void)
 {
-	extern char *Py_GetProgramName();
+	extern char *Py_GetProgramName(void);
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
 

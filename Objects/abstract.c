@@ -298,8 +298,6 @@ PyNumber_Check(PyObject *o)
 PyObject *
 PyNumber_Or(PyObject *v, PyObject *w)
 {
-        extern int PyNumber_Coerce();
-
 	BINOP(v, w, "__or__", "__ror__", PyNumber_Or);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
@@ -319,8 +317,6 @@ PyNumber_Or(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_Xor(PyObject *v, PyObject *w)
 {
-        extern int PyNumber_Coerce();
-
 	BINOP(v, w, "__xor__", "__rxor__", PyNumber_Xor);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
@@ -1391,25 +1387,11 @@ PyObject_CallObject(PyObject *o, PyObject *a)
 }
 
 PyObject *
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS 2 */
 PyObject_CallFunction(PyObject *callable, char *format, ...)
-#else
-/* VARARGS */
-	PyObject_CallFunction(va_alist) va_dcl
-#endif
 {
 	va_list va;
 	PyObject *args, *retval;
-#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
-#else
-	PyObject *callable;
-	char *format;
-	va_start(va);
-	callable = va_arg(va, PyObject *);
-	format   = va_arg(va, char *);
-#endif
 
 	if (callable == NULL) {
 		va_end(va);
@@ -1444,27 +1426,11 @@ PyObject_CallFunction(PyObject *callable, char *format, ...)
 }
 
 PyObject *
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS 2 */
 PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
-#else
-/* VARARGS */
-	PyObject_CallMethod(va_alist) va_dcl
-#endif
 {
 	va_list va;
 	PyObject *args, *func = 0, *retval;
-#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
-#else
-	PyObject *o;
-	char *name;
-	char *format;
-	va_start(va);
-	o      = va_arg(va, PyObject *);
-	name   = va_arg(va, char *);
-	format = va_arg(va, char *);
-#endif
 
 	if (o == NULL || name == NULL) {
 		va_end(va);

@@ -336,7 +336,7 @@ done:
 static void
 get_progpath(void)
 {
-	extern char *Py_GetProgramName();
+	extern char *Py_GetProgramName(void);
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
 
