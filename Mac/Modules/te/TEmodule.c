@@ -44,6 +44,9 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <TextEdit.h>
 
+#define as_TE(h) ((TEHandle)h)
+#define as_Handle(teh) ((Handle)teh)
+
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
 extern int QdRGB_Convert(PyObject *, RGBColor *);
@@ -740,6 +743,20 @@ static PyObject *TEObj_TEGetHiliteRgn(_self, _args)
 	return _res;
 }
 
+static PyObject *TEObj_as_Handle(_self, _args)
+	TEObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = as_Handle(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef TEObj_methods[] = {
 	{"TESetText", (PyCFunction)TEObj_TESetText, 1,
 	 "(Buffer text) -> None"},
@@ -813,6 +830,8 @@ static PyMethodDef TEObj_methods[] = {
 	 "(short feature, short action) -> (short _rv)"},
 	{"TEGetHiliteRgn", (PyCFunction)TEObj_TEGetHiliteRgn, 1,
 	 "(RgnHandle region) -> None"},
+	{"as_Handle", (PyCFunction)TEObj_as_Handle, 1,
+	 "() -> (Handle _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -1029,6 +1048,22 @@ static PyObject *TE_TEToScrap(_self, _args)
 	return _res;
 }
 
+static PyObject *TE_as_TE(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TEHandle _rv;
+	Handle h;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = as_TE(h);
+	_res = Py_BuildValue("O&",
+	                     TEObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef TE_methods[] = {
 	{"TEScrapHandle", (PyCFunction)TE_TEScrapHandle, 1,
 	 "() -> (Handle _rv)"},
@@ -1046,6 +1081,8 @@ static PyMethodDef TE_methods[] = {
 	 "() -> None"},
 	{"TEToScrap", (PyCFunction)TE_TEToScrap, 1,
 	 "() -> None"},
+	{"as_TE", (PyCFunction)TE_as_TE, 1,
+	 "(Handle h) -> (TEHandle _rv)"},
 	{NULL, NULL, 0}
 };
 

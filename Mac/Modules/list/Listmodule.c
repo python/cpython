@@ -44,6 +44,9 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Lists.h>
 
+#define as_List(x) ((ListHandle)x)
+#define as_Resource(lh) ((Handle)lh)
+
 static PyObject *List_Error;
 
 /* ------------------------ Object type List ------------------------ */
@@ -506,6 +509,20 @@ static PyObject *ListObj_LDraw(_self, _args)
 	return _res;
 }
 
+static PyObject *ListObj_as_Resource(_self, _args)
+	ListObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = as_Resource(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef ListObj_methods[] = {
 	{"LAddColumn", (PyCFunction)ListObj_LAddColumn, 1,
 	 "(short count, short colNum) -> (short _rv)"},
@@ -551,6 +568,8 @@ static PyMethodDef ListObj_methods[] = {
 	 "(Boolean setIt, Point theCell) -> None"},
 	{"LDraw", (PyCFunction)ListObj_LDraw, 1,
 	 "(Point theCell) -> None"},
+	{"as_Resource", (PyCFunction)ListObj_as_Resource, 1,
+	 "() -> (Handle _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -662,9 +681,27 @@ static PyObject *List_LNew(_self, _args)
 	return _res;
 }
 
+static PyObject *List_as_List(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ListHandle _rv;
+	Handle h;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = as_List(h);
+	_res = Py_BuildValue("O&",
+	                     ListObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef List_methods[] = {
 	{"LNew", (PyCFunction)List_LNew, 1,
 	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle _rv)"},
+	{"as_List", (PyCFunction)List_as_List, 1,
+	 "(Handle h) -> (ListHandle _rv)"},
 	{NULL, NULL, 0}
 };
 

@@ -48,6 +48,7 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 #define as_Menu(h) ((MenuHandle)h)
+#define as_Resource(h) ((Handle)h)
 
 static PyObject *Menu_Error;
 
@@ -1123,9 +1124,13 @@ static PyObject *MenuObj_as_Resource(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-
-	return ResObj_New((Handle)_self->ob_itself);
-
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = as_Resource(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
 }
 
 static PyObject *MenuObj_AppendMenu(_self, _args)
@@ -1291,7 +1296,7 @@ static PyMethodDef MenuObj_methods[] = {
 	{"IsMenuItemIconEnabled", (PyCFunction)MenuObj_IsMenuItemIconEnabled, 1,
 	 "(UInt16 item) -> (Boolean _rv)"},
 	{"as_Resource", (PyCFunction)MenuObj_as_Resource, 1,
-	 "Return this Menu as a Resource"},
+	 "() -> (Handle _rv)"},
 	{"AppendMenu", (PyCFunction)MenuObj_AppendMenu, 1,
 	 "(Str255 data) -> None"},
 	{"InsertMenu", (PyCFunction)MenuObj_InsertMenu, 1,

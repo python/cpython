@@ -45,6 +45,7 @@ includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
 #define as_Control(h) ((ControlHandle)h)
+#define as_Resource(ctl) ((Handle)ctl)
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 

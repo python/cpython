@@ -24,6 +24,7 @@ from macsupport import *
 
 MenuHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 MenuRef = MenuHandle
+Handle = OpaqueByValueType("Handle", "ResObj")
 
 unsigned_char = Type('unsigned char', 'b')
 
@@ -34,6 +35,7 @@ includestuff = includestuff + """
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 #define as_Menu(h) ((MenuHandle)h)
+#define as_Resource(h) ((Handle)h)
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):
