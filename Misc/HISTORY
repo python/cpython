@@ -7255,7 +7255,7 @@ Ellipses object, and corresponding syntax:
 	x[lo:hi:stride]		==	x[slice(lo, hi, stride)]
 	x[a, ..., z]		==	x[(a, Ellipses, z)]
 
-- New documentation for errno and cgi mdoules.
+- New documentation for errno and cgi modules.
 
 - The directory containing the script passed to the interpreter is
 inserted in from of sys.path; "." is no longer a default path
