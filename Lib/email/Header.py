@@ -361,6 +361,8 @@ class Header:
         #  =?charset2?b?SvxyZ2VuIEL2aW5n?="
         chunks = []
         for header, charset in newchunks:
+            if not header:
+                continue
             if charset is None or charset.header_encoding is None:
                 s = header
             else:
