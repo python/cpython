@@ -1,8 +1,9 @@
-""" Command line interface to difflib.py providing diffs in three formats:
+""" Command line interface to difflib.py providing diffs in four formats:
 
 * ndiff:    lists every line and highlights interline changes.
-* context:  highlights clusters of changes in a before/after format
+* context:  highlights clusters of changes in a before/after format.
 * unified:  highlights clusters of changes in an inline format.
+* html:     generates side by side comparison with change highlights.
 
 """
 
@@ -14,6 +15,7 @@ def main():
     parser = optparse.OptionParser(usage)
     parser.add_option("-c", action="store_true", default=False, help='Produce a context format diff (default)')
     parser.add_option("-u", action="store_true", default=False, help='Produce a unified format diff')
+    parser.add_option("-m", action="store_true", default=False, help='Produce HTML side by side diff (can use -c and -l in conjunction)')
     parser.add_option("-n", action="store_true", default=False, help='Produce a ndiff format diff')
     parser.add_option("-l", "--lines", type="int", default=3, help='Set number of context lines (default 3)')
     (options, args) = parser.parse_args()
@@ -36,6 +38,8 @@ def main():
         diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
     elif options.n:
         diff = difflib.ndiff(fromlines, tolines)
+    elif options.m:
+        diff = difflib.HtmlDiff().make_file(fromlines,tolines,fromfile,tofile,context=options.c,numlines=n)
     else:
         diff = difflib.context_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
 
