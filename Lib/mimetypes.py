@@ -192,7 +192,7 @@ class MimeTypes:
         types.
         """
         fp = open(filename)
-        self.readfp(fp)
+        self.readfp(fp, strict)
         fp.close()
 
     def readfp(self, fp, strict=True):
