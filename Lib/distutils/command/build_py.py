@@ -20,10 +20,16 @@ class build_py (Command):
 
     user_options = [
         ('build-lib=', 'd', "directory to \"build\" (copy) to"),
+        ('compile', 'c', "compile .py to .pyc"),
+        ('no-compile', None, "don't compile .py files [default]"),
+        ('optimize=', 'O',
+         "also compile with optimization: -O1 for \"python -O\", "
+         "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
         ('force', 'f', "forcibly build everything (ignore file timestamps)"),
         ]
 
-    boolean_options = ['force']
+    boolean_options = ['compile', 'force']
+    negative_opt = {'no-compile' : 'compile'}
 
 
     def initialize_options (self):
@@ -31,6 +37,8 @@ class build_py (Command):
         self.py_modules = None
         self.package = None
         self.package_dir = None
+        self.compile = 0
+        self.optimize = 0
         self.force = None
 
     def finalize_options (self):
@@ -44,6 +52,14 @@ class build_py (Command):
         self.py_modules = self.distribution.py_modules
         self.package_dir = self.distribution.package_dir
 
+        # Ick, copied straight from install_lib.py (fancy_getopt needs a
+        # type system!  Hell, *everything* needs a type system!!!)
+        if type(self.optimize) is not IntType:
+            try:
+                self.optimize = int(self.optimize)
+                assert 0 <= self.optimize <= 2
+            except (ValueError, AssertionError):
+                raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 
     def run (self):
 
@@ -86,6 +102,8 @@ class build_py (Command):
             self.build_modules()
         else:
             self.build_packages()
+
+        self.byte_compile(self.get_outputs(include_bytecode=0))
 
     # run ()
         
@@ -284,13 +302,19 @@ class build_py (Command):
         return apply(os.path.join, outfile_path)
 
 
-    def get_outputs (self):
+    def get_outputs (self, include_bytecode=1):
         modules = self.find_all_modules()
         outputs = []
         for (package, module, module_file) in modules:
             package = string.split(package, '.')
-            outputs.append(self.get_module_outfile(self.build_lib,
-                                                   package, module))
+            filename = self.get_module_outfile(self.build_lib, package, module)
+            outputs.append(filename)
+            if include_bytecode:
+                if self.compile:
+                    outputs.append(filename + "c")
+                if self.optimize > 0:
+                    outputs.append(filename + "o")
+
         return outputs
 
 
@@ -347,5 +371,27 @@ class build_py (Command):
                 self.build_module(module, module_file, package)
 
     # build_packages ()
-                       
+
+
+    def byte_compile (self, files):
+        from distutils.util import byte_compile
+        prefix = self.build_lib
+        if prefix[-1] != os.sep:
+            prefix = prefix + os.sep
+
+        # XXX this code is essentially the same as the 'byte_compile()
+        # method of the "install_lib" command, except for the determination
+        # of the 'prefix' string.  Hmmm.
+
+        if self.compile:
+            byte_compile(files, optimize=0,
+                         force=self.force,
+                         prefix=prefix,
+                         verbose=self.verbose, dry_run=self.dry_run)
+        if self.optimize > 0:
+            byte_compile(files, optimize=self.optimize,
+                         force=self.force,
+                         prefix=prefix,
+                         verbose=self.verbose, dry_run=self.dry_run)
+
 # class build_py
