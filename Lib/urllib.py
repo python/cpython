@@ -42,6 +42,13 @@ else:
 	def pathname2url(pathname):
 		return pathname
 
+_url2pathname = url2pathname
+def url2pathname(url):
+	return _url2pathname(unquote(url))
+_pathname2url = pathname2url
+def pathname2url(p):
+	return quote(_pathname2url(p))
+
 # This really consists of two pieces:
 # (1) a class which handles opening of all sorts of URLs
 #     (plus assorted utilities etc.)
@@ -228,6 +235,7 @@ class URLopener:
 			host, selector = splithost(url)
 			if host:
 				user_passwd, host = splituser(host)
+				host = unquote(host)
 			realhost = host
 		else:
 			host, selector = url
@@ -298,6 +306,7 @@ class URLopener:
 		import gopherlib
 		host, selector = splithost(url)
 		if not host: raise IOError, ('gopher error', 'no host given')
+		host = unquote(host)
 		type, selector = splitgophertype(selector)
 		selector, query = splitquery(selector)
 		selector = unquote(selector)
@@ -329,7 +338,6 @@ class URLopener:
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
-			file = unquote(file)
 			return addinfourl(
 				open(url2pathname(file), 'rb'),
 				headers, 'file:'+file)
@@ -343,6 +351,9 @@ class URLopener:
 		user, host = splituser(host)
 		if user: user, passwd = splitpasswd(user)
 		else: passwd = None
+		host = unquote(host)
+		user = unquote(user or '')
+		passwd = unquote(passwd or '')
 		host = socket.gethostbyname(host)
 		if not port:
 			import ftplib
@@ -350,6 +361,7 @@ class URLopener:
 		else:
 			port = int(port)
 		path, attrs = splitattr(path)
+		path = unquote(path)
 		dirs = string.splitfields(path, '/')
 		dirs, file = dirs[:-1], dirs[-1]
 		if dirs and not dirs[0]: dirs = dirs[1:]
@@ -548,13 +560,11 @@ def noheaders():
 # Class used by open_ftp() for cache of open FTP connections
 class ftpwrapper:
 	def __init__(self, user, passwd, host, port, dirs):
-		self.user = unquote(user or '')
-		self.passwd = unquote(passwd or '')
+		self.user = user
+		self.passwd = passwd
 		self.host = host
 		self.port = port
-		self.dirs = []
-		for dir in dirs:
-			self.dirs.append(unquote(dir))
+		self.dirs = dirs
 		self.init()
 	def init(self):
 		import ftplib
