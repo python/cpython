@@ -347,7 +347,9 @@ newinstanceobject(class, arg, kw)
 	if (init == NULL) {
 		err_clear();
 		if (arg != NULL && (!is_tupleobject(arg) ||
-				    gettuplesize(arg) != 0) || kw != NULL) {
+				    gettuplesize(arg) != 0)
+		    || kw != NULL && (!is_dictobject(kw) ||
+				      getdictsize(kw) != 0)) {
 			err_setstr(TypeError,
 				   "this constructor takes no arguments");
 			DECREF(inst);
