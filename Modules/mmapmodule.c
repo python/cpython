@@ -224,12 +224,12 @@ static PyObject *
 mmap_find_method(mmap_object *self,
 		 PyObject *args)
 {
-	int start = self->pos;
+	long start = self->pos;
 	char *needle;
 	int len;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "s#|i:find", &needle, &len, &start)) {
+	if (!PyArg_ParseTuple (args, "s#|l:find", &needle, &len, &start)) {
 		return NULL;
 	} else {
 		char *p;
@@ -239,7 +239,7 @@ mmap_find_method(mmap_object *self,
                     start += self->size;
                 if (start < 0)
                     start = 0;
-                else if (start > self->size)
+                else if ((size_t)start > self->size)
                     start = self->size;
                 p = self->data + start;
 
@@ -251,8 +251,8 @@ mmap_find_method(mmap_object *self,
 			}
 			if (!*n) {
 				return Py_BuildValue (
-					"i",
-					(int) (p - self->data));
+					"l",
+					(long) (p - self->data));
 			}
 			p++;
 		}
