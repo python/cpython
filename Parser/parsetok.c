@@ -27,9 +27,18 @@ node *
 PyParser_ParseStringFlags(char *s, grammar *g, int start,
 		          perrdetail *err_ret, int flags)
 {
+	return PyParser_ParseStringFlagsFilename(s, NULL,
+						 g, start, err_ret, 0);
+}
+
+node *
+PyParser_ParseStringFlagsFilename(char *s, char *filename,
+			  grammar *g, int start,
+		          perrdetail *err_ret, int flags)
+{
 	struct tok_state *tok;
 
-	initerr(err_ret, NULL);
+	initerr(err_ret, filename);
 
 	if ((tok = PyTokenizer_FromString(s)) == NULL) {
 		err_ret->error = E_NOMEM;
@@ -37,7 +46,7 @@ PyParser_ParseStringFlags(char *s, grammar *g, int start,
 	}
 
 	if (Py_TabcheckFlag || Py_VerboseFlag) {
-		tok->filename = "<string>";
+		tok->filename = filename ? filename : "<string>";
 		tok->altwarning = (tok->filename != NULL);
 		if (Py_TabcheckFlag >= 2)
 			tok->alterror++;

@@ -32,6 +32,10 @@ extern DL_IMPORT(node *) PyParser_ParseFileFlags(FILE *, char *, grammar *,
 						 int, char *, char *,
 						 perrdetail *, int);
 
+extern DL_IMPORT(node *) PyParser_ParseStringFlagsFilename(char *,
+					      char *,
+					      grammar *, int,
+                                              perrdetail *, int);
 #ifdef __cplusplus
 }
 #endif

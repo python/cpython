@@ -1134,7 +1134,9 @@ Py_CompileStringFlags(char *str, char *filename, int start,
 {
 	node *n;
 	PyCodeObject *co;
-	n = PyParser_SimpleParseStringFlags(str, start, PARSER_FLAGS(flags));
+
+	n = PyParser_SimpleParseStringFlagsFilename(str, filename, start,
+						    PARSER_FLAGS(flags));
 	if (n == NULL)
 		return NULL;
 	co = PyNode_CompileFlags(n, filename, flags);
@@ -1147,7 +1149,8 @@ Py_SymtableString(char *str, char *filename, int start)
 {
 	node *n;
 	struct symtable *st;
-	n = PyParser_SimpleParseString(str, start);
+	n = PyParser_SimpleParseStringFlagsFilename(str, filename,
+						    start, 0);
 	if (n == NULL)
 		return NULL;
 	st = PyNode_CompileSymtable(n, filename);
@@ -1193,6 +1196,28 @@ node *
 PyParser_SimpleParseString(char *str, int start)
 {
 	return PyParser_SimpleParseStringFlags(str, start, 0);
+}
+
+node *
+PyParser_SimpleParseStringFlagsFilename(char *str, char *filename,
+					int start, int flags)
+{
+	node *n;
+	perrdetail err;
+
+	n = PyParser_ParseStringFlagsFilename(str, filename, 
+					      &_PyParser_Grammar,
+					      start, &err, flags);
+	if (n == NULL)
+		err_input(&err);
+	return n;
+}
+
+node *
+PyParser_SimpleParseStringFilename(char *str, char *filename, int start)
+{
+	return PyParser_SimpleParseStringFlagsFilename(str, filename,
+						       start, 0);
 }
 
 /* Set the error appropriate to the given input error code (see errcode.h) */
