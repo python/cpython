@@ -882,15 +882,25 @@ You need not increment its reference count.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception,
-                                           const char *format, ...}
-This function sets the error indicator using a printf-style format
-string.  The first argument specifies the exception type and the
-second argument specifies the format string for the exception.  Any
-subsequent arguments are converted to output by the C library's
-\cfunction{vsprintf()} function.  The buffer used internally by
-\cfunction{PyErr_Format()} is 500 bytes long.  The caller is
-responsible for guaranteeing that the formatted output does not
-overflow the buffer.
+                                           const char *format, \moreargs}
+This function sets the error indicator.
+\var{exception} should be a Python object.
+\var{fmt} should be a string, containing format codes, similar to 
+\cfunction{printf}. The \code{width.precision} before a format code
+is parsed, but the width part is ignored.
+
+\begin{tableii}{c|l}{character}{Character}{Meaning}
+  \lineii{c}{Character, as an \ctype{int} parameter}
+  \lineii{d}{Number in decimal, as an \ctype{int} parameter}
+  \lineii{x}{Number in hexadecimal, as an \ctype{int} parameter}
+  \lineii{x}{A string, as a \ctype{char *} parameter}
+\end{tableii}
+
+An unrecognized format character causes all the rest of
+the format string to be copied as-is to the result string,
+and any extra arguments discarded.
+
+A new reference is returned, which is owned by the caller.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_SetNone}{PyObject *type}
