@@ -110,7 +110,31 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	return;
 }
 
+#if 1
+/*
+** Treating DialogObjects as WindowObjects is (I think) illegal under Carbon.
+** However, as they are still identical under MacOS9 Carbon this is a problem, even
+** if we neatly call GetDialogWindow() at the right places: there's one refcon field
+** and it points to the DialogObject, so WinObj_WhichWindow will smartly return the
+** dialog object, and therefore we still don't have a WindowObject.
+** I'll leave the chaining code in place for now, with this comment to warn the
+** unsuspecting victims (i.e. me, probably, in a few weeks:-)
+*/
 extern PyMethodChain WinObj_chain;
+#endif
+"""
+
+finalstuff = finalstuff + """
+/* Return the WindowPtr corresponding to a DialogObject */
+
+WindowPtr
+DlgObj_ConvertToWindow(self)
+	PyObject *self;
+{
+	if ( DlgObj_Check(self) )
+		return GetDialogWindow(((DialogObject *)self)->ob_itself);
+	return NULL;
+}
 """
 
 
@@ -118,6 +142,8 @@ extern PyMethodChain WinObj_chain;
 class MyObjectDefinition(GlobalObjectDefinition):
 	def __init__(self, name, prefix = None, itselftype = None):
 		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
+## This won't work in Carbon, so we disable it for all MacPythons:-(
+## But see the comment above:-((
 		self.basechain = "&WinObj_chain"
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
@@ -152,7 +178,7 @@ for f in methods: object.add(f)
 # Some methods that are currently macro's in C, but will be real routines
 # in MacOS 8.
 
-f = Method(WindowPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
+f = Method(ExistingWindowPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
 object.add(f)
 f = Method(SInt16, 'GetDialogDefaultItem', (DialogRef, 'dialog', InMode))
 object.add(f)

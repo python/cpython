@@ -89,7 +89,18 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	return;
 }
 
+#if 1
+/*
+** Treating DialogObjects as WindowObjects is (I think) illegal under Carbon.
+** However, as they are still identical under MacOS9 Carbon this is a problem, even
+** if we neatly call GetDialogWindow() at the right places: there's one refcon field
+** and it points to the DialogObject, so WinObj_WhichWindow will smartly return the
+** dialog object, and therefore we still don't have a WindowObject.
+** I'll leave the chaining code in place for now, with this comment to warn the
+** unsuspecting victims (i.e. me, probably, in a few weeks:-)
+*/
 extern PyMethodChain WinObj_chain;
+#endif
 
 static PyObject *Dlg_Error;
 
@@ -655,7 +666,7 @@ static PyObject *DlgObj_GetDialogWindow(_self, _args)
 		return NULL;
 	_rv = GetDialogWindow(_self->ob_itself);
 	_res = Py_BuildValue("O&",
-	                     WinObj_New, _rv);
+	                     WinObj_WhichWindow, _rv);
 	return _res;
 }
 
