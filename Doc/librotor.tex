@@ -35,8 +35,9 @@ if it is omitted, a default value of 6 will be used.
 Rotor objects have the following methods:
 
 \renewcommand{\indexsubitem}{(rotor method)}
-\begin{funcdesc}{setkey}{}
-Reset the rotor to its initial state.
+\begin{funcdesc}{setkey}{\optional{key}}
+Sets the rotor's key to \var{key}.  If \var{key} is not given, this
+function does nothing\footnote{This is for backwards compatibility.}.
 \end{funcdesc}
 
 \begin{funcdesc}{encrypt}{plaintext}
