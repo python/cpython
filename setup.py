@@ -53,14 +53,6 @@ class PyBuildExt(build_ext):
             ext.include_dirs.append( '.' ) # to get config.h
             ext.include_dirs.append( os.path.join(srcdir, './Include') )
             
-        # If the signal module is being compiled, remove the sigcheck.o and
-        # intrcheck.o object files from the archive.
-        if module_enabled(self.extensions, 'signal'):
-            print 'removing sigcheck.o intrcheck.o'
-            ar, library = sysconfig.get_config_vars('AR', 'LIBRARY')
-            cmd = '%s d Modules/%s sigcheck.o intrcheck.o' % (ar, library)
-            os.system(cmd)
-            
         build_ext.build_extensions(self)
 
     def detect_modules(self):
@@ -81,7 +73,6 @@ class PyBuildExt(build_ext):
         # Some modules that are normally always on:
         exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
         exts.append( Extension('pcre', ['pcremodule.c', 'pypcre.c']) )
-        exts.append( Extension('signal', ['signalmodule.c']) )
         
         exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
