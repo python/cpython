@@ -34,7 +34,7 @@ prefix=		/usr/local
 # === Variables that are customizable by hand ===
 
 INCLDIR=	$(srcdir)/../Include
-OPT=		-O
+OPT=		@OPT@
 CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
 MKDEP=		mkdep
@@ -61,6 +61,7 @@ SYSLIBS=	$(LIBM) $(LIBC)
 all:		$(LIB) ../python
 
 $(LIB):		$(OBJS)
+		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
