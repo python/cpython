@@ -28,6 +28,8 @@ def cr2lf(text):
 def lf2cr(text):
 	if '\n' in text:
 		text = string.join(string.split(text, '\n'), '\r')
+	if len(text) > 253:
+		text = text[:253] + '\311'
 	return text
 
 def Message(msg, id=256):
