@@ -108,8 +108,6 @@ class Editor(W.Window):
 		self.run_as_main = self.settings.get("run_as_main", 0)
 		self.run_with_interpreter = self.settings.get("run_with_interpreter", 0)
 		self.run_with_cl_interpreter = self.settings.get("run_with_cl_interpreter", 0)
-		self._threadstate = (0, 0)
-		self._thread = None
 	
 	def readwindowsettings(self):
 		try:
@@ -506,15 +504,7 @@ class Editor(W.Window):
 		self.runselbutton.push()
 	
 	def run(self):
-		if self._threadstate == (0, 0):
-			self._run()
-		else:
-			lock = Wthreading.Lock()
-			lock.acquire()
-			self._thread.postException(KeyboardInterrupt)
-			if self._thread.isBlocked():
-				self._thread.start()
-			lock.release()
+		self._run()
 	
 	def _run(self):
 		if self.run_with_interpreter:
@@ -565,14 +555,7 @@ class Editor(W.Window):
 		t.do_script(with_command=cmd)
 	
 	def runselection(self):
-		if self._threadstate == (0, 0):
-			self._runselection()
-		elif self._threadstate == (1, 1):
-			self._thread.block()
-			self.setthreadstate((1, 2))
-		elif self._threadstate == (1, 2):
-			self._thread.start()
-			self.setthreadstate((1, 1))
+		self._runselection()
 	
 	def _runselection(self):
 		if self.run_with_interpreter or self.run_with_cl_interpreter:
@@ -624,19 +607,6 @@ class Editor(W.Window):
 			# update the class in place
 			klass.__dict__.update(globals[classname].__dict__)
 			globals[classname] = klass
-	
-	def setthreadstate(self, state):
-		oldstate = self._threadstate
-		if oldstate[0] <> state[0]:
-			self.runbutton.settitle(runButtonLabels[state[0]])
-		if oldstate[1] <> state[1]:
-			self.runselbutton.settitle(runSelButtonLabels[state[1]])
-		self._threadstate = state
-	
-	def _exec_threadwrapper(self, *args, **kwargs):
-		apply(execstring, args, kwargs)
-		self.setthreadstate((0, 0))
-		self._thread = None
 	
 	def execstring(self, pytext, globals, locals, file, modname):
 		tracebackwindow.hide()
