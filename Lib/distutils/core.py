@@ -618,7 +618,27 @@ class Distribution:
 
         return tuple (values)
 
-# end class Distribution
+
+    # -- Distribution query methods ------------------------------------
+
+    def has_pure_modules (self):
+        return len (self.packages or self.py_modules or []) > 0
+
+    def has_ext_modules (self):
+        return self.ext_modules and len (self.ext_modules) > 0
+
+    def has_c_libraries (self):
+        return self.libraries and len (self.libraries) > 0
+
+    def has_modules (self):
+        return self.has_pure_modules() or self.has_ext_modules()
+
+    def is_pure (self):
+        return (self.has_pure_modules() and
+                not self.has_ext_modules() and
+                not self.has_c_libraries())
+
+# class Distribution
 
 
 class Command:
@@ -992,4 +1012,4 @@ class Command:
 
     # make_file ()
 
-# end class Command
+# class Command
