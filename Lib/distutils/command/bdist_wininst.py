@@ -43,6 +43,10 @@ class bdist_wininst (Command):
                     ('install-script=', None,
                      "basename of installation script to be run after"
                      "installation or before deinstallation"),
+                    ('pre-install-script=', None,
+                     "Fully qualified filename of a script to be run before "
+                     "any files are installed.  This script need not be in the "
+                     "distribution"),
                    ]
 
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
@@ -59,6 +63,7 @@ class bdist_wininst (Command):
         self.title = None
         self.skip_build = 0
         self.install_script = None
+        self.pre_install_script = None
 
     # initialize_options()
 
@@ -69,11 +74,12 @@ class bdist_wininst (Command):
             self.bdist_dir = os.path.join(bdist_base, 'wininst')
         if not self.target_version:
             self.target_version = ""
-        if self.distribution.has_ext_modules():
+        if not self.skip_build and self.distribution.has_ext_modules():
             short_version = get_python_version()
             if self.target_version and self.target_version != short_version:
                 raise DistutilsOptionError, \
-                      "target version can only be" + short_version
+                      "target version can only be %s, or the '--skip_build'" \
+                      " option must be specified" % (short_version,)
             self.target_version = short_version
 
         self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
@@ -109,6 +115,21 @@ class bdist_wininst (Command):
         # we do not want to include pyc or pyo files
         install_lib.compile = 0
         install_lib.optimize = 0
+        
+        # If we are building an installer for a Python version other
+        # than the one we are currently running, then we need to ensure
+        # our build_lib reflects the other Python version rather than ours.
+        # Note that for target_version!=sys.version, we must have skipped the
+        # build step, so there is no issue with enforcing the build of this
+        # version.
+        target_version = self.target_version
+        if not target_version:
+            assert self.skip_build, "Should have already checked this"
+            target_version = sys.version[0:3]
+        plat_specifier = ".%s-%s" % (get_platform(), target_version)
+        build = self.get_finalized_command('build')
+        build.build_lib = os.path.join(build.build_base,
+                                       'lib' + plat_specifier)
 
         # Use a custom scheme for the zip-file, because we have to decide
         # at installation time which scheme to use.
@@ -187,7 +208,7 @@ class bdist_wininst (Command):
         lines.append("title=%s" % repr(title)[1:-1])
         import time
         import distutils
-        build_info = "Build %s with distutils-%s" % \
+        build_info = "Built %s with distutils-%s" % \
                      (time.ctime(time.time()), distutils.__version__)
         lines.append("build_info=%s" % build_info)
         return string.join(lines, "\n")
@@ -223,6 +244,11 @@ class bdist_wininst (Command):
         if bitmap:
             file.write(bitmapdata)
 
+        # Append the pre-install script
+        cfgdata = cfgdata + "\0"
+        if self.pre_install_script:
+            script_data = open(self.pre_install_script, "r").read()
+            cfgdata = cfgdata + script_data + "\n\0"
         file.write(cfgdata)
         header = struct.pack("<iii",
                              0x1234567A,       # tag
