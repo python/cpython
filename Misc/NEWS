@@ -32,6 +32,8 @@ Build
 C API
 -----
 
+- Removed PyRange_New().
+
 
 Tests
 -----
