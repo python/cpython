@@ -390,6 +390,23 @@ argument is not a class object, a \exception{TypeError} exception is
 raised.
 \end{funcdesc}
 
+\begin{funcdesc}{iter}{o\optional{, sentinel}}
+  Return an iterator object.  The first argument is interpreted very
+  differently depending on the presence of the second argument.
+  Without a second argument, \var{o} must be a collection object which
+  supports the iteration protocol (the \method{__iter__()} method), or
+  it must support the sequence protocol (the \method{__getitem__()}
+  method with integer arguments starting at \code{0}).  If it does not
+  support either of those protocols, \exception{TypeError} is raised.
+  If the second argument, \var{sentinel}, is given, then \var{o} must
+  be a callable object.  The iterator created in this case will call
+  \var{o} with no arguments for each call to its \method{next()}
+  method; if the value returned is equal to \var{sentinel},
+  \exception{StopIteration} will be raised, otherwise the value will
+  be returned.
+  \versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{len}{s}
   Return the length (the number of items) of an object.  The argument
   may be a sequence (string, tuple or list) or a mapping (dictionary).
