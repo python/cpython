@@ -269,6 +269,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 #endif
 #ifdef MS_WINDOWS
 	char *s_buf = NULL;
+	char s_small_buf[28]; /* Room for "Windows Error 0xFFFFFFFF" */
 #endif
 #ifdef EINTR
 	if (i == EINTR && PyErr_CheckSignals())
@@ -306,10 +307,18 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 				(LPTSTR) &s_buf,
 				0,	/* size not used */
 				NULL);	/* no args */
-			s = s_buf;
-			/* remove trailing cr/lf and dots */
-			while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
-				s[--len] = '\0';
+			if (len==0) {
+				/* Only ever seen this in out-of-mem 
+				   situations */
+				sprintf(s_small_buf, "Windows Error 0x%X", i);
+				s = s_small_buf;
+				s_buf = NULL;
+			} else {
+				s = s_buf;
+				/* remove trailing cr/lf and dots */
+				while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
+					s[--len] = '\0';
+			}
 		}
 	}
 #endif /* Unix/Windows */
@@ -366,6 +375,8 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 {
 	int len;
 	char *s;
+	char *s_buf = NULL; /* Free via LocalFree */
+	char s_small_buf[28]; /* Room for "Windows Error 0xFFFFFFFF" */
 	PyObject *v;
 	DWORD err = (DWORD)ierr;
 	if (err==0) err = GetLastError();
@@ -378,12 +389,20 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 		err,
 		MAKELANGID(LANG_NEUTRAL,
 		SUBLANG_DEFAULT), /* Default language */
-		(LPTSTR) &s,
+		(LPTSTR) &s_buf,
 		0,	/* size not used */
 		NULL);	/* no args */
-	/* remove trailing cr/lf and dots */
-	while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
-		s[--len] = '\0';
+	if (len==0) {
+		/* Only seen this in out of mem situations */
+		sprintf(s_small_buf, "Windows Error 0x%X", err);
+		s = s_small_buf;
+		s_buf = NULL;
+	} else {
+		s = s_buf;
+		/* remove trailing cr/lf and dots */
+		while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
+			s[--len] = '\0';
+	}
 	if (filenameObject != NULL)
 		v = Py_BuildValue("(isO)", err, s, filenameObject);
 	else
@@ -392,7 +411,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
 	}
-	LocalFree(s);
+	LocalFree(s_buf);
 	return NULL;
 }
 
