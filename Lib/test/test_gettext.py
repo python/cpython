@@ -43,12 +43,6 @@ gettext message catalog library.''')
 
     print gettext.dgettext('gettext', 'nudge nudge')
 
-    # dcgettext
-    ##import locale
-    ##if gettext.dcgettext('gettext', 'nudge nudge',
-    ##                     locale.LC_MESSAGES) <> 'wink wink':
-    ##    print _('dcgettext failed')
-
     # test the alternative interface
     fp = open(os.path.join(mofile), 'rb')
     t = gettext.GNUTranslations(fp)
