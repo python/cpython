@@ -3,10 +3,13 @@ import nis
 
 print 'nis.maps()'
 try:
-    # the following could fail if NIS isn't active
     maps = nis.maps()
 except nis.error, msg:
-    raise TestFailed, msg 
+    # NIS is probably not active, so this test isn't useful
+    if verbose:
+        raise TestFailed, msg
+    # only do this if running under the regression suite
+    raise ImportError, msg
 
 done = 0
 for nismap in maps:
