@@ -128,6 +128,18 @@ stopped at the {}\keyword{yield} keyword (returning the result) and is
 resumed there when the next element is requested by calling the
 \method{next()} method of the returned iterator.
 
+\index{generator expression}
+\item[generator expression]
+An expression that returns a generator.  It looks like a normal expression
+followed by a \keyword{for} expression defining a loop variable, range, and
+an optional \keyword{if} expression.  The combined expression generates
+values for an enclosing function:
+
+\begin{verbatim}
+>>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
+285
+\end{verbatim}
+
 \index{GIL}
 \item[GIL]
 See \emph{global interpreter lock}.
