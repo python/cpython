@@ -8,7 +8,7 @@ import errno
 import shutil
 import tempfile
 from pprint import pprint
-from whrandom import random
+from random import random
 
 try:
     True, False
