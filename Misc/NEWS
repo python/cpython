@@ -30,6 +30,9 @@ Extension Modules
 Library
 -------
 
+- StringIO.truncate() now correctly adjusts the size attribute.
+  (Bug #951915).
+
 - locale.py now uses an updated locale alias table (built using
   Tools/i18n/makelocalealias.py, a tool to parse the X11 locale
   alias file); the encoding lookup was enhanced to use Python's
