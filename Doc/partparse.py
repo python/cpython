@@ -827,7 +827,7 @@ class Wobj:
 	self.data = self.data + data
 
 # ignore these commands
-ignoredcommands = ('bcode', 'ecode', 'hline', 'fulllineitems', 'small', '/')
+ignoredcommands = ('bcode', 'ecode', 'hline', 'small', '/')
 # map commands like these to themselves as plaintext
 wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX')
 # \{ --> {,  \} --> }, etc
@@ -1191,18 +1191,19 @@ def do_opcodedesc(length, buf, pp, i):
     del pp[i:newi]
     length = length - (newi-i)
 
-    ch.chtype = chunk_type[CSLINE]
-    ch.data = "defcv"
+    ch.chtype = CSLINE
+    ch.data = "deffn"
 
-    cslinearg = [chunk(GROUP, wh, [chunk(PLAIN, wh, "data")]),
-		 chunk(PLAIN, wh, ' '),
+    cslinearg = [#chunk(GROUP, wh, [chunk(PLAIN, wh, "exception")]),
+		 chunk(PLAIN, wh, 'exception '),
 		 chunk(GROUP, wh, [chunk(PLAIN, wh, "byte code instruction")]),
 		 chunk(PLAIN, wh, ' '),
 		 dataname,
+		 chunk(PLAIN, wh, ' '),
+		 pp[i],
 		 ]
 
-    pp.insert(i, chunk(GROUP, wh, cslinearg))
-    i, length = i+1, length+1
+    pp[i] = chunk(GROUP, wh, cslinearg)
     hist.command = ch.data
     return length, i
 
@@ -1224,12 +1225,16 @@ def rm_commas_etc(text):
 	    result = result + text
 	    break
     if changed:
-	print 'Warning: nodename changhed to ' + `result`
+	print 'Warning: nodename changed to ' + `result`
 
     return result
 
 # boolean flags
 flags = {'texi': 1}
+
+
+# map of \label{} to node names
+label_nodes = {}
 
 
 ##
@@ -1260,11 +1265,21 @@ def changeit(buf, pp):
 	    # check for {\em ...} constructs
 	    if ch.data and \
 	       ch.data[0].chtype == chunk_type[CSNAME] and \
-	       s(buf, ch.data[0].data) in fontchanges.keys():
+	       fontchanges.has_key(s(buf, ch.data[0].data)):
 		k = s(buf, ch.data[0].data)
 		del ch.data[0]
 		pp.insert(i-1, chunk(CSNAME, ch.where, fontchanges[k]))
 		length, i = length+1, i+1
+
+	    elif ch.data:
+		k = s(buf, ch.data[0].data)
+		if k == "fulllineitems":
+		    del ch.data[0]
+		    data = ch.data
+		    pp[i-1:i] = data
+		    i = i - 1
+		    length = length + len(data) - 1
+		    continue
 
 	    # recursively parse the contents of the group
 	    changeit(buf, ch.data)
@@ -1424,6 +1439,9 @@ def changeit(buf, pp):
 		length = length + len(chunks) - 1
 		i = i + len(chunks) - 1
 
+	    elif envname in ('sloppypar', 'flushleft'):
+		pass
+
 	    else:
 		print 'WARNING: don\'t know what to do with env ' + `envname`
 
@@ -1436,48 +1454,48 @@ def changeit(buf, pp):
 	    i, length = i-1, length-1
 
 	    if envname == 'verbatim':
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, 'example')])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, 'example')])]
 		i, length = i+2, length+2
 	    elif envname == 'itemize':
 		hist.itemizenesting = hist.itemizenesting - 1
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, 'itemize')])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, 'itemize')])]
 		i, length = i+2, length+2
 	    elif envname == 'enumerate':
 		hist.enumeratenesting = hist.enumeratenesting-1
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, 'enumerate')])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, 'enumerate')])]
 		i, length = i+2, length+2
 	    elif envname == 'description':
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, 'table')])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, 'table')])]
 		i, length = i+2, length+2
 	    elif (envname == 'tableiii') or (envname == 'tableii'):
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, 'table')])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, 'table')])]
 		i, length = i+2, length + 2
 		pp.insert(i, chunk(DENDLINE, ch.where, '\n'))
 		i, length = i+1, length+1
 
 	    elif envname in ('funcdesc', 'excdesc', 'datadesc'):
-		pp[i:i] = [
-			  chunk(CSLINE, ch.where, 'end'),
-			  chunk(GROUP, ch.where, [
-			  chunk(PLAIN, ch.where, hist.command)])]
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, hist.command)])]
 		i, length = i+2, length+2
 
-	    elif envname in ('seealso', 'opcodedesc'):
+	    elif envname == 'opcodedesc':
+		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
+			   chunk(GROUP, ch.where, [
+			       chunk(PLAIN, ch.where, "deffn")])]
+		i, length = i+2, length+2
+
+	    elif envname in ('seealso', 'sloppypar', 'flushleft'):
 		pass
 
 	    else:
@@ -1552,6 +1570,10 @@ def changeit(buf, pp):
 		    print 'WARNING: renewcommand with unsupported arg removed'
 		del pp[i:newi]
 		length = length - (newi-i)
+
+	    elif s_buf_data == "fulllineitems":
+		del pp[i-1]
+		i, length = i-1, length-1
 
 	    elif s_buf_data == 'item':
 		ch.chtype = chunk_type[CSLINE]
@@ -1828,12 +1850,6 @@ def changeit(buf, pp):
 		del pp[i:newi]
 		length = length - (newi-i)
 
-## 		ingroupch.append(chunk(PLAIN, ch.where, ' '))
-## 		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
-## 		ingroupch.append(chunk(GROUP, ch.where, [
-## 			  chunk(PLAIN, ch.where,
-## 			  '(built-in)')]))
-
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
@@ -2048,13 +2064,30 @@ def changeit(buf, pp):
 		i = i - 1
 		length = length + len(data) - 2
 
+	    elif s_buf_data == "quad":
+		ch.chtype = PLAIN
+		ch.data = "    "
+
 	    elif s_buf_data in ('noindent', 'indexsubitem'):
 		pass
 
 	    elif s_buf_data == 'label':
+		name = s(buf, pp[i].data[0].data)
 		del pp[i-1:i+1]
 		length = length - 2
 		i = i - 1
+		label_nodes[name] = hist.nodenames[-1]
+
+	    elif s_buf_data == 'ref':
+		name = s(buf, pp[i].data[0].data)
+		if label_nodes.has_key(name):
+		    pp[i].data[0].data = label_nodes[name]
+		else:
+		    pp[i-1:i+1] = [
+			chunk(PLAIN, ch.where,
+			      "(unknown node reference: %s)" % name)]
+		    length = length - 1
+		    print "WARNING: unknown node label", `name`
 
 	    else:
 		print "don't know what to do with keyword " + s_buf_data
