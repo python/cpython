@@ -1,1 +1,0 @@
-IDLE_VERSION = "0.5"
