@@ -90,7 +90,7 @@ This change may cause some compatibility problems for code where the
 same variable name is used both at the module level and as a local
 variable within a function that contains further function definitions.
 This seems rather unlikely though, since such code would have been
-pretty confusing to read in the first place.
+pretty confusing to read in the first place.  
 
 One side effect of the change is that the \code{from \var{module}
 import *} and \keyword{exec} statements have been made illegal inside
@@ -126,6 +126,14 @@ This shouldn't be much of a limitation, since \keyword{exec} is rarely
 used in most Python code (and when it is used, it's often a sign of a
 poor design anyway).
 
+Compatibility concerns have led to nested scopes being introduced
+gradually; in Python 2.1, they aren't enabled by default, but can be
+turned on within a module by using a future statement as described in
+PEP 236.  (See the following section for further discussion of PEP
+236.)  In Python 2.2, nested scopes will become the default and there
+will be no way to turn them off, but users will have had all of 2.1's
+lifetime to fix any breakage resulting from their introduction.
+
 \begin{seealso}
 
 \seepep{227}{Statically Nested Scopes}{Written and implemented by
@@ -137,7 +145,34 @@ Jeremy Hylton.}
 %======================================================================
 \section{PEP 236: \module{__future__} Directives}
 
-XXX
+The reaction to nested scopes was widespread concern about the dangers
+of breaking code with the 2.1 release, and it was strong enough to
+make the Pythoneers take a more conservative approach.  This approach
+consists of introducing a convention for enabling optional
+functionality in release N that will become compulsory in release N+1.  
+
+The syntax uses a \code{from...import} statement using the reserved
+module name \module{__future__}.  Nested scopes can be enabled by the
+following statement:
+
+\begin{verbatim}
+from __future__ import nested_scopes
+\end{verbatim}
+
+While it looks like a normal \keyword{import} statement, it's not;
+there are strict rules on where such a future statement can be put.
+They can only be at the top of a module, and must precede any Python
+code or regular \keyword{import} statements.  This is because such
+statements can affect how the Python bytecode compiler parses code and
+generates bytecode, so they must precede any statement that will
+result in bytecodes being produced.
+
+\begin{seealso}
+
+\seepep{236}{Back to the \module{__future__}}{Written by Tim Peters,
+and primarily implemented by Jeremy Hylton.}
+
+\end{seealso}
 
 %======================================================================
 \section{PEP 207: Rich Comparisons}
