@@ -4256,10 +4256,10 @@ then
   fi
   rm -fr conftest*
 fi
-fi
-CXX="$ac_save_cxx"
 echo "$as_me:$LINENO: result: $ac_cv_cxx_thread" >&5
 echo "${ECHO_T}$ac_cv_cxx_thread" >&6
+fi
+CXX="$ac_save_cxx"
 
 
 # checks for header files
