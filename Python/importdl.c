@@ -85,7 +85,7 @@ typedef void (*dl_funcptr)();
 typedef FARPROC dl_funcptr;
 #define _DL_FUNCPTR_DEFINED
 #define SHORT_EXT ".pyd"
-#define LONG_EXT "module.pyd"
+#define LONG_EXT ".dll"
 #endif
 
 #ifdef NeXT
