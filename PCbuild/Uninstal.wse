@@ -25,7 +25,7 @@ item: Remark
   Text=Note from Tim:  This is a verbatim copy of Wise's Uninstal.wse, altered at the end to write
 end
 item: Remark
-  Text=uninstall info under HKCU instead of HKLM if the user doesn't have Admin privs.
+  Text=uninstall info under HKCU instead of HKLM if our DOADMIN var is false.
 end
 item: Remark
 end
@@ -433,8 +433,9 @@ end
 item: Check Configuration
   Flags=10111011
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Remark
   Text=Write uninstall info under HKLM.  This if/else/end block added by Tim.
