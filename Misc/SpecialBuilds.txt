@@ -46,7 +46,8 @@ sys.getobjects(max[, type])
     allocated first in the list, least-recently allocated last in the
     list.  max=0 means no limit on list length.  If an optional type
     object is passed, the list is also restricted to objects of that
-    type.
+    type.  The return list itself, and some temp objects created just
+    to call sys.getobjects(), are excluded from the return list.
 
 envar PYTHONDUMPREFS
     If this envar exists, Py_Finalize() arranges to print a list of
