@@ -59,6 +59,16 @@ This is the full set of data types supported by XML-RPC.  Method calls
 may also raise a special \exception{Fault} instance, used to signal
 XML-RPC server errors, or \exception{ProtocolError} used to signal an
 error in the HTTP/HTTPS transport layer.
+
+When passing strings, characters special to XML such as \samp{<},
+\samp{>}, and \samp{\&} will be automatically escaped.  However, it's
+the caller's responsibility to ensure that the string is free of
+characters that aren't allowed in XML, such as the control characters
+with ASCII values between 0 and 31; failing to do this will result in
+an XML-RPC request that isn't well-formed XML.  If you have to pass
+arbitrary strings via XML-RPC, use the \class{Binary} wrapper class
+described below.
+
 \end{classdesc}
 
 
@@ -200,7 +210,7 @@ server named by the URI does not exist).  It has the following
 members:
 
 \begin{memberdesc}{url}
-The URI or URL that triggered te error.
+The URI or URL that triggered the error.
 \end{memberdesc}
 
 \begin{memberdesc}{errcode}
@@ -208,7 +218,7 @@ The error code.
 \end{memberdesc}
 
 \begin{memberdesc}{errmsg}
-The eror message of diagnostic string.
+The error message or diagnostic string.
 \end{memberdesc}
 
 \begin{memberdesc}{headers}
