@@ -760,8 +760,9 @@ class Message:
     def get_content_charset(self, failobj=None):
         """Return the charset parameter of the Content-Type header.
 
-        If there is no Content-Type header, or if that header has no charset
-        parameter, failobj is returned.
+        The returned string is always coerced to lower case.  If there is no
+        Content-Type header, or if that header has no charset parameter,
+        failobj is returned.
         """
         missing = []
         charset = self.get_param('charset', missing)
@@ -769,8 +770,9 @@ class Message:
             return failobj
         if isinstance(charset, TupleType):
             # RFC 2231 encoded, so decode it, and it better end up as ascii.
-            return unicode(charset[2], charset[0]).encode('us-ascii')
-        return charset
+            charset = unicode(charset[2], charset[0]).encode('us-ascii')
+        # RFC 2046, $4.1.2 says charsets are not case sensitive
+        return charset.lower()
 
     def get_charsets(self, failobj=None):
         """Return a list containing the charset(s) used in this message.

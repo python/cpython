@@ -443,8 +443,9 @@ have been present in the original \mailheader{Content-Type} header.
 
 \begin{methoddesc}[Message]{get_content_charset}{\optional{failobj}}
 Return the \code{charset} parameter of the \mailheader{Content-Type}
-header.  If there is no \mailheader{Content-Type} header, or if that
-header has no \code{charset} parameter, \var{failobj} is returned.
+header, coerced to lower case.  If there is no
+\mailheader{Content-Type} header, or if that header has no
+\code{charset} parameter, \var{failobj} is returned.
 
 Note that this method differs from \method{get_charset()} which
 returns the \class{Charset} instance for the default encoding of the

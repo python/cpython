@@ -23,10 +23,11 @@ Certain character sets must be encoded with quoted-printable or base64
 when used in email headers or bodies.  Certain character sets must be
 converted outright, and are not allowed in email.
 
-Optional \var{input_charset} is as described below.  After being alias
-normalized it is also used as a lookup into the registry of character
-sets to find out the header encoding, body encoding, and output
-conversion codec to be used for the character set.  For example, if
+Optional \var{input_charset} is as described below; it is always
+coerced to lower case.  After being alias normalized it is also used
+as a lookup into the registry of character sets to find out the header
+encoding, body encoding, and output conversion codec to be used for
+the character set.  For example, if
 \var{input_charset} is \code{iso-8859-1}, then headers and bodies will
 be encoded using quoted-printable and no output conversion codec is
 necessary.  If \var{input_charset} is \code{euc-jp}, then headers will

@@ -177,13 +177,15 @@ class Charset:
                   this attribute will have the same value as the input_codec.
     """
     def __init__(self, input_charset=DEFAULT_CHARSET):
+        # RFC 2046, $4.1.2 says charsets are not case sensitive
+        input_charset = input_charset.lower()
         # Set the input charset after filtering through the aliases
         self.input_charset = ALIASES.get(input_charset, input_charset)
         # We can try to guess which encoding and conversion to use by the
         # charset_map dictionary.  Try that first, but let the user override
         # it.
         henc, benc, conv = CHARSETS.get(self.input_charset,
-                                        (SHORTEST, SHORTEST, None))
+                                        (SHORTEST, BASE64, None))
         # Set the attributes, allowing the arguments to override the default.
         self.header_encoding = henc
         self.body_encoding = benc
