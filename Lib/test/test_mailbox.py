@@ -10,14 +10,14 @@ try:
 except os.error:
     pass
 
-
+FROM_ = "From some.body@dummy.domain  Sat Jul 24 13:43:35 2004\n"
 DUMMY_MESSAGE = """\
 From: some.body@dummy.domain
 To: me@my.domain
+Subject: Simple Test
 
 This is a dummy message.
 """
-
 
 class MaildirTestCase(unittest.TestCase):
 
@@ -38,7 +38,7 @@ class MaildirTestCase(unittest.TestCase):
         os.rmdir(os.path.join(self._dir, "new"))
         os.rmdir(self._dir)
 
-    def createMessage(self, dir):
+    def createMessage(self, dir, mbox=False):
         t = int(time.time() % 1000000)
         pid = self._counter
         self._counter += 1
@@ -47,6 +47,8 @@ class MaildirTestCase(unittest.TestCase):
         newname = os.path.join(self._dir, dir, filename)
         fp = open(tmpname, "w")
         self._msgfiles.append(tmpname)
+        if mbox:
+            fp.write(FROM_)
         fp.write(DUMMY_MESSAGE)
         fp.close()
         if hasattr(os, "link"):
@@ -56,6 +58,7 @@ class MaildirTestCase(unittest.TestCase):
             fp.write(DUMMY_MESSAGE)
             fp.close()
         self._msgfiles.append(newname)
+        return tmpname
 
     def test_empty_maildir(self):
         """Test an empty maildir mailbox"""
@@ -92,6 +95,18 @@ class MaildirTestCase(unittest.TestCase):
         self.assert_(self.mbox.next() is not None)
         self.assert_(self.mbox.next() is None)
         self.assert_(self.mbox.next() is None)
+
+    def test_unix_mbox(self):
+        ### should be better!
+        import email.Parser
+        fname = self.createMessage("cur", True)
+        n = 0
+        for msg in mailbox.PortableUnixMailbox(open(fname),
+                                               email.Parser.Parser().parse):
+            n += 1
+            self.assertEqual(msg["subject"], "Simple Test")
+            self.assertEqual(len(str(msg)), len(FROM_)+len(DUMMY_MESSAGE))
+        self.assertEqual(n, 1)
 
     # XXX We still need more tests!
 
