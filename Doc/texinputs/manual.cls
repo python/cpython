@@ -7,6 +7,7 @@
              [1998/03/03 Document class (Python manual)]
 
 \RequirePackage{pypaper}
+\RequirePackage{fancybox}
 
 % Change the options here to get a different set of basic options, but only
 % if you have to.  Paper and font size should be adjusted in pypaper.sty.

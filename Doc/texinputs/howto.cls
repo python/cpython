@@ -7,6 +7,7 @@
              [1998/02/25 Document class (Python HOWTO)]
 
 \RequirePackage{pypaper}
+\RequirePackage{fancybox}
 
 % Change the options here to get a different set of basic options,  This
 % is where to add things like "a4paper" or "10pt".
