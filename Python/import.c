@@ -202,7 +202,7 @@ _PyImportHooks_Init(void)
 			PyErr_Clear(); /* No zipimporter object -- okay */
 			if (Py_VerboseFlag)
 				PySys_WriteStderr(
-				    "# can't import zipimport.zimimporter\n");
+				    "# can't import zipimport.zipimporter\n");
 		}
 		else {
 			/* sys.path_hooks.append(zipimporter) */
