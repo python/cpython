@@ -97,6 +97,14 @@ item it, the item title string and optionally the keyboard shortcut
 and a callback routine. The callback is called with the arguments
 menu-id, item number within menu (1-based), current front window and
 the event record.
+
+In stead of a callable object the callback can also be a string. In
+this case menu selection causes the lookup of a method in the topmost
+window and the application. The method name is the callback string
+with \code{'domenu_'} prepended.
+
+Calling the \code{MenuBar} \code{fixmenudimstate} method sets the
+correct dimming for all menu items based on the current front window.
 \end{funcdesc}
 
 \begin{funcdesc}{Separator}{menu}
@@ -125,6 +133,13 @@ whole window on-screen. The window will however always be exact the
 size given, so parts may be offscreen.
 \end{funcdesc}
 
+\begin{funcdesc}{setwatchcursor}{}
+Set the mouse cursor to a watch.
+\end{funcdesc}
+
+\begin{funcdesc}{setarrowcursor}{}
+Set the mouse cursor to an arrow.
+\end{funcdesc}
 
 \subsection{Application objects}
 Application objects have the following methods, among others:
@@ -147,12 +162,17 @@ This routine is the main event loop, call it to set your application
 rolling. \var{Mask} is the mask of events you want to handle,
 \var{wait} is the number of ticks you want to leave to other
 concurrent application (default 0, which is probably not a good
-idea). This method does not return until \code{self} is raised.
+idea). While raising \code{self} to exit the mainloop is still
+supported it is not recommended, call \code{self._quit} instead.
 
 The event loop is split into many small parts, each of which can be
 overridden. The default methods take care of dispatching events to
 windows and dialogs, handling drags and resizes, Apple Events, events
 for non-FrameWork windows, etc.
+\end{funcdesc}
+
+\begin{funcdesc}{_quit}{}
+Terminate the event \code{mainloop} at the next convenient moment.
 \end{funcdesc}
 
 \begin{funcdesc}{do_char}{c\, event}
@@ -226,7 +246,7 @@ user. Tracking and such has already been taken care of.
 \subsection{ScrolledWindow Object}
 
 ScrolledWindow objects are ControlsWindow objects with the following
-extra mathods:
+extra methods:
 
 \renewcommand{\indexsubitem}{(ScrolledWindow method)}
 
@@ -296,3 +316,63 @@ Item number \var{item} was hit. You are responsible for redrawing
 toggle buttons, etc.
 \end{funcdesc}
 
+\section{Standard module \sectcode{MiniAEFrame}}
+\stmodindex{MiniAEFrame}
+
+The module \var{MiniAEFrame} provides a framework for an application
+that can function as an OSA server, i.e. receive and process
+AppleEvents. It can be used in conjunction with \var{FrameWork} or
+standalone.
+
+This module is temporary, it will eventually be replaced by a module
+that handles argument names better and possibly automates making your
+application scriptable.
+
+The \var{MiniAEFrame} module defines the following classes:
+
+\renewcommand{\indexsubitem}{(in module MiniAEFrame)}
+
+\begin{funcdesc}{AEServer}{}
+A class that handles AppleEvent dispatch. Your application should
+subclass this class together with either
+\code{MiniAEFrame.MiniApplication} or
+\code{FrameWork.Application}. Your \code{__init__} method should call
+the \code{__init__} method for both classes.
+\end{funcdesc}
+
+\begin{funcdesc}{MiniApplication}{}
+A class that is more or less compatible with
+\code{FrameWork.Application} but with less functionality. Its
+eventloop supports the apple menu, command-dot and AppleEvents, other
+events are passed on to the Python interpreter and/or Sioux.
+Useful if your application wants to use \code{AEServer} but does not
+provide its own windows, etc.
+\end{funcdesc}
+
+\subsection{AEServer Objects}
+
+\renewcommand{\indexsubitem}{(AEServer method)}
+
+\begin{funcdesc}{installaehandler}{classe\, type\, callback}
+Installs an AppleEvent handler. \code{Classe} and \code{type} are the
+four-char OSA Class and Type designators, \code{'****'} wildcards are
+allowed. When a matching AppleEvent is received the parameters are
+decoded and your callback is invoked.
+\end{funcdesc}
+
+\begin{funcdesc}{callback}{_object\, **kwargs}
+Your callback is called with the OSA Direct Object as first positional
+parameter. The other parameters are passed as keyword arguments, with
+the 4-char designator as name. Three extra keyword parameters are
+passed: \code{_class} and \code{_type} are the Class and Type
+designators and \code{_attributes} is a dictionary with the AppleEvent
+attributes.
+
+The return value of your method is packed with
+\code{aetools.packevent} and sent as reply.
+\end{funcdesc}
+
+Note that there are some serious problems with the current
+design. AppleEvents which have non-identifier 4-char designators for
+arguments are not implementable, and it is not possible to return an
+error to the originator. This will be addressed in a future release.
