@@ -20,7 +20,7 @@ import regex
 import os
 
 
-__version__ = '1.4'
+__version__ = '1.5'
 
 # Helper for non-unix systems
 if os.name == 'mac':
@@ -115,6 +115,7 @@ class URLopener:
 		fullurl = unwrap(fullurl)
 		type, url = splittype(fullurl)
  		if not type: type = 'file'
+		self.openedurl = '%s:%s' % (type, url)
 		if self.proxies.has_key(type):
 			proxy = self.proxies[type]
 			type, proxy = splittype(proxy)
@@ -204,7 +205,7 @@ class URLopener:
 		errcode, errmsg, headers = h.getreply()
 		fp = h.getfile()
 		if errcode == 200:
-			return addinfo(fp, headers)
+			return addinfourl(fp, headers, self.openedurl)
 		else:
 			return self.http_error(url,
 					       fp, errcode, errmsg, headers)
@@ -241,7 +242,7 @@ class URLopener:
 			fp = gopherlib.send_query(selector, query, host)
 		else:
 			fp = gopherlib.send_selector(selector, host)
-		return addinfo(fp, noheaders())
+		return addinfourl(fp, noheaders(), self.openedurl)
 
 	# Use local file or FTP depending on form of URL
 	def open_file(self, url):
@@ -253,12 +254,12 @@ class URLopener:
 	# Use local file
 	def open_local_file(self, url):
 		host, file = splithost(url)
-		if not host: return addinfo(open(url2pathname(file), 'r'), noheaders())
+		if not host: return addinfourl(open(url2pathname(file), 'r'), noheaders(), self.openedurl)
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfo(open(url2pathname(file), 'r'), noheaders())
+			return addinfourl(open(url2pathname(file), 'r'), noheaders(), self.openedurl)
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
@@ -290,8 +291,8 @@ class URLopener:
 				if string.lower(attr) == 'type' and \
 				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
 					type = string.upper(value)
-			return addinfo(self.ftpcache[key].retrfile(file, type),
-				  noheaders())
+			return addinfourl(self.ftpcache[key].retrfile(file, type),
+				  noheaders(), self.openedurl)
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg)
 
@@ -305,9 +306,9 @@ class FancyURLopener(URLopener):
 
 	# Default error handling -- don't raise an exception
 	def http_error_default(self, url, fp, errcode, errmsg, headers):
-	    return addinfo(fp, headers)
+	    return addinfourl(fp, headers, self.openedurl)
 
-	# Error 302 -- relocated
+	# Error 302 -- relocated (temporarily)
 	def http_error_302(self, url, fp, errcode, errmsg, headers):
 		# XXX The server can force infinite recursion here!
 		if headers.has_key('location'):
@@ -319,6 +320,9 @@ class FancyURLopener(URLopener):
 		void = fp.read()
 		fp.close()
 		return self.open(newurl)
+
+	# Error 301 -- also relocated (permanently)
+	http_error_301 = http_error_302
 
 	# Error 401 -- authentication required
 	# See this URL for a description of the basic authentication scheme:
@@ -506,6 +510,17 @@ class addinfo(addbase):
 		self.headers = headers
 	def info(self):
 		return self.headers
+
+# class to add info() and geturl() methods to an open file
+class addinfourl(addbase):
+	def __init__(self, fp, headers, url):
+		addbase.__init__(self, fp)
+		self.headers = headers
+		self.url = url
+	def info(self):
+		return self.headers
+	def geturl(self):
+		return self.url
 
 
 # Utility to combine a URL with a base URL to form a new URL
