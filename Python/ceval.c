@@ -83,6 +83,9 @@ static void format_exc_check_arg(PyObject *, char *, PyObject *);
 	"global name '%.200s' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
 	"local variable '%.200s' referenced before assignment"
+#define UNBOUNDFREE_ERROR_MSG \
+	"free variable '%.200s' referenced before assignment" \
+        " in enclosing scope"
 
 /* Dynamic execution profile */
 #ifdef DYNAMIC_EXECUTION_PROFILE
@@ -1693,18 +1696,22 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			x = freevars[oparg];
 			w = PyCell_Get(x);
 			if (w == NULL) {
-				if (oparg < f->f_ncells)
+				if (oparg < f->f_ncells) {
 					v = PyTuple_GetItem(co->co_cellvars,
 							       oparg);
-				else
+				       format_exc_check_arg(
+					       PyExc_UnboundLocalError,
+					       UNBOUNDLOCAL_ERROR_MSG,
+					       v);
+				} else {
 				       v = PyTuple_GetItem(
 						      co->co_freevars,
 						      oparg - f->f_ncells);
-
-				format_exc_check_arg(
-					PyExc_UnboundLocalError,
-					UNBOUNDLOCAL_ERROR_MSG,
-					v);
+				       format_exc_check_arg(
+					       PyExc_NameError,
+					       UNBOUNDFREE_ERROR_MSG,
+					       v);
+				}
 				err = -1;
 				break;
 			}
@@ -2883,11 +2890,10 @@ call_method(PyObject *func, PyObject *arg, PyObject *kw)
 				return NULL;
 		}
 		if (!ok) {
-			char* fn = get_func_name(func);
 			PyErr_Format(PyExc_TypeError,
-				     "unbound method %s%smust be "
+				     "unbound method %s%s must be "
 				     "called with instance as first argument",
-				     fn ? fn : "", fn ? "() " : "");
+				     get_func_name(func), get_func_desc(func));
 			return NULL;
 		}
 		Py_INCREF(arg);

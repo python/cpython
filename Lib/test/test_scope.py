@@ -291,7 +291,7 @@ else:
 
 try:
     errorInInner()
-except UnboundLocalError:
+except NameError:
     pass
 else:
     raise TestFailed
@@ -435,3 +435,4 @@ d = f(2)(4)
 verify(d.has_key('h'))
 del d['h']
 verify(d == {'x': 2, 'y': 7, 'w': 6})
+
