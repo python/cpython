@@ -563,6 +563,7 @@ _expectations = {
         test_mpz
         test_nis
         test_openpty
+        test_ossaudiodev
         test_poll
         test_pty
         test_pwd
