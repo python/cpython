@@ -3,3 +3,8 @@
 */
 
 #define USE_GUSI		/* Stdio implemented with GUSI */
+#define USE_MSL			/* Use MSL libraries */
+#ifdef USE_MSL
+#define USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */
+#include <ansi_prefix.mac.h>
+#endif
