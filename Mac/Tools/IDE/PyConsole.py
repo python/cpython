@@ -47,8 +47,11 @@ class ConsoleTextWidget(W.EditText):
 		self._namespace = dict
 	
 	def open(self):
+		import __main__
 		W.EditText.open(self)
-		self.write('Python ' + sys.version + '\nType "copyright", "credits" or "license" for more information.\n')
+		self.write('Python %s\n' % sys.version)
+		self.write('Type "copyright", "credits" or "license" for more information.\n')
+		self.write('MacPython IDE %s\n' % __main__.__version__)
 		self.write(sys.ps1)
 		self.flush()
 	
