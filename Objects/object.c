@@ -1475,13 +1475,13 @@ PyObject_Free(void *p)
    call site instead of requiring a test for NULL.
 */
 
-static int
+static void
 empty_clear_weak_refs(PyObject *o)
 {
-    return 1;
+    return;
 }
 
-int (*PyObject_ClearWeakRefs)(PyObject *) = empty_clear_weak_refs;
+void (*PyObject_ClearWeakRefs)(PyObject *) = empty_clear_weak_refs;
 
 
 
