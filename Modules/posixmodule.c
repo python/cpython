@@ -7244,7 +7244,7 @@ win32_urandom(PyObject *self, PyObject *args)
 	PyObject* returnVal = NULL;
 
 	/* Read arguments */
-	if (! PyArg_ParseTuple(args, "i", &howMany))
+	if (! PyArg_ParseTuple(args, "i:urandom", &howMany))
 		return NULL;
 	if (howMany < 0)
 		return PyErr_Format(PyExc_ValueError,
