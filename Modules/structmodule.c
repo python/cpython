@@ -80,6 +80,34 @@ typedef struct { char c; LONG_LONG x; } s_long_long;
 #pragma options align=reset
 #endif
 
+/* Helper to get a PyLongObject by hook or by crook.  Caller should decref. */
+
+static PyObject *
+get_pylong(PyObject *v)
+{
+	PyNumberMethods *m;
+
+	assert(v != NULL);
+	if (PyInt_Check(v))
+		return PyLong_FromLong(PyInt_AS_LONG(v));
+	if (PyLong_Check(v)) {
+		Py_INCREF(v);
+		return v;
+	}
+	m = v->ob_type->tp_as_number;
+	if (m != NULL && m->nb_long != NULL) {
+		v = m->nb_long(v);
+		if (v == NULL)
+			return NULL;
+		if (PyLong_Check(v))
+			return v;
+		Py_DECREF(v);
+	}
+	PyErr_SetString(StructError,
+			"cannot convert argument to long");
+	return NULL;
+}
+
 /* Helper routine to get a Python integer and raise the appropriate error
    if it isn't one */
 
@@ -123,33 +151,13 @@ static int
 get_longlong(PyObject *v, LONG_LONG *p)
 {
 	LONG_LONG x;
-	int v_needs_decref = 0;
 
-	if (PyInt_Check(v)) {
-		x = (LONG_LONG)PyInt_AS_LONG(v);
-		*p = x;
-		return 0;
-	}
-	if (!PyLong_Check(v)) {
-		PyNumberMethods *m = v->ob_type->tp_as_number;
-		if (m != NULL && m->nb_long != NULL) {
-			v = m->nb_long(v);
-			if (v == NULL)
-				return -1;
-			v_needs_decref = 1;
-		}
-		if (!PyLong_Check(v)) {
-			PyErr_SetString(StructError,
-					"cannot convert argument to long");
-			if (v_needs_decref)
-				Py_DECREF(v);
-			return -1;
-		}
-	}
+	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
-	if (v_needs_decref)
-		Py_DECREF(v);
+	Py_DECREF(v);
 	if (x == (LONG_LONG)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -162,39 +170,13 @@ static int
 get_ulonglong(PyObject *v, unsigned LONG_LONG *p)
 {
 	unsigned LONG_LONG x;
-	int v_needs_decref = 0;
 
-	if (PyInt_Check(v)) {
-		long i = PyInt_AS_LONG(v);
-		if (i < 0) {
-			PyErr_SetString(StructError, "can't convert negative "
-					"int to unsigned");
-			return -1;
-		}
-		x = (unsigned LONG_LONG)i;
-		*p = x;
-		return 0;
-	}
-	if (!PyLong_Check(v)) {
-		PyNumberMethods *m = v->ob_type->tp_as_number;
-		if (m != NULL && m->nb_long != NULL) {
-			v = m->nb_long(v);
-			if (v == NULL)
-				return -1;
-			v_needs_decref = 1;
-		}
-		if (!PyLong_Check(v)) {
-			PyErr_SetString(StructError,
-					"cannot convert argument to long");
-			if (v_needs_decref)
-				Py_DECREF(v);
-			return -1;
-		}
-	}
+	v = get_pylong(v);
+	if (v == NULL)
+		return -1;
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
-	if (v_needs_decref)
-		Py_DECREF(v);
+	Py_DECREF(v);
 	if (x == (unsigned LONG_LONG)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -500,7 +482,7 @@ typedef struct _formatdef {
    TYPE is one of char, byte, ubyte, etc.
 */
 
-/* Native mode routines. */
+/* Native mode routines. ****************************************************/
 
 static PyObject *
 nu_char(const char *p, const formatdef *f)
@@ -797,6 +779,8 @@ static formatdef native_table[] = {
 	{0}
 };
 
+/* Big-endian routines. *****************************************************/
+
 static PyObject *
 bu_int(const char *p, const formatdef *f)
 {
@@ -823,6 +807,24 @@ bu_uint(const char *p, const formatdef *f)
 		return PyLong_FromUnsignedLong(x);
 	else
 		return PyInt_FromLong((long)x);
+}
+
+static PyObject *
+bu_longlong(const char *p, const formatdef *f)
+{
+	return _PyLong_FromByteArray((const unsigned char *)p,
+				      8,
+				      0, /* little-endian */
+				      1  /* signed */);
+}
+
+static PyObject *
+bu_ulonglong(const char *p, const formatdef *f)
+{
+	return _PyLong_FromByteArray((const unsigned char *)p,
+				      8,
+				      0, /* little-endian */
+				      0  /* signed */);
 }
 
 static PyObject *
@@ -868,6 +870,34 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+bp_longlong(char *p, PyObject *v, const formatdef *f)
+{
+	int res;
+	v = get_pylong(v);
+	res = _PyLong_AsByteArray((PyLongObject *)v,
+			   	  (unsigned char *)p,
+				  8,
+				  0, /* little_endian */
+				  1  /* signed */);
+	Py_DECREF(v);
+	return res;
+}
+
+static int
+bp_ulonglong(char *p, PyObject *v, const formatdef *f)
+{
+	int res;
+	v = get_pylong(v);
+	res = _PyLong_AsByteArray((PyLongObject *)v,
+			   	  (unsigned char *)p,
+				  8,
+				  0, /* little_endian */
+				  0  /* signed */);
+	Py_DECREF(v);
+	return res;
+}
+
+static int
 bp_float(char *p, PyObject *v, const formatdef *f)
 {
 	double x = PyFloat_AsDouble(v);
@@ -904,10 +934,14 @@ static formatdef bigendian_table[] = {
 	{'I',	4,		0,		bu_uint,	bp_uint},
 	{'l',	4,		0,		bu_int,		bp_int},
 	{'L',	4,		0,		bu_uint,	bp_uint},
+	{'q',	8,		0,		bu_longlong,	bp_longlong},
+	{'Q',	8,		0,		bu_ulonglong,	bp_ulonglong},
 	{'f',	4,		0,		bu_float,	bp_float},
 	{'d',	8,		0,		bu_double,	bp_double},
 	{0}
 };
+
+/* Little-endian routines. *****************************************************/
 
 static PyObject *
 lu_int(const char *p, const formatdef *f)
@@ -935,6 +969,24 @@ lu_uint(const char *p, const formatdef *f)
 		return PyLong_FromUnsignedLong(x);
 	else
 		return PyInt_FromLong((long)x);
+}
+
+static PyObject *
+lu_longlong(const char *p, const formatdef *f)
+{
+	return _PyLong_FromByteArray((const unsigned char *)p,
+				      8,
+				      1, /* little-endian */
+				      1  /* signed */);
+}
+
+static PyObject *
+lu_ulonglong(const char *p, const formatdef *f)
+{
+	return _PyLong_FromByteArray((const unsigned char *)p,
+				      8,
+				      1, /* little-endian */
+				      0  /* signed */);
 }
 
 static PyObject *
@@ -980,6 +1032,34 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 }
 
 static int
+lp_longlong(char *p, PyObject *v, const formatdef *f)
+{
+	int res;
+	v = get_pylong(v);
+	res = _PyLong_AsByteArray((PyLongObject*)v,
+			   	  (unsigned char *)p,
+				  8,
+				  1, /* little_endian */
+				  1  /* signed */);
+	Py_DECREF(v);
+	return res;
+}
+
+static int
+lp_ulonglong(char *p, PyObject *v, const formatdef *f)
+{
+	int res;
+	v = get_pylong(v);
+	res = _PyLong_AsByteArray((PyLongObject*)v,
+			   	  (unsigned char *)p,
+				  8,
+				  1, /* little_endian */
+				  0  /* signed */);
+	Py_DECREF(v);
+	return res;
+}
+
+static int
 lp_float(char *p, PyObject *v, const formatdef *f)
 {
 	double x = PyFloat_AsDouble(v);
@@ -1016,6 +1096,8 @@ static formatdef lilendian_table[] = {
 	{'I',	4,		0,		lu_uint,	lp_uint},
 	{'l',	4,		0,		lu_int,		lp_int},
 	{'L',	4,		0,		lu_uint,	lp_uint},
+	{'q',	8,		0,		lu_longlong,	lp_longlong},
+	{'Q',	8,		0,		lu_ulonglong,	lp_ulonglong},
 	{'f',	4,		0,		lu_float,	lp_float},
 	{'d',	8,		0,		lu_double,	lp_double},
 	{0}

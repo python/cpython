@@ -364,20 +364,33 @@ _PyLong_AsByteArray(PyLongObject* v,
 	accumbits = 0;
 	carry = do_twos_comp ? 1 : 0;
 	for (i = 0; i < ndigits; ++i) {
+		unsigned int oldaccumbits = accumbits;
 		twodigits thisdigit = v->ob_digit[i];
 		if (do_twos_comp) {
 			thisdigit = (thisdigit ^ MASK) + carry;
 			carry = thisdigit >> SHIFT;
 			thisdigit &= MASK;
 		}
+		if (i < ndigits - 1)
+			accumbits += SHIFT;
+		else {
+			/* The most-significant digit may be partly empty. */
+			twodigits bitmask = 1 << (SHIFT - 1);
+			twodigits signbit = do_twos_comp << (SHIFT - 1);
+			unsigned int nsignbits = 0;
+			while ((thisdigit & bitmask) == signbit && bitmask) {
+				++nsignbits;
+				bitmask >>= 1;
+				signbit >>= 1;
+			}
+			accumbits += SHIFT - nsignbits;
+		}
 		/* Because we're going LSB to MSB, thisdigit is more
 		   significant than what's already in accum, so needs to be
 		   prepended to accum. */
-		accum |= thisdigit << accumbits;
-		accumbits += SHIFT;
+		accum |= thisdigit << oldaccumbits;
 		/* Store as many bytes as possible. */
-		assert(accumbits >= 8);
-		do {
+		while (accumbits >= 8) {
 			if (j >= n)
 				goto Overflow;
 			++j;
@@ -385,13 +398,13 @@ _PyLong_AsByteArray(PyLongObject* v,
 			p += pincr;
 			accumbits -= 8;
 			accum >>= 8;
-		} while (accumbits >= 8);
+		}
 	}
 
 	/* Store the straggler (if any). */
 	assert(accumbits < 8);
 	assert(carry == 0);  /* else do_twos_comp and *every* digit was 0 */
-	if (accum) {
+	if (accumbits > 0) {
 		if (j >= n)
 			goto Overflow;
 		++j;
