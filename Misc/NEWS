@@ -131,8 +131,8 @@ Extension modules
 
   The pickle format of date, time and datetime objects has changed
   completely.  The undocumented pickler and unpickler functions no
-  longer exist.  The undocumented __setstate__() methods no longer
-  exist either.
+  longer exist.  The undocumented __setstate__() and __getstate__()
+  methods no longer exist either.
 
 Library
 -------
