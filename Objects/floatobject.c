@@ -153,7 +153,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 					    NULL))
 			return NULL;
 		s = s_buffer;
-		len = strlen(s);
+		len = (int)strlen(s);
 	}
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
