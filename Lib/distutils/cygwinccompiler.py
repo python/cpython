@@ -357,7 +357,7 @@ def get_versions():
         out = os.popen(gcc_exe + ' -dumpversion','r')
         out_string = out.read()
         out.close()
-        result = re.search('(\d+\.\d+\.\d+)',out_string)
+        result = re.search('(\d+\.\d+(\.\d+)*)',out_string)
         if result:
             gcc_version = StrictVersion(result.group(1))
         else:
@@ -369,7 +369,7 @@ def get_versions():
         out = os.popen(ld_exe + ' -v','r')
         out_string = out.read()
         out.close()
-        result = re.search('(\d+\.\d+\.\d+)',out_string)
+        result = re.search('(\d+\.\d+(\.\d+)*)',out_string)
         if result:
             ld_version = StrictVersion(result.group(1))
         else:
@@ -381,7 +381,7 @@ def get_versions():
         out = os.popen(dllwrap_exe + ' --version','r')
         out_string = out.read()
         out.close()
-        result = re.search(' (\d+\.\d+\.\d+)',out_string)
+        result = re.search(' (\d+\.\d+(\.\d+)*)',out_string)
         if result:
             dllwrap_version = StrictVersion(result.group(1))
         else:
