@@ -436,8 +436,10 @@ parameter list.
 \obindex{user-defined function}
 
 Special attributes: \member{func_doc} or \member{__doc__} is the
-function's documentation string, or None if unavailable;
+function's documentation string, or \code{None} if unavailable;
 \member{func_name} or \member{__name__} is the function's name;
+\member{__module__} is the name of the module the function was defined
+in, or \code{None} if unavailable;
 \member{func_defaults} is a tuple containing default argument values for
 those arguments that have defaults, or \code{None} if no arguments
 have a default value; \member{func_code} is the code object representing
@@ -460,6 +462,7 @@ description of internal types below.
   \ttindex{func_doc}
   \ttindex{__doc__}
   \ttindex{__name__}
+  \ttindex{__module__}
   \ttindex{__dict__}
   \ttindex{func_defaults}
   \ttindex{func_closure}
@@ -482,10 +485,14 @@ object, \member{im_func} is the function object;
 or the class that asked for the method for unbound methods);
 \member{__doc__} is the method's documentation (same as
 \code{im_func.__doc__}); \member{__name__} is the method name (same as
-\code{im_func.__name__}).
+\code{im_func.__name__}); \member{__module__} is the name of the
+module the method was defined in, or \code{None} if unavailable.
 \versionchanged[\member{im_self} used to refer to the class that
                 defined the method]{2.2}
 \withsubitem{(method attribute)}{
+  \ttindex{__doc__}
+  \ttindex{__name__}
+  \ttindex{__module__}
   \ttindex{im_func}
   \ttindex{im_self}}
 
@@ -555,7 +562,8 @@ determined by the C function.
 Special read-only attributes: \member{__doc__} is the function's
 documentation string, or \code{None} if unavailable; \member{__name__}
 is the function's name; \member{__self__} is set to \code{None} (but see
-the next item).
+the next item); \member{__module__} is the name of the module the
+function was defined in or \code{None} if unavailable.
 \obindex{built-in function}
 \obindex{function}
 \indexii{C}{language}
