@@ -219,4 +219,99 @@ sub clean_key {
 }
 
 
+$idx_module_mark = '<tex2html_idx_module_mark>';
+$idx_module_title = 'Module Index';
+$idxmodulefile = '';
+
+sub add_module_idx {
+    print "\nDoing the module index ...";
+    local($key, @keys, $index);
+    $index = "<p>";
+    @keys = keys %Modules;
+    @keys = sort keysort  @keys;
+    foreach $key (@keys) {
+	$index .= "$Modules{$key}$key</a><br>\n"
+    }
+    s/$idx_module_mark/$index<p>/o;
+}
+
+
+sub remove_general_markers {
+    s/$lof_mark/<UL>$figure_captions<\/UL>/o;
+    s/$lot_mark/<UL>$table_captions<\/UL>/o;
+    &replace_citations if /$bbl_mark/;
+    &add_toc if (/$toc_mark/);
+    &add_idx if (/$idx_mark/);
+    &add_module_idx if (/$idx_module_mark/);
+    &replace_cross_references if /$cross_ref_mark/;
+    &replace_external_references if /$external_ref_mark/;
+    &replace_cite_references if /$cite_mark/;
+    if (defined &replace_user_references) {
+ 	&replace_user_references if /$user_ref_mark/;
+    }
+}  
+
+
+# $idx_mark will be replaced with the real index at the end
+sub do_cmd_textohtmlmoduleindex {
+    local($_) = @_;
+    $TITLE = $idx_module_title;
+    $idxmodulefile = $CURRENT_FILE;
+    join('', '<p>' , &make_section_heading($idx_module_title, "h2"),
+	 $idx_module_mark, $_);
+}
+
+# The bibliography and the index should be treated as separate sections
+# in their own HTML files. The \bibliography{} command acts as a sectioning command
+# that has the desired effect. But when the bibliography is constructed 
+# manually using the thebibliography environment, or when using the
+# theindex environment it is not possible to use the normal sectioning 
+# mechanism. This subroutine inserts a \bibliography{} or a dummy 
+# \textohtmlindex command just before the appropriate environments
+# to force sectioning.
+
+# XXX	This *assumes* that if there are two {theindex} environments, the
+#	first is the module index and the second is the standard index.  This
+#	is sufficient for the current Python documentation, but that's about
+#	it.
+
+sub add_bbl_and_idx_dummy_commands {
+    local($id);
+    s/([\\]begin\s*$O\d+$C\s*thebibliography)/$bbl_cnt++; $1/eg;
+#print STDERR "\nthebibliography: $bbl_cnt\n";
+    #if ($bbl_cnt == 1) {
+	s/([\\]begin\s*$O\d+$C\s*thebibliography)/do { $id =  ++$global{'max_id'}; "\\bibliography$O$id$C$O$id$C $1"}/geo;
+    #}
+    local(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);
+    if (scalar(@parts) == 3) {
+	print "\n&add_bbl_and_idx_dummy_commands ==> adding module index";
+	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlmoduleindex $1/o;
+    }
+    s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
+    s/[\\]printindex/\\textohtmlindex /o;
+    &lib_add_bbl_and_idx_dummy_commands() if defined(&lib_add_bbl_and_idx_dummy_commands);
+}
+
+# The bibliographic references, the appendices, the lists of figures and tables
+# etc. must appear in the contents table at the same level as the outermost
+# sectioning command. This subroutine finds what is the outermost level and
+# sets the above to the same level;
+sub set_depth_levels {
+    $section_headings['textohtmlmoduleindex'] = 'h1';
+    # Sets $outermost_level
+    local($level);
+    foreach $level ("part", "chapter", "section", "subsection",
+		    "subsubsection", "paragraph") {
+	last if (($outermost_level) = /\\($level)$delimiter_rx/);
+	}
+    $level = ($outermost_level ? $section_commands{$outermost_level} :
+	      do {$outermost_level = 'section'; 3;});
+    $MAX_SPLIT_DEPTH = $MAX_SPLIT_DEPTH + $level;
+    %section_commands = ('tableofcontents', $level, 'listoffigures', $level,
+			 'listoftables', $level, 'bibliography', $level,
+			 'textohtmlindex', $level,
+			 'textohtmlmoduleindex', $level,
+			 %section_commands);
+}
+			
 1;	# This must be the last line
