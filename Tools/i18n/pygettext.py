@@ -165,13 +165,15 @@ escapes = []
 
 def make_escapes(pass_iso8859):
     global escapes
+    if pass_iso8859:
+        # Allow iso-8859 characters to pass through so that e.g. 'msgid
+        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # escape any character outside the 32..126 range.
+        mod = 128
+    else:
+        mod = 256
     for i in range(256):
-        if pass_iso8859:
-            # Allow iso-8859 characters to pass through so that e.g. 'msgid
-            # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise
-            # we escape any character outside the 32..126 range.
-            i = i % 128
-        if 32 <= i <= 126:
+        if 32 <= (i % mod) <= 126:
             escapes.append(chr(i))
         else:
             escapes.append("\\%03o" % i)
@@ -373,7 +375,7 @@ def main():
             options.excludefilename = arg
 
     # calculate escapes
-    make_escapes(options.escapes)
+    make_escapes(options.escape)
 
     # calculate all keywords
     options.keywords.extend(default_keywords)
