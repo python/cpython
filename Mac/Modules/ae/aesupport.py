@@ -12,7 +12,7 @@ AESendMode = Type("AESendMode", "l")
 AESendPriority = Type("AESendPriority", "h")
 AEInteractAllowed = Type("AEInteractAllowed", "b")
 AEReturnID = Type("AEReturnID", "h")
-AETransactionID = Type("AETransactionID", "h")
+AETransactionID = Type("AETransactionID", "l")
 
 
 
