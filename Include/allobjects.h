@@ -41,6 +41,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define UsingSharedLibs
 #endif
 
+#ifdef WITH_THREAD
+/* This turns errno in a thread-safe function on Solaris.
+   Wonder what it will break though :-( */
+#define _REENTRANT
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
