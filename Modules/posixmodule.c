@@ -39,6 +39,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DO_PG
 #endif
 
+#ifdef _NEXT_SOURCE
+#define mode_t int
+#define NO_UNAME
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
