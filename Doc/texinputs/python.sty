@@ -1,5 +1,5 @@
 %
-% myformat.sty for the Python docummentation  [works only with with Latex2e]
+% python.sty for the Python docummentation  [works only with with Latex2e]
 %
 
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
@@ -13,7 +13,7 @@
 \RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
 
 % for PDF output, use maximal compression
-\@ifundefined{pdfannotlink}{
+\@@ifundefined{pdfannotlink}{
   \let\LinkColor=\relax
   \let\NormalColor=\relax
 }{%
@@ -52,18 +52,18 @@
   %
   % This is *heavily* based on the hyperref package.
   %
-  \def\@begindvi{%
-    \unvbox \@begindvibox
-    \@hyperfixhead
+  \def\@@begindvi{%
+    \unvbox \@@begindvibox
+    \@@hyperfixhead
   }
   \def\hyperpageanchor{\pdfdest name{page.\thepage}}
   \let\HYPERPAGEANCHOR\hyperpageanchor
-  \def\@hyperfixhead{%
-   \let\H@old@thehead\@thehead
-       \gdef\@foo{\pdfdest name{page.\thepage} fit}%
-     \expandafter\ifx\expandafter\@empty\H@old@thehead
-       \def\H@old@thehead{\hfil}\fi
-    \def\@thehead{\@foo\relax\H@old@thehead}%
+  \def\@@hyperfixhead{%
+   \let\H@@old@@thehead\@@thehead
+       \gdef\@@foo{\pdfdest name{page.\thepage} fit}%
+     \expandafter\ifx\expandafter\@@empty\H@@old@@thehead
+       \def\H@@old@@thehead{\hfil}\fi
+    \def\@@thehead{\@@foo\relax\H@@old@@thehead}%
   }
 }
 
@@ -73,7 +73,7 @@
 \advance \topmargin by -\headsep
 
 % attempt to work a little better for A4 users
-\@ifundefined{paperheight}{
+\@@ifundefined{paperheight}{
   \textheight 9in
 }{
   \textheight \paperheight
@@ -84,7 +84,7 @@
 \evensidemargin \oddsidemargin
 \marginparwidth 0.5in
 
-\@ifundefined{paperwidth}{
+\@@ifundefined{paperwidth}{
   \textwidth 6.5in
 }{
   \textwidth \paperwidth
@@ -107,7 +107,7 @@
 \newcommand{\HeaderFamily}{\sffamily}
 
 % Redefine the 'normal' header/footer style when using "fancyhdr" package:
-\@ifundefined{fancyhf}{}{
+\@@ifundefined{fancyhf}{}{
   % Use \pagestyle{normal} as the primary pagestyle for text.
   \fancypagestyle{normal}{
     \fancyhf{}
@@ -129,13 +129,13 @@
   % Redefine \cleardoublepage so that the blank page between chapters
   % gets the plain style and not the fancy style.  This is described
   % in the documentation for the fancyhdr package by Piet von Oostrum.
-  \@ifundefined{chapter}{}{
+  \@@ifundefined{chapter}{}{
     \renewcommand{\cleardoublepage}{
-      \clearpage\if@openright \ifodd\c@page\else
+      \clearpage\if@@openright \ifodd\c@@page\else
       \hbox{}
       \thispagestyle{plain}
       \newpage
-      \if@twocolumn\hbox{}\newpage\fi\fi\fi
+      \if@@twocolumn\hbox{}\newpage\fi\fi\fi
     }
   }
 }
@@ -181,26 +181,26 @@
 }
 
 % Augment the sectioning commands used to get our own font family in place:
-\renewcommand{\section}{\@startsection {section}{1}{\z@}%
-                                   {-3.5ex \@plus -1ex \@minus -.2ex}%
-                                   {2.3ex \@plus.2ex}%
-                                   {\reset@font\Large\HeaderFamily}}
-\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
-                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                     {1.5ex \@plus .2ex}%
-                                     {\reset@font\large\HeaderFamily}}
-\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
-                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                     {1.5ex \@plus .2ex}%
-                                     {\reset@font\normalsize\HeaderFamily}}
-\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
-                                    {3.25ex \@plus1ex \@minus.2ex}%
+\renewcommand{\section}{\@@startsection {section}{1}{\z@@}%
+                                   {-3.5ex \@@plus -1ex \@@minus -.2ex}%
+                                   {2.3ex \@@plus.2ex}%
+                                   {\reset@@font\Large\HeaderFamily}}
+\renewcommand{\subsection}{\@@startsection{subsection}{2}{\z@@}%
+                                     {-3.25ex\@@plus -1ex \@@minus -.2ex}%
+                                     {1.5ex \@@plus .2ex}%
+                                     {\reset@@font\large\HeaderFamily}}
+\renewcommand{\subsubsection}{\@@startsection{subsubsection}{3}{\z@@}%
+                                     {-3.25ex\@@plus -1ex \@@minus -.2ex}%
+                                     {1.5ex \@@plus .2ex}%
+                                     {\reset@@font\normalsize\HeaderFamily}}
+\renewcommand{\paragraph}{\@@startsection{paragraph}{4}{\z@@}%
+                                    {3.25ex \@@plus1ex \@@minus.2ex}%
                                     {-1em}%
-                                    {\reset@font\normalsize\HeaderFamily}}
-\renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
-                                       {3.25ex \@plus1ex \@minus .2ex}%
+                                    {\reset@@font\normalsize\HeaderFamily}}
+\renewcommand{\subparagraph}{\@@startsection{subparagraph}{5}{\parindent}%
+                                       {3.25ex \@@plus1ex \@@minus .2ex}%
                                        {-1em}%
-                                      {\reset@font\normalsize\HeaderFamily}}
+                                      {\reset@@font\normalsize\HeaderFamily}}
 
 
 % Underscore hack (only act like subscript operator if in math mode)
@@ -255,30 +255,30 @@
 
 % Command to generate a reference to a function, statement, keyword,
 % operator.
-\newcommand{\stindex}[1]{\indexii{statement}{#1@{\idxcode{#1}}}}
-\newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
-\newcommand{\exindex}[1]{\indexii{exception}{#1@{\idxcode{#1}}}}
+\newcommand{\stindex}[1]{\indexii{statement}{#1@@{\idxcode{#1}}}}
+\newcommand{\opindex}[1]{\indexii{operator}{#1@@{\idxcode{#1}}}}
+\newcommand{\exindex}[1]{\indexii{exception}{#1@@{\idxcode{#1}}}}
 \newcommand{\obindex}[1]{\indexii{object}{#1}}
-\newcommand{\bifuncindex}[1]{\index{#1@{\idxcode{#1()}} (built-in function)}}
+\newcommand{\bifuncindex}[1]{\index{#1@@{\idxcode{#1()}} (built-in function)}}
 
 % Add an index entry for a module
-\newcommand{\refmodule}[2]{\index{#1@{\idxcode{#1}} (#2module)}}
+\newcommand{\refmodule}[2]{\index{#1@@{\idxcode{#1}} (#2module)}}
 \newcommand{\refmodindex}[1]{\refmodule{#1}{}}
 \newcommand{\refbimodindex}[1]{\refmodule{#1}{built-in }}
 \newcommand{\refexmodindex}[1]{\refmodule{#1}{extension }}
 \newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
 
 % support for the module index
-\if@usemoduleindex
+\if@@usemoduleindex
   \newwrite\modindexfile
   \openout\modindexfile=mod\jobname.idx
 \fi
 
 % Add the defining entry for a module
 \newcommand{\defmodindex}[2]{%
-  \index{#1@{\idxcode{#1}} (#2module)|textbf}%
+  \index{#1@@{\idxcode{#1}} (#2module)|textbf}%
   \setindexsubitem{(in module #1)}%
-  \if@usemoduleindex%
+  \if@@usemoduleindex%
     \write\modindexfile{#1 \thepage}%
   \fi}
 
@@ -291,9 +291,9 @@
 \newcommand{\exmodindex}[1]{\defmodindex{#1}{extension }}
 
 % Additional string for an index entry
-\newcommand{\index@subitem}{}
-\newcommand{\setindexsubitem}[1]{\renewcommand{\index@subitem}{#1}}
-\newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \index@subitem}}
+\newcommand{\index@@subitem}{}
+\newcommand{\setindexsubitem}[1]{\renewcommand{\index@@subitem}{#1}}
+\newcommand{\ttindex}[1]{\index{#1@@{\idxcode{#1}} \index@@subitem}}
 
 
 % {fulllineitems} is used in one place in libregex.tex, but is really for
@@ -314,13 +314,13 @@
 \newenvironment{cfuncdesc}[3]{%
   \begin{fulllineitems}%
     \item[\code{#1 \bfcode{#2}(\varvars{#3})}]%
-    \index{#2@{\idxcode{#2()}}}%
+    \index{#2@@{\idxcode{#2()}}}%
 }{\end{fulllineitems}}
 
 \newenvironment{cvardesc}[2]{%
   \begin{fulllineitems}%
     \item[\code{#1 \bfcode{#2}}]%
-    \index{#2@{\idxcode{#2}}}%
+    \index{#2@@{\idxcode{#2}}}%
 }{\end{fulllineitems}}
 
 \newenvironment{ctypedesc}[1]{%
@@ -389,7 +389,7 @@
 \newcommand{\NULL}{\code{NULL}}
 
 % code is the most difficult one...
-\newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
+\newcommand{\code}[1]{{\@@vobeyspaces\@@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \mbox{\codefont{#1}}}}
 
 \newcommand{\bfcode}[1]{\code{\bfseries#1}} % bold-faced code font
@@ -408,7 +408,7 @@
 
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
-\@ifundefined{pdfannotlink}{%
+\@@ifundefined{pdfannotlink}{%
   \newcommand{\pythonurl}[1]{\mbox{\small\textsf{#1}}}%
 }{
   \newcommand{\pythonurl}[1]{{%
@@ -491,8 +491,8 @@
 }
 
 \newcommand{\itemnewline}[1]{%
-  \@tempdima\linewidth%
-  \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
+  \@@tempdima\linewidth%
+  \advance\@@tempdima \leftmargin\makebox[\@@tempdima][l]{#1}%
 }
 
 \newcommand{\sectcode}[1]{{\sectcodefont{#1}}}
@@ -508,20 +508,20 @@
 %
 %  \end{seealso}
 
-\newif\if@keyedmodule\@keyedmodulefalse
-\newcommand{\@modulebadkey}{{--just-some-junk--}}
+\newif\if@@keyedmodule\@@keyedmodulefalse
+\newcommand{\@@modulebadkey}{{--just-some-junk--}}
 
-\@ifundefined{pdfannotlink}{%
-  \newcommand{\seemodule}[3][\@modulebadkey]{%
-    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
-    \ref{module-\@modulekey}:\quad %
+\@@ifundefined{pdfannotlink}{%
+  \newcommand{\seemodule}[3][\@@modulebadkey]{%
+    \ifx\@@modulebadkey#1\def\@@modulekey{#2}\else\def\@@modulekey{#1}\fi%
+    \ref{module-\@@modulekey}:\quad %
     Module \module{#2}%
     \quad (#3)%
   }
-}{\newcommand{\seemodule}[3][\@modulebadkey]{%
-    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
-    \ref{module-\@modulekey}:\quad %
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label.module-\@modulekey}%
+}{\newcommand{\seemodule}[3][\@@modulebadkey]{%
+    \ifx\@@modulebadkey#1\def\@@modulekey{#2}\else\def\@@modulekey{#1}\fi%
+    \ref{module-\@@modulekey}:\quad %
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label.module-\@@modulekey}%
      \LinkColor Module \module{#2} \NormalColor%
      \pdfendlink%
     }%
@@ -530,21 +530,6 @@
 }
 \newenvironment{seealso}[0]{
   \strong{See Also:}\par
-  % These should only be defined within the {seealso} environment:
-  %\def\see@module##1##2{\ref{module-##1}:\quad Module \module{##1}\quad (##2)}
-%  \def\@seemodule[##1]##2##3{%
-%    \ref{module-##2}:\quad %
-%    \@ifundefined{pdfannotlink}{%
-%      Module \module{##2}%
-%    }{\if@keyedmodule\@keyedmodulefalse\fi%
-%      {\pdfannotlink attr{/Border [0 0 0]} goto name{module.##1}%
-%       \LinkColor Module \module{##2}\NormalColor\pdfendlink}%
-%      }%
-%    \quad (##3)%
-%  }
-%  \def\seemodule{%
-%    \@ifnextchar [\@seemodule{\@keyedmoduletrue \@seemodule[]}%
-%  }
   \def\seetext##1{\par{##1}}
 }{\par}
 
@@ -564,34 +549,34 @@
 % \date{}.  This allows the date to reflect the document's date and
 % release to specify the Python release that is documented.
 %
-\newcommand{\@release}{}
+\newcommand{\@@release}{}
 \newcommand{\version}{}
 \newcommand{\releasename}{Release}
 \newcommand{\release}[1]{%
-  \renewcommand{\@release}{\releasename\space\version}%
+  \renewcommand{\@@release}{\releasename\space\version}%
   \renewcommand{\version}{#1}}
 
 % Allow specification of the author's address separately from the
 % author's name.  This can be used to format them differently, which
 % is a good thing.
 %
-\newcommand{\@authoraddress}{}
-\newcommand{\authoraddress}[1]{\renewcommand{\@authoraddress}{#1}}
+\newcommand{\@@authoraddress}{}
+\newcommand{\authoraddress}[1]{\renewcommand{\@@authoraddress}{#1}}
 
 % This sets up the fancy chapter headings that make the documents look
 % at least a little better than the usual LaTeX output.
 %
-\@ifundefined{ChTitleVar}{}{
+\@@ifundefined{ChTitleVar}{}{
   \ChNameVar{\raggedleft\normalsize\HeaderFamily}
   \ChNumVar{\raggedleft \bfseries\Large\HeaderFamily}
   \ChTitleVar{\raggedleft \rm\Huge\HeaderFamily}
   % This creates chapter heads without the leading \vspace*{}:
-  \def\@makechapterhead#1{%
-    {\parindent \z@ \raggedright \normalfont
-      \ifnum \c@secnumdepth >\m@ne
+  \def\@@makechapterhead#1{%
+    {\parindent \z@@ \raggedright \normalfont
+      \ifnum \c@@secnumdepth >\m@@ne
         \DOCH
       \fi
-      \interlinepenalty\@M
+      \interlinepenalty\@@M
       \DOTI{#1}
     }
   }
