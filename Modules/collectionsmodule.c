@@ -247,14 +247,21 @@ PyDoc_STRVAR(extendleft_doc,
 static PyObject *
 deque_rotate(dequeobject *deque, PyObject *args)
 {
-	int i, n;
+	int i, n=1, len=deque->len, halflen=(len+1)>>1;
 	PyObject *item, *rv;
 
-	if (!PyArg_ParseTuple(args, "i:rotate", &n))
+	if (!PyArg_ParseTuple(args, "|i:rotate", &n))
 		return NULL;
 
-	if (n == 0  ||  deque->len == 0)
+	if (len == 0)
 		Py_RETURN_NONE;
+	if (n > halflen || n < -halflen) {
+		n %= len;
+		if (n > halflen)
+			n -= len;
+		else if (n < -halflen)
+			n += len;
+	}
 
 	for (i=0 ; i<n ; i++) {
 		item = deque_pop(deque, NULL);
@@ -280,7 +287,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 }
 
 PyDoc_STRVAR(rotate_doc, 
-"Rotate the deque n steps to the right.  If n is negative, rotates left.");
+"Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
 
 static int
 deque_len(dequeobject *deque)
