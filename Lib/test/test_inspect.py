@@ -202,6 +202,47 @@ for fname in files_to_clean_up:
     except:
         pass
 
+# Test for decorators as well.
+
+source = r"""
+def wrap(foo=None):
+  def wrapper(func):
+    return func
+  return wrapper
+
+def replace(func):
+  def insteadfunc():
+    print 'hello'
+  return insteadfunc
+
+# two decorators, one with argument
+@wrap()
+@wrap(wrap)
+def wrapped():
+  pass
+
+@replace
+def gone():
+  pass"""
+
+file = open(TESTFN + "2", "w")
+file.write(source)
+file.close()
+files_to_clean_up = [TESTFN + "2", TESTFN + '2c', TESTFN + '2o']
+
+mod2 = imp.load_source("testmod3", TESTFN + "2")
+
+test(inspect.getsource(mod2.wrapped) == sourcerange(13, 16),
+     "inspect.getsource(mod.wrapped)")
+test(inspect.getsource(mod2.gone) == sourcerange(8, 9),
+     "inspect.getsource(mod.gone)")
+
+for fname in files_to_clean_up:
+    try:
+        os.unlink(fname)
+    except:
+        pass
+
 # Test classic-class method resolution order.
 class A:    pass
 class B(A): pass
