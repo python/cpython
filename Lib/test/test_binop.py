@@ -3,24 +3,6 @@
 import test_support
 import unittest
 
-class getset(object):
-
-    """Define a get/set attribute descriptor.
-
-    This will eventually become a built-in."""
-
-    def __init__(self, get, set=None):
-        self.__get = get
-        self.__set = set
-
-    def __get__(self, inst, type=None):
-        return self.__get(inst)
-
-    def __set__(self, inst, value):
-        if self.__set is None:
-            raise AttributeError, "this attribute is read-only"
-        return self.__set(inst, value)
-
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""
     while a:
