@@ -24,6 +24,7 @@
  * 2000-10-24 fl  really fixed assert_not; reset groups in findall
  * 2000-12-21 fl  fixed memory leak in groupdict
  * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
+ * 2001-01-15 fl  don't use recursion for unbounded MIN_UTIL
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -38,7 +39,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2000 by Secret Labs AB ";
+char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -1012,11 +1013,21 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             /* see if the tail matches */
             state->repeat = rp->prev;
-            i = SRE_MATCH(state, pattern, level + 1);
+            if (rp->pattern[2] == 65535) {
+                /* unbounded repeat */
+                for (;;) {
+                    i = SRE_MATCH(state, pattern, level + 1);
+                    if (i || ptr >= end)
+                        break;
+                    state->ptr = ++ptr;
+                }
+            } else
+                i = SRE_MATCH(state, pattern, level + 1);
             if (i) {
                 /* free(rp); */
                 return i;
             }
+
             state->ptr = ptr;
             state->repeat = rp;
 

@@ -248,7 +248,7 @@ test(r"""sre.match(r'(x)*', 50000*'x').span()""",
 test(r"""sre.match(r'(x)*y', 50000*'x'+'y').span()""",
      (0, 50001), RuntimeError)
 test(r"""sre.match(r'(x)*?y', 50000*'x'+'y').span()""",
-     (0, 50001), RuntimeError)
+     (0, 50001)) # this works in 2.1
 
 from re_tests import *
 
