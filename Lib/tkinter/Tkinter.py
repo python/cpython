@@ -11,6 +11,8 @@ def _isfunctype(func):
 FunctionType = type(_isfunctype)
 ClassType = type(_Dummy)
 MethodType = type(_Dummy.meth)
+TupleType = type(())
+ListType = type([])
 
 def _tkerror(err):
 	pass
@@ -518,7 +520,7 @@ class Widget(Misc, Pack, Place):
 		del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
 	def _do(self, name, args=()):
-		apply(self.tk.call, (self._w, name) + args) 
+		return apply(self.tk.call, (self._w, name) + args) 
 
 class Toplevel(Widget, Wm):
 	def __init__(self, master=None, cnf={}):
@@ -594,26 +596,26 @@ class Canvas(Widget):
 			args = args[:-1]
 		else:
 			cnf = {}
-		v = (self._w, 'create', itemType) + args
+		v = (self._w, 'create', itemType) + _flatten(args)
 		for k in cnf.keys():
 			v = v + ('-' + k, cnf[k])
 		return self.tk.getint(apply(self.tk.call, v))
 	def create_arc(self, *args):
-		Canvas._create(self, 'arc', args)
+		return Canvas._create(self, 'arc', args)
 	def create_bitmap(self, *args):
-		Canvas._create(self, 'bitmap', args)
+		return Canvas._create(self, 'bitmap', args)
 	def create_line(self, *args):
-		Canvas._create(self, 'line', args)
+		return Canvas._create(self, 'line', args)
 	def create_oval(self, *args):
-		Canvas._create(self, 'oval', args)
+		return Canvas._create(self, 'oval', args)
 	def create_polygon(self, *args):
-		Canvas._create(self, 'polygon', args)
+		return Canvas._create(self, 'polygon', args)
 	def create_rectangle(self, *args):
-		Canvas._create(self, 'rectangle', args)
+		return Canvas._create(self, 'rectangle', args)
 	def create_text(self, *args):
-		Canvas._create(self, 'text', args)
+		return Canvas._create(self, 'text', args)
 	def create_window(self, *args):
-		Canvas._create(self, 'window', args)
+		return Canvas._create(self, 'window', args)
 	def dchars(self, *args):
 		self._do('dchars', args)
 	def delete(self, *args):
@@ -669,6 +671,15 @@ class Canvas(Widget):
 		self.tk.call(self._w, 'xview', index)
 	def yview(self, index):
 		self.tk.call(self._w, 'yview', index)
+
+def _flatten(tuple):
+	res = ()
+	for item in tuple:
+		if type(item) in (TupleType, ListType):
+			res = res + _flatten(item)
+		else:
+			res = res + (item,)
+	return res
 
 class Checkbutton(Widget):
 	def __init__(self, master=None, cnf={}):
