@@ -178,8 +178,10 @@ class StringIO:
             self.len = newpos
         self.pos = newpos
 
-    def writelines(self, list):
-        self.write(''.join(list))
+    def writelines(self, iterable):
+        write = self.write
+        for line in iterable:
+            write(line)
 
     def flush(self):
         _complain_ifclosed(self.closed)
