@@ -4,6 +4,57 @@ XXX Release date: DD-MMM-2002 XXX
 
 Type/class unification and new-style classes
 
+- Assignment to __class__ is disallowed if either the old and the new
+  class is a statically allocated type object (such as defined by an
+  extenson module).  This prevents anomalies like 2.__class__ = bool.
+
+- New-style object creation and deallocation have been sped up
+  significantly; they are now faster than classic instance creation
+  and deallocation.
+
+- The __slots__ variable can now mention "private" names, and the
+  right thing will happen (e.g. __slots__ = ["__foo"]).
+
+- The built-ins slice() and buffer() are now callable types.  The
+  types classobj (formerly class), code, function, instance, and
+  instancemethod (formerly instance-method), which have no built-in
+  names but are accessible through the types module, are now also
+  callable.  The type dict-proxy is renamed to dictproxy.
+
+- Cycles going through the __class__ link of a new-style instance are
+  now detected by the garbage collector.
+
+- Classes using __slots__ are now properly garbage collected.
+  [SF bug 519621]
+
+- Tightened the __slots__ rules: a slot name must be a valid Python
+  identifier.
+
+- The constructor for the module type now requires a name argument and
+  takes an optional docstring argument.  Previously, this constructor
+  ignored its arguments.  As a consequence, deriving a class from a
+  module (not from the module type) is now illegal; previously this
+  created an unnamed module, just like invoking the module type did.
+  [SF bug 563060]
+
+- A new type object, 'basestring', is added.  This is a common base type
+  for 'str' and 'unicode', and can be used instead of
+  types.StringTypes, e.g. to test whether something is "a string":
+  isinstance(x, basestring) is True for Unicode and 8-bit strings.  This
+  is an abstract base class and cannot be instantiated directly.
+
+- Changed new-style class instantiation so that when C's __new__
+  method returns something that's not a C instance, its __init__ is
+  not called.  [SF bug #537450]
+
+- Fixed super() to work correctly with class methods.  [SF bug #535444]
+
+- If you try to pickle an instance of a class that has __slots__ but
+  doesn't define or override __getstate__, a TypeError is now raised.
+  This is done by adding a bozo __getstate__ to the class that always
+  raises TypeError.  (Before, this would appear to be pickled, but the
+  state of the slots would be lost.)
+
 Core and builtins
 
 - XXX Karatsuba multiplication.  This is currently used if and only
@@ -80,17 +131,8 @@ Core and builtins
   but a buffer object would be returned when the repetition count
   was one or when the slice range was all inclusive.
 
-- The __slots__ variable can now mention "private" names, and the
-  right thing will happen (e.g. __slots__ = ["__foo"]).
-
 - Unicode objects in sys.path are no longer ignored but treated
   as directory names.
-
-- The built-ins slice() and buffer() are now callable types.  The
-  types classobj (formerly class), code, function, instance, and
-  instancemethod (formerly instance-method), which have no built-in
-  names but are accessible through the types module, are now also
-  callable.  The type dict-proxy is renamed to dictproxy.
 
 - Fixed string.startswith and string.endswith builtin methods
   so they accept negative indices.  [SF bug 493951]
@@ -102,33 +144,11 @@ Core and builtins
   with a third "stride" parameter.  For example, "hello world"[::-1]
   gives "dlrow olleh".
 
-- Cycles going through the __class__ link of a new-style instance are
-  now detected by the garbage collector.
-
-- Classes using __slots__ are now properly garbage collected.
-  [SF bug 519621]
-
-- Tightened the __slots__ rules: a slot name must be a valid Python
-  identifier.
-
-- The constructor for the module type now requires a name argument and
-  takes an optional docstring argument.  Previously, this constructor
-  ignored its arguments.  As a consequence, deriving a class from a
-  module (not from the module type) is now illegal; previously this
-  created an unnamed module, just like invoking the module type did.
-  [SF bug 563060]
-
 - A new warning PendingDeprecationWarning was added to provide
   direction on features which are in the process of being deprecated.
   The warning will not be printed by default.  To see the pending
   deprecations, use -Walways::PendingDeprecationWarning::
   as a command line option or warnings.filterwarnings() in code.
-
-- A new type object, 'basestring', is added.  This is a common base type
-  for 'str' and 'unicode', and can be used instead of
-  types.StringTypes, e.g. to test whether something is "a string":
-  isinstance(x, basestring) is True for Unicode and 8-bit strings.  This
-  is an abstract base class and cannot be instantiated directly.
 
 - Deprecated features of xrange objects have been removed as
   promised.  The start, stop, and step attributes and the tolist()
@@ -158,12 +178,6 @@ Core and builtins
 - Added a new dict method pop(key).  This removes and returns the
   value corresponding to key.  [SF patch #539949]
 
-- Changed new-style class instantiation so that when C's __new__
-  method returns something that's not a C instance, its __init__ is
-  not called.  [SF bug #537450]
-
-- Fixed super() to work correctly with class methods.  [SF bug #535444]
-
 - A new built-in type, bool, has been added, as well as built-in
   names for its two values, True and False.  Comparisons and sundry
   other operations that return a truth value have been changed to
@@ -182,12 +196,6 @@ Core and builtins
   Misc/pymemcompat.h, which can be bundled with 3rd party extensions
   and lets them use the same API with Python versions from 1.5.2
   onwards.
-
-- If you try to pickle an instance of a class that has __slots__ but
-  doesn't define or override __getstate__, a TypeError is now raised.
-  This is done by adding a bozo __getstate__ to the class that always
-  raises TypeError.  (Before, this would appear to be pickled, but the
-  state of the slots would be lost.)
 
 - PyErr_Display will provide file and line information for all exceptions
   that have an attribute print_file_and_line, not just SyntaxErrors.
