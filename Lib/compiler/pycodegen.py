@@ -23,9 +23,13 @@ def parse(path):
     t = transformer.Transformer()
     return t.parsesuite(src)
 
-def walk(tree, visitor):
+def walk(tree, visitor, verbose=None):
+    print visitor, "start"
     w = ASTVisitor()
+    if verbose is not None:
+        w.VERBOSE = verbose
     w.preorder(tree, visitor)
+    print visitor, "finish"
     return w.visitor
 
 class ASTVisitor:
@@ -64,7 +68,7 @@ class ASTVisitor:
     XXX Perhaps I can use a postorder walk for the code generator?
     """
 
-    VERBOSE = 1
+    VERBOSE = 0
 
     def __init__(self):
 	self.node = None
@@ -99,8 +103,12 @@ class ASTVisitor:
         self.node = node
         className = node.__class__.__name__
         meth = getattr(self.visitor, 'visit' + className, None)
-        if self.VERBOSE:
-            print "dispatch", className, (meth and meth.__name__ or '')
+        if self.VERBOSE > 0:
+            if self.VERBOSE == 1:
+                if meth is None:
+                    print "dispatch", className
+            else:
+                print "dispatch", className, (meth and meth.__name__ or '')
         if meth:
             return meth(node)
 
@@ -123,6 +131,9 @@ class CodeGenerator:
         """
         return self.code.makeCodeObject(self.maxStack)
 
+    def isLocalName(self, name):
+	return self.locals.top().has_elt(name)
+
     def push(self, n):
         self.curStack = self.curStack + n
         if self.curStack > self.maxStack:
@@ -134,11 +145,15 @@ class CodeGenerator:
         else:
             self.curStack = 0
 
+    def assertStackEmpty(self):
+        if self.curStack != 0:
+            print "warning: stack should be empty"
+
     def visitDiscard(self, node):
         return 1
 
     def visitModule(self, node):
-	lnf = walk(node.node, LocalNameFinder())
+	lnf = walk(node.node, LocalNameFinder(), 0)
 	self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.code.emit('LOAD_CONST', None)
@@ -162,11 +177,14 @@ class CodeGenerator:
 	return 1
 
     def visitIf(self, node):
-	after = ForwardRef()
+	after = StackRef()
 	for test, suite in node.tests:
-	    self.code.setLineNo(test.lineno)
+            if hasattr(test, 'lineno'):
+                self.code.setLineNo(test.lineno)
+            else:
+                print "warning", "no line number"
 	    self.visit(test)
-	    dest = ForwardRef()
+	    dest = StackRef()
 	    self.code.jumpIfFalse(dest)
 	    self.code.popTop()
 	    self.visit(suite)
@@ -177,6 +195,30 @@ class CodeGenerator:
 	    self.visit(node.else_)
 	after.bind(self.code.getCurInst())
 	return 1
+
+    def visitFor(self, node):
+        # three refs needed
+        start = StackRef()
+        anchor = StackRef()
+        breakAnchor = StackRef()
+
+        self.code.emit('SET_LINENO', node.lineno)
+        self.code.emit('SETUP_LOOP', breakAnchor)
+        self.visit(node.list)
+        self.visit(ast.Const(0))
+        start.bind(self.code.getCurInst())
+        self.code.setLineNo(node.lineno)
+        self.code.emit('FOR_LOOP', anchor)
+        self.push(1)
+        self.visit(node.assign)
+        self.visit(node.body)
+        self.code.emit('JUMP_ABSOLUTE', start)
+        anchor.bind(self.code.getCurInst())
+        self.code.emit('POP_BLOCK')
+        if node.else_:
+            self.visit(node.else_)
+        breakAnchor.bind(self.code.getCurInst())
+        return 1
 
     def visitCompare(self, node):
 	"""Comment from compile.c follows:
@@ -214,28 +256,53 @@ class CodeGenerator:
 	"""
 	self.visit(node.expr)
 	# if refs are never emitted, subsequent bind call has no effect
-	l1 = ForwardRef()
-	l2 = ForwardRef()
+	l1 = StackRef()
+	l2 = StackRef()
 	for op, code in node.ops[:-1]:
 	    # emit every comparison except the last
 	    self.visit(code)
 	    self.code.dupTop()
 	    self.code.rotThree()
 	    self.code.compareOp(op)
+            # dupTop and compareOp cancel stack effect
 	    self.code.jumpIfFalse(l1)
 	    self.code.popTop()
+            self.pop(1)
 	if node.ops:
 	    # emit the last comparison
 	    op, code = node.ops[-1]
 	    self.visit(code)
 	    self.code.compareOp(op)
+            self.pop(1)
 	if len(node.ops) > 1:
 	    self.code.jumpForward(l2)
 	    l1.bind(self.code.getCurInst())
 	    self.code.rotTwo()
 	    self.code.popTop()
+            self.pop(1)
 	    l2.bind(self.code.getCurInst())
 	return 1
+
+    def visitAssign(self, node):
+        self.code.setLineNo(node.lineno)
+        print "Assign"
+        print node.nodes
+        print node.expr
+        print
+        self.visit(node.expr)
+        for elt in node.nodes:
+            if isinstance(elt, ast.Node):
+                self.visit(elt)
+        return 1
+
+    def visitAssName(self, node):
+        if node.flags != 'OP_ASSIGN':
+            print "oops", node.flags
+        if self.isLocalName(node.name):
+            self.code.emit('STORE_FAST', node.name)
+        else:
+            self.code.emit('STORE_GLOBAL', node.name)
+        self.pop(1)
 
     def binaryOp(self, node, op):
 	self.visit(node.left)
@@ -243,6 +310,11 @@ class CodeGenerator:
 	self.code.emit(op)
         self.pop(1)
 	return 1
+
+    def unaryOp(self, node, op):
+        self.visit(node.expr)
+        self.code.emit(op)
+        return 1
 
     def visitAdd(self, node):
 	return self.binaryOp(node, 'BINARY_ADD')
@@ -256,9 +328,20 @@ class CodeGenerator:
     def visitDiv(self, node):
 	return self.binaryOp(node, 'BINARY_DIVIDE')
 
+    def visitUnarySub(self, node):
+        return self.unaryOp(node, 'UNARY_NEGATIVE')
+
+    def visitUnaryAdd(self, node):
+        return self.unaryOp(node, 'UNARY_POSITIVE')
+
+    def visitUnaryInvert(self, node):
+        return self.unaryOp(node, 'UNARY_INVERT')
+
+    def visitBackquote(self, node):
+        return self.unaryOp(node, 'UNARY_CONVERT')
+
     def visitName(self, node):
-	locals = self.locals.top()
-	if locals.has_elt(node.name):
+        if self.isLocalName(node.name):
 	    self.code.loadFast(node.name)
 	else:
 	    self.code.loadGlobal(node.name)
@@ -267,11 +350,21 @@ class CodeGenerator:
     def visitConst(self, node):
 	self.code.loadConst(node.value)
         self.push(1)
+        return 1
+
+    def visitTuple(self, node):
+        for elt in node.nodes:
+            self.visit(elt)
+        self.code.emit('BUILD_TUPLE', len(node.nodes))
+        self.pop(len(node.nodes))
+        return 1
 
     def visitReturn(self, node):
 	self.code.setLineNo(node.lineno)
 	self.visit(node.value)
 	self.code.returnValue()
+        self.pop(1)
+        self.assertStackEmpty()
 	return 1
 
     def visitRaise(self, node):
@@ -326,14 +419,14 @@ class NestedCodeGenerator(CodeGenerator):
             self.code.setVarArgs()
         if func.kwargs:
             self.code.setKWArgs()
-        lnf = walk(func.code, LocalNameFinder(args))
+        lnf = walk(func.code, LocalNameFinder(args), 0)
         self.locals.push(lnf.getLocals())
 
     def __repr__(self):
         return "<NestedCodeGenerator: %s>" % self.name
 
     def visitFunction(self, node):
-	lnf = walk(node.code, LocalNameFinder(node.argnames))
+	lnf = walk(node.code, LocalNameFinder(node.argnames), 0)
 	self.locals.push(lnf.getLocals())
         # XXX need to handle def foo((a, b)):
 	self.code.setLineNo(node.lineno)
@@ -376,21 +469,22 @@ class Label:
     def __repr__(self):
 	return "Label(%d)" % self.num
 
-class ForwardRef:
+class StackRef:
+    """Manage stack locations for jumps, loops, etc."""
     count = 0
 
     def __init__(self, id=None, val=None):
 	if id is None:
-	    id = ForwardRef.count
-	    ForwardRef.count = ForwardRef.count + 1
+	    id = StackRef.count
+	    StackRef.count = StackRef.count + 1
 	self.id = id
 	self.val = val
 
     def __repr__(self):
 	if self.val:
-	    return "ForwardRef(val=%d)" % self.val
+	    return "StackRef(val=%d)" % self.val
 	else:
-	    return "ForwardRef(id=%d)" % self.id
+	    return "StackRef(id=%d)" % self.id
 
     def bind(self, inst):
 	self.val = inst
@@ -522,7 +616,11 @@ class PythonVMCode:
                 oparg = self._convertArg(opname, t[1])
                 if opname == 'SET_LINENO':
                     lnotab.nextLine(oparg)
-                hi, lo = divmod(oparg, 256)
+                try:
+                    hi, lo = divmod(oparg, 256)
+                except TypeError:
+                    print opname, oparg
+                    raise
                 lnotab.addCode(chr(self.opnum[opname]) + chr(lo) +
                                chr(hi))
         # why is a module a special case?
@@ -551,7 +649,7 @@ class PythonVMCode:
         return tuple(l)
 
     def _findOffsets(self):
-        """Find offsets for use in resolving ForwardRefs"""
+        """Find offsets for use in resolving StackRefs"""
         self.offsets = []
         cur = 0
         for t in self.insts:
@@ -560,10 +658,10 @@ class PythonVMCode:
             if l == 1:
                 cur = cur + 1
             elif l == 2:
-                arg = t[1]
-                if isinstance(arg, ForwardRef):
-                    arg.__offset = cur
                 cur = cur + 3
+                arg = t[1]
+                if isinstance(arg, StackRef):
+                    arg.__offset = cur
 
     def _convertArg(self, op, arg):
         """Convert the string representation of an arg to a number
@@ -577,22 +675,25 @@ class PythonVMCode:
             return arg
         if op == 'LOAD_CONST':
             return self._lookupName(arg, self.consts)
-        if op == 'LOAD_FAST':
+        if op in self.localOps:
             if arg in self.names:
                 return self._lookupName(arg, self.varnames)
             else:
                 return self._lookupName(arg, self.varnames, self.names)
-        if op == 'LOAD_GLOBAL':
+        if op in self.globalOps:
             return self._lookupName(arg, self.names)
         if op == 'STORE_NAME':
             return self._lookupName(arg, self.names)
         if op == 'COMPARE_OP':
             return self.cmp_op.index(arg)
         if self.hasjrel.has_elt(op):
-            return self.offsets[arg.resolve()]
-        if self.hasjabs.has_elt(op):
             return self.offsets[arg.resolve()] - arg.__offset
+        if self.hasjabs.has_elt(op):
+            return self.offsets[arg.resolve()]
         return arg
+
+    localOps = ('LOAD_FAST', 'STORE_FAST')
+    globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL')
 
     def _lookupName(self, name, list, list2=None):
         """Return index of name in list, appending if necessary
@@ -787,8 +888,15 @@ class CompiledModule:
         return magic + mtime
 	
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
+    import getopt
+
+    opts, args = getopt.getopt(sys.argv[1:], 'v')
+    for k, v in opts:
+        if k == '-v':
+            ASTVisitor.VERBOSE = ASTVisitor.VERBOSE + 1
+            print k
+    if args:
+        filename = args[0]
     else:
         filename = 'test.py'
     buf = open(filename).read()
