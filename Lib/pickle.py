@@ -141,7 +141,7 @@ BINFLOAT        = 'G'   # push float; arg is 8-byte float encoding
 TRUE            = 'I01\n'  # not an opcode; see INT docs in pickletools.py
 FALSE           = 'I00\n'  # not an opcode; see INT docs in pickletools.py
 
-# Protocol 2 (XXX not yet implemented).
+# Protocol 2
 
 PROTO           = '\x80'  # identify pickle protocol
 NEWOBJ          = '\x81'  # build object by applying cls.__new__ to argtuple
