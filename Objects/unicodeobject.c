@@ -5081,16 +5081,17 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    }
 	    if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
 		assert(pbuf[0] == '0');
-		assert(pbuf[1] == c);
-		if (fill != ' ') {
-		    *res++ = *pbuf++;
-		    *res++ = *pbuf++;
+		if (pbuf[1] == c) {
+			if (fill != ' ') {
+			    *res++ = *pbuf++;
+			    *res++ = *pbuf++;
+			}
+			rescnt -= 2;
+			width -= 2;
+			if (width < 0)
+			    width = 0;
+			len -= 2;
 		}
-		rescnt -= 2;
-		width -= 2;
-		if (width < 0)
-		    width = 0;
-		len -= 2;
 	    }
 	    if (width > len && !(flags & F_LJUST)) {
 		do {
@@ -5101,9 +5102,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    if (fill == ' ') {
 		if (sign)
 		    *res++ = sign;
-		if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
+		if ((flags & F_ALT) && (c == 'x' || c == 'X') &&
+		    pbuf[1] == c) {
 		    assert(pbuf[0] == '0');
-		    assert(pbuf[1] == c);
 		    *res++ = *pbuf++;
 		    *res++ = *pbuf++;
 		}
