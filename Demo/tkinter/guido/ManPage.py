@@ -111,14 +111,14 @@ class EditableManPage(ScrolledText):
 		self.lineno = self.lineno + 1
 
 	def insert_prop(self, str, prop = ' '):
-		here = self.index(AtInsert())
-		self.insert(AtInsert(), str[0])
+		here = self.index('end')
+		self.insert('end', str[0])
 		tags = self.tag_names(here)
 		for tag in tags:
 			self.tag_remove(tag, here)
 		if prop != ' ':
 			self.tag_add(prop, here)
-		self.insert(AtInsert(), str[1:])
+		self.insert('end', str[1:])
 
 # Readonly Man Page class -- disables editing, otherwise the same
 class ReadonlyManPage(EditableManPage):
