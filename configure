@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.83 
+# From configure.in Revision: 1.84 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1865,7 +1865,7 @@ then
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="-shared -all";;
+		   *) CCSHARED="";;
 		   esac;;
 	esac
 fi

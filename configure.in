@@ -314,7 +314,7 @@ then
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="-shared -all";;
+		   *) CCSHARED="";;
 		   esac;;
 	esac
 fi
