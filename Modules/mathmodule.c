@@ -55,7 +55,7 @@ math_error()
 	else if (errno == ERANGE)
 		err_setstr(OverflowError, "math range error");
 	else
-		err_errno(RuntimeError);
+		err_errno(ValueError); /* Unexpected math error */
 	return NULL;
 }
 
