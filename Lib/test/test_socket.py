@@ -325,7 +325,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Check that setting it to an invalid type raises TypeError
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
-    # XXX The following three don't test module-level functionality...
+    # XXX The following don't test module-level functionality...
 
     def testSockName(self):
         """Testing getsockname()."""
@@ -347,6 +347,13 @@ class GeneralModuleTests(unittest.TestCase):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.failIf(reuse == 0, "failed to set reuse mode")
+
+    def testSendAfterClose(self):
+        """testing send() after close() with timeout."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        sock.close()
+        self.assertRaises(socket.error, sock.send, "spam")
 
 class BasicTCPTest(SocketConnectedTest):
 
@@ -486,6 +493,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             self.fail("Error trying to do accept after select.")
 
     def _testAccept(self):
+        time.sleep(0.1)
         self.cli.connect((HOST, PORT))
 
     def testConnect(self):
@@ -515,6 +523,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testRecv(self):
         self.cli.connect((HOST, PORT))
+        time.sleep(0.1)
         self.cli.send(MSG)
 
 class FileObjectClassTestCase(SocketConnectedTest):
