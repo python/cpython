@@ -74,7 +74,7 @@
 	<key>CFBundleSignature</key>
 	<string>PytX</string>
 	<key>CFBundleVersion</key>
-	<string>2.2</string>
+	<string>2.3</string>
 	<key>LSRequiresCarbon</key>
     <true/>
 	<key>CSResourcesFileMapped</key>
