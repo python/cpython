@@ -317,7 +317,7 @@ After, f=itemgetter(2), the call f(b) returns b[2].");
 static PyTypeObject itemgetter_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.itemgetter",		/* tp_name */
+	"operator.itemgetter",		/* tp_name */
 	sizeof(itemgetterobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
@@ -424,7 +424,7 @@ After, f=attrgetter('name'), the call f(b) returns b.name.");
 static PyTypeObject attrgetter_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"itertools.attrgetter",		/* tp_name */
+	"operator.attrgetter",		/* tp_name */
 	sizeof(attrgetterobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
