@@ -111,13 +111,13 @@ def main():
 	parse_errno_h(fp, dict)
 	fp.close()
 	
-	fss, ok = macfs.PromptGetFile("Select 2nd errno.h (MSL) or cancel")
+	fss, ok = macfs.PromptGetFile("Select cerrno (MSL) or cancel")
 	if not ok: return
 	fp = open(fss.as_pathname())
 	parse_errno_h(fp, dict)
 	fp.close()
 	
-	fss, ok = macfs.PromptGetFile("Where is Errors.h?")
+	fss, ok = macfs.PromptGetFile("Where is MacErrors.h?")
 	if not ok: return
 	fp = open(fss.as_pathname())
 	parse_errors_h(fp, dict)
