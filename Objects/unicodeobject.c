@@ -1185,15 +1185,17 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 {
     PyObject *v;
     char *p;
-    int i = 0;
-    int overalloc = 2;
     int len;
-    
-    /* Short-cut for emtpy strings */
+    int i = 0;
+    long overalloc = 2;
+    int nallocated;  /* overalloc * size; PyString_ adds one more for \0 */
+
+    /* Short-cut for empty strings */
     if (size == 0)
 	return PyString_FromStringAndSize(NULL, 0);
 
-    v = PyString_FromStringAndSize(NULL, overalloc * size);
+    nallocated = Py_SAFE_DOWNCAST(overalloc * size, long, int);
+    v = PyString_FromStringAndSize(NULL, nallocated);
     if (v == NULL)
         return NULL;
 
@@ -1211,7 +1213,7 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             *p++ = (char)(0xc0 | (ch >> 6));
             *p++ = (char)(0x80 | (ch & 0x3f));
         }
-                        
+
         else {
 	    /* Encode UCS2 Unicode ordinals */
 	    if (ch < 0x10000) {
@@ -1230,9 +1232,11 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                 }
 
 		if (overalloc < 3) {
-		    len = (int)(p - PyString_AS_STRING(v));
+		    len = Py_SAFE_DOWNCAST(p-PyString_AS_STRING(v), long, int);
+                    assert(len <= nallocated);
 		    overalloc = 3;
-		    if (_PyString_Resize(&v, overalloc * size))
+                    nallocated = Py_SAFE_DOWNCAST(overalloc * size, long, int);
+		    if (_PyString_Resize(&v, nallocated))
 			goto onError;
 		    p = PyString_AS_STRING(v) + len;
 		}
@@ -1245,9 +1249,11 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 	    /* Encode UCS4 Unicode ordinals */
 	encodeUCS4:
 	    if (overalloc < 4) {
-		len = (int)(p - PyString_AS_STRING(v));
+                len = Py_SAFE_DOWNCAST(p - PyString_AS_STRING(v), long, int);
+                assert(len <= nallocated);
 		overalloc = 4;
-		if (_PyString_Resize(&v, overalloc * size))
+                nallocated = Py_SAFE_DOWNCAST(overalloc * size, long, int);
+		if (_PyString_Resize(&v, nallocated))
 		    goto onError;
 		p = PyString_AS_STRING(v) + len;
 	    }
@@ -1257,9 +1263,11 @@ PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 	    *p++ = (char)(0x80 | (ch & 0x3f));
 	}
     }
+
     *p = '\0';
-    assert((p - PyString_AS_STRING(v)) <= overalloc*size);
-    if (_PyString_Resize(&v, (int)(p - PyString_AS_STRING(v))))
+    len = Py_SAFE_DOWNCAST(p - PyString_AS_STRING(v), long, int);
+    assert(len <= nallocated);
+    if (_PyString_Resize(&v, len))
 	goto onError;
     return v;
 
