@@ -1,6 +1,8 @@
 """Simple code to extract class & function docstrings from a module.
 
-
+This code is used as an example in the library reference manual in the
+section on using the parser module.  Refer to the manual for a thorough
+discussion of the operation of this code.
 """
 
 import symbol
@@ -23,12 +25,35 @@ def get_docs(fileName):
     return ModuleInfo(tup, basename)
 
 
-class DefnInfo:
+class SuiteInfoBase:
     _docstring = ''
     _name = ''
 
-    def __init__(self, tree):
-	self._name = tree[2][1]
+    def __init__(self, tree = None):
+	self._class_info = {}
+	self._function_info = {}
+	if tree:
+	    self._extract_info(tree)
+
+    def _extract_info(self, tree):
+	# extract docstring
+	if len(tree) == 2:
+	    found, vars = match(DOCSTRING_STMT_PATTERN[1], tree[1])
+	else:
+	    found, vars = match(DOCSTRING_STMT_PATTERN, tree[3])
+	if found:
+	    self._docstring = eval(vars['docstring'])
+	# discover inner definitions
+	for node in tree[1:]:
+	    found, vars = match(COMPOUND_STMT_PATTERN, node)
+	    if found:
+		cstmt = vars['compound']
+		if cstmt[0] == symbol.funcdef:
+		    name = cstmt[2][1]
+		    self._function_info[name] = FunctionInfo(cstmt)
+		elif cstmt[0] == symbol.classdef:
+		    name = cstmt[2][1]
+		    self._class_info[name] = ClassInfo(cstmt)
 
     def get_docstring(self):
 	return self._docstring
@@ -36,38 +61,21 @@ class DefnInfo:
     def get_name(self):
 	return self._name
 
-class SuiteInfoBase(DefnInfo):
-    def __init__(self):
-	self._class_info = {}
-	self._function_info = {}
-
     def get_class_names(self):
 	return self._class_info.keys()
 
     def get_class_info(self, name):
 	return self._class_info[name]
 
-    def _extract_info(self, tree):
-	if len(tree) >= 4:
-	    found, vars = match(DOCSTRING_STMT_PATTERN, tree[3])
-	    if found:
-		self._docstring = eval(vars['docstring'])
-	for node in tree[1:]:
-	    if (node[0] == symbol.stmt
-		and node[1][0] == symbol.compound_stmt):
-		if node[1][1][0] == symbol.funcdef:
-		    name = node[1][1][2][1]
-		    self._function_info[name] = \
-					      FunctionInfo(node[1][1])
-		elif node[1][1][0] == symbol.classdef:
-		    name = node[1][1][2][1]
-		    self._class_info[name] = ClassInfo(node[1][1])
+    def __getitem__(self, name):
+	try:
+	    return self._class_info[name]
+	except KeyError:
+	    return self._function_info[name]
 
 
-class SuiteInfo(SuiteInfoBase):
-    def __init__(self, tree):
-	SuiteInfoBase.__init__(self)
-	self._extract_info(tree)
+class SuiteFuncInfo:
+    #  Mixin class providing access to function names and info.
 
     def get_function_names(self):
 	return self._function_info.keys()
@@ -76,23 +84,16 @@ class SuiteInfo(SuiteInfoBase):
 	return self._function_info[name]
 
 
-class FunctionInfo(SuiteInfo):
-    def __init__(self, tree):
-	DefnInfo.__init__(self, tree)
-	suite = tree[-1]
-	if len(suite) >= 4:
-	    found, vars = match(DOCSTRING_STMT_PATTERN, suite[3])
-	    if found:
-		self._docstring = eval(vars['docstring'])
-	SuiteInfoBase.__init__(self)
-	self._extract_info(suite)
+class FunctionInfo(SuiteInfoBase, SuiteFuncInfo):
+    def __init__(self, tree = None):
+	self._name = tree[2][1]
+	SuiteInfoBase.__init__(self, tree and tree[-1] or None)
 
 
 class ClassInfo(SuiteInfoBase):
-    def __init__(self, tree):
-	SuiteInfoBase.__init__(self)
-	DefnInfo.__init__(self, tree)
-	self._extract_info(tree[-1])
+    def __init__(self, tree = None):
+	self._name = tree[2][1]
+	SuiteInfoBase.__init__(self, tree and tree[-1] or None)
 
     def get_method_names(self):
 	return self._function_info.keys()
@@ -101,19 +102,40 @@ class ClassInfo(SuiteInfoBase):
 	return self._function_info[name]
 
 
-class ModuleInfo(SuiteInfo):
-    def __init__(self, tree, name="<string>"):
+class ModuleInfo(SuiteInfoBase, SuiteFuncInfo):
+    def __init__(self, tree = None, name = "<string>"):
 	self._name = name
-	SuiteInfo.__init__(self, tree)
-	found, vars = match(DOCSTRING_STMT_PATTERN, tree[1])
-	if found:
-	    self._docstring = vars["docstring"]
+	SuiteInfoBase.__init__(self, tree)
+	if tree:
+	    found, vars = match(DOCSTRING_STMT_PATTERN, tree[1])
+	    if found:
+		self._docstring = vars["docstring"]
 
 
 from types import ListType, TupleType
 
 def match(pattern, data, vars=None):
-    """
+    """Match `data' to `pattern', with variable extraction.
+
+    pattern
+	Pattern to match against, possibly containing variables.
+
+    data
+	Data to be checked and against which variables are extracted.
+
+    vars
+	Dictionary of variables which have already been found.  If not
+	provided, an empty dictionary is created.
+
+    The `pattern' value may contain variables of the form ['varname'] which
+    are allowed to match anything.  The value that is matched is returned as
+    part of a dictionary which maps 'varname' to the matched value.  'varname'
+    is not required to be a string object, but using strings makes patterns
+    and the code which uses them more readable.
+
+    This function returns two values: a boolean indicating whether a match
+    was found and a dictionary mapping variable names to their associated
+    values.
     """
     if vars is None:
 	vars = {}
@@ -129,6 +151,15 @@ def match(pattern, data, vars=None):
 	if not same:
 	    break
     return same, vars
+
+
+#  This pattern identifies compound statements, allowing them to be readily
+#  differentiated from simple statements.
+#
+COMPOUND_STMT_PATTERN = (
+    symbol.stmt,
+    (symbol.compound_stmt, ['compound'])
+    )
 
 
 #  This pattern will match a 'stmt' node which *might* represent a docstring;
