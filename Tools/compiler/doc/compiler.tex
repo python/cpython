@@ -75,7 +75,8 @@ contains the tree.
 
 \begin{funcdesc}{parseFile}{path}
 Return an abstract syntax tree for the Python source code in the file
-specified by \var{path}.  It is equivalent to \code{parse(open(path).read())}.
+specified by \var{path}.  It is equivalent to
+\code{parse(open(\var{path}).read())}.
 \end{funcdesc}
 
 \begin{funcdesc}{walk}{ast, visitor, \optional{verbose=None}}
@@ -163,7 +164,7 @@ defines a set of named attributes for child nodes.
 
   \begin{methoddesc}{getChildNodes}{}
     Returns a flattened list of the child nodes in the order they
-    occur.  This method is like \method{getChildNodes}, except that it
+    occur.  This method is like \method{getChildNodes()}, except that it
     only returns those children that are \class{Node} instances.
   \end{methoddesc}
 
@@ -210,7 +211,7 @@ on their instances.  The values of most of the attributes are
 themselves \class{Node} instances or sequences of instances.  When the
 value is something other than an instance, the type is noted in the
 comment.  The attributes are listed in the order in which they are
-returned by \method{getChildren} and \method{getChildNodes}.
+returned by \method{getChildren()} and \method{getChildNodes()}.
 
 \input{asttable}
 
@@ -246,9 +247,9 @@ XXX The magic \method{visit()} method for visitors.
 
 The \class{ASTVisitor} is responsible for walking over the tree in the
 correct order.  A walk begins with a call to \method{preorder()}.  For
-each node, it checks the \var{visitor} argument to \method{preorder{}}
+each node, it checks the \var{visitor} argument to \method{preorder()}
 for a method named `visitNodeType,' where NodeType is the name of the
-node's class, e.g. for a \class{While} node a \method{visitWhile}
+node's class, e.g. for a \class{While} node a \method{visitWhile()}
 would be called .  If the method exists, it is called with the node as
 its first argument.
 
@@ -256,7 +257,7 @@ The visitor method for a particular node type can control how child
 nodes are visited during the walk.  The \class{ASTVisitor} modifies
 the visitor argument by adding a visit method to the visitor; this
 method can be used to visit a particular child node.  If no visitor is
-found for a particular node type, the \method{default} method is
+found for a particular node type, the \method{default()} method is
 called. 
 
 XXX describe extra arguments
@@ -278,7 +279,7 @@ XXX describe extra arguments
 \chapter{Bytecode Generation}
 
 The code generator is a visit that emits bytecodes.  Each visit method
-can call the \method{emit} method to emit a new bytecode.  The basic
+can call the \method{emit()} method to emit a new bytecode.  The basic
 code generator is specialized for modules, classes, and functions.  An
 assembler converts that emitted instructions to the low-level bytecode
 format.  It handles things like generator of constant lists of code
