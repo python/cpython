@@ -2,7 +2,6 @@
 
 from macsupport import *
 
-CFStringRef = OpaqueByValueType('CFStringRef', 'CFStringRefObj')
 IBNibRef = OpaqueByValueType('IBNibRef', 'IBNibRefObj')
 #CFBundleRef = OpaqueByValueType('CFBundleRef')
 
