@@ -93,7 +93,7 @@ PyObject *lowercasestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *args = NULL, *v = NULL;
+    PyObject *result, *args = NULL, *v;
     int i, len;
 
     if (_PyCodec_SearchCache == NULL || _PyCodec_SearchPath == NULL) {
@@ -119,15 +119,14 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
     
     /* Next, scan the search functions in order of registration */
-    len = PyList_Size(_PyCodec_SearchPath);
-    if (len < 0)
-	goto onError;
-
     args = PyTuple_New(1);
     if (args == NULL)
 	goto onError;
     PyTuple_SET_ITEM(args,0,v);
-    v = NULL;
+
+    len = PyList_Size(_PyCodec_SearchPath);
+    if (len < 0)
+	goto onError;
 
     for (i = 0; i < len; i++) {
 	PyObject *func;
@@ -135,7 +134,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	func = PyList_GetItem(_PyCodec_SearchPath, i);
 	if (func == NULL)
 	    goto onError;
-	result = PyEval_CallObject(func,args);
+	result = PyEval_CallObject(func, args);
 	if (result == NULL)
 	    goto onError;
 	if (result == Py_None) {
@@ -163,7 +162,6 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     return result;
 
  onError:
-    Py_XDECREF(v);
     Py_XDECREF(args);
     return NULL;
 }
