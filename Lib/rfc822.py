@@ -873,6 +873,16 @@ def mktime_tz(data):
         t = time.mktime(data[:8] + (0,))
         return t - data[9] - time.timezone
 
+def formatdate(timeval=None):
+    """Returns time format preferred for Internet standards.
+
+    Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+    """
+    if timeval is None:
+        timeval = time.time()
+    return "%s" % time.strftime('%a, %d %b %Y %H:%M:%S GMT',
+                                time.gmtime(timeval))
+
 
 # When used as script, run a small test program.
 # The first command line argument must be a filename containing one
