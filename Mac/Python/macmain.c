@@ -476,7 +476,8 @@ PyMac_Initialize(void)
 #if TARGET_API_MAC_OSX /* Really: TARGET_API_MAC_CARBON */
 
 static int
-locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
+locateResourcePy(CFStringRef resourceType, char *resourceName, char *resourceURLCStr, int length)
+{
     CFBundleRef mainBundle = NULL;
     CFURLRef URL, absoluteURL;
     CFStringRef filenameString, filepathString, rsrcString;
@@ -500,7 +501,7 @@ locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
 
 	    /* Look for py files in the main bundle by type */
 	    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
-	            CFSTR("py"), 
+	            resourceType, 
 	           NULL );
 
 	    /* See if there are any filename matches */
@@ -541,18 +542,22 @@ main(int argc, char **argv)
 	/* First we see whether we have __rawmain__.py and run that if it
 	** is there
 	*/
-	if (locateResourcePy("__rawmain__.py", scriptpath, 1024)) {
+	if (locateResourcePy(CFSTR("py"), "__rawmain__.py", scriptpath, 1024)) {
 		/* If we have a raw main we don't do AppleEvent processing.
 		** Notice that this also means we keep the -psn.... argv[1]
 		** value intact. Not sure whether that is important to someone,
 		** but you never know...
 		*/
 		script = scriptpath;
+	} else if (locateResourcePy(CFSTR("pyc"), "__rawmain__.pyc", scriptpath, 1024)) {
+		script = scriptpath;
 	} else {
 		/* Otherwise we look for __main__.py. Whether that is
 		** found or not we also process AppleEvent arguments.
 		*/
-		if (locateResourcePy("__main__.py", scriptpath, 1024))
+		if (locateResourcePy(CFSTR("py"), "__main__.py", scriptpath, 1024))
+			script = scriptpath;
+		else if (locateResourcePy(CFSTR("pyc"), "__main__.pyc", scriptpath, 1024))
 			script = scriptpath;
 			
 		init_common(&argc, &argv, 0);
