@@ -3,18 +3,11 @@ CODE		PRELOAD MOVEABLE DISCARDABLE
 DATA		PRELOAD SINGLE
 
 EXPORTS
-; Data item exports
-;	PyAnyNumber_Type DATA
-;	PyAnySequence_Type DATA
-;	PyAnyMapping_Type DATA
 	_Py_ZeroStruct DATA
 	_Py_NoneStruct DATA
 	_Py_TrueStruct DATA
 	Py_DebugFlag DATA
 	_PyParser_Grammar DATA
-	_PySys_ProfileFunc DATA
-	_PySys_TraceFunc DATA
-	_PySys_CheckInterval DATA
 	_PyThread_Started DATA
 	_PyParser_TokenNames DATA
 	Py_VerboseFlag DATA
@@ -173,7 +166,6 @@ EXPORTS
 	PyGrammar_AddAccelerators
 	PyGrammar_FindDFA
 	PyGrammar_LabelRepr
-;	PyNode_ListTree ; debugging item only
 	PyNode_AddChild
 	PyNode_Free
 	PyNode_New
@@ -202,10 +194,8 @@ EXPORTS
 	PyEval_InitThreads
 	PyEval_RestoreThread
 	PyEval_SaveThread
-	PyTraceBack_Fetch
 	PyTraceBack_Here
 	PyTraceBack_Print
-	PyTraceBack_Store
 	PyImport_AddModule
 	PyImport_Cleanup
 	PyImport_GetModuleDict
@@ -244,21 +234,9 @@ EXPORTS
 	Py_BuildValue
 	Py_VaBuildValue
 	PyArg_Parse
-	PyArgs_VaParse
+	PyArg_VaParse
 	PyArg_ParseTuple
 	PyArg_ParseTupleAndKeywords
-	PyArg_GetChar
-	PyArg_GetDoubleArray
-	PyArg_GetFloat
-	PyArg_GetFloatArray
-	PyArg_GetLong
-	PyArg_GetLongArray
-	PyArg_GetLongArraySize
-	PyArg_GetObject
-	PyArg_GetShort
-	PyArg_GetShortArray
-	PyArg_GetShortArraySize
-	PyArg_GetString
 	PyErr_BadArgument
 	PyErr_BadInternalCall
 	PyErr_Format
@@ -333,7 +311,6 @@ EXPORTS
 	PyComplex_RealAsDouble
 	PyComplex_ImagAsDouble
 	PyComplex_AsCComplex
-;	PyComplex_Check *** This is a macro ***
 	Py_AtExit
 	Py_GetPath
 	Py_GetExecPrefix
