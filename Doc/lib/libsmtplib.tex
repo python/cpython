@@ -19,10 +19,11 @@ A \class{SMTP} instance encapsulates an SMTP connection.  It has
 methods that support a full repertoire of SMTP and ESMTP
 operations. If the optional host and port parameters are given, the
 SMTP \method{connect()} method is called with those parameters during
-initialization.
+initialization.  An \exception{SMTPConnectError} is raised if the
+specified host doesn't respond correctly.
 
 For normal use, you should only require the initialization/connect,
-\method{sendmail()}, and \method{quit()} methods  An example is
+\method{sendmail()}, and \method{quit()} methods.  An example is
 included below.
 \end{classdesc}
 
@@ -62,6 +63,9 @@ line.)
 In normal operation it should not be necessary to call this method
 explicitly.  It is used to implement other methods and may be useful
 for testing private extensions.
+
+If the connection to the server is lost while waiting for the reply an
+\exception{SMTPServerDisconnected} exception will be raised.
 \end{methoddesc}
 
 \begin{methoddesc}{helo}{\optional{hostname}}
@@ -75,7 +79,7 @@ when necessary.
 \end{methoddesc}
 
 \begin{methoddesc}{ehlo}{\optional{hostname}}
-Identify yourself to an ESMTP server using \samp{HELO}.  The hostname
+Identify yourself to an ESMTP server using \samp{EHLO}.  The hostname
 argument defaults to the fully qualified domain name of the local
 host.  Examine the response for ESMTP option and store them for use by
 \method{has_option()}.
@@ -85,8 +89,8 @@ mail, it should not be necessary to call this method explicitly.  It
 will be implicitly called by \method{sendmail()} when necessary.
 \end{methoddesc}
 
-\begin{methoddesc}{has_option}{name}
-Return \code{1} if \var{name} is in the set of ESMTP options returned
+\begin{methoddesc}{has_extn}{name}
+Return \code{1} if \var{name} is in the set of SMTP service extensions returned
 by the server, \code{0} otherwise.  Case is ignored.
 \end{methoddesc}
 
@@ -99,11 +103,17 @@ an SMTP error code of 400 or greater and an error string.
 Note: many sites disable SMTP \samp{VRFY} in order to foil spammers.
 \end{methoddesc}
 
-\begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{, options}}
+\begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{,
+mail_options, rcpt_options}}
 Send mail.  The required arguments are an \rfc{822} from-address
 string, a list of \rfc{822} to-address strings, and a message string.
-The caller may pass a list of ESMTP options to be used in \samp{MAIL
-FROM} commands as \var{options}.
+The caller may pass a list of ESMTP options (such as \samp{8bitmime})
+to be used in \samp{MAIL FROM} commands as \var{mail_options}.  ESMTP
+options (such as \samp{DSN} commands) that should be used with all
+\samp{RCPT} commands can be passed as \var{rcpt_options}.  (If you
+need to use different ESMTP options to different recipients you have
+to use the low-level methods such as \method{mail}, \method{rcpt} and
+\method{data} to send the message.)
 
 If there has been no previous \samp{EHLO} or \samp{HELO} command this
 session, this method tries ESMTP \samp{EHLO} first. If the server does
@@ -112,13 +122,46 @@ to it (if the option is in the feature set the server advertises).  If
 \samp{EHLO} fails, \samp{HELO} will be tried and ESMTP options
 suppressed.
 
-This method will return normally if the mail is accepted for at least 
-one recipient. Otherwise it will throw an exception (either
-\exception{SMTPSenderRefused}, \exception{SMTPRecipientsRefused}, or
-\exception{SMTPDataError}).  That is, if this method does not throw an
-exception, then someone should get your mail.  If this method does not
-throw an exception, it returns a dictionary, with one entry for each
-recipient that was refused.
+This method will return normally if the mail is accepted for at least
+one recipient. Otherwise it will throw an exception.  That is, if this
+method does not throw an exception, then someone should get your mail.
+If this method does not throw an exception, it returns a dictionary,
+with one entry for each recipient that was refused.  Each entry
+contains a tuple of the SMTP error code and the accompanying error
+message sent by the server.
+
+This method may raise the following exceptions:
+
+\begin{itemize}
+
+\item \exception{SMTPRecipientsRefused}
+
+All recipients were refused.  Nobody got the mail.  The
+\var{recipients} attribute of the exception object is a dictionary
+with information about the refused recipients (like the one returned
+when at least one recipient was accepted).
+
+\item \exception{SMTPHeloError}
+
+The server didn't reply properly to
+the helo greeting.  The connection has
+been closed.
+
+\item \exception{SMTPSenderRefused}
+
+The server didn't accept the from_addr.
+
+\item \exception{SMTPDataError}
+
+The server replied with an unexpected
+error code (other than a refusal of
+a recipient).
+
+\end{itemize}
+
+Unless otherwise noted the connection will be open even after
+an exception is raised.
+
 \end{methoddesc}
 
 \begin{methoddesc}{quit}{}
