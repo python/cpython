@@ -1789,7 +1789,7 @@ static PyObject *
 import_submodule(PyObject *mod, char *subname, char *fullname)
 {
 	PyObject *modules = PyImport_GetModuleDict();
-	PyObject *m;
+	PyObject *m, *res = NULL;
 
 	/* Require:
 	   if mod == None: subname == fullname
@@ -1829,9 +1829,21 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 		m = load_module(fullname, fp, buf, fdp->type);
 		if (fp)
 			fclose(fp);
-		if (m != NULL && mod != Py_None) {
-			if (PyObject_SetAttrString(mod, subname, m) < 0) {
-				Py_DECREF(m);
+		if (mod != Py_None) {
+			/* Irrespective of the success of this load, make a
+			   reference to it in the parent package module.
+			   A copy gets saved in the modules dictionary
+			   under the full name, so get a reference from
+			   there, if need be.  (The exception is when
+			   the load failed with a SyntaxError -- then
+			   there's no trace in sys.modules.  In that case,
+			   of course, do nothing extra.) */
+			res = m;
+			if (res == NULL)
+				res = PyDict_GetItemString(modules, fullname);
+			if (res != NULL &&
+			    PyObject_SetAttrString(mod, subname, res) < 0) {
+				Py_XDECREF(m);
 				m = NULL;
 			}
 		}
