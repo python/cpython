@@ -136,7 +136,7 @@ class Module(AbstractCompileMode):
         # to indicate the type of the value.  simplest way to get the
         # same effect is to call marshal and then skip the code.
         mtime = os.stat(self.filename)[stat.ST_MTIME]
-        mtime = struct.pack('i', mtime)
+        mtime = struct.pack('<i', mtime)
         return self.MAGIC + mtime
 
 class LocalNameFinder:
@@ -389,9 +389,6 @@ class CodeGenerator:
     def visitClass(self, node):
         gen = self.ClassGen(node, self.scopes,
                             self.get_module())
-        if node.doc:
-            self.emit('LOAD_CONST', node.doc)
-            self.storeName('__doc__')
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -1306,6 +1303,10 @@ class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
         self.__super_init(klass, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
+        self.set_lineno(klass)
+        if klass.doc:
+            self.emit("LOAD_CONST", klass.doc)
+            self.storeName("__doc__")
 
 def generateArgList(arglist):
     """Generate an arg list marking TupleArgs"""
