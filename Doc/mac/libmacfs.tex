@@ -89,6 +89,11 @@ The constants for \var{where} and \var{which} can be obtained from the
 standard module \var{MACFS}.
 \end{funcdesc}
 
+\begin{funcdesc}{FindApplication}{creator}
+Locate the application with 4-char creator code \var{creator}. The
+function returns an FSSpec object pointing to the application.
+\end{funcdesc}
+
 \subsection{FSSpec objects}
 
 \renewcommand{\indexsubitem}{(FSSpec object attribute)}
@@ -132,6 +137,17 @@ Return a FInfo object describing the finder info for the file.
 \begin{funcdesc}{SetFInfo}{finfo}
 Set the finder info for the file to the values specified in the
 \var{finfo} object.
+\end{funcdesc}
+
+\begin{funcdesc}{GetDates}{}
+Return a tuple with three floating point values representing the
+creation date, modification date and backup date of the file.
+\end{funcdesc}
+
+\begin{funcdesc}{SetDates}{crdate\, moddate\, backupdate}
+Set the creation, modification and backup date of the file. The values
+are in the standard floating point format used for times throughout
+Python.
 \end{funcdesc}
 
 \subsection{alias objects}

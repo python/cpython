@@ -15,6 +15,8 @@ This exception is raised on MacOS generated errors, either from
 functions in this module or from other mac-specific modules like the
 toolbox interfaces. The arguments are the integer error code (the
 \var{OSErr} value) and a textual description of the error code.
+Symbolic names for all known error codes are defined in the standard
+module \var{macerrors}.
 \end{excdesc}
 
 \begin{funcdesc}{SetHighLevelEventHandler}{handler}
@@ -42,8 +44,8 @@ different values to use when python runs in the background, otherwise
 the background values will be set the the same as the foreground
 values. The function returns nothing.
 
-The default values, which are based on nothing at all, are 12, 6, 1
-and 12 respectively.
+The default values, which are based on minimal empirical testing, are 12, 1, 6
+and 2 respectively.
 \end{funcdesc}
 
 \begin{funcdesc}{EnableAppswitch}{onoff}
@@ -77,9 +79,20 @@ Return the textual description of MacOS error code \var{errno}.
 This function will put a splash window
 on-screen, with the contents of the DLOG resource specified by
 \code{resid}. Calling with a zero argument will remove the splash
-screen. This function is useful if you want to post a splash screen
+screen. This function is useful if you want an applet to post a splash screen
 early in initialization without first having to load numerous
 extension modules.
+\end{funcdesc}
+
+\begin{funcdesc}{DebugStr}{message \optional{\, object}}
+Drop to the low-level debugger with message \var{message}. The
+optional \var{object} argument is not used, but can easily be
+inspected from the debugger.
+
+Note that you should use this function with extreme care: if no
+low-level debugger like MacsBug is installed this call will crash your
+system. It is intended mainly for developers of Python extension
+modules.
 \end{funcdesc}
 
 \begin{funcdesc}{openrf}{name \optional{\, mode}}
