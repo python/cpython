@@ -280,13 +280,10 @@ class TestTimeDelta(unittest.TestCase):
         orig = timedelta(*args)
         state = orig.__getstate__()
         self.assertEqual(args, state)
-        derived = timedelta()
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
     def test_compare(self):
         t1 = timedelta(2, 3, 4)
@@ -837,13 +834,10 @@ class TestDate(unittest.TestCase):
         orig = self.theclass(*args)
         state = orig.__getstate__()
         self.assertEqual(state, ('\x00\x06\x07\x17',), self.theclass)
-        derived = self.theclass(1, 1, 1)
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
     def test_compare(self):
         t1 = self.theclass(2, 3, 4)
@@ -1194,13 +1188,10 @@ class TestDateTime(TestDate):
         orig = self.theclass(*args)
         state = orig.__getstate__()
         self.assertEqual(state, ('\x00\x06\x07\x17\x14\x3b\x01\x00\x10\x00',))
-        derived = self.theclass(1, 1, 1)
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
     def test_more_compare(self):
         # The test_compare() inherited from TestDate covers the error cases.
@@ -1578,13 +1569,10 @@ class TestTime(unittest.TestCase):
         orig = self.theclass(*args)
         state = orig.__getstate__()
         self.assertEqual(state, ('\x14\x3b\x10\x00\x10\x00',))
-        derived = self.theclass()
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
     def test_bool(self):
         cls = self.theclass
@@ -1891,33 +1879,21 @@ class TestTimeTZ(TestTime, TZInfoBase):
         orig = self.theclass(*args)
         state = orig.__getstate__()
         self.assertEqual(state, ('\x14\x3b\x10\x00\x10\x00',))
-        derived = self.theclass()
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
         tinfo = PicklableFixedOffset(-300, 'cookie')
         orig = self.theclass(5, 6, 7, tzinfo=tinfo)
-        state = orig.__getstate__()
-        derived = self.theclass(tzinfo=FixedOffset(0, "UTC", 0))
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
-        self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
-        self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
-        self.assertEqual(derived.tzname(), 'cookie')
-
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
-                self.failUnless(isinstance(derived.tzinfo,
-                                PicklableFixedOffset))
-                self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
-                self.assertEqual(derived.tzname(), 'cookie')
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
+            self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
+            self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
+            self.assertEqual(derived.tzname(), 'cookie')
 
     def test_more_bool(self):
         # Test cases with non-None tzinfo.
@@ -2106,33 +2082,23 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         orig = self.theclass(*args)
         state = orig.__getstate__()
         self.assertEqual(state, ('\x00\x06\x07\x17\x14\x3b\x01\x00\x10\x00',))
-        derived = self.theclass(1, 1, 1)
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
 
         # Try one with a tzinfo.
         tinfo = PicklableFixedOffset(-300, 'cookie')
         orig = self.theclass(*args, **{'tzinfo': tinfo})
-        state = orig.__getstate__()
         derived = self.theclass(1, 1, 1, tzinfo=FixedOffset(0, "", 0))
-        derived.__setstate__(state)
-        self.assertEqual(orig, derived)
-        self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
-        self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
-        self.assertEqual(derived.tzname(), 'cookie')
-
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.assertEqual(orig, derived)
-                self.failUnless(isinstance(derived.tzinfo,
-                                PicklableFixedOffset))
-                self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
-                self.assertEqual(derived.tzname(), 'cookie')
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
+            self.failUnless(isinstance(derived.tzinfo,
+                            PicklableFixedOffset))
+            self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
+            self.assertEqual(derived.tzname(), 'cookie')
 
     def test_extreme_hashes(self):
         # If an attempt is made to hash these via subtracting the offset
