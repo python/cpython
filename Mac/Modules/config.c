@@ -94,6 +94,7 @@ extern void initCm();
 extern void initCtl();
 extern void initDlg();
 extern void initEvt();
+extern void initFm();
 extern void initList();
 extern void initMenu();
 extern void initQd();
@@ -173,6 +174,7 @@ struct {
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
+	{"Fm", initFm},
 	{"Menu", initMenu},
 	{"List", initList},
 	{"Qd", initQd},
