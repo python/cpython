@@ -1251,9 +1251,9 @@ PyObject *macos_error_for_call(OSErr err, const char *name, const char *item)
 	char buffer[1024];
 	
 	if (item)
-		sprintf(buffer, "mac error calling %s on %s", name, item);
+		PyOS_snprintf(buffer, sizeof(buffer), "mac error calling %s on %s", name, item);
 	else
-		sprintf(buffer, "mac error calling %s", name);
+		PyOS_snprintf(buffer, sizeof(buffer), "mac error calling %s", name);
 
 	v = Py_BuildValue("(is)", err, buffer);
 	if (v != NULL) {
@@ -1376,9 +1376,9 @@ void printableUniStr(const HFSUniStr255 *uni, char *buffer)
 		UniChar		uch = uni->unicode[i];
 
 		if ((uch & 0x7f) == uch) {
-			sprintf(localbuf, "%c", uch);
+			PyOS_snprintf(localbuf, sizeof(localbuf), "%c", uch);
 		} else {
-			sprintf(localbuf, "\\u%04x", uch);
+			PyOS_snprintf(localbuf, sizeof(localbuf), "\\u%04x", uch);
 		}
 		strcat(buffer, localbuf);
 	}
