@@ -3,14 +3,14 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
-Expires: Sat, 1 Jul 1995 00:00:00 GMT
-Supersedes: <D6uD1L.BLv@cwi.nl>
+Expires: Fri, 1 Sep 1995 00:00:00 GMT
+Supersedes: <D9G7ow.IDL@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.24
-Last-modified: 31 May 1995
+Version: 1.25
+Last-modified: 25 July 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -108,6 +108,8 @@ Here's an overview of the questions per chapter:
   3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
   3.12. Q. Other trouble building Python on platform X.
   3.13. Q. How to configure dynamic loading on Lixux.
+  3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
+  3.15. Q. Errors when linking with a shared library containing C++ code.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -299,9 +301,11 @@ distribution:
         <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
         <URL:ftp://ftp.funet.fi/pub/languages/python/>
         <URL:ftp://ftp.sunet.se/pub/lang/python/>
-        <URL:ftp://unix.hensa.ac.uk/uunet/languages/python/>
-        <URL:ftp://ftp.sterlng.com/programming/languages/python/>
-        <URL:ftp://ftp.ibp.fr/pub/python/>
+        <URL:ftp://unix.hensa.ac.uk/mirrors/uunet/languages/python/>
+        <URL:ftp://ftp.sterling.com/programming/languages/python/>
+	<URL:ftp://ftp.ibp.fr/pub/python/>
+        <URL:ftp://ftp.switch.ch/software/sources/python/>
+        <URL:ftp://ftp.informatik.tu-muenchen.de/pub/comp/programming/languages/python/>
 
 Or try archie on the string "python".
 
@@ -344,9 +348,9 @@ ftp, e.g. <URL:ftp://ftp.python.org/pub/python/doc/lib-info.tar.gz>.
 
 1.9. Q. Is there a book on Python, or will there be one out soon?
 
-A. I am writing one.  Publishers are interested.  Optimistically, it
-will be ready for the press by mid-1995.  Mark Lutz is working on one
-too -- more details as they emerge.
+A. Mark Lutz is writing a Python book for O'Reilly and Associates, to
+be published early 1996.  See the outline (in PostScript):
+<URL:http://www.python.org/workshops/1995-05/outlinep.eps>.
 
 1.10. Q. Are there any published articles about Python that I can quote?
 
@@ -714,15 +718,13 @@ HAVE_PROTOTYPES.
 
 3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
-A.  (This is fixed in 1.2.)  You need to pass "-posix" to the C
-compiler, especially in the link phase -- it uses the correct version
-of the C library.  The easiest way is perhaps to do "make OPT=-posix".
-You also need to remove this NeXT-specific section from import.c:
+A.  (This often manifests itself as a weird error from the
+compileall.py script run by "make libinstall".)
 
-                #if defined(NeXT) || defined(WITH_RLD) 
-                #define DYNAMIC_LINK
-                #define USE_RLD
-                #endif
+Don't use gcc, use the Next C compiler (cc).  Even though it is
+derived from (an old version of) gcc, its interpretation of the
+"-posix" switch is different; in this particular case, cc is right and
+gcc is wrong.
 
 3.12. Q. Other trouble building Python on platform X.
 
@@ -735,37 +737,62 @@ to me too.
 
 3.13. Q. How to configure dynamic loading on Lixux.
 
-A. (Thanks to Andrew Kuchling):
+A. There are two answers, depending on whether you are using the new
+ELF object format or not.
 
-Linux requires that you use the GNU DLD library.  The stages of using
-dynamic libraries on Linux are:
+For ELF, this seems to be the procedure (thanks to Martin von Loewis):
 
-1) Get dld 3.2.5 from a Linux site.  Be careful here; the most recent
-GNU version is 3.2.3, and doesn't support Linux; be sure to get it
-from a Linux mirror, not a GNU mirror (3.2.4 should also work).
-Compile it and install the library libdld.a somewhere; I used
-/usr/local/lib.
+Compile Python to an ELF binary.
 
-Suitable URLs for the dld distribution are currently:
-<URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.src.tar.gz> and
-<URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.5.src.tar.gz>.
-There's also a binary distribution of it:
-<URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.bin.tar.gz>.
+In addition, you have to use the following flags:
 
-2) Get Jack Jansen's DL library; its location is given in the
-_Extending Python_ manual as <URL:ftp://ftp.cwi.nl/pub/dynload/>.
-Compile it and install libdl.a wherever you put libdld.a.
+  - when linking python: -rdynamic -ldl
+  - when compiling an object that goes into a shared module: -fPIC
+  - when linking a shared module: -shared -ldl
 
-3) Run Python's configure script, giving it the --with-dl-dld option,
-which requires a parameter giving the directory where you put the
-libraries.
+Furthermore, it appears that some Python releases did not understand
+that Linux has dynamic linking.  Python 1.2 did it right, but you
+should check wether the generated config.h indicates the use of -ldl
+(i.e. dlopen, dlsym).  Finally, you can load a shared module by saying
+'use foo'.  Make sure the module is in your PYTHONPATH.
 
-4) Recompile Python.
+For pre-ELF systems (thanks to Andrew Kuchling):
 
-Note that once ELF is common in the Linux world, it will be much
-easier (probably within a year) -- the standard SVR4-style dlopen()
-interface is then available.  This has already proved to work
-perfectly using a beta version of the ELF-capable GCC for Linux.
+Pre-ELF Linux requires that you use the GNU DLD library.  The stages
+of using dynamic libraries on Linux are:
+
+    1) Get dld 3.2.5 from a Linux site.  Be careful here; the most
+    recent GNU version is 3.2.3, and doesn't support Linux; be sure to
+    get it from a Linux mirror, not a GNU mirror (3.2.4 should also
+    work).  Compile it and install the library libdld.a somewhere; I
+    used /usr/local/lib.
+
+    Suitable URLs for the dld distribution are currently:
+    <URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.src.tar.gz> and
+    <URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.5.src.tar.gz>.
+    There's also a binary distribution of it:
+    <URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.bin.tar.gz>.
+
+    2) Get Jack Jansen's DL library; its location is given in the
+    _Extending Python_ manual as <URL:ftp://ftp.cwi.nl/pub/dynload/>.
+    Compile it and install libdl.a wherever you put libdld.a.
+
+    3) Run Python's configure script, giving it the --with-dl-dld option,
+    which requires a parameter giving the directory where you put the
+    libraries.
+
+    4) Recompile Python.
+
+3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
+
+A. Use the linker in /usr/ucb/ld, not the GNU linker.  The latter
+cannot create shared libraries.
+
+3.15. Q. Errors when linking with a shared library containing C++ code.
+
+A. Link the main Python binary with C++.  Change the definition of
+LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
+edit config.c slightly to make it compilable with C++.
 
 
 4. Programming in Python
@@ -1053,6 +1080,12 @@ targets.  There is some support for Macs and CURSES as well.  wxWindows
 preserves the look and feel of the underlying graphics toolkit.  See
 the wxPython WWW page at
 <URL:http://www.aiai.ed.ac.uk/~jacs/wx/wxpython/wxpython.html>.
+
+- There's an object-oriented GUI based on the Microsoft Foundation
+Classes model called WPY.  Programs written in WPY run unchanged and
+with native look and feel on NT, Windows 3.1 (using win32s) and on
+Unix (using Tk).  Source and binaries for NT and Linux are available
+in <URL:ftp://ftp.python.org/pub/python/wpy>.
 
 - Python has been mentioned on the "Futurism" subpage of the Fresco
 home page <URL:http://www.faslab.com/fresco/HomePage.html>.  "Pesto"
@@ -1371,8 +1404,12 @@ Note that many interactive programs (e.g. vi) don't work well with
 pipes substituted for standard input and output.  You will have to use
 pseudo ttys ("ptys") instead of pipes.  There is some undocumented
 code to use these in the library module pty.py -- I'm afraid you're on
-your own here.  What's *really* needed is a Python interface to Don
-Libes' expect library -- any takers?
+your own here.
+
+A different answer is a Python interface to Don Libes' "expect"
+library.  A prerelease of this is available on the Python ftp mirror
+sites in the contrib subdirectory as expy-0.3.tar.gz, e.g.
+<URL:ftp://ftp.python.org/pub/python/contrib/expy-0.3.tar.gz>.
 
 4.31. Q. How do I call a function if I have the arguments in a tuple?
 
@@ -1786,16 +1823,23 @@ e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 7.3. Q. Is there a Windows 3.1(1) version of Python?
 
 A. Yes, also see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
+e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.  You may also be able
+to run either of the Windows NT versions (see next question) if you
+have Microsoft's "win32s".
 
 7.4. Q. Is there a Windows NT version of Python?
 
-A. Yes.  Mark Hammond <MHammond@cmutual.com.au> has built a full NT
-port.  This supports using DLLs for dynamic loading of Python modules,
-and includes an interface to the Microsoft Foundation Classes and a
-Python programming environment using it that's written mostly in
-Python.  See <URL:ftp://ftp.python.org/pub/python/nt/> -- most mirrors
-will also have this.
+A. There are two, both sporting DLL support for dynamic loading of
+Python modules, and extensions to access the Win32 GUI API.
+
+Mark Hammond <MHammond@cmutual.com.au> maintains an NT port which
+includes an interface to the Microsoft Foundation Classes and a Python
+programming environment using it that's written mostly in Python.  See
+<URL:ftp://ftp.python.org/pub/python/nt/>.
+
+Jim Ahlstrom's WPY portable GUI runs on Windows NT and is modeled
+after the Microsoft Foundation Classes.  Source and binaries are
+available in <URL:ftp://ftp.python.org/pub/python/wpy>.
 
 Sam Rushing <rushing@squirl.oau.org> once announced he knows how to
 build Python for the Windows NT on the DEC Alpha AXP.
@@ -1806,7 +1850,7 @@ of Visual C++ 2.0.
 
 7.5. Q. Is there a Windows 95 version of Python?
 
-A. The Windows NT version might work, otherwise the Windows 3.1(1)
+A. The Windows NT versions might work, otherwise the Windows 3.1(1)
 version should work (isn't Windows 95 supposed to be backwards
 compatible?).
 
@@ -1817,13 +1861,15 @@ e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 
 7.7. Q. Is there a VMS version of Python?
 
-A. I think not.  This question has been asked on the list several
-times and I've never seen an affirmative answer.
+A. Donn Cave <donn@cac.washington.edu> did a partial port.  The
+results of his efforts are on public display in
+<<URL:ftp://ftp.python.org/pub/python/contrib/vms.tar.gz/>.
 
-7.8. Q. What about IBM mainframes, or other esoteric non-UNIX
-platforms?
+7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
 
-A. Basically, the same story as for VMS...
+A. I haven't heard about these, except I remember once hearing about
+an attempt at an OS/9 port.  If you're interested in any of this, go
+directly to the newsgroup and ask there, who knows what you may find.
 
 7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
 
