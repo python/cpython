@@ -286,6 +286,9 @@ extern void initmpz();
 #ifdef USE_MD5
 extern void initmd5();
 #endif
+#ifdef USE_ARRAY
+extern void initarray();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -435,6 +438,10 @@ struct {
 
 #ifdef USE_MD5
        {"md5", initmd5},
+#endif
+
+#ifdef USE_ARRAY
+       {"array", initarray},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
