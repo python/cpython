@@ -108,7 +108,7 @@ def gnu_getopt(args, shortopts, longopts = []):
 
     opts = []
     prog_args = []
-    if type(longopts) == type(""):
+    if isinstance(longopts, str):
         longopts = [longopts]
     else:
         longopts = list(longopts)
@@ -116,11 +116,11 @@ def gnu_getopt(args, shortopts, longopts = []):
     # Allow options after non-option arguments?
     if shortopts.startswith('+'):
         shortopts = shortopts[1:]
-        all_options_first = 1
+        all_options_first = True
     elif os.getenv("POSIXLY_CORRECT"):
-        all_options_first = 1
+        all_options_first = True
     else:
-        all_options_first = 0
+        all_options_first = False
 
     while args:
         if args[0] == '--':
