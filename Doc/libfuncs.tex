@@ -51,6 +51,15 @@ exactly one argument.)
   if it consists of a single expression.
 \end{funcdesc}
 
+\begin{funcdesc}{delattr}{object\, name}
+  This is a relative of \code{setattr}.  The arguments are an
+  object and a string.  The string must be the name
+  of one of the object's attributes.  The function deletes
+  the named attribute, provided the object allows it.  For example,
+  \code{setattr(\var{x}, '\var{foobar}')} is equivalent to
+  \code{del \var{x}.\var{foobar}}.
+\end{funcdesc}
+
 \begin{funcdesc}{dir}{}
   Without arguments, return the list of names in the current local
   symbol table.  With a module, class or class instance object as
