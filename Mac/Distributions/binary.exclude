@@ -1,9 +1,12 @@
 * Data
+*.CFM68K.slb
 *.Lib
 *.MAP
 *.SYM
 *.c
+*.cpp
 *.dbg
+*.dsp
 *.h
 *.hqx
 *.idb
