@@ -159,6 +159,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "make_versioninfo"=.\make_versioninfo.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "mmap"=.\mmap.dsp - Package Owner=<4>
 
 Package=<5>
@@ -227,6 +239,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name make_versioninfo
+    End Project Dependency
 }}}
 
 ###############################################################################
