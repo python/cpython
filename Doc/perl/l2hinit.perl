@@ -236,7 +236,7 @@ sub insert_index{
 }
 
 sub add_idx{
-    print "\nDoing the index ...";
+    print "\nBuilding HTML for the index ...";
     close(IDXFILE);
     insert_index($idx_mark, 'index.dat', $INDEX_COLUMNS, 1);
 }
@@ -246,7 +246,7 @@ $idx_module_mark = '<tex2html_idx_module_mark>';
 $idx_module_title = 'Module Index';
 
 sub add_module_idx{
-    print "\nDoing the module index ...";
+    print "\nBuilding HTML for the module index ...";
     my $key;
     open(MODIDXFILE, '>modindex.dat') || die "\n$!\n";
     foreach $key (keys %Modules) {
