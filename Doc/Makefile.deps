@@ -171,6 +171,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libqueue.tex \
 	../lib/liblocale.tex \
 	../lib/libbasehttp.tex \
+	../lib/libcookie.tex \
 	../lib/libcopyreg.tex \
 	../lib/libsymbol.tex \
 	../lib/libbinhex.tex \
