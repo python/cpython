@@ -49,7 +49,7 @@ class PathBrowser(MultiScrolledLists):
             return self.listmethods()
     
     def listmodules(self):
-        dir = self.path[0]
+        dir = self.path[0] or os.curdir
         modules = {}
         suffixes = imp.get_suffixes()
         allnames = os.listdir(dir)
