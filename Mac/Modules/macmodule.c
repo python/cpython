@@ -45,7 +45,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "macstat.h"
 
+#ifndef __MWERKS__
 #include <fcntl.h>
+#endif
 
 #include "macdefs.h"
 #include "dirent.h"
@@ -148,6 +150,7 @@ mac_chdir(self, args)
 	return mac_1str(args, chdir);
 }
 
+#ifndef __MWERKS__
 static object *
 mac_close(self, args)
 	object *self;
@@ -164,6 +167,7 @@ mac_close(self, args)
 	INCREF(None);
 	return None;
 }
+#endif /* !__MWERKS__ */
 
 #ifdef MPW
 
@@ -185,6 +189,7 @@ mac_dup(self, args)
 
 #endif /* MPW */
 
+#ifndef __MWERKS__
 static object *
 mac_fdopen(self, args)
 	object *self;
@@ -203,6 +208,7 @@ mac_fdopen(self, args)
 		return mac_error();
 	return newopenfileobject(fp, "(fdopen)", mode, fclose);
 }
+#endif
 
 static object *
 mac_getbootvol(self, args)
@@ -281,6 +287,7 @@ mac_listdir(self, args)
 	return d;
 }
 
+#ifndef __MWERKS__
 static object *
 mac_lseek(self, args)
 	object *self;
@@ -299,6 +306,7 @@ mac_lseek(self, args)
 		return mac_error();
 	return newintobject(res);
 }
+#endif /* !__MWERKS__ */
 
 static object *
 mac_mkdir(self, args)
@@ -308,6 +316,7 @@ mac_mkdir(self, args)
 	return mac_strint(args, mkdir);
 }
 
+#ifndef __MWERKS__
 static object *
 mac_open(self, args)
 	object *self;
@@ -348,6 +357,7 @@ mac_read(self, args)
 	resizestring(&buffer, size);
 	return buffer;
 }
+#endif /* !__MWERKS */
 
 static object *
 mac_rename(self, args)
@@ -418,6 +428,7 @@ mac_unlink(self, args)
 	return mac_1str(args, (int (*)(const char *))unlink);
 }
 
+#ifndef __MWERKS__
 static object *
 mac_write(self, args)
 	object *self;
@@ -434,27 +445,38 @@ mac_write(self, args)
 		return mac_error();
 	return newintobject((long)size);
 }
+#endif /* !__MWERKS__ */
 
 static struct methodlist mac_methods[] = {
 	{"chdir",	mac_chdir},
+#ifndef __MWERKS__
 	{"close",	mac_close},
+#endif
 #ifdef MPW
 	{"dup",		mac_dup},
 #endif
+#ifndef __MWERKS__
 	{"fdopen",	mac_fdopen},
+#endif
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir},
+#ifndef __MWERKS__
 	{"lseek",	mac_lseek},
+#endif
 	{"mkdir",	mac_mkdir},
+#ifndef __MWERKS__
 	{"open",	mac_open},
 	{"read",	mac_read},
+#endif
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
 	{"sync",	mac_sync},
 	{"unlink",	mac_unlink},
+#ifndef __MWERKS__
 	{"write",	mac_write},
+#endif
 
 	{NULL,		NULL}		 /* Sentinel */
 };
