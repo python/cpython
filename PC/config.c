@@ -67,6 +67,8 @@ extern void initmsvcrt();
 extern void initwinsound();
 extern void init_locale();
 #endif
+extern void init_codecs();
+extern void initunicodedata();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -112,6 +114,9 @@ struct _inittab _PyImport_Inittab[] = {
 	{"winsound", initwinsound},
 	{"_locale", init_locale},
 #endif
+
+	{"_codecs", init_codecs},
+	{"unicodedata", initunicodedata},
 
 /* -- ADDMODULE MARKER 2 -- */
 
