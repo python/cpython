@@ -20,3 +20,4 @@ test_scope
 19. var is bound and free in class
 20. interaction with trace function
 20. eval with free variables
+21. list comprehension with local variables
