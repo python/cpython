@@ -143,19 +143,11 @@ works like the \method{split()} method but splits from the end of
 the string.  
 
 \begin{verbatim}
->>> 'a b c'.split(None, 1)
-['a', 'b c']
->>> 'a b c'.rsplit(None, 1)
-['a b', 'c']
-\end{verbatim}
-
-% Consider replacing the above example with one that is less
-% abstract and more suggestive of why the function is useful:
-%       
-%     >>> 'www.python.org'.split('.', 1)
-%    ['www', 'python.org']
-%    >>> 'www.python.org'.rsplit('.', 1)
-%    ['www.python', 'org']       
+>>> 'www.python.org'.split('.', 1)
+['www', 'python.org']
+'www.python.org'.rsplit('.', 1)
+['www.python', 'org']        
+\end{verbatim}      
 
 \item The \method{sort()} method of lists gained three keyword
 arguments, \var{cmp}, \var{key}, and \var{reverse}.  These arguments
@@ -266,6 +258,15 @@ yellow 5
 \subsection{Optimizations}
 
 \begin{itemize}
+
+\item The machinery for growing and shrinking lists was optimized
+ for speed and for space efficiency.  Small lists (under six bytes)
+ never over-allocate by more than one byte.  Large lists do not
+ over-allocate by more than 1/8th.  Appending and popping from lists
+ now runs faster due to more efficient code paths and less frequent
+ use of the underlying system realloc().  List comprehensions also
+ benefit.  The amount of improvement varies between systems and shows
+ the greatest improvement on systems with poor realloc() implementations.
 
 \item \function{list()}, \function{tuple()}, \function{map()},
   \function{filter()}, and \function{zip()} now run several times
