@@ -48,7 +48,7 @@ python="_Python Documentation",""
 [EditorWindow]
 editor-on-startup= 0
 width= 80
-height= 24
+height= 30
 font= courier
 font-size= 12
 
@@ -59,7 +59,7 @@ tab-cols= 4
 
 [Theme]
 default= 1  
-name= IDLE Classic New
+name= IDLE Classic
 
 [Keys]
 default= 1  
