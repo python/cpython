@@ -13,14 +13,14 @@ MKPDF=		$(MKHOWTO) --pdf
 
 
 # what's what
-MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-HOWTODVIFILES=	doc.dvi mac.dvi inst.dvi dist.dvi
+MANDVIFILES=	api.dvi ext.dvi lib.dvi mac.dvi ref.dvi tut.dvi
+HOWTODVIFILES=	doc.dvi inst.dvi dist.dvi
 
-MANPDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
-HOWTOPDFFILES=	doc.pdf mac.pdf inst.pdf dist.pdf
+MANPDFFILES=	api.pdf ext.pdf lib.pdf mac.pdf ref.pdf tut.pdf
+HOWTOPDFFILES=	doc.pdf inst.pdf dist.pdf
 
-MANPSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
-HOWTOPSFILES=	doc.ps mac.ps inst.ps dist.ps
+MANPSFILES=	api.ps ext.ps lib.ps mac.ps ref.ps tut.ps
+HOWTOPSFILES=	doc.ps inst.ps dist.ps
 
 DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
 PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
