@@ -1159,6 +1159,7 @@ sub do_cmd_memberline{
     return "<dt><b>$idx</b><dd>" . $_;
 }
 
+
 sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
@@ -1176,7 +1177,8 @@ sub do_cmd_memberlineni{
     return "<dt><b><tt class=\"member\">$member</tt></b><dd>" . $_;
 }
 
-@col_aligns = ('<td>', '<td>', '<td>', '<td>');
+
+@col_aligns = ('<td>', '<td>', '<td>', '<td>', '<td>');
 
 sub fix_font{
     # do a little magic on a font name to get the right behavior in the first
@@ -1226,17 +1228,19 @@ sub figure_column_alignment{
 
 sub setup_column_alignments{
     local($_) = @_;
-    my($s1,$s2,$s3,$s4) = split(/[|]/,$_);
+    my($s1,$s2,$s3,$s4,$a5) = split(/[|]/,$_);
     my $a1 = figure_column_alignment($s1);
     my $a2 = figure_column_alignment($s2);
     my $a3 = figure_column_alignment($s3);
     my $a4 = figure_column_alignment($s4);
+    my $a5 = figure_column_alignment($s5);
     $col_aligns[0] = "<td$a1 valign=\"baseline\">";
     $col_aligns[1] = "<td$a2>";
     $col_aligns[2] = "<td$a3>";
     $col_aligns[3] = "<td$a4>";
+    $col_aligns[4] = "<td$a5>";
     # return the aligned header start tags
-    return ("<th$a1>", "<th$a2>", "<th$a3>", "<th$a4>");
+    return ("<th$a1>", "<th$a2>", "<th$a3>", "<th$a4>", "<th$a5>");
 }
 
 sub get_table_col1_fonts{
@@ -1252,7 +1256,7 @@ sub get_table_col1_fonts{
 
 sub do_env_tableii{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
+    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1298,7 +1302,7 @@ sub do_cmd_lineii{
 
 sub do_env_tableiii{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
+    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1331,7 +1335,7 @@ sub do_cmd_lineiii{
     local($_) = @_;
     my $aligns = next_optional_argument();
     my $c1 = next_argument();
-    my $c2 = next_argument(); 
+    my $c2 = next_argument();
     my $c3 = next_argument();
     s/[\s\n]+//;
     my($sfont,$efont) = get_table_col1_fonts();
@@ -1349,7 +1353,7 @@ sub do_cmd_lineiii{
 
 sub do_env_tableiv{
     local($_) = @_;
-    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
+    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
     my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -1400,6 +1404,67 @@ sub do_cmd_lineiv{
            . "        $c2align$c2</td>\n"
 	   . "        $c3align$c3</td>\n"
 	   . "        $c4align$c4</td>"
+	   . $_;
+}
+
+sub do_env_tablev{
+    local($_) = @_;
+    my($th1,$th2,$th3,$th4,$th5) = setup_column_alignments(next_argument());
+    my $font = fix_font(next_argument());
+    my $h1 = next_argument();
+    my $h2 = next_argument();
+    my $h3 = next_argument();
+    my $h4 = next_argument();
+    my $h5 = next_argument();
+    s/[\s\n]+//;
+    $globals{'lineifont'} = $font;
+    my $a1 = $col_aligns[0];
+    my $a2 = $col_aligns[1];
+    my $a3 = $col_aligns[2];
+    my $a4 = $col_aligns[3];
+    my $a5 = $col_aligns[4];
+    s/\\linev</\\linev[$a1|$a2|$a3|$a4|$a5]</g;
+    return '<table border align="center" style="border-collapse: collapse">'
+	   . "\n  <thead>"
+	   . "\n    <tr class=\"tableheader\">"
+	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
+	   . "\n      $th3<b>$h3</b>\&nbsp;</th>"
+	   . "\n      $th4<b>$h4</b>\&nbsp;</th>"
+	   . "\n      $th5<b>$h5</b>\&nbsp;</th>"
+	   . "\n      </tr>"
+	   . "\n    </thead>"
+	   . "\n  <tbody valign=\"baseline\">"
+	   . $_
+	   . "\n    </tbody>"
+	   . "\n</table>";
+}
+
+sub do_env_longtablev{
+    return do_env_tablev(@_);
+}
+
+sub do_cmd_linev{
+    local($_) = @_;
+    my $aligns = next_optional_argument();
+    my $c1 = next_argument();
+    my $c2 = next_argument();
+    my $c3 = next_argument();
+    my $c4 = next_argument();
+    my $c5 = next_argument();
+    s/[\s\n]+//;
+    my($sfont,$efont) = get_table_col1_fonts();
+    $c5 = '&nbsp;' if ($c5 eq '');
+    my($c1align,$c2align,$c3align,$c4align,$c5align) = split('\|', $aligns);
+    my $padding = '';
+    if ($c1align =~ /align="right"/ || $c1 eq '') {
+        $padding = '&nbsp;';
+    }
+    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
+           . "        $c2align$c2</td>\n"
+	   . "        $c3align$c3</td>\n"
+	   . "        $c4align$c4</td>\n"
+	   . "        $c5align$c5</td>"
 	   . $_;
 }
 

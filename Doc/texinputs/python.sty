@@ -978,6 +978,27 @@
   \end{center}%
 }
 
+\newenvironment{tablev}[7]{%
+  \begin{center}%
+    \def\linev##1##2##3##4##5{\csname#2\endcsname{##1}&##2&##3&##4&##5\\}%
+    \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6}&\strong{#7} \\%
+      \hline%
+}{%
+    \end{tabular}%
+  \end{center}%
+}
+
+\newenvironment{longtablev}[7]{%
+  \begin{center}%
+    \def\linev##1##2##3##4##5{\csname#2\endcsname{##1}&##2&##3&##4&##5\\}%
+    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6}&\strong{#7}%
+      \\%
+      \hline\endhead%
+}{%
+    \end{longtable}%
+  \end{center}%
+}
+
 % Cross-referencing (AMK, new impl. FLD)
 % Sample usage:
 %  \begin{seealso}
