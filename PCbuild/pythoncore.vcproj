@@ -364,6 +364,9 @@
 			RelativePath="..\Modules\_sre.c">
 		</File>
 		<File
+			RelativePath="..\Pc\_subprocess.c">
+		</File>
+		<File
 			RelativePath="..\Modules\_weakref.c">
 			<FileConfiguration
 				Name="Release|Win32">
