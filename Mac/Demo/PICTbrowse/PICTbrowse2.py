@@ -122,7 +122,7 @@ class MyDialog(FrameWork.DialogWindow):
 		self.wid.SetDialogDefaultItem(MAIN_SHOW)
 		self.contents = contents
 		self.ctl = self.wid.GetDialogItemAsControl(MAIN_LIST)
-		h = self.ctl.GetControlDataHandle(Controls.kControlListBoxPart, 
+		h = self.ctl.GetControlData_Handle(Controls.kControlListBoxPart, 
 				Controls.kControlListBoxListHandleTag)
 		self.list = List.as_List(h)
 		self.setlist()
