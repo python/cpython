@@ -67,9 +67,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 /* Optional routines, for some compiler/runtime combinations */
-#if defined(__MWERKS__) && defined(__powerc)
-#define MALLOC_DEBUG
-#endif
 #if defined(USE_GUSI) || !defined(__MWERKS__)
 #define WEHAVE_FDOPEN
 #endif
@@ -581,7 +578,7 @@ mac_write(self, args)
 	return newintobject((long)size);
 }
 
-#ifdef MALLOC_DEBUG
+#ifdef USE_MALLOC_DEBUG
 static object *
 mac_mstats(self, args)
 	object*self;
@@ -591,7 +588,7 @@ mac_mstats(self, args)
 	INCREF(None);
 	return None;
 }
-#endif MALLOC_DEBUG
+#endif USE_MALLOC_DEBUG
 
 static struct methodlist mac_methods[] = {
 	{"chdir",	mac_chdir},
@@ -617,7 +614,7 @@ static struct methodlist mac_methods[] = {
 	{"remove",	mac_unlink},
 	{"unlink",	mac_unlink},
 	{"write",	mac_write},
-#ifdef MALLOC_DEBUG
+#ifdef USE_MALLOC_DEBUG
 	{"mstats",	mac_mstats},
 #endif
 

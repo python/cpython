@@ -52,12 +52,14 @@ static char *rcsid = "$Id$";
  * 
  */
  
-
+#ifdef USE_MALLOC_DEBUG
+/* You may also selectively enable some of these (but some are interdependent) */
 #define DEBUG
 #define DEBUG2
 #define MSTATS
 #define RCHECK
 #define VCHECK
+#endif /* USE_MALLOC_DEBUG */
 
 typedef unsigned char u_char;
 typedef unsigned long u_long;
