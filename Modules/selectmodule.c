@@ -114,7 +114,7 @@ select_select(self, args)
 {
     object *fd2obj[FD_SETSIZE];
     object *ifdlist, *ofdlist, *efdlist;
-    object *ret;
+    object *ret, *tout;
     fd_set ifdset, ofdset, efdset;
     double timeout;
     struct timeval tv, *tvp;
@@ -124,12 +124,18 @@ select_select(self, args)
 
 
     /* Get args. Looks funny because of optional timeout argument */
-    if ( getargs(args, "(OOOd)", &ifdlist, &ofdlist, &efdlist, &timeout) ) {
+    if ( getargs(args, "(OOOO)", &ifdlist, &ofdlist, &efdlist, &tout) ) {
 	seconds = (int)timeout;
-	timeout = timeout - (double)seconds;
-	tv.tv_sec = seconds;
-	tv.tv_usec = (int)(timeout*1000000.0);
-	tvp = &tv;
+	if (tout == None)
+	    tvp = (struct timeval *)0;
+	else {
+	    if (!getargs(tout, "%d;timeout must be float or None", &timeout))
+		    return NULL;
+	    timeout = timeout - (double)seconds;
+	    tv.tv_sec = seconds;
+	    tv.tv_usec = (int)(timeout*1000000.0);
+	    tvp = &tv;
+	}
     } else {
 	/* Doesn't have 4 args, that means no timeout */
 	err_clear();
