@@ -68,7 +68,7 @@ Module interface:
 Socket methods:
 (NB: an argument list of the form (sockaddr...) means that multiple
 arguments are treated the same as a single tuple argument, for backwards
-compatibility.)
+compatibility.  This is deprecated, and will be removed in future versions.)
 
 - s.accept() --> new socket object, sockaddr
 - s.bind(sockaddr...) --> None
