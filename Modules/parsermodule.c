@@ -858,11 +858,7 @@ build_node_tree(PyObject *tuple)
 }
 
 
-#ifdef HAVE_OLD_CPP
-#define VALIDATER(n)    static int validate_/**/n(node *tree)
-#else
 #define VALIDATER(n)    static int validate_##n(node *tree)
-#endif
 
 
 /*
