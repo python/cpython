@@ -1924,6 +1924,72 @@ string_isspace(PyStringObject *self, PyObject *args)
 }
 
 
+static char isalpha__doc__[] =
+"S.isalpha() -> int\n\
+\n\
+Return 1 if  all characters in S are alphabetic\n\
+and there is at least one character in S, 0 otherwise.";
+
+static PyObject*
+string_isalpha(PyUnicodeObject *self, PyObject *args)
+{
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
+
+    if (!PyArg_NoArgs(args))
+        return NULL;
+
+    /* Shortcut for single character strings */
+    if (PyString_GET_SIZE(self) == 1 &&
+	isalpha(*p))
+	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
+    e = p + PyString_GET_SIZE(self);
+    for (; p < e; p++) {
+	if (!isalpha(*p))
+	    return PyInt_FromLong(0);
+    }
+    return PyInt_FromLong(1);
+}
+
+
+static char isalnum__doc__[] =
+"S.isalnum() -> int\n\
+\n\
+Return 1 if  all characters in S are alphanumeric\n\
+and there is at least one character in S, 0 otherwise.";
+
+static PyObject*
+string_isalnum(PyUnicodeObject *self, PyObject *args)
+{
+    register const unsigned char *p = (unsigned char *) PyString_AS_STRING(self);
+    register const unsigned char *e;
+
+    if (!PyArg_NoArgs(args))
+        return NULL;
+
+    /* Shortcut for single character strings */
+    if (PyString_GET_SIZE(self) == 1 &&
+	isalnum(*p))
+	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
+    e = p + PyString_GET_SIZE(self);
+    for (; p < e; p++) {
+	if (!isalnum(*p))
+	    return PyInt_FromLong(0);
+    }
+    return PyInt_FromLong(1);
+}
+
+
 static char isdigit__doc__[] =
 "S.isdigit() -> int\n\
 \n\
@@ -2166,6 +2232,8 @@ string_methods[] = {
 	{"isspace", (PyCFunction)string_isspace, 0, isspace__doc__},
 	{"isdigit", (PyCFunction)string_isdigit, 0, isdigit__doc__},
 	{"istitle", (PyCFunction)string_istitle, 0, istitle__doc__},
+	{"isalpha", (PyCFunction)string_isalpha, 0, isalpha__doc__},
+	{"isalnum", (PyCFunction)string_isalnum, 0, isalnum__doc__},
 	{"capitalize", (PyCFunction)string_capitalize, 1, capitalize__doc__},
 	{"count",      (PyCFunction)string_count,      1, count__doc__},
 	{"endswith",   (PyCFunction)string_endswith,   1, endswith__doc__},
