@@ -83,11 +83,12 @@ for name in all_host_names:
 else:
     print 'FQDN not found'
 
-print socket.getservbyname('telnet', 'tcp')
-try:
-    socket.getservbyname('telnet', 'udp')
-except socket.error:
-    pass
+if hasattr(socket, 'getservbyname'):
+    print socket.getservbyname('telnet', 'tcp')
+    try:
+        socket.getservbyname('telnet', 'udp')
+    except socket.error:
+        pass
 
 
 canfork = hasattr(os, 'fork')
