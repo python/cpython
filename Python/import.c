@@ -893,6 +893,13 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		strcat(buf, ".");
 		strcat(buf, name);
 		strcpy(name, buf);
+#ifdef macintosh
+		/* Freezing on the mac works different, and the modules are
+		** actually on sys.path. So we don't take the quick exit but
+		** continue with the normal flow.
+		*/
+		path = NULL;
+#else
 		if (find_frozen(name) != NULL) {
 			strcpy(buf, name);
 			return &fd_frozen;
@@ -900,6 +907,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		PyErr_Format(PyExc_ImportError,
 			     "No frozen submodule named %.200s", name);
 		return NULL;
+#endif
 	}
 	if (path == NULL) {
 		if (is_builtin(name)) {
