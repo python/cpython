@@ -60,7 +60,7 @@ class PyAssembler:
     def __init__(self, args=(), name='?', filename='<?>',
                  docstring=None):
         # XXX why is the default value for flags 3?
-	self.insts = []
+        self.insts = []
         # used by makeCodeObject
         self._getArgCount(args)
         self.code = ''
@@ -107,10 +107,10 @@ class PyAssembler:
         self.flags = self.flags | CO_VARKEYWORDS
 
     def getCurInst(self):
-	return len(self.insts)
+        return len(self.insts)
 
     def getNextInst(self):
-	return len(self.insts) + 1
+        return len(self.insts) + 1
 
     def dump(self, io=sys.stdout):
         i = 0
@@ -162,7 +162,7 @@ class PyAssembler:
         # XXX danger! can't pass through here twice
         if self.flags & CO_VARKEYWORDS:
             self.argcount = self.argcount - 1
-	stacksize = findDepth(self.insts)
+        stacksize = findDepth(self.insts)
         try:
             co = new.code(self.argcount, nlocals, stacksize,
                           self.flags, lnotab.getCode(), self._getConsts(),
@@ -193,9 +193,9 @@ class PyAssembler:
         """
         l = []
         for elt in self.consts:
-	    # XXX might be clearer to just as isinstance(CodeGen)
-	    if hasattr(elt, 'asConst'):
-		l.append(elt.asConst())
+            # XXX might be clearer to just as isinstance(CodeGen)
+            if hasattr(elt, 'asConst'):
+                l.append(elt.asConst())
             else:
                 l.append(elt)
         return tuple(l)
@@ -286,14 +286,14 @@ class PyAssembler:
     
     opnum = {}
     for num in range(len(dis.opname)):
-	opnum[dis.opname[num]] = num
+        opnum[dis.opname[num]] = num
 
     # this version of emit + arbitrary hooks might work, but it's damn
     # messy.
 
     def emit(self, *args):
         self._emitDispatch(args[0], args[1:])
-	self.insts.append(args)
+        self.insts.append(args)
 
     def _emitDispatch(self, type, args):
         for func in self._emit_hooks.get(type, []):
@@ -363,115 +363,115 @@ class StackRef:
     count = 0
 
     def __init__(self, id=None, val=None):
-	if id is None:
-	    id = StackRef.count
-	    StackRef.count = StackRef.count + 1
-	self.id = id
-	self.val = val
+        if id is None:
+            id = StackRef.count
+            StackRef.count = StackRef.count + 1
+        self.id = id
+        self.val = val
 
     def __repr__(self):
-	if self.val:
-	    return "StackRef(val=%d)" % self.val
-	else:
-	    return "StackRef(id=%d)" % self.id
+        if self.val:
+            return "StackRef(val=%d)" % self.val
+        else:
+            return "StackRef(id=%d)" % self.id
 
     def bind(self, inst):
-	self.val = inst
+        self.val = inst
 
     def resolve(self):
         if self.val is None:
             print "UNRESOLVE REF", self
             return 0
-	return self.val
+        return self.val
 
 class StackDepthTracker:
     # XXX need to keep track of stack depth on jumps
 
     def findDepth(self, insts):
-	depth = 0
-	maxDepth = 0
-	for i in insts:
-	    opname = i[0]
-	    delta = self.effect.get(opname, 0)
-	    if delta > 1:
-		depth = depth + delta
-	    elif delta < 0:
-		if depth > maxDepth:
-		    maxDepth = depth
-		depth = depth + delta
-	    else:
-		if depth > maxDepth:
-		    maxDepth = depth
-		# now check patterns
-		for pat, delta in self.patterns:
-		    if opname[:len(pat)] == pat:
-			depth = depth + delta
-			break
-		# if we still haven't found a match
-		if delta == 0:
-		    meth = getattr(self, opname)
-		    depth = depth + meth(i[1])
-	    if depth < 0:
-		depth = 0
-	return maxDepth
+        depth = 0
+        maxDepth = 0
+        for i in insts:
+            opname = i[0]
+            delta = self.effect.get(opname, 0)
+            if delta > 1:
+                depth = depth + delta
+            elif delta < 0:
+                if depth > maxDepth:
+                    maxDepth = depth
+                depth = depth + delta
+            else:
+                if depth > maxDepth:
+                    maxDepth = depth
+                # now check patterns
+                for pat, delta in self.patterns:
+                    if opname[:len(pat)] == pat:
+                        depth = depth + delta
+                        break
+                # if we still haven't found a match
+                if delta == 0:
+                    meth = getattr(self, opname)
+                    depth = depth + meth(i[1])
+            if depth < 0:
+                depth = 0
+        return maxDepth
 
     effect = {
-	'POP_TOP': -1,
-	'DUP_TOP': 1,
-	'SLICE+1': -1,
-	'SLICE+2': -1,
-	'SLICE+3': -2,
-	'STORE_SLICE+0': -1,
-	'STORE_SLICE+1': -2,
-	'STORE_SLICE+2': -2,
-	'STORE_SLICE+3': -3,
-	'DELETE_SLICE+0': -1,
-	'DELETE_SLICE+1': -2,
-	'DELETE_SLICE+2': -2,
-	'DELETE_SLICE+3': -3,
-	'STORE_SUBSCR': -3,
-	'DELETE_SUBSCR': -2,
-	# PRINT_EXPR?
-	'PRINT_ITEM': -1,
-	'LOAD_LOCALS': 1,
-	'RETURN_VALUE': -1,
-	'EXEC_STMT': -2,
-	'BUILD_CLASS': -2,
-	'STORE_NAME': -1,
-	'STORE_ATTR': -2,
-	'DELETE_ATTR': -1,
-	'STORE_GLOBAL': -1,
-	'BUILD_MAP': 1,
-	'COMPARE_OP': -1,
-	'STORE_FAST': -1,
-	}
+        'POP_TOP': -1,
+        'DUP_TOP': 1,
+        'SLICE+1': -1,
+        'SLICE+2': -1,
+        'SLICE+3': -2,
+        'STORE_SLICE+0': -1,
+        'STORE_SLICE+1': -2,
+        'STORE_SLICE+2': -2,
+        'STORE_SLICE+3': -3,
+        'DELETE_SLICE+0': -1,
+        'DELETE_SLICE+1': -2,
+        'DELETE_SLICE+2': -2,
+        'DELETE_SLICE+3': -3,
+        'STORE_SUBSCR': -3,
+        'DELETE_SUBSCR': -2,
+        # PRINT_EXPR?
+        'PRINT_ITEM': -1,
+        'LOAD_LOCALS': 1,
+        'RETURN_VALUE': -1,
+        'EXEC_STMT': -2,
+        'BUILD_CLASS': -2,
+        'STORE_NAME': -1,
+        'STORE_ATTR': -2,
+        'DELETE_ATTR': -1,
+        'STORE_GLOBAL': -1,
+        'BUILD_MAP': 1,
+        'COMPARE_OP': -1,
+        'STORE_FAST': -1,
+        }
     # use pattern match
     patterns = [
-	('BINARY_', -1),
-	('LOAD_', 1),
-	('IMPORT_', 1),
-	]
+        ('BINARY_', -1),
+        ('LOAD_', 1),
+        ('IMPORT_', 1),
+        ]
     # special cases
 
     #: UNPACK_TUPLE, UNPACK_LIST, BUILD_TUPLE,
     # BUILD_LIST, CALL_FUNCTION, MAKE_FUNCTION, BUILD_SLICE
     def UNPACK_TUPLE(self, count):
-	return count
+        return count
     def UNPACK_LIST(self, count):
-	return count
+        return count
     def BUILD_TUPLE(self, count):
-	return -count
+        return -count
     def BUILD_LIST(self, count):
-	return -count
+        return -count
     def CALL_FUNCTION(self, argc):
-	hi, lo = divmod(argc, 256)
-	return lo + hi * 2
+        hi, lo = divmod(argc, 256)
+        return lo + hi * 2
     def MAKE_FUNCTION(self, argc):
-	return -argc
+        return -argc
     def BUILD_SLICE(self, argc):
-	if argc == 2:
-	    return -1
-	elif argc == 3:
-	    return -2
+        if argc == 2:
+            return -1
+        elif argc == 3:
+            return -2
     
 findDepth = StackDepthTracker().findDepth
