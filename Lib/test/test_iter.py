@@ -527,4 +527,39 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test iterators with operator.countOf (PySequence_Count).
+    def test_countOf(self):
+        from operator import countOf
+        self.assertEqual(countOf([1,2,2,3,2,5], 2), 3)
+        self.assertEqual(countOf((1,2,2,3,2,5), 2), 3)
+        self.assertEqual(countOf("122325", "2"), 3)
+        self.assertEqual(countOf("122325", "6"), 0)
+
+        self.assertRaises(TypeError, countOf, 42, 1)
+        self.assertRaises(TypeError, countOf, countOf, countOf)
+
+        d = {"one": 3, "two": 3, "three": 3, 1j: 2j}
+        for k in d:
+            self.assertEqual(countOf(d, k), 1)
+        self.assertEqual(countOf(d.itervalues(), 3), 3)
+        self.assertEqual(countOf(d.itervalues(), 2j), 1)
+        self.assertEqual(countOf(d.itervalues(), 1j), 0)
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("a\n" "b\n" "c\n" "b\n")
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            for letter, count in ("a", 1), ("b", 2), ("c", 1), ("d", 0):
+                f.seek(0, 0)
+                self.assertEqual(countOf(f, letter + "\n"), count)
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)
