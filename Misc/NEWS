@@ -92,6 +92,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #126863 - getopt long option handling fixed
 
+- #123924 - httplib.py - Windows - using OpenSSL, problem with socket
+
 What's New in Python 2.0?
 =========================
 
