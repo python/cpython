@@ -76,7 +76,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output()
 		Output("%sPyObject *%s_New(itself)", self.static, self.prefix)
 		IndentLevel()
-		Output("const %s %sitself;", self.itselftype, self.argref)
+		Output("%s %sitself;", self.itselftype, self.argref)
 		DedentLevel()
 		OutLbrace()
 		Output("%s *it;", self.objecttype)
@@ -154,8 +154,9 @@ class ObjectDefinition(GeneratorGroup):
 		Output("#define %s_setattr NULL", self.prefix)
 
 	def outputTypeObject(self):
+		sf = self.static and "staticforward "
 		Output()
-		Output("%sPyTypeObject %s = {", self.static, self.typename)
+		Output("%sPyTypeObject %s = {", sf, self.typename)
 		IndentLevel()
 		Output("PyObject_HEAD_INIT(&PyType_Type)")
 		Output("0, /*ob_size*/")

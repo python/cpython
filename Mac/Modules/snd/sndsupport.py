@@ -19,7 +19,7 @@ class SndMethod(SndMixIn, OSErrMethodGenerator): pass
 includestuff = includestuff + """
 #include <Sound.h>
 
-#ifndef __MWERKS__
+#ifndef HAVE_UNIVERSAL_HEADERS
 #define SndCallBackUPP ProcPtr
 #define NewSndCallBackProc(x) (x)
 #define SndListHandle Handle
@@ -50,13 +50,13 @@ class SndCallBackType(InputOnlyType):
 	def __init__(self):
 		Type.__init__(self, 'PyObject*', 'O')
 	def getargsCheck(self, name):
-		Output("if (%s != Py_None && !callable(%s))", name, name)
+		Output("if (%s != Py_None && !PyCallable_Check(%s))", name, name)
 		OutLbrace()
 		Output('PyErr_SetString(PyExc_TypeError, "callback must be callable");')
 		Output("goto %s__error__;", name)
 		OutRbrace()
 	def passInput(self, name):
-		return "(SndCallBackProcPtr)&SndCh_UserRoutine"
+		return "NewSndCallBackProc(SndCh_UserRoutine)"
 	def cleanup(self, name):
 		# XXX This knows it is executing inside the SndNewChannel wrapper
 		Output("if (_res != NULL && %s != Py_None)", name)

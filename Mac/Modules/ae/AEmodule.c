@@ -82,7 +82,7 @@ typedef struct AEDescObject {
 } AEDescObject;
 
 static PyObject *AEDesc_New(itself)
-	const AEDesc *itself;
+	AEDesc *itself;
 {
 	AEDescObject *it;
 	it = PyObject_NEW(AEDescObject, &AEDesc_Type);
@@ -174,11 +174,13 @@ static PyObject *AEDesc_AEPutPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	if (!PyArg_ParseTuple(_args, "lO&s#",
 	                      &index,
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__))
+	                      &dataPtr__in__, &dataPtr__in_len__))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEPutPtr(&_self->ob_itself,
 	                index,
 	                typeCode,
@@ -223,16 +225,18 @@ static PyObject *AEDesc_AEGetNthPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__out__;
 	long dataPtr__len__;
-	if (!PyArg_ParseTuple(_args, "lO&l",
+	int dataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "lO&i",
 	                      &index,
 	                      PyMac_GetOSType, &desiredType,
-	                      &dataPtr__len__))
+	                      &dataPtr__in_len__))
 		return NULL;
-	if ((dataPtr__out__ = malloc(dataPtr__len__)) == NULL)
+	if ((dataPtr__out__ = malloc(dataPtr__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto dataPtr__error__;
 	}
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEGetNthPtr(&_self->ob_itself,
 	                   index,
 	                   desiredType,
@@ -243,7 +247,7 @@ static PyObject *AEDesc_AEGetNthPtr(_self, _args)
 	_res = Py_BuildValue("O&O&s#",
 	                     PyMac_BuildOSType, theAEKeyword,
 	                     PyMac_BuildOSType, typeCode,
-	                     dataPtr__out__, dataPtr__len__);
+	                     dataPtr__out__, (int)dataPtr__len__);
 	free(dataPtr__out__);
  dataPtr__error__: ;
 	return _res;
@@ -326,11 +330,13 @@ static PyObject *AEDesc_AEPutKeyPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__))
+	                      &dataPtr__in__, &dataPtr__in_len__))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEPutKeyPtr(&_self->ob_itself,
 	                   theAEKeyword,
 	                   typeCode,
@@ -374,16 +380,18 @@ static PyObject *AEDesc_AEGetKeyPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__out__;
 	long dataPtr__len__;
-	if (!PyArg_ParseTuple(_args, "O&O&l",
+	int dataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&O&i",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType,
-	                      &dataPtr__len__))
+	                      &dataPtr__in_len__))
 		return NULL;
-	if ((dataPtr__out__ = malloc(dataPtr__len__)) == NULL)
+	if ((dataPtr__out__ = malloc(dataPtr__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto dataPtr__error__;
 	}
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEGetKeyPtr(&_self->ob_itself,
 	                   theAEKeyword,
 	                   desiredType,
@@ -392,7 +400,7 @@ static PyObject *AEDesc_AEGetKeyPtr(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&s#",
 	                     PyMac_BuildOSType, typeCode,
-	                     dataPtr__out__, dataPtr__len__);
+	                     dataPtr__out__, (int)dataPtr__len__);
 	free(dataPtr__out__);
  dataPtr__error__: ;
 	return _res;
@@ -472,11 +480,13 @@ static PyObject *AEDesc_AEPutParamPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__))
+	                      &dataPtr__in__, &dataPtr__in_len__))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEPutParamPtr(&_self->ob_itself,
 	                     theAEKeyword,
 	                     typeCode,
@@ -520,16 +530,18 @@ static PyObject *AEDesc_AEGetParamPtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__out__;
 	long dataPtr__len__;
-	if (!PyArg_ParseTuple(_args, "O&O&l",
+	int dataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&O&i",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType,
-	                      &dataPtr__len__))
+	                      &dataPtr__in_len__))
 		return NULL;
-	if ((dataPtr__out__ = malloc(dataPtr__len__)) == NULL)
+	if ((dataPtr__out__ = malloc(dataPtr__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto dataPtr__error__;
 	}
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEGetParamPtr(&_self->ob_itself,
 	                     theAEKeyword,
 	                     desiredType,
@@ -538,7 +550,7 @@ static PyObject *AEDesc_AEGetParamPtr(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&s#",
 	                     PyMac_BuildOSType, typeCode,
-	                     dataPtr__out__, dataPtr__len__);
+	                     dataPtr__out__, (int)dataPtr__len__);
 	free(dataPtr__out__);
  dataPtr__error__: ;
 	return _res;
@@ -619,16 +631,18 @@ static PyObject *AEDesc_AEGetAttributePtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__out__;
 	long dataPtr__len__;
-	if (!PyArg_ParseTuple(_args, "O&O&l",
+	int dataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&O&i",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType,
-	                      &dataPtr__len__))
+	                      &dataPtr__in_len__))
 		return NULL;
-	if ((dataPtr__out__ = malloc(dataPtr__len__)) == NULL)
+	if ((dataPtr__out__ = malloc(dataPtr__in_len__)) == NULL)
 	{
 		PyErr_NoMemory();
 		goto dataPtr__error__;
 	}
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEGetAttributePtr(&_self->ob_itself,
 	                         theAEKeyword,
 	                         desiredType,
@@ -637,7 +651,7 @@ static PyObject *AEDesc_AEGetAttributePtr(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&s#",
 	                     PyMac_BuildOSType, typeCode,
-	                     dataPtr__out__, dataPtr__len__);
+	                     dataPtr__out__, (int)dataPtr__len__);
 	free(dataPtr__out__);
  dataPtr__error__: ;
 	return _res;
@@ -699,11 +713,13 @@ static PyObject *AEDesc_AEPutAttributePtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__))
+	                      &dataPtr__in__, &dataPtr__in_len__))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AEPutAttributePtr(&_self->ob_itself,
 	                         theAEKeyword,
 	                         typeCode,
@@ -927,7 +943,7 @@ static PyObject *AEDesc_getattr(self, name)
 
 #define AEDesc_setattr NULL
 
-static PyTypeObject AEDesc_Type = {
+staticforward PyTypeObject AEDesc_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
 	"AEDesc", /*tp_name*/
@@ -952,11 +968,13 @@ static PyObject *AE_AECreateDesc(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	AEDesc result;
 	if (!PyArg_ParseTuple(_args, "O&s#",
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__))
+	                      &dataPtr__in__, &dataPtr__in_len__))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AECreateDesc(typeCode,
 	                    dataPtr__in__, dataPtr__len__,
 	                    &result);
@@ -976,13 +994,15 @@ static PyObject *AE_AECoercePtr(_self, _args)
 	DescType typeCode;
 	char *dataPtr__in__;
 	long dataPtr__len__;
+	int dataPtr__in_len__;
 	DescType toType;
 	AEDesc result;
 	if (!PyArg_ParseTuple(_args, "O&s#O&",
 	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__len__,
+	                      &dataPtr__in__, &dataPtr__in_len__,
 	                      PyMac_GetOSType, &toType))
 		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
 	_err = AECoercePtr(typeCode,
 	                   dataPtr__in__, dataPtr__len__,
 	                   toType,
@@ -1002,12 +1022,14 @@ static PyObject *AE_AECreateList(_self, _args)
 	OSErr _err;
 	char *factoringPtr__in__;
 	long factoringPtr__len__;
+	int factoringPtr__in_len__;
 	Boolean isRecord;
 	AEDescList resultList;
 	if (!PyArg_ParseTuple(_args, "s#b",
-	                      &factoringPtr__in__, &factoringPtr__len__,
+	                      &factoringPtr__in__, &factoringPtr__in_len__,
 	                      &isRecord))
 		return NULL;
+	factoringPtr__len__ = factoringPtr__in_len__;
 	_err = AECreateList(factoringPtr__in__, factoringPtr__len__,
 	                    isRecord,
 	                    &resultList);
@@ -1232,7 +1254,7 @@ static PyMethodDef AE_methods[] = {
 
 
 static pascal OSErr
-GenericEventHandler(const AppleEvent *request, AppleEvent *reply, long refcon)
+GenericEventHandler(AppleEvent *request, AppleEvent *reply, long refcon)
 {
 	PyObject *handler = (PyObject *)refcon;
 	AEDescObject *requestObject, *replyObject;

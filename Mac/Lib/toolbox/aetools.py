@@ -136,8 +136,10 @@ def unpack(desc):
 
 
 def mkfss(data):
+	print "mkfss data =", `data`
 	vol, dir, fnlen = struct.unpack('hlb', data[:7])
 	filename = data[7:7+fnlen]
+	print (vol, dir, fnlen, filename)
 	return macfs.FSSpec((vol, dir, filename))
 
 

@@ -37,6 +37,11 @@ class MyScanner(Scanner):
 			'CloseDialog',
 			'DisposDialog',
 			'DisposeDialog',
+			'UpdtDialog',
+			'CouldAlert',
+			'FreeAlert',
+			'CouldDialog',
+			'FreeDialog',
 			]
 
 	def makeblacklisttypes(self):

@@ -10,7 +10,7 @@ from macsupport import *
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
 
 ModalFilterProcPtr = InputOnlyType("PyObject*", "O")
-ModalFilterProcPtr.passInput = lambda name: "Dlg_PassFilterProc(%s)" % name
+ModalFilterProcPtr.passInput = lambda name: "NewModalFilterProc(Dlg_PassFilterProc(%s))" % name
 
 RgnHandle = FakeType("_self->ob_itself->visRgn") # XXX
 
@@ -18,6 +18,10 @@ DITLMethod = Type("DITLMethod", "h")
 
 includestuff = includestuff + """
 #include <Dialogs.h>
+
+#ifndef HAVE_UNIVERSAL_HEADERS
+#define NewModalFilterProc(x) (x)
+#endif
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
@@ -36,7 +40,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	if (callback == NULL)
 		return 0; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&s#", DlgObj_New, dialog, event, sizeof(EventRecord));
+	args = Py_BuildValue("O&s#", DlgObj_New, dialog, event, (int)sizeof(EventRecord));
 	if (args == NULL)
 		res = NULL;
 	else {
