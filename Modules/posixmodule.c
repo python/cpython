@@ -5662,6 +5662,7 @@ posix_putenv(PyObject *self, PyObject *args)
 	new = PyString_AS_STRING(newstr);
 	PyOS_snprintf(new, len, "%s=%s", s1, s2);
 	if (putenv(new)) {
+                Py_DECREF(newstr);
                 posix_error();
                 return NULL;
 	}
