@@ -76,6 +76,17 @@ ResObj_Convert(v, p_itself)
 {
 	if (!ResObj_Check(v))
 	{
+		PyObject *tmp;
+		if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) )
+		{
+			*p_itself = ((ResourceObject *)tmp)->ob_itself;
+			Py_DECREF(tmp);
+			return 1;
+		}
+		PyErr_Clear();
+	}
+	if (!ResObj_Check(v))
+	{
 		PyErr_SetString(PyExc_TypeError, "Resource required");
 		return 0;
 	}
@@ -1388,17 +1399,26 @@ OptResObj_Convert(v, p_itself)
 	PyObject *v;
 	Handle *p_itself;
 {
+	PyObject *tmp;
+	
 	if ( v == Py_None ) {
 		*p_itself = NULL;
 		return 1;
 	}
-	if (!ResObj_Check(v))
+	if (ResObj_Check(v))
 	{
-		PyErr_SetString(PyExc_TypeError, "Resource required");
-		return 0;
+		*p_itself = ((ResourceObject *)v)->ob_itself;
+		return 1;
 	}
-	*p_itself = ((ResourceObject *)v)->ob_itself;
-	return 1;
+	/* If it isn't a resource yet see whether it is convertible */
+	if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) ) {
+		*p_itself = ((ResourceObject *)tmp)->ob_itself;
+		Py_DECREF(tmp);
+		return 1;
+	}
+	PyErr_Clear();
+	PyErr_SetString(PyExc_TypeError, "Resource required");
+	return 0;
 }
 
 
