@@ -835,10 +835,12 @@ dropwhile_next(dropwhileobject *lz)
 	PyObject *item, *good;
 	PyObject *it = lz->it;
 	long ok;
+	PyObject *(*iternext)(PyObject *);
 
+	assert(PyIter_Check(it));
+	iternext = *it->ob_type->tp_iternext;
 	for (;;) {
-		assert(PyIter_Check(it));
-		item = (*it->ob_type->tp_iternext)(it);
+		item = iternext(it);
 		if (item == NULL)
 			return NULL;
 		if (lz->start == 1)
@@ -1170,10 +1172,12 @@ islice_next(isliceobject *lz)
 	PyObject *item;
 	PyObject *it = lz->it;
 	long oldnext;
+	PyObject *(*iternext)(PyObject *);
 
+	assert(PyIter_Check(it));
+	iternext = *it->ob_type->tp_iternext;
 	while (lz->cnt < lz->next) {
-		assert(PyIter_Check(it));
-		item = (*it->ob_type->tp_iternext)(it);
+		item = iternext(it);
 		if (item == NULL)
 			return NULL;
 		Py_DECREF(item);
@@ -1182,7 +1186,7 @@ islice_next(isliceobject *lz)
 	if (lz->stop != -1 && lz->cnt >= lz->stop)
 		return NULL;
 	assert(PyIter_Check(it));
-	item = (*it->ob_type->tp_iternext)(it);
+	item = iternext(it);
 	if (item == NULL)
 		return NULL;
 	lz->cnt++;
@@ -1783,10 +1787,12 @@ ifilter_next(ifilterobject *lz)
 	PyObject *item;
 	PyObject *it = lz->it;
 	long ok;
+	PyObject *(*iternext)(PyObject *);
 
+	assert(PyIter_Check(it));
+	iternext = *it->ob_type->tp_iternext;
 	for (;;) {
-		assert(PyIter_Check(it));
-		item = (*it->ob_type->tp_iternext)(it);
+		item = iternext(it);
 		if (item == NULL)
 			return NULL;
 
@@ -1932,10 +1938,12 @@ ifilterfalse_next(ifilterfalseobject *lz)
 	PyObject *item;
 	PyObject *it = lz->it;
 	long ok;
+	PyObject *(*iternext)(PyObject *);
 
+	assert(PyIter_Check(it));
+	iternext = *it->ob_type->tp_iternext;
 	for (;;) {
-		assert(PyIter_Check(it));
-		item = (*it->ob_type->tp_iternext)(it);
+		item = iternext(it);
 		if (item == NULL)
 			return NULL;
 
