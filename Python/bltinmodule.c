@@ -1586,7 +1586,9 @@ builtin_issubclass(PyObject *self, PyObject *args)
 PyDoc_STRVAR(issubclass_doc,
 "issubclass(C, B) -> bool\n\
 \n\
-Return whether class C is a subclass (i.e., a derived class) of class B.");
+Return whether class C is a subclass (i.e., a derived class) of class B.\n\
+When using a tuple as the second argument issubclass(X, (A, B, ...)),\n\
+is a shortcut for issubclass(X, A) or issubclass(X, B) or ... (etc.).");
 
 
 static PyObject*

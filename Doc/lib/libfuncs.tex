@@ -550,11 +550,13 @@ def my_import(name):
   \versionchanged[Support for a tuple of type information was added]{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{issubclass}{class1, class2}
-  Return true if \var{class1} is a subclass (direct or indirect) of
-  \var{class2}.  A class is considered a subclass of itself.  If
-  either argument is not a class object, a \exception{TypeError}
-  exception is raised.
+\begin{funcdesc}{issubclass}{class, classinfo}
+  Return true if \var{class} is a subclass (direct or indirect) of
+  \var{classinfo}.  A class is considered a subclass of itself.
+  \var{classinfo} may be a tuple of class objects, in which case every
+  entry in \var{classinfo} will be checked. In any other case, a
+  \exception{TypeError} exception is raised.
+  \versionchanged[Support for a tuple of type information was added]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{iter}{o\optional{, sentinel}}
