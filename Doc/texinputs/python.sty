@@ -37,15 +37,21 @@
   % active links.  Some work, some don't.
   %
   \let\py@OldContentsline=\contentsline
+  %
+  % Macro that takes two args: the name to link to and the content of
+  % the link.  This takes care of the PDF magic, getting the colors
+  % the same for each link, and avoids having lots of garbage all over 
+  % this style file.
+  \newcommand{\py@linkToName}[2]{%
+    \pdfannotlink attr{/Border [0 0 0]} goto name{#1}%
+      \py@LinkColor#2\py@NormalColor%
+    \pdfendlink%
+  }    
   % Compute the padded page number separately since we end up with a pair of
   % \relax tokens; this gets the right string computed and works.
   \renewcommand{\contentsline}[3]{%
     \def\my@pageno{\py@targetno{#3}}%
-    \py@OldContentsline{#1}{%
-      \pdfannotlink attr{/Border [0 0 0]} goto name{page\my@pageno}%
-        \py@LinkColor#2\py@NormalColor%
-      \pdfendlink%
-    }{#3}%
+    \py@OldContentsline{#1}{\py@linkToName{page\my@pageno}{#2}}{#3}%
   }
   \AtEndDocument{
     \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
@@ -232,12 +238,10 @@
 % name, at least if we're building PDF:
 \@ifundefined{pdfannotlink}{%
   \newcommand{\refmodule}[2][\py@modulebadkey]{\module{#2}}
-}{\newcommand{\refmodule}[2][\py@modulebadkey]{%
+}{%
+  \newcommand{\refmodule}[2][\py@modulebadkey]{%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\py@modulekey}%
-     \py@LinkColor\module{#2}\py@NormalColor%
-     \pdfendlink%
-    }%
+    \py@linkToName{label-module-\py@modulekey}{\module{#2}}%
   }
 }
 
@@ -362,10 +366,9 @@
 \@ifundefined{pdfoutput}{
   \newcommand{\py@ModSynopsisSummary}[4]{\bfcode{#2} & #4\\}
 }{
-  \newcommand{\py@ModSynopsisSummary}[4]{
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-#1}
-     \py@LinkColor \bfcode{#2} \py@NormalColor
-     \pdfendlink}& #4\\}
+  \newcommand{\py@ModSynopsisSummary}[4]{%
+    \py@linkToName{label-module-#1}{\bfcode{#2}} & #4\\
+  }
 }
 \newenvironment{synopsistable}{
   % key, name, type, synopsis
@@ -807,10 +810,7 @@
     \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
     \ref{module-\py@modulekey}:\quad %
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\py@modulekey}%
-     \py@LinkColor Module \module{#2} \py@NormalColor%
-     \pdfendlink%
-    }%
+    \py@linkToName{label-module-\py@modulekey}{ Module \module{#2} }
     \quad (#3)%
   }
 }
