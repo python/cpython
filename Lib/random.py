@@ -333,8 +333,8 @@ class Random(_random.Random):
         # arc:  range of distribution (in radians between 0 and pi)
         import warnings
         warnings.warn("The cunifvariate function is deprecated; Use (mean "
-                      "+ arc * (Random.random() - 0.5)) % Math.pi instead",
-                      DeprecationWarning)
+                      "+ arc * (Random.random() - 0.5)) % Math.pi instead.",
+                      DeprecationWarning, 2)
 
         return (mean + arc * (self.random() - 0.5)) % _pi
 
@@ -487,8 +487,8 @@ class Random(_random.Random):
         # ccc = alpha + ainv
         import warnings
         warnings.warn("The stdgamma function is deprecated; "
-                      "use gammavariate() instead",
-                      DeprecationWarning)
+                      "use gammavariate() instead.",
+                      DeprecationWarning, 2)
         return self.gammavariate(alpha, 1.0)
 
 

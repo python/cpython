@@ -502,8 +502,8 @@ class Set(BaseSet):
         """Add all values from an iterable (such as a list or file)."""
         import warnings
         warnings.warn("The update() method is going to be deprecated; "
-                      "Use union_update() instead",
-                      PendingDeprecationWarning)
+                      "Use union_update() instead.",
+                      PendingDeprecationWarning, 2)
         self._update(iterable)
 
     def clear(self):
