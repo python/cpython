@@ -1,0 +1,220 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+#ifdef _WIN32
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP              BITMAP  DISCARDABLE     "PythonPowered.bmp"
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Germany) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_INTRO DIALOGEX 0, 0, 379, 178
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Setup"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "This Wizard will install %s on your computer. Click Next to continue or Cancel to exit the Setup Wizard.",
+                    IDC_TITLE,125,10,247,20,NOT WS_GROUP
+    EDITTEXT        IDC_INTRO_TEXT,125,31,247,131,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL | WS_HSCROLL | NOT WS_TABSTOP
+    CONTROL         110,IDC_BITMAP,"Static",SS_BITMAP | SS_CENTERIMAGE,6,8,
+                    104,163,WS_EX_CLIENTEDGE
+    LTEXT           "",IDC_BUILD_INFO,125,163,247,8
+END
+
+IDD_SELECTPYTHON DIALOGEX 0, 0, 379, 178
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Setup"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "Select python installation to use:",IDC_TITLE,125,10,
+                    247,12,NOT WS_GROUP
+    EDITTEXT        IDC_PATH,191,136,181,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Python Directory:",IDC_STATIC,125,137,55,8
+    LISTBOX         IDC_VERSIONS_LIST,125,24,247,106,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         110,IDC_BITMAP,"Static",SS_BITMAP | SS_CENTERIMAGE,6,8,
+                    104,163,WS_EX_CLIENTEDGE
+    EDITTEXT        IDC_INSTALL_PATH,191,157,181,14,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    LTEXT           "Installation Directory:",IDC_STATIC,125,158,66,8
+    PUSHBUTTON      "Find other ...",IDC_OTHERPYTHON,322,7,50,14,NOT 
+                    WS_VISIBLE
+END
+
+IDD_INSTALLFILES DIALOGEX 0, 0, 379, 178
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Setup"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    LTEXT           "Click Next to begin the installation. If you want to review or change any of your installation settings, click Back. Click Cancel to exit the Wizard.",
+                    IDC_TITLE,125,10,246,31,NOT WS_GROUP
+    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",WS_BORDER,
+                    125,157,246,14
+    CTEXT           "Installation progress:",IDC_INFO,125,137,246,8
+    CONTROL         110,IDC_BITMAP,"Static",SS_BITMAP | SS_CENTERIMAGE,6,8,
+                    104,163,WS_EX_CLIENTEDGE
+END
+
+IDD_FINISHED DIALOGEX 0, 0, 379, 178
+STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Setup"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Click the Finish button to exit the Setup wizard.",
+                    IDC_TITLE,125,10,247,31,NOT WS_GROUP
+    CONTROL         110,IDC_BITMAP,"Static",SS_BITMAP | SS_CENTERIMAGE,6,8,
+                    104,163,WS_EX_CLIENTEDGE
+    EDITTEXT        IDC_INFO,125,40,247,131,ES_MULTILINE | ES_READONLY | 
+                    WS_VSCROLL | WS_HSCROLL | NOT WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_INTRO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 372
+        VERTGUIDE, 125
+        VERTGUIDE, 372
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+        HORZGUIDE, 8
+        HORZGUIDE, 31
+    END
+
+    IDD_SELECTPYTHON, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 372
+        VERTGUIDE, 125
+        VERTGUIDE, 372
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+        HORZGUIDE, 8
+        HORZGUIDE, 41
+    END
+
+    IDD_INSTALLFILES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 372
+        VERTGUIDE, 125
+        VERTGUIDE, 371
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+        HORZGUIDE, 8
+        HORZGUIDE, 41
+    END
+
+    IDD_FINISHED, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 372
+        VERTGUIDE, 125
+        VERTGUIDE, 372
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+        HORZGUIDE, 8
+        HORZGUIDE, 41
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
