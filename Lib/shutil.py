@@ -109,7 +109,6 @@ def copytree(src, dst, symlinks=False):
     """
     names = os.listdir(src)
     os.makedirs(dst)
-    copystat(src, dst)
     errors = []
     for name in names:
         srcname = os.path.join(src, name)
@@ -125,6 +124,7 @@ def copytree(src, dst, symlinks=False):
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
             errors.append((srcname, dstname, why))
+    copystat(src, dst)
     if errors:
         raise Error, errors
 
