@@ -1326,7 +1326,7 @@ builtin_slice(self, args)
 }
 
 static char slice_doc[] =
-"slice([start,] step[, stop]) -> slice object\n\
+"slice([start,] stop[, step]) -> slice object\n\
 \n\
 Create a slice object.  This is used for slicing by the Numeric extensions.";
 
