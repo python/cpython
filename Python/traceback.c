@@ -243,8 +243,9 @@ tb_printinternal(tb, f, limit)
 	}
 	while (tb != NULL && !PyOS_InterruptOccurred()) {
 		if (depth <= limit) {
-			tb->tb_lineno = PyCode_Addr2Line(tb->tb_frame->f_code,
-							 tb->tb_lasti);
+			if (Py_OptimizeFlag)
+				tb->tb_lineno = PyCode_Addr2Line(
+					tb->tb_frame->f_code, tb->tb_lasti);
 			tb_displayline(f,
 			    PyString_AsString(
 				    tb->tb_frame->f_code->co_filename),
