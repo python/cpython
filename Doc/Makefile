@@ -58,6 +58,7 @@ DESTDIR=	/usr/local
 LIBDESTDIR=	$DESTDIR/lib
 LIBDEST=	$LIBDESTDIR/python
 DOCDESTDIR=	$LIBDEST/doc
+TARBALLDEST=	.
 
 # This is only used for .info generation:
 EMACS=		emacs
@@ -67,11 +68,19 @@ PARTPARSE=	$(PYTHON) ./partparse.pyc
 
 # Ideally, you shouldn't need to edit beyond this point
 
+VERSION=1.5
+
 # Main target
 all:	all-ps
 
 all-dvi: tut.dvi lib.dvi ext.dvi api.dvi
-all-ps:	tut.ps lib.ps ext.ps api.ps
+all-ps:
+	./texoption.sh -d openright
+	$(MAKE) tut.ps lib.ps ext.ps api.ps
+
+all-ps2:
+	./texoption.sh openright
+	$(MAKE) tut.ps lib.ps ext.ps api.ps
 
 # Individual document fake targets
 tut:	tut.ps
@@ -242,7 +251,36 @@ l2hapi: api.dvi myformat.perl
 
 tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
-	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* | gzip >html.tar.gz
+	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* \
+		| gzip >html-$(VERSION).tar.gz
+	if [ "$(TARBALLDEST)" != "." ] ; then \
+		mv html-$(VERSION).tar.gz $(TARBALLDEST) ; else true ; fi
+
+tarps:	all-ps
+	cp ref/ref.ps .
+	tar cf - ???.ps | gzip >postscript-$(VERSION).tar.gz
+	rm ref.ps
+	if [ "$(TARBALLDEST)" != "." ] ; then \
+		mv postscript-$(VERSION).tar.gz $(TARBALLDEST) ; else true ; fi
+
+tarps2:	all-ps2
+	cp ref/ref.ps .
+	tar cf - ???.ps | gzip >postscript-2sided-$(VERSION).tar.gz
+	rm ref.ps
+	if [ "$(TARBALLDEST)" != "." ] ; then \
+		mv postscript-2sided-$(VERSION).tar.gz $(TARBALLDEST) ; \
+		else true ; fi
+
+tardvi:
+	./texoption.sh -d openright
+	$(MAKE) all-dvi
+	tar cf - ???.dvi | gzip >dvi-$(VERSION).tar.gz
+	if [ "$(TARBALLDEST)" != "." ] ; then \
+		mv dvi-$(VERSION).tar.gz $(TARBALLDEST) ; else true ; fi
+
+# This can take a long time, since the documents can get formatter twice by
+# LaTeX, once with openright and once without.
+tarballs:  tardvi tarps tarps2 tarhtml
 
 
 # Housekeeping targets
