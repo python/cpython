@@ -97,7 +97,7 @@ signal signalmodule.c		# signal(2)
 
 # The SGI specific GL module:
 
-#gl glmodule.c cgensupport.c -lgl -lX11	# Graphics Library -- SGI only
+#gl glmodule.c cgensupport.c -I$(srcdir) -lgl -lX11
 
 # Thread module -- use only if Python has thread support for your OS.
 # Note that you must have configured (and built!) Python with the
