@@ -392,4 +392,6 @@ def writedict(dict, filename):
 		pass
 	os.rename(tempname, filename)
 
-main()
+
+if __name__ == '__main__':
+	main()
