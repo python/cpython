@@ -8,12 +8,9 @@ structs represented as Python strings.  It uses \dfn{format strings}
 (explained below) as compact descriptions of the lay-out of the C
 structs and the intended conversion to/from Python values.
 
-See also built-in module \code{array}.
-\refbimodindex{array}
-
 The module defines the following exception and functions:
 
-\setindexsubitem{(in module struct)}
+
 \begin{excdesc}{error}
   Exception raised on various occasions; argument is a string
   describing what is wrong.
@@ -135,5 +132,9 @@ Hint: to align the end of a structure to the alignment requirement of
 a particular type, end the format with the code for that type with a
 repeat count of zero, e.g.\ the format \code{'llh0l'} specifies two
 pad bytes at the end, assuming longs are aligned on 4-byte boundaries.
-(This only works when native size and alignment are in effect;
-standard size and alignment does not enforce any alignment.)
+This only works when native size and alignment are in effect;
+standard size and alignment does not enforce any alignment.
+
+\begin{seealso}
+\seemodule{array}{packed binary storage of homogeneous data}
+\end{seealso}
