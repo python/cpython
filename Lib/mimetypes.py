@@ -315,8 +315,8 @@ def read_mime_types(file):
     except IOError:
         return None
     db = MimeTypes()
-    db.readfp(f)
-    return db.types_map
+    db.readfp(f, True)
+    return db.types_map[True]
 
 
 suffix_map = {
