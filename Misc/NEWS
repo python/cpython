@@ -130,7 +130,13 @@ Extension modules
 
 Library
 
-- getopt.gnu_getopt was added.
+- Sockets now support timeout mode.  After s.settimeout(T), where T is
+  a float expressing seconds, subsequent operations raise an exception
+  if they cannot be completed within T seconds.  To disable timeout
+  mode, use s.settimeout(None).
+
+- getopt.gnu_getopt was added.  This supports GNU-style option
+  processing, where options can be mixed with non-option arguments.
 
 - Stop using strings for exceptions.  String objects used for
   exceptions are now classes deriving from Exception.  The objects
