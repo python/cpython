@@ -117,6 +117,7 @@ then
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
 	atheos*) MACHDEP="atheos";;
+        irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
 	esac
 fi
