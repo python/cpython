@@ -381,6 +381,10 @@ Extension modules
 Library
 -------
 
+- A new module, optparse, provides a fancy alternative to getopt for
+  command line parsing.  It is slightly modified version of Greg
+  Ward's Optik package.
+
 - UserDict.py now defines a DictMixin class which defines all dictionary
   methods for classes that already have a minimum mapping interface.
   This greatly simplifies writing classes that need to be substitutable
