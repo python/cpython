@@ -1,4 +1,4 @@
-"""__future__:  Record of phased-in incompatible language changes.
+"""Record of phased-in incompatible language changes.
 
 Each line is of the form:
 
