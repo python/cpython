@@ -43,14 +43,14 @@ terminates with an unhandled exception, a stack trace is printed and
 then the thread exits (but other threads continue to run).
 \end{funcdesc}
 
+\begin{funcdesc}{interrupt_main}{}
+Raise a KeyboardInterrupt in the main thread.  A subthread can use this
+function to to interrupt the main thread.
+\end{funcdesc}
+
 \begin{funcdesc}{exit}{}
 Raise the \exception{SystemExit} exception.  When not caught, this
 will cause the thread to exit silently.
-\end{funcdesc}
-
-\begin{funcdesc}{exit_thread}{}
-\deprecated{1.5.2}{Use \function{exit()}.}
-This is an obsolete synonym for \function{exit()}.
 \end{funcdesc}
 
 %\begin{funcdesc}{exit_prog}{status}
