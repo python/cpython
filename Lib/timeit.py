@@ -51,6 +51,7 @@ use python -O for the older versions to avoid timing SET_LINENO
 instructions.
 """
 
+import gc
 import sys
 import time
 try:
@@ -155,7 +156,12 @@ class Timer:
             it = itertools.repeat(None, number)
         else:
             it = [None] * number
-        return self.inner(it, self.timer)
+        gcold = gc.isenabled()
+        gc.disable()
+        timing = self.inner(it, self.timer)
+        if gcold:
+            gc.enable()
+        return timing
 
     def repeat(self, repeat=default_repeat, number=default_number):
         """Call timeit() a few times.
