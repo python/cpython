@@ -5,7 +5,7 @@
 # Jack Jansen, CWI, August 1995.
 #
 # To do:
-# - Also do project files (.µ and .º), after using AppleEvents to the
+# - Also do project files (.µ and .†), after using AppleEvents to the
 #   various builders to clean the projects
 # - Don't hexbin (and clean) if there exists a .hqx file that is newer.
 #
@@ -16,10 +16,6 @@ import sys
 import macostools
 import macfs
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('AE')
 import aetools
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
 from Required_Suite import Required_Suite 

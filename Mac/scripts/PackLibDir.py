@@ -1,9 +1,5 @@
 #
 # Turn a pyc file into a resource file containing it in 'PYC ' resource form
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('res')
 from Res import *
 import Res
 from Resources import *

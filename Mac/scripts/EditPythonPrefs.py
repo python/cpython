@@ -1,8 +1,4 @@
 """Edit the Python Preferences file."""
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('evt')
 
 from Dlg import *
 from Events import *

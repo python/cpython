@@ -15,9 +15,6 @@ import macfs
 import MacOS
 
 import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('AE')
 import aetools
 import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
