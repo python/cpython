@@ -110,6 +110,20 @@ y = r"""foo
 bar \\ baz
 """ + R'''spam
 '''
+x = u'abc' + U'ABC'
+y = u"abc" + U"ABC"
+x = ur'abc' + Ur'ABC' + uR'ABC' + UR'ABC'
+y = ur"abc" + Ur"ABC" + uR"ABC" + UR"ABC"
+x = ur'\\' + UR'\\'
+x = ur'\'' + ''
+y = ur'''
+foo bar \\
+baz''' + UR'''
+foo'''
+y = Ur"""foo
+bar \\ baz
+""" + uR'''spam
+'''
 
 # Indentation
 if 1:

@@ -54,10 +54,10 @@ Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
 Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
 # Tail end of """ string.
 Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
-Triple = group("[rR]?'''", '[rR]?"""')
+Triple = group("[uU]?[rR]?'''", '[uU]?[rR]?"""')
 # Single-line ' or " string.
-String = group(r"[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
-               r'[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
+String = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               r'[uU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
 # Because of leftmost-then-longest match semantics, be sure to put the
 # longest operators first (e.g., if = came before ==, == would get
@@ -74,8 +74,10 @@ PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
 # First (or only) line of ' or " string.
-ContStr = group(r"[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" + group("'", r'\\\r?\n'),
-                r'[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' + group('"', r'\\\r?\n'))
+ContStr = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
+                group("'", r'\\\r?\n'),
+                r'[uU]?[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' +
+                group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
@@ -84,7 +86,14 @@ tokenprog, pseudoprog, single3prog, double3prog = map(
 endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "'''": single3prog, '"""': double3prog,
             "r'''": single3prog, 'r"""': double3prog,
-            "R'''": single3prog, 'R"""': double3prog, 'r': None, 'R': None}
+            "u'''": single3prog, 'u"""': double3prog,
+            "ur'''": single3prog, 'ur"""': double3prog,
+            "R'''": single3prog, 'R"""': double3prog,
+            "U'''": single3prog, 'U"""': double3prog,
+            "uR'''": single3prog, 'uR"""': double3prog,
+            "Ur'''": single3prog, 'Ur"""': double3prog,
+            "UR'''": single3prog, 'UR"""': double3prog,
+            'r': None, 'R': None, 'u': None, 'U': None}
 
 tabsize = 8
 
@@ -172,7 +181,10 @@ def tokenize(readline, tokeneater=printtoken):
                 elif initial == '#':
                     tokeneater(COMMENT, token, spos, epos, line)
                 elif token in ("'''", '"""',               # triple-quoted
-                               "r'''", 'r"""', "R'''", 'R"""'):
+                               "r'''", 'r"""', "R'''", 'R"""',
+                               "u'''", 'u"""', "U'''", 'U"""',
+                               "ur'''", 'ur"""', "Ur'''", 'Ur"""',
+                               "uR'''", 'uR"""', "UR'''", 'UR"""'):
                     endprog = endprogs[token]
                     endmatch = endprog.match(line, pos)
                     if endmatch:                           # all on one line
@@ -185,10 +197,14 @@ def tokenize(readline, tokeneater=printtoken):
                         contline = line
                         break
                 elif initial in ("'", '"') or \
-                    token[:2] in ("r'", 'r"', "R'", 'R"'):
+                    token[:2] in ("r'", 'r"', "R'", 'R"',
+                                  "u'", 'u"', "U'", 'U"') or \
+                    token[:3] in ("ur'", 'ur"', "Ur'", 'Ur"',
+                                  "uR'", 'uR"', "UR'", 'UR"' ):
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
-                        endprog = endprogs[initial] or endprogs[token[1]]
+                        endprog = (endprogs[initial] or endprogs[token[1]] or
+                                   endprogs[token[2]])
                         contstr, needcont = line[start:], 1
                         contline = line
                         break
