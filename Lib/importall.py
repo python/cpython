@@ -1,17 +1,7 @@
 # Utility module to import all modules in the path, in the hope
 # that this will update their ".pyc" files.
 
-# First, see if this is the Mac or UNIX
-try:
-	import posix
-	os = posix
-	import path
-except ImportError:
-	import mac
-	os = mac
-	import macpath
-	path = macpath
-
+import os
 import sys
 
 # Sabotage 'gl' and 'stdwin' to prevent windows popping up...
