@@ -9,7 +9,7 @@ to a sane state so you can read the resulting traceback.
 
 import sys, curses
 
-def wrapper(func, *rest):
+def wrapper(func, *args, **kwds):
     """Wrapper function that initializes curses and calls another function,
     restoring normal keyboard/screen behavior on error.
     The callable object 'func' is then passed the main window 'stdscr'
@@ -41,23 +41,10 @@ def wrapper(func, *rest):
         except:
             pass
 
-        res = func(stdscr, *rest)
-    except:
-        # In the event of an error, restore the terminal
-        # to a sane state.
-        stdscr.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
-
-        # Pass the exception upwards
-        (exc_type, exc_value, exc_traceback) = sys.exc_info()
-        raise exc_type, exc_value, exc_traceback
-    else:
+        return func(stdscr, *rest)
+    finally:
         # Set everything back to normal
         stdscr.keypad(0)
         curses.echo()
         curses.nocbreak()
-        curses.endwin()          # Terminate curses
-
-        return res
+        curses.endwin()
