@@ -196,6 +196,7 @@ class MyRPCServer(rpc.RPCServer):
         Interrupt the MainThread and exit server if link is dropped.
 
         """
+        global quitting
         try:
             raise
         except SystemExit:
@@ -214,7 +215,8 @@ class MyRPCServer(rpc.RPCServer):
             traceback.print_exc(file=erf)
             print>>erf, '\n*** Unrecoverable, server exiting!'
             print>>erf, '-'*40
-            exit()
+            quitting = True
+            thread.interrupt_main()
 
 
 class MyHandler(rpc.RPCHandler):
