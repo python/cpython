@@ -86,6 +86,11 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
 #define MAGIC (50428 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
+/* Magic word as global; note that _PyImport_Init() can change the
+   value of this global to accomodate for alterations of how the
+   compiler works which are enabled by command line switches. */
+static long pyc_magic = MAGIC;
+
 /* See _PyImport_FixupExtension() below */
 static PyObject *extensions = NULL;
 
@@ -134,6 +139,13 @@ _PyImport_Init()
 			if (strcmp(filetab->suffix, ".pyc") == 0)
 				filetab->suffix = ".pyo";
 		}
+	}
+
+	if (Py_UnicodeFlag) {
+		/* Fix the pyc_magic so that byte compiled code created
+		   using the all-Unicode method doesn't interfere with
+		   code created in normal operation mode. */
+		pyc_magic = MAGIC + 1;
 	}
 }
 
@@ -366,7 +378,7 @@ PyImport_Cleanup()
 long
 PyImport_GetMagicNumber()
 {
-	return MAGIC;
+	return pyc_magic;
 }
 
 
@@ -572,7 +584,7 @@ check_compiled_module(pathname, mtime, cpathname)
 	if (fp == NULL)
 		return NULL;
 	magic = PyMarshal_ReadLongFromFile(fp);
-	if (magic != MAGIC) {
+	if (magic != pyc_magic) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# %s has bad magic\n", cpathname);
 		fclose(fp);
@@ -627,7 +639,7 @@ load_compiled_module(name, cpathname, fp)
 	PyObject *m;
 
 	magic = PyMarshal_ReadLongFromFile(fp);
-	if (magic != MAGIC) {
+	if (magic != pyc_magic) {
 		PyErr_Format(PyExc_ImportError,
 			     "Bad magic number in %.200s", cpathname);
 		return NULL;
@@ -685,7 +697,7 @@ write_compiled_module(co, cpathname, mtime)
 				"# can't create %s\n", cpathname);
 		return;
 	}
-	PyMarshal_WriteLongToFile(MAGIC, fp);
+	PyMarshal_WriteLongToFile(pyc_magic, fp);
 	/* First write a 0 for mtime */
 	PyMarshal_WriteLongToFile(0L, fp);
 	PyMarshal_WriteObjectToFile((PyObject *)co, fp);
@@ -1953,10 +1965,10 @@ imp_get_magic(self, args)
 
 	if (!PyArg_ParseTuple(args, ":get_magic"))
 		return NULL;
-	buf[0] = (char) ((MAGIC >>  0) & 0xff);
-	buf[1] = (char) ((MAGIC >>  8) & 0xff);
-	buf[2] = (char) ((MAGIC >> 16) & 0xff);
-	buf[3] = (char) ((MAGIC >> 24) & 0xff);
+	buf[0] = (char) ((pyc_magic >>  0) & 0xff);
+	buf[1] = (char) ((pyc_magic >>  8) & 0xff);
+	buf[2] = (char) ((pyc_magic >> 16) & 0xff);
+	buf[3] = (char) ((pyc_magic >> 24) & 0xff);
 
 	return PyString_FromStringAndSize(buf, 4);
 }
