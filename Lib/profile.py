@@ -104,9 +104,9 @@ class Profile:
            It is used so that a function call will not have to access the
            timing data for the parent frame.
     [ 1] = Total time spent in this frame's function, excluding time in
-           subfunctions
-    [ 2] = Cumulative time spent in this frame's function, including time in
-           all subfunctions to this frame.
+           subfunctions (this latter is tallied in cur[2]).
+    [ 2] = Total time spent in subfunctions, excluding time executing the
+           frame's function (this latter is tallied in cur[1]).
     [-3] = Name of the function that corresponds to this frame.
     [-2] = Actual frame that we correspond to (used to sync exception handling)
     [-1] = Our parent 6-tuple (corresponds to frame.f_back)
@@ -123,7 +123,7 @@ class Profile:
           non-recursive functions, this is the total execution time from start
           to finish of each invocation of a function, including time spent in
           all subfunctions.
-    [5] = A dictionary indicating for each function name, the number of times
+    [4] = A dictionary indicating for each function name, the number of times
           it was called by us.
     """
 
@@ -228,24 +228,40 @@ class Profile:
 
     def trace_dispatch_exception(self, frame, t):
         rt, rtt, rct, rfn, rframe, rcur = self.cur
-        if (not rframe is frame) and rcur:
+        if (rframe is not frame) and rcur:
             return self.trace_dispatch_return(rframe, t)
-        return 0
+        self.cur = rt, rtt+t, rct, rfn, rframe, rcur
+        return 1
 
 
     def trace_dispatch_call(self, frame, t):
+        if self.cur and frame.f_back is not self.cur[-2]:
+            rt, rtt, rct, rfn, rframe, rcur = self.cur
+            if not isinstance(rframe, Profile.fake_frame):
+                if rframe.f_back is not frame.f_back:
+                    print rframe, rframe.f_back
+                    print frame, frame.f_back
+                    raise "Bad call", self.cur[-3]
+                self.trace_dispatch_return(rframe, 0)
+                if self.cur and frame.f_back is not self.cur[-2]:
+                    raise "Bad call[2]", self.cur[-3]
         fcode = frame.f_code
         fn = (fcode.co_filename, fcode.co_firstlineno, fcode.co_name)
         self.cur = (t, 0, 0, fn, frame, self.cur)
-        if self.timings.has_key(fn):
-            cc, ns, tt, ct, callers = self.timings[fn]
-            self.timings[fn] = cc, ns + 1, tt, ct, callers
+        timings = self.timings
+        if timings.has_key(fn):
+            cc, ns, tt, ct, callers = timings[fn]
+            timings[fn] = cc, ns + 1, tt, ct, callers
         else:
-            self.timings[fn] = 0, 0, 0, 0, {}
+            timings[fn] = 0, 0, 0, 0, {}
         return 1
 
     def trace_dispatch_return(self, frame, t):
-        # if not frame is self.cur[-2]: raise "Bad return", self.cur[3]
+        if frame is not self.cur[-2]:
+            if frame is self.cur[-2].f_back:
+                self.trace_dispatch_return(self.cur[-2], 0)
+            else:
+                raise "Bad return", self.cur[-3]
 
         # Prefix "r" means part of the Returning or exiting frame
         # Prefix "p" means part of the Previous or older frame
@@ -257,7 +273,8 @@ class Profile:
         pt, ptt, pct, pfn, pframe, pcur = rcur
         self.cur = pt, ptt+rt, pct+sft, pfn, pframe, pcur
 
-        cc, ns, tt, ct, callers = self.timings[rfn]
+        timings = self.timings
+        cc, ns, tt, ct, callers = timings[rfn]
         if not ns:
             ct = ct + sft
             cc = cc + 1
@@ -268,7 +285,7 @@ class Profile:
             # courtesy of this call.
         else:
             callers[pfn] = 1
-        self.timings[rfn] = cc, ns - 1, tt+rtt, ct, callers
+        timings[rfn] = cc, ns - 1, tt+rtt, ct, callers
 
         return 1
 
