@@ -41,7 +41,7 @@ mac: icons mac/mac.html
 ref: icons ref/ref.html
 tut: icons tut/tut.html
 
-$(INDEXFILES): $(COMMONPERL)
+$(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
 api/api.html:  $(PAPERDIR)/api.aux
 	$(MKHTML) api $(L2HARGS)
@@ -55,7 +55,7 @@ lib/lib.html:  $(PAPERDIR)/lib.aux
 	$(MKHTML) lib $(L2HARGS)
 
 mac/mac.html:  $(MACFILES)
-	$(TOOLSDIR)/mkhowto.sh --html $(TOPDIR)/mac/mac.tex
+	$(TOOLSDIR)/mkhowto.sh --address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' --html $(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(PAPERDIR)/ref.aux
 	$(MKHTML) ref $(L2HARGS)
