@@ -2,13 +2,13 @@
 \label{module-panel}
 \stmodindex{panel}
 
-\strong{Please note:} The FORMS library, to which the \code{fl} module described
-above interfaces, is a simpler and more accessible user interface
-library for use with GL than the Panel Module (besides also being by a
-Dutch author).
+\strong{Please note:} The FORMS library, to which the
+\code{fl}\refbimodindex{fl} module described above interfaces, is a
+simpler and more accessible user interface library for use with GL
+than the \code{panel} module (besides also being by a Dutch author).
 
 This module should be used instead of the built-in module
-\code{pnl}
+\code{pnl}\refbimodindex{pnl}
 to interface with the
 \emph{Panel Library}.
 
@@ -31,6 +31,7 @@ or
 \code{panel.defpanellist()}.
 
 \section{Standard Module \sectcode{panelparser}}
+\label{module-panelparser}
 \stmodindex{panelparser}
 
 This module defines a self-contained parser for S-expressions as output
@@ -46,14 +47,15 @@ For more details, read the module file.
 % XXXXJH should be funcdesc, I think
 
 \section{Built-in Module \sectcode{pnl}}
+\label{module-pnl}
 \bimodindex{pnl}
 
 This module provides access to the
 \emph{Panel Library}
-built by NASA Ames (to get it, send e-mail to
-{\tt panel-request@nas.nasa.gov}).
+built by NASA Ames\index{NASA} (to get it, send e-mail to
+\code{panel-request@nas.nasa.gov}).
 All access to it should be done through the standard module
-\code{panel},
+\code{panel}\refstmodindex{panel},
 which transparantly exports most functions from
 \code{pnl}
 but redefines
