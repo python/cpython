@@ -94,7 +94,7 @@ Socket methods:
 #include <unistd.h>
 #endif
 
-#if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
+#if !defined(MS_WINDOWS) && !defined(PYOS_OS2) && !defined(__BEOS__)
 extern int gethostname(); /* For Solaris, at least */
 #endif
 
@@ -111,6 +111,11 @@ extern int gethostname(); /* For Solaris, at least */
 #define  INCL_DOSERRORS
 #define  INCL_NOPMAPI
 #include <os2.h>
+#endif
+
+#if defined(__BEOS__)
+/* It's in the libs, but not the headers... - [cjh] */
+int shutdown( int, int );
 #endif
 
 #include <sys/types.h>
@@ -147,7 +152,8 @@ extern int gethostname(); /* For Solaris, at least */
    it must be compiled by the C++ compiler, as it takes the address of
    a static data item exported from the main Python DLL.
 */
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) || defined(__BEOS__)
+/* BeOS suffers from the same socket dichotomy as Win32... - [cjh] */
 /* seem to be a few differences in the API */
 #define close closesocket
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
@@ -407,6 +413,11 @@ BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *,addr, int,addrlen)
 		return Py_None;
 	}
 
+#ifdef __BEOS__
+	/* XXX: BeOS version of accept() doesn't set family coreectly */
+	addr->sa_family = AF_INET;
+#endif
+
 	switch (addr->sa_family) {
 
 	case AF_INET:
@@ -600,6 +611,11 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 	if (!PyArg_Parse(args, "i", &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#ifdef __BEOS__
+	block = !block;
+	setsockopt( s->sock_fd, SOL_SOCKET, SO_NONBLOCK,
+				(void *)(&block), sizeof( int ) );
+#else
 #ifndef MS_WINDOWS
 #ifdef PYOS_OS2
 	block = !block;
@@ -616,6 +632,7 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 	block = !block;
 	ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
 #endif /* MS_WINDOWS */
+#endif /* __BEOS__ */
 	Py_END_ALLOW_THREADS
 
 	Py_INCREF(Py_None);
@@ -682,6 +699,12 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	PyObject *buf;
 	int buflen = 0;
 
+#ifdef __BEOS__
+/* We have incomplete socket support. */
+	PyErr_SetString( PySocket_Error, "getsockopt not supported" );
+	return NULL;
+#else
+
 	if (!PyArg_ParseTuple(args, "ii|i", &level, &optname, &buflen))
 		return NULL;
 	
@@ -710,6 +733,7 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	}
 	_PyString_Resize(&buf, buflen);
 	return buf;
+#endif /* __BEOS__ */
 }
 
 static char getsockopt_doc[] =
@@ -1506,6 +1530,11 @@ BUILD_FUNC_DEF_2(PySocket_getprotobyname,PyObject *,self, PyObject *,args)
 {
 	char *name;
 	struct protoent *sp;
+#ifdef __BEOS__
+/* Not available in BeOS yet. - [cjh] */
+	PyErr_SetString( PySocket_Error, "getprotobyname not supported" );
+	return NULL;
+#else
 	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1516,6 +1545,7 @@ BUILD_FUNC_DEF_2(PySocket_getprotobyname,PyObject *,self, PyObject *,args)
 		return NULL;
 	}
 	return PyInt_FromLong((long) sp->p_proto);
+#endif
 }
 
 static char getprotobyname_doc[] =
@@ -1866,7 +1896,7 @@ shutdown() -- shut down traffic in one or both directions\n\
 (*) not available on all platforms!)";
 
 void
-#if defined(MS_WINDOWS) || defined(PYOS_OS2)
+#if defined(MS_WINDOWS) || defined(PYOS_OS2) || defined(__BEOS__)
 init_socket()
 #else
 initsocket()
@@ -1883,7 +1913,11 @@ initsocket()
 		return;
 	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
 #else
+#if defined(__BEOS__)
+	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
+#else
 	m = Py_InitModule3("socket", PySocket_methods, module_doc);
+#endif /* __BEOS__ */
 #endif
 #endif
 	d = PyModule_GetDict(m);
@@ -1903,9 +1937,12 @@ initsocket()
 #endif /* AF_UNIX */
 	insint(d, "SOCK_STREAM", SOCK_STREAM);
 	insint(d, "SOCK_DGRAM", SOCK_DGRAM);
+#ifndef __BEOS__
+/* We have incomplete socket support. */
 	insint(d, "SOCK_RAW", SOCK_RAW);
 	insint(d, "SOCK_SEQPACKET", SOCK_SEQPACKET);
 	insint(d, "SOCK_RDM", SOCK_RDM);
+#endif
 
 #ifdef	SO_DEBUG
 	insint(d, "SO_DEBUG", SO_DEBUG);

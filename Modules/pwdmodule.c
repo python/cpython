@@ -51,6 +51,13 @@ static PyObject *
 mkpwent(p)
 	struct passwd *p;
 {
+#ifdef __BEOS__
+	/* For faking the GECOS field. - [cjh] */
+	char *be_user = NULL;
+
+	be_user = getenv( "USER" );
+#endif
+
 	return Py_BuildValue(
 		"(ssllsss)",
 		p->pw_name,
@@ -64,7 +71,12 @@ mkpwent(p)
 		(long)p->pw_uid,
 		(long)p->pw_gid,
 #endif
+#ifdef __BEOS__
+/* BeOS doesn't have a GECOS field, oddly enough. - [cjh] */
+		be_user ? be_user : "baron",
+#else
 		p->pw_gecos,
+#endif
 		p->pw_dir,
 		p->pw_shell);
 }

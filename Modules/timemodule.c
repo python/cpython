@@ -53,14 +53,17 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_SELECT
+#if defined(HAVE_SELECT) && !defined(__BEOS__)
 #include "myselect.h"
 #else
 #include "mytime.h"
 #endif
 
 #ifdef HAVE_FTIME
+#ifndef __BEOS__
+/* We have ftime(), but not in the headers (PR2). - [cjh] */
 #include <sys/timeb.h>
+#endif
 #if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
 extern int ftime();
 #endif /* MS_WINDOWS */
@@ -97,6 +100,12 @@ extern int ftime();
 #if defined(PYCC_VACPP)
 #include <time.h>
 #define timezone _timezone
+#endif
+
+#ifdef __BEOS__
+/* For bigtime_t, snooze(). - [cjh] */
+#include <support/SupportDefs.h>
+#include <kernel/OS.h>
 #endif
 
 /* Forward declarations */
@@ -670,7 +679,7 @@ floattime()
 	}
 #endif /* !HAVE_GETTIMEOFDAY */
 	{
-#ifdef HAVE_FTIME
+#if defined(HAVE_FTIME) && !defined(__BEOS__)
 		struct timeb t;
 		ftime(&t);
 		return (double)t.time + (double)t.millitm * (double)0.001;
@@ -696,7 +705,7 @@ floatsleep(double secs)
 #endif /* MPW */
 {
 /* XXX Should test for MS_WIN32 first! */
-#ifdef HAVE_SELECT
+#if defined(HAVE_SELECT) && !defined(__BEOS__)
 	struct timeval t;
 	double frac;
 	frac = fmod(secs, 1.0);
@@ -710,7 +719,7 @@ floatsleep(double secs)
 		return -1;
 	}
 	Py_END_ALLOW_THREADS
-#else /* !HAVE_SELECT */
+#else /* !HAVE_SELECT || __BEOS__ */
 #ifdef macintosh
 #define MacTicks	(* (long *)0x16A)
 	long deadline;
@@ -773,10 +782,35 @@ floatsleep(double secs)
 	}
 	Py_END_ALLOW_THREADS
 #else /* !PYOS_OS2 */
+#ifdef __BEOS__
+	/* This sleep *CAN BE* interrupted. */
+	{
+		bigtime_t frac, seconds;
+
+		extern double fmod Py_PROTO((double,double));
+		extern double floor Py_PROTO((double));
+
+		if( secs <= 0.0 ) {
+			return;
+		}
+
+		frac = (bigtime_t)fmod( secs, 1.0 );
+		seconds = (bigtime_t)floor( secs );
+
+		Py_BEGIN_ALLOW_THREADS
+		if( snooze( seconds * (bigtime_t)1000 + frac ) == B_INTERRUPTED ) {
+			Py_BLOCK_THREADS
+			PyErr_SetFromErrno( PyExc_IOError );
+			return -1;
+		}
+		Py_END_ALLOW_THREADS
+	}
+#else /* !__BEOS__ */
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	sleep((int)secs);
 	Py_END_ALLOW_THREADS
+#endif /* !__BEOS__ */
 #endif /* !PYOS_OS2 */
 #endif /* !MS_WIN32 */
 #endif /* !MSDOS */

@@ -21,6 +21,10 @@ This module should be used in conjunction with the TERMIOS module,\n\
 which defines the relevant symbolic constants.";
 
 
+#ifdef __BEOS__
+#include <unistd.h>
+#endif
+
 #define BAD "bad termios argument"
 
 static PyObject *TermiosError;
