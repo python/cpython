@@ -1208,10 +1208,10 @@ struct_pack(self, args)
 }
 
 
-static char unpack__doc__[] =
-"unpack(fmt, string) -> (v1, v2, ...)
-Unpack the string, containing packed C structure data, according\n"
-"to fmt.  Requires len(string)==calcsize(fmt).\n\
+static char unpack__doc__[] = "\
+unpack(fmt, string) -> (v1, v2, ...)\n\
+Unpack the string, containing packed C structure data, according\n\
+to fmt.  Requires len(string)==calcsize(fmt).\n\
 See struct.__doc__ for more on format strings.";
 
 static PyObject *
