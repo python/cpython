@@ -19,17 +19,24 @@ different on Unix and on Windows.
 
 \begin{funcdesc}{mmap}{fileno, length \optional{, tagname} }
 (Windows version) Maps \var{length} bytes from the file specified by
-the file handle \var{fileno}, and returns a mmap object.  If you have
-a Python file object, its
-\method{fileno()} method returns the file's handle, which is just an integer.
-\var{tagname}, if specified, is a string giving a tag name for the mapping. XXX what is the purpose of the tag name?
+the file handle \var{fileno}, and returns a mmap object.  If you wish
+to map an existing Python file object, use its \method{fileno()}
+method to obtain the correct value for the \var{fileno} parameter.
+
+\var{tagname}, if specified, is a string giving a tag name for the mapping. 
+Windows allows you to have many different mappings against the same
+file.  If you specify the name of an existing tag, that tag is opened,
+otherwise a new tag of this name is created.  If this parameter is
+None, the mapping is created without a name.  Avoiding the use of the
+tag parameter will assist in keeping your code portable between Unix
+and Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{mmap}{file, size \optional{, flags, prot}}
+\begin{funcdesc}{mmap}{fileno, size \optional{, flags, prot}}
 (Unix version) Maps \var{length} bytes from the file specified by the
-file handle \var{fileno}, and returns a mmap object.  If you have a
-Python file object, its \method{fileno()} method returns the file's
-handle, which is just an integer.
+file handle \var{fileno}, and returns a mmap object.  If you wish to
+map an existing Python file object, use its \method{fileno()} method
+to obtain the correct value for the \var{fileno} parameter.
 
 \var{flags} specifies the nature of the mapping.  
 \code{MAP_PRIVATE} creates a private copy-on-write mapping, so
@@ -61,8 +68,10 @@ will result in an exception being raised.
 \begin{methoddesc}{flush}{\optional{\var{offset}, \var{size}}}
 Flushes changes made to the in-memory copy of a file back to disk.
 Without use of this call there is no guarantee that changes are
-written back before the object is destroyed.  If \var{offset} 
-and \var{size} are specified, only changes to the given range of bytes will be flushed to disk; otherwise, the whole extent of the mapping is flushed.
+written back before the object is destroyed.  If \var{offset} and
+\var{size} are specified, only changes to the given range of bytes
+will be flushed to disk; otherwise, the whole extent of the mapping is
+flushed.
 \end{methoddesc}
 
 \begin{methoddesc}{move}{\var{dest}, \var{src}, \var{count}}
@@ -71,14 +80,14 @@ to the destination index \var{dest}.
 \end{methoddesc}
 
 \begin{methoddesc}{read}{\var{num}}
-Return a string containing up to \var{num} bytes taken from the
+Return a string containing up to \var{num} bytes starting from the
 current file position; the file position is updated to point after the
 bytes that were returned. 
 \end{methoddesc}
 
 \begin{methoddesc}{read_byte}{}
-Returns the character at the current file position, and advancing 
-the file position by 1.
+Returns a string of length 1 containing the character at the current
+file position, and advances the file position by 1.
 \end{methoddesc}
 
 \begin{methoddesc}{readline}{}
@@ -113,7 +122,7 @@ bytes that were written.
 \end{methoddesc}
 
 \begin{methoddesc}{write_byte}{\var{byte}}
-Write \var{byte} into memory at the current position of
+Write the single-character string \var{byte} into memory at the current position of
 the file pointer; the file position is advanced by 1.
 \end{methoddesc}
 
