@@ -33,7 +33,6 @@ sys.path.append('/ufs/jack/src/av/vcr')
 import VCR
 try:
 	import cl
-	import CL
 except ImportError:
 	cl = None
 
@@ -200,10 +199,10 @@ class VideoBagOfTricks:
 			self.c_rgb24_size.addto_choice(label)
 		self.c_rgb24_size.set_choice(self.rgb24_size)
 		if cl:
-			algs = cl.QueryAlgorithms(CL.VIDEO)
+			algs = cl.QueryAlgorithms(cl.VIDEO)
 			self.all_comp_schemes = []
 			for i in range(0, len(algs), 2):
-				if algs[i+1] in (CL.COMPRESSOR, CL.CODEC):
+				if algs[i+1] in (cl.COMPRESSOR, cl.CODEC):
 					self.all_comp_schemes.append(algs[i])
 			self.c_cformat.clear_choice()
 			for label in self.all_comp_schemes:
@@ -778,11 +777,11 @@ class VideoBagOfTricks:
 
 	def init_compressor(self, w, h):
 		self.compressor = None
-		scheme = cl.QuerySchemeFromName(CL.VIDEO, self.comp_scheme)
+		scheme = cl.QuerySchemeFromName(cl.VIDEO, self.comp_scheme)
 		self.compressor = cl.OpenCompressor(scheme)
-		parambuf = [CL.IMAGE_WIDTH, w, \
-			  CL.IMAGE_HEIGHT, h, \
-			  CL.ORIGINAL_FORMAT, CL.YUV422DC]
+		parambuf = [cl.IMAGE_WIDTH, w, \
+			  cl.IMAGE_HEIGHT, h, \
+			  cl.ORIGINAL_FORMAT, cl.YUV422DC]
 		self.compressor.SetParams(parambuf)
 		return self.compressor.Compress(0, '')
 
