@@ -629,6 +629,12 @@ changes are:
   Filenames on Windows are a case where Python's choice of ASCII as
   the default encoding turns out to be an annoyance.  
 
+  \item When presented with a Unicode filename on Windows, Python will
+  now convert it to an MBCS encoded string, as used by the Microsoft
+  file APIs.  As MBCS is explicitly used by the file APIs, Python's
+  choice of ASCII as the default encoding turns out to be an
+  annoyance.
+
   This patch also adds \samp{et} as a format sequence to
   \cfunction{PyArg_ParseTuple}; \samp{et} takes both a parameter and
   an encoding name, and converts it to the given encoding if the
@@ -668,6 +674,11 @@ changes are:
   \item On Windows, Python can now be compiled with Borland C thanks 
   to a number of patches contributed by Stephen Hansen.
 
+  \item Another Windows enhancement: Wise Solutions generously offered
+  PythonLabs use of their InstallerMaster 8.1 system.  Earlier
+  PythonLabs Windows installers used Wise 5.0a, which was beginning to
+  show its age.  (Packaged up by Tim Peters.)
+
   \item On platforms where Python uses the C \cfunction{dlopen()} function 
   to load extension modules, it's now possible to set the flags used 
   by \cfunction{dlopen()} using the \function{sys.getdlopenflags()} and
@@ -681,7 +692,7 @@ changes are:
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Fred L. Drake, Jr., Marc-Andr\'e Lemburg,
+Bremmer, Fred L. Drake, Jr., Mark Hammond, Marc-Andr\'e Lemburg,
 Tim Peters, Neil Schemenauer, Guido van Rossum.  
 
 \end{document}
