@@ -60,9 +60,9 @@ as a pseudo-host by that name.
 Dictionary mapping macro names to string lists.
 \end{memberdesc}
 
-\note{Versions of this module before 2.2.3 and 2.3 are very limited to a
-subset of the ASCII character set for passwords.  Starting with 2.2.3 and
-2.3, ASCII punctuation is allowed in passwords.  However, note that spaces
-and non-printable characters are not allowed in passwords.  This is a
-limitation of the way the .netrc file is parsed and should be removed in the
-future.}
+\note{Passwords are limited to a subset of the ASCII character set.
+Versions of this module prior to 2.3 were extremely limited.  Starting with
+2.3, all ASCII punctuation is allowed in passwords.  However, note that
+whitespace and non-printable characters are not allowed in passwords.  This
+is a limitation of the way the .netrc file is parsed and may be removed in
+the future.}
