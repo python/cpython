@@ -813,7 +813,12 @@ see its docs for details.
             raise TypeError("Tester.rundict: d must support .items(); " +
                             `d`)
         f = t = 0
-        for thisname, value in d.items():
+        # Run the tests by alpha order of names, for consistency in
+        # verbose-mode output.
+        names = d.keys()
+        names.sort()
+        for thisname in names:
+            value = d[thisname]
             if type(value) in (_FunctionType, _ClassType):
                 f2, t2 = self.__runone(value, name + "." + thisname)
                 f = f + f2
@@ -832,7 +837,12 @@ see its docs for details.
         savepvt = self.isprivate
         try:
             self.isprivate = lambda *args: 0
-            for k, v in d.items():
+            # Run the tests by alpha order of names, for consistency in
+            # verbose-mode output.
+            keys = d.keys()
+            keys.sort()
+            for k in keys:
+                v = d[k]
                 thisname = prefix + k
                 if type(v) is _StringType:
                     f, t = self.runstring(v, thisname)

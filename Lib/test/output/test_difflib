@@ -156,6 +156,14 @@ Trying: s.find_longest_match(0, 2, 0, 1)
 Expecting: (0, 0, 0)
 ok
 0 of 6 examples failed in difflib.SequenceMatcher.find_longest_match.__doc__
+Running difflib.SequenceMatcher.get_matching_blocks.__doc__
+Trying: s = SequenceMatcher(None, "abxcd", "abcd")
+Expecting: nothing
+ok
+Trying: s.get_matching_blocks()
+Expecting: [(0, 0, 2), (3, 2, 2), (5, 4, 0)]
+ok
+0 of 2 examples failed in difflib.SequenceMatcher.get_matching_blocks.__doc__
 Running difflib.SequenceMatcher.get_opcodes.__doc__
 Trying: a = "qabxcd"
 Expecting: nothing
@@ -180,55 +188,6 @@ ok
 0 of 4 examples failed in difflib.SequenceMatcher.get_opcodes.__doc__
 Running difflib.SequenceMatcher.quick_ratio.__doc__
 0 of 0 examples failed in difflib.SequenceMatcher.quick_ratio.__doc__
-Running difflib.SequenceMatcher.set_seqs.__doc__
-Trying: s = SequenceMatcher()
-Expecting: nothing
-ok
-Trying: s.set_seqs("abcd", "bcde")
-Expecting: nothing
-ok
-Trying: s.ratio()
-Expecting: 0.75
-ok
-0 of 3 examples failed in difflib.SequenceMatcher.set_seqs.__doc__
-Running difflib.SequenceMatcher.set_seq2.__doc__
-Trying: s = SequenceMatcher(None, "abcd", "bcde")
-Expecting: nothing
-ok
-Trying: s.ratio()
-Expecting: 0.75
-ok
-Trying: s.set_seq2("abcd")
-Expecting: nothing
-ok
-Trying: s.ratio()
-Expecting: 1.0
-ok
-0 of 4 examples failed in difflib.SequenceMatcher.set_seq2.__doc__
-Running difflib.SequenceMatcher.set_seq1.__doc__
-Trying: s = SequenceMatcher(None, "abcd", "bcde")
-Expecting: nothing
-ok
-Trying: s.ratio()
-Expecting: 0.75
-ok
-Trying: s.set_seq1("bcde")
-Expecting: nothing
-ok
-Trying: s.ratio()
-Expecting: 1.0
-ok
-0 of 4 examples failed in difflib.SequenceMatcher.set_seq1.__doc__
-Running difflib.SequenceMatcher.get_matching_blocks.__doc__
-Trying: s = SequenceMatcher(None, "abxcd", "abcd")
-Expecting: nothing
-ok
-Trying: s.get_matching_blocks()
-Expecting: [(0, 0, 2), (3, 2, 2), (5, 4, 0)]
-ok
-0 of 2 examples failed in difflib.SequenceMatcher.get_matching_blocks.__doc__
-Running difflib.SequenceMatcher.real_quick_ratio.__doc__
-0 of 0 examples failed in difflib.SequenceMatcher.real_quick_ratio.__doc__
 Running difflib.SequenceMatcher.ratio.__doc__
 Trying: s = SequenceMatcher(None, "abcd", "bcde")
 Expecting: nothing
@@ -243,6 +202,47 @@ Trying: s.real_quick_ratio()
 Expecting: 1.0
 ok
 0 of 4 examples failed in difflib.SequenceMatcher.ratio.__doc__
+Running difflib.SequenceMatcher.real_quick_ratio.__doc__
+0 of 0 examples failed in difflib.SequenceMatcher.real_quick_ratio.__doc__
+Running difflib.SequenceMatcher.set_seq1.__doc__
+Trying: s = SequenceMatcher(None, "abcd", "bcde")
+Expecting: nothing
+ok
+Trying: s.ratio()
+Expecting: 0.75
+ok
+Trying: s.set_seq1("bcde")
+Expecting: nothing
+ok
+Trying: s.ratio()
+Expecting: 1.0
+ok
+0 of 4 examples failed in difflib.SequenceMatcher.set_seq1.__doc__
+Running difflib.SequenceMatcher.set_seq2.__doc__
+Trying: s = SequenceMatcher(None, "abcd", "bcde")
+Expecting: nothing
+ok
+Trying: s.ratio()
+Expecting: 0.75
+ok
+Trying: s.set_seq2("abcd")
+Expecting: nothing
+ok
+Trying: s.ratio()
+Expecting: 1.0
+ok
+0 of 4 examples failed in difflib.SequenceMatcher.set_seq2.__doc__
+Running difflib.SequenceMatcher.set_seqs.__doc__
+Trying: s = SequenceMatcher()
+Expecting: nothing
+ok
+Trying: s.set_seqs("abcd", "bcde")
+Expecting: nothing
+ok
+Trying: s.ratio()
+Expecting: 0.75
+ok
+0 of 3 examples failed in difflib.SequenceMatcher.set_seqs.__doc__
 Running difflib.get_close_matches.__doc__
 Trying: get_close_matches("appel", ["ape", "apple", "peach", "puppy"])
 Expecting: ['apple', 'ape']

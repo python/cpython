@@ -88,65 +88,6 @@ ok
 0 of 6 examples failed in doctest.Tester.__doc__
 Running doctest.Tester.__init__.__doc__
 0 of 0 examples failed in doctest.Tester.__init__.__doc__
-Running doctest.Tester.run__test__.__doc__
-0 of 0 examples failed in doctest.Tester.run__test__.__doc__
-Running doctest.Tester.runstring.__doc__
-Trying: t = Tester(globs={}, verbose=1)
-Expecting: nothing
-ok
-Trying:
-test = r'''
-   # just an example
-   >>> x = 1 + 2
-   >>> x
-   3
-'''
-Expecting: nothing
-ok
-Trying: t.runstring(test, "Example")
-Expecting:
-Running string Example
-Trying: x = 1 + 2
-Expecting: nothing
-ok
-Trying: x
-Expecting: 3
-ok
-0 of 2 examples failed in string Example
-(0, 2)
-ok
-0 of 3 examples failed in doctest.Tester.runstring.__doc__
-Running doctest.Tester.summarize.__doc__
-0 of 0 examples failed in doctest.Tester.summarize.__doc__
-Running doctest.Tester.rundict.__doc__
-Trying:
-def _f():
-   '''>>> assert 1 == 1
-   '''
-Expecting: nothing
-ok
-Trying:
-def g():
-   '''>>> assert 2 != 1
-   '''
-Expecting: nothing
-ok
-Trying: d = {"_f": _f, "g": g}
-Expecting: nothing
-ok
-Trying: t = Tester(globs={}, verbose=0)
-Expecting: nothing
-ok
-Trying: t.rundict(d, "rundict_test")  # _f is skipped
-Expecting: (0, 1)
-ok
-Trying: t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
-Expecting: nothing
-ok
-Trying: t.rundict(d, "rundict_test_pvt")  # both are searched
-Expecting: (0, 2)
-ok
-0 of 7 examples failed in doctest.Tester.rundict.__doc__
 Running doctest.Tester.merge.__doc__
 Trying: from doctest import Tester
 Expecting: nothing
@@ -197,6 +138,37 @@ Test passed.
 (0, 6)
 ok
 0 of 10 examples failed in doctest.Tester.merge.__doc__
+Running doctest.Tester.run__test__.__doc__
+0 of 0 examples failed in doctest.Tester.run__test__.__doc__
+Running doctest.Tester.rundict.__doc__
+Trying:
+def _f():
+   '''>>> assert 1 == 1
+   '''
+Expecting: nothing
+ok
+Trying:
+def g():
+   '''>>> assert 2 != 1
+   '''
+Expecting: nothing
+ok
+Trying: d = {"_f": _f, "g": g}
+Expecting: nothing
+ok
+Trying: t = Tester(globs={}, verbose=0)
+Expecting: nothing
+ok
+Trying: t.rundict(d, "rundict_test")  # _f is skipped
+Expecting: (0, 1)
+ok
+Trying: t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
+Expecting: nothing
+ok
+Trying: t.rundict(d, "rundict_test_pvt")  # both are searched
+Expecting: (0, 2)
+ok
+0 of 7 examples failed in doctest.Tester.rundict.__doc__
 Running doctest.Tester.rundoc.__doc__
 Trying: t = Tester(globs={}, verbose=0)
 Expecting: nothing
@@ -213,6 +185,34 @@ Trying: t.rundoc(_f)  # expect 0 failures in 1 example
 Expecting: (0, 1)
 ok
 0 of 3 examples failed in doctest.Tester.rundoc.__doc__
+Running doctest.Tester.runstring.__doc__
+Trying: t = Tester(globs={}, verbose=1)
+Expecting: nothing
+ok
+Trying:
+test = r'''
+   # just an example
+   >>> x = 1 + 2
+   >>> x
+   3
+'''
+Expecting: nothing
+ok
+Trying: t.runstring(test, "Example")
+Expecting:
+Running string Example
+Trying: x = 1 + 2
+Expecting: nothing
+ok
+Trying: x
+Expecting: 3
+ok
+0 of 2 examples failed in string Example
+(0, 2)
+ok
+0 of 3 examples failed in doctest.Tester.runstring.__doc__
+Running doctest.Tester.summarize.__doc__
+0 of 0 examples failed in doctest.Tester.summarize.__doc__
 Running doctest.is_private.__doc__
 Trying: is_private("a.b", "my_func")
 Expecting: 0
@@ -248,14 +248,6 @@ Trying: hex(_TestClass(13).square().get())
 Expecting: '0xa9'
 ok
 0 of 2 examples failed in doctest.__test__._TestClass.__doc__
-Running doctest.__test__._TestClass.get.__doc__
-Trying: x = _TestClass(-42)
-Expecting: nothing
-ok
-Trying: print x.get()
-Expecting: -42
-ok
-0 of 2 examples failed in doctest.__test__._TestClass.get.__doc__
 Running doctest.__test__._TestClass.__init__.__doc__
 Trying: t = _TestClass(123)
 Expecting: nothing
@@ -264,6 +256,14 @@ Trying: print t.get()
 Expecting: 123
 ok
 0 of 2 examples failed in doctest.__test__._TestClass.__init__.__doc__
+Running doctest.__test__._TestClass.get.__doc__
+Trying: x = _TestClass(-42)
+Expecting: nothing
+ok
+Trying: print x.get()
+Expecting: -42
+ok
+0 of 2 examples failed in doctest.__test__._TestClass.get.__doc__
 Running doctest.__test__._TestClass.square.__doc__
 Trying: _TestClass(13).square().get()
 Expecting: 169
