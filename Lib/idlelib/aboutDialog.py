@@ -21,11 +21,10 @@ class AboutDialog(Toplevel):
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+30,
                 parent.winfo_rooty()+30))
-        #elguavas - config placeholders til config stuff completed
-        self.bg="#555555"
+        self.bg="#777777"
         self.fg="#ffffff"
         #no ugly bold default font on *nix 
-        font=tkFont.Font(self,Label().cget('font'))
+        font=tkFont.Font(self,Label(self).cget('font'))
         if os.name=='posix': font.config(weight=NORMAL)
         self.textFont=font
         
@@ -39,8 +38,7 @@ class AboutDialog(Toplevel):
         self.buttonOk.focus_set()
         #key bindings for this dialog
         self.bind('<Alt-c>',self.CreditsButtonBinding) #credits button
-        #self.bind('<Alt-l>',self.LicenseButtonBinding) #license button
-        self.bind('<Alt-r>',self.LicenseButtonBinding) #readme button
+        self.bind('<Alt-l>',self.LicenseButtonBinding) #license button
         self.bind('<Return>',self.Ok) #dismiss dialog
         self.bind('<Escape>',self.Ok) #dismiss dialog
         self.wait_window()
