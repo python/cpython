@@ -4755,6 +4755,25 @@ Return a tuple of floating point numbers indicating process times.");
 #endif
 
 
+#ifdef HAVE_GETSID
+PyDoc_STRVAR(posix_getsid__doc__,
+"getsid(pid) -> sid\n\n\
+Call the system call getsid().");
+
+static PyObject *
+posix_getsid(PyObject *self, PyObject *args)
+{
+	int pid, sid;
+	if (!PyArg_ParseTuple(args, "i:getsid", &pid))
+		return NULL;
+	sid = getsid(pid);
+	if (sid < 0)
+		return posix_error();
+	return PyInt_FromLong((long)sid);
+}
+#endif /* HAVE_GETSID */
+
+
 #ifdef HAVE_SETSID
 PyDoc_STRVAR(posix_setsid__doc__,
 "setsid()\n\n\
@@ -7020,6 +7039,9 @@ static PyMethodDef posix_methods[] = {
 #if defined(HAVE_WAITPID) || defined(HAVE_CWAIT)
 	{"waitpid",	posix_waitpid, METH_VARARGS, posix_waitpid__doc__},
 #endif /* HAVE_WAITPID */
+#ifdef HAVE_GETSID
+	{"getsid",	posix_getsid, METH_VARARGS, posix_getsid__doc__},
+#endif /* HAVE_GETSID */
 #ifdef HAVE_SETSID
 	{"setsid",	posix_setsid, METH_NOARGS, posix_setsid__doc__},
 #endif /* HAVE_SETSID */
