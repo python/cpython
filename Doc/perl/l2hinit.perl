@@ -16,12 +16,30 @@ $ICONSERVER = '../icons';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
-# a little painful, but lets us clean up the top level directory just a little
-$mywd = `pwd`;
-chop $mywd;
-$LATEX2HTMLSTYLES = "$mywd${dd}perl$envkey$LATEX2HTMLSTYLES";
+# Locate a file that's been "require"d.  Assumes that the file name of interest
+# is unique within the set of loaded files, after directory names have been
+# stripped.  Only the directory is returned.
+#
+sub find_my_file{
+    local($myfile,$key,$tmp,$mydir) = (@_[0], '', '', '');
+    foreach $key (keys %INC) {
+	$tmp = "$key";
+	$tmp =~ s|^.*/||o;
+	if ($tmp eq $myfile) {
+	    #print "\nfound $tmp: $key --> ", $INC{$key}, "\n";
+	    $mydir = $INC{$key};
+	}
+    }
+    $mydir =~ s|/[^/]*$||;
+    $mydir;
+}
 
-#print "\n\$LATEX2HTMLSTYLES = $LATEX2HTMLSTYLES\n\n";
+# A little painful, but lets us clean up the top level directory a little,
+# and not be tied to the current directory (as far as I can tell).
+#
+$mydir = &find_my_file("l2hinit.perl");
+#print "\nmy dir = $mydir\n";
+$LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
 
 
 sub top_navigation_panel {
