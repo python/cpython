@@ -176,7 +176,6 @@ class AbstractFormatter:
 
     def add_flowing_data(self, data):
         if not data: return
-        # The following looks a bit convoluted but is a great improvement over
         prespace = data[:1].isspace()
         postspace = data[-1:].isspace()
         data = " ".join(data.split())
