@@ -220,9 +220,38 @@ char new_doc[] =
 \n\
 You need to know a great deal about the interpreter to use this!";
 
+static void
+insertint(PyObject *d, char *name, int value)
+{
+	PyObject *v = PyInt_FromLong((long) value);
+	if (v == NULL) {
+		/* Don't bother reporting this error */
+		PyErr_Clear();
+	}
+	else {
+		PyDict_SetItemString(d, name, v);
+		Py_DECREF(v);
+	}
+}
+
 DL_EXPORT(void)
 initnew(void)
 {
-	Py_InitModule4("new", new_methods, new_doc, (PyObject *)NULL,
-		       PYTHON_API_VERSION);
+	PyObject *m;
+	PyObject *d;
+
+	m = Py_InitModule4("new", new_methods, new_doc, (PyObject *)NULL,
+		            PYTHON_API_VERSION);
+	d = PyModule_GetDict(m);
+
+#define ADDSYM(TOKEN) insertint(d, #TOKEN, TOKEN)
+	ADDSYM(CO_OPTIMIZED);
+	ADDSYM(CO_NEWLOCALS);
+	ADDSYM(CO_VARARGS);
+	ADDSYM(CO_VARKEYWORDS);
+	ADDSYM(CO_NESTED);
+	ADDSYM(CO_GENERATOR);
+	ADDSYM(CO_GENERATOR_ALLOWED);
+	ADDSYM(CO_FUTURE_DIVISION);
+#undef ADDSYM
 }
