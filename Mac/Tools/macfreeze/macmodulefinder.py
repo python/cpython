@@ -57,7 +57,7 @@ def process(program, modules=[], module_files = [], debug=0):
 	#
 	# search the main source for directives
 	#
-	extra_modules, exclude_modules, extra_path = \
+	extra_modules, exclude_modules, optional_modules, extra_path = \
 			directives.findfreezedirectives(program)
 	for m in extra_modules:
 		if os.sep in m:
@@ -84,7 +84,7 @@ def process(program, modules=[], module_files = [], debug=0):
 	#
 	# Tell the user about missing modules
 	#
-	maymiss = exclude_modules + MAC_MAYMISS_MODULES
+	maymiss = exclude_modules + optional_modules + MAC_MAYMISS_MODULES
 	for m in modfinder.badmodules.keys():
 		if not m in maymiss:
 			if debug > 0:
