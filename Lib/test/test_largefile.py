@@ -11,6 +11,11 @@ import test_support
 import os, struct, stat, sys
 
 
+# create >2GB file (2GB = 2147483648 bytes)
+size = 2500000000L
+name = test_support.TESTFN
+
+
 # On Windows this test comsumes large resources; It takes a long time to build
 # the >2GB file and takes >2GB of disk space therefore the resource must be
 # enabled to run this test.  If not, nothing after this line stanza will be
@@ -36,11 +41,6 @@ else:
               "filesystem does not have largefile support"
     else:
         f.close()
-
-
-# create >2GB file (2GB = 2147483648 bytes)
-size = 2500000000L
-name = test_support.TESTFN
 
 
 def expect(got_this, expect_this):
