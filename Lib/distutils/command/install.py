@@ -139,42 +139,33 @@ class Install (Command):
                 self.replace_sys_prefix ('BINLIBDEST', ('lib','python1.5'), 1)
 
 
-        # Here is where we decide where to install most library files:
-        # on POSIX systems, they go to 'site-packages' under the
-        # install_lib (determined above -- typically
-        # /usr/local/lib/python1.x).  Unfortunately, both
-        # platform-independent (.py*) and platform-specific (.so) files
-        # go to this directory, since there is no site-packages under
-        # $exec_prefix in the usual way that Python builds sys.path.  On
-        # non-POSIX systems, the situation is even worse: everything
-        # gets dumped right into $exec_prefix, not even a lib
-        # subdirectory!  But apparently that's what needs to be done to
-        # make it work under Python 1.5 -- hope we can get this fixed
-        # for 1.6!
+        # Here is where we decide where to install most library files: on
+        # POSIX systems, they go to 'site-packages' under the install_lib
+        # (determined above -- typically /usr/local/lib/python1.x).  Note
+        # that on POSIX systems, platform-specific files belong in
+        # 'site-packages' under install_platlib.  (The actual rule is that
+        # a module distribution that includes *any* platform-specific files
+        # -- ie. extension modules -- goes under install_platlib.  This
+        # solves the "can't find extension module in a package" problem.)
+        # On non-POSIX systems, install_lib and install_platlib are the
+        # same (eg. "C:\Program Files\Python\Lib" on Windows), as are
+        # install_site_lib and install_site_platlib (eg.
+        # "C:\Program Files\Python" on Windows) -- everything will be dumped
+        # right into one of the install_site directories.  (It doesn't
+        # really matter *which* one, of course, but I'll observe decorum
+        # and do it properly.)
 
         if self.install_site_lib is None:
             if os.name == 'posix':
                 self.install_site_lib = \
                     os.path.join (self.install_lib, 'site-packages')
             else:
-                self.install_site_lib = self.exec_prefix
+                self.install_site_lib = self.prefix
 
         if self.install_site_platlib is None:
             if os.name == 'posix':
-                # XXX ugh! this puts platform-specific files in with
-                # shared files, with no nice way to override it! (this
-                # might be a Python problem, though, not a Distutils
-                # problem...)
-
-                # NO: the way to fix this is
-                #   * any platform-dependent files in distribution?
-                #     yes: install under exec-prefix
-                #     no: install under prefix
-                # ...which will require a pretty major rethink of all
-                # this.  Damn.
-
                 self.install_site_platlib = \
-                    os.path.join (self.install_lib, 'site-packages')
+                    os.path.join (self.install_platlib, 'site-packages')
             else:
                 self.install_site_platlib = self.exec_prefix
 
@@ -240,12 +231,11 @@ class Install (Command):
 
         # Install modules in two steps: "platform-shared" files (ie. pure
         # python modules) and platform-specific files (compiled C
-        # extensions).
-
+        # extensions).  Note that 'install_py' is smart enough to install
+        # pure Python modules in the "platlib" directory if we built any
+        # extensions.
         self.run_peer ('install_py')
-
-        # don't have an 'install_ext' command just yet!
-        #self.run_peer ('install_ext'))
+        self.run_peer ('install_ext')
 
     # run ()
 
