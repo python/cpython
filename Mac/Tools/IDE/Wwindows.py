@@ -1,18 +1,11 @@
-from Carbon import Qd
-from Carbon import Win
-from Carbon import Evt
-from Carbon import Fm
+from Carbon import Dlg, Evt, Events, Fm
+from Carbon import Menu, Qd, Win, Windows
 import FrameWork
-from Carbon import Windows
-from Carbon import Events
 import Wbase
-from Carbon import Dlg
 import MacOS
-from Carbon import Menu
 import struct
 import traceback
-
-from types import *
+from types import InstanceType, StringType
 
 
 class Window(FrameWork.Window, Wbase.SelectableWidget):

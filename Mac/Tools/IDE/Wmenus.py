@@ -1,7 +1,6 @@
 import FrameWork
-from Carbon import Qd
 import Wbase, Wcontrols
-from Carbon import Ctl, Controls
+from Carbon import Ctl, Controls, Qd
 from types import *
 import Wapplication
 

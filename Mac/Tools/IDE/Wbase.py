@@ -1,14 +1,12 @@
-from Carbon import Qd
-from Carbon import Win
-from Carbon import QuickDraw
-from Carbon import Evt
+from Carbon import Evt, Qd, QuickDraw, Win
 import string
 from types import *
 import sys
 
-WidgetsError = "WidgetsError"
+class WidgetsError(Exception): pass
 
 DEBUG = 0
+
 
 class Widget:
 	
