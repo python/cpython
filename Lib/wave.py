@@ -230,7 +230,7 @@ class Wave_read:
 
 	def __init__(self, f):
 		if type(f) == type(''):
-			f = __builtin__.open(f, 'r')
+			f = __builtin__.open(f, 'rb')
 		# else, assume it is an open file object already
 		self.initfp(f)
 
@@ -368,7 +368,7 @@ class Wave_write:
 
 	def __init__(self, f):
 		if type(f) == type(''):
-			f = __builtin__.open(f, 'w')
+			f = __builtin__.open(f, 'wb')
 		self.initfp(f)
 
 	def initfp(self, file):
@@ -549,11 +549,11 @@ class Wave_write:
 		self._datalength = self._datawritten
 
 def open(f, mode):
-	if mode == 'r':
+	if mode in ('r', 'rb'):
 		return Wave_read(f)
-	elif mode == 'w':
+	elif mode in ('w', 'wb'):
 		return Wave_write(f)
 	else:
-		raise Error, "mode must be 'r' or 'w'"
+		raise Error, "mode must be 'r', 'rb', 'w', or 'wb'"
 
 openfp = open # B/W compatibility
