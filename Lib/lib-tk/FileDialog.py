@@ -122,7 +122,11 @@ class FileDialog:
         self.top.grab_set()
         self.how = None
         self.master.mainloop()          # Exited by self.quit(how)
-        if key: dialogstates[key] = self.get_filter()
+        if key:
+            directory, pattern = self.get_filter()
+            if self.how:
+                directory = os.path.dirname(self.how)
+            dialogstates[key] = directory, pattern
         self.top.destroy()
         return self.how
 
