@@ -470,6 +470,11 @@ Library
 
 Tools/Demos
 
+- The SGI demos (Demo/sgi) have been removed.  Nobody thought they
+  were interesting any more.  (The SGI library modules and extensions
+  are still there; it is believed that at least some of these are
+  still used and useful.)
+
 - IDLE supports the new encoding declarations (PEP 263); it can also
   deal with legacy 8-bit files if they use the locale's encoding. It
   allows non-ASCII strings in the interactive shell and executes them
