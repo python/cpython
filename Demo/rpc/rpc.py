@@ -1,5 +1,11 @@
 # Implement (a subset of) Sun RPC, version 2 -- RFC1057.
 
+# XXX There should be separate exceptions for the various reasons why
+# XXX an RPC can fail, rather than using RuntimeError for everything
+
+# XXX The UDP version of the protocol resends requests when it does
+# XXX not receive a timely reply -- use only for idempotent calls!
+
 import xdr
 import socket
 import os
@@ -80,24 +86,32 @@ class Unpacker(xdr.Unpacker):
 		xid = self.unpack_uint()
 		mtype = self.unpack_enum()
 		if mtype <> REPLY:
-			raise RuntimeError, 'no REPLY but ' + str(mtype)
+			raise RuntimeError, 'no REPLY but ' + `mtype`
 		stat = self.unpack_enum()
+		if stat == MSG_DENIED:
+			stat = self.unpack_enum()
+			if stat == RPC_MISMATCH:
+				low = self.unpack_uint()
+				high = self.unpack_uint()
+				raise RuntimeError, \
+				  'MSG_DENIED: RPC_MISMATCH: ' + `low, high`
+			if stat == AUTH_ERROR:
+				stat = self.unpack_uint()
+				raise RuntimeError, \
+					'MSG_DENIED: AUTH_ERROR: ' + `stat`
+			raise RuntimeError, 'MSG_DENIED: ' + `stat`
 		if stat <> MSG_ACCEPTED:
-			if stat == MSG_DENIED:
-				stat = self.unpack_enum()
-				if stat == RPC_MISMATCH:
-					low = self.unpack_uint()
-					high = self.unpack_uint()
-					raise 'RPC_MISMATCH', (low, high)
-				if stat == AUTH_ERROR:
-					stat = self.unpack_uint()
-					raise 'AUTH_ERROR', str(stat)
-				raise 'MSG_REJECTED', str(stat)
-			raise RuntimeError, 'no MSG_ACCEPTED but ' + str(stat)
+			raise RuntimeError, \
+			  'Neither MSG_DENIED nor MSG_ACCEPTED: ' + `stat`
 		verf = self.unpack_auth()
 		stat = self.unpack_enum()
+		if stat == PROG_MISMATCH:
+			low = self.unpack_uint()
+			high = self.unpack_uint()
+			raise RuntimeError, \
+				'call failed: PROG_MISMATCH: ' + `low, high`
 		if stat <> SUCCESS:
-			raise RuntimeError, 'no SUCCESS but ' + str(stat)
+			raise RuntimeError, 'call failed: ' + `stat`
 		return xid, verf
 		# Caller must get procedure-specific part of reply
 
@@ -229,7 +243,6 @@ class RawTCPClient(Client):
 
 
 # Raw UDP-based client
-# XXX This class does not recover from missed/duplicated packets!
 
 class RawUDPClient(Client):
 
