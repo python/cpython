@@ -36,6 +36,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patches #749830, #1144555: allow UNIX mmap size to default to current 
+  file size.
+
 - Added functional.partial().  See PEP309.
 
 - Patch #1093585: raise a ValueError for negative history items in readline.
