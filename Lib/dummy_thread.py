@@ -44,14 +44,17 @@ def start_new_thread(function, args, kwargs={}):
         raise TypeError("2nd arg must be a tuple")
     if type(kwargs) != type(dict()):
         raise TypeError("3rd arg must be a dict")
+    global _main
+    _main = False
     try:
         function(*args, **kwargs)
     except SystemExit:
         pass
     except:
         _traceback.print_exc()
+    _main = True
+    global _interrupt
     if _interrupt:
-        global _interrupt
         _interrupt = False
         raise KeyboardInterrupt
 
@@ -122,11 +125,16 @@ class LockType(object):
     def locked(self):
         return self.locked_status
 
-
+# Used to signal that interrupt_main was called in a "thread"
 _interrupt = False
+# True when not executing in a "thread"
+_main = True
 
 def interrupt_main():
     """Set _interrupt flag to True to have start_new_thread raise
     KeyboardInterrupt upon exiting."""
-    global _interrupt
-    _interrupt = True
+    if _main:
+        raise KeyboardInterrupt
+    else:
+        global _interrupt
+        _interrupt = True
