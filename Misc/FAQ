@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.10
-Last-modified: 14 July 1994
+Version: 1.11
+Last-modified: 25 July 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -76,6 +76,7 @@ Here's an overview of the questions per chapter:
   2.3. Q. Are there any commercial projects going on using Python?
   2.4. Q. How stable is Python?
   2.5. Q. What new developments are expected for Python in the future?
+  2.6. Q. Is it reasonable to propose incompatible changes to Python?
 
  3. Building Python
   3.1. Q. Is there a test set?
@@ -88,7 +89,8 @@ Here's an overview of the questions per chapter:
        script (after the script name).
   3.6. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
-  3.7. Q. Other trouble building Python 1.0.2 on platform X.
+  3.7. Q. Python built with gcc for the DEC Alpha doesn't work.
+  3.8. Q. Other trouble building Python on platform X.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -131,6 +133,15 @@ Here's an overview of the questions per chapter:
        disk.)
   6.3. Q. Why isn't there a switch or case statement in Python?
   6.4. Q. Why does Python use indentation for grouping of statements?
+  6.5. Q. Why are Python strings immutable?
+  6.6. Q. Why don't strings have methods like index() or sort(), like
+       lists?
+  6.7. Q. Why does Python use methods for some functionality
+       (e.g. list.index()) but functions for other (e.g. len(list))?
+  6.8. Q. Why can't I derive a class from built-in types (e.g. lists or
+       files)?
+  6.9. Q. Why must 'self' be declared and used explicitly in method
+       definitions and calls?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -190,8 +201,8 @@ have an extension of .Z, indicating use of "compress" compression.)
 It is a gzip'ed tar file containing the complete C source, LaTeX
 documentation, Python library modules, example programs, and several
 useful pieces of freely distributable software.  This will compile and
-run out of the box on most UNIX platforms.  At the time of writing,
-<version> is 1.0.2.  (See section 7 for non-UNIX information.)
+run out of the box on most UNIX platforms.  (See section 7 for
+non-UNIX information.)
 
 1.4. Q. How do I get documentation on Python?
 
@@ -199,12 +210,11 @@ A. The latest Python documentation set is always available by
 anonymous ftp from ftp.cwi.nl [192.16.191.128] in the directory
 /pub/python, with filename pythondoc-ps<version>.tar.gz.  It is a
 gzip'ed tar file containing PostScript files of the reference manual,
-the library manual, and the tutorial.  At the time of writing
-<version> is 1.0.2.  Note that the library manual is the most
-important one of the set, as much of Python's power stems from the
-standard or built-in types, functions and modules, all of which are
-described here.  PostScript for a high-level description of Python is
-in the file nluug-paper.ps.
+the library manual, and the tutorial.  Note that the library manual is
+the most important one of the set, as much of Python's power stems
+from the standard or built-in types, functions and modules, all of
+which are described here.  PostScript for a high-level description of
+Python is in the file nluug-paper.ps.
 
 1.5. Q. Are there other ftp sites that mirror the Python distribution?
 
@@ -335,9 +345,9 @@ Ivan Herman <ivan@cwi.nl>.
 
 2.4. Q. How stable is Python?
 
-A. Very stable.  While the current version number (1.0.2) would
-suggest it is in the early stages of development, in fact new, stable
-releases (numbered 0.9.x) have been coming out roughly every 3 to 6
+A. Very stable.  While the current version number would suggest it is
+in the early stages of development, in fact new, stable releases
+(numbered 0.9.x and 1.0.x) have been coming out roughly every 3 to 6
 months for the past four years.
 
 2.5. Q. What new developments are expected for Python in the future?
@@ -360,6 +370,15 @@ There may be a Windows version of STDWIN.
 Also planned is improved support for embedding Python in other
 applications, e.g. by renaming most global symbols to have a "Py"
 prefix and providing more documentation and threading support.
+
+2.6. Q. Is it reasonable to propose incompatible changes to Python?
+
+A. In general, no.  There are already millions of lines of Python code
+around the world, so any changes in the language that invalidates more
+than a very small fraction of existing programs has to be frowned
+upon.  Even if you can provide a conversion program, there still is
+the problem of updating all documentation.  Providing a gradual
+upgrade path is the only way if a feature has to be changed.
 
 
 3. Building Python
@@ -409,7 +428,15 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.7. Q. Other trouble building Python 1.0.2 on platform X.
+3.7. Q. Python built with gcc for the DEC Alpha doesn't work.
+
+People have reported problems with both gcc 2.5.8 and 2.6.0.  The DEC
+OSF/1 cc compiler does not have these problems so it's probably gcc's
+fault.  One person reported that the problem went away when using -g
+instead of -O so this may be an option if you insist on using gcc.  If
+someone tracks it down more completely I'd like to hear about it!
+
+3.8. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
@@ -761,6 +788,93 @@ This is not solely due to the lack of begin/end brackets (the lack of
 declarations also helps, and the powerful operations of course), but
 it certainly helps!
 
+6.5. Q. Why are Python strings immutable?
+
+A. There are two advantages.  One is performance: knowing that a
+string is immutable makes it easy to lay it out at construction time
+-- fixed and unchanging storage requirements.  (This is also one of
+the reasons for the the distinction between tuples and lists.)  The
+other is that strings in Python are considered as "elemental" as
+numbers.  No amount of activity will change the value 8 to anything
+else, and in Python, no amount of activity will change the string
+"eight" to anything else.  (Adapted from Jim Roskind)
+
+6.6. Q. Why don't strings have methods like index() or sort(), like
+lists?
+
+A. Good question.  Strings currently don't have methods at all
+(likewise tuples and numbers).  Long ago, it seemed unnecessary to
+implement any of these functions in C, so a standard library module
+"string" written in Python was created that performs string related
+operations.  Since then, the cry for performance has moved most of
+them into the built-in module strop (this is imported by module
+string, which is still the perferred interface, without loss of
+performance except during initialization).  Some of these functions
+(e.g. index()) could easily be implemented as string methods instead,
+but others (e.g. sort()) can't, since their interface prescribes that
+they modify the object, while strings are immutable (see the previous
+question).
+
+6.7. Q. Why does Python use methods for some functionality
+(e.g. list.index()) but functions for other (e.g. len(list))?
+
+A. Functions are used for those operations that are generic for a
+group of types and which should work even for objects that don't have
+methods at all (e.g. numbers, strings, tuples).  Also, implementing
+len(), max(), min() as a built-in function is actually less code than
+implementing them as methods for each type.  One can quibble about
+individual cases but it's really too late to change such things
+fundamentally now.
+
+6.8. Q. Why can't I derive a class from built-in types (e.g. lists or
+files)?
+
+A. This is caused by the relatively late addition of (user-defined)
+classes to the language -- the implementation framework doesn't easily
+allow it.  See the answer to question 4.2 for a work-around.  This
+*may* be fixed in the (distant) future.
+
+6.9. Q. Why must 'self' be declared and used explicitly in method
+definitions and calls?
+
+A. By asking this question you reveal your C++ background. :-)
+When I added classes, this was (again) the simplest way of
+implementing methods without too many changes to the interpreter.  I
+borrowed the idea from Modula-3.  It turns out to be very useful, for
+a variety of reasons.
+
+First, it makes it more obvious that you are using a method or
+instance attribute instead of a local variable.  Reading "self.x" or
+"self.meth()" makes it absolutely clear that an instance variable or
+method is used even if you don't know the class definition by heart.
+In C++, you can sort of tell by the lack of a local variable
+declaration (assuming globals are rare or reasily recognizable) -- but
+in Python, there are no local variable declarations, so you'd have to
+look up the class definition to be sure.
+
+Second, it means that no special syntax is necessary if you want to
+explicitly reference or call the method from a particular class.  In
+C++, if you want to use a method from base class that is overridden in
+a derived class, you have to use the :: operator -- in Python you can
+write baseclass.methodname(self, <argument list>).  This is
+particularly useful for __init__() methods, and in general in cases
+where a derived class method wants to extend the base class method of
+the same name and thus has to call the base class method somehow.
+
+Lastly, for instance variables, it solves a syntactic problem with
+assignment: since local variables in Python are (by definition!) those
+variables to which a value assigned in a function body (and that
+aren't explicitly declared global), there has to be some way to tell
+the interpreter that an assignment was meant to assign to an instance
+variable instead of to a local variable, and it should preferably be
+syntactic (for efficiency reasons).  C++ does this through
+declarations, but Python doesn't have declarations and it would be a
+pity having to introduce them just for this purpose.  Using the
+explicit "self.var" solves this nicely.  Similarly, for using instance
+variables, having to write "self.var" means that references to
+unqualified names inside a method don't have to search the instance's
+directories.
+
 
 7. Using Python on non-UNIX platforms
 =====================================
@@ -805,9 +919,9 @@ Where's the library?
 
 A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
-you can get the file pythonlib1.0.2.tar.gz from most ftp sites carrying
-Python; this is a subset of the distribution containing just those
-file.
+you can get the file pythonlib<version>.tar.gz from most ftp sites
+carrying Python; this is a subset of the distribution containing just
+those file.
 
 Once you have installed the library, you need to point sys.path to it.
 Assuming the library is in C:\misc\python\lib, the following commands
