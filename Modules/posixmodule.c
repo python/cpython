@@ -765,7 +765,6 @@ posix_geteuid(self, args)
 		return NULL;
 	return newintobject((long)geteuid());
 }
-#endif /* !NT */
 
 static object *
 posix_getgid(self, args)
@@ -776,6 +775,7 @@ posix_getgid(self, args)
 		return NULL;
 	return newintobject((long)getgid());
 }
+#endif /* !NT */
 
 static object *
 posix_getpid(self, args)
