@@ -3,6 +3,7 @@
 def FOUR_CHAR_CODE(x): return x
 from Carbon.TextEdit import *
 from Carbon.QuickDraw import *
+fkDragActionAll = -1
 
 
 kDragHasLeftSenderWindow	= (1 << 0)
@@ -34,7 +35,8 @@ kZoomDecelerate = 2
 flavorSenderOnly = (1 << 0)
 flavorSenderTranslated = (1 << 1)
 flavorNotSaved = (1 << 2)
-flavorSystemTranslated = (1 << 8) 
+flavorSystemTranslated = (1 << 8)
+flavorDataPromised = (1 << 9) 
 kDragFlavorTypeHFS = FOUR_CHAR_CODE('hfs ')
 kDragFlavorTypePromiseHFS = FOUR_CHAR_CODE('phfs')
 flavorTypeHFS = kDragFlavorTypeHFS
@@ -54,6 +56,14 @@ kDragTrackingEnterWindow = 2
 kDragTrackingInWindow = 3
 kDragTrackingLeaveWindow = 4
 kDragTrackingLeaveHandler = 5     
+kDragActionNothing = 0L
+kDragActionCopy = 1L
+kDragActionAlias = (1L << 1)
+kDragActionGeneric = (1L << 2)
+kDragActionPrivate = (1L << 3)
+kDragActionMove = (1L << 4)
+kDragActionDelete = (1L << 5)
+# kDragActionAll = (long)0xFFFFFFFF
 dragHasLeftSenderWindow = kDragHasLeftSenderWindow
 dragInsideSenderApplication = kDragInsideSenderApplication
 dragInsideSenderWindow = kDragInsideSenderWindow 

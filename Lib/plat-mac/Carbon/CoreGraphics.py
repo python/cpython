@@ -22,3 +22,7 @@ kCGTextFillStrokeClip = 6
 kCGTextClip = 7
 kCGEncodingFontSpecific = 0
 kCGEncodingMacRoman = 1
+kCGInterpolationDefault = 0
+kCGInterpolationNone = 1
+kCGInterpolationLow = 2
+kCGInterpolationHigh = 3     

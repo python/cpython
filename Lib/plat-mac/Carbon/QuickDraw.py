@@ -70,6 +70,7 @@ fixedType = 1
 directType = 2
 gdDevType = 0     
 interlacedDevice = 2
+hwMirroredDevice = 4
 roundedDevice = 5
 hasAuxMenuBar = 6
 burstDevice = 7
