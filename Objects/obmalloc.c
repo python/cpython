@@ -695,7 +695,7 @@ static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
    to supply a single place to set a breakpoint.
 */
 static void
-bumpserialno()
+bumpserialno(void)
 {
 	++serialno;
 }
