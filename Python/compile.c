@@ -1891,6 +1891,7 @@ com_assign(c, n, assigning)
 		}
 	}
 }
+
 /* Forward */ static node *get_rawdocstring PROTO((node *));
 
 static void
@@ -2170,6 +2171,90 @@ com_exec_stmt(c, n)
 	com_pop(c, 3);
 }
 
+static int
+is_constant_false(c, n)
+	struct compiling *c;
+	node *n;
+{
+	object *v;
+	int i;
+
+  /* Label to avoid tail recursion */
+  next:
+	switch (TYPE(n)) {
+
+	case suite:
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto next;
+		}
+		/* Fall through */
+	case file_input:
+		for (i = 0; i < NCH(n); i++) {
+			node *ch = CHILD(n, i);
+			if (TYPE(ch) == stmt) {
+				n = ch;
+				goto next;
+			}
+		}
+		break;
+
+	case stmt:
+	case simple_stmt:
+	case small_stmt:
+		n = CHILD(n, 0);
+		goto next;
+
+	case expr_stmt:
+	case testlist:
+	case test:
+	case and_test:
+	case not_test:
+	case comparison:
+	case expr:
+	case xor_expr:
+	case and_expr:
+	case shift_expr:
+	case arith_expr:
+	case term:
+	case factor:
+	case power:
+	case atom:
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto next;
+		}
+		break;
+
+	case NAME:
+		if (Py_OptimizeFlag && strcmp(STR(n), "__debug__") == 0)
+			return 1;
+		break;
+
+	case NUMBER:
+		v = parsenumber(c, STR(n));
+		if (v == NULL) {
+			err_clear();
+			break;
+		}
+		i = testbool(v);
+		DECREF(v);
+		return i == 0;
+
+	case STRING:
+		v = parsestrplus(n);
+		if (v == NULL) {
+			err_clear();
+			break;
+		}
+		i = testbool(v);
+		DECREF(v);
+		return i == 0;
+
+	}
+	return 0;
+}
+
 static void
 com_if_stmt(c, n)
 	struct compiling *c;
@@ -2182,9 +2267,11 @@ com_if_stmt(c, n)
 	for (i = 0; i+3 < NCH(n); i+=4) {
 		int a = 0;
 		node *ch = CHILD(n, i+1);
+		if (is_constant_false(c, ch))
+			continue;
 		if (i > 0)
 			com_addoparg(c, SET_LINENO, ch->n_lineno);
-		com_node(c, CHILD(n, i+1));
+		com_node(c, ch);
 		com_addfwref(c, JUMP_IF_FALSE, &a);
 		com_addbyte(c, POP_TOP);
 		com_pop(c, 1);
@@ -2196,7 +2283,8 @@ com_if_stmt(c, n)
 	}
 	if (i+2 < NCH(n))
 		com_node(c, CHILD(n, i+2));
-	com_backpatch(c, anchor);
+	if (anchor)
+		com_backpatch(c, anchor);
 }
 
 static void
