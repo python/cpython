@@ -431,13 +431,14 @@ static PyObject * os2_error(int code)
 /* POSIX generic methods */
 
 static PyObject *
-posix_int(args, func)
+posix_int(args, format, func)
         PyObject *args;
+        char *format;
 	int (*func) Py_FPROTO((int));
 {
 	int fd;
 	int res;
-	if (!PyArg_Parse(args,  "i", &fd))
+	if (!PyArg_ParseTuple(args,  format, &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(fd);
@@ -450,13 +451,14 @@ posix_int(args, func)
 
 
 static PyObject *
-posix_1str(args, func)
+posix_1str(args, format, func)
 	PyObject *args;
+        char *format;
 	int (*func) Py_FPROTO((const char *));
 {
 	char *path1;
 	int res;
-	if (!PyArg_Parse(args, "s", &path1))
+	if (!PyArg_ParseTuple(args, format, &path1))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1);
@@ -468,13 +470,14 @@ posix_1str(args, func)
 }
 
 static PyObject *
-posix_2str(args, func)
+posix_2str(args, format, func)
 	PyObject *args;
+        char *format;
 	int (*func) Py_FPROTO((const char *, const char *));
 {
 	char *path1, *path2;
 	int res;
-	if (!PyArg_Parse(args, "(ss)", &path1, &path2))
+	if (!PyArg_ParseTuple(args, format, &path1, &path2))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1, path2);
@@ -487,14 +490,15 @@ posix_2str(args, func)
 }
 
 static PyObject *
-posix_strint(args, func)
+posix_strint(args, format, func)
 	PyObject *args;
+        char *format;
 	int (*func) Py_FPROTO((const char *, int));
 {
 	char *path;
 	int i;
 	int res;
-	if (!PyArg_Parse(args, "(si)", &path, &i))
+	if (!PyArg_ParseTuple(args, format, &path, &i))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path, i);
@@ -506,14 +510,15 @@ posix_strint(args, func)
 }
 
 static PyObject *
-posix_strintint(args, func)
+posix_strintint(args, format, func)
 	PyObject *args;
+        char *format;
 	int (*func) Py_FPROTO((const char *, int, int));
 {
 	char *path;
 	int i,i2;
 	int res;
-	if (!PyArg_Parse(args, "(sii)", &path, &i, &i2))
+	if (!PyArg_ParseTuple(args, format, &path, &i, &i2))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path, i, i2);
@@ -525,15 +530,16 @@ posix_strintint(args, func)
 }
 
 static PyObject *
-posix_do_stat(self, args, statfunc)
+posix_do_stat(self, args, format, statfunc)
 	PyObject *self;
 	PyObject *args;
+        char *format;
 	int (*statfunc) Py_FPROTO((const char *, struct stat *));
 {
 	struct stat st;
 	char *path;
 	int res;
-	if (!PyArg_Parse(args, "s", &path))
+	if (!PyArg_ParseTuple(args, format, &path))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*statfunc)(path, &st);
@@ -583,7 +589,7 @@ posix_access(self, args)
 	int mode;
 	int res;
 
-	if (!PyArg_Parse(args, "(si)", &path, &mode))
+	if (!PyArg_ParseTuple(args, "si:access", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = access(path, mode);
@@ -614,17 +620,43 @@ posix_ttyname(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *file;
 	int id;
 	char *ret;
 
-	if (!PyArg_Parse(args, "i", &id))
+	if (!PyArg_ParseTuple(args, "i:ttyname", &id))
 		return NULL;
 
 	ret = ttyname(id);
 	if (ret == NULL)
 		return(posix_error());
 	return(PyString_FromString(ret));
+}
+#endif
+
+#ifdef HAVE_CTERMID
+static char posix_ctermid__doc__[] =
+"ctermid() -> String\n\
+Return the name of the controlling terminal for this process.";
+
+static PyObject *
+posix_ctermid(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+        char *ret;
+        char buffer[L_ctermid];
+
+	if (!PyArg_ParseTuple(args, ":ctermid"))
+		return NULL;
+
+#ifdef HAVE_CTERMID_R
+	ret = ctermid_r(buffer);
+#else
+        ret = ctermid(buffer);
+#endif
+	if (ret == NULL)
+		return(posix_error());
+	return(PyString_FromString(buffer));
 }
 #endif
 
@@ -637,7 +669,7 @@ posix_chdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_1str(args, chdir);
+	return posix_1str(args, "s:chdir", chdir);
 }
 
 
@@ -650,7 +682,7 @@ posix_chmod(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_strint(args, chmod);
+	return posix_strint(args, "si:chmod", chmod);
 }
 
 
@@ -664,7 +696,7 @@ posix_fsync(self, args)
        PyObject *self;
        PyObject *args;
 {
-       return posix_int(args, fsync);
+       return posix_int(args, "i:fsync", fsync);
 }
 #endif /* HAVE_FSYNC */
 
@@ -681,7 +713,7 @@ posix_fdatasync(self, args)
        PyObject *self;
        PyObject *args;
 {
-       return posix_int(args, fdatasync);
+       return posix_int(args, "i:fdatasync", fdatasync);
 }
 #endif /* HAVE_FDATASYNC */
 
@@ -696,7 +728,7 @@ posix_chown(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_strintint(args, chown);
+	return posix_strintint(args, "sii:chown", chown);
 }
 #endif /* HAVE_CHOWN */
 
@@ -713,7 +745,7 @@ posix_getcwd(self, args)
 {
 	char buf[1026];
 	char *res;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getcwd"))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = getcwd(buf, sizeof buf);
@@ -735,7 +767,7 @@ posix_link(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_2str(args, link);
+	return posix_2str(args, "ss:link", link);
 }
 #endif /* HAVE_LINK */
 
@@ -765,7 +797,7 @@ posix_listdir(self, args)
 	WIN32_FIND_DATA FileData;
 	char namebuf[MAX_PATH+5];
 
-	if (!PyArg_Parse(args, "t#", &name, &len))
+	if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
 		return NULL;
 	if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
@@ -826,7 +858,7 @@ posix_listdir(self, args)
 	char namebuf[MAX_PATH+5];
 	struct _find_t ep;
 
-	if (!PyArg_Parse(args, "t#", &name, &len))
+	if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
 		return NULL;
 	if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
@@ -891,7 +923,7 @@ posix_listdir(self, args)
     FILEFINDBUF3   ep;
     APIRET rc;
 
-	if (!PyArg_Parse(args, "t#", &name, &len))
+    if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
         return NULL;
     if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");
@@ -954,7 +986,7 @@ posix_listdir(self, args)
 	PyObject *d, *v;
 	DIR *dirp;
 	struct dirent *ep;
-	if (!PyArg_Parse(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:listdir", &name))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
@@ -1007,7 +1039,7 @@ posix_mkdir(self, args)
 	int res;
 	char *path;
 	int mode = 0777;
-	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
+	if (!PyArg_ParseTuple(args, "s|i:mkdir", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #if ( defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP) ) && !defined(__QNX__)
@@ -1035,7 +1067,7 @@ posix_nice(self, args)
 {
 	int increment, value;
 
-	if (!PyArg_Parse(args, "i", &increment))
+	if (!PyArg_ParseTuple(args, "i:nice", &increment))
 		return NULL;
 	value = nice(increment);
 	if (value == -1)
@@ -1054,7 +1086,7 @@ posix_rename(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_2str(args, rename);
+	return posix_2str(args, "ss:rename", rename);
 }
 
 
@@ -1067,7 +1099,7 @@ posix_rmdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_1str(args, rmdir);
+	return posix_1str(args, "s:rmdir", rmdir);
 }
 
 
@@ -1080,7 +1112,7 @@ posix_stat(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_do_stat(self, args, stat);
+	return posix_do_stat(self, args, "s:stat", stat);
 }
 
 
@@ -1096,7 +1128,7 @@ posix_system(self, args)
 {
 	char *command;
 	long sts;
-	if (!PyArg_Parse(args, "s", &command))
+	if (!PyArg_ParseTuple(args, "s:system", &command))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	sts = system(command);
@@ -1116,7 +1148,7 @@ posix_umask(self, args)
 	PyObject *args;
 {
 	int i;
-	if (!PyArg_Parse(args, "i", &i))
+	if (!PyArg_ParseTuple(args, "i:umask", &i))
 		return NULL;
 	i = umask(i);
 	if (i < 0)
@@ -1138,7 +1170,7 @@ posix_unlink(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_1str(args, unlink);
+	return posix_1str(args, "s:remove", unlink);
 }
 
 
@@ -1154,7 +1186,7 @@ posix_uname(self, args)
 {
 	struct utsname u;
 	int res;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":uname"))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = uname(&u);
@@ -1197,7 +1229,7 @@ posix_utime(self, args)
 #define UTIME_ARG buf
 #endif /* HAVE_UTIME_H */
 
-	if (!PyArg_Parse(args, "(s(ll))", &path, &atime, &mtime))
+	if (!PyArg_ParseTuple(args, "s(ll):utime", &path, &atime, &mtime))
 		return NULL;
 	ATIME = atime;
 	MTIME = mtime;
@@ -1226,7 +1258,7 @@ posix__exit(self, args)
 	PyObject *args;
 {
 	int sts;
-	if (!PyArg_Parse(args, "i", &sts))
+	if (!PyArg_ParseTuple(args, "i:_exit", &sts))
 		return NULL;
 	_exit(sts);
 	return NULL; /* Make gcc -Wall happy */
@@ -1255,7 +1287,7 @@ posix_execv(self, args)
 	/* execv has two arguments: (path, argv), where
 	   argv is a list or tuple of strings. */
 
-	if (!PyArg_Parse(args, "(sO)", &path, &argv))
+	if (!PyArg_ParseTuple(args, "sO:execv", &path, &argv))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1320,7 +1352,7 @@ posix_execve(self, args)
 	   argv is a list or tuple of strings and env is a dictionary
 	   like posix.environ. */
 
-	if (!PyArg_Parse(args, "(sOO)", &path, &argv, &env))
+	if (!PyArg_ParseTuple(args, "sOO:execve", &path, &argv, &env))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1444,7 +1476,7 @@ posix_spawnv(self, args)
 	/* spawnv has three arguments: (mode, path, argv), where
 	   argv is a list or tuple of strings. */
 
-	if (!PyArg_Parse(args, "(isO)", &mode, &path, &argv))
+	if (!PyArg_ParseTuple(args, "isO:spawnv", &mode, &path, &argv))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1510,7 +1542,7 @@ posix_spawnve(self, args)
 	   argv is a list or tuple of strings and env is a dictionary
 	   like posix.environ. */
 
-	if (!PyArg_Parse(args, "(isOO)", &mode, &path, &argv, &env))
+	if (!PyArg_ParseTuple(args, "isOO:spawnve", &mode, &path, &argv, &env))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1613,7 +1645,7 @@ posix_fork(self, args)
 	PyObject *args;
 {
 	int pid;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":fork"))
 		return NULL;
 	pid = fork();
 	if (pid == -1)
@@ -1634,7 +1666,7 @@ posix_getegid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getegid"))
 		return NULL;
 	return PyInt_FromLong((long)getegid());
 }
@@ -1651,7 +1683,7 @@ posix_geteuid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":geteuid"))
 		return NULL;
 	return PyInt_FromLong((long)geteuid());
 }
@@ -1668,7 +1700,7 @@ posix_getgid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getgid"))
 		return NULL;
 	return PyInt_FromLong((long)getgid());
 }
@@ -1684,7 +1716,7 @@ posix_getpid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getpid"))
 		return NULL;
 	return PyInt_FromLong((long)getpid());
 }
@@ -1700,7 +1732,7 @@ posix_getpgrp(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getpgrp"))
 		return NULL;
 #ifdef GETPGRP_HAVE_ARG
 	return PyInt_FromLong((long)getpgrp(0));
@@ -1721,7 +1753,7 @@ posix_setpgrp(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":setpgrp"))
 		return NULL;
 #ifdef SETPGRP_HAVE_ARG
 	if (setpgrp(0, 0) < 0)
@@ -1745,7 +1777,7 @@ posix_getppid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getppid"))
 		return NULL;
 	return PyInt_FromLong((long)getppid());
 }
@@ -1762,7 +1794,7 @@ posix_getuid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":getuid"))
 		return NULL;
 	return PyInt_FromLong((long)getuid());
 }
@@ -1780,7 +1812,7 @@ posix_kill(self, args)
 	PyObject *args;
 {
 	int pid, sig;
-	if (!PyArg_Parse(args, "(ii)", &pid, &sig))
+	if (!PyArg_ParseTuple(args, "ii:kill", &pid, &sig))
 		return NULL;
 #if defined(PYOS_OS2)
     if (sig == XCPT_SIGNAL_INTR || sig == XCPT_SIGNAL_BREAK) {
@@ -1820,7 +1852,7 @@ posix_plock(self, args)
 	PyObject *args;
 {
 	int op;
-	if (!PyArg_Parse(args, "i", &op))
+	if (!PyArg_ParseTuple(args, "i:plock", &op))
 		return NULL;
 	if (plock(op) == -1)
 		return posix_error();
@@ -1927,7 +1959,7 @@ posix_popen(self, args)
 	int   err, bufsize = -1;
 	FILE *fp;
 	PyObject *f;
-	if (!PyArg_ParseTuple(args, "s|si", &name, &mode, &bufsize))
+	if (!PyArg_ParseTuple(args, "s|si:popen", &name, &mode, &bufsize))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fp = popen(name, mode, (bufsize > 0) ? bufsize : 4096, &err);
@@ -1952,7 +1984,7 @@ posix_popen(self, args)
 	int bufsize = -1;
 	FILE *fp;
 	PyObject *f;
-	if (!PyArg_ParseTuple(args, "s|si", &name, &mode, &bufsize))
+	if (!PyArg_ParseTuple(args, "s|si:popen", &name, &mode, &bufsize))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fp = popen(name, mode);
@@ -1979,7 +2011,7 @@ posix_setuid(self, args)
 	PyObject *args;
 {
 	int uid;
-	if (!PyArg_Parse(args, "i", &uid))
+	if (!PyArg_ParseTuple(args, "i:setuid", &uid))
 		return NULL;
 	if (setuid(uid) < 0)
 		return posix_error();
@@ -2000,7 +2032,7 @@ posix_setgid(self, args)
 	PyObject *args;
 {
 	int gid;
-	if (!PyArg_Parse(args, "i", &gid))
+	if (!PyArg_ParseTuple(args, "i:setgid", &gid))
 		return NULL;
 	if (setgid(gid) < 0)
 		return posix_error();
@@ -2030,7 +2062,7 @@ posix_waitpid(self, args)
 #endif
 	status_i = 0;
 
-	if (!PyArg_Parse(args, "(ii)", &pid, &options))
+	if (!PyArg_ParseTuple(args, "ii:waitpid", &pid, &options))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef NeXT
@@ -2057,7 +2089,7 @@ posix_wait(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int pid, sts;
+	int pid;
 #ifdef UNION_WAIT
 	union wait status;
 #define status_i (status.w_status)
@@ -2065,6 +2097,8 @@ posix_wait(self, args)
 	int status;
 #define status_i status
 #endif
+        if (!PyArg_ParseTuple(args, ":wait"))
+                return NULL;
 	status_i = 0;
 	Py_BEGIN_ALLOW_THREADS
 	pid = wait(&status);
@@ -2073,6 +2107,7 @@ posix_wait(self, args)
 		return posix_error();
 	else
 		return Py_BuildValue("ii", pid, status_i);
+#undef status_i
 }
 #endif
 
@@ -2087,9 +2122,9 @@ posix_lstat(self, args)
 	PyObject *args;
 {
 #ifdef HAVE_LSTAT
-	return posix_do_stat(self, args, lstat);
+	return posix_do_stat(self, args, "s:lstat", lstat);
 #else /* !HAVE_LSTAT */
-	return posix_do_stat(self, args, stat);
+	return posix_do_stat(self, args, "s:lstat", stat);
 #endif /* !HAVE_LSTAT */
 }
 
@@ -2107,7 +2142,7 @@ posix_readlink(self, args)
 	char buf[MAXPATHLEN];
 	char *path;
 	int n;
-	if (!PyArg_Parse(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "s:readlink", &path))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	n = readlink(path, buf, (int) sizeof buf);
@@ -2129,7 +2164,7 @@ posix_symlink(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_2str(args, symlink);
+	return posix_2str(args, "ss:symlink", symlink);
 }
 #endif /* HAVE_SYMLINK */
 
@@ -2157,7 +2192,7 @@ posix_times(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":times"))
 		return NULL;
 
     /* Currently Only Uptime is Provided -- Others Later */
@@ -2176,7 +2211,7 @@ posix_times(self, args)
 {
 	struct tms t;
 	clock_t c;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":times"))
 		return NULL;
 	errno = 0;
 	c = times(&t);
@@ -2202,7 +2237,7 @@ posix_times(self, args)
 {
 	FILETIME create, exit, kernel, user;
 	HANDLE hProc;
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":times"))
 		return NULL;
 	hProc = GetCurrentProcess();
 	GetProcessTimes(hProc, &create, &exit, &kernel, &user);
@@ -2240,7 +2275,7 @@ posix_setsid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":setsid"))
 		return NULL;
 	if (setsid() < 0)
 		return posix_error();
@@ -2260,7 +2295,7 @@ posix_setpgid(self, args)
 	PyObject *args;
 {
 	int pid, pgrp;
-	if (!PyArg_Parse(args, "(ii)", &pid, &pgrp))
+	if (!PyArg_ParseTuple(args, "ii:setpgid", &pid, &pgrp))
 		return NULL;
 	if (setpgid(pid, pgrp) < 0)
 		return posix_error();
@@ -2281,7 +2316,7 @@ posix_tcgetpgrp(self, args)
 	PyObject *args;
 {
 	int fd, pgid;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i:tcgetpgrp", &fd))
 		return NULL;
 	pgid = tcgetpgrp(fd);
 	if (pgid < 0)
@@ -2302,7 +2337,7 @@ posix_tcsetpgrp(self, args)
 	PyObject *args;
 {
 	int fd, pgid;
-	if (!PyArg_Parse(args, "(ii)", &fd, &pgid))
+	if (!PyArg_ParseTuple(args, "ii:tcsetpgrp", &fd, &pgid))
 		return NULL;
 	if (tcsetpgrp(fd, pgid) < 0)
 		return posix_error();
@@ -2348,7 +2383,7 @@ posix_close(self, args)
 	PyObject *args;
 {
 	int fd, res;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i:close", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
@@ -2370,7 +2405,7 @@ posix_dup(self, args)
 	PyObject *args;
 {
 	int fd;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i:dup", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fd = dup(fd);
@@ -2391,7 +2426,7 @@ posix_dup2(self, args)
 	PyObject *args;
 {
 	int fd, fd2, res;
-	if (!PyArg_Parse(args, "(ii)", &fd, &fd2))
+	if (!PyArg_ParseTuple(args, "ii:dup2", &fd, &fd2))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = dup2(fd, fd2);
@@ -2415,7 +2450,7 @@ posix_lseek(self, args)
 	int fd, how;
 	off_t pos, res;
 	PyObject *posobj;
-	if (!PyArg_Parse(args, "(iOi)", &fd, &posobj, &how))
+	if (!PyArg_ParseTuple(args, "iOi:lseek", &fd, &posobj, &how))
 		return NULL;
 #ifdef SEEK_SET
 	/* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -2460,7 +2495,7 @@ posix_read(self, args)
 {
 	int fd, size, n;
 	PyObject *buffer;
-	if (!PyArg_Parse(args, "(ii)", &fd, &size))
+	if (!PyArg_ParseTuple(args, "ii:read", &fd, &size))
 		return NULL;
 	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
@@ -2489,7 +2524,7 @@ posix_write(self, args)
 {
 	int fd, size;
 	char *buffer;
-	if (!PyArg_Parse(args, "(is#)", &fd, &buffer, &size))
+	if (!PyArg_ParseTuple(args, "is#:write", &fd, &buffer, &size))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, buffer, size);
@@ -2512,7 +2547,7 @@ posix_fstat(self, args)
 	int fd;
 	struct stat st;
 	int res;
-	if (!PyArg_Parse(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i:fstat", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = fstat(fd, &st);
@@ -2591,7 +2626,7 @@ posix_pipe(self, args)
     HFILE read, write;
     APIRET rc;
 
-    if (!PyArg_Parse(args, ""))
+    if (!PyArg_ParseTuple(args, ":pipe"))
         return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
@@ -2605,7 +2640,7 @@ posix_pipe(self, args)
 #if !defined(MS_WIN32)
 	int fds[2];
 	int res;
-	if (!PyArg_Parse(args, ""))
+	if (!PyArg_ParseTuple(args, ":pipe"))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = pipe(fds);
@@ -2617,7 +2652,7 @@ posix_pipe(self, args)
 	HANDLE read, write;
 	int read_fd, write_fd;
 	BOOL ok;
-	if (!PyArg_Parse(args, ""))
+	if (!PyArg_ParseTuple(args, ":pipe"))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	ok = CreatePipe(&read, &write, NULL, 0);
@@ -2646,7 +2681,7 @@ posix_mkfifo(self, args)
 	char *file;
 	int mode = 0666;
 	int res;
-	if (!PyArg_ParseTuple(args, "s|i", &file, &mode))
+	if (!PyArg_ParseTuple(args, "s|i:mkfifo", &file, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = mkfifo(file, mode);
@@ -2674,7 +2709,7 @@ posix_ftruncate(self, args)
 	int res;
 	PyObject *lenobj;
 
-	if (!PyArg_Parse(args, "(iO)", &fd, &lenobj))
+	if (!PyArg_ParseTuple(args, "iO:ftruncate", &fd, &lenobj))
 		return NULL;
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
@@ -2800,7 +2835,7 @@ posix_putenv(self, args)
         char *new;
 	PyObject *newstr;
 
-	if (!PyArg_ParseTuple(args, "ss", &s1, &s2))
+	if (!PyArg_ParseTuple(args, "ss:putenv", &s1, &s2))
 		return NULL;
 
 #if defined(PYOS_OS2)
@@ -2869,7 +2904,7 @@ posix_strerror(self, args)
 {
 	int code;
 	char *message;
-	if (!PyArg_ParseTuple(args, "i", &code))
+	if (!PyArg_ParseTuple(args, "i:strerror", &code))
 		return NULL;
 	message = strerror(code);
 	if (message == NULL) {
@@ -2903,12 +2938,13 @@ posix_WIFSTOPPED(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WIFSTOPPED", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WIFSTOPPED(status));
+#undef status_i
 }
 #endif /* WIFSTOPPED */
 
@@ -2931,12 +2967,13 @@ posix_WIFSIGNALED(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WIFSIGNALED", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WIFSIGNALED(status));
+#undef status_i
 }
 #endif /* WIFSIGNALED */
 
@@ -2960,12 +2997,13 @@ posix_WIFEXITED(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WIFEXITED", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WIFEXITED(status));
+#undef status_i
 }
 #endif /* WIFEXITED */
 
@@ -2988,12 +3026,13 @@ posix_WEXITSTATUS(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WEXITSTATUS", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WEXITSTATUS(status));
+#undef status_i
 }
 #endif /* WEXITSTATUS */
 
@@ -3017,12 +3056,13 @@ posix_WTERMSIG(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WTERMSIG", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WTERMSIG(status));
+#undef status_i
 }
 #endif /* WTERMSIG */
 
@@ -3045,12 +3085,13 @@ posix_WSTOPSIG(self, args)
 #endif
 	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status_i))
+	if (!PyArg_ParseTuple(args, "i:WSTOPSIG", &status_i))
 	{
 		return NULL;
 	}
    
 	return Py_BuildValue("i", WSTOPSIG(status));
+#undef status_i
 }
 #endif /* WSTOPSIG */
 
@@ -3077,7 +3118,7 @@ posix_fstatvfs(self, args)
 {
 	int fd, res;
 	struct statvfs st;
-	if (!PyArg_ParseTuple(args, "i", &fd))
+	if (!PyArg_ParseTuple(args, "i:fstatvfs", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = fstatvfs(fd, &st);
@@ -3129,7 +3170,7 @@ posix_statvfs(self, args)
 	char *path;
 	int res;
 	struct statvfs st;
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "s:statvfs", &path))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = statvfs(path, &st);
@@ -3165,173 +3206,292 @@ posix_statvfs(self, args)
 #endif /* HAVE_STATVFS */
 
 
-static PyMethodDef posix_methods[] = {
-	{"access",	posix_access, 0, posix_access__doc__},
-#ifdef HAVE_TTYNAME
-	{"ttyname",	posix_ttyname, 0, posix_ttyname__doc__},
+#ifdef HAVE_TEMPNAM
+static char posix_tempnam__doc__[] = "\
+tempnam([dir[, prefix]]) -> string\n\
+Return a unique name for a temporary file.\n\
+The directory and a short may be specified as strings; they may be omitted\n\
+or None if not needed.";
+
+static PyObject *
+posix_tempnam(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+    char *dir = NULL;
+    char *pfx = NULL;
+    char *name;
+
+    if (!PyArg_ParseTuple(args, "|zz:tempnam", &dir, &pfx))
+        return NULL;
+    name = tempnam(dir, pfx);
+    if (name == NULL)
+        return PyErr_NoMemory();
+    result = PyString_FromString(name);
+    free(name);
+    return result;
+}
 #endif
-	{"chdir",	posix_chdir, 0, posix_chdir__doc__},
-	{"chmod",	posix_chmod, 0, posix_chmod__doc__},
+
+
+#ifdef HAVE_TMPFILE
+static char posix_tmpfile__doc__[] = "\
+tmpfile() -> file object\n\
+Create a temporary file with no directory entries.";
+
+static PyObject *
+posix_tmpfile(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    FILE *fp;
+
+    if (!PyArg_ParseTuple(args, ":tmpfile"))
+        return NULL;
+    fp = tmpfile();
+    if (fp == NULL)
+        return posix_error();
+    return PyFile_FromFile(fp, "<tmpfile>", "w+", fclose);
+}
+#endif
+
+
+#ifdef HAVE_TMPNAM
+static char posix_tmpnam__doc__[] = "\
+tmpnam() -> string\n\
+Return a unique name for a temporary file.";
+
+static PyObject *
+posix_tmpnam(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    char buffer[L_tmpnam];
+    char *name;
+
+    if (!PyArg_ParseTuple(args, ":tmpnam"))
+        return NULL;
+#ifdef HAVE_TMPNAM_R
+    name = tmpnam_r(buffer);
+#else
+    name = tmpnam(buffer);
+#endif
+    if (name == NULL) {
+        PyErr_SetObject(PyExc_OSError,
+                        Py_BuildValue("is", 0,
+#ifdef HAVE_TMPNAM_R
+                                      "unexpected NULL from tmpnam_r"
+#else
+                                      "unexpected NULL from tmpnam"
+#endif
+                                      ));
+        return NULL;
+    }
+    return PyString_FromString(buffer);
+}
+#endif
+
+
+static char posix_abort__doc__[] = "\
+abort() -> does not return!\n\
+Abort the interpreter immediately.  This 'dumps core' or otherwise fails\n\
+in the hardest way possible on the hosting operating system.";
+
+static PyObject *
+posix_abort(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    if (!PyArg_ParseTuple(args, ":abort"))
+        return NULL;
+    abort();
+    /*NOTREACHED*/
+    Py_FatalError("abort() called from Python code didn't abort!");
+    return NULL;
+}
+                
+
+static PyMethodDef posix_methods[] = {
+	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
+#ifdef HAVE_TTYNAME
+	{"ttyname",	posix_ttyname, METH_VARARGS, posix_ttyname__doc__},
+#endif
+	{"chdir",	posix_chdir, METH_VARARGS, posix_chdir__doc__},
+	{"chmod",	posix_chmod, METH_VARARGS, posix_chmod__doc__},
 #ifdef HAVE_CHOWN
-	{"chown",	posix_chown, 0, posix_chown__doc__},
+	{"chown",	posix_chown, METH_VARARGS, posix_chown__doc__},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_CTERMID
+	{"ctermid",	posix_ctermid, METH_VARARGS, posix_ctermid__doc__},
+#endif
 #ifdef HAVE_GETCWD
-	{"getcwd",	posix_getcwd, 0, posix_getcwd__doc__},
+	{"getcwd",	posix_getcwd, METH_VARARGS, posix_getcwd__doc__},
 #endif
 #ifdef HAVE_LINK
-	{"link",	posix_link, 0, posix_link__doc__},
+	{"link",	posix_link, METH_VARARGS, posix_link__doc__},
 #endif /* HAVE_LINK */
-	{"listdir",	posix_listdir, 0, posix_listdir__doc__},
-	{"lstat",	posix_lstat, 0, posix_lstat__doc__},
-	{"mkdir",	posix_mkdir, 1, posix_mkdir__doc__},
+	{"listdir",	posix_listdir, METH_VARARGS, posix_listdir__doc__},
+	{"lstat",	posix_lstat, METH_VARARGS, posix_lstat__doc__},
+	{"mkdir",	posix_mkdir, METH_VARARGS, posix_mkdir__doc__},
 #ifdef HAVE_NICE
-	{"nice",	posix_nice, 0, posix_nice__doc__},
+	{"nice",	posix_nice, METH_VARARGS, posix_nice__doc__},
 #endif /* HAVE_NICE */
 #ifdef HAVE_READLINK
-	{"readlink",	posix_readlink, 0, posix_readlink__doc__},
+	{"readlink",	posix_readlink, METH_VARARGS, posix_readlink__doc__},
 #endif /* HAVE_READLINK */
-	{"rename",	posix_rename, 0, posix_rename__doc__},
-	{"rmdir",	posix_rmdir, 0, posix_rmdir__doc__},
-	{"stat",	posix_stat, 0, posix_stat__doc__},
+	{"rename",	posix_rename, METH_VARARGS, posix_rename__doc__},
+	{"rmdir",	posix_rmdir, METH_VARARGS, posix_rmdir__doc__},
+	{"stat",	posix_stat, METH_VARARGS, posix_stat__doc__},
 #ifdef HAVE_SYMLINK
-	{"symlink",	posix_symlink, 0, posix_symlink__doc__},
+	{"symlink",	posix_symlink, METH_VARARGS, posix_symlink__doc__},
 #endif /* HAVE_SYMLINK */
 #ifdef HAVE_SYSTEM
-	{"system",	posix_system, 0, posix_system__doc__},
+	{"system",	posix_system, METH_VARARGS, posix_system__doc__},
 #endif
-	{"umask",	posix_umask, 0, posix_umask__doc__},
+	{"umask",	posix_umask, METH_VARARGS, posix_umask__doc__},
 #ifdef HAVE_UNAME
-	{"uname",	posix_uname, 0, posix_uname__doc__},
+	{"uname",	posix_uname, METH_VARARGS, posix_uname__doc__},
 #endif /* HAVE_UNAME */
-	{"unlink",	posix_unlink, 0, posix_unlink__doc__},
-	{"remove",	posix_unlink, 0, posix_remove__doc__},
-	{"utime",	posix_utime, 0, posix_utime__doc__},
+	{"unlink",	posix_unlink, METH_VARARGS, posix_unlink__doc__},
+	{"remove",	posix_unlink, METH_VARARGS, posix_remove__doc__},
+	{"utime",	posix_utime, METH_VARARGS, posix_utime__doc__},
 #ifdef HAVE_TIMES
-	{"times",	posix_times, 0, posix_times__doc__},
+	{"times",	posix_times, METH_VARARGS, posix_times__doc__},
 #endif /* HAVE_TIMES */
-	{"_exit",	posix__exit, 0, posix__exit__doc__},
+	{"_exit",	posix__exit, METH_VARARGS, posix__exit__doc__},
 #ifdef HAVE_EXECV
-	{"execv",	posix_execv, 0, posix_execv__doc__},
-	{"execve",	posix_execve, 0, posix_execve__doc__},
+	{"execv",	posix_execv, METH_VARARGS, posix_execv__doc__},
+	{"execve",	posix_execve, METH_VARARGS, posix_execve__doc__},
 #endif /* HAVE_EXECV */
 #ifdef HAVE_SPAWNV
-	{"spawnv",	posix_spawnv, 0, posix_spawnv__doc__},
-	{"spawnve",	posix_spawnve, 0, posix_spawnve__doc__},
+	{"spawnv",	posix_spawnv, METH_VARARGS, posix_spawnv__doc__},
+	{"spawnve",	posix_spawnve, METH_VARARGS, posix_spawnve__doc__},
 #endif /* HAVE_SPAWNV */
 #ifdef HAVE_FORK
-	{"fork",	posix_fork, 0, posix_fork__doc__},
+	{"fork",	posix_fork, METH_VARARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
 #ifdef HAVE_GETEGID
-	{"getegid",	posix_getegid, 0, posix_getegid__doc__},
+	{"getegid",	posix_getegid, METH_VARARGS, posix_getegid__doc__},
 #endif /* HAVE_GETEGID */
 #ifdef HAVE_GETEUID
-	{"geteuid",	posix_geteuid, 0, posix_geteuid__doc__},
+	{"geteuid",	posix_geteuid, METH_VARARGS, posix_geteuid__doc__},
 #endif /* HAVE_GETEUID */
 #ifdef HAVE_GETGID
-	{"getgid",	posix_getgid, 0, posix_getgid__doc__},
+	{"getgid",	posix_getgid, METH_VARARGS, posix_getgid__doc__},
 #endif /* HAVE_GETGID */
-	{"getpid",	posix_getpid, 0, posix_getpid__doc__},
+	{"getpid",	posix_getpid, METH_VARARGS, posix_getpid__doc__},
 #ifdef HAVE_GETPGRP
-	{"getpgrp",	posix_getpgrp, 0, posix_getpgrp__doc__},
+	{"getpgrp",	posix_getpgrp, METH_VARARGS, posix_getpgrp__doc__},
 #endif /* HAVE_GETPGRP */
 #ifdef HAVE_GETPPID
-	{"getppid",	posix_getppid, 0, posix_getppid__doc__},
+	{"getppid",	posix_getppid, METH_VARARGS, posix_getppid__doc__},
 #endif /* HAVE_GETPPID */
 #ifdef HAVE_GETUID
-	{"getuid",	posix_getuid, 0, posix_getuid__doc__},
+	{"getuid",	posix_getuid, METH_VARARGS, posix_getuid__doc__},
 #endif /* HAVE_GETUID */
 #ifdef HAVE_KILL
-	{"kill",	posix_kill, 0, posix_kill__doc__},
+	{"kill",	posix_kill, METH_VARARGS, posix_kill__doc__},
 #endif /* HAVE_KILL */
 #ifdef HAVE_PLOCK
-	{"plock",	posix_plock, 0, posix_plock__doc__},
+	{"plock",	posix_plock, METH_VARARGS, posix_plock__doc__},
 #endif /* HAVE_PLOCK */
 #ifdef HAVE_POPEN
-	{"popen",	posix_popen, 1, posix_popen__doc__},
+	{"popen",	posix_popen, METH_VARARGS, posix_popen__doc__},
 #endif /* HAVE_POPEN */
 #ifdef HAVE_SETUID
-	{"setuid",	posix_setuid, 0, posix_setuid__doc__},
+	{"setuid",	posix_setuid, METH_VARARGS, posix_setuid__doc__},
 #endif /* HAVE_SETUID */
 #ifdef HAVE_SETGID
-	{"setgid",	posix_setgid, 0, posix_setgid__doc__},
+	{"setgid",	posix_setgid, METH_VARARGS, posix_setgid__doc__},
 #endif /* HAVE_SETGID */
 #ifdef HAVE_SETPGRP
-	{"setpgrp",	posix_setpgrp, 0, posix_setpgrp__doc__},
+	{"setpgrp",	posix_setpgrp, METH_VARARGS, posix_setpgrp__doc__},
 #endif /* HAVE_SETPGRP */
 #ifdef HAVE_WAIT
-	{"wait",	posix_wait, 0, posix_wait__doc__},
+	{"wait",	posix_wait, METH_VARARGS, posix_wait__doc__},
 #endif /* HAVE_WAIT */
 #ifdef HAVE_WAITPID
-	{"waitpid",	posix_waitpid, 0, posix_waitpid__doc__},
+	{"waitpid",	posix_waitpid, METH_VARARGS, posix_waitpid__doc__},
 #endif /* HAVE_WAITPID */
 #ifdef HAVE_SETSID
-	{"setsid",	posix_setsid, 0, posix_setsid__doc__},
+	{"setsid",	posix_setsid, METH_VARARGS, posix_setsid__doc__},
 #endif /* HAVE_SETSID */
 #ifdef HAVE_SETPGID
-	{"setpgid",	posix_setpgid, 0, posix_setpgid__doc__},
+	{"setpgid",	posix_setpgid, METH_VARARGS, posix_setpgid__doc__},
 #endif /* HAVE_SETPGID */
 #ifdef HAVE_TCGETPGRP
-	{"tcgetpgrp",	posix_tcgetpgrp, 0, posix_tcgetpgrp__doc__},
+	{"tcgetpgrp",	posix_tcgetpgrp, METH_VARARGS, posix_tcgetpgrp__doc__},
 #endif /* HAVE_TCGETPGRP */
 #ifdef HAVE_TCSETPGRP
-	{"tcsetpgrp",	posix_tcsetpgrp, 0, posix_tcsetpgrp__doc__},
+	{"tcsetpgrp",	posix_tcsetpgrp, METH_VARARGS, posix_tcsetpgrp__doc__},
 #endif /* HAVE_TCSETPGRP */
-	{"open",	posix_open, 1, posix_open__doc__},
-	{"close",	posix_close, 0, posix_close__doc__},
-	{"dup",		posix_dup, 0, posix_dup__doc__},
-	{"dup2",	posix_dup2, 0, posix_dup2__doc__},
-	{"lseek",	posix_lseek, 0, posix_lseek__doc__},
-	{"read",	posix_read, 0, posix_read__doc__},
-	{"write",	posix_write, 0, posix_write__doc__},
-	{"fstat",	posix_fstat, 0, posix_fstat__doc__},
-	{"fdopen",	posix_fdopen,	1, posix_fdopen__doc__},
+	{"open",	posix_open, METH_VARARGS, posix_open__doc__},
+	{"close",	posix_close, METH_VARARGS, posix_close__doc__},
+	{"dup",		posix_dup, METH_VARARGS, posix_dup__doc__},
+	{"dup2",	posix_dup2, METH_VARARGS, posix_dup2__doc__},
+	{"lseek",	posix_lseek, METH_VARARGS, posix_lseek__doc__},
+	{"read",	posix_read, METH_VARARGS, posix_read__doc__},
+	{"write",	posix_write, METH_VARARGS, posix_write__doc__},
+	{"fstat",	posix_fstat, METH_VARARGS, posix_fstat__doc__},
+	{"fdopen",	posix_fdopen, METH_VARARGS, posix_fdopen__doc__},
 #ifdef HAVE_PIPE
-	{"pipe",	posix_pipe, 0, posix_pipe__doc__},
+	{"pipe",	posix_pipe, METH_VARARGS, posix_pipe__doc__},
 #endif
 #ifdef HAVE_MKFIFO
-	{"mkfifo",	posix_mkfifo, 1, posix_mkfifo__doc__},
+	{"mkfifo",	posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
 #endif
 #ifdef HAVE_FTRUNCATE
-	{"ftruncate",	posix_ftruncate, 1, posix_ftruncate__doc__},
+	{"ftruncate",	posix_ftruncate, METH_VARARGS, posix_ftruncate__doc__},
 #endif
 #ifdef HAVE_PUTENV
-	{"putenv",	posix_putenv, 1, posix_putenv__doc__},
+	{"putenv",	posix_putenv, METH_VARARGS, posix_putenv__doc__},
 #endif
 #ifdef HAVE_STRERROR
-	{"strerror",	posix_strerror, 1, posix_strerror__doc__},
+	{"strerror",	posix_strerror, METH_VARARGS, posix_strerror__doc__},
 #endif
 #ifdef HAVE_FSYNC
-	{"fsync",       posix_fsync, 0, posix_fsync__doc__},
+	{"fsync",       posix_fsync, METH_VARARGS, posix_fsync__doc__},
 #endif
 #ifdef HAVE_FDATASYNC
-	{"fdatasync",   posix_fdatasync,  0, posix_fdatasync__doc__},
+	{"fdatasync",   posix_fdatasync,  METH_VARARGS, posix_fdatasync__doc__},
 #endif
 #ifdef HAVE_SYS_WAIT_H
 #ifdef WIFSTOPPED
-        {"WIFSTOPPED",	posix_WIFSTOPPED, 0, posix_WIFSTOPPED__doc__},
+        {"WIFSTOPPED",	posix_WIFSTOPPED, METH_VARARGS, posix_WIFSTOPPED__doc__},
 #endif /* WIFSTOPPED */
 #ifdef WIFSIGNALED
-        {"WIFSIGNALED",	posix_WIFSIGNALED, 0, posix_WIFSIGNALED__doc__},
+        {"WIFSIGNALED",	posix_WIFSIGNALED, METH_VARARGS, posix_WIFSIGNALED__doc__},
 #endif /* WIFSIGNALED */
 #ifdef WIFEXITED
-        {"WIFEXITED",	posix_WIFEXITED, 0, posix_WIFEXITED__doc__},
+        {"WIFEXITED",	posix_WIFEXITED, METH_VARARGS, posix_WIFEXITED__doc__},
 #endif /* WIFEXITED */
 #ifdef WEXITSTATUS
-        {"WEXITSTATUS",	posix_WEXITSTATUS, 0, posix_WEXITSTATUS__doc__},
+        {"WEXITSTATUS",	posix_WEXITSTATUS, METH_VARARGS, posix_WEXITSTATUS__doc__},
 #endif /* WEXITSTATUS */
 #ifdef WTERMSIG
-        {"WTERMSIG",	posix_WTERMSIG, 0, posix_WTERMSIG__doc__},
+        {"WTERMSIG",	posix_WTERMSIG, METH_VARARGS, posix_WTERMSIG__doc__},
 #endif /* WTERMSIG */
 #ifdef WSTOPSIG
-        {"WSTOPSIG",	posix_WSTOPSIG, 0, posix_WSTOPSIG__doc__},
+        {"WSTOPSIG",	posix_WSTOPSIG, METH_VARARGS, posix_WSTOPSIG__doc__},
 #endif /* WSTOPSIG */
 #endif /* HAVE_SYS_WAIT_H */
 #ifdef HAVE_FSTATVFS
-	{"fstatvfs",	posix_fstatvfs, 1, posix_fstatvfs__doc__},
+	{"fstatvfs",	posix_fstatvfs, METH_VARARGS, posix_fstatvfs__doc__},
 #endif
 #ifdef HAVE_STATVFS
-	{"statvfs",	posix_statvfs, 1, posix_statvfs__doc__},
+	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
 #endif
+#ifdef HAVE_TMPNAM
+	{"tmpfile",	posix_tmpfile, METH_VARARGS, posix_tmpfile__doc__},
+#endif
+#ifdef HAVE_TEMPNAM
+	{"tempnam",	posix_tempnam, METH_VARARGS, posix_tempnam__doc__},
+#endif
+#ifdef HAVE_TMPNAM
+	{"tmpnam",	posix_tmpnam, METH_VARARGS, posix_tmpnam__doc__},
+#endif
+	{"abort",	posix_abort, METH_VARARGS, posix_abort__doc__},
 	{NULL,		NULL}		 /* Sentinel */
 };
 
@@ -3425,6 +3585,9 @@ all_ins(d)
 #ifdef X_OK
         if (ins(d, "X_OK", (long)X_OK)) return -1;
 #endif        
+#ifdef TMP_MAX
+        if (ins(d, "TMP_MAX", (long)TMP_MAX)) return -1;
+#endif
 #ifdef WNOHANG
         if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
 #endif        
