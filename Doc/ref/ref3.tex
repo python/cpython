@@ -897,10 +897,8 @@ syntax (such as arithmetic operations or subscripting and slicing) by
 defining methods with special names.  For instance, if a class defines
 a method named \method{__getitem__()}, and \code{x} is an instance of
 this class, then \code{x[i]} is equivalent to
-\code{x.__getitem__(i)}.  (The reverse is not true --- if \code{x} is
-a list object, \code{x.__getitem__(i)} is not equivalent to
-\code{x[i]}.)  Except where mentioned, attempts to execute an
-operation raise an exception when no appropriate method is defined.
+\code{x.__getitem__(i)}.  Except where mentioned, attempts to execute
+an operation raise an exception when no appropriate method is defined.
 \withsubitem{(mapping object method)}{\ttindex{__getitem__()}}
 
 When implementing a class that emulates any built-in type, it is
