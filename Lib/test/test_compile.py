@@ -156,3 +156,8 @@ exec """
 expect_same(all_one_bits, -1)
 expect_same("-" + all_one_bits, 1)
 """
+
+# Verify sequence packing/unpacking with "or".  SF bug #757818
+i,j = (1, -1) or (-1, 1)
+if i != 1 or j != -1:
+    raise TestFailed, "Sequence packing/unpacking"
