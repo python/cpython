@@ -212,6 +212,7 @@ Instead, you can get the same information from the list type:
      '__reduce__',
      '__reduce_ex__',
      '__repr__',
+     '__reversed__',
      '__rmul__',
      '__setattr__',
      '__setitem__',
