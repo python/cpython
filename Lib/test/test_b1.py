@@ -95,6 +95,7 @@ if complex(0.0, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
 if complex(0j, 3.14) <> 3.14j: raise TestFailed, 'complex(0j, 3.14)'
 if complex(0.0, 3.14) <> 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
 if complex("  3.14+J  ") <> 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
+if complex(u"  3.14+J  ") <> 3.14+1j:  raise TestFailed, 'complex(u"  3.14+J  )"'
 class Z:
     def __complex__(self): return 3.14j
 z = Z()
@@ -208,6 +209,9 @@ if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
 if float(314) <> 314.0: raise TestFailed, 'float(314)'
 if float(314L) <> 314.0: raise TestFailed, 'float(314L)'
 if float("  3.14  ") <> 3.14:  raise TestFailed, 'float("  3.14  ")'
+if float(u"  3.14  ") <> 3.14:  raise TestFailed, 'float(u"  3.14  ")'
+if float(u"  \u0663.\u0661\u0664  ") <> 3.14:
+    raise TestFailed, 'float(u"  \u0663.\u0661\u0664  ")'
 
 print 'getattr'
 import sys
@@ -254,6 +258,9 @@ if int(3.9) <> 3: raise TestFailed, 'int(3.9)'
 if int(-3.9) <> -3: raise TestFailed, 'int(-3.9)'
 if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
 if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
+# Different base:
+if int("10",16) <> 16L: raise TestFailed, 'int("10",16)'
+if int(u"10",16) <> 16L: raise TestFailed, 'int(u"10",16)'
 # Test conversion fron strings and various anomalies
 L = [
         ('0', 0),
@@ -267,9 +274,28 @@ L = [
         ('314 ', 314),
         ('  \t\t  314  \t\t  ', 314),
         (`sys.maxint`, sys.maxint),
+        ('  1x', ValueError),
+        ('  1  ', 1),
+        ('  1\02  ', ValueError),
         ('', ValueError),
         (' ', ValueError),
         ('  \t\t  ', ValueError),
+        (u'0', 0),
+        (u'1', 1),
+        (u'9', 9),
+        (u'10', 10),
+        (u'99', 99),
+        (u'100', 100),
+        (u'314', 314),
+        (u' 314', 314),
+        (u'\u0663\u0661\u0664 ', 314),
+        (u'  \t\t  314  \t\t  ', 314),
+        (u'  1x', ValueError),
+        (u'  1  ', 1),
+        (u'  1\02  ', ValueError),
+        (u'', ValueError),
+        (u' ', ValueError),
+        (u'  \t\t  ', ValueError),
 ]
 for s, v in L:
     for sign in "", "+", "-":
@@ -349,10 +375,17 @@ if long(3.9) <> 3L: raise TestFailed, 'long(3.9)'
 if long(-3.9) <> -3L: raise TestFailed, 'long(-3.9)'
 if long(3.5) <> 3L: raise TestFailed, 'long(3.5)'
 if long(-3.5) <> -3L: raise TestFailed, 'long(-3.5)'
+if long("-3") <> -3L: raise TestFailed, 'long("-3")'
+if long(u"-3") <> -3L: raise TestFailed, 'long(u"-3")'
+# Different base:
+if long("10",16) <> 16L: raise TestFailed, 'long("10",16)'
+if long(u"10",16) <> 16L: raise TestFailed, 'long(u"10",16)'
 # Check conversions from string (same test set as for int(), and then some)
 LL = [
         ('1' + '0'*20, 10L**20),
         ('1' + '0'*100, 10L**100),
+        (u'1' + u'0'*20, 10L**20),
+        (u'1' + u'0'*100, 10L**100),
 ]
 for s, v in L + LL:
     for sign in "", "+", "-":
@@ -363,11 +396,11 @@ for s, v in L + LL:
                 vv = -v
             try:
                 if long(ss) != long(vv):
-                    raise TestFailed, "int(%s)" % `ss`
+                    raise TestFailed, "long(%s)" % `ss`
             except v:
                 pass
             except ValueError, e:
-                raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
+                raise TestFailed, "long(%s) raised ValueError: %s" % (`ss`, e)
 
 print 'map'
 if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:

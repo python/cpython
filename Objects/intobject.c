@@ -261,6 +261,24 @@ PyInt_FromString(s, pend, base)
 	return PyInt_FromLong(x);
 }
 
+PyObject *
+PyInt_FromUnicode(s, length, base)
+	Py_UNICODE *s;
+	int length;
+	int base;
+{
+	char buffer[256];
+	
+	if (length >= sizeof(buffer)) {
+		PyErr_SetString(PyExc_ValueError,
+				"int() literal too large to convert");
+		return NULL;
+	}
+	if (PyUnicode_EncodeDecimal(s, length, buffer, NULL))
+		return NULL;
+	return PyInt_FromString(buffer, NULL, base);
+}
+
 /* Methods */
 
 /* ARGSUSED */

@@ -82,6 +82,7 @@ extern DL_IMPORT(unsigned LONG_LONG) PyLong_AsUnsignedLongLong Py_PROTO((PyObjec
 #endif /* HAVE_LONG_LONG */
 
 DL_IMPORT(PyObject *) PyLong_FromString Py_PROTO((char *, char **, int));
+DL_IMPORT(PyObject *) PyLong_FromUnicode Py_PROTO((Py_UNICODE*, int, int));
 
 #ifdef __cplusplus
 }

@@ -329,8 +329,14 @@ PyObject *PyUnicode_FromObject(register PyObject *obj)
 	s = PyString_AS_STRING(obj);
 	len = PyString_GET_SIZE(obj);
     }
-    else if (PyObject_AsCharBuffer(obj, &s, &len))
+    else if (PyObject_AsCharBuffer(obj, &s, &len)) {
+	/* Overwrite the error message with something more useful in
+	   case of a TypeError. */
+	if (PyErr_ExceptionMatches(PyExc_TypeError))
+	    PyErr_SetString(PyExc_TypeError,
+			    "coercing to Unicode: need string or charbuffer");
 	return NULL;
+    }
     if (len == 0) {
 	Py_INCREF(unicode_empty);
 	return (PyObject *)unicode_empty;
@@ -1923,6 +1929,60 @@ PyObject *PyUnicode_Translate(PyObject *str,
     return NULL;
 }
     
+/* --- Decimal Encoder ---------------------------------------------------- */
+
+int PyUnicode_EncodeDecimal(Py_UNICODE *s,
+			    int length,
+			    char *output,
+			    const char *errors)
+{
+    Py_UNICODE *p, *end;
+
+    if (output == NULL) {
+	PyErr_BadArgument();
+	return -1;
+    }
+
+    p = s;
+    end = s + length;
+    while (p < end) {
+	register Py_UNICODE ch = *p++;
+	int decimal;
+	
+	if (Py_UNICODE_ISSPACE(ch)) {
+	    *output++ = ' ';
+	    continue;
+	}
+	decimal = Py_UNICODE_TODECIMAL(ch);
+	if (decimal >= 0) {
+	    *output++ = '0' + decimal;
+	    continue;
+	}
+	if (0 < ch < 256) {
+	    *output++ = ch;
+	    continue;
+	}
+	/* All other characters are considered invalid */
+	if (errors == NULL || strcmp(errors, "strict") == 0) {
+	    PyErr_SetString(PyExc_ValueError,
+			    "invalid decimal Unicode string");
+	    goto onError;
+	}
+	else if (strcmp(errors, "ignore") == 0)
+	    continue;
+	else if (strcmp(errors, "replace") == 0) {
+	    *output++ = '?';
+	    continue;
+	}
+    }
+    /* 0-terminate the output string */
+    *output++ = '\0';
+    return 0;
+
+ onError:
+    return -1;
+}
+
 /* --- Helpers ------------------------------------------------------------ */
 
 static 
@@ -2811,12 +2871,14 @@ int PyUnicode_Contains(PyObject *container,
     register Py_UNICODE ch;
 
     /* Coerce the two arguments */
-    u = (PyUnicodeObject *)PyUnicode_FromObject(container);
-    if (u == NULL)
-	goto onError;
     v = (PyUnicodeObject *)PyUnicode_FromObject(element);
     if (v == NULL)
 	goto onError;
+    u = (PyUnicodeObject *)PyUnicode_FromObject(container);
+    if (u == NULL) {
+	Py_DECREF(v);
+	goto onError;
+    }
 
     /* Check v in u */
     if (PyUnicode_GET_SIZE(v) != 1) {
