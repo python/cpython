@@ -667,18 +667,19 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AppleEvent reply;
-	long handlerRefcon;
-	if (!PyArg_ParseTuple(_args, "O&l",
+	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
+	PyObject *dispatcher;
+	if (!PyArg_ParseTuple(_args, "O&O",
 	                      AEDesc_Convert, &reply,
-	                      &handlerRefcon))
+	                      &dispatcher))
 		return NULL;
 	_err = AEResumeTheCurrentEvent(&_self->ob_itself,
 	                               &reply,
-	                               upp_GenericEventHandler,
-	                               handlerRefcon);
+	                               dispatcher__proc__, (long)dispatcher);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	Py_INCREF(dispatcher); /* XXX leak, but needed */
 	return _res;
 }
 
@@ -760,7 +761,7 @@ static PyMethodDef AEDesc_methods[] = {
 	{"AESuspendTheCurrentEvent", (PyCFunction)AEDesc_AESuspendTheCurrentEvent, 1,
 	 "() -> None"},
 	{"AEResumeTheCurrentEvent", (PyCFunction)AEDesc_AEResumeTheCurrentEvent, 1,
-	 "(AppleEvent reply, long handlerRefcon) -> None"},
+	 "(AppleEvent reply, EventHandler dispatcher) -> None"},
 	{"AEGetTheCurrentEvent", (PyCFunction)AEDesc_AEGetTheCurrentEvent, 1,
 	 "() -> None"},
 	{"AESetTheCurrentEvent", (PyCFunction)AEDesc_AESetTheCurrentEvent, 1,
@@ -1002,20 +1003,21 @@ static PyObject *AE_AEInstallEventHandler(_self, _args)
 	OSErr _err;
 	AEEventClass theAEEventClass;
 	AEEventID theAEEventID;
-	long handlerRefcon;
-	if (!PyArg_ParseTuple(_args, "O&O&l",
+	AEEventHandlerUPP handler__proc__ = upp_GenericEventHandler;
+	PyObject *handler;
+	if (!PyArg_ParseTuple(_args, "O&O&O",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID,
-	                      &handlerRefcon))
+	                      &handler))
 		return NULL;
 	_err = AEInstallEventHandler(theAEEventClass,
 	                             theAEEventID,
-	                             upp_GenericEventHandler,
-	                             handlerRefcon,
+	                             handler__proc__, (long)handler,
 	                             0);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	Py_INCREF(handler); /* XXX leak, but needed */
 	return _res;
 }
 
@@ -1038,6 +1040,30 @@ static PyObject *AE_AERemoveEventHandler(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *AE_AEGetEventHandler(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	AEEventClass theAEEventClass;
+	AEEventID theAEEventID;
+	long procptr, handlerptr;
+	
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &theAEEventClass,
+	                      PyMac_GetOSType, &theAEEventID))
+		return NULL;
+	_err = AEGetEventHandler(theAEEventClass,
+	                         theAEEventID,
+	                         (AEEventHandlerUPP *)&procptr, &handlerptr,
+	                         0);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("ll",
+	                     (long)procptr, (long)handlerptr);
 	return _res;
 }
 
@@ -1078,9 +1104,11 @@ static PyMethodDef AE_methods[] = {
 	{"AEInteractWithUser", (PyCFunction)AE_AEInteractWithUser, 1,
 	 "(long timeOutInTicks) -> None"},
 	{"AEInstallEventHandler", (PyCFunction)AE_AEInstallEventHandler, 1,
-	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, long handlerRefcon) -> None"},
+	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, EventHandler handler) -> None"},
 	{"AERemoveEventHandler", (PyCFunction)AE_AERemoveEventHandler, 1,
 	 "(AEEventClass theAEEventClass, AEEventID theAEEventID) -> None"},
+	{"AEGetEventHandler", (PyCFunction)AE_AEGetEventHandler, 1,
+	 "(AEEventClass theAEEventClass, AEEventID theAEEventID) -> (EventHandler handler)"},
 	{"AEManagerInfo", (PyCFunction)AE_AEManagerInfo, 1,
 	 "(AEKeyword keyWord) -> (long result)"},
 	{NULL, NULL, 0}

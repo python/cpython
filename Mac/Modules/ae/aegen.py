@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:AppleEvents.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:AppleEvents.h'
 
 f = AEFunction(OSErr, 'AECreateDesc',
     (DescType, 'typeCode', InMode),
@@ -214,8 +214,7 @@ aedescmethods.append(f)
 f = AEMethod(OSErr, 'AEResumeTheCurrentEvent',
     (AppleEvent_ptr, 'theAppleEvent', InMode),
     (AppleEvent_ptr, 'reply', InMode),
-    (AEEventHandlerUPP, 'dispatcher', InMode),
-    (long, 'handlerRefcon', InMode),
+    (EventHandler, 'dispatcher', InMode),
 )
 aedescmethods.append(f)
 
@@ -249,8 +248,7 @@ functions.append(f)
 f = AEFunction(OSErr, 'AEInstallEventHandler',
     (AEEventClass, 'theAEEventClass', InMode),
     (AEEventID, 'theAEEventID', InMode),
-    (AEEventHandlerUPP, 'handler', InMode),
-    (long, 'handlerRefcon', InMode),
+    (EventHandler, 'handler', InMode),
     (AlwaysFalse, 'isSysHandler', InMode),
 )
 functions.append(f)
@@ -259,6 +257,14 @@ f = AEFunction(OSErr, 'AERemoveEventHandler',
     (AEEventClass, 'theAEEventClass', InMode),
     (AEEventID, 'theAEEventID', InMode),
     (AEEventHandlerUPP, 'handler', InMode),
+    (AlwaysFalse, 'isSysHandler', InMode),
+)
+functions.append(f)
+
+f = AEFunction(OSErr, 'AEGetEventHandler',
+    (AEEventClass, 'theAEEventClass', InMode),
+    (AEEventID, 'theAEEventID', InMode),
+    (EventHandler, 'handler', OutMode),
     (AlwaysFalse, 'isSysHandler', InMode),
 )
 functions.append(f)
