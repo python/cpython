@@ -590,6 +590,9 @@
 /* Define if you have the <sys/lock.h> header file.  */
 #undef HAVE_SYS_LOCK_H
 
+/* Define if you have the <sys/modem.h> header file.  */
+#undef HAVE_SYS_MODEM_H
+
 /* Define if you have the <sys/ndir.h> header file.  */
 #undef HAVE_SYS_NDIR_H
 
