@@ -49,7 +49,7 @@ Core and builtins
 - Implemented generator expressions (PEP 289).  Coded by Jiwon Seo.
 
 - Enabled the profiling of C extension functions (and builtins) - check
-  new documentation and modified profiler and bdb modules for more details
+  new documentation and modified profile and bdb modules for more details
 
 - Set file.name to the object passed to open (instead of a new string)
 
@@ -221,7 +221,7 @@ Core and builtins
   When comparing containers with cyclic references to themselves it
   will now just hit the recursion limit.  See SF patch 825639.
 
-- str and unicode builtin types now have rsplit() method that is
+- str and unicode builtin types now have an rsplit() method that is
   same as split() except that it scans the string from the end
   working towards the beginning.  See SF feature request 801847.
 
@@ -265,11 +265,11 @@ Extension modules
 - socket.sslerror is now a subclass of socket.error .  Also added
   socket.error to the socket module's C API.
 
-- Bug #920575: A problem that _locale module segfaults on
+- Bug #920575: A problem where the _locale module segfaults on
   nl_langinfo(ERA) caused by GNU libc's illegal NULL return is fixed.
 
 - array objects now support the copy module.  Also, their resizing
-  scheme has been updated the same as for list objects.  The improves
+  scheme has been updated to match that used for list objects.  This improves
   the performance (speed and memory usage) of append() operations.
   Also, array.extend() now accepts any iterable argument for repeated
   appends without needing to create another temporary array.
@@ -348,7 +348,7 @@ Extension modules
   It offers some of functionality of SQL's groupby keyword and of
   the Unix uniq filter.
 
-- itertools now has a new function, tee() which produces two independent
+- itertools now has a new tee() function which produces two independent
   iterators from a single iterable.
 
 - itertools.izip() with no arguments now returns an empty iterator instead
@@ -432,7 +432,7 @@ Library
 
 - Support non-anonymous ftp URLs in urllib2.
 
-- The encodings package will now applies codec name aliases
+- The encodings package will now apply codec name aliases
   first before starting to try the import of the codec module.
   This simplifies overriding built-in codecs with external
   packages, e.g. the included CJK codecs with the JapaneseCodecs
