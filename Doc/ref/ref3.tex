@@ -955,14 +955,7 @@ instances are compared by object identity (``address'').
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__rcmp__}{self, other}
-Called by all comparison operations.  Should return a negative integer if
-\code{self < other}, zero if \code{self == other}, a positive integer if
-\code{self > other}.  If no \method{__cmp__()} operation is defined, class
-instances are compared by object identity (``address'').
-(Note: the restriction that exceptions are not propagated by
-\method{__cmp__()} has been removed in Python 1.5.)
-\bifuncindex{cmp}
-\index{comparisons}
+  \versionchanged[No longer supported]{2.1}
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__hash__}{self}
