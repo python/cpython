@@ -38,17 +38,6 @@ class PyncheWidget:
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
         #
-        # Edit Menu
-        #
-	editbtn = Menubutton(menubar, text='Edit',
-                             underline=0)
-        editbtn.pack(side=LEFT)
-        editmenu = Menu(editbtn, tearoff=0)
-        editbtn['menu'] = editmenu
-	editmenu.add_command(label='Options...',
-                             command=self.__popup_options,
-                             underline=0)
-        #
         # Help menu
         #
         helpbtn = Menubutton(menubar, text='Help',
@@ -74,9 +63,6 @@ class PyncheWidget:
 
     def parent(self):
         return self.__root
-
-    def __popup_options(self, event=None):
-        print 'Options...'
 
     def __popup_about(self, event=None):
         tkMessageBox.showinfo('About Pynche 1.0',
