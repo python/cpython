@@ -330,8 +330,10 @@ def add_ui(db):
     add_data(db, "Binary", [("Script", msilib.Binary("inst.vbs"))])
     # See "Custom Action Type 6"
     add_data(db, "CustomAction",
-        [("CheckDir", 6, "Script", "CheckDir"),
-        ("UpdateEditIDLE", 6, "Script", "UpdateEditIDLE")])
+        [("CheckDir", 6, "Script", "CheckDir")])
+    if have_tcl:
+        add_data(db, "CustomAction",
+        [("UpdateEditIDLE", 6, "Script", "UpdateEditIDLE")])
     os.unlink("inst.vbs")
 
 
@@ -1035,6 +1037,16 @@ def add_registry(db):
     ewi = "Edit with IDLE"
     pat2 = r"Software\Classes\%sPython.%sFile\DefaultIcon"
     pat3 = r"Software\Classes\%sPython.%sFile"
+    tcl_verbs = []
+    if have_tcl:
+        tcl_verbs=[
+             ("py.IDLE", -1, pat % (testprefix, "", ewi), "",
+              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
+              "REGISTRY.tcl"),
+             ("pyw.IDLE", -1, pat % (testprefix, "NoCon", ewi), "",
+              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
+              "REGISTRY.tcl"),
+        ]
     add_data(db, "Registry",
             [# Extensions
              ("py.ext", -1, r"Software\Classes\."+ext, "",
@@ -1057,12 +1069,7 @@ def add_registry(db):
               r'"[TARGETDIR]pythonw.exe" "%1" %*', "REGISTRY.def"),
              ("pyc.open", -1, pat % (testprefix, "Compiled", "open"), "",
               r'"[TARGETDIR]python.exe" "%1" %*', "REGISTRY.def"),
-             ("py.IDLE", -1, pat % (testprefix, "", ewi), "",
-              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
-              "REGISTRY.tcl"),
-             ("pyw.IDLE", -1, pat % (testprefix, "NoCon", ewi), "",
-              r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
-              "REGISTRY.tcl"),
+             ] + tcl_verbs + [
              #Icons
              ("py.icon", -1, pat2 % (testprefix, ""), "",
               r'[TARGETDIR]py.ico', "REGISTRY.def"),
