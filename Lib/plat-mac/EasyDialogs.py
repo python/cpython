@@ -23,9 +23,11 @@ from Carbon import Dlg,Win,Evt,Events # sdm7g
 from Carbon import Ctl
 from Carbon import Controls
 from Carbon import Menu
+import Nav
 import MacOS
 import string
 from Carbon.ControlAccessor import *	# Also import Controls constants
+import Carbon.File
 import macfs
 import macresource
 
@@ -546,7 +548,150 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 		if hasattr(MacOS, 'SchedParams'):
 			apply(MacOS.SchedParams, appsw)
 		del d
+
+def _mktypelist(typelist):
+	# Workaround for OSX typeless files:
+	if 'TEXT' in typelist and not '\0\0\0\0' in typelist:
+		typelist = typelist + ('\0\0\0\0',)
+	if not typelist:
+		return None
+	data = 'Pyth' + struct.pack("hh", 0, len(typelist))
+	for type in typelist:
+		data = data+type
+	return Carbon.Res.Handle(data)
 	
+_ALLOWED_KEYS = {
+	'version':1,
+	'defaultLocation':1,
+	'dialogOptionFlags':1,
+	'location':1,
+	'clientName':1,
+	'windowTitle':1,
+	'actionButtonLabel':1,
+	'cancelButtonLabel':1,
+	'savedFileName':1,
+	'message':1,
+	'preferenceKey':1,
+	'popupExtension':1,
+	'eventProc':1,
+	'previewProc':1,
+	'filterProc':1,
+	'typeList':1,
+	'fileType':1,
+	'fileCreator':1,
+	# Our extension:
+	'wanted':1,
+	'multiple':1,
+}
+
+def _process_Nav_args(argsargs, allowed, dftflags):
+	import aepack
+	import Carbon.AE
+	import Carbon.File
+	args = argsargs.copy()
+	for k in args.keys():
+		if not allowed.has_key(k):
+			raise TypeError, "Unknown keyword argument: %s" % repr(k)
+	# Set some defaults, and modify some arguments
+	if not args.has_key('dialogOptionFlags'):
+		args['dialogOptionFlags'] = dftflags
+	if args.has_key('defaultLocation') and \
+			not isinstance(args['defaultLocation'], Carbon.AE.AEDesc):
+		defaultLocation = args['defaultLocation']
+		if isinstance(defaultLocation, (Carbon.File.FSSpec, Carbon.File.FSRef)):
+			args['defaultLocation'] = aepack.pack(defaultLocation)
+		else:
+			defaultLocation = Carbon.File.FSRef(defaultLocation)
+			args['defaultLocation'] = aepack.pack(defaultLocation)
+	if args.has_key('typeList') and not isinstance(args['typeList'], Carbon.Res.ResourceType):
+		typeList = args['typeList'].copy()
+		# Workaround for OSX typeless files:
+		if 'TEXT' in typeList and not '\0\0\0\0' in typeList:
+			typeList = typeList + ('\0\0\0\0',)
+		data = 'Pyth' + struct.pack("hh", 0, len(typeList))
+		for type in typeList:
+			data = data+type
+		args['typeList'] = Carbon.Res.Handle(data)
+	tpwanted = str
+	if args.has_key('wanted'):
+		tpwanted = args['wanted']
+		del args['wanted']
+	return args, tpwanted
+	
+def AskFileForOpen(**args):
+	default_flags = 0x56 # Or 0xe4?
+	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	try:
+		rr = Nav.NavChooseFile(args)
+		good = 1
+	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
+		return None
+	if not rr.validRecord or not rr.selection:
+		return None
+	if issubclass(tpwanted, Carbon.File.FSRef):
+		return tpwanted(rr.selection_fsr[0])
+	if issubclass(tpwanted, Carbon.File.FSSpec):
+		return tpwanted(rr.selection[0])
+	if issubclass(tpwanted, str):
+		return tpwanted(rr.selection_fsr[0].FSRefMakePath())
+	if issubclass(tpwanted, unicode):
+		return tpwanted(rr.selection_fsr[0].FSRefMakePath(), 'utf8')
+	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+
+def AskFileForSave(**args):
+	default_flags = 0x07
+	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	try:
+		rr = Nav.NavPutFile(args)
+		good = 1
+	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
+		return None
+	if not rr.validRecord or not rr.selection:
+		return None
+	if issubclass(tpwanted, Carbon.File.FSRef):
+		raise TypeError, "Cannot pass wanted=FSRef to AskFileForSave"
+	if issubclass(tpwanted, Carbon.File.FSSpec):
+		return tpwanted(rr.selection[0])
+	if issubclass(tpwanted, (str, unicode)):
+		# This is gross, and probably incorrect too
+		vrefnum, dirid, name = rr.selection[0].as_tuple()
+		pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
+		pardir_fsr = Carbon.File.FSRef(fss)
+		pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
+		name_utf8 = unicode(name, 'macroman').encode('utf8')
+		fullpath = os.path.join(pardir_path, name_utf8)
+		if issubclass(tpwanted, unicode):
+			return unicode(fullpath, 'utf8')
+		return tpwanted(fullpath)
+	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+		
+def AskFolder(**args):
+	default_flags = 0x17
+	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	try:
+		rr = Nav.NavChooseFolder(args)
+		good = 1
+	except Nav.error, arg:
+		if arg[0] != -128: # userCancelledErr
+			raise Nav.error, arg
+		return None
+	if not rr.validRecord or not rr.selection:
+		return None
+	if issubclass(tpwanted, Carbon.File.FSRef):
+		return tpwanted(rr.selection_fsr[0])
+	if issubclass(tpwanted, Carbon.File.FSSpec):
+		return tpwanted(rr.selection[0])
+	if issubclass(tpwanted, str):
+		return tpwanted(rr.selection_fsr[0].FSRefMakePath())
+	if issubclass(tpwanted, unicode):
+		return tpwanted(rr.selection_fsr[0].FSRefMakePath(), 'utf8')
+	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+	
+
 def test():
 	import time, sys
 
@@ -555,10 +700,9 @@ def test():
 				('flags=', 'Valued option'), ('f:', 'Short valued option'))
 	commandlist = (('start', 'Start something'), ('stop', 'Stop something'))
 	argv = GetArgv(optionlist=optionlist, commandlist=commandlist, addoldfile=0)
+	Message("Command line: %s"%' '.join(argv))
 	for i in range(len(argv)):
 		print 'arg[%d] = %s'%(i, `argv[i]`)
-	print 'Type return to continue - ',
-	sys.stdin.readline()
 	ok = AskYesNoCancel("Do you want to proceed?")
 	ok = AskYesNoCancel("Do you want to identify?", yes="Identify", no="No")
 	if ok > 0:
@@ -568,6 +712,14 @@ def test():
 			Message("%s has no secret nickname"%s)
 		else:
 			Message("Hello everybody!!\nThe secret nickname of %s is %s!!!"%(s, s2))
+	else:
+		s = 'Anonymous'
+	rv = AskFileForOpen(message="Gimme a file, %s"%s, wanted=macfs.FSSpec)
+	Message("rv: %s"%rv)
+	rv = AskFileForSave(wanted=macfs.FSSpec, savedFileName="%s.txt"%s)
+	Message("rv.as_pathname: %s"%rv.as_pathname())
+	rv = AskFolder()
+	Message("Folder name: %s"%rv)
 	text = ( "Working Hard...", "Hardly Working..." ,
 			"So far, so good!", "Keep on truckin'" )
 	bar = ProgressBar("Progress, progress...", 0, label="Ramping up...")
