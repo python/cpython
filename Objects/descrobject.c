@@ -906,7 +906,10 @@ getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 		PyErr_SetString(PyExc_AttributeError, "unsettable attribute");
 		return -1;
 	}
-	res = PyObject_CallFunction(gs->set, "(OO)", obj, value);
+	if (value == NULL)
+		res = PyObject_CallFunction(gs->set, "(O)", obj);
+	else
+		res = PyObject_CallFunction(gs->set, "(OO)", obj, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
