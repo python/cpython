@@ -702,7 +702,7 @@ _expectations = {
         test_winsound
         test_zipfile
         test_zlib
-        """
+        """,
     'hp-ux11':
         """
         test_al
