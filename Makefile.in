@@ -329,15 +329,12 @@ libainstall:	all
 		$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY)
 		$(RANLIB) $(LIBPL)/$(LIBRARY)
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
-		$(INSTALL_DATA) $(srcdir)/Modules/getpath.c $(LIBPL)/getpath.c
-		$(INSTALL_DATA) $(srcdir)/Modules/getbuildinfo.c $(LIBPL)/getbuildinfo.c
 		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
 		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
+		$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
 		$(INSTALL_PROGRAM) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
 		$(INSTALL_DATA) config.h $(LIBPL)/config.h
-		$(INSTALL_DATA) $(srcdir)/Python/frozenmain.c $(LIBPL)/frozenmain.c
-		$(INSTALL_DATA) Modules/main.o $(LIBPL)/main.o
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
