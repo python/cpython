@@ -688,7 +688,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 	Note that the argument is different from previous versions of
 	the debugger (in python distributions 1.5.1 and before) where
-	a linenumber was used instead of breakpoint numbers."""
+	a linenumber was used instead of either filename:lineno or
+	breakpoint numbers."""
 
 	def help_tbreak(self):
 		print """tbreak  same arguments as break, but breakpoint is
