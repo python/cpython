@@ -40,11 +40,13 @@ class GzipFile:
 
         if mode[0:1] == 'r':
             self.mode = READ
-            self._init_read()
+ 	    # Set flag indicating start of a new member
+            self._new_member = 1 
+            self.extrabuf = ""
+            self.extrasize = 0
             self.filename = filename
-            self.decompress = zlib.decompressobj(-zlib.MAX_WBITS)
 
-        elif mode[0:1] == 'w':
+        elif mode[0:1] == 'w' or mode[0:1] == 'a':
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,
@@ -59,8 +61,6 @@ class GzipFile:
 
         if self.mode == WRITE:
             self._write_gzip_header()
-        elif self.mode == READ:
-            self._read_gzip_header()
 
     def __repr__(self):
         s = repr(self.fileobj)
@@ -92,16 +92,14 @@ class GzipFile:
     def _init_read(self):
         self.crc = zlib.crc32("")
         self.size = 0
-        self.extrabuf = ""
-        self.extrasize = 0
 
     def _read_gzip_header(self):
         magic = self.fileobj.read(2)
         if magic != '\037\213':
-            raise RuntimeError, 'Not a gzipped file'
+            raise IOError, 'Not a gzipped file'
         method = ord( self.fileobj.read(1) )
         if method != 8:
-            raise RuntimeError, 'Unknown compression method'
+            raise IOError, 'Unknown compression method'
         flag = ord( self.fileobj.read(1) )
         # modtime = self.fileobj.read(4)
         # extraflag = self.fileobj.read(1)
@@ -170,37 +168,74 @@ class GzipFile:
         self.extrasize = len(buf) + self.extrasize
 
     def _read(self, size=1024):
-        try:
-            buf = self.fileobj.read(size)
-        except AttributeError:
-            raise EOFError, "Reached EOF"
+        if self.fileobj is None: raise EOFError, "Reached EOF"
+ 	
+        if self._new_member:
+            # If the _new_member flag is set, we have to 
+            # 
+            # First, check if we're at the end of the file;
+            # if so, it's time to stop; no more members to read.
+            pos = self.fileobj.tell()   # Save current position
+            self.fileobj.seek(0, 2)     # Seek to end of file
+            if pos == self.fileobj.tell():
+                self.fileobj = None
+                return EOFError, "Reached EOF"
+            else: 
+                self.fileobj.seek( pos ) # Return to original position
+  
+            self._init_read()       
+            self._read_gzip_header()
+            self.decompress = zlib.decompressobj(-zlib.MAX_WBITS)
+            self._new_member = 0
+ 
+        # Read a chunk of data from the file
+        buf = self.fileobj.read(size)
+ 
+        # If the EOF has been reached, flush the decompression object
+        # and mark this object as finished.
+       
         if buf == "":
             uncompress = self.decompress.flush()
-            if uncompress == "":
-                self._read_eof()
-                self.fileobj = None
-                raise EOFError, 'Reached EOF'
-        else:
-            uncompress = self.decompress.decompress(buf)
-        self.crc = zlib.crc32(uncompress, self.crc)
-        self.extrabuf = self.extrabuf + uncompress
-        self.extrasize = self.extrasize + len(uncompress)
-        self.size = self.size + len(uncompress)
+            self._read_eof()
+            self.fileobj = None
+            self._add_read_data( uncompress )
+            raise EOFError, 'Reached EOF'
+  
+        uncompress = self.decompress.decompress(buf)
+        self._add_read_data( uncompress )
+
+        if self.decompress.unused_data != "":
+            # Ending case: we've come to the end of a member in the file,
+            # so seek back to the start of the unused data, finish up
+            # this member, and read a new gzip header.
+            # (The number of bytes to seek back is the length of the unused
+            # data, minus 8 because _read_eof() will rewind a further 8 bytes)
+            self.fileobj.seek( -len(self.decompress.unused_data)+8, 1)
+
+            # Check the CRC and file size, and set the flag so we read
+            # a new member on the next call 
+            self._read_eof()
+            self._new_member = 1        
+	    
+    def _add_read_data(self, data):	        
+        self.crc = zlib.crc32(data, self.crc)
+        self.extrabuf = self.extrabuf + data
+        self.extrasize = self.extrasize + len(data)
+        self.size = self.size + len(data)
 
     def _read_eof(self):
-        # Andrew writes:
-        ## We've read to the end of the file, so we have to rewind in order
-        ## to reread the 8 bytes containing the CRC and the file size.  The
-        ## decompressor is smart and knows when to stop, so feeding it
-        ## extra data is harmless.  
-        self.fileobj.seek(-8, 2)
+        # We've read to the end of the file, so we have to rewind in order
+        # to reread the 8 bytes containing the CRC and the file size.  
+        # We check the that the computed CRC and size of the
+        # uncompressed data matches the stored values.
+        self.fileobj.seek(-8, 1)
         crc32 = read32(self.fileobj)
         isize = read32(self.fileobj)
         if crc32 != self.crc:
-            self.error = "CRC check failed"
+            raise ValueError, "CRC check failed"
         elif isize != self.size:
-            self.error = "Incorrect length of data produced"
-
+            raise ValueError, "Incorrect length of data produced"
+          
     def close(self):
         if self.mode == WRITE:
             self.fileobj.write(self.compress.flush())
