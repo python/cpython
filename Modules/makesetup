@@ -130,6 +130,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.[cC])		srcs="$srcs $arg";;
 			*.cc)		srcs="$srcs $arg";;
 			*.c++)		srcs="$srcs $arg";;
+			\$*)		libs="$libs $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			[a-zA-Z_]*)	mods="$mods $arg";;
