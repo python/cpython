@@ -127,9 +127,11 @@ module_getattr(m, name)
 	if (res == NULL)
 		err_setstr(AttributeError, name);
 	else {
+#ifdef SUPPORT_OBSOLETE_ACCESS
 		if (is_accessobject(res))
 			res = getaccessvalue(res, getglobals());
 		else
+#endif
 			INCREF(res);
 	}
 	return res;
@@ -141,14 +143,18 @@ module_setattr(m, name, v)
 	char *name;
 	object *v;
 {
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	object *ac;
+#endif
 	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
 		err_setstr(TypeError, "read-only special attribute");
 		return -1;
 	}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	ac = dictlookup(m->md_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getglobals(), v);
+#endif
 	if (v == NULL) {
 		int rv = dictremove(m->md_dict, name);
 		if (rv < 0)

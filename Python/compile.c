@@ -1792,12 +1792,12 @@ com_newlocal(c, name)
 
 #define strequ(a, b) (strcmp((a), (b)) == 0)
 
+#ifdef SUPPORT_OBSOLETE_ACCESS
 static void
 com_access_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
-#if 0
 	int i, j, k, mode, imode;
 	object *vmode;
 	REQ(n, access_stmt);
@@ -1848,8 +1848,8 @@ com_access_stmt(c, n)
 		com_addoparg(c, LOAD_CONST, imode);
 		com_addopname(c, ACCESS_MODE, CHILD(n, i));
 	}
-#endif
 }
+#endif
 
 static void
 com_exec_stmt(c, n)
@@ -2421,9 +2421,11 @@ com_node(c, n)
 	case global_stmt:
 		com_global_stmt(c, n);
 		break;
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	case access_stmt:
 		com_access_stmt(c, n);
 		break;
+#endif
 	case exec_stmt:
 		com_exec_stmt(c, n);
 		break;

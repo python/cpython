@@ -95,7 +95,9 @@ static int cmp_member PROTO((object *, object *));
 static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *, object *));
+#ifdef SUPPORT_OBSOLETE_ACCESS
 static int access_statement PROTO((object *, object *, frameobject *));
+#endif
 static int exec_statement PROTO((object *, object *, object *));
 static object *find_from_args PROTO((frameobject *, int));
 
@@ -324,7 +326,9 @@ eval_code2(co, globals, locals,
 	register frameobject *f; /* Current frame */
 	register object **fastlocals;
 	object *retval;		/* Return value */
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	int defmode = 0;	/* Default access mode for new variables */
+#endif
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -1082,6 +1086,7 @@ eval_code2(co, globals, locals,
 				err_setstr(SystemError, "no locals");
 				break;
 			}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			u = dict2lookup(x, w);
 			if (u == NULL) {
 				if (defmode != 0) {
@@ -1103,6 +1108,7 @@ eval_code2(co, globals, locals,
 				DECREF(v);
 				break;
 			}
+#endif
 			err = dict2insert(x, w, v);
 			DECREF(v);
 			break;
@@ -1113,12 +1119,14 @@ eval_code2(co, globals, locals,
 				err_setstr(SystemError, "no locals");
 				break;
 			}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			u = dict2lookup(x, w);
 			if (u != NULL && is_accessobject(u)) {
 				err = setaccessvalue(u, x,
 						     (object *)NULL);
 				break;
 			}
+#endif
 			if ((err = dict2remove(x, w)) != 0)
 				err_setval(NameError, w);
 			break;
@@ -1196,6 +1204,7 @@ eval_code2(co, globals, locals,
 		case STORE_GLOBAL:
 			w = GETNAMEV(oparg);
 			v = POP();
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (f->f_locals != NULL) {
 				u = dict2lookup(f->f_locals, w);
 				if (u != NULL && is_accessobject(u)) {
@@ -1205,12 +1214,14 @@ eval_code2(co, globals, locals,
 					break;
 				}
 			}
+#endif
 			err = dict2insert(f->f_globals, w, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_GLOBAL:
 			w = GETNAMEV(oparg);
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (f->f_locals != NULL) {
 				u = dict2lookup(f->f_locals, w);
 				if (u != NULL && is_accessobject(u)) {
@@ -1219,6 +1230,7 @@ eval_code2(co, globals, locals,
 					break;
 				}
 			}
+#endif
 			if ((err = dict2remove(f->f_globals, w)) != 0)
 				err_setval(NameError, w);
 			break;
@@ -1248,12 +1260,14 @@ eval_code2(co, globals, locals,
 					}
 				}
 			}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (is_accessobject(x)) {
 				x = getaccessvalue(x, f->f_globals /* XXX */);
 				if (x == NULL)
 					break;
 			}
 			else
+#endif
 				INCREF(x);
 			PUSH(x);
 			break;
@@ -1269,12 +1283,14 @@ eval_code2(co, globals, locals,
 					break;
 				}
 			}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (is_accessobject(x)) {
 				x = getaccessvalue(x, f->f_globals);
 				if (x == NULL)
 					break;
 			}
 			else
+#endif
 				INCREF(x);
 			PUSH(x);
 			break;
@@ -1310,28 +1326,33 @@ eval_code2(co, globals, locals,
 							oparg));
 				break;
 			}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (is_accessobject(x)) {
 				x = getaccessvalue(x, f->f_locals);
 				if (x == NULL)
 					break;
 			}
 			else
+#endif
 				INCREF(x);
 			PUSH(x);
 			break;
 
 		case STORE_FAST:
 			v = POP();
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			w = GETLOCAL(oparg);
 			if (w != NULL && is_accessobject(w)) {
 				err = setaccessvalue(w, f->f_locals, v);
 				DECREF(v);
 				break;
 			}
+#endif
 			SETLOCAL(oparg, v);
 			break;
 
 		case DELETE_FAST:
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			x = GETLOCAL(oparg);
 			if (x == NULL) {
 				err_setval(NameError,
@@ -1344,6 +1365,7 @@ eval_code2(co, globals, locals,
 						     (object *)NULL);
 				break;
 			}
+#endif
 			SETLOCAL(oparg, NULL);
 			break;
 		
@@ -1439,6 +1461,7 @@ eval_code2(co, globals, locals,
 			locals_2_fast(f, 0);
 			break;
 
+#ifdef SUPPORT_OBSOLETE_ACCESS
 		case ACCESS_MODE:
 			v = POP();
 			w = GETNAMEV(oparg);
@@ -1448,6 +1471,7 @@ eval_code2(co, globals, locals,
 				err = access_statement(w, v, f);
 			DECREF(v);
 			break;
+#endif
 		
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
@@ -2826,6 +2850,7 @@ import_from(locals, v, name)
 			if (!is_stringobject(name) ||
 			    getstringvalue(name)[0] == '_')
 				continue;
+#ifdef SUPPORT_OBSOLETE_ACCESS
 			if (is_accessobject(value)) {
 				value = getaccessvalue(value, (object *)NULL);
 				if (value == NULL) {
@@ -2834,6 +2859,7 @@ import_from(locals, v, name)
 				}
 			}
 			else
+#endif
 				INCREF(value);
 			err = dict2insert(locals, name, value);
 			DECREF(value);
@@ -2902,6 +2928,7 @@ build_class(methods, bases, name)
 	return newclassobject(bases, methods, name);
 }
 
+#ifdef SUPPORT_OBSOLETE_ACCESS
 static int
 access_statement(name, vmode, f)
 	object *name;
@@ -2931,6 +2958,7 @@ access_statement(name, vmode, f)
 	locals_2_fast(f, 0);
 	return ret;
 }
+#endif
 
 static int
 exec_statement(prog, globals, locals)
