@@ -42,3 +42,40 @@ make "OPT=-O3 -fschedule-insns2 -ObjC -arch m68k -arch i486"
 
 Ted Horst
 (not speaking for Swissbank)
+
+
+Subject: Re: dynamic loading on NeXTSTEP
+From: horst@il.us.swissbank.com (Ted Horst)
+To: python-list@cwi.nl
+Date: Fri, 6 Sep 1996 16:27:32 GMT
+X-Newsgroups: comp.lang.python
+X-Organization: Swiss Bank Corporation CM&T Division
+
+Ted Horst writes
+> 
+> These are the steps that I took to get dynamic loading working under NeXTSTEP
+> (3.3 m68k, i486) for Python1.4beta3 (including the Numeric stuff).   
+
+<SNIP>
+
+> make "OPT=-O3 -fschedule-insns2 -ObjC -arch m68k -arch i486"
+> 
+> Ted Horst
+> (not speaking for Swissbank)
+
+Wow, I guess I was overzealous with the optimizations.  Upon further
+testing, I discovered that the Numeric stuff did not work properly on
+Intel machines, but did work properly on m68k.  I dropped the
+optimization to -O2 (leaving out the -fschedule-insns2), and it seems
+to behave properly on both architectures now.
+
+So,
+
+make "OPT=-O2 -ObjC -arch m68k -arch i486"
+
+looks like a better choice.
+
+Sorry for the misguidance,
+
+Ted Horst
+(still not speaking for SwissBank)
