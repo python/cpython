@@ -1,0 +1,325 @@
+\section{\module{itertools} ---
+         Functions creating iterators for efficient looping}
+
+\declaremodule{standard}{itertools}
+\modulesynopsis{Functions creating iterators for efficient looping.}
+\moduleauthor{Raymond Hettinger}{python@rcn.com}
+\sectionauthor{Raymond Hettinger}{python@rcn.com}
+\versionadded{2.3}
+
+
+This module implements a number of iterator building blocks inspired
+by constructs from the Haskell and SML programming languages.  Each
+has been recast in a form suitable for Python.
+
+With the advent of iterators and generators in Python 2.3, each of
+these tools can be expressed easily and succinctly in pure python.
+Rather duplicating what can already be done, this module emphasizes
+providing value in other ways:
+
+\begin{itemize}
+
+    \item Instead of constructing an over-specialized toolset, this module
+        provides basic building blocks that can be readily combined.
+
+        For instance, SML provides a tabulation tool: \code{tabulate(\var{f})}
+        which produces a sequence \code{f(0), f(1), ...}.  This toolbox
+        takes a different approach of providing \function{imap()} and
+        \function{count()} which can be combined to form
+        \code{imap(\var{f}, count())} and produce an equivalent result.
+
+    \item Some tools were dropped because they offer no advantage over their
+        pure python counterparts or because their behavior was too
+        surprising.
+
+        For instance, SML provides a tool:  \code{cycle(\var{seq})} which
+        loops over the sequence elements and then starts again when the
+        sequence is exhausted.  The surprising behavior is the need for
+        significant auxiliary storage (unusual for iterators).  Also, it
+        is trivially implemented in python with almost no performance
+        penalty.
+
+    \item Another source of value comes from standardizing a core set of tools
+        to avoid the readability and reliability problems that arise when many
+        different individuals create their own slightly varying implementations
+        each with their own quirks and naming conventions.
+
+    \item Whether cast in pure python form or C code, tools that use iterators
+        are more memory efficient (and faster) than their list based counterparts.
+        Adopting the principles of just-in-time manufacturing, they create
+        data when and where needed instead of consuming memory with the
+        computer equivalent of ``inventory''.
+
+\end{itemize}
+
+\begin{seealso}
+  \seetext{The Standard ML Basis Library,
+           \citetitle[http://www.standardml.org/Basis/]
+           {The Standard ML Basis Library}.}
+
+  \seetext{Haskell, A Purely Functional Language,
+           \citetitle[http://www.haskell.org/definition/]
+           {Definition of Haskell and the Standard Libraries}.}
+\end{seealso}
+
+
+\subsection{Itertool functions \label{itertools-functions}}
+
+The following module functions all construct and return iterators.
+Some provide streams of infinite length, so they should only be accessed
+by functions or loops that truncate the stream.
+
+\begin{funcdesc}{count}{\optional{n}}
+  Make an iterator that returns consecutive integers starting with \var{n}.
+  Does not currently support python long integers.  Often used as an
+  argument to \function{imap()} to generate consecutive data points.
+  Also, used in \function{izip()} to add sequence numbers.  Equivalent to:
+
+  \begin{verbatim}
+     def count(n=0):
+         cnt = n
+         while True:
+             yield cnt
+             cnt += 1
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{dropwhile}{predicate, iterable}
+  Make an iterator that drops elements from the iterable as long as
+  the predicate is true; afterwards, returns every element.  Note,
+  the iterator does not produce \emph{any} output until the predicate
+  is true, so it may have a lengthy start-up time.  Equivalent to:
+
+  \begin{verbatim}
+     def dropwhile(predicate, iterable):
+         iterable = iter(iterable)
+         while True:
+             x = iterable.next()
+             if predicate(x): continue # drop when predicate is true
+             yield x
+             break
+         while True:
+             yield iterable.next()
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{ifilter}{predicate, iterable \optional{, invert}}
+  Make an iterator that filters elements from iterable returning only
+  those for which the predicate is \code{True}.  If
+  \var{invert} is \code{True}, then reverse the process and pass through
+  only those elements for which the predicate is \code{False}.
+  If \var{predicate} is \code{None}, return the items that are true
+  (or false if \var{invert} has been set).  Equivalent to:
+
+  \begin{verbatim}
+     def ifilter(predicate, iterable, invert=False):
+         iterable = iter(iterable)
+         while True:
+             x = iterable.next()
+             if predicate is None:
+                  b = bool(x)
+             else:
+                  b = bool(predicate(x))
+             if not invert and b or invert and not b:
+                 yield x
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{imap}{function, *iterables}
+  Make an iterator that computes the function using arguments from
+  each of the iterables.  If \var{function} is set to \code{None}, then
+  \function{imap()} returns the arguments as a tuple.  Like
+  \function{map()} but stops when the shortest iterable is exhausted
+  instead of filling in \code{None} for shorter iterables.  The reason
+  for the difference is that infinite iterator arguments are typically
+  an error for \function{map()} (because the output is fully evaluated)
+  but represent a common and useful way of supplying arguments to
+  \function{imap()}.
+  Equivalent to:
+
+  \begin{verbatim}
+     def imap(function, *iterables):
+         iterables = map(iter, iterables)
+         while True:
+             args = [i.next() for i in iterables]
+             if function is None:
+                 yield tuple(args)
+             else:
+                 yield function(*args)
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{islice}{iterable, \optional{start,} stop \optional{, step}}
+  Make an iterator that returns selected elements from the iterable.
+  If \var{start} is non-zero, then elements from the iterable are skipped
+  until start is reached.  Afterward, elements are returned consecutively
+  unless \var{step} is set higher than one which results in items being
+  skipped.  If \var{stop} is specified, then iteration stops at the
+  specified element position; otherwise, it continues indefinitely or
+  until the iterable is exhausted.  Unlike regular slicing,
+  \function{islice()} does not support negative values for \var{start},
+  \var{stop}, or \var{step}.  Can be used to extract related fields
+  from data where the internal structure has been flattened (for
+  example, a multi-line report may list a name field on every
+  third line).  Equivalent to:
+
+  \begin{verbatim}
+     def islice(iterable, *args):
+         iterable = iter(iterable)
+         s = slice(*args)
+         next = s.start or 0
+         stop = s.stop
+         step = s.step or 1
+         cnt = 0
+         while True:
+              while cnt < next:
+                   dummy = iterable.next()
+                   cnt += 1
+              if cnt >= stop:
+                   break
+              yield iterable.next()
+              cnt += 1
+              next += step
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{izip}{*iterables}
+  Make an iterator that aggregates elements from each of the iterables.
+  Like \function{zip()} except that it returns an iterator instead of
+  a list.  Used for lock-step iteration over several iterables at a
+  time.  Equivalent to:
+
+  \begin{verbatim}
+     def izip(*iterables):
+         iterables = map(iter, iterables)
+         while True:
+             result = [i.next() for i in iterables]
+             yield tuple(result)
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{repeat}{obj}
+  Make an iterator that returns \var{obj} over and over again.
+  Used as argument to \function{imap()} for invariant parameters
+  to the called function.  Also used with function{izip()} to create
+  an invariant part of a tuple record.  Equivalent to:
+
+  \begin{verbatim}
+     def repeat(x):
+         while True:
+             yield x
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{starmap}{function, iterable}
+  Make an iterator that computes the function using arguments tuples
+  obtained from the iterable.  Used instead of \function{imap()} when
+  argument parameters are already grouped in tuples from a single iterable
+  (the data has been ``pre-zipped'').  The difference between
+  \function{imap()} and \function{starmap} parallels the distinction
+  between \code{function(a,b)} and \code{function(*c)}.
+  Equivalent to:
+
+  \begin{verbatim}
+     def starmap(function, iterable):
+         iterable = iter(iterable)
+         while True:
+             yield function(*iterable.next())
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{takewhile}{predicate, iterable}
+  Make an iterator that returns elements from the iterable as long as
+  the predicate is true.  Equivalent to:
+
+  \begin{verbatim}
+     def takewhile(predicate, iterable):
+         iterable = iter(iterable)
+         while True:
+             x = iterable.next()
+             if predicate(x):
+                 yield x
+             else:
+                 break
+  \end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{times}{n, \optional{object}}
+  Make an iterator that returns \var{object} \var{n} times.
+  \var{object} defaults to \code{None}.  Used for looping a specific
+  number of times without creating a number object on each pass.
+  Equivalent to:
+
+  \begin{verbatim}
+     def times(n, object=None):
+         if n<0 : raise ValueError
+         for i in xrange(n):
+             yield object
+  \end{verbatim}
+\end{funcdesc}
+
+
+\subsection{Examples \label{itertools-example}}
+
+The following examples show common uses for each tool and
+demonstrate ways they can be combined.
+
+\begin{verbatim}
+>>> for i in times(3):
+...     print "Hello"
+...
+Hello
+Hello
+Hello
+
+>>> amounts = [120.15, 764.05, 823.14]
+>>> for checknum, amount in izip(count(1200), amounts):
+...     print 'Check %d is for $%.2f' % (checknum, amount)
+...
+Check 1200 is for $120.15
+Check 1201 is for $764.05
+Check 1202 is for $823.14
+
+>>> import operator
+>>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
+...    print cube
+...
+1
+8
+27
+
+>>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura',
+                  '', 'martin', '', 'walter', '', 'samuele']
+>>> for name in islice(reportlines, 3, len(reportlines), 2):
+...    print name.title()
+...
+Alex
+Laura
+Martin
+Walter
+Samuele
+
+\end{verbatim}
+
+This section has further examples of how itertools can be combined.
+Note that \function{enumerate()} and \method{iteritems()} already
+have highly efficient implementations in Python.  They are only
+included here to illustrate how higher level tools can be created
+from building blocks.
+
+\begin{verbatim}
+>>> def enumerate(iterable):
+...     return izip(count(), iterable)
+
+>>> def tabulate(function):
+...     "Return function(0), function(1), ..."
+...     return imap(function, count())
+
+>>> def iteritems(mapping):
+...     return izip(mapping.iterkeys(), mapping.itervalues())
+
+>>> def nth(iterable, n):
+...     "Returns the nth item"
+...     return islice(iterable, n, n+1).next()
+
+\end{verbatim}
