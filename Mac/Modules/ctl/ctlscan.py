@@ -79,6 +79,7 @@ class MyScanner(Scanner):
 			'GetControlProperty',
 			'SetControlProperty',
 			'GetControlPropertySize',
+			'SendControlMessage', # Parameter changed from long to void* from UH3.3 to UH3.4
 			]
 
 	def makegreylist(self):

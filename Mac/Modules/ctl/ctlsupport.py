@@ -122,8 +122,8 @@ static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
-extern int settrackfunc(PyObject *); 	/* forward */
-extern void clrtrackfunc(void);	/* forward */
+staticforward int settrackfunc(PyObject *); 	/* forward */
+staticforward void clrtrackfunc(void);	/* forward */
 staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
 """
 

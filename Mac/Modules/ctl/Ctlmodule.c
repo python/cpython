@@ -81,8 +81,8 @@ static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
-extern int settrackfunc(PyObject *); 	/* forward */
-extern void clrtrackfunc(void);	/* forward */
+staticforward int settrackfunc(PyObject *); 	/* forward */
+staticforward void clrtrackfunc(void);	/* forward */
 staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
 
 static PyObject *Ctl_Error;
@@ -909,24 +909,6 @@ static PyObject *CtlObj_SetControlColor(ControlObject *_self, PyObject *_args)
 	return _res;
 }
 #endif
-
-static PyObject *CtlObj_SendControlMessage(ControlObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	SInt32 _rv;
-	SInt16 inMessage;
-	SInt32 inParam;
-	if (!PyArg_ParseTuple(_args, "hl",
-	                      &inMessage,
-	                      &inParam))
-		return NULL;
-	_rv = SendControlMessage(_self->ob_itself,
-	                         inMessage,
-	                         inParam);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
 
 static PyObject *CtlObj_EmbedControl(ControlObject *_self, PyObject *_args)
 {
@@ -1895,8 +1877,6 @@ static PyMethodDef CtlObj_methods[] = {
 	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
 	 "(CCTabHandle newColorTable) -> None"},
 #endif
-	{"SendControlMessage", (PyCFunction)CtlObj_SendControlMessage, 1,
-	 "(SInt16 inMessage, SInt32 inParam) -> (SInt32 _rv)"},
 	{"EmbedControl", (PyCFunction)CtlObj_EmbedControl, 1,
 	 "(ControlHandle inContainer) -> None"},
 	{"AutoEmbedControl", (PyCFunction)CtlObj_AutoEmbedControl, 1,
