@@ -24,7 +24,8 @@
 #if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 2)
 /* In Python 2.0 and  2.1, disabling Unicode was not possible. */
 #define Py_USING_UNICODE
-#define NOFIX_TRACE
+#else
+#define FIX_TRACE
 #endif
 
 enum HandlerTypes {
@@ -293,7 +294,7 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
     return NULL;
 }
 
-#ifndef NOFIX_TRACE
+#ifdef FIX_TRACE
 static int
 trace_frame(PyThreadState *tstate, PyFrameObject *f, int code, PyObject *val)
 {
@@ -320,6 +321,37 @@ trace_frame(PyThreadState *tstate, PyFrameObject *f, int code, PyObject *val)
     }	
     return result;
 }
+
+static int
+trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
+{
+    PyObject *type, *value, *traceback, *arg;
+    int err;
+
+    if (tstate->c_tracefunc == NULL)
+	return 0;
+
+    PyErr_Fetch(&type, &value, &traceback);
+    if (value == NULL) {
+	value = Py_None;
+	Py_INCREF(value);
+    }
+    arg = Py_BuildValue("(OOO)", type, value, traceback);
+    if (arg == NULL) {
+	PyErr_Restore(type, value, traceback);
+	return 0;
+    }
+    err = trace_frame(tstate, f, PyTrace_EXCEPTION, arg);
+    Py_DECREF(arg);
+    if (err == 0)
+	PyErr_Restore(type, value, traceback);
+    else {
+	Py_XDECREF(type);
+	Py_XDECREF(value);
+	Py_XDECREF(traceback);
+    }
+    return err;
+}
 #endif
 
 static PyObject*
@@ -332,30 +364,31 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
     if (c == NULL)
         return NULL;
     
-    f = PyFrame_New(
-                    tstate,			/*back*/
-                    c,				/*code*/
-                    PyEval_GetGlobals(),	/*globals*/
-                    NULL			/*locals*/
-                    );
+    f = PyFrame_New(tstate, c, PyEval_GetGlobals(), NULL);
     if (f == NULL)
         return NULL;
     tstate->frame = f;
-#ifndef NOFIX_TRACE
-    if (trace_frame(tstate, f, PyTrace_CALL, Py_None)) {
-	Py_DECREF(f);
+#ifdef FIX_TRACE
+    if (trace_frame(tstate, f, PyTrace_CALL, Py_None) < 0) {
 	return NULL;
     }
 #endif
     res = PyEval_CallObject(func, args);
-    if (res == NULL && tstate->curexc_traceback == NULL)
-        PyTraceBack_Here(f);
-#ifndef NOFIX_TRACE
+    if (res == NULL) {
+	if (tstate->curexc_traceback == NULL)
+	    PyTraceBack_Here(f);
+#ifdef FIX_TRACE
+	if (trace_frame_exc(tstate, f) < 0) {
+	    return NULL;
+	}
+    }
     else {
-	if (trace_frame(tstate, f, PyTrace_RETURN, res)) {
+	if (trace_frame(tstate, f, PyTrace_RETURN, res) < 0) {
 	    Py_XDECREF(res);
 	    res = NULL;
 	}
+    }
+#else
     }
 #endif
     tstate->frame = f->f_back;
