@@ -60,6 +60,7 @@ elif 'nt' in _names:
     linesep = '\r\n'
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
+    altsep = '/'
     from nt import *
     for i in ['_exit']:
         try:
