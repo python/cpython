@@ -93,10 +93,8 @@ rooturl   -- URL to start checking
 
 """
 
-# ' Emacs bait
 
-
-__version__ = "0.4"
+__version__ = "0.5"
 
 
 import sys
@@ -487,7 +485,12 @@ class MyURLopener(urllib.FancyURLopener):
     def __init__(*args):
 	self = args[0]
 	apply(urllib.FancyURLopener.__init__, args)
-	self.addheaders = [('User-agent', 'Python-webchecker/%s' % __version__)]
+	self.addheaders = [
+	    ('User-agent', 'Python-webchecker/%s' % __version__),
+	    ]
+
+    def http_error_401(self, url, fp, errcode, errmsg, headers):
+        return None
 
     def open_file(self, url):
 	path = urllib.url2pathname(urllib.unquote(url))
