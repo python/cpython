@@ -27,7 +27,7 @@ newline = re.compile('\n')
 attrfind = re.compile(
     _S + '(?P<name>' + _Name + ')'
     '(' + _opS + '=' + _opS +
-    '(?P<value>'+_QStr+'|[-a-zA-Z0-9.:+*%?!()_#=~]+))?')
+    '(?P<value>'+_QStr+'|[-a-zA-Z0-9.:+*%?!\(\)_#=~]+))?')
 starttagopen = re.compile('<' + _Name)
 starttagend = re.compile(_opS + '(?P<slash>/?)>')
 starttagmatch = re.compile('<(?P<tagname>'+_Name+')'
@@ -43,8 +43,8 @@ cdataclose = re.compile(r'\]\]>')
 # SYSTEM SystemLiteral
 # PUBLIC PubidLiteral SystemLiteral
 _SystemLiteral = '(?P<%s>'+_QStr+')'
-_PublicLiteral = '(?P<%s>"[-\'()+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*"|' \
-                        "'[-()+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*')"
+_PublicLiteral = '(?P<%s>"[-\'\(\)+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*"|' \
+                        "'[-\(\)+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*')"
 _ExternalId = '(?:SYSTEM|' \
                  'PUBLIC'+_S+_PublicLiteral%'pubid'+ \
               ')'+_S+_SystemLiteral%'syslit'
@@ -652,7 +652,7 @@ class XMLParser:
                 return i+1
             if not self.__accept_missing_endtag_name:
                 self.syntax_error('no name specified in end tag')
-                tag = self.stack[-1][0]
+            tag = self.stack[-1][0]
             k = i+2
         else:
             tag = res.group(0)
