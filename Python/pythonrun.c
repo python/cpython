@@ -1566,18 +1566,6 @@ initsigs(void)
 	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
 
-#ifdef MPW
-
-/* Check for file descriptor connected to interactive device.
-   Pretend that stdin is always interactive, other files never. */
-
-int
-isatty(int fd)
-{
-	return fd == fileno(stdin);
-}
-
-#endif
 
 /*
  * The file descriptor fd is considered ``interactive'' if either

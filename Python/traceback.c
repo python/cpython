@@ -147,13 +147,8 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 	int i;
 	if (filename == NULL || name == NULL)
 		return -1;
-#ifdef MPW
-	/* This is needed by MPW's File and Line commands */
-#define FMT "  File \"%.500s\"; line %d # in %.500s\n"
-#else
 	/* This is needed by Emacs' compile command */
 #define FMT "  File \"%.500s\", line %d, in %.500s\n"
-#endif
 	xfp = fopen(filename, "r" PY_STDIOTEXTMODE);
 	if (xfp == NULL) {
 		/* Search tail of filename in sys.path before giving up */

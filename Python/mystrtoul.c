@@ -100,7 +100,6 @@ PyOS_strtoul(register char *str, char **ptr, int base)
 	}
 	temp = result;
 	result = result * base + c;
-#ifndef MPW
 	if(base == 10) {
 		if(((long)(result - c) / base != (long)temp))	/* overflow */
 			ovf = 1;
@@ -109,7 +108,6 @@ PyOS_strtoul(register char *str, char **ptr, int base)
 		if ((result - c) / base != temp)	/* overflow */
 			ovf = 1;
 	}
-#endif
 	str++;
     }
 

@@ -3,11 +3,7 @@
 
 #include "Python.h"
 
-#ifdef MPW /* MPW pushes 'extended' for float and double types with varargs */
-typedef extended va_double;
-#else
 typedef double va_double;
-#endif
 
 /* Package context -- the full module name for package imports */
 char *_Py_PackageContext = NULL;
