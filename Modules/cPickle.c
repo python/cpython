@@ -194,6 +194,8 @@ cPickle_PyMapping_HasKey(o, key)
     return 0;
 }
 
+#define PyErr_Format PyErr_JFFormat
+static
 PyObject *
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS 2 */
@@ -3868,6 +3870,9 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.4  1997/04/09 17:47:47  guido
+ Give PyErr_Format a new name and make it static.
+
  Revision 2.3  1997/04/09 17:36:32  guido
  Jim Fulton's version 2.2.
 
