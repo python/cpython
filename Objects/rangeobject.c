@@ -264,34 +264,41 @@ range_tolist(rangeobject *self, PyObject *args)
 }
 
 static PyObject *
-range_getattr(rangeobject *r, char *name)
+range_get_stop(rangeobject *self, void *closure)
+{
+	return PyInt_FromLong(self->start + (self->len * self->step));
+}
+
+static PyMethodDef range_methods[] = {
+	{"tolist",	(PyCFunction)range_tolist, METH_NOARGS,
+         "tolist() -> list\n"
+         "Return a list object with the same values.\n"
+         "(This method is deprecated; use list() instead.)"},
+	{NULL,		NULL}
+};
+
+static PyMemberDef range_members[] = {
+	{"step",  T_LONG, offsetof(rangeobject, step),  RO,
+	 "Interval between indexes of the slice; also known as the 'stride'."},
+	{"start", T_LONG, offsetof(rangeobject, start), RO,
+	 "First index of the slice."},
+	{NULL, 0, 0, 0}
+};
+
+static PyGetSetDef range_getsets[] = {
+	{"stop", (getter)range_get_stop, NULL,
+	 ""},
+	{NULL},
+};
+
+static PyObject *
+range_getattro(rangeobject *self, PyObject *name)
 {
 	PyObject *result;
-
-	static PyMethodDef range_methods[] = {
-		{"tolist",	(PyCFunction)range_tolist, METH_NOARGS,
-                 "tolist() -> list\n"
-                 "Return a list object with the same values.\n"
-                 "(This method is deprecated; use list() instead.)"},
-		{NULL,		NULL}
-	};
-	static struct memberlist range_members[] = {
-		{"step",  T_LONG, offsetof(rangeobject, step), RO},
-		{"start", T_LONG, offsetof(rangeobject, start), RO},
-		{"stop",  T_LONG, 0, RO},
-		{NULL, 0, 0, 0}
-	};
-
-	result = Py_FindMethod(range_methods, (PyObject *) r, name);
-	if (result == NULL) {
-		PyErr_Clear();
-		if (strcmp("stop", name) == 0)
-			result = PyInt_FromLong(r->start + (r->len * r->step));
-		else
-			result = PyMember_Get((char *)r, range_members, name);
-		if (result)
-			WARN("xrange object's 'start', 'stop' and 'step' "
-			     "attributes are deprecated");
+	result = PyObject_GenericGetAttr((PyObject *)self, name);
+	if (result && PyInt_CheckExact(result)) {
+		WARN("xrange object's 'start', 'stop' and 'step' "
+		     "attributes are deprecated");
 	}
 	return result;
 }
@@ -315,7 +322,7 @@ PyTypeObject PyRange_Type = {
 	0,			/* Item size for varobject */
 	(destructor)range_dealloc,		/*tp_dealloc*/
 	0,					/*tp_print*/
-	(getattrfunc)range_getattr,		/*tp_getattr*/
+	0,					/*tp_getattr*/
 	0,					/*tp_setattr*/
 	(cmpfunc)range_compare,			/*tp_compare*/
 	(reprfunc)range_repr,			/*tp_repr*/
@@ -325,7 +332,7 @@ PyTypeObject PyRange_Type = {
 	0,					/*tp_hash*/
 	0,					/*tp_call*/
 	0,					/*tp_str*/
-	PyObject_GenericGetAttr,		/*tp_getattro*/
+	(getattrofunc)range_getattro,		/*tp_getattro*/
 	0,					/*tp_setattro*/
 	0,					/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,			/*tp_flags*/
@@ -336,9 +343,9 @@ PyTypeObject PyRange_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
+	range_methods,				/* tp_methods */
+	range_members,				/* tp_members */
+	range_getsets,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 };
