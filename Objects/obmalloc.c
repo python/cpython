@@ -171,7 +171,7 @@
 
 /*
  * Size of the pools used for small blocks. Should be a power of 2,
- * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k, eventually 8k.
+ * between 1K and SYSTEM_PAGE_SIZE, that is: 1k, 2k, 4k.
  */
 #define POOL_SIZE		SYSTEM_PAGE_SIZE	/* must be 2^N */
 #define POOL_SIZE_MASK		SYSTEM_PAGE_SIZE_MASK
@@ -308,8 +308,8 @@ static poolp freepools = NULL;		/* free list for cached pools */
  * and only grows by appending at the end.  For now we never return an arena
  * to the OS.
  */
-static uptr *arenas = NULL;
-static uint narenas = 0;
+static uptr *volatile arenas = NULL;	/* the pointer itself is volatile */
+static volatile uint narenas = 0;
 static uint maxarenas = 0;
 
 /* Number of pools still available to be allocated in the current arena. */
@@ -354,6 +354,7 @@ new_arena(void)
 	   nfreepools <- number of whole pools that fit after alignment */
 	arenabase = bp;
 	nfreepools = ARENA_SIZE / POOL_SIZE;
+	assert(POOL_SIZE * nfreepools == ARENA_SIZE);
 	excess = (uint)bp & POOL_SIZE_MASK;
 	if (excess != 0) {
 		--nfreepools;
@@ -362,15 +363,16 @@ new_arena(void)
 
 	/* Make room for a new entry in the arenas vector. */
 	if (arenas == NULL) {
+		assert(narenas == 0 && maxarenas == 0);
 		arenas = (uptr *)PyMem_MALLOC(16 * sizeof(*arenas));
 		if (arenas == NULL)
 			goto error;
 		maxarenas = 16;
-		narenas = 0;
 	}
 	else if (narenas == maxarenas) {
 		/* Grow arenas.  Don't use realloc:  if this fails, we
 		 * don't want to lose the base addresses we already have.
+		 *
 		 * Exceedingly subtle:  Someone may be calling the pymalloc
 		 * free via PyMem_{DEL, Del, FREE, Free} without holding the
 		 *.GIL.  Someone else may simultaneously be calling the
@@ -392,26 +394,30 @@ new_arena(void)
 		 * is supposed to fail.  Having an incomplete vector can't
 		 * make a supposed-to-fail case succeed by mistake (it could
 		 * only make a supposed-to-succeed case fail by mistake).
+		 *
+		 * In addition, without a lock we can't know for sure when
+		 * an old vector is no longer referenced, so we simply let
+		 * old vectors leak.
+		 *
+		 * And on top of that, since narenas and arenas can't be
+		 * changed as-a-pair atomically without a lock, we're also
+		 * careful to declare them volatile and ensure that we change
+		 * arenas first.  This prevents another thread from picking
+		 * up an narenas value too large for the arenas value it
+		 * reads up (arenas never shrinks).
+		 *
 		 * Read the above 50 times before changing anything in this
 		 * block.
-		 * XXX Fudge.  This is still vulnerable:  there's nothing
-		 * XXX to stop the bad-guy thread from picking up the
-		 * XXX current value of arenas, but not indexing off of it
-		 * XXX until after the PyMem_FREE(oldarenas) below completes.
 		 */
-		uptr *oldarenas;
 		uptr *p;
-		uint newmax = maxarenas + (maxarenas >> 1);
-
+		uint newmax = maxarenas << 1;
 		if (newmax <= maxarenas)	/* overflow */
 			goto error;
 		p = (uptr *)PyMem_MALLOC(newmax * sizeof(*arenas));
 		if (p == NULL)
 			goto error;
 		memcpy(p, arenas, narenas * sizeof(*arenas));
-		oldarenas = arenas;
-		arenas = p;
-		PyMem_FREE(oldarenas);
+		arenas = p;	/* old arenas deliberately leaked */
 		maxarenas = newmax;
 	}
 
@@ -431,12 +437,19 @@ error:
 /* Return true if and only if P is an address that was allocated by
  * pymalloc.  I must be the index into arenas that the address claims
  * to come from.
+ *
  * Tricky:  Letting B be the arena base address in arenas[I], P belongs to the
  * arena if and only if
  *	B <= P < B + ARENA_SIZE
  * Subtracting B throughout, this is true iff
  *	0 <= P-B < ARENA_SIZE
  * By using unsigned arithmetic, the "0 <=" half of the test can be skipped.
+ *
+ * Obscure:  A PyMem "free memory" function can call the pymalloc free or
+ * realloc before the first arena has been allocated.  arenas is still
+ * NULL in that case.  We're relying on that narenas is also 0 in that case,
+ * so the (I) < narenas must be false, saving us from trying to index into
+ * a NULL arenas.
  */
 #define ADDRESS_IN_RANGE(P, I) \
 	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ARENA_SIZE)
