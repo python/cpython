@@ -2,7 +2,7 @@
 
 
 def rat(num, den):
-	return Rat().init(num, den)
+	return Rat(num, den)
 
 
 def gcd(a, b):
@@ -13,13 +13,12 @@ def gcd(a, b):
 
 class Rat:
 
-	def init(self, num, den):
+	def __init__(self, num, den):
 		if den == 0:
 			raise ZeroDivisionError, 'rat(x, 0)'
 		g = gcd(num, den)
 		self.num = num/g
 		self.den = den/g
-		return self
 
 	def __repr__(self):
 		return 'rat' + `self.num, self.den`
@@ -49,8 +48,10 @@ class Rat:
 			return a, rat(b, 1L)
 		if t == type(0.0):
 			return a.__float__(), b
+		if t == type(a) and a.__class__ == b.__class__:
+			return a, b
 		raise TypeError, 'Rat.__coerce__: bad other arg'
-			
+
 	def __add__(a, b):
 		if type(b) <> type(a):
 			a, b = a.__coerce__(b)
@@ -93,4 +94,4 @@ def test():
 	except ZeroDivisionError:
 		print 'OK'
 
-#test()
+test()

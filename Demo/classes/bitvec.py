@@ -48,7 +48,7 @@ def _check_slice(len, i, j):
 
 class BitVec:
 
-	def init(self, *params):
+	def __init__(self, *params):
 		self._data = 0L
 		self._len = 0
 		if not len(params):
@@ -93,20 +93,12 @@ class BitVec:
 		else:
 			raise error, 'bitvec() requires 0 -- 2 parameter(s)'
 
-		return self
-
-
-	def _init(self, data, len):
-		self._data = data
-		self._len = len
-		return self
-
 		
 	def append(self, item):
 		#_check_value(item)
 		#self[self._len:self._len] = [item]
 		self[self._len:self._len] = \
-			  BitVec()._init(long(not not item), 1)
+			  BitVec(long(not not item), 1)
 
 		
 	def count(self, value):
@@ -138,7 +130,7 @@ class BitVec:
 	def insert(self, index, item):
 		#_check_value(item)
 		#self[index:index] = [item]
-		self[index:index] = BitVec()._init(long(not not item), 1)
+		self[index:index] = BitVec(long(not not item), 1)
 
 
 	def remove(self, value):
@@ -163,7 +155,7 @@ class BitVec:
 
 
 	def copy(self):
-		return BitVec()._init(self._data, self._len)
+		return BitVec(self._data, self._len)
 
 
 	def seq(self):
@@ -229,7 +221,7 @@ class BitVec:
 		#rprt(`self`+'.__getslice__'+`i, j`+'\n')
 		i, j = _check_slice(self._len, i, j)
 		if i >= j:
-			return BitVec()._init(0L, 0)
+			return BitVec(0L, 0)
 		if i:
 			ndata = self._data >> i
 		else:
@@ -239,7 +231,7 @@ class BitVec:
 			#we'll have to invent faster variants here
 			#e.g. mod_2exp
 			ndata = ndata & ((1L << nlength) - 1)
-		return BitVec()._init(ndata, nlength)
+		return BitVec(ndata, nlength)
 
 	def __setslice__(self, i, j, sequence, *rest):
 		#rprt(`self`+'.__setslice__'+`(i, j, sequence) + rest`+'\n')
@@ -274,16 +266,16 @@ class BitVec:
 		if type(multiplier) != type(0):
 			raise TypeError, 'sequence subscript not int'
 		if multiplier <= 0:
-			return BitVec()._init(0L, 0)
+			return BitVec(0L, 0)
 		elif multiplier == 1:
 			return self.copy()
 		#handle special cases all 0 or all 1...
 		if self._data == 0L:
-			return BitVec()._init(0L, self._len * multiplier)
+			return BitVec(0L, self._len * multiplier)
 		elif (~self)._data == 0L:
-			return ~BitVec()._init(0L, self._len * multiplier)
+			return ~BitVec(0L, self._len * multiplier)
 		#otherwise el cheapo again...
-		retval = BitVec()._init(0L, 0)
+		retval = BitVec(0L, 0)
 		while multiplier:
 			retval, multiplier = retval + self, multiplier - 1
 		return retval
@@ -293,7 +285,7 @@ class BitVec:
 		if type(otherseq) != type(self):
 			otherseq = apply(bitvec, (otherseq, ) + rest)
 		#sequence is now of our own type
-		return BitVec()._init(self._data & otherseq._data, \
+		return BitVec(self._data & otherseq._data, \
 			  min(self._len, otherseq._len))
 
 
@@ -302,7 +294,7 @@ class BitVec:
 		if type(otherseq) != type(self):
 			otherseq = apply(bitvec, (otherseq, ) + rest)
 		#sequence is now of our own type
-		return BitVec()._init(self._data ^ otherseq._data, \
+		return BitVec(self._data ^ otherseq._data, \
 			  max(self._len, otherseq._len))
 
 
@@ -311,13 +303,13 @@ class BitVec:
 		if type(otherseq) != type(self):
 			otherseq = apply(bitvec, (otherseq, ) + rest)
 		#sequence is now of our own type
-		return BitVec()._init(self._data | otherseq._data, \
+		return BitVec(self._data | otherseq._data, \
 			  max(self._len, otherseq._len))
 
 
 	def __invert__(self):
 		#rprt(`self`+'.__invert__()\n')
-		return BitVec()._init(~self._data & ((1L << self._len) - 1), \
+		return BitVec(~self._data & ((1L << self._len) - 1), \
 			  self._len)
 
 	def __coerce__(self, otherseq, *rest):
@@ -337,5 +329,4 @@ class BitVec:
 		return float(self._data)
 
 
-def bitvec(params):
-	return apply(BitVec().init, params)
+bitvec = BitVec

@@ -16,7 +16,7 @@ def range(*a):
 		start, stop, step = a
 	else:
 		raise TypeError, 'range() needs 1-3 arguments'
-	return Range().init(start, stop, step)
+	return Range(start, stop, step)
 	
 
 # Class implementing a range object.
@@ -26,14 +26,13 @@ def range(*a):
 class Range:
 
 	# initialization -- should be called only by range() above
-	def init(self, start, stop, step):
+	def __init__(self, start, stop, step):
 		if step == 0:
 			raise ValueError, 'range() called with zero step'
 		self.start = start
 		self.stop = stop
 		self.step = step
 		self.len = max(0, int((self.stop - self.start) / self.step))
-		return self
 
 	# implement `x` and is also used by print x
 	def __repr__(self):

@@ -8,7 +8,7 @@
 # ... 
 # !dlroW olleH
 #
-# The .forw is so you can use anonymous sequences in init, and still
+# The .forw is so you can use anonymous sequences in __init__, and still
 # keep a reference the forward sequence. ) 
 # If you give it a non-anonymous mutable sequence, the reverse sequence
 # will track the updated values. ( but not reassignment! - another 

@@ -1,4 +1,4 @@
-Examples of classes that implement special operators (see class.doc):
+Examples of classes that implement special operators (see reference manual):
 
 Complex.py	Complex numbers
 Dates.py	Date manipulation package by Tim Peters
