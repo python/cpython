@@ -32,6 +32,7 @@ break_stmt
 continue_stmt
 continue + try/except ok
 continue + try/finally ok
+testing continue and break in try/except in loop
 return_stmt
 raise_stmt
 import_stmt
