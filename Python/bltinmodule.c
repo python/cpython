@@ -1371,7 +1371,7 @@ Return the dictionary containing the current scope's local variables.";
 
 
 static PyObject *
-min_max(PyObject *args, int sign)
+min_max(PyObject *args, int op)
 {
 	int i;
 	PyObject *v, *w, *x;
@@ -1401,15 +1401,15 @@ min_max(PyObject *args, int sign)
 		if (w == NULL)
 			w = x;
 		else {
-			int c = PyObject_Compare(x, w);
-			if (c && PyErr_Occurred()) {
+			int cmp = PyObject_RichCompareBool(x, w, op);
+			if (cmp > 0) {
+				Py_DECREF(w);
+				w = x;
+			}
+			else if (cmp < 0) {
 				Py_DECREF(x);
 				Py_XDECREF(w);
 				return NULL;
-			}
-			if (c * sign > 0) {
-				Py_DECREF(w);
-				w = x;
 			}
 			else
 				Py_DECREF(x);
@@ -1424,7 +1424,7 @@ min_max(PyObject *args, int sign)
 static PyObject *
 builtin_min(PyObject *self, PyObject *v)
 {
-	return min_max(v, -1);
+	return min_max(v, Py_LT);
 }
 
 static char min_doc[] =
@@ -1438,7 +1438,7 @@ With two or more arguments, return the smallest argument.";
 static PyObject *
 builtin_max(PyObject *self, PyObject *v)
 {
-	return min_max(v, 1);
+	return min_max(v, Py_GT);
 }
 
 static char max_doc[] =
