@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <tcl.h>
 #include <tk.h>
 
-extern char *getprogramname ();
+extern char *Py_GetProgramName ();
 
 /* Internal declarations from tkInt.h.  */
 #if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
@@ -1234,11 +1234,11 @@ Tkinter_Create (self, args)
   char *className = NULL;
   int interactive = 0;
 
-  baseName = strrchr (getprogramname (), '/');
+  baseName = strrchr (Py_GetProgramName (), '/');
   if (baseName != NULL)
     baseName++;
   else
-    baseName = getprogramname ();
+    baseName = Py_GetProgramName ();
   className = "Tk";
   
   if (!PyArg_ParseTuple (args, "|zssi",
