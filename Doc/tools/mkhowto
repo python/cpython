@@ -347,9 +347,6 @@ class Job:
             if self.use_bibtex:
                 self.run("%s %s" % (BIBTEX_BINARY, self.doc))
             self.process_synopsis_files()
-            #
-            # let the doctype-specific handler do some intermediate work:
-            #
             self.run("%s %s" % (binary, self.doc))
             self.latex_runs = self.latex_runs + 1
             if os.path.isfile("mod%s.idx" % self.doc):
