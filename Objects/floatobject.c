@@ -278,7 +278,7 @@ convert_to_double(PyObject **v,
 	else if (PyLong_Check(obj)) {
 		PyFPE_START_PROTECT("convert_to_double", {*v=NULL;return -1;})
 		*dbl = PyLong_AsDouble(obj);
-		PyFPE_END_PROTECT(result)
+		PyFPE_END_PROTECT(*dbl)
 	}
 	else {
 		Py_INCREF(Py_NotImplemented);
