@@ -184,8 +184,6 @@ def dict_constructor():
     vereq(d, {})
     d = dict({})
     vereq(d, {})
-    d = dict({})
-    vereq(d, {})
     d = dict({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
     vereq(d, dict(d.items()))
