@@ -136,6 +136,10 @@ Core and builtins
   same as split() except that it scans the string from the end
   working towards the beginning.  See SF feature request 801847.
 
+- Fixed a bug in object.__reduce_ex__ when using protocol 2.  Failure
+  to clear the error when attempts to get the __getstate__ attribute
+  fail caused intermittent errors and odd behavior.
+
 Extension modules
 -----------------
 

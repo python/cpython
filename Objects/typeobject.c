@@ -2581,6 +2581,7 @@ reduce_2(PyObject *obj)
 			goto end;
 	}
 	else {
+		PyErr_Clear();
 		state = PyObject_GetAttrString(obj, "__dict__");
 		if (state == NULL) {
 			PyErr_Clear();
