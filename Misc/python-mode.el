@@ -81,7 +81,7 @@
 (defvar py-python-command "python"
   "*Shell command used to start Python interpreter.")
 
-(defvar py-indent-offset 8		; argue with Guido <grin>
+(defvar py-indent-offset 4
   "*Indentation increment.
 Note that `\\[py-guess-indent-offset]' can usually guess a good value
 when you're editing someone else's Python code.")
