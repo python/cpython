@@ -163,7 +163,7 @@ between two dates or times.
     If any argument is a float, and there are fractional microseconds,
     the fractional microseconds left over from all arguments are combined
     and their sum is rounded to the nearest microsecond.  If no
-    argument is a flost, the conversion and normalization processes
+    argument is a float, the conversion and normalization processes
     are exact (no information is lost).
 
     If the normalized value of days lies outside the indicated range,
@@ -489,7 +489,7 @@ calendar extended in both directions; like a time object,
 \class{datetime} assumes there are exactly 3600*24 seconds in every
 day.
 
-\begin{funcdesc}datetime{year, month, day,
+\begin{funcdesc}{datetime}{year, month, day,
              hour=0, minute=0, second=0, microsecond=0}
 The year, month and day arguments are required.  Arguments may be ints
 or longs, in the following ranges:
@@ -882,6 +882,7 @@ implement all of them.
 \begin{verbatim}
         return CONSTANT  # fixed-offset class
         return CONSTANT + self.dst(dt)  # daylight-aware class
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{self, dt}
