@@ -6,9 +6,18 @@
 \ProvidesPackage{ltxmarkup}
 \RequirePackage{python}      % fulllineitems environment
 
+% These two macros are used in constructing the last parameter to the
+% envdesc and macrodesc environments.
+
+\newcommand{\py@ltx@optparam}[1]{{[}\var{#1}{]}}
+\newcommand{\py@ltx@param}[1]{\{\var{#1}\}}
+
 \newenvironment{envdesc}[2]{
   \begin{fulllineitems}
-    \item[\code{\e begin\{{\bfseries #1}\}#2}]
+    \item[\code{\e begin\{{\bfseries #1}\}{%
+      \let\op=\py@ltx@optparam%
+      \let\p=\py@ltx@param%
+      #2}}]
     %\item[\code{\e end\{{\bfseries #1}\}}]
     \index{#1 environment@\idxcode{#1} environment}
     \index{environments!#1@\idxcode{#1}}
@@ -16,7 +25,10 @@
 
 \newenvironment{macrodesc}[2]{
   \begin{fulllineitems}
-    \item[\code{\e\bfseries#1}#2]
+    \item[\code{\e\bfseries#1}{%
+      \let\op=\py@ltx@optparam%
+      \let\p=\py@ltx@param%
+      #2}]
     \index{#1@\idxcode{\e #1}}
 }{\end{fulllineitems}}
 
