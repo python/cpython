@@ -537,6 +537,15 @@ a window (in which case default behavior would be to use the window
 size if \envvar{LINES} and \envvar{COLUMNS} are not set).
 \end{funcdesc}
 
+\begin{funcdesc}{use_default_colors}{}
+Allow use of default values for colors on terminals supporting this
+feature. Use this to support transparency in your
+application.  The default color is assigned to the color number -1.
+After calling this function, 
+\function{init_pair(x, curses.COLOR_RED, -1)} initializes, for instance,
+color pair \var{x} to a red foreground color on the default background.
+\end{funcdesc}
+
 \subsection{Window Objects \label{curses-window-objects}}
 
 Window objects, as returned by \function{initscr()} and

@@ -22,6 +22,8 @@ Extension modules
 
 - The signal module now exposes SIGRTMIN and SIGRTMAX (if available).
 
+- curses module now supports use_default_colors().  [patch #739124]
+
 Library
 -------
 
