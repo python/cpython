@@ -93,6 +93,9 @@ static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
+#ifndef TARGET_API_MAC_CARBON_NOTYET
+staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
+#endif
 """
 
 finalstuff = finalstuff + """
@@ -165,12 +168,13 @@ mytracker(ControlHandle ctl, short part)
 
 #ifndef TARGET_API_MAC_CARBON_NOTYET
 static int
-setcallback(self, which, callback, uppp)
-	ControlObject *self;
+setcallback(myself, which, callback, uppp)
+	PyObject *myself;
 	OSType which;
 	PyObject *callback;
 	UniversalProcPtr *uppp;
 {
+	ControlObject *self = (ControlObject *)myself;
 	char keybuf[9];
 	
 	if ( which == kControlUserPaneDrawProcTag )
@@ -544,7 +548,7 @@ OSErr _err;
 ControlPartCode inPart;
 ResType inTagName;
 PyObject *callback;
-UniversalProcPtr *c_callback;
+UniversalProcPtr c_callback;
 
 if (!PyArg_ParseTuple(_args, "hO&O",
                       &inPart,
@@ -552,7 +556,7 @@ if (!PyArg_ParseTuple(_args, "hO&O",
                       &callback))
 	return NULL;
 
-if ( setcallback(_self, inTagName, callback, &c_callback) < 0 )
+if ( setcallback((PyObject *)_self, inTagName, callback, &c_callback) < 0 )
 	return NULL;
 _err = SetControlData(_self->ob_itself,
 	              inPart,
