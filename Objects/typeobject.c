@@ -2435,7 +2435,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 				     "method cannot be both class and static");
 				return -1;
 			}
-			descr = create_specialmethod(meth, PyClassMethod_New);
+			descr = PyDescr_NewClassMethod(type, meth);
 		}
 		else if (meth->ml_flags & METH_STATIC) {
 			descr = create_specialmethod(meth, PyStaticMethod_New);

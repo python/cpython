@@ -70,6 +70,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
 
 PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
+PyAPI_FUNC(PyObject *) PyDescr_NewClassMethod(PyTypeObject *, PyMethodDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewMember(PyTypeObject *,
 					       struct PyMemberDef *);
 PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *,

@@ -963,17 +963,16 @@ dict_items(register dictobject *mp)
 }
 
 static PyObject *
-dict_fromkeys(PyObject *mp, PyObject *args)
+dict_fromkeys(PyObject *cls, PyObject *args)
 {
 	PyObject *seq;
 	PyObject *value = Py_None;
 	PyObject *it;	/* iter(seq) */
 	PyObject *key;
 	PyObject *d;
-	PyObject *cls;
 	int status;
 
-	if (!PyArg_ParseTuple(args, "OO|O:fromkeys", &cls, &seq, &value))
+	if (!PyArg_ParseTuple(args, "O|O:fromkeys", &seq, &value))
 		return NULL;
 
 	d = PyObject_CallObject(cls, NULL);
