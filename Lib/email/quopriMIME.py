@@ -1,5 +1,6 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield)
+# Author: Ben Gertzfield
+# Contact: email-sig@python.org
 
 """Quoted-printable content transfer encoding per RFCs 2045-2047.
 
@@ -43,12 +44,12 @@ bqre = re.compile(r'[^ !-<>-~\t]')
 # Helpers
 def header_quopri_check(c):
     """Return True if the character should be escaped with header quopri."""
-    return hqre.match(c) and True
+    return bool(hqre.match(c))
 
 
 def body_quopri_check(c):
     """Return True if the character should be escaped with body quopri."""
-    return bqre.match(c) and True
+    return bool(bqre.match(c))
 
 
 def header_quopri_len(s):

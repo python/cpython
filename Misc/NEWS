@@ -34,6 +34,19 @@ Extension modules
 Library
 -------
 
+- Updates for the email package:
+  + All deprecated APIs that in email 2.x issued warnings have been removed:
+    _encoder argument to the MIMEText constructor, Message.add_payload(),
+    Utils.dump_address_pair(), Utils.decode(), Utils.encode()
+  + New deprecations: Generator.__call__(), Message.get_type(),
+    Message.get_main_type(), Message.get_subtype(), the 'strict' argument to
+    the Parser constructor.  These will be removed in email 3.1.
+  + Support for Python earlier than 2.3 has been removed (see PEP 291).
+  + All defect classes have been renamed to end in 'Defect'.
+  + Some FeedParser fixes; also a MultipartInvariantViolationDefect will be
+    added to messages that claim to be multipart but really aren't.
+  + Updates to documentation.
+
 - re's findall() and finditer() functions now take an optional flags argument
   just like the compile(), search(), and match() functions.  Also, documented
   the previously existing start and stop parameters for the findall() and

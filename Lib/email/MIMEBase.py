@@ -1,8 +1,8 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
-"""Base class for MIME specializations.
-"""
+"""Base class for MIME specializations."""
 
 from email import Message
 

@@ -1,7 +1,8 @@
+# Copyright (C) 2001-2004 Python Software Foundation
 # Author: Anthony Baxter
+# Contact: email-sig@python.org
 
-"""Class representing audio/* type MIME documents.
-"""
+"""Class representing audio/* type MIME documents."""
 
 import sndhdr
 from cStringIO import StringIO
@@ -65,7 +66,7 @@ class MIMEAudio(MIMENonMultipart):
         if _subtype is None:
             _subtype = _whatsnd(_audiodata)
         if _subtype is None:
-            raise TypeError, 'Could not find audio MIME subtype'
+            raise TypeError('Could not find audio MIME subtype')
         MIMENonMultipart.__init__(self, 'audio', _subtype, **_params)
         self.set_payload(_audiodata)
         _encoder(self)

@@ -1,4 +1,5 @@
 # Copyright (C) 2002-2004 Python Software Foundation
+# Contact: email-sig@python.org
 
 """Email address parsing code.
 
@@ -115,7 +116,7 @@ def parsedate_tz(data):
             tzoffset = -tzoffset
         else:
             tzsign = 1
-        tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
+        tzoffset = tzsign * ( (tzoffset//100)*3600 + (tzoffset % 100)*60)
     tuple = (yy, mm, dd, thh, tmm, tss, 0, 1, 0, tzoffset)
     return tuple
 

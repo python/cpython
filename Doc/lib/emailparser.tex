@@ -18,28 +18,78 @@ messages, the root object will return \code{True} from its
 \method{is_multipart()} method, and the subparts can be accessed via
 the \method{get_payload()} and \method{walk()} methods.
 
+There are actually two parser interfaces available for use, the classic
+\class{Parser} API and the incremental \class{FeedParser} API.  The classic
+\class{Parser} API is fine if you have the entire text of the message in
+memory as a string, or if the entire message lives in a file on the file
+system.  \class{FeedParser} is more appropriate for when you're reading the
+message from a stream which might block waiting for more input (e.g. reading
+an email message from a socket).  The \class{FeedParser} can consume and parse
+the message incrementally, and only returns the root object when you close the
+parser\footnote{As of email package version 3.0, introduced in
+Python 2.4, the classic \class{Parser} was re-implemented in terms of the
+\class{FeedParser}, so the semantics and results are identical between the two
+parsers.}.
+
 Note that the parser can be extended in limited ways, and of course
 you can implement your own parser completely from scratch.  There is
 no magical connection between the \module{email} package's bundled
 parser and the \class{Message} class, so your custom parser can create
 message object trees any way it finds necessary.
 
-The primary parser class is \class{Parser} which parses both the
-headers and the payload of the message.  In the case of
-\mimetype{multipart} messages, it will recursively parse the body of
-the container message.  Two modes of parsing are supported,
-\emph{strict} parsing, which will usually reject any non-RFC compliant
-message, and \emph{lax} parsing, which attempts to adjust for common
-MIME formatting problems.
+\subsubsection{FeedParser API}
 
-The \module{email.Parser} module also provides a second class, called
+\versionadded{2.4}
+
+The \class{FeedParser} provides an API that is conducive to incremental
+parsing of email messages, such as would be necessary when reading the text of
+an email message from a source that can block (e.g. a socket).  The
+\class{FeedParser} can of course be used to parse an email message fully
+contained in a string or a file, but the classic \class{Parser} API may be
+more convenient for such use cases.  The semantics and results of the two
+parser APIs are identical.
+
+The \class{FeedParser}'s API is simple; you create an instance, feed it a
+bunch of text until there's no more to feed it, then close the parser to
+retrieve the root message object.  The \class{FeedParser} is extremely
+accurate when parsing standards-compliant messages, and it does a very good
+job of parsing non-compliant messages, providing information about how a
+message was deemed broken.  It will populate a message object's \var{defects}
+attribute with a list of any problems it found in a message.  See the
+\refmodule{email.Errors} module for the list of defects that it can find.
+
+Here is the API for the \class{FeedParser}:
+
+\begin{classdesc}{FeedParser}{\optional{_factory}}
+Create a \class{FeedParser} instance.  Optional \var{_factory} is a
+no-argument callable that will be called whenever a new message object is
+needed.  It defaults to the \class{email.Message.Message} class.
+\end{classdesc}
+
+\begin{methoddesc}[FeedParser]{feed}{data}
+Feed the \class{FeedParser} some more data.  \var{data} should be a
+string containing one or more lines.  The lines can be partial and the
+\class{FeedParser} will stitch such partial lines together properly.  The
+lines in the string can have any of the common three line endings, carriage
+return, newline, or carriage return and newline (they can even be mixed).
+\end{methoddesc}
+
+\begin{methoddesc}[FeedParser]{close}{}
+Closing a \class{FeedParser} completes the parsing of all previously fed data,
+and returns the root message object.  It is undefined what happens if you feed
+more data to a closed \class{FeedParser}.
+\end{methoddesc}
+
+\subsubsection{Parser class API}
+
+The \class{Parser} provides an API that can be used to parse a message when
+the complete contents of the message are available in a string or file.  The
+\module{email.Parser} module also provides a second class, called
 \class{HeaderParser} which can be used if you're only interested in
 the headers of the message. \class{HeaderParser} can be much faster in
 these situations, since it does not attempt to parse the message body,
 instead setting the payload to the raw body as a string.
 \class{HeaderParser} has the same API as the \class{Parser} class.
-
-\subsubsection{Parser class API}
 
 \begin{classdesc}{Parser}{\optional{_class\optional{, strict}}}
 The constructor for the \class{Parser} class takes an optional
@@ -49,19 +99,14 @@ needs to be created.  It defaults to \class{Message} (see
 \refmodule{email.Message}).  The factory will be called without
 arguments.
 
-The optional \var{strict} flag specifies whether strict or lax parsing
-should be performed.  Normally, when things like MIME terminating
-boundaries are missing, or when messages contain other formatting
-problems, the \class{Parser} will raise a
-\exception{MessageParseError}.  However, when lax parsing is enabled,
-the \class{Parser} will attempt to work around such broken formatting
-to produce a usable message structure (this doesn't mean
-\exception{MessageParseError}s are never raised; some ill-formatted
-messages just can't be parsed).  The \var{strict} flag defaults to
-\code{False} since lax parsing usually provides the most convenient
-behavior.
+The optional \var{strict} flag is ignored.  \deprecated{2.4}{Because the
+\class{Parser} class is a backward compatible API wrapper around the
+new-in-Python 2.4 \class{FeedParser}, \emph{all} parsing is effectively
+non-strict.  You should simply stop passing a \var{strict} flag to the
+\class{Parser} constructor.}
 
 \versionchanged[The \var{strict} flag was added]{2.2.2}
+\versionchanged[The \var{strict} flag was deprecated]{2.4}
 \end{classdesc}
 
 The other public \class{Parser} methods are:
@@ -149,4 +194,13 @@ Here are some notes on the parsing semantics:
       object containing a list payload of length 1.  Their
       \method{is_multipart()} method will return \code{True}.  The
       single element in the list payload will be a sub-message object.
+
+\item Some non-standards compliant messages may not be internally consistent
+      about their \mimetype{multipart}-edness.  Such messages may have a
+      \mailheader{Content-Type} header of type \mimetype{multipart}, but their
+      \method{is_multipart()} method may return \code{False}.  If such
+      messages were parsed with the \class{FeedParser}, they will have an
+      instance of the \class{MultipartInvariantViolationDefect} class in their
+      \var{defects} attribute list.  See \refmodule{email.Errors} for
+      details.
 \end{itemize}

@@ -1,4 +1,5 @@
 # Copyright (C) 2001-2004 Python Software Foundation
+# Contact: email-sig@python.org
 # email package unit tests
 
 import os
@@ -51,25 +52,20 @@ def openfile(filename, mode='r'):
 
 # Base test class
 class TestEmailBase(unittest.TestCase):
-    if hasattr(difflib, 'ndiff'):
-        # Python 2.2 and beyond
-        def ndiffAssertEqual(self, first, second):
-            """Like failUnlessEqual except use ndiff for readable output."""
-            if first <> second:
-                sfirst = str(first)
-                ssecond = str(second)
-                diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
-                fp = StringIO()
-                print >> fp, NL, NL.join(diff)
-                raise self.failureException, fp.getvalue()
-    else:
-        # Python 2.1
-        ndiffAssertEqual = unittest.TestCase.assertEqual
+    def ndiffAssertEqual(self, first, second):
+        """Like failUnlessEqual except use ndiff for readable output."""
+        if first <> second:
+            sfirst = str(first)
+            ssecond = str(second)
+            diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
+            fp = StringIO()
+            print >> fp, NL, NL.join(diff)
+            raise self.failureException, fp.getvalue()
 
-    def _msgobj(self, filename, strict=False):
+    def _msgobj(self, filename):
         fp = openfile(findfile(filename))
         try:
-            msg = email.message_from_file(fp, strict=strict)
+            msg = email.message_from_file(fp)
         finally:
             fp.close()
         return msg
@@ -493,43 +489,11 @@ class TestMessageAPI(TestEmailBase):
 
 # Test the email.Encoders module
 class TestEncoders(unittest.TestCase):
-    def test_encode_noop(self):
-        eq = self.assertEqual
-        msg = MIMEText('hello world', _encoder=Encoders.encode_noop)
-        eq(msg.get_payload(), 'hello world')
-
-    def test_encode_7bit(self):
-        eq = self.assertEqual
-        msg = MIMEText('hello world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello world')
-        eq(msg['content-transfer-encoding'], '7bit')
-        msg = MIMEText('hello \x7f world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x7f world')
-        eq(msg['content-transfer-encoding'], '7bit')
-
-    def test_encode_8bit(self):
-        eq = self.assertEqual
-        msg = MIMEText('hello \x80 world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x80 world')
-        eq(msg['content-transfer-encoding'], '8bit')
-
     def test_encode_empty_payload(self):
         eq = self.assertEqual
         msg = Message()
         msg.set_charset('us-ascii')
         eq(msg['content-transfer-encoding'], '7bit')
-
-    def test_encode_base64(self):
-        eq = self.assertEqual
-        msg = MIMEText('hello world', _encoder=Encoders.encode_base64)
-        eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=')
-        eq(msg['content-transfer-encoding'], 'base64')
-
-    def test_encode_quoted_printable(self):
-        eq = self.assertEqual
-        msg = MIMEText('hello world', _encoder=Encoders.encode_quopri)
-        eq(msg.get_payload(), 'hello=20world')
-        eq(msg['content-transfer-encoding'], 'quoted-printable')
 
     def test_default_cte(self):
         eq = self.assertEqual
@@ -932,16 +896,6 @@ class TestMIMEAudio(unittest.TestCase):
         au = MIMEAudio(self._audiodata, 'fish')
         self.assertEqual(im.get_type(), 'audio/fish')
 
-    def test_custom_encoder(self):
-        eq = self.assertEqual
-        def encoder(msg):
-            orig = msg.get_payload()
-            msg.set_payload(0)
-            msg['Content-Transfer-Encoding'] = 'broken64'
-        au = MIMEAudio(self._audiodata, _encoder=encoder)
-        eq(au.get_payload(), 0)
-        eq(au['content-transfer-encoding'], 'broken64')
-
     def test_add_header(self):
         eq = self.assertEqual
         unless = self.failUnless
@@ -984,16 +938,6 @@ class TestMIMEImage(unittest.TestCase):
     def checkSetMinor(self):
         im = MIMEImage(self._imgdata, 'fish')
         self.assertEqual(im.get_type(), 'image/fish')
-
-    def test_custom_encoder(self):
-        eq = self.assertEqual
-        def encoder(msg):
-            orig = msg.get_payload()
-            msg.set_payload(0)
-            msg['Content-Transfer-Encoding'] = 'broken64'
-        im = MIMEImage(self._imgdata, _encoder=encoder)
-        eq(im.get_payload(), 0)
-        eq(im['content-transfer-encoding'], 'broken64')
 
     def test_add_header(self):
         eq = self.assertEqual
@@ -1396,8 +1340,8 @@ class TestNonConformant(TestEmailBase):
         eq = self.assertEqual
         msg = self._msgobj('msg_14.txt')
         eq(msg.get_type(), 'text')
-        eq(msg.get_main_type(), None)
-        eq(msg.get_subtype(), None)
+        eq(msg.get_content_maintype(), 'text')
+        eq(msg.get_content_subtype(), 'plain')
 
     def test_same_boundary_inner_outer(self):
         unless = self.failUnless
@@ -1406,14 +1350,17 @@ class TestNonConformant(TestEmailBase):
         inner = msg.get_payload(0)
         unless(hasattr(inner, 'defects'))
         self.assertEqual(len(inner.defects), 1)
-        unless(isinstance(inner.defects[0], Errors.StartBoundaryNotFound))
+        unless(isinstance(inner.defects[0],
+                          Errors.StartBoundaryNotFoundDefect))
 
     def test_multipart_no_boundary(self):
         unless = self.failUnless
         msg = self._msgobj('msg_25.txt')
         unless(isinstance(msg.get_payload(), str))
-        self.assertEqual(len(msg.defects), 1)
-        unless(isinstance(msg.defects[0], Errors.NoBoundaryInMultipart))
+        self.assertEqual(len(msg.defects), 2)
+        unless(isinstance(msg.defects[0], Errors.NoBoundaryInMultipartDefect))
+        unless(isinstance(msg.defects[1],
+                          Errors.MultipartInvariantViolationDefect))
 
     def test_invalid_content_type(self):
         eq = self.assertEqual
@@ -1464,40 +1411,19 @@ Subject: here's something interesting
 counter to RFC 2822, there's no separating newline here
 """)
 
+    def test_lying_multipart(self):
+        unless = self.failUnless
+        msg = self._msgobj('msg_41.txt')
+        unless(hasattr(msg, 'defects'))
+        self.assertEqual(len(msg.defects), 2)
+        unless(isinstance(msg.defects[0], Errors.NoBoundaryInMultipartDefect))
+        unless(isinstance(msg.defects[1],
+                          Errors.MultipartInvariantViolationDefect))
+
 
 
 # Test RFC 2047 header encoding and decoding
 class TestRFC2047(unittest.TestCase):
-    def test_iso_8859_1(self):
-        eq = self.assertEqual
-        s = '=?iso-8859-1?q?this=20is=20some=20text?='
-        eq(Utils.decode(s), 'this is some text')
-        s = '=?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?='
-        eq(Utils.decode(s), u'Keld J\xf8rn Simonsen')
-        s = '=?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=' \
-            '=?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?='
-        eq(Utils.decode(s), 'If you can read this you understand the example.')
-        s = '=?iso-8859-8?b?7eXs+SDv4SDp7Oj08A==?='
-        eq(Utils.decode(s),
-           u'\u05dd\u05d5\u05dc\u05e9 \u05df\u05d1 \u05d9\u05dc\u05d8\u05e4\u05e0')
-        s = '=?iso-8859-1?q?this=20is?= =?iso-8859-1?q?some=20text?='
-        eq(Utils.decode(s), u'this issome text')
-        s = '=?iso-8859-1?q?this=20is_?= =?iso-8859-1?q?some=20text?='
-        eq(Utils.decode(s), u'this is some text')
-
-    def test_encode_header(self):
-        eq = self.assertEqual
-        s = 'this is some text'
-        eq(Utils.encode(s), '=?iso-8859-1?q?this=20is=20some=20text?=')
-        s = 'Keld_J\xf8rn_Simonsen'
-        eq(Utils.encode(s), '=?iso-8859-1?q?Keld_J=F8rn_Simonsen?=')
-        s1 = 'If you can read this yo'
-        s2 = 'u understand the example.'
-        eq(Utils.encode(s1, encoding='b'),
-           '=?iso-8859-1?b?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=')
-        eq(Utils.encode(s2, charset='iso-8859-2', encoding='b'),
-           '=?iso-8859-2?b?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=')
-
     def test_rfc2047_multiline(self):
         eq = self.assertEqual
         s = """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz
@@ -1517,10 +1443,7 @@ class TestRFC2047(unittest.TestCase):
         s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
         dh = decode_header(s)
         eq(dh, [('Andr\xe9', 'iso-8859-1'), ('Pirard <pirard@dom.ain>', None)])
-        # Python 2.1's unicode() builtin doesn't call the object's
-        # __unicode__() method.  Use the following alternative instead.
-        #hu = unicode(make_header(dh)).encode('latin-1')
-        hu = make_header(dh).__unicode__().encode('latin-1')
+        hu = unicode(make_header(dh)).encode('latin-1')
         eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
     def test_whitespace_eater_unicode_2(self):
@@ -1870,8 +1793,8 @@ class TestIdempotent(TestEmailBase):
         eq = self.assertEquals
         msg, text = self._msgobj('msg_01.txt')
         eq(msg.get_type(), 'text/plain')
-        eq(msg.get_main_type(), 'text')
-        eq(msg.get_subtype(), 'plain')
+        eq(msg.get_content_maintype(), 'text')
+        eq(msg.get_content_subtype(), 'plain')
         eq(msg.get_params()[1], ('charset', 'us-ascii'))
         eq(msg.get_param('charset'), 'us-ascii')
         eq(msg.preamble, None)
@@ -2712,11 +2635,7 @@ class TestHeader(TestEmailBase):
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
-        # Test for conversion to unicode.  BAW: Python 2.1 doesn't support the
-        # __unicode__() protocol, so do things this way for compatibility.
-        ustr = h.__unicode__()
-        # For Python 2.2 and beyond
-        #ustr = unicode(h)
+        ustr = unicode(h)
         eq(ustr.encode('utf-8'),
            'Die Mieter treten hier ein werden mit einem Foerderband '
            'komfortabel den Korridor entlang, an s\xc3\xbcdl\xc3\xbcndischen '
@@ -2955,6 +2874,15 @@ Content-Type: text/plain;
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_content_charset(),
                          'this is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_unknown_encoding(self):
+        m = """\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename*0=X-UNKNOWN''myfile.txt
+
+"""
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(), 'myfile.txt')
 
 
 

@@ -1,8 +1,8 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
-"""Class representing image/* type MIME documents.
-"""
+"""Class representing image/* type MIME documents."""
 
 import imghdr
 
@@ -39,7 +39,7 @@ class MIMEImage(MIMENonMultipart):
         if _subtype is None:
             _subtype = imghdr.what(None, _imagedata)
         if _subtype is None:
-            raise TypeError, 'Could not guess image MIME subtype'
+            raise TypeError('Could not guess image MIME subtype')
         MIMENonMultipart.__init__(self, 'image', _subtype, **_params)
         self.set_payload(_imagedata)
         _encoder(self)

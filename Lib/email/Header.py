@@ -1,5 +1,6 @@
 # Copyright (C) 2002-2004 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
+# Author: Ben Gertzfield, Barry Warsaw
+# Contact: email-sig@python.org
 
 """Header encoding and decoding functionality."""
 

@@ -1,18 +1,6 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
-
-# XXX The following information needs updating.
-
-# Python 2.3 doesn't come with any Asian codecs by default.  Two packages are
-# currently available and supported as of this writing (30-Dec-2003):
-#
-# CJKCodecs
-# http://cjkpython.i18n.org
-# This package contains Chinese, Japanese, and Korean codecs
-
-# JapaneseCodecs
-# http://www.asahi-net.or.jp/~rd6t-kjym/python
-# Some Japanese users prefer this codec package
+# Author: Ben Gertzfield, Barry Warsaw
+# Contact: email-sig@python.org
 
 import email.base64MIME
 import email.quopriMIME
@@ -21,9 +9,9 @@ from email.Encoders import encode_7or8bit
 
 
 # Flags for types of header encodings
-QP     = 1   # Quoted-Printable
-BASE64 = 2   # Base64
-SHORTEST = 3 # the shorter of QP and base64, but only for headers
+QP          = 1 # Quoted-Printable
+BASE64      = 2 # Base64
+SHORTEST    = 3 # the shorter of QP and base64, but only for headers
 
 # In "=?charset?q?hello_world?=", the =?, ?q?, and ?= add up to 7
 MISC_LEN = 7
@@ -128,7 +116,7 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
     documentation for more information.
     """
     if body_enc == SHORTEST:
-        raise ValueError, 'SHORTEST not allowed for body_enc'
+        raise ValueError('SHORTEST not allowed for body_enc')
     CHARSETS[charset] = (header_enc, body_enc, output_charset)
 
 

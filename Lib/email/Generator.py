@@ -1,13 +1,14 @@
 # Copyright (C) 2001-2004 Python Software Foundation
-# Author: barry@python.org (Barry Warsaw)
+# Author: Barry Warsaw
+# Contact: email-sig@python.org
 
-"""Classes to generate plain text from a message object tree.
-"""
+"""Classes to generate plain text from a message object tree."""
 
 import re
 import sys
 import time
 import random
+import warnings
 from cStringIO import StringIO
 
 from email.Header import Header
@@ -81,7 +82,10 @@ class Generator:
         self._write(msg)
 
     # For backwards compatibility, but this is slower
-    __call__ = flatten
+    def __call__(self, msg, unixfrom=False):
+        warnings.warn('__call__() deprecated; use flatten()',
+                      DeprecationWarning, 2)
+        self.flatten(msg, unixfrom)
 
     def clone(self, fp):
         """Clone this generator with the exact same options."""
@@ -175,7 +179,7 @@ class Generator:
         if cset is not None:
             payload = cset.body_encode(payload)
         if not isinstance(payload, basestring):
-            raise TypeError, 'string payload expected: %s' % type(payload)
+            raise TypeError('string payload expected: %s' % type(payload))
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
         self._fp.write(payload)
@@ -271,6 +275,8 @@ class Generator:
 
 
 
+_FMT = '[Non-text (%(type)s) part of message omitted, filename %(filename)s]'
+
 class DecodedGenerator(Generator):
     """Generator a text representation of a message.
 
@@ -301,13 +307,13 @@ class DecodedGenerator(Generator):
         """
         Generator.__init__(self, outfp, mangle_from_, maxheaderlen)
         if fmt is None:
-            fmt = ('[Non-text (%(type)s) part of message omitted, '
-                   'filename %(filename)s]')
-        self._fmt = fmt
+            self._fmt = _FMT
+        else:
+            self._fmt = fmt
 
     def _dispatch(self, msg):
         for part in msg.walk():
-            maintype = part.get_main_type('text')
+            maintype = part.get_content_maintype()
             if maintype == 'text':
                 print >> self, part.get_payload(decode=True)
             elif maintype == 'multipart':
@@ -315,9 +321,9 @@ class DecodedGenerator(Generator):
                 pass
             else:
                 print >> self, self._fmt % {
-                    'type'       : part.get_type('[no MIME type]'),
-                    'maintype'   : part.get_main_type('[no main MIME type]'),
-                    'subtype'    : part.get_subtype('[no sub-MIME type]'),
+                    'type'       : part.get_content_type(),
+                    'maintype'   : part.get_content_maintype(),
+                    'subtype'    : part.get_content_subtype(),
                     'filename'   : part.get_filename('[no filename]'),
                     'description': part.get('Content-Description',
                                             '[no description]'),
