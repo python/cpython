@@ -13,3 +13,4 @@ test_scope
 12. lambdas
 13. UnboundLocal
 14. complex definitions
+15. scope of global statements
