@@ -1,6 +1,6 @@
 from test_support import verbose
 import re
-import sys, traceback
+import sys, os, string, traceback
 
 from re_tests import *
 if verbose: print 'Running re_tests test suite'
@@ -50,6 +50,13 @@ for t in tests:
 		    except IndexError:
 			gi = "Error"
 		    vardict['g%d' % i] = gi
+		for i in result.re.groupindex.keys():
+		    try:
+			gi = result.group(i)
+		    except IndexError:
+			pass
+		    else:
+			vardict[i] = str(gi)
 		repl=eval(repl, vardict)
 		if repl!=expected:
 		    print '=== grouping error', t,
