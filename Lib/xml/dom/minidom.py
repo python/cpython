@@ -331,7 +331,7 @@ class Element( Node ):
 
         for a_name in a_names:
             writer.write(" %s=\"" % a_name)
-            _write_data(writer, self._get_attributes()[a_name])
+            _write_data(writer, self._get_attributes()[a_name].value)
             writer.write("\"")
         if self.childNodes:
             writer.write(">")
@@ -429,7 +429,7 @@ class Document(Node):
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
         prefix,localName = _nssplit(qualifiedName)
-        return Attr(namespaceURI, qualifiedName, localName, prefix)
+        return Attr(qualifiedName, namespaceURI, localName, prefix)
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
         _getElementsByTagNameNSHelper(self, namespaceURI, localName)
