@@ -8,10 +8,6 @@
 #    and Tim Peters
 
 
-# Todo:
-#    Add rich comparisons for equality testing with other types
-
-
 """
 This is a Py2.3 implementation of decimal floating point arithmetic based on
 the General Decimal Arithmetic Specification:
@@ -643,6 +639,16 @@ class Decimal(object):
         elif res._sign:
             return -1
         return 1
+
+    def __eq__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return False
+        return self.__cmp__(other) == 0
+
+    def __ne__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return True
+        return self.__cmp__(other) != 0
 
     def compare(self, other, context=None):
         """Compares one to another.

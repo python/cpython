@@ -33,6 +33,7 @@ import pickle, copy
 from decimal import *
 from test.test_support import TestSkipped, run_unittest, run_doctest, is_resource_enabled
 import threading
+import random
 
 # Tests are built around these assumed context defaults
 DefaultContext.prec=9
@@ -841,17 +842,17 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(cmp(dc,45), 0)
 
         #a Decimal and uncomparable
-        try: da == 'ugly'
-        except TypeError: pass
-        else: self.fail('Did not raised an error!')
+        self.assertNotEqual(da, 'ugly')
+        self.assertNotEqual(da, 32.7)
+        self.assertNotEqual(da, object())
+        self.assertNotEqual(da, object)
 
-        try: da == '32.7'
-        except TypeError: pass
-        else: self.fail('Did not raised an error!')
-
-        try: da == object
-        except TypeError: pass
-        else: self.fail('Did not raised an error!')
+        # sortable
+        a = map(Decimal, xrange(100))
+        b =  a[:]
+        random.shuffle(a)
+        a.sort()
+        self.assertEqual(a, b)
 
     def test_copy_and_deepcopy_methods(self):
         d = Decimal('43.24')
@@ -1077,6 +1078,10 @@ class ContextAPItests(unittest.TestCase):
             v1 = vars(c)[k]
             v2 = vars(e)[k]
             self.assertEqual(v1, v2)
+
+    def test_equality_with_other_types(self):
+        self.assert_(Decimal(10) in ['a', 1.0, Decimal(10), (1,2), {}])
+        self.assert_(Decimal(10) not in ['a', 1.0, (1,2), {}])
 
 def test_main(arith=False, verbose=None):
     """ Execute the tests.
