@@ -168,49 +168,8 @@ class SocketIO:
             raise
         except:
             self.debug("localcall:EXCEPTION")
-            if self.debugging: traceback.print_exc(file=sys.__stderr__)
-            efile = sys.stderr
-            typ, val, tb = info = sys.exc_info()
-            sys.last_type, sys.last_value, sys.last_traceback = info
-            tbe = traceback.extract_tb(tb)
-            print >>efile, '\nTraceback (most recent call last):'
-            exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
-            self.cleanup_traceback(tbe, exclude)
-            traceback.print_list(tbe, file=efile)
-            lines = traceback.format_exception_only(typ, val)
-            for line in lines:
-                print>>efile, line,
+            traceback.print_exc(file=sys.__stderr__)
             return ("EXCEPTION", None)
-
-    def cleanup_traceback(self, tb, exclude):
-        "Remove excluded traces from beginning/end of tb; get cached lines"
-        orig_tb = tb[:]
-        while tb:
-            for rpcfile in exclude:
-                if tb[0][0].count(rpcfile):
-                    break    # found an exclude, break for: and delete tb[0]
-            else:
-                break        # no excludes, have left RPC code, break while:
-            del tb[0]
-        while tb:
-            for rpcfile in exclude:
-                if tb[-1][0].count(rpcfile):
-                    break
-            else:
-                break
-            del tb[-1]
-        if len(tb) == 0:
-            # exception was in RPC internals, don't prune!
-            tb[:] = orig_tb[:]
-            print>>sys.stderr, "** IDLE RPC Internal Exception: "
-        for i in range(len(tb)):
-            fn, ln, nm, line = tb[i]
-            if nm == '?':
-                nm = "-toplevel-"
-            if not line and fn.startswith("<pyshell#"):
-                line = self.remotecall('linecache', 'getline',
-                                       (fn, ln), {})
-            tb[i] = fn, ln, nm, line
 
     def remotecall(self, oid, methodname, args, kwargs):
         self.debug("remotecall:asynccall: ", oid, methodname)
