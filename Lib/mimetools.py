@@ -3,7 +3,6 @@
 
 import os
 import rfc822
-import string
 import tempfile
 
 
@@ -25,17 +24,17 @@ class Message(rfc822.Message):
 		if str is None:
 			str = 'text/plain'
 		if ';' in str:
-			i = string.index(str, ';')
+			i = str.index(';')
 			self.plisttext = str[i:]
 			str = str[:i]
 		else:
 			self.plisttext = ''
-		fields = string.splitfields(str, '/')
+		fields = str.split('/')
 		for i in range(len(fields)):
-			fields[i] = string.lower(string.strip(fields[i]))
-		self.type = string.joinfields(fields, '/')
+			fields[i] = fields[i].strip().lower()
+		self.type = '/'.join(fields)
 		self.maintype = fields[0]
-		self.subtype = string.joinfields(fields[1:], '/')
+		self.subtype = '/'.join(fields[1:])
 
 	def parseplist(self):
 		str = self.plisttext
@@ -44,22 +43,22 @@ class Message(rfc822.Message):
 			str = str[1:]
 			if ';' in str:
 				# XXX Should parse quotes!
-				end = string.index(str, ';')
+				end = str.index(';')
 			else:
 				end = len(str)
 			f = str[:end]
 			if '=' in f:
-				i = string.index(f, '=')
-				f = string.lower(string.strip(f[:i])) + \
-					'=' + string.strip(f[i+1:])
-			self.plist.append(string.strip(f))
+				i = f.index('=')
+				f = f[:i].strip().lower() + \
+					'=' + f[i+1:].strip()
+			self.plist.append(f.strip())
 			str = str[end:]
 
 	def getplist(self):
 		return self.plist
 
 	def getparam(self, name):
-		name = string.lower(name) + '='
+		name = name.lower() + '='
 		n = len(name)
 		for p in self.plist:
 			if p[:n] == name:
@@ -69,15 +68,15 @@ class Message(rfc822.Message):
 	def getparamnames(self):
 		result = []
 		for p in self.plist:
-			i = string.find(p, '=')
+			i = p.find('=')
 			if i >= 0:
-				result.append(string.lower(p[:i]))
+				result.append(p[:i].lower())
 		return result
 
 	def getencoding(self):
 		if self.encodingheader is None:
 			return '7bit'
-		return string.lower(self.encodingheader)
+		return self.encodingheader.lower()
 
 	def gettype(self):
 		return self.type
