@@ -269,6 +269,86 @@ struct _inittab {
 \end{cfuncdesc}
 
 
+\section{Data marshalling support \label{marshalling-utils}}
+
+These routines allow C code to work with serialized objects using the
+same data format as the \module{marshal} module.  There are functions
+to write data into the serialization format, and additional functions
+that can be used to read the data back.  Files used to store marshalled
+data must be opened in binary mode.
+
+Numeric values are stored with the least significant byte first.
+
+\begin{cfuncdesc}{void}{PyMarshal_WriteLongToFile}{long value, FILE *file}
+  Marshal a \ctype{long} integer, \var{value}, to \var{file}.  This
+  will only write the least-significant 32 bits of \var{value};
+  regardless of the size of the native \ctype{long} type.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyMarshal_WriteShortToFile}{short value, FILE *file}
+  Marshal a \ctype{short} integer, \var{value}, to \var{file}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyMarshal_WriteObjectToFile}{PyObject *value,
+                                                     FILE *file}
+  Marshal a Python object, \var{value}, to \var{file}.  This
+  will only write the least-significant 16 bits of \var{value};
+  regardless of the size of the native \ctype{short} type.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMarshal_WriteObjectToString}{PyObject *value}
+  Return a string object containing the marshalled representation of
+  \var{value}.
+\end{cfuncdesc}
+
+The following functions allow marshalled values to be read back in.
+
+XXX What about error detection?  It appears that reading past the end
+of the file will always result in a negative numeric value (where
+that's relevant), but it's not clear that negative values won't be
+handled properly when there's no error.  What's the right way to tell?
+Should only non-negative values be written using these routines?
+
+\begin{cfuncdesc}{long}{PyMarshal_ReadLongFromFile}{FILE *file}
+  Return a C \ctype{long} from the data stream in a \ctype{FILE*}
+  opened for reading.  Only a 32-bit value can be read in using
+  this function, regardless of the native size of \ctype{long}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyMarshal_ReadShortFromFile}{FILE *file}
+  Return a C \ctype{short} from the data stream in a \ctype{FILE*}
+  opened for reading.  Only a 16-bit value can be read in using
+  this function, regardless of the native size of \ctype{long}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMarshal_ReadObjectFromFile}{FILE *file}
+  Return a Python object from the data stream in a \ctype{FILE*}
+  opened for reading.  On error, sets the appropriate exception
+  (\exception{EOFError} or \exception{TypeError}) and returns \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMarshal_ReadLastObjectFromFile}{FILE *file}
+  Return a Python object from the data stream in a \ctype{FILE*}
+  opened for reading.  Unlike
+  \cfunction{PyMarshal_ReadObjectFromFile()}, this function assumes
+  that no further objects will be read from the file, allowing it to
+  aggressively load file data into memory so that the de-serialization
+  can operate from data in memory rather than reading a byte at a time
+  from the file.  Only use these variant if you are certain that you
+  won't be reading anything else from the file.  On error, sets the
+  appropriate exception (\exception{EOFError} or
+  \exception{TypeError}) and returns \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMarshal_ReadObjectFromString}{char *string,
+                                                             int len}
+  Return a Python object from the data stream in a character buffer
+  containing \var{len} bytes pointed to by \var{string}.  On error,
+  sets the appropriate exception (\exception{EOFError} or
+  \exception{TypeError}) and returns \NULL.
+\end{cfuncdesc}
+
+
 \section{Parsing arguments and building values
          \label{arg-parsing}}
 
