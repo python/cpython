@@ -57,8 +57,7 @@ def strftest(now):
 	('%w', '%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
 	('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
 	 'week number of the year (Mon 1st)'),
-	('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
-	 '%m/%d/%y %H:%M:%S'),
+	# %x see below
 	('%X', '%02d:%02d:%02d' % (now[3], now[4], now[5]), '%H:%M:%S'),
 	('%y', '%02d' % (now[0]%100), 'year without century'),
 	('%Y', '%d' % now[0], 'year with century'),
@@ -69,6 +68,8 @@ def strftest(now):
     nonstandard_expectations = (
 	# These are standard but don't have predictable output
 	('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
+	('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
+	 '%m/%d/%y %H:%M:%S'),
 	('(%Z)', '(%s)' % tz, 'time zone name'),
 
 	# These are some platform specific extensions
