@@ -184,6 +184,7 @@ lookdict(mp, key, hash)
 	{
 		return ep;
 	}
+	/* XXX What if PyObject_Compare returned an exception? */
 	/* Derive incr from sum, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
 	incr = (sum ^ (sum >> 3)) & mask;
@@ -209,6 +210,7 @@ lookdict(mp, key, hash)
 			  PyObject_Compare(ep->me_key, key) == 0)) {
 			return ep;
 		}
+		/* XXX What if PyObject_Compare returned an exception? */
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
 		if (incr > mask)
@@ -738,10 +740,12 @@ characterize(a, b, pval)
 		if (a->ma_table[i].me_value != NULL) {
 			PyObject *key = a->ma_table[i].me_key;
 			PyObject *aval, *bval;
+			/* XXX What if PyObject_Compare raises an exception? */
 			if (diff != NULL && PyObject_Compare(key, diff) > 0)
 				continue;
 			aval = a->ma_table[i].me_value;
 			bval = PyDict_GetItem((PyObject *)b, key);
+			/* XXX What if PyObject_Compare raises an exception? */
 			if (bval == NULL || PyObject_Compare(aval, bval) != 0)
 			{
 				diff = key;
@@ -766,9 +770,13 @@ dict_compare(a, b)
 		return 1;	/* b is shorter */
 	/* Same length -- check all keys */
 	adiff = characterize(a, b, &aval);
+	if (PyErr_Occurred())
+		return -1;
 	if (adiff == NULL)
 		return 0;	/* a is a subset with the same length */
 	bdiff = characterize(b, a, &bval);
+	if (PyErr_Occurred())
+		return -1;
 	/* bdiff == NULL would be impossible now */
 	res = PyObject_Compare(adiff, bdiff);
 	if (res == 0)
