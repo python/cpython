@@ -2,7 +2,7 @@
 #define CSTRINGIO_INCLUDED
 /*
 
-  $Id$
+  cStringIO.h,v 1.3 1997/06/13 19:44:02 jim Exp
 
   cStringIO C API
 
@@ -69,13 +69,7 @@
 
   This would typically be done in your init function.
 
-  $Log$
-  Revision 2.6  1997/10/07 14:44:48  guido
-  Use K&R function prototypes.
-
-  Revision 2.5  1997/08/13 03:14:08  guido
-  cPickle release 0.3 from Jim Fulton
-
+  cStringIO.h,v
   Revision 1.3  1997/06/13 19:44:02  jim
   - changed to avoid warning of multiple declarations in 1.5 and
     our 1.4.
