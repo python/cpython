@@ -7,7 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import struct, __builtin__
+import __builtin__, sys
 
 ### Registry and builtin stateless codec functions
 
@@ -48,11 +48,21 @@ BOM_UTF32_LE = '\xff\xfe\x00\x00'
 # UTF-32, big endian
 BOM_UTF32_BE = '\x00\x00\xfe\xff'
 
-# UTF-16, native endianness
-BOM = BOM_UTF16 = struct.pack('=H', 0xFEFF)
+if sys.byteorder == 'little':
 
-# UTF-32, native endianness
-BOM_UTF32 = struct.pack('=L', 0x0000FEFF)
+    # UTF-16, native endianness
+    BOM = BOM_UTF16 = BOM_UTF16_LE
+
+    # UTF-32, native endianness
+    BOM_UTF32 = BOM_UTF32_LE
+
+else:
+
+    # UTF-16, native endianness
+    BOM = BOM_UTF16 = BOM_UTF16_BE
+
+    # UTF-32, native endianness
+    BOM_UTF32 = BOM_UTF32_BE
 
 # Old broken names (don't use in new code)
 BOM32_LE = BOM_UTF16_LE
