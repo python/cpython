@@ -264,7 +264,7 @@ class PyBuildExt(build_ext):
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
-        lib_dirs = self.compiler.library_dirs + ['/lib', '/usr/lib']
+        lib_dirs = self.compiler.library_dirs + ['/lib', '/usr/lib', '/usr/lib/lib64']
         inc_dirs = self.compiler.include_dirs + ['/usr/include']
         exts = []
 
