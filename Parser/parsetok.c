@@ -154,8 +154,11 @@ parsetok(tok, g, start, err_ret)
 		str[len] = '\0';
 		if ((err_ret->error =
 		     PyParser_AddToken(ps, (int)type, str,
-				       tok->lineno)) != E_OK)
+				       tok->lineno)) != E_OK) {
+			if (err_ret->error != E_DONE)
+				PyMem_DEL(str);
 			break;
+		}
 	}
 
 	if (err_ret->error == E_DONE) {
