@@ -1643,7 +1643,6 @@ PyCurses_UngetMouse(self,args)
      PyObject *self;
      PyObject *args;
 {
-	int rtn;
 	MEVENT event;
 
 	PyCursesInitialised
@@ -1947,7 +1946,7 @@ PyCurses_MouseMask(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-	int newmask, rtn;
+	int newmask;
 	mmask_t oldmask, availmask;
 
 	PyCursesInitialised 
@@ -2159,7 +2158,7 @@ PyCurses_TypeAhead(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  int fd, err;
+  int fd;
 
   PyCursesInitialised
 
@@ -2302,6 +2301,8 @@ static PyMethodDef PyCurses_methods[] = {
   {"raw",                 (PyCFunction)PyCurses_raw},
   {"reset_prog_mode",     (PyCFunction)PyCurses_reset_prog_mode},
   {"reset_shell_mode",    (PyCFunction)PyCurses_reset_shell_mode},
+  {"resetty",             (PyCFunction)PyCurses_resetty},
+  {"savetty",             (PyCFunction)PyCurses_savetty},
   {"setsyx",              (PyCFunction)PyCurses_setsyx},
   {"start_color",         (PyCFunction)PyCurses_Start_Color},
   {"termattrs",           (PyCFunction)PyCurses_termattrs},
