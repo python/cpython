@@ -128,7 +128,7 @@ Letters, digits, and the characters \character{_,.-} are never quoted.
 The optional \var{safe} parameter specifies additional characters
 that should not be quoted --- its default value is \code{'/'}.
 
-Example: \code{quote('/\~connolly/')} yields \code{'/\%7econnolly/'}.
+Example: \code{quote('/\~{}connolly/')} yields \code{'/\%7econnolly/'}.
 \end{funcdesc}
 
 \begin{funcdesc}{quote_plus}{string\optional{, safe}}
@@ -140,7 +140,7 @@ string are escaped unless they are included in \var{safe}.
 \begin{funcdesc}{unquote}{string}
 Replace \samp{\%xx} escapes by their single-character equivalent.
 
-Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~connolly/'}.
+Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~{}connolly/'}.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote_plus}{string}
