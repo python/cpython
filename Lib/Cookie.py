@@ -215,7 +215,7 @@ Finis.
 #
 # Import our required modules
 #
-import string, sys
+import string
 from UserDict import UserDict
 
 try:

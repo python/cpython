@@ -27,8 +27,6 @@ current file part.  This may be useful when using MultiFile with a non-
 seekable stream object.
 """
 
-import sys
-
 __all__ = ["MultiFile","Error"]
 
 class Error(Exception):

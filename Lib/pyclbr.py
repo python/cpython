@@ -53,7 +53,6 @@ PACKAGE RELATED BUGS
   exists coded in Python in the freeze package.)
 """
 
-import os
 import sys
 import imp
 import re
