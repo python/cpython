@@ -819,18 +819,19 @@ eval_frame(PyFrameObject *f)
 			   for expository comments */
 			f->f_stacktop = stack_pointer;
 			
-			if (maybe_call_line_trace(tstate->c_tracefunc,
-						  tstate->c_traceobj,
-						  f, &instr_lb, &instr_ub)) {
-				/* trace function raised an exception */
-				why = WHY_EXCEPTION;
-				goto on_error;
-			}
+			err = maybe_call_line_trace(tstate->c_tracefunc,
+						    tstate->c_traceobj,
+						    f, &instr_lb, &instr_ub);
 			/* Reload possibly changed frame fields */
 			JUMPTO(f->f_lasti);
-			stack_pointer = f->f_stacktop;
-			assert(stack_pointer != NULL);
-			f->f_stacktop = NULL;
+			if (f->f_stacktop != NULL) {
+				stack_pointer = f->f_stacktop;
+				f->f_stacktop = NULL;
+			}
+			if (err) {
+				/* trace function raised an exception */
+				goto on_error;
+			}
 		}
 
 		/* Extract opcode and argument */
