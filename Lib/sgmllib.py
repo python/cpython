@@ -12,7 +12,7 @@
 import markupbase
 import re
 
-__all__ = ["SGMLParser"]
+__all__ = ["SGMLParser", "SGMLParseError"]
 
 # Regular expressions used for parsing
 
