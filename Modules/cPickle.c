@@ -504,7 +504,7 @@ readline_other(Unpicklerobject *self, char **s) {
 
 
 static char *
-strndup(char *s, int l)
+pystrndup(char *s, int l)
 {
   char *r;
   UNLESS(r=malloc((l+1)*sizeof(char))) return (char*)PyErr_NoMemory();
@@ -2013,7 +2013,7 @@ load_int(Unpicklerobject *self) {
     long l;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=pystrndup(s,len)) return -1;
 
     errno = 0;
     l = strtol(s, &endptr, 0);
@@ -2121,7 +2121,7 @@ load_long(Unpicklerobject *self) {
     int len, res = -1;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=pystrndup(s,len)) return -1;
 
     UNLESS(l = PyLong_FromString(s, &end, 0))
         goto finally;
@@ -2147,7 +2147,7 @@ load_float(Unpicklerobject *self) {
     double d;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=pystrndup(s,len)) return -1;
 
     errno = 0;
     d = strtod(s, &endptr);
@@ -2257,7 +2257,7 @@ load_string(Unpicklerobject *self) {
     static PyObject *eval_dict = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=pystrndup(s,len)) return -1;
 
     UNLESS(eval_dict)
         UNLESS(eval_dict = Py_BuildValue("{s{}}", "__builtins__"))
@@ -3912,6 +3912,10 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.9  1997/08/20 23:38:57  guido
+ Renamed strndup to pystrndup, to avoid conflicting prototype
+ in GNU libc on some platforms.
+
  Revision 2.8  1997/08/13 03:14:37  guido
  cPickle release 0.3 from Jim Fulton
 
