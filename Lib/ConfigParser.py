@@ -106,11 +106,11 @@ class Error(Exception):
     """Base class for ConfigParser exceptions."""
 
     def __init__(self, msg=''):
-        self._msg = msg
+        self.message = msg
         Exception.__init__(self, msg)
 
     def __repr__(self):
-        return self._msg
+        return self.message
 
     __str__ = __repr__
 
@@ -118,56 +118,60 @@ class NoSectionError(Error):
     """Raised when no section matches a requested option."""
 
     def __init__(self, section):
-        Error.__init__(self, 'No section: %s' % section)
+        Error.__init__(self, 'No section: ' + `section`)
         self.section = section
 
 class DuplicateSectionError(Error):
     """Raised when a section is multiply-created."""
 
     def __init__(self, section):
-        Error.__init__(self, "Section %s already exists" % section)
+        Error.__init__(self, "Section %r already exists" % section)
         self.section = section
 
 class NoOptionError(Error):
     """A requested option was not found."""
 
     def __init__(self, option, section):
-        Error.__init__(self, "No option `%s' in section: %s" %
+        Error.__init__(self, "No option %r in section: %r" %
                        (option, section))
         self.option = option
         self.section = section
 
 class InterpolationError(Error):
-    """A string substitution required a setting which was not available."""
+    """Base class for interpolation-related exceptions."""
 
-    def __init__(self, reference, option, section, rawval):
-        Error.__init__(self,
-                       "Bad value substitution:\n"
-                       "\tsection: [%s]\n"
-                       "\toption : %s\n"
-                       "\tkey    : %s\n"
-                       "\trawval : %s\n"
-                       % (section, option, reference, rawval))
-        self.reference = reference
+    def __init__(self, option, section, msg):
+        Error.__init__(self, msg)
         self.option = option
         self.section = section
 
-class InterpolationSyntaxError(Error):
+class InterpolationMissingOptionError(InterpolationError):
+    """A string substitution required a setting which was not available."""
+
+    def __init__(self, option, section, rawval, reference):
+        msg = ("Bad value substitution:\n"
+               "\tsection: [%s]\n"
+               "\toption : %s\n"
+               "\tkey    : %s\n"
+               "\trawval : %s\n"
+               % (section, option, reference, rawval))
+        InterpolationError.__init__(self, option, section, msg)
+        self.reference = reference
+
+class InterpolationSyntaxError(InterpolationError):
     """Raised when the source text into which substitutions are made
     does not conform to the required syntax."""
 
-class InterpolationDepthError(Error):
+class InterpolationDepthError(InterpolationError):
     """Raised when substitutions are nested too deeply."""
 
     def __init__(self, option, section, rawval):
-        Error.__init__(self,
-                       "Value interpolation too deeply recursive:\n"
-                       "\tsection: [%s]\n"
-                       "\toption : %s\n"
-                       "\trawval : %s\n"
-                       % (section, option, rawval))
-        self.option = option
-        self.section = section
+        msg = ("Value interpolation too deeply recursive:\n"
+               "\tsection: [%s]\n"
+               "\toption : %s\n"
+               "\trawval : %s\n"
+               % (section, option, rawval))
+        InterpolationError.__init__(self, option, section, msg)
 
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
@@ -179,7 +183,7 @@ class ParsingError(Error):
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
-        self._msg = self._msg + '\n\t[line %2d]: %s' % (lineno, line)
+        self.message += '\n\t[line %2d]: %s' % (lineno, line)
 
 class MissingSectionHeaderError(ParsingError):
     """Raised when a key-value pair is found before any section header."""
@@ -555,7 +559,8 @@ class ConfigParser(RawConfigParser):
                 try:
                     value = value % vars
                 except KeyError, e:
-                    raise InterpolationError(e[0], option, section, rawval)
+                    raise InterpolationMissingOptionError(
+                        option, section, rawval, e[0])
             else:
                 break
         if value.find("%(") != -1:
@@ -593,13 +598,14 @@ class SafeConfigParser(ConfigParser):
                 m = self._interpvar_match(rest)
                 if m is None:
                     raise InterpolationSyntaxError(
-                        "bad interpolation variable syntax at: %r" % rest)
+                        "bad interpolation variable reference", rest)
                 var = m.group(1)
                 rest = rest[m.end():]
                 try:
                     v = map[var]
                 except KeyError:
-                    raise InterpolationError(var, option, section, rest)
+                    raise InterpolationMissingOptionError(
+                        option, section, rest, var)
                 if "%" in v:
                     self._interpolate_some(option, accum, v,
                                            section, map, depth + 1)
@@ -607,4 +613,5 @@ class SafeConfigParser(ConfigParser):
                     accum.append(v)
             else:
                 raise InterpolationSyntaxError(
-                    "'%' must be followed by '%' or '('")
+                    option, section, rest,
+                    "'%' must be followed by '%' or '(', found: " + `rest`)

@@ -90,17 +90,26 @@ section.
 \end{excdesc}
 
 \begin{excdesc}{InterpolationError}
-Exception raised when problems occur performing string interpolation.
+Base class for exceptions raised when problems occur performing string
+interpolation.
 \end{excdesc}
 
 \begin{excdesc}{InterpolationDepthError}
 Exception raised when string interpolation cannot be completed because
 the number of iterations exceeds \constant{MAX_INTERPOLATION_DEPTH}.
+Subclass of \exception{InterpolationError}.
+\end{excdesc}
+
+\begin{excdesc}{InterpolationMissingOptionError}
+Exception raised when an option referenced from a value does not exist.
+Subclass of \exception{InterpolationError}.
+\versionadded{2.3}
 \end{excdesc}
 
 \begin{excdesc}{InterpolationSyntaxError}
 Exception raised when the source text into which substitutions are
 made does not conform to the required syntax.
+Subclass of \exception{InterpolationError}.
 \versionadded{2.3}
 \end{excdesc}
 
@@ -122,8 +131,8 @@ the \var{raw} parameter is false.  This is relevant only for the
 
 \begin{seealso}
   \seemodule{shlex}{Support for a creating \UNIX{} shell-like
-                    minilanguages which can be used as an alternate format
-                    for application configuration files.}
+                    mini-languages which can be used as an alternate
+                    format for application configuration files.}
 \end{seealso}
 
 
