@@ -510,8 +510,8 @@ is equivalent to a call with M+N positional arguments
 
 A consequence of this is that although the \samp{*expression} syntax
 appears \emph{after} any keyword arguments, it is processed
-\emph{before} the keyword arguments (and the \samp{**expression}
-argument, if any -- see below).  So:
+\emph{before} the keyword arguments (and the
+\samp{**expression} argument, if any -- see below).  So:
 
 \begin{verbatim}
 >>> def f(a, b):
@@ -527,9 +527,9 @@ TypeError: f() got multiple values for keyword argument 'a'
 1 2
 \end{verbatim}
 
-It is unusual for both keyword arguments and the \samp{*expression}
-syntax to be used in the same call, so in practice this confusion does
-not arise.
+It is unusual for both keyword arguments and the
+\samp{*expression} syntax to be used in the same call, so in practice
+this confusion does not arise.
 
 If the syntax \samp{**expression} appears in the function call,
 \samp{expression} must evaluate to a (subclass of) dictionary, the
