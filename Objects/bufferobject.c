@@ -141,6 +141,7 @@ PyBuffer_FromReadWriteMemory(void *ptr, int size)
 PyObject *
 PyBuffer_New(int size)
 {
+	PyObject *o;
 	PyBufferObject * b;
 
 	if (size < 0) {
@@ -149,10 +150,10 @@ PyBuffer_New(int size)
 		return NULL;
 	}
 	/* PyObject_New is inlined */
-	b = (PyBufferObject *) PyObject_MALLOC(sizeof(*b) + size);
-	if ( b == NULL )
+	o = PyObject_MALLOC(sizeof(*b) + size);
+	if ( o == NULL )
 		return PyErr_NoMemory();
-	PyObject_INIT((PyObject *)b, &PyBuffer_Type);
+	b = (PyBufferObject *) PyObject_INIT(o, &PyBuffer_Type);
 
 	b->b_base = NULL;
 	b->b_ptr = (void *)(b + 1);
@@ -162,7 +163,7 @@ PyBuffer_New(int size)
 	b->b_hash = -1;
 #endif
 
-	return (PyObject *) b;
+	return o;
 }
 
 /* Methods */

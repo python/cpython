@@ -1123,6 +1123,10 @@ _PyTrash_deposit_object(PyObject *op)
 		typecode = Py_TRASHCAN_FRAME;
 	else if (PyTraceBack_Check(op))
 		typecode = Py_TRASHCAN_TRACEBACK;
+	else /* We have a bug here -- those are the only types in GC */ {
+		Py_FatalError("Type not supported in GC -- internal bug");
+		return; /* pacify compiler -- execution never here */
+	}
 	op->ob_refcnt = typecode;
 
 	op->ob_type = (PyTypeObject*)_PyTrash_delete_later;
