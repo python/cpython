@@ -37,7 +37,7 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t == 'DragReference' and m == "InMode":
+			if t in ('DragReference', 'DragRef') and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname
