@@ -128,6 +128,9 @@ int exe_size;			/* number of bytes for exe-file portion */
 char python_dir[MAX_PATH];
 char pythondll[MAX_PATH];
 BOOL pyc_compile, pyo_compile;
+/* Either HKLM or HKCU, depending on where Python itself is registered, and
+   the permissions of the current user. */
+HKEY hkey_root = (HKEY)-1;
 
 BOOL success;			/* Installation successfull? */
 char *failure_reason = NULL;
@@ -580,11 +583,19 @@ static PyObject *PyMessageBox(PyObject *self, PyObject *args)
 	return g_Py_BuildValue("i", rc);
 }
 
+static PyObject *GetRootHKey(PyObject *self)
+{
+	return g_Py_BuildValue("l", hkey_root);
+}
+
 #define METH_VARARGS 0x0001
+#define METH_NOARGS   0x0004
+typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 
 PyMethodDef meth[] = {
 	{"create_shortcut", CreateShortcut, METH_VARARGS, NULL},
 	{"get_special_folder_path", GetSpecialFolderPath, METH_VARARGS, NULL},
+	{"get_root_hkey", (PyCFunction)GetRootHKey, METH_NOARGS, NULL},
 	{"file_created", FileCreated, METH_VARARGS, NULL},
 	{"directory_created", DirectoryCreated, METH_VARARGS, NULL},
 	{"message_box", PyMessageBox, METH_VARARGS, NULL},
@@ -727,7 +738,7 @@ static int run_simple_script(char *script)
 	int rc;
 	char *tempname;
 	HINSTANCE hPython;
-	tempname = tmpnam(NULL);
+	tempname = tempnam(NULL, NULL);
 	freopen(tempname, "a", stderr);
 	freopen(tempname, "a", stdout);
 
@@ -1320,6 +1331,11 @@ static BOOL GetOtherPythonVersion(HWND hwnd, LPSTR version)
 }
 #endif /* USE_OTHER_PYTHON_VERSIONS */
 
+typedef struct _InstalledVersionInfo {
+    char prefix[MAX_PATH+1]; // sys.prefix directory.
+    HKEY hkey; // Is this Python in HKCU or HKLM?
+} InstalledVersionInfo;
+
 
 /*
  * Fill the listbox specified by hwnd with all python versions found
@@ -1342,7 +1358,7 @@ static BOOL GetPythonVersions(HWND hwnd, HKEY hkRoot, LPSTR version)
 	while (ERROR_SUCCESS == RegEnumKeyEx(hKey, index,
 					      core_version, &bufsize, NULL,
 					      NULL, NULL, NULL)) {
-		char subkey_name[80], vers_name[80], prefix_buf[MAX_PATH+1];
+		char subkey_name[80], vers_name[80];
 		int itemindex;
 		DWORD value_size;
 		HKEY hk;
@@ -1357,20 +1373,68 @@ static BOOL GetPythonVersions(HWND hwnd, HKEY hkRoot, LPSTR version)
 		wsprintf(subkey_name,
 			  "Software\\Python\\PythonCore\\%s\\InstallPath",
 			  core_version);
-		value_size = sizeof(subkey_name);
 		if (ERROR_SUCCESS == RegOpenKeyEx(hkRoot, subkey_name, 0, KEY_READ, &hk)) {
-			if (ERROR_SUCCESS == RegQueryValueEx(hk, NULL, NULL, NULL, prefix_buf,
-							     &value_size)) {
+			InstalledVersionInfo *ivi = 
+			      (InstalledVersionInfo *)malloc(sizeof(InstalledVersionInfo));
+			value_size = sizeof(ivi->prefix);
+			if (ivi && 
+			    ERROR_SUCCESS == RegQueryValueEx(hk, NULL, NULL, NULL,
+			                                     ivi->prefix, &value_size)) {
 				itemindex = SendMessage(hwnd, LB_ADDSTRING, 0,
-							(LPARAM)(LPSTR)vers_name);
+				                        (LPARAM)(LPSTR)vers_name);
+				ivi->hkey = hkRoot;
 				SendMessage(hwnd, LB_SETITEMDATA, itemindex,
-					     (LPARAM)(LPSTR)strdup(prefix_buf));
+				            (LPARAM)(LPSTR)ivi);
 			}
 			RegCloseKey(hk);
 		}
 	}
 	RegCloseKey(hKey);
 	return result;
+}
+
+/* Determine if the current user can write to HKEY_LOCAL_MACHINE */
+BOOL HasLocalMachinePrivs()
+{
+		HKEY hKey;
+		DWORD result;
+		static char KeyName[] = 
+			"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+
+		result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+					  KeyName,
+					  0,
+					  KEY_CREATE_SUB_KEY,
+					  &hKey);
+		if (result==0)
+			RegCloseKey(hKey);
+		return result==0;
+}
+
+// Check the root registry key to use - either HKLM or HKCU.
+// If Python is installed in HKCU, then our extension also must be installed
+// in HKCU - as Python won't be available for other users, we shouldn't either
+// (and will fail if we are!)
+// If Python is installed in HKLM, then we will also prefer to use HKLM, but
+// this may not be possible - so we silently fall back to HKCU.
+//
+// We assume hkey_root is already set to where Python itself is installed.
+void CheckRootKey(HWND hwnd)
+{
+	if (hkey_root==HKEY_CURRENT_USER) {
+		; // as above, always install ourself in HKCU too.
+	} else if (hkey_root==HKEY_LOCAL_MACHINE) {
+		// Python in HKLM, but we may or may not have permissions there.
+		// Open the uninstall key with 'create' permissions - if this fails,
+		// we don't have permission.
+		if (!HasLocalMachinePrivs())
+			hkey_root = HKEY_CURRENT_USER;
+	} else {
+		MessageBox(hwnd, "Don't know Python's installation type",
+				   "Strange", MB_OK | MB_ICONSTOP);
+		/* Default to wherever they can, but preferring HKLM */
+		hkey_root = HasLocalMachinePrivs() ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+	}
 }
 
 /* Return the installation scheme depending on Python version number */
@@ -1447,7 +1511,6 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case IDC_VERSIONS_LIST:
 			switch (HIWORD(wParam)) {
 				int id;
-				char *cp;
 			case LBN_SELCHANGE:
 			  UpdateInstallDir:
 				PropSheet_SetWizButtons(GetParent(hwnd),
@@ -1464,15 +1527,18 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				} else {
 					char *pbuf;
 					int result;
+					InstalledVersionInfo *ivi;
 					PropSheet_SetWizButtons(GetParent(hwnd),
 								PSWIZB_BACK | PSWIZB_NEXT);
 					/* Get the python directory */
-					cp = (LPSTR)SendDlgItemMessage(hwnd,
+                    ivi = (InstalledVersionInfo *)
+                                SendDlgItemMessage(hwnd,
 									IDC_VERSIONS_LIST,
 									LB_GETITEMDATA,
 									id,
 									0);
-					strcpy(python_dir, cp);
+                    hkey_root = ivi->hkey;
+					strcpy(python_dir, ivi->prefix);
 					SetDlgItemText(hwnd, IDC_PATH, python_dir);
 					/* retrieve the python version and pythondll to use */
 					result = SendDlgItemMessage(hwnd, IDC_VERSIONS_LIST,
@@ -1555,15 +1621,28 @@ static BOOL OpenLogfile(char *dir)
 	char subkey_name[256];
 	static char KeyName[] = 
 		"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+	const char *root_name = (hkey_root==HKEY_LOCAL_MACHINE ?
+	                        "HKEY_LOCAL_MACHINE" : "HKEY_CURRENT_USER");
 	DWORD disposition;
 
-	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+	/* Use Create, as the Uninstall subkey may not exist under HKCU.
+	   Use CreateKeyEx, so we can specify a SAM specifying write access
+	*/
+		result = RegCreateKeyEx(hkey_root,
 			      KeyName,
-			      0,
-			      KEY_CREATE_SUB_KEY,
-			      &hKey);
+			      0, /* reserved */
+			      NULL, /* class */
+			      0, /* options */
+			      KEY_CREATE_SUB_KEY, /* sam */
+			      NULL, /* security */
+			      &hKey, /* result key */
+			      NULL); /* disposition */
 	if (result != ERROR_SUCCESS) {
 		if (result == ERROR_ACCESS_DENIED) {
+			/* This should no longer be able to happen - we have already
+			   checked if they have permissions in HKLM, and all users
+			   should have write access to HKCU.
+			*/
 			MessageBox(GetFocus(),
 				   "You do not seem to have sufficient access rights\n"
 				   "on this machine to install this software",
@@ -1584,6 +1663,9 @@ static BOOL OpenLogfile(char *dir)
 		 localtime(&ltime));
 	fprintf(logfile, buffer);
 	fprintf(logfile, "Source: %s\n", modulename);
+
+	/* Root key must be first entry processed by uninstaller. */
+	fprintf(logfile, "999 Root Key: %s\n", root_name);
 
 	sprintf(subkey_name, "%s-py%d.%d", meta_name, py_major, py_minor);
 
@@ -1722,6 +1804,8 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				strcat(python_dir, "\\");
 			/* Strip the trailing backslash again */
 			python_dir[strlen(python_dir)-1] = '\0';
+            
+            CheckRootKey(hwnd);
 	    
 			if (!OpenLogfile(python_dir))
 				break;
@@ -1850,7 +1934,7 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			if (logfile)
 				fprintf(logfile, "300 Run Script: [%s]%s\n", pythondll, fname);
 
-			tempname = tmpnam(NULL);
+			tempname = tempnam(NULL, NULL);
 
 			if (!freopen(tempname, "a", stderr))
 				MessageBox(GetFocus(), "freopen stderr", NULL, MB_OK);
@@ -2100,7 +2184,7 @@ void DeleteRegistryKey(char *string)
 	if (delim)
 		*delim = '\0';
 
-	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+	result = RegOpenKeyEx(hkey_root,
 			      keyname,
 			      0,
 			      KEY_WRITE,
@@ -2143,7 +2227,7 @@ void DeleteRegistryValue(char *string)
 
 	*value++ = '\0';
 
-	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+	result = RegOpenKeyEx(hkey_root,
 			      keyname,
 			      0,
 			      KEY_WRITE,
@@ -2209,7 +2293,7 @@ BOOL Run_RemoveScript(char *line)
 
 		argv[0] = scriptname;
 
-		tempname = tmpnam(NULL);
+		tempname = tempnam(NULL, NULL);
 
 		if (!freopen(tempname, "a", stderr))
 			MessageBox(GetFocus(), "freopen stderr", NULL, MB_OK);
@@ -2268,28 +2352,6 @@ int DoUninstall(int argc, char **argv)
 		return 1; /* Error */
 	}
 
-	{
-		DWORD result;
-		HKEY hKey;
-		static char KeyName[] = 
-			"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
-
-		result = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-				      KeyName,
-				      0,
-				      KEY_CREATE_SUB_KEY,
-				      &hKey);
-		if (result == ERROR_ACCESS_DENIED) {
-			MessageBox(GetFocus(),
-				   "You do not seem to have sufficient access rights\n"
-				   "on this machine to uninstall this software",
-				   NULL,
-				   MB_OK | MB_ICONSTOP);
-			return 1; /* Error */
-		}
-		RegCloseKey(hKey);
-	}
-
 	logfile = fopen(argv[2], "r");
 	if (!logfile) {
 		MessageBox(NULL,
@@ -2332,6 +2394,7 @@ int DoUninstall(int argc, char **argv)
 				MB_YESNO | MB_ICONQUESTION))
 		return 0;
 
+	hkey_root = HKEY_LOCAL_MACHINE;
 	cp = "";
 	for (i = 0; i < nLines; ++i) {
 		/* Ignore duplicate lines */
@@ -2339,7 +2402,21 @@ int DoUninstall(int argc, char **argv)
 			int ign;
 			cp = lines[i];
 			/* Parse the lines */
-			if (2 == sscanf(cp, "%d Made Dir: %s", &ign, &buffer)) {
+			if (2 == sscanf(cp, "%d Root Key: %s", &ign, &buffer)) {
+				if (strcmp(buffer, "HKEY_CURRENT_USER")==0)
+					hkey_root = HKEY_CURRENT_USER;
+				else {
+					// HKLM - check they have permissions.
+					if (!HasLocalMachinePrivs()) {
+						MessageBox(GetFocus(),
+							   "You do not seem to have sufficient access rights\n"
+							   "on this machine to uninstall this software",
+							   NULL,
+							   MB_OK | MB_ICONSTOP);
+						return 1; /* Error */
+					}
+				}
+			} else if (2 == sscanf(cp, "%d Made Dir: %s", &ign, &buffer)) {
 				if (MyRemoveDirectory(cp))
 					++nDirs;
 				else {
