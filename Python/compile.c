@@ -323,6 +323,99 @@ intern_strings(PyObject *tuple)
 	return 0;
 }
 
+#define GETARG(arr, i) ((int)((arr[i+2]<<8) + arr[i+1]))
+#define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
+#define GETJUMPTGT(arr, i) (GETARG(arr,i) + (arr[i]==JUMP_ABSOLUTE ? 0 : i+3))
+#define SETARG(arr, i, val) arr[i+2] = val>>8; arr[i+1] = val & 255
+
+static PyObject *
+optimize_code(PyObject *code, PyObject* consts)
+{
+	int i, j, codelen;
+	int tgt, tgttgt, opcode;
+	unsigned char *codestr;
+
+	/* Make a modifiable copy of the code string */
+	if (!PyString_Check(code))
+		goto exitUnchanged;
+	codelen = PyString_Size(code);
+	codestr = PyMem_Malloc(codelen);
+	if (codestr == NULL) 
+		goto exitUnchanged;
+	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
+	assert(PyTuple_Check(consts));
+
+	for (i=0 ; i<codelen-7 ; i += HAS_ARG(codestr[i]) ? 3 : 1) {
+		opcode = codestr[i];
+		switch (opcode) {
+
+		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP. 
+		   Note, only the first opcode is changed, the others still
+		   perform normally if they happen to be jump targets. */
+		case LOAD_CONST:
+			j = GETARG(codestr, i);
+			if (codestr[i+3] != JUMP_IF_FALSE  ||
+			    codestr[i+6] != POP_TOP  ||
+			    !PyObject_IsTrue(PyTuple_GET_ITEM(consts, j)))
+				continue;
+			codestr[i] = JUMP_FORWARD;
+			SETARG(codestr, i, 4);
+			break;
+
+		/* Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2 JMP+2.
+		   Note, these opcodes occur together only in assignment
+		   statements.  Accordingly, the unpack opcode is never
+		   a jump target.  */
+		case BUILD_TUPLE:
+		case BUILD_LIST:
+			if (codestr[i+3] != UNPACK_SEQUENCE  ||
+			    GETARG(codestr, i) != 2  ||
+			    GETARG(codestr, i+3) != 2)
+				continue;
+			codestr[i] = ROT_TWO;
+			codestr[i+1] = JUMP_FORWARD;
+			SETARG(codestr, i+1, 2);
+			codestr[i+4] = DUP_TOP;	 /* Filler codes used as NOPs */	
+			codestr[i+5] = POP_TOP;
+			break;
+
+		/* Replace jumps to unconditional jumps */
+		case JUMP_FORWARD:
+		case JUMP_IF_FALSE:
+		case JUMP_IF_TRUE:
+		case JUMP_ABSOLUTE:
+		case CONTINUE_LOOP:
+		case SETUP_LOOP:
+		case SETUP_EXCEPT:
+		case SETUP_FINALLY:
+			tgt = GETJUMPTGT(codestr, i);
+			if (!UNCONDITIONAL_JUMP(codestr[tgt])) 
+				continue;
+			tgttgt = GETJUMPTGT(codestr, tgt);
+			if (opcode == JUMP_FORWARD) /* JMP_ABS can go backwards */
+				opcode = JUMP_ABSOLUTE;
+			if (opcode != JUMP_ABSOLUTE && opcode != CONTINUE_LOOP)
+				tgttgt -= i + 3;     /* Calc relative jump addr */
+			if (tgttgt < 0)           /* No backward relative jumps */
+				 continue;
+			codestr[i] = opcode;
+			SETARG(codestr, i, tgttgt);
+			break;
+
+		case EXTENDED_ARG:
+			PyMem_Free(codestr);
+			goto exitUnchanged;
+		}
+	}
+	code = PyString_FromStringAndSize(codestr, codelen);
+	PyMem_Free(codestr);
+	return code;
+
+exitUnchanged:
+	Py_INCREF(code);
+	return code;
+}
+
 PyCodeObject *
 PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	   PyObject *code, PyObject *consts, PyObject *names,
@@ -366,8 +459,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_nlocals = nlocals;
 		co->co_stacksize = stacksize;
 		co->co_flags = flags;
-		Py_INCREF(code);
-		co->co_code = code;
+		co->co_code = optimize_code(code, consts);
 		Py_INCREF(consts);
 		co->co_consts = consts;
 		Py_INCREF(names);
