@@ -47,6 +47,7 @@ extern int verbose; /* Defined in pythonrun.c */
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
    __NetBSD__	-- NetBSD shared libraries (not quite SVR4 compatible)
+   __FreeBSD__	-- FreeBSD shared libraries
 
    (The other WITH_* symbols are used only once, to set the
    appropriate symbols.)
@@ -67,7 +68,7 @@ typedef void (*dl_funcptr)();
 #define LONG_EXT "module.sl"
 #endif 
 
-#ifdef __NetBSD__
+#if defined(__NetBSD__) || defined(__FreeBSD__)
 #define DYNAMIC_LINK
 #define USE_SHLIB
 
@@ -133,7 +134,7 @@ static void aix_loaderror(char *name);
 #ifdef USE_SHLIB
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef __NetBSD__
+#if defined(__NetBSD__) || defined(__FreeBSD__)
 #include <nlist.h>
 #include <link.h>
 #else
@@ -176,7 +177,7 @@ typedef void (*dl_funcptr)();
 extern char *getprogramname();
 
 #ifndef FUNCNAME_PATTERN
-#if defined(__hp9000s300) || defined(__NetBSD__) || defined(__BORLANDC__)
+#if defined(__hp9000s300) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__BORLANDC__)
 #define FUNCNAME_PATTERN "_init%.200s"
 #else
 #define FUNCNAME_PATTERN "init%.200s"
