@@ -391,12 +391,14 @@ static void com_list(struct compiling *, node *, int);
 static void com_list_iter(struct compiling *, node *, node *, char *);
 static int com_argdefs(struct compiling *, node *);
 static int com_newlocal(struct compiling *, char *);
-static void com_assign(struct compiling *, node *, int);
+static void com_assign(struct compiling *, node *, int, node *);
+static void com_assign_name(struct compiling *, node *, int);
 static PyCodeObject *icompile(struct _node *, struct compiling *);
 static PyCodeObject *jcompile(struct _node *, char *,
 			      struct compiling *);
 static PyObject *parsestrplus(node *);
 static PyObject *parsestr(char *);
+static node *get_rawdocstring(node *);
 
 static int
 com_init(struct compiling *c, char *filename)
@@ -995,7 +997,7 @@ com_list_for(struct compiling *c, node *n, node *e, char *t)
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
 	com_push(c, 1);
-	com_assign(c, CHILD(n, 1), OP_ASSIGN);
+	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
 	c->c_loops++;
 	com_list_iter(c, n, e, t);
 	c->c_loops--;
@@ -1203,6 +1205,59 @@ com_slice(struct compiling *c, node *n, int op)
 }
 
 static void
+com_augassign_slice(struct compiling *c, node *n, int opcode, node *augn)
+{
+	if (NCH(n) == 1) {
+		com_addbyte(c, DUP_TOP);
+		com_push(c, 1);
+		com_addbyte(c, SLICE);
+		com_node(c, augn);
+		com_addbyte(c, opcode);
+		com_pop(c, 1);
+		com_addbyte(c, ROT_TWO);
+		com_addbyte(c, STORE_SLICE);
+		com_pop(c, 2);
+	} else if (NCH(n) == 2 && TYPE(CHILD(n, 0)) != COLON) {
+		com_node(c, CHILD(n, 0));
+		com_addoparg(c, DUP_TOPX, 2);
+		com_push(c, 2);
+		com_addbyte(c, SLICE+1);
+		com_pop(c, 1);
+		com_node(c, augn);
+		com_addbyte(c, opcode);
+		com_pop(c, 1);
+		com_addbyte(c, ROT_THREE);
+		com_addbyte(c, STORE_SLICE+1);
+		com_pop(c, 3);
+	} else if (NCH(n) == 2) {
+		com_node(c, CHILD(n, 1));
+		com_addoparg(c, DUP_TOPX, 2);
+		com_push(c, 2);
+		com_addbyte(c, SLICE+2);
+		com_pop(c, 1);
+		com_node(c, augn);
+		com_addbyte(c, opcode);
+		com_pop(c, 1);
+		com_addbyte(c, ROT_THREE);
+		com_addbyte(c, STORE_SLICE+2);
+		com_pop(c, 3);
+	} else {
+		com_node(c, CHILD(n, 0));
+		com_node(c, CHILD(n, 2));
+		com_addoparg(c, DUP_TOPX, 3);
+		com_push(c, 3);
+		com_addbyte(c, SLICE+3);
+		com_pop(c, 2);
+		com_node(c, augn);
+		com_addbyte(c, opcode);
+		com_pop(c, 1);
+		com_addbyte(c, ROT_FOUR);
+		com_addbyte(c, STORE_SLICE+3);
+		com_pop(c, 4);
+	}
+}
+
+static void
 com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 {
 	node *m;
@@ -1376,7 +1431,7 @@ com_subscript(struct compiling *c, node *n)
 }
 
 static void
-com_subscriptlist(struct compiling *c, node *n, int assigning)
+com_subscriptlist(struct compiling *c, node *n, int assigning, node *augn)
 {
 	int i, op;
 	REQ(n, subscriptlist);
@@ -1388,11 +1443,20 @@ com_subscriptlist(struct compiling *c, node *n, int assigning)
 		     || (NCH(sub) > 1 && TYPE(CHILD(sub, 1)) == COLON))
 		    && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop))
 		{
-			if (assigning == OP_APPLY)
+			switch (assigning) {
+			case OP_DELETE:
+				op = DELETE_SLICE;
+				break;
+			case OP_ASSIGN:
+				op = STORE_SLICE;
+				break;
+			case OP_APPLY:
 				op = SLICE;
-			else
-				op = ((assigning == OP_ASSIGN) ?
-				      STORE_SLICE : DELETE_SLICE);
+				break;
+			default:
+				com_augassign_slice(c, sub, assigning, augn);
+				return;
+			}
 			com_slice(c, sub, op);
 			if (op == STORE_SLICE)
 				com_pop(c, 2);
@@ -1410,17 +1474,30 @@ com_subscriptlist(struct compiling *c, node *n, int assigning)
 		com_addoparg(c, BUILD_TUPLE, i);
 		com_pop(c, i-1);
 	}
-	if (assigning == OP_APPLY) {
-		op = BINARY_SUBSCR;
-		i = 1;
-	}
-	else if (assigning == OP_ASSIGN) {
-		op = STORE_SUBSCR;
-		i = 3;
-	}
-	else {
+	switch (assigning) {
+	case OP_DELETE:
 		op = DELETE_SUBSCR;
 		i = 2;
+		break;
+	default:
+	case OP_ASSIGN:
+		op = STORE_SUBSCR;
+		i = 3;
+		break;
+	case OP_APPLY:
+		op = BINARY_SUBSCR;
+		i = 1;
+		break;
+	}
+	if (assigning > OP_APPLY) {
+		com_addoparg(c, DUP_TOPX, 2);
+		com_push(c, 2);
+		com_addbyte(c, BINARY_SUBSCR);
+		com_pop(c, 1);
+		com_node(c, augn);
+		com_addbyte(c, assigning);
+		com_pop(c, 1);
+		com_addbyte(c, ROT_THREE);
 	}
 	com_addbyte(c, op);
 	com_pop(c, i);
@@ -1438,7 +1515,7 @@ com_apply_trailer(struct compiling *c, node *n)
 		com_select_member(c, CHILD(n, 1));
 		break;
 	case LSQB:
-		com_subscriptlist(c, CHILD(n, 1), OP_APPLY);
+		com_subscriptlist(c, CHILD(n, 1), OP_APPLY, NULL);
 		break;
 	default:
 		com_error(c, PyExc_SystemError,
@@ -1832,8 +1909,21 @@ com_list(struct compiling *c, node *n, int toplevel)
 
 /* Begin of assignment compilation */
 
-static void com_assign_name(struct compiling *, node *, int);
-static void com_assign(struct compiling *, node *, int);
+
+static void
+com_augassign_attr(struct compiling *c, node *n, int opcode, node *augn)
+{
+	com_addbyte(c, DUP_TOP);
+	com_push(c, 1);
+	com_addopname(c, LOAD_ATTR, n);
+	com_pop(c, 1);
+	com_node(c, augn);
+	com_addbyte(c, opcode);
+	com_pop(c, 1);
+	com_addbyte(c, ROT_TWO);
+	com_addopname(c, STORE_ATTR, n);
+	com_pop(c, 2);
+}
 
 static void
 com_assign_attr(struct compiling *c, node *n, int assigning)
@@ -1843,7 +1933,7 @@ com_assign_attr(struct compiling *c, node *n, int assigning)
 }
 
 static void
-com_assign_trailer(struct compiling *c, node *n, int assigning)
+com_assign_trailer(struct compiling *c, node *n, int assigning, node *augn)
 {
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
@@ -1852,10 +1942,13 @@ com_assign_trailer(struct compiling *c, node *n, int assigning)
 			  "can't assign to function call");
 		break;
 	case DOT: /* '.' NAME */
-		com_assign_attr(c, CHILD(n, 1), assigning);
+		if (assigning > OP_APPLY)
+			com_augassign_attr(c, CHILD(n, 1), assigning, augn);
+		else
+			com_assign_attr(c, CHILD(n, 1), assigning);
 		break;
 	case LSQB: /* '[' subscriptlist ']' */
-		com_subscriptlist(c, CHILD(n, 1), assigning);
+		com_subscriptlist(c, CHILD(n, 1), assigning, augn);
 		break;
 	default:
 		com_error(c, PyExc_SystemError, "unknown trailer type");
@@ -1874,7 +1967,19 @@ com_assign_sequence(struct compiling *c, node *n, int assigning)
 		com_push(c, i-1);
 	}
 	for (i = 0; i < NCH(n); i += 2)
-		com_assign(c, CHILD(n, i), assigning);
+		com_assign(c, CHILD(n, i), assigning, NULL);
+}
+
+static void
+com_augassign_name(struct compiling *c, node *n, int opcode, node *augn)
+{
+	REQ(n, NAME);
+	com_addopname(c, LOAD_NAME, n);
+	com_push(c, 1);
+	com_node(c, augn);
+	com_addbyte(c, opcode);
+	com_pop(c, 1);
+	com_assign_name(c, n, OP_ASSIGN);
 }
 
 static void
@@ -1887,7 +1992,7 @@ com_assign_name(struct compiling *c, node *n, int assigning)
 }
 
 static void
-com_assign(struct compiling *c, node *n, int assigning)
+com_assign(struct compiling *c, node *n, int assigning, node *augn)
 {
 	/* Loop to avoid trivial recursion */
 	for (;;) {
@@ -1896,6 +2001,11 @@ com_assign(struct compiling *c, node *n, int assigning)
 		case exprlist:
 		case testlist:
 			if (NCH(n) > 1) {
+				if (assigning > OP_APPLY) {
+					com_error(c, PyExc_SyntaxError,
+						  "augmented assign to tuple not possible");
+					return;
+				}
 				com_assign_sequence(c, n, assigning);
 				return;
 			}
@@ -1940,7 +2050,7 @@ com_assign(struct compiling *c, node *n, int assigning)
 					com_apply_trailer(c, CHILD(n, i));
 				} /* NB i is still alive */
 				com_assign_trailer(c,
-						CHILD(n, i), assigning);
+						CHILD(n, i), assigning, augn);
 				return;
 			}
 			n = CHILD(n, 0);
@@ -1956,6 +2066,11 @@ com_assign(struct compiling *c, node *n, int assigning)
 						  "can't assign to ()");
 					return;
 				}
+				if (assigning > OP_APPLY) {
+					com_error(c, PyExc_SyntaxError,
+						  "augmented assign to tuple not possible");
+					return;
+				}
 				break;
 			case LSQB:
 				n = CHILD(n, 1);
@@ -1964,10 +2079,20 @@ com_assign(struct compiling *c, node *n, int assigning)
 						  "can't assign to []");
 					return;
 				}
+				if (assigning > OP_APPLY) {
+					com_error(c, PyExc_SyntaxError,
+						  "augmented assign to list not possible");
+					return;
+				}
 				com_assign_sequence(c, n, assigning);
 				return;
 			case NAME:
-				com_assign_name(c, CHILD(n, 0), assigning);
+				if (assigning > OP_APPLY)
+					com_augassign_name(c, CHILD(n, 0),
+							   assigning, augn);
+				else
+					com_assign_name(c, CHILD(n, 0),
+							assigning);
 				return;
 			default:
 				com_error(c, PyExc_SyntaxError,
@@ -1991,31 +2116,61 @@ com_assign(struct compiling *c, node *n, int assigning)
 	}
 }
 
-/* Forward */ static node *get_rawdocstring(node *);
+static void
+com_augassign(struct compiling *c, node *n)
+{
+	int opcode;
+
+	switch (STR(CHILD(CHILD(n, 1), 0))[0]) {
+	case '+': opcode = INPLACE_ADD; break;
+	case '-': opcode = INPLACE_SUBTRACT; break;
+	case '/': opcode = INPLACE_DIVIDE; break;
+	case '%': opcode = INPLACE_MODULO; break;
+	case '<': opcode = INPLACE_LSHIFT; break;
+	case '>': opcode = INPLACE_RSHIFT; break;
+	case '&': opcode = INPLACE_AND; break;
+	case '^': opcode = INPLACE_XOR; break;
+	case '|': opcode = INPLACE_OR; break;
+	case '*':
+		if (STR(CHILD(CHILD(n, 1), 0))[1] == '*')
+			opcode = INPLACE_POWER;
+		else
+			opcode = INPLACE_MULTIPLY;
+		break;
+	default:
+		com_error(c, PyExc_SystemError, "com_augassign: bad operator");
+		return;
+	}
+	com_assign(c, CHILD(n, 0), opcode, CHILD(n, 2));
+}
 
 static void
 com_expr_stmt(struct compiling *c, node *n)
 {
-	REQ(n, expr_stmt); /* testlist ('=' testlist)* */
+	REQ(n, expr_stmt);
+	/* testlist (('=' testlist)* | augassign testlist) */
 	/* Forget it if we have just a doc string here */
 	if (!c->c_interactive && NCH(n) == 1 && get_rawdocstring(n) != NULL)
 		return;
-	com_node(c, CHILD(n, NCH(n)-1));
-	if (NCH(n) == 1) {
+ 	if (NCH(n) == 1) {
+		com_node(c, CHILD(n, NCH(n)-1));
 		if (c->c_interactive)
 			com_addbyte(c, PRINT_EXPR);
 		else
 			com_addbyte(c, POP_TOP);
 		com_pop(c, 1);
 	}
+	else if (TYPE(CHILD(n,1)) == augassign)
+		com_augassign(c, n);
 	else {
 		int i;
+		com_node(c, CHILD(n, NCH(n)-1));
 		for (i = 0; i < NCH(n)-2; i+=2) {
 			if (i+2 < NCH(n)-2) {
 				com_addbyte(c, DUP_TOP);
 				com_push(c, 1);
 			}
-			com_assign(c, CHILD(n, i), OP_ASSIGN);
+			com_assign(c, CHILD(n, i), OP_ASSIGN, NULL);
 		}
 	}
 }
@@ -2472,7 +2627,7 @@ com_for_stmt(struct compiling *c, node *n)
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
 	com_push(c, 1);
-	com_assign(c, CHILD(n, 1), OP_ASSIGN);
+	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
 	c->c_loops++;
 	com_node(c, CHILD(n, 5));
 	c->c_loops--;
@@ -2594,7 +2749,7 @@ com_try_except(struct compiling *c, node *n)
 		com_addbyte(c, POP_TOP);
 		com_pop(c, 1);
 		if (NCH(ch) > 3)
-			com_assign(c, CHILD(ch, 3), OP_ASSIGN);
+			com_assign(c, CHILD(ch, 3), OP_ASSIGN, NULL);
 		else {
 			com_addbyte(c, POP_TOP);
 			com_pop(c, 1);
@@ -2940,7 +3095,7 @@ com_node(struct compiling *c, node *n)
 		com_print_stmt(c, n);
 		break;
 	case del_stmt: /* 'del' exprlist */
-		com_assign(c, CHILD(n, 1), OP_DELETE);
+		com_assign(c, CHILD(n, 1), OP_DELETE, NULL);
 		break;
 	case pass_stmt:
 		break;

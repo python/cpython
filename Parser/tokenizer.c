@@ -78,6 +78,17 @@ char *_PyParser_TokenNames[] = {
 	"LEFTSHIFT",
 	"RIGHTSHIFT",
 	"DOUBLESTAR",
+	"PLUSEQUAL",
+	"MINEQUAL",
+	"STAREQUAL",
+	"SLASHEQUAL",
+	"PERCENTEQUAL",
+	"AMPEREQUAL",
+	"VBAREQUAL",
+	"CIRCUMFLEXEQUAL",
+	"LEFTSHIFTEQUAL",
+	"RIGHTSHIFTEQUAL",
+	"DOUBLESTAREQUAL",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -388,15 +399,91 @@ PyToken_TwoChars(int c1, int c2)
 		case '>':	return RIGHTSHIFT;
 		}
 		break;
+	case '+':
+		switch (c2) {
+		case '=':	return PLUSEQUAL;
+		}
+		break;
+	case '-':
+		switch (c2) {
+		case '=':	return MINEQUAL;
+		}
+		break;
 	case '*':
 		switch (c2) {
 		case '*':	return DOUBLESTAR;
+		case '=':	return STAREQUAL;
+		}
+		break;
+	case '/':
+		switch (c2) {
+		case '=':	return SLASHEQUAL;
+		}
+		break;
+	case '|':
+		switch (c2) {
+		case '=':	return VBAREQUAL;
+		}
+		break;
+	case '%':
+		switch (c2) {
+		case '=':	return PERCENTEQUAL;
+		}
+		break;
+	case '&':
+		switch (c2) {
+		case '=':	return AMPEREQUAL;
+		}
+		break;
+	case '^':
+		switch (c2) {
+		case '=':	return CIRCUMFLEXEQUAL;
 		}
 		break;
 	}
 	return OP;
 }
 
+int
+PyToken_ThreeChars(int c1, int c2, int c3)
+{
+	switch (c1) {
+	case '<':
+		switch (c2) {
+		case '<':
+			switch (c3) {
+			case '=':
+				return LEFTSHIFTEQUAL;
+				break;
+			}
+			break;
+		}
+		break;
+	case '>':
+		switch (c2) {
+		case '>':
+			switch (c3) {
+			case '=':
+				return RIGHTSHIFTEQUAL;
+				break;
+			}
+			break;
+		}
+		break;
+	case '*':
+		switch (c2) {
+		case '*':
+			switch (c3) {
+			case '=':
+				return DOUBLESTAREQUAL;
+				break;
+			}
+			break;
+		}
+		break;
+	}
+	return OP;
+}
 
 static int
 indenterror(struct tok_state *tok)
@@ -770,6 +857,13 @@ PyTokenizer_Get(register struct tok_state *tok, char **p_start,
 		int c2 = tok_nextc(tok);
 		int token = PyToken_TwoChars(c, c2);
 		if (token != OP) {
+			int c3 = tok_nextc(tok);
+			int token3 = PyToken_ThreeChars(c, c2, c3);
+			if (token3 != OP) {
+				token = token3;
+			} else {
+				tok_backup(tok, c3);
+			}
 			*p_start = tok->start;
 			*p_end = tok->cur;
 			return token;
