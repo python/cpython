@@ -532,6 +532,7 @@ def list2cmdline(seq):
             result.extend(bs_buf)
 
         if needquote:
+            result.extend(bs_buf)
             result.append('"')
 
     return ''.join(result)
