@@ -6,7 +6,7 @@ import types
 
 __all__ = ["dis","disassemble","distb","disco","opname","cmp_op",
            "hasconst","hasname","hasjrel","hasjabs","haslocal",
-           "hascompare"]
+           "hascompare", "hasfree"]
 
 def dis(x=None):
     """Disassemble classes, methods, functions, or code.
@@ -60,6 +60,7 @@ def disassemble(co, lasti=-1):
     n = len(code)
     i = 0
     extended_arg = 0
+    free = None
     while i < n:
         c = code[i]
         op = ord(c)
@@ -88,6 +89,10 @@ def disassemble(co, lasti=-1):
                 print '(' + co.co_varnames[oparg] + ')',
             elif op in hascompare:
                 print '(' + cmp_op[oparg] + ')',
+            elif op in hasfree:
+                if free is None:
+                    free = co.co_cellvars + co.co_freevars
+                print '(' + free[oparg] + ')',
         print
 
 disco = disassemble                     # XXX For backwards compatibility
@@ -127,6 +132,7 @@ hasjrel = []
 hasjabs = []
 haslocal = []
 hascompare = []
+hasfree = []
 
 opname = [''] * 256
 for op in range(256): opname[op] = '<' + `op` + '>'
@@ -271,6 +277,14 @@ def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args + (#kwargs << 8)
 def_op('MAKE_FUNCTION', 132)    # Number of args with default values
 def_op('BUILD_SLICE', 133)      # Number of items
+
+def_op('MAKE_CLOSURE', 134)
+def_op('LOAD_CLOSURE', 135)
+hasfree.append(135)
+def_op('LOAD_DEREF', 136)
+hasfree.append(136)
+def_op('STORE_DEREF', 137)
+hasfree.append(137)
 
 def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)
