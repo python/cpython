@@ -1,0 +1,39 @@
+"""distutils.command.x
+
+Implements the Distutils 'x' command."""
+
+# created 2000/mm/dd, Greg Ward
+
+__revision__ = "$Id$"
+
+from distutils.core import Command
+
+
+class x (Command):
+
+    description = ""
+
+    user_options = [('', '',
+                     ""),
+                   ]
+
+
+    def initialize_options (self):
+        self. = None
+        self. = None
+        self. = None
+
+    # initialize_options()
+
+
+    def finalize_options (self):
+
+    # finalize_options()
+
+
+    def run (self):
+
+
+    # run()
+
+# class x
