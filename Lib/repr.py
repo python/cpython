@@ -7,6 +7,7 @@ class Repr:
         self.maxlevel = 6
         self.maxtuple = 6
         self.maxlist = 6
+        self.maxarray = 5
         self.maxdict = 4
         self.maxstring = 30
         self.maxlong = 40
@@ -48,6 +49,23 @@ class Repr:
             s = s + self.repr1(x[i], level-1)
         if n > self.maxlist: s = s + ', ...'
         return '[' + s + ']'
+
+    def repr_array(self, x, level):
+        n = len(x)
+        header = "array('%s', [" % x.typecode
+        if n == 0:
+            return header + "])"
+        if level <= 0:
+            return header + "...])"
+        s = ''
+        for i in range(min(n, self.maxarray)):
+            if s:
+                s += ', '
+            s += self.repr1(x[i], level-1)
+        if n > self.maxarray:
+            s += ', ...'
+        return header + s + "])"
+
     def repr_dict(self, x, level):
         n = len(x)
         if n == 0: return '{}'

@@ -145,6 +145,9 @@ Extension modules
 Library
 -------
 
+- array.array was added to the types repr.py knows about (see
+  <http://www.python.org/sf/680789>).
+
 - The new pickletools.py contains lots of documentation about pickle
   internals, and supplies some helpers for working with pickles, such as
   a symbolic pickle disassembler.
