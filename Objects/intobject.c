@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Integer object implementation */
 
 #include "Python.h"
+#include <ctype.h>
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
@@ -216,6 +217,48 @@ PyInt_AsLong(op)
 	Py_DECREF(io);
 	
 	return val;
+}
+
+PyObject *
+PyInt_FromString(s, pend, base)
+	char *s;
+	char **pend;
+	int base;
+{
+	char *end;
+	long x;
+	char buffer[256]; /* For errors */
+
+	if ((base != 0 && base < 2) || base > 36) {
+		PyErr_SetString(PyExc_ValueError, "invalid base for int()");
+		return NULL;
+	}
+
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	errno = 0;
+	if (base == 0 && s[0] == '0')
+		x = (long) PyOS_strtoul(s, &end, base);
+	else
+		x = PyOS_strtol(s, &end, base);
+	if (end == s || !isalnum(end[-1]))
+		goto bad;
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+  bad:
+		sprintf(buffer, "invalid literal for int(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (errno != 0) {
+		sprintf(buffer, "int() literal too large: %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	if (pend)
+		*pend = end;
+	return PyInt_FromLong(x);
 }
 
 /* Methods */

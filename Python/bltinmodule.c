@@ -812,24 +812,6 @@ globals and locals.  If only globals is given, locals defaults to it.";
 
 
 static PyObject *
-builtin_float(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:float", &v))
-		return NULL;
-	return PyNumber_Float(v);
-}
-
-static char float_doc[] =
-"float(x) -> floating point number\n\
-\n\
-Convert a string or number to a floating point number, if possible.";
-
-
-static PyObject *
 builtin_getattr(self, args)
 	PyObject *self;
 	PyObject *args;
@@ -1251,17 +1233,79 @@ builtin_int(self, args)
 	PyObject *args;
 {
 	PyObject *v;
+	int base = -909;		     /* unlikely! */
 
-	if (!PyArg_ParseTuple(args, "O:int", &v))
+	if (!PyArg_ParseTuple(args, "O|i:int", &v, &base))
 		return NULL;
-	return PyNumber_Int(v);
+	if (base == -909)
+		return PyNumber_Int(v);
+	else if (!PyString_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't convert non-string with explicit base");
+		return NULL;
+	}
+	return PyInt_FromString(PyString_AS_STRING(v), NULL, base);
 }
 
 static char int_doc[] =
-"int(x) -> integer\n\
+"int(x[, base]) -> integer\n\
 \n\
-Convert a string or number to an integer, if possible.\n\
-A floating point argument will be truncated towards zero.";
+Convert a string or number to an integer, if possible.  A floating point\n\
+argument will be truncated towards zero (this does not include a string\n\
+representation of a floating point number!)  When converting a string, use\n\
+the optional base.  It is an error to supply a base when converting a\n\
+non-string.";
+
+
+static PyObject *
+builtin_long(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *v;
+	int base = -909;		     /* unlikely! */
+	
+	if (!PyArg_ParseTuple(args, "O|i:long", &v, &base))
+		return NULL;
+	if (base == -909)
+		return PyNumber_Long(v);
+	else if (!PyString_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't convert non-string with explicit base");
+		return NULL;
+	}
+	return PyLong_FromString(PyString_AS_STRING(v), NULL, base);
+}
+
+static char long_doc[] =
+"long(x) -> long integer\n\
+long(x, base) -> long integer\n\
+\n\
+Convert a string or number to a long integer, if possible.  A floating\n\
+point argument will be truncated towards zero (this does not include a\n\
+string representation of a floating point number!)  When converting a\n\
+string, use the given base.  It is an error to supply a base when\n\
+converting a non-string.";
+
+
+static PyObject *
+builtin_float(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O:float", &v))
+		return NULL;
+	if (PyString_Check(v))
+		return PyFloat_FromString(v, NULL);
+	return PyNumber_Float(v);
+}
+
+static char float_doc[] =
+"float(x) -> floating point number\n\
+\n\
+Convert a string or number to a floating point number, if possible.";
 
 
 static PyObject *
@@ -1349,25 +1393,6 @@ static char locals_doc[] =
 "locals() -> dictionary\n\
 \n\
 Return the dictionary containing the current scope's local variables.";
-
-
-static PyObject *
-builtin_long(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	PyObject *v;
-	
-	if (!PyArg_ParseTuple(args, "O:long", &v))
-		return NULL;
-	return PyNumber_Long(v);
-}
-
-static char long_doc[] =
-"long(x) -> long integer\n\
-\n\
-Convert a string or number to a long integer, if possible.\n\
-A floating point argument will be truncated towards zero.";
 
 
 static PyObject *

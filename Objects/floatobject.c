@@ -149,6 +149,57 @@ PyFloat_FromDouble(fval)
 	return (PyObject *) op;
 }
 
+PyObject *
+PyFloat_FromString(v, pend)
+	PyObject *v;
+	char **pend;
+{
+	extern double strtod Py_PROTO((const char *, char **));
+	char *s, *last, *end;
+	double x;
+	char buffer[256]; /* For errors */
+
+	if (!PyString_Check(v))
+		return NULL;
+	s = PyString_AS_STRING(v);
+
+	last = s + PyString_GET_SIZE(v);
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (s[0] == '\0') {
+		PyErr_SetString(PyExc_ValueError, "empty string for float()");
+		return NULL;
+	}
+	errno = 0;
+	PyFPE_START_PROTECT("PyFloat_FromString", return 0)
+	x = strtod(s, &end);
+	PyFPE_END_PROTECT(x)
+	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
+	   byte at the end of the string, when the input is inf(inity) */
+	if (end > last)
+		end = last;
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+		sprintf(buffer, "invalid literal for float(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for float()");
+		return NULL;
+	}
+	else if (errno != 0) {
+		sprintf(buffer, "float() literal too large: %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	if (pend)
+		*pend = end;
+	return PyFloat_FromDouble(x);
+}
+
 static void
 float_dealloc(op)
 	PyFloatObject *op;

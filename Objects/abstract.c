@@ -53,123 +53,6 @@ null_error()
 	return NULL;
 }
 
-/* Copied with modifications from stropmodule.c: atoi, atof, atol */
-
-static PyObject *
-int_from_string(v)
-	PyObject *v;
-{
-	char *s, *end;
-	long x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	errno = 0;
-	x = PyOS_strtol(s, &end, 10);
-	if (end == s || !isdigit(end[-1]))
-		goto bad;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-  bad:
-		sprintf(buffer, "invalid literal for int(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for int()");
-		return NULL;
-	}
-	else if (errno != 0) {
-		sprintf(buffer, "int() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyInt_FromLong(x);
-}
-
-static PyObject *
-long_from_string(v)
-	PyObject *v;
-{
-	char *s, *end;
-	PyObject *x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	x = PyLong_FromString(s, &end, 10);
-	if (x == NULL) {
-		if (PyErr_ExceptionMatches(PyExc_ValueError))
-			goto bad;
-		return NULL;
-	}
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-  bad:
-		sprintf(buffer, "invalid literal for long(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		Py_XDECREF(x);
-		return NULL;
-	}
-	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for long()");
-		return NULL;
-	}
-	return x;
-}
-
-static PyObject *
-float_from_string(v)
-	PyObject *v;
-{
-	extern double strtod Py_PROTO((const char *, char **));
-	char *s, *last, *end;
-	double x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	last = s + PyString_GET_SIZE(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for float()");
-		return NULL;
-	}
-	errno = 0;
-	PyFPE_START_PROTECT("float_from_string", return 0)
-	x = strtod(s, &end);
-	PyFPE_END_PROTECT(x)
-	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
-	   byte at the end of the string, when the input is inf(inity) */
-	if (end > last)
-		end = last;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
-		return NULL;
-	}
-	else if (errno != 0) {
-		sprintf(buffer, "float() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyFloat_FromDouble(x);
-}
-
 /* Operations on any object */
 
 int
@@ -713,12 +596,67 @@ PyNumber_Int(o)
 	if (o == NULL)
 		return null_error();
 	if (PyString_Check(o))
-		return int_from_string(o);
+		return PyInt_FromString(PyString_AS_STRING(o), NULL, 10);
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_int)
 		return m->nb_int(o);
 
 	return type_error("object can't be converted to int");
+}
+
+/* There are two C API functions for converting a string to a long,
+ * PyNumber_Long() and PyLong_FromString().  Both are used in builtin_long, 
+ * reachable from Python with the built-in function long().
+ *
+ * The difference is this: PyNumber_Long will raise an exception when the
+ * string cannot be converted to a long.  The most common situation is
+ * where a float string is passed in; this raises a ValueError.
+ * PyLong_FromString does not raise an exception; it silently truncates the 
+ * float to an integer.
+ *
+ * You can see the different behavior from Python with the following:
+ *
+ * long('9.5')
+ * => ValueError: invalid literal for long(): 9.5
+ *
+ * long('9.5', 10)
+ * => 9L
+ *
+ * The first example ends up calling PyNumber_Long(), while the second one
+ * calls PyLong_FromString().
+ */
+static PyObject *
+long_from_string(v)
+	PyObject *v;
+{
+	char *s, *end;
+	PyObject *x;
+	char buffer[256]; /* For errors */
+
+	s = PyString_AS_STRING(v);
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	x = PyLong_FromString(s, &end, 10);
+	if (x == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_ValueError))
+			goto bad;
+		return NULL;
+	}
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+  bad:
+		sprintf(buffer, "invalid literal for long(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		Py_XDECREF(x);
+		return NULL;
+	}
+	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for long()");
+		return NULL;
+	}
+	return x;
 }
 
 PyObject *
@@ -730,6 +668,10 @@ PyNumber_Long(o)
 	if (o == NULL)
 		return null_error();
 	if (PyString_Check(o))
+		/* need to do extra error checking that PyLong_FromString() 
+		 * doesn't do.  In particular long('9.5') must raise an
+		 * exception, not truncate the float.
+		 */
 		return long_from_string(o);
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_long)
@@ -747,7 +689,7 @@ PyNumber_Float(o)
 	if (o == NULL)
 		return null_error();
 	if (PyString_Check(o))
-		return float_from_string(o);
+		return PyFloat_FromString(o, NULL);
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_float)
 		return m->nb_float(o);
