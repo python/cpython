@@ -268,6 +268,7 @@ extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
 extern void initAE();
+extern void initRes();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -311,6 +312,7 @@ struct {
 #ifdef THINK_C
 /* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
+	{"Res", initRes},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
