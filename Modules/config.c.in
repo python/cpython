@@ -24,12 +24,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Configurable Python configuration file */
 
-#define VERSION "0.9.4 beta"
+#include "patchlevel.h"
+
+#define VERSION "0.9.%d alpha (%s)"
 
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= Dec 16 1991"
+#define DATE ">= Dec 27 1991"
 #endif
 
 #include <stdio.h>
@@ -46,7 +48,7 @@ initargs(p_argc, p_argv)
 	int *p_argc;
 	char ***p_argv;
 {
-	sprintf(version, "%s (%s)", VERSION, DATE);
+	sprintf(version, VERSION, PATCHLEVEL, DATE);
 
 #ifdef USE_STDWIN
 	wargs(p_argc, p_argv);
@@ -97,7 +99,7 @@ getpythonpath()
 /* Standard modules */
 extern void inittime();
 extern void initmath();
-extern void initregexp();
+extern void initregex();
 extern void initposix();
 extern void initpwd();
 extern void initgrp();
@@ -143,7 +145,7 @@ struct {
 
 	{"time",	inittime},
 	{"math",	initmath},
-	{"regexp",	initregexp},
+	{"regex",	initregex},
 	{"posix",	initposix},
 	{"pwd",		initpwd},
 	{"grp",		initgrp},
