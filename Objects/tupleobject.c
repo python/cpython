@@ -503,7 +503,7 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 #ifdef WITH_CYCLE_GC
 		PyGC_Head *g = PyObject_AS_GC((PyObject *)v);
 		PyObject_GC_Fini((PyObject *)v);
-		g = (PyTupleObject *)
+		g = (PyGC_Head *)
 			PyObject_REALLOC((char *)g, sizeof(PyTupleObject) 
 					+ PyGC_HEAD_SIZE
 					+ newsize * sizeof(PyObject *));
