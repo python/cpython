@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- the shelve module no longer uses the deprecated binary parameter.
+
 - the pstats module no longer uses the deprecated ignore() method.
 
 - the filecmp module no longer uses the deprecated use_statcache argument.

@@ -80,14 +80,8 @@ class Shelf(UserDict.DictMixin):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False, binary=None):
+    def __init__(self, dict, protocol=None, writeback=False):
         self.dict = dict
-        if protocol is not None and binary is not None:
-            raise ValueError, "can't specify both 'protocol' and 'binary'"
-        if binary is not None:
-            warnings.warn("The 'binary' argument to Shelf() is deprecated",
-                          PendingDeprecationWarning)
-            protocol = int(binary)
         if protocol is None:
             protocol = 0
         self._protocol = protocol
@@ -171,8 +165,8 @@ class BsdDbShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False, binary=None):
-        Shelf.__init__(self, dict, protocol, writeback, binary)
+    def __init__(self, dict, protocol=None, writeback=False):
+        Shelf.__init__(self, dict, protocol, writeback)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
@@ -207,12 +201,12 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False, binary=None):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False):
         import anydbm
-        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback, binary)
+        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback)
 
 
-def open(filename, flag='c', protocol=None, writeback=False, binary=None):
+def open(filename, flag='c', protocol=None, writeback=False):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -222,10 +216,7 @@ def open(filename, flag='c', protocol=None, writeback=False, binary=None):
     anydbm.open(). The optional protocol parameter specifies the
     version of the pickle protocol (0, 1, or 2).
 
-    The optional binary parameter is deprecated and may be set to True
-    to force the use of binary pickles for serializing data values.
-
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback, binary)
+    return DbfilenameShelf(filename, flag, protocol, writeback)
