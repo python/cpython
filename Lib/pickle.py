@@ -176,6 +176,8 @@ class Pickler:
         object, or any other custom object that meets this interface.
 
         """
+        if not 0 <= proto <= 2:
+            raise ValueError, "pickle protocol must be 0, 1 or 2"
         self.write = file.write
         self.memo = {}
         self.proto = proto
@@ -199,6 +201,8 @@ class Pickler:
         value of the bin flag passed to the constructor.
 
         """
+        if self.proto >= 2:
+            self.write(PROTO + chr(self.proto))
         self.save(object)
         self.write(STOP)
 
@@ -385,7 +389,14 @@ class Pickler:
         self.write(INT + `object` + '\n')
     dispatch[IntType] = save_int
 
-    def save_long(self, object):
+    def save_long(self, object, pack=struct.pack):
+        if self.proto >= 2:
+            bytes = encode_long(object)
+            n = len(bytes)
+            if n < 256:
+                self.write(LONG1 + chr(n) + bytes)
+            else:
+                self.write(LONG4 + pack("<i", n) + bytes)
         self.write(LONG + `object` + '\n')
     dispatch[LongType] = save_long
 
@@ -724,6 +735,12 @@ class Unpickler:
         raise EOFError
     dispatch[''] = load_eof
 
+    def load_proto(self):
+        proto = ord(self.read(1))
+        if not 0 <= proto <= 2:
+            raise ValueError, "unsupported pickle protocol: %d" % proto
+    dispatch[PROTO] = load_proto
+
     def load_persid(self):
         pid = self.readline()[:-1]
         self.append(self.persistent_load(pid))
@@ -767,6 +784,18 @@ class Unpickler:
     def load_long(self):
         self.append(long(self.readline()[:-1], 0))
     dispatch[LONG] = load_long
+
+    def load_long1(self):
+        n = ord(self.read(1))
+        bytes = self.read(n)
+        return decode_long(bytes)
+    dispatch[LONG1] = load_long1
+
+    def load_long4(self):
+        n = mloads('i' + self.read(4))
+        bytes = self.read(n)
+        return decode_long(bytes)
+    dispatch[LONG4] = load_long4
 
     def load_float(self):
         self.append(float(self.readline()[:-1]))
@@ -1081,6 +1110,55 @@ class Unpickler:
 class _EmptyClass:
     pass
 
+# Encode/decode longs.
+
+def encode_long(x):
+    r"""Encode a long to a two's complement little-ending binary string.
+    >>> encode_long(255L)
+    '\xff\x00'
+    >>> encode_long(32767L)
+    '\xff\x7f'
+    >>> encode_long(-256L)
+    '\x00\xff'
+    >>> encode_long(-32768L)
+    '\x00\x80'
+    >>> encode_long(-128L)
+    '\x80'
+    >>> encode_long(127L)
+    '\x7f'
+    >>>
+    """
+    digits = []
+    while not -128 <= x < 128:
+        digits.append(x & 0xff)
+        x >>= 8
+    digits.append(x & 0xff)
+    return "".join(map(chr, digits))
+
+def decode_long(data):
+    r"""Decode a long from a two's complement little-endian binary string.
+    >>> decode_long("\xff\x00")
+    255L
+    >>> decode_long("\xff\x7f")
+    32767L
+    >>> decode_long("\x00\xff")
+    -256L
+    >>> decode_long("\x00\x80")
+    -32768L
+    >>> decode_long("\x80")
+    -128L
+    >>> decode_long("\x7f")
+    127L
+    """
+    x = 0L
+    i = 0L
+    for c in data:
+        x |= long(ord(c)) << i
+        i += 8L
+    if data and ord(c) >= 0x80:
+        x -= 1L << i
+    return x
+
 # Shorthands
 
 try:
@@ -1102,3 +1180,12 @@ def load(file):
 def loads(str):
     file = StringIO(str)
     return Unpickler(file).load()
+
+# Doctest
+
+def _test():
+    import doctest
+    return doctest.testmod()
+
+if __name__ == "__main__":
+    _test()
