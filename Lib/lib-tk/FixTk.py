@@ -1,5 +1,6 @@
 import sys, os, _tkinter
 ver = str(_tkinter.TCL_VERSION)
-v = os.path.join(sys.prefix, "tcl", "tcl"+ver)
-if os.path.exists(os.path.join(v, "init.tcl")):
-    os.environ["TCL_LIBRARY"] = v
+for t in "tcl", "tk":
+    v = os.path.join(sys.prefix, "tcl", t+ver)
+    if os.path.exists(os.path.join(v, "tclIndex")):
+        os.environ[t.upper() + "_LIBRARY"] = v
