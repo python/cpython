@@ -206,7 +206,10 @@ these equations can be found in any statistics text.
   angle.  Both values must be expressed in radians, and can range
   between 0 and \emph{pi}.  Returned values range between
   \code{\var{mean} - \var{arc}/2} and \code{\var{mean} +
-  \var{arc}/2}.
+  \var{arc}/2} and are normalized to between 0 and \emph{pi}.
+
+  \deprecated{2.3}{Instead, use (mean + arc * (Random.random()
+  - 0.5)) % Math.pi}
 \end{funcdesc}
 
 \begin{funcdesc}{expovariate}{lambd}
