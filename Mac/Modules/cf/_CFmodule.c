@@ -171,7 +171,7 @@ static void CFTypeRefObj_dealloc(CFTypeRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFTypeRefObj_CFGetTypeID(CFTypeRefObject *_self, PyObject *_args)
@@ -354,7 +354,8 @@ static PyObject *CFTypeRefObj_toPython(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-	return PyCF_CF2Python(_self->ob_itself);
+	_res = PyCF_CF2Python(_self->ob_itself);
+	return _res;
 
 }
 
@@ -406,7 +407,7 @@ static int CFTypeRefObj_compare(CFTypeRefObject *self, CFTypeRefObject *other)
 static PyObject * CFTypeRefObj_repr(CFTypeRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);
+	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", (int)CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -485,7 +486,7 @@ static void CFArrayRefObj_dealloc(CFArrayRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFArrayRefObj_CFArrayCreateCopy(CFArrayRefObject *_self, PyObject *_args)
@@ -641,7 +642,7 @@ static void CFMutableArrayRefObj_dealloc(CFMutableArrayRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFMutableArrayRefObj_CFArrayRemoveValueAtIndex(CFMutableArrayRefObject *_self, PyObject *_args)
@@ -826,7 +827,7 @@ static void CFDictionaryRefObj_dealloc(CFDictionaryRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFDictionaryRefObj_CFDictionaryCreateCopy(CFDictionaryRefObject *_self, PyObject *_args)
@@ -964,7 +965,7 @@ static void CFMutableDictionaryRefObj_dealloc(CFMutableDictionaryRefObject *self
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFMutableDictionaryRefObj_CFDictionaryRemoveAllValues(CFMutableDictionaryRefObject *_self, PyObject *_args)
@@ -1092,7 +1093,7 @@ static void CFDataRefObj_dealloc(CFDataRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFDataRefObj_CFDataCreateCopy(CFDataRefObject *_self, PyObject *_args)
@@ -1262,7 +1263,7 @@ static void CFMutableDataRefObj_dealloc(CFMutableDataRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFMutableDataRefObj_CFDataSetLength(CFMutableDataRefObject *_self, PyObject *_args)
@@ -1485,7 +1486,7 @@ static void CFStringRefObj_dealloc(CFStringRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFStringRefObj_CFStringCreateWithSubstring(CFStringRefObject *_self, PyObject *_args)
@@ -2157,7 +2158,7 @@ static void CFMutableStringRefObj_dealloc(CFMutableStringRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFMutableStringRefObj_CFStringAppend(CFMutableStringRefObject *_self, PyObject *_args)
@@ -2490,7 +2491,7 @@ static void CFURLRefObj_dealloc(CFURLRefObject *self)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 	}
-	PyObject_Del(self);
+	PyObject_Free((PyObject *)self);
 }
 
 static PyObject *CFURLRefObj_CFURLCreateData(CFURLRefObject *_self, PyObject *_args)
@@ -4167,7 +4168,8 @@ static PyObject *CF_toCF(PyObject *_self, PyObject *_args)
 	if (typeid == CFURLGetTypeID())
 		return Py_BuildValue("O&", CFURLRefObj_New, rv);
 
-	return Py_BuildValue("O&", CFTypeRefObj_New, rv);
+	_res = Py_BuildValue("O&", CFTypeRefObj_New, rv);
+	return _res;
 
 }
 
@@ -4324,60 +4326,70 @@ void init_CF(void)
 	    PyDict_SetItemString(d, "Error", CF_Error) != 0)
 		return;
 	CFTypeRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFTypeRef_Type) < 0) return;
 	Py_INCREF(&CFTypeRef_Type);
 	PyModule_AddObject(m, "CFTypeRef", (PyObject *)&CFTypeRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFTypeRef_Type);
 	PyModule_AddObject(m, "CFTypeRefType", (PyObject *)&CFTypeRef_Type);
 	CFArrayRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFArrayRef_Type) < 0) return;
 	Py_INCREF(&CFArrayRef_Type);
 	PyModule_AddObject(m, "CFArrayRef", (PyObject *)&CFArrayRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFArrayRef_Type);
 	PyModule_AddObject(m, "CFArrayRefType", (PyObject *)&CFArrayRef_Type);
 	CFMutableArrayRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFMutableArrayRef_Type) < 0) return;
 	Py_INCREF(&CFMutableArrayRef_Type);
 	PyModule_AddObject(m, "CFMutableArrayRef", (PyObject *)&CFMutableArrayRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFMutableArrayRef_Type);
 	PyModule_AddObject(m, "CFMutableArrayRefType", (PyObject *)&CFMutableArrayRef_Type);
 	CFDictionaryRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFDictionaryRef_Type) < 0) return;
 	Py_INCREF(&CFDictionaryRef_Type);
 	PyModule_AddObject(m, "CFDictionaryRef", (PyObject *)&CFDictionaryRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFDictionaryRef_Type);
 	PyModule_AddObject(m, "CFDictionaryRefType", (PyObject *)&CFDictionaryRef_Type);
 	CFMutableDictionaryRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFMutableDictionaryRef_Type) < 0) return;
 	Py_INCREF(&CFMutableDictionaryRef_Type);
 	PyModule_AddObject(m, "CFMutableDictionaryRef", (PyObject *)&CFMutableDictionaryRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFMutableDictionaryRef_Type);
 	PyModule_AddObject(m, "CFMutableDictionaryRefType", (PyObject *)&CFMutableDictionaryRef_Type);
 	CFDataRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFDataRef_Type) < 0) return;
 	Py_INCREF(&CFDataRef_Type);
 	PyModule_AddObject(m, "CFDataRef", (PyObject *)&CFDataRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFDataRef_Type);
 	PyModule_AddObject(m, "CFDataRefType", (PyObject *)&CFDataRef_Type);
 	CFMutableDataRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFMutableDataRef_Type) < 0) return;
 	Py_INCREF(&CFMutableDataRef_Type);
 	PyModule_AddObject(m, "CFMutableDataRef", (PyObject *)&CFMutableDataRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFMutableDataRef_Type);
 	PyModule_AddObject(m, "CFMutableDataRefType", (PyObject *)&CFMutableDataRef_Type);
 	CFStringRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFStringRef_Type) < 0) return;
 	Py_INCREF(&CFStringRef_Type);
 	PyModule_AddObject(m, "CFStringRef", (PyObject *)&CFStringRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFStringRef_Type);
 	PyModule_AddObject(m, "CFStringRefType", (PyObject *)&CFStringRef_Type);
 	CFMutableStringRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFMutableStringRef_Type) < 0) return;
 	Py_INCREF(&CFMutableStringRef_Type);
 	PyModule_AddObject(m, "CFMutableStringRef", (PyObject *)&CFMutableStringRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&CFMutableStringRef_Type);
 	PyModule_AddObject(m, "CFMutableStringRefType", (PyObject *)&CFMutableStringRef_Type);
 	CFURLRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CFURLRef_Type) < 0) return;
 	Py_INCREF(&CFURLRef_Type);
 	PyModule_AddObject(m, "CFURLRef", (PyObject *)&CFURLRef_Type);
 	/* Backward-compatible name */
