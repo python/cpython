@@ -61,13 +61,12 @@ PAPER=letter
 
 # Ideally, you shouldn't need to edit beyond this point
 
-HTMLDIR=	html
 INFODIR=	info
 TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.2a4
+RELEASE=2.2b1
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
@@ -368,7 +367,7 @@ postscript-$(PAPER)-$(RELEASE).zip: $(PSFILES) paper-$(PAPER)/README
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
 html-$(RELEASE).tar:	$(ALLHTMLFILES)
-	cd $(HTMLDIR) && \
+	cd html && \
 		tar cf ../html-$(RELEASE).tar *.html */*.css */*.html \
 					      */*.gif */*.txt
 
@@ -380,7 +379,7 @@ html-$(RELEASE).tar.bz2: html-$(RELEASE).tar
 
 html-$(RELEASE).zip:	$(ALLHTMLFILES)
 	rm -f $@
-	cd $(HTMLDIR) && \
+	cd html && \
 		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt
 
 # convenience targets:
