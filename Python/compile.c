@@ -422,7 +422,8 @@ parsenumber(s)
 	x = strtol(s, &end, 0);
 	if (*end == '\0') {
 		if (errno != 0) {
-			err_setstr(RuntimeError, "integer constant too large");
+			err_setstr(OverflowError,
+				   "integer constant too large");
 			return NULL;
 		}
 		return newintobject(x);
@@ -431,12 +432,12 @@ parsenumber(s)
 	xx = strtod(s, &end);
 	if (*end == '\0') {
 		if (errno != 0) {
-			err_setstr(RuntimeError, "float constant too large");
+			err_setstr(OverflowError, "float constant too large");
 			return NULL;
 		}
 		return newfloatobject(xx);
 	}
-	err_setstr(RuntimeError, "bad number syntax");
+	err_setstr(SystemError, "bad number syntax?!?!");
 	return NULL;
 }
 
