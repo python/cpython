@@ -3,16 +3,15 @@
 \stmodindex{ftplib}
 \indexii{FTP}{protocol}
 
-\setindexsubitem{(in module ftplib)}
 
-This module defines the class \code{FTP} and a few related items.  The
-\code{FTP} class implements the client side of the FTP protocol.  You
+This module defines the class \class{FTP} and a few related items.  The
+\class{FTP} class implements the client side of the FTP protocol.  You
 can use this to write Python programs that perform a variety of
 automated FTP jobs, such as mirroring other ftp servers.  It is also
-used by the module \code{urllib} to handle URLs that use FTP.  For
+used by the module \module{urllib} to handle URLs that use FTP.  For
 more information on FTP (File Transfer Protocol), see Internet \rfc{959}.
 
-Here's a sample session using the \code{ftplib} module:
+Here's a sample session using the \module{ftplib} module:
 
 \begin{verbatim}
 >>> from ftplib import FTP
@@ -28,23 +27,23 @@ dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
  .
 >>> ftp.quit()
 \end{verbatim}
-%
+
 The module defines the following items:
 
-\begin{funcdesc}{FTP}{\optional{host\optional{\, user\, passwd\, acct}}}
+\begin{classdesc}{FTP}{\optional{host\optional{, user\optional{, passwd\optional{, acct}}}}}
 Return a new instance of the \code{FTP} class.  When
 \var{host} is given, the method call \code{connect(\var{host})} is
 made.  When \var{user} is given, additionally the method call
 \code{login(\var{user}, \var{passwd}, \var{acct})} is made (where
 \var{passwd} and \var{acct} default to the empty string when not given).
-\end{funcdesc}
+\end{classdesc}
 
 \begin{datadesc}{all_errors}
-The set of all exceptions (as a tuple) that methods of \code{FTP}
+The set of all exceptions (as a tuple) that methods of \class{FTP}
 instances may raise as a result of problems with the FTP connection
 (as opposed to programming errors made by the caller).  This set
 includes the four exceptions listed below as well as
-\code{socket.error} and \code{IOError}.
+\exception{socket.error} and \exception{IOError}.
 \end{datadesc}
 
 \begin{excdesc}{error_reply}
@@ -66,21 +65,21 @@ not begin with a digit in the range 1--5.
 
 \subsection{FTP Objects}
 
-FTP instances have the following methods:
+\class{FTP} instances have the following methods:
 
-\setindexsubitem{(FTP object method)}
+\setindexsubitem{(FTP method)}
 
 \begin{funcdesc}{set_debuglevel}{level}
 Set the instance's debugging level.  This controls the amount of
-debugging output printed.  The default, 0, produces no debugging
-output.  A value of 1 produces a moderate amount of debugging output,
-generally a single line per request.  A value of 2 or higher produces
-the maximum amount of debugging output, logging each line sent and
-received on the control connection.
+debugging output printed.  The default, \code{0}, produces no
+debugging output.  A value of \code{1} produces a moderate amount of
+debugging output, generally a single line per request.  A value of
+\code{2} or higher produces the maximum amount of debugging output,
+logging each line sent and received on the control connection.
 \end{funcdesc}
 
-\begin{funcdesc}{connect}{host\optional{\, port}}
-Connect to the given host and port.  The default port number is 21, as
+\begin{funcdesc}{connect}{host\optional{, port}}
+Connect to the given host and port.  The default port number is \code{21}, as
 specified by the FTP protocol specification.  It is rarely needed to
 specify a different port number.  This function should be called only
 once for each instance; it should not be called at all if a host was
@@ -94,15 +93,15 @@ connection.  (This message sometimes contains disclaimers or help
 information that may be relevant to the user.)
 \end{funcdesc}
 
-\begin{funcdesc}{login}{\optional{user\optional{\, passwd\optional{\, acct}}}}
+\begin{funcdesc}{login}{\optional{user\optional{, passwd\optional{, acct}}}}
 Log in as the given \var{user}.  The \var{passwd} and \var{acct}
 parameters are optional and default to the empty string.  If no
-\var{user} is specified, it defaults to \samp{anonymous}.  If
+\var{user} is specified, it defaults to \code{'anonymous'}.  If
 \var{user} is \code{anonymous}, the default \var{passwd} is
 \samp{\var{realuser}@\var{host}} where \var{realuser} is the real user
-name (glanced from the \samp{LOGNAME} or \samp{USER} environment
+name (glanced from the \envvar{LOGNAME} or \envvar{USER} environment
 variable) and \var{host} is the hostname as returned by
-\code{socket.gethostname()}.  This function should be called only
+\function{socket.gethostname()}.  This function should be called only
 once for each instance, after a connection has been established; it
 should not be called at all if a host and user were given when the
 instance was created.  Most FTP commands are only allowed after the
@@ -125,9 +124,9 @@ Return nothing if a response code in the range 200--299 is received.
 Raise an exception otherwise.
 \end{funcdesc}
 
-\begin{funcdesc}{retrbinary}{command\, callback\optional{\, maxblocksize}}
+\begin{funcdesc}{retrbinary}{command, callback\optional{, maxblocksize}}
 Retrieve a file in binary transfer mode.  \var{command} should be an
-appropriate \samp{RETR} command, i.e.\ \code{"RETR \var{filename}"}.
+appropriate \samp{RETR} command, i.e.\ \code{'RETR \var{filename}'}.
 The \var{callback} function is called for each block of data received,
 with a single string argument giving the data block.
 The optional \var{maxblocksize} argument specifies the maximum chunk size to
@@ -136,47 +135,47 @@ read on the low-level socket object created to do the actual transfer
 \var{callback}).  A reasonable default is chosen.
 \end{funcdesc}
 
-\begin{funcdesc}{retrlines}{command\optional{\, callback}}
+\begin{funcdesc}{retrlines}{command\optional{, callback}}
 Retrieve a file or directory listing in \ASCII{} transfer mode.
 \var{command} should be an appropriate \samp{RETR} command (see
-\code{retrbinary()} or a \samp{LIST} command (usually just the string
-\code{"LIST"}).  The \var{callback} function is called for each line,
+\method{retrbinary()} or a \samp{LIST} command (usually just the string
+\code{'LIST'}).  The \var{callback} function is called for each line,
 with the trailing CRLF stripped.  The default \var{callback} prints
 the line to \code{sys.stdout}.
 \end{funcdesc}
 
-\begin{funcdesc}{storbinary}{command\, file\, blocksize}
+\begin{funcdesc}{storbinary}{command, file, blocksize}
 Store a file in binary transfer mode.  \var{command} should be an
 appropriate \samp{STOR} command, i.e.\ \code{"STOR \var{filename}"}.
-\var{file} is an open file object which is read until EOF using its
-\code{read()} method in blocks of size \var{blocksize} to provide the
+\var{file} is an open file object which is read until \EOF{} using its
+\method{read()} method in blocks of size \var{blocksize} to provide the
 data to be stored.
 \end{funcdesc}
 
-\begin{funcdesc}{storlines}{command\, file}
+\begin{funcdesc}{storlines}{command, file}
 Store a file in \ASCII{} transfer mode.  \var{command} should be an
-appropriate \samp{STOR} command (see \code{storbinary()}).  Lines are
-read until EOF from the open file object \var{file} using its
-\code{readline()} method to privide the data to be stored.
+appropriate \samp{STOR} command (see \method{storbinary()}).  Lines are
+read until \EOF{} from the open file object \var{file} using its
+\method{readline()} method to privide the data to be stored.
 \end{funcdesc}
 
-\begin{funcdesc}{nlst}{argument\optional{\, \ldots}}
+\begin{funcdesc}{nlst}{argument\optional{, \ldots}}
 Return a list of files as returned by the \samp{NLST} command.  The
 optional \var{argument} is a directory to list (default is the current
 server directory).  Multiple arguments can be used to pass
 non-standard options to the \samp{NLST} command.
 \end{funcdesc}
 
-\begin{funcdesc}{dir}{argument\optional{\, \ldots}}
+\begin{funcdesc}{dir}{argument\optional{, \ldots}}
 Return a directory listing as returned by the \samp{LIST} command, as
 a list of lines.  The optional \var{argument} is a directory to list
 (default is the current server directory).  Multiple arguments can be
 used to pass non-standard options to the \samp{LIST} command.  If the
 last argument is a function, it is used as a \var{callback} function
-as for \code{retrlines()}.
+as for \method{retrlines()}.
 \end{funcdesc}
 
-\begin{funcdesc}{rename}{fromname\, toname}
+\begin{funcdesc}{rename}{fromname, toname}
 Rename file \var{fromname} on the server to \var{toname}.
 \end{funcdesc}
 
@@ -195,12 +194,12 @@ Return the pathname of the current directory on the server.
 \begin{funcdesc}{quit}{}
 Send a \samp{QUIT} command to the server and close the connection.
 This is the ``polite'' way to close a connection, but it may raise an
-exception of the server reponds with an error to the \code{QUIT}
+exception of the server reponds with an error to the \samp{QUIT}
 command.
 \end{funcdesc}
 
 \begin{funcdesc}{close}{}
 Close the connection unilaterally.  This should not be applied to an
 already closed connection (e.g.\ after a successful call to
-\code{quit()}.
+\method{quit()}.
 \end{funcdesc}
