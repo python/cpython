@@ -14,7 +14,11 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "unicodeobject.h"
 
-#ifdef macintosh
+#if defined(macintosh) || defined(MS_WIN64)
+/*XXX This was required to avoid a compiler error for an early Win64
+ * cross-compiler that was used for the port to Win64. When the platform is
+ * released the MS_WIN64 inclusion here should no longer be necessary.
+ */
 /* This probably needs to be defined for some other compilers too. It breaks the
 ** 5000-label switch statement up into switches with around 1000 cases each.
 */
