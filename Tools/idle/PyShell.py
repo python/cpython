@@ -6,6 +6,7 @@ import string
 import getopt
 import re
 import warnings
+import types
 
 import linecache
 from code import InteractiveInterpreter
@@ -188,6 +189,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
+        if isinstance(source, types.UnicodeType):
+            import IOBinding
+            source = source.encode(IOBinding.encoding)
         try:
             return InteractiveInterpreter.runsource(self, source, filename)
         finally:
