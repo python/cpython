@@ -505,6 +505,7 @@ global name space (this is the same as \code{\var{m}.__dict__} where
 \var{m} is the module in which the function \var{f} was defined).
 
 \subsubsection{Methods.}
+\obindex{method}
 
 Methods are functions that are called using the attribute notation.
 There are two flavors: built-in methods (such as \code{append()} on
@@ -518,6 +519,27 @@ Calling \code{\var{m}(\var{arg-1}, \var{arg-2}, {\rm \ldots},
 \var{arg-n})} is completely equivalent to calling
 \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1}, \var{arg-2}, {\rm
 \ldots}, \var{arg-n})}.
+
+(See the Python Reference Manual for more info.)
+
+\subsubsection{Code Objects.}
+\obindex{code}
+
+Code objects are used by the implementation to represent
+``pseudo-compiled'' executable Python code such as a function body.
+They differ from function objects because they don't contain a
+reference to their global execution environment.  Code objects are
+returned by the built-in \code{compile()} function and can be
+extracted from function objects through their \code{func_code}
+attribute.
+\bifuncindex{compile}
+\ttindex{func_code}
+
+A code object can be executed or evaluated by passing it (instead of a
+source string) to the \code{exec} statement or the built-in
+\code{eval()} function.
+\stindex{exec}
+\bifuncindex{eval}
 
 (See the Python Reference Manual for more info.)
 
