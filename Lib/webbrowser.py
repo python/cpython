@@ -183,9 +183,7 @@ register("grail", Grail)
 
 class WindowsDefault:
     def open(self, url, new=0):
-        import win32api, win32con
-        win32api.ShellExecute(0, "open", url, None, ".",
-                              win32con.SW_SHOWNORMAL)
+        self.junk = os.popen("start " + url)
 
     def open_new(self, url):
         self.open(url)
