@@ -527,7 +527,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
        of specified size. Return the unconsumed tail in an attribute.*/
     if(max_length) {
 	Py_DECREF(self->unconsumed_tail);
-	self->unconsumed_tail = PyString_FromStringAndSize(self->zst.next_in,
+	self->unconsumed_tail = PyString_FromStringAndSize((char *)self->zst.next_in,
 							   self->zst.avail_in);
 	if(!self->unconsumed_tail) {
 	    Py_DECREF(RetVal);
