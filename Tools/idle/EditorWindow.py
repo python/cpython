@@ -674,7 +674,7 @@ class EditorWindow:
         if self.get_tabwidth() != newtabwidth:
             pixels = text.tk.call("font", "measure", text["font"],
                                   "-displayof", text.master,
-                                  "n" * newtabwith)
+                                  "n" * newtabwidth)
             text.configure(tabs=pixels)
 
 def prepstr(s):
