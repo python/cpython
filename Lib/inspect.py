@@ -593,7 +593,9 @@ def getargs(co):
     Three things are returned: (args, varargs, varkw), where 'args' is
     a list of argument names (possibly containing nested lists), and
     'varargs' and 'varkw' are the names of the * and ** arguments or None."""
-    if not iscode(co): raise TypeError, 'arg is not a code object'
+
+    if not iscode(co):
+        raise TypeError('arg is not a code object')
 
     code = co.co_code
     nargs = co.co_argcount
@@ -642,8 +644,13 @@ def getargspec(func):
     A tuple of four things is returned: (args, varargs, varkw, defaults).
     'args' is a list of the argument names (it may contain nested lists).
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
-    'defaults' is an n-tuple of the default values of the last n arguments."""
-    if not isfunction(func): raise TypeError, 'arg is not a Python function'
+    'defaults' is an n-tuple of the default values of the last n arguments.
+    """
+
+    if ismethod(func):
+        func = func.im_func
+    if not isfunction(func):
+        raise TypeError('arg is not a Python function')
     args, varargs, varkw = getargs(func.func_code)
     return args, varargs, varkw, func.func_defaults
 
