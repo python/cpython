@@ -11,6 +11,12 @@ What's New in Python 2.3 alpha 1?
 
 Type/class unification and new-style classes
 --------------------------------------------
+- dict() now accepts keyword arguments so that dict(one=1,two=2)
+  is the equivalent of dict([('one',1),('two',2)]).  Accordingly,
+  the existing (but undocumented) 'items' keyword argument has
+  been eliminated. This means that dict(items=someMapping) now has
+  a different meaning than before.
+
 - int() now returns a long object if the argument is outside the
   integer range, so int("4"*1000), int(1e200) and int(1L<<1000) will
   all return long objects instead of raising an OverflowError.
