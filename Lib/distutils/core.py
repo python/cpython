@@ -106,12 +106,21 @@ class Distribution:
        those described below."""
 
 
-    # 'global_options' describes the command-line options that may
-    # be supplied to the client (setup.py) prior to any actual
-    # commands.  Eg. "./setup.py -nv" or "./setup.py --verbose"
-    # both take advantage of these global options.
-    global_options = [('verbose', 'v', "run verbosely"),
-                      ('dry-run', 'n', "don't actually do anything"),
+    # 'global_options' describes the command-line options that may be
+    # supplied to the client (setup.py) prior to any actual commands.
+    # Eg. "./setup.py -nv" or "./setup.py --verbose" both take advantage of
+    # these global options.  This list should be kept to a bare minimum,
+    # since every global option is also valid as a command option -- and we
+    # don't want to pollute the commands with too many options that they
+    # have minimal control over.
+    global_options = [('verbose', 'v',
+                       "run verbosely"),
+                      ('quiet=!verbose', 'q',
+                       "run quietly (turns verbosity off)"),
+                      ('dry-run', 'n',
+                       "don't actually do anything"),
+                      ('force', 'f',
+                       "skip dependency checking between files"),
                      ]
 
 
@@ -131,6 +140,7 @@ class Distribution:
         # Default values for our command-line options
         self.verbose = 0
         self.dry_run = 0
+        self.force = 0
 
         # And the "distribution meta-data" options -- these can only
         # come from setup.py (the caller), not the command line
@@ -211,23 +221,22 @@ class Distribution:
 
 
     def parse_command_line (self, args):
-        """Parse the client's command line: set any Distribution
+        """Parse the setup script's command line: set any Distribution
            attributes tied to command-line options, create all command
            objects, and set their options from the command-line.  'args'
            must be a list of command-line arguments, most likely
-           'sys.argv[1:]' (see the 'setup()' function).  This list is
-           first processed for "global options" -- options that set
-           attributes of the Distribution instance.  Then, it is
-           alternately scanned for Distutils command and options for
-           that command.  Each new command terminates the options for
-           the previous command.  The allowed options for a command are
-           determined by the 'options' attribute of the command object
-           -- thus, we instantiate (and cache) every command object
-           here, in order to access its 'options' attribute.  Any error
-           in that 'options' attribute raises DistutilsGetoptError; any
-           error on the command-line raises DistutilsArgError.  If no
-           Distutils commands were found on the command line, raises
-           DistutilsArgError."""
+           'sys.argv[1:]' (see the 'setup()' function).  This list is first
+           processed for "global options" -- options that set attributes of
+           the Distribution instance.  Then, it is alternately scanned for
+           Distutils command and options for that command.  Each new
+           command terminates the options for the previous command.  The
+           allowed options for a command are determined by the 'options'
+           attribute of the command object -- thus, we instantiate (and
+           cache) every command object here, in order to access its
+           'options' attribute.  Any error in that 'options' attribute
+           raises DistutilsGetoptError; any error on the command-line
+           raises DistutilsArgError.  If no Distutils commands were found
+           on the command line, raises DistutilsArgError."""
 
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
@@ -268,7 +277,10 @@ class Distribution:
                        "(a list of tuples)") % \
                       cmd_obj.__class__
 
-            args = fancy_getopt (cmd_obj.options, cmd_obj, args[1:])
+            # Poof! like magic, all commands support the global
+            # options too, just by adding in 'global_options'.
+            args = fancy_getopt (self.global_options + cmd_obj.options,
+                                 cmd_obj, args[1:])
             self.command_obj[command] = cmd_obj
             self.have_run[command] = 0
 
@@ -497,6 +509,17 @@ class Command:
         self.distribution = dist
         self.set_default_options ()
 
+        # Per-command versions of the global flags, so that the user can
+        # customize Distutils' behaviour command-by-command and let some
+        # commands fallback on the Distribution's behaviour.  None means
+        # "not defined, check self.distribution's copy", while 0 or 1 mean
+        # false and true (duh).  Note that this means figuring out the real
+        # value of each flag is a touch complicatd -- hence "self.verbose"
+        # (etc.) will be handled by __getattr__, below.
+        self._verbose = None
+        self._dry_run = None
+        self._force = None
+
         # 'ready' records whether or not 'set_final_options()' has been
         # called.  'set_final_options()' itself should not pay attention to
         # this flag: it is the business of 'ensure_ready()', which always
@@ -504,6 +527,17 @@ class Command:
         self.ready = 0
 
     # end __init__ ()
+
+
+    def __getattr__ (self, attr):
+        if attr in ('verbose', 'dry_run', 'force'):
+            myval = getattr (self, "_" + attr)
+            if myval is None:
+                return getattr (self.distribution, attr)
+            else:
+                return myval
+        else:
+            raise AttributeError, attr
 
 
     def ensure_ready (self):
@@ -569,7 +603,8 @@ class Command:
         """If the Distribution instance to which this command belongs
            has a verbosity level of greater than or equal to 'level'
            print 'msg' to stdout."""
-        if self.distribution.verbose >= level:
+    
+        if self.verbose >= level:
             print msg
 
 
@@ -720,15 +755,13 @@ class Command:
     def execute (self, func, args, msg=None, level=1):
         """Perform some action that affects the outside world (eg.
            by writing to the filesystem).  Such actions are special because
-           they should be disabled by the "dry run" flag (carried around by
-           the Command's Distribution), and should announce themselves if
-           the current verbosity level is high enough.  This method takes
-           care of all that bureaucracy for you; all you have to do is
-           supply the funtion to call and an argument tuple for it (to
-           embody the "external action" being performed), a message to
-           print if the verbosity level is high enough, and an optional
-           verbosity threshold."""
-
+           they should be disabled by the "dry run" flag, and should
+           announce themselves if the current verbosity level is high
+           enough.  This method takes care of all that bureaucracy for you;
+           all you have to do is supply the funtion to call and an argument
+           tuple for it (to embody the "external action" being performed),
+           a message to print if the verbosity level is high enough, and an
+           optional verbosity threshold."""
 
         # Generate a message if we weren't passed one
         if msg is None:
@@ -740,7 +773,7 @@ class Command:
         self.announce (msg, level)
 
         # And do it, as long as we're not in dry-run mode
-        if not self.distribution.dry_run:
+        if not self.dry_run:
             apply (func, args)
 
     # execute()
@@ -748,43 +781,45 @@ class Command:
 
     def mkpath (self, name, mode=0777):
         util.mkpath (name, mode,
-                     self.distribution.verbose, self.distribution.dry_run)
+                     self.verbose, self.dry_run)
 
 
     def copy_file (self, infile, outfile,
-                   preserve_mode=1, preserve_times=1, update=1, level=1):
-        """Copy a file respecting verbose and dry-run flags."""
+                   preserve_mode=1, preserve_times=1, level=1):
+        """Copy a file respecting verbose, dry-run and force flags."""
 
         return util.copy_file (infile, outfile,
                                preserve_mode, preserve_times,
-                               update, self.distribution.verbose >= level,
-                               self.distribution.dry_run)
+                               not self.force,
+                               self.verbose >= level,
+                               self.dry_run)
 
 
     def copy_tree (self, infile, outfile,
                    preserve_mode=1, preserve_times=1, preserve_symlinks=0,
-                   update=1, level=1):
-        """Copy an entire directory tree respecting verbose and dry-run
-           flags."""
+                   level=1):
+        """Copy an entire directory tree respecting verbose, dry-run,
+           and force flags."""
 
         return util.copy_tree (infile, outfile, 
                                preserve_mode,preserve_times,preserve_symlinks,
-                               update, self.distribution.verbose >= level,
-                               self.distribution.dry_run)
+                               not self.force,
+                               self.verbose >= level,
+                               self.dry_run)
 
 
     def move_file (self, src, dst, level=1):
         """Move a file respecting verbose and dry-run flags."""
         return util.move_file (src, dst,
-                               self.distribution.verbose >= level,
-                               self.distribution.dry_run)
+                               self.verbose >= level,
+                               self.dry_run)
 
 
     def spawn (self, cmd, search_path=1, level=1):
         from distutils.spawn import spawn
         spawn (cmd, search_path,
-               self.distribution.verbose >= level,
-               self.distribution.dry_run)
+               self.verbose >= level,
+               self.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,
@@ -811,29 +846,10 @@ class Command:
             raise TypeError, \
                   "'infiles' must be a string, or a list or tuple of strings"
 
-        # XXX this stuff should probably be moved off to a function
-        # in 'distutils.util'
-        from stat import *
-
-        if os.path.exists (outfile):
-            out_mtime = os.stat (outfile)[ST_MTIME]
-
-            # Loop over all infiles.  If any infile is newer than outfile,
-            # then we'll have to regenerate outfile
-            for f in infiles:
-                in_mtime = os.stat (f)[ST_MTIME]
-                if in_mtime > out_mtime:
-                    runit = 1
-                    break
-            else:
-                runit = 0
-
-        else:
-            runit = 1
-
-        # If we determined that 'outfile' must be regenerated, then
+        # If 'outfile' must be regenerated (either because it doesn't
+        # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if runit:
+        if self.force or newer_group (infiles, outfile):
             self.execute (func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
@@ -841,20 +857,5 @@ class Command:
             self.announce (skip_msg, level)
 
     # make_file ()
-
-
-#     def make_files (self, infiles, outfiles, func, args,
-#                     exec_msg=None, skip_msg=None, level=1):
-
-#         """Special case of 'execute()' for operations that process one or
-#            more input files and generate one or more output files.  Works
-#            just like 'execute()', except the operation is skipped and a
-#            different message printed if all files listed in 'outfiles'
-#            already exist and are newer than all files listed in
-#            'infiles'."""
-
-#         pass
-    
-    
 
 # end class Command
