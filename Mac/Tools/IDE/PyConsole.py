@@ -340,8 +340,15 @@ class SimpleStdin:
 	
 	def readline(self):
 		import EasyDialogs
+		# A trick to make the input dialog box a bit more palatable
+		if hasattr(sys.stdout, '_buf'):
+			prompt = sys.stdout._buf
+		else:
+			prompt = ""
+		if not prompt:
+			prompt = "Stdin input:"
 		sys.stdout.flush()
-		rv = EasyDialogs.AskString("")
+		rv = EasyDialogs.AskString(prompt)
 		if rv is None:
 			return ""
 		return rv + '\n'
