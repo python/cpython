@@ -58,8 +58,6 @@ class BuildExt (Command):
                 "directories to search for shared C libraries at runtime"),
                ('link-objects=', 'O',
                 "extra explicit link objects to include in the link"),
-               ('package=', 'p',
-                "Python package to put extension modules into"),
               ]
 
 
@@ -76,8 +74,9 @@ class BuildExt (Command):
         self.rpath = None
         self.link_objects = None
 
+
     def set_final_options (self):
-        self.set_undefined_options ('build', ('platdir', 'build_dir'))
+        self.set_undefined_options ('build', ('build_platlib', 'build_dir'))
 
         if self.package is None:
             self.package = self.distribution.ext_package
@@ -94,14 +93,16 @@ class BuildExt (Command):
                                         'python' + sys.version[0:3])
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
+        if type (self.include_dirs) is StringType:
+            self.include_dirs = string.split (self.include_dirs,
+                                              os.pathsep)
+
         self.include_dirs.insert (0, py_include)
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
 
 
     def run (self):
-
-        self.set_final_options ()
 
         # 'self.extensions', as supplied by setup.py, is a list of 2-tuples.
         # Each tuple is simple:
@@ -172,6 +173,19 @@ class BuildExt (Command):
     # check_extensions_list ()
 
 
+    def get_source_files (self):
+
+        filenames = []
+
+        # Wouldn't it be neat if we knew the names of header files too...
+        for (extension_name, build_info) in extensions:
+            sources = build_info.get ('sources')
+            if type (sources) in (ListType, TupleType):
+                filenames.extend (sources)
+
+        return filenames
+
+
     def build_extensions (self, extensions):
 
         for (extension_name, build_info) in extensions:
@@ -180,19 +194,42 @@ class BuildExt (Command):
                 raise DistutilsValueError, \
                       "in ext_modules option, 'sources' must be present " + \
                       "and must be a list of source filenames"
-            
+
+            # First step: compile the source code to object files.  This
+            # drops the object files in the current directory, regardless
+            # of where the source is (may be a bad thing, but that's how a
+            # Makefile.pre.in-based system does it, so at least there's a
+            # precedent!)
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
             self.compiler.compile (sources,
                                    macros=macros,
                                    includes=include_dirs)
 
+            # Now link the object files together into a "shared object" --
+            # of course, first we have to figure out all the other things
+            # that go into the mix.
             objects = self.compiler.object_filenames (sources)
             extra_objects = build_info.get ('extra_objects')
             if extra_objects:
                 objects.extend (extra_objects)
             libraries = build_info.get ('libraries')
             library_dirs = build_info.get ('library_dirs')
+            extra_args = build_info.get ('extra_link_args') or []
+            if self.compiler.compiler_type == 'msvc':
+                def_file = build_info.get ('def_file')
+                if def_file is None:
+                    source_dir = os.path.dirname (sources[0])
+                    ext_base = (string.split (extension_name, '.'))[-1]
+                    def_file = os.path.join (source_dir, "%s.def" % ext_base)
+                    if not os.path.exists (def_file):
+                        self.warn ("file '%s' not found: " % def_file +
+                                   "might have problems building DLL")
+                        def_file = None
+
+                if def_file is not None:
+                    extra_args.append ('/DEF:' + def_file)
+
             ext_filename = self.extension_filename \
                            (extension_name, self.package)
             ext_filename = os.path.join (self.build_dir, ext_filename)
@@ -201,7 +238,7 @@ class BuildExt (Command):
             self.compiler.link_shared_object (objects, ext_filename, 
                                               libraries=libraries,
                                               library_dirs=library_dirs,
-                                              build_info=build_info)  # XXX hack!
+                                              extra_postargs=extra_args)
 
     # build_extensions ()
 
