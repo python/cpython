@@ -150,6 +150,17 @@ sub do_cmd_strong{
     $_;
 }
 
+sub do_cmd_deprecated{
+    # two parameters:  \deprecated{version}{whattodo}
+    local($_) = @_;
+    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    local($release,$action) = ($2, $4);
+    s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
+    "<b>Deprecated since release $release.</b>"
+      . "\n$action<p>"
+      . $_;
+}
+
 # file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
@@ -165,6 +176,9 @@ sub do_cmd_setindexsubitem{
     s/$any_next_pair_pr_rx//;
     $INDEX_SUBITEM = $2;
     $_;
+}
+if (defined &process_commands_wrap_deferred) {
+    &process_commands_wrap_deferred("setindexsubitem \# {}\n");
 }
 
 sub do_cmd_indexii{
