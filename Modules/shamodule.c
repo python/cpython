@@ -491,15 +491,14 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
     SHAobject *new;
     unsigned char *cp = NULL;
     int len;
-	
-    if ((new = newSHAobject()) == NULL)
-        return NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
                                      &cp, &len)) {
-        Py_DECREF(new);
         return NULL;
     }
+
+    if ((new = newSHAobject()) == NULL)
+        return NULL;
 
     sha_init(new);
 
