@@ -64,6 +64,9 @@ DESTSHARED=	$(BINLIBDEST)/sharedmodules
 INSTALL=	@srcdir@/../install-sh -c
 INSTALL_PROGRAM=${INSTALL} -m 755
 INSTALL_DATA=	${INSTALL} -m 644
+# Shared libraries must be installed with executable mode on some systems;
+# rather than figuring out exactly which, we always give them executable mode.
+INSTALL_SHARED=	${INSTALL} -m 755
 
 # === Variables that are customizable by hand or by inclusion in Setup ===
 
@@ -199,7 +202,7 @@ sharedmods:	$(SHAREDMODS)
 sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
 		-for i in X $(SHAREDMODS); do \
 			if test $$i != X; \
-			then $(INSTALL_DATA) $$i $(DESTSHARED)/$$i; \
+			then $(INSTALL_SHARED) $$i $(DESTSHARED)/$$i; \
 			fi; \
 		done
 
