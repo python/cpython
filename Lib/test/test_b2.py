@@ -148,8 +148,8 @@ if reduce(lambda x, y: x+y, Squares(0), 0) != 0:
 
 
 print 'reload'
-#import strop
-#reload(strop)
+import marshal
+reload(marshal)
 import string
 reload(string)
 import sys

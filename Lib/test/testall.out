@@ -54,6 +54,7 @@ XXX Not yet implemented
 test_builtin
 4. Built-in functions
 test_b1
+__import__
 abs
 apply
 callable
