@@ -1614,7 +1614,7 @@ static PyMemberDef file_memberlist[] = {
 	{"softspace",	T_INT,		OFF(f_softspace), 0,
 	 "flag indicating that a space needs to be printed; used by print"},
 	{"mode",	T_OBJECT,	OFF(f_mode),	RO,
-	 "file mode ('r', 'w', 'a', possibly with 'b' or '+' added)"},
+	 "file mode ('r', 'U', 'w', 'a', possibly with 'b' or '+' added)"},
 	{"name",	T_OBJECT,	OFF(f_name),	RO,
 	 "file name"},
 	/* getattr(f, "closed") is implemented without this table */
@@ -1767,12 +1767,8 @@ file_iternext(PyFileObject *f)
 {
 	PyStringObject* l;
 
-	int i;
-
 	if (f->f_fp == NULL)
 		return err_closed();
-
-	i = f->f_softspace;
 
 	l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
 	if (l == NULL || PyString_GET_SIZE(l) == 0) {
