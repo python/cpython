@@ -150,6 +150,9 @@ class Unpacker:
     def set_position(self, position):
 	self.__pos = position
 
+    def get_buffer(self):
+	return self.__buf
+
     def done(self):
 	if self.__pos < len(self.__buf):
 	    raise Error('unextracted data remains')
