@@ -116,6 +116,7 @@ N_FRAME_REC=EXP_8 + '\x92'
 SEARCH_PREROLL=EXP_8 + '\x90'
 EDIT_PB_STANDBY=EXP_8 + '\x96'
 EDIT_PLAY=EXP_8 + '\x98'
+AUTO_EDIT=EXP_7 + '\x9c'
 
 IN_ENTRY=EXP_7 + '\x90'
 IN_ENTRY_RESET=EXP_7 + '\x91'
@@ -408,6 +409,10 @@ class VCR:
 			return 0
 		return 1
 
+	def autoedit(self):
+		self._check()
+		return self._endlongcmd(AUTO_EDIT)
+
 	def nframerec(self, num):
 		if not self.simplecmd(N_FRAME_REC):
 			return 0
@@ -487,13 +492,9 @@ class VCR:
 			cmd = OUT_ENTRY_SENSE
 		self.replycmd(cmd)
 		h = self._getnumber(2)
-		print 'h=',h
 		m = self._getnumber(2)
-		print 'm=',m
 		s = self._getnumber(2)
-		print 's=',s
 		f = self._getnumber(2)
-		print 'f=',f
 		return (h, m, s, f)
 
 	def inentry(self, arg):
@@ -528,3 +529,7 @@ class VCR:
 		else:
 			raise error, 'Arg should be +,-,reset,load or (h,m,s,f)'
 		return self.simplecmd(cmd)
+
+	def cancel(self):
+		d = self.simplecmd(CL)
+		self.busy_cmd = None
