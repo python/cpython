@@ -181,28 +181,6 @@ setipaddr(name, addr_ret)
 }
 
 
-/* Generally useful convenience function to create a tuple from two
-   objects.  This eats references to the objects; if either is NULL
-   it destroys the other and returns NULL without raising an exception
-   (assuming the function that was called to create the argument must
-   have raised an exception and returned NULL). */
-
-static object *
-makepair(a, b)
-	object *a, *b;
-{
-	object *pair = NULL;
-	if (a == NULL || b == NULL || (pair = newtupleobject(2)) == NULL) {
-		XDECREF(a);
-		XDECREF(b);
-		return NULL;
-	}
-	settupleitem(pair, 0, a);
-	settupleitem(pair, 1, b);
-	return pair;
-}
-
-
 /* Create a string object representing an IP address.
    This is always a string of the form 'dd.dd.dd.dd' (with variable
    size numbers). */
@@ -231,13 +209,18 @@ makesockaddr(addr, addrlen)
 	struct sockaddr *addr;
 	int addrlen;
 {
+	if (addrlen == 0) {
+		/* No address -- may be recvfrom() from known socket */
+		INCREF(None);
+		return None;
+	}
+
 	switch (addr->sa_family) {
 
 	case AF_INET:
 	{
 		struct sockaddr_in *a = (struct sockaddr_in *) addr;
-		return makepair(makeipaddr(a),
-				newintobject((long) ntohs(a->sin_port)));
+		return mkvalue("Oi", makeipaddr(a), ntohs(a->sin_port));
 	}
 
 	case AF_UNIX:
@@ -251,6 +234,7 @@ makesockaddr(addr, addrlen)
 	default:
 		err_setstr(SocketError, "return unknown socket address type");
 		return NULL;
+
 	}
 }
 
@@ -365,7 +349,7 @@ sock_accept(s, args)
 		return socket_error();
 	/* Create the new object with unspecified family,
 	   to avoid calls to bind() etc. on it. */
-	res = makepair((object *) newsockobject(newfd,
+	res = mkvalue("OO", (object *) newsockobject(newfd,
 						s->sock_family,
 						s->sock_type,
 						s->sock_proto),
@@ -624,7 +608,7 @@ sock_recvfrom(s, args)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
 		return NULL;
-	return makepair(buf,
+	return mkvalue("OO", buf,
 			makesockaddr((struct sockaddr *)addrbuf, addrlen));
 }
 
