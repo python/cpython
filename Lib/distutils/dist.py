@@ -14,7 +14,7 @@ from types import *
 from copy import copy
 from distutils.errors import *
 from distutils import sysconfig
-from distutils.fancy_getopt import FancyGetopt, longopt_xlate
+from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool
 
 
@@ -86,8 +86,8 @@ class Distribution:
         ('long-description', None,
          "print the long package description"),
         ]
-    display_option_names = map(lambda x: string.translate(x[0], longopt_xlate),
-                           display_options)
+    display_option_names = map(lambda x: translate_longopt(x[0]),
+                               display_options)
 
     # negative options are options that exclude other options
     negative_opt = {'quiet': 'verbose'}
@@ -592,7 +592,7 @@ class Distribution:
 
         for (opt, val) in option_order:
             if val and is_display_option.get(opt):
-                opt = string.translate (opt, longopt_xlate)
+                opt = translate_longopt(opt)
                 print getattr(self.metadata, "get_"+opt)()
                 any_display_options = 1
 
@@ -746,7 +746,7 @@ class Distribution:
         for (option, (source, value)) in option_dict.items():
             if DEBUG: print "    %s = %s (from %s)" % (option, value, source)
             try:
-                bool_opts = command_obj.boolean_options
+                bool_opts = map(translate_longopt, command_obj.boolean_options)
             except AttributeError:
                 bool_opts = []
             try:
