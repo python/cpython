@@ -1,0 +1,31 @@
+test_pyexpat
+PI:
+	xml-stylesheet href="stylesheet.css"
+Comment:
+	' comment data '
+Notation declared: ('notation', None, 'notation.jpeg', None)
+Unparsed entity decl:
+	('unparsed_entity', None, 'entity.file', None, 'notation')
+Start element:
+	root {}
+NS decl:
+	myns http://www.python.org/namespace
+Start element:
+	http://www.python.org/namespace!subelement {}
+Character data:
+	'Contents of subelements'
+End element:
+	http://www.python.org/namespace!subelement
+End of NS decl:
+	myns
+Start element:
+	sub2 {}
+Start of CDATA section
+Character data:
+	'contents of CDATA section'
+End of CDATA section
+End element:
+	sub2
+External entity ref: http://www.python.org/namespace=http://www.w3.org/XML/1998/namespaceexternal_entity None entity.file None
+End element:
+	root
