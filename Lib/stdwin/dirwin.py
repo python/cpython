@@ -2,24 +2,24 @@
 
 # Directory windows, a subclass of listwin
 
+import os
 import gwin
 import listwin
 import anywin
-import path
 import dircache
 
 def action(w, string, i, detail):
 	(h, v), clicks, button, mask = detail
 	if clicks == 2:
-		name = path.join(w.name, string)
+		name = os.path.join(w.name, string)
 		try:
 			w2 = anywin.open(name)
 			w2.parent = w
-		except posix.error, why:
+		except os.error, why:
 			stdwin.message('Can\'t open ' + name + ': ' + why[1])
 
 def open(name):
-	name = path.join(name, '')
+	name = os.path.join(name, '')
 	list = dircache.opendir(name)[:]
 	list.sort()
 	dircache.annotate(name, list)
