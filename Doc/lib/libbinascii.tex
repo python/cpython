@@ -1,5 +1,5 @@
 \section{\module{binascii} ---
-         Convert between binary \ASCII{}-encoded formats}
+         Convert between binary and \ASCII{}}
 
 \declaremodule{builtin}{binascii}
 \modulesynopsis{Tools for converting between binary and various
@@ -10,7 +10,7 @@ The \module{binascii} module contains a number of methods to convert
 between binary and various \ASCII{}-encoded binary
 representations. Normally, you will not use these functions directly
 but use wrapper modules like \refmodule{uu}\refstmodindex{uu} or
-\module{hexbin}\refstmodindex{hexbin} instead, this module solely
+\refmodule{binhex}\refstmodindex{binhex} instead, this module solely
 exists because bit-manipuation of large amounts of data is slow in
 Python.
 
@@ -81,3 +81,12 @@ Exception raised on incomplete data. These are usually not programming
 errors, but may be handled by reading a little more data and trying
 again.
 \end{excdesc}
+
+
+\begin{seealso}
+  \seemodule{base64}{support for base64 encoding used in MIME email messages}
+
+  \seemodule{binhex}{support for the binhex format used on the Macintosh}
+
+  \seemodule{uu}{support for UU encoding used on \UNIX{}}
+\end{seealso}
