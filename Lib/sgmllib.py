@@ -173,8 +173,6 @@ class SGMLParser:
 		# Now parse the data between i+1 and j into a tag and attrs
 		attrs = []
 		tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
-		# XXX Should also support value-less attributes (e.g. ISMAP)
-		# XXX Should use regex.group()
 		attrfind = regex.compile(
 		  '[ \t\n]+\([a-zA-Z][a-zA-Z0-9]*\)' +
 		  '\([ \t\n]*=[ \t\n]*' +
@@ -187,18 +185,12 @@ class SGMLParser:
 		while k < j:
 			l = attrfind.match(rawdata, k)
 			if l < 0: break
-			regs = attrfind.regs
-			a1, b1 = regs[1]
-			a2, b2 = regs[2]
-			a3, b3 = regs[3]
-			attrname = rawdata[a1:b1]
-			if '=' in rawdata[k:k+l]:
-				attrvalue = rawdata[a3:b3]
-				if attrvalue[:1] == '\'' == attrvalue[-1:] or \
-				   attrvalue[:1] == '"' == attrvalue[-1:]:
-					attrvalue = attrvalue[1:-1]
-			else:
-				attrvalue = ''
+			attrname, rest, attrvalue = attrfind.group(1, 2, 3)
+			if not rest:
+				attrvalue = attrname
+			elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
+			     attrvalue[:1] == '"' == attrvalue[-1:]:
+				attrvalue = attrvalue[1:-1]
 			attrs.append((string.lower(attrname), attrvalue))
 			k = k + l
 		j = j+1
@@ -226,6 +218,8 @@ class SGMLParser:
 		except AttributeError:
 			self.unknown_endtag(tag)
 			return
+		# XXX Should invoke end methods when popping their
+		# XXX stack entry, not when encountering the tag!
 		if self.stack and self.stack[-1] == tag:
 			del self.stack[-1]
 		else:
