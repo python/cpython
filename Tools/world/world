@@ -279,12 +279,12 @@ nameorgs = {
     "net": "networking",
     "org": "non-commercial",
     "int": "international",
-    # this isn't in the same class as those above, but for some reason (of
-    # which I am not aware), `uk' is the common practice country code for the
-    # United Kingdom.  AFAICT, the official `gb' code is routinely ignored!
-    # If you have a clue as to why this is, or if there is an official
-    # document describing this, please let me know.  ISO3166 certainly makes
-    # no mention of this.
+    # This isn't in the same class as those above, but is included here
+    # because `uk' is the common practice country code for the United Kingdom.
+    # AFAICT, the official `gb' code is routinely ignored!  David Pick
+    # <D.M.Pick@qmw.ac.uk> tells me that `uk' was long in use before ISO3166,
+    # but in reverse order (e.g. uk.ac.qmc) and this was just carried over
+    # into the New World of the Internet.
     #
     # See <url:http://www.ripe.net/docs/ripe-159.html#222123>
     "uk": "United Kingdom (common practice)",
