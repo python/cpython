@@ -381,7 +381,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
 
-	if (!PyArg_ParseTuple(args, "sss|ii:compile", &str, &filename, 
+	if (!PyArg_ParseTuple(args, "sss|ii:compile", &str, &filename,
 			      &startstr, &supplied_flags, &dont_inherit))
 		return NULL;
 
@@ -1128,7 +1128,7 @@ min_max(PyObject *args, int op)
 		v = args;
 	else if (!PyArg_ParseTuple(args, "O:min/max", &v))
 		return NULL;
-	
+
 	it = PyObject_GetIter(v);
 	if (it == NULL)
 		return NULL;
@@ -1704,9 +1704,10 @@ static PyObject*
 builtin_zip(PyObject *self, PyObject *args)
 {
 	PyObject *ret;
-	int itemsize = PySequence_Length(args);
+	const int itemsize = PySequence_Length(args);
 	int i;
 	PyObject *itlist;  /* tuple of iterators */
+	int len;	   /* guess at result length */
 
 	if (itemsize < 1) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1716,8 +1717,21 @@ builtin_zip(PyObject *self, PyObject *args)
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
+	/* Guess at result length:  the shortest of the input lengths. */
+	len = -1;	/* unknown */
+	for (i = 0; i < itemsize; ++i) {
+		PyObject *item = PyTuple_GET_ITEM(args, i);
+		int thislen = PySequence_Length(item);
+		if (thislen < 0)
+			PyErr_Clear();
+		else if (len < 0 || thislen < len)
+			len = thislen;
+	}
+
 	/* allocate result list */
-	if ((ret = PyList_New(0)) == NULL)
+	if (len < 0)
+		len = 10;	/* arbitrary */
+	if ((ret = PyList_New(len)) == NULL)
 		return NULL;
 
 	/* obtain iterators */
@@ -1738,14 +1752,14 @@ builtin_zip(PyObject *self, PyObject *args)
 	}
 
 	/* build result into ret list */
-	for (;;) {
-		int status;
+	for (i = 0; ; ++i) {
+		int j;
 		PyObject *next = PyTuple_New(itemsize);
 		if (!next)
 			goto Fail_ret_itlist;
 
-		for (i = 0; i < itemsize; i++) {
-			PyObject *it = PyTuple_GET_ITEM(itlist, i);
+		for (j = 0; j < itemsize; j++) {
+			PyObject *it = PyTuple_GET_ITEM(itlist, j);
 			PyObject *item = PyIter_Next(it);
 			if (!item) {
 				if (PyErr_Occurred()) {
@@ -1754,16 +1768,29 @@ builtin_zip(PyObject *self, PyObject *args)
 				}
 				Py_DECREF(next);
 				Py_DECREF(itlist);
-				return ret;
+				goto Done;
 			}
-			PyTuple_SET_ITEM(next, i, item);
+			PyTuple_SET_ITEM(next, j, item);
 		}
 
-		status = PyList_Append(ret, next);
-		Py_DECREF(next);
-		if (status < 0)
-			goto Fail_ret_itlist;
+		if (i < len)
+			PyList_SET_ITEM(ret, i, next);
+		else {
+			int status = PyList_Append(ret, next);
+			Py_DECREF(next);
+			++len;
+			if (status < 0)
+				goto Fail_ret_itlist;
+		}
 	}
+
+Done:
+	if (ret != NULL && i < len) {
+		/* The list is too big. */
+		if (PyList_SetSlice(ret, i, len, NULL) < 0)
+			return NULL;
+	}
+	return ret;
 
 Fail_ret_itlist:
 	Py_DECREF(itlist);
@@ -1864,7 +1891,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("complex",		&PyComplex_Type);
 #endif
 	SETBUILTIN("dict",		&PyDict_Type);
- 	SETBUILTIN("enumerate",		&PyEnum_Type);	
+ 	SETBUILTIN("enumerate",		&PyEnum_Type);
 	SETBUILTIN("float",		&PyFloat_Type);
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyInt_Type);
