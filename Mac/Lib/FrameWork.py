@@ -392,8 +392,9 @@ class Application:
 		try:
 			AEProcessAppleEvent(event)
 		except:
-			print "AEProcessAppleEvent error:"
-			traceback.print_exc()
+			pass
+			#print "AEProcessAppleEvent error:"
+			#traceback.print_exc()
 	
 	def do_unknownevent(self, event):
 		if DEBUG:
