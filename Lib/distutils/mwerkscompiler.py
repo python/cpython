@@ -62,10 +62,13 @@ class MWerksCompiler (CCompiler) :
                  debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
+         (output_dir, macros, include_dirs) = \
+            self._fix_compile_args (output_dir, macros, include_dirs)
          self.__sources = sources
          self.__macros = macros
          self.__include_dirs = include_dirs
          # Don't need extra_preargs and extra_postargs for CW
+         return []
          
     def link (self,
               target_desc,
@@ -80,6 +83,11 @@ class MWerksCompiler (CCompiler) :
               extra_preargs=None,
               extra_postargs=None,
               build_temp=None):
+        # First fixup.
+        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (libraries, library_dirs, runtime_library_dirs) = \
+            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
+
         # First examine a couple of options for things that aren't implemented yet
         if not target_desc in (self.SHARED_LIBRARY, self.SHARED_OBJECT):
             raise DistutilsPlatformError, 'Can only make SHARED_LIBRARY or SHARED_OBJECT targets on the Mac'
@@ -200,6 +208,11 @@ class MWerksCompiler (CCompiler) :
         if not os.path.isabs(filename):
            curdir = os.getcwd()
            filename = os.path.join(curdir, filename)
-        return filename
+        # Finally remove .. components
+        components = string.split(filename, ':')
+        for i in range(1, len(components)):
+           if components[i] == '..':
+              components[i] = ''
+        return string.join(components, ':')
         
         
