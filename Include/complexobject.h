@@ -13,6 +13,13 @@ typedef struct {
 
 /* Operations on complex numbers from complexmodule.c */
 
+#define c_sum _Py_c_sum
+#define c_diff _Py_c_diff
+#define c_neg _Py_c_neg
+#define c_prod _Py_c_prod
+#define c_quot _Py_c_quot
+#define c_pow _Py_c_pow
+
 extern complex c_sum();
 extern complex c_diff();
 extern complex c_neg();
