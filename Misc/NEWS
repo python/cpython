@@ -27,6 +27,10 @@ Library
 
 Windows
 
+- Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
+  of that has been fixed in the installer (disabled Wise's "delete in-
+  use files" uninstall option).
+
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
 
