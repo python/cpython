@@ -10,8 +10,9 @@
 
 
 \indexii{file}{byte-code}
-The \module{py_compile} module provides a single function to generate
-a byte-code file from a source file.
+The \module{py_compile} module provides a function to generate a
+byte-code file from a source file, and another function used when the
+module source file is invoked as a script.
 
 Though not often needed, this function can be useful when installing
 modules for shared use, especially if some of the users may not have
@@ -28,6 +29,17 @@ containing the source code.
   the name of the source file in error messages instead of \var{file}. 
 \end{funcdesc}
 
+
+\begin{funcdesc}{main}{\optional{args}}
+  Compile several source files.  The files named in \var{args} (or on
+  the command line, if \var{args} is not specified) are compiled and
+  the resulting bytecode is cached in the normal manner.  This
+  function does not search a directory structure to locate source
+  files; it only compiles files named explicitly.
+\end{funcdesc}
+
+When this module is run as a script, the \function{main()} is used to
+compile all the files named on the command line.
 
 \begin{seealso}
   \seemodule{compileall}{Utilities to compile all Python source files
