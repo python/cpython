@@ -20,10 +20,12 @@ as-yet-undetermined ways.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
-full details, you should refer to the documentation for Python 2.4.
-% add hyperlink when the documentation becomes available online.
+full details, you should refer to the documentation for Python 2.4,
+such as the \citetitle[../lib/lib.html]{Python Library Reference} and
+the \citetitle[../ref/ref.html]{Python Reference Manual}.  
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
+
 
 %======================================================================
 \section{PEP 218: Built-In Set Objects}
@@ -67,10 +69,17 @@ Since it is immutable and hashable, it may be used as a dictionary key or
 as a member of another set.  Accordingly, it does not have methods
 like \method{add()} and \method{remove()} which could alter its contents.
 
+% XXX what happens to the sets module?
+
 \begin{seealso}
 \seepep{218}{Adding a Built-In Set Object Type}{Originally proposed by
 Greg Wilson and ultimately implemented by Raymond Hettinger.}
 \end{seealso}
+
+%======================================================================
+\section{PEP 237: Unifying Long Integers and Integers}
+
+XXX write this.
 
 %======================================================================
 \section{PEP 322: Reverse Iteration}
@@ -121,6 +130,16 @@ language.
 \item The string methods, \method{ljust()}, \method{rjust()}, and
 \method{center()} now take an optional argument for specifying a
 fill character other than a space.
+
+\item Strings also gained an \method{rsplit()} method that
+works like the \method{split()} method but splits from the end of the string.
+
+\begin{verbatim}
+>>> 'a b c'.split(None, 1)
+['a', 'b c']
+>>> 'a b c'.rsplit(None, 1)
+['a b', 'c']
+\end{verbatim}
 
 \item The \method{sort()} method of lists gained three keyword
 arguments, \var{cmp}, \var{key}, and \var{reverse}.  These arguments
@@ -177,7 +196,7 @@ they were input.  For example, you can sort a list of people by name,
 and then sort the list by age, resulting in a list sorted by age where
 people with the same age are in name-sorted order.
 
-\item There is a new builtin function \function{sorted(iterable)} that works
+\item There is a new built-in function \function{sorted(iterable)} that works
 like the in-place \method{list.sort()} method but has been made suitable
 for use in expressions.  The differences are:
   \begin{itemize}
@@ -208,7 +227,6 @@ red 1
 yellow 5
 
 \end{verbatim}
-
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return an empty list instead of raising a \exception{TypeError}
@@ -312,9 +330,47 @@ counting, or identifying duplicate elements:
 ['a', 'b', 'r']
 \end{verbatim}
 
+\item \module{itertools} also gained a function named \function{tee(\var{iterator}, \var{N})} that returns \var{N} independent iterators 
+that replicate \var{iterator}.  If \var{N} is omitted, the default is
+2.
+
+\begin{verbatim}
+>>> L = [1,2,3]
+>>> i1, i2 = itertools.tee(L)
+>>> i1,i2
+(<itertools.tee object at 0x402c2080>, <itertools.tee object at 0x402c2090>)
+>>> list(i1)
+[1, 2, 3]
+>>> list(i2)
+[1, 2, 3]
+>\end{verbatim}
+
+Note that \function{tee()} has to keep copies of the values returned 
+by the iterator; in the worst case it may need to keep all of them.  
+This should therefore be used carefully if \var{iterator}
+returns a very large stream of results.
+
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
+
+\item The \module{operator} module gained two new functions, 
+\function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
+Both functions return callables that take a single argument and return
+the corresponding attribute or item; these callables are handy for use
+with \function{map()} or \function{list.sort()}.  For example, here's a simple 
+us
+
+\begin{verbatim}
+>>> L = [('c', 2), ('d', 1), ('a', '4'), ('b', 3)]
+>>> map(operator.itemgetter(0), L)
+['c', 'd', 'a', 'b']
+>>> map(operator.itemgetter(1), L)
+[2, 1, '4', 3]
+>>> L.sort(key=operator.itemgetter(1)) # Sort list by second item in tuples
+>>> L
+[('d', 1), ('c', 2), ('b', 3), ('a', '4')]
+\end{verbatim}
 
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
    which returns an N-bit long integer.  This method supports the existing
