@@ -100,6 +100,9 @@ def	genallprojects(force=0):
 	genpluginproject("all", "gdbm", 
 		libraries=["gdbm.ppc.gusi.lib"], 
 		extradirs=["::::gdbm:mac", "::::gdbm"])
+	genpluginproject("all", "_weakref", sources=["_weakref.c"])
+	genpluginproject("all", "_symtable", sources=["symtablemodule.c"])
+	genpluginproject("all", "_testcapi")
 	
 	# bgen-generated Toolbox modules
 	genpluginproject("ppc", "App", libraries=["AppearanceLib"])
