@@ -457,8 +457,10 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		n = 0;
 	else {
 		char msg[256];
-		sprintf(msg, "must assign sequence (not \"%.200s\") to slice",
-			     v->ob_type->tp_name);
+		PyOS_snprintf(msg, sizeof(msg),
+			      "must assign sequence"
+			      " (not \"%.200s\") to slice",
+			      v->ob_type->tp_name);
 		v_as_SF = PySequence_Fast(v, msg);
 		if(v_as_SF == NULL)
 			return -1;
