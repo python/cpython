@@ -12,7 +12,7 @@ from glob import glob
 
 from distutils.core import Command
 from distutils.errors import *
-from distutils.util import mkpath, newer, make_file, copy_file
+from distutils.util import mkpath, copy_file
 
 
 class BuildPy (Command):
