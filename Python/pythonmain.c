@@ -65,6 +65,10 @@ realmain(argc, argv)
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
+#ifdef macintosh
+	PyMac_InteractiveOptions(&inspect, &verbose, &suppress_print, &unbuffered, &debugging);
+#endif
+
 	while ((c = getopt(argc, argv, "c:disuv")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
