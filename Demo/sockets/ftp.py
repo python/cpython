@@ -4,6 +4,18 @@
 # but this is not a complete implementation!  Yet it shows how a simple
 # FTP client can be built, and you are welcome to extend it to suit
 # it to your needs...
+#
+# How it works (assuming you've read the RFC):
+#
+# User commands are passed uninterpreted to the server.  However, the
+# user never needs to send a PORT command.  Rather, the client opens a
+# port right away and sends the appropriate PORT command to the server.
+# When a response code 150 is received, this port is used to receive
+# the data (which is written to stdout in this version), and when the
+# data is exhausted, a new port is opened and a corresponding PORT
+# command sent.  In order to avoid errors when reusing ports quickly
+# (and because there is no s.getsockname() method in Python yet) we
+# cycle through a number of ports in the 50000 range.
 
 
 import sys, posix, string
@@ -60,12 +72,12 @@ def control(hostname):
 # (Cycle through a number of ports to avoid problems with reusing
 # a port within a short time.)
 #
-cycle = [0]
+nextport = 0
 #
 def newdataport(s, f):
-	port = cycle[0]
-	cycle[0] = (port+1) % 16
-	port = port + FTP_DATA_PORT
+	global nextport
+	port = nextport + FTP_DATA_PORT
+	nextport = (nextport+1) % 16
 	r = socket(AF_INET, SOCK_STREAM)
 	r.bind(gethostbyname(gethostname()), port)
 	r.listen(0)
@@ -122,7 +134,7 @@ def getdata(r):
 #
 def getcommand():
 	try:
-		return raw_input('ftp> ')
+		return raw_input('ftp.py> ')
 	except EOFError:
 		return ''
 
