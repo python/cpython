@@ -250,7 +250,8 @@ sets all items of a list (actually, any mutable sequence) to a given
 item:
 
 \begin{verbatim}
-int set_all(PyObject *target, PyObject *item)
+int
+set_all(PyObject *target, PyObject *item)
 {
     int i, n;
 
@@ -293,7 +294,8 @@ sum of the items in a list of integers; once using
 \cfunction{PySequence_GetItem()}\ttindex{PySequence_GetItem()}.
 
 \begin{verbatim}
-long sum_list(PyObject *list)
+long
+sum_list(PyObject *list)
 {
     int i, n;
     long total = 0;
@@ -313,7 +315,8 @@ long sum_list(PyObject *list)
 \ttindex{sum_list()}
 
 \begin{verbatim}
-long sum_sequence(PyObject *sequence)
+long
+sum_sequence(PyObject *sequence)
 {
     int i, n;
     long total = 0;
@@ -432,7 +435,8 @@ def incr_item(dict, key):
 Here is the corresponding C code, in all its glory:
 
 \begin{verbatim}
-int incr_item(PyObject *dict, PyObject *key)
+int
+incr_item(PyObject *dict, PyObject *key)
 {
     /* Objects all initialized to NULL for Py_XDECREF */
     PyObject *item = NULL, *const_one = NULL, *incremented_item = NULL;
