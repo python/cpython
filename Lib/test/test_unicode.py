@@ -341,6 +341,7 @@ assert '...%(foo)s...' % {u'foo':u"abc"} == u'...abc...'
 assert '...%(foo)s...' % {u'foo':u"abc",'def':123} ==  u'...abc...'
 assert '...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...'
 assert '...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...'
+assert '...%%...%%s...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...%...%s...1...2...3...abc...'
 assert '...%s...' % u"abc" == u'...abc...'
 print 'done.'
 
