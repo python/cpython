@@ -1,4 +1,6 @@
 /* zlibmodule.c -- gzip-compatible data compression */
+/* See http://www.cdrom.com/pub/infozip/zlib/ */
+/* See http://www.winimage.com/zLibDll for Windows */
 
 #include "Python.h"
 #ifdef MS_WIN32
