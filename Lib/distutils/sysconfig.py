@@ -153,6 +153,8 @@ def customize_compiler(compiler):
             cc = os.environ['CC']
         if os.environ.has_key('CXX'):
             cxx = os.environ['CXX']
+        if os.environ.has_key('LDSHARED'):
+            ldshared = os.environ['LDSHARED']
         if os.environ.has_key('CPP'):
             cpp = os.environ['CPP']
         else:

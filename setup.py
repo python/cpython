@@ -167,15 +167,12 @@ class PyBuildExt(build_ext):
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
         compiler = os.environ.get('CC')
-        linker_so = os.environ.get('LDSHARED')
         args = {}
         # unfortunately, distutils doesn't let us provide separate C and C++
         # compilers
         if compiler is not None:
             (ccshared,opt,base) = sysconfig.get_config_vars('CCSHARED','OPT','BASECFLAGS')
             args['compiler_so'] = compiler + ' ' + opt + ' ' + ccshared + ' ' + base
-        if linker_so is not None:
-            args['linker_so'] = linker_so
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)

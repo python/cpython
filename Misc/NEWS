@@ -47,6 +47,9 @@ Extension modules
 Library
 -------
 
+- Patch 983206: distutils now obeys environment variable LDSHARED, if
+  it is set.
+
 - Added Peter Astrand's subprocess.py module.  See PEP 324 for details.
 
 - time.strptime() now properly escapes timezones and all other locale-specific
