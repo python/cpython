@@ -327,36 +327,38 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 
 
 /* Convert a Python object to a Rect.
-   The object must be a (top, left, bottom, right) tuple.
-   (Unfortunately this is different from STDWIN's convention). */
+   The object must be a (left, top, right, bottom) tuple.
+   (This differs from the order in the struct but is consistent with
+   the arguments to SetRect(), and also with STDWIN). */
 int
 PyMac_GetRect(PyObject *v, Rect *r)
 {
-	return PyArg_Parse(v, "(hhhh)", &r->top, &r->left, &r->bottom, &r->right);
+	return PyArg_Parse(v, "(hhhh)", &r->left, &r->top, &r->right, &r->bottom);
 }
 
 /* Convert a Rect to a Python object */
 PyObject *
 PyMac_BuildRect(Rect *r)
 {
-	return Py_BuildValue("(hhhh)", r->top, r->left, r->bottom, r->right);
+	return Py_BuildValue("(hhhh)", r->left, r->top, r->right, r->bottom);
 }
 
 
 /* Convert a Python object to a Point.
-   The object must be a (v, h) tuple.
-   (Unfortunately this is different from STDWIN's convention). */
+   The object must be a (h, v) tuple.
+   (This differs from the order in the struct but is consistent with
+   the arguments to SetPoint(), and also with STDWIN). */
 int
 PyMac_GetPoint(PyObject *v, Point *p)
 {
-	return PyArg_Parse(v, "(hh)", &p->v, &p->h);
+	return PyArg_Parse(v, "(hh)", &p->h, &p->v);
 }
 
 /* Convert a Point to a Python object */
 PyObject *
 PyMac_BuildPoint(Point p)
 {
-	return Py_BuildValue("(hh)", p.v, p.h);
+	return Py_BuildValue("(hh)", p.h, p.v);
 }
 
 
@@ -369,8 +371,8 @@ PyMac_GetEventRecord(PyObject *v, EventRecord *e)
 	                   &e->what,
 	                   &e->message,
 	                   &e->when,
-	                   &e->where.v,                   
 	                   &e->where.h,
+	                   &e->where.v,                   
 	                   &e->modifiers);
 }
 
@@ -382,7 +384,7 @@ PyMac_BuildEventRecord(EventRecord *e)
 	                     e->what,
 	                     e->message,
 	                     e->when,
-	                     e->where.v,
 	                     e->where.h,
+	                     e->where.v,
 	                     e->modifiers);
 }
