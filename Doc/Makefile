@@ -359,15 +359,16 @@ postscript-$(PAPER)-$(RELEASE).zip: ps paper-$(PAPER)/README
 	rm -f $@
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
-html-$(RELEASE).tgz:	html
+html-$(RELEASE).tar:	html
 	cd $(HTMLDIR) && \
-		tar cf - *.html */*.css */*.html */*.gif */*.txt \
-		| gzip -9 >$@
+		tar cf ../html-$(RELEASE).tar *.html */*.css */*.html \
+					      */*.gif */*.txt
 
-html-$(RELEASE).tar.bz2:	html
-	cd $(HTMLDIR) && \
-		tar cf - *.html */*.css */*.html */*.gif */*.txt \
-		| bzip2 -9 >$@
+html-$(RELEASE).tgz:	html-$(RELEASE).tar
+	gzip -9 <html-$(RELEASE).tar >$@
+
+html-$(RELEASE).tar.bz2: html-$(RELEASE).tar
+	bzip2 -9 <html-$(RELEASE).tar >$@
 
 html-$(RELEASE).zip:	html
 	rm -f $@
@@ -415,10 +416,12 @@ distfiles:	tarballs zips bzips
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
+	rm -f html-$(RELEASE).tar
 	cd $(INFODIR) && $(MAKE) clean
 
 # Remove temporaries as well as final products
 clobber:
+	rm -f html-$(RELEASE).tar
 	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
 	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
 	rm -f latex-$(RELEASE).tgz html-$(RELEASE).zip
