@@ -2076,7 +2076,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         tinfo = PicklableFixedOffset(-300, 'cookie')
         orig = self.theclass(*args, **{'tzinfo': tinfo})
         state = orig.__getstate__()
-        derived = self.theclass(1, 1, 1)
+        derived = self.theclass(1, 1, 1, tzinfo=FixedOffset(0, "", 0))
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
         self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
