@@ -49,6 +49,15 @@ extern PyCFunction PyCFunction_GetFunction Py_PROTO((PyObject *));
 extern PyObject *PyCFunction_GetSelf Py_PROTO((PyObject *));
 extern int PyCFunction_GetFlags Py_PROTO((PyObject *));
 
+/* Macros for direct access to these values. Type checks are *not*
+   done, so use with care. */
+#define PyCFunction_GET_FUNCTION(func) \
+        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
+#define PyCFunction_GET_SELF(func) \
+	(((PyCFunctionObject *)func) -> m_self)
+#define PyCFunction_GET_FLAGS(func) \
+	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
+
 struct PyMethodDef {
 	char		*ml_name;
 	PyCFunction	ml_meth;
@@ -74,6 +83,12 @@ typedef struct PyMethodChain {
 
 extern PyObject *Py_FindMethodInChain
 	Py_PROTO((PyMethodChain *, PyObject *, char *));
+
+typedef struct {
+	PyObject_HEAD
+	PyMethodDef *m_ml;
+	PyObject    *m_self;
+} PyCFunctionObject;
 
 #ifdef __cplusplus
 }
