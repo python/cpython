@@ -194,3 +194,10 @@ Py_GetExecPrefix()
 {
 	return EXEC_PREFIX;
 }
+
+char *
+Py_GetProgramFullPath()
+{
+	extern char *Py_GetProgramName();
+	return Py_GetProgramName();
+}
