@@ -183,9 +183,7 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[b(reak) \optional{\optional{\var{filename}:}\var{lineno}%
-              \code{\Large{|}}\var{function}%
-              \optional{, \var{condition}}}]
+\item[b(reak) \optional{\optional{\var{filename}:}\var{lineno}\code{\Large{|}}\var{function}\optional{, \var{condition}}}]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the first
@@ -203,9 +201,7 @@ Without argument, list all breaks, including for each breakpoint,
 the number of times that breakpoint has been hit, the current
 ignore count, and the associated condition if any.
 
-\item[tbreak \optional{\optional{\var{filename}:}\var{lineno}%
-              \code{\Large{|}}\var{function}%
-              \optional{, \var{condition}}}]
+\item[tbreak \optional{\optional{\var{filename}:}\var{lineno}\code{\Large{|}}\var{function}\optional{, \var{condition}}}]
 
 Temporary breakpoint, which is removed automatically when it is
 first hit.  The arguments are the same as break.
