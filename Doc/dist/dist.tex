@@ -406,8 +406,7 @@ distribution.  For an example, again we turn to the Distutils' own
 manifest template:
 \begin{verbatim}
 include *.txt
-recursive-include examples *.txt
-recursive-include examples *.py
+recursive-include examples *.txt *.py
 prune examples/sample?/build
 \end{verbatim}
 The meanings should be fairly clear: include all files in the
@@ -652,16 +651,20 @@ each, are:
 \XXX{fragment moved down from above: needs context!}
 The manifest template commands are:
 \begin{tableii}{ll}{command}{Command}{Description}
-  \lineii{include \var{pat}}{include all files matching \var{pat}}
-  \lineii{exclude \var{pat}}{exclude all files matching \var{pat}}
-  \lineii{recursive-include \var{dir} \var{pat}}
-    {include all files under \var{dir} matching \var{pat}}
-  \lineii{recursive-exclude \var{dir} \var{pat}}
-    {exclude all files under \var{dir} matching \var{pat}}
-  \lineii{global-include \var{pat}}
-    {include all files anywhere in the source tree matching \var{pat}}
-  \lineii{global-exclude \var{pat}}
-    {exclude all files anywhere in the source tree matching \var{pat}}
+  \lineii{include \var{pat1} \var{pat2} ... }
+    {include all files matching any of the listed patterns}
+  \lineii{exclude \var{pat1} \var{pat2} ... }
+    {exclude all files matching any of the listed patterns}
+  \lineii{recursive-include \var{dir} \var{pat1} \var{pat2} ... }
+    {include all files under \var{dir} matching any of the listed patterns}
+  \lineii{recursive-exclude \var{dir} \var{pat1} \var{pat2} ...}
+    {exclude all files under \var{dir} matching any of the listed patterns}
+  \lineii{global-include \var{pat1} \var{pat2} ...}
+    {include all files anywhere in the source tree matching 
+     any of the listed patterns}
+  \lineii{global-exclude \var{pat1} \var{pat2} ...}
+    {exclude all files anywhere in the source tree matching 
+     any of the listed patterns}
   \lineii{prune \var{dir}}{exclude all files under \var{dir}}
   \lineii{graft \var{dir}}{include all files under \var{dir}}
 \end{tableii}
