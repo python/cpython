@@ -635,6 +635,8 @@ class build_ext (Command):
                 # don't extend ext.libraries, it may be shared with other
                 # extensions, it is a reference to the original list
                 return ext.libraries + [pythonlib]
+            else:
+                return ext.libraries
         elif sys.platform == "os2emx":
             # EMX/GCC requires the python library explicitly, and I
             # believe VACPP does as well (though not confirmed) - AIM Apr01
