@@ -291,7 +291,7 @@ PyNumber_Or(PyObject *v, PyObject *w)
 	BINOP(v, w, "__or__", "__ror__", PyNumber_Or);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -311,7 +311,7 @@ PyNumber_Xor(PyObject *v, PyObject *w)
 	BINOP(v, w, "__xor__", "__rxor__", PyNumber_Xor);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -331,7 +331,7 @@ PyNumber_And(PyObject *v, PyObject *w)
 	BINOP(v, w, "__and__", "__rand__", PyNumber_And);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -351,7 +351,7 @@ PyNumber_Lshift(PyObject *v, PyObject *w)
 	BINOP(v, w, "__lshift__", "__rlshift__", PyNumber_Lshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -371,7 +371,7 @@ PyNumber_Rshift(PyObject *v, PyObject *w)
 	BINOP(v, w, "__rshift__", "__rrshift__", PyNumber_Rshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -396,7 +396,7 @@ PyNumber_Add(PyObject *v, PyObject *w)
 		return (*m->sq_concat)(v, w);
 	else if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -416,7 +416,7 @@ PyNumber_Subtract(PyObject *v, PyObject *w)
 	BINOP(v, w, "__sub__", "__rsub__", PyNumber_Subtract);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -447,7 +447,7 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 	}
 	if (tp->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -485,7 +485,7 @@ PyNumber_Divide(PyObject *v, PyObject *w)
 	BINOP(v, w, "__div__", "__rdiv__", PyNumber_Divide);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -509,7 +509,7 @@ PyNumber_Remainder(PyObject *v, PyObject *w)
 	BINOP(v, w, "__mod__", "__rmod__", PyNumber_Remainder);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
@@ -529,7 +529,7 @@ PyNumber_Divmod(PyObject *v, PyObject *w)
 	BINOP(v, w, "__divmod__", "__rdivmod__", PyNumber_Divmod);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f)(PyObject *, PyObject *);
+		PyObject * (*f)(PyObject *, PyObject *) = NULL;
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if (v->ob_type->tp_as_number != NULL &&
