@@ -40,7 +40,7 @@ typedef struct {
 	double		bg_yield;		/* yield at most so long when in background */
 } PyMacSchedParams;
 
-
+char *PyMac_getscript(void);	/* Get the default encoding for our 8bit character set */
 #ifdef USE_GUSI1
 void PyMac_FixGUSIcd(void);		/* Workaround for GUSI chdir() call */
 extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
