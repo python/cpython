@@ -2450,6 +2450,94 @@ def pickles():
         print "a = x =", a
         print "b = y =", b
 
+def pickleslots():
+    if verbose: print "Testing pickling of classes with __slots__ ..."
+    import pickle, cPickle
+    # Pickling of classes with __slots__ but without __getstate__ should fail
+    global B, C, D, E
+    class B(object):
+        pass
+    for base in [object, B]:
+        class C(base):
+            __slots__ = ['a']
+        class D(C):
+            pass
+        try:
+            pickle.dumps(C())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: pickle C instance - %s" % base
+        try:
+            cPickle.dumps(C())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: cPickle C instance - %s" % base
+        try:
+            pickle.dumps(C())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: pickle D instance - %s" % base
+        try:
+            cPickle.dumps(D())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: cPickle D instance - %s" % base
+        # Give C a __getstate__ and __setstate__
+        class C(base):
+            __slots__ = ['a']
+            def __getstate__(self):
+                try:
+                    d = self.__dict__.copy()
+                except AttributeError:
+                    d = {}
+                try:
+                    d['a'] = self.a
+                except AttributeError:
+                    pass
+                return d
+            def __setstate__(self, d):
+                for k, v in d.items():
+                    setattr(self, k, v)
+        class D(C):
+            pass
+        # Now it should work
+        x = C()
+        y = pickle.loads(pickle.dumps(x))
+        vereq(hasattr(y, 'a'), 0)
+        y = cPickle.loads(cPickle.dumps(x))
+        vereq(hasattr(y, 'a'), 0)
+        x.a = 42
+        y = pickle.loads(pickle.dumps(x))
+        vereq(y.a, 42)
+        y = cPickle.loads(cPickle.dumps(x))
+        vereq(y.a, 42)
+        x = D()
+        x.a = 42
+        x.b = 100
+        y = pickle.loads(pickle.dumps(x))
+        vereq(y.a + y.b, 142)
+        y = cPickle.loads(cPickle.dumps(x))
+        vereq(y.a + y.b, 142)
+        # But a subclass that adds a slot should not work
+        class E(C):
+            __slots__ = ['b']
+        try:
+            pickle.dumps(E())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: pickle E instance - %s" % base
+        try:
+            cPickle.dumps(E())
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "should fail: cPickle E instance - %s" % base
+
 def copies():
     if verbose: print "Testing copy.copy() and copy.deepcopy()..."
     import copy
@@ -2798,6 +2886,7 @@ def test_main():
     strops()
     deepcopyrecursive()
     modules()
+    pickleslots()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
