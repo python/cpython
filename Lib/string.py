@@ -63,10 +63,14 @@ def split(s):
 
 # Split a list into fields separated by a given string
 # NB: splitfields(s, ' ') is NOT the same as split(s)!
+# splitfields(s, '') is illegal
+splitfields_error = 'string.splitfields called with empty separator'
 def splitfields(s, sep):
 	res = []
-	ns = len(s)
 	nsep = len(sep)
+	if nsep == 0:
+		raise splitfields_error
+	ns = len(s)
 	i = j = 0
 	while j+nsep <= ns:
 		if s[j:j+nsep] == sep:
