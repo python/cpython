@@ -1876,7 +1876,7 @@ module search path.  See the section on Standard Modules later.
 As an important speed-up of the start-up time for short programs that
 use a lot of standard modules, if a file called \file{spam.pyc} exists
 in the directory where \file{spam.py} is found, this is assumed to
-contain an already-``compiled'' version of the module \module{spam}.
+contain an already-``byte-compiled'' version of the module \module{spam}.
 The modification time of the version of \file{spam.py} used to create
 \file{spam.pyc} is recorded in \file{spam.pyc}, and the file is
 ignored if these don't match.
@@ -1888,11 +1888,41 @@ this attempt fails; if for any reason the file is not written
 completely, the resulting \file{spam.pyc} file will be recognized as
 invalid and thus ignored later.  The contents of the \file{spam.pyc}
 file is platform independent, so a Python module directory can be
-shared by machines of different architectures.  (Tip for experts:
-the module \module{compileall}\refstmodindex{compileall} creates
-\file{.pyc} files for all modules.)
+shared by machines of different architectures.
 
-% XXX Should optimization with -O be covered here?
+Some tips for experts:
+
+\begin{itemize}
+
+\item
+When the Python interpreter is invoked with the \code{-O} flag,
+optimized code is generated and stored in \file{.pyo} files.
+The optimizer currently doesn't help much; it only removes
+\keyword{assert} statements and \code{SET_LINENO} instructions.
+When \code{-O} is used, \emph{all} bytecode is optimized; \code{.pyc}
+files are ignored and \code{.py} files are compiled to optimized
+bytecode.
+
+\item
+A program doesn't run any faster when it is read from a
+\file{.pyc} or \file{.pyo} file than when it is read from a \file{.py}
+file; the only thing that's faster about \file{.pyc} or \file{.pyo}
+files is the speed with which they are loaded.
+
+\item
+It is possible to have a file called \file{spam.pyc} (or
+\file{spam.pyo} when \code{-O} is used) without a module
+\file{spam.py} in the same module.  This can be used to distribute
+a library of Python code in a form that is moderately hard to reverse
+engineer.
+
+\item
+The module \module{compileall}\refstmodindex{compileall} can create
+\file{.pyc} files (or \file{.pyo} files when \code{-O} is used) for
+all modules in a directory.
+
+\end{itemize}
+
 
 \section{Standard Modules}
 \label{standardModules}
