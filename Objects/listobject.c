@@ -627,16 +627,14 @@ listextend(self, args)
 	if (!PyArg_ParseTuple(args, "O:extend", &b))
 		return NULL;
 
-	if (!PyList_Check(b)) {
-		PyErr_SetString(PyExc_TypeError,
-				"list.extend() argument must be a list");
+	b = PySequence_Fast(b, "list.extend() argument must be a sequence");
+	if (!b)
 		return NULL;
-	}
-	if (PyList_GET_SIZE(b) == 0) {
+
+	if (PyObject_Length(b) == 0)
 		/* short circuit when b is empty */
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
+		goto ok;
+
 	if (self == (PyListObject*)b) {
 		/* as in list_ass_slice() we must special case the
 		 * situation: a.extend(a)
@@ -644,6 +642,7 @@ listextend(self, args)
 		 * XXX: I think this way ought to be faster than using
 		 * list_slice() the way list_ass_slice() does.
 		 */
+		Py_DECREF(b);
 		b = PyList_New(selflen);
 		if (!b)
 			return NULL;
@@ -653,33 +652,29 @@ listextend(self, args)
 			PyList_SET_ITEM(b, i, o);
 		}
 	}
-	else
-		/* we want b to have the same refcount semantics for the
-		 * Py_XDECREF() in the finally clause regardless of which
-		 * branch in the above conditional we took.
-		 */
-		Py_INCREF(b);
 
-	blen = PyList_GET_SIZE(b);
+	blen = PyObject_Length(b);
+
 	/* resize a using idiom */
 	items = self->ob_item;
 	NRESIZE(items, PyObject*, selflen + blen);
-	if (items == NULL ) {
+	if (items == NULL) {
 		PyErr_NoMemory();
-		goto finally;
+		goto failed;
 	}
 	self->ob_item = items;
 
-	/* populate the end self with b's items */
+	/* populate the end of self with b's items */
 	for (i = 0; i < blen; i++) {
-		PyObject *o = PyList_GET_ITEM(b, i);
+		PyObject *o = PySequence_Fast_GET_ITEM(b, i);
 		Py_INCREF(o);
 		PyList_SET_ITEM(self, self->ob_size++, o);
 	}
+  ok:
 	res = Py_None;
 	Py_INCREF(res);
-  finally:
-	Py_XDECREF(b);
+  failed:
+	Py_DECREF(b);
 	return res;
 }
 
