@@ -35,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
    character strings, and unsigned numbers */
 
 #include "Python.h"
+#include "mymath.h"
 
 #include <limits.h>
 
@@ -197,6 +198,274 @@ get_ulong(v, p)
   okay:
 	*p = x;
 	return 0;
+}
+
+
+/* Floating point helpers */
+
+/* These use ANSI/IEEE Standard 754-1985 (Standard for Binary Floating
+   Point Arithmetic).  See the following URL:
+   http://www.psc.edu/general/software/packages/ieee/ieee.html */
+
+/* XXX Signed zero, infinity, underflow, NaN are not handled quite right? */
+
+static int
+pack_float(x, p, incr)
+	double x; /* The number to pack */
+	char *p;  /* Where to pack the high order byte */
+	int incr; /* 1 for big-endian; -1 for little-endian */
+{
+	int s;
+	int e;
+	double fl;
+	long f;
+
+	if (x < 0) {
+		s = 1;
+		x = -x;
+	}
+	else
+		s = 0;
+	fl = frexp(x, &e);
+	/* Normalize fl to be in the range [1.0, 2.0) */
+	if (0.5 <= fl && fl < 1.0) {
+		fl *= 2.0;
+		e--;
+	}
+	else if (fl == 0.0) {
+		e = 0;
+	}
+	else {
+		PyErr_SetString(PyExc_SystemError,
+				"frexp() result out of range");
+		return -1;
+	}
+	e += 127;
+	if (e >= 255) {
+		/* XXX 255 itself is reserved for Inf/NaN */
+		PyErr_SetString(PyExc_OverflowError,
+				"float too large to pack with f format");
+		return -1;
+	}
+	else if (e <= 0) {
+		/* XXX Underflow -- could do better, but who cares? */
+		fl = 0.0;
+		e = 0;
+	}
+	if (fl == 0.0) {
+		f = 0;
+	}
+	else {
+		fl -= 1.0; /* Get rid of leading 1 */
+		fl *= 8388608.0; /* 2**23 */
+		f = (long) floor(fl + 0.5); /* Round */
+	}
+
+	/* First byte */
+	*p = (s<<7) | (e>>1);
+	p += incr;
+
+	/* Second byte */
+	*p = ((e&1)<<7) | (f>>16);
+	p += incr;
+
+	/* Third byte */
+	*p = (f>>8) & 0xFF;
+	p += incr;
+
+	/* Fourth byte */
+	*p = f&0xFF;
+
+	/* Done */
+	return 0;
+}
+
+static int
+pack_double(x, p, incr)
+	double x; /* The number to pack */
+	char *p;  /* Where to pack the high order byte */
+	int incr; /* 1 for big-endian; -1 for little-endian */
+{
+	int s;
+	int e;
+	double fl;
+	long fhi, flo;
+
+	if (x < 0) {
+		s = 1;
+		x = -x;
+	}
+	else
+		s = 0;
+	fl = frexp(x, &e);
+	/* Normalize fl to be in the range [1.0, 2.0) */
+	if (0.5 <= fl && fl < 1.0) {
+		fl *= 2.0;
+		e--;
+	}
+	else if (fl == 0.0) {
+		e = 0;
+	}
+	else {
+		PyErr_SetString(PyExc_SystemError,
+				"frexp() result out of range");
+		return -1;
+	}
+	e += 1023;
+	if (e >= 2047) {
+		/* XXX 2047 itself is reserved for Inf/NaN */
+		PyErr_SetString(PyExc_OverflowError,
+				"float too large to pack with d format");
+		return -1;
+	}
+	else if (e <= 0) {
+		/* XXX Underflow -- could do better, but who cares? */
+		fl = 0.0;
+		e = 0;
+	}
+	if (fl == 0.0) {
+		fhi = flo = 0;
+	}
+	else {
+		/* fhi receives the high 28 bits; flo the low 24 bits */
+		fl -= 1.0;
+		fl *= 268435456.0; /* 2**28 */
+		fhi = (long) floor(fl); /* Truncate */
+		fl -= (double)fhi;
+		fl *= 16777216.0; /* 2**24 */
+		flo = (long) floor(fl + 0.5); /* Round */
+	}
+
+	/* First byte */
+	*p = (s<<7) | (e>>4);
+	p += incr;
+
+	/* Second byte */
+	*p = ((e&0xF)<<4) | (fhi>>24);
+	p += incr;
+
+	/* Third byte */
+	*p = (fhi>>16) & 0xFF;
+	p += incr;
+
+	/* Fourth byte */
+	*p = (fhi>>8) & 0xFF;
+	p += incr;
+
+	/* Fifth byte */
+	*p = fhi & 0xFF;
+	p += incr;
+
+	/* Sixth byte */
+	*p = (flo>>16) & 0xFF;
+	p += incr;
+
+	/* Seventh byte */
+	*p = (flo>>8) & 0xFF;
+	p += incr;
+
+	/* Eighth byte */
+	*p = flo & 0xFF;
+	p += incr;
+
+	/* Done */
+	return 0;
+}
+
+static PyObject *
+unpack_float(p, incr)
+	char *p;  /* Where the high order byte is */
+	int incr; /* 1 for big-endian; -1 for little-endian */
+{
+	int s;
+	int e;
+	long f;
+	double x;
+
+	/* First byte */
+	s = (*p>>7) & 1;
+	e = (*p & 0x7F) << 1;
+	p += incr;
+
+	/* Second byte */
+	e |= (*p>>7) & 1;
+	f = (*p & 0x7F) << 16;
+	p += incr;
+
+	/* Third byte */
+	f |= (*p & 0xFF) << 8;
+	p += incr;
+
+	/* Fourth byte */
+	f |= *p & 0xFF;
+
+	x = (double)f / 8388608.0;
+
+	/* XXX This sadly ignores Inf/NaN issues */
+	if (e != 0)
+		x = ldexp(1.0 + x, e - 127);
+
+	if (s)
+		x = -x;
+
+	return PyFloat_FromDouble(x);
+}
+
+static PyObject *
+unpack_double(p, incr)
+	char *p;  /* Where the high order byte is */
+	int incr; /* 1 for big-endian; -1 for little-endian */
+{
+	int s;
+	int e;
+	long fhi, flo;
+	double x;
+
+	/* First byte */
+	s = (*p>>7) & 1;
+	e = (*p & 0x7F) << 4;
+	p += incr;
+
+	/* Second byte */
+	e |= (*p>>4) & 0xF;
+	fhi = (*p & 0xF) << 24;
+	p += incr;
+
+	/* Third byte */
+	fhi |= (*p & 0xFF) << 16;
+	p += incr;
+
+	/* Fourth byte */
+	fhi |= (*p & 0xFF) << 8;
+	p += incr;
+
+	/* Fifth byte */
+	fhi |= *p & 0xFF;
+	p += incr;
+
+	/* Sixth byte */
+	flo = (*p & 0xFF) << 16;
+	p += incr;
+
+	/* Seventh byte */
+	flo |= (*p & 0xFF) << 8;
+	p += incr;
+
+	/* Eighth byte */
+	flo |= *p & 0xFF;
+	p += incr;
+
+	x = (double)fhi + (double)flo / 16777216.0; /* 2**24 */
+	x /= 268435456.0; /* 2**28 */
+
+	/* XXX This sadly ignores Inf/NaN */
+	if (e != 0)
+		x = ldexp(1.0 + x, e - 1023);
+
+	if (s)
+		x = -x;
+
+	return PyFloat_FromDouble(x);
 }
 
 
@@ -486,6 +755,22 @@ bu_uint(p, f)
 		return PyLong_FromLong(x);
 }
 
+static PyObject *
+bu_float(p, f)
+	const char *p;
+	const formatdef *f;
+{
+	return unpack_float(p, 1);
+}
+
+static PyObject *
+bu_double(p, f)
+	const char *p;
+	const formatdef *f;
+{
+	return unpack_double(p, 1);
+}
+
 static int
 bp_int(p, v, f)
 	char *p;
@@ -522,6 +807,36 @@ bp_uint(p, v, f)
 	return 0;
 }
 
+static int
+bp_float(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1 && PyErr_Occurred()) {
+		PyErr_SetString(StructError,
+				"required argument is not a float");
+		return -1;
+	}
+	return pack_float(x, p, 1);
+}
+
+static int
+bp_double(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1 && PyErr_Occurred()) {
+		PyErr_SetString(StructError,
+				"required argument is not a float");
+		return -1;
+	}
+	return pack_double(x, p, 1);
+}
+
 static formatdef bigendian_table[] = {
 	{'x',	1,		0,		NULL},
 	{'b',	1,		0,		bu_int,		bp_int},
@@ -534,7 +849,8 @@ static formatdef bigendian_table[] = {
 	{'I',	4,		0,		bu_uint,	bp_uint},
 	{'l',	4,		0,		bu_int,		bp_int},
 	{'L',	4,		0,		bu_uint,	bp_uint},
-	/* No float and double! */
+	{'f',	4,		0,		bu_float,	bp_float},
+	{'d',	8,		0,		bu_double,	bp_double},
 	{0}
 };
 
@@ -570,6 +886,22 @@ lu_uint(p, f)
 		return make_ulong(x);
 	else
 		return PyLong_FromLong(x);
+}
+
+static PyObject *
+lu_float(p, f)
+	const char *p;
+	const formatdef *f;
+{
+	return unpack_float(p+3, -1);
+}
+
+static PyObject *
+lu_double(p, f)
+	const char *p;
+	const formatdef *f;
+{
+	return unpack_double(p+7, -1);
 }
 
 static int
@@ -608,6 +940,36 @@ lp_uint(p, v, f)
 	return 0;
 }
 
+static int
+lp_float(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1 && PyErr_Occurred()) {
+		PyErr_SetString(StructError,
+				"required argument is not a float");
+		return -1;
+	}
+	return pack_float(x, p+3, -1);
+}
+
+static int
+lp_double(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	double x = PyFloat_AsDouble(v);
+	if (x == -1 && PyErr_Occurred()) {
+		PyErr_SetString(StructError,
+				"required argument is not a float");
+		return -1;
+	}
+	return pack_double(x, p+7, -1);
+}
+
 static formatdef lilendian_table[] = {
 	{'x',	1,		0,		NULL},
 	{'b',	1,		0,		lu_int,		lp_int},
@@ -620,7 +982,8 @@ static formatdef lilendian_table[] = {
 	{'I',	4,		0,		lu_uint,	lp_uint},
 	{'l',	4,		0,		lu_int,		lp_int},
 	{'L',	4,		0,		lu_uint,	lp_uint},
-	/* No float and double! */
+	{'f',	4,		0,		lu_float,	lp_float},
+	{'d',	8,		0,		lu_double,	lp_double},
 	{0}
 };
 
