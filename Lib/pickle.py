@@ -515,6 +515,9 @@ class Pickler:
 
     dispatch[TupleType] = save_tuple
 
+    # save_empty_tuple() isn't used by anything in Python 2.3.  However, I
+    # found a Pickler subclass in Zope3 that calls it, so it's not harmless
+    # to remove it.
     def save_empty_tuple(self, obj):
         self.write(EMPTY_TUPLE)
 
