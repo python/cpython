@@ -1,6 +1,6 @@
 
 import mpz
-from test_support import vereq
+from test_support import vereq, TestFailed
 
 def check_conversion(num):
     mpz_num = mpz.mpz(num)

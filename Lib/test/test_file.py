@@ -1,7 +1,7 @@
 import os
 from array import array
 
-from test_support import verify, TESTFN
+from test_support import verify, TESTFN, TestFailed
 from UserList import UserList
 
 # verify writelines with instance sequence
@@ -70,23 +70,23 @@ else:
 
 f = open(TESTFN)
 if f.name != TESTFN:
-    raise TestError, 'file.name should be "%s"' % TESTFN
+    raise TestFailed, 'file.name should be "%s"' % TESTFN
 if f.isatty():
-    raise TestError, 'file.isatty() should be false'
+    raise TestFailed, 'file.isatty() should be false'
 
 if f.closed:
-    raise TestError, 'file.closed should be false'
+    raise TestFailed, 'file.closed should be false'
 
 try:
     f.readinto("")
 except TypeError:
     pass
 else:
-    raise TestError, 'file.readinto("") should raise a TypeError'
+    raise TestFailed, 'file.readinto("") should raise a TypeError'
 
 f.close()
 if not f.closed:
-    raise TestError, 'file.closed should be true'
+    raise TestFailed, 'file.closed should be true'
 
 for methodname in ['fileno', 'flush', 'isatty', 'read', 'readinto', 'readline', 'readlines', 'seek', 'tell', 'truncate', 'write', 'xreadlines' ]:
     method = getattr(f, methodname)
@@ -95,13 +95,13 @@ for methodname in ['fileno', 'flush', 'isatty', 'read', 'readinto', 'readline', 
     except ValueError:
         pass
     else:
-        raise TestError, 'file.%s() on a closed file should raise a ValueError' % methodname
+        raise TestFailed, 'file.%s() on a closed file should raise a ValueError' % methodname
 
 try:
     f.writelines([])
 except ValueError:
     pass
 else:
-    raise TestError, 'file.writelines([]) on a closed file should raise a ValueError'
+    raise TestFailed, 'file.writelines([]) on a closed file should raise a ValueError'
 
 os.unlink(TESTFN)
