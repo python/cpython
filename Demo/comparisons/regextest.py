@@ -18,15 +18,12 @@
 
 import string
 import sys
-import regex
-from regex_syntax import *
-
-regex.set_syntax(RE_SYNTAX_EGREP)
+import re
 
 def main():
     pats = map(chomp, sys.stdin.readlines())
-    bigpat = '(' + string.joinfields(pats, '|') + ')'
-    prog = regex.compile(bigpat)
+    bigpat = '(' + '|'.join(pats) + ')'
+    prog = re.compile(bigpat)
 
     for file in sys.argv[1:]:
         try:
@@ -40,11 +37,10 @@ def main():
             if not line:
                 break
             lineno = lineno + 1
-            if prog.search(line) >= 0:
+            if prog.search(line):
                 print "%s:%s:%s" % (file, lineno, line),
 
 def chomp(s):
-    if s[-1:] == '\n': return s[:-1]
-    else: return s
+    return s.rstrip('\n')
 
 main()
