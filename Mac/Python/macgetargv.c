@@ -45,11 +45,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Carbon/Carbon.h>
 #endif /* WITHOUT_FRAMEWORKS */
 
-#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
 typedef long refcontype;
-#else
-typedef unsigned long refcontype;
-#endif
 
 #include "Python.h"
 #include "macglue.h"

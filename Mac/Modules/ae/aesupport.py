@@ -100,11 +100,7 @@ extern int _AEDesc_Convert(PyObject *, AEDesc *);
 #define AEDesc_Convert _AEDesc_Convert
 #endif
 
-#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
 typedef long refcontype;
-#else
-typedef unsigned long refcontype;
-#endif
 
 static pascal OSErr GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype refcon); /* Forward */
 
@@ -163,11 +159,7 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype ref
 
 initstuff = initstuff + """
 	upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
-#if UNIVERSAL_INTERFACES_VERSION >= 0x03400
-	upp_GenericEventHandler = NewAEEventHandlerUPP(&GenericEventHandler);
-#else
 	upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
-#endif
 	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 """

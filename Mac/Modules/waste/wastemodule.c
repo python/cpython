@@ -43,8 +43,7 @@ static PyObject *ExistingwasteObj_New(WEReference);
 ** Parse/generate TextStyle records
 */
 static
-PyObject *TextStyle_New(itself)
-	TextStylePtr itself;
+PyObject *TextStyle_New(TextStylePtr itself)
 {
 
 	return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
@@ -52,9 +51,7 @@ PyObject *TextStyle_New(itself)
 }
 
 static
-TextStyle_Convert(v, p_itself)
-	PyObject *v;
-	TextStylePtr p_itself;
+TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 {
 	long font, face, size;
 	
@@ -70,8 +67,7 @@ TextStyle_Convert(v, p_itself)
 ** Parse/generate RunInfo records
 */
 static
-PyObject *RunInfo_New(itself)
-	WERunInfo *itself;
+PyObject *RunInfo_New(WERunInfo *itself)
 {
 
 	return Py_BuildValue("llhhO&O&", itself->runStart, itself->runEnd, itself->runHeight,

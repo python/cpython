@@ -1390,9 +1390,7 @@ static
 int cataloginfo_from_dict(FSCatalogInfoBitmap bitmap, FSCatalogInfo *info, const PyObject *dict)
 {
 	UInt32 storage;
-#if UNIVERSAL_INTERFACES_VERSION > 0x0332
 	FSPermissionInfo *permissions;
-#endif
 	
 	// Dates
 	if (fetch_utcdatetime(bitmap, kFSCatInfoCreateDate, dict, _kFSCatInfoCreateDate, &info->createDate)) return NULL;
@@ -1401,7 +1399,6 @@ int cataloginfo_from_dict(FSCatalogInfoBitmap bitmap, FSCatalogInfo *info, const
 	if (fetch_utcdatetime(bitmap, kFSCatInfoAccessDate, dict, _kFSCatInfoAccessDate, &info->accessDate)) return NULL;
 	if (fetch_utcdatetime(bitmap, kFSCatInfoBackupDate, dict, _kFSCatInfoBackupDate, &info->backupDate)) return NULL;
 
-#if UNIVERSAL_INTERFACES_VERSION > 0x0332
 	// Permissions
 	permissions = (FSPermissionInfo *) info->permissions;
 	if (fetch_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoUserID, &permissions->userID)) return NULL;
@@ -1410,7 +1407,6 @@ int cataloginfo_from_dict(FSCatalogInfoBitmap bitmap, FSCatalogInfo *info, const
 	permissions->mode = (UInt16) storage;
 	if (fetch_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoUserAccess, &storage)) return NULL;
 	permissions->userAccess = (UInt8) storage;
-#endif
 	// IDs
 	if (fetch_long(bitmap, kFSCatInfoTextEncoding, dict, _kFSCatInfoTextEncoding, &info->textEncodingHint)) return NULL;
 	if (fetch_long(bitmap, kFSCatInfoNodeFlags, dict, _kFSCatInfoNodeFlags, &storage)) return NULL;
@@ -1441,9 +1437,7 @@ PyObject *dict_from_cataloginfo(FSCatalogInfoBitmap bitmap, const FSCatalogInfo 
 {
 	PyObject *dict;
 	PyObject *id;
-#if UNIVERSAL_INTERFACES_VERSION > 0x0332
 	FSPermissionInfo *permissions;
-#endif
 	char buffer[1024];
 
 	dict = PyDict_New();
@@ -1473,14 +1467,12 @@ PyObject *dict_from_cataloginfo(FSCatalogInfoBitmap bitmap, const FSCatalogInfo 
 	if (insert_longlong(bitmap, kFSCatInfoRsrcSizes, dict, _kFSCatInfoRsrcLogical, info->rsrcLogicalSize)) return NULL;
 	if (insert_longlong(bitmap, kFSCatInfoRsrcSizes, dict, _kFSCatInfoRsrcPhysical, info->rsrcPhysicalSize)) return NULL;
 
-#if UNIVERSAL_INTERFACES_VERSION > 0x0332
 	// Permissions
 	permissions = (FSPermissionInfo *) info->permissions;
 	if (insert_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoUserID, permissions->userID)) return NULL;
 	if (insert_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoGroupID, permissions->groupID)) return NULL;
 	if (insert_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoUserAccess, permissions->userAccess)) return NULL;
 	if (insert_long(bitmap, kFSCatInfoPermissions, dict, _kFSCatInfoMode, permissions->mode)) return NULL;
-#endif
 
 	// Dates
 	if (insert_utcdatetime(bitmap, kFSCatInfoCreateDate, dict, _kFSCatInfoCreateDate, &info->createDate)) return NULL;
