@@ -245,6 +245,15 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	int i;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
+		if (vv != NULL && PyInt_Check(vv)) {
+			long val = PyInt_AsLong(vv);
+			if (val < 0) {
+				PyErr_SetString(PyExc_OverflowError,
+				"can't convert negative value to unsigned long");
+				return (unsigned long) -1;
+			}
+			return val;
+		}
 		PyErr_BadInternalCall();
 		return (unsigned long) -1;
 	}
@@ -279,6 +288,8 @@ PyLong_AsUnsignedLongMask(PyObject *vv)
 	int i, sign;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
+		if (vv != NULL && PyInt_Check(vv))
+			return PyInt_AsUnsignedLongMask(vv);
 		PyErr_BadInternalCall();
 		return (unsigned long) -1;
 	}
