@@ -70,8 +70,11 @@ class PrefFile(PrefObject):
 			else:
 				prefdict[key] = value
 		marshal.dump(prefdict, open(self.__path, 'wb'))
-		fss = macfs.FSSpec(macfs.FSRef(self.__path))
-		fss.SetCreatorType(self.__creator, 'pref')
+		try:
+			fss = macfs.FSSpec(macfs.FSRef(self.__path))
+			fss.SetCreatorType(self.__creator, 'pref')
+		except:
+			pass
 	
 	def __getattr__(self, attr):
 		if attr == '__members__':
