@@ -439,9 +439,16 @@ MacOS_WMAvailable(PyObject *self, PyObject *args)
 		** It appears the function caches the result itself, and it's cheap, so
 		** no need for us to cache.
 		*/
+#ifdef kCGNullDirectDisplay
+		/* On 10.1 CGMainDisplayID() isn't available, and
+		** kCGNullDirectDisplay isn't defined.
+		*/
 		if (CGMainDisplayID() == 0) {
 			rv = Py_False;
 		} else {
+#else
+		{
+#endif
 			if (GetCurrentProcess(&psn) < 0 ||
 				SetFrontProcess(&psn) < 0) {
 				rv = Py_False;
