@@ -1065,12 +1065,19 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 		goto utf8Error;
 	    }
             ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            if (ch < 0x800 || (ch >= 0xd800 && ch < 0xe000)) {
+            if (ch < 0x0800) {
+		/* Note: UTF-8 encodings of surrogates are considered
+		   legal UTF-8 sequences; 
+
+		   XXX For wide builds (UCS-4) we should probably try
+		       to recombine the surrogates into a single code
+		       unit.
+		*/
                 errmsg = "illegal encoding";
 		goto utf8Error;
 	    }
 	    else
-				*p++ = (Py_UNICODE)ch;
+		*p++ = (Py_UNICODE)ch;
             break;
 
         case 4:
@@ -1084,9 +1091,9 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
             /* validate and convert to UTF-16 */
             if ((ch < 0x10000)        /* minimum value allowed for 4
-                                       byte encoding */
+					 byte encoding */
                 || (ch > 0x10ffff))   /* maximum value allowed for
-                                       UTF-16 */
+					 UTF-16 */
 	    {
                 errmsg = "illegal encoding";
 		goto utf8Error;
@@ -1175,11 +1182,15 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     unsigned int cbWritten = 0;
     int i = 0;
 
+    /* Short-cut for emtpy strings */
+    if (size == 0)
+	return PyString_FromStringAndSize(NULL, 0);
+
+    /* We allocate 4 more bytes to have room for at least one full
+       UTF-8 sequence; saves a few cycles in the loop below */
     v = PyString_FromStringAndSize(NULL, cbAllocated + 4);
     if (v == NULL)
         return NULL;
-    if (size == 0)
-        return v;
 
     p = PyString_AS_STRING(v);
     while (i < size) {

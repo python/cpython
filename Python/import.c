@@ -41,8 +41,27 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        the Unicode -U option is in use.  IMO (Tim's), that's a Bad Idea
        (quite apart from that the -U option doesn't work so isn't used
        anyway).
+
+   XXX MAL, 2002-02-07: I had to modify the MAGIC due to a fix of the
+       UTF-8 encoder (it previously produced invalid UTF-8 for unpaired
+       high surrogates), so I simply bumped the month value to 20 (invalid
+       month) and set the day to 1.  This should be recognizable by any
+       algorithm relying on the above scheme. Perhaps we should simply
+       start counting in increments of 10 from now on ?!
+
+   Known values:
+       Python 1.5:   20121
+       Python 1.5.1: 20121
+       Python 1.5.2: 20121
+       Python 2.0:   50823
+       Python 2.0.1: 50823
+       Python 2.1:   60202
+       Python 2.1.1: 60202
+       Python 2.1.2: 60202
+       Python 2.2:   60717
+       Python 2.3a0: 62001
 */
-#define MAGIC (60717 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62001 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
