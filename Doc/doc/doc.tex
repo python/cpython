@@ -519,9 +519,19 @@ This \UNIX\ is also followed by a space.
       Like \env{datadesc}, but without creating any index entries.
     \end{envdesc}
 
+    \begin{envdesc}{excclassdesc}{\p{name}\p{constructor parameters}}
+      Descibe an exception defined by a class.  \var{constructor
+      parameters} should not include the \var{self} parameter or
+      the parentheses used in the call syntax.  To describe an
+      exception class without describing the parameters to its
+      constructor, use the \env{excdesc} environment.
+    \end{envdesc}
+
     \begin{envdesc}{excdesc}{\p{name}}
       Describe an exception.  This may be either a string exception or
-      a class exception.
+      a class exception.  In the case of class exceptions, the
+      constructor parameters are not described; use \env{excclassdesc}
+      to describe an exception class and its constructor.
     \end{envdesc}
 
     \begin{envdesc}{funcdesc}{\p{name}\p{parameters}}
@@ -545,6 +555,13 @@ This \UNIX\ is also followed by a space.
       Describe a class and its constructor.  \var{constructor
       parameters} should not include the \var{self} parameter or
       the parentheses used in the call syntax.
+    \end{envdesc}
+
+    \begin{envdesc}{classdesc*}{\p{name}}
+      Describe a class without describing the constructor.  This can
+      be used to describe classes that are merely containers for
+      attributes or which should never be instantiated or subclassed
+      by user code.
     \end{envdesc}
 
     \begin{envdesc}{memberdesc}{\op{type name}\p{name}}
