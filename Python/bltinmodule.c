@@ -410,6 +410,7 @@ complex_from_string(PyObject *v)
 	int sw_error=0;
 	int sign;
 	char buffer[256]; /* For errors */
+	char s_buffer[256];
 	int len;
 
 	if (PyString_Check(v)) {
@@ -417,8 +418,6 @@ complex_from_string(PyObject *v)
 		len = PyString_GET_SIZE(v);
 	}
 	else if (PyUnicode_Check(v)) {
-		char s_buffer[256];
-
 		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				 "complex() literal too large to convert");
