@@ -1,3 +1,20 @@
+"""ListViewer class.
+
+This class implements an input/output view on the color model.  It lists every
+unique color (e.g. unique r/g/b value) found in the color database.  Each
+color is shown by small swatch and primary color name.  Some colors have
+aliases -- more than one name for the same r/g/b value.  These aliases are
+displayed in the small listbox at the bottom of the screen.
+
+Clicking on a color name or swatch selects that color and updates all other
+windows.  When a color is selected in a different viewer, the color list is
+scrolled to the selected color and it is highlighted.  If the selected color
+is an r/g/b value without a name, no scrolling occurs.
+
+You can turn off Update On Click if all you want to see is the alias for a
+given name, without selecting the color.
+"""
+
 import sys
 from Tkinter import *
 from pynche import __version__

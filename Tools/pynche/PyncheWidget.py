@@ -1,4 +1,7 @@
 """Main Pynche (Pythonically Natural Color and Hue Editor) widget.
+
+This window provides the basic decorations, primarily including the menubar.
+It is used to bring up other windows.
 """
 
 import sys
