@@ -377,10 +377,6 @@ SOURCE=..\Python\pystate.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\python_nt.def
-# End Source File
-# Begin Source File
-
 SOURCE=..\PC\python_nt.rc
 
 !IF  "$(CFG)" == "python15 - Win32 Release"
