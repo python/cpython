@@ -51,9 +51,6 @@ int Py_OptimizeFlag = 0;
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%s' in function definition"
 
-#define ILLEGAL_DYNAMIC_SCOPE \
-"%.100s: exec or 'import *' makes names ambiguous in nested scope"
-
 #define GLOBAL_AFTER_ASSIGN \
 "name '%.400s' is assigned to before global declaration"
 
@@ -844,8 +841,6 @@ dump(node *n, int pad, int depth)
 	for (i = 0; i < NCH(n); ++i)
 		dump(CHILD(n, i), pad + 1, depth);
 }
-
-#define DUMP(N) dump(N, 0, -1)
 
 static int
 com_init(struct compiling *c, const char *filename)

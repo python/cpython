@@ -3804,9 +3804,6 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 	return result;
 }
 
-#define SLICE_ERROR_MSG \
-	"standard sequence type does not support step size other than one"
-
 /* Extract a slice index from a PyInt or PyLong, and store in *pi.
    Silently reduce values larger than INT_MAX to INT_MAX, and silently
    boost values less than -INT_MAX to 0.  Return 0 on error, 1 on success.

@@ -704,8 +704,6 @@ default_3way_compare(PyObject *v, PyObject *w)
 		Py_uintptr_t)(w->ob_type)) ? -1 : 1;
 }
 
-#define CHECK_TYPES(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_CHECKTYPES)
-
 /* Do a 3-way comparison, by hook or by crook.  Return:
    -2 for an exception (but see below);
    -1 if v <  w;
