@@ -2995,6 +2995,7 @@ com_arglist(c, n)
 {
 	int nch, i;
 	int complex = 0;
+	char nbuf[10];
 	REQ(n, varargslist);
 	/* varargslist:
 		(fpdef ['=' test] ',')* (fpdef ['=' test] | '*' .....) */
@@ -3011,7 +3012,8 @@ com_arglist(c, n)
 		if (TYPE(fp) == NAME)
 			name = STR(fp);
 		else {
-			name = "";
+			name = nbuf;
+			sprintf(nbuf, ".%d", i);
 			complex = 1;
 		}
 		com_newlocal(c, name);
