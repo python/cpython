@@ -307,9 +307,14 @@ are not supported.  Since Python strings have an explicit length,
 \code{\%s} conversions don't assume that \code{'\\0'} is the end of
 the string.
 
-For safety reasons, huge floating point precisions are truncated;
-\code{\%f} conversions for huge numbers are replaced by
-\code{\%g} conversions.  All other errors raise exceptions.
+For safety reasons, floating point precisions are clipped to 50;
+\code{\%f} conversions for numbers whose absolute value is over 1e25
+are replaced by \code{\%g} conversions.%
+\footnote{These numbers are fairly arbitrary.  They are intended to
+avoid printing endless strings of meaningless digits without hampering
+correct use and without having to know the exact precision of floating
+point values on a particular machine.}
+All other errors raise exceptions.
 
 If the right argument is a dictionary (or any kind of mapping), then
 the formats in the string must have a parenthesized key into that
@@ -350,7 +355,7 @@ The following operations are defined on mutable sequence types (where
   \lineiii{del \var{s}[\var{i}:\var{j}]}
 	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
   \lineiii{\var{s}.append(\var{x})}
-	{same as \code{\var{s}[len(\var{x}):len(\var{x})] = [\var{x}]}}{}
+	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{}
   \lineiii{\var{s}.count(\var{x})}
 	{return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
   \lineiii{\var{s}.index(\var{x})}
