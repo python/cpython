@@ -12,6 +12,10 @@ static char strop_module__doc__[] =
 /* XXX This file assumes that the <ctype.h> is*() functions
    XXX are defined for all 8-bit characters! */
 
+#define WARN if (PyErr_Warn(PyExc_DeprecationWarning, \
+		       "strop functions are obsolete; use string methods")) \
+	     return NULL
+
 /* The lstrip(), rstrip() and strip() functions are implemented
    in do_strip(), which uses an additional parameter to indicate what
    type of strip should occur. */
@@ -95,6 +99,7 @@ strop_splitfields(PyObject *self, PyObject *args)
 	char *s, *sub;
 	PyObject *list, *item;
 
+	WARN;
 	sub = NULL;
 	n = 0;
 	splitcount = 0;
@@ -167,6 +172,7 @@ strop_joinfields(PyObject *self, PyObject *args)
 	char* p = NULL;
 	intargfunc getitemfunc;
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "O|t#:join", &seq, &sep, &seplen))
 		return NULL;
 	if (sep == NULL) {
@@ -292,6 +298,7 @@ strop_find(PyObject *self, PyObject *args)
 	char *s, *sub;
 	int len, n, i = 0, last = INT_MAX;
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#|ii:find", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
@@ -335,6 +342,7 @@ strop_rfind(PyObject *self, PyObject *args)
 	int len, n, j;
 	int i = 0, last = INT_MAX;
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#|ii:rfind", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
@@ -404,6 +412,7 @@ static char strip__doc__[] =
 static PyObject *
 strop_strip(PyObject *self, PyObject *args)
 {
+	WARN;
 	return do_strip(args, BOTHSTRIP);
 }
 
@@ -416,6 +425,7 @@ static char lstrip__doc__[] =
 static PyObject *
 strop_lstrip(PyObject *self, PyObject *args)
 {
+	WARN;
 	return do_strip(args, LEFTSTRIP);
 }
 
@@ -428,6 +438,7 @@ static char rstrip__doc__[] =
 static PyObject *
 strop_rstrip(PyObject *self, PyObject *args)
 {
+	WARN;
 	return do_strip(args, RIGHTSTRIP);
 }
 
@@ -445,6 +456,7 @@ strop_lower(PyObject *self, PyObject *args)
 	PyObject *new;
 	int changed;
 
+	WARN;
 	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
@@ -483,6 +495,7 @@ strop_upper(PyObject *self, PyObject *args)
 	PyObject *new;
 	int changed;
 
+	WARN;
 	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
@@ -522,6 +535,7 @@ strop_capitalize(PyObject *self, PyObject *args)
 	PyObject *new;
 	int changed;
 
+	WARN;
 	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
@@ -577,6 +591,7 @@ strop_expandtabs(PyObject *self, PyObject *args)
 	int stringlen;
 	int tabsize = 8;
 
+	WARN;
 	/* Get arguments */
 	if (!PyArg_ParseTuple(args, "s#|i:expandtabs", &string, &stringlen, &tabsize))
 		return NULL;
@@ -642,6 +657,7 @@ strop_count(PyObject *self, PyObject *args)
 	int i = 0, last = INT_MAX;
 	int m, r;
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#|ii:count", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 	if (last > len)
@@ -685,6 +701,7 @@ strop_swapcase(PyObject *self, PyObject *args)
 	PyObject *new;
 	int changed;
 
+	WARN;
 	if (!PyArg_Parse(args, "t#", &s, &n))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
@@ -733,6 +750,7 @@ strop_atoi(PyObject *self, PyObject *args)
 	long x;
 	char buffer[256]; /* For errors */
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "s|i:atoi", &s, &base))
 		return NULL;
 
@@ -786,6 +804,7 @@ strop_atol(PyObject *self, PyObject *args)
 	PyObject *x;
 	char buffer[256]; /* For errors */
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "s|i:atol", &s, &base))
 		return NULL;
 
@@ -830,6 +849,7 @@ strop_atof(PyObject *self, PyObject *args)
 	double x;
 	char buffer[256]; /* For errors */
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "s:atof", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
@@ -913,6 +933,7 @@ strop_translate(PyObject *self, PyObject *args)
 	PyObject *result;
 	int trans_table[256];
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "St#|t#:translate", &input_obj,
 			      &table1, &tablen, &del_table, &dellen))
 		return NULL;
@@ -1124,6 +1145,7 @@ strop_replace(PyObject *self, PyObject *args)
 	int count = -1;
 	PyObject *new;
 
+	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#t#|i:replace",
 			      &str, &len, &pat, &pat_len, &sub, &sub_len,
 			      &count))
