@@ -287,6 +287,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         explain = long
         self.log_error("code %d, message %s", code, message)
         self.send_response(code, message)
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(self.error_message_format %
                          {'code': code,
