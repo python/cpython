@@ -40,7 +40,7 @@ class Node:
 
     def __init__(self):
         self.childNodes = []
-        if Node._debug: 
+        if Node._debug:
             index = repr(id(self)) + repr(self.__class__)
             Node.allnodes[index] = repr(self.__dict__)
             if Node.debug is None:
@@ -52,16 +52,16 @@ class Node:
         if key[0:2] == "__":
             raise AttributeError
         # getattr should never call getattr!
-        if self.__dict__.has_key("inGetAttr"): 
+        if self.__dict__.has_key("inGetAttr"):
             del self.inGetAttr
             raise AttributeError, key
 
         prefix, attrname = key[:5], key[5:]
         if prefix == "_get_":
             self.inGetAttr = 1
-            if hasattr(self, attrname): 
+            if hasattr(self, attrname):
                 del self.inGetAttr
-                return (lambda self=self, attrname=attrname: 
+                return (lambda self=self, attrname=attrname:
                                 getattr(self, attrname))
             else:
                 del self.inGetAttr
@@ -213,7 +213,7 @@ class AttributeList:
     def itemsNS(self):
         return map(lambda node: ((node.URI, node.localName), node.value),
                    self._attrs.values())
-    
+
     def keys(self):
         return self._attrs.keys()
 
@@ -229,7 +229,7 @@ class AttributeList:
     def __cmp__(self, other):
         if self._attrs is getattr(other, "_attrs", None):
             return 0
-        else: 
+        else:
             return cmp(id(self), id(other))
 
     #FIXME: is it appropriate to return .value?
@@ -324,7 +324,7 @@ class Element(Node):
         node.unlink()
         del self._attrs[node.name]
         del self._attrsNS[(node.namespaceURI, node.localName)]
-        
+
     def getElementsByTagName(self, name):
         return _getElementsByTagNameHelper(self, name, [])
 
@@ -337,7 +337,7 @@ class Element(Node):
     # undocumented
     def writexml(self, writer):
         writer.write("<" + self.tagName)
-            
+
         a_names = self._get_attributes().keys()
         a_names.sort()
 
@@ -473,4 +473,3 @@ def parse(*args, **kwargs):
 def parseString(*args, **kwargs):
     "Parse a file into a DOM from a string"
     return _doparse(pulldom.parseString, args, kwargs)
-

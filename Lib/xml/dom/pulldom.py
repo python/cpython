@@ -49,7 +49,7 @@ class PullDOM(xml.sax.ContentHandler):
                 attr = self.document.createAttribute(a_localname)
             attr.value = value
             node.setAttributeNode(attr)
-        
+
         parent = self.curNode
         node.parentNode = parent
         self.curNode = node
@@ -72,7 +72,7 @@ class PullDOM(xml.sax.ContentHandler):
             attr = self.document.createAttribute(aname)
             attr.value = value
             node.setAttributeNode(attr)
-        
+
         parent = self.curNode
         node.parentNode = parent
         self.curNode = node
@@ -87,7 +87,7 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent = self.lastEvent[1]
         #self.events.append((END_ELEMENT, node))
         self.curNode = node.parentNode
-        
+
     def comment(self, s):
         node = self.document.createComment(s)
         parent = self.curNode
@@ -98,7 +98,7 @@ class PullDOM(xml.sax.ContentHandler):
 
     def processingInstruction(self, target, data):
         node = self.document.createProcessingInstruction(target, data)
-        
+
         parent = self.curNode
         node.parentNode = parent
         self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
@@ -142,9 +142,9 @@ class ErrorHandler:
     def warning(self, exception):
         print exception
     def error(self, exception):
-        raise exception 
+        raise exception
     def fatalError(self, exception):
-        raise exception 
+        raise exception
 
 class DOMEventStream:
     def __init__(self, stream, parser, bufsize):
@@ -202,18 +202,18 @@ class SAX2DOM(PullDOM):
     def processingInstruction(self, target, data):
         PullDOM.processingInstruction(self, target, data)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)        
+        node.parentNode.appendChild(node)
 
     def ignorableWhitespace(self, chars):
         PullDOM.ignorableWhitespace(self, chars)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)        
+        node.parentNode.appendChild(node)
 
     def characters(self, chars):
         PullDOM.characters(self, chars)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)        
-    
+        node.parentNode.appendChild(node)
+
 default_bufsize = (2 ** 14) - 20
 
 def parse(stream_or_string, parser=None, bufsize=default_bufsize):
@@ -221,7 +221,7 @@ def parse(stream_or_string, parser=None, bufsize=default_bufsize):
         stream = open(stream_or_string)
     else:
         stream = stream_or_string
-    if not parser: 
+    if not parser:
         parser = xml.sax.make_parser()
     return DOMEventStream(stream, parser, bufsize)
 
@@ -230,7 +230,7 @@ def parseString(string, parser=None):
         from cStringIO import StringIO
     except ImportError:
         from StringIO import StringIO
-        
+
     bufsize = len(string)
     buf = StringIO(string)
     if not parser:

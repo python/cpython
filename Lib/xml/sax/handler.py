@@ -38,10 +38,10 @@ class ErrorHandler:
         raise exception
 
     def warning(self, exception):
-        "Handle a warning."   
+        "Handle a warning."
         print exception
 
-        
+
 # ===== CONTENTHANDLER =====
 
 class ContentHandler:
@@ -53,7 +53,7 @@ class ContentHandler:
 
     def __init__(self):
         self._locator = None
-    
+
     def setDocumentLocator(self, locator):
         """Called by the parser to give the application a locator for
         locating the origin of document events.
@@ -71,22 +71,22 @@ class ContentHandler:
         character content that does not match an application's
         business rules). The information returned by the locator is
         probably not sufficient for use with a search engine.
-        
+
         Note that the locator will return correct information only
         during the invocation of the events in this interface. The
         application should not attempt to use it at any other time."""
-        self._locator = locator        
+        self._locator = locator
 
     def startDocument(self):
         """Receive notification of the beginning of a document.
-        
+
         The SAX parser will invoke this method only once, before any
         other methods in this interface or in DTDHandler (except for
         setDocumentLocator)."""
 
     def endDocument(self):
         """Receive notification of the end of a document.
-        
+
         The SAX parser will invoke this method only once, and it will
         be the last method invoked during the parse. The parser shall
         not invoke this method until it has either abandoned parsing
@@ -95,13 +95,13 @@ class ContentHandler:
 
     def startPrefixMapping(self, prefix, uri):
         """Begin the scope of a prefix-URI Namespace mapping.
-        
+
         The information from this event is not necessary for normal
         Namespace processing: the SAX XML reader will automatically
         replace prefixes for element and attribute names when the
         http://xml.org/sax/features/namespaces feature is true (the
         default).
-        
+
         There are cases, however, when applications need to use
         prefixes in character data or in attribute values, where they
         cannot safely be expanded automatically; the
@@ -118,7 +118,7 @@ class ContentHandler:
 
     def endPrefixMapping(self, prefix):
         """End the scope of a prefix-URI mapping.
-        
+
         See startPrefixMapping for details. This event will always
         occur after the corresponding endElement event, but the order
         of endPrefixMapping events is not otherwise guaranteed."""
@@ -151,10 +151,10 @@ class ContentHandler:
 
         The name parameter contains the name of the element type, just
         as with the startElementNS event."""
-        
+
     def characters(self, content):
         """Receive notification of character data.
-        
+
         The Parser will call this method to report each chunk of
         character data. SAX parsers may return all contiguous
         character data in a single chunk, or they may split it into
@@ -164,24 +164,24 @@ class ContentHandler:
 
     def ignorableWhitespace(self, whitespace):
         """Receive notification of ignorable whitespace in element content.
-        
+
         Validating Parsers must use this method to report each chunk
         of ignorable whitespace (see the W3C XML 1.0 recommendation,
         section 2.10): non-validating parsers may also use this method
         if they are capable of parsing and using content models.
-        
+
         SAX parsers may return all contiguous whitespace in a single
         chunk, or they may split it into several chunks; however, all
         of the characters in any single event must come from the same
         external entity, so that the Locator provides useful
         information.
-        
+
         The application must not attempt to read from the array
         outside of the specified range."""
 
     def processingInstruction(self, target, data):
         """Receive notification of a processing instruction.
-        
+
         The Parser will invoke this method once for each processing
         instruction found: note that processing instructions may occur
         before or after the main document element.
@@ -192,7 +192,7 @@ class ContentHandler:
 
     def skippedEntity(self, name):
         """Receive notification of a skipped entity.
-        
+
         The Parser will invoke this method once for each entity
         skipped. Non-validating processors may skip entities if they
         have not seen the declarations (because, for example, the
@@ -202,7 +202,7 @@ class ContentHandler:
         http://xml.org/sax/features/external-parameter-entities
         properties."""
 
-        
+
 # ===== DTDHandler =====
 
 class DTDHandler:
@@ -217,16 +217,16 @@ class DTDHandler:
     def unparsedEntityDecl(self, name, publicId, systemId, ndata):
         "Handle an unparsed entity declaration event."
 
-        
+
 # ===== ENTITYRESOLVER =====
-        
+
 class EntityResolver:
     """Basic interface for resolving entities. If you create an object
     implementing this interface, then register the object with your
     Parser, the parser will call the method in your object to
     resolve all external entities. Note that DefaultHandler implements
     this interface with the default behaviour."""
-    
+
     def resolveEntity(self, publicId, systemId):
         """Resolve the system identifier of an entity and return either
         the system identifier to read from as a string, or an InputSource
