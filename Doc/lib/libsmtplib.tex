@@ -2,14 +2,16 @@
 \section{Standard Module \module{smtplib}}
 \stmodindex{smtplib}
 \label{module-smtplib}
+\indexii{SMTP}{protocol}
+\index{Simple Mail Transfer Protocol}
 
-The \module{smtplib} module defines an SMTP session object that can be
-used to send mail to any Internet machine with an SMTP or ESMTP
+The \module{smtplib} module defines an SMTP client session object that
+can be used to send mail to any Internet machine with an SMTP or ESMTP
 listener daemon.  For details of SMTP and ESMTP operation, consult
 \rfc{821} (\emph{Simple Mail Transfer Protocol}) and \rfc{1869}
 (\emph{SMTP Service Extensions}).
 
-\begin{classdesc}{SMTP}{\optional{host, port}}
+\begin{classdesc}{SMTP}{\optional{host\optional{, port}}}
 A \class{SMTP} instance encapsulates an SMTP connection.  It has
 methods that support a full repertoire of SMTP and ESMTP
 operations. If the optional host and port parameters are given, the
@@ -20,6 +22,7 @@ For normal use, you should only require the initialization/connect,
 \method{sendmail()}, and \method{quit()} methods  An example is
 included below.
 \end{classdesc}
+
 
 \subsection{SMTP Objects}
 \label{SMTP-objects}
@@ -32,8 +35,9 @@ debug messages for connection and for all messages sent to and
 received from the server.
 \end{methoddesc}
 
-\begin{methoddesc}{connect}{\optional{host='localhost'\optional{, port=0}}}
-Connect to a host on a given port.
+\begin{methoddesc}{connect}{\optional{host\optional{, port}}}
+Connect to a host on a given port.  The defaults are to connect to the 
+local host at the standard SMTP port (25).
 
 If the hostname ends with a colon (\character{:}) followed by a
 number, that suffix will be stripped off and the number interpreted as 
@@ -58,8 +62,9 @@ for testing private extensions.
 \end{methoddesc}
 
 \begin{methoddesc}{helo}{\optional{hostname}}
-Identify yourself to the SMTP server using HELO.  The hostname
-argument defaults to the FQDN of the local host.
+Identify yourself to the SMTP server using \samp{HELO}.  The hostname
+argument defaults to the fully qualified domain name of the local
+host.
 
 In normal operation it should not be necessary to call this method
 explicitly.  It will be implicitly called by the \method{sendmail()}
@@ -67,9 +72,9 @@ when necessary.
 \end{methoddesc}
 
 \begin{methoddesc}{ehlo}{\optional{hostname}}
-Identify yourself to an ESMTP server using HELO.  The hostname
-argument defaults to the FQDN of the local host.  Examine the 
-response for ESMTP option and store them for use by
+Identify yourself to an ESMTP server using \samp{HELO}.  The hostname
+argument defaults to the fully qualified domain name of the local
+host.  Examine the response for ESMTP option and store them for use by
 \method{has_option()}.
 
 Unless you wish to use \method{has_option()} before sending
@@ -83,33 +88,34 @@ by the server, \code{0} otherwise.  Case is ignored.
 \end{methoddesc}
 
 \begin{methoddesc}{verify}{address}
-Check the validity of an address on this server using SMTP VRFY.
+Check the validity of an address on this server using SMTP \samp{VRFY}.
 Returns a tuple consisting of code 250 and a full \rfc{822} address
 (including human name) if the user address is valid. Otherwise returns
 an SMTP error code of 400 or greater and an error string.
 
-Note: many sites disable SMTP VRFY in order to foil spammers.
+Note: many sites disable SMTP \samp{VRFY} in order to foil spammers.
 \end{methoddesc}
 
-\begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{, options=[]}}
-Send mail.  The required arguments are an \rfc{822} from-address string,
-a list of \rfc{822} to-address strings, and a message string.  The caller
-may pass a list of ESMTP options to be used in MAIL FROM commands.
+\begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{, options}}
+Send mail.  The required arguments are an \rfc{822} from-address
+string, a list of \rfc{822} to-address strings, and a message string.
+The caller may pass a list of ESMTP options to be used in \samp{MAIL
+FROM} commands as \var{options}.
 
-If there has been no previous EHLO or HELO command this session, this
-method tries ESMTP EHLO first. If the server does ESMTP, message size
-and each of the specified options will be passed to it (if the option
-is in the feature set the server advertises).  If EHLO fails, HELO
-will be tried and ESMTP options suppressed.
+If there has been no previous \samp{EHLO} or \samp{HELO} command this
+session, this method tries ESMTP \samp{EHLO} first. If the server does
+ESMTP, message size and each of the specified options will be passed
+to it (if the option is in the feature set the server advertises).  If
+\samp{EHLO} fails, \samp{HELO} will be tried and ESMTP options
+suppressed.
 
 This method will return normally if the mail is accepted for at least 
 one recipient. Otherwise it will throw an exception (either
 \exception{SMTPSenderRefused}, \exception{SMTPRecipientsRefused}, or
-\exception{SMTPDataError}).
-That is, if this method does not throw an exception, then someone 
-should get your mail.  If this method does not throw an exception,
-it returns a dictionary, with one entry for each recipient that was 
-refused.
+\exception{SMTPDataError}).  That is, if this method does not throw an
+exception, then someone should get your mail.  If this method does not
+throw an exception, it returns a dictionary, with one entry for each
+recipient that was refused.
 \end{methoddesc}
 
 \begin{methoddesc}{quit}{}
@@ -117,9 +123,10 @@ Terminate the SMTP session and close the connection.
 \end{methoddesc}
 
 Low-level methods corresponding to the standard SMTP/ESMTP commands
-HELP, RSET, NOOP, MAIL, RCPT, and DATA are also supported.  Normally
-these do not need to be called directly, so they are not documented
-here. For details, consult the module code.
+\samp{HELP}, \samp{RSET}, \samp{NOOP}, \samp{MAIL}, \samp{RCPT}, and
+\samp{DATA} are also supported.  Normally these do not need to be
+called directly, so they are not documented here.  For details,
+consult the module code.
 
 
 \subsection{SMTP Example}
