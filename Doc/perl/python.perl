@@ -444,31 +444,6 @@ sub make_str_index_entry{
     "$aname$str</a>";
 }
 
-# Changed from the stock version to indent {verbatim} sections,
-# and make them smaller, to better match the LaTeX version:
-
-# (Used with LaTeX2HTML 96.1*)
-sub replace_verbatim {
-    # Modifies $_
-    my($prefix,$suffix) = ("\n<p><dl><dd><pre>\n", "</pre></dl>");
-    s/$verbatim_mark(verbatim)(\d+)/$prefix$verbatim{$2}$suffix/go;
-    s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
-}
-
-# (Used with LaTeX2HTML 98.1)
-# The HTML this produces is bad; the <PRE> is on the outside of the <dl>,
-# but I haven't found a workaround yet.
-sub replace_verbatim_hook{
-    # Modifies $_
-    my($prefix,$suffix) = ("\n<p><dl><dd>", "</dl>");
-    s/$math_verbatim_rx/&put_comment("MATH: ".$verbatim{$1})/eg;
-    s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)\#/$prefix$verbatim{$2}$suffix/go;
-    # Raw HTML, but replacements may have protected characters
-    s/$verbatim_mark(rawhtml)(\d+)#/&unprotect_raw_html($verbatim{$2})/eg;
-    s/$verbatim_mark$keepcomments(\d+)#/$verbatim{$2}/ego; # Raw TeX
-    s/$unfinished_mark$keepcomments(\d+)#/$verbatim{$2}/ego; # Raw TeX
-}
-
 sub do_env_cfuncdesc{
     local($_) = @_;
     my($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
