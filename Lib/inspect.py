@@ -383,6 +383,8 @@ def getmodule(object):
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     main = sys.modules['__main__']
+    if not hasattr(object, '__name__'):
+        return None
     if hasattr(main, object.__name__):
         mainobject = getattr(main, object.__name__)
         if mainobject is object:
