@@ -942,8 +942,7 @@ def whichmodule(func, funcname):
     for name, module in sys.modules.items():
         if module is None:
             continue # skip dummy package entries
-        if name != '__main__' and \
-            getattr(module, funcname, None) is func:
+        if name != '__main__' and getattr(module, funcname, None) is func:
             break
     else:
         name = '__main__'
