@@ -10,6 +10,13 @@ splitx(str, pat, maxsplit): split string using pattern as delimiter plus
                             return delimiters
 """
 
+import warnings
+warnings.warn("the regsub module is deprecated; please use re.sub()",
+	      DeprecationWarning)
+
+# Ignore further deprecation warnings about this module
+warnings.filterwarnings("ignore", "", DeprecationWarning, __name__)
+
 import regex
 
 
