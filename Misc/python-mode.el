@@ -778,7 +778,7 @@ package.  Note that the latest X/Emacs releases contain this package.")
    "\\(def[ \t]+"                       ; function definitions start with def
    "\\([a-zA-Z0-9_]+\\)"                ;   name is here
 					;   function arguments...
-   "[ \t]*(\\([a-zA-Z0-9_=,\* \t\n]*\\))"
+   "[ \t]*(\\([-+/a-zA-Z0-9_=,\* \t\n.()\"'#]*\\))"
    "\\)"                                ; end of def
    "[ \t]*:"                            ; and then the :
    "\\)"                                ; >>methods and functions<<
