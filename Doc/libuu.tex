@@ -1,0 +1,35 @@
+\section{Standard Module \sectcode{uu}}
+\label{module-uu}
+\stmodindex{uu}
+
+This module encodes and decodes files in uuencode format, allowing
+arbitrary binary data to be transferred over ascii-only connections.
+Wherever a file argument is expected, the methods accept a file-like
+object.  For backwards compatibility, a string containing a pathname
+is also accepted, and the corresponding file will be opened for
+reading and writing; the pathname \code{'-'} is understood to mean the
+standard input or output.  However, this interface is deprecated; it's
+better for the caller to open the file itself, and be sure that, when
+required, the mode is \code{'rb'} or \code{'wb'} on Windows or DOS.
+
+This code was contributed by Lance Ellinghouse, and modified by Jack
+Jansen.
+
+The \module{uu} module defines the following functions:
+
+\setindexsubitem{(in module uu)}
+
+\begin{funcdesc}{encode}{in_file\, out_file\optional{\, name\, mode}}
+Uuencode file \var{in_file} into file \var{out_file}.  The uuencoded
+file will have the header specifying \var{name} and \var{mode} as the
+defaults for the results of decoding the file. The default defaults
+are taken from \var{in_file}, or \code{'-'} and \code{0666}
+respectively. 
+\end{funcdesc}
+
+\begin{funcdesc}{decode}{in_file\optional{\, out_file\, mode}}
+This call decodes uuencoded file \var{in_file} placing the result on
+file \var{out_file}. If \var{out_file} is a pathname the \var{mode} is
+also set. Defaults for \var{out_file} and \var{mode} are taken from
+the uuencode header.
+\end{funcdesc}
