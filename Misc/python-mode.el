@@ -911,9 +911,13 @@ the new line indented."
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
 	(py-goto-initial-line)
-	(if (py-statement-opens-block-p)
-	    (+ (current-indentation) py-indent-offset)
-	  (current-indentation)))))))
+	(+ (current-indentation)
+	   (if (py-statement-opens-block-p)
+	       py-indent-offset
+	     (if (py-statement-closes-block-p)
+		 (- py-indent-offset)
+	       0)))
+	)))))
 
 (defun py-guess-indent-offset (&optional global)
   "Guess a good value for, and change, `py-indent-offset'.
@@ -1905,6 +1909,16 @@ local bindings to py-newline-and-indent."))
 	  ;; search failed: couldn't find another interesting colon
 	  (setq searching nil)))
       answer)))
+
+(defun py-statement-closes-block-p ()
+  ;; true iff the current statement `closes' a block == the line
+  ;; starts with `return', `raise', `break' or `continue'.  doesn't
+  ;; catch embedded statements
+  (let ((here (point)))
+    (back-to-indentation)
+    (prog1
+	(looking-at "\\(return\\|raise\\|break\\|continue\\)\\>")
+      (goto-char here))))
 
 ;; go to point right beyond final line of block begun by the current
 ;; line.  This is the same as where py-goto-beyond-final-line goes
