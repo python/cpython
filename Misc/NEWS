@@ -34,6 +34,11 @@ Extension modules
 Library
 -------
 
+- time.strptime() now properly escapes timezones and all other locale-specific
+  strings for regex-specific symbols.  Was breaking under Japanese Windows when
+  the timezone was specified as "Tokyo (standard time)".
+  Closes bug #1039270.
+
 - Updates for the email package:
   + All deprecated APIs that in email 2.x issued warnings have been removed:
     _encoder argument to the MIMEText constructor, Message.add_payload(),
