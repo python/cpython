@@ -14,13 +14,12 @@
 import re
 
 # Compiled regular expression to "decode" a number
-decoder = re.compile( \
-	'^([-+]?)0*([0-9]*)((\.[0-9]*)?)(([eE][-+]?[0-9]+)?)$')
+decoder = re.compile(r'^([-+]?)0*(\d*)((?:\.\d*)?)(([eE][-+]?\d+)?)$')
 # \0 the whole thing
 # \1 leading sign or empty
 # \2 digits left of decimal point
 # \3 fraction (empty or begins with point)
-# \5 exponent part (empty or begins with 'e' or 'E')
+# \4 exponent part (empty or begins with 'e' or 'E')
 
 NotANumber = 'fpformat.NotANumber'
 
@@ -30,9 +29,9 @@ NotANumber = 'fpformat.NotANumber'
 # fraction is 0 or more digits
 # expo is an integer
 def extract(s):
-	m = decoder.match(s)
-	if not m: raise NotANumber
-	sign, intpart, fraction, exppart = m.group(1, 2, 3, 5)
+	res = decoder.match(s)
+	if res is None: raise NotANumber
+	sign, intpart, fraction, exppart = res.group(1,2,3,4)
 	if sign == '+': sign = ''
 	if fraction: fraction = fraction[1:]
 	if exppart: expo = eval(exppart[1:])
@@ -135,3 +134,4 @@ def test():
 			print x, fix(x, digs), sci(x, digs)
 	except (EOFError, KeyboardInterrupt):
 		pass
+

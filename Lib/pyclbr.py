@@ -35,17 +35,17 @@ the hell out of the parser, but it usually works.'''
 import os
 import sys
 import imp
-import regex
+import re
 import string
 
-id = '\\(<id>[A-Za-z_][A-Za-z0-9_]*\\)'	# match identifier
-blank_line = regex.compile('^[ \t]*\\($\\|#\\)')
-is_class = regex.symcomp('^class[ \t]+'+id+'[ \t]*\\(<sup>([^)]*)\\)?[ \t]*:')
-is_method = regex.symcomp('^[ \t]+def[ \t]+'+id+'[ \t]*(')
-is_import = regex.symcomp('^import[ \t]*\\(<imp>[^#]+\\)')
-is_from = regex.symcomp('^from[ \t]+'+id+'[ \t]+import[ \t]+\\(<imp>[^#]+\\)')
-dedent = regex.compile('^[^ \t]')
-indent = regex.compile('^[^ \t]*')
+id = '(?P<id>[A-Za-z_][A-Za-z0-9_]*)'	# match identifier
+blank_line = re.compile('^[ \t]*($|#)')
+is_class = re.compile('^class[ \t]+'+id+'[ \t]*(?P<sup>\([^)]*\))?[ \t]*:')
+is_method = re.compile('^[ \t]+def[ \t]+'+id+'[ \t]*\(')
+is_import = re.compile('^import[ \t]*(?P<imp>[^#]+)')
+is_from = re.compile('^from[ \t]+'+id+'[ \t]+import[ \t]+(?P<imp>[^#]+)')
+dedent = re.compile('^[^ \t]')
+indent = re.compile('^[^ \t]*')
 
 _modules = {}				# cache of modules we've seen
 
@@ -116,14 +116,16 @@ def readmodule(module, path = []):
 			break
 		lineno = lineno + 1	# count lines
 		line = line[:-1]	# remove line feed
-		if blank_line.match(line) >= 0:
+		if blank_line.match(line):
 			# ignore blank (and comment only) lines
 			continue
-##		if indent.match(line) >= 0:
-##			indentation = len(string.expandtabs(indent.group(0), 8))
-		if is_import.match(line) >= 0:
+## 		res = indent.match(line)
+## 		if res:
+## 			indentation = len(string.expandtabs(res.group(0), 8))
+		res = is_import.match(line)
+		if res:
 			# import module
-			for n in string.splitfields(is_import.group('imp'), ','):
+			for n in string.splitfields(res.group('imp'), ','):
 				n = string.strip(n)
 				try:
 					# recursively read the
@@ -133,10 +135,11 @@ def readmodule(module, path = []):
 					print 'module',n,'not found'
 					pass
 			continue
-		if is_from.match(line) >= 0:
+		res = is_from.match(line)
+		if res:
 			# from module import stuff
-			mod = is_from.group('id')
-			names = string.splitfields(is_from.group('imp'), ',')
+			mod = res.group('id')
+			names = string.splitfields(res.group('imp'), ',')
 			try:
 				# recursively read the imported module
 				d = readmodule(mod, path)
@@ -161,10 +164,11 @@ def readmodule(module, path = []):
 						   not dict.has_key(n):
 							dict[n] = d[n]
 			continue
-		if is_class.match(line) >= 0:
+		res = is_class.match(line)
+		if res:
 			# we found a class definition
-			class_name = is_class.group('id')
-			inherit = is_class.group('sup')
+			class_name = res.group('id')
+			inherit = res.group('sup')
 			if inherit:
 				# the class inherits from other classes
 				inherit = string.strip(inherit[1:-1])
@@ -194,15 +198,17 @@ def readmodule(module, path = []):
 			cur_class = Class(module, class_name, inherit, file, lineno)
 			dict[class_name] = cur_class
 			continue
-		if is_method.match(line) >= 0:
+		res = is_method.match(line)
+		if res:
 			# found a method definition
 			if cur_class:
 				# and we know the class it belongs to
-				meth_name = is_method.group('id')
+				meth_name = res.group('id')
 				cur_class._addmethod(meth_name, lineno)
 			continue
-		if dedent.match(line) >= 0:
+		if dedent.match(line):
 			# end of class definition
 			cur_class = None
 	f.close()
 	return dict
+

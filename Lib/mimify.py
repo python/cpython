@@ -27,21 +27,16 @@ CHARSET = 'ISO-8859-1'	# default charset for non-US-ASCII mail
 QUOTE = '> '		# string replies are quoted with
 # End configure
 
-import regex, regsub, string
+import re, string
 
-qp = regex.compile('^content-transfer-encoding:[ \t]*quoted-printable',
-		   regex.casefold)
-base64_re = regex.compile('^content-transfer-encoding:[ \t]*base64',
-		       regex.casefold)
-mp = regex.compile('^content-type:[\000-\377]*multipart/[\000-\377]*boundary="?\\([^;"\n]*\\)',
-		   regex.casefold)
-chrset = regex.compile('^\\(content-type:.*charset="\\)\\(us-ascii\\|iso-8859-[0-9]+\\)\\("[\000-\377]*\\)',
-		       regex.casefold)
-he = regex.compile('^-*$')
-mime_code = regex.compile('=\\([0-9a-f][0-9a-f]\\)', regex.casefold)
-mime_head = regex.compile('=\\?iso-8859-1\\?q\\?\\([^? \t\n]+\\)\\?=',
-			  regex.casefold)
-repl = regex.compile('^subject:[ \t]+re: ', regex.casefold)
+qp = re.compile('^content-transfer-encoding:\\s*quoted-printable', re.I)
+base64_re = re.compile('^content-transfer-encoding:\\s*base64', re.I)
+mp = re.compile('^content-type:.*multipart/.*boundary="?([^;"\n]*)', re.I|re.S)
+chrset = re.compile('^(content-type:.*charset=")(us-ascii|iso-8859-[0-9]+)(".*)', re.I|re.S)
+he = re.compile('^-*\n')
+mime_code = re.compile('=([0-9a-f][0-9a-f])', re.I)
+mime_head = re.compile('=\\?iso-8859-1\\?q\\?([^? \t\n]+)\\?=', re.I)
+repl = re.compile('^subject:\\s+re: ', re.I)
 
 class File:
 	'''A simple fake file object that knows about limited
@@ -81,7 +76,7 @@ class HeaderFile:
 			line = self.file.readline()
 		if not line:
 			return line
-		if he.match(line) >= 0:
+		if he.match(line):
 			return line
 		while 1:
 			self.peek = self.file.readline()
@@ -95,26 +90,26 @@ def mime_decode(line):
 	'''Decode a single line of quoted-printable text to 8bit.'''
 	newline = ''
 	while 1:
-		i = mime_code.search(line)
-		if i < 0:
+		res = mime_code.search(line)
+		if res is None:
 			break
-		newline = newline + line[:i] + \
-			  chr(string.atoi(mime_code.group(1), 16))
-		line = line[i+3:]
+		newline = newline + line[:res.start(0)] + \
+			  chr(string.atoi(res.group(1), 16))
+		line = line[res.end(0):]
 	return newline + line
 
 def mime_decode_header(line):
 	'''Decode a header line to 8bit.'''
 	newline = ''
 	while 1:
-		i = mime_head.search(line)
-		if i < 0:
+		res = mime_head.search(line)
+		if res is None:
 			break
-		match0, match1 = mime_head.group(0, 1)
+		match = res.group(1)
 		# convert underscores to spaces (before =XX conversion!)
-		match1 = string.join(string.split(match1, '_'), ' ')
-		newline = newline + line[:i] + mime_decode(match1)
-		line = line[i + len(match0):]
+		match = string.join(string.split(match, '_'), ' ')
+		newline = newline + line[:res.start(0)] + mime_decode(match)
+		line = line[res.end(0):]
 	return newline + line
 
 def unmimify_part(ifile, ofile, decode_base64 = 0):
@@ -140,19 +135,20 @@ def unmimify_part(ifile, ofile, decode_base64 = 0):
 		else:
 			pref = ''
 		line = mime_decode_header(line)
-		if qp.match(line) >= 0:
+		if qp.match(line):
 			quoted_printable = 1
 			continue	# skip this header
-		if decode_base64 and base64_re.match(line) >= 0:
+		if decode_base64 and base64_re.match(line):
 			is_base64 = 1
 			continue
 		ofile.write(pref + line)
-		if not prefix and repl.match(line) >= 0:
+		if not prefix and repl.match(line):
 			# we're dealing with a reply message
 			is_repl = 1
-		if mp.match(line) >= 0:
-			multipart = '--' + mp.group(1)
-		if he.match(line) >= 0:
+		mp_res = mp.match(line)
+		if mp_res:
+			multipart = '--' + mp_res.group(1)
+		if he.match(line):
 			break
 	if is_repl and (quoted_printable or multipart):
 		is_repl = 0
@@ -162,7 +158,7 @@ def unmimify_part(ifile, ofile, decode_base64 = 0):
 		line = ifile.readline()
 		if not line:
 			return
-		line = regsub.gsub(mime_head, '\\1', line)
+		line = re.sub(mime_head, '\\1', line)
 		if prefix and line[:len(prefix)] == prefix:
 			line = line[len(prefix):]
 			pref = prefix
@@ -216,8 +212,8 @@ def unmimify(infile, outfile, decode_base64 = 0):
 	unmimify_part(nifile, ofile, decode_base64)
 	ofile.flush()
 
-mime_char = regex.compile('[=\240-\377]') # quote these chars in body
-mime_header_char = regex.compile('[=?\240-\377]') # quote these in header
+mime_char = re.compile('[=\240-\377]') # quote these chars in body
+mime_header_char = re.compile('[=?\240-\377]') # quote these in header
 
 def mime_encode(line, header):
 	'''Code a single line as quoted-printable.
@@ -232,12 +228,12 @@ def mime_encode(line, header):
 		newline = string.upper('=%02x' % ord('F'))
 		line = line[1:]
 	while 1:
-		i = reg.search(line)
-		if i < 0:
+		res = reg.search(line)
+		if res is None:
 			break
-		newline = newline + line[:i] + \
-			  string.upper('=%02x' % ord(line[i]))
-		line = line[i+1:]
+		newline = newline + line[:res.start(0)] + \
+			  string.upper('=%02x' % ord(line[res.group(0)]))
+		line = line[res.end(0):]
 	line = newline + line
 
 	newline = ''
@@ -250,25 +246,25 @@ def mime_encode(line, header):
 		line = line[i:]
 	return newline + line
 
-mime_header = regex.compile('\\([ \t(]\\|^\\)\\([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240-\377]*\\)\\([ \t)]\\|$\\)')
+mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240-\377]*)([ \t)]|\n)')
 
 def mime_encode_header(line):
 	'''Code a single header line as quoted-printable.'''
 	newline = ''
 	while 1:
-		i = mime_header.search(line)
-		if i < 0:
+		res = mime_header.search(line)
+		if res is None:
 			break
-		newline = newline + line[:i] + mime_header.group(1) + \
+		newline = newline + line[:res.start(0)] + res.group(1) + \
 			  '=?' + CHARSET + '?Q?' + \
-			  mime_encode(mime_header.group(2), 1) + \
-			  '?=' + mime_header.group(3)
-		line = line[i+len(mime_header.group(0)):]
+			  mime_encode(res.group(2), 1) + \
+			  '?=' + res.group(3)
+		line = line[res.end(0):]
 	return newline + line
 
-mv = regex.compile('^mime-version:', regex.casefold)
-cte = regex.compile('^content-transfer-encoding:', regex.casefold)
-iso_char = regex.compile('[\240-\377]')
+mv = re.compile('^mime-version:', re.I)
+cte = re.compile('^content-transfer-encoding:', re.I)
+iso_char = re.compile('[\240-\377]')
 
 def mimify_part(ifile, ofile, is_mime):
 	'''Convert an 8bit part of a MIME mail message to quoted-printable.'''
@@ -286,19 +282,20 @@ def mimify_part(ifile, ofile, is_mime):
 		line = hfile.readline()
 		if not line:
 			break
-		if not must_quote_header and iso_char.search(line) >= 0:
+		if not must_quote_header and iso_char.search(line):
 			must_quote_header = 1
-		if mv.match(line) >= 0:
+		if mv.match(line):
 			is_mime = 1
-		if cte.match(line) >= 0:
+		if cte.match(line):
 			has_cte = 1
-			if qp.match(line) >= 0:
+			if qp.match(line):
 				is_qp = 1
-			elif base64_re.match(line) >= 0:
+			elif base64_re.match(line):
 				is_base64 = 1
-		if mp.match(line) >= 0:
-			multipart = '--' + mp.group(1)
-		if he.match(line) >= 0:
+		mp_res = mp.match(line)
+		if mp_res:
+			multipart = '--' + mp_res.group(1)
+		if he.match(line):
 			header_end = line
 			break
 		header.append(line)
@@ -328,7 +325,7 @@ def mimify_part(ifile, ofile, is_mime):
 			line = mime_decode(line)
 		message.append(line)
 		if not has_iso_chars:
-			if iso_char.search(line) >= 0:
+			if iso_char.search(line):
 				has_iso_chars = must_quote_body = 1
 		if not must_quote_body:
 			if len(line) > MAXLEN:
@@ -338,16 +335,17 @@ def mimify_part(ifile, ofile, is_mime):
 	for line in header:
 		if must_quote_header:
 			line = mime_encode_header(line)
-		if chrset.match(line) >= 0:
+		chrset_res = chrset.match(line)
+		if chrset_res:
 			if has_iso_chars:
 				# change us-ascii into iso-8859-1
-				if string.lower(chrset.group(2)) == 'us-ascii':
-					line = chrset.group(1) + \
-					       CHARSET + chrset.group(3)
+				if string.lower(chrset_res.group(2)) == 'us-ascii':
+					line = chrset_res.group(1) + \
+					       CHARSET + chrset_res.group(3)
 			else:
 				# change iso-8859-* into us-ascii
-				line = chrset.group(1) + 'us-ascii' + chrset.group(3)
-		if has_cte and cte.match(line) >= 0:
+				line = chrset_res.group(1) + 'us-ascii' + chrset_res.group(3)
+		if has_cte and cte.match(line):
 			line = 'Content-Transfer-Encoding: '
 			if is_base64:
 				line = line + 'base64\n'
@@ -445,3 +443,4 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
 	if decode_base64:
 		encode_args = encode_args + (decode_base64,)
 	apply(encode, encode_args)
+
