@@ -175,7 +175,7 @@ class SGMLParser:
                     if rawdata[i-1] != ';': i = i-1
                     continue
             else:
-                raise SGMLParserError('neither < nor & ??')
+                raise SGMLParseError('neither < nor & ??')
             # We get here only if incomplete matches but
             # nothing else
             match = incomplete.match(rawdata, i)
