@@ -515,12 +515,8 @@ Otherwise, an \exception{UnpicklingError} will be raised in the
 unpickling environment.  Note that as usual, the callable itself is
 pickled by name.
 
-\item A tuple of arguments for the callable object, or \code{None}.
-\deprecated{2.3}{If this item is \code{None}, then instead of calling
-the callable directly, its \method{__basicnew__()} method is called
-without arguments; this method should also return the unpickled
-object.  Providing \code{None} is deprecated, however; return a
-tuple of arguments instead.}
+\item A tuple of arguments for the callable object.
+\versionchanged[Formerly, this argument could also be \code{None}]{2.5}
 
 \item Optionally, the object's state, which will be passed to
       the object's \method{__setstate__()} method as described in

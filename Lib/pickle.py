@@ -33,7 +33,6 @@ import marshal
 import sys
 import struct
 import re
-import warnings
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -349,14 +348,7 @@ class Pickler:
 
         # Assert that args is a tuple or None
         if not isinstance(args, TupleType):
-            if args is None:
-                # A hack for Jim Fulton's ExtensionClass, now deprecated.
-                # See load_reduce()
-                warnings.warn("__basicnew__ special case is deprecated",
-                              DeprecationWarning)
-            else:
-                raise PicklingError(
-                    "args from reduce() should be a tuple")
+            raise PicklingError("args from reduce() should be a tuple")
 
         # Assert that func is callable
         if not callable(func):
@@ -1138,13 +1130,7 @@ class Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
-        if args is None:
-            # A hack for Jim Fulton's ExtensionClass, now deprecated
-            warnings.warn("__basicnew__ special case is deprecated",
-                          DeprecationWarning)
-            value = func.__basicnew__()
-        else:
-            value = func(*args)
+        value = func(*args)
         stack[-1] = value
     dispatch[REDUCE] = load_reduce
 

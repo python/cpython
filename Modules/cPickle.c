@@ -2143,6 +2143,12 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
 				&dictitems))
 		return -1;
 
+	if (!PyTuple_Check(argtup)) {
+		PyErr_SetString(PicklingError,
+				"args from reduce() should be a tuple");
+		return -1;
+	}
+
 	if (state == Py_None)
 		state = NULL;
 	if (listitems == Py_None)
@@ -3614,17 +3620,6 @@ Instance_New(PyObject *cls, PyObject *args)
 
 		if ((r=PyInstance_New(cls, args, NULL))) return r;
 		else goto err;
-	}
-
-	if (args==Py_None) {
-		/* Special case, call cls.__basicnew__() */
-		PyObject *basicnew;
-
-		basicnew = PyObject_GetAttr(cls, __basicnew___str);
-		if (!basicnew)  return NULL;
-		r=PyObject_CallObject(basicnew, NULL);
-		Py_DECREF(basicnew);
-		if (r) return r;
 	}
 
 	if ((r=PyObject_CallObject(cls, args))) return r;
