@@ -197,5 +197,5 @@ def test_exc(formatstr, args, exception, excmsg):
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
 test_exc(u'abc %\u3000', 1, ValueError,
-         "unsupported format character '\000' (0x3000) at index 5")
+         "unsupported format character '?' (0x3000) at index 5")
 
