@@ -679,6 +679,14 @@ command line or use \function{warnings.filterwarnings()}.
 \exception{SyntaxWarning} warning.  In a future version of Python,
 \code{None} may finally become a keyword.
 
+\item Python runs multithreaded programs by switching between threads
+after executing N bytecodes.  The default value for N has been
+increased from 10 to 100 bytecodes, speeding up single-threaded
+applications by reducing the switching overhead.  Some multithreaded
+applications may suffer slower response time, but that's easily fixed
+by setting the limit back to a lower number by calling
+\function{sys.setcheckinterval(\var{N})}.
+
 \item One minor but far-reaching change is that the names of extension
 types defined by the modules included with Python now contain the
 module and a \samp{.} in front of the type name.  For example, in
@@ -960,6 +968,9 @@ Gilfix integrated it into the Python \module{socket} module, after the
 patch had undergone a lengthy review.  After it was checked in, Guido
 van~Rossum rewrote parts of it.  This is a good example of the free
 software development process in action.
+
+\item The value of the C \cfunction{PYTHON_API_VERSION} macro is now exposed 
+at the Python level as \constant{sys.api_version}.
 
 \item The new \module{textwrap} module contains functions for wrapping
 strings containing paragraphs of text.  The \function{wrap(\var{text},
