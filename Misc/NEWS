@@ -67,6 +67,9 @@ Library
   allow any iterable.  Also the Set.update() has been deprecated because
   it duplicates Set.union_update().
 
+- Bug #801342:  random.sample() now accepts a Set as a possible argument.
+  Previously, it insisted that the population argument be indexable.
+
 - Bug #778964:  random.seed() now uses fractional seconds so that
   rapid successive, seeding calls will produce different sequences.
 
