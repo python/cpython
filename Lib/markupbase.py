@@ -300,7 +300,7 @@ class ParserBase:
             name = s.strip()
             if (i + len(s)) == n:
                 return None, -1  # end of buffer
-            return name.lower(), m.end()
+            return string.lower(name), m.end()
         else:
             self.updatepos(declstartpos, i)
             self.error("expected name token", self.getpos())
