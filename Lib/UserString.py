@@ -2,7 +2,7 @@
 ## vim:ts=4:et:nowrap
 """A user-defined wrapper around string objects
 
-Note: string objects have grown methods in Python 1.6 
+Note: string objects have grown methods in Python 1.6
 This module requires Python 1.6 or later.
 """
 from types import StringType, UnicodeType
@@ -14,7 +14,7 @@ class UserString:
             self.data = seq
         elif isinstance(seq, UserString):
             self.data = seq.data[:]
-        else: 
+        else:
             self.data = str(seq)
     def __str__(self): return str(self.data)
     def __repr__(self): return repr(self.data)
@@ -76,15 +76,15 @@ class UserString:
                 return self.__class__(self.data.encode(encoding, errors))
             else:
                 return self.__class__(self.data.encode(encoding))
-        else: 
+        else:
             return self.__class__(self.data.encode())
     def endswith(self, suffix, start=0, end=sys.maxint):
         return self.data.endswith(suffix, start, end)
-    def expandtabs(self, tabsize=8): 
+    def expandtabs(self, tabsize=8):
         return self.__class__(self.data.expandtabs(tabsize))
-    def find(self, sub, start=0, end=sys.maxint): 
+    def find(self, sub, start=0, end=sys.maxint):
         return self.data.find(sub, start, end)
-    def index(self, sub, start=0, end=sys.maxint): 
+    def index(self, sub, start=0, end=sys.maxint):
         return self.data.index(sub, start, end)
     def isalpha(self): return self.data.isalpha()
     def isalnum(self): return self.data.isalnum()
@@ -99,23 +99,23 @@ class UserString:
     def ljust(self, width): return self.__class__(self.data.ljust(width))
     def lower(self): return self.__class__(self.data.lower())
     def lstrip(self): return self.__class__(self.data.lstrip())
-    def replace(self, old, new, maxsplit=-1): 
+    def replace(self, old, new, maxsplit=-1):
         return self.__class__(self.data.replace(old, new, maxsplit))
-    def rfind(self, sub, start=0, end=sys.maxint): 
+    def rfind(self, sub, start=0, end=sys.maxint):
         return self.data.rfind(sub, start, end)
-    def rindex(self, sub, start=0, end=sys.maxint): 
+    def rindex(self, sub, start=0, end=sys.maxint):
         return self.data.rindex(sub, start, end)
     def rjust(self, width): return self.__class__(self.data.rjust(width))
     def rstrip(self): return self.__class__(self.data.rstrip())
-    def split(self, sep=None, maxsplit=-1): 
+    def split(self, sep=None, maxsplit=-1):
         return self.data.split(sep, maxsplit)
     def splitlines(self, keepends=0): return self.data.splitlines(keepends)
-    def startswith(self, prefix, start=0, end=sys.maxint): 
+    def startswith(self, prefix, start=0, end=sys.maxint):
         return self.data.startswith(prefix, start, end)
     def strip(self): return self.__class__(self.data.strip())
     def swapcase(self): return self.__class__(self.data.swapcase())
     def title(self): return self.__class__(self.data.title())
-    def translate(self, *args): 
+    def translate(self, *args):
         return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
 
@@ -136,7 +136,7 @@ class MutableString(UserString):
     A faster and better solution is to rewrite your program using lists."""
     def __init__(self, string=""):
         self.data = string
-    def __hash__(self): 
+    def __hash__(self):
         raise TypeError, "unhashable type (it is mutable)"
     def __setitem__(self, index, sub):
         if index < 0 or index >= len(self.data): raise IndexError
@@ -157,7 +157,7 @@ class MutableString(UserString):
         self.data = self.data[:start] + self.data[end:]
     def immutable(self):
         return UserString(self.data)
-    
+
 if __name__ == "__main__":
     # execute the regression test to stdout, if called as a script:
     import os

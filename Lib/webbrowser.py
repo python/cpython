@@ -122,7 +122,7 @@ class Konqueror:
         return not rc
 
     def open(self, url, new=1):
-	# XXX currently I know no way to prevent KFM from opening a new win.
+        # XXX currently I know no way to prevent KFM from opening a new win.
         self.open_new(url)
 
     def open_new(self, url):
