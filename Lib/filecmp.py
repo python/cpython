@@ -11,7 +11,6 @@ Functions:
 
 import os
 import stat
-import statcache
 
 __all__ = ["cmp","dircmp","cmpfiles"]
 
@@ -30,8 +29,7 @@ def cmp(f1, f2, shallow=1, use_statcache=0):
     shallow -- Just check stat signature (do not read the files).
                defaults to 1.
 
-    use_statcache -- Do not stat() each file directly: go through
-                     the statcache module for more efficiency.
+    use_statcache -- obsolete argument.
 
     Return value:
 
@@ -39,16 +37,10 @@ def cmp(f1, f2, shallow=1, use_statcache=0):
 
     This function uses a cache for past comparisons and the results,
     with a cache invalidation mechanism relying on stale signatures.
-    Of course, if 'use_statcache' is true, this mechanism is defeated,
-    and the cache will never grow stale.
 
     """
-    if use_statcache:
-        stat_function = statcache.stat
-    else:
-        stat_function = os.stat
-    s1 = _sig(stat_function(f1))
-    s2 = _sig(stat_function(f2))
+    s1 = _sig(os.stat(f1))
+    s2 = _sig(os.stat(f2))
     if s1[0] != stat.S_IFREG or s2[0] != stat.S_IFREG:
         return False
     if shallow and s1 == s2:
@@ -188,12 +180,12 @@ class dircmp:
 
             ok = 1
             try:
-                a_stat = statcache.stat(a_path)
+                a_stat = os.stat(a_path)
             except os.error, why:
                 # print 'Can\'t stat', a_path, ':', why[1]
                 ok = 0
             try:
-                b_stat = statcache.stat(b_path)
+                b_stat = os.stat(b_path)
             except os.error, why:
                 # print 'Can\'t stat', b_path, ':', why[1]
                 ok = 0
@@ -275,7 +267,7 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
     a, b -- directory names
     common -- list of file names found in both directories
     shallow -- if true, do comparison based solely on stat() information
-    use_statcache -- if true, use statcache.stat() instead of os.stat()
+    use_statcache -- obsolete argument
 
     Returns a tuple of three lists:
       files that compare equal
@@ -287,7 +279,7 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
     for x in common:
         ax = os.path.join(a, x)
         bx = os.path.join(b, x)
-        res[_cmp(ax, bx, shallow, use_statcache)].append(x)
+        res[_cmp(ax, bx, shallow)].append(x)
     return res
 
 
@@ -297,9 +289,9 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
 #       1 for different
 #       2 for funny cases (can't stat, etc.)
 #
-def _cmp(a, b, sh, st):
+def _cmp(a, b, sh):
     try:
-        return not abs(cmp(a, b, sh, st))
+        return not abs(cmp(a, b, sh))
     except os.error:
         return 2
 
