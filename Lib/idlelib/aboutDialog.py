@@ -118,7 +118,7 @@ class AboutDialog(Toplevel):
         self.display_printer_text(credits, 'About - Python Credits')
 
     def ShowIDLECredits(self):
-        self.ViewFile('About - Credits','CREDITS.txt')
+        self.ViewFile('About - Credits','CREDITS.txt', 'iso-8859-1')
 
     def ShowIDLEAbout(self):
         self.ViewFile('About - Readme', 'README.txt')
@@ -131,9 +131,22 @@ class AboutDialog(Toplevel):
         data = '\n'.join(printer._Printer__lines)
         textView.TextViewer(self, title, None, data)
 
-    def ViewFile(self,viewTitle,viewFile):
+    def ViewFile(self, viewTitle, viewFile, encoding=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),viewFile)
-        textView.TextViewer(self,viewTitle,fn)
+        if encoding:
+            import codecs
+            try:
+                textFile = codecs.open(fn, 'r')
+            except IOError:
+                tkMessageBox.showerror(title='File Load Error',
+                                       message='Unable to load file '+
+                                       `fileName`+' .')
+                return
+            else:
+                data = textFile.read()
+        else:
+            data = None
+        textView.TextViewer(self, viewTitle, fn, data=data)
 
     def Ok(self, event=None):
         self.destroy()
