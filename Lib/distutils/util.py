@@ -15,6 +15,10 @@ import os
 from distutils.errors import *
 
 
+# cache for by mkpath() -- in addition to cheapening redundant calls,
+# eliminates redundant "creating /foo/bar/baz" messages in dry-run mode
+PATH_CREATED = {}
+
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
@@ -26,11 +30,16 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
        directory).  If 'verbose' is true, print a one-line summary of
        each mkdir to stdout."""
 
+    global PATH_CREATED
+
     # XXX what's the better way to handle verbosity? print as we create
     # each directory in the path (the current behaviour), or only announce
-    # the creation of the whole path, and force verbose=0 on all sub-calls?
+    # the creation of the whole path? (quite easy to do the latter since
+    # we're not using a recursive algorithm)
 
     if os.path.isdir (name):
+        return
+    if PATH_CREATED.get (name):
         return
 
     (head, tail) = os.path.split (name)
@@ -58,6 +67,8 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
                 os.mkdir (head)
             except os.error, (errno, errstr):
                 raise DistutilsFileError, "%s: %s" % (head, errstr)
+
+        PATH_CREATED[head] = 1
 
 # mkpath ()
 
@@ -394,3 +405,13 @@ def move_file (src, dst,
     return dst
 
 # move_file ()
+
+
+def write_file (filename, contents):
+    """Create a file with the specified naem and write 'contents' (a
+       sequence of strings without line terminators) to it."""
+
+    f = open (filename, "w")
+    for line in contents:
+        f.write (line + "\n")
+    f.close ()
