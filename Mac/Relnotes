@@ -19,6 +19,8 @@ marked with [*] and at the bottom of the list.
 - The Numerical extension has moved to :Lib:site-python from :Extensions. As Numerical
   is now distutils-based you can easily install newer versions when they become
   available.
+- The Help and ctb modules are not available under Carbon because that functionality is
+  not in Carbon.
 - Windows and Dialogs can now be different beasts, so you may have to call
   dlg.GetDialogWindow() where you used to be able to call window methods straight
   on the dialog. This also has consequences for code using FrameWork.DialogWindow.
