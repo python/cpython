@@ -2364,7 +2364,7 @@ Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.";
 PyObject *
 _PyBuiltin_Init()
 {
-	PyObject *mod, *dict;
+	PyObject *mod, *dict, *debug;
 	mod = Py_InitModule4("__builtin__", builtin_methods,
 			     builtin_doc, (PyObject *)NULL,
 			     PYTHON_API_VERSION);
@@ -2375,9 +2375,12 @@ _PyBuiltin_Init()
 		return NULL;
 	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
 		return NULL;
-	if (PyDict_SetItemString(dict, "__debug__",
-			  PyInt_FromLong(Py_OptimizeFlag == 0)) < 0)
+	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
+	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
+		Py_XDECREF(debug);
 		return NULL;
+	}
+	Py_XDECREF(debug);
 
 	return mod;
 }
