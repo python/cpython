@@ -238,13 +238,13 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		if (builtin_object == NULL)
 			return NULL;
 	}
-	if ((back != NULL && !PyFrame_Check(back)) ||
-	    code == NULL || !PyCode_Check(code) ||
-	    globals == NULL || !PyDict_Check(globals) ||
+#ifdef Py_DEBUG
+	if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
 	    (locals != NULL && !PyDict_Check(locals))) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
+#endif
 	ncells = PyTuple_GET_SIZE(code->co_cellvars);
 	nfrees = PyTuple_GET_SIZE(code->co_freevars);
 	extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
