@@ -61,6 +61,15 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "pydebug.h"
 
+#ifdef HAVE_STDARG_PROTOTYPES
+void PySys_WriteStdout(const char *format, ...);
+void PySys_WriteStderr(const char *format, ...);
+#else
+/* Better to have no prototypes at all for varargs functions in this case */
+void PySys_WriteStdout();
+void PySys_WriteStderr();
+#endif
+
 #define addarc _Py_addarc
 #define addbit _Py_addbit
 #define adddfa _Py_adddfa
