@@ -257,16 +257,6 @@ int_compare(PyIntObject *v, PyIntObject *w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
-/* Needed for the new style number compare slots */
-static PyObject *
-int_cmp(PyObject *v, PyObject *w)
-{
-	register long a, b;
-	CONVERT_TO_LONG(v, a);
-	CONVERT_TO_LONG(w, b);
-	return PyInt_FromLong((a < b) ? -1 : (a > b) ? 1 : 0);
-}
-
 static long
 int_hash(PyIntObject *v)
 {
@@ -795,9 +785,6 @@ static PyNumberMethods int_as_number = {
 	0,			/*nb_inplace_and*/
 	0,			/*nb_inplace_xor*/
 	0,			/*nb_inplace_or*/
-	
-	/* New style slots: */
-	(binaryfunc)int_cmp,	/*nb_cmp*/
 };
 
 PyTypeObject PyInt_Type = {
@@ -821,7 +808,7 @@ PyTypeObject PyInt_Type = {
 	0,			/*tp_getattro*/
 	0,			/*tp_setattro*/
 	0,			/*tp_as_buffer*/
-	Py_TPFLAGS_NEWSTYLENUMBER /*tp_flags*/
+	Py_TPFLAGS_CHECKTYPES	/*tp_flags*/
 };
 
 void
