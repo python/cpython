@@ -4,8 +4,6 @@
 #
 # Based on prior profile module by Sjoerd Mullender...
 #   which was hacked somewhat by: Guido van Rossum
-#
-# See profile.doc for more information
 
 """Class for profiling Python code."""
 
@@ -94,18 +92,10 @@ def runctx(statement, globals, locals, filename=None):
     else:
         return prof.print_stats()
 
-# print help
+# Backwards compatibility.
 def help():
-    for dirname in sys.path:
-        fullname = os.path.join(dirname, 'profile.doc')
-        if os.path.exists(fullname):
-            sts = os.system('${PAGER-more} ' + fullname)
-            if sts: print '*** Pager exit status:', sts
-            break
-    else:
-        print 'Sorry, can\'t find the help file "profile.doc"',
-        print 'along the Python search path.'
-
+    print "Documentation for the profile module can be found "
+    print "in the Python Library Reference, section 'The Python Profiler'."
 
 if os.name == "mac":
     import MacOS
