@@ -40,13 +40,13 @@ For example:
 
 Country codes are maintained by the RIPE Network Coordination Centre,
 in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.  The
-authoritative source of counry code mappings is:
+authoritative source of country code mappings is:
 
-    <url:ftp://info.ripe.net/iso3166-countrycodes>
+    <url:ftp://ftp.ripe.net/iso3166-countrycodes.txt>
 
 The latest known change to this information was:
 
-    Thu Aug  7 17:59:51 MET DST 1997
+    Friday, 5 April 2002, 12.00 CET 2002
 
 This script also knows about non-geographic top-level domains.
 
@@ -88,7 +88,6 @@ __version__ = '$Revision$'
 
 
 import sys
-import string
 import getopt
 try:
     import re
@@ -109,13 +108,13 @@ def usage(code, msg=''):
 
 
 def resolve(rawaddr):
-    parts = string.splitfields(rawaddr, '.')
+    parts = rawaddr.split('.')
     if not len(parts):
 	# no top level domain found, bounce it to the next step
 	return rawaddr
     addr = parts[-1]
     if nameorgs.has_key(addr):
-        if string.lower(nameorgs[addr][0]) in 'aeiou':
+        if nameorgs[addr][0].lower() in 'aeiou':
             ana = 'an'
         else:
             ana = 'a'
@@ -171,7 +170,7 @@ def parse(file, normalize):
 	if scanning:
 	    mo = cre.match(line)
 	    if not mo:
-		line = string.strip(line)
+		line = line.strip()
 		if not line:
 		    continue
 		elif line[0] == '-':
@@ -181,29 +180,26 @@ def parse(file, normalize):
 		    continue
 	    country, code = mo.group(1, 2)
 	    if normalize:
-		words = string.split(country)
+		words = country.split()
 		for i in range(len(words)):
 		    w = words[i]
 		    # XXX special cases
 		    if w in ('AND', 'OF', 'OF)', 'name:', 'METROPOLITAN'):
-			words[i] = string.lower(w)
-		    elif w == 'THE' and i <> 1:
-			words[i] = string.lower(w)
+			words[i] = w.lower()
+		    elif w == 'THE' and i != 1:
+			words[i] = w.lower()
 		    elif len(w) > 3 and w[1] == "'":
-			words[i] = string.upper(w[0:3]) + \
-				   string.lower(w[3:])
+			words[i] = w[0:3].upper() + w[3:].lower()
 		    elif w == '(U.S.)':
 			pass
-		    elif w[0] == '(' and w <> '(local':
-			words[i] = '(' + string.capitalize(w[1:])
-		    elif string.find(w, '-'):
-			words[i] = string.join(
-			    map(string.capitalize, string.split(w, '-')),
-			    '-')
+		    elif w[0] == '(' and w != '(local':
+			words[i] = '(' + w[1:].capitalize()
+		    elif w.find('-') != -1:
+			words[i] = '-'.join([s.capitalize() for s in w.split('-')])
 		    else:
-			words[i] = string.capitalize(w)
-		code = string.lower(code)
-		country = string.join(words)
+			words[i] = w.capitalize()
+		code = code.lower()
+		country = ' '.join(words)
 		print '    "%s": "%s",' % (code, country)
 	    else:
 		print code, country
@@ -289,7 +285,7 @@ nameorgs = {
     # large-scale renaming process as the UK switched from their old `Coloured
     # Book' protocols over X.25 to Internet protocols over IP.
     #
-    # See <url:http://www.ripe.net/docs/ripe-159.html#222123>
+    # See <url:ftp://ftp.ripe.net/ripe/docs/ripe-159.txt>
     "uk": "United Kingdom (common practice)",
     "su": "Soviet Union (still in limited use)",
     }
@@ -350,7 +346,7 @@ countries = {
     "ck": "Cook Islands",
     "cr": "Costa Rica",
     "ci": "Cote D'Ivoire",
-    "hr": "Croatia (local name: Hrvatska)",
+    "hr": "Croatia",
     "cu": "Cuba",
     "cy": "Cyprus",
     "cz": "Czech Republic",
@@ -371,7 +367,6 @@ countries = {
     "fj": "Fiji",
     "fi": "Finland",
     "fr": "France",
-    "fx": "France, metropolitan",
     "gf": "French Guiana",
     "pf": "French Polynesia",
     "tf": "French Southern Territories",
@@ -391,7 +386,7 @@ countries = {
     "gw": "Guinea-Bissau",
     "gy": "Guyana",
     "ht": "Haiti",
-    "hm": "Heard and Mc Donald Islands",
+    "hm": "Heard Island and Mcdonald Islands",
     "va": "Holy See (Vatican City State)",
     "hn": "Honduras",
     "hk": "Hong Kong",
@@ -399,7 +394,7 @@ countries = {
     "is": "Iceland",
     "in": "India",
     "id": "Indonesia",
-    "ir": "Iran (Islamic Republic of)",
+    "ir": "Iran, Islamic Republic of",
     "iq": "Iraq",
     "ie": "Ireland",
     "il": "Israel",
@@ -407,7 +402,7 @@ countries = {
     "jm": "Jamaica",
     "jp": "Japan",
     "jo": "Jordan",
-    "kz": "Kazakhstan",
+    "kz": "Kazakstan",
     "ke": "Kenya",
     "ki": "Kiribati",
     "kp": "Korea, Democratic People's Republic of",
@@ -462,6 +457,7 @@ countries = {
     "om": "Oman",
     "pk": "Pakistan",
     "pw": "Palau",
+    "ps": "Palestinian Territory, Occupied",
     "pa": "Panama",
     "pg": "Papua New Guinea",
     "py": "Paraguay",
@@ -476,8 +472,10 @@ countries = {
     "ro": "Romania",
     "ru": "Russian Federation",
     "rw": "Rwanda",
+    "sh": "Saint Helena",
     "kn": "Saint Kitts and Nevis",
     "lc": "Saint Lucia",
+    "pm": "Saint Pierre and Miquelon",
     "vc": "Saint Vincent and the Grenadines",
     "ws": "Samoa",
     "sm": "San Marino",
@@ -487,7 +485,7 @@ countries = {
     "sc": "Seychelles",
     "sl": "Sierra Leone",
     "sg": "Singapore",
-    "sk": "Slovakia (Slovak Republic)",
+    "sk": "Slovakia",
     "si": "Slovenia",
     "sb": "Solomon Islands",
     "so": "Somalia",
@@ -495,11 +493,9 @@ countries = {
     "gs": "South Georgia and the South Sandwich Islands",
     "es": "Spain",
     "lk": "Sri Lanka",
-    "sh": "St. Helena",
-    "pm": "St. Pierre and Miquelon",
     "sd": "Sudan",
     "sr": "Suriname",
-    "sj": "Svalbard and Jan Mayen Islands",
+    "sj": "Svalbard and Jan Mayen",
     "sz": "Swaziland",
     "se": "Sweden",
     "ch": "Switzerland",
@@ -528,9 +524,9 @@ countries = {
     "vu": "Vanuatu",
     "ve": "Venezuela",
     "vn": "Viet Nam",
-    "vg": "Virgin Islands (British)",
-    "vi": "Virgin Islands (U.S.)",
-    "wf": "Wallis and Futuna Islands",
+    "vg": "Virgin Islands, British",
+    "vi": "Virgin Islands, U.s.",
+    "wf": "Wallis and Futuna",
     "eh": "Western Sahara",
     "ye": "Yemen",
     "yu": "Yugoslavia",
