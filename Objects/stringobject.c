@@ -2145,7 +2145,7 @@ interpreted as in slice notation.");
 static PyObject *
 string_count(PyStringObject *self, PyObject *args)
 {
-	const char *s = PyString_AS_STRING(self), *sub;
+	const char *s = PyString_AS_STRING(self), *sub, *t;
 	int len = PyString_GET_SIZE(self), n;
 	int i = 0, last = INT_MAX;
 	int m, r;
@@ -2186,10 +2186,15 @@ string_count(PyStringObject *self, PyObject *args)
 		} else {
 			i++;
 		}
+		if (i >= m)
+			break;
+		t = memchr(s+i, sub[0], m-i);
+		if (t == NULL)
+			break;
+		i = t - s;
 	}
 	return PyInt_FromLong((long) r);
 }
-
 
 PyDoc_STRVAR(swapcase__doc__,
 "S.swapcase() -> string\n\
