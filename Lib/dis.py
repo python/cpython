@@ -42,6 +42,8 @@ def disassemble(co, lasti):
 				print '(to ' + `i + oparg` + ')',
 			elif op in haslocal:
 				print '(' + co.co_varnames[oparg] + ')',
+			elif op in hascompare:
+				print '(' + cmp_op[oparg] + ')',
 		print
 
 def findlabels(code):
@@ -65,11 +67,15 @@ def findlabels(code):
 					labels.append(label)
 	return labels
 
+cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
+        'is not', 'exception match', 'BAD')
+
 hasconst = []
 hasname = []
 hasjrel = []
 hasjabs = []
 haslocal = []
+hascompare = []
 
 opname = [''] * 256
 for op in range(256): opname[op] = '<' + `op` + '>'
@@ -130,6 +136,11 @@ def_op('DELETE_SLICE+3', 53)
 
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
+def_op('BINARY_LSHIFT', 62)
+def_op('BINARY_RSHIFT', 63)
+def_op('BINARY_AND', 64)
+def_op('BINARY_XOR', 65)
+def_op('BINARY_OR', 66)
 
 def_op('PRINT_EXPR', 70)
 def_op('PRINT_ITEM', 71)
@@ -161,6 +172,7 @@ name_op('UNPACK_VARARG', 99)	# Minimal number of arguments
 def_op('LOAD_CONST', 100)	# Index in const list 
 hasconst.append(100)
 name_op('LOAD_NAME', 101)	# Index in name list 
+hascompare.append(106)
 def_op('BUILD_TUPLE', 102)	# Number of tuple items 
 def_op('BUILD_LIST', 103)	# Number of list items 
 def_op('BUILD_MAP', 104)	# Always zero for now 
@@ -183,8 +195,6 @@ jrel_op('SETUP_LOOP', 120)	# Distance to target address
 jrel_op('SETUP_EXCEPT', 121)	# ""
 jrel_op('SETUP_FINALLY', 122)	# ""
 
-def_op('RESERVE_FAST', 123)	# Number of local variables
-hasconst.append(123)
 def_op('LOAD_FAST', 124)	# Local variable number
 haslocal.append(124)
 def_op('STORE_FAST', 125)	# Local variable number
