@@ -171,56 +171,63 @@ __setslice(s,a)
 
 #undef spam1
 #undef spam2
-#define spam1(OP,DOC) {#OP, OP, 1, #OP "(o) -- " DOC},
-#define spam2(OP,DOC) {#OP, OP, 1, #OP "(a,b) -- " DOC},
-#define spam3(OP,DOC) {#OP, OP, 1, #OP "(a,b,c) -- " DOC},
+#ifdef HAVE_OLD_CPP
+#define spam1(OP,DOC) {"OP", OP, 1, DOC},
+#define spam2(OP,ALTOP,DOC) {"OP", __/**/OP, 1, DOC}, \
+			   {"ALTOP", __/**/OP, 1, DOC}, 
+#else
+#define spam1(OP,DOC) {#OP, OP, 1, DOC},
+#define spam2(OP,ALTOP,DOC) {#OP, __ ## OP, 1, DOC}, \
+			   {#ALTOP, __ ## OP, 1, DOC}, 
+#endif
 
 static struct PyMethodDef operator_methods[] = {
-spam1(isCallable      , "Return 1 if o is callable, and zero otherwise.")
-spam1(isNumberType    , "Return 1 if o has a numeric type, and zero otherwise.")
-spam1(isSequenceType  , "Return 1 if o has a sequence type, and zero otherwise.")
-spam1(truth           , "Return 1 if o is true, and 0 otherwise.")
-spam2(sequenceIncludes, "Return 1 is a includes b, and 0 otherwise.")
-spam2(indexOf         , "Return the index of b in a.")
-spam2(countOf         , "Return the number of times b occurs in a.")
-spam1(isMappingType   , "Return 1 if o has a mapping type, and zero otherwise.")
 
-#undef spam1
-#undef spam2
-#undef spam3
-#define spam1(OP,DOC) {#OP, __ ## OP, 1, #OP "(o) -- " DOC}, \
-            {"__" #OP "__", __ ## OP, 1, #OP "(o) -- " DOC}, 
-#define spam2(OP,DOC) {#OP, __ ## OP, 1, #OP "(a,b) -- " DOC}, \
-            {"__" #OP "__", __ ## OP, 1, #OP "(a,b) -- " DOC}, 
-#define spam3(OP,DOC) {#OP, __ ## OP, 1, #OP "(a,b,c) -- " DOC}, \
-            {"__" #OP "__", __ ## OP, 1, #OP "(a,b,c) -- " DOC}, 
-#define spam4(OP,DOC) {#OP, __ ## OP, 1, #OP "(a,b,c,v) -- " DOC}, \
-            {"__" #OP "__", __ ## OP, 1, #OP "(a,b,c,v) -- " DOC}, 
+spam1(isCallable,
+ "isCallable(o) -- Return 1 if o is callable, and zero otherwise.")
+spam1(isNumberType,
+ "isNumberType(o) -- Return 1 if o has a numeric type, and zero otherwise.")
+spam1(isSequenceType,
+ "isSequenceType(o) -- Return 1 if o has a sequence type, and zero otherwise.")
+spam1(truth,
+ "truth(o) -- Return 1 if o is true, and 0 otherwise.")
+spam1(sequenceIncludes,
+ "sequenceIncludes(a, b) -- Return 1 is a includes b, and 0 otherwise.")
+spam1(indexOf,
+ "indexOf(a, b) -- Return the index of b in a.")
+spam1(countOf,
+ "countOf(a, b) -- Return the number of times b occurs in a.")
+spam1(isMappingType,
+ "isMappingType(o) -- Return 1 if o has a mapping type, and zero otherwise.")
 
+spam2(add,__add__, "add(a, b) -- Return a + b, for a and b numbers.")
+spam2(sub,__sub__, "sub(a, b) -- Return a - b.")
+spam2(mul,__mul__, "mul(a, b) -- Return a * b, for a and b numbers.")
+spam2(div,__div__, "div(a, b) -- Return a / b.")
+spam2(mod,__mod__, "mod(a, b) -- Return a % b.")
+spam2(neg,__neg__, "neg(o) -- Return o negated.")
+spam2(pos,__pos__, "pos(o) -- Return o positive.")
+spam2(abs,__abs__, "abs(o) -- Return the absolute value of o.")
+spam2(inv,__inv__, "inv(o) -- Return the inverse of o.")
+spam2(lshift,__lshift__, "lshift(a, b) -- Return a shifted left by b.")
+spam2(rshift,__rshift__, "rshift(a, b) -- Return a shifted right by b.")
+spam2(and,__and__, "and(a, b) -- Return the bitwise and of a and b.")
+spam2(xor,__xor__, "xor(a, b) -- Return the bitwise exclusive-or of a and b.")
+spam2(or,__or__, "or(a, b) -- Return the bitwise or of a and b.")
+spam2(concat,__concat__,
+ "concat(a, b) -- Return a + b, for a and b sequences.")
+spam2(repeat,__repeat__,
+ "repeat(a, b) -- Return a + b, where a is a sequence, and b is an integer.")
+spam2(getitem,__getitem__,
+ "getitem(a, b) -- Return the value of a at index b.")
+spam2(setitem,__setitem__,
+ "setitem(a, b, c) -- Set the value of a at b to c.")
+spam2(getslice,__getslice__,
+ "getslice(a, b, c) -- Return the slice of a from b to c-1.")
+spam2(setslice,__setslice__,
+"setslice(a, b, c, v) -- Set the slice of a from b to c-1 to the sequence, v.")
 
-spam2(add         , "Return a + b, for a and b numbers.")
-spam2(sub         , "Return a - b.")
-spam2(mul         , "Return a * b, for a and b numbers.")
-spam2(div         , "Return a / b.")
-spam2(mod         , "Return a % b.")
-spam1(neg         , "Return o negated.")
-spam1(pos         , "Return o positive.")
-spam1(abs         , "Return the absolute value of o.")
-spam1(inv         , "Return the inverse of o.")
-spam2(lshift      , "Return a shifted left by b.")
-spam2(rshift      , "Return a shifted right by b.")
-spam2(and         , "Return the bitwise and of a and b.")
-spam2(xor         , "Return the bitwise exclusive-or of a and b.")
-spam2(or          , "Return the bitwise or of a and b.")
-spam2(concat      , "Return a + b, for a and b sequences.")
-spam2(repeat      , "Return a + b, where a is a sequence, and b is an "
-                        "integer.")
-spam2(getitem     , "Return the value of a at index b.")
-spam3(setitem     , "Set the value of a at b to c.")
-spam2(getslice    , "Return the slice of a from b to c-1.")
-spam4(setslice    , "Set the slice of a from b to c-1 to the sequence, v.")
 	{NULL,		NULL}		/* sentinel */
-
 
 };
 
