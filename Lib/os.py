@@ -27,7 +27,8 @@ _names = sys.builtin_module_names
 
 altsep = None
 
-__all__ = []
+__all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
+           "defpath", "name"]
 
 def _get_exports_list(module):
     try:
