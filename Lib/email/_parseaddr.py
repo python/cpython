@@ -196,12 +196,12 @@ class AddrlistClass:
         Returns a list containing all of the addresses.
         """
         result = []
-        while True:
+        while self.pos < len(self.field):
             ad = self.getaddress()
             if ad:
                 result += ad
             else:
-                break
+                result.append(('', ''))
         return result
 
     def getaddress(self):
