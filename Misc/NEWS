@@ -62,6 +62,12 @@ Build
 
 - term.h is now properly detected again.
 
+- Check for tzset no longer dependent on tm->tm_zone to exist in the struct
+  (not required by either ISO C nor the UNIX 2 spec).
+  Tests for sanity in tzname when HAVE_TZNAME defined were also defined.
+  Closes bug #1096244.  Thanks Gregory Bond.
+
+
 Windows
 -------
 
