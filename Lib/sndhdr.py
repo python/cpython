@@ -31,20 +31,14 @@ explicitly given directories.
 # subroutine come last.
 
 
-#--------------------------------#
-# Guess the type of a sound file #
-#--------------------------------#
-
 def what(filename):
+	"""Guess the type of a sound file"""
 	res = whathdr(filename)
 	return res
 
 
-#-------------------------#
-# Recognize sound headers #
-#-------------------------#
-
 def whathdr(filename):
+	"""Recognize sound headers"""
 	f = open(filename, 'r')
 	h = f.read(512)
 	for tf in tests:
