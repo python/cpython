@@ -224,7 +224,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	Py_END_ALLOW_THREADS
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
 
-	/* If the socket is is non-blocking mode or timeout mode, set the BIO
+	/* If the socket is in non-blocking mode or timeout mode, set the BIO
 	 * to non-blocking mode (blocking is the default)
 	 */
 	if (Sock->sock_timeout >= 0.0) {

@@ -685,7 +685,7 @@ when objects are involved in cycles.  For example, consider:
 In this example, we create a list that contains itself. When we delete
 it, it still has a reference from itself. It's reference count doesn't
 drop to zero.  Fortunately, Python's cyclic-garbage collector will
-eventually figure out that that the list is garbage and free it.
+eventually figure out that the list is garbage and free it.
 
 In the second version of the \class{Noddy} example, we allowed any
 kind of object to be stored in the \member{first} or \member{last}

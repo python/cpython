@@ -202,7 +202,7 @@ if sys.platform[:4] != 'java':
     oct(testme)
     hex(testme)
 else:
-    # Jython enforced that the these methods return
+    # Jython enforced that these methods return
     # a value of the expected type.
     print "__int__: ()"
     print "__long__: ()"

@@ -497,7 +497,7 @@ def close_all(map=None):
 #
 # After a little research (reading man pages on various unixen, and
 # digging through the linux kernel), I've determined that select()
-# isn't meant for doing doing asynchronous file i/o.
+# isn't meant for doing asynchronous file i/o.
 # Heartening, though - reading linux/mm/filemap.c shows that linux
 # supports asynchronous read-ahead.  So _MOST_ of the time, the data
 # will be sitting in memory for us already when we go to read it.

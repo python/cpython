@@ -71,7 +71,7 @@ verify(not in_table_d2(u"\u0040"))
 # This would generate a hash of all predicates. However, running
 # it is quite expensive, and only serves to detect changes in the
 # unicode database. Instead, stringprep.py asserts the version of
-# of the database.
+# the database.
 
 # predicates = [k for k in dir(stringprep) if k.startswith("in_table")]
 # predicates.sort()

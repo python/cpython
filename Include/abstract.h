@@ -872,7 +872,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
 
        /*
-	 Returns the result of bitwise or or o1 and o2, possibly in-place,
+	 Returns the result of bitwise or of o1 and o2, possibly in-place,
 	 or null on failure.  This is the equivalent of the Python
 	 expression: o1 |= o2.
 

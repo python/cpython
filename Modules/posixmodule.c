@@ -3953,7 +3953,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 
 	/* Create new output read handle and the input write handle. Set
 	 * the inheritance properties to FALSE. Otherwise, the child inherits
-	 * the these handles; resulting in non-closeable handles to the pipes
+	 * these handles; resulting in non-closeable handles to the pipes
 	 * being created. */
 	 fSuccess = DuplicateHandle(GetCurrentProcess(), hChildStdinWr,
 				    GetCurrentProcess(), &hChildStdinWrDup, 0,

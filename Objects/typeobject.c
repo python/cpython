@@ -5411,7 +5411,7 @@ static PyMemberDef super_members[] = {
 	{"__self__",  T_OBJECT, offsetof(superobject, obj), READONLY,
 	 "the instance invoking super(); may be None"},
 	{"__self_class__", T_OBJECT, offsetof(superobject, obj_type), READONLY,
-	 "the type of the the instance invoking super(); may be None"},
+	 "the type of the instance invoking super(); may be None"},
 	{0}
 };
 

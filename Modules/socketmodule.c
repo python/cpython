@@ -105,7 +105,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 \n\
  [*] not available on all platforms!");
 
-/* XXX This is a terrible mess of of platform-dependent preprocessor hacks.
+/* XXX This is a terrible mess of platform-dependent preprocessor hacks.
    I hope some day someone can clean this up please... */
 
 /* Hacks for gethostbyname_r().  On some non-Linux platforms, the configure

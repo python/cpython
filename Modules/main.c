@@ -154,7 +154,7 @@ Py_Main(int argc, char **argv)
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
-			   the command to interpret. */
+			   command to interpret. */
 			command = malloc(strlen(_PyOS_optarg) + 2);
 			if (command == NULL)
 				Py_FatalError(
