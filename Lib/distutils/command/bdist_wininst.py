@@ -98,6 +98,7 @@ class bdist_wininst (Command):
                 value = value + '/Include/$dist_name'
             setattr(install,
                     'install_' + key,
+        install.warn_dir = 0
                     value)
 
         self.announce("installing to %s" % self.bdist_dir)
