@@ -1329,19 +1329,16 @@ window_setfont(self, args)
 	windowobject *self;
 	object *args;
 {
+	object *v;
 	TEXTATTR saveattr, winattr;
-	object *str;
-	if (!getstrarg(args, &str))
-		return NULL;
 	wgettextattr(&saveattr);
 	wgetwintextattr(self->w_win, &winattr);
 	wsettextattr(&winattr);
-	wsetfont(getstringvalue(str));
+	v = drawing_setfont((drawingobject *)NULL, args);
 	wgettextattr(&winattr);
 	wsetwintextattr(self->w_win, &winattr);
 	wsettextattr(&saveattr);
-	INCREF(None);
-	return None;
+	return v;
 }
 
 static struct methodlist window_methods[] = {
