@@ -54,13 +54,8 @@ xreadlines(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-xreadlines_item(PyXReadlinesObject *a, int i)
+xreadlines_common(PyXReadlinesObject *a)
 {
-	if (i != a->abslineno) {
-		PyErr_SetString(PyExc_RuntimeError,
-			"xreadlines object accessed out of order");
-		return NULL;
-	}
 	if (a->lineno >= a->lineslen) {
 		Py_XDECREF(a->lines);
 		a->lines = PyObject_CallMethod(a->file, "readlines", "(i)",
@@ -73,6 +68,61 @@ xreadlines_item(PyXReadlinesObject *a, int i)
 	}
 	a->abslineno++;
 	return PySequence_GetItem(a->lines, a->lineno++);
+}
+
+static PyObject *
+xreadlines_item(PyXReadlinesObject *a, int i)
+{
+	if (i != a->abslineno) {
+		PyErr_SetString(PyExc_RuntimeError,
+			"xreadlines object accessed out of order");
+		return NULL;
+	}
+	return xreadlines_common(a);
+}
+
+static PyObject *
+xreadlines_getiter(PyXReadlinesObject *a)
+{
+	Py_INCREF(a);
+	return (PyObject *)a;
+}
+
+static PyObject *
+xreadlines_iternext(PyXReadlinesObject *a)
+{
+	PyObject *res;
+
+	res = xreadlines_common(a);
+	if (res == NULL && PyErr_ExceptionMatches(PyExc_IndexError))
+		PyErr_Clear();
+	return res;
+}
+
+static PyObject *
+xreadlines_next(PyXReadlinesObject *a, PyObject *args)
+{
+	PyObject *res;
+
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	res = xreadlines_common(a);
+	if (res == NULL && PyErr_ExceptionMatches(PyExc_IndexError))
+		PyErr_SetObject(PyExc_StopIteration, Py_None);
+	return res;
+}
+
+static char next_doc[] = "x.next() -> the next line or raise StopIteration";
+
+static PyMethodDef xreadlines_methods[] = {
+	{"next", (PyCFunction)xreadlines_next, METH_VARARGS, next_doc},
+	{NULL, NULL}
+};
+
+static PyObject *
+xreadlines_getattr(PyObject *a, char *name)
+{
+	return Py_FindMethod(xreadlines_methods, a, name);
 }
 
 static PySequenceMethods xreadlines_as_sequence = {
@@ -88,26 +138,32 @@ static PyTypeObject XReadlinesObject_Type = {
 	"xreadlines",
 	sizeof(PyXReadlinesObject) + PyGC_HEAD_SIZE,
 	0,
-	(destructor)xreadlines_dealloc, /*tp_dealloc*/
-	0, /*tp_print*/
-	0, /*tp_getattr*/
-	0, /*tp_setattr*/
-	0, /*tp_compare*/
-	0, /*tp_repr*/
-	0, /*tp_as_number*/
-	&xreadlines_as_sequence, /*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	0,		/*tp_hash*/
-	0,		/*tp_call*/
-	0,		/*tp_str*/
-	0,		/*tp_getattro*/
-	0,		/*tp_setattro*/
-	0,		/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
- 	0,		/* tp_doc */
+	(destructor)xreadlines_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	xreadlines_getattr,			/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	&xreadlines_as_sequence,		/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	(getiterfunc)xreadlines_getiter,	/* tp_iter */
+	(iternextfunc)xreadlines_iternext,	/* tp_iternext */
 };
 
-static PyMethodDef xreadlines_methods[] = {
+static PyMethodDef xreadlines_functions[] = {
 	{"xreadlines", xreadlines, METH_VARARGS, xreadlines_doc},
 	{NULL, NULL}
 };
@@ -118,5 +174,5 @@ initxreadlines(void)
 	PyObject *m;
 
 	XReadlinesObject_Type.ob_type = &PyType_Type;
-	m = Py_InitModule("xreadlines", xreadlines_methods);
+	m = Py_InitModule("xreadlines", xreadlines_functions);
 }
