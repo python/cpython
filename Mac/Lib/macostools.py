@@ -71,7 +71,10 @@ def touched(dst):
 	now = time.time()
 	if now == moddate:
 		now = now + 1
-	dir_fss.SetDates(crdate, now, bkdate)
+	try:
+		dir_fss.SetDates(crdate, now, bkdate)
+	except macfs.error:
+		pass
 	
 def touched_ae(dst):
 	"""Tell the finder a file has changed"""
