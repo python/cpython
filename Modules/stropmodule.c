@@ -798,6 +798,171 @@ strop_translate(self, args)
 }
 
 
+/* What follows is used for implementing replace().  Perry Stoll. */
+
+/*
+  mymemfind
+
+  strstr replacement for arbitrary blocks of memory.
+
+  Locates the first occurance in the memory pointed to by MEM of the
+  contents of memory pointed to by PAT.  Returns the index into MEM if
+  found, or -1 if not found.  If len of PAT is greater than length of
+  MEM, the function returns -1. 
+*/
+static int mymemfind(mem, len, pat, pat_len)
+	char *mem;
+	int len;
+	char *pat;
+	int pat_len;
+{
+	register int ii;
+
+	/* pattern can not occur in the last pat_len-1 chars */
+	len -= pat_len;
+
+	for (ii = 0; ii <= len; ii++) {
+		if (mem[ii] == pat[0] &&
+		    (pat_len == 1 ||
+		     memcmp(&mem[ii+1], &pat[1], pat_len-1) == 0)) {
+			return ii;
+		}
+	}
+	return -1;
+}
+
+/*
+  mymemcnt
+
+   Return the number of distinct times PAT is found in MEM.
+   meaning mem=1111 and pat==11 returns 2.
+           mem=11111 and pat==11 also return 2.
+ */
+static int mymemcnt(mem, len, pat, pat_len)
+	char *mem;
+	int len;
+	char *pat;
+	int pat_len;
+{
+	register int offset = 0;
+	int nfound = 0;
+
+	while (len >= 0) {
+		offset = mymemfind(mem, len, pat, pat_len);
+		if (offset == -1)
+			break;
+		mem += offset + pat_len;
+		len -= offset + pat_len;
+		nfound++;
+	}
+	return nfound;
+}
+
+/* 
+   mymemreplace
+
+   Return a string in which all occurences of PAT in memory STR are
+   replaced with SUB. 
+
+   If length of PAT is less than length of STR or there are no occurences
+   of PAT in STR, then the original string is returned. Otherwise, a new
+   string is allocated here and returned.
+   
+   on return, out_len is:
+       the length of output string, or
+       -1 if the input string is returned, or
+       unchanged if an error occurs (no memory).
+
+   return value is:
+       the new string allocated locally, or
+       NULL if an error occurred.
+*/
+static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, out_len)
+	char *str;
+	int len;     /* input string  */
+	char *pat;
+	int pat_len; /* pattern string to find */
+	char *sub;
+	int sub_len; /* substitution string */
+	int *out_len;
+
+{
+	char *out_s;
+	char *new_s;
+	int nfound, offset, new_len;
+
+	if (len == 0 || pat_len > len)
+		goto return_same;
+
+	/* find length of output string */
+	nfound = mymemcnt(str, len, pat, pat_len);
+	if (nfound == 0)
+		goto return_same;
+	new_len = len + nfound*(sub_len - pat_len);
+
+	new_s = (char *)malloc(new_len);
+	if (new_s == NULL) return NULL;
+
+	*out_len = new_len;
+	out_s = new_s;
+
+	while (len > 0) {
+		/* find index of next instance of pattern */
+		offset = mymemfind(str, len, pat, pat_len);
+		/* if not found,  break out of loop */
+		if (offset == -1) break;
+
+		/* copy non matching part of input string */
+		memcpy(new_s, str, offset); /* copy part of str before pat */
+		str += offset + pat_len; /* move str past pattern */
+		len -= offset + pat_len; /* reduce length of str remaining */
+
+		/* copy substitute into the output string */
+		new_s += offset; /* move new_s to dest for sub string */
+		memcpy(new_s, sub, sub_len); /* copy substring into new_s */
+		new_s += sub_len; /* offset new_s past sub string */
+	}
+	/* copy any remaining values into output string */
+	if (len > 0)
+		memcpy(new_s, str, len);
+	return out_s;
+
+  return_same:
+	*out_len = -1;
+	return str;
+}
+
+
+static PyObject*
+strop_replace(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+	char *str, *pat,*sub,*new_s;
+	int len,pat_len,sub_len,out_len;
+	PyObject *new;
+
+	if (!PyArg_ParseTuple(args, "s#s#s#",
+			      &str, &len, &pat, &pat_len, &sub, &sub_len))
+		return NULL;
+	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,&out_len);
+	if (new_s == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	if (out_len == -1) {
+		/* we're returning another reference to the input string */
+		new = PyTuple_GetItem(args, 0);
+		Py_XINCREF(new);
+	}
+	else {
+		new = PyString_FromStringAndSize(new_s, out_len);
+		free(new_s);
+	}
+	return new;
+}
+
+
 /* List of functions defined in the module */
 
 static PyMethodDef
@@ -811,13 +976,14 @@ strop_methods[] = {
 	{"joinfields",	strop_joinfields, 1},
 	{"lstrip",	strop_lstrip},
 	{"lower",	strop_lower},
+	{"maketrans",	strop_maketrans, 1},
+	{"replace",	strop_replace, 1},
 	{"rfind",	strop_rfind, 1},
 	{"rstrip",	strop_rstrip},
 	{"split",	strop_splitfields, 1},
 	{"splitfields",	strop_splitfields, 1},
 	{"strip",	strop_strip},
 	{"swapcase",	strop_swapcase},
-	{"maketrans",	strop_maketrans, 1},
 	{"translate",	strop_translate, 1},
 	{"upper",	strop_upper},
 	{NULL,		NULL}	/* sentinel */
