@@ -1,3 +1,22 @@
+(-) redo __xxx__ operators for class instances; add __getattr__ and
+__setattr__.
+
+(-) many things that take strings should also take arrays of chars
+
+(-) fix pow(x, y, z) for integers
+
+(*) add tuple(seq) to turn any sequence into a tuple
+
+(-) add list of existing extensions to FAQ
+
+(-) update "recent additions" chapter in tutorial
+
+(-) rewrite "output formatting" chapter in tutorial
+
+(-) add a make rule to build .so files (unfortunately need to figure
+    out what ld option is needed) (more appropriate for makesetup
+    script?)
+
 (-) write a script and add a "Make" rule (perhaps) that changes
     #!/usr/local/bin/python to something else in all scripts around.
 
@@ -11,19 +30,19 @@
 ----------------------------------------------------------------------
 (from BUGS1.0.1)
 ----------------------------------------------------------------------
-document addpack, urllib, ...
+(-) document addpack, urllib, ...
 
 (*) import.c from JaapV
 
-document os.exec*
+(-) document os.exec*
 
-name sunaudiodevmodule.c is too long
+(*) name sunaudiodevmodule.c is too long
 
 (*) play with / include SUIT interface
 
-make regsub.[g]sub() optionally case insensitive
+(-) make regsub.[g]sub() optionally case insensitive
 
-handle printing of errors in lines containing multiline strings
+(-) handle printing of errors in lines containing multiline strings
 
 ======================================================================
 
@@ -31,21 +50,21 @@ handle printing of errors in lines containing multiline strings
 
 (*) errors in __repr__() are handled wrong when called from format
 
-- long(0x80000000) has wrong value!
+(*) long(0x80000000) has wrong value!
 
-- hex(0x80000000) shouldn't have sign (?)
+(-) hex(0x80000000) shouldn't have sign (?)
 
 (*) need way to set buffering at file open time
 
 (*) need way to force stdout unbuffered
 
-- document new modules (builtin as well as Lib)
+(-) document new modules (builtin as well as Lib)
 
-- restart CVS tree
+(*) restart CVS tree
 
 (?) build shared libs for SunOS 4.1.3
 
-- Mac X... code resources as shared libs?
+(-) Mac X... code resources as shared libs?
 
 (*) X patches from Adrian Phillips
 
