@@ -66,15 +66,34 @@ request in effect, or the previous source was a stream
 result is a relative pathname, the directory part of the name of the
 file immediately before it on the source inclusion stack is prepended
 (this behavior is like the way the C preprocessor handles
-\code{\#include "file.h"}).  The result of the manipulations is treated
-as a filename, and returned as the first component of the tuple, with
-\function{open()} called on it to yield the second component.
+\code{\#include "file.h"}).
+
+The result of the manipulations is treated as a filename, and returned
+as the first component of the tuple, with
+\function{open()} called on it to yield the second component. (Note:
+this is the reverse of the order of arguments in instance initialization!)
 
 This hook is exposed so that you can use it to implement directory
 search paths, addition of file extensions, and other namespace hacks.
 There is no corresponding `close' hook, but a shlex instance will call
 the \method{close()} method of the sourced input stream when it
 returns \EOF.
+
+For more explicit control of source stacking, use the next two
+methods. 
+\end{methoddesc}
+
+\begin{methoddesc}{push_source}{stream\optional{, filename}}
+Push an input source stream onto the input stack.  If the filename
+argument is specified it will later be available for use in error
+messages.  This is the same method used internally by the
+\method{sourcehook} method. (New in 2.1)
+\end{methoddesc}
+
+\begin{methoddesc}{pop_source}{}}
+Pop the last-pushed input source from the input stack.
+This is the same method used internally when the lexer reaches
+\EOF on a stacked input stream. (New in 2.1)
 \end{methoddesc}
 
 \begin{methoddesc}{error_leader}{\optional{file\optional{, line}}}
