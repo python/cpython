@@ -1,11 +1,12 @@
 Contents of this directory:
 
 byteyears.py		Print product of a file's size and age
+checkpyc.py		Check presence and validity of ".pyc" files
+copytime.py		Copy one file's atime and mtime to another
 eptags.py		Create Emacs TAGS file for Python modules
 fact.py			Factorize numbers
 findlinksto.py		Find symbolic links to a given path (prefix)
 from.py			Summarize mailbox
-lfact.py		Factorize long numbers
 lpwatch.py		Watch BSD line printer queues
 mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
