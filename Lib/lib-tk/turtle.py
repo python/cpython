@@ -221,6 +221,8 @@ class RawPen:
                         self._canvas.coords(item, x0, y0, x, y)
                         self._canvas.update()
                         self._canvas.after(10)
+                    # in case nhops==0
+                    self._canvas.coords(item, x0, y0, x1, y1)
                     self._canvas.itemconfigure(item, arrow="none")
                 except Tkinter.TclError:
                     # Probably the window was closed!
