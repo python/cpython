@@ -8,10 +8,16 @@ import time
 import re
 import random
 
-from types import ListType, StringType
+from types import ListType
 from cStringIO import StringIO
 
 from email.Header import Header
+
+try:
+    from email._compat22 import _isstring
+except SyntaxError:
+    from email._compat21 import _isstring
+
 
 EMPTYSTRING = ''
 SEMISPACE = '; '
@@ -187,7 +193,7 @@ class Generator:
         cset = msg.get_charset()
         if cset is not None:
             payload = cset.body_encode(payload)
-        if not isinstance(payload, StringType):
+        if not _isstring(payload):
             raise TypeError, 'string payload expected: %s' % type(payload)
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
@@ -208,6 +214,10 @@ class Generator:
             print >> self._fp, '--' + boundary
             print >> self._fp, '\n'
             print >> self._fp, '--' + boundary + '--'
+            return
+        elif _isstring(subparts):
+            # e.g. a non-strict parse of a message with no starting boundary.
+            self._fp.write(subparts)
             return
         elif not isinstance(subparts, ListType):
             # Scalar payload
