@@ -1,4 +1,4 @@
-import pty, os, sys
+import pty, os, sys, signal
 from test.test_support import verbose, TestFailed, TestSkipped
 
 TEST_STRING_1 = "I wish to buy a fish license.\n"
@@ -14,36 +14,52 @@ else:
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 
+def test_basic_pty():
+    try:
+        debug("Calling master_open()")
+        master_fd, slave_name = pty.master_open()
+        debug("Got master_fd '%d', slave_name '%s'"%(master_fd, slave_name))
+        debug("Calling slave_open(%s)"%`slave_name`)
+        slave_fd = pty.slave_open(slave_name)
+        debug("Got slave_fd '%d'"%slave_fd)
+    except OSError:
+        # " An optional feature could not be imported " ... ?
+        raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
+
+    if not os.isatty(slave_fd):
+        raise TestFailed, "slave_fd is not a tty"
+
+    # IRIX apparently turns \n into \r\n. Allow that, but avoid allowing other
+    # differences (like extra whitespace, trailing garbage, etc.)
+
+    debug("Writing to slave_fd")
+    os.write(slave_fd, TEST_STRING_1)
+    s1 = os.read(master_fd, 1024)
+    sys.stdout.write(s1.replace("\r\n", "\n"))
+
+    debug("Writing chunked output")
+    os.write(slave_fd, TEST_STRING_2[:5])
+    os.write(slave_fd, TEST_STRING_2[5:])
+    s2 = os.read(master_fd, 1024)
+    sys.stdout.write(s2.replace("\r\n", "\n"))
+
+    os.close(slave_fd)
+    os.close(master_fd)
+
+def handle_sig(sig, frame):
+    raise TestFailed, "isatty hung"
+
+# isatty() and close() can hang on some platforms
+# set an alarm before running the test to make sure we don't hang forever
+old_alarm = signal.signal(signal.SIGALRM, handle_sig)
+signal.alarm(10)
+
 try:
-    debug("Calling master_open()")
-    master_fd, slave_name = pty.master_open()
-    debug("Got master_fd '%d', slave_name '%s'"%(master_fd, slave_name))
-    debug("Calling slave_open(%s)"%`slave_name`)
-    slave_fd = pty.slave_open(slave_name)
-    debug("Got slave_fd '%d'"%slave_fd)
-except OSError:
-    # " An optional feature could not be imported " ... ?
-    raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
-
-if not os.isatty(slave_fd):
-    raise TestFailed, "slave_fd is not a tty"
-
-# IRIX apparently turns \n into \r\n. Allow that, but avoid allowing other
-# differences (like extra whitespace, trailing garbage, etc.)
-
-debug("Writing to slave_fd")
-os.write(slave_fd, TEST_STRING_1)
-s1 = os.read(master_fd, 1024)
-sys.stdout.write(s1.replace("\r\n", "\n"))
-
-debug("Writing chunked output")
-os.write(slave_fd, TEST_STRING_2[:5])
-os.write(slave_fd, TEST_STRING_2[5:])
-s2 = os.read(master_fd, 1024)
-sys.stdout.write(s2.replace("\r\n", "\n"))
-
-os.close(slave_fd)
-os.close(master_fd)
+    test_basic_pty()
+finally:
+    # remove alarm, restore old alarm handler
+    signal.alarm(0)
+    signal.signal(signal.SIGALRM, old_alarm)
 
 # basic pty passed.
 
