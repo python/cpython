@@ -79,34 +79,38 @@ class install (Command):
         #('install-man=', None, "directory for Unix man pages"),
         #('install-html=', None, "directory for HTML documentation"),
         #('install-info=', None, "directory for GNU info files"),
-
-        # Flags for 'build_py'
-        #('compile-py', None, "compile .py to .pyc"),
-        #('optimize-py', None, "compile .py to .pyo (optimized)"),
         ]
 
 
     def initialize_options (self):
 
-        # Don't define 'prefix' or 'exec_prefix' so we can know when the
-        # command is run whether the user supplied values
+        # High-level options: these select both an installation base
+        # and scheme.
         self.prefix = None
         self.exec_prefix = None
         self.home = None
 
+        # These select only the installation base; it's up to the user to
+        # specify the installation scheme (currently, that means supplying
+        # the --install-{platlib,purelib,scripts,data} options).
         self.install_base = None
         self.install_platbase = None
 
-        # The actual installation directories are determined only at
-        # run-time, so the user can supply just prefix (and exec_prefix?)
-        # as a base for everything else
-        self.install_purelib = None
-        self.install_platlib = None
-        self.install_lib = None
-
+        # These options are the actual installation directories; if not
+        # supplied by the user, they are filled in using the installation
+        # scheme implied by prefix/exec-prefix/home and the contents of
+        # that installation scheme.
+        self.install_purelib = None     # for pure module distributions
+        self.install_platlib = None     # non-pure (dists w/ extensions)
+        self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
 
+        # These two are for putting non-packagized distributions into their
+        # own directory and creating a .pth file if it makes sense.
+        # 'extra_path' comes from the setup file; 'install_path_file' is
+        # set only if we determine that it makes sense to install a path
+        # file.
         self.extra_path = None
         self.install_path_file = 0
 
@@ -119,79 +123,36 @@ class install (Command):
         self.build_base = None
         self.build_lib = None
 
+        # Not defined yet because we don't know anything about
+        # documentation yet.
         #self.install_man = None
         #self.install_html = None
         #self.install_info = None
 
-        self.compile_py = 1
-        self.optimize_py = 1
-
 
     def finalize_options (self):
 
-        # XXX this method is where the default installation directories
-        # for modules and extension modules are determined.  (Someday,
-        # the default installation directories for scripts,
-        # documentation, and whatever else the Distutils can build and
-        # install will also be determined here.)  Thus, this is a pretty
-        # important place to fiddle with for anyone interested in
-        # installation schemes for the Python library.  Issues that
-        # are not yet resolved to my satisfaction:
-        #   * how much platform dependence should be here, and
-        #     how much can be pushed off to sysconfig (or, better, the
-        #     Makefiles parsed by sysconfig)?
-        #   * how independent of Python version should this be -- ie.
-        #     should we have special cases to handle Python 1.5 and
-        #     older, and then do it "the right way" for 1.6?  Or should
-        #     we install a site.py along with Distutils under pre-1.6
-        #     Python to take care of the current deficiencies in
-        #     Python's library installation scheme?
-        #
-        # Currently, this method has hacks to distinguish POSIX from
-        # non-POSIX systems (for installation of site-local modules),
-        # and assumes the Python 1.5 installation tree with no site.py
-        # to fix things.
+        # This method (and its pliant slaves, like 'finalize_unix()',
+        # 'finalize_other()', and 'select_scheme()') is where the default
+        # installation directories for modules, extension modules, and
+        # anything else we care to install from a Python module
+        # distribution.  Thus, this code makes a pretty important policy
+        # statement about how third-party stuff is added to a Python
+        # installation!  Note that the actual work of installation is done
+        # by the relatively simple 'install_*' commands; they just take
+        # their orders from the installation directory options determined
+        # here.
 
-        # Figure out actual installation directories; the basic principle
-        # is: ...
+        # Check for errors/inconsistencies in the options; first, stuff
+        # that's wrong on any platform.
 
-
-
-        # Logic:
-        #   * any: (prefix or exec-prefix or home) and (base or platbase)
-        #     supplied: error
-        #   * Windows/Mac OS: exec-prefix or home supplied: warn and ignore
-        # 
-        #   * Unix: home set
-        #     (select the unix_home scheme)
-        #   * Unix: neither prefix nor home set
-        #     (set prefix=sys_prefix and carry on)
-        #   * Unix: prefix set but not exec-prefix
-        #     (set exec-prefix=prefix and carry on)
-        #   * Unix: prefix set
-        #     (select the unix_prefix scheme)
-        # 
-        #   * Windows/Mac OS: prefix not set
-        #     (set prefix = sys_prefix and carry on)
-        #   * Windows/Mac OS: prefix set
-        #     (select the appropriate scheme)
-
-        # "select a scheme" means:
-        #   - set install-base and install-platbase
-        #   - subst. base/platbase/version into the values of the
-        #     particular scheme dictionary
-        #   - use the resultings strings to set install-lib, etc.
-
-        sys_prefix = os.path.normpath (sys.prefix)
-        sys_exec_prefix = os.path.normpath (sys.exec_prefix)
-
-        # Check for errors/inconsistencies in the options
         if ((self.prefix or self.exec_prefix or self.home) and
             (self.install_base or self.install_platbase)):
             raise DistutilsOptionError, \
                   ("must supply either prefix/exec-prefix/home or " +
                    "install-base/install-platbase -- not both")
 
+        # Next, stuff that's wrong (or dubious) only on certain platforms.
         if os.name == 'posix':
             if self.home and (self.prefix or self.exec_prefix):
                 raise DistutilsOptionError, \
@@ -240,7 +201,7 @@ class install (Command):
         self.install_libbase = self.install_lib # needed for .pth file
         self.install_lib = os.path.join (self.install_lib, self.extra_dirs)
 
-        # Figure out the build directories, ie. where to install from
+        # Find out the build directories, ie. where to install from.
         self.set_undefined_options ('build',
                                     ('build_base', 'build_base'),
                                     ('build_lib', 'build_lib'))
@@ -319,6 +280,12 @@ class install (Command):
 
 
     def select_scheme (self, name):
+
+        # "select a scheme" means:
+        #   - set install-base and install-platbase
+        #   - subst. base/platbase/version into the values of the
+        #     particular scheme dictionary
+        #   - use the resultings strings to set install-lib, etc.
 
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
