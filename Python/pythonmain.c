@@ -105,6 +105,16 @@ main(argc, argv)
 		sts = run_command(command) != 0;
 	}
 	else {
+		if (filename == NULL && isatty((int)fileno(fp))) {
+			char *startup = getenv("PYTHONSTARTUP");
+			if (startup != NULL && startup[0] != '\0') {
+				FILE *fp = fopen(startup, "r");
+				if (fp != NULL) {
+					(void) run_script(fp, startup);
+					err_clear();
+				}
+			}
+		}
 		sts = run(fp, filename == NULL ? "<stdin>" : filename) != 0;
 	}
 
