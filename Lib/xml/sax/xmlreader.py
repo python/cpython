@@ -119,6 +119,7 @@ class IncrementalParser(XMLReader):
         while buffer != "":
             self.feed(buffer)
             buffer = file.read(self._bufsize)
+        self.close()
 
     def feed(self, data):        
         """This method gives the raw XML data in the data parameter to
