@@ -90,7 +90,7 @@ class FAQServer:
 
 	<H2>Search the FAQ</H2>
 
-	<FORM ACTION="faq.py?req=query">
+	<FORM ACTION="faq.py">
 	<INPUT TYPE=text NAME=query>
 	<INPUT TYPE=submit VALUE="Search"><BR>
 	(Case insensitive regular expressions.)
@@ -612,6 +612,8 @@ class FAQServer:
 			pre = 1
 		if '/' in line or '@' in line:
 		    line = self.translate(line)
+		elif '<' in line or '&' in line:
+		    line = cgi.escape(line)
  		if not pre and '*' in line:
  		    line = self.emphasize(line)
 		print line
@@ -680,7 +682,7 @@ class FAQServer:
 	    <P>
 	    <HR>
 	    <A HREF="http://www.python.org">Python home</A> /
-	    <A HREF="faq.py">FAQ home</A> /
+	    <A HREF="faq.py?req=frontpage">FAQ home</A> /
 	    Feedback to <A HREF="mailto:guido@python.org">GvR</A>
 	    '''
 	print '''
