@@ -57,9 +57,16 @@ includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
+/* Carbon calls that we emulate in classic mode */
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
 #define GetWindowFromPort(port) ((WindowRef)(port))
 #define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#endif
+#if ACCESSOR_CALLS_ARE_FUNCTIONS
+/* Classic calls that we emulate in carbon mode */
+#define GetWindowUpdateRgn(win, rgn) GetWindowRegion((win), kWindowUpdateRgn, (rgn))
+#define GetWindowStructureRgn(win, rgn) GetWindowRegion((win), kWindowStructureRgn, (rgn))
+#define GetWindowContentRgn(win, rgn) GetWindowRegion((win), kWindowContentRgn, (rgn))
 #endif
 
 /* Function to dispose a window, with a "normal" calling sequence */
