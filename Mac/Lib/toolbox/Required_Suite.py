@@ -25,9 +25,9 @@ class Required_Suite:
 		_code = 'aevt'
 		_subcode = 'odoc'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -45,9 +45,9 @@ class Required_Suite:
 		_code = 'aevt'
 		_subcode = 'pdoc'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -64,9 +64,9 @@ class Required_Suite:
 		_code = 'aevt'
 		_subcode = 'quit'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -83,9 +83,9 @@ class Required_Suite:
 		_code = 'aevt'
 		_subcode = 'oapp'
 
+		if _arguments: raise TypeError, 'No optional args expected'
 		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if _arguments: raise TypeError, 'No optional args expected'
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)

@@ -311,6 +311,16 @@ def compileevent(fp, event):
 	#
 	fp.write("\t\t_code = %s\n"% `code`)
 	fp.write("\t\t_subcode = %s\n\n"% `subcode`)
+	#
+	# Do keyword name substitution
+	#
+	if arguments:
+		fp.write("\t\taetools.keysubst(_arguments, self._argmap_%s)\n"%funcname)
+	else:
+		fp.write("\t\tif _arguments: raise TypeError, 'No optional args expected'\n")
+	#
+	# Stuff required arg (if there is one) into arguments
+	#
 	if has_arg:
 		fp.write("\t\t_arguments['----'] = _object\n")
 	elif opt_arg:
@@ -320,12 +330,8 @@ def compileevent(fp, event):
 		fp.write("\t\tif _no_object != None: raise TypeError, 'No direct arg expected'\n")
 	fp.write("\n")
 	#
-	# Do key substitution
+	# Do enum-name substitution
 	#
-	if arguments:
-		fp.write("\t\taetools.keysubst(_arguments, self._argmap_%s)\n"%funcname)
-	else:
-		fp.write("\t\tif _arguments: raise TypeError, 'No optional args expected'\n")
 	for a in arguments:
 		if is_enum(a[2]):
 			kname = a[1]
