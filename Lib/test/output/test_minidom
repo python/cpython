@@ -124,6 +124,9 @@ Test Succeeded testInsertBefore
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testLegalChildren
 Passed assertion: len(Node.allnodes) == 0
+Passed test NodeList.item()
+Test Succeeded testNodeListItem
+Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Passed Test
 Test Succeeded testNonZero
