@@ -102,7 +102,7 @@ def packtree(outfp, dirname):
 		packtree(outfp, subdirname)
 
 def unixfix(name):
-	comps = name.splitfields(os.sep)
+	comps = name.split(os.sep)
 	res = ''
 	for comp in comps:
 		if comp:
