@@ -712,6 +712,15 @@ array_insert(self, args)
 }
 
 static PyObject *
+array_buffer_info(self, args)
+	arrayobject *self;
+	PyObject *args;
+{
+	return Py_BuildValue("ll",
+			     (long)(self->ob_item), (long)(self->ob_size));
+}
+
+static PyObject *
 array_append(self, args)
 	arrayobject *self;
 	PyObject *args;
@@ -1050,6 +1059,7 @@ array_tostring(self, args)
 
 static PyMethodDef array_methods[] = {
 	{"append",	(PyCFunction)array_append},
+	{"buffer_info", (PyCFunction)array_buffer_info},
 	{"byteswap",	(PyCFunction)array_byteswap},
 /*	{"count",	(method)array_count},*/
 	{"fromfile",	(PyCFunction)array_fromfile},
