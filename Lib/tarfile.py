@@ -923,7 +923,8 @@ class TarFile(object):
 
         try:
             import gzip
-        except ImportError:
+            gzip.GzipFile
+        except (ImportError, AttributeError):
             raise CompressionError, "gzip module is not available"
 
         pre, ext = os.path.splitext(name)
