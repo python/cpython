@@ -146,7 +146,7 @@ class build_py (Command):
                 raise DistutilsFileError, \
                       "package directory '%s' does not exist" % package_dir
             if not os.path.isdir (package_dir):
-                raise DistutilsFileErorr, \
+                raise DistutilsFileError, \
                       ("supposed package directory '%s' exists, " +
                        "but is not a directory") % package_dir
 
