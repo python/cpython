@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 /* Skip for Carbon */
 #include "macstat.h"
 #endif
@@ -51,7 +51,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <sys/stat.h>
 #else /* USE_GUSI */
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 #define stat macstat
 #endif
 #endif /* USE_GUSI */
@@ -259,7 +259,7 @@ mac_fdopen(self, args)
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 static PyObject *
 mac_getbootvol(self, args)
 	PyObject *self;
@@ -499,7 +499,7 @@ mac_fstat(self, args)
 }
 #endif /* WEHAVE_FSTAT */
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 static PyObject *
 mac_xstat(self, args)
 	PyObject *self;
@@ -611,7 +611,7 @@ static struct PyMethodDef mac_methods[] = {
 #ifdef WEHAVE_FSTAT
 	{"fstat",	mac_fstat},
 #endif
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 #endif
 	{"getcwd",	mac_getcwd},
@@ -623,7 +623,7 @@ static struct PyMethodDef mac_methods[] = {
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 	{"xstat",	mac_xstat},
 #endif
 	{"sync",	mac_sync},
