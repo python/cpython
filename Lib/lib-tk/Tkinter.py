@@ -8,6 +8,10 @@ TclError = _tkinter.TclError
 from types import *
 from Tkconstants import *
 import string; _string = string; del string
+try:
+	import MacOS; _MacOS = MacOS; del MacOS
+except ImportError:
+	_MacOS = None
 
 TkVersion = _string.atof(_tkinter.TK_VERSION)
 TclVersion = _string.atof(_tkinter.TCL_VERSION)
@@ -845,18 +849,11 @@ class Tk(Misc, Wm):
 			baseName, ext = os.path.splitext(baseName)
 			if ext not in ('.py', 'pyc'): baseName = baseName + ext
 		self.tk = _tkinter.create(screenName, baseName, className)
-		try:
+		if _MacOS:
 			# Disable event scanning except for Command-Period
-			import MacOS
-			try:
-				MacOS.SchedParams(1, 0)
-			except AttributeError:
-				# pre-1.5, use old routine
-				MacOS.EnableAppswitch(0)
-		except ImportError:
-			pass
-		else:
+			_MacOS.SchedParams(1, 0)
 			# Work around nasty MacTk bug
+			# XXX Is this one still needed?
 			self.update()
 		# Version sanity checks
 		tk_version = self.tk.getvar('tk_version')
