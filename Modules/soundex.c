@@ -26,7 +26,7 @@ static void soundex_hash(char *str, char *result)
     char *sptr = str;           /* pointer into str */
     char *rptr = result;        /* pointer into result */
     
-    if(*str == NULL)
+    if(*str == '\0')
     {
         strcpy(result,"000000");
         return;
@@ -39,19 +39,20 @@ static void soundex_hash(char *str, char *result)
     /* Translate the rest of the input string into result.  The following
        transformations are used:
 
-       1) All vowles, W, and H, are skipped.
+       1) All vowels, W, and H, are skipped.
 
        2) BFPV = 1
           CGJKQSXZ = 2
           DT = 3
           L = 4
           MN = 5
+          R = 6
 
        3) Only translate the first of adjacent equal translations.  I.E.
           remove duplicate digits.
     */
 
-    for(;(rptr - result) < 6 &&  *sptr != NULL;sptr++)
+    for(;(rptr - result) < 6 &&  *sptr != '\0';sptr++)
     {
         switch (toupper(*sptr))
         {
@@ -95,6 +96,9 @@ static void soundex_hash(char *str, char *result)
             if(*(rptr - 1) != '5')
                 *(rptr++) = '5';
             break;
+        case 'R':
+            if(*(rptr -1) != '6')
+                *(rptr++) = '6';
         default:
             break;
         }
@@ -107,7 +111,7 @@ static void soundex_hash(char *str, char *result)
 
     /* Terminate the result string.
      */
-    *(result + 6) = NULL;
+    *(result + 6) = '\0';
 }
 
 
@@ -119,7 +123,6 @@ static PyObject *
 get_soundex(PyObject *self, PyObject *args)
 {
 	char *str;
-	int retval;
 	char sdx[7];
 
 	if(!PyArg_ParseTuple( args, "s", &str))
@@ -136,7 +139,6 @@ static PyObject *
 sound_similar(PyObject *self, PyObject *args)
 {
     char *str1, *str2;
-    int return_value;
     char res1[7], res2[7];
     
     if(!PyArg_ParseTuple(args, "ss", &str1, &str2))
