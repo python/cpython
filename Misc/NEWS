@@ -18,6 +18,9 @@ Core and builtins
   Passing None is semantically identical to calling sort() with no
   arguments.
 
+- Fixed crash when printing a subclass of str and __str__ returned self.
+  See SF bug #667147.
+
 Extension modules
 -----------------
 

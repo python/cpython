@@ -158,10 +158,15 @@ _PyObject_Del(PyObject *op)
 	PyObject_FREE(op);
 }
 
-int
-PyObject_Print(PyObject *op, FILE *fp, int flags)
+/* Implementation of PyObject_Print with recursion checking */
+static int
+internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 {
 	int ret = 0;
+	if (nesting > 10) {
+		PyErr_SetString(PyExc_RuntimeError, "print recursion");
+		return -1;
+	}
 	if (PyErr_CheckSignals())
 		return -1;
 #ifdef USE_STACKCHECK
@@ -187,7 +192,8 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 			if (s == NULL)
 				ret = -1;
 			else {
-				ret = PyObject_Print(s, fp, Py_PRINT_RAW);
+				ret = internal_print(s, fp, Py_PRINT_RAW,
+						     nesting+1);
 			}
 			Py_XDECREF(s);
 		}
@@ -203,6 +209,13 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 	}
 	return ret;
 }
+
+int
+PyObject_Print(PyObject *op, FILE *fp, int flags)
+{
+	return internal_print(op, fp, flags, 0);
+}
+
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
 void _PyObject_Dump(PyObject* op)
