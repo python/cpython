@@ -785,6 +785,9 @@
    this defined. */
 #undef _POSIX_1_SOURCE
 
+/* Define to activate features from IEEE Stds 1003.{123}-1995 */
+#undef _POSIX_C_SOURCE
+
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
 
@@ -798,6 +801,9 @@
 #ifndef _XOPEN_SOURCE
 # define _XOPEN_SOURCE 500
 #endif
+
+/* Define to activate Unix95-and-earlier features */
+#undef _XOPEN_SOURCE_EXTENDED
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__

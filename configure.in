@@ -33,6 +33,13 @@ AH_VERBATIM([_XOPEN_SOURCE],
 #endif])
 AC_DEFINE(_XOPEN_SOURCE, 500)
 
+# On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires definition
+# of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else several APIs
+# are not declared. Since this is also needed in some cases for HP-UX,
+# we define it globally.
+AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Define to activate Unix95-and-earlier features)
+AC_DEFINE(_POSIX_C_SOURCE, 199506L, Define to activate features from IEEE Stds 1003.{123}-1995)
+
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
