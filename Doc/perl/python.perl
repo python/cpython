@@ -114,6 +114,8 @@ sub do_cmd_optional{
 # output files for users that read them over the network rather than
 # from local repositories.
 
+# \file and \samp are at the end of this file since they screw up fontlock.
+
 sub do_cmd_pytype{ return @_[0]; }
 sub do_cmd_makevar{ return @_[0]; }
 sub do_cmd_code{
@@ -164,6 +166,11 @@ sub do_cmd_kbd{
     return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{
     return use_wrappers(@_[0], '<b>', '</b>'); }
+sub do_cmd_textbf{
+    return use_wrappers(@_[0], '<b>', '</b>'); }
+sub do_cmd_textit{
+    return use_wrappers(@_[0], '<i>', '</i>'); }
+
 
 sub do_cmd_refmodule{
     # Insert the right magic to jump to the module definition.
@@ -194,7 +201,6 @@ sub do_cmd_envvar{
     add_index_entry("$envvar@\$$envvar", $ahref);
     return "<span class=envvar>$aname\$$envvar</a></span>" . $_;
 }
-
 
 sub do_cmd_url{
     # use the URL as both text and hyperlink
@@ -248,9 +254,7 @@ sub do_cmd_versionchanged{
 }
 
 #
-# These function handle platform dependency tracking.  The first two implement
-# the \platform and \platformof macros, and the third is called at the end of
-# processing to fill in references to the platform of a module.
+# These function handle platform dependency tracking.
 #
 sub do_cmd_platform{
     local($_) = @_;
@@ -262,13 +266,6 @@ sub do_cmd_platform{
       . "\n class=platform>$platform</span>.</p>\n" . $_;
 }
 
-sub do_cmd_platformof{
-    local($_) = @_;
-    next_optional_argument();
-    my $module = next_argument();
-    return "<tex2html-platformof><$module>" . $_;
-}
-
 $IGNORE_PLATFORM_ANNOTATION = '';
 sub do_cmd_ignorePlatformAnnotation{
     local($_) = @_;
@@ -276,16 +273,6 @@ sub do_cmd_ignorePlatformAnnotation{
     return $_;
 }
 
-sub process_all_platformofs{
-    while (/<tex2html-platformof><([^>]+)>/) {
-	my $match = $&;
-	my $module = $1;
-	s/$match/<span\n class=platform>$ModulePlatforms{$module}<\/span>/;
-    }
-}
-
-
-# file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
 
@@ -1037,7 +1024,6 @@ sub process_all_localmoduletables{
 }
 sub process_python_state{
     process_all_localmoduletables();
-    process_all_platformofs();
 }
 
 
@@ -1047,7 +1033,7 @@ sub process_python_state{
 
 sub do_env_seealso{
     return "<div class=seealso>\n  "
-      . "<p><b>See Also:</b></p>\n"
+      . "<p class=heading><b>See Also:</b></p>\n"
       . @_[0]
       . '</div>';
 }
@@ -1098,7 +1084,6 @@ memberline # [] # {}
 methodline # [] # {} # {}
 modulesynopsis # {}
 platform # {}
-platformof # [] # {}
 samp # {}
 setindexsubitem # {}
 withsubitem # {} # {}
