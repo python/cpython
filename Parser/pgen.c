@@ -149,8 +149,9 @@ metacompile(node *n)
 {
 	nfagrammar *gr;
 	int i;
-	
-	printf("Compiling (meta-) parse tree into NFA grammar\n");
+
+	if (Py_DebugFlag)
+		printf("Compiling (meta-) parse tree into NFA grammar\n");
 	gr = newnfagrammar();
 	REQ(n, MSTART);
 	i = n->n_nchildren - 1; /* Last child is ENDMARKER */
@@ -645,8 +646,8 @@ maketables(nfagrammar *gr)
 		if (Py_DebugFlag) {
 			printf("Dump of NFA for '%s' ...\n", nf->nf_name);
 			dumpnfa(&gr->gr_ll, nf);
+			printf("Making DFA for '%s' ...\n", nf->nf_name);
 		}
-		printf("Making DFA for '%s' ...\n", nf->nf_name);
 		d = adddfa(g, nf->nf_type, nf->nf_name);
 		makedfa(gr, gr->gr_nfa[i], d);
 	}
