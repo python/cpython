@@ -300,6 +300,45 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assert_(x is y, (proto, x, s, y))
 
+    def test_newobj_tuple(self):
+        x = MyTuple([1, 2, 3], foo=42, bar="hello")
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(tuple(x), tuple(y))
+        self.assertEqual(x.__dict__, y.__dict__)
+
+    def test_newobj_list(self):
+        x = MyList([1, 2, 3], foo=42, bar="hello")
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(list(x), list(y))
+        self.assertEqual(x.__dict__, y.__dict__)
+
+class MyTuple(tuple):
+    def __new__(cls, *args, **kwds):
+        # Ignore **kwds
+        return tuple.__new__(cls, *args)
+    def __getnewargs__(self):
+        return (tuple(self),)
+    def __init__(self, *args, **kwds):
+        for k, v in kwds.items():
+            setattr(self, k, v)
+
+class MyList(list):
+    def __new__(cls, *args, **kwds):
+        # Ignore **kwds
+        return list.__new__(cls, *args)
+    def __init__(self, *args, **kwds):
+        for k, v in kwds.items():
+            setattr(self, k, v)
+    def __getstate__(self):
+        return list(self), self.__dict__
+    def __setstate__(self, arg):
+        lst, dct = arg
+        for x in lst:
+            self.append(x)
+        self.__init__(**dct)
+
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
