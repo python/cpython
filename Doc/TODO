@@ -16,6 +16,11 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   must be linked against the C++ libraries (and possibly runtime).
   Also noted by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.
 
+* Python/C API reference missing PyArg_ParseTuple(),
+  PyArg_ParseTupleAndKeywords(), Py_BuildValue().  Information
+  requested by Greg Kochanski <gpk@bell-labs.com>.  PyEval_EvalCode()
+  has also been requested.
+
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.  Partial
   update submitted by Jim Kerr <jbkerr@sr.hp.com>.
