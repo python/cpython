@@ -117,14 +117,18 @@ Return the names of all registered dialects.
 
 The \module{csv} module defines the following classes:
 
-\begin{classdesc}{DictReader}{csvfile, fieldnames\optional{,
+\begin{classdesc}{DictReader}{csvfile\optional{,
+			      fieldnames=\constant{None},\optional{,
                               restkey=\constant{None}\optional{,
 			      restval=\constant{None}\optional{,
                               dialect=\code{'excel'}\optional{,
-			      fmtparam}}}}}
+			      fmtparam}}}}}}
 Create an object which operates like a regular reader but maps the
-information read into a dict whose keys are given by the \var{fieldnames}
-parameter.  If the row read has fewer fields than the fieldnames sequence,
+information read into a dict whose keys are given by the optional
+{} \var{fieldnames}
+parameter.  If the \var{fieldnames} parameter is omitted, the values in
+the first row of the \var{csvfile} will be used as the fieldnames.
+If the row read has fewer fields than the fieldnames sequence,
 the value of \var{restval} will be used as the default value.  If the row
 read has more fields than the fieldnames sequence, the remaining data is
 added as a sequence keyed by the value of \var{restkey}.  If the row read
@@ -149,6 +153,13 @@ method contains a key not found in \var{fieldnames}, the optional
 to \code{'raise'} a \exception{ValueError} is raised.  If it is set to
 \code{'ignore'}, extra values in the dictionary are ignored.  All other
 parameters are interpreted as for \class{writer} objects.
+
+Note that unlike the \class{DictReader} class, the \var{fieldnames}
+parameter of the \class{DictWriter} is not optional.  Since Python's
+\class{dict} objects are not ordered, there is not enough information
+available to deduce the order in which the row should be written to the
+\var{csvfile}.
+
 \end{classdesc}
 
 \begin{classdesc*}{Dialect}{}
