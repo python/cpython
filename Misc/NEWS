@@ -99,6 +99,9 @@ Release date: XX-XXX-2003
 - SF #557719, backported just the tiny fragment necessary to get BUILDEXE
   set properly in out-of-tree builds.
 
+- SF #649762, fix infinite loop in asynchat when null string used as terminator
+
+
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
 ====================================
