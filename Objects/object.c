@@ -370,7 +370,7 @@ setattr(v, name, w)
 		int res;
 		s = newstringobject(name);
 		if (s == NULL)
-			return NULL;
+			return -1;
 		res = (*v->ob_type->tp_setattro)(v, s, w);
 		XDECREF(s);
 		return res;
