@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "osdefs.h"
-
+#include "macglue.h"
 #include "pythonresources.h"
 
 
@@ -22,6 +22,10 @@
 #include <Resources.h>
 #include <TextUtils.h>
 #include <Dialogs.h>
+
+#ifdef USE_GUSI
+#include <GUSI.h>
+#endif
 
 #define PYTHONPATH "\
 :\n\
@@ -149,27 +153,24 @@ PyMac_GetPythonDir()
     AliasHandle handle;
     FSSpec dirspec;
     Boolean modified = 0;
-    short oldrh, prefrh;
+    short oldrh, prefrh = -1, homerh;
     
     oldrh = CurResFile();
-    /*
-    ** First look for an override of the preferences file
-    */
-    handle = (AliasHandle)GetResource('alis', PYTHONHOMEOVERRIDE_ID);
+
+    /* First look for an override in the application file */
+    UseResFile(PyMac_AppRefNum);
+    handle = (AliasHandle)Get1Resource('alis', PYTHONHOMEOVERRIDE_ID);
     if ( handle != NULL ) {
-    	prefrh = oldrh;
-    } else {
-	    /*
-	    ** Remember old resource file and try to open preferences file
-	    ** in the preferences folder.
-	    */
+    	homerh = PyMac_AppRefNum;
+    } else {   
+	    /* Try to open preferences file in the preferences folder. */
 	    prefrh = PyMac_OpenPrefFile();
-	    /* So, we've opened our preferences file, we hope. Look for the alias */
 	    handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
 	    if ( handle == NULL ) {
 	    	(void)StopAlert(BADPREFFILE_ID, NULL);
 	    	exit(1);
 	    }
+	    homerh = prefrh;
     }
 	/* It exists. Resolve it (possibly updating it) */
 	if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
@@ -178,12 +179,10 @@ PyMac_GetPythonDir()
     }
     if ( modified ) {
    		ChangedResource((Handle)handle);
-    	UpdateResFile(prefrh);
+    	UpdateResFile(homerh);
     }
-    if ( prefrh != oldrh ) {
-	   	CloseResFile(prefrh);
-	    UseResFile(oldrh);
-    }
+    if ( prefrh != -1 ) CloseResFile(prefrh);
+    UseResFile(oldrh);
 
    	if ( nfullpath(&dirspec, name) == 0 ) {
    		strcat(name, ":");
@@ -212,11 +211,13 @@ char *dir;
     OSErr err;
     Handle h;
     
+    oldrh = CurResFile();
     /*
-    ** This is a bit tricky. We check here whether the current resource file
+    ** This is a bit tricky. We check here whether the application file
     ** contains an override. This is to forestall us finding another STR# resource
     ** with "our" id and using that for path initialization
     */
+    UseResFile(PyMac_AppRefNum);
     SetResLoad(0);
     if ( (h=Get1Resource('STR#', PYTHONPATHOVERRIDE_ID)) ) {
     	ReleaseResource(h);
@@ -225,12 +226,12 @@ char *dir;
     	resource_id = PYTHONPATH_ID;
     }
     SetResLoad(1);
+    UseResFile(oldrh);
     
     /*
     ** Remember old resource file and try to open preferences file
     ** in the preferences folder.
     */
-    oldrh = CurResFile();
     if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
     				&prefdirDirID) == noErr ) {
     	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
@@ -302,10 +303,8 @@ char *dir;
 		rv++;
 	}
 out:
-	if ( prefrh ) {
-		CloseResFile(prefrh);
-		UseResFile(oldrh);
-	}
+	if ( prefrh != -1) CloseResFile(prefrh);
+	UseResFile(oldrh);
 	return rv;
 }
 #endif /* !USE_BUILTIN_PATH */
@@ -315,17 +314,24 @@ PyMac_PreferenceOptions(int *inspect, int *verbose, int *suppress_print,
 						 int *unbuffered, int *debugging, int *keep_normal,
 						 int *keep_error)
 {
-	short oldrh, prefrh;
+	short oldrh, prefrh = -1;
 	Handle handle;
 	int size;
 	char *p;
 	
 	
     oldrh = CurResFile();
-    prefrh = PyMac_OpenPrefFile();
-    handle = GetResource('Popt', PYTHONOPTIONSOVERRIDE_ID);
-    if ( handle == NULL )
+    
+    /* Attempt to load overrides from application */
+    UseResFile(PyMac_AppRefNum);
+    handle = Get1Resource('Popt', PYTHONOPTIONSOVERRIDE_ID);
+    UseResFile(oldrh);
+    
+    /* Otherwise get options from prefs file or any other open resource file */
+    if ( handle == NULL ) {
+	    prefrh = PyMac_OpenPrefFile();
 	    handle = GetResource('Popt', PYTHONOPTIONS_ID);
+	}
     if ( handle == NULL ) {
     	return;
     }
@@ -340,9 +346,35 @@ PyMac_PreferenceOptions(int *inspect, int *verbose, int *suppress_print,
     if ( size > POPT_DEBUGGING ) *debugging = p[POPT_DEBUGGING];
     if ( size > POPT_KEEPNORM ) *keep_normal = p[POPT_KEEPNORM];
     if ( size > POPT_KEEPERR ) *keep_error = p[POPT_KEEPERR];
+    /* The rest are not implemented yet */
     
     HUnlock(handle);
 
-   	CloseResFile(prefrh);
+   	if ( prefrh != -1) CloseResFile(prefrh);
     UseResFile(oldrh);
 }
+
+#ifdef USE_GUSI
+void
+PyMac_SetGUSIOptions()
+{
+	Handle h;
+	short oldrh, prefrh = -1;
+	
+	oldrh = CurResFile();
+	
+	/* Try override from the application resource fork */
+	UseResFile(PyMac_AppRefNum);
+	h = Get1Resource('GU\267I', GUSIOPTIONSOVERRIDE_ID);
+	UseResFile(oldrh);
+	
+	/* If that didn't work try nonoverride from anywhere */
+	if ( h == NULL ) {
+		prefrh = PyMac_OpenPrefFile();
+		h = GetResource('GU\267I', GUSIOPTIONS_ID);
+	}
+	if ( h ) GUSILoadConfiguration(h);
+   	if ( prefrh != -1) CloseResFile(prefrh);
+    UseResFile(oldrh);
+}
+#endif /* USE_GUSI */	
