@@ -42,6 +42,9 @@ Core and builtins
 Library
 -------
 
+- Brought platform.py in line with the 2.4 version, fixing support for
+  newer Windows versions and a cache issue.
+
 - Bug #950057: itertools.chain() and itertools.cycle() now handle
                exceptions immediately instead of waiting until the
                input source is updated.
