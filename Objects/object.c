@@ -1412,12 +1412,15 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 		}
 	}
 
+	Py_XINCREF(descr);
+
 	f = NULL;
 	if (descr != NULL &&
 	    PyType_HasFeature(descr->ob_type, Py_TPFLAGS_HAVE_CLASS)) {
 		f = descr->ob_type->tp_descr_get;
 		if (f != NULL && PyDescr_IsData(descr)) {
 			res = f(descr, obj, (PyObject *)obj->ob_type);
+			Py_DECREF(descr);
 			goto done;
 		}
 	}
@@ -1445,6 +1448,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 			res = PyDict_GetItem(dict, name);
 			if (res != NULL) {
 				Py_INCREF(res);
+				Py_XDECREF(descr);
 				goto done;
 			}
 		}
@@ -1452,12 +1456,13 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 
 	if (f != NULL) {
 		res = f(descr, obj, (PyObject *)obj->ob_type);
+		Py_DECREF(descr);
 		goto done;
 	}
 
 	if (descr != NULL) {
-		Py_INCREF(descr);
 		res = descr;
+		/* descr was already increfed above */
 		goto done;
 	}
 
