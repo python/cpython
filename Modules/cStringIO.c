@@ -58,6 +58,12 @@
 
 
   $Log$
+  Revision 2.3  1997/01/14 17:38:28  bwarsaw
+  Quieted gcc -Wall by removing unused local variables.
+
+  Suppressing my urge to reformat according to Python coding standards!
+  :-)
+
   Revision 2.2  1997/01/06 22:57:52  guido
   Jim's latest version.
 
@@ -317,9 +323,7 @@ O_cwrite(ARG(Oobject*, self), ARG(char*, c), ARG(int, l))
     ARGDECL(char*, c)
     ARGDECL(int, l)
 {
-  PyObject *s;
-  char *b;
-  int newl, space_needed;
+  int newl;
 
   newl=self->pos+l;
   if(newl > self->buf_size)
@@ -352,8 +356,8 @@ O_write(ARG(Oobject*, self), ARG(PyObject*, args))
     ARGDECL(PyObject*, args)
 {
   PyObject *s;
-  char *c, *b;
-  int l, newl, space_needed;
+  char *c;
+  int l;
 
   UNLESS(PyArg_Parse(args, "O", &s)) return NULL;
   UNLESS(-1 != (l=PyString_Size(s))) return NULL;
