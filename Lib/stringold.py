@@ -142,6 +142,6 @@ def zfill(x, width):
 	n = len(s)
 	if n >= width: return s
 	sign = ''
-	if s[0] = '-':
-		sign, s = '-', s[1:]
+	if s[0] in ('-', '+'):
+		sign, s = s[0], s[1:]
 	return sign + '0'*(width-n) + s
