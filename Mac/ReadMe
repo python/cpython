@@ -87,7 +87,7 @@ test_longexp and test_zlib (on MacOSX nothing should fail).
 
 If you increase the PythonInterpreter memory
 partition size they will pass (but for longexp you have to increase it by an
-incredible amount). It will, however, print some messages
+incredible amount, 400MB is rumoured). It will, however, print some messages
 about optional features not supported. You should not worry about these,
 they are modules that are supported by Python on other platforms. Also,
 if you didn't run compileall before autotesting you may run out of
