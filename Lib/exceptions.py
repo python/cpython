@@ -15,88 +15,78 @@ editing this file, but it isn't recommended.  The classes with a `*'
 are new with this feature.  They are defined as tuples containing the
 derived exceptions when string-based exceptions are used.
 
-StandardError(*)
+Exception(*)
  |
- +-- SystemExit
- +-- KeyboardInterrupt
- +-- ImportError
- +-- IOError
- +-- EOFError
- +-- RuntimeError
- +-- NameError
- +-- AttributeError
- +-- SyntaxError
- +-- TypeError
- +-- AssertionError
- +-- LookupError(*)
- |    |
- |    +-- IndexError
- |    +-- KeyError
- |
- +-- NumberError(*)
- |    |
- |    +-- OverflowError
- |    +-- ZeroDivisionError
- |    +-- FloatingPointError
- |
- +-- ValueError
- +-- SystemError
- +-- MemoryError
+ +-- StandardError(*)
+      |
+      +-- SystemExit
+      +-- KeyboardInterrupt
+      +-- ImportError
+      +-- IOError
+      +-- EOFError
+      +-- RuntimeError
+      +-- NameError
+      +-- AttributeError
+      +-- SyntaxError
+      +-- TypeError
+      +-- AssertionError
+      +-- LookupError(*)
+      |    |
+      |    +-- IndexError
+      |    +-- KeyError
+      |
+      +-- NumberError(*)
+      |    |
+      |    +-- OverflowError
+      |    +-- ZeroDivisionError
+      |    +-- FloatingPointError
+      |
+      +-- ValueError
+      +-- SystemError
+      +-- MemoryError
 """
 
-class StandardError:
+class Exception:
     def __init__(self, *args):
-        if len(args) == 0:
-            self.args = None
-        elif len(args) == 1:
-            # de-tuplify
-            self.args = args[0]
-        else:
-            self.args = args
+	self.args = args
 
     def __str__(self):
-        if self.args == None:
+        if not self.args:
             return ''
+	elif len(self.args) == 1:
+	    return str(self.args[0])
 	else:
 	    return str(self.args)
 
+class StandardError(Exception):
     def __getitem__(self, i):
-	if type(self.args) == type(()):
-	    return self.args[i]
-	elif i == 0:
-	    return self.args
-	else:
-	    raise IndexError
+	return self.args[i]
 
 class SyntaxError(StandardError):
     filename = lineno = offset = text = None
-    def __init__(self, msg, info=None):
-        self.msg = msg
-	if info:
-	    self.args = msg
-	else:
-	    self.args = (msg, info)
-	if info:
-	    self.filename, self.lineno, self.offset, self.text = info
+    msg = ""
+    def __init__(self, *args):
+	self.args = args
+	if len(self.args) >= 1:
+	    self.msg = self.args[0]
+	if len(self.args) == 2:
+	    info = self.args[1]
+	    try:
+		self.filename, self.lineno, self.offset, self.text = info
+	    except:
+		pass
     def __str__(self):
         return str(self.msg)
 
-
 class IOError(StandardError):
     def __init__(self, *args):
+	self.args = args
         self.errno = None
         self.strerror = None
-        if len(args) == 1:
-            # de-tuplify
-            self.args = args[0]
-        elif len(args) == 2:
+        if len(args) == 2:
             # common case: PyErr_SetFromErrno()
-            self.args = args
             self.errno = args[0]
             self.strerror = args[1]
-        else:
-            self.args = args
-
 
 class RuntimeError(StandardError):
     pass
@@ -143,24 +133,21 @@ class IndexError(LookupError):
 class KeyError(LookupError):
     pass
 
-# debate: should these two inherit from LookupError?
 class AttributeError(StandardError):
     pass
 
 class NameError(StandardError):
     pass
 
-class SystemExit(StandardError):
-    def __init__(self, *args):
-        if len(args) == 0:
-            self.args = None
-        elif len(args) == 1:
-            # de-tuplify
-            self.args = args[0]
-        else:
-            self.args = args
-        self.code = self.args
-
-
 class MemoryError(StandardError):
     pass
+
+class SystemExit(Exception):
+    def __init__(self, *args):
+	self.args = args
+        if len(args) == 0:
+            self.code = None
+        elif len(args) == 1:
+            self.code = args[0]
+        else:
+            self.code = args
