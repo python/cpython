@@ -2123,7 +2123,7 @@ init_tkinter(void)
 	m = Py_InitModule("_tkinter", moduleMethods);
 
 	d = PyModule_GetDict(m);
-	Tkinter_TclError = Py_BuildValue("s", "TclError");
+	Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
 	PyDict_SetItemString(d, "TclError", Tkinter_TclError);
 
 	ins_long(d, "READABLE", TCL_READABLE);
