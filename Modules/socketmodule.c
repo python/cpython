@@ -178,6 +178,14 @@ Socket methods:
 #include <netpacket/packet.h>
 #endif
 
+#ifdef HAVE_STDDEF_H
+#include <stddef.h>
+#endif
+
+#ifndef offsetof
+#define offsetof(type, member)	((size_t)(&((type *)0)->member))
+#endif
+
 #ifndef O_NDELAY
 #define O_NDELAY O_NONBLOCK	/* For QNX only? */
 #endif
