@@ -196,14 +196,17 @@ class POP3:
 		return (numMessages, sizeMessages)
 
 
-	def list(self, which=None):
+	def list(self, msg=None):
 		"""Request listing, return result.
-		Result is in form ['response', ['mesg_num octets', ...]].
 
-		Unsure what the optional 'msg' arg does.
+		Result without a msg argument is in form
+		['response', ['mesg_num octets', ...]].
+
+		Result when a msg argument is given is a single response:
+		the "scan listing" for that message.
 		"""
 		if which:
-			return self._longcmd('LIST %s' % which)
+			return self._shortcmd('LIST %s' % which)
 		return self._longcmd('LIST')
 
 
