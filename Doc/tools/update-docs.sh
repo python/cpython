@@ -21,7 +21,11 @@ if [ -f "$UPDATES" ] ; then
     cd devel-docs || exit $?
     (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
     rm "$UPDATES" || exit $?
-    EXPLANATION="`cat $INFO`"
+    if [ -f "$INFO" ] ; then
+        EXPLANATION="`cat $INFO`"
+    else
+        EXPLANATION=''
+    fi
     Mail -s '[development doc updates]' \
      python-dev@python.org doc-sig@python.org \
      <<EOF
