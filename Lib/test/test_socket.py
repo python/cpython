@@ -587,10 +587,10 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
 def test_main():
     suite = unittest.TestSuite()
-    ##suite.addTest(unittest.makeSuite(GeneralModuleTests))
-    ##suite.addTest(unittest.makeSuite(BasicTCPTest))
-    ##suite.addTest(unittest.makeSuite(BasicUDPTest))
-    ##suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
+    suite.addTest(unittest.makeSuite(GeneralModuleTests))
+    suite.addTest(unittest.makeSuite(BasicTCPTest))
+    suite.addTest(unittest.makeSuite(BasicUDPTest))
+    suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
     suite.addTest(unittest.makeSuite(FileObjectClassTestCase))
     suite.addTest(unittest.makeSuite(UnbufferedFileObjectClassTestCase))
     test_support.run_suite(suite)
