@@ -738,8 +738,8 @@ kw = {'name': "Quixote",
       # ...
       }
 
-if (  hasattr(core, 'setup_keywords') and 
-      'classifiers' in core.setup_keywords):
+if (hasattr(core, 'setup_keywords') and 
+    'classifiers' in core.setup_keywords):
     kw['classifiers'] = \
         ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
          'Environment :: No Input/Output (Daemon)',
@@ -888,7 +888,7 @@ by Kevin Altis, Dave Cole, Andrew McNamara, Skip Montanaro, Cliff Wells.
 
 The \module{pickle} and \module{cPickle} modules received some
 attention during the 2.3 development cycle.  In 2.2, new-style classes
-could be pickled without difficult, but they weren't pickled very
+could be pickled without difficulty, but they weren't pickled very
 compactly; \pep{307} quotes a trivial example where a new-style class
 results in a pickled string three times longer than that for a classic
 class.
@@ -2252,7 +2252,7 @@ name.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Simon Brunning, Michael Chermside, Andrew Dalke, Scott David
+article: Jeff Bauer, Simon Brunning, Michael Chermside, Andrew Dalke, Scott David
 Daniels, Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael
 Hudson, Chris Lambert, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre, Lalo
 Martins, Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy,
