@@ -29,8 +29,11 @@ RESTYPE = 'PYC '
 RESNAME = '__main__'
 
 # A resource with this name sets the "owner" (creator) of the destination
-# XXXX Should look for id=0
+# It should also have ID=0. Either of these alone is not enough.
 OWNERNAME = "owner resource"
+
+# Default applet creator code
+DEFAULT_APPLET_CREATOR="Pyta"
 
 # OpenResFile mode parameters
 READ = 1
@@ -157,27 +160,34 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 		Res.CloseResFile(input)
 	
 	# Check which resource-types we should not copy from the template
-	skiptypes = ['vers']
+	skiptypes = []
+	if 'vers' in typesfound: skiptypes.append('vers')
 	if 'SIZE' in typesfound: skiptypes.append('SIZE')
 	if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4', 
 			'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
 	if not copy_codefragment:
 		skiptypes.append('cfrg')
-	skipowner = (ownertype <> None)
+##	skipowner = (ownertype <> None)
 	
 	# Copy the resources from the template
 	
 	input = Res.FSpOpenResFile(template_fss, READ)
-	dummy, tmplowner = copyres(input, output, skiptypes, skipowner, progress)
-	if ownertype == None:
-		ownertype = tmplowner
+	dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
+		
 	Res.CloseResFile(input)
-	if ownertype == None:
-		raise BuildError, "No owner resource found in either resource file or template"
-	
+##	if ownertype == None:
+##		raise BuildError, "No owner resource found in either resource file or template"
 	# Make sure we're manipulating the output resource file now
 	
 	Res.UseResFile(output)
+
+	if ownertype == None:
+		# No owner resource in the template. We have skipped the
+		# Python owner resource, so we have to add our own. The relevant
+		# bundle stuff is already included in the interpret/applet template.
+		newres = Res.Resource('\0')
+		newres.AddResource(DEFAULT_APPLET_CREATOR, 0, "Owner resource")
+		ownertype = DEFAULT_APPLET_CREATOR
 	
 	if code:
 		# Delete any existing 'PYC ' resource named __main__
@@ -228,7 +238,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 
 
 # Copy resources between two resource file descriptors.
-# skip a resource named '__main__' or (if skipowner is set) 'Owner resource'.
+# skip a resource named '__main__' or (if skipowner is set) with ID zero.
 # Also skip resources with a type listed in skiptypes.
 #
 def copyres(input, output, skiptypes, skipowner, progress=None):
@@ -248,10 +258,8 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
 			res = Res.Get1IndResource(type, ires)
 			id, type, name = res.GetResInfo()
 			lcname = string.lower(name)
-##			if (type, lcname) == (RESTYPE, RESNAME):
-##				continue # Don't copy __main__ from template
-			# XXXX should look for id=0
-			if lcname == OWNERNAME:
+
+			if lcname == OWNERNAME and id == 0:
 				if skipowner:
 					continue # Skip this one
 				else:
