@@ -105,6 +105,13 @@ The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse()}.
 \end{funcdesc}
 
+\begin{funcdesc}{urldefrag}{url}
+If \var{url} contains a fragment identifier, returns a modified
+version of \var{url} with no fragment identifier, and the fragment
+identifier as a separate string.  If there is no fragment identifier
+in \var{url}, returns \var{url} unmodified and an empty string.
+\end{funcdesc}
+
 
 \begin{seealso}
   \seerfc{1738}{Uniform Resource Locators (URL)}{
