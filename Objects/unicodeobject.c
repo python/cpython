@@ -6,61 +6,35 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 
 Copyright (c) Corporation for National Research Initiatives.
 
+--------------------------------------------------------------------
+The original string type implementation is:
 
- Original header:
- --------------------------------------------------------------------
+    Copyright (c) 1999 by Secret Labs AB
+    Copyright (c) 1999 by Fredrik Lundh
 
- * Yet another Unicode string type for Python.  This type supports the
- * 16-bit Basic Multilingual Plane (BMP) only.
- *
- * Note that this string class supports embedded NULL characters.  End
- * of string is given by the length attribute.  However, the internal
- * representation always stores a trailing NULL to make it easier to
- * use unicode strings with standard APIs.
- *
- * History:
- * 1999-01-23 fl  Created
- * 1999-01-24 fl  Added split, join, capwords; basic UTF-8 support
- * 1999-01-24 fl  Basic UCS-2 support, buffer interface, etc.
- * 1999-03-06 fl  Moved declarations to separate file, etc.
- * 1999-06-13 fl  Changed join method semantics according to Tim's proposal
- * 1999-08-10 fl  Some minor tweaks
- *
- * Written by Fredrik Lundh, January 1999.
- *
- * Copyright (c) 1999 by Secret Labs AB.
- * Copyright (c) 1999 by Fredrik Lundh.
- *
- * fredrik@pythonware.com
- * http://www.pythonware.com
- *
- * --------------------------------------------------------------------
- * This Unicode String Type is
- * 
- * Copyright (c) 1999 by Secret Labs AB
- * Copyright (c) 1999 by Fredrik Lundh
- * 
- * By obtaining, using, and/or copying this software and/or its
- * associated documentation, you agree that you have read, understood,
- * and will comply with the following terms and conditions:
- * 
- * Permission to use, copy, modify, and distribute this software and its
- * associated documentation for any purpose and without fee is hereby
- * granted, provided that the above copyright notice appears in all
- * copies, and that both that copyright notice and this permission notice
- * appear in supporting documentation, and that the name of Secret Labs
- * AB or the author not be used in advertising or publicity pertaining to
- * distribution of the software without specific, written prior
- * permission.
- * 
- * SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO
- * THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS.  IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * -------------------------------------------------------------------- */
+By obtaining, using, and/or copying this software and/or its
+associated documentation, you agree that you have read, understood,
+and will comply with the following terms and conditions:
+
+Permission to use, copy, modify, and distribute this software and its
+associated documentation for any purpose and without fee is hereby
+granted, provided that the above copyright notice appears in all
+copies, and that both that copyright notice and this permission notice
+appear in supporting documentation, and that the name of Secret Labs
+AB or the author not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
+
+SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS.  IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--------------------------------------------------------------------
+
+*/
 
 #include "Python.h"
 
@@ -1129,27 +1103,7 @@ int unicodeescape_decoding_error(const char **source,
     }
 }
 
-static _Py_UCNHashAPI *pucnHash = NULL;
-
-static
-int mystrnicmp(const char *s1, const char *s2, size_t count)
-{
-    char c1, c2;
-    
-    if (count)
-    {
-        do
-        {
-           c1 = tolower(*(s1++));
-           c2 = tolower(*(s2++));
-        }
-        while(--count && c1 == c2);
-        
-        return c1 - c2;
-    }
-    
-    return 0;
-}
+static _PyUnicode_Name_CAPI *unicode_names = NULL;
 
 PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 					int size,
@@ -1282,55 +1236,37 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             /* Ok, we need to deal with Unicode Character Names now,
              * make sure we've imported the hash table data...
              */
-            if (pucnHash == NULL) {
+            if (unicode_names == NULL) {
                 PyObject *mod = 0, *v = 0;
                 mod = PyImport_ImportModule("ucnhash");
                 if (mod == NULL)
                     goto onError;
-                v = PyObject_GetAttrString(mod,"ucnhashAPI");
+                v = PyObject_GetAttrString(mod,"Unicode_Names_CAPI");
                 Py_DECREF(mod);
                 if (v == NULL)
                     goto onError;
-                pucnHash = PyCObject_AsVoidPtr(v);
+                unicode_names = PyCObject_AsVoidPtr(v);
                 Py_DECREF(v);
-                if (pucnHash == NULL)
+                if (unicode_names == NULL)
                     goto onError;
             }
                 
             if (*s == '{') {
                 const char *start = s + 1;
                 const char *endBrace = start;
-                unsigned long j;
 
-                /* look for either the closing brace, or we
-                 * exceed the maximum length of the unicode character names
-                 */
-                while (*endBrace != '}' &&
-                       (unsigned int)(endBrace - start) <=
-                           pucnHash->cchMax &&
-                       endBrace < end)
-                {
+                /* look for the closing brace */
+                while (*endBrace != '}' && endBrace < end)
                     endBrace++;
-                }
                 if (endBrace != end && *endBrace == '}') {
-                    j = pucnHash->hash(start, endBrace - start);
-                    if (j > pucnHash->cKeys ||
-                        mystrnicmp(
-                            start,
-                            ((_Py_UnicodeCharacterName *) 
-                             (pucnHash->getValue(j)))->pszUCN,
-                            (int)(endBrace - start)) != 0)
-                    {
+                    if (!unicode_names->getcode(start, endBrace-start, &chr)) {
                         if (unicodeescape_decoding_error(
                                 &s, &x, errors,
-                                "Invalid Unicode Character Name"))
-                        {
+                                "Invalid Unicode Character Name")
+                            )
                             goto onError;
-                        }
                         goto ucnFallthrough;
                     }
-                    chr = ((_Py_UnicodeCharacterName *)
-                           (pucnHash->getValue(j)))->value;
                     s = endBrace + 1;
                     goto store;
                 } else {
