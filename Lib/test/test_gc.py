@@ -2,35 +2,35 @@ from test_support import verify, verbose, TestFailed
 import sys
 import gc
 
+def expect(actual, expected, name):
+    if actual != expected:
+        raise TestFailed, "test_%s: actual %d, expected %d" % (
+            name, actual, expected)
+
+def expect_not(actual, expected, name):
+    if actual == expected:
+        raise TestFailed, "test_%s: actual %d unexpected" % (name, actual)
+
 def run_test(name, thunk):
     if verbose:
         print "testing %s..." % name,
-    try:
-        thunk()
-    except TestFailed:
-        if verbose:
-            print "failed (expected %s but got %s)" % (result,
-                                                       test_result)
-        raise TestFailed, name
-    else:
-        if verbose:
-            print "ok"
+    thunk()
+    if verbose:
+        print "ok"
 
 def test_list():
     l = []
     l.append(l)
     gc.collect()
     del l
-    if gc.collect() != 1:
-        raise TestFailed
+    expect(gc.collect(), 1, "list")
 
 def test_dict():
     d = {}
     d[1] = d
     gc.collect()
     del d
-    if gc.collect() != 1:
-        raise TestFailed
+    expect(gc.collect(), 1, "dict")
 
 def test_tuple():
     # since tuples are immutable we close the loop with a list
@@ -40,8 +40,7 @@ def test_tuple():
     gc.collect()
     del t
     del l
-    if gc.collect() != 2:
-        raise TestFailed
+    expect(gc.collect(), 2, "tuple")
 
 def test_class():
     class A:
@@ -49,8 +48,7 @@ def test_class():
     A.a = A
     gc.collect()
     del A
-    if gc.collect() == 0:
-        raise TestFailed
+    expect_not(gc.collect(), 0, "class")
 
 def test_instance():
     class A:
@@ -59,8 +57,7 @@ def test_instance():
     a.a = a
     gc.collect()
     del a
-    if gc.collect() == 0:
-        raise TestFailed
+    expect_not(gc.collect(), 0, "instance")
 
 def test_method():
     # Tricky: self.__init__ is a bound method, it references the instance.
@@ -70,8 +67,7 @@ def test_method():
     a = A()
     gc.collect()
     del a
-    if gc.collect() == 0:
-        raise TestFailed
+    expect_not(gc.collect(), 0, "method")
 
 def test_finalizer():
     # A() is uncollectable if it is part of a cycle, make sure it shows up
@@ -88,14 +84,13 @@ def test_finalizer():
     gc.collect()
     del a
     del b
-    if gc.collect() == 0:
-        raise TestFailed
+    expect_not(gc.collect(), 0, "finalizer")
     for obj in gc.garbage:
         if id(obj) == id_a:
             del obj.a
             break
     else:
-        raise TestFailed
+        raise TestFailed, "didn't find obj in garbage (finalizer)"
     gc.garbage.remove(obj)
 
 def test_function():
@@ -105,16 +100,14 @@ def test_function():
     exec("def f(): pass\n") in d
     gc.collect()
     del d
-    if gc.collect() != 2:
-        raise TestFailed
+    expect(gc.collect(), 2, "function")
 
 def test_frame():
     def f():
         frame = sys._getframe()
     gc.collect()
     f()
-    if gc.collect() != 1:
-        raise TestFailed
+    expect(gc.collect(), 1, "frame")
 
 
 def test_saveall():
@@ -133,7 +126,7 @@ def test_saveall():
                 del obj[:]
                 break
         else:
-            raise TestFailed
+            raise TestFailed, "didn't find obj in garbage (saveall)"
         gc.garbage.remove(obj)
     finally:
         gc.set_debug(debug)
@@ -155,6 +148,7 @@ def test_del():
 
 
 def test_all():
+    gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
     run_test("dicts", test_dict)
     run_test("tuples", test_tuple)
