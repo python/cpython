@@ -726,10 +726,22 @@ default_compiler = { 'posix': 'unix',
 # Map compiler types to (module_name, class_name) pairs -- ie. where to
 # find the code that implements an interface to this compiler.  (The module
 # is assumed to be in the 'distutils' package.)
-compiler_class = { 'unix': ('unixccompiler', 'UnixCCompiler'),
-                   'msvc': ('msvccompiler', 'MSVCCompiler'),
+compiler_class = { 'unix': ('unixccompiler', 'UnixCCompiler',"standard UNIX-style compiler"),
+                   'msvc': ('msvccompiler', 'MSVCCompiler',"Microsoft Visual C++"),
+                   'cygwin':  ('cygwinccompiler', 'CygwinCCompiler',"Cygwin-Gnu-Win32-C-Compiler"),
+                   'mingw32': ('cygwinccompiler', 'Mingw32CCompiler',"MinGW32-C-Compiler (or cygwin in this mode)"),
                  }
 
+# prints all possible arguments to --compiler
+def show_compilers():
+    from distutils.fancy_getopt import FancyGetopt 
+    list_of_compilers=[]
+    for compiler in compiler_class.keys():
+	list_of_compilers.append(("compiler="+compiler,None,compiler_class[compiler][2]))
+    list_of_compilers.sort()
+    pretty_printer=FancyGetopt(list_of_compilers)
+    pretty_printer.print_help("List of available compilers:")
+    
 
 def new_compiler (plat=None,
                   compiler=None,
@@ -755,7 +767,7 @@ def new_compiler (plat=None,
         if compiler is None:
             compiler = default_compiler[plat]
         
-        (module_name, class_name) = compiler_class[compiler]
+        (module_name, class_name,long_description) = compiler_class[compiler]
     except KeyError:
         msg = "don't know how to compile C/C++ code on platform '%s'" % plat
         if compiler is not None:

@@ -437,15 +437,37 @@ class Distribution:
             negative_opt = copy (negative_opt)
             negative_opt.update (cmd_class.negative_opt)
 
+	# Check for help_options in command class
+	# They have a different format (tuple of four) so we need to preprocess them here 
+	help_options = []
+	if hasattr(cmd_class,"help_options") and type (cmd_class.help_options) is ListType:
+	    help_options = map(lambda x:(x[0],x[1],x[2]),cmd_class.help_options)
+
         # All commands support the global options too, just by adding
         # in 'global_options'.
         parser.set_option_table (self.global_options +
-                                 cmd_class.user_options)
+                                 cmd_class.user_options + help_options)
         parser.set_negative_aliases (negative_opt)
         (args, opts) = parser.getopt (args[1:])
         if hasattr(opts, 'help') and opts.help:
             self._show_help(parser, display_options=0, commands=[cmd_class])
             return
+
+	if hasattr(cmd_class,"help_options") and type (cmd_class.help_options) is ListType:
+	    help_option_found=0
+	    for help_option in cmd_class.help_options:
+		if hasattr(opts, parser.get_attr_name(help_option[0])):
+		    help_option_found=1
+		    #print "showing help for option %s of command %s" % (help_option[0],cmd_class)
+		    if callable(help_option[3]):
+			help_option[3]()
+		    else:
+        		raise DistutilsClassError, \
+                          ("command class %s must provide " +
+                           "a callable object for help_option '%s'") % \
+                          (cmd_class,help_option[0])
+	    if help_option_found: 
+		return
 
         # Put the options from the command-line into their official
         # holding pen, the 'command_options' dictionary.
@@ -496,7 +518,11 @@ class Distribution:
                 klass = command
             else:
                 klass = self.get_command_class (command)
-            parser.set_option_table (klass.user_options)
+	    if hasattr(klass,"help_options") and type (klass.help_options) is ListType:
+		parser.set_option_table (klass.user_options+
+					 map(lambda x:(x[0],x[1],x[2]),klass.help_options))
+	    else:
+        	parser.set_option_table (klass.user_options)
             parser.print_help ("Options for '%s' command:" % klass.__name__)
             print
 
@@ -504,7 +530,7 @@ class Distribution:
         return
 
     # _show_help ()
-
+	
 
     def handle_display_options (self, option_order):
         """If there were any non-global "display-only" options

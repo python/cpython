@@ -110,11 +110,11 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
 
 
 ARCHIVE_FORMATS = {
-    'gztar': (make_tarball, [('compress', 'gzip')]),
-    'bztar': (make_tarball, [('compress', 'bzip2')]),
-    'ztar':  (make_tarball, [('compress', 'compress')]),
-    'tar':   (make_tarball, [('compress', None)]),
-    'zip':   (make_zipfile, [])
+    'gztar': (make_tarball, [('compress', 'gzip')],"gzipped tar-file"),
+    'bztar': (make_tarball, [('compress', 'bzip2')],"bzip2-ed tar-file"),
+    'ztar':  (make_tarball, [('compress', 'compress')],"compressed tar-file"),
+    'tar':   (make_tarball, [('compress', None)],"uncompressed tar-file"),
+    'zip':   (make_zipfile, [],"zip-file")
     }
 
 def check_archive_formats (formats):
