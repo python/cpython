@@ -1,13 +1,16 @@
-Changes since 1.6a1
--------------------
+Changes in 2.0b1 since 1.5.2
+----------------------------
 
-- All core-Python changes, plus a few from after 1.6a2, approximately as the
-  Python CVS tree was at May 5.
-- The threading performance bug has been fixed.
-- Tkinter is included again (yeah!), but only lightly tested. Please report
-  findings to the mailing list.
-- macfsn.py is auto-imported on startup (unless disabled with a new option).
-  This retrofits macfs.StandardGetFile() and friends to use Navigation Services
-  in stead of the old Standard File dialogs.
-- I think all installer problems have been fixed. Please report if not so.
+Unfortunately I have messed my administration up, so I can't give complete
+Mac-specific release notes for the changes in this release. So, I will
+have to leave it at the highlights:
 
+- 68K support has been dropped, this release is PPC only.
+- Threads support (through standard Python threads module).
+- Appearance support through App module and added calls in many other modules.
+- Navigation Services support, with macfs StandardFile calls transparently
+  replaced by their NavServices counterparts.
+- Offscreen QuickDraw support through Qdoffs module.
+- Drag manager support (Drag module).
+- Much better CGI support, see :Mac:Tools:CGI.
+- Better OSA/AppleEvent support.
