@@ -83,7 +83,22 @@ LINK32=link.exe
 # Name "python - Win32 Debug"
 # Begin Source File
 
+SOURCE=..\PC\pycon.ico
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\python.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\PC\python_exe.rc
+
+!IF  "$(CFG)" == "python - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Target
 # End Project
