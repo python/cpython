@@ -82,5 +82,4 @@ class C:
         ticks += 1
         raise AttributeError
 
-if __name__ == "__main__":
-    test_main()
+test_main()
