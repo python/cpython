@@ -12,6 +12,8 @@ What's New in Python 2.3 alpha 1?
 Type/class unification and new-style classes
 --------------------------------------------
 
+- One can now assign to __bases__ and __name__ of new-style classes.
+
 - dict() now accepts keyword arguments so that dict(one=1, two=2)
   is the equivalent of {"one": 1, "two": 2}.  Accordingly,
   the existing (but undocumented) 'items' keyword argument has
