@@ -1556,7 +1556,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
 			carry >>= SHIFT;
 		}
 	}
-	return z;
+	return long_normalize(z);
 }
 
 /* A helper for Karatsuba multiplication (k_mul).
@@ -1630,8 +1630,15 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	}
 
 	/* Use gradeschool math when either number is too small. */
-	if (ABS(a->ob_size) <= KARATSUBA_CUTOFF)
-		return x_mul(a, b);
+	if (ABS(a->ob_size) <= KARATSUBA_CUTOFF) {
+		/* 0 is inevitable if one kmul arg has more than twice
+		 * the digits of another, so it's worth special-casing.
+		 */
+		if (a->ob_size == 0)
+			return _PyLong_New(0);
+		else
+			return x_mul(a, b);
+	}
 
 	shift = ABS(b->ob_size) >> 1;
 	if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
@@ -1641,16 +1648,21 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	assert(ahbh->ob_size >= 0);
 
 	/* Allocate result space, and copy ahbh into the high digits. */
-	ret = _PyLong_New(ahbh->ob_size + 2*shift + 1);
+	ret = _PyLong_New(ABS(a->ob_size) + ABS(b->ob_size));
 	if (ret == NULL) goto fail;
 #ifdef Py_DEBUG
 	/* Fill with trash, to catch reference to uninitialized digits. */
 	memset(ret->ob_digit, 0xDF, ret->ob_size * sizeof(digit));
 #endif
+	assert(2*shift + ahbh->ob_size <= ret->ob_size);
 	memcpy(ret->ob_digit + 2*shift, ahbh->ob_digit,
 	       ahbh->ob_size * sizeof(digit));
-	/* That didn't copy into the most-significant (overflow) digit. */
-	ret->ob_digit[ret->ob_size - 1] = 0;
+
+	/* Zero-out the digits higher than the ahbh copy. */
+	i = ret->ob_size - 2*shift - ahbh->ob_size;
+	if (i)
+		memset(ret->ob_digit + 2*shift + ahbh->ob_size, 0,
+		       i * sizeof(digit));
 
 	/* Compute al*bl, and copy into the low digits. */
 	if ((albl = k_mul(al, bl)) == NULL) goto fail;
