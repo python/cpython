@@ -109,25 +109,30 @@ def capwords(str, pat='[^a-zA-Z0-9_]+'):
 
 
 # Manage a cache of compiled regular expressions.
-# If the pattern is a string a compiled version of it is returned.
-# If the pattern has been used before we return an already compiled
+#
+# If the pattern is a string a compiled version of it is returned.  If
+# the pattern has been used before we return an already compiled
 # version from the cache; otherwise we compile it now and save the
-# compiled version in the cache.
-# Instead of a string, a compiled regular expression can also be
-# passed.
-# WARNING: if the pattern syntax is changed, the cache should be
-# flushed!
+# compiled version in the cache, along with the syntax it was compiled
+# with.  Instead of a string, a compiled regular expression can also
+# be passed.
 
 cache = {}
 
 def compile(pat):
 	if type(pat) <> type(''):
 		return pat		# Assume it is a compiled regex
-	if cache.has_key(pat):
-		prog = cache[pat]	# Get it from the cache
+	key = (pat, regex.get_syntax())
+	if cache.has_key(key):
+		prog = cache[key]	# Get it from the cache
 	else:
-		prog = cache[pat] = regex.compile(pat)
+		prog = cache[key] = regex.compile(pat)
 	return prog
+
+
+def clear_cache():
+	global cache
+	cache = {}
 
 
 # Expand \digit in the replacement.
