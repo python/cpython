@@ -652,7 +652,7 @@ distpdf:	tarpdf bzippdf zippdf
 distlatex:	tarlatex bziplatex ziplatex
 
 paperdist:	distpdf distps
-edist:		disthtml zipisilo
+edist:		disthtml distinfo zipisilo
 
 pkglist:
 	$(TOOLSDIR)/mkpkglist >pkglist.html
