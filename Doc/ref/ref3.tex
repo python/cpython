@@ -35,8 +35,8 @@ lists are mutable.
 
 Objects are never explicitly destroyed; however, when they become
 unreachable they may be garbage-collected.  An implementation is
-allowed to postpone garbage collection or omit it altogether --- it is a
-matter of implementation quality how garbage collection is
+allowed to postpone garbage collection or omit it altogether --- it is
+a matter of implementation quality how garbage collection is
 implemented, as long as no objects are collected that are still
 reachable.  (Implementation note: the current implementation uses a
 reference-counting scheme which collects most objects as soon as they
