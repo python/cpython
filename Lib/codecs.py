@@ -104,7 +104,7 @@ class Codec:
 
 #
 # The StreamWriter and StreamReader class provide generic working
-# interfaces which can be used to implement new encodings submodules
+# interfaces which can be used to implement new encoding submodules
 # very easily. See encodings/utf_8.py for an example on how this is
 # done.
 #
