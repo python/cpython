@@ -2,14 +2,18 @@
 
 import os
 import sys
+import pickle
 import traceback
-
+from StringIO import StringIO
 from test.test_support import verbose
 
 import xml.dom
+import xml.dom.minidom
 import xml.parsers.expat
 
 from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom.minidom import getDOMImplementation
+
 
 if __name__ == "__main__":
     base = sys.argv[0]
@@ -24,7 +28,6 @@ def confirm(test, testname = "Test"):
         raise Exception
 
 def testParseFromFile():
-    from StringIO import StringIO
     dom = parse(StringIO(open(tstfile).read()))
     dom.unlink()
     confirm(isinstance(dom,Document))
@@ -1329,7 +1332,7 @@ failed = []
 try:
     Node.allnodes
 except AttributeError:
-    # We don't actually have the minidom from teh standard library,
+    # We don't actually have the minidom from the standard library,
     # but are picking up the PyXML version from site-packages.
     def check_allnodes():
         pass
