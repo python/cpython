@@ -3,6 +3,12 @@
 #  Script to push docs from my development area to SourceForge, where the
 #  update-docs.sh script unpacks them into their final destination.
 
+TARGET=python.sourceforge.net:/home/users/fdrake
+
+if [ "$1" ] ; then
+    scp "$1" $TARGET/python-docs-update.txt || exit $?
+fi
+
 START="`pwd`"
 MYDIR="`dirname $0`"
 cd "$MYDIR"
@@ -14,4 +20,4 @@ make --no-print-directory || exit $?
 cd ..
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
 make --no-print-directory HTMLDIR="$HTMLDIR" bziphtml
-scp "html-$RELEASE.tar.bz2" python.sourceforge.net:/home/users/fdrake/python-docs-update.tar.bz2
+scp "html-$RELEASE.tar.bz2" $TARGET/python-docs-update.tar.bz2
