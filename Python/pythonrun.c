@@ -113,7 +113,7 @@ Py_Initialize(void)
 	if (initialized)
 		return;
 	initialized = 1;
-	
+
 	if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = add_flag(Py_DebugFlag, p);
 	if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
@@ -523,7 +523,7 @@ PyRun_AnyFileEx(FILE *fp, const char *filename, int closeit)
 }
 
 int
-PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, 
+PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
 		     PyCompilerFlags *flags)
 {
 	if (filename == NULL)
@@ -688,14 +688,14 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 		int ispyc = 0;
 		if (ftell(fp) == 0) {
 			if (fread(buf, 1, 2, fp) == 2 &&
-			    ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic) 
+			    ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
 				ispyc = 1;
 			rewind(fp);
 		}
 		return ispyc;
 	}
 	return 0;
-} 
+}
 
 int
 PyRun_SimpleFileEx(FILE *fp, const char *filename, int closeit)
@@ -738,7 +738,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			Py_OptimizeFlag = 1;
 		v = run_pyc_file(fp, filename, d, d, flags);
 	} else {
-		v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d, 
+		v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d,
 				      closeit, flags);
 	}
 	if (v == NULL) {
@@ -1017,7 +1017,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
 				char* modstr = PyString_AsString(moduleName);
-				if (modstr && strcmp(modstr, "exceptions")) 
+				if (modstr && strcmp(modstr, "exceptions"))
 				{
 					err = PyFile_WriteString(modstr, f);
 					err += PyFile_WriteString(".", f);
@@ -1096,7 +1096,7 @@ PyRun_FileFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		PyObject *locals, PyCompilerFlags *flags)
 {
 	return PyRun_FileExFlags(fp, filename, start, globals, locals, 0,
-				 flags); 
+				 flags);
 }
 
 PyObject *
@@ -1173,7 +1173,7 @@ Py_CompileString(const char *str, const char *filename, int start)
 }
 
 PyObject *
-Py_CompileStringFlags(const char *str, const char *filename, int start, 
+Py_CompileStringFlags(const char *str, const char *filename, int start,
 		      PyCompilerFlags *flags)
 {
 	node *n;
@@ -1249,7 +1249,7 @@ PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
 	node *n;
 	perrdetail err;
 
-	n = PyParser_ParseStringFlagsFilename(str, filename, 
+	n = PyParser_ParseStringFlagsFilename(str, filename,
 					      &_PyParser_Grammar,
 					      start, &err, flags);
 	if (n == NULL)
@@ -1481,7 +1481,7 @@ Py_FdIsInteractive(FILE *fp, const char *filename)
 }
 
 
-#if defined(USE_STACKCHECK) 
+#if defined(USE_STACKCHECK)
 #if defined(WIN32) && defined(_MSC_VER)
 
 /* Stack checking for Microsoft C */
