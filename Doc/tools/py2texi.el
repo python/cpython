@@ -119,6 +119,9 @@ Otherwise a generated Info file name is used.")
 	     "@contents\n"
 	     "@bye\n"))
     ("enumerate" 0 "@enumerate" "@end enumerate")
+    ("envdesc" 2 (concat "\n@table @code"
+                         "\n@item @backslash{}begin@{\\1@}\\2")
+     "@end table\n")
     ("excdesc" 1
      (progn (setq obindex t)
 	    "\n@table @code\n@item \\1\n@obindex \\1\n")
@@ -144,6 +147,9 @@ Otherwise a generated Info file name is used.")
 			      "@item \\3 @tab \\4 @tab \\5\n"
 			      "@item ------- @tab ------ @tab ------\n")
      "@end multitable\n")
+    ("macrodesc" 2 (concat "\n@table @code"
+                           "\n@item \\1@{\\2@}")
+     "@end table\n")
     ("memberdesc" 1
      (progn (setq findex t)
 	    "\n@table @code\n@item \\1\n@findex \\1\n")
@@ -231,6 +237,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("documentclass" 1 py2texi-magic)
     ("e" 0 "@backslash{}")
     ("else" 0 (concat "@end ifinfo\n@" (setq last-if "iftex")))
+    ("env" 1 "@code{\\1}")
     ("EOF" 0 "@code{EOF}")
     ("email" 1 "@email{\\1}")
     ("emph" 1 "@emph{\\1}")
@@ -239,6 +246,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("exindex" 1 (progn (setq obindex t) "@obindex{\\1}"))
     ("fi" 0 (concat "@end " last-if))
     ("file" 1 "@file{\\1}")
+    ("filenq" 1 "@file{\\1}")
     ("filevar" 1 "@file{@var{\\1}}")
     ("footnote" 1 "@footnote{\\1}")
     ("frac" 0 "")
@@ -270,6 +278,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("linev" 5 "@item \\1 @tab \\2 @tab \\3 @tab \\4 @tab \\5")
     ("localmoduletable" 0 "")
     ("longprogramopt" 1 "@option{--\\1}")
+    ("macro" 1 "@code{@backslash{}\\1}")
     ("mailheader" 1 "@code{\\1}")
     ("makeindex" 0 "")
     ("makemodindex" 0 "")
@@ -359,6 +368,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("sum" 0 "")
     ("tableofcontents" 0 "")
     ("term" 1 "@item \\1")
+    ("TeX" 0 "@TeX{}")
     ("textasciitilde" 0 "~")
     ("textasciicircum" 0 "^")
     ("textbackslash" 0 "@backslash{}")
