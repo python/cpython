@@ -30,6 +30,7 @@ typedef struct
 {
   PyObject_HEAD
   z_stream zst;
+  int is_initialised;
 } compobject;
 
 static char compressobj__doc__[] = 
@@ -50,6 +51,7 @@ newcompobject(type)
         self = PyObject_NEW(compobject, type);
         if (self == NULL)
                 return NULL;
+	self->is_initialised = 0;
         return self;
 }
 
@@ -286,12 +288,15 @@ PyZlib_compressobj(selfptr, args)
   switch(err)
     {
     case (Z_OK):
+      self->is_initialised = 1;
       return (PyObject*)self;
     case (Z_MEM_ERROR):
+      Py_DECREF(self);
       PyErr_SetString(PyExc_MemoryError,
                       "Can't allocate memory for compression object");
       return NULL;
     case(Z_STREAM_ERROR):
+      Py_DECREF(self);
       PyErr_SetString(PyExc_ValueError,
                       "Invalid initialization option");
       return NULL;
@@ -305,6 +310,7 @@ PyZlib_compressobj(selfptr, args)
 	    PyErr_Format(ZlibError,
 			 "Error %i while creating compression object: %.200s",
 			 err, self->zst.msg);  
+        Py_DECREF(self);
 	return NULL;
       }
     }
@@ -329,12 +335,15 @@ PyZlib_decompressobj(selfptr, args)
   switch(err)
   {
     case (Z_OK):
+      self->is_initialised = 1;
       return (PyObject*)self;
     case(Z_STREAM_ERROR):
+      Py_DECREF(self);
       PyErr_SetString(PyExc_ValueError,
                       "Invalid initialization option");
       return NULL;
     case (Z_MEM_ERROR):
+      Py_DECREF(self);
       PyErr_SetString(PyExc_MemoryError,
                       "Can't allocate memory for decompression object");
       return NULL;
@@ -348,6 +357,7 @@ PyZlib_decompressobj(selfptr, args)
 	    PyErr_Format(ZlibError,
 			 "Error %i while creating decompression object: %.200s",
 			 err, self->zst.msg);  
+        Py_DECREF(self);
 	return NULL;
     }
   }
@@ -357,7 +367,8 @@ static void
 Comp_dealloc(self)
         compobject *self;
 {
-    deflateEnd(&self->zst);
+    if (self->is_initialised)
+      deflateEnd(&self->zst);
     PyMem_DEL(self);
 }
 
