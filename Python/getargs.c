@@ -1085,16 +1085,16 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* make sure there are no duplicate values for an argument;
 	   its not clear when to use the term "keyword argument vs. 
 	   keyword parameter in messages */
-	if (keywords) {
+	if (nkeywords > 0) {
 		for (i = 0; i < nargs; i++) {
 			char *thiskw = kwlist[i];
 			if (thiskw == NULL)
 				break;
 			if (PyMapping_HasKeyString(keywords, thiskw)) {
-				sprintf(msgbuf,
-					"keyword parameter %s redefined",
+				PyErr_Format(PyExc_TypeError,
+					"keyword parameter '%s' was given "
+					"by position and by name",
 					thiskw);
-				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
 			}
 		}
@@ -1155,29 +1155,23 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	}
 
 	/* handle no keyword parameters in call  */	
-	   	   
-	if (!keywords)
+	if (nkeywords == 0)
 		return 1; 
-		
+
 	/* make sure the number of keywords in the keyword list matches the 
 	   number of items in the format string */
-	  
 	nkwlist = 0;
 	p =  kwlist;
-	for (;;) {
-		if (!*(p++)) break;
+	while (*p++)
 		nkwlist++;
-	}
-
 	if (nkwlist != max) {
 		PyErr_SetString(PyExc_SystemError,
 	  "number of items in format string and keyword list do not match");
 		return 0;
 	}	  	  
-			
+		
 	/* convert the keyword arguments; this uses the format 
 	   string where it was left after processing args */
-	
 	converted = 0;
 	for (i = nargs; i < nkwlist; i++) {
 		PyObject *item;
@@ -1202,9 +1196,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			}
 		}
 	}
-	
+
 	/* make sure there are no extraneous keyword arguments */
-	
 	pos = 0;
 	if (converted < nkeywords) {
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
