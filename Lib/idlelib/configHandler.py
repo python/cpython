@@ -238,21 +238,15 @@ class IdleConf:
         containing fg and bg colours (appropriate for passing to Tkinter in, 
         e.g., a tag_config call), otherwise fg or bg colour only as specified. 
         """
-        #get some fallback defaults
-        defaultFg=self.GetOption('highlight', theme, 'normal' + "-foreground",
-            default='#000000')
-        defaultBg=self.GetOption('highlight', theme, 'normal' + "-background",
-            default='#ffffff')
-        #try for requested element colours
-        fore = self.GetOption('highlight', theme, element + "-foreground")
-        back = None
-        if element == 'cursor': #there is no config value for cursor bg
-            back = None
+        if self.defaultCfg['highlight'].has_section(theme):
+            themeDict=self.GetThemeDict('default',theme)
+        else:
+            themeDict=self.GetThemeDict('user',theme)
+        fore=themeDict[element+'-foreground']
+        if element=='cursor': #there is no config value for cursor bg
+            back=themeDict['normal-background']
         else:    
-            back = self.GetOption('highlight', theme, element + "-background")
-        #fall back if required
-        if not fore: fore=defaultFg
-        if not back: back=defaultBg
+            back=themeDict[element+'-background']
         highlight={"foreground": fore,"background": back}
         if not fgBg: #return dict of both colours
             return highlight
@@ -263,7 +257,7 @@ class IdleConf:
                 return highlight["background"]
             else:    
                 raise 'Invalid fgBg specified'
-            
+
     def GetThemeDict(self,type,themeName):
         """
         type - string, 'default' or 'user' theme type
@@ -311,8 +305,6 @@ class IdleConf:
                 'console-foreground':'#000000',
                 'console-background':'#ffffff' }
         for element in theme.keys():
-            print 'themeName:',themeName,'theme exists:',cfgParser.has_section(
-                    themeName)
             if not cfgParser.has_option(themeName,element):
                 #we are going to return a default, print warning
                 warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'+
@@ -385,7 +377,6 @@ class IdleConf:
             for event in self.GetExtensionKeys(extn).keys():
                 if event == vEvent:
                     extName=extn
-                    print extName
         return extName
     
     def GetExtensionKeys(self,extensionName):

@@ -518,7 +518,6 @@ class ConfigDialog(Toplevel):
         self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
 
     def AddChangedItem(self,type,section,item,value):
-        print type,section,item,value
         value=str(value) #make sure we use a string
         if not self.changedItems[type].has_key(section):
             self.changedItems[type][section]={}    
@@ -679,7 +678,6 @@ class ConfigDialog(Toplevel):
         theme=self.customTheme.get()
         themeElement=sampleElement+'-'+plane
         self.AddChangedItem('highlight',theme,themeElement,newColour)
-        print self.changedItems['highlight'][theme]
 
     def GetNewThemeName(self,message):
         usedNames=idleConf.GetSectionList('user','highlight')
