@@ -73,6 +73,16 @@ typedef FileFilterYDProcPtr FileFilterYDUPP;
 #define GETDIR_ID 130		/* Resource ID for our "get directory" */
 #define SELECTCUR_ITEM 10	/* "Select current directory" button */
 
+/* The dialog for interactive options */
+#define OPT_DIALOG		131		/* Resource ID for dialog */
+#define OPT_OK			1
+#define OPT_CANCEL		2
+#define OPT_INSPECT		3
+#define OPT_VERBOSE		4
+#define OPT_SUPPRESS	5
+#define OPT_UNBUFFERED	6
+#define OPT_DEBUGGING	7
+
 /* The STR# resource for sys.path initialization */
 #define PYTHONPATH_ID 128
 
@@ -954,7 +964,7 @@ PyMac_InitApplet()
 	if (!err)
 		SIOUXSettings.autocloseonquit = 1;
 	else
-		SIOUXSettings.showstatusline = 1;
+		printf("\n[Terminated]\n");
 #endif
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
@@ -990,4 +1000,54 @@ PyMac_InitApplication()
 		}
 	}
 	Py_Main(argc, argv);
+}
+
+/*
+** PyMac_InteractiveOptions - Allow user to set options if option key is pressed
+*/
+void
+PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
+						 int *unbuffered, int *debugging)
+{
+	KeyMap rmap;
+	unsigned char *map;
+	short item, type;
+	ControlHandle handle;
+	DialogPtr dialog;
+	Rect rect;
+	
+	GetKeys(rmap);
+	map = (unsigned char *)rmap;
+	if ( ( map[0x3a>>3] & (1<<(0x3a&7)) ) == 0 )	/* option key is 3a */
+		return;
+
+	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
+	if ( dialog == NULL )
+		return;
+	while (1) {
+		handle = NULL;
+		ModalDialog(NULL, &item);
+		if ( item == OPT_OK )
+			break;
+		if ( item == OPT_CANCEL ) {
+			DisposDialog(dialog);
+			exit(0);
+		}
+#define OPT_ITEM(num, var) \
+		if ( item == (num) ) { \
+			*(var) = !*(var); \
+			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
+			SetCtlValue(handle, (short)*(var)); \
+		}
+		
+		OPT_ITEM(OPT_INSPECT, inspect);
+		OPT_ITEM(OPT_VERBOSE, verbose);
+		OPT_ITEM(OPT_SUPPRESS, suppress_print);
+		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
+		OPT_ITEM(OPT_DEBUGGING, debugging);
+		
+#undef OPT_ITEM
+	}
+	DisposDialog(dialog);
+	/*DBG*/printf("options: %d %d %d %d %d %d\n", *inspect, *verbose, *suppress_print, *unbuffered, *debugging);
 }
