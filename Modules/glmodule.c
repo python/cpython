@@ -867,6 +867,17 @@ gl_gversion(self, args)
 }
 
 
+/* void clear - Manual because of clash with termcap */
+static PyObject *
+gl_clear(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	__GLclear( );
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* End of manually written stubs */
 
 
@@ -1004,18 +1015,6 @@ gl_popviewport(self, args)
 	PyObject *args;
 {
 	popviewport( );
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-/* void clear */
-
-static PyObject *
-gl_clear(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	clear( );
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -8096,6 +8095,7 @@ static struct PyMethodDef gl_methods[] = {
 	{"packrect", gl_packrect},
 	{"unpackrect", gl_unpackrect},
 	{"gversion", gl_gversion},
+	{"clear", gl_clear},
 	{"getshade", gl_getshade},
 	{"devport", gl_devport},
 	{"rdr2i", gl_rdr2i},
@@ -8104,7 +8104,6 @@ static struct PyMethodDef gl_methods[] = {
 	{"rmv2i", gl_rmv2i},
 	{"noport", gl_noport},
 	{"popviewport", gl_popviewport},
-	{"clear", gl_clear},
 	{"clearhitcode", gl_clearhitcode},
 	{"closeobj", gl_closeobj},
 	{"cursoff", gl_cursoff},
