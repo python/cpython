@@ -68,6 +68,11 @@ if type (RuntimeError) is types.ClassType:
     class DistutilsExecError (DistutilsError):
         pass
 
+    # DistutilsInternalError is raised on internal inconsistencies
+    # or impossibilities
+    class DistutilsInternalError (DistutilsError):
+        pass
+
 # String-based exceptions
 else:
     DistutilsError = 'DistutilsError'
@@ -80,5 +85,6 @@ else:
     DistutilsValueError = 'DistutilsValueError'
     DistutilsPlatformError = 'DistutilsPlatformError'
     DistutilsExecError = 'DistutilsExecError'
+    DistutilsInternalError = 'DistutilsInternalError'
     
 del types
