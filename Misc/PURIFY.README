@@ -1,0 +1,72 @@
+Purify (tm) and Quantify (tm) are commercial software quality
+assurance tools available from Pure Atria Corporation
+<http://www.pureatria.com/>.  Purify is essentially a memory access
+verifier and leak detector; Quantify is a C level profiler.  The rest
+of this file assumes you generally know how to use Purify and
+Quantify, and that you have installed valid licenses for these
+products.  If you don't have them installed, you can ignore the
+following since it won't help you a bit!
+
+You can easily build a Purify or Quantify instrumented version of the
+Python interpreter by passing the LINKCC variable to the make command
+at the top of the Python tree:
+
+    make LINKCC='purify gcc'
+
+This assumes that the `purify' program is on your $PATH, and that you
+are using gcc as your C compiler.  Note that you can't Purify and
+Quantify the interpreter (or any program) at the same time.
+
+Now, just run the interpreter as you normally would.  If you're
+running it in place (i.e. not installed), you may find it helpful to
+set your PYTHONPATH environment variable.  E.g., in Bourne Shell, on a
+Solaris 2.x machine:
+
+    % PYTHONPATH=./Lib:./Lib/sunos5:./Lib/tkinter:./Modules ./python
+
+When running the regression test (make test), I have found it useful
+to set my PURIFYOPTIONS environment variable using the following shell
+function.  Check out the Purify documentation for details:
+
+p() {
+  chainlen='-chain-length=12'
+  ignoresigs='-ignore-signals="SIGHUP,SIGINT,SIGQUIT,SIGILL,SIGTRAP,SIGAVRT,SIGEMT,SIGFPE,SIGKILL,SIGBUS,SIGSEGV,SIGPIPE,SIGTERM,SIGUSR1,SIGUSR2,SIGPOLL,SIGXCPU,SIGXFSZ,SIGFREEZE,SIGTHAW,SIGRTMIN,SIGRTMAX"'
+  followchild='-follow-child-processes=yes'
+  threads='-max-threads=50'
+  export PURIFYOPTIONS="$chainlen $ignoresigs $followchild $threads"
+  echo $PURIFYOPTIONS
+}
+
+Note that you may want to crank -chain-length up even further.  A
+value of 20 should get you the entire stack up into the Python C code
+in all situations.
+
+With the regression test, you'll probably get a gabillion UMR errors,
+and a few MLK errors.  I think most of these can be safely suppressed
+by putting the following in your .purify file:
+
+    suppress umr ...; "socketmodule.c"
+    suppress umr ...; time_strftime
+    suppress umr ...; "dbmmodule.c"
+    suppress umr ...; "gdbmmodule.c"
+    suppress umr ...; "grpmodule.c"
+    suppress umr ...; "nismodule.c"
+    suppress umr ...; "pwdmodule.c"
+
+This will still leave you (currently) with a few UMR and MLK reports.
+For now, don't worry about them.  We'll be evaluating these as time
+goes on, and correcting them as appropriate.
+
+Using Purify or Quantify in this way will give you coarse grained
+reports on the whole Python interpreter.  You can actually get more
+fine grained control over both by linking with the optional `pure'
+module, which exports (most of) the Purify and Quantify C API's into
+Python.  To link in this module (it must be statically linked), edit
+your Modules/Setup file for your site, and rebuild the interpreter.
+You might want to check out the comments in the Modules/puremodule.c
+file for some idiosyncrasies.
+
+Using this module, you can actually profile or leak test a small
+section of code, instead of the whole interpreter.  Using this in
+conjuction with pdb.py, dbx, or the profiler.py module really gives
+you quite a bit of introspective power.
