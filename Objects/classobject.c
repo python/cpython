@@ -11,6 +11,7 @@
 #include "funcobject.h"
 #include "classobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 typedef struct {
 	OB_HEAD
@@ -71,7 +72,7 @@ class_getattr(op, name)
 				return v;
 		}
 	}
-	errno = ESRCH;
+	err_setstr(NameError, name);
 	return NULL;
 }
 
