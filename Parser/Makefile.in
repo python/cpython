@@ -14,6 +14,7 @@ RANLIB=		@RANLIB@
 AR=		@AR@
 
 DEFS=		@DEFS@
+LIBS=		@LIBS@
 
 
 # === Other things that are customizable but not by configure ===
@@ -56,7 +57,7 @@ add2lib:	$(OBJS)
 		touch add2lib
 
 $(PGEN):	$(PGENOBJS)
-		$(CC) $(OPT) $(PGENOBJS) -o $(PGEN)
+		$(CC) $(OPT) $(PGENOBJS) $(LIBS) -o $(PGEN)
 
 clean:
 		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej add2lib
