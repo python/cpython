@@ -68,6 +68,19 @@ list_resize(PyListObject *self, int newsize)
 static PyListObject *free_lists[MAXFREELISTS];
 static int num_free_lists = 0;
 
+void
+PyList_Fini(void)
+{
+	PyListObject *op;
+
+	while (num_free_lists) {
+		num_free_lists--;
+		op = free_lists[num_free_lists]; 
+		assert(PyList_CheckExact(op));
+		PyObject_GC_Del(op);
+	}
+}
+
 PyObject *
 PyList_New(int size)
 {
