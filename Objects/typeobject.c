@@ -1219,8 +1219,18 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	/* Look in tp_dict of types in MRO */
 	mro = type->tp_mro;
 	if (mro == NULL) {
-		if (PyType_Ready(type) < 0)
+		if (PyType_Ready(type) < 0) {
+			/* It's not ideal to clear the error condition,
+			   but this function is documented as not setting
+			   an exception, and I don't want to change that.
+			   When PyType_Ready() can't proceed, it won't
+			   set the "ready" flag, so future attempts to ready
+			   the same type will call it again -- hopefully
+			   in a context that propagates the exception out.
+			*/
+			PyErr_Clear();
 			return NULL;
+		}
 		mro = type->tp_mro;
 		assert(mro != NULL);
 	}
