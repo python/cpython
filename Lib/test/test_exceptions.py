@@ -2,6 +2,9 @@
 
 from test_support import *
 from types import ClassType
+import warnings
+
+warnings.filterwarnings("error", "", OverflowWarning, __name__)
 
 print '5. Built-in exceptions'
 # XXX This is not really enough, each *operation* should be tested!
