@@ -449,13 +449,27 @@ PyLong_FromDouble:double:v::
 PyLong_FromLong:PyObject*::+1:
 PyLong_FromLong:long:v::
 
+PyLong_FromLongLong:PyObject*::+1:
+PyLong_FromLongLong:long long:v::
+
+PyLong_FromUnsignedLongLong:PyObject*::+1:
+PyLong_FromUnsignedLongLong:unsigned long long:v::
+
 PyLong_FromString:PyObject*::+1:
 PyLong_FromString:char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
 
+PyLong_FromUnicode:PyObject*::+1:
+PyLong_FromUnicode:Py_UNICODE:u::
+PyLong_FromUnicode:int:length::
+PyLong_FromUnicode:int:base::
+
 PyLong_FromUnsignedLong:PyObject*::+1:
 PyLong_FromUnsignedLong:unsignedlong:v::
+
+PyLong_FromVoidPtr:PyObject*::+1:
+PyLong_FromVoidPtr:void*:p::
 
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
