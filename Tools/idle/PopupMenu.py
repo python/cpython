@@ -83,4 +83,4 @@ class PopupMenu:
 
     def help(self):
         from HelpWindow import HelpWindow
-        HelpWindow()
+        HelpWindow(root=self.flist.root)
