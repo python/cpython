@@ -49,10 +49,13 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 };
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
+	char funcname[258];
+
+	sprintf(funcname, "init%.200s", shortname);
 
 #ifdef MS_WIN32
 	{

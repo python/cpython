@@ -65,11 +65,22 @@ static struct {
 static int nhandles = 0;
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
 	void *handle;
+	char funcname[258];
+	char pathbuf[260];
+
+	if (strchr(pathname, '/') == NULL) {
+		/* Prefix bare filename with "./" */
+		sprintf(pathbuf, "./%-.255s", pathname);
+		pathname = pathbuf;
+	}
+
+	/* ### should there be a leading underscore for some platforms? */
+	sprintf(funcname, "init%.200s", shortname);
 
 	if (fp != NULL) {
 		int i;

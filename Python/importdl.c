@@ -30,59 +30,22 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Support for dynamic loading of extension modules */
-/* If no dynamic linking is supported, this file still generates some code! */
 
 #include "Python.h"
-#include "importdl.h"
 
-/* Explanation of some of the the various #defines used by dynamic linking...
-
-   symbol	-- defined for:
-
-   HAVE_DYNAMIC_LOADING -- any kind of dynamic linking (from ./configure)
-   USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
-   _AIX		-- AIX style dynamic linking
-   __NetBSD__	-- NetBSD shared libraries
-		   (assuming dlerror() was introduced between 1.2 and 1.3)
-   __BEOS__ -- BeOS shared libraries - defined by the compiler
+/* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
+   supported on this platform. configure will then compile and link in one
+   of the dynload_*.c files, as appropriate. We will call a function in
+   those modules to get a function pointer to the module's init function.
 */
-
-/* Configure dynamic linking */
-
 #ifdef HAVE_DYNAMIC_LOADING
 
+#include "importdl.h"
+
 extern dl_funcptr _PyImport_GetDynLoadFunc(const char *name,
-					   const char *funcname,
+					   const char *shortname,
 					   const char *pathname, FILE *fp);
 
-/* ### given NeXT, is WITH_DYLD not necessary? */
-
-#if defined(__hp9000s300) || (defined(__NetBSD__) || defined(__FreeBSD__)) && !defined(__ELF__) || defined(__OpenBSD__) || defined(__BORLANDC__) || defined(NeXT) || defined(WITH_DYLD)
-#define FUNCNAME_PATTERN "_init%.200s"
-#else
-#define FUNCNAME_PATTERN "init%.200s"
-#endif
-
-/* ### temporary, for setting USE_SHLIB */
-#if defined(__NetBSD__) && (NetBSD < 199712)
-#define USE_SHLIB
-#else
-#if defined(HAVE_DLOPEN) || defined(M_UNIX)
-#define USE_SHLIB
-#endif
-#endif
-#ifdef _AIX
-#undef USE_SHLIB
-#endif
-#ifdef __BEOS__
-#undef USE_SHLIB
-#endif
-
-#endif /* HAVE_DYNAMIC_LOADING */
-
-#ifdef NO_DYNAMIC_LINK
-#undef HAVE_DYNAMIC_LOADING
-#endif
 
 
 PyObject *
@@ -91,24 +54,9 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 	char *pathname;
 	FILE *fp;
 {
-#ifndef HAVE_DYNAMIC_LOADING
-	PyErr_SetString(PyExc_ImportError,
-			"dynamically linked modules not supported");
-	return NULL;
-#else
 	PyObject *m, *d, *s;
-	char funcname[258];
 	char *lastdot, *shortname, *packagecontext;
-	dl_funcptr p = NULL;
-
-#ifdef USE_SHLIB
-	char pathbuf[260];
-	if (strchr(pathname, '/') == NULL) {
-		/* Prefix bare filename with "./" */
-		sprintf(pathbuf, "./%-.255s", pathname);
-		pathname = pathbuf;
-	}
-#endif /* USE_SHLIB */
+	dl_funcptr p;
 
 	if ((m = _PyImport_FindExtension(name, pathname)) != NULL) {
 		Py_INCREF(m);
@@ -123,15 +71,14 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		packagecontext = name;
 		shortname = lastdot+1;
 	}
-	sprintf(funcname, FUNCNAME_PATTERN, shortname);
 
-	p = _PyImport_GetDynLoadFunc(name, funcname, pathname, fp);
+	p = _PyImport_GetDynLoadFunc(name, shortname, pathname, fp);
 	if (PyErr_Occurred())
 		return NULL;
 	if (p == NULL) {
 		PyErr_Format(PyExc_ImportError,
-		   "dynamic module does not define init function (%.200s)",
-			     funcname);
+		   "dynamic module does not define init function (init%.200s)",
+			     shortname);
 		return NULL;
 	}
 	_Py_PackageContext = packagecontext;
@@ -160,5 +107,6 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 			name, pathname);
 	Py_INCREF(m);
 	return m;
-#endif /* HAVE_DYNAMIC_LOADING */
 }
+
+#endif /* HAVE_DYNAMIC_LOADING */

@@ -59,10 +59,11 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 };
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
+	char funcname[258];
 
 	/*
 	** Dynamic loading of CFM shared libraries on the Mac.  The
@@ -121,6 +122,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 		return NULL;
 	}
 	/* Locate the address of the correct init function */
+	sprintf(funcname, "init%.200s", shortname);
 	err = FindSymbol(connID, Pstring(funcname), &symAddr, &class);
 	if ( err ) {
 		sprintf(buf, "%s: %.200s",

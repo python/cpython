@@ -1234,9 +1234,11 @@ load_module(name, fp, buf, type)
 		m = load_compiled_module(name, buf, fp);
 		break;
 
+#ifdef HAVE_DYNAMIC_LOADING
 	case C_EXTENSION:
 		m = _PyImport_LoadDynamicModule(name, buf, fp);
 		break;
+#endif
 
 #ifdef macintosh
 	case PY_RESOURCE:
@@ -2158,6 +2160,8 @@ imp_load_compiled(self, args)
 	return m;
 }
 
+#ifdef HAVE_DYNAMIC_LOADING
+
 static PyObject *
 imp_load_dynamic(self, args)
 	PyObject *self;
@@ -2179,6 +2183,8 @@ imp_load_dynamic(self, args)
 	m = _PyImport_LoadDynamicModule(name, pathname, fp);
 	return m;
 }
+
+#endif /* HAVE_DYNAMIC_LOADING */
 
 static PyObject *
 imp_load_source(self, args)
@@ -2330,7 +2336,9 @@ static PyMethodDef imp_methods[] = {
 	{"is_builtin",		imp_is_builtin,		1},
 	{"is_frozen",		imp_is_frozen,		1},
 	{"load_compiled",	imp_load_compiled,	1},
+#ifdef HAVE_DYNAMIC_LOADING
 	{"load_dynamic",	imp_load_dynamic,	1},
+#endif
 	{"load_package",	imp_load_package,	1},
 #ifdef macintosh
 	{"load_resource",	imp_load_resource,	1},

@@ -45,13 +45,14 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{0, 0}
 };
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
+dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				    const char *pathname, FILE *fp)
 {
 	dl_funcptr p;
 	APIRET  rc;
 	HMODULE hDLL;
 	char failreason[256];
+	char funcname[258];
 
 	rc = DosLoadModule(failreason,
 			   sizeof(failreason),
@@ -67,6 +68,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *name, const char *funcname,
 		return NULL;
 	}
 
+	sprintf(funcname, "init%.200s", shortname);
 	rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
 	if (rc != NO_ERROR)
 		p = NULL; /* Signify Failure to Acquire Entrypoint */
