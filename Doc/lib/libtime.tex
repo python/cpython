@@ -10,27 +10,27 @@ An explanation of some terminology and conventions is in order.
 \begin{itemize}
 
 \item
-\index{epoch}
-The \dfn{epoch} is the point where the time starts.  On January 1st of that
-year, at 0 hours, the ``time since the epoch'' is zero.  For \UNIX{}, the
-epoch is 1970.  To find out what the epoch is, look at \code{gmtime(0)}.
+The \dfn{epoch}\index{epoch} is the point where the time starts.  On
+January 1st of that year, at 0 hours, the ``time since the epoch'' is
+zero.  For \UNIX{}, the epoch is 1970.  To find out what the epoch is,
+look at \code{gmtime(0)}.
 
 \item
-\index{UTC}
-\index{Coordinated Universal Time}
-\index{Greenwich Mean Time}
 UTC is Coordinated Universal Time (formerly known as Greenwich Mean
 Time).  The acronym UTC is not a mistake but a compromise between
-English and French.
+English and French.%
+\index{UTC}%
+\index{Coordinated Universal Time}%
+\index{Greenwich Mean Time}
 
 \item
-\index{Daylight Saving Time}
 DST is Daylight Saving Time, an adjustment of the timezone by
 (usually) one hour during part of the year.  DST rules are magic
 (determined by local law) and can change from year to year.  The \C{}
 library has a table containing the local rules (often it is read from
 a system file for flexibility) and is the only source of True Wisdom
-in this respect.
+in this respect.%
+\index{Daylight Saving Time}
 
 \item
 The precision of the various real-time functions may be less than
