@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /ufs/guido/bin/sgi/python
 
 # Mirror a remote ftp subtree into a local directory tree.
 # Basic usage: ftpmirror [options] host remotedir localdir
@@ -43,7 +43,7 @@ interactive = 0
 mac = 0
 rmok = 0
 nologin = 0
-skippats = []
+skippats = ['.', '..', '.mirrorinfo']
 
 def main():
 	global verbose, interactive, mac, rmok, nologin
@@ -136,9 +136,6 @@ def mirrorsubdir(f, localdir):
 						  (words[-3], words[-1])
 				continue
 			filename = words[-1]
-			if filename in ('.', '..'):
-				if verbose > 1: print 'Skipping . or ..'
-				continue
 			infostuff = words[-5:-1]
 			mode = words[0]
 		skip = 0
@@ -168,6 +165,10 @@ def mirrorsubdir(f, localdir):
 					info[filename] = 'Not retrieved'
 				continue
 		try:
+			os.unlink(fullname)
+		except os.error:
+			pass
+		try:
 			fp = open(fullname, 'w')
 		except IOError, msg:
 			print "Can't create %s: %s" % (fullname, str(msg))
@@ -180,7 +181,10 @@ def mirrorsubdir(f, localdir):
 		else:
 			fp1 = fp
 		t0 = time.time()
-		f.retrbinary('RETR ' + filename, fp1.write, 8*1024)
+		try:
+			f.retrbinary('RETR ' + filename, fp1.write, 8*1024)
+		except ftplib.error_perm, msg:
+			print msg
 		t1 = time.time()
 		bytes = fp.tell()
 		fp.close()
