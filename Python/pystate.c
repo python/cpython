@@ -47,7 +47,6 @@ PyInterpreterState_New(void)
 		interp->modules = NULL;
 		interp->sysdict = NULL;
 		interp->builtins = NULL;
-		interp->checkinterval = 10;
 		interp->tstate_head = NULL;
 #ifdef HAVE_DLOPEN
 #ifdef RTLD_NOW
@@ -124,7 +123,6 @@ PyThreadState_New(PyInterpreterState *interp)
 
 		tstate->frame = NULL;
 		tstate->recursion_depth = 0;
-		tstate->ticker = 0;
 		tstate->tracing = 0;
 		tstate->use_tracing = 0;
 
