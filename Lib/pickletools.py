@@ -70,8 +70,8 @@ At heart, that's all the PM has.  Subtleties arise for these reasons:
 + Backward compatibility and micro-optimization.  As explained below,
   pickle opcodes never go away, not even when better ways to do a thing
   get invented.  The repertoire of the PM just keeps growing over time.
-  So, e.g., there are now six distinct opcodes for building a Python integer,
-  five of them devoted to "short" integers.  Even so, the only way to pickle
+  So, e.g., there are now five distinct opcodes for building a Python integer,
+  four of them devoted to "short" integers.  Even so, the only way to pickle
   a Python long int takes time quadratic in the number of digits, for both
   pickling and unpickling.  This isn't so much a subtlety as a source of
   wearying complication.
