@@ -87,7 +87,9 @@ This module also defines an exception 'error'.
 import sys
 from pcre import *
 
-__all__ = ["match","search","sub","subn","split","findall","escape","compile"]
+__all__ = ["match","search","sub","subn","split","findall","escape","compile",
+           "I","L","M","S","X","IGNORECASE","LOCALE","MULTILINE","DOTALL",
+           "VERBOSE","error"]
 
 #
 # First, the public part of the interface:

@@ -30,6 +30,8 @@ Parameterless functions or methods cannot be used, however.
 
 import bisect
 
+__all__ = ["scheduler"]
+
 class scheduler:
     def __init__(self, timefunc, delayfunc):
         """Initialize a new instance, passing the time and delay

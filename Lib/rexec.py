@@ -23,6 +23,7 @@ import __builtin__
 import os
 import ihooks
 
+__all__ = ["RExec"]
 
 class FileBase:
 

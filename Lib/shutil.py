@@ -8,6 +8,8 @@ import os
 import sys
 import stat
 
+__all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
+           "copytree","rmtree"]
 
 def copyfileobj(fsrc, fdst, length=16*1024):
     """copy data from file-like object fsrc to file-like object fdst"""

@@ -43,6 +43,8 @@ import readline
 import __builtin__
 import __main__
 
+__all__ = ["Completer"]
+
 class Completer:
 
     def complete(self, text, state):

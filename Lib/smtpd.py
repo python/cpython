@@ -75,6 +75,7 @@ import socket
 import asyncore
 import asynchat
 
+__all__ = ["SMTPServer","DebuggingServer","PureProxy","MailmanProxy"]
 
 program = sys.argv[0]
 __version__ = 'Python SMTP proxy version 0.2'

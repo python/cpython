@@ -14,6 +14,9 @@ import sys
 
 from sre_constants import *
 
+__all__ = ["Pattern","SubPattern","Tokenizer","parse","parse_template",
+           "expand_template"]
+
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
 

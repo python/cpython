@@ -30,6 +30,7 @@ explicitly given directories.
 # The file structure is top-down except that the test program and its
 # subroutine come last.
 
+__all__ = ["what","whathdr"]
 
 def what(filename):
     """Guess the type of a sound file"""

@@ -59,6 +59,7 @@ There are also some utility functions here.
 
 import time
 
+__all__ = ["Message","AddressList","parsedate","parsedate_tz","mktime_tz"]
 
 _blanklines = ('\r\n', '\n')            # Optimization for islast()
 

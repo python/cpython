@@ -19,6 +19,7 @@ warnings.filterwarnings("ignore", "", DeprecationWarning, __name__)
 
 import regex
 
+__all__ = ["sub","gsub","split","splitx","capwords"]
 
 # Replace first occurrence of pattern pat in string str by replacement
 # repl.  If the pattern isn't found, the string is returned unchanged.

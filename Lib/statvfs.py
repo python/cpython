@@ -13,3 +13,9 @@ F_FFREE   = 6           # Total number of free file nodes
 F_FAVAIL  = 7           # Free nodes available to non-superuser
 F_FLAG    = 8           # Flags (see your local statvfs man page)
 F_NAMEMAX = 9           # Maximum file name length
+
+__all__ = locals().keys()
+for _i in range(len(__all__)-1,-1,-1):
+    if __all__[_i][0] == "_":
+        del __all__[_i]
+del _i
