@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-1 -*-
 # Copyright (C) 2001,2002 Python Software Foundation
 # csv package unit tests
 
@@ -639,6 +640,25 @@ else:
                 lastrc = rc
             # if writer leaks during write, last delta should be 5 or more
             self.assertEqual(delta < 5, True)
+
+# commented out for now - csv module doesn't yet support Unicode
+if 0:
+    from StringIO import StringIO
+    import csv
+
+    class TestUnicode(unittest.TestCase):
+        def test_unicode_read(self):
+            import codecs
+            f = codecs.EncodedFile(StringIO("Martin von Löwis,"
+                                            "Marc André Lemburg,"
+                                            "Guido van Rossum,"
+                                            "François Pinard\r\n"),
+                                   data_encoding='iso-8859-1')
+            reader = csv.reader(f)
+            self.assertEqual(list(reader), [[u"Martin von Löwis",
+                                             u"Marc André Lemburg",
+                                             u"Guido van Rossum",
+                                             u"François Pinardn"]])
 
 def test_main():
     mod = sys.modules[__name__]
