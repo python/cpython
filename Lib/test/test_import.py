@@ -1,8 +1,17 @@
-from test_support import TESTFN
+from test_support import TESTFN, TestFailed
 
 import os
 import random
 import sys
+
+# Brief digression to test that import is case-sensitive:  if we got this
+# far, we know for sure that "random" exists.
+try:
+    import RAnDoM
+except ImportError:
+    pass
+else:
+    raise TestFailed("import of RAnDoM should have failed (case mismatch)")
 
 sys.path.insert(0, os.curdir)
 
