@@ -44,6 +44,8 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Controls.h>
 
+#define as_Control(h) ((ControlHandle)h)
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
@@ -1333,6 +1335,22 @@ static PyObject *Ctl_ClearKeyboardFocus(_self, _args)
 	return _res;
 }
 
+static PyObject *Ctl_as_Control(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlHandle _rv;
+	Handle h;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = as_Control(h);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef Ctl_methods[] = {
 	{"NewControl", (PyCFunction)Ctl_NewControl, 1,
 	 "(WindowPtr owningWindow, Rect boundsRect, Str255 controlTitle, Boolean initiallyVisible, SInt16 initialValue, SInt16 minimumValue, SInt16 maximumValue, SInt16 procID, SInt32 controlReference) -> (ControlHandle _rv)"},
@@ -1364,6 +1382,8 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr inWindow) -> None"},
 	{"ClearKeyboardFocus", (PyCFunction)Ctl_ClearKeyboardFocus, 1,
 	 "(WindowPtr inWindow) -> None"},
+	{"as_Control", (PyCFunction)Ctl_as_Control, 1,
+	 "(Handle h) -> (ControlHandle _rv)"},
 	{NULL, NULL, 0}
 };
 
