@@ -886,7 +886,7 @@ class HTMLDoc(Doc):
         if name:
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
         if value.__doc__ is not None:
-            doc = self.markup(value.__doc__, self.preformat)
+            doc = self.markup(getdoc(value), self.preformat)
             push('<dd><tt>%s</tt></dd>\n' % doc)
         push('</dl>\n')
 
@@ -1160,7 +1160,7 @@ class TextDoc(Doc):
                 push(msg)
                 for name, kind, homecls, value in ok:
                     if callable(value) or inspect.isdatadescriptor(value):
-                        doc = getattr(value, "__doc__", None)
+                        doc = getdoc(value)
                     else:
                         doc = None
                     push(self.docother(getattr(object, name),
@@ -1454,6 +1454,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0):
             desc += ' in ' + name[:name.rfind('.')]
         elif module and module is not object:
             desc += ' in module ' + module.__name__
+        if not (inspect.ismodule(object) or
+                inspect.isclass(object) or
+                inspect.isroutine(object) or
+                isinstance(object, property)):
+            # If the passed object is a piece of data or an instance,
+            # document its available methods instead of its value.
+            object = type(object)
+            desc += ' object'
         pager(title % desc + '\n\n' + text.document(object, name))
     except (ImportError, ErrorDuringImport), value:
         print value
