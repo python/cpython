@@ -1837,58 +1837,33 @@ _PyBuiltin_Init(void)
 	if (mod == NULL)
 		return NULL;
 	dict = PyModule_GetDict(mod);
-	if (PyDict_SetItemString(dict, "None", Py_None) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "NotImplemented",
-				 Py_NotImplemented) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "classmethod",
-				 (PyObject *) &PyClassMethod_Type) < 0)
-		return NULL;
+
+#define SETBUILTIN(NAME, OBJECT) \
+	if (PyDict_SetItemString(dict, NAME, (PyObject *)OBJECT) < 0) \
+		return NULL
+
+	SETBUILTIN("None",		Py_None);
+	SETBUILTIN("Ellipsis",		Py_Ellipsis);
+	SETBUILTIN("NotImplemented",	Py_NotImplemented);
+	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
-	if (PyDict_SetItemString(dict, "complex",
-				 (PyObject *) &PyComplex_Type) < 0)
-		return NULL;
+	SETBUILTIN("complex",		&PyComplex_Type);
 #endif
-	if (PyDict_SetItemString(dict, "dictionary",
-				 (PyObject *) &PyDict_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "float",
-				 (PyObject *) &PyFloat_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "property",
-				 (PyObject *) &PyProperty_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "int", (PyObject *) &PyInt_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "list", (PyObject *) &PyList_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "long", (PyObject *) &PyLong_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "object",
-				 (PyObject *) &PyBaseObject_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "staticmethod",
-				 (PyObject *) &PyStaticMethod_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "str", (PyObject *) &PyString_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "super",
-				 (PyObject *) &PySuper_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "tuple",
-				 (PyObject *) &PyTuple_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "type", (PyObject *) &PyType_Type) < 0)
-		return NULL;
-	if (PyDict_SetItemString(dict, "file", (PyObject *) &PyFile_Type) < 0)
-		return NULL;
+	SETBUILTIN("dictionary",	&PyDict_Type);
+	SETBUILTIN("float",		&PyFloat_Type);
+	SETBUILTIN("property",		&PyProperty_Type);
+	SETBUILTIN("int",		&PyInt_Type);
+	SETBUILTIN("list",		&PyList_Type);
+	SETBUILTIN("long",		&PyLong_Type);
+	SETBUILTIN("object",		&PyBaseObject_Type);
+	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
+	SETBUILTIN("str",		&PyString_Type);
+	SETBUILTIN("super",		&PySuper_Type);
+	SETBUILTIN("tuple",		&PyTuple_Type);
+	SETBUILTIN("type",		&PyType_Type);
+	SETBUILTIN("file",		&PyFile_Type);
 #ifdef Py_USING_UNICODE
-	if (PyDict_SetItemString(dict, "unicode",
-				 (PyObject *) &PyUnicode_Type) < 0)
-		return NULL;
+	SETBUILTIN("unicode",		&PyUnicode_Type);
 #endif
 	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
@@ -1898,6 +1873,7 @@ _PyBuiltin_Init(void)
 	Py_XDECREF(debug);
 
 	return mod;
+#undef SETBUILTIN
 }
 
 /* Helper for filter(): filter a tuple through a function */
