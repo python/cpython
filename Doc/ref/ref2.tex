@@ -294,11 +294,12 @@ Although both lower case `l' and upper case `L' are allowed as suffix
 for long integers, it is strongly recommended to always use `L', since
 the letter `l' looks too much like the digit `1'.
 
-Plain integer decimal literals must be at most $2^{31} - 1$ (i.e., the
-largest positive integer, assuming 32-bit arithmetic).  Plain octal and
-hexadecimal literals may be as large as $2^{32} - 1$, but values
-larger than $2^{31} - 1$ are converted to a negative value by
-subtracting $2^{32}$.  There is no limit for long integer literals.
+Plain integer decimal literals must be at most 2147483647 (i.e., the
+largest positive integer, using 32-bit arithmetic).  Plain octal and
+hexadecimal literals may be as large as 4294967295, but values larger
+than 2147483647 are converted to a negative value by subtracting
+4294967296.  There is no limit for long integer literals apart from
+what can be stored in available memory.
 
 Some examples of plain and long integer literals:
 

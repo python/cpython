@@ -307,9 +307,10 @@ The primary must evaluate to a sequence object.  The lower and upper
 bound expressions, if present, must evaluate to plain integers;
 defaults are zero and the sequence's length, respectively.  If either
 bound is negative, the sequence's length is added to it.  The slicing
-now selects all items with index $k$ such that $i <= k < j$ where $i$
-and $j$ are the specified lower and upper bounds.  This may be an
-empty sequence.  It is not an error if $i$ or $j$ lie outside the
+now selects all items with index \var{k} such that
+\code{\var{i} <= \var{k} < \var{j}} where \var{i}
+and \var{j} are the specified lower and upper bounds.  This may be an
+empty sequence.  It is not an error if \var{i} or \var{j} lie outside the
 range of valid indexes (such items don't exist so they aren't
 selected).
 
@@ -477,10 +478,11 @@ arguments are converted to a common type.  They shift the first
 argument to the left or right by the number of bits given by the
 second argument.
 
-A right shift by $n$ bits is defined as division by $2^n$.  A left
-shift by $n$ bits is defined as multiplication with $2^n$; for plain
-integers there is no overflow check so this drops bits and flip the
-sign if the result is not less than $2^{31}$ in absolute value.
+A right shift by \var{n} bits is defined as division by
+\code{pow(2,\var{n})}.  A left shift by \var{n} bits is defined as
+multiplication with \code{pow(2,\var{n})}; for plain integers there is
+no overflow check so this drops bits and flips the sign if the result
+is not less than \code{pow(2,31)} in absolute value.
 
 Negative shift counts raise a \verb@ValueError@ exception.
 \exindex{ValueError}
@@ -530,20 +532,21 @@ comp_operator:  "<"|">"|"=="|">="|"<="|"<>"|"!="|"is" ["not"]|["not"] "in"
 
 Comparisons yield integer values: 1 for true, 0 for false.
 
-Comparisons can be chained arbitrarily, e.g. $x < y <= z$ is
-equivalent to $x < y$ \verb@and@ $y <= z$, except that $y$ is
-evaluated only once (but in both cases $z$ is not evaluated at all
-when $x < y$ is found to be false).
+Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
+equivalent to \code{x < y and y <= z}, except that \code{y} is
+evaluated only once (but in both cases \code{z} is not evaluated at all
+when \code{x < y} is found to be false).
 \indexii{chaining}{comparisons}
 
-\catcode`\_=8
-Formally, $e_0 op_1 e_1 op_2 e_2 ...e_{n-1} op_n e_n$ is equivalent to
-$e_0 op_1 e_1$ \verb@and@ $e_1 op_2 e_2$ \verb@and@ ... \verb@and@
-$e_{n-1} op_n e_n$, except that each expression is evaluated at most once.
+Formally, if \var{a}, \var{b}, \var{c}, \ldots, \var{y}, \var{z} are
+expressions and \var{opa}, \var{opb}, \ldots, \var{opy} are comparison
+operators, then \var{a opa b opb c} \ldots \var{y opy z} is equivalent
+to \var{a opa b} \code{and} \var{b opb c} \code{and} \ldots \code{and}
+\var{y opy z}, except that each expression is evaluated at most once.
 
-Note that $e_0 op_1 e_1 op_2 e_2$ does not imply any kind of comparison
-between $e_0$ and $e_2$, e.g. $x < y > z$ is perfectly legal.
-\catcode`\_=12
+Note that \var{a opa b opb c} doesn't imply any kind of comparison
+between \var{a} and \var{c}, so that e.g.\ \code{x < y > z} is
+perfectly legal (though perhaps not pretty).
 
 The forms \verb@<>@ and \verb@!=@ are equivalent; for consistency with
 C, \verb@!=@ is preferred; where \verb@!=@ is mentioned below
@@ -557,7 +560,7 @@ ordered consistently but arbitrarily.
 
 (This unusual definition of comparison is done to simplify the
 definition of operations like sorting and the \verb@in@ and
-\verb@not in@ operators.)
+\verb@not@ \verb@in@ operators.)
 
 Comparison of objects of the same type depends on the type:
 
@@ -592,11 +595,12 @@ execution of a program.
 \end{itemize}
 
 The operators \verb@in@ and \verb@not in@ test for sequence
-membership: if $y$ is a sequence, $x ~\verb@in@~ y$ is true if and
-only if there exists an index $i$ such that $x = y[i]$.
-$x ~\verb@not in@~ y$ yields the inverse truth value.  The exception
-\verb@TypeError@ is raised when $y$ is not a sequence, or when $y$ is
-a string and $x$ is not a string of length one.%
+membership: if \var{y} is a sequence, \code{\var{x} in \var{y}} is
+true if and only if there exists an index \var{i} such that
+\code{\var{x} = \var{y}[\var{i}]}.
+\code{\var{x} not in \var{y}} yields the inverse truth value.  The
+exception \verb@TypeError@ is raised when \var{y} is not a sequence,
+or when \var{y} is a string and \var{x} is not a string of length one.%
 \footnote{The latter restriction is sometimes a nuisance.}
 \opindex{in}
 \opindex{not in}
@@ -604,8 +608,9 @@ a string and $x$ is not a string of length one.%
 \obindex{sequence}
 
 The operators \verb@is@ and \verb@is not@ test for object identity:
-$x ~\verb@is@~ y$ is true if and only if $x$ and $y$ are the same
-object.  $x ~\verb@is not@~ y$ yields the inverse truth value.
+\var{x} \code{is} \var{y} is true if and only if \var{x} and \var{y}
+are the same object.  \var{x} \code{is not} \var{y} yields the inverse
+truth value.
 \opindex{is}
 \opindex{is not}
 \indexii{identity}{test}
@@ -632,14 +637,14 @@ other values are interpreted as true.
 The operator \verb@not@ yields 1 if its argument is false, 0 otherwise.
 \opindex{not}
 
-The condition $x ~\verb@and@~ y$ first evaluates $x$; if $x$ is false,
-its value is returned; otherwise, $y$ is evaluated and the resulting
-value is returned.
+The condition \var{x} \verb@and@ \var{y} first evaluates \var{x}; if
+\var{x} is false, its value is returned; otherwise, \var{y} is
+evaluated and the resulting value is returned.
 \opindex{and}
 
-The condition $x ~\verb@or@~ y$ first evaluates $x$; if $x$ is true,
-its value is returned; otherwise, $y$ is evaluated and the resulting
-value is returned.
+The condition \var{x} \verb@or@ \var{y} first evaluates \var{x}; if
+\var{x} is true, its value is returned; otherwise, \var{y} is
+evaluated and the resulting value is returned.
 \opindex{or}
 
 (Note that \verb@and@ and \verb@or@ do not restrict the value and type
