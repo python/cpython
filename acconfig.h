@@ -35,6 +35,18 @@
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
+/* Define if --enable-ipv6 is specified */
+#undef ENABLE_IPV6
+
+/* Define if sockaddr has sa_len member */
+#undef HAVE_SOCKADDR_SA_LEN
+
+/* struct addrinfo (netdb.h) */
+#undef HAVE_ADDRINFO
+
+/* struct sockaddr_storage (sys/socket.h) */
+#undef HAVE_SOCKADDR_STORAGE
+
 /* Defined when any dynamic module loading is enabled */
 #undef HAVE_DYNAMIC_LOADING
 

@@ -187,6 +187,8 @@ Socket methods:
 #include <GUSI.h>
 #endif
 
+#include "addrinfo.h"
+
 #ifdef USE_SSL
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
@@ -195,6 +197,14 @@ Socket methods:
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #endif /* USE_SSL */
+
+/* I know this is a bad practice, but it is the easiest... */
+#ifndef HAVE_GETADDRINFO
+#include "getaddrinfo.c"
+#endif
+#ifndef HAVE_GETNAMEINFO
+#include "getnameinfo.c"
+#endif
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
 /* BeOS suffers from the same socket dichotomy as Win32... - [cjh] */
