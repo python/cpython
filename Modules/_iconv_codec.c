@@ -663,7 +663,7 @@ init_iconv_codec(void)
 {
     PyObject *m;
 
-    char in = 1;
+    char in = '0';
     char *inptr = &in;
     size_t insize = 1;
     Py_UNICODE out = 0;
@@ -671,7 +671,7 @@ init_iconv_codec(void)
     size_t outsize = sizeof(out);
     size_t res;
 
-    iconv_t hdl = iconv_open(UNICODE_ENCODING, "ASCII");
+    iconv_t hdl = iconv_open(UNICODE_ENCODING, "ISO8859-1");
 
     if (hdl == (iconv_t)-1) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -688,12 +688,12 @@ init_iconv_codec(void)
 
     /* Check whether conv() returned native endianess or not for the chosen
        encoding */
-    if (out == 0x1)
+    if (out == 0x30)
        byteswap = 0;
 #if Py_UNICODE_SIZE == 2
-    else if (out == 0x0100)
+    else if (out == 0x3000)
 #else
-    else if (out == 0x01000000)
+    else if (out == 0x30000000)
 #endif
        byteswap = 1;
     else {
