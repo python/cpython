@@ -1,3 +1,4 @@
+
 \documentclass{howto}
 
 % $Id$
@@ -129,8 +130,95 @@ section apply only to new-style classes. This divergence isn't
 intended to last forever; eventually old-style classes will be
 dropped, possibly in Python 3.0.
 
-So how do you define a new-style class?  XXX
-Subclass object -- subclass a built-in type.
+So how do you define a new-style class?  You do it by subclassing an
+existing new-style class.  Most of Python's built-in types, such as
+integers, lists, dictionaries, and even files, are new-style classes
+now.  A new-style class named \class{object}, the base class for all
+built-in types, has been also been added so if no built-in type is
+suitable, you can just subclass \class{object}:
+
+\begin{verbatim}
+class C(object):
+    def __init__ (self):
+        ...
+    ...
+\end{verbatim}
+
+This means that \keyword{class} statements that don't have any base
+classes are always classic classes in Python 2.2.  There's actually a
+way to make new-style classes without any base classes, by setting the
+\member{__metaclass__} variable to XXX.  (What do you set it to?)
+
+The type objects for the built-in types are available as built-ins,
+named using a clever trick.  Python has always had built-in functions
+named \function{int()}, \function{float()}, and \function{str()}.  In
+2.2, they aren't functions any more, but type objects that behave as
+factories when called.
+
+\begin{verbatim}
+>>> int
+<type 'int'>
+>>> int('123')
+123
+\end{verbatim}
+
+To make the set of types complete, new type objects such as
+\function{dictionary} and \function{file} have been added.
+
+Here's a more interesting example.  The following class subclasses
+Python's dictionary implementation in order to automatically fold all
+dictionary keys to lowercase.
+
+\begin{verbatim}
+class LowerCaseDict(dictionary):
+    def _fold_key (self, key):
+        if not isinstance(key, str):
+            raise TypeError, "All keys must be strings"
+        return key.lower()
+    
+    def __getitem__ (self, key):
+        key = self._fold_key(key)
+        return dictionary.__getitem__(self, key)
+
+    def __setitem__ (self, key, value):
+        key = self._fold_key(key)
+        dictionary.__setitem__(self, key, value)
+
+    def __delitem__ (self, key):
+        key = self._fold_key(key)
+        dictionary.__delitem__(self, key, value)
+\end{verbatim}
+
+Trying out this class, it works as you'd expect:
+
+\begin{verbatim}
+>>> d = LowerCaseDict()
+>>> d['ABC'] = 1
+>>> d['abc']
+1
+\end{verbatim}
+
+However, because it's a subclass of Python's dictionary type,
+instances of \class{LowerCaseDict} can be used in most places where a
+regular dictionary is required.
+
+\begin{verbatim}
+>>> d = LowerCaseDict()
+>>> exec 'Name = 1' in d
+>>> print d.items()
+XXX
+>>> exec 'nAmE = name + 1' in d
+>>> print d.items()
+XXX
+\end{verbatim}
+
+And now you can have Python with case-insensitive variable names!  One
+of the nice things about Python 2.2 is that it makes Python flexible
+enough to solve many other past problems without hacking Python's C
+code.  If you want a case-insensitive Python environment, using a
+case-folding dictionary and writing a case-insensitive tokenizer using
+the compiler package (now automatically installed in 2.2) will make it
+a straightforward.
 
 
 \subsection{Descriptors}
@@ -233,13 +321,65 @@ write \function{eiffelmethod()} or the ZODB or whatever, but most
 users will just write code on top of the resulting libraries and
 ignore the implementation details.
 
-\subsection{Inheritance Lookup: The Diamond Rule}
+\subsection{Multiple Inheritance: The Diamond Rule}
 
-XXX
+Multiple inheritance has also been made more useful through changing
+the rules under which names are resolved.  Consider this set of classes
+(diagram taken from \pep{253} by Guido van Rossum):
+
+\begin{verbatim}
+                class A:
+                  ^ ^  def save(self): ...
+                 /   \
+                /     \
+               /       \
+              /         \
+          class B     class C:
+              ^         ^  def save(self): ...
+               \       /
+                \     /
+                 \   /
+                  \ /
+                class D
+\end{verbatim}
+
+The lookup rule for classic classes is simple but not very smart; the
+base classes are searched depth-first, going from left to right.  A
+reference to \method{D.save} will search the classes \class{D},
+\class{B}, and then \class{A}, where \method{save()} would be found
+and returned.  \method{C.save()} would never be found at all.  This is
+bad, because if \class{C}'s \method{save()} method is saving some
+internal state specific to \class{C}, not calling it will result in
+that state never getting saved.
+
+New-style classes follow a different algorithm that's a bit more
+complicated to explain, but does the right thing in this situation.
+
+\begin{enumerate}
+
+\item List all the base classes, following the classic lookup rule and
+include a class multiple times if it's visited repeatedly.  In the
+above example, the list of visited classes is [\class{D}, \class{B},
+\class{A}, \class{C}, class{A}].
+
+\item Scan the list for duplicated classes.  If any are found, remove
+all but one occurrence, leaving the \emph{last} one in the list.  In
+the above example, the list becomes [\class{D}, \class{B}, \class{C},
+class{A}] after dropping duplicates.
+
+\end{enumerate}
+
+Following this rule, referring to \method{D.save()} will return
+\method{C.save()}, which is the behaviour we're after.  This lookup
+rule is the same as the one followed by XXX Common Lisp?.
+
 
 \subsection{Attribute Access}
 
 XXX __getattribute__, __getattr__
+
+XXX properties, slots
+
 
 \subsection{Related Links}
 \ref{sect-rellinks}
@@ -264,6 +404,7 @@ Guido van Rossum, with substantial assistance from the rest of the
 Zope Corp. team.
 
 Finally, there's the ultimate authority: the source code.
+typeobject.c, others?
 % XXX point people at the right files
 
 
@@ -349,7 +490,6 @@ means you can do things like this:
 >>> a,b,c = i
 >>> a,b,c
 (1, 2, 3)
->>>
 \end{verbatim}
 
 Iterator support has been added to some of Python's basic types.  
@@ -373,7 +513,6 @@ Apr 4
 Nov 11
 Dec 12
 Oct 10
->>>
 \end{verbatim}          
 
 That's just the default behaviour.  If you want to iterate over keys,
@@ -471,7 +610,6 @@ Traceback (most recent call last):
   File "<stdin>", line 1, in ?
   File "<stdin>", line 2, in generate_ints
 StopIteration
->>>
 \end{verbatim}
 
 You could equally write \code{for i in generate_ints(5)}, or
