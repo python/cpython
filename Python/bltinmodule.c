@@ -1864,6 +1864,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("complex",		&PyComplex_Type);
 #endif
 	SETBUILTIN("dict",		&PyDict_Type);
+ 	SETBUILTIN("enumerate",		&PyEnum_Type);	
 	SETBUILTIN("float",		&PyFloat_Type);
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyInt_Type);
