@@ -2,30 +2,36 @@
 #
 # Extra magic needed by the LaTeX->SGML conversion process.  This requires
 # $(TOOLSDIR) to be properly defined.
-#
-# Note that docfixer.py outputs XML directly; this will be fixed before too
-# much longer.
 
 DOCFIXER=	$(TOOLSDIR)/sgmlconv/docfixer.py
-ESIS2SGML=	$(TOOLSDIR)/sgmlconv/esis2sgml.py
-ESIS2XML=	$(TOOLSDIR)/sgmlconv/esis2sgml.py --xml
+ESIS2ML=	$(TOOLSDIR)/sgmlconv/esis2sgml.py
 FIXGES=		$(TOOLSDIR)/sgmlconv/fixgenents.sh
 LATEX2ESIS=	$(TOOLSDIR)/sgmlconv/latex2esis.py
 
-
 ESISTARGETS=	$(patsubst %.tex,%.esis,$(wildcard *.tex))
+SGMLTARGETS=	$(patsubst %.tex,%.sgml,$(wildcard *.tex))
 XMLTARGETS=	$(patsubst %.tex,%.xml,$(wildcard *.tex))
 
-.SUFFIXES: .esis .tex .xml
+
+all:	sgml
+
+sgml:	$(SGMLTARGETS)
+xml:	$(XMLTARGETS)
+
+ESISTOOLS=	$(TOOLSDIR)/sgmlconv/esistools.py
+
+$(ESISTARGETS): $(LATEX2ESIS) $(DOCFIXER) $(ESISTOOLS)
+$(SGMLTARGETS): $(ESIS2ML) $(FIXGES)
+$(XMLTARGETS): $(ESIS2ML) $(FIXGES)
+
+
+.SUFFIXES: .esis .sgml .tex .xml
 
 .tex.esis:
-	$(LATEX2ESIS) $< $@
+	$(LATEX2ESIS) $< | $(DOCFIXER) > $@
+
+.esis.sgml:
+	$(ESIS2ML) $< | $(FIXGES) > $@
 
 .esis.xml:
-	$(DOCFIXER) $< | $(FIXGES) > $@
-
-all:	$(XMLTARGETS)
-
-
-$(ESISTARGETS): $(LATEX2ESIS)
-$(XMLTARGETS): $(DOCFIXER) $(FIXGES)
+	$(ESIS2ML) --xml $< | $(FIXGES) > $@
