@@ -388,7 +388,9 @@ list_concat(a, bb)
 	int i;
 	PyListObject *np;
 	if (!PyList_Check(bb)) {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError,
+			     "can only append list (not \"%.200s\") to list",
+			     bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((PyListObject *)bb)
@@ -469,7 +471,9 @@ list_ass_slice(a, ilow, ihigh, v)
 		}
 	}
 	else {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError,
+			     "must assign list (not \"%.200s\") to slice",
+			     v->ob_type->tp_name);
 		return -1;
 	}
 	if (ilow < 0)

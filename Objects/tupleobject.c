@@ -361,7 +361,9 @@ tupleconcat(a, bb)
 	register int i;
 	PyTupleObject *np;
 	if (!PyTuple_Check(bb)) {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError,
+       		     "can only append tuple (not \"%.200s\") to tuple",
+			     bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((PyTupleObject *)bb)
