@@ -109,7 +109,7 @@ new_function(unused, args)
 		Py_XDECREF(newfunc->func_name);
 		newfunc->func_name = name;
 	}
-	if (defaults != NULL) {
+	if (defaults != Py_None) {
 		Py_XINCREF(defaults);
 		Py_XDECREF(newfunc->func_defaults);
 		newfunc->func_defaults  = defaults;
