@@ -6,37 +6,20 @@
  * partial history:
  * 1999-10-24 fl  created (based on existing template matcher code)
  * 2000-03-06 fl  first alpha, sort of
- * 2000-06-30 fl  added fast search optimization
- * 2000-06-30 fl  added assert (lookahead) primitives, etc
- * 2000-07-02 fl  added charset optimizations, etc
- * 2000-07-03 fl  store code in pattern object, lookbehind, etc
- * 2000-07-08 fl  added regs attribute
- * 2000-07-21 fl  reset lastindex in scanner methods
  * 2000-08-01 fl  fixes for 1.6b1
- * 2000-08-03 fl  added recursion limit
  * 2000-08-07 fl  use PyOS_CheckStack() if available
- * 2000-08-08 fl  changed findall to return empty strings instead of None
- * 2000-08-27 fl  properly propagate memory errors
- * 2000-09-02 fl  return -1 instead of None for start/end/span
  * 2000-09-20 fl  added expand method
- * 2000-09-21 fl  don't use the buffer interface for unicode strings
- * 2000-10-03 fl  fixed assert_not primitive; support keyword arguments
- * 2000-10-24 fl  really fixed assert_not; reset groups in findall
- * 2000-12-21 fl  fixed memory leak in groupdict
- * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
- * 2001-01-15 fl  avoid recursion for MIN_UNTIL; fixed uppercase literal bug
- * 2001-01-16 fl  fixed memory leak in pattern destructor
  * 2001-03-20 fl  lots of fixes for 2.1b2
  * 2001-04-15 fl  export copyright as Python attribute, not global
  * 2001-04-28 fl  added __copy__ methods (work in progress)
- * 2001-05-14 fl  fixes for 1.5.2
+ * 2001-05-14 fl  fixes for 1.5.2 compatibility
  * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
  * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
  * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
  * 2001-10-21 fl  added sub/subn primitive
- * 2001-10-22 fl  check for literal sub/subn templates
  * 2001-10-24 fl  added finditer primitive (for 2.2 only)
  * 2001-12-07 fl  fixed memory leak in sub/subn (Guido van Rossum)
+ * 2002-11-09 fl  fixed empty sub/subn return type
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -52,7 +35,7 @@
 #ifndef SRE_RECURSIVE
 
 static char copyright[] =
-    " SRE 2.2.1 Copyright (c) 1997-2001 by Secret Labs AB ";
+    " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #include "Python.h"
 #include "structmember.h" /* offsetof */
@@ -1801,7 +1784,7 @@ join_list(PyObject* list, PyObject* pattern)
     switch (PyList_GET_SIZE(list)) {
     case 0:
         Py_DECREF(list);
-        return PyString_FromString("");
+        return PySequence_GetSlice(pattern, 0, 0);
     case 1:
         result = PyList_GET_ITEM(list, 0);
         Py_INCREF(result);
