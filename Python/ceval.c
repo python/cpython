@@ -819,7 +819,7 @@ eval_code(co, globals, locals, arg)
 						n = gettuplesize(v);
 					}
 				}
-#if 0 /* Compatibility hacks no longer needed (I think) */
+#ifdef COMPAT_HACKS /* Compatibility hacks no longer needed (I think) */
 				else if (n != 1 && oparg == 1) {
 					/* Rule (b) */
 					PUSH(v);
