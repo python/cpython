@@ -93,7 +93,11 @@ FUNC2(math_fmod, fmod)
 #endif
 FUNC1(math_log, log)
 FUNC1(math_log10, log10)
+#ifdef applec /* MPW */
+FUNC2(math_pow, power)
+#else
 FUNC2(math_pow, pow)
+#endif
 FUNC1(math_sin, sin)
 FUNC1(math_sinh, sinh)
 FUNC1(math_sqrt, sqrt)
