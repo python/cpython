@@ -1,5 +1,8 @@
-This directory contains the LaTeX source to the Python documentation.
-It is not all finished, but good enough to get you started.
+Python main documentation -- in LaTeX
+-------------------------------------
+
+This directory contains the LaTeX sources to the Python documentation
+and a published article about Python.
 
 The following are the LaTeX source files:
 
@@ -9,16 +12,26 @@ The following are the LaTeX source files:
 	qua.tex, quabib.bib		Article published in CWI Quarterly
 
 All except qua.tex use the style option file "myformat.sty".  This
-contains some macro definitions and sets style parameters.  You can
-easily edit it to change the paper size (the default is European
-paper, "A4": 21 x 29.7 cm).
+contains some macro definitions and sets some style parameters.
 
-There's a Makefile to call latex and other utilities (makeindex and
-bibtex) in the right order and the right number of times.  This will
-produce dvi files for each document made; to preview them, use xdvi.
-Printing depends on local conventions; at my site, I use dvips and
-lpr.  For example:
+All documents are set up for European paper size ("A4": 21 x 29.7 cm)
+by default.  To use US paper, remove the "a4wide" style option from
+the \documentstyle options list in the first line of the main .tex
+files (you may want to fiddle with the lay-out parameters, since the
+default format uses rather wide margins to my taste).
+
+You need the makeindex utility to produce the index for ref.tex
+lib.tex; you need bibtex to produce the references list for qua.tex.
+
+There's a Makefile to call latex and the other utilities in the right
+order and the right number of times.  This will produce dvi files for
+each document made; to preview them, use xdvi.  Printing depends on
+local conventions; at my site, I use dvips and lpr.  For example:
 
 	make ref			# creates ref.dvi
 	xdvi ref			# preview it
 	dvips -Ppsc ref | lpr -Ppsc	# print it on printer "psc".
+
+If you don't have latex, you can ftp the pre-formatted PosytScript
+versions of the documents; see "../misc/FTP" for information about
+ftp-ing Python files.
