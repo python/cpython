@@ -4,7 +4,7 @@ import os
 import AppleEvents
 import macfs
 
-def mkproject(outputfile, modulename, settings, force=0):
+def mkproject(outputfile, modulename, settings, force=0, templatename=None):
 	#
 	# Copy the dictionary
 	#
@@ -18,8 +18,10 @@ def mkproject(outputfile, modulename, settings, force=0):
 	dictcopy['mac_exportname'] = os.path.split(outputfile)[1] + '.exp'
 	if not dictcopy.has_key('mac_outputdir'):
 		dictcopy['mac_outputdir'] = ':lib:'
-	dictcopy['mac_dllname'] = modulename + '.ppc.slb'
-	dictcopy['mac_targetname'] = modulename + '.ppc'
+	if not dictcopy.has_key('mac_dllname'):
+		dictcopy['mac_dllname'] = modulename + '.ppc.slb'
+	if not dictcopy.has_key('mac_targetname'):
+		dictcopy['mac_targetname'] = modulename + '.ppc'
 	if os.path.isabs(dictcopy['sysprefix']):
 		dictcopy['mac_sysprefixtype'] = 'Absolute'
 	else:
@@ -27,7 +29,7 @@ def mkproject(outputfile, modulename, settings, force=0):
 	#
 	# Generate the XML for the project
 	#
-	xmlbuilder = cwxmlgen.ProjectBuilder(dictcopy)
+	xmlbuilder = cwxmlgen.ProjectBuilder(dictcopy, templatename=templatename)
 	xmlbuilder.generate()
 	if not force:
 		# We do a number of checks and all must succeed before we decide to
