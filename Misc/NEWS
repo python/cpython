@@ -170,6 +170,9 @@ Extension modules
 
 Library
 
+- xml.dom.minidom.toxml and toprettyxml now take an optional encoding
+  argument.
+
 - Some fixes in the copy module: when an object is copied through its
   __reduce__ method, there was no check for a __setstate__ method on
   the result [SF patch 565085]; deepcopy should treat instances of

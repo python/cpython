@@ -65,16 +65,22 @@ class Node(xml.dom.Node):
     def __nonzero__(self):
         return 1
 
-    def toxml(self):
-        writer = _get_StringIO()
-        self.writexml(writer)
-        return writer.getvalue()
+    def toxml(self, encoding = None):
+        return self.toprettyxml("", "", encoding)
 
-    def toprettyxml(self, indent="\t", newl="\n"):
+    def toprettyxml(self, indent="\t", newl="\n", encoding = None):
         # indent = the indentation string to prepend, per level
         # newl = the newline string to append
         writer = _get_StringIO()
-        self.writexml(writer, "", indent, newl)
+        if encoding is not None:
+            import codecs
+            # Can't use codecs.getwriter to preserve 2.0 compatibility
+            writer = codecs.lookup(encoding)[3](writer)
+        if self.nodeType == Node.DOCUMENT_NODE:
+            # Can pass encoding only to document, to put it into XML header
+            self.writexml(writer, "", indent, newl, encoding)
+        else:
+            self.writexml(writer, "", indent, newl)
         return writer.getvalue()
 
     def hasChildNodes(self):
@@ -934,8 +940,12 @@ class Document(Node):
         return _getElementsByTagNameNSHelper(self, namespaceURI, localName,
                                              NodeList())
 
-    def writexml(self, writer, indent="", addindent="", newl=""):
-        writer.write('<?xml version="1.0" ?>\n')
+    def writexml(self, writer, indent="", addindent="", newl="",
+                 encoding = None):
+        if encoding is None:
+            writer.write('<?xml version="1.0" ?>\n')
+        else:
+            writer.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
 

@@ -606,6 +606,14 @@ def testSAX2DOM():
 
     doc.unlink()
 
+def testEncodings():
+    doc = parseString('<foo>&#x20ac;</foo>')
+    confirm(doc.toxml() == u'<?xml version="1.0" ?>\n<foo>\u20ac</foo>'
+            and doc.toxml('utf-8') == '<?xml version="1.0" encoding="utf-8"?>\n<foo>\xe2\x82\xac</foo>'
+            and doc.toxml('iso-8859-15') == '<?xml version="1.0" encoding="iso-8859-15"?>\n<foo>\xa4</foo>',
+            "testEncodings - encoding EURO SIGN")
+    doc.unlink()
+
 # --- MAIN PROGRAM
 
 names = globals().keys()
