@@ -467,12 +467,12 @@ The following operations are defined on mutable sequence types (where
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
 	  if \code{\var{i} >= 0}}{}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
-    {same as \code{x = \var{s}[\var{i}]; del \var{s}[\var{i}]; return x}}{(4)}
+    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(4)}
   \lineiii{\var{s}.remove(\var{x})}
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(3)}
-  \lineiii{\var{s}.sort(\var{cmpfunc})}
+  \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
 	{sort the items of \var{s} in place}{(2), (3)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
@@ -486,6 +486,7 @@ The following operations are defined on mutable sequence types (where
 \ttindex{count}
 \ttindex{index}
 \ttindex{insert}
+\ttindex{pop}
 \ttindex{remove}
 \ttindex{reverse}
 \ttindex{sort}
@@ -510,7 +511,9 @@ list in place for economy of space when sorting or reversing a large
 list.  They don't return the sorted or reversed list to remind you of
 this side effect.
 
-\item[(4)4] The optional argument \var{i} defaults to \code{-1}, so that
+\item[(4)] The \method{pop()} method is experimental and not supported 
+by other mutable sequence types than lists.
+The optional argument \var{i} defaults to \code{-1}, so that
 by default the last item is removed and returned.
 
 \end{description}
