@@ -46,51 +46,49 @@ class ProfileHookTestCase(unittest.TestCase):
         def f(p):
             pass
         f_ident = ident(f)
-        self.check_events(f, [(0, 'call', f_ident),
-                              (0, 'return', f_ident),
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident),
                               ])
 
     def test_exception(self):
         def f(p):
+            1/0
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'exception', f_ident),
+                              (0, 'exception', protect_ident),
+                              ])
+
+    def test_caught_exception(self):
+        def f(p):
             try: 1/0
             except: pass
         f_ident = ident(f)
-        self.check_events(f, [(0, 'call', f_ident),
-                              (0, 'exception', f_ident),
-                              (0, 'return', f_ident),
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'exception', f_ident),
+                              (1, 'return', f_ident),
                               ])
 
     def test_caught_nested_exception(self):
         def f(p):
             try: 1/0
             except: pass
-        def g(p):
-            f(p)
         f_ident = ident(f)
-        g_ident = ident(g)
-        self.check_events(g, [(0, 'call', g_ident),
-                              (1, 'call', f_ident),
+        self.check_events(f, [(1, 'call', f_ident),
                               (1, 'exception', f_ident),
                               (1, 'return', f_ident),
-                              (0, 'return', g_ident),
                               ])
 
     def test_nested_exception(self):
         def f(p):
             1/0
-        def g(p):
-            try: f(p)
-            except: pass
         f_ident = ident(f)
-        g_ident = ident(g)
-        self.check_events(g, [(0, 'call', g_ident),
-                              (1, 'call', f_ident),
+        self.check_events(f, [(1, 'call', f_ident),
                               (1, 'exception', f_ident),
                               # This isn't what I expected:
-                              (0, 'exception', g_ident),
+                              (0, 'exception', protect_ident),
                               # I expected this again:
                               # (1, 'exception', f_ident),
-                              (0, 'return', g_ident),
                               ])
 
     def test_exception_in_except_clause(self):
@@ -104,14 +102,14 @@ class ProfileHookTestCase(unittest.TestCase):
                 except: pass
         f_ident = ident(f)
         g_ident = ident(g)
-        self.check_events(g, [(0, 'call', g_ident),
-                              (1, 'call', f_ident),
-                              (1, 'exception', f_ident),
-                              (0, 'exception', g_ident),
+        self.check_events(g, [(1, 'call', g_ident),
                               (2, 'call', f_ident),
                               (2, 'exception', f_ident),
-                              (0, 'exception', g_ident),
-                              (0, 'return', g_ident),
+                              (1, 'exception', g_ident),
+                              (3, 'call', f_ident),
+                              (3, 'exception', f_ident),
+                              (1, 'exception', g_ident),
+                              (1, 'return', g_ident),
                               ])
 
     def test_exception_propogation(self):
@@ -120,21 +118,46 @@ class ProfileHookTestCase(unittest.TestCase):
         def g(p):
             try: f(p)
             finally: p.add_event("falling through")
-        def h(p):
-            try: g(p)
-            except: pass
         f_ident = ident(f)
         g_ident = ident(g)
-        h_ident = ident(h)
-        self.check_events(h, [(0, 'call', h_ident),
-                              (1, 'call', g_ident),
+        self.check_events(g, [(1, 'call', g_ident),
                               (2, 'call', f_ident),
                               (2, 'exception', f_ident),
                               (1, 'exception', g_ident),
                               (1, 'falling through', g_ident),
-                              (0, 'exception', h_ident),
-                              (0, 'return', h_ident),
+                              (0, 'exception', protect_ident),
                               ])
+
+    def test_raise_twice(self):
+        def f(p):
+            try: 1/0
+            except: 1/0
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'exception', f_ident),
+                              (1, 'exception', f_ident),
+                              (0, 'exception', protect_ident)
+                              ])
+
+    def test_raise_reraise(self):
+        def f(p):
+            try: 1/0
+            except: raise
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'exception', f_ident),
+                              (0, 'exception', protect_ident)
+                              ])
+
+    def test_raise(self):
+        def f(p):
+            raise Exception()
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'exception', f_ident),
+                              (0, 'exception', protect_ident)
+                              ])
+
 
 def ident(function):
     if hasattr(function, "f_code"):
@@ -144,12 +167,19 @@ def ident(function):
     return code.co_firstlineno, code.co_name
 
 
+def protect(f, p):
+    try: f(p)
+    except: pass
+
+protect_ident = ident(protect)
+
+
 def capture_events(callable):
     p = HookWatcher()
     sys.setprofile(p.callback)
-    callable(p)
+    protect(callable, p)
     sys.setprofile(None)
-    return p.get_events()
+    return p.get_events()[1:-1]
 
 
 def show_events(callable):
