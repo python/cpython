@@ -91,6 +91,10 @@ class MyScanner(Scanner):
 			 [("ExistingDialogPtr", "*", "*")]),
 			([("DialogRef", "*", "OutMode")],
 			 [("ExistingDialogPtr", "*", "*")]),
+			([("WindowPtr", "*", "OutMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
+			([("WindowPtr", "*", "ReturnMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
 			]
 
 	def writeinitialdefs(self):
