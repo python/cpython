@@ -49,12 +49,10 @@
 	      <br>(for quick access to all documentation)
 
 	    <li> <a href="lib/lib.html" class=title>Library Reference</a>
-	      (<a href="lib/modindex.html">Module Index</a>)
 	      <br>(keep this under your pillow)
 
 	    <li> <a href="mac/mac.html" class=title>Macintosh Module
-		Reference</a> (<a href="mac/modindex.html">Module
-		Index</a>)
+		Reference</a>
 	      <br>(this too, if you use a Macintosh)
 	  </ul>
 	  </td>
