@@ -49,6 +49,7 @@ def test():
 				break
 			continue
 		print 'Heh?'
+	p.close()
 
 test()
 
