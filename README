@@ -455,32 +455,30 @@ Linker (ld) libraries and flags for threads
 Configuring additional built-in modules
 ---------------------------------------
 
-You can configure the interpreter to contain fewer or more built-in
-modules by editing the Modules/Setup file.  This file is initially
-copied from Setup.dist by the configure script; if it does not exist
-yet, create it by copying Modules/Setup.dist yourself (configure will
-never overwrite it).  Never edit Setup.dist -- always edit Setup or
-Setup.local (see below).  Read the comments in the file for
-information on what kind of edits are allowed.  When you have edited
-Setup in the Modules directory, the interpreter will automatically be
-rebuilt the next time you run make in the toplevel directory.  (When
-working inside the Modules directory, use "make Makefile; make".)
+Starting with Python 2.1, the setup.py script at the top of the source
+distribution attempts to detect which modules can be built and
+automatically compiles them.  Autodetection doesn't always work, so
+you can customize the configuration by editing the Modules/Setup file.
+This file is initially copied from Setup.dist by the configure script;
+if it does not exist yet, create it by copying Modules/Setup.dist
+yourself (configure will never overwrite it).  Never edit Setup.dist
+-- always edit Setup or Setup.local (see below).  Read the comments in
+the file for information on what kind of edits are allowed.  When you
+have edited Setup in the Modules directory, the interpreter will
+automatically be rebuilt the next time you run make in the toplevel
+directory.  (When working inside the Modules directory, use "make
+Makefile; make".)
 
-The default collection of modules should build on any Unix system, but
-many optional modules should work on all modern Unices (e.g. try
-audioop, imageop, crypt, dbm, gdbm, nis, resource, termios, timing,
-syslog, _curses, pyexpat, readline, rgbimg, zlib).  Often the quickest
-way to determine whether a particular module works or not is to see if
-it will build: enable it in Setup, then if you get compilation or link
+Many useful modules can be built on any Unix system, but some optional
+modules can't be reliably autodetected.  Often the quickest way to
+determine whether a particular module works or not is to see if it
+will build: enable it in Setup, then if you get compilation or link
 errors, disable it -- you're either missing support or need to adjust
 the compilation and linking parameters for that module.
 
 On SGI IRIX, there are modules that interface to many SGI specific
-system libraries, e.g. the GL library and the audio hardware.
-
-For SunOS and Solaris, enable module "sunaudiodev" to support the
-audio device. Likewise, for Linux and some *BSD systems, enable
-"linuxaudiodev".
+system libraries, e.g. the GL library and the audio hardware.  These
+modules will not be built by the setup.py script.
 
 In addition to the file Setup, you can also edit the file Setup.local.
 (the makesetup script processes both).  You may find it more
