@@ -1610,6 +1610,7 @@ posix_execve(PyObject *self, PyObject *args)
 	
 	for (pos = 0; pos < i; pos++) {
 		char *p, *k, *v;
+		size_t len;
 
 		key = PyList_GetItem(keys, pos);
 		val = PyList_GetItem(vals, pos);
@@ -1626,12 +1627,13 @@ posix_execve(PyObject *self, PyObject *args)
         /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
         if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
 #endif
-		p = PyMem_NEW(char, PyString_Size(key)+PyString_Size(val) + 2);
+		len = PyString_Size(key) + PyString_Size(val) + 2;
+		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
 			goto fail_2;
 		}
-		sprintf(p, "%s=%s", k, v);
+		PyOS_snprintf(p, len, "%s=%s", k, v);
 		envlist[envc++] = p;
 #if defined(PYOS_OS2)
     }
@@ -1803,6 +1805,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 	
 	for (pos = 0; pos < i; pos++) {
 		char *p, *k, *v;
+		size_t len;
 
 		key = PyList_GetItem(keys, pos);
 		val = PyList_GetItem(vals, pos);
@@ -1814,12 +1817,13 @@ posix_spawnve(PyObject *self, PyObject *args)
 		{
 			goto fail_2;
 		}
-		p = PyMem_NEW(char, PyString_Size(key)+PyString_Size(val) + 2);
+		len = PyString_Size(key) + PyString_Size(val) + 2;
+		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
 			goto fail_2;
 		}
-		sprintf(p, "%s=%s", k, v);
+		PyOS_snprintf(p, len, "%s=%s", k, v);
 		envlist[envc++] = p;
 	}
 	envlist[envc] = 0;
@@ -4030,6 +4034,7 @@ posix_putenv(PyObject *self, PyObject *args)
         char *s1, *s2;
         char *new;
 	PyObject *newstr;
+	size_t len;
 
 	if (!PyArg_ParseTuple(args, "ss:putenv", &s1, &s2))
 		return NULL;
@@ -4058,11 +4063,14 @@ posix_putenv(PyObject *self, PyObject *args)
 #endif
 
 	/* XXX This can leak memory -- not easy to fix :-( */
-	newstr = PyString_FromStringAndSize(NULL, strlen(s1) + strlen(s2) + 2);
+	len = strlen(s1) + strlen(s2) + 2;
+	/* len includes space for a trailing \0; the size arg to
+	   PyString_FromStringAndSize does not count that */
+	newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
 	if (newstr == NULL)
 		return PyErr_NoMemory();
 	new = PyString_AS_STRING(newstr);
-	(void) sprintf(new, "%s=%s", s1, s2);
+	PyOS_snprintf(new, len, "%s=%s", s1, s2);
 	if (putenv(new)) {
                 posix_error();
                 return NULL;
