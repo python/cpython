@@ -1258,8 +1258,8 @@ PyList_AsTuple(PyObject *v)
 	if (w == NULL)
 		return NULL;
 	p = ((PyTupleObject *)w)->ob_item;
-	memcpy((ANY *)p,
-	       (ANY *)((PyListObject *)v)->ob_item,
+	memcpy((void *)p,
+	       (void *)((PyListObject *)v)->ob_item,
 	       n*sizeof(PyObject *));
 	while (--n >= 0) {
 		Py_INCREF(*p);

@@ -210,15 +210,15 @@ PyEval_RestoreThread(PyThreadState *tstate)
 
 #define NPENDINGCALLS 32
 static struct {
-	int (*func)(ANY *);
-	ANY *arg;
+	int (*func)(void *);
+	void *arg;
 } pendingcalls[NPENDINGCALLS];
 static volatile int pendingfirst = 0;
 static volatile int pendinglast = 0;
 static volatile int things_to_do = 0;
 
 int
-Py_AddPendingCall(int (*func)(ANY *), ANY *arg)
+Py_AddPendingCall(int (*func)(void *), void *arg)
 {
 	static int busy = 0;
 	int i, j;
@@ -255,8 +255,8 @@ Py_MakePendingCalls(void)
 	things_to_do = 0;
 	for (;;) {
 		int i;
-		int (*func)(ANY *);
-		ANY *arg;
+		int (*func)(void *);
+		void *arg;
 		i = pendingfirst;
 		if (i == pendinglast)
 			break; /* Queue empty */
