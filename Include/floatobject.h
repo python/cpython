@@ -47,6 +47,48 @@ PyAPI_FUNC(void) PyFloat_AsReprString(char*, PyFloatObject *v);
    preserve precision across conversions. */
 PyAPI_FUNC(void) PyFloat_AsString(char*, PyFloatObject *v);
 
+/* _PyFloat_{Pack,Unpack}{4,8}
+ *
+ * The struct and pickle (at least) modules need an efficient platform-
+ * independent way to store floating-point values as byte strings.
+ * The Pack routines produce a string from a C double, and the Unpack
+ * routines produce a C double from such a string.  The suffix (4 or 8)
+ * specifies the number of bytes in the string.
+ *
+ * Excepting NaNs and infinities (which aren't handled correctly), the 4-
+ * byte format is identical to the IEEE-754 single precision format, and
+ * the 8-byte format to the IEEE-754 double precision format.  On non-
+ * IEEE platforms with more precision, or larger dynamic range, than
+ * 754 supports, not all values can be packed; on non-IEEE platforms with
+ * less precision, or smaller dynamic range, not all values can be
+ * unpacked.  What happens in such cases is partly accidental (alas).
+ */
+
+/* The pack routines write 4 or 8 bytes, starting at p.  le is a bool
+ * argument, true if you want the string in little-endian format (exponent
+ * last, at p+3 or p+7), false if you want big-endian format (exponent
+ * first, at p).
+ * Return value:  0 if all is OK, -1 if error (and an exception is
+ * set, most likely OverflowError).
+ * Bug:  What this does is undefined if x is a NaN or infinity.
+ * Bug:  -0.0 and +0.0 produce the same string.
+ */
+PyAPI_FUNC(int) _PyFloat_Pack4(double x, unsigned char *p, int le);
+PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char *p, int le);
+
+/* The unpack routines read 4 or 8 bytes, starting at p.  le is a bool
+ * argument, true if the string is in little-endian format (exponent
+ * last, at p+3 or p+7), false if big-endian (exponent first, at p).
+ * Return value:  The unpacked double.  On error, this is -1.0 and
+ * PyErr_Occurred() is true (and an exception is set, most likely
+ * OverflowError).
+ * Bug:  What this does is undefined if the string represents a NaN or
+ * infinity.
+ */
+PyAPI_FUNC(double) _PyFloat_Unpack4(const unsigned char *p, int le);
+PyAPI_FUNC(double) _PyFloat_Unpack8(const unsigned char *p, int le);
+
+
 #ifdef __cplusplus
 }
 #endif
