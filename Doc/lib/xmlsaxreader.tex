@@ -69,20 +69,27 @@ parser object.
 \end{classdesc}
 
 \begin{classdesc}{AttributesImpl}{attrs}
-  This is a dictionary-like object which represents the element
-  attributes in a \method{startElement()} call. In addition to the
-  most useful dictionary operations, it supports a number of other
-  methods as described below. Objects of this class should be
+  This is an implementation of the \ulink{\class{Attributes}
+  interface}{attributes-objects.html} (see
+  section~\ref{attributes-objects}).  This is a dictionary-like
+  object which represents the element attributes in a
+  \method{startElement()} call. In addition to the most useful
+  dictionary operations, it supports a number of other methods as
+  described by the interface. Objects of this class should be
   instantiated by readers; \var{attrs} must be a dictionary-like
-  object.
+  object containing a mapping from attribute names to attribute
+  values.
 \end{classdesc}
 
 \begin{classdesc}{AttributesNSImpl}{attrs, qnames}
-  Namespace-aware variant of attributes, which will be passed to
-  \method{startElementNS()}. It is derived from \class{AttributesImpl},
-  but understands attribute names as two-tuples of \var{namespaceURI}
-  and \var{localname}. In addition, it provides a number of methods
-  expecting qualified names as they appear in the original document.
+  Namespace-aware variant of \class{AttributesImpl}, which will be
+  passed to \method{startElementNS()}. It is derived from
+  \class{AttributesImpl}, but understands attribute names as
+  two-tuples of \var{namespaceURI} and \var{localname}. In addition,
+  it provides a number of methods expecting qualified names as they
+  appear in the original document.  This class implements the
+  \ulink{\class{AttributesNS} interface}{attributes-ns-objects.html}
+  (see section~\ref{attributes-ns-objects}).
 \end{classdesc}
 
 
@@ -288,27 +295,27 @@ Instances of \class{Locator} provide these methods:
 \end{methoddesc}
 
 
-\subsection{AttributesImpl Objects \label{attributes-impl-objects}}
+\subsection{The \class{Attributes} Interface \label{attributes-objects}}
 
-\class{AttributesImpl} objects implement a portion of the mapping
-protocol, and the methods \method{copy()}, \method{get()},
+\class{Attributes} objects implement a portion of the mapping
+protocol, including the methods \method{copy()}, \method{get()},
 \method{has_key()}, \method{items()}, \method{keys()}, and
 \method{values()}.  The following methods are also provided:
 
-\begin{methoddesc}[AttributesImpl]{getLength}{}
+\begin{methoddesc}[Attributes]{getLength}{}
   Return the number of attributes.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesImpl]{getNames}{}
+\begin{methoddesc}[Attributes]{getNames}{}
   Return the names of the attributes.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesImpl]{getType}{name}
+\begin{methoddesc}[Attributes]{getType}{name}
   Returns the type of the attribute \var{name}, which is normally
   \code{'CDATA'}.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesImpl]{getValue}{name}
+\begin{methoddesc}[Attributes]{getValue}{name}
   Return the value of attribute \var{name}.
 \end{methoddesc}
 
@@ -316,22 +323,29 @@ protocol, and the methods \method{copy()}, \method{get()},
 % here already, but documented only for derived class.
 
 
-\subsection{AttributesNSImpl Objects \label{attributes-ns-impl-objects}}
+\subsection{The \class{AttributesNS} Interface \label{attributes-ns-objects}}
 
-\begin{methoddesc}[AttributesNSImpl]{getValueByQName}{name}
+This interface is a subtype of the \ulink{\class{Attributes}
+interface}{attributes-objects.html} (see
+section~\ref{attributes-objects}).  All methods supported by that
+interface are also available on \class{AttributesNS} objects.
+
+The following methods are also available:
+
+\begin{methoddesc}[AttributesNS]{getValueByQName}{name}
   Return the value for a qualified name.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesNSImpl]{getNameByQName}{name}
+\begin{methoddesc}[AttributesNS]{getNameByQName}{name}
   Return the \code{(\var{namespace}, \var{localname})} pair for a
   qualified \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesNSImpl]{getQNameByName}{name}
+\begin{methoddesc}[AttributesNS]{getQNameByName}{name}
   Return the qualified name for a \code{(\var{namespace},
   \var{localname})} pair.
 \end{methoddesc}
 
-\begin{methoddesc}[AttributesNSImpl]{getQNames}{}
+\begin{methoddesc}[AttributesNS]{getQNames}{}
   Return the qualified names of all attributes.
 \end{methoddesc}
