@@ -499,15 +499,16 @@ eval_code2(co, globals, locals,
 				if (kwdict == NULL) {
 					PyErr_Format(PyExc_TypeError,
 					 "unexpected keyword argument: %.400s",
-					 PyString_AsString(keyword));
+					    PyString_AsString(keyword));
 					goto fail;
 				}
 				PyDict_SetItem(kwdict, keyword, value);
 			}
 			else {
 				if (GETLOCAL(j) != NULL) {
-					PyErr_SetString(PyExc_TypeError,
-						"keyword parameter redefined");
+					PyErr_Format(PyExc_TypeError, 
+				     "keyword parameter redefined: %.400s",
+					     PyString_AsString(keyword));
 					goto fail;
 				}
 				Py_INCREF(value);
@@ -1548,125 +1549,166 @@ eval_code2(co, globals, locals,
 			break;
 
 		case CALL_FUNCTION:
+		case CALL_FUNCTION_VAR:
+		case CALL_FUNCTION_KW:
+		case CALL_FUNCTION_VAR_KW:
 		{
-			int na = oparg & 0xff;
-			int nk = (oparg>>8) & 0xff;
-			int n = na + 2*nk;
-			PyObject **pfunc = stack_pointer - n - 1;
-			PyObject *func = *pfunc;
-			PyObject *self = NULL;
-			PyObject *class = NULL;
-			f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
-			if (PyMethod_Check(func)) {
-				self = PyMethod_Self(func);
-				class = PyMethod_Class(func);
-				func = PyMethod_Function(func);
-				Py_INCREF(func);
-				if (self != NULL) {
-					Py_INCREF(self);
-					Py_DECREF(*pfunc);
-					*pfunc = self;
-					na++;
-					n++;
-				}
-				else {
-					/* Unbound methods must be
-					   called with an instance of
-					   the class (or a derived
-					   class) as first argument */
-					if (na > 0 &&
-					    (self = stack_pointer[-n])
-					 	!= NULL &&
-					    PyInstance_Check(self) &&
-					    PyClass_IsSubclass(
-						    (PyObject *)
-						    (((PyInstanceObject *)self)
-						     ->in_class),
-						    class))
-						/* Handy-dandy */ ;
-					else {
-						PyErr_SetString(
-							PyExc_TypeError,
-	   "unbound method must be called with class instance 1st argument");
-						x = NULL;
-						break;
-					}
-				}
-			}
-			else
-				Py_INCREF(func);
-			if (PyFunction_Check(func)) {
-				PyObject *co = PyFunction_GetCode(func);
-				PyObject *globals =
-					PyFunction_GetGlobals(func);
-				PyObject *argdefs =
-					PyFunction_GetDefaults(func);
-				PyObject **d;
-				int nd;
-				if (argdefs != NULL) {
-					d = &PyTuple_GET_ITEM(argdefs, 0);
-					nd = ((PyTupleObject *)argdefs) ->
-						ob_size;
-				}
-				else {
-					d = NULL;
-					nd = 0;
-				}
-				x = eval_code2(
-					(PyCodeObject *)co,
-					globals, (PyObject *)NULL,
-					stack_pointer-n, na,
-					stack_pointer-2*nk, nk,
-					d, nd,
-					class);
+		    int na = oparg & 0xff;
+		    int nk = (oparg>>8) & 0xff;
+		    int flags = (opcode - CALL_FUNCTION) & 3;
+		    int n = na + 2*nk + (flags & 1) + ((flags >> 1) & 1);
+		    PyObject **pfunc = stack_pointer - n - 1;
+		    PyObject *func = *pfunc;
+		    PyObject *self = NULL;
+		    PyObject *class = NULL;
+		    f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
+		    if (PyMethod_Check(func)) {
+			self = PyMethod_Self(func);
+			class = PyMethod_Class(func);
+			func = PyMethod_Function(func);
+			Py_INCREF(func);
+			if (self != NULL) {
+			    Py_INCREF(self);
+			    Py_DECREF(*pfunc);
+			    *pfunc = self;
+			    na++;
+			    n++;
 			}
 			else {
-				PyObject *args = PyTuple_New(na);
-				PyObject *kwdict = NULL;
-				if (args == NULL) {
-					x = NULL;
-					break;
+			    /* Unbound methods must be called with an
+			       instance of the class (or a derived
+			       class) as first argument */ 
+			    if (na > 0 && (self = stack_pointer[-n]) != NULL 
+				&& PyInstance_Check(self) 
+				&& PyClass_IsSubclass((PyObject *)
+				    (((PyInstanceObject *)self)->in_class),
+						      class))
+                                  /* Handy-dandy */ ;
+			    else {
+				PyErr_SetString(PyExc_TypeError,
+	    "unbound method must be called with class instance 1st argument");
+				x = NULL;
+				break;
+			    }
+			}
+		    }
+		    else
+			Py_INCREF(func);
+		    if (PyFunction_Check(func) && flags == 0) {
+			PyObject *co = PyFunction_GetCode(func);
+			PyObject *globals = PyFunction_GetGlobals(func);
+			PyObject *argdefs = PyFunction_GetDefaults(func);
+			PyObject **d;
+			int nd;
+			if (argdefs != NULL) {
+			    d = &PyTuple_GET_ITEM(argdefs, 0);
+			    nd = ((PyTupleObject *)argdefs)->ob_size;
+			}
+			else {
+			    d = NULL;
+			    nd = 0;
+			}
+			x = eval_code2((PyCodeObject *)co, globals, 
+				       (PyObject *)NULL, stack_pointer-n, na,
+				       stack_pointer-2*nk, nk, d, nd,
+				       class);
+		    }
+		    else {
+			int nstar = 0;
+			PyObject *args;
+			PyObject *stararg = 0;
+			PyObject *kwdict = NULL;
+			if (flags & 2) {
+			    kwdict = POP();
+			    if (!PyDict_Check(kwdict)) {
+				PyErr_SetString(PyExc_TypeError,
+					"** argument must be a dictionary");
+				x = NULL;
+				break;
+			    }
+			}
+			if (flags & 1) {
+			    stararg = POP();
+			    if (!PySequence_Check(stararg)) {
+				PyErr_SetString(PyExc_TypeError,
+					"* argument must be a sequence");
+				x = NULL;
+				break;
+			    }
+			    nstar = PySequence_Length(stararg);
+			}
+			if (nk > 0) {
+			    if (kwdict == NULL) {
+				kwdict = PyDict_New();
+				if (kwdict == NULL) {
+				    x = NULL;
+				    break;
 				}
-				if (nk > 0) {
-					kwdict = PyDict_New();
-					if (kwdict == NULL) {
-						x = NULL;
-						break;
-					}
-					err = 0;
-					while (--nk >= 0) {
-						PyObject *value = POP();
-						PyObject *key = POP();
-						err = PyDict_SetItem(
-							kwdict, key, value);
-						Py_DECREF(key);
-						Py_DECREF(value);
-						if (err)
-							break;
-					}
-					if (err) {
-						Py_DECREF(args);
-						Py_DECREF(kwdict);
-						break;
-					}
+			    }
+			    err = 0;
+			    while (--nk >= 0) {
+				PyObject *value = POP();
+				PyObject *key = POP();
+				if (PyDict_GetItem(kwdict, key) != NULL) {
+				    err = 1;
+				    PyErr_Format(PyExc_TypeError,
+					"keyword parameter redefined: %.400s",
+						 PyString_AsString(key));
+				    break;
 				}
-				while (--na >= 0) {
-					w = POP();
-					PyTuple_SET_ITEM(args, na, w);
-				}
-				x = PyEval_CallObjectWithKeywords(
-					func, args, kwdict);
+				err = PyDict_SetItem(kwdict, key, value);
+				Py_DECREF(key);
+				Py_DECREF(value);
+				if (err)
+				    break;
+			    }
+			    if (err) {
 				Py_DECREF(args);
-				Py_XDECREF(kwdict);
+				Py_DECREF(kwdict);
+				break;
+			    }
 			}
-			Py_DECREF(func);
-			while (stack_pointer > pfunc) {
-				w = POP();
-				Py_DECREF(w);
+			args = PyTuple_New(na + nstar);
+			if (args == NULL) {
+			    x = NULL;
+			    break;
 			}
-			PUSH(x);
-			if (x != NULL) continue;
-			break;
+			if (stararg) {
+			    PyObject *t = NULL;
+			    int i;
+			    if (!PyTuple_Check(stararg)) {
+				/* must be sequence to pass earlier test */
+				t = PySequence_Tuple(stararg);
+				if (t == NULL) {
+				    x = NULL;
+				    break;
+				}
+				Py_DECREF(stararg);
+				stararg = t;
+			    }
+			    for (i = 0; i < nstar; i++) {
+				PyObject *a = PyTuple_GET_ITEM(stararg, i);
+				Py_INCREF(a);
+				PyTuple_SET_ITEM(args, na + i, a);
+			    }
+			    Py_DECREF(stararg);
+			}
+			while (--na >= 0) {
+			    w = POP();
+			    PyTuple_SET_ITEM(args, na, w);
+			}
+			x = PyEval_CallObjectWithKeywords(func, args, kwdict);
+			Py_DECREF(args);
+			Py_XDECREF(kwdict);
+		    }
+		    Py_DECREF(func);
+		    while (stack_pointer > pfunc) {
+			w = POP();
+			Py_DECREF(w);
+		    }
+		    PUSH(x);
+		    if (x != NULL) continue;
+		    break;
 		}
 		
 		case MAKE_FUNCTION:
@@ -2687,10 +2729,9 @@ import_from(locals, v, name)
 	else {
 		x = PyDict_GetItem(w, name);
 		if (x == NULL) {
-			char buf[250];
-			sprintf(buf, "cannot import name %.230s",
-				PyString_AsString(name));
-			PyErr_SetString(PyExc_ImportError, buf);
+			PyErr_Format(PyExc_ImportError, 
+				     "cannot import name %.230s",
+				     PyString_AsString(name));
 			return -1;
 		}
 		else

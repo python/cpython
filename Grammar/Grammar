@@ -23,7 +23,7 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
-varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME] | ('**'|'*' '*') NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [',']
+varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME] | '**' NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
@@ -86,5 +86,5 @@ dictmaker: test ':' test (',' test ':' test)* [',']
 
 classdef: 'class' NAME ['(' testlist ')'] ':' suite
 
-arglist:  argument (',' argument)* [',']
+arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
 argument: [test '='] test	# Really [keyword '='] test

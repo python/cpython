@@ -1185,11 +1185,17 @@ com_call_function(c, n)
 		PyObject *keywords = NULL;
 		int i, na, nk;
 		int lineno = n->n_lineno;
+		int star_flag = 0;
+		int starstar_flag = 0;
+		int opcode;
 		REQ(n, arglist);
 		na = 0;
 		nk = 0;
 		for (i = 0; i < NCH(n); i += 2) {
 			node *ch = CHILD(n, i);
+			if (TYPE(ch) == STAR ||
+			    TYPE(ch) == DOUBLESTAR)
+			  break;
 			if (ch->n_lineno != lineno) {
 				lineno = ch->n_lineno;
 				com_addoparg(c, SET_LINENO, lineno);
@@ -1201,12 +1207,27 @@ com_call_function(c, n)
 				nk++;
 		}
 		Py_XDECREF(keywords);
+		while (i < NCH(n)) {
+		    node *tok = CHILD(n, i);
+		    node *ch = CHILD(n, i+1);
+		    i += 3;
+		    switch (TYPE(tok)) {
+		    case STAR:       star_flag = 1;     break;
+		    case DOUBLESTAR: starstar_flag = 1;	break;
+		    }
+		    com_node(c, ch);
+		}
 		if (na > 255 || nk > 255) {
 			com_error(c, PyExc_SyntaxError,
 				  "more than 255 arguments");
 		}
-		com_addoparg(c, CALL_FUNCTION, na | (nk << 8));
-		com_pop(c, na + 2*nk);
+		if (star_flag || starstar_flag)
+		    opcode = CALL_FUNCTION_STAR - 1 + 
+			star_flag + (starstar_flag << 1);
+		else
+		    opcode = CALL_FUNCTION;
+		com_addoparg(c, opcode, na | (nk << 8));
+		com_pop(c, na + 2*nk + star_flag + starstar_flag);
 	}
 }
 
