@@ -2,8 +2,8 @@ FAQ Wizard
 ----------
 
 Author: Guido van Rossum <guido@python.org>
-Version: 0.9.0
-Date:  21 December 1997
+Version: 1.0
+Date:  6 April 1998
 
 
 This is a CGI program that maintains a user-editable FAQ.  It uses RCS
@@ -25,6 +25,9 @@ faqcust.py	additional local customization module (optional)
 
 What's New?
 -----------
+
+Version 1.0 corrects some minor bugs and uses tab-agnostic
+indentation; it is otherwise unchanged from version 0.9.0.
 
 Version 0.9.0 uses the re module (Perl style regular expressions) for
 all its regular expression needs, instead of the regex and regsub
