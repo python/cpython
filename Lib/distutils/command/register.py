@@ -26,15 +26,15 @@ class register(Command):
          'verify the package metadata for correctness'),
         ('list-classifiers', None,
          'list the valid Trove classifiers'),
-        ('verbose', None,
-         'display full response from server'),
+        ('show-response', None,
+         'display full response text from server'),
         ]
-    boolean_options = ['verify', 'verbose', 'list-classifiers']
+    boolean_options = ['verify', 'show-response', 'list-classifiers']
 
     def initialize_options(self):
         self.repository = None
         self.verify = 0
-        self.verbose = 0
+        self.show_response = 0
         self.list_classifiers = 0
 
     def finalize_options(self):
@@ -232,9 +232,8 @@ Your selection [default 1]: ''',
             'description': meta.get_long_description(),
             'keywords': meta.get_keywords(),
             'platform': meta.get_platforms(),
+            'classifiers': meta.get_classifiers(),
         }
-        if hasattr(meta, 'classifiers'):
-            data['classifiers'] = meta.get_classifiers()
         return data
 
     def post_to_server(self, data, auth=None):
@@ -277,16 +276,16 @@ Your selection [default 1]: ''',
         try:
             result = opener.open(req)
         except urllib2.HTTPError, e:
-            if self.verbose:
+            if self.show_response:
                 data = e.fp.read()
             result = e.code, e.msg
         except urllib2.URLError, e:
             result = 500, str(e)
         else:
-            if self.verbose:
+            if self.show_response:
                 data = result.read()
             result = 200, 'OK'
-        if self.verbose:
+        if self.show_response:
             print '-'*75, data, '-'*75
         return result
 
