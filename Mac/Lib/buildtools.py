@@ -83,8 +83,10 @@ def process(template, filename, destname, copy_codefragment,
 	fp.close()
 	try:
 		code = compile(text, filename, "exec")
-	except (SyntaxError, EOFError):
-		raise BuildError, "Syntax error in script %s" % `filename`
+	except SyntaxError, arg:
+		raise BuildError, "Syntax error in script %s: %s" % (filename, arg)
+	except EOFError:
+		raise BuildError, "End-of-file in script %s" % (filename,)
 	
 	# Set the destination file name. Note that basename
 	# does contain the whole filepath, only a .py is stripped.
@@ -341,7 +343,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	if progress:
 		progress.label("Copy resources...")
 		progress.set(20)
-	resfilename = '%s.rsrc' % shortname
+	resfilename = 'python.rsrc'  # XXXX later: '%s.rsrc' % shortname
 	try:
 		output = Res.FSOpenResourceFile(
 				os.path.join(destname, 'Contents', 'Resources', resfilename), 
