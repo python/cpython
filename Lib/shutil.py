@@ -5,6 +5,7 @@ XXX The functions here don't copy the data fork or other metadata on Mac.
 """
 
 import os
+import sys
 import stat
 
 
