@@ -85,7 +85,8 @@ class _ScrollWidget:
 	
 
 UNDOLABELS = [	# Indexed by WEGetUndoInfo() value
-	None, "", "typing", "Cut", "Paste", "Clear", "Drag", "Style"]
+	None, "", "typing", "Cut", "Paste", "Clear", "Drag", "Style",
+	"Ruler", "backspace", "delete", "transform", "resize"]
 
 
 class EditText(Wbase.SelectableWidget, _ScrollWidget):
@@ -452,7 +453,10 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		#if not doundo:
 		#	return 0
 		which, redo = self.ted.WEGetUndoInfo()
-		which = UNDOLABELS[which]
+		if which < len(UNDOLABELS):
+			which = UNDOLABELS[which]
+		else:
+			which = ""
 		if which == None: 
 			return None
 		if redo:
