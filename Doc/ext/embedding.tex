@@ -58,7 +58,8 @@ on a file.
 \begin{verbatim}
 #include <Python.h>
 
-int main()
+int
+main(int argc, char *argv[])
 {
   Py_Initialize();
   PyRun_SimpleString("from time import time,ctime\n"
