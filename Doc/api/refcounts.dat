@@ -822,6 +822,277 @@ PyTuple_SetItem:PyObject*:o:0:
 PyTuple_Size:int:::
 PyTuple_Size:PyTupleObject*:p:0:
 
+PyUnicode_Check:int:::
+PyUnicode_Check:PyObject*:o:0:
+
+PyUnicode_GET_SIZE:int:::
+PyUnicode_GET_SIZE:PyObject*:o:0:
+
+PyUnicode_GET_DATA_SIZE:int:::
+PyUnicode_GET_DATA_SIZE:PyObject*:o:0:
+
+PyUnicode_AS_UNICODE:Py_UNICODE*:::
+PyUnicode_AS_UNICODE:PyObject*:o:0:
+
+PyUnicode_AS_DATA:const char*:::
+PyUnicode_AS_DATA:PyObject*:o:0:
+
+Py_UNICODE_ISSPACE:int:::
+Py_UNICODE_ISSPACE:Py_UNICODE:ch::
+
+Py_UNICODE_ISLOWER:int:::
+Py_UNICODE_ISLOWER:Py_UNICODE:ch::
+
+Py_UNICODE_ISUPPER:int:::
+Py_UNICODE_ISUPPER:Py_UNICODE:ch::
+
+Py_UNICODE_ISTITLE:int:::
+Py_UNICODE_ISTITLE:Py_UNICODE:ch::
+
+Py_UNICODE_ISLINEBREAK:int:::
+Py_UNICODE_ISLINEBREAK:Py_UNICODE:ch::
+
+Py_UNICODE_ISDECIMAL:int:::
+Py_UNICODE_ISDECIMAL:Py_UNICODE:ch::
+
+Py_UNICODE_ISDIGIT:int:::
+Py_UNICODE_ISDIGIT:Py_UNICODE:ch::
+
+Py_UNICODE_ISNUMERIC:int:::
+Py_UNICODE_ISNUMERIC:Py_UNICODE:ch::
+
+Py_UNICODE_TOLOWER:Py_UNICODE:::
+Py_UNICODE_TOLOWER:Py_UNICODE:ch::
+
+Py_UNICODE_TOUPPER:Py_UNICODE:::
+Py_UNICODE_TOUPPER:Py_UNICODE:ch::
+
+Py_UNICODE_TOTITLE:Py_UNICODE:::
+Py_UNICODE_TOTITLE:Py_UNICODE:ch::
+
+Py_UNICODE_TODECIMAL:int:::
+Py_UNICODE_TODECIMAL:Py_UNICODE:ch::
+
+Py_UNICODE_TODIGIT:int:::
+Py_UNICODE_TODIGIT:Py_UNICODE:ch::
+
+Py_UNICODE_TONUMERIC:double:::
+Py_UNICODE_TONUMERIC:Py_UNICODE:ch::
+
+PyUnicode_FromUnicode:PyObject*::+1:
+PyUnicode_FromUnicode:const Py_UNICODE *:u::
+PyUnicode_FromUnicode:int:size::
+
+PyUnicode_AsUnicode:Py_UNICODE*:::
+PyUnicode_AsUnicode:PyObject :*unicode:0:
+
+PyUnicode_GetSize:int:::
+PyUnicode_GetSize:PyObject :*unicode:0:
+
+PyUnicode_FromObject:PyObject*::+1:
+PyUnicode_FromObject:PyObject :*obj:0:
+
+PyUnicode_FromWideChar:PyObject*::+1:
+PyUnicode_FromWideChar:const wchar_t *:w::
+PyUnicode_FromWideChar:int:size::
+
+PyUnicode_AsWideChar:int:::
+PyUnicode_AsWideChar:PyObject :*unicode:0:
+PyUnicode_AsWideChar:wchar_t *:w::
+PyUnicode_AsWideChar:int:size::
+
+PyUnicode_Decode:PyObject*::+1:
+PyUnicode_Decode:const char *:s::
+PyUnicode_Decode:int:size::
+PyUnicode_Decode:const char *:encoding::
+PyUnicode_Decode:const char *:errors::
+
+PyUnicode_Encode:PyObject*::+1:
+PyUnicode_Encode:const Py_UNICODE *:s::
+PyUnicode_Encode:int:size::
+PyUnicode_Encode:const char *:encoding::
+PyUnicode_Encode:const char *:errors::
+
+PyUnicode_AsEncodedString:PyObject*::+1:
+PyUnicode_AsEncodedString:PyObject *:unicode::
+PyUnicode_AsEncodedString:const char *:encoding::
+PyUnicode_AsEncodedString:const char *:errors::
+
+PyUnicode_DecodeUTF8:PyObject*::+1:
+PyUnicode_DecodeUTF8:const char *:s::
+PyUnicode_DecodeUTF8:int:size::
+PyUnicode_DecodeUTF8:const char *:errors::
+
+PyUnicode_EncodeUTF8:PyObject*::+1:
+PyUnicode_EncodeUTF8:const Py_UNICODE *:s::
+PyUnicode_EncodeUTF8:int:size::
+PyUnicode_EncodeUTF8:const char *:errors::
+
+PyUnicode_AsUTF8String:PyObject*::+1:
+PyUnicode_AsUTF8String:PyObject *:unicode::
+
+PyUnicode_DecodeUTF16:PyObject*::+1:
+PyUnicode_DecodeUTF16:const char *:s::
+PyUnicode_DecodeUTF16:int:size::
+PyUnicode_DecodeUTF16:const char *:errors::
+PyUnicode_DecodeUTF16:int*:byteorder::
+
+PyUnicode_EncodeUTF16:PyObject*::+1:
+PyUnicode_EncodeUTF16:const Py_UNICODE *:s::
+PyUnicode_EncodeUTF16:int:size::
+PyUnicode_EncodeUTF16:const char *:errors::
+PyUnicode_EncodeUTF16:int:byteorder::
+
+PyUnicode_AsUTF16String:PyObject*::+1:
+PyUnicode_AsUTF16String:PyObject *:unicode::
+
+PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
+PyUnicode_DecodeUnicodeEscape:const char *:s::
+PyUnicode_DecodeUnicodeEscape:int:size::
+PyUnicode_DecodeUnicodeEscape:const char *:errors::
+
+PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
+PyUnicode_EncodeUnicodeEscape:const Py_UNICODE *:s::
+PyUnicode_EncodeUnicodeEscape:int:size::
+PyUnicode_EncodeUnicodeEscape:const char *:errors::
+
+PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
+PyUnicode_AsUnicodeEscapeString:PyObject *:unicode::
+
+PyUnicode_DecodeRawUnicodeEscape:PyObject*::+1:
+PyUnicode_DecodeRawUnicodeEscape:const char *:s::
+PyUnicode_DecodeRawUnicodeEscape:int:size::
+PyUnicode_DecodeRawUnicodeEscape:const char *:errors::
+
+PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
+PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE *:s::
+PyUnicode_EncodeRawUnicodeEscape:int:size::
+PyUnicode_EncodeRawUnicodeEscape:const char *:errors::
+
+PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
+PyUnicode_AsRawUnicodeEscapeString:PyObject *:unicode::
+
+PyUnicode_DecodeLatin1:PyObject*::+1:
+PyUnicode_DecodeLatin1:const char *:s::
+PyUnicode_DecodeLatin1:int:size::
+PyUnicode_DecodeLatin1:const char *:errors::
+
+PyUnicode_EncodeLatin1:PyObject*::+1:
+PyUnicode_EncodeLatin1:const Py_UNICODE *:s::
+PyUnicode_EncodeLatin1:int:size::
+PyUnicode_EncodeLatin1:const char *:errors::
+
+PyUnicode_AsLatin1String:PyObject*::+1:
+PyUnicode_AsLatin1String:PyObject *:unicode::
+
+PyUnicode_DecodeASCII:PyObject*::+1:
+PyUnicode_DecodeASCII:const char *:s::
+PyUnicode_DecodeASCII:int:size::
+PyUnicode_DecodeASCII:const char *:errors::
+
+PyUnicode_EncodeASCII:PyObject*::+1:
+PyUnicode_EncodeASCII:const Py_UNICODE *:s::
+PyUnicode_EncodeASCII:int:size::
+PyUnicode_EncodeASCII:const char *:errors::
+
+PyUnicode_AsASCIIString:PyObject*::+1:
+PyUnicode_AsASCIIString:PyObject *:unicode::
+
+PyUnicode_DecodeCharmap:PyObject*::+1:
+PyUnicode_DecodeCharmap:const char *:s::
+PyUnicode_DecodeCharmap:int:size::
+PyUnicode_DecodeCharmap:PyObject*:mapping:0:
+PyUnicode_DecodeCharmap:const char *:errors::
+
+PyUnicode_EncodeCharmap:PyObject*::+1:
+PyUnicode_EncodeCharmap:const Py_UNICODE *:s::
+PyUnicode_EncodeCharmap:int:size::
+PyUnicode_EncodeCharmap:PyObject*:mapping:0:
+PyUnicode_EncodeCharmap:const char *:errors::
+
+PyUnicode_AsCharmapString:PyObject*::+1:
+PyUnicode_AsCharmapString:PyObject*:unicode:0:
+PyUnicode_AsCharmapString:PyObject*:mapping:0:
+
+PyUnicode_TranslateCharmap:PyObject*::+1:
+PyUnicode_TranslateCharmap:const Py_UNICODE *:s::
+PyUnicode_TranslateCharmap:int:size::
+PyUnicode_TranslateCharmap:PyObject*:table:0:
+PyUnicode_TranslateCharmap:const char *:errors::
+
+PyUnicode_DecodeMBCS:PyObject*::+1:
+PyUnicode_DecodeMBCS:const char *:s::
+PyUnicode_DecodeMBCS:int:size::
+PyUnicode_DecodeMBCS:const char *:errors::
+
+PyUnicode_EncodeMBCS:PyObject*::+1:
+PyUnicode_EncodeMBCS:const Py_UNICODE *:s::
+PyUnicode_EncodeMBCS:int:size::
+PyUnicode_EncodeMBCS:const char *:errors::
+
+PyUnicode_AsMBCSString:PyObject*::+1:
+PyUnicode_AsMBCSString:PyObject *:unicode::
+
+PyUnicode_Concat:PyObject*::+1:
+PyUnicode_Concat:PyObject*:left:0:
+PyUnicode_Concat:PyObject*:right:0:
+
+PyUnicode_Split:PyObject*::+1:
+PyUnicode_Split:PyObject*:left:0:
+PyUnicode_Split:PyObject*:right:0:
+PyUnicode_Split:int:maxsplit::
+
+PyUnicode_Splitlines:PyObject*::+1:
+PyUnicode_Splitlines:PyObject*:s:0:
+PyUnicode_Splitlines:int:maxsplit::
+
+PyUnicode_Translate:PyObject*::+1:
+PyUnicode_Translate:PyObject*:str:0:
+PyUnicode_Translate:PyObject*:table:0:
+PyUnicode_Translate:const char *:errors::
+
+PyUnicode_Join:PyObject*::+1:
+PyUnicode_Join:PyObject*:separator:0:
+PyUnicode_Join:PyObject*:seq:0:
+
+PyUnicode_Tailmatch:PyObject*::+1:
+PyUnicode_Tailmatch:PyObject*:str:0:
+PyUnicode_Tailmatch:PyObject*:substr:0:
+PyUnicode_Tailmatch:int:start::
+PyUnicode_Tailmatch:int:end::
+PyUnicode_Tailmatch:int:direction::
+
+PyUnicode_Find:PyObject*::+1:
+PyUnicode_Find:PyObject*:str:0:
+PyUnicode_Find:PyObject*:substr:0:
+PyUnicode_Find:int:start::
+PyUnicode_Find:int:end::
+PyUnicode_Find:int:direction::
+
+PyUnicode_Count:PyObject*::+1:
+PyUnicode_Count:PyObject*:str:0:
+PyUnicode_Count:PyObject*:substr:0:
+PyUnicode_Count:int:start::
+PyUnicode_Count:int:end::
+
+PyUnicode_Replace:PyObject*::+1:
+PyUnicode_Replace:PyObject*:str:0:
+PyUnicode_Replace:PyObject*:substr:0:
+PyUnicode_Replace:PyObject*:replstr:0:
+PyUnicode_Replace:int:maxcount::
+
+PyUnicode_Compare:int:::
+PyUnicode_Compare:PyObject*:left:0:
+PyUnicode_Compare:PyObject*:right:0:
+
+PyUnicode_Format:PyObject*::+1:
+PyUnicode_Format:PyObject*:format:0:
+PyUnicode_Format:PyObject*:args:0:
+
+PyUnicode_Contains:int:::
+PyUnicode_Contains:PyObject*:container:0:
+PyUnicode_Contains:PyObject*:element:0:
+
 Py_AtExit:int:::
 Py_AtExit:void (*)():func::
 
