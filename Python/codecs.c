@@ -55,14 +55,6 @@ int import_encodings()
     return 0;
 }
 
-/* Register a new codec search function.
-
-   As side effect, this tries to load the encodings package, if not
-   yet done, to make sure that it is always first in the list of
-   search functions.
-
-   The search_function's refcount is incremented by this function. */
-
 int PyCodec_Register(PyObject *search_function)
 {
     if (!import_encodings_called) {
@@ -117,7 +109,7 @@ PyObject *normalizestring(const char *string)
    characters. This makes encodings looked up through this mechanism
    effectively case-insensitive.
 
-   If no codec is found, a KeyError is set and NULL returned. 
+   If no codec is found, a LookupError is set and NULL returned. 
 
    As side effect, this tries to load the encodings package, if not
    yet done. This is part of the lazy load strategy for the encodings
@@ -130,6 +122,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     PyObject *result, *args = NULL, *v;
     int i, len;
 
+    if (encoding == NULL) {
+	PyErr_BadArgument();
+	goto onError;
+    }
     if (_PyCodec_SearchCache == NULL || 
 	_PyCodec_SearchPath == NULL) {
 	PyErr_SetString(PyExc_SystemError,
