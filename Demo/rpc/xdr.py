@@ -89,6 +89,8 @@ class Unpacker:
 		i = self.pos
 		self.pos = j = i+4
 		data = self.buf[i:j]
+		if len(data) < 4:
+			raise EOFError
 		x = long(ord(data[0]))<<24 | ord(data[1])<<16 | \
 			ord(data[2])<<8 | ord(data[3])
 		# Return a Python long only if the value is not representable
@@ -99,7 +101,10 @@ class Unpacker:
 		def unpack_uint(self):
 			i = self.pos
 			self.pos = j = i+4
-			return struct.unpack('l', self.buf[i:j])
+			data = self.buf[i:j]
+			if len(data) < 4:
+				raise EOFError
+			return struct.unpack('l', data)
 
 	def unpack_int(self):
 		x = self.unpack_uint()
@@ -126,7 +131,7 @@ class Unpacker:
 		i = self.pos
 		j = i + (n+3)/4*4
 		if j > len(self.buf):
-			raise RuntimeError, 'buffer overrun'
+			raise EOFError
 		self.pos = j
 		return self.buf[i:i+n]
 
