@@ -73,7 +73,12 @@ static int exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
 static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 static void reset_exc_info(PyThreadState *);
+static void format_exc_check_arg(PyObject *, char *, PyObject *);
 
+#define NAME_ERROR_MSG \
+	"There is no variable named '%s'"
+#define UNBOUNDLOCAL_ERROR_MSG \
+	"Local variable '%.200s' referenced before assignment"
 
 /* Dynamic execution profile */
 #ifdef DYNAMIC_EXECUTION_PROFILE
@@ -1396,7 +1401,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				break;
 			}
 			if ((err = PyDict_DelItem(x, w)) != 0)
-				PyErr_SetObject(PyExc_NameError, w);
+				format_exc_check_arg(PyExc_NameError, 
+							NAME_ERROR_MSG ,w);
 			break;
 
 		case UNPACK_SEQUENCE:
@@ -1471,7 +1477,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case DELETE_GLOBAL:
 			w = GETNAMEV(oparg);
 			if ((err = PyDict_DelItem(f->f_globals, w)) != 0)
-				PyErr_SetObject(PyExc_NameError, w);
+				format_exc_check_arg(
+				    PyExc_NameError, NAME_ERROR_MSG ,w);
 			break;
 		
 		case LOAD_CONST:
@@ -1493,8 +1500,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				if (x == NULL) {
 					x = PyDict_GetItem(f->f_builtins, w);
 					if (x == NULL) {
-						PyErr_SetObject(
-							PyExc_NameError, w);
+						format_exc_check_arg(
+							    PyExc_NameError, 
+							    NAME_ERROR_MSG ,w);
 						break;
 					}
 				}
@@ -1509,7 +1517,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (x == NULL) {
 				x = PyDict_GetItem(f->f_builtins, w);
 				if (x == NULL) {
-					PyErr_SetObject(PyExc_NameError, w);
+					format_exc_check_arg(
+						    PyExc_NameError, 
+						    NAME_ERROR_MSG ,w);
 					break;
 				}
 			}
@@ -1520,9 +1530,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
 			if (x == NULL) {
-				PyErr_SetObject(PyExc_UnboundLocalError,
-					   PyTuple_GetItem(co->co_varnames,
-							oparg));
+				format_exc_check_arg(
+					PyExc_UnboundLocalError,
+					UNBOUNDLOCAL_ERROR_MSG,
+					PyTuple_GetItem(co->co_varnames, oparg)
+					);
 				break;
 			}
 			Py_INCREF(x);
@@ -1538,9 +1550,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case DELETE_FAST:
 			x = GETLOCAL(oparg);
 			if (x == NULL) {
-				PyErr_SetObject(PyExc_UnboundLocalError,
-					   PyTuple_GetItem(co->co_varnames,
-							oparg));
+				format_exc_check_arg(
+					PyExc_UnboundLocalError,
+					UNBOUNDLOCAL_ERROR_MSG,
+					PyTuple_GetItem(co->co_varnames, oparg)
+					);
 				break;
 			}
 			SETLOCAL(oparg, NULL);
@@ -3063,6 +3077,20 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	return 0;
 }
 
+static void 
+format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
+{
+	char *obj_str;
+
+	if (!obj)
+		return;
+
+	obj_str = PyString_AsString(obj);
+	if (!obj_str)
+		return;
+
+	PyErr_Format(exc, format_str, obj_str);
+}
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
 
