@@ -1,5 +1,8 @@
 # test_pickle and test_cpickle both use this.
 
+from test_support import TestFailed
+import sys
+
 # break into multiple strings to please font-lock-mode
 DATA = """(lp1
 I0
@@ -197,3 +200,19 @@ def dotest(pickle):
         else:
             if u2 != u:
                 print "Endcase failure: %s => %s" % (`u`, `u2`)
+
+    # Test the full range of Python ints.
+    n = sys.maxint
+    while n:
+        for expected in (-n, n):
+            for binary_mode in (0, 1):
+                s = pickle.dumps(expected, binary_mode)
+                got = pickle.loads(s)
+                if expected != got:
+                    raise TestFailed("for %s-mode pickle of %d, pickle "
+                                     "string is %s, loaded back as %s" % (
+                                     binary_mode and "binary" or "text",
+                                     expected,
+                                     repr(s),
+                                     got))
+        n = n >> 1
