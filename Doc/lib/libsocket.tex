@@ -153,14 +153,27 @@ daemon).
 \end{funcdesc}
 
 \begin{funcdesc}{ntohl}{x}
-\funcline{ntohs}{x}
-\funcline{htonl}{x}
-\funcline{htons}{x}
-These functions convert 32-bit (`l' suffix) and 16-bit (`s' suffix)
-integers between network and host byte order.  On machines where the
-host byte order is the same as the network byte order, they are no-ops
-(assuming the values fit in the indicated size); otherwise, they
-perform 2-byte or 4-byte swap operations.
+Convert 32-bit integers from network to host byte order.  On machines
+where the host byte order is the same as network byte order, this is a
+no-op; otherwise, it performs a 4-byte swap operation.
+\end{funcdesc}
+
+\begin{funcdesc}{ntohs}{x}
+Convert 16-bit integers from network to host byte order.  On machines
+where the host byte order is the same as network byte order, this is a
+no-op; otherwise, it performs a 2-byte swap operation.
+\end{funcdesc}
+
+\begin{funcdesc}{htonl}{x}
+Convert 32-bit integers from host to network byte order.  On machines
+where the host byte order is the same as network byte order, this is a
+no-op; otherwise, it performs a 4-byte swap operation.
+\end{funcdesc}
+
+\begin{funcdesc}{htons}{x}
+Convert 16-bit integers from host to network byte order.  On machines
+where the host byte order is the same as network byte order, this is a
+no-op; otherwise, it performs a 2-byte swap operation.
 \end{funcdesc}
 
 \begin{datadesc}{SocketType}
