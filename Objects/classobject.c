@@ -848,7 +848,8 @@ instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 	return 0;
 }
 
-static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr, *iterstr;
+static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
+static PyObject *iterstr, *nextstr;
 
 static int
 instance_length(PyInstanceObject *inst)
@@ -1726,6 +1727,14 @@ instance_getiter(PyInstanceObject *self)
 	if ((func = instance_getattr(self, iterstr)) != NULL) {
 		PyObject *res = PyEval_CallObject(func, (PyObject *)NULL);
 		Py_DECREF(func);
+		if (res != NULL && !PyIter_Check(res)) {
+			PyErr_Format(PyExc_TypeError,
+				     "__iter__ returned non-iterator "
+				     "of type '%.100s'",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			res = NULL;
+		}
 		return res;
 	}
 	PyErr_Clear();
@@ -1734,7 +1743,33 @@ instance_getiter(PyInstanceObject *self)
 		return NULL;
 	}
 	Py_DECREF(func);
-	return PyIter_New((PyObject *)self);
+	return PySeqIter_New((PyObject *)self);
+}
+
+
+/* Call the iterator's next */
+static PyObject *
+instance_iternext(PyInstanceObject *self)
+{
+	PyObject *func;
+
+	if (nextstr == NULL)
+		nextstr = PyString_InternFromString("next");
+
+	if ((func = instance_getattr(self, nextstr)) != NULL) {
+		PyObject *res = PyEval_CallObject(func, (PyObject *)NULL);
+		Py_DECREF(func);
+		if (res != NULL) {
+			return res;
+		}
+		if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+			PyErr_Clear();
+			return NULL;
+		}
+		return NULL;
+	}
+	PyErr_SetString(PyExc_TypeError, "instance has no next() method");
+	return NULL;
 }
 
 
@@ -1803,6 +1838,7 @@ PyTypeObject PyInstance_Type = {
 	instance_richcompare,			/* tp_richcompare */
  	offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
 	(getiterfunc)instance_getiter,		/* tp_iter */
+	(iternextfunc)instance_iternext,	/* tp_iternext */
 };
 
 

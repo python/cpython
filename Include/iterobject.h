@@ -1,10 +1,10 @@
 /* Iterators (the basic kind, over a sequence) */
 
-extern DL_IMPORT(PyTypeObject) PyIter_Type;
+extern DL_IMPORT(PyTypeObject) PySeqIter_Type;
 
-#define PyIter_Check(op) ((op)->ob_type == &PyIter_Type)
+#define PySeqIter_Check(op) ((op)->ob_type == &PySeqIter_Type)
 
-extern DL_IMPORT(PyObject *) PyIter_New(PyObject *);
+extern DL_IMPORT(PyObject *) PySeqIter_New(PyObject *);
 
 extern DL_IMPORT(PyTypeObject) PyCallIter_Type;
 

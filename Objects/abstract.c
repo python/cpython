@@ -1748,10 +1748,32 @@ PyObject_GetIter(PyObject *o)
 		f = t->tp_iter;
 	if (f == NULL) {
 		if (PySequence_Check(o))
-			return PyIter_New(o);
+			return PySeqIter_New(o);
 		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
 		return NULL;
 	}
-	else
-		return (*f)(o);
+	else {
+		PyObject *res = (*f)(o);
+		if (res != NULL && !PyIter_Check(res)) {
+			PyErr_Format(PyExc_TypeError,
+				     "iter() returned non-iterator "
+				     "of type '%.100s'",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			res = NULL;
+		}
+		return res;
+	}
+}
+
+PyObject *
+PyIter_Next(PyObject *iter)
+{
+	if (!PyIter_Check(iter)) {
+		PyErr_Format(PyExc_TypeError,
+			     "'%.100s' object is not an iterator",
+			     iter->ob_type->tp_name);
+		return NULL;
+	}
+	return (*iter->ob_type->tp_iternext)(iter);
 }

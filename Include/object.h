@@ -201,6 +201,7 @@ typedef PyObject *(*reprfunc)(PyObject *);
 typedef long (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
+typedef PyObject *(*iternextfunc) (PyObject *);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
@@ -252,6 +253,7 @@ typedef struct _typeobject {
 
 	/* Iterators */
 	getiterfunc tp_iter;
+	iternextfunc tp_iternext;
 
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */

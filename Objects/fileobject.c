@@ -1340,6 +1340,7 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)file_getiter,		/* tp_iter */
+	0,					/* tp_iternext */
 };
 
 /* Interface for the 'soft space' between print items. */
