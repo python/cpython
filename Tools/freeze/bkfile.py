@@ -35,11 +35,8 @@ class _BkFile:
 		self.__file.close()
 		if self.__backup is None:
 			return
-		import cmp
-		# don't use cmp.cmp because of NFS bugs :-( and
-		# anyway, the stat mtime values differ so do_cmp will
-		# most likely be called anyway
-		if cmp.do_cmp(self.__backup, self.__filename):
+		import filecmp
+		if filecmp.cmp(self.__backup, self.__filename, shallow = 0):
 			import os
 			os.unlink(self.__filename)
 			os.rename(self.__backup, self.__filename)
