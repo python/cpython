@@ -375,7 +375,8 @@ class ParserBase:
             return name.lower(), m.end()
         else:
             self.updatepos(declstartpos, i)
-            self.error("expected name token")
+            self.error("expected name token at %r"
+                       % rawdata[declstartpos:declstartpos+20])
 
     # To be overridden -- handlers for unknown objects
     def unknown_decl(self, data):
