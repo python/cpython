@@ -442,7 +442,7 @@ static block *
 new_arena(void)
 {
 	uint excess;	/* number of bytes above pool alignment */
-	block *bp = (block *)PyMem_MALLOC(ARENA_SIZE);
+	block *bp = (block *)malloc(ARENA_SIZE);
 	if (bp == NULL)
 		return NULL;
 
@@ -460,7 +460,7 @@ new_arena(void)
 	/* Make room for a new entry in the arenas vector. */
 	if (arenas == NULL) {
 		assert(narenas == 0 && maxarenas == 0);
-		arenas = (uptr *)PyMem_MALLOC(16 * sizeof(*arenas));
+		arenas = (uptr *)malloc(16 * sizeof(*arenas));
 		if (arenas == NULL)
 			goto error;
 		maxarenas = 16;
@@ -509,7 +509,7 @@ new_arena(void)
 		uint newmax = maxarenas << 1;
 		if (newmax <= maxarenas)	/* overflow */
 			goto error;
-		p = (uptr *)PyMem_MALLOC(newmax * sizeof(*arenas));
+		p = (uptr *)malloc(newmax * sizeof(*arenas));
 		if (p == NULL)
 			goto error;
 		memcpy(p, arenas, narenas * sizeof(*arenas));
@@ -525,7 +525,7 @@ new_arena(void)
 	return bp;
 
 error:
-	PyMem_FREE(bp);
+	free(bp);
 	nfreepools = 0;
 	return NULL;
 }
@@ -552,7 +552,9 @@ error:
 
 /*==========================================================================*/
 
-/* malloc */
+/* malloc.  Note that nbytes==0 tries to return a non-NULL pointer, distinct
+ * from all other currently live pointers.  This may not be possible.
+ */
 
 /*
  * The basic blocks are ordered by decreasing execution frequency,
@@ -571,7 +573,7 @@ _PyMalloc_Malloc(size_t nbytes)
 	uint size;
 
 	/*
-	 * This implicitly redirects malloc(0)
+	 * This implicitly redirects malloc(0).
 	 */
 	if ((nbytes - 1) < SMALL_REQUEST_THRESHOLD) {
 		LOCK();
@@ -698,7 +700,7 @@ redirect:
 	 * last chance to serve the request) or when the max memory limit
 	 * has been reached.
 	 */
-	return (void *)PyMem_MALLOC(nbytes);
+	return (void *)malloc(nbytes ? nbytes : 1);
 }
 
 /* free */
@@ -782,63 +784,63 @@ _PyMalloc_Free(void *p)
 
 	/* We didn't allocate this address. */
 	INCTHEIRS;
-	PyMem_FREE(p);
+	free(p);
 }
 
-/* realloc */
+/* realloc.  If p is NULL, this acts like malloc(nbytes).  Else if nbytes==0,
+ * then as the Python docs promise, we do not treat this like free(p), and
+ * return a non-NULL result.
+ */
 
 void *
 _PyMalloc_Realloc(void *p, size_t nbytes)
 {
-	block *bp;
+	void *bp;
 	poolp pool;
 	uint size;
 
 	if (p == NULL)
 		return _PyMalloc_Malloc(nbytes);
 
-	/* realloc(p, 0) on big blocks is redirected. */
 	pool = POOL_ADDR(p);
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We're in charge of this block */
 		INCMINE;
 		size = (pool->szidx + 1) << ALIGNMENT_SHIFT; /* block size */
-		if (size >= nbytes) {
-			/* Don't bother if a smaller size was requested
-			   except for realloc(p, 0) == free(p), ret NULL */
-			/* XXX but Python guarantees that *its* flavor of
-			   resize(p, 0) will not do a free or return NULL */
-			if (nbytes == 0) {
-				_PyMalloc_Free(p);
-				bp = NULL;
-			}
-			else
-				bp = (block *)p;
+		if (size >= nbytes)
+			/* Don't bother if a smaller size was requested. */
+			return p;
+		/* We need more memory. */
+		assert(nbytes != 0);
+		bp = (block *)_PyMalloc_Malloc(nbytes);
+		if (bp != NULL) {
+			memcpy(bp, p, size);
+			_PyMalloc_Free(p);
 		}
-		else {
-			bp = (block *)_PyMalloc_Malloc(nbytes);
-			if (bp != NULL) {
-				memcpy(bp, p, size);
-				_PyMalloc_Free(p);
-			}
+		return bp;
+	}
+	/* We're not managing this block. */
+	INCTHEIRS;
+	if (nbytes <= SMALL_REQUEST_THRESHOLD) {
+		/* Take over this block. */
+		bp = _PyMalloc_Malloc(nbytes ? nbytes : 1);
+		if (bp != NULL) {
+			memcpy(bp, p, nbytes);
+			free(p);
 		}
+		else if (nbytes == 0) {
+			/* Meet the doc's promise that nbytes==0 will
+			 * never return a NULL pointer when p isn't NULL.
+			 */
+			bp = p;
+		}
+
 	}
 	else {
-		/* We haven't allocated this block */
-		INCTHEIRS;
-		if (nbytes <= SMALL_REQUEST_THRESHOLD && nbytes) {
-			/* small request */
-			size = nbytes;
-			bp = (block *)_PyMalloc_Malloc(nbytes);
-			if (bp != NULL) {
-				memcpy(bp, p, size);
-				_PyMalloc_Free(p);
-			}
-		}
-		else
-			bp = (block *)PyMem_REALLOC(p, nbytes);
+		assert(nbytes != 0);
+		bp = realloc(p, nbytes);
 	}
-	return (void *)bp;
+	return bp;
 }
 
 #else	/* ! WITH_PYMALLOC */
