@@ -210,6 +210,40 @@ builtin_float(self, v)
 }
 
 static object *
+builtin_getattr(self, v)
+	object *self;
+	object *v;
+{
+	object *name;
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2 ||
+		(name = gettupleitem(v, 1), !is_stringobject(name))) {
+		err_setstr(TypeError,
+			"getattr() arguments must be (object, string)");
+		return NULL;
+	}
+	return getattr(gettupleitem(v, 0), getstringvalue(name));
+}
+
+static object *
+builtin_setattr(self, v)
+	object *self;
+	object *v;
+{
+	object *name;
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3 ||
+		(name = gettupleitem(v, 1), !is_stringobject(name))) {
+		err_setstr(TypeError,
+		  "setattr() arguments must be (object, string, object)");
+		return NULL;
+	}
+	if (setattr(gettupleitem(v, 0),
+		    getstringvalue(name), gettupleitem(v, 2)) != 0)
+		return NULL;
+	INCREF(None);
+	return None;
+}
+
+static object *
 builtin_hex(self, v)
 	object *self;
 	object *v;
@@ -570,6 +604,7 @@ static struct methodlist builtin_methods[] = {
 	{"eval",	builtin_eval},
 	{"exec",	builtin_exec},
 	{"float",	builtin_float},
+	{"getattr",	builtin_getattr},
 	{"hex",		builtin_hex},
 	{"input",	builtin_input},
 	{"int",		builtin_int},
@@ -584,6 +619,7 @@ static struct methodlist builtin_methods[] = {
 	{"range",	builtin_range},
 	{"raw_input",	builtin_raw_input},
 	{"reload",	builtin_reload},
+	{"setattr",	builtin_setattr},
 	{"type",	builtin_type},
 	{NULL,		NULL},
 };
