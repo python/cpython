@@ -922,6 +922,17 @@
     \end{fulllineitems}
   }
 }
+% \seetitle[url]{title}{why it's interesting}
+\newcommand{\py@seetitle}[3][\py@modulebadkey]{%
+  \par
+  \begin{fulllineitems}
+    \item[\citetitle{#2}]
+    \ifx\py@modulebadkey#1\else
+      \item[{\small{(\url{#1})}}]
+    \fi
+    #3
+  \end{fulllineitems}
+}
 % \seepep{number}{title}{why it's interesting}
 \newcommand{\py@seepep}[3]{%
   \par%
@@ -951,7 +962,9 @@
   \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
   \let\seemodule=\py@seemodule
+  \let\seepep=\py@seepep
   \let\seerfc=\py@seerfc
+  \let\seetitle=\py@seetitle
   \let\seeurl=\py@seeurl
 }{\par}
 

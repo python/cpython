@@ -803,10 +803,10 @@ distribution, to create or maintain whole documents or sections.
       markup used to describe individual references.
     \end{envdesc}
 
-    For each of the following macros, \var{why} should be a complete
-    sentence, start with a capital letter (unless it starts with an
-    identifier, which should not be modified), and end with the
-    apropriate punctuation.
+    For each of the following macros, \var{why} should be one or more
+    complete sentences, starting with a capital letter (unless it
+    starts with an identifier, which should not be modified), and
+    ending with the apropriate punctuation.
 
     \begin{macrodesc}{seemodule}{\op{key}\p{name}\p{why}}
       Refer to another module.  \var{why} should be a brief
@@ -842,6 +842,13 @@ distribution, to create or maintain whole documents or sections.
       can be used to refer to off-line materials or on-line materials
       using the \macro{url} macro.  This should consist of one or more
       complete sentences.
+    \end{macrodesc}
+
+    \begin{macrodesc}{seetitle}{\op{url}\p{title}\p{why}}
+      Add a reference to an external document named \var{title}.  If
+      \var{url} is given, the title is made a hyperlink in the HTML
+      version of the documentation, and displayed below the title in
+      the typeset versions of the documentation.
     \end{macrodesc}
 
     \begin{macrodesc}{seeurl}{\p{url}\p{why}}
