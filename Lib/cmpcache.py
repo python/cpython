@@ -58,7 +58,7 @@ def sig(st):
 #
 def do_cmp(f1, f2):
 	#print '    cmp', f1, f2 # XXX remove when debugged
-	bufsize = 8096 # Could be tuned
+	bufsize = 8*1024 # Could be tuned
 	fp1 = open(f1, 'r')
 	fp2 = open(f2, 'r')
 	while 1:

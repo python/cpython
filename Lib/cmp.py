@@ -51,7 +51,7 @@ def sig(st): # Return signature (i.e., type, size, mtime) from raw stat data
 	return type, size, mtime
 
 def do_cmp(f1, f2): # Compare two files, really
-	bufsize = 8096 # Could be tuned
+	bufsize = 8*1024 # Could be tuned
 	fp1 = open(f1, 'r')
 	fp2 = open(f2, 'r')
 	while 1:
