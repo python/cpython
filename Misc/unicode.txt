@@ -743,8 +743,9 @@ For explicit handling of files using Unicode, the standard
 stream codecs as available through the codecs module should 
 be used.
 
-XXX There should be a short-cut open(filename,mode,encoding) available which
-    also assures that mode contains the 'b' character when needed.
+The codecs module should provide a short-cut open(filename,mode,encoding)
+available which also assures that mode contains the 'b' character when
+needed.
 
 
 File/Stream Input:
@@ -810,6 +811,10 @@ Unicode-Mappings:
 Introduction to Unicode (a little outdated by still nice to read):
         http://www.nada.kth.se/i18n/ucs/unicode-iso10646-oview.html
 
+For comparison:
+	Introducing Unicode to ECMAScript --
+	http://www-4.ibm.com/software/developer/library/internationalization-support.html
+
 Encodings:
 
     Overview:
@@ -832,7 +837,7 @@ Encodings:
 
 History of this Proposal:
 -------------------------
-1.2: 
+1.2: Removed POD about codecs.open()
 1.1: Added note about comparisons and hash values. Added note about
      case mapping algorithms. Changed stream codecs .read() and
      .write() method to match the standard file-like object methods

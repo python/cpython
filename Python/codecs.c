@@ -93,9 +93,14 @@ PyObject *lowercasestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
-    PyObject *result, *args = NULL, *v;
+    PyObject *result, *args = NULL, *v = NULL;
     int i, len;
 
+    if (_PyCodec_SearchCache == NULL || _PyCodec_SearchPath == NULL) {
+	PyErr_SetString(PyExc_SystemError,
+			"codec module not properly initialized");
+	goto onError;
+    }
     if (!import_encodings_called)
 	import_encodings();
 
@@ -109,6 +114,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     result = PyDict_GetItem(_PyCodec_SearchCache, v);
     if (result != NULL) {
 	Py_INCREF(result);
+	Py_DECREF(v);
 	return result;
     }
     
@@ -121,6 +127,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     if (args == NULL)
 	goto onError;
     PyTuple_SET_ITEM(args,0,v);
+    v = NULL;
 
     for (i = 0; i < len; i++) {
 	PyObject *func;
@@ -146,7 +153,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     if (i == len) {
 	/* XXX Perhaps we should cache misses too ? */
 	PyErr_SetString(PyExc_LookupError,
-			"unkown encoding");
+			"unknown encoding");
 	goto onError;
     }
 
@@ -156,6 +163,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     return result;
 
  onError:
+    Py_XDECREF(v);
     Py_XDECREF(args);
     return NULL;
 }
@@ -378,5 +386,7 @@ void _PyCodecRegistry_Init()
 void _PyCodecRegistry_Fini()
 {
     Py_XDECREF(_PyCodec_SearchPath);
+    _PyCodec_SearchPath = NULL;
     Py_XDECREF(_PyCodec_SearchCache);
+    _PyCodec_SearchCache = NULL;
 }

@@ -30,13 +30,13 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import string,codecs,aliases
 
 _cache = {}
-_unkown = '--unkown--'
+_unknown = '--unknown--'
 
 def search_function(encoding):
     
     # Cache lookup
-    entry = _cache.get(encoding,_unkown)
-    if entry is not _unkown:
+    entry = _cache.get(encoding,_unknown)
+    if entry is not _unknown:
         return entry
 
     # Import the module

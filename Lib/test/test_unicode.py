@@ -108,6 +108,7 @@ if 0:
     test('translate', u'xyz', u'xyz', table)
 
 test('replace', u'one!two!three!', u'one@two!three!', u'!', u'@', 1)
+test('replace', u'one!two!three!', u'onetwothree', '!', '')
 test('replace', u'one!two!three!', u'one@two@three!', u'!', u'@', 2)
 test('replace', u'one!two!three!', u'one@two@three@', u'!', u'@', 3)
 test('replace', u'one!two!three!', u'one@two@three@', u'!', u'@', 4)
