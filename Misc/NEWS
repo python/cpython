@@ -127,6 +127,11 @@ Build
 
 C API
 
+- The type of tp_free has been changed from "void (*)(PyObject *)" to
+  "void (*)(void *)".
+
+- PyObject_Del, PyObject_GC_Del are now functions instead of macros.
+
 - A type can now inherit its metatype from its base type.  Previously,
   when PyType_Ready() was called, if ob_type was found to be NULL, it
   was always set to &PyType_Type; now it is set to base->ob_type,
