@@ -33,4 +33,8 @@ print 'test_math'
 unload('test_math')
 import test_math
 
+print 'test_time'
+unload('test_time')
+import test_time
+
 print 'Passed all tests.'
