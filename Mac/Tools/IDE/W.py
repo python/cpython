@@ -24,6 +24,12 @@ def getapplication():
 		raise WidgetsError, 'W not properly initialized: unknown Application'
 	return _application
 
+def getdefaultfont():
+	prefs = getapplication().getprefs()
+	if not prefs.defaultfont:
+		prefs.defaultfont = ("Python-Sans", 0, 9, (0, 0, 0))
+	return prefs.defaultfont
+
 def Message(text):
 	import EasyDialogs, Qd, string
 	Qd.InitCursor()
