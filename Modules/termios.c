@@ -293,10 +293,163 @@ static PyMethodDef termios_methods[] =
 	{NULL, NULL}
 };
 
+
+static struct constant {
+	char *name;
+	long value;
+} termios_constants[] = {
+	/* cfgetospeed(), cfsetospeed() constants */
+	{"B0", B0},
+	{"B50", B50},
+	{"B75", B75},
+	{"B110", B110},
+	{"B134", B134},
+	{"B150", B150},
+	{"B200", B200},
+	{"B300", B300},
+	{"B600", B600},
+	{"B1200", B1200},
+	{"B1800", B1800},
+	{"B2400", B2400},
+	{"B4800", B4800},
+	{"B9600", B9600},
+	{"B19200", B19200},
+	{"B38400", B38400},
+	{"B57600", B57600},
+	{"B115200", B115200},
+	{"B230400", B230400},
+	{"CBAUDEX", CBAUDEX},
+
+	/* tcsetattr() constants */
+	{"TCSANOW", TCSANOW},
+	{"TCSADRAIN", TCSADRAIN},
+	{"TCSAFLUSH", TCSAFLUSH},
+
+	/* tcflush() constants */
+	{"TCIFLUSH", TCIFLUSH},
+	{"TCOFLUSH", TCOFLUSH},
+	{"TCIOFLUSH", TCIOFLUSH},
+
+	/* tcflow() constants */
+	{"TCOOFF", TCOOFF},
+	{"TCOON", TCOON},
+	{"TCIOFF", TCIOFF},
+	{"TCION", TCION},
+
+	/* struct termios.c_iflag constants */
+	{"IGNBRK", IGNBRK},
+	{"BRKINT", BRKINT},
+	{"IGNPAR", IGNPAR},
+	{"PARMRK", PARMRK},
+	{"INPCK", INPCK},
+	{"ISTRIP", ISTRIP},
+	{"INLCR", INLCR},
+	{"IGNCR", IGNCR},
+	{"ICRNL", ICRNL},
+	{"IUCLC", IUCLC},
+	{"IXON", IXON},
+	{"IXANY", IXANY},
+	{"IXOFF", IXOFF},
+	{"IMAXBEL", IMAXBEL},
+
+	/* struct termios.c_oflag constants */
+	{"OPOST", OPOST},
+	{"OLCUC", OLCUC},
+	{"ONLCR", ONLCR},
+	{"OCRNL", OCRNL},
+	{"ONOCR", ONOCR},
+	{"ONLRET", ONLRET},
+	{"OFILL", OFILL},
+	{"OFDEL", OFDEL},
+	{"NLDLY", NLDLY},
+	{"CRDLY", CRDLY},
+	{"TABDLY", TABDLY},
+	{"BSDLY", BSDLY},
+	{"VTDLY", VTDLY},
+	{"FFDLY", FFDLY},
+
+	/* struct termios.c_oflag-related values (delay mask) */
+	{"NL0", NL0},
+	{"NL1", NL1},
+	{"CR0", CR0},
+	{"CR1", CR1},
+	{"CR2", CR2},
+	{"CR3", CR3},
+	{"TAB0", TAB0},
+	{"TAB1", TAB1},
+	{"TAB2", TAB2},
+	{"TAB3", TAB3},
+	{"XTABS", XTABS},
+	{"BS0", BS0},
+	{"BS1", BS1},
+	{"VT0", VT0},
+	{"VT1", VT1},
+	{"FF0", FF0},
+	{"FF1", FF1},
+
+	/* struct termios.c_cflag constants */
+	{"CSIZE", CSIZE},
+	{"CSTOPB", CSTOPB},
+	{"CREAD", CREAD},
+	{"PARENB", PARENB},
+	{"PARODD", PARODD},
+	{"HUPCL", HUPCL},
+	{"CLOCAL", CLOCAL},
+	{"CIBAUD", CIBAUD},
+	{"CRTSCTS", CRTSCTS},
+
+	/* struct termios.c_cflag-related values (character size) */
+	{"CS5", CS5},
+	{"CS6", CS6},
+	{"CS7", CS7},
+	{"CS8", CS8},
+
+	/* struct termios.c_lflag constants */
+	{"ISIG", ISIG},
+	{"ICANON", ICANON},
+	{"XCASE", XCASE},
+	{"ECHO", ECHO},
+	{"ECHOE", ECHOE},
+	{"ECHOK", ECHOK},
+	{"ECHONL", ECHONL},
+	{"ECHOCTL", ECHOCTL},
+	{"ECHOPRT", ECHOPRT},
+	{"ECHOKE", ECHOKE},
+	{"FLUSHO", FLUSHO},
+	{"NOFLSH", NOFLSH},
+	{"TOSTOP", TOSTOP},
+	{"PENDIN", PENDIN},
+	{"IEXTEN", IEXTEN},
+
+	/* indexes into the control chars array returned by tcgetattr() */
+	{"VINTR", VINTR},
+	{"VQUIT", VQUIT},
+	{"VERASE", VERASE},
+	{"VKILL", VKILL},
+	{"VEOF", VEOF},
+	{"VTIME", VTIME},
+	{"VMIN", VMIN},
+	{"VSWTC", VSWTC},
+	{"VSTART", VSTART},
+	{"VSTOP", VSTOP},
+	{"VSUSP", VSUSP},
+	{"VEOL", VEOL},
+	{"VREPRINT", VREPRINT},
+	{"VDISCARD", VDISCARD},
+	{"VWERASE", VWERASE},
+	{"VLNEXT", VLNEXT},
+	{"VEOL2", VEOL2},
+
+	/* sentinel */
+	{NULL, 0}
+};
+
+
 DL_EXPORT(void)
 PyInit_termios(void)
 {
 	PyObject *m, *d;
+	struct constant *constant = termios_constants;
 
 	m = Py_InitModule4("termios", termios_methods, termios__doc__,
                            (PyObject *)NULL, PYTHON_API_VERSION);
@@ -304,4 +457,9 @@ PyInit_termios(void)
 	d = PyModule_GetDict(m);
 	TermiosError = PyErr_NewException("termios.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", TermiosError);
+
+	while (constant->name != NULL) {
+		PyModule_AddIntConstant(m, constant->name, constant->value);
+		++constant;
+	}
 }
