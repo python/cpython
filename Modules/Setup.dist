@@ -410,7 +410,7 @@ GLHACK=-Dclear=__GLclear
 # Fred Drake's interface to the Python parser
 #parser parsermodule.c
 
-# Digital Creations' cStringIO and cPickle
+# cStringIO and cPickle
 #cStringIO cStringIO.c
 #cPickle cPickle.c
 
