@@ -14,6 +14,23 @@ except (UnicodeError, TypeError):
     # cannot be encoded in the file system encoding.
     raise TestSkipped("No Unicode filesystem semantics on this platform.")
 
+if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
+    # The file system encoding does not support Latin-1
+    # (which test_support assumes), so try the file system
+    # encoding instead.
+    import sys
+    try:
+        TESTFN_UNICODE = unicode("@test-\xe0\xf2", sys.getfilesystemencoding())
+        TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
+        if '?' in TESTFN_ENCODED:
+            # MBCS will not report the error properly
+            raise UnicodeError, "mbcs encoding problem"
+    except (UnicodeError, TypeError):
+        raise TestSkipped("Cannot find a suiteable filename.")
+
+if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
+    raise TestSkipped("Cannot find a suitable filename.")
+
 def remove_if_exists(filename):
     if os.path.exists(filename):
         os.unlink(filename)
