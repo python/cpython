@@ -75,12 +75,42 @@ fill_free_list()
 }
 
 static intobject *free_list = NULL;
+#ifndef NSMALLPOSINTS
+#define NSMALLPOSINTS		100
+#endif
+#ifndef NSMALLNEGINTS
+#define NSMALLNEGINTS		1
+#endif
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+/* References to small integers are saved in this array so that they
+   can be shared.
+   The integers that are saved are those in the range
+   -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
+*/
+static intobject *small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+#endif
+#ifdef COUNT_ALLOCS
+int quick_int_allocs, quick_neg_int_allocs;
+#endif
 
 object *
 newintobject(ival)
 	long ival;
 {
 	register intobject *v;
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS &&
+	    (v = small_ints[ival + NSMALLNEGINTS]) != NULL) {
+		INCREF(v);
+#ifdef COUNT_ALLOCS
+		if (ival >= 0)
+			quick_int_allocs++;
+		else
+			quick_neg_int_allocs++;
+#endif
+		return (object *) v;
+	}
+#endif
 	if (free_list == NULL) {
 		if ((free_list = fill_free_list()) == NULL)
 			return NULL;
@@ -90,6 +120,13 @@ newintobject(ival)
 	v->ob_type = &Inttype;
 	v->ob_ival = ival;
 	NEWREF(v);
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
+		/* save this one for a following allocation */
+		INCREF(v);
+		small_ints[ival + NSMALLNEGINTS] = v;
+	}
+#endif
 	return (object *) v;
 }
 

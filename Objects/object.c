@@ -36,15 +36,21 @@ long ref_total;
 
 #ifdef COUNT_ALLOCS
 static typeobject *type_list;
-
+extern int tuple_zero_allocs, fast_tuple_allocs;
+extern int quick_int_allocs, quick_neg_int_allocs;
 void
 dump_counts()
 {
 	typeobject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
-		printf("%s %d %d %d\n", tp->tp_name, tp->tp_alloc, tp->tp_free,
+		printf("%s alloc'd: %d, freed: %d, max in use: %d\n",
+		       tp->tp_name, tp->tp_alloc, tp->tp_free,
 		       tp->tp_maxalloc);
+	printf("fast tuple allocs: %d, empty: %d\n", fast_tuple_allocs,
+	       tuple_zero_allocs);
+	printf("fast int allocs: pos: %d, neg: %d\n", quick_int_allocs,
+	       quick_neg_int_allocs);
 }
 
 void
