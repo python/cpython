@@ -104,7 +104,8 @@ static frameobject *current_frame;
 #include <errno.h>
 #include "thread.h"
 
-static type_lock interpreter_lock;
+static type_lock interpreter_lock = 0;
+static long main_thread = 0;
 
 void
 init_save_thread()
@@ -113,6 +114,7 @@ init_save_thread()
 		return;
 	interpreter_lock = allocate_lock();
 	acquire_lock(interpreter_lock, 1);
+	main_thread = get_thread_ident();
 }
 
 #endif
@@ -149,6 +151,87 @@ restore_thread(x)
 		current_frame = (frameobject *)x;
 	}
 #endif
+}
+
+
+/* Mechanism whereby asynchronously executing callbacks (e.g. UNIX
+   signal handlers or Mac I/O completion routines) can schedule calls
+   to a function to be called synchronously.
+   The synchronous function is called with one void* argument.
+   It should return 0 for success or -1 for failure -- failure should
+   be accompanied by an exception.
+
+   If registry succeeds, the registry function returns 0; if it fails
+   (e.g. due to too many pending calls) it returns -1 (without setting
+   an exception condition).
+
+   Note that because registry may occur from within signal handlers,
+   or other asynchronous events, calling malloc() is unsafe!
+
+#ifdef WITH_THREAD
+   Any thread can schedule pending calls, but only the main thread
+   will execute them.
+#endif
+
+   XXX WARNING!  ASYNCHRONOUSLY EXECUTING CODE!
+   There are two possible race conditions:
+   (1) nested asynchronous registry calls;
+   (2) registry calls made while pending calls are being processed.
+   While (1) is very unlikely, (2) is a real possibility.
+   The current code is safe against (2), but not against (1).
+   The safety against (2) is derived from the fact that only one
+   thread (the main thread) ever takes things out of the queue.
+*/
+
+#define NPENDINGCALLS 32
+static struct {
+	int (*func) PROTO((ANY *));
+	ANY *arg;
+} pendingcalls[NPENDINGCALLS];
+static volatile int pendingfirst = 0;
+static volatile int pendinglast = 0;
+
+int
+Py_AddPendingCall(func, arg)
+	int (*func) PROTO((ANY *));
+	ANY *arg;
+{
+	int i, j;
+	/* XXX Begin critical section */
+	/* XXX If you want this to be safe against nested
+	   XXX asynchronous calls, you'll have to work harder! */
+	i = pendinglast;
+	j = (i + 1) % NPENDINGCALLS;
+	if (j == pendingfirst)
+		return -1; /* Queue full */
+	pendingcalls[i].func = func;
+	pendingcalls[i].arg = arg;
+	pendinglast = j;
+	/* XXX End critical section */
+	return 0;
+}
+
+static int
+MakePendingCalls()
+{
+#ifdef WITH_THREAD
+	if (get_thread_ident() != main_thread)
+		return 0;
+#endif
+	for (;;) {
+		int i;
+		int (*func) PROTO((ANY *));
+		ANY *arg;
+		i = pendingfirst;
+		if (i == pendinglast)
+			break; /* Queue empty */
+		func = pendingcalls[i].func;
+		arg = pendingcalls[i].arg;
+		pendingfirst = (i + 1) % NPENDINGCALLS;
+		if (func(arg) < 0)
+			return -1;
+	}
+	return 0;
 }
 
 
@@ -313,6 +396,13 @@ eval_code(co, globals, locals, owner, arg)
 		   Doing this every time through the loop would add
 		   too much overhead (a function call per instruction).
 		   So we do it only every Nth instruction. */
+		
+		if (pendingfirst != pendinglast) {
+			if (MakePendingCalls() < 0) {
+				why = WHY_EXCEPTION;
+				goto on_error;
+			}
+		}
 		
 		if (--ticker < 0) {
 			ticker = ticker_count;
