@@ -10,7 +10,7 @@ import sys
 
 def test(method, input, output, *args):
     if verbose:
-        print '%s.%s%s =? %s... ' % (repr(input), method, args, output),
+        print '%s.%s%s =? %s... ' % (repr(input), method, args, repr(output)),
     try:
         f = getattr(input, method)
         value = apply(f, args)
@@ -19,7 +19,7 @@ def test(method, input, output, *args):
         exc = sys.exc_info()[:2]
     else:
         exc = None
-    if value != output:
+    if value != output or type(value) is not type(output):
         if verbose:
             print 'no'
         print '*',f, `input`, `output`, `value`
@@ -70,19 +70,21 @@ test('split', u'a b c d ', [u'a', u'b', u'c', u'd'])
 
 # join now works with any sequence type
 class Sequence:
-    def __init__(self): self.seq = 'wxyz'
+    def __init__(self, seq): self.seq = seq
     def __len__(self): return len(self.seq)
     def __getitem__(self, i): return self.seq[i]
 
 test('join', u' ', u'a b c d', [u'a', u'b', u'c', u'd'])
+test('join', u' ', u'a b c d', ['a', 'b', u'c', u'd'])
 test('join', u'', u'abcd', (u'a', u'b', u'c', u'd'))
-test('join', u' ', u'w x y z', Sequence())
+test('join', u' ', u'w x y z', Sequence('wxyz'))
 test('join', u' ', TypeError, 7)
-
-class BadSeq(Sequence):
-    def __init__(self): self.seq = [7, u'hello', 123L]
-
-test('join', u' ', TypeError, BadSeq())
+test('join', u' ', TypeError, Sequence([7, u'hello', 123L]))
+test('join', ' ', u'a b c d', [u'a', u'b', u'c', u'd'])
+test('join', ' ', u'a b c d', ['a', 'b', u'c', u'd'])
+test('join', '', u'abcd', (u'a', u'b', u'c', u'd'))
+test('join', ' ', u'w x y z', Sequence(u'wxyz'))
+test('join', ' ', TypeError, 7)
 
 result = u''
 for i in range(10):
