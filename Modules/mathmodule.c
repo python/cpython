@@ -274,6 +274,31 @@ math_log10(PyObject *self, PyObject *args)
 static char math_log10_doc[] =
 "log10(x) -> the base 10 logarithm of x.";
 
+static const double degToRad = 3.141592653589793238462643383 / 180.0;
+
+static PyObject *
+math_degrees(PyObject *self, PyObject *args)
+{
+	double x;
+	if (! PyArg_ParseTuple(args, "d:degrees", &x))
+		return NULL;
+	return PyFloat_FromDouble(x / degToRad);
+}
+
+static char math_degrees_doc[] =
+"degrees(x) -> converts angle x from radians to degrees";
+
+static PyObject *
+math_radians(PyObject *self, PyObject *args)
+{
+	double x;
+	if (! PyArg_ParseTuple(args, "d:radians", &x))
+		return NULL;
+	return PyFloat_FromDouble(x * degToRad);
+}
+
+static char math_radians_doc[] =
+"radians(x) -> converts angle x from degrees to radians";
 
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_VARARGS,	math_acos_doc},
@@ -283,6 +308,7 @@ static PyMethodDef math_methods[] = {
 	{"ceil",	math_ceil,	METH_VARARGS,	math_ceil_doc},
 	{"cos",		math_cos,	METH_VARARGS,	math_cos_doc},
 	{"cosh",	math_cosh,	METH_VARARGS,	math_cosh_doc},
+	{"degrees",	math_degrees,	METH_VARARGS,	math_degrees_doc},
 	{"exp",		math_exp,	METH_VARARGS,	math_exp_doc},
 	{"fabs",	math_fabs,	METH_VARARGS,	math_fabs_doc},
 	{"floor",	math_floor,	METH_VARARGS,	math_floor_doc},
@@ -294,6 +320,7 @@ static PyMethodDef math_methods[] = {
 	{"log10",	math_log10,	METH_VARARGS,	math_log10_doc},
 	{"modf",	math_modf,	METH_VARARGS,	math_modf_doc},
 	{"pow",		math_pow,	METH_VARARGS,	math_pow_doc},
+	{"radians",	math_radians,	METH_VARARGS,	math_radians_doc},
 	{"sin",		math_sin,	METH_VARARGS,	math_sin_doc},
 	{"sinh",	math_sinh,	METH_VARARGS,	math_sinh_doc},
 	{"sqrt",	math_sqrt,	METH_VARARGS,	math_sqrt_doc},
