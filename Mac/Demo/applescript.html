@@ -1,0 +1,171 @@
+<HTML><HEAD><TITLE>Using Open Scripting Extension from Python</TITLE></HEAD>
+<BODY>
+<H1>Using Open Scripting Extension from Python</H1>
+<HR>
+
+OSA support in Python is still far from complete, and what
+support there is is likely to change in the forseeable future. Still,
+there is already enough in place to allow you to do some nifty things
+to other programs from your python program.  <P>
+
+<CITE>
+Actually, when we say "AppleScript" in this document we actually mean
+"the Open Scripting Architecture", there is nothing
+AppleScript-specific in the Python implementation. <p>
+</CITE>
+
+In this example, we will look at a scriptable application, extract its
+"AppleScript Dictionary" and generate a Python interface module from
+that and use that module to control the application. Because we want
+to concentrate on the OSA details we don't bother with a real
+user-interface for our application. <p>
+
+The application we are going to script is Eudora Light, a free mail
+program from <A HREF="http://www.qualcomm.com">QualComm</A>. This is a
+very versatile mail-reader, and QualComm has an accompanying
+commercial version once your needs outgrow Eudora Light. Our program
+will tell Eudora to send queued mail, retrieve mail or quit. <p>
+
+<H2>Creating the Python interface module</H2>
+
+There is a tool in the standard distribution that looks through a file
+for an 'AETE' or 'AEUT' resource, the internal representation of the
+AppleScript dictionary. This tool is called
+<CODE>gensuitemodule.py</CODE>, and lives in
+<CODE>Tools:bgen:ae</CODE>. When we start it, it asks us for an input
+file and we point it to the Eudora Light executable. It starts parsing
+the AETE resource, and for each AppleEvent suite it finds it prompts
+us for the filename of the resulting python module. Remember to change
+folders for the first module, you don't want to clutter up the Eudora
+folder with your python interfaces. If you want to skip a suite you
+press cancel and the process continues with the next suite. In the
+case of Eudora, you do <EM>not</EM> want to generate the Required
+suite, because it will be empty. AppleScript understands that an empty
+suite means "incorporate the whole standard suite by this name",
+gensuitemodule does not currently understand this. Creating the empty
+<CODE>Required_Suite.py</CODE> would hide the correct module of that
+name from our application. <p>
+
+<CITE>
+Time for a sidebar. If you want to re-create
+<CODE>Required_Suite.py</CODE> or one of the other standard modules
+you should look in <CODE>System Folder:Extensions:Scripting
+Additions:Dialects:English Dialect</CODE>, that is where the core
+AppleEvent dictionaries live. Also, if you are looking for the
+<CODE>Finder_Suite</CODE> interface: don't look in the finder (it has
+an old System 7.0 scripting suite), look at the extension <CODE>Finder
+Scripting Extension</CODE>. <p>
+</CITE>
+
+Let's glance at the <A
+HREF="scripting/Eudora_Suite.py">Eudora_Suite.py</A> just created. You
+may want to open Script Editor alongside, and have a look at how it
+interprets the dictionary. EudoraSuite.py starts with some
+boilerplate, then come some dictionaries implementing the OSA
+Enumerations, then a big class definition with methods for each
+AppleScript Verb and finally some comments. The Enumerations we will
+skip, it suffices to know that whenever you have to pass an enumerator
+to a method you can pass the english name and don't have to bother
+with the 4-letter type code. So, you can say
+<CODE><PRE>
+	eudora.notice(occurrence="mail_arrives")
+</PRE></CODE>
+instead of the rather more cryptic
+<CODE><PRE>
+	eudora.notice(occurrence="wArv")
+</PRE></CODE>
+
+The <CODE>Eudora_Suite</CODE> class is the bulk of the code
+generated. For each verb it contains a method. Each method knows what
+arguments the verb expects, and it makes handy use of the keyword
+argument scheme introduced in Python 1.3 to present a palatable
+interface to the python programmer. You will see that each method
+calls some routines from <CODE>aetools</CODE>, an auxiliary module
+living in <CODE>Tools:bgen:ae</CODE> which contains some other nifty
+AppleEvent tools as well. Have a look at it sometime, there is (of
+course) no documentation yet. <p>
+
+The other thing you notice is that each method calls
+<CODE>self.send</CODE>, but no such method is defined. You will have
+to provide it by subclassing or multiple inheritance, as we shall see
+later. <p>
+
+The module ends with some comments. Sadly, gensuitemodule is not yet
+able to turn the Object Specifiers into reasonable Python code. For
+now, if you need object specifiers, you will have to use the routines
+defined in <CODE>aetools.py</CODE> (and <CODE>aetypes.py</CODE>, which
+it incorporates). You use these in the form <CODE>aetools.Word(10,
+aetools.Document(1))</CODE> where the corresponding AppleScript
+terminology would be <CODE>word 10 of the first
+document</CODE>. Examine the two modules mentioned above along with
+the comments at the end of your suite module if you need to create
+more than the standard object specifiers. <p>
+
+<H2>Using a Python suite module</H2>
+
+Now that we have created the suite module we can use it in an
+application. We do this by creating a class that inherits
+<CODE>Eudora_Suite</CODE> and the <CODE>TalkTo</CODE> class from
+<CODE>aetools</CODE>. The <CODE>TalkTo</CODE> class is basically a
+container for the <CODE>send</CODE> method used by the methods from
+the suite classes. <p>
+
+Actually, our class will also inherit <CODE>Required_Suite</CODE>,
+because we also need functionality from that suite: the quit
+command. Gensuitemodule could have created this completely derived
+class for us, since it has access to all information needed to build
+the class but unfortunately it does not do so at the moment. All in
+all, the heart of our program looks like this:
+<CODE><PRE>
+	import Eudora_Suite, Required_Suite, aetools
+	
+	class Eudora(aetools.TalkTo, Required_Suite.Required_Suite, \
+				Eudora_Suite.Eudora_Suite):
+		pass
+</PRE></CODE>
+
+Yes, our class body is <CODE>pass</CODE>, all functionality is already
+provided by the base classes, the only thing we have to do is glue it
+together in the right way. <p>
+
+Looking at the sourcefile <A
+HREF="scripting/testeudora.py">testeudora.py</A> we see that it starts
+with some imports (and some <CODE>addpack</CODE> calls to extend
+<CODE>sys.path</CODE> to include <CODE>Tools:bgen:ae</CODE>, use of
+<CODE>ni</CODE> should be preferred over <CODE>addpack</CODE> but I
+have not managed to master it yet). Then we get the class definition
+for our main object and a constant giving the signature of Eudora. <p>
+
+This, again, needs a little explanation. There are various ways to
+describe to AppleScript which program we want to talk to, but the
+easiest one to use (from Python, at least) is creator
+signature. Application name would be much nicer, but Python currently
+does not have a module that interfaces to the Finder database (which
+would allow us to map names to signatures). The other alternative,
+<CODE>ChooseApplication</CODE> from the program-to-program toolbox, is
+also not available from Python at the moment. <p>
+
+The main program itself is a wonder of simplicity. We create the
+object that talks to Eudora (passing the signature as argument), ask
+the user what she wants and call the appropriate method of the talker
+object. The use of keyword arguments with the same names as used by
+AppleScript make passing the parameters a breeze. <p>
+
+The exception handling does need a few comments, though. Since
+AppleScript is basically a connectionless RPC protocol nothing happens
+when we create to talker object. Hence, if the destination application
+is not running we will not notice until we send our first
+command. There is another thing to note about errors returned by
+AppleScript calls: even though <CODE>MacOS.Error</CODE> is raised not
+all of the errors are actually <CODE>OSErr</CODE>-type errors, some
+are error codes returned by the server application. In that case, the
+error message will be incorrect. <p>
+
+That concludes our simple example. Again, let me emphasize that
+scripting support in Python is not very complete at the moment, and
+the details of how to use AppleEvents will definitely change in the
+near future. This will not only fix all the ideosyncracies noted in
+this document but also break existing programs, since the current
+suite organization will have to change to fix some of the problems.
+Still, if you want to experiment with AppleEvents right now: go ahead!
+<p>
