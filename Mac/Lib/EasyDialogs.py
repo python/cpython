@@ -2,6 +2,7 @@
 
 Message(msg) -- display a message and an OK button.
 AskString(prompt, default) -- ask for a string, display OK and Cancel buttons.
+AskPassword(prompt, default) -- like AskString(), but shows text as bullets.
 AskYesNoCancel(question, default) -- display a question and Yes, No and Cancel buttons.
 bar = Progress(label, maxvalue) -- Display a progress bar
 bar.set(value) -- Set value
@@ -116,12 +117,12 @@ def AskPassword(prompt,	 default='', id=257):
 	string = default
 	oldschedparams = MacOS.SchedParams(0,0)
 	while 1:
-		ready,ev = Evt.WaitNextEvent( -1, 6 )
+		ready,ev = Evt.WaitNextEvent(Events.everyEvent, 6)
 		if not ready: continue
 		what,msg,when,where,mod = ev
 		if what == 0 : Dlg.DialogSelect(ev)	# for blinking caret
 		elif Dlg.IsDialogEvent(ev):
-			if what == Events.keyDown:
+			if what in (Events.keyDown, Events.autoKey):
 				charcode = msg & Events.charCodeMask
 				if ( mod & Events.cmdKey ):
 					MacOS.SysBeep()
