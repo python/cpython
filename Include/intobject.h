@@ -25,30 +25,30 @@ typedef struct {
     long ob_ival;
 } PyIntObject;
 
-extern DL_IMPORT(PyTypeObject) PyInt_Type;
+PyAPI_DATA(PyTypeObject) PyInt_Type;
 
 #define PyInt_Check(op) PyObject_TypeCheck(op, &PyInt_Type)
 #define PyInt_CheckExact(op) ((op)->ob_type == &PyInt_Type)
 
-extern DL_IMPORT(PyObject *) PyInt_FromString(char*, char**, int);
+PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
 #ifdef Py_USING_UNICODE
-extern DL_IMPORT(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
+PyAPI_FUNC(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
 #endif
-extern DL_IMPORT(PyObject *) PyInt_FromLong(long);
-extern DL_IMPORT(long) PyInt_AsLong(PyObject *);
-extern DL_IMPORT(long) PyInt_GetMax(void);
+PyAPI_FUNC(PyObject *) PyInt_FromLong(long);
+PyAPI_FUNC(long) PyInt_AsLong(PyObject *);
+PyAPI_FUNC(long) PyInt_GetMax(void);
 
 /* Macro, trading safety for speed */
 #define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
 
 /* These aren't really part of the Int object, but they're handy; the protos
- * are necessary for systems that need the magic of DL_IMPORT and that want
+ * are necessary for systems that need the magic of PyAPI_FUNC and that want
  * to have stropmodule as a dynamically loaded module instead of building it
  * into the main Python shared library/DLL.  Guido thinks I'm weird for
  * building it this way.  :-)  [cjh]
  */
-extern DL_IMPORT(unsigned long) PyOS_strtoul(char *, char **, int);
-extern DL_IMPORT(long) PyOS_strtol(char *, char **, int);
+PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);
+PyAPI_FUNC(long) PyOS_strtol(char *, char **, int);
 
 #ifdef __cplusplus
 }

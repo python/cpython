@@ -78,32 +78,32 @@ struct _dictobject {
 	PyDictEntry ma_smalltable[PyDict_MINSIZE];
 };
 
-extern DL_IMPORT(PyTypeObject) PyDict_Type;
+PyAPI_DATA(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) PyObject_TypeCheck(op, &PyDict_Type)
 
-extern DL_IMPORT(PyObject *) PyDict_New(void);
-extern DL_IMPORT(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
-extern DL_IMPORT(int) PyDict_SetItem(PyObject *mp, PyObject *key, PyObject *item);
-extern DL_IMPORT(int) PyDict_DelItem(PyObject *mp, PyObject *key);
-extern DL_IMPORT(void) PyDict_Clear(PyObject *mp);
-extern DL_IMPORT(int) PyDict_Next
-	(PyObject *mp, int *pos, PyObject **key, PyObject **value);
-extern DL_IMPORT(PyObject *) PyDict_Keys(PyObject *mp);
-extern DL_IMPORT(PyObject *) PyDict_Values(PyObject *mp);
-extern DL_IMPORT(PyObject *) PyDict_Items(PyObject *mp);
-extern DL_IMPORT(int) PyDict_Size(PyObject *mp);
-extern DL_IMPORT(PyObject *) PyDict_Copy(PyObject *mp);
+PyAPI_FUNC(PyObject *) PyDict_New(void);
+PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
+PyAPI_FUNC(int) PyDict_SetItem(PyObject *mp, PyObject *key, PyObject *item);
+PyAPI_FUNC(int) PyDict_DelItem(PyObject *mp, PyObject *key);
+PyAPI_FUNC(void) PyDict_Clear(PyObject *mp);
+PyAPI_FUNC(int) PyDict_Next(
+	PyObject *mp, int *pos, PyObject **key, PyObject **value);
+PyAPI_FUNC(PyObject *) PyDict_Keys(PyObject *mp);
+PyAPI_FUNC(PyObject *) PyDict_Values(PyObject *mp);
+PyAPI_FUNC(PyObject *) PyDict_Items(PyObject *mp);
+PyAPI_FUNC(int) PyDict_Size(PyObject *mp);
+PyAPI_FUNC(PyObject *) PyDict_Copy(PyObject *mp);
 
 /* PyDict_Update(mp, other) is equivalent to PyDict_Merge(mp, other, 1). */
-extern DL_IMPORT(int) PyDict_Update(PyObject *mp, PyObject *other);
+PyAPI_FUNC(int) PyDict_Update(PyObject *mp, PyObject *other);
 
 /* PyDict_Merge updates/merges from a mapping object (an object that
    supports PyMapping_Keys() and PyObject_GetItem()).  If override is true,
    the last occurrence of a key wins, else the first.  The Python
    dict.update(other) is equivalent to PyDict_Merge(dict, other, 1).
 */
-extern DL_IMPORT(int) PyDict_Merge(PyObject *mp,
+PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
 				   PyObject *other,
 				   int override);
 
@@ -112,13 +112,13 @@ extern DL_IMPORT(int) PyDict_Merge(PyObject *mp,
    of a key wins, else the first.  The Python dict constructor dict(seq2)
    is equivalent to dict={}; PyDict_MergeFromSeq(dict, seq2, 1).
 */
-extern DL_IMPORT(int) PyDict_MergeFromSeq2(PyObject *d,
+PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
 					   PyObject *seq2,
 					   int override);
 
-extern DL_IMPORT(PyObject *) PyDict_GetItemString(PyObject *dp, char *key);
-extern DL_IMPORT(int) PyDict_SetItemString(PyObject *dp, char *key, PyObject *item);
-extern DL_IMPORT(int) PyDict_DelItemString(PyObject *dp, char *key);
+PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, char *key);
+PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, char *key, PyObject *item);
+PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, char *key);
 
 #ifdef __cplusplus
 }

@@ -19,10 +19,10 @@ typedef struct PyStructSequence_Desc {
 	int n_in_sequence;
 } PyStructSequence_Desc;
 
-extern DL_IMPORT(void) PyStructSequence_InitType(PyTypeObject *type, 
+PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type, 
 						 PyStructSequence_Desc *desc);
        
-extern DL_IMPORT(PyObject *) PyStructSequence_New(PyTypeObject* type);
+PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);
 
 typedef struct {
 	PyObject_VAR_HEAD

@@ -7,16 +7,16 @@
 extern "C" {
 #endif
 
-extern DL_IMPORT(PyTypeObject) PyModule_Type;
+PyAPI_DATA(PyTypeObject) PyModule_Type;
 
 #define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
 #define PyModule_CheckExact(op) ((op)->ob_type == &PyModule_Type)
 
-extern DL_IMPORT(PyObject *) PyModule_New(char *);
-extern DL_IMPORT(PyObject *) PyModule_GetDict(PyObject *);
-extern DL_IMPORT(char *) PyModule_GetName(PyObject *);
-extern DL_IMPORT(char *) PyModule_GetFilename(PyObject *);
-extern DL_IMPORT(void) _PyModule_Clear(PyObject *);
+PyAPI_FUNC(PyObject *) PyModule_New(char *);
+PyAPI_FUNC(PyObject *) PyModule_GetDict(PyObject *);
+PyAPI_FUNC(char *) PyModule_GetName(PyObject *);
+PyAPI_FUNC(char *) PyModule_GetFilename(PyObject *);
+PyAPI_FUNC(void) _PyModule_Clear(PyObject *);
 
 #ifdef __cplusplus
 }

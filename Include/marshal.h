@@ -7,16 +7,16 @@
 extern "C" {
 #endif
 
-DL_IMPORT(void) PyMarshal_WriteLongToFile(long, FILE *);
-DL_IMPORT(void) PyMarshal_WriteShortToFile(int, FILE *);
-DL_IMPORT(void) PyMarshal_WriteObjectToFile(PyObject *, FILE *);
-DL_IMPORT(PyObject *) PyMarshal_WriteObjectToString(PyObject *);
+PyAPI_FUNC(void) PyMarshal_WriteLongToFile(long, FILE *);
+PyAPI_FUNC(void) PyMarshal_WriteShortToFile(int, FILE *);
+PyAPI_FUNC(void) PyMarshal_WriteObjectToFile(PyObject *, FILE *);
+PyAPI_FUNC(PyObject *) PyMarshal_WriteObjectToString(PyObject *);
 
-DL_IMPORT(long) PyMarshal_ReadLongFromFile(FILE *);
-DL_IMPORT(int) PyMarshal_ReadShortFromFile(FILE *);
-DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromFile(FILE *);
-DL_IMPORT(PyObject *) PyMarshal_ReadLastObjectFromFile(FILE *);
-DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromString(char *, int);
+PyAPI_FUNC(long) PyMarshal_ReadLongFromFile(FILE *);
+PyAPI_FUNC(int) PyMarshal_ReadShortFromFile(FILE *);
+PyAPI_FUNC(PyObject *) PyMarshal_ReadObjectFromFile(FILE *);
+PyAPI_FUNC(PyObject *) PyMarshal_ReadLastObjectFromFile(FILE *);
+PyAPI_FUNC(PyObject *) PyMarshal_ReadObjectFromString(char *, int);
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-extern DL_IMPORT(PyTypeObject) PyCFunction_Type;
+PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
 #define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
 
@@ -16,9 +16,9 @@ typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
 					     PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
 
-extern DL_IMPORT(PyCFunction) PyCFunction_GetFunction(PyObject *);
-extern DL_IMPORT(PyObject *) PyCFunction_GetSelf(PyObject *);
-extern DL_IMPORT(int) PyCFunction_GetFlags(PyObject *);
+PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
+PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
+PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -28,7 +28,7 @@ extern DL_IMPORT(int) PyCFunction_GetFlags(PyObject *);
 	(((PyCFunctionObject *)func) -> m_self)
 #define PyCFunction_GET_FLAGS(func) \
 	(((PyCFunctionObject *)func) -> m_ml -> ml_flags)
-extern DL_IMPORT(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
     char	*ml_name;
@@ -38,9 +38,9 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
-extern DL_IMPORT(PyObject *) Py_FindMethod(PyMethodDef[], PyObject *, char *);
+PyAPI_FUNC(PyObject *) Py_FindMethod(PyMethodDef[], PyObject *, char *);
 
-extern DL_IMPORT(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 
 /* Flag passed to newmethodobject */
 #define METH_OLDARGS  0x0000
@@ -61,7 +61,7 @@ typedef struct PyMethodChain {
     struct PyMethodChain *link;	/* NULL or base type */
 } PyMethodChain;
 
-extern DL_IMPORT(PyObject *) Py_FindMethodInChain(PyMethodChain *, PyObject *,
+PyAPI_FUNC(PyObject *) Py_FindMethodInChain(PyMethodChain *, PyObject *,
                                                   char *);
 
 typedef struct {

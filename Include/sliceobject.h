@@ -6,7 +6,7 @@ extern "C" {
 
 /* The unique ellipsis object "..." */
 
-extern DL_IMPORT(PyObject) _Py_EllipsisObject; /* Don't use this directly */
+PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
 #define Py_Ellipsis (&_Py_EllipsisObject)
 
@@ -24,15 +24,15 @@ typedef struct {
     PyObject *start, *stop, *step;
 } PySliceObject;
 
-extern DL_IMPORT(PyTypeObject) PySlice_Type;
+PyAPI_DATA(PyTypeObject) PySlice_Type;
 
 #define PySlice_Check(op) ((op)->ob_type == &PySlice_Type)
 
-DL_IMPORT(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
+PyAPI_FUNC(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
                                   PyObject* step);
-DL_IMPORT(int) PySlice_GetIndices(PySliceObject *r, int length,
+PyAPI_FUNC(int) PySlice_GetIndices(PySliceObject *r, int length,
                                   int *start, int *stop, int *step);
-DL_IMPORT(int) PySlice_GetIndicesEx(PySliceObject *r, int length,
+PyAPI_FUNC(int) PySlice_GetIndicesEx(PySliceObject *r, int length,
 				    int *start, int *stop, 
 				    int *step, int *slicelength);
 

@@ -26,27 +26,27 @@ typedef struct {
 #endif
 } PyFileObject;
 
-extern DL_IMPORT(PyTypeObject) PyFile_Type;
+PyAPI_DATA(PyTypeObject) PyFile_Type;
 
 #define PyFile_Check(op) PyObject_TypeCheck(op, &PyFile_Type)
 #define PyFile_CheckExact(op) ((op)->ob_type == &PyFile_Type)
 
-extern DL_IMPORT(PyObject *) PyFile_FromString(char *, char *);
-extern DL_IMPORT(void) PyFile_SetBufSize(PyObject *, int);
-extern DL_IMPORT(PyObject *) PyFile_FromFile(FILE *, char *, char *,
+PyAPI_FUNC(PyObject *) PyFile_FromString(char *, char *);
+PyAPI_FUNC(void) PyFile_SetBufSize(PyObject *, int);
+PyAPI_FUNC(PyObject *) PyFile_FromFile(FILE *, char *, char *,
                                              int (*)(FILE *));
-extern DL_IMPORT(FILE *) PyFile_AsFile(PyObject *);
-extern DL_IMPORT(PyObject *) PyFile_Name(PyObject *);
-extern DL_IMPORT(PyObject *) PyFile_GetLine(PyObject *, int);
-extern DL_IMPORT(int) PyFile_WriteObject(PyObject *, PyObject *, int);
-extern DL_IMPORT(int) PyFile_SoftSpace(PyObject *, int);
-extern DL_IMPORT(int) PyFile_WriteString(const char *, PyObject *);
-extern DL_IMPORT(int) PyObject_AsFileDescriptor(PyObject *);
+PyAPI_FUNC(FILE *) PyFile_AsFile(PyObject *);
+PyAPI_FUNC(PyObject *) PyFile_Name(PyObject *);
+PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
+PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
+PyAPI_FUNC(int) PyFile_SoftSpace(PyObject *, int);
+PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
 
 /* The default encoding used by the platform file system APIs
    If non-NULL, this is different than the default encoding for strings
 */
-extern DL_IMPORT(const char *) Py_FileSystemDefaultEncoding;
+PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 
 #ifdef WITH_UNIVERSAL_NEWLINES
 /* Routines to replace fread() and fgets() which accept any of \r, \n
