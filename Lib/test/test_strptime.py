@@ -1,18 +1,17 @@
 """PyUnit testing against strptime >= 2.1.0."""
 
-import sys
-sys.path.append('..')
 import unittest
 import time
 import locale
 import re
+from test import test_support
 
 import _strptime
 
 __version__ = (1,0,5)
 
 class LocaleTime_Tests(unittest.TestCase):
-    """Contains all tests for _strptime.LocaleTime."""
+    """Tests for _strptime.LocaleTime."""
 
     def setUp(self):
         """Create time tuple based on current time."""
@@ -30,23 +29,19 @@ class LocaleTime_Tests(unittest.TestCase):
         self.failUnless(comparison == strftime_output, "%s: position within tuple incorrect; %s != %s" % (error_msg, comparison, strftime_output))
 
     def test_weekday(self):
-        """Make sure that full and abbreviated weekday names are correct in
-        both string and position with tuple.
-
-        """
+        # Make sure that full and abbreviated weekday names are correct in
+        # both string and position with tuple
         self.compare_against_time(self.LT_ins.f_weekday, '%A', 6, "Testing of full weekday name failed")
         self.compare_against_time(self.LT_ins.a_weekday, '%a', 6, "Testing of abbreviated weekday name failed")
 
     def test_month(self):
-        """Test full and abbreviated month names; both string and position
-        within the tuple.
-
-        """
+        # Test full and abbreviated month names; both string and position
+        # within the tuple
         self.compare_against_time(self.LT_ins.f_month, '%B', 1, "Testing against full month name failed")
         self.compare_against_time(self.LT_ins.a_month, '%b', 1, "Testing against abbreviated month name failed")
 
     def test_am_pm(self):
-        """Make sure AM/PM representation done properly."""
+        # Make sure AM/PM representation done properly
         strftime_output = time.strftime("%p", self.time_tuple)
         self.failUnless(strftime_output in self.LT_ins.am_pm, "AM/PM representation not in tuple")
         if self.time_tuple[3] < 12: position = 0
@@ -54,12 +49,12 @@ class LocaleTime_Tests(unittest.TestCase):
         self.failUnless(strftime_output == self.LT_ins.am_pm[position], "AM/PM representation in the wrong position within the tuple")
 
     def test_timezone(self):
-        """Make sure timezone is correct."""
+        # Make sure timezone is correct
         if time.strftime("%Z", self.time_tuple):
             self.compare_against_time(self.LT_ins.timezone, '%Z', 8, "Testing against timezone failed")
 
     def test_date_time(self):
-        """Check that LC_date_time, LC_date, and LC_time are correct."""
+        # Check that LC_date_time, LC_date, and LC_time are correct
         strftime_output = time.strftime("%c", self.time_tuple)
         self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_date_time, self.time_tuple), "LC_date_time incorrect")
         strftime_output = time.strftime("%x", self.time_tuple)
@@ -68,11 +63,11 @@ class LocaleTime_Tests(unittest.TestCase):
         self.failUnless(strftime_output == time.strftime(self.LT_ins.LC_time, self.time_tuple), "LC_time incorrect")
 
     def test_lang(self):
-        """Make sure lang is set."""
+        # Make sure lang is set
         self.failUnless(self.LT_ins.lang in (locale.getdefaultlocale()[0], locale.getlocale(locale.LC_TIME)), "Setting of lang failed")
 
     def test_by_hand_input(self):
-        """Test passed-in initialization value checks."""
+        # Test passed-in initialization value checks
         self.failUnless(_strptime.LocaleTime(f_weekday=range(7)), "Argument size check for f_weekday failed")
         self.assertRaises(TypeError, _strptime.LocaleTime, f_weekday=range(8))
         self.assertRaises(TypeError, _strptime.LocaleTime, f_weekday=range(6))
@@ -103,7 +98,7 @@ class TimeRETests(unittest.TestCase):
         self.locale_time = _strptime.LocaleTime()
 
     def test_getitem(self):
-        """Make sure that __getitem__ works properly."""
+        # Make sure that __getitem__ works properly
         self.failUnless(self.time_re['m'], "Fetching 'm' directive (built-in) failed")
         self.failUnless(self.time_re['b'], "Fetching 'b' directive (built w/ __tupleToRE) failed")
         for name in self.locale_time.a_month:
@@ -113,14 +108,14 @@ class TimeRETests(unittest.TestCase):
         self.assertRaises(KeyError, self.time_re.__getitem__, '1')
 
     def test_pattern(self):
-        """Test TimeRE.pattern."""
+        # Test TimeRE.pattern
         pattern_string = self.time_re.pattern(r"%a %A %d")
         self.failUnless(pattern_string.find(self.locale_time.a_weekday[2]) != -1, "did not find abbreviated weekday in pattern string '%s'" % pattern_string)
         self.failUnless(pattern_string.find(self.locale_time.f_weekday[4]) != -1, "did not find full weekday in pattern string '%s'" % pattern_string)
         self.failUnless(pattern_string.find(self.time_re['d']) != -1, "did not find 'd' directive pattern string '%s'" % pattern_string)
 
     def test_compile(self):
-        """Check that compiled regex is correct."""
+        # Check that compiled regex is correct
         found = self.time_re.compile(r"%A").match(self.locale_time.f_weekday[6])
         self.failUnless(found and found.group('A') == self.locale_time.f_weekday[6], "re object for '%A' failed")
         compiled = self.time_re.compile(r"%a %b")
@@ -142,11 +137,11 @@ class StrptimeTests(unittest.TestCase):
         self.time_tuple = time.gmtime()
 
     def test_TypeError(self):
-        """Make sure ValueError is raised when match fails."""
+        # Make sure ValueError is raised when match fails
         self.assertRaises(ValueError,_strptime.strptime, data_string="%d", format="%A")
 
     def test_returning_RE(self):
-        """Make sure that an re can be returned."""
+        # Make sure that an re can be returned
         strp_output = _strptime.strptime(False, "%Y")
         self.failUnless(isinstance(strp_output, type(re.compile(''))), "re object not returned correctly")
         self.failUnless(_strptime.strptime("1999", strp_output), "Use or re object failed")
@@ -160,71 +155,68 @@ class StrptimeTests(unittest.TestCase):
         self.failUnless(strp_output[position] == self.time_tuple[position], "testing of '%s' directive failed; '%s' -> %s != %s" % (directive, strf_output, strp_output[position], self.time_tuple[position]))
 
     def test_year(self):
-        """Test that the year is handled properly."""
+        # Test that the year is handled properly
         for directive in ('y', 'Y'):
             self.helper(directive, 0)
 
     def test_month(self):
-        """Test for month directives."""
+        # Test for month directives
         for directive in ('B', 'b', 'm'):
             self.helper(directive, 1)
 
     def test_day(self):
-        """Test for day directives."""
+        # Test for day directives
         self.helper('d', 2)
 
     def test_hour(self):
-        """Test hour directives."""
+        # Test hour directives
         self.helper('H', 3)
         strf_output = time.strftime("%I %p", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%I %p")
         self.failUnless(strp_output[3] == self.time_tuple[3], "testing of '%%I %%p' directive failed; '%s' -> %s != %s" % (strf_output, strp_output[3], self.time_tuple[3]))
 
     def test_minute(self):
-        """Test minute directives."""
+        # Test minute directives
         self.helper('M', 4)
 
     def test_second(self):
-        """Test second directives."""
+        # Test second directives
         self.helper('S', 5)
 
     def test_weekday(self):
-        """Test weekday directives."""
+        # Test weekday directives
         for directive in ('A', 'a', 'w'):
             self.helper(directive,6)
 
     def test_julian(self):
-        """Test julian directives."""
+        # Test julian directives
         self.helper('j', 7)
 
     def test_timezone(self):
-        """Test timezone directives.
-
-        When gmtime() is used with %Z, entire result of strftime() is empty.
-
-        """
+        # Test timezone directives.
+        # When gmtime() is used with %Z, entire result of strftime() is empty.
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
         self.failUnless(strp_output[8] == time_tuple[8], "timezone check failed; '%s' -> %s != %s" % (strf_output, strp_output[8], time_tuple[8]))
 
     def test_date_time(self):
-        """*** Test %c directive. ***"""
+        # Test %c directive
         for position in range(6):
             self.helper('c', position)
 
     def test_date(self):
-        """*** Test %x directive. ***"""
+        # Test %x directive
         for position in range(0,3):
             self.helper('x', position)
 
     def test_time(self):
-        """*** Test %X directive. ***"""
+        # Test %X directive
         for position in range(3,6):
             self.helper('X', position)
 
     def test_percent(self):
-        """Make sure % signs are handled properly."""
+        # Make sure % signs are handled properly
         strf_output = time.strftime("%m %% %Y", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%m %% %Y")
         self.failUnless(strp_output[0] == self.time_tuple[0] and strp_output[1] == self.time_tuple[1], "handling of percent sign failed")
@@ -237,43 +229,49 @@ class FxnTests(unittest.TestCase):
         self.time_tuple = time.gmtime()
 
     def test_julianday_result(self):
-        """Test julianday."""
+        # Test julianday
         result = _strptime.julianday(self.time_tuple[0], self.time_tuple[1], self.time_tuple[2])
         self.failUnless(result == self.time_tuple[7], "julianday failed; %s != %s" % (result, self.time_tuple[7]))
 
     def test_julianday_trigger(self):
-        """Make sure julianday is called."""
+        # Make sure julianday is called
         strf_output = time.strftime("%Y-%m-%d", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%Y-%m-%d")
         self.failUnless(strp_output[7] == self.time_tuple[7], "strptime did not trigger julianday(); %s != %s" % (strp_output[7], self.time_tuple[7]))
 
     def test_gregorian_result(self):
-        """Test gregorian."""
+        # Test gregorian
         result = _strptime.gregorian(self.time_tuple[7], self.time_tuple[0])
         comparison = [self.time_tuple[0], self.time_tuple[1], self.time_tuple[2]]
         self.failUnless(result == comparison, "gregorian() failed; %s != %s" % (result, comparison))
 
     def test_gregorian_trigger(self):
-        """Test that gregorian() is triggered."""
+        # Test that gregorian() is triggered
         strf_output = time.strftime("%j %Y", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%j %Y")
         self.failUnless(strp_output[1] == self.time_tuple[1] and strp_output[2] == self.time_tuple[2], "gregorian() not triggered; month -- %s != %s, day -- %s != %s" % (strp_output[1], self.time_tuple[1], strp_output[2], self.time_tuple[2]))
 
     def test_dayofweek_result(self):
-        """Test dayofweek."""
+        # Test dayofweek
         result = _strptime.dayofweek(self.time_tuple[0], self.time_tuple[1], self.time_tuple[2])
         comparison = self.time_tuple[6]
         self.failUnless(result == comparison, "dayofweek() failed; %s != %s" % (result, comparison))
 
     def test_dayofweek_trigger(self):
-        """Make sure dayofweek() gets triggered."""
+        # Make sure dayofweek() gets triggered
         strf_output = time.strftime("%Y-%m-%d", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%Y-%m-%d")
         self.failUnless(strp_output[6] == self.time_tuple[6], "triggering of dayofweek() failed; %s != %s" % (strp_output[6], self.time_tuple[6]))
 
 
-
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(LocaleTime_Tests))
+    suite.addTest(unittest.makeSuite(TimeRETests))
+    suite.addTest(unittest.makeSuite(StrptimeTests))
+    suite.addTest(unittest.makeSuite(FxnTests))
+    test_support.run_suite(suite)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main()
