@@ -24,6 +24,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* POSIX module implementation */
 
+/* This file is also used for Windows NT.  In that case the module
+   actually calls itself 'nt', not 'posix', and a few functions are
+   either unimplemented or implemented differently.  The source
+   assumes that for Windows NT, the macro 'NT' is defined independent
+   of the compiler used.  Different compilers define their own feature
+   test macro, e.g. '__BORLANDC__' or '_MSCVER'. */
+
+/* For MS-DOS and Windows 3.x, use ../Dos/dosmodule.c */
+
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
@@ -40,8 +49,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* HAVE_FCNTL_H */
 
 #ifndef NT
+#define HAVE_FORK	1
+#endif
+
+#if !defined(NT) || defined(__BORLANDC__)
+/* Unix functions that the configure script doesn't check for
+   and that aren't easily available under NT except with Borland C */
+#define HAVE_GETEGID	1
+#define HAVE_GETEUID	1
+#define HAVE_GETGID	1
+#define HAVE_GETPPID	1
+#define HAVE_GETUID	1
+#define HAVE_KILL	1
+#define HAVE_WAIT	1
+#endif
+
+#ifndef NT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+/* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
+extern int rename();
+extern int pclose();
+extern int lstat();
+extern int symlink();
 #else /* !HAVE_UNISTD_H */
 extern int mkdir PROTO((const char *, mode_t));
 extern int chdir PROTO((const char *));
@@ -62,14 +92,6 @@ extern int symlink PROTO((const char *, const char *));
 extern int lstat PROTO((const char *, struct stat *));
 #endif /* HAVE_LSTAT */
 #endif /* !HAVE_UNISTD_H */
-#endif /* !NT */
-
-#ifndef NT
-/* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
-extern int rename();
-extern int pclose();
-extern int lstat();
-extern int symlink();
 #endif /* !NT */
 
 #ifdef HAVE_UTIME_H
@@ -165,7 +187,9 @@ static object *PosixError; /* Exception posix.error */
 
 /* Set a POSIX-specific error from errno, and return NULL */
 
-static object * posix_error() { 	return err_errno(PosixError);
+static object * posix_error()
+{
+	return err_errno(PosixError);
 }
 
 
@@ -738,7 +762,7 @@ posix_execve(self, args)
 	return NULL;
 }
 
-#ifndef NT
+#ifdef HAVE_FORK
 static object *
 posix_fork(self, args)
 	object *self;
@@ -752,7 +776,9 @@ posix_fork(self, args)
 		return posix_error();
 	return newintobject((long)pid);
 }
+#endif
 
+#ifdef HAVE_GETEGID
 static object *
 posix_getegid(self, args)
 	object *self;
@@ -762,7 +788,9 @@ posix_getegid(self, args)
 		return NULL;
 	return newintobject((long)getegid());
 }
+#endif
 
+#ifdef HAVE_GETEUID
 static object *
 posix_geteuid(self, args)
 	object *self;
@@ -772,7 +800,9 @@ posix_geteuid(self, args)
 		return NULL;
 	return newintobject((long)geteuid());
 }
+#endif
 
+#ifdef HAVE_GETGID
 static object *
 posix_getgid(self, args)
 	object *self;
@@ -782,7 +812,7 @@ posix_getgid(self, args)
 		return NULL;
 	return newintobject((long)getgid());
 }
-#endif /* !NT */
+#endif
 
 static object *
 posix_getpid(self, args)
@@ -830,7 +860,7 @@ posix_setpgrp(self, args)
 
 #endif /* HAVE_SETPGRP */
 
-#ifndef NT
+#ifdef HAVE_GETPPID
 static object *
 posix_getppid(self, args)
 	object *self;
@@ -840,7 +870,9 @@ posix_getppid(self, args)
 		return NULL;
 	return newintobject((long)getppid());
 }
+#endif
 
+#ifdef HAVE_GETUID
 static object *
 posix_getuid(self, args)
 	object *self;
@@ -850,7 +882,9 @@ posix_getuid(self, args)
 		return NULL;
 	return newintobject((long)getuid());
 }
+#endif
 
+#ifdef HAVE_KILL
 static object *
 posix_kill(self, args)
 	object *self;
@@ -864,7 +898,7 @@ posix_kill(self, args)
 	INCREF(None);
 	return None;
 }
-#endif /* !NT */
+#endif
 
 static object *
 posix_popen(self, args)
@@ -940,7 +974,7 @@ posix_waitpid(self, args)
 }
 #endif /* HAVE_WAITPID */
 
-#ifndef NT
+#ifdef HAVE_WAIT
 static object *
 posix_wait(self, args)
 	object *self;
@@ -955,7 +989,7 @@ posix_wait(self, args)
 	else
 		return mkvalue("ii", pid, sts);
 }
-#endif /* !NT */
+#endif
 
 static object *
 posix_lstat(self, args)
@@ -1366,21 +1400,31 @@ static struct methodlist posix_methods[] = {
 	{"_exit",	posix__exit},
 	{"execv",	posix_execv},
 	{"execve",	posix_execve},
-#ifndef NT
+#ifdef HAVE_FORK
 	{"fork",	posix_fork},
+#endif /* HAVE_FORK */
+#ifdef HAVE_GETEGID
 	{"getegid",	posix_getegid},
+#endif /* HAVE_GETEGID */
+#ifdef HAVE_GETEUID
 	{"geteuid",	posix_geteuid},
+#endif /* HAVE_GETEUID */
+#ifdef HAVE_GETGID
 	{"getgid",	posix_getgid},
-#endif /* !NT */
+#endif /* HAVE_GETGID */
 	{"getpid",	posix_getpid},
 #ifdef HAVE_GETPGRP
 	{"getpgrp",	posix_getpgrp},
 #endif /* HAVE_GETPGRP */
-#ifndef NT
+#ifdef HAVE_GETPPID
 	{"getppid",	posix_getppid},
+#endif /* HAVE_GETPPID */
+#ifdef HAVE_GETUID
 	{"getuid",	posix_getuid},
+#endif /* HAVE_GETUID */
+#ifdef HAVE_KILL
 	{"kill",	posix_kill},
-#endif /* !NT */
+#endif /* HAVE_KILL */
 	{"popen",	posix_popen,	1},
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid},
@@ -1391,9 +1435,9 @@ static struct methodlist posix_methods[] = {
 #ifdef HAVE_SETPGRP
 	{"setpgrp",	posix_setpgrp},
 #endif /* HAVE_SETPGRP */
-#ifndef NT
+#ifdef HAVE_WAIT
 	{"wait",	posix_wait},
-#endif /* !NT */
+#endif /* HAVE_WAIT */
 #ifdef HAVE_WAITPID
 	{"waitpid",	posix_waitpid},
 #endif /* HAVE_WAITPID */
