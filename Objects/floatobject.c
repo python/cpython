@@ -155,15 +155,22 @@ PyFloat_FromString(v, pend)
 	char **pend;
 {
 	extern double strtod Py_PROTO((const char *, char **));
-	char *s, *last, *end;
+	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* For errors */
+	int len;
 
-	if (!PyString_Check(v))
+	if (PyString_Check(v)) {
+		s = PyString_AS_STRING(v);
+		len = PyString_GET_SIZE(v);
+	}
+	else if (PyObject_AsCharBuffer(v, &s, &len)) {
+		PyErr_SetString(PyExc_TypeError,
+				"float() needs a string argument");
 		return NULL;
-	s = PyString_AS_STRING(v);
+	}
 
-	last = s + PyString_GET_SIZE(v);
+	last = s + len;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -172,7 +179,7 @@ PyFloat_FromString(v, pend)
 	}
 	errno = 0;
 	PyFPE_START_PROTECT("PyFloat_FromString", return 0)
-	x = strtod(s, &end);
+	x = strtod((char *)s, (char **)&end);
 	PyFPE_END_PROTECT(x)
 	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
 	   byte at the end of the string, when the input is inf(inity) */
@@ -185,7 +192,7 @@ PyFloat_FromString(v, pend)
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
+	else if (end != last) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for float()");
 		return NULL;
@@ -196,7 +203,7 @@ PyFloat_FromString(v, pend)
 		return NULL;
 	}
 	if (pend)
-		*pend = end;
+		*pend = (char *)end;
 	return PyFloat_FromDouble(x);
 }
 
@@ -785,7 +792,7 @@ PyFloat_Fini()
 					PyFloat_AsString(buf, p);
 					fprintf(stderr,
 			     "#   <float at %lx, refcnt=%d, val=%s>\n",
-						p, p->ob_refcnt, buf);
+						(long)p, p->ob_refcnt, buf);
 				}
 			}
 			list = list->next;

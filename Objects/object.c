@@ -189,11 +189,6 @@ PyObject_Print(op, fp, flags)
 					s = PyObject_Repr(op);
 				if (s == NULL)
 					ret = -1;
-				else if (!PyString_Check(s)) {
-					PyErr_SetString(PyExc_TypeError,
-						   "repr not string");
-					ret = -1;
-				}
 				else {
 					ret = PyObject_Print(s, fp,
 							     Py_PRINT_RAW);
@@ -234,14 +229,28 @@ PyObject_Repr(v)
 			v->ob_type->tp_name, (long)v);
 		return PyString_FromString(buf);
 	}
-	else
-		return (*v->ob_type->tp_repr)(v);
+	else {
+		PyObject *res;
+		res = (*v->ob_type->tp_repr)(v);
+		if (res == NULL)
+			return NULL;
+		if (!PyString_Check(res)) {
+			PyErr_Format(PyExc_TypeError,
+				     "__repr__ returned non-string (type %s)",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
+	}
 }
 
 PyObject *
 PyObject_Str(v)
 	PyObject *v;
 {
+	PyObject *res;
+	
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
 	else if (PyString_Check(v)) {
@@ -249,10 +258,9 @@ PyObject_Str(v)
 		return v;
 	}
 	else if (v->ob_type->tp_str != NULL)
-		return (*v->ob_type->tp_str)(v);
+		res = (*v->ob_type->tp_str)(v);
 	else {
 		PyObject *func;
-		PyObject *res;
 		if (!PyInstance_Check(v) ||
 		    (func = PyObject_GetAttrString(v, "__str__")) == NULL) {
 			PyErr_Clear();
@@ -260,8 +268,17 @@ PyObject_Str(v)
 		}
 		res = PyEval_CallObject(func, (PyObject *)NULL);
 		Py_DECREF(func);
-		return res;
 	}
+	if (res == NULL)
+		return NULL;
+	if (!PyString_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__str__ returned non-string (type %s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+	}
+	return res;
 }
 
 static PyObject *
@@ -330,6 +347,8 @@ PyObject_Compare(v, w)
 				return cmp;
 			}
 		}
+		else if (PyUnicode_Check(v) || PyUnicode_Check(w))
+			return PyUnicode_Compare(v, w);
 		else if (vtp->tp_as_number != NULL)
 			vname = "";
 		else if (wtp->tp_as_number != NULL)
@@ -652,7 +671,7 @@ _Py_ForgetReference(op)
 	register PyObject *op;
 {
 #ifdef SLOW_UNREF_CHECK
-	register PyObject *p;
+        register PyObject *p;
 #endif
 	if (op->ob_refcnt < 0)
 		Py_FatalError("UNREF negative refcnt");
