@@ -13,4 +13,6 @@ __all__ = ['build',
            'install_lib',
            'clean',
            'sdist',
+           'bdist',
+           'bdist_dumb',
           ]
