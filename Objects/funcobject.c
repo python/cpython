@@ -156,8 +156,6 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 
 #define OFF(x) offsetof(PyFunctionObject, x)
 
-#define RR ()
-
 static PyMemberDef func_memberlist[] = {
         {"func_closure",  T_OBJECT,     OFF(func_closure),
 	 RESTRICTED|READONLY},
