@@ -156,7 +156,7 @@ intdiv(v, w)
 		return NULL;
 	}
 	if (((intobject *)w) -> ob_ival == 0)
-		err_zdiv();
+		return err_zdiv();
 	return newintobject(v->ob_ival / ((intobject *)w) -> ob_ival);
 }
 
@@ -170,7 +170,7 @@ intrem(v, w)
 		return NULL;
 	}
 	if (((intobject *)w) -> ob_ival == 0)
-		err_zdiv();
+		return err_zdiv();
 	return newintobject(v->ob_ival % ((intobject *)w) -> ob_ival);
 }
 
@@ -195,7 +195,7 @@ intpow(v, w)
 		ix = ix * iv;
 	if (neg) {
 		if (ix == 0)
-			err_zdiv();
+			return err_zdiv();
 		ix = 1/ix;
 	}
 	/* XXX How to check for overflow? */
