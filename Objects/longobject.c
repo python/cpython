@@ -545,7 +545,7 @@ PyLong_AsDouble(PyObject *vv)
 		goto overflow;
 	errno = 0;
 	x = ldexp(x, e * SHIFT);
-	if (errno == ERANGE)
+	if (Py_OVERFLOWED(x))
 		goto overflow;
 	return x;
 
@@ -1607,7 +1607,7 @@ long_true_divide(PyObject *v, PyObject *w)
 		goto overflow;
 	errno = 0;
 	ad = ldexp(ad, aexp * SHIFT);
-	if (ad != 0 && errno == ERANGE) /* ignore underflow to 0.0 */
+	if (Py_OVERFLOWED(ad)) /* ignore underflow to 0.0 */
 		goto overflow;
 	return PyFloat_FromDouble(ad);
 
