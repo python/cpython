@@ -1,7 +1,7 @@
-What's New in IDLE 1.1rc2?
-=============================
+What's New in IDLE 1.1?
+=======================
 
-*Release date: XX-NOV-2004*
+*Release date: 30-NOV-2004*
 
 - On OpenBSD, terminating IDLE with ctrl-c from the command line caused a
   stuck subprocess MainThread because only the SocketThread was exiting.
