@@ -275,6 +275,18 @@ class BaseSet(object):
                 return False
         return True
 
+    # Inequality comparisons using the is-subset relation.
+    __le__ = issubset
+    __ge__ = issuperset
+
+    def __lt__(self, other):
+        self._binary_sanity_check(other)
+        return len(self) < len(other) and self.issubset(other)
+
+    def __gt__(self, other):
+        self._binary_sanity_check(other)
+        return len(self) > len(other) and self.issuperset(other)
+
     # Assorted helpers
 
     def _binary_sanity_check(self, other):

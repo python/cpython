@@ -74,9 +74,11 @@ the following operations:
   \lineii{\var{x} not in \var{s}}
          {test \var{x} for non-membership in \var{s}}
   \lineii{\var{s}.issubset(\var{t})}
-         {test whether every element in \var{s} is in \var{t}}
+         {test whether every element in \var{s} is in \var{t};
+         \code{\var{s} <= \var{t}} is equivalent}
   \lineii{\var{s}.issuperset(\var{t})}
-         {test whether every element in \var{t} is in \var{s}}
+         {test whether every element in \var{t} is in \var{s};
+         \code{\var{s} >= \var{t}} is equivalent}
 
   \hline
   \lineii{\var{s} | \var{t}}
@@ -99,9 +101,14 @@ the following operations:
          {new set with a shallow copy of \var{s}}
 \end{tableii}
 
-In addition to the above operations, both \class{Set} and \class{ImmutableSet}
-support set to set equality comparisons.  Two sets are equal if and only if
-every element of each set is contained in the other.
+In addition, both \class{Set} and \class{ImmutableSet}
+support set to set comparisons.  Two sets are equal if and only if
+every element of each set is contained in the other (each is a subset
+of the other).
+A set is less than another set if and only if the first set is a proper
+subset of the second set (is a subset, but is not equal).
+A set is greater than another set if and only if the first set is a proper
+superset of the second set (is a superset, but is not equal).
 
 The following table lists operations available in \class{ImmutableSet}
 but not found in \class{Set}:
