@@ -9,6 +9,8 @@ import sys
 import os
 from stat import *
 
+__all__ = ["getline","clearcache","checkcache"]
+
 def getline(filename, lineno):
     lines = getlines(filename)
     if 1 <= lineno <= len(lines):

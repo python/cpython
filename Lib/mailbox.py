@@ -6,6 +6,8 @@
 import rfc822
 import os
 
+__all__ = ["UnixMailbox","MmdfMailbox","MHMailbox","Maildir","BabylMailbox"]
+
 class _Mailbox:
     def __init__(self, fp):
         self.fp = fp

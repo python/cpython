@@ -14,6 +14,8 @@ import __builtin__
 import struct
 import marshal
 
+__all__ = ["ImportManager","Importer","BuiltinImporter"]
+
 _StringType = type('')
 _ModuleType = type(sys)         ### doesn't work in JPython...
 

@@ -3,6 +3,10 @@
 import os
 from stat import *
 
+__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
+           "basename","dirname","commonprefix","getsize","getmtime",
+           "getatime","islink","exists","isdir","isfile",
+           "walk","expanduser","expandvars","normpath","abspath"]
 
 # Normalize the case of a pathname.  Dummy in Posix, but <s>.lower() here.
 

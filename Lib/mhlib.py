@@ -82,6 +82,7 @@ import multifile
 import shutil
 from bisect import bisect
 
+__all__ = ["MH","Error","Folder","Message"]
 
 # Exported constants
 

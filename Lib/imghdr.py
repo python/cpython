@@ -1,5 +1,6 @@
 """Recognize image file formats based on their first few bytes."""
 
+__all__ = ["what"]
 
 #-------------------------#
 # Recognize image headers #
