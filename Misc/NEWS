@@ -259,7 +259,10 @@ Core language, builtins, and interpreter
 - The interpreter accepts now bytecode files on the command line even
   if they do not have a .pyc or .pyo extension. On Linux, after executing
 
-  echo ':pyc:M::\x87\xc6\x0d\x0a::/usr/local/bin/python:' > /proc/sys/fs/binfmt_misc/register
+import imp,sys,string
+magic = string.join(["\\x%.2x" % ord(c) for c in imp.get_magic()],"")
+reg = ':pyc:M::%s::%s:' % (magic, sys.executable)
+open("/proc/sys/fs/binfmt_misc/register","wb").write(reg)
 
   any byte code file can be used as an executable (i.e. as an argument
   to execve(2)).
