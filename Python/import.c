@@ -1040,16 +1040,18 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 #endif /* PYOS_OS2 */
 		for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 #if defined(PYOS_OS2)
-			/* OS/2 limits DLLs to 8 character names (w/o extension)
+			/* OS/2 limits DLLs to 8 character names (w/o
+			   extension)
 			 * so if the name is longer than that and its a
 			 * dynamically loaded module we're going to try,
 			 * truncate the name before trying
 			 */
 			if (strlen(realname) > 8) {
 				/* is this an attempt to load a C extension? */
-				const struct filedescr *scan = _PyImport_DynLoadFiletab;
+				const struct filedescr *scan;
+				scan = _PyImport_DynLoadFiletab;
 				while (scan->suffix != NULL) {
-					if (strcmp(scan->suffix, fdp->suffix) == 0)
+					if (!strcmp(scan->suffix, fdp->suffix))
 						break;
 					else
 						scan++;
@@ -1067,7 +1069,8 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 				PySys_WriteStderr("# trying %s\n", buf);
 #endif /* !macintosh */
 			filemode = fdp->mode;
-			if (filemode[0] == 'U') filemode = "r" PY_STDIOTEXTMODE;
+			if (filemode[0] == 'U') 
+				filemode = "r" PY_STDIOTEXTMODE;
 			fp = fopen(buf, filemode);
 			if (fp != NULL) {
 				if (case_ok(buf, len, namelen, name))
@@ -2296,6 +2299,8 @@ get_file(char *pathname, PyObject *fob, char *mode)
 {
 	FILE *fp;
 	if (fob == NULL) {
+		if (mode[0] == 'U') 
+			mode = "r" PY_STDIOTEXTMODE;
 		fp = fopen(pathname, mode);
 		if (fp == NULL)
 			PyErr_SetFromErrno(PyExc_IOError);
@@ -2403,10 +2408,11 @@ imp_load_module(PyObject *self, PyObject *args)
 			      &name, &fob, &pathname,
 			      &suffix, &mode, &type))
 		return NULL;
-	if (*mode && (*mode != 'r' || strchr(mode, '+') != NULL)) {
-		PyErr_Format(PyExc_ValueError,
-			     "invalid file open mode %.200s", mode);
-		return NULL;
+	if (*mode &&
+	    !(*mode == 'r' || *mode == 'U' || strchr(mode, '+'))) {
+			PyErr_Format(PyExc_ValueError,
+				     "invalid file open mode %.200s", mode);
+			return NULL;
 	}
 	if (fob == Py_None)
 		fp = NULL;
