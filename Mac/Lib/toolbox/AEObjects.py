@@ -1,4 +1,4 @@
-# Generated from 'sap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AEObjects.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AEObjects.h'
 
 kAEAND = 'AND '
 kAEOR = 'OR  '
