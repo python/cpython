@@ -22,6 +22,12 @@ from rfc822 import parsedate as _parsedate
 from rfc822 import parsedate_tz as _parsedate_tz
 
 try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
+try:
     from quopri import decodestring as _qdecode
 except ImportError:
     # Python 2.1 doesn't have quopri.decodestring()
@@ -30,12 +36,11 @@ except ImportError:
 
         if not s:
             return s
-        hasnewline = (s[-1] == '\n')
         infp = StringIO(s)
         outfp = StringIO()
         _quopri.decode(infp, outfp)
         value = outfp.getvalue()
-        if not hasnewline and value[-1] =='\n':
+        if not s.endswith('\n') and value.endswith('\n'):
             return value[:-1]
         return value
 
@@ -67,9 +72,8 @@ def _bdecode(s):
     # newline".  Blech!
     if not s:
         return s
-    hasnewline = (s[-1] == '\n')
     value = base64.decodestring(s)
-    if not hasnewline and value[-1] == '\n':
+    if not s.endswith('\n') and value.endswith('\n'):
         return value[:-1]
     return value
 
@@ -88,7 +92,7 @@ def fix_eols(s):
 def formataddr(pair):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
-    for an RFC 2822 From:, To: or Cc:.
+    for an RFC 2822 From, To or Cc header.
 
     If the first element of pair is false, then the second element is
     returned unmodified.
@@ -170,7 +174,7 @@ def encode(s, charset='iso-8859-1', encoding='q'):
 
 
 
-def formatdate(timeval=None, localtime=0):
+def formatdate(timeval=None, localtime=False):
     """Returns a date string as specified by RFC 2822, e.g.:
 
     Fri, 09 Nov 2001 01:08:47 -0000
@@ -178,7 +182,7 @@ def formatdate(timeval=None, localtime=0):
     Optional timeval if given is a floating point time value as accepted by
     gmtime() and localtime(), otherwise the current time is used.
 
-    Optional localtime is a flag that when true, interprets timeval, and
+    Optional localtime is a flag that when True, interprets timeval, and
     returns a date relative to the local timezone instead of UTC, properly
     taking daylight savings time into account.
     """
