@@ -3369,6 +3369,10 @@ posix_tmpnam(self, args)
  * magic names instead of poluting the module's namespace with tons of
  * rarely-used constants.  There are three separate tables that use
  * these definitions.
+ *
+ * This code is always included, even if none of the interfaces that
+ * need it are included.  The #if hackery needed to avoid it would be
+ * sufficiently pervasive that it's not worth the loss of readability.
  */
 struct constdef {
     char *name;
@@ -4276,57 +4280,88 @@ posix_sysconf(self, args)
 #endif
 
 
-#ifdef CHECK_CONFNAME_TABLES
-/* This code should not be enabled by default; it's only purpose is to
- * test the order of constants in the configuration name tables.  The
- * second function defined here, check_confname_tables(), is called
- * during module initialization if CHECK_CONFNAME_TABLES is defined.
- * This only needs to be done when changes are made to the tables.
+/* This code is used to ensure that the tables of configuration value names
+ * are in sorted order as required by conv_confname(), and also to build the
+ * the exported dictionaries that are used to publish information about the
+ * names available on the host platform.
+ *
+ * Sorting the table at runtime ensures that the table is properly ordered
+ * when used, even for platforms we're not able to test on.  It also makes
+ * it easier to add additional entries to the tables.
  */
-static void
-check_confname_table(table, tablesize, tablename)
+
+static int
+cmp_constdefs(v1, v2)
+     const void *v1;
+     const void *v2;
+{
+    const struct constdef *c1 =
+        (const struct constdef *) v1;
+    const struct constdef *c2 =
+        (const struct constdef *) v2;
+
+    return strcmp(c1->name, c2->name);
+}
+
+static int
+setup_confname_table(table, tablesize, tablename, moddict)
      struct constdef *table;
      size_t tablesize;
-     char *tablename;
+     char * tablename;
+     PyObject *moddict;
 {
-    if (tablesize > 1) {
+    PyObject *d = NULL;
+
+    qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
+    d = PyDict_New();
+    if (d != NULL) {
+        PyObject *o;
         int i = 0;
 
-        for (; i < (tablesize - 1); ++i) {
-            if (strcmp(table[i].name, table[i + 1].name) >= 0) {
-                char buffer[256];
-
-                snprintf(buffer, sizeof(buffer),
-                         "confname table '%s' out of order!\n", tablename);
-                Py_FatalError(buffer);
+        for (; i < tablesize; ++i) {
+            o = PyInt_FromLong(table[i].value);
+            if (o == NULL
+                || PyDict_SetItemString(d, table[i].name, o) == -1) {
+                Py_DECREF(d);
+                d = NULL;
+                return -1;
             }
         }
+        if (PyDict_SetItemString(moddict, tablename, d) == -1)
+            return -1;
+        return 0;
     }
+    return -1;
 }
 
-static void
-check_confname_tables()
+/* Return -1 on failure, 0 on success. */
+static int
+setup_confname_tables(moddict)
+     PyObject *moddict;
 {
 #if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
-        check_confname_table(posix_constants_pathconf,
+    if (setup_confname_table(posix_constants_pathconf,
                              sizeof(posix_constants_pathconf)
                                / sizeof(struct constdef),
-                             "pathconf");
+                             "pathconf_names", moddict))
+        return -1;
 #endif
 #ifdef HAVE_CONFSTR
-        check_confname_table(posix_constants_confstr,
+    if (setup_confname_table(posix_constants_confstr,
                              sizeof(posix_constants_confstr)
                                / sizeof(struct constdef),
-                             "confstr");
+                             "confstr_names", moddict))
+        return -1;
 #endif
 #ifdef HAVE_SYSCONF
-        check_confname_table(posix_constants_sysconf,
+    if (setup_confname_table(posix_constants_sysconf,
                              sizeof(posix_constants_sysconf)
                                / sizeof(struct constdef),
-                             "sysconf");
+                             "sysconf_names", moddict))
+        return -1;
 #endif
+    return 0;
 }
-#endif
 
 
 static char posix_abort__doc__[] = "\
@@ -4346,7 +4381,7 @@ posix_abort(self, args)
     Py_FatalError("abort() called from Python code didn't abort!");
     return NULL;
 }
-                
+
 
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
@@ -4743,11 +4778,10 @@ INITFUNC()
         if (all_ins(d))
                 return;
 
+        if (setup_confname_tables(d))
+                return;
+
 	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 	posix_putenv_garbage = PyDict_New();
-
-#ifdef CHECK_CONFNAME_TABLES
-        check_confname_tables();
-#endif
 }
