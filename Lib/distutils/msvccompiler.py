@@ -158,9 +158,6 @@ class MSVCCompiler (CCompiler) :
                   force=0):
 
         CCompiler.__init__ (self, verbose, dry_run, force)
-
-        self.add_library_dir( os.path.join( sys.exec_prefix, 'libs' ) )
-        
         versions = get_devstudio_versions ()
 
         if versions:
