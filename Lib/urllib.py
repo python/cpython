@@ -52,7 +52,13 @@ class URLopener:
 	# Constructor
 	def __init__(self):
 		self.addheaders = []
-		self.tempcache = {}
+		self.tempcache = None
+		# Undocumented feature: if you assign {} to tempcache,
+		# it is used to cache files retrieved with
+		# self.retrieve().  This is not enabled by default
+		# since it does not work for changing documents (and I
+		# haven't got the logic to check expiration headers
+		# yet).
 		self.ftpcache = ftpcache
 		# Undocumented feature: you can use a different
 		# ftp cache by assigning to the .ftpcache member;
@@ -66,12 +72,13 @@ class URLopener:
 
 	def cleanup(self):
 		import os
-		for url in self.tempcache.keys():
-			try:
-				os.unlink(self.tempcache[url][0])
-			except os.error:
-				pass
-			del self.tempcache[url]
+		if self.tempcache:
+			for url in self.tempcache.keys():
+				try:
+					os.unlink(self.tempcache[url][0])
+				except os.error:
+					pass
+				del self.tempcache[url]
 
 	# Add a header to be used by the HTTP interface only
 	# e.g. u.addheader('Accept', 'sound/basic')
@@ -98,10 +105,10 @@ class URLopener:
 	# retrieve(url) returns (filename, None) for a local object
 	# or (tempfilename, headers) for a remote object
 	def retrieve(self, url):
-		if self.tempcache.has_key(url):
+		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
 		url1 = unwrap(url)
-		if self.tempcache.has_key(url1):
+		if self.tempcache and self.tempcache.has_key(url1):
 			self.tempcache[url] = self.tempcache[url1]
 			return self.tempcache[url1]
 		type, url1 = splittype(url1)
@@ -116,7 +123,8 @@ class URLopener:
 		headers = fp.info()
 		import tempfile
 		tfn = tempfile.mktemp()
-		self.tempcache[url] = result = tfn, headers
+		if self.tempcache is not None:
+			self.tempcache[url] = result = tfn, headers
 		tfp = open(tfn, 'w')
 		bs = 1024*8
 		block = fp.read(bs)

@@ -43,7 +43,7 @@ def split(s):
 	colon = 0
 	for i in range(len(s)):
 		if s[i] == ':': colon = i+1
-	return s[:colon], s[colon:]
+	return s[:colon-1], s[colon:]
 
 
 # Short interfaces to split()
