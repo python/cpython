@@ -5,13 +5,13 @@
 import unittest
 from test.test_support import run_unittest
 
-from codeop import compile_command
+from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 
 class CodeopTests(unittest.TestCase):
 
     def assertValid(self, str, symbol='single'):
         '''succeed iff str is a valid piece of code'''
-        expected = compile(str, "<input>", symbol)
+        expected = compile(str, "<input>", symbol, PyCF_DONT_IMPLY_DEDENT)
         self.assertEquals( compile_command(str, "<input>", symbol), expected)
 
 
@@ -42,7 +42,8 @@ class CodeopTests(unittest.TestCase):
 
         # special case
         self.assertEquals(compile_command(""),
-                          compile("pass", "<input>", 'single'))
+                          compile("pass", "<input>", 'single',
+                                  PyCF_DONT_IMPLY_DEDENT))
 
         av("3**3","eval")
         av("(lambda z: \n z**3)","eval")

@@ -89,6 +89,15 @@ expect_error("2.0e+")
 expect_error("1e-")
 expect_error("3-4e/21")
 
+if verbose:
+    print "testing compile() of indented block w/o trailing newline"
+
+s = """
+if 1:
+    if 2:
+        pass"""
+compile(s, "<string>", "exec")
+
 
 if verbose:
     print "testing literals with leading zeroes"

@@ -63,6 +63,8 @@ _features = [getattr(__future__, fname)
 
 __all__ = ["compile_command", "Compile", "CommandCompiler"]
 
+PyCF_DONT_IMPLY_DEDENT = 0x200          # Matches pythonrun.h
+
 def _maybe_compile(compiler, source, filename, symbol):
     # Check for source consisting of only blank lines and comments
     for line in source.split("\n"):
@@ -103,6 +105,9 @@ def _maybe_compile(compiler, source, filename, symbol):
     if not code1 and e1 == e2:
         raise SyntaxError, err1
 
+def _compile(source, filename, symbol):
+    return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT)
+
 def compile_command(source, filename="<input>", symbol="single"):
     r"""Compile a command and determine whether it is incomplete.
 
@@ -121,7 +126,7 @@ def compile_command(source, filename="<input>", symbol="single"):
       syntax error (OverflowError and ValueError can be produced by
       malformed literals).
     """
-    return _maybe_compile(compile, source, filename, symbol)
+    return _maybe_compile(_compile, source, filename, symbol)
 
 class Compile:
     """Instances of this class behave much like the built-in compile
@@ -129,7 +134,7 @@ class Compile:
     statement, it "remembers" and compiles all subsequent program texts
     with the statement in force."""
     def __init__(self):
-        self.flags = 0
+        self.flags = PyCF_DONT_IMPLY_DEDENT
 
     def __call__(self, source, filename, symbol):
         codeob = compile(source, filename, symbol, self.flags, 1)
