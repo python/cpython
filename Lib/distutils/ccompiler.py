@@ -923,7 +923,7 @@ class CCompiler:
         log.debug(msg)
 
     def debug_print (self, msg):
-        from distutils.core import DEBUG
+        from distutils.debug import DEBUG
         if DEBUG:
             print msg
 

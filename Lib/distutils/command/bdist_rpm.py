@@ -10,7 +10,8 @@ __revision__ = "$Id$"
 import sys, os, string
 import glob
 from types import *
-from distutils.core import Command, DEBUG
+from distutils.core import Command
+from distutils.debug import DEBUG
 from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
