@@ -14,3 +14,5 @@ microedit.py		The smallest window editor
 miniedit.py		A small multi-window editor
 python.py		A window interface to the Python interpreter
 wdiff.py		A window-based directory diff
+
+See ../ibrowse for another demo written using stdwin.
