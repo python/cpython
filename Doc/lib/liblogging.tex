@@ -200,8 +200,9 @@ level is one of the predefined levels \constant{CRITICAL},
 \constant{ERROR}, \constant{WARNING}, \constant{INFO} or \constant{DEBUG}
 then you get the corresponding string. If you have associated levels
 with names using \function{addLevelName()} then the name you have associated
-with \var{lvl} is returned. Otherwise, the string "Level \%s" \% lvl is
-returned.
+with \var{lvl} is returned. If a numeric value corresponding to one of the
+defined levels is passed in, the corresponding string representation is
+returned. Otherwise, the string "Level \%s" \% lvl is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{makeLogRecord}{attrdict}
@@ -243,8 +244,8 @@ behavior.
           {Original Python \module{logging} package}
           {This is the original source for the \module{logging}
            package.  The version of the package available from this
-           site is suitable for use with Python 2.1.x and 2.2.x, which
-           do not include the \module{logging} package in the standard
+           site is suitable for use with Python 1.5.2, 2.1.x and 2.2.x,
+           which do not include the \module{logging} package in the standard
            library.}
 \end{seealso}
 
@@ -363,6 +364,112 @@ This is a factory method which can be overridden in subclasses to create
 specialized \class{LogRecord} instances.
 \end{methoddesc}
 
+\subsection{Basic example \label{minimal-example}}
+
+The \module{logging} package provides a lot of flexibility, and its
+configuration can appear daunting.  This section demonstrates that simple
+use of the logging package is possible.
+
+The simplest example shows logging to the console:
+
+\begin{verbatim}
+import logging
+
+logging.debug('A debug message')
+logging.info('Some information')
+logging.warning('A shot across the bows')
+\end{verbatim}
+
+If you run the above script, you'll see this:
+\begin{verbatim}
+WARNING:root:A shot across the bows
+\end{verbatim}
+
+Because no particular logger was specified, the system used the root logger.
+The debug and info messages didn't appear because by default, the root
+logger is configured to only handle messages with a severity of WARNING
+or above. The message format is also a configuration default, as is the output
+destination of the messages - \code{sys.stderr}. The severity level,
+the message format and destination can be easily changed, as shown in
+the example below:
+
+\begin{verbatim}
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+										format='%(asctime)s %(levelname)s %(message)s',
+										filename='/tmp/myapp.log',
+										filemode='w')
+logging.debug('A debug message')
+logging.info('Some information')
+logging.warning('A shot across the bows')
+\end{verbatim}
+
+The \method{basicConfig()} method is used to change the configuration
+defaults, which results in output (written to \code{/tmp/myapp.log})
+which should look something like the following:
+
+\begin{verbatim}
+2004-07-02 13:00:08,743 DEBUG A debug message
+2004-07-02 13:00:08,743 INFO Some information
+2004-07-02 13:00:08,743 WARNING A shot across the bows
+\end{verbatim}
+
+This time, all messages with a severity of DEBUG or above were handled,
+and the format of the messages was also changed, and output went to the
+specified file rather than the console.
+
+Formatting uses standard Python string formatting - see section
+\ref{typesseq-strings}. The format string takes the following
+common specifiers. For a complete list of specifiers, consult the
+\class{Formatter} documentation.
+
+\begin{tableii}{l|l}{code}{Format}{Description}
+\lineii{\%(name)s}     {Name of the logger (logging channel).}
+\lineii{\%(levelname)s}{Text logging level for the message
+                        (\code{'DEBUG'}, \code{'INFO'},
+                        \code{'WARNING'}, \code{'ERROR'},
+                        \code{'CRITICAL'}).}
+\lineii{\%(asctime)s}  {Human-readable time when the \class{LogRecord}
+                        was created.  By default this is of the form
+                        ``2003-07-08 16:49:45,896'' (the numbers after the
+                        comma are millisecond portion of the time).}
+\lineii{\%(message)s}  {The logged message.}
+\end{tableii}
+
+To change the date/time format, you can pass an additional keyword parameter,
+\var{datefmt}, as in the following:
+
+\begin{verbatim}
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+										format='%(asctime)s %(levelname)-8s %(message)s',
+										datefmt='%a, %d %b %Y %H:%M:%S',
+										filename='/temp/myapp.log',
+										filemode='w')
+logging.debug('A debug message')
+logging.info('Some information')
+logging.warning('A shot across the bows')
+\end{verbatim}
+
+which would result in output like
+
+\begin{verbatim}
+Fri, 02 Jul 2004 13:06:18 DEBUG    A debug message
+Fri, 02 Jul 2004 13:06:18 INFO     Some information
+Fri, 02 Jul 2004 13:06:18 WARNING  A shot across the bows
+\end{verbatim}
+
+The date format string follows the requirements of \function{strftime()} -
+see the documentation for the \refmodule{time} module.
+
+If, instead of sending logging output to the console or a file, you'd rather
+use a file-like object which you have created separately, you can pass it
+to \function{basicConfig()} using the \var{stream} keyword argument. Note
+that if both \var{stream} and \var{filename} keyword arguments are passed,
+the \var{stream} argument is ignored.
+
 \subsection{Handler Objects}
 
 Handlers have the following attributes and methods. Note that
@@ -429,14 +536,15 @@ emission of the record with acquisition/release of the I/O thread
 lock.
 \end{methoddesc}
 
-\begin{methoddesc}{handleError}{}
+\begin{methoddesc}{handleError}{record}
 This method should be called from handlers when an exception is
-encountered during an emit() call. By default it does nothing,
+encountered during an \method{emit()} call. By default it does nothing,
 which means that exceptions get silently ignored. This is what is
 mostly wanted for a logging system - most users will not care
 about errors in the logging system, they are more interested in
 application errors. You could, however, replace this with a custom
-handler if you wish.
+handler if you wish. The specified record is the one which was being
+processed when the exception occurred.
 \end{methoddesc}
 
 \begin{methoddesc}{format}{record}
@@ -506,7 +614,7 @@ The \class{RotatingFileHandler} class supports rotation of disk log files.
 Returns a new instance of the \class{RotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. If
 \var{mode} is not specified, \code{'a'} is used. By default, the
-file grows indefinitely. 
+file grows indefinitely.
 
 You can use the \var{maxBytes} and
 \var{backupCount} values to allow the file to \dfn{rollover} at a
@@ -522,7 +630,7 @@ a \var{backupCount} of 5 and a base file name of
 written to is always \file{app.log}.  When this file is filled, it is
 closed and renamed to \file{app.log.1}, and if files \file{app.log.1},
 \file{app.log.2}, etc.  exist, then they are renamed to \file{app.log.2},
-\file{app.log.3} etc.  respectively.  
+\file{app.log.3} etc.  respectively.
 \end{classdesc}
 
 \begin{methoddesc}{doRollover}{}
@@ -1051,7 +1159,7 @@ entry is set to 1 to indicate that messages must propagate to handlers
 higher up the logger hierarchy from this logger, or 0 to indicate that
 messages are \strong{not} propagated to handlers up the hierarchy. The
 \code{qualname} entry is the hierarchical channel name of the logger,
-for example, the name used by the application to get the logger.
+that is to say the name used by the application to get the logger.
 
 Sections which specify handler configuration are exemplified by the
 following.
@@ -1147,45 +1255,3 @@ is almost equivalent to specifying the date format string "%Y-%m-%d %H:%M:%S".
 The ISO8601 format also specifies milliseconds, which are appended to the
 result of using the above format string, with a comma separator. An example
 time in ISO8601 format is \code{2003-01-23 00:29:50,411}.
-
-\subsection{Using the logging package}
-
-\subsubsection{Basic example - log to a file}
-
-Here's a simple logging example that just logs to a file. In order,
-it creates a \class{Logger} instance, then a \class{FileHandler}
-and a \class{Formatter}. It attaches the \class{Formatter} to the
-\class{FileHandler}, then the \class{FileHandler} to the \class{Logger}.
-Finally, it sets a debug level for the logger.
-
-\begin{verbatim}
-import logging
-logger = logging.getLogger('myapp')
-hdlr = logging.FileHandler('/var/tmp/myapp.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr) 
-logger.setLevel(logging.WARNING)
-\end{verbatim}
-
-We can use this logger object now to write entries to the log file:
-
-\begin{verbatim}
-logger.error('We have a problem')
-logger.info('While this is just chatty')
-\end{verbatim}
-
-If we look in the file that was created, we'll see something like this:
-\begin{verbatim}
-2003-07-08 16:49:45,896 ERROR We have a problem
-\end{verbatim}
-
-The info message was not written to the file: we called the
-\method{setLevel()} method to say we only wanted \constant{WARNING} or
-worse, so the info message is discarded.
-
-The timestamp is of the form  
-``year-month-day hour:minutes:seconds,milliseconds.''
-Note that despite the three digits of precision in the milliseconds field,
-not all systems provide time with this much precision.
-
