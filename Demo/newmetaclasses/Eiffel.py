@@ -27,6 +27,13 @@ class EiffelBaseMetaClass(type):
 
     convert_methods = classmethod(convert_methods)
 
+class EiffelMetaClass1(EiffelBaseMetaClass):
+    # an implementation of the "eiffel" meta class that uses nested functions
+
+    def __new__(meta, name, bases, dict):
+        meta.convert_methods(dict)
+        return super(EiffelMetaClass1, meta).__new__(meta, name, bases, dict)
+
     def make_eiffel_method(func, pre, post):
         def method(self, *args, **kwargs):
             if pre:
@@ -42,13 +49,6 @@ class EiffelBaseMetaClass(type):
         return method
     
     make_eiffel_method = staticmethod(make_eiffel_method)
-
-class EiffelMetaClass1(EiffelBaseMetaClass):
-    # an implementation of the "eiffel" meta class that uses nested functions
-
-    def __new__(meta, name, bases, dict):
-        meta.convert_methods(dict)
-        return super(EiffelMetaClass1, meta).__new__(meta, name, bases, dict)
 
 class EiffelMethodWrapper:
 
