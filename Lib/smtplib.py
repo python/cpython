@@ -150,9 +150,9 @@ class SMTP:
         self.helo_resp=msg
         return code
 
-    def help(self):
+    def help(self, args=''):
         """ SMTP 'help' command. Returns help text from server """
-        self.putcmd("help")
+        self.putcmd("help", args)
         (code,msg)=self.getreply()
         return msg
 
