@@ -124,7 +124,6 @@ new_code(PyObject* unused, PyObject* args)
 	PyObject* name;
 	int firstlineno;
 	PyObject* lnotab;
-	PyBufferProcs *pb;
 
 	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS|O!O!:code",
 			      &argcount, &nlocals, &stacksize, &flags,
