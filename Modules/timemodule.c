@@ -1,6 +1,11 @@
 /* Time module */
 
-#include <stdio.h>
+#include "allobjects.h"
+
+#include "modsupport.h"
+
+#include "sigtype.h"
+
 #include <signal.h>
 #include <setjmp.h>
 
@@ -10,18 +15,6 @@
 typedef unsigned long time_t;
 extern time_t time();
 #endif /* !__STDC__ */
-
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
-#include "import.h"
-#include "sigtype.h"
-#include "modsupport.h"
-#include "errors.h"
 
 
 /* Time methods */

@@ -2,13 +2,14 @@
 
 /* XXX This is rather old, should be restructured perhaps */
 /* XXX Need a better interface to report errors than writing to stderr */
+/* XXX Should use editor resource to fetch true tab size on Macintosh */
 
-#include <stdio.h>
+#include "pgenheaders.h"
+
 #include <ctype.h>
 #include "string.h"
 
-#include "PROTO.h"
-#include "malloc.h"
+#include "fgetsintr.h"
 #include "tokenizer.h"
 #include "errcode.h"
 
@@ -19,6 +20,11 @@
 #ifndef TABSIZE
 #define TABSIZE 8
 #endif
+
+/* Forward */
+static struct tok_state *tok_new PROTO((void));
+static int tok_nextc PROTO((struct tok_state *tok));
+static void tok_backup PROTO((struct tok_state *tok, int c));
 
 /* Token names */
 
@@ -352,7 +358,9 @@ tok_get(tok, p_start, p_end)
 		   This is also recognized by vi, when it occurs near the
 		   beginning or end of the file.  (Will vi never die...?) */
 		int x;
-		if (sscanf(tok->cur, " vi:set tabsize=%d:", &x) == 1 &&
+		/* XXX The case to (unsigned char *) is needed by THINK C */
+		if (sscanf((unsigned char *)tok->cur,
+				" vi:set tabsize=%d:", &x) == 1 &&
 						x >= 1 && x <= 40) {
 			fprintf(stderr, "# vi:set tabsize=%d:\n", x);
 			tok->tabsize = x;

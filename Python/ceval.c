@@ -1,309 +1,62 @@
-/* Evaluate compiled expression nodes */
+/* Execute compiled code */
 
-#include <stdio.h>
-#include <ctype.h>
-#include "string.h"
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "objimpl.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
-#include "dictobject.h"
-#include "builtinobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "context.h"
-#include "funcobject.h"
-#include "classobject.h"
-#include "token.h"
-#include "graminit.h"
-#include "run.h"
 #include "import.h"
-#include "support.h"
 #include "sysmodule.h"
 #include "compile.h"
+#include "frameobject.h"
+#include "ceval.h"
 #include "opcode.h"
+#include "builtinmodule.h"
+#include "traceback.h"
 
-/* List access macros */
-#ifdef NDEBUG
-#define GETITEM(v, i) GETLISTITEM((listobject *)(v), (i))
-#define GETITEMNAME(v, i) GETSTRINGVALUE((stringobject *)GETITEM((v), (i)))
-#else
-#define GETITEM(v, i) getlistitem((v), (i))
-#define GETITEMNAME(v, i) getstringvalue(getlistitem((v), (i)))
+#ifndef NDEBUG
+#define TRACE
 #endif
 
-typedef struct {
-	int b_type;		/* what kind of block this is */
-	int b_handler;		/* where to jump to find handler */
-	int b_level;		/* value stack level to pop to */
-} block;
-
-typedef struct _frame {
-	OB_HEAD
-	struct _frame *f_back;	/* previous frame, or NULL */
-	codeobject *f_code;	/* code segment */
-	object *f_locals;	/* local symbol table (dictobject) */
-	object *f_globals;	/* global symbol table (dictobject) */
-	object **f_valuestack;	/* malloc'ed array */
-	block *f_blockstack;	/* malloc'ed array */
-	int f_nvalues;		/* size of f_valuestack */
-	int f_nblocks;		/* size of f_blockstack */
-	int f_ivalue;		/* index in f_valuestack */
-	int f_iblock;		/* index in f_blockstack */
-	int f_nexti;		/* index in f_code (next instruction) */
-} frameobject;
-
-#define is_frameobject(op) ((op)->ob_type == &Frametype)
-
-static void
-frame_dealloc(f)
-	frameobject *f;
+#ifdef TRACE
+static int
+prtrace(v, str)
+	object *v;
+	char *str;
 {
-	XDECREF(f->f_back);
-	XDECREF(f->f_code);
-	XDECREF(f->f_locals);
-	XDECREF(f->f_globals);
-	XDEL(f->f_valuestack);
-	XDEL(f->f_blockstack);
-	DEL(f);
+	printf("%s ", str);
+	printobject(v, stdout, 0);
+	printf("\n");
 }
-typeobject Frametype = {
-	OB_HEAD_INIT(&Typetype)
-	0,
-	"frame",
-	sizeof(frameobject),
-	0,
-	frame_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	0,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
-	0,		/*tp_as_number*/
-	0,		/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-};
+#endif
 
-static frameobject * newframeobject PROTO(
-	(frameobject *, codeobject *, object *, object *, int, int));
+static frameobject *current_frame;
 
-static frameobject *
-newframeobject(back, code, locals, globals, nvalues, nblocks)
-	frameobject *back;
-	codeobject *code;
-	object *locals;
-	object *globals;
-	int nvalues;
-	int nblocks;
+object *
+getlocals()
 {
-	frameobject *f;
-	if ((back != NULL && !is_frameobject(back)) ||
-		code == NULL || !is_codeobject(code) ||
-		locals == NULL || !is_dictobject(locals) ||
-		globals == NULL || !is_dictobject(globals) ||
-		nvalues < 0 || nblocks < 0) {
-		err_badcall();
+	if (current_frame == NULL)
 		return NULL;
+	else
+		return current_frame->f_locals;
+}
+
+object *
+getglobals()
+{
+	if (current_frame == NULL)
+		return NULL;
+	else
+		return current_frame->f_globals;
+}
+
+void
+printtraceback(fp)
+	FILE *fp;
+{
+	object *v = tb_fetch();
+	if (v != NULL) {
+		fprintf(fp, "Stack backtrace (innermost last):\n");
+		tb_print(v, fp);
+		DECREF(v);
 	}
-	f = NEWOBJ(frameobject, &Frametype);
-	if (f != NULL) {
-		if (back)
-			INCREF(back);
-		f->f_back = back;
-		INCREF(code);
-		f->f_code = code;
-		INCREF(locals);
-		f->f_locals = locals;
-		INCREF(globals);
-		f->f_globals = globals;
-		f->f_valuestack = NEW(object *, nvalues+1);
-		f->f_blockstack = NEW(block, nblocks+1);
-		f->f_nvalues = nvalues;
-		f->f_nblocks = nblocks;
-		f->f_ivalue = f->f_iblock = f->f_nexti = 0;
-		if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
-			err_nomem();
-			DECREF(f);
-			f = NULL;
-		}
-	}
-	return f;
-}
-
-#define GETUSTRINGVALUE(s) ((unsigned char *)GETSTRINGVALUE(s))
-
-#define Push(f, v)	((f)->f_valuestack[(f)->f_ivalue++] = (v))
-#define Pop(f)		((f)->f_valuestack[--(f)->f_ivalue])
-#define Top(f)		((f)->f_valuestack[(f)->f_ivalue-1])
-#define Empty(f)	((f)->f_ivalue == 0)
-#define Full(f)		((f)->f_ivalue == (f)->f_nvalues)
-#define Nextbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti++])
-#define Peekbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti])
-#define Peekint(f)	\
-	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti] + \
-	 GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti+1])
-#define Prevbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti-1])
-#define Jumpto(f, x)	((f)->f_nexti = (x))
-#define Jumpby(f, x)	((f)->f_nexti += (x))
-#define Getconst(f, i)	(GETITEM((f)->f_code->co_consts, (i)))
-#define Getname(f, i)	(GETITEMNAME((f)->f_code->co_names, (i)))
-
-/* Corresponding functions, for debugging */
-
-static void
-push(f, v)
-	frameobject *f;
-	object *v;
-{
-	if (Full(f)) {
-		printf("stack overflow\n");
-		abort();
-	}
-	Push(f, v);
-}
-
-static object *
-pop(f)
-	frameobject *f;
-{
-	if (Empty(f)) {
-		printf("stack underflow\n");
-		abort();
-	}
-	return Pop(f);
-}
-
-static object *
-top(f)
-	frameobject *f;
-{
-	if (Empty(f)) {
-		printf("stack underflow\n");
-		abort();
-	}
-	return Top(f);
-}
-
-static int
-nextbyte(f)
-	frameobject *f;
-{
-	stringobject *code = (f)->f_code->co_code;
-	if (f->f_nexti >= getstringsize((object *)code)) {
-		printf("ran off end of instructions\n");
-		abort();
-	}
-	return GETUSTRINGVALUE(code)[f->f_nexti++];
-}
-
-static int
-nextint(f)
-	frameobject *f;
-{
-	int a, b;
-#ifdef NDEBUG
-	a = Nextbyte(f);
-	b = Nextbyte(f);
-#else
-	a = nextbyte(f);
-	b = nextbyte(f);
-#endif
-	return a + (b << 8);
-}
-
-/* Tracing versions */
-
-static void
-trace_push(f, v)
-	frameobject *f;
-	object *v;
-{
-	printf("\tpush ");
-	printobject(v, stdout, 0);
-	printf("\n");
-	push(f, v);
-}
-
-static object *
-trace_pop(f)
-	frameobject *f;
-{
-	object *v;
-	v = pop(f);
-	printf("\tpop ");
-	printobject(v, stdout, 0);
-	printf("\n");
-	return v;
-}
-
-static object *
-trace_top(f)
-	frameobject *f;
-{
-	object *v;
-	v = top(f);
-	printf("\ttop ");
-	printobject(v, stdout, 0);
-	printf("\n");
-	return v;
-}
-
-static int
-trace_nextop(f)
-	frameobject *f;
-{
-	int op;
-	int arg;
-	
-	printf("%d: ", f->f_nexti);
-	op = nextbyte(f);
-	if (op < HAVE_ARGUMENT)
-		printf("op %3d\n", op);
-	else {
-		arg = Peekint(f);
-		printf("op %d arg %d\n", op, arg);
-	}
-	return op;
-}
-
-/* Block management */
-
-static void
-setup_block(f, type, handler)
-	frameobject *f;
-	int type;
-	int handler;
-{
-	block *b;
-	if (f->f_iblock >= f->f_nblocks) {
-		printf("block stack overflow\n");
-		abort();
-	}
-	b = &f->f_blockstack[f->f_iblock++];
-	b->b_type = type;
-	b->b_level = f->f_ivalue;
-	b->b_handler = handler + f->f_nexti;
-}
-
-static block *
-pop_block(f)
-	frameobject *f;
-{
-	block *b;
-	if (f->f_iblock <= 0) {
-		printf("block stack underflow\n");
-		abort();
-	}
-	b = &f->f_blockstack[--f->f_iblock];
-	while (f->f_ivalue > b->b_level) {
-		object *v = Pop(f);
-		XDECREF(v);
-	}
-	return b;
 }
 
 
@@ -323,19 +76,29 @@ flushline()
 	}
 }
 
-static object *
-checkerror(ctx, v)
-	context *ctx;
+
+/* Test a value used as condition, e.g., in a for or if statement */
+
+static int
+testbool(v)
 	object *v;
 {
-	if (v == NULL)
-		puterrno(ctx);
-	return v;
+	if (is_intobject(v))
+		return getintvalue(v) != 0;
+	if (is_floatobject(v))
+		return getfloatvalue(v) != 0.0;
+	if (v->ob_type->tp_as_sequence != NULL)
+		return (*v->ob_type->tp_as_sequence->sq_length)(v) != 0;
+	if (v->ob_type->tp_as_mapping != NULL)
+		return (*v->ob_type->tp_as_mapping->mp_length)(v) != 0;
+	if (v == None)
+		return 0;
+	/* All other objects are 'true' */
+	return 1;
 }
 
 static object *
-add(ctx, v, w)
-	context *ctx;
+add(v, w)
 	object *v, *w;
 {
 	if (v->ob_type->tp_as_number != NULL)
@@ -343,27 +106,24 @@ add(ctx, v, w)
 	else if (v->ob_type->tp_as_sequence != NULL)
 		v = (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
 	else {
-		type_error(ctx, "+ not supported by operands");
+		err_setstr(TypeError, "+ not supported by operands");
 		return NULL;
 	}
-	return checkerror(ctx, v);
+	return v;
 }
 
 static object *
-sub(ctx, v, w)
-	context *ctx;
+sub(v, w)
 	object *v, *w;
 {
 	if (v->ob_type->tp_as_number != NULL)
-		return checkerror(ctx,
-			(*v->ob_type->tp_as_number->nb_subtract)(v, w));
-	type_error(ctx, "bad operand type(s) for -");
+		return (*v->ob_type->tp_as_number->nb_subtract)(v, w);
+	err_setstr(TypeError, "bad operand type(s) for -");
 	return NULL;
 }
 
 static object *
-mul(ctx, v, w)
-	context *ctx;
+mul(v, w)
 	object *v, *w;
 {
 	typeobject *tp;
@@ -375,259 +135,234 @@ mul(ctx, v, w)
 	}
 	tp = v->ob_type;
 	if (tp->tp_as_number != NULL)
-		return checkerror(ctx, (*tp->tp_as_number->nb_multiply)(v, w));
+		return (*tp->tp_as_number->nb_multiply)(v, w);
 	if (tp->tp_as_sequence != NULL) {
 		if (!is_intobject(w)) {
-			type_error(ctx, "can't multiply sequence with non-int");
+			err_setstr(TypeError,
+				"can't multiply sequence with non-int");
 			return NULL;
 		}
 		if (tp->tp_as_sequence->sq_repeat == NULL) {
-			type_error(ctx, "sequence does not support *");
+			err_setstr(TypeError, "sequence does not support *");
 			return NULL;
 		}
-		return checkerror(ctx, (*tp->tp_as_sequence->sq_repeat)
-						(v, (int)getintvalue(w)));
+		return (*tp->tp_as_sequence->sq_repeat)
+						(v, (int)getintvalue(w));
 	}
-	type_error(ctx, "bad operand type(s) for *");
+	err_setstr(TypeError, "bad operand type(s) for *");
 	return NULL;
 }
 
 static object *
-div(ctx, v, w)
-	context *ctx;
+div(v, w)
 	object *v, *w;
 {
 	if (v->ob_type->tp_as_number != NULL)
-		return checkerror(ctx,
-			(*v->ob_type->tp_as_number->nb_divide)(v, w));
-	type_error(ctx, "bad operand type(s) for /");
+		return (*v->ob_type->tp_as_number->nb_divide)(v, w);
+	err_setstr(TypeError, "bad operand type(s) for /");
 	return NULL;
 }
 
 static object *
-rem(ctx, v, w)
-	context *ctx;
+rem(v, w)
 	object *v, *w;
 {
 	if (v->ob_type->tp_as_number != NULL)
-		return checkerror(ctx,
-			(*v->ob_type->tp_as_number->nb_remainder)(v, w));
-	type_error(ctx, "bad operand type(s) for %");
+		return (*v->ob_type->tp_as_number->nb_remainder)(v, w);
+	err_setstr(TypeError, "bad operand type(s) for %");
 	return NULL;
 }
 
 static object *
-neg(ctx, v)
-	context *ctx;
+neg(v)
 	object *v;
 {
 	if (v->ob_type->tp_as_number != NULL)
-		return checkerror(ctx,
-			(*v->ob_type->tp_as_number->nb_negative)(v));
-	type_error(ctx, "bad operand type(s) for unary -");
+		return (*v->ob_type->tp_as_number->nb_negative)(v);
+	err_setstr(TypeError, "bad operand type(s) for unary -");
 	return NULL;
 }
 
 static object *
-pos(ctx, v)
-	context *ctx;
+pos(v)
 	object *v;
 {
 	if (v->ob_type->tp_as_number != NULL)
-		return checkerror(ctx,
-			(*v->ob_type->tp_as_number->nb_positive)(v));
-	type_error(ctx, "bad operand type(s) for unary +");
+		return (*v->ob_type->tp_as_number->nb_positive)(v);
+	err_setstr(TypeError, "bad operand type(s) for unary +");
 	return NULL;
 }
 
 static object *
-not(ctx, v)
-	context *ctx;
+not(v)
 	object *v;
 {
-	int outcome = testbool(ctx, v);
-	if (ctx->ctx_exception)
-		return NULL;
-	return checkerror(ctx, newintobject((long) !outcome));
+	int outcome = testbool(v);
+	object *w = outcome == 0 ? True : False;
+	INCREF(w);
+	return w;
 }
 
 static object *
-call_builtin(ctx, func, args)
-	context *ctx;
+call_builtin(func, arg)
 	object *func;
-	object *args;
+	object *arg;
 {
-	if (is_builtinobject(func)) {
-		function funcptr = getbuiltinfunction(func);
-		return (*funcptr)(ctx, args);
-	}
 	if (is_methodobject(func)) {
 		method meth = getmethod(func);
 		object *self = getself(func);
-		return checkerror(ctx, (*meth)(self, args));
+		return (*meth)(self, arg);
 	}
 	if (is_classobject(func)) {
-		if (args != NULL) {
-			type_error(ctx, "classobject() allows no arguments");
+		if (arg != NULL) {
+			err_setstr(TypeError,
+				"classobject() allows no arguments");
 			return NULL;
 		}
-		return checkerror(ctx, newclassmemberobject(func));
+		return newclassmemberobject(func);
 	}
-	type_error(ctx, "call of non-function");
+	err_setstr(TypeError, "call of non-function");
 	return NULL;
 }
 
-static object *eval_compiled PROTO((context *, codeobject *, object *, int));
-
-/* XXX Eventually, this should not call eval_compiled recursively
-   but create a new frame */
-
 static object *
-call_function(ctx, func, args)
-	context *ctx;
+call_function(func, arg)
 	object *func;
-	object *args;
+	object *arg;
 {
-	object *newargs = NULL;
-	object *savelocals, *newlocals, *saveglobals;
-	object *c, *v;
+	object *newarg = NULL;
+	object *newlocals, *newglobals;
+	object *co, *v;
 	
 	if (is_classmethodobject(func)) {
 		object *self = classmethodgetself(func);
 		func = classmethodgetfunc(func);
-		if (args == NULL) {
-			args = self;
+		if (arg == NULL) {
+			arg = self;
 		}
 		else {
-			newargs = checkerror(ctx, newtupleobject(2));
-			if (newargs == NULL)
+			newarg = newtupleobject(2);
+			if (newarg == NULL)
 				return NULL;
 			INCREF(self);
-			INCREF(args);
-			settupleitem(newargs, 0, self);
-			settupleitem(newargs, 1, args);
-			args = newargs;
+			INCREF(arg);
+			settupleitem(newarg, 0, self);
+			settupleitem(newarg, 1, arg);
+			arg = newarg;
 		}
 	}
 	else {
 		if (!is_funcobject(func)) {
-			type_error(ctx, "call of non-function");
+			err_setstr(TypeError, "call of non-function");
 			return NULL;
 		}
 	}
 	
-	c = checkerror(ctx, getfunccode(func));
-	if (c == NULL) {
-		XDECREF(newargs);
+	co = getfunccode(func);
+	if (co == NULL) {
+		XDECREF(newarg);
 		return NULL;
 	}
-	if (!is_codeobject(c)) {
-		printf("Bad code\n");
+	if (!is_codeobject(co)) {
+		fprintf(stderr, "XXX Bad code\n");
 		abort();
 	}
-	newlocals = checkerror(ctx, newdictobject());
+	newlocals = newdictobject();
 	if (newlocals == NULL) {
-		XDECREF(newargs);
+		XDECREF(newarg);
 		return NULL;
 	}
 	
-	savelocals = ctx->ctx_locals;
-	ctx->ctx_locals = newlocals;
-	saveglobals = ctx->ctx_globals;
-	ctx->ctx_globals = getfuncglobals(func);
+	newglobals = getfuncglobals(func);
+	INCREF(newglobals);
 	
-	v = eval_compiled(ctx, (codeobject *)c, args, 1);
+	v = eval_code((codeobject *)co, newglobals, newlocals, arg);
 	
-	DECREF(ctx->ctx_locals);
-	ctx->ctx_locals = savelocals;
-	ctx->ctx_globals = saveglobals;
+	DECREF(newlocals);
+	DECREF(newglobals);
 	
-	XDECREF(newargs);
+	XDECREF(newarg);
 	
 	return v;
 }
 
 static object *
-apply_subscript(ctx, v, w)
-	context *ctx;
+apply_subscript(v, w)
 	object *v, *w;
 {
 	typeobject *tp = v->ob_type;
 	if (tp->tp_as_sequence == NULL && tp->tp_as_mapping == NULL) {
-		type_error(ctx, "unsubscriptable object");
+		err_setstr(TypeError, "unsubscriptable object");
 		return NULL;
 	}
 	if (tp->tp_as_sequence != NULL) {
 		int i;
 		if (!is_intobject(w)) {
-			type_error(ctx, "sequence subscript not int");
+			err_setstr(TypeError, "sequence subscript not int");
 			return NULL;
 		}
 		i = getintvalue(w);
-		return checkerror(ctx, (*tp->tp_as_sequence->sq_item)(v, i));
+		return (*tp->tp_as_sequence->sq_item)(v, i);
 	}
-	return checkerror(ctx, (*tp->tp_as_mapping->mp_subscript)(v, w));
+	return (*tp->tp_as_mapping->mp_subscript)(v, w);
 }
 
 static object *
-loop_subscript(ctx, v, w)
-	context *ctx;
+loop_subscript(v, w)
 	object *v, *w;
 {
 	sequence_methods *sq = v->ob_type->tp_as_sequence;
 	int i, n;
 	if (sq == NULL) {
-		type_error(ctx, "loop over non-sequence");
+		err_setstr(TypeError, "loop over non-sequence");
 		return NULL;
 	}
 	i = getintvalue(w);
 	n = (*sq->sq_length)(v);
 	if (i >= n)
 		return NULL; /* End of loop */
-	return checkerror(ctx, (*sq->sq_item)(v, i));
+	return (*sq->sq_item)(v, i);
 }
 
 static int
-slice_index(ctx, v, isize, pi)
-	context *ctx;
+slice_index(v, isize, pi)
 	object *v;
 	int isize;
 	int *pi;
 {
 	if (v != NULL) {
 		if (!is_intobject(v)) {
-			type_error(ctx, "slice index must be int");
-			return 0;
+			err_setstr(TypeError, "slice index must be int");
+			return -1;
 		}
 		*pi = getintvalue(v);
 		if (*pi < 0)
 			*pi += isize;
 	}
-	return 1;
+	return 0;
 }
 
 static object *
-apply_slice(ctx, u, v, w) /* u[v:w] */
-	context *ctx;
+apply_slice(u, v, w) /* return u[v:w] */
 	object *u, *v, *w;
 {
 	typeobject *tp = u->ob_type;
 	int ilow, ihigh, isize;
 	if (tp->tp_as_sequence == NULL) {
-		type_error(ctx, "only sequences can be sliced");
+		err_setstr(TypeError, "only sequences can be sliced");
 		return NULL;
 	}
 	ilow = 0;
 	isize = ihigh = (*tp->tp_as_sequence->sq_length)(u);
-	if (!slice_index(ctx, v, isize, &ilow))
+	if (slice_index(v, isize, &ilow) != 0)
 		return NULL;
-	if (!slice_index(ctx, w, isize, &ihigh))
+	if (slice_index(w, isize, &ihigh) != 0)
 		return NULL;
-	return checkerror(ctx, (*tp->tp_as_sequence->sq_slice)(u, ilow, ihigh));
+	return (*tp->tp_as_sequence->sq_slice)(u, ilow, ihigh);
 }
-static void
-assign_subscript(ctx, w, key, v)
-	context *ctx;
+
+static int
+assign_subscript(w, key, v) /* w[key] = v */
 	object *w;
 	object *key;
 	object *v;
@@ -636,47 +371,48 @@ assign_subscript(ctx, w, key, v)
 	sequence_methods *sq;
 	mapping_methods *mp;
 	int (*func)();
-	int err;
 	if ((sq = tp->tp_as_sequence) != NULL &&
 			(func = sq->sq_ass_item) != NULL) {
 		if (!is_intobject(key)) {
-			type_error(ctx, "sequence subscript must be integer");
-			return;
+			err_setstr(TypeError,
+				"sequence subscript must be integer");
+			return -1;
 		}
-		err = (*func)(w, (int)getintvalue(key), v);
+		else
+			return (*func)(w, (int)getintvalue(key), v);
 	}
 	else if ((mp = tp->tp_as_mapping) != NULL &&
 			(func = mp->mp_ass_subscript) != NULL) {
-		err = (*func)(w, key, v);
+		return (*func)(w, key, v);
 	}
 	else {
-		type_error(ctx, "can't assign to this subscripted object");
-		return;
+		err_setstr(TypeError,
+				"can't assign to this subscripted object");
+		return -1;
 	}
-	if (err != 0)
-		puterrno(ctx);
 }
 
-static void
-assign_slice(ctx, u, v, w, x) /* u[v:w] = x */
-	context *ctx;
+static int
+assign_slice(u, v, w, x) /* u[v:w] = x */
 	object *u, *v, *w, *x;
 {
-	typeobject *tp = u->ob_type;
+	sequence_methods *sq = u->ob_type->tp_as_sequence;
 	int ilow, ihigh, isize;
-	if (tp->tp_as_sequence == NULL ||
-			tp->tp_as_sequence->sq_ass_slice == NULL) {
-		type_error(ctx, "unassignable slice");
-		return;
+	if (sq == NULL) {
+		err_setstr(TypeError, "assign to slice of non-sequence");
+		return -1;
+	}
+	if (sq == NULL || sq->sq_ass_slice == NULL) {
+		err_setstr(TypeError, "unassignable slice");
+		return -1;
 	}
 	ilow = 0;
-	isize = ihigh = (*tp->tp_as_sequence->sq_length)(u);
-	if (!slice_index(ctx, v, isize, &ilow))
-		return;
-	if (!slice_index(ctx, w, isize, &ihigh))
-		return;
-	if ((*tp->tp_as_sequence->sq_ass_slice)(u, ilow, ihigh, x) != 0)
-		puterrno(ctx);
+	isize = ihigh = (*sq->sq_length)(u);
+	if (slice_index(v, isize, &ilow) != 0)
+		return -1;
+	if (slice_index(w, isize, &ihigh) != 0)
+		return -1;
+	return (*sq->sq_ass_slice)(u, ilow, ihigh, x);
 }
 
 static int
@@ -695,9 +431,50 @@ cmp_exception(err, v)
 	return err == v;
 }
 
+static int
+cmp_member(v, w)
+	object *v, *w;
+{
+	int i, n, cmp;
+	object *x;
+	sequence_methods *sq;
+	/* Special case for char in string */
+	if (is_stringobject(w)) {
+		register char *s, *end;
+		register char c;
+		if (!is_stringobject(v) || getstringsize(v) != 1) {
+			err_setstr(TypeError,
+			    "string member test needs char left operand");
+			return -1;
+		}
+		c = getstringvalue(v)[0];
+		s = getstringvalue(w);
+		end = s + getstringsize(w);
+		while (s < end) {
+			if (c == *s++)
+				return 1;
+		}
+		return 0;
+	}
+	sq = w->ob_type->tp_as_sequence;
+	if (sq == NULL) {
+		err_setstr(TypeError,
+			"'in' or 'not in' needs sequence right argument");
+		return -1;
+	}
+	n = (*sq->sq_length)(w);
+	for (i = 0; i < n; i++) {
+		x = (*sq->sq_item)(w, i);
+		cmp = cmpobject(v, x);
+		XDECREF(x);
+		if (cmp == 0)
+			return 1;
+	}
+	return 0;
+}
+
 static object *
-cmp_outcome(ctx, op, v, w)
-	register context *ctx;
+cmp_outcome(op, v, w)
 	enum cmp_op op;
 	register object *v;
 	register object *w;
@@ -705,44 +482,43 @@ cmp_outcome(ctx, op, v, w)
 	register int cmp;
 	register int res = 0;
 	switch (op) {
+	case IS:
+	case IS_NOT:
+		res = (v == w);
+		if (op == IS_NOT)
+			res = !res;
+		break;
 	case IN:
 	case NOT_IN:
-		cmp = cmp_member(ctx, v, w);
-		break;
-	case IS:
-	case IS_NOT:
-		cmp = (v == w);
+		res = cmp_member(v, w);
+		if (res < 0)
+			return NULL;
+		if (op == NOT_IN)
+			res = !res;
 		break;
 	case EXC_MATCH:
-		cmp = cmp_exception(v, w);
+		res = cmp_exception(v, w);
 		break;
 	default:
-		cmp = cmp_values(ctx, v, w);
-	}
-	if (ctx->ctx_exception)
-		return NULL;
-	switch (op) {
-	case EXC_MATCH:
-	case IS:
-	case IN:     res =  cmp; break;
-	case IS_NOT:
-	case NOT_IN: res = !cmp; break;
-	case LT: res = cmp <  0; break;
-	case LE: res = cmp <= 0; break;
-	case EQ: res = cmp == 0; break;
-	case NE: res = cmp != 0; break;
-	case GT: res = cmp >  0; break;
-	case GE: res = cmp >= 0; break;
-	/* XXX no default? */
+		cmp = cmpobject(v, w);
+		switch (op) {
+		case LT: res = cmp <  0; break;
+		case LE: res = cmp <= 0; break;
+		case EQ: res = cmp == 0; break;
+		case NE: res = cmp != 0; break;
+		case GT: res = cmp >  0; break;
+		case GE: res = cmp >= 0; break;
+		/* XXX no default? (res is initialized to 0 though) */
+		}
 	}
 	v = res ? True : False;
 	INCREF(v);
 	return v;
 }
 
-static void
-import_from(ctx, v, name)
-	context *ctx;
+static int
+import_from(locals, v, name)
+	object *locals;
 	object *v;
 	char *name;
 {
@@ -758,27 +534,27 @@ import_from(ctx, v, name)
 			x = dictlookup(w, name);
 			if (x == NULL) {
 				/* XXX can't happen? */
-				name_error(ctx, name);
-				break;
+				err_setstr(NameError, name);
+				return -1;
 			}
-			if (dictinsert(ctx->ctx_locals, name, x) != 0) {
-				puterrno(ctx);
-				break;
-			}
+			if (dictinsert(locals, name, x) != 0)
+				return -1;
 		}
+		return 0;
 	}
 	else {
 		x = dictlookup(w, name);
-		if (x == NULL)
-			name_error(ctx, name);
-		else if (dictinsert(ctx->ctx_locals, name, x) != 0)
-			puterrno(ctx);
+		if (x == NULL) {
+			err_setstr(NameError, name);
+			return -1;
+		}
+		else
+			return dictinsert(locals, name, x);
 	}
 }
 
 static object *
-build_class(ctx, v, w)
-	context *ctx;
+build_class(v, w)
 	object *v; /* None or tuple containing base classes */
 	object *w; /* dictionary */
 {
@@ -787,7 +563,8 @@ build_class(ctx, v, w)
 		for (i = gettuplesize(v); --i >= 0; ) {
 			object *x = gettupleitem(v, i);
 			if (!is_classobject(x)) {
-				type_error(ctx, "base is not a class object");
+				err_setstr(TypeError,
+					"base is not a class object");
 				return NULL;
 			}
 		}
@@ -796,85 +573,152 @@ build_class(ctx, v, w)
 		v = NULL;
 	}
 	if (!is_dictobject(w)) {
-		sys_error(ctx, "build_class with non-dictionary");
+		err_setstr(SystemError, "build_class with non-dictionary");
 		return NULL;
 	}
-	return checkerror(ctx, newclassobject(v, w));
+	return newclassobject(v, w);
 }
 
-static object *
-eval_compiled(ctx, co, arg, needvalue)
-	context *ctx;
+
+/* Status code for main loop (reason for stack unwind) */
+
+enum why_code {
+		WHY_NOT,	/* No error */
+		WHY_EXCEPTION,	/* Exception occurred */
+		WHY_RERAISE,	/* Exception re-raised by 'finally' */
+		WHY_RETURN,	/* 'return' statement */
+		WHY_BREAK	/* 'break' statement */
+};
+
+/* Interpreter main loop */
+
+object *
+eval_code(co, globals, locals, arg)
 	codeobject *co;
+	object *globals;
+	object *locals;
 	object *arg;
-	int needvalue;
 {
-	frameobject *f;
-	register object *v;
+	register unsigned char *next_instr;
+	register int opcode;	/* Current opcode */
+	register int oparg;	/* Current opcode argument, if any */
+	register object **stack_pointer;
+	register enum why_code why; /* Reason for block stack unwind */
+	register int err;	/* Error status -- nonzero if error */
+	register object *x;	/* Result object -- NULL if error */
+	register object *v;	/* Temporary objects popped off stack */
 	register object *w;
 	register object *u;
-	register object *x;
-	char *name;
-	int i, op;
-	FILE *fp;
-#ifndef NDEBUG
-	int trace = dictlookup(ctx->ctx_globals, "__trace") != NULL;
+	register object *t;
+	register frameobject *f; /* Current frame */
+	int lineno;		/* Current line number */
+	object *retval;		/* Return value iff why == WHY_RETURN */
+	char *name;		/* Name used by some instructions */
+	FILE *fp;		/* Used by print operations */
+#ifdef TRACE
+	int trace = dictlookup(globals, "__trace__") != NULL;
+#endif
+
+/* Code access macros */
+
+#define GETCONST(i)	Getconst(f, i)
+#define GETNAME(i)	Getname(f, i)
+#define FIRST_INSTR()	(GETUSTRINGVALUE(f->f_code->co_code))
+#define INSTR_OFFSET()	(next_instr - FIRST_INSTR())
+#define NEXTOP()	(*next_instr++)
+#define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
+#define JUMPTO(x)	(next_instr = FIRST_INSTR() + (x))
+#define JUMPBY(x)	(next_instr += (x))
+
+/* Stack manipulation macros */
+
+#define STACK_LEVEL()	(stack_pointer - f->f_valuestack)
+#define EMPTY()		(STACK_LEVEL() == 0)
+#define TOP()		(stack_pointer[-1])
+#define BASIC_PUSH(v)	(*stack_pointer++ = (v))
+#define BASIC_POP()	(*--stack_pointer)
+
+#ifdef TRACE
+#define PUSH(v)		(BASIC_PUSH(v), trace && prtrace(TOP(), "push"))
+#define POP()		(trace && prtrace(TOP(), "pop"), BASIC_POP())
+#else
+#define PUSH(v)		BASIC_PUSH(v)
+#define POP()		BASIC_POP()
 #endif
 
 	f = newframeobject(
-			(frameobject *)NULL,	/*back*/
+			current_frame,		/*back*/
 			co,			/*code*/
-			ctx->ctx_locals,	/*locals*/
-			ctx->ctx_globals,	/*globals*/
+			globals,		/*globals*/
+			locals,			/*locals*/
 			50,			/*nvalues*/
 			20);			/*nblocks*/
-	if (f == NULL) {
-		puterrno(ctx);
+	if (f == NULL)
 		return NULL;
-	}
-
-#define EMPTY()		Empty(f)
-#define FULL()		Full(f)
-#define GETCONST(i)	Getconst(f, i)
-#define GETNAME(i)	Getname(f, i)
-#define JUMPTO(x)	Jumpto(f, x)
-#define JUMPBY(x)	Jumpby(f, x)
-
-#ifdef NDEBUG
-
-#define PUSH(v) 	Push(f, v)
-#define TOP()		Top(f)
-#define POP()		Pop(f)
-
-#else
-
-#define PUSH(v) if(trace) trace_push(f, v); else push(f, v)
-#define TOP() (trace ? trace_top(f) : top(f))
-#define POP() (trace ? trace_pop(f) : pop(f))
-
-#endif
-
+	
+	current_frame = f;
+	
+	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
+	
+	stack_pointer = f->f_valuestack;
+	
 	if (arg != NULL) {
 		INCREF(arg);
 		PUSH(arg);
 	}
 	
-	while (f->f_nexti < getstringsize((object *)f->f_code->co_code) &&
-				!ctx->ctx_exception) {
-#ifdef NDEBUG
-		op = Nextbyte(f);
-#else
-		op = trace ? trace_nextop(f) : nextbyte(f);
-#endif
-		if (op >= HAVE_ARGUMENT)
-			i = nextint(f);
-		switch (op) {
+	why = WHY_NOT;
+	err = 0;
+	x = None;	/* Not a reference, just anything non-NULL */
+	lineno = -1;
+	
+	for (;;) {
+		static ticker;
 		
-		case DUP_TOP:
-			v = TOP();
-			INCREF(v);
-			PUSH(v);
-			break;
+		/* Do periodic things */
+		
+		if (--ticker < 0) {
+			ticker = 100;
+			if (intrcheck()) {
+				err_set(KeyboardInterrupt);
+				why = WHY_EXCEPTION;
+				tb_here(f, INSTR_OFFSET(), lineno);
+				break;
+			}
+		}
+		
+		/* Extract opcode and argument */
+		
+		opcode = NEXTOP();
+		if (HAS_ARG(opcode))
+			oparg = NEXTARG();
+
+#ifdef TRACE
+		/* Instruction tracing */
+		
+		if (trace) {
+			if (HAS_ARG(opcode)) {
+				printf("%d: %d, %d\n",
+					(int) (INSTR_OFFSET() - 3),
+					opcode, oparg);
+			}
+			else {
+				printf("%d: %d\n",
+					(int) (INSTR_OFFSET() - 1), opcode);
+			}
+		}
+#endif
+
+		/* Main switch on opcode */
+		
+		switch (opcode) {
+		
+		/* BEWARE!
+		   It is essential that any operation that fails sets either
+		   x to NULL, err to nonzero, or why to anything but WHY_NOT,
+		   and that no operation that succeeds does this! */
+		
+		/* case STOP_CODE: this is an error! */
 		
 		case POP_TOP:
 			v = POP();
@@ -897,125 +741,130 @@ eval_compiled(ctx, co, arg, needvalue)
 			PUSH(w);
 			break;
 		
+		case DUP_TOP:
+			v = TOP();
+			INCREF(v);
+			PUSH(v);
+			break;
+		
 		case UNARY_POSITIVE:
 			v = POP();
-			u = pos(ctx, v);
+			x = pos(v);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case UNARY_NEGATIVE:
 			v = POP();
-			u = neg(ctx, v);
+			x = neg(v);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case UNARY_NOT:
 			v = POP();
-			u = not(ctx, v);
+			x = not(v);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case UNARY_CONVERT:
 			v = POP();
-			u = checkerror(ctx, reprobject(v));
+			x = reprobject(v);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case UNARY_CALL:
 			v = POP();
 			if (is_classmethodobject(v) || is_funcobject(v))
-				u = call_function(ctx, v, (object *)NULL);
+				x = call_function(v, (object *)NULL);
 			else
-				u = call_builtin(ctx, v, (object *)NULL);
+				x = call_builtin(v, (object *)NULL);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_MULTIPLY:
 			w = POP();
 			v = POP();
-			u = mul(ctx, v, w);
+			x = mul(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_DIVIDE:
 			w = POP();
 			v = POP();
-			u = div(ctx, v, w);
+			x = div(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_MODULO:
 			w = POP();
 			v = POP();
-			u = rem(ctx, v, w);
+			x = rem(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_ADD:
 			w = POP();
 			v = POP();
-			u = add(ctx, v, w);
+			x = add(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_SUBTRACT:
 			w = POP();
 			v = POP();
-			u = sub(ctx, v, w);
+			x = sub(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_SUBSCR:
 			w = POP();
 			v = POP();
-			u = apply_subscript(ctx, v, w);
+			x = apply_subscript(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case BINARY_CALL:
 			w = POP();
 			v = POP();
 			if (is_classmethodobject(v) || is_funcobject(v))
-				u = call_function(ctx, v, w);
+				x = call_function(v, w);
 			else
-				u = call_builtin(ctx, v, w);
+				x = call_builtin(v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case SLICE+0:
 		case SLICE+1:
 		case SLICE+2:
 		case SLICE+3:
-			op -= SLICE;
-			if (op & 2)
+			if ((opcode-SLICE) & 2)
 				w = POP();
 			else
 				w = NULL;
-			if (op & 1)
+			if ((opcode-SLICE) & 1)
 				v = POP();
 			else
 				v = NULL;
 			u = POP();
-			x = apply_slice(ctx, u, v, w);
+			x = apply_slice(u, v, w);
 			DECREF(u);
 			XDECREF(v);
 			XDECREF(w);
@@ -1026,19 +875,18 @@ eval_compiled(ctx, co, arg, needvalue)
 		case STORE_SLICE+1:
 		case STORE_SLICE+2:
 		case STORE_SLICE+3:
-			op -= SLICE;
-			if (op & 2)
+			if ((opcode-STORE_SLICE) & 2)
 				w = POP();
 			else
 				w = NULL;
-			if (op & 1)
+			if ((opcode-STORE_SLICE) & 1)
 				v = POP();
 			else
 				v = NULL;
 			u = POP();
-			x = POP();
-			assign_slice(ctx, u, v, w, x); /* u[v:w] = x */
-			DECREF(x);
+			t = POP();
+			err = assign_slice(u, v, w, t); /* u[v:w] = t */
+			DECREF(t);
 			DECREF(u);
 			XDECREF(v);
 			XDECREF(w);
@@ -1048,18 +896,17 @@ eval_compiled(ctx, co, arg, needvalue)
 		case DELETE_SLICE+1:
 		case DELETE_SLICE+2:
 		case DELETE_SLICE+3:
-			op -= SLICE;
-			if (op & 2)
+			if ((opcode-DELETE_SLICE) & 2)
 				w = POP();
 			else
 				w = NULL;
-			if (op & 1)
+			if ((opcode-DELETE_SLICE) & 1)
 				v = POP();
 			else
 				v = NULL;
 			u = POP();
-			x = NULL;
-			assign_slice(ctx, u, v, w, x); /* del u[v:w] */
+			err = assign_slice(u, v, w, (object *)NULL);
+							/* del u[v:w] */
 			DECREF(u);
 			XDECREF(v);
 			XDECREF(w);
@@ -1070,7 +917,7 @@ eval_compiled(ctx, co, arg, needvalue)
 			v = POP();
 			u = POP();
 			/* v[w] = u */
-			assign_subscript(ctx, v, w, u);
+			err = assign_subscript(v, w, u);
 			DECREF(u);
 			DECREF(v);
 			DECREF(w);
@@ -1080,7 +927,7 @@ eval_compiled(ctx, co, arg, needvalue)
 			w = POP();
 			v = POP();
 			/* del v[w] */
-			assign_subscript(ctx, v, w, (object *)NULL);
+			err = assign_subscript(v, w, (object *)NULL);
 			DECREF(v);
 			DECREF(w);
 			break;
@@ -1125,113 +972,126 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case BREAK_LOOP:
-			raise_pseudo(ctx, BREAK_PSEUDO);
+			why = WHY_BREAK;
 			break;
 		
 		case RAISE_EXCEPTION:
 			v = POP();
 			w = POP();
-			if (!is_stringobject(w)) {
-				DECREF(v);
-				DECREF(v);
-				type_error(ctx, "exceptions must be strings");
-			}
-			else {
-				raise_exception(ctx, w, v);
-			}
+			if (!is_stringobject(w))
+				err_setstr(TypeError,
+					"exceptions must be strings");
+			else
+				err_setval(w, v);
+			DECREF(v);
+			DECREF(w);
+			why = WHY_EXCEPTION;
 			break;
 		
 		case LOAD_LOCALS:
-			v = ctx->ctx_locals;
+			v = f->f_locals;
 			INCREF(v);
 			PUSH(v);
 			break;
 		
 		case RETURN_VALUE:
-			v = POP();
-			raise_pseudo(ctx, RETURN_PSEUDO);
-			ctx->ctx_errval = v;
+			retval = POP();
+			why = WHY_RETURN;
 			break;
 		
 		case REQUIRE_ARGS:
-			if (EMPTY())
-				type_error(ctx,
+			if (EMPTY()) {
+				err_setstr(TypeError,
 					"function expects argument(s)");
+				why = WHY_EXCEPTION;
+			}
 			break;
 		
 		case REFUSE_ARGS:
-			if (!EMPTY())
-				type_error(ctx,
+			if (!EMPTY()) {
+				err_setstr(TypeError,
 					"function expects no argument(s)");
+				why = WHY_EXCEPTION;
+			}
 			break;
 		
 		case BUILD_FUNCTION:
 			v = POP();
-			x = checkerror(ctx, newfuncobject(v, ctx->ctx_globals));
+			x = newfuncobject(v, f->f_globals);
 			DECREF(v);
 			PUSH(x);
 			break;
 		
 		case POP_BLOCK:
-			(void) pop_block(f);
+			{
+				block *b = pop_block(f);
+				while (STACK_LEVEL() > b->b_level) {
+					v = POP();
+					DECREF(v);
+				}
+			}
 			break;
 		
 		case END_FINALLY:
 			v = POP();
-			w = POP();
 			if (is_intobject(v)) {
-				raise_pseudo(ctx, (int)getintvalue(v));
-				DECREF(v);
-				if (w == None)
-					DECREF(w);
-				else
-					ctx->ctx_errval = w;
+				why = (enum why_code) getintvalue(v);
+				if (why == WHY_RETURN)
+					retval = POP();
 			}
-			else if (is_stringobject(v))
-				raise_exception(ctx, v, w);
-			else if (v == None) {
-				DECREF(v);
+			else if (is_stringobject(v)) {
+				w = POP();
+				err_setval(v, w);
 				DECREF(w);
+				w = POP();
+				tb_store(w);
+				DECREF(w);
+				why = WHY_RERAISE;
 			}
-			else {
-				sys_error(ctx, "'finally' pops bad exception");
+			else if (v != None) {
+				err_setstr(SystemError,
+					"'finally' pops bad exception");
+				why = WHY_EXCEPTION;
 			}
+			DECREF(v);
 			break;
 		
 		case BUILD_CLASS:
 			w = POP();
 			v = POP();
-			x = build_class(ctx, v, w);
+			x = build_class(v, w);
 			PUSH(x);
 			DECREF(v);
 			DECREF(w);
 			break;
 		
 		case STORE_NAME:
-			name = GETNAME(i);
+			name = GETNAME(oparg);
 			v = POP();
-			if (dictinsert(ctx->ctx_locals, name, v) != 0)
-				mem_error(ctx, "insert in symbol table");
+			err = dictinsert(f->f_locals, name, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_NAME:
-			name = GETNAME(i);
-			if (dictremove(ctx->ctx_locals, name) != 0)
-				name_error(ctx, name);
+			name = GETNAME(oparg);
+			if ((err = dictremove(f->f_locals, name)) != 0)
+				err_setstr(NameError, name);
 			break;
 		
 		case UNPACK_TUPLE:
 			v = POP();
 			if (!is_tupleobject(v)) {
-				type_error(ctx, "unpack non-tuple");
+				err_setstr(TypeError, "unpack non-tuple");
+				why = WHY_EXCEPTION;
 			}
-			else if (gettuplesize(v) != i) {
-				error(ctx, "unpack tuple of wrong size");
+			else if (gettuplesize(v) != oparg) {
+				err_setstr(RuntimeError,
+					"unpack tuple of wrong size");
+				why = WHY_EXCEPTION;
 			}
 			else {
-				for (; --i >= 0; ) {
-					w = gettupleitem(v, i);
+				for (; --oparg >= 0; ) {
+					w = gettupleitem(v, oparg);
 					INCREF(w);
 					PUSH(w);
 				}
@@ -1242,14 +1102,17 @@ eval_compiled(ctx, co, arg, needvalue)
 		case UNPACK_LIST:
 			v = POP();
 			if (!is_listobject(v)) {
-				type_error(ctx, "unpack non-list");
+				err_setstr(TypeError, "unpack non-list");
+				why = WHY_EXCEPTION;
 			}
-			else if (getlistsize(v) != i) {
-				error(ctx, "unpack tuple of wrong size");
+			else if (getlistsize(v) != oparg) {
+				err_setstr(RuntimeError,
+					"unpack list of wrong size");
+				why = WHY_EXCEPTION;
 			}
 			else {
-				for (; --i >= 0; ) {
-					w = getlistitem(v, i);
+				for (; --oparg >= 0; ) {
+					w = getlistitem(v, oparg);
 					INCREF(w);
 					PUSH(w);
 				}
@@ -1258,144 +1121,120 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case STORE_ATTR:
-			name = GETNAME(i);
+			name = GETNAME(oparg);
 			v = POP();
 			u = POP();
-			/* v.name = u */
-			if (v->ob_type->tp_setattr == NULL) {
-				type_error(ctx, "object without writable attributes");
-			}
-			else {
-				if ((*v->ob_type->tp_setattr)(v, name, u) != 0)
-					puterrno(ctx);
-			}
+			err = setattr(v, name, u); /* v.name = u */
 			DECREF(v);
 			DECREF(u);
 			break;
 		
 		case DELETE_ATTR:
-			name = GETNAME(i);
+			name = GETNAME(oparg);
 			v = POP();
-			/* del v.name */
-			if (v->ob_type->tp_setattr == NULL) {
-				type_error(ctx,
-					"object without writable attributes");
-			}
-			else {
-				if ((*v->ob_type->tp_setattr)
-						(v, name, (object *)NULL) != 0)
-					puterrno(ctx);
-			}
+			err = setattr(v, name, (object *)NULL);
+							/* del v.name */
 			DECREF(v);
 			break;
 		
 		case LOAD_CONST:
-			v = GETCONST(i);
-			INCREF(v);
-			PUSH(v);
+			x = GETCONST(oparg);
+			INCREF(x);
+			PUSH(x);
 			break;
 		
 		case LOAD_NAME:
-			name = GETNAME(i);
-			v = dictlookup(ctx->ctx_locals, name);
-			if (v == NULL) {
-				v = dictlookup(ctx->ctx_globals, name);
-				if (v == NULL)
-					v = dictlookup(ctx->ctx_builtins, name);
+			name = GETNAME(oparg);
+			x = dictlookup(f->f_locals, name);
+			if (x == NULL) {
+				x = dictlookup(f->f_globals, name);
+				if (x == NULL)
+					x = getbuiltin(name);
 			}
-			if (v == NULL)
-				name_error(ctx, name);
-				/* XXX could optimize */
+			if (x == NULL)
+				err_setstr(NameError, name);
 			else
-				INCREF(v);
-			PUSH(v);
+				INCREF(x);
+			PUSH(x);
 			break;
 		
 		case BUILD_TUPLE:
-			v = checkerror(ctx, newtupleobject(i));
-			if (v != NULL) {
-				for (; --i >= 0;) {
+			x = newtupleobject(oparg);
+			if (x != NULL) {
+				for (; --oparg >= 0;) {
 					w = POP();
-					settupleitem(v, i, w);
+					err = settupleitem(x, oparg, w);
+					if (err != 0)
+						break;
 				}
+				PUSH(x);
 			}
-			PUSH(v);
 			break;
 		
 		case BUILD_LIST:
-			v = checkerror(ctx, newlistobject(i));
-			if (v != NULL) {
-				for (; --i >= 0;) {
+			x =  newlistobject(oparg);
+			if (x != NULL) {
+				for (; --oparg >= 0;) {
 					w = POP();
-					setlistitem(v, i, w);
+					err = setlistitem(x, oparg, w);
+					if (err != 0)
+						break;
 				}
+				PUSH(x);
 			}
-			PUSH(v);
 			break;
 		
 		case BUILD_MAP:
-			v = checkerror(ctx, newdictobject());
-			PUSH(v);
+			x = newdictobject();
+			PUSH(x);
 			break;
 		
 		case LOAD_ATTR:
-			name = GETNAME(i);
+			name = GETNAME(oparg);
 			v = POP();
-			if (v->ob_type->tp_getattr == NULL) {
-				type_error(ctx, "attribute-less object");
-				u = NULL;
-			}
-			else {
-				u = checkerror(ctx,
-					(*v->ob_type->tp_getattr)(v, name));
-			}
+			x = getattr(v, name);
 			DECREF(v);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case COMPARE_OP:
 			w = POP();
 			v = POP();
-			u = cmp_outcome(ctx, (enum cmp_op)i, v, w);
+			x = cmp_outcome((enum cmp_op)oparg, v, w);
 			DECREF(v);
 			DECREF(w);
-			PUSH(u);
+			PUSH(x);
 			break;
 		
 		case IMPORT_NAME:
-			name = GETNAME(i);
-			u = import_module(ctx, name);
-			if (u != NULL) {
-				INCREF(u);
-				PUSH(u);
-			}
+			name = GETNAME(oparg);
+			x = import_module(name);
+			XINCREF(x);
+			PUSH(x);
 			break;
 		
 		case IMPORT_FROM:
-			name = GETNAME(i);
+			name = GETNAME(oparg);
 			v = TOP();
-			import_from(ctx, v, name);
+			err = import_from(f->f_locals, v, name);
 			break;
 		
 		case JUMP_FORWARD:
-			JUMPBY(i);
+			JUMPBY(oparg);
 			break;
 		
 		case JUMP_IF_FALSE:
-			if (!testbool(ctx, TOP()))
-				JUMPBY(i);
+			if (!testbool(TOP()))
+				JUMPBY(oparg);
 			break;
 		
 		case JUMP_IF_TRUE:
-			if (testbool(ctx, TOP()))
-				JUMPBY(i);
+			if (testbool(TOP()))
+				JUMPBY(oparg);
 			break;
 		
 		case JUMP_ABSOLUTE:
-			JUMPTO(i);
-			/* XXX Should check for interrupts more often? */
-			if (intrcheck())
-				intr_error(ctx);
+			JUMPTO(oparg);
 			break;
 		
 		case FOR_LOOP:
@@ -1406,157 +1245,168 @@ eval_compiled(ctx, co, arg, needvalue)
 			   	s, i are popped, and we jump */
 			w = POP(); /* Loop index */
 			v = POP(); /* Sequence object */
-			x = loop_subscript(ctx, v, w);
-			if (x != NULL) {
+			u = loop_subscript(v, w);
+			if (u != NULL) {
 				PUSH(v);
-				u = checkerror(ctx,
-					newintobject(getintvalue(w)+1));
-				PUSH(u);
-				DECREF(w);
+				x = newintobject(getintvalue(w)+1);
 				PUSH(x);
+				DECREF(w);
+				PUSH(u);
 			}
 			else {
 				DECREF(v);
 				DECREF(w);
-				JUMPBY(i);
+				/* A NULL can mean "s exhausted"
+				   but also an error: */
+				if (err_occurred())
+					why = WHY_EXCEPTION;
+				else
+					JUMPBY(oparg);
 			}
 			break;
 		
 		case SETUP_LOOP:
-			setup_block(f, SETUP_LOOP, i);
-			break;
-		
 		case SETUP_EXCEPT:
-			setup_block(f, SETUP_EXCEPT, i);
+		case SETUP_FINALLY:
+			setup_block(f, opcode, INSTR_OFFSET() + oparg,
+						STACK_LEVEL());
 			break;
 		
-		case SETUP_FINALLY:
-			setup_block(f, SETUP_FINALLY, i);
+		case SET_LINENO:
+#ifdef TRACE
+			if (trace)
+				printf("--- Line %d ---\n", oparg);
+#endif
+			lineno = oparg;
 			break;
 		
 		default:
-			printf("opcode %d\n", op);
-			sys_error(ctx, "eval_compiled: unknown opcode");
+			fprintf(stderr,
+				"XXX lineno: %d, opcode: %d\n",
+				lineno, opcode);
+			err_setstr(SystemError, "eval_code: unknown opcode");
+			why = WHY_EXCEPTION;
 			break;
 		
+		} /* switch */
+
+		
+		/* Quickly continue if no error occurred */
+		
+		if (why == WHY_NOT) {
+			if (err == 0 && x != NULL)
+				continue; /* Normal, fast path */
+			why = WHY_EXCEPTION;
+			x = None;
+			err = 0;
+		}
+
+#ifndef NDEBUG
+		/* Double-check exception status */
+		
+		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
+			if (!err_occurred()) {
+				fprintf(stderr, "XXX ghost error\n");
+				err_setstr(SystemError, "ghost error");
+				why = WHY_EXCEPTION;
+			}
+		}
+		else {
+			if (err_occurred()) {
+				fprintf(stderr, "XXX undetected error\n");
+				why = WHY_EXCEPTION;
+			}
+		}
+#endif
+
+		/* Log traceback info if this is a real exception */
+		
+		if (why == WHY_EXCEPTION) {
+			int lasti = INSTR_OFFSET() - 1;
+			if (HAS_ARG(opcode))
+				lasti -= 2;
+			tb_here(f, lasti, lineno);
 		}
 		
-		/* Unwind block stack if an exception occurred */
+		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
 		
-		while (ctx->ctx_exception && f->f_iblock > 0) {
+		if (why == WHY_RERAISE)
+			why = WHY_EXCEPTION;
+
+		/* Unwind stacks if a (pseudo) exception occurred */
+		
+		while (why != WHY_NOT && f->f_iblock > 0) {
 			block *b = pop_block(f);
-			if (b->b_type == SETUP_LOOP &&
-					ctx->ctx_exception == BREAK_PSEUDO) {
-				clear_exception(ctx);
-				JUMPTO(b->b_handler);
-				break;
-			}
-			else if (b->b_type == SETUP_FINALLY ||
-				b->b_type == SETUP_EXCEPT &&
-				ctx->ctx_exception == CATCHABLE_EXCEPTION) {
-				v = ctx->ctx_errval;
-				if (v == NULL)
-					v = None;
-				INCREF(v);
-				PUSH(v);
-				v = ctx->ctx_error;
-				if (v == NULL)
-					v = newintobject(ctx->ctx_exception);
-				else
-					INCREF(v);
-				PUSH(v);
-				clear_exception(ctx);
-				JUMPTO(b->b_handler);
-				break;
-			}
-		}
-	}
-	
-	if (ctx->ctx_exception) {
-		while (!EMPTY()) {
-			v = POP();
-			XDECREF(v);
-		}
-		v = NULL;
-		if (ctx->ctx_exception == RETURN_PSEUDO) {
-			if (needvalue) {
-				v = ctx->ctx_errval;
-				INCREF(v);
-				clear_exception(ctx);
-			}
-			else {
-				/* XXX Can detect this statically! */
-				type_error(ctx, "unexpected return statement");
-			}
-		}
-	}
-	else {
-		if (needvalue)
-			v = POP();
-		else
-			v = NULL;
-		if (!EMPTY()) {
-			sys_error(ctx, "stack not cleaned up");
-			XDECREF(v);
-			while (!EMPTY()) {
+			while (STACK_LEVEL() > b->b_level) {
 				v = POP();
 				XDECREF(v);
 			}
-			v = NULL;
-		}
-	}
+			if (b->b_type == SETUP_LOOP && why == WHY_BREAK) {
+				why = WHY_NOT;
+				JUMPTO(b->b_handler);
+				break;
+			}
+			if (b->b_type == SETUP_FINALLY ||
+					b->b_type == SETUP_EXCEPT &&
+					why == WHY_EXCEPTION) {
+				if (why == WHY_EXCEPTION) {
+					object *exc, *val;
+					err_get(&exc, &val);
+					if (val == NULL) {
+						val = None;
+						INCREF(val);
+					}
+					v = tb_fetch();
+					/* Make the raw exception data
+					   available to the handler,
+					   so a program can emulate the
+					   Python main loop.  Don't do
+					   this for 'finally'. */
+					if (b->b_type == SETUP_EXCEPT) {
+#if 0 /* Oops, this breaks too many things */
+						sysset("exc_traceback", v);
+#endif
+						sysset("exc_value", val);
+						sysset("exc_type", exc);
+						err_clear();
+					}
+					PUSH(v);
+					PUSH(val);
+					PUSH(exc);
+				}
+				else {
+					if (why == WHY_RETURN)
+						PUSH(retval);
+					v = newintobject((long)why);
+					PUSH(v);
+				}
+				why = WHY_NOT;
+				JUMPTO(b->b_handler);
+				break;
+			}
+		} /* unwind stack */
 
-#undef EMPTY
-#undef FULL
-#undef GETCONST
-#undef GETNAME
-#undef JUMPTO
-#undef JUMPBY
-
-#undef POP
-#undef TOP
-#undef PUSH
+		/* End the loop if we still have an error (or return) */
+		
+		if (why != WHY_NOT)
+			break;
+		
+	} /* main loop */
 	
-	DECREF(f);
-	return v;
-
-}
-
-/* Provisional interface until everything is compilable */
-
-#include "node.h"
-
-static object *
-eval_or_exec(ctx, n, arg, needvalue)
-	context *ctx;
-	node *n;
-	object *arg;
-	int needvalue;
-{
-	object *v;
-	codeobject *co = compile(n);
-	freenode(n); /* XXX A rather strange place to do this! */
-	if (co == NULL) {
-		puterrno(ctx);
-		return NULL;
+	/* Pop remaining stack entries */
+	
+	while (!EMPTY()) {
+		v = POP();
+		XDECREF(v);
 	}
-	v = eval_compiled(ctx, co, arg, needvalue);
-	DECREF(co);
-	return v;
-}
-
-object *
-eval_node(ctx, n)
-	context *ctx;
-	node *n;
-{
-	return eval_or_exec(ctx, n, (object *)NULL, 1/*needvalue*/);
-}
-
-void
-exec_node(ctx, n)
-	context *ctx;
-	node *n;
-{
-	(void) eval_or_exec(ctx, n, (object *)NULL, 0/*needvalue*/);
+	
+	/* Restore previous frame and release the current one */
+	
+	current_frame = f->f_back;
+	DECREF(f);
+	
+	if (why == WHY_RETURN)
+		return retval;
+	else
+		return NULL;
 }

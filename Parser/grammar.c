@@ -1,10 +1,9 @@
 /* Grammar implementation */
 
-#include <stdio.h>
+#include "pgenheaders.h"
+
 #include <ctype.h>
 
-#include "PROTO.h"
-#include "malloc.h"
 #include "assert.h"
 #include "token.h"
 #include "grammar.h"
@@ -127,6 +126,21 @@ findlabel(ll, type, str)
 	abort();
 }
 
+/* Forward */
+static void translabel PROTO((grammar *, label *));
+
+void
+translatelabels(g)
+	grammar *g;
+{
+	int i;
+	
+	printf("Translating labels ...\n");
+	/* Don't translate EMPTY */
+	for (i = EMPTY+1; i < g->g_ll.ll_nlabels; i++)
+		translabel(g, &g->g_ll.ll_label[i]);
+}
+
 static void
 translabel(g, lb)
 	grammar *g;
@@ -192,16 +206,4 @@ translabel(g, lb)
 	}
 	else
 		printf("Can't translate label '%s'\n", labelrepr(lb));
-}
-
-void
-translatelabels(g)
-	grammar *g;
-{
-	int i;
-	
-	printf("Translating labels ...\n");
-	/* Don't translate EMPTY */
-	for (i = EMPTY+1; i < g->g_ll.ll_nlabels; i++)
-		translabel(g, &g->g_ll.ll_label[i]);
 }

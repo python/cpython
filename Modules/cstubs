@@ -25,24 +25,13 @@ Each definition must be contained on one line:
 		N*retval
 */
 
-#include <stdio.h>
 #include <gl.h>
 #include <device.h>
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "floatobject.h"
-#include "listobject.h"
-#include "tupleobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
+
+#include "allobjects.h"
 #include "import.h"
-#include "sigtype.h"
 #include "modsupport.h"
 #include "cgensupport.h"
-#include "errors.h"
 
 /*
 Some stubs are too complicated for the stub generator.

@@ -1,19 +1,10 @@
 /* Math module -- standard C math library functions, pi and e */
 
-#include <stdio.h>
-#include <math.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "tupleobject.h"
-#include "floatobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
-#include "import.h"
 #include "modsupport.h"
+
+#include <math.h>
 
 static int
 getdoublearg(args, px)

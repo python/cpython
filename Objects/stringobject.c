@@ -1,13 +1,6 @@
 /* String object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "intobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include "allobjects.h"
 
 object *
 newsizedstringobject(str, size)

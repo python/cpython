@@ -7,7 +7,7 @@ int err_occurred PROTO((void));
 void err_get PROTO((object **, object **));
 void err_clear PROTO((void));
 
-/* Predefined exceptions (in run.c) */
+/* Predefined exceptions */
 
 extern object *RuntimeError;
 extern object *EOFError;
@@ -29,5 +29,6 @@ extern object *KeyboardInterrupt;
 extern int err_badarg PROTO((void));
 extern object *err_nomem PROTO((void));
 extern object *err_errno PROTO((object *));
+extern void err_input PROTO((int));
 
 extern void err_badcall PROTO((void));

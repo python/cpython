@@ -1,19 +1,14 @@
 /* Integer object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include "allobjects.h"
 
 /* Standard Booleans */
+
 intobject FalseObject = {
 	OB_HEAD_INIT(&Inttype)
 	0
 };
+
 intobject TrueObject = {
 	OB_HEAD_INIT(&Inttype)
 	1
@@ -33,21 +28,58 @@ err_zdiv()
 	return NULL;
 }
 
+/* Integers are quite normal objects, to make object handling uniform.
+   (Using odd pointers to represent integers would save much space
+   but require extra checks for this special case throughout the code.)
+   Since, a typical Python program spends much of its time allocating
+   and deallocating integers, these operations should be very fast.
+   Therefore we use a dedicated allocation scheme with a much lower
+   overhead (in space and time) than straight malloc(): a simple
+   dedicated free list, filled when necessary with memory from malloc().
+*/
+
+#define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
+#define N_INTOBJECTS	(BLOCK_SIZE / sizeof(intobject))
+
+static intobject *
+fill_free_list()
+{
+	intobject *p, *q;
+	p = NEW(intobject, N_INTOBJECTS);
+	if (p == NULL)
+		return (intobject *)err_nomem();
+	q = p + N_INTOBJECTS;
+	while (--q > p)
+		*(intobject **)q = q-1;
+	*(intobject **)q = NULL;
+	return p + N_INTOBJECTS - 1;
+}
+
+static intobject *free_list = NULL;
+
 object *
 newintobject(ival)
 	long ival;
 {
-	/* For efficiency, this code is copied from newobject() */
-	register intobject *op = (intobject *) malloc(sizeof(intobject));
-	if (op == NULL) {
-		err_nomem();
+	register intobject *v;
+	if (free_list == NULL) {
+		if ((free_list = fill_free_list()) == NULL)
+			return NULL;
 	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Inttype;
-		op->ob_ival = ival;
-	}
-	return (object *) op;
+	v = free_list;
+	free_list = *(intobject **)free_list;
+	NEWREF(v);
+	v->ob_type = &Inttype;
+	v->ob_ival = ival;
+	return (object *) v;
+}
+
+static void
+int_dealloc(v)
+	intobject *v;
+{
+	*(intobject **)v = free_list;
+	free_list = v;
 }
 
 long
@@ -65,7 +97,7 @@ getintvalue(op)
 /* Methods */
 
 static void
-intprint(v, fp, flags)
+int_print(v, fp, flags)
 	intobject *v;
 	FILE *fp;
 	int flags;
@@ -74,7 +106,7 @@ intprint(v, fp, flags)
 }
 
 static object *
-intrepr(v)
+int_repr(v)
 	intobject *v;
 {
 	char buf[20];
@@ -83,7 +115,7 @@ intrepr(v)
 }
 
 static int
-intcompare(v, w)
+int_compare(v, w)
 	intobject *v, *w;
 {
 	register long i = v->ob_ival;
@@ -92,7 +124,7 @@ intcompare(v, w)
 }
 
 static object *
-intadd(v, w)
+int_add(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -110,7 +142,7 @@ intadd(v, w)
 }
 
 static object *
-intsub(v, w)
+int_sub(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -128,7 +160,7 @@ intsub(v, w)
 }
 
 static object *
-intmul(v, w)
+int_mul(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -147,7 +179,7 @@ intmul(v, w)
 }
 
 static object *
-intdiv(v, w)
+int_div(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -161,7 +193,7 @@ intdiv(v, w)
 }
 
 static object *
-intrem(v, w)
+int_rem(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -175,7 +207,7 @@ intrem(v, w)
 }
 
 static object *
-intpow(v, w)
+int_pow(v, w)
 	intobject *v;
 	register object *w;
 {
@@ -203,7 +235,7 @@ intpow(v, w)
 }
 
 static object *
-intneg(v)
+int_neg(v)
 	intobject *v;
 {
 	register long a, x;
@@ -215,7 +247,7 @@ intneg(v)
 }
 
 static object *
-intpos(v)
+int_pos(v)
 	intobject *v;
 {
 	INCREF(v);
@@ -223,14 +255,14 @@ intpos(v)
 }
 
 static number_methods int_as_number = {
-	intadd,	/*tp_add*/
-	intsub,	/*tp_subtract*/
-	intmul,	/*tp_multiply*/
-	intdiv,	/*tp_divide*/
-	intrem,	/*tp_remainder*/
-	intpow,	/*tp_power*/
-	intneg,	/*tp_negate*/
-	intpos,	/*tp_plus*/
+	int_add,	/*tp_add*/
+	int_sub,	/*tp_subtract*/
+	int_mul,	/*tp_multiply*/
+	int_div,	/*tp_divide*/
+	int_rem,	/*tp_remainder*/
+	int_pow,	/*tp_power*/
+	int_neg,	/*tp_negate*/
+	int_pos,	/*tp_plus*/
 };
 
 typeobject Inttype = {
@@ -239,12 +271,12 @@ typeobject Inttype = {
 	"int",
 	sizeof(intobject),
 	0,
-	free,		/*tp_dealloc*/
-	intprint,	/*tp_print*/
+	int_dealloc,	/*tp_dealloc*/
+	int_print,	/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	intcompare,	/*tp_compare*/
-	intrepr,	/*tp_repr*/
+	int_compare,	/*tp_compare*/
+	int_repr,	/*tp_repr*/
 	&int_as_number,	/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/

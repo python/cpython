@@ -5,7 +5,7 @@
 typedef struct _stackentry {
 	int		 s_state;	/* State in current DFA */
 	dfa		*s_dfa;		/* Current DFA */
-	node		*s_parent;	/* Where to add next node */
+	struct _node	*s_parent;	/* Where to add next node */
 } stackentry;
 
 typedef struct _stack {
@@ -22,4 +22,5 @@ typedef struct {
 
 parser_state *newparser PROTO((struct _grammar *g, int start));
 void delparser PROTO((parser_state *ps));
-int addtoken PROTO((parser_state *ps, int type, char *str));
+int addtoken PROTO((parser_state *ps, int type, char *str, int lineno));
+void addaccelerators PROTO((grammar *g));

@@ -1,11 +1,10 @@
 /* Parse tree node implementation */
 
-#include "PROTO.h"
-#include "malloc.h"
+#include "pgenheaders.h"
 #include "node.h"
 
 node *
-newnode(type)
+newtree(type)
 	int type;
 {
 	node *n = NEW(node, 1);
@@ -13,6 +12,7 @@ newnode(type)
 		return NULL;
 	n->n_type = type;
 	n->n_str = NULL;
+	n->n_lineno = 0;
 	n->n_nchildren = 0;
 	n->n_child = NULL;
 	return n;
@@ -22,10 +22,11 @@ newnode(type)
 #define XXXROUNDUP(n) ((n) == 1 ? 1 : ((n) + XXX - 1) / XXX * XXX)
 
 node *
-addchild(n1, type, str)
+addchild(n1, type, str, lineno)
 	register node *n1;
 	int type;
 	char *str;
+	int lineno;
 {
 	register int nch = n1->n_nchildren;
 	register int nch1 = nch+1;
@@ -41,9 +42,24 @@ addchild(n1, type, str)
 	n = &n1->n_child[n1->n_nchildren++];
 	n->n_type = type;
 	n->n_str = str;
+	n->n_lineno = lineno;
 	n->n_nchildren = 0;
 	n->n_child = NULL;
 	return n;
+}
+
+/* Forward */
+static void freechildren PROTO((node *));
+
+
+void
+freetree(n)
+	node *n;
+{
+	if (n != NULL) {
+		freechildren(n);
+		DEL(n);
+	}
 }
 
 static void
@@ -57,14 +73,4 @@ freechildren(n)
 		DEL(n->n_child);
 	if (STR(n) != NULL)
 		DEL(STR(n));
-}
-
-void
-freenode(n)
-	node *n;
-{
-	if (n != NULL) {
-		freechildren(n);
-		DEL(n);
-	}
 }

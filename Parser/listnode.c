@@ -1,12 +1,30 @@
 /* List a node on a file */
 
-#include <stdio.h>
-
-#include "PROTO.h"
+#include "pgenheaders.h"
 #include "token.h"
 #include "node.h"
 
+/* Forward */
+static void list1node PROTO((FILE *, node *));
+
+void
+listtree(n)
+	node *n;
+{
+	listnode(stdout, n);
+}
+
 static int level, atbol;
+
+void
+listnode(fp, n)
+	FILE *fp;
+	node *n;
+{
+	level = 0;
+	atbol = 1;
+	list1node(fp, n);
+}
 
 static void
 list1node(fp, n)
@@ -48,21 +66,4 @@ list1node(fp, n)
 	}
 	else
 		fprintf(fp, "? ");
-}
-
-void
-listnode(fp, n)
-	FILE *fp;
-	node *n;
-{
-	level = 0;
-	atbol = 1;
-	list1node(fp, n);
-}
-
-void
-listtree(n)
-	node *n;
-{
-	listnode(stdout, n);
 }

@@ -2,7 +2,7 @@
 
 #ifdef MSDOS
 
-/* This might work for MS-DOS: */
+/* This might work for MS-DOS (untested though): */
 
 void
 initintr()
@@ -37,7 +37,7 @@ initintr()
 int
 intrcheck()
 {
-	/* Static to make it faster(?) only */
+	/* Static to make it faster only */
 	static EventRecord e;
 	
 	/* XXX This fails if the user first types ahead and then
@@ -59,7 +59,7 @@ intrcheck()
 
 #ifndef OK
 
-/* Default version -- should work for Unix and Standard C */
+/* Default version -- for real operating systems and for Standard C */
 
 #include <stdio.h>
 #include <signal.h>

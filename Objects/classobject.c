@@ -1,28 +1,17 @@
 /* Class object implementation */
 
-#include <stdio.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "node.h"
-#include "object.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "dictobject.h"
-#include "funcobject.h"
-#include "classobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include "structmember.h"
 
 typedef struct {
 	OB_HEAD
-	node	*cl_tree;	/* The entire classdef parse tree */
 	object	*cl_bases;	/* A tuple */
 	object	*cl_methods;	/* A dictionary */
 } classobject;
 
 object *
-newclassobject(tree, bases, methods)
-	node *tree;
+newclassobject(bases, methods)
 	object *bases; /* NULL or tuple of classobjects! */
 	object *methods;
 {
@@ -30,7 +19,6 @@ newclassobject(tree, bases, methods)
 	op = NEWOBJ(classobject, &Classtype);
 	if (op == NULL)
 		return NULL;
-	op->cl_tree = tree;
 	if (bases != NULL)
 		INCREF(bases);
 	op->cl_bases = bases;
@@ -70,6 +58,7 @@ class_getattr(op, name)
 			v = class_getattr(gettupleitem(op->cl_bases, i), name);
 			if (v != NULL)
 				return v;
+			err_clear();
 		}
 	}
 	err_setstr(NameError, name);
@@ -242,6 +231,22 @@ classmethodgetself(cm)
 
 /* Class method methods */
 
+#define OFF(x) offsetof(classmethodobject, x)
+
+static struct memberlist classmethod_memberlist[] = {
+	{"cm_func",	T_OBJECT,	OFF(cm_func)},
+	{"cm_self",	T_OBJECT,	OFF(cm_self)},
+	{NULL}	/* Sentinel */
+};
+
+static object *
+classmethod_getattr(cm, name)
+	register classmethodobject *cm;
+	char *name;
+{
+	return getmember((char *)cm, classmethod_memberlist, name);
+}
+
 static void
 classmethod_dealloc(cm)
 	register classmethodobject *cm;
@@ -259,7 +264,7 @@ typeobject Classmethodtype = {
 	0,
 	classmethod_dealloc,	/*tp_dealloc*/
 	0,			/*tp_print*/
-	0,			/*tp_getattr*/
+	classmethod_getattr,	/*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/

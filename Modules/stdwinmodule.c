@@ -38,22 +38,11 @@
    XXX more?
 */
 
-#include <stdio.h>
-#include "stdwin.h"
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "objimpl.h"
-#include "import.h"
 #include "modsupport.h"
-#include "errors.h"
 
+#include "stdwin.h"
 
 /* Window and menu object types declared here because of forward references */
 

@@ -1,7 +1,6 @@
 /* Grammar subroutines needed by parser */
 
-#include "PROTO.h"
-#define NULL 0
+#include "pgenheaders.h"
 #include "assert.h"
 #include "grammar.h"
 #include "token.h"

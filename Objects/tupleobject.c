@@ -1,19 +1,6 @@
 /* Tuple object implementation */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "intobject.h"
-#include "objimpl.h"
-#include "errors.h"
-
-typedef struct {
-	OB_VARHEAD
-	object *ob_item[1];
-} tupleobject;
+#include "allobjects.h"
 
 object *
 newtupleobject(size)

@@ -1,9 +1,43 @@
 /* Print a bunch of C initializers that represent a grammar */
 
-#include <stdio.h>
-
-#include "PROTO.h"
+#include "pgenheaders.h"
 #include "grammar.h"
+
+/* Forward */
+static void printarcs PROTO((int, dfa *, FILE *));
+static void printstates PROTO((grammar *, FILE *));
+static void printdfas PROTO((grammar *, FILE *));
+static void printlabels PROTO((grammar *, FILE *));
+
+void
+printgrammar(g, fp)
+	grammar *g;
+	FILE *fp;
+{
+	fprintf(fp, "#include \"pgenheaders.h\"\n");
+	fprintf(fp, "#include \"grammar.h\"\n");
+	printdfas(g, fp);
+	printlabels(g, fp);
+	fprintf(fp, "grammar gram = {\n");
+	fprintf(fp, "\t%d,\n", g->g_ndfas);
+	fprintf(fp, "\tdfas,\n");
+	fprintf(fp, "\t{%d, labels},\n", g->g_ll.ll_nlabels);
+	fprintf(fp, "\t%d\n", g->g_start);
+	fprintf(fp, "};\n");
+}
+
+void
+printnonterminals(g, fp)
+	grammar *g;
+	FILE *fp;
+{
+	dfa *d;
+	int i;
+	
+	d = g->g_dfa;
+	for (i = g->g_ndfas; --i >= 0; d++)
+		fprintf(fp, "#define %s %d\n", d->d_name, d->d_type);
+}
 
 static void
 printarcs(i, d, fp)
@@ -88,34 +122,4 @@ printlabels(g, fp)
 				l->lb_type, l->lb_str);
 	}
 	fprintf(fp, "};\n");
-}
-
-void
-printgrammar(g, fp)
-	grammar *g;
-	FILE *fp;
-{
-	fprintf(fp, "#include \"PROTO.h\"\n");
-	fprintf(fp, "#include \"grammar.h\"\n");
-	printdfas(g, fp);
-	printlabels(g, fp);
-	fprintf(fp, "grammar gram = {\n");
-	fprintf(fp, "\t%d,\n", g->g_ndfas);
-	fprintf(fp, "\tdfas,\n");
-	fprintf(fp, "\t{%d, labels},\n", g->g_ll.ll_nlabels);
-	fprintf(fp, "\t%d\n", g->g_start);
-	fprintf(fp, "};\n");
-}
-
-void
-printnonterminals(g, fp)
-	grammar *g;
-	FILE *fp;
-{
-	dfa *d;
-	int i;
-	
-	d = g->g_dfa;
-	for (i = g->g_ndfas; --i >= 0; d++)
-		fprintf(fp, "#define %s %d\n", d->d_name, d->d_type);
 }

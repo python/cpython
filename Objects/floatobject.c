@@ -3,16 +3,10 @@
 /* XXX There should be overflow checks here, but it's hard to check
    for any kind of float exception without losing portability. */
 
-#include <stdio.h>
-#include <math.h>
-#include <ctype.h>
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "floatobject.h"
-#include "stringobject.h"
-#include "objimpl.h"
-#include "errors.h"
+#include <ctype.h>
+#include <math.h>
 
 #ifndef THINK_C
 extern double fmod PROTO((double, double));

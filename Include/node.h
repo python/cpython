@@ -3,13 +3,14 @@
 typedef struct _node {
 	int		n_type;
 	char		*n_str;
+	int		n_lineno;
 	int		n_nchildren;
 	struct _node	*n_child;
 } node;
 
-extern node *newnode PROTO((int type));
-extern node *addchild PROTO((node *n, int type, char *str));
-extern void freenode PROTO((node *n));
+extern node *newtree PROTO((int type));
+extern node *addchild PROTO((node *n, int type, char *str, int lineno));
+extern void freetree PROTO((node *n));
 
 /* Node access functions */
 #define NCH(n)		((n)->n_nchildren)
@@ -28,3 +29,6 @@ extern void freenode PROTO((node *n));
 		abort(); \
 	} }
 #endif
+
+extern void listtree PROTO((node *));
+extern void listnode PROTO((FILE *, node *));

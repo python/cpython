@@ -1,153 +1,67 @@
 /* Module definition and import implementation */
 
-#include <stdio.h>
-#include "string.h"
+#include "allobjects.h"
 
-#include "PROTO.h"
-#include "object.h"
-#include "stringobject.h"
-#include "listobject.h"
-#include "dictobject.h"
-#include "moduleobject.h"
 #include "node.h"
-#include "context.h"
 #include "token.h"
 #include "graminit.h"
-#include "run.h"
-#include "support.h"
 #include "import.h"
 #include "errcode.h"
 #include "sysmodule.h"
+#include "pythonrun.h"
 
-/* Define pathname separator and delimiter in $PYTHONPATH */
+/* Define pathname separator used in file names */
 
 #ifdef THINK_C
 #define SEP ':'
-#define DELIM ' '
 #endif
 
 #ifndef SEP
 #define SEP '/'
 #endif
 
-#ifndef DELIM
-#define DELIM ':'
-#endif
+static object *modules;
+
+/* Initialization */
 
 void
 initimport()
 {
-	object *v;
-	if ((v = newdictobject()) == NULL)
-		fatal("no mem for module table");
-	if (sysset("modules", v) != 0)
-		fatal("can't assign sys.modules");
-	DECREF(v);
+	if ((modules = newdictobject()) == NULL)
+		fatal("no mem for dictionary of modules");
 }
 
 object *
-new_module(name)
+get_modules()
+{
+	return modules;
+}
+
+object *
+add_module(name)
 	char *name;
 {
 	object *m;
-	object *mtab;
-	mtab = sysget("modules");
-	if (mtab == NULL || !is_dictobject(mtab)) {
-		errno = EBADF;
-		return NULL;
-	}
+	if ((m = dictlookup(modules, name)) != NULL && is_moduleobject(m))
+		return m;
 	m = newmoduleobject(name);
 	if (m == NULL)
 		return NULL;
-	if (dictinsert(mtab, name, m) != 0) {
+	if (dictinsert(modules, name, m) != 0) {
 		DECREF(m);
 		return NULL;
 	}
+	DECREF(m); /* Yes, it still exists, in modules! */
 	return m;
 }
 
-static void
-use_module(ctx, d)
-	context *ctx;
-	object *d;
-{
-	INCREF(d);
-	DECREF(ctx->ctx_locals);
-	ctx->ctx_locals = d;
-	INCREF(d);
-	DECREF(ctx->ctx_globals);
-	ctx->ctx_globals = d;
-}
-
-static void
-define_module(ctx, name)
-	context *ctx;
-	char *name;
-{
-	object *m;
-	m = new_module(name);
-	if (m == NULL) {
-		puterrno(ctx);
-		return;
-	}
-	use_module(ctx, getmoduledict(m));
-	DECREF(m);
-}
-
-static object *
-parsepath(path, delim)
-	char *path;
-	int delim;
-{
-	int i, n;
-	char *p;
-	object *v, *w;
-	
-	n = 1;
-	p = path;
-	while ((p = strchr(p, delim)) != NULL) {
-		n++;
-		p++;
-	}
-	v = newlistobject(n);
-	if (v == NULL)
-		return NULL;
-	for (i = 0; ; i++) {
-		p = strchr(path, delim);
-		if (p == NULL)
-			p = strchr(path, '\0'); /* End of string */
-		w = newsizedstringobject(path, (int) (p - path));
-		if (w == NULL) {
-			DECREF(v);
-			return NULL;
-		}
-		setlistitem(v, i, w);
-		if (*p == '\0')
-			break;
-		path = p+1;
-	}
-	return v;
-}
-
-void
-setpythonpath(path)
-	char *path;
-{
-	object *v;
-	if ((v = parsepath(path, DELIM)) != NULL) {
-		if (sysset("path", v) != 0)
-			fatal("can't assign sys.path");
-		DECREF(v);
-	}
-}
-
 static FILE *
-open_module(name, suffix)
+open_module(name, suffix, namebuf)
 	char *name;
 	char *suffix;
+	char *namebuf; /* XXX No buffer overflow checks! */
 {
 	object *path;
-	char namebuf[256];
 	FILE *fp;
 	
 	path = sysget("path");
@@ -169,8 +83,8 @@ open_module(name, suffix)
 			len = getstringsize(v);
 			if (len > 0 && namebuf[len-1] != SEP)
 				namebuf[len++] = SEP;
-			strcpy(namebuf+len, name); /* XXX check for overflow */
-			strcat(namebuf, suffix); /* XXX ditto */
+			strcpy(namebuf+len, name);
+			strcat(namebuf, suffix);
 			fp = fopen(namebuf, "r");
 			if (fp != NULL)
 				break;
@@ -180,119 +94,113 @@ open_module(name, suffix)
 }
 
 static object *
-load_module(ctx, name)
-	context *ctx;
+get_module(m, name, m_ret)
+	/*module*/object *m;
 	char *name;
+	object **m_ret;
 {
-	object *m;
-	char **p;
-	FILE *fp;
-	node *n;
-	int err;
-	object *mtab;
-	object *save_locals, *save_globals;
-	
-	mtab = sysget("modules");
-	if (mtab == NULL || !is_dictobject(mtab)) {
-		errno = EBADF;
-		return NULL;
-	}
-	fp = open_module(name, ".py");
-	if (fp == NULL) {
-		name_error(ctx, name);
-		return NULL;
-	}
-	err = parseinput(fp, file_input, &n);
-	fclose(fp);
-	if (err != E_DONE) {
-		input_error(ctx, err);
-		return NULL;
-	}
-	save_locals = ctx->ctx_locals;
-	INCREF(save_locals);
-	save_globals = ctx->ctx_globals;
-	INCREF(save_globals);
-	define_module(ctx, name);
-	exec_node(ctx, n);
-	DECREF(ctx->ctx_locals);
-	ctx->ctx_locals = save_locals;
-	DECREF(ctx->ctx_globals);
-	ctx->ctx_globals = save_globals;
-	/* XXX need to free the tree n here; except referenced defs */
-	if (ctx->ctx_exception) {
-		dictremove(mtab, name); /* Undefine the module */
-		return NULL;
-	}
-	m = dictlookup(mtab, name);
-	if (m == NULL) {
-		error(ctx, "module not defined after loading");
-		return NULL;
-	}
-	return m;
-}
-
-object *
-import_module(ctx, name)
-	context *ctx;
-	char *name;
-{
-	object *m;
-	object *mtab;
-	mtab = sysget("modules");
-	if (mtab == NULL || !is_dictobject(mtab)) {
-		error(ctx, "bad sys.modules");
-		return NULL;
-	}
-	if ((m = dictlookup(mtab, name)) == NULL) {
-		m = load_module(ctx, name);
-	}
-	return m;
-}
-
-object *
-reload_module(ctx, m)
-	context *ctx;
-	object *m;
-{
-	char *name;
-	FILE *fp;
-	node *n;
-	int err;
 	object *d;
-	object *save_locals, *save_globals;
-	if (m == NULL || !is_moduleobject(m)) {
-		type_error(ctx, "reload() argument must be module");
-		return NULL;
-	}
-	/* XXX Ought to check for builtin module */
-	name = getmodulename(m);
-	fp = open_module(name, ".py");
+	FILE *fp;
+	node *n;
+	int err;
+	char namebuf[256];
+	
+	fp = open_module(name, ".py", namebuf);
 	if (fp == NULL) {
-		error(ctx, "reload() cannot find module source file");
+		if (m == NULL)
+			err_setstr(NameError, name);
+		else
+			err_setstr(RuntimeError, "no module source file");
 		return NULL;
 	}
-	err = parseinput(fp, file_input, &n);
+	err = parse_file(fp, namebuf, file_input, &n);
 	fclose(fp);
 	if (err != E_DONE) {
-		input_error(ctx, err);
+		err_input(err);
 		return NULL;
 	}
-	d = newdictobject();
-	if (d == NULL)
+	if (m == NULL) {
+		m = add_module(name);
+		if (m == NULL) {
+			freetree(n);
+			return NULL;
+		}
+		*m_ret = m;
+	}
+	d = getmoduledict(m);
+	return run_node(n, namebuf, d, d);
+}
+
+static object *
+load_module(name)
+	char *name;
+{
+	object *m, *v;
+	v = get_module((object *)NULL, name, &m);
+	if (v == NULL)
 		return NULL;
-	setmoduledict(m, d);
-	save_locals = ctx->ctx_locals;
-	INCREF(save_locals);
-	save_globals = ctx->ctx_globals;
-	INCREF(save_globals);
-	use_module(ctx, d);
-	exec_node(ctx, n);
-	DECREF(ctx->ctx_locals);
-	ctx->ctx_locals = save_locals;
-	DECREF(ctx->ctx_globals);
-	ctx->ctx_globals = save_globals;
-	if (ctx->ctx_exception)
+	DECREF(v);
+	return m;
+}
+
+object *
+import_module(name)
+	char *name;
+{
+	object *m;
+	if ((m = dictlookup(modules, name)) == NULL)
+		m = load_module(name);
+	return m;
+}
+
+object *
+reload_module(m)
+	object *m;
+{
+	if (m == NULL || !is_moduleobject(m)) {
+		err_setstr(TypeError, "reload() argument must be module");
 		return NULL;
-	INCREF(None);
-	return None;
+	}
+	/* XXX Ought to check for builtin modules -- can't reload these... */
+	return get_module(m, getmodulename(m), (object **)NULL);
+}
+
+static void
+cleardict(d)
+	object *d;
+{
+	int i;
+	for (i = getdictsize(d); --i >= 0; ) {
+		char *k;
+		k = getdictkey(d, i);
+		if (k != NULL)
+			(void) dictremove(d, k);
+	}
+}
+
+void
+doneimport()
+{
+	if (modules != NULL) {
+		int i;
+		/* Explicitly erase all modules; this is the safest way
+		   to get rid of at least *some* circular dependencies */
+		for (i = getdictsize(modules); --i >= 0; ) {
+			char *k;
+			k = getdictkey(modules, i);
+			if (k != NULL) {
+				object *m;
+				m = dictlookup(modules, k);
+				if (m != NULL && is_moduleobject(m)) {
+					object *d;
+					d = getmoduledict(m);
+					if (d != NULL && is_dictobject(d)) {
+						cleardict(d);
+					}
+				}
+			}
+		}
+		cleardict(modules);
+	}
+	DECREF(modules);
 }
