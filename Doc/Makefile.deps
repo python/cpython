@@ -166,6 +166,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libfcntl.tex \
 	lib/libposixfile.tex \
 	lib/libsyslog.tex \
+	lib/liblogging.tex \
 	lib/libpdb.tex \
 	lib/libprofile.tex \
 	lib/libcgi.tex \
