@@ -22,15 +22,23 @@ else:
 # pythonrun.c has been fixed to ignore that exception.  If so, the
 # write() should return EFBIG when the limit is exceeded.
 
+# At least one platform has an unlimited RLIMIT_FSIZE and attempts to
+# change it raise ValueError instead.
+
 try:
-    resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max))
+    try:
+        resource.setrlimit(resource.RLIMIT_FSIZE, (1024, max))
+        limit_set = 1
+    except ValueError:
+        limit_set = 0
     f = open(TESTFN, "wb")
     f.write("X" * 1024)
     try:
         f.write("Y")
         f.flush()
     except IOError:
-        pass
+        if not limit_set:
+            raise
     f.close()
     os.unlink(TESTFN)
 finally:
@@ -40,9 +48,9 @@ finally:
 too_big = 10L**50
 try:
     resource.setrlimit(resource.RLIMIT_FSIZE, (too_big, max))
-except OverflowError:
+except (OverflowError, ValueError):
     pass
 try:
     resource.setrlimit(resource.RLIMIT_FSIZE, (max, too_big))
-except OverflowError:
+except (OverflowError, ValueError):
     pass
