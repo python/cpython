@@ -528,11 +528,11 @@ paper-$(PAPER)/README: $(PSFILES) $(TOOLSDIR)/getpagecounts
 
 info-$(RELEASE).tgz: info
 	cd $(INFODIR) && tar cf - README python.dir python-*.info* \
-		| gzip -9 >$@
+		| gzip -9 >../$@
 
 info-$(RELEASE).tar.bz2: info
 	cd $(INFODIR) && tar cf - README python.dir python-*.info* \
-		| bzip2 -9 >$@
+		| bzip2 -9 >../$@
 
 latex-$(RELEASE).tgz:
 	$(PYTHON) $(TOOLSDIR)/mksourcepkg --gzip $(RELEASE)
@@ -653,6 +653,9 @@ distlatex:	tarlatex bziplatex ziplatex
 
 paperdist:	distpdf distps
 edist:		disthtml zipisilo
+
+pkglist:
+	$(TOOLSDIR)/mkpkglist >pkglist.html
 
 distfiles:	paperdist edist
 	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
