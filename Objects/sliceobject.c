@@ -278,6 +278,13 @@ slice_compare(PySliceObject *v, PySliceObject *w)
 	return result;
 }
 
+static long
+slice_hash(PySliceObject *v)
+{
+	PyErr_SetString(PyExc_TypeError, "unhashable type");
+	return -1L;
+}
+
 PyTypeObject PySlice_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/* Number of items for varobject */
@@ -293,7 +300,7 @@ PyTypeObject PySlice_Type = {
 	0,					/* tp_as_number */
 	0,	    				/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
+	(hashfunc)slice_hash,			/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
