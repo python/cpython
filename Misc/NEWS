@@ -64,6 +64,8 @@ Extension modules
 Library
 -------
 
+- difflib.py has two new functions:  context_diff() and unified_diff().
+
 - More fixes to urllib (SF 549151): (a) When redirecting, always use
   GET.  This is common practice and more-or-less sanctioned by the
   HTTP standard. (b) Add a handler for 307 redirection, which becomes
