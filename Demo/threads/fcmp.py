@@ -9,7 +9,7 @@ def fringe( co, list ):
         if type(x) is type([]):
             fringe(co, x)
         else:
-            co.detach(x)
+            co.back(x)
 
 def printinorder( list ):
     co = Coroutine()
