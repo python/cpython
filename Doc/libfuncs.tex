@@ -87,16 +87,16 @@ exactly one argument.)
   \code{(math.floor(\var{a} / \var{b}), \var{a} \%{} \var{b})}.
 \end{funcdesc}
 
-\begin{funcdesc}{eval}{s\optional{\, globals\optional{\, locals}}}
+\begin{funcdesc}{eval}{expression\optional{\, globals\optional{\, locals}}}
   The arguments are a string and two optional dictionaries.  The
-  string argument is parsed and evaluated as a Python expression
-  (technically speaking, a condition list) using the dictionaries as
-  global and local name space.  The string must not contain null bytes
-  or newline characters.  The return value is the
-  result of the expression.  If the third argument is omitted it
-  defaults to the second.  If both dictionaries are omitted, the
+  \var{expression} argument is parsed and evaluated as a Python
+  expression (technically speaking, a condition list) using the
+  \var{globals} and \var{locals} dictionaries as global and local name
+  space.  If the \var{globals} dictionary is omitted it defaults to
+  the \var{locals} dictionary.  If both dictionaries are omitted, the
   expression is executed in the environment where \code{eval} is
-  called.  Syntax errors are reported as exceptions.  Example:
+  called.  The return value is the result of the evaluated expression.
+  Syntax errors are reported as exceptions.  Example:
 
 \bcode\begin{verbatim}
 >>> x = 1
@@ -111,8 +111,26 @@ exactly one argument.)
   passing \code{'eval'} to the \var{kind} argument.
 
   Note: dynamic execution of statements is supported by the
-  \code{exec} statement.
+  \code{exec} statement.  Execution of statements from a file is
+  supported by the \code{execfile()} function.
 
+\end{funcdesc}
+
+\begin{funcdesc}{execfile}{file\optional{\, globals\optional{\, locals}}}
+  This function is similar to the \code{eval()} function or the
+  \code{exec} statement, but parses a file instead of a string.  It is
+  different from the \code{import} statement in that it does not use
+  the module administration -- it reads the file unconditionally and
+  does not create a new module.
+
+  The arguments are a file name and two optional dictionaries.  The
+  file is parsed and evaluated as a sequence of Python statements
+  (similarly to a module) using the \var{globals} and \var{locals}
+  dictionaries as global and local name space.  If the \var{globals}
+  dictionary is omitted it defaults to the \var{locals} dictionary.
+  If both dictionaries are omitted, the expression is executed in the
+  environment where \code{execfile} is called.  The return value is
+  None.
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function\, list}
