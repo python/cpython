@@ -65,9 +65,11 @@ extern DL_IMPORT(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 #ifdef INTERN_STRINGS
 extern DL_IMPORT(void) PyString_InternInPlace(PyObject **);
 extern DL_IMPORT(PyObject *) PyString_InternFromString(const char *);
+extern DL_IMPORT(void) _Py_ReleaseInternedStrings(void);
 #else
 #define PyString_InternInPlace(p)
 #define PyString_InternFromString(cp) PyString_FromString(cp)
+#define _Py_ReleaseInternedStrings()
 #endif
 
 /* Macro, trading safety for speed */

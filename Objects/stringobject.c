@@ -3217,3 +3217,13 @@ PyString_Fini(void)
 	}
 #endif
 }
+
+#ifdef INTERN_STRINGS
+void _Py_ReleaseInternedStrings(void)
+{
+	if (interned) {
+		Py_DECREF(interned);
+		interned = NULL;
+	}
+}
+#endif /* INTERN_STRINGS */
