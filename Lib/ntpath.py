@@ -34,15 +34,20 @@ def isabs(s):
 	return s != '' and s[:1] in '/\\'
 
 
-# Join two pathnames.
-# Ignore the first part if the second part is absolute.
+# Join pathnames.
+# Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(a, b):
-	if isabs(b): return b
-	if a == '' or a[-1:] in '/\\': return a + b
-	# Note: join('x', '') returns 'x/'; is this what we want?
-	return a + os.sep + b
+def join(a, *p):
+	path = a
+	for b in p:
+		if isabs(b):
+			path = b
+		elif path == '' or path[-1:] in '/\\':
+			path = path + b
+		else:
+			path = path + os.sep + b
+	return path
 
 
 # Split a path in a drive specification (a drive letter followed by a
