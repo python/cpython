@@ -53,6 +53,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libsys.tex \
 	../lib/libfpectl.tex \
 	../lib/libgc.tex \
+	../lib/libweakref.tex \
 	../lib/libtypes.tex \
 	../lib/libtraceback.tex \
 	../lib/libpickle.tex \
