@@ -1440,7 +1440,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			digit zz = (digit) (z >> SHIFT);
 			carry += v->ob_digit[i+k] - z
 				+ ((twodigits)zz << SHIFT);
-			v->ob_digit[i+k] = carry & MASK;
+			v->ob_digit[i+k] = (digit)(carry & MASK);
 			carry = Py_ARITHMETIC_RIGHT_SHIFT(BASE_TWODIGITS_TYPE,
 							  carry, SHIFT);
 			carry -= zz;
@@ -1459,7 +1459,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			carry = 0;
 			for (i = 0; i < size_w && i+k < size_v; ++i) {
 				carry += v->ob_digit[i+k] + w->ob_digit[i];
-				v->ob_digit[i+k] = carry & MASK;
+				v->ob_digit[i+k] = (digit)(carry & MASK);
 				carry = Py_ARITHMETIC_RIGHT_SHIFT(
 						BASE_TWODIGITS_TYPE,
 						carry, SHIFT);
