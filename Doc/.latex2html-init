@@ -250,6 +250,32 @@ sub remove_general_markers {
     }
 }
 
+# In addition to the standard stuff, add label to allow named node files.
+sub do_cmd_tableofcontents {
+    local($_) = @_;
+    $tocfile = $CURRENT_FILE;
+    $TITLE = $toc_title;
+    &anchor_label("contents",$CURRENT_FILE,$_);	# this is added
+    join('', '<P>', &make_section_heading($toc_title, "H2"), $toc_mark, $_);
+}
+
+# In addition to the standard stuff, add label to allow named node files.
+sub do_cmd_listoffigures {
+    local($_) = @_;
+    $TITLE = $lof_title;
+    $loffile = $CURRENT_FILE;
+    &anchor_label("figures",$CURRENT_FILE,$_);	# this is added
+    join('', '<P>' , &make_section_heading($lof_title, "H2"), $lof_mark, $_);
+}  
+
+# In addition to the standard stuff, add label to allow named node files.
+sub do_cmd_listoftables {
+    local($_) = @_;
+    $TITLE = $lot_title;
+    $lotfile = $CURRENT_FILE;
+    &anchor_label("tables",$CURRENT_FILE,$_);	# this is added
+    join('', '<P>' , &make_section_heading($lot_title, "H2"), $lot_mark, $_);
+}
 
 # In addition to the standard stuff, add label to allow named node files.
 sub do_cmd_textohtmlinfopage {
