@@ -191,6 +191,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libcmpcache.tex \
 	../lib/libstatcache.tex \
 	../lib/libwave.tex \
+	../lib/libchunk.tex \
 	../lib/libcurses.tex \
 	../lib/libpipes.tex \
 	../lib/librlcompleter.tex \
