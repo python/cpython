@@ -35,18 +35,18 @@ def buildapplet():
 	# Ask for source text if not specified in sys.argv[1:]
 	
 	if not sys.argv[1:]:
-		srcfss, ok = macfs.PromptGetFile('Select Python source or applet:', 'TEXT', 'APPL')
-		if not ok:
+		filename = EasyDialogs.AskFileForOpen(message='Select Python source or applet:', 
+			fileTypes=('TEXT', 'APPL'))
+		if not filename:
 			return
-		filename = srcfss.as_pathname()
 		tp, tf = os.path.split(filename)
 		if tf[-3:] == '.py':
 			tf = tf[:-3]
 		else:
 			tf = tf + '.applet'
-		dstfss, ok = macfs.StandardPutFile('Save application as:', tf)
-		if not ok: return
-		dstfilename = dstfss.as_pathname()
+		dstfilename = EasyDialogs.AskFileForSave(message='Save application as:', 
+			savedFileName=tf)
+		if not dstfilename: return
 		cr, tp = MacOS.GetCreatorAndType(filename)
 		if tp == 'APPL':
 			buildtools.update(template, filename, dstfilename)
