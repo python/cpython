@@ -218,11 +218,12 @@ there is no matching header; and \code{len(\var{m})},
 \code{\var{m}.get(name\optional{, deafult})},
 \code{\var{m}.has_key(name)}, \code{\var{m}.keys()},
 \code{\var{m}.values()} \code{\var{m}.items()}, and
-\code{\var{m}.setdefault(name\optional{, default})} act as expected
-(and consistently).  \class{Message} instances also support the
-mapping writable interface \code{\var{m}[name] = value} and \code{del
-\var{m}[name]}.  \class{Message} objects do not support the
-\method{clear()}, \method{copy()}, \method{popitem()}, or
+\code{\var{m}.setdefault(name\optional{, default})} act as expected,
+with the one difference that \method{get()} and \method{setdefault()}
+use an empty string as the default value.  \class{Message} instances
+also support the mapping writable interface \code{\var{m}[name] =
+value} and \code{del \var{m}[name]}.  \class{Message} objects do not
+support the \method{clear()}, \method{copy()}, \method{popitem()}, or
 \method{update()} methods of the mapping interface.  (Support for
 \method{.get()} and \method{.setdefault()} was only added in Python
 2.2.)
