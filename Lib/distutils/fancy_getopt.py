@@ -304,7 +304,7 @@ class FancyGetopt:
             return self.option_order
 
 
-    def generate_help (header=None):
+    def generate_help (self, header=None):
         """Generate help text (a list of strings, one per suggested line of
         output) from the option table for this FancyGetopt object."""
 
@@ -388,7 +388,7 @@ class FancyGetopt:
 
     # generate_help ()
 
-    def print_help (self, file=None, header=None):
+    def print_help (self, header=None, file=None):
         if file is None:
             file = sys.stdout
         for line in self.generate_help (header):
