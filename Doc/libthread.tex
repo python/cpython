@@ -8,9 +8,9 @@ threads of control sharing their global data space.  For
 synchronization, simple locks (a.k.a.\ \dfn{mutexes} or \dfn{binary
 semaphores}) are provided.
 
-The module is optional and supported on SGI IRIX 4.x and 5.x and Sun
-Solaris 2.x systems, as well as on systems that have a PTHREAD
-implementation (e.g.\ KSR).
+The module is optional.  It is supported on Windows NT and '95, SGI
+IRIX, Solaris 2.x, as well as on systems that have a POSIX thread
+(a.k.a. ``pthread'') implementation.
 
 It defines the following constant and functions:
 
@@ -91,12 +91,28 @@ thread.  (When the \code{signal} module is available, interrupts
 always go to the main thread.)
 
 \item
-Calling \code{sys.exit()} or raising the \code{SystemExit} is
+Calling \code{sys.exit()} or raising the \code{SystemExit} exception is
 equivalent to calling \code{thread.exit_thread()}.
 
 \item
 Not all built-in functions that may block waiting for I/O allow other
 threads to run.  (The most popular ones (\code{sleep}, \code{read},
 \code{select}) work as expected.)
+
+\item
+It is not possible to interrupt the \code{acquire()} method on a lock
+-- the \code{KeyboardInterrupt} exception will happen after the lock
+has been acquired.
+
+\item
+When the main thread exits, it is system defined whether the other
+threads survive.  On SGI IRIX using the native thread implementation,
+they survive.  On most other systems, they are killed without
+executing ``try-finally'' clauses or executing object destructors.
+
+\item
+When the main thread exits, it doesn't do any of its usual cleanup
+(except that ``try-finally'' clauses are honored), and the standard
+I/O files are not flushed.
 
 \end{itemize}
