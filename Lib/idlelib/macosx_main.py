@@ -1,17 +1,31 @@
-#! /usr/bin/env python
+"""IDLE.app
+
+Installation:
+  see the install_IDLE target in python/dist/src/Mac/OSX/Makefile
+  
+Usage: 
+
+1. Double clicking IDLE icon will open IDLE.
+2. Dropping file on IDLE icon will open that file in IDLE.
+3. Launch from command line with files with this command-line:
+
+     /Applications/Python/IDLE.app/Contents/MacOS/python file1 file2 file3
+
+"""
 
 # Add IDLE.app/Contents/Resources/idlelib to path.
 # __file__ refers to this file when it is used as a module, sys.argv[0]
 # refers to this file when it is used as a script (pythonw macosx_main.py)
 import sys
-from os.path import split, join
+
+from os.path import split, join, isdir
 try:
     __file__
 except NameError:
     __file__ = sys.argv[0]
 idlelib = join(split(__file__)[0], 'idlelib')
-if os.path.isdir(idlelib):
-    sys.path.append(idlelib)
+if isdir(idlelib):
+  sys.path.append(idlelib)
 
 # Make sure True, False, bool() builtins exist.
 # - preserves 2.2 compatibility - 2.2.1 includes bool, 2.2 does not.
@@ -28,6 +42,5 @@ if '-p' in sys.argv:
     del sys, __file__, boolcheck, split, join
     __import__('run').main()
 else:
-    # start the application.
-    import PyShell
-    PyShell.main()
+    # Load idlelib/idle.py which starts the application.
+    import idle 

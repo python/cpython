@@ -2,6 +2,8 @@ import sys
 import time
 import socket
 
+import boolcheck
+
 import CallTips
 import RemoteDebugger
 import RemoteObjectBrowser
