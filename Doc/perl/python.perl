@@ -1288,6 +1288,17 @@ sub do_cmd_seerfc{
       . $_;
 }
 
+sub do_cmd_seeurl{
+    local($_) = @_;
+    my $url = next_argument();
+    my $text = next_argument();
+    return '<dl compact class="seeurl">'
+      . "\n    <dt><a href=\"$url\""
+      . "\n        class=\"url\">$url</a>"
+      . "\n    <dd>$text\n  </dl>"
+      . $_;
+}
+
 sub do_cmd_seetext{
     local($_) = @_;
     my $content = next_argument();
