@@ -172,6 +172,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libpyexpat.tex \
 	../lib/xmldom.tex \
 	../lib/xmldomminidom.tex \
+	../lib/xmldompulldom.tex \
 	../lib/xmlsax.tex \
 	../lib/xmlsaxhandler.tex \
 	../lib/xmlsaxutils.tex \
