@@ -693,7 +693,9 @@ C API
 
 - PyNumber_Check() now returns true for string and unicode objects.
   This is a result of these types having a partially defined
-  tp_as_number slot.
+  tp_as_number slot.  (This is not a feature, but an indication that
+  PyNumber_check() is not very useful to determine numeric behavior.
+  It may be deprecated.)
 
 - The string object's layout has changed: the pointer member
   ob_sinterned has been replaced by an int member ob_sstate.  On some
