@@ -784,32 +784,32 @@ Special read-only attributes: \code{start} is the lowerbound;
 \section{Special method names\label{specialnames}}
 
 A class can implement certain operations that are invoked by special
-syntax (such as arithmetic operations or subscripting and slicing) by defining
-methods with special names.  For instance, if a class defines a
-method named \method{__getitem__()}, and \code{x} is an instance of this
-class, then \code{x[i]} is equivalent to \code{x.__getitem__(i)}.
-(The reverse is not true --- if \code{x} is a list object,
-\code{x.__getitem__(i)} is not equivalent to \code{x[i]}.)
-Except where mentioned, attempts to execute an
+syntax (such as arithmetic operations or subscripting and slicing) by
+defining methods with special names.  For instance, if a class defines
+a method named \method{__getitem__()}, and \code{x} is an instance of
+this class, then \code{x[i]} is equivalent to
+\code{x.__getitem__(i)}.  (The reverse is not true --- if \code{x} is
+a list object, \code{x.__getitem__(i)} is not equivalent to
+\code{x[i]}.)  Except where mentioned, attempts to execute an
 operation raise an exception when no appropriate method is defined.
 \ttindex{__getitem__}
 
 
 \subsection{Basic customization\label{customization}}
 
-\begin{description}
-
-\item[{\tt __init__(self, [args...])}]
+\begin{methoddescni}{__init__}{self\optional{, args...}}
 Called when the instance is created.  The arguments are those passed
 to the class constructor expression.  If a base class has an
 \code{__init__} method the derived class's \code{__init__} method must
 explicitly call it to ensure proper initialization of the base class
-part of the instance, e.g., ``\code{BaseClass.__init__(self, [args...])}''.
+part of the instance, e.g., \samp{BaseClass.__init__(\var{self},
+[\var{args}...])}.
 \ttindex{__init__}
 \indexii{class}{constructor}
+\end{methoddescni}
 
 
-\item[{\tt __del__(self)}]
+\begin{methoddescni}{__del__}{self}
 Called when the instance is about to be destroyed.  This is also
 called a destructor\index{destructor}.  If a base class
 has a \method{__del__()} method, the derived class's \method{__del__()} method
@@ -841,20 +841,21 @@ latter two situations can be resolved by storing None in
 \code{sys.exc_traceback} or \code{sys.last_traceback}.
 
 \strong{Warning:} due to the precarious circumstances under which
-\code{__del__} methods are invoked, exceptions that occur during their
+\method{__del__()} methods are invoked, exceptions that occur during their
 execution are ignored, and a warning is printed to \code{sys.stderr}
-instead.  Also, when \code{__del__} is invoked is response to a module
+instead.  Also, when \method{__del__()} is invoked is response to a module
 being deleted (e.g., when execution of the program is done), other
-globals referenced by the \code{__del__} method may already have been
-deleted.  For this reason, \code{__del__} methods should do the
+globals referenced by the \method{__del__()} method may already have been
+deleted.  For this reason, \method{__del__()} methods should do the
 absolute minimum needed to maintain external invariants.  Python 1.5
 guarantees that globals whose name begins with a single underscore are
 deleted from their module before other globals are deleted; if no
 other references to such globals exist, this may help in assuring that
 imported modules are still available at the time when the
-\code{__del__} method is called. 
+\method{__del__()} method is called. 
+\end{methoddescni}
 
-\item[{\tt __repr__(self)}]
+\begin{methoddescni}{__repr__}{self}
 Called by the \function{repr()} built-in function and by string conversions
 (reverse quotes) to compute the ``official'' string representation of
 an object.  This should normally look like a valid Python expression
@@ -868,15 +869,16 @@ may be used instead.
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
 \index{back-quotes}
+\end{methoddescni}
 
-\item[{\tt __str__(self)}]
-Called by the \function{str()} built-in function and by the \keyword{print}
-statement to compute the ``informal'' string representation of an object.
+\begin{methoddescni}{__str__}{self}
+Called by the \function{str()}\bifuncindex{str} built-in function and
+by the \keyword{print}\stindex{print} statement to compute the
+``informal'' string representation of an object.
 \ttindex{__str__}
-\bifuncindex{str}
-\stindex{print}
+\end{methoddescni}
 
-\item[{\tt __cmp__(self, other)}]
+\begin{methoddescni}{__cmp__}{self, other}
 Called by all comparison operations.  Should return a negative integer if
 \code{self < other},  zero if \code{self == other}, a positive integer if
 \code{self > other}.  If no \method{__cmp__()} operation is defined, class
@@ -886,10 +888,11 @@ instances are compared by object identity (``address'').
 \ttindex{__cmp__}
 \bifuncindex{cmp}
 \index{comparisons}
+\end{methoddescni}
 
-\item[{\tt __hash__(self)}]
-Called for the key object for dictionary operations,
-and by the built-in function
+\begin{methoddescni}{__hash__}{self}
+Called for the key object for dictionary\obindex{dictionary}
+operations, and by the built-in function
 \function{hash()}\bifuncindex{hash}.  Should return a 32-bit integer
 usable as a hash value
 for dictionary operations.  The only required property is that objects
@@ -904,17 +907,18 @@ implements a \method{__cmp__()} method it should not implement
 \method{__hash__()}, since the dictionary implementation requires that
 a key's hash value is immutable (if the object's hash value changes, it
 will be in the wrong hash bucket).
-\obindex{dictionary}
 \ttindex{__cmp__}
 \ttindex{__hash__}
+\end{methoddescni}
 
-\item[__nonzero__(self)]
-Called to implement truth value testing; should return 0 or 1.  When
-this method is not defined, \code{__len__} is called, if it is defined
-(see below).  If a class defines neither \code{__len__} nor
-\code{__nonzero__}, all its instances are considered true.
-
-\end{description}
+\begin{methoddescni}{__nonzero__}{self}
+Called to implement truth value testing; should return \code{0} or
+\code{1}.  When this method is not defined, \method{__len__()} is
+called, if it is defined (see below).  If a class defines neither
+\method{__len__()} nor \method{__nonzero__()}, all its instances are
+considered true.
+\ttindex{__nonzero__}
+\end{methoddescni}
 
 
 \subsection{Customizing attribute access\label{attribute-access}}
@@ -926,61 +930,57 @@ For performance reasons, these methods are cached in the class object
 at class definition time; therefore, they cannot be changed after the
 class definition is executed.
 
-\begin{description}
-
-\item[{\tt __getattr__(self, name)}]
+\begin{methoddescni}{__getattr__}{self, name}
 Called when an attribute lookup has not found the attribute in the
 usual places (i.e. it is not an instance attribute nor is it found in
 the class tree for \code{self}).  \code{name} is the attribute name.
 This method should return the (computed) attribute value or raise an
-\code{AttributeError} exception.
+\exception{AttributeError} exception.
 \ttindex{__getattr__}
 
 Note that if the attribute is found through the normal mechanism,
-\code{__getattr__} is not called.  (This is an intentional asymmetry between
-\code{__getattr__} and \code{__setattr__}.)
+\method{__getattr__()} is not called.  (This is an intentional
+asymmetry between \method{__getattr__()} and \method{__setattr__()}.)
 This is done both for efficiency reasons and because otherwise
-\code{__setattr__} would have no way to access other attributes of the
-instance.
+\method{__setattr__()} would have no way to access other attributes of
+the instance.
 Note that at least for instance variables, you can fake
 total control by not inserting any values in the instance
 attribute dictionary (but instead inserting them in another object).
 \ttindex{__setattr__}
+\end{methoddescni}
 
-\item[{\tt __setattr__(self, name, value)}]
+\begin{methoddescni}{__setattr__}{self, name, value}
 Called when an attribute assignment is attempted.  This is called
-instead of the normal mechanism (i.e. store the value in the instance
-dictionary).  \code{name} is the attribute name, \code{value} is the
+instead of the normal mechanism (i.e.\ store the value in the instance
+dictionary).  \var{name} is the attribute name, \var{value} is the
 value to be assigned to it.
 \ttindex{__setattr__}
 
-If \code{__setattr__} wants to assign to an instance attribute, it
-should not simply execute ``\code{self.\var{name} = value}'' --- this would
-cause a recursive call to itself.  Instead, it should insert the value in the
-dictionary of instance attributes, e.g.,
-``\code{self.__dict__[name] = value}.''
+If \method{__setattr__()} wants to assign to an instance attribute, it 
+should not simply execute \samp{self.\var{name} = value} --- this
+would cause a recursive call to itself.  Instead, it should insert the
+value in the dictionary of instance attributes, e.g.,
+\samp{self.__dict__[\var{name}] = value}.
 \ttindex{__dict__}
+\end{methoddescni}
 
-\item[{\tt __delattr__(self, name)}]
-Like \code{__setattr__} but for attribute deletion instead of
+\begin{methoddescni}{__delattr__}{self, name}
+Like \method{__setattr__()} but for attribute deletion instead of
 assignment.
 \ttindex{__delattr__}
-
-\end{description}
+\end{methoddescni}
 
 
 \subsection{Emulating callable objects\label{callable-types}}
 
-\begin{description}
-
-\item[{\tt __call__(self, [args...])}]
+\begin{methoddescni}{__call__}{self\optional{, args...}}
 Called when the instance is ``called'' as a function; if this method
-is defined, \code{x(arg1, arg2, ...)} is a shorthand for
-\code{x.__call__(arg1, arg2, ...)}.
+is defined, \code{\var{x}(arg1, arg2, ...)} is a shorthand for
+\code{\var{x}.__call__(arg1, arg2, ...)}.
 \ttindex{__call__}
 \indexii{call}{instance}
-
-\end{description}
+\end{methoddescni}
 
 
 \subsection{Emulating sequence and mapping types\label{sequence-types}}
@@ -994,7 +994,7 @@ sequence, and the method \method{__getslice__()} (see below) should be
 defined.  It is also recommended that mappings provide methods
 \method{keys()}, \method{values()}, \method{items()},
 \method{has_key()}, \method{get()}, \method{clear()}, \method{copy()},
- and \method{update()} behaving similar to those for
+and \method{update()} behaving similar to those for
 Python's standard dictionary objects; mutable sequences should provide
 methods \method{append()}, \method{count()}, \method{index()},
 \method{insert()}, \method{pop()}, \method{remove()}, \method{reverse()}
@@ -1026,35 +1026,35 @@ multiplication (meaning repetition) by defining the methods
 \ttindex{__rmul__}
 \ttindex{__coerce__}
 
-\begin{description}
-
-\item[{\tt __len__(self)}]
-Called to implement the built-in function \function{len()}.  Should return
-the length of the object, an integer \code{>=} 0.  Also, an object
-that doesn't define a \method{__nonzero__()} method and
-whose \method{__len__()} method returns zero is considered to be false in a
-Boolean context.
+\begin{methoddescni}{__len__}{self}
+Called to implement the built-in function
+\function{len()}\bifuncindex{len}.  Should return the length of the
+object, an integer \code{>=} 0.  Also, an object that doesn't define a
+\method{__nonzero__()} method and whose \method{__len__()} method
+returns zero is considered to be false in a Boolean context.
 \ttindex{__len__}
 \ttindex{__nonzero__}
+\end{methoddescni}
 
-\item[{\tt __getitem__(self, key)}]
-Called to implement evaluation of \code{self[key]}.
+\begin{methoddescni}{__getitem__}{self, key}
+Called to implement evaluation of \code{\var{self}[\var{key}]}.
 For a sequence types, the accepted keys should be integers.  Note that the
 special interpretation of negative indices (if the class wishes to
 emulate a sequence type) is up to the \method{__getitem__()} method.
 \ttindex{__getitem__}
+\end{methoddescni}
 
-\item[{\tt __setitem__(self, key, value)}]
-Called to implement assignment to \code{self[key]}.  Same note as for
-\method{__getitem__()}.
+\begin{methoddescni}{__setitem__}{self, key, value}
+Called to implement assignment to \code{\var{self}[\var{key}]}.  Same
+note as for \method{__getitem__()}.
 \ttindex{__setitem__}
+\end{methoddescni}
 
-\item[{\tt __delitem__(self, key)}]
-Called to implement deletion of \code{self[key]}.  Same note as for
-\method{__getitem__()}.
+\begin{methoddescni}{__delitem__}{self, key}
+Called to implement deletion of \code{\var{self}[\var{key}]}.  Same
+note as for \method{__getitem__()}.
 \ttindex{__delitem__}
-
-\end{description}
+\end{methoddescni}
 
 
 \subsection{Additional methods for emulation of sequence types%
@@ -1065,28 +1065,28 @@ objects.  Immutable sequences methods should only define
 \method{__getslice__()}; mutable sequences, should define all three
 three methods.
 
-\begin{description}
-
-\item[{\tt __getslice__(self, i, j)}]
-Called to implement evaluation of \code{self[i:j]}.  The returned
-object should be of the same type as \code{self}.  Note that missing
-\var{i} or \var{j} in the slice expression are replaced by zero or
-\code{sys.maxint}, respectively, and no further transformations on the
-indices is performed.  The interpretation of negative indices and
-indices larger than the length of the sequence is up to the method.
+\begin{methoddescni}{__getslice__}{self, i, j}
+Called to implement evaluation of \code{\var{self}[\var{i}:\var{j}]}.
+The returned object should be of the same type as \var{self}.  Note
+that missing \var{i} or \var{j} in the slice expression are replaced
+by zero or \code{sys.maxint}, respectively, and no further
+transformations on the indices is performed.  The interpretation of
+negative indices and indices larger than the length of the sequence is
+up to the method.
 \ttindex{__getslice__}
+\end{methoddescni}
 
-\item[{\tt __setslice__(self, i, j, sequence)}]
-Called to implement assignment to \code{self[i:j]}.  Same notes for
-\var{i} and \var{j} as for \method{__getslice__()}.
+\begin{methoddescni}{__setslice__}{self, i, j, sequence}
+Called to implement assignment to \code{\var{self}[\var{i}:\var{j}]}.
+Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
 \ttindex{__setslice__}
+\end{methoddescni}
 
-\item[{\tt __delslice__(self, i, j)}]
-Called to implement deletion of \code{self[i:j]}.  Same notes for
-\var{i} and \var{j} as for \method{__getslice__()}.
+\begin{methoddescni}{__delslice__}{self, i, j}
+Called to implement deletion of \code{\var{self}[\var{i}:\var{j}]}.
+Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
 \ttindex{__delslice__}
-
-\end{description}
+\end{methoddescni}
 
 Notice that these methods are only invoked when a single slice with a
 single colon is used.  For slice operations involving extended slice
@@ -1100,31 +1100,30 @@ Methods corresponding to operations that are not supported by the
 particular kind of number implemented (e.g., bitwise operations for
 non-integral numbers) should be left undefined.
 
-\begin{description}
-
-\item[{\tt __add__(self, other)}]\itemjoin
-\item[{\tt __sub__(self, other)}]\itemjoin
-\item[{\tt __mul__(self, other)}]\itemjoin
-\item[{\tt __div__(self, other)}]\itemjoin
-\item[{\tt __mod__(self, other)}]\itemjoin
-\item[{\tt __divmod__(self, other)}]\itemjoin
-\item[{\tt __pow__(self, other \optional{, modulo})}]\itemjoin
-\item[{\tt __lshift__(self, other)}]\itemjoin
-\item[{\tt __rshift__(self, other)}]\itemjoin
-\item[{\tt __and__(self, other)}]\itemjoin
-\item[{\tt __xor__(self, other)}]\itemjoin
-\item[{\tt __or__(self, other)}]\itembreak
+\begin{methoddescni}{__add__}{self, other}
+\methodlineni{__sub__}{self, other}
+\methodlineni{__mul__}{self, other}
+\methodlineni{__div__}{self, other}
+\methodlineni{__mod__}{self, other}
+\methodlineni{__divmod__}{self, other}
+\methodlineni{__pow__}{self, other\optional{, modulo}}
+\methodlineni{__lshift__}{self, other}
+\methodlineni{__rshift__}{self, other}
+\methodlineni{__and__}{self, other}
+\methodlineni{__xor__}{self, other}
+\methodlineni{__or__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
-\code{-}, \code{*}, \code{/}, \code{\%}, \function{divmod()}, \function{pow()},
-\code{**},
-\code{<<}, \code{>>}, \code{\&}, \code{\^}, \code{|}).
-For instance, to evaluate the expression \var{x}\code{+}\var{y}, where 
-\var{x} is an instance of a class that has an \method{__add__()}
-method, \code{\var{x}.__add__(\var{y})} is called.
-Note that \function{__pow__()} should be defined to accept an optional 
-third argument if the ternary version of the built-in \function{pow()} 
-function is to be supported.
+\code{-}, \code{*}, \code{/}, \code{\%},
+\function{divmod()}\bifuncindex{divmod},
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<}, \code{>>},
+\code{\&}, \code{\^}, \code{|}).  For instance, to evaluate the
+expression \var{x}\code{+}\var{y}, where \var{x} is an instance of a
+class that has an \method{__add__()} method,
+\code{\var{x}.__add__(\var{y})} is called.  Note that
+\method{__pow__()} should be defined to accept an optional third
+argument if the ternary version of the built-in
+\function{pow()}\bifuncindex{pow} function is to be supported.
 \ttindex{__or__}
 \ttindex{__xor__}
 \ttindex{__and__}
@@ -1137,31 +1136,32 @@ function is to be supported.
 \ttindex{__mul__}
 \ttindex{__sub__}
 \ttindex{__add__}
+\end{methoddescni}
 
-\item[{\tt __radd__(self, other)}]\itemjoin
-\item[{\tt __rsub__(self, other)}]\itemjoin
-\item[{\tt __rmul__(self, other)}]\itemjoin
-\item[{\tt __rdiv__(self, other)}]\itemjoin
-\item[{\tt __rmod__(self, other)}]\itemjoin
-\item[{\tt __rdivmod__(self, other)}]\itemjoin
-\item[{\tt __rpow__(self, other)}]\itemjoin
-\item[{\tt __rlshift__(self, other)}]\itemjoin
-\item[{\tt __rrshift__(self, other)}]\itemjoin
-\item[{\tt __rand__(self, other)}]\itemjoin
-\item[{\tt __rxor__(self, other)}]\itemjoin
-\item[{\tt __ror__(self, other)}]\itembreak
+\begin{methoddescni}{__radd__}{self, other}
+\methodlineni{__rsub__}{self, other}
+\methodlineni{__rmul__}{self, other}
+\methodlineni{__rdiv__}{self, other}
+\methodlineni{__rmod__}{self, other}
+\methodlineni{__rdivmod__}{self, other}
+\methodlineni{__rpow__}{self, other}
+\methodlineni{__rlshift__}{self, other}
+\methodlineni{__rrshift__}{self, other}
+\methodlineni{__rand__}{self, other}
+\methodlineni{__rxor__}{self, other}
+\methodlineni{__ror__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
-\code{-}, \code{*}, \code{/}, \code{\%}, \function{divmod()}, \function{pow()},
-\code{**},
-\code{<<}, \code{>>}, \code{\&}, \code{\^}, \code{|}) with reversed operands.
-These functions are only called if the left operand does not support
-the corresponding operation.
-For instance, to evaluate the expression \var{x}\code{-}\var{y}, where 
-\var{y} is an instance of a class that has an \method{__rsub__()}
-method, \code{\var{y}.__rsub__(\var{x})} is called.
-Note that ternary \function{pow()} will not try calling
-\method{__rpow__()} (the coercion rules would become too
+\code{-}, \code{*}, \code{/}, \code{\%},
+\function{divmod()}\bifuncindex{divmod},
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<}, \code{>>},
+\code{\&}, \code{\^}, \code{|}) with reversed operands.  These
+functions are only called if the left operand does not support the
+corresponding operation.  For instance, to evaluate the expression
+\var{x}\code{-}\var{y}, where \var{y} is an instance of a class that
+has an \method{__rsub__()} method, \code{\var{y}.__rsub__(\var{x})} is
+called.  Note that ternary \function{pow()}\bifuncindex{pow} will not
+try calling \method{__rpow__()} (the coercion rules would become too
 complicated).
 \ttindex{__or__}
 \ttindex{__xor__}
@@ -1175,44 +1175,52 @@ complicated).
 \ttindex{__mul__}
 \ttindex{__sub__}
 \ttindex{__add__}
+\end{methoddescni}
 
-\item[{\tt __neg__(self)}]\itemjoin
-\item[{\tt __pos__(self)}]\itemjoin
-\item[{\tt __abs__(self)}]\itemjoin
-\item[{\tt __invert__(self)}]\itembreak
+\begin{methoddescni}{__neg__}{self}
+\methodlineni{__pos__}{self}
+\methodlineni{__abs__}{self}
+\methodlineni{__invert__}{self}
 Called to implement the unary arithmetic operations (\code{-}, \code{+},
-\function{abs()} and \code{~}).
+\function{abs()}\bifuncindex{abs} and \code{~}).
 \ttindex{__invert__}
 \ttindex{__abs__}
 \ttindex{__pos__}
 \ttindex{__neg__}
+\end{methoddescni}
 
-\item[{\tt __int__(self)}]\itemjoin
-\item[{\tt __long__(self)}]\itemjoin
-\item[{\tt __float__(self)}]\itembreak
-Called to implement the built-in functions \function{int()}, \function{long()}
-and \function{float()}.  Should return a value of the appropriate type.
+\begin{methoddescni}{__int__}{self}
+\methodlineni{__long__}{self}
+\methodlineni{__float__}{self}
+Called to implement the built-in functions
+\function{int()}\bifuncindex{int}, \function{long()}\bifuncindex{long} 
+and \function{float()}\bifuncindex{float}.  Should return a value of
+the appropriate type.
 \ttindex{__float__}
 \ttindex{__long__}
 \ttindex{__int__}
+\end{methoddescni}
 
-\item[{\tt __oct__(self)}]\itemjoin
-\item[{\tt __hex__(self)}]\itembreak
-Called to implement the built-in functions \function{oct()} and
-\function{hex()}.  Should return a string value.
+\begin{methoddescni}{__oct__}{self}
+\methodlineni{__hex__}{self}
+Called to implement the built-in functions
+\function{oct()}\bifuncindex{oct} and
+\function{hex()}\bifuncindex{hex}.  Should return a string value.
 \ttindex{__hex__}
 \ttindex{__oct__}
+\end{methoddescni}
 
-\item[{\tt __coerce__(self, other)}]
+\begin{methoddescni}{__coerce__}{self, other}
+\ttindex{__coerce__}
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
-return a 2-tuple containing \code{self} and \code{other} converted to
+return a 2-tuple containing \var{self} and \var{other} converted to
 a common numeric type, or \code{None} if conversion is possible.  When
 the common type would be the type of \code{other}, it is sufficient to
 return \code{None}, since the interpreter will also ask the other
 object to attempt a coercion (but sometimes, if the implementation of
 the other type cannot be changed, it is useful to do the conversion to
 the other type here).
-\ttindex{__coerce__}
+\end{methoddescni}
 
 \strong{Coercion rules}: to evaluate \var{x} \var{op} \var{y}, the
 following steps are taken (where \method{__op__()} and
@@ -1281,5 +1289,3 @@ instance.
 	\end{itemize}
 
 \end{itemize}
-
-\end{description}
