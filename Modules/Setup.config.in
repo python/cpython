@@ -9,29 +9,5 @@
 # Threading
 @USE_THREAD_MODULE@thread threadmodule.c
 
-# You may want the following to be built as statically loaded modules;
-# comment out the *shared* line in that case:
-
-*shared*
-
-# Readline
-@USE_READLINE_MODULE@readline readline.c -lreadline -ltermcap
-
-# The ncurses library, under Linux
-@USE_NCURSES_MODULE@_curses _cursesmodule.c -lncurses -ltermcap
-
-# bsddb(3) module enabled by --with-libdb or presence of db.h
-@USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@
-
-# dbm(3) may require -lndbm or similar
-@USE_DBM_MODULE@dbm dbmmodule.c @HAVE_LIBNDBM@
-
-# ndbm(3) may require -lndbm or similar
-@USE_NDBM_MODULE@ndbm ndbmmodule.c @HAVE_LIBNDBM@
-
-# gdbm(3) may require -lgdbm or similar
-@USE_GDBM_MODULE@gdbm gdbmmodule.c @HAVE_LIBGDBM@
-
-# crypt(3) may require -lcrypt or similar
-@USE_CRYPT_MODULE@crypt cryptmodule.c @HAVE_LIBCRYPT@
-
+# The rest of the modules previously listed in this file are built
+# by the setup.py script in Python 2.1.
