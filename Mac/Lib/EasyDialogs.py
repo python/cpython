@@ -18,7 +18,7 @@ import Qd
 import QuickDraw
 import Dlg,Win,Evt,Events # sdm7g
 
-def Message(msg):
+def Message(msg, id=256):
 	"""Display a MESSAGE string.
 	
 	Return when the user clicks the OK button or presses Return.
@@ -26,7 +26,6 @@ def Message(msg):
 	The MESSAGE string can be at most 255 characters long.
 	"""
 	
-	id = 256
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "Can't get DLOG resource with id =", id
@@ -40,7 +39,7 @@ def Message(msg):
 			return
 
 
-def AskString(prompt, default = ""):
+def AskString(prompt, default = "", id=257):
 	"""Display a PROMPT string and a text entry field with a DEFAULT string.
 	
 	Return the contents of the text entry field when the user clicks the
@@ -73,7 +72,7 @@ def AskString(prompt, default = ""):
 		if n == 2: return None
 
 
-def AskYesNoCancel(question, default = 0):
+def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258):
 ##	"""Display a QUESTION string which can be answered with Yes or No.
 ##	
 ##	Return 1 when the user clicks the Yes button.
@@ -86,7 +85,6 @@ def AskYesNoCancel(question, default = 0):
 ##	The QUESTION strign ca be at most 255 characters.
 ##	"""
 	
-	id = 258
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "Can't get DLOG resource with id =", id
@@ -99,6 +97,15 @@ def AskYesNoCancel(question, default = 0):
 	# The question string is item 5
 	tp, h, rect = d.GetDialogItem(5)
 	SetDialogItemText(h, question)
+	if yes != None:
+		tp, h, rect = d.GetDialogItem(2)
+		h.as_Control().SetControlTitle(yes)
+	if no != None:
+		tp, h, rect = d.GetDialogItem(3)
+		h.as_Control().SetControlTitle(no)
+	if cancel != None:
+		tp, h, rect = d.GetDialogItem(4)
+		h.as_Control().SetControlTitle(cancel)
 	d.SetDialogCancelItem(4)
 	if default == 1:
 		d.SetDialogDefaultItem(2)
@@ -122,10 +129,10 @@ screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 
 				
 class ProgressBar:
-	def __init__(self, title="Working...", maxval=100, label=""):
+	def __init__(self, title="Working...", maxval=100, label="", id=259):
 		self.maxval = maxval
 		self.curval = -1
-		self.d = GetNewDialog(259, -1)
+		self.d = GetNewDialog(id, -1)
 		self.title(title)
 		self.label(label)
 		self._update(0)
@@ -206,6 +213,7 @@ def test():
 
 	Message("Testing EasyDialogs.")
 	ok = AskYesNoCancel("Do you want to proceed?")
+	ok = AskYesNoCancel("Do you want to identify?", yes="Indentify", no="Don't identify")
 	if ok > 0:
 		s = AskString("Enter your first name")
 		Message("Thank you,\015%s" % `s`)
