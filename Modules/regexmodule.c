@@ -1,12 +1,11 @@
 /*
-XXX support translate table
 XXX support range parameter on search
 XXX support mstop parameter on search
 */
 
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -43,8 +42,9 @@ typedef struct {
 	OB_HEAD
 	struct re_pattern_buffer re_patbuf; /* The compiled expression */
 	struct re_registers re_regs; /* The registers from the last match */
-	int re_regs_valid;	/* Nonzero if the registers are valid */
 	char re_fastmap[256];	/* Storage for fastmap */
+	object *re_translate;	/* String object for translate table */
+	object *re_lastok;	/* String object last matched/searched */
 } regexobject;
 
 /* Regex object methods */
@@ -53,6 +53,8 @@ static void
 reg_dealloc(re)
 	regexobject *re;
 {
+	XDECREF(re->re_translate);
+	XDECREF(re->re_lastok);
 	XDEL(re->re_patbuf.buffer);
 	XDEL(re->re_patbuf.translate);
 	DEL(re);
@@ -66,15 +68,12 @@ makeresult(regs)
 	if (v != NULL) {
 		int i;
 		for (i = 0; i < RE_NREGS; i++) {
-			object *w, *u;
-			if (	(w = newtupleobject(2)) == NULL ||
-				(u = newintobject(regs->start[i])) == NULL ||
-				settupleitem(w, 0, u) != 0 ||
-				(u = newintobject(regs->end[i])) == NULL ||
-				settupleitem(w, 1, u) != 0) {
-				XDECREF(w);
-				DECREF(v);
-				return NULL;
+			object *w;
+			w = mkvalue("(ii)", regs->start[i], regs->end[i]);
+			if (w == NULL) {
+				XDECREF(v);
+				v = NULL;
+				break;
 			}
 			settupleitem(v, i, w);
 		}
@@ -87,30 +86,37 @@ reg_match(re, args)
 	regexobject *re;
 	object *args;
 {
+	object *argstring;
 	char *buffer;
 	int size;
 	int offset;
 	int result;
-	if (getargs(args, "s#", &buffer, &size)) {
+	if (getargs(args, "S", &argstring)) {
 		offset = 0;
 	}
 	else {
 		err_clear();
-		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
+		if (!getargs(args, "(Si)", &argstring, &offset))
 			return NULL;
-		if (offset < 0 || offset > size) {
-			err_setstr(RegexError, "match offset out of range");
-			return NULL;
-		}
 	}
-	re->re_regs_valid = 0;
+	buffer = getstringvalue(argstring);
+	size = getstringsize(argstring);
+	if (offset < 0 || offset > size) {
+		err_setstr(RegexError, "match offset out of range");
+		return NULL;
+	}
+	XDECREF(re->re_lastok);
+	re->re_lastok = NULL;
 	result = re_match(&re->re_patbuf, buffer, size, offset, &re->re_regs);
 	if (result < -1) {
 		/* Failure like stack overflow */
 		err_setstr(RegexError, "match failure");
 		return NULL;
 	}
-	re->re_regs_valid = result >= 0;
+	if (result >= 0) {
+		INCREF(argstring);
+		re->re_lastok = argstring;
+	}
 	return newintobject((long)result); /* Length of the match or -1 */
 }
 
@@ -119,30 +125,34 @@ reg_search(re, args)
 	regexobject *re;
 	object *args;
 {
+	object *argstring;
 	char *buffer;
 	int size;
 	int offset;
 	int range;
 	int result;
 	
-	if (getargs(args, "s#", &buffer, &size)) {
+	if (getargs(args, "S", &argstring)) {
 		offset = 0;
 	}
 	else {
 		err_clear();
-		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
+		if (!getargs(args, "(Si)", &argstring, &offset))
 			return NULL;
-		if (offset < 0 || offset > size) {
-			err_setstr(RegexError, "search offset out of range");
-			return NULL;
-		}
+	}
+	buffer = getstringvalue(argstring);
+	size = getstringsize(argstring);
+	if (offset < 0 || offset > size) {
+		err_setstr(RegexError, "search offset out of range");
+		return NULL;
 	}
 	/* NB: In Emacs 18.57, the documentation for re_search[_2] and
 	   the implementation don't match: the documentation states that
 	   |range| positions are tried, while the code tries |range|+1
 	   positions.  It seems more productive to believe the code! */
 	range = size - offset;
-	re->re_regs_valid = 0;
+	XDECREF(re->re_lastok);
+	re->re_lastok = NULL;
 	result = re_search(&re->re_patbuf, buffer, size, offset, range,
 			   &re->re_regs);
 	if (result < -1) {
@@ -150,13 +160,58 @@ reg_search(re, args)
 		err_setstr(RegexError, "match failure");
 		return NULL;
 	}
-	re->re_regs_valid = result >= 0;
+	if (result >= 0) {
+		INCREF(argstring);
+		re->re_lastok = argstring;
+	}
 	return newintobject((long)result); /* Position of the match or -1 */
+}
+
+static object *
+reg_substring(re, args)
+	regexobject *re;
+	object *args;
+{
+	int i, a, b;
+	if (args != NULL && is_tupleobject(args)) {
+		int n = gettuplesize(args);
+		object *res = newtupleobject(n);
+		if (res == NULL)
+			return NULL;
+		for (i = 0; i < n; i++) {
+			object *v = reg_substring(re, gettupleitem(args, i));
+			if (v == NULL) {
+				DECREF(res);
+				return NULL;
+			}
+			settupleitem(res, i, v);
+		}
+		return res;
+	}
+	if (!getargs(args, "i", &i))
+		return NULL;
+	if (i < 0 || i >= RE_NREGS) {
+		err_setstr(RegexError, "substring() index out of range");
+		return NULL;
+	}
+	if (re->re_lastok == NULL) {
+		err_setstr(RegexError,
+		    "substring() only valid after successful match/search");
+		return NULL;
+	}
+	a = re->re_regs.start[i];
+	b = re->re_regs.end[i];
+	if (a < 0 || b < 0) {
+		INCREF(None);
+		return None;
+	}
+	return newsizedstringobject(getstringvalue(re->re_lastok)+a, b-a);
 }
 
 static struct methodlist reg_methods[] = {
 	{"match",	reg_match},
 	{"search",	reg_search},
+	{"substring",	reg_substring},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -166,12 +221,21 @@ reg_getattr(re, name)
 	char *name;
 {
 	if (strcmp(name, "regs") == 0) {
-		if (!re->re_regs_valid) {
+		if (re->re_lastok == NULL) {
 			err_setstr(RegexError,
 			  "regs only valid after successful match/search");
 			return NULL;
 		}
 		return makeresult(&re->re_regs);
+	}
+	if (strcmp(name, "last") == 0) {
+		if (re->re_lastok == NULL) {
+			err_setstr(RegexError,
+			  "last only valid after successful match/search");
+			return NULL;
+		}
+		INCREF(re->re_lastok);
+		return re->re_lastok;
 	}
 	return findmethod(reg_methods, (object *)re, name);
 }
@@ -192,19 +256,30 @@ static typeobject Regextype = {
 };
 
 static object *
-newregexobject(pat, size)
+newregexobject(pat, size, translate)
 	char *pat;
 	int size;
+	object *translate;
 {
 	regexobject *re;
+	if (translate != NULL && getstringsize(translate) != 256) {
+		err_setstr(RegexError,
+			   "translation table must be 256 bytes");
+		return NULL;
+	}
 	re = NEWOBJ(regexobject, &Regextype);
 	if (re != NULL) {
 		char *error;
 		re->re_patbuf.buffer = NULL;
 		re->re_patbuf.allocated = 0;
 		re->re_patbuf.fastmap = re->re_fastmap;
-		re->re_patbuf.translate = NULL;
-		re->re_regs_valid = 0;
+		if (translate)
+			re->re_patbuf.translate = getstringvalue(translate);
+		else
+			re->re_patbuf.translate = NULL;
+		XINCREF(translate);
+		re->re_translate = translate;
+		re->re_lastok = NULL;
 		error = re_compile_pattern(pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			err_setstr(RegexError, error);
@@ -222,9 +297,13 @@ regex_compile(self, args)
 {
 	char *pat;
 	int size;
-	if (!getargs(args, "s#", &pat, &size))
-		return NULL;
-	return newregexobject(pat, size);
+	object *tran = NULL;
+	if (!getargs(args, "s#", &pat, &size)) {
+		err_clear();
+		if (!getargs(args, "(s#S)", &pat, &size, &tran))
+			return NULL;
+	}
+	return newregexobject(pat, size, tran);
 }
 
 static object *cache_pat;
@@ -253,7 +332,7 @@ regex_match(self, args)
 	object *args;
 {
 	object *pat, *string;
-	if (!getStrStrarg(args, &pat, &string))
+	if (!getargs(args, "(SS)", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
@@ -266,7 +345,7 @@ regex_search(self, args)
 	object *args;
 {
 	object *pat, *string;
-	if (!getStrStrarg(args, &pat, &string))
+	if (!getargs(args, "(SS)", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
