@@ -275,9 +275,6 @@ class IMAP4:
 
 		(typ, [data]) = <instance>.list(user, password)
 		"""
-		if not 'AUTH=LOGIN' in self.capabilities \
-		and not 'AUTH-LOGIN' in self.capabilities:
-			raise self.error("server doesn't allow LOGIN authorisation")
 		typ, dat = self._simple_command('LOGIN', user, password)
 		if typ != 'OK':
 			raise self.error(dat)
