@@ -9,7 +9,9 @@ static char RCSId[]
 #ifdef COMPILED_FROM_DSP
 #  include "winconfig.h"
 #else
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
+#endif
 #endif /* ndef COMPILED_FROM_DSP */
 
 #include "xmlrole.h"

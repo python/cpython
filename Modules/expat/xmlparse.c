@@ -9,7 +9,9 @@ See the file COPYING for copying permission.
 #  include "expat.h"
 #  undef XMLPARSEAPI
 #else
+#ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
 
 #ifdef __declspec
 #  define XMLPARSEAPI(type) __declspec(dllexport) type __cdecl
