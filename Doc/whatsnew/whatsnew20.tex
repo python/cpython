@@ -30,6 +30,29 @@ impossible, but they're certainly significant.  Consult the
 publicly-available CVS logs if you want to see the full list.
 
 % ======================================================================
+\section{What About Python 1.6?}
+
+Python 1.6 can be thought of as the Contractual Obligations Python
+release.  After the core development team left CNRI in May 2000, CNRI
+requested that a 1.6 release be created, containing all the work on
+Python that had been performed at CNRI.  Python 1.6 therefore
+represents the state of the CVS tree as of May 2000, with the most
+significant new feature being Unicode support.  Development continued
+after May, of course, so the 1.6 tree received a few fixes to ensure
+that it's forward-compatible with Python 2.0.  1.6 is therefore part
+of Python's evolution, and not a side branch.
+
+So, should you take much interest in Python 1.6?  Probably not.  The
+1.6final and 2.0beta1 releases were made on the same day (September 5,
+2000), the plan being to finalize Python 2.0 within a month or so.  If
+you have applications to maintain, there seems little point in
+breaking things by moving to 1.6, fixing them, and then having another
+round of breakage within a month by moving to 2.0; you're better off
+just going straight to 2.0.  Most of the really interesting features
+described in this document are only in 2.0, because a lot of work was
+done between May and September.  
+
+% ======================================================================
 \section{Unicode}
 
 The largest new feature in Python 2.0 is a new fundamental data type:
@@ -528,6 +551,11 @@ def f():
 f()
 \end{verbatim}
 
+Two new exceptions, \exception{TabError} and
+\exception{IndentationError}, have been introduced.  They're both
+subclasses of \exception{SyntaxError}, and are raised when Python code
+is found to be improperly indented.
+
 \subsection{Changes to Built-in Functions}
 
 A new built-in, \function{zip(\var{seq1}, \var{seq2}, ...)}, has been
@@ -569,14 +597,22 @@ else:
 
 can be reduced to a single \code{return dict.setdefault(key, [])} statement.
 
+The interpreter sets a maximum recursion depth in order to catch
+runaway recursion before filling the C stack and causing a core dump
+or GPF..  Previously this limit was fixed when you compiled Python,
+but in 2.0 the maximum recursion depth can be read and modified using
+\function{sys.getrecursionlimit} and \function{sys.setrecursionlimit}.
+The default value is 1000, and a rough maximum value for a given
+platform can be found by running a new script,
+\file{Misc/find_recursionlimit.py}.
 
 % ======================================================================
 \section{Porting to 2.0}
 
 New Python releases try hard to be compatible with previous releases,
 and the record has been pretty good.  However, some changes are
-considered useful enough, often fixing initial design decisions that
-turned to be actively mistaken, that breaking backward compatibility
+considered useful enough, usually because they fix initial design decisions that
+turned out to be actively mistaken, that breaking backward compatibility
 can't always be avoided.  This section lists the changes in Python 2.0
 that may cause old Python code to break.
 
@@ -612,6 +648,16 @@ stricter checking.  GvR backed out the changes in the face of public
 reaction, so for the \module{socket} module, the documentation was
 fixed and the multiple argument form is simply marked as deprecated;
 it \emph{will} be tightened up again in a future Python version.
+
+The \code{\e x} escape in string literals now takes exactly 2 hex
+digits.  Previously it would consume all the hex digits following the
+'x' and take the lowest 8 bits of the result, so \code{\e x123456} was
+equivalent to \code{\e x56}.
+
+The \exception{AttributeError} exception has a more friendly error message,
+whose text will be something like \code{'Spam' instance has no attribute 'eggs'}.
+Previously the error message was just the missing attribute name \code{eggs}, and 
+code written to take advantage of this fact will break in 2.0.
 
 Some work has been done to make integers and long integers a bit more
 interchangeable.  In 1.5.2, large-file support was added for Solaris,
@@ -719,6 +765,13 @@ contributed by Yakov Markovitch.
 Python 2.0's source now uses only ANSI C prototypes, so compiling Python now
 requires an ANSI C compiler, and can no longer be done using a compiler that
 only supports K\&R C.  
+
+Previously the Python virtual machine used 16-bit numbers in its
+bytecode, limiting the size of source files.  In particular, this
+affected the maximum size of literal lists and dictionaries in Python
+source; occasionally people who are generating Python code would run into this limit.
+A patch by Charles G. Waldman raises the limit from \verb|2^16| to \verb|2^{32}|.
+
 
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
