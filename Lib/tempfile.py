@@ -32,7 +32,7 @@ def gettempdir():
         import macfs, MACFS
         try:
              refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk,
-                                              MACFS.kTemporaryFolderType, 0)
+                                              MACFS.kTemporaryFolderType, 1)
              dirname = macfs.FSSpec((refnum, dirid, '')).as_pathname()
              attempdirs.insert(0, dirname)
         except macfs.error:
