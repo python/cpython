@@ -847,12 +847,29 @@ data extractors when used with \function{map()} or
 
 % XXX sre is now non-recursive.
 
+\item The \module{threading} module now has an elegantly simple way to support 
+thread-local data.  The module contains a \class{local} class whose
+attribute values are local to different threads.
+
+\begin{verbatim}
+import threading
+
+data = threading.local()
+data.number = 42
+data.url = ('www.python.org', 80)
+\end{verbatim}
+
+Other threads can assign and retrieve their own values for the
+\member{number} and \member{url} attributes.  You can subclass
+\class{local} to initialize attributes or to add methods.
+(Contributed by Jim Fulton.)
+
 \item The \module{weakref} module now supports a wider variety of objects
    including Python functions, class instances, sets, frozensets, deques,
    arrays, files, sockets, and regular expression pattern objects.
 
 \item The \module{xmlrpclib} module now supports a multi-call extension for 
-tranmitting multiple XML-RPC calls in a single HTTP operation.
+transmitting multiple XML-RPC calls in a single HTTP operation.
    
 \end{itemize}
 
