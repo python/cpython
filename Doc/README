@@ -4,8 +4,8 @@ started.
 
 The following are the important latex source files:
 
-	tut.tex		A tutorial
-	mod.tex		The library reference
+	tut.tex				A tutorial
+	lib.tex, lib[1-5].tex		The library reference
 
 They both read the style option file "myformat.sty".
 
