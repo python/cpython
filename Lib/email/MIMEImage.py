@@ -13,17 +13,17 @@ import Encoders
 
 
 
-class Image(MIMEBase.MIMEBase):
+class MIMEImage(MIMEBase.MIMEBase):
     """Class for generating image/* type MIME documents."""
 
-    def __init__(self, _imagedata, _minor=None,
+    def __init__(self, _imagedata, _subtype=None,
                  _encoder=Encoders.encode_base64, **_params):
         """Create an image/* type MIME document.
 
         _imagedata is a string containing the raw image data.  If this data
         can be decoded by the standard Python `imghdr' module, then the
         subtype will be automatically included in the Content-Type: header.
-        Otherwise, you can specify the specific image subtype via the _minor
+        Otherwise, you can specify the specific image subtype via the _subtype
         parameter.
 
         _encoder is a function which will perform the actual encoding for
@@ -37,10 +37,10 @@ class Image(MIMEBase.MIMEBase):
         constructor, which turns them into parameters on the Content-Type:
         header.
         """
-        if _minor is None:
-            _minor = imghdr.what(None, _imagedata)
-        if _minor is None:
-            raise TypeError, 'Could not guess image _minor type'
-        MIMEBase.MIMEBase.__init__(self, 'image', _minor, **_params)
+        if _subtype is None:
+            _subtype = imghdr.what(None, _imagedata)
+        if _subtype is None:
+            raise TypeError, 'Could not guess image MIME subtype'
+        MIMEBase.MIMEBase.__init__(self, 'image', _subtype, **_params)
         self.set_payload(_imagedata)
         _encoder(self)
