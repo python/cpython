@@ -573,7 +573,7 @@ class IMAP4:
     def search(self, charset, *criteria):
         """Search mailbox for matching messages.
 
-        (typ, [data]) = <instance>.search(charset, criterium, ...)
+        (typ, [data]) = <instance>.search(charset, criterion, ...)
 
         'data' is space separated list of matching message numbers.
         """

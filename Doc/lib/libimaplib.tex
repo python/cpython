@@ -274,12 +274,12 @@ An \class{IMAP4} instance has the following methods:
   \code{None}. Returns the given code, instead of the usual type.
 \end{methoddesc}
 
-\begin{methoddesc}{search}{charset, criterium\optional{, ...}}
+\begin{methoddesc}{search}{charset, criterion\optional{, ...}}
   Search mailbox for matching messages.  Returned data contains a space
   separated list of matching message numbers.  \var{charset} may be
   \code{None}, in which case no \samp{CHARSET} will be specified in the
   request to the server.  The IMAP protocol requires that at least one
-  criterium be specified; an exception will be raised when the server
+  criterion be specified; an exception will be raised when the server
   returns an error.
 
   Example:
@@ -325,12 +325,12 @@ msgnums = M.search(None, '(FROM "LDJ")')
   Returns socket instance used to connect to server.
 \end{methoddesc}
 
-\begin{methoddesc}{sort}{sort_criteria, charset, search_criterium\optional{, ...}}
+\begin{methoddesc}{sort}{sort_criteria, charset, search_criterion\optional{, ...}}
   The \code{sort} command is a variant of \code{search} with sorting semantics for
   the results.  Returned data contains a space
   separated list of matching message numbers.
 
-  Sort has two arguments before the \var{search_criterium}
+  Sort has two arguments before the \var{search_criterion}
   argument(s); a parenthesized list of \var{sort_criteria}, and the searching \var{charset}.
   Note that unlike \code{search}, the searching \var{charset} argument is mandatory.
   There is also a \code{uid sort} command which corresponds to \code{sort} the way
