@@ -1947,8 +1947,8 @@ delta_str(PyDateTime_Delta *self)
 	return NULL;
 }
 
-/* Pickle support.  This is a plain application of __reduce__.
- */
+/* Pickle support, a simple use of __reduce__. */
+
 static PyObject *
 delta_getstate(PyDateTime_Delta *self)
 {
@@ -2523,7 +2523,7 @@ date_weekday(PyDateTime_Date *self)
 	return PyInt_FromLong(dow);
 }
 
-/* Pickle support.  Quite a maze! */
+/* Pickle support, a simple use of __reduce__. */
 
 static PyObject *
 date_getstate(PyDateTime_Date *self)
@@ -3335,9 +3335,7 @@ time_nonzero(PyDateTime_Time *self)
 	return (TIME_GET_MINUTE(self) - offset + TIME_GET_HOUR(self)*60) != 0;
 }
 
-/*
- * Pickle support.  Quite a maze!
- */
+/* Pickle support, a simple use of __reduce__. */
 
 /* Let basestate be the non-tzinfo data string.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
@@ -4337,7 +4335,7 @@ datetime_utctimetuple(PyDateTime_DateTime *self)
 	return build_struct_time(y, m, d, hh, mm, ss, 0);
 }
 
-/* Pickle support.  Quite a maze! */
+/* Pickle support, a simple use of __reduce__. */
 
 /* Let basestate be the non-tzinfo data string.
  * If tzinfo is None, this returns (basestate,), else (basestate, tzinfo).
