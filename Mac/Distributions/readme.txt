@@ -53,6 +53,7 @@ distribution when I'm fed up with it. They were last updated for 2.3a1.
    http://guide.apple.com/usindex.lasso
    http://www.apple.com/downloads/macosx/submit
    http://www.versiontracker.com/ (userid Jack.Jansen@oratrix.com)
+   Also, check out Stephan Deibels http://pythonology.org/market contact list
 - Open PythonX.Y.vct again, use the "remove compressed files" command to trim down
   the size, commit.
 - Remove the subdires under (vise) so you don't get confused by them later.
