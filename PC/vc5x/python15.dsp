@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib:"libc"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib /nologo /subsystem:windows /dll /machine:I386 /nodefaultlib:"libc" /libpath:"Release"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib /nologo /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib /nologo /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /pdbtype:sept /libpath:"Debug"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -251,17 +251,7 @@ SOURCE=..\Python\import.c
 # Begin Source File
 
 SOURCE=..\PC\import_nt.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 # ADD CPP /I "..\Python"
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-# ADD CPP /I "..\Python"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
