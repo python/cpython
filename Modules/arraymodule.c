@@ -540,7 +540,9 @@ array_concat(a, bb)
 	int size;
 	arrayobject *np;
 	if (!is_arrayobject(bb)) {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError,
+		     "can only append array (not \"%.200s\") to array",
+			     bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((arrayobject *)bb)
@@ -613,7 +615,9 @@ array_ass_slice(a, ilow, ihigh, v)
 		}
 	}
 	else {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError,
+	     "can only assign array (not \"%.200s\") to array slice",
+			     v->ob_type->tp_name);
 		return -1;
 	}
 	if (ilow < 0)
@@ -821,7 +825,8 @@ array_reverse(self, args)
 	char tmp[sizeof(double)]; /* Assume that's the max item size */
 
 	if (args != NULL) {
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError,
+		     "<array>.reverse requires exactly 0 arguments");
 		return NULL;
 	}
 

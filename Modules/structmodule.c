@@ -1128,7 +1128,8 @@ struct_pack(self, args)
 	if (args == NULL || !PyTuple_Check(args) ||
 	    (n = PyTuple_Size(args)) < 1)
         {
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError, 
+			"struct.pack requires at least one argument");
 		return NULL;
 	}
 	format = PyTuple_GetItem(args, 0);
