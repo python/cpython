@@ -441,7 +441,12 @@ class HTTPConnection:
             # be using HTTP/1.0 and those clients may be issuing this header
             # themselves. we should NOT issue it twice; some web servers (such
             # as Apache) barf when they see two Host: headers
-            self.putheader('Host', self.host)
+
+            # if we need a non-standard port,include it in the header
+            if self.port == HTTP_PORT:
+                self.putheader('Host', self.host)
+            else:
+                self.putheader('Host', "%s:%s" % (self.host, self.port))
 
             # note: we are assuming that clients will not attempt to set these
             #       headers since *this* library must deal with the
