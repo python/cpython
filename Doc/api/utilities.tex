@@ -84,7 +84,7 @@ values from C values.
   \cfunction{Py_AtExit()} returns \code{0}; on failure, it returns
   \code{-1}.  The cleanup function registered last is called first.
   Each cleanup function will be called at most once.  Since Python's
-  internal finallization will have completed before the cleanup
+  internal finalization will have completed before the cleanup
   function, no Python APIs should be called by \var{func}.
 \end{cfuncdesc}
 
