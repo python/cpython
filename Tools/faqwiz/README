@@ -2,8 +2,8 @@ FAQ Wizard
 ----------
 
 Author: Guido van Rossum <guido@python.org>
-Version: 0.8.4
-Date:  16 December 1997
+Version: 0.9.0
+Date:  21 December 1997
 
 
 This is a CGI program that maintains a user-editable FAQ.  It uses RCS
@@ -21,6 +21,17 @@ faqw.py		executable script to be edited and installed in cgi-bin
 faqwiz.py	main module, lives in same directory as FAQ entry files
 faqconf.py	main configuration module
 faqcust.py	additional local customization module (optional)
+
+
+What's New?
+-----------
+
+Version 0.9.0 uses the re module (Perl style regular expressions) for
+all its regular expression needs, instead of the regex and regsub
+modules (Emacs style).  This affects the syntax for regular
+expressions entered by the user as search strings (with "regular
+expression" checked), hence the version number jump.
+
 
 Setup Information
 -----------------
@@ -75,6 +86,7 @@ faq01.001.htp in your working directory and an RCS revision history
 file faq01.001.htp,v in the RCS subdirectory.  You can now exercise
 the other FAQ wizard features (search, index, whole FAQ, what's new,
 roulette, and so on).
+
 
 Maintaining Multiple FAQs
 -------------------------

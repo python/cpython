@@ -49,7 +49,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.8.4"			# FAQ Wizard version
+WIZVERSION = "0.9.0"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
@@ -58,12 +58,12 @@ import os, sys
 FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
 del os, sys
 
-# Regular expression to recognize FAQ entry files: group(1) should be
-# the section number, group(2) should be the question number.  Both
-# should be fixed width so simple-minded sorting yields the right
-# order.
+# Perl (re module) style regular expression to recognize FAQ entry
+# files: group(1) should be the section number, group(2) should be the
+# question number.  Both should be fixed width so simple-minded
+# sorting yields the right order.
 
-OKFILENAME = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
+OKFILENAME = r"^faq(\d\d)\.(\d\d\d)\.htp$"
 
 # Format to construct a FAQ entry file name
 
