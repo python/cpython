@@ -945,6 +945,18 @@ audioop_lin2lin(self, args)
 	return rv;
 }
 
+static int
+gcd(a, b)
+	int a, b;
+{
+	while (b > 0) {
+		int tmp = a % b;
+		a = b;
+		b = tmp;
+	}
+	return a;
+}
+
 static PyObject *
 audioop_ratecv(self, args)
 	PyObject *self;
@@ -977,6 +989,15 @@ audioop_ratecv(self, args)
 		PyErr_SetString(AudioopError, "not a whole number of frames");
 		return NULL;
 	}
+	if (inrate <= 0 || outrate <= 0) {
+		PyErr_SetString(AudioopError, "sampling rate not > 0");
+		return NULL;
+	}
+	/* divide inrate and outrate by their greatest common divisor */
+	d = gcd(inrate, outrate);
+	inrate /= d;
+	outrate /= d;
+
 	prev_i = malloc(nchannels * sizeof(int));
 	cur_i = malloc(nchannels * sizeof(int));
 	len /= size * nchannels;	/* # of frames */
