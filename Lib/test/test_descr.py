@@ -365,7 +365,6 @@ def pylists():
 
 def metaclass():
     if verbose: print "Testing __metaclass__..."
-    global C
     class C:
         __metaclass__ = type
         def __init__(self):
@@ -383,13 +382,11 @@ def metaclass():
             def myself(cls): return cls
     verify(D.myself() == D)
 
-import sys
-MT = type(sys)
-
 def pymods():
     if verbose: print "Testing Python subclass of module..."
-    global log
     log = []
+    import sys
+    MT = type(sys)
     class MM(MT):
         def __init__(self):
             MT.__init__(self)
@@ -415,7 +412,6 @@ def pymods():
 
 def multi():
     if verbose: print "Testing multiple inheritance..."
-    global C
     class C(object):
         def __init__(self):
             self.__state = 0
@@ -584,22 +580,39 @@ def dynamics():
     # Test dynamic instances
     class C(object):
         __dynamic__ = 1
-        foobar = 1
-        def __repr__(self):
-            return "<C object>"
     a = C()
-    verify(not hasattr(a, "spam"))
-    verify(a.foobar == 1)
+    verify(not hasattr(a, "foobar"))
     C.foobar = 2
     verify(a.foobar == 2)
     C.method = lambda self: 42
     verify(a.method() == 42)
-    verify(repr(a) == "<C object>")
     C.__repr__ = lambda self: "C()"
     verify(repr(a) == "C()")
-    # The following test should succeed, but doesn't yet
-##    C.__int__ = lambda self: 100
-##    verify(int(a) == 100)
+    C.__int__ = lambda self: 100
+    verify(int(a) == 100)
+    verify(a.foobar == 2)
+    verify(not hasattr(a, "spam"))
+    def mygetattr(self, name):
+        if name == "spam":
+            return "spam"
+        else:
+            return object.__getattr__(self, name)
+    C.__getattr__ = mygetattr
+    verify(a.spam == "spam")
+    a.new = 12
+    verify(a.new == 12)
+    def mysetattr(self, name, value):
+        if name == "spam":
+            raise AttributeError
+        return object.__setattr__(self, name, value)
+    C.__setattr__ = mysetattr
+    try:
+        a.spam = "not spam"
+    except AttributeError:
+        pass
+    else:
+        verify(0, "expected AttributeError")
+    verify(a.spam == "spam")
 
 def errors():
     if verbose: print "Testing errors..."
@@ -750,12 +763,6 @@ def newslot():
     verify(b.foo == 3)
     verify(b.__class__ is D)
 
-class PerverseMetaType(type):
-    def mro(cls):
-        L = type.mro(cls)
-        L.reverse()
-        return L
-
 def altmro():
     if verbose: print "Testing mro() and overriding it..."
     class A(object):
@@ -768,6 +775,11 @@ def altmro():
         pass
     verify(D.mro() == [D, B, C, A, object] == list(D.__mro__))
     verify(D().f() == "C")
+    class PerverseMetaType(type):
+        def mro(cls):
+            L = type.mro(cls)
+            L.reverse()
+            return L
     class X(A,B,C,D):
         __metaclass__ = PerverseMetaType
     verify(X.__mro__ == (object, A, C, B, D, X))
