@@ -604,6 +604,8 @@ static PyObject *Icn_PlotCIconHandle(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Icn_IconServicesTerminate(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -616,6 +618,7 @@ static PyObject *Icn_IconServicesTerminate(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Icn_IconRefToIconFamily(_self, _args)
 	PyObject *_self;
@@ -1336,8 +1339,11 @@ static PyMethodDef Icn_methods[] = {
 	 "(Rect theRect, IconAlignmentType align, IconTransformType transform, Handle theSICN) -> None"},
 	{"PlotCIconHandle", (PyCFunction)Icn_PlotCIconHandle, 1,
 	 "(Rect theRect, IconAlignmentType align, IconTransformType transform, CIconHandle theCIcon) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"IconServicesTerminate", (PyCFunction)Icn_IconServicesTerminate, 1,
 	 "() -> None"},
+#endif
 	{"IconRefToIconFamily", (PyCFunction)Icn_IconRefToIconFamily, 1,
 	 "(IconRef theIconRef, IconSelectorValue whichIcons) -> (IconFamilyHandle iconFamily)"},
 	{"IconFamilyToIconSuite", (PyCFunction)Icn_IconFamilyToIconSuite, 1,

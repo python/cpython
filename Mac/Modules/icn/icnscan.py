@@ -45,6 +45,12 @@ class MyScanner(Scanner):
 			"svAllAvailableData",
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'IconServicesTerminate',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
 			"IconActionUPP",

@@ -315,11 +315,13 @@ class SpbObjectDefinition(ObjectDefinition):
 		self->ob_completion = value;
 		Py_INCREF(value);
 		rv = 1;
+#ifndef TARGET_API_MAC_CARBON_NOTYET
 	} else if (strcmp(name, "interruptRoutine") == 0) {
 		self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
 		self->ob_interrupt = value;
 		Py_INCREF(value);
 		rv = 1;
+#endif
 	}
 	if ( rv ) return 0;
 	else return -1;""")

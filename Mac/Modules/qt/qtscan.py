@@ -63,6 +63,13 @@ class MyScanner(Scanner):
 ##			"VideoMediaGetStallCount", # Undefined in CW Pro 3 library
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'SpriteMediaGetIndImageProperty',	# XXXX Why isn't this in carbon?
+				'CheckQuickTimeRegistration',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
 			# I don't think we want to do these

@@ -6235,6 +6235,8 @@ PyTypeObject Movie_Type = {
 /* --------------------- End object type Movie ---------------------- */
 
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Qt_CheckQuickTimeRegistration(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -6252,6 +6254,7 @@ static PyObject *Qt_CheckQuickTimeRegistration(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Qt_EnterMovies(_self, _args)
 	PyObject *_self;
@@ -7625,6 +7628,8 @@ static PyObject *Qt_SpriteMediaGetActionVariable(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Qt_SpriteMediaGetIndImageProperty(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -7649,6 +7654,7 @@ static PyObject *Qt_SpriteMediaGetIndImageProperty(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *Qt_NewTimeBase(_self, _args)
 	PyObject *_self;
@@ -7818,8 +7824,11 @@ static PyObject *Qt_MoviesTask(_self, _args)
 }
 
 static PyMethodDef Qt_methods[] = {
+
+#ifndef TARGET_API_MAC_CARBON
 	{"CheckQuickTimeRegistration", (PyCFunction)Qt_CheckQuickTimeRegistration, 1,
 	 "(void * registrationKey, long flags) -> None"},
+#endif
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 "() -> None"},
 	{"ExitMovies", (PyCFunction)Qt_ExitMovies, 1,
@@ -7940,8 +7949,11 @@ static PyMethodDef Qt_methods[] = {
 	 "(MediaHandler mh, QTAtomID variableID, float value) -> (ComponentResult _rv)"},
 	{"SpriteMediaGetActionVariable", (PyCFunction)Qt_SpriteMediaGetActionVariable, 1,
 	 "(MediaHandler mh, QTAtomID variableID) -> (ComponentResult _rv, float value)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SpriteMediaGetIndImageProperty", (PyCFunction)Qt_SpriteMediaGetIndImageProperty, 1,
 	 "(MediaHandler mh, short imageIndex, long imagePropertyType, void * imagePropertyValue) -> (ComponentResult _rv)"},
+#endif
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
 	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,

@@ -2240,7 +2240,7 @@ static PyObject *Win_GetCWMgrPort(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Win_IsValidWindowPtr(_self, _args)
 	PyObject *_self;
@@ -2480,7 +2480,7 @@ static PyMethodDef Win_methods[] = {
 	 "() -> (CGrafPtr wMgrCPort)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#ifndef TARGET_API_MAC_CARBON
 	{"IsValidWindowPtr", (PyCFunction)Win_IsValidWindowPtr, 1,
 	 "(GrafPtr grafPort) -> (Boolean _rv)"},
 #endif
