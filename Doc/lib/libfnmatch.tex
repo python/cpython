@@ -1,5 +1,5 @@
 \section{\module{fnmatch} ---
-         \UNIX{} style filename pattern matching}
+         \UNIX{} filename pattern matching}
 
 \declaremodule{standard}{fnmatch}
 \modulesynopsis{\UNIX{} shell style filename pattern matching.}
@@ -19,9 +19,10 @@ characters used in shell-style wildcards are:
 \end{list}
 
 Note that the filename separator (\code{'/'} on \UNIX{}) is \emph{not}
-special to this module.  See module \refmodule{glob}\refstmodindex{glob}
-for pathname expansion (\refmodule{glob} uses \function{fnmatch()} to
-match filename segments).
+special to this module.  See module
+\refmodule{glob}\refstmodindex{glob} for pathname expansion
+(\refmodule{glob} uses \function{fnmatch()} to match filename
+segments).
 
 
 \begin{funcdesc}{fnmatch}{filename, pattern}
