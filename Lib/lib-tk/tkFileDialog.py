@@ -41,14 +41,14 @@ class _Dialog(Dialog):
             pass
 
     def _fixresult(self, widget, result):
-	if result:
-	    # keep directory and filename until next time
+        if result:
+            # keep directory and filename until next time
             import os
-	    path, file = os.path.split(result)
-	    self.options["initialdir"] = path
-	    self.options["initialfile"] = file
+            path, file = os.path.split(result)
+            self.options["initialdir"] = path
+            self.options["initialfile"] = file
         self.filename = result # compatibility
-	return result
+        return result
 
 
 #
