@@ -1270,6 +1270,8 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"nodelay",         (PyCFunction)PyCursesWindow_nodelay},
 	{"notimeout",       (PyCFunction)PyCursesWindow_notimeout},
 	{"noutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
+        /* Backward compatibility alias -- remove in Python 2.1 */
+	{"nooutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
 	{"putwin",          (PyCFunction)PyCursesWindow_PutWin},
 	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine},
 	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin},
