@@ -298,9 +298,6 @@ class DecimalTest(unittest.TestCase):
 for filename in os.listdir(dir):
     if '.decTest' not in filename:
         continue
-    ## XXX buildout to include integer and trim
-    if 'integer' in filename or 'trim' in filename:
-        continue
     head, tail = filename.split('.')
     tester = lambda self, f=filename: self.eval_file(dir + f)
     setattr(DecimalTest, 'test_' + head, tester)
