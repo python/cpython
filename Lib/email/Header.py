@@ -93,14 +93,41 @@ def decode_header(header):
 
 
 
+def make_header(decoded_seq, maxlinelen=None, header_name=None,
+                continuation_ws=' '):
+    """Create a Header from a sequence of pairs as returned by decode_header()
+
+    decode_header() takes a header value string and returns a sequence of
+    pairs of the format (decoded_string, charset) where charset is the string
+    name of the character set.
+
+    This function takes one of those sequence of pairs and returns a Header
+    instance.  Optional maxlinelen, header_name, and continuation_ws are as in
+    the Header constructor.
+    """
+    h = Header(maxlinelen=maxlinelen, header_name=header_name,
+               continuation_ws=continuation_ws)
+    for s, charset in decoded_seq:
+        if not isinstance(charset, Charset):
+            charset = Charset(charset)
+        h.append(s, charset)
+    return h
+
+
+
 class Header:
-    def __init__(self, s, charset=None, maxlinelen=None, header_name=None,
+    def __init__(self, s=None, charset=None, maxlinelen=None, header_name=None,
                  continuation_ws=' '):
         """Create a MIME-compliant header that can contain many languages.
 
-        Specify the initial header value in s.  Specify its character set as a
-        Charset object in the charset argument.  If None, a default Charset
-        instance will be used.
+        Specify the initial header value in s.  If None, the initial header
+        value is not set.
+
+        Specify both s's character set, and the default character set by
+        setting the charset argument to a Charset object (not a character set
+        name string!).  If None, a us-ascii Charset is used as both s's
+        initial charset and as the default character set for subsequent
+        .append() calls.
 
         You can later append to the header with append(s, charset) below;
         charset does not have to be the same as the one initially specified
@@ -123,7 +150,8 @@ class Header:
         cws_expanded_len = len(continuation_ws.replace('\t', SPACE8))
         # BAW: I believe `chunks' and `maxlinelen' should be non-public.
         self._chunks = []
-        self.append(s, charset)
+        if s is not None:
+            self.append(s, charset)
         if maxlinelen is None:
             maxlinelen = MAXLINELEN
         if header_name is None:
@@ -148,11 +176,22 @@ class Header:
         uchunks = [unicode(s, str(charset)) for s, charset in self._chunks]
         return u''.join(uchunks)
 
+    # Rich comparison operators for equality only.  BAW: does it make sense to
+    # have or explicitly disable <, <=, >, >= operators?
+    def __eq__(self, other):
+        # other may be a Header or a string.  Both are fine so coerce
+        # ourselves to a string, swap the args and do another comparison.
+        return other == self.encode()
+
+    def __ne__(self, other):
+        return not self == other
+
     def append(self, s, charset=None):
         """Append string s with Charset charset to the MIME header.
 
         charset defaults to the one given in the class constructor.  If
-        charset is given, it should be an instance of email.Charset.Charset.
+        charset is given, it should be an instance of Charset (not a character
+        set name string!).
         """
         if charset is None:
             charset = self._charset
