@@ -15,7 +15,10 @@ sax -- The Simple API for XML, developed by XML-Dev, led by David
 
 __all__ = ["dom", "parsers", "sax"]
 
-__version__ = "$Revision$".split()[1]
+# When being checked-out without options, this has the form
+# "<dollar>Revision: x.y </dollar>"
+# When exported using -kv, it is "x.y".
+__version__ = "$Revision$".split()[-2][0]
 
 
 _MINIMUM_XMLPLUS_VERSION = (0, 6, 1)
