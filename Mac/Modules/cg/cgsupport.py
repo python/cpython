@@ -25,7 +25,7 @@ includestuff = includestuff + """
 #include <Quickdraw.h>
 #include <CGContext.h>
 #else
-#include <CoreGraphics/CoreGraphics.h>
+#include <ApplicationServices/ApplicationServices.h>
 #endif
 
 #if !TARGET_API_MAC_OSX
