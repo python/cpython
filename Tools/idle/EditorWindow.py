@@ -174,6 +174,11 @@ class EditorWindow:
             self.wmenu_end = end
             WindowList.register_callback(self.postwindowsmenu)
 
+        # Some abstractions so IDLE extensions are cross-IDE
+        self.askyesno = tkMessageBox.askyesno
+        self.askinteger = tkSimpleDialog.askinteger
+        self.showerror = tkMessageBox.showerror
+
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
