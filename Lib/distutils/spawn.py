@@ -144,7 +144,14 @@ def _spawn_posix (cmd,
         # Loop until the child either exits or is terminated by a signal
         # (ie. keep waiting if it's merely stopped)
         while 1:
-            (pid, status) = os.waitpid(pid, 0)
+            try:
+                (pid, status) = os.waitpid(pid, 0)
+            except OSError, exc:
+                import errno
+                if exc.errno == errno.EINTR:
+                    continue
+                raise DistutilsExecError, \
+                      "command '%s' failed: %s" % (cmd[0], exc[-1])
             if os.WIFSIGNALED(status):
                 raise DistutilsExecError, \
                       "command '%s' terminated by signal %d" % \
