@@ -1,4 +1,9 @@
-\documentstyle[11pt,myformat]{report}
+\documentstyle[twoside,a4wide,11pt,myformat]{report}
+%              ^^^^^^^^^^^^^^^^^^^^
+% If you have trouble finding these style files, any of the pointed-at
+% style options are optional and may be taken out.
+% But "myformat.sty" should be found in the same directory as this file!
+% Also, "myformat" should be last since it corrects a few style params.
 
 \title{\bf Python Reference Manual}
 
@@ -565,7 +570,7 @@ value one, depending on the implementation, but \verb\c\ and \verb\d\
 are guaranteed to refer to two different, unique, newly created empty
 lists.
 
-\section{The standard type hierarchy}
+\section{The standard type hierarchy} \label{types}
 
 Below is a list of the types that are built into Python.  Extension
 modules written in C can define additional types.  Future versions of
@@ -809,7 +814,7 @@ which the function was defined.
 \indexii{global}{name space}
 
 \item[User-defined methods]
-A user-defined method (a.k.a. {\tt object closure}) is a pair of a
+A user-defined method (a.k.a. {\em object closure}) is a pair of a
 class instance object and a user-defined function.  It should be
 called with an argument list containing one item less than the number
 of items in the function's formal parameter list.  When called, the
@@ -1336,7 +1341,7 @@ It is illegal to attempt to convert recursive objects (e.g., lists or
 dictionaries that contain a reference to themselves, directly or
 indirectly.)
 
-\section{Primaries}
+\section{Primaries} \label{primaries}
 
 Primaries represent the most tightly bound operations of the language.
 Their syntax is:
@@ -1441,13 +1446,12 @@ argument list of the call: the instance becomes the first argument.
 
 \end{description}
 
-\section{Factors}
+\section{Unary arithmetic operations}
 
-Factors represent the unary numeric operators.
-Their syntax is:
+All unary arithmetic (and bit-wise) operations have the same priority:
 
 \begin{verbatim}
-factor:         primary | "-" factor | "+" factor | "~" factor
+u_expr:         primary | "-" u_expr | "+" u_expr | "~" u_expr
 \end{verbatim}
 
 The unary \verb\"-"\ operator yields the negative of its
@@ -1462,14 +1466,19 @@ plain or long integer argument.  The bit-wise negation negation of
 In all three cases, if the argument does not have the proper type,
 a \verb\TypeError\ exception is raised.
 
-\section{Terms}
+\section{Binary arithmetic operations}
 
-Terms represent the most tightly binding binary operators:
-%
+The binary arithmetic operations have the conventional priority
+levels.  Note that some of these operations also apply to certain
+non-numeric types.  There is no ``power'' operator, so there are only
+two levels, one for multiplicative operators and one for additive
+operators:
+
 \begin{verbatim}
-term:           factor | term "*" factor | term "/" factor | term "%" factor
+m_expr:         u_expr | m_expr "*" u_expr | m_expr "/" u_expr | m_expr "%" u_expr
+a_expr:         m_expr | aexpr "+" m_expr | aexpr "-" m_expr
 \end{verbatim}
-%
+
 The \verb\"*"\ (multiplication) operator yields the product of its
 arguments.  The arguments must either both be numbers, or one argument
 must be a plain integer and the other must be a sequence.  In the
@@ -1486,40 +1495,37 @@ function applied to the result.  Division by zero raises the
 
 The \verb\"%"\ (modulo) operator yields the remainder from the
 division of the first argument by the second.  The numeric arguments
-are first converted to a common type.  A zero right argument raises the
-\verb\ZeroDivisionError\ exception.  The arguments may be floating point
-numbers, e.g., \verb\3.14 % 0.7\ equals \verb\0.34\.  The modulo operator
-always yields a result with the same sign as its second operand (or
-zero); the absolute value of the result is strictly smaller than the
-second operand.
+are first converted to a common type.  A zero right argument raises
+the \verb\ZeroDivisionError\ exception.  The arguments may be floating
+point numbers, e.g., \verb\3.14 % 0.7\ equals \verb\0.34\.  The modulo
+operator always yields a result with the same sign as its second
+operand (or zero); the absolute value of the result is strictly
+smaller than the second operand.
 
 The integer division and modulo operators are connected by the
-following identity: \verb\x == (x/y)*y + (x%y)\.
-Integer division and modulo are also connected with the built-in
-function \verb\divmod()\: \verb\divmod(x, y) == (x/y, x%y)\.
-These identities don't hold for floating point numbers; there a
-similar identity holds where \verb\x/y\ is replaced by
-\verb\floor(x/y)\).
+following identity: \verb\x == (x/y)*y + (x%y)\.  Integer division and
+modulo are also connected with the built-in function \verb\divmod()\:
+\verb\divmod(x, y) == (x/y, x%y)\.  These identities don't hold for
+floating point numbers; there a similar identity holds where
+\verb\x/y\ is replaced by \verb\floor(x/y)\).
 
-\section{Arithmetic expressions}
-
-\begin{verbatim}
-arith_expr:     term | arith_expr "+" term | arith_expr "-" term
-\end{verbatim}
-
-The \verb|"+"| operator yields the sum of its arguments.  The
-arguments must either both be numbers, or both sequences of the same
-type.  In the former case, the numbers are converted to a common type
-and then added together.  In the latter case, the sequences are
+The \verb\"+"\ (addition) operator yields the sum of its arguments.
+The arguments must either both be numbers, or both sequences of the
+same type.  In the former case, the numbers are converted to a common
+type and then added together.  In the latter case, the sequences are
 concatenated.
 
-The \verb|"-"| operator yields the difference of its arguments.
-The numeric arguments are first converted to a common type.
+The \verb\"-"\ (subtraction) operator yields the difference of its
+arguments.  The numeric arguments are first converted to a common
+type.
 
-\section{Shift expressions}
+\section{Shifting operations}
+
+The shifting operations have lower priority than the arithmetic
+operations:
 
 \begin{verbatim}
-shift_expr:     arith_expr | shift_expr ( "<<" | ">>" ) arith_expr
+shift_expr:     a_expr | shift_expr ( "<<" | ">>" ) a_expr
 \end{verbatim}
 
 These operators accept plain or long integers as arguments.  The
@@ -1528,41 +1534,41 @@ argument to the left or right by the number of bits given by the
 second argument.
 
 A right shift by $n$ bits is defined as division by $2^n$.  A left
-shift by $n$ bits is defined as multiplication with $2^n$ without
-overflow check; for plain integers this drops bits if the result is
-not less than $2^{31} - 1$ in absolute value.
+shift by $n$ bits is defined as multiplication with $2^n$; for plain
+integers there is no overflow check so this drops bits and flip the
+sign if the result is not less than $2^{31}$ in absolute value.
 
 Negative shift counts raise a \verb\ValueError\ exception.
 
-\section{Bitwise AND expressions}
+\section{Bitwise operations}
+
+Each of the three bitwise operations has a different priority level:
 
 \begin{verbatim}
 and_expr:       shift_expr | and_expr "&" shift_expr
-\end{verbatim}
-
-This operator yields the bitwise AND of its arguments, which must be
-plain or long integers.  The arguments are converted to a common type.
-
-\section{Bitwise XOR expressions}
-
-\begin{verbatim}
 xor_expr:       and_expr | xor_expr "^" and_expr
-\end{verbatim}
-
-This operator yields the bitwise exclusive OR of its arguments, which
-must be plain or long integers.  The arguments are converted to a
-common type.
-
-\section{Bitwise OR expressions}
-
-\begin{verbatim}
 or_expr:       xor_expr | or_expr "|" xor_expr
 \end{verbatim}
 
-This operator yields the bitwise OR of its arguments, which must be
-plain or long integers.  The arguments are converted to a common type.
+The \verb\"&"\ operator yields the bitwise AND of its arguments, which
+must be plain or long integers.  The arguments are converted to a
+common type.
+
+The \verb\"~"\ operator yields the bitwise XOR (exclusive OR) of its
+arguments, which must be plain or long integers.  The arguments are
+converted to a common type.
+
+The \verb\"|"\ operator yields the bitwise (inclusive) OR of its
+arguments, which must be plain or long integers.  The arguments are
+converted to a common type.
 
 \section{Comparisons}
+
+Contrary to C, all comparison operations in Python have the same
+priority, which is lower than that of any arithmetic, shifting or
+bitwise operation.  Also contrary to C, expressions like
+\verb\a < b < c\ have the interpretation that is conventional in
+mathematics:
 
 \begin{verbatim}
 comparison:     or_expr (comp_operator or_expr)*
@@ -1642,7 +1648,9 @@ The operators \verb\is\ and \verb\is not\ compare object identity:
 $x ~\verb\is\~ y$ is true if and only if $x$ and $y$ are the same
 object.  $x ~\verb\is not\~ y$ yields the inverse truth value.
 
-\section{Boolean operators}
+\section{Boolean operations} \label{Booleans}
+
+Boolean operations have the lowest priority of all Python operations:
 
 \begin{verbatim}
 condition:      or_test
@@ -1651,27 +1659,30 @@ and_test:       not_test | and_test "and" not_test
 not_test:       comparison | "not" not_test
 \end{verbatim}
 
-In the context of Boolean operators, and also when conditions are used
-by control flow statements, the following values are interpreted as
-false: \verb\None\, numeric zero of all types, empty sequences
+In the context of Boolean operations, and also when conditions are
+used by control flow statements, the following values are interpreted
+as false: \verb\None\, numeric zero of all types, empty sequences
 (strings, tuples and lists), and empty mappings (dictionaries).  All
 other values are interpreted as true.
 
 The operator \verb\not\ yields 1 if its argument is false, 0 otherwise.
 
 The condition $x ~\verb\and\~ y$ first evaluates $x$; if $x$ is false,
-$x$ is returned; otherwise, $y$ is evaluated and returned.
+its value is returned; otherwise, $y$ is evaluated and the resulting
+value is returned.
 
 The condition $x ~\verb\or\~ y$ first evaluates $x$; if $x$ is true,
-$x$ is returned; otherwise, $y$ is evaluated and returned.
+its value is returned; otherwise, $y$ is evaluated and the resulting
+value is returned.
 
 (Note that \verb\and\ and \verb\or\ do not restrict the value and type
 they return to 0 and 1, but rather return the last evaluated argument.
-This is sometimes useful, e.g., if \verb\s\ is a string, which should be
-replaced by a default value if it is empty, \verb\s or 'foo'\
-returns the desired value.  Because \verb\not\ has to invent a value
-anyway, it does not bother to return a value of the same type as its
-argument, so \verb\not 'foo'\ yields \verb\0\, not \verb\''\.)
+This is sometimes useful, e.g. if \verb\s\ is a string that should be
+replaced by a default value if it is empty, the expression
+\verb\s or 'foo'\ yields the desired value.  Because \verb\not\ has to
+invent a value anyway, it does not bother to return a value of the
+same type as its argument, so e.g. \verb\not 'foo'\ yields \verb\0\,
+not \verb\''\.)
 
 \section{Expression lists and condition lists}
 
@@ -1687,19 +1698,23 @@ while expression lists don't allow comparisons and Boolean operators
 (they do allow bitwise and shift operators though).
 
 Expression lists are used in expression statements and assignments;
-condition lists are used everywhere else.
+condition lists are used everywhere else where a list of
+comma-separated values is required.
 
 An expression (condition) list containing at least one comma yields a
 tuple.  The length of the tuple is the number of expressions
 (conditions) in the list.  The expressions (conditions) are evaluated
-from left to right.
+from left to right.  (Conditions lists are used syntactically is a few
+places where no tuple is constructed but a list of values is needed
+nevertheless.)
 
 The trailing comma is required only to create a single tuple (a.k.a. a
 {\em singleton}); it is optional in all other cases.  A single
 expression (condition) without a trailing comma doesn't create a
 tuple, but rather yields the value of that expression (condition).
 
-To create an empty tuple, use an empty pair of parentheses: \verb\()\.
+(To create an empty tuple, use an empty pair of parentheses:
+\verb\()\.)
 
 \chapter{Simple statements}
 
@@ -1709,7 +1724,7 @@ by semicolons.  The syntax for simple statements is:
 
 \begin{verbatim}
 simple_stmt:    expression_stmt
-              | assignment
+              | assignment_stmt
               | pass_stmt
               | del_stmt
               | print_stmt
@@ -1723,65 +1738,71 @@ simple_stmt:    expression_stmt
 
 \section{Expression statements}
 
+Expression statements are used (mostly interactively) to compute and
+write a value, or (usually) to call a procedure (a function that
+returns no meaningful result; in Python, procedures return the value
+\verb\None\):
+
 \begin{verbatim}
 expression_stmt: expression_list
 \end{verbatim}
 
-An expression statement evaluates the expression list (which may
-be a single expression).
-If the value is not \verb\None\, it is converted to a string
-using the rules for string conversions, and the resulting string
-is written to standard output on a line by itself.
+An expression statement evaluates the expression list (which may be a
+single expression).  If the value is not \verb\None\, it is converted
+to a string using the rules for string conversions (expressions in
+reverse quotes), and the resulting string is written to standard
+output on a line by itself.
 
 (The exception for \verb\None\ is made so that procedure calls, which
 are syntactically equivalent to expressions, do not cause any output.
 A tuple with only \verb\None\ items is written normally.)
 
-\section{Assignments}
+\section{Assignment statements}
+
+Assignment statements are used to (re)bind names to values and to
+modify attributes or items of mutable objects:
 
 \begin{verbatim}
-assignment:     (target_list "=")+ expression_list
-target_list:    target ("," target)* [","]
-target:         identifier | "(" target_list ")" | "[" target_list "]"
-              | attributeref | subscription | slicing
+assignment_stmt: (target_list "=")+ expression_list
+target_list:     target ("," target)* [","]
+target:          identifier | "(" target_list ")" | "[" target_list "]"
+               | attributeref | subscription | slicing
 \end{verbatim}
 
-(See the section on primaries for the syntax definition of the last
+(See section \ref{primaries} for the syntax definitions for the last
 three symbols.)
 
-An assignment evaluates the expression list (remember that this can
-be a single expression or a comma-separated list,
-the latter yielding a tuple)
-and assigns the single resulting object to each of the target lists,
-from left to right.
+An assignment statement evaluates the expression list (remember that
+this can be a single expression or a comma-separated list, the latter
+yielding a tuple) and assigns the single resulting object to each of
+the target lists, from left to right.
 
-Assignment is defined recursively depending on the form of the target.
-When a target is part of a mutable object (an attribute reference,
-subscription or slicing), the mutable object must ultimately perform
-the assignment and decide about its validity, and may raise an
-exception if the assignment is unacceptable.  The rules observed by
-various types and the exceptions raised are given with the definition
-of the object types (some of which are defined in the library
-reference).
+Assignment is defined recursively depending on the form of the target
+(list).  When a target is part of a mutable object (an attribute
+reference, subscription or slicing), the mutable object must
+ultimately perform the assignment and decide about its validity, and
+may raise an exception if the assignment is unacceptable.  The rules
+observed by various types and the exceptions raised are given with the
+definition of the object types (see section \ref{types}).
 
-Assignment of an object to a target list is recursively
-defined as follows.
+Assignment of an object to a target list is recursively defined as
+follows.
 
 \begin{itemize}
 \item
-If the target list contains no commas (except in nested constructs):
-the object is assigned to the single target contained in the list.
+If the target list is a single target: the object is assigned to that
+target.
 
 \item
-If the target list contains commas (that are not in nested constructs):
-the object must be a tuple with the same number of items
-as the list contains targets, and the items are assigned, from left
-to right, to the corresponding targets.
+If the target list is a comma-separated list of targets: the object
+must be a tuple with the same number of items as the list contains
+targets, and the items are assigned, from left to right, to the
+corresponding targets.
 
 \end{itemize}
 
-Assignment of an object to a (non-list)
-target is recursively defined as follows.
+Assignment of an object to a (simple) target is recursively defined as
+follows.
 
 \begin{itemize}
 
@@ -1790,33 +1811,31 @@ If the target is an identifier (name):
 \begin{itemize}
 \item
 If the name does not occur in a \verb\global\ statement in the current
-code block: the object is bound to that name in the current local
-name space.
+code block: the name is bound to the object in the current local name
+space.
 \item
-Otherwise: the object is bound to that name in the current global name
+Otherwise: the name is bound to the object in the current global name
 space.
 \end{itemize}
-A previous binding of the same name in the same name space is undone.
+The name is rebound if it was already bound.
 
 \item
-If the target is a target list enclosed in parentheses:
-the object is assigned to that target list.
+If the target is a target list enclosed in parentheses: the object is
+assigned to that target list as described above.
 
 \item
-If the target is a target list enclosed in square brackets:
-the object must be a list with the same number of items
-as the target list contains targets,
-and the list's items are assigned, from left to right,
-to the corresponding targets.
+If the target is a target list enclosed in square brackets: the object
+must be a list with the same number of items as the target list
+contains targets, and its items are assigned, from left to right, to
+the corresponding targets.
 
 \item
-If the target is an attribute reference:
-The primary expression in the reference is evaluated.
-It should yield an object with assignable attributes;
-if this is not the case, \verb\TypeError\ is raised.
-That object is then asked to assign the assigned object
-to the given attribute; if it cannot perform the assignment,
-it raises an exception.
+If the target is an attribute reference: The primary expression in the
+reference is evaluated.  It should yield an object with assignable
+attributes; if this is not the case, \verb\TypeError\ is raised.  That
+object is then asked to assign the assigned object to the given
+attribute; if it cannot perform the assignment, it raises an exception
+(usually but not necessarily \verb\AttributeError\).
 
 \item
 If the target is a subscription: The primary expression in the
@@ -2077,7 +2096,9 @@ program.)
 \chapter{Compound statements}
 
 Compound statements contain (groups of) other statements; they affect
-or control the execution of those other statements in some way.
+or control the execution of those other statements in some way.  In
+general, compound statements span multiple lines, although in simple
+incarnations a whole compound statement may be contained in one line.
 
 The \verb\if\, \verb\while\ and \verb\for\ statements implement
 traditional control flow constructs.  \verb\try\ specifies exception
@@ -2086,25 +2107,27 @@ class definitions are also syntactically compound statements.
 
 Compound statements consist of one or more `clauses'.  A clause
 consists of a header and a `suite'.  The clause headers of a
-particular compound statement are all at the same indentation level;
-all clauses begin with a uniquely identifying keyword and end with a
-colon.  A suite is a group of statements controlled by a clause.  A
-suite can be a bunch of semicolon-separated simple statements on the
-same line as the header, following the colon, or it can be a list of
-indented statements.  Only the latter form of suite can contain nested
-compound statements; the following is illegal (mostly because it
-wouldn't be clear what to do with \verb\else\):
+particular compound statement are all at the same indentation level.
+Each clause header begins with a uniquely identifying keyword and ends
+with a colon.  A suite is a group of statements controlled by a
+clause.  A suite can be one or more semicolon-separated simple
+statements on the same line as the header, following the header's
+colon, or it can be one or more indented statements on subsequent
+lines.  Only the latter form of suite can contain nested compound
+statements; the following is illegal, mostly because it wouldn't be
+clear to which \verb\if\ clause a following \verb\else\ clause would
+belong:
 
 \begin{verbatim}
 if test1: if test2: print x
 \end{verbatim}
 
 Also note that the semicolon binds tighter that the colon in this
-context (so to speak), so that in the following example, either all or
-none of the \verb\print\ statements are executed:
+context, so that in the following example, either all or none of the
+\verb\print\ statements are executed:
 
 \begin{verbatim}
-if some_test: print x; print y; print z
+if x < y < z: print x; print y; print z
 \end{verbatim}
 
 Summarizing:
@@ -2124,7 +2147,7 @@ keyword that cannot start a statement, thus there are no ambiguities
 (the `dangling \verb\else\' problem is solved in Python by requiring
 nested \verb\if\ statements to be indented).
 
-The formatting of the grammar rules in the following section places
+The formatting of the grammar rules in the following sections places
 each clause on a separate line for clarity.
 
 \section{The {\tt if} statement}
@@ -2137,9 +2160,12 @@ if_stmt:        "if" condition ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-It selects exactly one of the suites, by testing the conditions one by
-one until one is true; then that suite is executed.  If all conditions
-are false, the suite of the \verb\else\ clause is executed, if present.
+It selects exactly one of the suites by evaluating the conditions one
+by one until one is found to be true (see section \ref{Booleans} for
+the definition of true and false); then that suite is executed (and no
+other part of the \verb\if\ statement is executed or evaluated).  If
+all conditions are false, the suite of the \verb\else\ clause, if
+present, is executed.
 
 \section{The {\tt while} statement}
 
@@ -2153,8 +2179,8 @@ while_stmt:     "while" condition ":" suite
 
 This repeatedly tests the condition and, if it is true, executes the
 first suite; if the condition is false (which may be the first time it
-is tested) the suite of the \verb\else\ clause is executed, if
-present, and the loop terminates.
+is tested) the suite of the \verb\else\ clause, if present, is
+executed and the loop terminates.
 
 A \verb\break\ statement executed in the first suite terminates the
 loop without executing the \verb\else\ clause's suite.  A
@@ -2171,40 +2197,48 @@ for_stmt:       "for" target_list "in" condition_list ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-The suite is executed once for each item in the condition list, in the
+The condition list is evaluated once; it should yield a sequence.  The
+suite is then executed once for each item in the sequence, in the
 order of ascending indices.  Each item in turn is assigned to the
 target list using the standard rules for assignments, and then the
-suite is executed.  When the list is exhausted (which is immediately
-when the sequence is empty), the suite in the \verb\else\ clause is
-executed, if present.
+suite is executed.  When the items are exhausted (which is immediately
+when the sequence is empty), the suite in the \verb\else\ clause, if
+present, is executed, and the loop terminates.
 
 A \verb\break\ statement executed in the first suite terminates the
 loop without executing the \verb\else\ clause's suite.  A
 \verb\continue\ statement executed in the first suited skips the rest
-of the suite and continues with the next item or with the \verb\else\
-clause.
+of the suite and continues with the next item, or with the \verb\else\
+clause if there was no next item.
 
 The suite may assign to the variable(s) in the target list; this does
 not affect the next item assigned to it.
 
-The target list are not deleted when the loop is finished (but if the
-loop has executed 0 times it will not have been assigned to at all by
-the loop).
+The target list is not deleted when the loop is finished, but if the
+sequence is empty, it will not have been assigned to at all by the
+loop.
 
-The built-in function \verb\range()\ returns a sequence of integers
-suitable to emulate the effect of Pascal's \verb\for i := 1 to n do\.
+Hint: the built-in function \verb\range()\ returns a sequence of
+integers suitable to emulate the effect of Pascal's \verb\for i := a
+to b do\; e.g. \verb\range(3)\ returns the list \verb\[0, 1, 2]\.
 
 {\bf Warning:} There is a subtlety when the sequence is being modified
-by the loop (this can only occur for lists).  An internal counter is
-used to keep track of which item is used next, and this is incremented
-on each iteration.  When this counter has reached the end of the
-sequence the loop terminates.  This means that if the suite deletes
-the current (or a previous) item from the sequence, the next item will
-be skipped (since it gets the index of the current item and this has
-already been treated).  Likewise, if the suite inserts an item in the
-sequence before the current item, the current item will be treated
-again the next time through the loop.  This can lead to nasty bugs
-that can be avoided by making a temporary copy using the \
+by the loop (this can only occur for mutable sequences, i.e. lists).
+An internal counter is used to keep track of which item is used next,
+and this is incremented on each iteration.  When this counter has
+reached the length of the sequence the loop terminates.  This means that
+if the suite deletes the current (or a previous) item from the
+sequence, the next item will be skipped (since it gets the index of
+the current item which has already been treated).  Likewise, if the
+suite inserts an item in the sequence before the current item, the
+current item will be treated again the next time through the loop.
+This can lead to nasty bugs that can be avoided by making a temporary
+copy using a slice of the whole sequence, e.g.
+
+\begin{verbatim}
+for x in a[:]:
+    if x < 0: a.remove(x)
+\end{verbatim}
 
 \section{The {\tt try} statement}
 
@@ -2212,18 +2246,20 @@ The \verb\try\ statement specifies exception handlers and/or cleanup
 code for a group of statements:
 
 \begin{verbatim}
-try_stmt:       "try" ":" suite
+try_stmt:       try_exc_stmt | try_fin_stmt
+try_exc_stmt:   "try" ":" suite
                ("except" condition ["," target] ":" suite)*
                ["except" ":" suite]
-               ["finally" ":" suite]
+try_fin_stmt:   "try" ":" suite
+               "finally" ":" suite
 \end{verbatim}
 
-There are really two forms: \verb\try...except\ and
-\verb\try...finally\.  A \verb\try\ statement with both types of
-clauses is equivalent to a \verb\try...finally\ statement with a
-\verb\try...except\ statement in its \verb\try\ clause.  A \verb\try\
-statement with neither a \verb\except\ clause nor a \verb\finally\
-clause just executes the suite of statements in its \verb\try\ clause.
+There are two forms of \verb\try\ statement: \verb\try...except\ and
+\verb\try...finally\.  These forms cannot be mixed.  A \verb\try\
+clause with neither a \verb\except\ clause nor a \verb\finally\ clause
+just executes the suite of statements in its \verb\try\ clause (it
+could be forbidden syntactically but there seems little reason to do
+so).
 
 The \verb\try...except\ form specifies one or more exception handlers.
 When no exception occurs in the \verb\try\ clause, no exception
