@@ -7,7 +7,7 @@ data.
 """
 __version__ = '$Revision$'
 
-
+import errno
 import re
 import string
 import StringIO
@@ -23,8 +23,8 @@ class LaTeXFormatError(Error):
 
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
 _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
-_begin_macro_rx = re.compile(r"[\\]([a-zA-Z]+[*]?)({| |)")
-_comment_rx = re.compile("%([^\n]*)\n")
+_begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
+_comment_rx = re.compile("%+[ \t]*(.*)\n")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"[[]([^]]*)[]]")
 _parameter_rx = re.compile("[ \n]*{([^}]*)}")
@@ -58,7 +58,7 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             text = m.group(1)
             if text:
                 ofp.write("(COMMENT\n")
-                ofp.write("-%s\n" % encode(text))
+                ofp.write("- %s \n" % encode(text))
                 ofp.write(")COMMENT\n")
                 ofp.write("-\\n\n")
             else:
@@ -68,7 +68,7 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
         m = _begin_env_rx.match(line)
         if m:
             # re-write to use the macro handler
-            line = r"\%s%s" % (m.group(1), line[m.end():])
+            line = r"\%s %s" % (m.group(1), line[m.end():])
             continue
         m =_end_env_rx.match(line)
         if m:
@@ -86,8 +86,6 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 ofp.write(")%s\n" % envname)
                 del stack[-1]
             else:
-##                 print "envname ==>", envname
-##                 print stack
                 raise LaTeXFormatError("environment close doesn't match")
             line = line[m.end():]
             continue
@@ -108,7 +106,6 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             if macroname[-1] == "*":
                 macroname = macroname[:-1]
                 numbered = 0
-            real_ofp = ofp
             if macroname in autoclosing and macroname in stack:
                 while stack[-1] != macroname:
                     if stack[-1] and stack[-1] not in discards:
@@ -117,25 +114,25 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 if macroname not in discards:
                     ofp.write("-\\n\n)%s\n-\\n\n" % macroname)
                 del stack[-1]
+            real_ofp = ofp
             if macroname in discards:
                 ofp = StringIO.StringIO()
             #
             conversion = table.get(macroname, ([], 0, 0))
-            if type(conversion) is type(""):
-                # XXX convert to general entity; ESIS cheats!
-                line = "&%s;%s" % (conversion, line[m.end(1):])
-                continue
             params, optional, empty = conversion
             empty = empty or knownempty(macroname)
             if empty:
                 ofp.write("e\n")
             if not numbered:
                 ofp.write("Anumbered TOKEN no\n")
+            # rip off the macroname
             if params:
                 if optional and len(params) == 1:
                     line = line = line[m.end():]
                 else:
-                    line = line[m.end() - 1:]
+                    line = line[m.end(1):]
+            elif empty:
+                line = line[m.end(1):]
             else:
                 line = line[m.end():]
             #
@@ -195,8 +192,7 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                               % (attrname, dtype, encode(value)))
                     line = line[m.end():]
             stack.append(macroname)
-            if type(conversion) is not type(""):
-                ofp.write("(%s\n" % macroname)
+            ofp.write("(%s\n" % macroname)
             if empty:
                 line = "}" + line
             ofp = real_ofp
@@ -218,7 +214,6 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             line = line[1:]
             continue
         if line[0] == "\\" and line[1] in ESCAPED_CHARS:
-##             print "*** Found", `line[1]`, "as escaped character. ***"
             ofp.write("-%s\n" % encode(line[1]))
             line = line[2:]
             continue
@@ -249,7 +244,11 @@ def convert(ifp, ofp, table={}, discards=(), autoclosing=(), knownempties=()):
     d = {}
     for gi in knownempties:
         d[gi] = gi
-    return subconvert(ifp.read(), ofp, table, discards, autoclosing, d.has_key)
+    try:
+        subconvert(ifp.read(), ofp, table, discards, autoclosing, d.has_key)
+    except IOError, (err, msg):
+        if err != errno.EPIPE:
+            raise
 
 
 def main():
@@ -290,9 +289,13 @@ def main():
         "methoddescni": (["class", "name", ("args",)], 1, 0),
         "opcodedesc": (["name", "var"], 0, 0),
         "par": ([], 0, 1),
+        "paragraph": ([("title",)], 0, 0),
         "rfc": (["number"], 0, 1),
         "section": ([("title",)], 0, 0),
         "seemodule": (["ref", "name"], 1, 0),
+        "subparagraph": ([("title",)], 0, 0),
+        "subsection": ([("title",)], 0, 0),
+        "subsubsection": ([("title",)], 0, 0),
         "tableii": (["colspec", "style", "head1", "head2"], 0, 0),
         "tableiii": (["colspec", "style", "head1", "head2", "head3"], 0, 0),
         "tableiv": (["colspec", "style", "head1", "head2", "head3", "head4"],
@@ -300,16 +303,16 @@ def main():
         "versionadded": (["version"], 0, 1),
         "versionchanged": (["version"], 0, 1),
         #
-        "ABC": "ABC",
-        "ASCII": "ASCII",
-        "C": "C",
-        "Cpp": "Cpp",
-        "EOF": "EOF",
-        "e": "backslash",
-        "ldots": "ldots",
-        "NULL": "NULL",
-        "POSIX": "POSIX",
-        "UNIX": "Unix",
+        "ABC": ([], 0, 1),
+        "ASCII": ([], 0, 1),
+        "C": ([], 0, 1),
+        "Cpp": ([], 0, 1),
+        "EOF": ([], 0, 1),
+        "e": ([], 0, 1),
+        "ldots": ([], 0, 1),
+        "NULL": ([], 0, 1),
+        "POSIX": ([], 0, 1),
+        "UNIX": ([], 0, 1),
         #
         # Things that will actually be going away!
         #
@@ -325,9 +328,9 @@ def main():
                       "noindent", "tableofcontents"],
             autoclosing=["chapter", "section", "subsection", "subsubsection",
                          "paragraph", "subparagraph", ],
-            knownempties=["rfc", "declaremodule", "appendix",
+            knownempties=["appendix",
                           "maketitle", "makeindex", "makemodindex",
-                          "localmoduletable", "manpage", "input"])
+                          "localmoduletable"])
 
 
 if __name__ == "__main__":
