@@ -71,7 +71,8 @@ class UnixCCompiler (CCompiler):
     obj_extension = ".o"
     static_lib_extension = ".a"
     shared_lib_extension = ".so"
-    static_lib_format = shared_lib_format = "lib%s%s"
+    dylib_lib_extension = ".dylib"
+    static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
 
 
 
@@ -259,6 +260,8 @@ class UnixCCompiler (CCompiler):
         for dir in dirs:
             shared = os.path.join(
                 dir, self.library_filename(lib, lib_type='shared'))
+            dylib = os.path.join(
+                dir, self.library_filename(lib, lib_type='dylib'))
             static = os.path.join(
                 dir, self.library_filename(lib, lib_type='static'))
 
@@ -266,7 +269,9 @@ class UnixCCompiler (CCompiler):
             # data to go on: GCC seems to prefer the shared library, so I'm
             # assuming that *all* Unix C compilers do.  And of course I'm
             # ignoring even GCC's "-static" option.  So sue me.
-            if os.path.exists(shared):
+            if os.path.exists(dylib):
+                return dylib
+            elif os.path.exists(shared):
                 return shared
             elif os.path.exists(static):
                 return static
