@@ -5,9 +5,9 @@
 VERSION=2.3
 builddir = ../..
 srcdir = ../..
-LIBDEST=$(prefix)/lib/python$(VERSION)
-prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
 dstroot=/.
+prefix=$(dstroot)/Library/Frameworks/Python.framework/Versions/$(VERSION)
+LIBDEST=$(prefix)/lib/python$(VERSION)
 
 # These are normally glimpsed from the previous set
 bindir=$(dstroot)/usr/local/bin
@@ -261,8 +261,8 @@ installmacsubtree: $(INSTALLED_PYTHON)
 	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(LIBDEST)/site-packages/
 
 	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(INSTALLED_PYTHON) $(srcdir)/Lib/compileall.py $(MACLIBDEST) $(MACTOOLSDEST)
-	$(INSTALLED_PYTHON) -O $(srcdir)/Lib/compileall.py $(MACLIBDEST) $(MACTOOLSDEST)
+	$(INSTALLED_PYTHON) -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(INSTALLED_PYTHON) -O -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
 
 	
 # Put symlinks "python" and "pythonw" in the standard place
