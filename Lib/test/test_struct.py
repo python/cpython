@@ -2,6 +2,23 @@ from test_support import TestFailed, verbose, verify
 import struct
 ## import pdb
 
+import sys
+ISBIGENDIAN = sys.byteorder == "big"
+del sys
+verify((struct.pack('=i', 1)[0] == chr(0)) == ISBIGENDIAN,
+       "bigendian determination appears wrong")
+
+def string_reverse(s):
+    chars = list(s)
+    chars.reverse()
+    return "".join(chars)
+
+def bigendian_to_native(value):
+    if ISBIGENDIAN:
+        return value
+    else:
+        return string_reverse(value)
+
 def simple_err(func, *args):
     try:
         apply(func, args)
@@ -21,6 +38,7 @@ def any_err(func, *args):
         raise TestFailed, "%s%s did not raise error" % (
             func.__name__, args)
 ##      pdb.set_trace()
+
 
 simple_err(struct.calcsize, 'Z')
 
@@ -103,13 +121,11 @@ tests = [
                '\000\000\000\000\000\000\000\300', 0),
 ]
 
-isbigendian = struct.pack('=i', 1)[0] == chr(0)
-
 for fmt, arg, big, lil, asy in tests:
     if verbose:
         print `fmt`, `arg`, `big`, `lil`
     for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
-                        ('='+fmt, isbigendian and big or lil)]:
+                        ('='+fmt, ISBIGENDIAN and big or lil)]:
         res = struct.pack(xfmt, arg)
         if res != exp:
             raise TestFailed, "pack(%s, %s) -> %s # expected %s" % (
@@ -124,7 +140,7 @@ for fmt, arg, big, lil, asy in tests:
                 `fmt`, `res`, `rev`, `arg`)
 
 ###########################################################################
-# q/Q tests.
+# Simple native q/Q tests.
 
 has_native_qQ = 1
 try:
@@ -138,17 +154,6 @@ if verbose:
 any_err(struct.pack, "Q", -1)   # can't pack -1 as unsigned regardless
 simple_err(struct.pack, "q", "a")  # can't pack string as 'q' regardless
 simple_err(struct.pack, "Q", "a")  # ditto, but 'Q'
-
-def string_reverse(s):
-    chars = list(s)
-    chars.reverse()
-    return "".join(chars)
-
-def bigendian_to_native(value):
-    if isbigendian:
-        return value
-    else:
-        return string_reverse(value)
 
 def test_native_qQ():
     bytes = struct.calcsize('q')
@@ -175,149 +180,188 @@ def test_native_qQ():
 if has_native_qQ:
     test_native_qQ()
 
-# Standard q/Q (8 bytes; should work on all platforms).
-
-MIN_Q, MAX_Q = 0, 2L**64 - 1
-MIN_q, MAX_q = -(2L**63), 2L**63 - 1
+###########################################################################
+# Standard integer tests (bBhHiIlLqQ).
 
 import binascii
-def test_one_qQ(x, pack=struct.pack,
-                   unpack=struct.unpack,
-                   unhexlify=binascii.unhexlify):
-    if verbose:
-        print "trying std q/Q on", x, "==", hex(x)
 
-    # Try 'q'.
-    if MIN_q <= x <= MAX_q:
-        # Try '>q'.
-        expected = long(x)
-        if x < 0:
-            expected += 1L << 64
-            assert expected > 0
-        expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
-        if len(expected) & 1:
-            expected = "0" + expected
-        expected = unhexlify(expected)
-        expected = "\x00" * (8 - len(expected)) + expected
+class IntTester:
 
-        # >q pack work?
-        got = pack(">q", x)
-        verify(got == expected,
-               "'>q'-pack of %r gave %r, not %r" %
-                (x, got, expected))
+    # XXX Most std integer modes fail to test for out-of-range.
+    BUGGY_RANGE_CHECK = "bBhHIL"
 
-        # >q unpack work?
-        retrieved = unpack(">q", got)[0]
-        verify(x == retrieved,
-               "'>q'-unpack of %r gave %r, not %r" %
-                (got, retrieved, x))
+    def __init__(self, formatpair, bytesize):
+        assert len(formatpair) == 2
+        self.formatpair = formatpair
+        for direction in "<>!=":
+            for code in formatpair:
+                format = direction + code
+                verify(struct.calcsize(format) == bytesize)
+        self.bytesize = bytesize
+        self.bitsize = bytesize * 8
+        self.signed_code, self.unsigned_code = formatpair
+        self.unsigned_min = 0
+        self.unsigned_max = 2L**self.bitsize - 1
+        self.signed_min = -(2L**(self.bitsize-1))
+        self.signed_max = 2L**(self.bitsize-1) - 1
 
-        # Adding any byte should cause a "too big" error.
-        any_err(unpack, ">q", '\x01' + got)
+    def test_one(self, x, pack=struct.pack,
+                          unpack=struct.unpack,
+                          unhexlify=binascii.unhexlify):
+        if verbose:
+            print "trying std", self.formatpair, "on", x, "==", hex(x)
 
-        # Try '<q'.
-        expected = string_reverse(expected)
+        # Try signed.
+        code = self.signed_code
+        if self.signed_min <= x <= self.signed_max:
+            # Try big-endian.
+            expected = long(x)
+            if x < 0:
+                expected += 1L << self.bitsize
+                assert expected > 0
+            expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
+            if len(expected) & 1:
+                expected = "0" + expected
+            expected = unhexlify(expected)
+            expected = "\x00" * (self.bytesize - len(expected)) + expected
 
-        # <q pack work?
-        got = pack("<q", x)
-        verify(got == expected,
-               "'<q'-pack of %r gave %r, not %r" %
-                (x, got, expected))
+            # Pack work?
+            format = ">" + code
+            got = pack(format, x)
+            verify(got == expected,
+                   "'%s'-pack of %r gave %r, not %r" %
+                    (format, x, got, expected))
 
-        # <q unpack work?
-        retrieved = unpack("<q", got)[0]
-        verify(x == retrieved,
-               "'<q'-unpack of %r gave %r, not %r" %
-                (got, retrieved, x))
+            # Unpack work?
+            retrieved = unpack(format, got)[0]
+            verify(x == retrieved,
+                   "'%s'-unpack of %r gave %r, not %r" %
+                    (format, got, retrieved, x))
 
-        # Adding any byte should cause a "too big" error.
-        any_err(unpack, "<q", '\x01' + got)
+            # Adding any byte should cause a "too big" error.
+            any_err(unpack, format, '\x01' + got)
 
-    else:
-        # x is out of q's range -- verify pack realizes that.
-        any_err(pack, '>q', x)
-        any_err(pack, '<q', x)
+            # Try little-endian.
+            format = "<" + code
+            expected = string_reverse(expected)
 
-    # Much the same for 'Q'.
-    if MIN_Q <= x <= MAX_Q:
-        # Try '>Q'.
-        expected = long(x)
-        expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
-        if len(expected) & 1:
-            expected = "0" + expected
-        expected = unhexlify(expected)
-        expected = "\x00" * (8 - len(expected)) + expected
+            # Pack work?
+            got = pack(format, x)
+            verify(got == expected,
+                   "'%s'-pack of %r gave %r, not %r" %
+                    (format, x, got, expected))
 
-        # >Q pack work?
-        got = pack(">Q", x)
-        verify(got == expected,
-               "'>Q'-pack of %r gave %r, not %r" %
-                (x, got, expected))
+            # Unpack work?
+            retrieved = unpack(format, got)[0]
+            verify(x == retrieved,
+                   "'%s'-unpack of %r gave %r, not %r" %
+                    (format, got, retrieved, x))
 
-        # >Q unpack work?
-        retrieved = unpack(">Q", got)[0]
-        verify(x == retrieved,
-               "'>Q'-unpack of %r gave %r, not %r" %
-                (got, retrieved, x))
+            # Adding any byte should cause a "too big" error.
+            any_err(unpack, format, '\x01' + got)
 
-        # Adding any byte should cause a "too big" error.
-        any_err(unpack, ">Q", '\x01' + got)
+        else:
+            # x is out of range -- verify pack realizes that.
+            if code in self.BUGGY_RANGE_CHECK:
+                if verbose:
+                    print "Skipping buggy range check for code", code
+            else:
+                any_err(pack, ">" + code, x)
+                any_err(pack, "<" + code, x)
 
-        # Try '<Q'.
-        expected = string_reverse(expected)
+        # Much the same for unsigned.
+        code = self.unsigned_code
+        if self.unsigned_min <= x <= self.unsigned_max:
+            # Try big-endian.
+            format = ">" + code
+            expected = long(x)
+            expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
+            if len(expected) & 1:
+                expected = "0" + expected
+            expected = unhexlify(expected)
+            expected = "\x00" * (self.bytesize - len(expected)) + expected
 
-        # <Q pack work?
-        got = pack("<Q", x)
-        verify(got == expected,
-               "'<Q'-pack of %r gave %r, not %r" %
-                (x, got, expected))
+            # Pack work?
+            got = pack(format, x)
+            verify(got == expected,
+                   "'%s'-pack of %r gave %r, not %r" %
+                    (format, x, got, expected))
 
-        # <Q unpack work?
-        retrieved = unpack("<Q", got)[0]
-        verify(x == retrieved,
-               "'<Q'-unpack of %r gave %r, not %r" %
-                (got, retrieved, x))
+            # Unpack work?
+            retrieved = unpack(format, got)[0]
+            verify(x == retrieved,
+                   "'%s'-unpack of %r gave %r, not %r" %
+                    (format, got, retrieved, x))
 
-        # Adding any byte should cause a "too big" error.
-        any_err(unpack, "<Q", '\x01' + got)
+            # Adding any byte should cause a "too big" error.
+            any_err(unpack, format, '\x01' + got)
 
-    else:
-        # x is out of Q's range -- verify pack realizes that.
-        any_err(pack, '>Q', x)
-        any_err(pack, '<Q', x)
+            # Try little-endian.
+            format = "<" + code
+            expected = string_reverse(expected)
 
-def test_std_qQ():
-    from random import randrange
+            # Pack work?
+            got = pack(format, x)
+            verify(got == expected,
+                   "'%s'-pack of %r gave %r, not %r" %
+                    (format, x, got, expected))
 
-    # Create all interesting powers of 2.
-    values = []
-    for exp in range(70):
-        values.append(1L << exp)
+            # Unpack work?
+            retrieved = unpack(format, got)[0]
+            verify(x == retrieved,
+                   "'%s'-unpack of %r gave %r, not %r" %
+                    (format, got, retrieved, x))
 
-    # Add some random 64-bit values.
-    for i in range(50):
-        val = 0L
-        for j in range(8):
-            val = (val << 8) | randrange(256)
-        values.append(val)
+            # Adding any byte should cause a "too big" error.
+            any_err(unpack, format, '\x01' + got)
 
-    # Try all those, and their negations, and +-1 from them.  Note
-    # that this tests all power-of-2 boundaries in range, and a few out
-    # of range, plus +-(2**n +- 1).
-    for base in values:
-        for val in -base, base:
-            for incr in -1, 0, 1:
-                x = val + incr
-                try:
-                    x = int(x)
-                except OverflowError:
-                    pass
-                test_one_qQ(x)
+        else:
+            # x is out of range -- verify pack realizes that.
+            if code in self.BUGGY_RANGE_CHECK:
+                if verbose:
+                    print "Skipping buggy range check for code", code
+            else:
+                any_err(pack, ">" + code, x)
+                any_err(pack, "<" + code, x)
 
-    # Some error cases.
-    for direction in "<>":
-        for letter in "qQ":
-            for badobject in "a string", 3+42j, randrange:
-                any_err(struct.pack, direction + letter, badobject)
-    
-test_std_qQ()
+    def run(self):
+        from random import randrange
+
+        # Create all interesting powers of 2.
+        values = []
+        for exp in range(self.bitsize + 3):
+            values.append(1L << exp)
+
+        # Add some random values.
+        for i in range(self.bitsize):
+            val = 0L
+            for j in range(self.bytesize):
+                val = (val << 8) | randrange(256)
+            values.append(val)
+
+        # Try all those, and their negations, and +-1 from them.  Note
+        # that this tests all power-of-2 boundaries in range, and a few out
+        # of range, plus +-(2**n +- 1).
+        for base in values:
+            for val in -base, base:
+                for incr in -1, 0, 1:
+                    x = val + incr
+                    try:
+                        x = int(x)
+                    except OverflowError:
+                        pass
+                    self.test_one(x)
+
+        # Some error cases.
+        for direction in "<>":
+            for code in self.formatpair:
+                for badobject in "a string", 3+42j, randrange:
+                    any_err(struct.pack, direction + code, badobject)
+
+for args in [("bB", 1),
+             ("hH", 2),
+             ("iI", 4),
+             ("lL", 4),
+             ("qQ", 8)]:
+    t = IntTester(*args)
+    t.run()
