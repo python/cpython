@@ -23,9 +23,12 @@ print '1.1.2 Numeric literals'
 print '1.1.2.1 Plain integers'
 if 0xff <> 255: raise TestFailed, 'hex int'
 if 0377 <> 255: raise TestFailed, 'octal int'
-if  2147483647   != 017777777777: raise TestFailed, 'max positive int'
-# Change the following line to "if 0:" if you have 64-bit integers
-if 1:
+if  2147483647   != 017777777777: raise TestFailed, 'large positive int'
+try:
+	from sys import maxint
+except ImportError:
+	maxint = 2147483647
+if maxint == 2147483647:
 	if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
 	# XXX -2147483648
 	if 037777777777 != -1: raise TestFailed, 'oct -1'
@@ -37,6 +40,21 @@ if 1:
 			continue
 		raise TestFailed, \
 			  'No OverflowError on huge integer literal ' + `s`
+elif eval('maxint == 9223372036854775807'):
+	if eval('9223372036854775807-1 != -01000000000000000000000'):
+		raise TestFailed, 'max negative int'
+	if eval('01777777777777777777777') != -1: raise TestFailed, 'oct -1'
+	if eval('0xffffffffffffffff') != -1: raise TestFailed, 'hex -1'
+	for s in '9223372036854775808', '02000000000000000000000', \
+		 '0x10000000000000000':
+		try:
+			x = eval(s)
+		except OverflowError:
+			continue
+		raise TestFailed, \
+			  'No OverflowError on huge integer literal ' + `s`
+else:
+	print 'Weird maxint value', maxint
 
 print '1.1.2.2 Long integers'
 x = 0L

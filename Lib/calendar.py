@@ -6,7 +6,6 @@
 
 # Import functions and variables from time module
 from time import gmtime, localtime, mktime, asctime, ctime
-from time import timezone, altzone, daylight, tzname
 
 # Exception raised for bad input (with string parameter for details)
 error = 'calendar.error'
