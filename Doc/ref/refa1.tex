@@ -40,14 +40,17 @@ lines that can appear before a future statement are:
 
 \end{itemize}
 
-The only feature recognized by Python 2.1 is \samp{nested_scopes}.
+The features recognized by Python 2.2 are \samp{generators},
+\samp{division} and \samp{nested_scopes}.  \samp{nested_scopes} 
+is redundant in 2.2 as the nested scopes feature is active by default.
 
-A future statement is recognized and treated specially at compile time:
-Changes to the semantics of core constructs are often implemented by
-generating different code.  It may even be the case that a new feature
-introduces new incompatible syntax (such as a new reserved word), in
-which case the compiler may need to parse the module differently.  Such
-decisions cannot be pushed off until runtime.
+A future statement is recognized and treated specially at compile
+time: Changes to the semantics of core constructs are often
+implemented by generating different code.  It may even be the case
+that a new feature introduces new incompatible syntax (such as a new
+reserved word), in which case the compiler may need to parse the
+module differently.  Such decisions cannot be pushed off until
+runtime.
 
 For any given release, the compiler knows which feature names have been
 defined, and raises a compile-time error if a future statement contains
@@ -72,8 +75,11 @@ no special semantics or syntax restrictions.
 
 Code compiled by an exec statement or calls to the builtin functions
 \function{compile()} and \function{execfile()} that occur in a module
-\module{M} containing a future statement will use the new syntax or
-semantics associated with the future statement.
+\module{M} containing a future statement will, by default, use the new 
+syntax or semantics associated with the future statement.  This can,
+starting with Python 2.2 be controlled by optional arguments to
+\function{compile()} --- see the documentation of that function in the 
+library reference for details.
 
 A future statement typed at an interactive interpreter prompt will
 take effect for the rest of the interpreter session.  If an
@@ -110,7 +116,8 @@ is executed.
 Each statment in \file{__future__.py} is of the form:
 
 \begin{verbatim}
-FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ")"
+FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ","
+                        CompilerFlag ")"
 \end{verbatim}
 
 where, normally, OptionalRelease is less then MandatoryRelease, and
@@ -142,6 +149,11 @@ feature got dropped.
 
 Instances of class \class{_Feature} have two corresponding methods,
 \method{getOptionalRelease()} and \method{getMandatoryRelease()}.
+
+CompilerFlag is the (bitfield) flag that should be passed in the
+fourth argument to the builtin function \function{compile()} to enable
+the feature in dynamically compiled code.  This flag is stored in the
+\member{compiler_flag} attribute on \class{_Future} instances.
 
 No feature description will ever be deleted from \module{__future__}.
 
