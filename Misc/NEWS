@@ -176,7 +176,8 @@ Mac
   before displaying.
 
 - OSA Scripting support has improved a lot, and gensuitemodule.py can now
-  be used by mere mortals.
+  be used by mere mortals. The documentation is now also more or less
+  complete.
 
 - The IDE (in a framework build) now includes introductory documentation
   in Apple Help Viewer format.
