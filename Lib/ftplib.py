@@ -95,7 +95,7 @@ class FTP:
 		if port: self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect(self.host, self.port)
-		self.file = self.sock.makefile('r')
+		self.file = self.sock.makefile('rb')
 		self.welcome = self.getresp()
 
 	# Get the welcome message from the server
@@ -288,7 +288,7 @@ class FTP:
 		if not callback: callback = print_line
 		resp = self.sendcmd('TYPE A')
 		conn = self.transfercmd(cmd)
-		fp = conn.makefile('r')
+		fp = conn.makefile('rb')
 		while 1:
 			line = fp.readline()
 			if self.debugging > 2: print '*retr*', `line`
