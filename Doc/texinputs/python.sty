@@ -27,13 +27,22 @@
   \let\NormalColor=\Black
   \pdfcompresslevel=9
   %
+  % Pad the number with '0' to 3 digits wide so no page name is a prefix
+  % of any other.
+  %
+  \def\py@targetno#1{\ifnum#1<100 0\fi\ifnum#1<10 0\fi#1}
+  \def\py@pageno{\py@targetno\thepage}
+  %
   % This definition allows the entries in the page-view of the ToC to be
   % active links.  Some work, some don't.
   %
   \let\OldContentsline=\contentsline
+  % Compute the padded page number separately since we end up with a pair of
+  % \relax tokens; this gets the right string computed and works.
   \renewcommand{\contentsline}[3]{%
+    \def\my@pageno{\py@targetno{#3}}%
     \OldContentsline{#1}{%
-      \pdfannotlink attr{/Border [0 0 0]} goto name{page.#3}%
+      \pdfannotlink attr{/Border [0 0 0]} goto name{page\my@pageno}%
         \LinkColor#2\NormalColor%
       \pdfendlink%
     }{#3}%
@@ -45,12 +54,17 @@
   \AtEndDocument{
     \InputIfFileExists{\jobname.bkm}{\pdfcatalog{/PageMode /UseOutlines}}{}
   }
+  \newcommand{\py@target}[1]{%
+    \if@doing@page@targets%
+      {\pdfdest name{#1} fit}%
+    \fi%
+  }
   \let\OldLabel=\label
   \renewcommand{\label}[1]{%
     \OldLabel{#1}%
-    {\pdfdest name{label.#1} fit}%
+    \py@target{label-#1}%
   }
-  % This stuff adds a page.# destination to every PDF page, where # has
+  % This stuff adds a page# destination to every PDF page, where # has
   % the same formatting as the displayed page number.  This doesn't really
   % help with the frontmatter, but does fine with the body.
   %
@@ -62,7 +76,7 @@
   }
   \def\@hyperfixhead{%
    \let\H@old@thehead\@thehead
-       \gdef\@foo{\if@doing@page@targets\pdfdest name{page.\thepage x} fit\fi}%
+       \global\def\@foo{\py@target{page\py@pageno}}%
      \expandafter\ifx\expandafter\@empty\H@old@thehead
        \def\H@old@thehead{\hfil}\fi
     \def\@thehead{\@foo\relax\H@old@thehead}%
@@ -191,26 +205,26 @@
 % Augment the sectioning commands used to get our own font family in place,
 % and reset some internal data items:
 \renewcommand{\section}{\reset@python%
-                        \@startsection {section}{1}{\z@}%
-                                   {-3.5ex \@plus -1ex \@minus -.2ex}%
-                                   {2.3ex \@plus.2ex}%
-                                   {\reset@font\Large\HeaderFamily}}
+                        \@startsection{section}{1}{\z@}%
+                                       {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                       {2.3ex \@plus.2ex}%
+                                       {\reset@font\Large\HeaderFamily}}
 \renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
-                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                     {1.5ex \@plus .2ex}%
-                                     {\reset@font\large\HeaderFamily}}
+                                       {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                       {1.5ex \@plus .2ex}%
+                                       {\reset@font\large\HeaderFamily}}
 \renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
-                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                     {1.5ex \@plus .2ex}%
-                                     {\reset@font\normalsize\HeaderFamily}}
+                                       {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                       {1.5ex \@plus .2ex}%
+                                       {\reset@font\normalsize\HeaderFamily}}
 \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
-                                    {3.25ex \@plus1ex \@minus.2ex}%
-                                    {-1em}%
-                                    {\reset@font\normalsize\HeaderFamily}}
+                                       {3.25ex \@plus1ex \@minus.2ex}%
+                                       {-1em}%
+                                       {\reset@font\normalsize\HeaderFamily}}
 \renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
                                        {3.25ex \@plus1ex \@minus .2ex}%
                                        {-1em}%
-                                      {\reset@font\normalsize\HeaderFamily}}
+                                       {\reset@font\normalsize\HeaderFamily}}
 
 
 % Underscore hack (only act like subscript operator if in math mode)
@@ -518,9 +532,9 @@
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
 \@ifundefined{pdfannotlink}{
-  \newcommand{\pythonurl}[1]{\mbox{\small\textsf{#1}}}
+  \newcommand{\py@url}[1]{\mbox{\small\textsf{#1}}}
 }{
-  \newcommand{\pythonurl}[1]{{%
+  \newcommand{\py@url}[1]{{%
     \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \LinkColor%				color of the link text
     {\small\textsf{#1}}%
@@ -528,7 +542,7 @@
     \pdfendlink}%			and don't appear bound to the current
   }%					formatting "box".
 }
-\let\url=\pythonurl
+\let\url=\py@url
 \newcommand{\email}[1]{{\small\textsf{#1}}}
 \newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
@@ -643,7 +657,7 @@
 }{\newcommand{\seemodule}[3][\@modulebadkey]{%
     \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
     \ref{module-\@modulekey}:\quad %
-    {\pdfannotlink attr{/Border [0 0 0]} goto name{label.module-\@modulekey}%
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-\@modulekey}%
      \LinkColor Module \module{#2} \NormalColor%
      \pdfendlink%
     }%
