@@ -1070,6 +1070,8 @@ _PyObject_DebugCheckAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
 	char *msg;
+	ulong nbytes;
+	const uchar *tail;
 	int i;
 
 	if (p == NULL) {
@@ -1077,6 +1079,10 @@ _PyObject_DebugCheckAddress(const void *p)
 		goto error;
 	}
 
+	/* Check the stuff at the start of p first:  if there's underwrite
+	 * corruption, the number-of-bytes field may be nuts, and checking
+	 * the tail could lead to a segfault then.
+	 */
 	for (i = 4; i >= 1; --i) {
 		if (*(q-i) != FORBIDDENBYTE) {
 			msg = "bad leading pad byte";
@@ -1084,14 +1090,12 @@ _PyObject_DebugCheckAddress(const void *p)
 		}
 	}
 
-	{
-		const ulong nbytes = read4(q-8);
-		const uchar *tail = q + nbytes;
-		for (i = 0; i < 4; ++i) {
-			if (tail[i] != FORBIDDENBYTE) {
-				msg = "bad trailing pad byte";
-				goto error;
-			}
+	nbytes = read4(q-8);
+	tail = q + nbytes;
+	for (i = 0; i < 4; ++i) {
+		if (tail[i] != FORBIDDENBYTE) {
+			msg = "bad trailing pad byte";
+			goto error;
 		}
 	}
 
@@ -1118,15 +1122,13 @@ _PyObject_DebugDumpAddress(const void *p)
 	nbytes = read4(q-8);
 	fprintf(stderr, "    %lu bytes originally requested\n", nbytes);
 
-	/* In case this is nuts, check the pad bytes before trying to read up
-	   the serial number (the address deref could blow up). */
-
-	fputs("    the 4 pad bytes at p-4 are ", stderr);
+	/* In case this is nuts, check the leading pad bytes first. */
+	fputs("    The 4 pad bytes at p-4 are ", stderr);
 	if (*(q-4) == FORBIDDENBYTE &&
 	    *(q-3) == FORBIDDENBYTE &&
 	    *(q-2) == FORBIDDENBYTE &&
 	    *(q-1) == FORBIDDENBYTE) {
-		fputs("FORBIDDENBYTE, as expected\n", stderr);
+		fputs("FORBIDDENBYTE, as expected.\n", stderr);
 	}
 	else {
 		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
@@ -1138,15 +1140,20 @@ _PyObject_DebugDumpAddress(const void *p)
 				fputs(" *** OUCH", stderr);
 			fputc('\n', stderr);
 		}
+
+		fputs("    Because memory is corrupted at the start, the "
+		      "count of bytes requested\n"
+		      "       may be bogus, and checking the trailing pad "
+		      "bytes may segfault.\n", stderr);
 	}
 
 	tail = q + nbytes;
-	fprintf(stderr, "    the 4 pad bytes at tail=%p are ", tail);
+	fprintf(stderr, "    The 4 pad bytes at tail=%p are ", tail);
 	if (tail[0] == FORBIDDENBYTE &&
 	    tail[1] == FORBIDDENBYTE &&
 	    tail[2] == FORBIDDENBYTE &&
 	    tail[3] == FORBIDDENBYTE) {
-		fputs("FORBIDDENBYTE, as expected\n", stderr);
+		fputs("FORBIDDENBYTE, as expected.\n", stderr);
 	}
 	else {
 		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
@@ -1162,12 +1169,12 @@ _PyObject_DebugDumpAddress(const void *p)
 	}
 
 	serial = read4(tail+4);
-	fprintf(stderr, "    the block was made by call #%lu to "
-	                "debug malloc/realloc\n", serial);
+	fprintf(stderr, "    The block was made by call #%lu to "
+	                "debug malloc/realloc.\n", serial);
 
 	if (nbytes > 0) {
 		int i = 0;
-		fputs("    data at p:", stderr);
+		fputs("    Data at p:", stderr);
 		/* print up to 8 bytes at the start */
 		while (q < tail && i < 8) {
 			fprintf(stderr, " %02x", *q);
