@@ -106,18 +106,19 @@ def decodestring(s):
 	decode(f, g)
 	return g.getvalue()
 
-# Small test program, reads stdin, writes stdout.
-# no arg: encode, any arg: decode.
+# Small test program
 def test():
 	import sys, getopt
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'deut')
 	except getopt.error, msg:
+		sys.stdout = sys.stderr
 		print msg
 		print """usage: basd64 [-d] [-e] [-u] [-t] [file|-]
 		-d, -u: decode
 		-e: encode (default)
 		-t: decode string 'Aladdin:open sesame'"""
+		sys.exit(2)
 	func = encode
 	for o, a in opts:
 		if o == '-e': func = encode
