@@ -130,6 +130,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libtextwrap.tex \
 	lib/libcodecs.tex \
 	lib/libunicodedata.tex \
+	lib/libstringprep.tex \
 	lib/libstruct.tex \
 	lib/libmisc.tex \
 	lib/libmath.tex \
@@ -251,6 +252,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libxmllib.tex \
 	lib/libxmlrpclib.tex \
 	lib/libsimplexmlrpc.tex \
+	lib/libdocxmlrpc.tex \
 	lib/libpyexpat.tex \
 	lib/xmldom.tex \
 	lib/xmldomminidom.tex \
