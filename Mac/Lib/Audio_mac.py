@@ -1,10 +1,11 @@
 QSIZE = 100000
+error='Audio_mac.error'
 
 class Play_Audio_mac:
 
-	def __init__(self):
+	def __init__(self, qsize=QSIZE):
 		self._chan = None
-		self._qsize = QSIZE
+		self._qsize = qsize
 		self._outrate = 22254
 		self._sampwidth = 1
 		self._nchannels = 1
@@ -46,7 +47,7 @@ class Play_Audio_mac:
 			self._chan = Snd.SndNewChannel(5, 0, self._callback)
 		nframes = len(data) / self._nchannels / self._sampwidth
 		if len(data) != nframes * self._nchannels * self._sampwidth:
-			raise ValueError, 'data is not a whole number of frames'
+			raise error, 'data is not a whole number of frames'
 		while self._gc and \
 			  self.getfilled() + nframes > \
 				self._qsize / self._nchannels / self._sampwidth:
