@@ -77,11 +77,6 @@ class Debugger:
             return
         if self.stackviewer:
             self.stackviewer.close(); self.stackviewer = None
-        # Remove all EditWindow BREAK tags when closing debugger:
-        edit_windows = self.pyshell.flist.inversedict.keys()
-        for window in edit_windows:
-            window.text.tag_remove("BREAK", 1.0, END)
-            window.break_set = False
         # Clean up pyshell if user clicked debugger control close widget.
         # (Causes a harmless extra cycle through close_debugger() if user
         # toggled debugger from pyshell Debug menu)
@@ -311,48 +306,34 @@ class Debugger:
         if gv:
             gv.load_dict(gdict, force, self.pyshell.interp.rpcclt)
 
-    def set_breakpoint_here(self, edit):
-        text = edit.text
-        filename = edit.io.filename
-        if not filename:
-            text.bell()
-            return
-        lineno = int(float(text.index("insert")))
+    def set_breakpoint_here(self, filename, lineno):
         msg = self.idb.set_break(filename, lineno)
         if msg:
             text.bell()
             return
-        text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
-        edit.break_set = True
 
-    def clear_breakpoint_here(self, edit):
-        text = edit.text
-        filename = edit.io.filename
-        if not filename:
-            text.bell()
-            return
-        lineno = int(float(text.index("insert")))
+    def clear_breakpoint_here(self, filename, lineno):
         msg = self.idb.clear_break(filename, lineno)
         if msg:
             text.bell()
             return
-        text.tag_remove("BREAK", "insert linestart",\
-                        "insert lineend +1char")
-        # Don't bother to track break_set status
 
-    def clear_file_breaks(self, edit):
-        text = edit.text
-        filename = edit.io.filename
-        if not filename:
-            text.bell()
-            return
+    def clear_file_breaks(self, filename):
         msg = self.idb.clear_all_file_breaks(filename)
         if msg:
             text.bell()
             return
-        text.tag_remove("BREAK", "1.0", END)
-        edit.break_set = False
 
+    def load_breakpoints(self):
+        "Load PyShellEditorWindow breakpoints into subprocess debugger"
+        pyshell_edit_windows = self.pyshell.flist.inversedict.keys()
+        for editwin in pyshell_edit_windows:
+            filename = editwin.io.filename
+            try:
+                for lineno in editwin.breakpoints:
+                    self.set_breakpoint_here(filename, lineno)
+            except AttributeError:
+                continue
 
 class StackViewer(ScrolledList):
 

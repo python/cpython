@@ -58,7 +58,6 @@ class EditorWindow:
             self.top.instanceDict=flist.inversedict
         self.recentFilesPath=os.path.join(idleConf.GetUserCfgDir(),
                 'recent-files.lst')
-        self.break_set = False
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.text = text = Text(text_frame, name='text', padx=5, wrap='none',
@@ -625,9 +624,6 @@ class EditorWindow:
         if not self.get_saved():
             title = "*%s*" % title
             icon = "*%s" % icon
-            if self.break_set:
-                shell = self.flist.pyshell 
-                shell.interp.debugger.clear_file_breaks(self)
         self.top.wm_title(title)
         self.top.wm_iconname(icon)
 
@@ -696,9 +692,6 @@ class EditorWindow:
         #print self.io.filename
         if self.io.filename:
             self.UpdateRecentFilesList(newFile=self.io.filename)
-        if self.break_set:
-            shell = self.flist.pyshell
-            shell.interp.debugger.clear_file_breaks(self)
         WindowList.unregister_callback(self.postwindowsmenu)
         if self.close_hook:
             self.close_hook()

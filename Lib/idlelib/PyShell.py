@@ -44,11 +44,15 @@ else:
         file.write(warnings.formatwarning(message, category, filename, lineno))
     warnings.showwarning = idle_showwarning
 
-# We need to patch linecache.checkcache, because we don't want it
-# to throw away our <pyshell#...> entries.
-# Rather than repeating its code here, we save those entries,
-# then call the original function, and then restore the saved entries.
-def linecache_checkcache(orig_checkcache=linecache.checkcache):
+def linecache_checkcache():
+    """Extend linecache.checkcache to preserve the <pyshell#...> entries
+
+    Rather than repeating the linecache code, patch it by saving the pyshell#
+    entries, call linecache.checkcache(), and then restore the saved
+    entries.
+
+    """
+    orig_checkcache=linecache.checkcache
     cache = linecache.cache
     save = {}
     for filename in cache.keys():
@@ -56,36 +60,91 @@ def linecache_checkcache(orig_checkcache=linecache.checkcache):
             save[filename] = cache[filename]
     orig_checkcache()
     cache.update(save)
+    
 linecache.checkcache = linecache_checkcache
+
 
 class PyShellEditorWindow(EditorWindow):
     "Regular text edit window when a shell is present"
-    # XXX ought to merge with regular editor window
+
+    # XXX KBK 19Oct02 Breakpoints are currently removed if module is
+    # changed or closed.  Future plans include saving breakpoints in a
+    # project file and possibly preserving breakpoints by changing their
+    # line numbers as a module is modified.
 
     def __init__(self, *args):
+        self.breakpoints = []
         apply(EditorWindow.__init__, (self,) + args)
         self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>",
-                       self.clear_breakpoint_here)
+        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-    rmenu_specs = [
-        ("Set Breakpoint", "<<set-breakpoint-here>>"),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>")
-    ]
+    rmenu_specs = [("Set Breakpoint", "<<set-breakpoint-here>>"),
+                   ("Clear Breakpoint", "<<clear-breakpoint-here>>")]
 
     def set_breakpoint_here(self, event=None):
-        if not self.flist.pyshell or not self.flist.pyshell.interp.debugger:
-            self.text.bell()
+        text = self.text
+        filename = self.io.filename
+        if not filename:
+            text.bell()
             return
-        self.flist.pyshell.interp.debugger.set_breakpoint_here(self)
+        lineno = int(float(text.index("insert")))
+        try:
+            i = self.breakpoints.index(lineno)
+        except:  # only add if missing, i.e. do once
+            self.breakpoints.append(lineno)
+        text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
+        try:    # update the subprocess debugger
+            debug = self.flist.pyshell.interp.debugger
+            debug.set_breakpoint_here(filename, lineno)
+        except: # but debugger may not be active right now....
+            pass
 
     def clear_breakpoint_here(self, event=None):
-        if not self.flist.pyshell or not self.flist.pyshell.interp.debugger:
-            self.text.bell()
+        text = self.text
+        filename = self.io.filename
+        if not filename:
+            text.bell()
             return
-        self.flist.pyshell.interp.debugger.clear_breakpoint_here(self)
-                                    
+        lineno = int(float(text.index("insert")))
+        try:
+            self.breakpoints.remove(lineno)
+        except:
+            pass
+        text.tag_remove("BREAK", "insert linestart",\
+                        "insert lineend +1char")
+        try:
+            debug = self.flist.pyshell.interp.debugger
+            debug.clear_breakpoint_here(filename, lineno)
+        except:
+            pass
+
+    def clear_file_breaks(self):
+        if self.breakpoints:
+            text = self.text
+            filename = self.io.filename
+            if not filename:
+                text.bell()
+                return
+            self.breakpoints = []
+            text.tag_remove("BREAK", "1.0", END)
+            try:
+                debug = self.flist.pyshell.interp.debugger
+                debug.clear_file_breaks(filename)
+            except:
+                pass
+
+    def saved_change_hook(self):
+        "Extend base method - clear breaks if module is modified"
+        if not self.get_saved():
+            self.clear_file_breaks()
+        EditorWindow.saved_change_hook(self)
+
+    def _close(self):
+        "Extend base method - clear breaks when module is closed"
+        self.clear_file_breaks()
+        EditorWindow._close(self)
+                                
 
 class PyShellFileList(FileList):
     "Extend base class: file list when a shell is present"
@@ -174,7 +233,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # Instead, find the executable by looking relative to
             # sys.prefix.
             executable = os.path.join(sys.prefix, 'Resources', 
-                                'Python.app', 'Contents', 'MacOS', 'python')
+                                      'Python.app', 'Contents',
+                                      'MacOS', 'python')
             return executable
         else:
             return sys.executable 
@@ -207,19 +267,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def restart_subprocess(self):
         # close only the subprocess debugger
-        db = self.getdebugger()
-        if db:
+        debug = self.getdebugger()
+        if debug:
             RemoteDebugger.close_subprocess_debugger(self.rpcclt)           
         # kill subprocess, spawn a new one, accept connection
         self.rpcclt.close()
         self.spawn_subprocess()
         self.rpcclt.accept()
         # restart remote debugger
-        if db:
+        if debug:
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
-            # reload remote debugger breakpoints
-            pass   # XXX KBK 04Sep02 TBD
-        
+            # reload remote debugger breakpoints for all PyShellEditWindows
+            debug.load_breakpoints()
+
     active_seq = None
 
     def poll_subprocess(self):
@@ -264,6 +324,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt = None
         if clt is not None:
             clt.close()
+
+    debugger = None
+
+    def setdebugger(self, debugger):
+        self.debugger = debugger
+
+    def getdebugger(self):
+        return self.debugger
 
     def remote_stack_viewer(self):
         import RemoteObjectBrowser
@@ -381,14 +449,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         for key in c.keys():
             if key[:1] + key[-1:] != "<>":
                 del c[key]
-
-    debugger = None
-
-    def setdebugger(self, debugger):
-        self.debugger = debugger
-
-    def getdebugger(self):
-        return self.debugger
 
     def display_executing_dialog(self):
         tkMessageBox.showerror(
@@ -567,6 +627,8 @@ class PyShell(OutputWindow):
     def open_remote_debugger(self):
         gui = RemoteDebugger.start_remote_debugger(self.interp.rpcclt, self)
         self.interp.setdebugger(gui)
+        # Load all PyShellEditorWindow breakpoints:
+        gui.load_breakpoints()
         sys.ps1 = "[DEBUG ON]\n>>> "
         self.showprompt()
         self.set_debugger_indicator()
