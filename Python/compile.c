@@ -164,6 +164,26 @@ PyTypeObject PyCode_Type = {
 #define NAME_CHARS \
 	"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
+/* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
+
+static int
+all_name_chars(unsigned char *s)
+{
+       static char ok_name_char[256];
+       static unsigned char *name_chars = NAME_CHARS;
+
+       if (ok_name_char[*name_chars] == 0) {
+	       unsigned char *p;
+	       for (p = name_chars; *p; p++)
+		       ok_name_char[*p] = 1;
+       }
+       while (*s) {
+	       if (ok_name_char[*s++] == 0)
+		       return 0;
+       }
+       return 1;
+}
+
 PyCodeObject *
 PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	   PyObject *code, PyObject *consts, PyObject *names,
@@ -214,12 +234,9 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	/* Intern selected string constants */
 	for (i = PyTuple_Size(consts); --i >= 0; ) {
 		PyObject *v = PyTuple_GetItem(consts, i);
-		char *p;
 		if (!PyString_Check(v))
 			continue;
-		p = PyString_AsString(v);
-		if (strspn(p, NAME_CHARS)
-		    != (size_t)PyString_Size(v))
+		if (!all_name_chars((unsigned char *)PyString_AsString(v)))
 			continue;
 		PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));
 	}
