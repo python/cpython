@@ -1049,7 +1049,7 @@ def _fast_quote(s):
     for i in range(len(res)):
         c = res[i]
         if not _fast_safe.has_key(c):
-            res[i] = '%%%02x' % ord(c)
+            res[i] = '%%%02X' % ord(c)
     return ''.join(res)
 
 def quote(s, safe = '/'):
@@ -1080,7 +1080,7 @@ def quote(s, safe = '/'):
     for i in range(len(res)):
         c = res[i]
         if c not in safe:
-            res[i] = '%%%02x' % ord(c)
+            res[i] = '%%%02X' % ord(c)
     return ''.join(res)
 
 def quote_plus(s, safe = ''):
