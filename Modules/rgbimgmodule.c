@@ -17,6 +17,7 @@
 #include "allobjects.h"
 #include "modsupport.h"
 #include <unistd.h>
+#include <string.h>
 
 /*
  *	from image.h
@@ -80,12 +81,12 @@ typedef struct {
 
 #define CHANOFFSET(z)	(3-(z))	/* this is byte order dependent */
 
-static expandrow();
-static setalpha();
-static copybw();
-static interleaverow();
-static int compressrow();
-static lumrow();
+static expandrow PROTO((unsigned char *, unsigned char *, int));
+static setalpha PROTO((unsigned char *, int));
+static copybw PROTO((long *, int));
+static interleaverow PROTO((unsigned char *, unsigned char *, int, int));
+static int compressrow PROTO((unsigned char *, unsigned char *, int, int));
+static lumrow PROTO((unsigned char *, unsigned char *, int));
 
 #ifdef ADD_TAGS
 #define TAGLEN	(5)
@@ -164,7 +165,7 @@ static readheader(inf,image)
 FILE *inf;
 IMAGE *image;
 {
-    bzero(image,sizeof(IMAGE));
+    memset(image,0,sizeof(IMAGE));
     image->imagic = getshort(inf);
     image->type = getshort(inf);
     image->dim = getshort(inf);
@@ -179,7 +180,7 @@ IMAGE *image;
 {
     IMAGE t;
 
-    bzero(&t,sizeof(IMAGE));
+    memset(&t,0,sizeof(IMAGE));
     fwrite(&t,sizeof(IMAGE),1,outf);
     fseek(outf,0,SEEK_SET);
     putshort(outf,image->imagic);
@@ -260,7 +261,7 @@ longimagedata(self, args)
     object *self, *args;
 {
     char *name;
-    unsigned long *base, *lptr;
+    unsigned char *base, *lptr;
     unsigned char *rledat, *verdat;
     long *starttab, *lengthtab;
     FILE *inf;
@@ -331,7 +332,7 @@ longimagedata(self, args)
 	    free(rledat);
 	    return NULL;
 	}
-	base = (unsigned long *) getstringvalue(rv);
+	base = (unsigned char *) getstringvalue(rv);
 #ifdef ADD_TAGS
 	addlongimgtag(base,xsize,ysize);
 #endif
@@ -355,7 +356,7 @@ longimagedata(self, args)
 		    fread(rledat,lengthtab[y+z*ysize],1,inf);
 		    cur += lengthtab[y+z*ysize];
 		    expandrow(lptr,rledat,3-z);
-		    lptr += xsize;
+		    lptr += xsize * sizeof(unsigned long);
 		}
 	    }
 	} else {
@@ -370,13 +371,13 @@ longimagedata(self, args)
 		    cur += lengthtab[y+z*ysize];
 		    expandrow(lptr,rledat,3-z);
 		}
-		lptr += xsize;
+		lptr += xsize * sizeof(unsigned long);
 	    }
     	}
 	if(zsize == 3) 
 	    setalpha(base,xsize*ysize);
 	else if(zsize<3) 
-	    copybw(base,xsize*ysize);
+	    copybw((long *) base,xsize*ysize);
 	fclose(inf);
 	free(starttab);
 	free(lengthtab);
@@ -389,7 +390,7 @@ longimagedata(self, args)
 	    fclose(inf);
 	    return NULL;
 	}
-	base = (unsigned long *) getstringvalue(rv);
+	base = (unsigned char *) getstringvalue(rv);
 #ifdef ADD_TAGS
 	addlongimgtag(base,xsize,ysize);
 #endif
@@ -400,13 +401,13 @@ longimagedata(self, args)
 	    for(y=0; y<ysize; y++) {
 		fread(verdat,xsize,1,inf);
 		interleaverow(lptr,verdat,3-z,xsize);
-		lptr += xsize;
+		lptr += xsize * sizeof(unsigned long);
 	    }
 	}
 	if(zsize == 3) 
 	    setalpha(base,xsize*ysize);
 	else if(zsize<3) 
-	    copybw(base,xsize*ysize);
+	    copybw((long *) base,xsize*ysize);
 	fclose(inf);
 	free(verdat);
 	return rv;
@@ -535,7 +536,7 @@ static object *
 longstoimage(self, args)
     object *self, *args;
 {
-    unsigned long *lptr;
+    unsigned char *lptr;
     char *name;
     int xsize, ysize, zsize;
     FILE *outf;
@@ -543,7 +544,7 @@ longstoimage(self, args)
     int tablen, y, z, pos, len;
     long *starttab, *lengthtab;
     unsigned char *rlebuf;
-    unsigned long *lumbuf;
+    unsigned char *lumbuf;
     int rlebuflen, goodwrite;
 
     if (!getargs(args, "(s#iiis)", &lptr, &len, &xsize, &ysize, &zsize, &name))
@@ -561,9 +562,9 @@ longstoimage(self, args)
     lengthtab = (long *)malloc(tablen);
     rlebuflen = 1.05*xsize+10;
     rlebuf = (unsigned char *)malloc(rlebuflen);
-    lumbuf = (unsigned long *)malloc(xsize*sizeof(long));
+    lumbuf = (unsigned char *)malloc(xsize*sizeof(long));
 
-    bzero(&image,sizeof(IMAGE));
+    memset(&image,0,sizeof(IMAGE));
     image.imagic = IMAGIC; 
     image.type = RLE(1);
     if(zsize>1)
@@ -600,7 +601,7 @@ longstoimage(self, args)
 	    lengthtab[y+z*ysize] = len;
 	    pos += len;
 	}
-	lptr += xsize;
+	lptr += xsize * sizeof(unsigned long);
     }
 
     fseek(outf,512,SEEK_SET);
