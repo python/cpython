@@ -31,11 +31,13 @@
 #if defined(__ultrix) && defined(__mips) && defined(_DECTHREADS_)
 /* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
 #  define PY_PTHREAD_D4
+#  error Systems with PY_PTHREAD_D4 are unsupported. See README.
 
 #elif defined(__osf__) && defined (__alpha)
 /* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
 #  if !defined(_PTHREAD_ENV_ALPHA) || defined(_PTHREAD_USE_D4) || defined(PTHREAD_USE_D4)
 #    define PY_PTHREAD_D4
+#    error Systems with PY_PTHREAD_D4 are unsupported. See README.
 #  else
 #    define PY_PTHREAD_STD
 #  endif
@@ -50,13 +52,16 @@
 #    define PY_PTHREAD_STD
 #  else
 #    define PY_PTHREAD_D7
+#    error Systems with PY_PTHREAD_D7 are unsupported. See README.
 #  endif
 
 #elif defined(__DGUX)
 #  define PY_PTHREAD_D6
+#  error Systems with PY_PTHREAD_D6 are unsupported. See README.
 
 #elif defined(__hpux) && defined(_DECTHREADS_)
 #  define PY_PTHREAD_D4
+#  error Systems with PY_PTHREAD_D4 are unsupported. See README.
 
 #else /* Default case */
 #  define PY_PTHREAD_STD

@@ -261,6 +261,20 @@ AC_PROG_CC
 AC_AIX
 AC_MINIX
 
+# Check for unsupported systems
+case $ac_sys_system/$ac_sys_release in
+SunOS/4*|DYNIX/*|dgux*/*|IRIX/4*|Linux*/1*)
+   echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
+   echo See README for details.
+   exit 1;;
+esac
+
+if test "$MINIX" = yes; then
+   echo This system \(MINIX\) is no longer supported.
+   echo Read README for details.
+   exit 1
+fi
+
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
@@ -1338,6 +1352,9 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lc_r"
     THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
+    echo Systems with __d6_pthread_create are not supported anymore.
+    echo See README
+    exit 1
     posix_threads=yes
     LIBS="$LIBS -lthread"
     THREADOBJ="Python/thread.o"], [
@@ -1650,6 +1667,8 @@ AC_ARG_WITH(sgi-dl,
             AC_HELP_STRING(--with-sgi-dl=DIRECTORY, IRIX 4 dynamic linking),
 [
 AC_MSG_RESULT($withval)
+echo --with-sgi-dl is unsupported; see README
+exit 1
 AC_DEFINE(WITH_SGI_DL, 1,
   [Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
@@ -1670,6 +1689,8 @@ AC_ARG_WITH(dl-dld,
             AC_HELP_STRING(--with-dl-dld=DL_DIR, GNU dynamic linking),
 [
 AC_MSG_RESULT($withval)
+echo --with-dl-dld is unsupported; see README
+exit 1
 AC_DEFINE(WITH_DL_DLD, 1, 
   [Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
