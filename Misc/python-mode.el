@@ -188,6 +188,43 @@ the Emacs bell is also rung as a warning.")
    )
   "*Additional keywords to highlight `python-mode' buffers.")
 
+;; These are taken from XEmacs 19.12's font-lock.el file.  I prefer
+;; these myself, but which do you think are better?
+;; 
+;;(defconst python-font-lock-keywords
+;;  (purecopy
+;;   (list
+;;    (cons (concat "\\b\\("
+;;                  (mapconcat 'identity
+;;                             '("access"     "del"        "from"
+;;                               "lambda"     "return"     "and"
+;;                               "elif"       "global"     "not"
+;;                               "try:"       "break "     "else:"
+;;                               "if"         "or"         "while"
+;;                               "except"     "except:"    "import"
+;;                               "pass"       "continue"   "finally:"
+;;                               "in"         "print"      "for"
+;;                               "is"         "raise")
+;;                             "\\|")
+;;                  "\\)[ \n\t(]")
+;;          1)
+;;    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+;;      1 font-lock-type-face)
+;;    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+;;      1 font-lock-function-name-face)
+;;    ))
+;;  "Additional expressions to highlight in Python mode.")
+
+;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
+;; original keywords, which wouldn't be necessary if we go with the
+;; XEmacs defaults, but which I agree makes sense without them.
+;;
+;; functions
+;; '("\\bdef\\s +\\(\\sw+\\)\\s *(" 1 font-lock-function-name-face)
+;; classes
+;; '("\\bclass\\s +\\(\\sw+\\)\\s *[(:]" 1 font-lock-type-face)
+
+
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
