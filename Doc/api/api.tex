@@ -1993,7 +1993,7 @@ Returns 1/0 depending on whether \var{ch} is a lowercase character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISUPPER}{Py_UNICODE ch}
-Returns 1/0 depending on whether \var{ch} is a uppercase character.
+Returns 1/0 depending on whether \var{ch} is an uppercase character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISTITLE}{Py_UNICODE ch}
@@ -2014,6 +2014,14 @@ Returns 1/0 depending on whether \var{ch} is a digit character.
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISNUMERIC}{Py_UNICODE ch}
 Returns 1/0 depending on whether \var{ch} is a numeric character.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{Py_UNICODE_ISALPHA}{Py_UNICODE ch}
+Returns 1/0 depending on whether \var{ch} is an alphabetic character.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{Py_UNICODE_ISALNUM}{Py_UNICODE ch}
+Returns 1/0 depending on whether \var{ch} is an alphanumeric character.
 \end{cfuncdesc}
 
 These APIs can be used for fast direct character conversions:
