@@ -3,7 +3,7 @@
 """Program to control the Solaris audio device.
 
 When no arguments are given, this pops up a graphical window which lets you
-choose which audio output device you want sound to go to.
+choose the audio input and output devices.
 
 This program can be driven via the command line, and when done so, no window
 pops up.  Options have the general form:
@@ -27,10 +27,13 @@ The list of devices and their short options are:
 
 Other options are:
 
+    --version
+    -v
+        Print the version number and exit.
+
     --help
     -h
         Print this message and exit.
-
 """
 
 import sys
@@ -41,6 +44,8 @@ from SUNAUDIODEV import *
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
 
+__version__ = '1.0'
+
 
 
 class MainWindow:
@@ -48,13 +53,13 @@ class MainWindow:
         self.__devctl = device
         info = device.getinfo()
         #
-        self.__tkroot = tkroot = Tk(className='Pynche')
+        self.__tkroot = tkroot = Tk(className='Audiopy')
         tkroot.withdraw()
         # now create the top level window
         root = self.__root = Toplevel(tkroot, class_='Audiopy')
         root.protocol('WM_DELETE_WINDOW', self.__quit)
-        root.title('Audiopy')
-        root.iconname('Audiopy')
+        root.title('audiopy ' + __version__)
+        root.iconname('audiopy ' + __version__)
         root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
         #
         buttons = []
@@ -284,6 +289,9 @@ def main():
         if arg in ('-h', '--help'):
             usage(code=0)
             # does not return
+        elif arg in ('-v', '--version'):
+            print 'audiopy version', __version__
+            sys.exit(0)
         for long, short, io, mask in options:
             if arg in (long, short):
                 # toggle the option
