@@ -2657,25 +2657,25 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Python.NoConFile\shell\Edit with IDLE\command
-  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -e "%%1"
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -n -e "%%1"
 end
 item: Edit Registry
   Total Keys=1
   Key=Python.File\shell\Edit with IDLE\command
-  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -e "%%1"
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -n -e "%%1"
 end
 item: Else Statement
 end
 item: Edit Registry
   Total Keys=1
   Key=Software\CLASSES\Python.NoConFile\shell\Edit with IDLE\command
-  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -e "%%1"
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -n -e "%%1"
   Root=1
 end
 item: Edit Registry
   Total Keys=1
   Key=Software\CLASSES\Python.File\shell\Edit with IDLE\command
-  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -e "%%1"
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Lib\idlelib\idle.pyw -n -e "%%1"
   Root=1
 end
 item: End Block
