@@ -7,7 +7,7 @@ _Stop = 'Readcd.Stop'
 
 def _doatime(self, type, data):
 	if ((data[0] * 60) + data[1]) * 75 + data[2] > self.end:
-		print 'done with list entry',`self.listindex`
+##		print 'done with list entry',`self.listindex`
 		raise _Stop
 	func, arg = self.callbacks[type]
 	if func:
@@ -15,7 +15,7 @@ def _doatime(self, type, data):
 
 def _dopnum(self, type, data):
 	if data > self.end:
-		print 'done with list entry',`self.listindex`
+##		print 'done with list entry',`self.listindex`
 		raise _Stop
 	func, arg = self.callbacks[type]
 	if func:
@@ -48,7 +48,7 @@ class Readcd():
 		self.status = None
 		self.trackinfo = None
 		if self.playing:
-			print 'stop playing from eject'
+##			print 'stop playing from eject'
 			raise _Stop
 
 	def pmsf2msf(self, track, min, sec, frame):
@@ -199,7 +199,7 @@ class Readcd():
 				if self.listindex >= len(self.list):
 					return
 				start, end = self.list[self.listindex]
-				print 'starting with',`(start, end)`
+##				print 'starting with',`(start, end)`
 				try:
 					min, sec, frame = start
 					dummy = self.player.seek(min, sec, frame)
