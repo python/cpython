@@ -114,13 +114,6 @@ receive data on the connection, and \var{address} is the address bound
 to the socket on the other end of the connection.
 \end{funcdesc}
 
-\begin{funcdesc}{avail}{}
-Return true (nonzero) if at least one byte of data can be received
-from the socket without blocking, false (zero) if not.  There is no
-indication of how many bytes are available.  (\strong{This function is
-obsolete --- see module \code{select} for a more general solution.})
-\end{funcdesc}
-
 \begin{funcdesc}{bind}{address}
 Bind the socket to an address.  The socket must not already be bound.
 \end{funcdesc}
