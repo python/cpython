@@ -32,6 +32,8 @@ internationalized, to the local language and cultural habits.
 # Francois Pinard and Marc-Andre Lemburg also contributed valuably to this
 # module.
 #
+# J. David Ibanez implemented plural forms.
+#
 # TODO:
 # - Lazy loading of .mo files.  Currently the entire catalog is loaded into
 #   memory, but that's probably bad for large translated programs.  Instead,
@@ -43,16 +45,74 @@ internationalized, to the local language and cultural habits.
 # - Support Solaris .mo file formats.  Unfortunately, we've been unable to
 #   find this format documented anywhere.
 
-import os
-import sys
-import struct
-import copy
+
+import copy, os, re, struct, sys
 from errno import ENOENT
+
 
 __all__ = ["bindtextdomain","textdomain","gettext","dgettext",
            "find","translation","install","Catalog"]
 
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
+
+
+def test(condition, true, false):
+    """
+    Implements the C expression:
+
+      condition ? true : false
+
+    Required to correctly interpret plural forms.
+    """
+    if condition:
+        return true
+    else:
+        return false
+
+
+def c2py(plural):
+    """
+    Gets a C expression as used in PO files for plural forms and
+    returns a Python lambda function that implements an equivalent
+    expression.
+    """
+    # Security check, allow only the "n" identifier
+    from StringIO import StringIO
+    import token, tokenize
+    tokens = tokenize.generate_tokens(StringIO(plural).readline)
+    danger = [ x for x in tokens if x[0] == token.NAME and x[1] != 'n' ]
+    if danger:
+        raise ValueError, 'dangerous expression'
+
+    # Replace some C operators by their Python equivalents
+    plural = plural.replace('&&', ' and ')
+    plural = plural.replace('||', ' or ')
+
+    expr = re.compile(r'\![^=]')
+    plural = expr.sub(' not ', plural)
+
+    # Regular expression and replacement function used to transform
+    # "a?b:c" to "test(a,b,c)".
+    expr = re.compile(r'(.*?)\?(.*?):(.*)')
+    def repl(x):
+        return "test(%s, %s, %s)" % (x.group(1), x.group(2),
+                                     expr.sub(repl, x.group(3)))
+
+    # Code to transform the plural expression, taking care of parentheses
+    stack = ['']
+    for c in plural:
+        if c == '(':
+            stack.append('')
+        elif c == ')':
+            if len(stack) == 0:
+                raise ValueError, 'unbalanced parenthesis in plural form'
+            s = expr.sub(repl, stack.pop())
+            stack[-1] += '(%s)' % s
+        else:
+            stack[-1] += c
+    plural = expr.sub(repl, stack.pop())
+
+    return eval('lambda n: int(%s)' % plural)
 
 
 
@@ -121,10 +181,26 @@ class NullTranslations:
             return self._fallback.gettext(message)
         return message
 
+    def ngettext(self, msgid1, msgid2, n):
+        if self._fallback:
+            return self._fallback.ngettext(msgid1, msgid2, n)
+        if n == 1:
+            return msgid1
+        else:
+            return msgid2
+
     def ugettext(self, message):
         if self._fallback:
             return self._fallback.ugettext(message)
         return unicode(message)
+
+    def ungettext(self, msgid1, msgid2, n):
+        if self._fallback:
+            return self._fallback.ungettext(msgid1, msgid2, n)
+        if n == 1:
+            return unicode(msgid1)
+        else:
+            return unicode(msgid2)
 
     def info(self):
         return self._info
@@ -169,8 +245,16 @@ class GNUTranslations(NullTranslations):
             tlen, toff = unpack(ii, buf[transidx:transidx+8])
             tend = toff + tlen
             if mend < buflen and tend < buflen:
+                msg = buf[moff:mend]
                 tmsg = buf[toff:tend]
-                catalog[buf[moff:mend]] = tmsg
+                if msg.find('\x00') >= 0:
+                    # Plural forms
+                    msgid1, msgid2 = msg.split('\x00')
+                    tmsg = tmsg.split('\x00')
+                    for i in range(len(tmsg)):
+                        catalog[(msgid1, i)] = tmsg[i]
+                else:
+                    catalog[msg] = tmsg
             else:
                 raise IOError(0, 'File is corrupt', filename)
             # See if we're looking at GNU .mo conventions for metadata
@@ -186,6 +270,12 @@ class GNUTranslations(NullTranslations):
                     self._info[k] = v
                     if k == 'content-type':
                         self._charset = v.split('charset=')[1]
+                    elif k == 'plural-forms':
+                        v = v.split(';')
+##                        nplurals = v[0].split('nplurals=')[1]
+##                        nplurals = int(nplurals.strip())
+                        plural = v[1].split('plural=')[1]
+                        self.plural = c2py(plural)
             # advance to next entry in the seek tables
             masteridx += 8
             transidx += 8
@@ -198,6 +288,19 @@ class GNUTranslations(NullTranslations):
                 return self._fallback.gettext(message)
             return message
 
+
+    def ngettext(self, msgid1, msgid2, n):
+        try:
+            return self._catalog[(msgid1, self.plural(n))]
+        except KeyError:
+            if self._fallback:
+                return self._fallback.ngettext(msgid1, msgid2, n)
+            if n == 1:
+                return msgid1
+            else:
+                return msgid2
+
+
     def ugettext(self, message):
         try:
             tmsg = self._catalog[message]
@@ -207,6 +310,18 @@ class GNUTranslations(NullTranslations):
             tmsg = message
         return unicode(tmsg, self._charset)
 
+
+    def ungettext(self, msgid1, msgid2, n):
+        try:
+            tmsg = self._catalog[(msgid1, self.plural(n))]
+        except KeyError:
+            if self._fallback:
+                return self._fallback.ungettext(msgid1, msgid2, n)
+            if n == 1:
+                tmsg = msgid1
+            else:
+                tmsg = msgid2
+        return unicode(tmsg, self._charset)
 
 
 # Locate a .mo file using the gettext strategy
@@ -311,8 +426,23 @@ def dgettext(domain, message):
     return t.gettext(message)
 
 
+def dngettext(domain, msgid1, msgid2, n):
+    try:
+        t = translation(domain, _localedirs.get(domain, None))
+    except IOError:
+        if n == 1:
+            return msgid1
+        else:
+            return msgid2
+    return t.ngettext(msgid1, msgid2, n)
+
+
 def gettext(message):
     return dgettext(_current_domain, message)
+
+
+def ngettext(msgid1, msgid2, n):
+    return dngettext(_current_domain, msgid1, msgid2, n)
 
 
 # dcgettext() has been deemed unnecessary and is not implemented.

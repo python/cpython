@@ -69,6 +69,32 @@ Like \function{gettext()}, but look the message up in the specified
 \var{domain}.
 \end{funcdesc}
 
+\begin{funcdesc}{ngettext}{singular, plural, n}
+
+Like \function{gettext()}, but consider plural forms. If a translation
+is found, apply the plural formula to \var{n}, and return the
+resulting message (some languages have more than two plural forms).
+If no translation is found, return \var{singular} if \var{n} is 1;
+return \var{plural} otherwise.
+
+The Plural formula is taken from the catalog header. It is a C or
+Python expression that has a free variable n; the expression evaluates
+to the index of the plural in the catalog. See the GNU gettext
+documentation for the precise syntax to be used in .po files, and the
+formulas for a variety of languages.
+
+\versionadded{2.3}
+
+\end{funcdesc}
+
+\begin{funcdesc}{dngettext}{domain, singular, plural, n}
+Like \function{ngettext()}, but look the message up in the specified
+\var{domain}.
+
+\versionadded{2.3}
+\end{funcdesc}
+
+
 Note that GNU \program{gettext} also defines a \function{dcgettext()}
 method, but this was deemed not useful and so it is currently
 unimplemented.
@@ -207,6 +233,21 @@ Otherwise, return the translated message as a Unicode string.
 Overridden in derived classes.
 \end{methoddesc}
 
+\begin{methoddesc}[NullTranslations]{ngettext}{singular, plural, n}
+If a fallback has been set, forward \method{ngettext} to the fallback.
+Otherwise, return the translated message.  Overridden in derived classes.
+
+\versionadded{2.3}
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{ungettext}{singular, plural, n}
+If a fallback has been set, forward \method{ungettext} to the fallback.
+Otherwise, return the translated message as a Unicode string.
+Overridden in derived classes.
+
+\versionadded{2.3}
+\end{methoddesc}
+
 \begin{methoddesc}[NullTranslations]{info}{}
 Return the ``protected'' \member{_info} variable.
 \end{methoddesc}
@@ -262,6 +303,9 @@ The other usefully overridden method is \method{ugettext()}, which
 returns a Unicode string by passing both the translated message string
 and the value of the ``protected'' \member{_charset} variable to the
 builtin \function{unicode()} function.
+
+To facilitate plural forms, the methods \method{ngettext} and
+\method{ungettext} are overridden as well.
 
 \subsubsection{Solaris message catalog support}
 
@@ -534,6 +578,7 @@ this module:
 \begin{itemize}
     \item Peter Funk
     \item James Henstridge
+    \Juan David Ib\'a\~nez Palomar
     \item Marc-Andr\'e Lemburg
     \item Martin von L\"owis
     \item Fran\c cois Pinard
