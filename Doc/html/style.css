@@ -89,6 +89,10 @@ div.note .label         { margin-right: 0.5em;
                                        monospace;
                           font-size: 90%; }
 .verbatim               { margin-left: 2em; }
+.verbatim .footer       { padding: 0.05in;
+                          font-size: 85%;
+                          background-color: #99ccff;
+                          margin-right: 0.5in; }
 
 .grammar                { background-color: #99ccff;
                           margin-right: 0.5in;
