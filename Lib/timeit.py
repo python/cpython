@@ -58,6 +58,7 @@ except ImportError:
 
 __all__ = ["Timer"]
 
+dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 10
 
@@ -72,13 +73,13 @@ else:
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
 template = """
-def inner(seq, timer):
+def inner(_seq, _timer):
     %(setup)s
-    t0 = timer()
-    for i in seq:
+    _t0 = _timer()
+    for _i in _seq:
         %(stmt)s
-    t1 = timer()
-    return t1-t0
+    _t1 = _timer()
+    return _t1 - _t0
 """
 
 def reindent(src, indent):
@@ -107,10 +108,35 @@ class Timer:
         stmt = reindent(stmt, 8)
         setup = reindent(setup, 4)
         src = template % {'stmt': stmt, 'setup': setup}
-        code = compile(src, "<src>", "exec")
+        self.src = src # Save for traceback display
+        code = compile(src, dummy_src_name, "exec")
         ns = {}
         exec code in globals(), ns
         self.inner = ns["inner"]
+
+    def print_exc(self, file=None):
+        """Helper to print a traceback from the timed code.
+
+        Typical use:
+
+            t = Timer(...)       # outside the try/except
+            try:
+                t.timeit(...)    # or t.repeat(...)
+            except:
+                t.print_exc()
+
+        The advantage over the standard traceback is that source lines
+        in the compiled template will be displayed.
+
+        The optional file argument directs where the traceback is
+        sent; it defaults to sys.stderr.
+        """
+        import linecache, traceback
+        linecache.cache[dummy_src_name] = (len(self.src),
+                                           None,
+                                           self.src.split("\n"),
+                                           dummy_src_name)
+        traceback.print_exc(file=file)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
@@ -162,6 +188,10 @@ def main(args=None):
 
     The return value is an exit code to be passed to sys.exit(); it
     may be None to indicate success.
+
+    When an exception happens during timing, a traceback is printed to
+    stderr and the return value is 1.  Exceptions at other times
+    (including the template compilation) are not caught.
     """
     if args is None:
         args = sys.argv[1:]
@@ -201,17 +231,25 @@ def main(args=None):
         # determine number so that 0.2 <= total time < 2.0
         for i in range(1, 10):
             number = 10**i
-            x = t.timeit(number)
+            try:
+                x = t.timeit(number)
+            except:
+                t.print_exc()
+                return 1
             if x >= 0.2:
                 break
-    r = t.repeat(repeat, number)
+    try:
+        r = t.repeat(repeat, number)
+    except:
+        t.print_exc()
+        return 1
     best = min(r)
     print "%d loops," % number,
     usec = best * 1e6 / number
     if repeat > 1:
-        print "best of %d: %.3f usec" % (repeat, usec)
+        print "best of %d: %.3f usec per loop" % (repeat, usec)
     else:
-        print "time: %.3f usec" % usec
+        print "time: %.3f usec per loop" % usec
     return None
 
 if __name__ == "__main__":
