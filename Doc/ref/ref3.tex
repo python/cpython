@@ -1330,7 +1330,7 @@ non-integral numbers) should be left undefined.
 \begin{methoddesc}[numeric object]{__add__}{self, other}
 \methodline[numeric object]{__sub__}{self, other}
 \methodline[numeric object]{__mul__}{self, other}
-\methodline[numeric object]{__div__}{self, other}
+\methodline[numeric object]{__floordiv__}{self, other}
 \methodline[numeric object]{__mod__}{self, other}
 \methodline[numeric object]{__divmod__}{self, other}
 \methodline[numeric object]{__pow__}{self, other\optional{, modulo}}
@@ -1339,18 +1339,30 @@ non-integral numbers) should be left undefined.
 \methodline[numeric object]{__and__}{self, other}
 \methodline[numeric object]{__xor__}{self, other}
 \methodline[numeric object]{__or__}{self, other}
-These functions are
+These methods are
 called to implement the binary arithmetic operations (\code{+},
-\code{-}, \code{*}, \code{/}, \code{\%},
+\code{-}, \code{*}, \code{//}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
 \function{pow()}\bifuncindex{pow}, \code{**}, \code{<}\code{<},
 \code{>}\code{>}, \code{\&}, \code{\^}, \code{|}).  For instance, to
 evaluate the expression \var{x}\code{+}\var{y}, where \var{x} is an
 instance of a class that has an \method{__add__()} method,
-\code{\var{x}.__add__(\var{y})} is called.  Note that
+\code{\var{x}.__add__(\var{y})} is called.  The \method{__divmod__()}
+method should be the equivalent to using \method{__floordiv__()} and
+\method{__mod__()}; it should not be related to \method{__truediv__()}
+(described below).  Note that
 \method{__pow__()} should be defined to accept an optional third
 argument if the ternary version of the built-in
 \function{pow()}\bifuncindex{pow} function is to be supported.
+\end{methoddesc}
+
+\begin{methoddesc}[numeric object]{__div__}{self, other}
+\methodline[numeric object]{__truediv__}{self, other}
+The division operator (\code{/}) is implemented by these methods.  The
+\method{__truediv__()} method is used when \code{__future__.division}
+is in effect, otherwise \method{__div__()} is used.  If only one of
+these two methods is defined, the object will not support division in
+the alternate context; \exception{TypeError} will be raised instead.
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__radd__}{self, other}
@@ -1365,7 +1377,7 @@ argument if the ternary version of the built-in
 \methodline[numeric object]{__rand__}{self, other}
 \methodline[numeric object]{__rxor__}{self, other}
 \methodline[numeric object]{__ror__}{self, other}
-These functions are
+These methods are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
