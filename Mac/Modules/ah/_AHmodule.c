@@ -52,7 +52,7 @@ static PyObject *Ah_AHGotoMainTOC(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	AHTOCType toctype;
-	if (!PyArg_ParseTuple(_args, "s",
+	if (!PyArg_ParseTuple(_args, "h",
 	                      &toctype))
 		return NULL;
 	_err = AHGotoMainTOC(toctype);
