@@ -87,7 +87,16 @@ class Options:
         raise getopt.error("option %s not recognized" % opt)
 
     def get_header(self):
-        return HEAD % self.variables
+        s = HEAD % self.variables
+        if self.uplink:
+            if self.uptitle:
+                link = ('<link rel="up" href="%s" title="%s">'
+                        % (self.uplink, self.uptitle))
+            else:
+                link = '<link rel="up" href="%s">' % self.uplink
+            repl = "  %s\n</head>" % link
+            s = s.replace("</head>", repl, 1)
+        return s
 
     def get_footer(self):
         return TAIL % self.variables
