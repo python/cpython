@@ -675,7 +675,7 @@ libainstall:	all
 		fi; \
 	done
 	@if test -d $(LDLIBRARY); then :; else \
-		if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+		if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 			$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL)/$(LDLIBRARY) ; \
 			$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
 		else \
@@ -736,9 +736,9 @@ RESSRCDIR=$(srcdir)/Mac/OSXResources/framework
 $(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
                 $(RESSRCDIR)/version.plist \
                 $(RESSRCDIR)/English.lproj/InfoPlist.strings
-	@if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
-		exit; \
+		exit 1; \
 	else true; \
 	fi
 	$(INSTALL) -d -m $(DIRMODE)  $(FRAMEWORKDEST)/Resources/English.lproj
@@ -760,9 +760,9 @@ $(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
 frameworkinstall: install frameworkinfrastructureinstall
 FRAMEWORKFINALDEST=$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)
 frameworkinfrastructureinstall:	$(LDLIBRARY)
-	@if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
-		exit; \
+		exit 1; \
 	else true; \
 	fi
 	@for i in $(FRAMEWORKFINALDEST)/Resources/English.lproj $(FRAMEWORKFINALDEST)/lib; do\
