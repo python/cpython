@@ -296,6 +296,7 @@ PyCursesWindow_SubWin(self,arg)
   if (!PyArg_Parse(arg,
 		   "(iiii);nlines,ncols,begin_y,begin_x",
 		   &nlines,&ncols,&begin_y,&begin_x))
+    PyErr_Clear();
     if (!PyArg_Parse(arg,"(ii)",&begin_y,&begin_x))
       return (PyObject *)NULL;
   win = subwin(self->win,nlines,ncols,begin_y,begin_x);
@@ -329,9 +330,12 @@ PyCursesWindow_AddCh(self,arg)
       use_attr = FALSE;
     }
   if (!PyArg_Parse(arg,"(iiii);y,x,ch,attr", &y, &x, &ch, &attr)) {
+    PyErr_Clear();
     if (!PyArg_Parse(arg,"(iii);y,x,ch", &y, &x, &ch)) {
+      PyErr_Clear();
       use_xy = FALSE;
       if (!PyArg_Parse(arg,"(ii);ch,attr", &ch, &attr))
+        PyErr_Clear();
 	if (!PyArg_Parse(arg,"i;ch", &ch))
 	  return (PyObject *)NULL;
     }
@@ -373,9 +377,12 @@ PyCursesWindow_InsCh(self,arg)
       use_attr = FALSE;
     }
   if (!PyArg_Parse(arg,"(iiii);y,x,ch,attr", &y, &x, &ch, &attr)) {
+    PyErr_Clear();
     if (!PyArg_Parse(arg,"(iii);y,x,ch", &y, &x, &ch)) {
+      PyErr_Clear();
       use_xy = FALSE;
       if (!PyArg_Parse(arg,"(ii);ch,attr", &ch, &attr))
+        PyErr_Clear();
 	if (!PyArg_Parse(arg,"i;ch", &ch))
 	  return (PyObject *)NULL;
     }
@@ -430,6 +437,7 @@ PyCursesWindow_EchoChar(self,arg)
   int ch;
   int attr, attr_old, use_attr = TRUE;
   if (!PyArg_Parse(arg,"(ii);ch,attr", &ch, &attr)) {
+    PyErr_Clear();
     use_attr = FALSE;
     if (!PyArg_Parse(arg,"i;ch", &ch))
       return (PyObject *)NULL;
@@ -468,9 +476,12 @@ PyCursesWindow_AddStr(self,arg)
       use_attr = FALSE;
     }
   if (!PyArg_Parse(arg,"(iisi);y,x,str,attr", &y, &x, &str, &attr)) {
+    PyErr_Clear();
     if (!PyArg_Parse(arg,"(iis);y,x,str", &y, &x, &str)) {
+      PyErr_Clear();
       use_xy = FALSE;
       if (!PyArg_Parse(arg,"(si);str,attr", &str, &attr))
+        PyErr_Clear();
 	if (!PyArg_Parse(arg,"s;str", &str))
 	  return (PyObject *)NULL;
     }
@@ -1131,6 +1142,7 @@ PyCurses_NewWindow(self,arg)
   if (!PyArg_Parse(arg,
 		   "(iiii);nlines,ncols,begin_y,begin_x",
 		   &nlines,&ncols,&begin_y,&begin_x))
+    PyErr_Clear();
     if (!PyArg_Parse(arg,"(ii)",&begin_y,&begin_x))
       return (PyObject *)NULL;
   win = newwin(nlines,ncols,begin_y,begin_x);
@@ -1412,7 +1424,7 @@ initcurses()
 	  char *key_n2;
 	  for (key=KEY_MIN;key < KEY_MAX; key++) {
 	    key_n = (char *)keyname(key);
-	    if (strcmp(key_n,"UNKNOWN KEY")==0)
+	    if (key_n == NULL || strcmp(key_n,"UNKNOWN KEY")==0)
 	      continue;
 	    if (strncmp(key_n,"KEY_F(",6)==0) {
 	      char *p1, *p2;
