@@ -777,6 +777,38 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 
+	case 'u': /* raw unicode buffer (Py_UNICODE *) */
+		{
+			if (*format == '#') { /* any buffer-like object */
+			        void **p = (void **)va_arg(*p_va, char **);
+			        PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				int *q = va_arg(*p_va, int *);
+				int count;
+
+				if ( pb == NULL ||
+				     pb->bf_getreadbuffer == NULL ||
+				     pb->bf_getsegcount == NULL )
+				  return "read-only buffer";
+				if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+				  return "single-segment read-only buffer";
+				if ( (count =
+				      (*pb->bf_getreadbuffer)(arg, 0, p)) < 0 )
+				  return "(unspecified)";
+				/* buffer interface returns bytes, we want
+				   length in characters */
+				*q = count/(sizeof(Py_UNICODE)); 
+				format++;
+			} else {
+			        Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
+			
+			        if (PyUnicode_Check(arg))
+				    *p = PyUnicode_AS_UNICODE(arg);
+				else
+				  return "unicode";
+			}
+			break;
+		}
+
 	case 'S': /* string object */
 		{
 			PyObject **p = va_arg(*p_va, PyObject **);
