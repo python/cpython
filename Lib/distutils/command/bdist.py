@@ -90,7 +90,8 @@ class bdist (Command):
         # "build/bdist.<plat>/dumb", "build/bdist.<plat>/rpm", etc.)
         if self.bdist_base is None:
             build_base = self.get_finalized_command('build').build_base
-            self.bdist_base = os.path.join(build_base, 'bdist.' + self.plat_name)
+            self.bdist_base = os.path.join(build_base,
+                                           'bdist.' + self.plat_name)
 
         self.ensure_string_list('formats')
         if self.formats is None:
@@ -109,16 +110,28 @@ class bdist (Command):
 
     def run (self):
 
+        # Figure out which sub-commands we need to run.
+        commands = []
         for format in self.formats:
             try:
-                cmd_name = self.format_command[format][0]
+                commands.append(self.format_command[format][0])
             except KeyError:
-                raise DistutilsOptionError, \
-                      "invalid format '%s'" % format
+                raise DistutilsOptionError, "invalid format '%s'" % format
 
+        # Reinitialize and run each command.
+        for i in range(len(self.formats)):
+            cmd_name = commands[i]
             sub_cmd = self.reinitialize_command(cmd_name)
             if cmd_name not in self.no_format_option:
-                sub_cmd.format = format
+                sub_cmd.format = self.formats[i]
+
+            print ("bdist.run: format=%s, command=%s, rest=%s" %
+                   (self.formats[i], cmd_name, commands[i+1:]))
+
+            # If we're going to need to run this command again, tell it to
+            # keep its temporary files around so subsequent runs go faster.
+            if cmd_name in commands[i+1:]:
+                sub_cmd.keep_temp = 1
             self.run_command (cmd_name)
 
     # run()
