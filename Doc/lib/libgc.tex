@@ -79,7 +79,8 @@ Return the current collection thresholds as a tuple of
 \end{funcdesc}
 
 
-The following variable is provided for read-only access:
+The following variable is provided for read-only access (you can
+mutate its value but should not rebind it):
 
 \begin{datadesc}{garbage}
 A list of objects which the collector found to be unreachable
@@ -88,9 +89,22 @@ contains only objects with \method{__del__()} methods.\footnote{Prior to
   Python 2.2, the list contained all instance objects in unreachable
   cycles,  not only those with \method{__del__()} methods.}
 Objects that have
-\method{__del__()} methods and create part of a reference cycle cause
-the entire reference cycle to be uncollectable.  If
-\constant{DEBUG_SAVEALL} is set, then all unreachable objects will
+\method{__del__()} methods and are part of a reference cycle cause
+the entire reference cycle to be uncollectable, including objects
+not necessarily in the cycle but reachable only from it.  Python doesn't
+collect such cycles automatically because, in general, it isn't possible
+for Python to guess a safe order in which to run the \method{__del__()}
+methods.  If you know a safe order, you can force the issue by examining
+the \var{garbage} list, and explicitly breaking cycles due to your
+objects within the list.  Note that these objects are kept alive even
+so by virtue of being in the \var{garbage} list, so they should be
+removed from \var{garbage} too.  For example, after breaking cycles, do
+\code{del gc.garbage[:]} to empty the list.  It's generally better
+to avoid the issue by not creating cycles containing objects with
+\method{__del__()} methods, and \var{garbage} can be examined in that
+case to verify that no such are being created.
+
+If \constant{DEBUG_SAVEALL} is set, then all unreachable objects will
 be added to this list rather than freed.
 \end{datadesc}
 
@@ -132,5 +146,5 @@ a leaking program.
 \begin{datadesc}{DEBUG_LEAK}
 The debugging flags necessary for the collector to print
 information about a leaking program (equal to \code{DEBUG_COLLECTABLE |
-DEBUG_UNCOLLECTABLE | DEBUG_INSTANCES | DEBUG_OBJECTS | DEBUG_SAVEALL}).  
+DEBUG_UNCOLLECTABLE | DEBUG_INSTANCES | DEBUG_OBJECTS | DEBUG_SAVEALL}).
 \end{datadesc}
