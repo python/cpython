@@ -3,7 +3,6 @@
 #include "Python.h"
 #ifdef macintosh
 #include "macglue.h"
-#include <SIOUX.h>
 #endif /* macintosh */
 
 static char *argv0;
@@ -21,6 +20,12 @@ main(argc, argv)
 
 	/* Initialize the Python interpreter.  Required. */
 #ifdef macintosh
+	/* If the first option is "-q" we don't open a console */
+	if ( argc > 1 && strcmp(argv[1], "-q") == 0 ) {
+		PyMac_SetConsoleHandler(PyMac_DummyReadHandler, PyMac_DummyWriteHandler,
+			PyMac_DummyWriteHandler);
+/*		freopen("demo output", "w", stdout); */
+	}
 	PyMac_Initialize();
 #else
 	Py_Initialize();
@@ -45,10 +50,6 @@ main(argc, argv)
 
 	/* Some more application specific code */
 	printf("\nGoodbye, cruel world\n");
-#ifdef macintosh
-	printf("Type return or so-\n");
-	getchar();
-#endif
 	/* Exit, cleaning up the interpreter */
 	Py_Exit(0);
 	/*NOTREACHED*/
