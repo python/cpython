@@ -223,7 +223,7 @@ class URLopener:
             suffix = os.path.splitext(path)[1]
             (fd, filename) = tempfile.mkstemp(suffix)
             self.__tempfiles.append(filename)
-            tfp = os.open(fd, 'wb')
+            tfp = os.fdopen(fd, 'wb')
         result = filename, headers
         if self.tempcache is not None:
             self.tempcache[url] = result
