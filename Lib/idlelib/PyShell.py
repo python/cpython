@@ -43,6 +43,7 @@ from ColorDelegator import ColorDelegator
 from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow, OnDemandOutputWindow
 from IdleConf import idleconf
+from configHandler import idleConf
 import idlever
 
 # We need to patch linecache.checkcache, because we don't want it
@@ -141,15 +142,15 @@ class ModifiedColorDelegator(ColorDelegator):
         ColorDelegator.recolorize_main(self)
 
     tagdefs = ColorDelegator.tagdefs.copy()
-    cconf = idleconf.getsection('Colors')
-
+    theme = idleConf.GetOption('main','Theme','name')
     tagdefs.update({
-        "stdin": cconf.getcolor("stdin"),
-        "stdout": cconf.getcolor("stdout"),
-        "stderr": cconf.getcolor("stderr"),
-        "console": cconf.getcolor("console"),
-        "ERROR": cconf.getcolor("ERROR"),
-        None: cconf.getcolor("normal"),
+
+        "stdin": idleConf.GetHighlight(theme, "stdin"),
+        "stdout": idleConf.GetHighlight(theme, "stdout"),
+        "stderr": idleConf.GetHighlight(theme, "stderr"),
+        "console": idleConf.GetHighlight(theme, "console"),
+        "ERROR": idleConf.GetHighlight(theme, "error"),
+        None: idleConf.GetHighlight(theme, "normal"),
     })
 
 

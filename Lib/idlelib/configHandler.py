@@ -5,7 +5,7 @@
 ## 
 ##---------------------------------------------------------------------------##
 """
-Provides access to configuration information
+Provides access to stored idle configuration information
 """
 
 import os
@@ -153,8 +153,17 @@ class IdleConf:
         return cfgParser.sections()
     
     def GetHighlight(self, theme, element):
+        #get some fallback defaults
+        defaultFg=self.GetOption('highlight', theme, 'normal' + "-foreground",
+            default='#000000')
+        defaultBg=self.GetOption('highlight', theme, 'normal' + "-background",
+            default='#ffffff')
+        #try for requested element colours
         fore = self.GetOption('highlight', theme, element + "-foreground")
         back = self.GetOption('highlight', theme, element + "-background")
+        #fall back if required
+        if not fore: fore=defaultFg
+        if not back: back=defaultBg
         return {"foreground": fore,
                 "background": back}
 
