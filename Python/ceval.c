@@ -1482,11 +1482,10 @@ eval_code2(co, globals, locals,
 						object *key = POP();
 						err = mappinginsert(
 							kwdict, key, value);
-						if (err) {
-							DECREF(key);
-							DECREF(value);
+						DECREF(key);
+						DECREF(value);
+						if (err)
 							break;
-						}
 					}
 					if (err) {
 						DECREF(args);
