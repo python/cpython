@@ -295,9 +295,9 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
 #	1 for different
 #	2 for funny cases (can't stat, etc.)
 #
-def _cmp(a, b):
+def _cmp(a, b, sh, st):
     try:
-        return not abs(cmp(a, b))
+        return not abs(cmp(a, b, sh, st))
     except os.error:
         return 2
 
