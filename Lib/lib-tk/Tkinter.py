@@ -1,23 +1,31 @@
 # Tkinter.py -- Tk/Tcl widget wrappers
 
-import _tkinter
-from _tkinter import TclError
+__version__ = "$Revision$"
+
+try:
+	# See if modern _tkinter is present
+	import _tkinter
+	tkinter = _tkinter # b/w compat
+except ImportError:
+	# No modern _tkinter -- try oldfashioned tkinter
+	import tkinter
+	if hasattr(tkinter, "__path__"):
+		import sys, os
+		# Append standard platform specific directory
+		p = tkinter.__path__
+		for dir in sys.path:
+			if (dir not in p and
+			    os.path.basename(dir) == sys.platform):
+				p.append(dir)
+		del sys, os, p, dir
+		from tkinter import tkinter
+TclError = tkinter.TclError
 from types import *
 from Tkconstants import *
+import string; _string = string; del string
 
-# XXXX Not really correct.
-# The following code disables all python  mainloop event handling,
-# but what we really want is to disable it only for tk windows...
-import os
-if os.name == 'mac':
-	import MacOS
-	MacOS.EnableAppswitch(0)
-
-CallableTypes = (FunctionType, MethodType,
-		 BuiltinFunctionType, BuiltinMethodType)
-
-TkVersion = eval(_tkinter.TK_VERSION)
-TclVersion = eval(_tkinter.TCL_VERSION)
+TkVersion = eval(tkinter.TK_VERSION)
+TclVersion = eval(tkinter.TCL_VERSION)
 
 
 def _flatten(tuple):
@@ -31,7 +39,6 @@ def _flatten(tuple):
 
 def _cnfmerge(cnfs):
 	if type(cnfs) is DictionaryType:
-		_fixgeometry(cnfs)
 		return cnfs
 	elif type(cnfs) in (NoneType, StringType):
 		
@@ -39,35 +46,9 @@ def _cnfmerge(cnfs):
 	else:
 		cnf = {}
 		for c in _flatten(cnfs):
-			_fixgeometry(c)
 			for k, v in c.items():
 				cnf[k] = v
 		return cnf
-
-if TkVersion >= 4.0:
-	_fixg_warning = "Warning: patched up pre-Tk-4.0 geometry option\n"
-	def _fixgeometry(c):
-		if c and c.has_key('geometry'):
-			wh = _parsegeometry(c['geometry'])
-			if wh:
-				# Print warning message -- once
-				global _fixg_warning
-				if _fixg_warning:
-					import sys
-					sys.stderr.write(_fixg_warning)
-					_fixg_warning = None
-				w, h = wh
-				c['width'] = w
-				c['height'] = h
-				del c['geometry']
-	def _parsegeometry(s):
-		from string import splitfields
-		fields = splitfields(s, 'x')
-		if len(fields) == 2:
-			return tuple(fields)
-		# else: return None
-else:
-	def _fixgeometry(c): pass
 
 class Event:
 	pass
@@ -78,8 +59,7 @@ def _tkerror(err):
 	pass
 
 def _exit(code='0'):
-	import sys
-	sys.exit(getint(code))
+	raise SystemExit, code
 
 _varnum = 0
 class Variable:
@@ -93,40 +73,35 @@ class Variable:
 		self._name = 'PY_VAR' + `_varnum`
 		_varnum = _varnum + 1
 	def __del__(self):
-		self._tk.unsetvar(self._name)
+		self._tk.globalunsetvar(self._name)
 	def __str__(self):
 		return self._name
-	def __call__(self, value=None):
-		if value == None:
-			return self.get()
-		else:
-			self.set(value)
 	def set(self, value):
-		return self._tk.setvar(self._name, value)
+		return self._tk.globalsetvar(self._name, value)
 
 class StringVar(Variable):
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getvar(self._name)
+		return self._tk.globalgetvar(self._name)
 
 class IntVar(Variable):
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getint(self._tk.getvar(self._name))
+		return self._tk.getint(self._tk.globalgetvar(self._name))
 
 class DoubleVar(Variable):
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getdouble(self._tk.getvar(self._name))
+		return self._tk.getdouble(self._tk.globalgetvar(self._name))
 
 class BooleanVar(Variable):
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getboolean(self._tk.getvar(self._name))
+		return self._tk.getboolean(self._tk.globalgetvar(self._name))
 
 def mainloop(n=0):
 	_default_root.tk.mainloop(n)
@@ -180,6 +155,14 @@ class Misc:
 	def focus_get(self):
 		name = self.tk.call('focus')
 		if name == 'none': return None
+		return self._nametowidget(name)
+	def tk_focusNext(self):
+		name = self.tk.call('tk_focusNext', self._w)
+		if not name: return None
+		return self._nametowidget(name)
+	def tk_focusPrev(self):
+		name = self.tk.call('tk_focusPrev', self._w)
+		if not name: return None
 		return self._nametowidget(name)
 	def after(self, ms, func=None, *args):
 		if not func:
@@ -365,34 +348,34 @@ class Misc:
 		self.tk.call('update')
 	def update_idletasks(self):
 		self.tk.call('update', 'idletasks')
-	def bind(self, sequence, func=None, add=''):
-		if add: add = '+'
-		if func:
-		    name = self._register(func, self._substitute)
-		    self.tk.call('bind', self._w, sequence, 
-				 (add + name,) + self._subst_format)
+	def bindtags(self, tagList=None):
+		if tagList is None:
+			return self.tk.splitlist(
+				self.tk.call('bindtags', self._w))
 		else:
-		    return self.tk.call('bind', self._w, sequence)
+			self.tk.call('bindtags', self._w, tagList)
+	def _bind(self, what, sequence, func, add):
+		if func:
+			cmd = ("%sset _tkinter_break [%s %s]\n"
+			       'if {"$_tkinter_break" == "break"} break\n') \
+			       % (add and '+' or '',
+				  self._register(func, self._substitute),
+				  _string.join(self._subst_format))
+			apply(self.tk.call, what + (sequence, cmd))
+		elif func == '':
+			apply(self.tk.call, what + (sequence, func))
+		else:
+			return apply(self.tk.call, what + (sequence,))
+	def bind(self, sequence=None, func=None, add=None):
+		return self._bind(('bind', self._w), sequence, func, add)
 	def unbind(self, sequence):
 		self.tk.call('bind', self._w, sequence, '')
-	def bind_all(self, sequence, func=None, add=''):
-		if add: add = '+'
-		if func:
-		    name = self._register(func, self._substitute)
-		    self.tk.call('bind', 'all' , sequence, 
-				 (add + name,) + self._subst_format)
-		else:
-		    return self.tk.call('bind', 'all', sequence)
+	def bind_all(self, sequence=None, func=None, add=None):
+		return self._bind(('bind', 'all'), sequence, func, add)
 	def unbind_all(self, sequence):
 		self.tk.call('bind', 'all' , sequence, '')
-	def bind_class(self, className, sequence, func=None, add=''):
-		if add: add = '+'
-		if func:
-		    name = self._register(func, self._substitute)
-		    self.tk.call('bind', className , sequence, 
-				 (add + name,) + self._subst_format)
-		else:
-		    return self.tk.call('bind', className, sequence)
+	def bind_class(self, className, sequence=None, func=None, add=None):
+		self._bind(('bind', className), sequence, func, add)
 	def unbind_class(self, className, sequence):
 		self.tk.call('bind', className , sequence, '')
 	def mainloop(self, n=0):
@@ -416,7 +399,7 @@ class Misc:
 		res = ()
 		for k, v in cnf.items():
 			if k[-1] == '_': k = k[:-1]
-			if type(v) in CallableTypes:
+			if callable(v):
 				v = self._register(v)
 			res = res + ('-'+k, v)
 		return res
@@ -425,7 +408,7 @@ class Misc:
 		if name[0] == '.':
 			w = w._root()
 			name = name[1:]
-		from string import find
+		find = _string.find
 		while name:
 			i = find(name, '.')
 			if i >= 0:
@@ -436,13 +419,16 @@ class Misc:
 			name = tail
 		return w
 	def _register(self, func, subst=None):
-		f = self._wrap(func, subst)
+		f = CallWrapper(func, subst, self).__call__
 		name = `id(f)`
-		if hasattr(func, 'im_func'):
+		try:
 			func = func.im_func
-		if hasattr(func, '__name__') and \
-		   type(func.__name__) == type(''):
+		except AttributeError:
+			pass
+		try:
 			name = name + func.__name__
+		except AttributeError:
+			pass
 		self.tk.createcommand(name, f)
 		return name
 	register = _register
@@ -485,8 +471,6 @@ class Misc:
 		exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
 		root = self._root()
 		root.report_callback_exception(exc, val, tb)
-	def _wrap(self, func, subst=None):
-		return CallWrapper(func, subst, self).__call__
 
 class CallWrapper:
 	def __init__(self, func, subst, widget):
@@ -556,12 +540,14 @@ class Wm:
 	def positionfrom(self, who=None):
 		return self.tk.call('wm', 'positionfrom', self._w, who)
 	def protocol(self, name=None, func=None):
-		if type(func) in CallableTypes:
+	        if callable(func):
 			command = self._register(func)
 		else:
 			command = func
 		return self.tk.call(
 			'wm', 'protocol', self._w, name, command)
+	def resizable(self, width=None, height=None):
+		return self.tk.call('wm', 'resizable', self._w, width, height)
 	def sizefrom(self, who=None):
 		return self.tk.call('wm', 'sizefrom', self._w, who)
 	def state(self):
@@ -583,22 +569,31 @@ class Tk(Misc, Wm):
 			import sys, os
 			baseName = os.path.basename(sys.argv[0])
 			if baseName[-3:] == '.py': baseName = baseName[:-3]
-		self.tk = _tkinter.create(screenName, baseName, className)
+		self.tk = tkinter.create(screenName, baseName, className)
+		try:
+			# Disable event scanning except for Command-Period
+			import MacOS
+			MacOS.EnableAppswitch(0)
+		except ImportError:
+			pass
+		else:
+			# Work around nasty MacTk bug
+			self.update()
 		# Version sanity checks
 		tk_version = self.tk.getvar('tk_version')
-		if tk_version != _tkinter.TK_VERSION:
+		if tk_version != tkinter.TK_VERSION:
 		    raise RuntimeError, \
 		    "tk.h version (%s) doesn't match libtk.a version (%s)" \
-		    % (_tkinter.TK_VERSION, tk_version)
+		    % (tkinter.TK_VERSION, tk_version)
 		tcl_version = self.tk.getvar('tcl_version')
-		if tcl_version != _tkinter.TCL_VERSION:
+		if tcl_version != tkinter.TCL_VERSION:
 		    raise RuntimeError, \
 		    "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
-		    % (_tkinter.TCL_VERSION, tcl_version)
+		    % (tkinter.TCL_VERSION, tcl_version)
 		if TkVersion < 4.0:
-		    raise RuntimeError, \
-			  "Tk 4.0 or higher is required; found Tk %s" \
-			  % str(TkVersion)
+			raise RuntimeError, \
+			"Tk 4.0 or higher is required; found Tk %s" \
+			% str(TkVersion)
 		self.tk.createcommand('tkerror', _tkerror)
 		self.tk.createcommand('exit', _exit)
 		self.readprofile(baseName, className)
@@ -610,8 +605,7 @@ class Tk(Misc, Wm):
 	def __str__(self):
 		return self._w
 	def readprofile(self, baseName, className):
-		##print __import__
-		import os, pdb
+		import os
 		if os.environ.has_key('HOME'): home = os.environ['HOME']
 		else: home = os.curdir
 		class_tcl = os.path.join(home, '.%s.tcl' % className)
@@ -619,7 +613,6 @@ class Tk(Misc, Wm):
 		base_tcl = os.path.join(home, '.%s.tcl' % baseName)
 		base_py = os.path.join(home, '.%s.py' % baseName)
 		dir = {'self': self}
-		##pdb.run('from Tkinter import *', dir)
 		exec 'from Tkinter import *' in dir
 		if os.path.isfile(class_tcl):
 			print 'source', `class_tcl`
@@ -643,14 +636,16 @@ class Pack:
 		apply(self.tk.call, 
 		      ('pack', 'configure', self._w) 
 		      + self._options(cnf, kw))
+	configure = config
 	pack = config
 	def __setitem__(self, key, value):
 		Pack.config({key: value})
 	def forget(self):
 		self.tk.call('pack', 'forget', self._w)
-	def newinfo(self):
+	pack_forget = forget
+	def info(self):
 		words = self.tk.splitlist(
-			self.tk.call('pack', 'newinfo', self._w))
+			self.tk.call('pack', 'info', self._w))
 		dict = {}
 		for i in range(0, len(words), 2):
 			key = words[i][1:]
@@ -659,7 +654,7 @@ class Pack:
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
-	info = newinfo
+	pack_info = info
 	_noarg_ = ['_noarg_']
 	def propagate(self, flag=_noarg_):
 		if flag is Pack._noarg_:
@@ -667,30 +662,107 @@ class Pack:
 				'pack', 'propagate', self._w))
 		else:
 			self.tk.call('pack', 'propagate', self._w, flag)
+	pack_propagate = propagate
 	def slaves(self):
 		return map(self._nametowidget,
 			   self.tk.splitlist(
 				   self.tk.call('pack', 'slaves', self._w)))
+	pack_slaves = slaves
 
 class Place:
 	def config(self, cnf={}, **kw):
+		for k in ['in_']:
+			if kw.has_key(k):
+				kw[k[:-1]] = kw[k]
+				del kw[k]
 		apply(self.tk.call, 
 		      ('place', 'configure', self._w) 
 		      + self._options(cnf, kw))
+	configure = config
 	place = config
 	def __setitem__(self, key, value):
 		Place.config({key: value})
 	def forget(self):
 		self.tk.call('place', 'forget', self._w)
+	place_forget = forget
 	def info(self):
 		return self.tk.call('place', 'info', self._w)
+	place_info = info
 	def slaves(self):
 		return map(self._nametowidget,
 			   self.tk.splitlist(
 				   self.tk.call(
 					   'place', 'slaves', self._w)))
+	place_slaves = slaves
 
-class Widget(Misc, Pack, Place):
+class Grid:
+	# Thanks to Masa Yoshikawa (yosikawa@isi.edu)
+	def config(self, cnf={}, **kw):
+		apply(self.tk.call, 
+		      ('grid', 'configure', self._w) 
+		      + self._options(cnf, kw))
+	grid = config
+	def __setitem__(self, key, value):
+		Grid.config({key: value})
+	def bbox(self, column, row):
+		return self._getints(
+			self.tk.call(
+				'grid', 'bbox', self._w, column, row)) or None
+	grid_bbox = bbox
+	def columnconfigure(self, index, *args):
+		res = apply(self.tk.call, 
+			      ('grid', 'columnconfigure', self._w) 
+			      + args)
+		if args == ['minsize']:
+			return self._getint(res) or None
+		elif args == ['wieght']:
+			return self._getdouble(res) or None
+	def forget(self):
+		self.tk.call('grid', 'forget', self._w)
+	grid_forget = forget
+	def info(self):
+		words = self.tk.splitlist(
+			self.tk.call('grid', 'info', self._w))
+		dict = {}
+		for i in range(0, len(words), 2):
+			key = words[i][1:]
+			value = words[i+1]
+			if value[0] == '.':
+				value = self._nametowidget(value)
+			dict[key] = value
+		return dict
+	grid_info = info
+	def location(self, x, y):
+		return self._getints(
+			self.tk.call(
+				'grid', 'location', self._w, x, y)) or None
+	_noarg_ = ['_noarg_']
+	def propagate(self, flag=_noarg_):
+		if flag is Grid._noarg_:
+			return self._getboolean(self.tk.call(
+				'grid', 'propagate', self._w))
+		else:
+			self.tk.call('grid', 'propagate', self._w, flag)
+	grid_propagate = propagate
+	def rowconfigure(self, index, *args):
+		res = apply(self.tk.call, 
+			      ('grid', 'rowconfigure', self._w) 
+			      + args)
+		if args == ['minsize']:
+			return self._getint(res) or None
+		elif args == ['wieght']:
+			return self._getdouble(res) or None
+	def size(self):
+		return self._getints(
+			self.tk.call('grid', 'size', self._w)) or None
+	def slaves(self, *args):
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   apply(self.tk.call,
+					 ('grid', 'slaves', self._w) + args)))
+	grid_slaves = slaves
+
+class Widget(Misc, Pack, Place, Grid):
 	def _setup(self, master, cnf):
 		global _default_root
 		if not master:
@@ -720,14 +792,13 @@ class Widget(Misc, Pack, Place):
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
 		Widget._setup(self, master, cnf)
-		apply(self.tk.call, (widgetName, self._w)+extra)
-		if cnf:
-			Widget.config(self, cnf)
+		apply(self.tk.call,
+		      (widgetName, self._w) + extra + self._options(cnf))
 	def config(self, cnf=None, **kw):
 		# XXX ought to generalize this so tag_config etc. can use it
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
-		else:
+		elif cnf:
 			cnf = _cnfmerge(cnf)
 		if cnf is None:
 			cnf = {}
@@ -735,22 +806,19 @@ class Widget(Misc, Pack, Place):
 				self.tk.call(self._w, 'configure')):
 				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
 			return cnf
-		if type(cnf) == StringType:
+		if type(cnf) is StringType:
 			x = self.tk.split(self.tk.call(
 				self._w, 'configure', '-'+cnf))
 			return (x[0][1:],) + x[1:]
 		for k in cnf.keys():
-			if type(k) == ClassType:
+			if type(k) is ClassType:
 				k.config(self, cnf[k])
 				del cnf[k]
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
+	configure = config
 	def __getitem__(self, key):
-		if TkVersion >= 4.0:
-			return self.tk.call(self._w, 'cget', '-' + key)
-		v = self.tk.splitlist(self.tk.call(
-			self._w, 'configure', '-' + key))
-		return v[4]
+		return self.tk.call(self._w, 'cget', '-' + key)
 	def __setitem__(self, key, value):
 		Widget.config(self, {key: value})
 	def keys(self):
@@ -765,21 +833,22 @@ class Widget(Misc, Pack, Place):
 		self.tk.call('destroy', self._w)
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args)
-	# XXX The following method seems out of place here
-##	def unbind_class(self, seq):
-##		Misc.unbind_class(self, self.widgetName, seq)
 
 class Toplevel(Widget, Wm):
 	def __init__(self, master=None, cnf={}, **kw):
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
 		extra = ()
-		if cnf.has_key('screen'):
-			extra = ('-screen', cnf['screen'])
-			del cnf['screen']
-		if cnf.has_key('class'):
-			extra = extra + ('-class', cnf['class'])
-			del cnf['class']
+		for wmkey in ['screen', 'class_', 'class', 'visual',
+			      'colormap']:
+			if cnf.has_key(wmkey):
+				val = cnf[wmkey]
+				# TBD: a hack needed because some keys
+				# are not valid as keyword arguments
+				if wmkey[-1] == '_': opt = '-'+wmkey[:-1]
+				else: opt = '-'+wmkey
+				extra = extra + (opt, val)
+				del cnf[wmkey]
 		Widget.__init__(self, master, 'toplevel', cnf, {}, extra)
 		root = self._root()
 		self.iconname(root.iconname())
@@ -843,11 +912,9 @@ class Canvas(Widget):
 		return self._getints(self._do('bbox', args)) or None
 	def tag_unbind(self, tagOrId, sequence):
 		self.tk.call(self._w, 'bind', tagOrId, sequence, '')
-	def tag_bind(self, tagOrId, sequence, func, add=''):
-		if add: add='+'
-		name = self._register(func, self._substitute)
-		self.tk.call(self._w, 'bind', tagOrId, sequence, 
-			     (add + name,) + self._subst_format)
+	def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
+		return self._bind((self._w, 'tag', 'bind', tagOrId),
+				  sequence, func, add)
 	def canvasx(self, screenx, gridspacing=None):
 		return self.tk.getdouble(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
@@ -856,7 +923,7 @@ class Canvas(Widget):
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
 		return self._do('coords', args)
-	def _create(self, itemType, args, kw): # Args: (value, value, ..., cnf={})
+	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
 		args = _flatten(args)
 		cnf = args[-1]
 		if type(cnf) in (DictionaryType, TupleType):
@@ -892,7 +959,7 @@ class Canvas(Widget):
 	def dtag(self, *args):
 		self._do('dtag', args)
 	def find(self, *args):
-		return self._getints(self._do('find', args))
+		return self._getints(self._do('find', args)) or ()
 	def find_above(self, tagOrId):
 		return self.find('above', tagOrId)
 	def find_all(self):
@@ -917,6 +984,8 @@ class Canvas(Widget):
 		return self.tk.getint(self._do('index', args))
 	def insert(self, *args):
 		self._do('insert', args)
+	def itemcget(self, tagOrId, option):
+		return self._do('itemcget', (tagOrId, '-'+option))
 	def itemconfig(self, tagOrId, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
@@ -930,6 +999,7 @@ class Canvas(Widget):
 			return (x[0][1:],) + x[1:]
 		self._do('itemconfigure', (tagOrId,)
 			 + self._options(cnf, kw))
+	itemconfigure = itemconfig
 	def lower(self, *args):
 		self._do('lower', args)
 	def move(self, *args):
@@ -948,7 +1018,7 @@ class Canvas(Widget):
 	def select_adjust(self, tagOrId, index):
 		self.tk.call(self._w, 'select', 'adjust', tagOrId, index)
 	def select_clear(self):
-		self.tk.call(self._w, 'select', 'clear', 'end')
+		self.tk.call(self._w, 'select', 'clear')
 	def select_from(self, tagOrId, index):
 		self.tk.call(self._w, 'select', 'set', tagOrId, index)
 	def select_item(self):
@@ -958,8 +1028,12 @@ class Canvas(Widget):
 	def type(self, tagOrId):
 		return self.tk.call(self._w, 'type', tagOrId) or None
 	def xview(self, *args):
+		if not args:
+			return self._getdoubles(self.tk.call(self._w, 'xview'))
 		apply(self.tk.call, (self._w, 'xview')+args)
 	def yview(self, *args):
+		if not args:
+			return self._getdoubles(self.tk.call(self._w, 'yview'))
 		apply(self.tk.call, (self._w, 'yview')+args)
 
 class Checkbutton(Widget):
@@ -979,12 +1053,6 @@ class Checkbutton(Widget):
 class Entry(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'entry', cnf, kw)
-	def tk_entryBackspace(self):
-		self.tk.call('tk_entryBackspace', self._w)
-	def tk_entryBackword(self):
-		self.tk.call('tk_entryBackword', self._w)
-	def tk_entrySeeCaret(self):
-		self.tk.call('tk_entrySeeCaret', self._w)
 	def delete(self, first, last=None):
 		self.tk.call(self._w, 'delete', first, last)
 	def get(self):
@@ -1003,9 +1071,9 @@ class Entry(Widget):
 	def select_adjust(self, index):
 		self.tk.call(self._w, 'select', 'adjust', index)
 	def select_clear(self):
-		self.tk.call(self._w, 'select', 'clear', 'end')
+		self.tk.call(self._w, 'select', 'clear')
 	def select_from(self, index):
-	        self.tk.call(self._w, 'select', 'set', index)
+		self.tk.call(self._w, 'select', 'set', index)
 	def select_present(self):
 		return self.tk.getboolean(
 			self.tk.call(self._w, 'select', 'present'))
@@ -1024,8 +1092,6 @@ class Frame(Widget):
 			extra = ('-class', cnf['class'])
 			del cnf['class']
 		Widget.__init__(self, master, 'frame', cnf, {}, extra)
-	def tk_menuBar(self, *args):
-		apply(self.tk.call, ('tk_menuBar', self._w) + args)
 
 class Label(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1034,20 +1100,22 @@ class Label(Widget):
 class Listbox(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'listbox', cnf, kw)
-	def tk_listboxSingleSelect(self):
-		if TkVersion >= 4.0:
-			self['selectmode'] = 'single'
-		else:
-			self.tk.call('tk_listboxSingleSelect', self._w) 
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
+	def bbox(self, *args):
+		return self._getints(self._do('bbox', args)) or None
 	def curselection(self):
+		# XXX Ought to apply self._getints()...
 		return self.tk.splitlist(self.tk.call(
 			self._w, 'curselection'))
 	def delete(self, first, last=None):
 		self.tk.call(self._w, 'delete', first, last)
-	def get(self, index):
-		return self.tk.call(self._w, 'get', index)
+	def get(self, first, last=None):
+		if last:
+			return self.tk.splitlist(self.tk.call(
+				self._w, 'get', first, last))
+		else:
+			return self.tk.call(self._w, 'get', first)
 	def insert(self, index, *elements):
 		apply(self.tk.call,
 		      (self._w, 'insert', index) + elements)
@@ -1058,31 +1126,33 @@ class Listbox(Widget):
 		self.tk.call(self._w, 'scan', 'mark', x, y)
 	def scan_dragto(self, x, y):
 		self.tk.call(self._w, 'scan', 'dragto', x, y)
+	def see(self, index):
+		self.tk.call(self._w, 'see', index)
+	def index(self, index):
+		i = self.tk.call(self._w, 'index', index)
+		if i == 'none': return None
+		return self.tk.getint(i)
 	def select_adjust(self, index):
 		self.tk.call(self._w, 'select', 'adjust', index)
-	if TkVersion >= 4.0:
-		def select_anchor(self, index):
-			self.tk.call(self._w, 'selection', 'anchor', index)
-		def select_clear(self, first, last=None):
-			self.tk.call(self._w,
-				     'selection', 'clear', first, last)
-		def select_includes(self, index):
-			return self.tk.getboolean(self.tk.call(
-				self._w, 'selection', 'includes', index))
-		def select_set(self, first, last=None):
-			self.tk.call(self._w, 'selection', 'set', first, last)
-	else:
-		def select_clear(self):
-			self.tk.call(self._w, 'select', 'clear')
-		def select_from(self, index):
-			self.tk.call(self._w, 'select', 'from', index)
-		def select_to(self, index):
-			self.tk.call(self._w, 'select', 'to', index)
+	def select_anchor(self, index):
+		self.tk.call(self._w, 'selection', 'anchor', index)
+	def select_clear(self, first, last=None):
+		self.tk.call(self._w,
+			     'selection', 'clear', first, last)
+	def select_includes(self, index):
+		return self.tk.getboolean(self.tk.call(
+			self._w, 'selection', 'includes', index))
+	def select_set(self, first, last=None):
+		self.tk.call(self._w, 'selection', 'set', first, last)
 	def size(self):
 		return self.tk.getint(self.tk.call(self._w, 'size'))
 	def xview(self, *what):
+		if not what:
+			return self._getdoubles(self.tk.call(self._w, 'xview'))
 		apply(self.tk.call, (self._w, 'xview')+what)
 	def yview(self, *what):
+		if not what:
+			return self._getdoubles(self.tk.call(self._w, 'yview'))
 		apply(self.tk.call, (self._w, 'yview')+what)
 
 class Menu(Widget):
@@ -1110,6 +1180,8 @@ class Menu(Widget):
 		self.tk.call('tk_firstMenu', self._w)
 	def tk_mbButtonDown(self):
 		self.tk.call('tk_mbButtonDown', self._w)
+	def tk_popup(self, x, y, entry=""):
+		self.tk.call('tk_popup', self._w, x, y, entry)
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
 	def add(self, itemType, cnf={}, **kw):
@@ -1127,9 +1199,20 @@ class Menu(Widget):
 		self.add('separator', cnf or kw)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
-	def entryconfig(self, index, cnf={}, **kw):
+	def entryconfig(self, index, cnf=None, **kw):
+		if cnf is None and not kw:
+			cnf = {}
+			for x in self.tk.split(apply(self.tk.call,
+			    (self._w, 'entryconfigure', index))):
+				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+			return cnf
+		if type(cnf) == StringType and not kw:
+			x = self.tk.split(apply(self.tk.call,
+			    (self._w, 'entryconfigure', index, '-'+cnf)))
+			return (x[0][1:],) + x[1:]
 		apply(self.tk.call, (self._w, 'entryconfigure', index)
 		      + self._options(cnf, kw))
+	entryconfigure = entryconfig
 	def index(self, index):
 		i = self.tk.call(self._w, 'index', index)
 		if i == 'none': return None
@@ -1175,8 +1258,18 @@ class Scale(Widget):
 class Scrollbar(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'scrollbar', cnf, kw)
+	def activate(self, index):
+		self.tk.call(self._w, 'activate', index)
+	def delta(self, deltax, deltay):
+		return self.getdouble(self.tk.call(
+			self._w, 'delta', deltax, deltay))
+	def fraction(self, x, y):
+		return self.getdouble(self.tk.call(
+			self._w, 'fraction', x, y))
+	def identify(self, x, y):
+		return self.tk.call(self._w, 'identify', x, y)
 	def get(self):
-		return self._getints(self.tk.call(self._w, 'get'))
+		return self._getdoubles(self.tk.call(self._w, 'get'))
 	def set(self, *args):
 		apply(self.tk.call, (self._w, 'set')+args)
 
@@ -1184,8 +1277,10 @@ class Text(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'text', cnf, kw)
 		self.bind('<Delete>', self.bspace)
+	def bbox(self, *args):
+		return self._getints(self._do('bbox', args)) or None
 	def bspace(self, *args):
-	        self.delete('insert')
+		self.delete('insert')
 	def tk_textSelectTo(self, index):
 		self.tk.call('tk_textSelectTo', self._w, index)
 	def tk_textBackspace(self):
@@ -1202,53 +1297,64 @@ class Text(Widget):
 			self._w, 'debug', boolean))
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
+	def dlineinfo(self, index):
+		return self._getints(self.tk.call(self._w, 'dlineinfo', index))
 	def get(self, index1, index2=None):
 		return self.tk.call(self._w, 'get', index1, index2)
 	def index(self, index):
 		return self.tk.call(self._w, 'index', index)
 	def insert(self, index, chars, *args):
 		apply(self.tk.call, (self._w, 'insert', index, chars)+args)
+	def mark_gravity(self, markName, direction=None):
+		return apply(self.tk.call,
+			     (self._w, 'mark', 'gravity', markName, direction))
 	def mark_names(self):
 		return self.tk.splitlist(self.tk.call(
 			self._w, 'mark', 'names'))
 	def mark_set(self, markName, index):
 		self.tk.call(self._w, 'mark', 'set', markName, index)
-	def mark_unset(self, markNames):
+	def mark_unset(self, *markNames):
 		apply(self.tk.call, (self._w, 'mark', 'unset') + markNames)
-	def scan_mark(self, y):
-		self.tk.call(self._w, 'scan', 'mark', y)
-	def scan_dragto(self, y):
-		self.tk.call(self._w, 'scan', 'dragto', y)
+	def scan_mark(self, x, y):
+		self.tk.call(self._w, 'scan', 'mark', x, y)
+	def scan_dragto(self, x, y):
+		self.tk.call(self._w, 'scan', 'dragto', x, y)
 	def search(self, pattern, index, stopindex=None,
 		   forwards=None, backwards=None, exact=None,
 		   regexp=None, nocase=None, count=None):
-	    args = [self._w, 'search']
-	    if forwards: args.append('-forwards')
-	    if backwards: args.append('-backwards')
-	    if exact: args.append('-exact')
-	    if regexp: args.append('-regexp')
-	    if nocase: args.append('-nocase')
-	    if count: args.append('-count'); args.append(count)
-	    if pattern[0] == '-': args.append('--')
-	    args.append(pattern)
-	    args.append(index)
-	    if stopindex: args.append(stopindex)
-	    return apply(self.tk.call, tuple(args))
+		args = [self._w, 'search']
+		if forwards: args.append('-forwards')
+		if backwards: args.append('-backwards')
+		if exact: args.append('-exact')
+		if regexp: args.append('-regexp')
+		if nocase: args.append('-nocase')
+		if count: args.append('-count'); args.append(count)
+		if pattern[0] == '-': args.append('--')
+		args.append(pattern)
+		args.append(index)
+		if stopindex: args.append(stopindex)
+		return apply(self.tk.call, tuple(args))
+	def see(self, index):
+		self.tk.call(self._w, 'see', index)
 	def tag_add(self, tagName, index1, index2=None):
 		self.tk.call(
 			self._w, 'tag', 'add', tagName, index1, index2)
 	def tag_unbind(self, tagName, sequence):
 		self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
-	def tag_bind(self, tagName, sequence, func, add=''):
-		if add: add='+'
-		name = self._register(func, self._substitute)
-		self.tk.call(self._w, 'tag', 'bind', 
-			     tagName, sequence, 
-			     (add + name,) + self._subst_format)
+	def tag_bind(self, tagName, sequence, func, add=None):
+		return self._bind((self._w, 'tag', 'bind', tagName),
+				  sequence, func, add)
+	def tag_cget(self, tagName, option):
+		return self.tk.call(self._w, 'tag', 'cget', tagName, option)
 	def tag_config(self, tagName, cnf={}, **kw):
+		if type(cnf) == StringType:
+			x = self.tk.split(self.tk.call(
+				self._w, 'tag', 'configure', tagName, '-'+cnf))
+			return (x[0][1:],) + x[1:]
 		apply(self.tk.call, 
 		      (self._w, 'tag', 'configure', tagName)
 		      + self._options(cnf, kw))
+	tag_configure = tag_config
 	def tag_delete(self, *tagNames):
 		apply(self.tk.call, (self._w, 'tag', 'delete') + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
@@ -1271,9 +1377,15 @@ class Text(Widget):
 	def window_cget(self, index, option):
 		return self.tk.call(self._w, 'window', 'cget', index, option)
 	def window_config(self, index, cnf={}, **kw):
+		if type(cnf) == StringType:
+			x = self.tk.split(self.tk.call(
+				self._w, 'window', 'configure',
+				index, '-'+cnf))
+			return (x[0][1:],) + x[1:]
 		apply(self.tk.call, 
 		      (self._w, 'window', 'configure', index)
 		      + self._options(cnf, kw))
+	window_configure = window_config
 	def window_create(self, index, cnf={}, **kw):
 		apply(self.tk.call, 
 		      (self._w, 'window', 'create', index)
@@ -1281,7 +1393,13 @@ class Text(Widget):
 	def window_names(self):
 		return self.tk.splitlist(
 			self.tk.call(self._w, 'window', 'names'))
+	def xview(self, *what):
+		if not what:
+			return self._getdoubles(self.tk.call(self._w, 'xview'))
+		apply(self.tk.call, (self._w, 'xview')+what)
 	def yview(self, *what):
+		if not what:
+			return self._getdoubles(self.tk.call(self._w, 'yview'))
 		apply(self.tk.call, (self._w, 'yview')+what)
 	def yview_pickplace(self, *what):
 		apply(self.tk.call, (self._w, 'yview', '-pickplace')+what)
@@ -1305,7 +1423,7 @@ class Image:
 		elif kw: cnf = kw
 		options = ()
 		for k, v in cnf.items():
-			if type(v) in CallableTypes:
+			if callable(v):
 				v = self._register(v)
 			options = options + ('-'+k, v)
 		apply(self.tk.call,
@@ -1333,10 +1451,25 @@ class PhotoImage(Image):
 		apply(Image.__init__, (self, 'photo', name, cnf), kw)
 	def blank(self):
 		self.tk.call(self.name, 'blank')
-	def cget(self):
-		return self.tk.call(self.name, 'cget')
+	def cget(self, option):
+		return self.tk.call(self.name, 'cget', '-' + option)
 	# XXX config
-	# XXX copy
+	def __getitem__(self, key):
+		return self.tk.call(self.name, 'cget', '-' + key)
+	def copy(self):
+		destImage = PhotoImage()
+		self.tk.call(destImage, 'copy', self.name)
+		return destImage
+	def zoom(self,x,y=''):
+		destImage = PhotoImage()
+		if y=='': y=x
+		self.tk.call(destImage, 'copy', self.name, '-zoom',x,y)
+		return destImage
+	def subsample(self,x,y=''):
+		destImage = PhotoImage()
+		if y=='': y=x
+		self.tk.call(destImage, 'copy', self.name, '-subsample',x,y)
+		return destImage
 	def get(self, x, y):
 		return self.tk.call(self.name, 'get', x, y)
 	def put(self, data, to=None):
@@ -1345,7 +1478,13 @@ class PhotoImage(Image):
 			args = args + to
 		apply(self.tk.call, args)
 	# XXX read
-	# XXX write
+	def write(self, filename, format=None, from_coords=None):
+		args = (self.name, 'write', filename)
+		if format:
+			args = args + ('-format', format)
+		if from_coords:
+			args = args + ('-from',) + tuple(from_coords)
+		apply(self.tk.call, args)
 
 class BitmapImage(Image):
 	def __init__(self, name=None, cnf={}, **kw):
@@ -1374,3 +1513,9 @@ class Tributton(Button):
 		self.bind('<ButtonRelease-1>', self.tkButtonUp)
 		self['fg']               = self['bg']
 		self['activebackground'] = self['bg']
+
+
+# Emacs cruft
+# Local Variables:
+# py-indent-offset: 8
+# End:
