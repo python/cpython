@@ -34,6 +34,13 @@ from decimal import *
 from test.test_support import TestSkipped, run_unittest, run_doctest, is_resource_enabled
 import threading
 
+# Tests are built around these assumed context defaults
+DefaultContext.prec=9
+DefaultContext.rounding=ROUND_HALF_EVEN
+DefaultContext.trap_enablers=dict.fromkeys(Signals, 0)
+setcontext(DefaultContext)
+
+
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
     file = sys.argv[0]
