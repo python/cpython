@@ -16,7 +16,9 @@
    family of functions must indicate this by defining
    _POSIX_SEMAPHORES. */   
 #ifdef _POSIX_SEMAPHORES
-#if _POSIX_SEMAPHORES == -1
+/* On FreeBSD 4.x, _POSIX_SEMAPHORES is defined empty, so 
+   we need to add 0 to make it work there as well. */
+#if (_POSIX_SEMAPHORES+0) == -1
 #define HAVE_BROKEN_POSIX_SEMAPHORES
 #else
 #include <semaphore.h>
