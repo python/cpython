@@ -1,5 +1,12 @@
 # Grammar for Python
 
+# Note:  Changing the grammar specified in this file will most likely
+#        require corresponding changes in the parser module
+#        (../Modules/parsermodule.c).  If you can't make the changes to
+#        that module yourself, please co-ordinate the required changes
+#        with someone who can; ask around on python-dev for help.  Fred
+#        Drake <fdrake@acm.org> will probably be listening there.
+
 # Commands for Kees Blom's railroad program
 #diagram:token NAME
 #diagram:token NUMBER
