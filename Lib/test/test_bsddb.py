@@ -2,7 +2,7 @@
 """Test script for the bsddb C module by Roger E. Masse
    Adapted to unittest format and expanded scope by Raymond Hettinger
 """
-import os
+import os, sys
 import bsddb
 import dbhash # Just so we know it's imported
 import unittest
@@ -92,6 +92,57 @@ class TestBSDDB(unittest.TestCase):
     def test_clear(self):
         self.f.clear()
         self.assertEqual(len(self.f), 0)
+
+    def test__no_deadlock_first(self, debug=0):
+        # do this so that testers can see what function we're in in
+        # verbose mode when we deadlock.
+        sys.stdout.flush()
+
+        # in pybsddb's _DBWithCursor this causes an internal DBCursor
+        # object is created.  Other test_ methods in this class could
+        # inadvertently cause the deadlock but an explicit test is needed.
+        if debug: print "A"
+        k,v = self.f.first()
+        if debug: print "B", k
+        self.f[k] = "deadlock.  do not pass go.  do not collect $200."
+        if debug: print "C"
+        # if the bsddb implementation leaves the DBCursor open during
+        # the database write and locking+threading support is enabled
+        # the cursor's read lock will deadlock the write lock request..
+
+        # test the iterator interface (if present)
+        if hasattr(self, 'iteritems'):
+            if debug: print "D"
+            k,v = self.f.iteritems()
+            if debug: print "E"
+            self.f[k] = "please don't deadlock"
+            if debug: print "F"
+            while 1:
+                try:
+                    k,v = self.f.iteritems()
+                except StopIteration:
+                    break
+            if debug: print "F2"
+
+            i = iter(self.f)
+            if debug: print "G"
+            while i:
+                try:
+                    if debug: print "H"
+                    k = i.next()
+                    if debug: print "I"
+                    self.f[k] = "deadlocks-r-us"
+                    if debug: print "J"
+                except StopIteration:
+                    i = None
+            if debug: print "K"
+
+        # test the legacy cursor interface mixed with writes
+        self.assert_(self.f.first()[0] in self.d)
+        k = self.f.next()[0]
+        self.assert_(k in self.d)
+        self.f[k] = "be gone with ye deadlocks"
+        self.assert_(self.f[k], "be gone with ye deadlocks")
 
     def test_popitem(self):
         k, v = self.f.popitem()
