@@ -1631,7 +1631,7 @@ PyTypeObject PyFile_Type = {
 	(initproc)file_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	file_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,                           /* tp_free */
 };
 
 /* Interface for the 'soft space' between print items. */
