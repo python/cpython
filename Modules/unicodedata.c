@@ -282,7 +282,7 @@ _getname(Py_UCS4 code, char* buffer, int buflen)
     int word;
     unsigned char* w;
 
-    if (code < 0 || code >= 65536)
+    if (code >= 65536)
         return 0;
 
     /* get offset into phrasebook */
