@@ -105,15 +105,17 @@ Instead of the normal \samp{\%}-based substitutions, Template strings support
 
 \item \samp{\$\{identifier\}} is equivalent to \samp{\$identifier}.  It is
       required when valid identifier characters follow the placeholder but are
-      not part of the placeholder, e.g. "\$\{noun\}ification".
+      not part of the placeholder, such as "\$\{noun\}ification".
 \end{itemize}
 
 Any other appearance of \samp{\$} in the string will result in a
 \exception{ValueError} being raised.
 
+\versionadded{2.4}
+
 Template strings are used just like normal strings, in that the modulus
 operator is used to interpolate a dictionary of values into a Template string,
-e.g.:
+for example:
 
 \begin{verbatim}
 >>> from string import Template
@@ -151,7 +153,7 @@ capturing groups correspond to the rules given above, along with the invalid
 placeholder rule:
 
 \begin{itemize}
-\item \var{escaped} -- This group matches the escape sequence, i.e. \samp{\$\$}
+\item \var{escaped} -- This group matches the escape sequence, \samp{\$\$},
       in the default pattern.
 \item \var{named} -- This group matches the unbraced placeholder name; it
       should not include the \samp{\$} in capturing group.
@@ -242,7 +244,7 @@ these functions as deprecated, although they will not be removed until Python
 \end{funcdesc}
 
 \begin{funcdesc}{expandtabs}{s\optional{, tabsize}}
-  Expand tabs in a string, i.e.\ replace them by one or more spaces,
+  Expand tabs in a string replacing them by one or more spaces,
   depending on the current column and the given tab size.  The column
   number is reset to zero after each newline occurring in the string.
   This doesn't understand other non-printing characters or escape
