@@ -228,6 +228,8 @@
 -25292	errKCReadOnly	errKCReadOnly
 -25291	errKCNotAvailable	errKCNotAvailable
 -25280	printerStatusOpCodeNotSupportedErr	printerStatusOpCodeNotSupportedErr
+-22018	kTXNOutsideOfFrameErr	kTXNOutsideOfFrameErr
+-22017	kTXNOutsideOfLineErr	kTXNOutsideOfLineErr
 -22016	kTXNATSUIIsNotInstalledErr	kTXNATSUIIsNotInstalledErr
 -22015	kTXNDataTypeNotAllowedErr	kTXNDataTypeNotAllowedErr
 -22014	kTXNCopyNotAllowedInEchoModeErr	kTXNCopyNotAllowedInEchoModeErr
@@ -248,6 +250,9 @@
 -20002	invalidIndexErr	The recordIndex parameter is not valid.
 -20001	recordDataTooBigErr	The record data is bigger than buffer size (1024 bytes).
 -20000	unknownInsertModeErr	There is no such an insert mode.
+-14002	kModemScriptMissing	kModemScriptMissing
+-14001	kModemPreferencesMissing	kModemPreferencesMissing
+-14000	kModemOutOfMemory	kModemOutOfMemory
 -13950	kHIDBaseError	kHIDBaseError
 -13949	kHIDNullStateErr	kHIDNullStateErr
 -13948	kHIDBufferTooSmallErr	kHIDBufferTooSmallErr
@@ -286,6 +291,7 @@
 -13882	debuggingDuplicateOptionErr	optionSelectorNum already registered
 -13881	debuggingDuplicateSignatureErr	componentSignature already registered
 -13880	debuggingExecutionContextErr	routine cannot be called at this time
+-13038	kBridgeSoftwareRunningCantSleep	kBridgeSoftwareRunningCantSleep
 -13020	kNoSuchPowerSource	kNoSuchPowerSource
 -13014	kProcessorTempRoutineRequiresMPLib2	kProcessorTempRoutineRequiresMPLib2
 -13013	kCantReportProcessorTemperatureErr	kCantReportProcessorTemperatureErr
@@ -306,6 +312,7 @@
 -11002	pictInfoVerbErr	the passed verb was invalid
 -11001	pictInfoIDErr	the internal consistancy check for the PictInfoID is wrong
 -11000	pictInfoVersionErr	wrong version of the PictInfo structure
+-10780	errTaskNotFound	no task with that task id exists
 -10116	telNotEnoughdspBW	not enough real-time for allocation
 -10115	telBadSampleRate	incompatible sample rate
 -10114	telBadSWErr	Software not installed properly
@@ -544,29 +551,46 @@
 -8740	kTextUndefinedElementErr	text conversion errors
 -8739	kTextMalformedInputErr	in DBCS, for example, high byte followed by invalid low byte
 -8738	kTextUnsupportedEncodingErr	specified encoding not supported for this operation
+-7139	kRANotEnabled	kRANotEnabled
+-7138	kRACallBackFailed	kRACallBackFailed
+-7137	kRADuplicateIPAddr	kRADuplicateIPAddr
+-7136	kRANCPRejectedbyPeer	kRANCPRejectedbyPeer
+-7135	kRAExtAuthenticationFailed	kRAExtAuthenticationFailed
+-7134	kRAATalkInactive	kRAATalkInactive
+-7133	kRAPeerNotResponding	kRAPeerNotResponding
+-7132	kRAPPPPeerDisconnected	kRAPPPPeerDisconnected
+-7131	kRAPPPUserDisconnected	kRAPPPUserDisconnected
+-7130	kRAPPPNegotiationFailed	kRAPPPNegotiationFailed
+-7129	kRAPPPAuthenticationFailed	kRAPPPAuthenticationFailed
+-7128	kRAPPPProtocolRejected	kRAPPPProtocolRejected
 -7127	dcmBufferOverflowErr	data is larger than buffer size
--7126	dcmIterationCompleteErr	no more item in iterator
--7124	dcmBadFeatureErr	invalid AccessMethod feature
--7122	dcmNoAccessMethodErr	no such AccessMethod
+-7126	kRANotPrimaryInterface	when IPCP is not primary TCP/IP intf.
+-7125	kRATCPIPNotConfigured	TCP/IP not configured, could be loaded
+-7124	kRATCPIPInactive	TCP/IP inactive, cannot be loaded
+-7123	kRARemoteAccessNotReady	kRARemoteAccessNotReady
+-7122	kRAInitOpenTransportFailed	kRAInitOpenTransportFailed
 -7121	dcmProtectedErr	need keyword to use dictionary
--7119	dcmBadPropertyErr	no such property exist
+-7120	kRAUserPwdEntryRequired	kRAUserPwdEntryRequired
+-7119	kRAUserPwdChangeRequired	kRAUserPwdChangeRequired
 -7118	dcmBadFindMethodErr	no such find method supported
--7117	dcmBadDataSizeErr	too big data size
--7116	dcmTooManyKeyErr	too many key field
+-7117	kRAInvalidSerialProtocol	kRAInvalidSerialProtocol
+-7116	kRAInvalidPortState	kRAInvalidPortState
 -7115	dcmBadKeyErr	bad key information
--7113	dcmNoFieldErr	no such field exist
+-7114	kRAPortBusy	kRAPortBusy
+-7113	kRAInstallationDamaged	kRAInstallationDamaged
 -7112	dcmBadFieldTypeErr	no such field type supported
 -7111	dcmBadFieldInfoErr	incomplete information
 -7110	dcmNecessaryFieldErr	lack required/identify field
 -7109	dcmDupRecordErr	same record already exist
--7108	dcmNoRecordErr	no such record
+-7108	kRANotConnected	kRANotConnected
 -7107	dcmBlockFullErr	dictionary block full
+-7106	kRAMissingResources	kRAMissingResources
 -7105	dcmDictionaryBusyErr	dictionary is busy
 -7104	dcmDictionaryNotOpenErr	dictionary not opened
 -7103	dcmPermissionErr	invalid permission
 -7102	dcmBadDictionaryErr	invalid dictionary
 -7101	dcmNotDictionaryErr	not dictionary
--7100	dcmParamErr	bad parameter
+-7100	kRAInvalidParameter	kRAInvalidParameter
 -7000	laEngineNotFoundErr	can't find the engine
 -6999	laPropertyErr	Error in properties
 -6998	kUSBUnknownDeviceErr	device ref not recognised
@@ -640,11 +664,18 @@
 -5698	kNavInvalidCustomControlMessageErr	kNavInvalidCustomControlMessageErr
 -5697	kNavCustomControlMessageFailedErr	kNavCustomControlMessageFailedErr
 -5696	kNavInvalidSystemConfigErr	kNavInvalidSystemConfigErr
+-5695	kNavWrongDialogClassErr	kNavWrongDialogClassErr
+-5694	kNavWrongDialogStateErr	kNavWrongDialogStateErr
 -5640	dialogNoTimeoutErr	dialogNoTimeoutErr
 -5623	menuInvalidErr	menu is invalid
 -5622	menuItemNotFoundErr	specified menu item wasn't found
 -5621	menuUsesSystemDefErr	GetMenuDefinition failed because the menu uses the system MDEF
 -5620	menuNotFoundErr	specified menu or menu ID wasn't found
+-5615	windowWrongStateErr	window is not in a state that is valid for the current action
+-5614	windowManagerInternalErr	something really weird happened inside the window manager
+-5613	windowAttributesConflictErr	passed some attributes that are mutually exclusive
+-5612	windowAttributeImmutableErr	tried to change attributes which can't be changed
+-5611	errWindowDoesNotFitOnscreen	ConstrainWindowToScreen could not make the window fit onscreen
 -5610	errWindowNotFound	returned from FindWindowOfClass
 -5609	errFloatingWindowsNotInitialized	called HideFloatingWindows or ShowFloatingWindows without calling InitFloatingWindows
 -5608	errWindowsAlreadyInitialized	tried to call InitFloatingWindows twice, or called InitWindows and then floating windows
@@ -683,6 +714,7 @@
 -5382	errIAParamErr	errIAParamErr
 -5381	errIAAllocationErr	errIAAllocationErr
 -5380	errIAUnknownErr	errIAUnknownErr
+-5363	hrURLNotHandledErr	hrURLNotHandledErr
 -5362	hrUnableToResizeHandleErr	hrUnableToResizeHandleErr
 -5361	hrMiscellaneousExceptionErr	hrMiscellaneousExceptionErr
 -5360	hrHTMLRenderingLibNotInstalledErr	hrHTMLRenderingLibNotInstalledErr
@@ -937,6 +969,7 @@
 -3030	noTranslationPathErr	noTranslationPathErr
 -3026	couldNotParseSourceFileErr	Source document does not contain source type
 -3025	invalidTranslationPathErr	Source type to destination type not a valid path
+-3005	retryComponentRegistrationErr	retryComponentRegistrationErr
 -3004	unresolvedComponentDLLErr	unresolvedComponentDLLErr
 -3003	componentDontRegister	componentDontRegister
 -3002	componentNotCaptured	componentNotCaptured
@@ -1084,6 +1117,8 @@
 -2203	matrixErr	bad matrix, digitizer did nothing
 -2202	qtParamErr	bad input parameter (out of range, etc)
 -2201	digiUnimpErr	feature unimplemented
+-2159	qtXMLApplicationErr	qtXMLApplicationErr
+-2158	qtXMLParseErr	qtXMLParseErr
 -2157	qtActionNotHandledErr	qtActionNotHandledErr
 -2149	notEnoughDataErr	notEnoughDataErr
 -2148	urlDataHFTPURLErr	urlDataHFTPURLErr
@@ -1230,6 +1265,7 @@
 -2002	badPublicMovieAtom	badPublicMovieAtom
 -2001	badImageDescription	badImageDescription
 -2000	couldNotResolveDataRef	couldNotResolveDataRef
+-1862	nonDragOriginatorErr	illegal attempt at originator only data
 -1861	badImageErr	bad translucent image PixMap
 -1860	badImageRgnErr	bad translucent image region
 -1859	noSuitableDisplaysErr	no displays support translucency
@@ -1259,6 +1295,8 @@
 -1752	errOSABadStorageType	errOSABadStorageType
 -1751	errOSAInvalidID	errOSAInvalidID
 -1750	errOSASystemError	errOSASystemError
+-1741	errAEBufferTooSmall	buffer for AEFlattenDesc too small
+-1740	errAEBuildSyntaxError	AEBuildDesc and friends detected a syntax error
 -1739	errAEDescIsNull	attempting to perform an invalid operation on a null descriptor
 -1738	errAEStreamAlreadyConverted	attempt to convert a stream that has already been converted
 -1737	errAEStreamBadNesting	nesting violation while streaming
@@ -1400,6 +1438,7 @@
 -903	noPortErr	Unable to open port or bad portRefNum.  If you're calling
 -902	nameTypeErr	Invalid or inappropriate locationKindSelector in locationName
 -900	notInitErr	PPCToolBox not initialized
+-877	notAppropriateForClassic	This application won't or shouldn't run on Classic (Problem 2481058).
 -876	appVersionTooOld	The application's creator and version are incompatible with the current version of Mac OS.
 -875	wrongApplicationPlatform	The application could not launch because the required platform is not available
 -863	hmCloseViewActive	Returned from HMRemoveBalloon if CloseView was active
@@ -1426,6 +1465,27 @@
 -802	rcDBError	rcDBError
 -801	rcDBValue	rcDBValue
 -800	rcDBNull	rcDBNull
+-677	icTooManyProfilesErr	too many profiles in database
+-676	icProfileNotFoundErr	profile not found
+-675	icConfigInappropriateErr	incorrect manufacturer code
+-674	icConfigNotFoundErr	no internet configuration was found
+-673	icNoURLErr	no URL found
+-672	icNothingToOverrideErr	no component for the override component to capture
+-671	icNoMoreWritersErr	you cannot begin a write session because someone else is already doing it
+-670	icTruncatedErr	more data was present than was returned
+-669	icInternalErr	Internet Config internal error
+-668	icPrefDataErr	problem with preference data
+-667	icPermErr	cannot set preference
+-666	icPrefNotFoundErr	Internet preference not found
+-648	vmInvalidOwningProcessErr	current process does not own the BackingFileID or FileViewID
+-647	vmAddressNotInFileViewErr	address is not in a FileView
+-646	vmNoMoreFileViewsErr	no more FileViews were found
+-645	vmFileViewAccessErr	requested FileViewAccess cannot be obtained
+-644	vmInvalidFileViewIDErr	invalid FileViewID
+-643	vmNoMoreBackingFilesErr	no more BackingFiles were found
+-642	vmBusyBackingFileErr	open views found on BackingFile
+-641	vmMappingPrivilegesErr	requested MappingPrivileges cannot be obtained
+-640	vmInvalidBackingFileIDErr	invalid BackingFileID
 -626	noMMUErr	no MMU present
 -625	cannotDeferErr	unable to defer additional functions
 -624	interruptsMaskedErr	don’t call with interrupts masked
@@ -1744,6 +1804,7 @@
 23	ENFILE	Too many open files in system
 24	EMFILE	Too many open files
 25	ENOTTY	Inappropriate ioctl for device
+26	ESIGPARM	Signal error
 27	EFBIG	File too large
 28	ENOSPC	No space left on device
 29	ESPIPE	Illegal seek
@@ -1787,3 +1848,5 @@
 67	ELOOK	Internal mapping for kOTLookErr, don't return to client
 77	ENOLCK	No locks available
 78	ENOSYS	Function not implemented
+88	EILSEQ	Wide character encoding error
+99	EUNKNOWN	Unknown error
