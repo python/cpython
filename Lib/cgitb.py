@@ -193,7 +193,7 @@ class Hook:
 
         if self.logdir is not None:
             import os, tempfile
-            (fd, name) = tempfile.mkstemp(suffix=['.html', '.txt'][text],
+            (fd, path) = tempfile.mkstemp(suffix=['.html', '.txt'][text],
                                           dir=self.logdir)
             try:
                 file = os.fdopen(fd, 'w')
