@@ -605,9 +605,17 @@ class Misc:
             self.tk.call('winfo', 'cells', self._w))
     def winfo_children(self):
         """Return a list of all widgets which are children of this widget."""
-        return map(self._nametowidget,
-               self.tk.splitlist(self.tk.call(
-                   'winfo', 'children', self._w)))
+        result = []
+        for child in self.tk.splitlist(
+            self.tk.call('winfo', 'children', self._w)):
+            try:
+                # Tcl sometimes returns extra windows, e.g. for
+                # menus; those need to be skipped
+                result.append(self._nametowidget(child))
+            except KeyError:
+                pass
+        return result
+
     def winfo_class(self):
         """Return window class name of this widget."""
         return self.tk.call('winfo', 'class', self._w)
