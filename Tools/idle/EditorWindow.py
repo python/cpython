@@ -6,6 +6,7 @@ import imp
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
+import browser
 import idlever
 import WindowList
 from IdleConf import idleconf
@@ -288,14 +289,16 @@ class EditorWindow:
         else:
             self.io.loadfile(helpfile)
 
-    # XXX Fix these for Windows
-    help_viewer = "netscape -remote 'openurl(%(url)s)' 2>/dev/null || " \
-                  "netscape %(url)s &"
     help_url = "http://www.python.org/doc/current/"
+    if sys.platform[:3] == "win":
+        fn = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        fn = os.path.join(fn, "Doc", "index.html")
+        if os.path.isfile(fn):
+            help_url = fn
+        del fn
 
     def python_docs(self, event=None):
-        cmd = self.help_viewer % {"url": self.help_url}
-        os.system(cmd)
+        browser.open(self.help_url)
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
