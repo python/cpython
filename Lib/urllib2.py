@@ -631,7 +631,7 @@ class AbstractBasicAuthHandler:
         # XXX could be multiple headers
         authreq = headers.get(authreq, None)
         if authreq:
-            mo = AbstractBasicAuthHandler.rx.match(authreq)
+            mo = AbstractBasicAuthHandler.rx.search(authreq)
             if mo:
                 scheme, realm = mo.groups()
                 if scheme.lower() == 'basic':

@@ -43,6 +43,9 @@ Extension modules
 Library
 -------
 
+- Patch #994595: urllib2 now recognizes Basic authentication even if
+  other authentication schemes are offered.
+
 - Bug #993394.  A KeyError was being raised by Thread.__delete() for
   dummy_threading when called by atexit if an instance of Thread was created in
   an interpreter running in -O.  The exception was of no importance and thus is
