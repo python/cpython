@@ -11,7 +11,7 @@ calculate_path()
 		int pathlen = strlen(pypath);
 		module_search_path = malloc(pathlen + 1);
 		if (module_search_path) 
-			strncpy(module_search_path, pypath, pathlen);
+			strncpy(module_search_path, pypath, pathlen + 1);
 		else {
 			fprintf(stderr, 
 				"Not enough memory for dynamic PYTHONPATH.\n"
