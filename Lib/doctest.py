@@ -479,6 +479,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         # Restore stdout.
         sys.stdout = save_stdout
 
+# [XX] Normalize with respect to os.path.pardir?
 def _module_relative_path(module, path):
     if not inspect.ismodule(module):
         raise TypeError, 'Expected a module: %r' % module
@@ -1995,8 +1996,8 @@ def testfile(filename, module_relative=True, name=None, package=None,
         os-specific path.  The path may be absolute or relative (to
         the current working directory).
 
-    Optional keyword arg "name" gives the name of the file; by default
-    use the file's name.
+    Optional keyword arg "name" gives the name of the test; by default
+    use the file's basename.
 
     Optional keyword argument "package" is a Python package or the
     name of a Python package whose directory should be used as the
@@ -2059,7 +2060,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
 
     # If no name was given, then use the file's name.
     if name is None:
-        name = os.path.split(filename)[-1]
+        name = os.path.basename(filename)
 
     # Assemble the globals.
     if globs is None:
@@ -2385,20 +2386,14 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
 
     A number of options may be provided as keyword arguments:
 
-    package
-      The name of a Python package.  Text-file paths will be
-      interpreted relative to the directory containing this package.
-      The package may be supplied as a package object or as a dotted
-      package name.
-
     setUp
-      The name of a set-up function.  This is called before running the
+      A set-up function.  This is called before running the
       tests in each file. The setUp function will be passed a DocTest
       object.  The setUp function can access the test globals as the
       globs attribute of the test passed.
 
     tearDown
-      The name of a tear-down function.  This is called after running the
+      A tear-down function.  This is called after running the
       tests in each file.  The tearDown function will be passed a DocTest
       object.  The tearDown function can access the test globals as the
       globs attribute of the test passed.
@@ -2465,8 +2460,7 @@ def DocFileTest(path, module_relative=True, package=None,
         path = _module_relative_path(package, path)
 
     # Find the file and read it.
-    name = os.path.split(path)[-1]
-
+    name = os.path.basename(path)
     doc = open(path).read()
 
     # Convert it to a test, and wrap it in a DocFileCase.
@@ -2505,13 +2499,13 @@ def DocFileSuite(*paths, **kw):
       "module_relative" is False.
 
     setUp
-      The name of a set-up function.  This is called before running the
+      A set-up function.  This is called before running the
       tests in each file. The setUp function will be passed a DocTest
       object.  The setUp function can access the test globals as the
       globs attribute of the test passed.
 
     tearDown
-      The name of a tear-down function.  This is called after running the
+      A tear-down function.  This is called after running the
       tests in each file.  The tearDown function will be passed a DocTest
       object.  The tearDown function can access the test globals as the
       globs attribute of the test passed.
