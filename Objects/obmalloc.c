@@ -424,6 +424,7 @@ new_arena(void)
 
 error:
 	PyMem_FREE(bp);
+	nfreepools = 0;
 	return NULL;
 }
 
