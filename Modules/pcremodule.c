@@ -512,6 +512,10 @@ PyPcre_expand(self, args)
 			{
 				PyObject *r, *tuple, *result;
 				r=PyObject_GetAttrString(match_obj, "group");
+				if (r == NULL) {
+					Py_DECREF(results);
+					return NULL;
+				}
 				tuple=PyTuple_New(1);
 				Py_INCREF(value);
 				PyTuple_SetItem(tuple, 0, value);
