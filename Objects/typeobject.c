@@ -2972,6 +2972,11 @@ slot_sq_length(PyObject *self)
 		return -1;
 	len = (int)PyInt_AsLong(res);
 	Py_DECREF(res);
+	if (len < 0) {
+		PyErr_SetString(PyExc_ValueError, 
+				"__len__() should return >= 0");
+		return -1;
+	}
 	return len;
 }
 
