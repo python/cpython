@@ -306,6 +306,12 @@ then
 fi
 
 AC_MSG_CHECKING(for --with-thread)
+# Let --with-threads be an alias for --with-thread
+if test "${with_thread+set}" != set; then
+   if test "${with_threads+set}" = set; then
+      with_thread="$with_threads";
+   fi
+fi
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
 AC_MSG_RESULT($withval)
 if test -d "$withval"
