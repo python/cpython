@@ -1877,6 +1877,16 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(Utils.parsedate('Wed,3 Apr 2002 14:58:26 +0800'),
                          Utils.parsedate('Wed, 3 Apr 2002 14:58:26 +0800'))
 
+    def test_parsedate_no_dayofweek(self):
+        eq = self.assertEqual
+        eq(Utils.parsedate_tz('25 Feb 2003 13:47:26 -0800'),
+           (2003, 2, 25, 13, 47, 26, 0, 0, 0, -28800))
+
+    def test_parsedate_compact_no_dayofweek(self):
+        eq = self.assertEqual
+        eq(Utils.parsedate_tz('5 Feb 2003 13:47:26 -0800'),
+           (2003, 2, 5, 13, 47, 26, 0, 0, 0, -28800))
+
     def test_parseaddr_empty(self):
         self.assertEqual(Utils.parseaddr('<>'), ('', ''))
         self.assertEqual(Utils.formataddr(Utils.parseaddr('<>')), '')
