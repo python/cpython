@@ -1,47 +1,46 @@
-This is Python release 1.5 alpha 4
+This is Python release 1.5 beta 1
 ==================================
-
-******************************************
-*** RELEASE RESTRICTED TO PSA MEMBERS! ***
-******************************************
-
 
 What's new in this release?
 ---------------------------
 
 Too much has changed to list it all here.  There's a loooong list of
-changes in Misc/NEWS.  This file is now *complete*: it has all changes
-made since 1.4 (all changes worth mentioning, anyway).  The complete
-list of changes since 1.5a4 is presented at the end of the file.  (It
-could still use a better organization.  Want to volunteer to add
-better structor or convert it to HTML?)
+changes since release 1.4 in the file Misc/NEWS.  If you were an alpha
+tester, the list of changes since 1.5a4 is presented at the end of
+that file.
 
-  - There's support in the readline module to change bindings and
-  write your own command completer in Python.  An example completer is
-  in rlcompleter.py.
+Most relevant changes since 1.5a4 (of course all known bugs have been
+fixed, leaks plugged, and documentation has been added):
 
-  - The new re module is here.  It is based on Philip Hazel's pcre
-  code; the Python interfaces were put together by Andrew Kuchling.
-  The regex module is declared obsolete.  (The previous re
-  implementation, obsolete though it is, is still available as
-  re1.py, as a keepsake.)
+  - Package directories now *require* the presence of __init__.py.
+  Packages can now contain shared libraries.
 
-  - All standard exceptions and most exceptions defined in standard
-  extension modules are now classes.  Use python -X to revert back to
-  string exceptions.  See
-    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
-  for more info.
+  - New module 'fileinput' to iterate over the lines of a list of files.
 
-  - Sequence assignments no longer require exact matching of the type
-  of sequence on the left- and right-hand side.  For example
-    (a, b, c) = [1, 2, 3]
-  is now legal.  (The lengths must still match exactly.)
+  - New module 'locale' for localized number formatting and string case
+  sensitivity.
 
-  - dict.get(key, default) returns dict[key] if it exists, and default
-  otherwise; default defaults to None.
+  - New module 'xmllib' to parse XML files.
 
-  - Class objects now have a __module__ attribute giving the module
-  name in which they were defined.
+  - Some more support for Tk extensions (PIL, TIX, BLT, TOGL).
+
+  - Fixed address list parsing in module 'rfc822'.
+
+  - More deployment (and only one fix) for the 're' module.
+
+  - New Python mode for Emacs.
+
+  - OS/2 support.
+
+Other important changes, if this is the first release you see since
+1.4:
+
+  - It's much faster (almost twice for the Lib/test/pystone.py
+  benchmark.)
+
+  - There's an assert statement: assert <condition> or
+  assert <condition>, <errormessage>.  It raises AssertionError if the
+  condition evaluates to false.
 
   - There is now built-in support for importing hierarchical module
   names (e.g. "import spam.ham.eggs"); ni is declared obsolete.  Note
@@ -51,37 +50,29 @@ better structor or convert it to HTML?)
     http://grail.cnri.reston.va.us/python/essays/packages.html
   for more info.
 
-  - A site can append items to the end of the default sys.path by
-  placing directory names in files named *.pth in either
-  $prefix/lib/site-python/ or $prefix/lib/python1.5/site-packages/.
-  This is implemented in the module site.py which is now loaded by
-  default at the end of initialization; use python -S to skip this.
-  See
-    http://grail.cnri.reston.va.us/python/essays/packages.html
-  for more info.
-
-Other important changes, if this is the first release you see since
-1.4:
-
-  - It's much faster (almost twice for pystone.py -- see
-  Tools/scripts.)
-
-  - There's an assert statement.
+  - The new "re" module (Perl style regular expressions) is here.  It
+  is based on Philip Hazel's pcre code; the Python interfaces were put
+  together by Andrew Kuchling.  The regex module is declared obsolete.
 
   - In support of the re module, a new form of string literals is
   introduced, "raw strings": e.g. r"\n" is equal to "\\n".
 
+  - All standard exceptions and most exceptions defined in standard
+  extension modules are now classes.  Use python -X to revert back to
+  string exceptions.  See
+    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
+  for more info.
+
   - Comparisons can now raise exceptions.
 
-  - New dictionary methods: .clear(), .update(), .copy().
+  - New dictionary methods: .clear(), .update(), .copy(), .get().
+
+  - New regression test harness tests more.
 
   - It's much smarter about the initial value for sys.path; you can
   control it easier using $PYTHONHOME (see the usage message, e.g. try
   ``python -h'').  In most situations, the interpreter can be
   installed at an arbitrary location without having to recompile.
-
-  - The infamous killer joke, ehh, metaclass support, is now
-  available.  See Demo/metaclasses/ for more info.
 
   - The build process now builds a single library (libpython1.5.a)
   which contains everything except for the main() entry point.  This
@@ -100,7 +91,15 @@ Other important changes, if this is the first release you see since
   defined by Python now have a "Py" or "_Py" prefix, and the same is
   true for most macros and typedefs.
 
-  - New regression test harness tests more.
+
+If you don't read instructions
+------------------------------
+
+Congratulations on getting this far. :-)
+
+To start building right away (on UNIX): type "./configure" in the
+current directory and when it finishes, type "make".  The section
+Build Instructions below is still recommended reading. :-)
 
 
 What is Python anyway?
@@ -159,26 +158,15 @@ If you can read German, try:
 	ISBN: 3-8273-1110-1
 
 
-If you don't read instructions
-------------------------------
-
-Congratulations on getting this far. :-)
-
-To start building right away (on UNIX): type "./configure" in the
-current directory and when it finishes, type "make".  The section
-Build Instructions below is still recommended reading. :-)
-
-
 Copyright issues
 ----------------
 
 Python is COPYRIGHTED but free to use for all.  See the full copyright
-notice at the end of this file.
+notice at the end of this file and in the file Misc/COPYRIGHT.
 
 The Python distribution is *not* affected by the GNU Public Licence
 (GPL).  There are interfaces to some GNU code but these are entirely
-optional and no GNU code is distributed with Python.  For all these
-packages, GPL-free public domain versions also exist.
+optional and no GNU code is distributed with Python.
 
 
 Build instructions
@@ -286,7 +274,7 @@ Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 SCO:    1) Everything works much better if you add -U__STDC__ to the
 	defs.  This is because all the SCO header files are broken.
-	Anything that isn't mentioned in the C standard it's
+	Anything that isn't mentioned in the C standard is
 	conditionally excluded when __STDC__ is defined.
 
 	2) Due to the U.S. export restrictions, SCO broke the crypt
@@ -298,9 +286,16 @@ SCO:    1) Everything works much better if you add -U__STDC__ to the
 	3) According to at least one report, the above apply only to
 	SCO 3 -- Python builds out of the box on SCO 5.
 
-SunOS:	On SunOS 4.1.x, when using the SunPro C compiler, you may want
-	to use the '-Xa' option instead of '-Xc', to enable some
-	needed non-ANSI Sunisms.
+SunOS 4.x: When using the standard "cc" compiler, certain modules may
+
+	not be compilable because they use non-K&R syntax.  You should
+	be able to get a basic Python interpreter by commenting out
+	such modules in the Modules/Setup file, but I really recommend
+	using gcc.
+
+	When using the SunPro C compiler, you may want to use the
+	'-Xa' option instead of '-Xc', to enable some needed non-ANSI
+	Sunisms.
 
 NeXT:   To build fat binaries, use the --with-next-archs switch
 	described below.
@@ -325,6 +320,11 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	smarter "smake " utility (/usr/sbin/smake), or GNU make.  If
 	you set the first line of the Makefile to #!/usr/sbin/smake
 	smake will be invoked by make (likewise for GNU make).
+
+OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
+        compiler installed, just change into the pc\os2vacpp directory
+        and type NMAKE.  Threading and sockets are supported by default
+        in the resulting binaries of PYTHON15.DLL and PYTHON.EXE.
 
 
 Configuring additional built-in modules
@@ -400,28 +400,34 @@ different directory).  This runs the test in verbose mode.
 Installing
 ----------
 
-Installing Python was never this easy!
-
 To install the Python binary, library modules, shared library modules
 (see below), include files, configuration files, and the manual page,
-just type "make install".  This will install all platform-independent
-files in subdirectories the directory given with the --prefix option
-to configure or the 'prefix' Make variable (default /usr/local), and
-all binary and other platform-specific files in subdirectories if the
-directory given by --exec-prefix or the 'exec_prefix' Make variable
-(defaults to the --prefix directory).  All subdirectories created will
-have Python's version number in their name, e.g. the library modules
-are installed in "/usr/local/lib/python1.5/" by default.  The Python
-binary is installed as "python1.5" and a hard link named "python" is
-created.  The only file not installed with a version number in its
-name is the manual page, installed as "/usr/local/man/man1/python.1"
-by default.
+just type
+
+	make install
+
+This will install all platform-independent files in subdirectories the
+directory given with the --prefix option to configure or the 'prefix'
+Make variable (default /usr/local), and all binary and other
+platform-specific files in subdirectories if the directory given by
+--exec-prefix or the 'exec_prefix' Make variable (defaults to the
+--prefix directory).
+
+All subdirectories created will have Python's version number in their
+name, e.g. the library modules are installed in
+"/usr/local/lib/python1.5/" by default.  The Python binary is
+installed as "python1.5" and a hard link named "python" is created.
+The only file not installed with a version number in its name is the
+manual page, installed as "/usr/local/man/man1/python.1" by default.
 
 If you have a previous installation of a pre-1.5 Python that you don't
-want to replace yet, use "make altinstall".  This installs the same
-set of files as "make install" except it doesn't create the hard link
-to "python1.5" named "python" and it doesn't install the manual page
-at all.
+want to replace yet, use
+
+	make altinstall
+
+This installs the same set of files as "make install" except it
+doesn't create the hard link to "python1.5" named "python" and it
+doesn't install the manual page at all.
 
 The only thing you may have to install manually is the Python mode for
 Emacs.  (But then again, more recent versions of Emacs may already
@@ -675,7 +681,7 @@ Bugs are best reported to the comp.lang.python newsgroup or the Python
 mailing list -- see the section "Newsgroup and mailing list" above.
 Before posting, check the newsgroup archives (see above) to see if
 your bug has already been reported!  If you don't want to go public,
-send them to me <guido@python.org>.
+send them to me: <guido@python.org>.
 
 
 Questions
@@ -698,18 +704,19 @@ also usable from Python.  Since this requires that you first build and
 install Tcl/Tk, the Tk interface is not enabled by default.  Python
 supports all Tcl/Tk versions from version 7.5/4.1 through 8.0 (and it
 is expected that it will also work with newer versions).  Tcl/Tk
-7.4/4.0 is no longer supported.
+7.4/4.0 is no longer supported.  8.0 or any later non-alpha non-beta
+release is recommended.
 
-See http://www.sunlabs.com/research/tcl/ for more info on where to get
-Tcl/Tk.  Also http://sunscript.sun.com/.
+See http://sunscript.sun.com/ for more info on Tcl/Tk, including the
+on-line manual pages.
+
 
 To enable the Python/Tk interface, once you've built and installed
-Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
-for the string "_tkinter".  Uncomment one (normally the first) of the
-lines beginning with "#_tkinter" and un-comment the line beginning
-with "#TKPATH".  If you have installed Tcl/Tk or X11 in unusual
-places, you will have to edit the first line to fix or add -I and -L
-options.  See the Build Instructions above for more details.
+Tcl/Tk, load the file Modules/Setup in your favorite text editor and
+search for the string "_tkinter".  Then follow the instructions found
+there.  If you have installed Tcl/Tk or X11 in unusual places, you
+will have to edit the first line to fix or add -I and -L options.
+(Also see the general instructions at the top of that file.)
 
 There is little documentation on how to use Tkinter; however most of
 the Tk manual pages apply quite straightforwardly.  Begin with
@@ -757,7 +764,8 @@ Makefile.in     Source from which config.status creates Makefile
 Misc/           Miscellaneous useful files
 Modules/        Implementation of most built-in modules
 Objects/        Implementation of most built-in object types
-PC/             PC porting files (DOS, Windows, NT, OS/2)
+PC/             PC porting files (DOS, Windows, OS/2)
+PCbuild/	Directory where you should build for Windows NT/95
 Parser/         The parser and tokenizer and their input handling
 Python/         The "compiler" and interpreter
 README          The file you're reading now
