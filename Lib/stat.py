@@ -24,10 +24,10 @@ ST_CTIME = 9
 # Extract bits from the mode
 
 def S_IMODE(mode):
-	return mode & 07777
+    return mode & 07777
 
 def S_IFMT(mode):
-	return mode & 0170000
+    return mode & 0170000
 
 # Constants used as S_IFMT() for various file types
 # (not all are implemented on all systems)
@@ -43,25 +43,25 @@ S_IFSOCK = 0140000
 # Functions to test for each file type
 
 def S_ISDIR(mode):
-	return S_IFMT(mode) == S_IFDIR
+    return S_IFMT(mode) == S_IFDIR
 
 def S_ISCHR(mode):
-	return S_IFMT(mode) == S_IFCHR
+    return S_IFMT(mode) == S_IFCHR
 
 def S_ISBLK(mode):
-	return S_IFMT(mode) == S_IFBLK
+    return S_IFMT(mode) == S_IFBLK
 
 def S_ISREG(mode):
-	return S_IFMT(mode) == S_IFREG
+    return S_IFMT(mode) == S_IFREG
 
 def S_ISFIFO(mode):
-	return S_IFMT(mode) == S_IFIFO
+    return S_IFMT(mode) == S_IFIFO
 
 def S_ISLNK(mode):
-	return S_IFMT(mode) == S_IFLNK
+    return S_IFMT(mode) == S_IFLNK
 
 def S_ISSOCK(mode):
-	return S_IFMT(mode) == S_IFSOCK
+    return S_IFMT(mode) == S_IFSOCK
 
 # Names for permission bits
 

@@ -17,7 +17,7 @@ def copyfileobj(fsrc, fdst, length=16*1024):
             break
         fdst.write(buf)
 
-	
+
 def copyfile(src, dst):
     """Copy data from src to dst"""
     fsrc = None
@@ -48,7 +48,7 @@ def copystat(src, dst):
 
 def copy(src, dst):
     """Copy data and mode bits ("cp src dst").
-    
+
     The destination may be a directory.
 
     """

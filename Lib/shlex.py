@@ -1,6 +1,6 @@
 """A lexical analyzer class for simple shell-like syntaxes."""
 
-# Module and documentation by Eric S. Raymond, 21 Dec 1998 
+# Module and documentation by Eric S. Raymond, 21 Dec 1998
 # Input stacking and error message cleanup added by ESR, March 2000
 
 import os.path
@@ -8,7 +8,7 @@ import sys
 
 
 class shlex:
-    "A lexical analyzer class for simple shell-like syntaxes." 
+    "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None):
         if instream:
             self.instream = instream
@@ -88,7 +88,7 @@ class shlex:
                 self.lineno = self.lineno + 1
             if self.debug >= 3:
                 print "shlex: in state", repr(self.state), \
-                      "I see character:", repr(nextchar) 
+                      "I see character:", repr(nextchar)
             if self.state is None:
                 self.token = ''         # past end of file
                 break
@@ -181,7 +181,7 @@ class shlex:
         return "\"%s\", line %d: " % (infile, lineno)
 
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     if len(sys.argv) == 1:
         lexer = shlex()
     else:

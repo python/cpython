@@ -27,7 +27,7 @@ letters = lowercase + uppercase
 digits = '0123456789'
 hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
-punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~""" 
+punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
