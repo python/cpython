@@ -207,9 +207,10 @@ class MyHandler(rpc.RPCHandler):
         """Override base method"""
         executive = Executive(self)
         self.register("exec", executive)
-        sys.stdin = self.get_remote_proxy("stdin")
+        sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
+        self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
 
     def exithook(self):
@@ -238,12 +239,17 @@ class Executive:
 
     def runcode(self, code):
         try:
+            self.usr_exc_info = None
             exec code in self.locals
         except:
+            self.usr_exc_info = sys.exc_info()
             if quitting:
                 exit()
             # even print a user code SystemExit exception, continue
             print_exception()
+            jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
+            if jit:
+                self.rpchandler.interp.open_remote_stack_viewer()
         else:
             flush_stdout()
 
@@ -261,13 +267,16 @@ class Executive:
         return self.calltip.fetch_tip(name)
 
     def stackviewer(self, flist_oid=None):
-        if not hasattr(sys, "last_traceback"):
+        if self.usr_exc_info:
+            typ, val, tb = self.usr_exc_info
+        else:
             return None
         flist = None
         if flist_oid is not None:
             flist = self.rpchandler.get_remote_proxy(flist_oid)
-        tb = sys.last_traceback
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
+        sys.last_type = typ
+        sys.last_value = val
         item = StackViewer.StackTreeItem(flist, tb)
         return RemoteObjectBrowser.remote_object_tree_item(item)
