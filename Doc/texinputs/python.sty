@@ -220,7 +220,8 @@
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\py@idxcode{#1}}}}
 \newcommand{\exindex}[1]{\indexii{exception}{#1@{\py@idxcode{#1}}}}
 \newcommand{\obindex}[1]{\indexii{object}{#1}}
-\newcommand{\bifuncindex}[1]{\withsubitem{(built-in function)}{\ttindex{#1()}}}
+\newcommand{\bifuncindex}[1]{%
+  \index{#1@{\py@idxcode{#1()}} (built-in function)}}
 
 % Add an index entry for a module
 \newcommand{\py@refmodule}[2]{\index{#1@{\py@idxcode{#1}} (#2module)}}
@@ -292,10 +293,12 @@
 }
 \newcommand{\withsubitem}[2]{%
   \begingroup%
+    \def\index@subitem{#1}%
     \ifpy@usingsubitem%
-      \def\index@subitem{#1}#2%
+      #2%
     \else%
-      \def\index@subitem{#1}#2%
+      \py@usingsubitemtrue%
+      #2%
       \py@usingsubitemfalse%
     \fi
   \endgroup%
@@ -564,9 +567,9 @@
   \begin{fulllineitems}
     \item[\bfcode{#2}%
     \ifx#1\@undefined%
-      \withsubitem{(C type)}{\ttindex{#2}}%
+      \index{#2@{\py@idxcode{#2}} (C type)}
     \else%
-      \withsubitem{(C type)}{\ttindex{#1}}%
+      \index{#2@{\py@idxcode{#1}} (C type)}
     \fi]
 }{\end{fulllineitems}}
 
@@ -575,12 +578,13 @@
 % -- "simple" because it has no args; NOT for constant definitions!
 \newenvironment{csimplemacrodesc}[1]{
   \begin{fulllineitems}
-    \item[\bfcode{#1}\withsubitem{(macro)}{\ttindex{#1}}]
+    \item[\bfcode{#1}\index{#1@{\py@idxcode{#1}} (macro)}]
 }{\end{fulllineitems}}
 
 % simple functions (not methods) -----------------------------------------
 % \begin{funcdesc}{name}{args}
-\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1()}}
+\newcommand{\funcline}[2]{\funclineni{#1}{#2}%
+                          \index{#1@{\py@idxcode{#1()}} (in \py@thismodule)}}
 \newenvironment{funcdesc}[2]{
   \begin{fulllineitems}
     \funcline{#1}{#2}
@@ -600,7 +604,7 @@
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
     \item[\code{\bfcode{#1}(\py@varvars{#2})}%
-      \withsubitem{(class in \py@thismodule)}{\ttindex{#1}}]
+      \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
 }{\end{fulllineitems}}
 
 % \begin{excclassdesc}{name}{constructor args}
@@ -610,7 +614,7 @@
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
     \item[\code{\bfcode{#1}(\py@varvars{#2})}%
-      \withsubitem{(exception in \py@thismodule)}{\ttindex{#1}}]
+      \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
 
 
@@ -618,21 +622,21 @@
 
 % object method ----------------------------------------------------------
 % \begin{methoddesc}[classname]{methodname}{args}
-\newcommand{\methodline}[3][\py@classbadkey]{
+\newcommand{\methodline}[3][\@undefined]{
   \methodlineni{#2}{#3}
   \ifx#1\@undefined
-    \withsubitem{(\py@thisclass\ method)}{\ttindex{#2()}}
+    \index{#2@{\py@idxcode{#2()}} (\py@thisclass\ method)}
   \else
-    \withsubitem{(#1 method)}{\ttindex{#2()}}
+    \index{#2@{\py@idxcode{#2()}} (#1 method)}
   \fi
 }
-\newenvironment{methoddesc}[3][\py@classbadkey]{
+\newenvironment{methoddesc}[3][\@undefined]{
   \begin{fulllineitems}
     \ifx#1\@undefined
       \methodline{#2}{#3}
     \else
       \def\py@thisclass{#1}
-      \methodline[#1]{#2}{#3}
+      \methodline{#2}{#3}
     \fi
 }{\end{fulllineitems}}
 
@@ -650,10 +654,10 @@
 \newcommand{\memberline}[2][\py@classbadkey]{%
   \ifx#1\@undefined
     \memberlineni{#2}
-    \withsubitem{(\py@thisclass\ attribute)}{\ttindex{#2}}
+    \index{#2@{\py@idxcode{#2}} (\py@thisclass\ attribute)}
   \else
     \memberlineni{#2}
-    \withsubitem{(#1 attribute)}{\ttindex{#2}}
+    \index{#2@{\py@idxcode{#2}} (#1 attribute)}
   \fi
 }
 \newenvironment{memberdesc}[2][\py@classbadkey]{
@@ -662,7 +666,7 @@
       \memberline{#2}
     \else
       \def\py@thisclass{#1}
-      \memberline[#1]{#2}
+      \memberline{#2}
     \fi
 }{\end{fulllineitems}}
 
@@ -676,15 +680,17 @@
 
 % For exceptions: --------------------------------------------------------
 % \begin{excdesc}{name}
-%  -- need support for constructor; maybe use optional parameter?
+%  -- for constructor information, use excclassdesc instead
 \newenvironment{excdesc}[1]{
   \begin{fulllineitems}
-    \item[\bfcode{#1}\ttindex{#1}]
+    \item[\bfcode{#1}%
+          \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
 
 % Module data or constants: ----------------------------------------------
 % \begin{datadesc}{name}
-\newcommand{\dataline}[1]{\datalineni{#1}\ttindex{#1}}
+\newcommand{\dataline}[1]{%
+  \datalineni{#1}\index{#1@{\py@idxcode{#1}} (data in \py@thismodule)}}
 \newenvironment{datadesc}[1]{
   \begin{fulllineitems}
     \dataline{#1}
