@@ -261,7 +261,8 @@ tar archive several times. Each archive member is represented by a
     gigabytes. A \exception{ValueError} is raised if a file exceeds
     this limit.  If false, create a GNU tar compatible archive.  It
     will not be \POSIX{} compliant, but can store files without any
-    of the above restrictions.
+    of the above restrictions. 
+    \versionchanged[\var{posix} defaults to false.]{2.4}
 \end{memberdesc}
 
 \begin{memberdesc}{dereference}

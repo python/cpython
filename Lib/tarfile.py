@@ -781,7 +781,7 @@ class TarFile(object):
                                 # messages (if debug >= 0). If > 0, errors
                                 # are passed to the caller as exceptions.
 
-    posix = True                # If True, generates POSIX.1-1990-compliant
+    posix = False               # If True, generates POSIX.1-1990-compliant
                                 # archives (no GNU extensions!)
 
     fileobject = ExFileObject
@@ -1137,7 +1137,7 @@ class TarFile(object):
         tarinfo.mode  = stmd
         tarinfo.uid   = statres.st_uid
         tarinfo.gid   = statres.st_gid
-        tarinfo.size  = statres.st_size
+        tarinfo.size  = not stat.S_ISDIR(stmd) and statres.st_size or 0
         tarinfo.mtime = statres.st_mtime
         tarinfo.type  = type
         tarinfo.linkname = linkname
