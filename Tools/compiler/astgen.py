@@ -71,15 +71,15 @@ class NodeInfo:
             if arg.endswith('*'):
                 arg = self.argnames[i] = arg[:-1]
                 d[arg] = P_OTHER
-                hardest_arg = P_OTHER
+                hardest_arg = max(hardest_arg, P_OTHER)
             elif arg.endswith('!'):
                 arg = self.argnames[i] = arg[:-1]
                 d[arg] = P_NESTED
-                hardest_arg = P_NESTED
+                hardest_arg = max(hardest_arg, P_NESTED)
             elif arg.endswith('&'):
                 arg = self.argnames[i] = arg[:-1]
                 d[arg] = P_NONE
-                hardest_arg = P_NONE
+                hardest_arg = max(hardest_arg, P_NONE)
             else:
                 d[arg] = P_NODE
         self.hardest_arg = hardest_arg
