@@ -52,34 +52,6 @@ The exceptions are:
 
 \renewcommand{\indexsubitem}{(exception in module string)}
 
-\begin{excdesc}{atof_error}
-Exception raised by
-\code{atof}
-when a non-float string argument is detected.
-The exception argument is the offending string.
-\end{excdesc}
-
-\begin{excdesc}{atoi_error}
-Exception raised by
-\code{atoi}
-when a non-integer string argument is detected.
-The exception argument is the offending string.
-\end{excdesc}
-
-\begin{excdesc}{atol_error}
-Exception raised by
-\code{atol}
-when a non-integer string argument is detected.
-The exception argument is the offending string.
-\end{excdesc}
-
-\begin{excdesc}{index_error}
-Exception raised by \code{index} when \var{sub} is not found.
-The exception argument is undefined (it may be a tuple containing the
-offending arguments to \code{index} or it may be the constant string
-\code{'substring not found'}).
-\end{excdesc}
-
 The functions are:
 
 \renewcommand{\indexsubitem}{(in module string)}
@@ -121,12 +93,12 @@ Like \code{find} but finds the highest index.
 \end{funcdesc}
 
 \begin{funcdesc}{index}{s\, sub\optional{\, start}}
-Like \code{find} but raise \code{index_error} when the substring is
+Like \code{find} but raise \code{ValueError} when the substring is
 not found.
 \end{funcdesc}
 
 \begin{funcdesc}{rindex}{s\, sub\optional{\, start}}
-Like \code{rfind} but raise \code{index_error} when the substring is
+Like \code{rfind} but raise \code{ValueError} when the substring is
 not found.
 \end{funcdesc}
 
