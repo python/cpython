@@ -126,22 +126,27 @@ Exception\n\
 static int
 populate_methods(PyObject *klass, PyObject *dict, PyMethodDef *methods)
 {
+    PyObject *module;
+    int status = -1;
+
     if (!methods)
 	return 0;
 
+    module = PyString_FromString("exceptions");
+    if (!module)
+	return 0;
     while (methods->ml_name) {
 	/* get a wrapper for the built-in function */
-	PyObject *func = PyCFunction_New(methods, NULL);
+	PyObject *func = PyCFunction_NewEx(methods, NULL, module);
 	PyObject *meth;
-	int status;
 
 	if (!func)
-	    return -1;
+	    goto status;
 
 	/* turn the function into an unbound method */
 	if (!(meth = PyMethod_New(func, NULL, klass))) {
 	    Py_DECREF(func);
-	    return -1;
+	    goto status;
 	}
 
 	/* add method to dictionary */
@@ -151,11 +156,14 @@ populate_methods(PyObject *klass, PyObject *dict, PyMethodDef *methods)
 
 	/* stop now if an error occurred, otherwise do the next method */
 	if (status)
-	    return status;
+	    goto status;
 
 	methods++;
     }
-    return 0;
+    status = 0;
+ status:
+    Py_DECREF(module);
+    return status;
 }
 
 
