@@ -343,7 +343,7 @@ generic_getattr(genericobject *g, char *name)
 }
 
 static int
-generic_setattr(genericobject *g, char *name PyObject *v)
+generic_setattr(genericobject *g, char *name, PyObject *v)
 {
 	int ret;
 
