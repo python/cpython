@@ -1444,7 +1444,6 @@ static PyMethodDef moduleMethods[] =
 	{NULL,                 NULL}
 };
 
-#undef WITH_READLINE /* XXX */
 #ifdef WITH_READLINE
 static int
 EventHook ()
