@@ -59,6 +59,7 @@ PyList_New(int size)
 {
 	PyListObject *op;
 	size_t nbytes;
+
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -82,7 +83,7 @@ PyList_New(int size)
 		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
 		if (op->ob_item == NULL)
 			return PyErr_NoMemory();
-		memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
+		memset(op->ob_item, 0, nbytes);
 	}
 	op->ob_size = size;
 	op->allocated = size;
