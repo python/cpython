@@ -94,12 +94,12 @@ built.
 
 *** How to build the _tkinter extension ***
 
-This assumes that you have installed the Tcl/Tk binary distribution
-for Windows 95/NT with version numbers 7.5p1/4.1p1, in the default
+This assumes that you have installed the Tcl/Tk binary distribution for
+Windows 95/NT with version numbers 7.5p1/4.1p1, in the default
 installation location (C:\tcl).  (Ftp to ftp.sunlabs.com in /pub/tcl,
-file win41p1.exe.)  You must also have fetched and unpacked the zip
-file vclibs41.zip which contains the files tcl75.lib and tk41.lib, and
-placed those files in C:\tcl\bin.  In order to use _tkinter, the
+file win41p1.exe.)  You must also fetch and unpack the zip file
+vclibs41.zip which contains the files tcl75.lib and tk41.lib, and place
+those files in the PC subdirectory.  In order to use _tkinter, the
 Tkinter.py module must be on PYTHONPATH.  It is found in the
 Lib\tkinter subdirectory.
 
