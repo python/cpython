@@ -24,12 +24,12 @@ Here are the public methods of the \class{Generator} class:
 The constructor for the \class{Generator} class takes a file-like
 object called \var{outfp} for an argument.  \var{outfp} must support
 the \method{write()} method and be usable as the output file in a
-Python 2.0 extended print statement.
+Python extended print statement.
 
 Optional \var{mangle_from_} is a flag that, when \code{True}, puts a
 \samp{>} character in front of any line in the body that starts exactly as
-\samp{From } (i.e. \code{From} followed by a space at the front of the
-line).  This is the only guaranteed portable way to avoid having such
+\samp{From }, i.e. \code{From} followed by a space at the beginning of the
+line.  This is the only guaranteed portable way to avoid having such
 lines be mistaken for a Unix mailbox format envelope header separator (see
 \ulink{WHY THE CONTENT-LENGTH FORMAT IS BAD}
 {http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}
@@ -48,10 +48,10 @@ recommended (but not required) by \rfc{2822}.
 
 The other public \class{Generator} methods are:
 
-\begin{methoddesc}[Generator]{flatten()}{msg\optional{, unixfrom}}
+\begin{methoddesc}[Generator]{flatten}{msg\optional{, unixfrom}}
 Print the textual representation of the message object structure rooted at
 \var{msg} to the output file specified when the \class{Generator}
-instance was created.  Sub-objects are visited depth-first and the
+instance was created.  Subparts are visited depth-first and the
 resulting text will be properly MIME encoded.
 
 Optional \var{unixfrom} is a flag that forces the printing of the
@@ -60,7 +60,7 @@ root message object.  If the root object has no envelope header, a
 standard one is crafted.  By default, this is set to \code{False} to
 inhibit the printing of the envelope delimiter.
 
-Note that for sub-objects, no envelope header is ever printed.
+Note that for subparts, no envelope header is ever printed.
 
 \versionadded{2.2.2}
 \end{methoddesc}
@@ -99,16 +99,20 @@ Optional \var{_mangle_from_} and \var{maxheaderlen} are as with the
 \class{Generator} base class.
 
 If the subpart is not of main type \mimetype{text}, optional \var{fmt}
-is a format string that is used instead of the message
-payload.  \var{fmt} is expanded with the following keywords (in
-\samp{\%(keyword)s} format):
+is a format string that is used instead of the message payload.
+\var{fmt} is expanded with the following keywords, \samp{\%(keyword)s}
+format:
 
-type       : Full MIME type of the non-\mimetype{text} part
-maintype   : Main MIME type of the non-\mimetype{text} part
-subtype    : Sub-MIME type of the non-\mimetype{text} part
-filename   : Filename of the non-\mimetype{text} part
-description: Description associated with the non-\mimetype{text} part
-encoding   : Content transfer encoding of the non-\mimetype{text} part
+\begin{itemize}
+\item \code{type} -- Full MIME type of the non-\mimetype{text} part
+\item \code{maintype} -- Main MIME type of the non-\mimetype{text} part
+\item \code{subtype} -- Sub-MIME type of the non-\mimetype{text} part
+\item \code{filename} -- Filename of the non-\mimetype{text} part
+\item \code{description} -- Description associated with the
+      non-\mimetype{text} part
+\item \code{encoding} -- Content transfer encoding of the
+      non-\mimetype{text} part
+\end{itemize}
 
 The default value for \var{fmt} is \code{None}, meaning
 

@@ -1,10 +1,10 @@
 Ordinarily, you get a message object structure by passing a file or
-some text to a parser, which parses the text and returns the root of
-the message object structure.  However you can also build a complete
-object structure from scratch, or even individual \class{Message}
-objects by hand.  In fact, you can also take an existing structure and
-add new \class{Message} objects, move them around, etc.  This makes a
-very convenient interface for slicing-and-dicing MIME messages.
+some text to a parser, which parses the text and returns the root
+message object.  However you can also build a complete message
+structure from scratch, or even individual \class{Message} objects by
+hand.  In fact, you can also take an existing structure and add new
+\class{Message} objects, move them around, etc.  This makes a very
+convenient interface for slicing-and-dicing MIME messages.
 
 You can create a new object structure by creating \class{Message}
 instances, adding attachments and all the appropriate headers manually.
@@ -99,7 +99,7 @@ callable takes one argument, which is the \class{MIMEAudio} instance.
 It should use \method{get_payload()} and \method{set_payload()} to
 change the payload to encoded form.  It should also add any
 \mailheader{Content-Transfer-Encoding} or other headers to the message
-object as necessary.  The default encoding is \emph{Base64}.  See the
+object as necessary.  The default encoding is base64.  See the
 \refmodule{email.Encoders} module for a list of the built-in encoders.
 
 \var{_params} are passed straight through to the base class constructor.
@@ -124,7 +124,7 @@ callable takes one argument, which is the \class{MIMEImage} instance.
 It should use \method{get_payload()} and \method{set_payload()} to
 change the payload to encoded form.  It should also add any
 \mailheader{Content-Transfer-Encoding} or other headers to the message
-object as necessary.  The default encoding is \emph{Base64}.  See the
+object as necessary.  The default encoding is base64.  See the
 \refmodule{email.Encoders} module for a list of the built-in encoders.
 
 \var{_params} are passed straight through to the \class{MIMEBase}

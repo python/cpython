@@ -54,7 +54,7 @@ should be performed.  Normally, when things like MIME terminating
 boundaries are missing, or when messages contain other formatting
 problems, the \class{Parser} will raise a
 \exception{MessageParseError}.  However, when lax parsing is enabled,
-the \class{Parser} will attempt to workaround such broken formatting
+the \class{Parser} will attempt to work around such broken formatting
 to produce a usable message structure (this doesn't mean
 \exception{MessageParseError}s are never raised; some ill-formatted
 messages just can't be parsed).  The \var{strict} flag defaults to
@@ -73,14 +73,12 @@ support both the \method{readline()} and the \method{read()} methods
 on file-like objects.
 
 The text contained in \var{fp} must be formatted as a block of \rfc{2822}
-style headers and header continuation lines, optionally preceeded by a
+style headers and header continuation lines, optionally preceded by a
 envelope header.  The header block is terminated either by the
 end of the data or by a blank line.  Following the header block is the
 body of the message (which may contain MIME-encoded subparts).
 
-Optional \var{headersonly} is a flag specifying whether to stop
-parsing after reading the headers or not.  The default is \code{False},
-meaning it parses the entire contents of the file.
+Optional \var{headersonly} is as with the \method{parse()} method.
 
 \versionchanged[The \var{headersonly} flag was added]{2.2.2}
 \end{methoddesc}
@@ -104,7 +102,7 @@ convenience.  They are available in the top-level \module{email}
 package namespace.
 
 \begin{funcdesc}{message_from_string}{s\optional{, _class\optional{, strict}}}
-Return a message object tree from a string.  This is exactly
+Return a message object structure from a string.  This is exactly
 equivalent to \code{Parser().parsestr(s)}.  Optional \var{_class} and
 \var{strict} are interpreted as with the \class{Parser} class constructor.
 
@@ -112,9 +110,10 @@ equivalent to \code{Parser().parsestr(s)}.  Optional \var{_class} and
 \end{funcdesc}
 
 \begin{funcdesc}{message_from_file}{fp\optional{, _class\optional{, strict}}}
-Return a message object tree from an open file object.  This is exactly
-equivalent to \code{Parser().parse(fp)}.  Optional \var{_class} and
-\var{strict} are interpreted as with the \class{Parser} class constructor.
+Return a message object structure tree from an open file object.  This
+is exactly equivalent to \code{Parser().parse(fp)}.  Optional
+\var{_class} and \var{strict} are interpreted as with the
+\class{Parser} class constructor.
 
 \versionchanged[The \var{strict} flag was added]{2.2.2}
 \end{funcdesc}
@@ -138,9 +137,10 @@ Here are some notes on the parsing semantics:
       \method{get_payload()} method will return a string object.
 \item All \mimetype{multipart} type messages will be parsed as a
       container message object with a list of sub-message objects for
-      their payload.  These messages will return \code{True} for
-      \method{is_multipart()} and their \method{get_payload()} method
-      will return a list of \class{Message} instances.
+      their payload.  The outer container message will return
+      \code{True} for \method{is_multipart()} and their
+      \method{get_payload()} method will return the list of
+      \class{Message} subparts.
 \item Most messages with a content type of \mimetype{message/*}
       (e.g. \mimetype{message/deliver-status} and
       \mimetype{message/rfc822}) will also be parsed as container
