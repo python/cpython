@@ -261,12 +261,6 @@ PyObject_Str(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	if (PyString_Check(v)) {
-		/* For a string subtype that's not a string, return a true
-		   string with the same string data. */
-		PyStringObject *s = (PyStringObject *)v;
-		return PyString_FromStringAndSize(s->ob_sval, s->ob_size);
-	}
 	if (v->ob_type->tp_str == NULL)
 		return PyObject_Repr(v);
 

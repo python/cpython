@@ -2298,6 +2298,36 @@ def buffer_inherit():
     except TypeError:
         pass
 
+def str_of_str_subclass():
+    import binascii
+    import cStringIO
+
+    if verbose:
+        print "Testing __str__ defined in subclass of str ..."
+
+    class octetstring(str):
+        def __str__(self):
+            return binascii.b2a_hex(self)
+        def __repr__(self):
+            return self + " repr"
+
+    o = octetstring('A')
+    vereq(type(o), octetstring)
+    vereq(type(str(o)), str)
+    vereq(type(repr(o)), str)
+    vereq(ord(o), 0x41)
+    vereq(str(o), '41')
+    vereq(repr(o), 'A repr')
+    vereq(o.__str__(), '41')
+    vereq(o.__repr__(), 'A repr')
+
+    capture = cStringIO.StringIO()
+    # Calling str() or not exercises different internal paths.
+    print >> capture, o
+    print >> capture, str(o)
+    vereq(capture.getvalue(), '41\n41\n')
+    capture.close()
+
 def test_main():
     class_docstrings()
     lists()
@@ -2346,6 +2376,7 @@ def test_main():
     binopoverride()
     subclasspropagation()
     buffer_inherit()
+    str_of_str_subclass()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
