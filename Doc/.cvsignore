@@ -12,8 +12,4 @@ python-???.*
 *.out
 *.bkm
 *.tar.gz
-api
-ext
-lib
-mac
-tut
+html
