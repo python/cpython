@@ -583,7 +583,7 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
         self.SetKeysType()   
         ##load keyset element list
-        keySet=idleConf.GetKeys(currentOption)
+        keySet=idleConf.GetCurrentKeySet()
         bindNames=keySet.keys()
         bindNames.sort()
         for bindName in bindNames: 
@@ -595,8 +595,7 @@ class ConfigDialog(Toplevel):
         listIndex=self.listBindings.index(ANCHOR)
         binding=self.listBindings.get(listIndex)
         bindName=binding.split()[0] #first part, up to first space
-        currentKeySet=idleConf.CurrentKeys()
-        currentKeySequences=idleConf.GetKeys(currentKeySet).values()
+        currentKeySequences=idleConf.GetCurrentKeySet().values()
         newKeys=GetKeysDialog(self,'Get New Keys',bindName,currentKeySequences)
         if newKeys.result: #new keys were specified
             self.listBindings.delete(listIndex)

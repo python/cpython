@@ -161,9 +161,10 @@ class GetKeysDialog(Toplevel):
         keyList=keyList+modifiers
         if finalKey: 
             if (not modifiers) and (finalKey in self.functionKeys):
-                finalKey='<'+finalKey
+                finalKey='<'+self.TranslateKey(finalKey)
+            else:
+                finalKey=self.TranslateKey(finalKey)
             keyList.append(finalKey+'>')
-                
         keyStr=string.join(keyList,'-')
         self.keyString.set(keyStr)
         
@@ -189,14 +190,33 @@ class GetKeysDialog(Toplevel):
         #these tuples are also available for use in validity checks
         self.functionKeys=('F1','F2','F2','F4','F5','F6','F7','F8','F9',
                 'F10','F11','F12')
-        self.punctuationKeys=tuple('~!@#%^&*()_-+={}[]|;:,./?')
-        self.specialKeys=('tab','space')
         self.alphanumKeys=tuple(string.ascii_lowercase+string.digits)
+        self.punctuationKeys=tuple('~!@#%^&*()_-+={}[]|;:,.<>/?')
+        self.whitespaceKeys=('Tab','Space','Return')
+        self.editKeys=('BackSpace','Delete','Insert')
+        self.moveKeys=('Home','End','Page Up','Page Down','Left Arrow',
+                'Right Arrow','Up Arrow','Down Arrow')
         #make a tuple of most of the useful common 'final' keys
-        keys=(self.alphanumKeys+self.punctuationKeys+self.specialKeys+
-                self.functionKeys)
+        keys=(self.alphanumKeys+self.punctuationKeys+self.functionKeys+
+                self.whitespaceKeys+self.editKeys+self.moveKeys)
         apply(self.listKeysFinal.insert,
             (END,)+keys)
+    
+    def TranslateKey(self,key):
+        #translate from key list value to tkinter key-id
+        translateDict={'~':'asciitilde','!':'exclam','@':'at','#':'numbersign',
+                '%':'percent','^':'asciicircum','&':'ampersand','*':'asterisk',
+                '(':'parenleft',')':'parenright','_':'underscore','-':'minus',
+                '+':'plus','=':'equal','{':'braceleft','}':'braceright',
+                '[':'bracketleft',']':'bracketright','|':'bar',';':'semicolon',
+                ':':'colon',',':'comma','.':'period','<':'less','>':'greater',
+                '/':'slash','?':'question','Page Up':'Prior','Page Down':'Next',
+                'Left Arrow':'Left','Right Arrow':'Right','Up Arrow':'Up',
+                'Down Arrow': 'Down'}
+        if key in translateDict.keys():
+            key=translateDict[key]
+        key='Key-'+key
+        return key
     
     def Ok(self, event=None):
         if self.KeysOk():

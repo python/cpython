@@ -153,7 +153,6 @@ class IdleConf:
             cfgParser=self.defaultCfg[configType]
         else:
             raise 'Invalid configSet specified'
-        
         return cfgParser.sections()
     
     def GetHighlight(self, theme, element, fgBg=None):
@@ -215,8 +214,10 @@ class IdleConf:
         Gets a list of all idle extensions declared in the config files.
         activeOnly - boolean, if true only return active (enabled) extensions
         """
-        extns=self.GetSectionList('default','extensions')
-        userExtns=self.GetSectionList('user','extensions')
+        extns=self.RemoveKeyBindNames(
+                self.GetSectionList('default','extensions'))
+        userExtns=self.RemoveKeyBindNames(
+                self.GetSectionList('user','extensions'))
         for extn in userExtns:
             if extn not in extns: #user has added own extension
                 extns.append(extn) 
@@ -230,6 +231,75 @@ class IdleConf:
         else:
             return extns        
 
+    def RemoveKeyBindNames(self,extnNameList):
+        #get rid of keybinding section names
+        names=extnNameList
+        kbNameIndicies=[]
+        for name in names:
+            if name.endswith('_bindings') or name.endswith('_cfgBindings'): 
+                    kbNameIndicies.append(names.index(name))
+        kbNameIndicies.sort()
+        kbNameIndicies.reverse()
+        for index in kbNameIndicies: #delete each keybinding section name    
+            del(names[index])
+        return names
+        
+    def GetExtensionKeys(self,extensionName):
+        """
+        returns a dictionary of the configurable keybindings for a particular
+        extension,as they exist in the dictionary returned by GetCurrentKeySet;
+        that is, where previously re-used bindings are disabled.
+        """
+        keysName=extensionName+'_cfgBindings'
+        activeKeys=self.GetCurrentKeySet()
+        extKeys={}
+        if self.defaultCfg['extensions'].has_section(keysName):
+            eventNames=self.defaultCfg['extensions'].GetOptionList(keysName)
+            for eventName in eventNames:
+                event='<<'+eventName+'>>'
+                binding=activeKeys[event]
+                extKeys[event]=binding
+        return extKeys 
+        
+    def __GetRawExtensionKeys(self,extensionName):
+        """
+        returns a dictionary of the configurable keybindings for a particular
+        extension, as defined in the configuration files, or an empty dictionary
+        if no bindings are found
+        """
+        keysName=extensionName+'_cfgBindings'
+        extKeys={}
+        if self.defaultCfg['extensions'].has_section(keysName):
+            eventNames=self.defaultCfg['extensions'].GetOptionList(keysName)
+            for eventName in eventNames:
+                binding=self.GetOption('extensions',keysName,
+                        eventName,default='').split()
+                event='<<'+eventName+'>>'
+                extKeys[event]=binding
+        return extKeys 
+    
+    def GetExtensionBindings(self,extensionName):
+        """
+        Returns a dictionary of all the event bindings for a particular
+        extension. The configurable keybindings are returned as they exist in
+        the dictionary returned by GetCurrentKeySet; that is, where re-used 
+        keybindings are disabled.
+        """
+        bindsName=extensionName+'_bindings'
+        extBinds=self.GetExtensionKeys(extensionName)
+        #add the non-configurable bindings
+        if self.defaultCfg['extensions'].has_section(bindsName):
+            eventNames=self.defaultCfg['extensions'].GetOptionList(bindsName)
+            for eventName in eventNames:
+                binding=self.GetOption('extensions',bindsName,
+                        eventName,default='').split()
+                event='<<'+eventName+'>>'
+                extBinds[event]=binding
+        
+        return extBinds 
+        
+    
+    
     def GetKeyBinding(self, keySetName, eventStr):
         """
         returns the keybinding for a specific event.
@@ -241,12 +311,31 @@ class IdleConf:
         binding=self.GetOption('keys',keySetName,eventName,default='').split()
         return binding
 
-    def GetKeys(self, keySetName=None):
+    def GetCurrentKeySet(self):
         """
-        returns the requested set of keybindings, with fallbacks if required.
+        Returns a dictionary of: all current core keybindings, plus the 
+        keybindings for all currently active extensions. If a binding defined
+        in an extension is already in use, that binding is disabled.
+        """
+        currentKeySet=self.GetCoreKeys(keySetName=self.CurrentKeys())
+        activeExtns=self.GetExtensions(activeOnly=1)
+        for extn in activeExtns:
+            extKeys=self.__GetRawExtensionKeys(extn)
+            if extKeys: #the extension defines keybindings
+                for event in extKeys.keys():
+                    if extKeys[event] in currentKeySet.values():
+                        #the binding is already in use
+                        extKeys[event]='' #disable this binding
+                    currentKeySet[event]=extKeys[event] #add binding
+        return currentKeySet
+    
+    def GetCoreKeys(self, keySetName=None):
+        """
+        returns the requested set of core keybindings, with fallbacks if
+        required.
         """
         #keybindings loaded from the config file(s) are loaded _over_ these
-        #defaults, so if there is a problem getting any binding there will
+        #defaults, so if there is a problem getting any core binding there will
         #be an 'ultimate last resort fallback' to the CUA-ish bindings
         #defined here.
         keyBindings={
