@@ -4,7 +4,8 @@ from __future__ import nested_scopes
 import _symtable
 from _symtable import USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM, \
      DEF_STAR, DEF_DOUBLESTAR, DEF_INTUPLE, DEF_FREE, \
-     DEF_FREE_GLOBAL, DEF_FREE_CLASS, DEF_IMPORT, DEF_BOUND
+     DEF_FREE_GLOBAL, DEF_FREE_CLASS, DEF_IMPORT, DEF_BOUND, \
+     OPT_IMPORT_STAR, OPT_EXEC, OPT_BARE_EXEC
 
 import weakref
 
@@ -97,7 +98,12 @@ class SymbolTable:
         return bool(self._table.children)
 
     def has_exec(self):
-        return bool()
+        """Return true if the scope uses exec"""
+        return bool(self._table.optimized & (OPT_EXEC | OPT_BARE_EXEC))
+
+    def has_import_star(self):
+        """Return true if the scope uses import *"""
+        return bool(self._table.optimized & OPT_IMPORT_STAR)
 
     def get_identifiers(self):
         return self._table.symbols.keys()
@@ -190,10 +196,10 @@ class Symbol:
                     or (self.__flags & DEF_FREE_GLOBAL))
 
     def is_vararg(self):
-        return bool(self.flag & DEF_STAR)
+        return bool(self.__flags & DEF_STAR)
 
     def is_keywordarg(self):
-        return bool(self.__flags & DEF_STARSTAR)
+        return bool(self.__flags & DEF_DOUBLESTAR)
 
     def is_local(self):
         return bool(self.__flags & DEF_BOUND)
