@@ -23,37 +23,50 @@ def escape(data, entities={}):
 
 class XMLGenerator(handler.ContentHandler):
 
-    def __init__(self, out=None):
+    def __init__(self, out=None, encoding="iso-8859-1"):
         if out is None:
             import sys
             out = sys.stdout
         handler.ContentHandler.__init__(self)
         self._out = out
+        self._ns_contexts = [{}] # contains uri -> prefix dicts
+        self._current_context = self._ns_contexts[-1]
+        self._encoding = encoding
 
     # ContentHandler methods
 
     def startDocument(self):
-        self._out.write('<?xml version="1.0" encoding="iso-8859-1"?>\n')
+        self._out.write('<?xml version="1.0" encoding="%s"?>\n' %
+                        self._encoding)
 
     def startPrefixMapping(self, prefix, uri):
-        pass
+        self._ns_contexts.append(self._current_context.copy())
+        self._current_context[uri] = prefix
 
     def endPrefixMapping(self, prefix):
-        pass
+        del self._current_context[-1]
 
     def startElement(self, name, attrs):
-        if type(name) is type(()):
-            uri, localname, prefix = name
-            name = "%s:%s"%(prefix,localname)
         self._out.write('<' + name)
         for (name, value) in attrs.items():
             self._out.write(' %s="%s"' % (name, escape(value)))
         self._out.write('>')
-
+        
     def endElement(self, name):
-        # FIXME: not namespace friendly yet
         self._out.write('</%s>' % name)
 
+    def startElementNS(self, name, qname, attrs):
+        name = self._current_context[name[0]] + ":" + name[1]
+        self._out.write('<' + name)
+        for (name, value) in attrs.items():
+            name = self._current_context[name[0]] + ":" + name[1]
+            self._out.write(' %s="%s"' % (name, escape(value)))
+        self._out.write('>')
+
+    def endElementNS(self, name, qname):
+        name = self._current_context[name[0]] + ":" + name[1]
+        self._out.write('</%s>' % name)
+        
     def characters(self, content):
         self._out.write(escape(content))
 
@@ -103,8 +116,14 @@ class XMLFilterBase:
     def startElement(self, name, attrs):
         self._cont_handler.startElement(name, attrs)
 
-    def endElement(self, name, qname):
-        self._cont_handler.endElement(name, qname)
+    def endElement(self, name):
+        self._cont_handler.endElement(name)
+
+    def startElementNS(self, name, qname, attrs):
+        self._cont_handler.startElement(name, attrs)
+
+    def endElementNS(self, name, qname):
+        self._cont_handler.endElementNS(name, qname)
 
     def characters(self, content):
         self._cont_handler.characters(content)
