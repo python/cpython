@@ -890,6 +890,10 @@ class FieldStorage:
 	    if item.name == key: return 1
 	return 0
 
+    def __len__(self):
+	"""Dictionary style len(x) support."""
+	return len(self.keys())
+
     def read_urlencoded(self):
 	"""Internal: read data in query string format."""
 	qs = self.fp.read(self.length)
