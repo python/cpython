@@ -4412,7 +4412,7 @@ static PyMethodDef datetime_methods[] = {
 
 	{"now",         (PyCFunction)datetime_now,
 	 METH_KEYWORDS | METH_CLASS,
-	 PyDoc_STR("[tz] -> new datetime with tz's locl day and time.")},
+	 PyDoc_STR("[tz] -> new datetime with tz's local day and time.")},
 
 	{"utcnow",         (PyCFunction)datetime_utcnow,
 	 METH_NOARGS | METH_CLASS,
