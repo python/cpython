@@ -117,7 +117,7 @@ class Profile:
            timing data for the parent frame.
     [ 1] = Total time spent in this frame's function, excluding time in
            subfunctions (this latter is tallied in cur[2]).
-    [ 2] = Total time spent in subfunctions, excluding time execute the
+    [ 2] = Total time spent in subfunctions, excluding time executing the
            frame's function (this latter is tallied in cur[1]).
     [-3] = Name of the function that corresponds to this frame.
     [-2] = Actual frame that we correspond to (used to sync exception handling).
