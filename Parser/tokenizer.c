@@ -319,13 +319,15 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	PyObject* buf = tok->decoding_buffer;
 	if (buf == NULL) {
 		buf = PyObject_CallObject(tok->decoding_readline, NULL);
-		if (buf == NULL) return error_ret(tok);
+		if (buf == NULL)
+			return error_ret(tok);
 	} else {
 		tok->decoding_buffer = NULL;
 	}
 	utf8 = PyUnicode_AsUTF8String(buf);
 	Py_DECREF(buf);
-	if (utf8 == NULL) return error_ret(tok);
+	if (utf8 == NULL)
+		return error_ret(tok);
 	else {
 		const char* str = PyString_AsString(utf8);
 		assert(strlen(str) < (size_t)size); /* XXX */
@@ -352,15 +354,18 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 	PyObject *reader, *stream, *readline;
 
 	stream = PyFile_FromFile(tok->fp, tok->filename, "rb", NULL);
-	if (stream == NULL) return 0;
+	if (stream == NULL)
+		return 0;
 
 	reader = PyCodec_StreamReader(enc, stream, NULL);
 	Py_DECREF(stream);
-	if (reader == NULL) return 0;
+	if (reader == NULL)
+		return 0;
 
 	readline = PyObject_GetAttrString(reader, "readline");
 	Py_DECREF(reader);
-	if (readline == NULL) return 0;
+	if (readline == NULL)
+		return 0;
 
 	tok->decoding_readline = readline;
 	return 1;
@@ -386,7 +391,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 {
 	char *line;
 	int warn = 0, badchar = 0;
-	for (;;)
+	for (;;) {
 		if (tok->decoding_state < 0) {
 			/* We already have a codec associated with
 			   this input. */
@@ -406,6 +411,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 				return error_ret(tok);
 			assert(tok->decoding_state != 0);
 		}
+	}
 	if (line != NULL && tok->lineno < 2 && !tok->read_coding_spec) {
 		if (!check_coding_spec(line, strlen(line), tok, fp_setreadl)) {
 			return error_ret(tok);
