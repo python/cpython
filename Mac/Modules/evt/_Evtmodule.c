@@ -33,6 +33,9 @@ static PyObject *Evt_GetMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point mouseLoc;
+#ifndef GetMouse
+	PyMac_PRECHECK(GetMouse);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetMouse(&mouseLoc);
@@ -45,6 +48,9 @@ static PyObject *Evt_Button(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef Button
+	PyMac_PRECHECK(Button);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = Button();
@@ -57,6 +63,9 @@ static PyObject *Evt_StillDown(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef StillDown
+	PyMac_PRECHECK(StillDown);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = StillDown();
@@ -69,6 +78,9 @@ static PyObject *Evt_WaitMouseUp(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef WaitMouseUp
+	PyMac_PRECHECK(WaitMouseUp);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WaitMouseUp();
@@ -81,6 +93,9 @@ static PyObject *Evt_GetCaretTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
+#ifndef GetCaretTime
+	PyMac_PRECHECK(GetCaretTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetCaretTime();
@@ -93,6 +108,9 @@ static PyObject *Evt_GetKeys(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	KeyMap theKeys__out__;
+#ifndef GetKeys
+	PyMac_PRECHECK(GetKeys);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetKeys(theKeys__out__);
@@ -105,6 +123,9 @@ static PyObject *Evt_GetDblTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
+#ifndef GetDblTime
+	PyMac_PRECHECK(GetDblTime);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetDblTime();
@@ -117,6 +138,9 @@ static PyObject *Evt_SetEventMask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventMask value;
+#ifndef SetEventMask
+	PyMac_PRECHECK(SetEventMask);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &value))
 		return NULL;
@@ -132,6 +156,9 @@ static PyObject *Evt_GetNextEvent(PyObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventMask eventMask;
 	EventRecord theEvent;
+#ifndef GetNextEvent
+	PyMac_PRECHECK(GetNextEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &eventMask))
 		return NULL;
@@ -149,6 +176,9 @@ static PyObject *Evt_EventAvail(PyObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventMask eventMask;
 	EventRecord theEvent;
+#ifndef EventAvail
+	PyMac_PRECHECK(EventAvail);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &eventMask))
 		return NULL;
@@ -166,6 +196,9 @@ static PyObject *Evt_PostEvent(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	EventKind eventNum;
 	UInt32 eventMsg;
+#ifndef PostEvent
+	PyMac_PRECHECK(PostEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "Hl",
 	                      &eventNum,
 	                      &eventMsg))
@@ -186,6 +219,9 @@ static PyObject *Evt_OSEventAvail(PyObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventMask mask;
 	EventRecord theEvent;
+#ifndef OSEventAvail
+	PyMac_PRECHECK(OSEventAvail);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &mask))
 		return NULL;
@@ -206,6 +242,9 @@ static PyObject *Evt_GetOSEvent(PyObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventMask mask;
 	EventRecord theEvent;
+#ifndef GetOSEvent
+	PyMac_PRECHECK(GetOSEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &mask))
 		return NULL;
@@ -223,6 +262,9 @@ static PyObject *Evt_FlushEvents(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	EventMask whichMask;
 	EventMask stopMask;
+#ifndef FlushEvents
+	PyMac_PRECHECK(FlushEvents);
+#endif
 	if (!PyArg_ParseTuple(_args, "HH",
 	                      &whichMask,
 	                      &stopMask))
@@ -241,6 +283,9 @@ static PyObject *Evt_SystemClick(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	EventRecord theEvent;
 	WindowPtr theWindow;
+#ifndef SystemClick
+	PyMac_PRECHECK(SystemClick);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetEventRecord, &theEvent,
 	                      WinObj_Convert, &theWindow))
@@ -258,6 +303,9 @@ static PyObject *Evt_SystemClick(PyObject *_self, PyObject *_args)
 static PyObject *Evt_SystemTask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef SystemTask
+	PyMac_PRECHECK(SystemTask);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	SystemTask();
@@ -274,6 +322,9 @@ static PyObject *Evt_SystemEvent(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	EventRecord theEvent;
+#ifndef SystemEvent
+	PyMac_PRECHECK(SystemEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &theEvent))
 		return NULL;
@@ -290,6 +341,9 @@ static PyObject *Evt_GetGlobalMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point globalMouse;
+#ifndef GetGlobalMouse
+	PyMac_PRECHECK(GetGlobalMouse);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetGlobalMouse(&globalMouse);
@@ -305,6 +359,9 @@ static PyObject *Evt_GetCurrentKeyModifiers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
+#ifndef GetCurrentKeyModifiers
+	PyMac_PRECHECK(GetCurrentKeyModifiers);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetCurrentKeyModifiers();
@@ -320,6 +377,9 @@ static PyObject *Evt_CheckEventQueueForUserCancel(PyObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef CheckEventQueueForUserCancel
+	PyMac_PRECHECK(CheckEventQueueForUserCancel);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CheckEventQueueForUserCancel();
@@ -333,6 +393,9 @@ static PyObject *Evt_KeyScript(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short code;
+#ifndef KeyScript
+	PyMac_PRECHECK(KeyScript);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &code))
 		return NULL;
@@ -348,6 +411,9 @@ static PyObject *Evt_IsCmdChar(PyObject *_self, PyObject *_args)
 	Boolean _rv;
 	EventRecord event;
 	short test;
+#ifndef IsCmdChar
+	PyMac_PRECHECK(IsCmdChar);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetEventRecord, &event,
 	                      &test))
@@ -363,6 +429,9 @@ static PyObject *Evt_LMGetKeyThresh(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
+#ifndef LMGetKeyThresh
+	PyMac_PRECHECK(LMGetKeyThresh);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = LMGetKeyThresh();
@@ -375,6 +444,9 @@ static PyObject *Evt_LMSetKeyThresh(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 value;
+#ifndef LMSetKeyThresh
+	PyMac_PRECHECK(LMSetKeyThresh);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &value))
 		return NULL;
@@ -388,6 +460,9 @@ static PyObject *Evt_LMGetKeyRepThresh(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
+#ifndef LMGetKeyRepThresh
+	PyMac_PRECHECK(LMGetKeyRepThresh);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = LMGetKeyRepThresh();
@@ -400,6 +475,9 @@ static PyObject *Evt_LMSetKeyRepThresh(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 value;
+#ifndef LMSetKeyRepThresh
+	PyMac_PRECHECK(LMSetKeyRepThresh);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &value))
 		return NULL;
@@ -413,6 +491,9 @@ static PyObject *Evt_LMGetKbdLast(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 _rv;
+#ifndef LMGetKbdLast
+	PyMac_PRECHECK(LMGetKbdLast);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = LMGetKbdLast();
@@ -425,6 +506,9 @@ static PyObject *Evt_LMSetKbdLast(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 value;
+#ifndef LMSetKbdLast
+	PyMac_PRECHECK(LMSetKbdLast);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &value))
 		return NULL;
@@ -438,6 +522,9 @@ static PyObject *Evt_LMGetKbdType(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 _rv;
+#ifndef LMGetKbdType
+	PyMac_PRECHECK(LMGetKbdType);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = LMGetKbdType();
@@ -450,6 +537,9 @@ static PyObject *Evt_LMSetKbdType(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt8 value;
+#ifndef LMSetKbdType
+	PyMac_PRECHECK(LMSetKbdType);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &value))
 		return NULL;
@@ -463,6 +553,9 @@ static PyObject *Evt_TickCount(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
+#ifndef TickCount
+	PyMac_PRECHECK(TickCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = TickCount();
