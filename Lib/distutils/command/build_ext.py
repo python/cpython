@@ -67,7 +67,9 @@ class build_ext (Command):
         ('debug', 'g',
          "compile/link with debugging information"),
         ('force', 'f',
-         "forcibly build everything (ignore file timestamps"),
+         "forcibly build everything (ignore file timestamps)"),
+        ('compiler=', 'c',
+         "specify the compiler type"),
         ]
 
 
@@ -87,6 +89,7 @@ class build_ext (Command):
         self.link_objects = None
         self.debug = None
         self.force = None
+        self.compiler = None
 
 
     def finalize_options (self):
@@ -95,6 +98,7 @@ class build_ext (Command):
         self.set_undefined_options ('build',
                                     ('build_lib', 'build_lib'),
                                     ('build_temp', 'build_temp'),
+                                    ('compiler', 'compiler'),
                                     ('debug', 'debug'),
                                     ('force', 'force'))
 
@@ -169,7 +173,8 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler (verbose=self.verbose,
+        self.compiler = new_compiler (compiler=self.compiler,
+                                      verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
 
@@ -340,6 +345,10 @@ class build_ext (Command):
                 implib_dir = os.path.join(self.build_temp,\
                                           self.get_ext_libname(extension_name))
                 extra_args.append ('/IMPLIB:' + implib_dir)
+
+                # XXX arg, which of these is correct?
+                self.mkpath(implib_dir)
+                self.mkpath(os.path.dirname(implib_dir))
             # if MSVC
 
             fullname = self.get_ext_fullname (extension_name)
