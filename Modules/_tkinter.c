@@ -553,8 +553,10 @@ AsObj(value)
 		PyObject* utf8 = PyUnicode_AsUTF8String (value);
 		if (!utf8)
 			return 0;
-		return Tcl_NewStringObj (PyString_AS_STRING (utf8),
+		result = Tcl_NewStringObj (PyString_AS_STRING (utf8),
 					 PyString_GET_SIZE (utf8));
+		Py_DECREF(utf8);
+		return result;
 	}
 	else {
 		PyObject *v = PyObject_Str(value);
