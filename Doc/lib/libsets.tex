@@ -91,6 +91,15 @@ the following operations:
          {new set with a shallow copy of \var{s}}
 \end{tableiii}
 
+Note, this non-operator versions of \method{union()},
+\method{intersection()}, \method{difference()}, and
+\method{symmetric_difference()} will accept any iterable as an argument.
+In contrast, their operator based counterparts require their arguments to
+be sets.  This precludes error-prone constructions like
+\code{Set('abc') \&\ 'cbs'} in favor of the more readable
+\code{Set('abc').intersection('cbs')}.
+\versionchanged[Formerly all arguments were required to be sets]{2.3.1}
+
 In addition, both \class{Set} and \class{ImmutableSet}
 support set to set comparisons.  Two sets are equal if and only if
 every element of each set is contained in the other (each is a subset
@@ -145,11 +154,18 @@ but not found in \class{ImmutableSet}:
   \lineiii{\var{s}.pop()}{}
          {remove and return an arbitrary element from \var{s}; raises
 	  KeyError if empty}
-  \lineiii{\var{s}.update(\var{t})}{}
-         {add elements from \var{t} to set \var{s}}
   \lineiii{\var{s}.clear()}{}
          {remove all elements from set \var{s}}
 \end{tableiii}
+
+\versionchanged[Earlier versions had an \method{update()} method; use
+                \method{union_update()} instead]{2.3.1}
+
+Note, this non-operator versions of \method{union_update()},
+\method{intersection_update()}, \method{difference_update()}, and
+\method{symmetric_difference_update()} will accept any iterable as
+an argument.
+\versionchanged[Formerly all arguments were required to be sets]{2.3.1}
 
 
 \subsection{Example \label{set-example}}
@@ -167,7 +183,7 @@ but not found in \class{ImmutableSet}:
 Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
 >>> employees.issuperset(engineers)           # superset test
 False
->>> employees.update(engineers)               # update from another set
+>>> employees.union_update(engineers)         # update from another set
 >>> employees.issuperset(engineers)
 True
 >>> for group in [engineers, programmers, management, employees]:

@@ -30,7 +30,10 @@ Extension modules
 Library
 -------
 
-- sets.py now runs under Py2.2
+- sets.py now runs under Py2.2.  In addition, the argument restrictions
+  for most set methods (but not the operators) have been relaxed to
+  allow any iterable.  Also the Set.update() has been deprecated because
+  it duplicates Set.union_update().
 
 - random.seed() with no arguments or None uses time.time() as a default
   seed.  Modified to match Py2.2 behavior and use fractional seconds so
