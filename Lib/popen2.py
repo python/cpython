@@ -5,7 +5,7 @@ import string
 MAXFD = 100	# Max number of file descriptors (os.getdtablesize()???)
 
 def popen2(cmd):
-	cmd = string.split(cmd)
+	cmd = ['/bin/sh', '-c', cmd]
 	p2cread, p2cwrite = os.pipe()
 	c2pread, c2pwrite = os.pipe()
 	pid = os.fork()
