@@ -177,7 +177,7 @@ if (stack.index == STACK_PAGE_SIZE) \
 { \
    if (stack.current->next == NULL) \
    { \
-      stack.current->next = malloc(sizeof(item_page_t)); \
+      stack.current->next = (item_page_t *)malloc(sizeof(item_page_t)); \
       if (stack.current->next == NULL) \
          on_error; \
       stack.current->next->prev = stack.current; \
