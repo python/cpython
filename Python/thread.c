@@ -1,11 +1,24 @@
 #include "thread.h"
 
+<<<<<<< thread.c
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 #ifdef DEBUG
 #define dprintf(args)	printf args
 #else
 #define dprintf(args)
 #endif
 
+=======
+#ifdef DEBUG
+#define dprintf(args)	printf args
+#else
+#define dprintf(args)
+#endif
+
+>>>>>>> 2.3
 #ifdef __sgi
 #include <stdlib.h>
 #include <stdio.h>
@@ -59,6 +72,83 @@ struct lock {
 
 static int initialized;
 
+<<<<<<< thread.c
+#ifdef __sgi
+/*
+ * This routine is called as a signal handler when another thread
+ * exits.  When that happens, we must see whether we have to exit as
+ * well (because of an exit_prog()) or whether we should continue on.
+ */
+static void exit_sig _P0()
+{
+	dprintf(("exit_sig called\n"));
+	if (exiting && getpid() == my_pid) {
+		dprintf(("already exiting\n"));
+		return;
+	}
+	if (do_exit) {
+		dprintf(("exiting in exit_sig\n"));
+		exit_thread();
+	}
+}
+
+/*
+ * This routine is called when a process calls exit().  If that wasn't
+ * done from the library, we do as if an exit_prog() was intended.
+ */
+static void maybe_exit _P0()
+{
+	dprintf(("maybe_exit called\n"));
+	if (exiting) {
+		dprintf(("already exiting\n"));
+		return;
+	}
+	exit_prog(0);
+}
+#endif
+
+/*
+ * Initialization.
+ */
+void init_thread _P0()
+{
+#ifdef __sgi
+	struct sigaction s;
+#endif
+
+	dprintf(("init_thread called\n"));
+	if (initialized)
+		return;
+	initialized = 1;
+
+#ifdef __sgi
+	my_pid = getpid();	/* so that we know which is the main thread */
+	atexit(maybe_exit);
+	s.sa_handler = exit_sig;
+	sigemptyset(&s.sa_mask);
+	sigaddset(&s.sa_mask, SIGUSR1);
+	s.sa_flags = 0;
+	sigaction(SIGUSR1, &s, 0);
+	prctl(PR_SETEXITSIG, SIGUSR1);
+	usconfig(CONF_ARENATYPE, US_SHAREDONLY);
+	/*usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);*/
+	shared_arena = usinit(tmpnam(0));
+	count_lock = usnewlock(shared_arena);
+	(void) usinitlock(count_lock);
+	wait_lock = usnewlock(shared_arena);
+#endif
+#ifdef sun
+	lwp_setstkcache(STACKSIZE, NSTACKS);
+#endif
+#ifdef C_THREADS
+	cthread_init();
+#endif
+}
+
+/*
+ * Thread support.
+ */
+=======
 #ifdef __sgi
 /*
  * This routine is called as a signal handler when another thread
@@ -134,6 +224,7 @@ void init_thread _P0()
 /*
  * Thread support.
  */
+>>>>>>> 2.3
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
 #ifdef sun
