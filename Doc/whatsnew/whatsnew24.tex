@@ -869,6 +869,9 @@ euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
  \item Korean: cp949, euc-kr, johab, iso-2022-kr
 \end{itemize} 
 
+item Some other new encodings were added: ISO_8859-11, ISO_8859-16, PCTP-154, 
+and TIS-620.
+
 \item There is a new \module{collections} module for 
    various specialized collection datatypes.  
    Currently it contains just one type, \class{deque}, 
@@ -1039,6 +1042,12 @@ data extractors when used with \function{map()} or
 [('d', 1), ('c', 2), ('b', 3), ('a', 4)]
 \end{verbatim}
 
+\item The \module{optparse} module was updated.  The module now passes
+its messages through \function{gettext.gettext()}, making it possible
+to internationalize Optik's help and error messages.  Help messages
+for options can now include the string \code{'%default'}, which will
+be replaced by the option's default value.
+
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
@@ -1134,6 +1143,11 @@ Changes to Python's build process and to the C API include:
   \item A new function, \cfunction{PyDict_Contains(\var{d}, \var{k})},
   implements fast dictionary lookups without masking exceptions raised
   during the look-up process.
+
+  \item A new function, \cfunction{PyArg_VaParseTupleAndKeywords()},
+  is the same as \cfunction{PyArg_ParseTupleAndKeywords()} but takes a 
+  \ctype{va_list} instead of a number of arguments.
+  (Contributed by Greg Chapman.)
 
   \item A new method flag, \constant{METH_COEXISTS}, allows a function
   defined in slots to co-exist with a \ctype{PyCFunction} having the
