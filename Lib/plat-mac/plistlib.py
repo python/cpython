@@ -57,8 +57,14 @@ Parse Plist example:
 """
 
 
-__all__ = ["readPlist", "writePlist", "Plist", "Data", "Date", "Dict"]
+__all__ = [
+    "readPlist", "writePlist",
+    "readPlistFromResource", "writePlistToResource",
+    "Plist", "Data", "Date", "Dict"
+]
 # Note: the Plist class has been deprecated.
+
+import base64, datetime
 
 
 def readPlist(pathOrFile):
@@ -91,6 +97,44 @@ def writePlist(rootObject, pathOrFile):
     writer.writeln("</plist>")
     if didOpen:
         pathOrFile.close()
+
+
+def readPlistFromResource(path, restype='plst', resid=0):
+    """Read plst resource from the resource fork of path.
+    """
+    from Carbon.File import FSRef, FSGetResourceForkName
+    from Carbon.Files import fsRdPerm
+    from Carbon import Res
+    from cStringIO import StringIO
+    fsRef = FSRef(path)
+    resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdPerm)
+    Res.UseResFile(resNum)
+    plistData = StringIO(Res.Get1Resource(restype, resid).data)
+    Res.CloseResFile(resNum)
+    return readPlist(plistData)
+
+
+def writePlistToResource(rootObject, path, restype='plst', resid=0):
+    """Write 'rootObject' as a plst resource to the resource fork of path.
+    """
+    from Carbon.File import FSRef, FSGetResourceForkName
+    from Carbon.Files import fsRdWrPerm
+    from Carbon import Res
+    from cStringIO import StringIO
+    plistData = StringIO()
+    writePlist(rootObject, plistData)
+    plistData = plistData.getvalue()
+    fsRef = FSRef(path)
+    resNum = Res.FSOpenResourceFile(fsRef, FSGetResourceForkName(), fsRdWrPerm)
+    Res.UseResFile(resNum)
+    try:
+        Res.Get1Resource(restype, resid).RemoveResource()
+    except Res.Error:
+        pass
+    res = Res.Resource(plistData)
+    res.AddResource(restype, resid, '')
+    res.WriteResource()
+    Res.CloseResFile(resNum)
 
 
 class DumbXMLWriter:
@@ -131,6 +175,11 @@ import re
 _controlStripper = re.compile(r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0e\x0f"
     "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
+# Contents should conform to a subset of ISO 8601
+# (in particular, YYYY '-' MM '-' DD 'T' HH ':' MM ':' SS 'Z'.  Smaller units may be omitted with
+#  a loss of precision)
+_dateParser = re.compile(r"(?P<year>\d\d\d\d)(?:-(?P<month>\d\d)(?:-(?P<day>\d\d)(?:T(?P<hour>\d\d)(?::(?P<minute>\d\d)(?::(?P<second>\d\d))?)?)?)?)?Z")
+
 def _escapeAndEncode(text):
     text = text.replace("\r\n", "\n")       # convert DOS line endings
     text = text.replace("\r", "\n")         # convert Mac line endings
@@ -165,8 +214,7 @@ class PlistWriter(DumbXMLWriter):
         elif isinstance(value, int):
             self.simpleElement("integer", str(value))
         elif isinstance(value, float):
-            # should perhaps use repr() for better precision?
-            self.simpleElement("real", str(value))
+            self.simpleElement("real", repr(value))
         elif isinstance(value, dict):
             self.writeDict(value)
         elif isinstance(value, Data):
@@ -262,12 +310,10 @@ class Data:
         self.data = data
 
     def fromBase64(cls, data):
-        import base64
         return cls(base64.decodestring(data))
     fromBase64 = classmethod(fromBase64)
 
     def asBase64(self):
-        import base64
         return base64.encodestring(self.data)
 
     def __cmp__(self, other):
@@ -284,25 +330,40 @@ class Data:
 
 class Date:
 
-    """Primitive date wrapper, uses time floats internally, is agnostic
-    about time zones.
+    """Primitive date wrapper, uses UTC datetime instances internally.
     """
 
     def __init__(self, date):
-        if isinstance(date, str):
-            from xml.utils.iso8601 import parse
-            date = parse(date)
+        if isinstance(date, datetime.datetime):
+            pass
+        elif isinstance(date, (float, int)):
+            date = datetime.datetime.fromtimestamp(date)
+        elif isinstance(date, basestring):
+            order = ('year', 'month', 'day', 'hour', 'minute', 'second')
+            gd = _dateParser.match(date).groupdict()
+            lst = []
+            for key in order:
+                val = gd[key]
+                if val is None:
+                    break
+                lst.append(int(val))
+            date = datetime.datetime(*lst)
+        else:
+            raise ValueError, "Can't convert %r to datetime" % (date,)
         self.date = date
 
     def toString(self):
-        from xml.utils.iso8601 import tostring
-        return tostring(self.date)
+        d = self.date
+        return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
+            d.year, d.month, d.day,
+            d.second, d.minute, d.hour,
+        )
 
     def __cmp__(self, other):
         if isinstance(other, self.__class__):
             return cmp(self.date, other.date)
-        elif isinstance(other, (int, float)):
-            return cmp(self.date, other)
+        elif isinstance(other, (datetime.datetime, float, int, basestring)):
+            return cmp(self.date, Date(other).date)
         else:
             return cmp(id(self), id(other))
 
@@ -317,13 +378,13 @@ class PlistParser:
         self.currentKey = None
         self.root = None
 
-    def parse(self, file):
+    def parse(self, fileobj):
         from xml.parsers.expat import ParserCreate
         parser = ParserCreate()
         parser.StartElementHandler = self.handleBeginElement
         parser.EndElementHandler = self.handleEndElement
         parser.CharacterDataHandler = self.handleData
-        parser.ParseFile(file)
+        parser.ParseFile(fileobj)
         return self.root
 
     def handleBeginElement(self, element, attrs):
