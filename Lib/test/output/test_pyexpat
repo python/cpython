@@ -3,6 +3,14 @@ OK.
 OK.
 OK.
 OK.
+OK.
+OK.
+OK.
+OK.
+OK.
+OK.
+OK.
+OK.
 PI:
 	'xml-stylesheet' 'href="stylesheet.css"'
 Comment:
@@ -99,6 +107,4 @@ Legal values tested o.k.
 Caught expected TypeError:
 ParserCreate() argument 2 must be string or None, not int
 Caught expected ValueError:
-namespace_separator must be one character, omitted, or None
-Caught expected ValueError:
-namespace_separator must be one character, omitted, or None
+namespace_separator must be at most one character, omitted, or None

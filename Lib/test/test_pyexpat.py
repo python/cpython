@@ -75,6 +75,18 @@ parser.returns_unicode = 1; confirm(parser.returns_unicode == 1)
 parser.returns_unicode = 2; confirm(parser.returns_unicode == 1)
 parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
 
+# Test getting/setting ordered_attributes
+parser.ordered_attributes = 0; confirm(parser.ordered_attributes == 0)
+parser.ordered_attributes = 1; confirm(parser.ordered_attributes == 1)
+parser.ordered_attributes = 2; confirm(parser.ordered_attributes == 1)
+parser.ordered_attributes = 0; confirm(parser.ordered_attributes == 0)
+
+# Test getting/setting specified_attributes
+parser.specified_attributes = 0; confirm(parser.specified_attributes == 0)
+parser.specified_attributes = 1; confirm(parser.specified_attributes == 1)
+parser.specified_attributes = 2; confirm(parser.specified_attributes == 1)
+parser.specified_attributes = 0; confirm(parser.specified_attributes == 0)
+
 HANDLER_NAMES = [
     'StartElementHandler', 'EndElementHandler',
     'CharacterDataHandler', 'ProcessingInstructionHandler',
@@ -167,6 +179,7 @@ except TypeError, e:
     print e
 else:
     print "Failed to catch expected TypeError."
+
 try:
     expat.ParserCreate(namespace_separator='too long')
 except ValueError, e:
@@ -174,10 +187,13 @@ except ValueError, e:
     print e
 else:
     print "Failed to catch expected ValueError."
-try:
-    expat.ParserCreate(namespace_separator='') # too short
-except ValueError, e:
-    print "Caught expected ValueError:"
-    print e
-else:
-    print "Failed to catch expected ValueError."
+
+# ParserCreate() needs to accept a namespace_separator of zero length
+# to satisfy the requirements of RDF applications that are required
+# to simply glue together the namespace URI and the localname.  Though
+# considered a wart of the RDF specifications, it needs to be supported.
+#
+# See XML-SIG mailing list thread starting with
+# http://mail.python.org/pipermail/xml-sig/2001-April/005202.html
+#
+expat.ParserCreate(namespace_separator='') # too short
