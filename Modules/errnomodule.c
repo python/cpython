@@ -54,56 +54,44 @@ static PyMethodDef errno_methods[] = {
 /* Helper function doing the dictionary inserting */
 
 static void
-inscode(d, e, c, name, code, comment)
-	PyObject * d;
-	PyObject * e;
-	PyObject * c;
+_inscode(d, de, name, code)
+	PyObject *d;
+	PyObject *de;
 	char *name;
 	int code;
-	char * comment;
 {
 	PyObject *u;
 	PyObject *v;
-	PyObject *w;
-
-#ifdef HAVE_STRERROR
-	if (strerror(code) != NULL)
-		comment = strerror(code);
-#endif
 
 	u = PyString_FromString(name);
 	v = PyInt_FromLong((long) code);
-	w = PyString_FromString(comment);
 
-	if (!u || !v || !w) {
+	if (!u || !v) {
 		/* Don't bother reporting this error */
 		PyErr_Clear();
 	}
 	else {
 		/* insert in modules dict */
 		PyDict_SetItem(d, u, v);
-		/* insert in errorstr dict */
-		PyDict_SetItem(e, v, w);
 		/* insert in errorcode dict */
-		PyDict_SetItem(c, v, u);
+		PyDict_SetItem(de, v, u);
 	}
 	Py_XDECREF(u);
 	Py_XDECREF(v);
-	Py_XDECREF(w);
 }
 
 void
 initerrno()
 {
-	PyObject *m, *d, *ds, *de;
+	PyObject *m, *d, *de;
 	m = Py_InitModule("errno", errno_methods);
 	d = PyModule_GetDict(m);
-	ds = PyDict_New();
-	if (ds == NULL || PyDict_SetItemString(d,"errorstr",ds))
-		Py_FatalError("can't initialize errno module");
 	de = PyDict_New();
 	if (de == NULL || PyDict_SetItemString(d,"errorcode",de))
 		Py_FatalError("can't initialize errno module");
+
+/* Macro so I don't have to edit each and every line below... */
+#define inscode(d, ds, de, name, code, comment) _inscode(d, de, name, code)
 
 	/*
 	 * The names and comments are borrowed from linux/include/errno.h,
