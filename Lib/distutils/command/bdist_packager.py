@@ -14,6 +14,7 @@ from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
 from distutils.file_util import write_file
 from distutils.errors import *
+from distutils import log
 import string, sys
 
 class bdist_packager (Command):
@@ -102,8 +103,8 @@ class bdist_packager (Command):
             else:
                 setattr(self,attr,default)
                 val = default
-        if val!="":
-            self.announce('Creating %s script', attr)
+        if val != "":
+            log.info('Creating %s script', attr)
             self.execute(write_file,
                      (path, self.get_script(attr)),
                      "writing '%s'" % path)
@@ -234,7 +235,7 @@ class bdist_packager (Command):
         install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.pkg_dir
 
-        self.announce("installing to %s" % self.pkg_dir)
+        log.info("installing to %s", self.pkg_dir)
         self.run_command('install')
 
         # And make an archive relative to the root of the
@@ -243,7 +244,7 @@ class bdist_packager (Command):
                                       self.plat_name)
 
         if not self.keep_temp:
-            remove_tree(self.pkg_dir, self.verbose, self.dry_run)
+            remove_tree(self.pkg_dir, dry_run=self.dry_run)
 
     # run()
 

@@ -12,6 +12,7 @@ from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
 from distutils.errors import *
+from distutils import log
 
 class bdist_wininst (Command):
 
@@ -115,7 +116,7 @@ class bdist_wininst (Command):
                     'install_' + key,
                     value)
 
-        self.announce("installing to %s" % self.bdist_dir)
+        log.info("installing to %s", self.bdist_dir)
         install.ensure_finalized()
 
         # avoid warning of 'install_lib' about installing
@@ -136,11 +137,11 @@ class bdist_wininst (Command):
         # create an exe containing the zip-file
         self.create_exe(arcname, fullname, self.bitmap)
         # remove the zip-file again
-        self.announce("removing temporary file '%s'" % arcname)
+        log.debug("removing temporary file '%s'", arcname)
         os.remove(arcname)
 
         if not self.keep_temp:
-            remove_tree(self.bdist_dir, self.verbose, self.dry_run)
+            remove_tree(self.bdist_dir, dry_run=self.dry_run)
 
     # run()
 

@@ -9,7 +9,7 @@ __revision__ = "$Id$"
 import os
 from types import *
 from distutils.errors import DistutilsFileError, DistutilsInternalError
-
+from distutils import log
 
 # cache for by mkpath() -- in addition to cheapening redundant calls,
 # eliminates redundant "creating /foo/bar/baz" messages in dry-run mode
@@ -69,8 +69,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
         if _path_created.get(abs_head):
             continue
 
-        if verbose:
-            print "creating", head
+        log.info("creating %s", head)
 
         if not dry_run:
             try:
@@ -105,7 +104,7 @@ def create_tree (base_dir, files, mode=0777, verbose=0, dry_run=0):
 
     # Now create them
     for dir in need_dirs:
-        mkpath(dir, mode, verbose, dry_run)
+        mkpath(dir, mode, dry_run=dry_run)
 
 # create_tree ()
 
@@ -151,7 +150,7 @@ def copy_tree (src, dst,
                   "error listing files in '%s': %s" % (src, errstr)
 
     if not dry_run:
-        mkpath(dst, verbose=verbose)
+        mkpath(dst)
 
     outputs = []
 
@@ -161,21 +160,19 @@ def copy_tree (src, dst,
 
         if preserve_symlinks and os.path.islink(src_name):
             link_dest = os.readlink(src_name)
-            if verbose:
-                print "linking %s -> %s" % (dst_name, link_dest)
+            log.info("linking %s -> %s", dst_name, link_dest)
             if not dry_run:
                 os.symlink(link_dest, dst_name)
             outputs.append(dst_name)
 
         elif os.path.isdir(src_name):
             outputs.extend(
-                copy_tree(src_name, dst_name,
-                          preserve_mode, preserve_times, preserve_symlinks,
-                          update, verbose, dry_run))
+                copy_tree(src_name, dst_name, preserve_mode,
+                          preserve_times, preserve_symlinks, update,
+                          dry_run=dry_run))
         else:
-            copy_file(src_name, dst_name,
-                      preserve_mode, preserve_times,
-                      update, None, verbose, dry_run)
+            copy_file(src_name, dst_name, preserve_mode,
+                      preserve_times, update, dry_run=dry_run)
             outputs.append(dst_name)
 
     return outputs
@@ -200,8 +197,7 @@ def remove_tree (directory, verbose=0, dry_run=0):
     from distutils.util import grok_environment_error
     global _path_created
 
-    if verbose:
-        print "removing '%s' (and everything under it)" % directory
+    log.info("removing '%s' (and everything under it)", directory)
     if dry_run:
         return
     cmdtuples = []
@@ -214,6 +210,5 @@ def remove_tree (directory, verbose=0, dry_run=0):
             if _path_created.has_key(abspath):
                 del _path_created[abspath]
         except (IOError, OSError), exc:
-            if verbose:
-                print grok_environment_error(
-                    exc, "error removing %s: " % directory)
+            log.warn(grok_environment_error(
+                    exc, "error removing %s: " % directory))

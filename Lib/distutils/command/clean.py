@@ -9,6 +9,7 @@ __revision__ = "$Id$"
 import os
 from distutils.core import Command
 from distutils.dir_util import remove_tree
+from distutils import log
 
 class clean (Command):
 
@@ -51,10 +52,10 @@ class clean (Command):
         # remove the build/temp.<plat> directory (unless it's already
         # gone)
         if os.path.exists(self.build_temp):
-            remove_tree(self.build_temp, self.verbose, self.dry_run)
+            remove_tree(self.build_temp, dry_run=self.dry_run)
         else:
-            self.warn("'%s' does not exist -- can't clean it" %
-                      self.build_temp)
+            log.warn("'%s' does not exist -- can't clean it",
+                     self.build_temp)
 
         if self.all:
             # remove build directories
@@ -62,17 +63,17 @@ class clean (Command):
                               self.bdist_base,
                               self.build_scripts):
                 if os.path.exists(directory):
-                    remove_tree(directory, self.verbose, self.dry_run)
+                    remove_tree(directory, dry_run=self.dry_run)
                 else:
-                    self.warn("'%s' does not exist -- can't clean it" %
-                              directory)
+                    log.warn("'%s' does not exist -- can't clean it",
+                             directory)
 
         # just for the heck of it, try to remove the base build directory:
         # we might have emptied it right now, but if not we don't care
         if not self.dry_run:
             try:
                 os.rmdir(self.build_base)
-                self.announce("removing '%s'" % self.build_base)
+                log.info("removing '%s'", self.build_base)
             except OSError:
                 pass
 

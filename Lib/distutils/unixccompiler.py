@@ -26,6 +26,7 @@ from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 from distutils.errors import \
      DistutilsExecError, CompileError, LibError, LinkError
+from distutils import log
 
 # XXX Things not currently handled:
 #   * optimization/debug/warning flags; we just use whatever's in Python's
@@ -147,7 +148,7 @@ class UnixCCompiler (CCompiler):
         for i in range(len(sources)):
             src = sources[i] ; obj = objects[i]
             if skip_sources[src]:
-                self.announce("skipping %s (%s up-to-date)" % (src, obj))
+                log.debug("skipping %s (%s up-to-date)", src, obj)
             else:
                 self.mkpath(os.path.dirname(obj))
                 try:
@@ -191,7 +192,7 @@ class UnixCCompiler (CCompiler):
                 except DistutilsExecError, msg:
                     raise LibError, msg
         else:
-            self.announce("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # create_static_lib ()
 
@@ -240,7 +241,7 @@ class UnixCCompiler (CCompiler):
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
-            self.announce("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # link ()
 

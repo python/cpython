@@ -9,7 +9,7 @@ __revision__ = "$Id$"
 
 import os
 from distutils.errors import DistutilsFileError
-
+from distutils import log
 
 # for generating verbose output in 'copy_file()'
 _copy_action = { None:   'copying',
@@ -73,7 +73,6 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
 
 # _copy_file_contents()
 
-
 def copy_file (src, dst,
                preserve_mode=1,
                preserve_times=1,
@@ -90,8 +89,7 @@ def copy_file (src, dst,
     'preserve_times' is true (the default), the last-modified and
     last-access times are copied as well.  If 'update' is true, 'src' will
     only be copied if 'dst' does not exist, or if 'dst' does exist but is
-    older than 'src'.  If 'verbose' is true, then a one-line summary of the
-    copy will be printed to stdout.
+    older than 'src'.
 
     'link' allows you to make hard links (os.link) or symbolic links
     (os.symlink) instead of copying: set it to "hard" or "sym"; if it is
@@ -127,20 +125,18 @@ def copy_file (src, dst,
         dir = os.path.dirname(dst)
 
     if update and not newer(src, dst):
-        if verbose:
-            print "not copying %s (output up-to-date)" % src
-        return (dst, 0)
+        log.debug("not copying %s (output up-to-date)", src)
+        return dst, 0
 
     try:
         action = _copy_action[link]
     except KeyError:
         raise ValueError, \
               "invalid value '%s' for 'link' argument" % link
-    if verbose:
-        if os.path.basename(dst) == os.path.basename(src):
-            print "%s %s -> %s" % (action, src, dir)
-        else:
-            print "%s %s -> %s" % (action, src, dst)
+    if os.path.basename(dst) == os.path.basename(src):
+        log.info("%s %s -> %s", action, src, dir)
+    else:
+        log.info("%s %s -> %s", action, src, dst)
 
     if dry_run:
         return (dst, 1)
@@ -197,8 +193,7 @@ def move_file (src, dst,
     from os.path import exists, isfile, isdir, basename, dirname
     import errno
 
-    if verbose:
-        print "moving %s -> %s" % (src, dst)
+    log.info("moving %s -> %s", src, dst)
 
     if dry_run:
         return dst

@@ -17,7 +17,7 @@ import sys, os, string, re
 from types import *
 from distutils.core import Command
 from distutils.errors import DistutilsExecError
-
+from distutils import log
 
 LANG_EXT = {'c': '.c',
             'c++': '.cxx'}
@@ -103,9 +103,7 @@ class config (Command):
         from distutils.ccompiler import CCompiler, new_compiler
         if not isinstance(self.compiler, CCompiler):
             self.compiler = new_compiler(compiler=self.compiler,
-                                         verbose=self.noisy,
-                                         dry_run=self.dry_run,
-                                         force=1)
+                                         dry_run=self.dry_run, force=1)
             if self.include_dirs:
                 self.compiler.set_include_dirs(self.include_dirs)
             if self.libraries:
@@ -161,7 +159,7 @@ class config (Command):
         if not filenames:
             filenames = self.temp_files
             self.temp_files = []
-        self.announce("removing: " + string.join(filenames))
+        log.info("removing: %s", string.join(filenames))
         for filename in filenames:
             try:
                 os.remove(filename)
@@ -239,7 +237,7 @@ class config (Command):
         except CompileError:
             ok = 0
 
-        self.announce(ok and "success!" or "failure.")
+        log.info(ok and "success!" or "failure.")
         self._clean()
         return ok
 
@@ -260,7 +258,7 @@ class config (Command):
         except (CompileError, LinkError):
             ok = 0
 
-        self.announce(ok and "success!" or "failure.")
+        log.info(ok and "success!" or "failure.")
         self._clean()
         return ok
 
@@ -282,7 +280,7 @@ class config (Command):
         except (CompileError, LinkError, DistutilsExecError):
             ok = 0
 
-        self.announce(ok and "success!" or "failure.")
+        log.info(ok and "success!" or "failure.")
         self._clean()
         return ok
 

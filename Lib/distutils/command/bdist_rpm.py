@@ -14,6 +14,7 @@ from distutils.core import Command, DEBUG
 from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
+from distutils import log
 
 class bdist_rpm (Command):
 
@@ -278,7 +279,7 @@ class bdist_rpm (Command):
 
 
         # build package
-        self.announce('building RPMs')
+        log.info("building RPMs")
         rpm_cmd = ['rpm']
         if self.source_only: # what kind of RPMs?
             rpm_cmd.append('-bs')

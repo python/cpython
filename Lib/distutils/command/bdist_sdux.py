@@ -14,6 +14,7 @@ from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
 from distutils.command import bdist_packager
+from distutils import log
 import sys
 from commands import getoutput
 
@@ -185,9 +186,9 @@ class bdist_sdux(bdist_packager.bdist_packager):
         psf_path = os.path.join(self.pkg_dir, 
                                  "%s.psf" % self.get_binary_name())
         # build package
-        self.announce('Building package')
+        log.info('Building package')
         self.run_command('build')
-        self.announce('Creating psf file')
+        log.info('Creating psf file')
         self.execute(write_file,
                      (psf_path,
                       self._make_control_file()),
@@ -195,7 +196,7 @@ class bdist_sdux(bdist_packager.bdist_packager):
         if self.control_only: # stop if requested
             return
 
-        self.announce('Creating package')
+        log.info('Creating package')
         spawn_cmd = ['swpackage', '-s']
         spawn_cmd.append(psf_path)
         spawn_cmd.append('-x')

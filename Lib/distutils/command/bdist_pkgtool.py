@@ -15,6 +15,7 @@ from distutils.file_util import write_file
 from distutils.errors import *
 from distutils.command import bdist_packager
 from distutils import sysconfig
+from distutils import log
 import compileall
 from commands import getoutput
 
@@ -211,9 +212,9 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
 
         install = self.reinitialize_command('install', reinit_subcommands=1)
         # build package
-        self.announce('Building package')
+        log.info('Building package')
         self.run_command('build')
-        self.announce('Creating pkginfo file')
+        log.info('Creating pkginfo file')
         path = os.path.join(pkg_dir, "pkginfo")
         self.execute(write_file,
                      (path,
@@ -244,7 +245,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         self.write_script(os.path.join(pkg_dir, "depend"),
                  'depend',None)
 
-        self.announce('Creating prototype file')
+        log.info('Creating prototype file')
         path = os.path.join(pkg_dir, "prototype")
         self.execute(write_file,
                      (path,
@@ -256,7 +257,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
             return
 
 
-        self.announce('Creating package')
+        log.info('Creating package')
         pkg_cmd = ['pkgmk', '-o', '-f']
         pkg_cmd.append(path)
         pkg_cmd.append('-b')
@@ -265,7 +266,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         pkg_cmd = ['pkgtrans', '-s', '/var/spool/pkg']
         path = os.path.join(os.environ['PWD'],pkg_dir,
                            self.get_binary_name() + ".pkg")
-        self.announce('Transferring package to ' + pkg_dir)
+        log.info('Transferring package to ' + pkg_dir)
         pkg_cmd.append(path)
         pkg_cmd.append(self.pkg_abrev)
         self.spawn(pkg_cmd)
@@ -326,7 +327,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         if self.no_autorelocate==0:
             request=string.split(DEFAULT_REQUEST,"\012")
         else:
-            self.announce('Creating relocation request script')
+            log.info('Creating relocation request script')
         if self.request:
             users_request=self.get_script('request')
             if users_request!=None and users_request!=[]:

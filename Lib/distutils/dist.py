@@ -15,7 +15,7 @@ from copy import copy
 from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
-
+from distutils import log
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
 # the same as a Python NAME -- I don't allow leading underscores.  The fact
@@ -46,7 +46,8 @@ class Distribution:
     # since every global option is also valid as a command option -- and we
     # don't want to pollute the commands with too many options that they
     # have minimal control over.
-    global_options = [('verbose', 'v', "run verbosely (default)"),
+    # The fourth entry for verbose means that it can be repeated.
+    global_options = [('verbose', 'v', "run verbosely (default)", 1),
                       ('quiet', 'q', "run quietly (turns verbosity off)"),
                       ('dry-run', 'n', "don't actually do anything"),
                       ('help', 'h', "show detailed help message"),
@@ -392,6 +393,7 @@ class Distribution:
         parser.set_aliases({'licence': 'license'})
         args = parser.getopt(args=self.script_args, object=self)
         option_order = parser.get_option_order()
+        log.set_verbosity(self.verbose)
 
         # for display options we return immediately
         if self.handle_display_options(option_order):
@@ -876,13 +878,7 @@ class Distribution:
     # -- Methods that operate on the Distribution ----------------------
 
     def announce (self, msg, level=1):
-        """Print 'msg' if 'level' is greater than or equal to the verbosity
-        level recorded in the 'verbose' attribute (which, currently, can be
-        only 0 or 1).
-        """
-        if self.verbose >= level:
-            print msg
-
+        log.debug(msg)
 
     def run_commands (self):
         """Run each command that was seen on the setup script command line.
@@ -907,7 +903,7 @@ class Distribution:
         if self.have_run.get(command):
             return
 
-        self.announce("running " + command)
+        log.info("running %s", command)
         cmd_obj = self.get_command_obj(command)
         cmd_obj.ensure_finalized()
         cmd_obj.run()

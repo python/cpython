@@ -24,7 +24,7 @@ from types import *
 from distutils.core import Command
 from distutils.errors import *
 from distutils.sysconfig import customize_compiler
-
+from distutils import log
 
 def show_compilers ():
     from distutils.ccompiler import show_compilers
@@ -111,7 +111,6 @@ class build_clib (Command):
         # Yech -- this is cut 'n pasted from build_ext.py!
         from distutils.ccompiler import new_compiler
         self.compiler = new_compiler(compiler=self.compiler,
-                                     verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
         customize_compiler(self.compiler)
@@ -213,7 +212,7 @@ class build_clib (Command):
                        "a list of source filenames") % lib_name
             sources = list(sources)
 
-            self.announce("building '%s' library" % lib_name)
+            log.info("building '%s' library", lib_name)
 
             # First, compile the source code to object files in the library
             # directory.  (This should probably change to putting object

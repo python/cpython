@@ -13,6 +13,7 @@ from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 import distutils.util
 import distutils.dir_util
+from distutils import log
 import mkcwproject
 
 class MWerksCompiler (CCompiler) :
@@ -132,8 +133,8 @@ class MWerksCompiler (CCompiler) :
         exportname = basename + '.mcp.exp'
         prefixname = 'mwerks_%s_config.h'%basename
         # Create the directories we need
-        distutils.dir_util.mkpath(build_temp, self.verbose, self.dry_run)
-        distutils.dir_util.mkpath(output_dir, self.verbose, self.dry_run)
+        distutils.dir_util.mkpath(build_temp, dry_run=self.dry_run)
+        distutils.dir_util.mkpath(output_dir, dry_run=self.dry_run)
         # And on to filling in the parameters for the project builder
         settings = {}
         settings['mac_exportname'] = exportname
@@ -159,8 +160,7 @@ class MWerksCompiler (CCompiler) :
             return
         # Build the export file
         exportfilename = os.path.join(build_temp, exportname)
-        if self.verbose:
-            print '\tCreate export file', exportfilename
+        log.debug("\tCreate export file", exportfilename)
         fp = open(exportfilename, 'w')
         fp.write('%s\n'%export_symbols[0])
         fp.close()
@@ -181,8 +181,7 @@ class MWerksCompiler (CCompiler) :
         # because we pass this pathname to CodeWarrior in an AppleEvent, and CW
         # doesn't have a clue about our working directory.
         xmlfilename = os.path.join(os.getcwd(), os.path.join(build_temp, xmlname))
-        if self.verbose:
-            print '\tCreate XML file', xmlfilename
+        log.debug("\tCreate XML file", xmlfilename)
         xmlbuilder = mkcwproject.cwxmlgen.ProjectBuilder(settings)
         xmlbuilder.generate()
         xmldata = settings['tmp_projectxmldata']
@@ -191,12 +190,10 @@ class MWerksCompiler (CCompiler) :
         fp.close()
         # Generate the project. Again a full pathname.
         projectfilename = os.path.join(os.getcwd(), os.path.join(build_temp, projectname))
-        if self.verbose:
-            print '\tCreate project file', projectfilename
+        log.debug('\tCreate project file', projectfilename)
         mkcwproject.makeproject(xmlfilename, projectfilename)
         # And build it
-        if self.verbose:
-            print '\tBuild project'
+        log.debug('\tBuild project')
         mkcwproject.buildproject(projectfilename)
 
     def _filename_to_abs(self, filename):
