@@ -33,7 +33,7 @@ item: Global
   Variable Default5=C:\src\Python-1.5b1
   Variable Flags5=00001001
 end
-remarked item: Open/Close INSTALL.LOG
+item: Open/Close INSTALL.LOG
   Flags=00000001
 end
 item: Check if File/Dir Exists
@@ -90,7 +90,7 @@ end
 item: End Block
 end
 item: Remark
-  Text=Dont use "Program Files" for Python!
+  Text=Dont use "Program Files" for Python! (why not?)
 end
 item: Set Variable
   Variable=MAINDIR
@@ -110,12 +110,11 @@ item: Set Variable
 end
 item: Set Variable
   Variable=COMPONENTS
-  Value=AC
+  Value=ABCD
 end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\Wizard.bmp
   X Position=9
   Y Position=10
   Filler Color=8421440
@@ -427,13 +426,14 @@ item: Custom Dialog Set
       Text Italian=Selezionare i componenti
     end
     item: Checkbox
-      Rectangle=86 75 256 129
+      Rectangle=86 66 256 138
       Variable=COMPONENTS
       Create Flags=01010000000000010000000000000011
       Flags=0000000000000110
       Text=Python Utility Scripts
       Text=Python Help Files
       Text=Python test suite
+      Text=Python interpreter and library
       Text=
       Text French=Python Utility Scripts
       Text French=Python Help Files
@@ -692,6 +692,11 @@ end
 item: Check Disk Space
   Component=COMPONENTS
 end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=D
+  Flags=00001010
+end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\python.exe
   Destination=%MAINDIR%\python.exe
@@ -730,16 +735,19 @@ end
 item: Install File
   Source=%_SRC_%\Lib\*.py
   Destination=%MAINDIR%\Lib
+  Description=Library Modules
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\plat-win\*.py
   Destination=%MAINDIR%\Lib\Plat-Win
+  Description=Windows-specific library modules
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\lib-tk\*.py
   Destination=%MAINDIR%\Lib\lib-tk
+  Description=Tkinter related library modules
   Flags=0000000000000010
 end
 item: Install File
@@ -753,6 +761,8 @@ item: Install File
   Destination=%SYS32%\MSVCRT.DLL
   Description=Visual C++ Runtime DLLs
   Flags=0000001000000011
+end
+item: End Block
 end
 item: If/While Statement
   Variable=COMPONENTS
@@ -784,12 +794,39 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-item: Remark
-  Text=Install all HTML files here!
+item: Install File
+  Source=%_SRC_%\Doc\index.html
+  Destination=%MAINDIR%\Doc\index.html
+  Description=Python Documentation root (HTML)
+  Flags=0000000000000010
 end
-remarked item: Install File
-  Source=\\Newcnri\guido\python\src\Doc\lib\*.*
-  Destination=%MAINDIR%\doc\lib
+item: Install File
+  Source=%_SRC_%\Doc\icons\*.*
+  Destination=%MAINDIR%\Doc\icons
+  Description=Python Documentation (HTML)
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Doc\tut\*.*
+  Destination=%MAINDIR%\Doc\tut
+  Description=Python Documentation (HTML)
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Doc\lib\*.*
+  Destination=%MAINDIR%\Doc\lib
+  Description=Python Documentation (HTML)
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Doc\ext\*.*
+  Destination=%MAINDIR%\Doc\ext
+  Description=Python Documentation (HTML)
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Doc\api\*.*
+  Destination=%MAINDIR%\Doc\api
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
@@ -824,19 +861,17 @@ item: Install File
   Description=Python Test output files
   Flags=0000000000000010
 end
-item: End Block
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=C
-  Flags=00001010
-end
 item: Install File
   Source=%_SRC_%\Lib\test\*.py
   Destination=%MAINDIR%\Lib\Test
   Flags=0000000000000010
 end
 item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=D
+  Flags=00001010
 end
 item: Edit Registry
   Key=.py
@@ -904,6 +939,8 @@ item: Edit Registry
   New Value=%MAINDIR%\Python.exe
   Root=2
 end
+item: End Block
+end
 item: If/While Statement
   Variable=COMPONENTS
   Value=B
@@ -924,11 +961,13 @@ end
 item: Include Script
   Pathname=c:\program files\wise\include\uninstal.wse
 end
-item: Add Text to INSTALL.LOG
-  Text=File Tree: %MAINDIR%\lib\*.*
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=D
+  Flags=00001010
 end
 item: Add Text to INSTALL.LOG
-  Text=File Tree: %MAINDIR%\doc\*.*
+  Text=File Tree: %MAINDIR%\Lib\*.*
 end
 item: Check Configuration
   Flags=10111011
@@ -966,19 +1005,19 @@ item: Create Shortcut
   Key Type=1536
   Flags=00000001
 end
-item: If/While Statement
+remarked item: If/While Statement
   Variable=COMPONENTS
   Value=B
   Flags=00001010
 end
-item: Create Shortcut
+remarked item: Create Shortcut
   Source=%MAINDIR%\Help\python.hlp
   Destination=%GROUP%\Python Manuals.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
 end
-item: End Block
+remarked item: End Block
 end
 item: Else Statement
 end
@@ -1003,13 +1042,14 @@ item: End Block
 end
 item: End Block
 end
+item: End Block
+end
 item: Self-Register OCXs/DLLs
   Description=Updating System Configuration, Please Wait...
 end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\Wizard.bmp
   X Position=9
   Y Position=10
   Filler Color=8421440
