@@ -291,9 +291,9 @@ executable, like shell scripts, by putting the line
 #! /usr/bin/env python
 \end{verbatim}
 
-(assuming that the interpreter is on the user's PATH) at the beginning
-of the script and giving the file an executable mode.  The \samp{\#!}
-must be the first two characters of the file.
+(assuming that the interpreter is on the user's \envvar{PATH}) at the
+beginning of the script and giving the file an executable mode.  The
+\samp{\#!} must be the first two characters of the file.
 
 \subsection{The Interactive Startup File}
 \label{startup}
@@ -304,7 +304,7 @@ must be the first two characters of the file.
 When you use Python interactively, it is frequently handy to have some
 standard commands executed every time the interpreter is started.  You
 can do this by setting an environment variable named
-\code{PYTHONSTARTUP} to the name of a file containing your start-up
+\envvar{PYTHONSTARTUP} to the name of a file containing your start-up
 commands.  This is similar to the \file{.profile} feature of the \UNIX{}
 shells.
 
@@ -375,7 +375,7 @@ can be used for grouping.  For example:
 -3
 \end{verbatim}
 
-Like in \C{}, the equal sign (\code{=}) is used to assign a value to a
+Like in \C{}, the equal sign (\character{=}) is used to assign a value to a
 variable.  The value of an assignment is not written:
 
 \begin{verbatim}
@@ -859,7 +859,7 @@ Besides the \keyword{while} statement just introduced, Python knows
 the usual control flow statements known from other languages, with
 some twists.
 
-\section{If Statements}
+\section{\keyword{if} Statements}
 \label{if}
 
 Perhaps the most well-known statement type is the \keyword{if}
@@ -888,7 +888,7 @@ if', and is useful to avoid excessive indentation.  An
 %    gets changed in the wrong way.
 \emph{case} statements found in other languages.
 
-\section{For Statements}
+\section{\keyword{for} Statements}
 \label{for}
 
 The \keyword{for} statement in Python differs a bit from what you may be
@@ -966,7 +966,8 @@ and \function{len()} as follows:
 4 lamb
 \end{verbatim}
 
-\section{Break and Continue Statements, and Else Clauses on Loops}
+\section{\keyword{break} and \keyword{continue} Statements, and
+         \keyword{else} Clauses on Loops}
 \label{break}
 
 The \keyword{break} statement, like in \C{}, breaks out of the smallest
@@ -1001,7 +1002,7 @@ which searches for prime numbers:
 9 equals 3 * 3
 \end{verbatim}
 
-\section{Pass Statements}
+\section{\keyword{pass} Statements}
 \label{pass}
 
 The \keyword{pass} statement does nothing.
@@ -1798,19 +1799,20 @@ This imports all names except those beginning with an underscore
 \subsection{The Module Search Path}
 \label{searchPath}
 
+\indexiii{module}{search}{path}
 When a module named \module{spam} is imported, the interpreter searches
 for a file named \file{spam.py} in the current directory,
 and then in the list of directories specified by
-the environment variable \code{PYTHONPATH}.  This has the same syntax as
-the \UNIX{} shell variable \code{PATH}, i.e., a list of colon-separated
-directory names.  When \code{PYTHONPATH} is not set, or when the file
+the environment variable \envvar{PYTHONPATH}.  This has the same syntax as
+the shell variable \envvar{PATH}, i.e., a list of
+directory names.  When \envvar{PYTHONPATH} is not set, or when the file
 is not found there, the search continues in an installation-dependent
-default path, usually \file{.:/usr/local/lib/python}.
+default path; on \UNIX{}, this is usually \file{.:/usr/local/lib/python}.
 
 Actually, modules are searched in the list of directories given by the 
 variable \code{sys.path} which is initialized from the directory 
 containing the input script (or the current directory),
-\code{PYTHONPATH} and the installation-dependent default.  This allows
+\envvar{PYTHONPATH} and the installation-dependent default.  This allows
 Python programs that know what they're doing to modify or replace the 
 module search path.  See the section on Standard Modules later.
 
@@ -1832,8 +1834,8 @@ completely, the resulting \file{spam.pyc} file will be recognized as
 invalid and thus ignored later.  The contents of the \file{spam.pyc}
 file is platform independent, so a Python module directory can be
 shared by machines of different architectures.  (Tip for experts:
-the module \module{compileall} creates file{.pyc} files for all
-modules.)
+the module \module{compileall}\refstmodindex{compileall} creates
+\file{.pyc} files for all modules.)
 
 % XXX Should optimization with -O be covered here?
 
@@ -1849,9 +1851,9 @@ provide access to operating system primitives such as system calls.
 The set of such modules is a configuration option; e.g., the
 \module{amoeba} module is  only provided on systems that somehow
 support Amoeba primitives.  One particular module deserves some
-attention: \module{sys}, which is built into every Python interpreter.
-The variables \code{sys.ps1} and \code{sys.ps2} define the strings
-used as primary and secondary prompts:
+attention: \module{sys}\refstmodindex{sys}, which is built into every
+Python interpreter.  The variables \code{sys.ps1} and \code{sys.ps2}
+define the strings used as primary and secondary prompts:
 
 \begin{verbatim}
 >>> import sys
@@ -1873,11 +1875,8 @@ The variable
 is a list of strings that determine the interpreter's search path for
 modules.
 It is initialized to a default path taken from the environment variable
-\code{PYTHONPATH},
-or from a built-in default if
-\code{PYTHONPATH}
-is not set.
-You can modify it using standard list operations, e.g.:
+\envvar{PYTHONPATH}, or from a built-in default if \envvar{PYTHONPATH}
+is not set.  You can modify it using standard list operations, e.g.:
 
 \begin{verbatim}
 >>> import sys
@@ -1915,7 +1914,7 @@ Note that it lists all types of names: variables, modules, functions, etc.
 
 \function{dir()} does not list the names of built-in functions and
 variables.  If you want a list of those, they are defined in the
-standard module \module{__builtin__}:
+standard module \module{__builtin__}\refbimodindex{__builtin__}:
 
 \begin{verbatim}
 >>> import __builtin__
@@ -1950,8 +1949,9 @@ Often you'll want more control over the formatting of your output than
 simply printing space-separated values.  There are two ways to format
 your output; the first way is to do all the string handling yourself;
 using string slicing and concatenation operations you can create any
-lay-out you can imagine.  The standard module \module{string} contains
-some useful operations for padding strings to a given column width;
+lay-out you can imagine.  The standard module
+\module{string}\refstmodindex{string} contains some useful operations
+for padding strings to a given column width;
 these will be discussed shortly.  The second way is to use the
 \code{\%} operator with a string as the left argument.  \code{\%}
 interprets the left argument as a \C{} \cfunction{sprintf()}-style
@@ -2093,8 +2093,9 @@ local variables.
 \label{files}
 
 % Opening files 
-\function{open()} returns a file object, and is most commonly used with
-two arguments: \samp{open(\var{filename}, \var{mode})}.
+\function{open()}\bifuncindex{open} returns a file
+object\obindex{file}, and is most commonly used with two arguments:
+\samp{open(\var{filename}, \var{mode})}.
 
 \begin{verbatim}
 >>> f=open('/tmp/workfile', 'w')
@@ -2112,7 +2113,7 @@ the end.  \code{'r+'} opens the file for both reading and writing.
 The \var{mode} argument is optional; \code{'r'} will be assumed if
 it's omitted.
 
-On Windows, (XXX does the Mac need this too?) \code{'b'} appended to the
+On Windows and the Macintosh, \code{'b'} appended to the
 mode opens the file in binary mode, so there are also modes like
 \code{'rb'}, \code{'wb'}, and \code{'r+b'}.  Windows makes a
 distinction between text and binary files; the end-of-line characters
@@ -2120,7 +2121,8 @@ in text files are automatically altered slightly when data is read or
 written.  This behind-the-scenes modification to file data is fine for
 \ASCII{} text files, but it'll corrupt binary data like that in JPEGs or
 \file{.EXE} files.  Be very careful to use binary mode when reading and
-writing such files.
+writing such files.  (Note that the precise semantics of text mode on
+the Macintosh depends on the underlying \C{} library being used.)
 
 \subsection{Methods of file objects}
 \label{fileMethods}
@@ -2213,8 +2215,9 @@ File objects have some additional methods, such as \method{isatty()}
 and \method{truncate()} which are less frequently used; consult the
 Library Reference for a complete guide to file objects.
 
-\subsection{The pickle module}
+\subsection{The \module{pickle} module}
 \label{pickle}
+\refstmodindex{pickle}
 
 Strings can easily be written to and read from a file. Numbers take a
 bit more effort, since the \method{read()} method only returns
@@ -2290,7 +2293,7 @@ pointing at the earliest point in the line where the error was detected.
 The error is caused by (or at least detected at) the token
 \emph{preceding}
 the arrow: in the example, the error is detected at the keyword
-\keyword{print}, since a colon (\code{:}) is missing before it.
+\keyword{print}, since a colon (\character{:}) is missing before it.
 File name and line number are printed so you know where to look in case
 the input came from a script.
 
@@ -2543,7 +2546,7 @@ rely on the politeness of the user not to ``break into the
 definition.''  The most important features of classes are retained
 with full power, however: the class inheritance mechanism allows
 multiple base classes, a derived class can override any methods of its
-base class(es), a method can call the method of a base class with the
+base class or classes, a method can call the method of a base class with the
 same name.  Objects can contain an arbitrary amount of private data.
 
 In \Cpp{} terminology, all class members (including the data members) are
@@ -2558,13 +2561,13 @@ provides semantics for importing and renaming.  But, just like in \Cpp{}
 or Modula-3, built-in types cannot be used as base classes for
 extension by the user.  Also, like in \Cpp{} but unlike in Modula-3, most
 built-in operators with special syntax (arithmetic operators,
-subscripting etc.) can be redefined for class members.
+subscripting etc.) can be redefined for class instances.
 
 \section{A word about terminology}
 \label{terminology}
 
-Lacking universally accepted terminology to talk about classes, I'll
-make occasional use of Smalltalk and \Cpp{} terms.  (I'd use Modula-3
+Lacking universally accepted terminology to talk about classes, I will
+make occasional use of Smalltalk and \Cpp{} terms.  (I would use Modula-3
 terms, since its object-oriented semantics are closer to those of
 Python than \Cpp{}, but I expect that few readers have heard of it.)
 
@@ -2572,7 +2575,7 @@ I also have to warn you that there's a terminological pitfall for
 object-oriented readers: the word ``object'' in Python does not
 necessarily mean a class instance.  Like \Cpp{} and Modula-3, and
 unlike Smalltalk, not all types in Python are classes: the basic
-built-in types like integers and lists aren't, and even somewhat more
+built-in types like integers and lists are not, and even somewhat more
 exotic types like files aren't.  However, \emph{all} Python types
 share a little bit of common semantics that is best described by using
 the word object.
@@ -2638,7 +2641,7 @@ global names defined in the module: they share the same name space!%
 Attributes may be read-only or writable.  In the latter case,
 assignment to attributes is possible.  Module attributes are writable:
 you can write \samp{modname.the_answer = 42}.  Writable attributes may
-also be deleted with the del statement, e.g.
+also be deleted with the \keyword{del} statement, e.g.
 \samp{del modname.the_answer}.
 
 Name spaces are created at different moments and have different
@@ -2689,12 +2692,12 @@ statically.)
 A special quirk of Python is that assignments always go into the
 innermost scope.  Assignments do not copy data --- they just
 bind names to objects.  The same is true for deletions: the statement
-\samp{del x} removes the binding of x from the name space referenced by the
-local scope.  In fact, all operations that introduce new names use the
-local scope: in particular, import statements and function definitions
-bind the module or function name in the local scope.  (The
-\keyword{global} statement can be used to indicate that particular
-variables live in the global scope.)
+\samp{del x} removes the binding of \code{x} from the name space
+referenced by the local scope.  In fact, all operations that introduce
+new names use the local scope: in particular, import statements and
+function definitions bind the module or function name in the local
+scope.  (The \keyword{global} statement can be used to indicate that
+particular variables live in the global scope.)
 
 
 \section{A first look at classes}
@@ -3196,12 +3199,12 @@ can often be passed a class that emulates the methods of that data
 type instead.  For instance, if you have a function that formats some
 data from a file object, you can define a class with methods
 \method{read()} and \method{readline()} that gets the data from a string
-buffer instead, and pass it as an argument.  (Unfortunately, this
-technique has its limitations: a class can't define operations that
-are accessed by special syntax such as sequence subscripting or
-arithmetic operators, and assigning such a ``pseudo-file'' to
-\code{sys.stdin} will not cause the interpreter to read further input
-from it.)
+buffer instead, and pass it as an argument.%  (Unfortunately, this
+%technique has its limitations: a class can't define operations that
+%are accessed by special syntax such as sequence subscripting or
+%arithmetic operators, and assigning such a ``pseudo-file'' to
+%\code{sys.stdin} will not cause the interpreter to read further input
+%from it.)
 
 
 Instance method objects have attributes, too: \code{m.im_self} is the
@@ -3285,7 +3288,7 @@ you an idea of what's available.
 
 The major Python Web site is \url{http://www.python.org}; it contains
 code, documentation, and pointers to Python-related pages around the
-Web.  \code{www.python.org} is mirrored in various places around the
+Web.  This web site is mirrored in various places around the
 world, such as Europe, Japan, and Australia; a mirror may be faster
 than the main site, depending on your geographical location.  A more
 informal site is \url{http://starship.skyport.net}, which contains a
@@ -3293,13 +3296,16 @@ bunch of Python-related personal home pages; many people have
 downloadable software here.
 
 For Python-related questions and problem reports, you can post to the
-newsgroup \code{comp.lang.python}, or send them to the mailing list at
-\email{python-list@cwi.nl}.  The newsgroup and mailing list are
-gatewayed, so messages posted to one will automatically be forwarded
-to the other.  There are around 20--30 postings a day, asking (and
-answering) questions, suggesting new features, and announcing new
-modules.  But before posting, be sure to check the list of Frequently
-Asked Questions (also called the FAQ), at
+newsgroup \newsgroup{comp.lang.python}, or send them to the mailing
+list at \email{python-list@cwi.nl}.  The newsgroup and mailing list
+are gatewayed, so messages posted to one will automatically be
+forwarded to the other.  There are around 35--45 postings a day,
+% Postings figure based on average of last six months activity as
+% reported by www.findmail.com; Oct. '97 - Mar. '98:  7480 msgs / 182
+% days = 41.1 msgs / day.
+asking (and answering) questions, suggesting new features, and
+announcing new modules.  Before posting, be sure to check the list of
+Frequently Asked Questions (also called the FAQ), at
 \url{http://www.python.org/doc/FAQ.html}, or look for it in the
 \file{Misc/} directory of the Python source distribution.  The FAQ
 answers many of the questions that come up again and again, and may
