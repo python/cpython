@@ -1,303 +1,273 @@
 import ConfigParser
 import StringIO
+import unittest
 
-from test.test_support import TestFailed, verify
+from test import test_support
 
 
-def basic(src):
-    print "Testing basic accessors..."
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    L = cf.sections()
-    L.sort()
-    verify(L == [r'Commented Bar',
-                 r'Foo Bar',
-                 r'Internationalized Stuff',
-                 r'Long Line',
-                 r'Section\with$weird%characters[' '\t',
-                 r'Spaces',
-                 r'Spacey Bar',
-                 ],
-           "unexpected list of section names")
+class TestCaseBase(unittest.TestCase):
+    def newconfig(self, defaults=None):
+        if defaults is None:
+            self.cf = self.config_class()
+        else:
+            self.cf = self.config_class(defaults)
+        return self.cf
 
-    # The use of spaces in the section names serves as a regression test for
-    # SourceForge bug #115357.
-    # http://sourceforge.net/bugs/?func=detailbug&group_id=5470&bug_id=115357
-    verify(cf.get('Foo Bar', 'foo', raw=1) == 'bar')
-    verify(cf.get('Spacey Bar', 'foo', raw=1) == 'bar')
-    verify(cf.get('Commented Bar', 'foo', raw=1) == 'bar')
-    verify(cf.get('Spaces', 'key with spaces', raw=1) == 'value')
-    verify(cf.get('Spaces', 'another with spaces', raw=1) == 'splat!')
+    def fromstring(self, string, defaults=None):
+        cf = self.newconfig(defaults)
+        sio = StringIO.StringIO(string)
+        cf.readfp(sio)
+        return cf
 
-    verify('__name__' not in cf.options("Foo Bar"),
-           '__name__ "option" should not be exposed by the API!')
+    def test_basic(self):
+        cf = self.fromstring(
+            "[Foo Bar]\n"
+            "foo=bar\n"
+            "[Spacey Bar]\n"
+            "foo = bar\n"
+            "[Commented Bar]\n"
+            "foo: bar ; comment\n"
+            "[Long Line]\n"
+            "foo: this line is much, much longer than my editor\n"
+            "   likes it.\n"
+            "[Section\\with$weird%characters[\t]\n"
+            "[Internationalized Stuff]\n"
+            "foo[bg]: Bulgarian\n"
+            "foo=Default\n"
+            "foo[en]=English\n"
+            "foo[de]=Deutsch\n"
+            "[Spaces]\n"
+            "key with spaces : value\n"
+            "another with spaces = splat!\n"
+            )
+        L = cf.sections()
+        L.sort()
+        eq = self.assertEqual
+        eq(L, [r'Commented Bar',
+               r'Foo Bar',
+               r'Internationalized Stuff',
+               r'Long Line',
+               r'Section\with$weird%characters[' '\t',
+               r'Spaces',
+               r'Spacey Bar',
+               ])
 
-    # Make sure the right things happen for remove_option();
-    # added to include check for SourceForge bug #123324:
-    verify(cf.remove_option('Foo Bar', 'foo'),
-           "remove_option() failed to report existance of option")
-    verify(not cf.has_option('Foo Bar', 'foo'),
-           "remove_option() failed to remove option")
-    verify(not cf.remove_option('Foo Bar', 'foo'),
-           "remove_option() failed to report non-existance of option"
-           " that was removed")
-    try:
-        cf.remove_option('No Such Section', 'foo')
-    except ConfigParser.NoSectionError:
-        pass
-    else:
-        raise TestFailed(
-            "remove_option() failed to report non-existance of option"
-            " that never existed")
+        # The use of spaces in the section names serves as a
+        # regression test for SourceForge bug #583248:
+        # http://www.python.org/sf/583248
+        eq(cf.get('Foo Bar', 'foo'), 'bar')
+        eq(cf.get('Spacey Bar', 'foo'), 'bar')
+        eq(cf.get('Commented Bar', 'foo'), 'bar')
+        eq(cf.get('Spaces', 'key with spaces'), 'value')
+        eq(cf.get('Spaces', 'another with spaces'), 'splat!')
 
-    verify(cf.get('Long Line', 'foo', raw=1) ==
+        self.failIf('__name__' in cf.options("Foo Bar"),
+                    '__name__ "option" should not be exposed by the API!')
+
+        # Make sure the right things happen for remove_option();
+        # added to include check for SourceForge bug #123324:
+        self.failUnless(cf.remove_option('Foo Bar', 'foo'),
+                        "remove_option() failed to report existance of option")
+        self.failIf(cf.has_option('Foo Bar', 'foo'),
+                    "remove_option() failed to remove option")
+        self.failIf(cf.remove_option('Foo Bar', 'foo'),
+                    "remove_option() failed to report non-existance of option"
+                    " that was removed")
+
+        self.assertRaises(ConfigParser.NoSectionError,
+                          cf.remove_option, 'No Such Section', 'foo')
+
+        eq(cf.get('Long Line', 'foo'),
            'this line is much, much longer than my editor\nlikes it.')
 
-
-def case_sensitivity():
-    print "Testing case sensitivity..."
-    cf = ConfigParser.ConfigParser()
-    cf.add_section("A")
-    cf.add_section("a")
-    L = cf.sections()
-    L.sort()
-    verify(L == ["A", "a"])
-    cf.set("a", "B", "value")
-    verify(cf.options("a") == ["b"])
-    verify(cf.get("a", "b", raw=1) == "value",
+    def test_case_sensitivity(self):
+        cf = self.newconfig()
+        cf.add_section("A")
+        cf.add_section("a")
+        L = cf.sections()
+        L.sort()
+        eq = self.assertEqual
+        eq(L, ["A", "a"])
+        cf.set("a", "B", "value")
+        eq(cf.options("a"), ["b"])
+        eq(cf.get("a", "b"), "value",
            "could not locate option, expecting case-insensitive option names")
-    verify(cf.has_option("a", "b"))
-    cf.set("A", "A-B", "A-B value")
-    for opt in ("a-b", "A-b", "a-B", "A-B"):
-        verify(cf.has_option("A", opt),
-               "has_option() returned false for option which should exist")
-    verify(cf.options("A") == ["a-b"])
-    verify(cf.options("a") == ["b"])
-    cf.remove_option("a", "B")
-    verify(cf.options("a") == [])
+        self.failUnless(cf.has_option("a", "b"))
+        cf.set("A", "A-B", "A-B value")
+        for opt in ("a-b", "A-b", "a-B", "A-B"):
+            self.failUnless(
+                cf.has_option("A", opt),
+                "has_option() returned false for option which should exist")
+        eq(cf.options("A"), ["a-b"])
+        eq(cf.options("a"), ["b"])
+        cf.remove_option("a", "B")
+        eq(cf.options("a"), [])
 
-    # SF bug #432369:
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO("[MySection]\nOption: first line\n\tsecond line\n")
-    cf.readfp(sio)
-    verify(cf.options("MySection") == ["option"])
-    verify(cf.get("MySection", "Option") == "first line\nsecond line")
+        # SF bug #432369:
+        cf = self.fromstring(
+            "[MySection]\nOption: first line\n\tsecond line\n")
+        eq(cf.options("MySection"), ["option"])
+        eq(cf.get("MySection", "Option"), "first line\nsecond line")
 
-    # SF bug #561822:
-    cf = ConfigParser.ConfigParser(defaults={"key":"value"})
-    cf.readfp(StringIO.StringIO("[section]\nnekey=nevalue\n"))
-    verify(cf.has_option("section", "Key"))
-
-
-def boolean(src):
-    print "Testing interpretation of boolean Values..."
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    for x in range(1, 5):
-        verify(cf.getboolean('BOOLTEST', 't%d' % (x)) == 1)
-    for x in range(1, 5):
-        verify(cf.getboolean('BOOLTEST', 'f%d' % (x)) == 0)
-    for x in range(1, 5):
-        try:
-            cf.getboolean('BOOLTEST', 'e%d' % (x))
-        except ValueError:
-            pass
-        else:
-            raise TestFailed(
-                "getboolean() failed to report a non boolean value")
+        # SF bug #561822:
+        cf = self.fromstring("[section]\nnekey=nevalue\n",
+                             defaults={"key":"value"})
+        self.failUnless(cf.has_option("section", "Key"))
 
 
-def interpolation(src):
-    print "Testing value interpolation..."
-    cf = ConfigParser.ConfigParser({"getname": "%(__name__)s"})
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    verify(cf.get("Foo", "getname") == "Foo")
-    verify(cf.get("Foo", "bar") == "something with interpolation (1 step)")
-    verify(cf.get("Foo", "bar9")
-           == "something with lots of interpolation (9 steps)")
-    verify(cf.get("Foo", "bar10")
-           == "something with lots of interpolation (10 steps)")
-    expect_get_error(cf, ConfigParser.InterpolationDepthError, "Foo", "bar11")
+    def test_parse_errors(self):
+        self.newconfig()
+        self.parse_error(ConfigParser.ParsingError,
+                         "[Foo]\n  extra-spaces: splat\n")
+        self.parse_error(ConfigParser.ParsingError,
+                         "[Foo]\n  extra-spaces= splat\n")
+        self.parse_error(ConfigParser.ParsingError,
+                         "[Foo]\noption-without-value\n")
+        self.parse_error(ConfigParser.ParsingError,
+                         "[Foo]\n:value-without-option-name\n")
+        self.parse_error(ConfigParser.ParsingError,
+                         "[Foo]\n=value-without-option-name\n")
+        self.parse_error(ConfigParser.MissingSectionHeaderError,
+                         "No Section!\n")
 
-    # Now make sure we don't interpolate if we use RawConfigParser:
-    cf = ConfigParser.RawConfigParser({"getname": "%(__name__)s"})
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    verify(cf.get("Foo", "getname") == "%(__name__)s")
-    verify(cf.get("Foo", "bar")
-           == "something %(with1)s interpolation (1 step)")
-    verify(cf.get("Foo", "bar9")
-           == "something %(with9)s lots of interpolation (9 steps)")
-    verify(cf.get("Foo", "bar10")
-           == "something %(with10)s lots of interpolation (10 steps)")
-    verify(cf.get("Foo", "bar11")
-           == "something %(with11)s lots of interpolation (11 steps)")
+    def parse_error(self, exc, src):
+        sio = StringIO.StringIO(src)
+        self.assertRaises(exc, self.cf.readfp, sio)
 
+    def test_query_errors(self):
+        cf = self.newconfig()
+        self.assertEqual(cf.sections(), [],
+                         "new ConfigParser should have no defined sections")
+        self.failIf(cf.has_section("Foo"),
+                    "new ConfigParser should have no acknowledged sections")
+        self.assertRaises(ConfigParser.NoSectionError,
+                          cf.options, "Foo")
+        self.assertRaises(ConfigParser.NoSectionError,
+                          cf.set, "foo", "bar", "value")
+        self.get_error(ConfigParser.NoSectionError, "foo", "bar")
+        cf.add_section("foo")
+        self.get_error(ConfigParser.NoOptionError, "foo", "bar")
 
-def parse_errors():
-    print "Testing parse errors..."
-    expect_parse_error(ConfigParser.ParsingError,
-                       """[Foo]\n  extra-spaces: splat\n""")
-    expect_parse_error(ConfigParser.ParsingError,
-                       """[Foo]\n  extra-spaces= splat\n""")
-    expect_parse_error(ConfigParser.ParsingError,
-                       """[Foo]\noption-without-value\n""")
-    expect_parse_error(ConfigParser.ParsingError,
-                       """[Foo]\n:value-without-option-name\n""")
-    expect_parse_error(ConfigParser.ParsingError,
-                       """[Foo]\n=value-without-option-name\n""")
-    expect_parse_error(ConfigParser.MissingSectionHeaderError,
-                       """No Section!\n""")
+    def get_error(self, exc, section, option):
+        self.assertRaises(exc, self.cf.get, section, option)
 
+    def test_boolean(self):
+        cf = self.fromstring(
+            "[BOOLTEST]\n"
+            "T1=1\n"
+            "T2=TRUE\n"
+            "T3=True\n"
+            "T4=oN\n"
+            "T5=yes\n"
+            "F1=0\n"
+            "F2=FALSE\n"
+            "F3=False\n"
+            "F4=oFF\n"
+            "F5=nO\n"
+            "E1=2\n"
+            "E2=foo\n"
+            "E3=-1\n"
+            "E4=0.1\n"
+            "E5=FALSE AND MORE"
+            )
+        for x in range(1, 5):
+            self.failUnless(cf.getboolean('BOOLTEST', 't%d' % x))
+            self.failIf(cf.getboolean('BOOLTEST', 'f%d' % x))
+            self.assertRaises(ValueError,
+                              cf.getboolean, 'BOOLTEST', 'e%d' % x)
 
-def query_errors():
-    print "Testing query interface..."
-    cf = ConfigParser.ConfigParser()
-    verify(cf.sections() == [],
-           "new ConfigParser should have no defined sections")
-    verify(not cf.has_section("Foo"),
-           "new ConfigParser should have no acknowledged sections")
-    try:
-        cf.options("Foo")
-    except ConfigParser.NoSectionError, e:
-        pass
-    else:
-        raise TestFailed(
-            "Failed to catch expected NoSectionError from options()")
-    try:
-        cf.set("foo", "bar", "value")
-    except ConfigParser.NoSectionError, e:
-        pass
-    else:
-        raise TestFailed("Failed to catch expected NoSectionError from set()")
-    expect_get_error(cf, ConfigParser.NoSectionError, "foo", "bar")
-    cf.add_section("foo")
-    expect_get_error(cf, ConfigParser.NoOptionError, "foo", "bar")
-
-
-def weird_errors():
-    print "Testing miscellaneous error conditions..."
-    cf = ConfigParser.ConfigParser()
-    cf.add_section("Foo")
-    try:
+    def test_weird_errors(self):
+        cf = self.newconfig()
         cf.add_section("Foo")
-    except ConfigParser.DuplicateSectionError, e:
-        pass
-    else:
-        raise TestFailed("Failed to catch expected DuplicateSectionError")
+        self.assertRaises(ConfigParser.DuplicateSectionError,
+                          cf.add_section, "Foo")
+
+    def test_write(self):
+        cf = self.fromstring(
+            "[Long Line]\n"
+            "foo: this line is much, much longer than my editor\n"
+            "   likes it.\n"
+            "[DEFAULT]\n"
+            "foo: another very\n"
+            " long line"
+            )
+        output = StringIO.StringIO()
+        cf.write(output)
+        self.assertEqual(
+            output.getvalue(),
+            "[DEFAULT]\n"
+            "foo = another very\n"
+            "\tlong line\n"
+            "\n"
+            "[Long Line]\n"
+            "foo = this line is much, much longer than my editor\n"
+            "\tlikes it.\n"
+            "\n"
+            )
+
+    # shared by subclasses
+    def get_interpolation_config(self):
+        return self.fromstring(
+            "[Foo]\n"
+            "bar=something %(with1)s interpolation (1 step)\n"
+            "bar9=something %(with9)s lots of interpolation (9 steps)\n"
+            "bar10=something %(with10)s lots of interpolation (10 steps)\n"
+            "bar11=something %(with11)s lots of interpolation (11 steps)\n"
+            "with11=%(with10)s\n"
+            "with10=%(with9)s\n"
+            "with9=%(with8)s\n"
+            "with8=%(with7)s\n"
+            "with7=%(with6)s\n"
+            "with6=%(with5)s\n"
+            "with5=%(with4)s\n"
+            "with4=%(with3)s\n"
+            "with3=%(with2)s\n"
+            "with2=%(with1)s\n"
+            "with1=with\n"
+            "\n"
+            "[Mutual Recursion]\n"
+            "foo=%(bar)s\n"
+            "bar=%(foo)s\n",
+            defaults={"getname": "%(__name__)s"})
 
 
-def expect_get_error(cf, exctype, section, option, raw=0):
-    try:
-        cf.get(section, option, raw=raw)
-    except exctype, e:
-        pass
-    else:
-        raise TestFailed("Failed to catch expected " + exctype.__name__)
+class ConfigParserTestCase(TestCaseBase):
+    config_class = ConfigParser.ConfigParser
+
+    def test_interpolation(self):
+        cf = self.get_interpolation_config()
+        eq = self.assertEqual
+        eq(cf.get("Foo", "getname"), "Foo")
+        eq(cf.get("Foo", "bar"), "something with interpolation (1 step)")
+        eq(cf.get("Foo", "bar9"),
+           "something with lots of interpolation (9 steps)")
+        eq(cf.get("Foo", "bar10"),
+           "something with lots of interpolation (10 steps)")
+        self.get_error(ConfigParser.InterpolationDepthError, "Foo", "bar11")
 
 
-def expect_parse_error(exctype, src):
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO(src)
-    try:
-        cf.readfp(sio)
-    except exctype, e:
-        pass
-    else:
-        raise TestFailed("Failed to catch expected " + exctype.__name__)
+class RawConfigParserTestCase(TestCaseBase):
+    config_class = ConfigParser.RawConfigParser
+
+    def test_interpolation(self):
+        cf = self.get_interpolation_config()
+        eq = self.assertEqual
+        eq(cf.get("Foo", "getname"), "%(__name__)s")
+        eq(cf.get("Foo", "bar"),
+           "something %(with1)s interpolation (1 step)")
+        eq(cf.get("Foo", "bar9"),
+           "something %(with9)s lots of interpolation (9 steps)")
+        eq(cf.get("Foo", "bar10"),
+           "something %(with10)s lots of interpolation (10 steps)")
+        eq(cf.get("Foo", "bar11"),
+           "something %(with11)s lots of interpolation (11 steps)")
 
 
-# The long string literals present in the rest of the file screw up
-# font-lock in Emacs/XEmacs, so this stuff needs to stay near the end
-# of this file.
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTests([unittest.makeSuite(ConfigParserTestCase),
+                    unittest.makeSuite(RawConfigParserTestCase)])
+    test_support.run_suite(suite)
 
-def write(src):
-    print "Testing writing of files..."
-    cf = ConfigParser.ConfigParser()
-    sio = StringIO.StringIO(src)
-    cf.readfp(sio)
-    output = StringIO.StringIO()
-    cf.write(output)
-    verify(output, """[DEFAULT]
-foo = another very
-        long line
-
-[Long Line]
-foo = this line is much, much longer than my editor
-        likes it.
-""")
-
-
-basic(r"""
-[Foo Bar]
-foo=bar
-[Spacey Bar]
-foo = bar
-[Commented Bar]
-foo: bar ; comment
-[Long Line]
-foo: this line is much, much longer than my editor
-   likes it.
-[Section\with$weird%characters[""" '\t' r"""]
-[Internationalized Stuff]
-foo[bg]: Bulgarian
-foo=Default
-foo[en]=English
-foo[de]=Deutsch
-[Spaces]
-key with spaces : value
-another with spaces = splat!
-""")
-write("""[Long Line]
-foo: this line is much, much longer than my editor
-   likes it.
-[DEFAULT]
-foo: another very
- long line""")
-case_sensitivity()
-boolean(r"""
-[BOOLTEST]
-T1=1
-T2=TRUE
-T3=True
-T4=oN
-T5=yes
-F1=0
-F2=FALSE
-F3=False
-F4=oFF
-F5=nO
-E1=2
-E2=foo
-E3=-1
-E4=0.1
-E5=FALSE AND MORE
-""")
-interpolation(r"""
-[Foo]
-bar=something %(with1)s interpolation (1 step)
-bar9=something %(with9)s lots of interpolation (9 steps)
-bar10=something %(with10)s lots of interpolation (10 steps)
-bar11=something %(with11)s lots of interpolation (11 steps)
-with11=%(with10)s
-with10=%(with9)s
-with9=%(with8)s
-with8=%(with7)s
-with7=%(with6)s
-with6=%(with5)s
-with5=%(with4)s
-with4=%(with3)s
-with3=%(with2)s
-with2=%(with1)s
-with1=with
-
-[Mutual Recursion]
-foo=%(bar)s
-bar=%(foo)s
-""")
-parse_errors()
-query_errors()
-weird_errors()
+if __name__ == "__main__":
+    test_main()
