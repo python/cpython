@@ -1,23 +1,40 @@
-This directory contains Python and C code for video stuff.
+CMIF video tools
+================
 
-History:
+This directory contains Python and C programs to manipulate files
+containing digitized video in the "CMIF video format".
+
+
+History
+-------
 
 We started this in October 1991, when we had a large framegrabber
-board on loan from SGI for a few weeks.
+board on loan from SGI for a few weeks: we developed a movie recording
+program (camcorder.py) and added numerous features, including still
+frame capture and synchronous sound recording using a second machine
+(the machine holding the framegrabber board didn't have audio).
 
-Later, when we started processing the recorded film fragments, the
-"CMIF video format" was revised several times, and we finally created
-an object-oriented interface for reading and writing various
-incarnations of these files, called VFile.
+During the following months, when we started using and processing the
+recorded film fragments, the "CMIF video format" was revised several
+times, and we eventually created an object-oriented interface for
+reading and writing various incarnations of these files, called VFile.
+(This module is also used by our flagship application, the CMIF
+editor, not in this directory but in /ufs/guido/mm/.)
 
-When we finally got our own Indigo entry-level video board (in June
-1992) and a version of the Irix video library that supported capturing
-PAL format (August 1992) Sjoerd added an interface to the video
+When we got our own Indigo entry-level video board (in June 1992) and
+a version of the Irix video library that supported capturing PAL
+format (in August 1992), Sjoerd added an interface to the video
 library to Python (sv) and Guido wrote makemovie.py (based upon a
-still frame grabber by Sjoerd) to record a movie using it.
+still frame grabber by Sjoerd, in turn based upon SGI demo code in C)
+to record a movie using it.
 
-	--Guido, Jack and Sjoerd
+	Guido van Rossum
+	Jack Jansen
+	Sjoerd Mullender
 
+
+Overview of files
+-----------------
 
 cam.py		network real-time tv broadcast; see tv.py
 		usage: cam [packfactor [host]]
@@ -67,21 +84,21 @@ video.py	player for movies recorded by camcorder.py
 		soundfile	default is none (no sound)
 		skipbytes	byte offset in soundfile where sound starts
 
-Vplay.py	same but using VFile.py
+Vplay.py	similar but more modern, using VFile.py
 
 vinfo.py	print summary of movie file(s)
 		usage: vinfo [-d] moviefile ...
 		-d		print delta times (default: print abs times)
 
-Vinfo.py	same but using VFile.py
+Vinfo.py	similar but more modern, using VFile.py
 
 vpregs.py	definition of VP registers
 
 vtime.py	virtual time module imported by syncaudio.py and camcorder.py
 
 
-These are C programs, either for efficiency or because they need to
-link with a C library.
+The following are C programs, either for efficiency or because they
+need to link with a C library:
 
 squash.c	make a movie smaller by averaging pixels
 		usage: squash factor [bits] <moviefile >newmoviefile
@@ -96,3 +113,6 @@ tomono.c	like squash2 but outputs a monochrome movie
 
 v2i.c		convert the first frame of a movie file to SGI .rgb format
 		link with -limage
+
+i2v.c		convert an rgb file to "lrectwrite" format (this was
+		used one time by the CMIF editor)

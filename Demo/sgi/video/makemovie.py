@@ -1,5 +1,5 @@
+#! /ufs/guido/bin/sgi/python
 #! /ufs/guido/src/video/py
-# XXX for now, you need this special version of Python
 
 # Capture a CMIF movie using the Indigo video library and board
 
