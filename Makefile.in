@@ -258,12 +258,11 @@ libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
 
 # Create the MACHDEP source directory, if one wasn't distributed..
-# XXX This requires Tools/scripts/h2py.py which requires /usr/local/bin/python.
-# Oh well, it's a hint that something should be done.
-$(srcdir)/Lib/$(MACHDEP):
+$(srcdir)/Lib/$(MACHDEP): python
 		mkdir $(srcdir)/Lib/$(MACHDEP)
 		cp $(srcdir)/Lib/generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
-		(cd $(srcdir)/Lib/$(MACHDEP); ./regen)
+		export PATH; PATH="`pwd`:$PATH"; \
+		cd $(srcdir)/Lib/$(MACHDEP); ./regen
 
 # Install the include files
 inclinstall:
