@@ -1315,7 +1315,7 @@ PySetValue(PyObject *self, PyObject *args)
 		return NULL;
 	if (typ != REG_SZ) {
 		PyErr_SetString(PyExc_TypeError,
-				"Type must be win32con.REG_SZ");
+				"Type must be _winreg.REG_SZ");
 		return NULL;
 	}
 	/* XXX - need Unicode support */
