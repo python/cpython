@@ -13,22 +13,26 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ',
     'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
 
-saw_locale = 0
-for loc in candidate_locales:
-    try:
-        setlocale(LC_NUMERIC, loc)
-    except Error:
-        continue
-    if verbose:
-        print "locale %r" % loc
-    saw_locale = 1
-    nl_radixchar = nl_langinfo(RADIXCHAR)
-    li_radixchar = localeconv()['decimal_point']
-    if nl_radixchar != li_radixchar:
-        print "%r != %r" % (nl_radixchar, li_radixchar)
-    nl_radixchar = nl_langinfo(THOUSEP)
-    li_radixchar = localeconv()['thousands_sep']
-    if nl_radixchar != li_radixchar:
-        print "%r != %r" % (nl_radixchar, li_radixchar)
-if not saw_locale:
-    raise ImportError, "None of the listed locales found"
+oldlocale = setlocale(LC_NUMERIC)
+try:
+    saw_locale = 0
+    for loc in candidate_locales:
+        try:
+            setlocale(LC_NUMERIC, loc)
+        except Error:
+            continue
+        if verbose:
+            print "locale %r" % loc
+        saw_locale = 1
+        nl_radixchar = nl_langinfo(RADIXCHAR)
+        li_radixchar = localeconv()['decimal_point']
+        if nl_radixchar != li_radixchar:
+            print "%r != %r" % (nl_radixchar, li_radixchar)
+        nl_radixchar = nl_langinfo(THOUSEP)
+        li_radixchar = localeconv()['thousands_sep']
+        if nl_radixchar != li_radixchar:
+            print "%r != %r" % (nl_radixchar, li_radixchar)
+    if not saw_locale:
+            raise ImportError, "None of the listed locales found"
+finally:
+    setlocale(LC_NUMERIC, oldlocale)
