@@ -171,7 +171,6 @@ builtin_float(self, v)
 		return newfloatobject((double)x);
 	}
 	else if (is_longobject(v)) {
-		extern double dgetlongvalue();
 		return newfloatobject(dgetlongvalue(v));
 	}
 	else if (is_floatobject(v)) {
@@ -215,12 +214,13 @@ builtin_int(self, v)
 	else if (is_longobject(v)) {
 		long x;
 		x = getlongvalue(v);
-		if (x == -1 && err_occurred())
+		if (err_occurred())
 			return NULL;
 		return newintobject(x);
 	}
 	else if (is_floatobject(v)) {
 		double x = getfloatvalue(v);
+		/* XXX should check for overflow */
 		return newintobject((long)x);
 	}
 	err_setstr(TypeError, "int() argument must be int, long or float");
@@ -269,7 +269,7 @@ builtin_long(self, v)
 	}
 	else if (is_floatobject(v)) {
 		double x = getfloatvalue(v);
-		return newlongobject((long)x);
+		return dnewlongobject(x);
 	}
 	err_setstr(TypeError, "long() argument must be int, long or float");
 	return NULL;
