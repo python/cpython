@@ -1,12 +1,14 @@
+TBL=		tbl
 TROFF=		ditroff
 MS=		-ms
-PREVIEW=	dpv
+FUNNYTAB=	$$HOME/lib/funnytab
+PREVIEW=	dpv -f $(FUNNYTAB)
 
-intro:		intro.dit
-		$(PREVIEW) intro.dit
+tut:		tut.dit
+		$(PREVIEW) tut.dit
 
-modules:	modules.dit
-		$(PREVIEW) modules.dit
+mod:		mod.dit
+		$(PREVIEW) mod.dit
 
 paper:		paper.dit
 		$(PREVIEW) paper.dit
@@ -14,7 +16,7 @@ paper:		paper.dit
 ref:		ref.dit
 		$(PREVIEW) ref.dit
 
-ALL=		intro.dit modules.dit paper.dit ref.dit
+ALL=		tut.dit mod.dit paper.dit ref.dit
 
 all:		$(ALL)
 
@@ -26,4 +28,4 @@ clean:
 .SUFFIXES:	.ms .dit
 
 .ms.dit:
-		$(TROFF) $(MS) $*.ms >$@
+		$(TBL) $*.ms | $(TROFF) $(MS) >$@
