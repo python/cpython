@@ -32,7 +32,6 @@ decode(in_file [, out_file, mode])
 
 import binascii
 import os
-import string
 import sys
 
 class Error(Exception):
@@ -97,17 +96,17 @@ def decode(in_file, out_file=None, mode=None):
             raise Error, 'No valid begin line found in input file'
         if hdr[:5] != 'begin':
             continue
-        hdrfields = string.split(hdr)
+        hdrfields = hdr.split(" ", 2)
         if len(hdrfields) == 3 and hdrfields[0] == 'begin':
             try:
-                string.atoi(hdrfields[1], 8)
+                int(hdrfields[1], 8)
                 break
             except ValueError:
                 pass
     if out_file is None:
-        out_file = hdrfields[2]
+        out_file = hdrfields[2].rstrip()
     if mode is None:
-        mode = string.atoi(hdrfields[1], 8)
+        mode = int(hdrfields[1], 8)
     #
     # Open the output file
     #
