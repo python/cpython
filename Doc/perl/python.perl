@@ -58,6 +58,12 @@ sub do_cmd_varvars{
     $_;
 }
 
+sub do_cmd_pytype{
+    local($_) = @_;
+    s|$next_pair_pr_rx|\2|;
+    $_;
+}
+
 # Logical formatting (some based on texinfo), needs to be converted to
 # minimalist HTML.  The "minimalist" is primarily to reduce the size of
 # output files for users that read them over the network rather than
