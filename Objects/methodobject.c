@@ -188,46 +188,73 @@ typeobject Methodtype = {
 	(hashfunc)meth_hash, /*tp_hash*/
 };
 
-static object *listmethods PROTO((struct methodlist *)); /* Forward */
+/* List all methods in a chain -- helper for findmethodinchain */
 
 static object *
-listmethods(ml)
-	struct methodlist *ml;
+listmethodchain(chain)
+	struct methodchain *chain;
 {
+	struct methodchain *c;
+	struct methodlist *ml;
 	int i, n;
 	object *v;
-	for (n = 0; ml[n].ml_name != NULL; n++)
-		;
+	
+	n = 0;
+	for (c = chain; c != NULL; c = c->link) {
+		for (ml = c->methods; ml->ml_name != NULL; ml++)
+			n++;
+	}
 	v = newlistobject(n);
-	if (v != NULL) {
-		for (i = 0; i < n; i++)
-			setlistitem(v, i, newstringobject(ml[i].ml_name));
-		if (err_occurred()) {
-			DECREF(v);
-			v = NULL;
-		}
-		else {
-			sortlist(v);
+	if (v == NULL)
+		return NULL;
+	i = 0;
+	for (c = chain; c != NULL; c = c->link) {
+		for (ml = c->methods; ml->ml_name != NULL; ml++) {
+			setlistitem(v, i, newstringobject(ml->ml_name));
+			i++;
 		}
 	}
+	if (err_occurred()) {
+		DECREF(v);
+		return NULL;
+	}
+	sortlist(v);
 	return v;
 }
 
-/* Find a method in a module's method table.
-   Usually called from an object's getattr method. */
+/* Find a method in a method chain */
 
 object *
-findmethod(ml, op, name)
-	struct methodlist *ml;
-	object *op;
+findmethodinchain(chain, self, name)
+	struct methodchain *chain;
+	object *self;
 	char *name;
 {
 	if (strcmp(name, "__methods__") == 0)
-		return listmethods(ml);
-	for (; ml->ml_name != NULL; ml++) {
-		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml, op);
+		return listmethodchain(chain);
+	while (chain != NULL) {
+		struct methodlist *ml = chain->methods;
+		for (; ml->ml_name != NULL; ml++) {
+			if (name[0] == ml->ml_name[0] &&
+			    strcmp(name+1, ml->ml_name+1) == 0)
+				return newmethodobject(ml, self);
+		}
+		chain = chain->link;
 	}
 	err_setstr(AttributeError, name);
 	return NULL;
+}
+
+/* Find a method in a single method list */
+
+object *
+findmethod(methods, self, name)
+	struct methodlist *methods;
+	object *self;
+	char *name;
+{
+	struct methodchain chain;
+	chain.methods = methods;
+	chain.link = NULL;
+	return findmethodinchain(&chain, self, name);
 }

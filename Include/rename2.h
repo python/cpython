@@ -38,6 +38,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* typedef ANY *PyUnivPtr; */
 #define methodlist PyMethodDef
+#define methodchain PyMethodChain
 
 #define None Py_None
 #define False Py_False
@@ -290,6 +291,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define newrangeobject PyRange_New
 #define method PyCFunction
 #define findmethod Py_FindMethod
+#define findmethodinchain Py_FindMethodInChain
 #define getmethod PyCFunction_GetFunction
 #define getself PyCFunction_GetSelf
 #define getvarargs PyCFunction_IsVarArgs
