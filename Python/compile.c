@@ -1133,13 +1133,12 @@ com_addopname(struct compiling *c, int op, node *n)
 }
 
 static PyObject *
-parsenumber(struct compiling *co, char *s)
+parsenumber(struct compiling *c, char *s)
 {
 	char *end;
 	long x;
 	double dx;
 #ifndef WITHOUT_COMPLEX
-	Py_complex c;
 	int imflag;
 #endif
 
@@ -1158,8 +1157,8 @@ parsenumber(struct compiling *co, char *s)
 				    "hex/oct constants > sys.maxint "
 				    "will return positive values "
 				    "in Python 2.4 and up",
-				    co->c_filename,
-				    co->c_lineno,
+				    c->c_filename,
+				    c->c_lineno,
 				    NULL,
 				    NULL) < 0)
 				return NULL;
@@ -1176,11 +1175,12 @@ parsenumber(struct compiling *co, char *s)
 	/* XXX Huge floats may silently fail */
 #ifndef WITHOUT_COMPLEX
 	if (imflag) {
-		c.real = 0.;
+		Py_complex z;
+		z.real = 0.;
 		PyFPE_START_PROTECT("atof", return 0)
-		c.imag = atof(s);
-		PyFPE_END_PROTECT(c)
-		return PyComplex_FromCComplex(c);
+		z.imag = atof(s);
+		PyFPE_END_PROTECT(z)
+		return PyComplex_FromCComplex(z);
 	}
 	else
 #endif
@@ -1215,7 +1215,7 @@ decode_utf8(char **sPtr, char *end, char* encoding)
 }
 
 static PyObject *
-parsestr(struct compiling *com, char *s)
+parsestr(struct compiling *c, char *s)
 {
 	PyObject *v;
 	size_t len;
@@ -1224,7 +1224,7 @@ parsestr(struct compiling *com, char *s)
 	char *end;
 	int quote = *s;
 	int rawmode = 0;
-	char* encoding = ((com == NULL) ? NULL : com->c_encoding);
+	char* encoding = ((c == NULL) ? NULL : c->c_encoding);
 	int need_encoding;
 	int unicode = 0;
 
@@ -1245,7 +1245,7 @@ parsestr(struct compiling *com, char *s)
 	s++;
 	len = strlen(s);
 	if (len > INT_MAX) {
-		com_error(com, PyExc_OverflowError, 
+		com_error(c, PyExc_OverflowError, 
 			  "string to parse is too long");
 		return NULL;
 	}
@@ -1315,7 +1315,7 @@ parsestr(struct compiling *com, char *s)
 			v = PyUnicode_DecodeUnicodeEscape(buf, len, NULL);
 		Py_XDECREF(u);
 		if (v == NULL)
-			PyErr_SyntaxLocation(com->c_filename, com->c_lineno);
+			PyErr_SyntaxLocation(c->c_filename, c->c_lineno);
 		return v;
 			
 	}
@@ -1345,7 +1345,7 @@ parsestr(struct compiling *com, char *s)
 	v = PyString_DecodeEscape(s, len, NULL, unicode,
 				  need_encoding ? encoding : NULL);
 	if (v == NULL)
-		PyErr_SyntaxLocation(com->c_filename, com->c_lineno);
+		PyErr_SyntaxLocation(c->c_filename, c->c_lineno);
 	return v;
 }
 
