@@ -274,6 +274,22 @@ PyFloat_Check:PyObject*:p:0:
 PyFloat_FromDouble:PyObject*::+1:
 PyFloat_FromDouble:double:v::
 
+Py_InitModule:PyObject*::0:
+Py_InitModule:name:char*::
+Py_InitModule:methods:PyMethodDef[]::
+
+Py_InitModule3:PyObject*::0:
+Py_InitModule3:name:char*::
+Py_InitModule3:methods:PyMethodDef[]::
+Py_InitModule3:doc:char*::
+
+Py_InitModule4:PyObject*::0:
+Py_InitModule4:name:char*::
+Py_InitModule4:methods:PyMethodDef[]::
+Py_InitModule4:doc:char*::
+Py_InitModule4:self:PyObject*::
+Py_InitModule4:apiver:int::usually provided by Py_InitModule or Py_InitModule3
+
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:char*:name::
 

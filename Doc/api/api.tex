@@ -4650,7 +4650,37 @@ implementing new object types in C.
 \begin{cfuncdesc}{void}{PyObject_DEL}{PyObject *op}
 \end{cfuncdesc}
 
-Py_InitModule (!!!)
+\begin{cfuncdesc}{PyObject*}{Py_InitModule}{char *name,
+                                            PyMethodDef *methods}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_InitModule3}{char *name,
+                                             PyMethodDef *methods,
+                                             char *doc}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.  If \var{doc} is non-\NULL, it will
+  be used to define the docstring for the module.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_InitModule4}{char *name,
+                                             PyMethodDef *methods,
+                                             char *doc, PyObject *self,
+                                             int apiver}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.  If \var{doc} is non-\NULL, it will
+  be used to define the docstring for the module.  If \var{self} is
+  non-\NULL, it will passed to the functions of the module as their
+  (otherwise \NULL) first parameter.  (This was added as an
+  experimental feature, and there are no known uses in the current
+  version of Python.)  For \var{apiver}, the only value which should
+  be passed is defined by the constant \constant{PYTHON_API_VERSION}.
+
+  \strong{Note:}  Most uses of this function should probably be using
+  the \cfunction{Py_InitModule3()} instead; only use this if you are
+  sure you need it.
+\end{cfuncdesc}
 
 PyArg_ParseTupleAndKeywords, PyArg_ParseTuple, PyArg_Parse
 
