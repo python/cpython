@@ -1,9 +1,9 @@
-\section{\module{pickle} ---
-         Python object serialization}
+\section{\module{pickle} --- Python object serialization}
 
 \declaremodule{standard}{pickle}
 \modulesynopsis{Convert Python objects to streams of bytes and back.}
 % Substantial improvements by Jim Kerr <jbkerr@sr.hp.com>.
+% Rewritten by Barry Warsaw <barry@zope.com>
 
 \index{persistence}
 \indexii{persistent}{objects}
@@ -12,64 +12,112 @@
 \indexii{flattening}{objects}
 \indexii{pickling}{objects}
 
+The \module{pickle} module implements a fundamental, but powerful
+algorithm for serializing and de-serializing a Python object
+structure.  ``Pickling'' is the process whereby a Python object
+hierarchy is converted into a byte stream, and ``unpickling'' is the
+inverse operation, whereby a byte stream is converted back into an
+object hierarchy.  Pickling (and unpickling) is alternatively known as
+``serialization'', ``marshaling\footnote{Don't confuse this with the
+\module{marshal}\refmodule{marshal} module}'', or ``flattening'',
+however the preferred term used here is ``pickling'' and
+``unpickling'' to avoid confusing.
 
-The \module{pickle} module implements a basic but powerful algorithm
-for ``pickling'' (a.k.a.\ serializing, marshalling or flattening)
-nearly arbitrary Python objects.  This is the act of converting
-objects to a stream of bytes (and back: ``unpickling'').  This is a
-more primitive notion than persistence --- although \module{pickle}
-reads and writes file objects, it does not handle the issue of naming
-persistent objects, nor the (even more complicated) area of concurrent
-access to persistent objects.  The \module{pickle} module can
-transform a complex object into a byte stream and it can transform the
-byte stream into an object with the same internal structure.  The most
-obvious thing to do with these byte streams is to write them onto a
-file, but it is also conceivable to send them across a network or
-store them in a database.  The module
-\refmodule{shelve}\refstmodindex{shelve} provides a simple interface
-to pickle and unpickle objects on DBM-style database files.
+This documentation describes both the \module{pickle} module and the 
+\module{cPickle}\refmodule{cPickle} module.
 
+\subsection{Relationship to other Python modules}
 
-\note{The \module{pickle} module is rather slow.  A
-reimplementation of the same algorithm in C, which is up to 1000 times
-faster, is available as the
-\refmodule{cPickle}\refbimodindex{cPickle} module.  This has the same
-interface except that \class{Pickler} and \class{Unpickler} are
-factory functions, not classes (so they cannot be used as base classes
-for inheritance).}
+The \module{pickle} module has an optimized cousin called the
+\module{cPickle} module.  As its name implies, \module{cPickle} is
+written in C, so it can be up to 1000 times faster than
+\module{pickle}.  However it does not support subclassing of the
+\function{Pickler()} and \function{Unpickler()} classes, because in
+\module{cPickle} these are functions, not classes.  Most applications
+have no need for this functionality, and can benefit from the improved
+performance of \module{cPickle}.  Other than that, the interfaces of
+the two modules are nearly identical; the common interface is
+described in this manual and differences are pointed out where
+necessary.  In the following discussions, we use the term ``pickle''
+to collectively describe the \module{pickle} and
+\module{cPickle} modules.
 
-Although the \module{pickle} module can use the built-in module
-\refmodule{marshal}\refbimodindex{marshal} internally, it differs from 
-\refmodule{marshal} in the way it handles certain kinds of data:
+The data streams the two modules produce are guaranteed to be
+interchangeable.
+
+Python has a more primitive serialization module called
+\module{marshal}\refmodule{marshal}, but in general
+\module{pickle} should always be the preferred way to serialize Python
+objects.  \module{marshal} exists primarily to support Python's
+\file{.pyc} files.
+
+The \module{pickle} module differs from \refmodule{marshal} several
+significant ways:
 
 \begin{itemize}
 
-\item Recursive objects (objects containing references to themselves): 
-      \module{pickle} keeps track of the objects it has already
-      serialized, so later references to the same object won't be
-      serialized again.  (The \refmodule{marshal} module breaks for
-      this.)
+\item The \module{pickle} module keeps track of the objects it has
+      already serialized, so that later references to the same object
+      won't be serialized again.  \module{marshal} doesn't do this.
 
-\item Object sharing (references to the same object in different
-      places):  This is similar to self-referencing objects;
-      \module{pickle} stores the object once, and ensures that all
-      other references point to the master copy.  Shared objects
-      remain shared, which can be very important for mutable objects.
+      This has implications both for recursive objects and object
+      sharing.  Recursive objects are objects that contain references
+      to themselves.  These are not handled by marshal, and in fact,
+      attempting to marshal recursive objects will crash your Python
+      interpreter.  Object sharing happens when there are multiple
+      references to the same object in different places in the object
+      hierarchy being serialized.  \module{pickle} stores such objects
+      only once, and ensures that all other references point to the
+      master copy.  Shared objects remain shared, which can be very
+      important for mutable objects.
 
-\item User-defined classes and their instances:  \refmodule{marshal}
-      does not support these at all, but \module{pickle} can save
-      and restore class instances transparently.  The class definition 
-      must be importable and live in the same module as when the
-      object was stored.
+\item \module{marshal} cannot be used to serialize user-defined
+      classes and their instances.  \module{pickle} can save and
+      restore class instances transparently, however the class
+      definition must be importable and live in the same module as
+      when the object was stored.
+
+\item The \module{marshal} serialization format is not guaranteed to
+      be portable across Python versions.  Because its primary job in
+      life is to support \file{.pyc} files, the Python implementers
+      reserve the right to change the serialization format in
+      non-backwards compatible ways should the need arise.  The
+      \module{pickle} serialization format is guaranteed to be
+      backwards compatible across Python releases.
+
+\item The \module{pickle} module doesn't handle code objects, which
+      the \module{marshal} module does.  This avoids the possibility
+      of smuggling Trojan horses into a program through the
+      \module{pickle} module\footnote{This doesn't necessarily imply
+      that \module{pickle} is inherently secure.  See
+      section~\ref{pickle-sec} for a more detailed discussion on
+      \module{pickle} module security.  Besides, it's possible that
+      \module{pickle} will eventually support serializing code
+      objects.}.
 
 \end{itemize}
 
+Note that serialization is a more primitive notion than persistence;
+although
+\module{pickle} reads and writes file objects, it does not handle the
+issue of naming persistent objects, nor the (even more complicated)
+issue of concurrent access to persistent objects.  The \module{pickle}
+module can transform a complex object into a byte stream and it can
+transform the byte stream into an object with the same internal
+structure.  Perhaps the most obvious thing to do with these byte
+streams is to write them onto a file, but it is also conceivable to
+send them across a network or store them in a database.  The module
+\refmodule{shelve} provides a simple interface
+to pickle and unpickle objects on DBM-style database files.
+
+\subsection{Data stream format}
+
 The data format used by \module{pickle} is Python-specific.  This has
 the advantage that there are no restrictions imposed by external
-standards such as
-XDR\index{XDR}\index{External Data Representation} (which can't
-represent pointer sharing); however it means that non-Python programs
-may not be able to reconstruct pickled Python objects.
+standards such as XDR\index{XDR}\index{External Data Representation}
+(which can't represent pointer sharing); however it means that
+non-Python programs may not be able to reconstruct pickled Python
+objects.
 
 By default, the \module{pickle} data format uses a printable \ASCII{}
 representation.  This is slightly more voluminous than a binary
@@ -79,129 +127,178 @@ for debugging or recovery purposes it is possible for a human to read
 the pickled file with a standard text editor.
 
 A binary format, which is slightly more efficient, can be chosen by
-specifying a nonzero (true) value for the \var{bin} argument to the
+specifying a true value for the \var{bin} argument to the
 \class{Pickler} constructor or the \function{dump()} and \function{dumps()}
-functions.  The binary format is not the default because of backwards
-compatibility with the Python 1.4 pickle module.  In a future version,
-the default may change to binary.
+functions.
 
-The \module{pickle} module doesn't handle code objects, which the
-\refmodule{marshal}\refbimodindex{marshal} module does.  I suppose
-\module{pickle} could, and maybe it should, but there's probably no
-great need for it right now (as long as \refmodule{marshal} continues
-to be used for reading and writing code objects), and at least this
-avoids the possibility of smuggling Trojan horses into a program.
+\subsection{Usage}
 
-For the benefit of persistence modules written using \module{pickle}, it
-supports the notion of a reference to an object outside the pickled
-data stream.  Such objects are referenced by a name, which is an
-arbitrary string of printable \ASCII{} characters.  The resolution of
-such names is not defined by the \module{pickle} module --- the
-persistent object module will have to implement a method
-\method{persistent_load()}.  To write references to persistent objects,
-the persistent module must define a method \method{persistent_id()} which
-returns either \code{None} or the persistent ID of the object.
+To serialize an object hierarchy, you first create a pickler, then you
+call the pickler's \method{dump()} method.  To de-serialize a data
+stream, you first create an unpickler, then you call the unpickler's
+\method{load()} method.  The \module{pickle} module provides the
+following functions to make this process more convenient:
 
-There are some restrictions on the pickling of class instances.
+\begin{funcdesc}{dump}{object, file\optional{, bin}}
+Write a pickled representation of \var{object} to the open file object
+\var{file}.  This is equivalent to
+\code{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
+If the optional \var{bin} argument is true, the binary pickle format
+is used; otherwise the (less efficient) text pickle format is used
+(for backwards compatibility, this is the default).
 
-First of all, the class must be defined at the top level in a module.
-Furthermore, all its instance variables must be picklable.
+\var{file} must have a \method{write()} method that accepts a single
+string argument.  It can thus be a file object opened for writing, a
+\refmodule{StringIO} object, or any other custom
+object that meets this interface.
+\end{funcdesc}
 
-\setindexsubitem{(pickle protocol)}
+\begin{funcdesc}{load}{file}
+Read a string from the open file object \var{file} and interpret it as
+a pickle data stream, reconstructing and returning the original object
+hierarchy.  This is equivalent to \code{Unpickler(\var{file}).load()}.
 
-When a pickled class instance is unpickled, its \method{__init__()} method
-is normally \emph{not} invoked.  \note{This is a deviation
-from previous versions of this module; the change was introduced in
-Python 1.5.  The reason for the change is that in many cases it is
-desirable to have a constructor that requires arguments; it is a
-(minor) nuisance to have to provide a \method{__getinitargs__()} method.}
+\var{file} must have two methods, a \method{read()} method that takes
+an integer argument, and a \method{readline()} method that requires no
+arguments.  Both methods should return a string.  Thus \var{file} can
+be a file object opened for reading, a
+\module{StringIO} object, or any other custom
+object that meets this interface.
 
-If it is desirable that the \method{__init__()} method be called on
-unpickling, a class can define a method \method{__getinitargs__()},
-which should return a \emph{tuple} containing the arguments to be
-passed to the class constructor (\method{__init__()}).  This method is
-called at pickle time; the tuple it returns is incorporated in the
-pickle for the instance.
-\withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}}
-\withsubitem{(instance constructor)}{\ttindex{__init__()}}
+This function automatically determines whether the data stream was
+written in binary mode or not.
+\end{funcdesc}
 
-Classes can further influence how their instances are pickled --- if
-the class
-\withsubitem{(copy protocol)}{
-  \ttindex{__getstate__()}\ttindex{__setstate__()}}
-\withsubitem{(instance attribute)}{
-  \ttindex{__dict__}}
-defines the method \method{__getstate__()}, it is called and the return
-state is pickled as the contents for the instance, and if the class
-defines the method \method{__setstate__()}, it is called with the
-unpickled state.  (Note that these methods can also be used to
-implement copying class instances.)  If there is no
-\method{__getstate__()} method, the instance's \member{__dict__} is
-pickled.  If there is no \method{__setstate__()} method, the pickled
-object must be a dictionary and its items are assigned to the new
-instance's dictionary.  (If a class defines both \method{__getstate__()}
-and \method{__setstate__()}, the state object needn't be a dictionary
---- these methods can do what they want.)  This protocol is also used
-by the shallow and deep copying operations defined in the
-\refmodule{copy}\refstmodindex{copy} module.
+\begin{funcdesc}{dumps}{object\optional{, bin}}
+Return the pickled representation of the object as a string, instead
+of writing it to a file.  If the optional \var{bin} argument is
+true, the binary pickle format is used; otherwise the (less efficient)
+text pickle format is used (this is the default).
+\end{funcdesc}
 
-Note that when class instances are pickled, their class's code and
-data are not pickled along with them.  Only the instance data are
-pickled.  This is done on purpose, so you can fix bugs in a class or
-add methods and still load objects that were created with an earlier
-version of the class.  If you plan to have long-lived objects that
-will see many versions of a class, it may be worthwhile to put a version
-number in the objects so that suitable conversions can be made by the
-class's \method{__setstate__()} method.
+\begin{funcdesc}{loads}{string}
+Read a pickled object hierarchy from a string.  Characters in the
+string past the pickled object's representation are ignored.
+\end{funcdesc}
 
-When a class itself is pickled, only its name is pickled --- the class
-definition is not pickled, but re-imported by the unpickling process.
-Therefore, the restriction that the class must be defined at the top
-level in a module applies to pickled classes as well.
+The \module{pickle} module also defines three exceptions:
 
-\setindexsubitem{(in module pickle)}
+\begin{excdesc}{PickleError}
+A common base class for the other exceptions defined below.  This
+inherits from \exception{Exception}.
+\end{excdesc}
 
-The interface can be summarized as follows.
+\begin{excdesc}{PicklingError}
+This exception is raised when an unpicklable object is passed to
+the \method{dump()} method.
+\end{excdesc}
 
-To pickle an object \code{x} onto a file \code{f}, open for writing:
+\begin{excdesc}{UnpicklingError}
+This exception is raised when there is a problem unpickling an object,
+such as a security violation.  Note that other exceptions may also be
+raised during unpickling, including (but not necessarily limited to)
+\exception{AttributeError} and \exception{ImportError}.
+\end{excdesc}
+
+The \module{pickle} module also exports two callables\footnote{In the
+\module{pickle} module these callables are classes, which you could
+subclass to customize the behavior.  However, in the \module{cPickle}
+modules these callables are factory functions and so cannot be
+subclassed.  One of the common reasons to subclass is to control what
+objects can actually be unpickled.  See section~\ref{pickle-sec} for
+more details on security concerns.}, \class{Pickler} and
+\class{Unpickler}:
+
+\begin{classdesc}{Pickler}{file\optional{, bin}}
+This takes a file-like object to which it will write a pickle data
+stream.  Optional \var{bin} if true, tells the pickler to use the more
+efficient binary pickle format, otherwise the \ASCII{} format is used
+(this is the default).
+
+\var{file} must have a \method{write()} method that accepts a single
+string argument.  It can thus be an open file object, a
+\module{StringIO} object, or any other custom
+object that meets this interface.
+\end{classdesc}
+
+\class{Pickler} objects define one (or two) public methods:
+
+\begin{methoddesc}[Pickler]{dump}{object}
+Write a pickled representation of \var{object} to the open file object
+given in the constructor.  Either the binary or \ASCII{} format will
+be used, depending on the value of the \var{bin} flag passed to the
+constructor.
+\end{methoddesc}
+
+\begin{methoddesc}[Pickler]{clear_memo}{}
+Clears the pickler's ``memo''.  The memo is the data structure that
+remembers which objects the pickler has already seen, so that shared
+or recursive objects pickled by reference and not by value.  This
+method is useful when re-using picklers.
+
+\strong{Note:} \method{clear_memo()} is only available on the picklers
+created by \module{cPickle}.  In the \module{pickle} module, picklers
+have an instance variable called \member{memo} which is a Python
+dictionary.  So to clear the memo for a \module{pickle} module
+pickler, you could do the following:
 
 \begin{verbatim}
-p = pickle.Pickler(f)
-p.dump(x)
+mypickler.memo.clear()
 \end{verbatim}
+\end{methoddesc}
 
-A shorthand for this is:
+It is possible to make multiple calls to the \method{dump()} method of
+the same \class{Pickler} instance.  These must then be matched to the
+same number of calls to the \method{load()} method of the
+corresponding \class{Unpickler} instance.  If the same object is
+pickled by multiple \method{dump()} calls, the \method{load()} will
+all yield references to the same object\footnote{\emph{Warning}: this
+is intended for pickling multiple objects without intervening
+modifications to the objects or their parts.  If you modify an object
+and then pickle it again using the same \class{Pickler} instance, the
+object is not pickled again --- a reference to it is pickled and the
+\class{Unpickler} will return the old value, not the modified one.
+There are two problems here: (1) detecting changes, and (2)
+marshalling a minimal set of changes.  Garbage Collection may also
+become a problem here.}.
 
-\begin{verbatim}
-pickle.dump(x, f)
-\end{verbatim}
+\class{Unpickler} objects are defined as:
 
-To unpickle an object \code{x} from a file \code{f}, open for reading:
+\begin{classdesc}{Unpickler}{file}
+This takes a file-like object from which it will read a pickle data
+stream.  This class automatically determines whether the data stream
+was written in binary mode or not, so it does not need a flag as in
+the \class{Pickler} factory.
 
-\begin{verbatim}
-u = pickle.Unpickler(f)
-x = u.load()
-\end{verbatim}
+\var{file} must have two methods, a \method{read()} method that takes
+an integer argument, and a \method{readline()} method that requires no
+arguments.  Both methods should return a string.  Thus \var{file} can
+be a file object opened for reading, a
+\module{StringIO} object, or any other custom
+object that meets this interface.
+\end{classdesc}
 
-A shorthand is:
+\class{Unpickler} objects have one (or two) public methods:
 
-\begin{verbatim}
-x = pickle.load(f)
-\end{verbatim}
+\begin{methoddesc}[Unpickler]{load}{}
+Read a pickled object representation from the open file object given
+in the constructor, and return the reconstituted object hierarchy
+specified therein.
+\end{methoddesc}
 
-The \class{Pickler} class only calls the method \code{f.write()} with a
-\withsubitem{(class in pickle)}{\ttindex{Unpickler}\ttindex{Pickler}}
-string argument.  The \class{Unpickler} calls the methods \code{f.read()}
-(with an integer argument) and \code{f.readline()} (without argument),
-both returning a string.  It is explicitly allowed to pass non-file
-objects here, as long as they have the right methods.
+\begin{methoddesc}[Unpickler]{noload}{}
+This is just like \method{load()} except that it doesn't actually
+create any objects.  This is useful primarily for finding what's
+called ``persistent ids'' that may be referenced in a pickle data
+stream.  See section~\ref{pickle-protocol} below for more details.
 
-The constructor for the \class{Pickler} class has an optional second
-argument, \var{bin}.  If this is present and true, the binary
-pickle format is used; if it is absent or false, the (less efficient,
-but backwards compatible) text pickle format is used.  The
-\class{Unpickler} class does not have an argument to distinguish
-between binary and text pickle formats; it accepts either format.
+\strong{Note:} the \method{noload()} method is currently only
+available on \class{Unpickler} objects created with the
+\module{cPickle} module.  \module{pickle} module \class{Unpickler}s do
+not have the \method{noload()} method.
+\end{methoddesc}
+
+\subsection{What can be pickled and unpickled?}
 
 The following types can be pickled:
 
@@ -209,89 +306,344 @@ The following types can be pickled:
 
 \item \code{None}
 
-\item integers, long integers, floating point numbers
+\item integers, long integers, floating point numbers, complex numbers
 
 \item normal and Unicode strings
 
-\item tuples, lists and dictionaries containing only picklable objects
+\item tuples, lists, and dictionaries containing only picklable objects
 
-\item functions defined at the top level of a module (by name
-      reference, not storage of the implementation)
+\item functions defined at the top level of a module
 
-\item built-in functions
+\item built-in functions defined at the top level of a module
 
-\item classes that are defined at the top level in a module
+\item classes that are defined at the top level of a module
 
 \item instances of such classes whose \member{__dict__} or
-\method{__setstate__()} is picklable
+\method{__setstate__()} is picklable  (see
+section~\ref{pickle-protocol} for details)
 
 \end{itemize}
 
 Attempts to pickle unpicklable objects will raise the
 \exception{PicklingError} exception; when this happens, an unspecified
-number of bytes may have been written to the file.
+number of bytes may have already been written to the underlying file.
 
-It is possible to make multiple calls to the \method{dump()} method of
-the same \class{Pickler} instance.  These must then be matched to the
-same number of calls to the \method{load()} method of the
-corresponding \class{Unpickler} instance.  If the same object is
-pickled by multiple \method{dump()} calls, the \method{load()} will all
-yield references to the same object.  \emph{Warning}: this is intended
-for pickling multiple objects without intervening modifications to the
-objects or their parts.  If you modify an object and then pickle it
-again using the same \class{Pickler} instance, the object is not
-pickled again --- a reference to it is pickled and the
-\class{Unpickler} will return the old value, not the modified one.
-(There are two problems here: (a) detecting changes, and (b)
-marshalling a minimal set of changes.  I have no answers.  Garbage
-Collection may also become a problem here.)
+Note that functions (built-in and user-defined) are pickled by ``fully
+qualified'' name reference, not by value.  This means that only the
+function name is pickled, along with the name of module the function
+is defined in.  Neither the function's code, nor any of its function
+attributes are pickled.  Thus the defining module must be importable
+in the unpickling environment, and the module must contain the named
+object, otherwise an exception will be raised\footnote{The exception
+raised will likely be an \exception{ImportError} or an
+\exception{AttributeError} but it could be something else.}.
 
-Apart from the \class{Pickler} and \class{Unpickler} classes, the
-module defines the following functions, and an exception:
+Similarly, classes are pickled by named reference, so the same
+restrictions in the unpickling environment apply.  Note that none of
+the class's code or data is pickled, so in the following example the
+class attribute \code{attr} is not restored in the unpickling
+environment:
 
-\begin{funcdesc}{dump}{object, file\optional{, bin}}
-Write a pickled representation of \var{object} to the open file object
-\var{file}.  This is equivalent to
-\samp{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
-If the optional \var{bin} argument is present and nonzero, the binary
-pickle format is used; if it is zero or absent, the (less efficient)
-text pickle format is used.
-\end{funcdesc}
+\begin{verbatim}
+class Foo:
+    attr = 'a class attr'
 
-\begin{funcdesc}{load}{file}
-Read a pickled object from the open file object \var{file}.  This is
-equivalent to \samp{Unpickler(\var{file}).load()}.
-\end{funcdesc}
+picklestring = pickle.dumps(Foo)
+\end{verbatim}
 
-\begin{funcdesc}{dumps}{object\optional{, bin}}
-Return the pickled representation of the object as a string, instead
-of writing it to a file.  If the optional \var{bin} argument is
-present and nonzero, the binary pickle format is used; if it is zero
-or absent, the (less efficient) text pickle format is used.
-\end{funcdesc}
+These restrictions are why picklable functions and classes must be
+defined in the top level of a module.
 
-\begin{funcdesc}{loads}{string}
-Read a pickled object from a string instead of a file.  Characters in
-the string past the pickled object's representation are ignored.
-\end{funcdesc}
+Similarly, when class instances are pickled, their class's code and
+data are not pickled along with them.  Only the instance data are
+pickled.  This is done on purpose, so you can fix bugs in a class or
+add methods to the class and still load objects that were created with
+an earlier version of the class.  If you plan to have long-lived
+objects that will see many versions of a class, it may be worthwhile
+to put a version number in the objects so that suitable conversions
+can be made by the class's \method{__setstate__()} method.
 
-\begin{excdesc}{PicklingError}
-This exception is raised when an unpicklable object is passed to
-\method{Pickler.dump()}.
-\end{excdesc}
+\subsection{The pickle protocol
+\label{pickle-protocol}}\setindexsubitem{(pickle protocol)}
 
+This section describes the ``pickling protocol'' that defines the
+interface between the pickler/unpickler and the objects that are being
+serialized.  This protocol provides a standard way for you to define,
+customize, and control how your objects are serialized and
+de-serialized.  The description in this section doesn't cover specific
+customizations that you can employ to make the unpickling environment
+safer from untrusted pickle data streams; see section~\ref{pickle-sec}
+for more details.
 
-\begin{seealso}
-  \seemodule[copyreg]{copy_reg}{Pickle interface constructor
-                                registration for extension types.}
+\subsubsection{Pickling and unpickling normal class
+    instances\label{pickle-inst}}
 
-  \seemodule{shelve}{Indexed databases of objects; uses \module{pickle}.}
+When a pickled class instance is unpickled, its \method{__init__()}
+method is normally \emph{not} invoked.  If it is desirable that the
+\method{__init__()} method be called on unpickling, a class can define
+a method \method{__getinitargs__()}, which should return a
+\emph{tuple} containing the arguments to be passed to the class
+constructor (i.e. \method{__init__()}).  The
+\method{__getinitargs__()} method is called at
+pickle time; the tuple it returns is incorporated in the pickle for
+the instance.
+\withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}}
+\withsubitem{(instance constructor)}{\ttindex{__init__()}}
 
-  \seemodule{copy}{Shallow and deep object copying.}
+\withsubitem{(copy protocol)}{
+  \ttindex{__getstate__()}\ttindex{__setstate__()}}
+\withsubitem{(instance attribute)}{
+  \ttindex{__dict__}}
 
-  \seemodule{marshal}{High-performance serialization of built-in types.}
-\end{seealso}
+Classes can further influence how their instances are pickled; if the
+class defines the method \method{__getstate__()}, it is called and the
+return state is pickled as the contents for the instance, instead of
+the contents of the instance's dictionary.  If there is no
+\method{__getstate__()} method, the instance's \member{__dict__} is
+pickled.
 
+Upon unpickling, if the class also defines the method
+\method{__setstate__()}, it is called with the unpickled
+state\footnote{These methods can also be used to implement copying
+class instances.}.  If there is no \method{__setstate__()} method, the
+pickled object must be a dictionary and its items are assigned to the
+new instance's dictionary.  If a class defines both
+\method{__getstate__()} and \method{__setstate__()}, the state object
+needn't be a dictionary and these methods can do what they
+want\footnote{This protocol is also used by the shallow and deep
+copying operations defined in the
+\refmodule{copy} module.}.
+
+\subsubsection{Pickling and unpickling extension types}
+
+When the \class{Pickler} encounters an object of a type it knows
+nothing about --- such as an extension type --- it looks in two places
+for a hint of how to pickle it.  One alternative is for the object to
+implement a \method{__reduce__()} method.  If provided, at pickling
+time \method{__reduce__()} will be called with no arguments, and it
+must return either a string or a tuple.
+
+If a string is returned, it names a global variable whose contents are
+pickled as normal.  When a tuple is returned, it must be of length two
+or three, with the following semantics:
+
+\begin{itemize}
+
+\item A callable object, which in the unpickling environment must be
+      either a class, a callable registered as a ``safe constructor''
+      (see below), or it must have an attribute
+      \member{__safe_for_unpickling__} with a true value.  Otherwise,
+      an \exception{UnpicklingError} will be raised in the unpickling
+      environment.  Note that as usual, the callable itself is pickled
+      by name.
+
+\item A tuple of arguments for the callable object, or \code{None}.
+
+\item Optionally, the object's state, which will be passed to
+      the object's \method{__setstate__()} method as described in
+      section~\ref{pickle-inst}.  If the object has no
+      \method{__setstate__()} method, then, as above, the value must
+      be a dictionary and it will be added to the object's
+      \member{__dict__}.
+
+\end{itemize}
+
+Upon unpickling, the callable will be called (provided that it meets
+the above criteria), passing in the tuple of arguments; it should
+return the unpickled object.  If the second item was \code{None}, then
+instead of calling the callable directly, its \method{__basicnew__()}
+method is called without arguments.  It should also return the
+unpickled object.
+
+An alternative to implementing a \method{__reduce__()} method on the
+object to be pickled, is to register the callable with the
+\refmodule{copy_reg} module.  This module provides a way
+for programs to register ``reduction functions'' and constructors for
+user-defined types.   Reduction functions have the same semantics and
+interface as the \method{__reduce__()} method described above, except
+that they are called with a single argument, the object to be pickled.
+
+The registered constructor is deemed a ``safe constructor'' for purposes
+of unpickling as described above.
+
+\subsubsection{Pickling and unpickling external objects}
+
+For the benefit of object persistence, the \module{pickle} module
+supports the notion of a reference to an object outside the pickled
+data stream.  Such objects are referenced by a ``persistent id'',
+which is just an arbitrary string of printable \ASCII{} characters.
+The resolution of such names is not defined by the \module{pickle}
+module; it will delegate this resolution to user defined functions on
+the pickler and unpickler\footnote{The actual mechanism for
+associating these user defined functions is slightly different for
+\module{pickle} and \module{cPickle}.  The description given here
+works the same for both implementations.  Users of the \module{pickle}
+module could also use subclassing to effect the same results,
+overriding the \method{persistent_id()} and \method{persistent_load()}
+methods in the derived classes.}.
+
+To define external persistent id resolution, you need to set the
+\member{persistent_id} attribute of the pickler object and the
+\member{persistent_load} attribute of the unpickler object.
+
+To pickle objects that have an external persistent id, the pickler
+must have a custom \function{persistent_id()} method that takes an
+object as an argument and returns either \code{None} or the persistent
+id for that object.  When \code{None} is returned, the pickler simply
+pickles the object as normal.  When a persistent id string is
+returned, the pickler will pickle that string, along with a marker
+so that the unpickler will recognize the string as a persistent id.
+
+To unpickle external objects, the unpickler must have a custom
+\function{persistent_load()} function that takes a persistent id
+string and returns the referenced object.
+
+Here's a silly example that \emph{might} shed more light:
+
+\begin{verbatim}
+import pickle
+from cStringIO import StringIO
+
+src = StringIO()
+p = pickle.Pickler(src)
+
+def persistent_id(obj):
+    if hasattr(obj, 'x'):
+        return 'the value %d' % obj.x
+    else:
+        return None
+
+p.persistent_id = persistent_id
+
+class Integer:
+    def __init__(self, x):
+        self.x = x
+    def __str__(self):
+        return 'My name is integer %d' % self.x
+
+i = Integer(7)
+print i
+p.dump(i)
+
+datastream = src.getvalue()
+print repr(datastream)
+dst = StringIO(datastream)
+
+up = pickle.Unpickler(dst)
+
+class FancyInteger(Integer):
+    def __str__(self):
+        return 'I am the integer %d' % self.x
+
+def persistent_load(persid):
+    if persid.startswith('the value '):
+        value = int(persid.split()[2])
+        return FancyInteger(value)
+    else:
+        raise pickle.UnpicklingError, 'Invalid persistent id'
+
+up.persistent_load = persistent_load
+
+j = up.load()
+print j
+\end{verbatim}
+
+In the \module{cPickle} module, the unpickler's
+\member{persistent_load} attribute can also be set to a Python
+list, in which case, when the unpickler reaches a persistent id, the
+persistent id string will simply be appended to this list.  This
+functionality exists so that a pickle data stream can be ``sniffed''
+for object references without actually instantiating all the objects
+in a pickle\footnote{We'll leave you with the image of Guido and Jim
+sitting around sniffing pickles in their living rooms.}.  Setting
+\member{persistent_load} to a list is usually used in conjunction with
+the \method{noload()} method on the Unpickler.
+
+% BAW: Both pickle and cPickle support something called
+% inst_persistent_id() which appears to give unknown types a second
+% shot at producing a persistent id.  Since Jim Fulton can't remember
+% why it was added or what it's for, I'm leaving it undocumented.
+
+\subsection{Security \label{pickle-sec}}
+
+Most of the security issues surrounding the \module{pickle} and
+\module{cPickle} module involve unpickling.  There are no known
+security vulnerabilities
+related to pickling because you (the programmer) control the objects
+that \module{pickle} will interact with, and all it produces is a
+string.
+
+However, for unpickling, it is \strong{never} a good idea to unpickle
+an untrusted string whose origins are dubious, for example, strings
+read from a socket.  This is because unpickling can create unexpected
+objects and even potentially run methods of those objects, such as
+their class constructor or destructor\footnote{A special note of
+caution is worth raising about the \refmodule{Cookie}
+module.  By default, the \class{Cookie.Cookie} class is an alias for
+the \class{Cookie.SmartCookie} class, which ``helpfully'' attempts to
+unpickle any cookie data string it is passed.  This is a huge security
+hole because cookie data typically comes from an untrusted source.
+You should either explicitly use the \class{Cookie.SimpleCookie} class
+--- which doesn't attempt to unpickle its string --- or you should
+implement the defensive programming steps described later on in this
+section.}.
+
+You can defend against this by customizing your unpickler so that you
+can control exactly what gets unpickled and what gets called.
+Unfortunately, exactly how you do this is different depending on
+whether you're using \module{pickle} or \module{cPickle}.
+
+One common feature that both modules implement is the
+\member{__safe_for_unpickling__} attribute.  Before calling a callable
+which is not a class, the unpickler will check to make sure that the
+callable has either been registered as a safe callable via the
+\refmodule{copy_reg} module, or that it has an
+attribute \member{__safe_for_unpickling__} with a true value.  This
+prevents the unpickling environment from being tricked into doing
+evil things like call \code{os.unlink()} with an arbitrary file name.
+See section~\ref{pickle-protocol} for more details.
+
+For safely unpickling class instances, you need to control exactly
+which classes will get created.  The issue here is usually not that a
+class's constructor will get called --- it won't by the unpickler ---
+but that the class's destructor (i.e. its \method{__del__()} method)
+might get called when the object is garbage collected.  The way to
+control the classes that are safe to instantiate differs in
+\module{pickle} and \module{cPickle}\footnote{A word of caution: the
+mechanisms described here use internal attributes and methods, which
+are subject to change in future versions of Python.  We intend to
+someday provide a common interface for controlling this behavior,
+which will work in either \module{pickle} or \module{cPickle}.}.
+
+In the \module{pickle} module, you need to derive a subclass from
+\class{Unpickler}, overriding the \method{load_global()}
+method.  \method{load_global()} should read two lines from the pickle
+data stream where the first line will the the name of the module
+containing the class and the second line will be the name of the
+instance's class.  It then look up the class, possibly importing the
+module and digging out the attribute, then it appends what it finds to
+the unpickler's stack.  Later on, this class will be assigned to the
+\member{__class__} attribute of an empty class, as a way of magically
+creating an instance without calling its class's \method{__init__()}.
+You job (should you choose to accept it), would be to have
+\method{load_global()} push onto the unpickler's stack, a known safe
+version of any class you deem safe to unpickle.  It is up to you to
+produce such a class.  Or you could raise an error if you want to
+disallow all unpickling of instances.  If this sounds like a hack,
+you're right.  UTSL.
+
+Things are a little cleaner with \module{cPickle}, but not by much.
+To control what gets unpickled, you can set the unpickler's
+\member{find_global} attribute to a function or \code{None}.  If it is
+\code{None} then any attempts to unpickle instances will raise an
+\exception{UnpicklingError}.  If it is a function,
+then it should accept a module name and a class name, and return the
+corresponding class object.  It is responsible for looking up the
+class, again performing any necessary imports, and it may raise an
+error to prevent instances of the class from being unpickled.
+
+The moral of the story is that you should be really careful about the
+source of the strings your application unpickles.
 
 \subsection{Example \label{pickle-example}}
 
@@ -362,28 +714,54 @@ follows can happen from either the same process or a new process.
 \end{verbatim}
 
 
-\section{\module{cPickle} ---
-         Alternate implementation of \module{pickle}}
+\begin{seealso}
+  \seemodule[copyreg]{copy_reg}{Pickle interface constructor
+                                registration for extension types.}
+
+  \seemodule{shelve}{Indexed databases of objects; uses \module{pickle}.}
+
+  \seemodule{copy}{Shallow and deep object copying.}
+
+  \seemodule{marshal}{High-performance serialization of built-in types.}
+\end{seealso}
+
+
+\section{\module{cPickle} --- A faster \module{pickle}}
 
 \declaremodule{builtin}{cPickle}
 \modulesynopsis{Faster version of \refmodule{pickle}, but not subclassable.}
 \moduleauthor{Jim Fulton}{jfulton@digicool.com}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
+The \module{cPickle} module supports serialization and
+de-serialization of Python objects, providing an interface and
+functionality nearly identical to the
+\refmodule{pickle}\refstmodindex{pickle} module.  There are several
+differences, the most important being performance and subclassability.
 
-The \module{cPickle} module provides a similar interface and identical
-functionality as the \refmodule{pickle}\refstmodindex{pickle} module,
-but can be up to 1000 times faster since it is implemented in C.  The
-only other important difference to note is that \function{Pickler()}
-and \function{Unpickler()} are functions and not classes, and so
-cannot be subclassed.  This should not be an issue in most cases.
+First, \module{cPickle} can be up to 1000 times faster than
+\module{pickle} because the former is implemented in C.  Second, in
+the \module{cPickle} module the callables \function{Pickler()} and
+\function{Unpickler()} are functions, not classes.  This means that
+you cannot use them to derive custom pickling and unpickling
+subclasses.  Most applications have no need for this functionality and
+should benefit from the greatly improved performance of the
+\module{cPickle} module.
 
-The format of the pickle data is identical to that produced using the
-\refmodule{pickle} module, so it is possible to use \refmodule{pickle} and
-\module{cPickle} interchangeably with existing pickles.
+The pickle data stream produced by \module{pickle} and
+\module{cPickle} are identical, so it is possible to use
+\module{pickle} and \module{cPickle} interchangeably with existing
+pickles\footnote{Since the pickle data format is actually a tiny
+stack-oriented programming language, and some freedom is taken in the
+encodings of certain objects, it is possible that the two modules
+produce different data streams for the same input objects.  However it
+is guaranteed that they will always be able to read each other's
+data streams.}.
 
-(Since the pickle data format is actually a tiny stack-oriented
-programming language, and there are some freedoms in the encodings of
-certain objects, it's possible that the two modules produce different
-pickled data for the same input objects; however they will always be
-able to read each other's pickles back in.)
+There are additional minor differences in API between \module{cPickle}
+and \module{pickle}, however for most applications, they are
+interchangable.  More documentation is provided in the
+\module{pickle} module documentation, which
+includes a list of the documented differences.
+
+
