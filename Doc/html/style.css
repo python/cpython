@@ -27,6 +27,13 @@ BIG.XHUGE		{ font-size : xx-large }
  * the normal text size.
  */
 
+body			{ color: #000000;
+                          background-color: #ffffff; }
+
+a:active		{ color: #ff0000; }
+a:visited		{ color: #551a8b; }
+a:link			{ color: #0000bb; }
+
 h1, h2, h3, h4, h5, h6	{ font-family: avantgarde, sans-serif;
 			  font-weight: bold }
 h1			{ font-size: 180% }
