@@ -119,7 +119,58 @@ import __builtin__
 __builtin__.quit = __builtin__.exit = exit
 del exit
 
-#
+# interactive prompt objects for printing the license text, a list of
+# contributors and the copyright notice.
+class _Printer:
+    MAXLINES = 23
+
+    def __init__(self, s):
+        self.__lines = s.split('\n')
+        self.__linecnt = len(self.__lines)
+
+    def __repr__(self):
+        prompt = 'Hit Return for more, or q (and Return) to quit: '
+        lineno = 0
+        while 1:
+            try:
+                for i in range(lineno, lineno + self.MAXLINES):
+                    print self.__lines[i]
+            except IndexError:
+                break
+            else:
+                lineno += self.MAXLINES
+                key = None
+                while key is None:
+                    key = raw_input(prompt)
+                    if key not in ('', 'q'):
+                        key = None
+                if key == 'q':
+                    break
+        return ''
+
+__builtin__.copyright = _Printer(sys.copyright)
+__builtin__.credits = _Printer(
+    '''Python development is led by BeOpen PythonLabs (www.pythonlabs.com).''')
+
+def make_license(filename):
+    try:
+        return _Printer(open(filename).read())
+    except IOError:
+        return None
+
+here = os.path.dirname(os.__file__)
+for dir in here, os.path.join(here, os.pardir), os.curdir:
+    for file in "LICENSE.txt", "LICENSE":
+        lic = make_license(os.path.join(dir, file))
+        if lic:
+            break
+    if lic:
+        __builtin__.license = lic
+        break
+else:
+    __builtin__.license = _Printer('See http://hdl.handle.net/1895.22/1012')
+
+
 # Set the string encoding used by the Unicode implementation.  The
 # default is 'ascii', but if you're willing to experiment, you can
 # change this.
