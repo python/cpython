@@ -70,6 +70,9 @@
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD
 
+/* Define this if you have BeOS threads */
+#undef BEOS_THREADS
+
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
@@ -86,6 +89,9 @@
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
+/* Define this if you have the type long long */
+#undef HAVE_LONG_LONG
+
 /* Define this if you have a K&R style C preprocessor */
 #undef HAVE_OLD_CPP
 
@@ -101,9 +107,6 @@
 
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
-
-/* Define if you have BeOS threads */
-#undef BEOS_THREADS
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
@@ -153,6 +156,12 @@
 
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
+
+/* The number of bytes in a void *.  */
+#undef SIZEOF_VOID_P
 
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
@@ -237,6 +246,9 @@
 
 /* Define if you have the plock function.  */
 #undef HAVE_PLOCK
+
+/* Define if you have the pthread_init function.  */
+#undef HAVE_PTHREAD_INIT
 
 /* Define if you have the putenv function.  */
 #undef HAVE_PUTENV
@@ -402,12 +414,6 @@
 
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
-
-/* Define if your compiler supports long long.  */
-#undef HAVE_LONG_LONG
-
-/* The number of bytes in a long long.  */
-#undef SIZEOF_LONG_LONG
 
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
