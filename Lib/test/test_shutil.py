@@ -1,8 +1,10 @@
+
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
 import shutil
 import tempfile
+import stat
 import os
 import os.path
 from test import test_support
@@ -13,8 +15,32 @@ class TestShutil(unittest.TestCase):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
-        self.assertEqual(shutil.rmtree(filename, True), None)
-        shutil.rmtree(filename, False, lambda func, arg, exc: None)
+
+    if hasattr(os, 'chmod'):
+        def test_on_error(self):
+            self.errorState = 0
+            os.mkdir(TESTFN)
+            f = open(os.path.join(TESTFN, 'a'), 'w')
+            f.close()
+            # Make TESTFN unwritable.
+            os.chmod(TESTFN, stat.S_IRUSR)
+
+            shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
+
+            # Make TESTFN writable again.
+            os.chmod(TESTFN, stat.S_IRWXU)
+            shutil.rmtree(TESTFN)
+
+    def check_args_to_onerror(self, func, arg, exc):
+        if self.errorState == 0:
+            self.assertEqual(func, os.remove)
+            self.assertEqual(arg, os.path.join(TESTFN, 'a'))
+            self.assertEqual(exc[0], OSError)
+            self.errorState = 1
+        else:
+            self.assertEqual(func, os.rmdir)
+            self.assertEqual(arg, TESTFN)
+            self.assertEqual(exc[0], OSError)
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
@@ -62,7 +88,6 @@ class TestShutil(unittest.TestCase):
                     shutil.rmtree(TESTFN)
                 except OSError:
                     pass
-
 
 def test_main():
     test_support.run_unittest(TestShutil)

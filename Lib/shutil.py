@@ -127,39 +127,45 @@ def copytree(src, dst, symlinks=False):
     if errors:
         raise Error, errors
 
-def _raise_err(err):
-    raise err
-
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
 
-    If ignore_errors is set, errors are ignored; otherwise, if
-    onerror is set, it is called to handle the error; otherwise, an
-    exception is raised.
+    If ignore_errors is set, errors are ignored; otherwise, if onerror
+    is set, it is called to handle the error with arguments (func,
+    path, exc_info) where func is os.listdir, os.remove, or os.rmdir;
+    path is the argument to that function that caused it to fail; and
+    exc_info is a tuple returned by sys.exc_info().  If ignore_errors
+    is false and onerror is None, an exception is raised.
+
     """
-    # This strange way of calling functions is necessary to keep the onerror
-    # argument working. Maybe sys._getframe hackery would work as well, but
-    # this is simple.
-    func = os.listdir
-    arg = path
-    try:
-        for (dirpath, dirnames, filenames) in os.walk(path, topdown=False,
-                                                      onerror=_raise_err):
-            for filename in filenames:
-                func = os.remove
-                arg = os.path.join(dirpath, filename)
-                func(arg)
-            func = os.rmdir
-            arg = dirpath
-            func(arg)
-    except OSError:
-        exc = sys.exc_info()
-        if ignore_errors:
+    if ignore_errors:
+        def onerror(*args):
             pass
-        elif onerror is not None:
-            onerror(func, arg, exc)
+    elif onerror is None:
+        def onerror(*args):
+            raise
+    names = []
+    try:
+        names = os.listdir(path)
+    except os.error, err:
+        onerror(os.listdir, path, sys.exc_info())
+    for name in names:
+        fullname = os.path.join(path, name)
+        try:
+            mode = os.lstat(fullname).st_mode
+        except os.error:
+            mode = 0
+        if stat.S_ISDIR(mode):
+            rmtree(fullname, ignore_errors, onerror)
         else:
-            raise exc[0], (exc[1][0], exc[1][1] + ' removing '+arg)
+            try:
+                os.remove(fullname)
+            except os.error, err:
+                onerror(os.remove, fullname, sys.exc_info())
+    try:
+        os.rmdir(path)
+    except os.error:
+        onerror(os.rmdir, path, sys.exc_info())
 
 def move(src, dst):
     """Recursively move a file or directory to another location.
