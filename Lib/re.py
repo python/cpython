@@ -153,9 +153,7 @@ class MatchObject:
 		    g = self.re.groupindex[g]
 		except (KeyError, TypeError):
 		    raise IndexError, ('group "' + g + '" is undefined')
-	    if g >= len(self.regs):
-		result.append(None)
-	    elif (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
+	    if (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
 		result.append(None)
 	    else:
 		result.append(self.string[self.regs[g][0]:self.regs[g][1]])
@@ -525,6 +523,186 @@ def build_fastmap(code, pos=0):
 #
 #
 
+[NORMAL, CHARCLASS, REPLACEMENT] = range(3)
+[CHAR, MEMORY_REFERENCE, SYNTAX, SET, WORD_BOUNDARY, NOT_WORD_BOUNDARY,
+ BEGINNING_OF_BUFFER, END_OF_BUFFER] = range(8)
+
+def expand_escape(pattern, index, context=NORMAL):
+    if index >= len(pattern):
+	raise error, 'escape ends too soon'
+
+    elif pattern[index] == 't':
+	return CHAR, chr(9), index + 1
+    
+    elif pattern[index] == 'n':
+	return CHAR, chr(10), index + 1
+    
+    elif pattern[index] == 'r':
+	return CHAR, chr(13), index + 1
+    
+    elif pattern[index] == 'f':
+	return CHAR, chr(12), index + 1
+    
+    elif pattern[index] == 'a':
+	return CHAR, chr(7), index + 1
+    
+    elif pattern[index] == 'e':
+	return CHAR, chr(27), index + 1
+    
+    elif pattern[index] == 'c':
+	if index + 1 >= len(pattern):
+	    raise error, '\\c must be followed by another character'
+	elif pattern[index + 1] in 'abcdefghijklmnopqrstuvwxyz':
+	    return CHAR, chr(ord(pattern[index + 1]) - ord('a') + 1), index + 2
+	else:
+	    return CHAR, chr(ord(pattern[index + 1]) ^ 64), index + 2
+	
+    elif pattern[index] == 'x':
+	# CAUTION: this is the Python rule, not the Perl rule!
+	end = index
+	while (end < len(pattern)) and (pattern[end] in string.hexdigits):
+	    end = end + 1
+	if end == index:
+	    raise error, "\\x must be followed by hex digit(s)"
+	# let Python evaluate it, so we don't incorrectly 2nd-guess
+	# what it's doing (and Python in turn passes it on to sscanf,
+	# so that *it* doesn't incorrectly 2nd-guess what C does!)
+	char = eval ('"' + pattern[index-2:end] + '"')
+	assert len(char) == 1
+	return CHAR, char, end
+
+    elif pattern[index] == 'b':
+	if context != NORMAL:
+	    return CHAR, chr(8), index + 1
+	else:
+	    return WORD_BOUNDARY, '', index + 1
+	    
+    elif pattern[index] == 'B':
+	if context != NORMAL:
+	    return CHAR, 'B', index + 1
+	else:
+	    return NOT_WORD_BOUNDARY, '', index + 1
+	    
+    elif pattern[index] == 'A':
+	if context != NORMAL:
+	    return CHAR, 'A', index + 1
+	else:
+	    return BEGINNING_OF_BUFFER, '', index + 1
+	    
+    elif pattern[index] == 'Z':
+	if context != NORMAL:
+	    return 'Z', index + 1
+	else:
+	    return END_OF_BUFFER, '', index + 1
+	    
+    elif pattern[index] in 'GluLUQE':
+	raise error, ('\\' + ch + ' is not allowed')
+    
+    elif pattern[index] == 'w':
+	if context == NORMAL:
+	    return SYNTAX, 'word', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'word' in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 'w', index + 1
+	
+    elif pattern[index] == 'W':
+	if context == NORMAL:
+	    return NOT_SYNTAX, 'word', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'word' not in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 'W', index + 1
+	
+    elif pattern[index] == 's':
+	if context == NORMAL:
+	    return SYNTAX, 'whitespace', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'whitespace' in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 's', index + 1
+	
+    elif pattern[index] == 'S':
+	if context == NORMAL:
+	    return NOT_SYNTAX, 'whitespace', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'whitespace' not in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 'S', index + 1
+	
+    elif pattern[index] == 'd':
+	if context == NORMAL:
+	    return SYNTAX, 'digit', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'digit' in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 'd', index + 1
+	
+    elif pattern[index] == 'D':
+	if context == NORMAL:
+	    return NOT_SYNTAX, 'digit', index + 1
+	elif context == CHARCLASS:
+	    set = []
+	    for char in syntax_table.keys():
+		if 'digit' not in syntax_table[char]:
+		    set.append(char)
+	    return SET, set, index + 1
+	else:
+	    return CHAR, 'D', index + 1
+
+    elif pattern[index] in '0123456789':
+	end = index
+	while (end < len(pattern)) and (pattern[end] in string.digits):
+	    end = end + 1
+	value = pattern[index:end]
+
+	if (len(value) == 3) or ((len(value) == 2) and (value[0] == '0')):
+	    # octal character value
+	    value = string.atoi(value, 8)
+	    if value > 255:
+		raise error, 'octal char out of range'
+	    return CHAR, chr(value), end
+
+	elif value == '0':
+	    return CHAR, chr(0), end
+
+	elif len(value) > 3:
+	    raise error, ('\\' + value + ' has too many digits')
+
+	else:
+	    # \1-\99 - reference a register
+	    if context == CHARCLASS:
+		raise error, ('cannot reference a register from '
+			      'inside a character class')
+	    value = string.atoi(value)
+	    if value == 0:
+		raise error, ('register 0 cannot be used '
+			      'during match')
+	    return MEMORY_REFERENCE, value, end
+
+    else:
+	return CHAR, pattern[index], index + 1
+
 def compile(pattern, flags=0):
     stack = []
     index = 0
@@ -536,118 +714,50 @@ def compile(pattern, flags=0):
 	char = pattern[index]
 	index = index + 1
 	if char == '\\':
-	    if index < len(pattern):
-		next = pattern[index]
-		index = index + 1
-		if next == 't':
-		    stack.append([Exact(chr(9))])
+	    escape_type, value, index = expand_escape(pattern, index)
 
-		elif next == 'n':
-		    stack.append([Exact(chr(10))])
-
-		elif next == 'r':
-		    stack.append([Exact(chr(13))])
-
-		elif next == 'f':
-		    stack.append([Exact(chr(12))])
-
-		elif next == 'a':
-		    stack.append([Exact(chr(7))])
-
-		elif next == 'e':
-		    stack.append([Exact(chr(27))])
-
-		elif next in '0123456789':
-		    value = next
-		    while (index < len(pattern)) and \
-			  (pattern[index] in string.digits):
-			value = value + pattern[index]
-			index = index + 1
-		    if (len(value) == 3) or \
-		       ((len(value) == 2) and (value[0] == '0')):
-			value = string.atoi(value, 8)
-			if value > 255:
-			    raise error, 'octal char out of range'
-			stack.append([Exact(chr(value))])
-		    elif value == '0':
-			stack.append([Exact(chr(0))])
-		    elif len(value) > 3:
-			raise error, 'too many digits'
-		    else:
-			value = string.atoi(value)
-			if value >= register:
-			    raise error, ('cannot reference a register '
-					  'not yet used')
-			elif value == 0:
-			    raise error, ('register 0 cannot be used '
-					  'during match')
-			stack.append([MatchMemory(value)])
-
-		elif next == 'x':
-		    value = ''
-		    while (index < len(pattern)) and \
-			  (pattern[index] in string.hexdigits):
-			value = value + pattern[index]
-			index = index + 1
-		    value = string.atoi(value, 16)
-		    if value > 255:
-			raise error, 'hex char out of range'
-		    stack.append([Exact(chr(value))])
-
-		elif next == 'c':
-		    if index >= len(pattern):
-			raise error, '\\c at end of re'
-		    elif pattern[index] in 'abcdefghijklmnopqrstuvwxyz':
-			stack.append(Exact(chr(ord(pattern[index]) -
-					       ord('a') + 1)))
-		    else:
-			stack.append(Exact(chr(ord(pattern[index]) ^ 64)))
-		    index = index + 1
-		    
-		elif next == 'A':
-		    stack.append([BegBuf()])
-
-		elif next == 'Z':
-		    stack.append([EndBuf()])
-
-		elif next == 'b':
-		    stack.append([WordBound()])
-
-		elif next == 'B':
-		    stack.append([NotWordBound()])
-
-		elif next == 'w':
-		    stack.append([SyntaxSpec('word')])
-
-		elif next == 'W':
-		    stack.append([NotSyntaxSpec('word')])
-
-		elif next == 's':
-		    stack.append([SyntaxSpec('whitespace')])
-
-		elif next == 'S':
-		    stack.append([NotSyntaxSpec('whitespace')])
-
-		elif next == 'd':
-		    stack.append([SyntaxSpec('digit')])
-
-		elif next == 'D':
-		    stack.append([NotSyntaxSpec('digit')])
-
-		elif next in 'GluLUQE':
-		    # some perl-isms that we don't support
-		    raise error, '\\' + next + ' not supported'
+	    if escape_type == CHAR:
+		stack.append([Exact(value)])
 		
-		else:
-		    stack.append([Exact(pattern[index])])
-
+	    elif escape_type == MEMORY_REFERENCE:
+		if value >= register:
+		    raise error, ('cannot reference a register '
+				  'not yet used')
+		stack.append([MatchMemory(value)])
+		
+	    elif escape_type == BEGINNING_OF_BUFFER:
+		stack.append([BegBuf()])
+		
+	    elif escape_type == END_OF_BUFFER:
+		stack.append([EndBuf()])
+		
+	    elif escape_type == WORD_BOUNDARY:
+		stack.append([WordBound()])
+		
+	    elif escape_type == NOT_WORD_BOUNDARY:
+		stack.append([NotWordBound()])
+		
+	    elif escape_type == SYNTAX:
+		stack.append([SyntaxSpec(value)])
+		
+	    elif escape_type == NOT_SYNTAX:
+		stack.append([NotSyntaxSpec(value)])
+		
+	    elif escape_type == SET:
+		raise error, 'cannot use set escape type here'
+	    
 	    else:
-		raise error, 'backslash at the end of a string'
+		raise error, 'unknown escape type'
 
 	elif char == '|':
 	    if len(stack) == 0:
-		raise error, 'nothing to alternate'
+		raise error, 'alternate with nothing on the left'
+	    if stack[-1][0].name == '(':
+		raise error, 'alternate with nothing on the left in the group'
+	    if stack[-1][0].name == '|':
+		raise error, 'alternates with nothing inbetween them'
 	    expr = []
+	    
 	    while (len(stack) != 0) and \
 		  (stack[-1][0].name != '(') and \
 		  (stack[-1][0].name != '|'):
@@ -775,12 +885,13 @@ def compile(pattern, flags=0):
 
 	    if len(stack) == 0:
 		raise error, 'too many close parens'
+	    
 	    if len(expr) == 0:
 		raise error, 'nothing inside parens'
 
 	    # check to see if alternation used correctly
 	    if (expr[-1].name == '|'):
-		raise error, 'alternation with nothing on the right'
+		raise error, 'alternate with nothing on the right'
 
 	    # remove markers left by alternation
 	    expr = filter(lambda x: x.name != '|', expr)
@@ -789,7 +900,7 @@ def compile(pattern, flags=0):
 	    need_label = 0
 	    for i in range(len(expr)):
 		if (expr[i].name == 'jump') and (expr[i].label == -1):
-		    expr[i] = JumpOpcode(label)
+		    expr[i] = Jump(label)
 		    need_label = 1
 	    if need_label:
 		expr.append(Label(label))
@@ -1033,7 +1144,7 @@ def compile(pattern, flags=0):
 		stack.append([Exact(char)])
 
 	elif char in string.whitespace:
-	    if flags & VERBOSE:
+	    if not (flags & VERBOSE):
 		stack.append([Exact(char)])
 
 	elif char == '[':
@@ -1042,28 +1153,44 @@ def compile(pattern, flags=0):
 	    negate = 0
 	    last = ''
 	    set = []
+
 	    if pattern[index] == '^':
 		negate = 1
 		index = index + 1
 	    if index >= len(pattern):
 		raise error, 'incomplete set'
-	    if pattern[index] in ']-':
-		set.append(pattern[index])
-		last = pattern[index]
-		index = index + 1
+
 	    while (index < len(pattern)) and (pattern[index] != ']'):
 		next = pattern[index]
 		index = index + 1
 		if next == '-':
+		    if last == '':
+			raise error, 'improper use of range in character set'
+
+		    start = last
+		    
 		    if (index >= len(pattern)) or (pattern[index] == ']'):
 			raise error, 'incomplete range in set'
-		    if last > pattern[index]:
+		    
+		    if pattern[index] == '\\':
+			escape_type, value, index = expand_escape(pattern,
+								  index + 1,
+								  CHARCLASS)
+
+			if escape_type == CHAR:
+			    end = value
+			else:
+			    raise error, ('illegal escape in character '
+					  'class range')
+		    else:
+			end = pattern[index]
+			
+		    if start > end:
 			raise error, 'range arguments out of order in set'
-		    for next in map(chr, \
-				    range(ord(last), \
-					  ord(pattern[index]) + 1)):
-			if next not in set:
-			    set.append(next)
+		    for char in map(chr, range(ord(start), ord(end) + 1)):
+			if char not in set:
+			    set.append(char)
+			    
 		    last = ''
 		    index = index + 1
 
@@ -1071,42 +1198,30 @@ def compile(pattern, flags=0):
 		    # expand syntax meta-characters and add to set
 		    if index >= len(pattern):
 			raise error, 'incomplete set'
-		    elif (pattern[index] == ']'):
-			raise error, 'backslash at the end of a set'
-		    elif pattern[index] == 'w':
-			for next in syntax_table.keys():
-			    if 'word' in syntax_table[next]:
-				set.append(next)
-		    elif pattern[index] == 'W':
-			for next in syntax_table.keys():
-			    if 'word' not in syntax_table[next]:
-				set.append(next)
-		    elif pattern[index] == 'd':
-			for next in syntax_table.keys():
-			    if 'digit' in syntax_table[next]:
-				set.append(next)
-		    elif pattern[index] == 'D':
-			for next in syntax_table.keys():
-			    if 'digit' not in syntax_table[next]:
-				set.append(next)
-		    elif pattern[index] == 's':
-			for next in syntax_table.keys():
-			    if 'whitespace' in syntax_table[next]:
-				set.append(next)
-		    elif pattern[index] == 'S':
-			for next in syntax_table.keys():
-			    if 'whitespace' not in syntax_table[next]:
-				set.append(next)
+
+		    escape_type, value, index = expand_escape(pattern,
+							      index,
+							      CHARCLASS)
+
+		    if escape_type == CHAR:
+			set.append(value)
+			last = value
+
+		    elif escape_type == SET:
+			for char in value:
+			    if char not in set:
+				set.append(char)
+			last = ''
+
 		    else:
-			raise error, 'unknown meta in set'
-		    last = ''
-		    index = index + 1
+			raise error, 'illegal escape type in character class'
 
 		else:
 		    if next not in set:
 			set.append(next)
 		    last = next
-	    if pattern[index] != ']':
+		    
+	    if (index >= len(pattern)) or ( pattern[index] != ']'):
 		raise error, 'incomplete set'
 
 	    index = index + 1
@@ -1116,8 +1231,12 @@ def compile(pattern, flags=0):
 		for char in map(chr, range(256)):
 		    if char not in set:
 			notset.append(char)
+		if len(notset) == 0:
+		    raise error, 'empty negated set'
 		stack.append([Set(notset)])
 	    else:
+		if len(set) == 0:
+		    raise error, 'empty set'
 		stack.append([Set(set)])
 
 	else:
@@ -1132,7 +1251,7 @@ def compile(pattern, flags=0):
     if len(code) == 0:
 	raise error, 'no code generated'
     if (code[-1].name == '|'):
-	raise error, 'alternation with nothing on the right'
+	raise error, 'alternate with nothing on the right'
     code = filter(lambda x: x.name != '|', code)
     need_label = 0
     for i in range(len(code)):

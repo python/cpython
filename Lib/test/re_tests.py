@@ -218,7 +218,7 @@ tests = [
  'found', 'multiple words'),
 ('(.*)c(.*)', 'abcde', SUCCEED,
  'found+"-"+g1+"-"+g2', 'abcde-ab-de'),
-('((.*), (.*))', '(a, b)', SUCCEED,
+('\\((.*), (.*)\\)', '(a, b)', SUCCEED,
  'g2+"-"+g1', 'b-a'),
 ('[k]', 'ab', FAIL),
 ('a[-]?c', 'ac', SUCCEED,
