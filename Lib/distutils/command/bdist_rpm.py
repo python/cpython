@@ -1,20 +1,17 @@
 """distutils.command.bdist_rpm
 
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
-distributions."""
+distributions)."""
 
 # created 2000/04/25, by Harry Henry Gebel
 
 __revision__ = "$Id$"
 
-from os.path import exists, basename
-import os
+import os, string
+from types import *
 from distutils.core import Command
 from distutils.util import mkpath, write_file, copy_file
 from distutils.errors import *
-from string import join, lower
-from types import StringType, DictType, LongType, FloatType, IntType, \
-     ListType, TupleType
 
 class bdist_rpm (Command):
 
@@ -68,23 +65,15 @@ class bdist_rpm (Command):
 
         # make directories
         if self.spec_only:
-            self.execute(mkpath, ('redhat',), "Created './redhat' directory")
+            self.mkpath('redhat')
         else:
-            self.execute(mkpath, ('build/rpm/SOURCES',),
-                         "Created RPM source directory")
-            self.execute(mkpath, ('build/rpm/SPECS',),
-                         "Created RPM source directory")
-            self.execute(mkpath, ('build/rpm/BUILD',),
-                         "Created RPM source directory")
-            self.execute(mkpath, ('build/rpm/RPMS',),
-                         "Created RPM source directory")
-            self.execute(mkpath, ('build/rpm/SRPMS',),
-                         "Created RPM source directory")
+            for d in ('SOURCES', 'SPECS', 'BUILD', 'RPMS', 'SRPMS'):
+                self.mkpath(os.path.join('build/rpm', d))
 
         # spec file goes into .redhat directory if '--spec-only specified',
-        # into build/rpm/spec otherwisu
+        # into build/rpm/spec otherwise
         if self.spec_only:
-            spec_path = './redhat/%s.spec' % self.distribution.get_name()
+            spec_path = 'redhat/%s.spec' % self.distribution.get_name()
         else:
             spec_path = ('build/rpm/SPECS/%s.spec' %
                          self.distribution.get_name())
@@ -98,12 +87,12 @@ class bdist_rpm (Command):
 
         # make a source distribution and copy to SOURCES directory with
         # optional icon
-        sdist = self.find_peer ('sdist')
+        sdist = self.get_finalized_command ('sdist')
         if self.use_bzip2:
             sdist.formats = ['bztar']
         else:
             sdist.formats = ['gztar']
-        self.run_peer('sdist')
+        self.run_command('sdist')
         if self.use_bzip2:
             source = self.distribution.get_fullname() + '.tar.bz2'
         else:
@@ -111,7 +100,7 @@ class bdist_rpm (Command):
         self.execute(copy_file, (source, 'build/rpm/SOURCES'),
                      'Copying source distribution to SOURCES')
         if self.icon:
-            if exists(self.icon):
+            if os.path.exists(self.icon):
                 self.execute(copy_file, (self.icon, 'build/rpm/SOURCES'),
                      'Copying icon to SOURCES')
             else:
@@ -144,10 +133,12 @@ class bdist_rpm (Command):
         DistributionMetadata class, then from the package_data file, which is
         Python code read with execfile() '''
 
+        from string import join
+
         package_type = 'rpm'
         
         # read in package data, if any
-        if exists('package_data'):
+        if os.path.exists('package_data'):
             try:
                 exec(open('package_data'))
             except:
@@ -195,7 +186,7 @@ class bdist_rpm (Command):
         self.doc = self._check_string_list('doc')
         if type(self.doc) == ListType:
             for readme in ('README', 'README.txt'):
-                if exists(readme) and readme not in self.doc:
+                if os.path.exists(readme) and readme not in self.doc:
                     self.doc.append(readme)
             self.doc = join(self.doc)
         self.provides = join(self._check_string_list('provides'))
@@ -246,9 +237,9 @@ class bdist_rpm (Command):
                       'Conflicts',
                       'Obsoletes',
                       ):
-            if getattr(self, lower(field)):
-                spec_file.append('%s: %s' % (field, getattr(self,
-                                                            lower(field))))
+            if getattr(self, string.lower(field)):
+                spec_file.append('%s: %s' %
+                                 (field, getattr(self, string.lower(field))))
                       
         if self.distribution.get_url() != 'UNKNOWN':
             spec_file.append('Url: ' + self.distribution.get_url())
@@ -260,7 +251,7 @@ class bdist_rpm (Command):
              spec_file.append('BuildRequires: ' + self.build_requires)
 
         if self.icon:
-            spec_file.append('Icon: ' + basename(self.icon))
+            spec_file.append('Icon: ' + os.path.basename(self.icon))
 
         spec_file.extend([
             '',
@@ -388,5 +379,3 @@ class bdist_rpm (Command):
                    'list or tuple of strings' % var_name)
         else:
             return default_value
-
-# class bdist_rpm

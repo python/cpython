@@ -40,7 +40,7 @@ class bdist_dumb (Command):
 
     def finalize_options (self):
         if self.bdist_dir is None:
-            bdist_base = self.get_peer_option('bdist', 'bdist_base')
+            bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'dumb')
 
         if self.format is None:
@@ -56,10 +56,10 @@ class bdist_dumb (Command):
 
     def run (self):
 
-        self.run_peer ('build')
+        self.run_command ('build')
 
-        # XXX don't use 'self.find_peer()', because it always runs
-        # 'ensure_ready()' on the command object; we explictly want a
+        # XXX don't use 'self.get_finalized_command()', because it always runs
+        # 'ensure_finalized()' on the command object; we explictly want a
         # command object that has *not* been finalized, so we can set
         # options on it!  (The option we set, 'root', is so that we can do
         # a proper "fake install" using this install command object.)
@@ -67,7 +67,7 @@ class bdist_dumb (Command):
         install.root = self.bdist_dir
 
         self.announce ("installing to %s" % self.bdist_dir)
-        install.ensure_ready()
+        install.ensure_finalized()
         install.run()
 
         # And make an archive relative to the root of the

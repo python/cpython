@@ -69,11 +69,11 @@ class Command:
         # none of that complicated bureaucracy is needed.
         self.help = 0
 
-        # 'ready' records whether or not 'finalize_options()' has been
+        # 'finalized' records whether or not 'finalize_options()' has been
         # called.  'finalize_options()' itself should not pay attention to
-        # this flag: it is the business of 'ensure_ready()', which always
-        # calls 'finalize_options()', to respect/update it.
-        self.ready = 0
+        # this flag: it is the business of 'ensure_finalized()', which
+        # always calls 'finalize_options()', to respect/update it.
+        self.finalized = 0
 
     # __init__ ()
 
@@ -89,10 +89,10 @@ class Command:
             raise AttributeError, attr
 
 
-    def ensure_ready (self):
-        if not self.ready:
+    def ensure_finalized (self):
+        if not self.finalized:
             self.finalize_options ()
-        self.ready = 1
+        self.finalized = 1
         
 
     # Subclasses must define:
@@ -184,32 +184,24 @@ class Command:
         # Option_pairs: list of (src_option, dst_option) tuples
 
         src_cmd_obj = self.distribution.get_command_obj (src_cmd)
-        src_cmd_obj.ensure_ready ()
+        src_cmd_obj.ensure_finalized ()
         for (src_option, dst_option) in option_pairs:
             if getattr (self, dst_option) is None:
                 setattr (self, dst_option,
                          getattr (src_cmd_obj, src_option))
 
 
-    def find_peer (self, command, create=1):
+    def get_finalized_command (self, command, create=1):
         """Wrapper around Distribution's 'get_command_obj()' method:
            find (create if necessary and 'create' is true) the command
            object for 'command'.."""
 
         cmd_obj = self.distribution.get_command_obj (command, create)
-        cmd_obj.ensure_ready ()
+        cmd_obj.ensure_finalized ()
         return cmd_obj
 
 
-    def get_peer_option (self, command, option):
-        """Find or create the command object for 'command', and return
-           its 'option' option."""
-
-        cmd_obj = self.find_peer (command)
-        return getattr(cmd_obj, option)
-
-
-    def run_peer (self, command):
+    def run_command (self, command):
         """Run some other command: uses the 'run_command()' method of
            Distribution, which creates the command object if necessary
            and then invokes its 'run()' method."""
