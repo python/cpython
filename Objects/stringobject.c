@@ -824,10 +824,8 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 	int min_len;
 	PyObject *result;
 
-	/* May sure both arguments use string comparison.
-	   This implies PyString_Check(a) && PyString_Check(b). */
-	if (a->ob_type->tp_richcompare != (richcmpfunc)string_richcompare ||
-	    b->ob_type->tp_richcompare != (richcmpfunc)string_richcompare) {
+	/* Make sure both arguments are strings. */
+	if (!(PyString_Check(a) && PyString_Check(b))) {
 		result = Py_NotImplemented;
 		goto out;
 	}
