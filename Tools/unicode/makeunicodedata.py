@@ -18,6 +18,7 @@
 # 2002-10-22 mvl  generate NFC tables
 # 2002-11-24 mvl  expand all ranges, sort names version-independently
 # 2002-11-25 mvl  add UNIDATA_VERSION
+# 2004-05-29 perky add east asian width information
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -25,12 +26,13 @@
 import sys
 
 SCRIPT = sys.argv[0]
-VERSION = "2.2"
+VERSION = "2.3"
 
 # The Unicode Database
 UNIDATA_VERSION = "3.2.0"
 UNICODE_DATA = "UnicodeData.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions.txt"
+EASTASIAN_WIDTH = "EastAsianWidth.txt"
 
 CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
     "Nl", "No", "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Cn", "Lm",
@@ -50,12 +52,14 @@ LINEBREAK_MASK = 0x10
 SPACE_MASK = 0x20
 TITLE_MASK = 0x40
 UPPER_MASK = 0x80
+WIDE_MASK = 0x100
 
 def maketables(trace=0):
 
     print "--- Reading", UNICODE_DATA, "..."
 
-    unicode = UnicodeData(UNICODE_DATA, COMPOSITION_EXCLUSIONS)
+    unicode = UnicodeData(UNICODE_DATA, COMPOSITION_EXCLUSIONS,
+                          EASTASIAN_WIDTH)
 
     print len(filter(None, unicode.table)), "characters"
 
@@ -330,8 +334,10 @@ def makeunicodetype(unicode, trace):
             if record[7]:
                 flags |= DIGIT_MASK
                 digit = int(record[7])
+            if record[15] in ('W', 'F'): # Wide or Full width
+                flags |= WIDE_MASK
             item = (
-                flags, upper, lower, title, decimal, digit
+                upper, lower, title, decimal, digit, flags
                 )
             # add entry to index and item tables
             i = cache.get(item)
@@ -538,7 +544,7 @@ import sys
 
 class UnicodeData:
 
-    def __init__(self, filename, exclusions, expand=1):
+    def __init__(self, filename, exclusions, eastasianwidth, expand=1):
         file = open(filename)
         table = [None] * 0x110000
         while 1:
@@ -580,6 +586,25 @@ class UnicodeData:
                 continue
             char = int(s.split()[0],16)
             self.exclusions[char] = 1
+
+        widths = [None] * 0x110000
+        for s in open(eastasianwidth):
+            s = s.strip()
+            if not s:
+                continue
+            if s[0] == '#':
+                continue
+            s = s.split()[0].split(';')
+            if '..' in s[0]:
+                first, last = [int(c, 16) for c in s[0].split('..')]
+                chars = range(first, last+1)
+            else:
+                chars = [int(s[0], 16)]
+            for char in chars:
+                widths[char] = s[1]
+        for i in range(0, 0x110000):
+            if table[i] is not None:
+                table[i].append(widths[i])
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
