@@ -133,7 +133,8 @@ IO_isatty(IOobject *self, PyObject *args) {
 
         UNLESS (PyArg_ParseTuple(args, ":isatty")) return NULL;
 
-        return PyInt_FromLong(0);
+	Py_INCREF(Py_False);
+        return Py_False;
 }
 
 PyDoc_STRVAR(IO_read__doc__,
