@@ -35,7 +35,7 @@ static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 static PyInterpreterState *interp_head = NULL;
 
 PyThreadState *_PyThreadState_Current = NULL;
-unaryfunc _PyThreadState_GetFrame = NULL;
+PyThreadFrameGetter _PyThreadState_GetFrame = NULL;
 
 
 PyInterpreterState *
@@ -126,7 +126,7 @@ PyThreadState_New(PyInterpreterState *interp)
 {
 	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
 	if (_PyThreadState_GetFrame == NULL)
-		_PyThreadState_GetFrame = (unaryfunc)threadstate_getframe;
+		_PyThreadState_GetFrame = threadstate_getframe;
 
 	if (tstate != NULL) {
 		tstate->interp = interp;

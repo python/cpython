@@ -326,6 +326,9 @@ Build
 C API
 -----
 
+- PyEval_GetFrame() is now declared to return a PyFrameObject *
+  instead of a plain PyObject *.  (SF patch #686601.)
+
 - PyNumber_Check() now checks that the object has a nb_int or nb_float
   slot, rather than simply checking whether it has a non-NULL
   tp_as_number pointer.

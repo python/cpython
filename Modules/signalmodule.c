@@ -766,7 +766,7 @@ PyErr_CheckSignals(void)
 	if (PyThread_get_thread_ident() != main_thread)
 		return 0;
 #endif
-	if (!(f = PyEval_GetFrame()))
+	if (!(f = (PyObject *)PyEval_GetFrame()))
 		f = Py_None;
 	
 	for (i = 1; i < NSIG; i++) {

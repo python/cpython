@@ -107,8 +107,10 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
+typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
+
 /* hook for PyEval_GetFrame(), requested for Psyco */
-PyAPI_DATA(unaryfunc) _PyThreadState_GetFrame;
+PyAPI_DATA(PyThreadFrameGetter) _PyThreadState_GetFrame;
 
 #ifdef __cplusplus
 }
