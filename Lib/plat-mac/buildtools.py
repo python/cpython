@@ -54,7 +54,7 @@ def findtemplate(template=None):
 		try:
 			file, d1, d2 = Carbon.File.FSResolveAliasFile(file, 1)
 			break
-		except (Carbon.File.error, ValueError):
+		except (Carbon.File.Error, ValueError):
 			continue
 	else:
 		raise BuildError, "Template %s not found on sys.path" % `template`
@@ -175,7 +175,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 		output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
 	except MacOS.Error:
 		destdir, destfile = os.path.split(destname)
-		Res.FSCreateResourceFile(destdir, destfile, RESOURCE_FORK_NAME)
+		Res.FSCreateResourceFile(destdir, unicode(destfile), RESOURCE_FORK_NAME)
 		output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
 	
 	# Copy the resources from the target specific resource template, if any
@@ -261,7 +261,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
 	
 	# Now set the creator, type and bundle bit of the destination.
 	# Done with FSSpec's, FSRef FInfo isn't good enough yet (2.3a1+)
-	dset_fss = Carbon.File.FSSpec(destname)
+	dest_fss = Carbon.File.FSSpec(destname)
 	dest_finfo = dest_fss.FSpGetFInfo()
 	dest_finfo.Creator = ownertype
 	dest_finfo.Type = 'APPL'
