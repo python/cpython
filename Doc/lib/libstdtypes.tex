@@ -839,15 +839,15 @@ The following operations are defined on mutable sequence types (where
     {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(3)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
-	  if \code{\var{i} >= 0}}{}
+	  if \code{\var{i} >= 0}}{(4)}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
-    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(4)}
+    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(5)}
   \lineiii{\var{s}.remove(\var{x})}
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(3)}
   \lineiii{\var{s}.reverse()}
-	{reverses the items of \var{s} in place}{(5)}
+	{reverses the items of \var{s} in place}{(6)}
   \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
-	{sort the items of \var{s} in place}{(5), (6)}
+	{sort the items of \var{s} in place}{(6), (7)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -874,16 +874,20 @@ Notes:
 \item[(3)] Raises \exception{ValueError} when \var{x} is not found in
   \var{s}.
 
-\item[(4)] The \method{pop()} method is only supported by the list and
+\item[(4)] When a negative index is passed as the first parameter to
+  the \method{insert()} method, the new element is prepended to the
+  sequence.
+
+\item[(5)] The \method{pop()} method is only supported by the list and
   array types.  The optional argument \var{i} defaults to \code{-1},
   so that by default the last item is removed and returned.
 
-\item[(5)] The \method{sort()} and \method{reverse()} methods modify the
+\item[(6)] The \method{sort()} and \method{reverse()} methods modify the
   list in place for economy of space when sorting or reversing a large
   list.  To remind you that they operate by side effect, they don't return
   the sorted or reversed list.
 
-\item[(6)] The \method{sort()} method takes an optional argument
+\item[(7)] The \method{sort()} method takes an optional argument
   specifying a comparison function of two arguments (list items) which
   should return a negative, zero or positive number depending on whether
   the first argument is considered smaller than, equal to, or larger
