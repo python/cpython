@@ -21,7 +21,7 @@ TextEncoding = Type("TextEncoding", "l")
 
 UInt8 = Type("UInt8", "b")
 SInt8 = Type("SInt8", "b")
-UInt16 = Type("UInt16", "h")
+UInt16 = Type("UInt16", "H")
 SInt16 = Type("SInt16", "h")
 UInt32 = Type("UInt32", "l")
 SInt32 = Type("SInt32", "l")

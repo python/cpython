@@ -137,6 +137,7 @@ class OutputOnlyType(OutputOnlyMixIn, Type):
 void = None
 char = Type("char", "c")
 short = Type("short", "h")
+unsigned_short = Type("unsigned short", "H")
 int = Type("int", "i")
 long = Type("long", "l")
 unsigned_long = Type("unsigned long", "l")
