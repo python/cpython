@@ -15,6 +15,7 @@ Command line options:
 -s: single    -- run only a single test (see below)
 -r: random    -- randomize test execution order
 -l: leakdebug -- if cycle garbage collection is enabled, run with DEBUG_LEAK
+--have-resources   -- run tests that require large resources (time/space)
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -40,7 +41,8 @@ import random
 import test_support
 
 def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
-         exclude=0, single=0, randomize=0, leakdebug=0):
+         exclude=0, single=0, randomize=0, leakdebug=0,
+         use_large_resources=0):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -65,7 +67,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     """
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'vgqxsrl')
+        opts, args = getopt.getopt(sys.argv[1:], 'vgqxsrl', ['have-resources'])
     except getopt.error, msg:
         print msg
         print __doc__
@@ -78,6 +80,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         if o == '-s': single = 1
         if o == '-r': randomize = 1
         if o == '-l': leakdebug = 1
+        if o == '--have-resources': use_large_resources = 1
     if generate and verbose:
         print "-g and -v don't go together!"
         return 2
@@ -121,19 +124,17 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     if randomize:
         random.shuffle(tests)
     test_support.verbose = verbose      # Tell tests to be moderately quiet
+    test_support.use_large_resources = use_large_resources
     save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
             print test
-        ok = runtest(test, generate, verbose, testdir)
+        ok = runtest(test, generate, verbose, quiet, testdir)
         if ok > 0:
             good.append(test)
         elif ok == 0:
             bad.append(test)
         else:
-            if not quiet:
-                print "test", test,
-                print "skipped -- an optional feature could not be imported"
             skipped.append(test)
         # Unload the newly imported modules (best effort finalization)
         for module in sys.modules.keys():
@@ -194,12 +195,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, testdir = None):
+def runtest(test, generate, verbose, quiet, testdir = None):
     """Run a single test.
     test -- the name of the test
     generate -- if true, generate output, instead of running the test
     and comparing it to a previously created output file
     verbose -- if true, print more messages
+    quiet -- if true, don't print 'skipped' messages (probably redundant)
     testdir -- test directory
     """
     test_support.unload(test)
@@ -228,6 +230,9 @@ def runtest(test, generate, verbose, testdir = None):
         finally:
             sys.stdout = save_stdout
     except (ImportError, test_support.TestSkipped), msg:
+        if not quiet:
+            print "test", test,
+            print "skipped -- ", msg
         return -1
     except KeyboardInterrupt, v:
         raise KeyboardInterrupt, v, sys.exc_info()[2]

@@ -42,8 +42,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #ifdef MS_WIN32
-#define ftruncate _chsize
 #define fileno _fileno
+/* can (almost fully) duplicate with _chsize, see file_truncate */
 #define HAVE_FTRUNCATE
 #endif
 
@@ -63,6 +63,12 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifndef DONT_HAVE_ERRNO_H
 #include <errno.h>
 #endif
+
+/* define the appropriate 64-bit capable tell() function */
+#ifdef MS_WIN64
+#	define TELL64 _telli64
+#endif
+
 
 typedef struct {
 	PyObject_HEAD
@@ -239,12 +245,87 @@ file_close(PyFileObject *f, PyObject *args)
 	return Py_None;
 }
 
+
+/* a portable fseek() function
+   return 0 on success, non-zero on failure (with errno set) */
+int
+_portable_fseek(fp, offset, whence)
+	FILE* fp;
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+	fpos_t offset;
+#else
+	off_t offset;
+#endif
+	int whence;
+{
+#if defined(HAVE_FSEEKO)
+	return fseeko(fp, offset, whence);
+#elif defined(HAVE_FSEEK64)
+	return fseek64(fp, offset, whence);
+#elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8 
+	/* lacking a 64-bit capable fseek() (as Win64 does) use a 64-bit capable
+		fsetpos() and tell() to implement fseek()*/
+	fpos_t pos;
+	switch (whence) {
+		case SEEK_CUR:
+			if (fgetpos(fp, &pos) != 0)
+				return -1;
+			offset += pos;
+			break;
+		case SEEK_END:
+			/* do a "no-op" seek first to sync the buffering so that
+			   the low-level tell() can be used correctly */
+			if (fseek(fp, 0, SEEK_END) != 0)
+				return -1;
+			if ((pos = TELL64(fileno(fp))) == -1L)
+				return -1;
+			offset += pos;
+			break;
+		/* case SEEK_SET: break; */
+	}
+	return fsetpos(fp, &offset);
+#else
+	return fseek(fp, offset, whence);
+#endif
+}
+
+
+/* a portable ftell() function
+   Return -1 on failure with errno set appropriately, current file
+   position on success */
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+fpos_t
+#else
+off_t
+#endif
+_portable_ftell(fp)
+	FILE* fp;
+{
+#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
+	return ftello(fp);
+#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
+	return ftell64(fp);
+#elif SIZEOF_FPOS_T >= 8 && defined(HAVE_LARGEFILE_SUPPORT)
+	fpos_t pos;
+	if (fgetpos(fp, &pos) != 0)
+		return -1;
+	return pos;
+#else
+	return ftell(fp);
+#endif
+}
+
+
 static PyObject *
 file_seek(PyFileObject *f, PyObject *args)
 {
 	int whence;
 	int ret;
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+	fpos_t offset, pos;
+#else
 	off_t offset;
+#endif /* !MS_WIN64 */
 	PyObject *offobj;
 	
 	if (f->f_fp == NULL)
@@ -260,16 +341,12 @@ file_seek(PyFileObject *f, PyObject *args)
 #endif
 	if (PyErr_Occurred())
 		return NULL;
+	
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
-#if defined(HAVE_FSEEKO)
-	ret = fseeko(f->f_fp, offset, whence);
-#elif defined(HAVE_FSEEK64)
-	ret = fseek64(f->f_fp, offset, whence);
-#else
-	ret = fseek(f->f_fp, offset, whence);
-#endif
+	ret = _portable_fseek(f->f_fp, offset, whence);
 	Py_END_ALLOW_THREADS
+
 	if (ret != 0) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		clearerr(f->f_fp);
@@ -279,12 +356,17 @@ file_seek(PyFileObject *f, PyObject *args)
 	return Py_None;
 }
 
+
 #ifdef HAVE_FTRUNCATE
 static PyObject *
 file_truncate(PyFileObject *f, PyObject *args)
 {
 	int ret;
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+	fpos_t newsize;
+#else
 	off_t newsize;
+#endif
 	PyObject *newsizeobj;
 	
 	if (f->f_fp == NULL)
@@ -306,13 +388,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 		/* Default to current position*/
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
-		newsize =  ftello(f->f_fp);
-#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
-		newsize =  ftell64(f->f_fp);
-#else
-		newsize =  ftell(f->f_fp);
-#endif
+		newsize = _portable_ftell(f->f_fp);
 		Py_END_ALLOW_THREADS
 		if (newsize == -1) {
 		        PyErr_SetFromErrno(PyExc_IOError);
@@ -324,49 +400,66 @@ file_truncate(PyFileObject *f, PyObject *args)
 	errno = 0;
 	ret = fflush(f->f_fp);
 	Py_END_ALLOW_THREADS
-	if (ret == 0) {
-	        Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		ret = ftruncate(fileno(f->f_fp), newsize);
-		Py_END_ALLOW_THREADS
-	}
-	if (ret != 0) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		clearerr(f->f_fp);
+	if (ret != 0) goto onioerror;
+
+#ifdef MS_WIN32
+	/* can use _chsize; if, however, the newsize overflows 32-bits then
+	   _chsize is *not* adequate; in this case, an OverflowError is raised */
+	if (newsize > LONG_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"the new size is too long for _chsize (it is limited to 32-bit values)");
 		return NULL;
+	} else {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		ret = _chsize(fileno(f->f_fp), newsize);
+		Py_END_ALLOW_THREADS
+		if (ret != 0) goto onioerror;
 	}
+#else
+	Py_BEGIN_ALLOW_THREADS
+	errno = 0;
+	ret = ftruncate(fileno(f->f_fp), newsize);
+	Py_END_ALLOW_THREADS
+	if (ret != 0) goto onioerror;
+#endif /* !MS_WIN32 */
+	
 	Py_INCREF(Py_None);
 	return Py_None;
+
+onioerror:
+	PyErr_SetFromErrno(PyExc_IOError);
+	clearerr(f->f_fp);
+	return NULL;
 }
 #endif /* HAVE_FTRUNCATE */
 
 static PyObject *
 file_tell(PyFileObject *f, PyObject *args)
 {
-	off_t offset;
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
+	fpos_t pos;
+#else
+	off_t pos;
+#endif
+
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_NoArgs(args))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
-#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
-	offset = ftello(f->f_fp);
-#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
-	offset = ftell64(f->f_fp);
-#else
-	offset = ftell(f->f_fp);
-#endif
+	pos = _portable_ftell(f->f_fp);
 	Py_END_ALLOW_THREADS
-	if (offset == -1) {
+	if (pos == -1) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		clearerr(f->f_fp);
 		return NULL;
 	}
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	return PyInt_FromLong(offset);
+	return PyInt_FromLong(pos);
 #else
-	return PyLong_FromLongLong(offset);
+	return PyLong_FromLongLong(pos);
 #endif
 }
 
@@ -482,6 +575,11 @@ file_read(PyFileObject *f, PyObject *args)
 		buffersize = new_buffersize(f, (size_t)0);
 	else
 		buffersize = bytesrequested;
+	if (buffersize > INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"requested number of bytes is more than a Python string can hold");
+		return NULL;
+	}
 	v = PyString_FromStringAndSize((char *)NULL, buffersize);
 	if (v == NULL)
 		return NULL;
@@ -518,7 +616,7 @@ static PyObject *
 file_readinto(PyFileObject *f, PyObject *args)
 {
 	char *ptr;
-	int ntodo, ndone, nnow;
+	size_t ntodo, ndone, nnow;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -540,7 +638,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 		ndone += nnow;
 		ntodo -= nnow;
 	}
-	return PyInt_FromLong(ndone);
+	return PyInt_FromLong((long)ndone);
 }
 
 
@@ -557,7 +655,7 @@ get_line(PyFileObject *f, int n)
 	register FILE *fp;
 	register int c;
 	register char *buf, *end;
-	int n1, n2;
+	size_t n1, n2;
 	PyObject *v;
 
 	fp = f->f_fp;
@@ -596,6 +694,11 @@ get_line(PyFileObject *f, int n)
 				break;
 			n1 = n2;
 			n2 += 1000;
+			if (n2 > INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+					"line is longer than a Python string can hold");
+				return NULL;
+			}
 			Py_BLOCK_THREADS
 			if (_PyString_Resize(&v, n2) < 0)
 				return NULL;
@@ -735,6 +838,11 @@ file_readlines(PyFileObject *f, PyObject *args)
 			/* Need a larger buffer to fit this line */
 			nfilled += nread;
 			buffersize *= 2;
+			if (buffersize > INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+					"line is too long for a Python string");
+				goto error;
+			}
 			if (big_buffer == NULL) {
 				/* Create the big buffer */
 				big_buffer = PyString_FromStringAndSize(
