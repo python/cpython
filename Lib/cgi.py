@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#!/usr/bin/env python
 
 """Support module for CGI (Common Gateway Interface) scripts.
 
