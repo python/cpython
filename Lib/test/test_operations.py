@@ -26,3 +26,18 @@ x2 = BadDictKey()
 d[x1] = 1
 d[x2] = 2
 print "No exception passed through."
+
+# Dict resizing bug, found by Jack Jansen in 2.2 CVS development.
+# This version got an assert failure in debug build, infinite loop in
+# release build.  Unfortunately, provoking this kind of stuff requires
+# a mix of inserts and deletes hitting exactly the right hash codes in
+# exactly the right order, and I can't think of a randomized approach
+# that would be *likely* to hit a failing case in reasonable time.
+
+d = {}
+for i in range(5):
+    d[i] = i
+for i in range(5):
+    del d[i]
+for i in range(5, 9):  # i==8 was the problem
+    d[i] = i
