@@ -159,8 +159,7 @@ the history file.");
 /* Generic hook function setter */
 
 static PyObject *
-set_hook(const char *funcname, PyObject **hook_var,
-	 PyThreadState **tstate, PyObject *args)
+set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
 {
 	PyObject *function = Py_None;
 	char buf[80];
@@ -170,14 +169,12 @@ set_hook(const char *funcname, PyObject **hook_var,
 	if (function == Py_None) {
 		Py_XDECREF(*hook_var);
 		*hook_var = NULL;
-		*tstate = NULL;
 	}
 	else if (PyCallable_Check(function)) {
 		PyObject *tmp = *hook_var;
 		Py_INCREF(function);
 		*hook_var = function;
 		Py_XDECREF(tmp);
-		*tstate = PyThreadState_GET();
 	}
 	else {
 		PyOS_snprintf(buf, sizeof(buf),
@@ -194,18 +191,15 @@ set_hook(const char *funcname, PyObject **hook_var,
 /* Exported functions to specify hook functions in Python */
 
 static PyObject *startup_hook = NULL;
-static PyThreadState *startup_hook_tstate = NULL;
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static PyObject *pre_input_hook = NULL;
-static PyThreadState *pre_input_hook_tstate = NULL;
 #endif
 
 static PyObject *
 set_startup_hook(PyObject *self, PyObject *args)
 {
-	return set_hook("startup_hook", &startup_hook,
-			&startup_hook_tstate, args);
+	return set_hook("startup_hook", &startup_hook, args);
 }
 
 PyDoc_STRVAR(doc_set_startup_hook,
@@ -222,8 +216,7 @@ before readline prints the first prompt.");
 static PyObject *
 set_pre_input_hook(PyObject *self, PyObject *args)
 {
-	return set_hook("pre_input_hook", &pre_input_hook,
-			&pre_input_hook_tstate, args);
+	return set_hook("pre_input_hook", &pre_input_hook, args);
 }
 
 PyDoc_STRVAR(doc_set_pre_input_hook,
@@ -239,7 +232,6 @@ characters.");
 /* Exported function to specify a word completer in Python */
 
 static PyObject *completer = NULL;
-static PyThreadState *completer_tstate = NULL;
 
 static PyObject *begidx = NULL;
 static PyObject *endidx = NULL;
@@ -403,7 +395,7 @@ get the readline word delimiters for tab-completion");
 static PyObject *
 set_completer(PyObject *self, PyObject *args)
 {
-	return set_hook("completer", &completer, &completer_tstate, args);
+	return set_hook("completer", &completer, args);
 }
 
 PyDoc_STRVAR(doc_set_completer,
@@ -584,28 +576,33 @@ static struct PyMethodDef readline_methods[] =
 /* C function to call the Python hooks. */
 
 static int
-on_hook(PyObject *func, PyThreadState **tstate)
+on_hook(PyObject *func)
 {
 	int result = 0;
 	if (func != NULL) {
 		PyObject *r;
-		/* Note that readline is called with the interpreter
-		   lock released! */
-		PyEval_RestoreThread(*tstate);
+#ifdef WITH_THREAD	      
+		PyGILState_STATE gilstate = PyGILState_Ensure();
+#endif
 		r = PyObject_CallFunction(func, NULL);
 		if (r == NULL)
 			goto error;
 		if (r == Py_None)
 			result = 0;
-		else
+		else {
 			result = PyInt_AsLong(r);
+			if (result == -1 && PyErr_Occurred()) 
+				goto error;
+		}
 		Py_DECREF(r);
 		goto done;
 	  error:
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-		*tstate = PyEval_SaveThread();
+#ifdef WITH_THREAD	      
+		PyGILState_Release(gilstate);
+#endif
 	}
 	return result;
 }
@@ -613,14 +610,14 @@ on_hook(PyObject *func, PyThreadState **tstate)
 static int
 on_startup_hook(void)
 {
-	return on_hook(startup_hook, &startup_hook_tstate);
+	return on_hook(startup_hook);
 }
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static int
 on_pre_input_hook(void)
 {
-	return on_hook(pre_input_hook, &pre_input_hook_tstate);
+	return on_hook(pre_input_hook);
 }
 #endif
 
@@ -633,11 +630,9 @@ on_completion(char *text, int state)
 	char *result = NULL;
 	if (completer != NULL) {
 		PyObject *r;
-		/* Note that readline is called with the interpreter
-		   lock released! */
-		PyEval_RestoreThread(completer_tstate);
-		/* Don't use the default filename completion if we
-		 * have a custom completion function... */
+#ifdef WITH_THREAD	      
+		PyGILState_STATE gilstate = PyGILState_Ensure();
+#endif
 		rl_attempted_completion_over = 1;
 		r = PyObject_CallFunction(completer, "si", text, state);
 		if (r == NULL)
@@ -657,7 +652,9 @@ on_completion(char *text, int state)
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-		completer_tstate = PyEval_SaveThread();
+#ifdef WITH_THREAD	      
+		PyGILState_Release(gilstate);
+#endif
 	}
 	return result;
 }
