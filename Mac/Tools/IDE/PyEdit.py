@@ -83,7 +83,7 @@ class Editor(W.Window):
 		W.Window.__init__(self, bounds, self.title, minsize = (330, 120), tabbable = 0)
 		self.setupwidgets(text)
 		if change > 0:
-				self.editgroup.editor.changed = 1
+			self.editgroup.editor.changed = 1
 		
 		if self.settings.has_key("selection"):
 			selstart, selend = self.settings["selection"]
