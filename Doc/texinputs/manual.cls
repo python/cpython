@@ -4,7 +4,8 @@
 
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{manual}
-             [1998/03/03 Python manual]
+             [1998/03/03 Document class (Python manual)]
+
 
 % Change the options here to get a different set of basic options,  This
 % is where to add things like "a4paper" or "10pt".
@@ -37,3 +38,63 @@
 % This should come last.  Do not change this.
 %
 \RequirePackage{python}
+
+
+% Change the title page to look a bit better, and fit in with the
+% fncychap ``Bjarne'' style a bit better.
+%
+\renewcommand{\maketitle}{%
+  \begin{titlepage}%
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \@ifundefined{ChTitleVar}{}{%
+      \mghrulefill{\RW}}%
+    \@ifundefined{pdfinfo}{}{
+      \pdfinfo
+        author {\@author}
+        title {\@title}
+    }
+    \begin{flushright}%
+      {\rm\Huge\HeaderFamily \@title \par}%
+      {\em\LARGE\HeaderFamily \@release \par}
+      \vfill
+      {\LARGE\HeaderFamily \@author \par}
+      \vfill\vfill
+      {\large
+       \@date \par
+       \vfill
+       \@authoraddress \par
+      }%
+    \end{flushright}%\par
+    \@thanks
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+  \let\thanks\relax\let\maketitle\relax
+  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}
+}
+
+
+% This wraps the \tableofcontents macro with all the magic to get the
+% spacing right and have the right number of pages if the 'openright'
+% option has been used.  This eliminates a fair amount of crud in the
+% individual document files.
+%
+\let\OldTableofcontents=\tableofcontents
+\renewcommand{\tableofcontents}{%
+  \setcounter{page}{1}%
+  \pagebreak%
+  \pagestyle{plain}%
+  {%
+    \parskip = 0mm%
+    \OldTableofcontents%
+    \if@openright%
+      \ifodd\value{page}%
+        \typeout{Adding blank page after the table of contents.}%
+        \pagebreak\hspace{0pt}%
+      \fi%
+    \fi%
+    \cleardoublepage%
+  }%
+  \pagenumbering{arabic}%
+  \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
+}

@@ -10,7 +10,7 @@
 % .sty file is distributed with Python, so you should not need to disable
 % it.  You'd also end up with a mixed page style; uglier than stock LaTeX!
 %
-\RequirePackage[Bjarne]{fncychap}\typeout{Using nice chapter headings.}
+\RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
 
 
 % for PDF output, use maximal compression
@@ -121,12 +121,15 @@
   % Redefine \cleardoublepage so that the blank page between chapters
   % gets the plain style and not the fancy style.  This is described
   % in the documentation for the fancyhdr package by Piet von Oostrum.
-  \renewcommand{\cleardoublepage}{
-    \clearpage\if@openright \ifodd\c@page\else
-    \hbox{}
-    \thispagestyle{plain}
-    \newpage
-    \if@twocolumn\hbox{}\newpage\fi\fi\fi}
+  \@ifundefined{chapter}{}{
+    \renewcommand{\cleardoublepage}{
+      \clearpage\if@openright \ifodd\c@page\else
+      \hbox{}
+      \thispagestyle{plain}
+      \newpage
+      \if@twocolumn\hbox{}\newpage\fi\fi\fi
+    }
+  }
 }
 
 % old code font selections:
@@ -523,31 +526,6 @@
   \OldEndAbstract
 }
 
-% This wraps the \tableofcontents macro with all the magic to get the
-% spacing right and have the right number of pages if the 'openright'
-% option has been used.  This eliminates a fair amount of crud in the
-% individual document files.
-%
-\let\OldTableofcontents=\tableofcontents
-\renewcommand{\tableofcontents}[0]{%
-  \setcounter{page}{1}%
-  \pagebreak%
-  \pagestyle{plain}%
-  {%
-  \parskip = 0mm%
-  \OldTableofcontents%
-  \if@openright%
-    \ifodd\value{page}%
-      \typeout{Adding blank page after the table of contents.}%
-      \pagebreak\hspace{0pt}%
-    \fi%
-  \fi%
-  }%
-  \cleardoublepage%
-  \pagenumbering{arabic}%
-  \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
-}
-
 % Allow the release number to be specified independently of the
 % \date{}.  This allows the date to reflect the document's date and
 % release to specify the Python release that is documented.
@@ -566,39 +544,6 @@
 \newcommand{\@authoraddress}{}
 \newcommand{\authoraddress}[1]{\renewcommand{\@authoraddress}{#1}}
 
-% Change the title page to look a bit better, and fit in with the
-% fncychap ``Bjarne'' style a bit better.
-%
-\renewcommand{\maketitle}{%
-  \begin{titlepage}%
-    \let\footnotesize\small
-    \let\footnoterule\relax
-    \@ifundefined{ChTitleVar}{}{%
-      \mghrulefill{\RW}}%
-    \@ifundefined{pdfinfo}{}{
-      \pdfinfo
-        author {\@author}
-        title {\@title}
-    }
-    \begin{flushright}%
-      {\rm\Huge\HeaderFamily \@title \par}%
-      {\em\LARGE\HeaderFamily \@release \par}
-      \vfill
-      {\LARGE\HeaderFamily \@author \par}
-      \vfill\vfill
-      {\large
-       \@date \par
-       \vskip 3em
-       \@authoraddress \par
-      }%
-    \end{flushright}%\par
-    \@thanks
-  \end{titlepage}%
-  \setcounter{footnote}{0}%
-  \let\thanks\relax\let\maketitle\relax
-  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}
-}
-
 % This sets up the fancy chapter headings that make the documents look
 % at least a little better than the usual LaTeX output.
 %
@@ -616,7 +561,6 @@
       \DOTI{#1}
     }
   }
-  \typeout{Using fancy chapter headings.}
 }
 
 % Tell TeX about pathological hyphenation cases:
