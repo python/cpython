@@ -131,6 +131,12 @@ class ConfigDialog(Toplevel):
     def SetFontSample(self):
         self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
             family=self.listFontName.get(self.listFontName.curselection()[0]))
+
+    def SetHighlightSampleBinding(self,event):
+        self.SetHighlightSample()
+        
+    def SetHighlightSample(self):
+        pass    
     
     def CreateWidgets(self):
         self.framePages = Frame(self)
@@ -287,8 +293,8 @@ class ConfigDialog(Toplevel):
         frameFontSet=Frame(frameSet)
         labelCustomTitle=Label(frameCustom,text='Set Custom Highlighting')
         labelTargetTitle=Label(self.frameHighlightTarget,text='for : ')
-        self.optMenuHighlightTarget=OptionMenu(self.frameHighlightTarget,
-            self.highlightTarget,'normal text background','test target interface item 2')
+        self.optMenuHighlightTarget=DynOptionMenu(self.frameHighlightTarget,
+            self.highlightTarget,None,command=None)
         buttonSetColour=Button(self.frameColourSet,text='Set Colour',
                 command=self.GetColour)
         labelFontTitle=Label(frameFontSet,text='Set Font Style')
@@ -308,19 +314,17 @@ class ConfigDialog(Toplevel):
         #    width=2,height=10)
         labelThemeTitle=Label(frameTheme,text='Select a Highlighting Theme')
         labelTypeTitle=Label(frameTheme,text='Select : ')
-        radioThemeBuiltin=Radiobutton(frameTheme,variable=self.themeType,
+        self.radioThemeBuiltin=Radiobutton(frameTheme,variable=self.themeType,
             value=0,command=self.SetThemeType,text='a Built-in Theme')
-        radioThemeCustom=Radiobutton(frameTheme,variable=self.themeType,
+        self.radioThemeCustom=Radiobutton(frameTheme,variable=self.themeType,
             value=1,command=self.SetThemeType,text='a Custom Theme')
-        self.optMenuThemeBuiltin=OptionMenu(frameTheme,
-            self.builtinTheme,'test builtin junk','test builtin junk 2')
-        self.builtinTheme.set('test builtin junk')
-        self.optMenuThemeCustom=OptionMenu(frameTheme,
-            self.customTheme,'test custom junk','test custom junk 2')
-        self.customTheme.set('test custom junk')
-        self.themeType.set(0)
+        self.optMenuThemeBuiltin=DynOptionMenu(frameTheme,
+            self.builtinTheme,None,command=self.SetHighlightSampleBinding)
+        self.optMenuThemeCustom=DynOptionMenu(frameTheme,
+            self.customTheme,None,command=self.SetHighlightSampleBinding)
+ #       self.themeType.set(0)
         self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme')
-        self.SetThemeType()
+ #       self.SetThemeType()
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
@@ -344,8 +348,8 @@ class ConfigDialog(Toplevel):
         #frameDivider.pack(side=LEFT,fill=Y,padx=5,pady=5)
         labelThemeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        radioThemeBuiltin.pack(side=TOP,anchor=W,padx=5)
-        radioThemeCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
+        self.radioThemeBuiltin.pack(side=TOP,anchor=W,padx=5)
+        self.radioThemeCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
         self.optMenuThemeBuiltin.pack(side=TOP,fill=X,padx=5,pady=5)
         self.optMenuThemeCustom.pack(side=TOP,fill=X,anchor=W,padx=5,pady=5)
         self.buttonDeleteCustomTheme.pack(side=TOP,fill=X,padx=5,pady=5)
@@ -387,19 +391,16 @@ class ConfigDialog(Toplevel):
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
-        radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysType,
+        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysType,
             value=0,command=self.SetKeysType,text='a Built-in Key Set')
-        radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysType,
+        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysType,
             value=1,command=self.SetKeysType,text='a Custom Key Set')
-        self.optMenuKeysBuiltin=OptionMenu(frameKeySets,
-            self.builtinKeys,'test builtin junk','test builtin junk 2')
-        self.builtinKeys.set('test builtin junk')
-        self.optMenuKeysCustom=OptionMenu(frameKeySets,
-            self.customKeys,'test custom junk','test custom junk 2')
-        self.customKeys.set('test custom junk')
-        self.keysType.set(0)
+        self.optMenuKeysBuiltin=DynOptionMenu(frameKeySets,
+            self.builtinKeys,None,command=None)
+        self.optMenuKeysCustom=DynOptionMenu(frameKeySets,
+            self.customKeys,None,command=None)
         self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set')
-        self.SetKeysType()
+#         self.SetKeysType()
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -422,8 +423,8 @@ class ConfigDialog(Toplevel):
         #frameKeySets
         labelKeysTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        radioKeysBuiltin.pack(side=TOP,anchor=W,padx=5)
-        radioKeysCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
+        self.radioKeysBuiltin.pack(side=TOP,anchor=W,padx=5)
+        self.radioKeysCustom.pack(side=TOP,anchor=W,padx=5,pady=2)
         self.optMenuKeysBuiltin.pack(side=TOP,fill=X,padx=5,pady=5)
         self.optMenuKeysCustom.pack(side=TOP,fill=X,anchor=W,padx=5,pady=5)
         self.buttonDeleteCustomKeys.pack(side=TOP,fill=X,padx=5,pady=5)
@@ -539,9 +540,49 @@ class ConfigDialog(Toplevel):
         self.tabCols.set(tabCols)
     
     def LoadThemeLists(self):
-        ##default themes
-        pass
-
+        ##current theme type radiobutton
+        self.themeType.set(idleConf.GetOption('main','Theme','user',type='int'))
+        ##currently set theme
+        currentOption=idleConf.GetOption('main','Theme','name')
+        ##load option menus
+        if self.themeType.get() == 0: #default theme selected
+            itemList=idleConf.GetSectionList('default','highlight')
+            self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
+            itemList=idleConf.GetSectionList('user','highlight')
+            if not itemList:
+                self.radioThemeCustom.config(state=DISABLED)
+                self.customTheme.set('- no custom themes -')    
+            else:
+                self.optMenuThemeCustom.SetMenu(itemList,itemList[0])
+        elif self.themeType.get() == 1: #user theme selected
+            itemList=idleConf.GetSectionList('user','highlight')
+            self.optMenuThemeCustom.SetMenu(itemList,currentOption)
+            itemList=idleConf.GetSectionList('default','highlight')
+            self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
+        self.SetThemeType()   
+    
+    def LoadKeyLists(self):
+        ##current keys type radiobutton
+        self.keysType.set(idleConf.GetOption('main','Keys','user',type='int'))
+        ##currently set keys
+        currentOption=idleConf.GetOption('main','Keys','name')
+        ##load option menus
+        if self.keysType.get() == 0: #default theme selected
+            itemList=idleConf.GetSectionList('default','keys')
+            self.optMenuKeysBuiltin.SetMenu(itemList,currentOption)
+            itemList=idleConf.GetSectionList('user','keys')
+            if not itemList:
+                self.radioKeysCustom.config(state=DISABLED)    
+                self.customKeys.set('- no custom keys -')    
+            else:
+                self.optMenuKeysCustom.SetMenu(itemList,itemList[0])
+        elif self.keysType.get() == 1: #user theme selected
+            itemList=idleConf.GetSectionList('user','keys')
+            self.optMenuKeysCustom.SetMenu(itemList,currentOption)
+            itemList=idleConf.GetSectionList('default','keys')
+            self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
+        self.SetKeysType()   
+        
     def LoadConfigs(self):
         """
         load configuration from default and user config files and populate
@@ -553,6 +594,7 @@ class ConfigDialog(Toplevel):
         ### highlighting page
         self.LoadThemeLists()
         ### keys page
+        self.LoadKeyLists()
         ### help page
         ### general page
         
