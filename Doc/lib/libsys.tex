@@ -475,6 +475,16 @@ else:
   debugged.
 \end{funcdesc}
 
+\begin{funcdesc}{settscdump}{on_flag}
+  Activate dumping of VM measurements using the Pentium timestamp
+  counter, if \var{on_flag} is true. Deactivate these dumps if
+  \var{on_flag} is off. The function is available only if Python
+  was compiled with \code{--with-tsc}. To understand the output
+  of this dump, read \code{Python/ceval.c}.
+
+  \versionadded{2.4}
+\end{funcdesc}
+
 \begin{datadesc}{stdin}
 \dataline{stdout}
 \dataline{stderr}
