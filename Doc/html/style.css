@@ -129,10 +129,6 @@ div.note .label         { margin-right: 0.5em;
                           border-color: black;
                           border-style: solid;
                           border-width: 0px 0px 2px 0px;
-                          /* This "empty-cells" property should allow us to
-                             avoid having anything for empty cells,
-                             but many browsers don't implement this at
-                             all. */
                           empty-cells: show;
                           margin-left: auto;
                           margin-right: auto;
