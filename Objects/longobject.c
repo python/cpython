@@ -377,7 +377,7 @@ long_escan(str, pend, base)
 		err_setstr(ValueError, "invalid base for long literal");
 		return NULL;
 	}
-	while (*str != '\0' && isspace(*str))
+	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
 		str++;
 	if (*str == '+')
 		++str;
@@ -385,7 +385,7 @@ long_escan(str, pend, base)
 		++str;
 		sign = -1;
 	}
-	while (*str != '\0' && isspace(*str))
+	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
 		str++;
 	if (base == 0) {
 		if (str[0] != '0')

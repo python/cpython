@@ -136,7 +136,7 @@ float_buf_repr(buf, v)
 	for (; *cp != '\0'; cp++) {
 		/* Any non-digit means it's not an integer;
 		   this takes care of NAN and INF as well. */
-		if (!isdigit(*cp))
+		if (!isdigit(Py_CHARMASK(*cp)))
 			break;
 	}
 	if (*cp == '\0') {
@@ -329,10 +329,6 @@ float_pow(v, w, z)
 			return NULL;
 		}
 		return newfloatobject(0.0);
-	}
-	if (iv < 0.0) {
-		err_setstr(ValueError, "negative float to float power");
-		return NULL;
 	}
 	errno = 0;
 	ix = pow(iv, iw);
