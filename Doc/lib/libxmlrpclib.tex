@@ -175,20 +175,28 @@ It also supports certain of Python's built-in operators through
 \subsection{Binary Objects \label{binary-objects}}
 
 This class may initialized from string data (which may include NULs).
-It has the following methods, supported mainly for internal use by the
-marshalling/unmarshalling code:
+The primary acess to the content of a \class{Binary} object is
+provided by an attribute:
 
-\begin{methoddesc}{decode}{string}
+\begin{memberdesc}[Binary]{data}
+The binary data encapsulated by the \class{Binary} instance.  The data
+is provided as an 8-bit string.
+\end{memberdesc}
+
+\class{Binary} objects have the following methods, supported mainly
+for internal use by the marshalling/unmarshalling code:
+
+\begin{methoddesc}[Binary]{decode}{string}
 Accept a base64 string and decode it as the instance's new data.
 \end{methoddesc}
 
-\begin{methoddesc}{encode}{out}
+\begin{methoddesc}[Binary]{encode}{out}
 Write the XML-RPC base 64 encoding of this binary item to the out
 stream object.
 \end{methoddesc}
 
 It also supports certain of Python's built-in operators through a
-\method{_cmp__} method.
+\method{_cmp__()} method.
 
 
 \subsection{Fault Objects \label{fault-objects}}
