@@ -142,7 +142,7 @@ class PlistWriter(DumbXMLWriter):
         elif isinstance(value, (tuple, list)):
             self.writeArray(value)
         else:
-            assert 0, "unsuported type: %s" % type(value)
+            raise TypeError("unsuported type: %s" % type(value))
 
     def writeData(self, data):
         self.beginElement("data")
@@ -156,7 +156,8 @@ class PlistWriter(DumbXMLWriter):
         items = d.items()
         items.sort()
         for key, value in items:
-            assert isinstance(key, (str, unicode)), "keys must be strings"
+            if not isinstance(key, (str, unicode)):
+                raise TypeError("keys must be strings")
             self.simpleElement("key", key)
             self.writeValue(value)
         self.endElement("dict")
@@ -204,7 +205,7 @@ class Plist(Dict):
 
     def fromFile(cls, pathOrFile):
         didOpen = 0
-        if not hasattr(pathOrFile, "write"):
+        if isinstance(pathOrFile, (str, unicode)):
             pathOrFile = open(pathOrFile)
             didOpen = 1
         p = PlistParser()
@@ -215,7 +216,7 @@ class Plist(Dict):
     fromFile = classmethod(fromFile)
 
     def write(self, pathOrFile):
-        if not hasattr(pathOrFile, "write"):
+        if isinstance(pathOrFile, (str, unicode)):
             pathOrFile = open(pathOrFile, "w")
             didOpen = 1
         else:
