@@ -833,8 +833,12 @@ whichmodule(PyObject *global, PyObject *global_name)
 		*global_name_attr = 0, *name = 0;
 
 	module = PyObject_GetAttrString(global, "__module__");
-	if (module) return module;
-	PyErr_Clear();
+	if (module) 
+		return module;
+	if (PyErr_ExceptionMatches(PyExc_AttributeError))
+		PyErr_Clear();
+	else
+		return NULL;
 
 	if (!( modules_dict = PySys_GetObject("modules")))
 		return NULL;
@@ -846,7 +850,10 @@ whichmodule(PyObject *global, PyObject *global_name)
 
 		global_name_attr = PyObject_GetAttr(module, global_name);
 		if (!global_name_attr)  {
-			PyErr_Clear();
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				return NULL;
 			continue;
 		}
 
@@ -1814,7 +1821,10 @@ save_inst(Picklerobject *self, PyObject *args)
 		}
 	}
 	else {
-		PyErr_Clear();
+		if (PyErr_ExceptionMatches(PyExc_AttributeError))
+			PyErr_Clear();
+		else
+			goto finally;
 	}
 
 	if (!self->bin) {
@@ -1859,10 +1869,16 @@ save_inst(Picklerobject *self, PyObject *args)
 			goto finally;
 	}
 	else {
-		PyErr_Clear();
+		if (PyErr_ExceptionMatches(PyExc_AttributeError))
+			PyErr_Clear();
+		else
+			goto finally;
 
 		if (!( state = PyObject_GetAttr(args, __dict___str)))  {
-			PyErr_Clear();
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				goto finally;
 			res = 0;
 			goto finally;
 		}
@@ -2141,7 +2157,10 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
         	PyObject *temp = PyObject_GetAttr(callable, __name___str);
 
 		if (temp == NULL) {
-			PyErr_Clear();
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				return -1;
 			use_newobj = 0;
 		}
 		else {
@@ -2176,8 +2195,13 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
 			PyObject *ob_dot_class;
 
 			ob_dot_class = PyObject_GetAttr(ob, __class___str);
-			if (ob_dot_class == NULL)
-				PyErr_Clear();
+			if (ob_dot_class == NULL) {
+				if (PyErr_ExceptionMatches(
+					    PyExc_AttributeError))
+					PyErr_Clear();
+				else
+					return -1;
+			}
 			i = ob_dot_class != cls; /* true iff a problem */
 			Py_XDECREF(ob_dot_class);
 			if (i) {
@@ -2447,7 +2471,10 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			}
 		}
 		else {
-			PyErr_Clear();
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				goto finally;
 			/* Check for a __reduce__ method. */
 			__reduce__ = PyObject_GetAttr(args, __reduce___str);
 			if (__reduce__ != NULL) {
@@ -3564,7 +3591,7 @@ Instance_New(PyObject *cls, PyObject *args)
 			PyObject *__getinitargs__;
 
 			__getinitargs__ = PyObject_GetAttr(cls,
-							   __getinitargs___str);
+						   __getinitargs___str);
 			if (!__getinitargs__)  {
 				/* We have a class with no __getinitargs__,
 				   so bypass usual construction  */
@@ -4253,6 +4280,8 @@ load_build(Unpicklerobject *self)
 		Py_DECREF(junk);
 		return 0;
 	}
+	if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+		return -1;
 	PyErr_Clear();
 
 	/* A default __setstate__.  First see whether state embeds a
