@@ -1187,7 +1187,7 @@ class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
 
     def get_module(self):
         return self
-    
+
     def visitDiscard(self, node):
         # XXX Discard means it's an expression.  Perhaps this is a bad
         # name.
