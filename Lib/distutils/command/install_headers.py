@@ -7,6 +7,7 @@ files to the Python include directory."""
 
 __revision__ = "$Id$"
 
+import os
 from distutils.core import Command
 
 
@@ -21,6 +22,7 @@ class install_headers (Command):
 
     def initialize_options (self):
         self.install_dir = None
+	self.outfiles = []
 
     def finalize_options (self):
         self.set_undefined_options('install',
@@ -33,8 +35,14 @@ class install_headers (Command):
 
         self.mkpath(self.install_dir)
         for header in headers:
-            self.copy_file(header, self.install_dir)
+            out = self.copy_file(header, self.install_dir)
+            self.outfiles.append(out)
 
+    def get_inputs (self):
+        return self.distribution.headers or []
+
+    def get_outputs (self):
+        return self.outfiles
     # run()
 
 # class install_headers

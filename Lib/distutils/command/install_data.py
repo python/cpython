@@ -25,7 +25,7 @@ class install_data (Command):
 
     def initialize_options (self):
         self.install_dir = None
-        self.outfiles = None
+        self.outfiles = []
         self.root = None
         self.data_files = self.distribution.data_files
 
@@ -40,7 +40,8 @@ class install_data (Command):
         for f in self.data_files:
             if type(f) == StringType:
                 # its a simple file, so copy it
-                self.copy_file(f, self.install_dir)
+                out = self.copy_file(f, self.install_dir)
+                self.outfiles.append(out)
             else:
                 # its a tuple with path to install to and a list of files
                 dir = f[0]
@@ -50,10 +51,11 @@ class install_data (Command):
                     dir = change_root(self.root, dir)
                 self.mkpath(dir)
                 for data in f[1]:
-                    self.copy_file(data, dir)
+                    out = self.copy_file(data, dir)
+                    self.outfiles.append(out)
 
     def get_inputs (self):
         return self.data_files or []
 
     def get_outputs (self):
-        return self.outfiles or []
+        return self.outfiles
