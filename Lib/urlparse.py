@@ -134,18 +134,6 @@ def urljoin(base, url, allow_fragments = 1):
 		urlparse(base, '', allow_fragments)
 	scheme, netloc, path, params, query, fragment = \
 		urlparse(url, bscheme, allow_fragments)
-	# XXX Unofficial hack: default netloc to bnetloc even if
-	# schemes differ
-	if scheme != bscheme and not netloc and \
-	   scheme in uses_relative and bscheme in uses_relative and \
-	   scheme in uses_netloc and bscheme in uses_netloc:
-	   netloc = bnetloc
-	   # Strip the port number
-	   i = find(netloc, '@')
-	   if i < 0: i = 0
-	   i = find(netloc, ':', i)
-	   if i >= 0:
-		   netloc = netloc[:i]
 	if scheme != bscheme or scheme not in uses_relative:
 		return urlunparse((scheme, netloc, path,
 				   params, query, fragment))
