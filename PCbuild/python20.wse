@@ -8,7 +8,7 @@ item: Global
   Japanese Font Size=10
   Start Gradient=0 0 255
   End Gradient=0 0 0
-  Windows Flags=00000100000000010010110100001000
+  Windows Flags=00000100000011010010110100001000
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
@@ -17,9 +17,11 @@ item: Global
   Patch Threshold=85
   Patch Memory=4000
   Variable Name1=_SYS_
-  Variable Description1=System directory
+  Variable Description1=System directory (where to find MSVCRT.DLL)
   Variable Default1=C:\Windows\System
-  Variable Flags1=00001001
+  Variable Values1=C:\Windows\System
+  Variable Values1=C:\WINNT\System32
+  Variable Flags1=00000010
   Variable Name2=_WISE_
   Variable Description2=WISE root directory
   Variable Default2=C:\Wise
