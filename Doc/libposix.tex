@@ -3,19 +3,19 @@
 \bimodindex{posix}
 
 This module provides access to operating system functionality that is
-standardized by the C Standard and the \POSIX{} standard (a thinly disguised
-\UNIX{} interface).
+standardized by the \C{} Standard and the \POSIX{} standard (a thinly
+disguised \UNIX{} interface).
 
 \strong{Do not import this module directly.}  Instead, import the
-module \code{os}, which provides a \emph{portable} version of this
-interface.  On \UNIX{}, the \code{os} module provides a superset of
-the \code{posix} interface.  On non-\UNIX{} operating systems the
-\code{posix} module is not available, but a subset is always available
-through the \code{os} interface.  Once \code{os} is imported, there is
-\emph{no} performance penalty in using it instead of
-\code{posix}.  In addition, \code{os} provides some additional
-functionality, such as automatically calling \code{putenv()}
-when an entry is \code{os.environ} is changed.
+module \module{os}, which provides a \emph{portable} version of this
+interface.  On \UNIX{}, the \module{os} module provides a superset of
+the \module{posix} interface.  On non-\UNIX{} operating systems the
+\module{posix} module is not available, but a subset is always
+available through the \module{os} interface.  Once \module{os} is
+imported, there is \emph{no} performance penalty in using it instead
+of \module{posix}.  In addition, \module{os} provides some additional
+functionality, such as automatically calling \function{putenv()}
+when an entry in \code{os.environ} is changed.
 \refstmodindex{os}
 
 The descriptions below are very terse; refer to the corresponding
@@ -24,9 +24,9 @@ Arguments called \var{path} refer to a pathname given as a string.
 
 Errors are reported as exceptions; the usual exceptions are given
 for type errors, while errors reported by the system calls raise
-\code{posix.error}, described below.
+\exception{error}, described below.
 
-Module \code{posix} defines the following data items:
+Module \module{posix} defines the following data items:
 
 \setindexsubitem{(data in module posix)}
 \begin{datadesc}{environ}
@@ -36,30 +36,40 @@ For example,
 \code{posix.environ['HOME']}
 is the pathname of your home directory, equivalent to
 \code{getenv("HOME")}
-in C.
+in \C{}.
 
 Modifying this dictionary does not affect the string environment
-passed on by \code{execv()}, \code{popen()} or \code{system()}; if you
-need to change the environment, pass \code{environ} to \code{execve()}
-or add variable assignments and export statements to the command
-string for \code{system()} or \code{popen()}.
+passed on by \function{execv()}, \function{popen()} or
+\function{system()}; if you need to change the environment, pass
+\code{environ} to \function{execve()} or add variable assignments and
+export statements to the command string for \function{system()} or
+\function{popen()}.
 
-\emph{However:} If you are using this module via the \code{os} module
-(as you should -- see the introduction above), \code{environ} is a
-a mapping object that behaves almost like a dictionary but invokes
-\code{putenv()} automatically called whenever an item is changed.
+\emph{However:} If you are using this module via the \module{os}
+module (as you should -- see the introduction above), \code{environ}
+is a a mapping object that behaves almost like a dictionary but
+invokes \function{putenv()} automatically called whenever an item is
+changed.
 \end{datadesc}
 
 \setindexsubitem{(exception in module posix)}
 \begin{excdesc}{error}
 This exception is raised when a \POSIX{} function returns a
-\POSIX{}-related error (e.g., not for illegal argument types).  Its
-string value is \code{'posix.error'}.  The accompanying value is a
-pair containing the numeric error code from \code{errno} and the
-corresponding string, as would be printed by the C function
-\code{perror()}.
-See the module \module{errno}\refbimodindex{errno}, which contains
-names for the error codes defined by the underlying operating system.
+\POSIX{}-related error (e.g., not for illegal argument types).  The
+accompanying value is a pair containing the numeric error code from
+\cdata{errno} and the corresponding string, as would be printed by the
+\C{} function \cfunction{perror()}.  See the module
+\module{errno}\refbimodindex{errno}, which contains names for the
+error codes defined by the underlying operating system.
+
+When exceptions are classes, this exception carries two attributes,
+\member{errno} and \member{strerror}.  The first holds the value of
+the \C{} \cdata{errno} variable, and the latter holds the
+corresponding error message from \cfunction{strerror()}.
+
+When exceptions are strings, the string for the exception is
+\code{'os.error'}; this reflects the more portable access to the
+exception through the \module{os} module.
 \end{excdesc}
 
 It defines the following functions and constants:
@@ -83,10 +93,10 @@ and \var{gid}.
 Close file descriptor \var{fd}.
 
 Note: this function is intended for low-level I/O and must be applied
-to a file descriptor as returned by \code{posix.open()} or
-\code{posix.pipe()}.  To close a ``file object'' returned by the
-built-in function \code{open} or by \code{posix.popen} or
-\code{posix.fdopen}, use its \code{close()} method.
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To close a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, use its \method{close()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{dup}{fd}
@@ -95,7 +105,7 @@ Return a duplicate of file descriptor \var{fd}.
 
 \begin{funcdesc}{dup2}{fd\, fd2}
 Duplicate file descriptor \var{fd} to \var{fd2}, closing the latter
-first if necessary.  Return \code{None}.
+first if necessary.
 \end{funcdesc}
 
 \begin{funcdesc}{execv}{path\, args}
@@ -120,24 +130,24 @@ handlers, flushing stdio buffers, etc.
 (Not on MS-DOS.)
 
 Note: the standard way to exit is \code{sys.exit(\var{n})}.
-\code{posix._exit()} should normally only be used in the child process
-after a \code{fork()}.
+\function{_exit()} should normally only be used in the child process
+after a \function{fork()}.
 \end{funcdesc}
 
 \begin{funcdesc}{fdopen}{fd\optional{\, mode\optional{\, bufsize}}}
 Return an open file object connected to the file descriptor \var{fd}.
 The \var{mode} and \var{bufsize} arguments have the same meaning as
-the corresponding arguments to the built-in \code{open()} function.
+the corresponding arguments to the built-in \function{open()} function.
 \end{funcdesc}
 
 \begin{funcdesc}{fork}{}
-Fork a child process.  Return 0 in the child, the child's process id
-in the parent.
+Fork a child process.  Return \code{0} in the child, the child's
+process id in the parent.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{fstat}{fd}
-Return status for file descriptor \var{fd}, like \code{stat()}.
+Return status for file descriptor \var{fd}, like \function{stat()}.
 \end{funcdesc}
 
 \begin{funcdesc}{ftruncate}{fd\, length}
@@ -203,61 +213,63 @@ directory.
 
 \begin{funcdesc}{lseek}{fd\, pos\, how}
 Set the current position of file descriptor \var{fd} to position
-\var{pos}, modified by \var{how}: 0 to set the position relative to
-the beginning of the file; 1 to set it relative to the current
-position; 2 to set it relative to the end of the file.
+\var{pos}, modified by \var{how}: \code{0} to set the position
+relative to the beginning of the file; \code{1} to set it relative to
+the current position; \code{2} to set it relative to the end of the
+file.
 \end{funcdesc}
 
 \begin{funcdesc}{lstat}{path}
-Like \code{stat()}, but do not follow symbolic links.  (On systems
-without symbolic links, this is identical to \code{posix.stat()}.)
+Like \function{stat()}, but do not follow symbolic links.  (On systems
+without symbolic links, this is identical to \function{stat()}.)
 \end{funcdesc}
 
 \begin{funcdesc}{mkfifo}{path\optional{\, mode}}
 Create a FIFO (a \POSIX{} named pipe) named \var{path} with numeric mode
-\var{mode}.  The default \var{mode} is 0666 (octal).  The current
+\var{mode}.  The default \var{mode} is \code{0666} (octal).  The current
 umask value is first masked out from the mode.
 (Not on MS-DOS.)
 
 FIFOs are pipes that can be accessed like regular files.  FIFOs exist
-until they are deleted (for example with \code{os.unlink}).
-Generally, FIFOs are used as rendez-vous between ``client'' and
+until they are deleted (for example with \function{os.unlink()}).
+Generally, FIFOs are used as rendezvous between ``client'' and
 ``server'' type processes: the server opens the FIFO for reading, and
-the client opens it for writing.  Note that \code{mkfifo()} doesn't
-open the FIFO -- it just creates the rendez-vous point.
+the client opens it for writing.  Note that \function{mkfifo()}
+doesn't open the FIFO --- it just creates the rendezvous point.
 \end{funcdesc}
 
 \begin{funcdesc}{mkdir}{path\optional{\, mode}}
 Create a directory named \var{path} with numeric mode \var{mode}.
-The default \var{mode} is 0777 (octal).  On some systems, \var{mode}
-is ignored.  Where it is used, the current umask value is first
-masked out.
+The default \var{mode} is \code{0777} (octal).  On some systems,
+\var{mode} is ignored.  Where it is used, the current umask value is
+first masked out.
 \end{funcdesc}
 
 \begin{funcdesc}{nice}{increment}
-Add \var{incr} to the process' ``niceness''.  Return the new niceness.
-(Not on MS-DOS.)
+Add \var{increment} to the process' ``niceness''.  Return the new
+niceness.  (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{open}{file\, flags\optional{\, mode}}
 Open the file \var{file} and set various flags according to
 \var{flags} and possibly its mode according to \var{mode}.
-The default \var{mode} is 0777 (octal), and the current umask value is
-first masked out.  Return the file descriptor for the newly opened
-file.
+The default \var{mode} is \code{0777} (octal), and the current umask
+value is first masked out.  Return the file descriptor for the newly
+opened file.
 
-For a description of the flag and mode values, see the \UNIX{} or C
-run-time documentation; flag constants (like \code{O_RDONLY} and
-\code{O_WRONLY}) are defined in this module too (see below).
+For a description of the flag and mode values, see the \UNIX{} or \C{}
+run-time documentation; flag constants (like \constant{O_RDONLY} and
+\constant{O_WRONLY}) are defined in this module too (see below).
 
 Note: this function is intended for low-level I/O.  For normal usage,
-use the built-in function \code{open}, which returns a ``file object''
-with \code{read()} and  \code{write()} methods (and many more).
+use the built-in function \function{open()}, which returns a ``file
+object'' with \method{read()} and \method{write()} methods (and many
+more).
 \end{funcdesc}
 
 \begin{funcdesc}{pipe}{}
-Create a pipe.  Return a pair of file descriptors \code{(r, w)}
-usable for reading and writing, respectively.
+Create a pipe.  Return a pair of file descriptors \code{(\var{r},
+\var{w})} usable for reading and writing, respectively.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -272,23 +284,23 @@ Open a pipe to or from \var{command}.  The return value is an open
 file object connected to the pipe, which can be read or written
 depending on whether \var{mode} is \code{'r'} (default) or \code{'w'}.
 The \var{bufsize} argument has the same meaning as the corresponding
-argument to the built-in \code{open()} function.  The exit status of
-the command (encoded in the format specified for \code{wait()}) is
-available as the return value of the \code{close()} method of the file
+argument to the built-in \function{open()} function.  The exit status of
+the command (encoded in the format specified for \function{wait()}) is
+available as the return value of the \method{close()} method of the file
 object.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{putenv}{varname\, value}
-Set the environment variable named \var{varname} to the string \var{value}.  
-Such changes to the environment affect
-subprocesses started with \code{os.system()}, \code{os.popen()} or
-\code{os.fork()} and \code{os.execv()}.  (Not on all systems.)
+Set the environment variable named \var{varname} to the string
+\var{value}.  Such changes to the environment affect subprocesses
+started with \function{os.system()}, \function{os.popen()} or
+\function{os.fork()} and \function{os.execv()}.  (Not on all systems.)
 
-When \code{putenv()} is
+When \function{putenv()} is
 supported, assignments to items in \code{os.environ} are automatically
-translated into corresponding calls to \code{os.putenv()}; however,
-calls to \code{os.putenv()} don't update \code{os.environ}, so it is
+translated into corresponding calls to \function{putenv()}; however,
+calls to \function{putenv()} don't update \code{os.environ}, so it is
 actually preferable to assign to items of \code{os.environ}.  
 \end{funcdesc}
 
@@ -301,22 +313,23 @@ Read at most \var{n} bytes from file descriptor \var{fd}.
 Return a string containing the bytes read.
 
 Note: this function is intended for low-level I/O and must be applied
-to a file descriptor as returned by \code{posix.open()} or
-\code{posix.pipe()}.  To read a ``file object'' returned by the
-built-in function \code{open} or by \code{posix.popen} or
-\code{posix.fdopen}, or \code{sys.stdin}, use its
-\code{read()} or \code{readline()} methods.
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To read a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, or \code{sys.stdin}, use its
+\method{read()} or \method{readline()} methods.
 \end{funcdesc}
 
 \begin{funcdesc}{readlink}{path}
 Return a string representing the path to which the symbolic link
 points.  (On systems without symbolic links, this always raises
-\code{posix.error}.)
+\exception{error}.)
 \end{funcdesc}
 
 \begin{funcdesc}{remove}{path}
-Remove the file \var{path}.  See \code{rmdir} below to remove a directory.
-This is identical to the \code{unlink} function documented below.
+Remove the file \var{path}.  See \function{rmdir()} below to remove a
+directory.  This is identical to the \function{unlink()} function
+documented below.
 \end{funcdesc}
 
 \begin{funcdesc}{rename}{src\, dst}
@@ -333,21 +346,21 @@ Set the current process' group id.
 \end{funcdesc}
 
 \begin{funcdesc}{setpgrp}{}
-Calls the system call \code{setpgrp()} or \code{setpgrp(0, 0)}
-depending on which version is implemented (if any).  See the \UNIX{}
-manual for the semantics.
+Calls the system call \cfunction{setpgrp()} or \cfunction{setpgrp(0,
+0)} depending on which version is implemented (if any).  See the
+\UNIX{} manual for the semantics.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{setpgid}{pid\, pgrp}
-Calls the system call \code{setpgid()}.  See the \UNIX{} manual for
-the semantics.
+Calls the system call \cfunction{setpgid()}.  See the \UNIX{} manual
+for the semantics.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{setsid}{}
-Calls the system call \code{setsid()}.  See the \UNIX{} manual for the
-semantics.
+Calls the system call \cfunction{setsid()}.  See the \UNIX{} manual
+for the semantics.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -357,9 +370,10 @@ Set the current process' user id.
 \end{funcdesc}
 
 \begin{funcdesc}{stat}{path}
-Perform a \emph{stat} system call on the given path.  The return value
-is a tuple of at least 10 integers giving the most important (and
-portable) members of the \emph{stat} structure, in the order
+Perform a \cfunction{stat()} system call on the given path.  The
+return value is a tuple of at least 10 integers giving the most
+important (and portable) members of the \emph{stat} structure, in the
+order
 \code{st_mode},
 \code{st_ino},
 \code{st_dev},
@@ -373,35 +387,34 @@ portable) members of the \emph{stat} structure, in the order
 More items may be added at the end by some implementations.
 (On MS-DOS, some items are filled with dummy values.)
 
-Note: The standard module \code{stat} defines functions and constants
-that are useful for extracting information from a stat structure.
-\refstmodindex{stat}
+Note: The standard module \module{stat}\refstmodindex{stat} defines
+functions and constants that are useful for extracting information
+from a stat structure.
 \end{funcdesc}
 
 \begin{funcdesc}{symlink}{src\, dst}
 Create a symbolic link pointing to \var{src} named \var{dst}.  (On
-systems without symbolic links, this always raises
-\code{posix.error}.)
+systems without symbolic links, this always raises \exception{error}.)
 \end{funcdesc}
 
 \begin{funcdesc}{system}{command}
 Execute the command (a string) in a subshell.  This is implemented by
-calling the Standard C function \code{system()}, and has the same
-limitations.  Changes to \code{posix.environ}, \code{sys.stdin} etc.\ are
-not reflected in the environment of the executed command.  The return
-value is the exit status of the process encoded in the format
-specified for \code{wait()}.
+calling the Standard \C{} function \cfunction{system()}, and has the
+same limitations.  Changes to \code{posix.environ}, \code{sys.stdin}
+etc.\ are not reflected in the environment of the executed command.
+The return value is the exit status of the process encoded in the
+format specified for \function{wait()}.
 \end{funcdesc}
 
 \begin{funcdesc}{tcgetpgrp}{fd}
 Return the process group associated with the terminal given by
-\var{fd} (an open file descriptor as returned by \code{posix.open()}).
+\var{fd} (an open file descriptor as returned by \function{open()}).
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{tcsetpgrp}{fd\, pg}
 Set the process group associated with the terminal given by
-\var{fd} (an open file descriptor as returned by \code{posix.open()})
+\var{fd} (an open file descriptor as returned by \function{open()})
 to \var{pg}.
 (Not on MS-DOS.)
 \end{funcdesc}
@@ -412,7 +425,7 @@ or other)
 times, in seconds.  The items are: user time, system time, children's
 user time, children's system time, and elapsed real time since a fixed
 point in the past, in that order.  See the \UNIX{}
-manual page \emph{times}(2).  (Not on MS-DOS.)
+manual page \manpage{times}{2}.  (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{umask}{mask}
@@ -423,11 +436,14 @@ Set the current numeric umask and returns the previous umask.
 \begin{funcdesc}{uname}{}
 Return a 5-tuple containing information identifying the current
 operating system.  The tuple contains 5 strings:
-\code{(\var{sysname}, \var{nodename}, \var{release}, \var{version}, \var{machine})}.
-Some systems truncate the nodename to 8
+\code{(\var{sysname}, \var{nodename}, \var{release}, \var{version},
+\var{machine})}.  Some systems truncate the nodename to 8
 characters or to the leading component; a better way to get the
-hostname is \code{socket.gethostname()} or even
-\code{socket.gethostbyaddr(socket.gethostname())}.
+hostname is \function{socket.gethostname()}%
+\index{gethostname()@\idxcode{gethostname()} (in module socket)}
+or even
+\code{socket.gethostbyaddr(socket.gethostname())}%
+\index{gethostbyaddr()@\idxcode{gethostbyaddr()} (in module socket)}.
 (Not on MS-DOS, nor on older \UNIX{} systems.)
 \end{funcdesc}
 
@@ -452,10 +468,11 @@ byte is set if a core file was produced.  (Not on MS-DOS.)
 \begin{funcdesc}{waitpid}{pid\, options}
 Wait for completion of a child process given by proces id, and return
 a tuple containing its pid and exit status indication (encoded as for
-\code{wait()}).  The semantics of the call are affected by the value of
-the integer options, which should be 0 for normal operation.  (If the
-system does not support \code{waitpid()}, this always raises
-\code{posix.error}.  Not on MS-DOS.)
+\function{wait()}).  The semantics of the call are affected by the
+value of the integer \var{options}, which should be \code{0} for
+normal operation.  (If the system does not support
+\function{waitpid()}, this always raises \exception{error}.  Not on
+MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{write}{fd\, str}
@@ -463,16 +480,16 @@ Write the string \var{str} to file descriptor \var{fd}.
 Return the number of bytes actually written.
 
 Note: this function is intended for low-level I/O and must be applied
-to a file descriptor as returned by \code{posix.open()} or
-\code{posix.pipe()}.  To write a ``file object'' returned by the
-built-in function \code{open} or by \code{posix.popen} or
-\code{posix.fdopen}, or \code{sys.stdout} or \code{sys.stderr}, use
-its \code{write()} method.
+to a file descriptor as returned by \function{open()} or
+\function{pipe()}.  To write a ``file object'' returned by the
+built-in function \function{open()} or by \function{popen()} or
+\function{fdopen()}, or \code{sys.stdout} or \code{sys.stderr}, use
+its \method{write()} method.
 \end{funcdesc}
 
 \begin{datadesc}{WNOHANG}
-The option for \code{waitpid()} to avoid hanging if no child process
-status is available immediately.
+The option for \function{waitpid()} to avoid hanging if no child
+process status is available immediately.
 \end{datadesc}
 
 
@@ -489,6 +506,6 @@ status is available immediately.
 \dataline{O_CREAT}
 \dataline{O_EXCL}
 \dataline{O_TRUNC}
-Options for the \code{flag} argument to the \code{open()} function.
+Options for the \code{flag} argument to the \function{open()} function.
 These can be bit-wise OR'd together.
 \end{datadesc}
