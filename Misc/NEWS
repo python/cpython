@@ -47,6 +47,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- The xml.parsers.expat module now provides Expat 1.95.7.
+
 - socket.IPPROTO_IPV6 was added.
 
 - readline.clear_history was added.
