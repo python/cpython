@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.58 
+# From configure.in Revision: 1.59 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1784,7 +1784,7 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
 	Linux*) LINKFORSHARED="-rdynamic";;
-	next) LINKFORSHARED="-u libsys_s";;
+	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	IRIX*/6*) LINKFORSHARED="$SGI_ABI -all";;
 	esac
