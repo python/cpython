@@ -258,14 +258,6 @@ class Dict(dict):
     to retrieve values, making d.foo equivalent to d["foo"].
     """
 
-    def __new__(cls, **kwargs):
-        self = dict.__new__(cls)
-        self.update(kwargs)
-        return self
-
-    def __init__(self, **kwargs):
-        self.update(kwargs)
-
     def __getattr__(self, attr):
         try:
             value = self[attr]
