@@ -1083,18 +1083,28 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* make sure there are no duplicate values for an argument;
 	   its not clear when to use the term "keyword argument vs. 
 	   keyword parameter in messages */
-	
+
 	if (keywords) {
 		for (i = 0; i < tplen; i++) {
-			if (PyMapping_HasKeyString(keywords, kwlist[i])) {
+			char *thiskw = kwlist[i];
+			if (thiskw == NULL)
+				break;
+			if (PyMapping_HasKeyString(keywords, thiskw)) {
 				sprintf(msgbuf,
 					"keyword parameter %s redefined",
-					kwlist[i]);
+					thiskw);
 				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
 			}
 		}
 	}
+	/* XXX The loop just above didn't used to break when hitting the
+	   end of kwlist, so could pass NULL on to PyMapping_HasKeyString,
+	   which sets a "NULL argument to internal routine" error then.
+	   However, the comment below doesn't give any clues about which
+	   'error string' it's talking about, so darned hard to say whether
+	   the PyErr_Clear() still serves a purpose.
+	*/
 	PyErr_Clear(); /* I'm not which Py functions set the error string */
 		
 	/* required arguments missing from args can be supplied by keyword 
