@@ -2,11 +2,9 @@
 """Test dlmodule.c
    Roger E. Masse  revised strategy by Barry Warsaw
 """
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
 
 import dl
+from test_support import verbose
 
 sharedlibs = [
     # SunOS/Solaris
