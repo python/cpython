@@ -136,25 +136,25 @@ I_68K_CORE : (buildmwproject, "CWIE", [
 	]),
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
+		":PlugIns:toolboxmodules.ppc.µ",	# First: used by others
+		":PlugIns:qtmodules.ppc.µ",
 		":PlugIns:ctb.ppc.µ",
 		":PlugIns:gdbm.ppc.µ",
 		":PlugIns:icglue.ppc.µ",
 		":PlugIns:imgmodules.ppc.µ",
 		":PlugIns:macspeech.ppc.µ",
-		":PlugIns:toolboxmodules.ppc.µ",
-		":PlugIns:qtmodules.ppc.µ",
 		":PlugIns:waste.ppc.µ",
 		":PlugIns:_tkinter.ppc.µ",
 		":PlugIns:calldll.ppc.µ",
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
+		":PlugIns:toolboxmodules.CFM68K.µ",	# First: used by others
+		":PlugIns:qtmodules.CFM68K.µ",
 		":PlugIns:ctb.CFM68K.µ",
 		":PlugIns:gdbm.CFM68K.µ",
 		":PlugIns:icglue.CFM68K.µ",
 		":PlugIns:imgmodules.CFM68K.µ",
-		":PlugIns:toolboxmodules.CFM68K.µ",
-		":PlugIns:qtmodules.CFM68K.µ",
 		":PlugIns:waste.CFM68K.µ",
 		":PlugIns:_tkinter.CFM68K.µ",
 	]),
@@ -194,7 +194,7 @@ I_APPLETS : (buildapplet, None, [
 	]),
 
 I_FAT : (buildfat, None, [
-			(":Python", ":build.macppc.shared:PythonPPC", 
+			(":PythonFAT", ":build.macppc.shared:PythonPPC", 
 						":build.mac68k.shared:PythonCFM68K"),
 			(":PythonApplet", ":build.macppc.shared:PythonAppletPPC",
 							  ":build.mac68k.shared:PythonAppletCFM68K")
@@ -219,8 +219,7 @@ def main():
 		instructions.append(BUILD_DICT[i])
 		
 	for routine, arg, list in instructions:
-		#routine(dir, arg, list)
-		print routine, dir, arg, list # DBG
+		routine(dir, arg, list)
 		
 	print "All done!"
 	sys.exit(1)	
