@@ -75,7 +75,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         def __init__(self, cmd):
             self.command = cmd
 
-        def open(self, url, new=0):
+        def open(self, url, new=0, autoraise=1):
             os.system(self.command % url)
 
         def open_new(self, url):	# Deprecated.  May be removed in 2.1.
@@ -151,7 +151,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                         rc = os.system(cmd)
                     return not rc
 
-                def open(self, url, new=1):
+                def open(self, url, new=1, autoraise=1):
                     # XXX Currently I know no way to prevent KFM from opening a new win.
                     self._remote("openURL %s" % url)
 
@@ -199,7 +199,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                     s.close()
                     return 1
 
-                def open(self, url, new=0):
+                def open(self, url, new=0, autoraise=1):
                     if new:
                         self._remote("LOADNEW " + url)
                     else:
@@ -220,7 +220,7 @@ if sys.platform[:3] == "win":
     _tryorder = ("netscape", "windows-default")
 
     class WindowsDefault:
-        def open(self, url, new=0):
+        def open(self, url, new=0, autoraise=1):
             os.startfile(url)
 
         def open_new(self, url):        # Deprecated.  May be removed in 2.1.
@@ -238,7 +238,7 @@ except ImportError:
     pass
 else:
     class InternetConfig:
-        def open(self, url, new=0):
+        def open(self, url, new=0, autoraise=1):
             ic.launchurl(url)
 
         def open_new(self, url):        # Deprecated.  May be removed in 2.1.
