@@ -53,7 +53,10 @@ case $BE_HOST_CPU in
 		# Boy, do we need a lot of crap...
 		GLUE_LOC=/boot/develop/lib/ppc
 		GLUE="${GLUE_LOC}/glue-noinit.a ${GLUE_LOC}/init_term_dyn.o"
-		CC="mwcc -xms -export pragma -nodup"
+		case $(uname -r) in
+			4.0*) CC="mwcc -xms -export pragma -nodup" ;;
+			*) CC="mwcc -shared -export pragma -nodup" ;;
+		esac
 		;;
 
 	x86)
