@@ -110,16 +110,16 @@ Raise an exception if a stat call on either pathname fails.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{p}
-Split the pathname \var{p} in a pair \code{(\var{head}, \var{tail})}, where
-\var{tail} is the last pathname component and \var{head} is
-everything leading up to that.  If \var{p} ends in a slash (except if
-it is the root), the trailing slash is removed and the operation
-applied to the result; otherwise, \code{join(\var{head}, \var{tail})} equals
-\var{p}.  The \var{tail} part never contains a slash.  Some boundary
-cases:\ if \var{p} is the root, \var{head} equals \var{p} and
-\var{tail} is empty; if \var{p} is empty, both \var{head} and
-\var{tail} are empty; if \var{p} contains no slash, \var{head} is
-empty and \var{tail} equals \var{p}.
+Split the pathname \var{p} in a pair \code{(\var{head}, \var{tail})},
+where \var{tail} is the last pathname component and \var{head} is
+everything leading up to that.  The \var{tail} part will never contain
+a slash; if \var{p} ends in a slash, \var{tail} will be empty.  If
+there is no slash in \var{p}, \var{head} will be empty.  If \var{p} is
+empty, both \var{head} and \var{tail} are empty.  Trailing slashes are
+stripped from \var{head} unless it is the root (one or more slashes
+only).  In nearly all cases, \code{join(\var{head}, \var{tail})}
+equals \var{p} (the only exception being when there were multiple
+slashes separating \var{head} from \var{tail}).
 \end{funcdesc}
 
 \begin{funcdesc}{splitext}{p}
