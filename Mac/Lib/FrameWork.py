@@ -676,10 +676,14 @@ class AppleMenu(Menu):
 	
 	def __init__(self, bar, abouttext="About me...", aboutcallback=None):
 		Menu.__init__(self, bar, "\024")
-		self.additem(abouttext, None, aboutcallback)
-		self.addseparator()
 		if MacOS.runtimemodel == 'ppc':
+			self.additem(abouttext, None, aboutcallback)
+			self.addseparator()
 			self.menu.AppendResMenu('DRVR')
+		else:
+			# Additem()'s tricks do not work for "apple" menu under Carbon
+			self.menu.InsertMenuItem(abouttext, 0)
+			self.items.append((abouttext, None, aboutcallback, None))
 	
 	def dispatch(self, id, item, window, event):
 		if item == 1:
