@@ -13,10 +13,13 @@ This module defines the class \class{ConfigParser}.
 \index{Windows ini file}
 The \class{ConfigParser} class implements a basic configuration file
 parser language which provides a structure similar to what you would
-find on Microsoft Windows INI files.  (Beware: this library does \emph{not}
-interpret or write the value-type prefixes used in the Windows
-Registry extended version of INI syntax.)  You can use this to write Python
+find on Microsoft Windows INI files.  You can use this to write Python
 programs which can be customized by end users easily.
+
+\begin{notice}[warning]
+  This library does \emph{not} interpret or write the value-type
+  prefixes used in the Windows Registry extended version of INI syntax.
+\end{notice}
 
 The configuration file consists of sections, led by a
 \samp{[section]} header and followed by \samp{name: value} entries,
@@ -93,6 +96,11 @@ Exception raised when problems occur performing string interpolation.
 \begin{excdesc}{InterpolationDepthError}
 Exception raised when string interpolation cannot be completed because
 the number of iterations exceeds \constant{MAX_INTERPOLATION_DEPTH}.
+\end{excdesc}
+
+\begin{excdesc}{InterpolationSyntaxError}
+Exception raised when the source text into which substitutions are
+made does not conform to the required syntax.
 \end{excdesc}
 
 \begin{excdesc}{MissingSectionHeaderError}
