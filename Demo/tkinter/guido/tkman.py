@@ -37,17 +37,26 @@ class SelectionBox:
 					       'expand': 1, 'fill': 'both'}})
 		self.subsubframe = Frame(self.subframe, {
 			Pack: {'side': 'left', 'expand': 1, 'fill': 'both'}})
-		self.l1 = Label(self.subsubframe,
+		self.l1 = Button(self.subsubframe,
 				{'text': 'Display manual page named:',
+				 'command': self.entry_cb,
 				 Pack: {'side': 'top'}})
 		self.entry = Entry(self.subsubframe,
 				   {'relief': 'sunken', 'bd': 2,
 				    'width': 20,
 				    Pack: {'side': 'top',
 					   'expand': 0, 'fill': 'x'}})
-		self.l2 = Label(self.subsubframe,
-				{'text': 'Search (regexp, case insensitive):',
-				 Pack: {'side': 'top'}})
+		self.l2frame = Frame(self.subsubframe, {
+			Pack: {'expand': 0, 'fill': 'none'}})
+		self.l2 = Button(self.l2frame,
+				{'text': 'Search regexp:',
+				 'command': self.search_cb,
+				 Pack: {'side': 'left'}})
+		self.casesense = Checkbutton(self.l2frame,
+					     {'text': 'Case sensitive',
+					      'variable': 'casesense',
+					      'relief': 'flat',
+					      Pack: {'side': 'left'}})
 		self.search = Entry(self.subsubframe,
 				   {'relief': 'sunken', 'bd': 2,
 				    'width': 20,
@@ -65,9 +74,11 @@ class SelectionBox:
 		self.search.bind('<Return>', self.search_cb)
 		self.listbox.bind('<Double-1>', self.listbox_cb)
 
-		self.entry.focus_set()
+		self.entry.bind('<Tab>', self.entry_tab)
+		self.search.bind('<Tab>', self.search_tab)
+		self.text.bind('<Tab>', self.text_tab)
 
-		self.showing = None
+		self.entry.focus_set()
 
 	def addchoice(self, choice):
 		if choice not in self.choices:
@@ -79,6 +90,27 @@ class SelectionBox:
 		self.choices[len(self.choices):] = list
 		self.choices.sort()
 		self.update()
+
+	def entry_cb(self, *e):
+		self.update()
+
+	def listbox_cb(self, e):
+		selection = self.listbox.curselection()
+		if selection and len(selection) == 1:
+			name = self.listbox.get(selection[0])
+			self.show_page(name)
+
+	def search_cb(self, *e):
+		self.search_string(self.search.get())
+
+	def entry_tab(self, e):
+		self.search.focus_set()
+
+	def search_tab(self, e):
+		self.entry.focus_set()
+
+	def text_tab(self, e):
+		self.entry.focus_set()
 
 	def updatelist(self):
 		key = self.entry.get()
@@ -93,49 +125,35 @@ class SelectionBox:
 			return key
 		elif self.listbox.size() == 1:
 			return self.listbox.get(0)
-
-	def entry_cb(self, e):
-		self.update()
+		# Else return None, meaning not a unique selection
 
 	def update(self):
-		self.show_page(self.updatelist())
+		name = self.updatelist()
+		if name:
+			self.show_page(name)
+			self.entry.delete(0, AtEnd())
+			self.updatelist()
 
 	def show_page(self, name):
-		if not name:
-			return
-		if name == self.showing:
-			print 'show_page: already showing'
-			return
-		name = '%s/%s.n' % (MANDIR, name)
-		fp = os.popen('nroff -man %s | ul -i' % name, 'r')
-		self.text.delete('1.0', AtEnd())
-		frame_cursor = self.frame['cursor']
-		entry_cursor = self.entry['cursor']
-		self.entry['cursor'] = 'watch'
-		self.search['cursor'] = 'watch'
-		self.frame['cursor'] = 'watch'
+		file = '%s/%s.n' % (MANDIR, name)
+		fp = os.popen('nroff -man %s | ul -i' % file, 'r')
+		self.text.kill()
+		self.title['text'] = name
 		self.text.parsefile(fp)
-		self.search['cursor'] = entry_cursor
-		self.entry['cursor'] = entry_cursor
-		self.frame['cursor'] = frame_cursor
-		self.entry.delete(0, AtEnd())
-		self.updatelist()
-
-	def listbox_cb(self, e):
-		selection = self.listbox.curselection()
-		if selection and len(selection) == 1:
-			which = self.listbox.get(selection[0])
-			self.show_page(which)
-
-	def search_cb(self, e):
-		self.search_string(self.search.get())
 
 	def search_string(self, search):
 		if not search:
 			print 'Empty search string'
 			return
+		if self.frame.tk.getvar('casesense') != '1':
+			map = regex.casefold
+		else:
+			map = None
 		try:
-			prog = regex.compile(search, regex.casefold)
+			if map:
+				prog = regex.compile(search, map)
+			else:
+				prog = regex.compile(search)
 		except regex.error, msg:
 			print 'Regex error:', msg
 			return
