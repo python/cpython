@@ -297,8 +297,9 @@ class EditorWindow:
 
     help_url = "http://www.python.org/doc/current/"
     if sys.platform[:3] == "win":
-        fn = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        fn = os.path.join(fn, "Doc", "index.html")
+        fn = os.path.dirname(__file__)
+        fn = os.path.join(fn, "../../Doc/index.html")
+        fn = os.path.normpath(fn)
         if os.path.isfile(fn):
             help_url = fn
         del fn
