@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdio.h>
 
 #ifndef DATE
