@@ -49,6 +49,11 @@ extern char *strerror Py_PROTO((int));
 #endif
 #endif
 
+#ifdef MS_WIN32
+#include "windows.h"
+#include "winbase.h"
+#endif
+
 void
 PyErr_Restore(type, value, traceback)
 	PyObject *type;
@@ -142,7 +147,7 @@ PyErr_GivenExceptionMatches(err, exc)
 
 	return err == exc;
 }
-	
+
 
 int
 PyErr_ExceptionMatches(exc)
@@ -291,7 +296,26 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 	if (i == 0)
 		s = "Error"; /* Sometimes errno didn't get set */
 	else
+#ifndef MS_WIN32
 		s = strerror(i);
+#else
+	{
+		int len = FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL,	/* no message source */
+			i,
+			MAKELANGID(LANG_NEUTRAL,
+				   SUBLANG_DEFAULT), /* Default language */
+			(LPTSTR) &s,
+			0,	/* size not used */
+			NULL);	/* no args */
+		/* remove trailing cr/lf and dots */
+		while (len > 0 && s[len-1] <= '.')
+			s[--len] = '\0';
+	}
+#endif
 	if (filename != NULL && Py_UseClassExceptionsFlag)
 		v = Py_BuildValue("(iss)", i, s, filename);
 	else
@@ -300,9 +324,12 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
 	}
+#ifdef MS_WIN32
+	LocalFree(s);
+#endif
 	return NULL;
 }
-	
+
 
 PyObject *
 PyErr_SetFromErrno(exc)
