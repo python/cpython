@@ -25,19 +25,19 @@ class instances).
 Two problems often exist with deep copy operations that don't exist
 with shallow copy operations:
 
-(a) recursive objects (compound objects that, directly or indirectly,
+ a) recursive objects (compound objects that, directly or indirectly,
     contain a reference to themselves) may cause a recursive loop
 
-(b) because deep copy copies *everything* it may copy too much, e.g.
+ b) because deep copy copies *everything* it may copy too much, e.g.
     administrative data structures that should be shared even between
     copies
 
 Python's deep copy operation avoids these problems by:
 
-(a) keeping a table of objects already copied during the current
-copying pass
+ a) keeping a table of objects already copied during the current
+    copying pass
 
-(b) letting user-defined classes override the copying operation or the
+ b) letting user-defined classes override the copying operation or the
     set of components copied
 
 This version does not copy types like module, class, function, method,
@@ -97,10 +97,7 @@ def _copy_tuple(x):
 d[types.TupleType] = _copy_tuple
 
 def _copy_dict(x):
-	y = {}
-	for key in x.keys():
-		y[key] = x[key]
-	return y
+	return x.copy()
 d[types.DictionaryType] = _copy_dict
 
 def _copy_inst(x):
@@ -238,7 +235,12 @@ def _test():
 		def __init__(self, arg=None):
 			self.a = 1
 			self.arg = arg
-			self.fp = open('copy.py')
+			if __name__ == '__main__':
+				import sys
+				file = sys.argv[0]
+			else:
+				file = __file__
+			self.fp = open(file)
 			self.fp.close()
 		def __getstate__(self):
 			return {'a': self.a, 'arg': self.arg}
