@@ -275,7 +275,7 @@ Profiler Extensions, which includes discussion of how to derive
 ``better'' profilers from the classes presented, or reading the source
 code for these modules.
 
-\begin{funcdesc}{run}{string\optional{, filename\optional{, ...}}}
+\begin{funcdesc}{run}{command\optional{, filename}}
 
 This function takes a single argument that has can be passed to the
 \keyword{exec} statement, and an optional file name.  In all cases this
@@ -337,6 +337,12 @@ the former is the actual number of calls.  Note that when the function
 does not recurse, these two values are the same, and only the single
 figure is printed.
 
+\end{funcdesc}
+
+\begin{funcdesc}{runctx}{command, globals, locals\optional{, filename}}
+This function is similar to \function{profile.run()}, with added
+arguments to supply the globals and locals dictionaries for the
+\var{command} string.
 \end{funcdesc}
 
 Analysis of the profiler data is done using this class from the

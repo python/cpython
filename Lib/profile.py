@@ -76,6 +76,23 @@ def run(statement, filename=None):
     else:
         return prof.print_stats()
 
+def runctx(statement, globals, locals, filename=None):
+    """Run statement under profiler, supplying your own globals and locals,
+    optionally saving results in filename.
+
+    statement and filename have the same semantics as profile.run
+    """
+    prof = Profile()
+    try:
+        prof = prof.runctx(statement, globals, locals)
+    except SystemExit:
+        pass
+
+    if filename is not None:
+        prof.dump_stats(filename)
+    else:
+        return prof.print_stats()
+
 # print help
 def help():
     for dirname in sys.path:
