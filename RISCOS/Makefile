@@ -9,12 +9,12 @@ DLKLIB = $(LIBSROOT).dlk
 ZLIB = $(LIBSROOT).zlib
 EXPAT = $(LIBSROOT).expat.lib
 
-OBJSCAN = $(DLKLIB).objscan
-MAKEDLK = $(DLKLIB).makedlk
+OBJSCAN = objscan
+MAKEDLK = makedlk
 
 # change from time to time (don't forget to change !Boot also)
 TARGET=Python22
-BUILD=23
+BUILD=25
 
 
 #
@@ -164,7 +164,9 @@ OBJECTS_OBJECTS =\
 	@.^.Objects.o.abstract\
 	@.^.Objects.o.unicodectype\
 	@.^.Objects.o.unicodeobject\
-	@.^.Objects.o.descrobject
+	@.^.Objects.o.descrobject\
+	@.^.Objects.o.weakrefobject\
+	@.^.Objects.o.structseq
 
 
 OBJECTS_PARSER =\
@@ -418,6 +420,7 @@ rebuild: clean clean-support
 	-wipe @.^.Lib.*/pyd ~C ~V
 	-wipe @.^.Lib.plat-riscos.*/pyd ~C~V
 	remove s.linktab
+	remove @.^.LibPython
 
 clean-support:
 	-wipe @.^.!* ~C~V
