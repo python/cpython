@@ -319,7 +319,7 @@ class TCPServer(BaseServer):
 
     request_queue_size = 5
 
-    allow_reuse_address = 0
+    allow_reuse_address = False
 
     def __init__(self, server_address, RequestHandlerClass):
         """Constructor.  May be extended, do not override."""
@@ -380,7 +380,7 @@ class UDPServer(TCPServer):
 
     """UDP server class."""
 
-    allow_reuse_address = 0
+    allow_reuse_address = False
 
     socket_type = socket.SOCK_DGRAM
 
