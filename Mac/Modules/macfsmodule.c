@@ -405,27 +405,20 @@ mfs_StandardGetFile(self, args)
 	object *self;	/* Not used */
 	object *args;
 {
-	char *list[4];
-	SFTypeList typelist;
+	SFTypeList list;
 	short numtypes;
 	StandardFileReply reply;
 	
 	list[0] = list[1] = list[2] = list[3] = 0;
 	numtypes = 0;
-#if 0
-	/* XXXX Why doesn't this work? */
-	if (!newgetargs(args, "|O&|O&|O&|O&", PyMac_GetOSType, &list[0],
+	if (!newgetargs(args, "|O&O&O&O&", PyMac_GetOSType, &list[0],
 			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
 			  PyMac_GetOSType, &list[3]) )
 		return NULL;
-#else
-	if (!newgetargs(args, "|O&", PyMac_GetOSType, &list[0]) )
-		return NULL;
-#endif
-	while ( list[numtypes] && numtypes < 4 ) {
+	while ( numtypes < 4 && list[numtypes] ) {
 		numtypes++;
 	}
-	StandardGetFile((FileFilterUPP)0, numtypes, typelist, &reply);
+	StandardGetFile((FileFilterUPP)0, numtypes, list, &reply);
 	return mkvalue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
 }
 
