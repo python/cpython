@@ -60,10 +60,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef HAVE_FTIME
-#ifndef __BEOS__
-/* We have ftime(), but not in the headers (PR2). - [cjh] */
 #include <sys/timeb.h>
-#endif
 #if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
 extern int ftime();
 #endif /* MS_WINDOWS */
@@ -98,6 +95,10 @@ extern int ftime();
 /* For bigtime_t, snooze(). - [cjh] */
 #include <support/SupportDefs.h>
 #include <kernel/OS.h>
+#ifndef CLOCKS_PER_SEC
+/* C'mon, fix the bloody headers... - [cjh] */
+#define CLOCKS_PER_SEC 1000
+#endif
 #endif
 
 /* Forward declarations */
@@ -705,7 +706,7 @@ floattime()
 	}
 #endif /* !HAVE_GETTIMEOFDAY */
 	{
-#if defined(HAVE_FTIME) && !defined(__BEOS__)
+#if defined(HAVE_FTIME)
 		struct timeb t;
 		ftime(&t);
 		return (double)t.time + (double)t.millitm * (double)0.001;
@@ -811,20 +812,13 @@ floatsleep(double secs)
 #ifdef __BEOS__
 	/* This sleep *CAN BE* interrupted. */
 	{
-		bigtime_t frac, seconds;
-
-		extern double fmod Py_PROTO((double,double));
-		extern double floor Py_PROTO((double));
-
 		if( secs <= 0.0 ) {
 			return;
 		}
-
-		frac = (bigtime_t)fmod( secs, 1.0 );
-		seconds = (bigtime_t)floor( secs );
-
+		
 		Py_BEGIN_ALLOW_THREADS
-		if( snooze( seconds * (bigtime_t)1000 + frac ) == B_INTERRUPTED ) {
+		/* BeOS snooze() is in microseconds... */
+		if( snooze( (bigtime_t)( secs * 1000.0 * 1000.0 ) ) == B_INTERRUPTED ) {
 			Py_BLOCK_THREADS
 			PyErr_SetFromErrno( PyExc_IOError );
 			return -1;
