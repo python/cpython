@@ -774,7 +774,14 @@ DBCursor_dealloc(DBCursorObject* self)
     int err;
     if (self->dbc != NULL) {
         MYDB_BEGIN_ALLOW_THREADS;
-	if (self->mydb->db != NULL)
+	/* If the underlying database has been closed, we don't
+	   need to do anything. If the environment has been closed
+	   we need to leak, as BerkeleyDB will crash trying to access
+	   the environment. There was an exception when the 
+	   user closed the environment even though there still was
+	   a database open. */
+	if (self->mydb->db && self->mydb->myenvobj &&
+	    !self->mydb->myenvobj->closed)
             err = self->dbc->c_close(self->dbc);
         self->dbc = NULL;
         MYDB_END_ALLOW_THREADS;
