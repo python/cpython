@@ -246,19 +246,26 @@ There are many flavors of Emacs out there, each with different
 features supporting those needed by CC Mode.")
 
 (defvar python-font-lock-keywords
-  (let* ((keywords '("and"        "assert"     "break"      "class"
-		     "continue"   "def"        "del"        "elif"
-		     "else:"      "except"     "except:"    "exec"
-		     "finally:"   "for"        "from"       "global"
-		     "if"         "import"     "in"         "is"
-		     "lambda"     "not"        "or"         "pass"
-		     "print"      "raise"      "return"     "try:"
-		     "while"
-		     ))
-	 (kwregex (mapconcat 'identity keywords "\\|")))
+  (let ((kw1 (mapconcat 'identity
+			'("and"      "assert"   "break"   "class"
+			  "continue" "def"      "del"     "elif"
+			  "else"     "except"   "exec"    "for"
+			  "from"     "global"   "if"      "import"
+			  "in"       "is"       "lambda"  "not"
+			  "or"       "pass"     "print"   "raise"
+			  "return"   "while"
+			  )
+			"\\|"))
+	(kw2 (mapconcat 'identity
+			'("else:" "except:" "finally:" "try:")
+			"\\|"))
+	)
     (list
      ;; keywords
-     (cons (concat "\\b\\(" kwregex "\\)\\b[ \n\t(]") 1)
+     (cons (concat "\\b\\(" kw1 "\\)\\b[ \n\t(]") 1)
+     ;; block introducing keywords with immediately following colons.
+     ;; Yes "except" is in both lists.
+     (cons (concat "\\b\\(" kw2 "\\)[ \n\t(]") 1)
      ;; classes
      '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-type-face)
