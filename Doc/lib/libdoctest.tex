@@ -406,6 +406,17 @@ often contrive doctest examples to produce numbers of that form:
 
 Simple fractions are also easier for people to understand, and that makes
 for better documentation.
+
+\item Be careful if you have code that must only execute once.
+
+If you have module-level code that must only execute once, a more foolproof
+definition of \function{_test()} is
+
+\begin{verbatim}
+def _test():
+    import doctest, sys
+    doctest.testmod(sys.modules["__main__"])
+\end{verbatim}
 \end{enumerate}
 
 
