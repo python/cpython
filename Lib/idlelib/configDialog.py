@@ -22,18 +22,18 @@ class ConfigDialog(Toplevel):
         #The second value is the display name list sort index. 
         #The third value indicates whether the element can have a foreground 
         #or background colour or both. 
-        self.themeElements={'Normal Text':('normal','00','both'),
-            'Python Keywords':('keyword','01','both'),
-            'Python Definitions':('definition','02','both'),
-            'Python Comments':('comment','03','both'),
-            'Python Strings':('string','04','both'),
-            'Selected Text':('hilite','05','both'),
-            'Found Text':('hit','06','both'),
-            'Cursor':('cursor','07','fg'),
-            'Error Background':('error','08','bg'),
-            'Shell Foreground':('console','09','fg'),
-            'Shell Stdout Foreground':('stdout','10','fg'),
-            'Shell Stderr Foreground':('stderr','11','fg')}
+        self.themeElements={'Normal Text':('normal','00'),
+            'Python Keywords':('keyword','01'),
+            'Python Definitions':('definition','02'),
+            'Python Comments':('comment','03'),
+            'Python Strings':('string','04'),
+            'Selected Text':('hilite','05'),
+            'Found Text':('hit','06'),
+            'Cursor':('cursor','07'),
+            'Error Text':('error','08'),
+            'Shell Normal Text':('console','09'),
+            'Shell Stdout Text':('stdout','10'),
+            'Shell Stderr Text':('stderr','11')}
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.transient(parent)
@@ -115,19 +115,14 @@ class ConfigDialog(Toplevel):
         self.SetHighlightTarget()
         
     def SetHighlightTarget(self):
-        colourPlane=self.themeElements[self.highlightTarget.get()][2]
-        if colourPlane == 'bg': 
-            self.radioFg.config(state=DISABLED)
-            self.radioBg.config(state=DISABLED)
-            self.fgHilite.set(0)
-        elif colourPlane == 'fg':
+        if self.highlightTarget.get()=='Cursor': #bg not possible
             self.radioFg.config(state=DISABLED)
             self.radioBg.config(state=DISABLED)
             self.fgHilite.set(1)
-        elif colourPlane == 'both':
-            self.radioFg.config(state=NORMAL)
-            self.radioBg.config(state=NORMAL)
-            self.fgHilite.set(1) #default to setting foreground attribute
+        else: #both fg and bg can be set
+            self.radioFg.config(state=DISABLED)
+            self.radioBg.config(state=DISABLED)
+            self.fgHilite.set(1)
         self.SetColourSample()
     
     def SetColourSampleBinding(self,*args):
@@ -144,6 +139,7 @@ class ConfigDialog(Toplevel):
     def CreateWidgets(self):
         self.tabPages = TabPageSet(self,
                 pageNames=['Fonts/Tabs','Highlighting','Keys','General'])
+        self.tabPages.ChangePage()#activates default (first) page
         frameActionButtons = Frame(self)
         #action buttons
         self.buttonHelp = Button(frameActionButtons,text='Help',
@@ -498,9 +494,12 @@ class ConfigDialog(Toplevel):
             theme=self.customTheme.get()
         for element in self.themeElements.keys():
             colours=idleConf.GetHighlight(theme, self.themeElements[element][0])
+            if element=='Cursor': #cursor sample needs special painting
+                colours['background']=idleConf.GetHighlight(theme, 
+                        'normal-text', fgBg='bg')
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[element][0],),colours)
-        
+    
     def LoadFontCfg(self):
         ##base editor font selection list
         fonts=list(tkFont.families(self))
@@ -538,7 +537,7 @@ class ConfigDialog(Toplevel):
         self.themeIsBuiltin.set(idleConf.GetOption('main','Theme','default',
             type='int',default=1))
         ##currently set theme
-        currentOption=idleConf.GetOption('main','Theme','name')
+        currentOption=idleConf.CurrentTheme()
         ##load available theme option menus
         if self.themeIsBuiltin.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','highlight')
@@ -575,7 +574,7 @@ class ConfigDialog(Toplevel):
         self.keysAreDefault.set(idleConf.GetOption('main','Keys','default',
             type='int',default=1))
         ##currently set keys
-        currentOption=idleConf.GetOption('main','Keys','name')
+        currentOption=idleConf.CurrentKeys()
         ##load available keyset option menus
         if self.keysAreDefault.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','keys')

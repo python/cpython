@@ -49,7 +49,7 @@ cursor-background= black
 
 [FormatParagraph]
 
-[ZoomHeight]
+#[ZoomHeight]
 
 #[ScriptBinding]    # disabled in favor of ExecBinding
 

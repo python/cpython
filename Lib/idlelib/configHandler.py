@@ -1,13 +1,13 @@
-##---------------------------------------------------------------------------##
-##
-## idle - configuration data handler, based on and replacing IdleConfig.py 
-## elguavas
-## 
-##---------------------------------------------------------------------------##
 """
-Provides access to stored idle configuration information
-"""
+Provides access to stored idle configuration information.
 
+Throughout this module there is an emphasis on returning useable defaults if
+there is a problem returning a requested configuration value back to idle.
+This is to allow idle to continue to function in spite of errors in the
+retrieval of config information. When a default is returned instead of a 
+requested config value, a message is printed to stderr to aid in 
+configuration problem notification and resolution. 
+"""
 import os
 import sys
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
@@ -23,10 +23,11 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
     
-    def Get(self, section, option, default=None, type=None):
+    def Get(self, section, option, type=None): #,default=None)
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
+        If a default is returned a warning is printed to stderr.
         """
         if type=='bool': 
             getVal=self.getboolean
@@ -37,8 +38,14 @@ class IdleConfParser(ConfigParser):
         if self.has_option(section,option):
             #return getVal(section, option, raw, vars)
             return getVal(section, option)
-        else:
-            return default
+#         #the following handled in IdleConf.GetOption instead
+#         else: 
+#             warning=('\n Warning: configHandler.py - IdleConfParser.Get -\n'+
+#                        ' problem retrieving configration option '+`option`+'\n'+
+#                        ' from section '+`section`+'.\n'+
+#                        ' returning default value: '+`default`+'\n')
+#             sys.stderr.write(warning)
+#             return default
 
     def GetOptionList(self,section):
         """
@@ -75,10 +82,10 @@ class IdleConf:
         (idle install dir)/config-highlight.def
         (idle install dir)/config-keys.def
     user config  files
-        (user home dir)/.idlerc/idle-main.cfg
-        (user home dir)/.idlerc/idle-extensions.cfg
-        (user home dir)/.idlerc/idle-highlight.cfg
-        (user home dir)/.idlerc/idle-keys.cfg
+        (user home dir)/.idlerc/config-main.cfg
+        (user home dir)/.idlerc/config-extensions.cfg
+        (user home dir)/.idlerc/config-highlight.cfg
+        (user home dir)/.idlerc/config-keys.cfg
     """
     def __init__(self):
         self.defaultCfg={}
@@ -90,7 +97,7 @@ class IdleConf:
             
     def CreateConfigHandlers(self):
         """
-        set up a dictionary config parsers for default and user 
+        set up a dictionary of config parsers for default and user 
         configurations respectively
         """
         #build idle install path
@@ -112,7 +119,7 @@ class IdleConf:
         usrCfgFiles={}
         for cfgType in configTypes: #build config file names
             defCfgFiles[cfgType]=os.path.join(idledir,'config-'+cfgType+'.def')                    
-            usrCfgFiles[cfgType]=os.path.join(userdir,'idle-'+cfgType+'.cfg')                    
+            usrCfgFiles[cfgType]=os.path.join(userdir,'config-'+cfgType+'.cfg')                    
         for cfgType in configTypes: #create config parsers
             self.defaultCfg[cfgType]=IdleConfParser(defCfgFiles[cfgType])
             self.userCfg[cfgType]=IdleUserConfParser(usrCfgFiles[cfgType])
@@ -132,6 +139,11 @@ class IdleConf:
         elif self.defaultCfg[configType].has_option(section,option):
             return self.defaultCfg[configType].Get(section, option, type=type)
         else:
+            warning=('\n Warning: configHandler.py - IdleConf.GetOption -\n'+
+                       ' problem retrieving configration option '+`option`+'\n'+
+                       ' from section '+`section`+'.\n'+
+                       ' returning default value: '+`default`+'\n')
+            sys.stderr.write(warning)
             return default
     
     def GetSectionList(self, configSet, configType):
@@ -152,7 +164,13 @@ class IdleConf:
         
         return cfgParser.sections()
     
-    def GetHighlight(self, theme, element):
+    def GetHighlight(self, theme, element, fgBg=None):
+        """
+        return individual highlighting theme elements.
+        fgBg - string ('fg'or'bg') or None, if None return a dictionary
+        containing fg and bg colours (appropriate for passing to Tkinter in, 
+        e.g., a tag_config call), otherwise fg or bg colour only as specified. 
+        """
         #get some fallback defaults
         defaultFg=self.GetOption('highlight', theme, 'normal' + "-foreground",
             default='#000000')
@@ -160,12 +178,25 @@ class IdleConf:
             default='#ffffff')
         #try for requested element colours
         fore = self.GetOption('highlight', theme, element + "-foreground")
-        back = self.GetOption('highlight', theme, element + "-background")
+        back = None
+        if element == 'cursor': #there is no config value for cursor bg
+            back = None
+        else:    
+            back = self.GetOption('highlight', theme, element + "-background")
         #fall back if required
         if not fore: fore=defaultFg
         if not back: back=defaultBg
-        return {"foreground": fore,
-                "background": back}
+        highlight={"foreground": fore,"background": back}
+        if not fgBg: #return dict of both colours
+            return highlight
+        else: #return specified colour only
+            if fgBg == 'fg':
+                return highlight["foreground"]
+            if fgBg == 'bg':
+                return highlight["background"]
+            else:    
+                raise 'Invalid fgBg specified'
+            
 
     def GetTheme(self, name=None):
         """
@@ -174,6 +205,39 @@ class IdleConf:
         """
         pass
     
+    def CurrentTheme(self):
+        """
+        Returns the name of the currently active theme        
+        """
+        return self.GetOption('main','Theme','name')
+        
+
+    def CurrentKeys(self):
+        """
+        Returns the name of the currently active theme        
+        """
+        return self.GetOption('main','Keys','name')
+    
+    def GetExtensions(self, activeOnly=1):
+        """
+        Gets a list of all idle extensions declared in the config files.
+        activeOnly - boolean, if true only return active (enabled) extensions
+        """
+        extns=self.GetSectionList('default','extensions')
+        userExtns=self.GetSectionList('user','extensions')
+        for extn in userExtns:
+            if extn not in extns: #user has added own extension
+                extns.append(extn) 
+        if activeOnly:
+            activeExtns=[]
+            for extn in extns:
+                if self.GetOption('extensions',extn,'enable',default=1,type='bool'):
+                    #the extension is enabled
+                    activeExtns.append(extn)
+            return activeExtns
+        else:
+            return extns        
+
     def GetKeys(self, keySetName=None):
         """
         returns the requested keybindings, with fallbacks if required.
