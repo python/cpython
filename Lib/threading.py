@@ -621,14 +621,6 @@ def enumerate():
     _active_limbo_lock.release()
     return active
 
-# XXX This needs a real defintion.
-def settrace(tracefunc):
-    pass
-
-# XXX This needs a real defintion.
-def setprofile(dispatchfunc):
-    pass
-
 # Create the main thread object
 
 _MainThread()
