@@ -12,6 +12,7 @@ TO DO:
     - display class name in stack viewer entries for methods
     - suppress tracing through IDLE internals (e.g. print)
     - add a button to suppress through a specific module or class or method
+    - more object inspection to stack viewer, e.g. to view all array items
 - insert the initial current directory into sys.path
 - default directory attribute for each window instead of only for windows
   that have an associated filename
