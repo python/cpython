@@ -113,37 +113,20 @@ class CygwinCCompiler (UnixCCompiler):
 
     # __init__ ()
 
-    # not much different of the compile method in UnixCCompiler,
-    # but we have to insert some lines in the middle of it, so
-    # we put here a adapted version of it.
-    # (If we would call compile() in the base class, it would do some
-    # initializations a second time, this is why all is done here.)
-    def compile(self, sources,
-                output_dir=None, macros=None, include_dirs=None, debug=0,
-                extra_preargs=None, extra_postargs=None, depends=None):
-        
-        macros, objects, extra_postargs, pp_opts, build = \
-                self._setup_compile(output_dir, macros, include_dirs, sources,
-                                    depends, extra_postargs)
-        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-        for obj, (src, ext) in build.items():
-            if ext == '.rc' or ext == '.res':
-                # gcc needs '.res' and '.rc' compiled to object files !!!
-                try:
-                    self.spawn (["windres","-i",src,"-o",obj])
-                except DistutilsExecError, msg:
-                    raise CompileError, msg
-            else: # for other files use the C-compiler
-                try:
-                    self.spawn (self.compiler_so + cc_args +
-                            [src, '-o', obj] +
-                            extra_postargs)
-                except DistutilsExecError, msg:
-                    raise CompileError, msg
-
-        # Return *all* object filenames, not just the ones we just built.
-        return objects
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        if ext == '.rc' or ext == '.res':
+            # gcc needs '.res' and '.rc' compiled to object files !!!
+            try:
+                self.spawn(["windres", "-i", src, "-o", obj])
+            except DistutilsExecError, msg:
+                raise CompileError, msg
+        else: # for other files use the C-compiler
+            try:
+                self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
+                           extra_postargs)
+            except DistutilsExecError, msg:
+                raise CompileError, msg
 
     def link (self,
               target_desc,
