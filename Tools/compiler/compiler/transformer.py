@@ -402,19 +402,20 @@ class Transformer:
     return n
 
   def import_stmt(self, nodelist):
-    # import: dotted_name (',' dotted_name)* |
-    # from: dotted_name 'import' ('*' | NAME (',' NAME)*)
-    names = [ ]
-    if nodelist[0][1][0] == 'f':
+    # import_stmt: 'import' dotted_as_name (',' dotted_as_name)* |
+    # from: 'from' dotted_name 'import'
+    #                        ('*' | import_as_name (',' import_as_name)*)
+    names = []
+    is_as = 0
+    if nodelist[0][1] == 'from':
       for i in range(3, len(nodelist), 2):
-        # note: nodelist[i] could be (token.STAR, '*') or (token.NAME, name)
-        names.append(nodelist[i][1])
+        names.append(self.com_import_as_name(nodelist[i][1]))
       n = Node('from', self.com_dotted_name(nodelist[1]), names)
       n.lineno = nodelist[0][2]
       return n
 
     for i in range(1, len(nodelist), 2):
-      names.append(self.com_dotted_name(nodelist[i]))
+      names.append(self.com_dotted_as_name(nodelist[i]))
     n = Node('import', names)
     n.lineno = nodelist[0][2]
     return n
@@ -738,6 +739,7 @@ class Transformer:
     if node[0] not in _legal_node_types:
       raise error, 'illegal node passed to com_node: %s' % node[0]
 
+#    print "dispatch", self._dispatch[node[0]].__name__, node
     return self._dispatch[node[0]](node[1:])
 
   def com_arglist(self, nodelist):
@@ -813,6 +815,22 @@ class Transformer:
       if type(n) == type(()) and n[0] == 1:
         name = name + n[1] + '.'
     return name[:-1]
+
+  def com_dotted_as_name(self, node):
+    dot = self.com_dotted_name(node[1])
+    if len(node) == 2:
+      return dot, None
+    assert node[2][1] == 'as'
+    assert node[3][0] == token.NAME
+    return dot, node[3][1]
+
+  def com_import_as_name(self, node):
+    if node[0] == token.NAME:
+      return node[1], None
+    assert len(node) == 4
+    assert node[2][1] == 'as'
+    assert node[3][0] == token.NAME
+    return node[1][1], node[3][1]
 
   def com_bases(self, node):
     bases = [ ]
