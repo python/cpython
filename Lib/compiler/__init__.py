@@ -4,7 +4,7 @@ There are several functions defined at the top level that are imported
 from modules contained in the package.
 
 parse(buf) -> AST
-    Donverts a string containing Python source code to an abstract
+    Converts a string containing Python source code to an abstract
     syntax tree (AST).  The AST is defined in compiler.ast.
 
 parseFile(path) -> AST
