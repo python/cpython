@@ -20,7 +20,7 @@ from types import *
 from Carbon import AE
 from Carbon.AppleEvents import *
 import MacOS
-import macfs
+import Carbon.File
 import StringIO
 import aetypes
 from aetypes import mkenum, mktype
@@ -59,8 +59,9 @@ unpacker_coercions = {
 # Some python types we need in the packer:
 #
 AEDescType = AE.AEDescType
-FSSType = macfs.FSSpecType
-AliasType = macfs.AliasType
+FSSType = Carbon.File.FSSpecType
+FSRefType = Carbon.File.FSRefType
+AliasType = Carbon.File.AliasType
 
 def packkey(ae, key, value):
 	if hasattr(key, 'which'):
@@ -83,36 +84,35 @@ def pack(x, forcetype = None):
 	if x == None:
 		return AE.AECreateDesc('null', '')
 		
-	t = type(x)
-	if t == AEDescType:
+	if isinstance(x, AEDescType):
 		return x
-	if t == FSSType:
+	if isinstance(x, FSSType):
 		return AE.AECreateDesc('fss ', x.data)
-	if t == AliasType:
+	if isinstance(x, AliasType):
 		return AE.AECreateDesc('alis', x.data)
-	if t == IntType:
+	if isinstance(x, IntType):
 		return AE.AECreateDesc('long', struct.pack('l', x))
-	if t == FloatType:
+	if isinstance(x, FloatType):
 		return AE.AECreateDesc('doub', struct.pack('d', x))
-	if t == StringType:
+	if isinstance(x, StringType):
 		return AE.AECreateDesc('TEXT', x)
-	if t == UnicodeType:
+	if isinstance(x, UnicodeType):
 		data = t.encode('utf16')
 		if data[:2] == '\xfe\xff':
 			data = data[2:]
 		return AE.AECreateDesc('utxt', data)
-	if t == ListType:
+	if isinstance(x, ListType):
 		list = AE.AECreateList('', 0)
 		for item in x:
 			list.AEPutDesc(0, pack(item))
 		return list
-	if t == DictionaryType:
+	if isinstance(x, DictionaryType):
 		record = AE.AECreateList('', 1)
 		for key, value in x.items():
 			packkey(record, key, value)
 			#record.AEPutParamDesc(key, pack(value))
 		return record
-	if t == InstanceType and hasattr(x, '__aepack__'):
+	if hasattr(x, '__aepack__'):
 		return x.__aepack__()
 	if hasattr(x, 'which'):
 		return AE.AECreateDesc('TEXT', x.which)
@@ -144,7 +144,7 @@ def unpack(desc, formodulename=""):
 		record = desc.AECoerceDesc('reco')
 		return mkaetext(unpack(record, formodulename))
 	if t == typeAlias:
-		return macfs.RawAlias(desc.data)
+		return Carbon.File.Alias(rawdata=desc.data)
 	# typeAppleEvent returned as unknown
 	if t == typeBoolean:
 		return struct.unpack('b', desc.data)[0]
@@ -165,7 +165,7 @@ def unpack(desc, formodulename=""):
 		data = desc.data
 		return struct.unpack('d', data)[0]
 	if t == typeFSS:
-		return macfs.RawFSSpec(desc.data)
+		return Carbon.File.FSSpec(rawdata=desc.data)
 	if t == typeInsertionLoc:
 		record = desc.AECoerceDesc('reco')
 		return mkinsertionloc(unpack(record, formodulename))
@@ -353,8 +353,8 @@ def _test():
 		None,
 		['a', 'list', 'of', 'strings'],
 		{'key1': 'value1', 'key2':'value2'},
-		macfs.FSSpec(':'),
-		macfs.FSSpec(':').NewAliasMinimal(),
+		Carbon.File.FSSpec(os.curdir),
+		Carbon.File.FSSpec(os.curdir).NewAliasMinimal(),
 		aetypes.Enum('enum'),
 		aetypes.Type('type'),
 		aetypes.Keyword('kwrd'),
