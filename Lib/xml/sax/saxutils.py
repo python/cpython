@@ -80,7 +80,7 @@ class XMLGenerator(handler.ContentHandler):
     def startElement(self, name, attrs):
         self._out.write('<' + name)
         for (name, value) in attrs.items():
-            self._out.write(' %s="%s"' % (name, escape(value)))
+            self._out.write(' %s=%s' % (name, quoteattr(value)))
         self._out.write('>')
 
     def endElement(self, name):
@@ -101,7 +101,7 @@ class XMLGenerator(handler.ContentHandler):
 
         for (name, value) in attrs.items():
             name = self._current_context[name[0]] + ":" + name[1]
-            self._out.write(' %s="%s"' % (name, escape(value)))
+            self._out.write(' %s=%s' % (name, quoteattr(value)))
         self._out.write('>')
 
     def endElementNS(self, name, qname):
