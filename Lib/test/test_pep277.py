@@ -100,6 +100,7 @@ class UnicodeFileTests(unittest.TestCase):
         f.write((filename + '\n').encode("utf-8"))
         f.close()
         print repr(filename)
+        os.access(filename,os.R_OK)
         os.remove(filename)
         os.chdir(oldwd)
         os.rmdir(dirname)

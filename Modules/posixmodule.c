@@ -1027,6 +1027,22 @@ posix_access(PyObject *self, PyObject *args)
 	int mode;
 	int res;
 
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "Ui:access", &po, &mode)) {
+			Py_BEGIN_ALLOW_THREADS
+			/* PyUnicode_AS_UNICODE OK without thread lock as
+			   it is a simple dereference. */
+			res = _waccess(PyUnicode_AS_UNICODE(po), mode);
+			Py_END_ALLOW_THREADS
+			return(PyBool_FromLong(res == 0));
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif
 	if (!PyArg_ParseTuple(args, "si:access", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
