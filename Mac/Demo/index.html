@@ -1,0 +1,94 @@
+<HTML><HEAD><TITLE>Macintosh Python crash course</TITLE></HEAD>
+<BODY>
+<H1><IMG SRC="html.icons/python.gif">Macintosh Python crash course</H1>
+<HR>
+
+This set of documents provides an introduction to various aspects of
+Python programming on the Mac. It is assumed that the reader is
+already familiar with Python and, to some extent, with MacOS Toolbox
+programming. Other readers may find something interesting here too,
+your mileage may vary. <p>
+
+Another set of Macintosh-savvy examples, more aimed at beginners, is
+maintained by Joseph Strout, at <A
+HREF="http://www-acs.ucsd.edu/~jstrout/python/">
+http://www-acs.ucsd.edu/~jstrout/python/</A>.
+<P>
+
+The document was actually written while I was working on a "real"
+project: creating a single-button application that will allow my
+girlfriend to read her mail (which actually pass thry <EM>my</EM>
+mailbox, so I get to read it too, but don't tell her:-) without her
+having to worry about internet connections, unix commands, etc.  The
+application, when finished, will connect to the net using InterSLIP,
+start a (pseudo-)POP server on unix using rsh and use AppleScript to
+tell Eudora to connect to that server and retrieve messages.  <p>
+
+<CITE>
+If you want to try the examples here you will have to download some
+fixes to the 1.3 distribution to your Macintosh. You need an updated
+version of <A HREF="update-to-1.3/FrameWork.py">FrameWork.py</A> (to
+go in <CODE>Lib:mac</CODE> and updated <A
+HREF="update-to-1.3/into-PlugIns.hqx">project templates</A> to go into
+the <CODE>PlugIns</CODE> folder for PPC users.
+Users of 1.3.1 or later distributions don't need these fixes.<P>
+</CITE>
+
+If you are reading this document on the web and would prefer to read
+it offline you can transfer the whole stuff (as a BinHexed StuffIt
+archive) from <A HREF="complete.hqx"> here</A>. This archive includes
+the fixes mentioned in the previous paragraph. <p>
+
+<H2>Table of contents</H2>
+
+<UL>
+<LI>
+<A HREF="example1.html">Using python to create Macintosh applications,
+part one</A> explains how to create a simple modal-dialog application
+in Python. It also takes a glance at using the toolbox modules Res and
+Dlg, and EasyDialogs for simple question-dialogs.
+
+<LI>
+<A HREF="example2.html">Using python to create Macintosh applications,
+part two</A> turns the previous example program into a more complete
+mac application, using a modeless dialog, menus, etc. It also explains
+how to create applets, standalone applications written in Python.
+
+<LI>
+In the Python distribution two more examples are included without
+explanation. <I>PICTbrowse</I> is an application that locates PICT
+resources and displays them, it demonstrates some quickdraw and the
+resource and list namagers. <I>Imgbrowse</I> displays image files in
+many different formats (gif, tiff, pbm, etc). It shows how to use the
+img modules on the mac.
+
+<LI>
+<A HREF="plugins.html">Creating a C extension module on the Macintosh</A>
+is meant for the hardcore programmer, and shows how to create an
+extension module in C. It also handles using Modulator to create the
+boilerplate for your module, and creating dynamically-loadable modules
+on PowerPC Macs.
+
+<LI>
+<A HREF="applescript.html">Using Open Scripting Architecture from Python</A> explains
+how to create a Python module interfacing to a scriptable application,
+and how to use that module in your python program.
+</UL>
+
+At some point in the (possibly distant) future, I will add chapters on
+how to use bgen to create modules completely automatic and how to make
+your Python program scriptable, but that will have to wait. <p>
+
+<HR>
+
+Please let me know if you miss critical information in this
+document. I am quite sure that I will never find the time to turn it
+into a complete MacPython programmers guide (which would probably be a
+400-page book instead of 5 lousy html-files), but it should contain
+at least the information that is neither in the standard Python
+documentation nor in Inside Mac or other Mac programmers
+documentation. <p>
+
+<HR>
+<A HREF="http://www.cwi.nl/~jack">Jack Jansen</A>,
+<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 6-Mar-1996.
