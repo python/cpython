@@ -115,3 +115,5 @@ class NamespaceErr(DOMException):
 
 class InvalidAccessErr(DOMException):
     code = INVALID_ACCESS_ERR
+
+from domreg import getDOMImplementation,registerDOMImplementation
