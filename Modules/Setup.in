@@ -274,12 +274,6 @@ rotor rotormodule.c		# enigma-inspired encryption
 #new newmodule.c
 
 
-# John Redford's sybase module (requires sybase):
-# (Unfortunately this code is orphaned.  Read the source for documentation.)
-
-#sybase sybasemodule.c
-
-
 # Generic (SunOS / SVR4) dynamic loading module.
 # This is not needed for dynamic loading of Python modules --
 # it is a highly experimental and dangerous device for calling
@@ -308,22 +302,14 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 
 
-# Andy Bensky's "environment" module (contains putenv())
-#environment environment.c
-
 # David Wayne Williams' soundex module
 #soundex soundex.c
-
-# Objective-C (incomplete!!!)
-#objc.c
 
 # Helper module for various ascii-encoders
 binascii binascii.c
 
-# Fred Drake's interface to the Python parser.
-# (Not enabled by default because it is big and doesn't compile with
-# cc on SunOS 4.1.3)
-#parser parsermodule.c
+# Fred Drake's interface to the Python parser
+parser parsermodule.c
 
 
 # Example -- included for reference only:
