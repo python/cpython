@@ -104,8 +104,15 @@ codec_encode(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|ss:encode", &v, &encoding, &errors))
         return NULL;
 
+#ifdef Py_USING_UNICODE
     if (encoding == NULL)
 	encoding = PyUnicode_GetDefaultEncoding();
+#else
+    if (encoding == NULL) {
+	PyErr_SetString(PyExc_ValueError, "no encoding specified");
+	return NULL;
+    }
+#endif
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(v, encoding, errors);
@@ -137,8 +144,15 @@ codec_decode(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|ss:decode", &v, &encoding, &errors))
         return NULL;
 
+#ifdef Py_USING_UNICODE
     if (encoding == NULL)
 	encoding = PyUnicode_GetDefaultEncoding();
+#else
+    if (encoding == NULL) {
+	PyErr_SetString(PyExc_ValueError, "no encoding specified");
+	return NULL;
+    }
+#endif
 
     /* Decode via the codec registry */
     v = PyCodec_Decode(v, encoding, errors);

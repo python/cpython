@@ -221,6 +221,8 @@ Library
 Build
 -----
 
+- Bug #1158607: Build with --disable-unicode again.
+
 - spwdmodule.c is built only if either HAVE_GETSPNAM or HAVE_HAVE_GETSPENT is
   defined.  Discovered as a result of not being able to build on OS X.
 

@@ -720,11 +720,19 @@ def make_encoding_map(decoding_map):
 
 ### error handlers
 
-strict_errors = lookup_error("strict")
-ignore_errors = lookup_error("ignore")
-replace_errors = lookup_error("replace")
-xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
-backslashreplace_errors = lookup_error("backslashreplace")
+try:
+    strict_errors = lookup_error("strict")
+    ignore_errors = lookup_error("ignore")
+    replace_errors = lookup_error("replace")
+    xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
+    backslashreplace_errors = lookup_error("backslashreplace")
+except LookupError:
+    # In --disable-unicode builds, these error handler are missing
+    strict_errors = None
+    ignore_errors = None
+    replace_errors = None
+    xmlcharrefreplace_errors = None
+    backslashreplace_errors = None
 
 # Tell modulefinder that using codecs probably needs the encodings
 # package

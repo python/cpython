@@ -202,12 +202,12 @@ d[float] = _deepcopy_atomic
 d[bool] = _deepcopy_atomic
 try:
     d[complex] = _deepcopy_atomic
-except AttributeError:
+except NameError:
     pass
 d[str] = _deepcopy_atomic
 try:
     d[unicode] = _deepcopy_atomic
-except AttributeError:
+except NameError:
     pass
 try:
     d[types.CodeType] = _deepcopy_atomic
