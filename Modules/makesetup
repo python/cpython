@@ -79,6 +79,18 @@ esac
 NL='\
 '
 
+# Setup to link with extra libraries when makeing shared extensions.
+# Currently, only Cygwin needs this baggage.
+case `uname -s` in
+CYGWIN*) if test $srcdir = .
+	 then
+	 	ExtraLibDir=..
+	 else
+	 	ExtraLibDir='$(LIBPL)'
+	 fi
+	 ExtraLibs="-L$ExtraLibDir -lpython\$(VERSION)";;
+esac
+
 # Main loop
 for i in ${*-Setup}
 do
@@ -149,6 +161,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.so)		libs="$libs $arg";;
 			*.sl)		libs="$libs $arg";;
 			/*.o)		libs="$libs $arg";;
+			*.def)		libs="$libs $arg";;
 			*.o)		srcs="$srcs `basename $arg .o`.c";;
 			*.[cC])		srcs="$srcs $arg";;
 			*.cc)		srcs="$srcs $arg";;
@@ -213,7 +226,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			no)	SHAREDMODS="$SHAREDMODS $file";;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(LDSHARED) $objs $libs -o $file"
+			rule="$rule; \$(LDSHARED) $objs $libs $ExtraLibs -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done

@@ -105,6 +105,7 @@ SYSLIBS=	$(LIBM) $(LIBC)
 
 LIBRARY=	../libpython$(VERSION).a
 LDLIBRARY=	../@LDLIBRARY@
+@SET_DLLLIBRARY@
 
 # === Rules ===
 
@@ -126,6 +127,14 @@ link:		$(MAINOBJ)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) $(MAINOBJ) \
 		  $(LDLIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python$(EXE) $(LDLAST)
 		mv python$(EXE) ../python$(EXE)
+
+# This rule builds the Cygwin Python DLL
+$(DLLLIBRARY): $(LIBRARY)
+		test -d cygwin || mkdir cygwin
+		(cd cygwin; ar x ../$^)
+		dlltool --export-all --output-def $(basename $@).def cygwin/*.o
+		$(LDSHARED) -Wl,--out-implib=$(LDLIBRARY) -o $@ $(basename $@).def cygwin/*.o $(MODLIBS) $(LIBS) $(SYSLIBS)
+		rm -fr cygwin
 
 clean:
 		-rm -f *.o python$(EXE) core *~ [@,#]* *.old *.orig *.rej
