@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.253 
+# From configure.in Revision: 1.254 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -4435,7 +4435,7 @@ fi
 
 # -I${DLINCLDIR} is added to the compile rule for importdl.o
 
-DLINCLDIR=/
+DLINCLDIR=.
 
 echo $ac_n "checking for --with-sgi-dl""... $ac_c" 1>&6
 echo "configure:4442: checking for --with-sgi-dl" >&5
