@@ -377,8 +377,8 @@ By default, tests are created for objects with no docstring:
 
     >>> def no_docstring(v):
     ...     pass
-    >>> finder.find(no_docstring) # doctest: +ELLIPSIS
-    [<DocTest no_docstring from ... (no examples)>]
+    >>> finder.find(no_docstring)
+    []
 
 However, the optional argument `exclude_empty` to the DocTestFinder
 constructor can be used to exclude tests for objects with empty
@@ -414,8 +414,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
-     0  SampleClass.NestedClass.get
-     0  SampleClass.NestedClass.square
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
@@ -473,8 +471,6 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
-     0  some_module.SampleClass.NestedClass.get
-     0  some_module.SampleClass.NestedClass.square
      1  some_module.SampleClass.__init__
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_property
@@ -520,6 +516,23 @@ deprecated isprivate gimmick.
      1  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
+     1  SampleClass.__init__
+     1  SampleClass.double
+     1  SampleClass.get
+
+By default, that excluded objects with no doctests.  exclude_empty=False
+tells it to include (empty) tests for objects with no doctests.  This feature
+is really to support backward compatibility in what doctest.master.summarize()
+displays.
+
+    >>> tests = doctest.DocTestFinder(_namefilter=namefilter,
+    ...                                exclude_empty=False).find(SampleClass)
+    >>> tests.sort()
+    >>> for t in tests:
+    ...     print '%2s  %s' % (len(t.examples), t.name)
+     1  SampleClass
+     3  SampleClass.NestedClass
+     1  SampleClass.NestedClass.__init__
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
@@ -550,7 +563,7 @@ object explicitly passed to DocTestFinder:
     ...     return base == 'SampleClass'
     >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
     >>> len(tests)
-    11
+    9
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
