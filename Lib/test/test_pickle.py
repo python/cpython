@@ -80,6 +80,9 @@ def dotest(pickle):
     x2 = pickle.loads(s)
     if x2 == r: print "ok"
     else: print "bad"
+    # don't create cyclic garbage
+    del x2[0]
+    del r[0]
 
     # Test protection against closed files
     import tempfile, os
