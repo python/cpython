@@ -7,6 +7,22 @@ What's New in IDLEfork 0.9b1?
 
 *Release date: XX-XXX-2003*
 
+- Interrupt the subprocess if it is running when the user attempts to 
+  restart the shell, run a module, or exit.
+
+- Improved exception reporting when running commands or scripts from the
+  command line.
+
+- Added a comment to the shell startup header to indicate when IDLE is not
+  using the subprocess.  (For now, set PyShell.use_subprocess to False to run
+  in this mode.)
+
+- Restore the ability to run without the subprocess.  This can be important for
+  some platforms or configurations.  (Running without the subprocess allows the
+  debugger to trace through parts of IDLE itself, which may or may not be
+  desirable, depending on your point of view.  In addition, the traditional
+  reload/import tricks must be use if user source code is changed.)
+
 - Improve the error message a user gets when saving a file with non-ASCII
   characters and no source encoding is specified.  Done by adding a dialog
   'EncodingMessage', which contains the line to add in a fixed-font entry
