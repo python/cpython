@@ -77,7 +77,8 @@ def split_entry(str, which):
     return stuff
 
 
-_rmtt = re.compile(r"(.*)<tt>(.*)</tt>(.*)$", re.IGNORECASE)
+_rmtt = re.compile(r"(.*)<tt(?: class=[a-z0-9]+)?>(.*)</tt>(.*)$",
+                   re.IGNORECASE)
 _rmparens = re.compile(r"\(\)")
 
 def split_entry_key(str):
