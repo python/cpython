@@ -632,8 +632,8 @@ The \option{data\_files} option can be used to specify additional
 files needed by the module distribution: configuration files,
 data files, anything which does not fit in the previous categories.
 
-\option{data\_files} specify a sequence of \code{(directory, files)}
-pairs in the following way:
+\option{data\_files} specifies a sequence of (\var{directory},
+\var{files}) pairs in the following way:
 
 \begin{verbatim}
 setup(...
@@ -643,6 +643,17 @@ setup(...
 
 Note that you can specify the directory names where the data files
 will be installed, but you cannot rename the data files themselves.
+
+Each (\var{directory}, \var{files}) pair in the sequence specifies the
+installation directory and the files to install there.  If
+\var{directory} is a relative path, it is interpreted relative to the
+installation prefix (Python's \code{sys.prefix} for pure-Python
+packages, \code{sys.exec_prefix} for packages that contain extension
+modules).  Each file name in \var{files} is interpreted relative to
+the \file{setup.py} script at the top of the package source
+distribution.  No directory information from \var{files} is used to
+determine the final location of the installed file; only the name of
+the file is used.
 
 You can specify the \option{data\_files} options as a simple sequence
 of files without specifying a target directory, but this is not recommended,
