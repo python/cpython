@@ -121,14 +121,14 @@ def _test():
     for hp,h,p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b", 8000), 
                    ("www.python.org:80", "www.python.org", 80),
                    ("www.python.org", "www.python.org", 80),
-	           ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
+                   ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
         try:
             http = httplib.HTTP(hp)
         except httplib.InvalidURL:
             print "InvalidURL raised erroneously"
-	c = http._conn
-	if h != c.host: raise AssertionError, ("Host incorrectly parsed", h, c.host)
-	if p != c.port: raise AssertionError, ("Port incorrectly parsed", p, c.host)
+        c = http._conn
+        if h != c.host: raise AssertionError, ("Host incorrectly parsed", h, c.host)
+        if p != c.port: raise AssertionError, ("Port incorrectly parsed", p, c.host)
 
     # test response with multiple message headers with the same field name.
     text = ('HTTP/1.1 200 OK\r\n'

@@ -534,8 +534,8 @@ class HTTPConnection:
                 host = host[:i]
             else:
                 port = self.default_port
-	    if host[0] == '[' and host[-1] == ']':
-	        host = host[1:-1]
+            if host[0] == '[' and host[-1] == ']':
+                host = host[1:-1]
         self.host = host
         self.port = port
 
