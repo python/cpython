@@ -29,6 +29,10 @@ Extension modules
 Library
 -------
 
+- Bug #930024: posixpath.realpath() now handles infinite loops in symlinks by
+  returning the last point in the path that was not part of any loop.  Thanks
+  AM Kuchling.
+
 - Bug #980327: ntpath not handles compressing erroneous slashes between the
   drive letter and the rest of the path.  Also clearly handles UNC addresses now
   as well.  Thanks Paul Moore.
