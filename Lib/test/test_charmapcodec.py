@@ -17,7 +17,7 @@ def check(a, b):
 
 # test codec's full path name (see test/testcodec.py)
 codecname = 'test.testcodec'
-    
+
 check(unicode('abc', codecname), u'abc')
 check(unicode('xdef', codecname), u'abcdef')
 check(unicode('defx', codecname), u'defabc')
@@ -41,4 +41,3 @@ except UnicodeError:
     print '\\001 maps to undefined: OK'
 else:
     print '*** check failed: \\001 does not map to undefined'
-    

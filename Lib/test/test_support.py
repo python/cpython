@@ -73,13 +73,13 @@ def findfile(file, here=__file__):
     return file
 
 def verify(condition, reason='test failed'):
-	
-	""" Verify that condition is true. If not, raise an
-	    AssertionError.
 
-	    The optinal argument reason can be given to provide
-	    a better error text.
-	
-	"""
-	if not condition:
-		raise AssertionError,reason
+    """ Verify that condition is true. If not, raise an
+        AssertionError.
+
+        The optinal argument reason can be given to provide
+        a better error text.
+
+    """
+    if not condition:
+        raise AssertionError,reason
