@@ -1,5 +1,6 @@
 # First attempt at automatically generating CodeWarior projects
 import os
+import MacOS
 
 Error="gencwproject.Error"
 #
@@ -17,15 +18,22 @@ TEMPLATELIST= [
 ]
 
 class ProjectBuilder:
-	def __init__(self, dict, templatelist=TEMPLATELIST, templatedir=None):
-		if templatedir == None:
+	def __init__(self, dict, templatelist=TEMPLATELIST, templatename=None):
+		if templatename == None:
+			if hasattr(MacOS, 'runtimemodel'):
+				templatename = 'template-%s'%MacOS.runtimemodel
+			else:
+				templatename = 'template'
+		if os.sep in templatename:
+			templatedir = templatename
+		else:
 			try:
 				packagedir = os.path.split(__file__)[0]
 			except NameError:
 				packagedir = os.curdir
-			templatedir = os.path.join(packagedir, 'template')
+			templatedir = os.path.join(packagedir, templatename)
 		if not os.path.exists(templatedir):
-			raise Error, "Cannot file templatedir"
+			raise Error, "Cannot find templatedir %s"%templatedir
 		self.dict = dict
 		if not dict.has_key('prefixname'):
 			dict['prefixname'] = 'mwerks_plugin_config.h'
