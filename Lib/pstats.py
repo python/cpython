@@ -107,7 +107,7 @@ class Stats:
 	def load_stats(self, arg):
 		if not arg:  self.stats = {}
 		elif type(arg) == type(""):
-			f = open(arg, 'r')
+			f = open(arg, 'rb')
 			self.stats = marshal.load(f)
 			f.close()
 			try:
