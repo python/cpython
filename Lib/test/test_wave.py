@@ -13,7 +13,7 @@ nframes = 100
 
 testfile = tempfile.mktemp()
 
-f = wave.open(testfile, 'w')
+f = wave.open(testfile, 'wb')
 f.setnchannels(nchannels)
 f.setsampwidth(sampwidth)
 f.setframerate(framerate)
@@ -22,7 +22,7 @@ output = '\0' * nframes * nchannels * sampwidth
 f.writeframes(output)
 f.close()
 
-f = wave.open(testfile, 'r')
+f = wave.open(testfile, 'rb')
 check(nchannels == f.getnchannels(), "nchannels")
 check(sampwidth == f.getsampwidth(), "sampwidth")
 check(framerate == f.getframerate(), "framerate")
