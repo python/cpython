@@ -30,6 +30,9 @@ Release date: XX-XXX-2003
 
 - Backported the "largefile" requirement for test_largefile on Mac OS X.
 
+- Backported email package 2.5.2, which makes address parsing slightly
+  more robust.
+
 - SF #710576: Backport of fix for #663074, to implement per-interpreter
   codecs registries. This adds new members at the end of
   PyInterpreterState.
@@ -152,6 +155,10 @@ Release date: XX-XXX-2003
 
 - Distutils: Translate spaces in the machine name to underscores
   (Power Macintosh -> Power_Macintosh)
+
+- Backported SF #658233, continuation lines in .mo file metadata
+  crashed gettext.GNUTranslations parsing.  Also, export more symbols
+  in the gettext module's __all__.
 
 
 What's New in Python 2.2.2 (final) ?
