@@ -43,6 +43,7 @@ extern int verbose; /* Defined in pythonrun.c */
    NT		-- NT style dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
    WITH_MAC_DL	-- Mac dynamic linking (highly experimental)
+   USE_MAC_SHARED_LIBRARY -- Another mac dynamic linking method
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
@@ -98,6 +99,15 @@ typedef FARPROC dl_funcptr;
 #define DYNAMIC_LINK
 #endif
 
+#ifdef USE_MAC_SHARED_LIBRARY
+#define DYNAMIC_LINK
+#define SHORT_EXT ".shlb"
+#define LONG_EXT "module.shlb"
+#ifndef _DL_FUNCPTR_DEFINED
+typedef void (*dl_funcptr)();
+#endif
+#endif
+
 #if !defined(DYNAMIC_LINK) && defined(HAVE_DLFCN_H) && defined(HAVE_DLOPEN)
 #define DYNAMIC_LINK
 #define USE_SHLIB
@@ -138,6 +148,13 @@ typedef void (*dl_funcptr)();
 #include "dynamic_load.h"
 #endif
 
+#ifdef USE_MAC_SHARED_LIBRARY
+#include <CodeFragments.h>
+#include <Files.h>
+#include "macdefs.h"
+#include "macglue.h"
+#endif
+
 #ifdef USE_RLD
 #include <mach-o/rld.h>
 #define FUNCNAME_PATTERN "_init%.200s"
@@ -163,9 +180,9 @@ extern char *getprogramname();
 
 #endif /* DYNAMIC_LINK */
 
-/* Max length of module suffix searched for -- accommodates "module.so" */
+/* Max length of module suffix searched for -- accommodates "module.shlb" */
 #ifndef MAXSUFFIXSIZE
-#define MAXSUFFIXSIZE 10
+#define MAXSUFFIXSIZE 12
 #endif
 
 /* Pass it on to import.c */
@@ -203,6 +220,28 @@ load_dynamic_module(name, pathname)
 			return NULL;
 	}
 #else /* !WITH_MAC_DL */
+#ifdef USE_MAC_SHARED_LIBRARY
+	/* Another way to do dynloading on the mac, use CFM */
+	{
+		FSSpec libspec;
+		CFragConnectionID connID;
+	    Ptr mainAddr;
+	    Str255 errMessage;
+	    OSErr err;
+		
+		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
+		err = GetDiskFragment(&libspec, 0, 0, Pstring(name), kLoadCFrag, &connID, &mainAddr,
+						errMessage);
+		if ( err ) {
+			char buf[512];
+			
+			sprintf(buf, "%#s: %s", errMessage, macstrerror(err)); 
+			err_setstr(ImportError, buf);
+			return NULL;
+		}
+		p = (dl_funcptr)mainAddr;
+	}
+#endif /* USE_MAC_SHARED_LIBRARY */
 #ifdef USE_SHLIB
 	{
 #ifdef RTLD_NOW
