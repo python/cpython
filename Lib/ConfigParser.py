@@ -96,11 +96,13 @@ MAX_INTERPOLATION_DEPTH = 10
 
 
 # exception classes
-class Error:
+class Error(Exception):
     def __init__(self, msg=''):
         self._msg = msg
+        Exception.__init__(self, msg)
     def __repr__(self):
         return self._msg
+    __str__ = __repr__
 
 class NoSectionError(Error):
     def __init__(self, section):
