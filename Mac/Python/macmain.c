@@ -269,7 +269,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	}
 #if __profile__ == 1
 	/* collectSummary or collectDetailed, timebase, #routines, max stack depth */
-	ProfilerInit(collectSummary, bestTimeBase, 2000, 150);
+	ProfilerInit(collectSummary, bestTimeBase, 8000, 250);
 #endif
 
 	/* Tell the rest of python about our argc/argv */
