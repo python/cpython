@@ -85,6 +85,24 @@ builtin_chr(self, v)
 }
 
 static object *
+builtin_coerce(self, args)
+	object *self;
+	object *args;
+{
+	object *v, *w;
+	object *res;
+
+	if (!getargs(args, "(OO)", &v, &w))
+		return NULL;
+	if (coerce(&v, &w) < 0)
+		return NULL;
+	res = mkvalue("(OO)", v, w);
+	DECREF(v);
+	DECREF(w);
+	return res;
+}
+
+static object *
 builtin_dir(self, v)
 	object *self;
 	object *v;
@@ -250,6 +268,9 @@ builtin_float(self, v)
 		INCREF(v);
 		return v;
 	}
+	else if (is_instanceobject(v)) {
+		return instance_convert(v, "__float__");
+	}
 	err_setstr(TypeError, "float() argument must be int, long or float");
 	return NULL;
 }
@@ -359,6 +380,9 @@ builtin_int(self, v)
 		/* XXX should check for overflow */
 		return newintobject((long)x);
 	}
+	else if (is_instanceobject(v)) {
+		return instance_convert(v, "__int__");
+	}
 	err_setstr(TypeError, "int() argument must be int, long or float");
 	return NULL;
 }
@@ -385,7 +409,10 @@ builtin_len(self, v)
 		err_setstr(TypeError, "len() of unsized object");
 		return NULL;
 	}
-	return newintobject(len);
+	if (len < 0)
+		return NULL;
+	else
+		return newintobject(len);
 }
 
 static object *
@@ -406,6 +433,9 @@ builtin_long(self, v)
 	else if (is_floatobject(v)) {
 		double x = getfloatvalue(v);
 		return dnewlongobject(x);
+	}
+	else if (is_instanceobject(v)) {
+		return instance_convert(v, "__long__");
 	}
 	err_setstr(TypeError, "long() argument must be int, long or float");
 	return NULL;
@@ -648,6 +678,7 @@ static struct methodlist builtin_methods[] = {
 	{"abs",		builtin_abs},
 	{"apply",	builtin_apply},
 	{"chr",		builtin_chr},
+	{"coerce",	builtin_coerce},
 	{"dir",		builtin_dir},
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
@@ -766,6 +797,8 @@ coerce(pv, pw)
 		INCREF(w);
 		return 0;
 	}
+	if (is_instanceobject(v) || is_instanceobject(w))
+		return instance_coerce(pv, pw);
 	if (v->ob_type->tp_as_number == NULL ||
 					w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "mixing number and non-number");

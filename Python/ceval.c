@@ -36,6 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "bltinmodule.h"
 #include "traceback.h"
 
+/* Turn this on if your compiler chokes on the big switch: */
+/* #define CASE_TOO_BIG 1 /**/
+
 #ifndef NDEBUG
 /* For debugging the interpreter: */
 #define LLTRACE  1	/* Low-level trace feature */
@@ -106,13 +109,13 @@ init_save_thread()
    dynamically loaded modules needn't be compiled separately for use
    with and without threads: */
 
-void *
+object *
 save_thread()
 {
 #ifdef USE_THREAD
 	if (interpreter_lock) {
-		void *res;
-		res = (void *)current_frame;
+		object *res;
+		res = (object *)current_frame;
 		current_frame = NULL;
 		release_lock(interpreter_lock);
 		return res;
@@ -124,7 +127,7 @@ save_thread()
 
 void
 restore_thread(x)
-	void *x;
+	object *x;
 {
 #ifdef USE_THREAD
 	if (interpreter_lock) {
@@ -722,6 +725,10 @@ eval_code(co, globals, locals, arg)
 			if ((err = dict2remove(f->f_locals, w)) != 0)
 				err_setstr(NameError, getstringvalue(w));
 			break;
+
+#ifdef CASE_TOO_BIG
+		default: switch (opcode) {
+#endif
 		
 		case UNPACK_VARARG:
 			if (EMPTY()) {
@@ -1023,13 +1030,19 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case JUMP_IF_FALSE:
-			if (!testbool(TOP()))
+			err = testbool(TOP());
+			if (err > 0)
+				err = 0;
+			else if (err == 0)
 				JUMPBY(oparg);
 			break;
 		
 		case JUMP_IF_TRUE:
-			if (testbool(TOP()))
+			err = testbool(TOP());
+			if (err > 0) {
+				err = 0;
 				JUMPBY(oparg);
+			}
 			break;
 		
 		case JUMP_ABSOLUTE:
@@ -1092,7 +1105,11 @@ eval_code(co, globals, locals, arg)
 			err_setstr(SystemError, "eval_code: unknown opcode");
 			why = WHY_EXCEPTION;
 			break;
-		
+
+#ifdef CASE_TOO_BIG
+		}
+#endif
+
 		} /* switch */
 
 	    on_error:
@@ -1388,22 +1405,27 @@ flushline()
 }
 
 
-/* Test a value used as condition, e.g., in a for or if statement */
+/* Test a value used as condition, e.g., in a for or if statement.
+   Return -1 if an error occurred */
 
 static int
 testbool(v)
 	object *v;
 {
+	int res;
 	if (v == None)
-		return 0;
-	if (v->ob_type->tp_as_number != NULL)
-		return (*v->ob_type->tp_as_number->nb_nonzero)(v);
-	if (v->ob_type->tp_as_sequence != NULL)
-		return (*v->ob_type->tp_as_sequence->sq_length)(v) != 0;
-	if (v->ob_type->tp_as_mapping != NULL)
-		return (*v->ob_type->tp_as_mapping->mp_length)(v) != 0;
-	/* All other objects are 'true' */
-	return 1;
+		res = 0;
+	else if (v->ob_type->tp_as_number != NULL)
+		res = (*v->ob_type->tp_as_number->nb_nonzero)(v);
+	else if (v->ob_type->tp_as_mapping != NULL)
+		res = (*v->ob_type->tp_as_mapping->mp_length)(v);
+	else if (v->ob_type->tp_as_sequence != NULL)
+		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
+	else
+		res = 0;
+	if (res > 0)
+		res = 1;
+	return res;
 }
 
 static object *
@@ -1649,7 +1671,13 @@ not(v)
 	object *v;
 {
 	int outcome = testbool(v);
-	object *w = outcome == 0 ? True : False;
+	object *w;
+	if (outcome < 0)
+		return NULL;
+	if (outcome == 0)
+		w = True;
+	else
+		w = False;
 	INCREF(w);
 	return w;
 }
@@ -1780,18 +1808,24 @@ apply_subscript(v, w)
 		err_setstr(TypeError, "unsubscriptable object");
 		return NULL;
 	}
-	if (tp->tp_as_sequence != NULL) {
+	if (tp->tp_as_mapping != NULL) {
+		return (*tp->tp_as_mapping->mp_subscript)(v, w);
+	}
+	else {
 		int i;
 		if (!is_intobject(w)) {
 			err_setstr(TypeError, "sequence subscript not int");
 			return NULL;
 		}
 		i = getintvalue(w);
-		if (i < 0)
-			i += (*tp->tp_as_sequence->sq_length)(v);
+		if (i < 0) {
+			int len = (*tp->tp_as_sequence->sq_length)(v);
+			if (len < 0)
+				return NULL;
+			i += len;
+		}
 		return (*tp->tp_as_sequence->sq_item)(v, i);
 	}
-	return (*tp->tp_as_mapping->mp_subscript)(v, w);
 }
 
 static object *
@@ -1841,6 +1875,8 @@ apply_slice(u, v, w) /* return u[v:w] */
 	}
 	ilow = 0;
 	isize = ihigh = (*tp->tp_as_sequence->sq_length)(u);
+	if (isize < 0)
+		return NULL;
 	if (slice_index(v, isize, &ilow) != 0)
 		return NULL;
 	if (slice_index(w, isize, &ihigh) != 0)
@@ -1858,7 +1894,11 @@ assign_subscript(w, key, v) /* w[key] = v */
 	sequence_methods *sq;
 	mapping_methods *mp;
 	int (*func)();
-	if ((sq = tp->tp_as_sequence) != NULL &&
+	if ((mp = tp->tp_as_mapping) != NULL &&
+			(func = mp->mp_ass_subscript) != NULL) {
+		return (*func)(w, key, v);
+	}
+	else if ((sq = tp->tp_as_sequence) != NULL &&
 			(func = sq->sq_ass_item) != NULL) {
 		if (!is_intobject(key)) {
 			err_setstr(TypeError,
@@ -1867,14 +1907,14 @@ assign_subscript(w, key, v) /* w[key] = v */
 		}
 		else {
 			int i = getintvalue(key);
-			if (i < 0)
-				i += (*sq->sq_length)(w);
+			if (i < 0) {
+				int len = (*sq->sq_length)(w);
+				if (len < 0)
+					return -1;
+				i += len;
+			}
 			return (*func)(w, i, v);
 		}
-	}
-	else if ((mp = tp->tp_as_mapping) != NULL &&
-			(func = mp->mp_ass_subscript) != NULL) {
-		return (*func)(w, key, v);
 	}
 	else {
 		err_setstr(TypeError,
@@ -1899,6 +1939,8 @@ assign_slice(u, v, w, x) /* u[v:w] = x */
 	}
 	ilow = 0;
 	isize = ihigh = (*sq->sq_length)(u);
+	if (isize < 0)
+		return -1;
 	if (slice_index(v, isize, &ilow) != 0)
 		return -1;
 	if (slice_index(w, isize, &ihigh) != 0)
@@ -1955,6 +1997,8 @@ cmp_member(v, w)
 		return -1;
 	}
 	n = (*sq->sq_length)(w);
+	if (n < 0)
+		return -1;
 	for (i = 0; i < n; i++) {
 		x = (*sq->sq_item)(w, i);
 		cmp = cmpobject(v, x);
@@ -1977,7 +2021,7 @@ cmp_outcome(op, v, w)
 	case IS:
 	case IS_NOT:
 		res = (v == w);
-		if (op == IS_NOT)
+		if (op == (int) IS_NOT)
 			res = !res;
 		break;
 	case IN:
@@ -1985,7 +2029,7 @@ cmp_outcome(op, v, w)
 		res = cmp_member(v, w);
 		if (res < 0)
 			return NULL;
-		if (op == NOT_IN)
+		if (op == (int) NOT_IN)
 			res = !res;
 		break;
 	case EXC_MATCH:

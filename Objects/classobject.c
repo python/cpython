@@ -25,8 +25,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Class object implementation */
 
 #include "allobjects.h"
-
+#include "modsupport.h"
 #include "structmember.h"
+#include "ceval.h"
+
+extern typeobject MappingInstancetype;
+extern typeobject SequenceInstancetype;
 
 typedef struct {
 	OB_HEAD
@@ -166,6 +170,7 @@ newinstanceobject(class)
 	register object *class;
 {
 	register instanceobject *inst;
+	object *v;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
@@ -246,6 +251,428 @@ instance_setattr(inst, name, v)
 		return dictinsert(inst->in_attr, name, v);
 }
 
+int
+instance_print(inst, fp, flags)
+	instanceobject *inst;
+	FILE *fp;
+	int flags;
+{
+	object *func, *repr;
+	int ret;
+
+	func = instance_getattr(inst, "__repr__");
+	if (func == NULL) {
+		err_clear();
+		fprintf(fp, "<instance object at %lx>", (long)inst);
+		return 0;
+	}
+	repr = call_object(func, (object *)NULL);
+	DECREF(func);
+	if (repr == NULL)
+		return -1;
+	ret = printobject(repr, fp, flags | PRINT_RAW);
+	DECREF(repr);
+	return ret;
+}
+
+object *
+instance_repr(inst)
+	instanceobject *inst;
+{
+	object *func;
+	object *res;
+
+	func = instance_getattr(inst, "__repr__");
+	if (func == NULL) {
+		char buf[80];
+		err_clear();
+		sprintf(buf, "<instance object at %lx>", (long)inst);
+		return newstringobject(buf);
+	}
+	res = call_object(func, (object *)NULL);
+	DECREF(func);
+	return res;
+}
+
+int
+instance_compare(inst, other)
+	instanceobject *inst, *other;
+{
+	object *func;
+	object *res;
+	int outcome;
+
+	func = instance_getattr(inst, "__cmp__");
+	if (func == NULL) {
+		err_clear();
+		if (inst < other)
+			return -1;
+		if (inst > other)
+			return 1;
+		return 0;
+	}
+	res = call_object(func, (object *)other);
+	DECREF(func);
+	if (res == NULL) {
+		err_clear(); /* XXX Should report the error, bot how...??? */
+		return 0;
+	}
+	if (is_intobject(res))
+		outcome = getintvalue(res);
+	else
+		outcome = 0; /* XXX Should report the error, bot how...??? */
+	DECREF(res);
+	return outcome;
+}
+
+int
+instance_length(inst)
+	instanceobject *inst;
+{
+	object *func;
+	object *res;
+	int outcome;
+
+	func = instance_getattr(inst, "__len__");
+	if (func == NULL)
+		return -1;
+	res = call_object(func, (object *)NULL);
+	DECREF(func);
+	if (is_intobject(res)) {
+		outcome = getintvalue(res);
+		if (outcome < 0)
+			err_setstr(ValueError, "__len__() should return >= 0");
+	}
+	else {
+		err_setstr(TypeError, "__len__() should return an int");
+		outcome = -1;
+	}
+	DECREF(res);
+	return outcome;
+}
+
+object *
+instance_subscript(inst, key)
+	instanceobject *inst;
+	object *key;
+{
+	object *func;
+	object *arg;
+	object *res;
+
+	func = instance_getattr(inst, "__getitem__");
+	if (func == NULL)
+		return NULL;
+	arg = mkvalue("(O)", key);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	return res;
+}
+
+int
+instance_ass_subscript(inst, key, value)
+	instanceobject*inst;
+	object *key;
+	object *value;
+{
+	object *func;
+	object *arg;
+	object *res;
+
+	if (value == NULL)
+		func = instance_getattr(inst, "__delitem__");
+	else
+		func = instance_getattr(inst, "__setitem__");
+	if (func == NULL)
+		return -1;
+	if (value == NULL)
+		arg = mkvalue("(O)", key);
+	else
+		arg = mkvalue("(OO)", key, value);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	if (res == NULL)
+		return -1;
+	DECREF(res);
+	return 0;
+}
+
+mapping_methods instance_as_mapping = {
+	instance_length,	/*mp_length*/
+	instance_subscript,	/*mp_subscript*/
+	instance_ass_subscript,	/*mp_ass_subscript*/
+};
+
+static object *
+instance_concat(inst, other)
+	instanceobject *inst, *other;
+{
+	object *func, *res;
+
+	func = instance_getattr(inst, "__add__");
+	if (func == NULL)
+		return NULL;
+	res = call_object(func, (object *)other);
+	DECREF(func);
+	return res;
+}
+
+static object *
+instance_repeat(inst, count)
+	instanceobject *inst;
+	int count;
+{
+	object *func, *arg, *res;
+
+	func = instance_getattr(inst, "__mul__");
+	if (func == NULL)
+		return NULL;
+	arg = newintobject((long)count);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	return res;
+}
+
+static object *
+instance_item(inst, i)
+	instanceobject *inst;
+	int i;
+{
+	object *func, *arg, *res;
+
+	func = instance_getattr(inst, "__getitem__");
+	if (func == NULL)
+		return NULL;
+	arg = newintobject((long)i);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	return res;
+}
+
+static object *
+instance_slice(inst, i, j)
+	instanceobject *inst;
+	int i, j;
+{
+	object *func, *arg, *res;
+
+	func = instance_getattr(inst, "__getslice__");
+	if (func == NULL)
+		return NULL;
+	arg = mkvalue("(ii)", i, j);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	return res;
+}
+
+static int
+instance_ass_item(inst, i, item)
+	instanceobject *inst;
+	int i;
+	object *item;
+{
+	object *func, *arg, *res;
+
+	if (item == NULL)
+		func = instance_getattr(inst, "__delitem__");
+	else
+		func = instance_getattr(inst, "__setitem__");
+	if (func == NULL)
+		return NULL;
+	if (item == NULL)
+		arg = mkvalue("i", i);
+	else
+		arg = mkvalue("(iO)", i, item);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	if (res == NULL)
+		return -1;
+	DECREF(res);
+	return 0;
+}
+
+static int
+instance_ass_slice(inst, i, j, value)
+	instanceobject *inst;
+	int i, j;
+	object *value;
+{
+	object *func, *arg, *res;
+
+	if (value == NULL)
+		func = instance_getattr(inst, "__delslice__");
+	else
+		func = instance_getattr(inst, "__setslice__");
+	if (func == NULL)
+		return NULL;
+	if (value == NULL)
+		arg = mkvalue("(ii)", i, j);
+	else
+		arg = mkvalue("(iiO)", i, j, value);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	if (res == NULL)
+		return -1;
+	DECREF(res);
+	return 0;
+}
+
+static sequence_methods instance_as_sequence = {
+	instance_length,	/*sq_length*/
+	instance_concat,	/*sq_concat*/
+	instance_repeat,	/*sq_repeat*/
+	instance_item,		/*sq_item*/
+	instance_slice,		/*sq_slice*/
+	instance_ass_item,	/*sq_ass_item*/
+	instance_ass_slice,	/*sq_ass_slice*/
+};
+
+static object *
+generic_binary_op(self, other, methodname)
+	instanceobject *self;
+	object *other;
+	char *methodname;
+{
+	object *func, *res;
+
+	if ((func = instance_getattr(self, methodname)) == NULL)
+		return NULL;
+	res = call_object(func, other);
+	DECREF(func);
+	return res;
+}
+
+static object *
+generic_unary_op(self, methodname)
+	instanceobject *self;
+	char *methodname;
+{
+	object *func, *res;
+
+	if ((func = instance_getattr(self, methodname)) == NULL)
+		return NULL;
+	res = call_object(func, (object *)NULL);
+	DECREF(func);
+	return res;
+}
+
+#define BINARY(funcname, methodname) \
+static object * funcname(self, other) instanceobject *self; object *other; { \
+	return generic_binary_op(self, other, methodname); \
+}
+
+#define UNARY(funcname, methodname) \
+static object *funcname(self) instanceobject *self; { \
+	return generic_unary_op(self, methodname); \
+}
+
+BINARY(instance_add, "__add__")
+BINARY(instance_sub, "__sub__")
+BINARY(instance_mul, "__mul__")
+BINARY(instance_div, "__div__")
+BINARY(instance_mod, "__mod__")
+BINARY(instance_divmod, "__divmod__")
+BINARY(instance_pow, "__pow__")
+UNARY(instance_neg, "__neg__")
+UNARY(instance_pos, "__pos__")
+UNARY(instance_abs, "__abs__")
+
+int
+instance_nonzero(self)
+	instanceobject *self;
+{
+	object *func, *res;
+	long outcome;
+
+	if ((func = instance_getattr(self, "__len__")) == NULL) {
+		err_clear();
+		if ((func = instance_getattr(self, "__nonzero__")) == NULL) {
+			err_clear();
+			/* Fall back to the default behavior:
+			   all instances are nonzero */
+			return 1;
+		}
+	}
+	res = call_object(func, (object *)NULL);
+	DECREF(func);
+	if (res == NULL)
+		return -1;
+	if (!is_intobject(res)) {
+		DECREF(res);
+		err_setstr(TypeError, "__nonzero__ should return an int");
+		return -1;
+	}
+	outcome = getintvalue(res);
+	DECREF(res);
+	if (outcome < 0) {
+		err_setstr(ValueError, "__nonzero__ should return >= 0");
+		return -1;
+	}
+	return outcome > 0;
+}
+
+UNARY(instance_invert, "__invert__")
+BINARY(instance_lshift, "__lshift__")
+BINARY(instance_rshift, "__rshift__")
+BINARY(instance_and, "__and__")
+BINARY(instance_xor, "__xor__")
+BINARY(instance_or, "__or__")
+
+static number_methods instance_as_number = {
+	instance_add,		/*nb_add*/
+	instance_sub,		/*nb_subtract*/
+	instance_mul,		/*nb_multiply*/
+	instance_div,		/*nb_divide*/
+	instance_mod,		/*nb_remainder*/
+	instance_divmod,	/*nb_divmod*/
+	instance_pow,		/*nb_power*/
+	instance_neg,		/*nb_negative*/
+	instance_pos,		/*nb_positive*/
+	instance_abs,		/*nb_absolute*/
+	instance_nonzero,	/*nb_nonzero*/
+	instance_invert,	/*nb_invert*/
+	instance_lshift,	/*nb_lshift*/
+	instance_rshift,	/*nb_rshift*/
+	instance_and,		/*nb_and*/
+	instance_xor,		/*nb_xor*/
+	instance_or,		/*nb_or*/
+};
+
 typeobject Instancetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -253,15 +680,75 @@ typeobject Instancetype = {
 	sizeof(instanceobject),
 	0,
 	instance_dealloc,	/*tp_dealloc*/
-	0,			/*tp_print*/
+	instance_print,		/*tp_print*/
 	instance_getattr,	/*tp_getattr*/
 	instance_setattr,	/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
-	0,			/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	0,			/*tp_as_mapping*/
+	instance_compare,	/*tp_compare*/
+	instance_repr,		/*tp_repr*/
+	&instance_as_number,	/*tp_as_number*/
+	&instance_as_sequence,	/*tp_as_sequence*/
+	&instance_as_mapping,	/*tp_as_mapping*/
 };
+
+static int
+one_coerce(pv, pw)
+	object **pv, **pw;
+{
+	object *v = *pv;
+	object *w = *pw;
+	object *func;
+
+	if (!is_instanceobject(v))
+		return 1;
+	func = instance_getattr((instanceobject *)v, "__coerce__");
+	if (func == NULL) {
+		err_clear();
+		return 1;
+	}
+	if (func != NULL) {
+		object *res = call_object(func, w);
+		int outcome;
+		if (res == NULL)
+			return -1;
+		outcome = getargs(res, "(OO)", &v, &w);
+		if (!outcome || v->ob_type != w->ob_type ||
+			        v->ob_type->tp_as_number == NULL) {
+			DECREF(res);
+			err_setstr(TypeError, "bad __coerce__ result");
+			return -1;
+		}
+		INCREF(v);
+		INCREF(w);
+		DECREF(res);
+		*pv = v;
+		*pw = w;
+		return 0;
+	}
+}
+
+int
+instance_coerce(pv, pw)
+	object **pv, **pw;
+{
+	int outcome;
+	outcome = one_coerce(pv, pw);
+	if (outcome > 0) {
+		outcome = one_coerce(pw, pv);
+		if (outcome > 0) {
+			err_setstr(TypeError, "uncoerceable instance");
+			outcome = -1;
+		}
+	}
+	return outcome;
+}
+
+object *
+instance_convert(inst, methodname)
+	object *inst;
+	char *methodname;
+{
+	return generic_unary_op((instanceobject *)inst, methodname);
+}
 
 
 /* And finally, here are instance method objects */
