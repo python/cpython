@@ -33,6 +33,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "structmember.h"
 
 #include <ctype.h>
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 /* Three symbols from graminit.h are also defined in Python.h, with
    Py_ prefixes to their names.  Python.h can't include graminit.h
