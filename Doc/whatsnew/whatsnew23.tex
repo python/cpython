@@ -833,6 +833,16 @@ creates a dictionary with keys taken from the supplied iterator
 
 (Patches contributed by Raymond Hettinger.)
 
+The dict() constructor now also accepts keyword arguments to simplify
+creating small dictionaries:
+
+\begin{verbatim}
+>>> dict(red=1, blue=2, green=3, black=4)
+{'blue': 2, 'black': 4, 'green': 3, 'red': 1}    
+\end{verbatim}
+
+(Contributed by Just van Rossum.)       
+
 \item The \keyword{assert} statement no longer checks the \code{__debug__}
 flag, so you can no longer disable assertions by assigning to \code{__debug__}.
 Running Python with the \programopt{-O} switch will still generate
@@ -1014,6 +1024,10 @@ and significantly reworked by Tim Peters.)
 small speed increase, subject to your compiler's idiosyncrasies.
 (Removed by Michael Hudson.)
 
+\item \function{xrange()} objects now have their own iterator, making
+\code{for i in xrange(n)} slightly faster than
+\code{for i in range(n)}.  (Patch by Raymond Hettinger.)
+
 \item A number of small rearrangements have been made in various
 hotspots to improve performance, inlining a function here, removing
 some code there.  (Implemented mostly by GvR, but lots of people have
@@ -1177,28 +1191,30 @@ will enable buffering.
 
 \item The \function{sample(\var{population}, \var{k})} function was
 added to the \module{random} module.  \var{population} is a sequence
-containing the elements of a population, and \function{sample()}
+or \code{xrange} object containing the elements of a population, and \function{sample()}
 chooses \var{k} elements from the population without replacing chosen
 elements.  \var{k} can be any value up to \code{len(\var{population})}.
 For example:
 
 \begin{verbatim}
->>> pop = range(6) ; pop
-[0, 1, 2, 3, 4, 5]
->>> random.sample(pop, 3)          # Choose three elements
-[0, 4, 3]
->>> random.sample(pop, 6)          # Choose all six elements
-[4, 5, 0, 3, 2, 1]
->>> random.sample(pop, 6)          # Choose six again
-[4, 2, 3, 0, 5, 1]
->>> random.sample(pop, 7)          # Can't choose more than six
+>>> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'St', 'Sn']
+>>> random.sample(days, 3)	# Choose 3 elements
+['St', 'Sn', 'Th']
+>>> random.sample(days, 7)	# Choose 7 elements
+['Tu', 'Th', 'Mo', 'We', 'St', 'Fr', 'Sn']
+>>> random.sample(days, 7)	# Choose 7 again
+['We', 'Mo', 'Sn', 'Fr', 'Tu', 'St', 'Th']
+>>> random.sample(days, 8)	# Can't choose eight
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-  File "random.py", line 396, in sample
-    raise ValueError, "sample larger than population"
+  File "random.py", line 414, in sample
+      raise ValueError, "sample larger than population"
 ValueError: sample larger than population
->>>
+>>> random.sample(xrange(1,10000,2), 10)   # Choose ten odds under 10000
+[3407, 3805, 1505, 7023, 2401, 2267, 9733, 3151, 8083, 9195]
 \end{verbatim}
+ 
+(Contributed by Raymond Hettinger.)
 
 \item The \module{readline} module also gained a number of new
 functions: \function{get_history_item()},
@@ -1269,6 +1285,58 @@ long been an annoyance because it uses the platform C library's
 sometimes have odd bugs.  Brett Cannon contributed a portable
 implementation that's written in pure Python, which should behave
 identically on all platforms.
+
+\item The \module{UserDict) has a new \class{DictMixin} class which
+defines all dictionary methods for classes that already have a minimum
+mapping interface.  This greatly simplifies writing classes that need
+to be substitutable for dictionaries, such as the classes in 
+the \module{shelve} module.
+ 
+Adding the mixin as a superclass provides the full dictionary
+interface whenever the class defines \method{__getitem__},
+\method{__setitem__}, \method{__delitem__), and \method{keys}.
+For example:
+ 
+\begin{verbatim}
+>>> import UserDict
+>>> class SeqDict(UserDict.DictMixin):
+    """Dictionary lookalike implemented with lists."""
+    def __init__(self):
+        self.keylist = []
+        self.valuelist = []
+    def __getitem__(self, key):
+        try:
+            i = self.keylist.index(key)
+        except ValueError:
+            raise KeyError
+        return self.valuelist[i]
+    def __setitem__(self, key, value):
+        try:
+            i = self.keylist.index(key)
+            self.valuelist[i] = value
+        except ValueError:
+            self.keylist.append(key)
+            self.valuelist.append(value)
+    def __delitem__(self, key):
+        try:
+            i = self.keylist.index(key)
+        except ValueError:
+            raise KeyError
+        self.keylist.pop(i)
+        self.valuelist.pop(i)
+    def keys(self):
+        return list(self.keylist)
+
+>>> s = SeqDict()
+>>> dir(s)      # See that other dictionary methods are implemented
+['__cmp__', '__contains__', '__delitem__', '__doc__', '__getitem__',
+ '__init__', '__iter__', '__len__', '__module__', '__repr__',
+ '__setitem__', 'clear', 'get', 'has_key', 'items', 'iteritems',
+ 'iterkeys', 'itervalues', 'keylist', 'keys', 'pop', 'popitem',
+ 'setdefault', 'update', 'valuelist', 'values']
+\end {verbatim}
+
+(Contributed by Raymond Hettinger.)
 
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
@@ -1711,8 +1779,9 @@ name.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Simon Brunning, Michael Chermside, Scott David Daniels,
-Fred~L. Drake, Jr., Michael Hudson, Detlef Lannert, Martin von
-L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer, Neal
-Norwitz, Chris Reedy, Vinay Sajip, Neil Schemenauer, Jason Tishler.
+Fred~L. Drake, Jr., Raymond Hettinger, Michael Hudson, Detlef Lannert,
+Martin von L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer,
+Neal Norwitz, Chris Reedy, Vinay Sajip, Neil Schemenauer, Jason
+Tishler.
 
 \end{document}
