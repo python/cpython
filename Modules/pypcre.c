@@ -256,6 +256,7 @@ static BOOL
 set_start_bits(const uschar *code, uschar *start_bits)
 {
 register int c;
+volatile int dummy;
 
 do
   {
@@ -281,6 +282,7 @@ do
       case OP_BRAZERO:
       case OP_BRAMINZERO:
       if (!set_start_bits(++tcode, start_bits)) return FALSE;
+      dummy = 1;
       do tcode += (tcode[1] << 8) + tcode[2]; while (*tcode == OP_ALT);
       tcode += 3;
       try_next = TRUE;
