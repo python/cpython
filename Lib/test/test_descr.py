@@ -365,6 +365,26 @@ def test_dir():
     # object.
     vereq(dir(None), dir(Ellipsis))
 
+    # Nasty test case for proxied objects
+    class Wrapper(object):
+        def __init__(self, obj):
+            self.__obj = obj
+        def __repr__(self):
+            return "Wrapper(%s)" % repr(self.__obj)
+        def __getitem__(self, key):
+            return Wrapper(self.__obj[key])
+        def __len__(self):
+            return len(self.__obj)
+        def __getattr__(self, name):
+            return Wrapper(getattr(self.__obj, name))
+
+    class C(object):
+        def __getclass(self):
+            return Wrapper(type(self))
+        __class__ = property(__getclass)
+
+    dir(C()) # This used to segfault
+
 binops = {
     'add': '+',
     'sub': '-',

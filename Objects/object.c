@@ -1507,14 +1507,22 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 	if (bases == NULL)
 		PyErr_Clear();
 	else {
+		/* We have no guarantee that bases is a real tuple */
 		int i, n;
-		assert(PyTuple_Check(bases));
-		n = PyTuple_GET_SIZE(bases);
-		for (i = 0; i < n; i++) {
-			PyObject *base = PyTuple_GET_ITEM(bases, i);
-			if (merge_class_dict(dict, base) < 0) {
-				Py_DECREF(bases);
-				return -1;
+		n = PySequence_Size(bases); /* This better be right */
+		if (n < 0)
+			PyErr_Clear();
+		else {
+			for (i = 0; i < n; i++) {
+				PyObject *base = PySequence_GetItem(bases, i);
+				if (base == NULL) {
+					Py_DECREF(bases);
+					return -1;
+				}
+				if (merge_class_dict(dict, base) < 0) {
+					Py_DECREF(bases);
+					return -1;
+				}
 			}
 		}
 		Py_DECREF(bases);
