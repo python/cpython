@@ -397,6 +397,12 @@
                                     {\reset@font\normalsize\py@HeaderFamily}}
 
 
+% This gets the underscores closer to the right width; the only change
+% from standard LaTeX is the width specified.
+
+\DeclareTextCommandDefault{\textunderscore}{%
+  \leavevmode \kern.06em\vbox{\hrule\@width.55em}}
+
 % Underscore hack (only act like subscript operator if in math mode)
 %
 % The following is due to Mark Wooding (the old version didn't work with
