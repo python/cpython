@@ -17,7 +17,8 @@ typedef struct {
 staticforward PyTypeObject XReadlinesObject_Type;
 
 static void
-xreadlines_dealloc(PyXReadlinesObject *op) {
+xreadlines_dealloc(PyXReadlinesObject *op)
+{
 	Py_XDECREF(op->file);
 	Py_XDECREF(op->lines);
 	PyObject_DEL(op);
@@ -27,7 +28,8 @@ xreadlines_dealloc(PyXReadlinesObject *op) {
 #define CHUNKSIZE  8192
 
 static PyXReadlinesObject *
-newreadlinesobject(PyObject *file) {
+newreadlinesobject(PyObject *file)
+{
 	PyXReadlinesObject *op;
 	op = PyObject_NEW(PyXReadlinesObject, &XReadlinesObject_Type);
 	if (op == NULL)
@@ -40,7 +42,8 @@ newreadlinesobject(PyObject *file) {
 }
 
 static PyObject *
-xreadlines(PyObject *self, PyObject *args) {
+xreadlines(PyObject *self, PyObject *args)
+{
 	PyObject *file;
 	PyXReadlinesObject *ret;
 
@@ -51,8 +54,9 @@ xreadlines(PyObject *self, PyObject *args) {
 	return (PyObject*)ret;
 }
 
-static PyObject*
-xreadlines_item(PyXReadlinesObject *a, int i) {
+static PyObject *
+xreadlines_item(PyXReadlinesObject *a, int i)
+{
 	if (i != a->abslineno) {
 		PyErr_SetString(PyExc_RuntimeError,
 			"xreadlines object accessed out of order");
