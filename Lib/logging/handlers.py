@@ -19,9 +19,9 @@ Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python, and influenced by Apache's log4j system.
 
 Should work under Python versions >= 1.5.2, except that source line
-information is not available unless 'inspect' is.
+information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -132,6 +132,13 @@ class SocketHandler(logging.Handler):
         self.port = port
         self.sock = None
         self.closeOnError = 0
+        self.retryTime = None
+        #
+        # Exponential backoff parameters.
+        #
+        self.retryStart = 1.0
+        self.retryMax = 30.0
+        self.retryFactor = 2.0
 
     def makeSocket(self):
         """
@@ -142,6 +149,34 @@ class SocketHandler(logging.Handler):
         s.connect((self.host, self.port))
         return s
 
+    def createSocket(self):
+        """
+        Try to create a socket, using an exponential backoff with
+        a max retry time. Thanks to Robert Olson for the original patch
+        (SF #815911) which has been slightly refactored.
+        """
+        now = time.time()
+        # Either retryTime is None, in which case this
+        # is the first time back after a disconnect, or
+        # we've waited long enough.
+        if self.retryTime is None:
+          attempt = 1
+        else:
+          attempt = (now >= self.retryTime)
+        if attempt:
+            try:
+                self.sock = self.makeSocket()
+                self.retryTime = None # next time, no delay before trying
+            except:
+                #Creation failed, so set the retry time and return.
+                if self.retryTime is None:
+                    self.retryPeriod = self.retryStart
+                else:
+                    self.retryPeriod = self.retryPeriod * self.retryFactor
+                    if self.retryPeriod > self.retryMax:
+                        self.retryPeriod = self.retryMax
+                self.retryTime = now + self.retryPeriod
+
     def send(self, s):
         """
         Send a pickled string to the socket.
@@ -149,24 +184,38 @@ class SocketHandler(logging.Handler):
         This function allows for partial sends which can happen when the
         network is busy.
         """
-        if hasattr(self.sock, "sendall"):
-            self.sock.sendall(s)
-        else:
-            sentsofar = 0
-            left = len(s)
-            while left > 0:
-                sent = self.sock.send(s[sentsofar:])
-                sentsofar = sentsofar + sent
-                left = left - sent
+        if self.sock is None:
+            self.createSocket()
+        #self.sock can be None either because we haven't reached the retry
+        #time yet, or because we have reached the retry time and retried,
+        #but are still unable to connect.
+        if self.sock:
+            try:
+                if hasattr(self.sock, "sendall"):
+                    self.sock.sendall(s)
+                else:
+                    sentsofar = 0
+                    left = len(s)
+                    while left > 0:
+                        sent = self.sock.send(s[sentsofar:])
+                        sentsofar = sentsofar + sent
+                        left = left - sent
+            except socket.error:
+                self.sock.close()
+                self.sock = None  # so we can call createSocket next time
 
     def makePickle(self, record):
         """
         Pickles the record in binary format with a length prefix, and
         returns it ready for transmission across the socket.
         """
+        ei = record.exc_info
+        if ei:
+          dummy = self.format(record) # just to get traceback text into record.exc_text
+          record.exc_info = None  # to avoid Unpickleable error
         s = cPickle.dumps(record.__dict__, 1)
-        #n = len(s)
-        #slen = "%c%c" % ((n >> 8) & 0xFF, n & 0xFF)
+        if ei:
+          record.exc_info = ei  # for next handler
         slen = struct.pack(">L", len(s))
         return slen + s
 
@@ -195,8 +244,6 @@ class SocketHandler(logging.Handler):
         """
         try:
             s = self.makePickle(record)
-            if not self.sock:
-                self.sock = self.makeSocket()
             self.send(s)
         except:
             self.handleError(record)
@@ -208,6 +255,7 @@ class SocketHandler(logging.Handler):
         if self.sock:
             self.sock.close()
             self.sock = None
+        logging.Handler.close(self)
 
 class DatagramHandler(SocketHandler):
     """
@@ -386,6 +434,7 @@ class SysLogHandler(logging.Handler):
         """
         if self.unixsocket:
             self.socket.close()
+        logging.Handler.close(self)
 
     def emit(self, record):
         """
@@ -580,7 +629,7 @@ class NTEventLogHandler(logging.Handler):
         DLL name.
         """
         #self._welu.RemoveSourceFromRegistry(self.appname, self.logtype)
-        pass
+        logging.Handler.close(self)
 
 class HTTPHandler(logging.Handler):
     """
@@ -603,7 +652,7 @@ class HTTPHandler(logging.Handler):
     def mapLogRecord(self, record):
         """
         Default implementation of mapping the log record into a dict
-        that is send as the CGI data. Overwrite in your class.
+        that is sent as the CGI data. Overwrite in your class.
         Contributed by Franz  Glasner.
         """
         return record.__dict__
@@ -726,3 +775,4 @@ class MemoryHandler(BufferingHandler):
         self.flush()
         self.target = None
         self.buffer = []
+        BufferingHandler.close(self)
