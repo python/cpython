@@ -193,7 +193,7 @@ class IdleConf:
         """
         Creates (if required) and returns a filesystem directory for storing
         user config files.
-        
+
         """
         cfgDir = '.idlerc'
         userDir = os.path.expanduser('~')

@@ -30,9 +30,9 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, lineterminator=None)
         self.assertRaises(TypeError, ctor, arg, lineterminator=1)
         self.assertRaises(TypeError, ctor, arg, quoting=None)
-        self.assertRaises(TypeError, ctor, arg, 
+        self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_ALL, quotechar='')
-        self.assertRaises(TypeError, ctor, arg, 
+        self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_ALL, quotechar=None)
 
     def test_reader_arg_valid(self):
@@ -172,15 +172,15 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(csv.Error,
                           self._write_test,
                           ['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
-                          escapechar=None, doublequote=False) 
+                          escapechar=None, doublequote=False)
         self._write_test(['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
                          escapechar='\\', doublequote = False)
-        self._write_test(['"'], '""""', 
+        self._write_test(['"'], '""""',
                          escapechar='\\', quoting = csv.QUOTE_MINIMAL)
-        self._write_test(['"'], '\\"', 
+        self._write_test(['"'], '\\"',
                          escapechar='\\', quoting = csv.QUOTE_MINIMAL,
                          doublequote = False)
-        self._write_test(['"'], '\\"', 
+        self._write_test(['"'], '\\"',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
         self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
@@ -244,7 +244,7 @@ class Test_Csv(unittest.TestCase):
         # will this fail where locale uses comma for decimals?
         self._read_test([',3,"5",7.3, 9'], [['', 3, '5', 7.3, 9]],
                         quoting=csv.QUOTE_NONNUMERIC)
-        self.assertRaises(ValueError, self._read_test, 
+        self.assertRaises(ValueError, self._read_test,
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
 
