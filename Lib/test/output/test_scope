@@ -21,3 +21,4 @@ test_scope
 20. interaction with trace function
 20. eval and exec with free variables
 21. list comprehension with local variables
+22. eval with free variables
