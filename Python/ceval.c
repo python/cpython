@@ -2091,21 +2091,23 @@ eval_frame(PyFrameObject *f)
 		case FOR_ITER:
 			/* before: [iter]; after: [iter, iter()] *or* [] */
 			v = TOP();
-			x = PyIter_Next(v);
+			x = (*v->ob_type->tp_iternext)(v);
 			if (x != NULL) {
 				PUSH(x);
 				PREDICT(STORE_FAST);
 				PREDICT(UNPACK_SEQUENCE);
 				continue;
 			}
-			if (!PyErr_Occurred()) {
-				/* iterator ended normally */
- 				x = v = POP();
-				Py_DECREF(v);
-				JUMPBY(oparg);
-				continue;
+			if (PyErr_Occurred()) {
+				if (!PyErr_ExceptionMatches(PyExc_StopIteration))
+					break;
+				PyErr_Clear();
 			}
-			break;
+			/* iterator ended normally */
+ 			x = v = POP();
+			Py_DECREF(v);
+			JUMPBY(oparg);
+			continue;
 
 		case SETUP_LOOP:
 		case SETUP_EXCEPT:
