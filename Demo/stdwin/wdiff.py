@@ -36,7 +36,7 @@ mk2arg = commands.mk2arg
 
 # List of names to ignore in dircmp()
 #
-skiplist = ['RCS', '.Amake', 'tags', '.', '..']
+skiplist = ['RCS', 'CVS', '.Amake', 'tags', 'TAGS', '.', '..']
 
 # Function to determine whether a name should be ignored in dircmp().
 #
