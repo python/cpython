@@ -237,7 +237,7 @@ class Application(FrameWork.Application):
 		for m in self.menubar.menus.values():
 			if onoff:
 				m.menu.EnableItem(0)
-			else:
+			elif m.menu.GetMenuItemText(3) <> 'Cut': # ew...
 				m.menu.DisableItem(0)
 		MenuToolbox.DrawMenuBar()
 	
