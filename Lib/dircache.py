@@ -13,7 +13,7 @@ def listdir(path): # List directory contents, using cache
 	try:
 		cached_mtime, list = cache[path]
 		del cache[path]
-	except RuntimeError:
+	except KeyError:
 		cached_mtime, list = -1, []
 	try:
 		mtime = posix.stat(path)[8]
