@@ -110,6 +110,11 @@ used for special class methods; variants without leading and trailing\n\
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
+#ifdef _AIX
+#define __div __aix_div
+#define __abs __aix_abs
+#endif
+
 spami(isCallable       , PyCallable_Check)
 spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
