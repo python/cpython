@@ -52,6 +52,13 @@ Extension modules
 
 Library
 
+- Functions in the os.spawn() family now release the global interpreter
+  lock around calling the platform spawn.  They should always have done
+  this, but did not before 2.2c1.  Multithreaded programs calling
+  an os.spawn function with P_WAIT will no longer block all Python threads
+  until the spawned program completes.  It's possible that some programs
+  relies on blocking, although more likely by accident than by design.
+
 - webbrowser defaults to netscape.exe on OS/2 now.
 
 - Tix.ResizeHandle exposes detach_widget, hide, and show.

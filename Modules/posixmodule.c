@@ -1668,7 +1668,7 @@ posix_execve(PyObject *self, PyObject *args)
 #ifdef HAVE_SPAWNV
 static char posix_spawnv__doc__[] =
 "spawnv(mode, path, args)\n\
-Execute an executable path with arguments, replacing current process.\n\
+Execute the program 'path' in a new process.\n\
 \n\
 	mode: mode of process creation\n\
 	path: path of executable file\n\
@@ -1717,8 +1717,11 @@ posix_spawnv(PyObject *self, PyObject *args)
 
 	if (mode == _OLD_P_OVERLAY)
 		mode = _P_OVERLAY;
+	
+	Py_BEGIN_ALLOW_THREADS
 	spawnval = _spawnv(mode, path, argvlist);
-
+	Py_END_ALLOW_THREADS
+	
 	PyMem_DEL(argvlist);
 
 	if (spawnval == -1)
@@ -1734,7 +1737,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 
 static char posix_spawnve__doc__[] =
 "spawnve(mode, path, args, env)\n\
-Execute a path with arguments and environment, replacing current process.\n\
+Execute the program 'path' in a new process.\n\
 \n\
 	mode: mode of process creation\n\
 	path: path of executable file\n\
@@ -1830,7 +1833,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 
 	if (mode == _OLD_P_OVERLAY)
 		mode = _P_OVERLAY;
+
+	Py_BEGIN_ALLOW_THREADS
 	spawnval = _spawnve(mode, path, argvlist, envlist);
+	Py_END_ALLOW_THREADS
+
 	if (spawnval == -1)
 		(void) posix_error();
 	else
