@@ -38,6 +38,12 @@ try:
 except AssertionError:
     raise TestFailed, "re.sub"
 
+try:
+    assert re.sub('a', 'b', 'aaaaa') == 'bbbbb'
+    assert re.sub('a', 'b', 'aaaaa', 1) == 'baaaa'
+except AssertionError:
+    raise TestFailed, "qualified re.sub"
+
 if verbose:
     print 'Running tests on symbolic references'
 
@@ -114,6 +120,15 @@ try:
     
 except AssertionError:
     raise TestFailed, "re.split"
+
+try:
+    assert re.split(":", ":a:b::c", 2) == ['', 'a', 'b::c']
+    assert re.split(':', 'a:b:c:d', 2) == ['a', 'b', 'c:d']
+
+    assert re.split("(:)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']
+    assert re.split("(:*)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']    
+except AssertionError:
+    raise TestFailed, "qualified re.split"
 
 if verbose:
     print 'Pickling a RegexObject instance'
