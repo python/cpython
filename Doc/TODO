@@ -1,4 +1,4 @@
-PYTHON DOCUMENTATION TO-DO LIST
+PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
@@ -7,3 +7,16 @@ PYTHON DOCUMENTATION TO-DO LIST
 * Document native package semantics.
 
 * Fix partparse.py again, or toss it into the abyss.
+
+* Figure out indexsubitem handling in HTML; some of them are wrong for the
+  items being indexed.
+
+* Update the pickle documentation to describe all of the current behavior;
+  only a subset is described.  __reduce__, etc.
+
+* Review libppath.tex fir completeness, & system-specific behaviors.
+
+* Figure out how to make the link borders in the PDF output go away
+  completely.
+
+* Find & change remaining uses of multiple \label{} commands in each file.
