@@ -44,6 +44,15 @@ Integer specifying the handle of the Python DLL.
 Availability: Windows.
 \end{datadesc}
 
+\begin{funcdesc}{displayhook}{\var{value}}
+If \var{value} is not \code{None}, this function prints it to 
+\code{sys.stdout}, and saves it in \code{__builtin__._}.
+
+This function is called when an expression is entered at the prompt
+of an interactive Python session. It exists mainly so it can be
+overridden.
+\end{funcdesc}
+
 \begin{funcdesc}{exc_info}{}
 This function returns a tuple of three values that give information
 about the exception that is currently being handled.  The information
