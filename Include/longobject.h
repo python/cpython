@@ -41,8 +41,7 @@ extern PyObject *PyLong_FromDouble Py_PROTO((double));
 extern long PyLong_AsLong Py_PROTO((PyObject *));
 extern double PyLong_AsDouble Py_PROTO((PyObject *));
 
-PyObject *PyLong_FromString Py_PROTO((char *, int));
-PyObject *long_escan Py_PROTO((char *, char **, int));
+PyObject *PyLong_FromString Py_PROTO((char *, char **, int));
 
 #ifdef __cplusplus
 }

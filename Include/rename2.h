@@ -48,6 +48,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define newaccessobject PyAccess_FromValue
 #define getaccessvalue PyAccess_AsValue
 #define setaccessvalue PyAccess_SetValue
+#define setaccessowner PyAccess_SetOwner
+#define cloneaccessobject PyAccess_Clone
+#define hasaccessvalue PyAccess_HasValue
+#define Anynumbertype PyAnyNumber_Type
+#define Anysequencetype PyAnySequence_Type
+#define Anymappingtype PyAnyMapping_Type
 
 #ifdef Py_TRACE_REFS
 #define TRACE_REFS
@@ -68,6 +74,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define threads_started _PyThread_Started
 #define tok_name _PyParser_TokenNames
 #define verbose Py_VerboseFlag
+#define suppress_print Py_SuppressPrintingFlag
 #define AccessError PyExc_AccessError
 #define AttributeError PyExc_AttributeError
 #define ConflictError PyExc_ConflictError
@@ -95,6 +102,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define Typetype PyType_Type
 #define Listtype PyList_Type
 #define Dicttype PyDict_Type
+#define Mappingtype PyDict_Type
 #define Tupletype PyTuple_Type
 #define Filetype PyFile_Type
 #define Classtype PyClass_Type
@@ -105,6 +113,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define Moduletype PyModule_Type
 #define Codetype PyCode_Type
 #define Frametype PyFrame_Type
+#define Rangetype PyRange_Type
 #define floatobject PyFloatObject
 #define intobject PyIntObject
 #define longobject PyLongObject
@@ -150,6 +159,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define is_typeobject PyType_Check
 #define is_listobject PyList_Check
 #define is_dictobject PyDict_Check
+#define is_mappingobject PyDict_Check
 #define is_tupleobject PyTuple_Check
 #define is_fileobject PyFile_Check
 #define is_classobject PyClass_Check
@@ -170,11 +180,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define cmpobject PyObject_Compare
 #define getattr PyObject_GetAttrString
 #define getattro PyObject_GetAttr
+#define hasattr PyObject_HasAttrString
+#define hasattro PyObject_HasAttr
 #define hashobject PyObject_Hash
 #define newobject _PyObject_New
 #define newvarobject _PyObject_NewVar
 #define printobject PyObject_Print
 #define reprobject PyObject_Repr
+#define strobject PyObject_Str
 #define setattr PyObject_SetAttrString
 #define setattro PyObject_SetAttr
 #define testbool PyObject_IsTrue
@@ -185,18 +198,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define newfloatobject PyFloat_FromDouble
 #define getintvalue PyInt_AsLong
 #define GETINTVALUE PyInt_AS_LONG
+#define getmaxint PyInt_GetMax
 #define newintobject PyInt_FromLong
 #define alloclongobject _PyLong_New
 #define dgetlongvalue PyLong_AsDouble
 #define dnewlongobject PyLong_FromDouble
 #define getlongvalue PyLong_AsLong
-#define long_scan PyLong_FromString
+#define long_escan PyLong_FromString
+#define long_scan(a, b) PyLong_FromString((a), (char **)0, (b))
 #define newlongobject PyLong_FromLong
 #define formatstring PyString_Format
 #define getstringsize PyString_Size
 #define getstringvalue PyString_AsString
 #define GETSTRINGVALUE PyString_AS_STRING
 #define joinstring PyString_Concat
+#define joinstring_decref PyString_ConcatAndDel
 #define newsizedstringobject PyString_FromStringAndSize
 #define newstringobject PyString_FromString
 #define resizestring _PyString_Resize
@@ -210,26 +226,40 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define setlistitem PyList_SetItem
 #define setlistslice PyList_SetSlice
 #define sortlist PyList_Sort
+#define reverselist PyList_Reverse
+#define listtuple PyList_AsTuple
 #define dictinsert PyDict_SetItemString
 #define dictlookup PyDict_GetItemString
 #define dictremove PyDict_DelItemString
 #define getmappingitems PyDict_Items
+#define getdictitems PyDict_Items
 #define getmappingkeys PyDict_Keys
+#define getdictkeys PyDict_Keys
 #define getmappingvalues PyDict_Values
+#define getdictvalues PyDict_Values
+#define getmappingsize PyDict_Size
+#define getdictsize PyDict_Size
 #define mappingclear PyDict_Clear
 #define mappinggetnext PyDict_Next
 #define mappinginsert PyDict_SetItem
+#define dict2insert PyDict_SetItem
 #define mappinglookup PyDict_GetItem
+#define dict2lookup PyDict_GetItem
 #define mappingremove PyDict_DelItem
+#define dict2remove PyDict_DelItem
 #define newmappingobject PyDict_New
+#define newdictobject PyDict_New
 #define gettupleitem PyTuple_GetItem
 #define GETTUPLEITEM PyTuple_GET_ITEM
 #define gettuplesize PyTuple_Size
 #define gettupleslice PyTuple_GetSlice
 #define newtupleobject PyTuple_New
 #define settupleitem PyTuple_SetItem
+#define resizetuple _PyTuple_Resize
 #define filegetline PyFile_GetLine
 #define getfilefile PyFile_AsFile
+#define getfilename PyFile_Name
+#define setfilebufsize PyFile_SetBufSize
 #define newfileobject PyFile_FromString
 #define newopenfileobject PyFile_FromFile
 #define softspace PyFile_SoftSpace
@@ -242,14 +272,22 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define newclassobject PyClass_New
 #define newinstancemethodobject PyMethod_New
 #define newinstanceobject PyInstance_New
+#define instancebinop PyInstance_DoBinOp
 #define block PyTryBlock
 #define extend_stack PyFrame_ExtendStack
 #define newframeobject PyFrame_New
 #define pop_block PyFrame_BlockPop
 #define setup_block PyFrame_BlockSetup
+#define fast_2_locals PyFrame_FastToLocals
+#define locals_2_fast PyFrame_LocalsToFast
 #define getfunccode PyFunction_GetCode
 #define getfuncglobals PyFunction_GetGlobals
+#define getfuncargstuff PyFunction_GetArgStuff
+#define setfuncargstuff PyFunction_SetArgStuff
+#define mystrtol PyOS_strtol
+#define mystrtoul PyOS_strtoul
 #define newfuncobject PyFunction_New
+#define newrangeobject PyRange_New
 #define method PyCFunction
 #define findmethod Py_FindMethod
 #define getmethod PyCFunction_GetFunction
@@ -299,6 +337,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define add_module PyImport_AddModule
 #define doneimport PyImport_Cleanup
 #define get_modules PyImport_GetModuleDict
+#define get_pyc_magic PyImport_GetMagicNumber
 #define import_module PyImport_ImportModule
 #define init_frozen PyImport_ImportFrozenModule
 #define initimport PyImport_Init
@@ -310,9 +349,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define initmodule Py_InitModule
 #define initmodule4 Py_InitModule4
 #define rd_long PyMarshal_ReadLongFromFile
+#define rd_short PyMarshal_ReadShortFromFile
 #define rd_object PyMarshal_ReadObjectFromFile
 #define rds_object PyMarshal_ReadObjectFromString
 #define wr_long PyMarshal_WriteLongToFile
+#define wr_short PyMarshal_WriteShortToFile
 #define wr_object PyMarshal_WriteObjectToFile
 #define initsys PySys_Init
 #define setpythonargv PySys_SetArgv
@@ -323,6 +364,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define compile_string Py_CompileString
 #define fatal Py_FatalError
 #define goaway Py_Exit
+#define cleanup Py_Cleanup
 #define initall Py_Initialize
 #define print_error PyErr_Print
 #define parse_file PyParser_SimpleParseFile
@@ -339,6 +381,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define mkvalue Py_BuildValue
 #define vmkvalue Py_VaBuildValue
 #define getargs PyArg_Parse
+#define vgetargs PyArgs_VaParse
 #define newgetargs PyArg_ParseTuple
 #define getichararg PyArg_GetChar
 #define getidoublearray PyArg_GetDoubleArray
@@ -372,6 +415,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define initintr PyOS_InitInterrupts
 #define intrcheck PyOS_InterruptOccurred
 #define getmtime PyOS_GetLastModificationTime
+#define my_readline PyOS_Readline
+#define realmain Py_Main
+#define ref_total _Py_RefTotal
+#define sigcheck PyErr_CheckSignals
 
 #ifdef __cplusplus
 }

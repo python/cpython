@@ -31,11 +31,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Interface for marshal.c */
 
 void PyMarshal_WriteLongToFile Py_PROTO((long, FILE *));
-void wr_short Py_PROTO((int, FILE *));
+void PyMarshal_WriteShortToFile Py_PROTO((int, FILE *));
 void PyMarshal_WriteObjectToFile Py_PROTO((PyObject *, FILE *));
 
 long PyMarshal_ReadLongFromFile Py_PROTO((FILE *));
-int rd_short Py_PROTO((FILE *));
+int PyMarshal_ReadShortFromFile Py_PROTO((FILE *));
 PyObject *PyMarshal_ReadObjectFromFile Py_PROTO((FILE *));
 PyObject *PyMarshal_ReadObjectFromString Py_PROTO((char *, int));
 
