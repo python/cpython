@@ -470,23 +470,15 @@ Assuming you have access to an interpreter object, the typical idiom
 for calling into Python from a C thread is
 
 \begin{verbatim}
-    PyThreadState *tstate;
-    PyObject *result;
-
-    /* interp is your reference to an interpreter object. */
-    tstate = PyThreadState_New(interp);
-    PyEval_AcquireThread(tstate);
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
 
     /* Perform Python actions here.  */
     result = CallSomeFunction();
     /* evaluate result */
 
     /* Release the thread. No Python API allowed beyond this point. */
-    PyEval_ReleaseThread(tstate);
-
-    /* You can either delete the thread state, or save it
-       until you need it the next time. */
-    PyThreadState_Delete(tstate);
+    PyGILState_Release(gstate);
 \end{verbatim}
 
 \begin{ctypedesc}{PyInterpreterState}
@@ -727,8 +719,8 @@ Failure is a fatal error.
 \begin{cfuncdesc}{void}{PyGILState_Release}{PyGILState_STATE}
 Release any resources previously acquired.  After this call, Python's
 state will be the same as it was prior to the corresponding
-\cfunction{PyGILState_Ensure} call (but generally this state will be unknown to 
-the caller, hence the use of the GILState API.)
+\cfunction{PyGILState_Ensure} call (but generally this state will be
+unknown to the caller, hence the use of the GILState API.)
     
 Every call to \cfunction{PyGILState_Ensure()} must be matched by a call to 
 \cfunction{PyGILState_Release()} on the same thread.
