@@ -9,33 +9,43 @@ This module defines a number of classes that allow easy and uniform
 access to mail messages in a (\UNIX{}) mailbox.
 
 \begin{classdesc}{UnixMailbox}{fp\optional{, factory}}
-Access to a classic \UNIX{}-style mailbox, where all messages are
-contained in a single file and separate by ``From '' (a.k.a ``From_'')
-lines.  The file object \var{fp} points to the mailbox file.  Optional
-\var{factory} is a callable that should create new message objects.
-It is called with one argument, \var{fp} by the \method{next()}
-method.  The default is the \class{rfc822.Message} class (see the
+Access to a classic \UNIX-style mailbox, where all messages are
+contained in a single file and separated by \samp{From }
+(a.k.a.\ \samp{From_}) lines.  The file object \var{fp} points to the
+mailbox file.  The optional \var{factory} parameter is a callable that
+should create new message objects.  \var{factory} is called with one
+argument, \var{fp} by the \method{next()} method of the mailbox
+object.  The default is the \class{rfc822.Message} class (see the
 \refmodule{rfc822} module).
 
-For maximum portability, messages in a \UNIX{}-style mailbox are
-separated by any line that begins exactly with the letters \emph{F},
-\emph{r}, \emph{o}, \emph{m}, \emph{[space]} if preceded by exactly two
-newlines.  Because of the wide-range of variations in practice,
-nothing else on the From_ line should be considered.  However, the
-current implementation doesn't check for the leading two newlines.
-This is usually fine for most applications.
+For maximum portability, messages in a \UNIX-style mailbox are
+separated by any line that begins exactly with the string \code{'From
+'} (note the trailing space) if preceded by exactly two newlines.
+Because of the wide-range of variations in practice, nothing else on
+the From_ line should be considered.  However, the current
+implementation doesn't check for the leading two newlines.  This is
+usually fine for most applications.
 
 The \class{UnixMailbox} class implements a more strict version of
 From_ line checking, using a regular expression that usually correctly
 matched From_ delimiters.  It considers delimiter line to be separated
-by ``From name time'' lines.  For maximum portability, use the
-\class{PortableUnixMailbox} class instead.  This
-class is completely identical to \class{UnixMailbox} except that
-individual messages are separated by only ``From '' lines.
+by \samp{From \var{name} \var{time}} lines.  For maximum portability,
+use the \class{PortableUnixMailbox} class instead.  This class is
+identical to \class{UnixMailbox} except that individual messages are
+separated by only \samp{From } lines.
 
-For more
-information see
-\url{http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}.
+For more information, see
+\citetitle[http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html]{Configuring
+Netscape Mail on \UNIX: Why the Content-Length Format is Bad}.
+\end{classdesc}
+
+\begin{classdesc}{PortableUnixMailbox}{fp\optional{, factory}}
+A less-strict version of \class{UnixMailbox}, which considers only the
+\samp{From } at the beginning of the line separating messages.  The
+``\var{name} \var{time}'' portion of the From line is ignored, to
+protect against some variations that are observed in practice.  This
+works since lines in the message which begin with \code{'From '} are
+quoted by mail handling software well before delivery.
 \end{classdesc}
 
 \begin{classdesc}{MmdfMailbox}{fp\optional{, factory}}
