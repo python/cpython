@@ -41,7 +41,6 @@ font-bold= 0
 [Indent]
 use-spaces= 1
 num-spaces= 4
-tab-cols= 4
 
 [Theme]
 default= 1  
