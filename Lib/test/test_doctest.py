@@ -971,9 +971,7 @@ and actual outputs to be displayed using a unified diff:
     Line 2, in f
     Failed example:
         print '\n'.join('abcdefg')
-    Differences (unified diff):
-        --- Expected
-        +++ Got
+    Differences (unified diff with -expected +actual):
         @@ -1,8 +1,8 @@
          a
         -B
@@ -998,9 +996,7 @@ and actual outputs to be displayed using a context diff:
     Line 2, in f
     Failed example:
         print '\n'.join('abcdefg')
-    Differences (context diff):
-        *** Expected
-        --- Got
+    Differences (context diff with expected followed by actual):
         ***************
         *** 1,8 ****
           a

@@ -1618,13 +1618,13 @@ class OutputChecker:
             got_lines = [l+'\n' for l in got.split('\n')]
             # Use difflib to find their differences.
             if optionflags & UNIFIED_DIFF:
-                diff = difflib.unified_diff(want_lines, got_lines, n=2,
-                                            fromfile='Expected', tofile='Got')
-                kind = 'unified diff'
+                diff = difflib.unified_diff(want_lines, got_lines, n=2)
+                diff = list(diff)[2:] # strip the diff header
+                kind = 'unified diff with -expected +actual'
             elif optionflags & CONTEXT_DIFF:
-                diff = difflib.context_diff(want_lines, got_lines, n=2,
-                                            fromfile='Expected', tofile='Got')
-                kind = 'context diff'
+                diff = difflib.context_diff(want_lines, got_lines, n=2)
+                diff = list(diff)[2:] # strip the diff header
+                kind = 'context diff with expected followed by actual'
             elif optionflags & NDIFF_DIFF:
                 engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
                 diff = list(engine.compare(want_lines, got_lines))
