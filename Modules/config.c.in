@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 1 Jan 1992"
+#define DATE ">= 6 Apr 1992"
 #endif
 
 #include <stdio.h>
