@@ -1105,6 +1105,18 @@ def slots():
     gc.collect()
     vereq(Counted.counter, 0)
 
+    # Test lookup leaks [SF bug 572567]
+    import sys,gc
+    class G(object):
+        def __cmp__(self, other):
+            return 0
+    g = G()
+    orig_objects = len(gc.get_objects())
+    for i in xrange(10):
+        g==g
+    new_objects = len(gc.get_objects())
+    vereq(orig_objects, new_objects)
+
 def dynamics():
     if verbose: print "Testing class attribute propagation..."
     class D(object):
