@@ -73,6 +73,7 @@ class sdist (Command):
         if self.template is None:
             self.template = "MANIFEST.in"
 
+        self.ensure_string_list('formats')
         if self.formats is None:
             try:
                 self.formats = [self.default_format[os.name]]
@@ -80,8 +81,6 @@ class sdist (Command):
                 raise DistutilsPlatformError, \
                       "don't know how to create source distributions " + \
                       "on platform %s" % os.name
-        elif type (self.formats) is StringType:
-            self.formats = string.split (self.formats, ',')
 
         bad_format = check_archive_formats (self.formats)
         if bad_format:
