@@ -1,0 +1,130 @@
+\section{Built-in module \sectcode{cgi}}
+\stmodindex{cgi}
+\indexii{WWW}{server}
+\indexii{CGI}{protocol}
+\indexii{HTTP}{protocol}
+\indexii{MIME}{headers}
+\index{URL}
+
+This module makes it easy to write Python scripts that run in a WWW
+server using the Common Gateway Interface.  It was written by Michael
+McLay and subsequently modified by Steve Majewski and Guido van
+Rossum.
+
+When a WWW server finds that a URL contains a reference to a file in a
+particular subdirectory (usually \code{/cgibin}), it runs the file as
+a subprocess.  Information about the request such as the full URL, the
+originating host etc., is passed to the subprocess in the shell
+environment; additional input from the client may be read from
+standard input.  Standard output from the subprocess is sent back
+across the network to the client as the response from the request.
+The CGI protocol describes what the environment variables passed to
+the subprocess mean and how the output should be formatted.  The
+official reference documentation for the CGI protocol can be found on
+the World-Wide Web at
+\code{<URL:http://hoohoo.ncsa.uiuc.edu/cgi/overview.html>}.  The
+\code{cgi} module was based on version 1.1 of the protocol and should
+also work with version 1.0.
+
+The \code{cgi} module defines several classes that make it easy to
+access the information passed to the subprocess from a Python script;
+in particular, it knows how to parse the input sent by an HTML
+``form'' using either a POST or a GET request (these are alternatives
+for submitting forms in the HTTP protocol).
+
+The formatting of the output is so trivial that no additional support
+is needed.  All you need to do is print a minimal set of MIME headers
+describing the output format, followed by a blank line and your actual
+output.  E.g. if you want to generate HTML, your script could start as
+follows:
+
+\begin{verbatim}
+# Header -- one or more lines:
+print "Content-type: text/html"
+# Blank line separating header from body:
+print
+# Body, in HTML format:
+print "<TITLE>The Amazing SPAM Homepage!</TITLE>"
+# etc...
+\end{verbatim}
+
+The server will add some header lines of its own, but it won't touch
+the output following the header.
+
+The \code{cgi} module defines the following functions:
+
+\begin{funcdesc}{parse}{}
+Read and parse the form submitted to the script and return a
+dictionary containing the form's fields.  This should be called at
+most once per script invocation, as it may consume standard input (if
+the form was submitted through a POST request).  The keys in the
+resulting dictionary are the field names used in the submission; the
+values are {\em lists} of the field values (since field name may be
+used multiple times in a single form).  As a side effect, it sets
+\code{environ['QUERY_STRING']} to the raw query string, if it isn't
+already set.
+\end{funcdesc}
+
+\begin{funcdesc}{print_environ_usage}{}
+Print a piece of HTML listing the environment variables that may be
+set by the CGI protocol.
+This is mainly useful when learning about writing CGI scripts.
+\end{funcdesc}
+
+\begin{funcdesc}{print_environ}{}
+Print a piece of HTML text showing the entire contents of the shell
+environment.  This is mainly useful when debugging a CGI script.
+\end{funcdesc}
+
+\begin{funcdesc}{print_form}{form}
+Print a piece of HTML text showing the contents of the \var{form}.
+This is mainly useful when debugging a CGI script.
+\end{funcdesc}
+
+\begin{funcdesc}{escape}{string}
+Convert special characters in \var{string} to HTML escapes.  In
+particular, ``\code{\&}'' is replaced with ``\code{\&amp;}'',
+``\code{<}'' is replaced with ``\code{\&lt;}'', and ``\code{>}'' is
+replaced with ``\code{\&gt;}''.  This is useful when printing (almost)
+arbitrary text in an HTML context.  Note that for inclusion in quoted
+tag attributes (e.g. \code{<A HREF="...">}), some additional
+characters would have to be converted --- in particular the string
+quote.  There is currently no function that does this.
+\end{funcdesc}
+
+The module defines the following classes.  Since the base class
+initializes itself by calling \code{parse()}, at most one instance of
+at most one of these classes should be created per script invocation:
+
+\begin{funcdesc}{FormContentDict}{}
+This class behaves like a (read-only) dictionary and has the same keys
+and values as the dictionary returned by \code{parse()} (i.e. each
+field name maps to a list of values).  Additionally, it initializes
+its data member \code{query_string} to the raw query sent from the
+server.
+\end{funcdesc}
+
+\begin{funcdesc}{SvFormContentDict}{}
+This class, derived from \code{FormContentDict}, is a little more
+user-friendly when you are expecting that each field name is only used
+once in the form.  When you access for a particular field (using
+\code{form[fieldname]}), it will return the string value of that item
+if it is unique, or raise \code{IndexError} if the field was specified
+more than once in the form.  (If the field wasn't specified at all,
+\code{KeyError} is raised.)  To access fields that are specified
+multiple times, use \code{form.getlist(fieldname)}.  The
+\code{values()} and \code{items()} methods return mixed lists --
+containing strings for singly-defined fields, and lists of strings for
+multiply-defined fields.
+\end{funcdesc}
+
+(It currently defines some more classes, but these are experimental
+and/or obsolescent, and are thus not documented --- see the source for
+more informations.)
+
+The module defines the following variable:
+
+\begin{datadesc}{environ}
+The shell environment, exactly as received from the http server.  See
+the CGI documentation for a description of the various fields.
+\end{datadesc}
