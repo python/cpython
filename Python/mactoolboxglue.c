@@ -104,7 +104,7 @@ PyObject *
 PyMac_GetOSErrException(void)
 {
 	if (PyMac_OSErrException == NULL)
-		PyMac_OSErrException = PyString_FromString("MacOS.Error");
+		PyMac_OSErrException = PyErr_NewException("MacOS.Error", NULL, NULL);
 	return PyMac_OSErrException;
 }
 
