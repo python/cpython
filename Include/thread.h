@@ -34,7 +34,9 @@ void release_lock Py_PROTO((type_lock));
 
 type_sema allocate_sema Py_PROTO((int));
 void free_sema Py_PROTO((type_sema));
-void down_sema Py_PROTO((type_sema));
+int down_sema Py_PROTO((type_sema, int));
+#define WAIT_SEMA	1
+#define NOWAIT_SEMA	0
 void up_sema Py_PROTO((type_sema));
 
 #ifndef NO_EXIT_PROG
