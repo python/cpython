@@ -2065,7 +2065,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
- fchdir fork fsync fdatasync fpathconf ftime ftruncate \
+ fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getwd \
  kill killpg lchown lstat mkfifo mknod mktime \
@@ -2094,6 +2094,24 @@ AC_TRY_COMPILE([#include <unistd.h>], void *x=link,
 AC_MSG_CHECKING(for symlink)
 AC_TRY_COMPILE([#include <unistd.h>], void *x=symlink,
   AC_DEFINE(HAVE_SYMLINK, 1, Define if you have the 'symlink' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for fchdir)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=fchdir,
+  AC_DEFINE(HAVE_FCHDIR, 1, Define if you have the 'fchdir' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for fsync)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=fsync,
+  AC_DEFINE(HAVE_SYNC, 1, Define if you have the 'fsync' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING(for fdatasync)
+AC_TRY_COMPILE([#include <unistd.h>], void *x=fdatasync,
+  AC_DEFINE(HAVE_FDATASYNC, 1, Define if you have the 'fdatasync' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
