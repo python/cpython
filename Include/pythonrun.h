@@ -44,7 +44,6 @@ struct _node *PyParser_SimpleParseFile Py_PROTO((FILE *, char *, int));
 
 PyObject *PyRun_String Py_PROTO((char *, int, PyObject *, PyObject *));
 PyObject *PyRun_File Py_PROTO((FILE *, char *, int, PyObject *, PyObject *));
-PyObject *run_pyc_file Py_PROTO((FILE *, char *, PyObject *, PyObject *));
 
 PyObject *Py_CompileString Py_PROTO((char *, char *, int));
 

@@ -152,6 +152,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define RET_SAVE Py_BLOCK_THREADS
 #define RES_SAVE Py_UNBLOCK_THREADS
 #define END_SAVE Py_END_ALLOW_THREADS
+#define callable PyCallable_Check
 #define is_floatobject PyFloat_Check
 #define is_intobject PyInt_Check
 #define is_longobject PyLong_Check
