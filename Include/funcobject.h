@@ -37,6 +37,7 @@ typedef struct {
 	object *func_name;
 	int	func_argcount;
 	object *func_argdefs;
+	object *func_doc;
 } funcobject;
 
 extern DL_IMPORT typeobject Functype;
