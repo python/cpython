@@ -505,7 +505,7 @@ static PyMethodDef dbmmodule_methods[] = {
 
 DL_EXPORT(void)
 initgdbm(void) {
-    PyObject *m, *d;
+    PyObject *m, *d, *s;
 
     Dbmtype.ob_type = &PyType_Type;
     m = Py_InitModule4("gdbm", dbmmodule_methods,
@@ -515,7 +515,8 @@ initgdbm(void) {
     DbmError = PyErr_NewException("gdbm.error", NULL, NULL);
     if (DbmError != NULL) {
         PyDict_SetItemString(d, "error", DbmError);
-        PyDict_SetItemString(d, "open_flags",
-                PyString_FromString(dbmmodule_open_flags));
+        s = PyString_FromString(dbmmodule_open_flags);
+        PyDict_SetItemString(d, "open_flags", s);
+        Py_DECREF(s);
     }
 }
