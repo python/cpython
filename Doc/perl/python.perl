@@ -1018,6 +1018,9 @@ sub fix_font{
     elsif ($font eq 'member') {
         $font = 'tt class="member"';
     }
+    elsif ($font eq 'class') {
+        $font = 'tt class="class"';
+    }
     elsif ($font eq 'constant') {
         $font = 'tt class="constant"';
     }
@@ -1068,7 +1071,7 @@ sub get_table_col1_fonts{
         $efont = "</$font>";
         $efont =~ s/ .*>/>/;
     }
-    return ($font, $sfont, $efont);
+    return ($sfont, $efont);
 }
 
 sub do_env_tableii{
@@ -1105,11 +1108,11 @@ sub do_cmd_lineii{
     my $c1 = next_argument();
     my $c2 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = get_table_col1_fonts();
+    my($sfont,$efont) = get_table_col1_fonts();
     $c2 = '&nbsp;' if ($c2 eq '');
     my($c1align,$c2align) = split('\|', $aligns);
     my $padding = '';
-    if ($c1align =~ /align="right"/) {
+    if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
     }
     return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
@@ -1155,11 +1158,11 @@ sub do_cmd_lineiii{
     my $c2 = next_argument(); 
     my $c3 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = get_table_col1_fonts();
+    my($sfont,$efont) = get_table_col1_fonts();
     $c3 = '&nbsp;' if ($c3 eq '');
     my($c1align,$c2align,$c3align) = split('\|', $aligns);
     my $padding = '';
-    if ($c1align =~ /align="right"/) {
+    if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
     }
     return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
@@ -1210,11 +1213,11 @@ sub do_cmd_lineiv{
     my $c3 = next_argument();
     my $c4 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = get_table_col1_fonts();
+    my($sfont,$efont) = get_table_col1_fonts();
     $c4 = '&nbsp;' if ($c4 eq '');
     my($c1align,$c2align,$c3align,$c4align) = split('\|', $aligns);
     my $padding = '';
-    if ($c1align =~ /align="right"/) {
+    if ($c1align =~ /align="right"/ || $c1 eq '') {
         $padding = '&nbsp;';
     }
     return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
