@@ -4,9 +4,10 @@ Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
 
 from distutils.errors import *
 from distutils.core import Command
-from md5 import md5
 from distutils.sysconfig import get_python_version
+from distutils.spawn import spawn
 from distutils import log
+from md5 import md5
 import os
 import platform
 import ConfigParser
@@ -26,14 +27,17 @@ class upload(Command):
          "url of repository [default: %s]" % DEFAULT_REPOSITORY),
         ('show-response', None,
          'display full response text from server'),
+        ('sign', 's',
+         'sign files to upload using gpg'),
         ]
-    boolean_options = ['show-response']
+    boolean_options = ['show-response', 'sign']
 
     def initialize_options(self):
         self.username = ''
         self.password = ''
         self.repository = ''
         self.show_response = 0
+        self.sign = False
 
     def finalize_options(self):
         if os.environ.has_key('HOME'):
@@ -61,11 +65,16 @@ class upload(Command):
             self.upload_file(command, filename)
 
     def upload_file(self, command, filename):
+        # Sign if requested
+        if self.sign:
+            spawn(("gpg", "--sign",  "-a", filename),
+                  dry_run=self.dry_run)
 
         # Fill in the data
         content = open(filename).read()
         data = {
             ':action':'file_upload',
+            'protcol_version':'1',
             'name':self.distribution.get_name(),
             'version':self.distribution.get_version(),
             'content':(os.path.basename(filename),content),
@@ -81,6 +90,10 @@ class upload(Command):
         elif command == 'bdist_dumb':
             comment = 'built for %s' % platform.platform(terse=1)
         data['comment'] = comment
+
+        if self.sign:
+            data['gpg_signature'] = (os.path.basename(filename) + ".asc",
+                                     open(filename+".asc").read())
 
         # set up the authentication
         auth = "Basic " + base64.encodestring(self.username + ":" + self.password).strip()
@@ -148,7 +161,7 @@ class upload(Command):
                           log.INFO)
         else:
             self.announce('Upload failed (%s): %s' % (r.status, r.reason), 
-                          log.INFO)
+                          log.ERROR)
         if self.show_response:
             print '-'*75, r.read(), '-'*75
 
