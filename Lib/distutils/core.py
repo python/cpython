@@ -851,26 +851,6 @@ class Command:
             raise DistutilsOptionError, "unknown option %s" % name
 
 
-    def set_peer_option (self, command, option, value):
-        """Attempt to simulate a command-line override of some option
-           value in another command.  Finds the command object for
-           'command', sets its 'option' to 'value', and unconditionally
-           calls 'finalize_options()' on it: this means that some command
-           objects may have 'finalize_options()' invoked more than once.
-           Even so, this is not entirely reliable: the other command may
-           already be initialized to its satisfaction, in which case the
-           second 'finalize_options()' invocation will have little or no
-           effect."""
-
-        # XXX this won't work -- must call finalize_option to work, but
-        # calling finalize_option is wrong (it's only supposed to be called
-        # once).  Where is this needed?!??!
-
-        cmd_obj = self.distribution.find_command_obj (command)
-        cmd_obj.set_option (option, value)
-        cmd_obj.finalize_options ()
-
-
     def find_peer (self, command, create=1):
         """Wrapper around Distribution's 'find_command_obj()' method:
            find (create if necessary and 'create' is true) the command
