@@ -210,8 +210,9 @@ class Play_Audio_sun:
         else:
             return 0
 
-    def getfillable(self):
-        return BUFFERSIZE - self.getfilled()
+##    # Nobody remembers what this method does, and it's broken. :-(
+##    def getfillable(self):
+##        return BUFFERSIZE - self.getfilled()
 
 def AudioDev():
     # Dynamically try to import and use a platform specific module.
