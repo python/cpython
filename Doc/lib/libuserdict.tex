@@ -12,10 +12,13 @@ can add new behaviours to dictionaries.
 
 The \module{UserDict} module defines the \class{UserDict} class:
 
-\begin{classdesc}{UserDict}{}
+\begin{classdesc}{UserDict}{\optional{intialdata}}
 Return a class instance that simulates a dictionary.  The instance's
 contents are kept in a regular dictionary, which is accessible via the
-\member{data} attribute of \class{UserDict} instances.
+\member{data} attribute of \class{UserDict} instances.  If
+\var{initialdata} is provided, \member{data} is initialized with its
+contents; note that a reference to \var{initialdata} will not be kept, 
+allowing it be used used for other purposes.
 \end{classdesc}
 
 In addition to supporting the methods and operations of mappings (see
