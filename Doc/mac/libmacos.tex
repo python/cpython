@@ -1,0 +1,74 @@
+\section{Built-in Module \sectcode{MacOS}}
+\bimodindex{MacOS}
+
+\renewcommand{\indexsubitem}{(in module MacOS)}
+
+This module provides access to MacOS specific functionality in the
+python interpreter, such as how the interpreter eventloop functions
+and the like. Use with care.
+
+Note the capitalisation of the module name, this is a historical
+artefact.
+
+\begin{excdesc}{Error}
+This exception is raised on MacOS generated errors, either from
+functions in this module or from other mac-specific modules like the
+toolbox interfaces. The arguments are the integer error code (the
+\var{OSErr} value) and a textual description of the error code.
+\end{excdesc}
+
+\begin{funcdesc}{SetHighLevelEventHandler}{handler}
+Pass a python function that will be called upon reception of a
+high-level event. The previous handler is returned. The handler
+function is called with the event as argument.
+
+Note that your event handler is currently only called dependably if
+your main event loop is in \var{stdwin}.
+\end{funcdesc}
+
+\begin{funcdesc}{AcceptHighLevelEvent}{}
+Read a high-level event. The return value is a tuple \code{(sender,
+refcon, data)}.
+\end{funcdesc}
+
+\begin{funcdesc}{SetScheduleTimes}{fgi\, fgy \optional{\, bgi\, bgy}}
+Controls how often the interpreter checks the event queue and how
+long it will yield the processor to other processes. \var{fgi}
+specifies after how many clicks (one click is one 60th of a second)
+the interpreter should check the event queue, and \var{fgy} specifies
+for how many clicks the CPU should be yielded when in the
+foreground. The optional \var{bgi} and \var{bgy} allow you to specify
+different values to use when python runs in the background, otherwise
+the background values will be set the the same as the foreground
+values. The function returns nothing.
+
+The default values, which are based on nothing at all, are 12, 6, 1
+and 12 respectively.
+\end{funcdesc}
+
+\begin{funcdesc}{EnableAppswitch}{onoff}
+Enable or disable the python event loop, based on the value of
+\var{onoff}. The old value is returned. If the event loop is disabled
+no time is granted to other applications, checking for command-period
+is not performed and it is impossible to switch applications. This
+should only be used by programs providing their own complete event
+loop.
+
+Note that based on the compiler used to build python it is still
+possible to loose events even with the python event loop disabled. If
+you have a \code{sys.stdout} window its handler will often also look
+in the event queue. Making sure nothing is ever printed works around
+this.
+\end{funcdesc}
+
+\begin{funcdesc}{HandleEvent}{ev}
+Pass the event record \code{ev} back to the python event loop, or
+possibly to the handler for the \code{sys.stdout} window (based on the
+compiler used to build python). This allows python programs that do
+their own event handling to still have some command-period and
+window-switching capability.
+\end{funcdesc}
+
+\begin{funcdesc}{GetErrorString}{errno}
+Return the textual description of MacOS error code \var{errno}.
+\end{funcdesc}
