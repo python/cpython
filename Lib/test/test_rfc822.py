@@ -222,6 +222,12 @@ A test message.
         eq(rfc822.parseaddr('Cynthia Person <cperson@dom.ain>'),
            ('Cynthia Person', 'cperson@dom.ain'))
 
+    def test_quote_unquote(self):
+        eq = self.assertEqual
+        eq(rfc822.quote('foo\\wacky"name'), 'foo\\\\wacky\\"name')
+        eq(rfc822.unquote('"foo\\\\wacky\\"name"'), 'foo\\wacky"name')
+
+
 def test_main():
     test_support.run_unittest(MessageTestCase)
 
