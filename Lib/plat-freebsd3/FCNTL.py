@@ -24,6 +24,8 @@ def __COPYRIGHT(s): return __IDSTRING(copyright,s)
 _BSD_PTRDIFF_T_ = int
 _BSD_SSIZE_T_ = int
 _BSD_TIME_T_ = long
+_BSD_CLOCKID_T_ = int
+_BSD_TIMER_T_ = int
 _BSD_CT_RUNE_T_ = int
 _BSD_PID_T_ = int
 _BSD_CLK_TCK_ = 128
@@ -46,8 +48,6 @@ def __word_swap_long(x): return \
 
 def __byte_swap_long(x): return \
 
-def __byte_swap_word(x): return \
-
 def __byte_swap_long(x): return \
 
 def __byte_swap_word(x): return \
@@ -57,7 +57,7 @@ ntohs = __byte_swap_word
 htonl = __byte_swap_long
 htons = __byte_swap_word
 NBBY = 8
-FD_SETSIZE = 256
+FD_SETSIZE = 1024
 O_RDONLY = 0x0000
 O_WRONLY = 0x0001
 O_RDWR = 0x0002
@@ -70,6 +70,7 @@ O_SHLOCK = 0x0010
 O_EXLOCK = 0x0020
 O_ASYNC = 0x0040
 O_FSYNC = 0x0080
+O_NOFOLLOW = 0x0100
 O_CREAT = 0x0200
 O_TRUNC = 0x0400
 O_EXCL = 0x0800
