@@ -167,7 +167,7 @@ class Distribution:
         # It's only safe to query 'have_run' for a command class that has
         # been instantiated -- a false value will be inserted when the
         # command object is created, and replaced with a true value when
-        # the command is succesfully run.  Thus it's probably best to use
+        # the command is successfully run.  Thus it's probably best to use
         # '.get()' rather than a straight lookup.
         self.have_run = {}
 
@@ -677,7 +677,7 @@ class Distribution:
 
     def get_command_obj (self, command, create=1):
         """Return the command object for 'command'.  Normally this object
-        is cached on a previous call to 'get_command_obj()'; if no comand
+        is cached on a previous call to 'get_command_obj()'; if no command
         object for 'command' is in the cache, then we either create and
         return it (if 'create' is true) or return None.
         """

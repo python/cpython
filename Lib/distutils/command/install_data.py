@@ -18,7 +18,7 @@ class install_data (Command):
 
     user_options = [
         ('install-dir=', 'd',
-         "base directory for installating data files "
+         "base directory for installing data files "
          "(default: installation base dir)"),
         ('root=', None,
          "install everything relative to this alternate root directory"),

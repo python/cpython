@@ -145,7 +145,7 @@ class CygwinCCompiler (UnixCCompiler):
                         ]
         
         # who wants symbols and a many times larger output file
-        # should explicitely switch the debug mode on 
+        # should explicitly switch the debug mode on 
         # otherwise we let dllwrap strip the output file
         # (On my machine unstripped_file = stripped_file + 254KB
         #   10KB < stripped_file < ??100KB ) 

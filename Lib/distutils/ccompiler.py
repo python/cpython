@@ -304,7 +304,7 @@ class CCompiler:
 
     def add_link_object (self, object):
         """Add 'object' to the list of object files (or analogues, such as
-        explictly named library files or the output of "resource
+        explicitly named library files or the output of "resource
         compilers") to be included in every link driven by this compiler
         object.
         """

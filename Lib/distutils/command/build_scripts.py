@@ -46,7 +46,7 @@ class build_scripts (Command):
         """Copy each script listed in 'self.scripts'; if it's marked as a
         Python script in the Unix way (first line matches 'first_line_re',
         ie. starts with "\#!" and contains "python"), then adjust the first
-        line to refer to the current Python intepreter as we copy.
+        line to refer to the current Python interpreter as we copy.
         """
         outfiles = []
         self.mkpath(self.build_dir)
