@@ -696,22 +696,17 @@ strop_atoi(self, args)
 
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for atoi()");
-		return NULL;
-	}
 	errno = 0;
 	if (base == 0 && s[0] == '0')
 		x = (long) PyOS_strtoul(s, &end, base);
 	else
 		x = PyOS_strtol(s, &end, base);
-	if (end == s || !isxdigit(end[-1])) {
-		PyErr_SetString(PyExc_ValueError, "no digits in int constant");
-		return NULL;
-	}
+	if (end == s || !isxdigit(end[-1]))
+		goto bad;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
+  bad:
 		sprintf(buffer, "invalid literal for atoi(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
