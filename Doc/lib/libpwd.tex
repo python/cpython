@@ -8,10 +8,11 @@
 This module provides access to the \UNIX{} user account and password
 database.  It is available on all \UNIX{} versions.
 
-Password database entries are reported as 7-tuples containing the
-following items from the password database (see \code{<pwd.h>}), in order:
+Password database entries are reported as a tuple-like object, whose
+attributes correspond to the members of the \code{passwd} structure
+(Attribute field below, see \code{<pwd.h>}):
 
-\begin{tableiii}{r|l|l}{textrm}{Index}{Field}{Meaning}
+\begin{tableiii}{r|l|l}{textrm}{Index}{Attribute}{Meaning}
   \lineiii{0}{\code{pw_name}}{Login name}
   \lineiii{1}{\code{pw_passwd}}{Optional encrypted password}
   \lineiii{2}{\code{pw_uid}}{Numerical user ID}
