@@ -15,7 +15,7 @@ import stat
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
-           "getatime","islink","exists","isdir","isfile","ismount",
+           "getatime","getctime","islink","exists","isdir","isfile","ismount",
            "walk","expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat","supports_unicode_filenames"]
 
@@ -137,6 +137,9 @@ def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
     return os.stat(filename).st_atime
 
+def getctime(filename):
+    """Return the creation time of a file, reported by os.stat()."""
+    return os.stat(filename).st_ctime
 
 # Is a path a symbolic link?
 # This will always return false on systems where os.lstat doesn't exist.

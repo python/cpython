@@ -5,7 +5,7 @@ from stat import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
-           "getatime","islink","exists","isdir","isfile",
+           "getatime","getctime", "islink","exists","isdir","isfile",
            "walk","expanduser","expandvars","normpath","abspath",
            "supports_unicode_filenames"]
 
@@ -129,6 +129,9 @@ def isfile(s):
         return False
     return S_ISREG(st.st_mode)
 
+def getctime(filename):
+    """Return the creation time of a file, reported by os.stat()."""
+    return os.stat(filename).st_ctime
 
 def exists(s):
     """Return True if the pathname refers to an existing file or directory."""

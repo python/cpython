@@ -463,6 +463,8 @@ Extension modules
 Library
 -------
 
+- os.path exposes getctime.
+
 - unittest.py now has two additional methods called assertAlmostEqual()
   and failIfAlmostEqual().  They implement an approximate comparision
   by rounding the difference between the two arguments and comparing

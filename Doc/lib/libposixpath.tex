@@ -67,18 +67,28 @@ unchanged.
 
 \begin{funcdesc}{getatime}{path}
 Return the time of last access of \var{filename}.  The return
-value is integer giving the number of seconds since the epoch (see the 
+value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
 \versionadded{1.5.2}
+\versionchanged[If \function{os.stat_float_times()} returns True, the result is a floating point number]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{getmtime}{path}
 Return the time of last modification of \var{filename}.  The return
-value is integer giving the number of seconds since the epoch (see the 
+value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
 \versionadded{1.5.2}
+\versionchanged[If \function{os.stat_float_times()} returns True, the result is a floating point number]{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{getctime}{path}
+Return the time of creation of \var{filename}.  The return
+value is a number giving the number of seconds since the epoch (see the 
+\refmodule{time} module).  Raise \exception{os.error} if the file does
+not exist or is inaccessible.
+\versionadded{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{getsize}{path}
