@@ -17,7 +17,7 @@ import webbrowser
 import idlever
 import WindowList
 from IdleConf import idleconf
-import aboutDialog
+import aboutDialog, textView
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -78,27 +78,6 @@ TK_TABWIDTH_DEFAULT = 8
 #$ event <<do-nothing>>
 #$ unix <Control-x>
 
-
-about_title = "About IDLEfork"
-about_text = """\
-IDLEfork %s
-
-IDLE is an Integrated DeveLopment Environment for Python \
-by Guido van Rossum.
-
-IDLEfork is an official experimental development version of IDLE. \
-Succesful new features in IDLEfork will be mereged back in to stable IDLE.
-
-This version of IDLEfork is based on the work in stable IDLE version 0.8, \
-IDLE fork 0.7.1 released by David Scherer, and the VPython idle fork. 
-
-See README.txt and NEWS.txt for more details on this verion of IDLEfork.
-
-WARNING: IDLEfork is at this stage alpha quality software, expect things \
-to be broken. 
-
-""" % (idlever.IDLE_VERSION)
-
 class EditorWindow:
 
     from Percolator import Percolator
@@ -108,9 +87,6 @@ class EditorWindow:
     import Bindings
     from Tkinter import Toplevel
     from MultiStatusBar import MultiStatusBar
-
-    about_title = about_title
-    about_text = about_text
 
     vars = {}
 
@@ -297,25 +273,15 @@ class EditorWindow:
         self.rmenu = rmenu
 
     def about_dialog(self, event=None):
-        #tkMessageBox.showinfo(self.about_title, self.about_text,
-        #                      master=self.text)
         aboutDialog.AboutDialog(self.top,'About IDLEfork')
         
-    helpfile = "help.txt"
-
     def good_advice(self, event=None):
         tkMessageBox.showinfo('Advice', "Don't Panic!", master=self.text)
 
     def help_dialog(self, event=None):
-        try:
-            helpfile = os.path.join(os.path.dirname(__file__), self.helpfile)
-        except NameError:
-            helpfile = self.helpfile
-        if self.flist:
-            self.flist.open(helpfile)
-        else:
-            self.io.loadfile(helpfile)
-
+        fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
+        textView.TextViewer(self.top,'Help',fn)        
+        
     help_url = "http://www.python.org/doc/current/"
     if sys.platform[:3] == "win":
         fn = os.path.dirname(__file__)
