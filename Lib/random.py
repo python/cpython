@@ -43,7 +43,7 @@ from warnings import warn as _warn
 from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
-from math import floor as _floor
+from math import floor as _floor, ldexp as _ldexp
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -63,13 +63,11 @@ try:
     from binascii import hexlify as _hexlify
 except ImportError:
     _urandom = None
-else:
-    _tofloat = 2.0 ** (-7*8)    # converts 7 byte integers to floats
 
 
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
-# the Mersenne Twister core generator.
+# the Mersenne Twister  and os.urandom() core generators.
 
 import _random
 
@@ -761,7 +759,7 @@ class HardwareRandom(Random):
         """Get the next random number in the range [0.0, 1.0)."""
         if _urandom is None:
             raise NotImplementedError('Cannot find hardware entropy source')
-        return long(_hexlify(_urandom(7)), 16) * _tofloat
+        return _ldexp(long(_hexlify(_urandom(7)), 16) >> 3, -BPF)
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates a long int with k random bits."""
