@@ -28,6 +28,7 @@
 #include <CFString.h>
 #include <CFURL.h>
 #include <CFPropertyList.h>
+#include <CFPreferences.h>
 #else
 #include <CoreServices/CoreServices.h>
 #endif
@@ -3320,6 +3321,323 @@ static PyObject *CF_CFDictionaryCreateMutableCopy(PyObject *_self, PyObject *_ar
 	return _res;
 }
 
+static PyObject *CF_CFPreferencesCopyAppValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFTypeRef _rv;
+	CFStringRef key;
+	CFStringRef applicationID;
+#ifndef CFPreferencesCopyAppValue
+	PyMac_PRECHECK(CFPreferencesCopyAppValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFStringRefObj_Convert, &applicationID))
+		return NULL;
+	_rv = CFPreferencesCopyAppValue(key,
+	                                applicationID);
+	_res = Py_BuildValue("O&",
+	                     CFTypeRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesGetAppBooleanValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	CFStringRef key;
+	CFStringRef applicationID;
+	Boolean keyExistsAndHasValidFormat;
+#ifndef CFPreferencesGetAppBooleanValue
+	PyMac_PRECHECK(CFPreferencesGetAppBooleanValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFStringRefObj_Convert, &applicationID))
+		return NULL;
+	_rv = CFPreferencesGetAppBooleanValue(key,
+	                                      applicationID,
+	                                      &keyExistsAndHasValidFormat);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     keyExistsAndHasValidFormat);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesGetAppIntegerValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFIndex _rv;
+	CFStringRef key;
+	CFStringRef applicationID;
+	Boolean keyExistsAndHasValidFormat;
+#ifndef CFPreferencesGetAppIntegerValue
+	PyMac_PRECHECK(CFPreferencesGetAppIntegerValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFStringRefObj_Convert, &applicationID))
+		return NULL;
+	_rv = CFPreferencesGetAppIntegerValue(key,
+	                                      applicationID,
+	                                      &keyExistsAndHasValidFormat);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     keyExistsAndHasValidFormat);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesSetAppValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef key;
+	CFTypeRef value;
+	CFStringRef applicationID;
+#ifndef CFPreferencesSetAppValue
+	PyMac_PRECHECK(CFPreferencesSetAppValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFTypeRefObj_Convert, &value,
+	                      CFStringRefObj_Convert, &applicationID))
+		return NULL;
+	CFPreferencesSetAppValue(key,
+	                         value,
+	                         applicationID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesAddSuitePreferencesToApp(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef applicationID;
+	CFStringRef suiteID;
+#ifndef CFPreferencesAddSuitePreferencesToApp
+	PyMac_PRECHECK(CFPreferencesAddSuitePreferencesToApp);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &suiteID))
+		return NULL;
+	CFPreferencesAddSuitePreferencesToApp(applicationID,
+	                                      suiteID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesRemoveSuitePreferencesFromApp(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef applicationID;
+	CFStringRef suiteID;
+#ifndef CFPreferencesRemoveSuitePreferencesFromApp
+	PyMac_PRECHECK(CFPreferencesRemoveSuitePreferencesFromApp);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &suiteID))
+		return NULL;
+	CFPreferencesRemoveSuitePreferencesFromApp(applicationID,
+	                                           suiteID);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesAppSynchronize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	CFStringRef applicationID;
+#ifndef CFPreferencesAppSynchronize
+	PyMac_PRECHECK(CFPreferencesAppSynchronize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &applicationID))
+		return NULL;
+	_rv = CFPreferencesAppSynchronize(applicationID);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesCopyValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFTypeRef _rv;
+	CFStringRef key;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesCopyValue
+	PyMac_PRECHECK(CFPreferencesCopyValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	_rv = CFPreferencesCopyValue(key,
+	                             applicationID,
+	                             userName,
+	                             hostName);
+	_res = Py_BuildValue("O&",
+	                     CFTypeRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesCopyMultiple(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDictionaryRef _rv;
+	CFArrayRef keysToFetch;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesCopyMultiple
+	PyMac_PRECHECK(CFPreferencesCopyMultiple);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
+	                      CFArrayRefObj_Convert, &keysToFetch,
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	_rv = CFPreferencesCopyMultiple(keysToFetch,
+	                                applicationID,
+	                                userName,
+	                                hostName);
+	_res = Py_BuildValue("O&",
+	                     CFDictionaryRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesSetValue(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef key;
+	CFTypeRef value;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesSetValue
+	PyMac_PRECHECK(CFPreferencesSetValue);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
+	                      CFStringRefObj_Convert, &key,
+	                      CFTypeRefObj_Convert, &value,
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	CFPreferencesSetValue(key,
+	                      value,
+	                      applicationID,
+	                      userName,
+	                      hostName);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesSetMultiple(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDictionaryRef keysToSet;
+	CFArrayRef keysToRemove;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesSetMultiple
+	PyMac_PRECHECK(CFPreferencesSetMultiple);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
+	                      CFDictionaryRefObj_Convert, &keysToSet,
+	                      CFArrayRefObj_Convert, &keysToRemove,
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	CFPreferencesSetMultiple(keysToSet,
+	                         keysToRemove,
+	                         applicationID,
+	                         userName,
+	                         hostName);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesSynchronize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesSynchronize
+	PyMac_PRECHECK(CFPreferencesSynchronize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	_rv = CFPreferencesSynchronize(applicationID,
+	                               userName,
+	                               hostName);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesCopyApplicationList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef _rv;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesCopyApplicationList
+	PyMac_PRECHECK(CFPreferencesCopyApplicationList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	_rv = CFPreferencesCopyApplicationList(userName,
+	                                       hostName);
+	_res = Py_BuildValue("O&",
+	                     CFArrayRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFPreferencesCopyKeyList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef _rv;
+	CFStringRef applicationID;
+	CFStringRef userName;
+	CFStringRef hostName;
+#ifndef CFPreferencesCopyKeyList
+	PyMac_PRECHECK(CFPreferencesCopyKeyList);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CFStringRefObj_Convert, &applicationID,
+	                      CFStringRefObj_Convert, &userName,
+	                      CFStringRefObj_Convert, &hostName))
+		return NULL;
+	_rv = CFPreferencesCopyKeyList(applicationID,
+	                               userName,
+	                               hostName);
+	_res = Py_BuildValue("O&",
+	                     CFArrayRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CF_CFStringGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3884,6 +4202,34 @@ static PyMethodDef CF_methods[] = {
 	 "(CFIndex capacity) -> (CFMutableDictionaryRef _rv)"},
 	{"CFDictionaryCreateMutableCopy", (PyCFunction)CF_CFDictionaryCreateMutableCopy, 1,
 	 "(CFIndex capacity, CFDictionaryRef theDict) -> (CFMutableDictionaryRef _rv)"},
+	{"CFPreferencesCopyAppValue", (PyCFunction)CF_CFPreferencesCopyAppValue, 1,
+	 "(CFStringRef key, CFStringRef applicationID) -> (CFTypeRef _rv)"},
+	{"CFPreferencesGetAppBooleanValue", (PyCFunction)CF_CFPreferencesGetAppBooleanValue, 1,
+	 "(CFStringRef key, CFStringRef applicationID) -> (Boolean _rv, Boolean keyExistsAndHasValidFormat)"},
+	{"CFPreferencesGetAppIntegerValue", (PyCFunction)CF_CFPreferencesGetAppIntegerValue, 1,
+	 "(CFStringRef key, CFStringRef applicationID) -> (CFIndex _rv, Boolean keyExistsAndHasValidFormat)"},
+	{"CFPreferencesSetAppValue", (PyCFunction)CF_CFPreferencesSetAppValue, 1,
+	 "(CFStringRef key, CFTypeRef value, CFStringRef applicationID) -> None"},
+	{"CFPreferencesAddSuitePreferencesToApp", (PyCFunction)CF_CFPreferencesAddSuitePreferencesToApp, 1,
+	 "(CFStringRef applicationID, CFStringRef suiteID) -> None"},
+	{"CFPreferencesRemoveSuitePreferencesFromApp", (PyCFunction)CF_CFPreferencesRemoveSuitePreferencesFromApp, 1,
+	 "(CFStringRef applicationID, CFStringRef suiteID) -> None"},
+	{"CFPreferencesAppSynchronize", (PyCFunction)CF_CFPreferencesAppSynchronize, 1,
+	 "(CFStringRef applicationID) -> (Boolean _rv)"},
+	{"CFPreferencesCopyValue", (PyCFunction)CF_CFPreferencesCopyValue, 1,
+	 "(CFStringRef key, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> (CFTypeRef _rv)"},
+	{"CFPreferencesCopyMultiple", (PyCFunction)CF_CFPreferencesCopyMultiple, 1,
+	 "(CFArrayRef keysToFetch, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> (CFDictionaryRef _rv)"},
+	{"CFPreferencesSetValue", (PyCFunction)CF_CFPreferencesSetValue, 1,
+	 "(CFStringRef key, CFTypeRef value, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> None"},
+	{"CFPreferencesSetMultiple", (PyCFunction)CF_CFPreferencesSetMultiple, 1,
+	 "(CFDictionaryRef keysToSet, CFArrayRef keysToRemove, CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> None"},
+	{"CFPreferencesSynchronize", (PyCFunction)CF_CFPreferencesSynchronize, 1,
+	 "(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> (Boolean _rv)"},
+	{"CFPreferencesCopyApplicationList", (PyCFunction)CF_CFPreferencesCopyApplicationList, 1,
+	 "(CFStringRef userName, CFStringRef hostName) -> (CFArrayRef _rv)"},
+	{"CFPreferencesCopyKeyList", (PyCFunction)CF_CFPreferencesCopyKeyList, 1,
+	 "(CFStringRef applicationID, CFStringRef userName, CFStringRef hostName) -> (CFArrayRef _rv)"},
 	{"CFStringGetTypeID", (PyCFunction)CF_CFStringGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFStringCreateWithPascalString", (PyCFunction)CF_CFStringCreateWithPascalString, 1,
@@ -4017,6 +4363,17 @@ void init_CF(void)
 	Py_INCREF(&CFURLRef_Type);
 	if (PyDict_SetItemString(d, "CFURLRefType", (PyObject *)&CFURLRef_Type) != 0)
 		Py_FatalError("can't initialize CFURLRefType");
+
+#define _STRINGCONST(name) PyModule_AddObject(m, #name, CFStringRefObj_New(name))
+	_STRINGCONST(kCFPreferencesAnyApplication);
+	_STRINGCONST(kCFPreferencesCurrentApplication);
+	_STRINGCONST(kCFPreferencesAnyHost);
+	_STRINGCONST(kCFPreferencesCurrentHost);
+	_STRINGCONST(kCFPreferencesAnyUser);
+	_STRINGCONST(kCFPreferencesCurrentUser);
+
+
+
 }
 
 /* ========================= End module _CF ========================= */

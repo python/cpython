@@ -50,6 +50,7 @@ includestuff = includestuff + """
 #include <CFString.h>
 #include <CFURL.h>
 #include <CFPropertyList.h>
+#include <CFPreferences.h>
 #else
 #include <CoreServices/CoreServices.h>
 #endif
@@ -163,6 +164,17 @@ PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFMutableDictionaryRef, CFMutableDictionaryRef
 PyMac_INIT_TOOLBOX_OBJECT_NEW(CFURLRef, CFURLRefObj_New);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFURLRef, CFURLRefObj_Convert);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CFURLRef, CFURLRefObj_Convert);
+"""
+
+variablestuff="""
+#define _STRINGCONST(name) PyModule_AddObject(m, #name, CFStringRefObj_New(name))
+_STRINGCONST(kCFPreferencesAnyApplication);
+_STRINGCONST(kCFPreferencesCurrentApplication);
+_STRINGCONST(kCFPreferencesAnyHost);
+_STRINGCONST(kCFPreferencesCurrentHost);
+_STRINGCONST(kCFPreferencesAnyUser);
+_STRINGCONST(kCFPreferencesCurrentUser);
+
 """
 
 Boolean = Type("Boolean", "l")
@@ -405,7 +417,7 @@ class CFURLRefObjectDefinition(MyGlobalObjectDefinition):
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
-module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
+module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)
 CFTypeRef_object = CFTypeRefObjectDefinition('CFTypeRef', 'CFTypeRefObj', 'CFTypeRef')
 CFArrayRef_object = CFArrayRefObjectDefinition('CFArrayRef', 'CFArrayRefObj', 'CFArrayRef')
 CFMutableArrayRef_object = CFMutableArrayRefObjectDefinition('CFMutableArrayRef', 'CFMutableArrayRefObj', 'CFMutableArrayRef')
