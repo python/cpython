@@ -72,8 +72,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define RAISE_EXCEPTION	81
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
+/*
 #define REQUIRE_ARGS	84
 #define REFUSE_ARGS	85
+*/
 #define BUILD_FUNCTION	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
@@ -85,7 +87,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DELETE_NAME	91	/* "" */
 #define UNPACK_TUPLE	92	/* Number of tuple items */
 #define UNPACK_LIST	93	/* Number of list items */
-/* unused:		94 */
+#define UNPACK_ARG	94	/* Number of arguments */
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */
