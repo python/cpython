@@ -491,6 +491,16 @@ if len([1, 2, 3, 4]) != 4: raise TestFailed, 'len([1, 2, 3, 4])'
 if len({}) != 0: raise TestFailed, 'len({})'
 if len({'a':1, 'b': 2}) != 2: raise TestFailed, 'len({\'a\':1, \'b\': 2})'
 
+print 'list'
+if list([]) != []: raise TestFailed, 'list([])'
+l0_3 = [0, 1, 2, 3]
+l0_3_bis = list(l0_3)
+if l0_3 != l0_3_bis or l0_3 is l0_3_bis: raise TestFailed, 'list([0, 1, 2, 3])'
+if list(()) != []: raise TestFailed, 'list(())'
+if list((0, 1, 2, 3)) != [0, 1, 2, 3]: raise TestFailed, 'list((0, 1, 2, 3))'
+if list('') != []: raise TestFailed, 'list('')'
+if list('spam') != ['s', 'p', 'a', 'm']: raise TestFailed, "list('spam')"
+
 print 'long'
 if long(314) != 314L: raise TestFailed, 'long(314)'
 if long(3.14) != 3L: raise TestFailed, 'long(3.14)'
