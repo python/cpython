@@ -34,6 +34,14 @@ TextStyle_ptr = TextStyle
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_TEObj_New(TEHandle);
+extern int _TEObj_Convert(PyObject *, TEHandle *);
+
+#define TEObj_New _TEObj_New
+#define TEObj_Convert _TEObj_Convert
+#endif
+
 #define as_TE(h) ((TEHandle)h)
 #define as_Resource(teh) ((Handle)teh)
 
@@ -63,6 +71,11 @@ TextStyle_Convert(v, p_itself)
 	p_itself->tsSize = (short)size;
 	return 1;
 }
+"""
+
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(TEObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEObj_Convert);
 """
 
 class TEMethodGenerator(OSErrMethodGenerator):

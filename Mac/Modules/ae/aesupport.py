@@ -85,6 +85,14 @@ includestuff = includestuff + """
 #include <AppleEvents.h>
 #include <AEObjects.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_AEDesc_New(AEDesc *);
+extern int _AEDesc_Convert(PyObject *, AEDesc *);
+
+#define AEDesc_New _AEDesc_New
+#define AEDesc_Convert _AEDesc_Convert
+#endif
+
 static pascal OSErr GenericEventHandler(); /* Forward */
 
 AEEventHandlerUPP upp_GenericEventHandler;
@@ -138,6 +146,8 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long 
 initstuff = initstuff + """
 	upp_AEIdleProc = NewAEIdleProc(AEIdleProc);
 	upp_GenericEventHandler = NewAEEventHandlerProc(GenericEventHandler);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc_Convert);
 """
 
 module = MacModule('AE', 'AE', includestuff, finalstuff, initstuff)

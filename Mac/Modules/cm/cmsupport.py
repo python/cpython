@@ -22,6 +22,17 @@ from macsupport import *
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_CmpObj_New(Component);
+extern int _CmpObj_Convert(PyObject *, Component *);
+extern PyObject *_CmpInstObj_New(ComponentInstance);
+extern int _CmpInstObj_Convert(PyObject *, ComponentInstance *);
+
+#define CmpObj_New _CmpObj_New
+#define CmpObj_Convert _CmpObj_Convert
+#define CmpInstObj_New _CmpInstObj_New
+#define CmpInstObj_Convert _CmpInstObj_Convert
+#endif
 
 /*
 ** Parse/generate ComponentDescriptor records
@@ -50,6 +61,13 @@ CmpDesc_Convert(v, p_itself)
 		&p_itself->componentFlags, &p_itself->componentFlagsMask);
 }
 
+"""
+
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpInstObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpInstObj_Convert);
 """
 
 ComponentDescription = OpaqueType('ComponentDescription', 'CmpDesc')

@@ -63,6 +63,22 @@ PenState_ptr = StructInputBufferType('PenState')
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_GrafObj_New(GrafPtr);
+extern int _GrafObj_Convert(PyObject *, GrafPtr *);
+extern PyObject *_BMObj_New(BitMapPtr);
+extern int _BMObj_Convert(PyObject *, BitMapPtr *);
+extern PyObject *_QdRGB_New(RGBColorPtr);
+extern int _QdRGB_Convert(PyObject *, RGBColorPtr *);
+
+#define GrafObj_New _GrafObj_New
+#define GrafObj_Convert _GrafObj_Convert
+#define BMObj_New _BMObj_New
+#define BMObj_Convert _BMObj_Convert
+#define QdRGB_New _QdRGB_New
+#define QdRGB_Convert _QdRGB_Convert
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetPortBitMapForCopyBits(port) ((const struct BitMap *)&((GrafPort *)(port))->portBits)
 #define GetPortPixMap(port) (((CGrafPtr)(port))->portPixMap)
@@ -201,6 +217,15 @@ variablestuff = """
 }
 """
 
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(BMObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(BMObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(QdRGB_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(QdRGB_Convert);
+"""
+
 ## not yet...
 ##
 ##class Region_ObjectDefinition(GlobalObjectDefinition):
@@ -219,6 +244,16 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputCheckConvertArg(self):
+		Output("#if 1")
+		OutLbrace()
+		Output("WindowRef win;")
+		OutLbrace("if (WinObj_Convert(v, &win) && v)")
+		Output("*p_itself = (GrafPtr)GetWindowPort(win);")
+		Output("return 1;")
+		OutRbrace()
+		Output("PyErr_Clear();")
+		OutRbrace()
+		Output("#else")
 		OutLbrace("if (DlgObj_Check(v))")
 		Output("DialogRef dlg = (DialogRef)((GrafPortObject *)v)->ob_itself;")
 		Output("*p_itself = (GrafPtr)GetWindowPort(GetDialogWindow(dlg));")
@@ -229,6 +264,7 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("*p_itself = (GrafPtr)GetWindowPort(win);")
 		Output("return 1;")
 		OutRbrace()
+		Output("#endif")
 	def outputGetattrHook(self):
 		Output("#if !ACCESSOR_CALLS_ARE_FUNCTIONS")
 		Output("""

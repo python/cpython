@@ -36,10 +36,22 @@ QDErr = OSErrType("QDErr", 'h')
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_GWorldObj_New(GWorldPtr);
+extern int _GWorldObj_Convert(PyObject *, GWorldPtr *);
+
+#define GWorldObj_New _GWorldObj_New
+#define GWorldObj_Convert _GWorldObj_Convert
+#endif
+
 #define as_GrafPtr(gworld) ((GrafPtr)(gworld))
 
 """
 
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldObj_Convert);
+"""
 
 class MyObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):

@@ -39,6 +39,15 @@ includestuff = includestuff + """
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
 #include <%s>""" % MACHEADERFILE + """
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+
+extern PyObject *_MenuObj_New(MenuHandle);
+extern int _MenuObj_Convert(PyObject *, MenuHandle *);
+
+#define MenuObj_New _MenuObj_New
+#define MenuObj_Convert _MenuObj_Convert 
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetMenuID(menu) ((*(menu))->menuID)
 #define GetMenuWidth(menu) ((*(menu))->menuWidth)
@@ -51,6 +60,11 @@ includestuff = includestuff + """
 
 #define as_Menu(h) ((MenuHandle)h)
 #define as_Resource(h) ((Handle)h)
+"""
+
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuObj_Convert);
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

@@ -10,6 +10,15 @@
 
 #include <Lists.h>
 
+
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_ListObj_New(ListHandle);
+extern int _ListObj_Convert(PyObject *, ListHandle *);
+
+#define ListObj_New _ListObj_New
+#define ListObj_Convert _ListObj_Convert
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetListPort(list) ((CGrafPtr)(*(list))->port)
 #define GetListVerticalScrollBar(list) ((*(list))->vScroll)
@@ -1065,6 +1074,9 @@ void initList()
 	PyObject *d;
 
 
+
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(ListObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListObj_Convert);
 
 
 	m = Py_InitModule("List", List_methods);
