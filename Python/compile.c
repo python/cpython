@@ -575,7 +575,7 @@ com_init(struct compiling *c, char *filename)
 	c->c_firstlineno = 0;
 	c->c_last_addr = 0;
 	c->c_last_line = 0;
-	c-> c_lnotab_next = 0;
+	c->c_lnotab_next = 0;
 	c->c_tmpname = 0;
 	c->c_symtable = NULL;
 	return 1;
