@@ -57,7 +57,7 @@ class Play_Audio_mac:
 			import audioop
 			data = audioop.add(data, '\x80'*len(data), 1)
 		h1 = struct.pack('llhhllbbl',
-			id(data)+MacOS.string_id_to_data,
+			id(data)+MacOS.string_id_to_buffer,
 			self._nchannels,
 			self._outrate, 0,
 			0,
