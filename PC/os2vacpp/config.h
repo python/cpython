@@ -556,7 +556,10 @@
 #define HAVE_STDARG_H 1
 
 /* Define if you have the <stdarg.h> prototypes.  */
-#define HAVE_STDARG_PROTOTYPES
+#define HAVE_STDARG_PROTOTYPES 1
+
+/* Define if malloc(0) returns a NULL pointer */
+#define MALLOC_ZERO_RETURNS_NULL 1
 
 /* Define if you have the <stdlib.h> header file.  */
 #define HAVE_STDLIB_H 1
