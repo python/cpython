@@ -33,10 +33,10 @@ The following values are considered false:
 \begin{itemize}
 
 \item	\code{None}
-	\withsubitem{(Built-in object)}{\ttindex{None}}
+        \withsubitem{(Built-in object)}{\ttindex{None}}
 
 \item	\code{False}
-	\withsubitem{(Built-in object)}{\ttindex{False}}
+        \withsubitem{(Built-in object)}{\ttindex{False}}
 
 \item	zero of any numeric type, for example, \code{0}, \code{0L},
         \code{0.0}, \code{0j}.
@@ -46,8 +46,9 @@ The following values are considered false:
 \item	any empty mapping, for example, \code{\{\}}.
 
 \item	instances of user-defined classes, if the class defines a
-	\method{__nonzero__()} or \method{__len__()} method, when that
-	method returns the integer zero.\footnote{Additional
+        \method{__nonzero__()} or \method{__len__()} method, when that
+        method returns the integer zero or \class{bool} value
+        \code{False}.\footnote{Additional 
 information on these special methods may be found in the
 \citetitle[../ref/ref.html]{Python Reference Manual}.}
 
