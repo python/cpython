@@ -1,4 +1,5 @@
 # Module 'rand'
+# Don't use unless you want compatibility with C's rand()!
 
 import whrandom
 
