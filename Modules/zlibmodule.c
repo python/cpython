@@ -30,6 +30,7 @@ typedef struct
 {
   PyObject_HEAD
   z_stream zst;
+  PyObject *unused_data;
   int is_initialised;
 } compobject;
 
@@ -52,6 +53,7 @@ newcompobject(type)
         if (self == NULL)
                 return NULL;
 	self->is_initialised = 0;
+	self->unused_data = PyString_FromString("");
         return self;
 }
 
@@ -369,6 +371,7 @@ Comp_dealloc(self)
 {
     if (self->is_initialised)
       deflateEnd(&self->zst);
+    Py_XDECREF(self->unused_data);
     PyMem_DEL(self);
 }
 
@@ -377,6 +380,7 @@ Decomp_dealloc(self)
         compobject *self;
 {
     inflateEnd(&self->zst);
+    Py_XDECREF(self->unused_data);
     PyMem_DEL(self);
 }
 
@@ -495,6 +499,19 @@ PyZlib_objdecompress(self, args)
       Py_DECREF(RetVal);
       return NULL;
     }
+
+  if (err == Z_STREAM_END)
+  {
+      /* The end of the compressed data has been reached, so set 
+         the unused_data attribute to a string containing the 
+         remainder of the data in the string. */
+      int pos = self->zst.next_in - input;  /* Position in the string */
+      Py_XDECREF(self->unused_data);  /* Free the original, empty string */
+
+      self->unused_data = PyString_FromStringAndSize(input+pos, inplen-pos);
+      if (self->unused_data == NULL) return NULL;
+  }
+
   _PyString_Resize(&RetVal, self->zst.total_out - start_total_out);
   return RetVal;
 }
@@ -700,6 +717,11 @@ Decomp_getattr(self, name)
      compobject *self;
      char *name;
 {
+        if (strcmp(name, "unused_data") == 0) 
+	  {  
+	    Py_INCREF(self->unused_data);
+	    return self->unused_data;
+	  }
         return Py_FindMethod(Decomp_methods, (PyObject *)self, name);
 }
 
