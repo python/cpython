@@ -79,6 +79,8 @@ Windows
 
 Mac
 
+- In unix-Python on Mac OS X (and darwin) sys.platform is now "darwin",
+  without any trailing digits.
 
 What's New in Python 2.2b2?
 Release date: 16-Nov-2001
