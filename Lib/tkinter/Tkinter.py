@@ -1722,6 +1722,7 @@ def _test():
 	root.test = test
 	quit = Button(root, text="QUIT", command=root.destroy)
 	quit.pack()
+	root.tkraise()
 	root.mainloop()
 
 if __name__ == '__main__':
