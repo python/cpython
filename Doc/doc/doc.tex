@@ -776,16 +776,16 @@ This \UNIX\ is also followed by a space.
       The name of a file or directory.  In the PDF and PostScript
       outputs, single quotes and a font change are used to indicate
       the file name, but no quotes are used in the HTML output.
-      \strong{Warning:} The \macro{file} macro cannot be used in the
-      content of a section title due to processing limitations.
+      \warning{The \macro{file} macro cannot be used in the
+      content of a section title due to processing limitations.}
     \end{macrodesc}
 
     \begin{macrodesc}{filenq}{\p{file or dir}}
       Like \macro{file}, but single quotes are never used.  This can
       be used in conjunction with tables if a column will only contain 
       file or directory names.
-      \strong{Warning:} The \macro{filenq} macro cannot be used in the
-      content of a section title due to processing limitations.
+      \warning{The \macro{filenq} macro cannot be used in the
+      content of a section title due to processing limitations.}
     \end{macrodesc}
 
     \begin{macrodesc}{function}{\p{name}}
@@ -864,7 +864,8 @@ This \UNIX\ is also followed by a space.
       user should be aware of when using whatever bit of API the
       note pertains to.  This should be the last thing in the
       paragraph as the end of the note is not visually marked in
-      any way.
+      any way.  The content of \var{text} should be written in
+      complete sentences and include all appropriate punctuation.
     \end{macrodesc}
 
     \begin{macrodesc}{pep}{\p{number}}
@@ -1001,9 +1002,11 @@ This \UNIX\ is also followed by a space.
       An important bit of information about an API that a user should
       be very aware of when using whatever bit of API the warning
       pertains to.  This should be the last thing in the paragraph as
-      the end of the warning is not visually marked in any way.  This
-      differs from \macro{note} in that it is recommended over
-      \macro{note} for information regarding security.
+      the end of the warning is not visually marked in any way.  The
+      content of \var{text} should be written in complete sentences
+      and include all appropriate punctuation.  This differs from
+      \macro{note} in that it is recommended over \macro{note} for
+      information regarding security.
     \end{macrodesc}
 
 
@@ -1327,8 +1330,8 @@ This \UNIX\ is also followed by a space.
       name is given in \var{name}, with the link key given in
       \var{key} if necessary.  In the HTML and PDF conversions, the
       module name will be a hyperlink to the referred-to module.
-      \strong{Note:}  The module must be documented in the same
-      document (the corresponding \macro{declaremodule} is required).
+      \note{The module must be documented in the same
+      document (the corresponding \macro{declaremodule} is required).}
     \end{macrodesc}
 
     \begin{macrodesc}{seepep}{\p{number}\p{title}\p{why}}
