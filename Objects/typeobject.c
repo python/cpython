@@ -32,7 +32,6 @@ static PyMemberDef type_members[] = {
 	{"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
 	{"__dictoffset__", T_LONG,
 	 offsetof(PyTypeObject, tp_dictoffset), READONLY},
-	{"__bases__", T_OBJECT, offsetof(PyTypeObject, tp_bases), READONLY},
 	{"__mro__", T_OBJECT, offsetof(PyTypeObject, tp_mro), READONLY},
 	{0}
 };
@@ -50,6 +49,46 @@ type_name(PyTypeObject *type, void *context)
 	return PyString_FromString(s);
 }
 
+static int
+type_set_name(PyTypeObject *type, PyObject *value, void *context)
+{
+	etype* et;
+
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't set %s.__name__", type->tp_name);
+		return -1;
+	}
+	if (!value) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't delete %s.__name__", type->tp_name);
+		return -1;
+	}
+	if (!PyString_Check(value)) {
+		PyErr_Format(PyExc_TypeError,
+			     "can only assign string to %s.__name__, not '%s'",
+			     type->tp_name, value->ob_type->tp_name);
+		return -1;
+	}
+	if (strlen(PyString_AS_STRING(value)) 
+	    != (size_t)PyString_GET_SIZE(value)) {
+		PyErr_Format(PyExc_ValueError,
+			     "__name__ must not contain null bytes");
+		return -1;
+	}
+
+	et = (etype*)type;
+
+	Py_INCREF(value);
+
+	Py_DECREF(et->name);
+	et->name = value;
+
+	type->tp_name = PyString_AS_STRING(value);
+
+	return 0;
+}
+
 static PyObject *
 type_module(PyTypeObject *type, void *context)
 {
@@ -63,7 +102,7 @@ type_module(PyTypeObject *type, void *context)
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
 		return PyString_FromString("__builtin__");
 	mod = PyDict_GetItemString(type->tp_dict, "__module__");
-	if (mod != NULL && PyString_Check(mod)) {
+	if (mod != NULL) {
 		Py_INCREF(mod);
 		return mod;
 	}
@@ -74,8 +113,7 @@ type_module(PyTypeObject *type, void *context)
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
-	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
-	    strrchr(type->tp_name, '.')) {
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can't set %s.__module__", type->tp_name);
 		return -1;
@@ -85,7 +123,162 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 			     "can't delete %s.__module__", type->tp_name);
 		return -1;
 	}
+
 	return PyDict_SetItemString(type->tp_dict, "__module__", value);
+}
+
+static PyObject *
+type_get_bases(PyTypeObject *type, void *context)
+{
+	Py_INCREF(type->tp_bases);
+	return type->tp_bases;
+}
+
+static PyTypeObject *best_base(PyObject *);
+static int mro_internal(PyTypeObject *);
+static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, char *);
+static int add_subclass(PyTypeObject*, PyTypeObject*);
+static void remove_subclass(PyTypeObject *, PyTypeObject *);
+static void update_all_slots(PyTypeObject *);
+
+static int
+mro_subclasses(PyTypeObject *type)
+{
+	PyTypeObject *subclass;
+	PyObject *ref, *subclasses, *old_mro;
+	int i, n, r;
+
+	subclasses = type->tp_subclasses;
+	if (subclasses == NULL)
+		return 0;
+	assert(PyList_Check(subclasses));
+	n = PyList_GET_SIZE(subclasses);
+	for (i = 0; i < n; i++) {
+		ref = PyList_GET_ITEM(subclasses, i);
+		assert(PyWeakref_CheckRef(ref));
+		subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
+		assert(subclass != NULL);
+		if ((PyObject *)subclass == Py_None)
+			continue;
+		assert(PyType_Check(subclass));
+		old_mro = subclass->tp_mro;
+		if (mro_internal(subclass) < 0) {
+			subclass->tp_mro = old_mro;
+			r = -1;
+		}
+		else {
+			Py_DECREF(old_mro);
+		}
+		if (mro_subclasses(subclass) < 0)
+			r = -1;
+	}
+	return r;
+}
+
+static int
+type_set_bases(PyTypeObject *type, PyObject *value, void *context)
+{
+	int i, r = 0;
+	PyObject* ob;
+	PyTypeObject *new_base, *old_base;
+	PyObject *old_bases, *old_mro;
+
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't set %s.__bases__", type->tp_name);
+		return -1;
+	}
+	if (!value) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't delete %s.__bases__", type->tp_name);
+		return -1;
+	}
+	if (!PyTuple_Check(value)) {
+		PyErr_Format(PyExc_TypeError,
+		     "can only assign tuple to %s.__bases__, not %s",
+			     type->tp_name, value->ob_type->tp_name);
+		return -1;
+	}
+	for (i = 0; i < PyTuple_GET_SIZE(value); i++) {
+		ob = PyTuple_GET_ITEM(value, i);
+		if (!PyClass_Check(ob) && !PyType_Check(ob)) {
+			PyErr_Format(
+				PyExc_TypeError,
+	"%s.__bases__ must be tuple of old- or new-style classes, not '%s'",
+				type->tp_name, ob->ob_type->tp_name);
+			return -1;
+		}
+		if (PyType_IsSubtype(type, (PyTypeObject*)ob)) {
+			PyErr_SetString(PyExc_TypeError,
+		"a __bases__ item causes an inheritance cycle");
+			return -1;
+		}
+	}
+
+	new_base = best_base(value);
+
+	if (!new_base) {
+		return -1;
+	}
+
+	if (!compatible_for_assignment(type->tp_base, new_base, "__bases__"))
+		return -1;
+
+	Py_INCREF(new_base);
+	Py_INCREF(value);
+
+	old_bases = type->tp_bases;
+	old_base = type->tp_base;
+	old_mro = type->tp_mro;
+
+	type->tp_bases = value;
+	type->tp_base = new_base;
+
+	if (mro_internal(type) < 0) {
+		type->tp_bases = old_bases;
+		type->tp_base = old_base;
+		type->tp_mro = old_mro;
+
+		Py_DECREF(value);
+		Py_DECREF(new_base);
+
+		return -1;
+	}
+
+	if (mro_subclasses(type) < 0)
+		r = -1;
+
+	/* any base that was in __bases__ but now isn't, we
+	   need to remove |type| from it's tp_subclasses.
+	   conversely, any class now in __bases__ that wasn't
+	   needs to have |type| added to it's subclasses. */
+
+	/* for now, sod that: just remove from all old_bases,
+	   add to all new_bases */
+
+	for (i = PyTuple_GET_SIZE(old_bases) - 1; i >= 0; i--) {
+		ob = PyTuple_GET_ITEM(old_bases, i);
+		if (PyType_Check(ob)) {
+			remove_subclass(
+				(PyTypeObject*)ob, type);
+		}
+	}
+
+	for (i = PyTuple_GET_SIZE(value) - 1; i >= 0; i--) {
+		ob = PyTuple_GET_ITEM(value, i);
+		if (PyType_Check(ob)) {
+			if (add_subclass((PyTypeObject*)ob, type) < 0)
+				r = -1;
+		}
+	}
+
+	update_all_slots(type);
+
+	Py_DECREF(old_bases);
+	Py_DECREF(old_base);
+	Py_DECREF(old_mro);
+
+	return r;
 }
 
 static PyObject *
@@ -120,7 +313,8 @@ type_get_doc(PyTypeObject *type, void *context)
 }
 
 static PyGetSetDef type_getsets[] = {
-	{"__name__", (getter)type_name, NULL, NULL},
+	{"__name__", (getter)type_name, (setter)type_set_name, NULL},
+	{"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
 	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__doc__", (getter)type_get_doc, NULL, NULL},
@@ -2026,10 +2220,47 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
+compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
+{
+	PyTypeObject *newbase, *oldbase;
+
+	if (new->tp_dealloc != old->tp_dealloc ||
+	    new->tp_free != old->tp_free)
+	{
+		PyErr_Format(PyExc_TypeError,
+			     "%s assignment: "
+			     "'%s' deallocator differs from '%s'",
+			     attr,
+			     new->tp_name,
+			     old->tp_name);
+		return 0;
+	}
+	newbase = new;
+	oldbase = old;
+	while (equiv_structs(newbase, newbase->tp_base))
+		newbase = newbase->tp_base;
+	while (equiv_structs(oldbase, oldbase->tp_base))
+		oldbase = oldbase->tp_base;
+	if (newbase != oldbase &&
+	    (newbase->tp_base != oldbase->tp_base ||
+	     !same_slots_added(newbase, oldbase))) {
+		PyErr_Format(PyExc_TypeError,
+			     "%s assignment: "
+			     "'%s' object layout differs from '%s'",
+			     attr,
+			     new->tp_name,
+			     old->tp_name);
+		return 0;
+	}
+	
+	return 1;
+}
+
+static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
 	PyTypeObject *old = self->ob_type;
-	PyTypeObject *new, *newbase, *oldbase;
+	PyTypeObject *new;
 
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2050,36 +2281,15 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 			     "__class__ assignment: only for heap types");
 		return -1;
 	}
-	if (new->tp_dealloc != old->tp_dealloc ||
-	    new->tp_free != old->tp_free)
-	{
-		PyErr_Format(PyExc_TypeError,
-			     "__class__ assignment: "
-			     "'%s' deallocator differs from '%s'",
-			     new->tp_name,
-			     old->tp_name);
+	if (compatible_for_assignment(new, old, "__class__")) {
+		Py_INCREF(new);
+		self->ob_type = new;
+		Py_DECREF(old);
+		return 0;
+	}
+	else {
 		return -1;
 	}
-	newbase = new;
-	oldbase = old;
-	while (equiv_structs(newbase, newbase->tp_base))
-		newbase = newbase->tp_base;
-	while (equiv_structs(oldbase, oldbase->tp_base))
-		oldbase = oldbase->tp_base;
-	if (newbase != oldbase &&
-	    (newbase->tp_base != oldbase->tp_base ||
-	     !same_slots_added(newbase, oldbase))) {
-		PyErr_Format(PyExc_TypeError,
-			     "__class__ assignment: "
-			     "'%s' object layout differs from '%s'",
-			     new->tp_name,
-			     old->tp_name);
-		return -1;
-	}
-	Py_INCREF(new);
-	self->ob_type = new;
-	Py_DECREF(old);
-	return 0;
 }
 
 static PyGetSetDef object_getsets[] = {
@@ -2478,7 +2688,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 }
 
 static int add_operators(PyTypeObject *);
-static int add_subclass(PyTypeObject *base, PyTypeObject *type);
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -2641,6 +2850,28 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 	return i;
 }
 
+static void
+remove_subclass(PyTypeObject *base, PyTypeObject *type)
+{
+	int i;
+	PyObject *list, *ref;
+
+	list = base->tp_subclasses;
+	if (list == NULL) {
+		return;
+	}
+	assert(PyList_Check(list));
+	i = PyList_GET_SIZE(list);
+	while (--i >= 0) {
+		ref = PyList_GET_ITEM(list, i);
+		assert(PyWeakref_CheckRef(ref));
+		if (PyWeakref_GET_OBJECT(ref) == (PyObject*)type) {
+			/* this can't fail, right? */
+			PySequence_DelItem(list, i);
+			return;
+		}
+	}
+}
 
 /* Generic wrappers for overloadable 'operators' such as __getitem__ */
 
@@ -4554,6 +4785,18 @@ fixup_slot_dispatchers(PyTypeObject *type)
 	init_slotdefs();
 	for (p = slotdefs; p->name; )
 		p = update_one_slot(type, p);
+}
+
+static void
+update_all_slots(PyTypeObject* type)
+{
+	slotdef *p;
+
+	init_slotdefs();
+	for (p = slotdefs; p->name; p++) {
+		/* update_slot returns int but can't actually fail */
+		update_slot(type, p->name_strobj);
+	}
 }
 
 /* This function is called by PyType_Ready() to populate the type's

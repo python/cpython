@@ -3434,6 +3434,93 @@ def do_this_first():
     # (before PyType_Ready(tuple) is called)
     type.mro(tuple)
 
+def mutable_bases():
+    # stuff that should work:
+    class C(object):
+        pass
+    class C2(object):
+        def __getattribute__(self, attr):
+            if attr == 'a':
+                return 2
+            else:
+                return super(C2, self).__getattribute__(attr)        
+        def meth(self):
+            return 1
+    class D(C):
+        pass
+    class E(D):
+        pass
+    d = D()
+    e = E()
+    D.__bases__ = (C2,)
+    vereq(d.meth(), 1)
+    vereq(e.meth(), 1)
+    vereq(d.a, 2)
+    vereq(e.a, 2)
+    vereq(C2.__subclasses__(), [D])
+
+    # stuff that shouldn't:
+    class L(list):
+        pass
+
+    try:
+        L.__bases__ = (dict,)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't turn list subclass into dict subclass"
+
+    try:
+        list.__bases__ = (dict,)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't be able to assign to list.__bases__"
+
+    try:
+        del D.__bases__
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't be able to delete .__bases__"
+
+    try:
+        D.__bases__ = (D,)
+    except TypeError:
+        pass
+    else:
+        # actually, we'll have crashed by here...
+        raise TestFailed, "shouldn't be able to create inheritance cycles"
+
+    # let's throw a classic class into the mix:
+    class Classic:
+        def meth2(self):
+            return 3
+
+    D.__bases__ = (C, Classic)
+
+    vereq(d.meth2(), 3)
+    vereq(e.meth2(), 3)
+    try:
+        d.a
+    except AttributeError:
+        pass
+    else:
+        raise TestFailed, "attribute should have vanished"
+
+    try:
+        D.__bases__ = (Classic,)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "new-style class must have a new-style base"
+
+def mutable_names():
+    class C(object):
+        pass
+
+    C.__name__ = 'C'
+
 def test_main():
     do_this_first()
     class_docstrings()
@@ -3513,6 +3600,8 @@ def test_main():
     slotmultipleinheritance()
     testrmul()
     testipow()
+    mutable_bases()
+    mutable_names()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
