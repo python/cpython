@@ -399,6 +399,14 @@ if test "$have_long_long" = yes ; then
 AC_CHECK_SIZEOF(long long)
 fi
 
+AC_MSG_CHECKING(for uintptr_t support)
+have_uintptr_t=no
+AC_TRY_COMPILE([], [uintptr_t x; x = (uintptr_t)0;], AC_DEFINE(HAVE_UINTPTR_T) have_uintptr_t=yes)
+AC_MSG_RESULT($have_uintptr_t)
+if test "$have_uintptr_t" = yes ; then
+AC_CHECK_SIZEOF(uintptr_t)
+fi
+
 # Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
 AC_MSG_CHECKING(size of off_t)
 AC_CACHE_VAL(ac_cv_sizeof_off_t,
