@@ -3,15 +3,18 @@ This directory contains some demonstrations of the socket module:
 broadcast.py	 	Broadcast the time to radio.py.
 echosvr.py		About the simplest TCP server possible.
 finger.py		Client for the 'finger' protocol.
-ftp.py			A simple ftp client.
+ftp.py			A very simple ftp client.
+gopher.py		A simple gopher client.
 telnet.py		Client for the 'telnet' protocol.
 throughput.py		Client and server to measure TCP throughput.
 udpecho.py		Client and server for the UDP echo protocol.
 radio.py		Receive time broadcasts from broadcast.py.
 
-The following two files are only relevant on SGI machines (or other
-systems that support multicast):
+The following file is only relevant on SGI machines (or other systems
+that support multicast):
 
 mcast.py		A Python translation of
 			/usr/people/4Dgifts/examples/network/mcast.c
-IN.py			Needed by mcast.py -- translation of <netinet/in.h>
+			(Note that IN.py is in ../../lib/sgi.)
+
+See also ../../lib/nntp.py for another example of socket code.
