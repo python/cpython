@@ -10,16 +10,16 @@
 # protocol.  All you know is that is has methods read(), readline(),
 # readlines(), fileno(), close() and info().  The read*(), fileno()
 # and close() methods work like those of open files. 
-# The info() method returns an rfc822.Message object which can be
+# The info() method returns an mimetools.Message object which can be
 # used to query various info about the object, if available.
-# (rfc822.Message objects are queried with the getheader() method.)
+# (mimetools.Message objects are queried with the getheader() method.)
 
 import string
 import socket
 import regex
 
 
-__version__ = '1.0'
+__version__ = '1.3b1'
 
 
 # This really consists of two pieces:
@@ -34,12 +34,12 @@ _urlopener = None
 def urlopen(url):
 	global _urlopener
 	if not _urlopener:
-		_urlopener = URLopener()
+		_urlopener = FancyURLopener()
 	return _urlopener.open(url)
 def urlretrieve(url):
 	global _urlopener
 	if not _urlopener:
-		_urlopener = URLopener()
+		_urlopener = FancyURLopener()
 	return _urlopener.retrieve(url)
 def urlcleanup():
 	if _urlopener:
@@ -49,6 +49,9 @@ def urlcleanup():
 # Class to open URLs.
 # This is a class rather than just a subroutine because we may need
 # more than one set of global protocol-specific options.
+# Note -- this is a base class for those who don't want the
+# automatic handling of errors type 302 (relocated) and 401
+# (authorization needed).
 ftpcache = {}
 class URLopener:
 
@@ -147,8 +150,19 @@ class URLopener:
 		import httplib
 		host, selector = splithost(url)
 		if not host: raise IOError, ('http error', 'no host given')
+		i = string.find(host, '@')
+		if i >= 0:
+			user_passwd, host = host[:i], host[i+1:]
+		else:
+			user_passwd = None
+		if user_passwd:
+			import base64
+			auth = string.strip(base64.encodestring(user_passwd))
+		else:
+			auth = None
 		h = httplib.HTTP(host)
 		h.putrequest('GET', selector)
+		if auth: h.putheader('Authorization: Basic %s' % auth)
 		for args in self.addheaders: apply(h.putheader, args)
 		h.endheaders()
 		errcode, errmsg, headers = h.getreply()
@@ -156,9 +170,27 @@ class URLopener:
 		if errcode == 200:
 			return addinfo(fp, headers)
 		else:
-			n = len(fp.read())
-			fp.close()
-			raise IOError, ('http error', errcode, errmsg, headers)
+			return self.http_error(url,
+					       fp, errcode, errmsg, headers)
+
+	# Handle http errors.
+	# Derived class can override this, or provide specific handlers
+	# named http_error_DDD where DDD is the 3-digit error code
+	def http_error(self, url, fp, errcode, errmsg, headers):
+		# First check if there's a specific handler for this error
+		name = 'http_error_%d' % errcode
+		if hasattr(self, name):
+			method = getattr(self, name)
+			result = method(url, fp, errcode, errmsg, headers)
+			if result: return result
+		return self.http_error_default(
+			url, fp, errcode, errmsg, headers)
+
+	# Default http error handler: close the connection and raises IOError
+	def http_error_default(self, url, fp, errcode, errmsg, headers):
+		void = fp.read()
+		fp.close()
+		raise IOError, ('http error', errcode, errmsg, headers)
 
 	# Use Gopher protocol
 	def open_gopher(self, url):
@@ -210,7 +242,6 @@ class URLopener:
 		dirs, file = dirs[:-1], dirs[-1]
 		if dirs and not dirs[0]: dirs = dirs[1:]
 		key = (user, host, port, string.joinfields(dirs, '/'))
-##		print 'key =', key
 		try:
 			if not self.ftpcache.has_key(key):
 				self.ftpcache[key] = \
@@ -227,6 +258,91 @@ class URLopener:
 				  noheaders())
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg)
+
+
+# Derived class with handlers for errors we can handle (perhaps)
+class FancyURLopener(URLopener):
+
+	def __init__(self, *args):
+		apply(URLopener.__init__, (self,) + args)
+		self.auth_cache = {}
+
+	# Default error handling -- don't raise an exception
+	def http_error_default(self, url, fp, errcode, errmsg, headers):
+	    return addinfo(fp, headers)
+
+	# Error 302 -- relocated
+	def http_error_302(self, url, fp, errcode, errmsg, headers):
+		# XXX The server can force infinite recursion here!
+		if headers.has_key('location'):
+			newurl = headers['location']
+		elif headers.has_key('uri'):
+			newurl = headers['uri']
+		else:
+			return
+		void = fp.read()
+		fp.close()
+		return self.open(newurl)
+
+	# Error 401 -- authentication required
+	# See this URL for a description of the basic authentication scheme:
+	# http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt
+	def http_error_401(self, url, fp, errcode, errmsg, headers):
+		if headers.has_key('www-authenticate'):
+			stuff = headers['www-authenticate']
+			p = regex.compile(
+				'[ \t]*\([^ \t]+\)[ \t]+realm="\([^"]*\)"')
+			if p.match(stuff) >= 0:
+				scheme, realm = p.group(1, 2)
+				if string.lower(scheme) == 'basic':
+					return self.retry_http_basic_auth(
+						url, realm)
+
+	def retry_http_basic_auth(self, url, realm):
+		host, selector = splithost(url)
+		i = string.find(host, '@') + 1
+		host = host[i:]
+		user, passwd = self.get_user_passwd(host, realm, i)
+		if not (user or passwd): return None
+		host = user + ':' + passwd + '@' + host
+		newurl = '//' + host + selector
+		return self.open_http(newurl)
+
+	def get_user_passwd(self, host, realm, clear_cache = 0):
+		key = realm + '@' + string.lower(host)
+		if self.auth_cache.has_key(key):
+			if clear_cache:
+				del self.auth_cache[key]
+			else:
+				return self.auth_cache[key]
+		user, passwd = self.prompt_user_passwd(host, realm)
+		if user or passwd: self.auth_cache[key] = (user, passwd)
+		return user, passwd
+
+	def prompt_user_passwd(self, host, realm):
+		# Override this in a GUI environment!
+		try:
+			user = raw_input("Enter username for %s at %s: " %
+					 (realm, host))
+			self.echo_off()
+			try:
+				passwd = raw_input(
+				  "Enter password for %s in %s at %s: " %
+				  (user, realm, host))
+			finally:
+				self.echo_on()
+			return user, passwd
+		except KeyboardInterrupt:
+			return None, None
+
+	def echo_off(self):
+		import os
+		os.system("stty -echo")
+
+	def echo_on(self):
+		import os
+		print
+		os.system("stty echo")
 
 
 # Utility functions
@@ -259,13 +375,14 @@ def ftperrors():
 			      ftplib.error_proto)
 	return _ftperrors
 
-# Return an empty rfc822.Message object
+# Return an empty mimetools.Message object
 _noheaders = None
 def noheaders():
 	global _noheaders
 	if not _noheaders:
-		import rfc822
-		_noheaders = rfc822.Message(open('/dev/null', 'r'))
+		import mimetools
+		import StringIO
+		_noheaders = mimetools.Message(StringIO.StringIO(), 0)
 		_noheaders.fp.close()	# Recycle file descriptor
 	return _noheaders
 
