@@ -142,12 +142,12 @@ def _test():
 
 	args = sys.argv[1:]
 	if not args:
-		if os.environ.has_key('MAIL'):
-			mbox = os.environ['MAIL']
-		elif os.environ.has_key('MAIL'):
-			mbox = os.environ['USER']
+		for key in 'MAIL', 'LOGNAME', 'USER':
+			if os.environ.has_key(key):
+				mbox = os.environ[key]
+				break
 		else:
-			print "Who are you?"
+			print "$MAIL, $LOGNAME nor $USER set -- who are you?"
 			return
 	else:
 		mbox = args[0]
