@@ -655,9 +655,18 @@ PyWeakref_GetObject(PyObject *ref)
 }
 
 
-/* This is the implementation of the PyObject_ClearWeakRefs() function; it
- * is installed in the init_weakref() function.  It is called by the
- * tp_dealloc handler to clear weak references.
+static void
+handle_callback(PyWeakReference *ref, PyObject *callback)
+{
+    PyObject *cbresult = PyObject_CallFunction(callback, "O", ref);
+
+    if (cbresult == NULL)
+        PyErr_WriteUnraisable(callback);
+    else
+        Py_DECREF(cbresult);
+}
+
+/* This function is called by the tp_dealloc handler to clear weak references.
  *
  * This iterates through the weak references for 'object' and calls callbacks
  * for those references which have one.  It returns when all callbacks have
@@ -682,25 +691,23 @@ PyObject_ClearWeakRefs(PyObject *object)
             clear_weakref(*list);
     }
     if (*list != NULL) {
-        int count = _PyWeakref_GetWeakrefCount(*list);
+        PyWeakReference *current = *list;
+        int count = _PyWeakref_GetWeakrefCount(current);
+        int restore_error = PyErr_Occurred() ? 1 : 0;
+        PyObject *err_type, *err_value, *err_tb;
 
+        if (restore_error)
+            PyErr_Fetch(&err_type, &err_value, &err_tb);
         if (count == 1) {
-            PyWeakReference *current = *list;
             PyObject *callback = current->wr_callback;
-            PyObject *cbresult;
 
-            Py_INCREF(callback);
+            current->wr_callback = NULL;
             clear_weakref(current);
-            cbresult = PyObject_CallFunction(callback, "O", current);
-            if (cbresult == NULL)
-                PyErr_WriteUnraisable(callback);
-            else
-                Py_DECREF(cbresult);
+            handle_callback(current, callback);
             Py_DECREF(callback);
         }
         else {
             PyObject *tuple = PyTuple_New(count * 2);
-            PyWeakReference *current = *list;
             int i = 0;
 
             for (i = 0; i < count; ++i) {
@@ -710,21 +717,18 @@ PyObject_ClearWeakRefs(PyObject *object)
                 PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
                 PyTuple_SET_ITEM(tuple, i * 2 + 1, current->wr_callback);
                 current->wr_callback = NULL;
-                next = current->wr_next;
                 clear_weakref(current);
                 current = next;
             }
             for (i = 0; i < count; ++i) {
                 PyObject *current = PyTuple_GET_ITEM(tuple, i * 2);
                 PyObject *callback = PyTuple_GET_ITEM(tuple, i * 2 + 1);
-                PyObject *cbresult = PyObject_CallFunction(callback, "O",
-                                                           current);
-                if (cbresult == NULL)
-                    PyErr_WriteUnraisable(callback);
-                else
-                    Py_DECREF(cbresult);
+
+                handle_callback((PyWeakReference *)current, callback);
             }
             Py_DECREF(tuple);
         }
+        if (restore_error)
+            PyErr_Restore(err_type, err_value, err_tb);
     }
 }
