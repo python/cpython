@@ -9,6 +9,7 @@ commands.  Currently this means:
   install
   install_py
   install_ext
+  dist
 
 but this list will undoubtedly grow with time."""
 
@@ -20,4 +21,5 @@ __all__ = ['build',
            'install',
            'install_py',
            'install_ext',
+           'dist',
           ]
