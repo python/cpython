@@ -62,21 +62,44 @@ wat_os2     A 32-bit OS/2 Python (console-mode).
 Microsoft Visual C++ Version 4.0 (32-bit Windows)
 =================================================
 
-The project files are vc40.mdp, vc40.ncb and vc40.mak.  They
-will NOT work from this PC directory.  To use them, first copy
-them to the Python distribution directory with this command:
-    copy vc40.* ..
-You may then want to remove them from here to prevent confusion.
+The distributed Makefile is vc40.mak.  This file is distributed with
+CRLF line separators, otherwise Developer Studio won't like it.  It
+will NOT work from this PC directory.  To use it, first copy it to the
+Python distribution directory, e.g. with this command:
+    copy vc40.mak ..
+To convert the Makefile into a project file, start Developer Studio,
+choose Open Workspace, change the file name pattern to *.mak, find and
+select the file vc40.mak, and click OK.  Developer Studio will create
+additional project files vc40.ncb and vc40.mdp when you use the
+project.  The project contains three targets, which should be built in
+this order:
 
-Once the project files are located in the directory just above
-this one, start VC++ and read in the project.  The targets are built
-in the subdirectories vc40_*.
+python14    The Python core as a DLL, named python14.dll.
 
-vc40_dll    The Python core built as an NT DLL.
+python	    The Python main program, named python.exe.  This should
+	    work as a console program under Windows 95 or NT, as well
+	    as under Windows 3.1(1) when using win32s.  It uses
+	    python14.dll.
 
-vc40_nt     A Windows NT and 95 Python QuickWin (console-mode)
-            version of Python including sockets.  It is
-            self-contained, and does not require any DLL's.
+_tkinter    The optional _tkinter extension, _tkinter.dll; see below.
+
+ALl end products of the compilation are placed in the subdirectory
+vc40 (which Developer Studio creates); object files are placed in
+vc40/tmp.  There are no separate Release and Debug project variants.
+Note that the python and _tkinter projects require that the
+python14.lib file exists in the vc40 subdirectory before they can be
+built.
+
+*** How to build the _tkinter extension ***
+
+This assumes that you have installed the Tcl/Tk binary distribution
+for Windows 95/NT with version numbers 7.5p1/4.1p1, in the default
+installation location (C:\tcl).  (Ftp to ftp.sunlabs.com in /pub/tcl,
+file win41p1.exe.)  You must also have fetched and unpacked the zip
+file vclibs41.zip which contains the files tcl75.lib and tk41.lib, and
+placed those files in C:\tcl\bin.  In order to use _tkinter, the
+Tkinter.py module must be on PYTHONPATH.  It is found in the
+Lib\tkinter subdirectory.
 
 
 Microsoft Visual C++ Version 1.5 (16-bit Windows)
