@@ -36,16 +36,13 @@ static struct memberlist tb_memberlist[] = {
 };
 
 static PyObject *
-tb_getattr(tb, name)
-	tracebackobject *tb;
-	char *name;
+tb_getattr(tracebackobject *tb, char *name)
 {
 	return PyMember_Get((char *)tb, tb_memberlist, name);
 }
 
 static void
-tb_dealloc(tb)
-	tracebackobject *tb;
+tb_dealloc(tracebackobject *tb)
 {
 	Py_TRASHCAN_SAFE_BEGIN(tb)
 	Py_XDECREF(tb->tb_next);
@@ -75,10 +72,8 @@ PyTypeObject Tracebacktype = {
 };
 
 static tracebackobject *
-newtracebackobject(next, frame, lasti, lineno)
-	tracebackobject *next;
-	PyFrameObject *frame;
-	int lasti, lineno;
+newtracebackobject(tracebackobject *next, PyFrameObject *frame, int lasti,
+		   int lineno)
 {
 	tracebackobject *tb;
 	if ((next != NULL && !is_tracebackobject(next)) ||
@@ -99,8 +94,7 @@ newtracebackobject(next, frame, lasti, lineno)
 }
 
 int
-PyTraceBack_Here(frame)
-	PyFrameObject *frame;
+PyTraceBack_Here(PyFrameObject *frame)
 {
 	PyThreadState *tstate = frame->f_tstate;
 	tracebackobject *oldtb = (tracebackobject *) tstate->curexc_traceback;
@@ -114,11 +108,7 @@ PyTraceBack_Here(frame)
 }
 
 static int
-tb_displayline(f, filename, lineno, name)
-	PyObject *f;
-	char *filename;
-	int lineno;
-	char *name;
+tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 {
 	int err = 0;
 	FILE *xfp;
@@ -206,10 +196,7 @@ tb_displayline(f, filename, lineno, name)
 }
 
 static int
-tb_printinternal(tb, f, limit)
-	tracebackobject *tb;
-	PyObject *f;
-	int limit;
+tb_printinternal(tracebackobject *tb, PyObject *f, int limit)
 {
 	int err = 0;
 	int depth = 0;
@@ -238,9 +225,7 @@ tb_printinternal(tb, f, limit)
 }
 
 int
-PyTraceBack_Print(v, f)
-	PyObject *v;
-	PyObject *f;
+PyTraceBack_Print(PyObject *v, PyObject *f)
 {
 	int err;
 	PyObject *limitv;

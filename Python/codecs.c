@@ -36,7 +36,7 @@ static int import_encodings_called = 0;
 */
 
 static
-int import_encodings() 
+int import_encodings(void)
 {
     PyObject *mod;
     
@@ -419,7 +419,7 @@ PyObject *PyCodec_Decode(PyObject *object,
     return NULL;
 }
 
-void _PyCodecRegistry_Init()
+void _PyCodecRegistry_Init(void)
 {
     if (_PyCodec_SearchPath == NULL)
 	_PyCodec_SearchPath = PyList_New(0);
@@ -430,7 +430,7 @@ void _PyCodecRegistry_Init()
 	Py_FatalError("can't initialize codec registry");
 }
 
-void _PyCodecRegistry_Fini()
+void _PyCodecRegistry_Fini(void)
 {
     Py_XDECREF(_PyCodec_SearchPath);
     _PyCodec_SearchPath = NULL;

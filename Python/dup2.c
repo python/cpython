@@ -16,8 +16,7 @@
 #define BADEXIT -1
 
 int
-dup2(fd1, fd2)
-int fd1, fd2;
+dup2(int fd1, int fd2)
 {
 	if (fd1 != fd2) {
 		if (fcntl(fd1, F_GETFL) < 0)

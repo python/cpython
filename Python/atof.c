@@ -17,8 +17,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include <ctype.h>
 
-double atof(s)
-	char *s;
+double atof(char *s)
 {
 	double a = 0.0;
 	int e = 0;

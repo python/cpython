@@ -30,9 +30,7 @@ extern int PyInitFrozenExtensions();
 /* Main program */
 
 int
-Py_FrozenMain(argc, argv)
-	int argc;
-	char **argv;
+Py_FrozenMain(int argc, char **argv)
 {
 	char *p;
 	int n, sts;

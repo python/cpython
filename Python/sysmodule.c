@@ -38,8 +38,7 @@ extern const char *PyWin_DLLVersionString;
 #endif
 
 PyObject *
-PySys_GetObject(name)
-	char *name;
+PySys_GetObject(char *name)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	PyObject *sd = tstate->interp->sysdict;
@@ -49,9 +48,7 @@ PySys_GetObject(name)
 }
 
 FILE *
-PySys_GetFile(name, def)
-	char *name;
-	FILE *def;
+PySys_GetFile(char *name, FILE *def)
 {
 	FILE *fp = NULL;
 	PyObject *v = PySys_GetObject(name);
@@ -63,9 +60,7 @@ PySys_GetFile(name, def)
 }
 
 int
-PySys_SetObject(name, v)
-	char *name;
-	PyObject *v;
+PySys_SetObject(char *name, PyObject *v)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	PyObject *sd = tstate->interp->sysdict;
@@ -80,9 +75,7 @@ PySys_SetObject(name, v)
 }
 
 static PyObject *
-sys_exc_info(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_exc_info(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate;
 	if (!PyArg_ParseTuple(args, ":exc_info"))
@@ -103,9 +96,7 @@ Return information about the exception that is currently being handled.\n\
 This should be called from inside an except clause only.";
 
 static PyObject *
-sys_exit(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_exit(PyObject *self, PyObject *args)
 {
 	/* Raise SystemExit so callers may catch it or clean up. */
 	PyErr_SetObject(PyExc_SystemExit, args);
@@ -122,9 +113,7 @@ If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure).";
 
 static PyObject *
-sys_getdefaultencoding(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_getdefaultencoding(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getdefaultencoding"))
 		return NULL;
@@ -138,9 +127,7 @@ Return the current default string encoding used by the Unicode \n\
 implementation.";
 
 static PyObject *
-sys_setdefaultencoding(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_setdefaultencoding(PyObject *self, PyObject *args)
 {
 	char *encoding;
 	if (!PyArg_ParseTuple(args, "s:setdefaultencoding", &encoding))
@@ -157,9 +144,7 @@ static char setdefaultencoding_doc[] =
 Set the current default string encoding used by the Unicode implementation.";
 
 static PyObject *
-sys_settrace(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_settrace(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	if (args == Py_None)
@@ -179,9 +164,7 @@ Set the global debug tracing function.  It will be called on each\n\
 function call.  See the debugger chapter in the library manual.";
 
 static PyObject *
-sys_setprofile(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_setprofile(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	if (args == Py_None)
@@ -201,9 +184,7 @@ Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual.";
 
 static PyObject *
-sys_setcheckinterval(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_setcheckinterval(PyObject *self, PyObject *args)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &tstate->interp->checkinterval))
@@ -223,9 +204,7 @@ n instructions.  This also affects how often thread switches occur.";
 #include <malloc.h>
 
 static PyObject *
-sys_mdebug(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_mdebug(PyObject *self, PyObject *args)
 {
 	int flag;
 	if (!PyArg_ParseTuple(args, "i:mdebug", &flag))
@@ -237,9 +216,7 @@ sys_mdebug(self, args)
 #endif /* USE_MALLOPT */
 
 static PyObject *
-sys_getrefcount(self, args)
-	PyObject *self;
-	PyObject *args;
+sys_getrefcount(PyObject *self, PyObject *args)
 {
 	PyObject *arg;
 	if (!PyArg_ParseTuple(args, "O:getrefcount", &arg))
@@ -267,8 +244,7 @@ temporary reference in the argument list, so it is at least 2.";
 
 #ifdef COUNT_ALLOCS
 static PyObject *
-sys_getcounts(self, args)
-	PyObject *self, *args;
+sys_getcounts(PyObject *self, PyObject *args)
 {
 	extern PyObject *get_counts(void);
 
@@ -315,7 +291,7 @@ static PyMethodDef sys_methods[] = {
 };
 
 static PyObject *
-list_builtin_module_names()
+list_builtin_module_names(void)
 {
 	PyObject *list = PyList_New(0);
 	int i;
@@ -407,7 +383,7 @@ settrace() -- set the global debug tracing function\n\
 #endif
 
 PyObject *
-_PySys_Init()
+_PySys_Init(void)
 {
 	extern int fclose(FILE *);
 	PyObject *m, *v, *sysdict;
@@ -495,9 +471,7 @@ _PySys_Init()
 }
 
 static PyObject *
-makepathobject(path, delim)
-	char *path;
-	int delim;
+makepathobject(char *path, int delim)
 {
 	int i, n;
 	char *p;
@@ -530,8 +504,7 @@ makepathobject(path, delim)
 }
 
 void
-PySys_SetPath(path)
-	char *path;
+PySys_SetPath(char *path)
 {
 	PyObject *v;
 	if ((v = makepathobject(path, DELIM)) == NULL)
@@ -542,9 +515,7 @@ PySys_SetPath(path)
 }
 
 static PyObject *
-makeargvobject(argc, argv)
-	int argc;
-	char **argv;
+makeargvobject(int argc, char **argv)
 {
 	PyObject *av;
 	if (argc <= 0 || argv == NULL) {
@@ -570,9 +541,7 @@ makeargvobject(argc, argv)
 }
 
 void
-PySys_SetArgv(argc, argv)
-	int argc;
-	char **argv;
+PySys_SetArgv(int argc, char **argv)
 {
 	PyObject *av = makeargvobject(argc, argv);
 	PyObject *path = PySys_GetObject("path");
@@ -674,11 +643,7 @@ PySys_SetArgv(argc, argv)
  */
 
 static void
-mywrite(name, fp, format, va)
-	char *name;
-	FILE *fp;
-	const char *format;
-	va_list va;
+mywrite(char *name, FILE *fp, const char *format, va_list va)
 {
 	PyObject *file;
 	PyObject *error_type, *error_value, *error_traceback;
@@ -700,43 +665,21 @@ mywrite(name, fp, format, va)
 }
 
 void
-#ifdef HAVE_STDARG_PROTOTYPES
 PySys_WriteStdout(const char *format, ...)
-#else
-PySys_WriteStdout(va_alist)
-	va_dcl
-#endif
 {
 	va_list va;
 
-#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
-#else
-	char *format;
-	va_start(va);
-	format = va_arg(va, char *);
-#endif
 	mywrite("stdout", stdout, format, va);
 	va_end(va);
 }
 
 void
-#ifdef HAVE_STDARG_PROTOTYPES
 PySys_WriteStderr(const char *format, ...)
-#else
-PySys_WriteStderr(va_alist)
-	va_dcl
-#endif
 {
 	va_list va;
 
-#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
-#else
-	char *format;
-	va_start(va);
-	format = va_arg(va, char *);
-#endif
 	mywrite("stderr", stderr, format, va);
 	va_end(va);
 }

@@ -29,14 +29,16 @@ long PyThread_get_thread_ident(void);
 /*
  * Initialization of the C package, should not be needed.
  */
-static void PyThread__init_thread(void)
+static void
+PyThread__init_thread(void)
 {
 }
 
 /*
  * Thread support.
  */
-int PyThread_start_new_thread(void (*func)(void *), void *arg)
+int
+PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
   int aThread;
   int success = 1;
@@ -52,7 +54,8 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
   return success;
 }
 
-long PyThread_get_thread_ident(void)
+long
+PyThread_get_thread_ident(void)
 {
   PPIB pib;
   PTIB tib;
@@ -64,7 +67,8 @@ long PyThread_get_thread_ident(void)
   return tib->tib_ptib2->tib2_ultid;
 }
 
-static void do_PyThread_exit_thread(int no_cleanup)
+static void
+do_PyThread_exit_thread(int no_cleanup)
 {
   dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
   if (!initialized)
@@ -75,18 +79,21 @@ static void do_PyThread_exit_thread(int no_cleanup)
   _endthread();
 }
 
-void PyThread_exit_thread(void)
+void 
+PyThread_exit_thread(void)
 {
   do_PyThread_exit_thread(0);
 }
 
-void PyThread__exit_thread(void)
+void 
+PyThread__exit_thread(void)
 {
   do_PyThread_exit_thread(1);
 }
 
 #ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
+static void 
+do_PyThread_exit_prog(int status, int no_cleanup)
 {
   dprintf(("PyThread_exit_prog(%d) called\n", status));
   if (!initialized)
@@ -96,12 +103,14 @@ static void do_PyThread_exit_prog(int status, int no_cleanup)
       exit(status);
 }
 
-void PyThread_exit_prog(int status)
+void 
+PyThread_exit_prog(int status)
 {
   do_PyThread_exit_prog(status, 0);
 }
 
-void PyThread__exit_prog _P1(int status)
+void 
+PyThread__exit_prog(int status)
 {
   do_PyThread_exit_prog(status, 1);
 }
@@ -112,7 +121,8 @@ void PyThread__exit_prog _P1(int status)
  * I [Dag] tried to implement it with mutex but I could find a way to
  * tell whether a thread already own the lock or not.
  */
-PyThread_type_lock PyThread_allocate_lock(void)
+PyThread_type_lock 
+PyThread_allocate_lock(void)
 {
   HMTX   aLock;
   APIRET rc;
@@ -131,7 +141,8 @@ PyThread_type_lock PyThread_allocate_lock(void)
   return (PyThread_type_lock) aLock;
 }
 
-void PyThread_free_lock(PyThread_type_lock aLock)
+void 
+PyThread_free_lock(PyThread_type_lock aLock)
 {
   dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
@@ -144,7 +155,8 @@ void PyThread_free_lock(PyThread_type_lock aLock)
  * and 0 if the lock was not acquired. This means a 0 is returned
  * if the lock has already been acquired by this thread!
  */
-int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
+int 
+PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
   int   success = 1;
   ULONG rc, count;
@@ -172,7 +184,8 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
   return success;
 }
 
-void PyThread_release_lock(PyThread_type_lock aLock)
+void 
+PyThread_release_lock(PyThread_type_lock aLock)
 {
   dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
@@ -185,22 +198,26 @@ void PyThread_release_lock(PyThread_type_lock aLock)
 /*
  * Semaphore support.
  */
-PyThread_type_sema PyThread_allocate_sema(int value)
+PyThread_type_sema 
+PyThread_allocate_sema(int value)
 {
   return (PyThread_type_sema) 0;
 }
 
-void PyThread_free_sema(PyThread_type_sema aSemaphore)
+void 
+PyThread_free_sema(PyThread_type_sema aSemaphore)
 {
 
 }
 
-int PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
+int 
+PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
 {
   return -1;
 }
 
-void PyThread_up_sema(PyThread_type_sema aSemaphore)
+void 
+PyThread_up_sema(PyThread_type_sema aSemaphore)
 {
   dprintf(("%ld: PyThread_up_sema(%p)\n", PyThread_get_thread_ident(), aSemaphore));
 }

@@ -19,7 +19,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* ARGSUSED */
 int
-PyErr_CheckSignals()
+PyErr_CheckSignals(void)
 {
 	if (!PyOS_InterruptOccurred())
 		return 0;

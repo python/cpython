@@ -99,7 +99,7 @@ static PyThread_type_lock interpreter_lock = 0;
 static long main_thread = 0;
 
 void
-PyEval_InitThreads()
+PyEval_InitThreads(void)
 {
 	if (interpreter_lock)
 		return;
@@ -110,20 +110,19 @@ PyEval_InitThreads()
 }
 
 void
-PyEval_AcquireLock()
+PyEval_AcquireLock(void)
 {
 	PyThread_acquire_lock(interpreter_lock, 1);
 }
 
 void
-PyEval_ReleaseLock()
+PyEval_ReleaseLock(void)
 {
 	PyThread_release_lock(interpreter_lock);
 }
 
 void
-PyEval_AcquireThread(tstate)
-	PyThreadState *tstate;
+PyEval_AcquireThread(PyThreadState *tstate)
 {
 	if (tstate == NULL)
 		Py_FatalError("PyEval_AcquireThread: NULL new thread state");
@@ -134,8 +133,7 @@ PyEval_AcquireThread(tstate)
 }
 
 void
-PyEval_ReleaseThread(tstate)
-	PyThreadState *tstate;
+PyEval_ReleaseThread(PyThreadState *tstate)
 {
 	if (tstate == NULL)
 		Py_FatalError("PyEval_ReleaseThread: NULL thread state");
@@ -150,7 +148,7 @@ PyEval_ReleaseThread(tstate)
    with and without threads: */
 
 PyThreadState *
-PyEval_SaveThread()
+PyEval_SaveThread(void)
 {
 	PyThreadState *tstate = PyThreadState_Swap(NULL);
 	if (tstate == NULL)
@@ -163,8 +161,7 @@ PyEval_SaveThread()
 }
 
 void
-PyEval_RestoreThread(tstate)
-	PyThreadState *tstate;
+PyEval_RestoreThread(PyThreadState *tstate)
 {
 	if (tstate == NULL)
 		Py_FatalError("PyEval_RestoreThread: NULL tstate");
@@ -221,9 +218,7 @@ static volatile int pendinglast = 0;
 static volatile int things_to_do = 0;
 
 int
-Py_AddPendingCall(func, arg)
-	int (*func)(ANY *);
-	ANY *arg;
+Py_AddPendingCall(int (*func)(ANY *), ANY *arg)
 {
 	static int busy = 0;
 	int i, j;
@@ -247,7 +242,7 @@ Py_AddPendingCall(func, arg)
 }
 
 int
-Py_MakePendingCalls()
+Py_MakePendingCalls(void)
 {
 	static int busy = 0;
 #ifdef WITH_THREAD
@@ -294,10 +289,7 @@ static int unpack_sequence(PyObject *, int, PyObject **);
 
 
 PyObject *
-PyEval_EvalCode(co, globals, locals)
-	PyCodeObject *co;
-	PyObject *globals;
-	PyObject *locals;
+PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
 	return eval_code2(co,
 			  globals, locals,
@@ -315,18 +307,9 @@ PyEval_EvalCode(co, globals, locals)
 #endif
 
 static PyObject *
-eval_code2(co, globals, locals,
-	   args, argcount, kws, kwcount, defs, defcount, owner)
-	PyCodeObject *co;
-	PyObject *globals;
-	PyObject *locals;
-	PyObject **args;
-	int argcount;
-	PyObject **kws; /* length: 2*kwcount */
-	int kwcount;
-	PyObject **defs;
-	int defcount;
-	PyObject *owner;
+eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
+	   PyObject **args, int argcount, PyObject **kws, int kwcount,
+	   PyObject **defs, int defcount, PyObject *owner)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -1920,11 +1903,7 @@ eval_code2(co, globals, locals,
 }
 
 static void
-set_exc_info(tstate, type, value, tb)
-	PyThreadState *tstate;
-	PyObject *type;
-	PyObject *value;
-	PyObject *tb;
+set_exc_info(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
@@ -1970,8 +1949,7 @@ set_exc_info(tstate, type, value, tb)
 }
 
 static void
-reset_exc_info(tstate)
-	PyThreadState *tstate;
+reset_exc_info(PyThreadState *tstate)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
@@ -2009,8 +1987,7 @@ reset_exc_info(tstate)
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
 static enum why_code
-do_raise(type, value, tb)
-	PyObject *type, *value, *tb;
+do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
 		/* Reraise */
@@ -2109,10 +2086,7 @@ do_raise(type, value, tb)
 }
 
 static int
-unpack_sequence(v, argcnt, sp)
-     PyObject *v;
-     int argcnt;
-     PyObject **sp;
+unpack_sequence(PyObject *v, int argcnt, PyObject **sp)
 {
 	int i;
 	PyObject *w;
@@ -2148,9 +2122,7 @@ finally:
 
 #ifdef LLTRACE
 static int
-prtrace(v, str)
-	PyObject *v;
-	char *str;
+prtrace(PyObject *v, char *str)
 {
 	printf("%s ", str);
 	if (PyObject_Print(v, stdout, 0) != 0)
@@ -2161,9 +2133,7 @@ prtrace(v, str)
 #endif
 
 static void
-call_exc_trace(p_trace, p_newtrace, f)
-	PyObject **p_trace, **p_newtrace;
-	PyFrameObject *f;
+call_exc_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f)
 {
 	PyObject *type, *value, *traceback, *arg;
 	int err;
@@ -2188,16 +2158,15 @@ call_exc_trace(p_trace, p_newtrace, f)
 	}
 }
 
+/* PyObject **p_trace: in/out; may not be NULL;
+ 				may not point to NULL variable initially
+  PyObject **p_newtrace: in/out; may be NULL;
+  				may point to NULL variable;
+ 				may be same variable as p_newtrace */
+
 static int
-call_trace(p_trace, p_newtrace, f, msg, arg)
-	PyObject **p_trace; /* in/out; may not be NULL;
-			     may not point to NULL variable initially */
-	PyObject **p_newtrace; /* in/out; may be NULL;
-				may point to NULL variable;
-				may be same variable as p_newtrace */
-	PyFrameObject *f;
-	char *msg;
-	PyObject *arg;
+call_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f,
+	   char *msg, PyObject *arg)
 {
 	PyThreadState *tstate = f->f_tstate;
 	PyObject *args, *what;
@@ -2267,7 +2236,7 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 }
 
 PyObject *
-PyEval_GetBuiltins()
+PyEval_GetBuiltins(void)
 {
 	PyThreadState *tstate = PyThreadState_Get();
 	PyFrameObject *current_frame = tstate->frame;
@@ -2278,7 +2247,7 @@ PyEval_GetBuiltins()
 }
 
 PyObject *
-PyEval_GetLocals()
+PyEval_GetLocals(void)
 {
 	PyFrameObject *current_frame = PyThreadState_Get()->frame;
 	if (current_frame == NULL)
@@ -2288,7 +2257,7 @@ PyEval_GetLocals()
 }
 
 PyObject *
-PyEval_GetGlobals()
+PyEval_GetGlobals(void)
 {
 	PyFrameObject *current_frame = PyThreadState_Get()->frame;
 	if (current_frame == NULL)
@@ -2298,21 +2267,21 @@ PyEval_GetGlobals()
 }
 
 PyObject *
-PyEval_GetFrame()
+PyEval_GetFrame(void)
 {
 	PyFrameObject *current_frame = PyThreadState_Get()->frame;
 	return (PyObject *)current_frame;
 }
 
 int
-PyEval_GetRestricted()
+PyEval_GetRestricted(void)
 {
 	PyFrameObject *current_frame = PyThreadState_Get()->frame;
 	return current_frame == NULL ? 0 : current_frame->f_restricted;
 }
 
 int
-Py_FlushLine()
+Py_FlushLine(void)
 {
 	PyObject *f = PySys_GetObject("stdout");
 	if (f == NULL)
@@ -2330,9 +2299,7 @@ Py_FlushLine()
 /* for backward compatibility: export this interface */
 
 PyObject *
-PyEval_CallObject(func, arg)
-	PyObject *func;
-	PyObject *arg;
+PyEval_CallObject(PyObject *func, PyObject *arg)
 {
 	return PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL);
 }
@@ -2340,10 +2307,7 @@ PyEval_CallObject(func, arg)
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
 PyObject *
-PyEval_CallObjectWithKeywords(func, arg, kw)
-	PyObject *func;
-	PyObject *arg;
-	PyObject *kw;
+PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 {
         ternaryfunc call;
         PyObject *result;
@@ -2382,10 +2346,7 @@ PyEval_CallObjectWithKeywords(func, arg, kw)
 }
 
 static PyObject *
-call_builtin(func, arg, kw)
-	PyObject *func;
-	PyObject *arg;
-	PyObject *kw;
+call_builtin(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	if (PyCFunction_Check(func)) {
 		PyCFunction meth = PyCFunction_GetFunction(func);
@@ -2428,10 +2389,7 @@ call_builtin(func, arg, kw)
 }
 
 static PyObject *
-call_function(func, arg, kw)
-	PyObject *func;
-	PyObject *arg;
-	PyObject *kw;
+call_function(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	PyObject *class = NULL; /* == owner */
 	PyObject *argdefs;
@@ -2549,8 +2507,7 @@ call_function(func, arg, kw)
 	"standard sequence type does not support step size other than one"
 
 static PyObject *
-loop_subscript(v, w)
-	PyObject *v, *w;
+loop_subscript(PyObject *v, PyObject *w)
 {
 	PySequenceMethods *sq = v->ob_type->tp_as_sequence;
 	int i;
@@ -2572,9 +2529,7 @@ loop_subscript(v, w)
    and error. Returns 1 on success.*/
 
 int
-_PyEval_SliceIndex(v, pi)
-	PyObject *v;
-	int *pi;
+_PyEval_SliceIndex(PyObject *v, int *pi)
 {
 	if (v != NULL) {
 		long x;
@@ -2627,8 +2582,7 @@ _PyEval_SliceIndex(v, pi)
 }
 
 static PyObject *
-apply_slice(u, v, w) /* return u[v:w] */
-	PyObject *u, *v, *w;
+apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 {
 	int ilow = 0, ihigh = INT_MAX;
 	if (!_PyEval_SliceIndex(v, &ilow))
@@ -2639,8 +2593,7 @@ apply_slice(u, v, w) /* return u[v:w] */
 }
 
 static int
-assign_slice(u, v, w, x) /* u[v:w] = x */
-	PyObject *u, *v, *w, *x;
+assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x) /* u[v:w] = x */
 {
 	int ilow = 0, ihigh = INT_MAX;
 	if (!_PyEval_SliceIndex(v, &ilow))
@@ -2654,10 +2607,7 @@ assign_slice(u, v, w, x) /* u[v:w] = x */
 }
 
 static PyObject *
-cmp_outcome(op, v, w)
-	int op;
-	register PyObject *v;
-	register PyObject *w;
+cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
 	register int cmp;
 	register int res = 0;
@@ -2699,10 +2649,7 @@ cmp_outcome(op, v, w)
 }
 
 static int
-import_from(locals, v, name)
-	PyObject *locals;
-	PyObject *v;
-	PyObject *name;
+import_from(PyObject *locals, PyObject *v, PyObject *name)
 {
 	PyObject *w, *x;
 	if (!PyModule_Check(v)) {
@@ -2741,10 +2688,7 @@ import_from(locals, v, name)
 }
 
 static PyObject *
-build_class(methods, bases, name)
-	PyObject *methods; /* dictionary */
-	PyObject *bases;  /* tuple containing classes */
-	PyObject *name;   /* string */
+build_class(PyObject *methods, PyObject *bases, PyObject *name)
 {
 	int i, n;
 	if (!PyTuple_Check(bases)) {
@@ -2806,11 +2750,8 @@ build_class(methods, bases, name)
 }
 
 static int
-exec_statement(f, prog, globals, locals)
-	PyFrameObject *f;
-	PyObject *prog;
-	PyObject *globals;
-	PyObject *locals;
+exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
+	       PyObject *locals)
 {
 	int n;
 	PyObject *v;
@@ -2874,9 +2815,7 @@ exec_statement(f, prog, globals, locals)
 
 /* Hack for ni.py */
 static PyObject *
-find_from_args(f, nexti)
-	PyFrameObject *f;
-	int nexti;
+find_from_args(PyFrameObject *f, int nexti)
 {
 	int opcode;
 	int oparg;
@@ -2914,8 +2853,7 @@ find_from_args(f, nexti)
 #ifdef DYNAMIC_EXECUTION_PROFILE
 
 PyObject *
-getarray(a)
-	long a[256];
+getarray(long a[256])
 {
 	int i;
 	PyObject *l = PyList_New(256);
@@ -2934,8 +2872,7 @@ getarray(a)
 }
 
 PyObject *
-_Py_GetDXProfile(self, args)
-	PyObject *self, *args;
+_Py_GetDXProfile(PyObject *self, PyObject *args)
 {
 #ifndef DXPAIRS
 	return getarray(dxp);

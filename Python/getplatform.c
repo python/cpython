@@ -15,7 +15,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 const char *
-Py_GetPlatform()
+Py_GetPlatform(void)
 {
 	return PLATFORM;
 }

@@ -55,9 +55,7 @@ typedef struct {
 			   else w_more(c, p)
 
 static void
-w_more(c, p)
-	char c;
-	WFILE *p;
+w_more(char c, WFILE *p)
 {
 	int size, newsize;
 	if (p->str == NULL)
@@ -76,10 +74,7 @@ w_more(c, p)
 }
 
 static void
-w_string(s, n, p)
-	char *s;
-	int n;
-	WFILE *p;
+w_string(char *s, int n, WFILE *p)
 {
 	if (p->fp != NULL) {
 		fwrite(s, 1, n, p->fp);
@@ -93,18 +88,14 @@ w_string(s, n, p)
 }
 
 static void
-w_short(x, p)
-	int x;
-	WFILE *p;
+w_short(int x, WFILE *p)
 {
 	w_byte( x      & 0xff, p);
 	w_byte((x>> 8) & 0xff, p);
 }
 
 static void
-w_long(x, p)
-	long x;
-	WFILE *p;
+w_long(long x, WFILE *p)
 {
 	w_byte((int)( x      & 0xff), p);
 	w_byte((int)((x>> 8) & 0xff), p);
@@ -114,9 +105,7 @@ w_long(x, p)
 
 #if SIZEOF_LONG > 4
 static void
-w_long64(x, p)
-	long x;
-	WFILE *p;
+w_long64(long x, WFILE *p)
 {
 	w_long(x, p);
 	w_long(x>>32, p);
@@ -124,9 +113,7 @@ w_long64(x, p)
 #endif
 
 static void
-w_object(v, p)
-	PyObject *v;
-	WFILE *p;
+w_object(PyObject *v, WFILE *p)
 {
 	int i, n;
 	PyBufferProcs *pb;
@@ -286,9 +273,7 @@ w_object(v, p)
 }
 
 void
-PyMarshal_WriteLongToFile(x, fp)
-	long x;
-	FILE *fp;
+PyMarshal_WriteLongToFile(long x, FILE *fp)
 {
 	WFILE wf;
 	wf.fp = fp;
@@ -298,9 +283,7 @@ PyMarshal_WriteLongToFile(x, fp)
 }
 
 void
-PyMarshal_WriteObjectToFile(x, fp)
-	PyObject *x;
-	FILE *fp;
+PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp)
 {
 	WFILE wf;
 	wf.fp = fp;
@@ -316,10 +299,7 @@ typedef WFILE RFILE; /* Same struct with different invariants */
 #define r_byte(p) ((p)->fp ? getc((p)->fp) : rs_byte(p))
 
 static int
-r_string(s, n, p)
-	char *s;
-	int n;
-	RFILE *p;
+r_string(char *s, int n, RFILE *p)
 {
 	if (p->fp != NULL)
 		return fread(s, 1, n, p->fp);
@@ -331,8 +311,7 @@ r_string(s, n, p)
 }
 
 static int
-r_short(p)
-	RFILE *p;
+r_short(RFILE *p)
 {
 	register short x;
 	x = r_byte(p);
@@ -342,8 +321,7 @@ r_short(p)
 }
 
 static long
-r_long(p)
-	RFILE *p;
+r_long(RFILE *p)
 {
 	register long x;
 	register FILE *fp = p->fp;
@@ -368,8 +346,7 @@ r_long(p)
 }
 
 static long
-r_long64(p)
-	RFILE *p;
+r_long64(RFILE *p)
 {
 	register long x;
 	x = r_long(p);
@@ -388,8 +365,7 @@ r_long64(p)
 }
 
 static PyObject *
-r_object(p)
-	RFILE *p;
+r_object(RFILE *p)
 {
 	PyObject *v, *v2;
 	long i, n;
@@ -634,8 +610,7 @@ r_object(p)
 }
 
 long
-PyMarshal_ReadLongFromFile(fp)
-	FILE *fp;
+PyMarshal_ReadLongFromFile(FILE *fp)
 {
 	RFILE rf;
 	rf.fp = fp;
@@ -643,8 +618,7 @@ PyMarshal_ReadLongFromFile(fp)
 }
 
 PyObject *
-PyMarshal_ReadObjectFromFile(fp)
-	FILE *fp;
+PyMarshal_ReadObjectFromFile(FILE *fp)
 {
 	RFILE rf;
 	if (PyErr_Occurred()) {
@@ -656,9 +630,7 @@ PyMarshal_ReadObjectFromFile(fp)
 }
 
 PyObject *
-PyMarshal_ReadObjectFromString(str, len)
-	char *str;
-	int len;
+PyMarshal_ReadObjectFromString(char *str, int len)
 {
 	RFILE rf;
 	if (PyErr_Occurred()) {
@@ -673,8 +645,7 @@ PyMarshal_ReadObjectFromString(str, len)
 }
 
 PyObject *
-PyMarshal_WriteObjectToString(x) /* wrs_object() */
-	PyObject *x;
+PyMarshal_WriteObjectToString(PyObject *x) /* wrs_object() */
 {
 	WFILE wf;
 	wf.fp = NULL;
@@ -703,9 +674,7 @@ PyMarshal_WriteObjectToString(x) /* wrs_object() */
 /* And an interface for Python programs... */
 
 static PyObject *
-marshal_dump(self, args)
-	PyObject *self;
-	PyObject *args;
+marshal_dump(PyObject *self, PyObject *args)
 {
 	WFILE wf;
 	PyObject *x;
@@ -734,9 +703,7 @@ marshal_dump(self, args)
 }
 
 static PyObject *
-marshal_load(self, args)
-	PyObject *self;
-	PyObject *args;
+marshal_load(PyObject *self, PyObject *args)
 {
 	RFILE rf;
 	PyObject *f;
@@ -761,9 +728,7 @@ marshal_load(self, args)
 }
 
 static PyObject *
-marshal_dumps(self, args)
-	PyObject *self;
-	PyObject *args;
+marshal_dumps(PyObject *self, PyObject *args)
 {
 	PyObject *x;
 	if (!PyArg_ParseTuple(args, "O:dumps", &x))
@@ -772,9 +737,7 @@ marshal_dumps(self, args)
 }
 
 static PyObject *
-marshal_loads(self, args)
-	PyObject *self;
-	PyObject *args;
+marshal_loads(PyObject *self, PyObject *args)
 {
 	RFILE rf;
 	PyObject *v;
@@ -804,7 +767,7 @@ static PyMethodDef marshal_methods[] = {
 };
 
 void
-PyMarshal_Init()
+PyMarshal_Init(void)
 {
 	(void) Py_InitModule("marshal", marshal_methods);
 }

@@ -23,7 +23,7 @@ static char cprt[] =
 Copyright 1995-2000 Corporation for National Research Initiatives (CNRI)";
 
 const char *
-Py_GetCopyright()
+Py_GetCopyright(void)
 {
 	return cprt;
 }

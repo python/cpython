@@ -37,7 +37,7 @@ PyThreadState *_PyThreadState_Current = NULL;
 
 
 PyInterpreterState *
-PyInterpreterState_New()
+PyInterpreterState_New(void)
 {
 	PyInterpreterState *interp = PyMem_NEW(PyInterpreterState, 1);
 
@@ -58,8 +58,7 @@ PyInterpreterState_New()
 
 
 void
-PyInterpreterState_Clear(interp)
-	PyInterpreterState *interp;
+PyInterpreterState_Clear(PyInterpreterState *interp)
 {
 	PyThreadState *p;
 	HEAD_LOCK();
@@ -73,8 +72,7 @@ PyInterpreterState_Clear(interp)
 
 
 static void
-zapthreads(interp)
-	PyInterpreterState *interp;
+zapthreads(PyInterpreterState *interp)
 {
 	PyThreadState *p;
 	/* No need to lock the mutex here because this should only happen
@@ -86,8 +84,7 @@ zapthreads(interp)
 
 
 void
-PyInterpreterState_Delete(interp)
-	PyInterpreterState *interp;
+PyInterpreterState_Delete(PyInterpreterState *interp)
 {
 	PyInterpreterState **p;
 	zapthreads(interp);
@@ -106,8 +103,7 @@ PyInterpreterState_Delete(interp)
 
 
 PyThreadState *
-PyThreadState_New(interp)
-	PyInterpreterState *interp;
+PyThreadState_New(PyInterpreterState *interp)
 {
 	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
 
@@ -143,8 +139,7 @@ PyThreadState_New(interp)
 
 
 void
-PyThreadState_Clear(tstate)
-	PyThreadState *tstate;
+PyThreadState_Clear(PyThreadState *tstate)
 {
 	if (Py_VerboseFlag && tstate->frame != NULL)
 		fprintf(stderr,
@@ -168,8 +163,7 @@ PyThreadState_Clear(tstate)
 
 
 void
-PyThreadState_Delete(tstate)
-	PyThreadState *tstate;
+PyThreadState_Delete(PyThreadState *tstate)
 {
 	PyInterpreterState *interp;
 	PyThreadState **p;
@@ -195,7 +189,7 @@ PyThreadState_Delete(tstate)
 
 
 PyThreadState *
-PyThreadState_Get()
+PyThreadState_Get(void)
 {
 	if (_PyThreadState_Current == NULL)
 		Py_FatalError("PyThreadState_Get: no current thread");
@@ -205,8 +199,7 @@ PyThreadState_Get()
 
 
 PyThreadState *
-PyThreadState_Swap(new)
-	PyThreadState *new;
+PyThreadState_Swap(PyThreadState *new)
 {
 	PyThreadState *old = _PyThreadState_Current;
 
@@ -222,7 +215,7 @@ PyThreadState_Swap(new)
    likely MemoryError) and the caller should pass on the exception. */
 
 PyObject *
-PyThreadState_GetDict()
+PyThreadState_GetDict(void)
 {
 	if (_PyThreadState_Current == NULL)
 		Py_FatalError("PyThreadState_GetDict: no current thread");
