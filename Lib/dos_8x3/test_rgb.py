@@ -23,7 +23,8 @@ def testimg(rgb_file, raw_file):
 		raise error, 'bad image length'
 	raw = open(raw_file, 'r').read()
 	if rgb != raw:
-		raise error, 'images don\'t match for '+rgb_file+' and '+raw_file
+		raise error, \
+		      'images don\'t match for '+rgb_file+' and '+raw_file
 	for depth in [1, 3, 4]:
 		rgbimg.longstoimage(rgb, width, height, depth, '@.rgb')
 	os.unlink('@.rgb')

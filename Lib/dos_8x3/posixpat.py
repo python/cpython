@@ -26,15 +26,20 @@ def isabs(s):
 	return s[:1] == '/'
 
 
-# Join two pathnames.
-# Ignore the first part if the second part is absolute.
+# Join pathnames.
+# Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(a, b):
-	if b[:1] == '/': return b
-	if a == '' or a[-1:] == '/': return a + b
-	# Note: join('x', '') returns 'x/'; is this what we want?
-	return a + '/' + b
+def join(a, *p):
+	path = a
+	for b in p:
+		if b[:1] == '/':
+			path = b
+		elif path == '' or path[-1:] == '/':
+			path = path + b
+		else:
+			path = path + '/' + b
+	return path
 
 
 # Split a path in head (everything up to the last '/') and tail (the

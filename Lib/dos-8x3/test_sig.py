@@ -1,31 +1,37 @@
 # Test the signal module
-
+from test_support import verbose
 import signal
 import os
 
 
+if verbose:
+	x = '-x'
+else:
+	x = '+x'
 pid = os.getpid()
 
 # Shell script that will send us asynchronous signals
 script = """
-(
-	set -x
+ (
+	set %(x)s
 	sleep 2
 	kill -5 %(pid)d
 	sleep 2
 	kill -2 %(pid)d
 	sleep 2
 	kill -3 %(pid)d
-) &
+ ) &
 """ % vars()
 
 def handlerA(*args):
-	print "handlerA", args
+	if verbose:
+		print "handlerA", args
 
 HandlerBCalled = "HandlerBCalled"	# Exception
 
 def handlerB(*args):
-	print "handlerB", args
+	if verbose:
+		print "handlerB", args
 	raise HandlerBCalled, args
 
 signal.alarm(20)			# Entire test lasts at most 20 sec.
@@ -40,11 +46,18 @@ print "starting pause() loop..."
 
 try:
 	while 1:
-		print "call pause()..."
+		if verbose:
+			print "call pause()..."
 		try:
 			signal.pause()
-			print "pause() returned"
+			if verbose:
+				print "pause() returned"
 		except HandlerBCalled:
-			print "HandlerBCalled exception caught"
+			if verbose:
+				print "HandlerBCalled exception caught"
+			else:
+				pass
+				
 except KeyboardInterrupt:
-	print "KeyboardInterrupt (assume the alarm() went off)"
+	if verbose:
+		print "KeyboardInterrupt (assume the alarm() went off)"

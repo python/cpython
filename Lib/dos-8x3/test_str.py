@@ -1,13 +1,21 @@
+from test_support import verbose
 import strop, sys
 
 def test(name, input, output, *args):
+    if verbose:
+	print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
     f = getattr(strop, name)
     try:
 	value = apply(f, (input,) + args)
     except:
 	 value = sys.exc_type
     if value != output:
+	if verbose:
+	    print 'no'
 	print f, `input`, `output`, `value`
+    else:
+	if verbose:
+	    print 'yes'
 
 test('atoi', " 1 ", 1)
 test('atoi', " 1x", ValueError)
@@ -38,8 +46,19 @@ test('split', 'this is the split function',
 test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
 test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
 
+# join now works with any sequence type
+class Sequence:
+    def __init__(self): self.seq = 'wxyz'
+    def __len__(self): return len(self.seq)
+    def __getitem__(self, i): return self.seq[i]
+
 test('join', ['a', 'b', 'c', 'd'], 'a b c d')
-test('join', ['a', 'b', 'c', 'd'], 'abcd', '')
+test('join', ('a', 'b', 'c', 'd'), 'abcd', '')
+test('join', Sequence(), 'w x y z')
+
+# try a few long ones
+print strop.join(['x' * 100] * 100, ':')
+print strop.join(('x' * 100,) * 100, ':')
 
 test('strip', '   hello   ', 'hello')
 test('lstrip', '   hello   ', 'hello   ')
