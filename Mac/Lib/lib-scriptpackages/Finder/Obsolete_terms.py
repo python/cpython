@@ -65,7 +65,6 @@ class creation_date_obsolete(aetools.NProperty):
 	"""creation date obsolete - the date on which the item was created (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release) """
 	which = 'crtd'
 	want = 'ldt '
-# repeated property locked_obsolete Is the item locked (applies only to file and application information windows)? (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
 class modification_date_obsolete(aetools.NProperty):
 	"""modification date obsolete - the date on which the item was last modified (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release) """
 	which = 'modd'
@@ -74,14 +73,10 @@ class modification_date_obsolete(aetools.NProperty):
 class item(aetools.ComponentItem):
 	"""item - An item """
 	want = 'cobj'
-# repeated property creation_date_obsolete the date on which the item was created (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
-# repeated property folder_obsolete the folder in which the item is stored (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
-# repeated property modification_date_obsolete the date on which the item was last modified (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
 
 class process(aetools.ComponentItem):
 	"""process - A process running on this computer """
 	want = 'prcs'
-# repeated property file_type_obsolete the OSType of the file type of the process (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
 
 class sharable_container(aetools.ComponentItem):
 	"""sharable container - A container that may be shared (disks and folders) """
@@ -106,7 +101,6 @@ class container(aetools.NProperty):
 	"""container - the container from which this window was opened """
 	which = 'ctnr'
 	want = 'obj '
-# repeated property folder_obsolete the folder from which this window was opened (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release)
 
 sharing_windows = sharing_window
 

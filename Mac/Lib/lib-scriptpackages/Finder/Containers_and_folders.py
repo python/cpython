@@ -46,7 +46,6 @@ class icon_size(aetools.NProperty):
 	"""icon size - the size of icons displayed in the window. Can be specified as a number, or ... """
 	which = 'lvis'
 	want = 'long'
-# repeated property icon_size ... alternatively, you can specify the icons size as a constant
 #        element 'cobj' as ['indx', 'name']
 #        element 'ctnr' as ['indx', 'name']
 #        element 'sctr' as ['indx', 'name']
@@ -70,7 +69,6 @@ containers = container
 class sharable_container(aetools.ComponentItem):
 	"""sharable container - A container that may be shared (disks and folders) """
 	want = 'sctr'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the container class
 class owner(aetools.NProperty):
 	"""owner - the user that owns the container (file sharing must be on to use this property) """
 	which = 'sown'
@@ -150,7 +148,6 @@ class make_changes(aetools.NProperty):
 class disk(aetools.ComponentItem):
 	"""disk - A disk """
 	want = 'cdis'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the sharable container class
 class capacity(aetools.NProperty):
 	"""capacity - the total number of bytes (free or used) on the disk """
 	which = 'capa'
@@ -194,7 +191,6 @@ disks = disk
 class folder(aetools.ComponentItem):
 	"""folder - A folder """
 	want = 'cfol'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the sharable container class
 #        element 'cobj' as ['indx', 'name']
 #        element 'ctnr' as ['indx', 'name']
 #        element 'sctr' as ['indx', 'name']
@@ -218,7 +214,6 @@ folders = folder
 class desktop_2d_object(aetools.ComponentItem):
 	"""desktop-object - Desktop-object is the class of the ³desktop² object """
 	want = 'cdsk'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the container class (NOTE: some container properties are not valid for the desktop)
 class startup_disk(aetools.NProperty):
 	"""startup disk - the startup disk """
 	which = 'sdsk'
@@ -249,7 +244,6 @@ class trash(aetools.NProperty):
 class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the ³trash² object """
 	want = 'ctrs'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the container class
 class warns_before_emptying(aetools.NProperty):
 	"""warns before emptying - Display a dialog when emptying the trash? """
 	which = 'warn'

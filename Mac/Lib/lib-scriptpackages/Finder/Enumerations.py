@@ -16,30 +16,30 @@ class Enumerations_Events(Type_Names_Suite_Events):
 	pass
 
 _Enum_ipnl = {
-	'General_Information_panel' : 'gpnl',	# 
-	'Sharing_panel' : 'spnl',	# 
-	'Memory_panel' : 'mpnl',	# 
-	'Status_and_Configuration_panel' : 'scnl',	# 
-	'Fonts_panel' : 'fpnl',	# 
+	'General Information panel' : 'gpnl',	# 
+	'Sharing panel' : 'spnl',	# 
+	'Memory panel' : 'mpnl',	# 
+	'Status and Configuration panel' : 'scnl',	# 
+	'Fonts panel' : 'fpnl',	# 
 }
 
 _Enum_pple = {
-	'General_Preferences_panel' : 'pgnp',	# 
-	'Label_Preferences_panel' : 'plbp',	# 
-	'Icon_View_Preferences_panel' : 'pivp',	# 
-	'Button_View_Preferences_panel' : 'pbvp',	# 
-	'List_View_Preferences_panel' : 'plvp',	# 
+	'General Preferences panel' : 'pgnp',	# 
+	'Label Preferences panel' : 'plbp',	# 
+	'Icon View Preferences panel' : 'pivp',	# 
+	'Button View Preferences panel' : 'pbvp',	# 
+	'List View Preferences panel' : 'plvp',	# 
 }
 
 _Enum_earr = {
-	'not_arranged' : 'narr',	# 
-	'snap_to_grid' : 'grda',	# 
-	'arranged_by_name' : 'nama',	# 
-	'arranged_by_modification_date' : 'mdta',	# 
-	'arranged_by_creation_date' : 'cdta',	# 
-	'arranged_by_size' : 'siza',	# 
-	'arranged_by_kind' : 'kina',	# 
-	'arranged_by_label' : 'laba',	# 
+	'not arranged' : 'narr',	# 
+	'snap to grid' : 'grda',	# 
+	'arranged by name' : 'nama',	# 
+	'arranged by modification date' : 'mdta',	# 
+	'arranged by creation date' : 'cdta',	# 
+	'arranged by size' : 'siza',	# 
+	'arranged by kind' : 'kina',	# 
+	'arranged by label' : 'laba',	# 
 }
 
 _Enum_sodr = {
@@ -55,19 +55,19 @@ _Enum_isiz = {
 
 _Enum_vwby = {
 	'conflicts' : 'cflc',	# 
-	'existing_items' : 'exsi',	# 
-	'small_icon' : 'smic',	# 
+	'existing items' : 'exsi',	# 
+	'small icon' : 'smic',	# 
 	'icon' : 'iimg',	# 
 	'name' : 'pnam',	# 
-	'modification_date' : 'asmo',	# 
+	'modification date' : 'asmo',	# 
 	'size' : 'ptsz',	# 
 	'kind' : 'kind',	# 
 	'comment' : 'comt',	# 
 	'label' : 'labi',	# 
 	'version' : 'vers',	# 
-	'creation_date' : 'ascd',	# 
-	'small_button' : 'smbu',	# 
-	'large_button' : 'lgbu',	# 
+	'creation date' : 'ascd',	# 
+	'small button' : 'smbu',	# 
+	'large button' : 'lgbu',	# 
 	'grid' : 'grid',	# 
 	'all' : 'kyal',	# 
 }
@@ -77,10 +77,10 @@ _Enum_gsen = {
 	'FPU' : 'fpu ',	# 
 	'MMU' : 'mmu ',	# 
 	'hardware' : 'hdwr',	# 
-	'operating_system' : 'os  ',	# 
-	'sound_system' : 'snd ',	# 
-	'memory_available' : 'lram',	# 
-	'memory_installed' : 'ram ',	# 
+	'operating system' : 'os  ',	# 
+	'sound system' : 'snd ',	# 
+	'memory available' : 'lram',	# 
+	'memory installed' : 'ram ',	# 
 }
 
 

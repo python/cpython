@@ -155,7 +155,8 @@ class small_32_bit_icon(aetools.NProperty):
 	"""small 32 bit icon - the small 32-bit color icon """
 	which = 'is32'
 	want = 'is32'
-# repeated property small_8_bit_icon the small 8-bit color icon
+
+small_8_bit_icon = small_8_bit_mask
 class small_4_bit_icon(aetools.NProperty):
 	"""small 4 bit icon - the small 4-bit color icon """
 	which = 'ics4'
