@@ -93,8 +93,7 @@ class Message:
 				self.status = 'EOF in headers'
 				break
 			# Skip unix From name time lines
-			if firstline and (line[:5] == 'From '
-					  or line[:6] == '>From '):
+			if firstline and line[:5] == 'From ':
 			        continue
 			firstline = 0
 			if self.islast(line):
