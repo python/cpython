@@ -225,13 +225,15 @@ init_common(int *argcp, char ***argvp, int embedded)
 	PyMac_AddLibResources();
 #endif
 
-#if defined(USE_GUSI)
+#if defined(USE_GUSI1)
 	/* Setup GUSI */
 	GUSIDefaultSetup();
 	PyMac_SetGUSISpin();
 	PyMac_SetGUSIOptions();
-	atexit(PyMac_StopGUSISpin);
 #endif
+#if defined(USE_GUSI)
+	atexit(PyMac_StopGUSISpin);
+#endif	
 
 #ifdef USE_SIOUX
 	/* Set various SIOUX flags. Some are changed later based on options */
@@ -405,7 +407,7 @@ PyMac_InitApplication()
 			*endp = '\0';
 
 			chdir(curwd);
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 			/* Change MacOS's idea of wd too */
 			PyMac_FixGUSIcd();
 #endif

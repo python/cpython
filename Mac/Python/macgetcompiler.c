@@ -38,23 +38,35 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef __MWERKS__
-#ifdef USE_GUSI
-#define HASGUSI " w/GUSI"
+#ifdef USE_GUSI1
+#define HASGUSI " w/GUSI1"
+#else
+#ifdef USE_GUSI2
+#define HASGUSI " w/GUSI2"
 #else
 #define HASGUSI ""
 #endif
+#endif
+
 #ifdef USE_MSL
 #define HASMSL " w/MSL"
 #else
 #define HASMSL ""
 #endif
+
+#ifdef WITH_THREAD
+#define HASTHREAD " w/THREADS"
+#else
+#define HASTHREAD ""
+#endif
+
 #ifdef __powerc
-#define COMPILER " [CW PPC" HASGUSI HASMSL "]"
+#define COMPILER " [CW PPC" HASGUSI HASMSL HASTHREAD"]"
 #else
 #ifdef __CFM68K__
-#define COMPILER " [CW CFM68K" HASGUSI HASMSL "]"
+#define COMPILER " [CW CFM68K" HASGUSI HASMSL  HASTHREAD"]"
 #else
-#define COMPILER " [CW 68K" HASGUSI HASMSL "]"
+#define COMPILER " [CW 68K" HASGUSI HASMSL  HASTHREAD"]"
 #endif
 #endif
 #endif

@@ -38,7 +38,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifdef USE_GUSI
 #include <sys/types.h>
 #endif /* USE_GUSI */
+#ifdef USE_GUSI2
+#include <sys/stat.h>
+#else
 #include <stat.h>
+#endif
 #include "rename2.h"
 
 long

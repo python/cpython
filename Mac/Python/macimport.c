@@ -48,7 +48,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #include <CodeFragments.h>
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 #include "TFileSpec.h"	/* for Path2FSSpec() */
 #endif
 
@@ -104,7 +104,7 @@ findnamedresource(
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 		if ( Path2FSSpec(filename, &fss) != noErr ||
 #else
 		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ||
@@ -303,7 +303,7 @@ char *filename;
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 		if ( (err=Path2FSSpec(filename, &fss)) != noErr ||
 		     FSpGetFInfo(&fss, &finfo) != noErr )
 #else
@@ -432,7 +432,7 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 #else
 	strcpy(buf+*lenp, _PyImport_Filetab[0].suffix);
 #endif
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 	if ( Path2FSSpec(buf, &fss) == noErr && 
 			FSpGetFInfo(&fss, &finfo) == noErr)
 		return _PyImport_Filetab;

@@ -62,11 +62,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #endif
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 #include <TFileSpec.h> /* For Path2FSSpec */
-#include <LowMem.h> /* For SetSFCurDir, etc */
 #include <GUSI.h>
 #endif
+#include <LowMem.h>
 
 /* The ID of the Sioux apple menu */
 #define SIOUX_APPLEID	32000
@@ -108,7 +108,6 @@ extern PyObject *newmfssobject Py_PROTO((FSSpec *));
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher Py_PROTO((int));
 
-static int PyMac_DoYield Py_PROTO((int, int));
 static int PyMac_Yield Py_PROTO((void));
 
 /*
@@ -161,7 +160,7 @@ static PyObject *python_event_handler;
 */
 int PyMac_AppearanceCompliant;
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 /*
 ** GUSI (1.6.0 and earlier, at the least) do not set the MacOS idea of
 ** the working directory. Hence, we call this routine after each call
@@ -183,7 +182,9 @@ PyMac_FixGUSIcd()
 	if (PBHSetVolSync(&pb) != noErr)
 		return;
 }
+#endif
 
+#ifdef USE_GUSI
 /*
 ** SpinCursor (needed by GUSI) drags in heaps of stuff, so we
 ** provide a dummy here.
@@ -194,6 +195,7 @@ void RotateCursor(short x) { /* Dummy */ }
 /*
 ** Replacement GUSI Spin function
 */
+#ifdef USE_GUSI1
 static int
 PyMac_GUSISpin(spin_msg msg, long arg)
 {
@@ -222,6 +224,7 @@ void
 PyMac_SetGUSISpin() {
 	GUSISetHook(GUSI_SpinHook, (GUSIHook)PyMac_GUSISpin);
 }
+#endif
 
 /* Called at exit() time thru atexit(), to stop event processing */
 void
@@ -531,7 +534,7 @@ PyMac_HandleEvent(evp)
 /*
 ** Yield the CPU to other tasks without processing events.
 */
-static int
+int
 PyMac_DoYield(int maxsleep, int maycallpython)
 {
 	EventRecord ev;
@@ -563,7 +566,7 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 		}
 	} else {
 		latest_time_ready = LMGetTicks() + maxsleep;
-		while ( maxsleep >= 0 ) {
+		do {
 			/* XXXX Hack by Jack.
 			** In time.sleep() you can click to another application
 			** once only. If you come back to Python you cannot get away
@@ -578,7 +581,7 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 				return -1;
 			}
 			maxsleep = latest_time_ready - LMGetTicks();
-		}
+		} while ( maxsleep > 0 );
 	}
 	in_here--;
 	return 0;

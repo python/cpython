@@ -53,8 +53,9 @@ typedef struct {
 #pragma lib_export on
 #endif
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 void PyMac_FixGUSIcd Py_PROTO((void));		/* Workaround for GUSI chdir() call */
+extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
 #endif
 
 char *PyMac_StrError(int);			/* strerror with mac errors */
@@ -62,7 +63,6 @@ unsigned char *Pstring(char *str);		/* Convert c-string to pascal-string in stat
 
 #ifdef USE_GUSI
 extern int PyMac_ConsoleIsDead;			/* True when exiting */
-extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
 extern void PyMac_StopGUSISpin(void);		/* Stop eventprocessing during exit() */
 #endif
 
@@ -81,6 +81,7 @@ void PyMac_GetSchedParams Py_PROTO((PyMacSchedParams *));	/* Get schedulers para
 void PyMac_SetSchedParams Py_PROTO((PyMacSchedParams *));	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
+int PyMac_DoYield Py_PROTO((int, int));	/* Yield cpu. First arg is maxtime, second ok to call python */
 int PyMac_HandleEvent Py_PROTO((EventRecord *));	/* Handle one event, possibly in Python */
 void PyMac_HandleEventIntern Py_PROTO((EventRecord *)); /* Handle one event internal only */
 int PyMac_SetEventHandler Py_PROTO((PyObject *));	/* set python-coded event handler */
