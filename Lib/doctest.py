@@ -1,4 +1,4 @@
-# Module doctest version 0.9.7
+# Module doctest.
 # Released to the public domain 16-Jan-2001,
 # by Tim Peters (tim.one@home.com).
 
@@ -294,70 +294,14 @@ ok
 Test passed.
 """
 
-# 0,0,1    06-Mar-1999
-#    initial version posted
-# 0,0,2    06-Mar-1999
-#    loosened parsing:
-#        cater to stinkin' tabs
-#        don't insist on a blank after PS2 prefix
-#            so trailing "... " line from a compound stmt no longer
-#            breaks if the file gets whitespace-trimmed
-#    better error msgs for inconsistent leading whitespace
-# 0,9,1    08-Mar-1999
-#    exposed the Tester class and added client methods
-#        plus docstring examples of their use (eww - head-twisting!)
-#    fixed logic error in reporting total # of tests & failures
-#    added __test__ support to testmod (a pale reflection of Christian
-#        Tismer's vision ...)
-#    removed the "deep" argument; fiddle __test__ instead
-#    simplified endcase logic for extracting tests, and running them.
-#        before, if no output was expected but some was produced
-#        anyway via an eval'ed result, the discrepancy wasn't caught
-#    made TestClass private and used __test__ to get at it
-#    many doc updates
-#    speed _SpoofOut for long expected outputs
-# 0,9,2    09-Mar-1999
-#    throw out comments from examples, enabling use of the much simpler
-#        exec compile(... "single") ...
-#        for simulating the runtime; that barfs on comment-only lines
-#    used the traceback module to do a much better job of reporting
-#        exceptions
-#    run __doc__ values thru str(), "just in case"
-#    privateness of names now determined by an overridable "isprivate"
-#        function
-#    by default a name now considered to be private iff it begins with
-#        an underscore but doesn't both begin & end with two of 'em; so
-#        e.g. Class.__init__ etc are searched now -- as they always
-#        should have been
-# 0,9,3    18-Mar-1999
-#    added .flush stub to _SpoofOut (JPython buglet diagnosed by
-#        Hugh Emberson)
-#    repaired ridiculous docs about backslashes in examples
-#    minor internal changes
-#    changed source to Unix line-end conventions
-#    moved __test__ logic into new Tester.run__test__ method
-# 0,9,4    27-Mar-1999
-#    report item name and line # in failing examples
-# 0,9,5    29-Jun-1999
-#    allow straightforward exceptions in examples - thanks to Mark Hammond!
-# 0,9,6    16-Jan-2001
-#    fiddling for changes in Python 2.0:  some of the embedded docstring
-#        examples no longer worked *exactly* as advertised, due to minor
-#        language changes, and running doctest on itself pointed that out.
-#        Hard to think of a better example of why this is useful <wink>.
-# 0,9,7    9-Feb-2001
-#    string method conversion
+__all__ = [
+    'testmod',
+    'run_docstring_examples',
+    'is_private',
+    'Tester',
+]
 
-# XXX Until generators are part of the language, examples in doctest'ed
-#     modules will inherit doctest's __future__ settings (see PEP 236 for
-#     more on that).  In the absence of a better working idea, the std
-#     test suite needs generators, while the set of doctest'ed modules that
-#     don't use "yield" in a generator context may well be empty.  So
-#     enable generators here.  This can go away when generators are no
-#     longer optional.
-from __future__ import generators
-
-__version__ = 0, 9, 7
+import __future__
 
 import types
 _FunctionType = types.FunctionType
@@ -374,8 +318,6 @@ _isPS2 = re.compile(r"(\s*)" + re.escape(PS2)).match
 _isEmpty = re.compile(r"\s*$").match
 _isComment = re.compile(r"\s*#").match
 del re
-
-__all__ = []
 
 # Extract interactive examples from a string.  Return a list of triples,
 # (source, outcome, lineno).  "source" is the source code, and ends
@@ -487,7 +429,8 @@ def _tag_out(printer, *tag_msg_pairs):
 # stuff to "the real" stdout, and fakeout is an instance of _SpoofOut
 # that captures the examples' std output.  Return (#failures, #tries).
 
-def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
+def _run_examples_inner(out, fakeout, examples, globs, verbose, name,
+                        compileflags):
     import sys, traceback
     OK, BOOM, FAIL = range(3)
     NADA = "nothing"
@@ -499,7 +442,8 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
                           ("Expecting", want or NADA))
         fakeout.clear()
         try:
-            exec compile(source, "<string>", "single") in globs
+            exec compile(source, "<string>", "single",
+                         compileflags, 1) in globs
             got = fakeout.get()
             state = OK
         except:
@@ -538,17 +482,28 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
 
     return failures, len(examples)
 
+# Get the future-flags associated with the future features that have been
+# imported into globs.
+
+def _extract_future_flags(globs):
+    flags = 0
+    for fname in __future__.all_feature_names:
+        feature = globs.get(fname, None)
+        if feature is getattr(__future__, fname):
+            flags |= feature.compiler_flag
+    return flags
+
 # Run list of examples, in a shallow copy of context (dict) globs.
 # Return (#failures, #tries).
 
-def _run_examples(examples, globs, verbose, name):
+def _run_examples(examples, globs, verbose, name, compileflags):
     import sys
     saveout = sys.stdout
     globs = globs.copy()
     try:
         sys.stdout = fakeout = _SpoofOut()
         x = _run_examples_inner(saveout.write, fakeout, examples,
-                                globs, verbose, name)
+                                globs, verbose, name, compileflags)
     finally:
         sys.stdout = saveout
         # While Python gc can clean up most cycles on its own, it doesn't
@@ -562,7 +517,8 @@ def _run_examples(examples, globs, verbose, name):
         globs.clear()
     return x
 
-def run_docstring_examples(f, globs, verbose=0, name="NoName"):
+def run_docstring_examples(f, globs, verbose=0, name="NoName",
+                           compileflags=None):
     """f, globs, verbose=0, name="NoName" -> run examples from f.__doc__.
 
     Use (a shallow copy of) dict globs as the globals for execution.
@@ -587,7 +543,9 @@ def run_docstring_examples(f, globs, verbose=0, name="NoName"):
     e = _extract_examples(doc)
     if not e:
         return 0, 0
-    return _run_examples(e, globs, verbose, name)
+    if compileflags is None:
+        compileflags = _extract_future_flags(globs)
+    return _run_examples(e, globs, verbose, name, compileflags)
 
 def is_private(prefix, base):
     """prefix, base -> true iff name prefix + "." + base is "private".
@@ -724,6 +682,8 @@ see its docs for details.
 
         self.name2ft = {}   # map name to (#failures, #trials) pair
 
+        self.compileflags = _extract_future_flags(globs)
+
     def runstring(self, s, name):
         """
         s, name -> search string s for examples to run, logging as name.
@@ -755,7 +715,8 @@ see its docs for details.
         f = t = 0
         e = _extract_examples(s)
         if e:
-            f, t = _run_examples(e, self.globs, self.verbose, name)
+            f, t = _run_examples(e, self.globs, self.verbose, name,
+                                 self.compileflags)
         if self.verbose:
             print f, "of", t, "examples failed in string", name
         self.__record_outcome(name, f, t)
@@ -793,7 +754,8 @@ see its docs for details.
                     "when object.__name__ doesn't exist; " + `object`)
         if self.verbose:
             print "Running", name + ".__doc__"
-        f, t = run_docstring_examples(object, self.globs, self.verbose, name)
+        f, t = run_docstring_examples(object, self.globs, self.verbose, name,
+                                      self.compileflags)
         if self.verbose:
             print f, "of", t, "examples failed in", name + ".__doc__"
         self.__record_outcome(name, f, t)
