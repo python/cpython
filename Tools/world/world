@@ -17,11 +17,11 @@ the `-r' flag (see below).
 
 For example:
 
-    % world tz us
+    %% world tz us
     tz originated from Tanzania, United Republic of
     us originated from United States
 
-    % world united
+    %% world united
     united matches 5 countries:
 	ae: United Arab Emirates
 	um: United States Minor Outlying Islands
@@ -55,7 +55,7 @@ Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
     --parse file
     -p file
         Parse an iso3166-countrycodes file extracting the two letter country
-        code followed by the country name.  Note that the three leter country
+        code followed by the country name.  Note that the three letter country
         code and number, which are also provided in the standard format file,
         are ignored.
 
