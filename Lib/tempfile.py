@@ -250,8 +250,8 @@ def gettempdir():
     _once('tempdir', _get_default_tempdir)
     return tempdir
 
-def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=True):
-    """mkstemp([suffix, [prefix, [dir, [binary]]]])
+def mkstemp(suffix="", prefix=template, dir=gettempdir(), text=False):
+    """mkstemp([suffix, [prefix, [dir, [text]]]])
     User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
     file descriptor returned by os.open, and name is the filename.
@@ -265,9 +265,9 @@ def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=True):
     If 'dir' is specified, the file will be created in that directory,
     otherwise a default directory is used.
 
-    If 'binary' is specified and false, the file is opened in text
-    mode.  Otherwise, the file is opened in binary mode.  On some
-    operating systems, this makes no difference.
+    If 'text' is specified and true, the file is opened in text
+    mode.  Else (the default) the file is opened in binary mode.  On
+    some operating systems, this makes no difference.
 
     The file is readable and writable only by the creating user ID.
     If the operating system uses permission bits to indicate whether a
@@ -277,10 +277,10 @@ def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=True):
     Caller is responsible for deleting the file when done with it.
     """
 
-    if binary:
-        flags = _bin_openflags
-    else:
+    if text:
         flags = _text_openflags
+    else:
+        flags = _bin_openflags
 
     return _mkstemp_inner(dir, prefix, suffix, flags)
 
@@ -290,7 +290,7 @@ def mkdtemp(suffix="", prefix=template, dir=gettempdir()):
     User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
 
-    Arguments are as for mkstemp, except that the 'binary' argument is
+    Arguments are as for mkstemp, except that the 'text' argument is
     not accepted.
 
     The directory is readable, writable, and searchable only by the
@@ -319,7 +319,7 @@ def mktemp(suffix="", prefix=template, dir=gettempdir()):
     User-callable function to return a unique temporary file name.  The
     file is not created.
 
-    Arguments are as for mkstemp, except that the 'binary' argument is
+    Arguments are as for mkstemp, except that the 'text' argument is
     not accepted.
 
     This function is unsafe and should not be used.  The file name
