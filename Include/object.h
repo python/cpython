@@ -292,15 +292,22 @@ environment the global variable trick is not safe.)
 #endif
 #endif
 
+#ifdef Py_TRACE_REFS
+extern void _Py_Dealloc Py_PROTO((PyObject *));
+extern void _Py_NewReference Py_PROTO((PyObject *));
+extern void _Py_ForgetReference Py_PROTO((PyObject *));
+extern void _Py_PrintReferences Py_PROTO((FILE *));
+#endif
+
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
 #define _Py_Dealloc(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
 #define _Py_ForgetReference(op) ((op)->ob_type->tp_free++)
-#else
+#else /* !COUNT_ALLOCS */
 #define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
 #define _Py_ForgetReference(op) /*empty*/
-#endif
-#endif
+#endif /* !COUNT_ALLOCS */
+#endif /* !Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
 extern void inc_count Py_PROTO((PyTypeObject *));
