@@ -174,7 +174,7 @@ class Editor(W.Window):
 		return '<%s>' % self.title
 	
 	def setupwidgets(self, text):
-		topbarheight = 24
+		topbarheight = 28
 		popfieldwidth = 80
 		self.lastlineno = None
 		
@@ -197,9 +197,9 @@ class Editor(W.Window):
 		
 		self.bevelbox = W.BevelBox((0, 0, 0, topbarheight))
 		self.hline = W.HorizontalLine((0, topbarheight, 0, 0))
-		self.infotext = W.TextBox((175, 6, -4, 14), backgroundcolor = (0xe000, 0xe000, 0xe000))
-		self.runbutton = W.Button((5, 4, 80, 16), runButtonLabels[0], self.run)
-		self.runselbutton = W.Button((90, 4, 80, 16), runSelButtonLabels[0], self.runselection)
+		self.infotext = W.TextBox((175, 7, -4, 14), backgroundcolor = (0xe000, 0xe000, 0xe000))
+		self.runbutton = W.Button((6, 5, 60, 16), runButtonLabels[0], self.run)
+		self.runselbutton = W.Button((78, 5, 90, 16), runSelButtonLabels[0], self.runselection)
 		
 		# bind some keys
 		editor.bind("cmdr", self.runbutton.push)
