@@ -150,6 +150,19 @@ typedef unsigned LONG_LONG Py_uintptr_t;
 #include <stat.h>
 #endif
 
+#if defined(PYCC_VACPP)
+/* VisualAge C/C++ Failed to Define MountType Field in sys/stat.h */
+#define S_IFMT (S_IFDIR|S_IFCHR|S_IFREG)
+#endif
+
+#ifndef S_ISREG
+#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+#endif
+
+#ifndef S_ISDIR
+#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
+#endif
+
 
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included

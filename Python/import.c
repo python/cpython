@@ -28,10 +28,6 @@
 #define S_IFMT (S_IFDIR|S_IFCHR|S_IFREG)
 #endif
 
-#ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#endif
-
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
 
