@@ -528,12 +528,6 @@ class build_ext (Command):
         # kludges; they are to be avoided if possible!)
 
         def_file = ext.export_symbol_file
-        if def_file is None:
-            source_dir = os.path.dirname (sources[0])
-            ext_base = (string.split (ext.name, '.'))[-1]
-            def_file = os.path.join (source_dir, "%s.def" % ext_base)
-            if not os.path.exists (def_file):
-                def_file = None
 
         if def_file is not None:
             extra_args.append ('/DEF:' + def_file)
