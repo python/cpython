@@ -1,6 +1,10 @@
 \documentclass{howto}
 \usepackage{distutils}
 
+% TODO:
+%   Move 'Tips and Tricks' to be the last section
+%   Fill in XXX comments
+
 \title{Installing Python Modules}
 
 % The audience for this document includes people who don't know anything 
@@ -10,12 +14,6 @@
 % sys.path and PYTHONPATH at least.  Should probably give pointers to
 % other docs on "import site", PYTHONSTARTUP, PYTHONHOME, etc.
 % 
-% Also, I need to take into account that most modules out there don't
-% (yet) use Distutils: briefly explain the old Makefile.pre.in
-% convention (maybe move material from the E&E manual to here?), and
-% explain where to copy .py and .so files manually if the distribution
-% doesn't provide a mechanism for doing so.
-%
 % Finally, it might be useful to include all the material from my "Care
 % and Feeding of a Python Installation" talk in here somewhere.  Yow!
 
@@ -63,10 +61,7 @@ written in Python.
 In the past, there has been little support for adding third-party
 modules to an existing Python installation.  With the introduction of
 the Python Distribution Utilities (Distutils for short) in Python 2.0,
-this is starting to change.  Not everything will change overnight,
-though, so while this document concentrates on installing module
-distributions that use the Distutils, we will also spend some time
-dealing with the old ways.
+this changed.
 
 This document is aimed primarily at the people who need to install
 third-party Python modules: end-users and system administrators who just
@@ -88,8 +83,7 @@ your platform and is installed just like any other software on your
 platform.  For example, the module developer might make an executable
 installer available for Windows users, an RPM package for users of
 RPM-based Linux systems (Red Hat, SuSE, Mandrake, and many others), a
-Debian package for users of Debian-based Linux systems (Debian proper,
-Caldera, Corel, etc.), and so forth.
+Debian package for users of Debian-based Linux systems, and so forth.
 
 In that case, you would download the installer appropriate to your
 platform and do the obvious thing with it: run it if it's an executable
@@ -117,8 +111,8 @@ will be featured prominently in the name of the downloaded archive, e.g.
 \file{foo-1.0.tar.gz} or \file{widget-0.9.7.zip}.  Next, the archive
 will unpack into a similarly-named directory: \file{foo-1.0} or
 \file{widget-0.9.7}.  Additionally, the distribution will contain a
-setup script \file{setup.py}, and a \file{README.txt} (or possibly
-\file{README}), which should explain that building and installing the
+setup script \file{setup.py}, and a file named \file{README.txt} or possibly
+just \file{README}, which should explain that building and installing the
 module distribution is a simple matter of running
 
 \begin{verbatim}
@@ -130,39 +124,6 @@ install the modules you've just downloaded: run the command above.
 Unless you need to install things in a non-standard way or customize the
 build process, you don't really need this manual.  Or rather, the above
 command is everything you need to get out of this manual.
-
-
-\subsection{The old way: no standards}
-\label{old-way}
-
-Before the Distutils, there was no infrastructure to support installing
-third-party modules in a consistent, standardized way.  Thus, it's not
-really possible to write a general manual for installing Python modules
-that don't use the Distutils; the only truly general statement that can
-be made is, ``Read the module's own installation instructions.''
-
-However, if such instructions exist at all, they are often woefully
-inadequate and targeted at experienced Python developers.  Such users
-are already familiar with how the Python library is laid out on their
-platform, and know where to copy various files in order for Python to
-find them.  This document makes no such assumptions, and explains how
-the Python library is laid out on three major platforms (\UNIX, Windows,
-and Mac OS), so that you can understand what happens when the Distutils
-do their job \emph{and} know how to install modules manually when the
-module author fails to provide a setup script.
-
-Additionally, while there has not previously been a standard
-installation mechanism, Python has had some standard machinery for
-building extensions on \UNIX{} since Python 1.4.  This
-machinery (the \file{Makefile.pre.in} file) is superseded by the
-Distutils, but it will no doubt live on in older module distributions
-for a while.  This \file{Makefile.pre.in} mechanism is documented in
-the \citetitle[../ext/ext.html]{Extending \& Embedding Python} manual,
-but that manual is aimed at module developers---hence, we include
-documentation for builders/installers here.
-
-All of the pre-Distutils material is tucked away in
-section~\ref{pre-distutils}.
 
 
 \section{Standard Build and Install}
@@ -248,10 +209,10 @@ python setup.py build
 python setup.py install
 \end{verbatim}
 
-(If you do this, you will notice that running the \command{install}
+If you do this, you will notice that running the \command{install}
 command first runs the \command{build} command, which---in this
 case---quickly notices that it has nothing to do, since everything in
-the \file{build} directory is up-to-date.)
+the \file{build} directory is up-to-date.
 
 You may not need this ability to break things down often if all you do
 is install modules downloaded off the 'net, but it's very handy for more
@@ -415,18 +376,93 @@ section~\ref{custom-install} on custom installations.
 \section{Building Extensions: Tips and Tricks}
 \label{building-ext}
 
-(This is the section to read for people doing any sort of interesting
-build.  Things to talk about:
+Whenever possible, the Distutils try to use the configuration
+information made available by the Python interpreter used to run the
+\file{setup.py} script.  For example, the same compiler and linker
+flags used to compile Python will also be used for compiling
+extensions.  Usually this will work well, but in complicated
+situations this might be inappropriate.  This section discusses how to
+override the usual Distutils behaviour.
+
+\subsection{Tweaking compiler/linker flags}
+\label{tweak-flags}
+
+Compiling a Python extension written in C or \Cpp will sometimes
+require specifying custom flags for the compiler and linker in order
+to use a particular library or produce a special kind of object code.
+This is especially true if the extension hasn't been tested on your 
+platform, or if you're trying to cross-compile Python.
+
+In the most general case, the extension author might have foreseen
+that compiling the extensions would be complicated, and provided a
+\file{Setup} file for you to edit.  This will likely only be done if
+the module distribution contains many separate extension modules, or
+if they often require elaborate sets of compiler flags in order to work.
+
+A \file{Setup} file, if present, is parsed in order to get a list of
+extensions to build.  Each line in a \file{Setup} describes a single
+module.  Lines have the following structure:
+
+\begin{verbatim}
+ <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
+\end{verbatim}
+
+Let's examine each of the fields in turn.
+
 \begin{itemize}
-\item the \file{Setup} file (any platform now, but \UNIX-biased)
-\item CFLAGS and LDFLAGS (must implement them first!)
-\item using non-MS compilers on Windows (how to convert
-  Python's library, ...)  
+
+\item \var{module} is the name of the extension module to be built,
+and should be a valid Python identifier.  You can't just change this
+in order to rename a module (edits to the source code would also be
+needed), so this should be left alone.
+
+\item \var{sourcefile} is anything that's likely to be a source code
+file, at least judging by the filename.  Filenames ending in .c are
+assumed to be written in C, filenames ending in .C, .cc, .c++ are
+assumed to be \Cpp, and filenames ending in .m or .mm are assumed to
+be in Objective C.
+
+\item \var{cpparg} is an argument for the C preprocessor, 
+and is anything starting with -I, -D, -U or -C .
+
+\item <library> is anything ending in .a or beginning with -l or -L.
 \end{itemize}
 
+If a particular platform requires a special library on your platform,
+you can add it by editing the \file{Setup} file and running
+\code{python setup.py build}.  For example, if the module defined by the line
 
-%\subsection{Tweaking compiler/linker flags}
-%\label{tweak-flags}
+\begin{verbatim}
+foo foomodule.c
+\end{verbatim}
+
+must be linked with the math library \file{libm.a} on your platform,
+simply add \samp{-lm} to the line:
+
+\begin{verbatim}
+foo foomodule.c -lm
+\end{verbatim}
+
+Arbitrary switches intended for the compiler or the linker can be
+supplied with the \code{-Xcompiler \var{arg}} and \code{-Xlinker
+\var{arg}} options:
+
+\begin{verbatim}
+foo foomodule.c -Xcompiler -o32 -Xlinker -shared -lm
+\end{verbatim}
+
+The next option after \code{-Xcompiler} and \code{-Xlinker} will be
+appended to the proper command line, so in the above example the
+compiler will be passed the \samp{-o32} option, and the linker will be
+passed \samp{-shared}.  If a compiler option requires an argument,
+you'll have to supply multiple \code{-Xcompiler} options; for example,
+to pass \code{-x c++} the \file{Setup} file would have to contain
+\code{-Xcompiler -x -Xcompiler c++}.  
+
+Compiler flags can also be supplied through setting the
+\envvar{CFLAGS} environment variable.  If set, the contents of
+\envvar{CFLAGS} will be added to the compiler flags specified in the 
+\file{Setup} file.
 
 
 \subsection{Using non-Microsoft compilers on Windows \label{non-ms-compilers}}
@@ -436,15 +472,16 @@ build.  Things to talk about:
 
 This subsection describes the necessary steps to use Distutils with the 
 Borland \Cpp{} compiler version 5.5.
-%Should we mention that users have to create cfg-files for the compiler
+%Should we mention that users have to create cfg-files for the compiler?
 %see also http://community.borland.com/article/0,1410,21205,00.html 
 
-First you have to know that the Borland's object file format(OMF) is
-different from what is used by the Python version you can download
-from the Python Web site.  (Python is built with Microsoft Visual \Cpp,
-which uses COFF as object file format.)  For this reason you have to
-convert Python's library \file{python20.lib} into the Borland format.
-You can do this as follows:
+First you have to know that Borland's object file format (OMF) is
+different from the format used by the Python version you can download
+from the Python or ActiveState Web site.  (Python is built with
+Microsoft Visual \Cpp, which uses COFF as the object file format.)
+For this reason you have to convert Python's library
+\file{python20.lib} into the Borland format.  You can do this as
+follows:
 
 \begin{verbatim}
 coff2omf python20.lib python20_bcpp.lib
@@ -473,9 +510,9 @@ to type:
 python setup.py build --compiler=bcpp
 \end{verbatim}
 
-If you want to use the Borland \Cpp{} compiler as default, you should
-consider to write it in your personal or system-wide configuration
-file for Distutils (see section~\ref{config-files}.)
+If you want to use the Borland \Cpp{} compiler as the default, you
+could specify this in your personal or system-wide configuration file
+for Distutils (see section~\ref{config-files}.)
  
 \begin{seealso}
   \seetitle[http://www.borland.com/bcppbuilder/freecompiler/]
@@ -501,10 +538,11 @@ distributions.\footnote{Check
 \XXX{For a Python which was built with Cygwin, all should work without 
 any of these following steps.}
 
-For these compilers we have to create some special libraries too.
-This task is more complex as for Borland's \Cpp, because there is no
-program to convert the library (inclusive the references on data
-structures.)
+These compilers also require some special libraries.
+This task is more complex than for Borland's \Cpp, because there is no
+program to convert the library.
+% I don't understand what the next line means. --amk
+% (inclusive the references on data structures.)
  
 First you have to create a list of symbols which the Python DLL exports.
 (You can find a good program for this task at 
@@ -569,7 +607,7 @@ other than the standard location for third-party Python modules.  For
 example, on a \UNIX{} system you might not have permission to write to the
 standard third-party module directory.  Or you might wish to try out a
 module before making it a standard part of your local Python
-installation; this is especially true when upgrading a distribution
+installation.  This is especially true when upgrading a distribution
 already present: you want to make sure your existing base of scripts
 still works with the new version before actually upgrading.
 
@@ -631,8 +669,8 @@ rather than the more traditional \file{/usr/local}.  This is entirely
 appropriate, since in those cases Python is part of ``the system''
 rather than a local add-on.  However, if you are installing Python
 modules from source, you probably want them to go in
-\file{/usr/local/lib/python1.\filevar{X}} rather than
-\file{/usr/lib/python1.\filevar{X}}.  This can be done with
+\file{/usr/local/lib/python2.\filevar{X}} rather than
+\file{/usr/lib/python2.\filevar{X}}.  This can be done with
 
 \begin{verbatim}
 /usr/bin/python setup.py install --prefix=/usr/local
@@ -641,9 +679,9 @@ modules from source, you probably want them to go in
 Another possibility is a network filesystem where the name used to write
 to a remote directory is different from the name used to read it: for
 example, the Python interpreter accessed as \file{/usr/local/bin/python}
-might search for modules in \file{/usr/local/lib/python1.\filevar{X}},
+might search for modules in \file{/usr/local/lib/python2.\filevar{X}},
 but those modules would have to be installed to, say,
-\file{/mnt/\filevar{@server}/export/lib/python1.\filevar{X}}.  This
+\file{/mnt/\filevar{@server}/export/lib/python2.\filevar{X}}.  This
 could be done with
 
 \begin{verbatim}
@@ -658,8 +696,8 @@ distributions, but could be expanded to C libraries, binary executables,
 etc.)  If \longprogramopt{exec-prefix} is not supplied, it defaults to
 \longprogramopt{prefix}.  Files are installed as follows:
 
-\installscheme{prefix}{/lib/python1.\filevar{X}/site-packages}
-              {exec-prefix}{/lib/python1.\filevar{X}/site-packages}
+\installscheme{prefix}{/lib/python2.\filevar{X}/site-packages}
+              {exec-prefix}{/lib/python2.\filevar{X}/site-packages}
               {prefix}{/bin}
               {prefix}{/share}
 
@@ -671,7 +709,7 @@ are created at installation time.
 Incidentally, the real reason the prefix scheme is important is simply
 that a standard \UNIX{} installation uses the prefix scheme, but with
 \longprogramopt{prefix} and \longprogramopt{exec-prefix} supplied by
-Python itself (as \code{sys.prefix} and \code{sys.exec\_prefix}).  Thus,
+Python itself as \code{sys.prefix} and \code{sys.exec\_prefix}.  Thus,
 you might think you'll never use the prefix scheme, but every time you
 run \code{python setup.py install} without any other options, you're
 using it.
@@ -681,7 +719,7 @@ no effect on how those extensions are built: in particular, the Python
 header files (\file{Python.h} and friends) installed with the Python
 interpreter used to run the setup script will be used in compiling
 extensions.  It is your responsibility to ensure that the interpreter
-used to run extensions installed in this way is compatibile with the
+used to run extensions installed in this way is compatible with the
 interpreter used to build them.  The best way to do this is to ensure
 that the two interpreters are the same version of Python (possibly
 different builds, or possibly copies of the same build).  (Of course, if
@@ -702,8 +740,9 @@ option to specify a base directory, e.g.
 python setup.py install --prefix="\Temp\Python"
 \end{verbatim}
 
-to install modules to the \file{\textbackslash{}Temp} directory on the current
-drive.
+to install modules to the
+\file{\textbackslash{}Temp\textbackslash{}Python} directory on the
+current drive.
 
 The installation base is defined by the \longprogramopt{prefix} option;
 the \longprogramopt{exec-prefix} option is not supported under Windows.
@@ -714,8 +753,10 @@ Files are installed as follows:
               {prefix}{\textbackslash{}Data}
 
 
-\subsection{Alternate installation: Mac OS}
+\subsection{Alternate installation: Mac OS 9}
 \label{alt-install-macos}
+
+% XXX Mac OS X?
 
 Like Windows, Mac OS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
@@ -739,7 +780,7 @@ section~\ref{alt-install} just don't do what you want.  You might
 want to tweak just one or two directories while keeping everything under
 the same base directory, or you might want to completely redefine the
 installation scheme.  In either case, you're creating a \emph{custom
-  installation scheme}.
+installation scheme}.
 
 You probably noticed the column of ``override options'' in the tables
 describing the alternate installation schemes above.  Those options are
@@ -822,8 +863,8 @@ python setup.py install --home=~/python \
 % $ % -- bow to font-lock
 
 \code{\$PLAT} is not (necessarily) an environment variable---it will be
-expanded by the Distutils as it parses your command line options (just
-as it does when parsing your configuration file(s)).
+expanded by the Distutils as it parses your command line options, just
+as it does when parsing your configuration file(s).
 
 Obviously, specifying the entire installation scheme every time you
 install a new module distribution would be very tedious.  Thus, you can
@@ -864,14 +905,14 @@ case, you probably want to supply an installation base of
 
 You probably noticed the use of \code{\$HOME} and \code{\$PLAT} in the
 sample configuration file input.  These are Distutils configuration
-variables, which bear a strong resemblance to environment variables.  In
-fact, you can use environment variables in config files---on platforms
-that have such a notion---but the Distutils additionally define a few
-extra variables that may not be in your environment, such as
-\code{\$PLAT}.  (And of course, you can only use the configuration
-variables supplied by the Distutils on systems that don't have
-environment variables, such as Mac OS (\XXX{true?}).)  See
-section~\ref{config-files} for details.
+variables, which bear a strong resemblance to environment variables.
+In fact, you can use environment variables in config files on
+platforms that have such a notion but the Distutils additionally
+define a few extra variables that may not be in your environment, such
+as \code{\$PLAT}.  (And of course, on systems that don't have
+environment variables, such as Mac OS (\XXX{true?}), the configuration
+variables supplied by the Distutils are the only ones you can use.)
+See section~\ref{config-files} for details.
 
 \XXX{need some Windows and Mac OS examples---when would custom
   installation schemes be needed on those platforms?}
@@ -958,10 +999,10 @@ And on Mac OS, they are:
 \label{config-syntax}
 
 The Distutils configuration files all have the same syntax.  The config
-files are grouped into sections; there is one section for each Distutils
+files are grouped into sections.  There is one section for each Distutils
 command, plus a \code{global} section for global options that affect
 every command.  Each section consists of one option per line, specified
-like \code{option=value}.
+as \code{option=value}.
 
 For example, the following is a complete config file that just forces
 all commands to run quietly by default:
@@ -1017,18 +1058,5 @@ python setup.py --help
 
 See also the ``Reference'' section of the ``Distributing Python
 Modules'' manual.
-
-
-%\section{Pre-Distutils Conventions}
-%\label{pre-distutils}
-
-
-%\subsection{The Makefile.pre.in file}
-%\label{makefile-pre-in}
-
-
-%\subsection{Installing modules manually}
-%\label{manual-install}
-
 
 \end{document}
