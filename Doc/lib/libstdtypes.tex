@@ -1044,12 +1044,12 @@ Notes:
   In general, the \var{key} and \var{reverse} conversion processes are
   much faster than specifying an equivalent \var{cmp} function.  This is
   because \var{cmp} is called multiple times for each list element while
-  \var{key} and \{reverse} touch each element only once.
+  \var{key} and \var{reverse} touch each element only once.
 
   \versionchanged[Support for \code{None} as an equivalent to omitting
   \var{cmpfunc} was added]{2.3}
 
-  \versionadded[Support for \var{key} and \var{reverse} was added]{2.4}
+  \versionchanged[Support for \var{key} and \var{reverse} was added]{2.4}
 
 \item[(9)]  Starting with Python 2.3, the \method{sort()} method is
   guaranteed to be stable.  A sort is stable if it guarantees not to
