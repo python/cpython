@@ -516,9 +516,7 @@ class TestCopy(unittest.TestCase):
         self.assert_(x[0] is not y[0])
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestCopy))
-    test_support.run_suite(suite)
+    test_support.run_unittest(TestCopy)
 
 if __name__ == "__main__":
     test_main()

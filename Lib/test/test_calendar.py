@@ -1,7 +1,7 @@
 import calendar
 import unittest
 
-from test.test_support import run_unittest
+from test import test_support
 
 
 class CalendarTestCase(unittest.TestCase):
@@ -55,7 +55,7 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(d), 13)
 
 def test_main():
-    run_unittest(CalendarTestCase)
+    test_support.run_unittest(CalendarTestCase)
 
 if __name__ == "__main__":
     test_main()

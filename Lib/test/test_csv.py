@@ -6,7 +6,7 @@ import unittest
 from StringIO import StringIO
 import csv
 import gc
-from test.test_support import verbose
+from test import test_support
 
 class Test_Csv(unittest.TestCase):
     """
@@ -568,7 +568,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         self.assertEqual(dialect.skipinitialspace, False)
 
 if not hasattr(sys, "gettotalrefcount"):
-    if verbose: print "*** skipping leakage tests ***"
+    if test_support.verbose: print "*** skipping leakage tests ***"
 else:
     class NUL:
         def write(s, *args):
@@ -640,15 +640,11 @@ else:
             # if writer leaks during write, last delta should be 5 or more
             self.assertEqual(delta < 5, True)
 
-def _testclasses():
+def test_main():
     mod = sys.modules[__name__]
-    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-
-def suite():
-    suite = unittest.TestSuite()
-    for testclass in _testclasses():
-        suite.addTest(unittest.makeSuite(testclass))
-    return suite
+    test_support.run_unittest(
+        *[getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
+    )
 
 if __name__ == '__main__':
-    unittest.main(defaultTest='suite')
+    test_main()

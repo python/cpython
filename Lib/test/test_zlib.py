@@ -479,24 +479,24 @@ LAERTES
 
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ChecksumTestCase))
-    suite.addTest(unittest.makeSuite(ExceptionTestCase))
-    suite.addTest(unittest.makeSuite(CompressTestCase))
-    suite.addTest(unittest.makeSuite(CompressObjectTestCase))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        ChecksumTestCase,
+        ExceptionTestCase,
+        CompressTestCase,
+        CompressObjectTestCase
+    )
 
 if __name__ == "__main__":
     test_main()
 
 def test(tests=''):
     if not tests: tests = 'o'
-    suite = unittest.TestSuite()
-    if 'k' in tests: suite.addTest(unittest.makeSuite(ChecksumTestCase))
-    if 'x' in tests: suite.addTest(unittest.makeSuite(ExceptionTestCase))
-    if 'c' in tests: suite.addTest(unittest.makeSuite(CompressTestCase))
-    if 'o' in tests: suite.addTest(unittest.makeSuite(CompressObjectTestCase))
-    test_support.run_suite(suite)
+    testcases = []
+    if 'k' in tests: testcases.append(ChecksumTestCase)
+    if 'x' in tests: testcases.append(ExceptionTestCase)
+    if 'c' in tests: testcases.append(CompressTestCase)
+    if 'o' in tests: testcases.append(CompressObjectTestCase)
+    test_support.run_unittest(*testcases)
 
 if False:
     import sys

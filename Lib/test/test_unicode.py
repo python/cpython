@@ -698,9 +698,7 @@ class UnicodeTest(
         print >>out, u'def\n'
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(UnicodeTest))
-    test_support.run_suite(suite)
+    test_support.run_unittest(UnicodeTest)
 
 if __name__ == "__main__":
     test_main()

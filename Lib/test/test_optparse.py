@@ -1193,18 +1193,11 @@ class TestMatchAbbrev(BaseTest):
                           "ambiguous option: --f (%s?)" % possibilities,
                           funcargs=[s, wordmap])
 
-def _testclasses():
-    mod = sys.modules[__name__]
-    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-
-def suite():
-    suite = unittest.TestSuite()
-    for testclass in _testclasses():
-        suite.addTest(unittest.makeSuite(testclass))
-    return suite
-
 def test_main():
-    test_support.run_suite(suite())
+    mod = sys.modules[__name__]
+    test_support.run_unittest(
+        *[getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
+    )
 
 if __name__ == '__main__':
     unittest.main()

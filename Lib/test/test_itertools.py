@@ -162,9 +162,7 @@ __test__ = {'libreftest' : libreftest}
 def test_main(verbose=None):
     import test_itertools
     suite = unittest.TestSuite()
-    for testclass in (TestBasicOps,
-                          ):
-        suite.addTest(unittest.makeSuite(testclass))
+    suite.addTest(unittest.makeSuite(TestBasicOps))
     test_support.run_suite(suite)
     test_support.run_doctest(test_itertools, verbose)
 

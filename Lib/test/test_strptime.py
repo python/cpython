@@ -406,14 +406,14 @@ class CalculationTests(unittest.TestCase):
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(LocaleTime_Tests))
-    suite.addTest(unittest.makeSuite(TimeRETests))
-    suite.addTest(unittest.makeSuite(StrptimeTests))
-    suite.addTest(unittest.makeSuite(Strptime12AMPMTests))
-    suite.addTest(unittest.makeSuite(JulianTests))
-    suite.addTest(unittest.makeSuite(CalculationTests))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        LocaleTime_Tests,
+        TimeRETests,
+        StrptimeTests,
+        Strptime12AMPMTests,
+        JulianTests,
+        CalculationTests
+    )
 
 
 if __name__ == '__main__':

@@ -229,15 +229,16 @@ def run_suite(suite, testclass=None):
         raise TestFailed(err)
 
 
-def run_unittest(testclass):
-    """Run tests from a unittest.TestCase-derived class."""
-    run_suite(unittest.makeSuite(testclass), testclass)
-
-def run_classtests(*classnames):
+def run_unittest(*classes):
+    """Run tests from unittest.TestCase-derived classes."""
     suite = unittest.TestSuite()
-    for cls in classnames:
+    for cls in classes:
         suite.addTest(unittest.makeSuite(cls))
-    run_suite(suite)
+    if len(classes)==1:
+        testclass = classes[0]
+    else:
+        testclass = None
+    run_suite(suite, testclass)
 
 
 #=======================================================================

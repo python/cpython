@@ -118,9 +118,7 @@ class TextHexOct(unittest.TestCase):
         \n"""
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TextHexOct))
-    test_support.run_suite(suite)
+    test_support.run_unittest(TextHexOct)
 
 if __name__ == "__main__":
     test_main()

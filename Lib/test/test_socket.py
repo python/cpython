@@ -683,17 +683,18 @@ class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
     bufsize = 2 # Exercise the buffering code
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(GeneralModuleTests))
-    suite.addTest(unittest.makeSuite(BasicTCPTest))
+    tests = [ GeneralModuleTests, BasicTCPTest ]
     if sys.platform != 'mac':
-        suite.addTest(unittest.makeSuite(BasicUDPTest))
-    suite.addTest(unittest.makeSuite(NonBlockingTCPTests))
-    suite.addTest(unittest.makeSuite(FileObjectClassTestCase))
-    suite.addTest(unittest.makeSuite(UnbufferedFileObjectClassTestCase))
-    suite.addTest(unittest.makeSuite(LineBufferedFileObjectClassTestCase))
-    suite.addTest(unittest.makeSuite(SmallBufferedFileObjectClassTestCase))
-    test_support.run_suite(suite)
+        tests.append(BasicUDPTest)
+
+    tests.extend([
+        NonBlockingTCPTests,
+        FileObjectClassTestCase,
+        UnbufferedFileObjectClassTestCase,
+        LineBufferedFileObjectClassTestCase,
+        SmallBufferedFileObjectClassTestCase
+    ])
+    test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()

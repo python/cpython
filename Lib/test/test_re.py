@@ -1,7 +1,7 @@
 import sys
 sys.path = ['.'] + sys.path
 
-from test.test_support import verbose, run_suite
+from test.test_support import verbose, run_unittest
 import re
 from sre import Scanner
 import sys, os, traceback
@@ -432,9 +432,7 @@ def run_re_tests():
                     print '=== Fails on unicode-sensitive match', t
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ReTests))
-    run_suite(suite)
+    run_unittest(ReTests)
     run_re_tests()
 
 if __name__ == "__main__":

@@ -103,9 +103,7 @@ class PowTest(unittest.TestCase):
 
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(PowTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(PowTest)
 
 if __name__ == "__main__":
     test_main()

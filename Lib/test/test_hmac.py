@@ -103,12 +103,12 @@ class CopyTestCase(unittest.TestCase):
             "Hexdigest of copy doesn't match original hexdigest.")
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestVectorsTestCase))
-    suite.addTest(unittest.makeSuite(ConstructorTestCase))
-    suite.addTest(unittest.makeSuite(SanityTestCase))
-    suite.addTest(unittest.makeSuite(CopyTestCase))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        TestVectorsTestCase,
+        ConstructorTestCase,
+        SanityTestCase,
+        CopyTestCase
+    )
 
 if __name__ == "__main__":
     test_main()

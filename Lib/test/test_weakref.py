@@ -534,12 +534,12 @@ class WeakKeyDictionaryTestCase(TestMappingProtocol):
         return self.__ref.copy()
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ReferencesTestCase))
-    suite.addTest(unittest.makeSuite(MappingTestCase))
-    suite.addTest(unittest.makeSuite(WeakValueDictionaryTestCase))
-    suite.addTest(unittest.makeSuite(WeakKeyDictionaryTestCase))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        ReferencesTestCase,
+        MappingTestCase,
+        WeakValueDictionaryTestCase,
+        WeakKeyDictionaryTestCase
+    )
 
 
 if __name__ == "__main__":

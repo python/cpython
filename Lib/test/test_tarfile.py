@@ -240,27 +240,26 @@ def test_main():
         # create testtar.tar.bz2
         bz2.BZ2File(tarname("bz2"), "wb").write(file(tarname(), "rb").read())
 
+    tests = [
+        ReadTest,
+        ReadStreamTest,
+        WriteTest,
+        WriteStreamTest
+    ]
+
+    if gzip:
+        tests.extend([
+            ReadTestGzip, ReadStreamTestGzip,
+            WriteTestGzip, WriteStreamTestGzip
+        ])
+
+    if bz2:
+        tests.extend([
+            ReadTestBzip2, ReadStreamTestBzip2,
+            WriteTestBzip2, WriteStreamTestBzip2
+        ])
     try:
-        suite = unittest.TestSuite()
-
-        suite.addTest(unittest.makeSuite(ReadTest))
-        suite.addTest(unittest.makeSuite(ReadStreamTest))
-        suite.addTest(unittest.makeSuite(WriteTest))
-        suite.addTest(unittest.makeSuite(WriteStreamTest))
-
-        if gzip:
-            suite.addTest(unittest.makeSuite(ReadTestGzip))
-            suite.addTest(unittest.makeSuite(ReadStreamTestGzip))
-            suite.addTest(unittest.makeSuite(WriteTestGzip))
-            suite.addTest(unittest.makeSuite(WriteStreamTestGzip))
-
-        if bz2:
-            suite.addTest(unittest.makeSuite(ReadTestBzip2))
-            suite.addTest(unittest.makeSuite(ReadStreamTestBzip2))
-            suite.addTest(unittest.makeSuite(WriteTestBzip2))
-            suite.addTest(unittest.makeSuite(WriteStreamTestBzip2))
-
-        test_support.run_suite(suite)
+        test_support.run_unittest(*tests)
     finally:
         if gzip:
             os.remove(tarname("gz"))

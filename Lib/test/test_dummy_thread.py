@@ -162,11 +162,7 @@ def test_main(imported_module=None):
     if test_support.verbose:
         print
         print "*** Using %s as _thread module ***" % _thread
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(LockTests))
-    suite.addTest(unittest.makeSuite(MiscTests))
-    suite.addTest(unittest.makeSuite(ThreadTests))
-    test_support.run_suite(suite)
+    test_support.run_unittest(LockTests, MiscTests, ThreadTests)
 
 if __name__ == '__main__':
     test_main()

@@ -658,42 +658,34 @@ Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin', 'Sam', 'Zack'])
 
 #==============================================================================
 
-def makeAllTests():
-    suite = unittest.TestSuite()
-    for klass in (TestSetOfSets,
-                  TestExceptionPropagation,
-                  TestBasicOpsEmpty,
-                  TestBasicOpsSingleton,
-                  TestBasicOpsTuple,
-                  TestBasicOpsTriple,
-                  TestBinaryOps,
-                  TestUpdateOps,
-                  TestMutate,
-                  TestSubsetEqualEmpty,
-                  TestSubsetEqualNonEmpty,
-                  TestSubsetEmptyNonEmpty,
-                  TestSubsetPartial,
-                  TestSubsetNonOverlap,
-                  TestOnlySetsNumeric,
-                  TestOnlySetsDict,
-                  TestOnlySetsOperator,
-                  TestCopyingEmpty,
-                  TestCopyingSingleton,
-                  TestCopyingTriple,
-                  TestCopyingTuple,
-                  TestCopyingNested,
-                 ):
-        suite.addTest(unittest.makeSuite(klass))
-    return suite
-
-#------------------------------------------------------------------------------
-
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     from test import test_sets
-    suite = makeAllTests()
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        TestSetOfSets,
+        TestExceptionPropagation,
+        TestBasicOpsEmpty,
+        TestBasicOpsSingleton,
+        TestBasicOpsTuple,
+        TestBasicOpsTriple,
+        TestBinaryOps,
+        TestUpdateOps,
+        TestMutate,
+        TestSubsetEqualEmpty,
+        TestSubsetEqualNonEmpty,
+        TestSubsetEmptyNonEmpty,
+        TestSubsetPartial,
+        TestSubsetNonOverlap,
+        TestOnlySetsNumeric,
+        TestOnlySetsDict,
+        TestOnlySetsOperator,
+        TestCopyingEmpty,
+        TestCopyingSingleton,
+        TestCopyingTriple,
+        TestCopyingTuple,
+        TestCopyingNested
+    )
     test_support.run_doctest(test_sets, verbose)
 
 if __name__ == "__main__":

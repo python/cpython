@@ -352,7 +352,7 @@ class ListTest(unittest.TestCase):
             self.assertIs(op(x, y), True)
 
 def test_main():
-    test_support.run_classtests(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
+    test_support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
 
 if __name__ == "__main__":
     test_main()

@@ -531,9 +531,11 @@ class JumpTestCase(unittest.TestCase):
         no_jump_without_trace_function()
 
 def test_main():
-    test_support.run_unittest(TraceTestCase)
-    test_support.run_unittest(RaisingTraceFuncTestCase)
-    test_support.run_unittest(JumpTestCase)
+    test_support.run_unittest(
+        TraceTestCase,
+        RaisingTraceFuncTestCase,
+        JumpTestCase
+    )
 
 if __name__ == "__main__":
     test_main()

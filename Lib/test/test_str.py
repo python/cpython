@@ -19,9 +19,7 @@ class StrTest(
         self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(StrTest))
-    test_support.run_suite(suite)
+    test_support.run_unittest(StrTest)
 
 if __name__ == "__main__":
     test_main()

@@ -192,9 +192,7 @@ class AllTest(unittest.TestCase):
 
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(AllTest))
-    test_support.run_suite(suite)
+    test_support.run_unittest(AllTest)
 
 if __name__ == "__main__":
     test_main()

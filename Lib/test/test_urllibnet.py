@@ -23,10 +23,7 @@ class URLTimeoutTest(unittest.TestCase):
 
 def test_main():
     test_support.requires('network')
-
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(URLTimeoutTest))
-    test_support.run_suite(suite)
+    test_support.run_unittest(URLTimeoutTest)
 
 if __name__ == "__main__":
     test_main()

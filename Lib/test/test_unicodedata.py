@@ -203,11 +203,11 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assert_(count >= 10) # should have tested at least the ASCII digits
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(UnicodeMiscTest))
-    suite.addTest(unittest.makeSuite(UnicodeMethodsTest))
-    suite.addTest(unittest.makeSuite(UnicodeFunctionsTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(
+        UnicodeMiscTest,
+        UnicodeMethodsTest,
+        UnicodeFunctionsTest
+    )
 
 if __name__ == "__main__":
     test_main()

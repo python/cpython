@@ -187,8 +187,10 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
 
 
 def test_main():
-    test_support.run_unittest(UncompressedZipImportTestCase)
-    test_support.run_unittest(CompressedZipImportTestCase)
+    test_support.run_unittest(
+        UncompressedZipImportTestCase,
+        CompressedZipImportTestCase
+    )
 
 if __name__ == "__main__":
     test_main()

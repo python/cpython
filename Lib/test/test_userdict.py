@@ -395,11 +395,11 @@ class UserDictMixinTest(TestMappingProtocol):
         self.assertEqual(s, t)
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMappingProtocol))
-    suite.addTest(unittest.makeSuite(UserDictTest))
-    suite.addTest(unittest.makeSuite(UserDictMixinTest))
-    test.test_support.run_suite(suite)
+    test.test_support.run_unittest(
+        TestMappingProtocol,
+        UserDictTest,
+        UserDictMixinTest
+    )
 
 if __name__ == "__main__":
     test_main()

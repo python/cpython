@@ -374,11 +374,10 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         self.check_bad_tree(tree, "malformed global ast")
 
 def test_main():
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    suite.addTest(loader.loadTestsFromTestCase(RoundtripLegalSyntaxTestCase))
-    suite.addTest(loader.loadTestsFromTestCase(IllegalSyntaxTestCase))
-    test_support.run_suite(suite)
+    test_support.run_unittest(
+        RoundtripLegalSyntaxTestCase,
+        IllegalSyntaxTestCase
+    )
 
 
 if __name__ == "__main__":
