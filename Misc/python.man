@@ -10,9 +10,6 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
-.B \-s
-]
-[
 .B \-u
 ]
 [
@@ -57,11 +54,6 @@ used, enter interactive mode after executing the script or the
 command.  It does not read the $PYTHONSTARTUP file.  This can be
 useful to inspect global variables or a stack trace when a script
 raises an exception.
-.TP
-.B \-s
-Suppresses the automatic printing of expressions entered in
-interactive mode (useful when input is actually generated e.g. by
-Emacs).
 .TP
 .B \-u
 Force stdout and stderr to be totally unbuffered.
@@ -168,9 +160,6 @@ the \fB\-d\fP option.
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-i\fP option.
-.IP PYTHONSUPPRESS
-If this is set to a non-empty string it is equivalent to specifying
-the \fB\-s\fP option.
 .IP PYTHONUNBUFFERED
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-u\fP option.
