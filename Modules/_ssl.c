@@ -245,14 +245,17 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 		ret = SSL_connect(self->ssl);
 		err = SSL_get_error(self->ssl, ret);
 		Py_END_ALLOW_THREADS
+		if(PyErr_CheckSignals()) {
+                        goto fail;
+		}
 		if (err == SSL_ERROR_WANT_READ) {
 			timedout = wait_for_timeout(Sock, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
 			timedout = wait_for_timeout(Sock, 1);
 		}
 		if (timedout) {
-			PyErr_SetString(PySSLErrorObject, "The connect operation timed out");
-			return NULL;
+			errstr = "The connect operation timed out";
+			goto fail;
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 	if (ret <= 0) {
@@ -387,6 +390,9 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 		len = SSL_write(self->ssl, data, len);
 		err = SSL_get_error(self->ssl, len);
 		Py_END_ALLOW_THREADS
+		if(PyErr_CheckSignals()) {
+			return NULL;
+		}
 		if (err == SSL_ERROR_WANT_READ) {
 			timedout = wait_for_timeout(self->Socket, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
@@ -434,6 +440,10 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		count = SSL_read(self->ssl, PyString_AsString(buf), len);
 		err = SSL_get_error(self->ssl, count);
 		Py_END_ALLOW_THREADS
+		if(PyErr_CheckSignals()) {
+			Py_DECREF(buf);
+			return NULL;
+		}
 		if (err == SSL_ERROR_WANT_READ) {
 			timedout = wait_for_timeout(self->Socket, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
@@ -441,6 +451,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		}
 		if (timedout) {
 			PyErr_SetString(PySSLErrorObject, "The read operation timed out");
+			Py_DECREF(buf);
 			return NULL;
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
