@@ -93,8 +93,6 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 				"NULL object passed to PyObject_Init");
 		return op;
   	}
-	if (PyType_IS_GC(tp))
-		op = (PyObject *) PyObject_FROM_GC(op);
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
@@ -109,8 +107,6 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
 				"NULL object passed to PyObject_InitVar");
 		return op;
 	}
-	if (PyType_IS_GC(tp))
-		op = (PyVarObject *) PyObject_FROM_GC(op);
 	/* Any changes should be reflected in PyObject_INIT_VAR */
 	op->ob_size = size;
 	op->ob_type = tp;
@@ -125,8 +121,6 @@ _PyObject_New(PyTypeObject *tp)
 	op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	if (PyType_IS_GC(tp))
-		op = (PyObject *) PyObject_FROM_GC(op);
 	return PyObject_INIT(op, tp);
 }
 
@@ -137,25 +131,14 @@ _PyObject_NewVar(PyTypeObject *tp, int size)
 	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
-	if (PyType_IS_GC(tp))
-		op = (PyVarObject *) PyObject_FROM_GC(op);
 	return PyObject_INIT_VAR(op, tp, size);
 }
 
 void
 _PyObject_Del(PyObject *op)
 {
-	if (op && PyType_IS_GC(op->ob_type)) {
-		op = (PyObject *) PyObject_AS_GC(op);
-	}
 	PyObject_FREE(op);
 }
-
-#ifndef WITH_CYCLE_GC
-/* extension modules might need these */
-void _PyGC_Insert(PyObject *op) { }
-void _PyGC_Remove(PyObject *op) { }
-#endif
 
 int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
@@ -214,14 +197,6 @@ void _PyObject_Dump(PyObject* op)
 		fprintf(stderr, "address    : %p\n", op);
 	}
 }
-
-#ifdef WITH_CYCLE_GC
-void _PyGC_Dump(PyGC_Head* op)
-{
-	_PyObject_Dump(PyObject_FROM_GC(op));
-}
-#endif /* WITH_CYCLE_GC */
-
 
 PyObject *
 PyObject_Repr(PyObject *v)
@@ -1146,7 +1121,7 @@ _PyObject_GetDictPtr(PyObject *obj)
 	if (dictoffset == 0)
 		return NULL;
 	if (dictoffset < 0) {
-		dictoffset += PyType_BASICSIZE(tp);
+		dictoffset += tp->tp_basicsize;
 		assert(dictoffset > 0); /* Sanity check */
 		if (tp->tp_itemsize > 0) {
 			int n = ((PyVarObject *)obj)->ob_size;
