@@ -1809,12 +1809,14 @@ posix_listdir(PyObject *self, PyObject *args)
 			w = PyUnicode_FromEncodedObject(v,
 					Py_FileSystemDefaultEncoding, 
 					"strict");
-			Py_DECREF(v);
-			v = w;
-			if (v == NULL) {
-				Py_DECREF(d);
-				d = NULL;
-				break;
+			if (w != NULL) {
+				Py_DECREF(v);
+				v = w;
+			}
+			else {
+				/* fall back to the original byte string, as
+				   discussed in patch #683592 */
+				PyErr_Clear();
 			}
 		}
 #endif
