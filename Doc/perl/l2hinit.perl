@@ -111,20 +111,31 @@ $CUSTOM_BUTTONS = '';
 $BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
 $NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 
+sub make_nav_sectref{
+    my($label,$title) = @_;
+    if ($title) {
+	return ("<b class=navlabel>$label:</b> "
+		. "<span class=sectref>$title</span>\n");
+    }
+    return '';
+}
+
 sub make_nav_panel{
-    ("<table width=\"100%\" cellpadding=0 cellspacing=2>\n<tr>"
-     . "\n<td>$NEXT</td>"
-     . "\n<td>$UP</td>"
-     . "\n<td>$PREVIOUS</td>"
-     . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
-     . "\n <b>$t_title</b></td>"
-     . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
-     . "\n<td>$CUSTOM_BUTTONS</td>" # module index
-     . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
-     . "\n</tr></table><hr>\n"
-     . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
-     . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
-     . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : ''));
+    return ("<table width=\"100%\" cellpadding=0 cellspacing=2>\n<tr>"
+	    . "\n<td>$NEXT</td>"
+	    . "\n<td>$UP</td>"
+	    . "\n<td>$PREVIOUS</td>"
+	    . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
+	    . "\n <b class=title>$t_title</b></td>"
+	    . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
+	    . "\n<td>$CUSTOM_BUTTONS</td>" # module index
+	    . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
+	    . "\n</tr></table>"
+	    #. "<hr>"
+	    . make_nav_sectref("Next", $NEXT_TITLE)
+	    . make_nav_sectref("Up", $UP_TITLE)
+	    . make_nav_sectref("Previous", $PREVIOUS_TITLE)
+	   );
 }
 
 sub top_navigation_panel {
@@ -278,7 +289,7 @@ sub do_cmd_tableofcontents {
     $tocfile = $CURRENT_FILE;
     my($closures,$reopens) = preserve_open_tags();
     anchor_label('contents', $CURRENT_FILE, $_);	# this is added
-    join('', "<BR>\n", $closures
+    join('', "<BR>\n\\tableofchildlinks[off]", $closures
 	 , make_section_heading($toc_title, 'H2'), $toc_mark
 	 , $reopens, $_);
 }
@@ -458,7 +469,7 @@ sub protect_useritems {
 # style support file.  The %declarations must be set before initialize()
 # is called in the main script.
 #
-%declarations = ('preform' => '<dl><dd><pre></pre></dl>',
+%declarations = ('preform' => '<dl><dd><pre class=verbatim></pre></dl>',
 		 %declarations);
 
 1;	# This must be the last line
