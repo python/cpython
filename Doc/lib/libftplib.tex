@@ -1,19 +1,17 @@
 \section{\module{ftplib} ---
-         FTP protocol client.}
+         FTP protocol client}
+
 \declaremodule{standard}{ftplib}
-
 \modulesynopsis{FTP protocol client (requires sockets).}
-
-\indexii{FTP}{protocol}
 
 
 This module defines the class \class{FTP} and a few related items.
-The \class{FTP} class implements the client side of the FTP protocol.
-You can use this to write Python programs that perform a variety of
-automated FTP jobs, such as mirroring other ftp servers.  It is also
-used by the module \module{urllib} to handle URLs that use FTP.  For
-more information on FTP (File Transfer Protocol), see Internet
-\rfc{959}.
+The \class{FTP} class implements the client side of the FTP
+protocol.\indexii{FTP}{protocol}  You can use this to write Python
+programs that perform a variety of automated FTP jobs, such as
+mirroring other ftp servers.  It is also used by the module
+\refmodule{urllib} to handle URLs that use FTP.  For more information
+on FTP (File Transfer Protocol), see Internet \rfc{959}.
 
 Here's a sample session using the \module{ftplib} module:
 
@@ -71,8 +69,7 @@ not begin with a digit in the range 1--5.
 \end{excdesc}
 
 
-\subsection{FTP Objects}
-\label{ftp-objects}
+\subsection{FTP Objects \label{ftp-objects}}
 
 \class{FTP} instances have the following methods:
 
@@ -104,7 +101,7 @@ information that may be relevant to the user.)
 Log in as the given \var{user}.  The \var{passwd} and \var{acct}
 parameters are optional and default to the empty string.  If no
 \var{user} is specified, it defaults to \code{'anonymous'}.  If
-\var{user} is \code{anonymous}, the default \var{passwd} is
+\var{user} is \code{'anonymous'}, the default \var{passwd} is
 \samp{\var{realuser}@\var{host}} where \var{realuser} is the real user
 name (glanced from the \envvar{LOGNAME} or \envvar{USER} environment
 variable) and \var{host} is the hostname as returned by
@@ -149,6 +146,11 @@ Retrieve a file or directory listing in \ASCII{} transfer mode.
 \code{'LIST'}).  The \var{callback} function is called for each line,
 with the trailing CRLF stripped.  The default \var{callback} prints
 the line to \code{sys.stdout}.
+\end{methoddesc}
+
+\begin{methoddesc}{set_pasv}{boolean}
+Enable ``passive'' mode if \var{boolean} is true, other disable
+passive mode.
 \end{methoddesc}
 
 \begin{methoddesc}{storbinary}{command, file, blocksize}
