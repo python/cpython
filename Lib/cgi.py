@@ -258,13 +258,13 @@ def print_form( form ):
 	for key in skeys:
 		print '<dt>', escape(key), ':',
 		print '<i>', escape(`type(form[key])`), '</i>',
-		print '<dd>', escape(form[key])
+		print '<dd>', escape(`form[key]`)
 	print '</dl>'
 
 def escape( s ):
-	s = regsub.gsub('&', '&amp;') # Must be done first
-	s = regsub.gsub('<', '&lt;')
-	s = regsub.gsub('>', '&gt;')
+	s = regsub.gsub('&', '&amp;', s) # Must be done first
+	s = regsub.gsub('<', '&lt;', s)
+	s = regsub.gsub('>', '&gt;', s)
 	return s
 
 def test( what ):
