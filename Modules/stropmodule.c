@@ -766,7 +766,7 @@ strop_atoi(PyObject *self, PyObject *args)
 		x = (long) PyOS_strtoul(s, &end, base);
 	else
 		x = PyOS_strtol(s, &end, base);
-	if (end == s || !isalnum(end[-1]))
+	if (end == s || !isalnum((int)end[-1]))
 		goto bad;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;

@@ -106,7 +106,9 @@
 #undef __EXTENSIONS__
 
 /* This must be set to 64 on some systems to enable large file support */
+#ifndef _FILE_OFFSET_BITS
 #undef _FILE_OFFSET_BITS
+#endif
 
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG

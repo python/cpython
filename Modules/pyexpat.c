@@ -1366,7 +1366,7 @@ get_version_string(void)
     char *rev = rcsid;
     int i = 0;
 
-    while (!isdigit(*rev))
+    while (!isdigit((int)*rev))
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;

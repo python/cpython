@@ -1453,7 +1453,7 @@ get_version_string(void)
     char *buffer;
     int i = 0;
 
-    while (*rev && !isdigit(*rev))
+    while (*rev && !isdigit((int)*rev))
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;
