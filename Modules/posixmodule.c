@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -357,6 +357,23 @@ posix_mkdir(self, args)
 {
 	return posix_strint(args, mkdir);
 }
+
+#ifndef MSDOS
+static object *
+posix_nice(self, args)
+	object *self;
+	object *args;
+{
+	int increment, value;
+
+	if (!getargs(args, "i", &increment))
+		return NULL;
+	value = nice(increment);
+	if (value == -1)
+		return posix_error();
+	return newintobject((long) value);
+}
+#endif
 
 #ifdef i386
 int
@@ -919,6 +936,9 @@ static struct methodlist posix_methods[] = {
 	{"listdir",	posix_listdir},
 	{"lstat",	posix_lstat},
 	{"mkdir",	posix_mkdir},
+#ifndef MSDOS
+	{"nice",	posix_nice},
+#endif
 	{"readlink",	posix_readlink},
 	{"rename",	posix_rename},
 	{"rmdir",	posix_rmdir},

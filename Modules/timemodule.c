@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -124,9 +124,9 @@ time_sleep(self, args)
 	object *self;
 	object *args;
 {
-	long secs;
+	double secs;
 	SIGTYPE (*sigsave)() = 0; /* Initialized to shut lint up */
-	if (!getargs(args, "l", &secs))
+	if (!getargs(args, "d", &secs))
 		return NULL;
 	BGN_SAVE
 	if (setjmp(sleep_intr)) {
@@ -138,11 +138,7 @@ time_sleep(self, args)
 	sigsave = signal(SIGINT, SIG_IGN);
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
-#ifdef BSD_TIME
-	longsleep(secs);
-#else
-	sleep((int)secs);
-#endif
+	floatsleep(secs);
 	END_SAVE
 	signal(SIGINT, sigsave);
 	INCREF(None);
@@ -188,7 +184,7 @@ time_millisleep(self, args)
 	sigsave = signal(SIGINT, SIG_IGN);
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
-	millisleep(msecs);
+	floatsleep(msecs / 1000.0);
 	END_SAVE
 	signal(SIGINT, sigsave);
 	INCREF(None);
@@ -284,12 +280,12 @@ sleep(secs)
 }
 #endif
 
-millisleep(msecs)
-	long msecs;
+floatsleep(secs)
+	double secs;
 {
 	register long deadline;
 	
-	deadline = MacTicks + msecs * 3 / 50; /* msecs * 60 / 1000 */
+	deadline = MacTicks + long(secs * 60.0);
 	while (MacTicks < deadline) {
 		if (intrcheck())
 			sleep_catcher(SIGINT);
@@ -319,21 +315,17 @@ millitimer()
 	return t.tv_sec*1000 + t.tv_usec/1000;
 }
 
-millisleep(msecs)
-	long msecs;
+floatsleep(secs)
+	double secs;
 {
 	struct timeval t;
-	t.tv_sec = msecs/1000;
-	t.tv_usec = (msecs%1000)*1000;
-	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
-}
-
-longsleep(secs)
-	long secs;
-{
-	struct timeval t;
-	t.tv_sec = secs;
-	t.tv_usec = 0;
+	double frac;
+	extern double fmod PROTO((double, double));
+	extern double floor PROTO((double));
+	frac = fmod(secs, 1.0);
+	secs = floor(secs);
+	t.tv_sec = (long)secs;
+	t.tv_usec = (long)(frac*1000000.0);
 	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
 
@@ -347,10 +339,10 @@ longsleep(secs)
 #endif
 
 static
-millisleep(msecs)
-	long msecs;
+floatsleep(secs)
+	double secs;
 {
-	delay(msecs);
+	delay(long(secs/1000.0));
 }
 
 static long
@@ -359,7 +351,7 @@ millitimer()
 	clock_t ticks;
 
 	ticks = clock();	/* ticks since program start */
-	return ticks * CLOCKS_PER_SEC;
+	return ticks * CLOCKS_PER_SEC;/* XXX shouldn't this be different? */
 }
 
 #endif /* TURBO_C */
