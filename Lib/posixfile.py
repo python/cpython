@@ -107,7 +107,7 @@ class _posixfile_:
         return posix.fdopen(fd, self._file_.mode)
 
     def flags(self, *which):
-        import fcntl
+        import fcntl, os
 
         if which:
             if len(which) > 1:
