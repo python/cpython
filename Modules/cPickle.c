@@ -407,7 +407,7 @@ write_file(Picklerobject *self, char *s, int  n) {
         return 0;
     }
 
-    if ((int)fwrite(s, sizeof(char), n, self->fp) != n) {
+    if (fwrite(s, sizeof(char), n, self->fp) != (size_t)n) {
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
     }
@@ -503,7 +503,7 @@ read_file(Unpicklerobject *self, char **s, int  n) {
         self->buf_size = n;
     }
             
-    if ((int)fread(self->buf, sizeof(char), n, self->fp) != n) {  
+    if (fread(self->buf, sizeof(char), n, self->fp) != (size_t)n) {
         if (feof(self->fp)) {
             PyErr_SetNone(PyExc_EOFError);
             return -1;
