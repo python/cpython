@@ -1110,7 +1110,6 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 				return *r_result == NULL ? -1 : 0;
 			}
 		}
-		w = PyTuple_GetItem(coerced, 1);
 	}
 	func = PyObject_GetAttrString(v, opname);
 	if (func == NULL) {
