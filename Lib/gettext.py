@@ -86,7 +86,8 @@ Currently, only GNU gettext format binary .mo files are supported.
 
 """
 
-# This module represents the integration of work from the following authors:
+# This module represents the integration of work, contributions, feedback, and
+# suggestions from the following people:
 #
 # Martin von Loewis, who wrote the initial implementation of the underlying
 # C-based libintlmodule (later renamed _gettext), along with a skeletal
@@ -118,6 +119,49 @@ _current_domain = 'messages'
 
 # Domain to directory mapping, for use by bindtextdomain()
 _localedirs = {}
+
+
+
+def _expand_lang(locale):
+    from locale import normalize
+    locale = normalize(locale)
+    COMPONENT_CODESET   = 1 << 0
+    COMPONENT_TERRITORY = 1 << 1
+    COMPONENT_MODIFIER  = 1 << 2
+    # split up the locale into its base components
+    mask = 0
+    pos = locale.find('@')
+    if pos >= 0:
+        modifier = locale[pos:]
+        locale = locale[:pos]
+        mask |= COMPONENT_MODIFIER
+    else:
+        modifier = ''
+    pos = locale.find('.')
+    if pos >= 0:
+        codeset = locale[pos:]
+        locale = locale[:pos]
+        mask |= COMPONENT_CODESET
+    else:
+        codeset = ''
+    pos = locale.find('_')
+    if pos >= 0:
+        territory = locale[pos:]
+        locale = locale[:pos]
+        mask |= COMPONENT_TERRITORY
+    else:
+        territory = ''
+    language = locale
+    ret = []
+    for i in range(mask+1):
+        if not (i & ~mask):  # if all components for this combo exist ...
+            val = language
+            if i & COMPONENT_TERRITORY: val += territory
+            if i & COMPONENT_CODESET:   val += codeset
+            if i & COMPONENT_MODIFIER:  val += modifier
+            ret.append(val)
+    ret.reverse()
+    return ret
 
 
 
@@ -158,8 +202,8 @@ class GNUTranslations(UserDict):
                 raise IOError(0, 'File is corrupt', filename)
             #
             # advance to next entry in the seek tables
-            masteridx = masteridx + 8
-            transidx = transidx + 8
+            masteridx += 8
+            transidx += 8
         return catalog
 
 
@@ -171,7 +215,6 @@ Translations = GNUTranslations
 def _find(localedir=None, languages=None, domain=None):
     global _current_domain
     global _localedirs
-
     # Get some reasonable defaults for arguments that were not supplied
     if domain is None:
         domain = _current_domain
@@ -193,6 +236,12 @@ def _find(localedir=None, languages=None, domain=None):
                 break
         if 'C' not in languages:
             languages.append('C')
+    # now normalize and expand the languages
+    langdict = {}
+    for lang in languages:
+        for nelang in _expand_lang(lang):
+            langdict[nelang] = nelang
+    languages = langdict.keys()
     # select a language
     for lang in languages:
         if lang == 'C':
