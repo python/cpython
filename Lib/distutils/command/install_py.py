@@ -66,8 +66,8 @@ class InstallPy (Command):
                     out_fn = string.replace (f, '.py', '.pyc')
                     
                     self.make_file (f, out_fn, compile, (f,),
-                                    "compiling %s -> %s" % (f, out_fn),
-                                    "compilation of %s skipped" % f)
+                                    "byte-compiling %s" % f,
+                                    "byte-compilation of %s skipped" % f)
                     
         # XXX ignore self.optimize for now, since we don't really know if
         # we're compiling optimally or not, and couldn't pick what to do
