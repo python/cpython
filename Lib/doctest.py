@@ -390,10 +390,10 @@ class _SpoofOut(StringIO):
             del self.softspace
 
 # Worst-case linear-time ellipsis matching.
-def ellipsis_match(want, got):
+def _ellipsis_match(want, got):
     """
     Essentially the only subtle case:
-    >>> ellipsis_match('aa...aa', 'aaa')
+    >>> _ellipsis_match('aa...aa', 'aaa')
     False
     """
     if ELLIPSIS_MARKER not in want:
@@ -426,7 +426,7 @@ def ellipsis_match(want, got):
 
     if startpos > endpos:
         # Exact end matches required more characters than we have, as in
-        # ellipsis_match('aa...aa', 'aaa')
+        # _ellipsis_match('aa...aa', 'aaa')
         return False
 
     # For the rest, we only need to find the leftmost non-overlapping
@@ -1558,7 +1558,7 @@ class OutputChecker:
         # The ELLIPSIS flag says to let the sequence "..." in `want`
         # match any substring in `got`.
         if optionflags & ELLIPSIS:
-            if ellipsis_match(want, got):
+            if _ellipsis_match(want, got):
                 return True
 
         # We didn't find any match; return false.
