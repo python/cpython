@@ -1,27 +1,6 @@
 % Format this file with latex.
 
-\documentstyle{article}
-
-% Page lay-out parameters
-\textwidth =      150mm
-\textheight =     240mm
-\topmargin =      -11mm
-\oddsidemargin =    5mm
-\evensidemargin =   5mm
-
-% Macros for e.g. and E.g. if you want them italicized:
-% \newcommand{\eg}{{\it e.g.}}
-% \newcommand{\Eg}{{\it E.g.}}
-% If you don't want them italicized:
-\newcommand{\eg}{e.g.}
-\newcommand{\Eg}{E.g.}
-
-% Frequently used system names
-\newcommand{\Python}{{\em Python}}
-\newcommand{\UNIX}{U{\sc nix}}
-
-% Code environment
-\newenvironment{code}{\begin{itemize}\samepage}{\end{itemize}}
+\documentstyle[myformat]{article}
 
 \title{\bf
 	Python Tutorial \\
@@ -956,7 +935,7 @@ but more efficient.%
 }
 \end{itemize}
 The list object type has two more methods:
-\begin{list}{}{\labelwidth=4cm}
+\begin{description}
 \item[{\tt insert(i, x)}]
 Inserts an item at a given position.
 The first argument is the index of the element before which to insert,
@@ -964,7 +943,7 @@ so {\tt a.insert(0, x)} inserts at the front of the list, and
 {\tt a.insert(len(a), x)} is equivalent to {\tt a.append(x)}.
 \item[{\tt sort()}]
 Sorts the elements of the list.
-\end{list}
+\end{description}
 For example:
 \begin{code}\begin{verbatim}
 >>> a = [10, 100, 1, 1000]
@@ -1562,18 +1541,14 @@ is equivalent to
 
 \section{XXX P.M.}
 
-The {\tt del} statement.
-
-The {\tt dir()} function.
-
-Tuples.
-
-Dictionaries.
-
-Objects and types in general.
-
-Backquotes.
-
-And/Or/Not.
+\begin{itemize}
+\item	The {\tt del} statement.
+\item	The {\tt dir()} function.
+\item	Tuples.
+\item	Dictionaries.
+\item	Objects and types in general.
+\item	Backquotes.
+\item	And/Or/Not.
+\end{itemize}
 
 \end{document}
