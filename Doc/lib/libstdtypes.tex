@@ -1079,7 +1079,12 @@ Files have the following methods:
   The \var{whence} argument is optional and defaults to \code{0}
   (absolute file positioning); other values are \code{1} (seek
   relative to the current position) and \code{2} (seek relative to the
-  file's end).  There is no return value.
+  file's end).  There is no return value.  Note that if the file is
+  opened for appending (mode \code{'a'} or \code{'a+'}), any
+  \method{seek()} operations will be undone at the next write.  If the
+  file is only opened for writing in append mode (mode \code{'a'}),
+  this method is essentially a no-op, but it remains useful for files
+  opened in append mode with reading enabled (mode \code{'a+'}).
 \end{methoddesc}
 
 \begin{methoddesc}[file]{tell}{}
