@@ -42,11 +42,10 @@ instance is not reused, so for applications that wrap/fill many text
 strings, it will be more efficient for you to create your own
 \class{TextWrapper} object.
 
-\begin{classdesc}{TextWrapper}{width, initial_indent, subsequent_indent,
-                               expand_tabs, replace_whitespace,
-                               fix_sentence_endings, break_long_words}
-Each keyword argument to the constructor corresponds to an instance
-attribute, so for example
+\begin{classdesc}{TextWrapper}{...}
+The \class{TextWrapper} constructor accepts a number of optional
+keyword arguments.  Each argument corresponds to one instance attribute,
+so for example
 \begin{verbatim}
 wrapper = TextWrapper(initial_indent="* ")
 \end{verbatim}
@@ -61,17 +60,24 @@ can change any of its options through direct assignment to instance
 attributes between uses.
 \end{classdesc}
 
+The \class{TextWrapper} instance attributes (and keyword arguments to
+the constructor) are as follows:
 
-The effects of the instance attributes are as follows:
+\begin{memberdesc}{width}
+(default: 70) The maximum length of wrapped lines.  As long as there are
+no individual words in the input text longer than \var{width},
+\class{TextWrapper} guarantees that no output line will be longer than
+\var{width} characters.
+\end{memberdesc}
 
 \begin{memberdesc}{expand_tabs}
-If true (the default), then all tab characters in \var{text} will be
-expanded to spaces using the \method{expand_tabs()} method of
+(default: \code{True}) If true, then all tab characters in \var{text}
+will be expanded to spaces using the \method{expand_tabs()} method of
 \var{text}.
 \end{memberdesc}
 
 \begin{memberdesc}{replace_whitespace}
-If true (the default), each whitespace character (as defined by
+(default: \code{True}) If true, each whitespace character (as defined by
 \var{string.whitespace}) remaining after tab expansion will be replaced
 by a single space.  \note{If \var{expand_tabs} is false and
 \var{replace_whitespace} is true, each tab character will be replaced by
@@ -97,14 +103,15 @@ font.  However, the sentence detection algorithm is imperfect: it
 assumes that a sentence ending consists of a lowercase letter followed
 by one of \character{.},
 \character{!}, or \character{?}, possibly followed by one of
-\character{"} or \character{'}.  One problem with this is algoritm is
-that it is unable to detect the difference between ``Dr.'' in
+\character{"} or \character{'}, followed by a space.  One problem
+with this is algorithm is that it is unable to detect the difference
+between ``Dr.'' in
 \begin{verbatim}
 [...] Dr. Frankenstein's monster [...]
 \end{verbatim}
 and ``Spot.'' in
 \begin{verbatim}
-[...] See Spot.  See Spot run [...]
+[...] See Spot. See Spot run [...]
 \end{verbatim}
 Furthermore, since it relies on \var{string.lowercase} for the
 definition of ``lowercase letter'', it is specific to English-language
@@ -112,9 +119,10 @@ texts.  Thus, \var{fix_sentence_endings} is false by default.
 \end{memberdesc}
 
 \begin{memberdesc}{break_long_words}
-If true (the default), then words longer than \var{width} will be broken
-in order to ensure that no lines are longer than \var{width}.  If it is
-false, long words will not be broken, and some lines may be longer than
+(default: \code{True}) If true, then words longer than
+\var{width} will be broken in order to ensure that no lines are longer
+than \var{width}.  If it is false, long words will not be broken, and
+some lines may be longer than
 \var{width}.  (Long words will be put on a line by themselves, in order
 to minimize the amount by which \var{width} is exceeded.)
 \end{memberdesc}
