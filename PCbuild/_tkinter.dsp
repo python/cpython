@@ -20,8 +20,8 @@ CFG=_tkinter - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE "_tkinter - Win32 Alpha Debug" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE "_tkinter - Win32 Alpha Release" (based on "Win32 (ALPHA) Dynamic-Link Library")
-!MESSAGE "_tkinter - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "_tkinter - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "_tkinter - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "_tkinter - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -29,7 +29,7 @@ CFG=_tkinter - Win32 Alpha Debug
 # PROP Scc_ProjName "_tkinter"
 # PROP Scc_LocalPath "..\..\.."
 
-!IF  "$(CFG)" == "_tkinter - Win32 x86 Release"
+!IF  "$(CFG)" == "_tkinter - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -60,7 +60,7 @@ LINK32=link.exe
 # ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib tcl80.lib tk80.lib /nologo /base:"0x1e190000" /subsystem:windows /dll /debug /machine:I386 /out:"./_tkinter.pyd" /libpath:"C:\Program Files\Tcl\lib" /export:init_tkinter
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "_tkinter - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "_tkinter - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -159,17 +159,17 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "_tkinter - Win32 x86 Release"
-# Name "_tkinter - Win32 x86 Debug"
+# Name "_tkinter - Win32 Release"
+# Name "_tkinter - Win32 Debug"
 # Name "_tkinter - Win32 Alpha Debug"
 # Name "_tkinter - Win32 Alpha Release"
 # Begin Source File
 
 SOURCE=..\Modules\_tkinter.c
 
-!IF  "$(CFG)" == "_tkinter - Win32 x86 Release"
+!IF  "$(CFG)" == "_tkinter - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "_tkinter - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "_tkinter - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "_tkinter - Win32 Alpha Debug"
 
@@ -182,9 +182,9 @@ SOURCE=..\Modules\_tkinter.c
 
 SOURCE=..\Modules\tkappinit.c
 
-!IF  "$(CFG)" == "_tkinter - Win32 x86 Release"
+!IF  "$(CFG)" == "_tkinter - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "_tkinter - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "_tkinter - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "_tkinter - Win32 Alpha Debug"
 

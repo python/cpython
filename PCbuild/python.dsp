@@ -18,8 +18,8 @@ CFG=python - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "python - Win32 x86 Release" (based on "Win32 (x86) Console Application")
-!MESSAGE "python - Win32 x86 Debug" (based on "Win32 (x86) Console Application")
+!MESSAGE "python - Win32 Release" (based on "Win32 (x86) Console Application")
+!MESSAGE "python - Win32 Debug" (based on "Win32 (x86) Console Application")
 !MESSAGE "python - Win32 Alpha Debug" (based on "Win32 (ALPHA) Console Application")
 !MESSAGE "python - Win32 Alpha Release" (based on "Win32 (ALPHA) Console Application")
 !MESSAGE 
@@ -29,7 +29,7 @@ CFG=python - Win32 Alpha Debug
 # PROP Scc_ProjName "python"
 # PROP Scc_LocalPath ".."
 
-!IF  "$(CFG)" == "python - Win32 x86 Release"
+!IF  "$(CFG)" == "python - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -55,7 +55,7 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /libpath:"Release"
 
-!ELSEIF  "$(CFG)" == "python - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -139,8 +139,8 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "python - Win32 x86 Release"
-# Name "python - Win32 x86 Debug"
+# Name "python - Win32 Release"
+# Name "python - Win32 Debug"
 # Name "python - Win32 Alpha Debug"
 # Name "python - Win32 Alpha Release"
 # Begin Source File
@@ -151,9 +151,9 @@ SOURCE=..\PC\pycon.ico
 
 SOURCE=..\Modules\python.c
 
-!IF  "$(CFG)" == "python - Win32 x86 Release"
+!IF  "$(CFG)" == "python - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python - Win32 Alpha Debug"
 

@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=zlib - Win32 x86 Debug
+CFG=zlib - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,12 +13,12 @@ CFG=zlib - Win32 x86 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "zlib.mak" CFG="zlib - Win32 x86 Debug"
+!MESSAGE NMAKE /f "zlib.mak" CFG="zlib - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "zlib - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "zlib - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "zlib - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "zlib - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -29,7 +29,7 @@ CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "zlib - Win32 x86 Release"
+!IF  "$(CFG)" == "zlib - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -57,7 +57,7 @@ LINK32=link.exe
 # ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\..\zlib113dll\static32\zlibstat.lib /nologo /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /out:"./zlib.pyd" /libpath:"Release" /export:initzlib
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "zlib - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "zlib - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -89,8 +89,8 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "zlib - Win32 x86 Release"
-# Name "zlib - Win32 x86 Debug"
+# Name "zlib - Win32 Release"
+# Name "zlib - Win32 Debug"
 # Begin Source File
 
 SOURCE=..\Modules\zlibmodule.c
