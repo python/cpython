@@ -291,9 +291,6 @@ header files were removed, in an attempt to create a more rational set
 of header files.  (Few of these ever need to be included explicitly;
 they are all included by Python.h.)
 
-Vladimir Marangozov redesigned more rational APIs for allocating
-memory.  See pymem.h.
-
 Trent Mick ensured portability to 64-bit platforms, under both Linux
 and Win64, especially for the new Intel Itanium processor.
 
