@@ -173,4 +173,6 @@ initxreadlines(void)
 {
 	XReadlinesObject_Type.ob_type = &PyType_Type;
 	Py_InitModule("xreadlines", xreadlines_functions);
+	PyErr_Warn(PyExc_DeprecationWarning,
+		   "xreadlines is deprecated; use 'for line in file'.");
 }

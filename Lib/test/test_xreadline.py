@@ -1,5 +1,8 @@
 from test.test_support import verbose
 
+import warnings
+warnings.filterwarnings('ignore', "xreadlines", DeprecationWarning)
+
 class XReader:
     def __init__(self):
         self.count = 5
