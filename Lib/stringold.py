@@ -242,7 +242,7 @@ def zfill(x, width):
 
 # Expand tabs in a string.
 # Doesn't take non-printing chars into account, but does understand \n.
-def expandtabs(s, tabsize):
+def expandtabs(s, tabsize=8):
 	res = line = ''
 	for c in s:
 		if c == '\t':
