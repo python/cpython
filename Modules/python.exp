@@ -22,16 +22,7 @@
 * are defined in the statically-bound modules and libraries.
 * =========================================================
 *
-PyAccess_AsValue
-PyAccess_Clone
-PyAccess_FromValue
-PyAccess_HasValue
-PyAccess_SetOwner
-PyAccess_SetValue
-PyAccess_Type
-PyAnyMapping_Type
-PyAnyNumber_Type
-PyAnySequence_Type
+PyAST_Type
 PyArg_GetChar
 PyArg_GetDoubleArray
 PyArg_GetFloat
@@ -46,6 +37,7 @@ PyArg_GetShortArraySize
 PyArg_GetString
 PyArg_Parse
 PyArg_ParseTuple
+PyArg_ParseTupleAndKeywords
 PyArgs_VaParse
 PyBuiltin_GetDict
 PyBuiltin_GetModule
@@ -207,6 +199,7 @@ PyMarshal_ReadObjectFromFile
 PyMarshal_ReadObjectFromString
 PyMarshal_WriteLongToFile
 PyMarshal_WriteObjectToFile
+PyMarshal_WriteObjectToString
 PyMember_Get
 PyMember_Set
 PyMethod_Class
@@ -255,6 +248,7 @@ PyObject_CallMethod
 PyObject_CallObject
 PyObject_Cmp
 PyObject_Compare
+PyObject_DelItem
 PyObject_GetAttr
 PyObject_GetAttrString
 PyObject_GetItem
@@ -288,6 +282,8 @@ PyRun_String
 PySequence_Check
 PySequence_Concat
 PySequence_Count
+PySequence_DelItem
+PySequence_DelSlice
 PySequence_GetItem
 PySequence_GetSlice
 PySequence_In
@@ -424,6 +420,7 @@ initimp
 initmath
 initmd5
 initoperator
+initparser
 initposix
 initpwd
 initregex
