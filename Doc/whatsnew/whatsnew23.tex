@@ -1,21 +1,115 @@
 \documentclass{howto}
-\title{What's New in Python 2.3}
 
-% We'll let Andrew claim ownership when he's ready.  ;-)
-%\author{A.M. Kuchling}
-%\authoraddress{\email{akuchlin@mems-exchange.org}}
+% $Id$
+
+\title{What's New in Python 2.3}
+\release{0.01}
+\author{A.M. Kuchling}
+\authoraddress{\email{akuchlin@mems-exchange.org}}
 
 \begin{document}
 \maketitle
 \tableofcontents
 
-\section{Introduction \label{intro}}
+%\section{Introduction \label{intro}}
+
+{\large This article is a draft, and is currently up to date for some
+random version of the CVS tree around March 26 2002.  Please send any
+additions, comments or errata to the author.}
+
+This article explains the new features in Python 2.3.  The tentative
+release date of Python 2.3 is currently scheduled for August 30 2002.
+
+This article doesn't attempt to provide a complete specification of
+the new features, but instead provides a convenient overview.  For
+full details, you should refer to the documentation for Python 2.3,
+such as the
+\citetitle[http://www.python.org/doc/2.3/lib/lib.html]{Python Library
+Reference} and the
+\citetitle[http://www.python.org/doc/2.3/ref/ref.html]{Python
+Reference Manual}.  If you want to understand the complete
+implementation and design rationale for a change, refer to the PEP for
+a particular new feature.
 
 
+%======================================================================
+\section{New and Improved Modules}
+
+arraymodule.c: - add Py_UNICODE arrays
+- support +=, *=
+
+Return enhanced tuples in grpmodule
+
+posixmodule: killpg, 
+
+Expat is now included with the Python source
+
+Readline: Add get_history_item, get_current_history_length, and
+redisplay functions.
+
+
+%======================================================================
+\section{Interpreter Changes and Fixes}
+
+XXX bug?  Change the version string from "2.2+" to "2.3a0".  disutils peels off
+the first 3 characters of this string in several places, so for as long
+as they remain "2.2" it confuses the heck out of attempts to build 2.3
+stuff using distutils.
+
+file object can now be subtyped (did this not work before?)
+
+yield is now always available
+
+This adds the module name and a dot in front of the type name in every
+type object initializer, except for built-in types (and those that
+already had this).  Note that it touches lots of Mac modules -- I have
+no way to test these but the changes look right.  Apologies if they're
+not.  This also touches the weakref docs, which contains a sample type
+object initializer.  It also touches the mmap test output, because the
+mmap type's repr is included in that output.  It touches object.h to
+put the correct description in a comment.
+
+File objects: Grow the string buffer at a mildly exponential rate for
+the getc version of get_line.  This makes test_bufio finish in 1.7
+seconds instead of 57 seconds on my machine (with Py_DEBUG defined).
+
+%======================================================================
+\section{Other Changes and Fixes}
+
+
+% ======================================================================
+\section{C Interface Changes}
+
+pymalloc is now enabled by default (also mention debug-mode pymalloc)
+
+Memory API reworking
+
+PyObject_DelItemString() added
+
+PyArg_NoArgs macro is now deprecated
+
+Ports:
+
+OS/2 EMX port
+
+MacOS: Weaklink most toolbox modules, improving backward
+compatibility. Modules will no longer fail to load if a single routine
+is missing on the curent OS version, in stead calling the missing
+routine will raise an exception.  Should finally fix 531398. 2.2.1
+candidate.  Also blacklisted some constants with definitions that
+were not Python-compatible.
+
+Checked in Sean Reifschneider's RPM spec file and patches.  Bugfix candidate.
 
 
 %======================================================================
 \section{Acknowledgements \label{acks}}
 
+The author would like to thank the following people for offering
+suggestions, corrections and assistance with various drafts of this
+article: Fred~L. Drake, Jr.
 
 \end{document}
+
+
+
