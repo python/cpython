@@ -148,7 +148,6 @@ static PyObject*
 set_history_length(PyObject *self, PyObject *args)
 {
     int length = history_length;
-    PyObject* ob;
     if (!PyArg_ParseTuple(args, "i:set_history_length", &length))
 	return NULL;
     history_length = length;
@@ -166,7 +165,6 @@ return the current history length value.\n\
 static PyObject*
 get_history_length(PyObject *self, PyObject *args)
 {
-	PyObject* ob;
 	if (!PyArg_ParseTuple(args, ":get_history_length"))
 		return NULL;
 	return Py_BuildValue("i", history_length);
