@@ -3,24 +3,44 @@
 __revision__ = "$Id$"
 
 import sys, os, string
+from types import IntType
 from distutils.core import Command
+from distutils.errors import DistutilsOptionError
 from distutils.dir_util import copy_tree
-from distutils.util import byte_compile
 
 class install_lib (Command):
 
     description = "install all Python modules (extensions and pure Python)"
 
+    # The byte-compilation options are a tad confusing.  Here are the
+    # possible scenarios:
+    #   1) no compilation at all (--no-compile --no-optimize)
+    #   2) compile .pyc only (--compile --no-optimize; default)
+    #   3) compile .pyc and "level 1" .pyo (--compile --optimize)
+    #   4) compile "level 1" .pyo only (--no-compile --optimize)
+    #   5) compile .pyc and "level 2" .pyo (--compile --optimize-more)
+    #   6) compile "level 2" .pyo only (--no-compile --optimize-more)
+    # 
+    # The UI for this is two option, 'compile' and 'optimize'.
+    # 'compile' is strictly boolean, and only decides whether to
+    # generate .pyc files.  'optimize' is three-way (0, 1, or 2), and
+    # decides both whether to generate .pyo files and what level of
+    # optimization to use.
+
     user_options = [
         ('install-dir=', 'd', "directory to install to"),
         ('build-dir=','b', "build directory (where to install from)"),
         ('force', 'f', "force installation (overwrite existing files)"),
-        ('compile', 'c', "compile .py to .pyc"),
-        ('optimize', 'o', "compile .py to .pyo (optimized)"),
+        ('compile', 'c', "compile .py to .pyc [default]"),
+        ('no-compile', None, "don't compile .py files"),
+        ('optimize=', 'O',
+         "also compile with optimization: -O1 for \"python -O\", "
+         "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
         ('skip-build', None, "skip the build steps"),
         ]
                
-    boolean_options = ['force', 'compile', 'optimize', 'skip-build']
+    boolean_options = ['force', 'compile', 'skip-build']
+    negative_opt = {'no-compile' : 'compile'}
 
 
     def initialize_options (self):
@@ -28,8 +48,8 @@ class install_lib (Command):
         self.install_dir = None
         self.build_dir = None
         self.force = 0
-        self.compile = 1
-        self.optimize = 1
+        self.compile = None
+        self.optimize = None
         self.skip_build = None
 
     def finalize_options (self):
@@ -41,10 +61,24 @@ class install_lib (Command):
                                    ('build_lib', 'build_dir'),
                                    ('install_lib', 'install_dir'),
                                    ('force', 'force'),
-                                   ('compile_py', 'compile'),
-                                   ('optimize_py', 'optimize'),
+                                   ('compile', 'compile'),
+                                   ('optimize', 'optimize'),
                                    ('skip_build', 'skip_build'),
                                   )
+
+        if self.compile is None:
+            self.compile = 1
+        if self.optimize is None:
+            self.optimize = 0
+
+        print "install_lib: compile=%s, optimize=%s" % \
+              (`self.compile`, `self.optimize`)
+        if type(self.optimize) is not IntType:
+            try:
+                self.optimize = int(self.optimize)
+                assert 0 <= self.optimize <= 2
+            except (ValueError, AssertionError):
+                raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 
     def run (self):
 
@@ -58,7 +92,7 @@ class install_lib (Command):
 
         # (Optionally) compile .py to .pyc
         if outfiles is not None and self.distribution.has_pure_modules():
-            self.bytecompile(outfiles)
+            self.byte_compile(outfiles)
 
     # run ()
 
@@ -82,10 +116,25 @@ class install_lib (Command):
             return
         return outfiles
 
-    def bytecompile (self, files):
-        byte_compile(files,
-                     force=self.force,
-                     verbose=self.verbose, dry_run=self.dry_run)
+    def byte_compile (self, files):
+        from distutils.util import byte_compile
+
+        # Get the "--root" directory supplied to the "install" command,
+        # and use it as a prefix to strip off the purported filename
+        # encoded in bytecode files.  This is far from complete, but it
+        # should at least generate usable bytecode in RPM distributions.
+        install_root = self.get_finalized_command('install').root
+
+        if self.compile:
+            byte_compile(files, optimize=0,
+                         force=self.force,
+                         prefix=install_root,
+                         verbose=self.verbose, dry_run=self.dry_run)
+        if self.optimize > 0:
+            byte_compile(files, optimize=self.optimize,
+                         force=self.force,
+                         prefix=install_root,
+                         verbose=self.verbose, dry_run=self.dry_run)
 
 
     # -- Utility methods -----------------------------------------------
@@ -111,8 +160,10 @@ class install_lib (Command):
     def _bytecode_filenames (self, py_filenames):
         bytecode_files = []
         for py_file in py_filenames:
-            bytecode = py_file + (__debug__ and "c" or "o")
-            bytecode_files.append(bytecode)
+            if self.compile:
+                bytecode_files.append(py_file + "c")
+            if self.optmize > 0:
+                bytecode_files.append(py_file + "o")
 
         return bytecode_files
         
