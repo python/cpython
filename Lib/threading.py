@@ -65,7 +65,7 @@ def RLock(*args, **kwargs):
     return apply(_RLock, args, kwargs)
 
 class _RLock(_Verbose):
-    
+
     def __init__(self, verbose=None):
         _Verbose.__init__(self, verbose)
         self.__block = _allocate_lock()
@@ -440,7 +440,7 @@ class Thread(_Verbose):
     def isAlive(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__started and not self.__stopped
-    
+
     def isDaemon(self):
         assert self.__initialized, "Thread.__init__() not called"
         return self.__daemonic
@@ -496,7 +496,7 @@ def _pickSomeNonDaemonThread():
 # when we exit (conform previous semantics).
 
 class _DummyThread(Thread):
-    
+
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"))
         self._Thread__started = 1

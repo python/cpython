@@ -26,10 +26,10 @@ def gettempdir():
     elif os.name == 'mac':
         import macfs, MACFS
         try:
-             refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk,
-                                              MACFS.kTemporaryFolderType, 1)
-             dirname = macfs.FSSpec((refnum, dirid, '')).as_pathname()
-             attempdirs.insert(0, dirname)
+            refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk,
+                                             MACFS.kTemporaryFolderType, 1)
+            dirname = macfs.FSSpec((refnum, dirid, '')).as_pathname()
+            attempdirs.insert(0, dirname)
         except macfs.error:
             pass
     for envname in 'TMPDIR', 'TEMP', 'TMP':
@@ -38,27 +38,27 @@ def gettempdir():
     testfile = gettempprefix() + 'test'
     for dir in attempdirs:
         try:
-           filename = os.path.join(dir, testfile)
-           if os.name == 'posix':
-               try:
-                   fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
-               except OSError:
-                   pass
-               else:
-                   fp = os.fdopen(fd, 'w')
-                   fp.write('blat')
-                   fp.close()
-                   os.unlink(filename)
-                   del fp, fd
-                   tempdir = dir
-                   break
-           else:
-               fp = open(filename, 'w')
-               fp.write('blat')
-               fp.close()
-               os.unlink(filename)
-               tempdir = dir
-               break
+            filename = os.path.join(dir, testfile)
+            if os.name == 'posix':
+                try:
+                    fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+                except OSError:
+                    pass
+                else:
+                    fp = os.fdopen(fd, 'w')
+                    fp.write('blat')
+                    fp.close()
+                    os.unlink(filename)
+                    del fp, fd
+                    tempdir = dir
+                    break
+            else:
+                fp = open(filename, 'w')
+                fp.write('blat')
+                fp.close()
+                os.unlink(filename)
+                tempdir = dir
+                break
         except IOError:
             pass
     if tempdir is None:
