@@ -1,47 +1,56 @@
 import dospath
-import os
+import test_support
+import unittest
 
-errors = 0
 
-def tester(fn, wantResult):
-    fn = fn.replace("\\", "\\\\")
-    gotResult = eval(fn)
-    if wantResult != gotResult:
-        print "error!"
-        print "evaluated: " + str(fn)
-        print "should be: " + str(wantResult)
-        print " returned: " + str(gotResult)
-        print ""
-        global errors
-        errors = errors + 1
+class DOSPathTestCase(unittest.TestCase):
 
-tester('dospath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
-tester('dospath.splitdrive("c:/foo/bar")', ('c:', '/foo/bar'))
+    def test_abspath(self):
+        self.assert_(dospath.abspath("C:\\") == "C:\\")
 
-tester('dospath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
-tester('dospath.split("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint\\foo', 'bar'))
+    def test_isabs(self):
+        isabs = dospath.isabs
+        self.assert_(isabs("c:\\"))
+        self.assert_(isabs("\\\\conky\\mountpoint\\"))
+        self.assert_(isabs("\\foo"))
+        self.assert_(isabs("\\foo\\bar"))
+        self.failIf(isabs("foo"))
+        self.failIf(isabs("foo\\"))
+        self.failIf(isabs("foo\\bar"))
+        self.failIf(isabs("c:foo"))
+        self.failIf(isabs("c:foo\\"))
+        self.failIf(isabs("c:foo\\bar"))
 
-tester('dospath.split("c:\\")', ('c:\\', ''))
-tester('dospath.split("\\\\conky\\mountpoint\\")', ('\\\\conky\\mountpoint', ''))
+    def test_commonprefix(self):
+        commonprefix = dospath.commonprefix
+        self.assert_(commonprefix(["/home/swenson/spam", "/home/swen/spam"])
+                     == "/home/swen")
+        self.assert_(commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])
+                     == "\\home\\swen\\")
+        self.assert_(commonprefix(["/home/swen/spam", "/home/swen/spam"])
+                     == "/home/swen/spam")
 
-tester('dospath.split("c:/")', ('c:/', ''))
-tester('dospath.split("//conky/mountpoint/")', ('//conky/mountpoint', ''))
+    def test_split(self):
+        split = dospath.split
+        self.assertEquals(split("c:\\foo\\bar"),
+                          ('c:\\foo', 'bar'))
+        self.assertEquals(split("\\\\conky\\mountpoint\\foo\\bar"),
+                          ('\\\\conky\\mountpoint\\foo', 'bar'))
 
-tester('dospath.isabs("c:\\")', 1)
-tester('dospath.isabs("\\\\conky\\mountpoint\\")', 1)
-tester('dospath.isabs("\\foo")', 1)
-tester('dospath.isabs("\\foo\\bar")', 1)
+        self.assertEquals(split("c:\\"), ('c:\\', ''))
+        self.assertEquals(split("\\\\conky\\mountpoint\\"),
+                          ('\\\\conky\\mountpoint', ''))
 
-tester('dospath.abspath("C:\\")', "C:\\")
+        self.assertEquals(split("c:/"), ('c:/', ''))
+        self.assertEquals(split("//conky/mountpoint/"),
+                          ('//conky/mountpoint', ''))
 
-tester('dospath.commonprefix(["/home/swenson/spam", "/home/swen/spam"])',
-       "/home/swen")
-tester('dospath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
-       "\\home\\swen\\")
-tester('dospath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
-       "/home/swen/spam")
+    def test_splitdrive(self):
+        splitdrive = dospath.splitdrive
+        self.assertEquals(splitdrive("c:\\foo\\bar"), ('c:', '\\foo\\bar'))
+        self.assertEquals(splitdrive("c:/foo/bar"), ('c:', '/foo/bar'))
+        self.assertEquals(splitdrive("foo\\bar"), ('', 'foo\\bar'))
+        self.assertEquals(splitdrive("c:"), ('c:', ''))
 
-if errors:
-    print str(errors) + " errors."
-else:
-    print "No errors.  Thank your lucky stars."
+
+test_support.run_unittest(DOSPathTestCase)
