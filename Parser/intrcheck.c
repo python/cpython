@@ -10,18 +10,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Check for interrupts */
 
-#include "config.h"
-
-/* config.h may or may not define DL_IMPORT */
-#ifndef DL_IMPORT	/* declarations for DLL import/export */
-#define DL_IMPORT(RTYPE) RTYPE
-#endif
-
-#include "intrcheck.h"
-
-/* Copied here from ceval.h -- can't include that file. */
-int Py_AddPendingCall(int (*func)(void *), void *arg);
-
+#include "Python.h"
 
 #ifdef QUICKWIN
 
