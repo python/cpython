@@ -44,6 +44,9 @@ Extension modules
 Library
 -------
 
+- nntplib has two new methods: description and descriptions. They
+  use a more RFC-compliant way of getting a newsgroup description.
+
 - Bug #993394.  Fix a possible red herring of KeyError in 'threading' being
   raised during interpreter shutdown from a registered function with atexit
   when dummy_threading is being used.
