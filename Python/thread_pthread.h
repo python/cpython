@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Posix threads interface */
 
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 
 
@@ -113,17 +114,36 @@ typedef struct {
 	pthread_mutex_t  mut;
 } pthread_lock;
 
-#define CHECK_STATUS(name)  if (status < 0) { perror(name); error=1; }
+#define CHECK_STATUS(name)  if (status != 0) { perror(name); error = 1; }
 
 /*
  * Initialization.
  */
+
+#ifdef _HAVE_BSDI
+static void _noop()
+{
+}
+
+static void _init_thread _P0()
+{
+	/* DO AN INIT BY STARTING THE THREAD */
+	static int dummy = 0;
+	pthread_t thread1;
+	pthread_create(&thread1, NULL, (void *) _noop, &dummy);
+	pthread_join(thread1, NULL);
+}
+
+#else /* !_HAVE_BSDI */
+
 static void _init_thread _P0()
 {
 #if defined(_AIX) && defined(__GNUC__)
 	pthread_init();
 #endif
 }
+
+#endif /* !_HAVE_BSDI */
 
 /*
  * Thread support.
@@ -234,6 +254,7 @@ type_lock allocate_lock _P0()
 		init_thread();
 
 	lock = (pthread_lock *) malloc(sizeof(pthread_lock));
+	memset((void *)lock, '\0', sizeof(pthread_lock));
 	if (lock) {
 		lock->locked = 0;
 
