@@ -162,8 +162,9 @@ def get_arg_text(ob):
             except:
                 pass
         # See if we can use the docstring
-        doc = getattr(ob, "__doc__", "").lstrip()
+        doc = getattr(ob, "__doc__", "")
         if doc:
+            doc = doc.lstrip()
             pos = doc.find("\n")
             if pos < 0 or pos > 70:
                 pos = 70
