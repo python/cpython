@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+Copyright 1991-1997 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
 
                         All Rights Reserved
@@ -35,6 +35,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 
+#ifdef USE_GUSI
+#include <sys/types.h>
+#endif /* USE_GUSI */
 #include <stat.h>
 #include "rename2.h"
 

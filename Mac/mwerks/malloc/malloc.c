@@ -1,5 +1,5 @@
 /*
- * Attempt at a memory allocator for the Mac, Jack Jansen, CWI, 1995.
+ * Attempt at a memory allocator for the Mac, Jack Jansen, CWI, 1995-1997.
  *
  * Code adapted from BSD malloc, which is:
  *
