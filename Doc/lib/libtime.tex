@@ -288,14 +288,17 @@ value is a \class{struct_time} as returned by \function{gmtime()} or
 \function{localtime()}.  The \var{format} parameter uses the same
 directives as those used by \function{strftime()}; it defaults to
 \code{"\%a \%b \%d \%H:\%M:\%S \%Y"} which matches the formatting
-returned by \function{ctime()}.  The same platform caveats apply; see
-the local \UNIX{} documentation for restrictions or additional
-supported directives.  If \var{string} cannot be parsed according to
-\var{format}, \exception{ValueError} is raised.  Values which are not
-provided as part of the input string are filled in with default
-values; the specific values are platform-dependent as the XPG standard
-does not provide sufficient information to constrain the result.
-\end{funcdesc}
+returned by \function{ctime()}.  If \var{string} cannot be parsed
+according to \var{format}, \exception{ValueError} is raised.  If the
+string to be parsed has excess data after parsing,
+\exception{ValueError} is raised.  The default values used to fill in
+any missing data is \code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)} .
+
+Support for the \code{\%Z} directive is based on the values contained in
+\code{tzname} and whether \code{daylight} is true.  Because of this
+it is platform-specifc sans recognition for UTC and GMT which are
+always known (and are considered to be non-daylight savings
+timezones).
 
 \begin{datadesc}{struct_time}
 The type of the time value sequence returned by \function{gmtime()},
