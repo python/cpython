@@ -108,11 +108,11 @@ class Application:
 		self.quitting = 0
 		self.needmenubarredraw = 0
 		self._windows = {}
+		self._helpmenu = None
 		if nomenubar:
 			self.menubar = None
 		else:
 			self.makemenubar()
-		self._helpmenu = None
 			
 	def __del__(self):
 		if self._doing_asyncevents:
