@@ -1,5 +1,4 @@
 import time
-import string
 import re
 import keyword
 from Tkinter import *
@@ -14,7 +13,7 @@ DEBUG = 0
 
 
 def any(name, list):
-    return "(?P<%s>" % name + string.join(list, "|") + ")"
+    return "(?P<%s>" % name + "|".join(list) + ")"
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
