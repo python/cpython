@@ -1,9 +1,9 @@
-"Read and write ZIP files"
+"Read and write ZIP files."
 # Written by James C. Ahlstrom jim@interet.com
 # All rights transferred to CNRI pursuant to the Python contribution agreement
 
 import struct, os, time
-import binascii, py_compile
+import binascii
 
 try:
     import zlib	# We may need its compression method
@@ -27,10 +27,12 @@ stringCentralDir = "PK\001\002"   # magic number for central directory
 structFileHeader = "<4s2B4H3l2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = "PK\003\004"   # magic number for file header
 
+
 def is_zipfile(filename):
     """Quickly see if file is a ZIP file by checking the magic number.
 
-Will not accept a ZIP archive with an ending comment."""
+    Will not accept a ZIP archive with an ending comment.
+    """
     try:
         fpin = open(filename, "rb")
         fpin.seek(-22, 2)		# Seek to end-of-file record
@@ -41,8 +43,10 @@ Will not accept a ZIP archive with an ending comment."""
     except:
         pass
 
+
 class ZipInfo:
-    "Class with attributes describing each file in the ZIP archive"
+    """Class with attributes describing each file in the ZIP archive."""
+
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
         self.filename = filename	# Name of the file in the archive
         self.date_time = date_time	# year, month, day, hour, min, sec
@@ -66,7 +70,7 @@ class ZipInfo:
         # file_size		Size of the uncompressed file
 
     def FileHeader(self):
-        'Return the per-file header as a string'
+        """Return the per-file header as a string."""
         dt = self.date_time
         dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
         dostime = dt[3] << 11 | dt[4] << 5 | dt[5] / 2
@@ -86,9 +90,10 @@ class ZipInfo:
 
 
 class ZipFile:
-    "Class with methods to open, read, write, close, list zip files"
+    """Class with methods to open, read, write, close, list zip files."""
+
     def __init__(self, filename, mode="r", compression=ZIP_STORED):
-        'Open the ZIP file with mode read "r", write "w" or append "a".'
+        """Open the ZIP file with mode read "r", write "w" or append "a"."""
         if compression == ZIP_STORED:
             pass
         elif compression == ZIP_DEFLATED:
@@ -123,7 +128,7 @@ class ZipFile:
             raise RuntimeError, 'Mode must be "r", "w" or "a"'
 
     def _GetContents(self):
-        "Read in the table of contents for the zip file"
+        """Read in the table of contents for the ZIP file."""
         fp = self.fp
         fp.seek(-22, 2)		# Start of end-of-archive record
         filesize = fp.tell() + 22	# Get file size
@@ -184,25 +189,26 @@ class ZipFile:
                           data.filename, fname)
 
     def namelist(self):
-        "Return a list of file names in the archive"
+        """Return a list of file names in the archive."""
         l = []
         for data in self.filelist:
             l.append(data.filename)
         return l
 
     def infolist(self):
-        "Return a list of class ZipInfo instances for files in the archive"
+        """Return a list of class ZipInfo instances for files in the
+        archive."""
         return self.filelist
 
     def printdir(self):
-        "Print a table of contents for the zip file"
+        """Print a table of contents for the zip file."""
         print "%-46s %19s %12s" % ("File Name", "Modified    ", "Size")
         for zinfo in self.filelist:
             date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time
             print "%-46s %s %12d" % (zinfo.filename, date, zinfo.file_size)
 
     def testzip(self):
-        "Read all the files and check the CRC"
+        """Read all the files and check the CRC."""
         for zinfo in self.filelist:
             try:
                 self.read(zinfo.filename)	# Check CRC-32
@@ -210,11 +216,11 @@ class ZipFile:
                 return zinfo.filename
 
     def getinfo(self, name):
-        'Return the instance of ZipInfo given "name"'
+        """Return the instance of ZipInfo given 'name'."""
         return self.NameToInfo[name]
 
     def read(self, name):
-        "Return file bytes (as a string) for name"
+        """Return file bytes (as a string) for name."""
         if self.mode not in ("r", "a"):
             raise RuntimeError, 'read() requires mode "r" or "a"'
         if not self.fp:
@@ -248,7 +254,7 @@ class ZipFile:
         return bytes
 
     def _writecheck(self, zinfo):
-        'Check for errors before writing a file to the archive'
+        """Check for errors before writing a file to the archive."""
         if self.NameToInfo.has_key(zinfo.filename):
             if self.debug:	# Warning for duplicate names
                 print "Duplicate name:", zinfo.filename
@@ -265,7 +271,8 @@ class ZipFile:
                   "That compression method is not supported"
 
     def write(self, filename, arcname=None, compress_type=None):
-        'Put the bytes from filename into the archive under the name arcname.'
+        """Put the bytes from filename into the archive under the name
+        arcname."""
         st = os.stat(filename)
         mtime = time.localtime(st[8])
         date_time = mtime[0:6]
@@ -320,7 +327,8 @@ class ZipFile:
         self.NameToInfo[zinfo.filename] = zinfo
 
     def writestr(self, zinfo, bytes):
-        'Write a file into the archive.  The contents is the string "bytes"'
+        """Write a file into the archive.  The contents is the string
+        'bytes'."""
         self._writecheck(zinfo)
         zinfo.file_size = len(bytes)		# Uncompressed size
         zinfo.CRC = binascii.crc32(bytes)	# CRC-32 checksum
@@ -343,13 +351,14 @@ class ZipFile:
         self.NameToInfo[zinfo.filename] = zinfo
 
     def __del__(self):
-        'Call the "close()" method in case the user forgot'
+        """Call the "close()" method in case the user forgot."""
         if self.fp:
             self.fp.close()
             self.fp = None
 
     def close(self):
-        'Close the file, and for mode "w" and "a" write the ending records'
+        """Close the file, and for mode "w" and "a" write the ending
+        records."""
         if self.mode in ("w", "a"):		# write ending records
             count = 0
             pos1 = self.fp.tell()
@@ -380,16 +389,20 @@ class ZipFile:
 
 
 class PyZipFile(ZipFile):
-    "Class to create ZIP archives with Python library files and packages"
+    """Class to create ZIP archives with Python library files and packages."""
+
     def writepy(self, pathname, basename = ""):
         """Add all files from "pathname" to the ZIP archive.
 
-If pathname is a package directory, search the directory and all
-package subdirectories recursively for all *.py and enter the modules into
-the archive.  If pathname is a plain directory, listdir *.py and enter all
-modules.  Else, pathname must be a Python *.py file and the module will be
-put into the archive.  Added modules are always module.pyo or module.pyc.
-This method will compile the module.py into module.pyc if necessary."""
+        If pathname is a package directory, search the directory and
+        all package subdirectories recursively for all *.py and enter
+        the modules into the archive.  If pathname is a plain
+        directory, listdir *.py and enter all modules.  Else, pathname
+        must be a Python *.py file and the module will be put into the
+        archive.  Added modules are always module.pyo or module.pyc.
+        This method will compile the module.py into module.pyc if
+        necessary.
+        """
         dir, name = os.path.split(pathname)
         if os.path.isdir(pathname):
             initname = os.path.join(pathname, "__init__.py")
@@ -446,9 +459,10 @@ This method will compile the module.py into module.pyc if necessary."""
     def _get_codename(self, pathname, basename):
         """Return (filename, archivename) for the path.
 
-Given a module name path, return the correct file path and archive name,
-compiling if necessary.  For example, given /python/lib/string,
-return (/python/lib/string.pyc, string)"""
+        Given a module name path, return the correct file path and
+        archive name, compiling if necessary.  For example, given
+        /python/lib/string, return (/python/lib/string.pyc, string).
+        """
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
         file_pyo = pathname + ".pyo"
@@ -456,7 +470,8 @@ return (/python/lib/string.pyc, string)"""
                             os.stat(file_pyo)[8] >= os.stat(file_py)[8]:
             fname = file_pyo	# Use .pyo file
         elif not os.path.isfile(file_pyc) or \
-                            os.stat(file_pyc)[8] < os.stat(file_py)[8]:
+             os.stat(file_pyc)[8] < os.stat(file_py)[8]:
+            import py_compile
             if self.debug:
                 print "Compiling", file_py
             py_compile.compile(file_py, file_pyc)
@@ -467,4 +482,3 @@ return (/python/lib/string.pyc, string)"""
         if basename:
             archivename = "%s/%s" % (basename, archivename)
         return (fname, archivename)
-
