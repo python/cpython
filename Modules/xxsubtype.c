@@ -7,6 +7,15 @@ static char xxsubtype__doc__[] =
 "If you don't care about the examples, and don't intend to run the Python\n"
 "test suite, you can recompile Python without Modules/xxsubtype.c.";
 
+/* We link this module statically for convenience.  If compiled as a shared
+   library instead, some compilers don't allow addresses of Python objects
+   defined in other libraries to be used in static initializers here.  The
+   DEFERRED_ADDRESS macro is used to tag the slots where such addresses
+   appear; the module init function must fill in the tagged slots at runtime.
+   The argument is for documentation -- the macro ignores it.
+*/
+#define DEFERRED_ADDRESS(ADDR) 0
+
 /* spamlist -- a list subtype */
 
 typedef struct {
@@ -66,7 +75,7 @@ static PyGetSetDef spamlist_getsets[] = {
 };
 
 static PyTypeObject spamlist_type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
 	0,
 	"xxsubtype.spamlist",
 	sizeof(spamlistobject),
@@ -97,7 +106,7 @@ static PyTypeObject spamlist_type = {
 	spamlist_methods,			/* tp_methods */
 	0,					/* tp_members */
 	spamlist_getsets,			/* tp_getset */
-	&PyList_Type,				/* tp_base */
+	DEFERRED_ADDRESS(&PyList_Type),		/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
@@ -160,7 +169,7 @@ static PyMemberDef spamdict_members[] = {
 };
 
 static PyTypeObject spamdict_type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
 	0,
 	"xxsubtype.spamdict",
 	sizeof(spamdictobject),
@@ -191,7 +200,7 @@ static PyTypeObject spamdict_type = {
 	spamdict_methods,			/* tp_methods */
 	spamdict_members,			/* tp_members */
 	0,					/* tp_getset */
-	&PyDict_Type,				/* tp_base */
+	DEFERRED_ADDRESS(&PyDict_Type),		/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
@@ -230,6 +239,14 @@ DL_EXPORT(void)
 initxxsubtype(void)
 {
 	PyObject *m, *d;
+
+	/* Fill in the deferred data addresses.  This must be done before
+	   PyType_Ready() is called. */
+	spamdict_type.ob_type = &PyType_Type;
+	spamdict_type.tp_base = &PyDict_Type;
+
+	spamlist_type.ob_type = &PyType_Type;
+	spamlist_type.tp_base = &PyList_Type;
 
 	m = Py_InitModule3("xxsubtype",
 			   xxsubtype_functions,
