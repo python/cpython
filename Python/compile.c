@@ -542,6 +542,54 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 	return 1;
 }
 
+static int
+fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
+{
+	PyObject *newconst, *v;
+	int len_consts, opcode;
+
+	/* Pre-conditions */
+	assert(PyList_CheckExact(consts));
+	assert(codestr[0] == LOAD_CONST);
+
+	/* Create new constant */
+	v = PyList_GET_ITEM(consts, GETARG(codestr, 0));
+	opcode = codestr[3];
+	switch (opcode) {
+	case UNARY_NEGATIVE:
+		newconst = PyNumber_Negative(v);
+		break;
+	case UNARY_CONVERT:
+		newconst = PyObject_Repr(v);
+		break;
+	case UNARY_INVERT:
+		newconst = PyNumber_Invert(v);
+		break;
+	default:
+		/* Called with an unknown opcode */
+		assert(0);
+		return 0;
+	}
+	if (newconst == NULL) {
+		PyErr_Clear();
+		return 0;
+	}
+
+	/* Append folded constant into consts table */
+	len_consts = PyList_GET_SIZE(consts);
+	if (PyList_Append(consts, newconst)) {
+		Py_DECREF(newconst);
+		return 0;
+	}
+	Py_DECREF(newconst);
+
+	/* Write NOP LOAD_CONST newconst */
+	codestr[0] = NOP;
+	codestr[1] = LOAD_CONST;
+	SETARG(codestr, 1, len_consts);
+	return 1;
+}
+
 static unsigned int *
 markblocks(unsigned char *code, int len)
 {
@@ -765,6 +813,20 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			if (lastlc >= 2  &&
 			    ISBASICBLOCK(blocks, i-6, 7)  &&
 			    fold_binops_on_constants(&codestr[i-6], consts)) {
+				i -= 2;
+				assert(codestr[i] == LOAD_CONST);
+				cumlc = 1;
+			}
+			break;
+
+		/* Fold unary ops on constants.
+		   LOAD_CONST c1  UNARY_OP -->  LOAD_CONST unary_op(c) */
+		case UNARY_NEGATIVE:
+		case UNARY_CONVERT:
+		case UNARY_INVERT:
+			if (lastlc >= 1  &&
+			    ISBASICBLOCK(blocks, i-3, 4)  &&
+			    fold_unaryops_on_constants(&codestr[i-3], consts))  {
 				i -= 2;
 				assert(codestr[i] == LOAD_CONST);
 				cumlc = 1;
