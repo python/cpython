@@ -89,7 +89,7 @@ class Pickler:
         self.write(STOP)
 
     def dump_special(self, callable, args, state = None):
-	if (type(args) is not TupleType):
+	if type(args) is not TupleType and args is not None:
             raise PicklingError, "Second argument to dump_special " \
                                  "must be a tuple"
 
@@ -162,6 +162,10 @@ class Pickler:
             else:
                 tup = reduce(object)
 
+	    if type(tup) is StringType:
+		self.save_global(object, tup)
+		return
+
             if (type(tup) is not TupleType):
                 raise PicklingError, "Value returned by %s must be a " \
                                      "tuple" % reduce
@@ -180,7 +184,7 @@ class Pickler:
             else:
                 state = None
 
-            if (type(arg_tup) is not TupleType):
+            if type(arg_tup) is not TupleType and arg_tup is not None:
                 raise PicklingError, "Second element of tuple returned " \
                                      "by %s must be a tuple" % reduce
 
@@ -648,8 +652,8 @@ class Unpickler:
         arg_tup  = stack[-1]
 	del stack[-2:]
 
-	if (type(callable) is not ClassType):
-	    if (not safe_constructors.has_key(callable)):
+	if type(callable) is not ClassType:
+	    if not safe_constructors.has_key(callable):
 		try:
                     safe = callable.__safe_for_unpickling__
                 except AttributeError:
@@ -659,7 +663,10 @@ class Unpickler:
                    raise UnpicklingError, "%s is not safe for " \
                                           "unpickling" % callable
 
-        value = apply(callable, arg_tup)
+	if arg_tup is None:
+	    value = callable.__basicnew__()
+	else:
+	    value = apply(callable, arg_tup)
         self.append(value)
     dispatch[REDUCE] = load_reduce
 
