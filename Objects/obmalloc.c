@@ -685,7 +685,11 @@ redirect:
 	 * last chance to serve the request) or when the max memory limit
 	 * has been reached.
 	 */
-	return (void *)malloc(nbytes ? nbytes : 1);
+#ifdef MALLOC_ZERO_RETURNS_NULL
+	if (nbytes == 0)
+		nbytes = 1;
+#endif
+	return (void *)malloc(nbytes);
 }
 
 /* free */
@@ -803,7 +807,10 @@ PyObject_Realloc(void *p, size_t nbytes)
 	}
 	/* We're not managing this block. */
 	if (nbytes <= SMALL_REQUEST_THRESHOLD) {
-		/* Take over this block. */
+		/* Take over this block -- ask for at least one byte so
+		 * we really do take it over (PyObject_Malloc(0) goes to
+		 * the system malloc).
+		 */
 		bp = PyObject_Malloc(nbytes ? nbytes : 1);
 		if (bp != NULL) {
 			memcpy(bp, p, nbytes);
