@@ -497,10 +497,12 @@ class install (Command):
                          "writing list of installed files to '%s'" %
                          self.record)
 
-        normalized_path = map(os.path.normpath, sys.path)
+        sys_path = map(os.path.normpath, sys.path)
+	sys_path = map(os.path.normcase, sys_path)
+        install_lib = os.path.normcase(os.path.normpath(self.install_lib))
         if (self.warn_dir and
             not (self.path_file and self.install_path_file) and
-            os.path.normpath(self.install_lib) not in normalized_path):
+            install_lib not in sys_path):
             self.warn(("modules installed to '%s', which is not in " +
                        "Python's module search path (sys.path) -- " +
                        "you'll have to change the search path yourself") %
