@@ -93,7 +93,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.2.1"
+#define PY_BSDDB_VERSION "4.2.2"
 static char *rcs_id = "$Id$";
 
 
@@ -2981,6 +2981,39 @@ DBC_get_both(DBCursorObject* self, PyObject* args)
                 self->mydb->moduleFlags.getReturnsNone);
 }
 
+/* Return size of entry */
+static PyObject*
+DBC_get_current_size(DBCursorObject* self, PyObject* args)
+{
+    int err, flags=DB_CURRENT;
+    PyObject* retval = NULL;
+    DBT key, data;
+
+    if (!PyArg_ParseTuple(args, ":get_current_size"))
+        return NULL;
+    CHECK_CURSOR_NOT_CLOSED(self);
+    CLEAR_DBT(key);
+    CLEAR_DBT(data);
+
+    /* We don't allocate any memory, forcing a ENOMEM error and thus
+       getting the record size. */
+    data.flags = DB_DBT_USERMEM;
+    data.ulen = 0;
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->dbc->c_get(self->dbc, &key, &data, flags);
+    MYDB_END_ALLOW_THREADS;
+    if (err == ENOMEM || !err) {
+        /* ENOMEM means positive size, !err means zero length value */
+        retval = PyInt_FromLong((long)data.size);
+        err = 0;
+    }
+
+    FREE_DBT(key);
+    FREE_DBT(data);
+    RETURN_IF_ERR();
+    return retval;
+}
+
 static PyObject*
 DBC_set_both(DBCursorObject* self, PyObject* args)
 {
@@ -4079,6 +4112,7 @@ static PyMethodDef DBCursor_methods[] = {
     {"set",             (PyCFunction)DBC_set,           METH_VARARGS|METH_KEYWORDS},
     {"set_range",       (PyCFunction)DBC_set_range,     METH_VARARGS|METH_KEYWORDS},
     {"get_both",        (PyCFunction)DBC_get_both,      METH_VARARGS},
+    {"get_current_size",(PyCFunction)DBC_get_current_size, METH_VARARGS},
     {"set_both",        (PyCFunction)DBC_set_both,      METH_VARARGS},
     {"set_recno",       (PyCFunction)DBC_set_recno,     METH_VARARGS|METH_KEYWORDS},
     {"consume",         (PyCFunction)DBC_consume,       METH_VARARGS|METH_KEYWORDS},
