@@ -619,7 +619,7 @@ PyObject *PyString_DecodeEscape(const char *s,
 		case 'U':
 		case 'N':
 			if (unicode) {
-				com_error(com, PyExc_ValueError,
+				PyErr_SetString(PyExc_ValueError,
 					  "Unicode escapes not legal "
 					  "when Unicode disabled");
 				goto failed;
