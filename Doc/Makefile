@@ -51,7 +51,7 @@ BIBTEX=		bibtex
 DVIPS=		dvips -f -N0
 MAKEINDEX=	makeindex
 L2H=		latex2html
-L2HARGS=	-address $$USER@`domainname`
+L2HARGS=	-address $$LOGNAME@`domainname`
 
 # Install destination -- not used now but might be useful some time...
 DESTDIR=	/usr/local
