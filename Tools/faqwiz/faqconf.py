@@ -70,7 +70,7 @@ NEWFILENAME = "faq%02d.%03d.htp"
 
 try:
     from faqcust import *
-except ImporError:
+except ImportError:
     pass
 
 # Calculated parameter names
@@ -82,7 +82,7 @@ FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
 
 try:
     from faqcust import *
-except ImporError:
+except ImportError:
     pass
 
 # ----------------------------------------------------------------------
