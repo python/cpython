@@ -1722,6 +1722,52 @@ posix_getpid(self, args)
 }
 
 
+#ifdef HAVE_GETGROUPS
+static char posix_getgroups__doc__[] = "\
+getgroups() -> list of group IDs\n\
+Return list of supplemental group IDs for the process.";
+
+static PyObject *
+posix_getgroups(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, ":getgroups")) {
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+        /* defined to be 16 on Solaris7, so this should be a small number */
+#define MAX_GROUPS 64
+#endif
+        gid_t grouplist[MAX_GROUPS];
+        int n;
+
+        n = getgroups(MAX_GROUPS, grouplist);
+        if (n < 0)
+            posix_error();
+        else {
+            result = PyList_New(n);
+            if (result != NULL) {
+                PyObject *o;
+                int i;
+                for (i = 0; i < n; ++i) {
+                    o = PyInt_FromLong((long)grouplist[i]);
+                    if (o == NULL) {
+                        Py_DECREF(result);
+                        result = NULL;
+                        break;
+                    }
+                    PyList_SET_ITEM(result, i, o);
+                }
+            }
+        }
+    }
+    return result;
+}
+#endif
+
 #ifdef HAVE_GETPGRP
 static char posix_getpgrp__doc__[] =
 "getpgrp() -> pgrp\n\
@@ -3293,6 +3339,804 @@ posix_tmpnam(self, args)
 #endif
 
 
+/* This is used for fpathconf(), pathconf(), confstr() and sysconf().
+ * It maps strings representing configuration variable names to
+ * integer values, allowing those functions to be called with the
+ * magic names instead of poluting the module's namespace with tons of
+ * rarely-used constants.
+ */
+struct constdef {
+    char *name;
+    long value;
+};
+
+static struct constdef posix_constants_pathconf[] = {
+#ifdef _PC_ASYNC_IO
+    {"PC_ASYNC_IO",	_PC_ASYNC_IO},
+#endif
+#ifdef _PC_CHOWN_RESTRICTED
+    {"PC_CHOWN_RESTRICTED",	_PC_CHOWN_RESTRICTED},
+#endif
+#ifdef _PC_FILESIZEBITS
+    {"PC_FILESIZEBITS",	_PC_FILESIZEBITS},
+#endif
+#ifdef _PC_LAST
+    {"PC_LAST",	_PC_LAST},
+#endif
+#ifdef _PC_LINK_MAX
+    {"PC_LINK_MAX",	_PC_LINK_MAX},
+#endif
+#ifdef _PC_MAX_CANON
+    {"PC_MAX_CANON",	_PC_MAX_CANON},
+#endif
+#ifdef _PC_MAX_INPUT
+    {"PC_MAX_INPUT",	_PC_MAX_INPUT},
+#endif
+#ifdef _PC_NAME_MAX
+    {"PC_NAME_MAX",	_PC_NAME_MAX},
+#endif
+#ifdef _PC_NO_TRUNC
+    {"PC_NO_TRUNC",	_PC_NO_TRUNC},
+#endif
+#ifdef _PC_PATH_MAX
+    {"PC_PATH_MAX",	_PC_PATH_MAX},
+#endif
+#ifdef _PC_PIPE_BUF
+    {"PC_PIPE_BUF",	_PC_PIPE_BUF},
+#endif
+#ifdef _PC_PRIO_IO
+    {"PC_PRIO_IO",	_PC_PRIO_IO},
+#endif
+#ifdef _PC_SOCK_MAXBUF
+    {"PC_SOCK_MAXBUF",	_PC_SOCK_MAXBUF},
+#endif
+#ifdef _PC_SYNC_IO
+    {"PC_SYNC_IO",	_PC_SYNC_IO},
+#endif
+#ifdef _PC_VDISABLE
+    {"PC_VDISABLE",	_PC_VDISABLE},
+#endif
+};
+
+
+static int
+conv_confname(arg, valuep, table, tablesize)
+     PyObject *arg;
+     int *valuep;
+     struct constdef *table;
+     size_t tablesize;
+{
+    if (PyInt_Check(arg)) {
+        *valuep = PyInt_AS_LONG(arg);
+        return 1;
+    }
+    if (PyString_Check(arg)) {
+        /* look up the value in the table using a binary search */
+        int lo = 0;
+        int hi = tablesize;
+        int cmp, mid;
+        char *confname = PyString_AS_STRING(arg);
+        printf("table: %d entries\n", tablesize);
+        while (lo < hi) {
+            mid = (lo + hi) / 2;
+            printf("%d confname='%s'; other='%s';\n",
+                   mid, confname, table[mid].name);
+            cmp = strcmp(confname, table[mid].name);
+            if (cmp < 0)
+                hi = mid;
+            else if (cmp > 0)
+                lo = mid + 1;
+            else {
+                *valuep = table[mid].value;
+                return 1;
+            }
+        }
+        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
+    }
+    else
+        PyErr_SetString(PyExc_TypeError,
+                        "configuration names must be strings or integers");
+    return 0;
+}
+
+
+#if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
+static int
+conv_path_confname(arg, valuep)
+     PyObject *arg;
+     int *valuep;
+{
+    return conv_confname(arg, valuep, posix_constants_pathconf,
+                         sizeof(posix_constants_pathconf)
+                           / sizeof(struct constdef));
+}
+#endif
+
+#ifdef HAVE_FPATHCONF
+static char posix_fpathconf__doc__[] = "\
+fpathconf(fd, name) -> integer\n\
+Return the configuration limit name for the file descriptor fd.\n\
+If there is no limit, return -1.";
+
+static PyObject *
+posix_fpathconf(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+    int name, fd;
+
+    if (PyArg_ParseTuple(args, "iO&:fpathconf", &fd, conv_confname, &name)) {
+        long limit;
+
+        errno = 0;
+        limit = fpathconf(fd, name);
+        if (limit == -1 && errno != 0)
+            posix_error();
+        else
+            result = PyInt_FromLong(limit);
+    }
+    return result;
+}
+#endif
+
+
+#ifdef HAVE_PATHCONF
+static char posix_pathconf__doc__[] = "\
+pathconf(path, name) -> integer\n\
+Return the configuration limit name for the file or directory path.\n\
+If there is no limit, return -1.";
+
+static PyObject *
+posix_pathconf(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+    int name;
+    char *path;
+
+    if (PyArg_ParseTuple(args, "sO&:pathconf", &path,
+                         conv_path_confname, &name)) {
+        long limit;
+
+        errno = 0;
+        limit = pathconf(path, name);
+        if (limit == -1 && errno != 0)
+            if (errno == EINVAL)
+                /* could be a path or name problem */
+                posix_error();
+            else
+                posix_error_with_filename(path);
+        else
+            result = PyInt_FromLong(limit);
+    }
+    return result;
+}
+#endif
+
+#ifdef HAVE_CONFSTR
+static struct constdef posix_constants_confstr[] = {
+#ifdef _CS_LFS64_CFLAGS
+    {"CS_LFS64_CFLAGS",	_CS_LFS64_CFLAGS},
+#endif
+#ifdef _CS_LFS64_LDFLAGS
+    {"CS_LFS64_LDFLAGS",	_CS_LFS64_LDFLAGS},
+#endif
+#ifdef _CS_LFS64_LIBS
+    {"CS_LFS64_LIBS",	_CS_LFS64_LIBS},
+#endif
+#ifdef _CS_LFS64_LINTFLAGS
+    {"CS_LFS64_LINTFLAGS",	_CS_LFS64_LINTFLAGS},
+#endif
+#ifdef _CS_LFS_CFLAGS
+    {"CS_LFS_CFLAGS",	_CS_LFS_CFLAGS},
+#endif
+#ifdef _CS_LFS_LDFLAGS
+    {"CS_LFS_LDFLAGS",	_CS_LFS_LDFLAGS},
+#endif
+#ifdef _CS_LFS_LIBS
+    {"CS_LFS_LIBS",	_CS_LFS_LIBS},
+#endif
+#ifdef _CS_LFS_LINTFLAGS
+    {"CS_LFS_LINTFLAGS",	_CS_LFS_LINTFLAGS},
+#endif
+#ifdef _CS_PATH
+    {"CS_PATH",	_CS_PATH},
+#endif
+#ifdef _CS_XBS5_ILP32_OFF32_CFLAGS
+    {"CS_XBS5_ILP32_OFF32_CFLAGS",	_CS_XBS5_ILP32_OFF32_CFLAGS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFF32_LDFLAGS
+    {"CS_XBS5_ILP32_OFF32_LDFLAGS",	_CS_XBS5_ILP32_OFF32_LDFLAGS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFF32_LIBS
+    {"CS_XBS5_ILP32_OFF32_LIBS",	_CS_XBS5_ILP32_OFF32_LIBS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFF32_LINTFLAGS
+    {"CS_XBS5_ILP32_OFF32_LINTFLAGS",	_CS_XBS5_ILP32_OFF32_LINTFLAGS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFFBIG_CFLAGS
+    {"CS_XBS5_ILP32_OFFBIG_CFLAGS",	_CS_XBS5_ILP32_OFFBIG_CFLAGS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFFBIG_LDFLAGS
+    {"CS_XBS5_ILP32_OFFBIG_LDFLAGS",	_CS_XBS5_ILP32_OFFBIG_LDFLAGS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFFBIG_LIBS
+    {"CS_XBS5_ILP32_OFFBIG_LIBS",	_CS_XBS5_ILP32_OFFBIG_LIBS},
+#endif
+#ifdef _CS_XBS5_ILP32_OFFBIG_LINTFLAGS
+    {"CS_XBS5_ILP32_OFFBIG_LINTFLAGS",	_CS_XBS5_ILP32_OFFBIG_LINTFLAGS},
+#endif
+#ifdef _CS_XBS5_LP64_OFF64_CFLAGS
+    {"CS_XBS5_LP64_OFF64_CFLAGS",	_CS_XBS5_LP64_OFF64_CFLAGS},
+#endif
+#ifdef _CS_XBS5_LP64_OFF64_LDFLAGS
+    {"CS_XBS5_LP64_OFF64_LDFLAGS",	_CS_XBS5_LP64_OFF64_LDFLAGS},
+#endif
+#ifdef _CS_XBS5_LP64_OFF64_LIBS
+    {"CS_XBS5_LP64_OFF64_LIBS",	_CS_XBS5_LP64_OFF64_LIBS},
+#endif
+#ifdef _CS_XBS5_LP64_OFF64_LINTFLAGS
+    {"CS_XBS5_LP64_OFF64_LINTFLAGS",	_CS_XBS5_LP64_OFF64_LINTFLAGS},
+#endif
+#ifdef _CS_XBS5_LPBIG_OFFBIG_CFLAGS
+    {"CS_XBS5_LPBIG_OFFBIG_CFLAGS",	_CS_XBS5_LPBIG_OFFBIG_CFLAGS},
+#endif
+#ifdef _CS_XBS5_LPBIG_OFFBIG_LDFLAGS
+    {"CS_XBS5_LPBIG_OFFBIG_LDFLAGS",	_CS_XBS5_LPBIG_OFFBIG_LDFLAGS},
+#endif
+#ifdef _CS_XBS5_LPBIG_OFFBIG_LIBS
+    {"CS_XBS5_LPBIG_OFFBIG_LIBS",	_CS_XBS5_LPBIG_OFFBIG_LIBS},
+#endif
+#ifdef _CS_XBS5_LPBIG_OFFBIG_LINTFLAGS
+    {"CS_XBS5_LPBIG_OFFBIG_LINTFLAGS",	_CS_XBS5_LPBIG_OFFBIG_LINTFLAGS},
+#endif
+};
+
+static int
+conv_confstr_confname(arg, valuep)
+     PyObject *arg;
+     int *valuep;
+{
+    return conv_confname(arg, valuep, posix_constants_confstr,
+                         sizeof(posix_constants_confstr)
+                           / sizeof(struct constdef));
+}
+
+static char posix_confstr__doc__[] = "\
+confstr(name) -> string\n\
+Return a string-valued system configuration variable.";
+
+static PyObject *
+posix_confstr(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+    int name;
+    char buffer[64];
+
+    if (PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name)) {
+        int len = confstr(name, buffer, sizeof(buffer));
+
+        printf("confstr(%d) --> %d, '%s'\n", name, len, buffer);
+        errno = 0;
+        if (len == 0) {
+            if (errno != 0)
+                posix_error();
+            else
+                result = PyString_FromString("");
+        }
+        else {
+            if (len >= sizeof(buffer)) {
+                result = PyString_FromStringAndSize(NULL, len);
+                if (result != NULL)
+                    confstr(name, PyString_AS_STRING(result), len+1);
+            }
+            else
+                result = PyString_FromString(buffer);
+        }
+    }
+    return result;
+}
+#endif
+
+
+#ifdef HAVE_SYSCONF
+static struct constdef posix_constants_sysconf[] = {
+#ifdef _SC_2_CHAR_TERM
+    {"SC_2_CHAR_TERM",	_SC_2_CHAR_TERM},
+#endif
+#ifdef _SC_2_C_BIND
+    {"SC_2_C_BIND",	_SC_2_C_BIND},
+#endif
+#ifdef _SC_2_C_DEV
+    {"SC_2_C_DEV",	_SC_2_C_DEV},
+#endif
+#ifdef _SC_2_C_VERSION
+    {"SC_2_C_VERSION",	_SC_2_C_VERSION},
+#endif
+#ifdef _SC_2_FORT_DEV
+    {"SC_2_FORT_DEV",	_SC_2_FORT_DEV},
+#endif
+#ifdef _SC_2_FORT_RUN
+    {"SC_2_FORT_RUN",	_SC_2_FORT_RUN},
+#endif
+#ifdef _SC_2_LOCALEDEF
+    {"SC_2_LOCALEDEF",	_SC_2_LOCALEDEF},
+#endif
+#ifdef _SC_2_SW_DEV
+    {"SC_2_SW_DEV",	_SC_2_SW_DEV},
+#endif
+#ifdef _SC_2_UPE
+    {"SC_2_UPE",	_SC_2_UPE},
+#endif
+#ifdef _SC_2_VERSION
+    {"SC_2_VERSION",	_SC_2_VERSION},
+#endif
+#ifdef _SC_AIO_LISTIO_MAX
+    {"SC_AIO_LISTIO_MAX",	_SC_AIO_LISTIO_MAX},
+#endif
+#ifdef _SC_AIO_LIST_MAX
+    {"SC_AIO_LIST_MAX",	_SC_AIO_LIST_MAX},
+#endif
+#ifdef _SC_AIO_MAX
+    {"SC_AIO_MAX",	_SC_AIO_MAX},
+#endif
+#ifdef _SC_AIO_PRIO_DELTA_MAX
+    {"SC_AIO_PRIO_DELTA_MAX",	_SC_AIO_PRIO_DELTA_MAX},
+#endif
+#ifdef _SC_ARG_MAX
+    {"SC_ARG_MAX",	_SC_ARG_MAX},
+#endif
+#ifdef _SC_ASYNCHRONOUS_IO
+    {"SC_ASYNCHRONOUS_IO",	_SC_ASYNCHRONOUS_IO},
+#endif
+#ifdef _SC_ATEXIT_MAX
+    {"SC_ATEXIT_MAX",	_SC_ATEXIT_MAX},
+#endif
+#ifdef _SC_AVPHYS_PAGES
+    {"SC_AVPHYS_PAGES",	_SC_AVPHYS_PAGES},
+#endif
+#ifdef _SC_BC_BASE_MAX
+    {"SC_BC_BASE_MAX",	_SC_BC_BASE_MAX},
+#endif
+#ifdef _SC_BC_DIM_MAX
+    {"SC_BC_DIM_MAX",	_SC_BC_DIM_MAX},
+#endif
+#ifdef _SC_BC_SCALE_MAX
+    {"SC_BC_SCALE_MAX",	_SC_BC_SCALE_MAX},
+#endif
+#ifdef _SC_BC_STRING_MAX
+    {"SC_BC_STRING_MAX",	_SC_BC_STRING_MAX},
+#endif
+#ifdef _SC_CHARCLASS_NAME_MAX
+    {"SC_CHARCLASS_NAME_MAX",	_SC_CHARCLASS_NAME_MAX},
+#endif
+#ifdef _SC_CHAR_BIT
+    {"SC_CHAR_BIT",	_SC_CHAR_BIT},
+#endif
+#ifdef _SC_CHAR_MAX
+    {"SC_CHAR_MAX",	_SC_CHAR_MAX},
+#endif
+#ifdef _SC_CHAR_MIN
+    {"SC_CHAR_MIN",	_SC_CHAR_MIN},
+#endif
+#ifdef _SC_CHILD_MAX
+    {"SC_CHILD_MAX",	_SC_CHILD_MAX},
+#endif
+#ifdef _SC_CLK_TCK
+    {"SC_CLK_TCK",	_SC_CLK_TCK},
+#endif
+#ifdef _SC_COHER_BLKSZ
+    {"SC_COHER_BLKSZ",	_SC_COHER_BLKSZ},
+#endif
+#ifdef _SC_COLL_WEIGHTS_MAX
+    {"SC_COLL_WEIGHTS_MAX",	_SC_COLL_WEIGHTS_MAX},
+#endif
+#ifdef _SC_DCACHE_ASSOC
+    {"SC_DCACHE_ASSOC",	_SC_DCACHE_ASSOC},
+#endif
+#ifdef _SC_DCACHE_BLKSZ
+    {"SC_DCACHE_BLKSZ",	_SC_DCACHE_BLKSZ},
+#endif
+#ifdef _SC_DCACHE_LINESZ
+    {"SC_DCACHE_LINESZ",	_SC_DCACHE_LINESZ},
+#endif
+#ifdef _SC_DCACHE_SZ
+    {"SC_DCACHE_SZ",	_SC_DCACHE_SZ},
+#endif
+#ifdef _SC_DCACHE_TBLKSZ
+    {"SC_DCACHE_TBLKSZ",	_SC_DCACHE_TBLKSZ},
+#endif
+#ifdef _SC_DELAYTIMER_MAX
+    {"SC_DELAYTIMER_MAX",	_SC_DELAYTIMER_MAX},
+#endif
+#ifdef _SC_EQUIV_CLASS_MAX
+    {"SC_EQUIV_CLASS_MAX",	_SC_EQUIV_CLASS_MAX},
+#endif
+#ifdef _SC_EXPR_NEST_MAX
+    {"SC_EXPR_NEST_MAX",	_SC_EXPR_NEST_MAX},
+#endif
+#ifdef _SC_FSYNC
+    {"SC_FSYNC",	_SC_FSYNC},
+#endif
+#ifdef _SC_GETGR_R_SIZE_MAX
+    {"SC_GETGR_R_SIZE_MAX",	_SC_GETGR_R_SIZE_MAX},
+#endif
+#ifdef _SC_GETPW_R_SIZE_MAX
+    {"SC_GETPW_R_SIZE_MAX",	_SC_GETPW_R_SIZE_MAX},
+#endif
+#ifdef _SC_ICACHE_ASSOC
+    {"SC_ICACHE_ASSOC",	_SC_ICACHE_ASSOC},
+#endif
+#ifdef _SC_ICACHE_BLKSZ
+    {"SC_ICACHE_BLKSZ",	_SC_ICACHE_BLKSZ},
+#endif
+#ifdef _SC_ICACHE_LINESZ
+    {"SC_ICACHE_LINESZ",	_SC_ICACHE_LINESZ},
+#endif
+#ifdef _SC_ICACHE_SZ
+    {"SC_ICACHE_SZ",	_SC_ICACHE_SZ},
+#endif
+#ifdef _SC_INT_MAX
+    {"SC_INT_MAX",	_SC_INT_MAX},
+#endif
+#ifdef _SC_INT_MIN
+    {"SC_INT_MIN",	_SC_INT_MIN},
+#endif
+#ifdef _SC_IOV_MAX
+    {"SC_IOV_MAX",	_SC_IOV_MAX},
+#endif
+#ifdef _SC_JOB_CONTROL
+    {"SC_JOB_CONTROL",	_SC_JOB_CONTROL},
+#endif
+#ifdef _SC_LINE_MAX
+    {"SC_LINE_MAX",	_SC_LINE_MAX},
+#endif
+#ifdef _SC_LOGIN_NAME_MAX
+    {"SC_LOGIN_NAME_MAX",	_SC_LOGIN_NAME_MAX},
+#endif
+#ifdef _SC_LOGNAME_MAX
+    {"SC_LOGNAME_MAX",	_SC_LOGNAME_MAX},
+#endif
+#ifdef _SC_LONG_BIT
+    {"SC_LONG_BIT",	_SC_LONG_BIT},
+#endif
+#ifdef _SC_MAPPED_FILES
+    {"SC_MAPPED_FILES",	_SC_MAPPED_FILES},
+#endif
+#ifdef _SC_MAXPID
+    {"SC_MAXPID",	_SC_MAXPID},
+#endif
+#ifdef _SC_MB_LEN_MAX
+    {"SC_MB_LEN_MAX",	_SC_MB_LEN_MAX},
+#endif
+#ifdef _SC_MEMLOCK
+    {"SC_MEMLOCK",	_SC_MEMLOCK},
+#endif
+#ifdef _SC_MEMLOCK_RANGE
+    {"SC_MEMLOCK_RANGE",	_SC_MEMLOCK_RANGE},
+#endif
+#ifdef _SC_MEMORY_PROTECTION
+    {"SC_MEMORY_PROTECTION",	_SC_MEMORY_PROTECTION},
+#endif
+#ifdef _SC_MESSAGE_PASSING
+    {"SC_MESSAGE_PASSING",	_SC_MESSAGE_PASSING},
+#endif
+#ifdef _SC_MQ_OPEN_MAX
+    {"SC_MQ_OPEN_MAX",	_SC_MQ_OPEN_MAX},
+#endif
+#ifdef _SC_MQ_PRIO_MAX
+    {"SC_MQ_PRIO_MAX",	_SC_MQ_PRIO_MAX},
+#endif
+#ifdef _SC_NGROUPS_MAX
+    {"SC_NGROUPS_MAX",	_SC_NGROUPS_MAX},
+#endif
+#ifdef _SC_NL_ARGMAX
+    {"SC_NL_ARGMAX",	_SC_NL_ARGMAX},
+#endif
+#ifdef _SC_NL_LANGMAX
+    {"SC_NL_LANGMAX",	_SC_NL_LANGMAX},
+#endif
+#ifdef _SC_NL_MSGMAX
+    {"SC_NL_MSGMAX",	_SC_NL_MSGMAX},
+#endif
+#ifdef _SC_NL_NMAX
+    {"SC_NL_NMAX",	_SC_NL_NMAX},
+#endif
+#ifdef _SC_NL_SETMAX
+    {"SC_NL_SETMAX",	_SC_NL_SETMAX},
+#endif
+#ifdef _SC_NL_TEXTMAX
+    {"SC_NL_TEXTMAX",	_SC_NL_TEXTMAX},
+#endif
+#ifdef _SC_NPROCESSORS_CONF
+    {"SC_NPROCESSORS_CONF",	_SC_NPROCESSORS_CONF},
+#endif
+#ifdef _SC_NPROCESSORS_ONLN
+    {"SC_NPROCESSORS_ONLN",	_SC_NPROCESSORS_ONLN},
+#endif
+#ifdef _SC_NZERO
+    {"SC_NZERO",	_SC_NZERO},
+#endif
+#ifdef _SC_OPEN_MAX
+    {"SC_OPEN_MAX",	_SC_OPEN_MAX},
+#endif
+#ifdef _SC_PAGESIZE
+    {"SC_PAGESIZE",	_SC_PAGESIZE},
+#endif
+#ifdef _SC_PAGE_SIZE
+    {"SC_PAGE_SIZE",	_SC_PAGE_SIZE},
+#endif
+#ifdef _SC_PASS_MAX
+    {"SC_PASS_MAX",	_SC_PASS_MAX},
+#endif
+#ifdef _SC_PHYS_PAGES
+    {"SC_PHYS_PAGES",	_SC_PHYS_PAGES},
+#endif
+#ifdef _SC_PII
+    {"SC_PII",	_SC_PII},
+#endif
+#ifdef _SC_PII_INTERNET
+    {"SC_PII_INTERNET",	_SC_PII_INTERNET},
+#endif
+#ifdef _SC_PII_INTERNET_DGRAM
+    {"SC_PII_INTERNET_DGRAM",	_SC_PII_INTERNET_DGRAM},
+#endif
+#ifdef _SC_PII_INTERNET_STREAM
+    {"SC_PII_INTERNET_STREAM",	_SC_PII_INTERNET_STREAM},
+#endif
+#ifdef _SC_PII_OSI
+    {"SC_PII_OSI",	_SC_PII_OSI},
+#endif
+#ifdef _SC_PII_OSI_CLTS
+    {"SC_PII_OSI_CLTS",	_SC_PII_OSI_CLTS},
+#endif
+#ifdef _SC_PII_OSI_COTS
+    {"SC_PII_OSI_COTS",	_SC_PII_OSI_COTS},
+#endif
+#ifdef _SC_PII_OSI_M
+    {"SC_PII_OSI_M",	_SC_PII_OSI_M},
+#endif
+#ifdef _SC_PII_SOCKET
+    {"SC_PII_SOCKET",	_SC_PII_SOCKET},
+#endif
+#ifdef _SC_PII_XTI
+    {"SC_PII_XTI",	_SC_PII_XTI},
+#endif
+#ifdef _SC_POLL
+    {"SC_POLL",	_SC_POLL},
+#endif
+#ifdef _SC_PRIORITIZED_IO
+    {"SC_PRIORITIZED_IO",	_SC_PRIORITIZED_IO},
+#endif
+#ifdef _SC_PRIORITY_SCHEDULING
+    {"SC_PRIORITY_SCHEDULING",	_SC_PRIORITY_SCHEDULING},
+#endif
+#ifdef _SC_REALTIME_SIGNALS
+    {"SC_REALTIME_SIGNALS",	_SC_REALTIME_SIGNALS},
+#endif
+#ifdef _SC_RE_DUP_MAX
+    {"SC_RE_DUP_MAX",	_SC_RE_DUP_MAX},
+#endif
+#ifdef _SC_RTSIG_MAX
+    {"SC_RTSIG_MAX",	_SC_RTSIG_MAX},
+#endif
+#ifdef _SC_SAVED_IDS
+    {"SC_SAVED_IDS",	_SC_SAVED_IDS},
+#endif
+#ifdef _SC_SCHAR_MAX
+    {"SC_SCHAR_MAX",	_SC_SCHAR_MAX},
+#endif
+#ifdef _SC_SCHAR_MIN
+    {"SC_SCHAR_MIN",	_SC_SCHAR_MIN},
+#endif
+#ifdef _SC_SELECT
+    {"SC_SELECT",	_SC_SELECT},
+#endif
+#ifdef _SC_SEMAPHORES
+    {"SC_SEMAPHORES",	_SC_SEMAPHORES},
+#endif
+#ifdef _SC_SEM_NSEMS_MAX
+    {"SC_SEM_NSEMS_MAX",	_SC_SEM_NSEMS_MAX},
+#endif
+#ifdef _SC_SEM_VALUE_MAX
+    {"SC_SEM_VALUE_MAX",	_SC_SEM_VALUE_MAX},
+#endif
+#ifdef _SC_SHARED_MEMORY_OBJECTS
+    {"SC_SHARED_MEMORY_OBJECTS",	_SC_SHARED_MEMORY_OBJECTS},
+#endif
+#ifdef _SC_SHRT_MAX
+    {"SC_SHRT_MAX",	_SC_SHRT_MAX},
+#endif
+#ifdef _SC_SHRT_MIN
+    {"SC_SHRT_MIN",	_SC_SHRT_MIN},
+#endif
+#ifdef _SC_SIGQUEUE_MAX
+    {"SC_SIGQUEUE_MAX",	_SC_SIGQUEUE_MAX},
+#endif
+#ifdef _SC_SIGRT_MAX
+    {"SC_SIGRT_MAX",	_SC_SIGRT_MAX},
+#endif
+#ifdef _SC_SIGRT_MIN
+    {"SC_SIGRT_MIN",	_SC_SIGRT_MIN},
+#endif
+#ifdef _SC_SPLIT_CACHE
+    {"SC_SPLIT_CACHE",	_SC_SPLIT_CACHE},
+#endif
+#ifdef _SC_SSIZE_MAX
+    {"SC_SSIZE_MAX",	_SC_SSIZE_MAX},
+#endif
+#ifdef _SC_STACK_PROT
+    {"SC_STACK_PROT",	_SC_STACK_PROT},
+#endif
+#ifdef _SC_STREAM_MAX
+    {"SC_STREAM_MAX",	_SC_STREAM_MAX},
+#endif
+#ifdef _SC_SYNCHRONIZED_IO
+    {"SC_SYNCHRONIZED_IO",	_SC_SYNCHRONIZED_IO},
+#endif
+#ifdef _SC_THREADS
+    {"SC_THREADS",	_SC_THREADS},
+#endif
+#ifdef _SC_THREAD_ATTR_STACKADDR
+    {"SC_THREAD_ATTR_STACKADDR",	_SC_THREAD_ATTR_STACKADDR},
+#endif
+#ifdef _SC_THREAD_ATTR_STACKSIZE
+    {"SC_THREAD_ATTR_STACKSIZE",	_SC_THREAD_ATTR_STACKSIZE},
+#endif
+#ifdef _SC_THREAD_DESTRUCTOR_ITERATIONS
+    {"SC_THREAD_DESTRUCTOR_ITERATIONS",	_SC_THREAD_DESTRUCTOR_ITERATIONS},
+#endif
+#ifdef _SC_THREAD_KEYS_MAX
+    {"SC_THREAD_KEYS_MAX",	_SC_THREAD_KEYS_MAX},
+#endif
+#ifdef _SC_THREAD_PRIORITY_SCHEDULING
+    {"SC_THREAD_PRIORITY_SCHEDULING",	_SC_THREAD_PRIORITY_SCHEDULING},
+#endif
+#ifdef _SC_THREAD_PRIO_INHERIT
+    {"SC_THREAD_PRIO_INHERIT",	_SC_THREAD_PRIO_INHERIT},
+#endif
+#ifdef _SC_THREAD_PRIO_PROTECT
+    {"SC_THREAD_PRIO_PROTECT",	_SC_THREAD_PRIO_PROTECT},
+#endif
+#ifdef _SC_THREAD_PROCESS_SHARED
+    {"SC_THREAD_PROCESS_SHARED",	_SC_THREAD_PROCESS_SHARED},
+#endif
+#ifdef _SC_THREAD_SAFE_FUNCTIONS
+    {"SC_THREAD_SAFE_FUNCTIONS",	_SC_THREAD_SAFE_FUNCTIONS},
+#endif
+#ifdef _SC_THREAD_STACK_MIN
+    {"SC_THREAD_STACK_MIN",	_SC_THREAD_STACK_MIN},
+#endif
+#ifdef _SC_THREAD_THREADS_MAX
+    {"SC_THREAD_THREADS_MAX",	_SC_THREAD_THREADS_MAX},
+#endif
+#ifdef _SC_TIMERS
+    {"SC_TIMERS",	_SC_TIMERS},
+#endif
+#ifdef _SC_TIMER_MAX
+    {"SC_TIMER_MAX",	_SC_TIMER_MAX},
+#endif
+#ifdef _SC_TTY_NAME_MAX
+    {"SC_TTY_NAME_MAX",	_SC_TTY_NAME_MAX},
+#endif
+#ifdef _SC_TZNAME_MAX
+    {"SC_TZNAME_MAX",	_SC_TZNAME_MAX},
+#endif
+#ifdef _SC_T_IOV_MAX
+    {"SC_T_IOV_MAX",	_SC_T_IOV_MAX},
+#endif
+#ifdef _SC_UCHAR_MAX
+    {"SC_UCHAR_MAX",	_SC_UCHAR_MAX},
+#endif
+#ifdef _SC_UINT_MAX
+    {"SC_UINT_MAX",	_SC_UINT_MAX},
+#endif
+#ifdef _SC_UIO_MAXIOV
+    {"SC_UIO_MAXIOV",	_SC_UIO_MAXIOV},
+#endif
+#ifdef _SC_ULONG_MAX
+    {"SC_ULONG_MAX",	_SC_ULONG_MAX},
+#endif
+#ifdef _SC_USHRT_MAX
+    {"SC_USHRT_MAX",	_SC_USHRT_MAX},
+#endif
+#ifdef _SC_VERSION
+    {"SC_VERSION",	_SC_VERSION},
+#endif
+#ifdef _SC_WORD_BIT
+    {"SC_WORD_BIT",	_SC_WORD_BIT},
+#endif
+#ifdef _SC_XBS5_ILP32_OFF32
+    {"SC_XBS5_ILP32_OFF32",	_SC_XBS5_ILP32_OFF32},
+#endif
+#ifdef _SC_XBS5_ILP32_OFFBIG
+    {"SC_XBS5_ILP32_OFFBIG",	_SC_XBS5_ILP32_OFFBIG},
+#endif
+#ifdef _SC_XBS5_LP64_OFF64
+    {"SC_XBS5_LP64_OFF64",	_SC_XBS5_LP64_OFF64},
+#endif
+#ifdef _SC_XBS5_LPBIG_OFFBIG
+    {"SC_XBS5_LPBIG_OFFBIG",	_SC_XBS5_LPBIG_OFFBIG},
+#endif
+#ifdef _SC_XOPEN_CRYPT
+    {"SC_XOPEN_CRYPT",	_SC_XOPEN_CRYPT},
+#endif
+#ifdef _SC_XOPEN_ENH_I18N
+    {"SC_XOPEN_ENH_I18N",	_SC_XOPEN_ENH_I18N},
+#endif
+#ifdef _SC_XOPEN_LEGACY
+    {"SC_XOPEN_LEGACY",	_SC_XOPEN_LEGACY},
+#endif
+#ifdef _SC_XOPEN_REALTIME
+    {"SC_XOPEN_REALTIME",	_SC_XOPEN_REALTIME},
+#endif
+#ifdef _SC_XOPEN_REALTIME_THREADS
+    {"SC_XOPEN_REALTIME_THREADS",	_SC_XOPEN_REALTIME_THREADS},
+#endif
+#ifdef _SC_XOPEN_SHM
+    {"SC_XOPEN_SHM",	_SC_XOPEN_SHM},
+#endif
+#ifdef _SC_XOPEN_UNIX
+    {"SC_XOPEN_UNIX",	_SC_XOPEN_UNIX},
+#endif
+#ifdef _SC_XOPEN_VERSION
+    {"SC_XOPEN_VERSION",	_SC_XOPEN_VERSION},
+#endif
+#ifdef _SC_XOPEN_XCU_VERSION
+    {"SC_XOPEN_XCU_VERSION",	_SC_XOPEN_XCU_VERSION},
+#endif
+#ifdef _SC_XOPEN_XPG2
+    {"SC_XOPEN_XPG2",	_SC_XOPEN_XPG2},
+#endif
+#ifdef _SC_XOPEN_XPG3
+    {"SC_XOPEN_XPG3",	_SC_XOPEN_XPG3},
+#endif
+#ifdef _SC_XOPEN_XPG4
+    {"SC_XOPEN_XPG4",	_SC_XOPEN_XPG4},
+#endif
+};
+
+static int
+conv_sysconf_confname(arg, valuep)
+     PyObject *arg;
+     int *valuep;
+{
+    return conv_confname(arg, valuep, posix_constants_sysconf,
+                         sizeof(posix_constants_sysconf)
+                           / sizeof(struct constdef));
+}
+
+static char posix_sysconf__doc__[] = "\
+sysconf(name) -> integer\n\
+Return an integer-valued system configuration variable.";
+
+static PyObject *
+posix_sysconf(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+    PyObject *result = NULL;
+    int name;
+
+    if (PyArg_ParseTuple(args, "O&:sysconf", conv_sysconf_confname, &name)) {
+        int value;
+
+        errno = 0;
+        value = sysconf(name);
+        if (value == -1 && errno != 0)
+            posix_error();
+        else
+            result = PyInt_FromLong(value);
+    }
+    return result;
+}
+#endif
+
+
 static char posix_abort__doc__[] = "\
 abort() -> does not return!\n\
 Abort the interpreter immediately.  This 'dumps core' or otherwise fails\n\
@@ -3380,6 +4224,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETGID
 	{"getgid",	posix_getgid, METH_VARARGS, posix_getgid__doc__},
 #endif /* HAVE_GETGID */
+#ifdef HAVE_GETGROUPS
+	{"getgroups",	posix_getgroups, METH_VARARGS, posix_getgroups__doc__},
+#endif
 	{"getpid",	posix_getpid, METH_VARARGS, posix_getpid__doc__},
 #ifdef HAVE_GETPGRP
 	{"getpgrp",	posix_getpgrp, METH_VARARGS, posix_getpgrp__doc__},
@@ -3491,6 +4338,18 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_TMPNAM
 	{"tmpnam",	posix_tmpnam, METH_VARARGS, posix_tmpnam__doc__},
 #endif
+#ifdef HAVE_CONFSTR
+	{"confstr",	posix_confstr, METH_VARARGS, posix_confstr__doc__},
+#endif
+#ifdef HAVE_SYSCONF
+	{"sysconf",	posix_sysconf, METH_VARARGS, posix_sysconf__doc__},
+#endif
+#ifdef HAVE_FPATHCONF
+	{"fpathconf",	posix_fpathconf, METH_VARARGS, posix_fpathconf__doc__},
+#endif
+#ifdef HAVE_PATHCONF
+	{"pathconf",	posix_pathconf, METH_VARARGS, posix_pathconf__doc__},
+#endif
 	{"abort",	posix_abort, METH_VARARGS, posix_abort__doc__},
 	{NULL,		NULL}		 /* Sentinel */
 };
@@ -3585,6 +4444,9 @@ all_ins(d)
 #ifdef X_OK
         if (ins(d, "X_OK", (long)X_OK)) return -1;
 #endif        
+#ifdef NGROUPS_MAX
+        if (ins(d, "NGROUPS_MAX", (long)NGROUPS_MAX)) return -1;
+#endif
 #ifdef TMP_MAX
         if (ins(d, "TMP_MAX", (long)TMP_MAX)) return -1;
 #endif
@@ -3682,7 +4544,7 @@ INITFUNC()
 	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
 		return;
 	Py_DECREF(v);
-	
+
         if (all_ins(d))
                 return;
 
