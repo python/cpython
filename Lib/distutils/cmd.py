@@ -157,47 +157,6 @@ class Command:
             print msg
 
 
-    # -- Option query/set methods --------------------------------------
-
-    def get_option (self, option):
-        """Return the value of a single option for this command.  Raise
-           AttributeError if 'option' is not known."""
-        return getattr (self, option)
-
-
-    def get_options (self, *options):
-        """Return (as a tuple) the values of several options for this
-           command.  Raise AttributeError if any of the options in
-           'options' are not known."""
-
-        values = []
-        for opt in options:
-            values.append (getattr (self, opt))
-
-        return tuple (values)
-
-
-    def set_option (self, option, value):
-        """Set the value of a single option for this command.  Raise
-           AttributeError if 'option' is not known."""
-
-        if not hasattr (self, option):
-            raise AttributeError, \
-                  "command '%s': no such option '%s'" % \
-                  (self.get_command_name(), option)
-        if value is not None:
-            setattr (self, option, value)
-
-    def set_options (self, **optval):
-        """Set the values of several options for this command.  Raise
-           AttributeError if any of the options specified as
-           keyword arguments are not known."""
-
-        for k in optval.keys():
-            if optval[k] is not None:
-                self.set_option (k, optval[k])
-
-
     # -- Convenience methods for commands ------------------------------
 
     def get_command_name (self):
@@ -228,8 +187,8 @@ class Command:
         src_cmd_obj.ensure_ready ()
         for (src_option, dst_option) in option_pairs:
             if getattr (self, dst_option) is None:
-                self.set_option (dst_option,
-                                 src_cmd_obj.get_option (src_option))
+                setattr (self, dst_option,
+                         getattr (src_cmd_obj, src_option))
 
 
     def find_peer (self, command, create=1):
@@ -247,7 +206,7 @@ class Command:
            its 'option' option."""
 
         cmd_obj = self.find_peer (command)
-        return cmd_obj.get_option (option)
+        return getattr(cmd_obj, option)
 
 
     def run_peer (self, command):
