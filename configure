@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.176 
+# From configure.in Revision: 1.178
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1193,8 +1193,8 @@ then
 	case $GCC in
 	yes)
 		case $ac_cv_prog_cc_g in
-		yes)	OPT="-g -O2 -Wall -Wstrict-prototypes";;
-		*)	OPT="-O2 -Wall -Wstrict-prototypes";;
+		yes)	OPT="-g -O2 -Wall -Wstrict-prototypes -fPIC";;
+		*)	OPT="-O2 -Wall -Wstrict-prototypes -fPIC";;
 		esac
 		;;
 	*)	OPT="-O";;
@@ -2650,7 +2650,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) 
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -G'
+		then LDSHARED='$(CC) -shared'
 		else LDSHARED="ld -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
@@ -4839,7 +4839,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x = {0,0};
+typedef int charset[2]; const charset x;
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
@@ -4914,7 +4914,7 @@ for ac_kw in inline __inline__ __inline; do
 #include "confdefs.h"
 
 int main() {
-} int $ac_kw foo() {
+} $ac_kw foo() {
 ; return 0; }
 EOF
 if { (eval echo configure:4921: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
