@@ -13,42 +13,28 @@ class Idb(bdb.Bdb):
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
-
-        co_filename = frame.f_code.co_filename
-##        co_name = frame.f_code.co_name
-
-        ## print>>sys.__stderr__, "*function: ", frame.f_code.co_name
-        ## print>>sys.__stderr__, "*file: ", frame.f_code.co_filename
-        ## print>>sys.__stderr__, "*line number: ", frame.f_code.co_firstlineno
-        ## print>>sys.__stderr__, "*name: ", co_name
-        ## print>>sys.__stderr__, "*function: ", frame.f_locals.get(co_name,None)
-
-##         try:
-##             # XXX 12 Dec 2002 CGT TO DO: Find way to get a reference to the
-##             # XXX currently running function. If the function has an
-##             #     attribute called "DebuggerStepThrough", prevent the debugger
-##             #     from stepping through Idle code. The following doesn't work
-##             #     in instance methods. Hard coded some workarounds.
-##             func = frame.f_locals[co_name]
-##             if getattr(func, "DebuggerStepThrough", 0):
-##                 print "XXXX DEBUGGER STEPPING THROUGH"
-##                 self.set_step()
-##                 return
-##         except:
-##             pass
-
-        # workaround for the problem above
-        exclude = ('rpc.py', 'threading.py', '<string>')
-        for rpcfile in exclude:
-            if co_filename.count(rpcfile):
-                self.set_step()
-                return
+        if self.in_rpc_code(frame):
+            self.set_step()
+            return
         message = self.__frame2message(frame)
         self.gui.interaction(message, frame)
 
     def user_exception(self, frame, info):
+        if self.in_rpc_code(frame):
+            self.set_step()
+            return
         message = self.__frame2message(frame)
         self.gui.interaction(message, frame, info)
+
+    def in_rpc_code(self, frame):
+        if frame.f_code.co_filename.count('rpc.py'):
+            return True
+        else:
+            prev_frame = frame.f_back
+            if prev_frame.f_code.co_filename.count('Debugger.py'):
+                # (that test will catch both Debugger.py and RemoteDebugger.py)
+                return False
+            return self.in_rpc_code(prev_frame)
 
     def __frame2message(self, frame):
         code = frame.f_code
