@@ -43,24 +43,31 @@ PyModule_New(char *name)
 PyObject *
 PyModule_GetDict(PyObject *m)
 {
+	PyObject *d;
 	if (!PyModule_Check(m)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((PyModuleObject *)m) -> md_dict;
+	d = ((PyModuleObject *)m) -> md_dict;
+	if (d == NULL)
+		((PyModuleObject *)m) -> md_dict = d = PyDict_New();
+	return d;
 }
 
 char *
 PyModule_GetName(PyObject *m)
 {
+	PyObject *d;
 	PyObject *nameobj;
 	if (!PyModule_Check(m)) {
 		PyErr_BadArgument();
 		return NULL;
 	}
-	nameobj = PyDict_GetItemString(((PyModuleObject *)m)->md_dict,
-				       "__name__");
-	if (nameobj == NULL || !PyString_Check(nameobj)) {
+	d = ((PyModuleObject *)m)->md_dict;
+	if (d == NULL ||
+	    (nameobj = PyDict_GetItemString(d, "__name__")) == NULL ||
+	    !PyString_Check(nameobj))
+	{
 		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
@@ -70,14 +77,17 @@ PyModule_GetName(PyObject *m)
 char *
 PyModule_GetFilename(PyObject *m)
 {
+	PyObject *d;
 	PyObject *fileobj;
 	if (!PyModule_Check(m)) {
 		PyErr_BadArgument();
 		return NULL;
 	}
-	fileobj = PyDict_GetItemString(((PyModuleObject *)m)->md_dict,
-				       "__file__");
-	if (fileobj == NULL || !PyString_Check(fileobj)) {
+	d = ((PyModuleObject *)m)->md_dict;
+	if (d == NULL ||
+	    (fileobj = PyDict_GetItemString(d, "__file__")) == NULL ||
+	    !PyString_Check(fileobj))
+	{
 		PyErr_SetString(PyExc_SystemError, "module filename missing");
 		return NULL;
 	}
@@ -99,6 +109,8 @@ _PyModule_Clear(PyObject *m)
 	PyObject *d;
 
 	d = ((PyModuleObject *)m)->md_dict;
+	if (d == NULL)
+		return;
 
 	/* First, clear only names starting with a single underscore */
 	pos = 0;
