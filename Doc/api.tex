@@ -115,7 +115,7 @@ true iff the object pointed to by \var{a} is a Python list.
 \label{refcounts}
 
 The reference count is important because today's computers have a 
-finite (and often severly limited) memory size; it counts how many 
+finite (and often severely limited) memory size; it counts how many 
 different places there are that have a reference to an object.  Such a 
 place could be another object, or a global (or static) \C{} variable, or 
 a local variable in some \C{} function.  When an object's reference count 
@@ -192,7 +192,7 @@ reference to the object, or it does not.  Few functions steal
 references; the two notable exceptions are
 \cfunction{PyList_SetItem()} and \cfunction{PyTuple_SetItem()}, which
 steal a reference to the item (but not to the tuple or list into which
-the item it put!).  These functions were designed to steal a reference
+the item is put!).  These functions were designed to steal a reference
 because of a common idiom for populating a tuple or list with newly
 created objects; for example, the code to create the tuple \code{(1,
 2, "three")} could look like this (forgetting about error handling for
