@@ -907,7 +907,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 	m_obj->pos = (size_t) 0;
 
 	/* set the tag name */
-	if (tagname != NULL) {
+	if (tagname != NULL && *tagname != '\0') {
 		m_obj->tagname = PyMem_Malloc(strlen(tagname)+1);
 		if (m_obj->tagname == NULL) {
 			PyErr_NoMemory();
@@ -924,7 +924,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 					       PAGE_READWRITE,
 					       0,
 					       m_obj->size,
-					       tagname);
+					       m_obj->tagname);
 	if (m_obj->map_handle != NULL) {
 		m_obj->data = (char *) MapViewOfFile (m_obj->map_handle,
 						      FILE_MAP_WRITE,
