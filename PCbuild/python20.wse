@@ -12,13 +12,14 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Pages Modified=00010000001101000000000100000010
+  Pages Modified=00010000011101000000000100000010
   Extra Pages=00000000000000000000000010110010
   Disk Filename=SETUP
   Patch Flags=0000000000000001
   Patch Threshold=85
   Patch Memory=4000
   EXE Filename=Python-2.2a1.exe
+  Dialogs Version=8
   Version File=2.2a1
   Version Description=Python Programming Language
   Version Copyright=©2001 Python Software Foundation
@@ -189,7 +190,6 @@ end
 item: Set Variable
   Variable=DOBACKUP
   Value=A
-  Flags=10000000
 end
 item: Remark
   Text=BRANDING determines if the installation will be branded with a name and company.  By default, this is written to the INST directory (installation media).
@@ -410,6 +410,288 @@ item: Custom Dialog Set
       Text German=Abbrechen
       Text Spanish=Cancelar
       Text Italian=Annulla
+    end
+  end
+end
+item: Custom Dialog Set
+  Name=Backup Replaced Files
+  Display Variable=DISPLAY
+  item: Dialog
+    Title=Backup Replaced Files
+    Title French=Fichiers de Sauvegarde Remplacés
+    Title German=Sicherungskopie von ersetzten Dateien erstellen
+    Title Portuguese=Ficheiros substituídos de segurança
+    Title Spanish=Copias de seguridad de los archivos reemplazados
+    Title Italian=Backup file sostituiti
+    Title Danish=Sikkerhedskopiering af erstattede filer
+    Title Dutch=Vervangen bestanden kopiëren
+    Title Norwegian=Sikkerhetskopiere erstattede filer
+    Title Swedish=Säkerhetskopiera utbytta filer
+    Width=280
+    Height=224
+    Font Name=Helv
+    Font Size=8
+    item: Push Button
+      Rectangle=172 185 214 199
+      Variable=DIRECTION
+      Value=N
+      Create Flags=01010000000000010000000000000001
+      Text=&Next >
+      Text French=&Suivant>
+      Text German=&Weiter>
+      Text Portuguese=&Próximo>
+      Text Spanish=&Siguiente >
+      Text Italian=&Avanti >
+      Text Danish=&Næste>
+      Text Dutch=&Volgende>
+      Text Norwegian=&Neste>
+      Text Swedish=&Nästa >
+    end
+    item: Push Button
+      Rectangle=130 185 172 199
+      Variable=DIRECTION
+      Value=B
+      Create Flags=01010000000000010000000000000000
+      Text=< &Back
+      Text French=<&Retour
+      Text German=<&Zurück
+      Text Portuguese=<&Retornar
+      Text Spanish=<&Retroceder
+      Text Italian=< &Indietro
+      Text Danish=<&Tilbage
+      Text Dutch=<&Terug
+      Text Norwegian=<&Tilbake
+      Text Swedish=< &Tillbaka
+    end
+    item: Push Button
+      Rectangle=222 185 264 199
+      Action=3
+      Create Flags=01010000000000010000000000000000
+      Text=Cancel
+      Text French=Annuler
+      Text German=Abbrechen
+      Text Portuguese=Cancelar
+      Text Spanish=Cancelar
+      Text Italian=Annulla
+      Text Danish=Annuller
+      Text Dutch=Annuleren
+      Text Norwegian=Avbryt
+      Text Swedish=Avbryt
+    end
+    item: Static
+      Rectangle=9 177 263 178
+      Action=3
+      Create Flags=01010000000000000000000000000111
+    end
+    item: Static
+      Rectangle=90 10 260 74
+      Create Flags=01010000000000000000000000000000
+      Text=This installation program can create backup copies of all files replaced during the installation. These files will be used when the software is uninstalled and a rollback is requested.  If backup copies are not created, you will only be able to uninstall the software and not roll the system back to a previous state.  Do you want to create backups of the replaced files?
+      Text French=Le programme d'installation peut créer des copies de sauvegarde de tous les fichiers remplacés pendant l'installation. Ces fichiers sont utilisés au cas où le logiciel est désinstallé et que l'on procède à la reprise du système. Si les copies de sauvegarde ne sont pas créées, on ne pourra que désinstaller le logiciel sans reprendre le système à un état précédent. Voulez-vous créer une sauvegarde des fichiers remplacés ?
+      Text German=Dieses Installationsprogramm kann Sicherungskopien von allen während der Installation ersetzten Dateien erstellen. Diese Dateien werden zur Rückgängigmachung der Installation und bei Anforderung eines Rollbacks verwendet. Ohne Sicherungskopien ist nur eine Rückgängigmachung der Installation möglich, nicht aber ein Rollback des Systems. Sicherungskopien der ersetzten Dateien erstellen?
+      Text Portuguese=Este programa de instalação pode criar cópias de segurança de todos os ficheiros substituídos durante a instalação. Estes ficheiros serão utilizados quando o programa for desinstalado  e for requisitada uma retomada. Se as cópias de segurança não forem criadas, só poderá desinstalar o programa e não pode retomar  um estado anterior do sistema. Deseja criar cópias de segurança dos ficheiros substituídos?
+      Text Spanish=Este programa de instalación puede crear copias de seguridad de todos los archivos reemplazados durante la instalación. Estos archivos se utilizarán cuando se desinstale el software y se solicite volver al estado anterior. Si no se crean copias de seguridad, únicamente podrá desinstalar el software y no podrá devolver el sistema al estado anterior. ¿Desea crear archivos de seguridad de los archivos reemplazados?
+      Text Italian=Questo programma di installazione può creare copie di backup di tutti i file sostituiti durante l’installazione. Questi file saranno usati quando il software sarà disinstallato e sarà richiesto un ritorno allo stato precedente. Se non crei le copie di backup, potrai solo disinstallare il software, ma non potrai riportare il sistema allo stato precedente. Vuoi creare i file di backup dei file sostituiti?
+      Text Danish=Dette installationsprogram kan oprette sikkerhedskopier af alle filer, som erstattes under installationen. Disse filer benyttes, når softwaren fjernes, og den tidligere systemkonfiguration genetableres. Hvis der ikke oprettes sikkerhedskopier, kan du kun fjerne den installerede software og ikke genetablere den tidligere systemkonfiguration. Vil du oprette sikkerhedskopier af filer, som erstattes?
+      Text Dutch=Dit installatieprogramma kan kopieën maken van alle bestanden die tijdens de installatie worden vervangen. Deze worden dan gebruikt als de software-installatie ongedaan wordt gemaakt en u het systeem wilt laten terugkeren naar de oorspronkelijke staat. Als er geen back-up kopieën worden gemaakt, kunt u de software enkel verwijderen maar het systeem niet in de oorspronkelijke staat terugbrengen. Wilt u een back-up maken van de vervangen bestanden?
+      Text Norwegian=Dette installasjonsprogrammet kan lage sikkerhetskopier av alle filer som blir erstattet under installasjonen. Disse filene vil tas i bruk når programvaren er avinstallert og det er behov for tilbakestilling. Hvis det ikke er laget sikkerhetskopier, kan du kun avinstallere programvaren og ikke stille systemet tilbake til tidligere status. Ønsker du å lage sikkerhetskopier av de filene som blir erstattet nå?
+      Text Swedish=Installationsprogrammet kan skapa säkerhetskopior av alla filer som byts ut under installationen. Dessa filer kan sedan användas när programvaran avinstalleras och du begär rollback. Om du då inte har några säkerhetskopior kan du bara avinstallera programvaran, inte återskapa systemet i dess tidigare skick. Vill du göra säkerhetskopior av de ersatta filerna?
+    end
+    item: Radio Button
+      Rectangle=155 74 182 100
+      Variable=DOBACKUP
+      Create Flags=01010000000000010000000000001001
+      Text=&Yes
+      Text=N&o
+      Text=
+      Text French=&Oui
+      Text French=N&on
+      Text French=
+      Text German=&Ja
+      Text German=N&ein  
+      Text German=
+      Text Portuguese=&Sim
+      Text Portuguese=Nã&o
+      Text Portuguese=
+      Text Spanish=&Sí
+      Text Spanish=N&o
+      Text Spanish=
+      Text Italian=&Sì
+      Text Italian=N&o
+      Text Italian=
+      Text Danish=&Ja
+      Text Danish=&Nej
+      Text Danish=
+      Text Dutch=&Ja
+      Text Dutch=N&ee
+      Text Dutch=
+      Text Norwegian=&Ja
+      Text Norwegian=&Nei
+      Text Norwegian=
+      Text Swedish=&Ja
+      Text Swedish=N&ej
+      Text Swedish=
+    end
+    item: Static
+      Control Name=BACK1
+      Rectangle=90 106 260 132
+      Create Flags=01010000000000000000000000000000
+      Text=Please select the directory where the replaced  files will be copied.
+      Text French=Veuillez sélectionner le répertoire où les fichiers remplacés doivent être copiés
+      Text German=Bitte wählen Sie das Verzeichnis, in das die ersetzten Dateien kopiert werden sollen.
+      Text Portuguese=É favor seleccionar o directório para onde os ficheiros substituídos serão copiados.
+      Text Spanish=Seleccione el directorio donde se copiarán los archivos reemplazados.
+      Text Italian=Seleziona la directory in cui saranno copiati i file sostituiti.
+      Text Danish=Vælg biblioteket, som de erstattede filer skal kopieres til.
+      Text Dutch=Selecteer de directory waarnaar de vervangen bestanden moeten worden gekopieerd.
+      Text Norwegian=Velg katalogen de erstattede filene skal kopieres til.
+      Text Swedish=Välj katalog dit du vill kopiera de ersatta filerna.
+    end
+    item: Static
+      Control Name=BACK2
+      Rectangle=90 134 260 162
+      Action=1
+      Create Flags=01010000000000000000000000000111
+      Text=Backup File Destination Directory
+      Text French=Répertoire de destination des fichiers de sauvegarde
+      Text German=Zielverzeichnis für die Sicherungsdatei
+      Text Portuguese=Directório de destino de ficheiro de segurança
+      Text Spanish=Directorio de Destino de los Archivos de Seguridad
+      Text Italian=Directory di destinazione dei file di backup
+      Text Danish=Destinationsbibliotek til sikkerhedskopier
+      Text Dutch=Doeldirectory backup-bestand
+      Text Norwegian=Målkatalog for sikkerhetskopier
+      Text Swedish=Katalog för säkerhetskopierade filer
+    end
+    item: Push Button
+      Control Name=BACK3
+      Rectangle=213 143 255 157
+      Variable=BACKUP_SAVE
+      Value=%BACKUP%
+      Destination Dialog=1
+      Action=2
+      Create Flags=01010000000000010000000000000000
+      Text=B&rowse...
+      Text French=P&arcourir
+      Text German=B&lättern...
+      Text Portuguese=P&rocurar
+      Text Spanish=V&isualizar...
+      Text Italian=Sfoglia...
+      Text Danish=&Gennemse...
+      Text Dutch=B&laderen...
+      Text Norwegian=Bla igjennom
+      Text Swedish=&Bläddra
+    end
+    item: Static
+      Control Name=BACK4
+      Rectangle=95 146 211 157
+      Destination Dialog=2
+      Create Flags=01010000000000000000000000000000
+      Text=%BACKUP%
+      Text French=%BACKUP%
+      Text German=%BACKUP%
+      Text Portuguese=%BACKUP%
+      Text Spanish=%BACKUP%
+      Text Italian=%BACKUP%
+      Text Danish=%BACKUP%
+      Text Dutch=%BACKUP%
+      Text Norwegian=%BACKUP%
+      Text Swedish=%BACKUP%
+    end
+    item: If/While Statement
+      Variable=DOBACKUP
+      Value=B
+    end
+    item: Set Control Attribute
+      Control Name=BACK3
+      Operation=1
+    end
+    item: Set Control Attribute
+      Control Name=BACK4
+      Operation=1
+    end
+    item: Else Statement
+    end
+    item: Set Control Attribute
+      Control Name=BACK3
+    end
+    item: Set Control Attribute
+      Control Name=BACK4
+    end
+    item: End Block
+    end
+  end
+  item: Dialog
+    Title=Select Destination Directory
+    Title French=Choisissez le répertoire de destination
+    Title German=Zielverzeichnis wählen
+    Title Portuguese=Seleccionar Directório de Destino
+    Title Spanish=Seleccione el Directorio de Destino
+    Title Italian=Seleziona Directory di destinazione
+    Title Danish=Vælg Destinationsbibliotek
+    Title Dutch=Kies Doeldirectory
+    Title Norwegian=Velg målkatalog
+    Title Swedish=Välj destinationskalatog
+    Width=221
+    Height=173
+    Font Name=Helv
+    Font Size=8
+    item: Listbox
+      Rectangle=5 2 160 149
+      Variable=BACKUP
+      Create Flags=01010000100000010000000101000000
+      Flags=0000110000100010
+      Text=%BACKUP%
+      Text=
+      Text French=%BACKUP%
+      Text French=
+      Text German=%BACKUP%
+      Text German=
+      Text Portuguese=%BACKUP%
+      Text Portuguese=
+      Text Spanish=%BACKUP%
+      Text Spanish=
+      Text Italian=%BACKUP%
+      Text Italian=
+      Text Danish=%BACKUP%
+      Text Danish=
+      Text Dutch=%BACKUP%
+      Text Dutch=
+      Text Norwegian=%BACKUP%
+      Text Norwegian=
+      Text Swedish=%BACKUP%
+      Text Swedish=
+    end
+    item: Push Button
+      Rectangle=167 6 212 21
+      Create Flags=01010000000000010000000000000001
+      Text=OK
+      Text French=OK
+      Text German=OK
+      Text Portuguese=OK
+      Text Spanish=ACEPTAR
+      Text Italian=OK
+      Text Danish=OK
+      Text Dutch=OK
+      Text Norwegian=OK
+      Text Swedish=OK
+    end
+    item: Push Button
+      Rectangle=167 25 212 40
+      Variable=BACKUP
+      Value=%BACKUP_SAVE%
+      Create Flags=01010000000000010000000000000000
+      Flags=0000000000000001
+      Text=Cancel
+      Text French=Annuler
+      Text German=Abbrechen 
+      Text Portuguese=Cancelar
+      Text Spanish=Cancelar
+      Text Italian=Annulla
+      Text Danish=Slet
+      Text Dutch=Annuleren
+      Text Norwegian=Avbryt
+      Text Swedish=Avbryt
     end
   end
 end
@@ -1833,10 +2115,11 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=%_WISE_%\Dialogs\Template\Wizard.bmp
-  X Position=0
-  Y Position=0
-  Filler Color=0
+  Bitmap Pathname=%_WISE_%\DIALOGS\TEMPLATE\WIZARD.BMP
+  X Position=9
+  Y Position=10
+  Filler Color=8421440
+  Flags=00000011
 end
 item: Custom Dialog Set
   Name=Finished
