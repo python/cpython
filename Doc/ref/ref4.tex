@@ -24,9 +24,9 @@ command (a command specified on the interpreter command line with the
 `\strong{-c}' option) is a code block.  The file read by the built-in
 function \function{execfile()} is a code block.  The string argument
 passed to the built-in function \function{eval()} and to the
-\keyword{exec} statement is a code block.  And finally, the expression
-read and evaluated by the built-in function \function{input()} is a
-code block.
+\keyword{exec}\stindex{exec} statement is a code block.  And finally,
+the expression read and evaluated by the built-in function
+\function{input()} is a code block.
 
 A code block is executed in an execution frame.  An \dfn{execution
 frame}\indexii{execution}{frame} contains some administrative
@@ -86,10 +86,11 @@ occurring as the target of an assignment, in a \keyword{for} loop header
 
 Whether a name is local or global in a code block is determined by
 static inspection of the source text for the code block: in the
-absence of \keyword{global} statements, a name that is bound anywhere
-in the code block is local in the entire code block; all other names
-are considered global.  The \keyword{global} statement forces global
-interpretation of selected names throughout the code block.  
+absence of \keyword{global}\stindex{global} statements, a name that is
+bound anywhere in the code block is local in the entire code block;
+all other names are considered global.  The \keyword{global} statement
+forces global interpretation of selected names throughout the code
+block.
 
 The following constructs bind names: formal parameters to functions,
 \keyword{import} statements, class and function definitions (these
@@ -97,9 +98,9 @@ bind the class or function name in the defining block), and targets
 that are identifiers if occurring in an assignment, \keyword{for} loop
 header, or in the second position of an \keyword{except} clause
 header.  The \keyword{import} statement of the form ``\samp{from
-\ldots import *}'' binds all names defined in the imported module,
-except those beginning with an underscore.  This form may only be used
-at the module level.
+\ldots import *}''\stindex{from} binds all names defined in the
+imported module, except those beginning with an underscore.  This form
+may only be used at the module level.
 
 A target occurring in a \keyword{del} statement is also considered bound
 for this purpose (though the actual semantics are to unbind the
@@ -110,15 +111,12 @@ When a global name is not found in the global namespace, it is
 searched in the built-in namespace (which is actually the global
 namespace of the module \module{__builtin__}\refbimodindex{__builtin__}).  
 The built-in namespace associated with the execution of a code block
-is actually found by looking up the name \code{__builtins__} is its
+is actually found by looking up the name \code{__builtins__} in its
 global namespace; this should be a dictionary or a module (in the
-latter case its dictionary is used).  Normally, the
+latter case the module's dictionary is used).  Normally, the
 \code{__builtins__} namespace is the dictionary of the built-in module
 \module{__builtin__} (note: no `s').  If it isn't, restricted
 execution\indexii{restricted}{execution} mode is in effect.
-\stindex{from}
-\stindex{exec}
-\stindex{global}
 
 The namespace for a module is automatically created the first time a
 module is imported.  The main module for a script is always called
