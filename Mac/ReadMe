@@ -1,11 +1,12 @@
-How to install Python 2.0c1 on your Macintosh
----------------------------------------------
+How to install Python 2.0 on your Macintosh
+-------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
 common user documentation (common to all platforms). You can find this
-(in various forms) on www.python.org and ftp.python.org. Through
-there, or via http://www.cwi.nl/~jack/macpython.html you can also find
-the most recent MacPython distribution.
+(in various forms) on www.pythonlabs.com, www.python.org and
+ftp.python.org. Through there, or via
+http://www.cwi.nl/~jack/macpython.html you can also find the most recent
+MacPython distribution.
 
 Mac-specific documentation is included in this distribution in folder
 Mac:Demo. The documentation is sparse, but it will have to serve for
@@ -58,7 +59,7 @@ All these except the DevKit are installed with Easy Install.
 
 After the installer finishes it automatically launches the
 ConfigurePython applet, to finish configuration of your Python.
-If you have previously installed another copy of 2.0b1 you should manually
+If you have previously installed another copy of 2.0 you should manually
 remove your preference file first (but no such action is needed for installing
 beside older MacPythons, and they will live together happily).
 
@@ -96,8 +97,8 @@ Uninstalling
 ------------
 
 Two items are installed in the system folder: the interpreter shared
-library "PythonCore 2.0c1" lives in the Extensions folder and the
-"Python 2.0c1 Preferences" file in the Python subfolder in the
+library "PythonCore 2.0" lives in the Extensions folder and the
+"Python 2.0 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
@@ -138,9 +139,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.0c1 works as expected you can trash
+After you are satisfied that 2.0 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.0c1".
+"2.0".
 
 The installer
 -------------
@@ -166,8 +167,8 @@ Thanks go to the whole Python community with Guido in the lead, of
 course. Mac-specific thanks go to the pythonmac-sig, Just van Rossum,
 Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
-Goodger, Chris Barker, Luc Lefebvre and all the other people who
-provided feedback, code or both!
+Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
+Tom Bridgman and all the other people who provided feedback, code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
 
