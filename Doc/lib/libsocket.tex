@@ -136,6 +136,8 @@ and \var{ipaddrlist} is a list of IP addresses for the same interface
 on the same host (most likely containing only a single address).
 To find the fully qualified domain name, check \var{hostname} and the
 items of \var{aliaslist} for an entry containing at least one period.
+An implementation of this algorithm can be found in the module
+\module{smtplib} in form of the \function{make_fqdn()} function.
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
