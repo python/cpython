@@ -496,7 +496,7 @@ class URLopener:
         # mediatype := [ type "/" subtype ] *( ";" parameter )
         # data      := *urlchar
         # parameter := attribute "=" value
-        import StringIO, mimetools, time
+        import StringIO, mimetools
         try:
             [type, data] = url.split(',', 1)
         except ValueError:
@@ -1307,7 +1307,6 @@ elif os.name == 'nt':
         try:
             import _winreg
             import re
-            import socket
         except ImportError:
             # Std modules, so should be around - but you never know!
             return 0
@@ -1365,7 +1364,6 @@ else:
 
 # Test and time quote() and unquote()
 def test1():
-    import time
     s = ''
     for i in range(256): s = s + chr(i)
     s = s*4
