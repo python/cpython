@@ -563,8 +563,12 @@ string_item(PyStringObject *a, register int i)
 	v = (PyObject *)characters[*pchar & UCHAR_MAX];
 	if (v == NULL)
 		v = PyString_FromStringAndSize(pchar, 1);
-	else
+	else {
+#ifdef COUNT_ALLOCS
+		one_strings++;
+#endif
 		Py_INCREF(v);
+	}
 	return v;
 }
 
