@@ -209,6 +209,8 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
     r = []
     for name_value in pairs:
+        if not name_value and not strict_parsing:
+            continue
         nv = name_value.split('=', 1)
         if len(nv) != 2:
             if strict_parsing:

@@ -55,7 +55,21 @@ def do_test(buf, method):
 # A list of test cases.  Each test case is a a two-tuple that contains
 # a string with the query and a dictionary with the expected result.
 
-parse_test_cases = [
+parse_qsl_test_cases = [
+    ("", []),
+    ("&", []),
+    ("&&", []),
+    ("=", [('', '')]),
+    ("=a", [('', 'a')]),
+    ("a", [('a', '')]),
+    ("a=", [('a', '')]),
+    ("a=", [('a', '')]),
+    ("&a=b", [('a', 'b')]),
+    ("a=a+b&b=b+c", [('a', 'a b'), ('b', 'b c')]),
+    ("a=1&a=2", [('a', '1'), ('a', '2')]),
+]
+
+parse_strict_test_cases = [
     ("", ValueError("bad query field: ''")),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
@@ -114,7 +128,12 @@ def first_second_elts(list):
     return map(lambda p:(p[0], p[1][0]), list)
 
 def main():
-    for orig, expect in parse_test_cases:
+    for orig, expect in parse_qsl_test_cases:
+        result = cgi.parse_qsl(orig, keep_blank_values=True)
+        print repr(orig), '=>', result
+        verify(result == expect, "Error parsing %s" % repr(orig))
+
+    for orig, expect in parse_strict_test_cases:
         # Test basic parsing
         print repr(orig)
         d = do_test(orig, "GET")
