@@ -522,8 +522,7 @@ the new line indented."
 	 (if nest
 	     (save-excursion
 	       (goto-char nest)
-	       (beginning-of-line)
-	       (1+ (- nest (point))))
+	       (1+ (current-column)))
 	   (forward-line -1)
 	   (if (py-continuation-line-p) ; on at least 3rd line in block
 	       (current-indentation)    ; so just continue the pattern
