@@ -1,3 +1,19 @@
+Thu Jan  6 13:36:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README: describe new Setup procedure
+
+	* Modules/Makefile.pre.in: copy Setup from $9srcdir)/Setup.in so
+	it *really* works with VPATH
+
+	* Modules/Setup: renamed to Modules/Setup.in
+
+	* Python/pythonmain.c (realmain): fclose script file
+
+	* Python/import.c (get_module): fix important leak: close the .py
+	file after parsing!
+
+	* README, Python/version.c: version 1.0.0 BETA 5
+
 Wed Jan  5 16:42:35 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Modules/rgbimgmodule.c: Only include <unistd.h> if it exists
