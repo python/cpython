@@ -251,7 +251,10 @@ def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
     suite = unittest.TestSuite()
     for cls in classes:
-        suite.addTest(unittest.makeSuite(cls))
+        if isinstance(cls, unittest.TestCase):
+            suite.addTest(cls)
+        else:
+            suite.addTest(unittest.makeSuite(cls))
     if len(classes)==1:
         testclass = classes[0]
     else:
