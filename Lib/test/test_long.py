@@ -159,7 +159,7 @@ def test_bitop_identities(maxdigits=MAXDIGITS):
             test_bitop_identities_2(x, y)
             test_bitop_identities_3(x, y, getran((lenx + leny)/2))
 
-# ------------------------------------------------------ hex oct str atol
+# ------------------------------------------------- hex oct repr str atol
 
 def slow_format(x, base):
     if (x, base) == (0, 8):
@@ -181,12 +181,18 @@ def slow_format(x, base):
 
 def test_format_1(x):
     from string import atol
-    for base, mapper in (8, oct), (10, str), (16, hex):
+    for base, mapper in (8, oct), (10, repr), (16, hex):
         got = mapper(x)
         expected = slow_format(x, base)
         check(got == expected, mapper.__name__, "returned",
               got, "but expected", expected, "for", x)
         check(atol(got, 0) == x, 'atol("%s", 0) !=' % got, x)
+    # str() has to be checked a little differently since there's no
+    # trailing "L"
+    got = str(x)
+    expected = slow_format(x, 10)[:-1]
+    check(got == expected, mapper.__name__, "returned",
+          got, "but expected", expected, "for", x)
 
 def test_format(maxdigits=MAXDIGITS):
     print "long str/hex/oct/atol"
