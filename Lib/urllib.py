@@ -20,22 +20,47 @@ import regex
 import os
 
 
-__version__ = '1.2'
+__version__ = '1.2' # XXXX Should I update this number? -- jack
 
 # Helper for non-unix systems
 if os.name == 'mac':
-	def _fixpath(pathname):
+	def url2pathname(pathname):
+		"Convert /-delimited pathname to mac pathname"
+		#
+		# XXXX The .. handling should be fixed...
+		#
+		tp = splittype(pathname)[0]
+		if tp and tp <> 'file':
+			raise RuntimeError, 'Cannot convert non-local URL to pathname'
 		components = string.split(pathname, '/')
+		if '..' in components or '.' in components or '' in components[1:-1]:
+			raise RuntimeError, 'Cannot convert URL containing ., .. or // to pathname'
 		if not components[0]:
 			# Absolute unix path, don't start with colon
 			return string.join(components[1:], ':')
 		else:
 			# relative unix path, start with colon
 			return ':' + string.join(components, ':')
+			
+	def pathname2url(pathname):
+		"convert mac pathname to /-delimited pathname"
+		if '/' in pathname:
+			raise RuntimeError, "Cannot convert pathname containing slashes"
+		components = string.split(pathname, ':')
+		if '' in components[1:-1]:
+			raise RuntimeError, "Cannot convert pathname containing ::"
+		# Truncate names longer than 31 bytes
+		components = map(lambda x: x[:31], components)
+		
+		if os.path.isabs(pathname):
+			return '/' + string.join(components, '/')
+		else:
+			return string.join(components, '/')
 else:
-	def _fixpath(pathname):
+	def url2pathname(pathname):
 		return pathname
-
+	def pathname2url(pathname):
+		return pathname
 
 # This really consists of two pieces:
 # (1) a class which handles opening of all sorts of URLs
@@ -144,7 +169,7 @@ class URLopener:
 			try:
 				fp = self.open_local_file(url1)
 				del fp
-				return splithost(url1)[1], None
+				return url2pathname(splithost(url1)[1]), None
 			except IOError, msg:
 				pass
 		fp = self.open(url)
@@ -238,12 +263,12 @@ class URLopener:
 	# Use local file
 	def open_local_file(self, url):
 		host, file = splithost(url)
-		if not host: return addinfo(open(_fixpath(file), 'r'), noheaders())
+		if not host: return addinfo(open(url2pathname(file), 'r'), noheaders())
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfo(open(_fixpath(file), 'r'), noheaders())
+			return addinfo(open(url2pathname(file), 'r'), noheaders())
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
