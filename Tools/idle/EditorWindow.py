@@ -8,7 +8,7 @@ import tkSimpleDialog
 import tkMessageBox
 import idlever
 import WindowList
-from IdleConf import IdleConf
+from IdleConf import idleconf
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -94,8 +94,8 @@ class EditorWindow:
     vars = {}
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
-        edconf = IdleConf.getsection('EditorWindow')
-        coconf = IdleConf.getsection('Colors')
+        edconf = idleconf.getsection('EditorWindow')
+        coconf = idleconf.getsection('Colors')
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -530,7 +530,7 @@ class EditorWindow:
                 traceback.print_exc()
 
     def get_standard_extension_names(self):
-        return IdleConf.getextensions()
+        return idleconf.getextensions()
 
     def load_extension(self, name):
         mod = __import__(name, globals(), locals(), [])
