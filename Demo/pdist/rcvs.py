@@ -23,14 +23,59 @@ class MyFile(File):
 		'A' -- new locally
 		'R' -- deleted locally
 		'U' -- changed remotely, no changes locally
+		       (includes new remotely or deleted remotely)
 		'M' -- changed locally, no changes remotely
 		'C' -- conflict: changed locally as well as remotely
 		       (includes cases where the file has been added
 		       or removed locally and remotely)
+		'r' -- get rid of entry
+		'c' -- create entry
+		'u' -- update entry
 		"""
 		if not self.eseen:
-			pass
-		return '?'
+			if not self.lseen:
+				if not self.rseen: return '0' # Never heard of
+				else:
+					return 'N' # New remotely
+			else: # self.lseen
+				if not self.rseen: return '?' # Local only
+				# Local and remote, but no entry
+				if self.lsum == self.rsum:
+					return 'c' # Restore entry only
+				else: return 'C' # Real conflict
+		else: # self.eseen
+			if not self.lseen:
+				if self.eremoved:
+					if self.rseen: return 'R' # Removed
+					else: return 'r' # Get rid of entry
+				else: # not self.eremoved
+					if self.rseen:
+						print "warning:",
+						print self.file,
+						print "was lost"
+						return 'U'
+					else: return 'r' # Get rid of entry
+			else: # self.lseen
+				if not self.rseen:
+					if self.enew: return 'A' # New locally
+					else: return 'D' # Deleted remotely
+				else: # self.rseen
+					if self.enew:
+						if self.lsum == self.rsum:
+							return 'u'
+						else:
+							return 'C'
+					if self.lsum == self.esum:
+						if self.esum == self.rsum:
+							return '='
+						else:
+							return 'U'
+					elif self.esum == self.rsum:
+						return 'M'
+					elif self.lsum == self.rsum:
+						return 'u'
+					else:
+						return 'C'
 
 	def update(self):
 		code = self.action()
@@ -127,7 +172,8 @@ class rcvs(CommandFrameWork):
 		files = []
 		if self.cvs.checkfiles(files):
 			return 1
-		self.cvs.report()
+		for file in files:
+			print self.cvs.entries[file].action(), file
 
 	def do_update(self, opts, files):
 		"""update [file] ..."""
@@ -138,6 +184,7 @@ class rcvs(CommandFrameWork):
 				print "%s: not found" % file
 			else:
 				self.cvs.entries[file].update()
+		self.cvs.putentries()
 
 	def do_commit(self, opts, files):
 		"""commit [file] ..."""
@@ -145,13 +192,14 @@ class rcvs(CommandFrameWork):
 			return 1
 		sts = 0
 		for file in files:
-			if not self.entries[file].commitcheck():
+			if not self.cvs.entries[file].commitcheck():
 				sts = 1
 		if sts:
 			return sts
 		message = raw_input("One-liner: ")
 		for file in files:
-			self.entries[file].commit(message)
+			self.cvs.entries[file].commit(message)
+		self.cvs.putentries()
 
 
 def main():
