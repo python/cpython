@@ -17,10 +17,19 @@
 #     I don't want to be the schmuck who ends up re-writting it!
 #
 # -fld
+#
+# (sometime later...)
+#
+#  Ok, I've re-worked substantial chunks of this.  It's only getting worse.
+#     It just might be gone before the next source release.  (Yeah!)
+#
+# -fld
 
 import sys, string, regex, getopt, os
 
 from types import IntType, ListType, StringType, TupleType
+
+release_version = sys.version[:3]
 
 # Different parse modes for phase 1
 MODE_REGULAR = 0
@@ -829,7 +838,7 @@ class Wobj:
 # ignore these commands
 ignoredcommands = ('bcode', 'ecode', 'hline', 'small', '/')
 # map commands like these to themselves as plaintext
-wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX')
+wordsselves = ('UNIX', 'ABC', 'C', 'ASCII', 'EOF', 'LaTeX', 'POSIX')
 # \{ --> {,  \} --> }, etc
 themselves = ('{', '}', ',', '.', '@', ' ', '\n') + wordsselves
 # these ones also themselves (see argargs macro in myformat.sty)
@@ -837,7 +846,7 @@ inargsselves = (',', '[', ']', '(', ')')
 # this is how *I* would show the difference between emph and strong
 #  code 1 means: fold to uppercase
 markcmds = {'code': ('', ''), 'var': 1, 'emph': ('_', '_'),
-	  'strong': ('*', '*')}
+	    'strong': ('*', '*')}
 
 # recognise patter {\FONTCHANGE-CMD TEXT} to \MAPPED-FC-CMD{TEXT}
 fontchanges = {'rm': 'r', 'it': 'i', 'em': 'emph', 'bf': 'b', 'tt': 't'}
@@ -1033,7 +1042,7 @@ enumeratesymbols = ['1', 'A', 'a']
 ## this routine will be called on \begin{funcdesc}{NAME}{ARGS}
 ##   or \funcline{NAME}{ARGS}
 ##
-def do_funcdesc(length, buf, pp, i):
+def do_funcdesc(length, buf, pp, i, index=1):
     startpoint = i-1
     ch = pp[startpoint]
     wh = ch.where
@@ -1114,9 +1123,8 @@ def do_excdesc(length, buf, pp, i):
 	cat_class = 'exception'
 	class_class = string.join(idxsi[2:])
     elif idxsi == ['built-in', 'exception', 'base', 'class']:
-	command = 'defcv'
-	cat_class = 'exception'
-	class_class = "exception base class"
+	command = 'defvr'
+	cat_class = 'exception base class'
     else:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
 
@@ -1136,7 +1144,7 @@ def do_excdesc(length, buf, pp, i):
     return length, i
 
 ## same for datadesc or dataline...
-def do_datadesc(length, buf, pp, i):
+def do_datadesc(length, buf, pp, i, index=1):
     startpoint = i-1
     ch = pp[startpoint]
     wh = ch.where
@@ -1146,24 +1154,17 @@ def do_datadesc(length, buf, pp, i):
     length = length - (newi-i)
 
     idxsi = hist.indexsubitem	# words
-    command = ''
-    cat_class = ''
+    command = 'defcv'
+    cat_class = 'data'
     class_class = ''
     if idxsi[-1] in ('attribute', 'option'):
-	command = 'defcv'
 	cat_class = idxsi[-1]
 	class_class = string.join(idxsi[:-1])
     elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
-	command = 'defcv'
-	cat_class = 'data'
 	class_class = string.join(idxsi[1:])
     elif len(idxsi) == 4 and idxsi[:3] == ['data', 'in', 'module']:
-	command = 'defcv'
-	cat_class = 'data'
 	class_class = string.join(idxsi[2:])
     else:
-	command = 'defcv'
-	cat_class = 'data'
 	class_class = string.join(idxsi)
 
     ch.chtype = chunk_type[CSLINE]
@@ -1194,8 +1195,7 @@ def do_opcodedesc(length, buf, pp, i):
     ch.chtype = CSLINE
     ch.data = "deffn"
 
-    cslinearg = [#chunk(GROUP, wh, [chunk(PLAIN, wh, "exception")]),
-		 chunk(PLAIN, wh, 'exception '),
+    cslinearg = [chunk(PLAIN, wh, 'byte\ code\ instruction'),
 		 chunk(GROUP, wh, [chunk(PLAIN, wh, "byte code instruction")]),
 		 chunk(PLAIN, wh, ' '),
 		 dataname,
@@ -1263,26 +1263,35 @@ def changeit(buf, pp):
 
 	if ch.chtype == chunk_type[GROUP]:
 	    # check for {\em ...} constructs
-	    if ch.data and \
-	       ch.data[0].chtype == chunk_type[CSNAME] and \
-	       fontchanges.has_key(s(buf, ch.data[0].data)):
-		k = s(buf, ch.data[0].data)
-		del ch.data[0]
+	    data = ch.data
+	    if data and \
+	       data[0].chtype == chunk_type[CSNAME] and \
+	       fontchanges.has_key(s(buf, data[0].data)):
+		k = s(buf, data[0].data)
+		del data[0]
 		pp.insert(i-1, chunk(CSNAME, ch.where, fontchanges[k]))
 		length, i = length+1, i+1
 
-	    elif ch.data:
-		k = s(buf, ch.data[0].data)
-		if k == "fulllineitems":
-		    del ch.data[0]
-		    data = ch.data
-		    pp[i-1:i] = data
-		    i = i - 1
-		    length = length + len(data) - 1
-		    continue
+	    elif data:
+		if len(data) \
+		   and data[0].chtype == chunk_type[GROUP] \
+		   and len(data[0].data) \
+		   and data[0].data[0].chtype == chunk_type[CSNAME] \
+		   and s(buf, data[0].data[0].data) == 'e':
+		    data[0] = data[0].data[0]
+		    print "invoking \\e magic group transform..."
+		else:
+## 		    print "GROUP -- ch.data[0].data =", ch.data[0].data
+		    k = s(buf, data[0].data)
+		    if k == "fulllineitems":
+			del data[0]
+			pp[i-1:i] = data
+			i = i - 1
+			length = length + len(data) - 1
+			continue
 
 	    # recursively parse the contents of the group
-	    changeit(buf, ch.data)
+	    changeit(buf, data)
 
 	elif ch.chtype == chunk_type[IF]:
 	    # \if...
@@ -1325,24 +1334,27 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, [])]
 		length, i = length+2, i+2
 
-	    elif envname == 'itemize':
+	    elif envname in ('itemize', 'list'):
 		if hist.itemizenesting > len(itemizesymbols):
 		    raise error, 'too deep itemize nesting'
+		if envname == 'list':
+		    del pp[i:i+2]
+		    length = length - 2
 		ingroupch = [chunk(CSNAME, ch.where,
-			  itemizesymbols[hist.itemizenesting])]
+				   itemizesymbols[hist.itemizenesting])]
 		hist.itemizenesting = hist.itemizenesting + 1
 		pp[i:i] = [chunk(CSLINE, ch.where, 'itemize'),
-			  chunk(GROUP, ch.where, ingroupch)]
+			   chunk(GROUP, ch.where, ingroupch)]
 		length, i = length+2, i+2
 
 	    elif envname == 'enumerate':
 		if hist.enumeratenesting > len(enumeratesymbols):
 		    raise error, 'too deep enumerate nesting'
 		ingroupch = [chunk(PLAIN, ch.where,
-			  enumeratesymbols[hist.enumeratenesting])]
+				   enumeratesymbols[hist.enumeratenesting])]
 		hist.enumeratenesting = hist.enumeratenesting + 1
 		pp[i:i] = [chunk(CSLINE, ch.where, 'enumerate'),
-			  chunk(GROUP, ch.where, ingroupch)]
+			   chunk(GROUP, ch.where, ingroupch)]
 		length, i = length+2, i+2
 
 	    elif envname == 'description':
@@ -1408,20 +1420,22 @@ def changeit(buf, pp):
 		    raise 'STILL, SOMETHING wrong', `i`
 
 
-	    elif envname == 'funcdesc':
+	    elif envname in ('funcdesc', 'funcdescni'):
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
-		length, i = do_funcdesc(length, buf, pp, i)
+		length, i = do_funcdesc(length, buf, pp, i,
+					envname=="funcdesc")
 
 	    elif envname == 'excdesc':
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
 		length, i = do_excdesc(length, buf, pp, i)
 
-	    elif envname == 'datadesc':
+	    elif envname in ('datadesc', 'datadescni'):
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
 		i, length = i+1, length+1
-		length, i = do_datadesc(length, buf, pp, i)
+		length, i = do_datadesc(length, buf, pp, i,
+					envname=="datadesc")
 
 	    elif envname == 'opcodedesc':
 		pp.insert(i, chunk(PLAIN, ch.where, ''))
@@ -1458,7 +1472,7 @@ def changeit(buf, pp):
 			   chunk(GROUP, ch.where, [
 			       chunk(PLAIN, ch.where, 'example')])]
 		i, length = i+2, length+2
-	    elif envname == 'itemize':
+	    elif envname in ('itemize', 'list'):
 		hist.itemizenesting = hist.itemizenesting - 1
 		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
 			   chunk(GROUP, ch.where, [
@@ -1483,7 +1497,8 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(DENDLINE, ch.where, '\n'))
 		i, length = i+1, length+1
 
-	    elif envname in ('funcdesc', 'excdesc', 'datadesc'):
+	    elif envname in ('funcdesc', 'excdesc', 'datadesc',
+			     'funcdescni', 'datadescni'):
 		pp[i:i] = [chunk(CSLINE, ch.where, 'end'),
 			   chunk(GROUP, ch.where, [
 			       chunk(PLAIN, ch.where, hist.command)])]
@@ -1546,30 +1561,41 @@ def changeit(buf, pp):
 		# \, --> , \[ --> [, \] --> ]
 		ch.chtype = chunk_type[PLAIN]
 
-	    elif s_buf_data == 'renewcommand':
-		# \renewcommand{\indexsubitem}....
-		i, length = i-1, length-1
-		del pp[i]
-		length, newi = getnextarg(length, buf, pp, i)
-		if newi-i == 1 \
-			  and i < length \
-			  and pp[i].chtype == chunk_type[CSNAME] \
-			  and s(buf, pp[i].data) == 'indexsubitem':
-		    del pp[i:newi]
-		    length = length - (newi-i)
-		    length, newi = getnextarg(length, buf, pp, i)
-		    text = flattext(buf, pp[i:newi])
-		    if text[:1] != '(' or text[-1:] != ')':
-			raise error, \
-			      'expected indexsubitem enclosed in parenteses'
-		    words = string.split(text[1:-1])
-		    hist.indexsubitem = words
-## 		    print 'set hist.indexsubitem =', words
-		    del text, words
-		else:
-		    print 'WARNING: renewcommand with unsupported arg removed'
-		del pp[i:newi]
-		length = length - (newi-i)
+	    elif s_buf_data == 'setindexsubitem':
+		stuff = pp[i].data
+		if len(stuff) != 1:
+		    raise error, "parameter to \\setindexsubitem{} too long"
+		if pp[i].chtype != chunk_type[GROUP]:
+		    raise error, "bad chunk type following \\setindexsubitem" \
+			  "\nexpected GROUP, got " + str(ch.chtype)
+		text = s(buf, stuff[0].data)
+		if text[:1] != '(' or text[-1:] != ')':
+		    raise error, \
+			  'expected indexsubitem enclosed in parenteses'
+		hist.indexsubitem = string.split(text[1:-1])
+		del stuff, text
+		del pp[i-1:i+1]
+		i = i - 1
+		length = length - 2
+
+	    elif s_buf_data == 'newcommand':
+		print "ignoring definition of \\" + s(buf, pp[i].data[0].data)
+		del pp[i-1:i+2]
+		i = i - 1
+		length = length - 3
+
+	    elif s_buf_data == 'mbox':
+		stuff = pp[i].data
+		pp[i-1:i+1] = stuff
+		i = i - 1
+		length = length + len(stuff) - 2
+
+	    elif s_buf_data == 'version':
+		ch.chtype = chunk_type[PLAIN]
+		ch.data = release_version
+
+	    elif s_buf_data == 'program':
+		ch.data = "strong"
 
 	    elif s_buf_data == "fulllineitems":
 		del pp[i-1]
@@ -1641,7 +1667,7 @@ def changeit(buf, pp):
 		    pp.insert(i, chunk(GROUP, ch.where, []))
 		    i, length = i+1, length+1
 	    elif s_buf_data in themselves:
-		# \UNIX --> UNIX
+		# \UNIX --> &UNIX;
 		ch.chtype = chunk_type[PLAIN]
 		if i != length \
 			  and pp[i].chtype == chunk_type[GROUP] \
@@ -1650,6 +1676,12 @@ def changeit(buf, pp):
 		    length = length-1
 	    elif s_buf_data in for_texi:
 		pass
+
+	    elif s_buf_data == 'manpage':
+		ch.data = 'emph'
+		sect = s(buf, pp[i+1].data[0].data)
+		pp[i+1].data = "(%s)" % sect
+		pp[i+1].chtype = chunk_type[PLAIN]
 
 	    elif s_buf_data == 'e':
 		# "\e" --> "\"
@@ -1661,10 +1693,6 @@ def changeit(buf, pp):
 		# @item @<cts. of itemargmacro>{a1}
 		#  a2 [ -- a3]
 		#
-		##print 'LINEIIIIII!!!!!!!'
-##				wobj = Wobj()
-##				dumpit(buf, wobj.write, pp[i-1:i+5])
-##				print '--->' + wobj.data + '<----'
 		if not hist.inenv:
 		    raise error, 'no environment for lineiii'
 		if (hist.inenv[0] != 'tableiii') and \
@@ -1679,10 +1707,6 @@ def changeit(buf, pp):
 			     chunk(GROUP, 0, pp[i:newi])]
 		del pp[i:newi]
 		length = length - (newi-i)
-##				print 'ITEM ARG: --->',
-##				wobj = Wobj()
-##				dumpit(buf, wobj.write, ingroupch)
-##				print wobj.data, '<---'
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		grouppos = i
 		i, length = i+1, length+1
@@ -1693,11 +1717,6 @@ def changeit(buf, pp):
 		    pp.insert(i, chunk(PLAIN, ch.where, '  ---  '))
 		    i = newi + 1
 		    length = length + 1
-##					pp[grouppos].data = pp[grouppos].data \
-##						  + [chunk(PLAIN, ch.where, '  ')] \
-##						  + pp[i:newi]
-##					del pp[i:newi]
-##					length = length - (newi-i)
 		if length != len(pp):
 		    raise 'IN LINEIII IS THE ERR', `i`
 
@@ -1708,7 +1727,8 @@ def changeit(buf, pp):
 		## also: remove commas and quotes
 		ch.chtype = chunk_type[CSLINE]
 		length, newi = getnextarg(length, buf, pp, i)
-		afternodenamecmd = next_command_p(length, buf, pp, newi, 'nodename')
+		afternodenamecmd = next_command_p(length, buf,
+						  pp, newi, 'nodename')
 		if afternodenamecmd < 0:
 		    cp1 = crcopy(pp[i:newi])
 		    pp[i:newi] = [chunk(GROUP, ch.where, pp[i:newi])]
@@ -1716,7 +1736,8 @@ def changeit(buf, pp):
 		    text = flattext(buf, cp1)
 		    text = invent_node_names(text)
 		else:
-		    length, endarg = getnextarg(length, buf, pp, afternodenamecmd)
+		    length, endarg = getnextarg(length, buf,
+						pp, afternodenamecmd)
 		    cp1 = crcopy(pp[afternodenamecmd:endarg])
 		    del pp[newi:endarg]
 		    length = length - (endarg-newi)
@@ -1726,7 +1747,6 @@ def changeit(buf, pp):
 		    text = flattext(buf, cp1)
 		if text[-1] == '.':
 		    text = text[:-1]
-##				print 'FLATTEXT:', `text`
 		if text in hist.nodenames:
 		    print 'WARNING: node name ' + `text` + ' already used'
 		    out.doublenodes.append(text)
@@ -1900,7 +1920,7 @@ def changeit(buf, pp):
 		ch.data = 'cindex'
 		length, newi = getnextarg(length, buf, pp, i)
 		ingroupch = [chunk(CSNAME, wh, 'code'),
-			  chunk(GROUP, wh, pp[i:newi])]
+			     chunk(GROUP, wh, pp[i:newi])]
 
 		del pp[i:newi]
 		length = length - (newi-i)
@@ -2045,14 +2065,14 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, ingroupch)]
 		i, length = i+2, length+2
 
-## 	    elif s_buf_data == 'indexsubitem':
-## 		ch.data = flattext(buf, [ch])
-## 		ch.chtype = chunk_type[PLAIN]
-
 	    elif s_buf_data == 'seemodule':
 		ch.data = "code"
+		# this is needed for just one of the input files... -sigh-
+		while pp[i+1].chtype == chunk_type[COMMENT]:
+		    i = i + 1
 		data = pp[i+1].data
-		data.insert(0, chunk(PLAIN, ch.where, " ("))
+		oparen = chunk(PLAIN, ch.where, " (")
+		data.insert(0, oparen)
 		data.append(chunk(PLAIN, ch.where, ")"))
 		pp[i+1:i+2] = data
 		length = length + len(data) - 1
@@ -2068,8 +2088,13 @@ def changeit(buf, pp):
 		ch.chtype = PLAIN
 		ch.data = "    "
 
-	    elif s_buf_data in ('noindent', 'indexsubitem'):
+	    elif s_buf_data in ('noindent', 'indexsubitem', 'footnote'):
 		pass
+
+	    elif s_buf_data in ('url', 'module', 'function', 'cfunction',
+				'keyword', 'method', 'exception', 'constant',
+				'email', 'class'):
+		ch.data = "code"
 
 	    elif s_buf_data == 'label':
 		name = s(buf, pp[i].data[0].data)
@@ -2077,6 +2102,17 @@ def changeit(buf, pp):
 		length = length - 2
 		i = i - 1
 		label_nodes[name] = hist.nodenames[-1]
+
+	    elif s_buf_data == 'rfc':
+		ch.chtype = chunk_type[PLAIN]
+		ch.data = "RFC " + s(buf, pp[i].data[0].data)
+		del pp[i]
+		length = length - 1
+
+	    elif s_buf_data == 'Large':
+		del pp[i-1]
+		i = i - 1
+		length = length - 1
 
 	    elif s_buf_data == 'ref':
 		name = s(buf, pp[i].data[0].data)
@@ -2220,12 +2256,13 @@ def dumpit(buf, wm, pp):
 
 
 def main():
+    global release_version
     outfile = None
     headerfile = 'texipre.dat'
     trailerfile = 'texipost.dat'
 
     try:
-	opts, args = getopt.getopt(sys.argv[1:], 'o:h:t:')
+	opts, args = getopt.getopt(sys.argv[1:], 'o:h:t:v:')
     except getopt.error:
 	args = []
 
@@ -2238,6 +2275,7 @@ def main():
 	if opt == '-o': outfile = arg
 	if opt == '-h': headerfile = arg
 	if opt == '-t': trailerfile = arg
+	if opt == '-v': release_version = arg
 
     if not outfile:
 	root, ext = os.path.splitext(args[0])
