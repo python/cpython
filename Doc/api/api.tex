@@ -3397,7 +3397,8 @@ function returns true for each pair in the dictionary, and false once
 all pairs have been reported.  The parameters \var{pkey} and
 \var{pvalue} should either point to \ctype{PyObject*} variables that
 will be filled in with each key and value, respectively, or may be
-\NULL.  The dictionary \var{p} must not be mutated during iteration.
+\NULL.
+
 For example:
 
 \begin{verbatim}
@@ -3407,6 +3408,27 @@ int pos = 0;
 while (PyDict_Next(self->dict, &pos, &key, &value)) {
     /* do something interesting with the values... */
     ...
+}
+\end{verbatim}
+
+The dictionary \var{p} should not be mutated during iteration.  It is
+safe (since Python 2.1) to modify the values of the keys as you
+iterate over the dictionary, for example:
+
+\begin{verbatim}
+PyObject *key, *value;
+int pos = 0;
+
+while (PyDict_Next(self->dict, &pos, &key, &value)) {
+    int i = PyInt_AS_LONG(value) + 1;
+    PyObject *o = PyInt_FromLong(i);
+    if (o == NULL)
+        return -1;
+    if (PyDict_SetItem(self->dict, key, o) < 0) {
+        Py_DECREF(o);
+        return -1;
+    }
+    Py_DECREF(o);
 }
 \end{verbatim}
 \end{cfuncdesc}
