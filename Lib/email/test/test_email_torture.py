@@ -11,14 +11,9 @@ import os
 import unittest
 from cStringIO import StringIO
 from types import ListType
-from test_email import TestEmailBase
 
-try:
-    import test_support
-    TestSkipped = test_support.TestSkipped
-except ImportError:
-    test_support = None
-    TestSkipped = ImportError
+from email.test.test_email import TestEmailBase
+from test.test_support import TestSkipped
 
 import email
 from email import __file__ as testfile
