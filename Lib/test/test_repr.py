@@ -5,7 +5,7 @@
 
 import unittest
 from test_support import run_unittest
-from repr import repr as r # Don't shadow builtin repr 
+from repr import repr as r # Don't shadow builtin repr
 
 
 def nestedTuple(nesting):
@@ -24,7 +24,7 @@ class ReprTests(unittest.TestCase):
         s = "a"*30+"b"*30
         expected = `s`[:13] + "..." + `s`[-14:]
         eq(r(s), expected)
-        
+
         eq(r("\"'"), repr("\"'"))
         s = "\""*30+"'"*100
         expected = `s`[:13] + "..." + `s`[-14:]
@@ -67,7 +67,7 @@ class ReprTests(unittest.TestCase):
         eq = self.assertEquals
         i1 = ClassWithRepr("a")
         eq(r(i1), repr(i1))
-        
+
         i2 = ClassWithRepr("x"*1000)
         expected = `i2`[:13] + "..." + `i2`[-14:]
         eq(r(i2), expected)

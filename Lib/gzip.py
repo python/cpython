@@ -277,7 +277,7 @@ class GzipFile:
 
     def rewind(self):
         '''Return the uncompressed stream file position indicator to the
-        beginning of the file''' 
+        beginning of the file'''
         if self.mode != READ:
             raise IOError("Can't rewind in write mode")
         self.fileobj.seek(0)
@@ -291,7 +291,7 @@ class GzipFile:
             if offset < self.offset:
                 raise IOError('Negative seek in write mode')
             count = offset - self.offset
-            for i in range(count/1024): 
+            for i in range(count/1024):
                 f.write(1024*'\0')
             self.write((count%1024)*'\0')
         elif self.mode == READ:

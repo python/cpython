@@ -452,7 +452,7 @@ class HTTPRedirectHandler(BaseHandler):
         new.error_302_dict[newurl] = newurl
 
         # Don't close the fp until we are sure that we won't use it
-        # with HTTPError.  
+        # with HTTPError.
         fp.read()
         fp.close()
 

@@ -13,7 +13,7 @@ class CodeopTests(unittest.TestCase):
         '''succeed iff str is a valid piece of code'''
         expected = compile(str, "<input>", symbol)
         self.assertEquals( compile_command(str, "<input>", symbol), expected)
-                           
+
 
     def assertIncomplete(self, str, symbol='single'):
         '''succeed iff str is the start of a valid piece of code'''
@@ -41,13 +41,13 @@ class CodeopTests(unittest.TestCase):
         av("a=3\n\n")
 
         # special case
-        self.assertEquals(compile_command(""), 
+        self.assertEquals(compile_command(""),
                           compile("pass", "<input>", 'single'))
 
         av("3**3","eval")
         av("(lambda z: \n z**3)","eval")
         av("#a\n#b\na**3","eval")
-        
+
     def test_incomplete(self):
         ai = self.assertIncomplete
         ai("(a **")
@@ -59,7 +59,7 @@ class CodeopTests(unittest.TestCase):
         ai("if 9==3:\n   pass\nelse:\n   pass")
         ai("a = (")
         ai("a = 9+ \\")
-        
+
         ai("(","eval")
         ai("(\n\n\n","eval")
         ai("(9+","eval")

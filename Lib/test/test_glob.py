@@ -107,4 +107,3 @@ class GlobTests(unittest.TestCase):
                                                    os.path.join('aab', 'F')]))
 
 run_unittest(GlobTests)
-

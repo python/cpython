@@ -247,9 +247,9 @@ def parse_multipart(fp, pdict):
     if pdict.has_key('boundary'):
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
-        raise ValueError,  ('Invalid boundary in multipart form: %s' 
+        raise ValueError,  ('Invalid boundary in multipart form: %s'
                             % `ib`)
-    
+
     nextpart = "--" + boundary
     lastpart = "--" + boundary + "--"
     partdict = {}
@@ -600,7 +600,7 @@ class FieldStorage:
         """Internal: read a part that is itself multipart."""
         ib = self.innerboundary
         if not valid_boundary(ib):
-            raise ValueError, ('Invalid boundary in multipart form: %s' 
+            raise ValueError, ('Invalid boundary in multipart form: %s'
                                % `ib`)
         self.list = []
         klass = self.FieldStorageClass or self.__class__

@@ -43,7 +43,7 @@ class TestImport(unittest.TestCase):
         f = open(self.module_path, 'w')
         f.write(contents)
         f.close()
-    
+
     def test_package_import__semantics(self):
 
         # Generate a couple of broken modules to try importing.
