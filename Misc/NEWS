@@ -211,6 +211,9 @@ TBD
 Windows
 -------
 
+- distutils' msvccompiler class now passes the preprocessor options to
+  the resource compiler.  See SF patch #669198.
+
 - The bsddb module now ships with Sleepycat's 4.1.25.NC, the latest
   release without strong cryptography.
 
