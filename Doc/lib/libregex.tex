@@ -3,7 +3,17 @@
 
 \bimodindex{regex}
 This module provides regular expression matching operations similar to
-those found in Emacs.  It is always available.
+those found in Emacs.
+
+\strong{Obsolescence note:}
+This module is obsolete as of Python version 1.5; it is still being
+maintained because much existing code still uses it.  All new code in
+need of regular expressions should use the new \code{re} module, which
+supports the more powerful and regular Perl-style regular expressions.
+Existing code should be converted.  The standard library module
+\code{reconvert} helps in converting \code{regex} style regular
+expressions to \code{re} style regular expressions.  (The interfaces
+are different too, so the conversion cannot be fully automated.)
 
 By default the patterns are Emacs-style regular expressions
 (with one exception).  There is
