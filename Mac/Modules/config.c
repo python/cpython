@@ -90,12 +90,14 @@ extern void initmactcp();
 #endif
 #ifdef USE_BGEN
 extern void initAE();
+extern void initCm();
 extern void initCtl();
 extern void initDlg();
 extern void initEvt();
 extern void initList();
 extern void initMenu();
 extern void initQd();
+extern void initQt();
 extern void initRes();
 extern void initSnd();
 extern void initWin();
@@ -167,12 +169,14 @@ struct {
 #endif
 #ifdef USE_BGEN
 	{"AE", initAE},
+	{"Cm", initCm},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
 	{"Menu", initMenu},
 	{"List", initList},
 	{"Qd", initQd},
+	{"Qt", initQt},
 	{"Snd", initSnd},
 	{"Win", initWin},
 	{"Res", initRes},
@@ -209,3 +213,4 @@ struct {
 	/* Sentinel */
 	{0, 0}
 };
+
