@@ -287,7 +287,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		}
 	}
 	else
-		Py_XINCREF(builtins);
+		Py_INCREF(builtins);
 	f->f_builtins = builtins;
 	Py_XINCREF(back);
 	f->f_back = back;
