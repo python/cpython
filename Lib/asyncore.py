@@ -510,7 +510,6 @@ def close_all (map=None):
 import os
 if os.name == 'posix':
     import fcntl
-    import FCNTL
 
     class file_wrapper:
         # here we override just enough to make a file
@@ -538,9 +537,9 @@ if os.name == 'posix':
             dispatcher.__init__ (self)
             self.connected = 1
             # set it to non-blocking mode
-            flags = fcntl.fcntl (fd, FCNTL.F_GETFL, 0)
-            flags = flags | FCNTL.O_NONBLOCK
-            fcntl.fcntl (fd, FCNTL.F_SETFL, flags)
+            flags = fcntl.fcntl (fd, fcntl.F_GETFL, 0)
+            flags = flags | os.O_NONBLOCK
+            fcntl.fcntl (fd, fcntl.F_SETFL, flags)
             self.set_file (fd)
 
         def set_file (self, fd):
