@@ -4399,6 +4399,39 @@ generators terminate, they automatically raise \exception{StopIteration}.
 In combination, these features make it easy to create iterators with no
 more effort than writing a regular function.
 
+\section{Generator Expressions\label{genexps}}
+
+Some simple generators can be coded succinctly as expressions using a syntax
+like list comprehensions but with parentheses instead of brackets.  These
+expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but
+less versatile than full generator definitions and the tend to be more memory
+friendly than equivalent list comprehensions.
+
+Examples:
+
+\begin{verbatim}
+>>> sum(i*i for i in range(10))                 # sum of squares
+285
+
+>>> xvec = [10, 20, 30]
+>>> yvec = [7, 5, 3]
+>>> sum(x*y for x,y in zip(xvec, yvec))         # dot product
+260
+
+>>> from math import pi, sin
+>>> sine_table = dict((x, sin(x*pi/180)) for x in range(0, 91))
+
+>>> unique_words = set(word  for line in page  for word in line.split())
+
+>>> valedictorian = max((student.gpa, student.name) for student in graduates)
+
+>>> data = 'golf'
+>>> list(data[i] for i in range(len(data)-1,-1,-1))
+['f', 'l', 'o', 'g']
+
+\end{verbatim}
+
 
 
 \chapter{Brief Tour of the Standard Library \label{briefTour}}
