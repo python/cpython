@@ -9,7 +9,12 @@
 
 The \module{telnetlib} module provides a \class{Telnet} class that
 implements the Telnet protocol.  See \rfc{854} for details about the
-protocol.
+protocol. In addition, it provides symbolic constants for the protocol
+characters (IAC/DONT/DO/WONT/WILL), and for the telnet options. The
+symbolic names of the telnet options follow the definitions in
+\code{arpa/telnet.h}, with the leading \code{TELOPT_} removed. For
+symbolic names of options which are traditionally not included in
+\code{arpa/telnet.h}, see the module source itself.
 
 
 \begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
@@ -156,6 +161,13 @@ far (may be the empty string if a timeout happened).
 If a regular expression ends with a greedy match (such as \regexp{.*})
 or if more than one expression can match the same input, the
 results are indeterministic, and may depend on the I/O timing.
+\end{methoddesc}
+
+\begin{methoddesc}{set_option_negotiation_callback}{callback}
+Each time a telnet option is read on the input flow, this
+\var{callback} (if set) is called with the following parameters :
+callback(telnet socket, command (DO/DONT/WILL/WONT), option).  No other
+action is done afterwards by telnetlib.
 \end{methoddesc}
 
 

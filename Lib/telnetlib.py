@@ -57,6 +57,66 @@ WONT = chr(252)
 WILL = chr(251)
 theNULL = chr(0)
 
+# Telnet protocol options code (don't change)
+# These ones all come from arpa/telnet.h
+BINARY = chr(0) # 8-bit data path
+ECHO = chr(1) # echo
+RCP = chr(2) # prepare to reconnect
+SGA = chr(3) # suppress go ahead
+NAMS = chr(4) # approximate message size
+STATUS = chr(5) # give status
+TM = chr(6) # timing mark
+RCTE = chr(7) # remote controlled transmission and echo
+NAOL = chr(8) # negotiate about output line width
+NAOP = chr(9) # negotiate about output page size
+NAOCRD = chr(10) # negotiate about CR disposition
+NAOHTS = chr(11) # negotiate about horizontal tabstops
+NAOHTD = chr(12) # negotiate about horizontal tab disposition
+NAOFFD = chr(13) # negotiate about formfeed disposition
+NAOVTS = chr(14) # negotiate about vertical tab stops
+NAOVTD = chr(15) # negotiate about vertical tab disposition
+NAOLFD = chr(16) # negotiate about output LF disposition
+XASCII = chr(17) # extended ascii character set
+LOGOUT = chr(18) # force logout
+BM = chr(19) # byte macro
+DET = chr(20) # data entry terminal
+SUPDUP = chr(21) # supdup protocol
+SUPDUPOUTPUT = chr(22) # supdup output
+SNDLOC = chr(23) # send location
+TTYPE = chr(24) # terminal type
+EOR = chr(25) # end or record
+TUID = chr(26) # TACACS user identification
+OUTMRK = chr(27) # output marking
+TTYLOC = chr(28) # terminal location number
+VT3270REGIME = chr(29) # 3270 regime
+X3PAD = chr(30) # X.3 PAD
+NAWS = chr(31) # window size
+TSPEED = chr(32) # terminal speed
+LFLOW = chr(33) # remote flow control
+LINEMODE = chr(34) # Linemode option
+XDISPLOC = chr(35) # X Display Location
+OLD_ENVIRON = chr(36) # Old - Environment variables
+AUTHENTICATION = chr(37) # Authenticate
+ENCRYPT = chr(38) # Encryption option
+NEW_ENVIRON = chr(39) # New - Environment variables
+# the following ones come from
+# http://www.iana.org/assignments/telnet-options
+# Unfortunately, that document does not assign identifiers
+# to all of them, so we are making them up
+TN3270E = chr(40) # TN3270E
+XAUTH = chr(41) # XAUTH
+CHARSET = chr(42) # CHARSET
+RSP = chr(43) # Telnet Remote Serial Port
+COM_PORT_OPTION = chr(44) # Com Port Control Option
+SUPPRESS_LOCAL_ECHO = chr(45) # Telnet Suppress Local Echo
+TLS = chr(46) # Telnet Start TLS
+KERMIT = chr(47) # KERMIT
+SEND_URL = chr(48) # SEND-URL
+FORWARD_X = chr(49) # FORWARD_X
+PRAGMA_LOGON = chr(138) # TELOPT PRAGMA LOGON
+SSPI_LOGON = chr(139) # TELOPT SSPI LOGON
+PRAGMA_HEARTBEAT = chr(140) # TELOPT PRAGMA HEARTBEAT
+EXOPL = chr(255) # Extended-Options-List
 
 class Telnet:
 
@@ -101,6 +161,12 @@ class Telnet:
         Reads all data in the cooked queue, without doing any socket
         I/O.
 
+    set_option_negotiation_callback(callback)
+        Each time a telnet option is read on the input flow, this callback
+        (if set) is called with the following parameters :
+        callback(telnet socket, command (DO/DONT/WILL/WONT), option)
+        No other action is done afterwards by telnetlib.
+
     """
 
     def __init__(self, host=None, port=0):
@@ -119,6 +185,7 @@ class Telnet:
         self.irawq = 0
         self.cookedq = ''
         self.eof = 0
+        self.option_callback = None
         if host:
             self.open(host, port)
 
@@ -312,6 +379,10 @@ class Telnet:
             raise EOFError, 'telnet connection closed'
         return buf
 
+    def set_option_negotiation_callback(self, callback):
+        """Provide a callback function called after each receipt of a telnet option."""
+        self.option_callback = callback
+
     def process_rawq(self):
         """Transfer from raw queue to cooked queue.
 
@@ -335,15 +406,21 @@ class Telnet:
                     buf = buf + c
                 elif c in (DO, DONT):
                     opt = self.rawq_getchar()
-                    self.msg('IAC %s %d', c == DO and 'DO' or 'DONT', ord(c))
-                    self.sock.send(IAC + WONT + opt)
+                    self.msg('IAC %s %d', c == DO and 'DO' or 'DONT', ord(opt))
+                    if self.option_callback:
+                        self.option_callback(self.sock, c, opt)
+                    else:
+                        self.sock.send(IAC + WONT + opt)
                 elif c in (WILL, WONT):
                     opt = self.rawq_getchar()
                     self.msg('IAC %s %d',
-                             c == WILL and 'WILL' or 'WONT', ord(c))
-                    self.sock.send(IAC + DONT + opt)
+                             c == WILL and 'WILL' or 'WONT', ord(opt))
+                    if self.option_callback:
+                        self.option_callback(self.sock, c, opt)
+                    else:
+                        self.sock.send(IAC + DONT + opt)
                 else:
-                    self.msg('IAC %s not recognized' % `c`)
+                    self.msg('IAC %d not recognized' % ord(opt))
         except EOFError: # raised by self.rawq_getchar()
             pass
         self.cookedq = self.cookedq + buf
