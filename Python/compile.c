@@ -424,11 +424,14 @@ markblocks(unsigned char *code, int len)
 }
 
 static PyObject *
-optimize_code(PyObject *code, PyObject* consts, PyObject *names)
+optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *lineno_obj)
 {
-	int i, j, codelen;
+	int i, j, codelen, nops, h, adj;
 	int tgt, tgttgt, opcode;
-	unsigned char *codestr;
+	unsigned char *codestr = NULL;
+	unsigned char *lineno;
+	int *addrmap = NULL;
+	int new_line, cum_orig_line, last_line, tabsiz;
 	unsigned int *blocks;
 	char *name;
 
@@ -441,23 +444,27 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 		goto exitUnchanged;
 	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
 
+	/* Mapping to new jump targets after NOPs are removed */
+	addrmap = PyMem_Malloc(codelen * sizeof(int));
+	if (addrmap == NULL)
+		goto exitUnchanged;
+
 	/* Avoid situations where jump retargeting could overflow */
-	if (codelen > 65000)
+	if (codelen > 32000)
 		goto exitUnchanged;
 
 	blocks = markblocks(codestr, codelen);
-	if (blocks == NULL) {
-		PyMem_Free(codestr);
+	if (blocks == NULL)
 		goto exitUnchanged;
-	}
 	assert(PyTuple_Check(consts));
 
-	for (i=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
+	for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
+		addrmap[i] = i - nops;
 		opcode = codestr[i];
 		switch (opcode) {
 
 		/* Replace UNARY_NOT JUMP_IF_FALSE POP_TOP with 
-		   with    JUMP_IF_TRUE POP_TOP NOP */
+		   with    JUMP_IF_TRUE POP_TOP */
 		case UNARY_NOT:
 			if (codestr[i+1] != JUMP_IF_FALSE  ||
 			    codestr[i+4] != POP_TOP  ||
@@ -471,6 +478,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 			SETARG(codestr, i, j);
 			codestr[i+3] = POP_TOP;
 			codestr[i+4] = NOP;
+			nops++;
 			break;
 
 		/* not a is b -->  a is not b
@@ -482,9 +490,10 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 			if (j < 6  ||  j > 9  ||
 			    codestr[i+3] != UNARY_NOT  || 
 			    !ISBASICBLOCK(blocks,i,4))
-  			 continue;
+				continue;
 			SETARG(codestr, i, (j^1));
 			codestr[i+3] = NOP;
+			nops++;
 			break;
 
 		/* Replace LOAD_GLOBAL/LOAD_NAME None with LOAD_CONST None */
@@ -503,43 +512,40 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 			}
 			break;
 
-		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP. 
-		   Note, only the first opcode is changed, the others still
-		   perform normally if they happen to be jump targets. */
+		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP */
 		case LOAD_CONST:
 			j = GETARG(codestr, i);
 			if (codestr[i+3] != JUMP_IF_FALSE  ||
 			    codestr[i+6] != POP_TOP  ||
+			    !ISBASICBLOCK(blocks,i,7) ||
 			    !PyObject_IsTrue(PyTuple_GET_ITEM(consts, j)))
 				continue;
-			codestr[i] = JUMP_FORWARD;
-			SETARG(codestr, i, 4);
+			memset(codestr+i, NOP, 7);
+			nops += 7;
 			break;
 
-		/* Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2 JMP+2 NOP NOP.
-		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2 JMP+1 NOP. */
+		/* Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
+		   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
+		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
 		case BUILD_TUPLE:
 		case BUILD_LIST:
-			if (codestr[i+3] != UNPACK_SEQUENCE)
+			j = GETARG(codestr, i);
+			if (codestr[i+3] != UNPACK_SEQUENCE  ||
+			    !ISBASICBLOCK(blocks,i,6) ||
+			    j != GETARG(codestr, i+3))
 				continue;
-			if (!ISBASICBLOCK(blocks,i,6))
-				continue;
-			if (GETARG(codestr, i) == 2 &&
-			    GETARG(codestr, i+3) == 2) {
+			if (j == 1) {
+				memset(codestr+i, NOP, 6);
+				nops += 6;
+			} else if (j == 2) {
 				codestr[i] = ROT_TWO;
-				codestr[i+1] = JUMP_FORWARD;
-				SETARG(codestr, i+1, 2);
-				codestr[i+4] = NOP;
-				codestr[i+5] = NOP;
-				continue;
-			} 
-			if (GETARG(codestr, i) == 3 &&
-			    GETARG(codestr, i+3) == 3) {
+				memset(codestr+i+1, NOP, 5);
+				nops += 5;
+			} else if (j == 3) {
 				codestr[i] = ROT_THREE;
 				codestr[i+1] = ROT_TWO;
-				codestr[i+2] = JUMP_FORWARD;
-				SETARG(codestr, i+2, 1);
-				codestr[i+5] = NOP;
+				memset(codestr+i+2, NOP, 4);
+				nops += 4;
 			}
 			break;
 
@@ -570,14 +576,73 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 		case EXTENDED_ARG:
 			PyMem_Free(codestr);
 			goto exitUnchanged;
+
+		/* Replace RETURN LOAD_CONST None RETURN with just RETURN */
+		case RETURN_VALUE:
+			if (i+4 >= codelen ||
+			   codestr[i+4] != RETURN_VALUE ||
+			   !ISBASICBLOCK(blocks,i,5))
+			       continue;
+			memset(codestr+i+1, NOP, 4);
+			nops += 4;
+			break;
 		}
 	}
-	code = PyString_FromStringAndSize((char *)codestr, codelen);
+
+	/* Fixup linenotab */
+	assert(PyString_Check(lineno_obj));
+	lineno = PyString_AS_STRING(lineno_obj);
+	tabsiz = PyString_GET_SIZE(lineno_obj);
+	cum_orig_line = 0;
+	last_line = 0;
+	for (i=0 ; i < tabsiz ; i+=2) {
+		cum_orig_line += lineno[i];
+		new_line = addrmap[cum_orig_line];
+		lineno[i] =((unsigned char)(new_line - last_line));
+		last_line = new_line;
+	}
+
+	/* Remove NOPs and fixup jump targets */
+	for (i=0, h=0 ; i<codelen ; ) {
+		opcode = codestr[i];
+		switch (opcode) {
+			case NOP:
+				i++;
+				continue;
+
+			case JUMP_ABSOLUTE:
+			case CONTINUE_LOOP:
+				j = addrmap[GETARG(codestr, i)];
+				SETARG(codestr, i, j);
+				break;
+
+			case FOR_ITER:
+			case JUMP_FORWARD:
+			case JUMP_IF_FALSE:
+			case JUMP_IF_TRUE:
+			case SETUP_LOOP:
+			case SETUP_EXCEPT:
+			case SETUP_FINALLY:
+				j = addrmap[GETARG(codestr, i) + i + 3] - addrmap[i] - 3;
+				SETARG(codestr, i, j);
+				break;
+		}
+		adj = CODESIZE(opcode);
+		while (adj--)
+			codestr[h++] = codestr[i++];
+	}
+
+	code = PyString_FromStringAndSize((char *)codestr, h);
+	PyMem_Free(addrmap);
 	PyMem_Free(codestr);
 	PyMem_Free(blocks);
 	return code;
 
 exitUnchanged:
+	if (addrmap != NULL)
+		PyMem_Free(addrmap);
+	if (codestr != NULL)
+		PyMem_Free(codestr);
 	Py_INCREF(code);
 	return code;
 }
@@ -4801,7 +4866,7 @@ jcompile(node *n, const char *filename, struct compiling *base,
 					     PyTuple_GET_SIZE(cellvars));
 		filename = PyString_InternFromString(sc.c_filename);
 		name = PyString_InternFromString(sc.c_name);
-		code = optimize_code(sc.c_code, consts, names);
+		code = optimize_code(sc.c_code, consts, names, sc.c_lnotab);
 		if (!PyErr_Occurred())
 			co = PyCode_New(sc.c_argcount,
 					sc.c_nlocals,

@@ -18,8 +18,6 @@ dis_f = """\
 
  %-4d         5 LOAD_CONST               1 (1)
               8 RETURN_VALUE
-              9 LOAD_CONST               0 (None)
-             12 RETURN_VALUE
 """%(_f.func_code.co_firstlineno + 1,
      _f.func_code.co_firstlineno + 2)
 
