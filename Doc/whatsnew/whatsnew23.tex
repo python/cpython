@@ -17,8 +17,8 @@
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for
-Python 2.3alpha2.  Please send any additions, comments or errata to
-the author.}
+Python 2.3beta1.  Please send any additions, comments or errata to the
+author.}
 
 This article explains the new features in Python 2.3.  The tentative
 release date of Python 2.3 is currently scheduled for mid-2003.
@@ -1366,8 +1366,13 @@ convert your database files to the new version.  You can do this
 fairly easily with the new scripts \file{db2pickle.py} and
 \file{pickle2db.py} which you will find in the distribution's
 Tools/scripts directory.  If you've already been using the PyBSDDB
-package, importing it as \module{bsddb3}, you will have to change your
+package and importing it as \module{bsddb3}, you will have to change your
 \code{import} statements.
+
+\item The new \module{bz2} module is an interface to the bz2 data
+compression library.  bz2 usually produces output that's smaller than
+the compressed output from the \module{zlib} module, meaning that it
+compresses data more highly.  (Contributed by Gustavo Niemeyer.)
  
 \item The Distutils \class{Extension} class now supports
 an extra constructor argument named \var{depends} for listing
@@ -1746,11 +1751,6 @@ For example:
 
 (Contributed by Raymond Hettinger.)
 
-\item The DOM implementation
-in \module{xml.dom.minidom} can now generate XML output in a
-particular encoding by providing an optional encoding argument to
-the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
-
 item The \module{Tix} module has received various bug fixes and
 updates for the current version of the Tix package.
 
@@ -1791,34 +1791,39 @@ Tkinter.wantobjects = 0
 
 Any breakage caused by this change should be reported as a bug.
 
+\item The DOM implementation
+in \module{xml.dom.minidom} can now generate XML output in a
+particular encoding by providing an optional encoding argument to
+the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
+
+\item The new \module{DocXMLRPCServer} module allows writing
+self-documenting XML-RPC servers. Run it in demo mode (as a program)
+to see it in action.   Pointing the Web browser to the RPC server
+produces pydoc-style documentation; pointing xmlrpclib to the
+server allows invoking the actual methods.
+(Contributed by Brian Quinlan.)
+
 \item Support for internationalized domain names (RFCs 3454, 3490,
 3491, and 3492) has been added. The ``idna'' encoding can be used
 to convert between a Unicode domain name and the ASCII-compatible
-encoding (ACE).
+encoding (ACE) of that name.
 
 \begin{alltt}
 >>> u"www.Alliancefran\c{c}aise.nu".encode("idna")
 'www.xn--alliancefranaise-npb.nu'
 \end{alltt}
 
-In addition, the \module{socket} has been extended to transparently
-convert Unicode hostnames to the ACE before passing them to the C
-library. In turn, modules that pass hostnames ``through'' (such as
-\module{httplib}, \module{ftplib}) also support Unicode host names
-(httplib also sends ACE Host: headers). \module{urllib} supports
-Unicode URLs with non-ASCII host names as long as the \code{path} part
-of the URL is ASCII only.
+The \module{socket} module has also been extended to transparently
+convert Unicode hostnames to the ACE version before passing them to
+the C library.  Modules that deal with hostnames such as
+\module{httplib} and \module{ftplib}) also support Unicode host names;
+\module{httplib} also sends HTTP \samp{Host} headers using the ACE
+version of the domain name.  \module{urllib} supports Unicode URLs
+with non-ASCII host names as long as the \code{path} part of the URL
+is ASCII only.
 
 To implement this change, the module \module{stringprep}, the tool
-\code{mkstringprep} and the \code{punycode} encoding have been added.
-
-\item The new \module{DocXMLRPCServer} allows to write 
-self-documenting XML-RPC servers. Run it in demo mode (as a program)
-to see it in action: Pointing the Web browser to the RPC server
-produces pydoc-style documentation; pointing xmlrpclib to the
-server allows to invoke the actual methods.
-
-Contributed by Brian Quinlan.
+\code{mkstringprep} and the \code{punycode} encoding have been added.  
 
 \end{itemize}
 
