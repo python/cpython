@@ -32,7 +32,10 @@ def format_attrs(attrs, xml=0):
             if name == value and isnmtoken(value):
                 s = "%s %s" % (s, value)
             elif istoken(value):
-                s = "%s %s=%s" % (s, name, value)
+                if value == "no" + name:
+                    s = "%s %s" % (s, value)
+                else:
+                    s = "%s %s=%s" % (s, name, value)
             else:
                 s = '%s %s="%s"' % (s, name, escape(value))
     return s
