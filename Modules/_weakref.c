@@ -740,21 +740,56 @@ cleanup_helper(PyObject *object)
         return;
     }
     list = GET_WEAKREFS_LISTPTR(object);
-    while (*list != NULL) {
-        PyWeakReference *current = *list;
-        PyObject *callback = current->wr_callback;
+    /* Remove the callback-less basic and proxy references */
+    if (*list != NULL && (*list)->wr_callback == NULL) {
+        clear_weakref(*list);
+        if (*list != NULL && (*list)->wr_callback == NULL)
+            clear_weakref(*list);
+    }
+    if (*list != NULL) {
+        int count = getweakrefcount(*list);
 
-        Py_XINCREF(callback);
-        clear_weakref(current);
-        if (callback != NULL) {
+        if (count == 1) {
+            PyWeakReference *current = *list;
+            PyObject *callback = current->wr_callback;
             PyObject *cbresult;
 
+            Py_INCREF(callback);
+            clear_weakref(current);
             cbresult = PyObject_CallFunction(callback, "O", current);
             if (cbresult == NULL)
                 PyErr_WriteUnraisable(callback);
             else
                 Py_DECREF(cbresult);
             Py_DECREF(callback);
+        }
+        else {
+            PyObject *tuple = PyTuple_New(count * 2);
+            PyWeakReference *current = *list;
+            int i = 0;
+
+            for (i = 0; i < count; ++i) {
+                PyWeakReference *next = current->wr_next;
+
+                Py_INCREF(current);
+                PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
+                PyTuple_SET_ITEM(tuple, i * 2 + 1, current->wr_callback);
+                current->wr_callback = NULL;
+                next = current->wr_next;
+                clear_weakref(current);
+                current = next;
+            }
+            for (i = 0; i < count; ++i) {
+                PyObject *current = PyTuple_GET_ITEM(tuple, i * 2);
+                PyObject *callback = PyTuple_GET_ITEM(tuple, i * 2 + 1);
+                PyObject *cbresult = PyObject_CallFunction(callback, "O",
+                                                           current);
+                if (cbresult == NULL)
+                    PyErr_WriteUnraisable(callback);
+                else
+                    Py_DECREF(cbresult);
+            }
+            Py_DECREF(tuple);
         }
     }
     return;
