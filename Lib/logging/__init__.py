@@ -21,7 +21,7 @@ comp.lang.python, and influenced by Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.8.1"
-__date__    = "26 June 2003"
+__version__ = "0.4.9"
+__date__    = "20 February 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -198,6 +198,7 @@ class LogRecord:
             self.filename = pathname
             self.module = "Unknown module"
         self.exc_info = exc_info
+        self.exc_text = None      # used to cache the traceback text
         self.lineno = lineno
         self.created = ct
         self.msecs = (ct - long(ct)) * 1000
@@ -364,9 +365,14 @@ class Formatter:
             record.asctime = self.formatTime(record, self.datefmt)
         s = self._fmt % record.__dict__
         if record.exc_info:
+            # Cache the traceback text to avoid converting it multiple times
+            # (it's constant anyway)
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+        if record.exc_text:
             if s[-1] != "\n":
                 s = s + "\n"
-            s = s + self.formatException(record.exc_info)
+            s = s + record.exc_text
         return s
 
 #
@@ -613,10 +619,17 @@ class Handler(Filterer):
         """
         Tidy up any resources used by the handler.
 
-        This version does nothing and is intended to be implemented by
-        subclasses.
+        This version does removes the handler from an internal list
+        of handlers which is closed when shutdown() is called. Subclasses
+        should ensure that this gets called from overridden close()
+        methods.
         """
-        pass
+        #get the module data lock, as we're updating a shared structure.
+        _acquireLock()
+        try:    #unlikely to raise an exception, but you never know...
+            del _handlers[self]
+        finally:
+            _releaseLock()
 
     def handleError(self, record):
         """
@@ -700,6 +713,7 @@ class FileHandler(StreamHandler):
         Closes the stream.
         """
         self.stream.close()
+        StreamHandler.close(self)
 
 #---------------------------------------------------------------------------
 #   Manager classes and functions
@@ -989,7 +1003,8 @@ class Logger(Filterer):
         else:
             fn, lno = "<unknown file>", 0
         if exc_info:
-            exc_info = sys.exc_info()
+            if type(exc_info) != types.TupleType:
+                exc_info = sys.exc_info()
         record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info)
         self.handle(record)
 
@@ -1194,3 +1209,16 @@ def shutdown():
     for h in _handlers.keys():
         h.flush()
         h.close()
+
+#Let's try and shutdown automatically on application exit...
+try:
+    import atexit
+    atexit.register(shutdown)
+except ImportError: # for Python versions < 2.0
+    def exithook(status, old_exit=sys.exit):
+        try:
+            shutdown()
+        finally:
+            old_exit(status)
+
+    sys.exit = exithook
