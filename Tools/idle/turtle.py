@@ -210,12 +210,16 @@ class RawPen:
                                                 arrow="last",
                                                 capstyle="round",
                                                 fill=self._color)
-                for i in range(1, 1+nhops):
-                    x, y = x0 + dx*i/nhops, y0 + dy*i/nhops
-                    self._canvas.coords(item, x0, y0, x, y)
-                    self._canvas.update()
-                    self._canvas.after(10)
-                self._canvas.itemconfigure(item, arrow="none")
+                try:
+                    for i in range(1, 1+nhops):
+                        x, y = x0 + dx*i/nhops, y0 + dy*i/nhops
+                        self._canvas.coords(item, x0, y0, x, y)
+                        self._canvas.update()
+                        self._canvas.after(10)
+                    self._canvas.itemconfigure(item, arrow="none")
+                except Tk.TclError:
+                    # Probably the window was closed!
+                    return
             else:
                 item = self._canvas.create_line(x0, y0, x1, y1,
                                                 width=self._width,
@@ -226,6 +230,7 @@ class RawPen:
 
 _root = None
 _canvas = None
+_pen = None
 
 class Pen(RawPen):
 
@@ -233,13 +238,25 @@ class Pen(RawPen):
         global _root, _canvas
         if _root is None:
             _root = Tk.Tk()
+            _root.wm_protocol("WM_DELETE_WINDOW", self.destroy)
         if _canvas is None:
             # XXX Should have scroll bars
             _canvas = Tk.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
         RawPen.__init__(self, _canvas)
 
-_pen = None
+    def destroy(self):
+        global _root, _canvas, _pen
+        self.clear()
+        if self is _pen:
+            _pen = None
+            root = _root; _root = None
+            canvas = _canvas; _canvas = None
+            if root:
+                try:
+                    root.destroy()
+                except Tk.TclError:
+                    pass
 
 def _getpen():
     global _pen
