@@ -922,12 +922,21 @@
     #3
   \end{fulllineitems}
 }
+% \seeurl{url}{why it's interesting}
+\newcommand{\py@seeurl}[2]{%
+  \par%
+  \begin{fulllineitems}
+    \item[\url{#1}]
+    #2
+  \end{fulllineitems}
+}
 \newenvironment{seealso}[0]{
   \par
   \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
   \let\seemodule=\py@seemodule
   \let\seerfc=\py@seerfc
+  \let\seeurl=\py@seeurl
 }{\par}
 
 
