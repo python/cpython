@@ -46,7 +46,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.6"			# FAQ Wizard version
+WIZVERSION = "0.8"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
@@ -470,6 +470,10 @@ ADD_SECTION = """\
 
 ADD_TAIL = """
 </UL>
+"""
+
+ROULETTE = """
+<P>Hit your browser's Reload button to play again.<P>
 """
 
 DELETE = """
