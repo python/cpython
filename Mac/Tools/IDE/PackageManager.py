@@ -248,7 +248,7 @@ class PimpInterface:
 		pkg = self.packages[number]
 		return pkg.installed()
 		
-	def installpackage(self, sel, output, recursive, force):
+	def installpackage(self, sel, output, recursive, force, user):
 		pkg = self.packages[sel]
 		list, messages = self.pimpinstaller.prepareInstall(pkg, force, recursive)
 		if messages:
@@ -269,22 +269,27 @@ class PackageBrowser(PimpInterface):
 	def close(self):
 		self.closepimp()
 	
-	def setupwidgets(self): 
+	def setupwidgets(self):
+		INSTALL_POS = -30
+		STATUS_POS = INSTALL_POS - 62
 		self.w = W.Window((580, 400), "Python Install Manager", minsize = (400, 200), tabbable = 0)
-##		self.w.divline = W.HorizontalLine((0, 20, 0, 0))
 		self.w.titlebar = W.TextBox((4, 4, 40, 12), 'Packages:')
 		data = self.getbrowserdata()
-		self.w.packagebrowser = W.MultiList((4, 20, 0, -70), data, self.listhit, cols=3)
-		self.w.installed_l = W.TextBox((4, -66, 60, 12), 'Installed:')
-		self.w.installed = W.TextBox((64, -66, 0, 12), '')
-		self.w.message_l = W.TextBox((4, -48, 60, 12), 'Status:')
-		self.w.message = W.TextBox((64, -48, 0, 12), '')
-		self.w.homepage_button = W.Button((4, -28, 96, 18), 'View homepage', self.do_homepage)
-		self.w.verbose_button = W.CheckBox((-358, -26, 60, 18), 'Verbose')
-		self.w.recursive_button = W.CheckBox((-284, -26, 140, 18), 'Install dependencies', self.updatestatus)
+		self.w.packagebrowser = W.MultiList((4, 20, 0, STATUS_POS-2), data, self.listhit, cols=3)
+		
+		self.w.installed_l = W.TextBox((4, STATUS_POS, 60, 12), 'Installed:')
+		self.w.installed = W.TextBox((64, STATUS_POS, 0, 12), '')
+		self.w.message_l = W.TextBox((4, STATUS_POS+20, 60, 12), 'Status:')
+		self.w.message = W.TextBox((64, STATUS_POS+20, 0, 12), '')
+		self.w.homepage_button = W.Button((4, STATUS_POS+40, 96, 18), 'View homepage', self.do_homepage)
+		
+		self.w.divline = W.HorizontalLine((0, INSTALL_POS, 0, 0))
+		self.w.verbose_button = W.CheckBox((-358, INSTALL_POS+4, 60, 18), 'Verbose')
+		self.w.recursive_button = W.CheckBox((-284, INSTALL_POS+4, 140, 18), 'Install dependencies', self.updatestatus)
 		self.w.recursive_button.set(1)
-		self.w.force_button = W.CheckBox((-160, -26, 80, 18), 'Overwrite', self.updatestatus)
-		self.w.install_button = W.Button((-76, -28, 56, 18), 'Install', self.do_install)
+		self.w.force_button = W.CheckBox((-160, INSTALL_POS+4, 70, 18), 'Overwrite', self.updatestatus)
+		self.w.user_button = W.CheckBox((-90, INSTALL_POS+4, 100, 18), 'User Only')
+		self.w.install_button = W.Button((4, INSTALL_POS+4, 56, 18), 'Install', self.do_install)
 		self.w.open()
 		
 	def updatestatus(self):
@@ -299,6 +304,7 @@ class PackageBrowser(PimpInterface):
 			self.w.verbose_button.enable(0)
 			self.w.recursive_button.enable(0)
 			self.w.force_button.enable(0)
+			self.w.user_button.enable(0)
 		else:
 			sel = sel[0]
 			self.w.packagebrowser.setselection([sel])
@@ -310,6 +316,7 @@ class PackageBrowser(PimpInterface):
 			self.w.verbose_button.enable(1)
 			self.w.recursive_button.enable(1)
 			self.w.force_button.enable(1)
+			self.w.user_button.enable(0) # XXXX
 		
 	def listhit(self, *args, **kwargs):
 		self.updatestatus()
@@ -322,7 +329,8 @@ class PackageBrowser(PimpInterface):
 			output = None
 		recursive = self.w.recursive_button.get()
 		force = self.w.force_button.get()
-		messages = self.installpackage(sel, output, recursive, force)
+		user = self.w.user_button.get()
+		messages = self.installpackage(sel, output, recursive, force, user)
 		self.updatestatus()
 		if messages:
 			EasyDialogs.Message('\n'.join(messages))
