@@ -33,6 +33,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "errcode.h"
 #include "sysmodule.h"
 #include "pythonrun.h"
+#include "marshal.h"
+#include "compile.h"
+#include "ceval.h"
+
+#ifdef THINK_C
+#define macintosh
+#endif
 
 /* Define pathname separator used in file names */
 
@@ -130,11 +137,15 @@ get_module(m, name, m_ret)
 	char *name;
 	object **m_ret;
 {
-	object *d;
-	FILE *fp;
+	codeobject *co = NULL;
+	object *v, *d;
+	FILE *fp, *fpc;
 	node *n;
 	int err;
-	char namebuf[256];
+	char namebuf[258];
+	int namelen;
+	long mtime;
+	extern long getmtime();
 	
 	fp = open_module(name, ".py", namebuf);
 	if (fp == NULL) {
@@ -144,7 +155,33 @@ get_module(m, name, m_ret)
 			err_setstr(RuntimeError, "no module source file");
 		return NULL;
 	}
-	err = parse_file(fp, namebuf, file_input, &n);
+	/* Get mtime -- always useful */
+	mtime = getmtime(namebuf);
+	/* Check ".pyc" file first */
+	namelen = strlen(namebuf);
+	namebuf[namelen] = 'c';
+	namebuf[namelen+1] = '\0';
+	fpc = fopen(namebuf, "rb");
+	if (fpc != NULL) {
+		long pyc_mtime;
+		(void) rd_long(fpc); /* Reserved for magic word */
+		pyc_mtime = rd_long(fpc);
+		if (pyc_mtime != 0 && pyc_mtime != -1 && pyc_mtime == mtime) {
+			v = rd_object(fpc);
+			if (v == NULL || err_occurred() || !is_codeobject(v)) {
+				err_clear();
+				XDECREF(v);
+			}
+			else
+				co = (codeobject *)v;
+		}
+		fclose(fpc);
+	}
+	namebuf[namelen] = '\0';
+	if (co == NULL)
+		err = parse_file(fp, namebuf, file_input, &n);
+	else
+		err = E_DONE;
 	fclose(fp);
 	if (err != E_DONE) {
 		err_input(err);
@@ -159,7 +196,37 @@ get_module(m, name, m_ret)
 		*m_ret = m;
 	}
 	d = getmoduledict(m);
-	return run_node(n, namebuf, d, d);
+	if (co == NULL) {
+		co = compile(n, namebuf);
+		freetree(n);
+		if (co == NULL)
+			return NULL;
+		/* Now write the code object to the ".pyc" file */
+		namebuf[namelen] = 'c';
+		namebuf[namelen+1] = '\0';
+		fpc = fopen(namebuf, "wb");
+		if (fpc != NULL) {
+			wr_long(0L, fpc); /* Reserved for magic word */
+			/* First write a 0 for mtime */
+			wr_long(0L, fpc);
+			wr_object((object *)co, fpc);
+			if (ferror(fpc)) {
+				/* Don't keep partial file */
+				fclose(fpc);
+				(void) unlink(namebuf);
+			}
+			else {
+				/* Now write the true mtime */
+				fseek(fpc, 4L, 0);
+				wr_long(mtime, fpc);
+				fflush(fpc);
+				fclose(fpc);
+			}
+		}
+	}
+	v = eval_code(co, d, d, (object *)NULL);
+	DECREF(co);
+	return v;
 }
 
 static object *
