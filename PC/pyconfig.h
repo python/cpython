@@ -180,7 +180,6 @@ typedef int pid_t;
 #define HAVE_LONG_LONG 1
 #define LONG_LONG __int64
 
-#undef HAVE_HYPOT
 #undef HAVE_SYS_UTIME_H
 #define HAVE_UTIME_H
 #define HAVE_DIRENT_H
