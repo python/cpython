@@ -367,7 +367,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(map(None, d,
                                    SequenceClass(5),
                                    iter(d.iterkeys())),
-                         expected) 
+                         expected)
 
         f = open(TESTFN, "w")
         try:
@@ -378,7 +378,6 @@ class TestCase(unittest.TestCase):
         f = open(TESTFN, "r")
         try:
             self.assertEqual(map(len, f), range(1, 21, 2))
-            f.seek(0, 0)
         finally:
             f.close()
             try:
