@@ -2,8 +2,9 @@
 \label{profile}
 
 Copyright \copyright{} 1994, by InfoSeek Corporation, all rights reserved.
+\index{InfoSeek Corporation}
 
-Written by James Roskind.%
+Written by James Roskind\index{Roskind, James}.%
 \footnote{
 Updated and converted to \LaTeX\ by Guido van Rossum.  The references to
 the old profiler are left in the text, although it no longer exists.
@@ -128,7 +129,7 @@ The file \file{profile.py} can also be invoked as
 a script to profile another script.  For example:
 
 \begin{verbatim}
-python /usr/local/lib/python1.4/profile.py myscript.py
+python /usr/local/lib/python1.5/profile.py myscript.py
 \end{verbatim}
 
 When you wish to review the profile, you should use the methods in the
@@ -401,16 +402,16 @@ abbreviation is unambiguous.  The following are the keys currently
 defined: 
 
 \begin{tableii}{|l|l|}{code}{Valid Arg}{Meaning}
-\lineii{"calls"}{call count}
-\lineii{"cumulative"}{cumulative time}
-\lineii{"file"}{file name}
-\lineii{"module"}{file name}
-\lineii{"pcalls"}{primitive call count}
-\lineii{"line"}{line number}
-\lineii{"name"}{function name}
-\lineii{"nfl"}{name/file/line}
-\lineii{"stdname"}{standard name}
-\lineii{"time"}{internal time}
+  \lineii{'calls'}{call count}
+  \lineii{'cumulative'}{cumulative time}
+  \lineii{'file'}{file name}
+  \lineii{'module'}{file name}
+  \lineii{'pcalls'}{primitive call count}
+  \lineii{'line'}{line number}
+  \lineii{'name'}{function name}
+  \lineii{'nfl'}{name/file/line}
+  \lineii{'stdname'}{standard name}
+  \lineii{'time'}{internal time}
 \end{tableii}
 
 Note that all sorts on statistics are in descending order (placing
@@ -723,8 +724,8 @@ class OldProfile(Profile):
             nor_callers = {}
             nc = 0
             for func_caller in callers.keys():
-                nor_callers[self.func_normalize(func_caller)]=\
-                      callers[func_caller]
+                nor_callers[self.func_normalize(func_caller)] = \
+                    callers[func_caller]
                 nc = nc + callers[func_caller]
             self.stats[nor_func] = nc, nc, tt, ct, nor_callers
 \end{verbatim}
