@@ -26,7 +26,7 @@ def runningOnOSX():
 class PythonIDE(Wapplication.Application):
 	
 	def __init__(self):
-		self.preffilepath = ":Python:PythonIDE preferences"
+		self.preffilepath = os.path.join("Python", "PythonIDE preferences")
 		Wapplication.Application.__init__(self, 'Pide')
 		from Carbon import AE
 		from Carbon import AppleEvents
