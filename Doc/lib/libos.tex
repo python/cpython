@@ -577,6 +577,12 @@ Return a string representing the current working directory.
 Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
 
+\begin{funcdesc}{chroot}{path}
+Change the root directory of the current process to \var{path}.
+Availability: \UNIX{}.
+\versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{chmod}{path, mode}
 Change the mode of \var{path} to the numeric \var{mode}.
 Availability: \UNIX{}, Windows.

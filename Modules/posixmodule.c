@@ -724,6 +724,18 @@ posix_chmod(PyObject *self, PyObject *args)
 }
 
 
+#ifdef HAVE_CHROOT
+static char posix_chroot__doc__[] = 
+"chroot(path) -> None\n\
+Change root directory to path.";
+
+static PyObject *
+posix_chroot(PyObject *self, PyObject *args)
+{
+	return posix_1str(args, "et:chroot", chroot);
+}
+#endif
+
 #ifdef HAVE_FSYNC
 static char posix_fsync__doc__[] =
 "fsync(fildes) -> None\n\
@@ -5336,6 +5348,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown, METH_VARARGS, posix_chown__doc__},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_CHROOT
+	{"chroot",	posix_chroot, METH_VARARGS, posix_chroot__doc__},
+#endif
 #ifdef HAVE_CTERMID
 	{"ctermid",	posix_ctermid, METH_VARARGS, posix_ctermid__doc__},
 #endif
