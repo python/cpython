@@ -47,7 +47,6 @@ static long polys[] = {
 	268435456 + 9,
 	536870912 + 5,
 	1073741824 + 83,
-	0
 };
 
 /* Object used as dummy key to fill deleted entries */
@@ -373,8 +372,10 @@ dictresize(dictobject *mp, int minused)
 	register dictentry *newtable;
 	register dictentry *ep;
 	register int i;
+
+	assert(minused >= 0);
 	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
-		if (i > sizeof(polys)/sizeof(polys[0])) {
+		if (i >= sizeof(polys)/sizeof(polys[0])) {
 			/* Ran out of polynomials */
 			PyErr_NoMemory();
 			return -1;
