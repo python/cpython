@@ -79,7 +79,6 @@ class Scope:
         return self.children
 
     def DEBUG(self):
-        return
         print >> sys.stderr, self.name, self.nested and "nested" or ""
         print >> sys.stderr, "\tglobals: ", self.globals
         print >> sys.stderr, "\tcells: ", self.cells
@@ -162,12 +161,12 @@ class Scope:
                     child_globals.append(name)
                 elif isinstance(self, FunctionScope) and sc == SC_LOCAL:
                     self.cells[name] = 1
-                else:
+                elif sc != SC_CELL:
                     child_globals.append(name)
             else:
                 if sc == SC_LOCAL:
                     self.cells[name] = 1
-                else:
+                elif sc != SC_CELL:
                     child_globals.append(name)
         return child_globals
 
@@ -221,7 +220,6 @@ class SymbolVisitor:
         self._do_args(scope, node.argnames)
         self.visit(node.code, scope)
         self.handle_free_vars(scope, parent)
-        scope.DEBUG()
         
     def visitLambda(self, node, parent):
         for n in node.defaults:
@@ -243,8 +241,6 @@ class SymbolVisitor:
 
     def handle_free_vars(self, scope, parent):
         parent.add_child(scope)
-        if scope.children:
-            scope.DEBUG()
         scope.handle_children()
 
     def visitClass(self, node, parent):
@@ -298,6 +294,14 @@ class SymbolVisitor:
     def visitAssName(self, node, scope, assign=1):
         scope.add_def(node.name)
 
+    def visitAssAttr(self, node, scope, assign=0):
+        self.visit(node.expr, scope, 0)
+
+    def visitSubscript(self, node, scope, assign=0):
+        self.visit(node.expr, scope, 0)
+        for n in node.subs:
+            self.visit(n, scope, 0)
+            
     def visitAugAssign(self, node, scope):
         # If the LHS is a name, then this counts as assignment.
         # Otherwise, it's just use.
