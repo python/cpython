@@ -15,6 +15,7 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 		goto fail;
 	v = PyDict_GetItem(st->st_symbols, k);
 	if (v) /* XXX could check that name, type, lineno match */ {
+		Py_DECREF(k);
 		Py_INCREF(v);
 		return v;
 	}
