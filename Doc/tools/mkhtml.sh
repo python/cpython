@@ -31,6 +31,10 @@ latex2html \
  ${1:+$@} \
  $srcdir/$part/$part.tex || exit $?
 
+# copy in the stylesheet
+echo "cp $srcdir/html/style.css $part/$part.css"
+cp $srcdir/html/style.css $part/$part.css || exit $?
+
 echo "(cd $part; $srcdir/tools/node2label.pl \*.html)"
 cd $part
 $srcdir/tools/node2label.pl *.html || exit $?
