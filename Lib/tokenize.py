@@ -9,13 +9,16 @@ ending (row, column) coordinates of the token, and the original line.  It is
 designed to match the working of the Python tokenizer exactly, except that
 it produces COMMENT tokens for comments and gives type OP for all operators."""
 
-__version__ = "Ka-Ping Yee, 26 October 1997"
+__version__ = "Ka-Ping Yee, 26 October 1997; patched, GvR 3/30/98"
 
 import string, re
 from token import *
 
 COMMENT = N_TOKENS
 tok_name[COMMENT] = 'COMMENT'
+NL = N_TOKENS + 1
+tok_name[NL] = 'NL'
+
 
 # Changes from 1.3:
 #     Ignore now accepts \f as whitespace.  Operator now includes '**'.
@@ -82,6 +85,7 @@ def tokenize(readline, tokeneater=printtoken):
     lnum = parenlev = continued = 0
     namechars, numchars = string.letters + '_', string.digits
     contstr, needcont = '', 0
+    contline = None
     indents = [0]
 
     while 1:                                   # loop over lines in stream
@@ -96,15 +100,18 @@ def tokenize(readline, tokeneater=printtoken):
             if endmatch:
                 pos = end = endmatch.end(0)
                 tokeneater(STRING, contstr + line[:end],
-                           strstart, (lnum, end), line)
+                           strstart, (lnum, end), contline + line)
                 contstr, needcont = '', 0
+                contline = None
             elif needcont and line[-2:] != '\\\n' and line[-3:] != '\\\r\n':
                 tokeneater(ERRORTOKEN, contstr + line,
-                           strstart, (lnum, len(line)), line)
+                           strstart, (lnum, len(line)), contline)
                 contstr = ''
+                contline = None
                 continue
             else:
                 contstr = contstr + line
+                contline = contline + line
                 continue
 
         elif parenlev == 0 and not continued:  # new statement
@@ -119,7 +126,7 @@ def tokenize(readline, tokeneater=printtoken):
             if pos == max: break
 
             if line[pos] in '#\r\n':           # skip comments or blank lines
-                tokeneater((NEWLINE, COMMENT)[line[pos] == '#'], line[pos:],
+                tokeneater((NL, COMMENT)[line[pos] == '#'], line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
 
@@ -146,7 +153,8 @@ def tokenize(readline, tokeneater=printtoken):
                     or (initial == '.' and token != '.'):  # ordinary number
                     tokeneater(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
-                    tokeneater(NEWLINE, token, spos, epos, line)
+                    tokeneater(parenlev > 0 and NL or NEWLINE,
+                               token, spos, epos, line)
                 elif initial == '#':
                     tokeneater(COMMENT, token, spos, epos, line)
                 elif token in ("'''", '"""',               # triple-quoted
@@ -160,6 +168,7 @@ def tokenize(readline, tokeneater=printtoken):
                     else:
                         strstart = (lnum, start)           # multiple lines
                         contstr = line[start:]
+                        contline = line
                         break
                 elif initial in ("'", '"') or \
                     token[:2] in ("r'", 'r"', "R'", 'R"'):
@@ -167,6 +176,7 @@ def tokenize(readline, tokeneater=printtoken):
                         strstart = (lnum, start)
                         endprog = endprogs[initial] or endprogs[token[1]]
                         contstr, needcont = line[start:], 1
+                        contline = line
                         break
                     else:                                  # ordinary string
                         tokeneater(STRING, token, spos, epos, line)
