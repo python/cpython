@@ -35,9 +35,10 @@ def check_all(modname):
     all.sort()
     verify(keys==all, "%s != %s" % (keys, all))
 
-# In case _socket fails to build, make this test fail more gracefully
-# than an AttributeError somewhere deep in CGIHTTPServer.
-import _socket
+if not sys.platform.startswith('java'):
+    # In case _socket fails to build, make this test fail more gracefully
+    # than an AttributeError somewhere deep in CGIHTTPServer.
+    import _socket
 
 check_all("BaseHTTPServer")
 check_all("CGIHTTPServer")
