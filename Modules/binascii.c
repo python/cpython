@@ -530,15 +530,6 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 		Py_DECREF(rv);
 		return NULL;
 	}
-
-
-	assert(PyString_Check(rv));
-	assert((bin_data - (unsigned char *)PyString_AsString(rv)) >= 0);
-	assert(!PyString_CHECK_INTERNED(rv));
-	
-	assert(rv->ob_refcnt == 1);
-
-
 	_PyString_Resize(
 		&rv, (bin_data - (unsigned char *)PyString_AsString(rv)));
 	if (rv) {
