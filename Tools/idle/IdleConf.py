@@ -91,10 +91,10 @@ def load(dir):
     global _dir
     _dir = dir
 
-    if sys.platform.startswith('win'):
+    if sys.platform[:3] == 'win':
         genplatfile = os.path.join(dir, "config-win.txt")
     # XXX don't know what the platform string is on a Mac
-    elif sys.platform.startswith('mac'):
+    elif sys.platform[:3] == 'mac':
         genplatfile = os.path.join(dir, "config-mac.txt")
     else:
         genplatfile = os.path.join(dir, "config-unix.txt")
