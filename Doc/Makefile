@@ -84,6 +84,9 @@ world:	ps pdf html tarballs
 api api.ps:
 	(cd paper-$(PAPER); $(MAKE) api.ps)
 
+doc doc.ps:
+	(cd paper-$(PAPER); $(MAKE) doc.ps)
+
 ext ext.ps:
 	(cd paper-$(PAPER); $(MAKE) ext.ps)
 
@@ -103,6 +106,9 @@ tut tut.ps:
 api.dvi:
 	(cd paper-$(PAPER); $(MAKE) api.dvi)
 
+doc.dvi:
+	(cd paper-$(PAPER); $(MAKE) doc.dvi)
+
 ext.dvi:
 	(cd paper-$(PAPER); $(MAKE) ext.dvi)
 
@@ -121,6 +127,9 @@ tut.dvi:
 
 api.pdf:
 	(cd paper-$(PAPER); $(MAKE) api.pdf)
+
+doc.pdf:
+	(cd paper-$(PAPER); $(MAKE) doc.pdf)
 
 ext.pdf:
 	(cd paper-$(PAPER); $(MAKE) ext.pdf)

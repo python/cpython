@@ -12,19 +12,21 @@ TOOLSDIR=	../tools
 TEXINPUTS=	.:../texinputs:
 
 MKDVI=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh
+# The --keep option is needed to keep the intermediate files for generating
+# the HTML global module index.
 MKHOWTO=	$(TOOLSDIR)/mkhowto --keep
 MKPDF=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --pdf
 
 
 # what's what
 MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-HOWTODVIFILES=	mac.dvi
+HOWTODVIFILES=	doc.dvi mac.dvi
 
 MANPDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
-HOWTOPDFFILES=	mac.pdf
+HOWTOPDFFILES=	doc.pdf mac.pdf
 
 MANPSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
-HOWTOPSFILES=	mac.ps
+HOWTOPSFILES=	doc.ps mac.ps
 
 DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
 PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
@@ -103,6 +105,13 @@ api.dvi: $(APIFILES)
 
 api.pdf: $(APIFILES)
 	$(MKPDF) api
+
+# Documenting Python
+doc.dvi: $(DOCFILES) ../texinputs/ltxmarkup.sty
+	$(MKHOWTO) --dvi ../doc/doc.tex
+
+doc.pdf: $(DOCCFILES) ../texinputs/ltxmarkup.sty
+	$(MKHOWTO) --pdf ../doc/doc.tex
 
 # Extending and Embedding the Python Interpreter
 ext.dvi: $(EXTFILES)

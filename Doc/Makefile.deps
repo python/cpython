@@ -4,6 +4,8 @@
 
 APIFILES= ../api/api.tex
 
+DOCFILES= ../doc/doc.tex
+
 EXTFILES= ../ext/ext.tex
 
 TUTFILES= ../tut/tut.tex
