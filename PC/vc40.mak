@@ -63,88 +63,88 @@ ALL : "$(OUTDIR)\python14.dll"
 
 CLEAN : 
 	-@erase ".\vc40\python14.dll"
-	-@erase ".\vc40\tmp\socketmodule.obj"
-	-@erase ".\vc40\tmp\rangeobject.obj"
-	-@erase ".\vc40\tmp\node.obj"
-	-@erase ".\vc40\tmp\importdl.obj"
-	-@erase ".\vc40\tmp\mathmodule.obj"
-	-@erase ".\vc40\tmp\dl_nt.obj"
-	-@erase ".\vc40\tmp\stringobject.obj"
-	-@erase ".\vc40\tmp\object.obj"
-	-@erase ".\vc40\tmp\frameobject.obj"
-	-@erase ".\vc40\tmp\binascii.obj"
-	-@erase ".\vc40\tmp\regexmodule.obj"
-	-@erase ".\vc40\tmp\import_nt.obj"
-	-@erase ".\vc40\tmp\posixmodule.obj"
-	-@erase ".\vc40\tmp\fileobject.obj"
-	-@erase ".\vc40\tmp\longobject.obj"
-	-@erase ".\vc40\tmp\cmathmodule.obj"
-	-@erase ".\vc40\tmp\regexpr.obj"
-	-@erase ".\vc40\tmp\newmodule.obj"
-	-@erase ".\vc40\tmp\cgensupport.obj"
-	-@erase ".\vc40\tmp\grammar1.obj"
-	-@erase ".\vc40\tmp\getmtime.obj"
-	-@erase ".\vc40\tmp\import.obj"
-	-@erase ".\vc40\tmp\ceval.obj"
-	-@erase ".\vc40\tmp\getplatform.obj"
-	-@erase ".\vc40\tmp\operator.obj"
-	-@erase ".\vc40\tmp\errors.obj"
-	-@erase ".\vc40\tmp\structmodule.obj"
-	-@erase ".\vc40\tmp\getargs.obj"
-	-@erase ".\vc40\tmp\myreadline.obj"
-	-@erase ".\vc40\tmp\methodobject.obj"
-	-@erase ".\vc40\tmp\mystrtoul.obj"
-	-@erase ".\vc40\tmp\complexobject.obj"
-	-@erase ".\vc40\tmp\rgbimgmodule.obj"
-	-@erase ".\vc40\tmp\timemodule.obj"
-	-@erase ".\vc40\tmp\parser.obj"
-	-@erase ".\vc40\tmp\moduleobject.obj"
-	-@erase ".\vc40\tmp\audioop.obj"
-	-@erase ".\vc40\tmp\rotormodule.obj"
-	-@erase ".\vc40\tmp\cobject.obj"
-	-@erase ".\vc40\tmp\graminit.obj"
-	-@erase ".\vc40\tmp\structmember.obj"
-	-@erase ".\vc40\tmp\typeobject.obj"
-	-@erase ".\vc40\tmp\getcompiler.obj"
-	-@erase ".\vc40\tmp\acceler.obj"
 	-@erase ".\vc40\tmp\thread.obj"
-	-@erase ".\vc40\tmp\yuvconvert.obj"
-	-@erase ".\vc40\tmp\getversion.obj"
-	-@erase ".\vc40\tmp\errnomodule.obj"
-	-@erase ".\vc40\tmp\soundex.obj"
-	-@erase ".\vc40\tmp\tokenizer.obj"
-	-@erase ".\vc40\tmp\getcopyright.obj"
-	-@erase ".\vc40\tmp\intobject.obj"
-	-@erase ".\vc40\tmp\floatobject.obj"
-	-@erase ".\vc40\tmp\abstract.obj"
-	-@erase ".\vc40\tmp\main.obj"
-	-@erase ".\vc40\tmp\imageop.obj"
-	-@erase ".\vc40\tmp\md5module.obj"
-	-@erase ".\vc40\tmp\traceback.obj"
-	-@erase ".\vc40\tmp\sysmodule.obj"
+	-@erase ".\vc40\tmp\getargs.obj"
+	-@erase ".\vc40\tmp\posixmodule.obj"
 	-@erase ".\vc40\tmp\getpath_nt.obj"
-	-@erase ".\vc40\tmp\frozen.obj"
-	-@erase ".\vc40\tmp\marshal.obj"
-	-@erase ".\vc40\tmp\arraymodule.obj"
-	-@erase ".\vc40\tmp\pythonrun.obj"
-	-@erase ".\vc40\tmp\threadmodule.obj"
-	-@erase ".\vc40\tmp\getopt.obj"
-	-@erase ".\vc40\tmp\funcobject.obj"
-	-@erase ".\vc40\tmp\sliceobject.obj"
-	-@erase ".\vc40\tmp\compile.obj"
-	-@erase ".\vc40\tmp\parsetok.obj"
-	-@erase ".\vc40\tmp\tupleobject.obj"
-	-@erase ".\vc40\tmp\config.obj"
-	-@erase ".\vc40\tmp\mappingobject.obj"
-	-@erase ".\vc40\tmp\md5c.obj"
-	-@erase ".\vc40\tmp\classobject.obj"
+	-@erase ".\vc40\tmp\mystrtoul.obj"
 	-@erase ".\vc40\tmp\selectmodule.obj"
-	-@erase ".\vc40\tmp\stropmodule.obj"
-	-@erase ".\vc40\tmp\signalmodule.obj"
+	-@erase ".\vc40\tmp\parsetok.obj"
+	-@erase ".\vc40\tmp\cgensupport.obj"
+	-@erase ".\vc40\tmp\funcobject.obj"
+	-@erase ".\vc40\tmp\md5c.obj"
+	-@erase ".\vc40\tmp\accessobject.obj"
+	-@erase ".\vc40\tmp\object.obj"
+	-@erase ".\vc40\tmp\socketmodule.obj"
+	-@erase ".\vc40\tmp\getplatform.obj"
+	-@erase ".\vc40\tmp\mappingobject.obj"
+	-@erase ".\vc40\tmp\stringobject.obj"
+	-@erase ".\vc40\tmp\dl_nt.obj"
+	-@erase ".\vc40\tmp\node.obj"
 	-@erase ".\vc40\tmp\modsupport.obj"
 	-@erase ".\vc40\tmp\listobject.obj"
+	-@erase ".\vc40\tmp\importdl.obj"
+	-@erase ".\vc40\tmp\frozen.obj"
+	-@erase ".\vc40\tmp\getopt.obj"
+	-@erase ".\vc40\tmp\binascii.obj"
+	-@erase ".\vc40\tmp\import_nt.obj"
+	-@erase ".\vc40\tmp\rotormodule.obj"
+	-@erase ".\vc40\tmp\acceler.obj"
+	-@erase ".\vc40\tmp\mathmodule.obj"
+	-@erase ".\vc40\tmp\tupleobject.obj"
+	-@erase ".\vc40\tmp\regexpr.obj"
+	-@erase ".\vc40\tmp\threadmodule.obj"
+	-@erase ".\vc40\tmp\tokenizer.obj"
+	-@erase ".\vc40\tmp\classobject.obj"
+	-@erase ".\vc40\tmp\structmodule.obj"
+	-@erase ".\vc40\tmp\config.obj"
+	-@erase ".\vc40\tmp\intobject.obj"
+	-@erase ".\vc40\tmp\grammar1.obj"
+	-@erase ".\vc40\tmp\abstract.obj"
+	-@erase ".\vc40\tmp\fileobject.obj"
+	-@erase ".\vc40\tmp\longobject.obj"
 	-@erase ".\vc40\tmp\bltinmodule.obj"
-	-@erase ".\vc40\tmp\accessobject.obj"
+	-@erase ".\vc40\tmp\methodobject.obj"
+	-@erase ".\vc40\tmp\getcompiler.obj"
+	-@erase ".\vc40\tmp\rgbimgmodule.obj"
+	-@erase ".\vc40\tmp\traceback.obj"
+	-@erase ".\vc40\tmp\sysmodule.obj"
+	-@erase ".\vc40\tmp\errnomodule.obj"
+	-@erase ".\vc40\tmp\signalmodule.obj"
+	-@erase ".\vc40\tmp\moduleobject.obj"
+	-@erase ".\vc40\tmp\pythonrun.obj"
+	-@erase ".\vc40\tmp\frameobject.obj"
+	-@erase ".\vc40\tmp\marshal.obj"
+	-@erase ".\vc40\tmp\regexmodule.obj"
+	-@erase ".\vc40\tmp\floatobject.obj"
+	-@erase ".\vc40\tmp\myreadline.obj"
+	-@erase ".\vc40\tmp\complexobject.obj"
+	-@erase ".\vc40\tmp\audioop.obj"
+	-@erase ".\vc40\tmp\compile.obj"
+	-@erase ".\vc40\tmp\cmathmodule.obj"
+	-@erase ".\vc40\tmp\timemodule.obj"
+	-@erase ".\vc40\tmp\structmember.obj"
+	-@erase ".\vc40\tmp\cobject.obj"
+	-@erase ".\vc40\tmp\arraymodule.obj"
+	-@erase ".\vc40\tmp\graminit.obj"
+	-@erase ".\vc40\tmp\import.obj"
+	-@erase ".\vc40\tmp\errors.obj"
+	-@erase ".\vc40\tmp\sliceobject.obj"
+	-@erase ".\vc40\tmp\typeobject.obj"
+	-@erase ".\vc40\tmp\getcopyright.obj"
+	-@erase ".\vc40\tmp\ceval.obj"
+	-@erase ".\vc40\tmp\parser.obj"
+	-@erase ".\vc40\tmp\stropmodule.obj"
+	-@erase ".\vc40\tmp\soundex.obj"
+	-@erase ".\vc40\tmp\yuvconvert.obj"
+	-@erase ".\vc40\tmp\getversion.obj"
+	-@erase ".\vc40\tmp\main.obj"
+	-@erase ".\vc40\tmp\newmodule.obj"
+	-@erase ".\vc40\tmp\imageop.obj"
+	-@erase ".\vc40\tmp\md5module.obj"
+	-@erase ".\vc40\tmp\rangeobject.obj"
+	-@erase ".\vc40\tmp\getmtime.obj"
+	-@erase ".\vc40\tmp\operator.obj"
 	-@erase ".\vc40\tmp\python_nt.res"
 	-@erase ".\vc40\python14.lib"
 	-@erase ".\vc40\python14.exp"
@@ -207,88 +207,88 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 DEF_FILE= \
 	".\PC\python_nt.def"
 LINK32_OBJS= \
-	"$(INTDIR)/socketmodule.obj" \
-	"$(INTDIR)/rangeobject.obj" \
-	"$(INTDIR)/node.obj" \
-	"$(INTDIR)/importdl.obj" \
-	"$(INTDIR)/mathmodule.obj" \
-	"$(INTDIR)/dl_nt.obj" \
-	"$(INTDIR)/stringobject.obj" \
-	"$(INTDIR)/object.obj" \
-	"$(INTDIR)/frameobject.obj" \
-	"$(INTDIR)/binascii.obj" \
-	"$(INTDIR)/regexmodule.obj" \
-	"$(INTDIR)/import_nt.obj" \
-	"$(INTDIR)/posixmodule.obj" \
-	"$(INTDIR)/fileobject.obj" \
-	"$(INTDIR)/longobject.obj" \
-	"$(INTDIR)/cmathmodule.obj" \
-	"$(INTDIR)/regexpr.obj" \
-	"$(INTDIR)/newmodule.obj" \
-	"$(INTDIR)/cgensupport.obj" \
-	"$(INTDIR)/grammar1.obj" \
-	"$(INTDIR)/getmtime.obj" \
-	"$(INTDIR)/import.obj" \
-	"$(INTDIR)/ceval.obj" \
-	"$(INTDIR)/getplatform.obj" \
-	"$(INTDIR)/operator.obj" \
-	"$(INTDIR)/errors.obj" \
-	"$(INTDIR)/structmodule.obj" \
-	"$(INTDIR)/getargs.obj" \
-	"$(INTDIR)/myreadline.obj" \
-	"$(INTDIR)/methodobject.obj" \
-	"$(INTDIR)/mystrtoul.obj" \
-	"$(INTDIR)/complexobject.obj" \
-	"$(INTDIR)/rgbimgmodule.obj" \
-	"$(INTDIR)/timemodule.obj" \
-	"$(INTDIR)/parser.obj" \
-	"$(INTDIR)/moduleobject.obj" \
-	"$(INTDIR)/audioop.obj" \
-	"$(INTDIR)/rotormodule.obj" \
-	"$(INTDIR)/cobject.obj" \
-	"$(INTDIR)/graminit.obj" \
-	"$(INTDIR)/structmember.obj" \
-	"$(INTDIR)/typeobject.obj" \
-	"$(INTDIR)/getcompiler.obj" \
-	"$(INTDIR)/acceler.obj" \
 	"$(INTDIR)/thread.obj" \
-	"$(INTDIR)/yuvconvert.obj" \
-	"$(INTDIR)/getversion.obj" \
-	"$(INTDIR)/errnomodule.obj" \
-	"$(INTDIR)/soundex.obj" \
-	"$(INTDIR)/tokenizer.obj" \
-	"$(INTDIR)/getcopyright.obj" \
-	"$(INTDIR)/intobject.obj" \
-	"$(INTDIR)/floatobject.obj" \
-	"$(INTDIR)/abstract.obj" \
-	"$(INTDIR)/main.obj" \
-	"$(INTDIR)/imageop.obj" \
-	"$(INTDIR)/md5module.obj" \
-	"$(INTDIR)/traceback.obj" \
-	"$(INTDIR)/sysmodule.obj" \
+	"$(INTDIR)/getargs.obj" \
+	"$(INTDIR)/posixmodule.obj" \
 	"$(INTDIR)/getpath_nt.obj" \
-	"$(INTDIR)/frozen.obj" \
-	"$(INTDIR)/marshal.obj" \
-	"$(INTDIR)/arraymodule.obj" \
-	"$(INTDIR)/pythonrun.obj" \
-	"$(INTDIR)/threadmodule.obj" \
-	"$(INTDIR)/getopt.obj" \
-	"$(INTDIR)/funcobject.obj" \
-	"$(INTDIR)/sliceobject.obj" \
-	"$(INTDIR)/compile.obj" \
-	"$(INTDIR)/parsetok.obj" \
-	"$(INTDIR)/tupleobject.obj" \
-	"$(INTDIR)/config.obj" \
-	"$(INTDIR)/mappingobject.obj" \
-	"$(INTDIR)/md5c.obj" \
-	"$(INTDIR)/classobject.obj" \
+	"$(INTDIR)/mystrtoul.obj" \
 	"$(INTDIR)/selectmodule.obj" \
-	"$(INTDIR)/stropmodule.obj" \
-	"$(INTDIR)/signalmodule.obj" \
+	"$(INTDIR)/parsetok.obj" \
+	"$(INTDIR)/cgensupport.obj" \
+	"$(INTDIR)/funcobject.obj" \
+	"$(INTDIR)/md5c.obj" \
+	"$(INTDIR)/accessobject.obj" \
+	"$(INTDIR)/object.obj" \
+	"$(INTDIR)/socketmodule.obj" \
+	"$(INTDIR)/getplatform.obj" \
+	"$(INTDIR)/mappingobject.obj" \
+	"$(INTDIR)/stringobject.obj" \
+	"$(INTDIR)/dl_nt.obj" \
+	"$(INTDIR)/node.obj" \
 	"$(INTDIR)/modsupport.obj" \
 	"$(INTDIR)/listobject.obj" \
+	"$(INTDIR)/importdl.obj" \
+	"$(INTDIR)/frozen.obj" \
+	"$(INTDIR)/getopt.obj" \
+	"$(INTDIR)/binascii.obj" \
+	"$(INTDIR)/import_nt.obj" \
+	"$(INTDIR)/rotormodule.obj" \
+	"$(INTDIR)/acceler.obj" \
+	"$(INTDIR)/mathmodule.obj" \
+	"$(INTDIR)/tupleobject.obj" \
+	"$(INTDIR)/regexpr.obj" \
+	"$(INTDIR)/threadmodule.obj" \
+	"$(INTDIR)/tokenizer.obj" \
+	"$(INTDIR)/classobject.obj" \
+	"$(INTDIR)/structmodule.obj" \
+	"$(INTDIR)/config.obj" \
+	"$(INTDIR)/intobject.obj" \
+	"$(INTDIR)/grammar1.obj" \
+	"$(INTDIR)/abstract.obj" \
+	"$(INTDIR)/fileobject.obj" \
+	"$(INTDIR)/longobject.obj" \
 	"$(INTDIR)/bltinmodule.obj" \
-	"$(INTDIR)/accessobject.obj" \
+	"$(INTDIR)/methodobject.obj" \
+	"$(INTDIR)/getcompiler.obj" \
+	"$(INTDIR)/rgbimgmodule.obj" \
+	"$(INTDIR)/traceback.obj" \
+	"$(INTDIR)/sysmodule.obj" \
+	"$(INTDIR)/errnomodule.obj" \
+	"$(INTDIR)/signalmodule.obj" \
+	"$(INTDIR)/moduleobject.obj" \
+	"$(INTDIR)/pythonrun.obj" \
+	"$(INTDIR)/frameobject.obj" \
+	"$(INTDIR)/marshal.obj" \
+	"$(INTDIR)/regexmodule.obj" \
+	"$(INTDIR)/floatobject.obj" \
+	"$(INTDIR)/myreadline.obj" \
+	"$(INTDIR)/complexobject.obj" \
+	"$(INTDIR)/audioop.obj" \
+	"$(INTDIR)/compile.obj" \
+	"$(INTDIR)/cmathmodule.obj" \
+	"$(INTDIR)/timemodule.obj" \
+	"$(INTDIR)/structmember.obj" \
+	"$(INTDIR)/cobject.obj" \
+	"$(INTDIR)/arraymodule.obj" \
+	"$(INTDIR)/graminit.obj" \
+	"$(INTDIR)/import.obj" \
+	"$(INTDIR)/errors.obj" \
+	"$(INTDIR)/sliceobject.obj" \
+	"$(INTDIR)/typeobject.obj" \
+	"$(INTDIR)/getcopyright.obj" \
+	"$(INTDIR)/ceval.obj" \
+	"$(INTDIR)/parser.obj" \
+	"$(INTDIR)/stropmodule.obj" \
+	"$(INTDIR)/soundex.obj" \
+	"$(INTDIR)/yuvconvert.obj" \
+	"$(INTDIR)/getversion.obj" \
+	"$(INTDIR)/main.obj" \
+	"$(INTDIR)/newmodule.obj" \
+	"$(INTDIR)/imageop.obj" \
+	"$(INTDIR)/md5module.obj" \
+	"$(INTDIR)/rangeobject.obj" \
+	"$(INTDIR)/getmtime.obj" \
+	"$(INTDIR)/operator.obj" \
 	"$(INTDIR)/python_nt.res"
 
 "$(OUTDIR)\python14.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -325,8 +325,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MT /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D\
+# ADD CPP /nologo /MD /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MD /W3 /O2 /I "PC" /I "Include" /I "Python" /D "WIN32" /D\
  "_WINDOWS" /D "HAVE_CONFIG_H" /Fp"$(INTDIR)/python.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
@@ -404,8 +404,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\tcl\include" /D\
  "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
  /Fp"$(INTDIR)/_tkinter.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
@@ -454,8 +454,8 @@ DEF_FILE= \
 LINK32_OBJS= \
 	"$(INTDIR)/_tkinter.obj" \
 	".\PC\tcl75.lib" \
-	".\PC\tk41.lib" \
-	".\vc40\python14.lib"
+	".\vc40\python14.lib" \
+	".\PC\tk41.lib"
 
 "$(OUTDIR)\_tkinter.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -481,8 +481,8 @@ ALL : "$(OUTDIR)\NumPy.dll"
 
 CLEAN : 
 	-@erase ".\vc40\NumPy.dll"
-	-@erase ".\vc40\tmp\arrayobject.obj"
 	-@erase ".\vc40\tmp\ofuncobject.obj"
+	-@erase ".\vc40\tmp\arrayobject.obj"
 	-@erase ".\vc40\NumPy.lib"
 	-@erase ".\vc40\NumPy.exp"
 
@@ -494,8 +494,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
  "_WINDOWS" /Fp"$(INTDIR)/NumPy.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
@@ -541,8 +541,8 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 DEF_FILE= \
 	".\NumPy\numpy_nt.def"
 LINK32_OBJS= \
-	"$(INTDIR)/arrayobject.obj" \
 	"$(INTDIR)/ofuncobject.obj" \
+	"$(INTDIR)/arrayobject.obj" \
 	".\vc40\python14.lib"
 
 "$(OUTDIR)\NumPy.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -581,8 +581,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
  "_WINDOWS" /Fp"$(INTDIR)/multiarray.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
@@ -629,8 +629,8 @@ DEF_FILE= \
 	".\NumPy\multiarray.def"
 LINK32_OBJS= \
 	"$(INTDIR)/multiarraymodule.obj" \
-	".\vc40\NumPy.lib" \
-	".\vc40\python14.lib"
+	".\vc40\python14.lib" \
+	".\vc40\NumPy.lib"
 
 "$(OUTDIR)\multiarray.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -668,8 +668,8 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /D "WIN32" /D "NDEBUG" /D\
  "_WINDOWS" /Fp"$(INTDIR)/fast_umath.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=
@@ -716,8 +716,8 @@ DEF_FILE= \
 	".\NumPy\fast_umath.def"
 LINK32_OBJS= \
 	"$(INTDIR)/fast_umathmodule.obj" \
-	".\vc40\NumPy.lib" \
-	".\vc40\python14.lib"
+	".\vc40\python14.lib" \
+	".\vc40\NumPy.lib"
 
 "$(OUTDIR)\fast_umath.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -2551,11 +2551,7 @@ DEP_CPP_THREA=\
 	".\Python\thread_pthread.h"\
 	".\Python\thread_cthread.h"\
 	".\Python\thread_nt.h"\
-	".\Python\thread_foobar.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-NODEP_CPP_THREA=\
-	"..\..\..\..\usr\include\thread.h"\
 	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
