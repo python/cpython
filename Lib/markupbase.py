@@ -4,6 +4,13 @@ import re
 
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match
 _declstringlit_match = re.compile(r'(\'[^\']*\'|"[^"]*")\s*').match
+_commentclose = re.compile(r'--\s*>')
+_markedsectionclose = re.compile(r']\s*]\s*>')
+
+# An analysis of the MS-Word extensions is available at
+# http://www.planetpublish.com/xmlarena/xap/Thursday/WordtoXML.pdf
+
+_msmarkedsectionclose = re.compile(r']\s*>')
 
 del re
 
@@ -53,6 +60,13 @@ class ParserBase:
         # This is some sort of declaration; in "HTML as
         # deployed," this should only be the document type
         # declaration ("<!DOCTYPE html...>").
+        # ISO 8879:1986, however, has more complex 
+        # declaration syntax for elements in <!...>, including:
+        # --comment--
+        # [marked section]
+        # name in the following list: ENTITY, DOCTYPE, ELEMENT, 
+        # ATTLIST, NOTATION, SHORTREF, USEMAP, 
+        # LINKTYPE, LINK, IDLINK, USELINK, SYSTEM
         rawdata = self.rawdata
         j = i + 2
         assert rawdata[i:j] == "<!", "unexpected call to parse_declaration"
@@ -60,9 +74,19 @@ class ParserBase:
             # Start of comment followed by buffer boundary,
             # or just a buffer boundary.
             return -1
-        # in practice, this should look like: ((name|stringlit) S*)+ '>'
+        # A simple, practical version could look like: ((name|stringlit) S*) + '>'
         n = len(rawdata)
-        decltype, j = self._scan_name(j, i)
+        if rawdata[j:j+1] == '--': #comment
+            # Locate --.*-- as the body of the comment
+            return self.parse_comment(i)
+        elif rawdata[j] == '[': #marked section
+            # Locate [statusWord [...arbitrary SGML...]] as the body of the marked section
+            # Where statusWord is one of TEMP, CDATA, IGNORE, INCLUDE, RCDATA
+            # Note that this is extended by Microsoft Office "Save as Web" function
+            # to include [if...] and [endif].
+            return self.parse_marked_section(i)
+        else: #all other declaration elements
+            decltype, j = self._scan_name(j, i)
         if j < 0:
             return j
         if decltype == "doctype":
@@ -87,8 +111,15 @@ class ParserBase:
             elif c in self._decl_otherchars:
                 j = j + 1
             elif c == "[":
+                # this could be handled in a separate doctype parser
                 if decltype == "doctype":
                     j = self._parse_doctype_subset(j + 1, i)
+                elif decltype in ("attlist", "linktype", "link", "element"):
+                    # must tolerate []'d groups in a content model in an element declaration
+                    # also in data attribute specifications of attlist declaration
+                    # also link type declaration subsets in linktype declarations
+                    # also link attribute specification lists in link declarations
+                    self.error("unsupported '[' char in %s declaration" % decltype)
                 else:
                     self.error("unexpected '[' char in declaration")
             else:
@@ -97,6 +128,42 @@ class ParserBase:
             if j < 0:
                 return j
         return -1 # incomplete
+
+    # Internal -- parse a marked section
+    # Override this to handle MS-word extension syntax <![if word]>content<![endif]>
+    def parse_marked_section( self, i, report=1 ):
+        rawdata= self.rawdata
+        assert rawdata[i:i+3] == '<![', "unexpected call to parse_marked_section()"
+        sectName, j = self._scan_name( i+3, i )
+        if j < 0:
+            return j
+        if sectName in ("temp", "cdata", "ignore", "include", "rcdata"):
+            # look for standard ]]> ending
+            match= _markedsectionclose.search(rawdata, i+3)
+        elif sectName in ("if", "else", "endif"):
+            # look for MS Office ]> ending
+            match= _msmarkedsectionclose.search(rawdata, i+3)
+        else:
+            self.error('unknown status keyword %s in marked section' % `rawdata[i+3:j]`)
+        if not match:
+            return -1
+        if report:
+            j = match.start(0)
+            self.unknown_decl(rawdata[i+3: j])
+        return match.end(0)
+            
+    # Internal -- parse comment, return length or -1 if not terminated
+    def parse_comment(self, i, report=1):
+        rawdata = self.rawdata
+        if rawdata[i:i+4] != '<!--':
+            self.error('unexpected call to parse_comment()')
+        match = _commentclose.search(rawdata, i+4)
+        if not match:
+            return -1
+        if report:
+            j = match.start(0)
+            self.handle_comment(rawdata[i+4: j])
+        return match.end(0)
 
     # Internal -- scan past the internal subset in a <!DOCTYPE declaration,
     # returning the index just past any whitespace following the trailing ']'.

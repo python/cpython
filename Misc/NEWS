@@ -67,6 +67,9 @@ Extension modules
 Library
 -------
 
+- sgmllib now supports SGML marked sections, in particular the 
+  MS Office extensions.
+
 - The urllib module now offers support for the iterator protocol.
   SF patch 698520 contributed by Brett Cannon.
 
