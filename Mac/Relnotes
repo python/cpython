@@ -1,0 +1,55 @@
+	Release notes for MacPython 1.5a2, 28-May-97
+	--------------------------------------------
+
+Here are the mac-specific changes since MacPython 1.4, with end-user-visible
+changes near the top and API changes and other things that are developer-only
+more to the bottom:
+
+- Module to interface to Internet Config added
+- Module calldll added that allows calling of arbitrary C routines
+  from MacOS toolboxes
+- gdbm module added
+- ctb error handling fixed, and some memory leaks plugged
+- Various of the documentation files in Mac:Demo have been updated
+- MacOS.string_id_to_buffer is a new hack: the number you have to
+  add to the id() of a string object to get the (data) memory address
+- MacOS.splash() double-free fixed
+- macfs.FSSpec.as_pathname() was incorrect for disk toplevel folders
+- QT.NewMovieFromFile has an extra parameter and an extra return value
+- EasyDialogs.ProgressBar has changed both in layout and interface
+- FrameWork.Application has a new cleanup() method which asks all windows
+  to close themselves.
+- Loading of PYC resources from the application greatly speeded up,
+  especially for CDROM based applications
+- interrupt check/eventloop only entered 10 times per second, giving
+  big speedup
+- Allow any object (file, folder, disk) to be dropped on an applet
+- Twit resource number conflict with debuggee fixed
+- sys.path preference can now be longer than 255 chars
+- cfmfile module allows parsing and merging of CFRG resources
+- PythonFAT and PythonApplet are now fat (PPC/CFM68K) applications, so
+  applets can be moved between architectures.
+- Twit resource number conflict with debuggee fixed
+- mkapplet now uses a progress bar in stead of print statements
+- unshar made a bit more mac-friendly (input output dialogs)
+- img: added png, xbm, bmp support
+- img: jpeg now uses IJG v6 library
+- img: import of imagefile support modules delayed until needed
+- img: better error handling for truncated images and such
+- img: imgop.unpack() can unpack formats with multiple pixels per byte
+
+
+- All files updated to new Py_ naming convention
+- Toolbox modules regenerated from new Universal Headers
+- nfullpath() merged into PyMac_GetFullPath()
+- Added support for Metrowerks profiler
+- Standard MW/MSL runtime libraries used in stead of homegrown version
+- Allow any object (file, folder, disk) to be dropped on an applet
+- Malloc now returns cache-line-aligned memory on PPC, which speeds
+  things up, especially on a 604. Dictionaries put this to good use.
+- statically linked pythons won't inadvertantly load .slb modules
+- Removed dependencies on PLStringFuncs and/or StdCLib
+- Project "segment" structure changed to more-or-less follow folder
+  structure
+- fullbuild redesigned
+- Added PyMac_Initialize() call, for use by embedding programs.
