@@ -288,6 +288,7 @@ Tkinter_Error(v)
 #ifdef WITH_THREAD
 #ifndef MS_WINDOWS
 #include "mytime.h"
+#include "myselect.h"
 
 /* Millisecond sleep() for Unix platforms. */
 
