@@ -347,7 +347,7 @@ will be used in methods to call a method in the superclass; for
 example, \class{D}'s \method{save()} method would look like this:
 
 \begin{verbatim}
-class D:
+class D (B,C):
     def save (self):
 	# Call superclass .save()
         super(D, self).save()
