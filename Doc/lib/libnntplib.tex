@@ -197,9 +197,15 @@ and \var{list} is a list of the article's headers (an uninterpreted
 list of lines, without trailing newlines).
 \end{methoddesc}
 
-\begin{methoddesc}{body}{id}
+\begin{methoddesc}{body}{id,\optional{fileHandle}}
 Send a \samp{BODY} command, where \var{id} has the same meaning as for
-\method{stat()}.  Return as for \method{head()}.
+\method{stat()}.  If the \var{fileHandle} parameter is supplied, then
+the body is stored in a file.  If \var{fileHandle} is a string, then
+the method will open a file object with that name, write to it then close it.
+If \var{fileHandle} is a file object, then it will start calling
+\method{write()} on it to store the lines of the body.
+Return as for \method{head()}.  If \var{fileHandle} is supplied. Then
+the returned \var{list} is an empty list.
 \end{methoddesc}
 
 \begin{methoddesc}{article}{id}
