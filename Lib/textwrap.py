@@ -325,11 +325,11 @@ def dedent(text):
         def test():
             # end first line with \ to avoid the empty line!
             s = '''\
-            Hey
-            there
+            hello
+              world
             '''
-            print repr(s)          # prints '    Hey\n    there\n    '
-            print repr(dedent(s))  # prints 'Hey\nthere\n'
+            print repr(s)          # prints '    hello\n      world\n    '
+            print repr(dedent(s))  # prints 'hello\n  world\n'
     """
     lines = text.expandtabs().split('\n')
     margin = None
