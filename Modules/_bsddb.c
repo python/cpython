@@ -51,7 +51,15 @@
  * Gregory P. Smith <greg@electricrain.com> is once again the maintainer.
  *
  * Use the pybsddb-users@lists.sf.net mailing list for all questions.
- * Things can change faster than the header of this file is updated.
+ * Things can change faster than the header of this file is updated.  This
+ * file is shared with the PyBSDDB project at SourceForge:
+ *
+ * http://pybsddb.sf.net
+ *
+ * This file should remain backward compatible with Python 2.1, but see PEP
+ * 291 for the most current backward compatibility requirements:
+ *
+ * http://www.python.org/peps/pep-0291.html
  *
  * This module contains 5 types:
  *
