@@ -217,6 +217,7 @@ class SMTP:
                     raise socket.error, "nonnumeric port"
         if not port: port = SMTP_PORT
         if self.debuglevel > 0: print 'connect:', (host, port)
+        msg = "getaddrinfo returns an empty list"
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:

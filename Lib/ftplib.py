@@ -115,6 +115,7 @@ class FTP:
         if host: self.host = host
         if port: self.port = port
         self.passiveserver = 0
+        msg = "getaddrinfo returns an empty list"
         for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
@@ -270,6 +271,7 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
+        msg = "getaddrinfo returns an empty list"
         for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
             af, socktype, proto, canonname, sa = res
             try:
