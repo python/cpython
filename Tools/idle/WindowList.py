@@ -4,11 +4,14 @@ class WindowList:
 
     def __init__(self):
         self.dict = {}
+        self.callbacks = []
 
     def add(self, window):
+        window.after_idle(self.call_callbacks)
         self.dict[str(window)] = window
 
     def delete(self, window):
+        window.after_idle(self.call_callbacks)
         try:
             del self.dict[str(window)]
         except KeyError:
@@ -31,10 +34,30 @@ class WindowList:
                 continue
             menu.add_command(label=title, command=window.wakeup)
 
+    def register_callback(self, callback):
+        self.callbacks.append(callback)
+
+    def unregister_callback(self, callback):
+        try:
+            self.callback.remove(callback)
+        except:
+            pass
+
+    def call_callbacks(self):
+        for callback in self.callbacks:
+            try:
+                callback()
+            except:
+                print "warning: callback failed in WindowList", \
+                      sys.exc_type, ":", sys.exc_value
+
 registry = WindowList()
 
-def add_windows_to_menu(menu):
-    registry.add_windows_to_menu(menu)
+add_windows_to_menu = registry.add_windows_to_menu
+register_callback = registry.register_callback
+unregister_callback = registry.unregister_callback
+call_callbacks = registry.call_callbacks
+
 
 class ListedToplevel(Toplevel):
 
