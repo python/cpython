@@ -354,10 +354,11 @@ Extension modules
   are wrapped. This can be configured through the wantobjects method,
   or Tkinter.wantobjects.
 
-- The PyBSDDB wrapper around the Sleepycat Berkeley DB library has been
-  added as the package bsddb. The traditional bsddb module is still
-  available in source code, but not built automatically anymore, and
-  is now named bsddb185.
+- The PyBSDDB wrapper around the Sleepycat Berkeley DB library has
+  been added as the package bsddb.  The traditional bsddb module is
+  still available in source code, but not built automatically anymore,
+  and is now named bsddb185.  This supports Berkeley DB versions from
+  3.0 to 4.1.
 
 - unicodedata was updated to Unicode 3.2. It supports normalization
   and names for Hangul syllables and CJK unified ideographs.
