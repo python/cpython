@@ -235,6 +235,8 @@ initsys()
 	extern char *getversion PROTO((void));
 	extern char *getcopyright PROTO((void));
 	extern char *getplatform PROTO((void));
+	extern char *Py_GetPrefix PROTO((void));
+	extern char *Py_GetExecPrefix PROTO((void));
 	extern int fclose PROTO((FILE *));
 	object *m = initmodule("sys", sys_methods);
 	object *v;
@@ -255,6 +257,11 @@ initsys()
 	dictinsert(sysdict, "copyright", v = newstringobject(getcopyright()));
 	XDECREF(v);
 	dictinsert(sysdict, "platform", v = newstringobject(getplatform()));
+	XDECREF(v);
+	dictinsert(sysdict, "prefix", v = newstringobject(Py_GetPrefix()));
+	XDECREF(v);
+	dictinsert(sysdict, "exec_prefix",
+		   v = newstringobject(Py_GetExecPrefix()));
 	XDECREF(v);
 	dictinsert(sysdict, "maxint", v = newintobject(getmaxint()));
 	XDECREF(v);
