@@ -184,13 +184,140 @@ implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
 %======================================================================
 \section{PEP 318: Decorators for Functions, Methods and Classes}
 
-% XXX write this section
+Python 2.2 extended Python's object model by adding static methods and
+class methods, but it didn't extend Python's syntax to provide any new
+way of defining static or class methods.  Instead, you had to write a
+\keyword{def} statement in the usual way, and pass the resulting
+method to a \function{staticmethod()} or \function{classmethod()}
+function that would wrap up the function as a method of the new type.
+Your code would look like this:
+
+\begin{verbatim}
+class C:
+   def meth (cls):
+       ...
+   
+   meth = classmethod(meth)   # Rebind name to wrapped-up class method
+\end{verbatim}
+
+If the method was very long, it would be easy to miss or forget the
+\function{classmethod()} invocation after the function body.  
+
+The intention was always to add some syntax to make such definitions
+more readable, but at the time of 2.2's release a good syntax was not
+obvious.  Years later, when Python 2.4 is coming out, a good syntax
+\emph{still} isn't obvious but users are asking for easier access to
+the feature, so a new syntactic feature has been added.
+
+The feature is called ``function decorators''.  The name comes from
+the idea that \function{classmethod}, \function{staticmethod}, and
+friends are storing additional information on a function object; they're
+\emph{decorating} functions with more details.  
+
+The notation borrows from Java and uses the \samp{@} character as an
+indicator.  Using the new syntax, the example above would be written:
+
+\begin{verbatim}
+class C:
+
+   @classmethod
+   def meth (cls):
+       ...
+   
+\end{verbatim}
+
+The \code{@classmethod} is shorthand for the
+\code{meth=classmethod(meth} assignment.  More generally, if you have
+the following:
+
+\begin{verbatim}
+@A @B @C
+def f ():
+    ...
+\end{verbatim}
+
+It's equivalent to:
+
+\begin{verbatim}
+def f(): ...
+f = C(B(A(f)))
+\end{verbatim}
+
+Decorators must come on the line before a function definition, and
+can't be on the same line, meaning that \code{@A def f(): ...} is
+illegal.  You can only decorate function definitions, either at the
+module-level or inside a class; you can't decorate class definitions.
+
+A decorator is just a function that takes the function to be decorated
+as an argument and returns either the same function or some new
+callable thing.  It's easy to write your own decorators.  The
+following simple example just sets an attribute on the function
+object:
+
+\begin{verbatim}
+>>> def deco(func):
+...    func.attr = 'decorated'
+...    return func
+...
+>>> @deco
+... def f(): pass
+...
+>>> f
+<function f at 0x402ef0d4>
+>>> f.attr
+'decorated'
+>>>
+\end{verbatim}
+
+As a slightly more realistic example, the following decorator checks
+that the supplied argument is an integer:
+
+\begin{verbatim}
+def require_int (func):
+    def wrapper (arg):
+        assert isinstance(arg, int)
+        return func(arg)
+
+    return wrapper
+
+@require_int
+def p1 (arg):
+    print arg
+
+@require_int
+def p2(arg):
+    print arg*2
+\end{verbatim}
+
+An example in \pep{318} contains a fancier version of this idea that
+lets you specify the required type and check the returned type as
+well.
+
+Decorator functions can take arguments.  If arguments are supplied,
+the decorator function is called with only those arguments and must
+return a new decorator function; this new function must take a single
+function and return a function, as previously described.  In other
+words, \code{@A @B @C(args)} becomes:
+
+\begin{verbatim}
+def f(): ...
+_deco = C(args)
+f = _deco(B(A(f)))
+\end{verbatim}
+
+Getting this right can be slightly brain-bending, but it's not too
+difficult.
+
+The new syntax was provisionally added in 2.4alpha2, and is subject to
+change during the 2.4alpha release cycle depending on the Python
+community's reaction.  Post-2.4 versions of Python will preserve
+compatibility with whatever syntax is used in 2.4final.
 
 \begin{seealso}
 \seepep{318}{Decorators for Functions, Methods and Classes}{Written 
-by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people wrote
-patches implementing function decorators, but the one that was actually 
-checked in was patch #979728, written by Mark Russell.}
+by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people
+wrote patches implementing function decorators, but the one that was
+actually checked in was patch #979728, written by Mark Russell.}
 \end{seealso}
 
 %======================================================================
