@@ -96,6 +96,7 @@ d[types.NoneType] = _copy_atomic
 d[types.IntType] = _copy_atomic
 d[types.LongType] = _copy_atomic
 d[types.FloatType] = _copy_atomic
+d[types.BooleanType] = _copy_atomic
 try:
     d[types.ComplexType] = _copy_atomic
 except AttributeError:
@@ -196,6 +197,7 @@ d[types.NoneType] = _deepcopy_atomic
 d[types.IntType] = _deepcopy_atomic
 d[types.LongType] = _deepcopy_atomic
 d[types.FloatType] = _deepcopy_atomic
+d[types.BooleanType] = _deepcopy_atomic
 try:
     d[types.ComplexType] = _deepcopy_atomic
 except AttributeError:
