@@ -105,8 +105,11 @@ PyString_FromStringAndSize(const char *str, int size)
 PyObject *
 PyString_FromString(const char *str)
 {
-	register size_t size = strlen(str);
+	register size_t size;
 	register PyStringObject *op;
+
+	assert(str != NULL);
+	size = strlen(str);
 	if (size > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too long for a Python string");
