@@ -359,7 +359,14 @@ then
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
 	FreeBSD*/3*) LDSHARED="gcc -shared";;
-	FreeBSD*|NetBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
+	FreeBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
+	NetBSD*)
+		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
+		then
+			LDSHARED="cc -shared"
+		else
+			LDSHARED="ld -Bshareable"
+		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
 	esac
@@ -376,7 +383,8 @@ then
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
-	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fpic";;
+	FreeBSD*|OpenBSD*) CCSHARED="-fpic";;
+	NetBSD*) CCSHARED="-fPIC";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
@@ -398,6 +406,11 @@ then
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
+	NetBSD*) 
+		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
+		then
+			LINKFORSHARED="-Wl,--export-dynamic"
+		fi;;
 	SunOS/5*) case $CC in
 		  *gcc*)
 		    if $CC -Xlinker -V 2>/dev/null | grep BFD >/dev/null
@@ -537,7 +550,8 @@ DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork ftime ftruncate \
+AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork \
+ fsync fdatasync ftime ftruncate \
  gethostname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
  kill link lstat mkfifo mktime nice pause plock pthread_init putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
