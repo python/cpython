@@ -9,6 +9,8 @@ WARN = 3
 ERROR = 4
 FATAL = 5
 
+import sys
+
 class Log:
 
     def __init__(self, threshold=WARN):
@@ -17,6 +19,7 @@ class Log:
     def _log(self, level, msg, args):
         if level >= self.threshold:
             print msg % args
+            sys.stdout.flush()
 
     def log(self, level, msg, *args):
         self._log(level, msg, args)
