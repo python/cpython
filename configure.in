@@ -171,6 +171,11 @@ then
 fi
 
 AC_PROG_CC
+
+# checks for UNIX variants that set C preprocessor variables
+AC_AIX
+AC_MINIX
+
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix, [  --with-suffix=.exe              set executable suffix],[
@@ -349,9 +354,6 @@ if test "$ac_arch_flags"
 then
 	OPT="$OPT $ac_arch_flags"
 fi
-# checks for UNIX variants that set C preprocessor variables
-AC_AIX
-AC_MINIX
 
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
 AC_CACHE_VAL(ac_cv_opt_olimit_ok,
@@ -1429,9 +1431,9 @@ x.sa_len = 0;],
 	AC_DEFINE(HAVE_SOCKADDR_SA_LEN),
 	AC_MSG_RESULT(no))
 
-bad_forward=no
 AC_MSG_CHECKING(for bad static forward)
-AC_TRY_RUN([
+AC_CACHE_VAL(ac_cv_bad_static_forward,
+[AC_TRY_RUN([
 struct s { int a; int b; };
 static struct s foo;
 int foobar() {
@@ -1442,9 +1444,12 @@ int foobar() {
 static struct s foo = { 1, 2 };
 main() {
  exit(!((int)&foo == foobar()));
-}
-], , AC_DEFINE(BAD_STATIC_FORWARD) bad_forward=yes)
-AC_MSG_RESULT($bad_forward)
+}], ac_cv_bad_static_forward=no, ac_cv_bad_static_forward=yes)])
+AC_MSG_RESULT($ac_cv_bad_static_forward)
+if test "$ac_cv_bad_static_forward" = yes
+then
+    AC_DEFINE(BAD_STATIC_FORWARD)
+fi
 
 va_list_is_array=no
 AC_MSG_CHECKING(whether va_list is an array)
