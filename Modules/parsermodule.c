@@ -1704,20 +1704,22 @@ validate_try(tree)
 	    res = (validate_numnodes(tree, 6, "try/finally")
 		   && validate_colon(CHILD(tree, 4))
 		   && validate_suite(CHILD(tree, 5)));
-	else if (res)
+	else if (res) {
 	    if (nch == (pos + 3)) {
 		res = ((strcmp(STR(CHILD(tree, pos)), "except") == 0)
 		       || (strcmp(STR(CHILD(tree, pos)), "else") == 0));
 		if (!res)
 		    err_string("Illegal trailing triple in try statement.");
 	    }
-	    else if (nch == (pos + 6))
+	    else if (nch == (pos + 6)) {
 		res = (validate_name(CHILD(tree, pos), "except")
 		       && validate_colon(CHILD(tree, pos + 1))
 		       && validate_suite(CHILD(tree, pos + 2))
 		       && validate_name(CHILD(tree, pos + 3), "else"));
+	    }
 	    else
 		res = validate_numnodes(tree, pos + 3, "try/except");
+	}
     }
     return (res);
 

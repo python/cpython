@@ -1008,7 +1008,7 @@ calcsize(fmt, f)
 	s = fmt;
 	size = 0;
 	while ((c = *s++) != '\0') {
-		if (isspace(c))
+		if (isspace((int)c))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
@@ -1110,7 +1110,7 @@ struct_pack(self, args)
 	res = restart = PyString_AsString(result);
 
 	while ((c = *s++) != '\0') {
-		if (isspace(c))
+		if (isspace((int)c))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
@@ -1242,7 +1242,7 @@ struct_unpack(self, args)
 	str = start;
 	s = fmt;
 	while ((c = *s++) != '\0') {
-		if (isspace(c))
+		if (isspace((int)c))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';

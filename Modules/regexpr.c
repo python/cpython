@@ -1271,11 +1271,12 @@ char *re_compile_pattern(regex, size, bufp)
 		}
 		case Rbol:
 		{
-			if (!beginning_context)
+			if (!beginning_context) {
 				if (regexp_context_indep_ops)
 					goto op_error;
 				else
 					goto normal_char;
+			}
 			opcode = Cbol;
 			goto store_opcode;
 		}
@@ -1289,11 +1290,12 @@ char *re_compile_pattern(regex, size, bufp)
 			      ((regexp_syntax & RE_NO_BK_PARENS)?
 			       (regex[pos] == ')'):
 			       (pos+1 < size && regex[pos] == '\134' &&
-				regex[pos+1] == ')'))))
+				regex[pos+1] == ')')))) {
 				if (regexp_context_indep_ops)
 					goto op_error;
 				else
 					goto normal_char;
+			}
 			opcode = Ceol;
 			goto store_opcode;
 			/* NOTREACHED */
@@ -1301,11 +1303,12 @@ char *re_compile_pattern(regex, size, bufp)
 		}
 		case Roptional:
 		{
-			if (beginning_context)
+			if (beginning_context) {
 				if (regexp_context_indep_ops)
 					goto op_error;
 				else
 					goto normal_char;
+			}
 			if (CURRENT_LEVEL_START == pattern_offset)
 				break; /* ignore empty patterns for ? */
 			ALLOC(3);
@@ -1316,11 +1319,12 @@ char *re_compile_pattern(regex, size, bufp)
 		case Rstar:
 		case Rplus:
 		{
-			if (beginning_context)
+			if (beginning_context) {
 				if (regexp_context_indep_ops)
 					goto op_error;
 				else
 					goto normal_char;
+			}
 			if (CURRENT_LEVEL_START == pattern_offset)
 				break; /* ignore empty patterns for + and * */
 			ALLOC(9);
@@ -2061,11 +2065,12 @@ int re_search(bufp,
 	else
 		dir = 1;
 
-	if (anchor == 2)
+	if (anchor == 2) {
 		if (pos != 0)
 			return -1;
 		else
 			range = 0;
+	}
 
 	for (; range >= 0; range--, pos += dir)
 	{

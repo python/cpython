@@ -175,11 +175,12 @@ long get_thread_ident _P0()
 static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 {
 	dprintf(("exit_thread called\n"));
-	if (!initialized)
+	if (!initialized) {
 		if (no_cleanup)
 			_exit(0);
 		else
 			exit(0);
+	}
 }
 
 void exit_thread _P0()
