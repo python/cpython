@@ -33,7 +33,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static char strop_module__doc__[] =
 "Common string manipulations, optimized for speed.\n\
-
+\n\
 Always use \"import string\" rather than referencing\n\
 this module directly.";
 
