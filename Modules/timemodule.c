@@ -371,6 +371,10 @@ time_ctime(self, args)
 		return NULL;
 	tt = (time_t)dt;
 	p = ctime(&tt);
+	if (p == NULL) {
+		PyErr_SetString(PyExc_ValueError, "unconvertible time");
+		return NULL;
+	}
 	if (p[24] == '\n')
 		p[24] = '\0';
 	return PyString_FromString(p);
