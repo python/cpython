@@ -1167,6 +1167,7 @@ AC_CHECK_TYPE(socklen_t, int)
 AC_OUTPUT(Makefile \
  Objects/Makefile \
  Parser/Makefile \
+ Grammar/Makefile \
  Python/Makefile \
  Modules/Makefile.pre \
  Modules/Setup.config)

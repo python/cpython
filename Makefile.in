@@ -196,8 +196,7 @@ libpython$(VERSION).dylib: $(LIBRARY)
 $(SUBDIRS):	Makefiles
 
 Grammar:
-		P=`pwd`/Parser; cd $(srcdir)/Grammar; $(MAKE) PGENDIR=$$P \
-			OPT="$(OPT)" VERSION="$(VERSION)" \
+		cd Grammar ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
 Parser:
