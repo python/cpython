@@ -213,7 +213,10 @@ class LogRecord:
             self.thread = thread.get_ident()
         else:
             self.thread = None
-        self.process = os.getpid()
+        if hasattr(os, 'getpid'):
+            self.process = os.getpid()
+        else:
+            self.process = None
 
     def __str__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
