@@ -621,7 +621,7 @@ class CCompiler:
         raise NotImplementedError
 
     
-    # old methods, rewritten to use the new link() method.
+    # Old 'link_*()' methods, rewritten to use the new 'link()' method.
 
     def link_shared_lib (self,
                          objects,
@@ -635,8 +635,6 @@ class CCompiler:
                          extra_preargs=None,
                          extra_postargs=None,
                          build_temp=None):
-        self.warn("link_shared_lib(..) is deprecated, please "
-                  "use link(CCompiler.SHARED_LIBRARY, ...) instead")
         self.link(CCompiler.SHARED_LIBRARY, objects, 
                   self.library_filename(output_libname, lib_type='shared'),
                   output_dir,
@@ -657,8 +655,6 @@ class CCompiler:
                             extra_preargs=None,
                             extra_postargs=None,
                             build_temp=None):
-        self.warn("link_shared_object(...) is deprecated, please "
-                  "use link(CCompiler.SHARED_OBJECT,...) instead.")
         self.link(CCompiler.SHARED_OBJECT, objects,
                   output_filename, output_dir,
                   libraries, library_dirs, runtime_library_dirs,
@@ -676,12 +672,10 @@ class CCompiler:
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
-        self.warn("link_executable(...) is deprecated, please "
-                  "use link(CCompiler.EXECUTABLE,...) instead.")
-        self.link (CCompiler.EXECUTABLE, objects, 
-                   self.executable_filename(output_progname), output_dir,
-                   libraries, library_dirs, runtime_library_dirs, None, 
-                   debug, extra_preargs, extra_postargs, None)
+        self.link(CCompiler.EXECUTABLE, objects, 
+                  self.executable_filename(output_progname), output_dir,
+                  libraries, library_dirs, runtime_library_dirs, None, 
+                  debug, extra_preargs, extra_postargs, None)
 
 
     # -- Miscellaneous methods -----------------------------------------
