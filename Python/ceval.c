@@ -17,8 +17,10 @@
 #include <ctype.h>
 
 #ifndef WITH_TSC 
-#define rdtscll(var)
-#else /*WITH_TSC defined*/
+
+#define READ_TIMESTAMP(var)
+
+#else
 
 typedef unsigned long long uint64;
 
@@ -26,7 +28,7 @@ typedef unsigned long long uint64;
 			   section should work for GCC on any PowerPC platform,
 			   irrespective of OS.  POWER?  Who knows :-) */
 
-#define rdtscll(var) ppc_getcounter(&var)
+#define READ_TIMESTAMP(var) ppc_getcounter(&var)
 
 static void
 ppc_getcounter(uint64 *v)
@@ -45,9 +47,10 @@ ppc_getcounter(uint64 *v)
 	((long*)(v))[1] = tb;
 }
 
-#else /* this section is for linux/x86 */
+#else /* this is for linux/x86 (and probably any other GCC/x86 combo) */
 
-#include <asm/msr.h>
+#define READ_TIMESTAMP(val) \
+     __asm__ __volatile__("rdtsc" : "=A" (val))
 
 #endif
 
@@ -575,10 +578,10 @@ PyEval_EvalFrame(PyFrameObject *f)
 	uint64 inst0, inst1, loop0, loop1, intr0 = 0, intr1 = 0;
 	int ticked = 0;
 
-	rdtscll(inst0);
-	rdtscll(inst1);
-	rdtscll(loop0);
-	rdtscll(loop1);
+	READ_TIMESTAMP(inst0);
+	READ_TIMESTAMP(inst1);
+	READ_TIMESTAMP(loop0);
+	READ_TIMESTAMP(loop1);
 
 	/* shut up the compiler */
 	opcode = 0;
@@ -748,7 +751,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 			   or a continue, preventing inst1 from being set
 			   on the way out of the loop.
 			*/
-			rdtscll(inst1);
+			READ_TIMESTAMP(inst1);
 			loop1 = inst1;
 		}
 		dump_tsc(opcode, ticked, inst0, inst1, loop0, loop1,
@@ -757,7 +760,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 		inst1 = 0;
 		intr0 = 0;
 		intr1 = 0;
-		rdtscll(loop0);
+		READ_TIMESTAMP(loop0);
 #endif
 		assert(stack_pointer >= f->f_valuestack); /* else underflow */
 		assert(STACK_LEVEL() <= f->f_stacksize);  /* else overflow */
@@ -879,7 +882,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 #endif
 
 		/* Main switch on opcode */
-		rdtscll(inst0);
+		READ_TIMESTAMP(inst0);
 
 		switch (opcode) {
 
@@ -1638,9 +1641,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 			v = SECOND();
 			u = THIRD();
 			STACKADJ(-3);
-			rdtscll(intr0);
+			READ_TIMESTAMP(intr0);
 			err = exec_statement(f, u, v, w);
-			rdtscll(intr1);
+			READ_TIMESTAMP(intr1);
 			Py_DECREF(u);
 			Py_DECREF(v);
 			Py_DECREF(w);
@@ -2016,9 +2019,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 				x = NULL;
 				break;
 			}
-			rdtscll(intr0);
+			READ_TIMESTAMP(intr0);
 			x = PyEval_CallObject(x, w);
-			rdtscll(intr1);
+			READ_TIMESTAMP(intr1);
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
@@ -2032,9 +2035,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 					"no locals found during 'import *'");
 				break;
 			}
-			rdtscll(intr0);
+			READ_TIMESTAMP(intr0);
 			err = import_all_from(x, v);
-			rdtscll(intr1);
+			READ_TIMESTAMP(intr1);
 			PyFrame_LocalsToFast(f, 0);
 			Py_DECREF(v);
 			if (err == 0) continue;
@@ -2043,9 +2046,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 		case IMPORT_FROM:
 			w = GETITEM(names, oparg);
 			v = TOP();
-			rdtscll(intr0);
+			READ_TIMESTAMP(intr0);
 			x = import_from(v, w);
-			rdtscll(intr1);
+			READ_TIMESTAMP(intr1);
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
@@ -2199,9 +2202,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 		    } else
 			    Py_INCREF(func);
 		    sp = stack_pointer;
-		    rdtscll(intr0);
+		    READ_TIMESTAMP(intr0);
 		    x = ext_do_call(func, &sp, flags, na, nk);
-		    rdtscll(intr1);
+		    READ_TIMESTAMP(intr1);
 		    stack_pointer = sp;
 		    Py_DECREF(func);
 
@@ -2314,7 +2317,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 
 	    on_error:
 
-		rdtscll(inst1);
+		READ_TIMESTAMP(inst1);
 
 		/* Quickly continue if no error occurred */
 
@@ -2327,7 +2330,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 						"XXX undetected error\n");
 				else {
 #endif
-					rdtscll(loop1);
+					READ_TIMESTAMP(loop1);
 					continue; /* Normal, fast path */
 #ifdef CHECKEXC
 				}
@@ -2446,7 +2449,7 @@ fast_block_end:
 
 		if (why != WHY_NOT)
 			break;
-		rdtscll(loop1);
+		READ_TIMESTAMP(loop1);
 
 	} /* main loop */
 
@@ -3543,9 +3546,9 @@ call_function(PyObject ***pp_stack, int oparg
 		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
-			rdtscll(*pintr0);
+			READ_TIMESTAMP(*pintr0);
 			C_TRACE(x=PyCFunction_Call(func,callargs,NULL));
-			rdtscll(*pintr1);
+			READ_TIMESTAMP(*pintr1);
 			Py_XDECREF(callargs);
 		}
 	} else {
@@ -3563,12 +3566,12 @@ call_function(PyObject ***pp_stack, int oparg
 			n++;
 		} else
 			Py_INCREF(func);
-		rdtscll(*pintr0);
+		READ_TIMESTAMP(*pintr0);
 		if (PyFunction_Check(func))
 			x = fast_function(func, pp_stack, n, na, nk);
 		else
 			x = do_call(func, pp_stack, na, nk);
-		rdtscll(*pintr1);
+		READ_TIMESTAMP(*pintr1);
 		Py_DECREF(func);
 	}
 
