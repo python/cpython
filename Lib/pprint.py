@@ -158,7 +158,7 @@ class PrettyPrinter:
                     if length > 1:
                         for key, ent in items[1:]:
                             rep = self.__repr(key, context, level)
-                            write(',\n%s: %s' % (' '*indent, rep))
+                            write(',\n%s%s: ' % (' '*indent, rep))
                             self.__format(ent, stream, indent + _len(rep) + 2,
                                           allowance + 1, context, level)
                     indent = indent - self.__indent_per_level
