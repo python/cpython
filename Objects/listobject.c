@@ -475,7 +475,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		if (a == b) {
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
-			v = list_slice(b, 0, n);
+			v = list_slice(b, 0, b->ob_size);
 			if (v == NULL)
 				return -1;
 			ret = list_ass_slice(a, ilow, ihigh, v);
