@@ -671,8 +671,8 @@ sub do_env_memberdesc{
     $class = $THIS_CLASS
         unless $class;
     $extra = " ($class_name attribute)"
-        if $class;
-    my $idx = make_str_index_entry($3, "<tt>$member()</tt>$extra");
+        if (!($class eq));
+    my $idx = make_str_index_entry($3, "<tt>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     "<dl><dt><b>$idx</b>\n<dd>" . $_ . "</dl>";
