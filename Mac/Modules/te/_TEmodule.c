@@ -850,52 +850,137 @@ static PyMethodDef TEObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain TEObj_chain = { TEObj_methods, NULL };
-
-static PyObject *TEObj_getattr(TEObject *self, char *name)
+static PyObject *TEObj_get_destRect(TEObject *self, void *closure)
 {
-
-				if( strcmp(name, "destRect") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildRect,
-							&(*self->ob_itself)->destRect);
-				if( strcmp(name, "viewRect") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildRect,
-							&(*self->ob_itself)->viewRect);
-				if( strcmp(name, "selRect") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildRect,
-							&(*self->ob_itself)->selRect);
-				if( strcmp(name, "lineHeight") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->lineHeight);
-				if( strcmp(name, "fontAscent") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
-				if( strcmp(name, "selPoint") == 0 )
-					return Py_BuildValue("O&", PyMac_BuildPoint,
-							(*self->ob_itself)->selPoint);
-				if( strcmp(name, "selStart") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->selStart);
-				if( strcmp(name, "selEnd") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->selEnd);
-				if( strcmp(name, "active") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->active);
-				if( strcmp(name, "just") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->just);
-				if( strcmp(name, "teLength") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->teLength);
-				if( strcmp(name, "txFont") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->txFont);
-				if( strcmp(name, "txFace") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->txFace);
-				if( strcmp(name, "txMode") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->txMode);
-				if( strcmp(name, "txSize") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->txSize);
-				if( strcmp(name, "nLines") == 0 )
-					return Py_BuildValue("h", (*self->ob_itself)->nLines);
-			
-	return Py_FindMethodInChain(&TEObj_chain, (PyObject *)self, name);
+	return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->destRect);
 }
 
-#define TEObj_setattr NULL
+#define TEObj_set_destRect NULL
+
+static PyObject *TEObj_get_viewRect(TEObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->viewRect);
+}
+
+#define TEObj_set_viewRect NULL
+
+static PyObject *TEObj_get_selRect(TEObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->selRect);
+}
+
+#define TEObj_set_selRect NULL
+
+static PyObject *TEObj_get_lineHeight(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->lineHeight);
+}
+
+#define TEObj_set_lineHeight NULL
+
+static PyObject *TEObj_get_fontAscent(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
+}
+
+#define TEObj_set_fontAscent NULL
+
+static PyObject *TEObj_get_selPoint(TEObject *self, void *closure)
+{
+	return Py_BuildValue("O&", PyMac_BuildPoint, (*self->ob_itself)->selPoint);
+}
+
+#define TEObj_set_selPoint NULL
+
+static PyObject *TEObj_get_selStart(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->selStart);
+}
+
+#define TEObj_set_selStart NULL
+
+static PyObject *TEObj_get_selEnd(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->selEnd);
+}
+
+#define TEObj_set_selEnd NULL
+
+static PyObject *TEObj_get_active(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->active);
+}
+
+#define TEObj_set_active NULL
+
+static PyObject *TEObj_get_just(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->just);
+}
+
+#define TEObj_set_just NULL
+
+static PyObject *TEObj_get_teLength(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->teLength);
+}
+
+#define TEObj_set_teLength NULL
+
+static PyObject *TEObj_get_txFont(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->txFont);
+}
+
+#define TEObj_set_txFont NULL
+
+static PyObject *TEObj_get_txFace(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->txFace);
+}
+
+#define TEObj_set_txFace NULL
+
+static PyObject *TEObj_get_txMode(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->txMode);
+}
+
+#define TEObj_set_txMode NULL
+
+static PyObject *TEObj_get_txSize(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->txSize);
+}
+
+#define TEObj_set_txSize NULL
+
+static PyObject *TEObj_get_nLines(TEObject *self, void *closure)
+{
+	return Py_BuildValue("h", (*self->ob_itself)->nLines);
+}
+
+#define TEObj_set_nLines NULL
+
+static PyGetSetDef TEObj_getsetlist[] = {
+	{"destRect", (getter)TEObj_get_destRect, (setter)TEObj_set_destRect, "Destination rectangle"},
+	{"viewRect", (getter)TEObj_get_viewRect, (setter)TEObj_set_viewRect, "Viewing rectangle"},
+	{"selRect", (getter)TEObj_get_selRect, (setter)TEObj_set_selRect, "Selection rectangle"},
+	{"lineHeight", (getter)TEObj_get_lineHeight, (setter)TEObj_set_lineHeight, "Height of a line"},
+	{"fontAscent", (getter)TEObj_get_fontAscent, (setter)TEObj_set_fontAscent, "Ascent of a line"},
+	{"selPoint", (getter)TEObj_get_selPoint, (setter)TEObj_set_selPoint, "Selection Point"},
+	{"selStart", (getter)TEObj_get_selStart, (setter)TEObj_set_selStart, "Start of selection"},
+	{"selEnd", (getter)TEObj_get_selEnd, (setter)TEObj_set_selEnd, "End of selection"},
+	{"active", (getter)TEObj_get_active, (setter)TEObj_set_active, "TBD"},
+	{"just", (getter)TEObj_get_just, (setter)TEObj_set_just, "Justification"},
+	{"teLength", (getter)TEObj_get_teLength, (setter)TEObj_set_teLength, "TBD"},
+	{"txFont", (getter)TEObj_get_txFont, (setter)TEObj_set_txFont, "Current font"},
+	{"txFace", (getter)TEObj_get_txFace, (setter)TEObj_set_txFace, "Current font variant"},
+	{"txMode", (getter)TEObj_get_txMode, (setter)TEObj_set_txMode, "Current text-drawing mode"},
+	{"txSize", (getter)TEObj_get_txSize, (setter)TEObj_set_txSize, "Current font size"},
+	{"nLines", (getter)TEObj_get_nLines, (setter)TEObj_set_nLines, "TBD"},
+};
+
 
 #define TEObj_compare NULL
 
@@ -912,14 +997,31 @@ PyTypeObject TE_Type = {
 	/* methods */
 	(destructor) TEObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) TEObj_getattr, /*tp_getattr*/
-	(setattrfunc) TEObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) TEObj_compare, /*tp_compare*/
 	(reprfunc) TEObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) TEObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	TEObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	TEObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ----------------------- End object type TE ----------------------- */

@@ -128,7 +128,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WindowPtr, WinObj_Convert);
 """
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputStructMembers(self):

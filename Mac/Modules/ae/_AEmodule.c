@@ -20,6 +20,9 @@
     }} while(0)
 
 
+#ifndef PyDoc_STR
+#define PyDoc_STR(x) (x)
+#endif
 #ifdef WITHOUT_FRAMEWORKS
 #include <AppleEvents.h>
 #include <AEObjects.h>
@@ -35,7 +38,13 @@ extern int _AEDesc_Convert(PyObject *, AEDesc *);
 #define AEDesc_Convert _AEDesc_Convert
 #endif
 
-static pascal OSErr GenericEventHandler(); /* Forward */
+#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
+typedef long refcontype;
+#else
+typedef unsigned long refcontype;
+#endif
+
+static pascal OSErr GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype refcon); /* Forward */
 
 AEEventHandlerUPP upp_GenericEventHandler;
 
@@ -820,46 +829,40 @@ static PyMethodDef AEDesc_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain AEDesc_chain = { AEDesc_methods, NULL };
-
-static PyObject *AEDesc_getattr(AEDescObject *self, char *name)
+static PyObject *AEDesc_get_type(AEDescObject *self, void *closure)
 {
-
-	if (strcmp(name, "type") == 0)
-		return PyMac_BuildOSType(self->ob_itself.descriptorType);
-	if (strcmp(name, "data") == 0) {
-		PyObject *res;
-#if !TARGET_API_MAC_CARBON
-		char state;
-		state = HGetState(self->ob_itself.dataHandle);
-		HLock(self->ob_itself.dataHandle);
-		res = PyString_FromStringAndSize(
-			*self->ob_itself.dataHandle,
-			GetHandleSize(self->ob_itself.dataHandle));
-		HUnlock(self->ob_itself.dataHandle);
-		HSetState(self->ob_itself.dataHandle, state);
-#else
-		Size size;
-		char *ptr;
-		OSErr err;
-		
-		size = AEGetDescDataSize(&self->ob_itself);
-		if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
-			return NULL;
-		if ( (ptr = PyString_AsString(res)) == NULL )
-			return NULL;
-		if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
-			return PyMac_Error(err);	
-#endif
-		return res;
-	}
-	if (strcmp(name, "__members__") == 0)
-		return Py_BuildValue("[ss]", "data", "type");
-
-	return Py_FindMethodInChain(&AEDesc_chain, (PyObject *)self, name);
+	return PyMac_BuildOSType(self->ob_itself.descriptorType);
 }
 
-#define AEDesc_setattr NULL
+#define AEDesc_set_type NULL
+
+static PyObject *AEDesc_get_data(AEDescObject *self, void *closure)
+{
+
+			PyObject *res;
+			Size size;
+			char *ptr;
+			OSErr err;
+			
+			size = AEGetDescDataSize(&self->ob_itself);
+			if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
+				return NULL;
+			if ( (ptr = PyString_AsString(res)) == NULL )
+				return NULL;
+			if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
+				return PyMac_Error(err);	
+			return res;
+			
+}
+
+#define AEDesc_set_data NULL
+
+static PyGetSetDef AEDesc_getsetlist[] = {
+	{"type", (getter)AEDesc_get_type, (setter)AEDesc_set_type, "Type of this AEDesc"},
+	{"data", (getter)AEDesc_get_data, (setter)AEDesc_set_data, "The raw data in this AEDesc"},
+	{NULL, NULL, NULL, NULL},
+};
+
 
 #define AEDesc_compare NULL
 
@@ -876,14 +879,31 @@ PyTypeObject AEDesc_Type = {
 	/* methods */
 	(destructor) AEDesc_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) AEDesc_getattr, /*tp_getattr*/
-	(setattrfunc) AEDesc_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) AEDesc_compare, /*tp_compare*/
 	(reprfunc) AEDesc_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) AEDesc_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	AEDesc_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	AEDesc_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type AEDesc --------------------- */
@@ -1349,12 +1369,6 @@ static PyMethodDef AE_methods[] = {
 };
 
 
-
-#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
-typedef long refcontype;
-#else
-typedef unsigned long refcontype;
-#endif
 
 static pascal OSErr
 GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype refcon)

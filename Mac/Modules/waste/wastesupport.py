@@ -277,7 +277,7 @@ class WEMethodGenerator(OSErrMethodGenerator):
 
 
 
-class WEObjectDefinition(GlobalObjectDefinition):
+class WEObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(waste_Error,"Cannot create null WE");
@@ -289,7 +289,7 @@ class WEObjectDefinition(GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("WEDispose(%s);", itselfname)
 		
-class WEOObjectDefinition(GlobalObjectDefinition):
+class WEOObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					Py_INCREF(Py_None);

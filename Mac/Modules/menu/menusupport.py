@@ -98,7 +98,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
 """
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	pass
 
 # Create the generator groups and link them

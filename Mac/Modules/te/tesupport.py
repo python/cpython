@@ -93,7 +93,91 @@ class TEMethodGenerator(OSErrWeakLinkMethodGenerator):
 
 
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+	# Attributes that can be set.
+	getsetlist = [
+		(
+		'destRect',
+		'return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->destRect);',
+		None,
+		'Destination rectangle'
+		), (
+		'viewRect',
+		'return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->viewRect);',
+		None,
+		'Viewing rectangle'
+		), (
+		'selRect',
+		'return Py_BuildValue("O&", PyMac_BuildRect, &(*self->ob_itself)->selRect);',
+		None,
+		'Selection rectangle'
+		), (
+		'lineHeight',
+		'return Py_BuildValue("h", (*self->ob_itself)->lineHeight);',
+		None,
+		'Height of a line'
+		), (
+		'fontAscent',
+		'return Py_BuildValue("h", (*self->ob_itself)->fontAscent);',
+		None,
+		'Ascent of a line'
+		), (
+		"selPoint",
+		'return Py_BuildValue("O&", PyMac_BuildPoint, (*self->ob_itself)->selPoint);',
+		None,
+		'Selection Point'
+		), (
+		'selStart',
+		'return Py_BuildValue("h", (*self->ob_itself)->selStart);',
+		None,
+		'Start of selection'
+		), (
+		'selEnd',
+		'return Py_BuildValue("h", (*self->ob_itself)->selEnd);',
+		None,
+		'End of selection'
+		), (
+		'active',
+		'return Py_BuildValue("h", (*self->ob_itself)->active);',
+		None,
+		'TBD'
+		), (
+		'just',
+		'return Py_BuildValue("h", (*self->ob_itself)->just);',
+		None,
+		'Justification'
+		), (
+		'teLength',
+		'return Py_BuildValue("h", (*self->ob_itself)->teLength);',
+		None,
+		'TBD'
+		), (
+		'txFont',
+		'return Py_BuildValue("h", (*self->ob_itself)->txFont);',
+		None,
+		'Current font'
+		), (
+		'txFace',
+		'return Py_BuildValue("h", (*self->ob_itself)->txFace);',
+		None,
+		'Current font variant'
+		), (
+		'txMode',
+		'return Py_BuildValue("h", (*self->ob_itself)->txMode);',
+		None,
+		'Current text-drawing mode'
+		), (
+		'txSize',
+		'return Py_BuildValue("h", (*self->ob_itself)->txSize);',
+		None,
+		'Current font size'
+		), (
+		'nLines',
+		'return Py_BuildValue("h", (*self->ob_itself)->nLines);',
+		None,
+		'TBD'
+		)]		
+		
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(TE_Error,"Cannot create null TE");
@@ -102,45 +186,6 @@ class MyObjectDefinition(GlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
 		Output("TEDispose(%s);", itselfname)
 		
-	def outputGetattrHook(self):
-		Output("""
-			if( strcmp(name, "destRect") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect,
-						&(*self->ob_itself)->destRect);
-			if( strcmp(name, "viewRect") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect,
-						&(*self->ob_itself)->viewRect);
-			if( strcmp(name, "selRect") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect,
-						&(*self->ob_itself)->selRect);
-			if( strcmp(name, "lineHeight") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->lineHeight);
-			if( strcmp(name, "fontAscent") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
-			if( strcmp(name, "selPoint") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildPoint,
-						(*self->ob_itself)->selPoint);
-			if( strcmp(name, "selStart") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->selStart);
-			if( strcmp(name, "selEnd") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->selEnd);
-			if( strcmp(name, "active") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->active);
-			if( strcmp(name, "just") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->just);
-			if( strcmp(name, "teLength") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->teLength);
-			if( strcmp(name, "txFont") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->txFont);
-			if( strcmp(name, "txFace") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->txFace);
-			if( strcmp(name, "txMode") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->txMode);
-			if( strcmp(name, "txSize") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->txSize);
-			if( strcmp(name, "nLines") == 0 )
-				return Py_BuildValue("h", (*self->ob_itself)->nLines);
-		""")
 
 # From here on it's basically all boiler plate...
 

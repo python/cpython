@@ -183,7 +183,7 @@ dragglue_DrawingUPP = NewDragDrawingUPP(dragglue_Drawing);
 #endif
 """    
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("""if (itself == NULL) {
 					PyErr_SetString(Drag_Error,"Cannot create null Drag");

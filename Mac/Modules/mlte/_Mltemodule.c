@@ -1295,14 +1295,7 @@ static PyMethodDef TXNObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain TXNObj_chain = { TXNObj_methods, NULL };
-
-static PyObject *TXNObj_getattr(TXNObjectObject *self, char *name)
-{
-	return Py_FindMethodInChain(&TXNObj_chain, (PyObject *)self, name);
-}
-
-#define TXNObj_setattr NULL
+#define TXNObj_getsetlist NULL
 
 #define TXNObj_compare NULL
 
@@ -1319,14 +1312,31 @@ PyTypeObject TXNObject_Type = {
 	/* methods */
 	(destructor) TXNObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) TXNObj_getattr, /*tp_getattr*/
-	(setattrfunc) TXNObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) TXNObj_compare, /*tp_compare*/
 	(reprfunc) TXNObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) TXNObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	TXNObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	TXNObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ------------------- End object type TXNObject -------------------- */
@@ -1411,14 +1421,7 @@ static PyMethodDef TXNFontMenuObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain TXNFontMenuObj_chain = { TXNFontMenuObj_methods, NULL };
-
-static PyObject *TXNFontMenuObj_getattr(TXNFontMenuObjectObject *self, char *name)
-{
-	return Py_FindMethodInChain(&TXNFontMenuObj_chain, (PyObject *)self, name);
-}
-
-#define TXNFontMenuObj_setattr NULL
+#define TXNFontMenuObj_getsetlist NULL
 
 #define TXNFontMenuObj_compare NULL
 
@@ -1435,14 +1438,31 @@ PyTypeObject TXNFontMenuObject_Type = {
 	/* methods */
 	(destructor) TXNFontMenuObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) TXNFontMenuObj_getattr, /*tp_getattr*/
-	(setattrfunc) TXNFontMenuObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) TXNFontMenuObj_compare, /*tp_compare*/
 	(reprfunc) TXNFontMenuObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) TXNFontMenuObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	TXNFontMenuObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	TXNFontMenuObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------- End object type TXNFontMenuObject ---------------- */

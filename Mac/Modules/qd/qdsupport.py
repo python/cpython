@@ -211,15 +211,7 @@ PyObject *BMObj_NewCopied(BitMapPtr itself)
 
 """
 
-variablestuff = """
-{
-	PyObject *o;
- 	
-	o = QDGA_New();
-	if (o == NULL || PyDict_SetItemString(d, "qd", o) != 0)
-		return;
-}
-"""
+variablestuff = ""
 
 initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_NEW(BitMapPtr, BMObj_New);
@@ -244,7 +236,22 @@ initstuff = initstuff + """
 ##	def outputFreeIt(self, itselfname):
 ##		Output("KillPoly(%s);", itselfname)
 
-class MyGRObjectDefinition(GlobalObjectDefinition):
+class MyGRObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+	getsetlist = [
+		('visRgn',
+		"""RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
+		return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(self->ob_itself, h));
+		""",
+		None,
+		"Convenience attribute: return a copy of the visible region"
+		), (
+		'clipRgn',
+		"""RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
+		return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(self->ob_itself, h));
+		""",
+		None,
+		"Convenience attribute: return a copy of the clipping region"
+		)]
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputCheckConvertArg(self):
@@ -269,157 +276,35 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 		Output("return 1;")
 		OutRbrace()
 		Output("#endif")
-	def outputGetattrHook(self):
-		Output("#if !ACCESSOR_CALLS_ARE_FUNCTIONS")
-		Output("""
-		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-		
-			if ( strcmp(name, "data") == 0 )
-				return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(GrafPort));
-				
-			if ( (itself_color->portVersion&0xc000) == 0xc000 ) {
-				/* Color-only attributes */
-			
-				if ( strcmp(name, "portBits") == 0 )
-					/* XXXX Do we need HLock() stuff here?? */
-					return BMObj_New((BitMapPtr)*itself_color->portPixMap);
-				if ( strcmp(name, "grafVars") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->visRgn);
-				if ( strcmp(name, "chExtra") == 0 )
-					return Py_BuildValue("h", itself_color->chExtra);
-				if ( strcmp(name, "pnLocHFrac") == 0 )
-					return Py_BuildValue("h", itself_color->pnLocHFrac);
-				if ( strcmp(name, "bkPixPat") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->bkPixPat);
-				if ( strcmp(name, "rgbFgColor") == 0 )
-					return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbFgColor);
-				if ( strcmp(name, "rgbBkColor") == 0 )
-					return Py_BuildValue("O&", QdRGB_New, &itself_color->rgbBkColor);
-				if ( strcmp(name, "pnPixPat") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->pnPixPat);
-				if ( strcmp(name, "fillPixPat") == 0 )
-					return Py_BuildValue("O&", ResObj_New, (Handle)itself_color->fillPixPat);
-			} else {
-				/* Mono-only attributes */
-				if ( strcmp(name, "portBits") == 0 )
-					return BMObj_New(&self->ob_itself->portBits);
-				if ( strcmp(name, "bkPat") == 0 )
-					return Py_BuildValue("s#", (char *)&self->ob_itself->bkPat, sizeof(Pattern));
-				if ( strcmp(name, "fillPat") == 0 )
-					return Py_BuildValue("s#", (char *)&self->ob_itself->fillPat, sizeof(Pattern));
-				if ( strcmp(name, "pnPat") == 0 )
-					return Py_BuildValue("s#", (char *)&self->ob_itself->pnPat, sizeof(Pattern));
-			}
-			/*
-			** Accessible for both color/mono windows.
-			** portVersion is really color-only, but we put it here
-			** for convenience
-			*/
-			if ( strcmp(name, "portVersion") == 0 )
-				return Py_BuildValue("h", itself_color->portVersion);
-			if ( strcmp(name, "device") == 0 )
-				return PyInt_FromLong((long)self->ob_itself->device);
-			if ( strcmp(name, "portRect") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
-			if ( strcmp(name, "visRgn") == 0 )
-				return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->visRgn);
-			if ( strcmp(name, "clipRgn") == 0 )
-				return Py_BuildValue("O&", ResObj_New, (Handle)self->ob_itself->clipRgn);
-			if ( strcmp(name, "pnLoc") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnLoc);
-			if ( strcmp(name, "pnSize") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildPoint, self->ob_itself->pnSize);
-			if ( strcmp(name, "pnMode") == 0 )
-				return Py_BuildValue("h", self->ob_itself->pnMode);
-			if ( strcmp(name, "pnVis") == 0 )
-				return Py_BuildValue("h", self->ob_itself->pnVis);
-			if ( strcmp(name, "txFont") == 0 )
-				return Py_BuildValue("h", self->ob_itself->txFont);
-			if ( strcmp(name, "txFace") == 0 )
-				return Py_BuildValue("h", (short)self->ob_itself->txFace);
-			if ( strcmp(name, "txMode") == 0 )
-				return Py_BuildValue("h", self->ob_itself->txMode);
-			if ( strcmp(name, "txSize") == 0 )
-				return Py_BuildValue("h", self->ob_itself->txSize);
-			if ( strcmp(name, "spExtra") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildFixed, self->ob_itself->spExtra);
-			/* XXXX Add more, as needed */
-			/* This one is so we can compare grafports: */
-			if ( strcmp(name, "_id") == 0 )
-				return Py_BuildValue("l", (long)self->ob_itself);
-		}""")
-		Output("#else")
-		Output("""
-		{	CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
-			if ( strcmp(name, "portBits") == 0 )
-				return BMObj_New((BitMapPtr)GetPortBitMapForCopyBits(itself_color));
-			if ( strcmp(name, "chExtra") == 0 )
-				return Py_BuildValue("h", GetPortChExtra(itself_color));
-			if ( strcmp(name, "pnLocHFrac") == 0 )
-				return Py_BuildValue("h", GetPortFracHPenLocation(itself_color));
-			if ( strcmp(name, "bkPixPat") == 0 ) {
-				PixPatHandle h=0;
-				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortBackPixPat(itself_color, h));
-			}
-			if ( strcmp(name, "rgbFgColor") == 0 ) {
-				RGBColor c;
-				return Py_BuildValue("O&", QdRGB_New, GetPortForeColor(itself_color, &c));
-			}
-			if ( strcmp(name, "rgbBkColor") == 0 ) {
-				RGBColor c;
-				return Py_BuildValue("O&", QdRGB_New, GetPortBackColor(itself_color, &c));
-			}
-			if ( strcmp(name, "pnPixPat") == 0 ) {
-				PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
-				
-				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortPenPixPat(itself_color, h));
-			}
-			if ( strcmp(name, "fillPixPat") == 0 ) {
-				PixPatHandle h=NewPixPat(); /* XXXX wrong dispose routine */
-				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortFillPixPat(itself_color, h));
-			}
-			if ( strcmp(name, "portRect") == 0 ) {
-				Rect r;
-				return Py_BuildValue("O&", PyMac_BuildRect, GetPortBounds(itself_color, &r));
-			}
-			if ( strcmp(name, "visRgn") == 0 ) {
-				RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
-				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortVisibleRegion(itself_color, h));
-			}
-			if ( strcmp(name, "clipRgn") == 0 ) {
-				RgnHandle h=NewRgn(); /* XXXX wrong dispose routine */
-				return Py_BuildValue("O&", ResObj_New, (Handle)GetPortClipRegion(itself_color, h));
-			}
-			if ( strcmp(name, "pnLoc") == 0 ) {
-				Point p;
-				return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenLocation(itself_color, &p));
-			}
-			if ( strcmp(name, "pnSize") == 0 ) {
-				Point p;
-				return Py_BuildValue("O&", PyMac_BuildPoint, *GetPortPenSize(itself_color, &p));
-			}
-			if ( strcmp(name, "pnMode") == 0 )
-				return Py_BuildValue("h", GetPortPenMode(itself_color));
-			if ( strcmp(name, "pnVis") == 0 )
-				return Py_BuildValue("h", GetPortPenVisibility(itself_color));
-			if ( strcmp(name, "txFont") == 0 )
-				return Py_BuildValue("h", GetPortTextFont(itself_color));
-			if ( strcmp(name, "txFace") == 0 )
-				return Py_BuildValue("h", (short)GetPortTextFace(itself_color));
-			if ( strcmp(name, "txMode") == 0 )
-				return Py_BuildValue("h", GetPortTextMode(itself_color));
-			if ( strcmp(name, "txSize") == 0 )
-				return Py_BuildValue("h", GetPortTextSize(itself_color));
-			if ( strcmp(name, "spExtra") == 0 )
-				return Py_BuildValue("O&", PyMac_BuildFixed, GetPortSpExtra(itself_color));
-			/* XXXX Add more, as needed */
-			/* This one is so we can compare grafports: */
-			if ( strcmp(name, "_id") == 0 )
-				return Py_BuildValue("l", (long)self->ob_itself);
-		}""")
-		Output("#endif")
 
-class MyBMObjectDefinition(GlobalObjectDefinition):
+class MyBMObjectDefinition(PEP252Mixin, GlobalObjectDefinition):
+	getsetlist = [
+	(
+	'baseAddr',
+	'return PyInt_FromLong((long)self->ob_itself->baseAddr);',
+	None,
+	None
+	), (
+	'rowBytes',
+	'return PyInt_FromLong((long)self->ob_itself->rowBytes);',
+	None,
+	None
+	), (
+	'bounds',
+	'return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);',
+	None,
+	None
+	), (
+	'bitmap_data',
+	'return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));',
+	None,
+	None
+	), (
+	'pixmap_data',
+	'return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));',
+	None,
+	None
+	)]
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputStructMembers(self):
@@ -434,104 +319,7 @@ class MyBMObjectDefinition(GlobalObjectDefinition):
 		Output("it->referred_bitmap = NULL;")
 	def outputCleanupStructMembers(self):
 		Output("Py_XDECREF(self->referred_object);")
-		Output("if (self->referred_bitmap) free(self->referred_bitmap);")
-	def outputGetattrHook(self):
-		Output("""if ( strcmp(name, "baseAddr") == 0 )
-			return PyInt_FromLong((long)self->ob_itself->baseAddr);
-		if ( strcmp(name, "rowBytes") == 0 )
-			return PyInt_FromLong((long)self->ob_itself->rowBytes);
-		if ( strcmp(name, "bounds") == 0 )
-			return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
-		/* XXXX Add more, as needed */
-		if ( strcmp(name, "bitmap_data") == 0 )
-			return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
-		if ( strcmp(name, "pixmap_data") == 0 )
-			return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
-		""")
-		
-# This object is instanciated once, and will access qd globals.
-class QDGlobalsAccessObjectDefinition(ObjectDefinition):
-	def outputStructMembers(self):
-		pass
-	def outputNew(self):
-		Output()
-		Output("%sPyObject *%s_New(void)", self.static, self.prefix)
-		OutLbrace()
-		Output("%s *it;", self.objecttype)
-		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
-		Output("if (it == NULL) return NULL;")
-		Output("return (PyObject *)it;")
-		OutRbrace()
-	def outputConvert(self):
-		pass
-	def outputCleanupStructMembers(self):
-		pass
-
-	def outputGetattrHook(self):
-		Output("#if !ACCESSOR_CALLS_ARE_FUNCTIONS")
-		Output("""
-	if ( strcmp(name, "arrow") == 0 )
-		return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
-	if ( strcmp(name, "black") == 0 ) 
-		return PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
-	if ( strcmp(name, "white") == 0 ) 
-		return PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
-	if ( strcmp(name, "gray") == 0 ) 
-		return PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
-	if ( strcmp(name, "ltGray") == 0 ) 
-		return PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
-	if ( strcmp(name, "dkGray") == 0 ) 
-		return PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
-	if ( strcmp(name, "screenBits") == 0 ) 
-		return BMObj_New(&qd.screenBits);
-	if ( strcmp(name, "thePort") == 0 ) 
-		return GrafObj_New(qd.thePort);
-	if ( strcmp(name, "randSeed") == 0 ) 
-		return Py_BuildValue("l", &qd.randSeed);
-		""")
-		Output("#else")
-		Output("""
-	if ( strcmp(name, "arrow") == 0 ) {
-		Cursor rv;
-		GetQDGlobalsArrow(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "black") == 0 ) {
-		Pattern rv;
-		GetQDGlobalsBlack(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "white") == 0 )  {
-		Pattern rv;
-		GetQDGlobalsWhite(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "gray") == 0 )  {
-		Pattern rv;
-		GetQDGlobalsGray(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "ltGray") == 0 )  {
-		Pattern rv;
-		GetQDGlobalsLightGray(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "dkGray") == 0 )  {
-		Pattern rv;
-		GetQDGlobalsDarkGray(&rv);
-		return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
-	}
-	if ( strcmp(name, "screenBits") == 0 ) {
-		BitMap rv;
-		GetQDGlobalsScreenBits(&rv);
-		return BMObj_NewCopied(&rv);
-	}
-	if ( strcmp(name, "thePort") == 0 ) 
-		return GrafObj_New(GetQDGlobalsThePort());
-	if ( strcmp(name, "randSeed") == 0 ) 
-		return Py_BuildValue("l", GetQDGlobalsRandomSeed());
-		""")
-		Output("#endif")
+		Output("if (self->referred_bitmap) free(self->referred_bitmap);")		
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)
@@ -543,8 +331,6 @@ gr_object = MyGRObjectDefinition("GrafPort", "GrafObj", "GrafPtr")
 module.addobject(gr_object)
 bm_object = MyBMObjectDefinition("BitMap", "BMObj", "BitMapPtr")
 module.addobject(bm_object)
-qd_object = QDGlobalsAccessObjectDefinition("QDGlobalsAccess", "QDGA", "XXXX")
-module.addobject(qd_object)
 
 
 # Create the generator classes used to populate the lists
@@ -553,15 +339,17 @@ Method = OSErrWeakLinkMethodGenerator
 
 # Create and populate the lists
 functions = []
-methods = []
+gr_methods = []
+bm_methods = []
+#methods = []
 execfile(INPUTFILE)
 execfile(EXTRAFILE)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
-##for f in r_methods: r_object.add(f)
-##for f in po_methods: po_object.add(f)
+for f in gr_methods: gr_object.add(f)
+for f in bm_methods: bm_object.add(f)
 
 # Manual generator: get data out of a bitmap
 getdata_body = """

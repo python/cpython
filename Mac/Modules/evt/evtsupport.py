@@ -43,25 +43,10 @@ includestuff = includestuff + """
 
 """
 
-class MyObjectDefinition(GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
-	def outputCheckConvertArg(self):
-		OutLbrace("if (DlgObj_Check(v))")
-		Output("*p_itself = ((WindowObject *)v)->ob_itself;")
-		Output("return 1;")
-		OutRbrace()
-		Out("""
-		if (v == Py_None) { *p_itself = NULL; return 1; }
-		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
-		""")
-
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
-##object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
-##module.addobject(object)
 
 # Create the generator classes used to populate the lists
 Function = OSErrWeakLinkFunctionGenerator
@@ -69,7 +54,6 @@ Function = OSErrWeakLinkFunctionGenerator
 
 # Create and populate the lists
 functions = []
-##methods = []
 execfile(INPUTFILE)
 
 # Move TickCount here, for convenience
@@ -80,7 +64,6 @@ functions.append(f)
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
-##for f in methods: object.add(f)
 
 WaitNextEvent_body = """
 Boolean _rv;

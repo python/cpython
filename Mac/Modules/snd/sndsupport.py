@@ -211,7 +211,7 @@ SPB_interrupt(SPBPtr my_spb)
 
 # create the module and object definition and link them
 
-class SndObjectDefinition(ObjectDefinition):
+class SndObjectDefinition(PEP252Mixin, ObjectDefinition):
 
 	def outputStructMembers(self):
 		ObjectDefinition.outputStructMembers(self)
@@ -237,7 +237,37 @@ class SndObjectDefinition(ObjectDefinition):
 		
 #
 
-class SpbObjectDefinition(ObjectDefinition):
+class SpbObjectDefinition(PEP252Mixin, ObjectDefinition):
+	getsetlist = [
+		(
+		'inRefNum',
+		'return Py_BuildValue("l", self->ob_spb.inRefNum);',
+		'return -1 + PyArg_Parse(v, "l", &self->ob_spb.inRefNum);',
+		None,
+		), (
+		'count',
+		'return Py_BuildValue("l", self->ob_spb.count);',
+		'return -1 + PyArg_Parse(v, "l", &self->ob_spb.count);',
+		None
+		), (
+		'milliseconds',
+		'return Py_BuildValue("l", self->ob_spb.milliseconds);',
+		'return -1 + PyArg_Parse(v, "l", &self->ob_spb.milliseconds);',
+		None,
+		), (
+		'error',
+		'return Py_BuildValue("h", self->ob_spb.error);',
+		None,
+		None
+		), (
+		'completionRoutine',
+		None,
+		"""self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
+		self->ob_completion = v;
+		Py_INCREF(v);
+		return 0;""",
+		None,
+		)]
 
 	def outputStructMembers(self):
 		Output("/* Members used to implement callbacks: */")
@@ -286,54 +316,6 @@ class SpbObjectDefinition(ObjectDefinition):
 		Output("*p_itself = &((%s *)v)->ob_spb;", self.objecttype)
 		Output("return 1;")
 		OutRbrace()
-
-	def outputSetattr(self):
-		Output()
-		Output("static int %s_setattr(%s *self, char *name, PyObject *value)", 
-			self.prefix, self.objecttype)
-		OutLbrace()
-		self.outputSetattrBody()
-		OutRbrace()
-
-	def outputSetattrBody(self):
-		Output("""
-	int rv = 0;
-	
-	if (strcmp(name, "inRefNum") == 0)
-		rv = PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
-	else if (strcmp(name, "count") == 0)
-		rv = PyArg_Parse(value, "l", &self->ob_spb.count);
-	else if (strcmp(name, "milliseconds") == 0)
-		rv = PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
-	else if (strcmp(name, "buffer") == 0)
-		rv = PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
-	else if (strcmp(name, "completionRoutine") == 0) {
-		self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
-		self->ob_completion = value;
-		Py_INCREF(value);
-		rv = 1;
-#if !TARGET_API_MAC_CARBON
-	} else if (strcmp(name, "interruptRoutine") == 0) {
-		self->ob_spb.completionRoutine = NewSIInterruptUPP(SPB_interrupt);
-		self->ob_interrupt = value;
-		Py_INCREF(value);
-		rv = 1;
-#endif
-	}
-	if ( rv ) return 0;
-	else return -1;""")
-			
-	def outputGetattrHook(self):
-		Output("""
-			if (strcmp(name, "inRefNum") == 0)
-				return Py_BuildValue("l", self->ob_spb.inRefNum);
-			else if (strcmp(name, "count") == 0)
-				return Py_BuildValue("l", self->ob_spb.count);
-			else if (strcmp(name, "milliseconds") == 0)
-				return Py_BuildValue("l", self->ob_spb.milliseconds);
-			else if (strcmp(name, "error") == 0)
-				return Py_BuildValue("h", self->ob_spb.error);""")
-		
 					
 
 sndobject = SndObjectDefinition('SndChannel', 'SndCh', 'SndChannelPtr')

@@ -53,6 +53,12 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
+			if t in ('GrafPtr', 'CGrafPtr') and m == 'InMode':
+				classname = "Method"
+				listname = "gr_methods"
+			elif t == 'BitMapPtr' and m == 'InMode':
+				classname = "Method"
+				listname = "bm_methods"
 ##			elif t == "PolyHandle" and m == "InMode":
 ##				classname = "Method"
 ##				listname = "p_methods"

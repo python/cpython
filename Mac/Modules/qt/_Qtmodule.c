@@ -1090,14 +1090,7 @@ static PyMethodDef MovieCtlObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain MovieCtlObj_chain = { MovieCtlObj_methods, NULL };
-
-static PyObject *MovieCtlObj_getattr(MovieControllerObject *self, char *name)
-{
-	return Py_FindMethodInChain(&MovieCtlObj_chain, (PyObject *)self, name);
-}
-
-#define MovieCtlObj_setattr NULL
+#define MovieCtlObj_getsetlist NULL
 
 #define MovieCtlObj_compare NULL
 
@@ -1114,14 +1107,31 @@ PyTypeObject MovieController_Type = {
 	/* methods */
 	(destructor) MovieCtlObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) MovieCtlObj_getattr, /*tp_getattr*/
-	(setattrfunc) MovieCtlObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) MovieCtlObj_compare, /*tp_compare*/
 	(reprfunc) MovieCtlObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) MovieCtlObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	MovieCtlObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	MovieCtlObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* ---------------- End object type MovieController ----------------- */
@@ -1541,14 +1551,7 @@ static PyMethodDef TimeBaseObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain TimeBaseObj_chain = { TimeBaseObj_methods, NULL };
-
-static PyObject *TimeBaseObj_getattr(TimeBaseObject *self, char *name)
-{
-	return Py_FindMethodInChain(&TimeBaseObj_chain, (PyObject *)self, name);
-}
-
-#define TimeBaseObj_setattr NULL
+#define TimeBaseObj_getsetlist NULL
 
 #define TimeBaseObj_compare NULL
 
@@ -1565,14 +1568,31 @@ PyTypeObject TimeBase_Type = {
 	/* methods */
 	(destructor) TimeBaseObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) TimeBaseObj_getattr, /*tp_getattr*/
-	(setattrfunc) TimeBaseObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) TimeBaseObj_compare, /*tp_compare*/
 	(reprfunc) TimeBaseObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) TimeBaseObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	TimeBaseObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	TimeBaseObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------------- End object type TimeBase -------------------- */
@@ -1845,14 +1865,7 @@ static PyMethodDef UserDataObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain UserDataObj_chain = { UserDataObj_methods, NULL };
-
-static PyObject *UserDataObj_getattr(UserDataObject *self, char *name)
-{
-	return Py_FindMethodInChain(&UserDataObj_chain, (PyObject *)self, name);
-}
-
-#define UserDataObj_setattr NULL
+#define UserDataObj_getsetlist NULL
 
 #define UserDataObj_compare NULL
 
@@ -1869,14 +1882,31 @@ PyTypeObject UserData_Type = {
 	/* methods */
 	(destructor) UserDataObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) UserDataObj_getattr, /*tp_getattr*/
-	(setattrfunc) UserDataObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) UserDataObj_compare, /*tp_compare*/
 	(reprfunc) UserDataObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) UserDataObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	UserDataObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	UserDataObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* -------------------- End object type UserData -------------------- */
@@ -3020,14 +3050,7 @@ static PyMethodDef MediaObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain MediaObj_chain = { MediaObj_methods, NULL };
-
-static PyObject *MediaObj_getattr(MediaObject *self, char *name)
-{
-	return Py_FindMethodInChain(&MediaObj_chain, (PyObject *)self, name);
-}
-
-#define MediaObj_setattr NULL
+#define MediaObj_getsetlist NULL
 
 #define MediaObj_compare NULL
 
@@ -3044,14 +3067,31 @@ PyTypeObject Media_Type = {
 	/* methods */
 	(destructor) MediaObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) MediaObj_getattr, /*tp_getattr*/
-	(setattrfunc) MediaObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) MediaObj_compare, /*tp_compare*/
 	(reprfunc) MediaObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) MediaObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	MediaObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	MediaObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type Media ---------------------- */
@@ -4301,14 +4341,7 @@ static PyMethodDef TrackObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain TrackObj_chain = { TrackObj_methods, NULL };
-
-static PyObject *TrackObj_getattr(TrackObject *self, char *name)
-{
-	return Py_FindMethodInChain(&TrackObj_chain, (PyObject *)self, name);
-}
-
-#define TrackObj_setattr NULL
+#define TrackObj_getsetlist NULL
 
 #define TrackObj_compare NULL
 
@@ -4325,14 +4358,31 @@ PyTypeObject Track_Type = {
 	/* methods */
 	(destructor) TrackObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) TrackObj_getattr, /*tp_getattr*/
-	(setattrfunc) TrackObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) TrackObj_compare, /*tp_compare*/
 	(reprfunc) TrackObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) TrackObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	TrackObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	TrackObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type Track ---------------------- */
@@ -6722,14 +6772,7 @@ static PyMethodDef MovieObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain MovieObj_chain = { MovieObj_methods, NULL };
-
-static PyObject *MovieObj_getattr(MovieObject *self, char *name)
-{
-	return Py_FindMethodInChain(&MovieObj_chain, (PyObject *)self, name);
-}
-
-#define MovieObj_setattr NULL
+#define MovieObj_getsetlist NULL
 
 #define MovieObj_compare NULL
 
@@ -6746,14 +6789,31 @@ PyTypeObject Movie_Type = {
 	/* methods */
 	(destructor) MovieObj_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc) MovieObj_getattr, /*tp_getattr*/
-	(setattrfunc) MovieObj_setattr, /*tp_setattr*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
 	(cmpfunc) MovieObj_compare, /*tp_compare*/
 	(reprfunc) MovieObj_repr, /*tp_repr*/
 	(PyNumberMethods *)0, /* tp_as_number */
 	(PySequenceMethods *)0, /* tp_as_sequence */
 	(PyMappingMethods *)0, /* tp_as_mapping */
 	(hashfunc) MovieObj_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*outputHook_tp_as_buffer*/
+	0, /*outputHook_tp_flags*/
+	0, /*outputHook_tp_doc*/
+	0, /*outputHook_tp_traverse*/
+	0, /*outputHook_tp_clear*/
+	0, /*outputHook_tp_richcompare*/
+	0, /*outputHook_tp_weaklistoffset*/
+	0, /*outputHook_tp_iter*/
+	0, /*outputHook_tp_iternext*/
+	MovieObj_methods, /* tp_methods */
+	0, /*outputHook_tp_members*/
+	MovieObj_getsetlist, /*tp_getset*/
+	0, /*outputHook_tp_base*/
 };
 
 /* --------------------- End object type Movie ---------------------- */
