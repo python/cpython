@@ -4,7 +4,6 @@ This window provides the basic decorations, primarily including the menubar.
 It is used to bring up other windows.
 """
 
-import sys
 from Tkinter import *
 import tkMessageBox
 
@@ -20,39 +19,34 @@ class PyncheWidget:
         self.__textwin = None
         self.__listwin = None
         self.__detailswin = None
-        # create the first and top window
-        root = self.__root = Tk(className='Pynche')
-        root.protocol('WM_DELETE_WINDOW', self.__quit)
-        root.title('Pynche %s' % version)
-        root.iconname('Pynche')
-        root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
         #
+        # Is there already a default root for Tk, say because we're running
+        # under Guido's IDE? :-) Two conditions say no, either the import
+        # fails or _default_root is None.
+        tkroot = None
+        try:
+            from Tkinter import _default_root
+            tkroot = self.__tkroot = _default_root
+        except ImportError:
+            pass
+        if not tkroot:
+            tkroot = self.__tkroot = Tk(className='Pynche')
+        # but this isn't our top level widget, so make it invisible
+        tkroot.withdraw()
         # create the menubar
-        #
-        menubar = self.__menubar = Frame(root, relief=RAISED, borderwidth=2)
-        menubar.grid(row=0, column=0, columnspan=2, sticky='EW')
+        menubar = self.__menubar = Menu(tkroot)
         #
         # File menu
         #
-        filebtn = Menubutton(menubar, text='File',
-                             underline=0)
-        filebtn.pack(side=LEFT)
-        filemenu = Menu(filebtn, tearoff=0)
-        filebtn['menu'] = filemenu
+        filemenu = self.__filemenu = Menu(menubar, tearoff=0)
         filemenu.add_command(label='Quit',
-                             command=self.__quit,
+                             command=tkroot.quit,
                              accelerator='Alt-Q',
                              underline=0)
-        root.bind('<Alt-q>', self.__quit)
-        root.bind('<Alt-Q>', self.__quit)
         #
         # View menu
         #
-        viewbtn = Menubutton(menubar, text='View',
-                             underline=0)
-        viewbtn.pack(side=LEFT)
-        viewmenu = Menu(viewbtn, tearoff=0)
-        viewbtn['menu'] = viewmenu
+        viewmenu = Menu(menubar, tearoff=0)
         viewmenu.add_command(label='Text Window...',
                              command=self.__popup_text,
                              underline=0)
@@ -61,29 +55,44 @@ class PyncheWidget:
                              underline=0)
         viewmenu.add_command(label='Details Window...',
                              command=self.__popup_details,
-                             underline=0)        #
+                             underline=0)
+        #
         # Help menu
         #
-        helpbtn = Menubutton(menubar, text='Help',
-                             underline=0)
-        helpbtn.pack(side=RIGHT)
-        helpmenu = Menu(helpbtn, tearoff=0)
-        helpbtn['menu'] = helpmenu
+        helpmenu = Menu(menubar, name='help', tearoff=0)
 	helpmenu.add_command(label='About...',
                              command=self.__popup_about,
                              underline=0)
+        #
+        # Tie them all together
+        #
+        menubar.add_cascade(label='File',
+                            menu=filemenu,
+                            underline=0)
+        menubar.add_cascade(label='View',
+                            menu=viewmenu,
+                            underline=0)
+        menubar.add_cascade(label='Help',
+                            menu=helpmenu,
+                            underline=0)
+
+        # now create the top level window
+        root = self.__root = Toplevel(tkroot, class_='Pynche', menu=menubar)
+        root.protocol('WM_DELETE_WINDOW', tkroot.quit)
+        root.title('Pynche %s' % version)
+        root.iconname('Pynche')
+        root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
+        root.bind('<Alt-q>', tkroot.quit)
+        root.bind('<Alt-Q>', tkroot.quit)
 
     def __keepalive(self):
         # Exercise the Python interpreter regularly so keyboard interrupts get
         # through.
-        self.__root.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
-
-    def __quit(self, event=None):
-        sys.exit(0)
+        self.__tkroot.tk.createtimerhandler(KEEPALIVE_TIMER, self.__keepalive)
 
     def start(self):
         self.__keepalive()
-        self.__root.mainloop()
+        self.__tkroot.mainloop()
 
     def parent(self):
         return self.__root
