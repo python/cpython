@@ -268,7 +268,7 @@ Sometimes you can see this inaccuracy when the number is printed:
 \end{verbatim}
 
 The inaccuracy isn't always visible when you print the number because
-the FP-to-decimal-string conversion is provided by the C library, and
+the FP-to-decimal-string conversion is provided by the C library and
 most C libraries try to produce sensible output, but the inaccuracy is
 still there and subsequent operations can magnify the error.
 
@@ -319,8 +319,8 @@ pass the string to the \class{Decimal} constructor:
 >>> f = 1.1
 >>> decimal.Decimal(str(f))
 Decimal("1.1")
->>> decimal.Decimal(repr(f))
-Decimal("1.1000000000000001")
+>>> decimal.Decimal('%.12f' % f)
+Decimal("1.100000000000")
 \end{verbatim}
 
 Once you have \class{Decimal} instances, you can perform the usual
@@ -337,11 +337,13 @@ Decimal("33.99")
 >>> a*b
 Decimal("61.7956")
 >>> a/b
-Decimal("20.6473988")
+Decimal("20.64739884393063583815028902")
 >>> a ** 2
 Decimal("1275.9184")
->>> a ** b
-Decimal("NaN")
+>>> a**b
+Traceback (most recent call last):
+  ...
+decimal.InvalidOperation: x ** (non-integer)
 \end{verbatim}
 
 You can combine \class{Decimal} instances with integers, but not with
@@ -358,8 +360,10 @@ TypeError: You can interact Decimal only with int, long or Decimal data types.
 \end{verbatim}
 
 \class{Decimal} numbers can be used with the \module{math} and
-\module{cmath} modules, though you'll get back a regular
-floating-point number and not a \class{Decimal}.  Instances also have a \method{sqrt()} method:
+\module{cmath} modules, but note that they'll be immediately converted to 
+floating-point numbers before the operation is performed, resulting in
+a possible loss of precision and accuracy.  You'll also get back a
+regular floating-point number and not a \class{Decimal}.  
 
 \begin{verbatim}
 >>> import math, cmath
@@ -368,6 +372,13 @@ floating-point number and not a \class{Decimal}.  Instances also have a \method{
 351364.18288201344
 >>> cmath.sqrt(-d)
 351364.18288201344j
+\end{verbatim}
+
+Instances also have a \method{sqrt()} method that returns a
+\class{Decimal}, but if you need other things such as trigonometric
+functions you'll have to implement them.
+
+\begin{verbatim}
 >>> d.sqrt()
 Decimal("351364.1828820134592177245001")
 \end{verbatim}
@@ -383,7 +394,7 @@ decimal operations:
  \item \member{rounding} specifies the rounding mode.  The \module{decimal}
        module has constants for the various possibilities:
        \constant{ROUND_DOWN}, \constant{ROUND_CEILING}, \constant{ROUND_HALF_EVEN}, and various others.
- \item \member{trap_enablers} is a dictionary specifying what happens on
+ \item \member{traps} is a dictionary specifying what happens on
 encountering certain error conditions: either  an exception is raised or 
 a value is returned.  Some examples of error conditions are
 division by zero, loss of precision, and overflow.
@@ -403,25 +414,27 @@ Decimal("0.1428571428571428571428571429")
 Decimal("0.142857143")
 \end{verbatim}
 
-The default action for error conditions is to return a special value
-such as infinity or not-a-number, but you can request that exceptions
-be raised:
+The default action for error conditions is selectable; the module can
+either return a special value such as infinity or not-a-number, or
+exceptions can be raised:
 
 \begin{verbatim}
->>> decimal.Decimal(1) / decimal.Decimal(0)
-Decimal("Infinity")
->>> decimal.getcontext().trap_enablers[decimal.DivisionByZero] = True
 >>> decimal.Decimal(1) / decimal.Decimal(0)
 Traceback (most recent call last):
   ...
 decimal.DivisionByZero: x / 0
+>>> decimal.getcontext().traps[decimal.DivisionByZero] = False
+>>> decimal.Decimal(1) / decimal.Decimal(0)
+Decimal("Infinity")
 >>> 
 \end{verbatim}
 
 The \class{Context} instance also has various methods for formatting 
 numbers such as \method{to_eng_string()} and \method{to_sci_string()}.
 
-       
+For more information, see the documentation for the \module{decimal}
+module, which includes a quick-start tutorial and a reference.
+
 \begin{seealso}
 \seepep{327}{Decimal Data Type}{Written by Facundo Batista and implemented
   by Facundo Batista, Eric Price, Raymond Hettinger, Aahz, and Tim Peters.}
