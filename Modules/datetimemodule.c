@@ -4751,6 +4751,11 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 	int ss = DATE_GET_SECOND(self);
 	int us = DATE_GET_MICROSECOND(self);
 
+	PyObject *result;
+	PyObject *temp;
+	int myoff, otoff, newoff;
+	int none;
+
 	PyObject *tzinfo;
 	static char *keywords[] = {"tz", NULL};
 
@@ -4760,30 +4765,127 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 	if (check_tzinfo_subclass(tzinfo) < 0)
 		return NULL;
 
-	if (tzinfo != Py_None && self->tzinfo != Py_None) {
-		int none;
-		int selfoffset;
-		selfoffset = call_utcoffset(self->tzinfo,
-					    (PyObject *)self,
-					    &none);
-	        if (selfoffset == -1 && PyErr_Occurred())
-	        	return NULL;
-	        if (! none) {
-			int tzoffset;
-	        	tzoffset = call_utcoffset(tzinfo,
-	        				  (PyObject *)self,
-	        				  &none);
-	        	if (tzoffset == -1 && PyErr_Occurred())
-	        		return NULL;
-	        	if (! none) {
-	        		mm -= selfoffset - tzoffset;
-	        		if (normalize_datetime(&y, &m, &d,
-	        				       &hh, &mm, &ss, &us) < 0)
-	        			return NULL;
-	        	}
-	        }
+        /* Don't call utcoffset unless necessary. */
+	result = new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+	if (result == NULL ||
+	    tzinfo == Py_None ||
+	    self->tzinfo == Py_None ||
+	    self->tzinfo == tzinfo)
+		return result;
+
+        /* Get the offsets.  If either object turns out to be naive, again
+         * there's no conversion of date or time fields.
+         */
+	myoff = call_utcoffset(self->tzinfo, (PyObject *)self, &none);
+	if (myoff == -1 && PyErr_Occurred())
+		goto Fail;
+	if (none)
+		return result;
+
+	otoff = call_utcoffset(tzinfo, result, &none);
+	if (otoff == -1 && PyErr_Occurred())
+		goto Fail;
+	if (none)
+		return result;
+
+	/* Add otoff-myoff to result. */
+	mm += otoff - myoff;
+	if (normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
+		goto Fail;
+	temp = new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+	if (temp == NULL)
+		goto Fail;
+	Py_DECREF(result);
+	result = temp;
+
+	/* If tz is a fixed-offset class, we're done, but we can't know
+	 * whether it is.  If it's a DST-aware class, and we're not near a
+	 * DST boundary, we're also done.  If we crossed a DST boundary,
+	 * the offset will be different now, and that's our only clue.
+	 * Unfortunately, we can be in trouble even if we didn't cross a
+	 * DST boundary, if we landed on one of the DST "problem hours".
+	 */
+	newoff = call_utcoffset(tzinfo, result, &none);
+	if (newoff == -1 && PyErr_Occurred())
+		goto Fail;
+	if (none)
+		goto Inconsistent;
+
+	if (newoff != otoff) {
+		/* We did cross a boundary.  Try to correct. */
+		mm += newoff - otoff;
+		if (normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
+			goto Fail;
+		temp = new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+		if (temp == NULL)
+			goto Fail;
+		Py_DECREF(result);
+		result = temp;
+
+		otoff = call_utcoffset(tzinfo, result, &none);
+		if (otoff == -1 && PyErr_Occurred())
+			goto Fail;
+		if (none)
+			goto Inconsistent;
+        }
+	/* If this is the first hour of DST, it may be a local time that
+	 * doesn't make sense on the local clock, in which case the naive
+	 * hour before it (in standard time) is equivalent and does make
+	 * sense on the local clock.  So force that.
+	 */
+	hh -= 1;
+	if (normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
+		goto Fail;
+	temp = new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+	if (temp == NULL)
+		goto Fail;
+	newoff = call_utcoffset(tzinfo, temp, &none);
+	if (newoff == -1 && PyErr_Occurred()) {
+		Py_DECREF(temp);
+		goto Fail;
 	}
-	return new_datetimetz(y, m, d, hh, mm, ss, us, tzinfo);
+	if (none) {
+		Py_DECREF(temp);
+		goto Inconsistent;
+	}
+	/* Are temp and result really the same time?  temp == result iff
+	 * temp - newoff == result - otoff, iff
+	 * (result - HOUR) - newoff = result - otoff, iff
+	 * otoff - newoff == HOUR
+	 */
+	if (otoff - newoff == 60) {
+		/* use the local time that makes sense */
+		Py_DECREF(result);
+		return temp;
+	}
+	Py_DECREF(temp);
+
+	/* There's still a problem with the unspellable (in local time)
+	 * hour after DST ends.
+	 */
+	temp = datetime_richcompare((PyDateTime_DateTime *)self,
+				    result, Py_EQ);
+	if (temp == NULL)
+		goto Fail;
+	if (temp == Py_True) {
+		Py_DECREF(temp);
+		return result;
+	}
+	Py_DECREF(temp);
+        /* Else there's no way to spell self in zone other.tz. */
+        PyErr_SetString(PyExc_ValueError, "astimezone(): the source "
+        		"datetimetz can't be expressed in the target "
+        		"timezone's local time");
+        goto Fail;
+
+Inconsistent:
+	PyErr_SetString(PyExc_ValueError, "astimezone(): tz.utcoffset() "
+			"gave inconsistent results; cannot convert");
+
+	/* fall thru to failure */
+Fail:
+	Py_DECREF(result);
+	return NULL;
 }
 
 static PyObject *
