@@ -115,7 +115,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     returns a date relative to the local timezone instead of UTC, properly
     taking daylight savings time into account.
 
-    Optional argument usegmt means that the timezone is written out as 
+    Optional argument usegmt means that the timezone is written out as
     an ascii string, not numeric one (so "GMT" instead of "+0000"). This
     is needed for HTTP, and is only used when localtime==False.
     """
