@@ -108,6 +108,9 @@ PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
 PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 
+# Environment to run shared python without installed libraries
+RUNSHARED=       @RUNSHARED@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755
@@ -136,6 +139,7 @@ LDLIBRARY=      @LDLIBRARY@
 BLDLIBRARY=     @BLDLIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
 LDLIBRARYDIR=   @LDLIBRARYDIR@
+INSTSONAME=	@INSTSONAME@
 
 
 LIBS=		@LIBS@
@@ -292,20 +296,20 @@ LIBRARY_OBJS=	\
 all:		$(BUILDPYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
-$(BUILDPYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
+$(BUILDPYTHON):	Modules/$(MAINOBJ) $(LIBRARY) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
 			Modules/$(MAINOBJ) \
 			$(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON)
-	./$(BUILDPYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
+	$(RUNSHARED) ./$(BUILDPYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
 
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
 	case $$MAKEFLAGS in \
-	*-s*) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
-	*) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
+	*-s*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
+	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
 
 # buildno should really depend on something like LIBRARY_SRC
@@ -333,18 +337,11 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) cr $@ $(MODOBJS)
 	$(RANLIB) $@
 
-# This rule is only here for DG/UX and BeOS!!!
-libpython$(VERSION).so:	$(LIBRARY)
-	case `uname -s | tr -d '/ ' | tr '[A-Z]' '[a-z]'` in \
-	*dgux*) \
-	    test -d dgux || mkdir dgux; \
-	    (cd dgux;ar x ../$^;ld -G -o ../$@ * ); \
-	    /bin/rm -rf ./dgux \
-	    ;; \
-	beos) \
-	    $(AR) so $(LIBRARY) $@ \
-	    ;; \
-	esac
+libpython$(VERSION).so: $(LIBRARY_OBJS)
+	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(LIBC) $(LIBM)
+
+libpython$(VERSION).sl: $(LIBRARY_OBJS)
+	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(LIBC) $(LIBM)
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHONFRAMEWORKDIR)
@@ -420,10 +417,10 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 Python/compile.o Python/symtable.o: $(GRAMMAR_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
-		$(CC) -c $(CFLAGS) $(CPPFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
+		$(CC) -c $(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
-		$(CC) -c $(CFLAGS) $(CPPFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
+		$(CC) -c $(CFLAGS) $(CPPFLAGS) $(CFLAGSFORSHARED) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
@@ -486,7 +483,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	./$(BUILDPYTHON) -E -tt
+TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -E -tt
 test:		all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
@@ -556,8 +553,8 @@ altbininstall:	$(BUILDPYTHON)
 		fi; \
 	done
 	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(BINDIR)/python$(VERSION)$(EXE)
-	if test -f libpython$(VERSION).so; then \
-		$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
+	if test -f libpython$(VERSION)$(SO); then \
+		$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(LIBDIR)/$(INSTSONAME); \
 	else	true; \
 	fi
 	if test -f "$(DLLLIBRARY)"; then \
@@ -640,10 +637,10 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 		done; \
 	done
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(LIBDEST)/LICENSE.txt
-	PYTHONPATH=$(LIBDEST) \
+	PYTHONPATH=$(LIBDEST)  $(RUNSHARED) \
 		./$(BUILDPYTHON) -tt $(LIBDEST)/compileall.py -x badsyntax \
 	        $(LIBDEST)
-	PYTHONPATH=$(LIBDEST) \
+	PYTHONPATH=$(LIBDEST) $(RUNSHARED) \
 		./$(BUILDPYTHON) -O $(LIBDEST)/compileall.py -x badsyntax $(LIBDEST)
 
 # Create the PLATDIR source directory, if one wasn't distributed..
@@ -686,12 +683,12 @@ libainstall:	all
 		else	true; \
 		fi; \
 	done
-	@if test -d $(LDLIBRARY); then :; else \
+	@if test -d $(LIBRARY); then :; else \
 		if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
-			$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL)/$(LDLIBRARY) ; \
-			$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
+			$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
+			$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
 		else \
-			echo Skip install of $(LDLIBRARY) - use make frameworkinstall; \
+			echo Skip install of $(LIBRARY) - use make frameworkinstall; \
 		fi; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
@@ -733,7 +730,8 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
+	$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
+	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED)
 
