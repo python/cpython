@@ -1,4 +1,4 @@
-# Rediculously simple test of the winsound module for Windows.
+# Ridiculously simple test of the winsound module for Windows.
 
 import winsound
 for i in range(100, 2000, 100):
