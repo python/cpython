@@ -543,8 +543,7 @@ static PyObject *Qd_GetPen(_self, _args)
 {
 	PyObject *_res = NULL;
 	Point pt;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &pt))
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetPen(&pt);
 	_res = Py_BuildValue("O&",
@@ -2062,8 +2061,7 @@ static PyObject *Qd_SetPt(_self, _args)
 	Point pt;
 	short h;
 	short v;
-	if (!PyArg_ParseTuple(_args, "O&hh",
-	                      PyMac_GetPoint, &pt,
+	if (!PyArg_ParseTuple(_args, "hh",
 	                      &h,
 	                      &v))
 		return NULL;
@@ -3435,7 +3433,7 @@ static PyMethodDef Qd_methods[] = {
 	{"ShowPen", (PyCFunction)Qd_ShowPen, 1,
 	 "() -> None"},
 	{"GetPen", (PyCFunction)Qd_GetPen, 1,
-	 "(Point pt) -> (Point pt)"},
+	 "() -> (Point pt)"},
 	{"GetPenState", (PyCFunction)Qd_GetPenState, 1,
 	 "() -> (PenState pnState)"},
 	{"SetPenState", (PyCFunction)Qd_SetPenState, 1,
@@ -3597,7 +3595,7 @@ static PyMethodDef Qd_methods[] = {
 	{"FillPoly", (PyCFunction)Qd_FillPoly, 1,
 	 "(PolyHandle poly, Pattern pat) -> None"},
 	{"SetPt", (PyCFunction)Qd_SetPt, 1,
-	 "(Point pt, short h, short v) -> (Point pt)"},
+	 "(short h, short v) -> (Point pt)"},
 	{"LocalToGlobal", (PyCFunction)Qd_LocalToGlobal, 1,
 	 "(Point pt) -> (Point pt)"},
 	{"GlobalToLocal", (PyCFunction)Qd_GlobalToLocal, 1,
