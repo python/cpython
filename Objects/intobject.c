@@ -957,8 +957,8 @@ PyInt_Fini()
 			     i++, p++) {
 				if (PyInt_Check(p) && p->ob_refcnt != 0)
 					fprintf(stderr,
-				"#   <int at %lx, refcnt=%d, val=%ld>\n",
-					  (long)p, p->ob_refcnt, p->ob_ival);
+				"#   <int at %p, refcnt=%d, val=%ld>\n",
+						p, p->ob_refcnt, p->ob_ival);
 			}
 			list = list->next;
 		}

@@ -806,8 +806,8 @@ PyFloat_Fini()
 					char buf[100];
 					PyFloat_AsString(buf, p);
 					fprintf(stderr,
-			     "#   <float at %lx, refcnt=%d, val=%s>\n",
-						(long)p, p->ob_refcnt, buf);
+			     "#   <float at %p, refcnt=%d, val=%s>\n",
+						p, p->ob_refcnt, buf);
 				}
 			}
 			list = list->next;

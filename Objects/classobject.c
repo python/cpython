@@ -353,11 +353,11 @@ class_repr(op)
 	else
 		name = PyString_AsString(op->cl_name);
 	if (mod == NULL || !PyString_Check(mod))
-		sprintf(buf, "<class ?.%.100s at %lx>", name, (long)op);
+		sprintf(buf, "<class ?.%.100s at %p>", name, op);
 	else
-		sprintf(buf, "<class %.50s.%.50s at %lx>",
+		sprintf(buf, "<class %.50s.%.50s at %p>",
 			PyString_AsString(mod),
-			name, (long)op);
+			name, op);
 	return PyString_FromString(buf);
 }
 
@@ -805,12 +805,12 @@ instance_repr(inst)
 			cname = "?";
 		PyErr_Clear();
 		if (mod == NULL || !PyString_Check(mod))
-			sprintf(buf, "<?.%.100s instance at %lx>",
-				cname, (long)inst);
+			sprintf(buf, "<?.%.100s instance at %p>",
+				cname, inst);
 		else
-			sprintf(buf, "<%.50s.%.50s instance at %lx>",
+			sprintf(buf, "<%.50s.%.50s instance at %p>",
 				PyString_AsString(mod),
-				cname, (long)inst);
+				cname, inst);
 		return PyString_FromString(buf);
 	}
 	res = PyEval_CallObject(func, (PyObject *)NULL);
@@ -1704,8 +1704,8 @@ instancemethod_repr(a)
 			icname = PyString_AsString(iclassname);
 		else
 			icname = "?";
-		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %lx>",
-			fcname, fname, icname, (long)self);
+		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %p>",
+			fcname, fname, icname, self);
 	}
 	Py_XDECREF(funcname);
 	return PyString_FromString(buf);

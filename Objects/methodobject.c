@@ -148,9 +148,9 @@ meth_repr(m)
 		sprintf(buf, "<built-in function %.80s>", m->m_ml->ml_name);
 	else
 		sprintf(buf,
-			"<built-in method %.80s of %.80s object at %lx>",
+			"<built-in method %.80s of %.80s object at %p>",
 			m->m_ml->ml_name, m->m_self->ob_type->tp_name,
-			(long)m->m_self);
+			m->m_self);
 	return PyString_FromString(buf);
 }
 

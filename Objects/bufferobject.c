@@ -241,20 +241,20 @@ buffer_repr(self)
 
 	if ( self->b_base == NULL )
 	{
-		sprintf(buf, "<%s buffer ptr %lx, size %d at %lx>",
+		sprintf(buf, "<%s buffer ptr %p, size %d at %p>",
 			status,
-			(long)self->b_ptr,
+			self->b_ptr,
 			self->b_size,
-			(long)self);
+			self);
 	}
 	else
 	{
-		sprintf(buf, "<%s buffer for %lx, ptr %lx, size %d at %lx>",
+		sprintf(buf, "<%s buffer for %p, ptr %p, size %d at %p>",
 			status,
-			(long)self->b_base,
-			(long)self->b_ptr,
+			self->b_base,
+			self->b_ptr,
 			self->b_size,
-			(long)self);
+			self);
 	}
 
 	return PyString_FromString(buf);

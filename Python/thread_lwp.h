@@ -137,13 +137,13 @@ PyThread_type_lock PyThread_allocate_lock _P0()
 	lock->lock_locked = 0;
 	(void) mon_create(&lock->lock_monitor);
 	(void) cv_create(&lock->lock_condvar, lock->lock_monitor);
-	dprintf(("PyThread_allocate_lock() -> %lx\n", (long)lock));
+	dprintf(("PyThread_allocate_lock() -> %p\n", lock));
 	return (PyThread_type_lock) lock;
 }
 
 void PyThread_free_lock _P1(lock, PyThread_type_lock lock)
 {
-	dprintf(("PyThread_free_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_free_lock(%p) called\n", lock));
 	mon_destroy(((struct lock *) lock)->lock_monitor);
 	free((char *) lock);
 }
@@ -152,7 +152,7 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 {
 	int success;
 
-	dprintf(("PyThread_acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 	success = 0;
 
 	(void) mon_enter(((struct lock *) lock)->lock_monitor);
@@ -165,13 +165,13 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 	}
 	cv_broadcast(((struct lock *) lock)->lock_condvar);
 	mon_exit(((struct lock *) lock)->lock_monitor);
-	dprintf(("PyThread_acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
+	dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
 	return success;
 }
 
 void PyThread_release_lock _P1(lock, PyThread_type_lock lock)
 {
-	dprintf(("PyThread_release_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_release_lock(%p) called\n", lock));
 	(void) mon_enter(((struct lock *) lock)->lock_monitor);
 	((struct lock *) lock)->lock_locked = 0;
 	cv_broadcast(((struct lock *) lock)->lock_condvar);
@@ -188,23 +188,23 @@ PyThread_type_sema PyThread_allocate_sema _P1(value, int value)
 	if (!initialized)
 		PyThread_init_thread();
 
-	dprintf(("PyThread_allocate_sema() -> %lx\n", (long) sema));
+	dprintf(("PyThread_allocate_sema() -> %p\n",  sema));
 	return (PyThread_type_sema) sema;
 }
 
 void PyThread_free_sema _P1(sema, PyThread_type_sema sema)
 {
-	dprintf(("PyThread_free_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_free_sema(%p) called\n",  sema));
 }
 
 int PyThread_down_sema _P2(sema, PyThread_type_sema sema, waitflag, int waitflag)
 {
-	dprintf(("PyThread_down_sema(%lx, %d) called\n", (long) sema, waitflag));
-	dprintf(("PyThread_down_sema(%lx) return\n", (long) sema));
+	dprintf(("PyThread_down_sema(%p, %d) called\n",  sema, waitflag));
+	dprintf(("PyThread_down_sema(%p) return\n",  sema));
 	return -1;
 }
 
 void PyThread_up_sema _P1(sema, PyThread_type_sema sema)
 {
-	dprintf(("PyThread_up_sema(%lx)\n", (long) sema));
+	dprintf(("PyThread_up_sema(%p)\n",  sema));
 }
