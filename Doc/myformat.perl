@@ -22,59 +22,75 @@ sub do_cmd_C{ join('', 'C', @_[0]); }
 sub do_cmd_Cpp{ join('', 'C++', @_[0]); }
 sub do_cmd_EOF{ join('', 'EOF', @_[0]); }
 
+sub do_cmd_e{ "\\" }
+
 # texinfo-like formatting commands: \code{...} etc.
 
-sub do_cmd_code{
+sub do_cmd_optional{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<CODE>\2<\/CODE>/;
+	s/$any_next_pair_pr_rx/<BIG>\[<\/BIG><VAR>\2<\/VAR><BIG>\]<\/BIG>/;
 	$_;
 }
 
+sub do_cmd_varvars{
+	local($_) = @_;
+	s/$any_next_pair_pr_rx/<VAR>\2<\/VAR>/;
+	$_;
+}
+
+sub do_cmd_code{
+	local($_) = @_;
+	s/$any_next_pair_pr_rx/<CODE>\2<\/CODE>/;
+	$_;
+}
+
+sub do_cmd_sectcode{ &do_cmd_code(@_); }
+
 sub do_cmd_kbd{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<KBD>\2<\/KBD>/;
+	s/$any_next_pair_pr_rx/<KBD>\2<\/KBD>/;
 	$_;
 }
 
 sub do_cmd_key{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<TT>\2<\/TT>/;
+	s/$any_next_pair_pr_rx/<TT>\2<\/TT>/;
 	$_;
 }
 
 sub do_cmd_samp{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/`<SAMP>\2<\/SAMP>'/;
+	s/$any_next_pair_pr_rx/`<SAMP>\2<\/SAMP>'/;
 	$_;
 }
 
 sub do_cmd_var{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<VAR>\2<\/VAR>/;
+	s/$any_next_pair_pr_rx/<VAR>\2<\/VAR>/;
 	$_;
 }
 
 sub do_cmd_file{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/`<CODE>\2<\/CODE>'/;
+	s/$any_next_pair_pr_rx/`<CODE>\2<\/CODE>'/;
 	$_;
 }
 
 sub do_cmd_dfn{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<I><DFN>\2<\/DFN><\/I>/;
+	s/$any_next_pair_pr_rx/<I><DFN>\2<\/DFN><\/I>/;
 	$_;
 }
 
 sub do_cmd_emph{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<EM>\2<\/EM>/;
+	s/$any_next_pair_pr_rx/<EM>\2<\/EM>/;
 	$_;
 }
 
 sub do_cmd_strong{
 	local($_) = @_;
-	s/(<#[0-9]+#>)(.*)(\1)/<STRONG>\2<\/STRONG>/;
+	s/$any_next_pair_pr_rx/<STRONG>\2<\/STRONG>/;
 	$_;
 }
 
@@ -143,29 +159,72 @@ sub my_parword_index_helper{
 	local($word, $_) = @_;
 	s/$next_pair_pr_rx//o;
 	local($br_id, $str) = ($1, $2);
-	join('', &make_index_entry($br_id, "$str ($word)"), $_);
+	&make_index_entry($br_id, "$str ($word)");
+	$_;
 }
 
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
 sub do_cmd_bimodindex{ &my_parword_index_helper('built-in module', @_); }
+sub do_cmd_stmodindex{ &my_parword_index_helper('standard module', @_); }
 sub do_cmd_bifuncindex{ &my_parword_index_helper('standard module', @_); }
+
+sub do_cmd_nodename{ &do_cmd_label(@_); }
+
+$any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+$new_command{"indexsubitem"} = "";
+
+sub get_indexsubitem{
+  local($result) = $new_command{"indexsubitem"};
+  #print "\nget_indexsubitem ==> $result\n";
+  $result;
+}
 
 sub do_env_cfuncdesc{
   local($_) = @_;
   local($return_type,$function_name,$arg_list) = ('', '', '');
-  local($any_next_pair_rx3) = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
   local($cfuncdesc_rx) =
-    "$any_next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
+    "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
   $* = 1;
   if (/$cfuncdesc_rx/o) {
     $return_type = "$2";
     $function_name = "$4";
     $arg_list = "$6";
-    &make_index_entry($3,$function_name)
+    &make_index_entry($3,"<TT>$function_name</TT> " . &get_indexsubitem);
   }
   $* = 0;
   "<DL><DT>$return_type <STRONG><A NAME=\"$3\">$function_name</A></STRONG>" .
     "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
 }
+
+sub do_env_funcdesc{
+  local($_) = @_;
+  local($function_name,$arg_list) = ('', '');
+  local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+  $* = 1;
+  if (/$funcdesc_rx/o) {
+    $function_name = "$2";
+    $arg_list = "$4";
+    &make_index_entry($1,"<TT>$function_name</TT> " . &get_indexsubitem);
+  }
+  $* = 0;
+  "<DL><DT><STRONG><A NAME=\"$3\">$function_name</A></STRONG>" .
+    "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
+}
+
+sub do_env_datadesc{
+  local($_) = @_;
+  local($data_name) = ('', '');
+  local($datadesc_rx) = "$next_pair_rx";
+  $* = 1;
+  if (/$datadesc_rx/o) {
+    $data_name = "$2";
+    &make_index_entry($1,"<TT>$data_name</TT> " . &get_indexsubitem);
+  }
+  $* = 0;
+  "<DL><DT><STRONG><A NAME=\"$3\">$data_name</A></STRONG>" .
+    "\n<DD>$'\n</DL>"
+}
+
+sub do_env_excdesc{ &do_env_datadesc(@_); }
 
 1;				# This must be the last line
