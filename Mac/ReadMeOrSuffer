@@ -1,4 +1,4 @@
-How to install Python 1.3.3 on your Macintosh
+How to install Python 1.4 on your Macintosh
 ------------------------------------------------
 
 Even if you don't usually read readme files: please read at least the
@@ -7,9 +7,11 @@ an unuseable python system. If this warning is too late and you already
 have an non-functional python: it is best to remove all traces and start
 with a fresh distribution. Especially don't forget to remove the
 "python preferences" file from the Preferences folder, and possibly
-"PythonCore" from the Extensions folder. Before you mail me for help *please*
+"PythonCore", "PythonCorePPC" and/or "PythonCoreCFM68K"
+from the Extensions folder. Before you mail me for help *please*
 try the steps above (cleaning up and re-installing): it should fix most
-common mistakes.
+common mistakes. If you are installing a CFM68K python also check that
+your installation of CFM68K was done correctly.
 
 If this is your first encounter with Python: you definitely need the common
 user documentation (common to all platforms). You can find this (in various
@@ -33,10 +35,16 @@ freezing. If this happens I would like to hear of it.
 Note that if you're using Tk you might want to raise the memory size, tcl
 and tk are quite a memory hog.
 
+A final note to CFM68K (and possibly PPC) users: the Code Fragment Manager
+can (incorrectly) produce "library not found" and other strange error messages
+when it really means that there is not enough room in the system heap. Decreasing
+(yes, *de*creasing) the size of the interpreter and/or enabling virtual memory
+may solve these problems.
+
 PowerPC Macintosh instructions
 ------------------------------
 
-1. Remove older versions of "PythonCore" and "Python Preferences"
+1. Remove older versions of "PythonCorePPC", "PythonCore" and "Python Preferences"
    from your system folder.
    
 2. Run the MkPluginAliases applet. This will first ask you whether it should
@@ -46,20 +54,31 @@ PowerPC Macintosh instructions
    by hand (and tell me what you did to make the script fail:-).
 
 3. To make sure any applets you create can find the common interpreter code
-   you should move PythonCore to the Extensions folder (drop it on the
+   you should move PythonCorePPC to the Extensions folder (drop it on the
    System Folder and it will find its own way). Alternatively, you can
-   make an alias called "PythonCore" in the Extensions folder and
-   point it to the real PythonCore. You may want to start PythonPPC
+   make an alias called "PythonCorePPC" in the Extensions folder and
+   point it to the real PythonCorePPC. You may want to start PythonPPC
    again at this point to check that you actually put the extension in
    the right place.
 
 4. You're all set now. Continue with the common instructions.
 
-68K Macintosh instructions
---------------------------
+CFM68K Macintosh instructions
+-----------------------------
 
-1. Remove old "Python Preferences" file from the Preferences folder, if you
-   have one (the file, that is, not the folder:-).
+For this you need a Mac with a 68020, 68030 or 68040, and at least System 7.1.1.
+CFM68K Python will not run on PowerPC Macs.
+
+1. Install the stuff from the "CFM68K for System Folder" into the Extensions
+   folder and restart.
+   
+2. Continue with the PowerPC instructions, but read "CFM68K" every time you see
+   "PPC".
+
+Classic 68K Macintosh instructions
+----------------------------------
+
+1. Remove the old "Python Preferences" file from the Preferences folder, if there is one.
    
 2. Run Python68K. This will create an initial preferences file (after
    asking you if that's ok with you). Quit python.
@@ -76,22 +95,21 @@ interpreter.
 Next, try "compileall.py" from :Lib to create all .pyc files (but this isn't
 really important).
 
-PPC users have a couple of applets in the main folder they may want to try,
+PPC and CFM68K users have a couple of applets in the main folder they may want to try,
 (68K users can use the corresponding scripts from the "scripts" folder):
 
 - EditPythonPrefs allows you to edit the preferences file, to change the
   python home folder or modify the initial sys.path setting.
-  The default settings are "liberal", you can remove stdwin and tkinter if
-  you don't use them and maybe others.
-- RunLibScript allows you to run any script as __main__ after setting arguments,
-  changing stdin/stdout/workdir, etc. Most of this functionality can also be
-  obtained nowadays by option-dragging a script to the interpreter.
-- For PPC only, mkapplet creates a python applet, a tiny application written
+  The default settings are somewhat arbitrary, you can remove tkinter if
+  you don't use it and possibly add Extensions:img:Lib.
+- mkapplet creates a python applet, a tiny application written
   in python. Drop a python source on it and out comes the application. More
   information can be found in the "Mac:Demo" folder.
   
-PPC users will see one more files in the python folder: PythonApplet. This is
-the template for building applets, leave it alone.
+PPC and CFM68K users will see one more files in the python folder: PythonApplet. This is
+the template for building applets, leave it alone. For the 1.4b3 release the applet is
+specific for your installation, i.e. PPC applets will not run on CFM68K machines and vice
+versa. I hope to fix this soon.
 
 Things to see
 -------------
@@ -115,8 +133,12 @@ Feedback
 --------
 
 Send bug reports, suggestions, contributions and fanmail to <jack@cwi.nl>.
-Be warned however that I'm pretty busy at the moment, so I may not always
+Be warned however that I'm pretty busy, so I may not always
 respond immedeately.
+
+A better way to discuss MacPython is to join the <pythonmac-sig@python.org>
+mailing list, which is explicitly meant for this purpose.
+
 Alternatively, you can try sending to comp.lang.python or python-list@cwi.nl,
 but since I read the newsgroup, not the mailinglist, I may miss it there
 (but other people may know quite a bit more than me anyway:-).
