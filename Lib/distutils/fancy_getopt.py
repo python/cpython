@@ -21,7 +21,12 @@ from distutils.errors import *
 # the same as a Python NAME -- except, in the spirit of most GNU
 # utilities, we use '-' in place of '_'.  (The spirit of LISP lives on!)
 # The similarities to NAME are again not a coincidence...
-longopt_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9-]*)$')
+longopt_pat = r'[a-zA-Z](?:[a-zA-Z0-9-]*)'
+longopt_re = re.compile (r'^%s$' % longopt_pat)
+
+# For recognizing "negative alias" options, eg. "quiet=!verbose"
+neg_alias_re = re.compile ("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
+
 
 # This is used to translate long options to legitimate Python identifiers
 # (for use as attributes of some object).
@@ -46,6 +51,7 @@ def fancy_getopt (options, object, args):
     short2long = {}
     attr_name = {}
     takes_arg = {}
+    neg_alias = {}
 
     for option in options:
         try:
@@ -73,7 +79,26 @@ def fancy_getopt (options, object, args):
             long = long[0:-1]
             takes_arg[long] = 1
         else:
-            takes_arg[long] = 0
+
+            # Is option is a "negative alias" for some other option (eg.
+            # "quiet=!verbose")?
+            match = neg_alias_re.match (long)
+            if match:
+                (alias_from, alias_to) = match.group (1,2)
+                if not takes_arg.has_key(alias_to) or takes_arg[alias_to]:
+                    raise DistutilsGetoptError, \
+                          ("option '%s' is a negative alias for '%s', " +
+                           "which either hasn't been defined yet " +
+                           "or takes an argument") % (alias_from, alias_to)
+
+                long = alias_from
+                neg_alias[long] = alias_to
+                long_opts[-1] = long
+                takes_arg[long] = 0
+
+            else:
+                takes_arg[long] = 0
+                
 
         # Now enforce some bondage on the long option name, so we can later
         # translate it to an attribute name in 'object'.  Have to do this a
@@ -112,7 +137,11 @@ def fancy_getopt (options, object, args):
             setattr (object, attr, val)
         else:
             if val == '':
-                setattr (object, attr, 1)
+                alias = neg_alias.get (opt)
+                if alias:
+                    setattr (object, attr_name[alias], 0)
+                else:
+                    setattr (object, attr, 1)
             else:
                 raise RuntimeError, "getopt lies! (bad value '%s')" % value
 
