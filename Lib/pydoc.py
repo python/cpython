@@ -318,7 +318,7 @@ class HTMLDoc(Doc):
 <!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
 <style type="text/css"><!--
-TT { font-family: lucida console, lucida typewriter, courier }
+TT { font-family: lucida typewriter, lucida console, courier }
 --></style></head><body bgcolor="#f0f0f8">
 %s
 </body></html>''' % (title, contents)
