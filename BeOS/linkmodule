@@ -46,7 +46,7 @@ fi
 # The shared libraries and glue objects we need to link against; these
 # libs are overkill for most of the standard modules, but it makes life
 # in this shell script easier.
-LIBS="-L.. -lpython1.5 -lbe -lnet -lroot"
+LIBS="-L.. -lpython$VERSION -lbe -lnet -lroot"
 
 case $BE_HOST_CPU in
 	ppc)

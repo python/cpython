@@ -1,4 +1,4 @@
-Python 1.5.x (x > 1) for BeOS
+Python for BeOS R5
 
 This directory contains several useful things to help you build your own
 version of Python for BeOS.
@@ -45,23 +45,25 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 4) Edit Modules/Setup to turn on all the modules you want built.
 
    Make sure you use _socket instead of socket for the name of the
-   socketmodule on BeOS.
+   socketmodule on BeOS (at least, until we get the new BONE networking).
 
    If you want the modules to be built as shared libraries, instead of as
    part of the Python shared library, be sure to uncomment the #*shared*
-   line.
+   line.  I haven't done much testing with static linking, it's not as
+   interesting.
 
    I've tried the following modules:
 
-   regex pcre posix signal readline array cmath math strop struct time
-   operator _locale fcntl pwd grp select _socket errno crypt termios
-   audioop imageop rgbimg md5 timing rotor syslog curses new gdbm soundex
-   binascii parser cStringIO cPickle zlib
+   array audioop binascii cmath _codecs cPickle crypt cStringIO _curses
+   errno fcntl gdbm grp imageop _locale math md5 new operator parser
+   pcre posix pwd pyexpat readline regex rgbimg rotor select sha signal
+   _socket soundex _sre strop struct syslog termios time timing ucnhash
+   unicodedata zlib
    
-   Note that some of these (readline, curses, gdbm, and zlib) require extra
-   libraries that aren't supplied with Python.  If you don't have the extra
-   libs (you can probably get them from GeekGadgets), don't try to use
-   these modules; they won't compile.
+   Note that some of these require extra libraries that aren't supplied 
+   with Python.  If you don't have the extra libs (you can probably get 
+   them from GeekGadgets), don't try to use these modules; they won't 
+   compile.
 
 5) Make:
 
@@ -71,17 +73,45 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
    make test
 
+   test_popen2 will probably hang; it's deadlocked on a semaphore.  I should
+   probably disable popen2 support... it uses fork(), and fork() doesn't mix
+   with threads on BeOS.  In *THEORY* you could use it in a single-threaded
+   program, but I haven't tried.
+   
+   If test_popen2 does hang, you can find the semaphore it's hung on via the
+   "ps" command.  Look for python and you'll find something like this:
+   
+./python -tt ../src/Lib/test/regrtest.py (team 26922) (uid 0) (gid 0)
+  39472               python  sem  10    3785    1500 piperd(360526)
+./python -tt ../src/Lib/test/regrtest.py (team 26923) (uid 0) (gid 0)
+  39477               python  sem  10      25       4 python lock (1)(360022)
+                                                                      ^^^^^^
+   That last number is the semaphore the fork()'d python is stuck on
+   (see how it's helpfully called "python lock (1)"? :-).  You can unblock
+   that semaphore to let the tests continue using the "release" command
+   with that semaphore number.  Be _very_ careful with "release" though,
+   releasing the wrong semaphore can be hazardous.
+
    Expect the following errors:
 
-   test_grp crashed -- exceptions.KeyError : getgrnam(): name not found
-   test_pwd failed -- Writing: 'fakename', expected: 'caught e'
-   test_socket crashed -- exceptions.AttributeError : SOCK_RAW
+   test * skipped -- an optional feature could not be imported (you'll see
+                     quite a few of these, based on what optional modules
+                     you've included)
+
+   test test_fork1 skipped -- can't mix os.fork with  threads on BeOS
+
+   test test_re failed -- Writing: '=== Failed incorrectly', expected: 
+                          "('abc', 'abc', 0, 'fou"
+
+   test test_select crashed -- select.error : (-2147459072, 'Bad file 
+                               descriptor')
+
+   test test_socket crashed -- exceptions.AttributeError : SOCK_RAW
 
    These are all due to either partial support for certain things (like
    sockets), or valid differences between systems.
 
-   NOTE: On R4/x86, the pause() function is broken; expect the signal
-         module test to crash Python!
+   That test_re failure is a little worrysome though.
 
 7) Install:
 
@@ -89,5 +119,5 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 8) Enjoy!
 
-- Chris Herborth (chrish@beoscentral.com)
-  January 12, 1999
+- Chris Herborth (chrish@pobox.com)
+  July 21, 2000

@@ -3620,11 +3620,6 @@ static char posix_putenv__doc__[] =
 "putenv(key, value) -> None\n\
 Change or add an environment variable.";
 
-#ifdef __BEOS__
-/* We have putenv(), but not in the headers (as of PR2). - [cjh] */
-int putenv( const char *str );
-#endif
-
 /* Save putenv() parameters as values here, so we can collect them when they
  * get re-set with another call for the same key. */
 static PyObject *posix_putenv_garbage;

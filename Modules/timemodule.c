@@ -70,13 +70,10 @@ extern int ftime(struct timeb *);
 #endif
 
 #ifdef __BEOS__
+#include <time.h>
 /* For bigtime_t, snooze(). - [cjh] */
 #include <support/SupportDefs.h>
 #include <kernel/OS.h>
-#ifndef CLOCKS_PER_SEC
-/* C'mon, fix the bloody headers... - [cjh] */
-#define CLOCKS_PER_SEC 1000
-#endif
 #endif
 
 /* Forward declarations */
