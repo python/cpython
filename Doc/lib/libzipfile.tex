@@ -146,11 +146,13 @@ cat myzip.zip >> python.exe
   \code{'a'}. 
 \end{methoddesc}
 
-\begin{methoddesc}{writestr}{zinfo, bytes}
-  Write the string \var{bytes} to the archive; meta-information is
-  given as the \class{ZipInfo} instance \var{zinfo}.  At least the
-  filename, date, and time must be given by \var{zinfo}.  The archive
-  must be opened with mode \code{'w'} or \code{'a'}.
+\begin{methoddesc}{writestr}{zinfo_or_arcname, bytes}
+  Write the string \var{bytes} to the archive; \var{zinfo_or_arcname}
+  is either the file name it will be given in the archive, or a
+  \class{ZipInfo} instance.  If it's an instance, at least the
+  filename, date, and time must be given.  If it's a name, the date
+  and time is set to the current date and time. The archive must be
+  opened with mode \code{'w'} or \code{'a'}.
 \end{methoddesc}
 
 

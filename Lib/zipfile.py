@@ -447,9 +447,16 @@ class ZipFile:
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
-    def writestr(self, zinfo, bytes):
+    def writestr(self, zinfo_or_arcname, bytes):
         """Write a file into the archive.  The contents is the string
-        'bytes'."""
+        'bytes'.  'zinfo_or_arcname' is either a ZipInfo instance or
+        the name of the file in the archive."""
+        if not isinstance(zinfo_or_arcname, ZipInfo):
+            zinfo = ZipInfo(filename=zinfo_or_arcname,
+                            date_time=time.localtime(time.time()))
+            zinfo.compress_type = self.compression
+        else:
+            zinfo = zinfo_or_arcname
         self._writecheck(zinfo)
         zinfo.file_size = len(bytes)            # Uncompressed size
         zinfo.CRC = binascii.crc32(bytes)       # CRC-32 checksum
