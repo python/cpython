@@ -35,7 +35,7 @@ Exception(*)
       |    +-- IndexError
       |    +-- KeyError
       |
-      +-- NumberError(*)
+      +-- ArithmeticError(*)
       |    |
       |    +-- OverflowError
       |    +-- ZeroDivisionError
@@ -112,16 +112,16 @@ class KeyboardInterrupt(StandardError):
 class AssertionError(StandardError):
     pass
 
-class NumberError(StandardError):
+class ArithmeticError(StandardError):
     pass
 
-class OverflowError(NumberError):
+class OverflowError(ArithmeticError):
     pass
 
-class FloatingPointError(NumberError):
+class FloatingPointError(ArithmeticError):
     pass
 
-class ZeroDivisionError(NumberError):
+class ZeroDivisionError(ArithmeticError):
     pass
 
 class LookupError(StandardError):
