@@ -83,12 +83,12 @@ typedef struct {
 
 #define CHANOFFSET(z)	(3-(z))	/* this is byte order dependent */
 
-static expandrow PROTO((unsigned char *, unsigned char *, int));
-static setalpha PROTO((unsigned char *, int));
-static copybw PROTO((long *, int));
-static interleaverow PROTO((unsigned char *, unsigned char *, int, int));
+static void expandrow PROTO((unsigned char *, unsigned char *, int));
+static void setalpha PROTO((unsigned char *, int));
+static void copybw PROTO((long *, int));
+static void interleaverow PROTO((unsigned char *, unsigned char *, int, int));
 static int compressrow PROTO((unsigned char *, unsigned char *, int, int));
-static lumrow PROTO((unsigned char *, unsigned char *, int));
+static void lumrow PROTO((unsigned char *, unsigned char *, int));
 
 #ifdef ADD_TAGS
 #define TAGLEN	(5)
@@ -141,7 +141,7 @@ FILE *inf;
     return (buf[0]<<24)+(buf[1]<<16)+(buf[2]<<8)+(buf[3]<<0);
 }
 
-static putshort(outf,val)
+static void putshort(outf,val)
 FILE *outf;
 unsigned short val;
 {
@@ -165,7 +165,7 @@ unsigned long val;
     return fwrite(buf,4,1,outf);
 }
 
-static readheader(inf,image)
+static void readheader(inf,image)
 FILE *inf;
 IMAGE *image;
 {
@@ -213,7 +213,7 @@ int len;
     return r;
 }
 
-static readtab(inf,tab,len)
+static void readtab(inf,tab,len)
 FILE *inf;
 /*unsigned*/ long *tab;
 int len;
@@ -435,7 +435,7 @@ longimagedata(self, args)
 
 /* static utility functions for longimagedata */
 
-static interleaverow(lptr,cptr,z,n)
+static void interleaverow(lptr,cptr,z,n)
 unsigned char *lptr, *cptr;
 int z, n;
 {
@@ -446,7 +446,7 @@ int z, n;
     }
 }
 
-static copybw(lptr,n)
+static void copybw(lptr,n)
 long *lptr;
 int n;
 {
@@ -468,7 +468,7 @@ int n;
     }
 }
 
-static setalpha(lptr,n)
+static void setalpha(lptr,n)
 unsigned char *lptr;
 {
     while(n>=8) {
@@ -489,7 +489,7 @@ unsigned char *lptr;
     }
 }
 
-static expandrow(optr,iptr,z)
+static void expandrow(optr,iptr,z)
 unsigned char *optr, *iptr;
 int z;
 {
@@ -647,7 +647,7 @@ longstoimage(self, args)
 
 /* static utility functions for longstoimage */
 
-static lumrow(rgbptr,lumptr,n) 
+static void lumrow(rgbptr,lumptr,n) 
 unsigned char *rgbptr, *lumptr;
 int n;
 {
