@@ -19,6 +19,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #define MINSIZE 4
 
+/* define this out if you don't want conversion statistics on exit */
+#undef SHOW_CONVERSION_COUNTS
+
 /*
 Table of irreducible polynomials to efficiently cycle through
 GF(2^n)-{0}, 2<=n<=30.
@@ -82,14 +85,33 @@ of non-NULL, non-dummy keys.
 To avoid slowing down lookups on a near-full table, we resize the table
 when it is more than half filled.
 */
-typedef struct {
+typedef struct dictobject dictobject;
+struct dictobject {
 	PyObject_HEAD
 	int ma_fill;
 	int ma_used;
 	int ma_size;
 	int ma_poly;
 	dictentry *ma_table;
-} dictobject;
+	dictentry *(*ma_lookup)(dictobject *mp, PyObject *key, long hash);
+};
+
+/* forward declarations */
+static dictentry *
+lookdict_string(dictobject *mp, PyObject *key, long hash);
+
+#ifdef SHOW_CONVERSION_COUNTS
+static long created = 0L;
+static long converted = 0L;
+
+static void
+show_counts(void)
+{
+	fprintf(stderr, "created %ld string dicts\n", created);
+	fprintf(stderr, "converted %ld to normal dicts\n", converted);
+	fprintf(stderr, "%.2f%% conversion rate\n", (100.0*converted)/created);
+}
+#endif
 
 PyObject *
 PyDict_New(void)
@@ -99,6 +121,9 @@ PyDict_New(void)
 		dummy = PyString_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
+#ifdef SHOW_CONVERSION_COUNTS
+		Py_AtExit(show_counts);
+#endif
 	}
 	mp = PyObject_NEW(dictobject, &PyDict_Type);
 	if (mp == NULL)
@@ -108,6 +133,10 @@ PyDict_New(void)
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
+	mp->ma_lookup = lookdict_string;
+#ifdef SHOW_CONVERSION_COUNTS
+	++created;
+#endif
 	PyObject_GC_Init(mp);
 	return (PyObject *)mp;
 }
@@ -129,6 +158,10 @@ All arithmetic on hash should ignore overflow.
 
 (This version is due to Reimer Behrends, some ideas are also due to
 Jyrki Alakuijala and Vladimir Marangozov.)
+
+This function must never return NULL; failures are indicated by returning
+a dictentry* for which the me_value field is NULL.  Exceptions are never
+reported by this function, and outstanding exceptions are maintained.
 */
 static dictentry *
 lookdict(dictobject *mp, PyObject *key, register long hash)
@@ -226,6 +259,83 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 }
 
 /*
+ * Hacked up version of lookdict which can assume keys are always strings;
+ * this assumption allows testing for errors during PyObject_Compare() to
+ * be dropped; string-string comparisons never raise exceptions.  This also
+ * means we don't need to go through PyObject_Compare(); we can always use
+ * the tp_compare slot of the string type object directly.
+ *
+ * This really only becomes meaningful if proper error handling in lookdict()
+ * is too expensive.
+ */
+static dictentry *
+lookdict_string(dictobject *mp, PyObject *key, register long hash)
+{
+	register int i;
+	register unsigned incr;
+	register dictentry *freeslot;
+	register unsigned int mask = mp->ma_size-1;
+	dictentry *ep0 = mp->ma_table;
+	register dictentry *ep;
+        cmpfunc compare = PyString_Type.tp_compare;
+
+	/* make sure this function doesn't have to handle non-string keys */
+	if (!PyString_Check(key)) {
+#ifdef SHOW_CONVERSION_COUNTS
+		++converted;
+#endif
+		mp->ma_lookup = lookdict;
+		return lookdict(mp, key, hash);
+	}
+	/* We must come up with (i, incr) such that 0 <= i < ma_size
+	   and 0 < incr < ma_size and both are a function of hash */
+	i = (~hash) & mask;
+	/* We use ~hash instead of hash, as degenerate hash functions, such
+	   as for ints <sigh>, can have lots of leading zeros. It's not
+	   really a performance risk, but better safe than sorry. */
+	ep = &ep0[i];
+	if (ep->me_key == NULL || ep->me_key == key)
+		return ep;
+	if (ep->me_key == dummy)
+		freeslot = ep;
+	else {
+		if (ep->me_hash == hash
+                    && compare(ep->me_key, key) == 0) {
+			return ep;
+		}
+		freeslot = NULL;
+	}
+	/* Derive incr from hash, just to make it more arbitrary. Note that
+	   incr must not be 0, or we will get into an infinite loop.*/
+	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
+	if (!incr)
+		incr = mask;
+	for (;;) {
+		ep = &ep0[(i+incr)&mask];
+		if (ep->me_key == NULL) {
+			if (freeslot != NULL)
+				return freeslot;
+			else
+				return ep;
+		}
+		if (ep->me_key == dummy) {
+			if (freeslot == NULL)
+				freeslot = ep;
+		}
+		else if (ep->me_key == key
+			 || (ep->me_hash == hash
+			     && compare(ep->me_key, key) == 0)) {
+			return ep;
+                }
+		/* Cycle through GF(2^n)-{0} */
+		incr = incr << 1;
+		if (incr > mask)
+			incr ^= mp->ma_poly; /* This will implicitly clear
+						the highest bit */
+	}
+}
+
+/*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
@@ -235,7 +345,7 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 {
 	PyObject *old_value;
 	register dictentry *ep;
-	ep = lookdict(mp, key, hash);
+	ep = (mp->ma_lookup)(mp, key, hash);
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
@@ -312,10 +422,11 @@ PyObject *
 PyDict_GetItem(PyObject *op, PyObject *key)
 {
 	long hash;
+	dictobject *mp = (dictobject *)op;
 	if (!PyDict_Check(op)) {
 		return NULL;
 	}
-	if (((dictobject *)op)->ma_table == NULL)
+	if (mp->ma_table == NULL)
 		return NULL;
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -328,7 +439,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 			return NULL;
 		}
 	}
-	return lookdict((dictobject *)op, key, hash) -> me_value;
+	return (mp->ma_lookup)(mp, key, hash)->me_value;
 }
 
 int
@@ -400,7 +511,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 	mp = (dictobject *)op;
 	if (((dictobject *)op)->ma_table == NULL)
 		goto empty;
-	ep = lookdict(mp, key, hash);
+	ep = (mp->ma_lookup)(mp, key, hash);
 	if (ep->me_value == NULL) {
 	empty:
 		PyErr_SetObject(PyExc_KeyError, key);
@@ -583,7 +694,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 		if (hash == -1)
 			return NULL;
 	}
-	v = lookdict(mp, key, hash) -> me_value;
+	v = (mp->ma_lookup)(mp, key, hash) -> me_value;
 	if (v == NULL)
 		PyErr_SetObject(PyExc_KeyError, key);
 	else
@@ -912,8 +1023,8 @@ dict_compare(dictobject *a, dictobject *b)
 			if (bhash == -1)
 				PyErr_Clear(); /* Don't want errors here */
 		}
-		aval = lookdict(a, akey, ahash) -> me_value;
-		bval = lookdict(b, bkey, bhash) -> me_value;
+		aval = (a->ma_lookup)(a, akey, ahash) -> me_value;
+		bval = (b->ma_lookup)(b, bkey, bhash) -> me_value;
 		res = PyObject_Compare(aval, bval);
 		if (res != 0)
 			break;
@@ -948,7 +1059,8 @@ dict_has_key(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	ok = mp->ma_size != 0 && lookdict(mp, key, hash)->me_value != NULL;
+	ok = (mp->ma_size != 0
+	      && (mp->ma_lookup)(mp, key, hash)->me_value != NULL);
 	return PyInt_FromLong(ok);
 }
 
@@ -974,7 +1086,7 @@ dict_get(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	val = lookdict(mp, key, hash)->me_value;
+	val = (mp->ma_lookup)(mp, key, hash)->me_value;
 
   finally:
 	if (val == NULL)
@@ -1006,7 +1118,7 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	val = lookdict(mp, key, hash)->me_value;
+	val = (mp->ma_lookup)(mp, key, hash)->me_value;
 
   finally:
 	if (val == NULL) {
