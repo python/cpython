@@ -1929,23 +1929,29 @@ AC_TRY_COMPILE([
   AC_MSG_RESULT(no)
 )
 
+dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
+dnl On others, they are in the C library, so we to take no action
+AC_CHECK_LIB(c, inet_aton, [/bin/true],
+  AC_CHECK_LIB(resolv, inet_aton)
+)
+
 AC_MSG_CHECKING(for hstrerror)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
 #include "confdefs.h" 
 #include <netdb.h>
-], void* p = hstrerror,
+], void* p = hstrerror; hstrerror(0),
   AC_DEFINE(HAVE_HSTRERROR, 1, Define if you have the 'hstrerror' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
 
 AC_MSG_CHECKING(for inet_aton)
-AC_TRY_COMPILE([
+AC_TRY_LINK([
 #include "confdefs.h" 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-], void* p = inet_aton,
+], void* p = inet_aton;inet_aton(0,0),
   AC_DEFINE(HAVE_INET_ATON, 1, Define if you have the 'inet_aton' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
