@@ -32,9 +32,9 @@ class build_scripts (Command):
         self.outfiles = None
 
     def finalize_options (self):
-        self.set_undefined_options ('build',
-                                    ('build_scripts', 'build_dir'),
-                                    ('force', 'force'))
+        self.set_undefined_options('build',
+                                   ('build_scripts', 'build_dir'),
+                                   ('force', 'force'))
         self.scripts = self.distribution.scripts
 
 

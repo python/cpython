@@ -80,22 +80,22 @@ class build_clib (Command):
         # I think that C libraries are really just temporary build
         # by-products, at least from the point of view of building Python
         # extensions -- but I want to keep my options open.
-        self.set_undefined_options ('build',
-                                    ('build_temp', 'build_clib'),
-                                    ('build_temp', 'build_temp'),
-                                    ('compiler', 'compiler'),
-                                    ('debug', 'debug'),
-                                    ('force', 'force'))
+        self.set_undefined_options('build',
+                                   ('build_temp', 'build_clib'),
+                                   ('build_temp', 'build_temp'),
+                                   ('compiler', 'compiler'),
+                                   ('debug', 'debug'),
+                                   ('force', 'force'))
 
         self.libraries = self.distribution.libraries
         if self.libraries:
-            self.check_library_list (self.libraries)
+            self.check_library_list(self.libraries)
 
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        if type (self.include_dirs) is StringType:
-            self.include_dirs = string.split (self.include_dirs,
-                                              os.pathsep)
+        if type(self.include_dirs) is StringType:
+            self.include_dirs = string.split(self.include_dirs,
+                                             os.pathsep)
 
         # XXX same as for build_ext -- what about 'self.define' and
         # 'self.undef' ?
@@ -110,23 +110,23 @@ class build_clib (Command):
 
         # Yech -- this is cut 'n pasted from build_ext.py!
         from distutils.ccompiler import new_compiler
-        self.compiler = new_compiler (compiler=self.compiler,
-                                      verbose=self.verbose,
-                                      dry_run=self.dry_run,
-                                      force=self.force)
+        self.compiler = new_compiler(compiler=self.compiler,
+                                     verbose=self.verbose,
+                                     dry_run=self.dry_run,
+                                     force=self.force)
         customize_compiler(self.compiler)
 
         if self.include_dirs is not None:
-            self.compiler.set_include_dirs (self.include_dirs)
+            self.compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
             # 'define' option is a list of (name,value) tuples
             for (name,value) in self.define:
-                self.compiler.define_macro (name, value)
+                self.compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
-                self.compiler.undefine_macro (macro)
+                self.compiler.undefine_macro(macro)
 
-        self.build_libraries (self.libraries)
+        self.build_libraries(self.libraries)
 
     # run()
 
@@ -141,16 +141,16 @@ class build_clib (Command):
         # Yechh, blecch, ackk: this is ripped straight out of build_ext.py,
         # with only names changed to protect the innocent!
 
-        if type (libraries) is not ListType:
+        if type(libraries) is not ListType:
             raise DistutilsSetupError, \
                   "'libraries' option must be a list of tuples"
 
         for lib in libraries:
-            if type (lib) is not TupleType and len (lib) != 2:
+            if type(lib) is not TupleType and len(lib) != 2:
                 raise DistutilsSetupError, \
                       "each element of 'libraries' must a 2-tuple"
 
-            if type (lib[0]) is not StringType:
+            if type(lib[0]) is not StringType:
                 raise DistutilsSetupError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"
@@ -160,7 +160,7 @@ class build_clib (Command):
                        "may not contain directory separators") % \
                       lib[0]
 
-            if type (lib[1]) is not DictionaryType:
+            if type(lib[1]) is not DictionaryType:
                 raise DistutilsSetupError, \
                       "second element of each tuple in 'libraries' " + \
                       "must be a dictionary (build info)"
@@ -178,7 +178,7 @@ class build_clib (Command):
 
         lib_names = []
         for (lib_name, build_info) in self.libraries:
-            lib_names.append (lib_name)
+            lib_names.append(lib_name)
         return lib_names
 
     # get_library_names ()
@@ -189,33 +189,33 @@ class build_clib (Command):
         compiler = self.compiler
 
         for (lib_name, build_info) in libraries:
-            sources = build_info.get ('sources')
-            if sources is None or type (sources) not in (ListType, TupleType):
+            sources = build_info.get('sources')
+            if sources is None or type(sources) not in (ListType, TupleType):
                 raise DistutilsSetupError, \
                       ("in 'libraries' option (library '%s'), " +
                        "'sources' must be present and must be " +
                        "a list of source filenames") % lib_name
-            sources = list (sources)
+            sources = list(sources)
 
-            self.announce ("building '%s' library" % lib_name)
+            self.announce("building '%s' library" % lib_name)
 
             # First, compile the source code to object files in the library
             # directory.  (This should probably change to putting object
             # files in a temporary build directory.)
-            macros = build_info.get ('macros')
-            include_dirs = build_info.get ('include_dirs')
-            objects = self.compiler.compile (sources,
-                                             output_dir=self.build_temp,
-                                             macros=macros,
-                                             include_dirs=include_dirs,
-                                             debug=self.debug)
+            macros = build_info.get('macros')
+            include_dirs = build_info.get('include_dirs')
+            objects = self.compiler.compile(sources,
+                                            output_dir=self.build_temp,
+                                            macros=macros,
+                                            include_dirs=include_dirs,
+                                            debug=self.debug)
 
             # Now "link" the object files together into a static library.
             # (On Unix at least, this isn't really linking -- it just
             # builds an archive.  Whatever.)
-            self.compiler.create_static_lib (objects, lib_name,
-                                             output_dir=self.build_clib,
-                                             debug=self.debug)
+            self.compiler.create_static_lib(objects, lib_name,
+                                            output_dir=self.build_clib,
+                                            debug=self.debug)
 
         # for libraries
 

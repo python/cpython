@@ -132,7 +132,7 @@ class bdist (Command):
             # keep its temporary files around so subsequent runs go faster.
             if cmd_name in commands[i+1:]:
                 sub_cmd.keep_temp = 1
-            self.run_command (cmd_name)
+            self.run_command(cmd_name)
 
     # run()
 

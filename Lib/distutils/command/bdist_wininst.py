@@ -56,8 +56,8 @@ class bdist_wininst (Command):
         if self.distribution.has_ext_modules():
             short_version = sys.version[:3]
             if self.target_version and self.target_version != short_version:
-                raise DistutilsOptionError ("target version can only be" +
-                                            short_version)
+                raise DistutilsOptionError, \
+                      "target version can only be" + short_version
             self.target_version = short_version
 
         self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
@@ -73,7 +73,7 @@ class bdist_wininst (Command):
                   ("distribution contains extensions and/or C libraries; "
                    "must be compiled on a Windows 32 platform")
 
-        self.run_command ('build')
+        self.run_command('build')
 
         install = self.reinitialize_command('install')
         install.root = self.bdist_dir
@@ -91,7 +91,7 @@ class bdist_wininst (Command):
 
         install_lib.ensure_finalized()
 
-        self.announce ("installing to %s" % self.bdist_dir)
+        self.announce("installing to %s" % self.bdist_dir)
         install.ensure_finalized()
         install.run()
 
@@ -103,24 +103,24 @@ class bdist_wininst (Command):
 
         # Our archive MUST be relative to sys.prefix, which is the
         # same as install_purelib in the 'nt' scheme.
-        root_dir = os.path.normpath (install.install_purelib)
+        root_dir = os.path.normpath(install.install_purelib)
 
         # Sanity check: Make sure everything is included
         for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
             attrname = 'install_' + key
-            install_x = getattr (install, attrname)
+            install_x = getattr(install, attrname)
             # (Use normpath so that we can string.find to look for
             # subdirectories)
-            install_x = os.path.normpath (install_x)
-            if string.find (install_x, root_dir) != 0:
+            install_x = os.path.normpath(install_x)
+            if string.find(install_x, root_dir) != 0:
                 raise DistutilsInternalError \
                       ("'%s' not included in install_lib" % key)
-        arcname = self.make_archive (archive_basename, "zip",
-                                     root_dir=root_dir)
-        self.create_exe (arcname, fullname)
+        arcname = self.make_archive(archive_basename, "zip",
+                                    root_dir=root_dir)
+        self.create_exe(arcname, fullname)
 
         if not self.keep_temp:
-            remove_tree (self.bdist_dir, self.verbose, self.dry_run)
+            remove_tree(self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
 
@@ -133,37 +133,37 @@ class bdist_wininst (Command):
         # Write the [metadata] section.  Values are written with
         # repr()[1:-1], so they do not contain unprintable characters, and
         # are not surrounded by quote chars.
-        lines.append ("[metadata]")
+        lines.append("[metadata]")
 
         # 'info' will be displayed in the installer's dialog box,
         # describing the items to be installed.
         info = (metadata.long_description or '') + '\n'
 
-        for name in dir (metadata):
+        for name in dir(metadata):
             if (name != 'long_description'):
-                data = getattr (metadata, name)
+                data = getattr(metadata, name)
                 if data:
                    info = info + ("\n    %s: %s" % \
-                                  (string.capitalize (name), data))
-                   lines.append ("%s=%s" % (name, repr (data)[1:-1]))
+                                  (string.capitalize(name), data))
+                   lines.append("%s=%s" % (name, repr(data)[1:-1]))
 
         # The [setup] section contains entries controlling
         # the installer runtime.
-        lines.append ("\n[Setup]")
-        lines.append ("info=%s" % repr (info)[1:-1])
-        lines.append ("target_compile=%d" % (not self.no_target_compile))
-        lines.append ("target_optimize=%d" % (not self.no_target_optimize))
+        lines.append("\n[Setup]")
+        lines.append("info=%s" % repr(info)[1:-1])
+        lines.append("target_compile=%d" % (not self.no_target_compile))
+        lines.append("target_optimize=%d" % (not self.no_target_optimize))
         if self.target_version:
-            lines.append ("target_version=%s" % self.target_version)
+            lines.append("target_version=%s" % self.target_version)
 
         title = self.distribution.get_fullname()
-        lines.append ("title=%s" % repr (title)[1:-1])
+        lines.append("title=%s" % repr(title)[1:-1])
         import time
         import distutils
         build_info = "Build %s with distutils-%s" % \
-                     (time.ctime (time.time()), distutils.__version__)
-        lines.append ("build_info=%s" % build_info)
-        return string.join (lines, "\n")
+                     (time.ctime(time.time()), distutils.__version__)
+        lines.append("build_info=%s" % build_info)
+        return string.join(lines, "\n")
 
     # get_inidata()
 
@@ -183,36 +183,36 @@ class bdist_wininst (Command):
         else:
             installer_name = os.path.join(self.dist_dir,
                                           "%s.win32.exe" % fullname)
-        self.announce ("creating %s" % installer_name)
+        self.announce("creating %s" % installer_name)
 
-        file = open (installer_name, "wb")
-        file.write (self.get_exe_bytes ())
-        file.write (cfgdata)
-        header = struct.pack ("<ii",
-                              0x12345679,       # tag
-                              len (cfgdata))    # length
-        file.write (header)
-        file.write (open (arcname, "rb").read())
+        file = open(installer_name, "wb")
+        file.write(self.get_exe_bytes())
+        file.write(cfgdata)
+        header = struct.pack("<ii",
+                             0x12345679,       # tag
+                             len(cfgdata))     # length
+        file.write(header)
+        file.write(open(arcname, "rb").read())
 
     # create_exe()
 
     def get_exe_bytes (self):
         import base64
-        return base64.decodestring (EXEDATA)
+        return base64.decodestring(EXEDATA)
 
 # class bdist_wininst
 
 if __name__ == '__main__':
     # recreate EXEDATA from wininst.exe by rewriting this file
     import re, base64
-    moddata = open ("bdist_wininst.py", "r").read()
-    exedata = open ("../../misc/wininst.exe", "rb").read()
-    print "wininst.exe length is %d bytes" % len (exedata)
-    print "wininst.exe encoded length is %d bytes" % len (base64.encodestring (exedata))
-    exp = re.compile ('EXE'+'DATA = """\\\\(\n.*)*\n"""', re.M)
-    data = exp.sub ('EXE' + 'DATA = """\\\\\n%s"""' %
-                    base64.encodestring (exedata), moddata)
-    open ("bdist_wininst.py", "w").write (data)
+    moddata = open("bdist_wininst.py", "r").read()
+    exedata = open("../../misc/wininst.exe", "rb").read()
+    print "wininst.exe length is %d bytes" % len(exedata)
+    print "wininst.exe encoded length is %d bytes" % len(base64.encodestring(exedata))
+    exp = re.compile('EXE'+'DATA = """\\\\(\n.*)*\n"""', re.M)
+    data = exp.sub('EXE' + 'DATA = """\\\\\n%s"""' %
+                    base64.encodestring(exedata), moddata)
+    open("bdist_wininst.py", "w").write(data)
     print "bdist_wininst.py recreated"
 
 EXEDATA = """\

@@ -210,10 +210,10 @@ class install (Command):
                        "not both")
         else:
             if self.exec_prefix:
-                self.warn ("exec-prefix option ignored on this platform")
+                self.warn("exec-prefix option ignored on this platform")
                 self.exec_prefix = None
             if self.home:
-                self.warn ("home option ignored on this platform")
+                self.warn("home option ignored on this platform")
                 self.home = None
 
         # Now the interesting logic -- so interesting that we farm it out
@@ -224,14 +224,14 @@ class install (Command):
         # install_{purelib,platlib,lib,scripts,data,...}, and the
         # INSTALL_SCHEME dictionary above.  Phew!
 
-        self.dump_dirs ("pre-finalize_{unix,other}")
+        self.dump_dirs("pre-finalize_{unix,other}")
 
         if os.name == 'posix':
-            self.finalize_unix ()
+            self.finalize_unix()
         else:
-            self.finalize_other ()
+            self.finalize_other()
 
-        self.dump_dirs ("post-finalize_{unix,other}()")
+        self.dump_dirs("post-finalize_{unix,other}()")
 
         # Expand configuration variables, tilde, etc. in self.install_base
         # and self.install_platbase -- that way, we can use $base or
@@ -250,9 +250,9 @@ class install (Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                            }
-        self.expand_basedirs ()
+        self.expand_basedirs()
 
-        self.dump_dirs ("post-expand_basedirs()")
+        self.dump_dirs("post-expand_basedirs()")
 
         # Now define config vars for the base directories so we can expand
         # everything else.
@@ -262,13 +262,13 @@ class install (Command):
         if DEBUG:
             from pprint import pprint
             print "config vars:"
-            pprint (self.config_vars)
+            pprint(self.config_vars)
 
         # Expand "~" and configuration variables in the installation
         # directories.
-        self.expand_dirs ()
+        self.expand_dirs()
 
-        self.dump_dirs ("post-expand_dirs()")
+        self.dump_dirs("post-expand_dirs()")
 
         # Pick the actual directory to install all modules to: either
         # install_purelib or install_platlib, depending on whether this
@@ -290,9 +290,9 @@ class install (Command):
         # have to deal with 'extra_path', which is the hack for allowing
         # non-packagized module distributions (hello, Numerical Python!) to
         # get their own directories.
-        self.handle_extra_path ()
+        self.handle_extra_path()
         self.install_libbase = self.install_lib # needed for .pth file
-        self.install_lib = os.path.join (self.install_lib, self.extra_dirs)
+        self.install_lib = os.path.join(self.install_lib, self.extra_dirs)
 
         # If a new root directory was supplied, make all the installation
         # dirs relative to it.
@@ -300,12 +300,12 @@ class install (Command):
             self.change_roots('libbase', 'lib', 'purelib', 'platlib',
                               'scripts', 'data', 'headers')
 
-        self.dump_dirs ("after prepending root")
+        self.dump_dirs("after prepending root")
 
         # Find out the build directories, ie. where to install from.
-        self.set_undefined_options ('build',
-                                    ('build_base', 'build_base'),
-                                    ('build_lib', 'build_lib'))
+        self.set_undefined_options('build',
+                                   ('build_base', 'build_base'),
+                                   ('build_lib', 'build_lib'))
 
         # Punt on doc directories for now -- after all, we're punting on
         # documentation completely!
@@ -321,8 +321,8 @@ class install (Command):
                 opt_name = opt[0]
                 if opt_name[-1] == "=":
                     opt_name = opt_name[0:-1]
-                opt_name = string.translate (opt_name, longopt_xlate)
-                val = getattr (self, opt_name)
+                opt_name = string.translate(opt_name, longopt_xlate)
+                val = getattr(self, opt_name)
                 print "  %s: %s" % (opt_name, val)
 
 
@@ -342,15 +342,15 @@ class install (Command):
 
         if self.home is not None:
             self.install_base = self.install_platbase = self.home
-            self.select_scheme ("unix_home")
+            self.select_scheme("unix_home")
         else:
             if self.prefix is None:
                 if self.exec_prefix is not None:
                     raise DistutilsOptionError, \
                           "must not supply exec-prefix without prefix"
 
-                self.prefix = os.path.normpath (sys.prefix)
-                self.exec_prefix = os.path.normpath (sys.exec_prefix)
+                self.prefix = os.path.normpath(sys.prefix)
+                self.exec_prefix = os.path.normpath(sys.exec_prefix)
 
             else:
                 if self.exec_prefix is None:
@@ -358,7 +358,7 @@ class install (Command):
 
             self.install_base = self.prefix
             self.install_platbase = self.exec_prefix
-            self.select_scheme ("unix_prefix")
+            self.select_scheme("unix_prefix")
 
     # finalize_unix ()
 
@@ -366,11 +366,11 @@ class install (Command):
     def finalize_other (self):          # Windows and Mac OS for now
 
         if self.prefix is None:
-            self.prefix = os.path.normpath (sys.prefix)
+            self.prefix = os.path.normpath(sys.prefix)
 
         self.install_base = self.install_platbase = self.prefix
         try:
-            self.select_scheme (os.name)
+            self.select_scheme(os.name)
         except KeyError:
             raise DistutilsPlatformError, \
                   "I don't know how to install stuff on '%s'" % os.name
@@ -389,26 +389,26 @@ class install (Command):
 
     def _expand_attrs (self, attrs):
         for attr in attrs:
-            val = getattr (self, attr)
+            val = getattr(self, attr)
             if val is not None:
                 if os.name == 'posix':
-                    val = os.path.expanduser (val)
-                val = subst_vars (val, self.config_vars)
-                setattr (self, attr, val)
+                    val = os.path.expanduser(val)
+                val = subst_vars(val, self.config_vars)
+                setattr(self, attr, val)
 
 
     def expand_basedirs (self):
-        self._expand_attrs (['install_base',
-                             'install_platbase',
-                             'root'])        
+        self._expand_attrs(['install_base',
+                            'install_platbase',
+                            'root'])        
 
     def expand_dirs (self):
-        self._expand_attrs (['install_purelib',
-                             'install_platlib',
-                             'install_lib',
-                             'install_headers',
-                             'install_scripts',
-                             'install_data',])
+        self._expand_attrs(['install_purelib',
+                            'install_platlib',
+                            'install_lib',
+                            'install_headers',
+                            'install_scripts',
+                            'install_data',])
 
 
     def convert_paths (self, *names):
@@ -423,12 +423,12 @@ class install (Command):
             self.extra_path = self.distribution.extra_path
 
         if self.extra_path is not None:
-            if type (self.extra_path) is StringType:
-                self.extra_path = string.split (self.extra_path, ',')
+            if type(self.extra_path) is StringType:
+                self.extra_path = string.split(self.extra_path, ',')
 
-            if len (self.extra_path) == 1:
+            if len(self.extra_path) == 1:
                 path_file = extra_dirs = self.extra_path[0]
-            elif len (self.extra_path) == 2:
+            elif len(self.extra_path) == 2:
                 (path_file, extra_dirs) = self.extra_path
             else:
                 raise DistutilsOptionError, \
@@ -437,7 +437,7 @@ class install (Command):
 
             # convert to local form in case Unix notation used (as it
             # should be in setup scripts)
-            extra_dirs = convert_path (extra_dirs)
+            extra_dirs = convert_path(extra_dirs)
 
         else:
             path_file = None
@@ -463,21 +463,21 @@ class install (Command):
 
         # Obviously have to build before we can install
         if not self.skip_build:
-            self.run_command ('build')
+            self.run_command('build')
 
         # Run all sub-commands (at least those that need to be run)
         for cmd_name in self.get_sub_commands():
-            self.run_command (cmd_name)
+            self.run_command(cmd_name)
 
         if self.path_file:
-            self.create_path_file ()
+            self.create_path_file()
 
         # write list of installed files, if requested.
         if self.record:
             outputs = self.get_outputs()
             if self.root:               # strip any package prefix
                 root_len = len(self.root)
-                for counter in xrange (len (outputs)):
+                for counter in xrange(len(outputs)):
                     outputs[counter] = outputs[counter][root_len:]
             self.execute(write_file,
                          (self.record, outputs),
@@ -496,12 +496,12 @@ class install (Command):
     # run ()
 
     def create_path_file (self):
-        filename = os.path.join (self.install_libbase,
-                                 self.path_file + ".pth")
+        filename = os.path.join(self.install_libbase,
+                                self.path_file + ".pth")
         if self.install_path_file:
-            self.execute (write_file,
-                          (filename, [self.extra_dirs]),
-                          "creating %s" % filename)
+            self.execute(write_file,
+                         (filename, [self.extra_dirs]),
+                         "creating %s" % filename)
         else:
             self.warn("path file '%s' not created" % filename)
 
@@ -513,8 +513,8 @@ class install (Command):
         # get the outputs of all its sub-commands.
         outputs = []
         for cmd_name in self.get_sub_commands():
-            cmd = self.get_finalized_command (cmd_name)
-            outputs.extend (cmd.get_outputs())
+            cmd = self.get_finalized_command(cmd_name)
+            outputs.extend(cmd.get_outputs())
 
         return outputs
 
@@ -522,8 +522,8 @@ class install (Command):
         # XXX gee, this looks familiar ;-(
         inputs = []
         for cmd_name in self.get_sub_commands():
-            cmd = self.get_finalized_command (cmd_name)
-            inputs.extend (cmd.get_inputs())
+            cmd = self.get_finalized_command(cmd_name)
+            inputs.extend(cmd.get_inputs())
 
         return inputs
 

@@ -71,24 +71,24 @@ class bdist_dumb (Command):
 
     def run (self):
 
-        self.run_command ('build')
+        self.run_command('build')
 
         install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.bdist_dir
 
-        self.announce ("installing to %s" % self.bdist_dir)
+        self.announce("installing to %s" % self.bdist_dir)
         self.run_command('install')
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
         archive_basename = "%s.%s" % (self.distribution.get_fullname(),
                                       self.plat_name)
-        self.make_archive (os.path.join(self.dist_dir, archive_basename),
-                           self.format,
-                           root_dir=self.bdist_dir)
+        self.make_archive(os.path.join(self.dist_dir, archive_basename),
+                          self.format,
+                          root_dir=self.bdist_dir)
 
         if not self.keep_temp:
-            remove_tree (self.bdist_dir, self.verbose, self.dry_run)
+            remove_tree(self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
 
