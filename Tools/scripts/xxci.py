@@ -26,7 +26,7 @@ def getargs():
 	args.sort()
 	return args
 
-badnames = ['tags', 'xyzzy']
+badnames = ['tags', 'TAGS', 'xyzzy', 'nohup.out', 'core']
 badprefixes = ['.', ',', '@', '#', 'o.']
 badsuffixes = \
 	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not']
