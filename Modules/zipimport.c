@@ -796,7 +796,7 @@ get_data(char *archive, PyObject *toc_entry)
 	long compress, data_size, file_size, file_offset;
 	long time, date, crc;
 
-	if (!PyArg_ParseTuple(toc_entry, "siiiiiii", &datapath, &compress,
+	if (!PyArg_ParseTuple(toc_entry, "slllllll", &datapath, &compress,
 			      &data_size, &file_size, &file_offset, &time,
 			      &date, &crc)) {
 		return NULL;
