@@ -12,6 +12,9 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Review libppath.tex for completeness, & system-specific behaviors.
 
-* Finish upgrade to LaTeX2HTML 98.1.  Most important: figure out a way to
+* Clean up upgrade to LaTeX2HTML 98.1.  Most important: figure out a way to
   avoid image creation, & if necessary, make sure image creation at least
   doesn't fail.
+
+* Separate modules which share a section.  (UserDict/UserList, and one
+  other which I can't recall at the moment.)
