@@ -58,7 +58,8 @@ The functions defined in this module are:
 \begin{funcdesc}{atof}{s}
 Convert a string to a floating point number.  The string must have
 the standard syntax for a floating point literal in Python, optionally
-preceded by a sign (\samp{+} or \samp{-}).
+preceded by a sign (\samp{+} or \samp{-}).  Note that this behaves
+identical to the built-in function \code{float()} when passed a string.
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{s\optional{\, base}}
@@ -68,9 +69,11 @@ sign (\samp{+} or \samp{-}).  The \var{base} defaults to 10.  If it is
 0, a default base is chosen depending on the leading characters of the
 string (after stripping the sign): \samp{0x} or \samp{0X} means 16,
 \samp{0} means 8, anything else means 10.  If \var{base} is 16, a
-leading \samp{0x} or \samp{0X} is always accepted.  (Note: for a more
-flexible interpretation of numeric literals, use the built-in function
-\code{eval()}.)
+leading \samp{0x} or \samp{0X} is always accepted.  Note that when
+invoked without \var{base} or with \var{base} set to 10, this behaves
+identical to the built-in function \code{int()} when passed a string.
+(Also note: for a more flexible interpretation of numeric literals,
+use the built-in function \code{eval()}.)
 \bifuncindex{eval}
 \end{funcdesc}
 
@@ -79,7 +82,9 @@ Convert string \var{s} to a long integer in the given \var{base}.  The
 string must consist of one or more digits, optionally preceded by a
 sign (\samp{+} or \samp{-}).  The \var{base} argument has the same
 meaning as for \code{atoi()}.  A trailing \samp{l} or \samp{L} is not
-allowed, except if the base is 0.
+allowed, except if the base is 0.  Note that when invoked without
+\var{base} or with \var{base} set to 10, this behaves identical to the
+built-in function \code{long()} when passed a string.
 \end{funcdesc}
 
 \begin{funcdesc}{capitalize}{word}
@@ -227,17 +232,11 @@ Pad a numeric string on the left with zero digits until the given
 width is reached.  Strings starting with a sign are handled correctly.
 \end{funcdesc}
 
-\begin{funcdesc}{replace}{old, new, str}
+\begin{funcdesc}{replace}{str, old, new\optional{, maxsplit}}
 Return a copy of string \var{str} with all occurrences of substring
-\var{old} replaced by \var{new}.
-\end{funcdesc}
-
-\begin{funcdesc}{replace1}{old, new, str\optional{, start\optional{, end}}}
-Return a copy of string \var{str} with the first occurrence of
-substring \var{old} replaced by \var{new}.  If no occurrence is found,
-\var{str} is returned unchanged.  Optional arguments \var{start} and
-\var{end} limit the search for \var{old} like for \code{find} (they
-are not used to slice the result).
+\var{old} replaced by \var{new}.  If the optional argument
+\var{maxsplit} is given, the first \var{maxsplit} occurrences are
+replaced.
 \end{funcdesc}
 
 This module is implemented in Python.  Much of its functionality has
