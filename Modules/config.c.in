@@ -1,11 +1,10 @@
-/* Configuration containing EVERYTHING */
+/* Configurable Python configuration file */
 
-/* At CWI, this implies stdwin, audio, Amoeba and the NASA Panel Library */
-#define USE_AUDIO
-#define USE_AMOEBA
-#define USE_PANEL
+#ifdef USE_STDWIN
+#include <stdwin.h>
 
 static int use_stdwin;
+#endif
 
 /*ARGSUSED*/
 void
@@ -13,6 +12,7 @@ initargs(p_argc, p_argv)
 	int *p_argc;
 	char ***p_argv;
 {
+#ifdef USE_STDWIN
 	extern char *getenv();
 	char *display;
 
@@ -44,6 +44,7 @@ initargs(p_argc, p_argv)
 	
 	if (use_stdwin)
 		winitargs(p_argc, p_argv);
+#endif
 }
 
 void
@@ -53,25 +54,35 @@ initcalls()
 	initmath();
 	initregexp();
 	initposix();
+
 #ifdef USE_AUDIO
 	initaudio();
 #endif
+
 #ifdef USE_AMOEBA
 	initamoeba();
 #endif
+
+#ifdef USE_GL
 	initgl();
 #ifdef USE_PANEL
 	initpanel();
 #endif
+#endif
+
+#ifdef USE_STDWIN
 	if (use_stdwin)
 		initstdwin();
+#endif
 }
 
 void
 donecalls()
 {
+#ifdef USE_STDWIN
 	if (use_stdwin)
 		wdone();
+#endif
 #ifdef USE_AUDIO
 	asa_done();
 #endif
