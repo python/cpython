@@ -315,7 +315,7 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=math_libs) )
-        exts.append( Extension('datetime', ['datetimemodule.c'],
+        exts.append( Extension('datetime', ['datetimemodule.c', 'timemodule.c'],
                                libraries=math_libs) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
