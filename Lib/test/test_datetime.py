@@ -2592,7 +2592,7 @@ Pacific  = USTimeZone(-8, "Pacific",  "PST", "PDT")
 utc_real = FixedOffset(0, "UTC", 0)
 # For better test coverage, we want another flavor of UTC that's west of
 # the Eastern and Pacific timezones.
-utc_fake = FixedOffset(-12, "UTCfake", 0)
+utc_fake = FixedOffset(-12*60, "UTCfake", 0)
 
 class TestTimezoneConversions(unittest.TestCase):
     # The DST switch times for 2002, in local time.
@@ -2643,25 +2643,17 @@ class TestTimezoneConversions(unittest.TestCase):
         # 1:MM:SS is taken to be daylight time, and 2:MM:SS as
         # standard time.  The hour 1:MM:SS standard time ==
         # 2:MM:SS daylight time can't be expressed in local time.
+        # Nevertheless, we want conversion back from UTC to mimic
+        # the local clock's "repeat an hour" behavior.
         nexthour_utc = asutc + HOUR
+        nexthour_tz = nexthour_utc.astimezone(tz)
         if dt.date() == dstoff.date() and dt.hour == 1:
             # We're in the hour before DST ends.  The hour after
-            # is ineffable.
-            # For concreteness, picture Eastern.  during is of
-            # the form 1:MM:SS, it's daylight time, so that's
-            # 5:MM:SS UTC.  Adding an hour gives 6:MM:SS UTC.
-            # Daylight time ended at 2+4 == 6:00:00 UTC, so
-            # 6:MM:SS is (correctly) taken to be standard time.
-            # But standard time is at offset -5, and that maps
-            # right back to the 1:MM:SS Eastern we started with.
-            # That's correct, too, *if* 1:MM:SS were taken as
-            # being standard time.  But it's not -- on this day
-            # it's taken as daylight time.
-            self.assertRaises(ValueError,
-                              nexthour_utc.astimezone, tz)
+            # is ineffable.  We want the conversion back to repeat 1:MM.
+            expected_diff = ZERO
         else:
-            nexthour_tz = nexthour_utc.astimezone(utc)
-            self.assertEqual(nexthour_tz - dt, HOUR)
+            expected_diff = HOUR
+        self.assertEqual(nexthour_tz - dt, expected_diff)
 
     # Check a time that's outside DST.
     def checkoutside(self, dt, tz, utc):
@@ -2738,6 +2730,31 @@ class TestTimezoneConversions(unittest.TestCase):
         expected = self.dston.replace(hour=1)
         got = sixutc.astimezone(Eastern).astimezone(None)
         self.assertEqual(expected, got)
+
+        # Now on the day DST ends, we want "repeat an hour" behavior.
+        #  UTC  4:MM  5:MM  6:MM  7:MM  checking these
+        #  EST 23:MM  0:MM  1:MM  2:MM
+        #  EDT  0:MM  1:MM  2:MM  3:MM
+        # wall  0:MM  1:MM  1:MM  2:MM  against these
+        for utc in utc_real, utc_fake:
+            for tz in Eastern, Pacific:
+                first_std_hour = self.dstoff - timedelta(hours=3) # 23:MM
+                # Convert that to UTC.
+                first_std_hour -= tz.utcoffset(None)
+                # Adjust for possibly fake UTC.
+                asutc = first_std_hour + utc.utcoffset(None)
+                # First UTC hour to convert; this is 4:00 when utc=utc_real &
+                # tz=Eastern.
+                asutcbase = asutc.replace(tzinfo=utc)
+                for tzhour in (0, 1, 1, 2):
+                    expectedbase = self.dstoff.replace(hour=tzhour)
+                    for minute in 0, 30, 59:
+                        expected = expectedbase.replace(minute=minute)
+                        asutc = asutcbase.replace(minute=minute)
+                        astz = asutc.astimezone(tz)
+                        self.assertEqual(astz.replace(tzinfo=None), expected)
+                    asutcbase += HOUR
+
 
     def test_bogus_dst(self):
         class ok(tzinfo):

@@ -924,11 +924,11 @@ implement all of them.
       \code{tz.utcoffset(dt) - tz.dst(dt)}
 
   must return the same result for every \class{datetimetz} \var{dt}
-  in a given year with \code{dt.tzinfo==tz}  For sane \class{tzinfo}
-  subclasses, this expression yields the time zone's "standard offset"
-  within the year, which should be the same across all days in the year.
-  The implementation of \method{datetimetz.astimezone()} relies on this,
-  but cannot detect violations; it's the programmer's responsibility to
+  with \code{dt.tzinfo==tz}  For sane \class{tzinfo} subclasses, this
+  expression yields the time zone's "standard offset", which should not
+  depend on the date or the time, but only on geographic location.  The
+  implementation of \method{datetimetz.astimezone()} relies on this, but
+  cannot detect violations; it's the programmer's responsibility to
   ensure it.
 
 \begin{methoddesc}{tzname}{self, dt}
@@ -969,6 +969,50 @@ and not need to worry about objects in other timezones.
 Example \class{tzinfo} classes:
 
 \verbatiminput{tzinfo-examples.py}
+
+Note that there are unavoidable subtleties twice per year in a tzinfo
+subclass accounting for both standard and daylight time, at the DST
+transition points.  For concreteness, consider US Eastern (UTC -0500),
+where EDT begins the minute after 1:59 (EST) on the first Sunday in
+April, and ends the minute after 1:59 (EDT) on the last Sunday in October:
+
+\begin{verbatim}
+    UTC   3:MM  4:MM  5:MM  6:MM  7:MM  8:MM
+    EST  22:MM 23:MM  0:MM  1:MM  2:MM  3:MM
+    EDT  23:MM  0:MM  1:MM  2:MM  3:MM  4:MM
+
+  start  22:MM 23:MM  0:MM  1:MM  3:MM  4:MM
+
+    end  23:MM  0:MM  1:MM  1:MM  2:MM  3:MM
+\end{verbatim}
+
+When DST starts (the "start" line), the local wall clock leaps from 1:59
+to 3:00.  A wall time of the form 2:MM doesn't really make sense on that
+day, so astimezone(Eastern) won't deliver a result with hour=2 on the
+day DST begins.  How an Eastern class chooses to interpret 2:MM on
+that day is its business.  The example Eastern class above chose to
+consider it as a time in EDT, simply because it "looks like it's
+after 2:00", and so synonymous with the EST 1:MM times on that day.
+Your Eastern class may wish, for example, to raise an exception instead
+when it sees a 2:MM time on the day Eastern begins.
+
+When DST ends (the "end" line), there's a potentially worse problem:
+there's an hour that can't be spelled at all in local wall time, the
+hour beginning at the moment DST ends.  In this example, that's times of
+the form 6:MM UTC on the day daylight time ends.  The local wall clock
+leaps from 1:59 (daylight time) back to 1:00 (standard time) again.
+1:MM is taken as daylight time (it's "before 2:00"), so maps to 5:MM UTC.
+2:MM is taken as standard time (it's "after 2:00"), so maps to 7:MM UTC.
+There is no local time that maps to 6:MM UTC on this day.
+
+Just as the wall clock does, astimezone(Eastern) maps both UTC hours 5:MM
+and 6:MM to Eastern hour 1:MM on this day.  However, this result is
+ambiguous (there's no way for Eastern to know which repetition of 1:MM
+is intended).  Applications that can't bear such ambiguity even one hour
+per year should avoid using hybrid tzinfo classes; there are no
+ambiguities when using UTC, or any other fixed-offset tzinfo subclass
+(such as a class representing only EST (fixed offset -5 hours), or only
+EDT (fixed offset -4 hours)).
 
 
 \subsection{\class{timetz} Objects \label{datetime-timetz}}
