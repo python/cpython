@@ -22,6 +22,8 @@ import sys
 import macfs
 import macostools
 
+DEBUG=0
+
 SyntaxError='Include/exclude file syntax error'
 
 class Matcher:
@@ -137,6 +139,8 @@ class IncMatcher(Matcher):
 				if dstpath[-1] == os.sep:
 					dir, file = os.path.split(path)
 					dstpath = os.path.join(dstpath, file)
+				if DEBUG:
+					print 'include', patharg, dstpath
 				return dstpath
 			path, lastcomp = os.path.split(path)
 			if not path:
@@ -146,11 +150,15 @@ class IncMatcher(Matcher):
 		path = patharg
 		while 1:
 			if self.edict.has_key(path):
+				if DEBUG:
+					print 'exclude', patharg, path
 				return ''
 			path, lastcomp = os.path.split(path)
 			if not path:
 				break
 			removed[0:0] = [lastcomp]
+		if DEBUG:
+			print 'nomatch', patharg
 		return None
 			
 	def checksourcetree(self):
@@ -177,6 +185,8 @@ class ExcMatcher(Matcher):
 		
 	def rebuild1(self, (src, dst)):
 		pat = fnmatch.translate(src)
+		if DEBUG:
+			print 'PATTERN', `src`, 'REGEX', `pat`
 		self.relist.append(regex.compile(pat))
 		
 	def unrebuild1(self, num, src):
@@ -187,6 +197,8 @@ class ExcMatcher(Matcher):
 		file = comps[-1]
 		for pat in self.relist:
 			if pat and pat.match(file) == len(file):
+				if DEBUG:
+					print 'excmatch', file, pat
 				return 1
 		return 0		
 		 
@@ -212,18 +224,33 @@ class Main:
 		return self.checkdir(':', 1)
 		
 	def checkdir(self, path, istop):
+		if DEBUG:
+			print 'checkdir', path
 		files = os.listdir(path)
 		rv = []
 		todo = []
 		for f in files:
+			if DEBUG:
+				print 'checkfile', f
 			if self.exc.match(f):
+				if DEBUG:
+					print 'exclude match', f
 				continue
 			fullname = os.path.join(path, f)
-			if self.inc.match(fullname) == None:
+			if DEBUG:
+				print 'checkpath', fullname
+			matchvalue = self.inc.match(fullname)
+			if matchvalue == None:
 				if os.path.isdir(fullname):
+					if DEBUG:
+						print 'do dir', fullname
 					todo.append(fullname)
 				else:
+					if DEBUG:
+						print 'include', fullname
 					rv.append(fullname)
+			elif DEBUG:
+				print 'badmatch', matchvalue
 		for d in todo:
 			if len(rv) > 500:
 				if istop:
@@ -263,7 +290,12 @@ class Main:
 					if doit:
 						print 'COPY ', fullname
 						print '  -> ', os.path.join(destprefix, dest)
-						macostools.copy(fullname, os.path.join(destprefix, dest), 1)
+						try:
+							macostools.copy(fullname, os.path.join(destprefix, dest), 1)
+						except: #DBG
+							print 'cwd', os.path.getcwd() #DBG
+							print 'fsspec', macfs.FSSpec(fullname) #DBG
+							sys.exit(1)
 		for d in todo:
 			if not self.rundir(d, destprefix, doit):
 				rv = 0
