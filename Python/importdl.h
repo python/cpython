@@ -64,6 +64,7 @@ extern PyObject *_PyImport_LoadDynamicModule
 #define MAXSUFFIXSIZE 12
 
 #ifdef MS_WINDOWS
+#include <windows.h>
 typedef FARPROC dl_funcptr;
 #else
 #ifdef PYOS_OS2
