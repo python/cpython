@@ -50,7 +50,7 @@ file_m.add('command', {'label': 'Quit', 'underline': 0, 'command': 'exit'})
 def single1(e):
 	x = e.x
 	y = e.y
-	tk.setvar('tk_priv(selectMode)', 'char')
+	t.setvar('tk_priv(selectMode)', 'char')
 	t.mark_set('anchor', At(x, y))
 	# Should focus W
 t.bind('<1>', single1)
@@ -58,26 +58,26 @@ t.bind('<1>', single1)
 def double1(e):
 	x = e.x
 	y = e.y
-	tk.setvar('tk_priv(selectMode)', 'word')
-	tk.call('tk_textSelectTo', t, At(x, y))
+	t.setvar('tk_priv(selectMode)', 'word')
+	t.tk_textSelectTo(At(x, y))
 t.bind('<Double-1>', double1)
 
 def triple1(e):
 	x = e.x
 	y = e.y
-	tk.setvar('tk_priv(selectMode)', 'line')
-	tk.call('tk_textSelectTo', t, At(x, y))
+	t.setvar('tk_priv(selectMode)', 'line')
+	t.tk_textSelectTo(At(x, y))
 t.bind('<Triple-1>', triple1)
 
 def returnkey(e):
-	t.insert('insert', '\n')
+	t.insert(AtInsert(), '\n')
 	invoke()
 t.bind('<Return>', returnkey)
 
 def controlv(e):
-	t.insert('insert', tk.call('selection', 'get'))
-	t.yview_pickplace('insert')
-	if t.index('insert')[-2:] == '.0':
+	t.insert(AtInsert(), t.selection_get())
+	t.yview_pickplace(AtInsert())
+	if t.index(AtInsert())[-2:] == '.0':
 		invoke()
 t.bind('<Control-v>', controlv)
 
@@ -86,8 +86,8 @@ t.bind('<Control-v>', controlv)
 
 def backspace(e):
 	if t.index('promptEnd') != t.index('insert - 1 char'):
-		t.delete('insert - 1 char', 'insert')
-		t.yview_pickplace('insert')
+		t.delete('insert - 1 char', AtInsert())
+		t.yview_pickplace(AtInsert())
 t.bind('<BackSpace>', backspace)
 t.bind('<Control-h>', backspace)
 t.bind('<Delete>', backspace)
@@ -100,19 +100,19 @@ t.bind('<Delete>', backspace)
 # a new prompt.
 
 def invoke():
-	cmd = t.get('promptEnd + 1 char', 'insert')
-	if tk.getboolean(tk.call('info', 'complete', cmd)):
-		if app == tk.call('winfo', 'name', '.'):
-			msg = tk.call('eval', cmd)
+	cmd = t.get('promptEnd + 1 char', AtInsert())
+	if t.getboolean(tk.call('info', 'complete', cmd)): # XXX
+		if app == root.winfo_name():
+			msg = tk.call('eval', cmd) # XXX
 		else:
-			msg = tk.call('send', app, cmd)
+			msg = t.send(app, cmd)
 		if msg:
-			t.insert('insert', msg + '\n')
+			t.insert(AtInsert(), msg + '\n')
 		prompt()
-	t.yview_pickplace('insert')
+	t.yview_pickplace(AtInsert())
 
 def prompt():
-	t.insert('insert', app + ': ')
+	t.insert(AtInsert(), app + ': ')
 	t.mark_set('promptEnd', 'insert - 1 char')
 	t.tag_add('bold', 'insert linestart', 'promptEnd')
 
@@ -127,26 +127,31 @@ def newApp(appName):
 	t.insert('promptEnd', appName + ':')
 	t.tag_add('bold', 'promptEnd linestart', 'promptEnd')
 
-newApp_tcl = `id(newApp)`
-tk.createcommand(newApp_tcl, newApp)
-
 def fillAppsMenu():
 	file_m_apps.add('command')
 	file_m_apps.delete(0, 'last')
-	names = tk.splitlist(tk.call('winfo', 'interps'))
+	names = root.winfo_interps()
 	names = map(None, names) # convert tuple to list
 	names.sort()
 	for name in names:
-		file_m_apps.add('command', {'label': name,
-					    'command': (newApp_tcl, name)})
+		try:
+			root.send(name, 'winfo name .')
+		except TclError:
+			# Inoperative window -- ignore it
+			pass
+		else:
+			file_m_apps.add('command', {'label': name,
+						    'command':
+						    lambda name=name:
+						    newApp(name)})
 
 file_m_apps['postcommand'] = fillAppsMenu
 mBar.tk_menuBar(file)
 
 # 7. Miscellaneous initialization.
 
-app = tk.call('winfo', 'name', '.')
+app = root.winfo_name()
 prompt()
-tk.call('focus', t)
+t.focus()
 
 root.mainloop()
