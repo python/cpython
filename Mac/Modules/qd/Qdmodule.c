@@ -40,9 +40,6 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
-extern PyObject *PMObj_New(PixMapHandle);
-extern int PMObj_Convert(PyObject *, PixMapHandle *);
-
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <QuickDraw.h>
@@ -218,6 +215,9 @@ static PyObject *GrafObj_getattr(self, name)
 				if ( strcmp(name, "spExtra") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildFixed, self->ob_itself->spExtra);
 				/* XXXX Add more, as needed */
+				/* This one is so we can compare grafports: */
+				if ( strcmp(name, "_id") == 0 )
+					return Py_BuildValue("l", (long)self->ob_itself);
 			}
 	return Py_FindMethodInChain(&GrafObj_chain, (PyObject *)self, name);
 }
