@@ -1558,6 +1558,25 @@ validate_import_as_name(node *tree)
 }
 
 
+/* dotted_name:  NAME ("." NAME)*
+ */
+static int
+validate_dotted_name(node *tree)
+{
+    int nch = NCH(tree);
+    int res = (validate_ntype(tree, dotted_name)
+               && is_odd(nch)
+               && validate_name(CHILD(tree, 0), NULL));
+    int i;
+
+    for (i = 1; res && (i < nch); i += 2) {
+        res = (validate_dot(CHILD(tree, i))
+               && validate_name(CHILD(tree, i+1), NULL));
+    }
+    return res;
+}
+
+
 /* dotted_as_name:  dotted_name [NAME NAME]
  */
 static int
@@ -1568,9 +1587,9 @@ validate_dotted_as_name(node *tree)
 
     if (res) {
         if (nch == 1)
-            res = validate_ntype(CHILD(tree, 0), dotted_name);
+            res = validate_dotted_name(CHILD(tree, 0));
         else if (nch == 3)
-            res = (validate_ntype(CHILD(tree, 0), dotted_name)
+            res = (validate_dotted_name(CHILD(tree, 0))
                    && validate_name(CHILD(tree, 1), "as")
                    && validate_name(CHILD(tree, 2), NULL));
         else {
@@ -1601,12 +1620,12 @@ validate_import_stmt(node *tree)
         res = validate_dotted_as_name(CHILD(tree, 1));
         for (j = 2; res && (j < nch); j += 2)
             res = (validate_comma(CHILD(tree, j))
-                   && validate_ntype(CHILD(tree, j + 1), dotted_name));
+                   && validate_dotted_as_name(CHILD(tree, j + 1)));
     }
     else if (res && (res = validate_name(CHILD(tree, 0), "from"))) {
         res = ((nch >= 4) && is_even(nch)
-               && validate_name(CHILD(tree, 2), "import")
-               && validate_dotted_as_name(CHILD(tree, 1)));
+               && validate_dotted_name(CHILD(tree, 1))
+               && validate_name(CHILD(tree, 2), "import"));
         if (nch == 4) {
             if (TYPE(CHILD(tree, 3)) == import_as_name)
                 res = validate_import_as_name(CHILD(tree, 3));
