@@ -437,32 +437,32 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 "{Objs}"pythonrun.c.o Ä "{Top}"Python:pythonrun.c
 	{CC} "{Top}"Python:pythonrun.c -o "{Objs}"pythonrun.c.o -s pythonrun.c {CFlags}
 
-"{Objs}"AEmodule.c.o Ä "{Top}"Demo:bgen:ae:AEmodule.c
-	{CC} "{Top}"Demo:bgen:ae:AEmodule.c -o "{Objs}"AEmodule.c.o -s AEmodule.c {CFlags}
+"{Objs}"AEmodule.c.o Ä "{Top}"Tools:bgen:ae:AEmodule.c
+	{CC} "{Top}"Tools:bgen:ae:AEmodule.c -o "{Objs}"AEmodule.c.o -s AEmodule.c {CFlags}
 
-"{Objs}"Ctlmodule.c.o Ä "{Top}"Demo:bgen:ctl:Ctlmodule.c
-	{CC} "{Top}"Demo:bgen:ctl:Ctlmodule.c -o "{Objs}"Ctlmodule.c.o -s Ctlmodule.c {CFlags}
+"{Objs}"Ctlmodule.c.o Ä "{Top}"Tools:bgen:ctl:Ctlmodule.c
+	{CC} "{Top}"Tools:bgen:ctl:Ctlmodule.c -o "{Objs}"Ctlmodule.c.o -s Ctlmodule.c {CFlags}
 
-"{Objs}"Dlgmodule.c.o Ä "{Top}"Demo:bgen:dlg:Dlgmodule.c
-	{CC} "{Top}"Demo:bgen:dlg:Dlgmodule.c -o "{Objs}"Dlgmodule.c.o -s Dlgmodule.c {CFlags}
+"{Objs}"Dlgmodule.c.o Ä "{Top}"Tools:bgen:dlg:Dlgmodule.c
+	{CC} "{Top}"Tools:bgen:dlg:Dlgmodule.c -o "{Objs}"Dlgmodule.c.o -s Dlgmodule.c {CFlags}
 
-"{Objs}"Evtmodule.c.o Ä "{Top}"Demo:bgen:evt:Evtmodule.c
-	{CC} "{Top}"Demo:bgen:evt:Evtmodule.c -o "{Objs}"Evtmodule.c.o -s Evtmodule.c {CFlags}
+"{Objs}"Evtmodule.c.o Ä "{Top}"Tools:bgen:evt:Evtmodule.c
+	{CC} "{Top}"Tools:bgen:evt:Evtmodule.c -o "{Objs}"Evtmodule.c.o -s Evtmodule.c {CFlags}
 
-"{Objs}"Menumodule.c.o Ä "{Top}"Demo:bgen:menu:Menumodule.c
-	{CC} "{Top}"Demo:bgen:menu:Menumodule.c -o "{Objs}"Menumodule.c.o -s Menumodule.c {CFlags}
+"{Objs}"Menumodule.c.o Ä "{Top}"Tools:bgen:menu:Menumodule.c
+	{CC} "{Top}"Tools:bgen:menu:Menumodule.c -o "{Objs}"Menumodule.c.o -s Menumodule.c {CFlags}
 
-"{Objs}"Qdmodule.c.o Ä "{Top}"Demo:bgen:qd:Qdmodule.c
-	{CC} "{Top}"Demo:bgen:qd:Qdmodule.c -o "{Objs}"Qdmodule.c.o -s Qdmodule.c {CFlags}
+"{Objs}"Qdmodule.c.o Ä "{Top}"Tools:bgen:qd:Qdmodule.c
+	{CC} "{Top}"Tools:bgen:qd:Qdmodule.c -o "{Objs}"Qdmodule.c.o -s Qdmodule.c {CFlags}
 
-"{Objs}"Resmodule.c.o Ä "{Top}"Demo:bgen:res:Resmodule.c
-	{CC} "{Top}"Demo:bgen:res:Resmodule.c -o "{Objs}"Resmodule.c.o -s Resmodule.c {CFlags}
+"{Objs}"Resmodule.c.o Ä "{Top}"Tools:bgen:res:Resmodule.c
+	{CC} "{Top}"Tools:bgen:res:Resmodule.c -o "{Objs}"Resmodule.c.o -s Resmodule.c {CFlags}
 
-"{Objs}"Sndmodule.c.o Ä "{Top}"Demo:bgen:snd:Sndmodule.c
-	{CC} "{Top}"Demo:bgen:snd:Sndmodule.c -o "{Objs}"Sndmodule.c.o -s Sndmodule.c {CFlags}
+"{Objs}"Sndmodule.c.o Ä "{Top}"Tools:bgen:snd:Sndmodule.c
+	{CC} "{Top}"Tools:bgen:snd:Sndmodule.c -o "{Objs}"Sndmodule.c.o -s Sndmodule.c {CFlags}
 
-"{Objs}"Winmodule.c.o Ä "{Top}"Demo:bgen:win:Winmodule.c
-	{CC} "{Top}"Demo:bgen:win:Winmodule.c -o "{Objs}"Winmodule.c.o -s Winmodule.c {CFlags}
+"{Objs}"Winmodule.c.o Ä "{Top}"Tools:bgen:win:Winmodule.c
+	{CC} "{Top}"Tools:bgen:win:Winmodule.c -o "{Objs}"Winmodule.c.o -s Winmodule.c {CFlags}
 
 "{Objs}"md5c.c.o Ä "{Top}"Modules:md5c.c
 	{CC} "{Top}"Modules:md5c.c -o "{Objs}"md5c.c.o -s md5c.c {CFlags}
