@@ -652,20 +652,21 @@ class PyBuildExt(build_ext):
         # The library to link fpectl with is platform specific.
         # Choose *one* of the options below for fpectl:
 
-        if platform == 'irix5':
-            # For SGI IRIX (tested on 5.3):
-            exts.append( Extension('fpectl', ['fpectlmodule.c'],
-                                   libraries=['fpe']) )
-        elif 0: # XXX how to detect SunPro?
-            # For Solaris with SunPro compiler (tested on Solaris 2.5
-            # with SunPro C 4.2): (Without the compiler you don't have
-            # -lsunmath.)
-            #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
-            pass
-        else:
-            # For other systems: see instructions in fpectlmodule.c.
-            #fpectl fpectlmodule.c ...
-            exts.append( Extension('fpectl', ['fpectlmodule.c']) )
+        # Disabled; it's dangerous or useless except in the hands of experts.
+##        if platform == 'irix5':
+##            # For SGI IRIX (tested on 5.3):
+##            exts.append( Extension('fpectl', ['fpectlmodule.c'],
+##                                   libraries=['fpe']) )
+##        elif 0: # XXX how to detect SunPro?
+##            # For Solaris with SunPro compiler (tested on Solaris 2.5
+##            # with SunPro C 4.2): (Without the compiler you don't have
+##            # -lsunmath.)
+##            #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
+##            pass
+##        else:
+##            # For other systems: see instructions in fpectlmodule.c.
+##            #fpectl fpectlmodule.c ...
+##            exts.append( Extension('fpectl', ['fpectlmodule.c']) )
 
 
         # Andrew Kuchling's zlib module.  Note that some versions of zlib
