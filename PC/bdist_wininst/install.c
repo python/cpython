@@ -955,7 +955,11 @@ static BOOL ExtractInstallData(char *data, DWORD size, int *pexe_size,
 		return FALSE;
 	}
 
-	if (pmd->tag != 0x1234567A || ofs < 0) {
+	if (pmd->tag != 0x1234567B) {
+		return SystemError(0,
+			   "Invalid cfgdata magic number (see bdist_wininst.py)");
+	}
+	if (ofs < 0) {
 		return FALSE;
 	}
 
