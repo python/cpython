@@ -23,10 +23,10 @@ MAXREPEAT = 32767
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
-DIGITS = string.digits
+DIGITS = tuple(string.digits)
 
-OCTDIGITS = "01234567"
-HEXDIGITS = "0123456789abcdefABCDEF"
+OCTDIGITS = tuple("01234567")
+HEXDIGITS = tuple("0123456789abcdefABCDEF")
 
 WHITESPACE = string.whitespace
 
@@ -188,13 +188,13 @@ def _class_escape(source, escape):
 	return code
     try:
 	if escape[1:2] == "x":
-	    while source.next and source.next in HEXDIGITS:
+	    while source.next in HEXDIGITS:
 		escape = escape + source.get()
 	    escape = escape[2:]
 	    # FIXME: support unicode characters!
 	    return LITERAL, chr(int(escape[-4:], 16) & 0xff)
 	elif str(escape[1:2]) in OCTDIGITS:
-	    while source.next and source.next in OCTDIGITS:
+	    while source.next in OCTDIGITS:
 		escape = escape + source.get()
 	    escape = escape[1:]
 	    # FIXME: support unicode characters!
@@ -215,12 +215,12 @@ def _escape(source, escape, state):
 	return code
     try:
 	if escape[1:2] == "x":
-	    while source.next and source.next in HEXDIGITS:
+	    while source.next in HEXDIGITS:
 		escape = escape + source.get()
 	    escape = escape[2:]
 	    # FIXME: support unicode characters!
 	    return LITERAL, chr(int(escape[-4:], 16) & 0xff)
-	elif str(escape[1:2]) in DIGITS:
+	elif escape[1:2] in DIGITS:
 	    while 1:
 		group = _group(escape, state)
 		if group:
@@ -228,7 +228,7 @@ def _escape(source, escape, state):
 			not _group(escape + source.next, state)):
 		        return GROUP, group
 		    escape = escape + source.get()
-		elif source.next and source.next in OCTDIGITS:
+		elif source.next in OCTDIGITS:
 		    escape = escape + source.get()
 		else:
 		    break
@@ -372,10 +372,10 @@ def _parse(source, state, flags=0):
 	    elif this == "{":
 		min, max = 0, MAXREPEAT
 		lo = hi = ""
-		while source.next and source.next in DIGITS:
+		while source.next in DIGITS:
 		    lo = lo + source.get()
 		if source.match(","):
-		    while source.next and source.next in DIGITS:
+		    while source.next in DIGITS:
 			hi = hi + source.get()
 		else:
 		    hi = lo
