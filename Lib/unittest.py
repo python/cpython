@@ -56,6 +56,16 @@ import os
 import types
 
 ##############################################################################
+# Exported classes and functions
+##############################################################################
+__all__ = ['TestResult', 'TestCase', 'TestSuite', 'TextTestRunner',
+           'TestLoader', 'FunctionTestCase', 'main', 'defaultTestLoader']
+
+# Expose obsolete functions for backwards compatability
+__all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
+
+
+##############################################################################
 # Test framework core
 ##############################################################################
 
