@@ -85,17 +85,13 @@ significant ways:
       \module{pickle} serialization format is guaranteed to be
       backwards compatible across Python releases.
 
-\item The \module{pickle} module doesn't handle code objects, which
-      the \module{marshal} module does.  This avoids the possibility
-      of smuggling Trojan horses into a program through the
-      \module{pickle} module\footnote{This doesn't necessarily imply
-      that \module{pickle} is inherently secure.  See
-      section~\ref{pickle-sec} for a more detailed discussion on
-      \module{pickle} module security.  Besides, it's possible that
-      \module{pickle} will eventually support serializing code
-      objects.}.
-
 \end{itemize}
+
+\begin{notice}[warning]
+The \module{pickle} module is not intended to be secure against
+erroneous or maliciously constructed data.  Never unpickle data
+received from an untrusted or unauthenticated source.
+\end{notice}
 
 Note that serialization is a more primitive notion than persistence;
 although
@@ -251,11 +247,10 @@ the \method{dump()} method.
 \end{excdesc}
 
 \begin{excdesc}{UnpicklingError}
-This exception is raised when there is a problem unpickling an object,
-such as a security violation.  Note that other exceptions may also be
-raised during unpickling, including (but not necessarily limited to)
-\exception{AttributeError}, \exception{EOFError},
-\exception{ImportError}, and \exception{IndexError}.
+This exception is raised when there is a problem unpickling an object.
+Note that other exceptions may also be raised during unpickling,
+including (but not necessarily limited to) \exception{AttributeError},
+\exception{EOFError}, \exception{ImportError}, and \exception{IndexError}.
 \end{excdesc}
 
 The \module{pickle} module also exports two callables\footnote{In the
@@ -263,8 +258,8 @@ The \module{pickle} module also exports two callables\footnote{In the
 subclass to customize the behavior.  However, in the \module{cPickle}
 modules these callables are factory functions and so cannot be
 subclassed.  One of the common reasons to subclass is to control what
-objects can actually be unpickled.  See section~\ref{pickle-sec} for
-more details on security concerns.}, \class{Pickler} and
+objects can actually be unpickled.  See section~\ref{pickle-sub} for
+more details.}, \class{Pickler} and
 \class{Unpickler}:
 
 \begin{classdesc}{Pickler}{file\optional{, protocol\optional{, bin}}}
@@ -445,7 +440,7 @@ serialized.  This protocol provides a standard way for you to define,
 customize, and control how your objects are serialized and
 de-serialized.  The description in this section doesn't cover specific
 customizations that you can employ to make the unpickling environment
-safer from untrusted pickle data streams; see section~\ref{pickle-sec}
+slightly safer from untrusted pickle data streams; see section~\ref{pickle-sub}
 for more details.
 
 \subsubsection{Pickling and unpickling normal class
@@ -647,54 +642,13 @@ the \method{noload()} method on the Unpickler.
 % shot at producing a persistent id.  Since Jim Fulton can't remember
 % why it was added or what it's for, I'm leaving it undocumented.
 
-\subsection{Security \label{pickle-sec}}
+\subsection{Subclassing Unpicklers \label{pickle-sub}}
 
-Most of the security issues surrounding the \module{pickle} and
-\module{cPickle} module involve unpickling.  There are no known
-security vulnerabilities
-related to pickling because you (the programmer) control the objects
-that \module{pickle} will interact with, and all it produces is a
-string.
-
-However, for unpickling, it is \strong{never} a good idea to unpickle
-an untrusted string whose origins are dubious, for example, strings
-read from a socket.  This is because unpickling can create unexpected
-objects and even potentially run methods of those objects, such as
-their class constructor or destructor\footnote{A special note of
-caution is worth raising about the \refmodule{Cookie}
-module.  By default, the \class{Cookie.Cookie} class is an alias for
-the \class{Cookie.SmartCookie} class, which ``helpfully'' attempts to
-unpickle any cookie data string it is passed.  This is a huge security
-hole because cookie data typically comes from an untrusted source.
-You should either explicitly use the \class{Cookie.SimpleCookie} class
---- which doesn't attempt to unpickle its string --- or you should
-implement the defensive programming steps described later on in this
-section.}.
-
-You can defend against this by customizing your unpickler so that you
-can control exactly what gets unpickled and what gets called.
-Unfortunately, exactly how you do this is different depending on
-whether you're using \module{pickle} or \module{cPickle}.
-
-One common feature that both modules implement is the
-\member{__safe_for_unpickling__} attribute.  Before calling a callable
-which is not a class, the unpickler will check to make sure that the
-callable has either been registered as a safe callable via the
-\refmodule[copyreg]{copy_reg} module, or that it has an
-attribute \member{__safe_for_unpickling__} with a true value.  This
-prevents the unpickling environment from being tricked into doing
-evil things like call \code{os.unlink()} with an arbitrary file name.
-See section~\ref{pickle-protocol} for more details.
-
-For safely unpickling class instances, you need to control exactly
-which classes will get created.  Be aware that a class's constructor
-could be called (if the pickler found a \method{__getinitargs__()}
-method) and the the class's destructor (i.e. its \method{__del__()} method)
-might get called when the object is garbage collected.  Depending on
-the class, it isn't very heard to trick either method into doing bad
-things, such as removing a file.  The way to
-control the classes that are safe to instantiate differs in
-\module{pickle} and \module{cPickle}\footnote{A word of caution: the
+By default, unpickling will import any class that it finds in the
+pickle data.  You can control exactly what gets unpickled and what
+gets called by customizing your unpickler.  Unfortunately, exactly how
+you do this is different depending on whether you're using
+\module{pickle} or \module{cPickle}.\footnote{A word of caution: the
 mechanisms described here use internal attributes and methods, which
 are subject to change in future versions of Python.  We intend to
 someday provide a common interface for controlling this behavior,
@@ -705,17 +659,17 @@ In the \module{pickle} module, you need to derive a subclass from
 method.  \method{load_global()} should read two lines from the pickle
 data stream where the first line will the the name of the module
 containing the class and the second line will be the name of the
-instance's class.  It then look up the class, possibly importing the
+instance's class.  It then looks up the class, possibly importing the
 module and digging out the attribute, then it appends what it finds to
 the unpickler's stack.  Later on, this class will be assigned to the
 \member{__class__} attribute of an empty class, as a way of magically
 creating an instance without calling its class's \method{__init__()}.
-You job (should you choose to accept it), would be to have
+Your job (should you choose to accept it), would be to have
 \method{load_global()} push onto the unpickler's stack, a known safe
 version of any class you deem safe to unpickle.  It is up to you to
 produce such a class.  Or you could raise an error if you want to
 disallow all unpickling of instances.  If this sounds like a hack,
-you're right.  UTSL.
+you're right.  Refer to the source code to make this work.
 
 Things are a little cleaner with \module{cPickle}, but not by much.
 To control what gets unpickled, you can set the unpickler's
@@ -724,7 +678,7 @@ To control what gets unpickled, you can set the unpickler's
 \exception{UnpicklingError}.  If it is a function,
 then it should accept a module name and a class name, and return the
 corresponding class object.  It is responsible for looking up the
-class, again performing any necessary imports, and it may raise an
+class and performing any necessary imports, and it may raise an
 error to prevent instances of the class from being unpickled.
 
 The moral of the story is that you should be really careful about the
