@@ -22,6 +22,8 @@ HTML options:
                         the filenames.
     --style             Specify the CSS file to use for the output (filename,
                         not a URL).
+    --up-link           URL to a parent document.
+    --up-title          Title of a parent document.
 
 Other options:
     --a4		Format for A4 paper.
@@ -91,6 +93,8 @@ class Options:
     numeric = 0
     style_file = os.path.join(TOPDIR, "html", "style.css")
     about_file = os.path.join(TOPDIR, "html", "about.dat")
+    up_link = None
+    up_title = None
     #
     DEFAULT_FORMATS = ("pdf",)
     ALL_FORMATS = ("dvi", "html", "pdf", "ps", "text")
@@ -112,7 +116,8 @@ class Options:
                                     "address=", "a4", "letter", "l2h-init=",
                                     "link=", "split=", "logging", "debugging",
                                     "keep", "quiet", "runs=", "image-type=",
-                                    "about=", "numeric", "style="]
+                                    "about=", "numeric", "style=",
+                                    "up-link=", "up-title="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -154,6 +159,10 @@ class Options:
                 self.style_file = os.path.abspath(arg)
             elif opt == "--l2h-init":
                 self.l2h_init_files.append(os.path.abspath(arg))
+            elif opt == "--up-link":
+                self.up_link = arg
+            elif opt == "--up-title":
+                self.up_title = arg
             #
             # Format specifiers:
             #
@@ -391,6 +400,8 @@ class Job:
         l2hoption(fp, "ADDRESS", options.address)
         l2hoption(fp, "MAX_LINK_DEPTH", options.max_link_depth)
         l2hoption(fp, "MAX_SPLIT_DEPTH", options.max_split_depth)
+        l2hoption(fp, "EXTERNAL_UP_LINK", options.up_link)
+        l2hoption(fp, "EXTERNAL_UP_TITLE", options.up_title)
         fp.write("1;\n")
         fp.close()
 
