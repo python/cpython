@@ -65,6 +65,18 @@ typedef FileFilterYDProcPtr FileFilterYDUPP;
 #include <stdio.h>
 
 /*
+** When less than this amount of stackspace is left we
+** raise a MemoryError.
+*/
+#ifndef MINIMUM_STACK_SIZE
+#ifdef __powerc
+#define MINIMUM_STACK_SIZE 8192
+#else
+#define MINIMUM_STACK_SIZE 4096
+#endif
+#endif
+
+/*
 ** We have to be careful, since we can't handle
 ** things like updates (and they'll keep coming back if we don't
 ** handle them). Note that we don't know who has windows open, so
@@ -140,12 +152,6 @@ PyMac_FixGUSIcd()
 	pb.ioWDDirID= curdirfss.parID;
 	if (PBHSetVol(&pb, 0) != noErr)
 		return;
-
-#if 0
-	/* Set standard-file working directory */
-	LMSetSFSaveDisk(-curdirfss.vRefNum);
-	LMSetCurDirStore(curdirfss.parID);
-#endif
 }
 #endif
 
@@ -233,7 +239,7 @@ PyOS_CheckStack()
 	long left;
 	
 	left = StackSpace();
-	if ( left < 4000 )
+	if ( left < MINIMUM_STACK_SIZE )
 		return -1;
 	return 0;
 }
@@ -648,6 +654,13 @@ PyObject *
 PyMac_BuildOSType(OSType t)
 {
 	return PyString_FromStringAndSize((char *)&t, 4);
+}
+
+/* Convert an NumVersion value to a 4-element tuple */
+PyObject *
+PyMac_BuildNumVersion(NumVersion t)
+{
+	return Py_BuildValue("(hhhh)", t.majorRev, t.minorAndBugRev, t.stage, t.nonRelRev);
 }
 
 
