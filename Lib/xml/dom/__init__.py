@@ -65,7 +65,7 @@ class DOMException(Exception):
         if self.__class__ is DOMException:
             raise RuntimeError(
                 "DOMException should not be instaniated directly")
-        apply(Exception.__init__, args, kw)
+        apply(Exception.__init__, (self,) + args, kw)
 
 
 class IndexSizeErr(DOMException):
