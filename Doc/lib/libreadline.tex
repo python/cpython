@@ -54,6 +54,22 @@ history file when saving.  Negative values imply unlimited history
 file size.
 \end{funcdesc}
 
+\begin{funcdesc}{set_startup_hook}{\optional{function}}
+Set or remove the startup_hook function.  If \var{function} is specified,
+it will be used as the new startup_hook function; if omitted or
+\code{None}, any hook function already installed is removed.  The
+startup_hook function is called with no arguments just
+before readline prints the first prompt.
+\end{funcdesc}
+
+\begin{funcdesc}{set_pre_input_hook}{\optional{function}}
+Set or remove the pre_input_hook function.  If \var{function} is specified,
+it will be used as the new pre_input_hook function; if omitted or
+\code{None}, any hook function already installed is removed.  The
+pre_input_hook function is called with no arguments after the first prompt
+has been printed and just before readline starts reading input characters.
+\end{funcdesc}
+
 \begin{funcdesc}{set_completer}{\optional{function}}
 Set or remove the completer function.  If \var{function} is specified,
 it will be used as the new completer function; if omitted or
