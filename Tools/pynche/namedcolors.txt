@@ -1,0 +1,100 @@
+# named colors from http://www.lightlink.com/xine/bells/namedcolors.html
+White                                            #FFFFFF
+Red                                              #FF0000
+Green                                            #00FF00
+Blue                                             #0000FF
+Magenta                                          #FF00FF
+Cyan                                             #00FFFF
+Yellow                                           #FFFF00
+Black                                            #000000
+Aquamarine                                       #70DB93
+Baker's Chocolate                                #5C3317
+Blue Violet                                      #9F5F9F
+Brass                                            #B5A642
+Bright Gold                                      #D9D919
+Brown                                            #A62A2A
+Bronze                                           #8C7853
+Bronze II                                        #A67D3D
+Cadet Blue                                       #5F9F9F
+Cool Copper                                      #D98719
+Copper                                           #B87333
+Coral                                            #FF7F00
+Corn Flower Blue                                 #42426F
+Dark Brown                                       #5C4033
+Dark Green                                       #2F4F2F
+Dark Green Copper                                #4A766E
+Dark Olive Green                                 #4F4F2F
+Dark Orchid                                      #9932CD
+Dark Purple                                      #871F78
+Dark Slate Blue                                  #6B238E
+Dark Slate Grey                                  #2F4F4F
+Dark Tan                                         #97694F
+Dark Turquoise                                   #7093DB
+Dark Wood                                        #855E42
+Dim Grey                                         #545454
+Dusty Rose                                       #856363
+Feldspar                                         #D19275
+Firebrick                                        #8E2323
+Forest Green                                     #238E23
+Gold                                             #CD7F32
+Goldenrod                                        #DBDB70
+Grey                                             #C0C0C0
+Green Copper                                     #527F76
+Green Yellow                                     #93DB70
+Hunter Green                                     #215E21
+Indian Red                                       #4E2F2F
+Khaki                                            #9F9F5F
+Light Blue                                       #C0D9D9
+Light Grey                                       #A8A8A8
+Light Steel Blue                                 #8F8FBD
+Light Wood                                       #E9C2A6
+Lime Green                                       #32CD32
+Mandarian Orange                                 #E47833
+Maroon                                           #8E236B
+Medium Aquamarine                                #32CD99
+Medium Blue                                      #3232CD
+Medium Forest Green                              #6B8E23
+Medium Goldenrod                                 #EAEAAE
+Medium Orchid                                    #9370DB
+Medium Sea Green                                 #426F42
+Medium Slate Blue                                #7F00FF
+Medium Spring Green                              #7FFF00
+Medium Turquoise                                 #70DBDB
+Medium Violet Red                                #DB7093
+Medium Wood                                      #A68064
+Midnight Blue                                    #2F2F4F
+Navy Blue                                        #23238E
+Neon Blue                                        #4D4DFF
+Neon Pink                                        #FF6EC7
+New Midnight Blue                                #00009C
+New Tan                                          #EBC79E
+Old Gold                                         #CFB53B
+Orange                                           #FF7F00
+Orange Red                                       #FF2400
+Orchid                                           #DB70DB
+Pale Green                                       #8FBC8F
+Pink                                             #BC8F8F
+Plum                                             #EAADEA
+Quartz                                           #D9D9F3
+Rich Blue                                        #5959AB
+Salmon                                           #6F4242
+Scarlet                                          #8C1717
+Sea Green                                        #238E68
+Semi-Sweet Chocolate                             #6B4226
+Sienna                                           #8E6B23
+Silver                                           #E6E8FA
+Sky Blue                                         #3299CC
+Slate Blue                                       #007FFF
+Spicy Pink                                       #FF1CAE
+Spring Green                                     #00FF7F
+Steel Blue                                       #236B8E
+Summer Sky                                       #38B0DE
+Tan                                              #DB9370
+Thistle                                          #D8BFD8
+Turquoise                                        #ADEAEA
+Very Dark Brown                                  #5C4033
+Very Light Grey                                  #CDCDCD
+Violet                                           #4F2F4F
+Violet Red                                       #CC3299
+Wheat                                            #D8D8BF
+Yellow Green                                     #99CC32
