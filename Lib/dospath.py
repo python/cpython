@@ -330,3 +330,6 @@ def abspath(path):
     if not isabs(path):
         path = join(os.getcwd(), path)
     return normpath(path)
+
+# realpath is a no-op on systems without islink support
+realpath = abspath

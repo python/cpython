@@ -379,3 +379,24 @@ def abspath(path):
     if not isabs(path):
         path = join(os.getcwd(), path)
     return normpath(path)
+
+
+# Return a canonical path (i.e. the absolute location of a file on the
+# filesystem).
+
+def realpath(filename):
+    """Return the canonical path of the specified filename, eliminating any
+symbolic links encountered in the path."""
+    filename = abspath(filename)
+
+    bits = ['/'] + filename.split('/')[1:]
+    for i in range(2, len(bits)+1):
+        component = join(*bits[0:i])
+        if islink(component):
+            resolved = os.readlink(component)
+            (dir, file) = split(component)
+            resolved = normpath(join(dir, resolved))
+            newpath = join(*([resolved] + bits[i:]))
+            return realpath(newpath)
+        
+    return filename
