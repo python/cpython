@@ -65,7 +65,7 @@ end
 # print the entire Python call stack
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
-        if $pc > eval_frame && $pc < PyEval_EvalCodeEx
+        if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
 	    pyframe
         end
         up-silently 1
