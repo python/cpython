@@ -225,13 +225,18 @@ if __name__ == '__main__':
     print target, ':', red, green, blue, triplet_to_rrggbb(rgbtuple)
     name, aliases = colordb.find_byrgb(rgbtuple)
     print 'name:', name, 'aliases:', string.join(aliases, ", ")
-    target = (1, 1, 128)			  # nearest to navy
-    target = (145, 238, 144)			  # nearest to lightgreen
-    target = (255, 251, 250)			  # snow
+    r, g, b = (1, 1, 128)			  # nearest to navy
+    r, g, b = (145, 238, 144)			  # nearest to lightgreen
+    r, g, b = (255, 251, 250)			  # snow
     print 'finding nearest to', target, '...'
     import time
     t0 = time.time()
-    nearest = colordb.nearest(target)
+    nearest = colordb.nearest(r, g, b)
     t1 = time.time()
     print 'found nearest color', nearest, 'in', t1-t0, 'seconds'
-
+    # dump the database
+    for n in colordb.unique_names():
+        r, g, b = colordb.find_byname(n)
+        aliases = colordb.aliases_of(r, g, b)
+        print '%20s: (%3d/%3d/%3d) == %s' % (n, r, g, b,
+                                             string.join(aliases[1:]))
