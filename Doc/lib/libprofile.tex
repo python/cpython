@@ -361,7 +361,7 @@ Analysis of the profiler data is done using this class from the
 % (This \stmodindex use may be hard to change ;-( )
 \stmodindex{pstats}
 
-\begin{classdesc}{Stats}{filename\optional{, ...}}
+\begin{classdesc}{Stats}{filename\optional{, \moreargs}}
 This class constructor creates an instance of a ``statistics object''
 from a \var{filename} (or set of filenames).  \class{Stats} objects are
 manipulated by methods, in order to print useful reports.
@@ -398,7 +398,7 @@ statistics for these two entries are accumulated into a single entry.
 \end{methoddesc}
 
 
-\begin{methoddesc}[Stats]{add}{filename\optional{, ...}}
+\begin{methoddesc}[Stats]{add}{filename\optional{, \moreargs}}
 This method of the \class{Stats} class accumulates additional
 profiling information into the current profiling object.  Its
 arguments should refer to filenames created by the corresponding
@@ -415,7 +415,7 @@ the same name on the \class{profile.Profile} class.
 \versionadded{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}[Stats]{sort_stats}{key\optional{, ...}}
+\begin{methoddesc}[Stats]{sort_stats}{key\optional{, \moreargs}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
 identifying the basis of a sort (example: \code{'time'} or
@@ -551,7 +551,7 @@ is only ticking at a rate (typically) of about .001 seconds.  Hence no
 measurements will be more accurate than the underlying clock.  If
 enough measurements are taken, then the ``error'' will tend to average
 out. Unfortunately, removing this first error induces a second source
-of error...
+of error.
 
 The second problem is that it ``takes a while'' from when an event is
 dispatched until the profiler's call to get the time actually
