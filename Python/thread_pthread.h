@@ -156,7 +156,7 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 				 );
 
 	if (success >= 0) {
-#if defined(PY_THREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
+#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
 		pthread_detach(&th);
 #elif defined(PY_PTHREAD_STD)
 		pthread_detach(th);
