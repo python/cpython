@@ -286,8 +286,6 @@ for the current locale.
 \subsection{Matching vs. Searching \label{matching-searching}}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
-\strong{XXX This section is still incomplete!}
-
 Python offers two different primitive operations based on regular
 expressions: match and search.  If you are accustomed to Perl's
 semantics, the search operation is what you're looking for.  See the
@@ -295,12 +293,12 @@ semantics, the search operation is what you're looking for.  See the
 regular expression objects.
 
 Note that match may differ from search using a regular expression
-beginning with \character{\^}:  \character{\^} matches only at the start
-of the string, or in \constant{MULTILINE} mode also immediately
-following a newline.  "match" succeeds only if the pattern matches at
-the start of the string regardless of mode, or at the starting
-position given by the optional \var{pos} argument regardless of
-whether a newline precedes it.
+beginning with \character{\^}: \character{\^} matches only at the
+start of the string, or in \constant{MULTILINE} mode also immediately
+following a newline.  The ``match'' operation succeeds only if the
+pattern matches at the start of the string regardless of mode, or at
+the starting position given by the optional \var{pos} argument
+regardless of whether a newline precedes it.
 
 % Examples from Tim Peters:
 \begin{verbatim}
