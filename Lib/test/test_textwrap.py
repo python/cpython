@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-
 import unittest
+from test import test_support
 
-# import item under test
 from textwrap import TextWrapper, wrap, fill
 
 
@@ -39,7 +37,7 @@ class WrapTestCase(WrapperTestCase):
     # Note: any methods that start with "test" are called automatically
     # by the unittest framework.
 
-    def testSimpleCases(self):
+    def test_simple(self):
         '''Simple case: just words, spaces, and a bit of punctuation.'''
 
         t = "Hello there, how are you this fine day?  I'm glad to hear it!"
@@ -68,7 +66,7 @@ class WrapTestCase(WrapperTestCase):
             self.check(result, expect)
 
 
-    def testWhitespace(self):
+    def test_whitespace(self):
         '''Whitespace munging and end-of-sentence detection.'''
 
         t = """\
@@ -95,7 +93,7 @@ What a mess!
         self.check(result, '\n'.join(expect))
 
 
-    def testWrappingShortToLong(self):
+    def test_wrap_short(self):
         '''Wrapping to make short lines longer.'''
 
         t = "This is a\nshort paragraph."
@@ -116,7 +114,7 @@ What a mess!
             self.check(result, expect)
 
 
-    def testHyphenated(self):
+    def test_hyphenated(self):
         '''Test breaking hyphenated words.'''
 
         t = "this-is-a-useful-feature-for-reformatting-posts-from-tim-peters'ly"
@@ -143,7 +141,7 @@ What a mess!
 
     def test_split(self):
         '''Ensure that the standard _split() method works as advertised 
-           in the comments (don't you hate it when code and comments diverge?).'''
+           in the comments.'''
 
         t = "Hello there -- you goof-ball, use the -b option!"
 
@@ -153,8 +151,8 @@ What a mess!
               "ball,", " ", "use", " ", "the", " ", "-b", " ",  "option!"])
 
 
-    def testPoppins(self):
-        '''Please rename this test based on its purpose.'''
+    def test_funky_punc(self):
+        '''Wrap text with long words and lots of punctuation.'''
 
         t = '''
 Did you say "supercalifragilisticexpialidocious?"
@@ -179,7 +177,7 @@ How *do* you spell that odd word, anyways?
             self.check(result, expect)
 
 
-    def testBreakLongWordsOff(self):        
+    def test_long_words(self):        
         '''Test with break_long_words disabled.'''
         t = '''
 Did you say "supercalifragilisticexpialidocious?"
@@ -211,7 +209,7 @@ This paragraph will be filled, first without any indentation,
 and then with some (including a hanging indent).'''
 
 
-    def testFill(self):
+    def test_fill(self):
         '''Test the fill() method.'''
 
         expect = '''\
@@ -223,7 +221,7 @@ some (including a hanging indent).'''
         self.check(result, expect)
 
 
-    def testInitialIndent(self):
+    def test_initial_indent(self):
         '''Test initial_indent parameter.'''
 
         expect = [
@@ -243,7 +241,7 @@ with some (including a hanging indent).'''
         self.check(result, expect)
 
 
-    def testSubsequentIndent(self):
+    def test_subsequent_indent(self):
         '''Test subsequent_indent parameter.'''
 
         expect = '''\
@@ -257,5 +255,11 @@ with some (including a hanging indent).'''
         self.check(result, expect)
 
 
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(WrapTestCase))
+    suite.addTest(unittest.makeSuite(IndentTestCases))
+    test_support.run_suite(suite)
+
 if __name__ == '__main__':
-    unittest.main()
+    test_main()
