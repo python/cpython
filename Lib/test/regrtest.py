@@ -105,6 +105,7 @@ def main(tests=None, testdir=None):
     if single:
         tests = tests[:1]
     test_support.verbose = verbose      # Tell tests to be moderately quiet
+    save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
             print test
@@ -118,6 +119,10 @@ def main(tests=None, testdir=None):
                 print "test", test,
                 print "skipped -- an optional feature could not be imported"
             skipped.append(test)
+        # Unload the newly imported modules (best effort finalization)
+        for module in sys.modules.keys():
+            if module not in save_modules:
+                test_support.unload(module)
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
             print "All",
