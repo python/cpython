@@ -11,6 +11,7 @@
 /* Across releases, change:
  *    MS_DLL_ID if the minor version number changes.
  *    PYTHON_DLL_NAME ditto.
+ * MS_DLL_ID must match PY_VERSION in the Windows install script.
  */
 #define MS_DLL_ID "2.1"
 
