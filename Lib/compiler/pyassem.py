@@ -361,6 +361,10 @@ class PyFlowGraph(FlowGraph):
         if flag == CO_VARARGS:
             self.argcount = self.argcount - 1
 
+    def checkFlag(self, flag):
+        if self.flags & flag:
+            return 1
+
     def setFreeVars(self, names):
         self.freevars = list(names)
 
@@ -564,7 +568,7 @@ class PyFlowGraph(FlowGraph):
 
     def newCodeObject(self):
         assert self.stage == DONE
-        if self.flags == 0:
+        if (self.flags & CO_NEWLOCALS) == 0:
             nlocals = 0
         else:
             nlocals = len(self.varnames)
@@ -761,9 +765,6 @@ class StackDepthTracker:
         ('LOAD_', 1),
         ]
     
-    # special cases:
-    # UNPACK_SEQUENCE, BUILD_TUPLE,
-    # BUILD_LIST, CALL_FUNCTION, MAKE_FUNCTION, BUILD_SLICE
     def UNPACK_SEQUENCE(self, count):
         return count-1
     def BUILD_TUPLE(self, count):

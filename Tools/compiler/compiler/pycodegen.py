@@ -12,7 +12,7 @@ from compiler import ast, parse, walk
 from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.consts import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
-     CO_NESTED, CO_GENERATOR
+     CO_NESTED, CO_GENERATOR, CO_GENERATOR_ALLOWED, CO_FUTURE_DIVISION
 from compiler.pyassem import TupleArg
 
 # Do we have Python 1.x or Python 2.x?
@@ -34,6 +34,15 @@ EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
 
+class BlockStack(misc.Stack):
+    __super_init = misc.Stack.__init__
+    
+    def __init__(self):
+        self.__super_init(self)
+        self.loop = None
+
+    
+
 def compile(filename, display=0):
     f = open(filename)
     buf = f.read()
@@ -52,8 +61,7 @@ class Module:
 
     def compile(self, display=0):
         tree = parse(self.source)
-        gen = NestedScopeModuleCodeGenerator(self.filename)
-        walk(tree, gen, verbose=1)
+        gen = ModuleCodeGenerator(self.filename, tree)
         if display:
             import pprint
             print pprint.pprint(tree)
@@ -154,6 +162,14 @@ class CodeGenerator:
         self.last_lineno = None
         self._setupGraphDelegation()
 
+        # XXX set flags based on future features
+        futures = self.get_module().futures
+        for feature in futures:
+            if feature == "division":
+                self.graph.setFlag(CO_FUTURE_DIVISION)
+            elif feature == "generators":
+                self.graph.setFlag(CO_GENERATOR_ALLOWED)
+
     def initClass(self):
         """This method is called once for each class"""
 
@@ -185,6 +201,14 @@ class CodeGenerator:
         else:
             return name
 
+    def parseSymbols(self, tree):
+        s = symbols.SymbolVisitor()
+        walk(tree, s)
+        return s.scopes
+
+    def get_module(self):
+        raise RuntimeError, "should be implemented by subclasses"
+
     # Next five methods handle name access
 
     def isLocalName(self, name):
@@ -201,13 +225,22 @@ class CodeGenerator:
 
     def _nameOp(self, prefix, name):
         name = self.mangle(name)
-        if not self.optimized:
-            self.emit(prefix + '_NAME', name)
-            return
-        if self.isLocalName(name):
-            self.emit(prefix + '_FAST', name)
+        scope = self.scope.check_name(name)
+        if scope == SC_LOCAL:
+            if not self.optimized:
+                self.emit(prefix + '_NAME', name)
+            else:
+                self.emit(prefix + '_FAST', name)
+        elif scope == SC_GLOBAL:
+            if not self.optimized:
+                self.emit(prefix + '_NAME', name)
+            else:
+                self.emit(prefix + '_GLOBAL', name)
+        elif scope == SC_FREE or scope == SC_CELL:
+            self.emit(prefix + '_DEREF', name)
         else:
-            self.emit(prefix + '_GLOBAL', name)
+            raise RuntimeError, "unsupported scope for var %s: %d" % \
+                  (name, scope)
 
     def _implicitNameOp(self, prefix, name):
         """Emit name ops for names generated implicitly by for loops
@@ -249,6 +282,8 @@ class CodeGenerator:
     ClassGen = None
 
     def visitModule(self, node):
+        self.scopes = self.parseSymbols(node)
+        self.scope = self.scopes[node]
         self.emit('SET_LINENO', 0)
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
@@ -270,17 +305,25 @@ class CodeGenerator:
 
     def _visitFuncOrLambda(self, node, isLambda=0):
         gen = self.FunctionGen(node, self.filename, self.scopes, isLambda,
-                               self.class_name)
+                               self.class_name, self.get_module())
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
-        self.emit('LOAD_CONST', gen)
-        self.emit('MAKE_FUNCTION', len(node.defaults))
+        frees = gen.scope.get_free_vars()
+        if frees:
+            for name in frees:
+                self.emit('LOAD_CLOSURE', name)
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_CLOSURE', len(node.defaults))
+        else:
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_FUNCTION', len(node.defaults))
 
     def visitClass(self, node):
-        gen = self.ClassGen(node, self.filename, self.scopes)
+        gen = self.ClassGen(node, self.filename, self.scopes,
+                            self.get_module())
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
             self.storeName('__doc__')
@@ -291,8 +334,14 @@ class CodeGenerator:
         for base in node.bases:
             self.visit(base)
         self.emit('BUILD_TUPLE', len(node.bases))
+        frees = gen.scope.get_free_vars()
+        for name in frees:
+            self.emit('LOAD_CLOSURE', name)
         self.emit('LOAD_CONST', gen)
-        self.emit('MAKE_FUNCTION', 0)
+        if frees:
+            self.emit('MAKE_CLOSURE', 0)
+        else:
+            self.emit('MAKE_FUNCTION', 0)
         self.emit('CALL_FUNCTION', 0)
         self.emit('BUILD_CLASS')
         self.storeName(node.name)
@@ -1017,121 +1066,34 @@ class CodeGenerator:
             self.visit(k)
             self.emit('STORE_SUBSCR')
 
-class NestedScopeCodeGenerator(CodeGenerator):
-    __super_visitModule = CodeGenerator.visitModule
-    __super_visitClass = CodeGenerator.visitClass
-    __super__visitFuncOrLambda = CodeGenerator._visitFuncOrLambda
-
-    def parseSymbols(self, tree):
-        s = symbols.SymbolVisitor()
-        walk(tree, s)
-        return s.scopes
-
-    def visitModule(self, node):
-        self.scopes = self.parseSymbols(node)
-        self.scope = self.scopes[node]
-        self.__super_visitModule(node)
-
-    def _nameOp(self, prefix, name):
-        name = self.mangle(name)
-        scope = self.scope.check_name(name)
-        if scope == SC_LOCAL:
-            if not self.optimized:
-                self.emit(prefix + '_NAME', name)
-            else:
-                self.emit(prefix + '_FAST', name)
-        elif scope == SC_GLOBAL:
-            if not self.optimized:
-                self.emit(prefix + '_NAME', name)
-            else:
-                self.emit(prefix + '_GLOBAL', name)
-        elif scope == SC_FREE or scope == SC_CELL:
-            self.emit(prefix + '_DEREF', name)
-        else:
-            raise RuntimeError, "unsupported scope for var %s: %d" % \
-                  (name, scope)
-
-    def _visitFuncOrLambda(self, node, isLambda=0):
-        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda,
-                               self.class_name)
-        walk(node.code, gen)
-        gen.finish()
-        self.set_lineno(node)
-        for default in node.defaults:
-            self.visit(default)
-        frees = gen.scope.get_free_vars()
-        if frees:
-            for name in frees:
-                self.emit('LOAD_CLOSURE', name)
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_CLOSURE', len(node.defaults))
-        else:
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_FUNCTION', len(node.defaults))
-
-    def visitClass(self, node):
-        gen = self.ClassGen(node, self.filename, self.scopes)
-        if node.doc:
-            self.emit('LOAD_CONST', node.doc)
-            self.storeName('__doc__')
-        walk(node.code, gen)
-        gen.finish()
-        self.set_lineno(node)
-        self.emit('LOAD_CONST', node.name)
-        for base in node.bases:
-            self.visit(base)
-        self.emit('BUILD_TUPLE', len(node.bases))
-        frees = gen.scope.get_free_vars()
-        for name in frees:
-            self.emit('LOAD_CLOSURE', name)
-        self.emit('LOAD_CONST', gen)
-        if frees:
-            self.emit('MAKE_CLOSURE', 0)
-        else:
-            self.emit('MAKE_FUNCTION', 0)
-        self.emit('CALL_FUNCTION', 0)
-        self.emit('BUILD_CLASS')
-        self.storeName(node.name)
-        
-
-class LGBScopeMixin:
-    """Defines initClass() for Python 2.1-compatible scoping"""
+class NestedScopeMixin:
+    """Defines initClass() for nested scoping (Python 2.2-compatible)"""
     def initClass(self):
         self.__class__.NameFinder = LocalNameFinder
         self.__class__.FunctionGen = FunctionCodeGenerator
         self.__class__.ClassGen = ClassCodeGenerator
 
-class NestedScopeMixin:
-    """Defines initClass() for nested scoping (Python 2.2-compatible)"""
-    def initClass(self):
-        self.__class__.NameFinder = LocalNameFinder
-        self.__class__.FunctionGen = NestedFunctionCodeGenerator
-        self.__class__.ClassGen = NestedClassCodeGenerator
-
-class ModuleCodeGenerator(LGBScopeMixin, CodeGenerator):
+class ModuleCodeGenerator(NestedScopeMixin, CodeGenerator):
     __super_init = CodeGenerator.__init__
 
     scopes = None
     
-    def __init__(self, filename):
+    def __init__(self, filename, tree):
         self.graph = pyassem.PyFlowGraph("<module>", filename)
+        self.futures = future.find_futures(tree)
         self.__super_init(filename)
+        walk(tree, self)
 
-class NestedScopeModuleCodeGenerator(NestedScopeMixin,
-                                     NestedScopeCodeGenerator):
-    __super_init = CodeGenerator.__init__
-    
-    def __init__(self, filename):
-        self.graph = pyassem.PyFlowGraph("<module>", filename)
-        self.__super_init(filename)
-##        self.graph.setFlag(CO_NESTED)
+    def get_module(self):
+        return self
 
 class AbstractFunctionCode:
     optimized = 1
     lambdaCount = 0
 
-    def __init__(self, func, filename, scopes, isLambda, class_name):
+    def __init__(self, func, filename, scopes, isLambda, class_name, mod):
         self.class_name = class_name
+        self.module = mod
         if isLambda:
             klass = FunctionCodeGenerator
             name = "<lambda.%d>" % klass.lambdaCount
@@ -1156,6 +1118,9 @@ class AbstractFunctionCode:
         self.set_lineno(func)
         if hasTupleArg:
             self.generateArgUnpack(func.argnames)
+
+    def get_module(self):
+        return self.module
 
     def finish(self):
         self.graph.startExitBlock()
@@ -1183,31 +1148,28 @@ class AbstractFunctionCode:
 
     unpackTuple = unpackSequence
 
-class FunctionCodeGenerator(LGBScopeMixin, AbstractFunctionCode,
+class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
                             CodeGenerator): 
     super_init = CodeGenerator.__init__ # call be other init
     scopes = None
 
-class NestedFunctionCodeGenerator(AbstractFunctionCode,
-                                  NestedScopeMixin,
-                                  NestedScopeCodeGenerator):
-    super_init = NestedScopeCodeGenerator.__init__ # call be other init
     __super_init = AbstractFunctionCode.__init__
 
-    def __init__(self, func, filename, scopes, isLambda, class_name):
+    def __init__(self, func, filename, scopes, isLambda, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[func]
-        self.__super_init(func, filename, scopes, isLambda, class_name)
+        self.__super_init(func, filename, scopes, isLambda, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        if self.scope.generator is not None:
-            self.graph.setFlag(CO_GENERATOR)
-##        self.graph.setFlag(CO_NESTED)
+        if self.graph.checkFlag(CO_GENERATOR_ALLOWED):
+            if self.scope.generator is not None:
+                self.graph.setFlag(CO_GENERATOR)
 
 class AbstractClassCode:
 
-    def __init__(self, klass, filename, scopes):
+    def __init__(self, klass, filename, scopes, module):
         self.class_name = klass.name
+        self.module = module
         self.graph = pyassem.PyFlowGraph(klass.name, filename,
                                            optimized=0, klass=1)
         self.super_init(filename)
@@ -1217,30 +1179,24 @@ class AbstractClassCode:
         if klass.doc:
             self.setDocstring(klass.doc)
 
-    def _nameOp(self, prefix, name):
-        name = self.mangle(name)
-        # Class namespaces are always unoptimized
-        self.emit(prefix + '_NAME', name)
+    def get_module(self):
+        return self.module
 
     def finish(self):
         self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
 
-class ClassCodeGenerator(LGBScopeMixin, AbstractClassCode, CodeGenerator):
+class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
     super_init = CodeGenerator.__init__
     scopes = None
 
-class NestedClassCodeGenerator(AbstractClassCode,
-                               NestedScopeMixin,
-                               NestedScopeCodeGenerator):
-    super_init = NestedScopeCodeGenerator.__init__ # call be other init
     __super_init = AbstractClassCode.__init__
 
-    def __init__(self, klass, filename, scopes):
+    def __init__(self, klass, filename, scopes, module):
         self.scopes = scopes
         self.scope = scopes[klass]
-        self.__super_init(klass, filename, scopes)
+        self.__super_init(klass, filename, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
 ##        self.graph.setFlag(CO_NESTED)
