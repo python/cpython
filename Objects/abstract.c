@@ -394,6 +394,8 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 /*
   Calling scheme used for ternary operations:
 
+  *** In some cases, w.op is called before v.op; see binary_op1. ***
+
   v	w	z	Action
   -------------------------------------------------------------------
   new	new	new	v.op(v,w,z), w.op(v,w,z), z.op(v,w,z)
@@ -425,62 +427,50 @@ ternary_op(PyObject *v,
 	   const char *op_name)
 {
 	PyNumberMethods *mv, *mw, *mz;
-	register PyObject *x = NULL;
-	register ternaryfunc *slot;
+	PyObject *x = NULL;
+	ternaryfunc slotv = NULL;
+	ternaryfunc slotw = NULL;
+	ternaryfunc slotz = NULL;
 	
 	mv = v->ob_type->tp_as_number;
 	mw = w->ob_type->tp_as_number;
-	if (v->ob_type != w->ob_type && mw && NEW_STYLE_NUMBER(w)) {
-		slot = NB_TERNOP(mw, op_slot);
-		if (*slot && *slot != *NB_TERNOP(mv, op_slot) &&
-		    PyType_IsSubtype(w->ob_type, v->ob_type)) {
-			x = (*slot)(v, w, z);
-			if (x != Py_NotImplemented)
-				return x;
-			/* Can't do it... fall through */
-			Py_DECREF(x);
-		}
+	if (mv != NULL && NEW_STYLE_NUMBER(v))
+		slotv = *NB_TERNOP(mv, op_slot);
+	if (w->ob_type != v->ob_type &&
+	    mv != NULL && NEW_STYLE_NUMBER(w)) {
+		slotw = *NB_TERNOP(mw, op_slot);
+		if (slotw == slotv)
+			slotw = NULL;
 	}
-	if (mv != NULL && NEW_STYLE_NUMBER(v)) {
-		/* try v.op(v,w,z) */
-		slot = NB_TERNOP(mv, op_slot);
-		if (*slot) {
-			x = (*slot)(v, w, z);
-			if (x != Py_NotImplemented)
-				return x;
-			/* Can't do it... fall through */
-			Py_DECREF(x);
-		}
-		if (v->ob_type == w->ob_type &&
-				(z == Py_None || z->ob_type == v->ob_type)) {
-			goto ternary_error;
-		}
+	if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
+		x = slotw(v, w, z);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
+		slotw = NULL;
 	}
-	if (mw != NULL && NEW_STYLE_NUMBER(w)) {
-		/* try w.op(v,w,z) */
-		slot = NB_TERNOP(mw,op_slot);
-		if (*slot) {
-			x = (*slot)(v, w, z);
-			if (x != Py_NotImplemented)
-				return x;
-			/* Can't do it... fall through */
-			Py_DECREF(x);
-		}
-		if (NEW_STYLE_NUMBER(v) &&
-				(z == Py_None || z->ob_type == v->ob_type)) {
-			goto ternary_error;
-		}
+	if (slotv) {
+		x = slotv(v, w, z);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
+	}
+	if (slotw) {
+		x = slotw(v, w, z);
+		if (x != Py_NotImplemented)
+			return x;
+		Py_DECREF(x); /* can't do it */
 	}
 	mz = z->ob_type->tp_as_number;
 	if (mz != NULL && NEW_STYLE_NUMBER(z)) {
-		/* try: z.op(v,w,z) */
-		slot = NB_TERNOP(mz, op_slot);
-		if (*slot) {
-			x = (*slot)(v, w, z);
+		slotz = *NB_TERNOP(mz, op_slot);
+		if (slotz == slotv || slotz == slotw)
+			slotz = NULL;
+		if (slotz) {
+			x = slotz(v, w, z);
 			if (x != Py_NotImplemented)
 				return x;
-			/* Can't do it... fall through */
-			Py_DECREF(x);
+			Py_DECREF(x); /* can't do it */
 		}
 	}
 
@@ -498,10 +488,10 @@ ternary_op(PyObject *v,
 		   treated as absent argument and not coerced. */
 		if (z == Py_None) {
 			if (v->ob_type->tp_as_number) {
-				slot = NB_TERNOP(v->ob_type->tp_as_number,
-						 op_slot);
-				if (*slot)
-					x = (*slot)(v, w, z);
+				slotz = *NB_TERNOP(v->ob_type->tp_as_number,
+						   op_slot);
+				if (slotz)
+					x = slotz(v, w, z);
 				else
 					c = -1;
 			}
@@ -521,10 +511,10 @@ ternary_op(PyObject *v,
 			goto error1;
 
 		if (v1->ob_type->tp_as_number != NULL) {
-			slot = NB_TERNOP(v1->ob_type->tp_as_number,
-					 op_slot);
-			if (*slot)
-				x = (*slot)(v1, w2, z2);
+			slotv = *NB_TERNOP(v1->ob_type->tp_as_number,
+					   op_slot);
+			if (slotv)
+				x = slotv(v1, w2, z2);
 			else
 				c = -1;
 		}
@@ -544,7 +534,6 @@ ternary_op(PyObject *v,
 			return x;
 	}
 	
-ternary_error:
 	PyErr_Format(PyExc_TypeError, "unsupported operand type(s) for %s",
 			op_name);
 	return NULL;
