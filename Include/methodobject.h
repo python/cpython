@@ -36,7 +36,6 @@ extern DL_IMPORT typeobject Methodtype;
 
 typedef object *(*method) FPROTO((object *, object *));
 
-extern object *newmethodobject PROTO((char *, method, object *, int));
 extern method getmethod PROTO((object *));
 extern object *getself PROTO((object *));
 extern int getvarargs PROTO((object *));
@@ -44,14 +43,16 @@ extern int getvarargs PROTO((object *));
 struct methodlist {
 	char	*ml_name;
 	method	ml_meth;
-	int	ml_varargs;
+	int	ml_flags;
+	char	*ml_doc;
 };
 
-extern object *findmethod PROTO((struct methodlist *, object *, char *));
+extern object *newmethodobject PROTO((struct methodlist *, object *));
+
+extern object *findmethod PROTO((struct methodlist[], object *, char *));
 
 /* Flag passed to newmethodobject */
 #define METH_VARARGS  0x0001
-#define METH_FREENAME 0x0100
 
 #ifdef __cplusplus
 }
