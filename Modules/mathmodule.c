@@ -127,12 +127,7 @@ FUNC1(math_ceil, ceil)
 FUNC1(math_cos, cos)
 FUNC1(math_cosh, cosh)
 FUNC1(math_exp, exp)
-#ifdef __MWERKS__
-double myfabs(double x) { return fabs(x); }
-FUNC1(math_fabs, myfabs)
-#else
 FUNC1(math_fabs, fabs)
-#endif
 FUNC1(math_floor, floor)
 FUNC2(math_fmod, fmod)
 FUNC2(math_hypot, hypot)
