@@ -65,8 +65,7 @@ class Module(GeneratorGroup):
 		Output("""    PyDict_SetItemString(d, "Error", %s) != 0)""",
 		                                               self.errorname)
 		IndentLevel()
-		Output("""Py_FatalError("can't initialize %s.Error");""",
-		                                           self.name)
+		Output("""return;""")
 		DedentLevel()
 		for tp in self.typeobjects:
 			tp.outputTypeObjectInitializer()
