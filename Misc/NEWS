@@ -31,6 +31,10 @@ Library
   with wide file name support os.listdir() already returned Unicode
   strings.)
 
+- Distutils: both 'py_modules' and 'packages' keywords can now be specified
+  in core.setup().  Previously you could supply one or the other, but
+  not both of them.  (SF patch #695090 from Bernhard Herzog)
+
 Tools/Demos
 -----------
 
