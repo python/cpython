@@ -310,7 +310,10 @@ list_builtin_module_names()
 	return list;
 }
 
-/* XXX If your compiler doesn't like strings this long, edit it. */
+/* XXX This doc string is too long to be a single string literal in VC++ 5.0.
+   Two literals concatenated works just fine.  If you have a K&R compiler
+   or other abomination that however *does* understand longer strings,
+   get rid of the !!! comment in the middle and the quotes that surround it. */
 static char sys_doc[] =
 "This module provides access to some objects used or maintained by the\n\
 interpreter and to functions that interact strongly with the interpreter.\n\
@@ -339,7 +342,7 @@ exc_value -- value of exception currently being handled\n\
 exc_traceback -- traceback of exception currently being handled\n\
   The function exc_info() should be used instead of these three,\n\
   because it is thread-safe.\n\
-\n\
+" /* !!! */ "\n\
 Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
