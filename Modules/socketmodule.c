@@ -1852,7 +1852,7 @@ getpeername() -- return remote address (*)\n\
 getsockname() -- return local address\n\
 getsockopt() -- get socket options\n\
 listen() -- start listening for incoming connections\n\
-makefile() -- return a file object corresponding tot the socket (*)\n\
+makefile() -- return a file object corresponding to the socket (*)\n\
 recv() -- receive data\n\
 recvfrom() -- receive data and sender's address\n\
 send() -- send data, may not send all of it\n\
