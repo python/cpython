@@ -10,10 +10,11 @@ may be subclassed by clients for still more flexibility)."""
 
 __rcsid__ = "$Id$"
 
-import sys
+import sys, os
 import string, re
 from distutils.errors import *
 from distutils.fancy_getopt import fancy_getopt
+from distutils import util
 
 # This is not *quite* the same as a Python NAME; I don't allow leading
 # underscores.  The fact that they're very similar is no coincidence...
@@ -593,5 +594,134 @@ class Command:
            and then invokes its 'run()' method."""
 
         self.distribution.run_command (command)
+
+
+    # -- External world manipulation -----------------------------------
+
+    def execute (self, func, args, msg=None, level=1):
+        """Perform some action that affects the outside world (eg.
+           by writing to the filesystem).  Such actions are special because
+           they should be disabled by the "dry run" flag (carried around by
+           the Command's Distribution), and should announce themselves if
+           the current verbosity level is high enough.  This method takes
+           care of all that bureaucracy for you; all you have to do is
+           supply the funtion to call and an argument tuple for it (to
+           embody the "external action" being performed), a message to
+           print if the verbosity level is high enough, and an optional
+           verbosity threshold."""
+
+
+        # Generate a message if we weren't passed one
+        if msg is None:
+            msg = "%s %s" % (func.__name__, `args`)
+            if msg[-2:] == ',)':        # correct for singleton tuple 
+                msg = msg[0:-2] + ')'
+
+        # Print it if verbosity level is high enough
+        self.announce (msg, level)
+
+        # And do it, as long as we're not in dry-run mode
+        if not self.distribution.dry_run:
+            apply (func, args)
+
+    # execute()
+
+
+    def mkpath (self, name, mode=0777):
+        util.mkpath (name, mode,
+                     self.distribution.verbose, self.distribution.dry_run)
+
+
+    def copy_file (self, infile, outfile,
+                   preserve_mode=1, preserve_times=1, update=1, level=1):
+        """Copy a file respecting verbose and dry-run flags."""
+
+        util.copy_file (infile, outfile,
+                        preserve_mode, preserve_times,
+                        update, self.distribution.verbose >= level,
+                        self.distribution.dry_run)
+
+
+    def copy_tree (self, infile, outfile,
+                   preserve_mode=1, preserve_times=1, preserve_symlinks=0,
+                   update=1, level=1):
+        """Copy an entire directory tree respecting verbose and dry-run
+           flags."""
+
+        util.copy_tree (infile, outfile, 
+                        preserve_mode, preserve_times, preserve_symlinks,
+                        update, self.distribution.verbose >= level,
+                        self.distribution.dry_run)
+
+
+    def make_file (self, infiles, outfile, func, args,
+                    exec_msg=None, skip_msg=None, level=1):
+
+        """Special case of 'execute()' for operations that process one or
+           more input files and generate one output file.  Works just like
+           'execute()', except the operation is skipped and a different
+           message printed if 'outfile' already exists and is newer than
+           all files listed in 'infiles'."""
+
+
+        if exec_msg is None:
+            exec_msg = "generating %s from %s" % \
+                       (outfile, string.join (infiles, ', '))
+        if skip_msg is None:
+            skip_msg = "skipping %s (inputs unchanged)" % outfile
+        
+
+        # Allow 'infiles' to be a single string
+        if type (infiles) is StringType:
+            infiles = (infiles,)
+        elif type (infiles) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'infiles' must be a string, or a list or tuple of strings"
+
+        # XXX this stuff should probably be moved off to a function
+        # in 'distutils.util'
+        from stat import *
+
+        if os.path.exists (outfile):
+            out_mtime = os.stat (outfile)[ST_MTIME]
+
+            # Loop over all infiles.  If any infile is newer than outfile,
+            # then we'll have to regenerate outfile
+            for f in infiles:
+                in_mtime = os.stat (f)[ST_MTIME]
+                if in_mtime > out_mtime:
+                    runit = 1
+                    break
+            else:
+                runit = 0
+
+        else:
+            runit = 1
+
+        # If we determined that 'outfile' must be regenerated, then
+        # perform the action that presumably regenerates it
+        if runit:
+            self.execute (func, args, exec_msg, level)
+
+        # Otherwise, print the "skip" message
+        else:
+            self.announce (skip_msg, level)
+
+    # make_file ()
+
+
+#     def make_files (self, infiles, outfiles, func, args,
+#                     exec_msg=None, skip_msg=None, level=1):
+
+#         """Special case of 'execute()' for operations that process one or
+#            more input files and generate one or more output files.  Works
+#            just like 'execute()', except the operation is skipped and a
+#            different message printed if all files listed in 'outfiles'
+#            already exist and are newer than all files listed in
+#            'infiles'."""
+
+#         pass
+    
+    
 
 # end class Command
