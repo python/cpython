@@ -31,6 +31,23 @@ class Command:
     command class.
     """
 
+    # 'sub_commands' formalizes the notion of a "family" of commands,
+    # eg. "install" as the parent with sub-commands "install_lib",
+    # "install_headers", etc.  The parent of a family of commands
+    # defines 'sub_commands' as a class attribute; it's a list of
+    #    (command_name : string, predicate : unbound_method | string | None)
+    # tuples, where 'predicate' is a method of the parent command that
+    # determines whether the corresponding command is applicable in the
+    # current situation.  (Eg. we "install_headers" is only applicable if
+    # we have any C header files to install.)  If 'predicate' is None,
+    # that command is always applicable.
+    # 
+    # 'sub_commands' is usually defined at the *end* of a class, because
+    # predicates can be unbound methods, so they must already have been
+    # defined.  The canonical example is the "install" command.
+    sub_commands = []
+
+
     # -- Creation/initialization methods -------------------------------
 
     def __init__ (self, dist):
@@ -308,6 +325,20 @@ class Command:
         necessary and then invokes its 'run()' method.
         """
         self.distribution.run_command (command)
+
+
+    def get_sub_commands (self):
+        """Determine the sub-commands that are relevant in the current
+        distribution (ie., that need to be run).  This is based on the
+        'sub_commands' class attribute: each tuple in that list may include
+        a method that we call to determine if the subcommand needs to be
+        run for the current distribution.  Return a list of command names.
+        """
+        commands = []
+        for (cmd_name, method) in self.sub_commands:
+            if method is None or method(self):
+                commands.append(cmd_name)
+        return commands
 
 
     # -- External world manipulation -----------------------------------
