@@ -107,23 +107,23 @@ class sdist (Command):
 
     def check_metadata (self):
 
-        dist = self.distribution
+        metadata = self.distribution.metadata
 
         missing = []
         for attr in ('name', 'version', 'url'):
-            if not (hasattr (dist, attr) and getattr (dist, attr)):
+            if not (hasattr (metadata, attr) and getattr (metadata, attr)):
                 missing.append (attr)
 
         if missing:
             self.warn ("missing required meta-data: " +
                        string.join (missing, ", "))
 
-        if dist.author:
-            if not dist.author_email:
+        if metadata.author:
+            if not metadata.author_email:
                 self.warn ("missing meta-data: if 'author' supplied, " +
                            "'author_email' must be supplied too")
-        elif dist.maintainer:
-            if not dist.maintainer_email:
+        elif metadata.maintainer:
+            if not metadata.maintainer_email:
                 self.warn ("missing meta-data: if 'maintainer' supplied, " +
                            "'maintainer_email' must be supplied too")
         else:
