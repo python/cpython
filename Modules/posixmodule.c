@@ -1343,8 +1343,12 @@ posix_execv(self, args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
- badarg:
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		return NULL;
+	}
+
+	if (argc == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty argument list");
 		return NULL;
 	}
 
@@ -1354,7 +1358,10 @@ posix_execv(self, args)
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);
-			goto badarg;
+			PyErr_SetString(PyExc_TypeError, 
+					"all arguments must be strings");
+			return NULL;
+			
 		}
 	}
 	argvlist[argc] = NULL;
@@ -1413,6 +1420,12 @@ posix_execve(self, args)
 	}
 	if (!PyMapping_Check(env)) {
 		PyErr_SetString(PyExc_TypeError, "env must be mapping object");
+		return NULL;
+	}
+
+	if (argc == 0) {
+		PyErr_SetString(PyExc_ValueError, 
+				"empty argument list");
 		return NULL;
 	}
 
