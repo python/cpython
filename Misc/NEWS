@@ -35,6 +35,34 @@ Extension Modules
 Library
 -------
 
+- Enhancements to the csv module:
+
+  + Dialects are now validated by the underlying C code, better
+    reflecting it's capabilities, and improving it's compliance with
+    PEP 305. 
+  + Dialect parameter parsing has been re-implemented to improve error
+    reporting.
+  + quotechar=None and quoting=QUOTE_NONE now work the way PEP 305
+    dictates.
+  + the parser now removes the escapechar prefix from escaped characters.
+  + Dialect classes passed to the module are no longer instantiated by
+    the module before being parsed (the former validation scheme required
+    this, but the mechanism was unreliable).
+  + The dialect registry now contains instances of the internal
+    C-coded dialect type, rather than references to python objects.
+  + the internal c-coded dialect type is now immutable.
+  + register_dialect now accepts the same keyword dialect specifications
+    as the reader and writer, allowing the user to register dialects
+    without first creating a dialect class.
+  + a configurable limit to the size of parsed fields has been added -
+    previously, an unmatched quote character could result in the entire
+    file being read into the field buffer before an error was reported.
+  + A new module method csv.set_field_limit() has been added that sets
+    the parser field size limit (returning the former limit). The initial
+    limit is 128kB.
+  + reader and writer objects were not being registered with the cyclic-GC.
+    This has been fixed.
+
 - _DummyThread objects in the threading module now delete self.__block that is
   inherited from _Thread since it uses up a lock allocated by 'thread'.  The
   lock primitives tend to be limited in number and thus should not be wasted on
