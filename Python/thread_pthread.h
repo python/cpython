@@ -79,13 +79,25 @@
 /* set default attribute object for different versions */
 
 #if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
+#if !defined(pthread_attr_default)
 #  define pthread_attr_default pthread_attr_default
+#endif
+#if !defined(pthread_mutexattr_default)
 #  define pthread_mutexattr_default pthread_mutexattr_default
+#endif
+#if !defined(pthread_condattr_default)
 #  define pthread_condattr_default pthread_condattr_default
+#endif
 #elif defined(PY_PTHREAD_STD) || defined(PY_PTHREAD_D6)
+#if !defined(pthread_attr_default)
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
+#endif
+#if !defined(pthread_mutexattr_default)
 #  define pthread_mutexattr_default ((pthread_mutexattr_t *)NULL)
+#endif
+#if !defined(pthread_condattr_default)
 #  define pthread_condattr_default ((pthread_condattr_t *)NULL)
+#endif
 #endif
 
 
