@@ -7,4 +7,7 @@
 *.pyc
 *.slb
 *.xSYM
+CVS
+Makefile.pre.in
+PyIDE-src
 [(]*[)]
