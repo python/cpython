@@ -3615,7 +3615,7 @@ static PyObject *_PyPopenProcs = NULL;
 static PyObject *
 posix_popen(PyObject *self, PyObject *args)
 {
-	PyObject *f, *s;
+	PyObject *f;
 	int tm = 0;
 
 	char *cmdstring;
@@ -3623,8 +3623,6 @@ posix_popen(PyObject *self, PyObject *args)
 	int bufsize = -1;
 	if (!PyArg_ParseTuple(args, "s|si:popen", &cmdstring, &mode, &bufsize))
 		return NULL;
-
-	s = PyTuple_New(0);
 
 	if (*mode == 'r')
 		tm = _O_RDONLY;
