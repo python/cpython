@@ -321,6 +321,9 @@
 /* Define if you have the chown function.  */
 #undef HAVE_CHOWN
 
+/* Define if you have the chroot function.  */
+#undef HAVE_CHROOT
+
 /* Define if you have the clock function.  */
 #undef HAVE_CLOCK
 

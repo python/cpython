@@ -1316,7 +1316,7 @@ fi
 AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
+AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getpeername getpid getpwent getwd \
  hstrerror inet_pton kill link lstat mkfifo mktime mremap \
