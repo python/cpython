@@ -77,7 +77,12 @@ code otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}{wait}{}
-Waits for and returns the return code of the child process.
+Waits for and returns the status code of the child process.  The
+status code encodes both the return code of the process and
+information about whether it exited using the \cfunction{exit()}
+system call or died due to a signal.  Functions to help interpret the
+status code are defined in the \refmodule{os} module; see section
+\ref{os-process} for the \function{W\var{*}()} family of functions.
 \end{methoddesc}
 
 
