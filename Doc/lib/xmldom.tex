@@ -375,6 +375,8 @@ following attributes:
 
 \begin{memberdesc}[DocumentType]{internalSubset}
   A string giving the complete internal subset from the document.
+  This does not include the brackets which enclose the subset.  If the
+  document has no internal subset, this should be \code{None}.
 \end{memberdesc}
 
 \begin{memberdesc}[DocumentType]{name}
