@@ -26,10 +26,10 @@ f() keywords must be strings
 h() got an unexpected keyword argument 'e'
 h() argument after * must be a sequence
 dir() argument after * must be a sequence
-None object argument after * must be a sequence
+NoneType object argument after * must be a sequence
 h() argument after ** must be a dictionary
 dir() argument after ** must be a dictionary
-None object argument after ** must be a dictionary
+NoneType object argument after ** must be a dictionary
 dir() got multiple values for keyword argument 'b'
 3 512 1
 3
