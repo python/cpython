@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -34,11 +34,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define NO_UNAME
 #endif
 
+#ifndef MSDOS
+#define DO_TIMES /* Comment this out if it causes trouble */
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef DO_TIMES
+#include <sys/times.h>
+#include <sys/param.h>
+#include <errno.h>
+#endif
 
 #ifdef SYSV
 
@@ -58,7 +68,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* !SYSV */
 
 #ifndef NO_UNISTD
-#include <unistd.h> /* Take this out if it doesn't exist */
+#include <unistd.h> /* Take this out and hope the best if it doesn't exist */
 #endif
 
 #include "allobjects.h"
@@ -691,6 +701,41 @@ posix_symlink(self, args)
 }
 
 
+#ifdef DO_TIMES
+
+static object *
+posix_times(self, args)
+	object *self;
+	object *args;
+{
+	struct tms t;
+	clock_t c;
+	object *tuple;
+	if (!getnoarg(args))
+		return NULL;
+	errno = 0;
+	c = times(&t);
+	if (c == (clock_t) -1) {
+		err_errno(IOError);
+		return NULL;
+	}
+	tuple = newtupleobject(4);
+	if (tuple == NULL)
+		return NULL;
+	settupleitem(tuple, 0, newfloatobject((double)t.tms_utime / HZ));
+	settupleitem(tuple, 1, newfloatobject((double)t.tms_stime / HZ));
+	settupleitem(tuple, 2, newfloatobject((double)t.tms_cutime / HZ));
+	settupleitem(tuple, 3, newfloatobject((double)t.tms_cstime / HZ));
+	if (err_occurred()) {
+		DECREF(tuple);
+		return NULL;
+	}
+	return tuple;
+}
+
+#endif
+
+
 static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
 	{"chmod",	posix_chmod},
@@ -715,6 +760,9 @@ static struct methodlist posix_methods[] = {
 #endif
 	{"unlink",	posix_unlink},
 	{"utime",	posix_utime},
+#ifdef DO_TIMES
+	{"times",	posix_times},
+#endif
 
 #ifndef MSDOS
 	{"_exit",	posix__exit},
