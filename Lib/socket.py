@@ -146,7 +146,7 @@ class _socketobject(object):
 
     def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, _sock=None):
         if _sock is None:
-	    _sock = _realsocket(family, type, proto)
+            _sock = _realsocket(family, type, proto)
         self._sock = _sock
 
     def close(self):
@@ -198,8 +198,8 @@ class _fileobject(object):
         self.mode = mode # Not actually used in this version
         if bufsize < 0:
             bufsize = self.default_bufsize
-	self.bufsize = bufsize
-	self.softspace = False
+        self.bufsize = bufsize
+        self.softspace = False
         if bufsize == 0:
             self._rbufsize = 1
         elif bufsize == 1:
