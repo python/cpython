@@ -455,7 +455,7 @@ collect_generations(void)
 {
 	static long collections0 = 0;
 	static long collections1 = 0;
-	long n;
+	long n = 0;
 
 
 	if (collections1 > threshold2) {
