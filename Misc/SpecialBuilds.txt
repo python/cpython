@@ -141,6 +141,7 @@ the C way:  by not defining NDEBUG), and some routines do additional
 sanity checks inside "#ifdef Py_DEBUG" blocks.
 ---------------------------------------------------------------------------
 COUNT_ALLOCS                                            introduced in 0.9.9
+                                             partly broken in 2.2 and 2.2.1
 
 Each type object grows three new members:
 
