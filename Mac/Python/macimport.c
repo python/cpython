@@ -437,13 +437,7 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 	if ( !_PyImport_Filetab[0].suffix )
 		return 0;
 		
-#if 0
-	/* Pre 1.5a4 */
-	strcpy(buf+*lenp, module);
-	strcpy(buf+*lenp+modnamelen, _PyImport_Filetab[0].suffix);
-#else
 	strcpy(buf+*lenp, _PyImport_Filetab[0].suffix);
-#endif
 #ifdef USE_GUSI1
 	if ( Path2FSSpec(buf, &fss) == noErr && 
 			FSpGetFInfo(&fss, &finfo) == noErr)
@@ -465,6 +459,7 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 	*/
 	if ( modnamelen > 54 ) return 0;	/* Leave room for extension */
 	strcpy((char *)fnbuf+1, module);
+	buf[*lenp] = '\0';
 	
 	for( fdp = _PyImport_Filetab+1; fdp->suffix; fdp++ ) {
 		strcpy((char *)fnbuf+1+modnamelen, fdp->suffix);
@@ -473,12 +468,7 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 			PySys_WriteStderr("# trying %s%s\n", buf, fdp->suffix);
 		if ( FSMakeFSSpec(refnum, dirid, fnbuf, &fss) == noErr ) {
 			/* Found it. */
-#if 0
-			strcpy(buf+*lenp+modnamelen, fdp->suffix);
-#else
 			strcpy(buf+*lenp, fdp->suffix);
-#endif
-			*lenp = strlen(buf);
 			return fdp;
 		}
 	}
