@@ -19,6 +19,7 @@
 #ifdef MS_WIN32
 #include <windows.h>
 #include <largeint.h>
+#include <direct.h>    /* for getcwd() */
 typedef LARGE_INTEGER hs_time;
 #else
 #ifndef HAVE_GETTIMEOFDAY
@@ -40,6 +41,14 @@ typedef struct timeval hs_time;
 #endif
 
 #define BUFFERSIZE 10240
+
+#ifndef PATH_MAX
+#   ifdef MAX_PATH
+#       define PATH_MAX MAX_PATH
+#   else
+#       error "Need a defn. for PATH_MAX in _hotshot.c"
+#   endif
+#endif
 
 typedef struct {
     PyObject_HEAD
@@ -365,6 +374,7 @@ logreader_tp_iternext(LogReaderObject *self)
             goto restart;
         }
     default:
+	;
     }
     if (err == ERR_EOF && oldindex != 0) {
         /* It looks like we ran out of data before we had it all; this
@@ -470,7 +480,7 @@ flush_data(ProfilerObject *self)
 {
     /* Need to dump data to the log file... */
     size_t written = fwrite(self->buffer, 1, self->index, self->logfp);
-    if (written == self->index)
+    if (written == (size_t)self->index)
         self->index = 0;
     else {
         memmove(self->buffer, &self->buffer[written],
@@ -723,7 +733,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
     case PyTrace_RETURN:
         pack_exit(self, get_tdelta(self));
         break;
-    case PyTrace_LINE: 
+    case PyTrace_LINE:
         if (self->linetimings)
             pack_lineno_tdelta(self, frame->f_lineno, get_tdelta(self));
         else
@@ -1259,7 +1269,7 @@ hotshot_profiler(PyObject *unused, PyObject *args)
         self->index = 0;
         self->active = 0;
         self->next_fileno = 0;
-        self->logfp = NULL;        
+        self->logfp = NULL;
         self->logfilename = PyTuple_GET_ITEM(args, 0);
         Py_INCREF(self->logfilename);
         self->filemap = PyDict_New();

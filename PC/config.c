@@ -44,6 +44,7 @@ extern void init_locale(void);
 extern void init_codecs(void);
 extern void initxreadlines(void);
 extern void init_weakref(void);
+extern void init_hotshot(void);
 extern void initxxsubtype(void);
 
 /* XXX tim: what's the purpose of ADDMODULE MARKER? */
@@ -98,6 +99,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"_codecs", init_codecs},
 	{"xreadlines", initxreadlines},
 	{"_weakref", init_weakref},
+	{"_hotshot", init_hotshot},
 
 	{"xxsubtype", initxxsubtype},
 
