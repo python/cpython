@@ -29,10 +29,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/*
-    This library implements dlopen() - functions for OS/2 using
-    DosLoadModule() and company.
-*/
+/* This library implements dlopen() - Unix-like dynamic linking
+ * emulation functions for OS/2 using DosLoadModule() and company.
+ */
 
 #define INCL_DOS
 #define INCL_DOSERRORS
@@ -46,8 +45,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <malloc.h>
 
-/*-------------------------------------- Unix-like dynamic linking emulation -*/
-
 typedef struct _track_rec {
 	char *name;
 	HMODULE handle;
@@ -55,8 +52,8 @@ typedef struct _track_rec {
 	struct _track_rec *next;
 } tDLLchain, *DLLchain;
 
-static DLLchain dlload = NULL;		/* A simple chained list of DLL names */
-static char dlerr [256];			    /* last error text string */
+static DLLchain dlload = NULL;	/* A simple chained list of DLL names */
+static char dlerr [256];	/* last error text string */
 static void *last_id;
 
 static DLLchain find_id(void *id)
@@ -65,13 +62,13 @@ static DLLchain find_id(void *id)
 
 	for (tmp = dlload; tmp; tmp = tmp->next)
 		if (id == tmp->id)
-			return (tmp);
+			return tmp;
 
-	return (NULL);
+	return NULL;
 }
 
 /* load a dynamic-link library and return handle */
-void *dlopen (char *filename, int flags)
+void *dlopen(char *filename, int flags)
 {
 	HMODULE hm;
 	DLLchain tmp;
@@ -85,10 +82,10 @@ void *dlopen (char *filename, int flags)
 
 	if (!tmp)
 	{
-		tmp = (DLLchain)malloc (sizeof (tDLLchain));
+		tmp = (DLLchain) malloc(sizeof(tDLLchain));
 		if (!tmp)
 			goto nomem;
-		tmp->name = strdup (filename);
+		tmp->name = strdup(filename);
 		tmp->next = dlload;
 		set_chain = 1;
 	}
@@ -97,14 +94,15 @@ void *dlopen (char *filename, int flags)
 	{
 		case NO_ERROR:
 			tmp->handle = hm;
-			if (set_chain) {
-				do {
+			if (set_chain)
+			{
+				do
 					last_id++;
-				} while ((last_id == 0) || (find_id(last_id)));
+				while ((last_id == 0) || (find_id(last_id)));
 				tmp->id = last_id;
 				dlload = tmp;
 			}
-			return (tmp->id);
+			return tmp->id;
 		case ERROR_FILE_NOT_FOUND:
 		case ERROR_PATH_NOT_FOUND:
 			errtxt = "module `%s' not found";
@@ -145,34 +143,35 @@ nomem:
 			errtxt = "cause `%s', error code = %d";
 			break;
 	}
-	snprintf (dlerr, sizeof (dlerr), errtxt, &err, rc);
-	if (tmp) {
+	snprintf(dlerr, sizeof(dlerr), errtxt, &err, rc);
+	if (tmp)
+	{
 		if (tmp->name)
 			free(tmp->name);
-		free (tmp);
+		free(tmp);
 	}
-	return (0);
+	return 0;
 }
 
 /* return a pointer to the `symbol' in DLL */
-void *dlsym (void *handle, char *symbol)
+void *dlsym(void *handle, char *symbol)
 {
 	int rc = 0;
 	PFN addr;
 	char *errtxt;
 	int symord = 0;
-	DLLchain tmp = find_id (handle);
+	DLLchain tmp = find_id(handle);
 
 	if (!tmp)
 		goto inv_handle;
 
 	if (*symbol == '#')
-		symord = atoi (symbol + 1);
+		symord = atoi(symbol + 1);
 
 	switch (rc = DosQueryProcAddr(tmp->handle, symord, symbol, &addr))
 	{
 		case NO_ERROR:
-			return ((void *)addr);
+			return (void *)addr;
 		case ERROR_INVALID_HANDLE:
 inv_handle:
 			errtxt = "invalid module handle";
@@ -185,40 +184,40 @@ inv_handle:
 			errtxt = "symbol `%s', error code = %d";
 			break;
 	}
-	snprintf (dlerr, sizeof (dlerr), errtxt, symbol, rc);
-	return (NULL);
+	snprintf(dlerr, sizeof(dlerr), errtxt, symbol, rc);
+	return NULL;
 }
 
 /* free dynamicaly-linked library */
-int dlclose (void *handle)
+int dlclose(void *handle)
 {
 	int rc;
-	DLLchain tmp = find_id (handle);
+	DLLchain tmp = find_id(handle);
 
 	if (!tmp)
 		goto inv_handle;
 
-	switch (rc = DosFreeModule (tmp->handle))
+	switch (rc = DosFreeModule(tmp->handle))
 	{
 		case NO_ERROR:
-			free (tmp->name);
+			free(tmp->name);
 			dlload = tmp->next;
-			free (tmp);
-			return (0);
+			free(tmp);
+			return 0;
 		case ERROR_INVALID_HANDLE:
 inv_handle:
 			strcpy(dlerr, "invalid module handle");
-			return (-1);
+			return -1;
 		case ERROR_INVALID_ACCESS:
-			strcpy (dlerr, "access denied");
-			return (-1);
+			strcpy(dlerr, "access denied");
+			return -1;
 		default:
-			return (-1);
+			return -1;
 	}
 }
 
 /* return a string describing last occured dl error */
 char *dlerror()
 {
-	return (dlerr);
+	return dlerr;
 }
