@@ -135,16 +135,21 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
 	int success;
-#ifdef THREAD_STACK_SIZE
+#if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_t attrs;
 #endif
 	dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
 		PyThread_init_thread();
 
-#ifdef THREAD_STACK_SIZE
+#if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_init(&attrs);
+#endif
+#ifdef THREAD_STACK_SIZE
 	pthread_attr_setstacksize(&attrs, THREAD_STACK_SIZE);
+#endif
+#ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
+        pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 	success = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
@@ -160,7 +165,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 func,
 				 arg
 #elif defined(PY_PTHREAD_STD)
-#ifdef THREAD_STACK_SIZE
+#if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 				 &attrs,
 #else
 				 (pthread_attr_t*)NULL,
