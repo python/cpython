@@ -6,6 +6,7 @@
 \moduleauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
 \sectionauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+\sectionauthor{Raymond Hettinger}{python@rcn.com}
 
 \versionadded{2.1}
 
@@ -88,6 +89,101 @@ class.
             testing frameworks using the pattern shared by
             \module{unittest}.}
 \end{seealso}
+
+
+\subsection{Minimal example \label{minimal-example}}
+
+The \module{unittest} module provides a rich set of tools for
+constructing and running tests.  This section demonstrates that a
+small subset of the tools suffice to meet the needs of most users.
+
+Here is a short script to test three functions from the
+\refmodule{random} module:
+
+\begin{verbatim}
+import random
+import unittest
+
+class TestSequenceFunctions(unittest.TestCase):
+    
+    def setUp(self):
+        self.seq = range(10)
+
+    def testshuffle(self):
+        # make sure the shuffled sequence does not lose any elements
+        random.shuffle(self.seq)
+        self.seq.sort()
+        self.assertEqual(self.seq, range(10))
+
+    def testchoice(self):
+        element = random.choice(self.seq)
+        self.assert_(element in self.seq)
+
+    def testsample(self):
+        self.assertRaises(ValueError, random.sample, self.seq, 20)
+        for element in random.sample(self.seq, 5):
+            self.assert_(element in self.seq)
+
+if __name__ == '__main__':
+    unittest.main()
+\end{verbatim}
+
+A testcase is created by subclassing \code{unittest.TestCase}.
+The three individual tests are defined with methods whose names start with
+the letters \code{test}.  This naming convention informs the test runner
+about which methods represent tests.
+
+The crux of each test is a call to \method{assertEqual()} to
+check for an expected result; \method{assert_()} to verify a condition;
+or \method{assertRaises()} to verify that an expected exception gets
+raised.  These methods are used instead of the \keyword{assert} statement
+so the test runner can accumulate all test results and produce a report.
+
+When a \method{setUp()} method is defined, the test runner will run that
+method prior to each test.  Likewise, if a \method{tearDown()} method is
+defined, the test runner will invoke that method after each test.  In the
+example, \method{setUp()} was used to create a fresh sequence for each test.
+
+The final block shows a simple way to run the tests.  \code{unittest.main()}
+provides a command line interface to the test script.  When run from the
+command line, the above script produces an output that looks like this:
+
+\begin{verbatim}
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+\end{verbatim}
+
+Instead of \code{unittest.main()}, there are other ways to run the tests
+with a finer level of control, less terse output, and no requirement to be
+run from the command line.  For example, the last two lines may be replaced
+with:
+
+\begin{verbatim}
+suite = unittest.TestSuite()
+suite.addTest(unittest.makeSuite(TestSequenceFunctions))
+unittest.TextTestRunner(verbosity=2).run(suite)
+\end{verbatim}
+
+Running the revised script from the interpreter or another script
+produces the following output:
+
+\begin{verbatim}
+testchoice (__main__.TestSequenceFunctions) ... ok
+testsample (__main__.TestSequenceFunctions) ... ok
+testshuffle (__main__.TestSequenceFunctions) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.110s
+
+OK
+\end{verbatim}
+
+The above examples show the most commonly used \module{unittest} features
+which are sufficient to meet many everyday testing needs.  The remainder
+of the documentation explores the full feature set from first principles.
 
 
 \subsection{Organizing test code
