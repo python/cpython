@@ -137,3 +137,111 @@ void PyThread_init_thread(void)
 #include "thread_foobar.h"
 #endif
 */
+
+#ifndef Py_HAVE_NATIVE_TLS
+/* If the platform has not supplied a platform specific
+   TLS implementation, provide our own.
+
+   This code stolen from "thread_sgi.h", where it was the only
+   implementation of an existing Python TLS API.
+*/
+/*
+ * Per-thread data ("key") support.
+ */
+
+struct key {
+	struct key *next;
+	long id;
+	int key;
+	void *value;
+};
+
+static struct key *keyhead = NULL;
+static int nkeys = 0;
+static PyThread_type_lock keymutex = NULL;
+
+static struct key *find_key(int key, void *value)
+{
+	struct key *p;
+	long id = PyThread_get_thread_ident();
+	for (p = keyhead; p != NULL; p = p->next) {
+		if (p->id == id && p->key == key)
+			return p;
+	}
+	if (value == NULL)
+		return NULL;
+	p = (struct key *)malloc(sizeof(struct key));
+	if (p != NULL) {
+		p->id = id;
+		p->key = key;
+		p->value = value;
+		PyThread_acquire_lock(keymutex, 1);
+		p->next = keyhead;
+		keyhead = p;
+		PyThread_release_lock(keymutex);
+	}
+	return p;
+}
+
+int PyThread_create_key(void)
+{
+	if (keymutex == NULL)
+		keymutex = PyThread_allocate_lock();
+	return ++nkeys;
+}
+
+void PyThread_delete_key(int key)
+{
+	struct key *p, **q;
+	PyThread_acquire_lock(keymutex, 1);
+	q = &keyhead;
+	while ((p = *q) != NULL) {
+		if (p->key == key) {
+			*q = p->next;
+			free((void *)p);
+			/* NB This does *not* free p->value! */
+		}
+		else
+			q = &p->next;
+	}
+	PyThread_release_lock(keymutex);
+}
+
+int PyThread_set_key_value(int key, void *value)
+{
+	struct key *p = find_key(key, value);
+	if (p == NULL)
+		return -1;
+	else
+		return 0;
+}
+
+void *PyThread_get_key_value(int key)
+{
+	struct key *p = find_key(key, NULL);
+	if (p == NULL)
+		return NULL;
+	else
+		return p->value;
+}
+
+void PyThread_delete_key_value(int key)
+{
+	long id = PyThread_get_thread_ident();
+	struct key *p, **q;
+	PyThread_acquire_lock(keymutex, 1);
+	q = &keyhead;
+	while ((p = *q) != NULL) {
+		if (p->key == key && p->id == id) {
+			*q = p->next;
+			free((void *)p);
+			/* NB This does *not* free p->value! */
+			break;
+		}
+		else
+			q = &p->next;
+	}
+	PyThread_release_lock(keymutex);
+}
+
+#endif /* Py_HAVE_NATIVE_TLS */

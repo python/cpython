@@ -30,10 +30,12 @@ PyAPI_FUNC(void) PyThread_exit_prog(int);
 PyAPI_FUNC(void) PyThread__PyThread_exit_prog(int);
 #endif
 
+/* Thread Local Storage (TLS) API */
 PyAPI_FUNC(int) PyThread_create_key(void);
 PyAPI_FUNC(void) PyThread_delete_key(int);
 PyAPI_FUNC(int) PyThread_set_key_value(int, void *);
 PyAPI_FUNC(void *) PyThread_get_key_value(int);
+PyAPI_FUNC(void) PyThread_delete_key_value(int key);
 
 #ifdef __cplusplus
 }

@@ -50,6 +50,11 @@ static void call_ll_exitfuncs(void);
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
 
+#ifdef WITH_THREAD
+extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
+extern void _PyGILState_Fini(void);
+#endif /* WITH_THREAD */
+
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
@@ -180,6 +185,11 @@ Py_Initialize(void)
 	if (!Py_NoSiteFlag)
 		initsite(); /* Module site */
 
+	/* auto-thread-state API, if available */
+#ifdef WITH_THREAD
+	_PyGILState_Init(interp, tstate);
+#endif /* WITH_THREAD */
+
 	PyModule_WarningsModule = PyImport_ImportModule("warnings");
 
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
@@ -243,6 +253,11 @@ Py_Finalize(void)
 	 */
 	call_sys_exitfunc();
 	initialized = 0;
+
+	/* Cleanup auto-thread-state */
+#ifdef WITH_THREAD
+	_PyGILState_Fini();
+#endif /* WITH_THREAD */
 
 	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_Get();
