@@ -694,23 +694,6 @@ class AbstractPickleTests(unittest.TestCase):
             else:
                 self.failUnless(num_appends >= 2)
 
-# XXX Temporary hack, so long as the C implementation of pickle protocol
-# XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
-# XXX into AbstractPickleTests above, and get rid of TempAbstractPickleTests
-# XXX along with the references to it in test_pickle.py.
-class TempAbstractPickleTests(unittest.TestCase):
-
-    def test_newobj_list_slots(self):
-        x = SlotList([1, 2, 3])
-        x.foo = 42
-        x.bar = "hello"
-        s = self.dumps(x, 2)
-        y = self.loads(s)
-        self.assertEqual(list(x), list(y))
-        self.assertEqual(x.__dict__, y.__dict__)
-        self.assertEqual(x.foo, y.foo)
-        self.assertEqual(x.bar, y.bar)
-
     def test_dict_chunking(self):
         n = 10  # too small to chunk
         x = dict.fromkeys(range(n))
@@ -732,6 +715,23 @@ class TempAbstractPickleTests(unittest.TestCase):
                 self.assertEqual(num_setitems, 0)
             else:
                 self.failUnless(num_setitems >= 2)
+
+# XXX Temporary hack, so long as the C implementation of pickle protocol
+# XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
+# XXX into AbstractPickleTests above, and get rid of TempAbstractPickleTests
+# XXX along with the references to it in test_pickle.py.
+class TempAbstractPickleTests(unittest.TestCase):
+
+    def test_newobj_list_slots(self):
+        x = SlotList([1, 2, 3])
+        x.foo = 42
+        x.bar = "hello"
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(list(x), list(y))
+        self.assertEqual(x.__dict__, y.__dict__)
+        self.assertEqual(x.foo, y.foo)
+        self.assertEqual(x.bar, y.bar)
 
 class MyInt(int):
     sample = 1
