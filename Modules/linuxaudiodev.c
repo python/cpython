@@ -63,15 +63,14 @@ static struct {
     uint32_t	a_fmt;
     char       *a_name;
 } audio_types[] = {
-    {  8, 	AFMT_MU_LAW, "Logarithmic mu-law audio" },
-    {  8, 	AFMT_A_LAW,  "Logarithmic A-law audio" },
-    {  8,	AFMT_U8,     "Standard unsigned 8-bit audio" },
-    {  8, 	AFMT_S8,     "Standard signed 8-bit audio" },
-    { 16, 	AFMT_U16_BE, "Big-endian 16-bit unsigned audio" },
-    { 16, 	AFMT_U16_LE, "Little-endian 16-bit unsigned audio" },
-    { 16, 	AFMT_S16_BE, "Big-endian 16-bit signed audio" },
-    { 16, 	AFMT_S16_LE, "Little-endian 16-bit signed audio" },
-    { 16, 	AFMT_S16_NE, "Native-endian 16-bit signed audio" },
+    {  8, 	AFMT_MU_LAW, "logarithmic mu-law 8-bit audio" },
+    {  8, 	AFMT_A_LAW,  "logarithmic A-law 8-bit audio" },
+    {  8,	AFMT_U8,     "linear unsigned 8-bit audio" },
+    {  8, 	AFMT_S8,     "linear signed 8-bit audio" },
+    { 16, 	AFMT_U16_BE, "linear unsigned 16-bit big-endian audio" },
+    { 16, 	AFMT_U16_LE, "linear unsigned 16-bit little-endian audio" },
+    { 16, 	AFMT_S16_BE, "linear signed 16-bit big-endian audio" },
+    { 16, 	AFMT_S16_LE, "linear signed 16-bit little-endian audio" },
 };
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
@@ -95,7 +94,7 @@ newladobject(PyObject *arg)
     else if (strcmp(mode, "w") == 0)
         imode = O_WRONLY;
     else {
-        PyErr_SetString(LinuxAudioError, "Mode should be one of 'r', or 'w'");
+        PyErr_SetString(LinuxAudioError, "mode should be 'r' or 'w'");
         return NULL;
     }
 
@@ -256,15 +255,15 @@ lad_setparameters(lad_t *self, PyObject *args)
     }
     if (audio_types[n].a_bps != ssize) {
 	PyErr_Format(PyExc_ValueError, 
-		     "sample size %d expected for %s: %d received",
-		     audio_types[n].a_bps, audio_types[n].a_name, ssize);
+		     "for %s, expected sample size %d, not %d",
+		     audio_types[n].a_name, audio_types[n].a_bps, ssize);
 	return NULL;
     }
 
     if (emulate == 0) {
 	if ((self->x_afmts & audio_types[n].a_fmt) == 0) {
 	    PyErr_Format(PyExc_ValueError, 
-			 "format not supported by device: %s",
+			 "%s format not supported by device",
 			 audio_types[n].a_name);
 	    return NULL;
 	}
