@@ -114,11 +114,13 @@ $(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
 # To deal with the conflict between signalmodule.o and
 # sigcheck.o+intrcheck.o, we remove the latter two if we have the former.
 add2lib:	$(OBJS)
+		-for i in $(OBJS); do \
+		     if test "$$i" = "signalmodule.o"; then \
+		        ar d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; \
+			break; \
+		     fi; \
+		done
 		$(AR) cr $(LIBRARY) $(OBJS)
-		-if ar x $(LIBRARY) signalmodule.o 2>/dev/null; \
-		then \
-		  ar d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; true; \
-		else true; fi
 		touch add2lib
 
 # This target is used by the master Makefile to link the final binary.
