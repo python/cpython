@@ -559,6 +559,21 @@ Additional debugging code to help debug memory management problems can
 be enabled by using the --with-pydebug option to the configure script.
 
 
+Profiling
+---------
+
+If you want C profiling turned on, the easiest way is to run configure
+with the CC environment variable to the necessary compiler
+invocation.  For example, on Linux, this works for profiling using
+gprof(1):
+
+    CC="gcc -pg" ./configure
+
+Note that on Linux, gprof apparently does not work for shared
+libraries.  The Makefile/Setup mechanism can be used to compile and
+link most extension module statically.
+
+
 Testing
 -------
 
