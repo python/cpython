@@ -9,13 +9,19 @@ static struct PyMethodDef $abbrev$_methods[] = {
 
 /* Initialization function for the module (*must* be called init$name$) */
 
+static char $name$_module_documentation[] = 
+""
+;
+
 void
 init$name$()
 {
 	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("$name$", $abbrev$_methods);
+	m = Py_InitModule4("$name$", $abbrev$_methods,
+		$name$_module_documentation,
+		(PyObject*)NULL,PYTHON_API_VERSION);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

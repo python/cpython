@@ -1,4 +1,8 @@
 
+static char $abbrev$_$method$__doc__[] =
+""
+;
+
 static PyObject *
 $abbrev$_$method$(self, args)
 	PyObject *self;	/* Not used */

@@ -1,4 +1,8 @@
 
+static char $Abbrev$type__doc__[] = 
+""
+;
+
 static PyTypeObject $Abbrev$type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
@@ -16,6 +20,12 @@ static PyTypeObject $Abbrev$type = {
 	$tp_as_sequence$,		/*tp_as_sequence*/
 	$tp_as_mapping$,		/*tp_as_mapping*/
 	(hashfunc)$tp_hash$,		/*tp_hash*/
+	(binaryfunc)$tp_call$,		/*tp_call*/
+	(reprfunc)$tp_str$,		/*tp_str*/
+
+	/* Space for future expansion */
+	0L,0L,0L,0L,
+	$Abbrev$type__doc__ /* Documentation string */
 };
 
 /* End of code for $name$ objects */
