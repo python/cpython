@@ -92,6 +92,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* twit range. Again needed to forestall conflicts with scripts using their own resources */
 #define TWIT_MIN		500
 #define TWIT_MAX		507
+/* Bruce range. The same */
+#define BRUCE_MIN		468
+#define BRUCE_MAX		499
 
 /*
 ** The following are valid both in the binary (or shared library)
