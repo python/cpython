@@ -335,7 +335,7 @@ class Checker:
         rp.set_url(url)
         try:
             rp.read()
-        except IOError, msg:
+        except (OSError, IOError), msg:
             self.note(1, "I/O error parsing %s: %s", url, msg)
 
     def run(self):
@@ -533,7 +533,7 @@ class Checker:
         url, fragment = url_pair
         try:
             return self.urlopener.open(url)
-        except IOError, msg:
+        except (OSError, IOError), msg:
             msg = self.sanitize(msg)
             self.note(0, "Error %s", msg)
             if self.verbose > 0:
