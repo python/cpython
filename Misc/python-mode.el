@@ -65,6 +65,14 @@
 ;; When in a Python mode buffer, do a C-h m for more help.  It's
 ;; doubtful that a texinfo manual would be very useful.
 
+;; If you are using XEmacs, you may also want to check out OO-Browser
+;; that comes bundled with it, including documentation in the info
+;; pages.  For GNU Emacs you have to install it yourself.  To read
+;; more about OO-Browser, follow these links:
+
+;; http://www.python.org/workshops/1996-06/papers/h.pasanen/oobr_contents.html
+;; http://www.infodock.com/manuals/alt-oobr-cover.html
+
 ;; Here's a brief to do list:
 ;;
 ;; - Better integration with gud-mode for debugging.
@@ -75,8 +83,6 @@
 ;;   hasn't been a problem... yet.
 ;; - have py-execute-region on indented code act as if the region is
 ;;   left justified. Avoids syntax errors.
-;; - Add a py-goto-error or some such that would scan an exception in
-;;   the py-shell buffer, and pop you to that line in the file.
 
 ;;; Code:
 
