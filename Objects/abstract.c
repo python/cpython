@@ -131,11 +131,12 @@ float_from_string(v)
 	PyObject *v;
 {
 	extern double strtod Py_PROTO((const char *, char **));
-	char *s, *end;
+	char *s, *last, *end;
 	double x;
 	char buffer[256]; /* For errors */
 
 	s = PyString_AS_STRING(v);
+	last = s + PyString_GET_SIZE(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -146,6 +147,10 @@ float_from_string(v)
 	PyFPE_START_PROTECT("float_from_string", return 0)
 	x = strtod(s, &end);
 	PyFPE_END_PROTECT(x)
+	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
+	   byte at the end of the string, when the input is inf(inity) */
+	if (end > last)
+		end = last;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
