@@ -27,7 +27,10 @@ def get(using=None):
             return GenericBrowser(browser)
         else:
             # User gave us a browser name.
-            command = _browsers[browser.lower()]
+            try:
+                command = _browsers[browser.lower()]
+            except KeyError:
+                command = _synthesize(browser)
             if command[1] is None:
                 return command[0]()
             else:
@@ -41,6 +44,37 @@ def open(url, new=0, autoraise=1):
 
 def open_new(url):      # Marked deprecated.  May be removed in 2.1.
     get().open(url, 1)
+
+
+def _synthesize(browser):
+    """Attempt to synthesize a controller base on existing controllers.
+
+    This is useful to create a controller when a user specifies a path to
+    an entry in the BROWSER environment variable -- we can copy a general
+    controller to operate using a specific installation of the desired
+    browser in this way.
+
+    If we can't create a controller in this way, or if there is no
+    executable for the requested browser, return [None, None].
+
+    """
+    if not os.path.exists(browser):
+        return [None, None]
+    name = os.path.basename(browser)
+    try:
+        command = _browsers[name.lower()]
+    except KeyError:
+        return [None, None]
+    # now attempt to clone to fit the new name:
+    controller = command[1]
+    if controller and name.lower() == controller.basename:
+        import copy
+        controller = copy.copy(controller)
+        controller.name = browser
+        controller.basename = os.path.basename(browser)
+        register(browser, None, controller)
+        return [None, controller]
+    ret
 
 #
 # Everything after this point initializes _browsers and _tryorder,
@@ -74,10 +108,12 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
     class GenericBrowser:
         def __init__(self, cmd):
-            self.command = cmd
+            self.name, self.args = cmd.split(None, 1)
+            self.basename = os.path.basename(self.name)
 
         def open(self, url, new=0, autoraise=1):
-            os.system(self.command % url)
+            command = "%s %s" % (self.name, self.args)
+            os.system(command % url)
 
         def open_new(self, url):        # Deprecated.  May be removed in 2.1.
             self.open(url)
@@ -102,6 +138,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                 "Launcher class for Netscape browsers."
                 def __init__(self, name):
                     self.name = name
+                    self.basename = os.path.basename(name)
 
                 def _remote(self, action, autoraise):
                     raise_opt = ("-noraise", "-raise")[autoraise]
@@ -144,15 +181,21 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                 for more information on the Konqueror remote-control interface.
 
                 """
+                def __init__(self):
+                    if _iscommand("konqueror"):
+                        self.name = self.basename = "konqueror"
+                    else:
+                        self.name = self.basename = "kfm"
+
                 def _remote(self, action):
                     cmd = "kfmclient %s >/dev/null 2>&1" % action
                     rc = os.system(cmd)
                     if rc:
                         import time
-                        if _iscommand("konqueror"):
-                            os.system("konqueror --silent &")
+                        if self.basename == "konqueror":
+                            os.system(self.name + " --silent &")
                         else:
-                            os.system("kfm -d &")
+                            os.system(self.name + " -d &")
                         time.sleep(PROCESS_CREATION_DELAY)
                         rc = os.system(cmd)
                     return not rc
@@ -165,7 +208,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                 # Deprecated.  May be removed in 2.1.
                 open_new = open
 
-            register("kfm", Konqueror, None)
+            register("kfm", Konqueror, Konqueror())
 
         # Grail, the Python browser.
         if _iscommand("grail"):
