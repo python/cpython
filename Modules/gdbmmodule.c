@@ -434,7 +434,7 @@ static PyObject *
 dbmopen(PyObject *self, PyObject *args)
 {
     char *name;
-    char *flags = "r ";
+    char *flags = "r";
     int iflags;
     int mode = 0666;
 
