@@ -64,7 +64,7 @@ extern void initthread();
 extern void PyMarshal_Init();
 extern void initimp();
 
-struct _inittab inittab[] = {
+struct _inittab _PyImport_Inittab[] = {
 
         {"array", initarray},
 #ifdef M_I386
