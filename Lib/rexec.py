@@ -259,7 +259,7 @@ class RExec(ihooks._Verbose):
 
     def r_execfile(self, file):
         m = self.add_module('__main__')
-        return execfile(file, m.__dict__)
+        execfile(file, m.__dict__)
 
     def r_import(self, mname, globals={}, locals={}, fromlist=[]):
         return self.importer.import_module(mname, globals, locals, fromlist)
