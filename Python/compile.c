@@ -3912,8 +3912,10 @@ jcompile(node *n, char *filename, struct compiling *base)
 		PyErr_SetString(PyExc_SystemError, "lost syntax error");
 	}
  exit:
-	if (base == NULL)
+	if (base == NULL) {
 		PySymtable_Free(sc.c_symtable);
+		sc.c_symtable = NULL;
+	}
 	com_free(&sc);
 	return co;
 }
@@ -4193,6 +4195,7 @@ PySymtable_Free(struct symtable *st)
 {
 	Py_XDECREF(st->st_symbols);
 	Py_XDECREF(st->st_stack);
+	Py_XDECREF(st->st_cur);
 	PyMem_Free((void *)st);
 }
 
@@ -4359,10 +4362,11 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 		PySymtableEntry_New(st, name, type, lineno);
 	if (strcmp(name, TOP) == 0)
 		st->st_global = st->st_cur->ste_symbols;
-	if (prev)
+	if (prev && st->st_pass == 1) {
 		if (PyList_Append(prev->ste_children, 
 				  (PyObject *)st->st_cur) < 0)
 			st->st_errors++;
+	}
 }
 
 static int
