@@ -5,13 +5,14 @@
 """
 
 import re
+import binascii
 import warnings
 from cStringIO import StringIO
 from types import ListType, TupleType, StringType
 
 # Intrapackage imports
-from email import Errors
 from email import Utils
+from email import Errors
 from email import Charset
 
 SEMISPACE = '; '
@@ -169,9 +170,11 @@ class Message:
         Content-Transfer-Encoding header.  When True and the message is not a
         multipart, the payload will be decoded if this header's value is
         `quoted-printable' or `base64'.  If some other encoding is used, or
-        the header is missing, the payload is returned as-is (undecoded).  If
-        the message is a multipart and the decode flag is True, then None is
-        returned.
+        the header is missing, or if the payload has bogus base64 data, the
+        payload is returned as-is (undecoded).
+
+        If the message is a multipart and the decode flag is True, then None
+        is returned.
         """
         if i is None:
             payload = self._payload
@@ -186,7 +189,11 @@ class Message:
             if cte.lower() == 'quoted-printable':
                 return Utils._qdecode(payload)
             elif cte.lower() == 'base64':
-                return Utils._bdecode(payload)
+                try:
+                    return Utils._bdecode(payload)
+                except binascii.Error:
+                    # Incorrect padding
+                    return payload
         # Everything else, including encodings with 8bit or 7bit are returned
         # unchanged.
         return payload
