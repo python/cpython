@@ -46,6 +46,7 @@ typedef struct {
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) ((op)->ob_type == &PyCode_Type)
+#define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 
