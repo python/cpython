@@ -87,8 +87,12 @@ Copyright (C) 1994 Steen Lumholt.
 /* Unicode conversion assumes that Tcl_UniChar is two bytes.
    We cannot test this directly, so we test UTF-8 size instead,
    expecting that TCL_UTF_MAX is changed if Tcl ever supports
-   either UTF-16 or UCS-4.  */
-#if TCL_UTF_MAX != 3
+   either UTF-16 or UCS-4.  
+   Redhat 8 sets TCL_UTF_MAX to 6, and uses wchar_t for 
+   Tcl_Unichar. This is also ok as long as Python uses UCS-4,
+   as well.
+*/
+#if TCL_UTF_MAX != 3 && !(defined(Py_UNICODE_WIDE) && TCL_UTF_MAX==6)
 #error "unsupported Tcl configuration"
 #endif
 
@@ -899,7 +903,7 @@ AsObj(PyObject *value)
 		int size = PyUnicode_GET_SIZE(value);
 		/* This #ifdef assumes that Tcl uses UCS-2.
 		   See TCL_UTF_MAX test above. */
-#ifdef Py_UNICODE_WIDE
+#if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX == 3
 		Tcl_UniChar *outbuf;
 		int i;
 		outbuf = (Tcl_UniChar*)ckalloc(size * sizeof(Tcl_UniChar));
@@ -1030,7 +1034,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 
 	if (value->typePtr == app->StringType) {
 #ifdef Py_USING_UNICODE
-#ifdef Py_UNICODE_WIDE
+#if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX==3
 		PyObject *result;
 		int size;
 		Tcl_UniChar *input;
