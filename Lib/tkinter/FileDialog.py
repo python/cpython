@@ -11,8 +11,6 @@ Classes:
 from Tkinter import *
 from Dialog import Dialog
 
-ANCHOR = 'anchor'
-
 import os
 import fnmatch
 
@@ -73,6 +71,8 @@ class FileDialog:
 	self.files = Listbox(self.midframe, exportselection=0,
 			     yscrollcommand=(self.filesbar, 'set'))
 	self.files.pack(side=RIGHT, expand=YES, fill=BOTH)
+	btags = self.files.bindtags()
+	self.files.bindtags(btags[1:] + btags[:1])
 	self.files.bind('<ButtonRelease-1>', self.files_select_event)
 	self.files.bind('<Double-ButtonRelease-1>', self.files_double_event)
 	self.filesbar.config(command=(self.files, 'yview'))
@@ -83,6 +83,8 @@ class FileDialog:
 			    yscrollcommand=(self.dirsbar, 'set'))
 	self.dirs.pack(side=LEFT, expand=YES, fill=BOTH)
 	self.dirsbar.config(command=(self.dirs, 'yview'))
+	btags = self.dirs.bindtags()
+	self.dirs.bindtags(btags[1:] + btags[:1])
 	self.dirs.bind('<ButtonRelease-1>', self.dirs_select_event)
 	self.dirs.bind('<Double-ButtonRelease-1>', self.dirs_double_event)
 
@@ -133,7 +135,7 @@ class FileDialog:
 
     def dirs_select_event(self, event):
 	dir, pat = self.get_filter()
-	subdir = self.dirs.get(ANCHOR)
+	subdir = self.dirs.get('active')
 	dir = os.path.normpath(os.path.join(self.directory, subdir))
 	self.set_filter(dir, pat)
 
@@ -141,7 +143,7 @@ class FileDialog:
 	self.ok_command()
 
     def files_select_event(self, event):
-	file = self.files.get(ANCHOR)
+	file = self.files.get('active')
 	self.set_selection(file)
 
     def ok_event(self, event):
