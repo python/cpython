@@ -209,7 +209,7 @@ clean:	l2hclean
 	rm -f *.bak *.orig
 
 l2hclean:
-	@rm -rf api ext lib tut
+	rm -rf api ext lib tut
 
 # Remove temporaries as well as final products
 clobber: clean
