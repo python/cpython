@@ -1,4 +1,3 @@
-
 # Symbolic constants for Tk
 
 # Booleans
