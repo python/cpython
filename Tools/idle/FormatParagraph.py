@@ -46,7 +46,7 @@ class FormatParagraph:
 def find_paragraph(text, mark):
     lineno, col = map(int, string.split(mark, "."))
     line = text.get("%d.0" % lineno, "%d.0 lineend" % lineno)
-    while is_all_white(line):
+    while text.compare("%d.0" % lineno, "<", "end") and is_all_white(line):
         lineno = lineno + 1
         line = text.get("%d.0" % lineno, "%d.0 lineend" % lineno)
     first_lineno = lineno
