@@ -15,7 +15,7 @@ from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
 from distutils.dep_util import newer_pairwise, newer_group
-from distutils.util import split_quoted
+from distutils.util import split_quoted, execute
 
 
 class CCompiler:
@@ -783,6 +783,9 @@ class CCompiler:
 
     def warn (self, msg):
         sys.stderr.write ("warning: %s\n" % msg)
+
+    def execute (self, func, args, msg=None, level=1):
+        execute(func, args, msg, self.verbose >= level, self.dry_run)
 
     def spawn (self, cmd):
         spawn (cmd, verbose=self.verbose, dry_run=self.dry_run)
