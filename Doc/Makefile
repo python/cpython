@@ -31,7 +31,7 @@ qua:
 	bibtex qua
 	latex qua
 	latex qua
-	dvips lib >lib.ps
+	dvips lib >qua.ps
 
 libinfo:
 	@echo This may take a while...
