@@ -569,6 +569,12 @@ bininstall:	altbininstall
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 altbininstall:	$(BUILDPYTHON)
+	@if test "$(PYTHONFRAMEWORKDIR)" != no-framework; then \
+		if test ! -f $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current/Resources/Info.plist; then \
+			echo 'Framework build: use "make frameworkinstall" in stead of "make install"'; \
+			exit 1; \
+		fi; \
+	fi
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $$i; then \
@@ -770,7 +776,7 @@ sharedinstall:
 # automatically set prefix to the location deep down in the framework, so we
 # only have to cater for the structural bits of the framework.
 
-frameworkinstall: install frameworkinfrastructureinstall
+frameworkinstall: frameworkinfrastructureinstall install
 FRAMEWORKFINALDEST=$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)
 frameworkinfrastructureinstall:	$(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
