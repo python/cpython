@@ -107,7 +107,8 @@ pwd_getpwuid(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:getpwuid", &uid))
 		return NULL;
 	if ((p = getpwuid(uid)) == NULL) {
-		PyErr_SetString(PyExc_KeyError, "getpwuid(): uid not found");
+		PyErr_Format(PyExc_KeyError,
+			     "getpwuid(): uid not found: %d", uid);
 		return NULL;
 	}
 	return mkpwent(p);
@@ -127,7 +128,8 @@ pwd_getpwnam(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:getpwnam", &name))
 		return NULL;
 	if ((p = getpwnam(name)) == NULL) {
-		PyErr_SetString(PyExc_KeyError, "getpwnam(): name not found");
+		PyErr_Format(PyExc_KeyError,
+			     "getpwnam(): name not found: %s", name);
 		return NULL;
 	}
 	return mkpwent(p);
