@@ -337,7 +337,7 @@ def demo():
     # more text
     write("end")
     if __name__ == '__main__':
-        root.mainloop()
+        _root.mainloop()
 
 if __name__ == '__main__':
     demo()
