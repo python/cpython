@@ -150,17 +150,27 @@ class TestTemplate(unittest.TestCase):
         raises(TypeError, s.substitute, d, {})
         raises(TypeError, s.safe_substitute, d, {})
 
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTemplate))
-    return suite
-
+    def test_delimiter_override(self):
+        class AmpersandTemplate(Template):
+            delimiter = '&'
+        s = AmpersandTemplate('this &gift is for &{who} &&')
+        self.assertEqual(s.substitute(gift='bud', who='you'),
+                         'this bud is for you &')
+        self.assertRaises(KeyError, s.substitute)
+        self.assertEqual(s.safe_substitute(gift='bud', who='you'),
+                         'this bud is for you &')
+        self.assertEqual(s.safe_substitute(),
+                         'this &gift is for &{who} &')
+        s = AmpersandTemplate('this &gift is for &{who} &')
+        self.assertRaises(ValueError, s.substitute,
+                          dict(gift='bud', who='you'))
+        self.assertRaises(ValueError, s.safe_substitute)
 
 def test_main():
     from test import test_support
-    test_support.run_suite(suite())
+    test_classes = [TestTemplate,]
+    test_support.run_unittest(*test_classes)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main()
