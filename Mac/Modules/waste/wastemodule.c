@@ -786,7 +786,7 @@ static PyObject *wasteObj_WEGetOffset(_self, _args)
 	_rv = WEGetOffset(&thePoint,
 	                  &edge,
 	                  _self->ob_itself);
-	_res = Py_BuildValue("lb",
+	_res = Py_BuildValue("lB",
 	                     _rv,
 	                     edge);
 	return _res;
@@ -825,7 +825,7 @@ static PyObject *wasteObj_WEFindWord(_self, _args)
 	WEEdge edge;
 	SInt32 wordStart;
 	SInt32 wordEnd;
-	if (!PyArg_ParseTuple(_args, "lb",
+	if (!PyArg_ParseTuple(_args, "lB",
 	                      &offset,
 	                      &edge))
 		return NULL;
@@ -849,7 +849,7 @@ static PyObject *wasteObj_WEFindLine(_self, _args)
 	WEEdge edge;
 	SInt32 lineStart;
 	SInt32 lineEnd;
-	if (!PyArg_ParseTuple(_args, "lb",
+	if (!PyArg_ParseTuple(_args, "lB",
 	                      &offset,
 	                      &edge))
 		return NULL;
@@ -873,7 +873,7 @@ static PyObject *wasteObj_WEFindParagraph(_self, _args)
 	WEEdge edge;
 	SInt32 paragraphStart;
 	SInt32 paragraphEnd;
-	if (!PyArg_ParseTuple(_args, "lb",
+	if (!PyArg_ParseTuple(_args, "lB",
 	                      &offset,
 	                      &edge))
 		return NULL;
@@ -927,7 +927,7 @@ static PyObject *wasteObj_WEGetAlignment(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = WEGetAlignment(_self->ob_itself);
-	_res = Py_BuildValue("b",
+	_res = Py_BuildValue("B",
 	                     _rv);
 	return _res;
 }
@@ -938,7 +938,7 @@ static PyObject *wasteObj_WESetAlignment(_self, _args)
 {
 	PyObject *_res = NULL;
 	WEAlignment alignment;
-	if (!PyArg_ParseTuple(_args, "b",
+	if (!PyArg_ParseTuple(_args, "B",
 	                      &alignment))
 		return NULL;
 	WESetAlignment(alignment,
@@ -2273,7 +2273,7 @@ void initwaste()
 	waste_Error = PyMac_GetOSErrException();
 	if (waste_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", waste_Error) != 0)
-		Py_FatalError("can't initialize waste.Error");
+		return;
 	WEO_Type.ob_type = &PyType_Type;
 	Py_INCREF(&WEO_Type);
 	if (PyDict_SetItemString(d, "WEOType", (PyObject *)&WEO_Type) != 0)
@@ -2285,7 +2285,7 @@ void initwaste()
 
 		callbackdict = PyDict_New();
 		if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
-			Py_FatalError("can't initialize Waste.callbackdict");
+			return;
 		upp_new_handler = NewWENewObjectProc(my_new_handler);
 		upp_dispose_handler = NewWEDisposeObjectProc(my_dispose_handler);
 		upp_draw_handler = NewWEDrawObjectProc(my_draw_handler);
