@@ -28,6 +28,8 @@ _open = __builtin__.open
 
 _BLOCKSIZE = 512
 
+error = IOError				# For anydbm
+
 class _Database:
 
 	def __init__(self, file):
