@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 Various bits of information used by the interpreter are collected in
 module 'sys'.
 Function member:
-- exit(sts): call (C, POSIX) exit(sts)
+- exit(sts): raise SystemExit
 Data members:
 - stdin, stdout, stderr: standard file objects
 - modules: the table of modules (dictionary)
