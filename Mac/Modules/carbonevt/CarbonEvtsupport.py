@@ -64,10 +64,10 @@ includestuff = r"""
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return; \
-    }} while(0)
+		PyErr_SetString(PyExc_NotImplementedError, \
+		"Not available in this shared library/OS version"); \
+		return; \
+	}} while(0)
 
 
 #define USE_MAC_MP_MULTITHREADING 0
@@ -145,24 +145,37 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 static EventHandlerUPP myEventHandlerUPP;
 
-pascal OSStatus myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
+static pascal OSStatus
+myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
 #if USE_MAC_MP_MULTITHREADING
-    MPEnterCriticalRegion(reentrantLock, kDurationForever);
-    PyEval_RestoreThread(_save);
+	MPEnterCriticalRegion(reentrantLock, kDurationForever);
+	PyEval_RestoreThread(_save);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
-    retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHandlerCallRef_New, handlerRef, EventRef_New, event);
-    status = PyInt_AsLong(retValue);
+	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHandlerCallRef_New, handlerRef, EventRef_New, event);
+	if (retValue == NULL) {
+		PySys_WriteStderr("Error in event handler callback:\n");
+		PyErr_Print();  /* this also clears the error */
+		status = noErr; /* complain? how? */
+	} else {
+		if (retValue == Py_None)
+			status = noErr;
+		else if (PyInt_Check(retValue)) {
+			status = PyInt_AsLong(retValue);
+		} else
+			status = noErr; /* wrong object type, complain? */
+		Py_DECREF(retValue);
+	}
 
 #if USE_MAC_MP_MULTITHREADING
-    _save = PyEval_SaveThread();
-    MPExitCriticalRegion(reentrantLock);
+	_save = PyEval_SaveThread();
+	MPExitCriticalRegion(reentrantLock);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
-    return status;
+	return status;
 }
 
 /******** end myEventHandler ***********/
