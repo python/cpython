@@ -531,17 +531,23 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	Py_INCREF(value);
 	Py_INCREF(key);
 	insertdict(mp, key, hash, value);
-	/* If we added a key, we can safely resize.  Otherwise skip this!
-	 * If fill >= 2/3 size, adjust size.  Normally, this doubles the
-	 * size, but it's also possible for the dict to shrink (if ma_fill is
-	 * much larger than ma_used, meaning a lot of dict keys have been
-	 * deleted).
+	/* If we added a key, we can safely resize.  Otherwise just return!
+	 * If fill >= 2/3 size, adjust size.  Normally, this doubles or
+	 * quaduples the size, but it's also possible for the dict to shrink
+	 * (if ma_fill is much larger than ma_used, meaning a lot of dict 
+	 * keys have been * deleted).
+	 * 
+	 * Quadrupling the size improves average dictionary sparseness
+	 * (reducing collisions) at the cost of some memory and iteration
+	 * speed (which loops over every possible entry).  It also halves
+	 * the number of expensive resize operations in a growing dictionary.
+	 * 
+	 * Very large dictionaries (over 50K items) use doubling instead.  
+	 * This may help applications with severe memory constraints.
 	 */
-	if (mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2) {
-		if (dictresize(mp, mp->ma_used*2) != 0)
-			return -1;
-	}
-	return 0;
+	if (!(mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2))
+		return 0;
+	return dictresize(mp, mp->ma_used*(mp->ma_used>50000 ? 2 : 4));
 }
 
 int
