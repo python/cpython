@@ -767,14 +767,12 @@ rotorobj_setkey(self, args)
 	Rotorobj *self;
 	PyObject * args;
 {
-	char *string = NULL;
+	char *key;
 
-	if (!PyArg_ParseTuple(args, "|s", &string))
+	if (!PyArg_ParseTuple(args, "s", &key))
 		return NULL;
 
-	if (string)
-		set_key(self, string);
-
+	set_key(self, key);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
