@@ -124,7 +124,7 @@ def addpackage(sitedir, name, known_paths):
         reset = 0
     fullname = os.path.join(sitedir, name)
     try:
-        f = file(fullname, "rU")
+        f = open(fullname, "rU")
     except IOError:
         return
     try:
@@ -149,7 +149,7 @@ def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
     'sitedir'"""
     if known_paths is None:
-        d = _init_pathinfo()
+        known_paths = _init_pathinfo()
         reset = 1
     else:
         reset = 0
@@ -162,7 +162,7 @@ def addsitedir(sitedir, known_paths=None):
         return
     names.sort()
     for name in names:
-        if name[-4:] == os.extsep + "pth":
+        if name.endswith(os.extsep + "pth"):
             addpackage(sitedir, name, known_paths)
     if reset:
         known_paths = None
