@@ -12,6 +12,17 @@ What's New in Python 2.3.5?
 Core and builtins
 -----------------
 
+- Bug #1055820 Cyclic garbage collection was not protecting against that
+  calling a live weakref to a piece of cyclic trash could resurrect an
+  insane mutation of the trash if any Python code ran during gc (via
+  running a dead object's __del__ method, running another callback on a
+  weakref to a dead object, or via any Python code run in any other thread
+  that managed to obtain the GIL while a __del__ or callback was running
+  in the thread doing gc).  The most likely symptom was "impossible"
+  ``AttributeEror`` exceptions, appearing seemingly at random, on weakly
+  referenced objects.  The cure was to clear all weakrefs to unreachable
+  objects before allowing any callbacks to run.
+
 - Bug #951851: Python crashed when reading import table of certain
   Windows DLLs
 
@@ -88,7 +99,7 @@ Library
 - Bug #679953: zipfile can now handle file sizes over 2 GB.  Previously the
   compressed and uncompressed file sizes were being stored as signed longs
   instead of unsigned as the ZIP spec specifies.
-  
+
 - Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects
   the documented behavior: the function passed to the onerror()
   handler can now also be os.listdir.
@@ -134,7 +145,7 @@ Build
 
 - Bug #1034496: Use -h instead of -soname for Solaris compatibility.
 
-- Patch #973204: Use -rpath instead of -R for runtime_library_dirs 
+- Patch #973204: Use -rpath instead of -R for runtime_library_dirs
   on Irix and True64.
 
 - Bug #978645: Modules/getpath.c now builds properly under --disable-framework
