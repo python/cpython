@@ -57,7 +57,6 @@ def open_new(url):      # Marked deprecated.  May be removed in 2.1.
 # an xterm.
 if os.environ.get("TERM") or os.environ.get("DISPLAY"):
     PROCESS_CREATION_DELAY = 4
-    global tryorder
     _tryorder = ("mozilla","netscape","kfm","grail","links","lynx","w3m")
 
     def _iscommand(cmd):
@@ -104,7 +103,9 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
                 def _remote(self, action, autoraise):
                     raise_opt = ("-noraise", "-raise")[autoraise]
-                    cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name, raise_opt, action)
+                    cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name,
+                                                                  raise_opt,
+                                                                  action)
                     rc = os.system(cmd)
                     if rc:
                         import time
@@ -152,7 +153,8 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                     return not rc
 
                 def open(self, url, new=1, autoraise=1):
-                    # XXX Currently I know no way to prevent KFM from opening a new win.
+                    # XXX Currently I know no way to prevent KFM from
+                    # opening a new win. 
                     self._remote("openURL %s" % url)
 
                 # Deprecated.  May be removed in 2.1.
@@ -171,7 +173,8 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                     import pwd
                     import socket
                     import tempfile
-                    tempdir = os.path.join(tempfile.gettempdir(), ".grail-unix")
+                    tempdir = os.path.join(tempfile.gettempdir(),
+                                           ".grail-unix")
                     user = pwd.getpwuid(_os.getuid())[0]
                     filename = os.path.join(tempdir, user + "-*")
                     maybes = glob.glob(filename)
@@ -216,7 +219,6 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 #
 
 if sys.platform[:3] == "win":
-    global _tryorder
     _tryorder = ("netscape", "windows-default")
 
     class WindowsDefault:
@@ -260,7 +262,7 @@ else:
     # Optimization: filter out alternatives that aren't available, so we can
     # avoid has_key() tests at runtime.  (This may also allow some unused
     # classes and class-instance storage to be garbage-collected.)
-    _tryorder = filter(lambda x: _browsers.has_key(x.lower()) or x.find("%s")>-1,\
-                       _tryorder)
+    _tryorder = filter(lambda x: _browsers.has_key(x.lower())
+                       or x.find("%s") > -1, _tryorder)
 
 # end
