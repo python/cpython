@@ -185,6 +185,31 @@ class NComparison(Comparison):
 	def __init__(self, obj1, obj2):
 		Comparison.__init__(obj1, self.relo, obj2)
 
+class Ordinal:
+	"""An AE Ordinal"""
+	
+	def __init__(self, abso):
+#		self.obj1 = obj1
+		self.abso = "%-4.4s" % str(abso)
+	
+	def __repr__(self):
+		return "Ordinal(%s)" % (`self.abso`)
+	
+	def __str__(self):
+		return "%s" % (string.strip(self.abso))
+	
+	def __aepack__(self):
+		return pack(self.abso, 'abso')
+
+def IsOrdinal(x):
+	return IsInstance(x, Ordinal)
+	
+class NOrdinal(Ordinal):
+	# The class attribute 'abso' must be set in a subclass
+	
+	def __init__(self):
+		Ordinal.__init__(self, self.abso)
+
 class Logical:
 	"""An AE logical expression object"""
 	
@@ -533,7 +558,7 @@ exec template % ("Text", 'text')
 exec template % ("Character", 'cha ')
 exec template % ("Word", 'cwor')
 exec template % ("Line", 'clin')
-exec template % ("Paragraph", 'cpar')
+exec template % ("paragraph", 'cpar')
 exec template % ("Window", 'cwin')
 exec template % ("Document", 'docu')
 exec template % ("File", 'file')
