@@ -4,8 +4,8 @@
 # Usage is as follows:
 #
 # import readcd
-# r = readcd.Readcd().init()
-# c = Cddb().init(r.gettrackinfo())
+# r = readcd.Readcd()
+# c = Cddb(r.gettrackinfo())
 #
 # Now you can use c.artist, c.title and c.track[trackno] (where trackno
 # starts at 1).  When the CD is not recognized, all values will be the empty
@@ -55,7 +55,7 @@ def tochash(toc):
 	return hash
 	
 class Cddb:
-	def init(self, tracklist):
+	def __init__(self, tracklist):
 		if posix.environ.has_key('CDDB_PATH'):
 			path = posix.environ['CDDB_PATH']
 			cddb_path = string.splitfields(path, ',')
@@ -104,7 +104,7 @@ class Cddb:
 			except IOError:
 				pass
 		if not hasattr(self, 'file'):
-			return self
+			return
 		import regex
 		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):\t\\(.*\\)')
 		while 1:
@@ -138,14 +138,17 @@ class Cddb:
 					continue
 				self.track[trackno] = value
 		f.close()
-		return self
 
 	def write(self):
+		import posixpath
 		if posix.environ.has_key('CDDB_WRITE_DIR'):
 			dir = posix.environ['CDDB_WRITE_DIR']
 		else:
 			dir = posix.environ['HOME'] + '/' + _cddbrc
 		file = dir + '/' + self.id + '.rdb'
+		if posixpath.exists(file):
+			# make backup copy
+			posix.rename(file, file + '~')
 		f = open(file, 'w')
 		f.write('album.title:\t' + self.title + '\n')
 		f.write('album.artist:\t' + self.artist + '\n')

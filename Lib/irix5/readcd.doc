@@ -18,7 +18,7 @@ read and the callbacks will be called.
 Initialization.
 ===============
 
-r = readcd.Readcd().init([cd-player [, mode]])
+r = readcd.Readcd([cd-player [, mode]])
 
 The optional arguments are the name of the CD device and the mode.
 When "mode" is not specified, it defaults to 'r' (which is the only

@@ -22,7 +22,7 @@ def _dopnum(self, cb_type, data):
 		func(arg, cb_type, data)
 
 class Readcd:
-	def init(self, *arg):
+	def __init__(self, *arg):
 		if len(arg) == 0:
 			self.player = cd.open()
 		elif len(arg) == 1:
@@ -38,7 +38,6 @@ class Readcd:
 		self.end = 0
 		self.status = None
 		self.trackinfo = None
-		return self
 
 	def eject(self):
 		self.player.eject()
