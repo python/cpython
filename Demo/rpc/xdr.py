@@ -92,11 +92,11 @@ class Unpacker:
 		# as a nonnegative Python int
 		if x < 0x80000000L: x = int(x)
 		return x
-	if struct.unpack('i', '\0\0\0\1') == 1:
+	if struct.unpack('l', '\0\0\0\1') == 1:
 		def unpack_uint(self):
 			i = self.pos
 			self.pos = j = i+4
-			return struct.unpack('i', self.buf[i:j])
+			return struct.unpack('l', self.buf[i:j])
 
 	def unpack_int(self):
 		x = self.unpack_uint()
