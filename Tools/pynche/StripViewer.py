@@ -80,6 +80,7 @@ class StripWidget(Pmw.MegaWidget):
 		   ('numchips', self._NUMCHIPS, Pmw.INITOPT),
 		   ('generator', None, Pmw.INITOPT),
 		   ('axis', None, Pmw.INITOPT),
+		   ('label', '', Pmw.INITOPT),
 		   )
 	self.defineoptions(kw, options)
 
@@ -93,13 +94,22 @@ class StripWidget(Pmw.MegaWidget):
 	numchips = self.__numchips = self['numchips']
 
 	canvaswidth = numchips * (chipwidth + 1)
-	canvasheight = chipheight + 35
+	canvasheight = chipheight + 43		  # TBD: Kludge
 
+	# create the canvas and pack it
 	self.__canvas = Canvas(
 	    parent,
 	    width=canvaswidth,
-	    height=canvasheight)
+	    height=canvasheight,
+## 	    borderwidth=2,
+## 	    relief=GROOVE
+	    )
+
 	self.__canvas.pack()
+	self.__canvas.bind('<ButtonRelease-1>',
+			   self.__select_chip)
+	self.__canvas.bind('<B1-Motion>',
+			   self.__select_chip)
 
 	# create the color strip
 	chips = self.__chips = []
@@ -112,6 +122,12 @@ class StripWidget(Pmw.MegaWidget):
 
 	    x = x + chipwidth + 1		  # for outline
 	    chips.append(rect)
+
+	# create the string tag
+	self.__label = self.__canvas.create_text(
+	    3, y + chipheight + 8,
+	    text=self['label'],
+	    anchor=W)
 
 	# create the arrow and text item
 	chipx = self.__arrow_x(0)
@@ -127,6 +143,28 @@ class StripWidget(Pmw.MegaWidget):
 
     def __set_color(self):
 	rgbtuple = self['color']
+	self.set_color(self, rgbtuple)
+
+    def __arrow_x(self, chipnum):
+	coords = self.__canvas.coords(self.__chips[chipnum])
+	assert coords
+	x0, y0, x1, y1 = coords
+	return (x1 + x0) / 2.0
+
+    def __select_chip(self, event=None):
+	chip = self.__canvas.find_closest(event.x, event.y)
+	delegate = self['delegate']
+	if chip and delegate:
+	    color = self.__canvas.itemcget(chip, 'fill')
+	    rgbtuple = ColorDB.rrggbb_to_triplet(color)
+	    delegate.set_color(self, rgbtuple)
+	
+
+    #
+    # public interface
+    #
+
+    def set_color(self, obj, rgbtuple):
 	red, green, blue = rgbtuple
 	if self.__generator:
 	    i = 0
@@ -164,9 +202,3 @@ class StripWidget(Pmw.MegaWidget):
 		outline = 'black'
 	    self.__canvas.itemconfigure(self.__chips[chip],
 					outline=outline)
-	
-    def __arrow_x(self, chipnum):
-	coords = self.__canvas.coords(self.__chips[chipnum])
-	assert coords
-	x0, y0, x1, y1 = coords
-	return (x1 + x0) / 2.0
