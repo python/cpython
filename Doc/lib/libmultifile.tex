@@ -1,8 +1,9 @@
 % Documentation by ESR
 \section{Standard Module \module{multifile}}
-\declaremodule[multifile]{standard}{multiFile}
+\declaremodule{standard}{multifile}
 
-\modulesynopsis{None}
+\modulesynopsis{Support for reading files which contain distinct
+parts, such as some MIME data.}
 
 
 The \class{MultiFile} object enables you to treat sections of a text
@@ -32,8 +33,8 @@ end-markers.  MultiFile is designed to support parsing of
 messages that may have multiple nested message parts, each with its
 own pattern for section-divider and end-marker lines.
 
-\subsection{MultiFile Objects}
-\label{MultiFile-objects}
+
+\subsection{MultiFile Objects \label{MultiFile-objects}}
 
 A \class{MultiFile} instance has the following methods:
 
@@ -129,8 +130,7 @@ True if the last end-of-file was for an end-of-message marker.
 \end{memberdesc}
 
 
-\subsection{\class{Multifile} Example}
-\label{multifile-example}
+\subsection{\class{MultiFile} Example \label{multifile-example}}
 
 % This is almost unreadable; should be re-written when someone gets time.
 
