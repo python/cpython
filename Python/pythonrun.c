@@ -675,12 +675,22 @@ PyRun_SimpleFileExFlags(FILE *fp, char *filename, int closeit,
 	if (m == NULL)
 		return -1;
 	d = PyModule_GetDict(m);
+	if (PyDict_GetItemString(d, "__file__") == NULL) {
+		PyObject *f = PyString_FromString(filename);
+		if (f == NULL)
+			return -1;
+		if (PyDict_SetItemString(d, "__file__", f) < 0) {
+			Py_DECREF(f);
+			return -1;
+		}
+		Py_DECREF(f);
+	}
 	ext = filename + strlen(filename) - 4;
 	if (maybe_pyc_file(fp, filename, ext, closeit)) {
 		/* Try to run a pyc file. First, re-open in binary */
 		if (closeit)
 			fclose(fp);
-		if( (fp = fopen(filename, "rb")) == NULL ) {
+		if ((fp = fopen(filename, "rb")) == NULL) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
 			return -1;
 		}
