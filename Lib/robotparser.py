@@ -9,7 +9,7 @@
     The robots.txt Exclusion Protocol is implemented as specified in
     http://info.webcrawler.com/mak/projects/robots/norobots-rfc.html
 """
-import re,urlparse,urllib
+import urlparse,urllib
 
 __all__ = ["RobotFileParser"]
 
