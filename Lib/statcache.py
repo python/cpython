@@ -49,8 +49,8 @@ def forget_dir(prefix):
 	prefix = os.path.dirname(os.path.join(prefix, "xxx"))
 	forget(prefix)
 	for path in cache.keys():
-	if path.startswith(prefix) and os.path.dirname(path) == prefix:
-		forget(path)
+		if path.startswith(prefix) and os.path.dirname(path) == prefix:
+			forget(path)
 
 def forget_except_prefix(prefix):
 	"""Remove all pathnames except with a given prefix.
