@@ -160,19 +160,38 @@ bz2
     project links in.
 
 
+_bsddb
+    Go to Sleepycat's patches page:
+        http://www.sleepycat.com/update/index.html
+    and download
+        4.0.14.zip
+    from the download page.  The file name is db-4.0.14.zip.  Unpack into
+        dist\db-4.0.14
 
-bsddb
-    Python wrapper for the BSD database 1.85.  Requires db.1.85.win32.zip,
-    from the "bsd db" link at
-        http://www.nightmare.com/software.html
-    Unpack into dist\bsddb.
-    You then need to compile it:  cd to dist\bsddb\Port\win32, and run
-        nmake -f makefile_nt.msc
-    This builds bsddb\Port\win32\db.lib, which the MSVC project links in.
-    Note that if you're running Win9X, you'll need to run vcvars32.bat
-    before running nmake (this batch file is in your MSVC installation).
-    TODO:  make this work like zlib (in particular, MSVC runs the prelink
-    step in an enviroment that already has the correct envars set up).
+    Apply the patch file bsddb_patch.txt in this (PCbuild) directory
+    against the file
+        dist\db-4.0.14\db\db_reclaim.c
+
+    Go to
+        http://www.sleepycat.com/docs/ref/build_win/intro.html
+    and follow the instructions for building the Sleepycat software.
+    Build the Release version.
+
+    XXX You have to copy
+    XXX     dist\db-4.0.14\build_win32\Release\libdb40.dll
+    XXX into PCbuild (or elsewhere on your path) before the tests
+    XXX will run.
+
+    XXX A debug-mode build blows up when running this, presumably because
+    XXX I'm mixing debug-mode MS stuff with Sleepycat's release-mode
+    XXX DLL.  This gives me a headache.  I would *like* to, as the old
+    XXX bsddb 1.85 project apparently managed to do, link the Berkeley
+    XXX DLL into the guts of our _bsddb.pyd.  I don't know how to.
+
+    XXX The installer needs to be changed accordingly.
+
+    XXX The Sleepycat release we use will probably change before
+    XXX 2.3a1.
 
 
 YOUR OWN EXTENSION DLLs

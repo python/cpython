@@ -1,0 +1,36 @@
+This patch is against Sleepycat's db-4.0.14 release.  It's not on the
+Sleepycat site.  It fixes cases of database corruption Barry (Warsaw)
+was seeing, and Barry got it from Sleepycat.
+
+*** db/db_reclaim.c.orig	2002/04/05 16:16:17	11.22
+--- db/db_reclaim.c	2002/04/10 18:53:13	11.23
+***************
+*** 195,202 ****
+  				    dbp->log_fileid, p->pgno, &LSN(meta),
+  				    PGNO_BASE_MD, &ldbt, meta->free)) != 0)
+  					goto err;
+- 
+  				LSN(p) = LSN(meta);
+  				if ((ret =
+  				    __db_pg_alloc_log(dbp->dbenv,
+  				    param->dbc->txn, &LSN(meta), 0,
+--- 195,202 ----
+  				    dbp->log_fileid, p->pgno, &LSN(meta),
+  				    PGNO_BASE_MD, &ldbt, meta->free)) != 0)
+  					goto err;
+  				LSN(p) = LSN(meta);
++ 
+  				if ((ret =
+  				    __db_pg_alloc_log(dbp->dbenv,
+  				    param->dbc->txn, &LSN(meta), 0,
+***************
+*** 206,211 ****
+--- 206,213 ----
+  					(void)__TLPUT(param->dbc, metalock);
+  					return (ret);
+  				}
++ 				LSN(p) = LSN(meta);
++ 
+  				if ((ret = mpf->put(mpf,
+  				     (PAGE *)meta, DB_MPOOL_DIRTY)) != 0) {
+  					(void)__TLPUT(param->dbc, metalock);
