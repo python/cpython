@@ -34,6 +34,18 @@ Core language, builtins, and interpreter
   item.  Such algorithms normally end up running in quadratic time;
   using popitem() they can usually be made to run in linear time.
 
+
+Standard library
+
+- The bisect module has new functions bisect_left, insort_left,
+  bisect_right and insort_right.  The old names bisect and insort
+  are now aliases for bisect_right and insort_right.  XXX_right
+  and XXX_left methods differ in what happens when the new element
+  compares equal to one or more elements already in the list:  the
+  XXX_left methods insert to the left, the XXX_right methods to the
+  right.
+
+
 Windows changes
 
 - select module:  By default under Windows, a select() call
