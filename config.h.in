@@ -25,6 +25,9 @@
    tzname.  */
 #undef HAVE_TZNAME
 
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
 /* Define if on MINIX.  */
 #undef _MINIX
 
@@ -61,6 +64,10 @@
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef uid_t
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
 
 /* Define if your <unistd.h> contains bad prototypes for exec*()
    (as it does on SGI IRIX 4.x) */
@@ -155,6 +162,18 @@
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
+/* Define if the compiler provides a wchar.h header file. */
+#undef HAVE_WCHAR_H
+
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be 16-bit unsigned type. (see
+   Include/unicodeobject.h). */
+#undef HAVE_USABLE_WCHAR_T
+
+/* Define if you want wctype.h functions to be used instead of the
+   one supplied by Python itself. (see Include/unicodectype.h). */
+#undef WANT_WCTYPE_FUNCTIONS
+
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
@@ -200,6 +219,15 @@
 /* Defined when any dynamic module loading is enabled */
 #undef HAVE_DYNAMIC_LOADING
 
+/* The number of bytes in a char.  */
+#undef SIZEOF_CHAR
+
+/* The number of bytes in a double.  */
+#undef SIZEOF_DOUBLE
+
+/* The number of bytes in a float.  */
+#undef SIZEOF_FLOAT
+
 /* The number of bytes in a int.  */
 #undef SIZEOF_INT
 
@@ -208,6 +236,9 @@
 
 /* The number of bytes in a long long.  */
 #undef SIZEOF_LONG_LONG
+
+/* The number of bytes in a short.  */
+#undef SIZEOF_SHORT
 
 /* The number of bytes in a void *.  */
 #undef SIZEOF_VOID_P
