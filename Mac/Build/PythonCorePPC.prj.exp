@@ -174,6 +174,7 @@ PySequence_Index
 PySequence_In
 PySequence_Contains
 PySequence_Count
+PySequence_Fast
 PySequence_List
 PySequence_Tuple
 PySequence_DelSlice
@@ -366,10 +367,14 @@ PyObject_SetAttrString
 PyObject_HasAttrString
 PyObject_GetAttrString
 PyObject_Hash
+_Py_HashPointer
+_Py_HashDouble
 PyObject_Compare
 PyObject_Str
 PyObject_Repr
 PyObject_Print
+_PyGC_Remove
+_PyGC_Insert
 _PyObject_Del
 _PyObject_NewVar
 _PyObject_New
@@ -820,6 +825,8 @@ h_errno
 gGUSIEventHook
 gGUSIExecHook
 gGUSISpinHook
+GUSI_sprintf__FPcPCce		# GUSI_sprintf(char*,const char*,...)
+GUSI_vsprintf__FPcPCcPc		# GUSI_vsprintf(char*,const char*,char*)
 GUSIHandleNextEvent__Fl		# GUSIHandleNextEvent(long)
 GUSISetMacHostError__Fs		# GUSISetMacHostError(short)
 GUSISetHostError__Fi		# GUSISetHostError(int)
@@ -923,6 +930,8 @@ StartSetup__11GUSIContextFv		# GUSIContext::StartSetup()
 Setup__11GUSIContextFb		# GUSIContext::Setup(bool)
 GUSIThreadSwitchOut
 GUSIThreadSwitchIn
+__dt__11GUSIProcessFv		# GUSIProcess::~GUSIProcess()
+QueueForClose__11GUSIProcessFP10GUSISocket		# GUSIProcess::QueueForClose(GUSISocket*)
 __ct__11GUSIProcessFb		# GUSIProcess::GUSIProcess(bool)
 sBlocks__Q216GUSIContextQueue7element		# GUSIContextQueue::element::sBlocks
 Wakeup__16GUSIContextQueueFv		# GUSIContextQueue::Wakeup()
@@ -944,13 +953,15 @@ __ct__14GUSIDConSocketFPCc		# GUSIDConSocket::GUSIDConSocket(const char*)
 open__14GUSIDConDeviceFR13GUSIFileTokeni		# GUSIDConDevice::open(GUSIFileToken&,int)
 Want__14GUSIDConDeviceFR13GUSIFileToken		# GUSIDConDevice::Want(GUSIFileToken&)
 GUSIwithDConSockets
+sGUSIDescriptorTable__19GUSIDescriptorTable		# GUSIDescriptorTable::sGUSIDescriptorTable
+__ct__19GUSIDescriptorTableFRC19GUSIDescriptorTable		# GUSIDescriptorTable::GUSIDescriptorTable(const GUSIDescriptorTable&)
 LookupSocket__19GUSIDescriptorTableFi		# GUSIDescriptorTable::LookupSocket(int)
 __vc__19GUSIDescriptorTableFi		# GUSIDescriptorTable::operator [](int)
 RemoveSocket__19GUSIDescriptorTableFi		# GUSIDescriptorTable::RemoveSocket(int)
 InstallSocket__19GUSIDescriptorTableFP10GUSISocketi		# GUSIDescriptorTable::InstallSocket(GUSISocket*,int)
 __dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
 CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
-__dt__Q23std70auto_ptr<19GUSIDescriptorTable,Q23std30_Single<19GUSIDescriptorTable>>Fv		# std::auto_ptr<GUSIDescriptorTable, std::_Single<GUSIDescriptorTable>>::~auto_ptr()
+SetInstance__19GUSIDescriptorTableFP19GUSIDescriptorTable		# GUSIDescriptorTable::SetInstance(GUSIDescriptorTable*)
 Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
 GUSIDefaultSetupConsole
 GUSISetupConsole
@@ -1315,6 +1326,7 @@ __dt__19GUSIOTStreamFactoryFv		# GUSIOTStreamFactory::~GUSIOTStreamFactory()
 __dt__13GUSIOTFactoryFv		# GUSIOTFactory::~GUSIOTFactory()
 __dt__21GUSIOTDatagramFactoryFv		# GUSIOTDatagramFactory::~GUSIOTDatagramFactory()
 select__20GUSIOTDatagramSocketFPbPbPb		# GUSIOTDatagramSocket::select(bool*,bool*,bool*)
+__dt__Q23std80auto_ptr<24GUSIOTAddr<9TUnitData,5>,Q23std35_Single<24GUSIOTAddr<9TUnitData,5>>>Fv		# std::auto_ptr<GUSIOTAddr<TUnitData, 5>, std::_Single<GUSIOTAddr<TUnitData, 5>>>::~auto_ptr()
 sendto__20GUSIOTDatagramSocketFRC12GUSIGathereriPCvUi		# GUSIOTDatagramSocket::sendto(const GUSIGatherer&,int,const void*,unsigned int)
 __dt__13GUSIScattererFv		# GUSIScatterer::~GUSIScatterer()
 recvfrom__20GUSIOTDatagramSocketFRC13GUSIScattereriPvPUi		# GUSIOTDatagramSocket::recvfrom(const GUSIScatterer&,int,void*,unsigned int*)
@@ -1334,6 +1346,7 @@ accept__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::accept(void*,unsigned 
 getpeername__18GUSIOTStreamSocketFPvPUi		# GUSIOTStreamSocket::getpeername(void*,unsigned int*)
 listen__18GUSIOTStreamSocketFi		# GUSIOTStreamSocket::listen(int)
 MopupEvents__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::MopupEvents()
+Close__18GUSIOTStreamSocketFUl		# GUSIOTStreamSocket::Close(unsigned long)
 __dt__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::~GUSIOTStreamSocket()
 close__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::close()
 Clone__18GUSIOTStreamSocketFv		# GUSIOTStreamSocket::Clone()
@@ -1474,12 +1487,12 @@ socketpair
 socket
 getdtablesize
 mktime__FPQ23std2tm		# mktime(std::tm*)
-gmtime__FPCUl		# gmtime(const unsigned long*)
-localtime__FPCUl		# localtime(const unsigned long*)
+gmtime
+localtime
 __dt__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>Fv		# GUSISpecificData<std::tm, &.GUSIKillTM>::~GUSISpecificData()
 GUSIKillTM
 gettimeofday
-time__FPUl		# time(unsigned long*)
+time
 getcwd
 chdir
 closedir
@@ -1605,9 +1618,13 @@ getsockname__10GUSISocketFPvPUi		# GUSISocket::getsockname(void*,unsigned int*)
 bind__10GUSISocketFPvUi		# GUSISocket::bind(void*,unsigned int)
 RemoveContext__10GUSISocketFP11GUSIContext		# GUSISocket::RemoveContext(GUSIContext*)
 AddContext__10GUSISocketFP11GUSIContext		# GUSISocket::AddContext(GUSIContext*)
-Supports__10GUSISocketFQ210GUSISocket12ConfigOption		# GUSISocket::Supports(GUSISocket::ConfigOption)
 __dt__10GUSISocketFv		# GUSISocket::~GUSISocket()
+Close__10GUSISocketFUl		# GUSISocket::Close(unsigned long)
+CheckClose__10GUSISocketFUl		# GUSISocket::CheckClose(unsigned long)
 close__10GUSISocketFv		# GUSISocket::close()
+Dequeue__10GUSISocketFv		# GUSISocket::Dequeue()
+Enqueue__10GUSISocketFPP10GUSISocket		# GUSISocket::Enqueue(GUSISocket**)
+Supports__10GUSISocketFQ210GUSISocket12ConfigOption		# GUSISocket::Supports(GUSISocket::ConfigOption)
 __ct__10GUSISocketFv		# GUSISocket::GUSISocket()
 __ct__10GUSImsghdrFRC13GUSIScattGathPCvUi		# GUSImsghdr::GUSImsghdr(const GUSIScattGath&,const void*,unsigned int)
 sKeyAlloc__17GUSISpecificTable		# GUSISpecificTable::sKeyAlloc
@@ -1633,8 +1650,8 @@ GUSIKillTimers
 __dt__Q29GUSITimer10TimerQueueFv		# GUSITimer::TimerQueue::~TimerQueue()
 Wakeup__9GUSITimerFv		# GUSITimer::Wakeup()
 __dt__Q211GUSIProcess7A5SaverFv		# GUSIProcess::A5Saver::~A5Saver()
-LocalTime__8GUSITimeFv		# GUSITime::LocalTime()
-GMTime__8GUSITimeFv		# GUSITime::GMTime()
+GM2LocalTime__8GUSITimeFv		# GUSITime::GM2LocalTime()
+Local2GMTime__8GUSITimeFv		# GUSITime::Local2GMTime()
 Zone__8GUSITimeFv		# GUSITime::Zone()
 Now__8GUSITimeFv		# GUSITime::Now()
 __ct__8GUSITimeFRCQ23std2tm		# GUSITime::GUSITime(const std::tm&)
@@ -1999,11 +2016,8 @@ system
 getenv
 __month_to_days
 strftime
-localtime
-gmtime
 ctime
 asctime
-time
 mktime
 difftime
 clock
