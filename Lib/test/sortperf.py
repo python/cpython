@@ -76,12 +76,13 @@ def tabulate(r):
     /sort: ascending data
     3sort: ascending, then 3 random exchanges
     +sort: ascending, then 10 random at the end
+    %sort: ascending, then randomly replace 1% of the elements w/ random values
     ~sort: many duplicates
     =sort: all equal
     !sort: worst case scenario
 
     """
-    cases = tuple([ch + "sort" for ch in r"*\/3+~=!"])
+    cases = tuple([ch + "sort" for ch in r"*\/3+%~=!"])
     fmt = ("%2s %7s" + " %6s"*len(cases))
     print fmt % (("i", "2**i") + cases)
     for i in r:
@@ -105,6 +106,11 @@ def tabulate(r):
         if n >= 10:
             L[-10:] = [random.random() for dummy in range(10)]
         doit(L) # +sort
+
+        # Replace 1% of the elements at random.
+        for dummy in xrange(n // 100):
+            L[random.randrange(n)] = random.random()
+        doit(L) # %sort
 
         # Arrange for lots of duplicates.
         if n > 4:
