@@ -34,6 +34,12 @@ EventTypeSpec_ptr = OpaqueType("EventTypeSpec", "EventTypeSpec")
 void_ptr = stringptr
 # here are some types that are really other types
 
+class MyVarInputBufferType(VarInputBufferType):
+	def passInput(self, name):
+		return "%s__len__, %s__in__" % (name, name)
+
+MyInBuffer = MyVarInputBufferType('char', 'long', 'l')		# (buf, len)
+
 EventTime = double
 EventTimeout = EventTime
 EventTimerInterval = EventTime
