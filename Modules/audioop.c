@@ -111,7 +111,7 @@ static int ulaw_table[256] = {
 	120,    112,    104,     96,     88,     80,     72,     64,
 	56,     48,     40,     32,     24,     16,      8,      0 };
 
-#define ZEROTRAP    /* turn on the trap as per the MIL-STD */
+/* #define ZEROTRAP    /* turn on the trap as per the MIL-STD */
 #define BIAS 0x84   /* define the add-in bias for 16 bit samples */
 #define CLIP 32635
 
