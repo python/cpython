@@ -15,7 +15,7 @@ from distutils.util import convert_path
 from distutils import log
 
 # check if Python is called on the first line with this expression
-first_line_re = re.compile(r'^#!.*python[0-9.]*(\s+.*)?$')
+first_line_re = re.compile('^#!.*python[0-9.]*([ \t].*)?$')
 
 class build_scripts (Command):
 
@@ -96,7 +96,7 @@ class build_scripts (Command):
                                    (os.path.normpath(sys.executable),
                                     post_interp))
                     else:
-                        outf.write("#!%s%s" %
+                        outf.write("#!%s%s\n" %
                                    (os.path.join(
                             sysconfig.get_config_var("BINDIR"),
                             "python" + sysconfig.get_config_var("EXE")),
