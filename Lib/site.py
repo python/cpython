@@ -267,7 +267,7 @@ Thanks to CWI, CNRI, BeOpen.com, Digital Creations and a cast of thousands
 for supporting Python development.  See www.python.org for more information.""")
 here = os.path.dirname(os.__file__)
 __builtin__.license = _Printer(
-    "license", "See http://www.pythonlabs.com/products/python2.0/license.html",
+    "license", "See http://www.python.org/%.3s/license.html" % sys.version,
     ["LICENSE.txt", "LICENSE"],
     [os.path.join(here, os.pardir), here, os.curdir])
 
