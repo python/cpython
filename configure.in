@@ -209,7 +209,7 @@ then
     BUILDEXEEXT=.exe
 else
 	AC_MSG_RESULT(no)
-	BUILDEXEEXT='$(EXEEXT)'
+	BUILDEXEEXT=$EXEEXT
 fi
 
 case $MACHDEP in
