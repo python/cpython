@@ -51,7 +51,7 @@ class InterslipControl(FrameWork.Application):
 		self.quititem = FrameWork.MenuItem(m, "Quit", "Q", self.quit)
 	
 	def quit(self, *args):
-		raise self
+		self._quit()
 		
 	def do_about(self, *args):
 		f = Dlg.GetNewDialog(ID_ABOUT, -1)

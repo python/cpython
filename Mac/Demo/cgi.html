@@ -30,11 +30,6 @@ This file contains two classes, <code>MiniApplication</code> and <code>AEServer<
 MiniApplication is a tiny replacement for <code>FrameWork.Application</code>,
 suitable if your application does not need windows and such. 
 
-<blockquote>Actually, Framework.Application has a problem for AE Servers,
-due to the way it expects to be quit through an exception, and raising an exception
-while inside an Apple Event handler is a very bad idea. This will be fixed.
-</blockquote>
-
 AEServer is a bit of glue that does part of the appleevent decoding for you. You
 call <code>installaehandler</code> passing it the class and id (4-char strings)
 of the event you have a handler for and the handler callback routine. When the
@@ -45,7 +40,7 @@ suites provide. <p>
 
 You can test AEServer by double-clicking it. It will react to the standard
 run/open/print/quit OSA commands. If it is running as a normal python script and you
-drag a file onto the interpreter the script will tell you what event is got. <p>
+drag a file onto the interpreter the script will tell you what event it got. <p>
 
 <h2>A Minimal CGI script</h2>
 

@@ -295,7 +295,7 @@ class Ped(Application):
 			w.close()
 		if self._windows:
 			return
-		raise self
+		self._quit()
 		
 	#
 	# Edit menu
