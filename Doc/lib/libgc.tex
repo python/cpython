@@ -83,7 +83,11 @@ The following variable is provided for read-only access:
 
 \begin{datadesc}{garbage}
 A list of objects which the collector found to be unreachable
-but could not be freed (uncollectable objects).  Objects that have
+but could not be freed (uncollectable objects).  By default, this list
+contains only objects with \method{__del__()} methods.\footnote{Prior to
+  Python 2.2, the list contained all instance objects in unreachable
+  cycles,  not only those with \method{__del__()} methods.}
+Objects that have
 \method{__del__()} methods and create part of a reference cycle cause
 the entire reference cycle to be uncollectable.  If
 \constant{DEBUG_SAVEALL} is set, then all unreachable objects will

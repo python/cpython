@@ -32,6 +32,11 @@ Core and builtins
 
 Extension modules
 
+- By default, the gc.garbage list now contains only those instances in
+  unreachable cycles that have __del__ methods; in 2.1 it contained all
+  instances in unreachable cycles.  "Instances" here has been generalized
+  to include instances of both new-style and old-style classes.
+
 - The socket module defines a new method for socket objects,
   sendall().  This is like send() but may make multiple calls to
   send() until all data has been sent.  Also, the socket function has
