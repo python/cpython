@@ -3,6 +3,10 @@
 #include <tcl.h>
 #include <tk.h>
 
+#ifdef WITH_BLT
+#include "blt.h"
+#endif
+
 int
 Tcl_AppInit (interp)
 	Tcl_Interp *interp;
@@ -40,6 +44,21 @@ Tcl_AppInit (interp)
 		extern void TkImaging_Init(void);
 		TkImaging_Init();
 	}
+#endif
+
+#ifdef WITH_TIX
+	if (Tix_Init (interp) == TCL_ERROR) {
+		fprintf(stderr, "Tix_Init error: #s\n", interp->result);
+		return TCL_ERROR;
+	}
+#endif
+
+#ifdef WITH_BLT
+	if (Blt_Init(interp) != TCL_OK) {
+		fprintf(stderr, "BLT_Init error: #s\n", interp->result);
+		return TCL_ERROR;
+	}
+	Tcl_StaticPackage(interp, "Blt", Blt_Init, Blt_SafeInit);
 #endif
 
 #ifdef WITH_XXX
