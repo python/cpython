@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #876278: Unbounded recursion in modulefinder
+
 - Brought platform.py in line with the 2.4 version, fixing support for
   newer Windows versions and a cache issue.
 
