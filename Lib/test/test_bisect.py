@@ -151,6 +151,47 @@ class TestInsort(unittest.TestCase):
 
 #==============================================================================
 
+
+class LenOnly:
+    "Dummy sequence class defining __len__ but not __getitem__."
+    def __len__(self):
+        return 10
+
+class GetOnly:
+    "Dummy sequence class defining __getitem__ but not __len__."
+    def __getitem__(self, ndx):
+        return 10
+
+class CmpErr:
+    "Dummy element that always raises an error during comparison"
+    def __cmp__(self, other):
+        raise ZeroDivisionError
+
+class TestErrorHandling(unittest.TestCase):
+
+    def test_non_sequence(self):
+        for f in (bisect_left, bisect_right, insort_left, insort_right):
+            self.assertRaises(TypeError, f, 10, 10)
+
+    def test_len_only(self):
+        for f in (bisect_left, bisect_right, insort_left, insort_right):
+            self.assertRaises(AttributeError, f, LenOnly(), 10)
+
+    def test_get_only(self):
+        for f in (bisect_left, bisect_right, insort_left, insort_right):
+            self.assertRaises(AttributeError, f, GetOnly(), 10)
+
+    def test_get_only(self):
+        seq = [CmpErr(), CmpErr(), CmpErr()]
+        for f in (bisect_left, bisect_right, insort_left, insort_right):
+            self.assertRaises(ZeroDivisionError, f, seq, 10)
+
+    def test_arg_parsing(self):
+        for f in (bisect_left, bisect_right, insort_left, insort_right):
+            self.assertRaises(TypeError, f, 10)
+
+#==============================================================================
+
 libreftest = """
 Example from the Library Reference:  Doc/lib/libbisect.tex
 
@@ -178,8 +219,25 @@ __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     from test import test_bisect
-    test_support.run_unittest(TestBisect, TestInsort)
+    from types import BuiltinFunctionType
+    import sys
+
+    test_classes = [TestBisect, TestInsort]
+    if isinstance(bisect_left, BuiltinFunctionType):
+        test_classes.append(TestErrorHandling)
+
+    test_support.run_unittest(*test_classes)
     test_support.run_doctest(test_bisect, verbose)
+
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(*test_classes)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
 
 if __name__ == "__main__":
     test_main(verbose=True)
