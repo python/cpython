@@ -380,6 +380,15 @@ Misc/python-mode.el.  Originally written by Tim Peters, who's no
 longer on the net, it is now maintained by Barry Warsaw
 <bwarsaw@cnri.reston.va.com>.
 
+BTW, if you want to use font-lock for Python sources, here's something
+to put in your .emacs file:
+
+	(defun my-python-mode-hook ()
+	  (setq font-lock-keywords python-font-lock-keywords)
+	  (font-lock-mode 1))
+	(add-hook 'python-mode-hook 'my-python-mode-hook)
+
+
 
 Bug reports
 -----------
@@ -430,8 +439,8 @@ have to edit the first line as well to fix the -I and -L options.)
 See the Build Instructions above for more details.
 
 There is little documentation.  Begin with fetching the "Tk Lifesaver"
-document, e.g. <URL:ftp://ftp.cwi.nl/pub/python/tkinter-doc.tar.gz> (a
-gzipped tar file containing a PostScript file).  There are demos in
+document, e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/tkinter-doc.tar.gz>
+(a gzipped tar file containing a PostScript file).  There are demos in
 the Demo/tkinter directory, in the subdirectories guido, matt and www.
 
 Note that there's a Python module called "Tkinter" (capital T) which
