@@ -838,12 +838,16 @@ Returns true if the given rectangle is empty.
 A rectangle
 \code{(\var{left}, \var{top}), (\var{right}, \var{bottom})}
 is empty if
+%begin{latexonly}
 \iftexi
+%end{latexonly}
 \code{\var{left} >= \var{right}} or \code{\var{top} => \var{bottom}}.
+%begin{latexonly}
 \else
 $\var{left} \geq \var{right}$ or $\var{top} \geq \var{bottom}$.
 %%JHXXX\emph{left~$\geq$~right} or \emph{top~$\leq$~bottom}.
 \fi
+%end{latexonly}
 \end{funcdesc}
 
 \begin{funcdesc}{intersect}{list}
@@ -873,13 +877,17 @@ By definition, a point
 \code{(\var{h}, \var{v})}
 is inside a rectangle
 \code{(\var{left}, \var{top}), (\var{right}, \var{bottom})} if
+%begin{latexonly}
 \iftexi
+%end{latexonly}
 \code{\var{left} <= \var{h} < \var{right}} and
 \code{\var{top} <= \var{v} < \var{bottom}}.
+%begin{latexonly}
 \else
 $\var{left} \leq \var{h} < \var{right}$ and
 $\var{top} \leq \var{v} < \var{bottom}$.
 \fi
+%end{latexonly}
 \end{funcdesc}
 
 \begin{funcdesc}{inset}{rect, \(dh, dv\)}
