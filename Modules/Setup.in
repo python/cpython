@@ -145,10 +145,16 @@ operator operator.c	# operator.add() and similar goodies
 fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
 grp grpmodule.c		# grp(3)
+errno errnomodule.c	# posix (UNIX) errno values
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
 #_socket socketmodule.c	# socket(2); use this one for BeOS sockets
-errno errnomodule.c	# posix (UNIX) errno values
+
+# Socket module compiled with SSL support; you must edit the SSL variable:
+#SSL=/usr/local/ssl
+#socket socketmodule.c \
+#	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
+#	-L$(SSL)/lib -lssl -lcrypto
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
