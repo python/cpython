@@ -15,10 +15,6 @@ interpreter.
 The \module{readline} module defines the following functions:
 
 
-\begin{funcdesc}{readline}{\optional{prompt}}
-Get a single line of input from the user.
-\end{funcdesc}
-
 \begin{funcdesc}{parse_and_bind}{string}
 Parse and execute single line of a readline init file.
 \end{funcdesc}
@@ -160,7 +156,7 @@ del os, histfile
 \end{verbatim}
 
 The following example extends the \class{code.InteractiveConsole} class to
-support command line editing and history save/restore.
+support history save/restore.
 
 \begin{verbatim}
 import code
@@ -182,12 +178,6 @@ class HistoryConsole(code.InteractiveConsole):
             except IOError:
                 pass
             atexit.register(self.save_history, histfile)
-
-    def raw_input(self, prompt=""):
-        line = readline.readline(prompt)
-        if line:
-            readline.add_history(line)
-        return line
 
     def save_history(self, histfile):
         readline.write_history_file(histfile)
