@@ -164,8 +164,6 @@ tcpcs_getattr(self, name)
 	tcpcsobject *self;
 	char *name;
 {
-	object *rv;
-	
 	return getmember((char *)&self->status, tcpcs_memberlist, name);
 }
 
@@ -295,7 +293,7 @@ tcps_asr_safe(arg)
 	object *args, *rv;
 	
 	if ( self->asr == None )
-		return;
+		return 0;
 	args = mkvalue("(ii)", self->asr_ec, self->asr_reason);
 	rv = call_object(self->asr, args);
 	DECREF(args);
@@ -459,7 +457,6 @@ tcps_Rcv(self, args)
 	tcpsobject *self;
 	object *args;
 {
-	int length;
 	int timeout;
 	rdsEntry rds[2];
 	OSErr err;
@@ -666,7 +663,7 @@ udps_asr_safe(arg)
 	object *args, *rv;
 	
 	if ( self->asr == None )
-		return;
+		return 0;
 	args = mkvalue("(i)", self->asr_ec);
 	rv = call_object(self->asr, args);
 	DECREF(args);
