@@ -21,6 +21,7 @@ extern "C" {
 
 #define UNARY_INVERT	15
 
+#define LIST_APPEND	18
 #define BINARY_POWER	19
 
 #define BINARY_MULTIPLY	20
