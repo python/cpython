@@ -345,6 +345,21 @@ def my_import(name):
   that differentiate between binary and text files (else it is
   ignored).  If the file cannot be opened, \exception{IOError} is
   raised.
+  
+  In addition to the standard \cfunction{fopen()} values \var{mode}
+  may be \code{'U'} or \code{'rU'}. If Python is built with universal
+  newline support (the default) the file is opened as a text file, but
+  lines may be terminated by any of \code{'\e n'}, the Unix end-of-line
+  convention,
+  \code{'\e r'}, the Macintosh convention or \code{'\e r\e n'}, the Windows
+  convention. All of these external representations are seen as
+  \code{'\e n'}
+  by the Python program. If Python is built without universal newline support
+  \var{mode} \code{'U'} is the same as normal text mode.  Note that
+  file objects so opened also have an attribute called
+  \member{newlines} which has a value of \code{None} (if no newlines
+  have yet been seen), \code{'\e n'}, \code{'\e r'}, \code{'\e r\e n'}, 
+  or a tuple containing all the newline types seen.
 
   If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
   binary file, you should append \code{'b'} to the \var{mode} value

@@ -1248,6 +1248,18 @@ file object, of the form \samp{<\mbox{\ldots}>}.  This is a read-only
 attribute and may not be present on all file-like objects.
 \end{memberdesc}
 
+\begin{memberdesc}[file]{newlines}
+If Python was built with the \code{--with-universal-newlines} option
+(the default) this read-only attribute exists, and for files opened in
+universal newline read mode it keeps track of the types of newlines
+encountered while reading the file. The values it can take are
+\code{'\e r'}, \code{'\e n'}, \code{'\e r\e n'}, \code{None} (unknown,
+no newlines read yet) or a tuple containing all the newline
+types seen, to indicate that multiple
+newline conventions were encountered. For files not opened in universal
+newline read mode the value of this attribute will be \code{None}.
+\end{memberdesc}
+
 \begin{memberdesc}[file]{softspace}
 Boolean that indicates whether a space character needs to be printed
 before another value when using the \keyword{print} statement.
