@@ -3166,6 +3166,19 @@ def weakref_segfault():
     del o
 
 
+def crash_in_get_sf736892():
+    def func():
+        pass
+
+    try:
+        f = func.__get__(None)
+    except TypeError:
+        pass
+    else:
+        # should not get here
+        f(1) # crash
+
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     class_docstrings()
@@ -3231,6 +3244,7 @@ def test_main():
     funnynew()
     subclass_right_op()
     dict_type_with_metaclass()
+    crash_in_get_sf736892()
 
     if verbose: print "All OK"
 
