@@ -11,9 +11,9 @@ if [ -z "$HOME" ] ; then
     export HOME
 fi
 
-UPDATES=$HOME/tmp/python-docs-update.tar.bz2
+UPDATES="$HOME/tmp/$1"
 
-cd /home/groups/python/htdocs
+cd /home/groups/python/htdocs || exit $?
 rm -rf devel-docs || exit $?
 mkdir devel-docs || exit $?
 cd devel-docs || exit $?
