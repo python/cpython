@@ -275,9 +275,9 @@ What we want to avoid is picking minrun such that in
     q, r = divmod(N, minrun)
 
 q is a power of 2 and r>0 (then the last merge only gets r elements into
-place, and r<minrun is small compared to N), or r=0 and q a little larger
-than a power of 2 (then we've got a case similar to "2112", again leaving
-too little work for the last merge to do).
+place, and r < minrun is small compared to N), or q a little larger than a
+power of 2 regardless of r (then we've got a case similar to "2112", again
+leaving too little work for the last merge to do).
 
 Instead we pick a minrun in range(32, 65) such that N/minrun is exactly a
 power of 2, or if that isn't possible, is close to, but strictly less than,
