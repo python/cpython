@@ -24,7 +24,7 @@
  * 2000-10-24 fl  really fixed assert_not; reset groups in findall
  * 2000-12-21 fl  fixed memory leak in groupdict
  * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
- * 2001-01-15 fl  don't use recursion for unbounded MIN_UTIL; fixed
+ * 2001-01-15 fl  avoid recursion for MIN_UTIL; fixed uppercase literal bug
  * 2001-01-16 fl  fixed memory leak in pattern destructor
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
@@ -40,7 +40,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2001 by Secret Labs AB ";
+char copyright[] = " SRE 2.1 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -49,7 +49,9 @@ char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2001 by Secret Labs AB ";
 #include <ctype.h>
 
 /* name of this module, minus the leading underscore */
-#define MODULE "sre"
+#if !defined(SRE_MODULE)
+#define SRE_MODULE "sre"
+#endif
 
 /* defining this one enables tracing */
 #undef VERBOSE
@@ -80,6 +82,10 @@ char copyright[] = " SRE 0.9.9 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 /* enables aggressive inlining (always on for Visual C) */
 #undef USE_INLINE
+
+#if PY_VERSION_HEX < 0x01060000
+#define PyObject_DEL(op) PyMem_DEL((op))
+#endif
 
 /* -------------------------------------------------------------------- */
 
@@ -221,6 +227,23 @@ sre_category(SRE_CODE category, unsigned int ch)
         return SRE_UNI_IS_LINEBREAK(ch);
     case SRE_CATEGORY_UNI_NOT_LINEBREAK:
         return !SRE_UNI_IS_LINEBREAK(ch);
+#else
+    case SRE_CATEGORY_UNI_DIGIT:
+        return SRE_IS_DIGIT(ch);
+    case SRE_CATEGORY_UNI_NOT_DIGIT:
+        return !SRE_IS_DIGIT(ch);
+    case SRE_CATEGORY_UNI_SPACE:
+        return SRE_IS_SPACE(ch);
+    case SRE_CATEGORY_UNI_NOT_SPACE:
+        return !SRE_IS_SPACE(ch);
+    case SRE_CATEGORY_UNI_WORD:
+        return SRE_LOC_IS_WORD(ch);
+    case SRE_CATEGORY_UNI_NOT_WORD:
+        return !SRE_LOC_IS_WORD(ch);
+    case SRE_CATEGORY_UNI_LINEBREAK:
+        return SRE_IS_LINEBREAK(ch);
+    case SRE_CATEGORY_UNI_NOT_LINEBREAK:
+        return !SRE_IS_LINEBREAK(ch);
 #endif
     }
     return 0;
@@ -1208,32 +1231,21 @@ _compile(PyObject* self_, PyObject* args)
     int groups = 0;
     PyObject* groupindex = NULL;
     PyObject* indexgroup = NULL;
-    if (!PyArg_ParseTuple(args, "OiO|iOO", &pattern, &flags, &code,
-                          &groups, &groupindex, &indexgroup))
+    if (!PyArg_ParseTuple(args, "OiO!|iOO", &pattern, &flags,
+                          &PyList_Type, &code, &groups,
+                          &groupindex, &indexgroup))
         return NULL;
 
-    code = PySequence_Fast(code, "code argument must be a sequence");
-    if (!code)
-        return NULL;
-
-#if PY_VERSION_HEX >= 0x01060000
-    n = PySequence_Size(code);
-#else
-    n = PySequence_Length(code);
-#endif
+    n = PyList_GET_SIZE(code);
 
     self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
-    if (!self) {
-        Py_DECREF(code);
+    if (!self)
         return NULL;
-    }
 
     for (i = 0; i < n; i++) {
-        PyObject *o = PySequence_Fast_GET_ITEM(code, i);
+        PyObject *o = PyList_GET_ITEM(code, i);
         self->code[i] = (SRE_CODE) PyInt_AsLong(o);
     }
-
-    Py_DECREF(code);
 
     if (PyErr_Occurred()) {
         PyObject_DEL(self);
@@ -1270,9 +1282,11 @@ sre_getlower(PyObject* self, PyObject* args)
         return NULL;
     if (flags & SRE_FLAG_LOCALE)
         return Py_BuildValue("i", sre_lower_locale(character));
-#if defined(HAVE_UNICODE)
     if (flags & SRE_FLAG_UNICODE)
+#if defined(HAVE_UNICODE)
         return Py_BuildValue("i", sre_lower_unicode(character));
+#else
+        return Py_BuildValue("i", sre_lower_locale(character));
 #endif
     return Py_BuildValue("i", sre_lower(character));
 }
@@ -1380,9 +1394,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     if (pattern->flags & SRE_FLAG_LOCALE)
         state->lower = sre_lower_locale;
-#if defined(HAVE_UNICODE)
     else if (pattern->flags & SRE_FLAG_UNICODE)
+#if defined(HAVE_UNICODE)
         state->lower = sre_lower_unicode;
+#else
+        state->lower = sre_lower_locale;
 #endif
     else
         state->lower = sre_lower;
@@ -1520,7 +1536,7 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
 
     string = state_init(&self->state, pattern, string, start, end);
     if (!string) {
-        PyObject_Del(self);
+        PyObject_DEL(self);
         return NULL;
     }
 
@@ -1619,7 +1635,7 @@ call(char* function, PyObject* args)
     PyObject* func;
     PyObject* result;
 
-    name = PyString_FromString(MODULE);
+    name = PyString_FromString(SRE_MODULE);
     if (!name)
         return NULL;
     module = PyImport_Import(name);
@@ -2366,7 +2382,7 @@ init_sre(void)
     Pattern_Type.ob_type = Match_Type.ob_type =
         Scanner_Type.ob_type = &PyType_Type;
 
-    m = Py_InitModule("_" MODULE, _functions);
+    m = Py_InitModule("_" SRE_MODULE, _functions);
     d = PyModule_GetDict(m);
 
     PyDict_SetItemString(

@@ -325,16 +325,26 @@ for t in tests:
 
             # Try the match on a unicode string, and check that it
             # still succeeds.
-            result=obj.search(unicode(s, "latin-1"))
-            if result==None:
-                print '=== Fails on unicode match', t
+            try:
+                u = unicode(s, "latin-1")
+            except NameError:
+                pass
+            else:
+                result=obj.search(u)
+                if result==None:
+                    print '=== Fails on unicode match', t
 
             # Try the match on a unicode pattern, and check that it
             # still succeeds.
-            obj=sre.compile(unicode(pattern, "latin-1"))
-            result=obj.search(s)
-            if result==None:
-                print '=== Fails on unicode pattern match', t
+            try:
+                u = unicode(pattern, "latin-1")
+            except NameError:
+                pass
+            else:
+                obj=sre.compile(u)
+                result=obj.search(s)
+                if result==None:
+                    print '=== Fails on unicode pattern match', t
 
             # Try the match with the search area limited to the extent
             # of the match and see if it still succeeds.  \B will
