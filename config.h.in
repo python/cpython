@@ -244,6 +244,9 @@
 /* Define if you have the setgid function.  */
 #undef HAVE_SETGID
 
+/* Define if you have the setlocale function.  */
+#undef HAVE_SETLOCALE
+
 /* Define if you have the setpgid function.  */
 #undef HAVE_SETPGID
 
@@ -309,6 +312,9 @@
 
 /* Define if you have the <limits.h> header file.  */
 #undef HAVE_LIMITS_H
+
+/* Define if you have the <locale.h> header file.  */
+#undef HAVE_LOCALE_H
 
 /* Define if you have the <ncurses.h> header file.  */
 #undef HAVE_NCURSES_H

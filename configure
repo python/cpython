@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.66 
+# From configure.in Revision: 1.67 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1234,7 +1234,7 @@ EOF
 
 fi
 
-for ac_hdr in dlfcn.h fcntl.h limits.h ncurses.h pthread.h \
+for ac_hdr in dlfcn.h fcntl.h limits.h locale.h ncurses.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h \
 sys/param.h sys/select.h sys/time.h sys/times.h \
@@ -2483,7 +2483,7 @@ fi
 for ac_func in alarm chown clock dlopen execv flock fork ftime ftruncate \
  gethostname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
  kill link lstat mkfifo nice pause plock putenv readlink \
- select setgid setuid setsid setpgid setpgrp setvbuf \
+ select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime symlink \
  tcgetpgrp tcsetpgrp times truncate uname waitpid
 do
