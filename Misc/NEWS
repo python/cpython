@@ -139,7 +139,7 @@ C API
 Documentation
 -------------
 
-Improved the tutorial on creating types in C.
+- Improved the tutorial on creating types in C.
 
   - point out the importance of reassigning data members before
     assigning thier values
@@ -148,6 +148,7 @@ Improved the tutorial on creating types in C.
 
   - mention the labor saving Py_VISIT and Py_CLEAR macros.
 
+- Major rewrite of the math module docs, to address common confusions.
 
 New platforms
 -------------
