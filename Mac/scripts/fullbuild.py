@@ -19,7 +19,6 @@ import EasyDialogs
 import regex
 import string
 
-import addpack
 import aetools
 import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
