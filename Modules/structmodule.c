@@ -402,8 +402,13 @@ unpack_float(p, incr)
 	x = (double)f / 8388608.0;
 
 	/* XXX This sadly ignores Inf/NaN issues */
-	if (e != 0)
-		x = ldexp(1.0 + x, e - 127);
+	if (e == 0)
+		e = -126;
+	else {
+		x += 1.0;
+		e -= 127;
+	}
+	x = ldexp(x, e);
 
 	if (s)
 		x = -x;
@@ -459,8 +464,13 @@ unpack_double(p, incr)
 	x /= 268435456.0; /* 2**28 */
 
 	/* XXX This sadly ignores Inf/NaN */
-	if (e != 0)
-		x = ldexp(1.0 + x, e - 1023);
+	if (e == 0)
+		e = -1022;
+	else {
+		x += 1.0;
+		e -= 1023;
+	}
+	x = ldexp(x, e);
 
 	if (s)
 		x = -x;
