@@ -39,7 +39,7 @@ body                    { color: #000000;
                           background-color: #ffffff; }
 
 a:active                { color: #ff0000; }
-a:hover                 { background-color: #bbeeff; }
+a[href]:hover           { background-color: #bbeeff; }
 a:visited               { color: #551a8b; }
 a:link                  { color: #0000bb; }
 
