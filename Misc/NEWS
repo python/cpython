@@ -38,12 +38,24 @@ Core and builtins
 
 - Weak reference objects are now part of the core and offers a C API.
   A bug which could allow a core dump when binary operations involved
-  proxy reference has been fixed.
+  proxy reference has been fixed.  weekref.ReferenceError is now a
+  built-in exception.
 
 - unicode(obj) now behaves more like str(obj), accepting arbitrary
   objects, and calling a __unicode__ method if it exists.
   unicode(obj, encoding) and unicode(obj, encoding, errors) still
   require an 8-bit string argument.
+
+- isinstance() now allows any object as the first argument and a
+  class, a type or something with a __bases__ tuple attribute for the
+  second argument.  The second argument may also be a tuple of a
+  class, type, or something with __bases__, in which case isinstance()
+  will return true if the first argument is an instance of any of the
+  things contained in the second argument tuple.  E.g.
+
+  isinstance(x, (A, B))
+
+  returns true if x is an instance of A or B.
 
 Extension modules
 
@@ -73,7 +85,11 @@ Extension modules
 - optional SSL support in the socket module now exports OpenSSL
   functions RAND_add(), RAND_egd(), and RAND_status().  These calls
   are useful on platforms like Solaris where OpenSSL does not
-  automatically seed its PRNG.
+  automatically seed its PRNG.  Also, the keyfile and certfile
+  arguments to socket.ssl() are now optional.
+
+- posixmodule (and by extension, the os module on POSIX platforms) now
+  exports O_LARGEFILE, O_DIRECT, O_DIRECTORY, and O_NOFOLLOW.
 
 Library
 
@@ -114,13 +130,32 @@ Library
 - The SocketServer.ThreadingMixIn class now closes the request after
   finish_request() returns.  (Not when it errors out though.)
 
+- The nntplib module's NNTP.body() method has grown a `file' argument
+  to allow saving the message body to a file.
+
+- The email package has added a class email.Parser.HeaderParser which
+  only parses headers and does not recurse into the message's body.
+  Also, the module/class MIMEAudio has been added for representing
+  audio data (contributed by Anthony Baxter).
+
+- ftplib should be able to handle files > 2GB.
+
+- ConfigParser.getboolean() now also interprets TRUE, FALSE, YES, NO,
+  ON, and OFF.
+
 Tools/Demos
 
 - Demo/dns was removed.  It no longer serves any purpose; a package
   derived from it is now maintained by Anthony Baxter, see
   http://PyDNS.SourceForge.net.
 
+- The freeze tool has been made more robust, and two new options have
+  been added: -X and -E.
+
 Build
+
+- configure will use CXX in LINKCC if CXX is used to build main() and
+  the system requires to link a C++ main using the C++ compiler.
 
 C API
 
