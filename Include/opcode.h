@@ -97,6 +97,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define JUMP_ABSOLUTE	113	/* Target byte offset from beginning of code */
 #define FOR_LOOP	114	/* Number of bytes to skip */
 
+#define LOAD_LOCAL	115	/* Index in name list */
+#define LOAD_GLOBAL	116	/* Index in name list */
+
 #define SETUP_LOOP	120	/* Target address (absolute) */
 #define SETUP_EXCEPT	121	/* "" */
 #define SETUP_FINALLY	122	/* "" */
