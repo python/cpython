@@ -447,7 +447,6 @@ solid_base(PyTypeObject *type)
 
 staticforward void object_dealloc(PyObject *);
 staticforward int object_init(PyObject *, PyObject *, PyObject *);
-staticforward int add_tp_new_wrapper(PyTypeObject *);
 
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
@@ -671,16 +670,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Override slots that deserve it */
 	override_slots(type, type->tp_defined);
-
-	/* Special hack for __new__ */
-	if (type->tp_new == NULL) {
-		/* Can't do this earlier, or some nasty recursion happens. */
-		type->tp_new = PyType_GenericNew;
-		if (add_tp_new_wrapper(type) < 0) {
-			Py_DECREF(type);
-			return NULL;
-		}
-	}
 
 	return (PyObject *)type;
 }
@@ -913,7 +902,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_dictoffset */
 	object_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
-	0,					/* tp_new */
+	PyType_GenericNew,			/* tp_new */
 	object_free,				/* tp_free */
 };
 
@@ -1163,7 +1152,9 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSLOT(tp_dictoffset);
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
-		COPYSLOT(tp_new);
+		if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+			COPYSLOT(tp_new);
+		}
 		COPYSLOT(tp_free);
 	}
 
