@@ -3,15 +3,15 @@
 
 \declaremodule{standard}{locale}
 \modulesynopsis{Internationalization services.}
-\moduleauthor{Martin von Loewis}{loewis@informatik.hu-berlin.de}
-\sectionauthor{Martin von Loewis}{loewis@informatik.hu-berlin.de}
+\moduleauthor{Martin von L\"owis}{loewis@informatik.hu-berlin.de}
+\sectionauthor{Martin von L\"owis}{loewis@informatik.hu-berlin.de}
 
 
-The \module{locale} module opens access to the \POSIX{} locale database
-and functionality. The \POSIX{} locale mechanism allows programmers
-to deal with certain cultural issues in an application, without
-requiring the programmer to know all the specifics of each country
-where the software is executed.
+The \module{locale} module opens access to the \POSIX{} locale
+database and functionality. The \POSIX{} locale mechanism allows
+programmers to deal with certain cultural issues in an application,
+without requiring the programmer to know all the specifics of each
+country where the software is executed.
 
 The \module{locale} module is implemented on top of the
 \module{_locale}\refbimodindex{_locale} module, which in turn uses an
@@ -21,170 +21,267 @@ The \module{locale} module defines the following exception and
 functions:
 
 
-\begin{funcdesc}{setlocale}{category\optional{, value}}
-If \var{value} is specified, modifies the locale setting for the
-\var{category}. The available categories are listed in the data
-description below. The value is the name of a locale. An empty string
-specifies the user's default settings. If the modification of the
-locale fails, the exception \exception{Error} is
-raised. If successful, the new locale setting is returned.
+\begin{excdesc}{Error}
+  Exception raised when \function{setlocale()} fails.
+\end{excdesc}
 
-If no \var{value} is specified, the current setting for the
-\var{category} is returned.
+\begin{funcdesc}{setlocale}{category\optional{, locale}}
+  If \var{locale} is specified, it may be a string, a tuple of the
+  form \code{(\var{language code}, \var{encoding})}, or \code{None}.
+  If it is a tuple, it is converted to a string using the locale
+  aliasing engine.  If \var{locale} is given and not \code{None},
+  \function{setlocale()} modifies the locale setting for the
+  \var{category}.  The available categories are listed in the data
+  description below.  The value is the name of a locale.  An empty
+  string specifies the user's default settings. If the modification of
+  the locale fails, the exception \exception{Error} is raised.  If
+  successful, the new locale setting is returned.
 
-\function{setlocale()} is not thread safe on most systems. Applications
-typically start with a call of
+  If \var{locale} is omitted or \code{None}, the current setting for
+  \var{category} is returned.
+
+  \function{setlocale()} is not thread safe on most systems.
+  Applications typically start with a call of
+
 \begin{verbatim}
 import locale
 locale.setlocale(locale.LC_ALL,"")
 \end{verbatim}
-This sets the locale for all categories to the user's default setting
-(typically specified in the \envvar{LANG} environment variable). If
-the locale is not changed thereafter, using multithreading should not
-cause problems.
-\end{funcdesc}
 
-\begin{excdesc}{Error}
-Exception raised when \function{setlocale()} fails.
-\end{excdesc}
+  This sets the locale for all categories to the user's default
+  setting (typically specified in the \envvar{LANG} environment
+  variable).  If the locale is not changed thereafter, using
+  multithreading should not cause problems.
+
+  \versionchanged[Added support for tuple values of the \var{locale}
+                  parameter]{2.0}
+\end{funcdesc}
 
 \begin{funcdesc}{localeconv}{}
-Returns the database of of the local conventions as a dictionary. This
-dictionary has the following strings as keys:
-\begin{itemize}
-\item \code{decimal_point} specifies the decimal point used in
-floating point number representations for the \constant{LC_NUMERIC}
-category.
-\item \code{grouping} is a sequence of numbers specifying at which
-relative positions the \code{thousands_sep} is expected. If the
-sequence is terminated with \constant{CHAR_MAX}, no further
-grouping is performed. If the sequence terminates with a \code{0}, the last
-group size is repeatedly used.
-\item \code{thousands_sep} is the character used between groups.
-\item \code{int_curr_symbol} specifies the international currency
-symbol from the \constant{LC_MONETARY} category.
-\item \code{currency_symbol} is the local currency symbol.
-\item \code{mon_decimal_point} is the decimal point used in monetary
-values.
-\item \code{mon_thousands_sep} is the separator for grouping of
-monetary values.
-\item \code{mon_grouping} has the same format as the \code{grouping}
-key; it is used for monetary values.
-\item \code{positive_sign} and \code{negative_sign} gives the sign
-used for positive and negative monetary quantities.
-\item \code{int_frac_digits} and \code{frac_digits} specify the number
-of fractional digits used in the international and local formatting
-of monetary values.
-\item \code{p_cs_precedes} and \code{n_cs_precedes} specifies whether
-the currency symbol precedes the value for positive or negative
-values.
-\item \code{p_sep_by_space} and \code{n_sep_by_space} specifies
-whether there is a space between the positive or negative value and
-the currency symbol.
-\item \code{p_sign_posn} and \code{n_sign_posn} indicate how the
-sign should be placed for positive and negative monetary values. 
-\end{itemize}
+  Returns the database of of the local conventions as a dictionary.
+  This dictionary has the following strings as keys:
 
-The possible values for \code{p_sign_posn} and
-\code{n_sign_posn} are given below.
+  \begin{itemize}
+    \item
+    \code{'decimal_point'} specifies the decimal point used in floating
+    point number representations for the \constant{LC_NUMERIC}
+    category.
 
-\begin{tableii}{c|l}{code}{Value}{Explanation}
-\lineii{0}{Currency and value are surrounded by parentheses.}
-\lineii{1}{The sign should precede the value and currency symbol.}
-\lineii{2}{The sign should follow the value and currency symbol.}
-\lineii{3}{The sign should immediately precede the value.}
-\lineii{4}{The sign should immediately follow the value.}
-\lineii{LC_MAX}{Nothing is specified in this locale.}
-\end{tableii}
+    \item
+    \code{'groupin'} is a sequence of numbers specifying at which
+    relative positions the \code{'thousands_sep'} is expected.  If the
+    sequence is terminated with \constant{CHAR_MAX}, no further
+    grouping is performed. If the sequence terminates with a \code{0},
+    the last group size is repeatedly used.
+
+    \item
+    \code{'thousands_sep'} is the character used between groups.
+
+    \item
+    \code{'int_curr_symbol'} specifies the international currency
+    symbol from the \constant{LC_MONETARY} category.
+
+    \item
+    \code{'currency_symbol'} is the local currency symbol.
+
+    \item
+    \code{'mon_decimal_point'} is the decimal point used in monetary
+    values.
+
+    \item
+    \code{'mon_thousands_sep'} is the separator for grouping of
+    monetary values.
+
+    \item
+    \code{'mon_grouping'} has the same format as the \code{'grouping'}
+    key; it is used for monetary values.
+
+    \item
+    \code{'positive_sign'} and \code{'negative_sign'} gives the sign
+    used for positive and negative monetary quantities.
+
+    \item
+    \code{'int_frac_digits'} and \code{'frac_digits'} specify the number
+    of fractional digits used in the international and local
+    formatting of monetary values.
+
+    \item
+    \code{'p_cs_precedes'} and \code{'n_cs_precedes'} specifies whether
+    the currency symbol precedes the value for positive or negative
+    values.
+
+    \item
+    \code{'p_sep_by_space'} and \code{'n_sep_by_space'} specifies
+    whether there is a space between the positive or negative value
+    and the currency symbol.
+
+    \item
+    \code{'p_sign_posn'} and \code{'n_sign_posn'} indicate how the
+    sign should be placed for positive and negative monetary values.
+  \end{itemize}
+
+  The possible values for \code{p_sign_posn} and
+  \code{n_sign_posn} are given below.
+
+  \begin{tableii}{c|l}{code}{Value}{Explanation}
+    \lineii{0}{Currency and value are surrounded by parentheses.}
+    \lineii{1}{The sign should precede the value and currency symbol.}
+    \lineii{2}{The sign should follow the value and currency symbol.}
+    \lineii{3}{The sign should immediately precede the value.}
+    \lineii{4}{The sign should immediately follow the value.}
+    \lineii{LC_MAX}{Nothing is specified in this locale.}
+  \end{tableii}
 \end{funcdesc}
 
-\begin{funcdesc}{strcoll}{string1,string2}
-Compares two strings according to the current \constant{LC_COLLATE}
-setting. As any other compare function, returns a negative, or a
-positive value, or \code{0}, depending on whether \var{string1}
-collates before or after \var{string2} or is equal to it.
+\begin{funcdesc}{getdefaultlocale}{\optional{envvars}}
+  Tries to determine the default locale settings and returns
+  them as a tuple of the form \code{(\var{language code},
+  \var{encoding})}.
+
+  According to \POSIX, a program which has not called
+  \code{setlocale(LC_ALL, '')} runs using the portable \code{'C'}
+  locale.  Calling \code{setlocale(LC_ALL, '')} lets it use the
+  default locale as defined by the \envvar{LANG} variable.  Since we
+  do not want to interfere with the current locale setting we thus
+  emulate the behavior in the way described above.
+
+  To maintain compatibility with other platforms, not only the
+  \envvar{LANG} variable is tested, but a list of variables given as
+  envvars parameter.  The first found to be defined will be
+  used.  \var{envvars} defaults to the search path used in GNU gettext;
+  it must always contain the variable name \samp{LANG}.  The GNU
+  gettext search path contains \code{'LANGUAGE'}, \code{'LC_ALL'},
+  code{'LC_CTYPE'}, and \code{'LANG'}, in that order.
+
+  Except for the code \code{'C'}, the language code corresponds to
+  \rfc{1766}.  \var{language code} and \var{encoding} may be
+  \code{None} if their values cannot be determined.
+  \versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{getlocale}{\optional{category}}
+  Returns the current setting for the given locale category as
+  tuple (language code, encoding).  \var{category} may be one of the
+  \constant{LC_*} values except \constant{LC_ALL}.  It defaults to
+  \constant{LC_CTYPE}.
+
+  Except for the code \code{'C'}, the language code corresponds to
+  \rfc{1766}.  \var{language code} and \var{encoding} may be
+  \code{None} if their values cannot be determined.
+  \versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{normalize}{localename}
+  Returns a normalized locale code for the given locale name.  The
+  returned locale code is formatted for use with
+  \function{setlocale()}.  If normalization fails, the original name
+  is returned unchanged.
+
+  If the given encoding is not known, the function defaults to
+  the default encoding for the locale code just like
+  \function{setlocale()}.
+  \versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{resetlocale}{\optional{category}}
+  Sets the locale for \var{category} to the default setting.
+
+  The default setting is determined by calling
+  \function{getdefaultlocale()}.  \var{category} defaults to
+  \constant{LC_ALL}.
+  \versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{strcoll}{string1, string2}
+  Compares two strings according to the current
+  \constant{LC_COLLATE} setting. As any other compare function,
+  returns a negative, or a positive value, or \code{0}, depending on
+  whether \var{string1} collates before or after \var{string2} or is
+  equal to it.
 \end{funcdesc}
 
 \begin{funcdesc}{strxfrm}{string}
-Transforms a string to one that can be used for the built-in function
-\function{cmp()}\bifuncindex{cmp}, and still returns locale-aware
-results.  This function can be used when the same string is compared
-repeatedly, e.g. when collating a sequence of strings.
+  Transforms a string to one that can be used for the built-in
+  function \function{cmp()}\bifuncindex{cmp}, and still returns
+  locale-aware results.  This function can be used when the same
+  string is compared repeatedly, e.g. when collating a sequence of
+  strings.
 \end{funcdesc}
 
-\begin{funcdesc}{format}{format, val, \optional{grouping\code{ = 0}}}
-Formats a number \var{val} according to the current
-\constant{LC_NUMERIC} setting.  The format follows the conventions of
-the \code{\%} operator.  For floating point values, the decimal point
-is modified if appropriate.  If \var{grouping} is true, also takes the
-grouping into account.
+\begin{funcdesc}{format}{format, val\optional{, grouping}}
+  Formats a number \var{val} according to the current
+  \constant{LC_NUMERIC} setting.  The format follows the conventions
+  of the \code{\%} operator.  For floating point values, the decimal
+  point is modified if appropriate.  If \var{grouping} is true, also
+  takes the grouping into account.
 \end{funcdesc}
 
 \begin{funcdesc}{str}{float}
-Formats a floating point number using the same format as the built-in
-function \code{str(\var{float})}, but takes the decimal point into
-account.
+  Formats a floating point number using the same format as the
+  built-in function \code{str(\var{float})}, but takes the decimal
+  point into account.
 \end{funcdesc}
 
 \begin{funcdesc}{atof}{string}
-Converts a string to a floating point number, following the
-\constant{LC_NUMERIC} settings.
+  Converts a string to a floating point number, following the
+  \constant{LC_NUMERIC} settings.
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{string}
-Converts a string to an integer, following the \constant{LC_NUMERIC}
-conventions.
+  Converts a string to an integer, following the
+  \constant{LC_NUMERIC} conventions.
 \end{funcdesc}
 
 \begin{datadesc}{LC_CTYPE}
 \refstmodindex{string}
-Locale category for the character type functions. Depending on the
-settings of this category, the functions of module \refmodule{string}
-dealing with case change their behaviour.
+  Locale category for the character type functions.  Depending on the
+  settings of this category, the functions of module
+  \refmodule{string} dealing with case change their behaviour.
 \end{datadesc}
 
 \begin{datadesc}{LC_COLLATE}
-Locale category for sorting strings. The functions
-\function{strcoll()} and \function{strxfrm()} of the \module{locale}
-module are affected.
+  Locale category for sorting strings.  The functions
+  \function{strcoll()} and \function{strxfrm()} of the
+  \module{locale} module are affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_TIME}
-Locale category for the formatting of time. The function
-\function{time.strftime()} follows these conventions.
+  Locale category for the formatting of time.  The function
+  \function{time.strftime()} follows these conventions.
 \end{datadesc}
 
 \begin{datadesc}{LC_MONETARY}
-Locale category for formatting of monetary values. The available
-options are available from the \function{localeconv()} function.
+  Locale category for formatting of monetary values.  The available
+  options are available from the \function{localeconv()} function.
 \end{datadesc}
 
 \begin{datadesc}{LC_MESSAGES}
-Locale category for message display. Python currently does not support
-application specific locale-aware messages. Messages displayed by the
-operating system, like those returned by \function{os.strerror()}
-might be affected by this category.
+  Locale category for message display. Python currently does not
+  support application specific locale-aware messages.  Messages
+  displayed by the operating system, like those returned by
+  \function{os.strerror()} might be affected by this category.
 \end{datadesc}
 
 \begin{datadesc}{LC_NUMERIC}
-Locale category for formatting numbers. The functions
-\function{format()}, \function{atoi()}, \function{atof()} and
-\function{str()} of the \module{locale} module are affected by that
-category. All other numeric formatting operations are not affected.
+  Locale category for formatting numbers.  The functions
+  \function{format()}, \function{atoi()}, \function{atof()} and
+  \function{str()} of the \module{locale} module are affected by that
+  category.  All other numeric formatting operations are not
+  affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_ALL}
-Combination of all locale settings. If this flag is used when the
-locale is changed, setting the locale for all categories is
-attempted. If that fails for any category, no category is changed at
-all. When the locale is retrieved using this flag, a string indicating
-the setting for all categories is returned. This string can be later
-used to restore the settings.
+  Combination of all locale settings.  If this flag is used when the
+  locale is changed, setting the locale for all categories is
+  attempted. If that fails for any category, no category is changed at
+  all.  When the locale is retrieved using this flag, a string
+  indicating the setting for all categories is returned. This string
+  can be later used to restore the settings.
 \end{datadesc}
 
 \begin{datadesc}{CHAR_MAX}
-This is a symbolic constant used for different values returned by
-\function{localeconv()}.
+  This is a symbolic constant used for different values returned by
+  \function{localeconv()}.
 \end{datadesc}
 
 Example:
@@ -198,6 +295,7 @@ Example:
 >>> locale.setlocale(locale.LC_ALL, "C") # use default (C) locale
 >>> locale.setlocale(locale.LC_ALL, loc) # restore saved locale
 \end{verbatim}
+
 
 \subsection{Background, details, hints, tips and caveats}
 
@@ -243,8 +341,8 @@ is to use the special functions defined by this module:
 \function{atof()}, \function{atoi()}, \function{format()},
 \function{str()}.
 
-\subsection{For extension writers and programs that embed Python}
-\label{embedding-locale}
+\subsection{For extension writers and programs that embed Python
+            \label{embedding-locale}}
 
 Extension modules should never call \function{setlocale()}, except to
 find out what the current locale is.  But since the return value can
