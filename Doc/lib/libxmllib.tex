@@ -1,0 +1,185 @@
+\section{Standard Module \sectcode{xmllib}}
+% Author: Sjoerd Mullender
+\label{module-xmllib}
+\stmodindex{xmllib}
+\index{XML}
+
+This module defines a class \code{XMLParser} which serves as the basis 
+for parsing text files formatted in XML (eXtended Markup Language).
+
+The \code{XMLParser} class must be instantiated without arguments.  It 
+has the following interface methods:
+
+\renewcommand{\indexsubitem}{({\tt XMLParser} method)}
+
+\begin{funcdesc}{reset}{}
+Reset the instance.  Loses all unprocessed data.  This is called
+implicitly at the instantiation time.
+\end{funcdesc}
+
+\begin{funcdesc}{setnomoretags}{}
+Stop processing tags.  Treat all following input as literal input
+(CDATA).
+\end{funcdesc}
+
+\begin{funcdesc}{setliteral}{}
+Enter literal mode (CDATA mode).
+\end{funcdesc}
+
+\begin{funcdesc}{feed}{data}
+Feed some text to the parser.  It is processed insofar as it consists
+of complete elements; incomplete data is buffered until more data is
+fed or \code{close()} is called.
+\end{funcdesc}
+
+\begin{funcdesc}{close}{}
+Force processing of all buffered data as if it were followed by an
+end-of-file mark.  This method may be redefined by a derived class to
+define additional processing at the end of the input, but the
+redefined version should always call \code{XMLParser.close()}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_starttag}{tag\, method\, attributes}
+This method is called to handle start tags for which a
+\code{start_\var{tag}()} method has been defined.  The \code{tag}
+argument is the name of the tag, and the \code{method} argument is the
+bound method which should be used to support semantic interpretation
+of the start tag.  The \var{attributes} argument is a dictionary of
+attributes, the key being the \var{name} and the value being the
+\var{value} of the attribute found inside the tag's \code{<>} brackets.
+Lower case and double quotes and backslashes in the \var{value} have
+been interpreted.  For instance, for the tag
+\code{<A HREF="http://www.cwi.nl/">}, this method would be called as
+\code{handle_starttag('A', self.start_A, {'HREF': 'http://www.cwi.nl/'})}.
+The base implementation simply calls \code{method} with \code{attributes}
+as the only argument.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_endtag}{tag\, method}
+This method is called to handle endtags for which an
+\code{end_\var{tag}()} method has been defined.  The \code{tag}
+argument is the name of the tag, and the
+\code{method} argument is the bound method which should be used to
+support semantic interpretation of the end tag.  If no
+\code{end_\var{tag}()} method is defined for the closing element, this
+handler is not called.  The base implementation simply calls
+\code{method}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_data}{data}
+This method is called to process arbitrary data.  It is intended to be
+overridden by a derived class; the base class implementation does
+nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_charref}{ref}
+This method is called to process a character reference of the form
+``\code{\&\#\var{ref};}''.  \var{ref} can either be a decimal number,
+or a hexadecimal number when preceded by \code{x}.
+In the base implementation, \var{ref} must be a number in the
+range 0-255.  It translates the character to \ASCII{} and calls the
+method \code{handle_data()} with the character as argument.  If
+\var{ref} is invalid or out of range, the method
+\code{unknown_charref(\var{ref})} is called to handle the error.  A
+subclass must override this method to provide support for character
+references outside of the \ASCII{} range.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_entityref}{ref}
+This method is called to process a general entity reference of the form
+``\code{\&\var{ref};}'' where \var{ref} is an general entity
+reference.  It looks for \var{ref} in the instance (or class)
+variable \code{entitydefs} which should be a mapping from entity names
+to corresponding translations.
+If a translation is found, it calls the method \code{handle_data()}
+with the translation; otherwise, it calls the method
+\code{unknown_entityref(\var{ref})}.  The default \code{entitydefs}
+defines translations for \code{\&amp;}, \code{\&apos}, \code{\&gt;},
+\code{\&lt;}, and \code{\&quot;}.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_comment}{comment}
+This method is called when a comment is encountered.  The
+\code{comment} argument is a string containing the text between the
+``\code{<!--}'' and ``\code{-->}'' delimiters, but not the delimiters
+themselves.  For example, the comment ``\code{<!--text-->}'' will
+cause this method to be called with the argument \code{'text'}.  The
+default method does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_cdata}{data}
+This method is called when a CDATA element is encountered.  The
+\code{data} argument is a string containing the text between the
+``\code{<![CDATA[}'' and ``\code{]]>}'' delimiters, but not the delimiters
+themselves.  For example, the entity ``\code{<![CDATA[text]]>}'' will
+cause this method to be called with the argument \code{'text'}.  The
+default method does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_proc}{name\, data}
+This method is called when a processing instruction (PI) is encountered.  The
+\code{name} is the PI target, and the \code{data} argument is a
+string containing the text between the PI target and the closing delimiter,
+but not the delimiter itself.  For example, the instruction
+``\code{<?XML text?>}'' will cause this method to be called with the
+arguments \code{'XML'} and \code{'text'}.  The default method does
+nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_special}{data}
+This method is called when a declaration is encountered.  The
+\code{data} argument is a string containing the text between the
+``\code{<!}'' and ``\code{>}'' delimiters, but not the delimiters
+themselves.  For example, the entity ``\code{<!DOCTYPE text>}'' will
+cause this method to be called with the argument \code{'DOCTYPE text'}.  The
+default method does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{syntax_error}{lineno\, message}
+This method is called when a syntax error is encountered.  The
+\code{lineno} argument is the line number of the error, and the
+\code{message} is a description of what was wrong.  The default method 
+raises a \code{RuntimeError} exception.  If this method is overridden, 
+it is permissable for it to return.  This method is only called when
+the error can be recovered from.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_starttag}{tag\, attributes}
+This method is called to process an unknown start tag.  It is intended
+to be overridden by a derived class; the base class implementation
+does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_endtag}{tag}
+This method is called to process an unknown end tag.  It is intended
+to be overridden by a derived class; the base class implementation
+does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_charref}{ref}
+This method is called to process unresolvable numeric character
+references.  It is intended to be overridden by a derived class; the
+base class implementation does nothing.
+\end{funcdesc}
+
+\begin{funcdesc}{unknown_entityref}{ref}
+This method is called to process an unknown entity reference.  It is
+intended to be overridden by a derived class; the base class
+implementation does nothing.
+\end{funcdesc}
+
+Apart from overriding or extending the methods listed above, derived
+classes may also define methods of the following form to define
+processing of specific tags.  Tag names in the input stream are case
+dependent; the \var{tag} occurring in method names must be in the
+correct case:
+
+\begin{funcdesc}{start_\var{tag}}{attributes}
+This method is called to process an opening tag \var{tag}.  The
+\var{attributes} argument has the same meaning as described for
+\code{handle_starttag()} above.
+\end{funcdesc}
+
+\begin{funcdesc}{end_\var{tag}}{}
+This method is called to process a closing tag \var{tag}.
+\end{funcdesc}
