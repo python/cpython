@@ -27,10 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Resources.h>
 #include <CodeFragments.h>
 
-#ifdef __CFM68K__
-#pragma lib_export on
-#endif
-
 extern void PyMac_InitApplication(void);
 #ifdef USE_MAC_APPLET_SUPPORT
 extern void PyMac_InitApplet(void);

@@ -145,15 +145,9 @@ findnamedresource(
 	if ( ok && dataptr != NULL ) {
 		HLock(h);
 		/* XXXX Unsafe if resource not correctly formatted! */
-#ifdef __CFM68K__
-		/* for cfm68k we take the second pstring */
-		*dataptr = *((*h)+(**h)+1);
-		memcpy(dataptr+1, (*h)+(**h)+2, (int)*dataptr);
-#else
 		/* for ppc we take the first pstring */
 		*dataptr = **h;
 		memcpy(dataptr+1, (*h)+1, (int)*dataptr);
-#endif
 		HUnlock(h);
 	}
 	if ( filerh != -1 )

@@ -469,12 +469,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HAVE_HSTRERROR
 
 /* Define if you have the hypot function.  */
-#ifndef __MC68K__
-/* 68K hypot definition (and implementation) are unuseable
-** because they use 10-byte floats.
-*/
 #define HAVE_HYPOT
-#endif
 
 /* Define if you have the inet_pton function.  */
 #undef HAVE_INET_PTON
