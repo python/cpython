@@ -56,6 +56,10 @@ Core
 
 Library
 
+- The "email" package has been added.  This is basically a port of the
+  mimelib package <http://sf.net/projects/mimelib> with API changes
+  and some implementations updated to use iterators and generators.
+
 - difflib.ndiff() and difflib.Differ.compare() are generators now.  This
   restores the ability of Tools/scripts/ndiff.py to start producing output
   before the entire comparison is complete.
