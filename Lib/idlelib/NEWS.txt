@@ -3,6 +3,13 @@ IDLEfork NEWS
 (For a more detailed change log, see the file ChangeLog.)
 ---------------------------------------------------------
 
+IDLEfork 0.9 Alpha 0 (31 DEC 2002)
+----------------------------------
+
+First Alpha release with GvR RPC and Configuration GUI.
+
+This file will be updated at next Alpha release.  Meanwhile, see README.txt.
+
 
 IDLEfork 0.8.1 (22 JUL 2001)
 ----------------------------
