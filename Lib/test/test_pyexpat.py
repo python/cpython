@@ -3,7 +3,7 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
         
-import pyexpat
+from xml.parsers import expat
                 
 class Outputter:
     def StartElementHandler(self, name, attrs):
@@ -67,7 +67,7 @@ def confirm(ok):
         print "Not OK."
 
 out = Outputter()
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 
 # Test getting/setting returns_unicode
 parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
@@ -115,28 +115,28 @@ data = '''\
 parser.returns_unicode = 0
 try:
     parser.Parse(data, 1)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString(parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
 
 # Try the parse again, this time producing Unicode output
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 parser.returns_unicode = 1
 
 for name in HANDLER_NAMES:
     setattr(parser, name, getattr(out, name))
 try:
     parser.Parse(data, 1)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString(parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
 
 # Try parsing a file
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 parser.returns_unicode = 1
 
 for name in HANDLER_NAMES:
@@ -145,8 +145,8 @@ import StringIO
 file = StringIO.StringIO(data)
 try:
     parser.ParseFile(file)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString(parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
