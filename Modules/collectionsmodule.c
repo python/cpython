@@ -34,6 +34,8 @@ typedef struct {
 	int len;
 } dequeobject;
 
+PyTypeObject deque_type;
+
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -109,7 +111,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
 	block *prevblock;
 
 	if (deque->len == 0) {
-		PyErr_SetString(PyExc_LookupError, "pop from an empty deque");
+		PyErr_SetString(PyExc_IndexError, "pop from an empty deque");
 		return NULL;
 	}
 	item = deque->rightblock->data[deque->rightindex];
@@ -144,7 +146,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 	block *prevblock;
 
 	if (deque->len == 0) {
-		PyErr_SetString(PyExc_LookupError, "pop from an empty deque");
+		PyErr_SetString(PyExc_IndexError, "pop from an empty deque");
 		return NULL;
 	}
 	item = deque->leftblock->data[deque->leftindex];
@@ -173,6 +175,38 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 }
 
 PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
+
+static PyObject *
+deque_right(dequeobject *deque, PyObject *unused)
+{
+	PyObject *item;
+
+	if (deque->len == 0) {
+		PyErr_SetString(PyExc_IndexError, "deque is empty");
+		return NULL;
+	}
+	item = deque->rightblock->data[deque->rightindex];
+	Py_INCREF(item);
+	return item;
+}
+
+PyDoc_STRVAR(right_doc, "Return the rightmost element.");
+
+static PyObject *
+deque_left(dequeobject *deque, PyObject *unused)
+{
+	PyObject *item;
+
+	if (deque->len == 0) {
+		PyErr_SetString(PyExc_IndexError, "deque is empty");
+		return NULL;
+	}
+	item = deque->leftblock->data[deque->leftindex];
+	Py_INCREF(item);
+	return item;
+}
+
+PyDoc_STRVAR(left_doc, "Return the leftmost element.");
 
 static PyObject *
 deque_extend(dequeobject *deque, PyObject *iterable)
@@ -467,6 +501,82 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	return 0;
 }
 
+static PyObject *
+deque_richcompare(PyObject *v, PyObject *w, int op)
+{
+	PyObject *it1=NULL, *it2=NULL, *x, *y;
+	int i, b, vs, ws, minlen, cmp=-1;
+
+	if (v->ob_type != &deque_type || w->ob_type != &deque_type) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	/* Shortcuts */
+	vs = ((dequeobject *)v)->len;
+	ws = ((dequeobject *)w)->len;
+	if (op == Py_EQ) {
+		if (v == w)
+			Py_RETURN_TRUE;
+		if (vs != ws)
+			Py_RETURN_FALSE;
+	}
+	if (op == Py_NE) {
+		if (v == w)
+			Py_RETURN_FALSE;
+		if (vs != ws)
+			Py_RETURN_TRUE;
+	}
+
+	/* Search for the first index where items are different */
+	it1 = PyObject_GetIter(v);
+	if (it1 == NULL)
+		goto done;
+	it2 = PyObject_GetIter(w);
+	if (it2 == NULL)
+		goto done;
+	minlen = (vs < ws)  ?  vs  :  ws;
+	for (i=0 ; i < minlen ; i++) {
+		x = PyIter_Next(it1);
+		if (x == NULL)
+			goto done;
+		y = PyIter_Next(it2);
+		if (y == NULL) {
+			Py_DECREF(x);
+			goto done;
+		}
+		b = PyObject_RichCompareBool(x, y, Py_EQ);
+		if (b == 0) {
+			cmp = PyObject_RichCompareBool(x, y, op);
+			Py_DECREF(x);
+			Py_DECREF(y);
+			goto done;
+		}
+		Py_DECREF(x);
+		Py_DECREF(y);
+		if (b == -1)
+			goto done;
+	}
+	/* Elements are equal through minlen.  The longest input is the greatest */
+	switch (op) {
+	case Py_LT: cmp = vs <  ws; break;
+	case Py_LE: cmp = vs <= ws; break;
+	case Py_EQ: cmp = vs == ws; break;
+	case Py_NE: cmp = vs != ws; break;
+	case Py_GT: cmp = vs >  ws; break;
+	case Py_GE: cmp = vs >= ws; break;
+	}
+	
+done:
+	Py_XDECREF(it1);
+	Py_XDECREF(it2);
+	if (cmp == 1)
+		Py_RETURN_TRUE;
+	if (cmp == 0)
+		Py_RETURN_FALSE;
+	return NULL;
+}
+
 static int
 deque_init(dequeobject *deque, PyObject *args, PyObject *kwds)
 {
@@ -509,6 +619,8 @@ static PyMethodDef deque_methods[] = {
 		METH_O,		 extend_doc},
 	{"extendleft",	(PyCFunction)deque_extendleft,	
 		METH_O,		 extendleft_doc},
+	{"left",		(PyCFunction)deque_left,	
+		METH_NOARGS,	 left_doc},
 	{"pop",			(PyCFunction)deque_pop,	
 		METH_NOARGS,	 pop_doc},
 	{"popleft",		(PyCFunction)deque_popleft,	
@@ -517,6 +629,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 reduce_doc},
 	{"__reversed__",	(PyCFunction)deque_reviter,	
 		METH_NOARGS,	 reversed_doc},
+	{"right",		(PyCFunction)deque_right,	
+		METH_NOARGS,	 right_doc},
 	{"rotate",		(PyCFunction)deque_rotate,	
 		METH_VARARGS,	rotate_doc},
 	{NULL,		NULL}	/* sentinel */
@@ -553,7 +667,7 @@ PyTypeObject deque_type = {
 	deque_doc,			/* tp_doc */
 	(traverseproc)set_traverse,	/* tp_traverse */
 	(inquiry)deque_clear,		/* tp_clear */
-	0,				/* tp_richcompare */
+	(richcmpfunc)deque_richcompare,	/* tp_richcompare */
 	0,				/* tp_weaklistoffset*/
 	(getiterfunc)deque_iter,	/* tp_iter */
 	0,				/* tp_iternext */

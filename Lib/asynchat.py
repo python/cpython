@@ -262,11 +262,7 @@ class fifo:
         return self.list == []
 
     def first (self):
-        it = iter(self.list)
-        try:
-            return it.next()
-        except StopIteration:
-            raise IndexError
+        return self.list.left()
 
     def push (self, data):
         self.list.append(data)
