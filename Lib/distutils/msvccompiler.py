@@ -15,17 +15,26 @@ from distutils.errors import *
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 
-def _devstudio_versions():
-    "Get a list of devstudio versions"
+
+def get_devstudio_versions ():
+
+    """Get list of devstudio versions from the Windows registry.  Return a
+       list of strings (???) containing version numbers; the list will be
+       empty if we were unable to access the registry (eg. couldn't import
+       a registry-access module) or the appropriate registry keys weren't
+       found.  (XXX is this correct???)"""
     try:
         import win32api
         import win32con
     except ImportError:
-        return None
+        return []
 
     K = 'Software\\Microsoft\\Devstudio'
     L = []
-    for base in (win32con.HKEY_CLASSES_ROOT,win32con.HKEY_LOCAL_MACHINE,win32con.HKEY_CURRENT_USER,win32con.HKEY_USERS):
+    for base in (win32con.HKEY_CLASSES_ROOT,
+                 win32con.HKEY_LOCAL_MACHINE,
+                 win32con.HKEY_CURRENT_USER,
+                 win32con.HKEY_USERS):
         try:
             k = win32api.RegOpenKeyEx(base,K)
             i = 0
@@ -43,8 +52,11 @@ def _devstudio_versions():
     L.reverse()
     return L
 
-def _msvc_get_paths(path, vNum='6.0', platform='x86'):
-    "Get a devstudio path (include, lib or path)"
+# get_devstudio_versions ()
+
+
+def get_msvc_paths (path, version='6.0', platform='x86'):
+    """Get a devstudio path (include, lib or path)."""
     try:
         import win32api
         import win32con
@@ -52,21 +64,26 @@ def _msvc_get_paths(path, vNum='6.0', platform='x86'):
         return None
 
     L = []
-    if path=='lib': path= 'Library'
+    if path=='lib':
+        path= 'Library'
     path = string.upper(path + ' Dirs')
-    K = 'Software\\Microsoft\\Devstudio\\%s\\Build System\\Components\\Platforms\\Win32 (%s)\\Directories' \
-                % (vNum,platform)
-    for base in (win32con.HKEY_CLASSES_ROOT,win32con.HKEY_LOCAL_MACHINE,win32con.HKEY_CURRENT_USER,win32con.HKEY_USERS):
+    K = ('Software\\Microsoft\\Devstudio\\%s\\' +
+         'Build System\\Components\\Platforms\\Win32 (%s)\\Directories') % \
+        (version,platform)
+    for base in (win32con.HKEY_CLASSES_ROOT,
+                 win32con.HKEY_LOCAL_MACHINE,
+                 win32con.HKEY_CURRENT_USER,
+                 win32con.HKEY_USERS):
         try:
             k = win32api.RegOpenKeyEx(base,K)
             i = 0
             while 1:
                 try:
                     (p,v,t) = win32api.RegEnumValue(k,i)
-                    if string.upper(p)==path:
+                    if string.upper(p) == path:
                         V = string.split(v,';')
                         for v in V:
-                            if v=='' or v in L: continue
+                            if v == '' or v in L: continue
                             L.append(v)
                         break
                     i = i + 1
@@ -76,30 +93,41 @@ def _msvc_get_paths(path, vNum='6.0', platform='x86'):
             pass
     return L
 
+# get_msvc_paths()
+
+
 def _find_exe(exe):
-    for v in _devstudio_versions():
-        for p in _msvc_get_paths('path',v):
-            fn=os.path.join(os.path.abspath(p),exe)
-            if os.path.isfile(fn): return fn
+    for v in get_devstudio_versions():
+        for p in get_msvc_paths('path',v):
+            fn = os.path.join(os.path.abspath(p),exe)
+            if os.path.isfile(fn):
+                return fn
 
     #didn't find it; try existing path
     try:
         for p in string.split(os.environ['Path'],';'):
             fn=os.path.join(os.path.abspath(p),exe)
-            if os.path.isfile(fn): return fn
-    except:
+            if os.path.isfile(fn):
+                return fn
+    # XXX BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD BAD !!!!!!!!!!!!!!!!
+    except:                             # XXX WHAT'S BEING CAUGHT HERE?!?!?
         pass
     return exe  #last desperate hope 
 
+
 def _find_SET(n):
-    for v in _devstudio_versions():
-        p=_msvc_get_paths(n,v)
-        if p!=[]: return p
+    for v in get_devstudio_versions():
+        p = get_msvc_paths(n,v)
+        if p:
+            return p
     return []
 
+
 def _do_SET(n):
-    p=_find_SET(n)
-    if p!=[]: os.environ[n]=string.join(p,';')
+    p = _find_SET(n)
+    if p:
+        os.environ[n] = string.join(p,';')
+
 
 class MSVCCompiler (CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
