@@ -550,6 +550,16 @@ eval_frame(PyFrameObject *f)
 #define STACK_LEVEL()	(stack_pointer - f->f_valuestack)
 #define EMPTY()		(STACK_LEVEL() == 0)
 #define TOP()		(stack_pointer[-1])
+#define SECOND()	(stack_pointer[-2])
+#define THIRD() 	(stack_pointer[-3])
+#define FOURTH()	(stack_pointer[-4])
+#define FIFTH() 	(stack_pointer[-5])
+#define SET_TOP(v)	(stack_pointer[-1] = (v))
+#define SET_SECOND(v)	(stack_pointer[-2] = (v))
+#define SET_THIRD(v)	(stack_pointer[-3] = (v))
+#define SET_FOURTH(v)	(stack_pointer[-4] = (v))
+#define SET_FIFTH(v)	(stack_pointer[-5] = (v))
+#define BASIC_STACKADJ(n)	(stack_pointer += n)
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
 
@@ -558,9 +568,13 @@ eval_frame(PyFrameObject *f)
                                lltrace && prtrace(TOP(), "push")); \
                                assert(STACK_LEVEL() <= f->f_stacksize); }
 #define POP()		((void)(lltrace && prtrace(TOP(), "pop")), BASIC_POP())
+#define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
+                               lltrace && prtrace(TOP(), "stackadj")); \
+                               assert(STACK_LEVEL() <= f->f_stacksize); }
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
+#define STACKADJ(n)	BASIC_STACKADJ(n)
 #endif
 
 /* Local variable macros */
@@ -810,30 +824,30 @@ eval_frame(PyFrameObject *f)
 			goto fast_next_opcode;
 
 		case ROT_TWO:
-			v = POP();
-			w = POP();
-			PUSH(v);
-			PUSH(w);
+			v = TOP();
+			w = SECOND();
+			SET_TOP(w);
+			SET_SECOND(v);
 			continue;
 
 		case ROT_THREE:
-			v = POP();
-			w = POP();
-			x = POP();
-			PUSH(v);
-			PUSH(x);
-			PUSH(w);
+			v = TOP();
+			w = SECOND();
+			x = THIRD();
+			SET_TOP(w);
+			SET_SECOND(x);
+			SET_THIRD(v);
 			continue;
 
 		case ROT_FOUR:
-			u = POP();
-			v = POP();
-			w = POP();
-			x = POP();
-			PUSH(u);
-			PUSH(x);
-			PUSH(w);
-			PUSH(v);
+			u = TOP();
+			v = SECOND();
+			w = THIRD();
+			x = FOURTH();
+			SET_TOP(v);
+			SET_SECOND(w);
+			SET_THIRD(x);
+			SET_FOURTH(u);
 			continue;
 
 		case DUP_TOP:
@@ -847,67 +861,62 @@ eval_frame(PyFrameObject *f)
 			case 1:
 				x = TOP();
 				Py_INCREF(x);
-				PUSH(x);
+				STACKADJ(1);
+				SET_TOP(x);
 				continue;
 			case 2:
-				x = POP();
+				x = TOP();
 				Py_INCREF(x);
-				w = TOP();
+				w = SECOND();
 				Py_INCREF(w);
-				PUSH(x);
-				PUSH(w);
-				PUSH(x);
+				STACKADJ(2);
+				SET_TOP(x);
+				SET_SECOND(w);
 				continue;
 			case 3:
-				x = POP();
+				x = TOP();
 				Py_INCREF(x);
-				w = POP();
+				w = SECOND();
 				Py_INCREF(w);
-				v = TOP();
+				v = THIRD();
 				Py_INCREF(v);
-				PUSH(w);
-				PUSH(x);
-				PUSH(v);
-				PUSH(w);
-				PUSH(x);
+				STACKADJ(3);
+				SET_TOP(x);
+				SET_SECOND(w);
+				SET_THIRD(v);
 				continue;
 			case 4:
-				x = POP();
+				x = TOP();
 				Py_INCREF(x);
-				w = POP();
+				w = SECOND();
 				Py_INCREF(w);
-				v = POP();
+				v = THIRD();
 				Py_INCREF(v);
-				u = TOP();
+				u = FOURTH();
 				Py_INCREF(u);
-				PUSH(v);
-				PUSH(w);
-				PUSH(x);
-				PUSH(u);
-				PUSH(v);
-				PUSH(w);
-				PUSH(x);
+				STACKADJ(4);
+				SET_TOP(x);
+				SET_SECOND(w);
+				SET_THIRD(v);
+				SET_FOURTH(u);
 				continue;
 			case 5:
-				x = POP();
+				x = TOP();
 				Py_INCREF(x);
-				w = POP();
+				w = SECOND();
 				Py_INCREF(w);
-				v = POP();
+				v = THIRD();
 				Py_INCREF(v);
-				u = POP();
+				u = FOURTH();
 				Py_INCREF(u);
-				t = TOP();
+				t = FIFTH();
 				Py_INCREF(t);
-				PUSH(u);
-				PUSH(v);
-				PUSH(w);
-				PUSH(x);
-				PUSH(t);
-				PUSH(u);
-				PUSH(v);
-				PUSH(w);
-				PUSH(x);
+				STACKADJ(5);
+				SET_TOP(x);
+				SET_SECOND(w);
+				SET_THIRD(v);
+				SET_FOURTH(u);
+				SET_FIFTH(t);
 				continue;
 			default:
 				Py_FatalError("invalid argument to DUP_TOPX"
@@ -916,120 +925,121 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case UNARY_POSITIVE:
-			v = POP();
+			v = TOP();
 			x = PyNumber_Positive(v);
 			Py_DECREF(v);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case UNARY_NEGATIVE:
-			v = POP();
+			v = TOP();
 			x = PyNumber_Negative(v);
 			Py_DECREF(v);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case UNARY_NOT:
-			v = POP();
+			v = TOP();
 			err = PyObject_IsTrue(v);
 			Py_DECREF(v);
 			if (err == 0) {
 				Py_INCREF(Py_True);
-				PUSH(Py_True);
+				SET_TOP(Py_True);
 				continue;
 			}
 			else if (err > 0) {
 				Py_INCREF(Py_False);
-				PUSH(Py_False);
+				SET_TOP(Py_False);
 				err = 0;
 				continue;
 			}
+			POP();
 			break;
 
 		case UNARY_CONVERT:
-			v = POP();
+			v = TOP();
 			x = PyObject_Repr(v);
 			Py_DECREF(v);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case UNARY_INVERT:
-			v = POP();
+			v = TOP();
 			x = PyNumber_Invert(v);
 			Py_DECREF(v);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_POWER:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Power(v, w, Py_None);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_MULTIPLY:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Multiply(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_DIVIDE:
 			if (!_Py_QnewFlag) {
 				w = POP();
-				v = POP();
+				v = TOP();
 				x = PyNumber_Divide(v, w);
 				Py_DECREF(v);
 				Py_DECREF(w);
-				PUSH(x);
+				SET_TOP(x);
 				if (x != NULL) continue;
 				break;
 			}
-			/* -Qnew is in effect:  fall through to
+			/* -Qnew is in effect:	fall through to
 			   BINARY_TRUE_DIVIDE */
 		case BINARY_TRUE_DIVIDE:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_TrueDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_FLOOR_DIVIDE:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_FloorDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_MODULO:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Remainder(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_ADD:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
@@ -1046,13 +1056,13 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_SUBTRACT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
@@ -1069,13 +1079,13 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_SUBSCR:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyList_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: list[int] */
 				long i = PyInt_AsLong(w);
@@ -1096,126 +1106,126 @@ eval_frame(PyFrameObject *f)
 				x = PyObject_GetItem(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_LSHIFT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Lshift(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_RSHIFT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Rshift(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_AND:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_And(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_XOR:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Xor(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case BINARY_OR:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_Or(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_POWER:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlacePower(v, w, Py_None);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_MULTIPLY:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceMultiply(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_DIVIDE:
 			if (!_Py_QnewFlag) {
 				w = POP();
-				v = POP();
+				v = TOP();
 				x = PyNumber_InPlaceDivide(v, w);
 				Py_DECREF(v);
 				Py_DECREF(w);
-				PUSH(x);
+				SET_TOP(x);
 				if (x != NULL) continue;
 				break;
 			}
-			/* -Qnew is in effect:  fall through to
+			/* -Qnew is in effect:	fall through to
 			   INPLACE_TRUE_DIVIDE */
 		case INPLACE_TRUE_DIVIDE:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceTrueDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_FLOOR_DIVIDE:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceFloorDivide(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_MODULO:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceRemainder(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_ADD:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
@@ -1232,13 +1242,13 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_SUBTRACT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
@@ -1255,57 +1265,57 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_LSHIFT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceLshift(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_RSHIFT:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceRshift(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_AND:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceAnd(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_XOR:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceXor(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case INPLACE_OR:
 			w = POP();
-			v = POP();
+			v = TOP();
 			x = PyNumber_InPlaceOr(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
@@ -1321,12 +1331,12 @@ eval_frame(PyFrameObject *f)
 				v = POP();
 			else
 				v = NULL;
-			u = POP();
+			u = TOP();
 			x = apply_slice(u, v, w);
 			Py_DECREF(u);
 			Py_XDECREF(v);
 			Py_XDECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
@@ -1374,9 +1384,10 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case STORE_SUBSCR:
-			w = POP();
-			v = POP();
-			u = POP();
+			w = TOP();
+			v = SECOND();
+			u = THIRD();
+			STACKADJ(-3);
 			/* v[w] = u */
 			err = PyObject_SetItem(v, w, u);
 			Py_DECREF(u);
@@ -1386,8 +1397,9 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case DELETE_SUBSCR:
-			w = POP();
-			v = POP();
+			w = TOP();
+			v = SECOND();
+			STACKADJ(-2);
 			/* del v[w] */
 			err = PyObject_DelItem(v, w);
 			Py_DECREF(v);
@@ -1545,9 +1557,10 @@ eval_frame(PyFrameObject *f)
 
 
 		case EXEC_STMT:
-			w = POP();
-			v = POP();
-			u = POP();
+			w = TOP();
+			v = SECOND();
+			u = THIRD();
+			STACKADJ(-3);
 			err = exec_statement(f, u, v, w);
 			Py_DECREF(u);
 			Py_DECREF(v);
@@ -1589,11 +1602,12 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case BUILD_CLASS:
-			u = POP();
-			v = POP();
-			w = POP();
+			u = TOP();
+			v = SECOND();
+			w = THIRD();
+			STACKADJ(-2);
 			x = build_class(u, v, w);
-			PUSH(x);
+			SET_TOP(x);
 			Py_DECREF(u);
 			Py_DECREF(v);
 			Py_DECREF(w);
@@ -1669,8 +1683,9 @@ eval_frame(PyFrameObject *f)
 
 		case STORE_ATTR:
 			w = GETITEM(names, oparg);
-			v = POP();
-			u = POP();
+			v = TOP();
+			u = SECOND();
+			STACKADJ(-2);
 			err = PyObject_SetAttr(v, w, u); /* v.w = u */
 			Py_DECREF(v);
 			Py_DECREF(u);
@@ -1852,16 +1867,16 @@ eval_frame(PyFrameObject *f)
 
 		case LOAD_ATTR:
 			w = GETITEM(names, oparg);
-			v = POP();
+			v = TOP();
 			x = PyObject_GetAttr(v, w);
 			Py_DECREF(v);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
 		case COMPARE_OP:
 			w = POP();
-			v = POP();
+			v = TOP();
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: cmp(int, int) */
 				register long a, b;
@@ -1888,7 +1903,7 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_DECREF(v);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
@@ -1900,7 +1915,7 @@ eval_frame(PyFrameObject *f)
 						"__import__ not found");
 				break;
 			}
-			u = POP();
+			u = TOP();
 			w = Py_BuildValue("(OOOO)",
 				    w,
 				    f->f_globals,
@@ -1909,12 +1924,13 @@ eval_frame(PyFrameObject *f)
 				    u);
 			Py_DECREF(u);
 			if (w == NULL) {
+				u = POP();
 				x = NULL;
 				break;
 			}
 			x = PyEval_CallObject(x, w);
 			Py_DECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
@@ -1972,13 +1988,14 @@ eval_frame(PyFrameObject *f)
 
 		case GET_ITER:
 			/* before: [obj]; after [getiter(obj)] */
-			v = POP();
+			v = TOP();
 			x = PyObject_GetIter(v);
 			Py_DECREF(v);
 			if (x != NULL) {
-				PUSH(x);
+				SET_TOP(x);
 				continue;
 			}
+			POP();
 			break;
 
 		case FOR_ITER:
@@ -2121,12 +2138,12 @@ eval_frame(PyFrameObject *f)
 			else
 				w = NULL;
 			v = POP();
-			u = POP();
+			u = TOP();
 			x = PySlice_New(u, v, w);
 			Py_DECREF(u);
 			Py_DECREF(v);
 			Py_XDECREF(w);
-			PUSH(x);
+			SET_TOP(x);
 			if (x != NULL) continue;
 			break;
 
