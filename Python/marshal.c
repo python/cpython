@@ -33,6 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "marshal.h"
 
 #include <errno.h>
+extern int errno;
 
 #define TYPE_NULL	'0'
 #define TYPE_NONE	'N'
