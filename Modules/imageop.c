@@ -167,6 +167,88 @@ imageop_grey2mono(self, args)
 }
 
 static object *
+imageop_grey2grey4(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len;
+    unsigned char *cp, *ncp;
+    unsigned char ovalue;
+    object *rv;
+    int i;
+    int pos;
+   
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    if ( x*y != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, (len+1)/2);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+    pos = 0;
+    ovalue = 0;
+    for ( i=0; i < len; i++ ) {
+	ovalue |= (cp[i] & 0xf0) >> pos;
+	pos += 4;
+	if ( pos == 8 ) {
+	    *ncp++ = ovalue;
+	    ovalue = 0;
+	    pos = 0;
+	}
+    }
+    if ( pos != 0 )
+      *ncp++ = ovalue;
+    return rv;
+}
+
+static object *
+imageop_grey2grey2(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len;
+    unsigned char *cp, *ncp;
+    unsigned char ovalue;
+    object *rv;
+    int i;
+    int pos;
+   
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    if ( x*y != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, (len+3)/4);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+    pos = 0;
+    ovalue = 0;
+    for ( i=0; i < len; i++ ) {
+	ovalue |= (cp[i] & 0xc0) >> pos;
+	pos += 2;
+	if ( pos == 8 ) {
+	    *ncp++ = ovalue;
+	    ovalue = 0;
+	    pos = 0;
+	}
+    }
+    if ( pos != 0 )
+      *ncp++ = ovalue;
+    return rv;
+}
+
+static object *
 imageop_dither2mono(self, args)
     object *self;
     object *args;
@@ -213,6 +295,51 @@ imageop_dither2mono(self, args)
 }
 
 static object *
+imageop_dither2grey2(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len;
+    unsigned char *cp, *ncp;
+    unsigned char ovalue;
+    object *rv;
+    int i;
+    int pos;
+    int sum, nvalue;
+   
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    if ( x*y != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, (len+3)/4);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+    pos = 1;
+    ovalue = 0;
+    for ( i=0; i < len; i++ ) {
+	sum += cp[i];
+	nvalue = sum & 0x180;
+	sum -= nvalue;
+	ovalue |= nvalue >> pos;
+	pos += 2;
+	if ( pos == 9 ) {
+	    *ncp++ = ovalue;
+	    ovalue = 0;
+	    pos = 1;
+	}
+    }
+    if ( pos != 0 )
+      *ncp++ = ovalue;
+    return rv;
+}
+
+static object *
 imageop_mono2grey(self, args)
     object *self;
     object *args;
@@ -248,6 +375,82 @@ imageop_mono2grey(self, args)
 	    bit = 0x80;
 	    cp++;
 	}
+    }
+    return rv;
+}
+
+static object *
+imageop_grey22grey(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned char *cp, *ncp;
+    unsigned char ovalue;
+    object *rv;
+    int i, pos, value, nvalue;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( (nlen+3)/4 != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+
+    pos = 0;
+    for ( i=0; i < nlen; i++ ) {
+	if ( pos == 0 ) {
+	    value = *cp++;
+	    pos = 8;
+	}
+	pos -= 2;
+	nvalue = (value >> pos) & 0x03;
+	*ncp++ = nvalue | (nvalue << 2) | (nvalue << 4) | (nvalue << 6);
+    }
+    return rv;
+}
+
+static object *
+imageop_grey42grey(self, args)
+    object *self;
+    object *args;
+{
+    int x, y, len, nlen;
+    unsigned char *cp, *ncp;
+    unsigned char ovalue;
+    object *rv;
+    int i, pos, value, nvalue;
+    
+    if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
+      return 0;
+
+    nlen = x*y;
+    if ( (nlen+1)/2 != len ) {
+	err_setstr(ImageopError, "String has incorrect length");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, nlen);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+
+    pos = 0;
+    for ( i=0; i < nlen; i++ ) {
+	if ( pos == 0 ) {
+	    value = *cp++;
+	    pos = 8;
+	}
+	pos -= 4;
+	nvalue = (value >> pos) & 0x0f;
+	*ncp++ = nvalue | (nvalue << 4);
     }
     return rv;
 }
@@ -291,8 +494,13 @@ static struct methodlist imageop_methods[] = {
     { "crop",		imageop_crop },
     { "scale",		imageop_scale },
     { "grey2mono",	imageop_grey2mono },
+    { "grey2grey2",	imageop_grey2grey2 },
+    { "grey2grey4",	imageop_grey2grey4 },
     { "dither2mono",	imageop_dither2mono },
+    { "dither2grey2",	imageop_dither2grey2 },
     { "mono2grey",	imageop_mono2grey },
+    { "grey22grey",	imageop_grey22grey },
+    { "grey42grey",	imageop_grey42grey },
     { 0,          0 }
 };
 
