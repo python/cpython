@@ -298,6 +298,13 @@ Extension modules
 
 Library
 
+- New module: sets, defines the class Set that implements a mutable
+  set type using the keys of a dict to represent the set.  There's
+  also a class ImmutableSet which is useful when you need sets of sets
+  or when you need to use sets as dict keys, and a class BaseSet which
+  is the base class of the two.  (This is not documented yet, but
+  help(sets) gives a wealth of information.)
+
 - Added operator.pow(a,b) which is equivalent to a**b.
 
 - random.randrange(-sys.maxint-1, sys.maxint) no longer raises
