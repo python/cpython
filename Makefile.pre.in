@@ -379,10 +379,14 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
-# This rule builds the Cygwin Python DLL
-libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
-	$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
-		$(LIBS) $(MODLIBS) $(SYSLIBS)
+# This rule builds the Cygwin Python DLL and import library if configured
+# for a shared core library; otherwise, this rule is a noop.
+$(DLLLIBRARY) libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
+	if test -n "$(DLLLIBRARY)"; then \
+		$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
+			$(LIBS) $(MODLIBS) $(SYSLIBS); \
+	else true; \
+	fi
 
 
 oldsharedmods: $(SHAREDMODS)

@@ -421,7 +421,8 @@ extern double hypot(double, double);
 #	define HAVE_DECLSPEC_DLL
 #endif
 
-#if defined(Py_ENABLE_SHARED) /* only get special linkage if built as shared */
+/* only get special linkage if built as shared or platform is Cygwin */
+#if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #	if defined(HAVE_DECLSPEC_DLL)
 #		ifdef Py_BUILD_CORE
 #			define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
