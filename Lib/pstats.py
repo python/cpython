@@ -524,3 +524,129 @@ def count_calls(callers):
 
 def f8(x):
     return fpformat.fix(x, 3).rjust(8)
+
+#**************************************************************************
+# Statistics browser added by ESR, April 2001
+#**************************************************************************
+
+if __name__ == '__main__':
+    import cmd
+
+    class ProfileBrowser(cmd.Cmd):
+        def __init__(self, profile=None):
+            self.prompt = "% "
+            if profile:
+                self.stats = Stats(profile)
+            else:
+                self.stats = None
+
+        def generic(self, fn, line):
+            args = line.split()
+            processed = []
+            for term in args:
+                try:
+                    processed.append(int(term))
+                    continue
+                except ValueError:
+                    pass
+                try:
+                    frac = float(term)
+                    if frac > 1 or frac < 0:
+                        print "Fraction argument mus be in [0, 1]"
+                        continue
+                    processed.append(frac)
+                    continue
+                except ValueError:
+                    pass
+                processed.append(term)
+            if self.stats:
+                apply(getattr(self.stats, fn), processed)
+            else:
+                print "No statistics object is loaded."
+            return 0
+
+        def do_add(self, line):
+            self.stats.add(line)
+            return 0
+        def help_add(self):
+            print "Add profile info from given file to current stastics object."
+
+        def do_callees(self, line):
+            return self.generic('callees', line)
+        def help_callees(self):
+            print "Print callees statistics from the current stat object."
+
+        def do_callers(self, line):
+            return self.generic('callers', line)
+        def help_callers(self):
+            print "Print callers statistics from the current stat object."
+
+        def do_EOF(self, line):
+            print ""
+            return 1
+        def help_EOF(self):
+            print "Leave the profile brower."
+
+        def do_quit(self, line):
+            return 1
+        def help_quit(self):
+            print "Leave the profile brower."
+
+        def do_read(self, line):
+            if line:
+                try:
+                    self.stats = Stats(line)
+                except IOError, args:
+                    print args[1]
+                    return
+                self.prompt = line + "% "
+            elif len(self.prompt > 2):
+                line = self.prompt[-2:]
+            else:
+                print "No statistics object is current -- cannot reload."
+            return 0
+        def help_read(self):
+            print "Read in profile data from a specified file."
+
+        def do_reverse(self, line):
+            self.stats.reverse_order()
+            return 0
+        def help_reverse(self):
+            print "Reverse the sort order of the profiling report."
+
+        def do_sort(self, line):
+            apply(self.stats.sort_stats, line.split())
+            return 0
+        def help_sort(self):
+            print "Sort profile data according to specified keys."
+
+        def do_stats(self, line):
+            return self.generic('print_stats', line)
+        def help_stats(self):
+            print "Print statistics from the current stat object."
+
+        def do_strip(self, line):
+            self.stats.strip_order()
+            return 0
+        def help_strip(self):
+            print "Strip leading path information from filenames in the report."
+
+        def postcmd(self, stop, line):
+            if stop:
+                return stop
+            return None
+
+    import sys
+    print "Welcome to the profile statistics browser."
+    if len(sys.argv) > 1:
+        initprofile = sys.argv[1]
+    else:
+        initprofile = None
+    try:
+        ProfileBrowser(initprofile).cmdloop()
+        print "Goodbye."
+    except KeyboardInterrupt:
+        pass
+
+# That's all, folks.
+
