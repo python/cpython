@@ -52,6 +52,8 @@ class Cmd:
 	misc_header = "Miscellaneous help topics:"
 	undoc_header = "Undocumented commands:"
 
+	def __init__(self): pass
+
 	def cmdloop(self, intro=None):
 		self.preloop()
 		if intro != None:
