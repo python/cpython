@@ -13,7 +13,7 @@ at the top of your CGI script.  The optional arguments to enable() are:
 By default, tracebacks are displayed but not saved, and context is 5.
 
 Alternatively, if you have caught an exception and want cgitb to display it
-for you, call cgitb.handle().  The optional argument to handle() is a 3-item
+for you, call cgitb.handler().  The optional argument to handler() is a 3-item
 tuple (etype, evalue, etb) just like the value of sys.exc_info()."""
 
 __author__ = 'Ka-Ping Yee'
