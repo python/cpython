@@ -16,7 +16,7 @@ def main():
         arg = arg.replace(' ', '+')
         list.append(arg)
     s = '+'.join(list)
-    url = "http://google.com/search?q=%s" % s
+    url = "http://www.google.com/search?q=%s" % s
     webbrowser.open(url)
 
 main()
