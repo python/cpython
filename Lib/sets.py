@@ -273,7 +273,7 @@ class BaseSet(object):
 class ImmutableSet(BaseSet):
     """Immutable set class."""
 
-    __slots__ = ['_hash']
+    __slots__ = ['_hashcode']
 
     # BaseSet + hashing
 
