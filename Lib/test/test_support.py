@@ -62,6 +62,10 @@ def is_resource_enabled(resource):
     return use_resources is not None and resource in use_resources
 
 def requires(resource, msg=None):
+    # see if the caller's module is __main__ - if so, treat as if
+    # the resource was set
+    if sys._getframe().f_back.f_globals.get("__name__") == "__main__":
+        return
     if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the `%s' resource not enabled" % resource
