@@ -933,8 +933,16 @@ PyNumber_Long(PyObject *o)
 		Py_INCREF(o);
 		return o;
 	}
-	if (PyLong_Check(o))
-		return _PyLong_Copy((PyLongObject *)o);
+	if (PyLong_Check(o)) {
+		PyObject *res;
+
+		res = _PyLong_Copy((PyLongObject *)o);
+		if (res != NULL)
+			((PyLongObject *)res)->ob_size =
+				((PyLongObject *)o)->ob_size;
+
+		return res;
+	}
 	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString() 
 		 * doesn't do.  In particular long('9.5') must raise an
