@@ -187,13 +187,13 @@ print dir()
 """
 t7, sub, subsub = None, None, None
 import t7 as tas
-print dir(tas)
+print fixdir(dir(tas))
 verify(not t7)
 from t7 import sub as subpar
-print dir(subpar)
+print fixdir(dir(subpar))
 verify(not t7 and not sub)
 from t7.sub import subsub as subsubsub
-print dir(subsubsub)
+print fixdir(dir(subsubsub))
 verify(not t7 and not sub and not subsub)
 from t7.sub.subsub import spam as ham
 print "t7.sub.subsub.spam =", ham
