@@ -1,4 +1,10 @@
-"Customize this file to change the default client etc."
+"""Customize this file to change the default client etc.
+
+(In general, it is probably be better to make local operation the
+default and to require something like an RCSSERVER environment
+variable to enable remote operation.)
+
+"""
 
 import string
 
@@ -8,7 +14,7 @@ import string
 HOST = 'voorn.cwi.nl'
 PORT = 4127
 VERBOSE = 1
-
+LOCAL = 0
 
 import client
 
@@ -25,6 +31,7 @@ def openrcsclient(opts = []):
 	host = HOST
 	port = PORT
 	verbose = VERBOSE
+	local = LOCAL
 	directory = None
 	for o, a in opts:
 		if o == '-h':
@@ -42,9 +49,14 @@ def openrcsclient(opts = []):
 			verbose = verbose + 1
 		if o == '-q':
 			verbose = 0
-	address = (host, port)
-	# XXX For local operation, instantiate RCSProxy.RCSProxyLocal() here
-	x = RCSProxyClient(address, verbose)
+		if o == '-L':
+			local = 1
+	if local:
+		import RCSProxy
+		x = RCSProxy.RCSProxyLocal()
+	else:
+		address = (host, port)
+		x = RCSProxyClient(address, verbose)
 	if not directory:
 		try:
 			directory = open("CVS/Repository").readline()
