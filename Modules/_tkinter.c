@@ -848,6 +848,148 @@ Tkapp_DeleteFileHandler (self, args)
   return Py_None;
 }
 
+/**** Tktt Object (timer token) ****/
+
+staticforward PyTypeObject Tktt_Type;
+
+typedef struct
+  {
+    PyObject_HEAD
+    Tk_TimerToken token;
+    PyObject *func;
+  }
+TkttObject;
+
+static PyObject *
+Tktt_DeleteTimerHandler (self, args)
+     PyObject *self;
+     PyObject *args;
+{
+  TkttObject *v = (TkttObject *) self;
+
+  if (!PyArg_Parse (args, ""))
+    return NULL;
+  if (v->func != NULL)
+    {
+      Tk_DeleteTimerHandler (v->token);
+      PyMem_DEL (v->func);
+      v->func = NULL;
+    }
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyMethodDef Tktt_methods[] =
+{
+  {"deletetimerhandler", Tktt_DeleteTimerHandler},
+  {NULL, NULL}
+};
+
+static TkttObject *
+Tktt_New (token, func)
+     Tk_TimerToken token;
+     PyObject *func;
+{
+  TkttObject *v;
+  
+  v = PyObject_NEW (TkttObject, &Tktt_Type);
+  if (v == NULL)
+    return NULL;
+
+  v->token = token;
+  v->func = func;
+  Py_INCREF (v->func);
+  return v;
+}
+
+static void
+Tktt_Dealloc (self)
+     PyObject *self;
+{
+  PyMem_DEL (self);
+}
+
+static int
+Tktt_Print (self, fp, flags)
+     PyObject *self;
+     FILE *fp;
+     int flags;
+{
+  TkttObject *v = (TkttObject *) self;
+
+  fprintf(fp, "<tktimertoken at 0x%x%s>", v,
+    v->func == NULL ? ", handler deleted" : "");
+  return 0;
+}
+
+static PyObject *
+Tktt_GetAttr (self, name)
+     PyObject *self;
+     char *name;
+{
+  return Py_FindMethod (Tktt_methods, self, name);
+}
+
+static PyTypeObject Tktt_Type =
+{
+  OB_HEAD_INIT (&PyType_Type)
+  0,				/*ob_size */
+  "tktimertoken",		/*tp_name */
+  sizeof (TkttObject),		/*tp_basicsize */
+  0,				/*tp_itemsize */
+  Tktt_Dealloc,			/*tp_dealloc */
+  Tktt_Print,			/*tp_print */
+  Tktt_GetAttr,			/*tp_getattr */
+  0,				/*tp_setattr */
+  0,				/*tp_compare */
+  0,				/*tp_repr */
+  0,				/*tp_as_number */
+  0,				/*tp_as_sequence */
+  0,				/*tp_as_mapping */
+  0,				/*tp_hash */
+};
+
+/** Timer Handler **/
+
+static void
+TimerHandler (clientData)
+     ClientData clientData;
+{
+  PyObject *func = (PyObject *) clientData;
+  PyObject *arg, *res;
+
+  arg = PyTuple_New (0);
+  res = PyEval_CallObject (func, arg);
+  Py_DECREF (arg);
+  if (res == NULL)
+    {
+      errorInCmd = 1;
+      PyErr_GetAndClear (&excInCmd, &valInCmd);
+    }
+  Py_DECREF (res);
+}
+
+static PyObject *
+Tkapp_CreateTimerHandler (self, args)
+     PyObject *self;
+     PyObject *args;		/* Is (milliseconds, func) */
+{
+  int milliseconds;
+  PyObject *func;
+  Tk_TimerToken token;
+
+  if (!PyArg_Parse (args, "(iO)", &milliseconds, &func))
+    return NULL;
+  if (!(PyMethod_Check(func) || PyFunction_Check(func) ||
+        PyCFunction_Check(func)))
+    {
+      PyErr_SetString (PyExc_TypeError, "bad argument list");
+      return NULL;
+    }
+  token = Tk_CreateTimerHandler(milliseconds, TimerHandler, (ClientData) func);
+  return (PyObject *) Tktt_New (token, func);
+}
+
 /** Event Loop **/
 
 static PyObject *
@@ -855,11 +997,17 @@ Tkapp_MainLoop (self, args)
      PyObject *self;
      PyObject *args;
 {
+  int threshold = 0;
+
   if (!PyArg_Parse (args, ""))
-    return NULL;
+    {
+      PyErr_Clear();
+      if (!PyArg_Parse (args, "i", &threshold))
+        return NULL;
+    }
 
   quitMainLoop = 0;
-  while (tk_NumMainWindows > 0 && !quitMainLoop && !errorInCmd)
+  while (tk_NumMainWindows > threshold && !quitMainLoop && !errorInCmd)
     {
       if (PyOS_InterruptOccurred ())
 	{
@@ -923,6 +1071,7 @@ static PyMethodDef Tkapp_methods[] =
   {"deletecommand", Tkapp_DeleteCommand},
   {"createfilehandler", Tkapp_CreateFileHandler},
   {"deletefilehandler", Tkapp_DeleteFileHandler},
+  {"createtimerhandler", Tkapp_CreateTimerHandler},
   {"mainloop", Tkapp_MainLoop},
   {"quit", Tkapp_Quit},
   {NULL, NULL}
@@ -1009,6 +1158,11 @@ Tkinter_Create (self, args)
 static PyMethodDef moduleMethods[] =
 {
   {"create", Tkinter_Create},
+  {"createfilehandler", Tkapp_CreateFileHandler},
+  {"deletefilehandler", Tkapp_DeleteFileHandler},
+  {"createtimerhandler", Tkapp_CreateTimerHandler},
+  {"mainloop", Tkapp_MainLoop},
+  {"quit", Tkapp_Quit},
   {NULL, NULL}
 };
 
