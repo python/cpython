@@ -1873,7 +1873,7 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\Lib\compiler\*.py
+  Source=..\lib\compiler\*.py
   Destination=%MAINDIR%\Lib\compiler
   Description=Python compiler written in Python
   Flags=0000000000000010
@@ -1904,7 +1904,7 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\Lib\email\*.py
+  Source=..\lib\email\*.py
   Destination=%MAINDIR%\Lib\email
   Description=Library email package
   Flags=0000000000000010
@@ -1920,7 +1920,7 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\Lib\hotshot\*.py
+  Source=..\lib\hotshot\*.py
   Destination=%MAINDIR%\Lib\hotshot
   Description=Fast Python profiler
   Flags=0000000000000010
@@ -2583,7 +2583,8 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath\InstallGroup
-  New Value=%GROUP%
+  New Value=%CGROUP_SAVE%
+  New Value=
   Root=2
 end
 item: Edit Registry
@@ -2620,7 +2621,8 @@ end
 item: Edit Registry
   Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath\InstallGroup
-  New Value=%GROUP%
+  New Value=%CGROUP_SAVE%
+  New Value=
   Root=1
 end
 item: Edit Registry
