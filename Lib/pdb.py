@@ -497,6 +497,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.set_quit()
         return 1
     do_q = do_quit
+    do_exit = do_quit
 
     def do_args(self, arg):
         f = self.curframe
@@ -819,8 +820,10 @@ command with a 'global' command, e.g.:
         self.help_q()
 
     def help_q(self):
-        print """q(uit) Quit from the debugger.
+        print """q(uit) or exit - Quit from the debugger.
 The program being executed is aborted."""
+
+    help_exit = help_q
 
     def help_whatis(self):
         print """whatis arg
