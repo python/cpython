@@ -31,7 +31,7 @@
 DESTLIB=$(prefix)/lib/python
 
 # Standard enabled (tests are always available)
-TESTPATH=$(DESTLIB)/test
+TESTPATH=:$(DESTLIB)/test
 
 # Enable this for SGI systems
 ARCHPATH=:$(DESTLIB)/sgi
