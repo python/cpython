@@ -909,7 +909,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
 		if (doc != NULL && PyString_Check(doc)) {
 			const size_t n = (size_t)PyString_GET_SIZE(doc);
-			type->tp_doc = PyObject_MALLOC(n+1);
+			type->tp_doc = (char *)PyObject_MALLOC(n+1);
 			if (type->tp_doc == NULL) {
 				Py_DECREF(type);
 				return NULL;
