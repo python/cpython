@@ -488,7 +488,6 @@ class Pickler:
                 if str(err) != ("a class that defines __slots__ "
                                 "without defining __getstate__ "
                                 "cannot be pickled"):
-                    print repr(str(err))
                     raise # Not that specific exception
                 getstate = None
 
