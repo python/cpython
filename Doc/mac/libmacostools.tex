@@ -39,7 +39,7 @@ specified as pathnames or \pytype{FSSpec} objects.
 \begin{funcdesc}{touched}{dst}
 Tell the finder that some bits of finder-information such as creator
 or type for file \var{dst} has changed. The file can be specified by
-pathname or fsspec. This call should prod the finder into redrawing the
+pathname or fsspec. This call should tell the finder to redraw the
 files icon.
 \end{funcdesc}
 
@@ -79,7 +79,7 @@ in the correct application.
 \begin{funcdesc}{Print}{file}
 Tell the finder to print a file (again specified by full pathname or
 \pytype{FSSpec}). The behaviour is identical to selecting the file and using
-the print command in the finder.
+the print command in the finder's file menu.
 \end{funcdesc}
 
 \begin{funcdesc}{copy}{file, destdir}
