@@ -393,14 +393,13 @@ The following format characters are understood:
 \code{x}, \code{X}, \code{e}, \code{E}, \code{f}, \code{g}, \code{G}. 
 Width and precision may be a \code{*} to specify that an integer argument
 specifies the actual width or precision.  The flag characters
-\code{-}, \code{+}, blank, \code{\#} and \code{0} are understood.  The
-size specifiers \code{h}, \code{l} or \code{L} may be 
-present but are ignored.  The \code{\%s} conversion takes any Python
-object and converts it to a string using \code{str()} before
-formatting it.  The ANSI features \code{\%p} and \code{\%n}
-are not supported.  Since Python strings have an explicit length,
-\code{\%s} conversions don't assume that \code{'\e0'} is the end of
-the string.
+\code{-}, \code{+}, blank, \code{\#} and \code{0} are understood.  The 
+size specifiers \code{h}, \code{l} or \code{L} may be present but are
+ignored.  The \code{\%s} conversion takes any Python object and
+converts it to a string using \code{str()} before formatting it.  The
+ANSI features \code{\%p} and \code{\%n} are not supported.  Since
+Python strings have an explicit length, \code{\%s} conversions don't
+assume that \code{'\e0'} is the end of the string.
 
 For safety reasons, floating point precisions are clipped to 50;
 \code{\%f} conversions for numbers whose absolute value is over 1e25
