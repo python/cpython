@@ -76,6 +76,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 #include "rangeobject.h"
 #include "stringobject.h"
+#include "bufferobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
