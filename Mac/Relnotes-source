@@ -1,6 +1,10 @@
 How to build Python from a source distribution.
 -----------------------------------------------
 
+NOTE: These notes are for building a Python from a machine-independent
+source distribution, *not* for building a Python from a mac-specific
+source distribution.
+
 You will need a Python source distribution in tar form. So, the
 first thing you need is a tar program for the mac. Suntar is
 reasonable and can be found at the info-mac sites. Edit the
