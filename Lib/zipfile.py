@@ -454,13 +454,13 @@ class ZipFile:
 
     def __del__(self):
         """Call the "close()" method in case the user forgot."""
-        if self.fp and not self._filePassed:
-            self.fp.close()
-            self.fp = None
+        self.close()
 
     def close(self):
         """Close the file, and for mode "w" and "a" write the ending
         records."""
+        if self.fp is None:
+            return
         if self.mode in ("w", "a"):             # write ending records
             count = 0
             pos1 = self.fp.tell()
