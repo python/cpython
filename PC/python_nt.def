@@ -1,4 +1,4 @@
-LIBRARY		Python14.dll
+LIBRARY		Python15.dll
 CODE		PRELOAD MOVEABLE DISCARDABLE
 DATA		PRELOAD SINGLE
 
@@ -21,7 +21,6 @@ EXPORTS
 	Py_SuppressPrintingFlag DATA
 	PyExc_AccessError DATA
 	PyExc_AttributeError DATA
-	PyExc_ConflictError DATA
 	PyExc_EOFError DATA
 	PyExc_IOError DATA
 	PyExc_ImportError DATA
@@ -60,6 +59,8 @@ EXPORTS
 	PyComplex_Type DATA
 	_Py_EllipsisObject DATA
 	PySlice_Type DATA
+	Py_InteractiveFlag DATA
+	PyCObject_Type DATA
 
 	_PyObject_New
 	_PyObject_NewVar
@@ -355,3 +356,8 @@ EXPORTS
 	PyCObject_AsVoidPtr
 	PyCObject_Import
 	Py_GetBuildInfo
+	Py_FdIsInteractive
+ 	PyThread_start_new_thread
+ 	PyThread_init_thread
+ 	PyThread_get_thread_ident
+ 	PyThread_exit_thread
