@@ -15,7 +15,7 @@ PyThread__init_thread(void)
  * Thread support.
  */
 int
-PyThread_start_new_thread(func, void (*func)(void *), void *arg)
+PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	int success = 0;	/* init not needed when SOLARIS_THREADS and */
 				/* C_THREADS implemented properly */
