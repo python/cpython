@@ -379,8 +379,9 @@ getrefcount() -- return the reference count for an object (plus one :-)\n\
 setcheckinterval() -- control how often the interpreter checks for events\n\
 setprofile() -- set the global profiling function\n\
 settrace() -- set the global debug tracing function\n\
-";
+"
 #endif
+/* end of sys_doc */ ;
 
 PyObject *
 _PySys_Init(void)
