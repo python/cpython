@@ -7,16 +7,24 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-d
 ]
 [
+.B \-E
+]
+[
+.B \-h
+]
+[
 .B \-i
 ]
 [
 .B \-O
 ]
-[
-.B \-S
+.br
+       [
+.B -Q
+.I argument
 ]
 [
-.B \-E
+.B \-S
 ]
 [
 .B \-t
@@ -25,13 +33,11 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-u
 ]
 [
+.B \-U
+]
+.br
+       [
 .B \-v
-]
-[
-.B \-x
-]
-[
-.B \-h
 ]
 [
 .B \-V
@@ -39,6 +45,9 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \-W
 .I argument
+]
+[
+.B \-x
 ]
 .br
        [
@@ -78,9 +87,21 @@ viewed by running the
 program.  
 .SH COMMAND LINE OPTIONS
 .TP
+.BI "\-c " command
+Specify the command to execute (see next section).
+This terminates the option list (following options are passed as
+arguments to the command).
+.TP
 .B \-d
 Turn on parser debugging output (for wizards only, depending on
 compilation options).
+.TP
+.B \-E
+Ignore environment variables like PYTHONPATH and PYTHONHOME that modify
+the behavior of the interpreter.
+.TP
+.B \-h
+Prints the usage for the interpreter executable and exits.
 .TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
@@ -95,16 +116,21 @@ compiled (bytecode) files from
 .I .pyc
 to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
 .TP
+.BI "\-Q " argument
+Division control; see PEP 238.  The argument must be one of "old" (the
+default, int/int and long/long return an int or long), "new" (new
+division semantics, i.e. int/int and long/long returns a float),
+"warn" (old division semantics with a warning for int/int and
+long/long), or "warnall" (old division semantics with a warning for
+all use of the division operator).  For a use of "warnall", see the
+Tools/scripts/fixdiv.py script.
+.TP
 .B \-S
 Disable the import of the module
 .I site
 and the site-dependent manipulations of
 .I sys.path
 that it entails.
-.TP
-.B \-E
-Ignore environment variables like PYTHONPATH and PYTHONHOME that modify
-the behavior of the interpreter.
 .TP
 .B \-t
 Issue a warning when a source file mixes tabs and spaces for
@@ -120,14 +146,6 @@ Print a message each time a module is initialized, showing the place
 twice, print a message for each file that is checked for when 
 searching for a module.  Also provides information on module cleanup
 at exit.
-.TP
-.B \-x
-Skip the first line of the source.  This is intended for a DOS
-specific hack only.  Warning: the line numbers in error messages will
-be off by one!
-.TP
-.B \-h
-Prints the usage for the interpreter executable and exits.
 .TP
 .B \-V
 Prints the Python version number of the executable and exits.
@@ -197,10 +215,10 @@ case-sensitive.  The
 field matches the line number, where zero matches all line numbers and
 is thus equivalent to an omitted line number.
 .TP
-.BI "\-c " command
-Specify the command to execute (see next section).
-This terminates the option list (following options are passed as
-arguments to the command).
+.B \-x
+Skip the first line of the source.  This is intended for a DOS
+specific hack only.  Warning: the line numbers in error messages will
+be off by one!
 .SH INTERPRETER INTERFACE
 The interpreter interface resembles that of the UNIX shell: when
 called with standard input connected to a tty device, it prompts for
