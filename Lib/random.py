@@ -6,6 +6,7 @@
 #	       lognormal
 #	       negative exponential
 #	       gamma
+#	       beta
 #
 #	distributions on the circle (angles 0 to 2pi)
 #	---------------------------------------------
@@ -15,7 +16,7 @@
 # Translated from anonymously contributed C/C++ source.
 
 from whrandom import random, uniform, randint, choice # Also for export!
-from math import log, exp, pi, e, sqrt, acos, cos
+from math import log, exp, pi, e, sqrt, acos, cos, sin
 
 # Housekeeping function to verify that magic constants have been
 # computed correctly
@@ -172,6 +173,37 @@ def stdgamma(alpha, ainv, bbb, ccc):
 				break
 		return x
 
+
+# -------------------- Gauss (faster alternative) --------------------
+
+# When x and y are two variables from [0, 1), uniformly distributed, then
+#
+#    cos(2*pi*x)*log(1-y)
+#    sin(2*pi*x)*log(1-y)
+#
+# are two *independent* variables with normal distribution (mu = 0, sigma = 1).
+# (Lambert Meertens)
+
+gauss_next = None
+def gauss(mu, sigma):
+	global gauss_next
+	if gauss_next != None:
+		z = gauss_next
+		gauss_next = None
+	else:
+		x2pi = random() * TWOPI
+		log1_y = log(1.0 - random())
+		z = cos(x2pi) * log1_y
+		gauss_next = sin(x2pi) * log1_y
+	return mu + z*sigma
+
+# -------------------- beta --------------------
+
+def betavariate(alpha, beta):
+	y = expovariate(alpha)
+	z = expovariate(1.0/beta)
+	return z/(y+z)
+
 # -------------------- test program --------------------
 
 def test():
@@ -179,7 +211,7 @@ def test():
 	print 'LOG4          =', LOG4
 	print 'NV_MAGICCONST =', NV_MAGICCONST
 	print 'SG_MAGICCONST =', SG_MAGICCONST
-	N = 100
+	N = 200
 	test_generator(N, 'random()')
 	test_generator(N, 'normalvariate(0.0, 1.0)')
 	test_generator(N, 'lognormvariate(0.0, 1.0)')
@@ -192,21 +224,30 @@ def test():
 	test_generator(N, 'gammavariate(2.0, 1.0)')
 	test_generator(N, 'gammavariate(20.0, 1.0)')
 	test_generator(N, 'gammavariate(200.0, 1.0)')
+	test_generator(N, 'gauss(0.0, 1.0)')
+	test_generator(N, 'betavariate(3.0, 3.0)')
 
 def test_generator(n, funccall):
-	import sys
-	print '%d calls to %s:' % (n, funccall),
-	sys.stdout.flush()
+	import time
+	print n, 'times', funccall
 	code = compile(funccall, funccall, 'eval')
 	sum = 0.0
 	sqsum = 0.0
+	smallest = 1e10
+	largest = 1e-10
+	t0 = time.time()
 	for i in range(n):
 		x = eval(code)
 		sum = sum + x
 		sqsum = sqsum + x*x
+		smallest = min(x, smallest)
+		largest = max(x, largest)
+	t1 = time.time()
+	print round(t1-t0, 3), 'sec,', 
 	avg = sum/n
 	stddev = sqrt(sqsum/n - avg*avg)
-	print 'avg %g, stddev %g' % (avg, stddev)
+	print 'avg %g, stddev %g, min %g, max %g' % \
+		  (avg, stddev, smallest, largest)
 
 if __name__ == '__main__':
 	test()
