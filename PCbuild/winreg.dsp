@@ -89,9 +89,6 @@ LINK32=link.exe
 
 # Name "winreg - Win32 Release"
 # Name "winreg - Win32 Debug"
-# Begin Group "Source Files"
-
-# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=..\PC\winreg.c
@@ -107,14 +104,5 @@ SOURCE=..\PC\winreg.c
 !ENDIF 
 
 # End Source File
-# End Group
-# Begin Group "Header Files"
-
-# PROP Default_Filter "h;hpp;hxx;hm;inl"
-# End Group
-# Begin Group "Resource Files"
-
-# PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-# End Group
 # End Target
 # End Project
