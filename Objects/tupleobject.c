@@ -499,8 +499,8 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 	int sizediff;
 
 	v = (PyTupleObject *) *pv;
-	if (v == NULL || !PyTuple_Check(v) || v->ob_refcnt != 1 ||
-             last_is_sticky) {
+	if (v == NULL || !PyTuple_Check(v) || last_is_sticky ||
+	    (v->ob_size != 0 && v->ob_refcnt != 1)) {
 		*pv = 0;
 		Py_XDECREF(v);
 		PyErr_BadInternalCall();
@@ -509,6 +509,15 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 	sizediff = newsize - v->ob_size;
 	if (sizediff == 0)
 		return 0;
+
+	if (v->ob_size == 0) {
+		/* Empty tuples are often shared, so we should never 
+		   resize them in-place even if we do own the only
+		   (current) reference */
+		Py_DECREF(v);
+		*pv = PyTuple_New(newsize);
+		return 0;
+	}
 
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
 #ifdef Py_REF_DEBUG
