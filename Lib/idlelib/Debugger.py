@@ -76,7 +76,15 @@ class Debugger:
             return
         if self.stackviewer:
             self.stackviewer.close(); self.stackviewer = None
+        # Remove all EditWindow BREAK tags when closing debugger:
+        edit_windows = self.pyshell.flist.inversedict.keys()
+        for window in edit_windows:
+            window.text.tag_remove("BREAK", 1.0, END)
+        # Clean up pyshell if user clicked debugger control close widget.
+        # (Causes a harmless extra cycle through close_debugger() if user
+        # toggled debugger from pyshell Debug menu)
         self.pyshell.close_debugger()
+        # Now close the debugger control window....
         self.top.destroy()
 
     def make_gui(self):
