@@ -1,6 +1,9 @@
 # Module 'Buttons'
 
 
+from Resize import *
+
+
 # Import module 'rect' renamed as '_rect'
 #
 import rect
@@ -91,12 +94,6 @@ class LabelAppearance():
 		h = (left + right - d.textwidth(self.text)) / 2
 		v = (top + bottom - d.lineheight()) / 2
 		self.textpos = h, v
-	#
-	# Resize method.
-	# Override for widgets that take over window geomtry management.
-	#
-	def resize(self):
-		pass
 	#
 	# Generic drawing mechanism.
 	# Do not override redraw() or draw() methods; override drawit() c.s.
@@ -360,11 +357,12 @@ class RadioReactivity() = TriggerReactivity():
 
 # Auxiliary class for 'define' method.
 #
-class Define():
+class Define() = NoResize():
 	#
 	def define(self, (win, bounds, text)):
 		self.init_appearance(win, bounds)
 		self.init_reactivity()
+		self.init_resize()
 		self.settext(text)
 		return self
 
