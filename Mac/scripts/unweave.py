@@ -5,9 +5,10 @@ import re
 import sys
 import macfs
 import os
+import macostools
 
 BEGINDEFINITION=re.compile("^<<(?P<name>.*)>>=\s*")
-USEDEFINITION=re.compile("^(?P<pre>.*)<<(?P<name>.*)>>[^=]")
+USEDEFINITION=re.compile("^(?P<pre>.*)<<(?P<name>.*)>>(?P<post>[^=].*)")
 ENDDEFINITION=re.compile("^@")
 
 class Processor:
@@ -27,34 +28,36 @@ class Processor:
 			self.pushback = None
 			return rv
 		self.lineno = self.lineno + 1
-		return self.fp.readline()
+		return self.lineno, self.fp.readline()
 		
-	def _linedirective(self):
-		"""Return a #line cpp directive for the current input file position"""
-		return '#line %d "%s"\n'%(self.lineno-2, os.path.split(self.filename)[1])
+	def _linedirective(self, lineno):
+		"""Return a #line cpp directive for this file position"""
+		return '#line %d "%s"\n'%(lineno-3, os.path.split(self.filename)[1])
 		
 	def _readitem(self):
 		"""Read the definition of an item. Insert #line where needed. """
-		rv = [self._linedirective()]
+		rv = []
 		while 1:
-			line = self._readline()
+			lineno, line = self._readline()
 			if not line:
 				break
 			if ENDDEFINITION.search(line):
 				break
 			if BEGINDEFINITION.match(line):
-				self.pushback = line
+				self.pushback = lineno, line
 				break
 			mo = USEDEFINITION.match(line)
 			if mo:
 				pre = mo.group('pre')
 				if pre:
-					rv.append(pre+'\n')
-			rv.append(line)
+					rv.append((lineno, pre+'\n'))
+			rv.append((lineno, line))
 			# For simplicity we add #line directives now, if
 			# needed.
 			if mo:
-				rv.append(self._linedirective())
+				post = mo.group('post')
+				if post and post != '\n':
+					rv.append((lineno, post))
 		return rv
 		
 	def _define(self, name, value):
@@ -67,7 +70,7 @@ class Processor:
 	def read(self):
 		"""Read the source file and store all definitions"""
 		while 1:
-			line = self._readline()
+			lineno, line = self._readline()
 			if not line: break
 			mo = BEGINDEFINITION.search(line)
 			if mo:
@@ -97,7 +100,7 @@ class Processor:
 		# No rest for the wicked: we have work to do.
 		self.resolving[name] = 1
 		result = []
-		for line in self.items[name]:
+		for lineno, line in self.items[name]:
 			mo = USEDEFINITION.search(line)
 			if mo:
 				# We replace the complete line. Is this correct?
@@ -105,7 +108,7 @@ class Processor:
 				replacement = self._resolve_one(macro)
 				result = result + replacement
 			else:
-				result.append(line)
+				result.append((lineno, line))
 		self.items[name] = result
 		self.resolved[name] = 1
 		del self.resolving[name]
@@ -123,16 +126,19 @@ class Processor:
 		for name in self.items.keys():
 			if pattern.search(name):
 				pathname = os.path.join(dir, name)
-				data = self._stripduplines(self.items[name])
+				data = self._addlinedirectives(self.items[name])
 				self._dosave(pathname, data)
 				
-	def _stripduplines(self, data):
-		for i in range(len(data)-1, 0, -1):
-			if data[i][:5] == '#line' and data[i-1][:5] == '#line':
-				del data[i-1]
-		if data[-1][:5] == '#line':
-			del data[-1]
-		return data
+	def _addlinedirectives(self, data):
+		curlineno = -100
+		rv = []
+		for lineno, line in data:
+			curlineno = curlineno + 1
+			if line and line != '\n' and lineno != curlineno:
+				rv.append(self._linedirective(lineno))
+				curlineno = lineno
+			rv.append(line)
+		return rv
 		
 	def _dosave(self, pathname, data):
 		"""Save data to pathname, unless it is identical to what is there"""
@@ -140,20 +146,41 @@ class Processor:
 			olddata = open(pathname).readlines()
 			if olddata == data:
 				return
+		macostools.mkdirs(os.path.split(pathname)[0])
 		fp = open(pathname, "w").writelines(data)
 		
-def process(file):
+def process(file, config):
 	pr = Processor(file)
 	pr.read()
 	pr.resolve()
-	pr.save(":jacktest:src", "^.*\.cp$")
-	pr.save(":jacktest:include", "^.*\.h")
+	for pattern, folder in config:
+		pr.save(folder, pattern)
+	
+def readconfig():
+	"""Read a configuration file, if it doesn't exist create it."""
+	configname = sys.argv[0] + '.config'
+	if not os.path.exists(configname):
+		confstr = """config = [
+	("^.*\.cp$", ":unweave-src"),
+	("^.*\.h$", ":unweave-include"),
+]"""
+		open(configname, "w").write(confstr)
+		print "Created config file", configname
+##		print "Please check and adapt (if needed)"
+##		sys.exit(0)
+	namespace = {}
+	execfile(configname, namespace)
+	return namespace['config']
 
 def main():
+	config = readconfig()
 	if len(sys.argv) > 1:
-		for file in sys.argv:
-			print "Processing", file
-			process(file)
+		for file in sys.argv[1:]:
+			if file[-3:] == '.nw':
+				print "Processing", file
+				process(file, config)
+			else:
+				print "Skipping", file
 	else:
 		fss, ok = macfs.PromptGetFile("Select .nw source file", "TEXT")
 		if not ok:
