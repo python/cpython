@@ -670,7 +670,7 @@ Updates the current cursor position of all the ancestors of the window
 to reflect the current cursor position of the window.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{delch}{\optional{x, y}}
+\begin{methoddesc}[window]{delch}{\optional{y, x}}
 Delete any character at \code{(\var{y}, \var{x})}.
 \end{methoddesc}
 
@@ -708,14 +708,14 @@ Return a tuple \code{(\var{y}, \var{x})} of co-ordinates of upper-left
 corner.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{getch}{\optional{x, y}}
+\begin{methoddesc}[window]{getch}{\optional{y, x}}
 Get a character. Note that the integer returned does \emph{not} have to
 be in \ASCII{} range: function keys, keypad keys and so on return numbers
 higher than 256. In no-delay mode, -1 is returned if there is 
 no input.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{getkey}{\optional{x, y}}
+\begin{methoddesc}[window]{getkey}{\optional{y, x}}
 Get a character, returning a string instead of an integer, as
 \method{getch()} does. Function keys, keypad keys and so on return a
 multibyte string containing the key name.  In no-delay mode, an
@@ -733,7 +733,7 @@ parent window into two integer variables y and x.  Returns
 \code{-1,-1} if this window has no parent.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{getstr}{\optional{x, y}}
+\begin{methoddesc}[window]{getstr}{\optional{y, x}}
 Read a string from the user, with primitive line editing capacity.
 \end{methoddesc}
 
@@ -769,7 +769,7 @@ degrade performance considerably, due to repeated calls to
 wrefresh.  This option is disabled by default.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{inch}{\optional{x, y}}
+\begin{methoddesc}[window]{inch}{\optional{y, x}}
 Return the character at the given position in the window. The bottom
 8 bits are the character proper, and upper bits are the attributes.
 \end{methoddesc}
