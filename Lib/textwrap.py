@@ -8,7 +8,7 @@ import string, re
 
 
 # XXX is this going to be implemented properly somewhere in 2.3?
-def islower (c):
+def islower(c):
     return c in string.lowercase
 
 
@@ -72,7 +72,7 @@ class TextWrapper:
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
 
-    def _munge_whitespace (self, text):
+    def _munge_whitespace(self, text):
         """_munge_whitespace(text : string) -> string
 
         Munge whitespace in text: expand tabs and convert all other
@@ -86,7 +86,7 @@ class TextWrapper:
         return text
 
 
-    def _split (self, text):
+    def _split(self, text):
         """_split(text : string) -> [string]
 
         Split the text to wrap into indivisible chunks.  Chunks are
@@ -101,7 +101,7 @@ class TextWrapper:
         chunks = filter(None, chunks)
         return chunks
 
-    def _fix_sentence_endings (self, chunks):
+    def _fix_sentence_endings(self, chunks):
         """_fix_sentence_endings(chunks : [string])
 
         Correct for sentence endings buried in 'chunks'.  Eg. when the
@@ -119,7 +119,7 @@ class TextWrapper:
             else:
                 i += 1
 
-    def _handle_long_word (self, chunks, cur_line, cur_len, width):
+    def _handle_long_word(self, chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
                              cur_len : int, width : int)
@@ -147,7 +147,7 @@ class TextWrapper:
         # cur_len will be zero, so the next line will be entirely
         # devoted to the long word that we can't handle right now.
 
-    def _wrap_chunks (self, chunks, width):
+    def _wrap_chunks(self, chunks, width):
         """_wrap_chunks(chunks : [string], width : int) -> [string]
 
         Wrap a sequence of text chunks and return a list of lines of
@@ -202,7 +202,7 @@ class TextWrapper:
 
     # -- Public interface ----------------------------------------------
 
-    def wrap (self, text, width):
+    def wrap(self, text, width):
         """wrap(text : string, width : int) -> [string]
 
         Split 'text' into multiple lines of no more than 'width'
@@ -219,7 +219,7 @@ class TextWrapper:
             self._fix_sentence_endings(chunks)
         return self._wrap_chunks(chunks, width)
 
-    def fill (self, text, width, initial_tab="", subsequent_tab=""):
+    def fill(self, text, width, initial_tab="", subsequent_tab=""):
         """fill(text : string,
                 width : int,
                 initial_tab : string = "",
@@ -241,8 +241,8 @@ class TextWrapper:
 
 _wrapper = TextWrapper()
 
-def wrap (text, width):
+def wrap(text, width):
     return _wrapper.wrap(text, width)
 
-def fill (text, width, initial_tab="", subsequent_tab=""):
+def fill(text, width, initial_tab="", subsequent_tab=""):
     return _wrapper.fill(text, width, initial_tab, subsequent_tab)
