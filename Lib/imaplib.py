@@ -83,7 +83,7 @@ InternalDate = re.compile(r'.*INTERNALDATE "'
         r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
         r'"')
 Literal = re.compile(r'.*{(?P<size>\d+)}$')
-MapCRLF = re.compile(r'(?:\r\n|\n|\r(?!\n))')
+MapCRLF = re.compile(r'\r\n|\r|\n')
 Response_code = re.compile(r'\[(?P<type>[A-Z-]+)( (?P<data>[^\]]*))?\]')
 Untagged_response = re.compile(r'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
 Untagged_status = re.compile(r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?')
