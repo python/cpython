@@ -8,7 +8,7 @@
 #include "modsupport.h"
 #include "patchlevel.h"
 
-#define MS_DLL_ID "1.5.2"
+#define MS_DLL_ID "1.5"
 
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
@@ -28,8 +28,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,5,2,1
+ PRODUCTVERSION 1,5,2,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
