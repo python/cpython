@@ -33,7 +33,11 @@ typedef struct methodlist PyMethodDef;
 #include <tk.h>
 
 extern char *getprogramname ();
+extern int isatty (int);
+
+/* Internal declarations from tkInt.h.  */ 
 extern int tk_NumMainWindows;
+extern struct { Tk_Window win; } *tkMainWindowList;
 
 /**** Tkapp Object Declaration ****/
 
@@ -58,6 +62,7 @@ TkappObject;
 /**** Error Handling ****/
 
 static PyObject *Tkinter_TclError;
+static int quitMainLoop = 0;
 static int errorInCmd = 0;
 static PyObject *excInCmd;
 static PyObject *valInCmd;
@@ -66,8 +71,6 @@ static PyObject *
 Tkinter_Error (v)
      PyObject *v;
 {
-  if (Tkapp_Check (v))
-    PyErr_BadInternalCall ();
   PyErr_SetString (Tkinter_TclError, Tkapp_Result (v));
   return NULL;
 }
@@ -688,6 +691,7 @@ PythonCmd (clientData, interp, argc, argv)
   
   res = PyEval_CallObject (func, arg);
   Py_DECREF (arg);
+
   if (res == NULL)
     return PythonCmd_Error (interp);
 
@@ -834,8 +838,6 @@ Tkapp_DeleteFileHandler (self, args)
 }
 
 /** Event Loop **/
-
-static int quitMainLoop;
 
 static PyObject *
 Tkapp_MainLoop (self, args)
@@ -1023,9 +1025,19 @@ StdinProc (clientData, mask)
   /* Do nothing. */
 }
 
+static void
+Tkinter_Cleanup ()
+{
+  /* XXX rl_deprep_terminal is static, damned! */
+  while (tkMainWindowList != 0)
+    Tk_DestroyWindow (tkMainWindowList->win);
+}
+
 void
 PyInit_tkinter ()
 {
+  static inited = 0;
+
 #ifdef WITH_READLINE
   extern int (*rl_event_hook) ();
 #endif /* WITH_READLINE */
@@ -1045,11 +1057,19 @@ PyInit_tkinter ()
   PyDict_SetItemString (d, "EXCEPTION", v);
 
   /* Unblock stdin. */
-  Tk_CreateFileHandler (0, TK_READABLE, StdinProc, (ClientData) 0);
+  if (isatty (0))
+    Tk_CreateFileHandler (0, TK_READABLE, StdinProc, (ClientData) 0);
 
 #ifdef WITH_READLINE
   rl_event_hook = EventHook;
 #endif /* WITH_READLINE */
+
+  if (!inited)
+    {
+      inited = 1;
+      if (atexit (Tkinter_Cleanup))
+	PyErr_SetFromErrno (Tkinter_TclError);
+    }
 
   if (PyErr_Occurred ())
     Py_FatalError ("can't initialize module tkinter");
