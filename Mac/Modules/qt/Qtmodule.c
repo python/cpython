@@ -6182,7 +6182,7 @@ PyTypeObject Movie_Type = {
 /* --------------------- End object type Movie ---------------------- */
 
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Qt_CheckQuickTimeRegistration(_self, _args)
 	PyObject *_self;
@@ -7575,7 +7575,7 @@ static PyObject *Qt_SpriteMediaGetActionVariable(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Qt_SpriteMediaGetIndImageProperty(_self, _args)
 	PyObject *_self;
@@ -7772,7 +7772,7 @@ static PyObject *Qt_MoviesTask(_self, _args)
 
 static PyMethodDef Qt_methods[] = {
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"CheckQuickTimeRegistration", (PyCFunction)Qt_CheckQuickTimeRegistration, 1,
 	 "(void * registrationKey, long flags) -> None"},
 #endif
@@ -7897,7 +7897,7 @@ static PyMethodDef Qt_methods[] = {
 	{"SpriteMediaGetActionVariable", (PyCFunction)Qt_SpriteMediaGetActionVariable, 1,
 	 "(MediaHandler mh, QTAtomID variableID) -> (ComponentResult _rv, float value)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SpriteMediaGetIndImageProperty", (PyCFunction)Qt_SpriteMediaGetIndImageProperty, 1,
 	 "(MediaHandler mh, short imageIndex, long imagePropertyType, void * imagePropertyValue) -> (ComponentResult _rv)"},
 #endif

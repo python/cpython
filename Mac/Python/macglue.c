@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Events.h>
 
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 /* Unfortunately this call is probably slower... */
 #define LMGetTicks() TickCount()
 #endif
@@ -161,7 +161,7 @@ struct hook_args {
 	int selectcur_hit;		/* Set to true when "select current" selected */
 	char *prompt;			/* The prompt */
 };
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 /* The StandardFile hooks don't exist in Carbon. This breaks GetDirectory,
 ** but the macfsn code will replace it by a NavServices version anyway.
 */
@@ -417,7 +417,7 @@ static void
 scan_event_queue(flush)
 	int flush;
 {
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	/* CARBONXXXX To be implemented */
 	return;
 #else
@@ -508,7 +508,7 @@ void
 PyMac_HandleEventIntern(evp)
 	EventRecord *evp;
 {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	if ( evp->what == mouseDown ) {
 		WindowPtr wp;
 		
@@ -585,7 +585,7 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	*/
 	if( in_here > 1 || !schedparams.process_events || 
 	    (python_event_handler && !maycallpython) ) {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 		if ( maxsleep >= 0 ) {
 			SystemTask();
 		}
@@ -754,7 +754,7 @@ myhook_proc(short item, DialogPtr theDialog, struct hook_args *dataptr)
 	}
 	return item;
 }	
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 /*
 ** Ask the user for a directory. I still can't understand
 ** why Apple doesn't provide a standard solution for this...

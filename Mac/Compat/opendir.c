@@ -20,7 +20,7 @@ DIR *
 opendir(path)
 	char *path;
 {
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	Str255 ppath;
 	FSSpec fss;
 	int plen;
@@ -80,7 +80,7 @@ void
 closedir(dirp)
 	DIR *dirp;
 {
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	dirp->nextfile = 0;
 #else
 	WDPBRec pb;
@@ -110,7 +110,7 @@ readdir(dp)
 	
 	dir.d_name[0]= 0;
 	pb.d.ioNamePtr= (unsigned char *)dir.d_name;
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	pb.d.ioVRefNum= dp->vrefnum;
 	pb.d.ioDrDirID= dp->dirid;
 #else
@@ -123,7 +123,7 @@ readdir(dp)
 		errno = EIO;
 		return NULL;
 	}
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 	p2cstrcpy(dir.d_name, (StringPtr)dir.d_name);
 #else
 	(void) p2cstr((unsigned char *)dir.d_name);

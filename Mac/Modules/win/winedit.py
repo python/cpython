@@ -40,34 +40,34 @@ methods.append(f)
 
 f = Method(Boolean, 'GetWindowZoomFlag',
     (WindowRef, 'theWindow', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowStructureRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowContentRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowUpdateRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
 f = Method(short, 'GetWindowTitleWidth',
     (WindowRef, 'theWindow', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
@@ -105,7 +105,7 @@ methods.append(f)
 # so we add the old/real names by hand.
 f = Method(void, 'CloseWindow',
     (WindowPtr, 'theWindow', InMode),
-    condition='#ifndef TARGET_API_MAC_CARBON'
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 

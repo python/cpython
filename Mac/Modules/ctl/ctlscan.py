@@ -81,7 +81,7 @@ class MyScanner(Scanner):
 
 	def makegreylist(self):
 		return [
-			('#ifndef TARGET_API_MAC_CARBON', [
+			('#if !TARGET_API_MAC_CARBON', [
 				'GetAuxiliaryControlRecord',
 				'SetControlColor',
 				# These have suddenly disappeared in UH 3.3.2...

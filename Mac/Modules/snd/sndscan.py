@@ -64,7 +64,7 @@ class SoundScanner(Scanner):
 
 	def makegreylist(self):
 		return [
-			('#ifndef TARGET_API_MAC_CARBON', [
+			('#if !TARGET_API_MAC_CARBON', [
 				'MACEVersion',
 				'SPBRecordToFile',
 				'Exp1to6',

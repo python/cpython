@@ -38,7 +38,7 @@ WinObj_Convert(v, p_itself)
 	PyObject *v;
 	WindowPtr *p_itself;
 {
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	if (DlgObj_Check(v)) {
 		*p_itself = ((WindowObject *)v)->ob_itself;
 		return 1;
@@ -130,7 +130,7 @@ static PyObject *WinObj_GetWindowAttributes(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_SetWinColor(_self, _args)
 	WindowObject *_self;
@@ -232,7 +232,7 @@ static PyObject *WinObj_ClipAbove(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_SaveOld(_self, _args)
 	WindowObject *_self;
@@ -248,7 +248,7 @@ static PyObject *WinObj_SaveOld(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_DrawNew(_self, _args)
 	WindowObject *_self;
@@ -1277,7 +1277,7 @@ static PyObject *WinObj_TrackGoAway(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetAuxWin(_self, _args)
 	WindowObject *_self;
@@ -1396,7 +1396,7 @@ static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
 	WindowObject *_self;
@@ -1413,7 +1413,7 @@ static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
 	WindowObject *_self;
@@ -1432,7 +1432,7 @@ static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowContentRgn(_self, _args)
 	WindowObject *_self;
@@ -1451,7 +1451,7 @@ static PyObject *WinObj_GetWindowContentRgn(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
 	WindowObject *_self;
@@ -1470,7 +1470,7 @@ static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
 	WindowObject *_self;
@@ -1563,7 +1563,7 @@ static PyObject *WinObj_SetWindowUserState(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_CloseWindow(_self, _args)
 	WindowObject *_self;
@@ -1624,7 +1624,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetWindowAttributes", (PyCFunction)WinObj_GetWindowAttributes, 1,
 	 "() -> (WindowAttributes outAttributes)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetWinColor", (PyCFunction)WinObj_SetWinColor, 1,
 	 "(WCTabHandle newColorTable) -> None"},
 #endif
@@ -1639,12 +1639,12 @@ static PyMethodDef WinObj_methods[] = {
 	{"ClipAbove", (PyCFunction)WinObj_ClipAbove, 1,
 	 "() -> None"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SaveOld", (PyCFunction)WinObj_SaveOld, 1,
 	 "() -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"DrawNew", (PyCFunction)WinObj_DrawNew, 1,
 	 "(Boolean update) -> None"},
 #endif
@@ -1767,7 +1767,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"TrackGoAway", (PyCFunction)WinObj_TrackGoAway, 1,
 	 "(Point thePt) -> (Boolean _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetAuxWin", (PyCFunction)WinObj_GetAuxWin, 1,
 	 "() -> (Boolean _rv, AuxWinHandle awHndl)"},
 #endif
@@ -1786,27 +1786,27 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetWindowGoAwayFlag", (PyCFunction)WinObj_GetWindowGoAwayFlag, 1,
 	 "() -> (Boolean _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
 	 "() -> (Boolean _rv)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowStructureRgn", (PyCFunction)WinObj_GetWindowStructureRgn, 1,
 	 "(RgnHandle r) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowContentRgn", (PyCFunction)WinObj_GetWindowContentRgn, 1,
 	 "(RgnHandle r) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowUpdateRgn", (PyCFunction)WinObj_GetWindowUpdateRgn, 1,
 	 "(RgnHandle r) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
 	 "() -> (short _rv)"},
 #endif
@@ -1821,7 +1821,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"SetWindowUserState", (PyCFunction)WinObj_SetWindowUserState, 1,
 	 "(Rect r) -> None"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"CloseWindow", (PyCFunction)WinObj_CloseWindow, 1,
 	 "() -> None"},
 #endif
@@ -2083,7 +2083,7 @@ static PyObject *Win_FrontNonFloatingWindow(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_SetDeskCPat(_self, _args)
 	PyObject *_self;
@@ -2150,7 +2150,7 @@ static PyObject *Win_FrontWindow(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_InitWindows(_self, _args)
 	PyObject *_self;
@@ -2166,7 +2166,7 @@ static PyObject *Win_InitWindows(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_GetWMgrPort(_self, _args)
 	PyObject *_self;
@@ -2183,7 +2183,7 @@ static PyObject *Win_GetWMgrPort(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_GetCWMgrPort(_self, _args)
 	PyObject *_self;
@@ -2200,7 +2200,7 @@ static PyObject *Win_GetCWMgrPort(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_IsValidWindowPtr(_self, _args)
 	PyObject *_self;
@@ -2219,7 +2219,7 @@ static PyObject *Win_IsValidWindowPtr(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_InitFloatingWindows(_self, _args)
 	PyObject *_self;
@@ -2237,7 +2237,7 @@ static PyObject *Win_InitFloatingWindows(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_InvalRect(_self, _args)
 	PyObject *_self;
@@ -2255,7 +2255,7 @@ static PyObject *Win_InvalRect(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_InvalRgn(_self, _args)
 	PyObject *_self;
@@ -2273,7 +2273,7 @@ static PyObject *Win_InvalRgn(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_ValidRect(_self, _args)
 	PyObject *_self;
@@ -2291,7 +2291,7 @@ static PyObject *Win_ValidRect(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_ValidRgn(_self, _args)
 	PyObject *_self;
@@ -2414,7 +2414,7 @@ static PyMethodDef Win_methods[] = {
 	{"FrontNonFloatingWindow", (PyCFunction)Win_FrontNonFloatingWindow, 1,
 	 "() -> (WindowPtr _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetDeskCPat", (PyCFunction)Win_SetDeskCPat, 1,
 	 "(PixPatHandle deskPixPat) -> None"},
 #endif
@@ -2425,47 +2425,47 @@ static PyMethodDef Win_methods[] = {
 	{"FrontWindow", (PyCFunction)Win_FrontWindow, 1,
 	 "() -> (WindowPtr _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InitWindows", (PyCFunction)Win_InitWindows, 1,
 	 "() -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetWMgrPort", (PyCFunction)Win_GetWMgrPort, 1,
 	 "() -> (GrafPtr wPort)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetCWMgrPort", (PyCFunction)Win_GetCWMgrPort, 1,
 	 "() -> (CGrafPtr wMgrCPort)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"IsValidWindowPtr", (PyCFunction)Win_IsValidWindowPtr, 1,
 	 "(GrafPtr grafPort) -> (Boolean _rv)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InitFloatingWindows", (PyCFunction)Win_InitFloatingWindows, 1,
 	 "() -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InvalRect", (PyCFunction)Win_InvalRect, 1,
 	 "(Rect badRect) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InvalRgn", (PyCFunction)Win_InvalRgn, 1,
 	 "(RgnHandle badRgn) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"ValidRect", (PyCFunction)Win_ValidRect, 1,
 	 "(Rect goodRect) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"ValidRgn", (PyCFunction)Win_ValidRgn, 1,
 	 "(RgnHandle goodRgn) -> None"},
 #endif

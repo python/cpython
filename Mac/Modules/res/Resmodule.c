@@ -275,7 +275,7 @@ static PyObject *ResObj_GetMaxResourceSize(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *ResObj_RsrcMapEntry(_self, _args)
 	ResourceObject *_self;
@@ -483,7 +483,7 @@ static PyMethodDef ResObj_methods[] = {
 	{"GetMaxResourceSize", (PyCFunction)ResObj_GetMaxResourceSize, 1,
 	 "() -> (long _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"RsrcMapEntry", (PyCFunction)ResObj_RsrcMapEntry, 1,
 	 "() -> (long _rv)"},
 #endif
@@ -592,7 +592,7 @@ PyTypeObject Resource_Type = {
 /* -------------------- End object type Resource -------------------- */
 
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Res_InitResources(_self, _args)
 	PyObject *_self;
@@ -613,7 +613,7 @@ static PyObject *Res_InitResources(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Res_RsrcZoneInit(_self, _args)
 	PyObject *_self;
@@ -688,7 +688,7 @@ static PyObject *Res_CurResFile(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Res_CreateResFile(_self, _args)
 	PyObject *_self;
@@ -710,7 +710,7 @@ static PyObject *Res_CreateResFile(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Res_OpenResFile(_self, _args)
 	PyObject *_self;
@@ -1173,7 +1173,7 @@ static PyObject *Res_OpenRFPerm(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Res_RGetResource(_self, _args)
 	PyObject *_self;
@@ -1357,12 +1357,12 @@ static PyObject *Res_Handle(_self, _args)
 
 static PyMethodDef Res_methods[] = {
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InitResources", (PyCFunction)Res_InitResources, 1,
 	 "() -> (short _rv)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"RsrcZoneInit", (PyCFunction)Res_RsrcZoneInit, 1,
 	 "() -> None"},
 #endif
@@ -1373,12 +1373,12 @@ static PyMethodDef Res_methods[] = {
 	{"CurResFile", (PyCFunction)Res_CurResFile, 1,
 	 "() -> (short _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"CreateResFile", (PyCFunction)Res_CreateResFile, 1,
 	 "(Str255 fileName) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"OpenResFile", (PyCFunction)Res_OpenResFile, 1,
 	 "(Str255 fileName) -> (short _rv)"},
 #endif
@@ -1425,7 +1425,7 @@ static PyMethodDef Res_methods[] = {
 	{"OpenRFPerm", (PyCFunction)Res_OpenRFPerm, 1,
 	 "(Str255 fileName, short vRefNum, SignedByte permission) -> (short _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"RGetResource", (PyCFunction)Res_RGetResource, 1,
 	 "(ResType theType, short theID) -> (Handle _rv)"},
 #endif

@@ -92,7 +92,7 @@ int PyMac_FindCodeResourceModule(PyStringObject *, char *, char *); /* Test for 
 PyObject * PyMac_LoadCodeResourceModule(char *, char *); /* Load 'PYD ' resource from file */
 struct filedescr *PyMac_FindModuleExtension(char *, size_t *, char *); /* Look for module in single folder */
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 int PyMac_GetDirectory(FSSpec *dirfss, char *prompt);		/* Ask user for a directory */
 void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList, 
 	StandardFileReply *reply, char *prompt);	/* Ask user for file, with prompt */

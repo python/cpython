@@ -178,7 +178,7 @@ if (strcmp(name, "type") == 0)
 	return PyMac_BuildOSType(self->ob_itself.descriptorType);
 if (strcmp(name, "data") == 0) {
 	PyObject *res;
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	char state;
 	state = HGetState(self->ob_itself.dataHandle);
 	HLock(self->ob_itself.dataHandle);

@@ -14,7 +14,7 @@ staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 
 #define as_Control(h) ((ControlHandle)h)
 #define as_Resource(ctl) ((Handle)ctl)
-#ifdef TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON
 #define GetControlRect(ctl, rectp) GetControlBounds(ctl, rectp)
 #else
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
@@ -49,7 +49,7 @@ ControlFontStyle_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
@@ -58,7 +58,7 @@ static ControlUserPaneTrackingUPP mytrackingproc_upp;
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
 #endif
 
@@ -780,7 +780,7 @@ static PyObject *CtlObj_GetControlReference(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetAuxiliaryControlRecord(_self, _args)
 	ControlObject *_self;
@@ -800,7 +800,7 @@ static PyObject *CtlObj_GetAuxiliaryControlRecord(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetControlColor(_self, _args)
 	ControlObject *_self;
@@ -819,7 +819,7 @@ static PyObject *CtlObj_SetControlColor(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
 	ControlObject *_self;
@@ -839,7 +839,7 @@ static PyObject *CtlObj_GetBevelButtonMenuValue(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
 	ControlObject *_self;
@@ -860,7 +860,7 @@ static PyObject *CtlObj_SetBevelButtonMenuValue(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
 	ControlObject *_self;
@@ -880,7 +880,7 @@ static PyObject *CtlObj_GetBevelButtonMenuHandle(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
 	ControlObject *_self;
@@ -901,7 +901,7 @@ static PyObject *CtlObj_SetBevelButtonTransform(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetImageWellTransform(_self, _args)
 	ControlObject *_self;
@@ -922,7 +922,7 @@ static PyObject *CtlObj_SetImageWellTransform(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetTabContentRect(_self, _args)
 	ControlObject *_self;
@@ -942,7 +942,7 @@ static PyObject *CtlObj_GetTabContentRect(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetTabEnabled(_self, _args)
 	ControlObject *_self;
@@ -966,7 +966,7 @@ static PyObject *CtlObj_SetTabEnabled(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetDisclosureTriangleLastValue(_self, _args)
 	ControlObject *_self;
@@ -1421,7 +1421,7 @@ static PyObject *CtlObj_GetControlDataHandle(_self, _args)
 
 }
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 
 static PyObject *CtlObj_SetControlDataCallback(_self, _args)
 	ControlObject *_self;
@@ -1457,7 +1457,7 @@ static PyObject *CtlObj_SetControlDataCallback(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 
 static PyObject *CtlObj_GetPopupData(_self, _args)
 	ControlObject *_self;
@@ -1480,7 +1480,7 @@ static PyObject *CtlObj_GetPopupData(_self, _args)
 }
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 
 static PyObject *CtlObj_SetPopupData(_self, _args)
 	ControlObject *_self;
@@ -1591,52 +1591,52 @@ static PyMethodDef CtlObj_methods[] = {
 	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
 	 "() -> (SInt32 _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetAuxiliaryControlRecord", (PyCFunction)CtlObj_GetAuxiliaryControlRecord, 1,
 	 "() -> (Boolean _rv, AuxCtlHandle acHndl)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
 	 "(CCTabHandle newColorTable) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetBevelButtonMenuValue", (PyCFunction)CtlObj_GetBevelButtonMenuValue, 1,
 	 "() -> (SInt16 outValue)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetBevelButtonMenuValue", (PyCFunction)CtlObj_SetBevelButtonMenuValue, 1,
 	 "(SInt16 inValue) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetBevelButtonMenuHandle", (PyCFunction)CtlObj_GetBevelButtonMenuHandle, 1,
 	 "() -> (MenuHandle outHandle)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetBevelButtonTransform", (PyCFunction)CtlObj_SetBevelButtonTransform, 1,
 	 "(IconTransformType transform) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetImageWellTransform", (PyCFunction)CtlObj_SetImageWellTransform, 1,
 	 "(IconTransformType inTransform) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"GetTabContentRect", (PyCFunction)CtlObj_GetTabContentRect, 1,
 	 "() -> (Rect outContentRect)"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetTabEnabled", (PyCFunction)CtlObj_SetTabEnabled, 1,
 	 "(SInt16 inTabToHilite, Boolean inEnabled) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetDisclosureTriangleLastValue", (PyCFunction)CtlObj_SetDisclosureTriangleLastValue, 1,
 	 "(SInt16 inValue) -> None"},
 #endif
@@ -1677,17 +1677,17 @@ static PyMethodDef CtlObj_methods[] = {
 	{"GetControlDataHandle", (PyCFunction)CtlObj_GetControlDataHandle, 1,
 	 "(part, type) -> ResObj"},
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 	{"SetControlDataCallback", (PyCFunction)CtlObj_SetControlDataCallback, 1,
 	 "(callbackfunc) -> None"},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
 	 NULL},
 #endif
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,
 	 NULL},
 #endif
@@ -2179,7 +2179,7 @@ mytracker(ControlHandle ctl, short part)
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\n");
 }
 
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 static int
 setcallback(myself, which, callback, uppp)
 	PyObject *myself;
@@ -2307,7 +2307,7 @@ void initCtl()
 
 
 	mytracker_upp = NewControlActionProc(mytracker);
-#ifndef TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON_NOTYET
 	mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
 	myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 	myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);

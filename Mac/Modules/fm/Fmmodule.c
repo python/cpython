@@ -45,7 +45,7 @@ FMRec_Convert(v, p_itself)
 
 static PyObject *Fm_Error;
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Fm_InitFonts(_self, _args)
 	PyObject *_self;
@@ -114,7 +114,7 @@ static PyObject *Fm_RealFont(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Fm_SetFontLock(_self, _args)
 	PyObject *_self;
@@ -267,7 +267,7 @@ static PyObject *Fm_GetPreserveGlyph(_self, _args)
 	return _res;
 }
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *Fm_FlushFonts(_self, _args)
 	PyObject *_self;
@@ -351,7 +351,7 @@ static PyObject *Fm_IsAntiAliasedTextEnabled(_self, _args)
 
 static PyMethodDef Fm_methods[] = {
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"InitFonts", (PyCFunction)Fm_InitFonts, 1,
 	 "() -> None"},
 #endif
@@ -362,7 +362,7 @@ static PyMethodDef Fm_methods[] = {
 	{"RealFont", (PyCFunction)Fm_RealFont, 1,
 	 "(short fontNum, short size) -> (Boolean _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"SetFontLock", (PyCFunction)Fm_SetFontLock, 1,
 	 "(Boolean lockFlag) -> None"},
 #endif
@@ -385,7 +385,7 @@ static PyMethodDef Fm_methods[] = {
 	{"GetPreserveGlyph", (PyCFunction)Fm_GetPreserveGlyph, 1,
 	 "() -> (Boolean _rv)"},
 
-#ifndef TARGET_API_MAC_CARBON
+#if !TARGET_API_MAC_CARBON
 	{"FlushFonts", (PyCFunction)Fm_FlushFonts, 1,
 	 "() -> None"},
 #endif
