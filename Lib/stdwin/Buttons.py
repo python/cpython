@@ -54,12 +54,9 @@ class LabelAppearance():
 			self.redraw()
 	#
 	def setbounds(self, bounds):
-		if self.bounds <> _rect.empty:
-			self.parent.change(self.bounds)
 		self.bounds = bounds
 		if self.bounds <> _rect.empty:
 			self.recalc()
-			self.parent.change(bounds)
 	#
 	def realize(self):
 		pass
@@ -109,14 +106,15 @@ class LabelAppearance():
 	#
 	def redraw(self):
 		if self.bounds <> _rect.empty:
-			self.draw(self.parent.begindrawing(), self.bounds)
+			d = self.parent.begindrawing()
+			d.erase(self.bounds)
+			self.draw(d, self.bounds)
 	#
 	def draw(self, (d, area)):
 		area = _rect.intersect(area, self.bounds)
 		if area = _rect.empty:
 			return
 		d.cliprect(area)
-		d.erase(self.bounds)
 		self.drawit(d)
 		d.noclip()
 	#
@@ -203,11 +201,10 @@ class RadioAppearance() = CheckAppearance():
 	def drawpict(self, d):
 		(left, top), (right, bottom) = self.boxbounds
 		radius = self.size / 2
-		h, v = left + radius, top + radius
-		d.circle((h, v), radius)
+		center = left + radius, top + radius
+		d.circle(center, radius)
 		if self.selected:
-			some = radius/3
-			d.paint((h-some, v-some), (h+some, v+some))
+			d.fillcircle(center, radius*3/5)
 	#
 
 
