@@ -134,7 +134,6 @@ __all__ = [
     'setcontext', 'getcontext'
 ]
 
-import threading
 import copy
 
 #Rounding
@@ -385,7 +384,19 @@ _condition_map = {ConversionSyntax:InvalidOperation,
 # The getcontext() and setcontext() function manage access to a thread-local
 # current context.  Py2.4 offers direct support for thread locals.  If that
 # is not available, use threading.currentThread() which is slower but will
-# work for older Pythons.
+# work for older Pythons.  If threads are not part of the build, create a
+# mock threading object with threading.local() returning the module namespace.
+
+try:
+    import threading
+except ImportError:
+    # Python was compiled without threads; create a mock object instead
+    import sys
+    class MockThreading:
+        def local(self, sys=sys):
+            return sys.modules[__name__]
+    threading = MockThreading()
+    del sys, MockThreading
 
 try:
     threading.local
