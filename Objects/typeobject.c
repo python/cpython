@@ -431,9 +431,25 @@ subtype_dealloc(PyObject *self)
 
 	/* This function exists so we can DECREF self->ob_type */
 
-	/* Find the nearest base with a different tp_dealloc
-	   and clear slots while we're at it */
+	/* Find the nearest base with a different tp_dealloc */
 	type = self->ob_type;
+	base = type;
+	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
+		base = base->tp_base;
+		assert(base);
+	}
+
+	/* If we added a weaklist, we clear it.  Do this *before* calling
+	   the finalizer (__del__), clearing slots, or clearing the instance
+	   dict. */
+
+	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
+		PyObject_ClearWeakRefs(self);
+
+	if (call_finalizer(self) < 0)
+		return;
+
+	/*  Clear slots up to the nearest base with a different tp_dealloc */
 	base = type;
 	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
 		if (base->ob_size)
@@ -441,13 +457,6 @@ subtype_dealloc(PyObject *self)
 		base = base->tp_base;
 		assert(base);
 	}
-
-	/* If we added weaklist, we clear it */
-	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
-		PyObject_ClearWeakRefs(self);
-
-	if (call_finalizer(self) < 0)
-		return;
 
 	/* If we added a dict, DECREF it */
 	if (type->tp_dictoffset && !base->tp_dictoffset) {
