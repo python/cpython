@@ -118,3 +118,101 @@ ikeys.sort()
 keys = u2.keys()
 keys.sort()
 verify(ikeys == keys)
+
+##########################
+# Test Dict Mixin
+
+from UserDict import DictMixin
+
+class SeqDict(DictMixin):
+    """Dictionary lookalike implemented with lists.
+
+    Used to test and demonstrate DictMixin
+    """
+    def __init__(self):
+        self.keylist = []
+        self.valuelist = []
+    def __getitem__(self, key):
+        try:
+            i = self.keylist.index(key)
+        except ValueError:
+            raise KeyError
+        return self.valuelist[i]
+    def __setitem__(self, key, value):
+        self.keylist.append(key)
+        self.valuelist.append(value)
+    def __delitem__(self, key):
+        try:
+            i = self.keylist.index(key)
+        except ValueError:
+            raise KeyError
+        self.keylist.pop(i)
+        self.valuelist.pop(i)
+    def keys(self):
+        return list(self.keylist)
+
+## Setup test and verify working of the test class
+s = SeqDict()                   # check init
+s[10] = 'ten'                   # exercise setitem
+s[20] = 'twenty'
+s[30] = 'thirty'
+del s[20]                       # exercise delitem
+verify(s[10] == 'ten')          # check getitem and setitem
+verify(s.keys() == [10, 30])    # check keys() and delitem
+
+## Now, test the DictMixin methods one by one
+verify(s.has_key(10))                                       # has_key
+verify(not s.has_key(20))
+
+verify(10 in s)                                             # __contains__
+verify(20 not in s)
+
+verify([k for k in s] == [10, 30])                          # __iter__
+
+verify(len(s) == 2)                                         # __len__
+
+verify(list(s.iteritems()) == [(10,'ten'), (30, 'thirty')]) # iteritems
+
+verify(list(s.iterkeys()) == [10, 30])                      # iterkeys
+
+verify(list(s.itervalues()) == ['ten', 'thirty'])           # itervalues
+
+verify(s.values() == ['ten', 'thirty'])                     # values
+
+verify(s.items() == [(10,'ten'), (30, 'thirty')])           # items
+
+verify(s.get(10) == 'ten')                                  # get
+verify(s.get(15,'fifteen') == 'fifteen')
+verify(s.get(15) == None)
+
+verify(s.setdefault(40, 'forty') == 'forty')                # setdefault
+verify(s.setdefault(10, 'null') == 'ten')
+del s[40]
+
+verify(s.pop(10) == 'ten')                                  # pop
+verify(10 not in s)
+s[10] = 'ten'
+
+k, v = s.popitem()                                          # popitem
+verify(k not in s)
+s[k] = v
+
+s.clear()                                                   # clear
+verify(len(s) == 0)
+
+try:                                                        # empty popitem
+    s.popitem()
+except KeyError:
+    pass
+else:
+    verify(0, "popitem from an empty list should raise KeyError")
+
+s.update({10: 'ten', 20:'twenty'})                          # update
+verify(s[10]=='ten' and s[20]=='twenty')
+
+
+
+
+
+
+
