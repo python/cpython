@@ -31,16 +31,16 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* UNIX password file access module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <sys/types.h>
 #include <pwd.h>
 
-static object *mkpwent(p)
+static PyObject *
+mkpwent(p)
 	struct passwd *p;
 {
-	return mkvalue("(ssllsss)",
+	return Py_BuildValue("(ssllsss)",
 		       p->pw_name,
 		       p->pw_passwd,
 #if defined(NeXT) && defined(_POSIX_SOURCE) && defined(__LITTLE_ENDIAN__)
@@ -57,56 +57,62 @@ static object *mkpwent(p)
 		       p->pw_shell);
 }
 
-static object *pwd_getpwuid(self, args)
-	object *self, *args;
+static PyObject *
+pwd_getpwuid(self, args)
+	PyObject *self;
+	PyObject *args;
 {
 	int uid;
 	struct passwd *p;
-	if (!getintarg(args, &uid))
+	if (!PyArg_Parse(args, "i", &uid))
 		return NULL;
 	if ((p = getpwuid(uid)) == NULL) {
-		err_setstr(KeyError, "getpwuid(): uid not found");
+		PyErr_SetString(PyExc_KeyError, "getpwuid(): uid not found");
 		return NULL;
 	}
 	return mkpwent(p);
 }
 
-static object *pwd_getpwnam(self, args)
-	object *self, *args;
+static PyObject *
+pwd_getpwnam(self, args)
+	PyObject *self;
+	PyObject *args;
 {
 	char *name;
 	struct passwd *p;
-	if (!getstrarg(args, &name))
+	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 	if ((p = getpwnam(name)) == NULL) {
-		err_setstr(KeyError, "getpwnam(): name not found");
+		PyErr_SetString(PyExc_KeyError, "getpwnam(): name not found");
 		return NULL;
 	}
 	return mkpwent(p);
 }
 
-static object *pwd_getpwall(self, args)
-	object *self, *args;
+static PyObject *
+pwd_getpwall(self, args)
+	PyObject *self;
+	PyObject *args;
 {
-	object *d;
+	PyObject *d;
 	struct passwd *p;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	if ((d = newlistobject(0)) == NULL)
+	if ((d = PyList_New(0)) == NULL)
 		return NULL;
 	setpwent();
 	while ((p = getpwent()) != NULL) {
-		object *v = mkpwent(p);
-		if (v == NULL || addlistitem(d, v) != 0) {
-			XDECREF(v);
-			DECREF(d);
+		PyObject *v = mkpwent(p);
+		if (v == NULL || PyList_Append(d, v) != 0) {
+			Py_XDECREF(v);
+			Py_DECREF(d);
 			return NULL;
 		}
 	}
 	return d;
 }
 
-static struct methodlist pwd_methods[] = {
+static PyMethodDef pwd_methods[] = {
 	{"getpwuid",	pwd_getpwuid},
 	{"getpwnam",	pwd_getpwnam},
 	{"getpwall",	pwd_getpwall},
@@ -116,5 +122,5 @@ static struct methodlist pwd_methods[] = {
 void
 initpwd()
 {
-	initmodule("pwd", pwd_methods);
+	Py_InitModule("pwd", pwd_methods);
 }
