@@ -16,12 +16,12 @@ import string, sys
 # Try importing the _locale module.
 #
 # If this fails, fall back on a basic 'C' locale emulation.
-#
 
+# Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
+# trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["setlocale","Error","localeconv","strcoll","strxfrm",
            "format","str","atof","atoi","LC_CTYPE","LC_COLLATE",
-           "LC_TIME","LC_MONETARY","LC_NUMERIC","LC_MESSAGES",
-           "LC_ALL","CHAR_MAX"]
+           "LC_TIME","LC_MONETARY","LC_NUMERIC", "LC_ALL","CHAR_MAX"]
 
 try:
 
@@ -699,6 +699,13 @@ def _print_locale():
             print
 
 ###
+
+try:
+    LC_MESSAGES
+except:
+    pass
+else:
+    __all__.append("LC_MESSAGES")
 
 if __name__=='__main__':
     print 'Locale aliasing:'
