@@ -16,7 +16,6 @@ Command line usage:
 Options:
     -m          Munge parenthesis and brackets. [0,n) would normally mismatch.
     -k keyword: Keyword is a valid LaTeX command. Do not include the backslash.
-    -f:         Forward-slash warnings suppressed.
     -d:         Delimiter check only (useful for non-LaTeX files).
     -h:         Help
     -s lineno:  Start at lineno (useful for skipping complex sections).
@@ -75,9 +74,8 @@ def checkit(source, opts, morecmds=[]):
 
     Opts is a mapping of options to option values if any:
         -m          munge parenthesis and brackets
-        -f          forward slash warnings to be skipped
         -d          delimiters only checking
-        -v          verbose listing on delimiters
+        -v          verbose listing of delimiters
         -s lineno:  linenumber to start scan (default is 1).
 
     Morecmds is a sequence of LaTeX commands (without backslashes) that
@@ -85,6 +83,7 @@ def checkit(source, opts, morecmds=[]):
     """
 
     texcmd = re.compile(r'\\[A-Za-z]+')
+    falsetexcmd = re.compile(r'\/([A-Za-z]+)') # Mismarked with forward slash
 
     validcmds = sets.Set(cmdstr.split())
     for cmd in morecmds:
@@ -114,10 +113,11 @@ def checkit(source, opts, morecmds=[]):
     for lineno, line in izip(count(startline), islice(source, startline-1, None)):
         line = line.rstrip()
 
-        if '/' in line and '-f' not in opts and '-d' not in opts:
-            # Warn whenever forward slashes encountered
-            line = line.rstrip()
-            print 'Warning, forward slash on line %d: %s' % (lineno, line)
+        if '/' in line and '-d' not in opts:
+            # Warn whenever forward slashes encountered with a LaTeX command
+            for cmd in falsetexcmd.findall(line):
+                if '\\' + cmd in validcmds:
+                    print 'Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd)
 
         if '-d' not in opts:
             # Validate commands
@@ -179,7 +179,7 @@ def checkit(source, opts, morecmds=[]):
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
-    optitems, arglist = getopt.getopt(args, "k:mfdhs:v")
+    optitems, arglist = getopt.getopt(args, "k:mdhs:v")
     opts = dict(optitems)
     if '-h' in opts or args==[]:
         print __doc__
