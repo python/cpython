@@ -1478,7 +1478,7 @@ class Tk(Misc, Wm):
             if ext not in ('.py', '.pyc', '.pyo'):
                 baseName = baseName + ext
         self.tk = _tkinter.create(screenName, baseName, className)
-        if _MacOS:
+        if _MacOS and hasattr(MacOS, 'SchedParams'):
             # Disable event scanning except for Command-Period
             _MacOS.SchedParams(1, 0)
             # Work around nasty MacTk bug
