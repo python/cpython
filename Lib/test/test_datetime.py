@@ -16,22 +16,11 @@ from datetime import tzinfo
 from datetime import time
 from datetime import date, datetime
 
-
-pickle_choices = [
-    (pickle, pickle, 0),
-    (pickle, pickle, 1),
-    (pickle, pickle, 2),
-    (cPickle, cPickle, 0),
-    (cPickle, cPickle, 1),
-    (cPickle, cPickle, 2),
-    (pickle, cPickle, 0),
-    (pickle, cPickle, 1),
-    (pickle, cPickle, 2),
-    (cPickle, pickle, 0),
-    (cPickle, pickle, 1),
-    (cPickle, pickle, 2),
-    ]
-
+pickle_choices = [(pickler, unpickler, proto)
+                  for pickler in pickle, cPickle
+                  for unpickler in pickle, cPickle
+                  for proto in range(3)]
+assert len(pickle_choices) == 2*2*3
 
 # XXX The test suite uncovered a bug in Python 2.2.2:  if x and y are
 # XXX instances of new-style classes (like date and time) that both
