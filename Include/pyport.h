@@ -255,10 +255,15 @@ extern "C" {
  *	  if the returned result is a NaN, or if a C89 box returns HUGE_VAL
  *	  in non-overflow cases.
  *    X is evaluated more than once.
+ * Some platforms have better way to spell this, so expect some #ifdef'ery.
  */
+#ifdef __FreeBSD__
+#define Py_OVERFLOWED(X) isinf(X)
+#else
 #define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
 					 (X) == Py_HUGE_VAL || \
 					 (X) == -Py_HUGE_VAL))
+#endif
 
 /* Py_SET_ERANGE_ON_OVERFLOW(x)
  * If a libm function did not set errno, but it looks like the result
@@ -320,7 +325,7 @@ extern "C" {
 #if defined(__GNUC__) && (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #else
-#define Py_DEPRECATED(VERSION_UNUSED) 
+#define Py_DEPRECATED(VERSION_UNUSED)
 #endif
 
 /**************************************************************************
@@ -395,17 +400,17 @@ extern double hypot(double, double);
 /* Declarations for symbol visibility.
 
   PyAPI_FUNC(type): Declares a public Python API function and return type
-  PyAPI_DATA(type): Declares public Python data and its type 
+  PyAPI_DATA(type): Declares public Python data and its type
   PyMODINIT_FUNC:   A Python module init function.  If these functions are
-                    inside the Python core, they are private to the core.  
-                    If in an extension module, it may be declared with 
+                    inside the Python core, they are private to the core.
+                    If in an extension module, it may be declared with
                     external linkage depending on the platform.
 
   As a number of platforms support/require "__declspec(dllimport/dllexport)",
   we support a HAVE_DECLSPEC_DLL macro to save duplication.
 */
 
-/* 
+/*
 All windows ports, except cygwin, are handled in PC/pyconfig.h
 BeOS is only other autoconf platform requiring special linkage handling
 and both these use __declspec()
