@@ -82,7 +82,6 @@ dfa *adddfa(grammar *g, int type, char *name);
 int addstate(dfa *d);
 void addarc(dfa *d, int from, int to, int lbl);
 dfa *PyGrammar_FindDFA(grammar *g, int type);
-char *typename(grammar *g, int lbl);
 
 int addlabel(labellist *ll, int type, char *str);
 int findlabel(labellist *ll, int type, char *str);
