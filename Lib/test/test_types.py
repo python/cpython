@@ -265,3 +265,27 @@ if d['key'][0] <> 3:
 d.setdefault('key', []).append(4)
 if len(d['key']) <> 2:
     raise TestFailed, 'present {} setdefault, w/ 2nd arg'
+# dict.popitem()
+for copymode in -1, +1:
+    # -1: b has same structure as a
+    # +1: b is a.copy()
+    for log2size in range(12):
+        size = 2**log2size
+        a = {}
+        b = {}
+        for i in range(size):
+            a[`i`] = i
+            if copymode < 0:
+                b[`i`] = i
+        if copymode > 0:
+            b = a.copy()
+        for i in range(size):
+            ka, va = ta = a.popitem()
+            if va != int(ka): raise TestFailed, "a.popitem: %s" % str(ta)
+            kb, vb = tb = b.popitem()
+            if vb != int(kb): raise TestFailed, "b.popitem: %s" % str(tb)
+            if copymode < 0 and ta != tb:
+                raise TestFailed, "a.popitem != b.popitem: %s, %s" % (
+                    str(ta), str(tb))
+        if a: raise TestFailed, 'a not empty after popitems: %s' % str(a)
+        if b: raise TestFailed, 'b not empty after popitems: %s' % str(b)
