@@ -89,10 +89,7 @@ non-empty string:
 
 \begin{verbatim}
 form = cgi.FieldStorage()
-form_ok = 0
-if form.has_key("name") and form.has_key("addr"):
-    form_ok = 1
-if not form_ok:
+if not (form.has_key("name") and form.has_key("addr")):
     print "<H1>Error</H1>"
     print "Please fill in the name and addr fields."
     return
