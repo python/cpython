@@ -252,7 +252,9 @@ extern void initsocket();
 extern void initaudioop();
 extern void initimageop();
 extern void initrgbimg();
+#ifdef USE_STDWIN
 extern void initstdwin();
+#endif
 extern void initmd5();
 extern void initmpz();
 extern void initrotor();
@@ -273,12 +275,21 @@ extern void initnew();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
-extern void initmacconsole();
-extern void initctb();
 extern void initmacfs();
+#ifdef THINK
+extern void initmacconsole();
+#endif
+#ifdef USE_MACCTB
+extern void initctb();
+#endif
+#ifdef USE_MACSPEECH
 extern void initmacspeech();
+#endif
+#ifdef USE_MACTCP
 extern void initmacdnr();
 extern void initmactcp();
+#endif
+#ifdef USE_BGEN
 extern void initAE();
 extern void initCtl();
 extern void initDlg();
@@ -288,9 +299,9 @@ extern void initQd();
 extern void initRes();
 extern void initSnd();
 extern void initWin();
+#endif
 
-#define HAVE_IMG
-#ifdef HAVE_IMG
+#ifdef USE_IMG
 extern void initimgcolormap();
 extern void initimgformat();
 extern void initimggif();
@@ -333,21 +344,23 @@ struct {
 	{"rotor", initrotor},
 	{"new", initnew},
 	{"gestalt", initgestalt},
+	{"macfs", initmacfs},
 #ifdef THINK_C
 /* This is an interface to the Think runtime */
 	{"macconsole", initmacconsole},
 #endif
-#ifndef MPW
-/* Do this one later... */
+#ifdef USE_MACCTB
 	{"ctb", initctb},
 #endif
-	{"macfs", initmacfs},
-#ifdef __MWERKS__
 /* This could probably be made to work on other compilers... */
+#ifdef USE_MACSPEECH
 	{"macspeech", initmacspeech},
+#endif
+#ifdef USE_MACTCP
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
+#ifdef USE_BGEN
 	{"AE", initAE},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
@@ -357,8 +370,8 @@ struct {
 	{"Snd", initSnd},
 	{"Win", initWin},
 	{"Res", initRes},
-
-#ifdef HAVE_IMG
+#endif
+#ifdef USE_IMG
 	{"imgcolormap",	initimgcolormap},
 	{"imgformat",	initimgformat},
 	{"imggif",	initimggif},
