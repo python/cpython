@@ -121,23 +121,14 @@ def find_exe (exe, version_number):
     return exe                          # last desperate hope 
 
 
-def _find_SET(name,version_number):
-    """looks up in the registry and returns a list of values suitable for
-       use in a SET command eg SET name=value. Normally the value will be a
-       ';' separated list similar to a path list.
+def set_path_env_var (name, version_number):
+    """Set environment variable 'name' to an MSVC path type value obtained
+       from 'get_msvc_paths()'.  This is equivalent to a SET command prior
+       to execution of spawned commands."""
 
-       name is the name of an MSVC path and version_number is a version_number
-       of an MSVC installation."""
-    return get_msvc_paths(name, version_number)
-
-
-def _do_SET(name, version_number):
-    """sets os.environ[name] to an MSVC path type value obtained from
-       _find_SET. This is equivalent to a SET command prior to execution of
-       spawned commands."""
-    p=_find_SET(name, version_number)
+    p = get_msvc_paths (name, version_number)
     if p:
-        os.environ[name]=string.join(p,';')
+        os.environ[name] = string.join (p,';')
 
 
 class MSVCCompiler (CCompiler) :
@@ -155,16 +146,16 @@ class MSVCCompiler (CCompiler) :
 
         self.add_library_dir( os.path.join( sys.exec_prefix, 'libs' ) )
         
-        vNum = get_devstudio_versions ()
+        versions = get_devstudio_versions ()
 
-        if vNum:
-            vNum = vNum[0]  # highest version
+        if versions:
+            version = versions[0]  # highest version
 
-            self.cc   = _find_exe("cl.exe", vNum)
-            self.link = _find_exe("link.exe", vNum)
-            _do_SET('lib', vNum)
-            _do_SET('include', vNum)
-            path=_find_SET('path', vNum)
+            self.cc   = _find_exe("cl.exe", version)
+            self.link = _find_exe("link.exe", version)
+            set_path_env_var ('lib', version)
+            set_path_env_var ('include', version)
+            path=get_msvc_paths('path', version)
             try:
                 for p in string.split(os.environ['path'],';'):
                     path.append(p)
