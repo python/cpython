@@ -1,0 +1,152 @@
+%%  Author:  Fred L. Drake, Jr.		<fdrake@acm.org>
+
+\section{Standard module \sectcode{pprint}}
+\stmodindex{pprint}
+
+The \code{pprint} module provides a capability to ``pretty-print''
+arbitrary Python data structures in a form which can be used as input
+to the interpreter.  If the formatted structures include objects which
+are not fundamental Python types, the representation may not be
+loadable.  This may be the case if objects such as files, sockets,
+classes, or instances are included, as well as many other builtin
+objects which are not representable as Python constants.
+
+The formatted representation keeps objects on a single line if it can,
+and breaks them out onto multiple lines if they won't fit within the
+width allowed width.  Construct PrettyPrinter objects explicitly if
+you need to adjust the width constraint.
+
+The \code{pprint} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module pprint)}
+
+\begin{funcdesc}{pformat}{object}
+Return the formatted representation of \var{object} as a string.  The
+default parameters for formatting are used.
+\end{funcdesc}
+
+\begin{funcdesc}{pprint}{object\optional{, stream}}
+Prints the formatted representation of \var{object} on \var{stream},
+followed by a newline.  If \var{stream} is omitted, \code{sys.stdout}
+is used.  This may be used in the interactive interpreter instead of a
+\code{print} command for inspecting values.  The default parameters
+for formatting are used.
+\end{funcdesc}
+
+\begin{funcdesc}{isreadable}{object}
+Determine if the formatted representation of \var{object} is
+``readable,'' or can be used to reconstruct the value using
+\code{eval()}.  Note that this returns false for recursive objects.
+\end{funcdesc}
+
+\begin{funcdesc}{isrecursive}{object}
+Determine if \var{object} requires a recursive representation.
+\end{funcdesc}
+
+\begin{funcdesc}{saferepr}{object}
+Return a string representation of \var{object}, protected against
+recursive data structures.  If the representation of \var{object}
+exposes a recursive entry, the recursive reference will be represented
+as \samp{$<$Recursion on \var{typename} with id=\var{number}$>$}.
+\end{funcdesc}
+
+
+% Now for the implementation class:
+
+\begin{funcdesc}{PrettyPrinter}{...}
+Construct a PrettyPrinter instance.  This constructor understands
+several keyword parameters.  An output stream may be set using the
+\var{stream} keyword; the only method used on the stream object is the
+file protocol's \code{write()} method.  If not specified, the
+PrettyPrinter adopts \code{sys.stdout}.  Three additional parameters
+may be used to control the formatted representation.  The keywords are
+\var{indent}, \var{depth}, and \var{width}.  The amount of indentation
+added for each recursive level is specified by \var{indent}; the
+default is one.  Other values can cause output to look a little odd,
+but can make nesting easier to spot.  The number of levels which may
+be printed is controlled by \var{depth}; if the data structure being
+printed is too deep, the next contained level is replaced by
+\samp{...}.  By default, there is no constraint on the depth of the
+objects being formatted.  The desired output width is constrained
+using the \var{width} parameter; the default is eighty characters.  If
+a structure cannot be formatted within the constrained width, a best
+effort will be made.
+\end{funcdesc}
+
+
+% Guido marked this as a good spot for an example in the template,
+% but I think this needs a better location in this module.  Not sure where.
+
+Example:
+
+\begin{verbatim}
+>>> import pprint
+>>> stuff = sys.path[:]
+>>> stuff.insert(0, stuff)
+>>> pprint.pprint(stuff)
+[<Recursion on list with id=869440>,
+ '',
+ '/usr/local/lib/python1.4',
+ '/usr/local/lib/python1.4/test',
+ '/usr/local/lib/python1.4/sunos5',
+ '/usr/local/lib/python1.4/sharedmodules',
+ '/usr/local/lib/python1.4/tkinter']
+>>> 
+>>> stuff[0] = stuff[1:]
+>>> pp = pprint.PrettyPrinter(indent=4)
+>>> pp.pprint(stuff)
+[   [   '',
+        '/usr/local/lib/python1.4',
+        '/usr/local/lib/python1.4/test',
+        '/usr/local/lib/python1.4/sunos5',
+        '/usr/local/lib/python1.4/sharedmodules',
+        '/usr/local/lib/python1.4/tkinter'],
+    '',
+    '/usr/local/lib/python1.4',
+    '/usr/local/lib/python1.4/test',
+    '/usr/local/lib/python1.4/sunos5',
+    '/usr/local/lib/python1.4/sharedmodules',
+    '/usr/local/lib/python1.4/tkinter']
+>>>
+>>> import parser
+>>> tup = parser.ast2tuple(
+...     parser.suite(open('pprint.py').read()))[1][1][1]
+>>> pp = pprint.PrettyPrinter(depth=6)
+>>> pp.pprint(tup)
+(266, (267, (307, (287, (288, (...))))))
+\end{verbatim}
+
+
+\subsection{PrettyPrinter Objects}
+
+PrettyPrinter instances (returned by \code{PrettyPrinter()} above)
+have the following methods.
+
+\renewcommand{\indexsubitem}{(PrettyPrinter method)}
+
+\begin{funcdesc}{pformat}{object}
+Return the formatted representation of \var{object}.  This takes into
+account the options passed to the PrettyPrinter constructor.
+\end{funcdesc}
+
+\begin{funcdesc}{pprint}{object}
+Print the formatted representation of \var{object} on the configured
+stream, followed by a newline.
+\end{funcdesc}
+
+The following methods provide the implementations for the
+corresponding functions of the same names.  Using these methods on an
+instance is slightly more efficient since new PrettyPrinter objects
+don't need to be created.
+
+\begin{funcdesc}{isreadable}{object}
+Determine if the formatted representation of the object is
+``readable,'' or can be used to reconstruct the value using
+\code{eval()}.  Note that this returns false for recursive objects.
+If the \var{depth} parameter of the PrettyPrinter is set and the
+object is deeper than allowed, this returns false.
+\end{funcdesc}
+
+\begin{funcdesc}{isrecursive}{object}
+Determine if the object requires a recursive representation.
+\end{funcdesc}
