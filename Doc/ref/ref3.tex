@@ -892,14 +892,15 @@ extracting a slice may not make sense.  (One example of this is the
 
 \subsection{Basic customization\label{customization}}
 
-\begin{methoddesc}[object]{__init__}{self\optional{, args...}}
-Called when the instance is created.  The arguments are those passed
-to the class constructor expression.  If a base class has an
-\method{__init__()} method the derived class's \method{__init__()} method must
-explicitly call it to ensure proper initialization of the base class
-part of the instance, e.g., \samp{BaseClass.__init__(\var{self},
-[\var{args}...])}.
-\indexii{class}{constructor}
+\begin{methoddesc}[object]{__init__}{self\optional{, \moreargs}}
+Called\indexii{class}{constructor} when the instance is created.  The
+arguments are those passed to the class constructor expression.  If a
+base class has an \method{__init__()} method the derived class's
+\method{__init__()} method must explicitly call it to ensure proper
+initialization of the base class part of the instance; for example:
+\samp{BaseClass.__init__(\var{self}, [\var{args}...])}.  As a special
+contraint on constructors, no value may be returned; doing so will
+cause a \exception{TypeError} to be raised at runtime.
 \end{methoddesc}
 
 
