@@ -2,6 +2,9 @@
 # standard library.
 
 import sys
+import test.test_support
+
+test.test_support.verbose = 0
 
 def runtest(name):
     __import__(name)
