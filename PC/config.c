@@ -61,7 +61,6 @@ extern void initcPickle();
 extern void initpcre();
 #ifdef WIN32
 extern void initmsvcrt();
-extern void initwinsound();
 extern void init_locale();
 #endif
 extern void init_codecs();
@@ -102,7 +101,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"pcre", initpcre},
 #ifdef WIN32
 	{"msvcrt", initmsvcrt},
-	{"winsound", initwinsound},
 	{"_locale", init_locale},
 #endif
 
