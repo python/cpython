@@ -115,7 +115,7 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
 {
 	short err;
 	FSSpec fss_parent, fss_current;
-	char tmpbuf[256];
+	char tmpbuf[1024];
 	int plen;
 
 	fss_current = *fss;
@@ -135,7 +135,7 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
                 fss_current = fss_parent;
                 /* Prepend path component just found to buf */
     			plen = fss_current.name[0];
-    			if (strlen(buf) + plen + 1 > 256) {
+    			if (strlen(buf) + plen + 1 > 1024) {
     				/* Oops... Not enough space (shouldn't happen) */
     				*buf = 0;
     				return -1;
