@@ -8,21 +8,19 @@
 
 
 The \module{Cookie} module defines classes for abstracting the concept of 
-Cookies, an HTTP state management mechanism. It supports both simplistic
+cookies, an HTTP state management mechanism. It supports both simplistic
 string-only cookies, and provides an abstraction for having any serializable
 data-type as cookie value.
 
+The module formerly strictly applied the parsing rules described in in
+the \rfc{2109} and \rfc{2068} specifications.  It has since been discovered
+that MSIE 3.0x doesn't follow the character rules outlined in those
+specs.  As a result, the parsing rules used are a bit less strict.
 
 \begin{excdesc}{CookieError}
 Exception failing because of \rfc{2109} invalidity: incorrect
 attributes, incorrect \code{Set-Cookie} header, etc.
 \end{excdesc}
-
-
-This used to be strict parsing based on the \rfc{2109} and \rfc{2068}
-specifications.  I have since discovered that MSIE 3.0x doesn't
-follow the character rules outlined in those specs.  As a
-result, the parsing rules here are less strict.
 
 \begin{classdesc}{BaseCookie}{\optional{input}}
 This class is a dictionary-like object whose keys are strings and
@@ -41,8 +39,13 @@ and \method{value_encode} to be the identity and \function{str()} respectively.
 \begin{classdesc}{SerialCookie}{\optional{input}}
 This class derives from \class{BaseCookie} and overrides \method{value_decode}
 and \method{value_encode} to be the \function{pickle.loads()} and 
-\function{pickle.dumps}. Note that using this class is a security hole,
-as arbitrary client-code can be run on \function{pickle.loads()}.
+\function{pickle.dumps}.  
+
+Do not use this class.  Reading pickled values from a cookie is a
+security hole, as arbitrary client-code can be run on
+\function{pickle.loads()}.  It is supported for backwards
+compatibility.
+
 \end{classdesc}
 
 \begin{classdesc}{SmartCookie}{\optional{input}}
