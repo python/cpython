@@ -78,7 +78,6 @@ static char *usage_mid = "\
 -U     : Unicode literals: treats '...' literals like u'...'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X     : disable class based built-in exceptions\n\
 -c cmd : program passed in as string (terminates option list)\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -167,10 +166,6 @@ Py_Main(argc, argv)
 
 		case 'x':
 			skipfirstline = 1;
-			break;
-
-		case 'X':
-			Py_UseClassExceptionsFlag = 0;
 			break;
 
 		case 'U':
