@@ -9,6 +9,7 @@ typedef struct _node {
 
 extern node *newnode PROTO((int type));
 extern node *addchild PROTO((node *n, int type, char *str));
+extern void freenode PROTO((node *n));
 
 /* Node access functions */
 #define NCH(n)		((n)->n_nchildren)
