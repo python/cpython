@@ -105,6 +105,9 @@ static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef HomeResFile
+	PyMac_PRECHECK(HomeResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = HomeResFile(_self->ob_itself);
@@ -120,6 +123,9 @@ static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_MacLoadResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef MacLoadResource
+	PyMac_PRECHECK(MacLoadResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	MacLoadResource(_self->ob_itself);
@@ -135,6 +141,9 @@ static PyObject *ResObj_MacLoadResource(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_ReleaseResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ReleaseResource
+	PyMac_PRECHECK(ReleaseResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ReleaseResource(_self->ob_itself);
@@ -150,6 +159,9 @@ static PyObject *ResObj_ReleaseResource(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_DetachResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef DetachResource
+	PyMac_PRECHECK(DetachResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	DetachResource(_self->ob_itself);
@@ -166,6 +178,9 @@ static PyObject *ResObj_GetResAttrs(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetResAttrs
+	PyMac_PRECHECK(GetResAttrs);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetResAttrs(_self->ob_itself);
@@ -184,6 +199,9 @@ static PyObject *ResObj_GetResInfo(ResourceObject *_self, PyObject *_args)
 	short theID;
 	ResType theType;
 	Str255 name;
+#ifndef GetResInfo
+	PyMac_PRECHECK(GetResInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetResInfo(_self->ob_itself,
@@ -206,6 +224,9 @@ static PyObject *ResObj_SetResInfo(ResourceObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short theID;
 	Str255 name;
+#ifndef SetResInfo
+	PyMac_PRECHECK(SetResInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &theID,
 	                      PyMac_GetStr255, name))
@@ -228,6 +249,9 @@ static PyObject *ResObj_AddResource(ResourceObject *_self, PyObject *_args)
 	ResType theType;
 	short theID;
 	Str255 name;
+#ifndef AddResource
+	PyMac_PRECHECK(AddResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hO&",
 	                      PyMac_GetOSType, &theType,
 	                      &theID,
@@ -250,6 +274,9 @@ static PyObject *ResObj_GetResourceSizeOnDisk(ResourceObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetResourceSizeOnDisk
+	PyMac_PRECHECK(GetResourceSizeOnDisk);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetResourceSizeOnDisk(_self->ob_itself);
@@ -266,6 +293,9 @@ static PyObject *ResObj_GetMaxResourceSize(ResourceObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetMaxResourceSize
+	PyMac_PRECHECK(GetMaxResourceSize);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetMaxResourceSize(_self->ob_itself);
@@ -284,6 +314,9 @@ static PyObject *ResObj_RsrcMapEntry(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef RsrcMapEntry
+	PyMac_PRECHECK(RsrcMapEntry);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = RsrcMapEntry(_self->ob_itself);
@@ -301,6 +334,9 @@ static PyObject *ResObj_SetResAttrs(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short attrs;
+#ifndef SetResAttrs
+	PyMac_PRECHECK(SetResAttrs);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &attrs))
 		return NULL;
@@ -318,6 +354,9 @@ static PyObject *ResObj_SetResAttrs(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_ChangedResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ChangedResource
+	PyMac_PRECHECK(ChangedResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ChangedResource(_self->ob_itself);
@@ -333,6 +372,9 @@ static PyObject *ResObj_ChangedResource(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_RemoveResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef RemoveResource
+	PyMac_PRECHECK(RemoveResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	RemoveResource(_self->ob_itself);
@@ -348,6 +390,9 @@ static PyObject *ResObj_RemoveResource(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_WriteResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef WriteResource
+	PyMac_PRECHECK(WriteResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	WriteResource(_self->ob_itself);
@@ -364,6 +409,9 @@ static PyObject *ResObj_SetResourceSize(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long newSize;
+#ifndef SetResourceSize
+	PyMac_PRECHECK(SetResourceSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newSize))
 		return NULL;
@@ -382,6 +430,9 @@ static PyObject *ResObj_GetNextFOND(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef GetNextFOND
+	PyMac_PRECHECK(GetNextFOND);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetNextFOND(_self->ob_itself);
@@ -415,6 +466,9 @@ static PyObject *ResObj_as_Menu(ResourceObject *_self, PyObject *_args)
 static PyObject *ResObj_LoadResource(ResourceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef LoadResource
+	PyMac_PRECHECK(LoadResource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	LoadResource(_self->ob_itself);
@@ -577,6 +631,9 @@ static PyObject *Res_InitResources(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef InitResources
+	PyMac_PRECHECK(InitResources);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = InitResources();
@@ -595,6 +652,9 @@ static PyObject *Res_InitResources(PyObject *_self, PyObject *_args)
 static PyObject *Res_RsrcZoneInit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef RsrcZoneInit
+	PyMac_PRECHECK(RsrcZoneInit);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	RsrcZoneInit();
@@ -612,6 +672,9 @@ static PyObject *Res_CloseResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
+#ifndef CloseResFile
+	PyMac_PRECHECK(CloseResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refNum))
 		return NULL;
@@ -629,6 +692,9 @@ static PyObject *Res_ResError(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef ResError
+	PyMac_PRECHECK(ResError);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = ResError();
@@ -642,6 +708,9 @@ static PyObject *Res_CurResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef CurResFile
+	PyMac_PRECHECK(CurResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CurResFile();
@@ -660,6 +729,9 @@ static PyObject *Res_CreateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 fileName;
+#ifndef CreateResFile
+	PyMac_PRECHECK(CreateResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, fileName))
 		return NULL;
@@ -681,6 +753,9 @@ static PyObject *Res_OpenResFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	Str255 fileName;
+#ifndef OpenResFile
+	PyMac_PRECHECK(OpenResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, fileName))
 		return NULL;
@@ -699,6 +774,9 @@ static PyObject *Res_UseResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
+#ifndef UseResFile
+	PyMac_PRECHECK(UseResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refNum))
 		return NULL;
@@ -716,6 +794,9 @@ static PyObject *Res_CountTypes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef CountTypes
+	PyMac_PRECHECK(CountTypes);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CountTypes();
@@ -732,6 +813,9 @@ static PyObject *Res_Count1Types(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef Count1Types
+	PyMac_PRECHECK(Count1Types);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = Count1Types();
@@ -749,6 +833,9 @@ static PyObject *Res_GetIndType(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ResType theType;
 	short index;
+#ifndef GetIndType
+	PyMac_PRECHECK(GetIndType);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -768,6 +855,9 @@ static PyObject *Res_Get1IndType(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ResType theType;
 	short index;
+#ifndef Get1IndType
+	PyMac_PRECHECK(Get1IndType);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &index))
 		return NULL;
@@ -786,6 +876,9 @@ static PyObject *Res_SetResLoad(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean load;
+#ifndef SetResLoad
+	PyMac_PRECHECK(SetResLoad);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &load))
 		return NULL;
@@ -804,6 +897,9 @@ static PyObject *Res_CountResources(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	ResType theType;
+#ifndef CountResources
+	PyMac_PRECHECK(CountResources);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theType))
 		return NULL;
@@ -822,6 +918,9 @@ static PyObject *Res_Count1Resources(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	ResType theType;
+#ifndef Count1Resources
+	PyMac_PRECHECK(Count1Resources);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theType))
 		return NULL;
@@ -841,6 +940,9 @@ static PyObject *Res_GetIndResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	short index;
+#ifndef GetIndResource
+	PyMac_PRECHECK(GetIndResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &theType,
 	                      &index))
@@ -862,6 +964,9 @@ static PyObject *Res_Get1IndResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	short index;
+#ifndef Get1IndResource
+	PyMac_PRECHECK(Get1IndResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &theType,
 	                      &index))
@@ -883,6 +988,9 @@ static PyObject *Res_GetResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	short theID;
+#ifndef GetResource
+	PyMac_PRECHECK(GetResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &theType,
 	                      &theID))
@@ -904,6 +1012,9 @@ static PyObject *Res_Get1Resource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	short theID;
+#ifndef Get1Resource
+	PyMac_PRECHECK(Get1Resource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &theType,
 	                      &theID))
@@ -925,6 +1036,9 @@ static PyObject *Res_GetNamedResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	Str255 name;
+#ifndef GetNamedResource
+	PyMac_PRECHECK(GetNamedResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theType,
 	                      PyMac_GetStr255, name))
@@ -946,6 +1060,9 @@ static PyObject *Res_Get1NamedResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	Str255 name;
+#ifndef Get1NamedResource
+	PyMac_PRECHECK(Get1NamedResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theType,
 	                      PyMac_GetStr255, name))
@@ -966,6 +1083,9 @@ static PyObject *Res_UniqueID(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	ResType theType;
+#ifndef UniqueID
+	PyMac_PRECHECK(UniqueID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theType))
 		return NULL;
@@ -984,6 +1104,9 @@ static PyObject *Res_Unique1ID(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	ResType theType;
+#ifndef Unique1ID
+	PyMac_PRECHECK(Unique1ID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theType))
 		return NULL;
@@ -1001,6 +1124,9 @@ static PyObject *Res_UpdateResFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short refNum;
+#ifndef UpdateResFile
+	PyMac_PRECHECK(UpdateResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refNum))
 		return NULL;
@@ -1018,6 +1144,9 @@ static PyObject *Res_SetResPurge(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean install;
+#ifndef SetResPurge
+	PyMac_PRECHECK(SetResPurge);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &install))
 		return NULL;
@@ -1036,6 +1165,9 @@ static PyObject *Res_GetResFileAttrs(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	short refNum;
+#ifndef GetResFileAttrs
+	PyMac_PRECHECK(GetResFileAttrs);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refNum))
 		return NULL;
@@ -1054,6 +1186,9 @@ static PyObject *Res_SetResFileAttrs(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short refNum;
 	short attrs;
+#ifndef SetResFileAttrs
+	PyMac_PRECHECK(SetResFileAttrs);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &refNum,
 	                      &attrs))
@@ -1076,6 +1211,9 @@ static PyObject *Res_OpenRFPerm(PyObject *_self, PyObject *_args)
 	Str255 fileName;
 	short vRefNum;
 	SignedByte permission;
+#ifndef OpenRFPerm
+	PyMac_PRECHECK(OpenRFPerm);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hb",
 	                      PyMac_GetStr255, fileName,
 	                      &vRefNum,
@@ -1101,6 +1239,9 @@ static PyObject *Res_RGetResource(PyObject *_self, PyObject *_args)
 	Handle _rv;
 	ResType theType;
 	short theID;
+#ifndef RGetResource
+	PyMac_PRECHECK(RGetResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &theType,
 	                      &theID))
@@ -1125,6 +1266,9 @@ static PyObject *Res_HOpenResFile(PyObject *_self, PyObject *_args)
 	long dirID;
 	Str255 fileName;
 	SignedByte permission;
+#ifndef HOpenResFile
+	PyMac_PRECHECK(HOpenResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlO&b",
 	                      &vRefNum,
 	                      &dirID,
@@ -1150,6 +1294,9 @@ static PyObject *Res_HCreateResFile(PyObject *_self, PyObject *_args)
 	short vRefNum;
 	long dirID;
 	Str255 fileName;
+#ifndef HCreateResFile
+	PyMac_PRECHECK(HCreateResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hlO&",
 	                      &vRefNum,
 	                      &dirID,
@@ -1173,6 +1320,9 @@ static PyObject *Res_FSpOpenResFile(PyObject *_self, PyObject *_args)
 	short _rv;
 	FSSpec spec;
 	SignedByte permission;
+#ifndef FSpOpenResFile
+	PyMac_PRECHECK(FSpOpenResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetFSSpec, &spec,
 	                      &permission))
@@ -1195,6 +1345,9 @@ static PyObject *Res_FSpCreateResFile(PyObject *_self, PyObject *_args)
 	OSType creator;
 	OSType fileType;
 	ScriptCode scriptTag;
+#ifndef FSpCreateResFile
+	PyMac_PRECHECK(FSpCreateResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&h",
 	                      PyMac_GetFSSpec, &spec,
 	                      PyMac_GetOSType, &creator,
@@ -1222,6 +1375,9 @@ static PyObject *Res_InsertResourceFile(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	SInt16 refNum;
 	RsrcChainLocation where;
+#ifndef InsertResourceFile
+	PyMac_PRECHECK(InsertResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &refNum,
 	                      &where))
@@ -1242,6 +1398,9 @@ static PyObject *Res_DetachResourceFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 refNum;
+#ifndef DetachResourceFile
+	PyMac_PRECHECK(DetachResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refNum))
 		return NULL;
@@ -1262,6 +1421,9 @@ static PyObject *Res_FSpResourceFileAlreadyOpen(PyObject *_self, PyObject *_args
 	FSSpec resourceFile;
 	Boolean inChain;
 	SInt16 refNum;
+#ifndef FSpResourceFileAlreadyOpen
+	PyMac_PRECHECK(FSpResourceFileAlreadyOpen);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFSSpec, &resourceFile))
 		return NULL;
@@ -1289,6 +1451,9 @@ static PyObject *Res_FSpOpenOrphanResFile(PyObject *_self, PyObject *_args)
 	FSSpec spec;
 	SignedByte permission;
 	SInt16 refNum;
+#ifndef FSpOpenOrphanResFile
+	PyMac_PRECHECK(FSpOpenOrphanResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetFSSpec, &spec,
 	                      &permission))
@@ -1310,6 +1475,9 @@ static PyObject *Res_GetTopResourceFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 refNum;
+#ifndef GetTopResourceFile
+	PyMac_PRECHECK(GetTopResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetTopResourceFile(&refNum);
@@ -1328,6 +1496,9 @@ static PyObject *Res_GetNextResourceFile(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	SInt16 curRefNum;
 	SInt16 nextRefNum;
+#ifndef GetNextResourceFile
+	PyMac_PRECHECK(GetNextResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &curRefNum))
 		return NULL;
@@ -1346,6 +1517,9 @@ static PyObject *Res_FSOpenResFile(PyObject *_self, PyObject *_args)
 	short _rv;
 	FSRef ref;
 	SignedByte permission;
+#ifndef FSOpenResFile
+	PyMac_PRECHECK(FSOpenResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetFSRef, &ref,
 	                      &permission))
@@ -1370,6 +1544,9 @@ static PyObject *Res_FSCreateResFile(PyObject *_self, PyObject *_args)
 	int nameLength__in_len__;
 	FSRef newRef;
 	FSSpec newSpec;
+#ifndef FSCreateResFile
+	PyMac_PRECHECK(FSCreateResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&u#",
 	                      PyMac_GetFSRef, &parentRef,
 	                      &nameLength__in__, &nameLength__in_len__))
@@ -1398,6 +1575,9 @@ static PyObject *Res_FSResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
 	FSRef resourceFileRef;
 	Boolean inChain;
 	SInt16 refNum;
+#ifndef FSResourceFileAlreadyOpen
+	PyMac_PRECHECK(FSResourceFileAlreadyOpen);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetFSRef, &resourceFileRef))
 		return NULL;
@@ -1430,6 +1610,9 @@ static PyObject *Res_FSCreateResourceFile(PyObject *_self, PyObject *_args)
 	int forkNameLength__in_len__;
 	FSRef newRef;
 	FSSpec newSpec;
+#ifndef FSCreateResourceFile
+	PyMac_PRECHECK(FSCreateResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&u#u#",
 	                      PyMac_GetFSRef, &parentRef,
 	                      &nameLength__in__, &nameLength__in_len__,
@@ -1464,6 +1647,9 @@ static PyObject *Res_FSOpenResourceFile(PyObject *_self, PyObject *_args)
 	int forkNameLength__in_len__;
 	SignedByte permissions;
 	SInt16 refNum;
+#ifndef FSOpenResourceFile
+	PyMac_PRECHECK(FSOpenResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&u#b",
 	                      PyMac_GetFSRef, &ref,
 	                      &forkNameLength__in__, &forkNameLength__in_len__,
