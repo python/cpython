@@ -94,9 +94,9 @@ is_sep(char ch)	/* determine if "ch" is a separator character */
 #endif
 }
 
-/* assumes 'dir' null terminated in bounds.  Never writes
-   beyond existing terminator.
-*/
+/* assumes 'dir' null terminated in bounds.
+ * Never writes beyond existing terminator.
+ */
 static void
 reduce(char *dir)
 {
@@ -113,11 +113,12 @@ exists(char *filename)
 	return stat(filename, &buf) == 0;
 }
 
-/* Assumes 'filename' MAXPATHLEN+1 bytes long - 
-   may extend 'filename' by one character.
-*/
+/* Is module  (check for .pyc/.pyo too)
+ * Assumes 'filename' MAXPATHLEN+1 bytes long - 
+ * may extend 'filename' by one character.
+ */
 static int
-ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
+ismodule(char *filename)
 {
 	if (exists(filename))
 		return 1;
@@ -151,9 +152,9 @@ join(char *buffer, char *stuff)
 }
 
 /* gotlandmark only called by search_for_prefix, which ensures
-   'prefix' is null terminated in bounds.  join() ensures
-   'landmark' can not overflow prefix if too long.
-*/
+ * 'prefix' is null terminated in bounds.  join() ensures
+ * 'landmark' can not overflow prefix if too long.
+ */
 static int
 gotlandmark(char *landmark)
 {
@@ -167,7 +168,8 @@ gotlandmark(char *landmark)
 }
 
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd. 
-   assumption provided by only caller, calculate_path() */
+ * assumption provided by only caller, calculate_path()
+ */
 static int
 search_for_prefix(char *argv0_path, char *landmark)
 {
@@ -283,13 +285,13 @@ calculate_path(void)
 	}
 
 	/* We need to construct a path from the following parts.
-	   (1) the PYTHONPATH environment variable, if set;
-	   (2) the zip archive file path;
-	   (3) the PYTHONPATH config macro, with the leading "."
-	       of each component replaced with pythonhome, if set;
-	   (4) the directory containing the executable (argv0_path).
-	   The length calculation calculates #3 first.
-	*/
+	 * (1) the PYTHONPATH environment variable, if set;
+	 * (2) the zip archive file path;
+	 * (3) the PYTHONPATH config macro, with the leading "."
+	 *     of each component replaced with pythonhome, if set;
+	 * (4) the directory containing the executable (argv0_path).
+	 * The length calculation calculates #3 first.
+	 */
 
 	/* Calculate size of return buffer */
 	if (pythonhome != NULL) {

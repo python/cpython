@@ -29,21 +29,22 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/*
-    This library implements dlopen() - functions for OS/2 using
-    DosLoadModule() and company.
-*/
+/* This library implements dlopen() - Unix-like dynamic linking
+ * emulation functions for OS/2 using DosLoadModule() and company.
+ */
 
 #ifndef _DLFCN_H
 #define _DLFCN_H
 
-/*-------------------------------------- Unix-like dynamic linking emulation -*/
 /* load a dynamic-link library and return handle */
-void *dlopen (char *filename, int flags);
+void *dlopen(char *filename, int flags);
+
 /* return a pointer to the `symbol' in DLL */
-void *dlsym (void *handle, char *symbol);
+void *dlsym(void *handle, char *symbol);
+
 /* free dynamicaly-linked library */
-int dlclose (void *handle);
+int dlclose(void *handle);
+
 /* return a string describing last occured dl error */
 char *dlerror(void);
 
