@@ -21,6 +21,8 @@ $ICONSERVER = '../icons';
 
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
+$TEXINPUTS = '';		# avoid bogus l2h setting it to ':' !!!
+
 
 # Locate a file that's been "require"d.  Assumes that the file name of interest
 # is unique within the set of loaded files, after directory names have been
