@@ -37,11 +37,11 @@ opendir(path)
 	if (hfsrunning()) {
 		pb.d.ioWDProcID= 0;
 		pb.d.ioWDDirID= 0;
-		err= PBOpenWD((WDPBPtr)&pb, FALSE);
+		err= PBOpenWD((WDPBPtr)&pb, 0);
 	}
 	else {
 		pb.v.ioVolIndex= 0;
-		err= PBGetVInfo((ParmBlkPtr)&pb, FALSE);
+		err= PBGetVInfo((ParmBlkPtr)&pb, 0);
 	}
 	if (err != noErr) {
 		errno = ENOENT;
@@ -64,7 +64,7 @@ closedir(dirp)
 		WDPBRec pb;
 		
 		pb.ioVRefNum= dirp->dirid;
-		(void) PBCloseWD(&pb, FALSE);
+		(void) PBCloseWD(&pb, 0);
 	}
 	dirp->dirid= 0;
 	dirp->nextfile= 0;
@@ -92,9 +92,9 @@ readdir(dp)
 	pb.d.ioFDirIndex= dp->nextfile++;
 	pb.d.ioDrDirID= 0;
 	if (hfsrunning())
-		err= PBGetCatInfo((CInfoPBPtr)&pb, FALSE);
+		err= PBGetCatInfo((CInfoPBPtr)&pb, 0);
 	else
-		err= PBGetFInfo((ParmBlkPtr)&pb, FALSE);
+		err= PBGetFInfo((ParmBlkPtr)&pb, 0);
 	if (err != noErr) {
 		errno = EIO;
 		return NULL;
