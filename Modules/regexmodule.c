@@ -583,7 +583,7 @@ regex_match(PyObject *self, PyObject *args)
 	PyObject *pat, *string;
 	PyObject *tuple, *v;
 
-	if (!PyArg_Parse(args, "(SS)", &pat, &string))
+	if (!PyArg_ParseTuple(args, "SS:match", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
@@ -601,7 +601,7 @@ regex_search(PyObject *self, PyObject *args)
 	PyObject *pat, *string;
 	PyObject *tuple, *v;
 
-	if (!PyArg_Parse(args, "(SS)", &pat, &string))
+	if (!PyArg_ParseTuple(args, "SS:search", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
@@ -617,7 +617,7 @@ static PyObject *
 regex_set_syntax(PyObject *self, PyObject *args)
 {
 	int syntax;
-	if (!PyArg_Parse(args, "i", &syntax))
+	if (!PyArg_ParseTuple(args, "i:set_syntax", &syntax))
 		return NULL;
 	syntax = re_set_syntax(syntax);
 	/* wipe the global pattern cache */
@@ -629,10 +629,8 @@ regex_set_syntax(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-regex_get_syntax(PyObject *self, PyObject *args)
+regex_get_syntax(PyObject *self)
 {
-	if (!PyArg_Parse(args, ""))
-		return NULL;
 	return PyInt_FromLong((long)re_syntax);
 }
 
@@ -640,10 +638,10 @@ regex_get_syntax(PyObject *self, PyObject *args)
 static struct PyMethodDef regex_global_methods[] = {
 	{"compile",	regex_compile, METH_VARARGS},
 	{"symcomp",	regex_symcomp, METH_VARARGS},
-	{"match",	regex_match, METH_OLDARGS},
-	{"search",	regex_search, METH_OLDARGS},
-	{"set_syntax",	regex_set_syntax, METH_OLDARGS},
-	{"get_syntax",  regex_get_syntax, METH_OLDARGS},
+	{"match",	regex_match, METH_VARARGS},
+	{"search",	regex_search, METH_VARARGS},
+	{"set_syntax",	regex_set_syntax, METH_VARARGS},
+	{"get_syntax",  (PyCFunction)regex_get_syntax, METH_NOARGS},
 	{NULL,		NULL}		     /* sentinel */
 };
 

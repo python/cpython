@@ -1242,22 +1242,11 @@ MPZ_divm(PyObject *self, PyObject *args)
 } /* MPZ_divm() */
 
 
-/* MPZ methods-as-attributes */
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-static PyObject *
-mpz_int(mpzobject *self, PyObject *args)
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 static PyObject *
 mpz_int(mpzobject *self)
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 {
 	long sli;
 
-
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS */
 
 	if (mpz_size(&self->mpz) > 1
 	    || (sli = (long)mpz_get_ui(&self->mpz)) < (long)0 ) {
@@ -1273,11 +1262,7 @@ mpz_int(mpzobject *self)
 } /* mpz_int() */
 	
 static PyObject *
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-mpz_long(mpzobject *self, PyObject *args)
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 mpz_long(mpzobject *self)
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 {
 	int i, isnegative;
 	unsigned long int uli;
@@ -1286,11 +1271,6 @@ mpz_long(mpzobject *self)
 	int bitpointer, newbitpointer;
 	MP_INT mpzscratch;
 
-
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS */
 
 	/* determine length of python-long to be allocated */
 	if ((longobjp = _PyLong_New(i = (int)
@@ -1352,24 +1332,14 @@ mpz_long(mpzobject *self)
 /* I would have avoided pow() anyways, so ... */
 static const double multiplier = 256.0 * 256.0 * 256.0 * 256.0;
 
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-static PyObject *
-mpz_float(mpzobject *self, PyObject *args)
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 static PyObject *
 mpz_float(mpzobject *self)
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 {
 	int i, isnegative;
 	double x;
 	double mulstate;
 	MP_INT mpzscratch;
 
-
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS */
 
 	i = (int)mpz_size(&self->mpz);
 
@@ -1406,49 +1376,26 @@ mpz_float(mpzobject *self)
 
 } /* mpz_float() */
 
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-static PyObject *
-mpz_hex(mpzobject *self, PyObject *args)
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 static PyObject *
 mpz_hex(mpzobject *self)
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 {
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS */
-
 	return mpz_format((PyObject *)self, 16, (unsigned char)1);
 } /* mpz_hex() */
 
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-static PyObject *
-mpz_oct(mpzobject *self, PyObject *args)
-#else /* def MPZ_CONVERSIONS_AS_METHODS */
 static PyObject *
 mpz_oct(mpzobject *self)
-#endif /* def MPZ_CONVERSIONS_AS_METHODS else */
 {
-#ifdef MPZ_CONVERSIONS_AS_METHODS
-	if (!PyArg_NoArgs(args))
-		return NULL;
-#endif /* def MPZ_CONVERSIONS_AS_METHODS */
-	
 	return mpz_format((PyObject *)self, 8, (unsigned char)1);
 } /* mpz_oct() */
 
 static PyObject *
-mpz_binary(mpzobject *self, PyObject *args)
+mpz_binary(mpzobject *self)
 {
 	int size;
 	PyStringObject *strobjp;
 	char *cp;
 	MP_INT mp;
 	unsigned long ldigit;
-
-	if (!PyArg_NoArgs(args))
-		return NULL;
 
 	if (mpz_cmp_ui(&self->mpz, (unsigned long int)0) < 0) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1493,13 +1440,13 @@ mpz_binary(mpzobject *self, PyObject *args)
 
 static PyMethodDef mpz_methods[] = {
 #ifdef MPZ_CONVERSIONS_AS_METHODS
-	{"int",			mpz_int},
-	{"long",		mpz_long},
-	{"float",		mpz_float},
-	{"hex",			mpz_hex},
-	{"oct",			mpz_oct},
+	{"int",			mpz_int,   METH_NOARGS},
+	{"long",		mpz_long,  METH_NOARGS},
+	{"float",		mpz_float, METH_NOARGS},
+	{"hex",			mpz_hex,   METH_NOARGS},
+	{"oct",			mpz_oct,   METH_NOARGS},
 #endif /* def MPZ_CONVERSIONS_AS_METHODS */
-	{"binary",		(PyCFunction)mpz_binary},
+	{"binary",		(PyCFunction)mpz_binary, METH_NOARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 

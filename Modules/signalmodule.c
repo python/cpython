@@ -149,7 +149,7 @@ static PyObject *
 signal_alarm(PyObject *self, PyObject *args)
 {
 	int t;
-	if (!PyArg_Parse(args, "i", &t))
+	if (!PyArg_ParseTuple(args, "i:alarm", &t))
 		return NULL;
 	/* alarm() returns the number of seconds remaining */
 	return PyInt_FromLong((long)alarm(t));
@@ -192,7 +192,7 @@ signal_signal(PyObject *self, PyObject *args)
 	int sig_num;
 	PyObject *old_handler;
 	void (*func)(int);
-	if (!PyArg_Parse(args, "(iO)", &sig_num, &obj))
+	if (!PyArg_ParseTuple(args, "iO:signal", &sig_num, &obj))
 		return NULL;
 #ifdef WITH_THREAD
 	if (PyThread_get_thread_ident() != main_thread) {
@@ -248,7 +248,7 @@ signal_getsignal(PyObject *self, PyObject *args)
 {
 	int sig_num;
 	PyObject *old_handler;
-	if (!PyArg_Parse(args, "i", &sig_num))
+	if (!PyArg_ParseTuple(args, "i:getsignal", &sig_num))
 		return NULL;
 	if (sig_num < 1 || sig_num >= NSIG) {
 		PyErr_SetString(PyExc_ValueError,
@@ -274,16 +274,16 @@ anything else -- the callable Python object used as a handler\n\
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
-	{"alarm",	        signal_alarm, METH_OLDARGS, alarm_doc},
+	{"alarm",	        signal_alarm, METH_VARARGS, alarm_doc},
 #endif
-	{"signal",	        signal_signal, METH_OLDARGS, signal_doc},
-	{"getsignal",	        signal_getsignal, METH_OLDARGS, getsignal_doc},
+	{"signal",	        signal_signal, METH_VARARGS, signal_doc},
+	{"getsignal",	        signal_getsignal, METH_VARARGS, getsignal_doc},
 #ifdef HAVE_PAUSE
 	{"pause",	        (PyCFunction)signal_pause,
 	 METH_NOARGS,pause_doc},
 #endif
 	{"default_int_handler", signal_default_int_handler, 
-	 METH_OLDARGS, default_int_handler_doc},
+	 METH_VARARGS, default_int_handler_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 
