@@ -20,6 +20,14 @@ It is always available.
   \code{argv} has zero length.
 \end{datadesc}
 
+\begin{datadesc}{byte_order}
+  An indicator of the native byte order.  This will have the value
+  \code{'big'} on big-endian (most-signigicant byte first) platforms,
+  and \code{'little'} on little-endian (least-significant byte first)
+  platforms.
+  \versionadded{2.0}
+\end{datadesc}
+
 \begin{datadesc}{builtin_module_names}
   A tuple of strings giving the names of all modules that are compiled
   into this Python interpreter.  (This information is not available in
