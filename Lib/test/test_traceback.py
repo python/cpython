@@ -57,7 +57,6 @@ def test():
                 past = time.time() - 3
                 os.utime(testfile, (past, past))
             else:
-                import time
                 time.sleep(3) # not to stay in same mtime.
 
             if 'test_bug737473' in sys.modules:
