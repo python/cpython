@@ -128,10 +128,69 @@ class MondayTestCase(MonthCalendarTestCase):
         self.check_weeks(2068, 12, (2, 7, 7, 7, 7, 1))
 
 
+class SundayTestCase(MonthCalendarTestCase):
+    firstweekday = calendar.SUNDAY
+
+    def test_february(self):
+        # A 28-day february starting of sunday (7+7+7+7 days)
+        self.check_weeks(2009, 2, (7, 7, 7, 7))
+
+        # A 28-day february starting of monday (6+7+7+7+1 days)
+        self.check_weeks(1999, 2, (6, 7, 7, 7, 1))
+
+        # A 28-day february starting of saturday (1+7+7+7+6 days)
+        self.check_weeks(1997, 2, (1, 7, 7, 7, 6))
+
+        # A 29-day february starting of sunday (7+7+7+7+1 days)
+        self.check_weeks(2004, 2, (7, 7, 7, 7, 1))
+
+        # A 29-day february starting of monday (6+7+7+7+2 days)
+        self.check_weeks(1960, 2, (6, 7, 7, 7, 2))
+
+        # A 29-day february starting of saturday (1+7+7+7+7 days)
+        self.check_weeks(1964, 2, (1, 7, 7, 7, 7))
+
+    def test_april(self):
+        # A 30-day april starting of sunday (7+7+7+7+2 days)
+        self.check_weeks(1923, 4, (7, 7, 7, 7, 2))
+
+        # A 30-day april starting of monday (6+7+7+7+3 days)
+        self.check_weeks(1918, 4, (6, 7, 7, 7, 3))
+
+        # A 30-day april starting of saturday (1+7+7+7+7+1 days)
+        self.check_weeks(1950, 4, (1, 7, 7, 7, 7, 1))
+
+        # A 30-day april starting of friday (2+7+7+7+7 days)
+        self.check_weeks(1960, 4, (2, 7, 7, 7, 7))
+
+        # A 30-day april starting of thursday (3+7+7+7+6 days)
+        self.check_weeks(1909, 4, (3, 7, 7, 7, 6))
+
+    def test_december(self):
+        # A 31-day december starting of sunday (7+7+7+7+3 days)
+        self.check_weeks(2080, 12, (7, 7, 7, 7, 3))
+
+        # A 31-day december starting of monday (6+7+7+7+4 days)
+        self.check_weeks(1941, 12, (6, 7, 7, 7, 4))
+
+        # A 31-day december starting of saturday (1+7+7+7+7+2 days)
+        self.check_weeks(1923, 12, (1, 7, 7, 7, 7, 2))
+
+        # A 31-day december starting of wednesday (4+7+7+7+6 days)
+        self.check_weeks(1948, 12, (4, 7, 7, 7, 6))
+
+        # A 31-day december starting of thursday (3+7+7+7+7 days)
+        self.check_weeks(1927, 12, (3, 7, 7, 7, 7))
+
+        # A 31-day december starting of friday (2+7+7+7+7+1 days)
+        self.check_weeks(1995, 12, (2, 7, 7, 7, 7, 1))
+
+
 def test_main():
     test_support.run_unittest(
         CalendarTestCase,
-        MondayTestCase
+        MondayTestCase,
+        SundayTestCase
     )
 
 
