@@ -150,13 +150,10 @@ def heapreplace(heap, item):
     returned may be larger than item!  That constrains reasonable uses of
     this routine.
     """
-
-    if heap:
-        returnitem = heap[0]
-        heap[0] = item
-        _siftup(heap, 0)
-        return returnitem
-    heap.pop()  # raise IndexError
+    returnitem = heap[0]    # raises appropriate IndexError if heap is empty
+    heap[0] = item
+    _siftup(heap, 0)
+    return returnitem
 
 def heapify(x):
     """Transform list into a heap, in-place, in O(len(heap)) time."""
