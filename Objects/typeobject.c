@@ -3850,12 +3850,14 @@ typedef struct wrapperbase slotdef;
 #undef RBINSLOT
 
 #define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
-	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
+	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
+	 PyDoc_STR(DOC)}
 #define FLSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC, FLAGS) \
 	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
-	 DOC, FLAGS}
+	 PyDoc_STR(DOC), FLAGS}
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
-	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
+	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER, \
+	 PyDoc_STR(DOC)}
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
 	ETSLOT(NAME, as_sequence.SLOT, FUNCTION, WRAPPER, DOC)
 #define MPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
