@@ -62,7 +62,9 @@ extern DL_IMPORT(PyObject *) PyExc_AssertionError;
 extern DL_IMPORT(PyObject *) PyExc_AttributeError;
 extern DL_IMPORT(PyObject *) PyExc_EOFError;
 extern DL_IMPORT(PyObject *) PyExc_FloatingPointError;
+extern DL_IMPORT(PyObject *) PyExc_EnvironmentError;
 extern DL_IMPORT(PyObject *) PyExc_IOError;
+extern DL_IMPORT(PyObject *) PyExc_OSError;
 extern DL_IMPORT(PyObject *) PyExc_ImportError;
 extern DL_IMPORT(PyObject *) PyExc_IndexError;
 extern DL_IMPORT(PyObject *) PyExc_KeyError;
@@ -86,6 +88,7 @@ extern DL_IMPORT(PyObject *) PyExc_MemoryErrorInst;
 extern int PyErr_BadArgument Py_PROTO((void));
 extern PyObject *PyErr_NoMemory Py_PROTO((void));
 extern PyObject *PyErr_SetFromErrno Py_PROTO((PyObject *));
+extern PyObject *PyErr_SetFromErrnoWithFilename Py_PROTO((PyObject *, char *));
 extern PyObject *PyErr_Format Py_PROTO((PyObject *, const char *, ...));
 
 extern void PyErr_BadInternalCall Py_PROTO((void));
