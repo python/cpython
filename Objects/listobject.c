@@ -43,7 +43,7 @@ PERFORMANCE OF THIS SOFTWARE.
 	((((n)+(PyTryBlock)-1)/(PyTryBlock))*(PyTryBlock))
 
 static int
-roundup(n)
+roundupsize(n)
 	int n;
 {
 	if (n < 500)
@@ -52,7 +52,7 @@ roundup(n)
 		return ROUNDUP(n, 100);
 }
 
-#define NRESIZE(var, type, nitems) PyMem_RESIZE(var, type, roundup(nitems))
+#define NRESIZE(var, type, nitems) PyMem_RESIZE(var, type, roundupsize(nitems))
 
 PyObject *
 PyList_New(size)
