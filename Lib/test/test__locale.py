@@ -33,6 +33,6 @@ try:
         if nl_radixchar != li_radixchar:
             print "%r != %r" % (nl_radixchar, li_radixchar)
     if not saw_locale:
-            raise ImportError, "None of the listed locales found"
+        raise ImportError, "None of the listed locales found"
 finally:
     setlocale(LC_NUMERIC, oldlocale)

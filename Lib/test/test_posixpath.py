@@ -397,7 +397,7 @@ class PosixPathTest(unittest.TestCase):
     def test_realpath(self):
         self.assert_("foo" in realpath("foo"))
         self.assertRaises(TypeError, posixpath.realpath)
-          
+
     if hasattr(os, "symlink"):
         def test_realpath_basic(self):
             # Basic operation.
@@ -406,7 +406,7 @@ class PosixPathTest(unittest.TestCase):
                 self.assertEqual(realpath(ABSTFN), ABSTFN+"1")
             finally:
                 self.safe_remove(ABSTFN)
-        
+
         def test_realpath_symlink_loops(self):
             # Bug #930024, return the path unchanged if we get into an infinite
             # symlink loop.
@@ -429,7 +429,7 @@ class PosixPathTest(unittest.TestCase):
                 self.safe_remove(ABSTFN+"1")
                 self.safe_remove(ABSTFN+"2")
 
-        def test_realpath_resolve_parents(self):                        
+        def test_realpath_resolve_parents(self):
             # We also need to resolve any symlinks in the parents of a relative
             # path passed to realpath. E.g.: current working directory is
             # /usr/doc with 'doc' being a symlink to /usr/share/doc. We call
