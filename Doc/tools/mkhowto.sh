@@ -220,14 +220,15 @@ fi
 COMMONTEXINPUTS=$TOPDIR/texinputs:$TEXINPUTS
 
 for FILE in $@ ; do
+    FILEDIR=`dirname $FILE`
     FILE=`basename ${FILE%.tex}`
     #
     # Put the directory the .tex file is in is also the first directory in
     # TEXINPUTS, to allow files there to override files in the common area.
     #
-    FILEDIR=`dirname $FILE`
     TEXINPUTS=$FILEDIR:$COMMONTEXINPUTS
     export TEXINPUTS
+    echo TEXINPUTS is $TEXINPUTS
     #
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
 	build_dvi $FILE 2>&1 | tee -a $LOGFILE
