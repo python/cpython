@@ -1,5 +1,9 @@
-This is Python version 1.6 -- released March 31, 2000
-=====================================================
+This is Python version 1.6
+==========================
+
+There are various alpha and beta versions -- these are distinguishable
+through Include/patchlevel.h or by the name of the top-level directory
+and the tar file.
 
 
 What's new in this release?
