@@ -1492,12 +1492,12 @@ def inherits():
     verify(repr(a) == "4j-3")
     base = complex(-3, 4)
     verify(base.__class__ is complex)
-    #XXX verify(a == base)
+    verify(a == base)
     verify(complex(a) == base)
     verify(complex(a).__class__ is complex)
     a = madcomplex(a)  # just trying another form of the constructor
     verify(repr(a) == "4j-3")
-    #XXX verify(a == base)
+    verify(a == base)
     verify(complex(a) == base)
     verify(complex(a).__class__ is complex)
     verify(hash(a) == hash(base))
@@ -1821,7 +1821,8 @@ def str_subclass_as_dict_key():
         def __hash__(self):
             return self.hashcode
 
-    verify('aBc' == cistr('ABC') == 'abc')
+    verify(cistr('ABC') == 'abc')
+    verify('aBc' == cistr('ABC'))
     verify(str(cistr('ABC')) == 'ABC')
 
     d = {cistr('one'): 1, cistr('two'): 2, cistr('tHree'): 3}
