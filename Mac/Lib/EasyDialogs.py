@@ -56,7 +56,7 @@ def Message(msg, id=260, ok=None):
 		h.SetControlTitle(ok)
 	d.SetDialogDefaultItem(1)
 	d.AutoSizeDialog()
-	d.ShowWindow()
+	d.GetDialogWindow().ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -95,7 +95,7 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
 	d.AutoSizeDialog()
-	d.ShowWindow()
+	d.GetDialogWindow().ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -127,7 +127,7 @@ def AskPassword(prompt,	 default='', id=264, ok=None, cancel=None):
 ##	SetControlData(pwd, kControlEditTextPart, kControlEditTextTextTag, bullets)
 	SetControlData(pwd, kControlEditTextPart, kControlEditTextPasswordTag, default)
 	d.SelectDialogItemText(4, 0, 999)
-	Ctl.SetKeyboardFocus(d, pwd, kControlEditTextPart)
+	Ctl.SetKeyboardFocus(d.GetDialogWindow(), pwd, kControlEditTextPart)
 	if ok != None:
 		h = d.GetDialogItemAsControl(1)
 		h.SetControlTitle(ok)
@@ -137,7 +137,7 @@ def AskPassword(prompt,	 default='', id=264, ok=None, cancel=None):
 	d.SetDialogDefaultItem(Dialogs.ok)
 	d.SetDialogCancelItem(Dialogs.cancel)
 	d.AutoSizeDialog()
-	d.ShowWindow()
+	d.GetDialogWindow().ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -196,7 +196,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 	elif default == -1:
 		d.SetDialogDefaultItem(4)
 	d.AutoSizeDialog()
-	d.ShowWindow()
+	d.GetDialogWindow().ShowWindow()
 	while 1:
 		n = ModalDialog(None)
 		if n == 1: return default
@@ -221,7 +221,7 @@ class ProgressBar:
 		self._update(0)
 		self.d.AutoSizeDialog()
 		self.title(title)
-		self.d.ShowWindow()
+		self.d.GetDialogWindow().ShowWindow()
 		self.d.DrawDialog()
 
 	def __del__( self ):
