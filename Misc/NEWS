@@ -36,6 +36,10 @@ Library
   extended or overridden by subclasses.  Formerly, the subclassed method would
   be ignored by the rest of the module.  (Bug #1078905).
 
+- Bug #1076985: ``codecs.StreamReader.readline()`` now calls ``read()`` only
+  once when a size argument is given. This prevents a buffer overflow in the
+  tokenizer with very long source lines.
+
 
 Build
 -----
