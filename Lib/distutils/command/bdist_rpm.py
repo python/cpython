@@ -326,7 +326,7 @@ class bdist_rpm (Command):
             rpm_cmd.append('-ba')
         if self.rpm3_mode:
             rpm_cmd.extend(['--define',
-                             '_topdir %s/%s' % (os.getcwd(), self.rpm_base),])
+                             '_topdir %s' % os.path.abspath(self.rpm_base)])
         if not self.keep_temp:
             rpm_cmd.append('--clean')
         rpm_cmd.append(spec_path)
