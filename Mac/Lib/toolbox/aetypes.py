@@ -71,6 +71,31 @@ def mkenum(enum):
 	if IsEnum(enum): return enum
 	return Enum(enum)
 
+class Boolean:
+	"""An AE boolean value"""
+	
+	def __init__(self, bool):
+		self.bool = (not not bool)
+	
+	def __repr__(self):
+		return "Boolean(%s)" % `self.bool`
+	
+	def __str__(self):
+		if self.bool:
+			return "True"
+		else:
+			return "False"
+	
+	def __aepack__(self):
+		return pack(struct.pack('b', self.bool), 'bool')
+
+def IsBoolean(x):
+	return IsInstance(x, Boolean)
+
+def mkboolean(bool):
+	if IsBoolean(bool): return bool
+	return Boolean(bool)
+
 class Type:
 	"""An AE 4-char typename object"""
 	
@@ -153,6 +178,12 @@ class Comparison:
 
 def IsComparison(x):
 	return IsInstance(x, Comparison)
+	
+class NComparison(Comparison):
+	# The class attribute 'relo' must be set in a subclass
+	
+	def __init__(self, obj1, obj2):
+		Comparison.__init__(obj1, self.relo, obj2)
 
 class Logical:
 	"""An AE logical expression object"""
@@ -332,10 +363,10 @@ class ObjectSpecifier:
 	key	type	description
 	---	----	-----------
 	
-	'want'	type	what kind of thing we want,
+	'want'	type	4-char class code of thing we want,
 			e.g. word, paragraph or property
 	
-	'form'	enum	how we specify the thing(s) we want,
+	'form'	enum	how we specify which 'want' thing(s) we want,
 			e.g. by index, by range, by name, or by property specifier
 	
 	'seld'	any	which thing(s) we want,
@@ -369,21 +400,50 @@ class ObjectSpecifier:
 			     'from': self.fr},
 			    'obj ')
 
-
 def IsObjectSpecifier(x):
 	return IsInstance(x, ObjectSpecifier)
 
 
+# Backwards compatability, sigh...
 class Property(ObjectSpecifier):
 
-	def __init__(self, which, fr = None):
-		ObjectSpecifier.__init__(self, 'prop', 'prop', mkenum(which), fr)
+	def __init__(self, which, fr = None, want='prop'):
+		ObjectSpecifier.__init__(self, want, 'prop', mktype(which), fr)
 
 	def __repr__(self):
 		if self.fr:
-			return "Property(%s, %s)" % (`self.seld.enum`, `self.fr`)
+			return "Property(%s, %s)" % (`self.seld.type`, `self.fr`)
 		else:
-			return "Property(%s)" % `self.seld.enum`
+			return "Property(%s)" % `self.seld.type`
+	
+	def __str__(self):
+		if self.fr:
+			return "Property %s of %s" % (str(self.seld), str(self.fr))
+		else:
+			return "Property %s" % str(self.seld)
+
+
+class NProperty(ObjectSpecifier):
+	# Subclasses *must* self baseclass attributes:
+	# want is the type of this property
+	# which is the property name of this property
+
+	def __init__(self, fr = None):
+		#try:
+		#	dummy = self.want
+		#except:
+		#	self.want = 'prop'
+		self.want = 'prop'
+		ObjectSpecifier.__init__(self, self.want, 'prop', 
+					mktype(self.which), fr)
+
+	def __repr__(self):
+		rv = "Property(%s"%`self.seld.type`
+		if self.fr:
+			rv = rv + ", fr=%s" % `self.fr`
+		if self.want != 'prop':
+			rv = rv + ", want=%s" % `self.want`
+		return rv + ")"
 	
 	def __str__(self):
 		if self.fr:
@@ -402,6 +462,10 @@ class SelectableItem(ObjectSpecifier):
 			form = 'rang'
 		elif IsComparison(seld) or IsLogical(seld):
 			form = 'test'
+		elif t == TupleType:
+			# Breakout: specify both form and seld in a tuple
+			# (if you want ID or rele or somesuch)
+			form, seld = seld
 		else:
 			form = 'indx'
 		ObjectSpecifier.__init__(self, want, form, seld, fr)
@@ -409,6 +473,8 @@ class SelectableItem(ObjectSpecifier):
 
 class ComponentItem(SelectableItem):
 	# Derived classes *must* set the *class attribute* 'want' to some constant
+	# Also, dictionaries _propdict and _elemdict must be set to map property
+	# and element names to the correct classes
 	
 	def __init__(self, which, fr = None):
 		SelectableItem.__init__(self, self.want, which, fr)
@@ -434,7 +500,30 @@ class ComponentItem(SelectableItem):
 		s = "%s %s" % (self.__class__.__name__, ss)
 		if self.fr: s = s + " of %s" % str(self.fr)
 		return s
-
+		
+	def __getattr__(self, name):
+		if self._elemdict.has_key(name):
+			cls = self._elemdict[name]
+			return DelayedComponentItem(cls, self)
+	   	if self._propdict.has_key(name):
+	   		cls = self._propdict[name]
+	   		return cls(self)
+		raise AttributeError, name
+		
+		
+class DelayedComponentItem:
+	def __init__(self, compclass, fr):
+		self.compclass = compclass
+		self.fr = fr
+		
+	def __call__(self, which):
+		return self.compclass(which, self.fr)
+		
+	def __repr__(self):
+		return "%s(???, %s)" % (self.__class__.__name__, `self.fr`)
+		
+	def __str__(self):
+		return "selector for element %s of %s"%(self.__class__.__name__, str(self.fr))
 
 template = """
 class %s(ComponentItem): want = '%s'
