@@ -290,6 +290,9 @@ Extension modules
 Library
 -------
 
+- Added two new command-line arguments for profile (output file and
+  default sort).
+
 - Added global runctx function to profile module
 
 - Add hlist missing entryconfigure and entrycget methods.

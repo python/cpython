@@ -39,6 +39,7 @@ import sys
 import os
 import time
 import marshal
+from optparse import OptionParser
 
 __all__ = ["run","help","Profile"]
 
@@ -55,7 +56,7 @@ __all__ = ["run","help","Profile"]
 # Note that an instance of Profile() is *not* needed to call them.
 #**************************************************************************
 
-def run(statement, filename=None):
+def run(statement, filename=None, sort=-1):
     """Run statement under profiler optionally saving results in filename
 
     This function takes a single argument that can be passed to the
@@ -74,7 +75,7 @@ def run(statement, filename=None):
     if filename is not None:
         prof.dump_stats(filename)
     else:
-        return prof.print_stats()
+        return prof.print_stats(sort)
 
 def runctx(statement, globals, locals, filename=None):
     """Run statement under profiler, supplying your own globals and locals,
@@ -384,9 +385,9 @@ class Profile:
         self.t = get_time() - t
 
 
-    def print_stats(self):
+    def print_stats(self, sort=-1):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(-1). \
+        pstats.Stats(self).strip_dirs().sort_stats(sort). \
                   print_stats()
 
     def dump_stats(self, file):
@@ -556,15 +557,28 @@ def Stats(*args):
 
 # When invoked as main program, invoke the profiler on a script
 if __name__ == '__main__':
+    usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
     if not sys.argv[1:]:
-        print "usage: profile.py scriptfile [arg] ..."
+        print "Usage: ", usage
         sys.exit(2)
 
-    filename = sys.argv[1]  # Get script filename
+    class ProfileParser(OptionParser):
+        def __init__(self, usage):
+            OptionParser.__init__(self)
+            self.usage = usage
 
-    del sys.argv[0]         # Hide "profile.py" from argument list
+    parser = ProfileParser(usage)
+    parser.allow_interspersed_args = False
+    parser.add_option('-o', '--outfile', dest="outfile", 
+        help="Save stats to <outfile>", default=None)
+    parser.add_option('-s', '--sort', dest="sort",
+        help="Sort order when printing to stdout, based on pstats.Stats class", default=-1)
 
-    # Insert script directory in front of module search path
-    sys.path.insert(0, os.path.dirname(filename))
-
-    run('execfile(%r)' % (filename,))
+    (options, args) = parser.parse_args()
+    sys.argv[:] = args
+    
+    if (len(sys.argv) > 0):
+        sys.path.insert(0, os.path.dirname(sys.argv[0]))
+        run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
+    else:
+        print "Usage: ", usage
