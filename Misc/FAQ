@@ -1875,7 +1875,7 @@ type around a C structure (pointer) type will also work for C++
 objects.
 
 A useful automated approach (which also works for C) is SWIG:
-http://www.cs.utah.edu/~beazley/SWIG/.
+<URL:http://www.cs.utah.edu/~beazley/SWIG/>.
 
 
 6. Python's design
