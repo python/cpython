@@ -60,28 +60,26 @@ Test running gen when defining function is out of scope
 
     >>> def f(n):
     ...     return (i*i for i in xrange(n))
-    ...
     >>> list(f(10))
     [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
     >>> def f(n):
     ...     return ((i,j) for i in xrange(3) for j in xrange(n))
-    ...
     >>> list(f(4))
     [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0), (2, 1), (2, 2), (2, 3)]
     >>> def f(n):
     ...     return ((i,j) for i in xrange(3) for j in xrange(4) if j in xrange(n))
-    ...
     >>> list(f(4))
     [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0), (2, 1), (2, 2), (2, 3)]
     >>> list(f(2))
     [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
 
-#Verify that parenthesis are required in a statement
-#>>> def f(n):
-#...     return i*i for i in xrange(n)
-#...
-#SyntaxError: invalid syntax
+Verify that parenthesis are required in a statement
+>>> def f(n):
+...     return i*i for i in xrange(n)
+Traceback (most recent call last):
+   ...
+SyntaxError: invalid syntax
 
 Verify early binding for the outermost for-expression
 
@@ -137,12 +135,10 @@ Generators always return to the most recent caller:
     ...     r = yrange(5)
     ...     print "creator", r.next()
     ...     return r
-    ...
     >>> def caller():
     ...     r = creator()
     ...     for i in r:
     ...             print "caller", i
-    ...
     >>> caller()
     creator 0
     caller 1
@@ -155,7 +151,6 @@ Generators can call other generators:
     >>> def zrange(n):
     ...     for i in yrange(n):
     ...         yield i
-    ...
     >>> list(zrange(5))
     [0, 1, 2, 3, 4]
 
