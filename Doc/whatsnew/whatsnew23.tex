@@ -615,11 +615,11 @@ characters may be encountered.  So far, Python has allowed specifying
 the error processing as either ``strict'' (raising
 \exception{UnicodeError}), ``ignore'' (skip the character), or
 ``replace'' (with question mark), defaulting to ``strict''. It may be
-desirable to specify an alternative processing of the error, e.g. by
+desirable to specify an alternative processing of the error, such as 
 inserting an XML character reference or HTML entity reference into the
 converted string.
 
-Python now has a flexible framework to add additional processing
+Python now has a flexible framework to add different processing
 strategies.  New error handlers can be added with
 \function{codecs.register_error}. Codecs then can access the error
 handler with \function{codecs.lookup_error}. An equivalent C API has
@@ -631,7 +631,7 @@ replacement string.
 
 Two additional error handlers have been implemented using this
 framework: ``backslashreplace'' uses Python backslash quoting to
-represent the unencodable character, and ``xmlcharrefreplace'' emits
+represent unencodable characters and ``xmlcharrefreplace'' emits
 XML character references.
 
 \begin{seealso}
@@ -821,7 +821,13 @@ KeyError: pop(): dictionary is empty
 >>>
 \end{verbatim}
 
-(Patch contributed by Raymond Hettinger.)
+There's also a new class method, 
+\method{dict.fromkeys(\var{iterable}, \var{value})}, that 
+creates a dictionary with keys taken from the supplied iterator
+\var{iterable} and all values set to \var{value}, defaulting to
+\code{None}.  
+
+(Patches contributed by Raymond Hettinger.)
 
 \item The \keyword{assert} statement no longer checks the \code{__debug__}
 flag, so you can no longer disable assertions by assigning to \code{__debug__}.
@@ -1283,29 +1289,28 @@ stamps, or if they use the tuple API. If used, the feature should be
 activated on an application level instead of trying to enable it on a
 per-use basis.
 
-\item Calling Tcl methods through \module{_tkinter} now does not
-always return strings anymore. Instead, if Tcl returns other objects,
-those objects are converted to their Python equivalent, if one exists,
-or wrapped with a \class{_tkinter.Tcl_Obj} object if no Python
-equivalent exists. This behaviour can be controlled through the
-\method{wantobjects} method of \class{tkapp} objects.
+\item Calling Tcl methods through \module{_tkinter} no longer 
+returns only strings. Instead, if Tcl returns other objects those
+objects are converted to their Python equivalent, if one exists, or
+wrapped with a \class{_tkinter.Tcl_Obj} object if no Python equivalent
+exists. This behaviour can be controlled through the
+\method{wantobjects()} method of \class{tkapp} objects.
 
-When using _tkinter through Tkinter.py (i.e. for most _tkinter
-applications), this feature is always activated. It should not cause
-compatibility problems, since Tkinter would always convert string
-results to Python types were possible.
+When using \module{_tkinter} through the \module{Tkinter} module (as
+most Tkinter applications will), this feature is always activated. It
+should not cause compatibility problems, since Tkinter would always
+convert string results to Python types where possible.
 
 If any incompatibilities are found, the old behaviour can be restored
-by invoking
+by setting the \member{wantobjects} variable in the \module{Tkinter}
+module to false before creating the first \class{tkapp} object.
 
 \begin{verbatim}
 import Tkinter
 Tkinter.wantobjects = 0
 \end{verbatim}
 
-before creating the first \class{tkapp} object.
-
-Please report any such breakage as a bug.
+Please report any breakage caused by this change as a bug.
 
 \end{itemize}
 
@@ -1651,6 +1656,12 @@ if \var{X} is more than one character long.
 \item The \function{int()} type constructor will now return a long
 integer instead of raising an \exception{OverflowError} when a string
 or floating-point number is too large to fit into an integer.
+
+\item Calling Tcl methods through \module{_tkinter} no longer 
+returns only strings. Instead, if Tcl returns other objects those
+objects are converted to their Python equivalent, if one exists, or
+wrapped with a \class{_tkinter.Tcl_Obj} object if no Python equivalent
+exists.
 
 \item You can no longer disable assertions by assigning to \code{__debug__}.
 
