@@ -19,7 +19,7 @@ else:
 if sys.platform in ('netbsd1', 'Darwin1.2', 'darwin',
                     'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                     'bsdos2', 'bsdos3', 'bsdos4',
-                    'openbsd', 'openbsd2'):
+                    'openbsd', 'openbsd2', 'openbsd3'):
     lockdata = struct.pack('lxxxxlxxxxlhh', 0, 0, 0, fcntl.F_WRLCK, 0)
 elif sys.platform in ['aix3', 'aix4', 'hp-uxB', 'unixware7']:
     lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
