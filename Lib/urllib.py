@@ -556,7 +556,7 @@ class FancyURLopener(URLopener):
         void = fp.read()
         fp.close()
         # In case the server sent a relative URL, join with original:
-        newurl = basejoin("http:" + url, newurl)
+        newurl = basejoin(self.type + ":" + url, newurl)
         if data is None:
             return self.open(newurl)
         else:
