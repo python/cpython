@@ -87,11 +87,6 @@ Socket methods:
 
 #include "Python.h"
 
-#if defined(HAVE_GETHOSTBYNAME_R) && defined(HAVE_GETHOSTBYNAME_R_3_ARG)
-/* XXX Somebody please submit code for the 3-arg version! */
-#undef HAVE_GETHOSTBYNAME_R
-#endif
-
 #if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && !defined(MS_WINDOWS)
 #define USE_GETHOSTBYNAME_LOCK
 #endif
@@ -342,10 +337,14 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	char ch;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
+	struct hostent_data data;
+#else
 	char buf[1001];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#endif
+#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -369,10 +368,13 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	}
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#if    defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &hp, &errnop);
-#else
+#elif  defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+#else  /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	result = gethostbyname_r(name, &hp_allocated, &data);
+	hp = (result != 0) ? NULL : &hp_allocated;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
@@ -1427,10 +1429,14 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
+	struct hostent_data data;
+#else
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#endif
+#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -1440,10 +1446,13 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &errnop);
-#else
+#elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
+#else /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	result = gethostbyname_r(name, &hp_allocated, &data);
+	h = (result != 0) ? NULL : &hp_allocated;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
@@ -1478,10 +1487,14 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
+#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
+	struct hostent_data data;
+#else
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#endif
+#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -1492,16 +1505,21 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
+#if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
 	result = gethostbyaddr_r((char *)&addr.sin_addr,
 		sizeof(addr.sin_addr),
 		AF_INET, &hp_allocated, buf, buf_len,
 		&h, &errnop);
-#else
+#elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	h = gethostbyaddr_r((char *)&addr.sin_addr,
 			    sizeof(addr.sin_addr),
 			    AF_INET, 
 			    &hp_allocated, buf, buf_len, &errnop);
+#else /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	result = gethostbyaddr_r((char *)&addr.sin_addr,
+		sizeof(addr.sin_addr),
+		AF_INET, &hp_allocated, &data);
+	h = (result != 0) ? NULL : &hp_allocated;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
