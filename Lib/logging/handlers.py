@@ -96,7 +96,7 @@ class RotatingFileHandler(logging.FileHandler):
         Emit a record.
 
         Output the record to the file, catering for rollover as described
-        in setRollover().
+        in doRollover().
         """
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
