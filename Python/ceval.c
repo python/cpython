@@ -87,6 +87,7 @@ static object *apply_subscript PROTO((object *, object *));
 static object *loop_subscript PROTO((object *, object *));
 static int slice_index PROTO((object *, int, int *));
 static object *apply_slice PROTO((object *, object *, object *));
+static object *build_slice PROTO((object *, object *, object *));
 static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
 static int cmp_exception PROTO((object *, object *));
@@ -187,6 +188,8 @@ restore_thread(x)
    thread (the main thread) ever takes things out of the queue.
 */
 
+static int ticker = 0; /* main loop counter to do periodic things */
+
 #define NPENDINGCALLS 32
 static struct {
 	int (*func) PROTO((ANY *));
@@ -215,6 +218,7 @@ Py_AddPendingCall(func, arg)
 	pendingcalls[i].func = func;
 	pendingcalls[i].arg = arg;
 	pendinglast = j;
+	ticker = 0; /* Signal main loop */
 	busy = 0;
 	/* XXX End critical section */
 	return 0;
@@ -225,11 +229,15 @@ Py_MakePendingCalls()
 {
 	static int busy = 0;
 #ifdef WITH_THREAD
-	if (get_thread_ident() != main_thread)
+	if (get_thread_ident() != main_thread) {
+		ticker = 0; /* We're not done yet */
 		return 0;
+	}
 #endif
-	if (busy)
+	if (busy) {
+		ticker = 0; /* We're not done yet */
 		return 0;
+	}
 	busy = 1;
 	for (;;) {
 		int i;
@@ -243,6 +251,7 @@ Py_MakePendingCalls()
 		pendingfirst = (i + 1) % NPENDINGCALLS;
 		if (func(arg) < 0) {
 			busy = 0;
+			ticker = 0; /* We're not done yet */
 			return -1;
 		}
 	}
@@ -280,6 +289,12 @@ eval_code(co, globals, locals)
 
 
 /* Interpreter main loop */
+
+#ifndef MAX_RECURSION_DEPTH
+#define MAX_RECURSION_DEPTH 10000
+#endif
+
+static int recursion_depth = 0;
 
 static object *
 eval_code2(co, globals, locals,
@@ -354,6 +369,13 @@ eval_code2(co, globals, locals,
 #define GETLOCAL(i)	(fastlocals[i])
 #define SETLOCAL(i, value)	do { XDECREF(GETLOCAL(i)); \
 				     GETLOCAL(i) = value; } while (0)
+
+#ifdef USE_STACKCHECK
+	if (recursion_depth%10 == 0 && PyOS_CheckStack()) {
+		err_setstr(MemoryError, "Stack overflow");
+		return NULL;
+	}
+#endif
 
 	if (globals == NULL) {
 		err_setstr(SystemError, "eval_code2: NULL globals");
@@ -514,6 +536,14 @@ eval_code2(co, globals, locals,
 		}
 	}
 
+	if (++recursion_depth > MAX_RECURSION_DEPTH) {
+		--recursion_depth;
+		err_setstr(RuntimeError, "Maximum recursion depth exceeded");
+		current_frame = f->f_back;
+		DECREF(f);
+		return NULL;
+	}
+
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
 	stack_pointer = f->f_valuestack;
 	
@@ -522,22 +552,23 @@ eval_code2(co, globals, locals,
 	x = None;	/* Not a reference, just anything non-NULL */
 	
 	for (;;) {
-		static int ticker;
-		
 		/* Do periodic things.
 		   Doing this every time through the loop would add
 		   too much overhead (a function call per instruction).
-		   So we do it only every Nth instruction. */
-		
-		if (pendingfirst != pendinglast) {
-			if (Py_MakePendingCalls() < 0) {
-				why = WHY_EXCEPTION;
-				goto on_error;
-			}
-		}
+		   So we do it only every Nth instruction.
+
+		   The ticker is reset to zero if there are pending
+		   calls (see Py_AddPendingCalls() and
+		   Py_MakePendingCalls() above). */
 		
 		if (--ticker < 0) {
 			ticker = sys_checkinterval;
+			if (pendingfirst != pendinglast) {
+				if (Py_MakePendingCalls() < 0) {
+					why = WHY_EXCEPTION;
+					goto on_error;
+				}
+			}
 			if (sigcheck()) {
 				why = WHY_EXCEPTION;
 				goto on_error;
@@ -1630,7 +1661,22 @@ eval_code2(co, globals, locals,
 			}
 			PUSH(x);
 			break;
-		
+
+		case BUILD_SLICE:
+			if (oparg == 3)
+				w = POP();
+			else
+				w = NULL;
+			v = POP();
+			u = POP();
+			x = build_slice(u,v,w);
+			DECREF(u);
+			DECREF(v);
+			XDECREF(w);
+			PUSH(x);
+			break;
+
+
 		default:
 			fprintf(stderr,
 				"XXX lineno: %d, opcode: %d\n",
@@ -1793,6 +1839,7 @@ eval_code2(co, globals, locals,
 
 	current_frame = f->f_back;
 	DECREF(f);
+	--recursion_depth;
 	
 	return retval;
 }
@@ -2546,6 +2593,13 @@ slice_index(v, isize, pi)
 			*pi += isize;
 	}
 	return 0;
+}
+
+static object *
+build_slice(u, v, w) /* u:v:w */
+	object *u, *v, *w;
+{
+  return PySlice_New(u,v,w);
 }
 
 static object *

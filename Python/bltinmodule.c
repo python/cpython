@@ -879,6 +879,28 @@ builtin_list(self, args)
 	return NULL;
 }
 
+
+static PyObject *
+builtin_slice(self, args)
+     PyObject *self;
+     PyObject *args;
+{
+  PyObject *start, *stop, *step;
+
+  start = stop = step = NULL;
+
+  if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
+    return NULL;
+
+  /*This swapping of stop and start is to maintain compatibility with
+    the range builtin.*/
+  if (stop == NULL) {
+    stop = start;
+    start = NULL;
+  }
+  return PySlice_New(start, stop, step);
+}
+
 static object *
 builtin_locals(self, args)
 	object *self;
@@ -1514,6 +1536,7 @@ static struct methodlist builtin_methods[] = {
 	{"repr",	builtin_repr, 1},
 	{"round",	builtin_round, 1},
 	{"setattr",	builtin_setattr, 1},
+	{"slice",       builtin_slice, 1},
 	{"str",		builtin_str, 1},
 	{"tuple",	builtin_tuple, 1},
 	{"type",	builtin_type, 1},
