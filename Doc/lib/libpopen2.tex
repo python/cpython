@@ -24,6 +24,11 @@ this is needed to determine whether the file objects should be opened
 in binary or text mode.  The default value for \var{mode} is
 \code{'t'}.
 
+On \UNIX, \var{cmd} may be a sequence, in which case arguments will be passed
+directly to the program without shell intervention (as with
+\function{os.spawnv()}). If \var{cmd} is a string it will be passed to the
+shell (as with \function{os.system()}).
+
 The only way to retrieve the return codes for the child processes is
 by using the \method{poll()} or \method{wait()} methods on the
 \class{Popen3} and \class{Popen4} classes; these are only available on
@@ -74,7 +79,6 @@ same file object as standard output.  These are typically created
 using \function{popen4()}.
 \versionadded{2.0}
 \end{classdesc}
-
 
 \subsection{Popen3 and Popen4 Objects \label{popen3-objects}}
 

@@ -361,6 +361,11 @@ specified, it specifies the buffer size for the I/O pipes.
 objects should be opened in binary or text mode.  The default value
 for \var{mode} is \code{'t'}.
 
+Also, for each of these variants, on \UNIX, \var{cmd} may be a sequence, in
+which case arguments will be passed directly to the program without shell
+intervention (as with \function{os.spawnv()}). If \var{cmd} is a string it will
+be passed to the shell (as with \function{os.system()}).
+
 These methods do not make it possible to retrieve the return code from
 the child processes.  The only way to control the input and output
 streams and also retrieve the return codes is to use the
@@ -389,14 +394,13 @@ Availability: \UNIX, Windows.
 \begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
+Availability: \UNIX, Windows.
+\versionadded{2.0}
+\end{funcdesc}
 
 (Note that \code{\var{child_stdin}, \var{child_stdout}, and
 \var{child_stderr}} are named from the point of view of the child
 process, i.e. \var{child_stdin} is the child's standard input.)
-
-Availability: \UNIX, Windows.
-\versionadded{2.0}
-\end{funcdesc}
 
 This functionality is also available in the \refmodule{popen2} module
 using functions of the same names, but the return values of those
