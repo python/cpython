@@ -209,6 +209,7 @@ class Play_Audio_sun:
 		return BUFFERSIZE - self.getfilled()
 
 def AudioDev():
+	# Dynamically try to import and use a platform specific module.
 	try:
 		import al
 	except ImportError:
