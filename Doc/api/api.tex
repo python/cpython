@@ -2001,6 +2001,13 @@ for example. to check that an object is a dictionary, use
 \cfunction{PyDict_Check()}.  The chapter is structured like the
 ``family tree'' of Python object types.
 
+\strong{Warning:}
+While the functions described in this chapter carefully check the type
+of the objects which are passed in, many of them do not check for
+\NULL{} being passed instead of a valid object.  Allowing \NULL{} to
+be passed in can cause memory access violations and immediate
+termination of the interpreter.
+
 
 \section{Fundamental Objects \label{fundamental}}
 
@@ -2057,6 +2064,9 @@ objects that are intrinsic to the Python language.
 
 \subsection{String Objects \label{stringObjects}}
 
+These functions raise \exception{TypeError} when expecting a string
+parameter and are called with a non-string parameter.
+
 \obindex{string}
 \begin{ctypedesc}{PyStringObject}
 This subtype of \ctype{PyObject} represents a Python string object.
@@ -2096,8 +2106,10 @@ checking.
 \begin{cfuncdesc}{char*}{PyString_AsString}{PyObject *string}
 Returns a null-terminated representation of the contents of
 \var{string}.  The pointer refers to the internal buffer of
-\var{string}, not a copy.  The data must not be modified in any way.
-It must not be de-allocated.
+\var{string}, not a copy.  The data must not be modified in any way,
+unless the string was just created using
+\code{PyString_FromStringAndSize(NULL, \var{size})}.
+It must not be deallocated.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AS_STRING}{PyObject *string}
@@ -2118,8 +2130,9 @@ null characters; if it does, the function returns -1 and a
 TypeError is raised.
 
 The buffer refers to an internal string buffer of \var{obj}, not a
-copy. The data must not be modified in any way.  It must not be
-de-allocated.
+copy. The data must not be modified in any way, unless the string was
+just created using \code{PyString_FromStringAndSize(NULL,
+\var{size})}.  It must not be deallocated.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
