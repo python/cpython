@@ -320,7 +320,7 @@ eval_node(n, filename, globals, locals)
 	freetree(n);
 	if (co == NULL)
 		return NULL;
-	v = eval_code(co, globals, locals, (object *)NULL);
+	v = eval_code(co, globals, locals, (object *)NULL, (object *)NULL);
 	DECREF(co);
 	return v;
 }

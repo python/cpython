@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Module object implementation */
 
 #include "allobjects.h"
+#include "ceval.h"
 
 typedef struct {
 	OB_HEAD
@@ -111,7 +112,7 @@ module_getattr(m, name)
 		err_setstr(AttributeError, name);
 	else {
 		if (is_accessobject(res))
-			res = getaccessvalue(res, (object *)NULL);
+			res = getaccessvalue(res, getclass());
 		else
 			INCREF(res);
 	}
@@ -134,7 +135,7 @@ module_setattr(m, name, v)
 	}
 	ac = dictlookup(m->md_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, (object *)NULL, v);
+		return setaccessvalue(ac, getclass(), v);
 	if (v == NULL) {
 		int rv = dictremove(m->md_dict, name);
 		if (rv < 0)

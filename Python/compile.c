@@ -1429,8 +1429,8 @@ com_access_stmt(c, n)
 	/* Calculate the mode mask */
 	mode = 0;
 	for (j = i; j < NCH(n); j += 2) {
-		int r=0,w=0,p=0;
-		for (k=0; k<NCH(CHILD(n,j)); k++) {
+		int r = 0, w = 0, p = 0;
+		for (k = 0; k < NCH(CHILD(n,j)); k++) {
 			if (strequ(STR(CHILD(CHILD(n,j),k)), "public"))
 				p = 0;
 			else if (strequ(STR(CHILD(CHILD(n,j),k)), "protected"))
@@ -1446,7 +1446,7 @@ com_access_stmt(c, n)
 					STR(CHILD(CHILD(n,j),k)));
 		}
 		if (r == 0 && w == 0)
-			r =w = 1;
+			r = w = 1;
 		if (p == 0) {
 			if (r == 1) mode |= AC_R_PUBLIC;
 			if (w == 1) mode |= AC_W_PUBLIC;

@@ -30,6 +30,13 @@ It should be possible to use other object types as base classes,
 but currently it isn't.  We'll see if we can fix that later, sigh...
 */
 
+typedef struct {
+	OB_HEAD
+	object	*cl_bases;	/* A tuple of class objects */
+	object	*cl_dict;	/* A dictionary */
+	object	*cl_name;	/* A string */
+} classobject;
+
 extern typeobject Classtype, Instancetype, Instancemethodtype;
 
 #define is_classobject(op) ((op)->ob_type == &Classtype)
@@ -38,9 +45,12 @@ extern typeobject Classtype, Instancetype, Instancemethodtype;
 
 extern object *newclassobject PROTO((object *, object *, object *));
 extern object *newinstanceobject PROTO((object *, object *));
-extern object *newinstancemethodobject PROTO((object *, object *));
+extern object *newinstancemethodobject PROTO((object *, object *, object *));
 
 extern object *instancemethodgetfunc PROTO((object *));
 extern object *instancemethodgetself PROTO((object *));
+extern object *instancemethodgetclass PROTO((object *));
 
 extern object *instance_convert PROTO((object *, char *));
+
+extern int issubclass PROTO((object *, object *));

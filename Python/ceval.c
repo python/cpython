@@ -161,10 +161,11 @@ enum why_code {
 /* Interpreter main loop */
 
 object *
-eval_code(co, globals, locals, arg)
+eval_code(co, globals, locals, class, arg)
 	codeobject *co;
 	object *globals;
 	object *locals;
+	object *class;
 	object *arg;
 {
 	register unsigned char *next_instr;
@@ -244,6 +245,7 @@ eval_code(co, globals, locals, arg)
 			co,			/*code*/
 			globals,		/*globals*/
 			locals,			/*locals*/
+			class,			/*class*/
 			50,			/*nvalues*/
 			20);			/*nblocks*/
 	if (f == NULL)
@@ -759,7 +761,7 @@ eval_code(co, globals, locals, arg)
 			v = POP();
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, (object *)NULL, v);
+				err = setaccessvalue(u, class, v);
 				DECREF(v);
 				break;
 			}
@@ -771,7 +773,7 @@ eval_code(co, globals, locals, arg)
 			w = GETNAMEV(oparg);
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, (object *)NULL,
+				err = setaccessvalue(u, class,
 						     (object *)NULL);
 				break;
 			}
@@ -969,7 +971,7 @@ eval_code(co, globals, locals, arg)
 			v = POP();
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, (object *)NULL, v);
+				err = setaccessvalue(u, class, v);
 				DECREF(v);
 				break;
 			}
@@ -981,7 +983,7 @@ eval_code(co, globals, locals, arg)
 			w = GETNAMEV(oparg);
 			u = dict2lookup(f->f_locals, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, (object *)NULL,
+				err = setaccessvalue(u, class,
 						     (object *)NULL);
 				break;
 			}
@@ -1012,11 +1014,12 @@ eval_code(co, globals, locals, arg)
 				}
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, (object *)NULL);
+				x = getaccessvalue(x, class);
 				if (x == NULL)
 					break;
 			}
-			INCREF(x);
+			else
+				INCREF(x);
 			PUSH(x);
 			break;
 		
@@ -1033,11 +1036,12 @@ eval_code(co, globals, locals, arg)
 				}
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, (object *)NULL);
+				x = getaccessvalue(x, class);
 				if (x == NULL)
 					break;
 			}
-			INCREF(x);
+			else
+				INCREF(x);
 			PUSH(x);
 			break;
 		
@@ -1049,11 +1053,12 @@ eval_code(co, globals, locals, arg)
 				break;
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, (object *)NULL);
+				x = getaccessvalue(x, class);
 				if (x == NULL)
 					break;
 			}
-			INCREF(x);
+			else
+				INCREF(x);
 			PUSH(x);
 			break;
 
@@ -1084,11 +1089,12 @@ eval_code(co, globals, locals, arg)
 				break;
 			}
 			if (is_accessobject(x)) {
-				x = getaccessvalue(x, (object *)NULL);
+				x = getaccessvalue(x, class);
 				if (x == NULL)
 					break;
 			}
-			INCREF(x);
+			else
+				INCREF(x);
 			PUSH(x);
 			break;
 
@@ -1096,7 +1102,7 @@ eval_code(co, globals, locals, arg)
 			v = POP();
 			w = GETLISTITEM(fastlocals, oparg);
 			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, (object *)NULL, v);
+				err = setaccessvalue(w, class, v);
 				DECREF(v);
 				break;
 			}
@@ -1112,8 +1118,7 @@ eval_code(co, globals, locals, arg)
 				break;
 			}
 			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, (object *)NULL,
-						     (object *)NULL);
+				err = setaccessvalue(w, class, (object *)NULL);
 				break;
 			}
 			DECREF(x);
@@ -1643,6 +1648,15 @@ getglobals()
 		return current_frame->f_globals;
 }
 
+object *
+getclass()
+{
+	if (current_frame == NULL)
+		return NULL;
+	else
+		return current_frame->f_class;
+}
+
 void
 printtraceback(f)
 	object *f;
@@ -1974,37 +1988,41 @@ call_function(func, arg)
 {
 	object *newarg = NULL;
 	object *newlocals, *newglobals;
+	object *class = NULL;
 	object *co, *v;
 	
 	if (is_instancemethodobject(func)) {
-		int argcount;
 		object *self = instancemethodgetself(func);
+		class = instancemethodgetclass(func);
 		func = instancemethodgetfunc(func);
-		if (arg == NULL)
-			argcount = 0;
-		else if (is_tupleobject(arg))
-			argcount = gettuplesize(arg);
-		else
-			argcount = 1;
-		newarg = newtupleobject(argcount + 1);
-		if (newarg == NULL)
-			return NULL;
-		INCREF(self);
-		settupleitem(newarg, 0, self);
-		if (arg != NULL && !is_tupleobject(arg)) {
-			INCREF(arg);
-			settupleitem(newarg, 1, arg);
-		}
-		else {
-			int i;
-			object *v;
-			for (i = 0; i < argcount; i++) {
-				v = gettupleitem(arg, i);
-				XINCREF(v);
-				settupleitem(newarg, i+1, v);
+		if (self != NULL) {
+			int argcount;
+			if (arg == NULL)
+				argcount = 0;
+			else if (is_tupleobject(arg))
+				argcount = gettuplesize(arg);
+			else
+				argcount = 1;
+			newarg = newtupleobject(argcount + 1);
+			if (newarg == NULL)
+				return NULL;
+			INCREF(self);
+			settupleitem(newarg, 0, self);
+			if (arg != NULL && !is_tupleobject(arg)) {
+				INCREF(arg);
+				settupleitem(newarg, 1, arg);
 			}
+			else {
+				int i;
+				object *v;
+				for (i = 0; i < argcount; i++) {
+					v = gettupleitem(arg, i);
+					XINCREF(v);
+					settupleitem(newarg, i+1, v);
+				}
+			}
+			arg = newarg;
 		}
-		arg = newarg;
 	}
 	else {
 		if (!is_funcobject(func)) {
@@ -2031,7 +2049,7 @@ call_function(func, arg)
 	newglobals = getfuncglobals(func);
 	INCREF(newglobals);
 	
-	v = eval_code((codeobject *)co, newglobals, newlocals, arg);
+	v = eval_code((codeobject *)co, newglobals, newlocals, class, arg);
 	
 	DECREF(newlocals);
 	DECREF(newglobals);
@@ -2367,10 +2385,10 @@ access_statement(name, mode, f)
 	int mode;
 	frameobject *f;
 {
-	object *value;
-	int i = -1;
-	object *ac;
-	int ret;
+	object *value, *ac;
+	typeobject *type;
+	int fastind, ret;
+	fastind = -1;
 	if (f->f_localmap == NULL)
 		value = dict2lookup(f->f_locals, name);
 	else {
@@ -2378,12 +2396,13 @@ access_statement(name, mode, f)
 		if (value == NULL || !is_intobject(value))
 			value = NULL;
 		else {
-			i = getintvalue(value);
-			if (0 <= i && i < getlistsize(f->f_fastlocals))
-				value = getlistitem(f->f_fastlocals, i);
+			fastind = getintvalue(value);
+			if (0 <= fastind &&
+			    fastind < getlistsize(f->f_fastlocals))
+				value = getlistitem(f->f_fastlocals, fastind);
 			else {
 				value = NULL;
-				i = -1;
+				fastind = -1;
 			}
 		}
 	}
@@ -2392,11 +2411,15 @@ access_statement(name, mode, f)
 		return -1;
 	}
 	err_clear();
-	ac = newaccessobject(value, (object*)NULL, (typeobject*)NULL, mode);
+	if (value != NULL && value != None)
+		type = value->ob_type;
+	else
+		type = NULL;
+	ac = newaccessobject(value, (object*)NULL, type, mode);
 	if (ac == NULL)
 		return -1;
-	if (i >= 0)
-		ret = setlistitem(f->f_fastlocals, i, ac);
+	if (fastind >= 0)
+		ret = setlistitem(f->f_fastlocals, fastind, ac);
 	else {
 		ret = dict2insert(f->f_locals, name, ac);
 		DECREF(ac);
