@@ -283,8 +283,8 @@ extern PyGC_Head _PyGC_generation0;
 #define PyObject_GC_New PyObject_New
 #define PyObject_GC_NewVar PyObject_NewVar
 #define PyObject_GC_Del	 PyObject_Del
-#define PyObject_GC_TRACK(op)
-#define PyObject_GC_UNTRACK(op)
+#define _PyObject_GC_TRACK(op)
+#define _PyObject_GC_UNTRACK(op)
 #define PyObject_GC_Track(op)
 #define PyObject_GC_UnTrack(op)
 
