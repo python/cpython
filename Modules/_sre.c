@@ -2007,17 +2007,16 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 
     }
 
-    /* get segment following last match */
-    i = STATE_OFFSET(&state, last);
-    if (i < state.endpos) {
-        item = PySequence_GetSlice(string, i, state.endpos);
-        if (!item)
-            goto error;
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
-        if (status < 0)
-            goto error;
-    }
+    /* get segment following last match (even if empty) */
+    item = PySequence_GetSlice(
+        string, STATE_OFFSET(&state, last), state.endpos
+        );
+    if (!item)
+        goto error;
+    status = PyList_Append(list, item);
+    Py_DECREF(item);
+    if (status < 0)
+        goto error;
 
     state_fini(&state);
     return list;
