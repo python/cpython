@@ -91,6 +91,7 @@ def test_module_with_large_stack(module):
     # compile & remove .py file, we only need .pyc
     f = open(filename, 'r')
     py_compile.compile(filename)
+    f.close()
     os.unlink(filename)
 
     # need to be able to load from current dir
@@ -104,4 +105,3 @@ def test_module_with_large_stack(module):
     os.unlink(module + '.pyc')
 
 test_module_with_large_stack('longlist')
-
