@@ -12,16 +12,13 @@ IDLEfork-0.9xx.win32.exe
 	point your launcher icons at it.  Installation is as idlefork
 	to avoid conflict with the original Python IDLE.
 
-IDLEfork-0.9xx-1.noarch.rpm 
-	This is an rpm which is designed to install as idleforklib in the
-	/usr/lib/python2.2 tree created by the Python2 rpm.  It requires
-	python2 and python2-tkinter rpms.  It installs as idlefork to avoid
+IDLEfork-0.9xx-1.noarch.rpm
+ 	This is an rpm which is designed to install as idleforklib in an
+	existing /usr/lib/python2.2 tree.  It installs as idlefork to avoid
 	conflict with Python IDLE.
 
-	The Python2 rpm is designed to work with Redhat systems prior to Rev 8.
-	It is available at http://www.python.org/2.2.2/rpms.html and
-	http://www.python.org/2.2.1/rpms.html .  See the warning/explanation
-	on the latter web page, which discusses the reason for python2.
+	Python rpms are available at http://www.python.org/2.2.2/rpms.html and
+	http://www.python.org/2.2.1/rpms.html.
 
 IDLEfork-0.9xx.tar.gz
 	This is a distutils sdist (source) tarfile which can be used to make 
@@ -29,17 +26,22 @@ IDLEfork-0.9xx.tar.gz
 	** It remains configured to install as idlelib, not idleforklib. **
 
 	Unpack in ..../Tools/, cd to the IDLEfork directory created, and
-	<python setup.py install> to install in ....site-packages/idlelib.
+	"python setup.py install" to install in ....site-packages/idlelib.
 	This will overwrite the Python IDLE installation.  
 
         If you don't want to overwrite Python IDLE, it is also possible to
-	simply call <python idle.py> to run from the IDLEfork source directory
+	simply call "python idle.py" to run from the IDLEfork source directory
 	without making an installation.  In this case, IDLE will not be on
 	your PATH unless you are in the source directory.  Also, it is then
 	advisable to remove any Python IDLE installation by removing
 	..../site-packages/idlelib so the two identically named packages don't
 	conflict.
 
+	On Redhat Linux systems prior to 8.0, /usr/bin/python may be pointing
+	at python1.5.  If so, change the first line in the /usr/bin/idle 
+	script to read:
+	       !# /usr/bin/python2.2
+	       
 See README.txt for more details on this version of IDLEfork. 
 
 
