@@ -246,8 +246,8 @@ statement.
 
 \subsection{The Module Search Path}
 
-When a module named {\tt foo} is imported, the interpreter searches
-for a file named {\tt foo.py} in the list of directories specified by
+When a module named {\tt spam} is imported, the interpreter searches
+for a file named {\tt spam.py} in the list of directories specified by
 the environment variable {\tt PYTHONPATH}.  It has the same syntax as
 the {\UNIX} shell variable {\tt PATH}, i.e., a list of colon-separated
 directory names.  When {\tt PYTHONPATH} is not set, or when the file
@@ -263,17 +263,17 @@ See the section on Standard Modules later.
 \subsection{``Compiled'' Python files}
 
 As an important speed-up of the start-up time for short programs that
-use a lot of standard modules, if a file called {\tt foo.pyc} exists
-in the directory where {\tt foo.py} is found, this is assumed to
-contain an already-``compiled'' version of the module {\tt foo}.  The
-modification time of the version of {\tt foo.py} used to create {\tt
-foo.pyc} is recorded in {\tt foo.pyc}, and the file is ignored if
+use a lot of standard modules, if a file called {\tt spam.pyc} exists
+in the directory where {\tt spam.py} is found, this is assumed to
+contain an already-``compiled'' version of the module {\tt spam}.  The
+modification time of the version of {\tt spam.py} used to create {\tt
+spam.pyc} is recorded in {\tt spam.pyc}, and the file is ignored if
 these don't match.
 
-Whenever {\tt foo.py} is successfully compiled, an attempt is made to
-write the compiled version to {\tt foo.pyc}.  It is not an error if
+Whenever {\tt spam.py} is successfully compiled, an attempt is made to
+write the compiled version to {\tt spam.pyc}.  It is not an error if
 this attempt fails; if for any reason the file is not written
-completely, the resulting {\tt foo.pyc} file will be recognized as
+completely, the resulting {\tt spam.pyc} file will be recognized as
 invalid and thus ignored later.
 
 \subsection{Executable Python scripts}
@@ -496,8 +496,8 @@ Besides numbers, Python can also manipulate strings, enclosed in
 single quotes or double quotes:
 
 \bcode\begin{verbatim}
->>> 'foo bar'
-'foo bar'
+>>> 'spam eggs'
+'spam eggs'
 >>> 'doesn\'t'
 "doesn't"
 >>> "doesn't"
@@ -660,9 +660,9 @@ can be written as a list of comma-separated values (items) between
 square brackets.  List items need not all have the same type.
 
 \bcode\begin{verbatim}
->>> a = ['foo', 'bar', 100, 1234]
+>>> a = ['spam', 'eggs', 100, 1234]
 >>> a
-['foo', 'bar', 100, 1234]
+['spam', 'eggs', 100, 1234]
 >>> 
 \end{verbatim}\ecode
 %
@@ -671,17 +671,17 @@ concatenated and so on:
 
 \bcode\begin{verbatim}
 >>> a[0]
-'foo'
+'spam'
 >>> a[3]
 1234
 >>> a[-2]
 100
 >>> a[1:-1]
-['bar', 100]
->>> a[:2] + ['bletch', 2*2]
-['foo', 'bar', 'bletch', 4]
+['eggs', 100]
+>>> a[:2] + ['bacon', 2*2]
+['spam', 'eggs', 'bacon', 4]
 >>> 3*a[:3] + ['Boe!']
-['foo', 'bar', 100, 'foo', 'bar', 100, 'foo', 'bar', 100, 'Boe!']
+['spam', 'eggs', 100, 'spam', 'eggs', 100, 'spam', 'eggs', 100, 'Boe!']
 >>> 
 \end{verbatim}\ecode
 %
@@ -690,10 +690,10 @@ individual elements of a list:
 
 \bcode\begin{verbatim}
 >>> a
-['foo', 'bar', 100, 1234]
+['spam', 'eggs', 100, 1234]
 >>> a[2] = a[2] + 23
 >>> a
-['foo', 'bar', 123, 1234]
+['spam', 'eggs', 123, 1234]
 >>>
 \end{verbatim}\ecode
 %
@@ -1287,7 +1287,7 @@ unpacking}.  This is supported by enclosing the list of variables in
 square brackets:
 
 \bcode\begin{verbatim}
->>> a = ['foo', 'bar', 100, 1234]
+>>> a = ['spam', 'eggs', 100, 1234]
 >>> [a1, a2, a3, a4] = a
 >>>
 \end{verbatim}\ecode
@@ -1697,8 +1697,8 @@ The value of x is 31.4, and y is 40000...
 >>> print hellos
 'hello, world\012'
 >>> # The argument of reverse quotes may be a tuple:
-... `x, y, ('foo', 'bar')`
-"(31.4, 40000, ('foo', 'bar'))"
+... `x, y, ('spam', 'eggs')`
+"(31.4, 40000, ('spam', 'eggs'))"
 >>>
 \end{verbatim}\ecode
 %
@@ -1809,10 +1809,10 @@ however, and result in error messages as shown here:
 Traceback (innermost last):
   File "<stdin>", line 1
 ZeroDivisionError: integer division or modulo
->>> 4 + foo*3
+>>> 4 + spam*3
 Traceback (innermost last):
   File "<stdin>", line 1
-NameError: foo
+NameError: spam
 >>> '2' + 2
 Traceback (innermost last):
   File "<stdin>", line 1
@@ -1919,11 +1919,11 @@ argument's value, as follows:
 
 \bcode\begin{verbatim}
 >>> try:
-...     foo()
+...     spam()
 ... except NameError, x:
 ...     print 'name', x, 'undefined'
 ... 
-name foo undefined
+name spam undefined
 >>> 
 \end{verbatim}\ecode
 %
@@ -3009,8 +3009,8 @@ attribute with the given name (a string value).  The function
 name.  The function \verb\setattr(x, name, value)\ assigns a value to
 an object's attribute with the given name.  These three functions are
 useful if the attribute names are not known beforehand.  Note that
-\verb\getattr(x, 'foo')\ is equivalent to \verb\x.foo\, and
-\verb\setattr(x, 'foo', y)\ is equivalent to \verb\x.foo = y\.  By
+\verb\getattr(x, 'spam')\ is equivalent to \verb\x.spam\, and
+\verb\setattr(x, 'spam', y)\ is equivalent to \verb\x.spam = y\.  By
 definition, \verb\hasattr(x, name)\ returns true if and only if
 \verb\getattr(x, name)\ returns without raising an exception.
 
