@@ -239,7 +239,7 @@ int WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
 static void WEOObj_dealloc(WEOObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *WEOObj_WEGetObjectType(WEOObject *_self, PyObject *_args)
@@ -456,7 +456,7 @@ int wasteObj_Convert(PyObject *v, WEReference *p_itself)
 static void wasteObj_dealloc(wasteObject *self)
 {
 	WEDispose(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *wasteObj_WEGetText(wasteObject *_self, PyObject *_args)

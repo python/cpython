@@ -84,7 +84,7 @@ int DragObj_Convert(PyObject *v, DragRef *p_itself)
 static void DragObj_dealloc(DragObjObject *self)
 {
 	Py_XDECREF(self->sendproc);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *DragObj_DisposeDrag(DragObjObject *_self, PyObject *_args)

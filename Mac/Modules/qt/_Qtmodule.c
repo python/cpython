@@ -130,7 +130,7 @@ int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 static void MovieCtlObj_dealloc(MovieControllerObject *self)
 {
 	DisposeMovieController(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *MovieCtlObj_MCSetMovie(MovieControllerObject *_self, PyObject *_args)
@@ -1164,7 +1164,7 @@ int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 static void TimeBaseObj_dealloc(TimeBaseObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *TimeBaseObj_DisposeTimeBase(TimeBaseObject *_self, PyObject *_args)
@@ -1615,7 +1615,7 @@ int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 static void UserDataObj_dealloc(UserDataObject *self)
 {
 	DisposeUserData(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *UserDataObj_GetUserData(UserDataObject *_self, PyObject *_args)
@@ -1919,7 +1919,7 @@ int MediaObj_Convert(PyObject *v, Media *p_itself)
 static void MediaObj_dealloc(MediaObject *self)
 {
 	DisposeTrackMedia(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *MediaObj_LoadMediaIntoRam(MediaObject *_self, PyObject *_args)
@@ -3094,7 +3094,7 @@ int TrackObj_Convert(PyObject *v, Track *p_itself)
 static void TrackObj_dealloc(TrackObject *self)
 {
 	DisposeMovieTrack(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *TrackObj_LoadTrackIntoRam(TrackObject *_self, PyObject *_args)
@@ -4375,7 +4375,7 @@ int MovieObj_Convert(PyObject *v, Movie *p_itself)
 static void MovieObj_dealloc(MovieObject *self)
 {
 	DisposeMovie(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *MovieObj_MoviesTask(MovieObject *_self, PyObject *_args)

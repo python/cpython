@@ -179,7 +179,7 @@ int DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 static void DlgObj_dealloc(DialogObject *self)
 {
 	DisposeDialog(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *DlgObj_DrawDialog(DialogObject *_self, PyObject *_args)

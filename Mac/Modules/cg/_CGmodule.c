@@ -241,7 +241,7 @@ int CGContextRefObj_Convert(PyObject *v, CGContextRef *p_itself)
 static void CGContextRefObj_dealloc(CGContextRefObject *self)
 {
 	CGContextRelease(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *CGContextRefObj_CGContextSaveGState(CGContextRefObject *_self, PyObject *_args)

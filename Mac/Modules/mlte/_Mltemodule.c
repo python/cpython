@@ -125,7 +125,7 @@ int TXNObj_Convert(PyObject *v, TXNObject *p_itself)
 static void TXNObj_dealloc(TXNObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *TXNObj_TXNDeleteObject(TXNObjectObject *_self, PyObject *_args)
@@ -1366,7 +1366,7 @@ int TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
 static void TXNFontMenuObj_dealloc(TXNFontMenuObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *TXNFontMenuObj_TXNGetFontMenuHandle(TXNFontMenuObjectObject *_self, PyObject *_args)

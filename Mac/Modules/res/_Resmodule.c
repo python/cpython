@@ -98,7 +98,7 @@ static void ResObj_dealloc(ResourceObject *self)
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)

@@ -183,7 +183,7 @@ static void CtlObj_dealloc(ControlObject *self)
 {
 	Py_XDECREF(self->ob_callbackdict);
 	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)

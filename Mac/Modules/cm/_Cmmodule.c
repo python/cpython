@@ -102,7 +102,7 @@ int CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 static void CmpInstObj_dealloc(ComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *CmpInstObj_CloseComponent(ComponentInstanceObject *_self, PyObject *_args)
@@ -384,7 +384,7 @@ int CmpObj_Convert(PyObject *v, Component *p_itself)
 static void CmpObj_dealloc(ComponentObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *CmpObj_UnregisterComponent(ComponentObject *_self, PyObject *_args)
