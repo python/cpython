@@ -94,6 +94,7 @@ Py_Initialize(void)
 	PyThreadState *tstate;
 	PyObject *bimod, *sysmod;
 	char *p;
+	extern void _Py_ReadyTypes(void);
 
 	if (initialized)
 		return;
@@ -115,11 +116,7 @@ Py_Initialize(void)
 		Py_FatalError("Py_Initialize: can't make first thread");
 	(void) PyThreadState_Swap(tstate);
 
-	if (PyType_Ready(&PyType_Type) < 0)
-		Py_FatalError("Py_Initialize: can't initialize 'type'");
-
-	if (PyType_Ready(&PyList_Type) < 0)
-		Py_FatalError("Py_Initialize: can't initialize 'list'");
+	_Py_ReadyTypes();
 
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
@@ -155,6 +152,7 @@ Py_Initialize(void)
 
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
+	_PyImport_FixupExtension("exceptions", "exceptions");
 
 	initsigs(); /* Signal handling stuff, including initintr() */
 
@@ -1325,6 +1323,9 @@ initsigs(void)
 #ifdef HAVE_SIGNAL_H
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
+#endif
+#ifdef SIGXFZ
+	signal(SIGXFZ, SIG_IGN);
 #endif
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
