@@ -69,6 +69,9 @@ static int  orig_argc;
 static int keep_normal;
 static int keep_error = 1;
 
+static void Py_Main Py_PROTO((int, char **)); /* Forward */
+void PyMac_Exit Py_PROTO((int)); /* Forward */
+
 /* Initialize the Mac toolbox world */
 
 static void
@@ -301,7 +304,7 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 }
 /* Main program */
 
-int
+static void
 Py_Main(argc, argv)
 	int argc;
 	char **argv;
@@ -374,6 +377,7 @@ Py_Main(argc, argv)
 /*
 ** Terminate application
 */
+void
 PyMac_Exit(status)
 	int status;
 {
