@@ -906,6 +906,13 @@ the dictionary used as the function's global namespace (this is the
 same as \code{\var{m}.__dict__} where \var{m} is the module in which
 the function \var{f} was defined).
 
+Function objects also support getting and setting arbitrary
+attributes, which can be used to, e.g. attach metadata to functions.
+Regular attribute dot-notation is used to get and set such
+attributes. \emph{Note that the current implementation only supports
+function attributes on functions written in Python.  Function
+attributes on built-ins may be supported in the future.}
+
 
 \subsubsection{Methods \label{typesmethods}}
 \obindex{method}
@@ -922,6 +929,37 @@ implementing the method.  Calling \code{\var{m}(\var{arg-1},
 \var{arg-2}, \textrm{\ldots}, \var{arg-n})} is completely equivalent to
 calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
 \var{arg-2}, \textrm{\ldots}, \var{arg-n})}.
+
+Class instance methods are either \emph{bound} or \emph{unbound},
+referring to whether the method was accessed through an instance or a
+class, respectively.  When a method is unbound, its \code{im_self}
+attribute will be \code{None} and if called, an explicit \code{self}
+object must be passed as the first argument.  In this case,
+\code{self} must be an instance of the unbound method's class (or a
+subclass of that class), otherwise a \code{TypeError} is raised.
+
+Like function objects, methods objects support getting and setting
+arbitrary attributes.  However, the attributes are actually stored on
+the underlying function object (i.e. \code{meth.im_func}).  To avoid
+surprising behavior, a \code{TypeError} is raised when an attempt is
+made to set an attribute on a bound method.  It is legal to get a
+bound method's attribute (the underlying function's attribute is
+returned), and it is also legal to set or get an unbound method's
+attribute.  For example:
+
+\begin{verbatim}
+class C:
+    def method(self):
+        pass
+
+c = C()
+d = C()
+c.meth.whoami = 'my name is c'
+d.meth.whoami = 'my name is d'
+\end{verbatim}
+
+If bound method attribute setting was allowed, \code{c.meth.whoami}
+would return ``my name is d''.
 
 See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
 information.
