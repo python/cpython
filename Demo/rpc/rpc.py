@@ -163,8 +163,36 @@ def make_auth_unix_default():
 	except ImportError:
 		uid = gid = 0
 	import time
-	return make_auth_unix(int(time.time()), \
+	return make_auth_unix(int(time.time()-unix_epoch()), \
 		  socket.gethostname(), uid, gid, [])
+
+_unix_epoch = -1
+def unix_epoch():
+    """Very painful calculation of when the Unix Epoch is.
+
+    This is defined as the return value of time.time() on Jan 1st,
+    1970, 00:00:00 GMT.
+
+    On a Unix system, this should always return 0.0.  On a Mac, the
+    calculations are needed -- and hard because of integer overflow
+    and other limitations.
+
+    """
+    global _unix_epoch
+    if _unix_epoch >= 0: return _unix_epoch
+    import time
+    now = time.time()
+    localt = time.localtime(now)	# (y, m, d, hh, mm, ss, ..., ..., ...)
+    gmt = time.gmtime(now)
+    offset = time.mktime(localt) - time.mktime(gmt)
+    y, m, d, hh, mm, ss = 1970, 1, 1, 0, 0, 0
+    offset, ss = divmod(ss + offset, 60)
+    offset, mm = divmod(mm + offset, 60)
+    offset, hh = divmod(hh + offset, 24)
+    d = d + offset
+    _unix_epoch = time.mktime((y, m, d, hh, mm, ss, 0, 0, 0))
+    print "Unix epoch:", time.ctime(_unix_epoch)
+    return _unix_epoch
 
 
 # Common base class for clients
