@@ -37,6 +37,7 @@
 % This gives us all the Python-specific markup that we really want.
 % This should come last.  Do not change this.
 %
+\newif\if@usemoduleindex\@usemoduleindextrue
 \RequirePackage{python}
 
 
