@@ -14,8 +14,8 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.4.  No release date
-for Python 2.4 has been set; expect that this will happen mid-2004.
+This article explains the new features in Python 2.4.  The release
+date is expected to be around September 2004.
 
 While Python 2.3 was primarily a library development release, Python
 2.4 may extend the core language and interpreter in
@@ -91,12 +91,12 @@ XXX write this.
 %======================================================================
 \section{PEP 229: Generator Expressions}
 
-Generator expressions create in-line generators using a syntax similar
-to list comprehensions but with parenthesis instead of the surrounding
-brackets.
-
-Genexps allow simple generators to be constructed without a separate function
-definition.  Writing:
+Now, simple generators can be coded succinctly as expressions using a syntax
+like list comprehensions but with parentheses instead of brackets.  These
+expressions are designed for situations where the generator is used right
+away by an enclosing function.  Generator expressions are more compact but
+less versatile than full generator definitions and the tend to be more memory
+friendly than equivalent list comprehensions.
        
 \begin{verbatim}
        g = (tgtexp  for var1 in exp1  for var2 in exp2 if exp3)
@@ -121,11 +121,9 @@ a whole list is memory all at once.  Applications using memory
 friendly generator expressions may scale-up to high volumes of data
 more readily than with list comprehensions.
 
-Generator expressions are intended to be used inside functions
-such as \function{sum()}, \function{min()}, \function{set()}, and
-\function{dict()}.  These functions consume their data all at once
-and would not benefit from having a full list instead of a generator
-as an input:
+Generator expressions are best used in functions that consume their
+data all at once and would not benefit from having a full list instead
+of a generator as an input:
 
 \begin{verbatim}
 >>> sum(i*i for i in range(10))
@@ -149,20 +147,15 @@ as an input:
 
 \end{verbatim}     
 
-These examples show the intended use for generator expressions
-in situations where the values get consumed immediately after the
-generator is created.  In these situations, they operate like
-memory efficient versions of list comprehensions.
-
 For more complex uses of generators, it is strongly recommended that
 the traditional full generator definitions be used instead.  In a
 generator expression, the first for-loop expression is evaluated
 as soon as the expression is defined while the other expressions do
 not get evaluated until the generator is run.  This nuance is never
-an issue when the generator is used immediately.  If it is not used
-right away, then it is better to write a full generator definition
-which more clearly reveals when the expressions are evaluated and is
-more obvious about the visibility and lifetime of its looping variables.
+an issue when the generator is used immediately; however, if it is not
+used right away, a full generator definition would be much more clear
+about when the sub-expressions are evaluated and would be more obvious
+about the visibility and lifetime of the variables.
 
 \begin{seealso}
 \seepep{289}{Generator Expressions}{Proposed by Raymond Hettinger and
