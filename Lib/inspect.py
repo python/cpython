@@ -275,15 +275,23 @@ def getdoc(object):
     except UnicodeError:
         return None
     else:
-        margin = None
+        # Find minimum indentation of any non-blank lines after first line.
+        margin = sys.maxint
         for line in lines[1:]:
             content = len(string.lstrip(line))
-            if not content: continue
-            indent = len(line) - content
-            if margin is None: margin = indent
-            else: margin = min(margin, indent)
-        if margin is not None:
+            if content:
+                indent = len(line) - content
+                margin = min(margin, indent)
+        # Remove indentation.
+        if lines:
+            lines[0] = lines[0].lstrip()
+        if margin < sys.maxint:
             for i in range(1, len(lines)): lines[i] = lines[i][margin:]
+        # Remove any trailing or leading blank lines.
+        while lines and not lines[-1]:
+            lines.pop()
+        while lines and not lines[0]:
+            lines.pop(0)
         return string.join(lines, '\n')
 
 def getfile(object):
