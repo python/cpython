@@ -4869,8 +4869,8 @@ should be \NULL{}.  Otherwise, the \member{tp_as_buffer} will point to
 a \ctype{PyBufferProcs} structure.
 
 \strong{Note:} It is very important that your
-\ctype{PyTypeObject} structure uses \code{Py_TPFLAGS_DEFAULT} for the
-value of the \member{tp_flags} member rather than \code{0}.  This
+\ctype{PyTypeObject} structure uses \constant{Py_TPFLAGS_DEFAULT} for
+the value of the \member{tp_flags} member rather than \code{0}.  This
 tells the Python runtime that your \ctype{PyBufferProcs} structure
 contains the \member{bf_getcharbuffer} slot. Older versions of Python
 did not have this member, so a new Python interpreter using an old
@@ -4898,7 +4898,7 @@ objects such as \ctype{PyString_Type} and
 
 The last slot is \member{bf_getcharbuffer}, of type
 \ctype{getcharbufferproc}.  This slot will only be present if the
-\code{Py_TPFLAGS_HAVE_GETCHARBUFFER} flag is present in the
+\constant{Py_TPFLAGS_HAVE_GETCHARBUFFER} flag is present in the
 \member{tp_flags} field of the object's \ctype{PyTypeObject}.  Before using
 this slot, the caller should test whether it is present by using the
 \cfunction{PyType_HasFeature()}\ttindex{PyType_HasFeature()} function.
@@ -4960,6 +4960,88 @@ The function cannot fail.
 
 \begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
                             (PyObject *self, int segment, const char **ptrptr)}
+\end{ctypedesc}
+
+
+\section{Supporting Cyclic Garbarge Collection
+         \label{supporting-cycle-detection}}
+
+Python's support for detecting and collecting garbage which involves
+circular references requires support from object types which are
+``containers'' for other objects which may also be containers.  Types
+which do not store references to other objects, or which only store
+references to atomic types (such as numbers or strings), do not need
+to provide any explicit support for garbage collection.
+
+To create a container type, the \member{tp_flags} field of the type
+object must include the \constant{Py_TPFLAGS_GC} and provide an
+implementation of the \member{tp_traverse} handler.  The value of the
+\member{tp_basicsize} field must include \constant{PyGC_HEAD_SIZE} as
+well.  If instances of the type are mutable, a \member{tp_clear}
+implementation must also be provided.
+
+\begin{datadesc}{Py_TPFLAGS_GC}
+  Objects with a type with this flag set must conform with the rules
+  documented here.  For convenience these objects will be referred to
+  as container objects.
+\end{datadesc}
+
+\begin{datadesc}{PyGC_HEAD_SIZE}
+  Extra memory needed for the garbage collector.  Container objects
+  must include this in the calculation of their tp_basicsize.  If the
+  collector is disabled at compile time then this is \code{0}.
+\end{datadesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_Init}{PyObject *op}
+  Adds the object \var{op} to the set of container objects tracked by
+  the collector.  The collector can run at unexpected times so objects
+  must be valid while being tracked.  This should be called once all
+  the fields followed by the \member{tp_traverse} handler become valid,
+  usually near the end of the constructor.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_Fini}{PyObject *op}
+  Remove the object \var{op} from the set of container objects tracked
+  by the collector.  Note that \cfunction{PyObject_GC_Init()} can be
+  called again on this object to add it back to the set of tracked
+  objects.  The deallocator (\member{tp_dealloc} handler) should call
+  this for the object before any of the fields used by the
+  \member{tp_traverse} handler become invalid.
+\end{cfuncdesc}
+
+The \member{tp_traverse} handler accepts a function parameter of this
+type:
+
+\begin{ctypedesc}[visitproc]{int (*visitproc)(PyObject *object, void *arg)}
+  Type of the visitor function passed to the \member{tp_traverse}
+  handler.  The function should be called with an object to traverse
+  as \var{object} and the third parameter to the \member{tp_traverse}
+  handler as \var{arg}.
+\end{ctypedesc}
+
+The \member{tp_traverse} handler must have the following type:
+
+\begin{ctypedesc}[traverseproc]{int (*traverseproc)(PyObject *self,
+                                visitproc visit, void *arg)}
+  Traversal function for a container object.  Implementations must
+  call the \var{visit} function for each object directly contained by
+  \var{self}, with the parameters to \var{visit} being the contained
+  object and the \var{arg} value passed to the handler.  If
+  \var{visit} returns a non-zero value then an error has occurred and
+  that value should be returned immediately.
+\end{ctypedesc}
+
+The \member{tp_clear} handler must be of the \ctype{inquiry} type, or
+\NULL{} if the object is immutable.
+
+\begin{ctypedesc}[inquiry]{int (*inquiry)(PyObject *self)}
+  Drop references that may have created reference cycles.  Immutable
+  objects do not have to define this method since they can never
+  directly create reference cycles.  Note that the object must still
+  be valid after calling this method (i.e., don't just call
+  \cfunction{Py_DECREF()} on a reference).  The collector will call
+  this method if it detects that this object is involved in a
+  reference cycle.
 \end{ctypedesc}
 
 
