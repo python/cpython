@@ -54,11 +54,11 @@ PyTypeObject List_Type;
 
 typedef struct ListObject {
 	PyObject_HEAD
-	ListRef ob_itself;
+	ListHandle ob_itself;
 } ListObject;
 
 PyObject *ListObj_New(itself)
-	ListRef itself;
+	ListHandle itself;
 {
 	ListObject *it;
 	if (itself == NULL) {
@@ -72,7 +72,7 @@ PyObject *ListObj_New(itself)
 }
 ListObj_Convert(v, p_itself)
 	PyObject *v;
-	ListRef *p_itself;
+	ListHandle *p_itself;
 {
 	if (!ListObj_Check(v))
 	{
@@ -615,7 +615,7 @@ static PyObject *List_LNew(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	ListRef _rv;
+	ListHandle _rv;
 	Rect rView;
 	Rect dataBounds;
 	Point cSize;
@@ -652,7 +652,7 @@ static PyObject *List_LNew(_self, _args)
 
 static PyMethodDef List_methods[] = {
 	{"LNew", (PyCFunction)List_LNew, 1,
-	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListRef _rv)"},
+	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle _rv)"},
 	{NULL, NULL, 0}
 };
 

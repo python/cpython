@@ -72,6 +72,8 @@ class MyScanner(Scanner):
 			'InitCPort',
 			'CloseCPort',
 			'BitMapToRegionGlue',
+			'StdOpcode', 	# XXXX Missing from library...
+
 			]
 
 	def makeblacklisttypes(self):

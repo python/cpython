@@ -605,7 +605,7 @@ static PyObject *Res_ResError(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	OSErr _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = ResError();
@@ -1275,7 +1275,7 @@ static PyMethodDef Res_methods[] = {
 	{"CloseResFile", (PyCFunction)Res_CloseResFile, 1,
 	 "(short refNum) -> None"},
 	{"ResError", (PyCFunction)Res_ResError, 1,
-	 "() -> (short _rv)"},
+	 "() -> (OSErr _rv)"},
 	{"CurResFile", (PyCFunction)Res_CurResFile, 1,
 	 "() -> (short _rv)"},
 	{"CreateResFile", (PyCFunction)Res_CreateResFile, 1,

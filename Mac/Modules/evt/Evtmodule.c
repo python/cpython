@@ -48,6 +48,76 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 static PyObject *Evt_Error;
 
+static PyObject *Evt_GetMouse(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Point mouseLoc;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetMouse(&mouseLoc);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, mouseLoc);
+	return _res;
+}
+
+static PyObject *Evt_Button(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = Button();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_StillDown(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = StillDown();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_WaitMouseUp(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WaitMouseUp();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_TickCount(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = TickCount();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Evt_GetCaretTime(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -57,6 +127,35 @@ static PyObject *Evt_GetCaretTime(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetCaretTime();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_GetKeys(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	KeyMap theKeys__out__;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetKeys(theKeys__out__);
+	_res = Py_BuildValue("s#",
+	                     (char *)&theKeys__out__, (int)sizeof(KeyMap));
+ theKeys__error__: ;
+	return _res;
+}
+
+static PyObject *Evt_GetDblTime(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDblTime();
 	_res = Py_BuildValue("l",
 	                     _rv);
 	return _res;
@@ -74,20 +173,6 @@ static PyObject *Evt_SetEventMask(_self, _args)
 	SetEventMask(value);
 	Py_INCREF(Py_None);
 	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Evt_GetDblTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	UInt32 _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetDblTime();
-	_res = Py_BuildValue("l",
-	                     _rv);
 	return _res;
 }
 
@@ -149,91 +234,6 @@ static PyObject *Evt_EventAvail(_self, _args)
 	_res = Py_BuildValue("bO&",
 	                     _rv,
 	                     PyMac_BuildEventRecord, &theEvent);
-	return _res;
-}
-
-static PyObject *Evt_GetMouse(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Point mouseLoc;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	GetMouse(&mouseLoc);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildPoint, mouseLoc);
-	return _res;
-}
-
-static PyObject *Evt_Button(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = Button();
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Evt_StillDown(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = StillDown();
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Evt_WaitMouseUp(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = WaitMouseUp();
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Evt_GetKeys(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	KeyMap theKeys__out__;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	GetKeys(theKeys__out__);
-	_res = Py_BuildValue("s#",
-	                     (char *)&theKeys__out__, (int)sizeof(KeyMap));
- theKeys__error__: ;
-	return _res;
-}
-
-static PyObject *Evt_TickCount(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	UInt32 _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = TickCount();
-	_res = Py_BuildValue("l",
-	                     _rv);
 	return _res;
 }
 
@@ -361,18 +361,6 @@ static PyObject *Evt_SystemEvent(_self, _args)
 }
 
 static PyMethodDef Evt_methods[] = {
-	{"GetCaretTime", (PyCFunction)Evt_GetCaretTime, 1,
-	 "() -> (UInt32 _rv)"},
-	{"SetEventMask", (PyCFunction)Evt_SetEventMask, 1,
-	 "(EventMask value) -> None"},
-	{"GetDblTime", (PyCFunction)Evt_GetDblTime, 1,
-	 "() -> (UInt32 _rv)"},
-	{"GetNextEvent", (PyCFunction)Evt_GetNextEvent, 1,
-	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
-	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
-	 "(EventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
-	{"EventAvail", (PyCFunction)Evt_EventAvail, 1,
-	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"GetMouse", (PyCFunction)Evt_GetMouse, 1,
 	 "() -> (Point mouseLoc)"},
 	{"Button", (PyCFunction)Evt_Button, 1,
@@ -381,10 +369,22 @@ static PyMethodDef Evt_methods[] = {
 	 "() -> (Boolean _rv)"},
 	{"WaitMouseUp", (PyCFunction)Evt_WaitMouseUp, 1,
 	 "() -> (Boolean _rv)"},
-	{"GetKeys", (PyCFunction)Evt_GetKeys, 1,
-	 "() -> (KeyMap theKeys)"},
 	{"TickCount", (PyCFunction)Evt_TickCount, 1,
 	 "() -> (UInt32 _rv)"},
+	{"GetCaretTime", (PyCFunction)Evt_GetCaretTime, 1,
+	 "() -> (UInt32 _rv)"},
+	{"GetKeys", (PyCFunction)Evt_GetKeys, 1,
+	 "() -> (KeyMap theKeys)"},
+	{"GetDblTime", (PyCFunction)Evt_GetDblTime, 1,
+	 "() -> (UInt32 _rv)"},
+	{"SetEventMask", (PyCFunction)Evt_SetEventMask, 1,
+	 "(EventMask value) -> None"},
+	{"GetNextEvent", (PyCFunction)Evt_GetNextEvent, 1,
+	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
+	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
+	 "(EventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
+	{"EventAvail", (PyCFunction)Evt_EventAvail, 1,
+	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
 	 "(EventKind eventNum, UInt32 eventMsg) -> None"},
 	{"OSEventAvail", (PyCFunction)Evt_OSEventAvail, 1,

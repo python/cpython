@@ -6,7 +6,7 @@ from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 
 LONG = "Components"
-SHORT = "Cm"
+SHORT = "cm"
 
 def main():
 	input = "Components.h"
@@ -37,6 +37,9 @@ class MyScanner(Scanner):
 				classname = "Method"
 				listname = "ci_methods"
 		return classname, listname
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 
 	def makeblacklistnames(self):
 		return [

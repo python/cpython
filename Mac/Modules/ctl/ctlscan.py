@@ -28,17 +28,39 @@ class MyScanner(Scanner):
 				listname = "methods"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("from TextEdit import *\n")
+		self.defsfile.write("from QuickDraw import *\n")
+		self.defsfile.write("\n")
+
 	def makeblacklistnames(self):
 		return [
 			'DisposeControl', # Generated manually
 			'KillControls', # Implied by close of dialog
 			'SetCtlAction',
+			'kControlBevelButtonCenterPopupGlyphTag', # Constant with funny definition
+			'kControlProgressBarIndeterminateTag', # ditto
+			# The following are unavailable for static 68k (appearance manager)
+			'GetBevelButtonMenuValue',
+			'SetBevelButtonMenuValue',
+			'GetBevelButtonMenuHandle',
+			'SetBevelButtonTransform',
+			'SetBevelButtonGraphicAlignment',
+			'SetBevelButtonTextAlignment',
+			'SetBevelButtonTextPlacement',
+			'SetImageWellTransform',
+			'GetTabContentRect',
+			'SetTabEnabled',
+			'SetDisclosureTriangleLastValue',
 			]
 
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
 			'ControlActionUPP',
+			'ControlButtonContentInfoPtr',
+			'Ptr',
 			]
 
 	def makerepairinstructions(self):

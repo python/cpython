@@ -6,7 +6,7 @@ from scantools import Scanner
 from bgenlocations import TOOLBOXDIR
 
 LONG = "Fonts"
-SHORT = "Fm"
+SHORT = "fm"
 
 def main():
 	input = "Fonts.h"
@@ -29,6 +29,11 @@ class MyScanner(Scanner):
 	def makeblacklistnames(self):
 		return [
 			"OutlineMetrics",	# Too complicated
+			"AntiTextIsAntiAliased",	# XXXX Missing from library...
+			"AntiTextGetEnabled",
+			"AntiTextSetEnabled",
+			"AntiTextGetApplicationAware",
+			"AntiTextSetApplicationAware",
 			]
 
 	def makeblacklisttypes(self):

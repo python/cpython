@@ -38,6 +38,8 @@ WCTabHandle = OpaqueByValueType("WCTabHandle", "ResObj")
 AuxWinHandle = OpaqueByValueType("AuxWinHandle", "ResObj")
 PixPatHandle = OpaqueByValueType("PixPatHandle", "ResObj")
 
+WindowRegionCode = Type("WindowRegionCode", "h")
+
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 

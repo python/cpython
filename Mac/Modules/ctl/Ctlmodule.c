@@ -47,10 +47,36 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
+extern PyObject *QdRGB_New(RGBColorPtr);
+extern QdRGB_Convert(PyObject *, RGBColorPtr);
 
 #ifdef THINK_C
 #define  ControlActionUPP ProcPtr
 #endif
+
+/*
+** Parse/generate ControlFontStyleRec records
+*/
+#if 0 /* Not needed */
+PyObject *ControlFontStyle_New(itself)
+	ControlFontStyleRec *itself;
+{
+
+	return Py_BuildValue("hhhhhhO&O&", itself->flags, itself->font,
+		itself->size, itself->style, itself->mode, itself->just,
+		QdRGB_New, &itself->foreColor, QdRGB_New, &itself->backColor);
+}
+#endif
+
+ControlFontStyle_Convert(v, itself)
+	PyObject *v;
+	ControlFontStyleRec *itself;
+{
+	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
+		&itself->font, &itself->size, &itself->style, &itself->mode, 
+		&itself->just, QdRGB_Convert, &itself->foreColor, 
+		QdRGB_Convert, &itself->backColor);
+}
 
 static PyObject *Ctl_Error;
 
@@ -96,6 +122,22 @@ static void CtlObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CtlObj_HiliteControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlPartCode hiliteState;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &hiliteState))
+		return NULL;
+	HiliteControl(_self->ob_itself,
+	              hiliteState);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CtlObj_ShowControl(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -122,6 +164,85 @@ static PyObject *CtlObj_HideControl(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_IsControlActive(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsControlActive(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_IsControlVisible(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsControlVisible(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_ActivateControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = ActivateControl(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_DeactivateControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = DeactivateControl(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlVisibility(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Boolean inIsVisible;
+	Boolean inDoDraw;
+	if (!PyArg_ParseTuple(_args, "bb",
+	                      &inIsVisible,
+	                      &inDoDraw))
+		return NULL;
+	_err = SetControlVisibility(_self->ob_itself,
+	                            inIsVisible,
+	                            inDoDraw);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CtlObj_Draw1Control(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -135,17 +256,73 @@ static PyObject *CtlObj_Draw1Control(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_HiliteControl(_self, _args)
+static PyObject *CtlObj_GetBestControlRect(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	ControlPartCode hiliteState;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &hiliteState))
+	OSErr _err;
+	Rect outRect;
+	SInt16 outBaseLineOffset;
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	HiliteControl(_self->ob_itself,
-	              hiliteState);
+	_err = GetBestControlRect(_self->ob_itself,
+	                          &outRect,
+	                          &outBaseLineOffset);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&h",
+	                     PyMac_BuildRect, &outRect,
+	                     outBaseLineOffset);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlFontStyle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlFontStyleRec inStyle;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ControlFontStyle_Convert, &inStyle))
+		return NULL;
+	_err = SetControlFontStyle(_self->ob_itself,
+	                           &inStyle);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_DrawControlInCurrentPort(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	DrawControlInCurrentPort(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_SetUpControlBackground(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inDepth;
+	Boolean inIsColorDevice;
+	if (!PyArg_ParseTuple(_args, "hb",
+	                      &inDepth,
+	                      &inIsColorDevice))
+		return NULL;
+	_err = SetUpControlBackground(_self->ob_itself,
+	                              inDepth,
+	                              inIsColorDevice);
+	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -157,12 +334,12 @@ static PyObject *CtlObj_TrackControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
-	Point thePoint;
+	Point startPoint;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &thePoint))
+	                      PyMac_GetPoint, &startPoint))
 		return NULL;
 	_rv = TrackControl(_self->ob_itself,
-	                   thePoint,
+	                   startPoint,
 	                   (ControlActionUPP)0);
 	_res = Py_BuildValue("h",
 	                     _rv);
@@ -200,12 +377,35 @@ static PyObject *CtlObj_TestControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
-	Point thePoint;
+	Point testPoint;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &thePoint))
+	                      PyMac_GetPoint, &testPoint))
 		return NULL;
 	_rv = TestControl(_self->ob_itself,
-	                  thePoint);
+	                  testPoint);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_HandleControlKey(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	SInt16 inKeyCode;
+	SInt16 inCharCode;
+	SInt16 inModifiers;
+	if (!PyArg_ParseTuple(_args, "hhh",
+	                      &inKeyCode,
+	                      &inCharCode,
+	                      &inModifiers))
+		return NULL;
+	_rv = HandleControlKey(_self->ob_itself,
+	                       inKeyCode,
+	                       inCharCode,
+	                       inModifiers);
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
@@ -376,7 +576,7 @@ static PyObject *CtlObj_GetControlVariant(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	SInt16 _rv;
+	ControlVariant _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlVariant(_self->ob_itself);
@@ -462,6 +662,174 @@ static PyObject *CtlObj_SetControlColor(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_SendControlMessage(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	SInt16 inMessage;
+	SInt32 inParam;
+	if (!PyArg_ParseTuple(_args, "hl",
+	                      &inMessage,
+	                      &inParam))
+		return NULL;
+	_rv = SendControlMessage(_self->ob_itself,
+	                         inMessage,
+	                         inParam);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_EmbedControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlHandle inContainer;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CtlObj_Convert, &inContainer))
+		return NULL;
+	_err = EmbedControl(_self->ob_itself,
+	                    inContainer);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_AutoEmbedControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = AutoEmbedControl(_self->ob_itself,
+	                        inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetSuperControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlHandle outParent;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetSuperControl(_self->ob_itself,
+	                       &outParent);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outParent);
+	return _res;
+}
+
+static PyObject *CtlObj_CountSubControls(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 outNumChildren;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = CountSubControls(_self->ob_itself,
+	                        &outNumChildren);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outNumChildren);
+	return _res;
+}
+
+static PyObject *CtlObj_GetIndexedSubControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inIndex;
+	ControlHandle outSubControl;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &inIndex))
+		return NULL;
+	_err = GetIndexedSubControl(_self->ob_itself,
+	                            inIndex,
+	                            &outSubControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outSubControl);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlSupervisor(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlHandle inBoss;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CtlObj_Convert, &inBoss))
+		return NULL;
+	_err = SetControlSupervisor(_self->ob_itself,
+	                            inBoss);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControlFeatures(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	UInt32 outFeatures;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetControlFeatures(_self->ob_itself,
+	                          &outFeatures);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outFeatures);
+	return _res;
+}
+
+static PyObject *CtlObj_GetControlDataSize(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	Size outMaxSize;
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName))
+		return NULL;
+	_err = GetControlDataSize(_self->ob_itself,
+	                          inPart,
+	                          inTagName,
+	                          &outMaxSize);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outMaxSize);
+	return _res;
+}
+
 static PyObject *CtlObj_as_Resource(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -492,20 +860,40 @@ static PyObject *CtlObj_DisposeControl(_self, _args)
 }
 
 static PyMethodDef CtlObj_methods[] = {
+	{"HiliteControl", (PyCFunction)CtlObj_HiliteControl, 1,
+	 "(ControlPartCode hiliteState) -> None"},
 	{"ShowControl", (PyCFunction)CtlObj_ShowControl, 1,
 	 "() -> None"},
 	{"HideControl", (PyCFunction)CtlObj_HideControl, 1,
 	 "() -> None"},
+	{"IsControlActive", (PyCFunction)CtlObj_IsControlActive, 1,
+	 "() -> (Boolean _rv)"},
+	{"IsControlVisible", (PyCFunction)CtlObj_IsControlVisible, 1,
+	 "() -> (Boolean _rv)"},
+	{"ActivateControl", (PyCFunction)CtlObj_ActivateControl, 1,
+	 "() -> None"},
+	{"DeactivateControl", (PyCFunction)CtlObj_DeactivateControl, 1,
+	 "() -> None"},
+	{"SetControlVisibility", (PyCFunction)CtlObj_SetControlVisibility, 1,
+	 "(Boolean inIsVisible, Boolean inDoDraw) -> None"},
 	{"Draw1Control", (PyCFunction)CtlObj_Draw1Control, 1,
 	 "() -> None"},
-	{"HiliteControl", (PyCFunction)CtlObj_HiliteControl, 1,
-	 "(ControlPartCode hiliteState) -> None"},
+	{"GetBestControlRect", (PyCFunction)CtlObj_GetBestControlRect, 1,
+	 "() -> (Rect outRect, SInt16 outBaseLineOffset)"},
+	{"SetControlFontStyle", (PyCFunction)CtlObj_SetControlFontStyle, 1,
+	 "(ControlFontStyleRec inStyle) -> None"},
+	{"DrawControlInCurrentPort", (PyCFunction)CtlObj_DrawControlInCurrentPort, 1,
+	 "() -> None"},
+	{"SetUpControlBackground", (PyCFunction)CtlObj_SetUpControlBackground, 1,
+	 "(SInt16 inDepth, Boolean inIsColorDevice) -> None"},
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
-	 "(Point thePoint) -> (ControlPartCode _rv)"},
+	 "(Point startPoint) -> (ControlPartCode _rv)"},
 	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
 	 "(Point startPoint, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
-	 "(Point thePoint) -> (ControlPartCode _rv)"},
+	 "(Point testPoint) -> (ControlPartCode _rv)"},
+	{"HandleControlKey", (PyCFunction)CtlObj_HandleControlKey, 1,
+	 "(SInt16 inKeyCode, SInt16 inCharCode, SInt16 inModifiers) -> (SInt16 _rv)"},
 	{"MoveControl", (PyCFunction)CtlObj_MoveControl, 1,
 	 "(SInt16 h, SInt16 v) -> None"},
 	{"SizeControl", (PyCFunction)CtlObj_SizeControl, 1,
@@ -527,7 +915,7 @@ static PyMethodDef CtlObj_methods[] = {
 	{"SetControlMaximum", (PyCFunction)CtlObj_SetControlMaximum, 1,
 	 "(SInt16 newMaximum) -> None"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
-	 "() -> (SInt16 _rv)"},
+	 "() -> (ControlVariant _rv)"},
 	{"SetControlAction", (PyCFunction)CtlObj_SetControlAction, 1,
 	 "() -> None"},
 	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
@@ -538,6 +926,24 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (Boolean _rv, AuxCtlHandle acHndl)"},
 	{"SetControlColor", (PyCFunction)CtlObj_SetControlColor, 1,
 	 "(CCTabHandle newColorTable) -> None"},
+	{"SendControlMessage", (PyCFunction)CtlObj_SendControlMessage, 1,
+	 "(SInt16 inMessage, SInt32 inParam) -> (SInt32 _rv)"},
+	{"EmbedControl", (PyCFunction)CtlObj_EmbedControl, 1,
+	 "(ControlHandle inContainer) -> None"},
+	{"AutoEmbedControl", (PyCFunction)CtlObj_AutoEmbedControl, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"GetSuperControl", (PyCFunction)CtlObj_GetSuperControl, 1,
+	 "() -> (ControlHandle outParent)"},
+	{"CountSubControls", (PyCFunction)CtlObj_CountSubControls, 1,
+	 "() -> (SInt16 outNumChildren)"},
+	{"GetIndexedSubControl", (PyCFunction)CtlObj_GetIndexedSubControl, 1,
+	 "(SInt16 inIndex) -> (ControlHandle outSubControl)"},
+	{"SetControlSupervisor", (PyCFunction)CtlObj_SetControlSupervisor, 1,
+	 "(ControlHandle inBoss) -> None"},
+	{"GetControlFeatures", (PyCFunction)CtlObj_GetControlFeatures, 1,
+	 "() -> (UInt32 outFeatures)"},
+	{"GetControlDataSize", (PyCFunction)CtlObj_GetControlDataSize, 1,
+	 "(ControlPartCode inPart, ResType inTagName) -> (Size outMaxSize)"},
 	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
 	 "Return this Control as a Resource"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
@@ -578,35 +984,35 @@ static PyObject *Ctl_NewControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
-	WindowPtr theWindow;
+	WindowPtr owningWindow;
 	Rect boundsRect;
-	Str255 title;
-	Boolean visible;
-	SInt16 value;
-	SInt16 min;
-	SInt16 max;
+	Str255 controlTitle;
+	Boolean initiallyVisible;
+	SInt16 initialValue;
+	SInt16 minimumValue;
+	SInt16 maximumValue;
 	SInt16 procID;
-	SInt32 refCon;
+	SInt32 controlReference;
 	if (!PyArg_ParseTuple(_args, "O&O&O&bhhhhl",
-	                      WinObj_Convert, &theWindow,
+	                      WinObj_Convert, &owningWindow,
 	                      PyMac_GetRect, &boundsRect,
-	                      PyMac_GetStr255, title,
-	                      &visible,
-	                      &value,
-	                      &min,
-	                      &max,
+	                      PyMac_GetStr255, controlTitle,
+	                      &initiallyVisible,
+	                      &initialValue,
+	                      &minimumValue,
+	                      &maximumValue,
 	                      &procID,
-	                      &refCon))
+	                      &controlReference))
 		return NULL;
-	_rv = NewControl(theWindow,
+	_rv = NewControl(owningWindow,
 	                 &boundsRect,
-	                 title,
-	                 visible,
-	                 value,
-	                 min,
-	                 max,
+	                 controlTitle,
+	                 initiallyVisible,
+	                 initialValue,
+	                 minimumValue,
+	                 maximumValue,
 	                 procID,
-	                 refCon);
+	                 controlReference);
 	_res = Py_BuildValue("O&",
 	                     CtlObj_New, _rv);
 	return _res;
@@ -618,14 +1024,14 @@ static PyObject *Ctl_GetNewControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
-	SInt16 controlID;
-	WindowPtr owner;
+	SInt16 resourceID;
+	WindowPtr owningWindow;
 	if (!PyArg_ParseTuple(_args, "hO&",
-	                      &controlID,
-	                      WinObj_Convert, &owner))
+	                      &resourceID,
+	                      WinObj_Convert, &owningWindow))
 		return NULL;
-	_rv = GetNewControl(controlID,
-	                    owner);
+	_rv = GetNewControl(resourceID,
+	                    owningWindow);
 	_res = Py_BuildValue("O&",
 	                     CtlObj_New, _rv);
 	return _res;
@@ -670,14 +1076,14 @@ static PyObject *Ctl_FindControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
-	Point thePoint;
+	Point testPoint;
 	WindowPtr theWindow;
 	ControlHandle theControl;
 	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      PyMac_GetPoint, &thePoint,
+	                      PyMac_GetPoint, &testPoint,
 	                      WinObj_Convert, &theWindow))
 		return NULL;
-	_rv = FindControl(thePoint,
+	_rv = FindControl(testPoint,
 	                  theWindow,
 	                  &theControl);
 	_res = Py_BuildValue("hO&",
@@ -686,17 +1092,225 @@ static PyObject *Ctl_FindControl(_self, _args)
 	return _res;
 }
 
+static PyObject *Ctl_FindControlUnderMouse(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlHandle _rv;
+	Point inWhere;
+	WindowPtr inWindow;
+	SInt16 outPart;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &inWhere,
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_rv = FindControlUnderMouse(inWhere,
+	                            inWindow,
+	                            &outPart);
+	_res = Py_BuildValue("O&h",
+	                     CtlObj_New, _rv,
+	                     outPart);
+	return _res;
+}
+
+static PyObject *Ctl_IdleControls(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	IdleControls(inWindow);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Ctl_DumpControlHierarchy(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	FSSpec inDumpFile;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      WinObj_Convert, &inWindow,
+	                      PyMac_GetFSSpec, &inDumpFile))
+		return NULL;
+	_err = DumpControlHierarchy(inWindow,
+	                            &inDumpFile);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Ctl_CreateRootControl(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	ControlHandle outControl;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = CreateRootControl(inWindow,
+	                         &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outControl);
+	return _res;
+}
+
+static PyObject *Ctl_GetRootControl(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	ControlHandle outControl;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = GetRootControl(inWindow,
+	                      &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outControl);
+	return _res;
+}
+
+static PyObject *Ctl_GetKeyboardFocus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	ControlHandle outControl;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = GetKeyboardFocus(inWindow,
+	                        &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_WhichControl, outControl);
+	return _res;
+}
+
+static PyObject *Ctl_SetKeyboardFocus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	ControlHandle inControl;
+	ControlFocusPart inPart;
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      WinObj_Convert, &inWindow,
+	                      CtlObj_Convert, &inControl,
+	                      &inPart))
+		return NULL;
+	_err = SetKeyboardFocus(inWindow,
+	                        inControl,
+	                        inPart);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Ctl_AdvanceKeyboardFocus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = AdvanceKeyboardFocus(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Ctl_ReverseKeyboardFocus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = ReverseKeyboardFocus(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Ctl_ClearKeyboardFocus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = ClearKeyboardFocus(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Ctl_methods[] = {
 	{"NewControl", (PyCFunction)Ctl_NewControl, 1,
-	 "(WindowPtr theWindow, Rect boundsRect, Str255 title, Boolean visible, SInt16 value, SInt16 min, SInt16 max, SInt16 procID, SInt32 refCon) -> (ControlHandle _rv)"},
+	 "(WindowPtr owningWindow, Rect boundsRect, Str255 controlTitle, Boolean initiallyVisible, SInt16 initialValue, SInt16 minimumValue, SInt16 maximumValue, SInt16 procID, SInt32 controlReference) -> (ControlHandle _rv)"},
 	{"GetNewControl", (PyCFunction)Ctl_GetNewControl, 1,
-	 "(SInt16 controlID, WindowPtr owner) -> (ControlHandle _rv)"},
+	 "(SInt16 resourceID, WindowPtr owningWindow) -> (ControlHandle _rv)"},
 	{"DrawControls", (PyCFunction)Ctl_DrawControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"UpdateControls", (PyCFunction)Ctl_UpdateControls, 1,
 	 "(WindowPtr theWindow, RgnHandle updateRegion) -> None"},
 	{"FindControl", (PyCFunction)Ctl_FindControl, 1,
-	 "(Point thePoint, WindowPtr theWindow) -> (ControlPartCode _rv, ControlHandle theControl)"},
+	 "(Point testPoint, WindowPtr theWindow) -> (ControlPartCode _rv, ControlHandle theControl)"},
+	{"FindControlUnderMouse", (PyCFunction)Ctl_FindControlUnderMouse, 1,
+	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},
+	{"IdleControls", (PyCFunction)Ctl_IdleControls, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"DumpControlHierarchy", (PyCFunction)Ctl_DumpControlHierarchy, 1,
+	 "(WindowPtr inWindow, FSSpec inDumpFile) -> None"},
+	{"CreateRootControl", (PyCFunction)Ctl_CreateRootControl, 1,
+	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	{"GetRootControl", (PyCFunction)Ctl_GetRootControl, 1,
+	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	{"GetKeyboardFocus", (PyCFunction)Ctl_GetKeyboardFocus, 1,
+	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	{"SetKeyboardFocus", (PyCFunction)Ctl_SetKeyboardFocus, 1,
+	 "(WindowPtr inWindow, ControlHandle inControl, ControlFocusPart inPart) -> None"},
+	{"AdvanceKeyboardFocus", (PyCFunction)Ctl_AdvanceKeyboardFocus, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"ReverseKeyboardFocus", (PyCFunction)Ctl_ReverseKeyboardFocus, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"ClearKeyboardFocus", (PyCFunction)Ctl_ClearKeyboardFocus, 1,
+	 "(WindowPtr inWindow) -> None"},
 	{NULL, NULL, 0}
 };
 

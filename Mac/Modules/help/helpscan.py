@@ -33,6 +33,9 @@ class MyScanner(Scanner):
 				listname = "methods"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 	def makeblacklistnames(self):
 		return [
 			]

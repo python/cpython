@@ -6,7 +6,7 @@ from bgenlocations import TOOLBOXDIR
 from scantools import Scanner
 
 def main():
-	input = "Windows.h"
+	input = "MacWindows.h"
 	output = "wingen.py"
 	defsoutput = TOOLBOXDIR + "Windows.py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -27,6 +27,9 @@ class MyScanner(Scanner):
 				classname = "Method"
 				listname = "methods"
 		return classname, listname
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 
 	def makeblacklistnames(self):
 		return [

@@ -3586,6 +3586,38 @@ static PyObject *Qd_GetIndPattern(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_SlopeFromAngle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Fixed _rv;
+	short angle;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &angle))
+		return NULL;
+	_rv = SlopeFromAngle(angle);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildFixed, _rv);
+	return _res;
+}
+
+static PyObject *Qd_AngleFromSlope(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	Fixed slope;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &slope))
+		return NULL;
+	_rv = AngleFromSlope(slope);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Qd_TextFont(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -3606,7 +3638,7 @@ static PyObject *Qd_TextFace(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short face;
+	Style face;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &face))
 		return NULL;
@@ -3666,8 +3698,8 @@ static PyObject *Qd_DrawChar(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short ch;
-	if (!PyArg_ParseTuple(_args, "h",
+	CharParameter ch;
+	if (!PyArg_ParseTuple(_args, "c",
 	                      &ch))
 		return NULL;
 	DrawChar(ch);
@@ -3721,8 +3753,8 @@ static PyObject *Qd_CharWidth(_self, _args)
 {
 	PyObject *_res = NULL;
 	short _rv;
-	short ch;
-	if (!PyArg_ParseTuple(_args, "h",
+	CharParameter ch;
+	if (!PyArg_ParseTuple(_args, "c",
 	                      &ch))
 		return NULL;
 	_rv = CharWidth(ch);
@@ -4215,10 +4247,14 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> (short scrnHRes, short scrnVRes)"},
 	{"GetIndPattern", (PyCFunction)Qd_GetIndPattern, 1,
 	 "(short patternListID, short index) -> (Pattern thePat)"},
+	{"SlopeFromAngle", (PyCFunction)Qd_SlopeFromAngle, 1,
+	 "(short angle) -> (Fixed _rv)"},
+	{"AngleFromSlope", (PyCFunction)Qd_AngleFromSlope, 1,
+	 "(Fixed slope) -> (short _rv)"},
 	{"TextFont", (PyCFunction)Qd_TextFont, 1,
 	 "(short font) -> None"},
 	{"TextFace", (PyCFunction)Qd_TextFace, 1,
-	 "(short face) -> None"},
+	 "(Style face) -> None"},
 	{"TextMode", (PyCFunction)Qd_TextMode, 1,
 	 "(short mode) -> None"},
 	{"TextSize", (PyCFunction)Qd_TextSize, 1,
@@ -4226,13 +4262,13 @@ static PyMethodDef Qd_methods[] = {
 	{"SpaceExtra", (PyCFunction)Qd_SpaceExtra, 1,
 	 "(Fixed extra) -> None"},
 	{"DrawChar", (PyCFunction)Qd_DrawChar, 1,
-	 "(short ch) -> None"},
+	 "(CharParameter ch) -> None"},
 	{"DrawString", (PyCFunction)Qd_DrawString, 1,
 	 "(Str255 s) -> None"},
 	{"DrawText", (PyCFunction)Qd_DrawText, 1,
 	 "(Buffer textBuf, short firstByte, short byteCount) -> None"},
 	{"CharWidth", (PyCFunction)Qd_CharWidth, 1,
-	 "(short ch) -> (short _rv)"},
+	 "(CharParameter ch) -> (short _rv)"},
 	{"StringWidth", (PyCFunction)Qd_StringWidth, 1,
 	 "(Str255 s) -> (short _rv)"},
 	{"TextWidth", (PyCFunction)Qd_TextWidth, 1,
