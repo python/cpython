@@ -128,6 +128,13 @@ class TemporaryFileWrapper:
     In particular, it seeks to automatically remove the file when it is
     no longer needed.
     """
+
+    # Cache the unlinker so we don't get spurious errors at shutdown
+    # when the module-level "os" in None'd out.  Note that this must
+    # be referenced as self.unlink, because the name TemporaryFileWrapper
+    # may also get None'd out before __del__ is called.
+    unlink = os.unlink
+
     def __init__(self, file, path):
         self.file = file
         self.path = path
@@ -137,7 +144,7 @@ class TemporaryFileWrapper:
         if not self.close_called:
             self.close_called = 1
             self.file.close()
-            os.unlink(self.path)
+            self.unlink(self.path)
 
     def __del__(self):
         self.close()
