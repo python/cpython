@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include <ctype.h>
 
 /* Shorthands to return certain errors */
 
@@ -413,13 +414,16 @@ PyNumber_Add(v, w)
 	if (m && m->sq_concat)
 		return (*m->sq_concat)(v, w);
 	else if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_add)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_add) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	return type_error("bad operand type(s) for +");
 }
@@ -430,13 +434,16 @@ PyNumber_Subtract(v, w)
 {
 	BINOP(v, w, "__sub__", "__rsub__", PyNumber_Subtract);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_subtract)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_subtract) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	return type_error("bad operand type(s) for -");
 }
@@ -459,7 +466,8 @@ PyNumber_Multiply(v, w)
 		tp = v->ob_type;
 	}
 	if (tp->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyInstance_Check(v)) {
 			/* Instances of user-defined classes get their
 			   other argument uncoerced, so they may
@@ -470,10 +478,12 @@ PyNumber_Multiply(v, w)
 		}
 		else if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_multiply)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_multiply) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	m = tp->tp_as_sequence;
 	if (m && m->sq_repeat) {
@@ -491,13 +501,16 @@ PyNumber_Divide(v, w)
 {
 	BINOP(v, w, "__div__", "__rdiv__", PyNumber_Divide);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_divide)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_divide) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	return type_error("bad operand type(s) for /");
 }
@@ -506,18 +519,20 @@ PyObject *
 PyNumber_Remainder(v, w)
 	PyObject *v, *w;
 {
-	if (PyString_Check(v)) {
+	if (PyString_Check(v))
 		return PyString_Format(v, w);
-	}
 	BINOP(v, w, "__mod__", "__rmod__", PyNumber_Remainder);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_remainder)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_remainder) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	return type_error("bad operand type(s) for %");
 }
@@ -526,17 +541,18 @@ PyObject *
 PyNumber_Divmod(v, w)
 	PyObject *v, *w;
 {
-	PyObject *res;
-
 	BINOP(v, w, "__divmod__", "__rdivmod__", PyNumber_Divmod);
 	if (v->ob_type->tp_as_number != NULL) {
-		PyObject *x;
+		PyObject *x = NULL;
+		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		x = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
+		if ((f = v->ob_type->tp_as_number->nb_divmod) != NULL)
+			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		return x;
+		if (f != NULL)
+			return x;
 	}
 	return type_error("bad operand type(s) for divmod()");
 }
@@ -548,12 +564,12 @@ do_pow(v, w)
 	PyObject *v, *w;
 {
 	PyObject *res;
-	if (PyInstance_Check(v) || PyInstance_Check(w))
-		return PyInstance_DoBinOp(v, w, "__pow__", "__rpow__", do_pow);
+	PyObject * (*f) Py_FPROTO((PyObject *, PyObject *, PyObject *));
+	BINOP(v, w, "__pow__", "__rpow__", do_pow);
 	if (v->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
 		PyErr_SetString(PyExc_TypeError,
-				"pow() requires numeric arguments");
+				"pow(x, y) requires numeric arguments");
 		return NULL;
 	}
 	if (
@@ -568,7 +584,10 @@ do_pow(v, w)
 	}
 	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
-	res = (*v->ob_type->tp_as_number->nb_power)(v, w, Py_None);
+	if ((f = v->ob_type->tp_as_number->nb_power) != NULL)
+		res = (*f)(v, w, Py_None);
+	else
+		res = type_error("pow(x, y) not defined for these operands");
 	Py_DECREF(v);
 	Py_DECREF(w);
 	return res;
@@ -580,6 +599,7 @@ PyNumber_Power(v, w, z)
 {
 	PyObject *res;
 	PyObject *v1, *z1, *w2, *z2;
+	PyObject * (*f) Py_FPROTO((PyObject *, PyObject *, PyObject *));
 
 	if (z == Py_None)
 		return do_pow(v, w);
@@ -589,7 +609,7 @@ PyNumber_Power(v, w, z)
 	if (v->ob_type->tp_as_number == NULL ||
 	    z->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
-		return type_error("pow() requires numeric arguments");
+		return type_error("pow(x, y, z) requires numeric arguments");
 	}
 	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
@@ -602,7 +622,11 @@ PyNumber_Power(v, w, z)
 	z2 = z1;
  	if (PyNumber_Coerce(&w2, &z2) != 0)
 		goto error1;
-	res = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
+	if ((f = v1->ob_type->tp_as_number->nb_power) != NULL)
+		res = (*f)(v1, w2, z2);
+	else
+		res = type_error(
+			"pow(x, y, z) not defined for these operands");
 	Py_DECREF(w2);
 	Py_DECREF(z2);
   error1:
@@ -1313,8 +1337,9 @@ PyObject_CallObject(o, a)
 
 	r = PyEval_CallObject(o, args);
 
-	if (args != a)
+	if (args != a) {
 		Py_DECREF(args);
+	}
 
 	return r;
 }
