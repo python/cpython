@@ -12,6 +12,26 @@ What's New in Python 2.4 alpha 2?
 Core and builtins
 -----------------
 
+- When importing a module M raises an exception, Python no longer leaves M
+  in sys.modules.  Before 2.4a2 it did, and a subsequent import of M would
+  succeed, picking up a module object from sys.modules reflecting as much
+  of the initialization of M as completed before the exception was raised.
+  Subsequent imports got no indication that M was in a partially-
+  initialized state, and the importers could get into arbitrarily bad
+  trouble as a result (the M they got was in an unintended state,
+  arbitrarily far removed from M's author's intent).  Now subsequent
+  imports of M will continue raising exceptions (but if, for example, the
+  source code for M is edited between import attempts, then perhaps later
+  attempts will succeed, or raise a different exception).
+
+  This can break existing code, but in such cases the code was probably
+  working before by accident.  In the Python source, the only case of
+  breakage discovered was in a test accidentally relying on a damaged
+  module remaining in sys.modules.  Cases are also known where tests
+  deliberately provoking import errors remove damaged modules from
+  sys.modules themselves, and such tests will break now if they do an
+  unconditional del sys.modules[M].
+
 - u'%s' % obj will now try obj.__unicode__() first and fallback to
   obj.__str__() if no __unicode__ method can be found.
 
@@ -141,7 +161,7 @@ Library
   - Add expansion of default values in help text: the string
     "%default" in an option's help string is expanded to str() of
     that option's default value, or "none" if no default value.
-    
+
   - Bug #955889: option default values that happen to be strings are
     now processed in the same way as values from the command line; this
     allows generation of nicer help when using custom types.  Can
@@ -176,6 +196,18 @@ Build
 
 C API
 -----
+
+- PyImport_ExecCodeModule() and PyImport_ExecCodeModuleEx():  if an
+  error occurs while loading the module, these now delete the module's
+  entry from sys.modules.  All ways of loading modules eventually call
+  one of these, so this is an error-case change in semantics for all
+  ways of loading modules.  In rare cases, a module loader may wish
+  to keep a module object in sys.modules despite that the module's
+  code cannot be executed.  In such cases, the module loader must
+  arrange to reinsert the name and module object in sys.modules.
+  PyImport_ReloadModule() has been changed to reinsert the original
+  module object into sys.modules if the module reload fails, so that
+  its visible semantics have not changed.
 
 - A large pile of datetime field-extraction macros is now documented,
   thanks to Anthony Tuininga (patch #986010).
