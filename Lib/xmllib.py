@@ -181,37 +181,46 @@ class XMLParser:
             res = amp.search(data, i)
             if res is None:
                 return data
-            res = ref.match(data, res.start(0))
+            s = res.start(0)
+            res = ref.match(data, s)
             if res is None:
                 self.syntax_error("bogus `&'")
-                i =i+1
+                i = s+1
                 continue
             i = res.end(0)
-            if data[i - 1] != ';':
-                self.syntax_error("`;' missing after entity/char reference")
-                i = i-1
             str = res.group(1)
-            pre = data[:res.start(0)]
-            post = data[i:]
+            rescan = 0
             if str[0] == '#':
                 if str[1] == 'x':
                     str = chr(string.atoi(str[2:], 16))
                 else:
                     str = chr(string.atoi(str[1:]))
-                data = pre + str + post
-                i = res.start(0)+len(str)
+                if data[i - 1] != ';':
+                    self.syntax_error("`;' missing after char reference")
+                    i = i-1
             elif all:
                 if self.entitydefs.has_key(str):
-                    data = pre + self.entitydefs[str] + post
-                    i = res.start(0)    # rescan substituted text
+                    str = self.entitydefs[str]
+                    rescan = 1
+                elif data[i - 1] != ';':
+                    self.syntax_error("bogus `&'")
+                    i = s + 1 # just past the &
+                    continue
                 else:
                     self.syntax_error("reference to unknown entity `&%s;'" % str)
-                    # can't do it, so keep the entity ref in
-                    data = pre + '&' + str + ';' + post
-                    i = res.start(0) + len(str) + 2
+                    str = '&' + str + ';'
+            elif data[i - 1] != ';':
+                self.syntax_error("bogus `&'")
+                i = s + 1 # just past the &
+                continue
+
+            # when we get here, str contains the translated text and i points
+            # to the end of the string that is to be replaced
+            data = data[:s] + str + data[i:]
+            if rescan:
+                i = s
             else:
-                # just translating character references
-                pass                    # i is already postioned correctly
+                i = s + len(str)
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
