@@ -50,17 +50,18 @@ which case it must be possible to call the constructor without
 any parameters).  Instances of the following classes will be in
 front of the \var{handler}s, unless the \var{handler}s contain
 them, instances of them or subclasses of them:
-
-\code{ProxyHandler, UnknownHandler, HTTPHandler, HTTPDefaultErrorHandler, 
-      HTTPRedirectHandler, FTPHandler, FileHandler}
+\class{ProxyHandler}, \class{UnknownHandler}, \class{HTTPHandler},
+\class{HTTPDefaultErrorHandler}, \class{HTTPRedirectHandler},
+\class{FTPHandler}, \class{FileHandler}
 
 If the Python installation has SSL support (\function{socket.ssl()}
 exists), \class{HTTPSHandler} will also be added.
 
-Beginning in Python 2.3, a \class{BaseHandler} subclass may also change its
-\var{handler_order} member variable to modify its position in the handlers
-list. Besides \class{ProxyHandler}, which has \var{handler_order} of
-\code{100}, all handlers currently have it set to \code{500}.
+Beginning in Python 2.3, a \class{BaseHandler} subclass may also
+change its \member{handler_order} member variable to modify its
+position in the handlers list. Besides \class{ProxyHandler}, which has
+\member{handler_order} of \code{100}, all handlers currently have it
+set to \code{500}.
 \end{funcdesc}
 
 
@@ -416,20 +417,21 @@ for \method{http_error_default()}.
                                                   fp, code, msg, hdrs}
 Return a \class{Request} or \code{None} in response to a redirect.
 This is called by the default implementations of the
-\code{http_error_30x()} methods when a redirection is received from
-the server.  If a redirection should take place, return a new
-\class{Request} to allow \code{http_error_30x()} to perform the
+\method{http_error_30*()} methods when a redirection is received
+from the server.  If a redirection should take place, return a new
+\class{Request} to allow \method{http_error_30*()} to perform the
 redirect.  Otherwise, raise \exception{HTTPError} if no other
 \class{Handler} should try to handle this URL, or return \code{None}
 if you can't but another \class{Handler} might.
 
-\note{The default implementation of this method does not strictly
- follow \rfc{2616}, which says that 301 and 302 responses to POST
+\begin{notice}
+ The default implementation of this method does not strictly
+ follow \rfc{2616}, which says that 301 and 302 responses to \code{POST}
  requests must not be automatically redirected without confirmation by
  the user.  In reality, browsers do allow automatic redirection of
- these responses, changing the POST to a GET, and the default
- implementation reproduces this behaviour.}
-
+ these responses, changing the POST to a \code{GET}, and the default
+ implementation reproduces this behavior.
+\end{notice}
 \end{methoddesc}
 
 
