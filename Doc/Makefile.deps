@@ -152,6 +152,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libpdb.tex \
 	lib/libprofile.tex \
 	lib/libcgi.tex \
+	lib/libcgitb.tex \
 	lib/liburllib.tex \
 	lib/liburllib2.tex \
 	lib/libhttplib.tex \
