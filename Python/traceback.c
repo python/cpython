@@ -144,16 +144,16 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 {
 	int err = 0;
 	FILE *xfp;
-	char linebuf[1000];
+	char linebuf[2000];
 	int i;
 	if (filename == NULL || name == NULL)
 		return -1;
 #ifdef MPW
 	/* This is needed by MPW's File and Line commands */
-#define FMT "  File \"%.900s\"; line %d # in %s\n"
+#define FMT "  File \"%.500s\"; line %d # in %.500s\n"
 #else
 	/* This is needed by Emacs' compile command */
-#define FMT "  File \"%.900s\", line %d, in %s\n"
+#define FMT "  File \"%.500s\", line %d, in %.500s\n"
 #endif
 	xfp = fopen(filename, "r");
 	if (xfp == NULL) {
