@@ -903,7 +903,7 @@ _pystat_fromstructstat(STRUCT_STAT st)
 #define ISSLASHW(c) ((c) == L'\\' || (c) == L'/')
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(a[0]))
 
-static BOOL 
+static BOOL
 IsUNCRootA(char *path, int pathlen)
 {
 	#define ISSLASH ISSLASHA
@@ -927,7 +927,7 @@ IsUNCRootA(char *path, int pathlen)
 }
 
 #ifdef Py_WIN_WIDE_FILENAMES
-static BOOL 
+static BOOL
 IsUNCRootW(Py_UNICODE *path, int pathlen)
 {
 	#define ISSLASH ISSLASHW
@@ -994,7 +994,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 			if (pathlen > 0) {
 				if (ISSLASHW(wpath[pathlen-1])) {
 	    				/* It does end with a slash -- exempt the root drive cases. */
-					if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':') || 
+					if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':') ||
 						IsUNCRootW(wpath, pathlen))
 	    					/* leave it alone */;
 					else {
@@ -1002,7 +1002,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 						wpath[pathlen-1] = L'\0';
 					}
 				}
-				else if (ISSLASHW(wpath[1]) && pathlen < ARRAYSIZE(wpath)-1 && 
+				else if (ISSLASHW(wpath[1]) && pathlen < ARRAYSIZE(wpath)-1 &&
 					IsUNCRootW(wpath, pathlen)) {
 					/* UNC root w/o trailing slash: add one when there's room */
 					wpath[pathlen++] = L'\\';
@@ -1044,7 +1044,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 	if (pathlen > 0) {
 		if (ISSLASHA(path[pathlen-1])) {
 			/* It does end with a slash -- exempt the root drive cases. */
-			if (pathlen == 1 || (pathlen == 3 && path[1] == ':') || 
+			if (pathlen == 1 || (pathlen == 3 && path[1] == ':') ||
 				IsUNCRootA(path, pathlen))
 	    			/* leave it alone */;
 			else {
@@ -1054,7 +1054,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 				path = pathcopy;
 			}
 		}
-		else if (ISSLASHA(path[1]) && pathlen < ARRAYSIZE(pathcopy)-1 && 
+		else if (ISSLASHA(path[1]) && pathlen < ARRAYSIZE(pathcopy)-1 &&
 			IsUNCRootA(path, pathlen)) {
 			/* UNC root w/o trailing slash: add one when there's room */
 			strncpy(pathcopy, path, pathlen);
@@ -2079,8 +2079,8 @@ posix_utime(PyObject *self, PyObject *args)
 		Py_BEGIN_ALLOW_THREADS
 #ifdef Py_WIN_WIDE_FILENAMES
 		if (have_unicode_filename)
-			/* utime is OK with utimbuf, but _wutime insists 
-			   on _utimbuf (the msvc headers assert the 
+			/* utime is OK with utimbuf, but _wutime insists
+			   on _utimbuf (the msvc headers assert the
 			   underscore version is ansi) */
 			res = _wutime(wpath, (struct _utimbuf *)UTIME_ARG);
 		else
@@ -7236,57 +7236,64 @@ typedef BOOL (WINAPI *CRYPTGENRANDOM)(HCRYPTPROV hProv, DWORD dwLen,\
 static CRYPTGENRANDOM pCryptGenRandom = NULL;
 static HCRYPTPROV hCryptProv = 0;
 
-static PyObject* win32_urandom(PyObject *self, PyObject *args)
+static PyObject*
+win32_urandom(PyObject *self, PyObject *args)
 {
-    int howMany = 0;
-    unsigned char* bytes = NULL;
-    PyObject* returnVal = NULL;
+	int howMany = 0;
+	unsigned char* bytes = NULL;
+	PyObject* returnVal = NULL;
 
-    /* Read arguments */
-    if (!PyArg_ParseTuple(args, "i", &howMany))
-        return(NULL);
+	/* Read arguments */
+	if (! PyArg_ParseTuple(args, "i", &howMany))
+		return NULL;
 
-    if (hCryptProv == 0) {
-        HINSTANCE hAdvAPI32 = NULL;
-        CRYPTACQUIRECONTEXTA pCryptAcquireContext = NULL;
+	if (hCryptProv == 0) {
+		HINSTANCE hAdvAPI32 = NULL;
+		CRYPTACQUIRECONTEXTA pCryptAcquireContext = NULL;
 
-        /* Obtain handle to the DLL containing CryptoAPI
-           This should not fail	*/
-        if( (hAdvAPI32 = GetModuleHandle("advapi32.dll")) == NULL)
-            return win32_error("GetModuleHandle", NULL);
+		/* Obtain handle to the DLL containing CryptoAPI
+		   This should not fail	*/
+		hAdvAPI32 = GetModuleHandle("advapi32.dll");
+		if(hAdvAPI32 == NULL)
+			return win32_error("GetModuleHandle", NULL);
 
-        /* Obtain pointers to the CryptoAPI functions
-           This will fail on some early versions of Win95 */
-        pCryptAcquireContext=(CRYPTACQUIRECONTEXTA)GetProcAddress(hAdvAPI32,\
-                             "CryptAcquireContextA");
-        pCryptGenRandom=(CRYPTGENRANDOM)GetProcAddress(hAdvAPI32,\
-                        "CryptGenRandom");
+		/* Obtain pointers to the CryptoAPI functions
+		   This will fail on some early versions of Win95 */
+		pCryptAcquireContext = (CRYPTACQUIRECONTEXTA)GetProcAddress(
+						hAdvAPI32,
+						"CryptAcquireContextA");
+		if (pCryptAcquireContext == NULL)
+			return PyErr_Format(PyExc_NotImplementedError,
+					    "CryptAcquireContextA not found");
 
-        if (pCryptAcquireContext == NULL || pCryptGenRandom == NULL)
-            return PyErr_Format(PyExc_NotImplementedError,\
-                                "CryptGenRandom not found");  
+		pCryptGenRandom = (CRYPTGENRANDOM)GetProcAddress(
+						hAdvAPI32, "CryptGenRandom");
+		if (pCryptAcquireContext == NULL)
+			return PyErr_Format(PyExc_NotImplementedError,
+					    "CryptGenRandom not found");
 
-	    /* Acquire context */
-        if(!pCryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL,
-                                 CRYPT_VERIFYCONTEXT))
-            return win32_error("CryptAcquireContext", NULL);
-    }
+		/* Acquire context */
+		if (! pCryptAcquireContext(&hCryptProv, NULL, NULL,
+					   PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+			return win32_error("CryptAcquireContext", NULL);
+	}
 
-    /* Allocate bytes */
-    if ((bytes = (unsigned char*)PyMem_Malloc(howMany)) == NULL)
-        return PyErr_NoMemory();
+	/* Allocate bytes */
+	bytes = (unsigned char*)PyMem_Malloc(howMany);
+	if (bytes == NULL)
+		return PyErr_NoMemory();
 
-    /* Get random data */
-    if (!pCryptGenRandom(hCryptProv, howMany, bytes)) {
-        PyMem_Free(bytes);
-        return win32_error("CryptGenRandom", NULL);
-    }
+	/* Get random data */
+	if (! pCryptGenRandom(hCryptProv, howMany, bytes)) {
+		PyMem_Free(bytes);
+		return win32_error("CryptGenRandom", NULL);
+	}
 
-    /* Build return value */
-    returnVal = PyString_FromStringAndSize(bytes, howMany);
-    PyMem_Free(bytes);
+	/* Build return value */
+	returnVal = PyString_FromStringAndSize(bytes, howMany);
+	PyMem_Free(bytes);
 
-    return returnVal;
+	return returnVal;
 }
 #endif
 
