@@ -84,6 +84,8 @@ ControlFontStyle_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
+static ControlUserPaneDrawUPP mydrawproc_upp;
+static ControlUserPaneIdleUPP myidleproc_upp;
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
@@ -99,6 +101,7 @@ PyTypeObject Control_Type;
 typedef struct ControlObject {
 	PyObject_HEAD
 	ControlHandle ob_itself;
+	PyObject *ob_callbackdict;
 } ControlObject;
 
 PyObject *CtlObj_New(itself)
@@ -110,6 +113,7 @@ PyObject *CtlObj_New(itself)
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	SetControlReference(itself, (long)it);
+	it->ob_callbackdict = NULL;
 	return (PyObject *)it;
 }
 CtlObj_Convert(v, p_itself)
@@ -128,6 +132,7 @@ CtlObj_Convert(v, p_itself)
 static void CtlObj_dealloc(self)
 	ControlObject *self;
 {
+	Py_XDECREF(self->ob_callbackdict);
 	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
 }
@@ -722,19 +727,18 @@ static PyObject *CtlObj_RemoveControlProperty(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _err;
+	OSStatus _rv;
 	OSType propertyCreator;
 	OSType propertyTag;
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &propertyCreator,
 	                      PyMac_GetOSType, &propertyTag))
 		return NULL;
-	_err = RemoveControlProperty(_self->ob_itself,
-	                             propertyCreator,
-	                             propertyTag);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_rv = RemoveControlProperty(_self->ob_itself,
+	                            propertyCreator,
+	                            propertyTag);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -743,19 +747,18 @@ static PyObject *CtlObj_GetControlRegion(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	OSStatus _err;
+	OSStatus _rv;
 	ControlPartCode inPart;
 	RgnHandle outRegion;
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &inPart,
 	                      ResObj_Convert, &outRegion))
 		return NULL;
-	_err = GetControlRegion(_self->ob_itself,
-	                        inPart,
-	                        outRegion);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_rv = GetControlRegion(_self->ob_itself,
+	                       inPart,
+	                       outRegion);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -1255,6 +1258,39 @@ static PyObject *CtlObj_GetControlDataHandle(_self, _args)
 
 }
 
+static PyObject *CtlObj_SetControlDataCallback(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	PyObject *callback;
+	UniversalProcPtr *c_callback;
+
+	if (!PyArg_ParseTuple(_args, "hO&O",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName,
+	                      &callback))
+		return NULL;
+
+	if ( setcallback(_self, inTagName, callback, &c_callback) < 0 )
+		return NULL;
+	_err = SetControlData(_self->ob_itself,
+		              inPart,
+		              inTagName,
+		              sizeof(c_callback),
+	                      (Ptr)&c_callback);
+
+	if (_err != noErr)
+		return PyMac_Error(_err);
+	_res = Py_None;
+	return _res;
+
+}
+
 static PyObject *CtlObj_GetPopupData(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -1373,9 +1409,9 @@ static PyMethodDef CtlObj_methods[] = {
 	{"IsValidControlHandle", (PyCFunction)CtlObj_IsValidControlHandle, 1,
 	 "() -> (Boolean _rv)"},
 	{"RemoveControlProperty", (PyCFunction)CtlObj_RemoveControlProperty, 1,
-	 "(OSType propertyCreator, OSType propertyTag) -> None"},
+	 "(OSType propertyCreator, OSType propertyTag) -> (OSStatus _rv)"},
 	{"GetControlRegion", (PyCFunction)CtlObj_GetControlRegion, 1,
-	 "(ControlPartCode inPart, RgnHandle outRegion) -> None"},
+	 "(ControlPartCode inPart, RgnHandle outRegion) -> (OSStatus _rv)"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
 	 "() -> (ControlVariant _rv)"},
 	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
@@ -1420,6 +1456,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(ResObj) -> None"},
 	{"GetControlDataHandle", (PyCFunction)CtlObj_GetControlDataHandle, 1,
 	 "(part, type) -> ResObj"},
+	{"SetControlDataCallback", (PyCFunction)CtlObj_SetControlDataCallback, 1,
+	 "(callbackfunc) -> None"},
 	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
 	 NULL},
 	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,
@@ -1912,6 +1950,83 @@ mytracker(ctl, part)
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\n");
 }
 
+static int
+setcallback(self, which, callback, uppp)
+	ControlObject *self;
+	OSType which;
+	PyObject *callback;
+	UniversalProcPtr *uppp;
+{
+	char keybuf[9];
+	
+	if ( which == kControlUserPaneDrawProcTag )
+		*uppp = mydrawproc_upp;
+	else if ( which == kControlUserPaneIdleProcTag )
+		*uppp = myidleproc_upp;
+	else
+		return -1;
+	/* Only now do we test for clearing of the callback: */
+	if ( callback == Py_None )
+		*uppp = NULL;
+	/* Create the dict if it doesn't exist yet (so we don't get such a dict for every control) */
+	if ( self->ob_callbackdict == NULL )
+		if ( (self->ob_callbackdict = PyDict_New()) == NULL )
+			return -1;
+	/* And store the Python callback */
+	sprintf(keybuf, "%x", which);
+	if (PyDict_SetItemString(self->ob_callbackdict, keybuf, callback) < 0)
+		return -1;
+	return 0;
+}
+
+static PyObject *
+callcallback(self, which, arglist)
+	ControlObject *self;
+	OSType which;
+	PyObject *arglist;
+{
+	char keybuf[9];
+	PyObject *func, *rv;
+	
+	sprintf(keybuf, "%x", which);
+	if ( self->ob_callbackdict == NULL ||
+			(func = PyDict_GetItemString(self->ob_callbackdict, keybuf)) == NULL ) {
+		PySys_WriteStderr("Control callback without callback object\n");
+		return NULL;
+	}
+	rv = PyEval_CallObject(func, arglist);
+	if ( rv == NULL )
+		PySys_WriteStderr("Exception in control callback handler\n");
+	return rv;
+}
+
+static pascal void
+mydrawproc(ControlHandle control, SInt16 part)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("Oh", ctl_obj, part);
+	rv = callcallback(ctl_obj, kControlUserPaneDrawProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
+}
+
+static pascal void
+myidleproc(ControlHandle control)
+{
+	ControlObject *ctl_obj;
+	PyObject *arglist, *rv;
+	
+	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
+	arglist = Py_BuildValue("O", ctl_obj);
+	rv = callcallback(ctl_obj, kControlUserPaneIdleProcTag, arglist);
+	Py_XDECREF(arglist);
+	Py_XDECREF(rv);
+}
+
+
 
 void initCtl()
 {
@@ -1921,6 +2036,8 @@ void initCtl()
 
 
 	mytracker_upp = NewControlActionProc(mytracker);
+	mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
+	myidleproc_upp = NewControlUserPaneDrawProc(myidleproc);
 
 
 	m = Py_InitModule("Ctl", Ctl_methods);
