@@ -153,7 +153,7 @@ long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
-	int success;
+	int status;
  	sigset_t oldmask, newmask;
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_t attrs;
@@ -179,7 +179,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	sigfillset(&newmask);
 	SET_THREAD_SIGMASK(SIG_BLOCK, &newmask, &oldmask);
 
-	success = pthread_create(&th, 
+	status = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
 				 pthread_attr_default,
 				 (pthread_startroutine_t)func, 
@@ -209,13 +209,15 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_destroy(&attrs);
 #endif
-	if (success == 0) {
+	if (status != 0)
+            return -1;
+
 #if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
-		pthread_detach(&th);
+        pthread_detach(&th);
 #elif defined(PY_PTHREAD_STD)
-		pthread_detach(th);
+        pthread_detach(th);
 #endif
-	}
+
 #if SIZEOF_PTHREAD_T <= SIZEOF_LONG
 	return (long) th;
 #else
