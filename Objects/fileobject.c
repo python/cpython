@@ -311,6 +311,7 @@ getline(f, n)
 	
 	for (;;) {
 		if ((c = getc(fp)) == EOF) {
+			clearerr(fp);
 			if (intrcheck()) {
 				DECREF(v);
 				err_set(KeyboardInterrupt);
