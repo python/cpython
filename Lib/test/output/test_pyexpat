@@ -97,7 +97,7 @@ End element:
 Testing constructor for proper handling of namespace_separator values:
 Legal values tested o.k.
 Caught expected TypeError:
-ParserCreate, argument 2: expected string or None, int found
+ParserCreate() argument 2 must be string or None, not int
 Caught expected ValueError:
 namespace_separator must be one character, omitted, or None
 Caught expected ValueError:

@@ -130,16 +130,18 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		if (max == 0) {
 			if (args == NULL)
 				return 1;
-			sprintf(msgbuf, "%s requires no arguments",
-				fname==NULL ? "function" : fname);
+			sprintf(msgbuf, "%s%s takes no arguments",
+				fname==NULL ? "function" : fname,
+				fname==NULL ? "" : "()");
 			PyErr_SetString(PyExc_TypeError, msgbuf);
 			return 0;
 		}
 		else if (min == 1 && max == 1) {
 			if (args == NULL) {
 				sprintf(msgbuf,
-					"%s requires at least one argument",
-					fname==NULL ? "function" : fname);
+					"%s%s takes at least one argument",
+					fname==NULL ? "function" : fname,
+					fname==NULL ? "" : "()");
 				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
 			}
@@ -167,8 +169,9 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	if (len < min || max < len) {
 		if (message == NULL) {
 			sprintf(msgbuf,
-				"%s requires %s %d argument%s; %d given",
+				"%s%s takes %s %d argument%s (%d given)",
 				fname==NULL ? "function" : fname,
+				fname==NULL ? "" : "()",
 				min==max ? "exactly"
 				         : len < min ? "at least" : "at most",
 				len < min ? min : max,
@@ -213,22 +216,26 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 
 	if (PyErr_Occurred())
 		return;
-	if (iarg == 0 && message == NULL)
-		message = msg;
 	else if (message == NULL) {
 		if (fname != NULL) {
-			sprintf(p, "%s, ", fname);
+			sprintf(p, "%s() ", fname);
 			p += strlen(p);
 		}
-		sprintf(p, "argument %d", iarg);
-		i = 0;
-		p += strlen(p);
-		while (levels[i] > 0) {
-			sprintf(p, ", item %d", levels[i]-1);
+		if (iarg != 0) {
+			sprintf(p, "argument %d", iarg);
+			i = 0;
 			p += strlen(p);
-			i++;
+			while (levels[i] > 0) {
+				sprintf(p, ", item %d", levels[i]-1);
+				p += strlen(p);
+				i++;
+			}
 		}
-		sprintf(p, ": expected %s found", msg);
+		else {
+			sprintf(p, "argument");
+			p += strlen(p);
+		}
+		sprintf(p, " %s", msg);
 		message = buf;
 	}
 	PyErr_SetString(PyExc_TypeError, message);
@@ -247,10 +254,9 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
       *p_va is undefined,
       *levels is a 0-terminated list of item numbers,
       *msgbuf contains an error message, whose format is:
-         "<typename1>, <typename2>", where:
+         "must be <typename1>, not <typename2>", where:
             <typename1> is the name of the expected type, and
             <typename2> is the name of the actual type,
-         (so you can surround it by "expected ... found"),
       and msgbuf is returned.
 */
 
@@ -281,10 +287,11 @@ converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 			n++;
 	}
 	
-	if (!PySequence_Check(arg)) {
+	if (!PySequence_Check(arg) || PyString_Check(arg)) {
 		levels[0] = 0;
 		sprintf(msgbuf,
-			toplevel ? "%d arguments, %s" : "%d-sequence, %s",
+			toplevel ? "expected %d arguments, not %s" :
+				   "must be %d-item sequence, not %s",
 			n, arg == Py_None ? "None" : arg->ob_type->tp_name);
 		return msgbuf;
 	}
@@ -292,11 +299,12 @@ converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 	if ((i = PySequence_Size(arg)) != n) {
 		levels[0] = 0;
 		sprintf(msgbuf,
-		    toplevel ? "%d arguments, %d" : "%d-sequence, %d-sequence",
-		    n, i);
+			toplevel ? "expected %d arguments, not %d" :
+				   "must be sequence of length %d, not %d",
+			n, i);
 		return msgbuf;
 	}
-	
+
 	format = *p_format;
 	for (i = 0; i < n; i++) {
 		char *msg;
@@ -310,7 +318,7 @@ converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 			return msg;
 		}
 	}
-	
+
 	*p_format = format;
 	return NULL;
 }
@@ -343,14 +351,14 @@ convertitem(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 
 
 /* Convert a non-tuple argument.  Adds to convertsimple1 functionality
-   by appending ", <actual argument type>" to error message. */
+   by formatting messages as "must be <desired type>, not <actual type>". */
 
 static char *
 convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 {
 	char *msg = convertsimple1(arg, p_format, p_va);
 	if (msg != NULL) {
-		sprintf(msgbuf, "%.50s, %.50s", msg,
+		sprintf(msgbuf, "must be %.50s, not %.50s", msg,
 			arg == Py_None ? "None" : arg->ob_type->tp_name);
 		msg = msgbuf;
 	}
@@ -1063,8 +1071,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	if (len < min || max < len) {
 		if (message == NULL) {
 			sprintf(msgbuf,
-				"%s requires %s %d argument%s; %d given",
+				"%s%s takes %s %d argument%s (%d given)",
 				fname==NULL ? "function" : fname,
+				fname==NULL ? "" : "()",
 				min==max ? "exactly"
 				         : len < min ? "at least" : "at most",
 				len < min ? min : max,

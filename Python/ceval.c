@@ -48,8 +48,8 @@ static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
 static PyObject *fast_cfunction(PyObject *, PyObject ***, int);
 static PyObject *do_call(PyObject *, PyObject ***, int, int);
 static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
-static PyObject *update_keyword_args(PyObject *, int, PyObject ***);
-static PyObject *update_star_args(int, int, PyObject *,	PyObject ***);
+static PyObject *update_keyword_args(PyObject *, int, PyObject ***, PyObject *);
+static PyObject *update_star_args(int, int, PyObject *, PyObject ***);
 static PyObject *load_args(PyObject ***, int);
 #define CALL_FLAG_VAR 1
 #define CALL_FLAG_KW 2
@@ -451,10 +451,14 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		if (argcount > co->co_argcount) {
 			if (!(co->co_flags & CO_VARARGS)) {
 				PyErr_Format(PyExc_TypeError,
-				    "too many arguments to %s(); "
-				    "expected %d, got %d",
+				    "%.200s() takes %s %d "
+				    "%sargument%s (%d given)",
 				    PyString_AsString(co->co_name),
-				    co->co_argcount, argcount);
+				    defcount ? "at most" : "exactly",
+				    co->co_argcount,
+				    kwcount ? "non-keyword " : "",
+				    co->co_argcount == 1 ? "" : "s",
+				    argcount);
 				goto fail;
 			}
 			n = co->co_argcount;
@@ -480,8 +484,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *value = kws[2*i + 1];
 			int j;
 			if (keyword == NULL || !PyString_Check(keyword)) {
-				PyErr_SetString(PyExc_TypeError,
-						"keywords must be strings");
+				PyErr_Format(PyExc_TypeError,
+				    "%.200s() keywords must be strings",
+				    PyString_AsString(co->co_name));
 				goto fail;
 			}
 			/* XXX slow -- speed up using dictionary? */
@@ -508,10 +513,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			else {
 				if (GETLOCAL(j) != NULL) {
 					PyErr_Format(PyExc_TypeError, 
-					     "keyword parameter '%.400s' "
-					     "redefined in call to %.200s()",
-					     PyString_AsString(keyword),
-					     PyString_AsString(co->co_name));
+					     "%.200s() got multiple "
+					     "values for keyword "
+					     "argument '%.400s'",
+					     PyString_AsString(co->co_name),
+					     PyString_AsString(keyword));
 					goto fail;
 				}
 				Py_INCREF(value);
@@ -523,10 +529,14 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			for (i = argcount; i < m; i++) {
 				if (GETLOCAL(i) == NULL) {
 					PyErr_Format(PyExc_TypeError,
-					    "not enough arguments to "
-					    "%.200s(); expected %d, got %d",
+					    "%.200s() takes %s %d "
+					    "%sargument%s (%d given)",
 					    PyString_AsString(co->co_name),
-					    m, i);
+					    ((co->co_flags & CO_VARARGS) ||
+					     defcount) ? "at least"
+						       : "exactly",
+					    m, kwcount ? "non-keyword " : "",
+					    m == 1 ? "" : "s", i);
 					goto fail;
 				}
 			}
@@ -546,8 +556,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	else {
 		if (argcount > 0 || kwcount > 0) {
 			PyErr_Format(PyExc_TypeError,
-				     "%.200s() expected no arguments",
-				     PyString_AsString(co->co_name));
+				     "%.200s() takes no arguments (%d given)",
+				     PyString_AsString(co->co_name),
+				     argcount + kwcount);
 			goto fail;
 		}
 	}
@@ -2669,8 +2680,12 @@ call_method(PyObject *func, PyObject *arg, PyObject *kw)
 		    && PyClass_IsSubclass((PyObject *)
 				  (((PyInstanceObject *)self)->in_class),
 					  class))) {
-		PyErr_SetString(PyExc_TypeError,
-	"unbound method must be called with instance as first argument");
+                PyObject* fn = ((PyFunctionObject*) func)->func_name;
+		PyErr_Format(PyExc_TypeError,
+                             "unbound method %s%smust be "
+                             "called with instance as first argument",
+                             fn ? PyString_AsString(fn) : "",
+                             fn ? "() " : "");
 			return NULL;
 		}
 		Py_INCREF(arg);
@@ -2793,7 +2808,8 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 }
 
 static PyObject *
-update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack)
+update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
+                    PyObject *func)
 {
 	PyObject *kwdict = NULL;
 	if (orig_kwdict == NULL)
@@ -2809,10 +2825,12 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack)
 		PyObject *value = EXT_POP(*pp_stack);
 		PyObject *key = EXT_POP(*pp_stack);
 		if (PyDict_GetItem(kwdict, key) != NULL) {
-			PyErr_Format(PyExc_TypeError, 
-				     "keyword parameter '%.400s' "
-				     "redefined in function call",
-				     PyString_AsString(key));
+                        PyObject* fn = ((PyFunctionObject*) func)->func_name;
+                        PyErr_Format(PyExc_TypeError, 
+                                     "%.200s%s got multiple values "
+                                     "for keyword argument '%.400s'",
+                                     fn ? PyString_AsString(fn) : "function",
+                                     fn ? "()" : "", PyString_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);
@@ -2877,7 +2895,7 @@ do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 	PyObject *result = NULL;
 
 	if (nk > 0) {
-		kwdict = update_keyword_args(NULL, nk, pp_stack);
+		kwdict = update_keyword_args(NULL, nk, pp_stack, func);
 		if (kwdict == NULL)
 			goto call_fail;
 	}
@@ -2903,8 +2921,11 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 	if (flags & CALL_FLAG_KW) {
 		kwdict = EXT_POP(*pp_stack);
 		if (!(kwdict && PyDict_Check(kwdict))) {
-			PyErr_SetString(PyExc_TypeError,
-					"** argument must be a dictionary");
+                        PyObject* fn = ((PyFunctionObject*) func)->func_name;
+			PyErr_Format(PyExc_TypeError,
+                            "%s%s argument after ** must be a dictionary",
+                            fn ? PyString_AsString(fn) : "function",
+                            fn ? "()" : "");
 			goto ext_call_fail;
 		}
 	}
@@ -2915,8 +2936,12 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 			t = PySequence_Tuple(stararg);
 			if (t == NULL) {
 			    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-				PyErr_SetString(PyExc_TypeError,
-					"* argument must be a sequence");
+                                PyObject* fn =
+                                    ((PyFunctionObject*) func)->func_name;
+				PyErr_Format(PyExc_TypeError,
+                                    "%s%s argument after * must be a sequence",
+                                    fn ? PyString_AsString(fn) : "function",
+                                    fn ? "()" : "");
 			    }
 				goto ext_call_fail;
 			}
@@ -2926,7 +2951,7 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 		nstar = PyTuple_GET_SIZE(stararg);
 	}
 	if (nk > 0) {
-		kwdict = update_keyword_args(kwdict, nk, pp_stack);
+		kwdict = update_keyword_args(kwdict, nk, pp_stack, func);
 		if (kwdict == NULL)
 			goto ext_call_fail;
 	}
