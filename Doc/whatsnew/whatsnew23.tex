@@ -543,7 +543,12 @@ implemented by Vinay Sajip.}
 
 A Boolean type was added to Python 2.3.  Two new constants were added
 to the \module{__builtin__} module, \constant{True} and
-\constant{False}.  The type object for this new type is named
+\constant{False}.  (\constant{True} and
+\constant{False} constants were added to the built-ins
+in Python 2.2.2, but the 2.2.2 versions simply have integer values of
+1 and 0 and aren't a different type.)
+
+The type object for this new type is named
 \class{bool}; the constructor for it takes any Python value and
 converts it to \constant{True} or \constant{False}.
 
@@ -704,7 +709,39 @@ See section~\ref{section-pep302} for a description of the new import hooks.
 %======================================================================
 \section{PEP 301: Package Index and Metadata for Distutils\label{section-pep301}}
 
-XXX This section needs to be written.
+Support for the long-requested Python catalog makes its first
+appearance in 2.3.
+
+The core component is the new Distutil \samp{register} command.
+Running \code{python setup.py register} will collect up the metadata
+describing a package, such as its name, version, maintainer,
+description, \&c., and sends it to a central catalog server.
+Currently the catalog can be browsed at
+\url{http://www.amk.ca/cgi-bin/pypi.cgi}, but it will move to 
+some hostname in the \code{python.org} domain before the final version
+of 2.3 is released.
+
+To make the catalog a bit more useful, a new optional
+\samp{classifiers} keyword argument has been added to the Distutils
+\function{setup()} function.  A list of
+\citetitle[http://www.tuxedo.org/\%7Eesr/trove/]{Trove}-style strings can be supplied to help classify the software.
+
+Here's an example \file{setup.py} with classifiers:
+
+\begin{verbatim}
+setup (name = "Quixote",
+       version = "0.5.1",
+       description = "A highly Pythonic Web application framework",
+       ...
+       classifiers= ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+                     'Environment :: No Input/Output (Daemon)',
+                     'Intended Audience :: Developers'],
+       ...
+    )
+\end{verbatim}
+
+The full list of classifiers can be obtained by running 
+\code{python setup.py register --list-classifiers}.
 
 \begin{seealso}
 
