@@ -113,7 +113,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=COMPONENTS
-  Value=ABCD
+  Value=ABCDE
 end
 item: Wizard Block
   Direction Variable=DIRECTION
@@ -438,6 +438,7 @@ item: Custom Dialog Set
       Text=Python Help Files
       Text=Python test suite
       Text=Python interpreter and library
+      Text=Tcl/Tk installation
       Text=
       Text French=Python Utility Scripts
       Text French=Python Help Files
@@ -864,6 +865,30 @@ item: Install File
   Description=Version checker tool
   Flags=0000000000000010
 end
+item: Install File
+  Source=%_SRC_%\Tools\idle\*.py
+  Destination=%MAINDIR%\Tools\idle
+  Description=Integrated DeveLopment Environment for Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\idle\README
+  Destination=%MAINDIR%\Tools\idle\README.txt
+  Description=IDLE read-me file
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\idle\help.txt
+  Destination=%MAINDIR%\Tools\idle\help.txt
+  Description=IDLE help file
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\idle\idle.pyw
+  Destination=%MAINDIR%\Tools\idle\idle.pyw
+  Description=IDLE bootstrap script
+  Flags=0000000000000010
+end
 item: End Block
 end
 item: If/While Statement
@@ -1158,6 +1183,25 @@ item: End Block
 end
 item: Self-Register OCXs/DLLs
   Description=Updating System Configuration, Please Wait...
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=E
+  Flags=00001010
+end
+item: Install File
+  Source=D:\downloads\tcl804.exe
+  Destination=%TEMP%\tcl804.exe
+  Description=Tcl/Tk installer
+  Flags=0000000000000010
+end
+item: Execute Program
+  Pathname=%TEMP%\tcl804.exe
+  Command Line=tcl804.exe
+  Default Directory=%TEMP%
+  Flags=00000011
+end
+item: End Block
 end
 item: Wizard Block
   Direction Variable=DIRECTION
