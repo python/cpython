@@ -67,13 +67,13 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(item)
 getbaseclasses(application)
 getbaseclasses(trash_2d_object)
 getbaseclasses(desktop_2d_object)
 getbaseclasses(container)
 getbaseclasses(folder)
 getbaseclasses(disk)
+getbaseclasses(item)
 getbaseclasses(package)
 getbaseclasses(file)
 getbaseclasses(application_file)
@@ -86,6 +86,10 @@ getbaseclasses(Finder_window)
 getbaseclasses(window)
 getbaseclasses(clipping_window)
 getbaseclasses(information_window)
+getbaseclasses(process)
+getbaseclasses(application_process)
+getbaseclasses(desk_accessory_process)
+getbaseclasses(application)
 getbaseclasses(icon_view_options)
 getbaseclasses(label)
 getbaseclasses(column)
@@ -93,10 +97,6 @@ getbaseclasses(preferences)
 getbaseclasses(alias_list)
 getbaseclasses(icon_family)
 getbaseclasses(list_view_options)
-getbaseclasses(process)
-getbaseclasses(application_process)
-getbaseclasses(desk_accessory_process)
-getbaseclasses(application)
 getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.version)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
@@ -132,7 +132,7 @@ getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
 getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
 getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
 getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
-getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
+getbaseclasses(StdSuites.Type_Names_Suite.string)
 getbaseclasses(StdSuites.Type_Names_Suite.small_real)
 getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
@@ -142,13 +142,13 @@ getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cobj' : item,
 	'capp' : application,
 	'ctrs' : trash_2d_object,
 	'cdsk' : desktop_2d_object,
 	'ctnr' : container,
 	'cfol' : folder,
 	'cdis' : disk,
+	'cobj' : item,
 	'pack' : package,
 	'file' : file,
 	'appf' : application_file,
@@ -161,6 +161,10 @@ _classdeclarations = {
 	'cwin' : window,
 	'lwnd' : clipping_window,
 	'iwnd' : information_window,
+	'prcs' : process,
+	'pcap' : application_process,
+	'pcda' : desk_accessory_process,
+	'capp' : application,
 	'icop' : icon_view_options,
 	'clbl' : label,
 	'lvcl' : column,
@@ -168,10 +172,6 @@ _classdeclarations = {
 	'alst' : alias_list,
 	'ifam' : icon_family,
 	'lvop' : list_view_options,
-	'prcs' : process,
-	'pcap' : application_process,
-	'pcda' : desk_accessory_process,
-	'capp' : application,
 	'comp' : StdSuites.Type_Names_Suite.double_integer,
 	'vers' : StdSuites.Type_Names_Suite.version,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
@@ -207,7 +207,7 @@ _classdeclarations = {
 	'exte' : StdSuites.Type_Names_Suite.extended_real,
 	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
 	'tdas' : StdSuites.Type_Names_Suite.dash_style,
-	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
+	'TEXT' : StdSuites.Type_Names_Suite.string,
 	'sing' : StdSuites.Type_Names_Suite.small_real,
 	'null' : StdSuites.Type_Names_Suite.null,
 	'insl' : StdSuites.Type_Names_Suite.location_reference,

@@ -173,24 +173,13 @@ getbaseclasses(Saturday)
 getbaseclasses(September)
 getbaseclasses(file_specification)
 getbaseclasses(text)
-getbaseclasses(graphic_group)
-getbaseclasses(drawing_area)
-getbaseclasses(cell)
-getbaseclasses(column)
-getbaseclasses(table)
-getbaseclasses(row)
-getbaseclasses(AppleTalk_address)
-getbaseclasses(address_specification)
-getbaseclasses(Token_Ring_address)
-getbaseclasses(FireWire_address)
-getbaseclasses(bus_slot)
-getbaseclasses(SCSI_address)
-getbaseclasses(ADB_address)
-getbaseclasses(USB_address)
-getbaseclasses(device_specification)
-getbaseclasses(LocalTalk_address)
-getbaseclasses(IP_address)
-getbaseclasses(Ethernet_address)
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(selection_2d_object)
+getbaseclasses(alias)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
 getbaseclasses(small_integer)
 getbaseclasses(RGB16_color)
 getbaseclasses(version)
@@ -238,13 +227,6 @@ getbaseclasses(text_style_info)
 getbaseclasses(line)
 getbaseclasses(word)
 getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(selection_2d_object)
-getbaseclasses(alias)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
 getbaseclasses(graphic_group)
 getbaseclasses(oval)
 getbaseclasses(graphic_text)
@@ -258,6 +240,24 @@ getbaseclasses(rounded_rectangle)
 getbaseclasses(arc)
 getbaseclasses(pixel_map)
 getbaseclasses(rectangle)
+getbaseclasses(graphic_group)
+getbaseclasses(drawing_area)
+getbaseclasses(AppleTalk_address)
+getbaseclasses(address_specification)
+getbaseclasses(Token_Ring_address)
+getbaseclasses(FireWire_address)
+getbaseclasses(bus_slot)
+getbaseclasses(SCSI_address)
+getbaseclasses(ADB_address)
+getbaseclasses(USB_address)
+getbaseclasses(device_specification)
+getbaseclasses(LocalTalk_address)
+getbaseclasses(IP_address)
+getbaseclasses(Ethernet_address)
+getbaseclasses(cell)
+getbaseclasses(column)
+getbaseclasses(table)
+getbaseclasses(row)
 
 #
 # Indices of types declared in this module
@@ -368,24 +368,13 @@ _classdeclarations = {
 	'sep ' : September,
 	'fss ' : file_specification,
 	'ctxt' : text,
-	'cpic' : graphic_group,
-	'cdrw' : drawing_area,
-	'ccel' : cell,
-	'ccol' : column,
-	'ctbl' : table,
-	'crow' : row,
-	'cat ' : AppleTalk_address,
-	'cadr' : address_specification,
-	'ctok' : Token_Ring_address,
-	'cfw ' : FireWire_address,
-	'cbus' : bus_slot,
-	'cscs' : SCSI_address,
-	'cadb' : ADB_address,
-	'cusb' : USB_address,
-	'cdev' : device_specification,
-	'clt ' : LocalTalk_address,
-	'cip ' : IP_address,
-	'cen ' : Ethernet_address,
+	'cwin' : window,
+	'file' : file,
+	'csel' : selection_2d_object,
+	'alis' : alias,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
 	'shor' : small_integer,
 	'tr16' : RGB16_color,
 	'vers' : version,
@@ -433,13 +422,6 @@ _classdeclarations = {
 	'clin' : line,
 	'cwor' : word,
 	'ctxt' : text,
-	'cwin' : window,
-	'file' : file,
-	'csel' : selection_2d_object,
-	'alis' : alias,
-	'capp' : application,
-	'cins' : insertion_point,
-	'docu' : document,
 	'cpic' : graphic_group,
 	'covl' : oval,
 	'cgtx' : graphic_text,
@@ -453,6 +435,24 @@ _classdeclarations = {
 	'carc' : arc,
 	'cpix' : pixel_map,
 	'crec' : rectangle,
+	'cpic' : graphic_group,
+	'cdrw' : drawing_area,
+	'cat ' : AppleTalk_address,
+	'cadr' : address_specification,
+	'ctok' : Token_Ring_address,
+	'cfw ' : FireWire_address,
+	'cbus' : bus_slot,
+	'cscs' : SCSI_address,
+	'cadb' : ADB_address,
+	'cusb' : USB_address,
+	'cdev' : device_specification,
+	'clt ' : LocalTalk_address,
+	'cip ' : IP_address,
+	'cen ' : Ethernet_address,
+	'ccel' : cell,
+	'ccol' : column,
+	'ctbl' : table,
+	'crow' : row,
 }
 
 

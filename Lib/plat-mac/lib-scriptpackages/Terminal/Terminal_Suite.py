@@ -64,11 +64,11 @@ class Terminal_Suite_Events:
 class application(aetools.ComponentItem):
 	"""application - The Terminal program """
 	want = 'capp'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - All of the properties of the superclass. """
 	which = 'c@#^'
 	want = 'capp'
-class properties(aetools.NProperty):
+class _Prop_properties(aetools.NProperty):
 	"""properties - every property of the Terminal program """
 	which = 'pALL'
 	want = '****'
@@ -80,91 +80,91 @@ applications = application
 class window(aetools.ComponentItem):
 	"""window - A Terminal window """
 	want = 'cwin'
-class background_color(aetools.NProperty):
+class _Prop_background_color(aetools.NProperty):
 	"""background color - the background color for the window """
 	which = 'pbcl'
 	want = '****'
-class bold_text_color(aetools.NProperty):
+class _Prop_bold_text_color(aetools.NProperty):
 	"""bold text color - the bold text color for the window """
 	which = 'pbtc'
 	want = '****'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window, relative to the upper left corner of the screen """
 	which = 'pbnd'
 	want = '****'
-class busy(aetools.NProperty):
+class _Prop_busy(aetools.NProperty):
 	"""busy - Is the window busy running a process? """
 	which = 'busy'
 	want = 'bool'
-class contents(aetools.NProperty):
+class _Prop_contents(aetools.NProperty):
 	"""contents - the currently visible contents of the window """
 	which = 'pcnt'
 	want = 'utxt'
-class cursor_color(aetools.NProperty):
+class _Prop_cursor_color(aetools.NProperty):
 	"""cursor color - the cursor color for the window """
 	which = 'pcuc'
 	want = '****'
-class custom_title(aetools.NProperty):
+class _Prop_custom_title(aetools.NProperty):
 	"""custom title - the custom title for the window """
 	which = 'titl'
 	want = 'utxt'
-class frame(aetools.NProperty):
+class _Prop_frame(aetools.NProperty):
 	"""frame - the origin and size of the window """
 	which = 'pfra'
 	want = '****'
-class frontmost(aetools.NProperty):
+class _Prop_frontmost(aetools.NProperty):
 	"""frontmost - Is the window in front of the other Terminal windows? """
 	which = 'pisf'
 	want = 'bool'
-class history(aetools.NProperty):
+class _Prop_history(aetools.NProperty):
 	"""history - the contents of the entire scrolling buffer of the window """
 	which = 'hist'
 	want = 'utxt'
-class normal_text_color(aetools.NProperty):
+class _Prop_normal_text_color(aetools.NProperty):
 	"""normal text color - the normal text color for the window """
 	which = 'ptxc'
 	want = '****'
-class number_of_columns(aetools.NProperty):
+class _Prop_number_of_columns(aetools.NProperty):
 	"""number of columns - the number of columns in the window """
 	which = 'ccol'
 	want = 'long'
-class number_of_rows(aetools.NProperty):
+class _Prop_number_of_rows(aetools.NProperty):
 	"""number of rows - the number of rows in the window """
 	which = 'crow'
 	want = 'long'
-class origin(aetools.NProperty):
+class _Prop_origin(aetools.NProperty):
 	"""origin - the lower left coordinates of the window, relative to the lower left corner of the screen """
 	which = 'pori'
 	want = '****'
-class position(aetools.NProperty):
+class _Prop_position(aetools.NProperty):
 	"""position - the upper left coordinates of the window, relative to the upper left corner of the screen """
 	which = 'ppos'
 	want = '****'
-class processes(aetools.NProperty):
+class _Prop_processes(aetools.NProperty):
 	"""processes - a list of the currently running processes """
 	which = 'prcs'
 	want = 'utxt'
-class size(aetools.NProperty):
+class _Prop_size(aetools.NProperty):
 	"""size - the width and height of the window """
 	which = 'psiz'
 	want = '****'
-class title_displays_custom_title(aetools.NProperty):
+class _Prop_title_displays_custom_title(aetools.NProperty):
 	"""title displays custom title - Does the title for the window contain a custom title? """
 	which = 'tdct'
 	want = 'bool'
-class title_displays_device_name(aetools.NProperty):
+class _Prop_title_displays_device_name(aetools.NProperty):
 	"""title displays device name - Does the title for the window contain the device name? """
 	which = 'tddn'
 	want = 'bool'
-class title_displays_file_name(aetools.NProperty):
+class _Prop_title_displays_file_name(aetools.NProperty):
 	"""title displays file name - Does the title for the window contain the file name? """
 	which = 'tdfn'
 	want = 'bool'
-class title_displays_shell_path(aetools.NProperty):
+class _Prop_title_displays_shell_path(aetools.NProperty):
 	"""title displays shell path - Does the title for the window contain the shell path? """
 	which = 'tdsp'
 	want = 'bool'
-class title_displays_window_size(aetools.NProperty):
+class _Prop_title_displays_window_size(aetools.NProperty):
 	"""title displays window size - Does the title for the window contain the window size? """
 	which = 'tdws'
 	want = 'bool'
@@ -173,8 +173,8 @@ windows = window
 application._superclassnames = []
 import Standard_Suite
 application._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'properties' : properties,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'properties' : _Prop_properties,
 }
 application._privelemdict = {
 	'document' : Standard_Suite.document,
@@ -182,30 +182,30 @@ application._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'background_color' : background_color,
-	'bold_text_color' : bold_text_color,
-	'bounds' : bounds,
-	'busy' : busy,
-	'contents' : contents,
-	'cursor_color' : cursor_color,
-	'custom_title' : custom_title,
-	'frame' : frame,
-	'frontmost' : frontmost,
-	'history' : history,
-	'normal_text_color' : normal_text_color,
-	'number_of_columns' : number_of_columns,
-	'number_of_rows' : number_of_rows,
-	'origin' : origin,
-	'position' : position,
-	'processes' : processes,
-	'properties' : properties,
-	'size' : size,
-	'title_displays_custom_title' : title_displays_custom_title,
-	'title_displays_device_name' : title_displays_device_name,
-	'title_displays_file_name' : title_displays_file_name,
-	'title_displays_shell_path' : title_displays_shell_path,
-	'title_displays_window_size' : title_displays_window_size,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'background_color' : _Prop_background_color,
+	'bold_text_color' : _Prop_bold_text_color,
+	'bounds' : _Prop_bounds,
+	'busy' : _Prop_busy,
+	'contents' : _Prop_contents,
+	'cursor_color' : _Prop_cursor_color,
+	'custom_title' : _Prop_custom_title,
+	'frame' : _Prop_frame,
+	'frontmost' : _Prop_frontmost,
+	'history' : _Prop_history,
+	'normal_text_color' : _Prop_normal_text_color,
+	'number_of_columns' : _Prop_number_of_columns,
+	'number_of_rows' : _Prop_number_of_rows,
+	'origin' : _Prop_origin,
+	'position' : _Prop_position,
+	'processes' : _Prop_processes,
+	'properties' : _Prop_properties,
+	'size' : _Prop_size,
+	'title_displays_custom_title' : _Prop_title_displays_custom_title,
+	'title_displays_device_name' : _Prop_title_displays_device_name,
+	'title_displays_file_name' : _Prop_title_displays_file_name,
+	'title_displays_shell_path' : _Prop_title_displays_shell_path,
+	'title_displays_window_size' : _Prop_title_displays_window_size,
 }
 window._privelemdict = {
 }
@@ -216,37 +216,4 @@ window._privelemdict = {
 _classdeclarations = {
 	'capp' : application,
 	'cwin' : window,
-}
-
-_propdeclarations = {
-	'busy' : busy,
-	'c@#^' : _3c_Inheritance_3e_,
-	'ccol' : number_of_columns,
-	'crow' : number_of_rows,
-	'hist' : history,
-	'pALL' : properties,
-	'pbcl' : background_color,
-	'pbnd' : bounds,
-	'pbtc' : bold_text_color,
-	'pcnt' : contents,
-	'pcuc' : cursor_color,
-	'pfra' : frame,
-	'pisf' : frontmost,
-	'pori' : origin,
-	'ppos' : position,
-	'prcs' : processes,
-	'psiz' : size,
-	'ptxc' : normal_text_color,
-	'tdct' : title_displays_custom_title,
-	'tddn' : title_displays_device_name,
-	'tdfn' : title_displays_file_name,
-	'tdsp' : title_displays_shell_path,
-	'tdws' : title_displays_window_size,
-	'titl' : custom_title,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

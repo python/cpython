@@ -97,12 +97,3 @@ class Required_suite_Events(Required_Suite_Events):
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

@@ -18,11 +18,11 @@ class Table_Suite_Events:
 class cell(aetools.ComponentItem):
 	"""cell - A cell """
 	want = 'ccel'
-class formula(aetools.NProperty):
+class _Prop_formula(aetools.NProperty):
 	"""formula - the formula of the cell """
 	which = 'pfor'
 	want = 'ctxt'
-class protection(aetools.NProperty):
+class _Prop_protection(aetools.NProperty):
 	"""protection - Indicates whether value or formula in the cell can be changed """
 	which = 'ppro'
 	want = 'prtn'
@@ -32,7 +32,7 @@ cells = cell
 class column(aetools.ComponentItem):
 	"""column - A column """
 	want = 'ccol'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name of the column """
 	which = 'pnam'
 	want = 'itxt'
@@ -52,14 +52,14 @@ class tables(aetools.ComponentItem):
 table = tables
 cell._superclassnames = []
 cell._privpropdict = {
-	'formula' : formula,
-	'protection' : protection,
+	'formula' : _Prop_formula,
+	'protection' : _Prop_protection,
 }
 cell._privelemdict = {
 }
 column._superclassnames = []
 column._privpropdict = {
-	'name' : name,
+	'name' : _Prop_name,
 }
 column._privelemdict = {
 }
@@ -88,17 +88,4 @@ _classdeclarations = {
 	'ccol' : column,
 	'crow' : rows,
 	'ctbl' : tables,
-}
-
-_propdeclarations = {
-	'pfor' : formula,
-	'pnam' : name,
-	'ppro' : protection,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'prtn' : _Enum_prtn,
 }

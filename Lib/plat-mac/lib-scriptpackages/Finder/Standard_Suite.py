@@ -324,12 +324,3 @@ _Enum_bool = None # XXXX enum bool not found!!
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

@@ -73,8 +73,6 @@ getbaseclasses(paragraph)
 getbaseclasses(word)
 getbaseclasses(attribute_run)
 getbaseclasses(text)
-getbaseclasses(script)
-getbaseclasses(folder_action)
 getbaseclasses(file)
 getbaseclasses(alias)
 getbaseclasses(item)
@@ -85,47 +83,8 @@ getbaseclasses(window)
 getbaseclasses(application)
 getbaseclasses(item)
 getbaseclasses(document)
-getbaseclasses(login_item)
-getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.version)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
-getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.color_table)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.type_element_info)
-getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
-getbaseclasses(StdSuites.Type_Names_Suite.machine_location)
-getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
-getbaseclasses(StdSuites.Type_Names_Suite.point)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
-getbaseclasses(StdSuites.Type_Names_Suite.menu_item)
-getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
-getbaseclasses(StdSuites.Type_Names_Suite.application_dictionary)
-getbaseclasses(StdSuites.Type_Names_Suite.unsigned_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.menu)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.type_suite_info)
-getbaseclasses(StdSuites.Type_Names_Suite.rotation)
-getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
-getbaseclasses(StdSuites.Type_Names_Suite.fixed)
-getbaseclasses(StdSuites.Type_Names_Suite.long_point)
-getbaseclasses(StdSuites.Type_Names_Suite.type_class_info)
-getbaseclasses(StdSuites.Type_Names_Suite.RGB96_color)
-getbaseclasses(StdSuites.Type_Names_Suite.target_id)
-getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
-getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
-getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
-getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
-getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
-getbaseclasses(StdSuites.Type_Names_Suite.plain_text)
-getbaseclasses(StdSuites.Type_Names_Suite.small_real)
-getbaseclasses(StdSuites.Type_Names_Suite.null)
-getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
-getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
+getbaseclasses(script)
+getbaseclasses(folder_action)
 getbaseclasses(window)
 getbaseclasses(radio_button)
 getbaseclasses(list)
@@ -170,7 +129,48 @@ getbaseclasses(color_well)
 getbaseclasses(scroll_bar)
 getbaseclasses(combo_box)
 getbaseclasses(browser)
+getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
+getbaseclasses(StdSuites.Type_Names_Suite.version)
+getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
+getbaseclasses(StdSuites.Type_Names_Suite.system_dictionary)
+getbaseclasses(StdSuites.Type_Names_Suite.color_table)
+getbaseclasses(StdSuites.Type_Names_Suite.fixed_point)
+getbaseclasses(StdSuites.Type_Names_Suite.TIFF_picture)
+getbaseclasses(StdSuites.Type_Names_Suite.type_element_info)
+getbaseclasses(StdSuites.Type_Names_Suite.type_event_info)
+getbaseclasses(StdSuites.Type_Names_Suite.machine_location)
+getbaseclasses(StdSuites.Type_Names_Suite.PostScript_picture)
+getbaseclasses(StdSuites.Type_Names_Suite.point)
+getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_point)
+getbaseclasses(StdSuites.Type_Names_Suite.menu_item)
+getbaseclasses(StdSuites.Type_Names_Suite.scrap_styles)
+getbaseclasses(StdSuites.Type_Names_Suite.application_dictionary)
+getbaseclasses(StdSuites.Type_Names_Suite.unsigned_integer)
+getbaseclasses(StdSuites.Type_Names_Suite.menu)
+getbaseclasses(StdSuites.Type_Names_Suite.fixed_rectangle)
+getbaseclasses(StdSuites.Type_Names_Suite.type_property_info)
+getbaseclasses(StdSuites.Type_Names_Suite.long_fixed_rectangle)
+getbaseclasses(StdSuites.Type_Names_Suite.long_fixed)
+getbaseclasses(StdSuites.Type_Names_Suite.type_suite_info)
+getbaseclasses(StdSuites.Type_Names_Suite.rotation)
+getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
+getbaseclasses(StdSuites.Type_Names_Suite.fixed)
+getbaseclasses(StdSuites.Type_Names_Suite.long_point)
+getbaseclasses(StdSuites.Type_Names_Suite.type_class_info)
+getbaseclasses(StdSuites.Type_Names_Suite.RGB96_color)
+getbaseclasses(StdSuites.Type_Names_Suite.target_id)
+getbaseclasses(StdSuites.Type_Names_Suite.pixel_map_record)
+getbaseclasses(StdSuites.Type_Names_Suite.type_parameter_info)
+getbaseclasses(StdSuites.Type_Names_Suite.extended_real)
+getbaseclasses(StdSuites.Type_Names_Suite.long_rectangle)
+getbaseclasses(StdSuites.Type_Names_Suite.dash_style)
+getbaseclasses(StdSuites.Type_Names_Suite.string)
+getbaseclasses(StdSuites.Type_Names_Suite.small_real)
+getbaseclasses(StdSuites.Type_Names_Suite.null)
+getbaseclasses(StdSuites.Type_Names_Suite.location_reference)
+getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
 getbaseclasses(application)
+getbaseclasses(login_item)
 
 #
 # Indices of types declared in this module
@@ -182,8 +182,6 @@ _classdeclarations = {
 	'cwor' : word,
 	'catr' : attribute_run,
 	'ctxt' : text,
-	'scpt' : script,
-	'foac' : folder_action,
 	'file' : file,
 	'alis' : alias,
 	'cobj' : item,
@@ -194,47 +192,8 @@ _classdeclarations = {
 	'capp' : application,
 	'cobj' : item,
 	'docu' : document,
-	'logi' : login_item,
-	'comp' : StdSuites.Type_Names_Suite.double_integer,
-	'vers' : StdSuites.Type_Names_Suite.version,
-	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
-	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
-	'clrt' : StdSuites.Type_Names_Suite.color_table,
-	'fpnt' : StdSuites.Type_Names_Suite.fixed_point,
-	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
-	'elin' : StdSuites.Type_Names_Suite.type_element_info,
-	'evin' : StdSuites.Type_Names_Suite.type_event_info,
-	'mLoc' : StdSuites.Type_Names_Suite.machine_location,
-	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
-	'QDpt' : StdSuites.Type_Names_Suite.point,
-	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
-	'cmen' : StdSuites.Type_Names_Suite.menu_item,
-	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
-	'aete' : StdSuites.Type_Names_Suite.application_dictionary,
-	'magn' : StdSuites.Type_Names_Suite.unsigned_integer,
-	'cmnu' : StdSuites.Type_Names_Suite.menu,
-	'frct' : StdSuites.Type_Names_Suite.fixed_rectangle,
-	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
-	'lfrc' : StdSuites.Type_Names_Suite.long_fixed_rectangle,
-	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
-	'suin' : StdSuites.Type_Names_Suite.type_suite_info,
-	'trot' : StdSuites.Type_Names_Suite.rotation,
-	'shor' : StdSuites.Type_Names_Suite.small_integer,
-	'fixd' : StdSuites.Type_Names_Suite.fixed,
-	'lpnt' : StdSuites.Type_Names_Suite.long_point,
-	'gcli' : StdSuites.Type_Names_Suite.type_class_info,
-	'tr96' : StdSuites.Type_Names_Suite.RGB96_color,
-	'targ' : StdSuites.Type_Names_Suite.target_id,
-	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
-	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
-	'exte' : StdSuites.Type_Names_Suite.extended_real,
-	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
-	'tdas' : StdSuites.Type_Names_Suite.dash_style,
-	'TEXT' : StdSuites.Type_Names_Suite.plain_text,
-	'sing' : StdSuites.Type_Names_Suite.small_real,
-	'null' : StdSuites.Type_Names_Suite.null,
-	'insl' : StdSuites.Type_Names_Suite.location_reference,
-	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
+	'scpt' : script,
+	'foac' : folder_action,
 	'cwin' : window,
 	'radB' : radio_button,
 	'list' : list,
@@ -279,7 +238,48 @@ _classdeclarations = {
 	'scrb' : scroll_bar,
 	'comB' : combo_box,
 	'broW' : browser,
+	'comp' : StdSuites.Type_Names_Suite.double_integer,
+	'vers' : StdSuites.Type_Names_Suite.version,
+	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
+	'aeut' : StdSuites.Type_Names_Suite.system_dictionary,
+	'clrt' : StdSuites.Type_Names_Suite.color_table,
+	'fpnt' : StdSuites.Type_Names_Suite.fixed_point,
+	'TIFF' : StdSuites.Type_Names_Suite.TIFF_picture,
+	'elin' : StdSuites.Type_Names_Suite.type_element_info,
+	'evin' : StdSuites.Type_Names_Suite.type_event_info,
+	'mLoc' : StdSuites.Type_Names_Suite.machine_location,
+	'EPS ' : StdSuites.Type_Names_Suite.PostScript_picture,
+	'QDpt' : StdSuites.Type_Names_Suite.point,
+	'lfpt' : StdSuites.Type_Names_Suite.long_fixed_point,
+	'cmen' : StdSuites.Type_Names_Suite.menu_item,
+	'styl' : StdSuites.Type_Names_Suite.scrap_styles,
+	'aete' : StdSuites.Type_Names_Suite.application_dictionary,
+	'magn' : StdSuites.Type_Names_Suite.unsigned_integer,
+	'cmnu' : StdSuites.Type_Names_Suite.menu,
+	'frct' : StdSuites.Type_Names_Suite.fixed_rectangle,
+	'pinf' : StdSuites.Type_Names_Suite.type_property_info,
+	'lfrc' : StdSuites.Type_Names_Suite.long_fixed_rectangle,
+	'lfxd' : StdSuites.Type_Names_Suite.long_fixed,
+	'suin' : StdSuites.Type_Names_Suite.type_suite_info,
+	'trot' : StdSuites.Type_Names_Suite.rotation,
+	'shor' : StdSuites.Type_Names_Suite.small_integer,
+	'fixd' : StdSuites.Type_Names_Suite.fixed,
+	'lpnt' : StdSuites.Type_Names_Suite.long_point,
+	'gcli' : StdSuites.Type_Names_Suite.type_class_info,
+	'tr96' : StdSuites.Type_Names_Suite.RGB96_color,
+	'targ' : StdSuites.Type_Names_Suite.target_id,
+	'tpmm' : StdSuites.Type_Names_Suite.pixel_map_record,
+	'pmin' : StdSuites.Type_Names_Suite.type_parameter_info,
+	'exte' : StdSuites.Type_Names_Suite.extended_real,
+	'lrct' : StdSuites.Type_Names_Suite.long_rectangle,
+	'tdas' : StdSuites.Type_Names_Suite.dash_style,
+	'TEXT' : StdSuites.Type_Names_Suite.string,
+	'sing' : StdSuites.Type_Names_Suite.small_real,
+	'null' : StdSuites.Type_Names_Suite.null,
+	'insl' : StdSuites.Type_Names_Suite.location_reference,
+	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
 	'capp' : application,
+	'logi' : login_item,
 }
 
 

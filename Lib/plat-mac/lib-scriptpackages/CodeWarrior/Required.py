@@ -50,13 +50,3 @@ _Enum_Conv = {
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'Conv' : _Enum_Conv,
-}

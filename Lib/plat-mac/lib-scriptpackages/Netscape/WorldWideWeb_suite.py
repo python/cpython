@@ -415,12 +415,3 @@ class WorldWideWeb_suite_Events:
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-}

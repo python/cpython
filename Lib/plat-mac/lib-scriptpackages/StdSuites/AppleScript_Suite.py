@@ -791,55 +791,55 @@ RGB_color = RGB_colors
 class application(aetools.ComponentItem):
 	"""application - specifies global properties of AppleScript """
 	want = 'capp'
-class AppleScript(aetools.NProperty):
+class _Prop_AppleScript(aetools.NProperty):
 	"""AppleScript - the top-level script object """
 	which = 'ascr'
 	want = 'scpt'
-class days(aetools.NProperty):
+class _Prop_days(aetools.NProperty):
 	"""days - the number of seconds in a day """
 	which = 'days'
 	want = 'long'
-class hours(aetools.NProperty):
+class _Prop_hours(aetools.NProperty):
 	"""hours - the number of seconds in an hour """
 	which = 'hour'
 	want = 'long'
-class minutes(aetools.NProperty):
+class _Prop_minutes(aetools.NProperty):
 	"""minutes - the number of seconds in a minute """
 	which = 'min '
 	want = 'long'
-class pi(aetools.NProperty):
+class _Prop_pi(aetools.NProperty):
 	"""pi - the constant pi """
 	which = 'pi  '
 	want = 'doub'
-class print_depth(aetools.NProperty):
+class _Prop_print_depth(aetools.NProperty):
 	"""print depth - the maximum depth to print """
 	which = 'prdp'
 	want = 'long'
-class print_length(aetools.NProperty):
+class _Prop_print_length(aetools.NProperty):
 	"""print length - the maximum length to print """
 	which = 'prln'
 	want = 'long'
-class result(aetools.NProperty):
+class _Prop_result(aetools.NProperty):
 	"""result - the last result of evaluation """
 	which = 'rslt'
 	want = '****'
-class return_(aetools.NProperty):
+class _Prop_return_(aetools.NProperty):
 	"""return - a return character """
 	which = 'ret '
 	want = 'cha '
-class space(aetools.NProperty):
+class _Prop_space(aetools.NProperty):
 	"""space - a space character """
 	which = 'spac'
 	want = 'cha '
-class tab(aetools.NProperty):
+class _Prop_tab(aetools.NProperty):
 	"""tab - a tab character """
 	which = 'tab '
 	want = 'cha '
-class text_item_delimiters(aetools.NProperty):
+class _Prop_text_item_delimiters(aetools.NProperty):
 	"""text item delimiters - the text item delimiters of a string """
 	which = 'txdl'
 	want = 'list'
-class weeks(aetools.NProperty):
+class _Prop_weeks(aetools.NProperty):
 	"""weeks - the number of seconds in a week """
 	which = 'week'
 	want = 'long'
@@ -871,11 +871,11 @@ character = characters
 class writing_code_info(aetools.ComponentItem):
 	"""writing code info - script code and language code of text run """
 	want = 'citl'
-class language_code(aetools.NProperty):
+class _Prop_language_code(aetools.NProperty):
 	"""language code - the language code for the text """
 	which = 'plcd'
 	want = 'shor'
-class script_code(aetools.NProperty):
+class _Prop_script_code(aetools.NProperty):
 	"""script code - the script code for the text """
 	which = 'pscd'
 	want = 'shor'
@@ -903,7 +903,7 @@ centimetres = centimeters
 class item(aetools.ComponentItem):
 	"""item - An item of any type """
 	want = 'cobj'
-class id(aetools.NProperty):
+class _Prop_id(aetools.NProperty):
 	"""id - the unique ID number of this object """
 	which = 'ID  '
 	want = 'long'
@@ -1041,15 +1041,15 @@ kilometres = kilometers
 class keystroke(aetools.ComponentItem):
 	"""keystroke - a press of a key combination on a Macintosh keyboard """
 	want = 'kprs'
-class key(aetools.NProperty):
+class _Prop_key(aetools.NProperty):
 	"""key - the character for the key was pressed (ignoring modifiers) """
 	which = 'kMsg'
 	want = 'cha '
-class key_kind(aetools.NProperty):
+class _Prop_key_kind(aetools.NProperty):
 	"""key kind - the kind of key that was pressed """
 	which = 'kknd'
 	want = 'ekst'
-class modifiers(aetools.NProperty):
+class _Prop_modifiers(aetools.NProperty):
 	"""modifiers - the modifier keys pressed in combination """
 	which = 'kMod'
 	want = 'eMds'
@@ -1063,31 +1063,31 @@ class pounds(aetools.ComponentItem):
 class date(aetools.ComponentItem):
 	"""date - Absolute date and time values """
 	want = 'ldt '
-class date_string(aetools.NProperty):
+class _Prop_date_string(aetools.NProperty):
 	"""date string - the date portion of a date-time value as text """
 	which = 'dstr'
 	want = 'TEXT'
-class day(aetools.NProperty):
+class _Prop_day(aetools.NProperty):
 	"""day - the day of the month of a date """
 	which = 'day '
 	want = 'long'
-class month(aetools.NProperty):
+class _Prop_month(aetools.NProperty):
 	"""month - the month of a date """
 	which = 'mnth'
 	want = 'mnth'
-class time(aetools.NProperty):
+class _Prop_time(aetools.NProperty):
 	"""time - the time since midnight of a date """
 	which = 'time'
 	want = 'long'
-class time_string(aetools.NProperty):
+class _Prop_time_string(aetools.NProperty):
 	"""time string - the time portion of a date-time value as text """
 	which = 'tstr'
 	want = 'TEXT'
-class weekday(aetools.NProperty):
+class _Prop_weekday(aetools.NProperty):
 	"""weekday - the day of a week of a date """
 	which = 'wkdy'
 	want = 'wkdy'
-class year(aetools.NProperty):
+class _Prop_year(aetools.NProperty):
 	"""year - the year of a date """
 	which = 'year'
 	want = 'long'
@@ -1097,15 +1097,15 @@ dates = date
 class list(aetools.ComponentItem):
 	"""list - An ordered collection of items """
 	want = 'list'
-class length(aetools.NProperty):
+class _Prop_length(aetools.NProperty):
 	"""length - the length of a list """
 	which = 'leng'
 	want = 'long'
-class rest(aetools.NProperty):
+class _Prop_rest(aetools.NProperty):
 	"""rest - all items of the list excluding first """
 	which = 'rest'
 	want = 'list'
-class reverse(aetools.NProperty):
+class _Prop_reverse(aetools.NProperty):
 	"""reverse - the items of the list in reverse order """
 	which = 'rvse'
 	want = 'list'
@@ -1221,7 +1221,7 @@ class ounces(aetools.ComponentItem):
 class class_(aetools.ComponentItem):
 	"""class - the type of a value """
 	want = 'pcls'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - inherits some of its properties from this class """
 	which = 'c@#^'
 	want = 'type'
@@ -1275,11 +1275,11 @@ class seconds(aetools.ComponentItem):
 class script(aetools.ComponentItem):
 	"""script - An AppleScript script """
 	want = 'scpt'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name of the script """
 	which = 'pnam'
 	want = 'TEXT'
-class parent(aetools.NProperty):
+class _Prop_parent(aetools.NProperty):
 	"""parent - its parent, i.e. the script that will handle events that this script doesn\xd5t """
 	which = 'pare'
 	want = 'scpt'
@@ -1443,19 +1443,19 @@ RGB_colors._privelemdict = {
 }
 application._superclassnames = []
 application._privpropdict = {
-	'AppleScript' : AppleScript,
-	'days' : days,
-	'hours' : hours,
-	'minutes' : minutes,
-	'pi' : pi,
-	'print_depth' : print_depth,
-	'print_length' : print_length,
-	'result' : result,
-	'return_' : return_,
-	'space' : space,
-	'tab' : tab,
-	'text_item_delimiters' : text_item_delimiters,
-	'weeks' : weeks,
+	'AppleScript' : _Prop_AppleScript,
+	'days' : _Prop_days,
+	'hours' : _Prop_hours,
+	'minutes' : _Prop_minutes,
+	'pi' : _Prop_pi,
+	'print_depth' : _Prop_print_depth,
+	'print_length' : _Prop_print_length,
+	'result' : _Prop_result,
+	'return_' : _Prop_return_,
+	'space' : _Prop_space,
+	'tab' : _Prop_tab,
+	'text_item_delimiters' : _Prop_text_item_delimiters,
+	'weeks' : _Prop_weeks,
 }
 application._privelemdict = {
 }
@@ -1481,8 +1481,8 @@ characters._privelemdict = {
 }
 writing_code_info._superclassnames = []
 writing_code_info._privpropdict = {
-	'language_code' : language_code,
-	'script_code' : script_code,
+	'language_code' : _Prop_language_code,
+	'script_code' : _Prop_script_code,
 }
 writing_code_info._privelemdict = {
 }
@@ -1503,7 +1503,7 @@ centimeters._privelemdict = {
 }
 item._superclassnames = []
 item._privpropdict = {
-	'id' : id,
+	'id' : _Prop_id,
 }
 item._privelemdict = {
 }
@@ -1649,9 +1649,9 @@ kilometers._privelemdict = {
 }
 keystroke._superclassnames = []
 keystroke._privpropdict = {
-	'key' : key,
-	'key_kind' : key_kind,
-	'modifiers' : modifiers,
+	'key' : _Prop_key,
+	'key_kind' : _Prop_key_kind,
+	'modifiers' : _Prop_modifiers,
 }
 keystroke._privelemdict = {
 }
@@ -1662,21 +1662,21 @@ pounds._privelemdict = {
 }
 date._superclassnames = []
 date._privpropdict = {
-	'date_string' : date_string,
-	'day' : day,
-	'month' : month,
-	'time' : time,
-	'time_string' : time_string,
-	'weekday' : weekday,
-	'year' : year,
+	'date_string' : _Prop_date_string,
+	'day' : _Prop_day,
+	'month' : _Prop_month,
+	'time' : _Prop_time,
+	'time_string' : _Prop_time_string,
+	'weekday' : _Prop_weekday,
+	'year' : _Prop_year,
 }
 date._privelemdict = {
 }
 list._superclassnames = []
 list._privpropdict = {
-	'length' : length,
-	'rest' : rest,
-	'reverse' : reverse,
+	'length' : _Prop_length,
+	'rest' : _Prop_rest,
+	'reverse' : _Prop_reverse,
 }
 list._privelemdict = {
 }
@@ -1687,7 +1687,7 @@ liters._privelemdict = {
 }
 linked_list._superclassnames = []
 linked_list._privpropdict = {
-	'length' : length,
+	'length' : _Prop_length,
 }
 linked_list._privelemdict = {
 }
@@ -1793,7 +1793,7 @@ ounces._privelemdict = {
 }
 class_._superclassnames = ['type_class']
 class_._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
 }
 class_._privelemdict = {
 }
@@ -1844,8 +1844,8 @@ seconds._privelemdict = {
 }
 script._superclassnames = []
 script._privpropdict = {
-	'name' : name,
-	'parent' : parent,
+	'name' : _Prop_name,
+	'parent' : _Prop_parent,
 }
 script._privelemdict = {
 }
@@ -1946,7 +1946,7 @@ Unicode_text._privelemdict = {
 }
 vector._superclassnames = []
 vector._privpropdict = {
-	'length' : length,
+	'length' : _Prop_length,
 }
 vector._privelemdict = {
 }
@@ -2146,50 +2146,4 @@ _classdeclarations = {
 	'wkdy' : weekdays,
 	'yard' : yards,
 	'zone' : zones,
-}
-
-_propdeclarations = {
-	'ID  ' : id,
-	'ascr' : AppleScript,
-	'c@#^' : _3c_Inheritance_3e_,
-	'day ' : day,
-	'days' : days,
-	'dstr' : date_string,
-	'hour' : hours,
-	'kMod' : modifiers,
-	'kMsg' : key,
-	'kknd' : key_kind,
-	'leng' : length,
-	'min ' : minutes,
-	'mnth' : month,
-	'pare' : parent,
-	'pi  ' : pi,
-	'plcd' : language_code,
-	'pnam' : name,
-	'prdp' : print_depth,
-	'prln' : print_length,
-	'pscd' : script_code,
-	'rest' : rest,
-	'ret ' : return_,
-	'rslt' : result,
-	'rvse' : reverse,
-	'spac' : space,
-	'tab ' : tab,
-	'time' : time,
-	'tstr' : time_string,
-	'txdl' : text_item_delimiters,
-	'week' : weeks,
-	'wkdy' : weekday,
-	'year' : year,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'boov' : _Enum_boov,
-	'cons' : _Enum_cons,
-	'eMds' : _Enum_eMds,
-	'ekst' : _Enum_ekst,
-	'misc' : _Enum_misc,
 }

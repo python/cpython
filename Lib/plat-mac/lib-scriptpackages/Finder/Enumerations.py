@@ -124,22 +124,3 @@ _Enum_vwby = {
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'earr' : _Enum_earr,
-	'ecvw' : _Enum_ecvw,
-	'edfm' : _Enum_edfm,
-	'elsv' : _Enum_elsv,
-	'ipnl' : _Enum_ipnl,
-	'isiz' : _Enum_isiz,
-	'lvic' : _Enum_lvic,
-	'priv' : _Enum_priv,
-	'sodr' : _Enum_sodr,
-	'vwby' : _Enum_vwby,
-}

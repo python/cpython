@@ -247,7 +247,7 @@ class CodeWarrior_suite_Events:
 class single_class_browser(aetools.ComponentItem):
 	"""single class browser - a single class browser """
 	want = '1BRW'
-class inherits(aetools.NProperty):
+class _Prop_inherits(aetools.NProperty):
 	"""inherits - all properties and elements of the given class are inherited by this class. """
 	which = 'c@#^'
 	want = 'TXTD'
@@ -311,7 +311,7 @@ build_progress_documents = build_progress_document
 class project_document(aetools.ComponentItem):
 	"""project document - a project document """
 	want = 'PRJD'
-class current_target(aetools.NProperty):
+class _Prop_current_target(aetools.NProperty):
 	"""current target - the current target """
 	which = 'CURT'
 	want = 'TRGT'
@@ -322,11 +322,11 @@ project_documents = project_document
 class subtarget(aetools.ComponentItem):
 	"""subtarget - a target that is prerequisite for another target """
 	want = 'SBTG'
-class link_against_output(aetools.NProperty):
+class _Prop_link_against_output(aetools.NProperty):
 	"""link against output - is the output of this subtarget linked into its dependent target? """
 	which = 'LNKO'
 	want = 'bool'
-class target(aetools.NProperty):
+class _Prop_target(aetools.NProperty):
 	"""target - the target that is dependent on this subtarget """
 	which = 'TrgT'
 	want = 'TRGT'
@@ -336,67 +336,67 @@ subtargets = subtarget
 class target_file(aetools.ComponentItem):
 	"""target file - a source or header file in a target """
 	want = 'SRCF'
-class code_size(aetools.NProperty):
+class _Prop_code_size(aetools.NProperty):
 	"""code size - the size of the code (in bytes) produced by compiling this source file """
 	which = 'CSZE'
 	want = 'long'
-class compiled_date(aetools.NProperty):
+class _Prop_compiled_date(aetools.NProperty):
 	"""compiled date - the date and this source file was last compiled """
 	which = 'CMPD'
 	want = 'ldt '
-class data_size(aetools.NProperty):
+class _Prop_data_size(aetools.NProperty):
 	"""data size - the size of the date (in bytes) produced by compiling this source file """
 	which = 'DSZE'
 	want = 'long'
-class debug(aetools.NProperty):
+class _Prop_debug(aetools.NProperty):
 	"""debug - is debugging information generated for this source file? """
 	which = 'DBUG'
 	want = 'bool'
-class dependents(aetools.NProperty):
+class _Prop_dependents(aetools.NProperty):
 	"""dependents - the source files that need this source file in order to build """
 	which = 'DPND'
 	want = 'list'
-class id(aetools.NProperty):
+class _Prop_id(aetools.NProperty):
 	"""id - the unique ID number of the target file """
 	which = 'ID  '
 	want = 'long'
-class init_before(aetools.NProperty):
+class _Prop_init_before(aetools.NProperty):
 	"""init before - is the \xd4initialize before\xd5 flag set for this shared library? """
 	which = 'INIT'
 	want = 'bool'
-class link_index(aetools.NProperty):
+class _Prop_link_index(aetools.NProperty):
 	"""link index - the index of the source file in its target\xd5s link order (-1 if source file is not in link order) """
 	which = 'LIDX'
 	want = 'long'
-class linked(aetools.NProperty):
+class _Prop_linked(aetools.NProperty):
 	"""linked - is the source file in the link order of its target? """
 	which = 'LINK'
 	want = 'bool'
-class location(aetools.NProperty):
+class _Prop_location(aetools.NProperty):
 	"""location - the location of the target file on disk """
 	which = 'FILE'
 	want = 'fss '
-class merge_output(aetools.NProperty):
+class _Prop_merge_output(aetools.NProperty):
 	"""merge output - is this shared library merged into another code fragment? """
 	which = 'MRGE'
 	want = 'bool'
-class modified_date(aetools.NProperty):
+class _Prop_modified_date(aetools.NProperty):
 	"""modified date - the date and time this source file was last modified """
 	which = 'MODD'
 	want = 'ldt '
-class path(aetools.NProperty):
+class _Prop_path(aetools.NProperty):
 	"""path - the path of the source file on disk """
 	which = 'Path'
 	want = 'itxt'
-class prerequisites(aetools.NProperty):
+class _Prop_prerequisites(aetools.NProperty):
 	"""prerequisites - the source files needed to build this source file """
 	which = 'PRER'
 	want = 'list'
-class type(aetools.NProperty):
+class _Prop_type(aetools.NProperty):
 	"""type - the type of source file """
 	which = 'FTYP'
 	want = 'FTYP'
-class weak_link(aetools.NProperty):
+class _Prop_weak_link(aetools.NProperty):
 	"""weak link - is this shared library linked weakly? """
 	which = 'WEAK'
 	want = 'bool'
@@ -418,11 +418,11 @@ ToolServer_worksheets = ToolServer_worksheet
 class target(aetools.ComponentItem):
 	"""target - a target in a project """
 	want = 'TRGT'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name -  """
 	which = 'pnam'
 	want = 'itxt'
-class project_document(aetools.NProperty):
+class _Prop_project_document(aetools.NProperty):
 	"""project document - the project document that contains this target """
 	which = 'PrjD'
 	want = 'PRJD'
@@ -434,11 +434,11 @@ targets = target
 class text_document(aetools.ComponentItem):
 	"""text document - a document that contains text """
 	want = 'TXTD'
-class modified(aetools.NProperty):
+class _Prop_modified(aetools.NProperty):
 	"""modified - Has the document been modified since the last save? """
 	which = 'imod'
 	want = 'bool'
-class selection(aetools.NProperty):
+class _Prop_selection(aetools.NProperty):
 	"""selection - the selection visible to the user """
 	which = 'sele'
 	want = 'csel'
@@ -450,118 +450,118 @@ class selection(aetools.NProperty):
 text_documents = text_document
 single_class_browser._superclassnames = ['text_document']
 single_class_browser._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 single_class_browser._privelemdict = {
 }
 import Standard_Suite
 single_class_hierarchy._superclassnames = ['document']
 single_class_hierarchy._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 single_class_hierarchy._privelemdict = {
 }
 class_browser._superclassnames = ['text_document']
 class_browser._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 class_browser._privelemdict = {
 }
 file_compare_document._superclassnames = ['text_document']
 file_compare_document._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 file_compare_document._privelemdict = {
 }
 catalog_document._superclassnames = ['text_document']
 catalog_document._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 catalog_document._privelemdict = {
 }
 editor_document._superclassnames = ['text_document']
 editor_document._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 editor_document._privelemdict = {
 }
 class_hierarchy._superclassnames = ['document']
 class_hierarchy._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 class_hierarchy._privelemdict = {
 }
 project_inspector._superclassnames = ['document']
 project_inspector._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 project_inspector._privelemdict = {
 }
 message_document._superclassnames = ['text_document']
 message_document._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 message_document._privelemdict = {
 }
 build_progress_document._superclassnames = ['document']
 build_progress_document._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 build_progress_document._privelemdict = {
 }
 project_document._superclassnames = ['document']
 project_document._privpropdict = {
-	'current_target' : current_target,
-	'inherits' : inherits,
+	'current_target' : _Prop_current_target,
+	'inherits' : _Prop_inherits,
 }
 project_document._privelemdict = {
 	'target' : target,
 }
 subtarget._superclassnames = ['target']
 subtarget._privpropdict = {
-	'inherits' : inherits,
-	'link_against_output' : link_against_output,
-	'target' : target,
+	'inherits' : _Prop_inherits,
+	'link_against_output' : _Prop_link_against_output,
+	'target' : _Prop_target,
 }
 subtarget._privelemdict = {
 }
 target_file._superclassnames = []
 target_file._privpropdict = {
-	'code_size' : code_size,
-	'compiled_date' : compiled_date,
-	'data_size' : data_size,
-	'debug' : debug,
-	'dependents' : dependents,
-	'id' : id,
-	'init_before' : init_before,
-	'link_index' : link_index,
-	'linked' : linked,
-	'location' : location,
-	'merge_output' : merge_output,
-	'modified_date' : modified_date,
-	'path' : path,
-	'prerequisites' : prerequisites,
-	'type' : type,
-	'weak_link' : weak_link,
+	'code_size' : _Prop_code_size,
+	'compiled_date' : _Prop_compiled_date,
+	'data_size' : _Prop_data_size,
+	'debug' : _Prop_debug,
+	'dependents' : _Prop_dependents,
+	'id' : _Prop_id,
+	'init_before' : _Prop_init_before,
+	'link_index' : _Prop_link_index,
+	'linked' : _Prop_linked,
+	'location' : _Prop_location,
+	'merge_output' : _Prop_merge_output,
+	'modified_date' : _Prop_modified_date,
+	'path' : _Prop_path,
+	'prerequisites' : _Prop_prerequisites,
+	'type' : _Prop_type,
+	'weak_link' : _Prop_weak_link,
 }
 target_file._privelemdict = {
 }
 symbol_browser._superclassnames = ['text_document']
 symbol_browser._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 symbol_browser._privelemdict = {
 }
 ToolServer_worksheet._superclassnames = ['text_document']
 ToolServer_worksheet._privpropdict = {
-	'inherits' : inherits,
+	'inherits' : _Prop_inherits,
 }
 ToolServer_worksheet._privelemdict = {
 }
 target._superclassnames = []
 target._privpropdict = {
-	'name' : name,
-	'project_document' : project_document,
+	'name' : _Prop_name,
+	'project_document' : _Prop_project_document,
 }
 target._privelemdict = {
 	'subtarget' : subtarget,
@@ -569,9 +569,9 @@ target._privelemdict = {
 }
 text_document._superclassnames = ['document']
 text_document._privpropdict = {
-	'inherits' : inherits,
-	'modified' : modified,
-	'selection' : selection,
+	'inherits' : _Prop_inherits,
+	'modified' : _Prop_modified,
+	'selection' : _Prop_selection,
 }
 text_document._privelemdict = {
 	'character' : Standard_Suite.character,
@@ -642,41 +642,4 @@ _classdeclarations = {
 	'TOOL' : ToolServer_worksheet,
 	'TRGT' : target,
 	'TXTD' : text_document,
-}
-
-_propdeclarations = {
-	'CMPD' : compiled_date,
-	'CSZE' : code_size,
-	'CURT' : current_target,
-	'DBUG' : debug,
-	'DPND' : dependents,
-	'DSZE' : data_size,
-	'FILE' : location,
-	'FTYP' : type,
-	'ID  ' : id,
-	'INIT' : init_before,
-	'LIDX' : link_index,
-	'LINK' : linked,
-	'LNKO' : link_against_output,
-	'MODD' : modified_date,
-	'MRGE' : merge_output,
-	'PRER' : prerequisites,
-	'Path' : path,
-	'PrjD' : project_document,
-	'TrgT' : target,
-	'WEAK' : weak_link,
-	'c@#^' : inherits,
-	'imod' : modified,
-	'pnam' : name,
-	'sele' : selection,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'DKND' : _Enum_DKND,
-	'FTYP' : _Enum_FTYP,
-	'Inte' : _Enum_Inte,
-	'PERM' : _Enum_PERM,
 }

@@ -150,27 +150,27 @@ class Folder_Actions_Suite_Events:
 class folder_action(aetools.ComponentItem):
 	"""folder action - An action attached to a folder in the file system """
 	want = 'foac'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - All of the properties of the superclass. """
 	which = 'c@#^'
 	want = 'cobj'
-class enabled(aetools.NProperty):
+class _Prop_enabled(aetools.NProperty):
 	"""enabled - Is the folder action enabled? """
 	which = 'enaB'
 	want = 'bool'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - the name of the folder action, which is also the name of the folder """
 	which = 'pnam'
 	want = 'utxt'
-class path(aetools.NProperty):
+class _Prop_path(aetools.NProperty):
 	"""path - the path to the folder to which the folder action applies """
 	which = 'ppth'
 	want = '****'
-class properties(aetools.NProperty):
+class _Prop_properties(aetools.NProperty):
 	"""properties - every property of the folder action """
 	which = 'pALL'
 	want = '****'
-class volume(aetools.NProperty):
+class _Prop_volume(aetools.NProperty):
 	"""volume - the volume on which the folder action resides """
 	which = 'volu'
 	want = 'utxt'
@@ -181,7 +181,7 @@ folder_actions = folder_action
 class script(aetools.ComponentItem):
 	"""script - A script invoked by a folder action """
 	want = 'scpt'
-class POSIX_path(aetools.NProperty):
+class _Prop_POSIX_path(aetools.NProperty):
 	"""POSIX path - the POSIX file system path of the disk """
 	which = 'posx'
 	want = 'utxt'
@@ -190,23 +190,23 @@ scripts = script
 import Standard_Suite
 folder_action._superclassnames = ['item']
 folder_action._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'enabled' : enabled,
-	'name' : name,
-	'path' : path,
-	'properties' : properties,
-	'volume' : volume,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'enabled' : _Prop_enabled,
+	'name' : _Prop_name,
+	'path' : _Prop_path,
+	'properties' : _Prop_properties,
+	'volume' : _Prop_volume,
 }
 folder_action._privelemdict = {
 	'script' : script,
 }
 script._superclassnames = ['item']
 script._privpropdict = {
-	'POSIX_path' : POSIX_path,
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'name' : name,
-	'path' : path,
-	'properties' : properties,
+	'POSIX_path' : _Prop_POSIX_path,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'name' : _Prop_name,
+	'path' : _Prop_path,
+	'properties' : _Prop_properties,
 }
 script._privelemdict = {
 }
@@ -225,21 +225,4 @@ _Enum_actn = {
 _classdeclarations = {
 	'foac' : folder_action,
 	'scpt' : script,
-}
-
-_propdeclarations = {
-	'c@#^' : _3c_Inheritance_3e_,
-	'enaB' : enabled,
-	'pALL' : properties,
-	'pnam' : name,
-	'posx' : POSIX_path,
-	'ppth' : path,
-	'volu' : volume,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'actn' : _Enum_actn,
 }

@@ -18,15 +18,15 @@ class QuickDraw_Graphics_Suppleme_Events:
 class drawing_area(aetools.ComponentItem):
 	"""drawing area - Container for graphics and supporting information """
 	want = 'cdrw'
-class rotation(aetools.NProperty):
+class _Prop_rotation(aetools.NProperty):
 	"""rotation - the default rotation for objects in the drawing area """
 	which = 'prot'
 	want = 'trot'
-class scale(aetools.NProperty):
+class _Prop_scale(aetools.NProperty):
 	"""scale - the default scaling for objects in the drawing area """
 	which = 'pscl'
 	want = 'fixd'
-class translation(aetools.NProperty):
+class _Prop_translation(aetools.NProperty):
 	"""translation - the default repositioning for objects in the drawing area """
 	which = 'ptrs'
 	want = 'QDpt'
@@ -40,9 +40,9 @@ class graphic_groups(aetools.ComponentItem):
 graphic_group = graphic_groups
 drawing_area._superclassnames = []
 drawing_area._privpropdict = {
-	'rotation' : rotation,
-	'scale' : scale,
-	'translation' : translation,
+	'rotation' : _Prop_rotation,
+	'scale' : _Prop_scale,
+	'translation' : _Prop_translation,
 }
 drawing_area._privelemdict = {
 }
@@ -58,16 +58,4 @@ graphic_groups._privelemdict = {
 _classdeclarations = {
 	'cdrw' : drawing_area,
 	'cpic' : graphic_groups,
-}
-
-_propdeclarations = {
-	'prot' : rotation,
-	'pscl' : scale,
-	'ptrs' : translation,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

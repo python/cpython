@@ -42,13 +42,13 @@ class Standard_Suite_Events:
 class application(aetools.ComponentItem):
 	"""application - An application program """
 	want = 'capp'
-class selected_text(aetools.NProperty):
+class _Prop_selected_text(aetools.NProperty):
 	"""selected text - the selected text """
 	which = 'stxt'
 	want = 'TEXT'
 application._superclassnames = []
 application._privpropdict = {
-	'selected_text' : selected_text,
+	'selected_text' : _Prop_selected_text,
 }
 application._privelemdict = {
 }
@@ -58,14 +58,4 @@ application._privelemdict = {
 #
 _classdeclarations = {
 	'capp' : application,
-}
-
-_propdeclarations = {
-	'stxt' : selected_text,
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
 }

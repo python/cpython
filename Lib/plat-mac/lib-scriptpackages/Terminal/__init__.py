@@ -43,14 +43,14 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(window)
-getbaseclasses(application)
 getbaseclasses(character)
 getbaseclasses(attachment)
 getbaseclasses(paragraph)
 getbaseclasses(word)
 getbaseclasses(attribute_run)
 getbaseclasses(text)
+getbaseclasses(window)
+getbaseclasses(application)
 getbaseclasses(color)
 getbaseclasses(window)
 getbaseclasses(application)
@@ -61,14 +61,14 @@ getbaseclasses(document)
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cwin' : window,
-	'capp' : application,
 	'cha ' : character,
 	'atts' : attachment,
 	'cpar' : paragraph,
 	'cwor' : word,
 	'catr' : attribute_run,
 	'ctxt' : text,
+	'cwin' : window,
+	'capp' : application,
 	'colr' : color,
 	'cwin' : window,
 	'capp' : application,

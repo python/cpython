@@ -74,13 +74,3 @@ _Enum_dbac = {
 #
 _classdeclarations = {
 }
-
-_propdeclarations = {
-}
-
-_compdeclarations = {
-}
-
-_enumdeclarations = {
-	'dbac' : _Enum_dbac,
-}

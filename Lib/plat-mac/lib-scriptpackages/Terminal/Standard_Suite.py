@@ -333,19 +333,19 @@ class Standard_Suite_Events:
 class application(aetools.ComponentItem):
 	"""application - An application's top level scripting object. """
 	want = 'capp'
-class _3c_Inheritance_3e_(aetools.NProperty):
+class _Prop__3c_Inheritance_3e_(aetools.NProperty):
 	"""<Inheritance> - All of the properties of the superclass. """
 	which = 'c@#^'
 	want = 'cobj'
-class frontmost(aetools.NProperty):
+class _Prop_frontmost(aetools.NProperty):
 	"""frontmost - Is this the frontmost (active) application? """
 	which = 'pisf'
 	want = 'bool'
-class name(aetools.NProperty):
+class _Prop_name(aetools.NProperty):
 	"""name - The name of the application. """
 	which = 'pnam'
 	want = 'utxt'
-class version(aetools.NProperty):
+class _Prop_version(aetools.NProperty):
 	"""version - The version of the application. """
 	which = 'vers'
 	want = 'utxt'
@@ -357,11 +357,11 @@ applications = application
 class item(aetools.ComponentItem):
 	"""item - A scriptable object. """
 	want = 'cobj'
-class class_(aetools.NProperty):
+class _Prop_class_(aetools.NProperty):
 	"""class - The class of the object. """
 	which = 'pcls'
 	want = 'type'
-class properties(aetools.NProperty):
+class _Prop_properties(aetools.NProperty):
 	"""properties - All of the object's properties. """
 	which = 'pALL'
 	want = 'reco'
@@ -377,59 +377,59 @@ colors = color
 class window(aetools.ComponentItem):
 	"""window - A window. """
 	want = 'cwin'
-class bounds(aetools.NProperty):
+class _Prop_bounds(aetools.NProperty):
 	"""bounds - The bounding rectangle of the window. """
 	which = 'pbnd'
 	want = 'qdrt'
-class closeable(aetools.NProperty):
+class _Prop_closeable(aetools.NProperty):
 	"""closeable - Whether the window has a close box. """
 	which = 'hclb'
 	want = 'bool'
-class document(aetools.NProperty):
+class _Prop_document(aetools.NProperty):
 	"""document - The document whose contents are being displayed in the window. """
 	which = 'docu'
 	want = 'docu'
-class floating(aetools.NProperty):
+class _Prop_floating(aetools.NProperty):
 	"""floating - Whether the window floats. """
 	which = 'isfl'
 	want = 'bool'
-class id(aetools.NProperty):
+class _Prop_id(aetools.NProperty):
 	"""id - The unique identifier of the window. """
 	which = 'ID  '
 	want = 'long'
-class index(aetools.NProperty):
+class _Prop_index(aetools.NProperty):
 	"""index - The index of the window in the back-to-front window ordering. """
 	which = 'pidx'
 	want = 'long'
-class miniaturizable(aetools.NProperty):
+class _Prop_miniaturizable(aetools.NProperty):
 	"""miniaturizable - Whether the window can be miniaturized. """
 	which = 'ismn'
 	want = 'bool'
-class miniaturized(aetools.NProperty):
+class _Prop_miniaturized(aetools.NProperty):
 	"""miniaturized - Whether the window is currently miniaturized. """
 	which = 'pmnd'
 	want = 'bool'
-class modal(aetools.NProperty):
+class _Prop_modal(aetools.NProperty):
 	"""modal - Whether the window is the application's current modal window. """
 	which = 'pmod'
 	want = 'bool'
-class resizable(aetools.NProperty):
+class _Prop_resizable(aetools.NProperty):
 	"""resizable - Whether the window can be resized. """
 	which = 'prsz'
 	want = 'bool'
-class titled(aetools.NProperty):
+class _Prop_titled(aetools.NProperty):
 	"""titled - Whether the window has a title bar. """
 	which = 'ptit'
 	want = 'bool'
-class visible(aetools.NProperty):
+class _Prop_visible(aetools.NProperty):
 	"""visible - Whether the window is currently visible. """
 	which = 'pvis'
 	want = 'bool'
-class zoomable(aetools.NProperty):
+class _Prop_zoomable(aetools.NProperty):
 	"""zoomable - Whether the window can be zoomed. """
 	which = 'iszm'
 	want = 'bool'
-class zoomed(aetools.NProperty):
+class _Prop_zoomed(aetools.NProperty):
 	"""zoomed - Whether the window is currently zoomed. """
 	which = 'pzum'
 	want = 'bool'
@@ -439,11 +439,11 @@ windows = window
 class document(aetools.ComponentItem):
 	"""document - A document. """
 	want = 'docu'
-class modified(aetools.NProperty):
+class _Prop_modified(aetools.NProperty):
 	"""modified - Has the document been modified since the last save? """
 	which = 'imod'
 	want = 'bool'
-class path(aetools.NProperty):
+class _Prop_path(aetools.NProperty):
 	"""path - The document's path. """
 	which = 'ppth'
 	want = 'utxt'
@@ -451,10 +451,10 @@ class path(aetools.NProperty):
 documents = document
 application._superclassnames = ['item']
 application._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'frontmost' : frontmost,
-	'name' : name,
-	'version' : version,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'frontmost' : _Prop_frontmost,
+	'name' : _Prop_name,
+	'version' : _Prop_version,
 }
 application._privelemdict = {
 	'document' : document,
@@ -462,44 +462,44 @@ application._privelemdict = {
 }
 item._superclassnames = []
 item._privpropdict = {
-	'class_' : class_,
-	'properties' : properties,
+	'class_' : _Prop_class_,
+	'properties' : _Prop_properties,
 }
 item._privelemdict = {
 }
 color._superclassnames = ['item']
 color._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
 }
 color._privelemdict = {
 }
 window._superclassnames = ['item']
 window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'bounds' : bounds,
-	'closeable' : closeable,
-	'document' : document,
-	'floating' : floating,
-	'id' : id,
-	'index' : index,
-	'miniaturizable' : miniaturizable,
-	'miniaturized' : miniaturized,
-	'modal' : modal,
-	'name' : name,
-	'resizable' : resizable,
-	'titled' : titled,
-	'visible' : visible,
-	'zoomable' : zoomable,
-	'zoomed' : zoomed,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'bounds' : _Prop_bounds,
+	'closeable' : _Prop_closeable,
+	'document' : _Prop_document,
+	'floating' : _Prop_floating,
+	'id' : _Prop_id,
+	'index' : _Prop_index,
+	'miniaturizable' : _Prop_miniaturizable,
+	'miniaturized' : _Prop_miniaturized,
+	'modal' : _Prop_modal,
+	'name' : _Prop_name,
+	'resizable' : _Prop_resizable,
+	'titled' : _Prop_titled,
+	'visible' : _Prop_visible,
+	'zoomable' : _Prop_zoomable,
+	'zoomed' : _Prop_zoomed,
 }
 window._privelemdict = {
 }
 document._superclassnames = ['item']
 document._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'modified' : modified,
-	'name' : name,
-	'path' : path,
+	'_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+	'modified' : _Prop_modified,
+	'name' : _Prop_name,
+	'path' : _Prop_path,
 }
 document._privelemdict = {
 }
@@ -535,44 +535,4 @@ _classdeclarations = {
 	'colr' : color,
 	'cwin' : window,
 	'docu' : document,
-}
-
-_propdeclarations = {
-	'ID  ' : id,
-	'c@#^' : _3c_Inheritance_3e_,
-	'docu' : document,
-	'hclb' : closeable,
-	'imod' : modified,
-	'isfl' : floating,
-	'ismn' : miniaturizable,
-	'iszm' : zoomable,
-	'pALL' : properties,
-	'pbnd' : bounds,
-	'pcls' : class_,
-	'pidx' : index,
-	'pisf' : frontmost,
-	'pmnd' : miniaturized,
-	'pmod' : modal,
-	'pnam' : name,
-	'ppth' : path,
-	'prsz' : resizable,
-	'ptit' : titled,
-	'pvis' : visible,
-	'pzum' : zoomed,
-	'vers' : version,
-}
-
-_compdeclarations = {
-	'<   ' : _3c_,
-	'<=  ' : _b2_,
-	'=   ' : _3d_,
-	'>   ' : _3e_,
-	'>=  ' : _b3_,
-	'bgwt' : starts_with,
-	'cont' : contains,
-	'ends' : ends_with,
-}
-
-_enumdeclarations = {
-	'savo' : _Enum_savo,
 }
