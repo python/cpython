@@ -155,7 +155,7 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype ref
 
 initstuff = initstuff + """
 	upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
-#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
+#if UNIVERSAL_INTERFACES_VERSION >= 0x03400
 	upp_GenericEventHandler = NewAEEventHandlerUPP(&GenericEventHandler);
 #else
 	upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
