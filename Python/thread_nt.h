@@ -31,8 +31,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 
-#include "windows.h"
-#include "limits.h"
+#include <windows.h>
+#include <limits.h>
+#include <process.h>
 
 long get_thread_ident(void);
 
@@ -53,25 +54,16 @@ static void _init_thread(void)
  */
 int start_new_thread(void (*func)(void *), void *arg)
 {
-	HANDLE aThread;
-	DWORD aThreadId;
+	long rv;
+	int success = 0;
 
-	int success = 0;        /* init not needed when SOLARIS_THREADS and */
-                            /* C_THREADS implemented properly */
 	dprintf(("%ld: start_new_thread called\n", get_thread_ident()));
 	if (!initialized)
 		init_thread();
 
-	aThread = CreateThread(
-				NULL,                           /* No security attributes               */
-				0,                              /* use default stack size               */
-				(LPTHREAD_START_ROUTINE) func,  /* thread function                      */
-				(LPVOID) arg,                   /* argument to thread function          */
-				0,                              /* use the default creation flags       */
-				&aThreadId);                    /* returns the thread identifier       */
+	rv = _beginthread(func, 0, arg); /* use default stack size */
  
-	if (aThread != NULL) {
-		CloseHandle(aThread);   /* We do not want to have any zombies hanging around */
+	if (rv != -1) {
 		success = 1;
 		dprintf(("%ld: start_new_thread succeeded: %ld\n", get_thread_ident(), aThreadId));
 	}
@@ -99,7 +91,7 @@ static void do_exit_thread(int no_cleanup)
 			_exit(0);
 		else
 			exit(0);
-	ExitThread(0);
+	_endthread();
 }
 
 void exit_thread(void)
