@@ -2486,10 +2486,6 @@ com_assert_stmt(struct compiling *c, node *n)
 	   where <message> is the second test, if present.
 	*/
 
-	/* XXX should __debug__ and AssertionError get inserted into
-	   the symbol table?  they don't follow the normal rules
-	   because they are always loaded as globals */
-
 	if (Py_OptimizeFlag)
 		return;
 	com_addop_name(c, LOAD_GLOBAL, "__debug__");
@@ -3524,10 +3520,6 @@ com_fplist(struct compiling *c, node *n)
 	}
 }
 
-/* XXX This function could probably be made simpler, because it
-   doesn't do anything except generate code for complex arguments. 
-*/
-
 static void
 com_arglist(struct compiling *c, node *n)
 {
@@ -3579,12 +3571,22 @@ com_arglist(struct compiling *c, node *n)
 			REQ(ch, STAR);
 			ch = CHILD(n, i+1);
 			if (TYPE(ch) == NAME) {
+				PyObject *v;
 				i += 3;
+				v = PyDict_GetItemString(c->c_cellvars,
+							 STR(ch));
+				if (v) {
+					com_addoparg(c, LOAD_FAST, narg);
+					com_addoparg(c, STORE_DEREF, 
+						     PyInt_AS_LONG(v));
 			}
+				narg++;
 		}
+	}
 	}
 	/* Handle **keywords */
 	if (i < nch) {
+		PyObject *v;
 		node *ch;
 		ch = CHILD(n, i);
 		if (TYPE(ch) != DOUBLESTAR) {
@@ -3596,6 +3598,11 @@ com_arglist(struct compiling *c, node *n)
 		else
 			ch = CHILD(n, i+1);
 		REQ(ch, NAME);
+		v = PyDict_GetItemString(c->c_cellvars, STR(ch));
+		if (v) {
+			com_addoparg(c, LOAD_FAST, narg);
+			com_addoparg(c, STORE_DEREF, PyInt_AS_LONG(v));
+		}			
 	}
 	if (complex) {
 		/* Generate code for complex arguments only after
