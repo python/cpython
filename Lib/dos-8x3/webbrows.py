@@ -183,7 +183,7 @@ register("grail", Grail)
 
 class WindowsDefault:
     def open(self, url, new=0):
-        self.junk = os.popen("start " + url)
+        os.startfile(url)
 
     def open_new(self, url):
         self.open(url)

@@ -122,9 +122,14 @@ def testtype(type, example):
             a.pop()
             a.pop()
             a.pop()
-            a.pop()
+            x = a.pop()
+            if x != 'e':
+                raise TestFailed, "array(%s) pop-test" % `type`
             if a != array.array(type, "acd"):
             	raise TestFailed, "array(%s) pop-test" % `type`
+            a.reverse()
+            if a != array.array(type, "dca"):
+            	raise TestFailed, "array(%s) reverse-test" % `type`
         else:
             a = array.array(type, [1, 2, 3, 4, 5])
             a[:-1] = a
@@ -155,9 +160,14 @@ def testtype(type, example):
             a.pop()
             a.pop()
             a.pop()
-            a.pop()
+            x = a.pop()
+            if x != 5:
+                raise TestFailed, "array(%s) pop-test" % `type`
             if a != array.array(type, [1, 3, 4]):
             	raise TestFailed, "array(%s) pop-test" % `type`
+            a.reverse()
+            if a != array.array(type, [4, 3, 1]):
+            	raise TestFailed, "array(%s) reverse-test" % `type`
 
         # test that overflow exceptions are raised as expected for assignment
         # to array of specific integral types

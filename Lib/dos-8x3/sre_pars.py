@@ -634,7 +634,7 @@ def parse_template(source, pattern):
                 while 1:
                     group = _group(this, pattern.groups+1)
                     if group:
-                        if (not s.next or
+                        if (s.next not in DIGITS or
                             not _group(this + s.next, pattern.groups+1)):
                             code = MARK, int(group)
                             break

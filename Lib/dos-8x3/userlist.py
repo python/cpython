@@ -17,6 +17,7 @@ class UserList:
             return cmp(self.data, other.data)
         else:
             return cmp(self.data, other)
+    def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
     def __getitem__(self, i): return self.data[i]
     def __setitem__(self, i, item): self.data[i] = item
