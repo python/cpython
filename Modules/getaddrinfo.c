@@ -199,8 +199,7 @@ if (pai->ai_flags & AI_CANONNAME) {\
 #define ERR(err) { error = (err); goto bad; }
 
 char *
-gai_strerror(ecode)
-	int ecode;
+gai_strerror(int ecode)
 {
 	if (ecode < 0 || ecode > EAI_MAX)
 		ecode = EAI_MAX;
@@ -208,8 +207,7 @@ gai_strerror(ecode)
 }
 
 void
-freeaddrinfo(ai)
-	struct addrinfo *ai;
+freeaddrinfo(struct addrinfo *ai)
 {
 	struct addrinfo *next;
 
@@ -223,10 +221,9 @@ freeaddrinfo(ai)
 }
 
 static int
-str_isnumber(p)
-	const char *p;
+str_isnumber(const char *p)
 {
-	char *q = (char *)p;
+	unsigned char *q = (unsigned char *)p;
 	while (*q) {
 		if (! isdigit(*q))
 			return NO;
