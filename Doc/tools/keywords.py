@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # This Python program sorts and reformats the table of keywords in ref2.tex
 
