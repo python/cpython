@@ -49,6 +49,6 @@ def makeport(nchannels, sampwidth, samprate):
 def play(p, data, offset, blocksize):
 	data = data[offset:]
 	p.writesamps(data)
-	while p.getfilled() > 0: time.millisleep(10)
+	while p.getfilled() > 0: time.sleep(0.01)
 
 main()

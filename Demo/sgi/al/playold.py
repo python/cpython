@@ -43,7 +43,7 @@ def main():
 		if not buf: break
 		port.writesamps(buf)
 	while port.getfilled() > 0:
-		time.millisleep(100)
+		time.sleep(0.1)
 
 try:
 	main()

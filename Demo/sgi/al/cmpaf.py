@@ -17,8 +17,8 @@ import AL
 import audioop
 import sys
 
-class Cmpaf():
-	def init(self):
+class Cmpaf:
+	def __init__(self):
 		parsetree = flp.parse_form('cmpaf_form','form')
 		flp.create_full_form(self, parsetree)
 		c = al.newconfig()
@@ -29,7 +29,6 @@ class Cmpaf():
 		self.do_adpcm = self.do_ulaw = self.do_diff = 0
 		self.acstate = None
 		self.form.show_form(FL.PLACE_SIZE, 1, 'compare audio formats')
-		return self
 
 	def run(self):
 		while 1:
@@ -61,5 +60,5 @@ class Cmpaf():
 	def cb_diff(self, obj, val):
 		self.do_diff = obj.get_button()
 
-cmpaf = Cmpaf().init()
+cmpaf = Cmpaf()
 cmpaf.run()
