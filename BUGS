@@ -1,3 +1,5 @@
+*** See the ChangeLog file for bugs fixed since 1.2 BETA 2 ***
+
 Sorry, this list does not claim completeness.  If I fixed a bug
 immediately upon receiving the first complaint I usually did not
 nother to make an entry in this file, unless it was a serious bug
@@ -6,6 +8,7 @@ nother to make an entry in this file, unless it was a serious bug
 ==> Status indicators: (-) not fixed; (*) fixed; (?) not sure.
 
 ======================================================================
+
 Known BUGS in 1.2 BETA 1, fixed in 1.2 BETA 2
 ---------------------------------------------
 
@@ -18,13 +21,10 @@ inclusion of '_'
 
 (*) configure.in contains bogus name to check for inet library
 
-Known BUGS in 1.1.1 and 1.2 BETA 1
+Known BUGS in 1.1.1 and 1.2 BETA 3
 ----------------------------------
 
-(*) a file with unmatched triple quotes causes a loop in the scanner
-
-(-) still a memory leak in threads; bigger when thread.exit_thread()
-is used
+(-) still a memory leak in threads when thread.exit_thread() is used
 
 Problems in 1.1.1 that are difficult to solve
 ---------------------------------------------
@@ -39,12 +39,6 @@ could maintain a list of all modules in order of importation so we can
 destroy them in reverse order???  really hopeless -- would have to
 destroy objects in a module in reverse order too...]
 
-(-) [X]DECREF can cause the interpreter to be called recursively (for
-__del__ disciplines) -- so list and dict implementation calls doing
-DECREF can cause recursive calls to methods of the object being
-modified.  Other files too.  [Only partially fixed -- listobject.c is
-still suspect.]
-
 (-) doneimport() should be called *before* the Py_AtExit code is
 called [problem: what if other threads are still active?]
 
@@ -56,16 +50,11 @@ Known portability problems
 
 (-) arraymodule doesn't compile under Ultrix (FPROTO macro)
 
-(-) Linux uses GNU getopt by default which is broken
-
 (-) makesetup assumes CCC is the C++ compiler -- not portable
 
 (-) "make depend" assumes mkdep exists -- not portable
 
 (-) regen calls h2py which isn't defined by default
-
-(-) make sharedinstall references to machdep directory but doesn't
-create it
 
 (-) HP doesn't compile out of the box (needs LIBS=-ldld or
 LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
@@ -73,6 +62,18 @@ LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
 ======================================================================
 BUGS present in 1.1.1 and fixed in 1.2
 --------------------------------------
+
+(*) Linux uses GNU getopt by default which is broken
+
+(*) make sharedinstall references to machdep directory but doesn't
+create it
+
+(*) a file with unmatched triple quotes causes a loop in the scanner
+
+(*) [X]DECREF can cause the interpreter to be called recursively (for
+__del__ disciplines) -- so list and dict implementation calls doing
+DECREF can cause recursive calls to methods of the object being
+modified.  Other files too.
 
 (*) if __getattr__ or __repr__ prints something, calling repr(x) from
 cmd line forgets a newline
