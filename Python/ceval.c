@@ -28,7 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    XXX how to pass arguments to call_trace?
    XXX totally get rid of access stuff
    XXX speed up searching for keywords by using a dictionary
-   XXX unknown keyword shouldn't raise KeyError?
    XXX document it!
    */
 
@@ -449,7 +448,7 @@ eval_code2(co, globals, locals,
 			}
 			if (j >= co->co_argcount) {
 				if (kwdict == NULL) {
-					err_setval(KeyError/*XXX*/, keyword);
+					err_setval(TypeError, keyword);
 					goto fail;
 				}
 				mappinginsert(kwdict, keyword, value);
