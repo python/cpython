@@ -9,7 +9,7 @@ Interface summary:
 	x = copy.copy(y)	# make a shallow copy of y
 	x = copy.deepcopy(y)	# make a deep copy of y
 
-For module specific errors, copy.Error is raised.
+For module specific errors, copy.error is raised.
 
 The difference between shallow and deep copying is only relevant for
 compound objects (objects that contain other objects, like lists or
@@ -52,7 +52,8 @@ __getstate__() and __setstate__().  See the __doc__ string of module
 
 import types
 
-Error = 'copy.Error'
+error = 'copy.error'
+Error = error # backward compatibility
 
 def copy(x):
 	"""Shallow copy operation on arbitrary Python objects.
@@ -66,7 +67,7 @@ def copy(x):
 		try:
 			copier = x.__copy__
 		except AttributeError:
-			raise Error, \
+			raise error, \
 			      "un(shallow)copyable object of type %s" % type(x)
 		y = copier()
 	else:
@@ -85,6 +86,7 @@ d[types.StringType] = _copy_atomic
 d[types.CodeType] = _copy_atomic
 d[types.TypeType] = _copy_atomic
 d[types.XRangeType] = _copy_atomic
+d[types.ClassType] = _copy_atomic
 
 def _copy_list(x):
 	return x[:]
@@ -140,7 +142,7 @@ def deepcopy(x, memo = None):
 		try:
 			copier = x.__deepcopy__
 		except AttributeError:
-			raise Error, \
+			raise error, \
 			      "un-deep-copyable object of type %s" % type(x)
 		y = copier(memo)
 	else:
@@ -220,7 +222,8 @@ del d
 del types
 
 def _test():
-	l = [None, 1, 2L, 3.14, 'xyzzy', (1, 2L), [3.14, 'abc'], {'abc': 'ABC'}, (), [], {}]
+	l = [None, 1, 2L, 3.14, 'xyzzy', (1, 2L), [3.14, 'abc'],
+	     {'abc': 'ABC'}, (), [], {}]
 	l1 = copy(l)
 	print l1==l
 	l1 = map(copy, l)
