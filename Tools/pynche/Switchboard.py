@@ -33,5 +33,8 @@ class Switchboard:
     def update_views_current(self):
         self.update_views(self.__red, self.__green, self.__blue)
 
+    def current_rgb(self):
+        return self.__red, self.__green, self.__blue
+
     def colordb(self):
         return self.__colordb
