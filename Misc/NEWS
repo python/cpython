@@ -72,6 +72,8 @@ Extension modules
 Library
 -------
 
+- Tkinter now supports the wish -sync and -use options.
+
 - The following methods in time support passing of None: ctime(), gmtime(),
   and localtime().  If None is provided, the current time is used (the
   same as when the argument is omitted).
