@@ -145,7 +145,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int nlocals;
 	int stacksize;
 	int flags;
-	PyObject *co = NULL;;
+	PyObject *co = NULL;
 	PyObject *code;
 	PyObject *consts;
 	PyObject *names, *ournames = NULL;
