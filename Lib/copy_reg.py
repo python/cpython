@@ -113,9 +113,14 @@ def _better_reduce(obj):
 
 def _reduce_ex(obj, proto=0):
     obj_reduce = getattr(obj, "__reduce__", None)
-    if obj_reduce and obj.__class__.__reduce__ is not object.__reduce__:
-        return obj_reduce()
-    elif proto < 2:
+    # XXX This fails in test_copy.py line 61
+    if obj_reduce:
+        try:
+            if obj.__class__.__reduce__ is not object.__reduce__:
+                return obj_reduce()
+        except AttributeError:
+            pass
+    if proto < 2:
         return _reduce(obj)
     else:
         return _better_reduce(obj)
