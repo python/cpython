@@ -542,7 +542,8 @@ extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
 					    int lineno, PyObject *op);
 #define _PyMAYBE_BUMP_REFTOTAL		_Py_RefTotal++
 #define _PyMAYBE_DROP_REFTOTAL		_Py_RefTotal--
-#define _PyMAYBE_REFTOTAL_COMMA		,
+#define _PyMAYBE_BUMP_REFTOTAL_COMMA	_PyMAYBE_BUMP_REFTOTAL ,
+#define _PyMAYBE_DROP_REFTOTAL_COMMA	_PyMAYBE_DROP_REFTOTAL ,
 #define _PyMAYBE_CHECK_REFCNT(OP)				\
 {	if ((OP)->ob_refcnt < 0)				\
 		_Py_NegativeRefcount(__FILE__, __LINE__,	\
@@ -551,22 +552,25 @@ extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
 #else
 #define _PyMAYBE_BUMP_REFTOTAL
 #define _PyMAYBE_DROP_REFTOTAL
-#define _PyMAYBE_REFTOTAL_COMMA
-#define _PyMAYBE_CHECK_REFCNT(OP)	;
-#endif
+#define _PyMAYBE_BUMP_REFTOTAL_COMMA
+#define _PyMAYBE_DROP_REFTOTAL_COMMA
+#define _PyMAYBE_CHECK_REFCNT(OP)	/* a semicolon */;
+#endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
 extern DL_IMPORT(void) inc_count(PyTypeObject *);
 #define _PyMAYBE_BUMP_COUNT(OP)		inc_count((OP)->ob_type)
 #define _PyMAYBE_BUMP_FREECOUNT(OP)	(OP)->ob_type->tp_frees++
-#define _PyMAYBE_BUMP_COUNT_COMMA	,
-#define _PyMAYBE_BUMP_FREECOUNT_COMMA	,
+#define _PyMAYBE_DROP_FREECOUNT(OP)	(OP)->ob_type->tp_frees--
+#define _PyMAYBE_BUMP_COUNT_COMMA(OP)	_PyMAYBE_BUMP_COUNT(OP) ,
+#define _PyMAYBE_BUMP_FREECOUNT_COMMA(OP) _PyMAYBE_BUMP_FREECOUNT(OP) ,
 #else
 #define _PyMAYBE_BUMP_COUNT(OP)
 #define _PyMAYBE_BUMP_FREECOUNT(OP)
-#define _PyMAYBE_BUMP_COUNT_COMMA
-#define _PyMAYBE_BUMP_FREECOUNT_COMMA
-#endif
+#define _PyMAYBE_DROP_FREECOUNT(OP)
+#define _PyMAYBE_BUMP_COUNT_COMMA(OP)
+#define _PyMAYBE_BUMP_FREECOUNT_COMMA(OP)
+#endif /* COUNT_ALLOCS */
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
@@ -580,27 +584,27 @@ extern DL_IMPORT(void) _Py_ResetReferences(void);
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
  * inline.
  */
-#define _Py_NewReference(op) (					\
-	_PyMAYBE_BUMP_COUNT(op) _PyMAYBE_BUMP_COUNT_COMMA	\
-	_PyMAYBE_BUMP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA		\
+#define _Py_NewReference(op) (		\
+	_PyMAYBE_BUMP_COUNT_COMMA(op)	\
+	_PyMAYBE_BUMP_REFTOTAL_COMMA	\
 	(op)->ob_refcnt = 1)
 
 #define _Py_ForgetReference(op) _PyMAYBE_BUMP_FREECOUNT(op)
 
-#define _Py_Dealloc(op) (						\
-	_PyMAYBE_BUMP_FREECOUNT(op) _PyMAYBE_BUMP_FREECOUNT_COMMA	\
+#define _Py_Dealloc(op) (				\
+	_PyMAYBE_BUMP_FREECOUNT_COMMA(op)		\
 	(*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (						\
-	_PyMAYBE_BUMP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA		\
+#define Py_INCREF(op) (			\
+	_PyMAYBE_BUMP_REFTOTAL_COMMA	\
 	(op)->ob_refcnt++)
 
-#define Py_DECREF(op)						\
-	if (_PyMAYBE_DROP_REFTOTAL _PyMAYBE_REFTOTAL_COMMA	\
-	    --(op)->ob_refcnt != 0)				\
-		_PyMAYBE_CHECK_REFCNT(op)			\
-	else							\
+#define Py_DECREF(op)				\
+	if (_PyMAYBE_DROP_REFTOTAL_COMMA	\
+	    --(op)->ob_refcnt != 0)		\
+		_PyMAYBE_CHECK_REFCNT(op)	\
+	else					\
 		_Py_Dealloc((PyObject *)(op))
 
 /* Macros to use in case the object pointer may be NULL: */
