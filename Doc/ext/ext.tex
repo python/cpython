@@ -1719,8 +1719,439 @@ implementation of CObjects (files \file{Include/cobject.h} and
 \file{Objects/cobject.c} in the Python source code distribution).
 
 
+\chapter{Defining New Types
+        \label{defining-new-types}}
+\sectionauthor{Michael Hudson}{mwh21@cam.ac.uk}
+
+As mentioned in the last chapter, Python allows the writer of an
+extension module to define new types that can be manipulated from
+Python code, much like strings and lists in core Python.
+
+This is not hard; the code for all extension types follows a pattern,
+but there are some details that you need to understand before you can
+get started.
+
+\section{The Basics
+    \label{dnt-basics}}
+
+The Python runtime sees all Python objects as variables of type
+\ctype{PyObject*}.  A \ctype{PyObject} is not a very magnificent
+object - it just contains the refcount and a pointer to the object's
+``type object''.  This is where the action is; the type object
+determines which (C) functions get called when, for instance, an
+attribute gets looked up on an object or it is multiplied by another
+object.  I call these C functions ``type methods'' to distinguish them
+from things like \code{[].append} (which I will call ``object
+methods'' when I get around to them).
+
+So, if you want to define a new object type, you need to create a new
+type object.
+
+This sort of thing can only be explained by example, so here's a
+minimal, but complete, module that defines a new type:
+
+\begin{verbatim}
+#include <Python.h>
+
+staticforward PyTypeObject noddy_NoddyType;
+
+typedef struct {
+    PyObject_HEAD
+} noddy_NoddyObject;
+
+static PyObject*
+noddy_new_noddy(PyObject* self, PyObject* args)
+{
+    noddy_NoddyObject* noddy;
+
+    if (!PyArg_ParseTuple(args,":new_noddy")) 
+        return NULL;
+
+    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
+
+    return (PyObject*)noddy;
+}
+
+static void
+noddy_noddy_dealloc(PyObject* self)
+{
+    PyObject_Del(self);
+}
+
+static PyTypeObject noddy_NoddyType = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "Noddy",
+    sizeof(noddy_NoddyObject),
+    0,
+    noddy_noddy_dealloc, /*tp_dealloc*/
+    0,          /*tp_print*/
+    0,          /*tp_getattr*/
+    0,          /*tp_setattr*/
+    0,          /*tp_compare*/
+    0,          /*tp_repr*/
+    0,          /*tp_as_number*/
+    0,          /*tp_as_sequence*/
+    0,          /*tp_as_mapping*/
+    0,          /*tp_hash */
+};
+
+static PyMethodDef noddy_methods[] = {
+    { "new_noddy", noddy_new_noddy, METH_VARARGS },
+    {NULL, NULL}
+};
+
+DL_EXPORT(void)
+initnoddy(void) 
+{
+    noddy_NoddyType.ob_type = &PyType_Type;
+
+    Py_InitModule("noddy", noddy_methods);
+}
+\end{verbatim}
+
+Now that's quite a bit to take in at once, but hopefully bits will
+seem familiar from the last chapter.
+
+The first bit that will be new is:
+
+\begin{verbatim}
+staticforward PyTypeObject noddy_NoddyType;
+\end{verbatim}
+
+This names the type object that will be defining further down in the
+file.  It can't be defined here because its definition has to refer to
+functions that have no yet been defined, but we need to be able to
+refer to it, hence the declaration.
+
+The \code{staticforward} is required to placate various brain dead
+compilers.
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+} noddy_NoddyObject;
+\end{verbatim}
+
+This is what a Noddy object will contain.  In this case nothing more
+than every Python object contains - a refcount and a pointer to a type
+object.  These are the fields the \code{PyObject_HEAD} macro brings
+in.  The reason for the macro is to standardize the layout and to
+enable special debugging fields to be brought in debug builds.
+
+For contrast
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+    long ob_ival;
+} PyIntObject;
+\end{verbatim}
+
+is the corresponding definition for standard Python integers.
+
+Next up is:
+
+\begin{verbatim}
+static PyObject*
+noddy_new_noddy(PyObject* self, PyObject* args)
+{
+    noddy_NoddyObject* noddy;
+
+    if (!PyArg_ParseTuple(args,":new_noddy")) 
+        return NULL;
+
+    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
+
+    return (PyObject*)noddy;
+}
+\end{verbatim}
+
+This is in fact just a regular module function, as described in the
+last chapter.  The reason it gets special mention is that this is
+where we create our Noddy object.  Defining PyTypeObject structures is
+all very well, but if there's no way to actually \textit{create} one
+of the wretched things it is not going to do anyone much good.
+
+Almost always, you create objects with a call of the form:
+
+\begin{verbatim}
+PyObject_New(<type>, &<type object>);
+\end{verbatim}
+
+This allocates the memory and then initializes the object (i.e.\ sets
+the reference count to one, makes the \cdata{ob_type} pointer point at
+the right place and maybe some other stuff, depending on build options).
+You \emph{can} do these steps separately if you have some reason to
+--- but at this level we don't bother.
+
+We cast the return value to a \ctype{PyObject*} because that's what
+the Python runtime expects.  This is safe because of guarantees about
+the layout of structures in the C standard, and is a fairly common C
+programming trick.  One could declare \cfunction{noddy_new_noddy} to
+return a \ctype{noddy_NoddyObject*} and then put a cast in the
+definition of \cdata{noddy_methods} further down the file --- it
+doesn't make much difference.
+
+Now a Noddy object doesn't do very much and so doesn't need to
+implement many type methods.  One you can't avoid is handling
+deallocation, so we find
+
+\begin{verbatim}
+static void
+noddy_noddy_dealloc(PyObject* self)
+{
+    PyObject_Del(self);
+}
+\end{verbatim}
+
+This is so short as to be self explanatory.  This function will be
+called when the reference count on a Noddy object reaches \code{0} (or
+it is found as part of an unreachable cycle by the cyclic garbage
+collector).  \cfunction{PyObject_Del()} is what you call when you want
+an object to go away.  If a Noddy object held references to other
+Python objects, one would decref them here.
+
+Moving on, we come to the crunch --- the type object.
+
+\begin{verbatim}
+static PyTypeObject noddy_NoddyType = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "Noddy",
+    sizeof(noddy_NoddyObject),
+    0,
+    noddy_noddy_dealloc, /*tp_dealloc*/
+    0,                   /*tp_print*/
+    0,                   /*tp_getattr*/
+    0,                   /*tp_setattr*/
+    0,                   /*tp_compare*/
+    0,                   /*tp_repr*/
+    0,                   /*tp_as_number*/
+    0,                   /*tp_as_sequence*/
+    0,                   /*tp_as_mapping*/
+    0,                   /*tp_hash */
+};
+\end{verbatim}
+
+Now if you go and look up the definition of \ctype{PyTypeObject} in
+\file{object.h} you'll see that it has many, many more fields that the
+definition above.  The remaining fields will be filled with zeros by
+the C compiler, and it's common practice to not specify them
+explicitly unless you need them.  
+
+This is so important that I'm going to pick the top of it apart still
+further:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(NULL)
+\end{verbatim}
+
+This line is a bit of a wart; what we'd like to write is:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(&PyType_Type)
+\end{verbatim}
+
+as the type of a type object is ``type'', but this isn't strictly
+conforming C and some compilers complain.  So instead we fill in the
+\cdata{ob_type} field of \cdata{noddy_NoddyType} at the earliest
+oppourtunity --- in \cfunction{initnoddy()}.
+
+\begin{verbatim}
+    0,
+\end{verbatim}
+
+XXX why does the type info struct start PyObject_*VAR*_HEAD??
+
+\begin{verbatim}
+    "Noddy",
+\end{verbatim}
+
+The name of our type.  This will appear in the default textual
+representation of our objects and in some error messages, for example:
+
+\begin{verbatim}
+>>> "" + noddy.new_noddy()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: cannot add type "Noddy" to string
+\end{verbatim}
+
+\begin{verbatim}
+    sizeof(noddy_NoddyObject),
+\end{verbatim}
+
+This is so that Python knows how much memory to allocate when you call
+\cfunction{PyObject_New}.
+
+\begin{verbatim}
+    0,
+\end{verbatim}
+
+This has to do with variable length objects like lists and strings.
+Ignore for now...
+
+Now we get into the type methods, the things that make your objects
+different from the others.  Of course, the Noddy object doesn't
+implement many of these, but as mentioned above you have to implement
+the deallocation function.
+
+\begin{verbatim}
+    noddy_noddy_dealloc, /*tp_dealloc*/
+\end{verbatim}
+
+From here, all the type methods are nil so I won't go over them yet -
+that's for the next section!
+
+Everything else in the file should be familiar, except for this line
+in \cfunction{initnoddy}:
+
+\begin{verbatim}
+    noddy_NoddyType.ob_type = &PyType_Type;
+\end{verbatim}
+
+This was alluded to above --- the \cdata{noddy_NoddyType} object should
+have type ``type'', but \code{\&PyType_Type} is not constant and so
+can't be used in its initializer.  To work around this, we patch it up
+in the module initialization.
+
+That's it!  All that remains is to build it; put the above code in a
+file called \file{noddymodule.c} and
+
+\begin{verbatim}
+from distutils.core import setup, Extension
+setup(name = "noddy", version = "1.0",
+    ext_modules = [Extension("noddy", ["noddymodule.c"])])
+\end{verbatim}
+
+in a file called \file{setup.py}; then typing
+
+\begin{verbatim}
+$ python setup.py build%$
+\end{verbatim}
+
+at a shell should produce a file \file{noddy.so} in a subdirectory;
+move to that directory and fire up Python --- you should be able to
+\code{import noddy} and play around with Noddy objects.
+
+That wasn't so hard, was it?
+
+\section{Type Methods
+         \label{dnt-type-methods}}
+
+This section aims to give a quick fly-by on the various type methods
+you can implement and what they do.
+
+Here is the definition of \ctype{PyTypeObject}, with some fields only
+used in debug builds omitted:
+
+\begin{verbatim}
+typedef struct _typeobject {
+    PyObject_VAR_HEAD
+    char *tp_name; /* For printing */
+    int tp_basicsize, tp_itemsize; /* For allocation */
+
+    /* Methods to implement standard operations */
+
+    destructor tp_dealloc;
+    printfunc tp_print;
+    getattrfunc tp_getattr;
+    setattrfunc tp_setattr;
+    cmpfunc tp_compare;
+    reprfunc tp_repr;
+
+    /* Method suites for standard classes */
+
+    PyNumberMethods *tp_as_number;
+    PySequenceMethods *tp_as_sequence;
+    PyMappingMethods *tp_as_mapping;
+
+    /* More standard operations (here for binary compatibility) */
+
+    hashfunc tp_hash;
+    ternaryfunc tp_call;
+    reprfunc tp_str;
+    getattrofunc tp_getattro;
+    setattrofunc tp_setattro;
+
+    /* Functions to access object as input/output buffer */
+    PyBufferProcs *tp_as_buffer;
+
+    /* Flags to define presence of optional/expanded features */
+    long tp_flags;
+
+    char *tp_doc; /* Documentation string */
+
+    /* call function for all accessible objects */
+    traverseproc tp_traverse;
+
+    /* delete references to contained objects */
+    inquiry tp_clear;
+
+    /* rich comparisons */
+    richcmpfunc tp_richcompare;
+
+    /* weak reference enabler */
+    long tp_weaklistoffset;
+
+} PyTypeObject;
+\end{verbatim}
+
+Now that's a \emph{lot} of methods.  Don't worry too much though - if
+you have a type you want to define, the chances are very good that you
+will only implement a handful of these.
+
+As you probably expect by now, I'm going to go over this line-by-line,
+saying a word about each field as we get to it.
+
+\begin{verbatim}
+    char *tp_name; /* For printing */
+\end{verbatim}
+
+The name of the type - as mentioned in the last section, this will
+appear in various places, almost entirely for diagnostic purposes.
+Try to choose something that will be helpful in such a situation!
+
+\begin{verbatim}
+    int tp_basicsize, tp_itemsize; /* For allocation */
+\end{verbatim}
+
+These fields tell the runtime how much memory to allocate when new
+objects of this typed are created.  Python has some builtin support
+for variable length structures (think: strings, lists) which is where
+the \cdata{tp_itemsize} field comes in.  This will be dealt with
+later.
+
+Now we come to the basic type methods - the ones most extension types
+will implement.
+
+\begin{verbatim}
+	destructor tp_dealloc;
+\end{verbatim}
+\begin{verbatim}
+	printfunc tp_print;
+\end{verbatim}
+\begin{verbatim}
+	getattrfunc tp_getattr;
+\end{verbatim}
+\begin{verbatim}
+	setattrfunc tp_setattr;
+\end{verbatim}
+\begin{verbatim}
+	cmpfunc tp_compare;
+\end{verbatim}
+\begin{verbatim}
+	reprfunc tp_repr;
+\end{verbatim}
+
+
+%\section{Attributes \& Methods
+%    \label{dnt-attrs-and-meths}}
+
+
 \chapter{Building C and \Cpp{} Extensions on \UNIX{}
-         \label{building-on-unix}}
+     \label{building-on-unix}}
 
 \sectionauthor{Jim Fulton}{jim@Digicool.com}
 
@@ -1878,7 +2309,7 @@ mpz mpzmodule.c -I$(GMP) -L$(GMP) -lgmp
 
 
 \section{Distributing your extension modules
-         \label{distributing}}
+     \label{distributing}}
 
 There are two ways to distribute extension modules for others to use.
 The way that allows the easiest cross-platform support is to use the
@@ -1911,7 +2342,7 @@ instructions to perform the build.
 
 
 \chapter{Building C and \Cpp{} Extensions on Windows
-         \label{building-on-windows}}
+     \label{building-on-windows}}
 
 
 This chapter briefly explains how to create a Windows extension module
@@ -1964,13 +2395,13 @@ and add the following to the module initialization function:
     MyObject_Type.ob_type = &PyType_Type;
 \end{verbatim}
 
-Refer to section 3 of the Python FAQ
-(\url{http://www.python.org/doc/FAQ.html}) for details on why you must
-do this.
+Refer to section 3 of the
+\citetitle[http://www.python.org/doc/FAQ.html]{Python FAQ} for details
+on why you must do this.
 
 
 \section{Differences Between \UNIX{} and Windows
-         \label{dynamic-linking}}
+     \label{dynamic-linking}}
 \sectionauthor{Chris Phoenix}{cphoenix@best.com}
 
 
@@ -2064,7 +2495,7 @@ them, use the Project Settings dialog, Link tab, to specify
 
 
 \chapter{Embedding Python in Another Application
-         \label{embedding}}
+     \label{embedding}}
 
 Embedding Python is similar to extending it, but not quite.  The
 difference is that when you extend Python, the main program of the
@@ -2094,7 +2525,7 @@ A simple demo of embedding Python can be found in the directory
 
 
 \section{Embedding Python in \Cpp{}
-         \label{embeddingInCplusplus}}
+     \label{embeddingInCplusplus}}
 
 It is also possible to embed Python in a \Cpp{} program; precisely how this
 is done will depend on the details of the \Cpp{} system used; in general you
