@@ -4,6 +4,51 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4 alpha 2?
+=================================
+
+*Release date: XX-XXX-2004*
+
+Core and builtins
+-----------------
+
+- Allow string and unicode return types from .encode()/.decode()
+  methods on string and unicode objects. Added unicode.decode()
+  which was missing for no apparent reason.
+
+- An attempt to fix the mess that is Python's behaviour with 
+  signal handlers and threads, complicated by readline's behaviour.
+  It's quite possible that there are still bugs here.
+
+Extension modules
+-----------------
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+New platforms
+-------------
+
+Tests
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
+
 What's New in Python 2.4 alpha 1?
 =================================
 
@@ -635,12 +680,6 @@ C API
   the more complex machinery of Py_BuildValue().  PyTuple_Pack(3, a, b, c)
   is equivalent to Py_BuildValue("(OOO)", a, b, c).
 
-New platforms
--------------
-
-Tests
------
-
 Windows
 -------
 
@@ -652,9 +691,6 @@ Windows
 - file.truncate() could misbehave if the file was open for update
   (modes r+, rb+, w+, wb+), and the most recent file operation before
   the truncate() call was an input operation.  SF bug 801631.
-
-Mac
-----
 
 
 What's New in Python 2.3 final?
