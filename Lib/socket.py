@@ -45,6 +45,7 @@ from _socket import *
 
 _have_ssl = False
 try:
+    import _ssl
     from _ssl import *
     _have_ssl = True
 except ImportError:
@@ -54,7 +55,8 @@ import os, sys
 
 __all__ = ["getfqdn"]
 __all__.extend(os._get_exports_list(_socket))
-# XXX shouldn't there be something similar to the above for _ssl exports?
+if _have_ssl:
+    __all__.extend(os._get_exports_list(_ssl))
 
 _realsocket = socket
 _needwrapper = False
@@ -90,6 +92,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10064] = "The host is down."
     errorTab[10065] = "The host is unreachable."
     __all__.append("errorTab")
+
 del os, sys
 
 
