@@ -479,7 +479,7 @@ class TestSGMLParser(SGMLParser):
 def test(args = None):
     import sys
 
-    if not args:
+    if args is None:
         args = sys.argv[1:]
 
     if args and args[0] == '-s':

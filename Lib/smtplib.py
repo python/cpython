@@ -236,7 +236,7 @@ class SMTP:
             (code, msg) = self.connect(host, port)
             if code != 220:
                 raise SMTPConnectError(code, msg)
-        if local_hostname:
+        if local_hostname is not None:
             self.local_hostname = local_hostname
         else:
             # RFC 2821 says we should use the fqdn in the EHLO/HELO verb, and

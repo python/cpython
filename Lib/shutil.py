@@ -122,7 +122,7 @@ def rmtree(path, ignore_errors=0, onerror=None):
             exc = sys.exc_info()
             if ignore_errors:
                 pass
-            elif onerror:
+            elif onerror is not None:
                 onerror(cmd[0], cmd[1], exc)
             else:
                 raise exc[0], (exc[1][0], exc[1][1] + ' removing '+cmd[1])

@@ -80,7 +80,7 @@ class Pattern:
     def opengroup(self, name=None):
         gid = self.groups
         self.groups = gid + 1
-        if name:
+        if name is not None:
             ogid = self.groupdict.get(name, None)
             if ogid is not None:
                 raise error, ("redefinition of group name %s as group %d; "
@@ -97,7 +97,7 @@ class SubPattern:
     # a subpattern, in intermediate form
     def __init__(self, pattern, data=None):
         self.pattern = pattern
-        if not data:
+        if data is None:
             data = []
         self.data = data
         self.width = None
