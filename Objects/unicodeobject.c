@@ -405,7 +405,7 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 
 PyObject *PyUnicode_FromOrdinal(int ordinal)
 {
-    Py_UNICODE s[2];
+    Py_UNICODE s[1];
 
 #ifdef Py_UNICODE_WIDE
     if (ordinal < 0 || ordinal > 0x10ffff) {
@@ -423,23 +423,8 @@ PyObject *PyUnicode_FromOrdinal(int ordinal)
     }
 #endif
 
-    if (ordinal <= 0xffff) {
-	/* UCS-2 character */
-	s[0] = (Py_UNICODE) ordinal;
-	return PyUnicode_FromUnicode(s, 1);
-    }
-    else {
-#ifndef Py_UNICODE_WIDE
-	/* UCS-4 character.  store as two surrogate characters */
-	ordinal -= 0x10000L;
-	s[0] = 0xD800 + (Py_UNICODE) (ordinal >> 10);
-	s[1] = 0xDC00 + (Py_UNICODE) (ordinal & 0x03FF);
-	return PyUnicode_FromUnicode(s, 2);
-#else
-	s[0] = (Py_UNICODE)ordinal;
-	return PyUnicode_FromUnicode(s, 1);
-#endif
-    }
+    s[0] = (Py_UNICODE)ordinal;
+    return PyUnicode_FromUnicode(s, 1);
 }
 
 PyObject *PyUnicode_FromObject(register PyObject *obj)
