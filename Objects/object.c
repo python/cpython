@@ -236,7 +236,7 @@ PyObject_Repr(v)
 			return NULL;
 		if (!PyString_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
-				     "__repr__ returned non-string (type %s)",
+				     "__repr__ returned non-string (type %.200s)",
 				     res->ob_type->tp_name);
 			Py_DECREF(res);
 			return NULL;
@@ -273,7 +273,7 @@ PyObject_Str(v)
 		return NULL;
 	if (!PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
-			     "__str__ returned non-string (type %s)",
+			     "__str__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
 		Py_DECREF(res);
 		return NULL;

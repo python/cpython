@@ -307,7 +307,7 @@ xmlparse_Parse( xmlparseobject *self, PyObject *args )
                 return NULL;
         }
         else if (rv == 0) {
-                PyErr_Format(ErrorObject, "%s: line %i, column %i",
+                PyErr_Format(ErrorObject, "%.200s: line %i, column %i",
                              XML_ErrorString( XML_GetErrorCode(self->itself) ),
                              XML_GetErrorLineNumber(self->itself),
                              XML_GetErrorColumnNumber(self->itself) );

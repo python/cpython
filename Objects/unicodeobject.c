@@ -365,7 +365,7 @@ PyObject *PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder did not return an unicode object (type=%s)",
+                     "decoder did not return an unicode object (type=%.400s)",
                      unicode->ob_type->tp_name);
         Py_DECREF(unicode);
         goto onError;
@@ -416,7 +416,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     /* XXX Should we really enforce this ? */
     if (!PyString_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "encoder did not return a string object (type=%s)",
+                     "encoder did not return a string object (type=%.400s)",
                      v->ob_type->tp_name);
         Py_DECREF(v);
         goto onError;
@@ -484,7 +484,7 @@ int utf8_decoding_error(const char **source,
     if ((errors == NULL) ||
         (strcmp(errors,"strict") == 0)) {
         PyErr_Format(PyExc_UnicodeError,
-                     "UTF-8 decoding error: %s",
+                     "UTF-8 decoding error: %.400s",
                      details);
         return -1;
     }
@@ -500,7 +500,7 @@ int utf8_decoding_error(const char **source,
     }
     else {
         PyErr_Format(PyExc_ValueError,
-                     "UTF-8 decoding error; unknown error handling code: %s",
+                     "UTF-8 decoding error; unknown error handling code: %.400s",
                      errors);
         return -1;
     }
@@ -607,7 +607,7 @@ int utf8_encoding_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "UTF-8 encoding error: %s",
+		     "UTF-8 encoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -622,7 +622,7 @@ int utf8_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "UTF-8 encoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -728,7 +728,7 @@ int utf16_decoding_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
         (strcmp(errors,"strict") == 0)) {
         PyErr_Format(PyExc_UnicodeError,
-                     "UTF-16 decoding error: %s",
+                     "UTF-16 decoding error: %.400s",
                      details);
         return -1;
     }
@@ -744,7 +744,7 @@ int utf16_decoding_error(const Py_UNICODE **source,
     }
     else {
         PyErr_Format(PyExc_ValueError,
-                     "UTF-16 decoding error; unknown error handling code: %s",
+                     "UTF-16 decoding error; unknown error handling code: %.400s",
                      errors);
         return -1;
     }
@@ -918,7 +918,7 @@ int unicodeescape_decoding_error(const char **source,
     if ((errors == NULL) ||
         (strcmp(errors,"strict") == 0)) {
         PyErr_Format(PyExc_UnicodeError,
-                     "Unicode-Escape decoding error: %s",
+                     "Unicode-Escape decoding error: %.400s",
                      details);
         return -1;
     }
@@ -932,7 +932,7 @@ int unicodeescape_decoding_error(const char **source,
     else {
         PyErr_Format(PyExc_ValueError,
                      "Unicode-Escape decoding error; "
-                     "unknown error handling code: %s",
+                     "unknown error handling code: %.400s",
                      errors);
         return -1;
     }
@@ -1296,7 +1296,7 @@ int latin1_encoding_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "Latin-1 encoding error: %s",
+		     "Latin-1 encoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -1310,7 +1310,7 @@ int latin1_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "Latin-1 encoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -1366,7 +1366,7 @@ int ascii_decoding_error(const char **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "ASCII decoding error: %s",
+		     "ASCII decoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -1381,7 +1381,7 @@ int ascii_decoding_error(const char **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "ASCII decoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -1429,7 +1429,7 @@ int ascii_encoding_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "ASCII encoding error: %s",
+		     "ASCII encoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -1443,7 +1443,7 @@ int ascii_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "ASCII encoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -1558,7 +1558,7 @@ int charmap_decoding_error(const char **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "charmap decoding error: %s",
+		     "charmap decoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -1573,7 +1573,7 @@ int charmap_decoding_error(const char **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "charmap decoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -1674,7 +1674,7 @@ int charmap_encoding_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "charmap encoding error: %s",
+		     "charmap encoding error: %.400s",
 		     details);
 	return -1;
     }
@@ -1689,7 +1689,7 @@ int charmap_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "charmap encoding error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
@@ -1806,7 +1806,7 @@ int translate_error(const Py_UNICODE **source,
     if ((errors == NULL) ||
 	(strcmp(errors,"strict") == 0)) {
 	PyErr_Format(PyExc_UnicodeError,
-		     "translate error: %s",
+		     "translate error: %.400s",
 		     details);
 	return -1;
     }
@@ -1821,7 +1821,7 @@ int translate_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "translate error; "
-		     "unknown error handling code: %s",
+		     "unknown error handling code: %.400s",
 		     errors);
 	return -1;
     }
