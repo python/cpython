@@ -1,11 +1,11 @@
 #!/usr/bin/python
 from test import test_support
+from test.test_support import TESTFN
 
 import unittest
 from cStringIO import StringIO
 import os
 import popen2
-import tempfile
 import sys
 
 import bz2
@@ -40,7 +40,7 @@ class BZ2FileTest(BaseTest):
     "Test MCRYPT type miscelaneous methods."
 
     def setUp(self):
-        self.filename = tempfile.mktemp("bz2")
+        self.filename = TESTFN
 
     def tearDown(self):
         if os.path.isfile(self.filename):
