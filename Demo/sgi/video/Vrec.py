@@ -265,7 +265,7 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 		vout.setformat(format)
 		vout.setsize(x, y)
 		if fields:
-			vout.setpf(1, -2))
+			vout.setpf((1, -2))
 		vout.writeheader()
 		if preallocspace:
 			print 'Preallocating space...'
