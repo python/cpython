@@ -228,7 +228,6 @@ for FILE in $@ ; do
     #
     TEXINPUTS=$FILEDIR:$COMMONTEXINPUTS
     export TEXINPUTS
-    echo TEXINPUTS is $TEXINPUTS
     #
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
 	build_dvi $FILE 2>&1 | tee -a $LOGFILE
