@@ -122,7 +122,7 @@ Here is an example session:
 >>> errcode, errmsg, headers = h.getreply()
 >>> print errcode # Should be 200
 >>> f = h.getfile()
->>> data f.read() # Get the raw HTML
+>>> data = f.read() # Get the raw HTML
 >>> f.close()
 >>> 
 \end{verbatim}\ecode
