@@ -41,7 +41,6 @@ class MultiFile:
         self.stack = [] # Grows down
         self.level = 0
         self.last = 0
-        self.readahead = ""
         if seekable:
             self.seekable = 1
             self.start = self.fp.tell()
@@ -50,7 +49,7 @@ class MultiFile:
     def tell(self):
         if self.level > 0:
             return self.lastpos
-        return self.fp.tell() - len(self.readahead) - self.start
+        return self.fp.tell() - self.start
 
     def seek(self, pos, whence=0):
         here = self.tell()
@@ -68,22 +67,8 @@ class MultiFile:
         self.fp.seek(pos + self.start)
         self.level = 0
         self.last = 0
-        self.readahead = ""
 
     def readline(self):
-        if not self.readahead:
-            self.readahead = self._readline()
-        line = self.readahead
-        if line:
-            self.readahead = self._readline()
-            if not self.readahead:
-                if line[-2:] == "\r\n":
-                    line = line[:-2]
-                elif line[-1:] == "\n":
-                    line = line[:-1]
-        return line
-
-    def _readline(self):
         if self.level > 0:
             return ''
         line = self.fp.readline()
