@@ -164,6 +164,8 @@ If the status numeric, it will be used as the system exit status.\n\
 If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure).";
 
+#ifdef Py_USING_UNICODE
+
 static PyObject *
 sys_getdefaultencoding(PyObject *self)
 {
@@ -175,8 +177,6 @@ static char getdefaultencoding_doc[] =
 \n\
 Return the current default string encoding used by the Unicode \n\
 implementation.";
-
-#ifdef Py_USING_UNICODE
 
 static PyObject *
 sys_setdefaultencoding(PyObject *self, PyObject *args)
