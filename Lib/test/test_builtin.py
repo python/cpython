@@ -962,7 +962,7 @@ class BuiltinTest(unittest.TestCase):
 
         # Reject floats when it would require PyLongs to represent.
         # (smaller floats still accepted, but deprecated)
-        self.assertRaises(ValueError, range, 1e100, 1e101, 1e101)
+        self.assertRaises(TypeError, range, 1e100, 1e101, 1e101)
 
     def test_input_and_raw_input(self):
         self.write_testfile()
