@@ -944,12 +944,12 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#:a2b_hex", &argbuf, &arglen))
 		return NULL;
 
-	/* XXX What should we do about odd-lengthed strings?  Should we add
-	 * an implicit leading zero, or a trailing zero?  For now, raise an
-	 * exception.
+	/* XXX What should we do about strings with an odd length?  Should
+	 * we add an implicit leading zero, or a trailing zero?  For now,
+	 * raise an exception.
 	 */
 	if (arglen % 2) {
-		PyErr_SetString(PyExc_TypeError, "odd lengthed string");
+		PyErr_SetString(PyExc_TypeError, "Odd-length string");
 		return NULL;
 	}
 
@@ -965,7 +965,7 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 		int bot = to_int(Py_CHARMASK(argbuf[i+1]));
 		if (top == -1 || bot == -1) {
 			PyErr_SetString(PyExc_TypeError,
-					"non-hexadecimal digit found");
+					"Non-hexadecimal digit found");
 			goto finally;
 		}
 		retbuf[j++] = (top << 4) + bot;
