@@ -1062,9 +1062,6 @@ class DocTestFinder:
 ## 5. DocTest Runner
 ######################################################################
 
-# [XX] Should overridable methods (eg DocTestRunner.check_output) be
-# named with a leading underscore?
-
 class DocTestRunner:
     """
     A class used to run DocTest test cases, and accumulate statistics.
@@ -1105,12 +1102,11 @@ class DocTestRunner:
         0
 
     The comparison between expected outputs and actual outputs is done
-    by the `check_output` method.  This comparison may be customized
-    with a number of option flags; see the documentation for `testmod`
-    for more information.  If the option flags are insufficient, then
-    the comparison may also be customized by subclassing
-    DocTestRunner, and overriding the methods `check_output` and
-    `output_difference`.
+    by an `OutputChecker`.  This comparison may be customized with a
+    number of option flags; see the documentation for `testmod` for
+    more information.  If the option flags are insufficient, then the
+    comparison may also be customized by passing a subclass of
+    `OutputChecker` to the constructor.
 
     The test runner's display output can be controlled in two ways.
     First, an output function (`out) can be passed to
@@ -1125,9 +1121,13 @@ class DocTestRunner:
     # separate sections of the summary.
     DIVIDER = "*" * 70
 
-    def __init__(self, verbose=None, optionflags=0):
+    def __init__(self, checker=None, verbose=None, optionflags=0):
         """
         Create a new test runner.
+
+        Optional keyword arg `checker` is the `OutputChecker` that
+        should be used to compare the expected outputs and actual
+        outputs of doctest examples.
 
         Optional keyword arg 'verbose' prints lots of stuff if true,
         only failures if false; by default, it's true iff '-v' is in
@@ -1138,6 +1138,7 @@ class DocTestRunner:
         it displays failures.  See the documentation for `testmod` for
         more information.
         """
+        self._checker = checker or OutputChecker()
         if verbose is None:
             verbose = '-v' in sys.argv
         self._verbose = verbose
@@ -1150,114 +1151,6 @@ class DocTestRunner:
 
         # Create a fake output target for capturing doctest output.
         self._fakeout = _SpoofOut()
-
-    #/////////////////////////////////////////////////////////////////
-    # Output verification methods
-    #/////////////////////////////////////////////////////////////////
-    # These two methods should be updated together, since the
-    # output_difference method needs to know what should be considered
-    # to match by check_output.
-
-    def check_output(self, want, got):
-        """
-        Return True iff the actual output (`got`) matches the expected
-        output (`want`).  These strings are always considered to match
-        if they are identical; but depending on what option flags the
-        test runner is using, several non-exact match types are also
-        possible.  See the documentation for `TestRunner` for more
-        information about option flags.
-        """
-        # Handle the common case first, for efficiency:
-        # if they're string-identical, always return true.
-        if got == want:
-            return True
-
-        # The values True and False replaced 1 and 0 as the return
-        # value for boolean comparisons in Python 2.3.
-        if not (self.optionflags & DONT_ACCEPT_TRUE_FOR_1):
-            if (got,want) == ("True\n", "1\n"):
-                return True
-            if (got,want) == ("False\n", "0\n"):
-                return True
-
-        # <BLANKLINE> can be used as a special sequence to signify a
-        # blank line, unless the DONT_ACCEPT_BLANKLINE flag is used.
-        if not (self.optionflags & DONT_ACCEPT_BLANKLINE):
-            # Replace <BLANKLINE> in want with a blank line.
-            want = re.sub('(?m)^%s\s*?$' % re.escape(BLANKLINE_MARKER),
-                          '', want)
-            # If a line in got contains only spaces, then remove the
-            # spaces.
-            got = re.sub('(?m)^\s*?$', '', got)
-            if got == want:
-                return True
-
-        # This flag causes doctest to ignore any differences in the
-        # contents of whitespace strings.  Note that this can be used
-        # in conjunction with the ELLISPIS flag.
-        if (self.optionflags & NORMALIZE_WHITESPACE):
-            got = ' '.join(got.split())
-            want = ' '.join(want.split())
-            if got == want:
-                return True
-
-        # The ELLIPSIS flag says to let the sequence "..." in `want`
-        # match any substring in `got`.  We implement this by
-        # transforming `want` into a regular expression.
-        if (self.optionflags & ELLIPSIS):
-            # Escape any special regexp characters
-            want_re = re.escape(want)
-            # Replace ellipsis markers ('...') with .*
-            want_re = want_re.replace(re.escape(ELLIPSIS_MARKER), '.*')
-            # Require that it matches the entire string; and set the
-            # re.DOTALL flag (with '(?s)').
-            want_re = '(?s)^%s$' % want_re
-            # Check if the `want_re` regexp matches got.
-            if re.match(want_re, got):
-                return True
-
-        # We didn't find any match; return false.
-        return False
-
-    def output_difference(self, want, got):
-        """
-        Return a string describing the differences between the
-        expected output (`want`) and the actual output (`got`).
-        """
-        # If <BLANKLINE>s are being used, then replace <BLANKLINE>
-        # with blank lines in the expected output string.
-        if not (self.optionflags & DONT_ACCEPT_BLANKLINE):
-            want = re.sub('(?m)^%s$' % re.escape(BLANKLINE_MARKER), '', want)
-
-        # Check if we should use diff.  Don't use diff if the actual
-        # or expected outputs are too short, or if the expected output
-        # contains an ellipsis marker.
-        if ((self.optionflags & (UNIFIED_DIFF | CONTEXT_DIFF)) and
-            want.count('\n') > 2 and got.count('\n') > 2 and
-            not (self.optionflags & ELLIPSIS and '...' in want)):
-            # Split want & got into lines.
-            want_lines = [l+'\n' for l in want.split('\n')]
-            got_lines = [l+'\n' for l in got.split('\n')]
-            # Use difflib to find their differences.
-            if self.optionflags & UNIFIED_DIFF:
-                diff = difflib.unified_diff(want_lines, got_lines, n=2,
-                                            fromfile='Expected', tofile='Got')
-                kind = 'unified'
-            elif self.optionflags & CONTEXT_DIFF:
-                diff = difflib.context_diff(want_lines, got_lines, n=2,
-                                            fromfile='Expected', tofile='Got')
-                kind = 'context'
-            else:
-                assert 0, 'Bad diff option'
-            # Remove trailing whitespace on diff output.
-            diff = [line.rstrip() + '\n' for line in diff]
-            return _tag_msg("Differences (" + kind + " diff)",
-                            ''.join(diff))
-
-        # If we're not using diff, then simply list the expected
-        # output followed by the actual output.
-        return (_tag_msg("Expected", want or "Nothing") +
-                _tag_msg("Got", got))
 
     #/////////////////////////////////////////////////////////////////
     # Reporting methods
@@ -1286,7 +1179,8 @@ class DocTestRunner:
         """
         # Print an error message.
         out(self.__failure_header(test, example) +
-            self.output_difference(example.want, got))
+            self._checker.output_difference(example.want, got,
+                                            self.optionflags))
 
     def report_unexpected_exception(self, out, test, example, exc_info):
         """
@@ -1412,7 +1306,8 @@ class DocTestRunner:
             # If the example executed without raising any exceptions,
             # then verify its output and report its outcome.
             if exception is None:
-                if self.check_output(example.want, got):
+                if self._checker.check_output(example.want, got,
+                                              self.optionflags):
                     self.report_success(out, test, example, got)
                 else:
                     self.report_failure(out, test, example, got)
@@ -1436,8 +1331,10 @@ class DocTestRunner:
                     # The test passes iff the pre-exception output and
                     # the exception description match the values given
                     # in `want`.
-                    if (self.check_output(m.group('out'), got) and
-                        self.check_output(m.group('exc'), exc_msg)):
+                    if (self._checker.check_output(m.group('out'), got,
+                                                   self.optionflags) and
+                        self._checker.check_output(m.group('exc'), exc_msg,
+                                                   self.optionflags)):
                         # Is +exc_msg the right thing here??
                         self.report_success(out, test, example,
                                             got+exc_hdr+exc_msg)
@@ -1553,6 +1450,115 @@ class DocTestRunner:
         elif verbose:
             print "Test passed."
         return totalf, totalt
+
+class OutputChecker:
+    """
+    A class used to check the whether the actual output from a doctest
+    example matches the expected output.  `OutputChecker` defines two
+    methods: `check_output`, which compares a given pair of outputs,
+    and returns true if they match; and `output_difference`, which
+    returns a string describing the differences between two outputs.
+    """
+    def check_output(self, want, got, optionflags):
+        """
+        Return True iff the actual output (`got`) matches the expected
+        output (`want`).  These strings are always considered to match
+        if they are identical; but depending on what option flags the
+        test runner is using, several non-exact match types are also
+        possible.  See the documentation for `TestRunner` for more
+        information about option flags.
+        """
+        # Handle the common case first, for efficiency:
+        # if they're string-identical, always return true.
+        if got == want:
+            return True
+
+        # The values True and False replaced 1 and 0 as the return
+        # value for boolean comparisons in Python 2.3.
+        if not (optionflags & DONT_ACCEPT_TRUE_FOR_1):
+            if (got,want) == ("True\n", "1\n"):
+                return True
+            if (got,want) == ("False\n", "0\n"):
+                return True
+
+        # <BLANKLINE> can be used as a special sequence to signify a
+        # blank line, unless the DONT_ACCEPT_BLANKLINE flag is used.
+        if not (optionflags & DONT_ACCEPT_BLANKLINE):
+            # Replace <BLANKLINE> in want with a blank line.
+            want = re.sub('(?m)^%s\s*?$' % re.escape(BLANKLINE_MARKER),
+                          '', want)
+            # If a line in got contains only spaces, then remove the
+            # spaces.
+            got = re.sub('(?m)^\s*?$', '', got)
+            if got == want:
+                return True
+
+        # This flag causes doctest to ignore any differences in the
+        # contents of whitespace strings.  Note that this can be used
+        # in conjunction with the ELLISPIS flag.
+        if (optionflags & NORMALIZE_WHITESPACE):
+            got = ' '.join(got.split())
+            want = ' '.join(want.split())
+            if got == want:
+                return True
+
+        # The ELLIPSIS flag says to let the sequence "..." in `want`
+        # match any substring in `got`.  We implement this by
+        # transforming `want` into a regular expression.
+        if (optionflags & ELLIPSIS):
+            # Escape any special regexp characters
+            want_re = re.escape(want)
+            # Replace ellipsis markers ('...') with .*
+            want_re = want_re.replace(re.escape(ELLIPSIS_MARKER), '.*')
+            # Require that it matches the entire string; and set the
+            # re.DOTALL flag (with '(?s)').
+            want_re = '(?s)^%s$' % want_re
+            # Check if the `want_re` regexp matches got.
+            if re.match(want_re, got):
+                return True
+
+        # We didn't find any match; return false.
+        return False
+
+    def output_difference(self, want, got, optionflags):
+        """
+        Return a string describing the differences between the
+        expected output (`want`) and the actual output (`got`).
+        """
+        # If <BLANKLINE>s are being used, then replace <BLANKLINE>
+        # with blank lines in the expected output string.
+        if not (optionflags & DONT_ACCEPT_BLANKLINE):
+            want = re.sub('(?m)^%s$' % re.escape(BLANKLINE_MARKER), '', want)
+
+        # Check if we should use diff.  Don't use diff if the actual
+        # or expected outputs are too short, or if the expected output
+        # contains an ellipsis marker.
+        if ((optionflags & (UNIFIED_DIFF | CONTEXT_DIFF)) and
+            want.count('\n') > 2 and got.count('\n') > 2 and
+            not (optionflags & ELLIPSIS and '...' in want)):
+            # Split want & got into lines.
+            want_lines = [l+'\n' for l in want.split('\n')]
+            got_lines = [l+'\n' for l in got.split('\n')]
+            # Use difflib to find their differences.
+            if optionflags & UNIFIED_DIFF:
+                diff = difflib.unified_diff(want_lines, got_lines, n=2,
+                                            fromfile='Expected', tofile='Got')
+                kind = 'unified'
+            elif optionflags & CONTEXT_DIFF:
+                diff = difflib.context_diff(want_lines, got_lines, n=2,
+                                            fromfile='Expected', tofile='Got')
+                kind = 'context'
+            else:
+                assert 0, 'Bad diff option'
+            # Remove trailing whitespace on diff output.
+            diff = [line.rstrip() + '\n' for line in diff]
+            return _tag_msg("Differences (" + kind + " diff)",
+                            ''.join(diff))
+
+        # If we're not using diff, then simply list the expected
+        # output followed by the actual output.
+        return (_tag_msg("Expected", want or "Nothing") +
+                _tag_msg("Got", got))
 
 class DocTestFailure(Exception):
     """A DocTest example has failed in debugging mode.
@@ -1937,9 +1943,11 @@ class Tester:
 
 class DocTestCase(unittest.TestCase):
 
-    def __init__(self, test, optionflags=0, setUp=None, tearDown=None):
+    def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
+                 checker=None):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
+        self._dt_checker = checker
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
@@ -1956,7 +1964,8 @@ class DocTestCase(unittest.TestCase):
         test = self._dt_test
         old = sys.stdout
         new = StringIO()
-        runner = DocTestRunner(optionflags=self._dt_optionflags, verbose=False)
+        runner = DocTestRunner(optionflags=self._dt_optionflags,
+                               checker=self._dt_checker, verbose=False)
 
         try:
             runner.DIVIDER = "-"*70
@@ -2045,7 +2054,8 @@ class DocTestCase(unittest.TestCase):
 
            """
 
-        runner = DebugRunner(verbose = False, optionflags=self._dt_optionflags)
+        runner = DebugRunner(optionflags=self._dt_optionflags,
+                             checker=self._dt_checker, verbose=False)
         runner.run(self._dt_test, out=nooutput)
 
     def id(self):
@@ -2065,7 +2075,8 @@ def nooutput(*args):
 
 def DocTestSuite(module=None, globs=None, extraglobs=None,
                  optionflags=0, test_finder=None,
-                 setUp=lambda: None, tearDown=lambda: None):
+                 setUp=lambda: None, tearDown=lambda: None,
+                 checker=None):
     """
     Convert doctest tests for a mudule to a unittest test suite.
 
@@ -2103,7 +2114,8 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
             elif filename.endswith(".pyo"):
                 filename = filename[:-1]
             test.filename = filename
-        suite.addTest(DocTestCase(test, optionflags, setUp, tearDown))
+        suite.addTest(DocTestCase(test, optionflags, setUp, tearDown,
+                                  checker))
 
     return suite
 
