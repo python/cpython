@@ -3,7 +3,10 @@
   Nick Mathewson
 """
 
+import sys
+import os
 import unittest
+
 from test_support import run_unittest
 from repr import repr as r # Don't shadow builtin repr
 
@@ -75,6 +78,38 @@ class ReprTests(unittest.TestCase):
         i3 = ClassWithFailingRepr()
         eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
 
+    def test_file(self):
+        fp = open(unittest.__file__)
+        self.failUnless(repr(fp).startswith(
+            "<open file '%s', mode 'r' at 0x" % unittest.__file__))
+        fp.close()
+        self.failUnless(repr(fp).startswith(
+            "<closed file '%s', mode 'r' at 0x" % unittest.__file__))
+
+    def test_lambda(self):
+        self.failUnless(repr(lambda x: x).startswith(
+            "<function <lambda> at 0x"))
+        # XXX anonymous functions?  see func_repr
+
+    def test_builtin_function(self):
+        eq = self.assertEquals
+        # Functions
+        eq(repr(hash), '<built-in function hash>')
+        # Methods
+        self.failUnless(repr(''.split).startswith(
+            '<built-in method split of str object at 0x'))
+
+    def test_xrange(self):
+        eq = self.assertEquals
+        eq(repr(xrange(1)), 'xrange(1)')
+        eq(repr(xrange(1, 2)), 'xrange(1, 2)')
+        eq(repr(xrange(1, 2, 3)), 'xrange(1, 4, 3)')
+        # Turn off warnings for deprecated multiplication
+        import warnings
+        warnings.filterwarnings('ignore', category=DeprecationWarning,
+                                module=ReprTests.__module__)
+        eq(repr(xrange(1) * 3), '(xrange(1) * 3)')
+
     def test_nesting(self):
         eq = self.assertEquals
         # everything is meant to give up after 6 levels.
@@ -92,6 +127,126 @@ class ReprTests(unittest.TestCase):
         eq(r([[[[[[{}]]]]]]), "[[[[[[{}]]]]]]")
         eq(r([[[[[[[{}]]]]]]]), "[[[[[[[...]]]]]]]")
 
+    def test_buffer(self):
+        # XXX doesn't test buffers with no b_base or read-write buffers (see
+        # bufferobject.c).  The test is fairly incomplete too.  Sigh.
+        x = buffer('foo')
+        self.failUnless(repr(x).startswith('<read-only buffer for 0x'))
+
+    def test_cell(self):
+        # XXX Hmm? How to get at a cell object?
+        pass
+
+    def test_descriptors(self):
+        eq = self.assertEquals
+        # method descriptors
+        eq(repr(dictionary.items), "<method 'items' of 'dictionary' objects>")
+        # XXX member descriptors
+        # XXX attribute descriptors
+        # XXX slot descriptors
+        # static and class methods
+        class C:
+            def foo(cls): pass
+        x = staticmethod(C.foo)
+        self.failUnless(repr(x).startswith('<staticmethod object at 0x'))
+        x = classmethod(C.foo)
+        self.failUnless(repr(x).startswith('<classmethod object at 0x'))
+
+def touch(path, text=''):
+    fp = open(path, 'w')
+    fp.write(text)
+    fp.close()
+
+def zap(actions, dirname, names):
+    for name in names:
+        actions.append(os.path.join(dirname, name))
+
+class LongReprTest(unittest.TestCase):
+    def setUp(self):
+        longname = 'areallylongpackageandmodulenametotestreprtruncation'
+        self.pkgname = os.path.join(longname)
+        self.subpkgname = os.path.join(longname, longname)
+        # Make the package and subpackage
+        os.mkdir(self.pkgname)
+        touch(os.path.join(self.pkgname, '__init__.py'))
+        os.mkdir(self.subpkgname)
+        touch(os.path.join(self.subpkgname, '__init__.py'))
+        # Remember where we are
+        self.here = os.getcwd()
+        sys.path.insert(0, self.here)
+
+    def tearDown(self):
+        actions = []
+        os.path.walk(self.pkgname, zap, actions)
+        actions.append(self.pkgname)
+        actions.sort()
+        actions.reverse()
+        for p in actions:
+            if os.path.isdir(p):
+                os.rmdir(p)
+            else:
+                os.remove(p)
+        del sys.path[0]
+
+    def test_module(self):
+        eq = self.assertEquals
+        touch(os.path.join(self.subpkgname, self.pkgname + '.py'))
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import areallylongpackageandmodulenametotestreprtruncation
+        eq(repr(areallylongpackageandmodulenametotestreprtruncation),
+           "<module 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation' from '%s'>" % areallylongpackageandmodulenametotestreprtruncation.__file__)
+
+    def test_type(self):
+        eq = self.assertEquals
+        touch(os.path.join(self.subpkgname, 'foo.py'), '''\
+class foo(object):
+    pass
+''')
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import foo
+        eq(repr(foo.foo),
+               "<type 'areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.foo.foo'>")
+
+    def test_object(self):
+        # XXX Test the repr of a type with a really long tp_name but with no
+        # tp_repr.  WIBNI we had ::Inline? :)
+        pass
+
+    def test_class(self):
+        touch(os.path.join(self.subpkgname, 'bar.py'), '''\
+class bar:
+    pass
+''')
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
+        self.failUnless(repr(bar.bar).startswith(
+            "<class areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.bar.bar at 0x"))
+
+    def test_instance(self):
+        touch(os.path.join(self.subpkgname, 'baz.py'), '''\
+class baz:
+    pass
+''')
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
+        ibaz = baz.baz()
+        self.failUnless(repr(ibaz).startswith(
+            "<areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.baz.baz instance at 0x"))
+
+    def test_method(self):
+        eq = self.assertEquals
+        touch(os.path.join(self.subpkgname, 'qux.py'), '''\
+class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:
+    def amethod(self): pass
+''')
+        from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
+        # Unbound methods first
+        eq(repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod),
+        '<unbound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod>')
+        # Bound method next
+        iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
+        self.failUnless(repr(iqux.amethod).startswith(
+            '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa instance at 0x'))
+
+    def test_builtin_function(self):
+        # XXX test built-in functions and methods with really long names
+        pass
 
 class ClassWithRepr:
     def __init__(self, s):
@@ -106,3 +261,4 @@ class ClassWithFailingRepr:
 
 
 run_unittest(ReprTests)
+run_unittest(LongReprTest)
