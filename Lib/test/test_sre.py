@@ -155,6 +155,7 @@ if verbose:
     print 'Running tests on sre.split'
 
 test(r"""sre.split(r":", ":a:b::c")""", ['', 'a', 'b', '', 'c'])
+test(r"""sre.split(r":+", ":a:b:::")""", ['', 'a', 'b', ''])
 test(r"""sre.split(r":*", ":a:b::c")""", ['', 'a', 'b', 'c'])
 test(r"""sre.split(r"(:*)", ":a:b::c")""", ['', ':', 'a', ':', 'b', '::', 'c'])
 test(r"""sre.split(r"(?::*)", ":a:b::c")""", ['', 'a', 'b', 'c'])
