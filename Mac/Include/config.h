@@ -1,6 +1,6 @@
 /* config.h for Macintosh THINK C 6.0.  */
 
-/* Define if on Macintosh (THINK C or MPW */
+/* Define if on Macintosh (THINK_C or MPW should also be defined) */
 #define macintosh
 
 /* Define if on AIX 3.
@@ -166,7 +166,7 @@
 #undef HAVE_GETTIMEOFDAY
 
 /* Define if you have getwd.  */
-#define HAVE_GETWD 1
+#undef HAVE_GETWD
 
 /* Define if you have link.  */
 #undef HAVE_LINK
