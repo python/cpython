@@ -176,10 +176,12 @@ __all__ = [
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
+    'COMPARISON_FLAGS',
     'REPORT_UDIFF',
     'REPORT_CDIFF',
     'REPORT_NDIFF',
     'REPORT_ONLY_FIRST_FAILURE',
+    'REPORTING_FLAGS',
     # 1. Utility Functions
     'is_private',
     # 2. Example & DocTest
