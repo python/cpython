@@ -9,33 +9,45 @@ of parameters below it.
 # Titles of FAQ sections
 
 SECTION_TITLES = {
+    # SectionNumber : SectionTitle; need at least one entry
     1: "General information and availability",
-    2: "Python in the real world",
-    3: "Building Python and Other Known Bugs",
-    4: "Programming in Python",
-    5: "Extending Python",
-    6: "Python's design",
-    7: "Using Python on non-UNIX platforms",
 }
 
 # Parameters you definitely want to change
 
-PASSWORD = "Spam"			# Editing password
-FAQNAME = "Python FAQ"			# Name of the FAQ
+SHORTNAME = "Generic"			# FAQ name with "FAQ" omitted
+PASSWORD = ""				# Password for editing
 OWNERNAME = "GvR"			# Name for feedback
 OWNEREMAIL = "guido@python.org"		# Email for feedback
 HOMEURL = "http://www.python.org"	# Related home page
 HOMENAME = "Python home"		# Name of related home page
-COOKIE_NAME = "Python-FAQ-Wizard"	# Name used for Netscape cookie
 RCSBINDIR = "/depot/gnu/plat/bin/"	# Directory containing RCS commands
 					# (must end in a slash)
 
 # Parameters you can normally leave alone
 
-FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
 MAXHITS = 10				# Max #hits to be shown directly
 COOKIE_LIFETIME = 28*24*3600		# Cookie expiration in seconds
 					# (28*24*3600 = 28 days = 4 weeks)
+
+# This parameter is normally overwritten with a dynamic value
+
+FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
+import os, sys
+FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
+del os, sys
+
+# Load local customizations on top of the previous parameters
+
+try:
+    from faqcust import *
+except ImporError:
+    pass
+
+# Calculated parameter names
+
+COOKIE_NAME = SHORTNAME + "-FAQ-Wizard"	# Name used for Netscape cookie
+FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
 
 # Regular expression to recognize FAQ entry files: group(1) should be
 # the section number, group(2) should be the question number.  Both
