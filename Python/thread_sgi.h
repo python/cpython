@@ -451,3 +451,83 @@ void up_sema _P1(sema, type_sema sema)
 	if (usvsema((usema_t *) sema) < 0)
 		perror("usvsema");
 }
+
+/*
+ * Per-thread data ("key") support.
+ */
+
+struct key {
+	struct key *next;
+	long id;
+	int key;
+	void *value;
+};
+
+static struct key *keyhead = NULL;
+static int nkeys = 0;
+static type_lock keymutex = NULL;
+
+static struct key *find_key _P2(key, int key, value, void *value)
+{
+	struct key *p;
+	long id = get_thread_ident();
+	for (p = keyhead; p != NULL; p = p->next) {
+		if (p->id == id && p->key == key)
+			return p;
+	}
+	if (value == NULL)
+		return NULL;
+	p = (struct key *)malloc(sizeof(struct key));
+	if (p != NULL) {
+		p->id = id;
+		p->key = key;
+		p->value = value;
+		acquire_lock(keymutex, 1);
+		p->next = keyhead;
+		keyhead = p;
+		release_lock(keymutex);
+	}
+	return p;
+}
+
+int create_key _P0()
+{
+	if (keymutex == NULL)
+		keymutex = allocate_lock();
+	return ++nkeys;
+}
+
+void delete_key _P1(key, int key)
+{
+	struct key *p, **q;
+	acquire_lock(keymutex, 1);
+	q = &keyhead;
+	while ((p = *q) != NULL) {
+		if (p->key == key) {
+			*q = p->next;
+			free((void *)p);
+			/* NB This does *not* free p->value! */
+		}
+		else
+			q = &p->next;
+	}
+	release_lock(keymutex);
+}
+
+int set_key_value _P2(key, int key, value, void *value)
+{
+	struct key *p = find_key(key, value);
+	if (p == NULL)
+		return -1;
+	else
+		return 0;
+}
+
+void *get_key_value _P1(key, int key)
+{
+	struct key *p = find_key(key, NULL);
+	if (p == NULL)
+		return NULL;
+	else
+		return p->value;
+}

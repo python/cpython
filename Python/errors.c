@@ -55,23 +55,34 @@ extern char *strerror Py_PROTO((int));
 #endif
 #endif
 
-/* Last exception stored */
-
-static PyObject *last_exception;
-static PyObject *last_exc_val;
-
 void
-PyErr_Restore(exception, value, traceback)
-	PyObject *exception;
+PyErr_Restore(type, value, traceback)
+	PyObject *type;
 	PyObject *value;
 	PyObject *traceback;
 {
-	PyErr_Clear();
+	PyThreadState *tstate = PyThreadState_Get();
+	PyObject *oldtype, *oldvalue, *oldtraceback;
 
-	last_exception = exception;
-	last_exc_val = value;
-	(void) PyTraceBack_Store(traceback);
-	Py_XDECREF(traceback);
+	if (traceback != NULL && !PyTraceBack_Check(traceback)) {
+		/* XXX Should never happen -- fatal error instead? */
+		Py_DECREF(traceback);
+		traceback = NULL;
+	}
+
+	/* Save these in locals to safeguard against recursive
+	   invocation through Py_XDECREF */
+	oldtype = tstate->curexc_type;
+	oldvalue = tstate->curexc_value;
+	oldtraceback = tstate->curexc_traceback;
+
+	tstate->curexc_type = type;
+	tstate->curexc_value = value;
+	tstate->curexc_traceback = traceback;
+
+	Py_XDECREF(oldtype);
+	Py_XDECREF(oldvalue);
+	Py_XDECREF(oldtraceback);
 }
 
 void
@@ -105,33 +116,32 @@ PyErr_SetString(exception, string)
 PyObject *
 PyErr_Occurred()
 {
-	return last_exception;
+	PyThreadState *tstate = PyThreadState_Get();
+
+	return tstate->curexc_type;
 }
 
 void
-PyErr_Fetch(p_exc, p_val, p_tb)
-	PyObject **p_exc;
-	PyObject **p_val;
-	PyObject **p_tb;
+PyErr_Fetch(p_type, p_value, p_traceback)
+	PyObject **p_type;
+	PyObject **p_value;
+	PyObject **p_traceback;
 {
-	*p_exc = last_exception;
-	last_exception = NULL;
-	*p_val = last_exc_val;
-	last_exc_val = NULL;
-	*p_tb = PyTraceBack_Fetch();
+	PyThreadState *tstate = PyThreadState_Get();
+
+	*p_type = tstate->curexc_type;
+	*p_value = tstate->curexc_value;
+	*p_traceback = tstate->curexc_traceback;
+
+	tstate->curexc_type = NULL;
+	tstate->curexc_value = NULL;
+	tstate->curexc_traceback = NULL;
 }
 
 void
 PyErr_Clear()
 {
-	PyObject *tb;
-	Py_XDECREF(last_exception);
-	last_exception = NULL;
-	Py_XDECREF(last_exc_val);
-	last_exc_val = NULL;
-	/* Also clear interpreter stack trace */
-	tb = PyTraceBack_Fetch();
-	Py_XDECREF(tb);
+	PyErr_Restore(NULL, NULL, NULL);
 }
 
 /* Convenience functions to set a type error exception and return 0 */
@@ -139,7 +149,8 @@ PyErr_Clear()
 int
 PyErr_BadArgument()
 {
-	PyErr_SetString(PyExc_TypeError, "illegal argument type for built-in operation");
+	PyErr_SetString(PyExc_TypeError,
+			"illegal argument type for built-in operation");
 	return 0;
 }
 
@@ -171,7 +182,8 @@ PyErr_SetFromErrno(exc)
 void
 PyErr_BadInternalCall()
 {
-	PyErr_SetString(PyExc_SystemError, "bad argument to internal function");
+	PyErr_SetString(PyExc_SystemError,
+			"bad argument to internal function");
 }
 
 

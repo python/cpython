@@ -50,6 +50,9 @@ static struct memberlist frame_memberlist[] = {
 	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
 	{"f_restricted",T_INT,		OFF(f_restricted),RO},
 	{"f_trace",	T_OBJECT,	OFF(f_trace)},
+	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
+	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
+	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},
 	{NULL}	/* Sentinel */
 };
 
@@ -112,6 +115,9 @@ frame_dealloc(f)
 	Py_XDECREF(f->f_globals);
 	Py_XDECREF(f->f_locals);
 	Py_XDECREF(f->f_trace);
+	Py_XDECREF(f->f_exc_type);
+	Py_XDECREF(f->f_exc_value);
+	Py_XDECREF(f->f_exc_traceback);
 	f->f_back = free_list;
 	free_list = f;
 }
@@ -134,12 +140,13 @@ PyTypeObject PyFrame_Type = {
 };
 
 PyFrameObject *
-PyFrame_New(back, code, globals, locals)
-	PyFrameObject *back;
+PyFrame_New(tstate, code, globals, locals)
+	PyThreadState *tstate;
 	PyCodeObject *code;
 	PyObject *globals;
 	PyObject *locals;
 {
+	PyFrameObject *back = tstate->frame;
 	static PyObject *builtin_object;
 	PyFrameObject *f;
 	PyObject *builtins;
@@ -214,6 +221,10 @@ PyFrame_New(back, code, globals, locals)
 	}
 	f->f_locals = locals;
 	f->f_trace = NULL;
+	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
+	f->f_tstate = PyThreadState_Get();
+	if (f->f_tstate == NULL)
+		Py_FatalError("can't create new frame without thread");
 
 	f->f_lasti = 0;
 	f->f_lineno = code->co_firstlineno;

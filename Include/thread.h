@@ -35,6 +35,10 @@ extern "C" {
 #define up_sema PyThread_up_sema
 #define exit_prog PyThread_exit_prog
 #define _exit_prog PyThread__exit_prog
+#define create_key PyThread_create_key
+#define delete_key PyThread_delete_key
+#define get_key_value PyThread_get_key_value
+#define set_key_value PyThread_set_key_value
 
 
 void init_thread Py_PROTO((void));
@@ -61,6 +65,11 @@ void up_sema Py_PROTO((type_sema));
 void exit_prog Py_PROTO((int));
 void _exit_prog Py_PROTO((int));
 #endif
+
+int create_key Py_PROTO((void));
+void delete_key Py_PROTO((int));
+int set_key_value Py_PROTO((int, void *));
+void * get_key_value Py_PROTO((int));
 
 #ifdef __cplusplus
 }

@@ -117,42 +117,18 @@ newtracebackobject(next, frame, lasti, lineno)
 	return tb;
 }
 
-static tracebackobject *tb_current = NULL;
-
 int
 PyTraceBack_Here(frame)
 	PyFrameObject *frame;
 {
-	tracebackobject *tb;
-	tb = newtracebackobject(tb_current, frame,
-				frame->f_lasti, frame->f_lineno);
+	PyThreadState *tstate = frame->f_tstate;
+	tracebackobject *oldtb = (tracebackobject *) tstate->curexc_traceback;
+	tracebackobject *tb = newtracebackobject(oldtb,
+				frame, frame->f_lasti, frame->f_lineno);
 	if (tb == NULL)
 		return -1;
-	Py_XDECREF(tb_current);
-	tb_current = tb;
-	return 0;
-}
-
-PyObject *
-PyTraceBack_Fetch()
-{
-	PyObject *v;
-	v = (PyObject *)tb_current;
-	tb_current = NULL;
-	return v;
-}
-
-int
-PyTraceBack_Store(v)
-	PyObject *v;
-{
-	if (v != NULL && !is_tracebackobject(v)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	Py_XDECREF(tb_current);
-	Py_XINCREF(v);
-	tb_current = (tracebackobject *)v;
+	tstate->curexc_traceback = (PyObject *)tb;
+	Py_XDECREF(oldtb);
 	return 0;
 }
 

@@ -95,6 +95,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "import.h"
 #include "bltinmodule.h"
 
+#include "pystate.h"
+
 #include "abstract.h"
 
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
