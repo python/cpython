@@ -324,9 +324,9 @@ def mktemp(suffix="", prefix=template, dir=None):
     the punch.
     """
 
-    from warnings import warn as _warn
-    _warn("mktemp is a potential security risk to your program",
-          RuntimeWarning, stacklevel=2)
+##    from warnings import warn as _warn
+##    _warn("mktemp is a potential security risk to your program",
+##          RuntimeWarning, stacklevel=2)
 
     if dir is None:
         dir = gettempdir()
