@@ -127,7 +127,7 @@ static char prefix[MAXPATHLEN+1];
 static char exec_prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
-static char lib_python[20]; /* Dynamically set to "lib/python" VERSION */
+static char lib_python[] = "lib/python" VERSION;
 
 static void
 reduce(char *dir)
@@ -408,9 +408,6 @@ calculate_path(void)
            (even though NSNameOfModule() probably does the same thing.) */
 #endif
 	
-	/* Initialize this dynamically for K&R C */
-	sprintf(lib_python, "lib/python%.9s", VERSION);
-
 	/* If there is no slash in the argv0 path, then we have to
 	 * assume python is on the user's $PATH, since there's no
 	 * other way to find a directory to start the search from.  If
