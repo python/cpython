@@ -152,7 +152,7 @@ getpath.o:	getpath.c Makefile
 # longer pertinent (but that were in a previous configuration).
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup Setup.local
 		-rm -f $(LIBRARY)
-		$(SHELL) $(MAKESETUP) Setup Setup.local
+		$(SHELL) $(MAKESETUP) Setup.local Setup
 
 Setup:
 		cp $(srcdir)/Setup.in Setup
