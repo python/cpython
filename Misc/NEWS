@@ -59,6 +59,9 @@ Extension modules
 Library
 -------
 
+- The bsddb module and dbhash module now support the iterator and
+  mapping protocols. 
+
 - Bug #711632: Reset all state members in HTMLParser.reset.
 
 - Bug #792649:  logging.ConfigStreamHandler had an uninitialized variable
