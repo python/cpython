@@ -107,7 +107,7 @@ def poll(timeout=0.0, map=None):
             try:
                 r, w, e = select.select(r, w, e, timeout)
             except select.error, err:
-                if err[0] not in (EINTR, ENOENT):
+                if err[0] != EINTR:
                     raise
 
         for fd in r:
