@@ -70,6 +70,8 @@ Library
 
 - distutils bdist commands now offer a --skip-build option.
 
+- warnings.warn now accepts a Warning instance as first argument.
+
 Tools/Demos
 
 Build
