@@ -100,7 +100,6 @@ signal signalmodule.c		# signal(2)
 
 array arraymodule.c	# array objects
 math mathmodule.c -lm	# math library functions, e.g. sin()
-parser parsermodule.c	# Fred Drake's interface to the Python parser
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
@@ -307,7 +306,12 @@ rotor rotormodule.c		# enigma-inspired encryption
 #objc.c
 
 # Helper module for various ascii-encoders
-binascii binasciimodule.c
+binascii binascii.c
+
+# Fred Drake's interface to the Python parser.
+# (Not enabled by default because it is big and doesn't compile with
+# cc on SunOS 4.1.3)
+#parser parsermodule.c
 
 
 # Example -- included for reference only:
