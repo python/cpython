@@ -33,6 +33,9 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Update the filecmp documentation (Moshe?).
 
+* Update the httplib documentation to match Greg Stein's HTTP/1.1
+  support and new classes.  (Greg, this is yours!)
+
 
 NOT WORTH THE TROUBLE
 ---------------------
