@@ -41,6 +41,9 @@
 %define binsuffix %(if [ "%{config_binsuffix}" = none ]; then echo ; else echo "%{config_binsuffix}"; fi)
 %define include_tkinter %(if [ \\( "%{config_tkinter}" = auto -a -f /usr/bin/wish \\) -o "%{config_tkinter}" = yes ]; then echo 1; else echo 0; fi)
 
+#  detect if documentation is available
+%define include_docs %(if [ -f "%{_sourcedir}/html-%{version}.tar.bz2" ]; then echo 1; else echo 0; fi)
+
 Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
 Version: %{version}
@@ -48,8 +51,9 @@ Release: %{release}
 Copyright: Modified CNRI Open Source License
 Group: Development/Languages
 Source: Python-%{version}.tgz
+%if %{include_docs}
 Source1: html-%{version}.tar.bz2
-#Patch0: Python-2.1-pythonpath.patch
+%endif
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildPrereq: expat-devel
 BuildPrereq: db4-devel
@@ -112,6 +116,7 @@ Install python-tools if you want to use these tools to develop
 Python programs.  You will also need to install the python and
 tkinter packages.
 
+%if %{include_docs}
 %package docs
 Summary: Python-related documentation.
 Group: Development/Documentation
@@ -119,8 +124,12 @@ Group: Development/Documentation
 %description docs
 Documentation relating to the Python programming language in HTML and info
 formats.
+%endif
 
 %changelog
+* Mon Oct 13 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-1pydotorg]
+- Adding code to detect wether documentation is available to build.
+
 * Fri Sep 19 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.1-1pydotorg]
 - Updating to the 2.3.1 release.
 
@@ -177,7 +186,6 @@ formats.
 #######
 %prep
 %setup -n Python-%{version}
-#%patch0 -p1
 
 ########
 #  BUILD
@@ -245,28 +253,20 @@ echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
 
 ######
 # Docs
+%if %{include_docs}
 mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
 (
    cd "$RPM_BUILD_ROOT"/var/www/html/python
    bunzip2 < %{SOURCE1} | tar x
 )
-
-#  clean up the /usr/local/bin/python references
-find "$RPM_BUILD_ROOT" -type f | xargs grep -l /usr/local/bin/python | while read file
-do
-   rm -f /tmp/pypathtmp
-   sed 's|/usr/local/bin/python|/usr/bin/python%{binsuffix}|g' <"$file" >/tmp/pypathtmp
-   cat </tmp/pypathtmp >"$file"
-   rm -f /tmp/pypathtmp
-done
+%endif
 
 ########
 #  CLEAN
 ########
 %clean
-#@@@
-#rm -fr $RPM_BUILD_ROOT
-#rm -f mainpkg.files tools.files
+[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf $RPM_BUILD_ROOT
+rm -f mainpkg.files tools.files
 
 ########
 #  FILES
@@ -312,6 +312,8 @@ done
 %{__prefix}/lib/python%{libvers}/lib-dynload/_tkinter.so*
 %endif
 
+%if %{include_docs}
 %files docs
 %defattr(-,root,root)
 /var/www/html/python/*
+%endif
