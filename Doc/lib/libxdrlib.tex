@@ -1,13 +1,12 @@
 \section{\module{xdrlib} ---
-         Encode and decode XDR data.}
-\declaremodule{standard}{xdrlib}
+         Encode and decode XDR data}
 
+\declaremodule{standard}{xdrlib}
 \modulesynopsis{Encoders and decoders for the External Data
-Representation (XDR).}
+                Representation (XDR).}
 
 \index{XDR}
 \index{External Data Representation}
-
 
 The \module{xdrlib} module supports the External Data Representation
 Standard as described in \rfc{1014}, written by Sun Microsystems,
@@ -28,6 +27,17 @@ The \class{Packer} class is instantiated with no arguments.
 values from a string buffer.  The input buffer is given as
 \var{data}.
 \end{classdesc}
+
+
+\begin{seealso}
+  \seerfc{1014}{XDR: External Data Representation Standard}{This RFC
+                defined the encoding of data which was XDR at the time
+                this module was originally written.  It has
+                appearantly been obsoleted by \rfc{1832}.}
+
+  \seerfc{1832}{XDR: External Data Representation Standard}{Newer RFC
+                that provides a revised definition of XDR.}
+\end{seealso}
 
 
 \subsection{Packer Objects \label{xdr-packer-objects}}
