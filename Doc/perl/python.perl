@@ -61,7 +61,7 @@ sub do_cmd_POSIX{ 'POSIX' . @_[0]; }
 sub do_cmd_C{ 'C' . @_[0]; }
 sub do_cmd_Cpp{ 'C++' . @_[0]; }
 sub do_cmd_EOF{ 'EOF' . @_[0]; }
-sub do_cmd_NULL{ '<tt>NULL</tt>' . @_[0]; }
+sub do_cmd_NULL{ '<tt class="constant">NULL</tt>' . @_[0]; }
 
 sub do_cmd_e{ '&#92;' . @_[0]; }
 
@@ -119,53 +119,55 @@ sub do_cmd_optional{
 sub do_cmd_pytype{ return @_[0]; }
 sub do_cmd_makevar{ return @_[0]; }
 sub do_cmd_code{
-    return use_wrappers(@_[0], '<tt>', '</tt>'); }
+    return use_wrappers(@_[0], '<code>', '</code>'); }
 sub do_cmd_module{
-    return use_wrappers(@_[0], '<tt class=module>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="module">', '</tt>'); }
 sub do_cmd_keyword{
-    return use_wrappers(@_[0], '<tt class=keyword>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="keyword">', '</tt>'); }
 sub do_cmd_exception{
-    return use_wrappers(@_[0], '<tt class=exception>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="exception">', '</tt>'); }
 sub do_cmd_class{
-    return use_wrappers(@_[0], '<tt class=class>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="class">', '</tt>'); }
 sub do_cmd_function{
-    return use_wrappers(@_[0], '<tt class=function>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="function">', '</tt>'); }
 sub do_cmd_constant{
-    return use_wrappers(@_[0], '<tt class=constant>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="constant">', '</tt>'); }
 sub do_cmd_member{
-    return use_wrappers(@_[0], '<tt class=member>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="member">', '</tt>'); }
 sub do_cmd_method{
-    return use_wrappers(@_[0], '<tt class=method>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="method">', '</tt>'); }
 sub do_cmd_cfunction{
-    return use_wrappers(@_[0], '<tt class=cfunction>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="cfunction">', '</tt>'); }
 sub do_cmd_cdata{
-    return use_wrappers(@_[0], '<tt class=cdata>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="cdata">', '</tt>'); }
 sub do_cmd_ctype{
-    return use_wrappers(@_[0], '<tt class=ctype>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="ctype">', '</tt>'); }
 sub do_cmd_regexp{
-    return use_wrappers(@_[0], '<tt class=regexp>', '</tt>'); }
+    return use_wrappers(@_[0], '<tt class="regexp">', '</tt>'); }
 sub do_cmd_character{
-    return use_wrappers(@_[0], '"<tt class=character>', '</tt>"'); }
+    return use_wrappers(@_[0], '"<tt class="character">', '</tt>"'); }
 sub do_cmd_program{
-    return use_wrappers(@_[0], '<b class=program>', '</b>'); }
+    return use_wrappers(@_[0], '<b class="program">', '</b>'); }
 sub do_cmd_programopt{
     return use_wrappers(@_[0], '<b class="programopt">', '</b>'); }
 sub do_cmd_email{
-    return use_wrappers(@_[0], '<span class=email>', '</span>'); }
+    return use_wrappers(@_[0], '<span class="email">', '</span>'); }
 sub do_cmd_mimetype{
-    return use_wrappers(@_[0], '<span class=mimetype>', '</span>'); }
+    return use_wrappers(@_[0], '<span class="mimetype">', '</span>'); }
 sub do_cmd_var{
     return use_wrappers(@_[0], "<var>", "</var>"); }
 sub do_cmd_dfn{
-    return use_wrappers(@_[0], '<i class=dfn>', '</i>'); }
+    return use_wrappers(@_[0], '<i class="dfn">', '</i>'); }
 sub do_cmd_emph{
     return use_italics(@_); }
 sub do_cmd_file{
-    return use_wrappers(@_[0], '<tt class=file>', '</tt>'); }
+    return use_wrappers(@_[0],
+                        '<font class="file" face="sans-serif">',
+                        '</font>'); }
 sub do_cmd_filenq{
-    return use_wrappers(@_[0], '<tt class=file>', '</tt>'); }
+    return do_cmd_file(@_[0]); }
 sub do_cmd_samp{
-    return use_wrappers(@_[0], '"<tt class=samp>', '</tt>"'); }
+    return use_wrappers(@_[0], '"<tt class="samp">', '</tt>"'); }
 sub do_cmd_kbd{
     return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{
@@ -183,13 +185,15 @@ sub do_cmd_refmodule{
     my $module = next_argument();
     $key = $module
         unless $key;
-    return "<tt class=module><a href=\"module-$key.html\">$module</a></tt>" . $_;
+    return "<tt class='module'><a href='module-$key.html'>$module</a></tt>"
+      . $_;
 }
 
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
-    my $stuff = "<a class=newsgroup href=\"news:$newsgroup\">$newsgroup</a>";
+    my $stuff = "<span class='newsgroup'><a href='news:$newsgroup'>"
+      . "$newsgroup</a></span>";
     return $stuff . $_;
 }
 
@@ -202,7 +206,7 @@ sub do_cmd_envvar{
     add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
 		    $ahref);
     add_index_entry("$envvar@\$$envvar", $ahref);
-    $aname =~ s/<a/<a class=envvar/;
+    $aname =~ s/<a/<a class="envvar"/;
     return "$aname\$$envvar</a>" . $_;
 }
 
@@ -211,7 +215,7 @@ sub do_cmd_url{
     local($_) = @_;
     my $url = next_argument();
     $url =~ s/~/&#126;/g;
-    return "<a class=url href=\"$url\">$url</a>" . $_;
+    return "<a class=\"url\" href=\"$url\">$url</a>" . $_;
 }
 
 sub do_cmd_manpage{
@@ -219,7 +223,7 @@ sub do_cmd_manpage{
     local($_) = @_;
     my $page = next_argument();
     my $section = next_argument();
-    return "<span class=manpage><i>$page</i>($section)</span>" . $_;
+    return "<span class='manpage'><i>$page</i>($section)</span>" . $_;
 }
 
 sub do_cmd_rfc{
@@ -231,7 +235,7 @@ sub do_cmd_rfc{
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=rfc name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>"
+    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>"
             . $_);
 }
 
@@ -280,11 +284,11 @@ sub do_cmd_versionchanged{
 sub do_cmd_platform{
     local($_) = @_;
     my $platform = next_argument();
-    $ModulePlatforms{$THIS_MODULE} = $platform;
+    $ModulePlatforms{"<tt class='module'>$THIS_MODULE</tt>"} = $platform;
     $platform = "Macintosh"
       if $platform eq 'Mac';
-    return "\n<p class=availability>Availability: <span"
-      . "\n class=platform>$platform</span>.</p>\n" . $_;
+    return "\n<p class='availability'>Availability: <span"
+      . "\n class='platform'>$platform</span>.</p>\n" . $_;
 }
 
 $IGNORE_PLATFORM_ANNOTATION = '';
@@ -353,7 +357,7 @@ sub write_idxfile{
 sub gen_link{
     my($node,$target) = @_;
     print INTLABELS "\$internal_labels{\"$target\"} = \"$URL/$node\";\n";
-    return "<a href=\"$node#$target\">";
+    return "<a href='$node#$target'>";
 }
 
 sub add_index_entry{
@@ -366,7 +370,7 @@ sub add_index_entry{
 
 sub new_link_info{
     my $name = "l2h-" . ++$globals{'max_id'};
-    my $aname = '<a name="' . $name . '">';
+    my $aname = "<a name='$name'>";
     my $ahref = gen_link($CURRENT_FILE, $name);
     return ($name, $aname, $ahref);
 }
@@ -483,7 +487,8 @@ sub idx_cmd_obindex{ my_typed_index_helper('object', @_[0]); }
 define_indexing_macro('bifuncindex');
 sub idx_cmd_bifuncindex{
     my $str = next_argument();
-    add_index_entry("<tt>$str()</tt> (built-in function)", @_[0]);
+    add_index_entry("<tt class='function'>$str()</tt> (built-in function)",
+                    @_[0]);
 }
 
 
@@ -499,7 +504,8 @@ sub make_mod_index_entry{
 
     if ($define eq 'DEF') {
 	# add to the module index
-	my($nstr,$garbage) = split / /, $str, 2;
+        $str =~ /(<tt.*<\/tt>)/;
+        my $nstr = $1;
 	$Modules{$nstr} .= $ahref;
     }
     return "$aname$anchor_invisible_mark</a>";
@@ -522,7 +528,8 @@ sub define_module{
     $THIS_MODULE = "$name";
     $INDEX_SUBITEM = "(in $name)";
     print "[$name]";
-    return make_mod_index_entry("<tt>$name</tt> (${word}module)", 'DEF');
+    return make_mod_index_entry(
+        "<tt class='module'>$name</tt> (${word}module)", 'DEF');
 }
 
 sub my_module_index_helper{
@@ -540,7 +547,7 @@ sub ref_module_index_helper{
     local($word, $ahref) = @_;
     my $str = next_argument();
     $word = "$word " if $word;
-    $str = "<tt>$str</tt> (${word}module)";
+    $str = "<tt class='module'>$str</tt> (${word}module)";
     # can't use add_index_entry() since the 2nd arg to gen_index_id() is used;
     # just inline it all here
     $str = gen_index_id($str, 'REF');
@@ -575,27 +582,85 @@ sub make_str_index_entry{
     return "$aname$str</a>";
 }
 
+$REFCOUNTS_LOADED = 0;
+
+sub load_refcounts{
+    $REFCOUNTS_LOADED = 1;
+
+    use File::Basename;
+    my $myname, $mydir, $myext;
+    ($myname, $mydir, $myext) = fileparse(__FILE__, '\..*');
+    chop $mydir;			# remove trailing '/'
+    ($myname, $mydir, $myext) = fileparse($mydir, '\..*');
+    chop $mydir;			# remove trailing '/'
+    $mydir = getcwd() . "$dd$mydir"
+      unless $mydir =~ s|^/|/|;
+    local $_;
+    my $filename = "$mydir${dd}api${dd}refcounts.dat";
+    open(REFCOUNT_FILE, "<$filename") || die "\n$!\n";
+    print "[loading API refcount data]";
+    while (<REFCOUNT_FILE>) {
+        if (/([a-zA-Z0-9_]+):PyObject\*:([a-zA-Z0-9_]*):(0|[-+]1):(.*)$/) {
+            my($func, $param, $count, $comment) = ($1, $2, $3, $4);
+            #print "\n$func($param) --> $count";
+            $REFCOUNTS{"$func:$param"} = $count;
+        }
+    }
+}
+
+sub get_refcount{
+    my ($func, $param) = @_;
+    load_refcounts()
+        unless $REFCOUNTS_LOADED;
+    return $REFCOUNTS{"$func:$param"};
+}
+
 sub do_env_cfuncdesc{
     local($_) = @_;
     my $return_type = next_argument();
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $idx = make_str_index_entry("<tt class=cfunction>$function_name()</tt>"
-				   . get_indexsubitem());
+    my $idx = make_str_index_entry(
+        "<tt class='cfunction'>$function_name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ????
+    my $result_rc = get_refcount($function_name, '');
+    my $rcinfo = '';
+    if ($result_rc eq '+1') {
+        $rcinfo = '<span class="label">Return value:</span>'
+                  . "\n  <span class=\"value\">New reference.</span>";
+    }
+    elsif ($result_rc eq '0') {
+        $rcinfo = '<span class="label">Return value:</span>'
+                  . "\n  <span class=\"value\">Borrowed reference.</span>";
+    }
+    if ($rcinfo ne '') {
+        $rcinfo = "\n<div class=\"refcount-info\">\n  $rcinfo\n</div>";
+    }
     return "<dl><dt>$return_type <b>$idx</b> (<var>$arg_list</var>)\n<dd>"
+           . $rcinfo
            . $_
            . '</dl>';
 }
 
+sub do_env_csimplemacrodesc{
+    local($_) = @_;
+    my $name = next_argument();
+    my $idx = make_str_index_entry("<tt class='macro'>$name</tt>");
+    return "<dl><dt><b>$idx</b>\n<dd>"
+           . $_
+           . '</dl>'
+}
+
 sub do_env_ctypedesc{
     local($_) = @_;
+    my $index_name = next_optional_argument();
     my $type_name = next_argument();
-    my $idx = make_str_index_entry("<tt class=ctype>$type_name</tt>"
-				   . get_indexsubitem());
-    $idx =~ s/ \(.*\)//;
-    return "<dl><dt><b>$idx</b>\n<dd>"
+    $index_name = $type_name
+      unless $index_name;
+    my($name,$aname,$ahref) = new_link_info();
+    add_index_entry("<tt class='ctype'>$index_name</tt> (C type)", $ahref);
+    return "<dl><dt><b><tt class='ctype'>$aname$type_name</a></tt></b>\n<dd>"
            . $_
            . '</dl>'
 }
@@ -604,7 +669,7 @@ sub do_env_cvardesc{
     local($_) = @_;
     my $var_type = next_argument();
     my $var_name = next_argument();
-    my $idx = make_str_index_entry("<tt class=cdata>$var_name</tt>"
+    my $idx = make_str_index_entry("<tt class='cdata'>$var_name</tt>"
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     return "<dl><dt>$var_type <b>$idx</b>\n"
@@ -617,7 +682,7 @@ sub do_env_funcdesc{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $idx = make_str_index_entry("<tt class=function>$function_name()</tt>"
+    my $idx = make_str_index_entry("<tt class='function'>$function_name()</tt>"
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)<\/tt>/<\/tt>/;
@@ -628,7 +693,7 @@ sub do_env_funcdescni{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    return "<dl><dt><b><tt class=function>$function_name</tt></b>"
+    return "<dl><dt><b><tt class='function'>$function_name</tt></b>"
       . " (<var>$arg_list</var>)\n"
       . '<dd>'
       . $_
@@ -639,7 +704,7 @@ sub do_cmd_funcline{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $prefix = "<tt class=function>$function_name()</tt>";
+    my $prefix = "<tt class='function'>$function_name()</tt>";
     my $idx = make_str_index_entry($prefix . get_indexsubitem());
     $prefix =~ s/\(\)//;
 
@@ -650,7 +715,7 @@ sub do_cmd_funclineni{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $prefix = "<tt class=function>$function_name</tt>";
+    my $prefix = "<tt class='function'>$function_name</tt>";
 
     return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
@@ -667,12 +732,12 @@ sub do_env_opcodedesc{
     my $arg_list = next_argument();
     my $idx;
     if ($INDEX_OPCODES) {
-	$idx = make_str_index_entry(
-		"<tt class=opcode>$opcode_name</tt> (byte code instruction)");
+	$idx = make_str_index_entry("<tt class='opcode'>$opcode_name</tt>"
+                                    . " (byte code instruction)");
 	$idx =~ s/ \(byte code instruction\)//;
     }
     else {
-	$idx = "<tt class=opcode>$opcode_name</tt>";
+	$idx = "<tt class='opcode'>$opcode_name</tt>";
     }
     my $stuff = "<dl><dt><b>$idx</b>";
     if ($arg_list) {
@@ -711,7 +776,7 @@ sub do_cmd_dataline{
 sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
-    my $idx = make_str_index_entry("<tt class=exception>$excname</tt>");
+    my $idx = make_str_index_entry("<tt class='exception'>$excname</tt>");
     return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>'
 }
 
@@ -723,7 +788,7 @@ sub do_env_classdesc{
     $THIS_CLASS = next_argument();
     my $arg_list = next_argument();
     $idx = make_str_index_entry(
-		"<tt class=class>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
+		"<tt class='class'>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
@@ -740,7 +805,7 @@ sub do_env_methoddesc{
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry("<tt class=method>$method()</tt>$extra");
+    my $idx = make_str_index_entry("<tt class='method'>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -758,7 +823,7 @@ sub do_cmd_methodline{
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry("<tt class=method>$method()</tt>$extra");
+    my $idx = make_str_index_entry("<tt class='method'>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>"
@@ -795,7 +860,7 @@ sub do_env_memberdesc{
     my $extra = '';
     $extra = " ($class attribute)"
         if ($class ne '');
-    my $idx = make_str_index_entry("<tt class=member>$member</tt>$extra");
+    my $idx = make_str_index_entry("<tt class='member'>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
@@ -811,7 +876,7 @@ sub do_cmd_memberline{
     my $extra = '';
     $extra = " ($class attribute)"
         if ($class ne '');
-    my $idx = make_str_index_entry("<tt class=member>$member</tt>$extra");
+    my $idx = make_str_index_entry("<tt class='member'>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b><dd>" . $_;
@@ -821,7 +886,9 @@ sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dl><dt><b><tt class=member>$member</tt></b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b><tt class='member'>$member</tt></b>\n<dd>"
+           . $_
+           . '</dl>';
 }
 
 
@@ -829,24 +896,12 @@ sub do_cmd_memberlineni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dt><b><tt class=member>$member</tt></b><dd>" . $_;
+    return "<dt><b><tt class='member'>$member</tt></b><dd>" . $_;
 }
 
-@col_aligns = ("<td>", "<td>", "<td>", "<td>");
+@col_aligns = ('<td>', '<td>', '<td>', '<td>');
 
 $TABLE_HEADER_BGCOLOR = $NAV_BGCOLOR;
-
-sub get_th{
-    my $a = @_[0];
-    my $r = '<th>';
-    if ($a eq 'l')
-      { $r = '<th align=left>'; }
-    elsif (substr($a, 0, 1) eq 'p')
-      { $r = '<th align=left>'; }
-    elsif ($a eq 'r')
-      { $r = '<th align=right>'; }
-    return $r;
-}
 
 sub fix_font{
     # do a little magic on a font name to get the right behavior in the first
@@ -856,22 +911,53 @@ sub fix_font{
 	$font = '';
     }
     elsif ($font eq 'file' || $font eq 'filenq') {
-	$font = 'tt class=file';
+	$font = 'tt class="file"';
+    }
+    elsif ($font eq 'member') {
+        $font = 'tt class="member"';
     }
     return $font;
 }
 
+sub figure_column_alignment{
+    my $a = @_[0];
+    my $mark = substr($a, 0, 1);
+    my $r = '';
+    if ($mark eq 'c')
+      { $r = ' align="center"'; }
+    elsif ($mark eq 'r')
+      { $r = ' align="right"'; }
+    elsif ($mark eq 'l')
+      { $r = ' align="left"'; }
+    elsif ($mark eq 'p')
+      { $r = ' align="left"'; }
+    return $r;
+}
+
 sub setup_column_alignments{
     local($_) = @_;
-    my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
-    my($th1,$th2,$th3,$th4) = ('<th>', '<th>', '<th>', '<th>');
-    $col_aligns[0] = (($a1 eq 'c') ? '<td align=center valign=baseline>'
-		                   : '<td valign=baseline>');
-    $col_aligns[1] = (($a2 eq 'c') ? '<td align=center>' : '<td>');
-    $col_aligns[2] = (($a3 eq 'c') ? '<td align=center>' : '<td>');
-    $col_aligns[3] = (($a4 eq 'c') ? '<td align=center>' : '<td>');
+    my($s1,$s2,$s3,$s4) = split(/[|]/,$_);
+    my $a1 = figure_column_alignment($s1);
+    my $a2 = figure_column_alignment($s2);
+    my $a3 = figure_column_alignment($s3);
+    my $a4 = figure_column_alignment($s4);
+    $col_aligns[0] = "<td$a1 valign=\"baseline\">";
+    $col_aligns[1] = "<td$a2>";
+    $col_aligns[2] = "<td$a3>";
+    $col_aligns[3] = "<td$a4>";
     # return the aligned header start tags
-    return (get_th($a1), get_th($a2), get_th($a3), get_th($a4));
+    return ("<th$a1>", "<th$a2>", "<th$a3>", "<th$a4>");
+}
+
+sub get_table_col1_fonts{
+    my $font = $globals{'lineifont'};
+    my ($sfont,$efont) = ('', '');
+    if ($font) {
+        $sfont = "<$font>";
+        $efont = "</$font>";
+        $efont =~ s/ .*>/>/;
+    }
+    return ($font, $sfont, $efont);
 }
 
 sub do_env_tableii{
@@ -882,32 +968,36 @@ sub do_env_tableii{
     my $h2 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center style="border-collapse: collapse">'
+    my $a1 = $col_aligns[0];
+    my $a2 = $col_aligns[1];
+    s/\\lineii</\\lineii[$a1|$a2]</g;
+    return '<table border align="center" style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
 	   . "\n    </thead>"
-	   . "\n  <tbody valign=baseline>"
-	   . $_
+	   . "\n  <tbody valign='baseline'>"
+           . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
 }
 
 sub do_cmd_lineii{
     local($_) = @_;
+    my $aligns = next_optional_argument();
     my $c1 = next_argument();
     my $c2 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
-    if ($font) {
-	$sfont = "<$font>";
-	$efont = "</$font>";
-	$efont =~ s/ .*>/>/;
+    my($font,$sfont,$efont) = get_table_col1_fonts();
+    $c2 = '&nbsp;' if ($c2 eq '');
+    my($c1align,$c2align) = split('\|', $aligns);
+    my $padding = '';
+    if ($c1align =~ /align="right"/) {
+        $padding = '&nbsp;';
     }
-    my($c1align,$c2align) = @col_aligns[0,1];
-    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
-           . "        $c2align$c2\&nbsp;</td>"
+    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
+           . "        $c2align$c2</td>"
 	   . $_;
 }
 
@@ -920,14 +1010,18 @@ sub do_env_tableiii{
     my $h3 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center style="border-collapse: collapse">'
+    my $a1 = $col_aligns[0];
+    my $a2 = $col_aligns[1];
+    my $a3 = $col_aligns[2];
+    s/\\lineiii</\\lineiii[$a1|$a2|$a3]</g;
+    return '<table border align="center" style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th3<b>$h3</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
+	   . "\n      $th3<b>$h3</b>\&nbsp;</th>"
 	   . "\n    </thead>"
-	   . "\n  <tbody valign=baseline>"
+	   . "\n  <tbody valign='baseline'>"
 	   . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
@@ -935,20 +1029,21 @@ sub do_env_tableiii{
 
 sub do_cmd_lineiii{
     local($_) = @_;
+    my $aligns = next_optional_argument();
     my $c1 = next_argument();
     my $c2 = next_argument(); 
     my $c3 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
-    if ($font) {
-	$sfont = "<$font>";
-	$efont = "</$font>";
-	$efont =~ s/ .*>/>/;
+    my($font,$sfont,$efont) = get_table_col1_fonts();
+    $c3 = '&nbsp;' if ($c3 eq '');
+    my($c1align,$c2align,$c3align) = split('\|', $aligns);
+    my $padding = '';
+    if ($c1align =~ /align="right"/) {
+        $padding = '&nbsp;';
     }
-    my($c1align,$c2align,$c3align) = @col_aligns[0,1,2];
-    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
            . "        $c2align$c2</td>\n"
-	   . "        $c3align$c3\&nbsp;</td>"
+	   . "        $c3align$c3</td>"
 	   . $_;
 }
 
@@ -962,15 +1057,20 @@ sub do_env_tableiv{
     my $h4 = next_argument();
     s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center style="border-collapse: collapse">'
+    my $a1 = $col_aligns[0];
+    my $a2 = $col_aligns[1];
+    my $a3 = $col_aligns[2];
+    my $a4 = $col_aligns[3];
+    s/\\lineiv</\\lineiv[$a1|$a2|$a3|$a4]</g;
+    return '<table border align="center" style="border-collapse: collapse">'
            . "\n  <thead>"
            . "\n    <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n      $th1<b>$h1</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th2<b>$h2</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th3<b>$h3</b>\&nbsp;\&nbsp;</th>"
-	   . "\n      $th4<b>$h4</b>\&nbsp;\&nbsp;</th>"
+	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
+	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
+	   . "\n      $th3<b>$h3</b>\&nbsp;</th>"
+	   . "\n      $th4<b>$h4</b>\&nbsp;</th>"
 	   . "\n    </thead>"
-	   . "\n  <tbody valign=baseline>"
+	   . "\n  <tbody valign='baseline'>"
 	   . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
@@ -978,28 +1078,29 @@ sub do_env_tableiv{
 
 sub do_cmd_lineiv{
     local($_) = @_;
+    my $aligns = next_optional_argument();
     my $c1 = next_argument();
     my $c2 = next_argument(); 
     my $c3 = next_argument();
     my $c4 = next_argument();
     s/[\s\n]+//;
-    my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
-    if ($font) {
-	$sfont = "<$font>";
-	$efont = "</$font>";
-	$efont =~ s/ .*>/>/;
+    my($font,$sfont,$efont) = get_table_col1_fonts();
+    $c4 = '&nbsp;' if ($c4 eq '');
+    my($c1align,$c2align,$c3align,$c4align) = split('\|', $aligns);
+    my $padding = '';
+    if ($c1align =~ /align="right"/) {
+        $padding = '&nbsp;';
     }
-    my($c1align,$c2align,$c3align,$c4align) = @col_aligns;
-    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
            . "        $c2align$c2</td>\n"
 	   . "        $c3align$c3</td>\n"
-	   . "        $c4align$c4\&nbsp;</td>"
+	   . "        $c4align$c4</td>"
 	   . $_;
 }
 
 sub do_cmd_maketitle {
     local($_) = @_;
-    my $the_title = "\n<div class=titlepage><center>";
+    my $the_title = "\n<div class='titlepage'><center>";
     if ($t_title) {
 	$the_title .= "\n<h1>$t_title</h1>";
     } else { write_warnings("\nThis document has no title."); }
@@ -1125,8 +1226,8 @@ sub process_python_state{
 #
 
 sub do_env_seealso{
-    return "<div class=seealso>\n  "
-      . "<p class=heading><b>See Also:</b></p>\n"
+    return "<div class='seealso'>\n  "
+      . "<p class='heading'><b>See Also:</b></p>\n"
       . @_[0]
       . '</div>';
 }
@@ -1144,8 +1245,8 @@ sub do_cmd_seemodule{
     if ($text =~ /\.$/) {
 	$period = '';
     }
-    return '<dl compact class=seemodule>'
-      . "\n    <dt>Module <b><tt class=module><a href=\"module-$key.html\">"
+    return '<dl compact class="seemodule">'
+      . "\n    <dt>Module <b><tt class='module'><a href='module-$key.html'>"
       . "$module</a></tt>:</b>"
       . "\n    <dd>$text$period\n  </dl>"
       . $_;
@@ -1154,7 +1255,7 @@ sub do_cmd_seemodule{
 sub do_cmd_seetext{
     local($_) = @_;
     my $content = next_argument();
-    return '<div class=seetext><p>' . $content . '</div>' . $_;
+    return '<div class="seetext"><p>' . $content . '</div>' . $_;
 }
 
 
@@ -1164,7 +1265,7 @@ sub do_cmd_seetext{
 
 sub do_env_definitions{
     local($_) = @_;
-    return "<dl class=definitions>$_</dl>\n";
+    return "<dl class='definitions'>$_</dl>\n";
 }
 
 sub do_cmd_term{

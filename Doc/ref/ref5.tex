@@ -115,7 +115,7 @@ evaluations of literals with the same value (either the same
 occurrence in the program text or a different occurrence) may obtain
 the same object or a different object with the same value.
 \indexiii{immutable}{data}{type}
-\indexii{immutable}{objects}
+\indexii{immutable}{object}
 
 \subsection{Parenthesized forms\label{parenthesized}}
 \index{parenthesized form}
@@ -189,7 +189,7 @@ section \ref{types}.  (To summarize,the key type should be hashable,
 which excludes all mutable objects.)  Clashes between duplicate keys
 are not detected; the last datum (textually rightmost in the display)
 stored for a given key value prevails.
-\indexii{immutable}{objects}
+\indexii{immutable}{object}
 
 \subsection{String conversions\label{string-conversions}}
 \indexii{string}{conversion}
@@ -338,7 +338,7 @@ extended slicing.\indexii{extended}{slicing}
 The semantics for a simple slicing are as follows.  The primary must
 evaluate to a sequence object.  The lower and upper bound expressions,
 if present, must evaluate to plain integers; defaults are zero and the
-sequence's length, respectively.  If either bound is negative, the
+\code{sys.maxint}, respectively.  If either bound is negative, the
 sequence's length is added to it.  The slicing now selects all items
 with index \var{k} such that
 \code{\var{i} <= \var{k} < \var{j}} where \var{i}
@@ -507,7 +507,7 @@ power, or a negative floating point number to a broken power), a
 \exception{TypeError} exception is raised.
 
 
-\section{Unary arithmetic operations\label{unary}}
+\section{Unary arithmetic operations \label{unary}}
 \indexiii{unary}{arithmetic}{operation}
 \indexiii{unary}{bit-wise}{operation}
 
@@ -526,7 +526,7 @@ The unary \code{+} (plus) operator yields its numeric argument
 unchanged.
 \index{plus}
 
-The unary \code{~} (invert) operator yields the bit-wise inversion
+The unary \code{\~} (invert) operator yields the bit-wise inversion
 of its plain or long integer argument.  The bit-wise inversion of
 \code{x} is defined as \code{-(x+1)}.  It only applies to integral
 numbers.

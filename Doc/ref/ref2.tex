@@ -148,7 +148,7 @@ text editors on non-UNIX platforms, it is unwise to use a mixture of
 spaces and tabs for the indentation in a single source file.
 
 A formfeed character may be present at the start of the line; it will
-be ignored for the indentation calculations above.  A formfeed
+be ignored for the indentation calculations above.  Formfeed
 characters occurring elsewhere in the leading whitespace have an
 undefined effect (for instance, they may reset the space count to
 zero).
@@ -369,7 +369,9 @@ characters: a backslash and a double quote; \code{r"\e"} is not a value
 string literal (even a raw string cannot end in an odd number of
 backslashes).  Specifically, \emph{a raw string cannot end in a single
 backslash} (since the backslash would escape the following quote
-character).
+character).  Note also that a single backslash followed by a newline
+is interpreted as those two characters as part of the string,
+\emph{not} as a line continuation.
 
 \subsection{String literal concatenation\label{string-catenation}}
 
@@ -464,7 +466,9 @@ exponent:       ("e"|"E") ["+"|"-"] digit+
 \end{verbatim}
 
 Note that the integer part of a floating point number cannot look like
-an octal integer.
+an octal integer, though the exponent may look like an octal literal
+but will always be interpreted using radix 10.  For example,
+\samp{1e010} is legal, while \samp{07.1} is a syntax error.
 The allowed range of floating point literals is
 implementation-dependent.
 Some examples of floating point literals:
@@ -485,7 +489,7 @@ Imaginary literals are described by the following lexical definitions:
 imagnumber:     (floatnumber | intpart) ("j"|"J")
 \end{verbatim}
 
-An imaginary literals yields a complex number with a real part of
+An imaginary literal yields a complex number with a real part of
 0.0.  Complex numbers are represented as a pair of floating point
 numbers and have the same restrictions on their range.  To create a
 complex number with a nonzero real part, add a floating point number
@@ -522,7 +526,7 @@ The following tokens serve as delimiters in the grammar:
 \end{verbatim}
 
 The period can also occur in floating-point and imaginary literals.  A
-sequence of three periods has a special meaning as ellipses in slices.
+sequence of three periods has a special meaning as an ellipsis in slices.
 
 The following printing ASCII characters have special meaning as part
 of other tokens or are otherwise significant to the lexical analyzer:

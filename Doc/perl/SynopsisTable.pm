@@ -38,14 +38,14 @@ sub show{
 
 sub tohtml{
     my $self = shift;
-    my $data = "<table class=\"synopsistable\">\n";
+    my $data = "<table class='synopsistable'>\n";
     my $name;
     foreach $name (split /,/, $self->{names}) {
 	my($key,$type,$synopsis) = $self->get($name);
-	my $link = "<a href=\"module-$key.html\">";
-	$data .= ("  <tr>"
-		  . "<td><b><tt class=module>$link$name</a></tt></b></td>\n"
-		  . "      <td class=synopsis>$synopsis</td></tr>\n");
+	my $link = "<a href='module-$key.html'>";
+	$data .= ('  <tr>'
+		  . "<td><b><tt class='module'>$link$name</a></tt></b></td>\n"
+		  . "      <td class='synopsis'>$synopsis</td></tr>\n");
     }
     $data .= "</table>\n";
     $data;
