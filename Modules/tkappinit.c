@@ -16,8 +16,7 @@
 #include <tk.h>
 
 int
-Tcl_AppInit(interp)
-	Tcl_Interp *interp;
+Tcl_AppInit(Tcl_Interp *interp)
 {
 	Tk_Window main;
 
