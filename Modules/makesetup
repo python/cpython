@@ -170,6 +170,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.cc)  obj=`basename $src .cc`.o; cc='$(CCC)';;
 			*.c++) obj=`basename $src .c++`.o; cc='$(CCC)';;
 			*.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
+			*.cxx) obj=`basename $src .cxx`.o; cc='$(CCC)';;
+			*.cpp) obj=`basename $src .cpp`.o; cc='$(CCC)';;
 			*)     continue;;
 			esac
 			objs="$objs $obj"
