@@ -273,18 +273,6 @@ class UDPServer(TCPServer):
         pass
 
 
-if hasattr(socket, 'AF_UNIX'):
-
-    class UnixStreamServer(TCPServer):
-
-        address_family = socket.AF_UNIX
-
-
-    class UnixDatagramServer(UDPServer):
-
-        address_family = socket.AF_UNIX
-
-
 class ForkingMixIn:
 
     """Mix-in class to handle each request in a new process."""
@@ -339,6 +327,17 @@ class ForkingTCPServer(ForkingMixIn, TCPServer): pass
 class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
 class ThreadingTCPServer(ThreadingMixIn, TCPServer): pass
 
+if hasattr(socket, 'AF_UNIX'):
+
+    class UnixStreamServer(TCPServer):
+        address_family = socket.AF_UNIX
+
+    class UnixDatagramServer(UDPServer):
+        address_family = socket.AF_UNIX
+
+    class ThreadingUnixStreamServer(ThreadingMixIn, UnixStreamServer): pass
+
+    class ThreadingUnixDatagramServer(ThreadingMixIn, UnixDatagramServer): pass
 
 class BaseRequestHandler:
 
