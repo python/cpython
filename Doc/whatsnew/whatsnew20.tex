@@ -261,7 +261,6 @@ while the second one is correct:
 [ (x,y) for x in seq1 for y in seq2]
 \end{verbatim}
 
-
 The idea of list comprehensions originally comes from the functional
 programming language Haskell (\url{http://www.haskell.org}).  Greg
 Ewing argued most effectively for adding them to Python and wrote the
@@ -269,95 +268,45 @@ initial list comprehension patch, which was then discussed for a
 seemingly endless time on the python-dev mailing list and kept
 up-to-date by Skip Montanaro.
 
-
-
-
-   A list comprehension has the form [ e | q[1], ..., q[n] ], n>=1, where
-   the q[i] qualifiers are either
-     * generators of the form p <- e, where p is a pattern (see Section
-       3.17) of type t and e is an expression of type [t]
-     * guards, which are arbitrary expressions of type Bool
-     * local bindings that provide new definitions for use in the
-       generated expression e or subsequent guards and generators.
-
-
 % ======================================================================
-\section{Distutils: Making Modules Easy to Install}
+\section{Augmented Assignment}
 
-Before Python 2.0, installing modules was a tedious affair -- there
-was no way to figure out automatically where Python is installed, or
-what compiler options to use for extension modules.  Software authors
-had to go through an ardous ritual of editing Makefiles and
-configuration files, which only really work on Unix and leave Windows
-and MacOS unsupported.  Software users faced wildly differing
-installation instructions 
+Augmented assignment operators, another long-requested feature, have
+been added to Python 2.0.  Augmented assignment operators include 
+\code{+=}, \code{-=}, \code{*=}, and so forth.  For example, the 
+statement \code{a += 2} increments the value of the variable \code{a}
+by 2, equivalent to the slightly lengthier 
+\code{a = a + 2}.  
 
-The SIG for distribution utilities, shepherded by Greg Ward, has
-created the Distutils, a system to make package installation much
-easier.  They form the \module{distutils} package, a new part of
-Python's standard library. In the best case, installing a Python
-module from source will require the same steps: first you simply mean
-unpack the tarball or zip archive, and the run ``\code{python setup.py
-install}''.  The platform will be automatically detected, the compiler
-will be recognized, C extension modules will be compiled, and the
-distribution installed into the proper directory.  Optional
-command-line arguments provide more control over the installation
-process, the distutils package offers many places to override defaults
--- separating the build from the install, building or installing in
-non-default directories, and more.
-
-In order to use the Distutils, you need to write a \file{setup.py}
-script.  For the simple case, when the software contains only .py
-files, a minimal \file{setup.py} can be just a few lines long:
+The full list of supported assignment operators is \code{+=},
+\code{-=}, \code{*=}, \code{/=}, \code{\%=}, \code{**=}, \code{\&=},
+\code{|=}, \code{^=}, \code{>>=}, and \code{<<=}.  Python classes can
+override the augmented assignment operators by defining methods named
+\method{__iadd__}, \method{__isub__}, etc.  For example, the following
+\class{Number} class stores a number and supports using += to create a
+new instance with an incremented value.
 
 \begin{verbatim}
-from distutils.core import setup
-setup (name = "foo", version = "1.0", 
-       py_modules = ["module1", "module2"])
+class Number:
+    def __init__(self, value):
+        self.value = value
+    def __iadd__(self, increment):
+	return Number( self.value + increment)
+
+n = Number(5)
+n += 3
+print n.value
 \end{verbatim}
 
-The \file{setup.py} file isn't much more complicated if the software
-consists of a few packages:
+The \method{__iadd__} special method is called with the value of the
+increment, and should return a new instance with an appropriately
+modified value; this return value is bound as the new value of the
+variable on the left-hand side. 
 
-\begin{verbatim}
-from distutils.core import setup
-setup (name = "foo", version = "1.0", 
-       packages = ["package", "package.subpackage"])
-\end{verbatim}
-
-A C extension can be the most complicated case; here's an example taken from 
-the PyXML package:
-
-
-\begin{verbatim}
-from distutils.core import setup, Extension
-
-expat_extension = Extension('xml.parsers.pyexpat',
-	define_macros = [('XML_NS', None)],
-	include_dirs = [ 'extensions/expat/xmltok',
-	                 'extensions/expat/xmlparse' ],
-	sources = [ 'extensions/pyexpat.c',
-	            'extensions/expat/xmltok/xmltok.c',
- 		    'extensions/expat/xmltok/xmlrole.c',
-                  ]
-       )
-setup (name = "PyXML", version = "0.5.4", 
-       ext_modules =[ expat_extension ] )
-	        
-\end{verbatim}
-
-The Distutils can also take care of creating source and binary
-distributions.  The ``sdist'' command, run by ``\code{python setup.py
-sdist}', builds a source distribution such as \file{foo-1.0.tar.gz}.
-Adding new commands isn't difficult, ``bdist_rpm'' and
-``bdist_wininst'' commands have already been contributed to create an
-RPM distribution and a Windows installer for the software,
-respectively.  Commands to create other distribution formats such as
-Debian packages and Solaris \file{.pkg} files are in various stages of
-development.
-
-All this is documented in a new manual, \textit{Distributing Python
-Modules}, that joins the basic set of Python documentation.
+Augmented assignment operators were first introduced in the C
+programming language, and most C-derived languages, such as
+\program{awk}, C++, Java, Perl, and PHP also support them.  The augmented
+assignment patch was implemented by Thomas Wouters.
 
 % ======================================================================
 \section{String Methods}
@@ -384,9 +333,10 @@ string manipulation functionality available through methods on both
 2
 \end{verbatim}
 
-One thing that hasn't changed, April Fools' jokes notwithstanding, is
-that Python strings are immutable. Thus, the string methods return new
-strings, and do not modify the string on which they operate.
+One thing that hasn't changed, a noteworthy April Fools' joke
+notwithstanding, is that Python strings are immutable. Thus, the
+string methods return new strings, and do not modify the string on
+which they operate.
 
 The old \module{string} module is still around for backwards
 compatibility, but it mostly acts as a front-end to the new string
@@ -467,11 +417,158 @@ March 2000 archives of the python-dev mailing list contain most of the
 relevant discussion, especially in the threads titled ``Reference
 cycle collection for Python'' and ``Finalization again''.
 
-
 % ======================================================================
-%\section{New XML Code}
+\section{Other Core Changes}
 
-%XXX write this section...
+Various minor changes have been made to Python's syntax and built-in
+functions.  None of the changes are very far-reaching, but they're
+handy conveniences.
+
+\subsection{Minor Language Changes}
+
+A new syntax makes it more convenient to call a given function
+with a tuple of arguments and/or a dictionary of keyword arguments.
+In Python 1.5 and earlier, you'd use the \function{apply()}
+built-in function: \code{apply(f, \var{args}, \var{kw})} calls the
+function \function{f()} with the argument tuple \var{args} and the
+keyword arguments in the dictionary \var{kw}.  \function{apply()} 
+is the same in 2.0, but thanks to a patch from
+Greg Ewing, \code{f(*\var{args}, **\var{kw})} as a shorter
+and clearer way to achieve the same effect.  This syntax is
+symmetrical with the syntax for defining functions:
+
+\begin{verbatim}
+def f(*args, **kw):
+    # args is a tuple of positional args,
+    # kw is a dictionary of keyword args
+    ...
+\end{verbatim}
+
+The \keyword{print} statement can now have its output directed to a
+file-like object by following the \keyword{print} with \code{>>
+\var{fileobj}}, similar to the redirection operator in Unix shells.
+Previously you'd either have to use the \method{write()} method of the
+file-like object, which lacks the convenience and simplicity of
+\keyword{print}, or you could assign a new value to \code{sys.stdout}
+and then restore the old value.  For sending output to standard error,
+it's much easier to write this:
+
+\begin{verbatim}
+print >> sys.stderr, "Warning: action field not supplied"
+\end{verbatim}
+
+Modules can now be renamed on importing them, using the syntax
+\code{import \var{module} as \var{name}} or \code{from \var{module}
+import \var{name} as \var{othername}}.  The patch was submitted by
+Thomas Wouters.
+
+A new format style is available when using the \code{\%} operator;
+'\%r' will insert the \function{repr()} of its argument.  This was
+also added from symmetry considerations, this time for symmetry with
+the existing '\%s' format style, which inserts the \function{str()} of
+its argument.  For example, \code{'\%r \%s' \% ('abc', 'abc')} returns a
+string containing \verb|'abc' abc|.
+
+Previously there was no way to implement a class that overrode
+Python's built-in \keyword{in} operator and implemented a custom
+version.  \code{\var{obj} in \var{seq}} returns true if \var{obj} is
+present in the sequence \var{seq}; Python computes this by simply
+trying every index of the sequence until either \var{obj} is found or
+an \exception{IndexError} is encountered.  Moshe Zadka contributed a
+patch which adds a \method{__contains__} magic method for providing a
+custom implementation for \keyword{in}. Additionally, new built-in
+objects written in C can define what \keyword{in} means for them via a
+new slot in the sequence protocol.
+
+Earlier versions of Python used a recursive algorithm for deleting
+objects.  Deeply nested data structures could cause the interpreter to
+fill up the C stack and crash; Christian Tismer rewrote the deletion
+logic to fix this problem.  On a related note, comparing recursive
+objects recursed infinitely and crashed; Jeremy Hylton rewrote the
+code to no longer crash, producing a useful result instead.  For
+example, after this code:
+
+\begin{verbatim}
+a = []
+b = []
+a.append(a)
+b.append(b)
+\end{verbatim}
+
+The comparison \code{a==b} returns true, because the two recursive
+data structures are isomorphic. \footnote{See the thread ``trashcan
+and PR\#7'' in the April 2000 archives of the python-dev mailing list
+for the discussion leading up to this implementation, and some useful
+relevant links.
+%http://www.python.org/pipermail/python-dev/2000-April/004834.html
+}
+
+Work has been done on porting Python to 64-bit Windows on the Itanium
+processor, mostly by Trent Mick of ActiveState.  (Confusingly,
+\code{sys.platform} is still \code{'win32'} on Win64 because it seems
+that for ease of porting, MS Visual C++ treats code as 32 bit on Itanium.)
+PythonWin also supports Windows CE; see the Python CE page at
+\url{http://starship.python.net/crew/mhammond/ce/} for more
+information.
+
+An attempt has been made to alleviate one of Python's warts, the
+often-confusing \exception{NameError} exception when code refers to a
+local variable before the variable has been assigned a value.  For
+example, the following code raises an exception on the \keyword{print}
+statement in both 1.5.2 and 2.0; in 1.5.2 a \exception{NameError}
+exception is raised, while 2.0 raises a new
+\exception{UnboundLocalError} exception.
+\exception{UnboundLocalError} is a subclass of \exception{NameError},
+so any existing code that expects \exception{NameError} to be raised
+should still work.
+
+\begin{verbatim}
+def f():
+    print "i=",i
+    i = i + 1 
+f()
+\end{verbatim}
+
+\subsection{Changes to Built-in Functions}
+
+A new built-in, \function{zip(\var{seq1}, \var{seq2}, ...)}, has been
+added.  \function{zip()} returns a list of tuples where each tuple
+contains the i-th element from each of the argument sequences.  The
+difference between \function{zip()} and \code{map(None, \var{seq1},
+\var{seq2})} is that \function{map()} raises an error if the sequences
+aren't all of the same length, while \function{zip()} truncates the
+returned list to the length of the shortest argument sequence.
+
+The \function{int()} and \function{long()} functions now accept an
+optional ``base'' parameter when the first argument is a string.
+\code{int('123', 10)} returns 123, while \code{int('123', 16)} returns
+291.  \code{int(123, 16)} raises a \exception{TypeError} exception
+with the message ``can't convert non-string with explicit base''.
+
+A new variable holding more detailed version information has been
+added to the \module{sys} module.  \code{sys.version_info} is a tuple
+\code{(\var{major}, \var{minor}, \var{micro}, \var{level},
+\var{serial})} For example, in a hypothetical 2.0.1beta1,
+\code{sys.version_info} would be \code{(2, 0, 1, 'beta', 1)}.
+\var{level} is a string such as \code{"alpha"}, \code{"beta"}, or
+\code{""} for a final release.
+
+Dictionaries have an odd new method, \method{setdefault(\var{key},
+\var{default})}, which behaves similarly to the existing
+\method{get()} method.  However, if the key is missing,
+\method{setdefault()} both returns the value of \var{default} as
+\method{get()} would do, and also inserts it into the dictionary as
+the value for \var{key}.  Thus, the following lines of code:
+
+\begin{verbatim}
+if dict.has_key( key ): return dict[key]
+else: 
+    dict[key] = []
+    return dict[key]
+\end{verbatim}
+
+can be reduced to a single \code{return dict.setdefault(key, [])} statement.
+
 
 % ======================================================================
 \section{Porting to 2.0}
@@ -563,136 +660,6 @@ and Fredrik Lundh.
 %place.
 
 % ======================================================================
-\section{Core Changes}
-
-Various minor changes have been made to Python's syntax and built-in
-functions.  None of the changes are very far-reaching, but they're
-handy conveniences.
-
-A change to syntax makes it more convenient to call a given function
-with a tuple of arguments and/or a dictionary of keyword arguments.
-In Python 1.5 and earlier, you do this with the \function{apply()}
-built-in function: \code{apply(f, \var{args}, \var{kw})} calls the
-function \function{f()} with the argument tuple \var{args} and the
-keyword arguments in the dictionary \var{kw}.  Thanks to a patch from
-Greg Ewing, 2.0 adds \code{f(*\var{args}, **\var{kw})} as a shorter
-and clearer way to achieve the same effect.  This syntax is
-symmetrical with the syntax for defining functions:
-
-\begin{verbatim}
-def f(*args, **kw):
-    # args is a tuple of positional args,
-    # kw is a dictionary of keyword args
-    ...
-\end{verbatim}
-
-A new format style is available when using the \code{\%} operator.
-'\%r' will insert the \function{repr()} of its argument.  This was
-also added from symmetry considerations, this time for symmetry with
-the existing '\%s' format style, which inserts the \function{str()} of
-its argument.  For example, \code{'\%r \%s' \% ('abc', 'abc')} returns a
-string containing \verb|'abc' abc|.
-
-A new built-in, \function{zip(\var{seq1}, \var{seq2}, ...)}, has been
-added.  \function{zip()} returns a list of tuples where each tuple
-contains the i-th element from each of the argument sequences.  The
-difference between \function{zip()} and \code{map(None, \var{seq1},
-\var{seq2})} is that \function{map()} raises an error if the sequences
-aren't all of the same length, while \function{zip()} truncates the
-returned list to the length of the shortest argument sequence.
-
-The \function{int()} and \function{long()} functions now accept an
-optional ``base'' parameter when the first argument is a string.
-\code{int('123', 10)} returns 123, while \code{int('123', 16)} returns
-291.  \code{int(123, 16)} raises a \exception{TypeError} exception
-with the message ``can't convert non-string with explicit base''.
-
-Modules can now be renamed on importing them, using the syntax
-\code{import \var{module} as \var{name}} or \code{from \var{module}
-import \var{name} as \var{othername}}.
-
-Previously there was no way to implement a class that overrode
-Python's built-in \keyword{in} operator and implemented a custom
-version.  \code{\var{obj} in \var{seq}} returns true if \var{obj} is
-present in the sequence \var{seq}; Python computes this by simply
-trying every index of the sequence until either \var{obj} is found or
-an \exception{IndexError} is encountered.  Moshe Zadka contributed a
-patch which adds a \method{__contains__} magic method for providing a
-custom implementation for \keyword{in}. Additionally, new built-in
-objects written in C can define what \keyword{in} means for them via a
-new slot in the sequence protocol.
-
-Earlier versions of Python used a recursive algorithm for deleting
-objects.  Deeply nested data structures could cause the interpreter to
-fill up the C stack and crash; Christian Tismer rewrote the deletion
-logic to fix this problem.  On a related note, comparing recursive
-objects recursed infinitely and crashed; Jeremy Hylton rewrote the
-code to no longer crash, producing a useful result instead.  For
-example, after this code:
-
-\begin{verbatim}
-a = []
-b = []
-a.append(a)
-b.append(b)
-\end{verbatim}
-
-The comparison \code{a==b} returns true, because the two recursive
-data structures are isomorphic.
-\footnote{See the thread ``trashcan and PR\#7'' in the April 2000 archives of the python-dev mailing list for the discussion leading up to this implementation, and some useful relevant links.
-%http://www.python.org/pipermail/python-dev/2000-April/004834.html
-}
-
-Work has been done on porting Python to 64-bit Windows on the Itanium
-processor, mostly by Trent Mick of ActiveState.  (Confusingly, \code{sys.platform} is still \code{'win32'} on
-Win64 because it seems that for ease of porting, MS Visual C++ treats code
-as 32 bit.
-)  PythonWin also supports Windows CE; see the Python CE page at
-\url{http://starship.python.net/crew/mhammond/ce/} for more information.
-
-An attempt has been made to alleviate one of Python's warts, the
-often-confusing \exception{NameError} exception when code refers to a
-local variable before the variable has been assigned a value.  For
-example, the following code raises an exception on the \keyword{print}
-statement in both 1.5.2 and 2.0; in 1.5.2 a \exception{NameError}
-exception is raised, while 2.0 raises a new
-\exception{UnboundLocalError} exception.
-\exception{UnboundLocalError} is a subclass of \exception{NameError},
-so any existing code that expects \exception{NameError} to be raised
-should still work.
-
-\begin{verbatim}
-def f():
-    print "i=",i
-    i = i + 1 
-f()
-\end{verbatim}
-
-A new variable holding more detailed version information has been
-added to the \module{sys} module.  \code{sys.version_info} is a tuple
-\code{(\var{major}, \var{minor}, \var{micro}, \var{level},
-\var{serial})} For example, in a hypothetical 2.0.1beta1,
-\code{sys.version_info} would be \code{(2, 0, 1, 'beta', 1)}.
-\var{level} is a string such as \code{"alpha"}, \code{"beta"}, or
-\code{""} for a final release.
-
-Dictionaries have an odd new method, \method{setdefault(\var{key},
-\var{default})}, which behaves similarly to the existing
-\method{get()} method.  However, if the key is missing,
-\method{setdefault()} both returns the value of \var{default} as
-\method{get()} would do, and also inserts it into the dictionary as
-the value for \var{key}.  Thus, the following lines of code:
-
-\begin{verbatim}
-if dict.has_key( key ): return dict[key]
-else: 
-    dict[key] = []
-    return dict[key]
-\end{verbatim}
-
-can be reduced to a single \code{return dict.setdefault(key, [])} statement.
-
-% ======================================================================
 \section{Extending/Embedding Changes}
 
 Some of the changes are under the covers, and will only be apparent to
@@ -753,6 +720,89 @@ contributed by Yakov Markovitch.
 Python 2.0's source now uses only ANSI C prototypes, so compiling Python now
 requires an ANSI C compiler, and can no longer be done using a compiler that
 only supports K\&R C.  
+
+% ======================================================================
+\section{Distutils: Making Modules Easy to Install}
+
+Before Python 2.0, installing modules was a tedious affair -- there
+was no way to figure out automatically where Python is installed, or
+what compiler options to use for extension modules.  Software authors
+had to go through an ardous ritual of editing Makefiles and
+configuration files, which only really work on Unix and leave Windows
+and MacOS unsupported.  Software users faced wildly differing
+installation instructions 
+
+The SIG for distribution utilities, shepherded by Greg Ward, has
+created the Distutils, a system to make package installation much
+easier.  They form the \module{distutils} package, a new part of
+Python's standard library. In the best case, installing a Python
+module from source will require the same steps: first you simply mean
+unpack the tarball or zip archive, and the run ``\code{python setup.py
+install}''.  The platform will be automatically detected, the compiler
+will be recognized, C extension modules will be compiled, and the
+distribution installed into the proper directory.  Optional
+command-line arguments provide more control over the installation
+process, the distutils package offers many places to override defaults
+-- separating the build from the install, building or installing in
+non-default directories, and more.
+
+In order to use the Distutils, you need to write a \file{setup.py}
+script.  For the simple case, when the software contains only .py
+files, a minimal \file{setup.py} can be just a few lines long:
+
+\begin{verbatim}
+from distutils.core import setup
+setup (name = "foo", version = "1.0", 
+       py_modules = ["module1", "module2"])
+\end{verbatim}
+
+The \file{setup.py} file isn't much more complicated if the software
+consists of a few packages:
+
+\begin{verbatim}
+from distutils.core import setup
+setup (name = "foo", version = "1.0", 
+       packages = ["package", "package.subpackage"])
+\end{verbatim}
+
+A C extension can be the most complicated case; here's an example taken from 
+the PyXML package:
+
+
+\begin{verbatim}
+from distutils.core import setup, Extension
+
+expat_extension = Extension('xml.parsers.pyexpat',
+	define_macros = [('XML_NS', None)],
+	include_dirs = [ 'extensions/expat/xmltok',
+	                 'extensions/expat/xmlparse' ],
+	sources = [ 'extensions/pyexpat.c',
+	            'extensions/expat/xmltok/xmltok.c',
+ 		    'extensions/expat/xmltok/xmlrole.c',
+                  ]
+       )
+setup (name = "PyXML", version = "0.5.4", 
+       ext_modules =[ expat_extension ] )
+	        
+\end{verbatim}
+
+The Distutils can also take care of creating source and binary
+distributions.  The ``sdist'' command, run by ``\code{python setup.py
+sdist}', builds a source distribution such as \file{foo-1.0.tar.gz}.
+Adding new commands isn't difficult, ``bdist_rpm'' and
+``bdist_wininst'' commands have already been contributed to create an
+RPM distribution and a Windows installer for the software,
+respectively.  Commands to create other distribution formats such as
+Debian packages and Solaris \file{.pkg} files are in various stages of
+development.
+
+All this is documented in a new manual, \textit{Distributing Python
+Modules}, that joins the basic set of Python documentation.
+
+% ======================================================================
+%\section{New XML Code}
+
+%XXX write this section...
 
 % ======================================================================
 \section{Module changes}
