@@ -2793,20 +2793,34 @@ listreviter_traverse(listreviterobject *it, visitproc visit, void *arg)
 static PyObject *
 listreviter_next(listreviterobject *it)
 {
-	PyObject *item = NULL;
+	PyObject *item;
+	long index = it->it_index;
+	PyListObject *seq = it->it_seq;
 
-	assert(PyList_Check(it->it_seq));
-	if (it->it_index >= 0) {
-		assert(it->it_index < PyList_GET_SIZE(it->it_seq));
-		item = PyList_GET_ITEM(it->it_seq, it->it_index);
+	if (index>=0 && index < PyList_GET_SIZE(seq)) {
+		item = PyList_GET_ITEM(seq, index);
 		it->it_index--;
 		Py_INCREF(item);
-	} else if (it->it_seq != NULL) {
-		Py_DECREF(it->it_seq);
-		it->it_seq = NULL;
+		return item;
 	}
-	return item;
+	it->it_index = -1;
+	if (seq != NULL) {
+		it->it_seq = NULL;
+		Py_DECREF(seq);
+	}
+	return NULL;
 }
+
+static int
+listreviter_len(listreviterobject *it)
+{
+	return it->it_index + 1;
+}
+
+static PySequenceMethods listreviter_as_sequence = {
+	(inquiry)listreviter_len,	/* sq_length */
+	0,				/* sq_concat */
+};
 
 PyTypeObject PyListRevIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -2822,7 +2836,7 @@ PyTypeObject PyListRevIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&listreviter_as_sequence,		/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */

@@ -288,6 +288,18 @@ rangeiter_next(rangeiterobject *r)
 	return NULL;
 }
 
+static int
+rangeiter_len(rangeiterobject *r)
+{
+	return r->len - r->index;
+}
+
+static PySequenceMethods rangeiter_as_sequence = {
+	(inquiry)rangeiter_len,		/* sq_length */
+	0,				/* sq_concat */
+};
+
+
 static PyTypeObject Pyrangeiter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,                                      /* ob_size */
@@ -302,7 +314,7 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_compare */
 	0,                                      /* tp_repr */
 	0,                                      /* tp_as_number */
-	0,                                      /* tp_as_sequence */
+	&rangeiter_as_sequence,			/* tp_as_sequence */
 	0,                                      /* tp_as_mapping */
 	0,                                      /* tp_hash */
 	0,                                      /* tp_call */
