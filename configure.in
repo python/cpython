@@ -750,10 +750,10 @@ if test "$with_threads" = "no"
 then
     USE_THREAD_MODULE="#"
 else
-    if test ! -z $with_threads -a -d $with_threads
+    if test ! -z "$with_threads" -a -d "$with_threads"
     then LDFLAGS="$LDFLAGS -L$with_threads"
     fi
-    if test ! -z $withval -a -d $withval
+    if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
     AC_DEFINE(_REENTRANT)
@@ -889,7 +889,7 @@ AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_SGI_DL)
 DYNLOADFILE="dynload_dl.o"
 dldir=$withval
-if test ! -z $dldir -a -d $dldir
+if test ! -z "$dldir" -a -d "$dldir"
 then LDFLAGS="$LDFLAGS -L$dldir"
 else AC_ERROR(proper usage is --with-sgi-dl=DIRECTORY)
 fi
