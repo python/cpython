@@ -55,16 +55,32 @@ def execle(file, *args):
 def execlp(file, *args):
 	execvp(file, args)
 
-_notfound = None
+def execlpe(file, *args):
+	env = args[-1]
+	execvpe(file, args[:-1], env)
+
 def execvp(file, args):
+	_execvpe(file, args)
+
+def execvpe(file, args, env):
+	_execvpe(file, args, env)
+
+_notfound = None
+def _execvpe(file, args, env = None):
+	if env:
+		func = execve
+		argrest = (args, env)
+	else:
+		func = execv
+		argrest = (args,)
+		env = environ
 	global _notfound
 	head, tail = path.split(file)
 	if head:
-		execv(file, args)
+		apply(func, (file,) + argrest)
 		return
-	ENOENT = 2
-	if environ.has_key('PATH'):
-		envpath = environ['PATH']
+	if env.has_key('PATH'):
+		envpath = env['PATH']
 	else:
 		envpath = defpath
 	import string
@@ -78,7 +94,7 @@ def execvp(file, args):
 	for dir in PATH:
 		fullname = path.join(dir, file)
 		try:
-			execv(fullname, args)
+			apply(func, (fullname,) + argrest)
 		except error, (errno, msg):
 			if errno != arg[0]:
 				exc, arg = error, (errno, msg)
