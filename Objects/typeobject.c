@@ -3702,16 +3702,22 @@ static slotdef slotdefs[] = {
 	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
 	       "x.__getitem__(y) <==> x[y]"),
 	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_intintargfunc,
-	       "x.__getslice__(i, j) <==> x[i:j]"),
+	       "x.__getslice__(i, j) <==> x[i:j]\n\
+               \n\
+               Use of negative indices is not supported."),
 	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
 	       "x.__setitem__(i, y) <==> x[i]=y"),
 	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
 	       "x.__delitem__(y) <==> del x[y]"),
 	SQSLOT("__setslice__", sq_ass_slice, slot_sq_ass_slice,
 	       wrap_intintobjargproc,
-	       "x.__setslice__(i, j, y) <==> x[i:j]=y"),
+	       "x.__setslice__(i, j, y) <==> x[i:j]=y\n\
+               \n\
+               Use of negative indices is not supported."),
 	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice, wrap_delslice,
-	       "x.__delslice__(i, j) <==> del x[i:j]"),
+	       "x.__delslice__(i, j) <==> del x[i:j]\n\
+               \n\
+               Use of negative indices is not supported."),
 	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
 	       "x.__contains__(y) <==> y in x"),
 	SQSLOT("__iadd__", sq_inplace_concat, slot_sq_inplace_concat,
