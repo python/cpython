@@ -48,7 +48,6 @@ def encode(input, output, quotetabs):
             output.write(s + lineEnd)
 
     prevline = None
-    linelen = 0
     while 1:
         line = input.readline()
         if not line:
@@ -59,25 +58,24 @@ def encode(input, output, quotetabs):
         if line[-1:] == '\n':
             line = line[:-1]
             stripped = '\n'
+        # Calculate the un-length-limited encoded line
         for c in line:
             if needsquoting(c, quotetabs):
                 c = quote(c)
-            # Have we hit the RFC 1521 encoded line maximum?
-            if linelen + len(c) >= MAXLINESIZE:
-                # Write out the previous line
-                if prevline is not None:
-                    write(prevline)
-                prevline = EMPTYSTRING.join(outline)
-                linelen = 0
-                outline = []
             outline.append(c)
-            linelen += len(c)
-        # Write out the current line
+        # First, write out the previous line
         if prevline is not None:
             write(prevline)
-        prevline = EMPTYSTRING.join(outline)
-        linelen = 0
-        outline = []
+        # Now see if we need any soft line breaks because of RFC-imposed
+        # length limitations.  Then do the thisline->prevline dance.
+        thisline = EMPTYSTRING.join(outline)
+        while len(thisline) > MAXLINESIZE:
+            # Don't forget to include the soft line break `=' sign in the
+            # length calculation!
+            write(thisline[:MAXLINESIZE-1], lineEnd='=\n')
+            thisline = thisline[MAXLINESIZE-1:]
+        # Write out the current line
+        prevline = thisline
     # Write out the last line, without a trailing newline
     if prevline is not None:
         write(prevline, lineEnd=stripped)
