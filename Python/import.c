@@ -858,6 +858,84 @@ PyImport_ReloadModule(m)
 }
 
 
+/* Higher-level import emulator which emulates the "import" statement
+   more accurately -- it invokes the __import__() function from the
+   builtins of the current globals.  This means that the import is
+   done using whatever import hooks are installed in the current
+   environment, e.g. by "ni" or "rexec". */
+
+PyObject *
+PyImport_Import(module_name)
+	PyObject *module_name;
+{
+	static PyObject *silly_list = NULL;
+	static PyObject *builtins_str = NULL;
+	static PyObject *import_str = NULL;
+	static PyObject *standard_builtins = NULL;
+	PyObject *globals = NULL;
+	PyObject *import = NULL;
+	PyObject *builtins = NULL;
+	PyObject *r = NULL;
+
+	/* Initialize constant string objects */
+	if (silly_list == NULL) {
+		import_str = PyString_InternFromString("__import__");
+		if (import_str == NULL)
+			return NULL;
+		builtins_str = PyString_InternFromString("__builtins__");
+		if (builtins_str == NULL)
+			return NULL;
+		silly_list = Py_BuildValue("[s]", "__doc__");
+		if (silly_list == NULL)
+			return NULL;
+	}
+
+	/* Get the builtins from current globals */
+	globals = PyEval_GetGlobals();
+	if(globals != NULL) {
+		builtins = PyObject_GetItem(globals, builtins_str);
+		if (builtins == NULL)
+			goto err;
+	}
+	else {
+		/* No globals -- use standard builtins, and fake globals */
+		PyErr_Clear();
+
+		if (standard_builtins == NULL) {
+			standard_builtins =
+				PyImport_ImportModule("__builtin__");
+			if (standard_builtins == NULL)
+				return NULL;
+		}
+
+		builtins = standard_builtins;
+		Py_INCREF(builtins);
+		globals = Py_BuildValue("{OO}", builtins_str, builtins);
+		if (globals == NULL)
+			goto err;
+	}
+
+	/* Get the __import__ function from the builtins */
+	if (PyDict_Check(builtins))
+		import=PyObject_GetItem(builtins, import_str);
+	else
+		import=PyObject_GetAttr(builtins, import_str);
+	if (import == NULL)
+		goto err;
+
+	/* Call the _import__ function with the proper argument list */
+	r = PyObject_CallFunction(import, "OOOO",
+				  module_name, globals, globals, silly_list);
+
+  err:
+	Py_XDECREF(globals);
+	Py_XDECREF(builtins);
+	Py_XDECREF(import);
+ 
+	return r;
+}
+
+
 /* Module 'imp' provides Python access to the primitives used for
    importing modules.
 */
