@@ -17,7 +17,7 @@ Options:
 
     --class classname
     -c classname
-        Use `classname' as the concrete SMTP proxy class.  Uses `SMTPProxy' by
+        Use `classname' as the concrete SMTP proxy class.  Uses `PureProxy' by
         default.
 
     --debug
