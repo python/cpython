@@ -76,8 +76,8 @@ case $makepre in
 esac
 
 # Newline for sed i and a commands
-NL="\\
-"
+NL='\
+'
 
 # Main loop
 for i in ${*-Setup}
@@ -120,8 +120,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		cpps=
 		libs=
 		mods=
+		skip=
 		for arg in $line
 		do
+			case $skip in
+			libs)	libs="$libs $arg"; skip=; continue;;
+			cpps)	cpps="$cpps $arg"; skip=; continue;;
+			srcs)	srcs="$srcs $arg"; skip=; continue;;
+			esac
 			case $arg in
 			-[IDUC]*)	cpps="$cpps $arg";;
 			-[A-Zl]*)	libs="$libs $arg";;
@@ -133,6 +139,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*)		libs="$libs $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
+			-u)		skip=libs; libs="$libs -u";;
 			[a-zA-Z_]*)	mods="$mods $arg";;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
