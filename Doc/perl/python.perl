@@ -137,11 +137,6 @@ sub do_cmd_samp{ use_wrappers(@_[0], '"<tt>', '</tt>"'); }
 sub do_cmd_kbd{ use_wrappers(@_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{ use_wrappers(@_[0], '<b>', '</b>'); }
 
-# \sectcode is obsolete, but keep it around here for a little while;
-# mostly expected to be useful for HOWTO support until that stuff is
-# more stable and checked.
-sub do_cmd_sectcode{ do_cmd_code(@_); }
-
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
