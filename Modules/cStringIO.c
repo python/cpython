@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * cStringIO.c,v 1.29 1999/06/15 14:10:27 jim Exp
  * 
  * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
  * All rights reserved.
@@ -78,7 +78,7 @@ static char cStringIO_module_documentation[] =
 "If someone else wants to provide a more complete implementation,\n"
 "go for it. :-)  \n"
 "\n"
-"$Id$\n"
+"cStringIO.c,v 1.29 1999/06/15 14:10:27 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -658,7 +658,4 @@ initcStringIO() {
 
   /* Maybe make certain warnings go away */
   if(0) PycString_IMPORT;
-  
-  /* Check for errors */
-  if (PyErr_Occurred()) Py_FatalError("can't initialize module cStringIO");
 }
