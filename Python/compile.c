@@ -3710,6 +3710,7 @@ com_node(struct compiling *c, node *n)
 	/* Expression nodes */
 	
 	case testlist:
+	case testlist_safe:
 		com_list(c, n, 0);
 		break;
 	case test:

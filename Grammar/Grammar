@@ -89,6 +89,7 @@ subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
+testlist_safe: test [(',' test)+ [',']]
 dictmaker: test ':' test (',' test ':' test)* [',']
 
 classdef: 'class' NAME ['(' testlist ')'] ':' suite
@@ -97,5 +98,5 @@ arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
 argument: [test '='] test	# Really [keyword '='] test
 
 list_iter: list_for | list_if
-list_for: 'for' exprlist 'in' testlist [list_iter]
+list_for: 'for' exprlist 'in' testlist_safe [list_iter]
 list_if: 'if' test [list_iter]
