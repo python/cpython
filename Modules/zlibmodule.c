@@ -15,14 +15,6 @@
    events!  And, since zlib itself is threadsafe, we don't need to worry
    about re-entering zlib functions.
 
-   What we _do_ have to worry about is releasing the global lock _in
-   general_ in the zlibmodule functions, because of all the calls to
-   Python functions, which assume that the global lock is held.  So
-   only two types of calls are wrapped in Py_BEGIN/END_ALLOW_THREADS:
-   those that grab the zlib lock, and those that involve other
-   time-consuming functions where we need to worry about holding up
-   other Python threads.
-
    N.B.
 
    Since ENTER_ZLIB and LEAVE_ZLIB only need to be called on functions
@@ -370,29 +362,21 @@ PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
 static void
 Comp_dealloc(compobject *self)
 {
-    ENTER_ZLIB
-
     if (self->is_initialised)
 	deflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
-
-    LEAVE_ZLIB
 }
 
 static void
 Decomp_dealloc(compobject *self)
 {
-    ENTER_ZLIB
-
     if (self->is_initialised)
 	inflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     PyObject_Del(self);
-
-    LEAVE_ZLIB
 }
 
 static char comp_compress__doc__[] =
@@ -672,7 +656,7 @@ PyZlib_flush(compobject *self, PyObject *args)
 	RetVal = NULL;
 
  error:    
-    LEAVE_ZLIB;
+    LEAVE_ZLIB
 
     return RetVal;
 }
