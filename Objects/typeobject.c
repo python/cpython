@@ -300,15 +300,23 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 	}
 }
 
-/* Internal routine to do a method lookup in the type
+/* Internal routines to do a method lookup in the type
    without looking in the instance dictionary
    (so we can't use PyObject_GetAttr) but still binding
    it to the instance.  The arguments are the object,
    the method name as a C string, and the address of a
-   static variable used to cache the interned Python string. */
+   static variable used to cache the interned Python string.
+
+   Two variants:
+
+   - lookup_maybe() returns NULL without raising an exception
+     when the _PyType_Lookup() call fails;
+
+   - lookup_method() always raises an exception upon errors.
+*/
 
 static PyObject *
-lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
+lookup_maybe(PyObject *self, char *attrstr, PyObject **attrobj)
 {
 	PyObject *res;
 
@@ -318,15 +326,22 @@ lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
 			return NULL;
 	}
 	res = _PyType_Lookup(self->ob_type, *attrobj);
-	if (res == NULL)
-		PyErr_SetObject(PyExc_AttributeError, *attrobj);
-	else {
+	if (res != NULL) {
 		descrgetfunc f;
 		if ((f = res->ob_type->tp_descr_get) == NULL)
 			Py_INCREF(res);
 		else
 			res = f(res, self, (PyObject *)(self->ob_type));
 	}
+	return res;
+}
+
+static PyObject *
+lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
+{
+	PyObject *res = lookup_maybe(self, attrstr, attrobj);
+	if (res == NULL && !PyErr_Occurred())
+		PyErr_SetObject(PyExc_AttributeError, *attrobj);
 	return res;
 }
 
@@ -342,11 +357,53 @@ call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 	PyObject *dummy_str = NULL;
 	va_start(va, format);
 
-	func = lookup_method(o, name, &dummy_str);
+	func = lookup_maybe(o, name, &dummy_str);
+	if (func == NULL) {
+		va_end(va);
+		if (!PyErr_Occurred())
+			PyErr_SetObject(PyExc_AttributeError, dummy_str);
+		Py_XDECREF(dummy_str);
+		return NULL;
+	}
+	Py_DECREF(dummy_str);
+
+	if (format && *format)
+		args = Py_VaBuildValue(format, va);
+	else
+		args = PyTuple_New(0);
+
+	va_end(va);
+
+	if (args == NULL)
+		return NULL;
+
+	assert(PyTuple_Check(args));
+	retval = PyObject_Call(func, args, NULL);
+
+	Py_DECREF(args);
+	Py_DECREF(func);
+
+	return retval;
+}
+
+/* Clone of call_method() that returns NotImplemented when the lookup fails. */
+
+PyObject *
+call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
+{
+	va_list va;
+	PyObject *args, *func = 0, *retval;
+	PyObject *dummy_str = NULL;
+	va_start(va, format);
+
+	func = lookup_maybe(o, name, &dummy_str);
 	Py_XDECREF(dummy_str);
 	if (func == NULL) {
 		va_end(va);
-		PyErr_SetString(PyExc_AttributeError, name);
+		if (!PyErr_Occurred()) {
+			Py_INCREF(Py_NotImplemented);
+			return Py_NotImplemented;
+		}
 		return NULL;
 	}
 
@@ -2447,7 +2504,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 	if (self->ob_type->tp_as_number != NULL && \
 	    self->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
 		PyObject *r; \
-		r = call_method( \
+		r = call_maybe( \
 			self, OPSTR, &cache_str, "(O)", other); \
 		if (r != Py_NotImplemented || \
 		    other->ob_type == self->ob_type) \
@@ -2456,7 +2513,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 	} \
 	if (other->ob_type->tp_as_number != NULL && \
 	    other->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
-		return call_method( \
+		return call_maybe( \
 			other, ROPSTR, &rcache_str, "(O)", self); \
 	} \
 	Py_INCREF(Py_NotImplemented); \
