@@ -77,7 +77,7 @@ def istoken(s):
     return _token_rx.match(s) is not None
 
 
-def do_convert(ifp, ofp, xml=0, autoclose=()):
+def do_convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
     if xml:
         autoclose = ()
     attrs = {}
@@ -85,6 +85,7 @@ def do_convert(ifp, ofp, xml=0, autoclose=()):
     knownempties = []
     knownempty = 0
     lastempty = 0
+    inverbatim = 0
     while 1:
         line = ifp.readline()
         if not line:
@@ -96,7 +97,10 @@ def do_convert(ifp, ofp, xml=0, autoclose=()):
             data = data[:-1]
         if type == "-":
             data = esistools.decode(data)
-            ofp.write(escape(data))
+            data = escape(data)
+            if not inverbatim:
+                data = string.replace(data, "---", "&mdash;")
+            ofp.write(data)
             if "\n" in data:
                 lastopened = None
             knownempty = 0
@@ -117,6 +121,7 @@ def do_convert(ifp, ofp, xml=0, autoclose=()):
             lastopened = data
             lastempty = knownempty
             knownempty = 0
+            inverbatim = data in verbatims
         elif type == ")":
             if data == "COMMENT":
                 ofp.write("-->")
@@ -134,6 +139,7 @@ def do_convert(ifp, ofp, xml=0, autoclose=()):
                     ofp.write("</%s>" % data)
             lastopened = None
             lastempty = 0
+            inverbatim = 0
         elif type == "A":
             name, type, value = string.split(data, " ", 2)
             name = map_gi(name, _attr_map)
@@ -156,12 +162,14 @@ def dump_empty_element_names(knownempties):
     fp.close()
 
 
-def sgml_convert(ifp, ofp, autoclose):
-    return do_convert(ifp, ofp, xml=0, autoclose=autoclose)
+def sgml_convert(ifp, ofp, autoclose, verbatims):
+    return do_convert(ifp, ofp, xml=0,
+                      autoclose=autoclose, verbatims=verbatims)
 
 
-def xml_convert(ifp, ofp, autoclose):
-    return do_convert(ifp, ofp, xml=1, autoclose=autoclose)
+def xml_convert(ifp, ofp, autoclose, verbatims):
+    return do_convert(ifp, ofp, xml=1,
+                      autoclose=autoclose, verbatims=verbatims)
 
 
 def update_gi_map(map, names, fromsgml=1):
@@ -184,6 +192,7 @@ def main():
     elem_names = ''
     attr_names = ''
     value_names = ''
+    verbatims = ('verbatim', 'interactive-session')
     opts, args = getopt.getopt(sys.argv[1:], "adesx",
                                ["autoclose=", "declare", "sgml", "xml",
                                 "elements-map=", "attributes-map",
@@ -243,7 +252,7 @@ def main():
     try:
         if xml and xmldecl:
             opf.write('<?xml version="1.0" encoding="iso8859-1"?>\n')
-        convert(ifp, ofp, autoclose)
+        convert(ifp, ofp, autoclose, verbatims)
     except IOError, (err, msg):
         if err != errno.EPIPE:
             raise
