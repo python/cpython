@@ -16,8 +16,18 @@ import string
 import marshal
 import regex
 
+try:
+	# experimental microthread support
+	import uthread2
+except ImportError:
+	uthread2 = None
+
 _scriptuntitledcounter = 1
 _wordchars = string.letters + string.digits + "_"
+
+
+runButtonLabels = ["Run all", "Stop!"]
+runSelButtonLabels = ["Run selection", "Pause!", "Resume"]
 
 
 class Editor(W.Window):
@@ -54,7 +64,8 @@ class Editor(W.Window):
 			else:
 				sourceOS = 'UNIX'
 				searchString = '\n'
-			change = EasyDialogs.AskYesNoCancel('³%s² contains %s-style line feeds. Change them to MacOS carriage returns?' % (self.title, sourceOS), 1)
+			change = EasyDialogs.AskYesNoCancel('³%s² contains %s-style line feeds. '
+					'Change them to MacOS carriage returns?' % (self.title, sourceOS), 1)
 			# bug: Cancel is treated as No
 			if change > 0:
 				text = string.replace(text, searchString, '\r')
@@ -98,6 +109,8 @@ class Editor(W.Window):
 			self.run_as_main = self.settings["run_as_main"]
 		else:
 			self.run_as_main = 0
+		self._threadstate = (0, 0)
+		self._thread = None
 	
 	def readwindowsettings(self):
 		try:
@@ -178,8 +191,8 @@ class Editor(W.Window):
 		self.bevelbox = W.BevelBox((0, 0, 0, topbarheight))
 		self.hline = W.HorizontalLine((0, topbarheight, 0, 0))
 		self.infotext = W.TextBox((175, 6, -4, 14), backgroundcolor = (0xe000, 0xe000, 0xe000))
-		self.runbutton = W.Button((5, 4, 80, 16), "Run all", self.run)
-		self.runselbutton = W.Button((90, 4, 80, 16), "Run selection", self.runselection)
+		self.runbutton = W.Button((5, 4, 80, 16), runButtonLabels[0], self.run)
+		self.runselbutton = W.Button((90, 4, 80, 16), runSelButtonLabels[0], self.runselection)
 		
 		# bind some keys
 		editor.bind("cmdr", self.runbutton.push)
@@ -460,7 +473,14 @@ class Editor(W.Window):
 		self.runselbutton.push()
 	
 	def run(self):
-		self._run()
+		if self._threadstate == (0, 0):
+			self._run()
+		else:
+			uthread2.globalLock()
+			self._thread.raiseException(KeyboardInterrupt)
+			if self._thread.isPaused():
+				self._thread.start()
+			uthread2.globalUnlock()
 	
 	def _run(self):
 		pytext = self.editgroup.editor.get()
@@ -468,7 +488,14 @@ class Editor(W.Window):
 		self.execstring(pytext, globals, globals, file, modname)
 	
 	def runselection(self):
-		self._runselection()
+		if self._threadstate == (0, 0):
+			self._runselection()
+		elif self._threadstate == (1, 1):
+			self._thread.pause()
+			self.setthreadstate((1, 2))
+		elif self._threadstate == (1, 2):
+			self._thread.start()
+			self.setthreadstate((1, 1))
 	
 	def _runselection(self):
 		globals, file, modname = self.getenvironment()
@@ -517,6 +544,19 @@ class Editor(W.Window):
 		pytext = selfirstline * '\r' + pytext
 		self.execstring(pytext, globals, locals, file, modname)
 	
+	def setthreadstate(self, state):
+		oldstate = self._threadstate
+		if oldstate[0] <> state[0]:
+			self.runbutton.settitle(runButtonLabels[state[0]])
+		if oldstate[1] <> state[1]:
+			self.runselbutton.settitle(runSelButtonLabels[state[1]])
+		self._threadstate = state
+	
+	def _exec_threadwrapper(self, *args, **kwargs):
+		apply(execstring, args, kwargs)
+		self.setthreadstate((0, 0))
+		self._thread = None
+	
 	def execstring(self, pytext, globals, locals, file, modname):
 		tracebackwindow.hide()
 		# update windows
@@ -531,8 +571,15 @@ class Editor(W.Window):
 		else:
 			cwdindex = None
 		try:
-			execstring(pytext, globals, locals, file, self.debugging, 
-					modname, self.profiling)
+			if uthread2 and uthread2.currentThread() is not None:
+				self._thread = uthread2.Thread(file, 
+							self._exec_threadwrapper, pytext, globals, locals, file, self.debugging, 
+							modname, self.profiling)
+				self.setthreadstate((1, 1))
+				self._thread.start()
+			else:
+				execstring(pytext, globals, locals, file, self.debugging, 
+							modname, self.profiling)
 		finally:
 			if self.path:
 				os.chdir(savedir)
@@ -561,6 +608,7 @@ class Editor(W.Window):
 				self.globals = {}
 			else:
 				globals = self.globals
+				modname = subname
 		else:
 			file = '<%s>' % self.title
 			globals = self.globals
@@ -1034,8 +1082,13 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		return
 	try:
 		if debugging:
-			PyDebugger.startfromhere()
-		else:
+			if uthread2:
+				uthread2.globalLock()
+				PyDebugger.startfromhere()
+				uthread2.globalUnlock()
+			else:
+				PyDebugger.startfromhere()
+		elif not uthread2:
 			MacOS.EnableAppswitch(0)
 		try:
 			if profiling:
@@ -1052,18 +1105,23 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 			else:
 				exec code in globals, locals
 		finally:
-			MacOS.EnableAppswitch(-1)
+			if not uthread2:
+				MacOS.EnableAppswitch(-1)
 	except W.AlertError, detail:
 		raise W.AlertError, detail
 	except (KeyboardInterrupt, BdbQuit):
 		pass
 	except:
+		if uthread2:
+			uthread2.globalLock()
 		if debugging:
 			sys.settrace(None)
 			PyDebugger.postmortem(sys.exc_type, sys.exc_value, sys.exc_traceback)
 			return
 		else:
 			tracebackwindow.traceback(1, filename)
+		if not uthread2:
+			uthread2.globalUnlock()
 	if debugging:
 		sys.settrace(None)
 		PyDebugger.stop()
