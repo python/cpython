@@ -12,9 +12,10 @@ from code import InteractiveInterpreter
 from Tkinter import *
 import tkMessageBox
 
-from EditorWindow import fixwordbreaks
-from FileList import FileList, MultiEditorWindow, MultiIOBinding
+from EditorWindow import EditorWindow, fixwordbreaks
+from FileList import FileList
 from ColorDelegator import ColorDelegator
+from OutputWindow import OutputWindow
 
 # We need to patch linecache.checkcache, because we don't want it
 # to throw away our <pyshell#...> entries.
@@ -31,36 +32,54 @@ def linecache_checkcache(orig_checkcache=linecache.checkcache):
 linecache.checkcache = linecache_checkcache
 
 
-class PyShellEditorWindow(MultiEditorWindow):
-    
-    def __init__(self, *args):
-        apply(MultiEditorWindow.__init__, (self,) + args)
-        self.text.bind("<3>", self.right_menu_event)
-      
-    def fixedwindowsmenu(self, wmenu):
-        wmenu.add_command(label="Python Shell", command=self.flist.open_shell)
-        wmenu.add_separator()
-    
-    menu = None
-    
-    def right_menu_event(self, event):
-        self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
-        if not self.menu:
-            self.make_menu()
-        menu = self.menu
-        iswin = sys.platform[:3] == 'win'
-        if iswin:
-            self.text.config(cursor="arrow")
-        menu.tk_popup(event.x_root, event.y_root)
-        if iswin:
-            self.text.config(cursor="ibeam")
+# Note: <<newline-and-indent>> event is defined in AutoIndent.py
 
-    def make_menu(self):
-        self.menu = menu = Menu(self.text, tearoff=0)
-        menu.add_command(label="Set breakpoint here",
-                          command=self.set_breakpoint_here)
-    
-    def set_breakpoint_here(self):
+#$ event <<plain-newline-and-indent>>
+#$ win <Control-j>
+#$ unix <Control-j>
+
+#$ event <<beginning-of-line>>
+#$ win <Control-a>
+#$ win <Home>
+#$ unix <Control-a>
+#$ unix <Home>
+
+#$ event <<history-next>>
+#$ win <Alt-n>
+#$ unix <Alt-n>
+
+#$ event <<history-previous>>
+#$ win <Alt-p>
+#$ unix <Alt-p>
+
+#$ event <<interrupt-execution>>
+#$ win <Control-c>
+#$ unix <Control-c>
+
+#$ event <<end-of-file>>
+#$ win <Control-d>
+#$ unix <Control-d>
+
+#$ event <<open-stack-viewer>>
+
+#$ event <<toggle-debugger>>
+
+
+class PyShellEditorWindow(EditorWindow):
+
+    # Regular text edit window when a shell is present
+    # XXX ought to merge with regular editor window
+
+    def __init__(self, *args):
+        apply(EditorWindow.__init__, (self,) + args)
+        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
+        self.text.bind("<<open-python-shell>>", self.flist.open_shell)
+
+    rmenu_specs = [
+        ("Set breakpoint here", "<<set-breakpoint-here>>"),
+    ]
+
+    def set_breakpoint_here(self, event=None):
         if not self.flist.pyshell or not self.flist.pyshell.interp.debugger:
             self.text.bell()
             return
@@ -68,12 +87,14 @@ class PyShellEditorWindow(MultiEditorWindow):
 
 
 class PyShellFileList(FileList):
-    
+
+    # File list when a shell is present
+
     EditorWindow = PyShellEditorWindow
-    
+
     pyshell = None
 
-    def open_shell(self):
+    def open_shell(self, event=None):
         if self.pyshell:
             self.pyshell.wakeup()
         else:
@@ -82,43 +103,29 @@ class PyShellFileList(FileList):
         return self.pyshell
 
 
-class ModifiedIOBinding(MultiIOBinding):
-
-    def defaultfilename(self, mode="open"):
-        if self.filename:
-            return MultiIOBinding.defaultfilename(self, mode)
-        else:
-            try:
-                pwd = os.getcwd()
-            except os.error:
-                pwd = ""
-            return pwd, ""
-
-    def open(self, event):
-        # Override base class method -- don't allow reusing this window
-        filename = self.askopenfile()
-        if filename:
-            self.flist.open(filename)
-        return "break"
-
-    def maybesave(self):
-        # Override base class method -- don't ask any questions
-        if self.text.get_saved():
-            return "yes"
-        else:
-            return "no"
-
-
 class ModifiedColorDelegator(ColorDelegator):
-    
+
+    # Colorizer for the shell window itself
+
     def recolorize_main(self):
         self.tag_remove("TODO", "1.0", "iomark")
         self.tag_add("SYNC", "1.0", "iomark")
         ColorDelegator.recolorize_main(self)
 
+    tagdefs = ColorDelegator.tagdefs.copy()
+
+    tagdefs.update({
+        ##"stdin":   {"background": "yellow"},
+        "stdout":  {"foreground": "blue"},
+        "stderr":  {"foreground": "#007700"},
+        "console": {"foreground": "#770000"},
+        "ERROR":   {"background": "#FF7777"},
+        None:      {"foreground": "purple"}, # default
+    })
+
 
 class ModifiedInterpreter(InteractiveInterpreter):
-    
+
     def __init__(self, tkconsole):
         self.tkconsole = tkconsole
         InteractiveInterpreter.__init__(self)
@@ -176,7 +183,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole.resetoutput()
         self.checklinecache()
         InteractiveInterpreter.showtraceback(self)
-        
+
     def checklinecache(self):
         c = linecache.cache
         for key in c.keys():
@@ -184,10 +191,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 del c[key]
 
     debugger = None
-    
+
     def setdebugger(self, debugger):
         self.debugger = debugger
-    
+
     def getdebugger(self):
         return self.debugger
 
@@ -214,25 +221,23 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 self.showtraceback()
         finally:
             self.tkconsole.endexecuting()
- 
+
     def write(self, s):
         # Override base class write
         self.tkconsole.console.write(s)
-       
 
-class PyShell(PyShellEditorWindow):
+
+class PyShell(OutputWindow):
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
-    IOBinding = ModifiedIOBinding
-    
+
     # Override menu bar specs
     menu_specs = PyShellEditorWindow.menu_specs[:]
-    menu_specs.insert(len(menu_specs)-1, ("debug", "Debug"))
-   
+    menu_specs.insert(len(menu_specs)-2, ("debug", "_Debug"))
+
     # New classes
     from History import History
-    from PopupMenu import PopupMenu
 
     def __init__(self, flist=None):
         self.interp = ModifiedInterpreter(self)
@@ -242,23 +247,24 @@ class PyShell(PyShellEditorWindow):
             root.withdraw()
             flist = PyShellFileList(root)
 
-        PyShellEditorWindow.__init__(self, flist, None, None)
-        self.config_colors()
+        OutputWindow.__init__(self, flist, None, None)
 
         import __builtin__
         __builtin__.quit = __builtin__.exit = "To exit, type Ctrl-D."
 
+        self.auto = self.extensions["AutoIndent"] # Required extension
         self.auto.config(prefertabs=1)
 
         text = self.text
+        text.configure(wrap="char")
         text.bind("<<newline-and-indent>>", self.enter_callback)
         text.bind("<<plain-newline-and-indent>>", self.linefeed_callback)
         text.bind("<<interrupt-execution>>", self.cancel_callback)
         text.bind("<<beginning-of-line>>", self.home_callback)
         text.bind("<<end-of-file>>", self.eof_callback)
-        text.bind("<<goto-traceback-line>>", self.goto_traceback_line)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
+        text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         sys.stdout = PseudoFile(self, "stdout")
         sys.stderr = PseudoFile(self, "stderr")
@@ -266,31 +272,12 @@ class PyShell(PyShellEditorWindow):
         self.console = PseudoFile(self, "console")
 
         self.history = self.History(self.text)
-        self.popup = self.PopupMenu(self.text, self.flist)
-
-    tagdefs = {
-        ##"stdin":   {"background": "yellow"},
-        "stdout":  {"foreground": "blue"},
-        "stderr":  {"foreground": "#007700"},
-        "console": {"foreground": "red"},
-        "ERROR":   {"background": "#FF7777"},
-        None:      {"foreground": "purple"}, # default
-    }
-
-    def config_colors(self):
-        for tag, cnf in self.tagdefs.items():
-            if cnf:
-                if not tag:
-                    apply(self.text.configure, (), cnf)
-                else:
-                    apply(self.text.tag_configure, (tag,), cnf)
-        self.text.tag_raise("sel")
 
     reading = 0
     executing = 0
     canceled = 0
     endoffile = 0
-    
+
     def toggle_debugger(self, event=None):
         if self.executing:
             tkMessageBox.showerror("Don't debug now",
@@ -362,14 +349,8 @@ class PyShell(PyShellEditorWindow):
         # Override this so EditorWindow never removes the colorizer
         return 1
 
-    def saved_change_hook(self):
-        # Override this to get the title right
-        title = "Python Shell"
-        if self.io.filename:
-            title = title + ": " + self.io.filename
-            if not self.undo.get_saved():
-                title = title + " *"
-        self.top.wm_title(title)
+    def short_title(self):
+        return "Python Shell"
 
     def begin(self):
         self.resetoutput()
@@ -382,7 +363,7 @@ class PyShell(PyShellEditorWindow):
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None
-    
+
     def interact(self):
         self.begin()
         self.top.mainloop()
@@ -457,7 +438,7 @@ class PyShell(PyShellEditorWindow):
             self.text.insert("insert", "\n")
             self.text.see("insert")
         else:
-            self.auto.autoindent(event)
+            self.auto.auto_indent(event)
         return "break"
 
     def enter_callback(self, event):
@@ -468,7 +449,7 @@ class PyShell(PyShellEditorWindow):
         try:
             sel = self.text.get("sel.first", "sel.last")
             if sel:
-                if self.text.compare("self.last", "<=", "iomark"):
+                if self.text.compare("sel.last", "<=", "iomark"):
                     self.recall(sel)
                     return "break"
         except:
@@ -492,7 +473,7 @@ class PyShell(PyShellEditorWindow):
         # If we're in the current input before its last line,
         # insert a newline right at the insert point
         if self.text.compare("insert", "<", "end-1c linestart"):
-            self.auto.autoindent(event)
+            self.auto.auto_indent(event)
             return "break"
         # We're in the last line; append a newline and submit it
         self.text.mark_set("insert", "end-1c")
@@ -500,7 +481,7 @@ class PyShell(PyShellEditorWindow):
             self.text.insert("insert", "\n")
             self.text.see("insert")
         else:
-            self.auto.autoindent(event)
+            self.auto.auto_indent(event)
         self.text.tag_add("stdin", "iomark", "end-1c")
         self.text.update_idletasks()
         if self.reading:
@@ -545,49 +526,7 @@ class PyShell(PyShellEditorWindow):
             self.canceled = 0
             raise KeyboardInterrupt
         return self._cancel_check
-    
-    file_line_pats = [
-        r'File "([^"]*)", line (\d+)',
-        r'([^\s]+)\((\d+)\)',
-        r'([^\s]+):\s*(\d+):',
-    ]
-    
-    file_line_progs = None
-    
-    def goto_traceback_line(self, event=None):
-        if self.file_line_progs is None:
-            l = []
-            for pat in self.file_line_pats:
-                l.append(re.compile(pat))
-            self.file_line_progs = l
-        # x, y = self.event.x, self.event.y
-        # self.text.mark_set("insert", "@%d,%d" % (x, y))
-        line = self.text.get("insert linestart", "insert lineend")
-        for prog in self.file_line_progs:
-            m = prog.search(line)
-            if m:
-                break
-        else:
-            tkMessageBox.showerror("No traceback line",
-                "The line you point at doesn't look "
-                "like an error message.",
-                master=self.text)
-            return
-        filename, lineno = m.group(1, 2)
-        try:
-            f = open(filename, "r")
-            f.close()
-        except IOError, msg:
-            self.text.bell()
-            return
-        edit = self.flist.open(filename)
-        try:
-            lineno = int(lineno)
-        except ValueError, msg:
-            self.text.bell()
-            return
-        edit.gotoline(lineno)
-    
+
     def open_stack_viewer(self, event=None):
         try:
             sys.last_traceback
@@ -618,26 +557,22 @@ class PyShell(PyShellEditorWindow):
         self.text.mark_set("iomark", "end-1c")
         sys.stdout.softspace = 0
 
-    def write(self, s):
-        # Overrides base class write
-        self.console.write(s)
+    def write(self, s, tags=()):
+        self.text.mark_gravity("iomark", "right")
+        OutputWindow.write(self, s, tags, "iomark")
+        self.text.mark_gravity("iomark", "left")
+        if self.canceled:
+            self.canceled = 0
+            raise KeyboardInterrupt
 
 class PseudoFile:
 
-    def __init__(self, interp, tags):
-        self.interp = interp
-        self.text = interp.text
+    def __init__(self, shell, tags):
+        self.shell = shell
         self.tags = tags
 
     def write(self, s):
-        self.text.mark_gravity("iomark", "right")
-        self.text.insert("iomark", str(s), self.tags)
-        self.text.mark_gravity("iomark", "left")
-        self.text.see("iomark")
-        self.text.update()
-        if self.interp.canceled:
-            self.interp.canceled = 0
-            raise KeyboardInterrupt
+        self.shell.write(s, self.tags)
 
     def writelines(self, l):
         map(self.write, l)

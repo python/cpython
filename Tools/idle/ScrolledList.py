@@ -1,7 +1,7 @@
 from Tkinter import *
 
 class ScrolledList:
-    
+
     def __init__(self, master, **options):
         # Create top frame, with scrollbar and listbox
         self.master = master
@@ -18,22 +18,22 @@ class ScrolledList:
         listbox["yscrollcommand"] = vbar.set
         # Bind events to the list box
         listbox.bind("<ButtonRelease-1>", self.click_event)
-	listbox.bind("<Double-ButtonRelease-1>", self.double_click_event)
+        listbox.bind("<Double-ButtonRelease-1>", self.double_click_event)
         listbox.bind("<ButtonPress-3>", self.popup_event)
         listbox.bind("<Key-Up>", self.up_event)
         listbox.bind("<Key-Down>", self.down_event)
         # Set the focus
         listbox.focus_set()
-    
+
     def close(self):
         self.frame.destroy()
-    
+
     def clear(self):
         self.listbox.delete(0, "end")
-    
+
     def append(self, item):
         self.listbox.insert("end", str(item))
-    
+
     def get(self, index):
         return self.listbox.get(index)
 
@@ -49,9 +49,9 @@ class ScrolledList:
         self.select(index)
         self.on_double(index)
         return "break"
-    
+
     menu = None
-    
+
     def popup_event(self, event):
         if not self.menu:
             self.make_menu()
@@ -65,7 +65,7 @@ class ScrolledList:
         menu = Menu(self.listbox, tearoff=0)
         self.menu = menu
         self.fill_menu()
-   
+
     def up_event(self, event):
         index = self.listbox.index("active")
         if self.listbox.selection_includes(index):
@@ -78,7 +78,7 @@ class ScrolledList:
             self.select(index)
             self.on_select(index)
         return "break"
-        
+
     def down_event(self, event):
         index = self.listbox.index("active")
         if self.listbox.selection_includes(index):
@@ -91,22 +91,22 @@ class ScrolledList:
             self.select(index)
             self.on_select(index)
         return "break"
-    
+
     def select(self, index):
         self.listbox.focus_set()
         self.listbox.activate(index)
         self.listbox.selection_clear(0, "end")
         self.listbox.selection_set(index)
         self.listbox.see(index)
-    
+
     # Methods to override for specific actions
-    
+
     def fill_menu(self):
         pass
- 
+
     def on_select(self, index):
         pass
-        
+
     def on_double(self, index):
         pass
 

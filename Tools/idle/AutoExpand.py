@@ -1,17 +1,30 @@
 import string
 import re
 
+###$ event <<expand-word>>
+###$ win <Alt-slash>
+###$ unix <Alt-slash>
+
 class AutoExpand:
-    
+
+    keydefs = {
+        '<<expand-word>>': ['<Alt-slash>'],
+    }
+
+    menudefs = [
+        ('edit', [
+            ('E_xpand word', '<<expand-word>>'),
+         ]),
+    ]
+
     wordchars = string.letters + string.digits + "_"
 
-    def __init__(self, text):
-        self.text = text
-        self.text.wordlist = None
+    def __init__(self, editwin):
+        self.text = editwin.text
+        self.text.wordlist = None # XXX what is this?
         self.state = None
-        self.text.bind("<<expand-word>>", self.autoexpand)
-        
-    def autoexpand(self, event):
+
+    def expand_word_event(self, event):
         curinsert = self.text.index("insert")
         curline = self.text.get("insert linestart", "insert lineend")
         if not self.state:
@@ -36,7 +49,7 @@ class AutoExpand:
         curline = self.text.get("insert linestart", "insert lineend")
         self.state = words, index, curinsert, curline
         return "break"
-        
+
     def getwords(self):
         word = self.getprevword()
         if not word:
@@ -66,7 +79,7 @@ class AutoExpand:
             dict[w] = w
         words.append(word)
         return words
-        
+
     def getprevword(self):
         line = self.text.get("insert linestart", "insert")
         i = len(line)

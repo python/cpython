@@ -1,3 +1,5 @@
+[See end for tips.]
+
 File menu:
 
 	New window -- create a new editing window
@@ -75,9 +77,19 @@ Python syntax colors: the coloring is applied in a background thread
 	Comments	red
 	Definitions	blue
 
-Console colors:
+Shell colors:
 
-	Console output	red
+	Console output	dark red
 	stdout		blue
 	stderr		dark green
-	stdin		purple
+	stdin		black
+
+Tips:
+	To change the font on Windows, open EditorWindow.py and change
+	    text['font'] = ("verdana", 8)
+	to, e.g.,
+	    text['font'] = ("courier new", 10)
+
+	To change the Python syntax colors, edit the tagdefs table
+	in ColorDelegator.py; to change the shell colors, edit the
+	tagdefs table in PyShell.py.

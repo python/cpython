@@ -5,6 +5,10 @@ import keyword
 from Tkinter import *
 from Delegator import Delegator
 
+#$ event <<toggle-auto-coloring>>
+#$ win <Control-slash>
+#$ unix <Control-slash>
+
 __debug__ = 0
 
 
@@ -29,10 +33,10 @@ class ColorDelegator(Delegator):
     def __init__(self):
         Delegator.__init__(self)
         self.prog = prog
-	self.idprog = idprog
+        self.idprog = idprog
 
     def setdelegate(self, delegate):
-	if self.delegate is not None:
+        if self.delegate is not None:
             self.unbind("<<toggle-auto-coloring>>")
         Delegator.setdelegate(self, delegate)
         if delegate is not None:
@@ -54,8 +58,11 @@ class ColorDelegator(Delegator):
 
         "SYNC":       {}, #{"background": "#ffff00"},
         "TODO":       {}, #{"background": "#cccccc"},
-        
+
         "BREAK":      {"background": "#FF7777"},
+
+        # The following is used by ReplaceDialog:
+        "hit":        {"foreground": "#FFFFFF", "background": "#000000"},
         }
 
     def insert(self, index, chars, tags=None):
@@ -79,9 +86,9 @@ class ColorDelegator(Delegator):
             return
         if self.colorizing:
             self.stop_colorizing = 1
-	    if __debug__: print "stop colorizing"
+            if __debug__: print "stop colorizing"
         if self.allow_colorizing:
-	    if __debug__: print "schedule colorizing"
+            if __debug__: print "schedule colorizing"
             self.after_id = self.after(1, self.recolorize)
 
     def close(self):
@@ -99,29 +106,29 @@ class ColorDelegator(Delegator):
             self.after_id = None
             if __debug__: print "cancel scheduled recolorizer"
             self.after_cancel(after_id)
-	if self.allow_colorizing and self.colorizing:
-	    if __debug__: print "stop colorizing"
-	    self.stop_colorizing = 1
-	self.allow_colorizing = not self.allow_colorizing
-	if self.allow_colorizing and not self.colorizing:
-	    self.after_id = self.after(1, self.recolorize)
-	if __debug__:
-	    print "auto colorizing turned", self.allow_colorizing and "on" or "off"
-	return "break"
+        if self.allow_colorizing and self.colorizing:
+            if __debug__: print "stop colorizing"
+            self.stop_colorizing = 1
+        self.allow_colorizing = not self.allow_colorizing
+        if self.allow_colorizing and not self.colorizing:
+            self.after_id = self.after(1, self.recolorize)
+        if __debug__:
+            print "auto colorizing turned", self.allow_colorizing and "on" or "off"
+        return "break"
 
     def recolorize(self):
         self.after_id = None
         if not self.delegate:
             if __debug__: print "no delegate"
             return
-	if not self.allow_colorizing:
-	    if __debug__: print "auto colorizing is off"
-	    return
-	if self.colorizing:
-	    if __debug__: print "already colorizing"
+        if not self.allow_colorizing:
+            if __debug__: print "auto colorizing is off"
+            return
+        if self.colorizing:
+            if __debug__: print "already colorizing"
             return
         try:
-	    self.stop_colorizing = 0
+            self.stop_colorizing = 0
             self.colorizing = 1
             if __debug__: print "colorizing..."
             t0 = time.clock()
@@ -131,63 +138,63 @@ class ColorDelegator(Delegator):
         finally:
             self.colorizing = 0
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
-	    if __debug__: print "reschedule colorizing"
+            if __debug__: print "reschedule colorizing"
             self.after_id = self.after(1, self.recolorize)
 
     def recolorize_main(self):
-	next = "1.0"
-	was_ok = is_ok = 0
-	while 1:
-	    item = self.tag_nextrange("TODO", next)
-	    if not item:
-		break
-	    head, tail = item
-	    self.tag_remove("SYNC", head, tail)
-	    item = self.tag_prevrange("SYNC", head)
-	    if item:
-		head = item[1]
-	    else:
-		head = "1.0"
+        next = "1.0"
+        was_ok = is_ok = 0
+        while 1:
+            item = self.tag_nextrange("TODO", next)
+            if not item:
+                break
+            head, tail = item
+            self.tag_remove("SYNC", head, tail)
+            item = self.tag_prevrange("SYNC", head)
+            if item:
+                head = item[1]
+            else:
+                head = "1.0"
 
-	    chars = ""
-	    mark = head
-	    is_ok = was_ok = 0
-	    while not (was_ok and is_ok):
-		next = self.index(mark + " lineend +1c")
-		was_ok = "SYNC" in self.tag_names(next + "-1c")
-		line = self.get(mark, next)
-		##print head, "get", mark, next, "->", `line`
-		if not line:
-		    return
-		for tag in self.tagdefs.keys():
-		    self.tag_remove(tag, mark, next)
-		chars = chars + line
-		m = self.prog.search(chars)
-		while m:
-		    i, j = m.span()
-		    for key, value in m.groupdict().items():
-			if value:
-			    a, b = m.span(key)
-			    self.tag_add(key,
-					 head + "+%dc" % a,
-					 head + "+%dc" % b)
-			    if value in ("def", "class"):
-				m1 = self.idprog.match(chars, b)
-				if m1:
-				    a, b = m1.span(1)
-				    self.tag_add("DEFINITION",
-						 head + "+%dc" % a,
-						 head + "+%dc" % b)
-		    m = self.prog.search(chars, j)
-		is_ok = "SYNC" in self.tag_names(next + "-1c")
-		mark = next
-		if is_ok:
-		    head = mark
-		    chars = ""
-		self.update()
-		if self.stop_colorizing:
-		    if __debug__: print "colorizing stopped"
-		    return
+            chars = ""
+            mark = head
+            is_ok = was_ok = 0
+            while not (was_ok and is_ok):
+                next = self.index(mark + " lineend +1c")
+                was_ok = "SYNC" in self.tag_names(next + "-1c")
+                line = self.get(mark, next)
+                ##print head, "get", mark, next, "->", `line`
+                if not line:
+                    return
+                for tag in self.tagdefs.keys():
+                    self.tag_remove(tag, mark, next)
+                chars = chars + line
+                m = self.prog.search(chars)
+                while m:
+                    i, j = m.span()
+                    for key, value in m.groupdict().items():
+                        if value:
+                            a, b = m.span(key)
+                            self.tag_add(key,
+                                         head + "+%dc" % a,
+                                         head + "+%dc" % b)
+                            if value in ("def", "class"):
+                                m1 = self.idprog.match(chars, b)
+                                if m1:
+                                    a, b = m1.span(1)
+                                    self.tag_add("DEFINITION",
+                                                 head + "+%dc" % a,
+                                                 head + "+%dc" % b)
+                    m = self.prog.search(chars, j)
+                is_ok = "SYNC" in self.tag_names(next + "-1c")
+                mark = next
+                if is_ok:
+                    head = mark
+                    chars = ""
+                self.update()
+                if self.stop_colorizing:
+                    if __debug__: print "colorizing stopped"
+                    return
 
 
 def main():

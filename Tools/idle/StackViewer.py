@@ -4,16 +4,18 @@ import os
 from Tkinter import *
 import linecache
 from repr import Repr
+from WindowList import ListedToplevel
 
 from ScrolledList import ScrolledList
 
 
 class StackBrowser:
-    
+
     def __init__(self, root, flist, stack=None):
-        self.top = top = Toplevel(root)
+        self.top = top = ListedToplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
         top.wm_title("Stack viewer")
+        top.wm_iconname("Stack")
         # Create help label
         self.helplabel = Label(top,
             text="Click once to view variables; twice for source",
@@ -24,7 +26,7 @@ class StackBrowser:
         if stack is None:
             stack = get_stack()
         self.sv.load_stack(stack)
-    
+
     def close(self):
         self.top.destroy()
 
@@ -44,7 +46,7 @@ class StackBrowser:
             self.show_globals(frame)
         self.show_locals(frame)
         self.curframe = frame
-    
+
     def show_globals(self, frame):
         title = "Global Variables"
         if frame.f_globals.has_key("__name__"):
@@ -66,7 +68,7 @@ class StackBrowser:
             title,
             self.globalsdict)
         self.globalsframe.pack(fill="both", side="bottom")
-    
+
     def show_locals(self, frame):
         self.localsdict = None
         if self.localsviewer:
@@ -92,7 +94,7 @@ class StackBrowser:
 
 
 class StackViewer(ScrolledList):
-    
+
     def __init__(self, master, flist, browser):
         ScrolledList.__init__(self, master)
         self.flist = flist
@@ -149,7 +151,7 @@ class StackViewer(ScrolledList):
     def show_stack_frame(self):
         index = self.listbox.index("active")
         self.browser.show_frame(self.stack[index])
-    
+
     def show_source(self, index):
         frame, lineno = self.stack[index]
         code = frame.f_code
@@ -169,7 +171,7 @@ def get_stack(t=None, f=None):
     while f is not None:
         stack.append((f, f.f_lineno))
         if f is self.botframe:
-	    break
+            break
         f = f.f_back
     stack.reverse()
     while t is not None:
@@ -191,7 +193,7 @@ def getexception(type=None, value=None):
 
 
 class NamespaceViewer:
-    
+
     def __init__(self, master, title, dict=None):
         width = 0
         height = 40
@@ -217,9 +219,9 @@ class NamespaceViewer:
         self.subframe = subframe = Frame(canvas)
         self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
         self.load_dict(dict)
-    
+
     dict = -1
-    
+
     def load_dict(self, dict, force=0):
         if dict is self.dict and not force:
             return

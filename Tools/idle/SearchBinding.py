@@ -1,89 +1,96 @@
-import string
-import re
 import tkSimpleDialog
-import tkMessageBox
+
+###$ event <<find>>
+###$ win <Control-f>
+###$ unix <Control-u><Control-u><Control-s>
+
+###$ event <<find-again>>
+###$ win <Control-g>
+###$ win <F3>
+###$ unix <Control-u><Control-s>
+
+###$ event <<find-selection>>
+###$ win <Control-F3>
+###$ unix <Control-s>
+
+###$ event <<find-in-files>>
+###$ win <Alt-F3>
+
+###$ event <<replace>>
+###$ win <Control-h>
+
+###$ event <<goto-line>>
+###$ win <Alt-g>
+###$ unix <Alt-g>
 
 class SearchBinding:
-	
-	def __init__(self, text):
-		self.text = text
-		self.pat = ""
-		self.prog = None
-		self.text.bind("<<find>>", self.find_event)
-		self.text.bind("<<find-next>>", self.find_next_event)
-		self.text.bind("<<find-same>>", self.find_same_event)
-		self.text.bind("<<goto-line>>", self.goto_line_event)
-	
-	def find_event(self, event):
-		default = self.text.get("self.first", "sel.last") or self.pat
-		new = tkSimpleDialog.askstring("Find",
-			"Regular Expression:",
-			initialvalue=default,
-			parent=self.text)
-		if not new:
-			return "break"
-		self.pat = new
-		try:
-			self.prog = re.compile(self.pat)
-		except re.error, msg:
-			tkMessageBox.showerror("RE error", str(msg),
-			                       master=self.text)
-			return "break"
-		return self.find_next_event(event)
-	
-	def find_same_event(self, event):
-		pat = self.text.get("sel.first", "sel.last")
-		if not pat:
-			return self.find_event(event)
-		self.pat = re.escape(pat)
-		self.prog = None
-		try:
-			self.prog = re.compile(self.pat)
-		except re.error, msg:
-			tkMessageBox.showerror("RE error", str(message),
-			                       master=self.text)
-			return "break"
-		self.text.mark_set("insert", "sel.last")
-		return self.find_next_event(event)
 
-	def find_next_event(self, event):
-		if not self.pat:
-			return self.find_event(event)
-		if not self.prog:
-			self.text.bell()
-			##print "No program"
-			return "break"
-		line, col = map(int,
-		                string.split(self.text.index("insert"), "."))
-		chars = self.text.get("%d.0" % line, "%d.0" % (line+1))
-		while chars:
-			m = self.prog.search(chars, col)
-			if m:
-				i, j = m.span()
-				self.text.mark_set("insert",
-				                   "%d.%d" % (line, j))
-				self.text.tag_remove("sel", "1.0", "end")
-				self.text.tag_add("sel",
-				                  "%d.%d" % (line, i),
-				                  "%d.%d" % (line, j))
-				self.text.see("insert")
-				break
-			line = line + 1
-			col = 0
-			chars = self.text.get("%d.0" % line, "%d.0" % (line+1))
-		else:
-			# Not found
-			self.text.bell()
-		return "break"
-	
-	def goto_line_event(self, event):
-		lineno = tkSimpleDialog.askinteger("Goto",
-						   "Go to line number:",
-						   parent=self.text)
-		if lineno is None:
-			return "break"
-		if lineno <= 0:
-			self.text.bell()
-			return "break"
-		self.text.mark_set("insert", "%d.0" % lineno)
-		self.text.see("insert")
+    windows_keydefs = {
+        '<<find-again>>': ['<Control-g>', '<F3>'],
+        '<<find-in-files>>': ['<Alt-F3>'],
+        '<<find-selection>>': ['<Control-F3>'],
+        '<<find>>': ['<Control-f>'],
+        '<<replace>>': ['<Control-h>'],
+        '<<goto-line>>': ['<Alt-g>'],
+    }
+
+    unix_keydefs = {
+        '<<find-again>>': ['<Control-u><Control-s>'],
+        '<<find-selection>>': ['<Control-s>'],
+        '<<find>>': ['<Control-u><Control-u><Control-s>'],
+        '<<goto-line>>': ['<Alt-g>', '<Meta-g>'],
+    }
+
+    menudefs = [
+        ('edit', [
+            None,
+            ('_Find...', '<<find>>'),
+            ('Find a_gain', '<<find-again>>'),
+            ('Find _selection', '<<find-selection>>'),
+            ('Find in Files...', '<<find-in-files>>'),
+            ('R_eplace...', '<<replace>>'),
+            ('Go to _line', '<<goto-line>>'),
+         ]),
+    ]
+
+    def __init__(self, editwin):
+        self.editwin = editwin
+
+    def find_event(self, event):
+        import SearchDialog
+        SearchDialog.find(self.editwin.text)
+        return "break"
+
+    def find_again_event(self, event):
+        import SearchDialog
+        SearchDialog.find_again(self.editwin.text)
+        return "break"
+
+    def find_selection_event(self, event):
+        import SearchDialog
+        SearchDialog.find_selection(self.editwin.text)
+        return "break"
+
+    def find_in_files_event(self, event):
+        import GrepDialog
+        GrepDialog.grep(self.editwin.text, self.editwin.io, self.editwin.flist)
+        return "break"
+
+    def replace_event(self, event):
+        import ReplaceDialog
+        ReplaceDialog.replace(self.editwin.text)
+        return "break"
+
+    def goto_line_event(self, event):
+        print event
+        text = self.editwin.text
+        lineno = tkSimpleDialog.askinteger("Goto",
+                                           "Go to line number:",
+                                           parent=text)
+        if lineno is None:
+            return "break"
+        if lineno <= 0:
+            text.bell()
+            return "break"
+        text.mark_set("insert", "%d.0" % lineno)
+        text.see("insert")
