@@ -264,7 +264,15 @@ def main(args=None):
         print "raw times:", " ".join(["%.*g" % (precision, x) for x in r])
     print "%d loops," % number,
     usec = best * 1e6 / number
-    print "best of %d: %.*g usec per loop" % (repeat, precision, usec)
+    if usec < 1000:
+        print "best of %d: %.*g usec per loop" % (repeat, precision, usec)
+    else:
+        msec = usec / 1000
+        if msec < 1000:
+            print "best of %d: %.*g msec per loop" % (repeat, precision, msec)
+        else:
+            sec = msec / 1000
+            print "best of %d: %.*g sec per loop" % (repeat, precision, sec)
     return None
 
 if __name__ == "__main__":
