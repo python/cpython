@@ -7,20 +7,33 @@ several PC ports of Python, as well as all the PC-specific
 Python source files.  It should be located in the root of the
 Python distribution, and there should be directories "Modules",
 "Objects", "Python", etc. in the parent directory of this "PC"
-subdirectory.
+subdirectory.  Be sure to read the documentation in the Python
+distribution.
 
-Be sure to read the documentation in the Python distribution.  You
-must set the environment variable PYTHONPATH to point to your Python
-library directory.  This is "../Lib", but you must use an absolute path,
-and perhaps copy it somewhere else.  Be sure to include the Windows
-specific directory "win" too.  If you use a DOS FAT file system and
-either a DOS or Windows 3.1x Python version, you should also put
-../Lib/dos_8x3 on your PYTHONPATH too, since it has DOS 8x3 names
-for the standard Python library names.  So your autoexec.bat should have:
-   set PYTHONPATH=.;c:\python\lib;c:\python\lib\win
-for Windows NT or
-   set PYTHONPATH=.;c:\python\lib;c:\python\lib\win;c:\python\lib\dos_8x3
-for DOS or Windows 3.1x (change the path to the correct path).
+Python requires library files such as string.py to be available in
+one or more library directories.  The search path of libraries is
+set up when Python starts.  To see the current Python library search
+path, start Python and enter "import sys" and "print sys.path".
+
+All PC ports except Windows 95/NT use this scheme to try to set up
+a search path:
+  1) If the Python executable (for example, py_dos.exe) is located
+     in a subdirectory of the Python root (..), then those library
+     files are used (../Lib) to generate the path.
+  2) Otherwise the environment variable PYTHONPATH is the search path.
+  3) Otherwise the directory "lib" in the directory of the executable
+     file is used to generate the path.
+  4) Otherwise, the current directory is used (not useful).
+
+The best installation strategy (except NT) is to put the Python
+executable in some convenient directory such as C:/python, and
+copy all library files and subdirectories (using XCOPY) to C:/python/lib.
+Then you don't need to set PYTHONPATH.  Otherwise, set the environment
+variable PYTHONPATH to your Python search path.  For example,
+   set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos_8x3
+
+Python for Windows 95/NT uses the same PYTHONPATH environment variable, plus
+the Python path recorded in the registry.
 
 There are several add-in modules to build Python programs which use
 the native Windows operating environment.  The ports here just make
@@ -75,7 +88,7 @@ python      The Python main program, named python.exe.  This should
 
 _tkinter    The optional _tkinter extension, _tkinter.dll; see below.
 
-ALl end products of the compilation are placed in the subdirectory
+All end products of the compilation are placed in the subdirectory
 vc40 (which Developer Studio creates); object files are placed in
 vc40/tmp.  There are no separate Release and Debug project variants.
 Note that the python and _tkinter projects require that the
