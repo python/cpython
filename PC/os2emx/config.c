@@ -36,32 +36,38 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+extern void initos2();
+extern void initsignal();
+#ifdef WITH_THREAD
+extern void initthread();
+#endif
+#if !HAVE_DYNAMIC_LOADING
 extern void init_codecs();
 extern void init_curses();
 extern void init_curses_panel();
 extern void init_hotshot();
 extern void init_locale();
-extern void init_socket();
+extern void init_random();
 extern void init_sre();
+extern void init_symtable();
 extern void init_testcapi();
 extern void init_weakref();
 extern void initarray();
 extern void initbinascii();
-extern void initbsddb();
+extern void initbsddb185();
+extern void initbz2();
 extern void initcPickle();
 extern void initcStringIO();
 extern void initcmath();
+extern void initdatetime();
 extern void initdl();
 extern void initerrno();
 extern void initfcntl();
 extern void initfpectl();
 extern void initfpetest();
-extern void initgc();
 extern void initimageop();
 extern void initmath();
 extern void initmd5();
-extern void initnew();
-extern void initos2();
 extern void initoperator();
 extern void initparser();
 extern void initpcre();
@@ -69,32 +75,34 @@ extern void initpwd();
 extern void initregex();
 extern void initrgbimg();
 extern void initrotor();
-extern void initselect();
 extern void initsha();
-extern void initsignal();
 extern void initstrop();
 extern void initstruct();
 extern void inittermios();
-extern void initthread();
 extern void inittime();
 extern void inittiming();
 extern void initunicodedata();
 extern void initxreadlines();
 extern void initxxsubtype();
+extern void initzipimport();
 extern void initzlib();
-
+#ifdef USE_SOCKET
+extern void init_socket();
+extern void initselect();
+#endif
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
 extern void initimp();
+extern void initgc();
 
 struct _inittab _PyImport_Inittab[] = {
 
-	{"gc", initgc},
-        {"os2", initos2},
-        {"signal", initsignal},
+	{"os2", initos2},
+	{"signal", initsignal},
 #ifdef WITH_THREAD
-        {"thread", initthread},
+	{"thread", initthread},
 #endif
 #if !HAVE_DYNAMIC_LOADING
 	{"_codecs", init_codecs},
@@ -102,15 +110,19 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_curses_panel", init_curses_panel},
 	{"_hotshot", init_hotshot},
 	{"_locale", init_locale},
-        {"_sre", init_sre},
+	{"_random", init_random},
+	{"_sre", init_sre},
+	{"_symtable", init_symtable},
 	{"_testcapi", init_testcapi},
 	{"_weakref", init_weakref},
 	{"array", initarray},
 	{"binascii", initbinascii},
-	{"bsddb", initbsddb},
+	{"bsddb185", initbsddb185},
+	{"bz2", initbz2},
 	{"cPickle", initcPickle},
 	{"cStringIO", initcStringIO},
 	{"cmath", initcmath},
+	{"datetime", initdatetime},
 	{"dl", initdl},
 	{"errno", initerrno},
 	{"fcntl", initfcntl},
@@ -119,7 +131,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"imageop", initimageop},
 	{"math", initmath},
 	{"md5", initmd5},
-	{"new", initnew},
 	{"operator", initoperator},
 	{"parser", initparser},
 	{"pcre", initpcre},
@@ -136,27 +147,30 @@ struct _inittab _PyImport_Inittab[] = {
 	{"unicodedata", initunicodedata},
 	{"xreadlines", initxreadlines},
 	{"xxsubtype", initxxsubtype},
+	{"zipimport", initzipimport},
 	{"zlib", initzlib},
 #ifdef USE_SOCKET
-        {"_socket", init_socket},
-        {"select", initselect},
+	{"_socket", init_socket},
+	{"select", initselect},
 #endif
 #endif
-
 /* -- ADDMODULE MARKER 2 -- */
 
-        /* This module "lives in" with marshal.c */
-        {"marshal", PyMarshal_Init},
+	/* This module "lives in" with marshal.c */
+	{"marshal", PyMarshal_Init},
 
-        /* This lives it with import.c */
-        {"imp", initimp},
+	/* This lives it with import.c */
+	{"imp", initimp},
 
-        /* These entries are here for sys.builtin_module_names */
-        {"__main__", NULL},
-        {"__builtin__", NULL},
-        {"sys", NULL},
-        {"exceptions", NULL},
+	/* These entries are here for sys.builtin_module_names */
+	{"__main__", NULL},
+	{"__builtin__", NULL},
+	{"sys", NULL},
+	{"exceptions", NULL},
 
-        /* Sentinel */
-        {0, 0}
+	/* This lives in gcmodule.c */
+	{"gc", initgc},
+
+	/* Sentinel */
+	{0, 0}
 };
