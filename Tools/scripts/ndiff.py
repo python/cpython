@@ -1,16 +1,50 @@
 #! /usr/bin/env python
 
-# Released to the public domain $JustDate:  3/16/98 $,
-# by Tim Peters (email tim_one@email.msn.com).
+# Module ndiff version 1.3.0
+# Released to the public domain 26-Mar-1999,
+# by Tim Peters (tim_one@email.msn.com).
 
-# ndiff file1 file2 -- a human-friendly file differencer.
+# Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 
-# $Revision$
+"""ndiff [-q] file1 file2
+
+Print a human-friendly file difference report to stdout.  Both inter-
+and intra-line differences are noted.
+
+If -q ("quiet") is not specified, the first two lines of output are
+
+-: file1
++: file2
+
+Each remaining line begins with a two-letter code:
+
+    "- "    line unique to file1
+    "+ "    line unique to file2
+    "  "    line common to both files
+    "? "    line not present in either input file
+
+Lines beginning with "? " attempt to guide the eye to intraline
+differences, and were not present in either input file.
+
+The first file can be recovered by retaining only lines that begin with
+"  " or "- ", and deleting those 2-character prefixes.
+
+The second file can be recovered similarly, but by retaining only "  "
+and "+ " lines.  On Unix, the second file can be recovered by piping the
+output through
+    sed -n '/^[+ ] /s/^..//p'
+Modifications to recover the first file are left as an exercise for
+the reader.
+
+See module comments for details and programmatic interface.
+"""
+
+__version__ = 1, 3, 0
 
 # SequenceMatcher tries to compute a "human-friendly diff" between
 # two sequences (chiefly picturing a file as a sequence of lines,
-# and a line as a sequence of characters, here).  Unlike UNIX(tm) diff,
-# e.g., the fundamental notion is the longest *contiguous* & junk-free
+# and a line as a sequence of characters, here).  Unlike e.g. UNIX(tm)
+# diff, the fundamental notion is the longest *contiguous* & junk-free
 # matching subsequence.  That's what catches peoples' eyes.  The
 # Windows(tm) windiff has another interesting notion, pairing up elements
 # that appear uniquely in each sequence.  That, and the method here,
@@ -26,11 +60,11 @@
 # apart.  Restricting synch points to contiguous matches preserves some
 # notion of locality, at the occasional cost of producing a longer diff.
 #
-# With respect to junk, an earlier verion of ndiff simply refused to
+# With respect to junk, an earlier version of ndiff simply refused to
 # *start* a match with a junk element.  The result was cases like this:
 #     before: private Thread currentThread;
 #     after:  private volatile Thread currentThread;
-# If you consider whitespace to be junk, the longest continguous match
+# If you consider whitespace to be junk, the longest contiguous match
 # not starting with junk is "e Thread currentThread".  So ndiff reported
 # that "e volatil" was inserted between the 't' and the 'e' in "private".
 # While an accurate view, to people that's absurd.  The current version
@@ -40,22 +74,8 @@
 # preceding blank; then "private" is matched, and extended to suck up the
 # following blank; then "Thread" is matched; and finally ndiff reports
 # that "volatile " was inserted before "Thread".  The only quibble
-# remaining is that perhaps it was really the case that " volative"
+# remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
-#
-# NOTE on the output:  From an ndiff report,
-# 1) The first file can be recovered by retaining only lines that begin
-#    with "  " or "- ", and deleting those 2-character prefixes.
-# 2) The second file can be recovered similarly, but by retaining only
-#    "  " and "+ " lines.
-# 3) Lines beginning with "? " attempt to guide the eye to intraline
-#    differences, and were not present in either input file.
-#
-# COROLLARY:
-# On Unix, the second file can be recovered by piping the output through
-#    sed -n '/^[+ ] /s/^..//p'
-# Modifications to recover the first file are left as an exercise for
-# the reader.
 #
 # NOTE on junk:  the module-level names
 #    IS_LINE_JUNK
@@ -70,8 +90,8 @@
 #
 # After setting those, you can call fcompare(f1name, f2name) with the
 # names of the files you want to compare.  The difference report
-# is sent to stdout.  Or you can call main(), which expects to find
-# (exactly) the two file names in sys.argv.
+# is sent to stdout.  Or you can call main(args), passing what would
+# have been in sys.argv[1:] had the cmd-line form been used.
 
 import string
 TRACE = 0
@@ -148,7 +168,7 @@ class SequenceMatcher:
         self.fullbcount = None
         self.__chain_b()
 
-    # for each element x in b, set b2j[x] to a list of the indices in
+    # For each element x in b, set b2j[x] to a list of the indices in
     # b where x appears; the indices are in increasing order; note that
     # the number of times x appears in b is len(b2j[x]) ...
     # when self.isjunk is defined, junk elements don't show up in this
@@ -173,7 +193,7 @@ class SequenceMatcher:
         b = self.b
         self.b2j = b2j = {}
         self.b2jhas = b2jhas = b2j.has_key
-        for i in xrange(0, len(b)):
+        for i in xrange(len(b)):
             elt = b[i]
             if b2jhas(elt):
                 b2j[elt].append(i)
@@ -210,9 +230,9 @@ class SequenceMatcher:
             k >= k'
             i <= i'
             and if i == i', j <= j'
-        In other words, of all maximal matching blocks, returns one
+        In other words, of all maximal matching blocks, return one
         that starts earliest in a, and of all those maximal matching
-        blocks that start earliest in a, returns the one that starts
+        blocks that start earliest in a, return the one that starts
         earliest in b.
 
         If isjunk is defined, first the longest matching block is
@@ -223,7 +243,7 @@ class SequenceMatcher:
         as identical junk happens to be adjacent to an "interesting"
         match.
 
-        If no blocks match, returns (alo, blo, 0).
+        If no blocks match, return (alo, blo, 0).
         """
 
         # CAUTION:  stripping common prefix or suffix would be incorrect.
@@ -238,40 +258,28 @@ class SequenceMatcher:
         # Windiff ends up at the same place as diff, but by pairing up
         # the unique 'b's and then matching the first two 'a's.
 
-        # find longest junk-free match
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.isbjunk
         besti, bestj, bestsize = alo, blo, 0
+        # find longest junk-free match
+        # during an iteration of the loop, j2len[j] = length of longest
+        # junk-free match ending with a[i-1] and b[j]
+        j2len = {}
+        nothing = []
         for i in xrange(alo, ahi):
-            # check for longest match starting at a[i]
-            if i + bestsize >= ahi:
-                # we're too far right to get a new best
-                break
             # look at all instances of a[i] in b; note that because
             # b2j has no junk keys, the loop is skipped if a[i] is junk
-            for j in b2j.get(a[i], []):
+            j2lenget = j2len.get
+            newj2len = {}
+            for j in b2j.get(a[i], nothing):
                 # a[i] matches b[j]
                 if j < blo:
                     continue
-                if j + bestsize >= bhi:
-                    # we're too far right to get a new best, here or
-                    # anywhere to the right
+                if j >= bhi:
                     break
-                if a[i + bestsize] != b[j + bestsize]:
-                    # can't be longer match; this test is not necessary
-                    # for correctness, but is a huge win for efficiency
-                    continue
-                # set k to length of match
-                k = 1   # a[i] == b[j] already known
-                while i + k < ahi and j + k < bhi and \
-                      a[i+k] == b[j+k] and not isbjunk(b[j+k]):
-                    k = k + 1
+                k = newj2len[j] = j2lenget(j-1, 0) + 1
                 if k > bestsize:
-                    besti, bestj, bestsize = i, j, k
-                    if i + bestsize >= ahi:
-                        # only time in my life I really wanted a
-                        # labelled break <wink> -- we're done with
-                        # both loops now
-                        break
+                    besti, bestj, bestsize = i-k+1, j-k+1, k
+            j2len = newj2len
 
         # Now that we have a wholly interesting match (albeit possibly
         # empty!), we may as well suck up the matching junk on each
@@ -293,101 +301,6 @@ class SequenceMatcher:
             print "get_matching_blocks", alo, ahi, blo, bhi
             print "    returns", besti, bestj, bestsize
         return besti, bestj, bestsize
-
-#   A different implementation, using a binary doubling technique that
-#   does far fewer element compares (trades 'em for integer compares),
-#   and has n*lg n worst-case behavior.  Alas, the code is much harder
-#   to follow (the details are tricky!), and in most cases I've seen,
-#   it takes at least 50% longer than the "clever dumb" method above;
-#   probably due to creating layers of small dicts.
-#   NOTE:  this no longer matches the version above wrt junk; remains
-#   too unpromising to update it; someday, though ...
-
-#    def find_longest_match(self, alo, ahi, blo, bhi):
-#        """Find longest matching block in a[alo:ahi] and b[blo:bhi].
-#
-#        Return (i,j,k) such that a[i:i+k] is equal to b[j:j+k], where
-#            alo <= i <= i+k <= ahi
-#            blo <= j <= j+k <= bhi
-#        and for all (i',j',k') meeting those conditions,
-#            k >= k'
-#            i <= i'
-#            and if i == i', j <= j'
-#        In other words, of all maximal matching blocks, returns one
-#        that starts earliest in a, and of all those maximal matching
-#        blocks that start earliest in a, returns the one that starts
-#        earliest in b.
-#
-#        If no blocks match, returns (alo, blo, 0).
-#        """
-#
-#        a, b2j = self.a, self.b2j
-#        # alljs[size][i] is a set of all j's s.t. a[i:i+len] matches
-#        # b[j:j+len]
-#        alljs = {}
-#        alljs[1] = js = {}
-#        ahits = {}
-#        for i in xrange(alo, ahi):
-#            elt = a[i]
-#            if ahits.has_key(elt):
-#                js[i] = ahits[elt]
-#                continue
-#            if b2j.has_key(elt):
-#                in_range = {}
-#                for j in b2j[elt]:
-#                    if j >= blo:
-#                        if j >= bhi:
-#                            break
-#                        in_range[j] = 1
-#                if in_range:
-#                    ahits[elt] = js[i] = in_range
-#        del ahits
-#        size = 1
-#        while js:
-#            oldsize = size
-#            size = size + size
-#            oldjs = js
-#            alljs[size] = js = {}
-#            for i in oldjs.keys():
-#                # i has matches of size oldsize
-#                if not oldjs.has_key(i + oldsize):
-#                    # can't double it
-#                    continue
-#                second_js = oldjs[i + oldsize]
-#                answer = {}
-#                for j in oldjs[i].keys():
-#                    if second_js.has_key(j + oldsize):
-#                        answer[j] = 1
-#                if answer:
-#                    js[i] = answer
-#        del alljs[size]
-#        size = size >> 1    # max power of 2 with a match
-#        if not size:
-#            return alo, blo, 0
-#        besti, bestj, bestsize = alo, blo, 0
-#        fatis = alljs[size].keys()
-#        fatis.sort()
-#        for i in fatis:
-#            # figure out longest match starting at a[i]
-#            totalsize = halfsize = size
-#            # i has matches of len totalsize at the indices in js
-#            js = alljs[size][i].keys()
-#            while halfsize > 1:
-#                halfsize = halfsize >> 1
-#                # is there a match of len halfsize starting at
-#                # i + totalsize?
-#                newjs = []
-#                if alljs[halfsize].has_key(i + totalsize):
-#                    second_js = alljs[halfsize][i + totalsize]
-#                    for j in js:
-#                        if second_js.has_key(j + totalsize):
-#                            newjs.append(j)
-#                if newjs:
-#                    totalsize = totalsize + halfsize
-#                    js = newjs
-#            if totalsize > bestsize:
-#                besti, bestj, bestsize = i, min(js), totalsize
-#        return besti, bestj, bestsize
 
     def get_matching_blocks(self):
         if self.matching_blocks is not None:
@@ -621,7 +534,7 @@ def fopen(fname):
     try:
         return open(fname, 'r')
     except IOError, detail:
-        print "couldn't open " + fname + ": " + `detail`
+        print "couldn't open " + fname + ": " + str(detail)
         return 0
 
 # open two files & spray the diff to stdout; return false iff a problem
@@ -649,24 +562,39 @@ def fcompare(f1name, f2name):
 
     return 1
 
-# get file names from argv & compare; return false iff a problem
-def main():
-    from sys import argv
-    if len(argv) != 3:
-        print 'need 2 args'
+# crack args (sys.argv[1:] is normal) & compare;
+# return false iff a problem
+
+def main(args):
+    import getopt
+    try:
+        opts, args = getopt.getopt(args, "q")
+    except getopt.error, detail:
+        print str(detail)
+        print __doc__
         return 0
-    [f1name, f2name] = argv[1:3]
-    print '-:', f1name
-    print '+:', f2name
+    noisy = 1
+    for opt, val in opts:
+        if opt == "-q":
+            noisy = 0
+    if len(args) != 2:
+        print 'need 2 args'
+        print __doc__
+        return 0
+    f1name, f2name = args
+    if noisy:
+        print '-:', f1name
+        print '+:', f2name
     return fcompare(f1name, f2name)
 
 if __name__ == '__main__':
+    import sys
+    args = sys.argv[1:]
     if 1:
-        main()
+        main(args)
     else:
         import profile, pstats
         statf = "ndiff.pro"
-        profile.run("main()", statf)
+        profile.run("main(args)", statf)
         stats = pstats.Stats(statf)
         stats.strip_dirs().sort_stats('time').print_stats()
-
