@@ -390,7 +390,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 		r = i>j;
 		break;
 	}
-	PyFPE_END_PROTECT(a)
+	PyFPE_END_PROTECT(r)
 	return PyBool_FromLong(r);
 }
 
@@ -852,7 +852,7 @@ PyTypeObject PyFloat_Type = {
 	(printfunc)float_print, 		/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)float_compare, 		/* tp_compare */
+	0, 		/* tp_compare */
 	(reprfunc)float_repr,			/* tp_repr */
 	&float_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
