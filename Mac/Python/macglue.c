@@ -71,11 +71,6 @@ extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
 
 #endif
 
-#ifdef USE_GUSI1
-#include <TFileSpec.h> /* For Path2FSSpec */
-#include <GUSI.h>
-#endif
-
 /* The ID of the Sioux apple menu */
 #define SIOUX_APPLEID	32000
 
@@ -174,11 +169,6 @@ static int upp_inited = 0;
 */
 static PyObject *python_event_handler;
 
-/*
-** Set to true if we're appearance-compliant
-*/
-int PyMac_AppearanceCompliant;
-
 /* Given an FSSpec, return the FSSpec of the parent folder */
 
 static OSErr
@@ -250,29 +240,6 @@ PyMac_GetFullPathname (FSSpec *fss, char *buf, int length)
         return 0;
 }
 
-#ifdef USE_GUSI1
-/*
-** GUSI (1.6.0 and earlier, at the least) do not set the MacOS idea of
-** the working directory. Hence, we call this routine after each call
-** to chdir() to rectify things.
-*/
-void
-PyMac_FixGUSIcd()
-{
-	WDPBRec pb;
-	FSSpec curdirfss;
-	
-	if ( Path2FSSpec(":x", &curdirfss) != noErr ) 
-		return;
-	
-	/* Set MacOS "working directory" */
-	pb.ioNamePtr= "\p";
-	pb.ioVRefNum= curdirfss.vRefNum;
-	pb.ioWDDirID= curdirfss.parID;
-	if (PBHSetVolSync(&pb) != noErr)
-		return;
-}
-#endif
 
 #ifdef USE_GUSI
 /*
@@ -282,48 +249,6 @@ PyMac_FixGUSIcd()
 void SpinCursor(short x) { /* Dummy */ }
 void RotateCursor(short x) { /* Dummy */ }
 
-/*
-** Replacement GUSI Spin function
-*/
-#ifdef USE_GUSI1
-static int
-PyMac_GUSISpin(spin_msg msg, long arg)
-{
-	static Boolean	inForeground = true;
-	int		maxsleep = 6;	/* 6 ticks is "normal" sleeptime */
-
-	if (PyMac_ConsoleIsDead) return 0;
-#if 0
-	if (inForeground)
-		SpinCursor(msg == SP_AUTO_SPIN ? short(arg) : 1);
-#endif
-
-
-	if ( msg == SP_AUTO_SPIN )
-		maxsleep = 0;
-	if ( msg==SP_SLEEP||msg==SP_SELECT ) {
-		maxsleep = arg;
-		/*
-		** We force-scan for interrupts. Not pretty, but otherwise
-		** a program may hang in select or sleep forever.
-		*/
-		scan_event_queue(1);
-	}
-	if (interrupted) {
-		interrupted = 0;
-		return -1;
-	}
-
-	PyMac_DoYield(maxsleep, 0); /* XXXX or is it safe to call python here? */
-
-	return 0;
-}
-
-void
-PyMac_SetGUSISpin() {
-	GUSISetHook(GUSI_SpinHook, (GUSIHook)PyMac_GUSISpin);
-}
-#endif
 
 /* Called at exit() time thru atexit(), to stop event processing */
 void
@@ -440,11 +365,6 @@ PyOS_CheckStack()
 	if ( &here < sentinel ) {
 		if (thread_for_sentinel == PyThreadState_Get()) {
 			return -1;
-#if 0
-		} else {
-			/* Else we are unsure... */
-			fprintf(stderr, "Stackcheck in other thread (was %x now %x)\n", thread_for_sentinel,PyThreadState_Get()); 
-#endif
 		}
 	}
 	return 0;
@@ -735,15 +655,7 @@ PyMac_InitMenuBar()
 	static unsigned char about_sioux[] = "\pAbout SIOUX";
 	
 	if ( sioux_mbar ) return;
-#if 0
-	/* This code does not seem to work anymore: apparently
-	** we now always have a menubar (since MacOS9?).
-	** So we simply always setup the Sioux menus here.
-	*/
-	if ( (sioux_mbar=GetMenuBar()) == NULL )  {
-#else
 	if ( (sioux_mbar=GetMenuBar()) == NULL || GetMenuHandle(SIOUX_APPLEID) == NULL)  {
-#endif
 		/* Sioux menu not installed yet. Do so */
 		SIOUXSetupMenus();
 		if ( (sioux_mbar=GetMenuBar()) == NULL )
@@ -762,8 +674,6 @@ PyMac_InitMenuBar()
 void
 PyMac_RestoreMenuBar()
 {
-#if 1
-	/* This doesn't seem to work anymore? Or only for Carbon? */
 	MenuBarHandle curmenubar;
 	
 	curmenubar = GetMenuBar();
@@ -774,7 +684,6 @@ PyMac_RestoreMenuBar()
 		PyMac_InitMenuBar();
 		DrawMenuBar();
 	}
-#endif
 }
 
 void
