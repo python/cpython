@@ -155,7 +155,7 @@ the file; if the operation takes too long, the alarm signal will be
 sent, and the handler raises an exception.
 
 \begin{verbatim}
-import signal, os, FCNTL
+import signal, os
 
 def handler(signum, frame):
     print 'Signal handler called with signal', signum
@@ -166,7 +166,7 @@ signal.signal(signal.SIGALRM, handler)
 signal.alarm(5)
 
 # This open() may hang indefinitely
-fd = os.open('/dev/ttyS0', FCNTL.O_RDWR)  
+fd = os.open('/dev/ttyS0', os.O_RDWR)  
 
 signal.alarm(0)          # Disable the alarm
 \end{verbatim}
