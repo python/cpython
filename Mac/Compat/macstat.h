@@ -20,9 +20,9 @@ struct macstat {
 	char st_creator[4]; /* File creator, e.g. 'PYTH' */
 };
 
-#define S_IFMT	0170000L
-#define S_IFDIR	0040000L
-#define S_IFREG 0100000L
+#define S_IFMT	0170000
+#define S_IFDIR	0040000
+#define S_IFREG 0100000
 #define S_IREAD    0400
 #define S_IWRITE   0200
 #define S_IEXEC    0100
