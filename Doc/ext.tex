@@ -356,13 +356,16 @@ function.  It should normally always be \samp{METH_VARARGS} or
 \samp{METH_VARARGS | METH_KEYWORDS}; a value of \samp{0} means that an
 obsolete variant of \code{PyArg_ParseTuple()} is used.
 
+When using only \samp{METH_VARARGS}, the function should expect
+the Python-level parameters to be passed in as a tuple acceptable for
+parsing via \cfunction{PyArg_ParseTuple()}; more information on this
+function is provided below.
+
 The \code{METH_KEYWORDS} bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the \C{}
 function should accept a third \samp{PyObject *} parameter which will
 be a dictionary of keywords.  Use \code{PyArg_ParseTupleAndKeywords()} 
 to parse the arguemts to such a function.
-
-XXX --- need to explain PyArg_ParseTupleAndKeywords() in detail.
 
 The method table must be passed to the interpreter in the module's
 initialization function (which should be the only non-\code{static}
@@ -621,6 +624,9 @@ Convert a Python floating point number to a \C{} \code{float}.
 \item[\samp{d} (float) {[double]}]
 Convert a Python floating point number to a \C{} \code{double}.
 
+\item[\samp{D} (complex) {[Py_complex]}]
+Convert a Python complex number to a \C{} \code{Py_complex} structure.
+
 \item[\samp{O} (object) {[PyObject *]}]
 Store a Python object (without any conversion) in a \C{} object pointer.
 The \C{} program thus receives the actual object that was passed.  The
@@ -736,8 +742,85 @@ Some example calls:
                  /* Possible Python call:
                     f(((0, 0), (400, 300)), (10, 10)) */
     }
+
+    {
+        Py_complex c;
+        ok = PyArg_ParseTuple(args, "D:myfunction", &c);
+        /* a complex, also providing a function name for errors */
+        /* Possible Python call: myfunction(1+2j) */
+    }
 \end{verbatim}
-%
+
+
+\section{Keyword Parsing with \sectcode{PyArg_ParseTupleAndKeywords()}}
+
+The \cfunction{PyArg_ParseTupleAndKeywords()} function is declared as
+follows:
+
+\bcode\begin{verbatim}
+    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
+                                    char *format, char **kwlist, ...);
+\end{verbatim}\ecode
+
+The \var{arg} and \var{format} parameters are identical to those of the
+\cfunction{PyArg_ParseTuple()} function.  The \var{kwdict} parameter
+is the dictionary of keywords received as the third parameter from the 
+Python runtime.  The \var{kwlist} parameter is a \NULL{}-terminated
+list of strings which identify the parameters; the names are matched
+with the type information from \var{format} from left to right.
+
+\strong{Note:}  Nested tuples cannot be parsed when using keyword
+arguments!  Keyword parameters passed in which are not present in the
+\var{kwlist} will cause a \exception{TypeError} to be raised.
+
+Here is an example module which uses keywords, based on an example by
+Geoff Philbrick (\email{philbrick@hks.com}):
+
+\begin{verbatim}
+#include <stdio.h>
+#include "Python.h"
+
+static PyObject *
+keywdarg_parrot(self, args, keywds)
+    PyObject *self;
+    PyObject *args;
+    PyObject *keywds;
+{  
+    int voltage;
+    char *state = "a stiff";
+    char *action = "voom";
+    char *type = "Norwegian Blue";
+
+    static char *kwlist[] = {"voltage", "state", "action", "type", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|sss", kwlist, 
+                                     &voltage, &state, &action, &type))
+        return NULL; 
+  
+    printf("-- This parrot wouldn't %s if you put %i Volts through it.\n", 
+           action, voltage);
+    printf("-- Lovely plumage, the %s -- It's %s!\n", type, state);
+
+    Py_INCREF(Py_None);
+
+    return Py_None;
+}
+
+static PyMethodDef keywdarg_methods[] = {
+    {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS|METH_KEYWORDS},
+    {NULL,  NULL}   /* sentinel */
+};
+
+void
+initkeywdarg()
+{
+  /* Create the module and add the functions */
+  Py_InitModule("keywdarg", keywdarg_methods);  
+  
+}
+\end{verbatim}
+
+
 \section{The \sectcode{Py_BuildValue()} Function}
 
 This function is the counterpart to \code{PyArg_ParseTuple()}.  It is
