@@ -243,10 +243,13 @@ def parse_multipart(fp, pdict):
     point in having two implementations of the same parsing algorithm.
 
     """
+    boundary = ""
     if pdict.has_key('boundary'):
         boundary = pdict['boundary']
-    else:
-        boundary = ""
+    if not valid_boundary(boundary):
+        raise ValueError,  ('Invalid boundary in multipart form: %s' 
+                            % `ib`)
+    
     nextpart = "--" + boundary
     lastpart = "--" + boundary + "--"
     partdict = {}
@@ -595,14 +598,18 @@ class FieldStorage:
 
     def read_multi(self, environ, keep_blank_values, strict_parsing):
         """Internal: read a part that is itself multipart."""
+        ib = self.innerboundary
+        if not valid_boundary(ib):
+            raise ValueError, ('Invalid boundary in multipart form: %s' 
+                               % `ib`)
         self.list = []
         klass = self.FieldStorageClass or self.__class__
-        part = klass(self.fp, {}, self.innerboundary,
+        part = klass(self.fp, {}, ib,
                      environ, keep_blank_values, strict_parsing)
         # Throw first part away
         while not part.done:
             headers = rfc822.Message(self.fp)
-            part = klass(self.fp, headers, self.innerboundary,
+            part = klass(self.fp, headers, ib,
                          environ, keep_blank_values, strict_parsing)
             self.list.append(part)
         self.skip_lines()
@@ -999,6 +1006,9 @@ def escape(s, quote=None):
         s = s.replace('"', "&quot;")
     return s
 
+def valid_boundary(s, _vb_pattern="^[ -~]{0,200}[!-~]$"):
+    import re
+    return re.match(_vb_pattern, s)
 
 # Invoke mainline
 # ===============
