@@ -169,4 +169,6 @@ typedef struct PyMac_PrefRecord {
 /* From macgetpath.c: */
 void PyMac_PreferenceOptions(PyMac_PrefRecord *);
 char * PyMac_GetPythonDir(void);
+/* from macmain.c: */
+extern PyMac_PrefRecord PyMac_options;
 #endif
