@@ -840,15 +840,15 @@ def make_incrementor(increment):
 expression_list:      expression ("," expression)* [","]
 \end{verbatim}
 
-An expression (expression) list containing at least one comma yields a
+An expression list containing at least one comma yields a
 tuple.  The length of the tuple is the number of expressions in the
 list.  The expressions are evaluated from left to right.
 \obindex{tuple}
 
 The trailing comma is required only to create a single tuple (a.k.a. a
 \emph{singleton}); it is optional in all other cases.  A single
-expression (expression) without a trailing comma doesn't create a
-tuple, but rather yields the value of that expression (expression).
+expression without a trailing comma doesn't create a
+tuple, but rather yields the value of that expression.
 (To create an empty tuple, use an empty pair of parentheses:
 \code{()}.)
 \indexii{trailing}{comma}
