@@ -140,7 +140,8 @@ def module_funcs(stdscr):
         func()
 
     # Functions that actually need arguments
-    curses.curs_set(1)
+    if curses.tigetstr("cnorm"):
+        curses.curs_set(1)
     curses.delay_output(1)
     curses.echo() ; curses.echo(1)
 
@@ -181,8 +182,8 @@ def module_funcs(stdscr):
         curses.pair_content(curses.COLOR_PAIRS)
         curses.pair_number(0)
 
-    if hasattr(curses, 'use_default_colors'):
-        curses.use_default_colors()
+        if hasattr(curses, 'use_default_colors'):
+            curses.use_default_colors()
 
     if hasattr(curses, 'keyname'):
         curses.keyname(13)
