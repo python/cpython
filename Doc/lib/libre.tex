@@ -802,10 +802,6 @@ The string passed to \function{match()} or \function{search()}.
 
 \subsection{Examples}
 
-%\begin{list}{}{\leftmargin 0.7in \labelwidth 0.65in}
-
-%\item[Simulating scanf]
-
 \leftline{\strong{Simulating \cfunction{scanf()}}}
 
 Python does not currently have an equivalent to \cfunction{scanf()}.
@@ -851,7 +847,27 @@ you would use a \cfunction{scanf()} format like
 The equivalent regular expression would be
 
 \begin{verbatim}
-    ([^\s]+) - (\d+) errors, (\d+) warnings
+    (\S+) - (\d+) errors, (\d+) warnings
 \end{verbatim}
 
-%\end{list}
+\leftline{\strong{Avoiding backtracking}}
+
+If you create regular expressions that require the engine to perform a lot
+of backtracking, you may encounter a RuntimeError exception with the message
+\code{maximum recursion limit exceeded}.  For example,
+
+\begin{verbatim}
+    >>> s = "<" + "that's a very big string!"*1000 + ">"
+    >>> re.match('<.*?>', s)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in ?
+      File "/usr/local/lib/python2.3/sre.py", line 132, in match
+	return _compile(pattern, flags).match(string)
+    RuntimeError: maximum recursion limit exceeded
+\end{verbatim}
+
+You can often restructure your regular expression to avoid backtracking.
+The above regular expression can be recast as \regexp{\textless
+[\textasciicircum \textgreater]*\textgreater}.  As a further
+benefit, such regular expressions will run faster than their backtracking
+equivalents.
