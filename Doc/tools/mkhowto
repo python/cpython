@@ -13,6 +13,7 @@ Options specifying formats to build:
 
 HTML options:
     --address, -a	Specify an address for page footers.
+    --dir		Specify the directory for HTML output.
     --link		Specify the number of levels to include on each page.
     --split, -s		Specify a section level for page splitting, default: %(max_split_depth)s.
     --iconserver, -i	Specify location of icons (default: ./).
