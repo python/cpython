@@ -578,6 +578,8 @@ def makedirs(dir):
 
 def symlink(src, dst, mkdirs=0):
 	"""Copy a file or a directory."""
+	if not os.path.exists(src):
+		raise IOError, "No such file or directory: '%s'" % src
 	if mkdirs:
 		makedirs(os.path.dirname(dst))
 	os.symlink(os.path.abspath(src), dst)
