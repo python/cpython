@@ -1,7 +1,7 @@
 /* "allobjects.c" -- Source for precompiled header "allobjects.h" */
 
 #include <stdio.h>
-#include "string.h"
+#include <string.h>
 
 #include "PROTO.h"
 
