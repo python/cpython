@@ -901,13 +901,18 @@ def dynamics():
         __dynamic__ = 1
     verify("a"*I(2) == "aa")
     verify(I(2)*"a" == "aa")
+    verify(2*I(3) == 6)
+    verify(I(3)*2 == 6)
+    verify(I(3)*I(2) == 6)
 
     # Test handling of long*seq and seq*long
     class L(long):
         __dynamic__ = 1
     verify("a"*L(2L) == "aa")
     verify(L(2L)*"a" == "aa")
-    
+    verify(2*L(3) == 6)
+    verify(L(3)*2 == 6)
+    verify(L(3)*L(2) == 6)
 
 def errors():
     if verbose: print "Testing errors..."
