@@ -12,6 +12,8 @@ import _sre
 
 from sre_constants import *
 
+assert _sre.MAGIC == MAGIC, "SRE module mismatch"
+
 MAXCODE = 65535
 
 def _compile(code, pattern, flags):
