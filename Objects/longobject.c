@@ -499,6 +499,8 @@ PyLong_FromString(str, pend, base)
 		Py_DECREF(z);
 		z = temp;
 	}
+	if (z == NULL)
+		return NULL;
 	if (str == start) {
 		PyErr_SetString(PyExc_ValueError,
 				"no digits in long int constant");
