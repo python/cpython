@@ -876,7 +876,8 @@ class CCompiler:
     #     extension for executable files, eg. '' or '.exe'
 
     def object_filenames(self, source_filenames, strip_dir=0, output_dir=''):
-        assert output_dir is not None
+        if output_dir is None:
+            output_dir = ''
         obj_names = []
         for src_name in source_filenames:
             base, ext = os.path.splitext(src_name)
