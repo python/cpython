@@ -101,6 +101,12 @@ DESTSHARED=	$(BINLIBDEST)/lib-dynload
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		@EXEEXT@
 
+# Short name and location for Mac OS X Python framework
+PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
+PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
+PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
+PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
+
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
 DIRMODE=	755
@@ -126,7 +132,9 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 
 LIBRARY=	@LIBRARY@
 LDLIBRARY=      @LDLIBRARY@
+BLDLIBRARY=     @BLDLIBRARY@
 DLLLIBRARY=	@DLLLIBRARY@
+LDLIBRARYDIR=   @LDLIBRARYDIR@
 
 
 LIBS=		@LIBS@
@@ -280,7 +288,7 @@ all:		$(PYTHON) oldsharedmods sharedmods
 $(PYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
 			Modules/$(MAINOBJ) \
-			$(LDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
+			$(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(PYTHON)
 	./$(PYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
@@ -329,7 +337,7 @@ libpython$(VERSION).so:	$(LIBRARY)
 	esac
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX
-libpython$(VERSION).dylib: $(LIBRARY)
+$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHONFRAMEWORKDIR)
 	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
 		-framework System @LIBTOOL_CRUFT@ 
 
@@ -631,6 +639,7 @@ $(srcdir)/Lib/$(PLATDIR):
 	cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen
 	export PATH; PATH="`pwd`:$$PATH"; \
 	export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
+	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
 	export EXE; EXE="$(EXE)"; \
 	cd $(srcdir)/Lib/$(PLATDIR); ./regen
 
@@ -665,8 +674,12 @@ libainstall:	all
 		fi; \
 	done
 	@if test -d $(LDLIBRARY); then :; else \
-		$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL)/$(LDLIBRARY) ; \
-		$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
+		if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+			$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL)/$(LDLIBRARY) ; \
+			$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
+		else \
+			echo Skip install of $(LDLIBRARY) - use make frameworkinstall; \
+		fi; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
 	$(INSTALL_DATA) Modules/$(MAINOBJ) $(LIBPL)/$(MAINOBJ)
@@ -711,6 +724,64 @@ sharedinstall:
 	./$(PYTHON) -E $(srcdir)/setup.py install \
 		--install-platlib=$(DESTSHARED)
 
+# Install a MacOSX framework During build (before
+# setup.py), make a minimal Python.framework directory structure in the build
+# directory. This framework is minimal, it doesn't contain the Lib directory
+# and such, but together with some magic in Modules/getpath.c it is good enough
+# to run python from the install dir.
+
+FRAMEWORKDEST=$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
+RESSRCDIR=$(srcdir)/Mac/OSXResources/framework
+$(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
+                $(RESSRCDIR)/version.plist \
+                $(RESSRCDIR)/English.lproj/InfoPlist.strings
+	@if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+		echo Not configured with --enable-framework; \
+		exit; \
+	else true; \
+	fi
+	$(INSTALL) -d -m $(DIRMODE)  $(FRAMEWORKDEST)/Resources/English.lproj
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKDEST)/Resources/Info.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKDEST)/Resources/version.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
+		$(FRAMEWORKDEST)/Resources/English.lproj/InfoPlist.strings
+	$(LN) -fs $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
+	$(LN) -fs Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
+	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
+	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
+	
+# On install, we re-make the framework
+# structure in the install location, /Library/Frameworks/ or the argument to
+# --enable-framework. If --enable-framework has been specified then we have
+# automatically set prefix to the location deep down in the framework, so we
+# only have to cater for the structural bits of the framework.
+
+frameworkinstall: install frameworkinfrastructureinstall
+FRAMEWORKFINALDEST=$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)
+frameworkinfrastructureinstall:	$(LDLIBRARY)
+	@if test -z "$(PYTHONFRAMEWORKDIR)"; then \
+		echo Not configured with --enable-framework; \
+		exit; \
+	else true; \
+	fi
+	@for i in $(FRAMEWORKFINALDEST)/Resources/English.lproj $(FRAMEWORKFINALDEST)/lib; do\
+		if test ! -d $$i; then \
+			echo "Creating directory $$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
+		else	true; \
+		fi; \
+	done
+	$(LN) -sf $(FRAMEWORKFINALDEST)/Headers $(INCLUDEPY)
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKFINALDEST)/Resources/Info.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKFINALDEST)/Resources/version.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
+		$(FRAMEWORKFINALDEST)/Resources/English.lproj/InfoPlist.strings
+	$(LN) -fs $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
+	$(LN) -fs Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
+	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
+	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
+	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+		
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
