@@ -289,7 +289,13 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
-        for service in ('echo', 'daytime', 'domain'):
+        if sys.platform in ('freebsd4', 'freebsd5'):
+            # avoid the 'echo' service on this platform, as there is an
+            # assumption breaking non-standard port/protocol entry
+            services = ('daytime', 'qotd', 'domain')
+        else:
+            services = ('echo', 'daytime', 'domain')
+        for service in services:
             try:
                 port = socket.getservbyname(service, 'tcp')
                 break
