@@ -331,7 +331,8 @@ def compileevent(fp, event):
 		if is_enum(a[2]):
 			kname = a[1]
 			ename = a[2][0]
-			fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
+			if ename <> '****':
+				fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
 					(`kname`, ename))
 	fp.write("\n")
 	#
