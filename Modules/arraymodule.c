@@ -1133,6 +1133,29 @@ Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
 4, or 8 bytes in size, RuntimeError is raised.");
 
 static PyObject *
+array_reduce(arrayobject *array)
+{
+	PyObject *dict, *result;
+
+	dict = PyObject_GetAttrString((PyObject *)array, "__dict__");
+	if (dict == NULL) {
+		PyErr_Clear();
+		dict = Py_None;
+		Py_INCREF(dict);
+	}
+	result = Py_BuildValue("O(cs#)O", 
+		array->ob_type, 
+		array->ob_descr->typecode,
+		array->ob_item,
+		array->ob_size * array->ob_descr->itemsize,
+		dict);
+	Py_DECREF(dict);
+	return result;
+}
+
+PyDoc_STRVAR(array_doc, "Return state information for pickling.");
+
+static PyObject *
 array_reverse(arrayobject *self, PyObject *unused)
 {
 	register int itemsize = self->ob_descr->itemsize;
@@ -1490,6 +1513,8 @@ PyMethodDef array_methods[] = {
 	 pop_doc},
 	{"read",	(PyCFunction)array_fromfile,	METH_VARARGS,
 	 fromfile_doc},
+	{"__reduce__",	(PyCFunction)array_reduce,	METH_NOARGS,
+	 array_doc},
 	{"remove",	(PyCFunction)array_remove,	METH_O,
 	 remove_doc},
 	{"reverse",	(PyCFunction)array_reverse,	METH_NOARGS,
