@@ -564,8 +564,8 @@ if type(dictlike().fromkeys('a')) is not dictlike:
     raise TestFailed, 'dictsubclass.fromkeys created wrong type'
 from UserDict import UserDict
 class mydict(dict):
-    def __new__(cls, *args, **kwargs):
-        return UserDict(*args, **kwargs)
+    def __new__(cls):
+        return UserDict()
 ud = mydict.fromkeys('ab')
 if ud != {'a':None, 'b':None} or not isinstance(ud,UserDict):
     raise TestFailed, 'fromkeys did not instantiate using  __new__'
