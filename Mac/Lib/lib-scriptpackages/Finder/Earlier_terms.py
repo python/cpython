@@ -107,7 +107,6 @@ class scriptable(aetools.NProperty):
 class container_window(aetools.ComponentItem):
 	"""container window - A window that contains items """
 	want = 'cwnd'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the window class
 class container(aetools.NProperty):
 	"""container - the container from which the window was opened """
 	which = 'ctnr'
@@ -198,8 +197,6 @@ internet_locations = internet_location
 class information_window(aetools.ComponentItem):
 	"""information window - An information window (opened by ³Get Info²) """
 	want = 'iwnd'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the window class
-# repeated property item the item from which this window was opened
 class comment(aetools.NProperty):
 	"""comment - the comment """
 	which = 'comt'
@@ -220,9 +217,6 @@ class modification_date(aetools.NProperty):
 	"""modification date - the date on which the item was last modified """
 	which = 'asmo'
 	want = 'ldt '
-# repeated property suggested_partition_size the memory size with which the developer recommends the application be launched
-# repeated property minimum_partition_size the smallest memory size with which the application can be launched (only applies to information windows for applications)
-# repeated property partition_size the memory size with which the application will be launched (only applies to information windows for applications)
 class icon(aetools.NProperty):
 	"""icon - the icon bitmap of the item """
 	which = 'iimg'
@@ -239,14 +233,10 @@ class warn_before_emptying(aetools.NProperty):
 	"""warn before emptying - Display a dialog when emptying the trash (only valid for trash info window)? """
 	which = 'warn'
 	want = 'bool'
-# repeated property product_version the version of the product (visible at the top of the ³Get Info² window)
-# repeated property version the version of the file (visible at the bottom of the ³Get Info² window)
 
 class item(aetools.ComponentItem):
 	"""item - An item """
 	want = 'cobj'
-# repeated property properties property that allows getting and setting of multiple properties
-# repeated property name the name of the item
 class index(aetools.NProperty):
 	"""index - the index in the front-to-back ordering within its container """
 	which = 'pidx'
@@ -255,7 +245,6 @@ class id(aetools.NProperty):
 	"""id - an id that identifies the item """
 	which = 'ID  '
 	want = 'long'
-# repeated property container the container of the item
 class disk(aetools.NProperty):
 	"""disk - the disk on which the item is stored """
 	which = 'cdis'
@@ -284,12 +273,6 @@ class description(aetools.NProperty):
 	"""description - a description of the item """
 	which = 'dscr'
 	want = 'itxt'
-# repeated property comment the comment of the item, displayed in the ³Get Info² window
-# repeated property size the logical size of the item
-# repeated property physical_size the actual space used by the item on disk
-# repeated property creation_date the date on which the item was created
-# repeated property modification_date the date on which the item was last modified
-# repeated property icon the icon bitmap of the item
 class selected(aetools.NProperty):
 	"""selected - Is the item selected? """
 	which = 'issl'
@@ -310,10 +293,6 @@ class information_window(aetools.NProperty):
 class process(aetools.ComponentItem):
 	"""process - A process running on this computer """
 	want = 'prcs'
-# repeated property properties property that allows getting and setting of multiple properties
-# repeated property name the name of the process
-# repeated property visible Is the process' layer visible?
-# repeated property frontmost Is the process the frontmost process?
 class file(aetools.NProperty):
 	"""file - the file from which the process was launched """
 	which = 'file'
@@ -326,12 +305,10 @@ class creator_type(aetools.NProperty):
 	"""creator type - the OSType of the creator of the process (the signature) """
 	which = 'fcrt'
 	want = 'type'
-# repeated property scriptable Is the process high-level event aware (accepts open application, open document, print document, and quit)?
 class remote_events(aetools.NProperty):
 	"""remote events - Does the process accept remote events? """
 	which = 'revt'
 	want = 'bool'
-# repeated property partition_size the size of the partition with which the process was launched
 class partition_space_used(aetools.NProperty):
 	"""partition space used - the number of bytes currently used in the process' partition """
 	which = 'pusd'
@@ -340,7 +317,6 @@ class partition_space_used(aetools.NProperty):
 class sharable_container(aetools.ComponentItem):
 	"""sharable container - A container that may be shared (disks and folders) """
 	want = 'sctr'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the container class
 class owner(aetools.NProperty):
 	"""owner - the user that owns the container (file sharing must be on to use this property) """
 	which = 'sown'
@@ -385,30 +361,18 @@ class protected(aetools.NProperty):
 class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the ³trash² object """
 	want = 'ctrs'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the container class
-# repeated property warn_before_emptying Display a dialog when emptying the trash?
 
 class preferences(aetools.ComponentItem):
 	"""preferences - The Finder Preferences """
 	want = 'cprf'
-# repeated property window the window that would open if Finder preferences was opened
-# repeated property calculate_folder_sizes Are folder sizes calculated and displayed in Finder list view windows?
 class delay_before_springing(aetools.NProperty):
 	"""delay before springing - the delay before springing open a container in ticks (1/60th of a second) (12 is shortest delay, 60 is longest delay) """
 	which = 'dela'
 	want = 'shor'
-# repeated property show_comments Are comments displayed in default Finder list view windows?
-# repeated property show_creation_date Are creation dates displayed in default Finder list view windows?
-# repeated property show_kind Are document kinds displayed in default Finder list view windows?
-# repeated property show_label Are labels displayed in default Finder list view windows?
-# repeated property show_modification_date Are modification dates displayed in default Finder list view windows?
-# repeated property show_size Are file sizes displayed in default Finder list view windows?
-# repeated property show_version Are file versions displayed in default Finder list view windows?
 class spring_open_folders(aetools.NProperty):
 	"""spring open folders - Spring open folders after the specified delay? """
 	which = 'sprg'
 	want = 'bool'
-# repeated property use_relative_dates Are relative dates (e.g., today, yesterday) shown  in Finder list view windows?
 class use_simple_menus(aetools.NProperty):
 	"""use simple menus - Use simplified Finder menus? """
 	which = 'usme'
@@ -421,15 +385,10 @@ class use_wide_grid(aetools.NProperty):
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
-# repeated property properties property that allows getting and setting of multiple properties
-# repeated property position the upper left position of the window
-# repeated property bounds the boundary rectangle for the window
 class titled(aetools.NProperty):
 	"""titled - Does the window have a title bar? """
 	which = 'ptit'
 	want = 'bool'
-# repeated property name the name of the window
-# repeated property index the number of the window in the front-to-back layer ordering
 class closeable(aetools.NProperty):
 	"""closeable - Does the window have a close box? """
 	which = 'hclb'
@@ -442,7 +401,8 @@ class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
-# repeated property resizable Is the window resizable?
+
+resizable = titled
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
@@ -455,7 +415,6 @@ class zoomed_full_size(aetools.NProperty):
 	"""zoomed full size - Is the window zoomed to the full size of the screen? (can only be set, not read, and only applies to open non-pop-up windows) """
 	which = 'zumf'
 	want = 'bool'
-# repeated property visible Is the window visible (always true for open Finder windows)?
 class popup(aetools.NProperty):
 	"""popup - Is the window is a pop-up window? (only applies to open container windows in the Finder and can only be set when the Finder is the front application) """
 	which = 'drwr'

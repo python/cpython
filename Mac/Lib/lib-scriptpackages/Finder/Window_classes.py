@@ -50,7 +50,8 @@ class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
-# repeated property resizable Is the window resizable?
+
+resizable = titled
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
@@ -163,8 +164,6 @@ container_windows = container_window
 class information_window(aetools.ComponentItem):
 	"""information window - An information window (opened by ³Get Info²) """
 	want = 'iwnd'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the window class
-# repeated property item the item from which this window was opened
 class current_panel(aetools.NProperty):
 	"""current panel - the current panel in the information window """
 	which = 'panl'
@@ -231,13 +230,10 @@ information_windows = information_window
 class preferences_window(aetools.ComponentItem):
 	"""preferences window - The Finder Preferences window """
 	want = 'pwnd'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the window class
-# repeated property current_panel The current panel in the Finder preferences window
 
 class clipping_window(aetools.ComponentItem):
 	"""clipping window - The window containing a clipping """
 	want = 'lwnd'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the window class
 
 clipping_windows = clipping_window
 

@@ -52,7 +52,6 @@ files = file
 class alias_file(aetools.ComponentItem):
 	"""alias file - An alias file (created with ³Make Alias²) """
 	want = 'alia'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 class original_item(aetools.NProperty):
 	"""original item - the original item pointed to by the alias """
 	which = 'orig'
@@ -63,7 +62,6 @@ alias_files = alias_file
 class application_file(aetools.ComponentItem):
 	"""application file - An application's file on disk """
 	want = 'appf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 class suggested_size(aetools.NProperty):
 	"""suggested size - the memory size with which the developer recommends the application be launched """
 	which = 'sprt'
@@ -90,28 +88,24 @@ application_files = application_file
 class document_file(aetools.ComponentItem):
 	"""document file - A document file """
 	want = 'docf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 
 document_files = document_file
 
 class font_file(aetools.ComponentItem):
 	"""font file - A font file """
 	want = 'fntf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 
 font_files = font_file
 
 class desk_accessory_file(aetools.ComponentItem):
 	"""desk accessory file - A desk accessory file """
 	want = 'dafi'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 
 desk_accessory_files = desk_accessory_file
 
 class internet_location_file(aetools.ComponentItem):
 	"""internet location file - An file containing an internet location """
 	want = 'inlf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 class location(aetools.NProperty):
 	"""location - the internet location """
 	which = 'iloc'
@@ -122,7 +116,6 @@ internet_location_files = internet_location_file
 class sound_file(aetools.ComponentItem):
 	"""sound file - A sound file """
 	want = 'sndf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 class sound(aetools.NProperty):
 	"""sound - the sound data """
 	which = 'snd '
@@ -133,21 +126,18 @@ sound_files = sound_file
 class clipping(aetools.ComponentItem):
 	"""clipping - A clipping """
 	want = 'clpf'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 
 clippings = clipping
 
 class package(aetools.ComponentItem):
 	"""package - A package """
 	want = 'pack'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the item class
 
 packages = package
 
 class suitcase(aetools.ComponentItem):
 	"""suitcase - A font or desk accessory suitcase """
 	want = 'stcs'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the file class
 #        element 'cobj' as ['indx', 'name']
 
 suitcases = suitcase
@@ -155,7 +145,6 @@ suitcases = suitcase
 class font_suitcase(aetools.ComponentItem):
 	"""font suitcase - A font suitcase """
 	want = 'fsut'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the suitcase class
 #        element 'cobj' as ['indx', 'name']
 
 font_suitcases = font_suitcase
@@ -163,7 +152,6 @@ font_suitcases = font_suitcase
 class desk_accessory_suitcase(aetools.ComponentItem):
 	"""desk accessory suitcase - A desk accessory suitcase """
 	want = 'dsut'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the suitcase class
 #        element 'cobj' as ['indx', 'name']
 
 desk_accessory_suitcases = desk_accessory_suitcase

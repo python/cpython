@@ -315,8 +315,8 @@ class Standard_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-# XXXX enum list not found!!
-# XXXX enum bool not found!!
+_Enum_list = None # XXXX enum list not found!!
+_Enum_bool = None # XXXX enum bool not found!!
 
 #
 # Indices of types declared in this module

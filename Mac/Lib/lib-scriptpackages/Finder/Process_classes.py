@@ -82,7 +82,6 @@ application_processes = application_process
 class desk_accessory_process(aetools.ComponentItem):
 	"""desk accessory process - A process launched from a desk accessory file """
 	want = 'pcda'
-# repeated property _3c_Inheritance_3e_ inherits some of its properties from the process class
 class desk_accessory_file(aetools.NProperty):
 	"""desk accessory file - the desk accessory file from which this process was launched """
 	which = 'dafi'

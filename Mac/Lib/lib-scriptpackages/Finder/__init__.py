@@ -3,6 +3,7 @@ Package generated from Macintosh HD:Systeemmap:Finder
 Resource aete resid 0 
 """
 import aetools
+Error = aetools.Error
 import Standard_Suite
 import Earlier_terms
 import Finder_Basics
