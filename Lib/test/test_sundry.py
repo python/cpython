@@ -30,7 +30,6 @@ import doctest
 import dumbdbm
 import encodings
 import filecmp
-import fileinput
 import fnmatch
 import formatter
 import fpformat
