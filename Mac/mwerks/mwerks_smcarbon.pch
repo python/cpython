@@ -1,0 +1,7 @@
+#pragma once on
+
+#pragma precompile_target "mwerks_smcarbon_pch"
+
+#include "mwerks_smcarbon_config.h"
+#include <Carbon.h>
+#include "Python.h"
