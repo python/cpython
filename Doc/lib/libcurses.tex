@@ -860,6 +860,32 @@ representing the desired state of the window, but does not force
 an update of the physical screen.
 \end{methoddesc}
 
+\begin{methoddesc}{overlay}{destwin\optional{, sminrow, smincol,
+      dminrow, dmincol, dmaxrow, dmaxcol}}
+Overlay the window on top of \var{destwin}. The windows need not be
+the same size, only the overlapping region is copied. This copy is
+non-destructive, which means that the current background character
+does not overwrite the old contents of \var{destwin}.
+
+To get fine-grained control over the copied region, the second form
+of \method{overlay} can be used. \var{sminrow} and \var{smincol} are
+the upper-left coordinates of the source window, and the other variables
+mark a rectangle in the destination window.
+\end{methoddesc}
+
+\begin{methoddesc}{overwrite}{destwin\optional{, sminrow, smincol,
+      dminrow, dmincol, dmaxrow, dmaxcol}}
+Overwrite the window on top of \var{destwin}. The windows need not be
+the same size, in which case only the overlapping region is copied. This copy is
+destructive, which means that the current background character
+overwrites the old contents of \var{destwin}.
+
+To get fine-grained control over the copied region, the second form
+of \method{overwrite} can be used. \var{sminrow} and \var{smincol} are
+the upper-left coordinates of the source window, the other variables
+mark a rectangle in the destination window.
+\end{methoddesc}
+
 \begin{methoddesc}{putwin}{file}
 Writes all data associated with the window into the provided file
 object.  This information can be later retrieved using the
