@@ -1105,16 +1105,16 @@ class Menu(Widget):
 	def add(self, itemType, cnf={}, **kw):
 		apply(self.tk.call, (self._w, 'add', itemType) 
 		      + self._options(cnf, kw))
-	def add_cascade(self, cnf={}):
-		self.add('cascade', cnf)
-	def add_checkbutton(self, cnf={}):
-		self.add('checkbutton', cnf)
-	def add_command(self, cnf={}):
-		self.add('command', cnf)
-	def add_radiobutton(self, cnf={}):
-		self.add('radiobutton', cnf)
-	def add_separator(self, cnf={}):
-		self.add('separator', cnf)
+	def add_cascade(self, cnf={}, **kw):
+		self.add('cascade', cnf or kw)
+	def add_checkbutton(self, cnf={}, **kw):
+		self.add('checkbutton', cnf or kw)
+	def add_command(self, cnf={}, **kw):
+		self.add('command', cnf or kw)
+	def add_radiobutton(self, cnf={}, **kw):
+		self.add('radiobutton', cnf or kw)
+	def add_separator(self, cnf={}, **kw):
+		self.add('separator', cnf or kw)
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
 	def entryconfig(self, index, cnf={}, **kw):
