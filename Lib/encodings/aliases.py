@@ -43,6 +43,7 @@ aliases = {
     'bz2'                : 'bz2_codec',
 
     # cp037 codec
+    '037'                : 'cp037',
     'csibm037'           : 'cp037',
     'ebcdic_cp_ca'       : 'cp037',
     'ebcdic_cp_nl'       : 'cp037',
@@ -52,40 +53,52 @@ aliases = {
     'ibm039'             : 'cp037',
 
     # cp1026 codec
+    '1026'               : 'cp1026',
     'csibm1026'          : 'cp1026',
     'ibm1026'            : 'cp1026',
 
     # cp1140 codec
+    '1140'               : 'cp1140',
     'ibm1140'            : 'cp1140',
 
     # cp1250 codec
+    '1250'               : 'cp1250',
     'windows_1250'       : 'cp1250',
 
     # cp1251 codec
+    '1251'               : 'cp1251',
     'windows_1251'       : 'cp1251',
 
     # cp1252 codec
+    '1252'               : 'cp1252',
     'windows_1252'       : 'cp1252',
 
     # cp1253 codec
+    '1253'               : 'cp1253',
     'windows_1253'       : 'cp1253',
 
     # cp1254 codec
+    '1254'               : 'cp1254',
     'windows_1254'       : 'cp1254',
 
     # cp1255 codec
+    '1255'               : 'cp1255',
     'windows_1255'       : 'cp1255',
 
     # cp1256 codec
+    '1256'               : 'cp1256',
     'windows_1256'       : 'cp1256',
 
     # cp1257 codec
+    '1257'               : 'cp1257',
     'windows_1257'       : 'cp1257',
 
     # cp1258 codec
+    '1258'               : 'cp1258',
     'windows_1258'       : 'cp1258',
 
     # cp424 codec
+    '424'                : 'cp424',
     'csibm424'           : 'cp424',
     'ebcdic_cp_he'       : 'cp424',
     'ibm424'             : 'cp424',
@@ -96,12 +109,14 @@ aliases = {
     'ibm437'             : 'cp437',
 
     # cp500 codec
+    '500'                : 'cp500',
     'csibm500'           : 'cp500',
     'ebcdic_cp_be'       : 'cp500',
     'ebcdic_cp_ch'       : 'cp500',
     'ibm500'             : 'cp500',
 
     # cp775 codec
+    '775'              : 'cp775',
     'cspc775baltic'      : 'cp775',
     'ibm775'             : 'cp775',
 
@@ -147,6 +162,7 @@ aliases = {
     'ibm863'             : 'cp863',
 
     # cp864 codec
+    '864'                : 'cp864',
     'csibm864'           : 'cp864',
     'ibm864'             : 'cp864',
 
