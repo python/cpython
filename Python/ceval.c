@@ -20,6 +20,8 @@
 
 #include <ctype.h>
 
+#define REPR(O) PyString_AS_STRING(PyObject_Repr(O))
+
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
@@ -1438,8 +1440,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			w = GETNAMEV(oparg);
 			v = POP();
 			if ((x = f->f_locals) == NULL) {
-				PyErr_SetString(PyExc_SystemError,
-						"no locals");
+				PyErr_Format(PyExc_SystemError,
+					     "no locals found when storing %s",
+					     REPR(w));
 				break;
 			}
 			err = PyDict_SetItem(x, w, v);
@@ -1449,8 +1452,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case DELETE_NAME:
 			w = GETNAMEV(oparg);
 			if ((x = f->f_locals) == NULL) {
-				PyErr_SetString(PyExc_SystemError,
-						"no locals");
+				PyErr_Format(PyExc_SystemError,
+					     "no locals when deleting %s",
+					     REPR(w));
 				break;
 			}
 			if ((err = PyDict_DelItem(x, w)) != 0)
@@ -1543,8 +1547,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case LOAD_NAME:
 			w = GETNAMEV(oparg);
 			if ((x = f->f_locals) == NULL) {
-				PyErr_SetString(PyExc_SystemError,
-						"no locals");
+				PyErr_Format(PyExc_SystemError,
+					     "no locals when loading %s",
+					     REPR(w));
 				break;
 			}
 			x = PyDict_GetItem(x, w);
@@ -1716,7 +1721,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyFrame_FastToLocals(f);
 			if ((x = f->f_locals) == NULL) {
 				PyErr_SetString(PyExc_SystemError,
-						"no locals");
+					"no locals found during 'import *'");
 				break;
 			}
 			err = import_all_from(x, v);

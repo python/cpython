@@ -70,8 +70,9 @@ builtin_apply(PyObject *self, PyObject *args)
 	if (alist != NULL) {
 		if (!PyTuple_Check(alist)) {
 			if (!PySequence_Check(alist)) {
-				PyErr_SetString(PyExc_TypeError,
-				    "apply() arg 2 must be a sequence");
+				PyErr_Format(PyExc_TypeError,
+				     "apply() arg 2 expect sequence, found %s",
+					     alist->ob_type->tp_name);
 				return NULL;
 			}
 			t = PySequence_Tuple(alist);
@@ -81,8 +82,9 @@ builtin_apply(PyObject *self, PyObject *args)
 		}
 	}
 	if (kwdict != NULL && !PyDict_Check(kwdict)) {
-		PyErr_SetString(PyExc_TypeError,
-			   "apply() arg 3 must be a dictionary");
+		PyErr_Format(PyExc_TypeError,
+			     "apply() arg 3 expected dictionary, found %s",
+			     kwdict->ob_type->tp_name);
 		goto finally;
 	}
 	retval = PyEval_CallObjectWithKeywords(func, alist, kwdict);
