@@ -756,7 +756,8 @@ listpop(PyListObject *self, PyObject *args)
 static int
 docompare(PyObject *x, PyObject *y, PyObject *compare)
 {
-	PyObject *args, *res;
+	PyObject *res;
+	PyObject *args;
 	int i;
 
 	if (compare == NULL) {
@@ -772,9 +773,13 @@ docompare(PyObject *x, PyObject *y, PyObject *compare)
 			return -i;
 	}
 
-	args = Py_BuildValue("(OO)", x, y);
+	args = PyTuple_New(2);
 	if (args == NULL)
 		return CMPERROR;
+	Py_INCREF(x);
+	Py_INCREF(y);
+	PyTuple_SET_ITEM(args, 0, x);
+	PyTuple_SET_ITEM(args, 1, y);
 	res = PyEval_CallObject(compare, args);
 	Py_DECREF(args);
 	if (res == NULL)
