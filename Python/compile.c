@@ -156,7 +156,7 @@ block_push(c, type)
 	int type;
 {
 	if (c->c_nblocks >= MAXBLOCKS) {
-		err_setstr(TypeError, "too many statically nested blocks");
+		err_setstr(SystemError, "too many statically nested blocks");
 		c->c_errors++;
 	}
 	else {
@@ -1126,7 +1126,7 @@ com_assign_trailer(c, n, assigning)
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
 	case LPAR: /* '(' [exprlist] ')' */
-		err_setstr(TypeError, "can't assign to function call");
+		err_setstr(SyntaxError, "can't assign to function call");
 		c->c_errors++;
 		break;
 	case DOT: /* '.' NAME */
@@ -1141,7 +1141,7 @@ com_assign_trailer(c, n, assigning)
 			com_assign_subscript(c, CHILD(n, 0), assigning);
 		break;
 	default:
-		err_setstr(TypeError, "unknown trailer type");
+		err_setstr(SystemError, "unknown trailer type");
 		c->c_errors++;
 	}
 }
@@ -1214,7 +1214,7 @@ com_assign(c, n, assigning)
 		case arith_expr:
 		case term:
 			if (NCH(n) > 1) {
-				err_setstr(TypeError,
+				err_setstr(SyntaxError,
 					"can't assign to operator");
 				c->c_errors++;
 				return;
@@ -1224,7 +1224,7 @@ com_assign(c, n, assigning)
 		
 		case factor: /* ('+'|'-'|'~') factor | atom trailer* */
 			if (TYPE(CHILD(n, 0)) != atom) { /* '+'|'-'|'~' */
-				err_setstr(TypeError,
+				err_setstr(SyntaxError,
 					"can't assign to operator");
 				c->c_errors++;
 				return;
@@ -1248,7 +1248,7 @@ com_assign(c, n, assigning)
 				n = CHILD(n, 1);
 				if (TYPE(n) == RPAR) {
 					/* XXX Should allow () = () ??? */
-					err_setstr(TypeError,
+					err_setstr(SyntaxError,
 						"can't assign to ()");
 					c->c_errors++;
 					return;
@@ -1257,7 +1257,7 @@ com_assign(c, n, assigning)
 			case LSQB:
 				n = CHILD(n, 1);
 				if (TYPE(n) == RSQB) {
-					err_setstr(TypeError,
+					err_setstr(SyntaxError,
 						"can't assign to []");
 					c->c_errors++;
 					return;
@@ -1268,7 +1268,7 @@ com_assign(c, n, assigning)
 				com_assign_name(c, CHILD(n, 0), assigning);
 				return;
 			default:
-				err_setstr(TypeError,
+				err_setstr(SyntaxError,
 						"can't assign to literal");
 				c->c_errors++;
 				return;
@@ -1328,7 +1328,7 @@ com_return_stmt(c, n)
 {
 	REQ(n, return_stmt); /* 'return' [testlist] */
 	if (!c->c_infunction) {
-		err_setstr(TypeError, "'return' outside function");
+		err_setstr(SyntaxError, "'return' outside function");
 		c->c_errors++;
 	}
 	if (NCH(n) < 2)
@@ -1604,7 +1604,7 @@ com_try_stmt(c, n)
 								i += 3) {
 			/* except_clause: 'except' [expr [',' expr]] */
 			if (except_anchor == 0) {
-				err_setstr(TypeError,
+				err_setstr(SyntaxError,
 					"default 'except:' must be last");
 				c->c_errors++;
 				break;
@@ -1679,7 +1679,7 @@ com_continue_stmt(c, n)
 		com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	}
 	else {
-		err_setstr(TypeError, "'continue' not properly in loop");
+		err_setstr(SyntaxError, "'continue' not properly in loop");
 		c->c_errors++;
 	}
 	/* XXX Could allow it inside a 'finally' clause
@@ -1842,7 +1842,7 @@ com_node(c, n)
 		break;
 	case break_stmt:
 		if (c->c_loops == 0) {
-			err_setstr(TypeError, "'break' outside loop");
+			err_setstr(SyntaxError, "'break' outside loop");
 			c->c_errors++;
 		}
 		com_addbyte(c, BREAK_LOOP);
