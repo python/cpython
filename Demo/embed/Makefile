@@ -28,12 +28,15 @@ MODLIBS=
 ALLLIBS=	$(LIBPYTHON) $(MODLIBS) $(LIBS) $(SYSLIBS)
 
 # Build the demo application
-all:		demo
+all:		demo loop import
 demo:		demo.o
 		$(CC) $(LDFLAGS) demo.o $(ALLLIBS) -o demo
 
 loop:		loop.o
 		$(CC) $(LDFLAGS) loop.o $(ALLLIBS) -o loop
+
+import:		import.o
+		$(CC) $(LDFLAGS) import.o $(ALLLIBS) -o import
 
 # Administrative targets
 
@@ -48,4 +51,4 @@ clean:
 		-rm -f *.o core
 
 clobber:	clean
-		-rm -f *~ @* '#'* demo loop
+		-rm -f *~ @* '#'* demo loop import
