@@ -915,16 +915,14 @@ eval_frame(PyFrameObject *f)
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
 				i = a + b;
-				if ((i^a) < 0 && (i^b) < 0) {
-					PyErr_SetString(PyExc_OverflowError,
-							"integer addition");
-					x = NULL;
-				}
-				else
-					x = PyInt_FromLong(i);
+				if ((i^a) < 0 && (i^b) < 0)
+					goto slow_add;
+				x = PyInt_FromLong(i);
 			}
-			else
+			else {
+			  slow_add:
 				x = PyNumber_Add(v, w);
+			}
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -940,16 +938,14 @@ eval_frame(PyFrameObject *f)
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
 				i = a - b;
-				if ((i^a) < 0 && (i^~b) < 0) {
-					PyErr_SetString(PyExc_OverflowError,
-							"integer subtraction");
-					x = NULL;
-				}
-				else
-					x = PyInt_FromLong(i);
+				if ((i^a) < 0 && (i^~b) < 0)
+					goto slow_sub;
+				x = PyInt_FromLong(i);
 			}
-			else
+			else {
+			  slow_sub:
 				x = PyNumber_Subtract(v, w);
+			}
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -1102,16 +1098,14 @@ eval_frame(PyFrameObject *f)
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
 				i = a + b;
-				if ((i^a) < 0 && (i^b) < 0) {
-					PyErr_SetString(PyExc_OverflowError,
-							"integer addition");
-					x = NULL;
-				}
-				else
-					x = PyInt_FromLong(i);
+				if ((i^a) < 0 && (i^b) < 0)
+					goto slow_iadd;
+				x = PyInt_FromLong(i);
 			}
-			else
+			else {
+			  slow_iadd:
 				x = PyNumber_InPlaceAdd(v, w);
+			}
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
@@ -1127,16 +1121,14 @@ eval_frame(PyFrameObject *f)
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
 				i = a - b;
-				if ((i^a) < 0 && (i^~b) < 0) {
-					PyErr_SetString(PyExc_OverflowError,
-							"integer subtraction");
-					x = NULL;
-				}
-				else
-					x = PyInt_FromLong(i);
+				if ((i^a) < 0 && (i^~b) < 0)
+					goto slow_isub;
+				x = PyInt_FromLong(i);
 			}
-			else
+			else {
+			  slow_isub:
 				x = PyNumber_InPlaceSubtract(v, w);
+			}
 			Py_DECREF(v);
 			Py_DECREF(w);
 			PUSH(x);
