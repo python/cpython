@@ -3,3 +3,5 @@ reply: 'HTTP/1.1 200 Ok\r\n'
 Text
 reply: 'HTTP/1.1 400.100 Not Ok\r\n'
 BadStatusLine raised as expected
+InvalidURL raised as expected
+InvalidURL raised as expected
