@@ -5012,6 +5012,8 @@ static PyObject *Ctl_CreateBevelButtonControl(PyObject *_self, PyObject *_args)
 }
 #endif
 
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Ctl_CreateSliderControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5057,6 +5059,7 @@ static PyObject *Ctl_CreateSliderControl(PyObject *_self, PyObject *_args)
 	setcallback(_res, kMyControlActionProcTag, liveTrackingProc, &c_callback);
 	return _res;
 }
+#endif
 
 #if TARGET_API_MAC_CARBON
 
@@ -5824,6 +5827,8 @@ static PyObject *Ctl_CreateCheckBoxControl(PyObject *_self, PyObject *_args)
 }
 #endif
 
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Ctl_CreateScrollBarControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5866,6 +5871,7 @@ static PyObject *Ctl_CreateScrollBarControl(PyObject *_self, PyObject *_args)
 	setcallback(_res, kMyControlActionProcTag, liveTrackingProc, &c_callback);
 	return _res;
 }
+#endif
 
 #if TARGET_API_MAC_CARBON
 
@@ -6256,8 +6262,11 @@ static PyMethodDef Ctl_methods[] = {
 	{"CreateBevelButtonControl", (PyCFunction)Ctl_CreateBevelButtonControl, 1,
 	 "(WindowPtr window, Rect boundsRect, CFStringRef title, UInt16 thickness, UInt16 behavior, ControlButtonContentInfo info, SInt16 menuID, UInt16 menuBehavior, UInt16 menuPlacement) -> (ControlHandle outControl)"},
 #endif
+
+#if TARGET_API_MAC_CARBON
 	{"CreateSliderControl", (PyCFunction)Ctl_CreateSliderControl, 1,
 	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, UInt16 orientation, UInt16 numTickMarks, Boolean liveTracking, PyObject* liveTrackingProc) -> (ControlHandle outControl)"},
+#endif
 
 #if TARGET_API_MAC_CARBON
 	{"CreateDisclosureTriangleControl", (PyCFunction)Ctl_CreateDisclosureTriangleControl, 1,
@@ -6373,8 +6382,11 @@ static PyMethodDef Ctl_methods[] = {
 	{"CreateCheckBoxControl", (PyCFunction)Ctl_CreateCheckBoxControl, 1,
 	 "(WindowPtr window, Rect boundsRect, CFStringRef title, SInt32 initialValue, Boolean autoToggle) -> (ControlHandle outControl)"},
 #endif
+
+#if TARGET_API_MAC_CARBON
 	{"CreateScrollBarControl", (PyCFunction)Ctl_CreateScrollBarControl, 1,
 	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, SInt32 viewSize, Boolean liveTracking, PyObject* liveTrackingProc) -> (ControlHandle outControl)"},
+#endif
 
 #if TARGET_API_MAC_CARBON
 	{"CreatePopupButtonControl", (PyCFunction)Ctl_CreatePopupButtonControl, 1,

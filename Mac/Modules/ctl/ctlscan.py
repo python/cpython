@@ -126,6 +126,8 @@ class MyScanner(Scanner):
 				'GetControlClickActivation',
 				'HandleControlContextualMenuClick',
 				
+				"CreateScrollBarControl",
+				"CreateSliderControl",
 				"CreateBevelButtonControl",
 				"CreateImageWellControl",
 				"CreatePictureControl",
