@@ -28,6 +28,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+#ifdef macintosh
+/* The Macintosh main program is in macmain.c */
+#define NO_MAIN
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -52,9 +57,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-#ifdef macintosh
-	wargs(&argc, &argv);
-#endif
 	argv0 = argv[0];
 	realmain(argc, argv);
 }
@@ -111,7 +113,7 @@ getcopyright()
 
 #ifndef PYTHONPATH
 #ifdef macintosh
-#define PYTHONPATH ": :Lib :Lib:stdwin :Demo"
+#define PYTHONPATH ": :Lib :Lib:stdwin :Lib:test :Lib:mac"
 #endif /* macintosh */
 #endif /* !PYTHONPATH */
 
