@@ -1157,6 +1157,40 @@ window_textcreate(self, args)
 		newtextobject(self, a[0], a[1], a[2], a[3]);
 }
 
+static object *
+window_setselection(self, args)
+	windowobject *self;
+	object *args;
+{
+	int sel;
+	object *str;
+	int ok;
+	if (!getintstrarg(args, &sel, &str))
+		return NULL;
+	ok = wsetselection(self->w_win, sel,
+		getstringvalue(str), (int)getstringsize(str));
+	return newintobject(ok);
+}
+
+static object *
+window_setwincursor(self, args)
+	windowobject *self;
+	object *args;
+{
+	object *str;
+	CURSOR *c;
+	if (!getstrarg(args, &str))
+		return NULL;
+	c = wfetchcursor(getstringvalue(str));
+	if (c == NULL) {
+		err_setstr(RuntimeError, "no such cursor");
+		return NULL;
+	}
+	wsetwincursor(self->w_win, c);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist window_methods[] = {
 	{"begindrawing",window_begindrawing},
 	{"change",	window_change},
@@ -1166,8 +1200,10 @@ static struct methodlist window_methods[] = {
 	{"getwinsize",	window_getwinsize},
 	{"menucreate",	window_menucreate},
 	{"scroll",	window_scroll},
+	{"setwincursor",window_setwincursor},
 	{"setdocsize",	window_setdocsize},
 	{"setorigin",	window_setorigin},
+	{"setselection",window_setselection},
 	{"settimer",	window_settimer},
 	{"settitle",	window_settitle},
 	{"show",	window_show},
@@ -1332,6 +1368,9 @@ return NULL;
 			w = None;
 		w = makemenu(w, e.u.m.item);
 		break;
+	case WE_LOST_SEL:
+		w = newintobject((long)e.u.sel);
+		break;
 	default:
 		w = None;
 		INCREF(w);
@@ -1470,10 +1509,18 @@ stdwin_setcutbuffer(self, args)
 	object *self;
 	object *args;
 {
+	int i;
 	object *str;
-	if (!getstrarg(args, &str))
-		return NULL;
-	wsetcutbuffer(0, getstringvalue(str), getstringsize(str));
+	/* Compatibility hack: setcutbuffer(str) === setcutbuffer(0, str) */
+	if (args != NULL && !is_tupleobject(args)) {
+		if (!getstrarg(args, &str))
+			return NULL;
+	}
+	else {
+		if (!getintstrarg(args, &i, &str))
+			return NULL;
+	}
+	wsetcutbuffer(i, getstringvalue(str), getstringsize(str));
 	INCREF(None);
 	return None;
 }
@@ -1483,11 +1530,15 @@ stdwin_getcutbuffer(self, args)
 	object *self;
 	object *args;
 {
+	int i;
 	char *str;
 	int len;
-	if (!getnoarg(args))
+	/* Compatibility hack: getcutbuffer() === getcutbuffer(0) */
+	if (args == NULL)
+		i = 0;
+	else if (!getintarg(args, &i))
 		return NULL;
-	str = wgetcutbuffer(0, &len);
+	str = wgetcutbuffer(i, &len);
 	if (str == NULL) {
 		str = "";
 		len = 0;
@@ -1495,16 +1546,63 @@ stdwin_getcutbuffer(self, args)
 	return newsizedstringobject(str, len);
 }
 
+static object *
+stdwin_rotatecutbuffers(self, args)
+	object *self;
+	object *args;
+{
+	int i;
+	if (!getintarg(args, &i))
+		return NULL;
+	wrotatecutbuffers(i);
+	INCREF(None);
+	return None;
+}
+
+static object *
+stdwin_getselection(self, args)
+	object *self;
+	object *args;
+{
+	int sel;
+	char *data;
+	int len;
+	if (!getintarg(args, &sel))
+		return NULL;
+	data = wgetselection(sel, &len);
+	if (data == NULL) {
+		data = "";
+		len = 0;
+	}
+	return newsizedstringobject(data, len);
+}
+
+static object *
+stdwin_resetselection(self, args)
+	object *self;
+	object *args;
+{
+	int sel;
+	if (!getintarg(args, &sel))
+		return NULL;
+	wresetselection(sel);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
 	{"askync",		stdwin_askync},
 	{"fleep",		stdwin_fleep},
+	{"getselection",	stdwin_getselection},
 	{"getcutbuffer",	stdwin_getcutbuffer},
 	{"getevent",		stdwin_getevent},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
 	{"open",		stdwin_open},
+	{"resetselection",	stdwin_resetselection},
+	{"rotatecutbuffers",	stdwin_rotatecutbuffers},
 	{"setcutbuffer",	stdwin_setcutbuffer},
 	{"setdefwinpos",	stdwin_setdefwinpos},
 	{"setdefwinsize",	stdwin_setdefwinsize},
