@@ -65,6 +65,8 @@ void Py_Cleanup Py_PROTO((void));
 void PyImport_Init	Py_PROTO((void));
 void PyBuiltin_Init	Py_PROTO((void));
 
+int Py_FdIsInteractive Py_PROTO((FILE *, char *));
+
 #ifdef __cplusplus
 }
 #endif
