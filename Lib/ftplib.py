@@ -392,7 +392,7 @@ class FTP:
         The callback function (2nd argument) is called for each line,
         with trailing CRLF stripped.  This creates a new port for you.
         print_line() is the default callback.'''
-        if not callback: callback = print_line
+        if not callable(callback): callback = print_line
         resp = self.sendcmd('TYPE A')
         conn = self.transfercmd(cmd)
         fp = conn.makefile('rb')
