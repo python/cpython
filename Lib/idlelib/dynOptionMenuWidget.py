@@ -1,22 +1,28 @@
 ##---------------------------------------------------------------------------##
 ##
-## idle - tkinter OptionMenu widget modified to allow dynamic
-##        reconfiguration of menu. 
+## idle - modified OptionMenu widget 
 ## elguavas
 ## 
 ##---------------------------------------------------------------------------##
 """
 OptionMenu widget modified to allow dynamic menu reconfiguration
+and setting of highlightthickness
 """
 from Tkinter import OptionMenu
 from Tkinter import _setit
+import copy
 
 class DynOptionMenu(OptionMenu):
     """
-    OptionMenu widget that allows dynamic menu reconfiguration
+    unlike OptionMenu, our kwargs can include highlightthickness
     """
     def __init__(self, master, variable, value, *values, **kwargs):
+        #get a copy of kwargs before OptionMenu.__init__ munges them
+        kwargsCopy=copy.copy(kwargs)
+        if 'highlightthickness' in kwargs.keys():
+            del(kwargs['highlightthickness'])
         OptionMenu.__init__(self, master, variable, value, *values, **kwargs)
+        self.config(highlightthickness=kwargsCopy.get('highlightthickness'))
         #self.menu=self['menu']
         self.variable=variable
         self.command=kwargs.get('command')
