@@ -19,8 +19,13 @@ def openspkr():
     conf.setwidth(AL.SAMPLE_16)
     conf.setchannels(AL.MONO)
     return al.openport('spkr','w',conf)
+
 def openvideo(name):
-    f = open(name, 'r')
+    try:
+        f = open(name, 'r')
+    except:
+        sys.stderr.write(name + ': cannot open\n')
+        sys.exit(1)
     line = f.readline()
     if not line: raise EndOfFile
     if line[:4] = 'CMIF': line = f.readline()
@@ -28,6 +33,7 @@ def openvideo(name):
     if len(x) = 3: w, h, pf = x
     else: w, h = x; pf = 2
     return f, w, h, pf
+
 def loadframe(f,w,h,pf,af,spkr):
     line = f.readline()
     if line = '':
@@ -57,56 +63,66 @@ def loadframe(f,w,h,pf,af,spkr):
     ct = time.millitimer() - epoch.epoch
     if tijd > 0 and ct < tijd:
     	time.millisleep(tijd-ct)
-    swapbuffers()
+    #swapbuffers()
     return tijd
+
 def playsound(af, spkr):
     nsamp = spkr.getfillable()
     data = af.read(nsamp*2)
     spkr.writesamps(data)
+
 def main():
-    if len(sys.argv) > 1:
-	f, w, h, pf = openvideo(sys.argv[1])
-    else:
-	f, w, h, pf = openvideo('film.video')
-    af = None
-    spkr = None
-    if len(sys.argv) > 2:
-	af = open(sys.argv[2], 'r')
-	spkr = openspkr()
-    if len(sys.argv) > 3:
-	data = af.read(eval(sys.argv[3]))
-	del data
-    foreground()
-    prefsize(w,h)
-    win = winopen('Video player')
-    RGBmode()
-    doublebuffer()
-    gconfig()
-    qdevice(ESCKEY)
-    running = 1
-    epoch.epoch = time.millitimer()
-    nframe = 0
-    tijd = 1
-    try:
-	while 1:
-	    if running:
-		try:
-		    tijd = loadframe(f, w, h, pf, af, spkr)
-		    nframe = nframe + 1
-		except EndOfFile:
-		    running = 0
-		    t = time.millitimer()
-		    if tijd > 0:
-			    print 'Recorded at ', nframe * 1000.0 / tijd,
-			    print 'frames/second (', tijd, 'ms total)'
-		    print 'Played at', nframe * 1000.0 / (t-epoch.epoch),
-		    print 'frames/second'
-	    if af <> None:
-		playsound(af,spkr)
-	    if qtest():
-		if qread() = (ESCKEY,1):
-		    raise bye
-    except bye:
-	pass
+	foreground()
+	if len(sys.argv) > 1:
+		filename = sys.argv[1]
+	else:
+		filename = 'film.video'
+	f, w, h, pf = openvideo(filename)
+	if len(sys.argv) > 2:
+		audiofilename = sys.argv[2]
+		af = open(audiofilename, 'r')
+		spkr = openspkr()
+		if len(sys.argv) > 3:
+			af.seek(eval(sys.argv[3]))
+	else:
+		af, spkr = None, None
+	prefsize(w,h)
+	win = winopen(filename)
+	RGBmode()
+	#doublebuffer()
+	gconfig()
+	qdevice(ESCKEY)
+	qdevice(WINSHUT)
+	qdevice(WINQUIT)
+	running = 1
+	epoch.epoch = time.millitimer()
+	nframe = 0
+	tijd = 1
+	try:
+	    while 1:
+		if running:
+		    try:
+			tijd = loadframe(f, w, h, pf, af, spkr)
+			nframe = nframe + 1
+		    except EndOfFile:
+			running = 0
+			t = time.millitimer()
+			if tijd > 0:
+				print 'Recorded at',
+				print 0.1 * int(nframe * 10000.0 / tijd),
+				print 'frames/sec'
+			print 'Played', nframe, 'frames at',
+			print 0.1 * int(nframe * 10000.0 / (t-epoch.epoch)),
+			print 'frames/sec'
+		if af <> None:
+			playsound(af,spkr)
+		if not running or qtest():
+		    dev, val = qread()
+		    if dev in (ESCKEY, WINSHUT, WINQUIT):
+			raise bye
+		    elif dev = REDRAW:
+		    	reshapeviewport()
+	except bye:
+	    pass
 
 main()
