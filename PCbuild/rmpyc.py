@@ -1,23 +1,24 @@
 # Remove all the .pyc and .pyo files under ../Lib.
 
+
 def deltree(root):
     import os
-    def rm(path):
-        os.unlink(path)
+    from os.path import join
+
     npyc = npyo = 0
-    dirs = [root]
-    while dirs:
-        dir = dirs.pop()
-        for short in os.listdir(dir):
-            full = os.path.join(dir, short)
-            if os.path.isdir(full):
-                dirs.append(full)
-            elif short.endswith(".pyc"):
+    for root, dirs, files in os.walk(root):
+        for name in files:
+            delete = False
+            if name.endswith('.pyc'):
+                delete = True
                 npyc += 1
-                rm(full)
-            elif short.endswith(".pyo"):
+            elif name.endswith('.pyo'):
+                delete = True
                 npyo += 1
-                rm(full)
+
+            if delete:
+                os.remove(join(root, name))
+
     return npyc, npyo
 
 npyc, npyo = deltree("../Lib")
