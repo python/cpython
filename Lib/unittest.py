@@ -422,7 +422,8 @@ class TestLoader:
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if type(obj) == types.ClassType and issubclass(obj, TestCase):
+            if (isinstance(obj, (type, types.ClassType)) and
+                issubclass(obj, TestCase)):
                 tests.append(self.loadTestsFromTestCase(obj))
         return self.suiteClass(tests)
 
@@ -456,7 +457,8 @@ class TestLoader:
         import unittest
         if type(obj) == types.ModuleType:
             return self.loadTestsFromModule(obj)
-        elif type(obj) == types.ClassType and issubclass(obj, unittest.TestCase):
+        elif (isinstance(obj, (type, types.ClassType)) and
+              issubclass(obj, unittest.TestCase)):
             return self.loadTestsFromTestCase(obj)
         elif type(obj) == types.UnboundMethodType:
             return obj.im_class(obj.__name__)
