@@ -790,3 +790,20 @@ PyTypeObject PyInt_Type = {
 	0,		/*tp_as_mapping*/
 	(hashfunc)int_hash, /*tp_hash*/
 };
+
+void
+PyInt_Fini()
+{
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	int i;
+	PyIntObject **p;
+
+	i = NSMALLNEGINTS + NSMALLPOSINTS;
+	p = small_ints;
+	while (--i >= 0) {
+		Py_XDECREF(*p);
+		*p++ = NULL;
+	}
+#endif
+	/* XXX Alas, the free list is not easily and safely freeable */
+}

@@ -590,3 +590,9 @@ PyTypeObject PyFloat_Type = {
 	0,			/*tp_as_mapping*/
 	(hashfunc)float_hash, /*tp_hash*/
 };
+
+void
+PyFloat_Fini()
+{
+	/* XXX Alas, the free list is not easily and safely freeable */
+}
