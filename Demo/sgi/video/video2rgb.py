@@ -101,15 +101,14 @@ def process(filename):
 
 	if mono:
 		depth = 1
+		bpp = 1
 	else:
 		depth = 3
+		bpp = 4
 
-	pf = testpackfactor(vin.packfactor)
-	if pf == None:
-		print 'Sorry, packfactor not supported:', vin.packfactor
-	convert(vin, cf, width, height, depth, pf)
+	convert(vin, cf, width, height, depth, bpp, vin.packfactor)
 
-def convert(vin, cf, width, height, depth, pf):
+def convert(vin, cf, width, height, depth, bpp, pf):
 	global seqno
 
 	if type(pf) == type(()):
@@ -128,7 +127,7 @@ def convert(vin, cf, width, height, depth, pf):
 			return
 		data = cf(data, width/xpf, height/abs(ypf))
 		if pf:
-			data = applypackfactor(data, width, height, pf)
+			data = applypackfactor(data, width, height, pf, bpp)
 		s = `seqno`
 		s = '0'*(4-len(s)) + s
 		fname = prefix + s + '.rgb'
@@ -136,33 +135,21 @@ def convert(vin, cf, width, height, depth, pf):
 		if not quiet:
 			print 'Writing',fname,'...'
 		imgfile.write(fname, data, width, height, depth)
-
-def testpackfactor(pf):
-	if type(pf) == type(()):
-		xpf, ypf = pf
-	else:
-		if pf in (0, 1):
-			return 0
-		return None
-	if xpf <> 1:
-		return None
-	return pf
 	
-def applypackfactor(image, w, h, pf):
+def applypackfactor(image, w, h, pf, bpp):
+	import imageop
 	if type(pf) == type(()):
 		xpf, ypf = pf
-	else:
+	elif pf == 0:
 		xpf = ypf = 1
-	rows = []
-	for i in range(0, (w*h+ypf-1)/abs(ypf), w):
-		rows.append(image[i:i+w])
+	else:
+		xpf = ypf = pf
+	w1 = w/xpf
+	h1 = h/abs(ypf)
 	if ypf < 0:
-		rows.reverse()
 		ypf = -ypf
-	image = ''
-	for i in range(0, h):
-		image = image + rows[i/ypf]
-	return image
+		image = imageop.crop(image, bpp, w1, h1, 0, h1-1, w1-1, 0)
+	return imageop.scale(image, bpp, w1, h1, w, h)
 	
 # Don't forget to call the main program
 
