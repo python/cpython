@@ -868,6 +868,7 @@ _expectations = {
         test_email_codecs
         test_gl
         test_imgfile
+        test_ioctl
         test_largefile
         test_linuxaudiodev
         test_locale
