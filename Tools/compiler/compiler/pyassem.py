@@ -63,7 +63,6 @@ class PyAssembler:
 	self.insts = []
         # used by makeCodeObject
         self._getArgCount(args)
-        print name, args, self.argcount
         self.code = ''
         self.consts = [docstring]
         self.filename = filename
@@ -260,20 +259,20 @@ class PyAssembler:
     localOps = ('LOAD_FAST', 'STORE_FAST', 'DELETE_FAST')
     globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL', 'DELETE_GLOBAL')
 
-    def _lookupName(self, name, list, list2=None):
-        """Return index of name in list, appending if necessary
-
-        Yicky hack: Second list can be used for lookup of local names
-        where the name needs to be added to varnames and names.
-        """
+    def _lookupName(self, name, list):
+        """Return index of name in list, appending if necessary"""
         if name in list:
-            return list.index(name)
-        else:
-            end = len(list)
-            list.append(name)
-            if list2 is not None:
-                list2.append(name)
-            return end
+            i = list.index(name)
+            # this is cheap, but incorrect in some cases, e.g 2 vs. 2L
+            if type(name) == type(list[i]):
+                return i
+            for i in range(len(list)):
+                elt = list[i]
+                if type(elt) == type(name) and elt == name:
+                    return i
+        end = len(list)
+        list.append(name)
+        return end
 
     # Convert some stuff from the dis module for local use
     
