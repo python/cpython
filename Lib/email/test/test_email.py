@@ -42,6 +42,12 @@ SPACE = ' '
 # We don't care about DeprecationWarnings
 warnings.filterwarnings('ignore', '', DeprecationWarning, __name__)
 
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
 
 
 def openfile(filename):
@@ -67,10 +73,10 @@ class TestEmailBase(unittest.TestCase):
         # Python 2.1
         ndiffAssertEqual = unittest.TestCase.assertEqual
 
-    def _msgobj(self, filename):
+    def _msgobj(self, filename, strict=False):
         fp = openfile(findfile(filename))
         try:
-            msg = email.message_from_file(fp)
+            msg = email.message_from_file(fp, strict=strict)
         finally:
             fp.close()
         return msg
@@ -184,18 +190,18 @@ class TestMessageAPI(TestEmailBase):
         eq = self.assertEqual
         msg = self._msgobj('msg_10.txt')
         # The outer message is a multipart
-        eq(msg.get_payload(decode=1), None)
+        eq(msg.get_payload(decode=True), None)
         # Subpart 1 is 7bit encoded
-        eq(msg.get_payload(0).get_payload(decode=1),
+        eq(msg.get_payload(0).get_payload(decode=True),
            'This is a 7bit encoded message.\n')
         # Subpart 2 is quopri
-        eq(msg.get_payload(1).get_payload(decode=1),
+        eq(msg.get_payload(1).get_payload(decode=True),
            '\xa1This is a Quoted Printable encoded message!\n')
         # Subpart 3 is base64
-        eq(msg.get_payload(2).get_payload(decode=1),
+        eq(msg.get_payload(2).get_payload(decode=True),
            'This is a Base64 encoded message.')
         # Subpart 4 has no Content-Transfer-Encoding: header.
-        eq(msg.get_payload(3).get_payload(decode=1),
+        eq(msg.get_payload(3).get_payload(decode=True),
            'This has no Content-Transfer-Encoding: header.\n')
 
     def test_decoded_generator(self):
@@ -310,11 +316,11 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_param('charset'), 'iso-2022-jp')
         msg.set_param('importance', 'high value')
         eq(msg.get_param('importance'), 'high value')
-        eq(msg.get_param('importance', unquote=0), '"high value"')
+        eq(msg.get_param('importance', unquote=False), '"high value"')
         eq(msg.get_params(), [('text/plain', ''),
                               ('charset', 'iso-2022-jp'),
                               ('importance', 'high value')])
-        eq(msg.get_params(unquote=0), [('text/plain', ''),
+        eq(msg.get_params(unquote=False), [('text/plain', ''),
                                        ('charset', '"iso-2022-jp"'),
                                        ('importance', '"high value"')])
         msg.set_param('charset', 'iso-9999-xx', header='X-Jimmy')
@@ -738,7 +744,7 @@ Blah blah blah
 
     def test_mangled_from(self):
         s = StringIO()
-        g = Generator(s, mangle_from_=1)
+        g = Generator(s, mangle_from_=True)
         g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
@@ -749,7 +755,7 @@ Blah blah blah
 
     def test_dont_mangle_from(self):
         s = StringIO()
-        g = Generator(s, mangle_from_=0)
+        g = Generator(s, mangle_from_=False)
         g.flatten(self.msg)
         self.assertEqual(s.getvalue(), """\
 From: aaa@bbb.org
@@ -1048,7 +1054,7 @@ class TestNonConformant(TestEmailBase):
             data = fp.read()
         finally:
             fp.close()
-        p = Parser(strict=1)
+        p = Parser(strict=True)
         # Note, under a future non-strict parsing mode, this would parse the
         # message into the intended message tree.
         self.assertRaises(Errors.BoundaryError, p.parsestr, data)
@@ -1098,6 +1104,20 @@ message 2
 
 --BOUNDARY--
 """)
+
+    def test_no_separating_blank_line(self):
+        eq = self.ndiffAssertEqual
+        msg = self._msgobj('msg_35.txt')
+        eq(msg.as_string(), """\
+From: aperson@dom.ain
+To: bperson@dom.ain
+Subject: here's something interesting
+
+counter to RFC 2822, there's no separating newline here
+""")
+        # strict=True should raise an exception
+        self.assertRaises(Errors.HeaderParseError,
+                          self._msgobj, 'msg_35.txt', True)
 
 
 
@@ -1644,7 +1664,7 @@ class TestMiscellaneous(unittest.TestCase):
     def test_formatdate_localtime(self):
         now = time.time()
         self.assertEqual(
-            Utils.parsedate(Utils.formatdate(now, localtime=1))[:6],
+            Utils.parsedate(Utils.formatdate(now, localtime=True))[:6],
             time.localtime(now)[:6])
 
     def test_parsedate_none(self):
@@ -1951,7 +1971,7 @@ eHh4eCB4eHh4IA==\r
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?b?aGVsbG8=?=')
         # Test the keep_eols flag
-        eq(he('hello\nworld', keep_eols=1),
+        eq(he('hello\nworld', keep_eols=True),
            '=?iso-8859-1?b?aGVsbG8Kd29ybGQ=?=')
         # Test the maxlinelen argument
         eq(he('xxxx ' * 20, maxlinelen=40), """\
@@ -2030,7 +2050,7 @@ class TestQuopri(unittest.TestCase):
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?q?hello?=')
         # Test the keep_eols flag
-        eq(he('hello\nworld', keep_eols=1), '=?iso-8859-1?q?hello=0Aworld?=')
+        eq(he('hello\nworld', keep_eols=True), '=?iso-8859-1?q?hello=0Aworld?=')
         # Test a non-ASCII character
         eq(he('hello\xc7there'), '=?iso-8859-1?q?hello=C7there?=')
         # Test the maxlinelen argument
@@ -2277,7 +2297,7 @@ class TestRFC2231(TestEmailBase):
         msg = self._msgobj('msg_29.txt')
         eq(msg.get_param('title'),
            ('us-ascii', 'en', 'This is even more ***fun*** isn\'t it!'))
-        eq(msg.get_param('title', unquote=0),
+        eq(msg.get_param('title', unquote=False),
            ('us-ascii', 'en', '"This is even more ***fun*** isn\'t it!"'))
 
     def test_set_param(self):
