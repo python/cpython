@@ -39,7 +39,8 @@ class MyScanner(Scanner):
 		return [
 			"LDispose",		# Done by removing the object
 			"LSearch",		# We don't want to handle procs just yet
-			"LGetCellDataLocation",		# What does this do??
+			"CreateCustomList",  # done manually
+			"SetListDefinitionProc",
 			
 			# These have funny argument/return values
 			"GetListViewBounds",
@@ -54,10 +55,7 @@ class MyScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
-			'ListDefSpec', # Too difficult for now
-			'ListDefSpec_ptr', # ditto
-			"ListDefUPP",
-			"ListClickLoopUPP",
+			"ListClickLoopUPP",  # Too difficult for now
 			]
 
 	def makerepairinstructions(self):
