@@ -31,6 +31,7 @@ def test():
 
     f = open(fname1, 'r')
     finish = f.readline()
+    f.close()   # on Windows an open file cannot be unlinked
 
     if start != finish:
         print 'Error: binhex != hexbin'
