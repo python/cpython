@@ -300,12 +300,19 @@ static void drop_readahead(PyFileObject *);
 static void
 file_dealloc(PyFileObject *f)
 {
+	int sts = 0;
 	if (f->weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) f);
 	if (f->f_fp != NULL && f->f_close != NULL) {
 		Py_BEGIN_ALLOW_THREADS
-		(*f->f_close)(f->f_fp);
+		sts = (*f->f_close)(f->f_fp);
 		Py_END_ALLOW_THREADS
+		if (sts == EOF) 
+#ifdef HAVE_STRERROR
+			PySys_WriteStderr("close failed: [Errno %d] %s\n", errno, strerror(errno)); 
+#else
+			PySys_WriteStderr("close failed: [Errno %d]\n", errno); 
+#endif
 	}
 	PyMem_Free(f->f_setbuf);
 	Py_XDECREF(f->f_name);
