@@ -71,7 +71,18 @@ class PlaySoundTest(unittest.TestCase):
         winsound.PlaySound('SystemQuestion', winsound.SND_ALIAS)
 
     def test_alias_fallback(self):
-        winsound.PlaySound('!"$%&/(#+*', winsound.SND_ALIAS)
+        # This test can't be expected to work on all systems.  The MS
+        # PlaySound() docs say:
+        #
+        #     If it cannot find the specified sound, PlaySound uses the
+        #     default system event sound entry instead.  If the function
+        #     can find neither the system default entry nor the default
+        #     sound, it makes no sound and returns FALSE.
+        #
+        # It's known to return FALSE on some real systems.
+
+        # winsound.PlaySound('!"$%&/(#+*', winsound.SND_ALIAS)
+        return
 
     def test_alias_nofallback(self):
         try:
