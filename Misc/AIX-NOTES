@@ -150,7 +150,6 @@ You should modify the \"\" to be a period:
 	LINKCC=     $(srcdir)/Modules/makexp_aix Modules/python.exp . $(LIBRARY); $(PURIFY) $(CXX)
 
 Using a period fixed the problem in the snake farm.  YMMV.
-After testing with different versions of AIX, a fix should
-be checked in.  Hopefully, this fix be incorporated into Python 2.3.
+This fix has been incorporated into Python 2.3.
 
 ==============================================================================
