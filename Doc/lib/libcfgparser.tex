@@ -1,0 +1,116 @@
+\section{\module{ConfigParser} ---
+         Configuration file parser.}
+
+\declaremodule{standard}{ConfigParser}
+
+\modulesynopsis{Configuration file parser.}
+\sectionauthor{Christopher G. Petrilli}{petrilli@amber.org}
+
+This module defines the class \class{ConfigParser}. The
+\class{ConfigParser} class implements a basic configuration file
+parser language which provides a structure similar to what you would
+find on Microsoft Windows INI files.  You can use this to write Python 
+programs which can be customized by end users easily.
+
+The configuration file consists of sections, lead by a
+\samp{[section]} header and followed by \samp{name: value} entries,
+with continuations in the style of \rfc{959}.  The optional values 
+can contain format strings which refer to other values in the same
+section, or values in a special \code{DEFAULT} section.  Additional
+defaults can provided upon instantiation of the class.
+
+For example:
+
+\begin{verbatim}
+foodir: %(dir)s/whatever
+\end{verbatim}
+
+would resolve the \samp{\%(dir)s} to the value of dir. All reference
+expansions are done late, on demand.
+
+Intrinsic defaults can be specified by passing them into the
+\class{ConfigParser} constructor as a dictionary.
+
+\begin{classdesc}{ConfigParser}{\optional{defaults}}
+Return a new instance of the \class{ConfigParser} class.  When
+\var{defaults} is given, it is initialized into the dictionairy of
+intrinsic defaults.  They keys must be strings, and the values must be 
+appropriate for the \samp{\%()s} string interpolation.  Note that
+\var{__name__} is always an intrinsic default; it's value is the 
+section name.
+\end{classdesc}
+
+\begin{excdesc}{NoSectionError}
+Exception raised when a specified section is not found.
+\end{excdesc}
+
+\begin{excdesc}{DuplicateSectionError}
+Exception raised when mutliple sections with the same name are found.
+\end{excdesc}
+
+\begin{excdesc}{NoOptionError}
+Exception raised when a specified option is not found in the specified 
+section.
+\end{excdesc}
+
+\begin{excdesc}{InterpolationError}
+Exception raised when problems occur performing string interpolation.
+\end{excdesc}
+
+\begin{excdesc}{MissingSectionHeaderError}
+Exception raised when attempting to parse a file which has no section
+headers.
+\end{excdesc}
+
+\begin{excdesc}{ParsingError}
+Exception raised when errors occur attempting to parse a file.
+\end{excdesc}
+
+\subsection{ConfigParser Objects \label{ConfigParser-objects}}
+
+\class{ConfigParser} instances have the following methods:
+
+\begin{methoddesc}{defaults}{}
+Return a dictionairy containing the instance-wide defaults.
+\end{methoddesc}
+
+\begin{methoddesc}{sections}{}
+Return a list of the sections available.
+\end{methoddesc}
+
+\begin{methoddesc}{has_section}{section}
+Indicates whether the named section is present in the
+configuration. The \code{DEFAULT} section is not acknowledged.
+\end{methoddesc}
+
+\begin{methoddesc}{options}{section}
+Returns a list of options available in the specified \var{section}.
+\end{methoddesc}
+
+\begin{methoddesc}{read}{filenames}
+Read and parse a list of filenames.
+\end{methoddesc}
+
+\begin{methoddesc}{get}{section, option\optional{, raw}}
+Get an \var{option} value for the provided \var{section}.  All the
+\samp{\%} interpolations are expanded in the return values, based on
+the defaults passed into the constructor, unless the \var{raw}
+argument is true.
+\end{methoddesc}
+
+\begin{methoddesc}{getint}{section, option}
+A convenience method which coerces the \var{option} in the specified
+\var{section} to an integer.
+\end{methoddesc}
+
+\begin{methoddesc}{getfloat}{section, option}
+A convenience method which coerces the \var{option} in the specified
+\var{section} to a floating point number.
+\end{methoddesc}
+
+\begin{methoddesc}{getboolean}{section, option}
+A convenience method which coerces the \var{option} in the specified
+\var{section} to a boolean value.  Note that the only accepted values
+for the option are \code{0} and \code{1}, any others will raise
+\exception{ValueError}.
+\end{methoddesc}
