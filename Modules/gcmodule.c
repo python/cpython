@@ -633,7 +633,7 @@ collect(int generation)
 
 	/* Collect statistics on uncollectable objects found and print
 	 * debugging information. */
-	for (gc = finalizers.gc.gc_next; 
+	for (gc = finalizers.gc.gc_next;
 	     gc != &finalizers;
 	     gc = gc->gc.gc_next) {
 		n++;
@@ -699,14 +699,9 @@ PyDoc_STRVAR(gc_enable__doc__,
 "Enable automatic garbage collection.\n");
 
 static PyObject *
-gc_enable(PyObject *self, PyObject *args)
+gc_enable(PyObject *self, PyObject *noargs)
 {
-
-	if (!PyArg_ParseTuple(args, ":enable"))	/* check no args */
-		return NULL;
-
 	enabled = 1;
-
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -717,14 +712,9 @@ PyDoc_STRVAR(gc_disable__doc__,
 "Disable automatic garbage collection.\n");
 
 static PyObject *
-gc_disable(PyObject *self, PyObject *args)
+gc_disable(PyObject *self, PyObject *noargs)
 {
-
-	if (!PyArg_ParseTuple(args, ":disable"))	/* check no args */
-		return NULL;
-
 	enabled = 0;
-
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -735,12 +725,8 @@ PyDoc_STRVAR(gc_isenabled__doc__,
 "Returns true if automatic garbage collection is enabled.\n");
 
 static PyObject *
-gc_isenabled(PyObject *self, PyObject *args)
+gc_isenabled(PyObject *self, PyObject *noargs)
 {
-
-	if (!PyArg_ParseTuple(args, ":isenabled"))	/* check no args */
-		return NULL;
-
 	return Py_BuildValue("i", enabled);
 }
 
@@ -750,16 +736,12 @@ PyDoc_STRVAR(gc_collect__doc__,
 "Run a full collection.  The number of unreachable objects is returned.\n");
 
 static PyObject *
-gc_collect(PyObject *self, PyObject *args)
+gc_collect(PyObject *self, PyObject *noargs)
 {
 	long n;
 
-	if (!PyArg_ParseTuple(args, ":collect"))	/* check no args */
-		return NULL;
-
-	if (collecting) {
+	if (collecting)
 		n = 0; /* already collecting, don't do anything */
-	}
 	else {
 		collecting = 1;
 		n = collect(NUM_GENERATIONS - 1);
@@ -801,11 +783,8 @@ PyDoc_STRVAR(gc_get_debug__doc__,
 "Get the garbage collection debugging flags.\n");
 
 static PyObject *
-gc_get_debug(PyObject *self, PyObject *args)
+gc_get_debug(PyObject *self, PyObject *noargs)
 {
-	if (!PyArg_ParseTuple(args, ":get_debug"))	/* no args */
-		return NULL;
-
 	return Py_BuildValue("i", debug);
 }
 
@@ -839,11 +818,8 @@ PyDoc_STRVAR(gc_get_thresh__doc__,
 "Return the current collection thresholds\n");
 
 static PyObject *
-gc_get_thresh(PyObject *self, PyObject *args)
+gc_get_thresh(PyObject *self, PyObject *noargs)
 {
-	if (!PyArg_ParseTuple(args, ":get_threshold"))	/* no args */
-		return NULL;
-
 	return Py_BuildValue("(iii)",
 			     generations[0].threshold,
 			     generations[1].threshold,
@@ -948,17 +924,14 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
 }
 
 static PyObject *
-gc_get_objects(PyObject *self, PyObject *args)
+gc_get_objects(PyObject *self, PyObject *noargs)
 {
 	int i;
 	PyObject* result;
 
-	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
-		return NULL;
 	result = PyList_New(0);
-	if (result == NULL) {
+	if (result == NULL)
 		return NULL;
-	}
 	for (i = 0; i < NUM_GENERATIONS; i++) {
 		if (append_objects(result, GEN_HEAD(i))) {
 			Py_DECREF(result);
@@ -985,15 +958,15 @@ PyDoc_STRVAR(gc__doc__,
 "get_referrents() -- Return the list of objects that an object refers to.\n");
 
 static PyMethodDef GcMethods[] = {
-	{"enable",	   gc_enable,	  METH_VARARGS, gc_enable__doc__},
-	{"disable",	   gc_disable,	  METH_VARARGS, gc_disable__doc__},
-	{"isenabled",	   gc_isenabled,  METH_VARARGS, gc_isenabled__doc__},
+	{"enable",	   gc_enable,	  METH_NOARGS,  gc_enable__doc__},
+	{"disable",	   gc_disable,	  METH_NOARGS,  gc_disable__doc__},
+	{"isenabled",	   gc_isenabled,  METH_NOARGS,  gc_isenabled__doc__},
 	{"set_debug",	   gc_set_debug,  METH_VARARGS, gc_set_debug__doc__},
-	{"get_debug",	   gc_get_debug,  METH_VARARGS, gc_get_debug__doc__},
+	{"get_debug",	   gc_get_debug,  METH_NOARGS,  gc_get_debug__doc__},
 	{"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
-	{"get_threshold",  gc_get_thresh, METH_VARARGS, gc_get_thresh__doc__},
-	{"collect",	   gc_collect,	  METH_VARARGS, gc_collect__doc__},
-	{"get_objects",    gc_get_objects,METH_VARARGS, gc_get_objects__doc__},
+	{"get_threshold",  gc_get_thresh, METH_NOARGS,  gc_get_thresh__doc__},
+	{"collect",	   gc_collect,	  METH_NOARGS,  gc_collect__doc__},
+	{"get_objects",    gc_get_objects,METH_NOARGS,  gc_get_objects__doc__},
 	{"get_referrers",  gc_get_referrers, METH_VARARGS,
 		gc_get_referrers__doc__},
 	{"get_referrents",  gc_get_referrents, METH_VARARGS,
