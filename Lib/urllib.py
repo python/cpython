@@ -123,8 +123,9 @@ class URLopener:
 		headers = fp.info()
 		import tempfile
 		tfn = tempfile.mktemp()
+		result = tfn, headers
 		if self.tempcache is not None:
-			self.tempcache[url] = result = tfn, headers
+			self.tempcache[url] = result
 		tfp = open(tfn, 'w')
 		bs = 1024*8
 		block = fp.read(bs)
