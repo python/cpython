@@ -24,7 +24,7 @@ class bdist_wininst (Command):
                     ('keep-temp', 'k',
                      "keep the pseudo-installation tree around after " +
                      "creating the distribution archive"),
-                    ('target-version=', 'v',
+                    ('target-version=', None,
                      "require a specific python version" +
                      " on the target system"),
                     ('no-target-compile', 'c',
@@ -265,10 +265,34 @@ class bdist_wininst (Command):
 
     def get_exe_bytes (self):
         from distutils.msvccompiler import get_build_version
+        # If a target-version other than the current version has been
+        # specified, then using the MSVC version from *this* build is no good.
+        # Without actually finding and executing the target version and parsing
+        # its sys.version, we just hard-code our knowledge of old versions.
+        # NOTE: Possible alternative is to allow "--target-version" to
+        # specify a Python executable rather than a simple version string.
+        # We can then execute this program to obtain any info we need, such
+        # as the real sys.version string for the build.
+        cur_version = get_python_version()
+        if self.target_version and self.target_version != cur_version:
+            # If the target version is *later* than us, then we assume they
+            # use what we use
+            # string compares seem wrong, but are what sysconfig.py itself uses
+            if self.target_version > cur_version:
+                bv = get_build_version()
+            else:
+                if self.target_version < "2.4":
+                    bv = "6"
+                else:
+                    bv = "7.1"
+        else:
+            # for current version - use authoritative check.
+            bv = get_build_version()
+
         # wininst-x.y.exe is in the same directory as this file
         directory = os.path.dirname(__file__)
         # we must use a wininst-x.y.exe built with the same C compiler
         # used for python.  XXX What about mingw, borland, and so on?
-        filename = os.path.join(directory, "wininst-%s.exe" % get_build_version())
+        filename = os.path.join(directory, "wininst-%s.exe" % bv)
         return open(filename, "rb").read()
 # class bdist_wininst
