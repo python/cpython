@@ -1954,6 +1954,7 @@ PyObject *PyExc_MemoryError;
 PyObject *PyExc_NameError;
 PyObject *PyExc_OverflowError;
 PyObject *PyExc_RuntimeError;
+PyObject *PyExc_NotImplementedError;
 PyObject *PyExc_SyntaxError;
 PyObject *PyExc_SystemError;
 PyObject *PyExc_SystemExit;
@@ -1989,6 +1990,7 @@ bltin_exc[] = {
 	{"NameError",          &PyExc_NameError,          1},
 	{"OverflowError",      &PyExc_OverflowError,      1},
 	{"RuntimeError",       &PyExc_RuntimeError,       1},
+ 	{"NotImplementedError",&PyExc_NotImplementedError,1},
 	{"SyntaxError",        &PyExc_SyntaxError,        1},
 	{"SystemError",        &PyExc_SystemError,        1},
 	{"SystemExit",         &PyExc_SystemExit,         1},
