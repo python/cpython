@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.3.5?
 ==============================
 
-*Release date: XX-XXX-2005*
+*Release date: 08-FEB-2005*
 
 Core and builtins
 -----------------
@@ -20,6 +20,9 @@ Library
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
+
+- Bug #1114776. Applied a fix to the copy.py fix in 2.3.5rc1 to deal 
+  with types that don't have an __mro__.
 
 
 What's New in Python 2.3.5rc1?
