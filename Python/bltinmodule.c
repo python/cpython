@@ -395,6 +395,133 @@ single (interactive) statement, or 'eval' to compile an expression.";
 #ifndef WITHOUT_COMPLEX
 
 static PyObject *
+complex_from_string(v)
+	PyObject *v;
+{
+	extern double strtod Py_PROTO((const char *, char **));
+	char a, *s, *start, *end;
+	double x=0.0, y=0.0, z;
+	int got_re=0, got_im=0, done=0;
+	int digit_or_dot;
+	int sw_error=0;
+	int sign;
+	char buffer[256]; /* For errors */
+
+	start = s = PyString_AS_STRING(v);
+
+	/* position on first nonblank */
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (s[0] == '\0') {
+		PyErr_SetString(PyExc_ValueError,
+				"empty string for complex()");
+		return NULL;
+	}
+
+	z = -1.0;
+	sign = 1;
+	do {
+	
+		switch (*s) {
+
+		case '\0':
+			if (s-start != PyString_GET_SIZE(v)) {
+				PyErr_SetString(
+					PyExc_ValueError,
+					"null byte in argument for complex()");
+				return NULL;
+			}
+			if(!done) sw_error=1;
+			break;
+						
+		case '-':
+			sign = -1;
+				/* Fallthrough */
+		case '+':
+			if (done)  sw_error=1;
+			s++;
+			if  (  *s=='\0'||*s=='+'||*s=='-'  ||
+			       isspace(Py_CHARMASK(*s))  )  sw_error=1;
+			break;
+
+		case 'J':
+		case 'j':
+			if (got_im || done) {
+				sw_error = 1;
+				break;
+			}
+			if  (z<0.0) {
+				y=sign;
+			}
+			else{
+				y=sign*z;
+			}
+			got_im=1;
+			s++;
+			if  (*s!='+' && *s!='-' )
+				done=1;
+			break;
+
+		default:
+			if (isspace(Py_CHARMASK(*s))) {
+				while (*s && isspace(Py_CHARMASK(*s)))
+					s++;
+				if (s[0] != '\0')
+					sw_error=1;
+				else
+					done = 1;
+				break;
+			}
+			digit_or_dot =
+				(*s=='.' || isdigit(Py_CHARMASK(*s)));
+			if  (done||!digit_or_dot) {
+				sw_error=1;
+				break;
+			}
+			errno = 0;
+			PyFPE_START_PROTECT("strtod", return 0)
+				z = strtod(s, &end) ;
+			PyFPE_END_PROTECT(z)
+				if (errno != 0) {
+					sprintf(buffer,
+					  "float() out of range: %.150s", s);
+					PyErr_SetString(
+						PyExc_ValueError,
+						buffer);
+					return NULL;
+				}
+			s=end;
+			if  (*s=='J' || *s=='j') {
+							
+				break;
+			}
+			if  (got_re) {
+				sw_error=1;
+				break;
+			}
+
+				/* accept a real part */
+			x=sign*z;
+			got_re=1;
+			if  (got_im)  done=1;
+			z = -1.0;
+			sign = 1;
+			break;
+					
+		}  /* end of switch  */
+
+	} while (*s!='\0' && !sw_error);
+
+	if (sw_error) {
+		PyErr_SetString(PyExc_ValueError,
+				"malformed string for complex()");
+		return NULL;
+	}
+
+	return PyComplex_FromDoubles(x,y);
+}
+
+static PyObject *
 builtin_complex(self, args)
 	PyObject *self;
 	PyObject *args;
@@ -407,6 +534,8 @@ builtin_complex(self, args)
 	i = NULL;
 	if (!PyArg_ParseTuple(args, "O|O:complex", &r, &i))
 		return NULL;
+	if (PyString_Check(r))
+		return complex_from_string(r);
 	if ((nbr = r->ob_type->tp_as_number) == NULL ||
 	    nbr->nb_float == NULL ||
 	    (i != NULL &&
@@ -455,11 +584,11 @@ builtin_complex(self, args)
 			return NULL;
 		cr.real = PyFloat_AsDouble(tmp);
 		Py_DECREF(tmp);
-		cr.imag = 0.;
+		cr.imag = 0.0;
 	}
 	if (i == NULL) {
-		ci.real = 0.;
-		ci.imag = 0.;
+		ci.real = 0.0;
+		ci.imag = 0.0;
 	}
 	else if (PyComplex_Check(i))
 		ci = ((PyComplexObject*)i)->cval;
@@ -2032,7 +2161,7 @@ PyObject *PyExc_ZeroDivisionError;
 
 PyObject *PyExc_MemoryErrorInst;
 
-static struct 
+static struct
 {
 	char* name;
 	PyObject** exc;
