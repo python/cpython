@@ -26,7 +26,6 @@ def jpeggrey2grey(img, width, height):
 	return data
 
 def jpeg2rgb(img, width, height):
-	import cl, CL
 	import jpeg
 	data, width, height, bytesperpixel = jpeg.decompress(img)
 	if bytesperpixel <> 4: raise RuntimeError, 'not rgb jpeg'
