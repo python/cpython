@@ -340,7 +340,9 @@ returning \var{newChild}.
 \begin{methoddesc}[Node]{insertBefore}{newChild, refChild}
 Insert a new child node before an existing child.  It must be the case
 that \var{refChild} is a child of this node; if not,
-\exception{ValueError} is raised.  \var{newChild} is returned.
+\exception{ValueError} is raised.  \var{newChild} is returned. If
+\var{refChild} is \code{None}, it inserts \var{newChild} at the end of
+the children's list.
 \end{methoddesc}
 
 \begin{methoddesc}[Node]{removeChild}{oldChild}
