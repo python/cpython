@@ -24,19 +24,20 @@ import StringIO
 import sys
 
 
-def strcasecmp(e1, e2, lower=string.lower):
+def cmp_entries(e1, e2, lower=string.lower):
     return cmp(lower(e1[1]), lower(e2[1])) or cmp(e1, e2)
 
 
-def dump_entries(ofp, entries):
+def dump_entries(write, entries):
     if len(entries) == 1:
-	ofp.write("  \\item %s (%s)%s\n" % entries[0])
+	write("  \\item %s (%s)%s\n" % entries[0])
 	return
-    ofp.write("  \item %s\n" % entries[0][0])
+    write("  \item %s\n" % entries[0][0])
     # now sort these in a case insensitive manner:
-    entries.sort(strcasecmp)
+    if len(entries) > 0:
+	entries.sort(cmp_entries)
     for xxx, subitem, pages in entries:
-	ofp.write("    \subitem %s%s\n" % (subitem, pages))
+	write("    \subitem %s%s\n" % (subitem, pages))
 
 
 breakable_re = re.compile(r"  \\item (.*) [(](.*)[)]((?:, \d+)+)")
@@ -55,27 +56,28 @@ def main():
     else:
 	fp = open(filename)
     ofp = StringIO.StringIO()
-    item, subitem = None, None
     entries = []
+    match = breakable_re.match
+    write = ofp.write
     while 1:
 	line = fp.readline()
 	if not line:
 	    break
-	m = breakable_re.match(line)
+	m = match(line)
 	if m:
 	    entry = m.group(1, 2, 3)
-	    if entries:
-		if entries[-1][0] != entry[0]:
-		    dump_entries(ofp, entries)
-		    entries = []
+	    if entries and entries[-1][0] != entry[0]:
+		dump_entries(write, entries)
+		entries = []
 	    entries.append(entry)
 	elif entries:
-	    dump_entries(ofp, entries)
+	    dump_entries(write, entries)
 	    entries = []
-	    ofp.write(line)
+	    write(line)
 	else:
-	    pass
-	    ofp.write(line)
+	    write(line)
+    del write
+    del match
     fp.close()
     if outfile == "-":
 	fp = sys.stdout
