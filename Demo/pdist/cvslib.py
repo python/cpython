@@ -292,7 +292,7 @@ class CVS:
 		if os.path.isdir(file): return True
 		for pat in self.IgnoreList:
 			if fnmatch.fnmatch(file, pat): return True
-		return Falso
+		return False
 
 
 # hexify and unhexify are useful to print MD5 checksums in hex format
