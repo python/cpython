@@ -217,6 +217,8 @@ PyNode_CompileSymtable
 PyNode_CompileFlags
 PyNode_Compile
 PyCode_New
+PyIter_Next
+PyObject_GetIter
 PyObject_IsSubclass
 PyObject_IsInstance
 PyObject_CallMethod
@@ -232,6 +234,7 @@ PyMapping_Check
 PySequence_Index
 PySequence_In
 PySequence_Contains
+_PySequence_IterContains
 PySequence_Count
 PySequence_Fast
 PySequence_List
@@ -321,6 +324,7 @@ _Py_c_neg
 _Py_c_diff
 _Py_c_sum
 PyDict_Type
+PyDictIter_Type
 PyDict_DelItemString
 PyDict_SetItemString
 PyDict_GetItemString
@@ -348,6 +352,7 @@ PyFile_Name
 PyFile_AsFile
 PyFloat_Type
 PyFloat_Fini
+PyFloat_AsReprString
 PyFloat_AsString
 PyFloat_AsStringEx
 PyFloat_AsDouble
@@ -594,6 +599,7 @@ PyMac_GetOSType
 PyMac_PromptGetFile
 PyMac_GetDirectory
 SIOUXDoAboutBox
+PyMac_RaiseConsoleWindow
 PyMac_RestoreMenuBar
 PyMac_InitMenuBar
 PyMac_SetSchedParams
@@ -823,6 +829,7 @@ PyThread_get_thread_ident
 PyThread_start_new_thread
 PyThread_init_thread
 PyExc_Exception
+PyExc_StopIteration
 PyExc_StandardError
 PyExc_ArithmeticError
 PyExc_LookupError
@@ -888,6 +895,10 @@ PyCell_New
 PySymtableEntry_Type
 PySymtableEntry_New
 PyNode_Future
+PySeqIter_Type
+PyCallIter_Type
+PyCallIter_New
+PySeqIter_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
