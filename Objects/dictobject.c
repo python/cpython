@@ -400,8 +400,10 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 	else {
 		if (ep->me_key == NULL)
 			mp->ma_fill++;
-		else
-			Py_DECREF(ep->me_key);
+		else {
+			assert(ep->me_key == dummy);
+			Py_DECREF(dummy);
+		}
 		ep->me_key = key;
 		ep->me_hash = hash;
 		ep->me_value = value;
