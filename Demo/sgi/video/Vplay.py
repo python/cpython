@@ -1,6 +1,4 @@
-#! /ufs/guido/bin/sgi/python-405
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
 
 # Play CMIF movie files
 

@@ -538,6 +538,8 @@ def readfileheader(fp, filename):
 			format, rest = eval(line[:-1])
 		except:
 			raise Error, filename + ': Bad 3.0 color info'
+		if format == 'xrgb8':
+			format = 'rgb8' # rgb8 upside-down, for X
 		if format in ('rgb', 'jpeg'):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0

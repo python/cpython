@@ -61,6 +61,9 @@ Vmkjpeg.py	compress an rgb or grey video file to jpeg[grey] format
 
 Vunjpeg.py	expand a jpeg[grey] video file to rgb or grey format
 
+Vfix.py		truncate the scan line width of a video file to
+		a multiple of 4 ('grey' images only)
+
 Vedit.py	interactive video editing program
 
 Vsend.py	unicast or multicast live video as UDP packets
@@ -80,7 +83,10 @@ LiveVideoOut.py	live video output class, used by Vsend and Vreceive
 
 
 The following are C programs, either for efficiency or because they
-need to link with a C library:
+need to link with a C library.  (These probably don't work any more
+since the video file format has changed several times since they were
+written.  Also, they can now be recoded in Python using the 'imageop'
+and 'imgfile' modules.)
 
 squash.c	make a movie smaller by averaging pixels
 		usage: squash factor [bits] <moviefile >newmoviefile
@@ -104,9 +110,8 @@ These programs are obsolete, but kept around for sentimental reasons.
 Most either don't work any more because they don't use VFile and hence
 haven't followed the frequent changes in the CMIF video file format;
 or they are dependent upon hardware we don't have (SGI's previous
-generation framegrabber).  Except for cam.py / tv.py, their
-functionality is present in the suite of programs whose name begins
-with 'V' listed above.
+generation framegrabber).  Anyway, their functionality is present in
+the suite of programs whose name begins with 'V' listed above.
 
 cam.py		network real-time tv broadcast; see tv.py
 		usage: cam [packfactor [host]]
@@ -158,5 +163,3 @@ vinfo.py	print summary of movie file(s)
 vpregs.py	definition of VP registers
 
 vtime.py	virtual time module imported by syncaudio.py and camcorder.py
-
-colorsys.py	color system conversions (now part of std python lib)
