@@ -2095,7 +2095,7 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (new == NULL)
 		return NULL;
 	assert(PyLong_Check(new));
-	new->ob_size = type->ob_size;
+	new->ob_size = tmp->ob_size;
 	for (i = 0; i < n; i++)
 		new->ob_digit[i] = tmp->ob_digit[i];
 	Py_DECREF(tmp);
