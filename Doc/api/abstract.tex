@@ -754,7 +754,8 @@ determination.
 \begin{cfuncdesc}{int}{PySequence_SetItem}{PyObject *o, int i, PyObject *v}
   Assign object \var{v} to the \var{i}th element of \var{o}.  Returns
   \code{-1} on failure.  This is the equivalent of the Python
-  statement \samp{\var{o}[\var{i}] = \var{v}}.
+  statement \samp{\var{o}[\var{i}] = \var{v}}.  This function \emph{does not}
+  steal a reference to \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySequence_DelItem}{PyObject *o, int i}
