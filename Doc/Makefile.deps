@@ -185,6 +185,12 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libcgihttp.tex \
 	../lib/libsimplehttp.tex \
 	../lib/liblinecache.tex \
+	../lib/libnew.tex \
+	../lib/libdircache.tex \
+	../lib/libcmp.tex \
+	../lib/libcmpcache.tex \
+	../lib/libstatcache.tex \
+	../lib/libwave.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
