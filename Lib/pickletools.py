@@ -578,6 +578,123 @@ float8 = ArgumentDescriptor(
              (may not survive roundtrip pickling intact).
              """)
 
+# Protocol 2 formats
+
+def decode_long(data):
+    r"""Decode a long from a two's complement little-endian binary string.
+    >>> decode_long("\xff\x00")
+    255L
+    >>> decode_long("\xff\x7f")
+    32767L
+    >>> decode_long("\x00\xff")
+    -256L
+    >>> decode_long("\x00\x80")
+    -32768L
+    >>> 
+    """
+    x = 0L
+    i = 0L
+    for c in data:
+        x |= long(ord(c)) << i
+        i += 8L
+    if i and (x & (1L << (i-1L))):
+        x -= 1L << i
+    return x
+
+def read_long1(f):
+    r"""
+    >>> import StringIO
+    >>> read_long1(StringIO.StringIO("\x02\xff\x00"))
+    255L
+    >>> read_long1(StringIO.StringIO("\x02\xff\x7f"))
+    32767L
+    >>> read_long1(StringIO.StringIO("\x02\x00\xff"))
+    -256L
+    >>> read_long1(StringIO.StringIO("\x02\x00\x80"))
+    -32768L
+    >>> 
+    """
+
+    n = read_uint1(f)
+    data = f.read(n)
+    if len(data) != n:
+        raise ValueError("not enough data in stream to read long1")
+    return decode_long(data)
+
+long1 = ArgumentDescriptor(
+    name="long1",
+    n=TAKEN_FROM_ARGUMENT,
+    reader=read_long1,
+    doc="""A binary long, little-endian, using 1-byte size.
+
+    This first reads one byte as an unsigned size, then reads that
+    many bytes and interprets them as a little-endian long.
+    """)
+
+def read_long2(f):
+    r"""
+    >>> import StringIO
+    >>> read_long2(StringIO.StringIO("\x02\x00\xff\x00"))
+    255L
+    >>> read_long2(StringIO.StringIO("\x02\x00\xff\x7f"))
+    32767L
+    >>> read_long2(StringIO.StringIO("\x02\x00\x00\xff"))
+    -256L
+    >>> read_long2(StringIO.StringIO("\x02\x00\x00\x80"))
+    -32768L
+    >>> 
+    """
+
+    n = read_uint2(f)
+    data = f.read(n)
+    if len(data) != n:
+        raise ValueError("not enough data in stream to read long2")
+    return decode_long(data)
+
+long2 = ArgumentDescriptor(
+    name="long2",
+    n=TAKEN_FROM_ARGUMENT,
+    reader=read_long2,
+    doc="""A binary long, little-endian, using 2-byte size.
+
+    This first reads two byte as an unsigned size, then reads that
+    many bytes and interprets them as a little-endian long.
+    """)
+
+def read_long4(f):
+    r"""
+    >>> import StringIO
+    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x00"))
+    255L
+    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x7f"))
+    32767L
+    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\xff"))
+    -256L
+    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\x80"))
+    -32768L
+    >>> 
+    """
+
+    n = read_int4(f)
+    if n < 0:
+        raise ValueError("unicodestring4 byte count < 0: %d" % n)
+    data = f.read(n)
+    if len(data) != n:
+        raise ValueError("not enough data in stream to read long1")
+    return decode_long(data)
+
+long4 = ArgumentDescriptor(
+    name="long4",
+    n=TAKEN_FROM_ARGUMENT,
+    reader=read_long4,
+    doc="""A binary representation of a long, little-endian.
+
+    This first reads four bytes as a signed size (but requires the
+    size to be >= 0), then reads that many bytes and interprets them
+    as a little-endian long.
+    """)
+
+
 ##############################################################################
 # Object descriptors.  The stack used by the pickle machine holds objects,
 # and in the stack_before and stack_after attributes of OpcodeInfo
@@ -626,6 +743,11 @@ pyinteger_or_bool = StackObject(
                         obtype=(int, long, bool),
                         doc="A Python integer object (short or long), or "
                             "a Python bool.")
+
+pybool = StackObject(
+             name='bool',
+             obtype=(bool,),
+             doc="A Python bool object.")
 
 pyfloat = StackObject(
               name='float',
@@ -1436,6 +1558,172 @@ opcodes = [
       ID is passed to self.persistent_load(), and whatever object that
       returns is pushed on the stack.  See PERSID for more detail.
       """),
+
+    # Protocol 2 opcodes
+
+    I(name='PROTO',
+      code='\x80',
+      arg=uint1,
+      stack_before=[],
+      stack_after=[],
+      proto=2,
+      doc="""Protocol version indicator.
+
+      For protocol 2 and above, a pickle must start with this opcode.
+      The argument is the protocol version, an int in range(2, 256).
+      """),
+
+    I(name='NEWOBJ',
+      code='\x81',
+      arg=None,
+      stack_before=[anyobject, anyobject],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Build an object instance.
+
+      The stack before should be thought of as containing a class
+      object followed by an argument tuple (the tuple being the stack
+      top).  Call these cls and args.  They are popped off the stack,
+      and the value returned by cls.__new__(cls, *args) is pushed back
+      onto the stack.
+      """),
+
+    I(name='EXT1',
+      code='\x82',
+      arg=uint1,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      This code and the similar EXT2 and EXT4 allow using a registry
+      of popular objects that are pickled by name, typically classes.
+      It is envisioned that through a global negotiation and
+      registration process, third parties can set up a mapping between
+      ints and object names.
+
+      In order to guarantee pickle interchangeability, the extension
+      code registry ought to be global, although a range of codes may
+      be reserved for private use.
+      """),
+
+    I(name='EXT2',
+      code='\x83',
+      arg=uint2,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      See EXT1.
+      """),
+
+    I(name='EXT4',
+      code='\x84',
+      arg=int4,
+      stack_before=[],
+      stack_after=[anyobject],
+      proto=2,
+      doc="""Extension code.
+
+      See EXT1.
+      """),
+
+    I(name='TUPLE1',
+      code='\x85',
+      arg=None,
+      stack_before=[anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops one value off the stack and pushes a tuple of
+      length 1 whose one item is that value back onto it.  IOW:
+
+          stack[-1] = tuple(stack[-1:])
+      """),
+
+    I(name='TUPLE2',
+      code='\x86',
+      arg=None,
+      stack_before=[anyobject, anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops two values off the stack and pushes a tuple
+      of length 2 whose items are those values back onto it.  IOW:
+
+          stack[-2:] = [tuple(stack[-2:])]
+      """),
+
+    I(name='TUPLE3',
+      code='\x87',
+      arg=None,
+      stack_before=[anyobject, anyobject, anyobject],
+      stack_after=[pytuple],
+      proto=2,
+      doc="""One-tuple.
+
+      This code pops three values off the stack and pushes a tuple
+      of length 3 whose items are those values back onto it.  IOW:
+
+          stack[-3:] = [tuple(stack[-3:])]
+      """),
+
+    I(name='NEWTRUE',
+      code='\x88',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybool],
+      proto=2,
+      doc="""True.
+
+      Push True onto the stack."""),
+
+    I(name='NEWFALSE',
+      code='\x89',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybool],
+      proto=2,
+      doc="""True.
+
+      Push False onto the stack."""),
+
+    I(name="LONG1",
+      code='\x8a',
+      arg=long1,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=2,
+      doc="""Long integer using one-byte length.
+
+      A more efficient encoding of a Python long; the long1 encoding
+      says it all."""),
+
+    I(name="LONG2",
+      code='\x8b',
+      arg=long2,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=2,
+      doc="""Long integer using two-byte length.
+
+      A more efficient encoding of a Python long; the long2 encoding
+      says it all."""),
+
+    I(name="LONG4",
+      code='\x8c',
+      arg=long4,
+      stack_before=[],
+      stack_after=[pylong],
+      proto=2,
+      doc="""Long integer using found-byte length.
+
+      A more efficient encoding of a Python long; the long4 encoding
+      says it all."""),
+
 ]
 del I
 
