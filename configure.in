@@ -380,6 +380,7 @@ AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 CC="$CC -OPT:Olimit=0"
 AC_TRY_RUN([int main() { return 0; }],
   ac_cv_opt_olimit_ok=yes,
+  ac_cv_opt_olimit_ok=no,
   ac_cv_opt_olimit_ok=no)
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
@@ -395,6 +396,7 @@ else
   CC="$CC -Olimit 1500"
   AC_TRY_RUN([int main() { return 0; }],
     ac_cv_olimit_ok=yes,
+    ac_cv_olimit_ok=no,
     ac_cv_olimit_ok=no)
   CC="$ac_save_cc"])
   AC_MSG_RESULT($ac_cv_olimit_ok)
@@ -468,21 +470,21 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 # Sizes of various common basic types
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(void *)
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(float)
-AC_CHECK_SIZEOF(double)
-AC_CHECK_SIZEOF(fpos_t)
+AC_CHECK_SIZEOF(int, 4)
+AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_SIZEOF(void *, 4)
+AC_CHECK_SIZEOF(char, 1)
+AC_CHECK_SIZEOF(short, 2)
+AC_CHECK_SIZEOF(float, 4)
+AC_CHECK_SIZEOF(double, 8)
+AC_CHECK_SIZEOF(fpos_t, 4)
 
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
 AC_TRY_COMPILE([], [long long x; x = (long long)0;], AC_DEFINE(HAVE_LONG_LONG) have_long_long=yes)
 AC_MSG_RESULT($have_long_long)
 if test "$have_long_long" = yes ; then
-AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(long long, 8)
 fi
 
 AC_MSG_CHECKING(for uintptr_t support)
@@ -490,7 +492,7 @@ have_uintptr_t=no
 AC_TRY_COMPILE([], [uintptr_t x; x = (uintptr_t)0;], AC_DEFINE(HAVE_UINTPTR_T) have_uintptr_t=yes)
 AC_MSG_RESULT($have_uintptr_t)
 if test "$have_uintptr_t" = yes ; then
-AC_CHECK_SIZEOF(uintptr_t)
+AC_CHECK_SIZEOF(uintptr_t, 4)
 fi
 
 # Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
@@ -504,7 +506,10 @@ main()
   if (!f) exit(1);
   fprintf(f, "%d\n", sizeof(off_t));
   exit(0);
-}], ac_cv_sizeof_off_t=`cat conftestval`, ac_cv_sizeof_off_t=0)
+}],
+ac_cv_sizeof_off_t=`cat conftestval`,
+ac_cv_sizeof_off_t=0,
+ac_cv_sizeof_off_t=4)
 ])
 AC_MSG_RESULT($ac_cv_sizeof_off_t)
 AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t)
@@ -530,7 +535,10 @@ main()
   if (!f) exit(1);
   fprintf(f, "%d\n", sizeof(time_t));
   exit(0);
-}], ac_cv_sizeof_time_t=`cat conftestval`, ac_cv_sizeof_time_t=0)
+}],
+ac_cv_sizeof_time_t=`cat conftestval`,
+ac_cv_sizeof_time_t=0,
+ac_cv_sizeof_time_t=4)
 ])
 AC_MSG_RESULT($ac_cv_sizeof_time_t)
 AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
@@ -557,7 +565,10 @@ if test "$have_pthread_t" = yes ; then
     if (!f) exit(1);
     fprintf(f, "%d\n", sizeof(pthread_t));
     exit(0);
-  }], ac_cv_sizeof_pthread_t=`cat conftestval`, ac_cv_sizeof_pthread_t=0)
+  }],
+  ac_cv_sizeof_pthread_t=`cat conftestval`,
+  ac_cv_sizeof_pthread_t=0,
+  ac_cv_sizeof_pthread_t=4)
   ])
   AC_MSG_RESULT($ac_cv_sizeof_pthread_t)
   AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t)
@@ -993,7 +1004,10 @@ else
         if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
         if (pthread_create(NULL, &attr, foo, NULL)) exit(-1);
         exit(0);
-      }], ac_cv_pthread_system_supported=yes, ac_cv_pthread_system_supported=no)
+      }],
+      ac_cv_pthread_system_supported=yes,
+      ac_cv_pthread_system_supported=no,
+      ac_cv_pthread_system_supported=no)
       ])
       AC_MSG_RESULT($ac_cv_pthread_system_supported)
       if test "$ac_cv_pthread_system_supported" = "yes"; then
@@ -1548,7 +1562,10 @@ int foobar() {
 static struct s foo = { 1, 2 };
 main() {
  exit(!((int)&foo == foobar()));
-}], ac_cv_bad_static_forward=no, ac_cv_bad_static_forward=yes)])
+}],
+ac_cv_bad_static_forward=no,
+ac_cv_bad_static_forward=yes,
+ac_cv_bad_static_forward=no)])
 AC_MSG_RESULT($ac_cv_bad_static_forward)
 if test "$ac_cv_bad_static_forward" = yes
 then
@@ -1710,7 +1727,10 @@ main() {
 	if (p == NULL) exit(1);
 	free(p);
 	exit(0);
-}], ac_cv_malloc_zero=nonnull, ac_cv_malloc_zero=null)])
+}],
+ac_cv_malloc_zero=nonnull,
+ac_cv_malloc_zero=null,
+ac_cv_malloc_zero=nonnull)]) # XXX arm cross-compile?
 AC_MSG_RESULT($ac_cv_malloc_zero)
 if test "$ac_cv_malloc_zero" = null
 then
@@ -1726,7 +1746,7 @@ wchar_h="no"
 # determine wchar_t size
 if test "$wchar_h" = yes
 then
-  AC_CHECK_SIZEOF(wchar_t)
+  AC_CHECK_SIZEOF(wchar_t, 4)
 fi
 
 AC_MSG_CHECKING(what type to use for unicode)
@@ -1787,7 +1807,10 @@ int main()
 {
 	exit(((-1)>>3 == -1) ? 0 : 1);
 }
-], ac_cv_rshift_extends_sign=yes, ac_cv_rshift_extends_sign=no)])
+],
+ac_cv_rshift_extends_sign=yes,
+ac_cv_rshift_extends_sign=no,
+ac_cv_rshift_extends_sign=yes)])
 AC_MSG_RESULT($ac_cv_rshift_extends_sign)
 if test "$ac_cv_rshift_extends_sign" = no
 then
@@ -1823,7 +1846,10 @@ int main()
 		exit(0);
 	exit(1);
 }
-],ac_cv_broken_nice=yes, ac_cv_broken_nice=no)])
+],
+ac_cv_broken_nice=yes,
+ac_cv_broken_nice=no,
+ac_cv_broken_nice=no)])
 AC_MSG_RESULT($ac_cv_broken_nice)
 if test "$ac_cv_broken_nice" = yes
 then

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.258 
+# From configure.in Revision: 1.260 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1679,7 +1679,7 @@ else
   ac_save_cc="$CC"
 CC="$CC -OPT:Olimit=0"
 if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_opt_olimit_ok=no
 else
   cat > conftest.$ac_ext <<EOF
 #line 1686 "configure"
@@ -1716,7 +1716,7 @@ else
   ac_save_cc="$CC"
   CC="$CC -Olimit 1500"
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_olimit_ok=no
 else
   cat > conftest.$ac_ext <<EOF
 #line 1723 "configure"
@@ -2318,7 +2318,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_int'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_int=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2325 "configure"
@@ -2357,7 +2357,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_long'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_long=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2364 "configure"
@@ -2396,7 +2396,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_void_p'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_void_p=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2403 "configure"
@@ -2435,7 +2435,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_char'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_char=1
 else
   cat > conftest.$ac_ext <<EOF
 #line 2442 "configure"
@@ -2474,7 +2474,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_short'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_short=2
 else
   cat > conftest.$ac_ext <<EOF
 #line 2481 "configure"
@@ -2513,7 +2513,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_float'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_float=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2520 "configure"
@@ -2552,7 +2552,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_double'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_double=8
 else
   cat > conftest.$ac_ext <<EOF
 #line 2559 "configure"
@@ -2591,7 +2591,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_fpos_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_fpos_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2598 "configure"
@@ -2655,7 +2655,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_long_long'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_long_long=8
 else
   cat > conftest.$ac_ext <<EOF
 #line 2662 "configure"
@@ -2720,7 +2720,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_uintptr_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_uintptr_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2727 "configure"
@@ -2762,7 +2762,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_off_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_off_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2769 "configure"
@@ -2819,7 +2819,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_time_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_time_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2826 "configure"
@@ -2889,7 +2889,7 @@ echo "configure:2888: checking size of pthread_t" >&5
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_pthread_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 2896 "configure"
@@ -4055,7 +4055,7 @@ echo "configure:4054: checking if PTHREAD_SCOPE_SYSTEM is supported" >&5
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_pthread_system_supported=no
 else
   cat > conftest.$ac_ext <<EOF
 #line 4062 "configure"
@@ -6095,7 +6095,7 @@ if eval "test \"`echo '$''{'ac_cv_bad_static_forward'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_bad_static_forward=no
 else
   cat > conftest.$ac_ext <<EOF
 #line 6102 "configure"
@@ -6647,7 +6647,7 @@ if eval "test \"`echo '$''{'ac_cv_malloc_zero'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_malloc_zero=nonnull
 else
   cat > conftest.$ac_ext <<EOF
 #line 6654 "configure"
@@ -6682,7 +6682,7 @@ rm -fr conftest*
 fi
 
 fi
-
+ # XXX arm cross-compile?
 echo "$ac_t""$ac_cv_malloc_zero" 1>&6
 if test "$ac_cv_malloc_zero" = null
 then
@@ -6741,7 +6741,7 @@ if eval "test \"`echo '$''{'ac_cv_sizeof_wchar_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_sizeof_wchar_t=4
 else
   cat > conftest.$ac_ext <<EOF
 #line 6748 "configure"
@@ -6951,7 +6951,7 @@ if eval "test \"`echo '$''{'ac_cv_rshift_extends_sign'+set}'`\" = set"; then
 else
   
 if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_rshift_extends_sign=yes
 else
   cat > conftest.$ac_ext <<EOF
 #line 6958 "configure"
@@ -7079,7 +7079,7 @@ if eval "test \"`echo '$''{'ac_cv_broken_nice'+set}'`\" = set"; then
 else
   
 if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  ac_cv_broken_nice=no
 else
   cat > conftest.$ac_ext <<EOF
 #line 7086 "configure"
