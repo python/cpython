@@ -619,4 +619,6 @@ xyzabc
     (r' (?x)foo ', 'foo', SUCCEED, 'found', 'foo'),
     # bug 115618: negative lookahead
     (r'(?<!abc)(d.f)', 'abcdefdof', SUCCEED, 'found', 'dof'),
+    # bug 116251: character class bug
+    (r'[\w-]+', 'laser_beam', SUCCEED, 'found', 'laser_beam'),
 ]
