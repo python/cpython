@@ -515,21 +515,36 @@ time \method{__reduce__()} will be called with no arguments, and it
 must return either a string or a tuple.
 
 If a string is returned, it names a global variable whose contents are
-pickled as normal.  When a tuple is returned, it must be between two
-and five elements long, with the following semantics:
+pickled as normal.  The string returned by \method{__reduce__} should
+be the object's local name relative to its module; the pickle module
+searches the module namespace to determine the object's module.
+
+When a tuple is returned, it must be between two and five elements
+long. Optional elements can either be omitted, or \code{None} can be provided 
+as their value.  The semantics of each element are:
 
 \begin{itemize}
 
-\item A callable object, which in the unpickling environment must be
-      either a class, a callable registered as a ``safe constructor''
-      (see below), or it must have an attribute
-      \member{__safe_for_unpickling__} with a true value.  Otherwise,
-      an \exception{UnpicklingError} will be raised in the unpickling
-      environment.  Note that as usual, the callable itself is pickled
-      by name.
+\item A callable object that will be called to create the initial
+version of the object.  The next element of the tuple will provide
+arguments for this callable, and later elements provide additional
+state information that will subsequently be used to fully reconstruct
+the pickled date.
+
+In the unpickling environment this object must be either a class, a
+callable registered as a ``safe constructor'' (see below), or it must
+have an attribute \member{__safe_for_unpickling__} with a true value.
+Otherwise, an \exception{UnpicklingError} will be raised in the
+unpickling environment.  Note that as usual, the callable itself is
+pickled by name.
 
 \item A tuple of arguments for the callable object, or \code{None}.
-\deprecated{2.3}{Use the tuple of arguments instead}								
+\deprecated{2.3}{If this item is \code{None}, then instead of calling
+the callable directly, its \method{__basicnew__()} method is called
+without arguments; this method should also return the unpickled
+object.  Providing \code{None} is deprecated, however; return a
+tuple of arguments instead.}
+
 \item Optionally, the object's state, which will be passed to
       the object's \method{__setstate__()} method as described in
       section~\ref{pickle-inst}.  If the object has no
@@ -556,26 +571,6 @@ other classes as long as they implement \method{__setitem__}.
 
 \end{itemize}
 
-Upon unpickling, the callable will be called (provided that it meets
-the above criteria), passing in the tuple of arguments; it should
-return the unpickled object.
-
-If the second item was \code{None}, then instead of calling the
-callable directly, its \method{__basicnew__()} method is called
-without arguments.  It should also return the unpickled object.
-
-\deprecated{2.3}{Use the tuple of arguments instead}
-
-An alternative to implementing a \method{__reduce__()} method on the
-object to be pickled, is to register the callable with the
-\refmodule[copyreg]{copy_reg} module.  This module provides a way
-for programs to register ``reduction functions'' and constructors for
-user-defined types.   Reduction functions have the same semantics and
-interface as the \method{__reduce__()} method described above, except
-that they are called with a single argument, the object to be pickled.
-
-The registered constructor is deemed a ``safe constructor'' for purposes
-
 It is sometimes useful to know the protocol version when implementing
 \method{__reduce__}.  This can be done by implementing a method named
 \method{__reduce_ex__} instead of \method{__reduce__}.
@@ -590,6 +585,16 @@ The \class{object} class implements both \method{__reduce__} and
 \method{__reduce_ex__} implementation detects this and calls
 \method{__reduce__}.
 
+An alternative to implementing a \method{__reduce__()} method on the
+object to be pickled, is to register the callable with the
+\refmodule[copyreg]{copy_reg} module.  This module provides a way
+for programs to register ``reduction functions'' and constructors for
+user-defined types.   Reduction functions have the same semantics and
+interface as the \method{__reduce__()} method described above, except
+that they are called with a single argument, the object to be pickled.
+
+The registered constructor is deemed a ``safe constructor'' for purposes
+of unpickling as described above.
 
 
 \subsubsection{Pickling and unpickling external objects}
