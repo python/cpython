@@ -219,6 +219,19 @@ test('translate', u"abababc", u'bbbc', {ord('a'):None})
 test('translate', u"abababc", u'iiic', {ord('a'):None, ord('b'):ord('i')})
 test('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c'):u'x'})
 
+# Contains:
+print 'Testing Unicode contains method...',
+assert ('a' in 'abdb') == 1
+assert ('a' in 'bdab') == 1
+assert ('a' in 'bdaba') == 1
+assert ('a' in 'bdba') == 1
+assert ('a' in u'bdba') == 1
+assert (u'a' in u'bdba') == 1
+assert (u'a' in u'bdb') == 0
+assert (u'a' in 'bdb') == 0
+assert (u'a' in 'bdba') == 1
+print 'done.'
+
 # Formatting:
 print 'Testing Unicode formatting strings...',
 assert u"%s, %s" % (u"abc", "abc") == u'abc, abc'
