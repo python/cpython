@@ -607,7 +607,7 @@ iconvcodec_repr(PyObject *self)
 }
 
 static PyTypeObject iconvcodec_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,                              /* Number of items for varobject */
     "iconvcodec",                   /* Name of this type */
     sizeof(iconvcodecObject),       /* Basic object size */
@@ -688,6 +688,7 @@ init_iconv_codec(void)
         Py_FatalError("can't initialize the _iconv_codec module: mixed endianess");
     iconv_close(hdl);
 
+    iconvcodec_Type.ob_type = &PyType_Type;
     m = Py_InitModule("_iconv_codec", _iconv_codec_methods);
 
     PyModule_AddStringConstant(m, "__version__", (char*)__version__);
