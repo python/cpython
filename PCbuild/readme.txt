@@ -243,13 +243,13 @@ _ssl
         http://www.openssl.org
 
     You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.6g.tar.gz
+        openssl-0.9.7b.tar.gz
     not
-        openssl-engine-0.9.6g.tar.gz
+        openssl-engine-0.9.7b.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-0.9.6g
+        dist/openssl-0.9.7b
 
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
@@ -278,7 +278,7 @@ _ssl
     Win9x note:  If, near the start of the build process, you see
     something like
 
-        C:\Code\openssl-0.9.6g>set OPTS=no-asm
+        C:\Code\openssl-0.9.7b>set OPTS=no-asm
         Out of environment space
 
     then you're in trouble, and will probably also see these errors near
@@ -288,7 +288,7 @@ _ssl
             'crypto\md5\asm\m5_win32.asm'
         Stop.
         NMAKE : fatal error U1073: don't know how to make
-            'C:\Code\openssl-0.9.6g/out32/libeay32.lib'
+            'C:\Code\openssl-0.9.7b/out32/libeay32.lib'
         Stop.
 
     You need more environment space.  Win9x only has room for 256 bytes
@@ -305,3 +305,10 @@ YOUR OWN EXTENSION DLLs
 If you want to create your own extension module DLL, there's an example
 with easy-to-follow instructions in ../PC/example/; read the file
 readme.txt there first.
+
+HTML Help
+---------
+
+The compiled HTML help file is built from the HTML pages by the script
+Doc/tools/prechm.py. This creates project files which must be compiled
+with MS HTML Help Workshop.
