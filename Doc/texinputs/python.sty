@@ -930,6 +930,7 @@
 \ifpdf
   % The \noindent here is a hack -- we're forcing pdfTeX into
   % horizontal mode since \pdfstartlink requires that.
+  % For PDF, we *should* only generate a link when the URL is absolute.
   \newcommand{\ulink}[2]{\noindent{%
     \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
     \py@LinkColor%                              color of the link text
