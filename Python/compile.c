@@ -2721,13 +2721,10 @@ com_argdefs(c, n)
 			t = TYPE(CHILD(n, i));
 		}
 		else {
-			/* Treat "(a=1, b)" as "(a=1, b=None)" */
-			if (ndefs) {
-				com_addoparg(c, LOAD_CONST,
-					     com_addconst(c, Py_None));
-				com_push(c, 1);
-				ndefs++;
-			}
+			/* Treat "(a=1, b)" as an error */
+			if (ndefs)
+				com_error(c, PyExc_SyntaxError,
+					  "Missing parameter default value");
 		}
 		if (t != COMMA)
 			break;
