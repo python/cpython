@@ -46,14 +46,6 @@ err_ovf(msg)
 	return NULL;
 }
 
-static object *
-err_zdiv(msg)
-	char *msg;
-{
-	err_setstr(ZeroDivisionError, msg);
-	return NULL;
-}
-
 /* Integers are quite normal objects, to make object handling uniform.
    (Using odd pointers to represent integers would save much space
    but require extra checks for this special case throughout the code.)
@@ -153,15 +145,11 @@ int_compare(v, w)
 static object *
 int_add(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b, x;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	x = a + b;
 	if ((x^a) < 0 && (x^b) < 0)
 		return err_ovf("integer addition");
@@ -171,15 +159,11 @@ int_add(v, w)
 static object *
 int_sub(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b, x;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	x = a - b;
 	if ((x^a) < 0 && (x^~b) < 0)
 		return err_ovf("integer subtraction");
@@ -189,97 +173,87 @@ int_sub(v, w)
 static object *
 int_mul(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
 	double x;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	x = (double)a * (double)b;
 	if (x > 0x7fffffff || x < (double) (long) 0x80000000)
 		return err_ovf("integer multiplication");
 	return newintobject(a * b);
 }
 
-static object *
-int_div(v, w)
-	intobject *v;
-	register object *w;
+static int
+i_divmod(x, y, p_xdivy, p_xmody)
+	register intobject *x, *y;
+	long *p_xdivy, *p_xmody;
 {
-	register long a, b, x;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
+	long xi = x->ob_ival;
+	long yi = y->ob_ival;
+	long xdivy, xmody;
+	
+	if (yi == 0) {
+		err_setstr(ZeroDivisionError, "integer division or modulo");
+		return -1;
 	}
-	if (((intobject *)w) -> ob_ival == 0)
-		return err_zdiv("integer division");
-	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
-	/* Make sure we always truncate towards zero */
-	/* XXX What if a == -0x80000000? */
-	if (a < 0) {
-		if (b < 0)
-			x = -a / -b;
-		else
-			x = -(-a / b);
-	}
-	else {
-		if (b < 0)
-			x = -(a / -b);
-		else
-			x = a / b;
-	}
-	return newintobject(x);
-}
-
-static object *
-int_rem(v, w)
-	intobject *v;
-	register object *w;
-{
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	if (((intobject *)w) -> ob_ival == 0)
-		return err_zdiv("integer remainder");
-	/* XXX Need to fix this similar to int_div */
-	return newintobject(v->ob_ival % ((intobject *)w) -> ob_ival);
-}
-
-static object *
-int_divmod(x, y)
-	intobject *x;
-	register object *y;
-{
-	object *v, *v0, *v1;
-	long xi, yi, xdivy, xmody;
-	if (!is_intobject(y)) {
-		err_badarg();
-		return NULL;
-	}
-	xi = x->ob_ival;
-	yi = getintvalue(y);
-	if (yi == 0)
-		return err_zdiv("integer divmod()");
 	if (yi < 0) {
-		xdivy = -xi / -yi;
+		if (xi < 0)
+			xdivy = -xi / -yi;
+		else
+			xdivy = - (xi / -yi);
 	}
 	else {
-		xdivy = xi / yi;
+		if (xi < 0)
+			xdivy = - (-xi / yi);
+		else
+			xdivy = xi / yi;
 	}
 	xmody = xi - xdivy*yi;
 	if (xmody < 0 && yi > 0 || xmody > 0 && yi < 0) {
 		xmody += yi;
 		xdivy -= 1;
 	}
+	*p_xdivy = xdivy;
+	*p_xmody = xmody;
+	return 0;
+}
+
+static object *
+int_div(x, y)
+	intobject *x;
+	intobject *y;
+{
+	long d, m;
+	if (i_divmod(x, y, &d, &m) < 0)
+		return NULL;
+	return newintobject(d);
+}
+
+static object *
+int_mod(x, y)
+	intobject *x;
+	intobject *y;
+{
+	long d, m;
+	if (i_divmod(x, y, &d, &m) < 0)
+		return NULL;
+	newintobject(m);
+}
+
+static object *
+int_divmod(x, y)
+	intobject *x;
+	intobject *y;
+{
+	object *v, *v0, *v1;
+	long d, m;
+	if (i_divmod(x, y, &d, &m) < 0)
+		return NULL;
 	v = newtupleobject(2);
-	v0 = newintobject(xdivy);
-	v1 = newintobject(xmody);
+	v0 = newintobject(d);
+	v1 = newintobject(m);
 	if (v == NULL || v0 == NULL || v1 == NULL ||
 		settupleitem(v, 0, v0) != 0 ||
 		settupleitem(v, 1, v1) != 0) {
@@ -294,15 +268,11 @@ int_divmod(x, y)
 static object *
 int_pow(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long iv, iw, ix;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	iv = v->ob_ival;
-	iw = ((intobject *)w)->ob_ival;
+	iw = w->ob_ival;
 	if (iw < 0) {
 		err_setstr(ValueError, "integer to the negative power");
 		return NULL;
@@ -366,15 +336,11 @@ int_invert(v)
 static object *
 int_lshift(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	if (b < 0) {
 		err_setstr(ValueError, "negative shift count");
 		return NULL;
@@ -393,15 +359,11 @@ int_lshift(v, w)
 static object *
 int_rshift(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	if (b < 0) {
 		err_setstr(ValueError, "negative shift count");
 		return NULL;
@@ -428,45 +390,33 @@ int_rshift(v, w)
 static object *
 int_and(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	return newintobject(a & b);
 }
 
 static object *
 int_xor(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	return newintobject(a ^ b);
 }
 
 static object *
 int_or(v, w)
 	intobject *v;
-	register object *w;
+	intobject *w;
 {
 	register long a, b;
-	if (!is_intobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	a = v->ob_ival;
-	b = ((intobject *)w) -> ob_ival;
+	b = w->ob_ival;
 	return newintobject(a | b);
 }
 
@@ -475,7 +425,7 @@ static number_methods int_as_number = {
 	int_sub,	/*nb_subtract*/
 	int_mul,	/*nb_multiply*/
 	int_div,	/*nb_divide*/
-	int_rem,	/*nb_remainder*/
+	int_mod,	/*nb_remainder*/
 	int_divmod,	/*nb_divmod*/
 	int_pow,	/*nb_power*/
 	int_neg,	/*nb_negative*/
