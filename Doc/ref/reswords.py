@@ -1,20 +1,11 @@
 """Spit out the Python reserved words table."""
 
-import string
-
-raw_words = """
-and       del       for       is        raise    
-assert    elif      from      lambda    return   
-break     else      global    not       try      
-class     except    if        or        while    
-continue  exec      import    pass               
-def       finally   in        print              
-"""
+import keyword
 
 ncols = 5
 
 def main():
-    words = string.split(raw_words)
+    words = keyword.kwlist[:]
     words.sort()
     colwidth = 1 + max(map(len, words))
     nwords = len(words)
