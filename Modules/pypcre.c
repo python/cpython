@@ -1064,7 +1064,7 @@ else
     c -= '0';
     while(i++ < 2 && (pcre_ctypes[ptr[1]] & ctype_digit) != 0 &&
       ptr[1] != '8' && ptr[1] != '9')
-        c = c * 8 + *(++ptr) - '0';
+        c = (c * 8 + *(++ptr) - '0') & 255;
     break;
 
     /* Special escapes not starting with a digit are straightforward */
