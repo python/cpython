@@ -24,31 +24,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 #include "Python.h"
-
-//#include "macglue.h"
-//#include "marshal.h"
-//#include "import.h"
-//#include "importdl.h"
 #include "pymactoolbox.h"
 
-//#include "pythonresources.h"
-
 #ifdef WITHOUT_FRAMEWORKS
-//#include <OSUtils.h> /* for Set(Current)A5 */
-//#include <Files.h>
-//#include <StandardFile.h>
-//#include <Resources.h>
-//#include <Memory.h>
-//#include <Windows.h>
-//#include <Traps.h>
-//#include <Processes.h>
-//#include <Fonts.h>
-//#include <Menus.h>
-//#include <TextUtils.h>
-//#include <LowMem.h>
-//#include <Events.h>
-#else
-//#include <Carbon/Carbon.h>
+#include <Script.h>
+#include <Resources.h>
 #endif
 
 /*
