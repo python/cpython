@@ -557,10 +557,25 @@ PyImport_AddModule(char *name)
 	return m;
 }
 
+/* Remove name from sys.modules, if it's there. */
+static void
+_RemoveModule(const char *name)
+{
+	PyObject *modules = PyImport_GetModuleDict();
+	if (PyDict_GetItemString(modules, name) == NULL)
+		return;
+	if (PyDict_DelItemString(modules, name) < 0)
+		Py_FatalError("import:  deleting existing key in"
+			      "sys.modules failed");
+}
 
 /* Execute a code object in a module and return the module object
-   WITH INCREMENTED REFERENCE COUNT */
-
+ * WITH INCREMENTED REFERENCE COUNT.  If an error occurs, name is
+ * removed from sys.modules, to avoid leaving damaged module objects
+ * in sys.modules.  The caller may wish to restore the original
+ * module object (if any) in this case; PyImport_ReloadModule is an
+ * example.
+ */
 PyObject *
 PyImport_ExecCodeModule(char *name, PyObject *co)
 {
@@ -582,7 +597,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	if (PyDict_GetItemString(d, "__builtins__") == NULL) {
 		if (PyDict_SetItemString(d, "__builtins__",
 					 PyEval_GetBuiltins()) != 0)
-			return NULL;
+			goto error;
 	}
 	/* Remember the filename as the __file__ attribute */
 	v = NULL;
@@ -601,7 +616,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 
 	v = PyEval_EvalCode((PyCodeObject *)co, d, d);
 	if (v == NULL)
-		return NULL;
+		goto error;
 	Py_DECREF(v);
 
 	if ((m = PyDict_GetItemString(modules, name)) == NULL) {
@@ -614,6 +629,10 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	Py_INCREF(m);
 
 	return m;
+
+  error:
+	_RemoveModule(name);
+	return NULL;
 }
 
 
@@ -888,7 +907,9 @@ static struct _frozen *find_frozen(char *name);
 static PyObject *
 load_package(char *name, char *pathname)
 {
-	PyObject *m, *d, *file, *path;
+	PyObject *m, *d;
+	PyObject *file = NULL;
+	PyObject *path = NULL;
 	int err;
 	char buf[MAXPATHLEN+1];
 	FILE *fp = NULL;
@@ -903,19 +924,15 @@ load_package(char *name, char *pathname)
 	d = PyModule_GetDict(m);
 	file = PyString_FromString(pathname);
 	if (file == NULL)
-		return NULL;
+		goto error;
 	path = Py_BuildValue("[O]", file);
-	if (path == NULL) {
-		Py_DECREF(file);
-		return NULL;
-	}
+	if (path == NULL)
+		goto error;
 	err = PyDict_SetItemString(d, "__file__", file);
 	if (err == 0)
 		err = PyDict_SetItemString(d, "__path__", path);
-	if (err != 0) {
-		m = NULL;
-		goto cleanup;
-	}
+	if (err != 0)
+		goto error;
 	buf[0] = '\0';
 	fdp = find_module(name, "__init__", path, buf, sizeof(buf), &fp, NULL);
 	if (fdp == NULL) {
@@ -930,6 +947,10 @@ load_package(char *name, char *pathname)
 	m = load_module(name, fp, buf, fdp->type, NULL);
 	if (fp != NULL)
 		fclose(fp);
+	goto cleanup;
+
+  error:
+  	m = NULL;
   cleanup:
 	Py_XDECREF(path);
 	Py_XDECREF(file);
@@ -2234,6 +2255,7 @@ PyImport_ReloadModule(PyObject *m)
 	char buf[MAXPATHLEN+1];
 	struct filedescr *fdp;
 	FILE *fp = NULL;
+	PyObject *newm;
 
 	if (m == NULL || !PyModule_Check(m)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2275,10 +2297,18 @@ PyImport_ReloadModule(PyObject *m)
 	Py_XDECREF(path);
 	if (fdp == NULL)
 		return NULL;
-	m = load_module(name, fp, buf, fdp->type, NULL);
+	newm = load_module(name, fp, buf, fdp->type, NULL);
 	if (fp)
 		fclose(fp);
-	return m;
+	if (newm == NULL) {
+		/* load_module probably removed name from modules because of
+		 * the error.  Put back the original module object.  We're
+		 * going to return NULL in this case regardless of whether
+		 * replacing name succeeds, so the return value is ignored.
+		 */
+		PyDict_SetItemString(modules, name, m);
+	}
+	return newm;
 }
 
 
