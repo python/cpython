@@ -1,6 +1,15 @@
 # Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Windows.h'
 
+f = Function(RgnHandle, 'GetGrayRgn',
+)
+functions.append(f)
+
 f = Function(void, 'InitWindows',
+)
+functions.append(f)
+
+f = Function(void, 'GetWMgrPort',
+    (GrafPtr, 'wPort', OutMode),
 )
 functions.append(f)
 
@@ -104,8 +113,18 @@ f = Function(void, 'InvalRect',
 )
 functions.append(f)
 
+f = Function(void, 'InvalRgn',
+    (RgnHandle, 'badRgn', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'ValidRect',
     (Rect_ptr, 'goodRect', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'ValidRgn',
+    (RgnHandle, 'goodRgn', InMode),
 )
 functions.append(f)
 
@@ -162,8 +181,26 @@ f = Method(void, 'DrawNew',
 )
 methods.append(f)
 
+f = Method(void, 'PaintOne',
+    (WindowRef, 'window', InMode),
+    (RgnHandle, 'clobberedRgn', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'PaintBehind',
+    (WindowRef, 'startWindow', InMode),
+    (RgnHandle, 'clobberedRgn', InMode),
+)
+methods.append(f)
+
 f = Method(void, 'CalcVis',
     (WindowRef, 'window', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'CalcVisBehind',
+    (WindowRef, 'startWindow', InMode),
+    (RgnHandle, 'clobberedRgn', InMode),
 )
 methods.append(f)
 
@@ -192,6 +229,11 @@ f = Method(Boolean, 'TrackBox',
     (short, 'partCode', InMode),
 )
 methods.append(f)
+
+f = Function(void, 'GetCWMgrPort',
+    (CGrafPtr, 'wMgrCPort', OutMode),
+)
+functions.append(f)
 
 f = Function(WindowRef, 'NewCWindow',
     (NullStorage, 'wStorage', InMode),

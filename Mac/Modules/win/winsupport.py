@@ -29,9 +29,10 @@ WindowPtr = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 WindowRef = WindowPtr
 WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 WindowPeek.passInput = lambda name: "(WindowPeek)(%s)" % name
-CGrafPtr = WindowPtr
+CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
+GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 
-#RgnHandle = OpaqueByValueType("RgnHandle", "RgnObj")
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 
 includestuff = includestuff + """
@@ -83,7 +84,6 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		""")
 	def outputFreeIt(self, itselfname):
 		Output("DisposeWindow(%s);", itselfname)
-
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them

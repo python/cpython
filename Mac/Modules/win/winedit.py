@@ -1,6 +1,11 @@
 # These are inline-routines/defines, so we do them "by hand"
 #
 
+f = Method(CGrafPtr, 'GetWindowPort',
+    (WindowRef, 'theWindow', InMode),
+)
+methods.append(f)
+
 f = Method(void, 'SetPortWindowPort',
     (WindowRef, 'theWindow', InMode),
 )
@@ -38,25 +43,23 @@ f = Method(Boolean, 'GetWindowZoomFlag',
 )
 methods.append(f)
 
-if 0:
-	# Regions are not implemented yet..
-	f = Method(void, 'GetWindowStructureRgn',
-		(WindowRef, 'theWindow', InMode),
-		(RgnHandle, 'r', InMode),
-	)
-	methods.append(f)
-	
-	f = Method(void, 'GetWindowContentRgn',
-		(WindowRef, 'theWindow', InMode),
-		(RgnHandle, 'r', InMode),
-	)
-	methods.append(f)
-	
-	f = Method(void, 'GetWindowUpdateRgn',
-		(WindowRef, 'theWindow', InMode),
-		(RgnHandle, 'r', InMode),
-	)
-	methods.append(f)
+f = Method(void, 'GetWindowStructureRgn',
+	(WindowRef, 'theWindow', InMode),
+	(RgnHandle, 'r', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'GetWindowContentRgn',
+	(WindowRef, 'theWindow', InMode),
+	(RgnHandle, 'r', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'GetWindowUpdateRgn',
+	(WindowRef, 'theWindow', InMode),
+	(RgnHandle, 'r', InMode),
+)
+methods.append(f)
 
 f = Method(short, 'GetWindowTitleWidth',
     (WindowRef, 'theWindow', InMode),

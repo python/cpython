@@ -19,6 +19,8 @@ extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
+extern PyTypeObject Window_Type;
+#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
 
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
@@ -30,6 +32,9 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
+
+extern PyObject *GrafObj_New(GrafPtr);
+extern int GrafObj_Convert(PyObject *, GrafPtr *);
 
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
@@ -412,6 +417,38 @@ static PyObject *WinObj_DrawNew(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_PaintOne(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	PaintOne(_self->ob_itself,
+	         clobberedRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_PaintBehind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	PaintBehind(_self->ob_itself,
+	            clobberedRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_CalcVis(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -420,6 +457,22 @@ static PyObject *WinObj_CalcVis(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CalcVis(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_CalcVisBehind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	CalcVisBehind(_self->ob_itself,
+	              clobberedRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -531,6 +584,20 @@ static PyObject *WinObj_DragWindow(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_GetWindowPort(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowPort(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, _rv);
+	return _res;
+}
+
 static PyObject *WinObj_SetPortWindowPort(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -627,6 +694,54 @@ static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
 	_rv = GetWindowZoomFlag(_self->ob_itself);
 	_res = Py_BuildValue("b",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowStructureRgn(_self->ob_itself,
+	                      r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowContentRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowContentRgn(_self->ob_itself,
+	                    r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle r;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &r))
+		return NULL;
+	GetWindowUpdateRgn(_self->ob_itself,
+	                   r);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -763,8 +878,14 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> None"},
 	{"DrawNew", (PyCFunction)WinObj_DrawNew, 1,
 	 "(Boolean update) -> None"},
+	{"PaintOne", (PyCFunction)WinObj_PaintOne, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
+	{"PaintBehind", (PyCFunction)WinObj_PaintBehind, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
 	{"CalcVis", (PyCFunction)WinObj_CalcVis, 1,
 	 "() -> None"},
+	{"CalcVisBehind", (PyCFunction)WinObj_CalcVisBehind, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
 	{"GrowWindow", (PyCFunction)WinObj_GrowWindow, 1,
 	 "(Point startPt, Rect bBox) -> (long _rv)"},
 	{"TrackBox", (PyCFunction)WinObj_TrackBox, 1,
@@ -777,6 +898,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Point thePt) -> (Boolean _rv)"},
 	{"DragWindow", (PyCFunction)WinObj_DragWindow, 1,
 	 "(Point startPt, Rect boundsRect) -> None"},
+	{"GetWindowPort", (PyCFunction)WinObj_GetWindowPort, 1,
+	 "() -> (CGrafPtr _rv)"},
 	{"SetPortWindowPort", (PyCFunction)WinObj_SetPortWindowPort, 1,
 	 "() -> None"},
 	{"GetWindowKind", (PyCFunction)WinObj_GetWindowKind, 1,
@@ -791,6 +914,12 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> (Boolean _rv)"},
 	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
 	 "() -> (Boolean _rv)"},
+	{"GetWindowStructureRgn", (PyCFunction)WinObj_GetWindowStructureRgn, 1,
+	 "(RgnHandle r) -> None"},
+	{"GetWindowContentRgn", (PyCFunction)WinObj_GetWindowContentRgn, 1,
+	 "(RgnHandle r) -> None"},
+	{"GetWindowUpdateRgn", (PyCFunction)WinObj_GetWindowUpdateRgn, 1,
+	 "(RgnHandle r) -> None"},
 	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
 	 "() -> (short _rv)"},
 	{"GetNextWindow", (PyCFunction)WinObj_GetNextWindow, 1,
@@ -833,6 +962,20 @@ PyTypeObject Window_Type = {
 /* --------------------- End object type Window --------------------- */
 
 
+static PyObject *Win_GetGrayRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetGrayRgn();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
 static PyObject *Win_InitWindows(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -843,6 +986,20 @@ static PyObject *Win_InitWindows(_self, _args)
 	InitWindows();
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Win_GetWMgrPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GrafPtr wPort;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetWMgrPort(&wPort);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, wPort);
 	return _res;
 }
 
@@ -930,6 +1087,21 @@ static PyObject *Win_InvalRect(_self, _args)
 	return _res;
 }
 
+static PyObject *Win_InvalRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle badRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &badRgn))
+		return NULL;
+	InvalRgn(badRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Win_ValidRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -940,6 +1112,21 @@ static PyObject *Win_ValidRect(_self, _args)
 	                      PyMac_GetRect, &goodRect))
 		return NULL;
 	ValidRect(&goodRect);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Win_ValidRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle goodRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &goodRgn))
+		return NULL;
+	ValidRgn(goodRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -996,6 +1183,20 @@ static PyObject *Win_PinRect(_self, _args)
 	              thePt);
 	_res = Py_BuildValue("l",
 	                     _rv);
+	return _res;
+}
+
+static PyObject *Win_GetCWMgrPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr wMgrCPort;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetCWMgrPort(&wMgrCPort);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, wMgrCPort);
 	return _res;
 }
 
@@ -1069,8 +1270,12 @@ static PyObject *Win_WhichWindow(_self, _args)
 }
 
 static PyMethodDef Win_methods[] = {
+	{"GetGrayRgn", (PyCFunction)Win_GetGrayRgn, 1,
+	 "() -> (RgnHandle _rv)"},
 	{"InitWindows", (PyCFunction)Win_InitWindows, 1,
 	 "() -> None"},
+	{"GetWMgrPort", (PyCFunction)Win_GetWMgrPort, 1,
+	 "() -> (GrafPtr wPort)"},
 	{"NewWindow", (PyCFunction)Win_NewWindow, 1,
 	 "(Rect boundsRect, Str255 title, Boolean visible, short theProc, WindowPtr behind, Boolean goAwayFlag, long refCon) -> (WindowPtr _rv)"},
 	{"GetNewWindow", (PyCFunction)Win_GetNewWindow, 1,
@@ -1079,14 +1284,20 @@ static PyMethodDef Win_methods[] = {
 	 "() -> (WindowPtr _rv)"},
 	{"InvalRect", (PyCFunction)Win_InvalRect, 1,
 	 "(Rect badRect) -> None"},
+	{"InvalRgn", (PyCFunction)Win_InvalRgn, 1,
+	 "(RgnHandle badRgn) -> None"},
 	{"ValidRect", (PyCFunction)Win_ValidRect, 1,
 	 "(Rect goodRect) -> None"},
+	{"ValidRgn", (PyCFunction)Win_ValidRgn, 1,
+	 "(RgnHandle goodRgn) -> None"},
 	{"CheckUpdate", (PyCFunction)Win_CheckUpdate, 1,
 	 "() -> (Boolean _rv, EventRecord theEvent)"},
 	{"FindWindow", (PyCFunction)Win_FindWindow, 1,
 	 "(Point thePoint) -> (short _rv, WindowPtr theWindow)"},
 	{"PinRect", (PyCFunction)Win_PinRect, 1,
 	 "(Rect theRect, Point thePt) -> (long _rv)"},
+	{"GetCWMgrPort", (PyCFunction)Win_GetCWMgrPort, 1,
+	 "() -> (CGrafPtr wMgrCPort)"},
 	{"NewCWindow", (PyCFunction)Win_NewCWindow, 1,
 	 "(Rect boundsRect, Str255 title, Boolean visible, short procID, WindowPtr behind, Boolean goAwayFlag, long refCon) -> (WindowPtr _rv)"},
 	{"GetNewCWindow", (PyCFunction)Win_GetNewCWindow, 1,

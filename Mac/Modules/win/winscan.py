@@ -36,13 +36,10 @@ class MyScanner(Scanner):
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
-			'GrafPtr',
-			'CGrafPtr',
-			'RgnHandle',
-##			'PicHandle',
 			'WCTabHandle',
 			'AuxWinHandle',
 			'PixPatHandle',
+			'DragGrayRgnUPP',
 			]
 
 	def makerepairinstructions(self):
