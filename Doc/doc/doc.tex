@@ -549,6 +549,17 @@ This \UNIX\ is also followed by a space.
       be used in the description.
     \end{envdesc}
 
+    \begin{envdesc}{cmemberdesc}{\p{container}\p{type}\p{name}}
+      Description for a structure member.  \var{container} should be
+      the \keyword{typedef} name, if there is one, otherwise if should
+      be \samp{struct \var{tag}}.  The type of the member should given
+      as \var{type}, and the name should be given as \var{name}.  The
+      text of the description should include the range of values
+      allowed, how the value should be interpreted, and whether the
+      value can be changed.  References to structure members in text
+      should use the \macro{member} macro.
+    \end{envdesc}
+
     \begin{envdesc}{csimplemacrodesc}{\p{name}}
       Documentation for a ``simple'' macro.  Simple macros are macros
       which are used for code expansion, but which do not take
