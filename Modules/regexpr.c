@@ -1157,7 +1157,7 @@ else \
 	} \
 }
 
-unsigned char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
+char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
 {
 	int a;
 	int pos;
@@ -1535,36 +1535,36 @@ unsigned char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
 	STORE(Cend);
 	SET_FIELDS;
 	if(!re_optimize(bufp))
-		return (unsigned char *)"Optimization error";
+		return "Optimization error";
 	return NULL;
 
   op_error:
 	SET_FIELDS;
-	return (unsigned char *)"Badly placed special character";
+	return "Badly placed special character";
 
   bad_match_register:
 	SET_FIELDS;
-	return (unsigned char *)"Bad match register number";
+	return "Bad match register number";
    
   hex_error:
 	SET_FIELDS;
-	return (unsigned char *)"Bad hexadecimal number";
+	return "Bad hexadecimal number";
    
   parenthesis_error:
 	SET_FIELDS;
-	return (unsigned char *)"Badly placed parenthesis";
+	return "Badly placed parenthesis";
    
   out_of_memory:
 	SET_FIELDS;
-	return (unsigned char *)"Out of memory";
+	return "Out of memory";
    
   ends_prematurely:
 	SET_FIELDS;
-	return (unsigned char *)"Regular expression ends prematurely";
+	return "Regular expression ends prematurely";
 
   too_complex:
 	SET_FIELDS;
-	return (unsigned char *)"Regular expression too complex";
+	return "Regular expression too complex";
 }
 
 #undef CHARAT

@@ -439,7 +439,7 @@ newregexobject(pattern, translate, givenpat, groupindex)
 		re->re_realpat = pattern;
 		Py_INCREF(givenpat);
 		re->re_givenpat = givenpat;
-		error = (char *)re_compile_pattern((unsigned char *)pat, size, &re->re_patbuf);
+		error = _Py_re_compile_pattern((unsigned char *)pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			PyErr_SetString(RegexError, error);
 			goto finally;
