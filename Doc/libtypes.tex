@@ -707,30 +707,28 @@ device or writing a file opened for reading.
 Files have the following methods:
 
 
-\setindexsubitem{(file method)}
-
-\begin{funcdesc}{close}{}
+\begin{methoddesc}[file]{close}{}
   Close the file.  A closed file cannot be read or written anymore.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flush}{}
+\begin{methoddesc}[file]{flush}{}
   Flush the internal buffer, like \code{stdio}'s \code{fflush()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{isatty}{}
+\begin{methoddesc}[file]{isatty}{}
   Return \code{1} if the file is connected to a tty(-like) device, else
   \code{0}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{fileno}{}
+\begin{methoddesc}[file]{fileno}{}
 Return the integer ``file descriptor'' that is used by the underlying
 implementation to request I/O operations from the operating system.
 This can be useful for other, lower level interfaces that use file
 descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
 \refbimodindex{fcntl}
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{read}{\optional{size}}
+\begin{methoddesc}[file]{read}{\optional{size}}
   Read at most \var{size} bytes from the file (less if the read hits
   \EOF{} or no more data is immediately available on a pipe, tty or
   similar device).  If the \var{size} argument is negative or omitted,
@@ -738,9 +736,9 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   object.  An empty string is returned when \EOF{} is encountered
   immediately.  (For certain files, like ttys, it makes sense to
   continue reading after an \EOF{} is hit.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{readline}{\optional{size}}
+\begin{methoddesc}[file]{readline}{\optional{size}}
   Read one entire line from the file.  A trailing newline character is
   kept in the string%
 \footnote{The advantage of leaving the newline on is that an empty string 
@@ -757,71 +755,71 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   immediately.  Note: unlike \code{stdio}'s \code{fgets()}, the returned
   string contains null characters (\code{'\e 0'}) if they occurred in the
   input.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{readlines}{\optional{sizehint}}
+\begin{methoddesc}[file]{readlines}{\optional{sizehint}}
   Read until \EOF{} using \code{readline()} and return a list containing
   the lines thus read.  If the optional \var{sizehint} argument is
   present, instead of reading up to \EOF{}, whole lines totalling
   approximately \var{sizehint} bytes (possibly after rounding up to an
   internal buffer size) are read.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{seek}{offset, whence}
+\begin{methoddesc}[file]{seek}{offset, whence}
   Set the file's current position, like \code{stdio}'s \code{fseek()}.
   The \var{whence} argument is optional and defaults to \code{0}
   (absolute file positioning); other values are \code{1} (seek
   relative to the current position) and \code{2} (seek relative to the
   file's end).  There is no return value.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{tell}{}
+\begin{methoddesc}[file]{tell}{}
   Return the file's current position, like \code{stdio}'s \code{ftell()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{truncate}{\optional{size}}
+\begin{methoddesc}[file]{truncate}{\optional{size}}
 Truncate the file's size.  If the optional size argument present, the
 file is truncated to (at most) that size.  The size defaults to the
 current position.  Availability of this function depends on the
 operating system version (e.g., not all \UNIX{} versions support this
 operation).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{write}{str}
+\begin{methoddesc}[file]{write}{str}
 Write a string to the file.  There is no return value.  Note: due to
 buffering, the string may not actually show up in the file until
 the \code{flush()} or \code{close()} method is called.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{writelines}{list}
+\begin{methoddesc}[file]{writelines}{list}
 Write a list of strings to the file.  There is no return value.
 (The name is intended to match \code{readlines}; \code{writelines}
 does not add line separators.)
-\end{funcdesc}
+\end{methoddesc}
 
 File objects also offer the following attributes:
 
 \setindexsubitem{(file attribute)}
 
-\begin{datadesc}{closed}
+\begin{memberdesc}[file]{closed}
 Boolean indicating the current state of the file object.  This is a
 read-only attribute; the \method{close()} method changes the value.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{mode}
+\begin{memberdesc}[file]{mode}
 The I/O mode for the file.  If the file was created using the
 \function{open()} built-in function, this will be the value of the
 \var{mode} parameter.  This is a read-only attribute.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{name}
+\begin{memberdesc}[file]{name}
 If the file object was created using \function{open()}, the name of
 the file.  Otherwise, some string that indicates the source of the
 file object, of the form \samp{<\mbox{\ldots}>}.  This is a read-only
 attribute.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{softspace}
+\begin{memberdesc}[file]{softspace}
 Boolean that indicates whether a space character needs to be printed
 before another value when using the \keyword{print} statement.
 Classes that are trying to simulate a file object should also have a
@@ -829,7 +827,7 @@ writable \code{softspace} attribute, which should be initialized to
 zero.  This will be automatic for classes implemented in Python; types
 implemented in \C{} will have to provide a writable \code{softspace}
 attribute.
-\end{datadesc}
+\end{memberdesc}
 
 \subsubsection{Internal Objects}
 

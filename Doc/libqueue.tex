@@ -37,34 +37,32 @@ other queue organizations (e.g. stack) but the inheritable interface
 is not described here.  See the source code for details.  The public
 methods are:
 
-\setindexsubitem{(Queue method)}
-
-\begin{funcdesc}{qsize}{}
+\begin{methoddesc}{qsize}{}
 Returns the approximate size of the queue.  Because of multithreading
 semantics, this number is not reliable.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{empty}{}
+\begin{methoddesc}{empty}{}
 Returns \code{1} if the queue is empty, \code{0} otherwise.  Because
 of multithreading semantics, this is not reliable.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{full}{}
+\begin{methoddesc}{full}{}
 Returns \code{1} if the queue is full, \code{0} otherwise.  Because of
 multithreading semantics, this is not reliable.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{put}{item}
+\begin{methoddesc}{put}{item}
 Puts \var{item} into the queue.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{get}{}
+\begin{methoddesc}{get}{}
 Gets and returns an item from the queue, blocking if necessary until
 one is available.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{get_nowait}{}
+\begin{methoddesc}{get_nowait}{}
 Gets and returns an item from the queue if one is immediately
 available.  Raises an \exception{Empty} exception if the queue is
 empty or if the queue's emptiness cannot be determined.
-\end{funcdesc}
+\end{methoddesc}

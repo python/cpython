@@ -142,32 +142,31 @@ l/lib/python1.4/test', '/usr/local/lib/python1.4/sunos5', '/usr/local/lib/python
 
 \class{PrettyPrinter} instances have the following methods:
 
-\setindexsubitem{(PrettyPrinter method)}
 
-\begin{funcdesc}{pformat}{object}
+\begin{methoddesc}{pformat}{object}
 Return the formatted representation of \var{object}.  This takes into
-account the options passed to the \class{PrettyPrinter} constructor.
-\end{funcdesc}
+Account the options passed to the \class{PrettyPrinter} constructor.
+\end{methoddesc}
 
-\begin{funcdesc}{pprint}{object}
+\begin{methoddesc}{pprint}{object}
 Print the formatted representation of \var{object} on the configured
 stream, followed by a newline.
-\end{funcdesc}
+\end{methoddesc}
 
 The following methods provide the implementations for the
 corresponding functions of the same names.  Using these methods on an
 instance is slightly more efficient since new \class{PrettyPrinter}
 objects don't need to be created.
 
-\begin{funcdesc}{isreadable}{object}
+\begin{methoddesc}{isreadable}{object}
 Determine if the formatted representation of the object is
 ``readable,'' or can be used to reconstruct the value using
 \function{eval()}\bifuncindex{eval}.  Note that this returns false for
 recursive objects.  If the \var{depth} parameter of the
 \class{PrettyPrinter} is set and the object is deeper than allowed,
 this returns false.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{isrecursive}{object}
+\begin{methoddesc}{isrecursive}{object}
 Determine if the object requires a recursive representation.
-\end{funcdesc}
+\end{methoddesc}

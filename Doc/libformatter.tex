@@ -37,6 +37,7 @@ initialized.
 
 One data element is defined at the module level:
 
+
 \begin{datadesc}{AS_IS}
 Value which can be used in the font specification passed to the
 \code{push_font()} method described below, or as the new value to any
@@ -47,33 +48,30 @@ be called without having to track whether the property was changed.
 
 The following attributes are defined for formatter instance objects:
 
-\setindexsubitem{(formatter attribute)}
 
-\begin{datadesc}{writer}
+\begin{memberdesc}[formatter]{writer}
 The writer instance with which the formatter interacts.
-\end{datadesc}
+\end{memberdesc}
 
 
-\setindexsubitem{(formatter method)}
-
-\begin{funcdesc}{end_paragraph}{blanklines}
+\begin{methoddesc}[formatter]{end_paragraph}{blanklines}
 Close any open paragraphs and insert at least \var{blanklines}
 before the next paragraph.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_line_break}{}
+\begin{methoddesc}[formatter]{add_line_break}{}
 Add a hard line break if one does not already exist.  This does not
 break the logical paragraph.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_hor_rule}{*args, **kw}
+\begin{methoddesc}[formatter]{add_hor_rule}{*args, **kw}
 Insert a horizontal rule in the output.  A hard break is inserted if
 there is data in the current paragraph, but the logical paragraph is
 not broken.  The arguments and keywords are passed on to the writer's
 \method{send_line_break()} method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_flowing_data}{data}
+\begin{methoddesc}[formatter]{add_flowing_data}{data}
 Provide data which should be formatted with collapsed whitespaces.
 Whitespace from preceeding and successive calls to
 \method{add_flowing_data()} is considered as well when the whitespace
@@ -81,15 +79,15 @@ collapse is performed.  The data which is passed to this method is
 expected to be word-wrapped by the output device.  Note that any
 word-wrapping still must be performed by the writer object due to the
 need to rely on device and font information.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_literal_data}{data}
+\begin{methoddesc}[formatter]{add_literal_data}{data}
 Provide data which should be passed to the writer unchanged.
 Whitespace, including newline and tab characters, are considered legal
 in the value of \var{data}.  
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{add_label_data}{format, counter}
+\begin{methoddesc}[formatter]{add_label_data}{format, counter}
 Insert a label which should be placed to the left of the current left
 margin.  This should be used for constructing bulleted or numbered
 lists.  If the \var{format} value is a string, it is interpreted as a
@@ -111,74 +109,74 @@ lower case, respectively, and \character{I} and \character{i}
 represent the counter value in Roman numerals, in upper and lower
 case.  Note that the alphabetic and roman transforms require that the
 counter value be greater than zero.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flush_softspace}{}
+\begin{methoddesc}[formatter]{flush_softspace}{}
 Send any pending whitespace buffered from a previous call to
 \method{add_flowing_data()} to the associated writer object.  This
 should be called before any direct manipulation of the writer object.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{push_alignment}{align}
+\begin{methoddesc}[formatter]{push_alignment}{align}
 Push a new alignment setting onto the alignment stack.  This may be
 \constant{AS_IS} if no change is desired.  If the alignment value is
 changed from the previous setting, the writer's \method{new_alignment()}
 method is called with the \var{align} value.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{pop_alignment}{}
+\begin{methoddesc}[formatter]{pop_alignment}{}
 Restore the previous alignment.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{push_font}{\code{(}size, italic, bold, teletype\code{)}}
+\begin{methoddesc}[formatter]{push_font}{\code{(}size, italic, bold, teletype\code{)}}
 Change some or all font properties of the writer object.  Properties
 which are not set to \constant{AS_IS} are set to the values passed in
 while others are maintained at their current settings.  The writer's
 \method{new_font()} method is called with the fully resolved font
 specification.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{pop_font}{}
+\begin{methoddesc}[formatter]{pop_font}{}
 Restore the previous font.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{push_margin}{margin}
+\begin{methoddesc}[formatter]{push_margin}{margin}
 Increase the number of left margin indentations by one, associating
 the logical tag \var{margin} with the new indentation.  The initial
 margin level is \code{0}.  Changed values of the logical tag must be
 true values; false values other than \constant{AS_IS} are not
 sufficient to change the margin.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{pop_margin}{}
+\begin{methoddesc}[formatter]{pop_margin}{}
 Restore the previous margin.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{push_style}{*styles}
+\begin{methoddesc}[formatter]{push_style}{*styles}
 Push any number of arbitrary style specifications.  All styles are
 pushed onto the styles stack in order.  A tuple representing the
 entire stack, including \constant{AS_IS} values, is passed to the
 writer's \method{new_styles()} method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{pop_style}{\optional{n\code{ = 1}}}
+\begin{methoddesc}[formatter]{pop_style}{\optional{n\code{ = 1}}}
 Pop the last \var{n} style specifications passed to
 \method{push_style()}.  A tuple representing the revised stack,
 including \constant{AS_IS} values, is passed to the writer's
 \method{new_styles()} method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{set_spacing}{spacing}
+\begin{methoddesc}[formatter]{set_spacing}{spacing}
 Set the spacing style for the writer.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{assert_line_data}{\optional{flag\code{ = 1}}}
+\begin{methoddesc}[formatter]{assert_line_data}{\optional{flag\code{ = 1}}}
 Inform the formatter that data has been added to the current paragraph
 out-of-band.  This should be used when the writer has been manipulated
 directly.  The optional \var{flag} argument can be set to false if
 the writer manipulations produced a hard line break at the end of the
 output.
-\end{funcdesc}
+\end{methoddesc}
 
 
 \subsection{Formatter Implementations}
@@ -213,21 +211,20 @@ Note that while most applications can use the
 \class{AbstractFormatter} class as a formatter, the writer must
 typically be provided by the application.
 
-\setindexsubitem{(writer method)}
 
-\begin{funcdesc}{flush}{}
+\begin{methoddesc}[writer]{flush}{}
 Flush any buffered output or device control events.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{new_alignment}{align}
+\begin{methoddesc}[writer]{new_alignment}{align}
 Set the alignment style.  The \var{align} value can be any object,
 but by convention is a string or \code{None}, where \code{None}
 indicates that the writer's ``preferred'' alignment should be used.
 Conventional \var{align} values are \code{'left'}, \code{'center'},
 \code{'right'}, and \code{'justify'}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{new_font}{font}
+\begin{methoddesc}[writer]{new_font}{font}
 Set the font style.  The value of \var{font} will be \code{None},
 indicating that the device's default font should be used, or a tuple
 of the form \code{(}\var{size}, \var{italic}, \var{bold},
@@ -236,67 +233,67 @@ font that should be used; specific strings and their interpretation
 must be defined by the application.  The \var{italic}, \var{bold}, and
 \var{teletype} values are boolean indicators specifying which of those
 font attributes should be used.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{new_margin}{margin, level}
+\begin{methoddesc}[writer]{new_margin}{margin, level}
 Set the margin level to the integer \var{level} and the logical tag
 to \var{margin}.  Interpretation of the logical tag is at the
 writer's discretion; the only restriction on the value of the logical
 tag is that it not be a false value for non-zero values of
 \var{level}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{new_spacing}{spacing}
+\begin{methoddesc}[writer]{new_spacing}{spacing}
 Set the spacing style to \var{spacing}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{new_styles}{styles}
+\begin{methoddesc}[writer]{new_styles}{styles}
 Set additional styles.  The \var{styles} value is a tuple of
 arbitrary values; the value \constant{AS_IS} should be ignored.  The
 \var{styles} tuple may be interpreted either as a set or as a stack
 depending on the requirements of the application and writer
 implementation.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_line_break}{}
+\begin{methoddesc}[writer]{send_line_break}{}
 Break the current line.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_paragraph}{blankline}
+\begin{methoddesc}[writer]{send_paragraph}{blankline}
 Produce a paragraph separation of at least \var{blankline} blank
 lines, or the equivelent.  The \var{blankline} value will be an
 integer.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_hor_rule}{*args, **kw}
+\begin{methoddesc}[writer]{send_hor_rule}{*args, **kw}
 Display a horizontal rule on the output device.  The arguments to this
 method are entirely application- and writer-specific, and should be
 interpreted with care.  The method implementation may assume that a
 line break has already been issued via \method{send_line_break()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_flowing_data}{data}
+\begin{methoddesc}[writer]{send_flowing_data}{data}
 Output character data which may be word-wrapped and re-flowed as
 needed.  Within any sequence of calls to this method, the writer may
 assume that spans of multiple whitespace characters have been
 collapsed to single space characters.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_literal_data}{data}
+\begin{methoddesc}[writer]{send_literal_data}{data}
 Output character data which has already been formatted
 for display.  Generally, this should be interpreted to mean that line
 breaks indicated by newline characters should be preserved and no new
 line breaks should be introduced.  The data may contain embedded
 newline and tab characters, unlike data provided to the
 \method{send_formatted_data()} interface.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send_label_data}{data}
+\begin{methoddesc}[writer]{send_label_data}{data}
 Set \var{data} to the left of the current left margin, if possible.
 The value of \var{data} is not restricted; treatment of non-string
 values is entirely application- and writer-dependent.  This method
 will only be called at the beginning of a line.
-\end{funcdesc}
+\end{methoddesc}
 
 
 \subsection{Writer Implementations}
