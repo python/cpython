@@ -522,13 +522,12 @@ class FAQServer:
 	value = "%s;%s" % (author, email)
 	import urllib
 	value = urllib.quote(value)
-	try:
-	    hostname = os.environ['HTTP_HOST']
-	except KeyError:
-	    hostname = os.environ['SERVER_NAME']
 	print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
-	print "domain=%s;" % hostname,
-	print "expires=Sat, 01-Jan-2000 00:00:00 GMT"
+	import time
+	now = time.time()
+	then = now + 28 * 24 * 3600
+	gmt = time.gmtime(then)
+	print time.strftime("expires=%a, %d-%b-%x %X GMT", gmt)
 
     def get_cookie(self):
 	if not os.environ.has_key('HTTP_COOKIE'):
@@ -654,7 +653,7 @@ class FAQServer:
 	if edit:
 	    print """
 	    <A HREF="faq.py?req=edit&name=%s">Edit this entry</A> /
-	    <A HREF="faq.py?req=info&name=%s" TARGET=_blank>Log info</A>
+	    <A HREF="faq.py?req=info&name=%s" TARGET=rlog>Log info</A>
 	    """ % (name, name)
 	    if self.headers:
 		try:
@@ -664,7 +663,7 @@ class FAQServer:
 		except KeyError:
 		    pass
 		else:
-		    s = '/ Last changed on %s by <A HREF="%s">%s</A>'
+		    s = '/ Last changed on %s by <A HREF="mailto:%s">%s</A>'
 		    print s % (date, email, author)
 	    print '<P>'
 	print "<HR>"
