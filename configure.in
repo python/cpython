@@ -582,6 +582,32 @@ AC_MSG_RESULT($ac_cv_func_getopt)
 test $ac_cv_func_getopt = no && LIBOBJS="$LIBOBJS getopt.o"
 AC_SUBST(LIBOBJS)dnl
 
+# check whether malloc(0) returns NULL or not
+AC_SUBST(MALLOC_ZERO_RETURNS_NULL)
+AC_MSG_CHECKING(what malloc(0) returns)
+AC_CACHE_VAL(ac_cv_malloc_zero,
+[AC_TRY_RUN([#include <stdio.h>
+#ifdef HAVE_STDLIB
+#include <stdlib.h>
+#else
+char *malloc(), *realloc();
+int *free();
+#endif
+main() {
+	char *p;
+	p = malloc(0);
+	if (p == NULL) exit(1);
+	p = realloc(p, 0);
+	if (p == NULL) exit(1);
+	free(p);
+	exit(0);
+}], ac_cv_malloc_zero=nonnull, ac_cv_malloc_zero=null)])
+AC_MSG_RESULT($ac_cv_malloc_zero)
+if test "$ac_cv_malloc_zero" = null
+then
+  AC_DEFINE(MALLOC_ZERO_RETURNS_NULL)
+fi
+
 # generate output files
 AC_OUTPUT(Makefile \
  Objects/Makefile \
