@@ -52,6 +52,7 @@ def checkin(x, copts, fn):
 	if not new and same(x, copts, fn, data):
 		print "%s: unchanged since last checkin" % fn
 		return
+	print "Checking in", fn, "..."
 	message = asklogmessage(new)
 	messages = x.put(fn, data, message)
 	if messages:
@@ -151,4 +152,5 @@ commands = {
 	'diff': ('c', diff),
 	}
 
-main()
+if __name__ == '__main__':
+	main()
