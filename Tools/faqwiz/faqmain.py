@@ -44,6 +44,8 @@ XXX Code organization TO DO
 
 # NB for timing purposes, the imports are at the end of this file
 
+PASSWORD = "Spam"
+
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
 
@@ -75,7 +77,7 @@ class FAQServer:
 
     KEYS = ['req', 'query', 'name', 'text', 'commit', 'title',
 	    'author', 'email', 'log', 'section', 'number', 'add',
-	    'version', 'edit']
+	    'version', 'edit', 'password']
 
     def __getattr__(self, key):
 	if key not in self.KEYS:
@@ -94,7 +96,7 @@ class FAQServer:
 	return value
 
     def do_frontpage(self):
-	self.prologue("Python FAQ (alpha) Front Page")
+	self.prologue("Python FAQ (beta test) Front Page")
 	print """
 	<UL>
 	<LI><A HREF="faq.py?req=index">FAQ index</A>
@@ -330,7 +332,8 @@ class FAQServer:
 	if not headers:
 	    self.error("Invalid file name", name)
 	    return
-	self.prologue("Python FAQ Edit Form")
+	self.prologue("Python FAQ Edit Wizard - Edit Form")
+	print '<A HREF="/python/faqhelp.html">Click for Help</A>'
 	title = headers['title']
 	version = self.getversion(name)
 	print "<FORM METHOD=POST ACTION=faq.py>"
@@ -362,13 +365,15 @@ class FAQServer:
 	if not headers:
 	    self.error("Invalid file name", name)
 	    return
-	if self.author and '@' in self.email:
-	    self.set_cookie(self.author, self.email)
-	self.prologue("Python FAQ Review Form")
+	if self.author or '@' in self.email or self.password:
+	    self.set_cookie(self.author, self.email, self.password)
+	self.prologue("Python FAQ Edit Wizard - Review Form")
+	print '<A HREF="/python/faqhelp.html">Click for Help</A>'
 	print "<HR>"
 	self.show(name, title, text, edit=0)
 	print "<FORM METHOD=POST ACTION=faq.py>"
-	if self.log and self.author and '@' in self.email:
+	if self.password == PASSWORD \
+	   and self.log and self.author and '@' in self.email:
 	    print """
 	    <INPUT TYPE=submit NAME=commit VALUE="Commit">
 	    Click this button to commit the change.
@@ -378,8 +383,9 @@ class FAQServer:
 	    """
 	else:
 	    print """
-	    To commit this change, please enter your name,
-	    email and a log message in the form below.
+	    To commit this change, please enter a log message,
+	    your name, your email address,
+	    and the correct password in the form below.
 	    <P>
 	    <HR>
 	    <P>
@@ -434,7 +440,13 @@ class FAQServer:
     def checkin(self):
 	import regsub, time, tempfile
 	name = self.name
-
+	password = self.password
+	if password != PASSWORD:
+	    self.error("Invalid password.")
+	    return
+	if not (self.log and self.author and '@' in self.email):
+	    self.error("No log message, no author, or invalid email.")
+	    return
 	headers, oldtext = self.read(name)
 	if not headers:
 	    self.error("Invalid file name", name)
@@ -549,7 +561,7 @@ class FAQServer:
 	output = p.read()
 	sts = p.close()
 	if not sts:
-	    self.set_cookie(author, email)
+	    self.set_cookie(author, email, password)
 	    self.prologue("Python FAQ Entry Edited")
 	    print "<HR>"
 	    self.show(name, title, text)
@@ -561,9 +573,9 @@ class FAQServer:
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 
-    def set_cookie(self, author, email):
+    def set_cookie(self, author, email, password):
 	name = "Python-FAQ-ID"
-	value = "%s;%s" % (author, email)
+	value = "%s/%s/%s" % (author, email, password)
 	import urllib
 	value = urllib.quote(value)
 	print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
@@ -585,36 +597,48 @@ class FAQServer:
 		key, value = word[:i], word[i+1:]
 		cookies[key] = value
 	if not cookies.has_key('Python-FAQ-ID'):
-	    return "", ""
+	    return "", "", ""
 	value = cookies['Python-FAQ-ID']
 	import urllib
 	value = urllib.unquote(value)
-	i = string.rfind(value, ';')
-	author, email = value[:i], value[i+1:]
-	return author, email
+	words = string.split(value, '/')
+	while len(words) < 3:
+	    words.append('')
+	author = string.join(words[:-2], '/')
+	email = words[-2]
+	password = words[-1]
+	return author, email, password
 
     def showedit(self, name, title, text):
 	author = self.author
 	email = self.email
+	password = self.password
 	if not author or not email:
-	    a, e = self.get_cookie()
+	    a, e, p = self.get_cookie()
 	    author = author or a
 	    email = email or e
+	    password = password or p
 	print """
 	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"><BR>
-	<TEXTAREA COLS=80 ROWS=20 NAME=text>%s</TEXTAREA>
-	""" % (self.escape(title), cgi.escape(string.strip(text)))
-	print """
-	<BR>
+	<TEXTAREA COLS=80 ROWS=20 NAME=text>%s\n</TEXTAREA>""" % (
+	    self.escape(title), cgi.escape(string.strip(text)))
+	print """<BR>
 	Log message (reason for the change):<BR>
-	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA>
-	<BR>
+	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA><BR>
 	Please provide the following information for logging purposes:
-	<BR>
-	<CODE>Name : </CODE><INPUT TYPE=text SIZE=40 NAME=author VALUE="%s">
-	<BR>
-	<CODE>Email: </CODE><INPUT TYPE=text SIZE=40 NAME=email VALUE="%s">
-	""" % (self.escape(self.log), self.escape(author), self.escape(email))
+	<TABLE FRAME=none COLS=2>
+	  <TR>
+	    <TD>Name:
+	    <TD><INPUT TYPE=text SIZE=40 NAME=author VALUE="%s">
+	  <TR>
+	    <TD>Email:
+	    <TD><INPUT TYPE=text SIZE=40 NAME=email VALUE="%s">
+	  <TR>
+	    <TD>Password:
+	    <TD><INPUT TYPE=password SIZE=40 NAME=password VALUE="%s">
+	</TABLE>
+	""" % (self.escape(self.log), self.escape(author),
+	       self.escape(email), self.escape(password))
 
     def escape(self, s):
 	import regsub
