@@ -29,6 +29,13 @@
 #	Adrian Baddeley.
 
 
+# Multi-threading note: the random number generator used here is not
+# thread-safe; it is possible that nearly simultaneous calls in
+# different theads return the same random value.  To avoid this, you
+# have to use a lock around all calls.  (I didn't want to slow this
+# down in the serial case by using a lock here.)
+
+
 class whrandom:
 	#
 	# Initialize an instance.
@@ -60,6 +67,8 @@ class whrandom:
 	# Get the next random number in the range [0.0, 1.0).
 	#
 	def random(self):
+		# This part is thread-unsafe:
+		# BEGIN CRITICAL SECTION
 		x, y, z = self._seed
 		#
 		x = (171 * x) % 30269
@@ -67,6 +76,7 @@ class whrandom:
 		z = (170 * z) % 30323
 		#
 		self._seed = x, y, z
+		# END CRITICAL SECTION
 		#
 		return (x/30269.0 + y/30307.0 + z/30323.0) % 1.0
 	#
