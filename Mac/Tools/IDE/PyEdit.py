@@ -26,13 +26,6 @@ else:
 	MyFrontWindow = Win.FrontWindow
 
 
-try:
-	import Wthreading
-except ImportError:
-	haveThreading = 0
-else:
-	haveThreading = Wthreading.haveThreading
-
 _scriptuntitledcounter = 1
 _wordchars = string.ascii_letters + string.digits + "_"
 
@@ -659,15 +652,8 @@ class Editor(W.Window):
 		else:
 			cwdindex = None
 		try:
-			if haveThreading:
-				self._thread = Wthreading.Thread(os.path.basename(file), 
-							self._exec_threadwrapper, pytext, globals, locals, file, self.debugging, 
-							modname, self.profiling)
-				self.setthreadstate((1, 1))
-				self._thread.start()
-			else:
-				execstring(pytext, globals, locals, file, self.debugging, 
-							modname, self.profiling)
+			execstring(pytext, globals, locals, file, self.debugging, 
+					modname, self.profiling)
 		finally:
 			if self.path:
 				os.chdir(savedir)
@@ -1204,14 +1190,8 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		return
 	try:
 		if debugging:
-			if haveThreading:
-				lock = Wthreading.Lock()
-				lock.acquire()
-				PyDebugger.startfromhere()
-				lock.release()
-			else:
-				PyDebugger.startfromhere()
-		elif not haveThreading:
+			PyDebugger.startfromhere()
+		else:
 			if hasattr(MacOS, 'EnableAppswitch'):
 				MacOS.EnableAppswitch(0)
 		try:
@@ -1229,9 +1209,8 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 			else:
 				exec code in globals, locals
 		finally:
-			if not haveThreading:
-				if hasattr(MacOS, 'EnableAppswitch'):
-					MacOS.EnableAppswitch(-1)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(-1)
 	except W.AlertError, detail:
 		raise W.AlertError, detail
 	except (KeyboardInterrupt, BdbQuit):
@@ -1240,18 +1219,12 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		if arg.code:
 			sys.stderr.write("Script exited with status code: %s\n" % repr(arg.code))
 	except:
-		if haveThreading:
-			import continuation
-			lock = Wthreading.Lock()
-			lock.acquire()
 		if debugging:
 			sys.settrace(None)
 			PyDebugger.postmortem(sys.exc_type, sys.exc_value, sys.exc_traceback)
 			return
 		else:
 			tracebackwindow.traceback(1, filename)
-		if haveThreading:
-			lock.release()
 	if debugging:
 		sys.settrace(None)
 		PyDebugger.stop()
