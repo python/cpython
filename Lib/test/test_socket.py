@@ -37,6 +37,42 @@ class SocketUDPTest(unittest.TestCase):
         self.serv = None
 
 class ThreadableTest:
+    """Threadable Test class
+
+    The ThreadableTest class makes it easy to create a threaded
+    client/server pair from an existing unit test. To create a
+    new threaded class from an existing unit test, use multiple
+    inheritance:
+
+        class NewClass (OldClass, ThreadableTest):
+            pass
+
+    This class defines two new fixture functions with obvious
+    purposes for overriding:
+
+        clientSetUp ()
+        clientTearDown ()
+
+    Any new test functions within the class must then define
+    tests in pairs, where the test name is preceeded with a
+    '_' to indicate the client portion of the test. Ex:
+
+        def testFoo(self):
+            # Server portion
+
+        def _testFoo(self):
+            # Client portion
+
+    Any exceptions raised by the clients during their tests
+    are caught and transferred to the main thread to alert
+    the testing framework.
+
+    Note, the server setup function cannot call any blocking
+    functions that rely on the client thread during setup,
+    unless serverExplicityReady() is called just before
+    the blocking call (such as in setting up a client/server
+    connection and performing the accept() in setUp().
+    """
 
     def __init__(self):
         # Swap the true setup function
@@ -45,8 +81,16 @@ class ThreadableTest:
         self.setUp = self._setUp
         self.tearDown = self._tearDown
 
+    def serverExplicitReady(self):
+        """This method allows the server to explicitly indicate that
+        it wants the client thread to proceed. This is useful if the
+        server is about to execute a blocking routine that is
+        dependent upon the client thread during its setup routine."""
+        self.server_ready.set()
+
     def _setUp(self):
-        self.ready = threading.Event()
+        self.server_ready = threading.Event()
+        self.client_ready = threading.Event()
         self.done = threading.Event()
         self.queue = Queue.Queue(1)
 
@@ -59,7 +103,9 @@ class ThreadableTest:
             self.clientRun, (test_method,))
 
         self.__setUp()
-        self.ready.wait()
+        if not self.server_ready.isSet():
+            self.server_ready.set()
+        self.client_ready.wait()
 
     def _tearDown(self):
         self.__tearDown()
@@ -70,7 +116,8 @@ class ThreadableTest:
             self.fail(msg)
 
     def clientRun(self, test_func):
-        self.ready.set()
+        self.server_ready.wait()
+        self.client_ready.set()
         self.clientSetUp()
         if not callable(test_func):
             raise TypeError, "test_func must be a callable function"
@@ -117,6 +164,9 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
 
     def setUp(self):
         ThreadedTCPSocketTest.setUp(self)
+        # Indicate explicitly we're ready for the client thread to
+        # proceed and then perform the blocking call to accept
+        self.serverExplicitReady()
         conn, addr = self.serv.accept()
         self.cli_conn = conn
 
@@ -369,7 +419,6 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
-        time.sleep(1) # Give server a chance to set up
         self.cli.sendto(MSG, 0, (HOST, PORT))
 
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
@@ -407,12 +456,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             self.fail("Error trying to do accept after select.")
 
     def _testAccept(self):
-        time.sleep(1)
         self.cli.connect((HOST, PORT))
 
     def testConnect(self):
         """Testing non-blocking connect."""
-        time.sleep(1)
         conn, addr = self.serv.accept()
 
     def _testConnect(self):
@@ -438,7 +485,6 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def _testRecv(self):
         self.cli.connect((HOST, PORT))
-        time.sleep(1)
         self.cli.send(MSG)
 
 class FileObjectClassTestCase(SocketConnectedTest):
@@ -498,7 +544,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.cli_file.write(MSG)
         self.cli_file.flush()
 
-def main():
+def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(GeneralModuleTests))
     suite.addTest(unittest.makeSuite(BasicTCPTest))
@@ -508,4 +554,4 @@ def main():
     test_support.run_suite(suite)
 
 if __name__ == "__main__":
-    main()
+    test_main()
