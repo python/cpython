@@ -1,4 +1,5 @@
 import warnings
+import os
 
 # The warnings module isn't easily tested, because it relies on module
 # globals to store configuration information.  We need to extract the
@@ -8,8 +9,7 @@ _filters = []
 _showwarning = None
 
 def showwarning(message, category, filename, lineno, file=None):
-    i = filename.find("Lib")
-    filename = filename[i:]
+    filename = os.path.basename(filename)
     print "%s:%s: %s: %s" % (filename, lineno, category.__name__, message)
 
 def monkey():
