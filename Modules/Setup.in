@@ -93,7 +93,8 @@ signal signalmodule.c		# signal(2)
 
 # The SGI specific GL module:
 
-#gl glmodule.c cgensupport.c -I$(srcdir) -lgl -lX11
+GLHACK=-Dclear=__GLclear
+#gl glmodule.c cgensupport.c -I$(srcdir) $(GLHACK) -lgl -lX11
 
 # The thread module is now automatically enabled, see Setup.thread.
 
@@ -216,7 +217,7 @@ md5 md5module.c md5c.c
 # These module work on any SGI machine:
 
 # *** gl must be enabled higher up in this file ***
-#fm fmmodule.c -lfm -lgl		# Font Manager
+#fm fmmodule.c $(GLHACK) -lfm -lgl		# Font Manager
 #sgi sgimodule.c			# sgi.nap() and a few more
 
 # This module requires the header file
@@ -240,7 +241,7 @@ md5 md5module.c md5c.c
 # toplevel directory:
 
 #FORMS=/ufs/guido/src/forms/FORMS
-#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a -lfm -lgl
+#fl flmodule.c -I$(FORMS) $(GLHACK) $(FORMS)/libforms.a -lfm -lgl
 
 
 # SunOS specific modules -- off by default:
