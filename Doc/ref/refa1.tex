@@ -20,13 +20,13 @@ versions of Python that introduce incompatible changes to the
 language.  It allows use of the new features on a per-module basis
 before the release in which the feature becomes standard.
 
-\begin{verbatim}
-future_statement: "from" "__future__" "import" feature ["as" name]
-                 ("," feature ["as" name])*
-
-feature: identifier
-name: identifier
-\end{verbatim}
+\begin{productionlist}[*]
+  \production{future_statement}
+             {"from" "__future__" "import" feature ["as" name]}
+  \productioncont{("," feature ["as" name])*}
+  \production{feature}{identifier}
+  \production{name}{identifier}
+\end{productionlist}
 
 A future statement must appear near the top of the module.  The only
 lines that can appear before a future statement are:
