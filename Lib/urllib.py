@@ -325,13 +325,19 @@ class URLopener:
             'Content-Type: %s\n' % (mtype or 'text/plain')))
         host, file = splithost(url)
         if not host:
+            urlfile = file
+            if file[:1] == '/':
+                urlfile = 'file://' + file
             return addinfourl(open(url2pathname(file), 'rb'),
-                              headers, 'file:'+file)
+                              headers, urlfile)
         host, port = splitport(host)
         if not port \
            and socket.gethostbyname(host) in (localhost(), thishost()): 
+            urlfile = file
+            if file[:1] == '/':
+                urlfile = 'file://' + file
             return addinfourl(open(url2pathname(file), 'rb'),
-                              headers, 'file:'+file)
+                              headers, urlfile)
         raise IOError, ('local file error', 'not on local host')
 
     # Use FTP protocol
