@@ -210,6 +210,9 @@
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
 
+/* Define if you want to build an interpreter with many run-time checks  */
+#undef Py_DEBUG
+
 /* The number of bytes in an off_t. */
 #undef SIZEOF_OFF_T
 
@@ -265,9 +268,6 @@
 
 /* The number of bytes in a void *.  */
 #undef SIZEOF_VOID_P
-
-/* Define if you have the _getpty function.  */
-#undef HAVE__GETPTY
 
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
@@ -355,6 +355,9 @@
 
 /* Define if you have the getpid function.  */
 #undef HAVE_GETPID
+
+/* Define if you have the _getpty function.  */
+#undef HAVE__GETPTY
 
 /* Define if you have the getpwent function.  */
 #undef HAVE_GETPWENT

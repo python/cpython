@@ -658,6 +658,16 @@ AC_MSG_RESULT($LINKFORSHARED)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
+# Check for --with-pydebug
+AC_MSG_CHECKING(for --with-pydebug)
+AC_ARG_WITH(pydebug, 
+[  --with-pydebug                  build with Py_DEBUG defined], [
+if test "$withval" != no
+then AC_DEFINE(Py_DEBUG) AC_MSG_RESULT(yes)
+else AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
