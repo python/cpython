@@ -30,8 +30,14 @@ The module defines the following functions:
   structure, e.g.\ created by \function{struct.pack()}. The binary
   data is copied to a buffer whose address is passed to the C
   \cfunction{fcntl()} call.  The return value after a successful call
-  is the contents of the buffer, converted to a string object.  In
-  case the \cfunction{fcntl()} fails, an \exception{IOError} is
+  is the contents of the buffer, converted to a string object.  The length
+  of the returned string will be the same as the length of the \var{arg} 
+  argument.  This is limited to 1024 bytes.  If the information returned
+  in the buffer by the operating system is larger than 1024 bytes, 
+  this is most likely to result in a segmentation violation or a more
+  subtle data corruption.
+
+  If the \cfunction{fcntl()} fails, an \exception{IOError} is
   raised.
 \end{funcdesc}
 
