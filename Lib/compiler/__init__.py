@@ -18,7 +18,7 @@ compile(source, filename, mode, flags=None, dont_inherit=None)
     Returns a code object.  A replacement for the builtin compile() function. 
 
 compileFile(filename)
-    Generates a .pyc file by compilining filename.
+    Generates a .pyc file by compiling filename.
 """
 
 from transformer import parse, parseFile
