@@ -453,6 +453,7 @@ PyInstance_NewRaw(PyObject *klass, PyObject *dict)
 		Py_DECREF(dict);
 		return NULL;
 	}
+	inst->in_weakreflist = NULL;
 	Py_INCREF(klass);
 	inst->in_class = (PyClassObject *)klass;
 	inst->in_dict = dict;
