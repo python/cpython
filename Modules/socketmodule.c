@@ -219,9 +219,14 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
    determine the bug just by checking for __APPLE__. If this bug
    gets ever fixed, perhaps checking for sys/version.h would be
    appropriate, which is 10/0 on the system with the bug. */
+#ifndef HAVE_GETNAMEINFO
+/* This bug seems to be fixed in Jaguar. Ths easiest way I could
+   Find to check for Jaguar is that it has getnameinfo(), which
+   older releases don't have */
 #undef HAVE_GETADDRINFO
 /* avoid clashes with the C library definition of the symbol. */
 #define getaddrinfo fake_getaddrinfo
+#endif
 #endif
 
 /* I know this is a bad practice, but it is the easiest... */
