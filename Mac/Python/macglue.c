@@ -685,11 +685,13 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	*/
 	if( in_here > 1 || !schedparams.process_events || 
 	    (python_event_handler && !maycallpython) ) {
-#if !TARGET_API_MAC_CARBON
 		if ( maxsleep >= 0 ) {
+#if !TARGET_API_MAC_CARBON
 			SystemTask();
-		}
+#else
+			int xxx = 0;
 #endif
+		}
 	} else {
 		latest_time_ready = LMGetTicks() + maxsleep;
 		do {
@@ -768,6 +770,7 @@ PyMac_InitMenuBar()
 {
 	MenuHandle applemenu;
 	
+	if ( sioux_mbar ) return;
 	if ( (sioux_mbar=GetMenuBar()) == NULL )  {
 		/* Sioux menu not installed yet. Do so */
 		SIOUXSetupMenus();
@@ -784,7 +787,7 @@ PyMac_InitMenuBar()
 void
 PyMac_RestoreMenuBar()
 {
-#if 0
+#if 1
 	/* This doesn't seem to work anymore? Or only for Carbon? */
 	MenuBarHandle curmenubar;
 	
@@ -799,6 +802,19 @@ PyMac_RestoreMenuBar()
 #endif
 }
 
+void
+PyMac_RaiseConsoleWindow()
+{
+	/* Note: this is a hack. SIOUXTextWindow is SIOUX's internal structure
+	** and we happen to know that the first entry is the window pointer.
+	*/
+	extern WindowRef *SIOUXTextWindow;
+
+	if ( SIOUXTextWindow == NULL || *SIOUXTextWindow == NULL )
+		return;
+	if ( FrontWindow() != *SIOUXTextWindow )
+		BringToFront(*SIOUXTextWindow);
+}
 
 /*
 ** Our replacement about box

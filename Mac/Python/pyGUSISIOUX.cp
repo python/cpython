@@ -102,6 +102,7 @@ GUSISIOUXSocket::Initialize()
 	GUSISetHook(GUSI_EventHook+diskEvt, 	(GUSIHook)SIOUXHandleOneEvent);
 	GUSISetHook(GUSI_EventHook+activateEvt, (GUSIHook)SIOUXHandleOneEvent);
 	GUSISetHook(GUSI_EventHook+osEvt, 		(GUSIHook)SIOUXHandleOneEvent);
+	PyMac_InitMenuBar();
 }
 GUSISIOUXSocket::~GUSISIOUXSocket()
 {
@@ -113,6 +114,7 @@ ssize_t GUSISIOUXSocket::read(const GUSIScatterer & buffer)
 	if ( !initialized ) Initialize();
 	GUSIStdioFlush();
 	PyMac_OutputSeen();
+	PyMac_RaiseConsoleWindow();
 	return buffer.SetLength(
 		ReadCharsFromConsole((char *) buffer.Buffer(), (int)buffer.Length()));
 	GUSIContext::Yield(kGUSIPoll);
