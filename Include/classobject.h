@@ -39,40 +39,42 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Revealing some structures (not for general use) */
 
 typedef struct {
-	OB_HEAD
-	object	*cl_bases;	/* A tuple of class objects */
-	object	*cl_dict;	/* A dictionary */
-	object	*cl_name;	/* A string */
+	PyObject_HEAD
+	PyObject	*cl_bases;	/* A tuple of class objects */
+	PyObject	*cl_dict;	/* A dictionary */
+	PyObject	*cl_name;	/* A string */
 	/* The following three are functions or NULL */
-	object	*cl_getattr;
-	object	*cl_setattr;
-	object	*cl_delattr;
-} classobject;
+	PyObject	*cl_getattr;
+	PyObject	*cl_setattr;
+	PyObject	*cl_delattr;
+} PyClassObject;
 
 typedef struct {
-	OB_HEAD
-	classobject	*in_class;	/* The class object */
-	object		*in_dict;	/* A dictionary */
-} instanceobject;
+	PyObject_HEAD
+	PyClassObject	*in_class;	/* The class object */
+	PyObject	*in_dict;	/* A dictionary */
+} PyInstanceObject;
 
-extern DL_IMPORT typeobject Classtype, Instancetype, Instancemethodtype;
+extern DL_IMPORT PyTypeObject PyClass_Type, PyInstance_Type, PyMethod_Type;
 
-#define is_classobject(op) ((op)->ob_type == &Classtype)
-#define is_instanceobject(op) ((op)->ob_type == &Instancetype)
-#define is_instancemethodobject(op) ((op)->ob_type == &Instancemethodtype)
+#define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
+#define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
+#define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
-extern object *newclassobject PROTO((object *, object *, object *));
-extern object *newinstanceobject PROTO((object *, object *));
-extern object *newinstancemethodobject PROTO((object *, object *, object *));
+extern PyObject *PyClass_New Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern PyObject *PyInstance_New Py_PROTO((PyObject *, PyObject *));
+extern PyObject *PyMethod_New Py_PROTO((PyObject *, PyObject *, PyObject *));
 
-extern object *instancemethodgetfunc PROTO((object *));
-extern object *instancemethodgetself PROTO((object *));
-extern object *instancemethodgetclass PROTO((object *));
+extern PyObject *PyMethod_Function Py_PROTO((PyObject *));
+extern PyObject *PyMethod_Self Py_PROTO((PyObject *));
+extern PyObject *PyMethod_Class Py_PROTO((PyObject *));
 
-extern int issubclass PROTO((object *, object *));
+extern int PyClass_IsSubclass Py_PROTO((PyObject *, PyObject *));
 
-extern object *instancebinop PROTO((object *, object *, char *, char *,
-				object * (*) PROTO((object *, object *)) ));
+extern PyObject *instancebinop
+	Py_PROTO((PyObject *, PyObject *,
+		  char *, char *,
+		  PyObject * (*) Py_PROTO((PyObject *, PyObject *)) ));
 
 #ifdef __cplusplus
 }

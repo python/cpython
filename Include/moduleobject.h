@@ -30,13 +30,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module object interface */
 
-extern DL_IMPORT typeobject Moduletype;
+extern DL_IMPORT PyTypeObject PyModule_Type;
 
-#define is_moduleobject(op) ((op)->ob_type == &Moduletype)
+#define PyModule_Check(op) ((op)->ob_type == &PyModule_Type)
 
-extern object *newmoduleobject PROTO((char *));
-extern object *getmoduledict PROTO((object *));
-extern char *getmodulename PROTO((object *));
+extern PyObject *PyModule_New Py_PROTO((char *));
+extern PyObject *PyModule_GetDict Py_PROTO((PyObject *));
+extern char *PyModule_GetName Py_PROTO((PyObject *));
 
 #ifdef __cplusplus
 }

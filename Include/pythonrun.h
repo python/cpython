@@ -30,31 +30,31 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Interfaces to parse and execute pieces of python code */
 
-void initall PROTO((void));
+void Py_Initialize Py_PROTO((void));
 
-int run PROTO((FILE *, char *));
+int PyRun_AnyFile Py_PROTO((FILE *, char *));
 
-int run_command PROTO((char *));
-int run_script PROTO((FILE *, char *));
-int run_tty_1 PROTO((FILE *, char *));
-int run_tty_loop PROTO((FILE *, char *));
+int PyRun_SimpleString Py_PROTO((char *));
+int PyRun_SimpleFile Py_PROTO((FILE *, char *));
+int PyRun_InteractiveOne Py_PROTO((FILE *, char *));
+int PyRun_InteractiveLoop Py_PROTO((FILE *, char *));
 
-struct _node *parse_string PROTO((char *, int));
-struct _node *parse_file PROTO((FILE *, char *, int));
+struct _node *PyParser_SimpleParseString Py_PROTO((char *, int));
+struct _node *PyParser_SimpleParseFile Py_PROTO((FILE *, char *, int));
 
-object *run_string PROTO((char *, int, object *, object *));
-object *run_file PROTO((FILE *, char *, int, object *, object *));
-object *run_pyc_file PROTO((FILE *, char *, object *, object *));
+PyObject *PyRun_String Py_PROTO((char *, int, PyObject *, PyObject *));
+PyObject *PyRun_File Py_PROTO((FILE *, char *, int, PyObject *, PyObject *));
+PyObject *run_pyc_file Py_PROTO((FILE *, char *, PyObject *, PyObject *));
 
-object *compile_string PROTO((char *, char *, int));
+PyObject *Py_CompileString Py_PROTO((char *, char *, int));
 
-void print_error PROTO((void));
+void PyErr_Print Py_PROTO((void));
 
-int Py_AtExit PROTO((void (*func) PROTO((void))));
+int Py_AtExit Py_PROTO((void (*func) Py_PROTO((void))));
 
-void goaway PROTO((int));
+void Py_Exit Py_PROTO((int));
 
-void cleanup PROTO((void));
+void cleanup Py_PROTO((void));
 
 #ifdef __cplusplus
 }

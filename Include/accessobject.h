@@ -46,19 +46,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define AC_R_PUBLIC	0004
 #define AC_W_PUBLIC	0002
 
-extern DL_IMPORT typeobject Accesstype;
+extern DL_IMPORT PyTypeObject Accesstype;
 
-#define is_accessobject(v) ((v)->ob_type == &Accesstype)
+#define PyAccess_Check(v) ((v)->ob_type == &Accesstype)
 
-object *newaccessobject PROTO((object *, object *, typeobject *, int));
-object *getaccessvalue PROTO((object *, object *));
-int setaccessvalue PROTO((object *, object *, object *));
+PyObject *newaccessobject Py_PROTO((PyObject *, PyObject *, PyTypeObject *, int));
+PyObject *getaccessvalue Py_PROTO((PyObject *, PyObject *));
+int setaccessvalue Py_PROTO((PyObject *, PyObject *, PyObject *));
 
-void setaccessowner PROTO((object *, object *));
-object *cloneaccessobject PROTO((object *));
-int hasaccessvalue PROTO((object *));
+void setaccessowner Py_PROTO((PyObject *, PyObject *));
+PyObject *cloneaccessobject Py_PROTO((PyObject *));
+int hasaccessvalue Py_PROTO((PyObject *));
 
-extern DL_IMPORT typeobject Anynumbertype, Anysequencetype, Anymappingtype;
+extern DL_IMPORT PyTypeObject Anynumbertype, Anysequencetype, Anymappingtype;
 
 #ifdef __cplusplus
 }

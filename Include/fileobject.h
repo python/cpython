@@ -30,17 +30,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* File object interface */
 
-extern DL_IMPORT typeobject Filetype;
+extern DL_IMPORT PyTypeObject PyFile_Type;
 
-#define is_fileobject(op) ((op)->ob_type == &Filetype)
+#define PyFile_Check(op) ((op)->ob_type == &PyFile_Type)
 
-extern object *newfileobject PROTO((char *, char *));
-extern void setfilebufsize PROTO((object *, int));
-extern object *newopenfileobject
-	PROTO((FILE *, char *, char *, int (*)FPROTO((FILE *))));
-extern FILE *getfilefile PROTO((object *));
-extern object *getfilename PROTO((object *));
-extern object *filegetline PROTO((object *, int));
+extern PyObject *PyFile_FromString Py_PROTO((char *, char *));
+extern void setfilebufsize Py_PROTO((PyObject *, int));
+extern PyObject *PyFile_FromFile
+	Py_PROTO((FILE *, char *, char *, int (*)Py_FPROTO((FILE *))));
+extern FILE *PyFile_AsFile Py_PROTO((PyObject *));
+extern PyObject *getfilename Py_PROTO((PyObject *));
+extern PyObject *PyFile_GetLine Py_PROTO((PyObject *, int));
 
 #ifdef __cplusplus
 }

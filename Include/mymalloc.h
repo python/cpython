@@ -57,10 +57,10 @@ extern "C" {
 #endif
 
 #ifndef HAVE_STDLIB_H
-extern ANY *malloc PROTO((size_t));
-extern ANY *calloc PROTO((size_t, size_t));
-extern ANY *realloc PROTO((ANY *, size_t));
-extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
+extern ANY *malloc Py_PROTO((size_t));
+extern ANY *calloc Py_PROTO((size_t, size_t));
+extern ANY *realloc Py_PROTO((ANY *, size_t));
+extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 #endif /* !HAVE_STDLIB */
 
 #ifndef NULL
@@ -69,16 +69,20 @@ extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 
 /* XXX Always allocate one extra byte, since some malloc's return NULL
    XXX for malloc(0) or realloc(p, 0). */
-#define NEW(type, n) ( (type *) malloc(1 + (n) * sizeof(type)) )
-#define RESIZE(p, type, n) \
+#define PyMem_NEW(type, n) ( (type *) malloc(1 + (n) * sizeof(type)) )
+#define PyMem_RESIZE(p, type, n) \
 	if ((p) == NULL) \
 		(p) =  (type *) malloc(1 + (n) * sizeof(type)); \
 	else \
 		(p) = (type *) realloc((ANY *)(p), 1 + (n) * sizeof(type))
-#define DEL(p) free((ANY *)p)
-#define XDEL(p) if ((p) == NULL) ; else DEL(p)
+#define PyMem_DEL(p) free((ANY *)p)
+#define PyMem_XDEL(p) if ((p) == NULL) ; else PyMem_DEL(p)
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifndef Py_USE_NEW_NAMES
+#include "rename2.h"
 #endif
 #endif /* !Py_MYMALLOC_H */

@@ -34,38 +34,40 @@ typedef struct {
 	int b_type;		/* what kind of block this is */
 	int b_handler;		/* where to jump to find handler */
 	int b_level;		/* value stack level to pop to */
-} block;
+} PyTryBlock;
 
 typedef struct _frame {
-	OB_HEAD
+	PyObject_HEAD
 	struct _frame *f_back;	/* previous frame, or NULL */
-	codeobject *f_code;	/* code segment */
-	object *f_builtins;	/* builtin symbol table (dictobject) */
-	object *f_globals;	/* global symbol table (dictobject) */
-	object *f_locals;	/* local symbol table (dictobject) */
-	object *f_owner;	/* owner (e.g. class or module) or NULL */
-	object *f_fastlocals;	/* fast local variables (listobject) */
-	object *f_localmap;	/* local variable names (dictobject) */
-	object **f_valuestack;	/* malloc'ed array */
-	block *f_blockstack;	/* malloc'ed array */
+	PyCodeObject *f_code;	/* code segment */
+	PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
+	PyObject *f_globals;	/* global symbol table (PyDictObject) */
+	PyObject *f_locals;	/* local symbol table (PyDictObject) */
+	PyObject *f_owner;	/* owner (e.g. class or module) or NULL */
+	PyObject *f_fastlocals;	/* fast local variables (PyListObject) */
+	PyObject *f_localmap;	/* local variable names (PyDictObject) */
+	PyObject **f_valuestack;	/* malloc'ed array */
+	PyTryBlock *f_blockstack;	/* malloc'ed array */
 	int f_nvalues;		/* size of f_valuestack */
 	int f_nblocks;		/* size of f_blockstack */
 	int f_iblock;		/* index in f_blockstack */
 	int f_lasti;		/* Last instruction if called */
 	int f_lineno;		/* Current line number */
-	int f_restricted;	/* Flag set if restricted operations in this scope */
-	object *f_trace;	/* Trace function */
-} frameobject;
+	int f_restricted;	/* Flag set if restricted operations
+				   in this scope */
+	PyObject *f_trace;	/* Trace function */
+} PyFrameObject;
 
 
 /* Standard object interface */
 
-extern DL_IMPORT typeobject Frametype;
+extern DL_IMPORT PyTypeObject PyFrame_Type;
 
-#define is_frameobject(op) ((op)->ob_type == &Frametype)
+#define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
-frameobject * newframeobject PROTO(
-	(frameobject *, codeobject *, object *, object *, object *, int, int));
+PyFrameObject * PyFrame_New
+	Py_PROTO((PyFrameObject *, PyCodeObject *,
+		  PyObject *, PyObject *, PyObject *, int, int));
 
 
 /* The rest of the interface is specific for frame objects */
@@ -73,14 +75,15 @@ frameobject * newframeobject PROTO(
 /* List access macros */
 
 #ifdef NDEBUG
-#define GETITEM(v, i) GETTUPLEITEM((tupleobject *)(v), (i))
-#define GETITEMNAME(v, i) GETSTRINGVALUE((stringobject *)GETITEM((v), (i)))
+#define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
+#define GETITEMNAME(v, i) \
+	PyString_AS_STRING((PyStringObject *)GETITEM((v), (i)))
 #else
-#define GETITEM(v, i) gettupleitem((v), (i))
-#define GETITEMNAME(v, i) getstringvalue(GETITEM(v, i))
+#define GETITEM(v, i) PyTuple_GetItem((v), (i))
+#define GETITEMNAME(v, i) PyString_AsString(GETITEM(v, i))
 #endif
 
-#define GETUSTRINGVALUE(s) ((unsigned char *)GETSTRINGVALUE(s))
+#define GETUSTRINGVALUE(s) ((unsigned char *)PyString_AS_STRING(s))
 
 /* Code access macros */
 
@@ -91,17 +94,17 @@ frameobject * newframeobject PROTO(
 
 /* Block management functions */
 
-void setup_block PROTO((frameobject *, int, int, int));
-block *pop_block PROTO((frameobject *));
+void PyFrame_BlockSetup Py_PROTO((PyFrameObject *, int, int, int));
+PyTryBlock *PyFrame_BlockPop Py_PROTO((PyFrameObject *));
 
 /* Extend the value stack */
 
-object **extend_stack PROTO((frameobject *, int, int));
+PyObject **PyFrame_ExtendStack Py_PROTO((PyFrameObject *, int, int));
 
 /* Conversions between "fast locals" and locals in dictionary */
 
-void locals_2_fast PROTO((frameobject *, int));
-void fast_2_locals PROTO((frameobject *));
+void locals_2_fast Py_PROTO((PyFrameObject *, int));
+void fast_2_locals Py_PROTO((PyFrameObject *));
 
 #ifdef __cplusplus
 }

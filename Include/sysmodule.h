@@ -30,13 +30,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* System module interface */
 
-object *sysget PROTO((char *));
-int sysset PROTO((char *, object *));
-FILE *sysgetfile PROTO((char *, FILE *));
-void initsys PROTO((void));
+PyObject *PySys_GetObject Py_PROTO((char *));
+int PySys_SetObject Py_PROTO((char *, PyObject *));
+FILE *PySys_GetFile Py_PROTO((char *, FILE *));
+void PySys_Init Py_PROTO((void));
 
-extern DL_IMPORT object *sys_trace, *sys_profile;
-extern DL_IMPORT int sys_checkinterval;
+extern DL_IMPORT PyObject *_PySys_TraceFunc, *_PySys_ProfileFunc;
+extern DL_IMPORT int _PySys_CheckInterval;
 
 #ifdef __cplusplus
 }

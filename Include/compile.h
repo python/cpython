@@ -39,24 +39,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    - the name of the object for which it was compiled. */
 
 typedef struct {
-	OB_HEAD
-	stringobject *co_code;	/* instruction opcodes */
-	object *co_consts;	/* list of immutable constant objects */
-	object *co_names;	/* list of stringobjects */
-	object *co_filename;	/* string */
-	object *co_name;	/* string */
-} codeobject;
+	PyObject_HEAD
+	PyStringObject *co_code;	/* instruction opcodes */
+	PyObject *co_consts;	/* list of immutable constant objects */
+	PyObject *co_names;	/* list of stringobjects */
+	PyObject *co_filename;	/* string */
+	PyObject *co_name;	/* string */
+} PyCodeObject;
 
-extern DL_IMPORT typeobject Codetype;
+extern DL_IMPORT PyTypeObject PyCode_Type;
 
-#define is_codeobject(op) ((op)->ob_type == &Codetype)
+#define PyCode_Check(op) ((op)->ob_type == &PyCode_Type)
 
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
-codeobject *compile PROTO((struct _node *, char *));
-codeobject *newcodeobject
-	PROTO((object *, object *, object *, object *, object *));
+PyCodeObject *PyNode_Compile Py_PROTO((struct _node *, char *));
+PyCodeObject *PyCode_New
+	Py_PROTO((PyObject *, PyObject *, PyObject *, PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

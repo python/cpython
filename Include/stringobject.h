@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /*
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 
-Type stringobject represents a character string.  An extra zero byte is
+Type PyStringObject represents a character string.  An extra zero byte is
 reserved at the end to ensure it is zero-terminated, but a size is
 present so strings with null bytes in them can be represented.  This
 is an immutable object type.
@@ -50,28 +50,28 @@ functions should be applied to nil objects.
 /* NB The type is revealed here only because it is used in dictobject.c */
 
 typedef struct {
-	OB_VARHEAD
+	PyObject_VAR_HEAD
 #ifdef CACHE_HASH
 	long ob_shash;
 #endif
 	char ob_sval[1];
-} stringobject;
+} PyStringObject;
 
-extern DL_IMPORT typeobject Stringtype;
+extern DL_IMPORT PyTypeObject PyString_Type;
 
-#define is_stringobject(op) ((op)->ob_type == &Stringtype)
+#define PyString_Check(op) ((op)->ob_type == &PyString_Type)
 
-extern object *newsizedstringobject PROTO((char *, int));
-extern object *newstringobject PROTO((char *));
-extern int getstringsize PROTO((object *));
-extern char *getstringvalue PROTO((object *));
-extern void joinstring PROTO((object **, object *));
-extern void joinstring_decref PROTO((object **, object *));
-extern int resizestring PROTO((object **, int));
-extern object *formatstring PROTO((object *, object *));
+extern PyObject *PyString_FromStringAndSize Py_PROTO((char *, int));
+extern PyObject *PyString_FromString Py_PROTO((char *));
+extern int PyString_Size Py_PROTO((PyObject *));
+extern char *PyString_AsString Py_PROTO((PyObject *));
+extern void PyString_Concat Py_PROTO((PyObject **, PyObject *));
+extern void joinstring_decref Py_PROTO((PyObject **, PyObject *));
+extern int _PyString_Resize Py_PROTO((PyObject **, int));
+extern PyObject *PyString_Format Py_PROTO((PyObject *, PyObject *));
 
 /* Macro, trading safety for speed */
-#define GETSTRINGVALUE(op) ((op)->ob_sval)
+#define PyString_AS_STRING(op) ((op)->ob_sval)
 
 #ifdef __cplusplus
 }

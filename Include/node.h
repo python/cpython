@@ -38,9 +38,9 @@ typedef struct _node {
 	struct _node	*n_child;
 } node;
 
-extern node *newtree PROTO((int type));
-extern node *addchild PROTO((node *n, int type, char *str, int lineno));
-extern void freetree PROTO((node *n));
+extern node *PyNode_New Py_PROTO((int type));
+extern node *PyNode_AddChild Py_PROTO((node *n, int type, char *str, int lineno));
+extern void PyNode_Free Py_PROTO((node *n));
 
 /* Node access functions */
 #define NCH(n)		((n)->n_nchildren)
@@ -60,7 +60,7 @@ extern void freetree PROTO((node *n));
 	} }
 #endif
 
-extern void listtree PROTO((node *));
+extern void PyNode_ListTree Py_PROTO((node *));
 
 #ifdef __cplusplus
 }

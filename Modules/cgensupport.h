@@ -32,16 +32,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef char *string;
 
-#define mknewlongobject(x) newintobject(x)
-#define mknewshortobject(x) newintobject((long)x)
-#define mknewfloatobject(x) newfloatobject(x)
-#define mknewcharobject(ch) mkvalue("c", ch)
+#define mknewlongobject(x) PyInt_FromLong(x)
+#define mknewshortobject(x) PyInt_FromLong((long)x)
+#define mknewfloatobject(x) PyFloat_FromDouble(x)
+#define mknewcharobject(ch) Py_BuildValue("c", ch)
 
-extern int getiobjectarg PROTO((object *args, int nargs, int i, object **p_a));
-extern int getilongarg PROTO((object *args, int nargs, int i, long *p_a));
-extern int getishortarg PROTO((object *args, int nargs, int i, short *p_a));
-extern int getifloatarg PROTO((object *args, int nargs, int i, float *p_a));
-extern int getistringarg PROTO((object *args, int nargs, int i, string *p_a));
+extern int PyArg_GetObject Py_PROTO((PyObject *args, int nargs, int i, PyObject **p_a));
+extern int PyArg_GetLong Py_PROTO((PyObject *args, int nargs, int i, long *p_a));
+extern int PyArg_GetShort Py_PROTO((PyObject *args, int nargs, int i, short *p_a));
+extern int PyArg_GetFloat Py_PROTO((PyObject *args, int nargs, int i, float *p_a));
+extern int PyArg_GetString Py_PROTO((PyObject *args, int nargs, int i, string *p_a));
 
 #ifdef __cplusplus
 }

@@ -66,7 +66,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define CIRCUMFLEX	33
 #define LEFTSHIFT	34
 #define RIGHTSHIFT	35
-/* Don't forget to update the table tok_name in tokenizer.c! */
+/* Don't forget to update the table _PyParser_TokenNames in tokenizer.c! */
 #define OP		36
 #define ERRORTOKEN	37
 #define N_TOKENS	38
@@ -80,9 +80,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define ISEOF(x)		((x) == ENDMARKER)
 
 
-extern char *tok_name[]; /* Token names */
-extern int tok_1char PROTO((int));
-extern int tok_2char PROTO((int, int));
+extern char *_PyParser_TokenNames[]; /* Token names */
+extern int PyToken_OneChar Py_PROTO((int));
+extern int PyToken_TwoChars Py_PROTO((int, int));
 
 #ifdef __cplusplus
 }

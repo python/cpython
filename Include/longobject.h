@@ -30,19 +30,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Long (arbitrary precision) integer object interface */
 
-typedef struct _longobject longobject; /* Revealed in longintrepr.h */
+typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 
-extern DL_IMPORT typeobject Longtype;
+extern DL_IMPORT PyTypeObject PyLong_Type;
 
-#define is_longobject(op) ((op)->ob_type == &Longtype)
+#define PyLong_Check(op) ((op)->ob_type == &PyLong_Type)
 
-extern object *newlongobject PROTO((long));
-extern object *dnewlongobject PROTO((double));
-extern long getlongvalue PROTO((object *));
-extern double dgetlongvalue PROTO((object *));
+extern PyObject *PyLong_FromLong Py_PROTO((long));
+extern PyObject *PyLong_FromDouble Py_PROTO((double));
+extern long PyLong_AsLong Py_PROTO((PyObject *));
+extern double PyLong_AsDouble Py_PROTO((PyObject *));
 
-object *long_scan PROTO((char *, int));
-object *long_escan PROTO((char *, char **, int));
+PyObject *PyLong_FromString Py_PROTO((char *, int));
+PyObject *long_escan Py_PROTO((char *, char **, int));
 
 #ifdef __cplusplus
 }

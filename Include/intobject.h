@@ -33,29 +33,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /*
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 
-intobject represents a (long) integer.  This is an immutable object;
+PyIntObject represents a (long) integer.  This is an immutable object;
 an integer cannot change its value after creation.
 
 There are functions to create new integer objects, to test an object
 for integer-ness, and to get the integer value.  The latter functions
-returns -1 and sets errno to EBADF if the object is not an intobject.
+returns -1 and sets errno to EBADF if the object is not an PyIntObject.
 None of the functions should be applied to nil objects.
 
-The type intobject is (unfortunately) exposed bere so we can declare
-TrueObject and FalseObject below; don't use this.
+The type PyIntObject is (unfortunately) exposed here so we can declare
+_Py_TrueStruct and _Py_ZeroStruct below; don't use this.
 */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	long ob_ival;
-} intobject;
+} PyIntObject;
 
-extern DL_IMPORT typeobject Inttype;
+extern DL_IMPORT PyTypeObject PyInt_Type;
 
-#define is_intobject(op) ((op)->ob_type == &Inttype)
+#define PyInt_Check(op) ((op)->ob_type == &PyInt_Type)
 
-extern object *newintobject PROTO((long));
-extern long getintvalue PROTO((object *));
+extern PyObject *PyInt_FromLong Py_PROTO((long));
+extern long PyInt_AsLong Py_PROTO((PyObject *));
 
 
 /*
@@ -66,16 +66,16 @@ All values of type Boolean must point to either of these; but in
 contexts where integers are required they are integers (valued 0 and 1).
 Hope these macros don't conflict with other people's.
 
-Don't forget to apply INCREF() when returning True or False!!!
+Don't forget to apply Py_INCREF() when returning True or False!!!
 */
 
-extern DL_IMPORT intobject FalseObject, TrueObject; /* Don't use these directly */
+extern DL_IMPORT PyIntObject _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these directly */
 
-#define False ((object *) &FalseObject)
-#define True ((object *) &TrueObject)
+#define Py_False ((PyObject *) &_Py_ZeroStruct)
+#define Py_True ((PyObject *) &_Py_TrueStruct)
 
 /* Macro, trading safety for speed */
-#define GETINTVALUE(op) ((op)->ob_ival)
+#define PyInt_AS_LONG(op) ((op)->ob_ival)
 
 #ifdef __cplusplus
 }

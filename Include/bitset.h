@@ -34,12 +34,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef BYTE *bitset;
 
-bitset newbitset PROTO((int nbits));
-void delbitset PROTO((bitset bs));
+bitset newbitset Py_PROTO((int nbits));
+void delbitset Py_PROTO((bitset bs));
 #define testbit(ss, ibit) (((ss)[BIT2BYTE(ibit)] & BIT2MASK(ibit)) != 0)
-int addbit PROTO((bitset bs, int ibit)); /* Returns 0 if already set */
-int samebitset PROTO((bitset bs1, bitset bs2, int nbits));
-void mergebitset PROTO((bitset bs1, bitset bs2, int nbits));
+int addbit Py_PROTO((bitset bs, int ibit)); /* Returns 0 if already set */
+int samebitset Py_PROTO((bitset bs1, bitset bs2, int nbits));
+void mergebitset Py_PROTO((bitset bs1, bitset bs2, int nbits));
 
 #define BITSPERBYTE	(8*sizeof(BYTE))
 #define NBYTES(nbits)	(((nbits) + BITSPERBYTE - 1) / BITSPERBYTE)

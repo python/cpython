@@ -34,24 +34,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdarg.h>
 
-extern int getargs PROTO((object *, char *, ...));
-extern int newgetargs PROTO((object *, char *, ...));
-extern object *mkvalue PROTO((char *, ...));
+extern int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
+extern int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
+extern PyObject *Py_BuildValue Py_PROTO((char *, ...));
 
 #else
 
 #include <varargs.h>
 
 /* Better to have no prototypes at all for varargs functions in this case */
-extern int getargs();
-extern object *mkvalue();
+extern int PyArg_Parse();
+extern int PyArg_ParseTuple();
+extern PyObject *Py_BuildValue();
 
 #endif
 
-extern int vgetargs PROTO((object *, char *, va_list));
-extern object *vmkvalue PROTO((char *, va_list));
+extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
+extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
-#define PYTHON_API_VERSION 1001
+#define PYTHON_API_VERSION 1002
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.
@@ -59,20 +60,16 @@ extern object *vmkvalue PROTO((char *, va_list));
    Please add a line or two to the top of this log for each API
    version change:
 
+   10-Jan-1995	GvR	Renamed globals to new naming scheme
+
    9-Jan-1995	GvR	Initial version (incompatible with older API)
 */
 
-extern object *initmodule4 PROTO((char *, struct methodlist *,
-				  char *, object *, int));
-#define initmodule(name, methods) \
-	initmodule4(name, methods, (char *)NULL, (object *)NULL, \
-		    PYTHON_API_VERSION)
-
-/* The following are obsolete -- use getargs directly! */
-#define getnoarg(v) getargs(v, "")
-#define getintarg(v, a) getargs(v, "i", a)
-#define getlongarg(v, a) getargs(v, "l", a)
-#define getstrarg(v, a) getargs(v, "s", a)
+extern PyObject *Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
+					  char *, PyObject *, int));
+#define Py_InitModule(name, methods) \
+	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \
+		       PYTHON_API_VERSION)
 
 #ifdef __cplusplus
 }

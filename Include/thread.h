@@ -4,11 +4,11 @@
 #define NO_EXIT_PROG		/* don't define exit_prog() */
 				/* (the result is no use of signals on SGI) */
 
-#ifndef PROTO
+#ifndef Py_PROTO
 #if defined(__STDC__) || defined(__cplusplus)
-#define PROTO(args)	args
+#define Py_PROTO(args)	args
 #else
-#define PROTO(args)	()
+#define Py_PROTO(args)	()
 #endif
 #endif
 
@@ -19,27 +19,27 @@ typedef void *type_sema;
 extern "C" {
 #endif
 
-void init_thread PROTO((void));
-int start_new_thread PROTO((void (*)(void *), void *));
-void exit_thread PROTO((void));
-void _exit_thread PROTO((void));
-long get_thread_ident PROTO((void));
+void init_thread Py_PROTO((void));
+int start_new_thread Py_PROTO((void (*)(void *), void *));
+void exit_thread Py_PROTO((void));
+void _exit_thread Py_PROTO((void));
+long get_thread_ident Py_PROTO((void));
 
-type_lock allocate_lock PROTO((void));
-void free_lock PROTO((type_lock));
-int acquire_lock PROTO((type_lock, int));
+type_lock allocate_lock Py_PROTO((void));
+void free_lock Py_PROTO((type_lock));
+int acquire_lock Py_PROTO((type_lock, int));
 #define WAIT_LOCK	1
 #define NOWAIT_LOCK	0
-void release_lock PROTO((type_lock));
+void release_lock Py_PROTO((type_lock));
 
-type_sema allocate_sema PROTO((int));
-void free_sema PROTO((type_sema));
-void down_sema PROTO((type_sema));
-void up_sema PROTO((type_sema));
+type_sema allocate_sema Py_PROTO((int));
+void free_sema Py_PROTO((type_sema));
+void down_sema Py_PROTO((type_sema));
+void up_sema Py_PROTO((type_sema));
 
 #ifndef NO_EXIT_PROG
-void exit_prog PROTO((int));
-void _exit_prog PROTO((int));
+void exit_prog Py_PROTO((int));
+void _exit_prog Py_PROTO((int));
 #endif
 
 #ifdef __cplusplus
