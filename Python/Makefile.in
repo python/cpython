@@ -48,7 +48,7 @@ SYSLIBS=	-lm
 
 # === Rules ===
 
-all:		$(LIB) frozenmain.o
+all:		$(LIB)
 
 $(LIB):		$& $(OBJS)
 		-rm -f $(LIB)

@@ -530,7 +530,9 @@ extern struct frozen {
 	int size;
 } frozen_modules[];
 
-static int
+/* This function is also used from frozenmain.c */
+
+int
 init_frozen(name)
 	char *name;
 {
