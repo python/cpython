@@ -19,22 +19,6 @@
 #include <unistd.h>
 #endif
 
-/* We expect that stat exists on most systems.
-   It's confirmed on Unix, Mac and Windows.
-   If you don't have it, add #define DONT_HAVE_STAT to your config.h. */
-#ifndef DONT_HAVE_STAT
-#define HAVE_STAT
-
-#ifndef DONT_HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifndef DONT_HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#elif defined(HAVE_STAT_H)
-#include <stat.h>
-#endif
-
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -47,9 +31,6 @@
 #ifndef S_ISDIR
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
-
-#endif
-
 
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */

@@ -8,26 +8,6 @@
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
 
-/* We expect that fstat exists on most systems.
-   It's confirmed on Unix, Mac and Windows.
-   If you don't have it, add #define DONT_HAVE_FSTAT to your config.h. */
-#ifndef DONT_HAVE_FSTAT
-#define HAVE_FSTAT
-
-#ifndef DONT_HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifndef DONT_HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#else
-#ifdef HAVE_STAT_H
-#include <stat.h>
-#endif
-#endif
-
-#endif /* DONT_HAVE_FSTAT */
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
