@@ -246,8 +246,8 @@ class VideoParams:
 
 	# Set the frame width and height (e.g. from gl.getsize())
 
-	def setsize(self, size):
-		self.width, self.height = size
+	def setsize(self, width, height):
+		self.width, self.height = width, height
 
 	# Retrieve the frame width and height (e.g. for gl.prefsize())
 
@@ -800,7 +800,7 @@ class BasicVinFile(VideoParams):
 	def setinfo(self, values):
 		raise CallError # Can't change info of input file!
 
-	def setsize(self, size):
+	def setsize(self, width, height):
 		raise CallError # Can't change info of input file!
 
 	def rewind(self):
