@@ -96,9 +96,8 @@ def copy_file (src, dst,
        on other systems, uses '_copy_file_contents()' to copy file
        contents.
 
-       Return true if the file was copied (or would have been copied),
-       false otherwise (ie. 'update' was true and the destination is
-       up-to-date)."""
+       Return the name of the destination file, whether it was actually
+       copied or not."""
 
     # XXX if the destination file already exists, we clobber it if
     # copying, but blow up if linking.  Hmmm.  And I don't know what
@@ -123,7 +122,7 @@ def copy_file (src, dst,
     if update and not newer (src, dst):
         if verbose:
             print "not copying %s (output up-to-date)" % src
-        return 0
+        return dst
 
     try:
         action = _copy_action[link]
@@ -137,7 +136,7 @@ def copy_file (src, dst,
             print "%s %s -> %s" % (action, src, dst)
             
     if dry_run:
-        return 1
+        return dst
 
     # On a Mac, use the native file copy routine
     if os.name == 'mac':
@@ -171,7 +170,7 @@ def copy_file (src, dst,
             if preserve_mode:
                 os.chmod (dst, S_IMODE (st[ST_MODE]))
 
-    return 1
+    return dst
 
 # copy_file ()
 
