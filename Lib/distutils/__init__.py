@@ -10,4 +10,4 @@ used from a setup script as
 
 __revision__ = "$Id$"
 
-__version__ = "1.0pre"
+__version__ = "1.0"
