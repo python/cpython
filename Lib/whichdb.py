@@ -31,9 +31,10 @@ def whichdb(filename):
     except IOError:
         return None
 
-    # Read the first 4 bytes of the file -- the magic number
-    s = f.read(4)
+    # Read the start of the file -- the magic number
+    s16 = f.read(16)
     f.close()
+    s = s16[0:4]
 
     # Return "" if not at least 4 bytes
     if len(s) != 4:
@@ -48,6 +49,16 @@ def whichdb(filename):
     # Check for GNU dbm
     if magic == 0x13579ace:
         return "gdbm"
+
+    # Check for BSD hash
+    if magic in (0x00061561, 0x61150600):
+        return "dbhash"
+
+    # BSD hash v2 has a 12-byte NULL pad in front of the file type
+    try:
+	(magic,) = struct.unpack("=l", s16[-4:])
+    except struct.error:
+        return ""
 
     # Check for BSD hash
     if magic in (0x00061561, 0x61150600):
