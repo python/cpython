@@ -42,12 +42,12 @@ if sys.platform[:3] == 'win':
 
 def expect(got_this, expect_this):
     if test_support.verbose:
-        print '%s =?= %s ...' % (`got_this`, `expect_this`),
+        print '%r =?= %r ...' % (got_this, expect_this),
     if got_this != expect_this:
         if test_support.verbose:
             print 'no'
-        raise test_support.TestFailed, 'got %s, but expected %s' %\
-              (str(got_this), str(expect_this))
+        raise test_support.TestFailed, 'got %r, but expected %r' %\
+              (got_this, expect_this)
     else:
         if test_support.verbose:
             print 'yes'
@@ -59,6 +59,8 @@ def expect(got_this, expect_this):
 if test_support.verbose:
     print 'create large file via seek (may be sparse file) ...'
 f = open(name, 'wb')
+f.write('z')
+f.seek(0)
 f.seek(size)
 f.write('a')
 f.flush()
@@ -74,7 +76,7 @@ if test_support.verbose:
     print 'play around with seek() and read() with the built largefile'
 f = open(name, 'rb')
 expect(f.tell(), 0)
-expect(f.read(1), '\000')
+expect(f.read(1), 'z')
 expect(f.tell(), 1)
 f.seek(0)
 expect(f.tell(), 0)
@@ -97,11 +99,14 @@ expect(f.tell(), 0)
 f.seek(size)
 expect(f.tell(), size)
 expect(f.read(1), 'a') # the 'a' that was written at the end of the file above
+f.seek(-size-1, 1)
+expect(f.read(1), 'z')
+expect(f.tell(), 1)
 f.close()
 
 if test_support.verbose:
     print 'play around with os.lseek() with the built largefile'
-f = open(name, 'r')
+f = open(name, 'rb')
 expect(os.lseek(f.fileno(), 0, 0), 0)
 expect(os.lseek(f.fileno(), 42, 0), 42)
 expect(os.lseek(f.fileno(), 42, 1), 84)
