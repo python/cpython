@@ -52,6 +52,14 @@ class SimpleDialog:
 	w_height = widget.winfo_reqheight()
 	x = m_x + (m_width - w_width) * relx
 	y = m_y + (m_height - w_height) * rely
+	if x+w_width > master.winfo_screenwidth():
+	    x = master.winfo_screenwidth() - w_width
+	elif x < 0:
+	    x = 0
+	if y+w_height > master.winfo_screenheight():
+	    y = master.winfo_screenheight() - w_height
+	elif y < 0:
+	    y = 0
 	widget.geometry("+%d+%d" % (x, y))
 	widget.deiconify() # Become visible at the desired location
 
