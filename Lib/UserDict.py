@@ -40,3 +40,7 @@ class UserDict:
         return self.data[key]
     def popitem(self):
         return self.data.popitem()
+    def __contains__(self, key):
+        return key in self.data
+    def __iter__(self):
+        return iter(self.data)
