@@ -46,19 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Menus.h>
 #include <TextUtils.h>
 #include <LowMem.h>
-#ifdef __CFM68K__
-/* cfm68k InterfaceLib exports GetEventQueue, but Events.h doesn't know this
-** and defines it as GetEvQHdr (which is correct for PPC). This fix is for
-** CW9, check that the workaround is still needed for the next release.
-*/
-#define GetEvQHdr GetEventQueue
-#endif /* __CFM68K__ */
-
 #include <Events.h>
-
-#ifdef __CFM68K__
-#undef GetEventQueue
-#endif /* __CFM68K__ */
 #else
 #include <Carbon/Carbon.h>
 #endif
@@ -99,11 +87,7 @@ extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
 ** raise a MemoryError.
 */
 #ifndef MINIMUM_STACK_SIZE
-#ifdef __powerc
 #define MINIMUM_STACK_SIZE 8192
-#else
-#define MINIMUM_STACK_SIZE 4096
-#endif
 #endif
 
 #if TARGET_API_MAC_CARBON

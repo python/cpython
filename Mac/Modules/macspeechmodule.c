@@ -42,10 +42,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pascal.h"
 #endif /* __MWERKS__ */
 
-#ifdef __powerc
 #include <CodeFragments.h>
 int lib_available;
-#endif /* __powerc */
 
 /* Somehow the Apple Fix2X and X2Fix don't do what I expect */
 #define fixed2double(x) (((double)(x))/32768.0)
@@ -60,9 +58,7 @@ init_available() {
 	OSErr err;
 	long result;
 
-#ifdef __powerc
 	lib_available = ((ProcPtr)SpeakString != (ProcPtr)0);
-#endif
 	err = Gestalt(gestaltSpeechAttr, &result);
 	if ( err == noErr && (result & (1<<gestaltSpeechMgrPresent)))
 		return 1;
@@ -75,12 +71,10 @@ check_available() {
 		PyErr_SetString(ms_error_object, "Speech Mgr not available");
 		return 0;
 	}
-#ifdef __powerc
 	if ( !lib_available ) {
 		PyErr_SetString(ms_error_object, "Speech Mgr available, but shared lib missing");
 		return 0;
 	}
-#endif
 	return 1;
 }
 
