@@ -328,7 +328,6 @@ static struct arraydescr descriptors[] = {
 	{'d', sizeof(double), d_getitem, d_setitem},
 	{'\0', 0, 0, 0} /* Sentinel */
 };
-/* If we ever allow items larger than double, we must change reverse()! */
 
 /****************************************************************************
 Implementations of array object methods.
@@ -650,7 +649,7 @@ array_count(arrayobject *self, PyObject *args)
 }
 
 static char count_doc [] =
-"count (x)\n\
+"count(x)\n\
 \n\
 Return number of occurences of x in the array.";
 
@@ -677,7 +676,7 @@ array_index(arrayobject *self, PyObject *args)
 }
 
 static char index_doc [] =
-"index (x)\n\
+"index(x)\n\
 \n\
 Return index of first occurence of x in the array.";
 
@@ -708,7 +707,7 @@ array_remove(arrayobject *self, PyObject *args)
 }
 
 static char remove_doc [] =
-"remove (x)\n\
+"remove(x)\n\
 \n\
 Remove the first occurence of x in the array.";
 
@@ -739,7 +738,7 @@ array_pop(arrayobject *self, PyObject *args)
 }
 
 static char pop_doc [] =
-"pop ([i])\n\
+"pop([i])\n\
 \n\
 Return the i-th element and delete it from the array. i defaults to -1.";
 
@@ -794,7 +793,7 @@ array_insert(arrayobject *self, PyObject *args)
 }
 
 static char insert_doc [] =
-"insert (i,x)\n\
+"insert(i,x)\n\
 \n\
 Insert a new item x into the array before position i.";
 
@@ -802,8 +801,12 @@ Insert a new item x into the array before position i.";
 static PyObject *
 array_buffer_info(arrayobject *self, PyObject *args)
 {
-	PyObject* retval = PyTuple_New(2);
-	if (!retval) return NULL;
+	PyObject* retval = NULL;
+        if (!PyArg_ParseTuple(args, ":buffer_info"))
+                return NULL;
+	retval = PyTuple_New(2);
+	if (!retval)
+		return NULL;
 
 	PyTuple_SET_ITEM(retval, 0, PyLong_FromVoidPtr(self->ob_item));
 	PyTuple_SET_ITEM(retval, 1, PyInt_FromLong((long)(self->ob_size)));
@@ -812,7 +815,7 @@ array_buffer_info(arrayobject *self, PyObject *args)
 }
 
 static char buffer_info_doc [] =
-"buffer_info -> (address, length)\n\
+"buffer_info() -> (address, length)\n\
 \n\
 Return a tuple (address, length) giving the current memory address and\n\
 the length in bytes of the buffer used to hold array's contents.";
@@ -898,22 +901,24 @@ array_reverse(arrayobject *self, PyObject *args)
 {
 	register int itemsize = self->ob_descr->itemsize;
 	register char *p, *q;
-	char tmp[sizeof(double)]; /* Assume that's the max item size */
+	/* little buffer to hold items while swapping */
+	char tmp[256];	/* 8 is probably enough -- but why skimp */
+	assert(itemsize <= sizeof(tmp));
 
-	if (args != NULL) {
-		PyErr_SetString(PyExc_TypeError,
-		     "<array>.reverse requires exactly 0 arguments");
-		return NULL;
-	}
+        if (!PyArg_ParseTuple(args, ":reverse"))
+                return NULL;
 
 	if (self->ob_size > 1) {
 		for (p = self->ob_item,
 		     q = self->ob_item + (self->ob_size - 1)*itemsize;
 		     p < q;
 		     p += itemsize, q -= itemsize) {
-			memmove(tmp, p, itemsize);
-			memmove(p, q, itemsize);
-			memmove(q, tmp, itemsize);
+			/* memory areas guaranteed disjoint, so memcpy
+			 * is safe (& memmove may be slower).
+			 */
+			memcpy(tmp, p, itemsize);
+			memcpy(p, q, itemsize);
+			memcpy(q, tmp, itemsize);
 		}
 	}
 
