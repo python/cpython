@@ -134,7 +134,7 @@ for patch submission may be found at http://www.python.org/patches/.
 
 If you have a proposal to change Python, it's best to submit a Python
 Enhancement Proposal (PEP) first.  All current PEPs, as well as
-guidelines for submitting a new PEP, are list at
+guidelines for submitting a new PEP, are listed at
 http://python.sourceforge.net/peps/.
 
 
@@ -285,7 +285,7 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
 
 	you need to first make sure that the library is available on
 	your system. Then, you need to instruct the dynamic loader how
-	to find it. You can chose any of the following strategies:
+	to find it. You can choose any of the following strategies:
 
 	1. When compiling Python, set LD_RUN_PATH to the directories
 	   containing missing libraries.
@@ -545,7 +545,7 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
 
         To do this, run "./configure --with-threads=no" including any
         other options you need (--prefix, etc.).  Then in Modules/Setup
-         uncomment the lines:
+        uncomment the lines:
 
         #SSL=/usr/local/ssl
         #_socket socketmodule.c \
@@ -689,7 +689,7 @@ more, but the information below is not enough to write a patch for the
 configure.in file, so manual intervention is required.  If you patch
 the configure.in file and are confident that the patch works, please
 send in the patch.  (Don't bother patching the configure script itself
--- it is regenerated each the configure.in file changes.)
+-- it is regenerated each time the configure.in file changes.)
 
 Compiler switches for threads
 .............................
@@ -820,7 +820,7 @@ gprof(1):
 
 Note that on Linux, gprof apparently does not work for shared
 libraries.  The Makefile/Setup mechanism can be used to compile and
-link most extension module statically.
+link most extension modules statically.
 
 
 Testing
