@@ -129,7 +129,7 @@ class GNUTranslations(NullTranslations):
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
-        # We need to & all 32 bit unsigned integers with 0xffffff for
+        # We need to & all 32 bit unsigned integers with 0xffffffff for
         # portability to 64 bit machines.
         MASK = 0xffffffff
         unpack = struct.unpack
