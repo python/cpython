@@ -123,7 +123,7 @@ try_stmt: 'try' ':' suite (except_clause ':' suite)+ | 'try' ':' suite 'finally'
 except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
-test: and_test ('or' and_test)*
+test: and_test ('or' and_test)* | lambdef
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
@@ -135,9 +135,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-'|'~') factor | atom trailer*
-atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | lambdef | NAME | NUMBER | STRING
-# Note ambiguity in grammar: "lambda x: x[1]" could mean "(lambda x: x)[1]"
-# but the parser is eager so interprets it as "lambda x: (x[1])"...
+atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 subscript: test | [test] ':' [test]
