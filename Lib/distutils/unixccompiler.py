@@ -201,7 +201,7 @@ class UnixCCompiler(CCompiler):
         if sys.platform[:6] == "darwin":
             # MacOSX's linker doesn't understand the -R flag at all
             return "-L" + dir
-        elif compiler == "gcc" or compiler == "g++":
+        elif compiler[:3] == "gcc" or compiler[:3] == "g++":
             return "-Wl,-R" + dir
         else:
             return "-R" + dir
