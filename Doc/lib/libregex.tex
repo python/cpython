@@ -4,8 +4,8 @@
 This module provides regular expression matching operations similar to
 those found in Emacs.  It is always available.
 
-By default the patterns are Emacs-style regular expressions,
-with one exception.  There is
+By default the patterns are Emacs-style regular expressions
+(with one exception).  There is
 a way to change the syntax to match that of several well-known
 \UNIX{} utilities.  The exception is that Emacs' \samp{\e s}
 pattern is not supported, since the original implementation references
@@ -36,7 +36,8 @@ avoid interpretation as an octal escape.
 
 A regular expression (or RE) specifies a set of strings that matches
 it; the functions in this module let you check if a particular string
-matches a given regular expression.
+matches a given regular expression (or if a given regular expression
+matches a particular string, which comes down to the same thing).
 
 Regular expressions can be concatenated to form new regular
 expressions; if \emph{A} and \emph{B} are both regular expressions,
@@ -51,22 +52,23 @@ any textbook about compiler construction.
 % "Compilers: Principles, Techniques and Tools", by Alfred V. Aho, 
 % Ravi Sethi, and Jeffrey D. Ullman, or some FA text.   
 
-A brief explanation of the format of regular
-expressions follows.
+A brief explanation of the format of regular expressions follows.
 
 Regular expressions can contain both special and ordinary characters.
 Ordinary characters, like '\code{A}', '\code{a}', or '\code{0}', are
 the simplest regular expressions; they simply match themselves.  You
 can concatenate ordinary characters, so '\code{last}' matches the
-characters 'last'.
+characters 'last'.  (In the rest of this section, we'll write RE's in
+\code{this special font}, usually without quotes, and strings to be
+matched 'in single quotes'.)
 
 Special characters either stand for classes of ordinary characters, or
 affect how the regular expressions around them are interpreted.
 
 The special characters are:
 \begin{itemize}
-\item[\code{.}]{Matches any character except a newline.}
-\item[\code{\^}]{Matches the start of the string.}
+\item[\code{.}]{(Dot.)  Matches any character except a newline.}
+\item[\code{\^}]{(Caret.)  Matches the start of the string.}
 \item[\code{\$}]{Matches the end of the string.  
 \code{foo} matches both 'foo' and 'foobar', while the regular
 expression '\code{foo\$}' matches only 'foo'.}
@@ -114,7 +116,8 @@ should be doubled are indicated.
 
 \begin{itemize}
 \item[\code{\e|}]\code{A\e|B}, where A and B can be arbitrary REs,
-creates a regular expression that will match either A or B.
+creates a regular expression that will match either A or B.  This can
+be used inside groups (see below) as well.
 %
 \item[\code{\e( \e)}]{Indicates the start and end of a group; the
 contents of a group can be matched later in the string with the
@@ -126,7 +129,8 @@ number.  For example, \code{\e (.+\e ) \e \e 1} matches 'the the' or
 '55 55', but not 'the end' (note the space after the group).  This
 special sequence can only be used to match one of the first 9 groups;
 groups with higher numbers can be matched using the \code{\e v}
-sequence.}}
+sequence.  (\code{\e 8} and \code{\e 9} don't need a double backslash
+because they are not octal digits.)}}
 %
 \item[\code{\e \e b}]{Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
@@ -150,6 +154,8 @@ the end of a word is indicated by whitespace or a non-alphanumeric
 character.}
 \item[\code{\e >}]{Matches the empty string, but only at the end of a
 word.}
+
+\item[\code{\e \e \e \e}]{Matches a literal backslash.}
 
 % In Emacs, the following two are start of buffer/end of buffer.  In
 % Python they seem to be synonyms for ^$.
@@ -175,7 +181,7 @@ The module defines these functions, and an exception:
 
 \begin{funcdesc}{search}{pattern\, string}
   Return the first position in \var{string} that matches the regular
-  expression \var{pattern}.  Return -1 if no position in the string
+  expression \var{pattern}.  Return \code{-1} if no position in the string
   matches the pattern (this is different from a zero-length match
   anywhere!).
 \end{funcdesc}
