@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "object.h"
 #include "objimpl.h"
 
+#include "accessobject.h"
 #include "intobject.h"
 #include "longobject.h"
 #include "floatobject.h"

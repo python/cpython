@@ -24,6 +24,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Function object interface */
 
+typedef struct {
+	OB_HEAD
+	object *func_code;
+	object *func_globals;
+	object *func_name;
+} funcobject;
+
 extern typeobject Functype;
 
 #define is_funcobject(op) ((op)->ob_type == &Functype)

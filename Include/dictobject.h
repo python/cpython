@@ -33,12 +33,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern object *dictlookup PROTO((object *dp, char *key));
 extern int dictinsert PROTO((object *dp, char *key, object *item));
 extern int dictremove PROTO((object *dp, char *key));
-extern char *getdictkey PROTO((object *dp, int i));
 
-#define getdictsize getmappingsize
 #define getdictkeys getmappingkeys
 
-#define getdict2key getmappingkey
 #define dict2lookup mappinglookup
 #define dict2insert mappinginsert
 #define dict2remove mappingremove

@@ -37,7 +37,7 @@ extern typeobject Classtype, Instancetype, Instancemethodtype;
 #define is_instancemethodobject(op) ((op)->ob_type == &Instancemethodtype)
 
 extern object *newclassobject PROTO((object *, object *, object *));
-extern object *newinstanceobject PROTO((object *));
+extern object *newinstanceobject PROTO((object *, object *));
 extern object *newinstancemethodobject PROTO((object *, object *));
 
 extern object *instancemethodgetfunc PROTO((object *));

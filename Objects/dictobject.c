@@ -307,39 +307,49 @@ mappingremove(op, key)
 	return 0;
 }
 
-int
-getmappingsize(op)
-	register object *op;
+void
+mappingclear(op)
+	object *op;
 {
-	if (!is_mappingobject(op)) {
-		err_badcall();
-		return -1;
+	int i;
+	register mappingobject *mp;
+	if (!is_mappingobject(op))
+		return;
+	mp = (mappingobject *)op;
+	for (i = 0; i < mp->ma_size; i++) {
+		XDECREF(mp->ma_table[i].me_key);
+		XDECREF(mp->ma_table[i].me_value);
+		mp->ma_table[i].me_key = NULL;
+		mp->ma_table[i].me_value = NULL;
 	}
-	return ((mappingobject *)op) -> ma_size;
+	mp->ma_used = 0;
 }
 
-object *
-getmappingkey(op, i)
+int
+mappinggetnext(op, ppos, pkey, pvalue)
 	object *op;
-	register int i;
+	int *ppos;
+	object **pkey;
+	object **pvalue;
 {
-	/* XXX This can't return errors since its callers assume
-	   that NULL means there was no key at that point */
+	int i;
 	register mappingobject *mp;
-	if (!is_mappingobject(op)) {
-		/* err_badcall(); */
-		return NULL;
-	}
+	if (!is_dictobject(op))
+		return 0;
 	mp = (mappingobject *)op;
-	if (i < 0 || i >= mp->ma_size) {
-		/* err_badarg(); */
-		return NULL;
-	}
-	if (mp->ma_table[i].me_value == NULL) {
-		/* Not an error! */
-		return NULL;
-	}
-	return (object *) mp->ma_table[i].me_key;
+	i = *ppos;
+	if (i < 0)
+		return 0;
+	while (i < mp->ma_size && mp->ma_table[i].me_value == NULL)
+		i++;
+	*ppos = i+1;
+	if (i >= mp->ma_size)
+		return 0;
+	if (pkey)
+		*pkey = mp->ma_table[i].me_key;
+	if (pvalue)
+		*pvalue = mp->ma_table[i].me_value;
+	return 1;
 }
 
 /* Methods */
@@ -488,6 +498,61 @@ mapping_keys(mp, args)
 	return v;
 }
 
+static object *
+mapping_values(mp, args)
+	register mappingobject *mp;
+	object *args;
+{
+	register object *v;
+	register int i, j;
+	if (!getnoarg(args))
+		return NULL;
+	v = newlistobject(mp->ma_used);
+	if (v == NULL)
+		return NULL;
+	for (i = 0, j = 0; i < mp->ma_size; i++) {
+		if (mp->ma_table[i].me_value != NULL) {
+			object *value = mp->ma_table[i].me_value;
+			INCREF(value);
+			setlistitem(v, j, value);
+			j++;
+		}
+	}
+	return v;
+}
+
+static object *
+mapping_items(mp, args)
+	register mappingobject *mp;
+	object *args;
+{
+	register object *v;
+	register int i, j;
+	if (!getnoarg(args))
+		return NULL;
+	v = newlistobject(mp->ma_used);
+	if (v == NULL)
+		return NULL;
+	for (i = 0, j = 0; i < mp->ma_size; i++) {
+		if (mp->ma_table[i].me_value != NULL) {
+			object *key = mp->ma_table[i].me_key;
+			object *value = mp->ma_table[i].me_value;
+			object *item = newtupleobject(2);
+			if (item == NULL) {
+				DECREF(v);
+				return NULL;
+			}
+			INCREF(key);
+			settupleitem(item, 0, key);
+			INCREF(value);
+			settupleitem(item, 1, value);
+			setlistitem(v, j, item);
+			j++;
+		}
+	}
+	return v;
+}
+
 object *
 getmappingkeys(mp)
 	object *mp;
@@ -497,6 +562,28 @@ getmappingkeys(mp)
 		return NULL;
 	}
 	return mapping_keys((mappingobject *)mp, (object *)NULL);
+}
+
+object *
+getmappingvalues(mp)
+	object *mp;
+{
+	if (mp == NULL || !is_mappingobject(mp)) {
+		err_badcall();
+		return NULL;
+	}
+	return mapping_values((mappingobject *)mp, (object *)NULL);
+}
+
+object *
+getmappingitems(mp)
+	object *mp;
+{
+	if (mp == NULL || !is_mappingobject(mp)) {
+		err_badcall();
+		return NULL;
+	}
+	return mapping_values((mappingobject *)mp, (object *)NULL);
 }
 
 static int
@@ -582,8 +669,10 @@ mapping_has_key(mp, args)
 }
 
 static struct methodlist mapp_methods[] = {
-	{"keys",	mapping_keys},
 	{"has_key",	mapping_has_key},
+	{"items",	mapping_items},
+	{"keys",	mapping_keys},
+	{"values",	mapping_values},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -696,15 +785,4 @@ dictremove(v, key)
 		last_name_char = key;
 	}
 	return mappingremove(v, last_name_object);
-}
-
-char *
-getdictkey(v, i)
-	object *v;
-	int i;
-{
-	object *key = getmappingkey(v, i);
-	if (key == NULL)
-		return NULL;
-	return getstringvalue(key);
 }

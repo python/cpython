@@ -28,12 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "structmember.h"
 
-typedef struct {
-	OB_HEAD
-	object *func_code;
-	object *func_globals;
-} funcobject;
-
 object *
 newfuncobject(code, globals)
 	object *code;
@@ -45,6 +39,8 @@ newfuncobject(code, globals)
 		op->func_code = code;
 		INCREF(globals);
 		op->func_globals = globals;
+		op->func_name = ((codeobject*)(op->func_code))->co_name;
+		INCREF(op->func_name);
 	}
 	return (object *)op;
 }
@@ -78,6 +74,7 @@ getfuncglobals(op)
 static struct memberlist func_memberlist[] = {
 	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
 	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
+	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
 	{NULL}	/* Sentinel */
 };
 
@@ -104,7 +101,7 @@ func_repr(op)
 {
 	char buf[140];
 	sprintf(buf, "<function %.100s at %lx>",
-		getstringvalue(((codeobject*)(op->func_code))->co_name),
+		getstringvalue(op->func_name),
 		(long)op);
 	return newstringobject(buf);
 }

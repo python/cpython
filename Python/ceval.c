@@ -84,9 +84,10 @@ static int cmp_exception PROTO((object *, object *));
 static int cmp_member PROTO((object *, object *));
 static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
-static object *build_class PROTO((object *, object *));
+static object *build_class PROTO((object *, object *, object *));
 static void locals_2_fast PROTO((frameobject *, int));
 static void fast_2_locals PROTO((frameobject *));
+static int access_statement PROTO((object *, int, frameobject *));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -743,10 +744,12 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case BUILD_CLASS:
-			w = POP();
+			u = POP();
 			v = POP();
-			x = build_class(v, w);
+			w = POP();
+			x = build_class(u, v, w);
 			PUSH(x);
+			DECREF(u);
 			DECREF(v);
 			DECREF(w);
 			break;
@@ -754,12 +757,24 @@ eval_code(co, globals, locals, arg)
 		case STORE_NAME:
 			w = GETNAMEV(oparg);
 			v = POP();
+			u = dict2lookup(f->f_locals, w);
+			if (u != NULL && is_accessobject(u)) {
+				err = setaccessvalue(u, (object *)NULL, v);
+				DECREF(v);
+				break;
+			}
 			err = dict2insert(f->f_locals, w, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_NAME:
 			w = GETNAMEV(oparg);
+			u = dict2lookup(f->f_locals, w);
+			if (u != NULL && is_accessobject(u)) {
+				err = setaccessvalue(u, (object *)NULL,
+						     (object *)NULL);
+				break;
+			}
 			if ((err = dict2remove(f->f_locals, w)) != 0)
 				err_setstr(NameError, getstringvalue(w));
 			break;
@@ -952,12 +967,24 @@ eval_code(co, globals, locals, arg)
 		case STORE_GLOBAL:
 			w = GETNAMEV(oparg);
 			v = POP();
+			u = dict2lookup(f->f_locals, w);
+			if (u != NULL && is_accessobject(u)) {
+				err = setaccessvalue(u, (object *)NULL, v);
+				DECREF(v);
+				break;
+			}
 			err = dict2insert(f->f_globals, w, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_GLOBAL:
 			w = GETNAMEV(oparg);
+			u = dict2lookup(f->f_locals, w);
+			if (u != NULL && is_accessobject(u)) {
+				err = setaccessvalue(u, (object *)NULL,
+						     (object *)NULL);
+				break;
+			}
 			if ((err = dict2remove(f->f_globals, w)) != 0)
 				err_setstr(NameError, getstringvalue(w));
 			break;
@@ -984,6 +1011,11 @@ eval_code(co, globals, locals, arg)
 					}
 				}
 			}
+			if (is_accessobject(x)) {
+				x = getaccessvalue(x, (object *)NULL);
+				if (x == NULL)
+					break;
+			}
 			INCREF(x);
 			PUSH(x);
 			break;
@@ -1000,6 +1032,11 @@ eval_code(co, globals, locals, arg)
 					break;
 				}
 			}
+			if (is_accessobject(x)) {
+				x = getaccessvalue(x, (object *)NULL);
+				if (x == NULL)
+					break;
+			}
 			INCREF(x);
 			PUSH(x);
 			break;
@@ -1010,6 +1047,11 @@ eval_code(co, globals, locals, arg)
 			if (x == NULL) {
 				err_setstr(NameError, getstringvalue(w));
 				break;
+			}
+			if (is_accessobject(x)) {
+				x = getaccessvalue(x, (object *)NULL);
+				if (x == NULL)
+					break;
 			}
 			INCREF(x);
 			PUSH(x);
@@ -1041,15 +1083,25 @@ eval_code(co, globals, locals, arg)
 					   "undefined local variable");
 				break;
 			}
+			if (is_accessobject(x)) {
+				x = getaccessvalue(x, (object *)NULL);
+				if (x == NULL)
+					break;
+			}
 			INCREF(x);
 			PUSH(x);
 			break;
 
 		case STORE_FAST:
+			v = POP();
 			w = GETLISTITEM(fastlocals, oparg);
+			if (w != NULL && is_accessobject(w)) {
+				err = setaccessvalue(w, (object *)NULL, v);
+				DECREF(v);
+				break;
+			}
 			XDECREF(w);
-			w = POP();
-			GETLISTITEM(fastlocals, oparg) = w;
+			GETLISTITEM(fastlocals, oparg) = v;
 			break;
 
 		case DELETE_FAST:
@@ -1057,6 +1109,11 @@ eval_code(co, globals, locals, arg)
 			if (x == NULL) {
 				err_setstr(NameError,
 					   "undefined local variable");
+				break;
+			}
+			if (w != NULL && is_accessobject(w)) {
+				err = setaccessvalue(w, (object *)NULL,
+						     (object *)NULL);
 				break;
 			}
 			DECREF(x);
@@ -1123,6 +1180,13 @@ eval_code(co, globals, locals, arg)
 			v = TOP();
 			err = import_from(f->f_locals, v, w);
 			locals_2_fast(f, 0);
+			break;
+
+		case ACCESS_MODE:
+			v = POP();
+			w = GETNAMEV(oparg);
+			err = access_statement(w, (int)getintvalue(v), f);
+			DECREF(v);
 			break;
 		
 		case JUMP_FORWARD:
@@ -1483,7 +1547,8 @@ fast_2_locals(f)
 	/* Merge f->f_fastlocals into f->f_locals */
 	object *locals, *fast, *map;
 	object *error_type, *error_value;
-	int i;
+	int pos;
+	object *key, *value;
 	if (f == NULL)
 		return;
 	locals = f->f_locals;
@@ -1495,16 +1560,10 @@ fast_2_locals(f)
 	    !is_dictobject(map))
 		return;
 	err_get(&error_type, &error_value);
-	i = getdictsize(map);
-	while (--i >= 0) {
-		object *key;
-		object *value;
+	pos = 0;
+	while (mappinggetnext(map, &pos, &key, &value)) {
 		int j;
-		key = getdict2key(map, i);
-		if (key == NULL)
-			continue;
-		value = dict2lookup(map, key);
-		if (value == NULL || !is_intobject(value))
+		if (!is_intobject(value))
 			continue;
 		j = getintvalue(value);
 		value = getlistitem(fast, j);
@@ -1529,7 +1588,8 @@ locals_2_fast(f, clear)
 	/* Merge f->f_locals into f->f_fastlocals */
 	object *locals, *fast, *map;
 	object *error_type, *error_value;
-	int i;
+	int pos;
+	object *key, *value;
 	if (f == NULL)
 		return;
 	locals = f->f_locals;
@@ -1541,16 +1601,10 @@ locals_2_fast(f, clear)
 	    !is_dictobject(map))
 		return;
 	err_get(&error_type, &error_value);
-	i = getdictsize(map);
-	while (--i >= 0) {
-		object *key;
-		object *value;
+	pos = 0;
+	while (mappinggetnext(map, &pos, &key, &value)) {
 		int j;
-		key = getdict2key(map, i);
-		if (key == NULL)
-			continue;
-		value = dict2lookup(map, key);
-		if (value == NULL || !is_intobject(value))
+		if (!is_intobject(value))
 			continue;
 		j = getintvalue(value);
 		value = dict2lookup(locals, key);
@@ -1907,14 +1961,7 @@ call_builtin(func, arg)
 		return (*meth)(self, arg);
 	}
 	if (is_classobject(func)) {
-		if (arg != NULL &&
-				!(is_tupleobject(arg) &&
-					gettuplesize(arg) == 0)) {
-			err_setstr(TypeError,
-				"classobject() allows no arguments");
-			return NULL;
-		}
-		return newinstanceobject(func);
+		return newinstanceobject(func, arg);
 	}
 	err_setstr(TypeError, "call of non-function");
 	return NULL;
@@ -2258,19 +2305,14 @@ import_from(locals, v, name)
 	object *w, *x;
 	w = getmoduledict(v);
 	if (getstringvalue(name)[0] == '*') {
-		int i;
-		int n = getdictsize(w);
-		for (i = 0; i < n; i++) {
-			name = getdict2key(w, i);
-			if (name == NULL || getstringvalue(name)[0] == '_')
+		int pos;
+		object *name, *value;
+		pos = 0;
+		while (mappinggetnext(w, &pos, &name, &value)) {
+			if (!is_stringobject(name) ||
+			    getstringvalue(name)[0] == '_')
 				continue;
-			x = dict2lookup(w, name);
-			if (x == NULL) {
-				/* XXX can't happen? */
-				err_setstr(SystemError, getstringvalue(name));
-				return -1;
-			}
-			if (dict2insert(locals, name, x) != 0)
+			if (dict2insert(locals, name, value) != 0)
 				return -1;
 		}
 		return 0;
@@ -2290,27 +2332,74 @@ import_from(locals, v, name)
 }
 
 static object *
-build_class(v, w)
-	object *v; /* None or tuple containing base classes */
-	object *w; /* dictionary */
+build_class(methods, bases, name)
+	object *methods; /* dictionary */
+	object *bases;  /* tuple containing classes */
+	object *name;   /* string */
 {
-	if (is_tupleobject(v)) {
-		int i;
-		for (i = gettuplesize(v); --i >= 0; ) {
-			object *x = gettupleitem(v, i);
-			if (!is_classobject(x)) {
-				err_setstr(TypeError,
-					"base is not a class object");
-				return NULL;
-			}
-		}
+	int i;
+	if (!is_tupleobject(bases)) {
+		err_setstr(SystemError, "build_class with non-tuple bases");
+		return NULL;
 	}
-	else {
-		v = NULL;
-	}
-	if (!is_dictobject(w)) {
+	if (!is_dictobject(methods)) {
 		err_setstr(SystemError, "build_class with non-dictionary");
 		return NULL;
 	}
-	return newclassobject(v, w, (object *) NULL);
+	if (!is_stringobject(name)) {
+		err_setstr(SystemError, "build_class witn non-string name");
+		return NULL;
+	}
+	for (i = gettuplesize(bases); --i >= 0; ) {
+		object *base = gettupleitem(bases, i);
+		if (!is_classobject(base)) {
+			err_setstr(TypeError,
+				"base is not a class object");
+			return NULL;
+		}
+	}
+	return newclassobject(bases, methods, name);
+}
+
+static int
+access_statement(name, mode, f)
+	object *name;
+	int mode;
+	frameobject *f;
+{
+	object *value;
+	int i = -1;
+	object *ac;
+	int ret;
+	if (f->f_localmap == NULL)
+		value = dict2lookup(f->f_locals, name);
+	else {
+		value = dict2lookup(f->f_localmap, name);
+		if (value == NULL || !is_intobject(value))
+			value = NULL;
+		else {
+			i = getintvalue(value);
+			if (0 <= i && i < getlistsize(f->f_fastlocals))
+				value = getlistitem(f->f_fastlocals, i);
+			else {
+				value = NULL;
+				i = -1;
+			}
+		}
+	}
+	if (value && is_accessobject(value)) {
+		err_setstr(AccessError, "can't override access");
+		return -1;
+	}
+	err_clear();
+	ac = newaccessobject(value, (object*)NULL, (typeobject*)NULL, mode);
+	if (ac == NULL)
+		return -1;
+	if (i >= 0)
+		ret = setlistitem(f->f_fastlocals, i, ac);
+	else {
+		ret = dict2insert(f->f_locals, name, ac);
+		DECREF(ac);
+	}
+	return ret;
 }

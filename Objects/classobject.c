@@ -29,9 +29,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 #include "ceval.h"
 
-extern typeobject MappingInstancetype;
-extern typeobject SequenceInstancetype;
-
 typedef struct {
 	OB_HEAD
 	object	*cl_bases;	/* A tuple */
@@ -102,7 +99,10 @@ class_getattr(op, name)
 	}
 	v = dictlookup(op->cl_methods, name);
 	if (v != NULL) {
-		INCREF(v);
+		if (is_accessobject(v))
+			v = getaccessvalue(v, (object *)NULL);
+		else
+			INCREF(v);
 		return v;
 	}
 	{
@@ -126,6 +126,7 @@ class_setattr(op, name, v)
 	char *name;
 	object *v;
 {
+	object *ac;
 	if (name[0] == '_' && name[1] == '_') {
 		int n = strlen(name);
 		if (name[n-1] == '_' && name[n-2] == '_') {
@@ -133,6 +134,9 @@ class_setattr(op, name, v)
 			return -1;
 		}
 	}
+	ac = dictlookup(op->cl_methods, name);
+	if (ac != NULL && is_accessobject(ac))
+		return setaccessvalue(ac, (object *)NULL, v);
 	if (v == NULL) {
 		int rv = dictremove(op->cl_methods, name);
 		if (rv < 0)
@@ -142,6 +146,20 @@ class_setattr(op, name, v)
 	}
 	else
 		return dictinsert(op->cl_methods, name, v);
+}
+
+static object *
+class_repr(op)
+	classobject *op;
+{
+	char buf[140];
+	char *name;
+	if (op->cl_name == NULL || !is_stringobject(op->cl_name))
+		name = "?";
+	else
+		name = getstringvalue(op->cl_name);
+	sprintf(buf, "<class %.100s at %lx>", name, (long)op);
+	return newstringobject(buf);
 }
 
 typeobject Classtype = {
@@ -155,7 +173,7 @@ typeobject Classtype = {
 	class_getattr,	/*tp_getattr*/
 	class_setattr,	/*tp_setattr*/
 	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	class_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -170,12 +188,18 @@ typedef struct {
 	object		*in_attr;	/* A dictionary */
 } instanceobject;
 
+static object *instance_getattr PROTO((instanceobject *, char *));
+
 object *
-newinstanceobject(class)
-	register object *class;
+newinstanceobject(class, arg)
+	object *class;
+	object *arg;
 {
 	register instanceobject *inst;
 	object *v;
+	object *init;
+	int pos;
+	object *key, *value;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
@@ -187,8 +211,51 @@ newinstanceobject(class)
 	inst->in_class = (classobject *)class;
 	inst->in_attr = newdictobject();
 	if (inst->in_attr == NULL) {
+	error:
 		DECREF(inst);
 		return NULL;
+	}
+	pos = 0;
+	while (mappinggetnext(((classobject *)class)->cl_methods,
+			      &pos, &key, &value)) {
+		if (is_accessobject(value)) {
+			object *ac = cloneaccessobject(value);
+			int err;
+			if (ac == NULL)
+				goto error;
+			err = dict2insert(inst->in_attr, key, ac);
+			DECREF(ac);
+			if (err)
+				goto error;
+		}
+	}
+	init = instance_getattr(inst, "__init__");
+	if (init == NULL) {
+		err_clear();
+		if (arg != NULL && !(is_tupleobject(arg) &&
+				     gettuplesize(arg) == 0)) {
+			err_setstr(TypeError,
+				"this classobject() takes no arguments");
+			DECREF(inst);
+			inst = NULL;
+		}
+	}
+	else {
+		object *res = call_object(init, arg);
+		DECREF(init);
+		if (res == NULL) {
+			DECREF(inst);
+			inst = NULL;
+		}
+		else {
+			if (res != None) {
+				err_setstr(TypeError,
+					   "__init__() should return None");
+				DECREF(inst);
+				inst = NULL;
+			}
+			DECREF(res);
+		}
 	}
 	return (object *)inst;
 }
@@ -199,9 +266,29 @@ static void
 instance_dealloc(inst)
 	register instanceobject *inst;
 {
+	object *error_type, *error_value;
+	object *del;
+	/* Call the __del__ method if it exists.  First temporarily
+	   revive the object and save the current exception, if any. */
+	INCREF(inst);
+	err_get(&error_type, &error_value);
+	if ((del = instance_getattr(inst, "__del__")) != NULL) {
+		object *args = newtupleobject(0);
+		object *res = args;
+		if (res != NULL)
+			res = call_object(del, args);
+		XDECREF(args);
+		DECREF(del);
+		XDECREF(res);
+		/* XXX If __del__ raised an exception, it is ignored! */
+	}
+	/* Restore the saved exception and undo the temporary revival */
+	err_setval(error_type, error_value);
+	/* Can't use DECREF here, it would cause a recursive call */
+	if (--inst->ob_refcnt > 0)
+		return; /* __del__ added a reference; don't delete now */
 	DECREF(inst->in_class);
-	if (inst->in_attr != NULL)
-		DECREF(inst->in_attr);
+	XDECREF(inst->in_attr);
 	free((ANY *)inst);
 }
 
@@ -221,7 +308,10 @@ instance_getattr(inst, name)
 	}
 	v = dictlookup(inst->in_attr, name);
 	if (v != NULL) {
-		INCREF(v);
+		if (is_accessobject(v))
+			v = getaccessvalue(v, (object *)NULL);
+		else
+			INCREF(v);
 		return v;
 	}
 	v = class_getattr(inst->in_class, name);
@@ -243,6 +333,7 @@ instance_setattr(inst, name, v)
 	char *name;
 	object *v;
 {
+	object *ac;
 	if (name[0] == '_' && name[1] == '_') {
 		int n = strlen(name);
 		if (name[n-1] == '_' && name[n-2] == '_') {
@@ -250,6 +341,9 @@ instance_setattr(inst, name, v)
 			return -1;
 		}
 	}
+	ac = dictlookup(inst->in_attr, name);
+	if (ac != NULL && is_accessobject(ac))
+		return setaccessvalue(ac, (object *)NULL, v);
 	if (v == NULL) {
 		int rv = dictremove(inst->in_attr, name);
 		if (rv < 0)
@@ -270,9 +364,15 @@ instance_repr(inst)
 
 	func = instance_getattr(inst, "__repr__");
 	if (func == NULL) {
-		char buf[80];
+		char buf[140];
+		object *classname = inst->in_class->cl_name;
+		char *cname;
+		if (classname != NULL && is_stringobject(classname))
+			cname = getstringvalue(classname);
+		else
+			cname = "?";
 		err_clear();
-		sprintf(buf, "<instance object at %lx>", (long)inst);
+		sprintf(buf, "<%.100s instance at %lx>", cname, (long)inst);
 		return newstringobject(buf);
 	}
 	res = call_object(func, (object *)NULL);
@@ -773,6 +873,7 @@ typeobject Instancetype = {
 	0,
 	instance_dealloc,	/*tp_dealloc*/
 	0,			/*tp_print*/
+	(object * (*) FPROTO((object *, char *)))
 	instance_getattr,	/*tp_getattr*/
 	instance_setattr,	/*tp_setattr*/
 	instance_compare,	/*tp_compare*/
@@ -879,6 +980,28 @@ instancemethod_compare(a, b)
 	return cmp;
 }
 
+static object *
+instancemethod_repr(a)
+	instancemethodobject *a;
+{
+	char buf[240];
+	object *classname =
+		((instanceobject *)(a->im_self))->in_class->cl_name;
+	object *funcname = ((funcobject *)(a->im_func))->func_name;
+	char *cname, *fname;
+	if (classname != NULL && is_stringobject(classname))
+		cname = getstringvalue(classname);
+	else
+		cname = "?";
+	if (funcname != NULL && is_stringobject(funcname))
+		fname = getstringvalue(funcname);
+	else
+		fname = "?";
+	sprintf(buf, "<method %.100s of %.100s instance at %lx>",
+		fname, cname, (long)a->im_func);
+	return newstringobject(buf);
+}
+
 static long
 instancemethod_hash(a)
 	instancemethodobject *a;
@@ -904,7 +1027,7 @@ typeobject Instancemethodtype = {
 	instancemethod_getattr,	/*tp_getattr*/
 	0,			/*tp_setattr*/
 	instancemethod_compare,	/*tp_compare*/
-	0,			/*tp_repr*/
+	instancemethod_repr,	/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
