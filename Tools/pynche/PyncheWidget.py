@@ -294,7 +294,13 @@ def make_view_popups(switchboard, root, extrapath):
         for file in os.listdir(dir):
             if file[-9:] == 'Viewer.py':
                 name = file[:-3]
-                module = __import__(name)
+                try:
+                    module = __import__(name)
+                except ImportError:
+                    # Pynche is running from inside a package, so get the
+                    # module using the explicit path.
+                    pkg = __import__('pynche.'+name)
+                    module = getattr(pkg, name)
                 if hasattr(module, 'ADDTOVIEW') and module.ADDTOVIEW:
                     # this is an external viewer
                     v = PopupViewer(module, name, switchboard, root)
