@@ -8,7 +8,9 @@
 #endif
 
 /* Define if type char is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
 #undef __CHAR_UNSIGNED__
+#endif
 
 /* Define to empty if the keyword does not work.  */
 #undef const
@@ -277,6 +279,9 @@
 
 /* Define if you have the <sys/utsname.h> header file.  */
 #undef HAVE_SYS_UTSNAME_H
+
+/* Define if you have the <sys/wait.h> header file.  */
+#undef HAVE_SYS_WAIT_H
 
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H
