@@ -99,6 +99,14 @@ class PyBuildExt(build_ext):
 
         build_ext.build_extensions(self)
 
+    def get_platform (self):
+	# Get value of sys.platform
+	platform = sys.platform
+	if platform[:6] =='cygwin': 
+	    platform = 'cygwin'
+
+	return platform
+
     def detect_modules(self):
         # Ensure that /usr/local is always used 
         if '/usr/local/lib' not in self.compiler.library_dirs:
@@ -113,9 +121,11 @@ class PyBuildExt(build_ext):
         inc_dirs = ['/usr/include'] + self.compiler.include_dirs
         exts = []
 
+	platform = self.get_platform()
+
  	# Check for MacOS X, which doesn't need libm.a at all
  	math_libs = ['m']
- 	if sys.platform == 'Darwin1.2':
+ 	if platform == 'Darwin1.2':
  	    math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -268,11 +278,12 @@ class PyBuildExt(build_ext):
         # similar functionality (but slower of course) implemented in Python.
 
         # The standard Unix dbm module:
-        if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
-            exts.append( Extension('dbm', ['dbmmodule.c'],
-                                   libraries = ['ndbm'] ) )
-        else:
-            exts.append( Extension('dbm', ['dbmmodule.c']) )
+        if platform not in ['cygwin']:
+            if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
+                exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       libraries = ['ndbm'] ) )
+            else:
+                exts.append( Extension('dbm', ['dbmmodule.c']) )
         
         # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
@@ -321,11 +332,12 @@ class PyBuildExt(build_ext):
 
 
         # Unix-only modules
-        if sys.platform not in ['mac', 'win32']:
+        if platform not in ['mac', 'win32']:
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
-            exts.append( Extension('resource', ['resource.c']) )
+            if platform not in ['cygwin']:
+                exts.append( Extension('resource', ['resource.c']) )
 
             if (self.compiler.find_library_file(lib_dirs, 'nsl')):
                 exts.append( Extension('nis', ['nismodule.c'],
@@ -333,7 +345,7 @@ class PyBuildExt(build_ext):
 
         # Curses support, requring the System V version of curses, often
         # provided by the ncurses library. 
-        if sys.platform == 'sunos4':
+        if platform == 'sunos4':
             include_dirs += ['/usr/5include']
             lib_dirs += ['/usr/5lib']
 
@@ -363,7 +375,7 @@ class PyBuildExt(build_ext):
         # The library to link fpectl with is platform specific.
         # Choose *one* of the options below for fpectl:
 
-        if sys.platform == 'irix5':
+        if platform == 'irix5':
             # For SGI IRIX (tested on 5.3):
             exts.append( Extension('fpectl', ['fpectlmodule.c'],
                                    libraries=['fpe']) )
@@ -420,12 +432,11 @@ class PyBuildExt(build_ext):
                                    libraries = ['expat']) )
 
         # Platform-specific libraries
-        plat = sys.platform
-        if plat == 'linux2':
+        if platform == 'linux2':
             # Linux-specific modules
             exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
 
-        if plat == 'sunos5':
+        if platform == 'sunos5':
             # SunOS specific modules 
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
@@ -484,7 +495,8 @@ class PyBuildExt(build_ext):
                 include_dirs.append(dir)
                 
         # Check for various platform-specific directories
-        if sys.platform == 'sunos5':
+        platform = self.get_platform()
+        if platform == 'sunos5':
             include_dirs.append('/usr/openwin/include')
             added_lib_dirs.append('/usr/openwin/lib')
         elif os.path.exists('/usr/X11R6/include'):
@@ -512,7 +524,7 @@ class PyBuildExt(build_ext):
         libs.append('tk'+version)   
         libs.append('tcl'+version)
         
-        if sys.platform in ['aix3', 'aix4']:
+        if platform in ['aix3', 'aix4']:
             libs.append('ld')
 
         # Finally, link with the X11 libraries
