@@ -45,6 +45,7 @@ all:	$(INDEXFILES) modindex.html
 .PHONY: api ext lib mac ref tut
 
 api: api/api.html
+doc: doc/doc.html
 ext: ext/ext.html
 lib: lib/lib.html
 mac: mac/mac.html
