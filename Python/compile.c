@@ -4107,16 +4107,17 @@ com_decorator_name(struct compiling *c, node *n)
 static void
 com_decorator(struct compiling *c, node *n)
 {
-	/* decorator: '@' dotted_name [ '(' [arglist] ')' ] */
+	/* decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE */
 	int nch = NCH(n);
-	assert(nch >= 2);
+	assert(nch >= 3);
 	REQ(CHILD(n, 0), AT);
+	REQ(RCHILD(n, -1), NEWLINE);
 	com_decorator_name(c, CHILD(n, 1));
 
-	if (nch > 2) {
-		assert(nch == 4 || nch == 5);
+	if (nch > 3) {
+		assert(nch == 5 || nch == 6);
 		REQ(CHILD(n, 2), LPAR);
-		REQ(CHILD(n, nch - 1), RPAR);
+		REQ(RCHILD(n, -2), RPAR);
 		com_call_function(c, CHILD(n, 3));
 	}
 }
@@ -4124,26 +4125,20 @@ com_decorator(struct compiling *c, node *n)
 static int
 com_decorators(struct compiling *c, node *n)
 {
-	int i, nch, ndecorators;
+	int i, nch;
 	
-	/* decorator ([NEWLINE] decorator)* NEWLINE */
+	/* decorator+ */
 	nch = NCH(n);
-	assert(nch >= 2);
-	REQ(CHILD(n, nch - 1), NEWLINE);
+	assert(nch >= 1);
 
-	ndecorators = 0;
-	/* the application order for decorators is the reverse of how they are
-	   listed; bottom-up */
-	nch -= 1;
-	for (i = 0; i < nch; i+=1) {
+	for (i = 0; i < nch; ++i) {
 		node *ch = CHILD(n, i);
-		if (TYPE(ch) != NEWLINE) {
-			com_decorator(c, ch);
-			++ndecorators;
-		}
+		REQ(ch, decorator);
+
+		com_decorator(c, ch);
 	}
 
-	return ndecorators;
+	return nch;
 }
 
 static void
@@ -4151,6 +4146,7 @@ com_funcdef(struct compiling *c, node *n)
 {
 	PyObject *co;
 	int ndefs, ndecorators;
+	
 	REQ(n, funcdef);
 	/*          -6            -5   -4   -3         -2  -1
 	   funcdef: [decorators] 'def' NAME parameters ':' suite */
@@ -4159,7 +4155,7 @@ com_funcdef(struct compiling *c, node *n)
 		ndecorators = com_decorators(c, CHILD(n, 0));
 	else
 		ndecorators = 0;
-	
+
 	ndefs = com_argdefs(c, n);
 	if (ndefs < 0)
 		return;
@@ -4179,11 +4175,13 @@ com_funcdef(struct compiling *c, node *n)
 		else
 			com_addoparg(c, MAKE_FUNCTION, ndefs);
 		com_pop(c, ndefs);
+
 		while (ndecorators > 0) {
 			com_addoparg(c, CALL_FUNCTION, 1);
 			com_pop(c, 1);
-			ndecorators--;
+			--ndecorators;
 		}
+
 		com_addop_varname(c, VAR_STORE, STR(RCHILD(n, -4)));
 		com_pop(c, 1);
 		Py_DECREF(co);

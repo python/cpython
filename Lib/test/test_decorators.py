@@ -40,14 +40,12 @@ def dbcheck(exprstr, globals=None, locals=None):
 def countcalls(counts):
     "Decorator to count calls to a function"
     def decorate(func):
-        name = func.func_name
-        counts[name] = 0
+        func_name = func.func_name
+        counts[func_name] = 0
         def call(*args, **kwds):
-            counts[name] += 1
+            counts[func_name] += 1
             return func(*args, **kwds)
-        # XXX: Would like to say: call.func_name = func.func_name here
-        #      to make nested decorators work in any order, but func_name
-        #      is a readonly attribute
+        call.func_name = func_name
         return call
     return decorate
 
@@ -65,6 +63,7 @@ def memoize(func):
         except TypeError:
             # Unhashable argument
             return func(*args)
+    call.func_name = func.func_name
     return call
 
 # -----------------------------------------------
@@ -126,13 +125,13 @@ class TestDecorators(unittest.TestCase):
         self.assertRaises(DbcheckError, f, 1, None)
 
     def test_memoize(self):
-        # XXX: This doesn't work unless memoize is the last decorator -
-        #      see the comment in countcalls.
         counts = {}
+
         @memoize
         @countcalls(counts)
         def double(x):
             return x * 2
+        self.assertEqual(double.func_name, 'double')
 
         self.assertEqual(counts, dict(double=0))
 
@@ -162,6 +161,11 @@ class TestDecorators(unittest.TestCase):
             codestr = "@%s\ndef f(): pass" % expr
             self.assertRaises(SyntaxError, compile, codestr, "test", "exec")
 
+        # You can't put multiple decorators on a single line:
+        #
+        self.assertRaises(SyntaxError, compile,
+                          "@f1 @f2\ndef f(): pass", "test", "exec")
+
         # Test runtime errors
 
         def unimp(func):
@@ -187,20 +191,74 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo.booh, 42)
 
     def test_order(self):
-        # Test that decorators are conceptually applied right-recursively;
-        # that means bottom-up
-        def ordercheck(num):
-            def deco(func):
-                return lambda: num
-            return deco
+        class C(object):
+            @staticmethod
+            @funcattrs(abc=1)
+            def foo(): return 42
+        # This wouldn't work if staticmethod was called first
+        self.assertEqual(C.foo(), 42)
+        self.assertEqual(C().foo(), 42)
 
-        # Should go ordercheck(1)(ordercheck(2)(blah)) which should lead to
-        # blah() == 1
-        @ordercheck(1)
-        @ordercheck(2)
-        def blah(): pass
-        self.assertEqual(blah(), 1, "decorators are meant to be applied "
-                                    "bottom-up")
+    def test_eval_order(self):
+        # Evaluating a decorated function involves four steps for each
+        # decorator-maker (the function that returns a decorator):
+        #
+        #    1: Evaluate the decorator-maker name
+        #    2: Evaluate the decorator-maker arguments (if any)
+        #    3: Call the decorator-maker to make a decorator
+        #    4: Call the decorator
+        #
+        # When there are multiple decorators, these steps should be
+        # performed in the above order for each decorator, but we should
+        # iterate through the decorators in the reverse of the order they
+        # appear in the source.
+
+        actions = []
+
+        def make_decorator(tag):
+            actions.append('makedec' + tag)
+            def decorate(func):
+                actions.append('calldec' + tag)
+                return func
+            return decorate
+
+        class NameLookupTracer (object):
+            def __init__(self, index):
+                self.index = index
+
+            def __getattr__(self, fname):
+                if fname == 'make_decorator':
+                    opname, res = ('evalname', make_decorator)
+                elif fname == 'arg':
+                    opname, res = ('evalargs', str(self.index))
+                else:
+                    assert False, "Unknown attrname %s" % fname
+                actions.append('%s%d' % (opname, self.index))
+                return res
+
+        c1, c2, c3 = map(NameLookupTracer, [ 1, 2, 3 ])
+
+        expected_actions = [ 'evalname1', 'evalargs1', 'makedec1',
+                             'evalname2', 'evalargs2', 'makedec2',
+                             'evalname3', 'evalargs3', 'makedec3',
+                             'calldec3', 'calldec2', 'calldec1' ]
+
+        actions = []
+        @c1.make_decorator(c1.arg)
+        @c2.make_decorator(c2.arg)
+        @c3.make_decorator(c3.arg)
+        def foo(): return 42
+        self.assertEqual(foo(), 42)
+
+        self.assertEqual(actions, expected_actions)
+
+        # Test the equivalence claim in chapter 7 of the reference manual.
+        #
+        actions = []
+        def bar(): return 42
+        bar = c1.make_decorator(c1.arg)(c2.make_decorator(c2.arg)(c3.make_decorator(c3.arg)(bar)))
+        self.assertEqual(bar(), 42)
+        self.assertEqual(actions, expected_actions)
 
 def test_main():
     test_support.run_unittest(TestDecorators)

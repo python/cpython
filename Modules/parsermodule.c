@@ -2364,7 +2364,7 @@ validate_testlist_gexp(node *tree)
 }
 
 /*  decorator:
- *    '@' dotted_name [ '(' [arglist] ')' ]
+ *    '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
  */
 static int
 validate_decorator(node *tree)
@@ -2372,41 +2372,37 @@ validate_decorator(node *tree)
     int ok;
     int nch = NCH(tree);
     ok = (validate_ntype(tree, decorator) &&
-	  (nch == 2 || nch == 4 || nch == 5) &&
+	  (nch == 3 || nch == 5 || nch == 6) &&
 	  validate_at(CHILD(tree, 0)) &&
-	  validate_dotted_name(CHILD(tree, 1)));
+	  validate_dotted_name(CHILD(tree, 1)) &&
+	  validate_newline(RCHILD(tree, -1)));
 
-    if (ok && nch != 2) {
-	    ok = (validate_lparen(CHILD(tree, 2)) &&
-		  validate_rparen(RCHILD(tree, -1)));
+    if (ok && nch != 3) {
+	ok = (validate_lparen(CHILD(tree, 2)) &&
+	      validate_rparen(RCHILD(tree, -2)));
 
-	    if (ok && nch == 5)
-		ok = validate_arglist(CHILD(tree, 3));
+	if (ok && nch == 6)
+	    ok = validate_arglist(CHILD(tree, 3));
     }
 
     return ok;
 }
-    
+
 /*  decorators:
- *    decorator ([NEWLINE] decorator)* NEWLINE
+ *    decorator+
  */
 static int
 validate_decorators(node *tree)
 {
     int i, nch, ok; 
     nch = NCH(tree);
-    ok = validate_ntype(tree, decorators) && nch >= 2;
+    ok = validate_ntype(tree, decorators) && nch >= 1;
 
-    i = 0;
-    while (ok && i < nch - 1) {
+    for (i = 0; ok && i < nch; ++i)
 	ok = validate_decorator(CHILD(tree, i));
-	if (TYPE(CHILD(tree, i + 1)) == NEWLINE)
-	    ++i;
-	++i;
-    }
 
     return ok;
-}			       
+}
 
 /*  funcdef:
  *      

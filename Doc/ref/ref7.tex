@@ -318,9 +318,9 @@ section~\ref{types}):
              {[\token{decorators}] "def" \token{funcname} "(" [\token{parameter_list}] ")"
               ":" \token{suite}}
   \production{decorators}
-             {\token{decorator} ([NEWLINE] \token{decorator})* NEWLINE}
+             {\token{decorator}+}
   \production{decorator}
-             {"@" \token{dotted_name} ["(" [\token{argument_list} [","]] ")"]}
+             {"@" \token{dotted_name} ["(" [\token{argument_list} [","]] ")"] NEWLINE}
   \production{parameter_list}
              {(\token{defparameter} ",")*}
   \productioncont{("*" \token{identifier} [, "**" \token{identifier}]}
@@ -352,11 +352,11 @@ Decorator expressions are evaluated when the function is defined, in the scope
 that contains the function definition.  The result must be a callable,
 which is invoked with the function object as the only argument.
 The returned value is bound to the function name instead of the function
-object.  If there are multiple decorators, they are applied in reverse
-order.  For example, the following code:
+object.  Multiple decorators are applied in nested fashion.
+For example, the following code:
 
 \begin{verbatim}
-@f1
+@f1(arg)
 @f2
 def func(): pass
 \end{verbatim}
@@ -365,7 +365,7 @@ is equivalent to:
 
 \begin{verbatim}
 def func(): pass
-func = f2(f1(func))
+func = f1(arg)(f2(func))
 \end{verbatim}
 
 When one or more top-level parameters have the form \var{parameter}
