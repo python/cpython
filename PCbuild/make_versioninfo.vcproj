@@ -44,7 +44,7 @@
 				Outputs="..\PC\pythonnt_rc.h"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="odbccp32.lib"
 				OutputFile=".\./make_versioninfo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -110,7 +110,7 @@
 				Outputs="..\PC\pythonnt_rc_d.h"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				AdditionalDependencies="odbccp32.lib"
 				OutputFile="./make_versioninfo_d.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

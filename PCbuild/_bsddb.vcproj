@@ -36,7 +36,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ..\..\db-4.2.52\build_win32\Debug_static\libdb42sd.lib"
+				AdditionalDependencies="..\..\db-4.2.52\build_win32\Debug_static\libdb42sd.lib"
 				OutputFile="./_bsddb_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -105,7 +105,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ..\..\db-4.2.52\build_win32\Release_static\libdb42s.lib"
+				AdditionalDependencies="..\..\db-4.2.52\build_win32\Release_static\libdb42s.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -179,7 +179,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ..\..\db-4.2.52\build_win32\Release_static\libdb42s.lib"
+				AdditionalDependencies="..\..\db-4.2.52\build_win32\Release_static\libdb42s.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
