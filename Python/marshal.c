@@ -241,10 +241,10 @@ w_object(PyObject *v, WFILE *p)
 	else if (PyCode_Check(v)) {
 		PyCodeObject *co = (PyCodeObject *)v;
 		w_byte(TYPE_CODE, p);
-		w_short(co->co_argcount, p);
-		w_short(co->co_nlocals, p);
-		w_short(co->co_stacksize, p);
-		w_short(co->co_flags, p);
+		w_long(co->co_argcount, p);
+		w_long(co->co_nlocals, p);
+		w_long(co->co_stacksize, p);
+		w_long(co->co_flags, p);
 		w_object(co->co_code, p);
 		w_object(co->co_consts, p);
 		w_object(co->co_names, p);
@@ -253,7 +253,7 @@ w_object(PyObject *v, WFILE *p)
 		w_object(co->co_cellvars, p);
 		w_object(co->co_filename, p);
 		w_object(co->co_name, p);
-		w_short(co->co_firstlineno, p);
+		w_long(co->co_firstlineno, p);
 		w_object(co->co_lnotab, p);
 	}
 	else if (PyObject_CheckReadBuffer(v)) {
@@ -588,10 +588,10 @@ r_object(RFILE *p)
 			return NULL;
 		}
 		else {
-			int argcount = r_short(p);
-			int nlocals = r_short(p);
-			int stacksize = r_short(p);
-			int flags = r_short(p);
+			int argcount = r_long(p);
+			int nlocals = r_long(p);
+			int stacksize = r_long(p);
+			int flags = r_long(p);
 			PyObject *code = NULL;
 			PyObject *consts = NULL;
 			PyObject *names = NULL;
@@ -612,7 +612,7 @@ r_object(RFILE *p)
 			if (cellvars) filename = r_object(p);
 			if (filename) name = r_object(p);
 			if (name) {
-				firstlineno = r_short(p);
+				firstlineno = r_long(p);
 				lnotab = r_object(p);
 			}
 
