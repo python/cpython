@@ -21,6 +21,8 @@ htons(), htonl() -- convert 16, 32 bit int from host to network byte order
 inet_aton() -- convert IP addr string (123.45.67.89) to 32-bit packed format
 inet_ntoa() -- convert 32-bit packed format IP to string (123.45.67.89)
 ssl() -- secure socket layer support (only available if configured)
+socket.getdefaulttimeout() -- get the default timeout value
+socket.setdefaulttimeout() -- set the default timeout value
 
  [*] not available on all platforms!
 

@@ -35,6 +35,8 @@ Module interface:
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - socket.inet_aton(IP address) -> 32-bit packed IP representation
 - socket.inet_ntoa(packed IP) -> IP address string
+- socket.getdefaulttimeout() -> None | float
+- socket.setdefaulttimeout(None | float)
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
@@ -521,6 +523,8 @@ internal_select(PySocketSockObject *s, int writing)
 
 /* Initialize a new socket object. */
 
+static float defaulttimeout = -1.0; /* Default timeout for new sockets */
+
 static void
 init_sockobject(PySocketSockObject *s,
 		SOCKET_T fd, int family, int type, int proto)
@@ -532,9 +536,13 @@ init_sockobject(PySocketSockObject *s,
 	s->sock_family = family;
 	s->sock_type = type;
 	s->sock_proto = proto;
-	s->sock_timeout = -1.0; /* Start without timeout */
+	s->sock_timeout = defaulttimeout;
 
 	s->errorhandler = &set_error;
+
+	if (defaulttimeout >= 0.0)
+		internal_setblocking(s, 0);
+
 #ifdef RISCOS
 	if (taskwindow)
 		socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
@@ -2725,6 +2733,58 @@ PyDoc_STRVAR(getnameinfo_doc,
 \n\
 Get host and port for a sockaddr.");
 
+
+/* Python API to getting and setting the default timeout value. */
+
+static PyObject *
+socket_getdefaulttimeout(PyObject *self)
+{
+	if (defaulttimeout < 0.0) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else
+		return PyFloat_FromDouble(defaulttimeout);
+}
+
+PyDoc_STRVAR(getdefaulttimeout_doc,
+"socket.getdefaulttimeout() -> None | float\n\
+\n\
+Returns the default timeout in floating seconds for new socket objects.\n\
+A value of None indicates that new socket objects have no timeout.\n\
+When the socket module is first imported, the default is None.");
+
+static PyObject *
+socket_setdefaulttimeout(PyObject *self, PyObject *arg)
+{
+	double timeout;
+
+	if (arg == Py_None)
+		timeout = -1.0;
+	else {
+		timeout = PyFloat_AsDouble(arg);
+		if (timeout < 0.0) {
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_ValueError,
+						"Timeout value out of range");
+			return NULL;
+		}
+	}
+
+	defaulttimeout = timeout;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(setdefaulttimeout_doc,
+"socket.setdefaulttimeout(None | float)\n\
+\n\
+Set the default timeout in floating seconds for new socket objects.\n\
+A value of None indicates that new socket objects have no timeout.\n\
+When the socket module is first imported, the default is None.");
+
+
 /* List of functions exported by this module. */
 
 static PyMethodDef socket_methods[] = {
@@ -2760,6 +2820,10 @@ static PyMethodDef socket_methods[] = {
 	 METH_VARARGS, getaddrinfo_doc},
 	{"getnameinfo",		socket_getnameinfo,
 	 METH_VARARGS, getnameinfo_doc},
+	{"getdefaulttimeout",	socket_getdefaulttimeout,
+	 METH_NOARGS, getdefaulttimeout_doc},
+	{"setdefaulttimeout",	socket_setdefaulttimeout,
+	 METH_O, setdefaulttimeout_doc},
 	{NULL,			NULL}		 /* Sentinel */
 };
 

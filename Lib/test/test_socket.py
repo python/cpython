@@ -297,6 +297,36 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.error:
                 pass
 
+    def testDefaultTimeout(self):
+        """Testing default timeout."""
+        # The default timeout should initially be None
+        self.assertEqual(socket.getdefaulttimeout(), None)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), None)
+        s.close()
+
+        # Set the default timeout to 10, and see if it propagates
+        socket.setdefaulttimeout(10)
+        self.assertEqual(socket.getdefaulttimeout(), 10)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), 10)
+        s.close()
+
+        # Reset the default timeout to None, and see if it propagates
+        socket.setdefaulttimeout(None)
+        self.assertEqual(socket.getdefaulttimeout(), None)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), None)
+        s.close()
+
+        # Check that setting it to an invalid value raises ValueError
+        self.assertRaises(ValueError, socket.setdefaulttimeout, -1)
+
+        # Check that setting it to an invalid type raises TypeError
+        self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
+
+    # XXX The following three don't test module-level functionality...
+
     def testSockName(self):
         """Testing getsockname()."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
