@@ -753,7 +753,8 @@ eval_code(co, globals, locals, owner, arg)
 				/* XXX move into writeobject() ? */
 				char *s = getstringvalue(v);
 				int len = getstringsize(v);
-				if (len > 0 && isspace(s[len-1]) &&
+				if (len > 0 &&
+				    isspace(Py_CHARMASK(s[len-1])) &&
 				    s[len-1] != ' ')
 					softspace(w, 0);
 			}

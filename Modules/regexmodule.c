@@ -35,7 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include "regexpr.h"
-#include "ctype.h"
+#include <ctype.h>
 
 static object *RegexError;	/* Exception */	
 
@@ -433,7 +433,7 @@ symcomp(pattern, gdict)
 					++o; /* eat the '>' */
 					break;
 				}
-				if (!isalnum(*o) && *o != '_') {
+				if (!isalnum(Py_CHARMASK(*o)) && *o != '_') {
 					o = backtrack;
 					break;
 				}
