@@ -92,6 +92,7 @@ class RHooks(ihooks.Hooks):
     def init_frozen(self, name): raise SystemError, "don't use this"
     def load_source(self, *args): raise SystemError, "don't use this"
     def load_compiled(self, *args): raise SystemError, "don't use this"
+    def load_package(self, *args): raise SystemError, "don't use this"
 
     def load_dynamic(self, name, filename, file):
         return self.rexec.load_dynamic(name, filename, file)
