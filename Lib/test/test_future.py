@@ -17,6 +17,9 @@ import test_future1
 unload('test_future2')
 import test_future2
 
+unload('test_future3')
+import test_future3
+
 # The remaining tests should fail
 try:
     import badsyntax_future3
