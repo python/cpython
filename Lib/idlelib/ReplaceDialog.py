@@ -1,9 +1,4 @@
-import string
-import os
-import re
-import fnmatch
 from Tkinter import *
-import tkMessageBox
 import SearchEngine
 from SearchDialogBase import SearchDialogBase
 
@@ -111,24 +106,24 @@ class ReplaceDialog(SearchDialogBase):
 
     def do_find(self, ok=0):
         if not self.engine.getprog():
-            return 0
+            return False
         text = self.text
         res = self.engine.search_text(text, None, ok)
         if not res:
             text.bell()
-            return 0
+            return False
         line, m = res
         i, j = m.span()
         first = "%d.%d" % (line, i)
         last = "%d.%d" % (line, j)
         self.show_hit(first, last)
         self.ok = 1
-        return 1
+        return True
 
     def do_replace(self):
         prog = self.engine.getprog()
         if not prog:
-            return 0
+            return False
         text = self.text
         try:
             first = pos = text.index("sel.first")
@@ -141,7 +136,7 @@ class ReplaceDialog(SearchDialogBase):
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
         m = prog.match(chars, col)
         if not prog:
-            return 0
+            return False
         new = m.expand(self.replvar.get())
         text.mark_set("insert", first)
         text.undo_block_start()
@@ -152,7 +147,7 @@ class ReplaceDialog(SearchDialogBase):
         text.undo_block_stop()
         self.show_hit(first, text.index("insert"))
         self.ok = 0
-        return 1
+        return True
 
     def show_hit(self, first, last):
         text = self.text
