@@ -25,10 +25,10 @@
 
 \newenvironment{macrodesc}[2]{
   \begin{fulllineitems}
-    \item[\code{\e\bfseries#1}{%
+    \item[\code{{\e\bfseries#1}{%
       \let\op=\py@ltx@optparam%
       \let\p=\py@ltx@param%
-      #2}]
+      #2}}]
     \index{#1@\idxcode{\e #1}}
 }{\end{fulllineitems}}
 
