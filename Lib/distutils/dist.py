@@ -12,7 +12,7 @@ import sys, string, re
 from types import *
 from copy import copy
 from distutils.errors import *
-from distutils.fancy_getopt import fancy_getopt, print_help
+from distutils.fancy_getopt import FancyGetopt, longopt_xlate
 
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
@@ -40,8 +40,8 @@ class Distribution:
 
 
     # 'global_options' describes the command-line options that may be
-    # supplied to the client (setup.py) prior to any actual commands.
-    # Eg. "./setup.py -nv" or "./setup.py --verbose" both take advantage of
+    # supplied to the setup script prior to any actual commands.
+    # Eg. "./setup.py -n" or "./setup.py --quiet" both take advantage of
     # these global options.  This list should be kept to a bare minimum,
     # since every global option is also valid as a command option -- and we
     # don't want to pollute the commands with too many options that they
@@ -53,8 +53,47 @@ class Distribution:
                       ('dry-run', 'n',
                        "don't actually do anything"),
                       ('help', 'h',
-                       "show this help message"),
+                       "show this help message, plus help for any commands " +
+                       "given on the command-line"),
                      ]
+
+    # options that are not propagated to the commands
+    display_options = [
+        ('help-commands', None,
+         "list all available commands"),
+        ('name', None,
+         "print package name"),
+        ('version', 'V',
+         "print package version"),
+        ('fullname', None,
+         "print <package name>-<version>"),
+        ('author', None,
+         "print the author's name"),
+        ('author-email', None,
+         "print the author's email address"),
+        ('maintainer', None,
+         "print the maintainer's name"),
+        ('maintainer-email', None,
+         "print the maintainer's email address"),
+        ('contact', None,
+         "print the name of the maintainer if present, "
+         "else author"),
+        ('contact-email', None,
+         "print the email of the maintainer if present, "
+         "else author"),
+        ('url', None,
+         "print the URL for this package"),
+        ('licence', None,
+         "print the licence of the package"),
+        ('license', None,
+         "alias for --licence"),
+        ('description', None,
+         "print the package description"),
+        ]
+    display_option_names = map(lambda x: string.translate(x[0], longopt_xlate),
+                           display_options)
+
+    # negative options are options that exclude other options
     negative_opt = {'quiet': 'verbose'}
 
 
@@ -75,31 +114,28 @@ class Distribution:
         self.verbose = 1
         self.dry_run = 0
         self.help = 0
-        self.help_commands = 0
+        for attr in self.display_option_names:
+            setattr(self, attr, 0)
 
-        # And the "distribution meta-data" options -- these can only
-        # come from setup.py (the caller), not the command line
-        # (or a hypothetical config file).
-        self.name = None
-        self.version = None
-        self.author = None
-        self.author_email = None
-        self.maintainer = None
-        self.maintainer_email = None
-        self.url = None
-        self.licence = None
-        self.description = None
+        # Store the distribution meta-data (name, version, author, and so
+        # forth) in a separate object -- we're getting to have enough
+        # information here (and enough command-line options) that it's
+        # worth it.  Also delegate 'get_XXX()' methods to the 'metadata'
+        # object in a sneaky and underhanded (but efficient!) way.
+        self.metadata = DistributionMetadata ()
+        for attr in dir(self.metadata):
+            meth_name = "get_" + attr
+            setattr(self, meth_name, getattr(self.metadata, meth_name))
 
         # 'cmdclass' maps command names to class objects, so we
         # can 1) quickly figure out which class to instantiate when
         # we need to create a new command object, and 2) have a way
-        # for the client to override command classes
+        # for the setup script to override command classes
         self.cmdclass = {}
 
         # These options are really the business of various commands, rather
         # than of the Distribution itself.  We provide aliases for them in
         # Distribution as a convenience to the developer.
-        # dictionary.        
         self.packages = None
         self.package_dir = None
         self.py_modules = None
@@ -128,8 +164,9 @@ class Distribution:
         self.have_run = {}
 
         # Now we'll use the attrs dictionary (ultimately, keyword args from
-        # the client) to possibly override any or all of these distribution
-        # options.        
+        # the setup script) to possibly override any or all of these
+        # distribution options.
+
         if attrs:
 
             # Pull out the set of command options and work on them
@@ -149,7 +186,9 @@ class Distribution:
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
             for (key,val) in attrs.items():
-                if hasattr (self, key):
+                if hasattr (self.metadata, key):
+                    setattr (self.metadata, key, val)
+                elif hasattr (self, key):
                     setattr (self, key, val)
                 else:
                     raise DistutilsSetupError, \
@@ -192,19 +231,17 @@ class Distribution:
         # happen until we know what the command is.
 
         self.commands = []
-        options = self.global_options + \
-                  [('help-commands', None,
-                    "list all available commands")]
-        args = fancy_getopt (options, self.negative_opt,
-                             self, sys.argv[1:])
+        parser = FancyGetopt (self.global_options + self.display_options)
+        parser.set_negative_aliases (self.negative_opt)
+        args = parser.getopt (object=self)
+        option_order = parser.get_option_order()
 
-        # User just wants a list of commands -- we'll print it out and stop
-        # processing now (ie. if they ran "setup --help-commands foo bar",
-        # we ignore "foo bar").
-        if self.help_commands:
-            self.print_commands ()
-            print
-            print usage
+        # Handle aliases (license == licence)
+        if self.license:
+            self.licence = 1
+
+        # for display options we return immediately
+        if self.handle_display_options(option_order):
             return
             
         while args:
@@ -246,15 +283,17 @@ class Distribution:
                 negative_opt = copy (negative_opt)
                 negative_opt.update (cmd_obj.negative_opt)
 
-            options = self.global_options + cmd_obj.user_options
-            args = fancy_getopt (options, negative_opt,
-                                 cmd_obj, args[1:])
+            parser.set_option_table (self.global_options +
+                                     cmd_obj.user_options)
+            parser.set_negative_aliases (negative_opt)
+            args = parser.getopt (args[1:], cmd_obj)
             if cmd_obj.help:
-                print_help (self.global_options,
-                            header="Global options:")
+                parser.set_option_table (self.global_options)
+                parser.print_help ("Global options:")
                 print
-                print_help (cmd_obj.user_options,
-                            header="Options for '%s' command:" % command)
+
+                parser.set_option_table (cmd_obj.user_options)
+                parser.print_help ("Options for '%s' command:" % command)
                 print
                 print usage
                 return
@@ -271,13 +310,23 @@ class Distribution:
         # get help on a command, but I support it because that's how
         # CVS does it -- might as well be consistent.)
         if self.help:
-            print_help (self.global_options, header="Global options:")
+            parser.set_option_table (self.global_options)
+            parser.print_help (
+                "Global options (apply to all commands, " +
+                "or can be used per command):")
             print
+
+            if not self.commands:
+                parser.set_option_table (self.display_options)
+                parser.print_help (
+                    "Information display options (just display " +
+                    "information, ignore any commands)")
+                print
 
             for command in self.commands:
                 klass = self.find_command_class (command)
-                print_help (klass.user_options,
-                            header="Options for '%s' command:" % command)
+                parser.set_option_table (klass.user_options)
+                parser.print_help ("Options for '%s' command:" % command)
                 print
 
             print usage
@@ -292,6 +341,40 @@ class Distribution:
 
     # parse_command_line()
 
+    def handle_display_options (self, option_order):
+        """If there were any non-global "display-only" options
+         (--help-commands or the metadata display options) on the command
+         line, display the requested info and return true; else return
+         false."""
+
+        from distutils.core import usage
+
+        # User just wants a list of commands -- we'll print it out and stop
+        # processing now (ie. if they ran "setup --help-commands foo bar",
+        # we ignore "foo bar").
+        if self.help_commands:
+            self.print_commands ()
+            print
+            print usage
+            return 1
+
+        # If user supplied any of the "display metadata" options, then
+        # display that metadata in the order in which the user supplied the
+        # metadata options.
+        any_display_options = 0
+        is_display_option = {}
+        for option in self.display_options:
+            is_display_option[option[0]] = 1
+
+        for (opt, val) in option_order:
+            if val and is_display_option.get(opt):
+                opt = string.translate (opt, longopt_xlate)
+                print getattr(self.metadata, "get_"+opt)()
+                any_display_options = 1
+
+        return any_display_options
+
+    # handle_display_options()
 
     def print_command_list (self, commands, header, max_length):
         """Print a subset of the list of all commands -- used by
@@ -437,7 +520,7 @@ class Distribution:
 
 
     def run_commands (self):
-        """Run each command that was seen on the client command line.
+        """Run each command that was seen on the setup script command line.
            Uses the list of commands found and cache of command objects
            created by 'create_command_obj()'."""
 
@@ -532,14 +615,74 @@ class Distribution:
                 not self.has_ext_modules() and
                 not self.has_c_libraries())
 
+    # -- Metadata query methods ----------------------------------------
+
+    # If you're looking for 'get_name()', 'get_version()', and so forth,
+    # they are defined in a sneaky way: the constructor binds self.get_XXX
+    # to self.metadata.get_XXX.  The actual code is in the
+    # DistributionMetadata class, below.
+
+# class Distribution
+
+
+class DistributionMetadata:
+    """Dummy class to hold the distribution meta-data: name, version,
+    author, and so forth."""
+
+    def __init__ (self):
+        self.name = None
+        self.version = None
+        self.author = None
+        self.author_email = None
+        self.maintainer = None
+        self.maintainer_email = None
+        self.url = None
+        self.licence = None
+        self.description = None
+        
+    # -- Metadata query methods ----------------------------------------
+
     def get_name (self):
         return self.name or "UNKNOWN"
 
-    def get_full_name (self):
-        return "%s-%s" % ((self.name or "UNKNOWN"), (self.version or "???"))
-    
-# class Distribution
+    def get_version(self):
+        return self.version or "???"
 
+    def get_fullname (self):
+        return "%s-%s" % (self.get_name(), self.get_version())
+
+    def get_author(self):
+        return self.author or "UNKNOWN"
+
+    def get_author_email(self):
+        return self.author_email or "UNKNOWN"
+
+    def get_maintainer(self):
+        return self.maintainer or "UNKNOWN"
+
+    def get_maintainer_email(self):
+        return self.maintainer_email or "UNKNOWN"
+
+    def get_contact(self):
+        return (self.maintainer or
+                self.author or
+                "UNKNOWN")
+
+    def get_contact_email(self):
+        return (self.maintainer_email or
+                self.author_email or
+                "UNKNOWN")
+
+    def get_url(self):
+        return self.url or "UNKNOWN"
+
+    def get_licence(self):
+        return self.licence or "UNKNOWN"
+
+    def get_description(self):
+        return self.description or "UNKNOWN"
+    
+# class DistributionMetadata
 
 if __name__ == "__main__":
     dist = Distribution ()
