@@ -383,3 +383,47 @@ Base class for warnings about dubious syntax
 \begin{excdesc}{RuntimeWarning}
 Base class for warnings about dubious runtime behavior.
 \end{excdesc}
+
+The full Exception class hierarchy is:
+
+\begin{verbatim}
+    Exception
+     +-- SystemExit
+     +-- StopIteration
+     +-- StandardError
+     |    +-- KeyboardInterrupt
+     |    +-- ImportError
+     |    +-- EnvironmentError
+     |    |    +-- IOError
+     |    |    +-- OSError
+     |    |         +-- WindowsError
+     |    +-- EOFError
+     |    +-- RuntimeError
+     |    |    +-- NotImplementedError
+     |    +-- NameError
+     |    |    +-- UnboundLocalError
+     |    +-- AttributeError
+     |    +-- SyntaxError
+     |    |    +-- IndentationError
+     |    |         +-- TabError
+     |    +-- TypeError
+     |    +-- AssertionError
+     |    +-- LookupError
+     |    |    +-- IndexError
+     |    |    +-- KeyError
+     |    +-- ArithmeticError
+     |    |    +-- OverflowError
+     |    |    +-- ZeroDivisionError
+     |    |    +-- FloatingPointError
+     |    +-- ValueError
+     |    |    +-- UnicodeError
+     |    +-- ReferenceError
+     |    +-- SystemError
+     |    +-- MemoryError
+     +---Warning
+	  +-- UserWarning
+	  +-- DeprecationWarning
+	  +-- SyntaxWarning
+	  +-- OverflowWarning
+	  +-- RuntimeWarning
+\end{verbatim}
