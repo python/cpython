@@ -898,7 +898,8 @@ dragglue_TrackingHandler(DragTrackingMessage theMessage, WindowPtr theWindow,
 	rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
 	Py_DECREF(args);
 	if ( rv == NULL ) {
-		fprintf(stderr, "Drag: Exception in TrackingHandler\n");
+		PySys_WriteStderr("Drag: Exception in TrackingHandler\n");
+		PyErr_Print();
 		return -1;
 	}
 	i = -1;
@@ -923,7 +924,8 @@ dragglue_ReceiveHandler(WindowPtr theWindow, void *handlerRefCon,
 	rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
 	Py_DECREF(args);
 	if ( rv == NULL ) {
-		fprintf(stderr, "Drag: Exception in ReceiveHandler\n");
+		PySys_WriteStderr("Drag: Exception in ReceiveHandler\n");
+		PyErr_Print();
 		return -1;
 	}
 	i = -1;
@@ -951,7 +953,8 @@ dragglue_SendData(FlavorType theType, void *dragSendRefCon,
 	rv = PyEval_CallObject(self->sendproc, args);
 	Py_DECREF(args);
 	if ( rv == NULL ) {
-		fprintf(stderr, "Drag: Exception in SendDataHandler\n");
+		PySys_WriteStderr("Drag: Exception in SendDataHandler\n");
+		PyErr_Print();
 		return -1;
 	}
 	i = -1;
