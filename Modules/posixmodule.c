@@ -649,7 +649,7 @@ posix_ctermid(self, args)
 	if (!PyArg_ParseTuple(args, ":ctermid"))
 		return NULL;
 
-#ifdef HAVE_CTERMID_R
+#if defined(HAVE_CTERMID_R) && defined(WITH_THREAD)
 	ret = ctermid_r(buffer);
 #else
         ret = ctermid(buffer);
@@ -3342,7 +3342,7 @@ posix_tmpnam(self, args)
 
     if (!PyArg_ParseTuple(args, ":tmpnam"))
         return NULL;
-#ifdef HAVE_TMPNAM_R
+#if defined(HAVE_TMPNAM_R) && defined(WITH_THREAD)
     name = tmpnam_r(buffer);
 #else
     name = tmpnam(buffer);
