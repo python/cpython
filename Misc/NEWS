@@ -119,6 +119,9 @@ Tools/Demos
 Build
 -----
 
+- Patch #973204: Use -rpath instead of -R for runtime_library_dirs 
+  on Irix and True64.
+
 - Bug #978645: Modules/getpath.c now builds properly under --disable-framework
   build under OS X.
 
