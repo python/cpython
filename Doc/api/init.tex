@@ -455,19 +455,10 @@ Python/C API.  When they are done, they should reset the thread state
 pointer, release the lock, and finally free their thread state data
 structure.
 
-When creating a thread data structure, you need to provide an
-interpreter state data structure.  The interpreter state data
-structure holds global data that is shared by all threads in an
-interpreter, for example the module administration
-(\code{sys.modules}).  Depending on your needs, you can either create
-a new interpreter state data structure, or share the interpreter state
-data structure used by the Python main thread (to access the latter,
-you must obtain the thread state and access its \member{interp} member;
-this must be done by a thread that is created by Python or by the main
-thread after Python is initialized).
-
-Assuming you have access to an interpreter object, the typical idiom
-for calling into Python from a C thread is
+Beginning with version 2.3, threads can now take advantage of the 
+\cfunction{PyGILState_*()} functions to do all of the above
+automatically.  The typical idiom for calling into Python from a C
+thread is now:
 
 \begin{verbatim}
     PyGILState_STATE gstate;
@@ -480,6 +471,13 @@ for calling into Python from a C thread is
     /* Release the thread. No Python API allowed beyond this point. */
     PyGILState_Release(gstate);
 \end{verbatim}
+
+Note that the \cfunction{PyGILState_*()} functions assume there is only
+one global  interpreter (created automatically by
+\cfunction{Py_Initialize()}).  Python still supports the creation of
+additional interpreters  (using \cfunction{Py_NewInterpreter()}), but
+mixing multiple interpreters and the \cfunction{PyGILState_*()} API is
+unsupported.
 
 \begin{ctypedesc}{PyInterpreterState}
   This data structure represents the state shared by a number of
