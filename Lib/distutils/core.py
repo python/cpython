@@ -88,7 +88,7 @@ def setup (**attrs):
         ok = dist.parse_command_line (sys.argv[1:])
     except DistutilsArgError, msg:
         sys.stderr.write (usage + "\n")
-        raise SystemExit, msg
+        raise SystemExit, "error: %s" % msg
 
     # And finally, run all the commands found on the command line.
     if ok:
