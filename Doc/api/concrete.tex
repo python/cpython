@@ -1112,7 +1112,7 @@ These are the UTF-16 codec APIs:
 
 % --- Unicode-Escape Codecs ----------------------------------------------
 
-These are the ``Unicode Esacpe'' codec APIs:
+These are the ``Unicode Escape'' codec APIs:
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUnicodeEscape}{const char *s,
                                                int size,
@@ -1138,13 +1138,13 @@ These are the ``Unicode Esacpe'' codec APIs:
 
 % --- Raw-Unicode-Escape Codecs ------------------------------------------
 
-These are the ``Raw Unicode Esacpe'' codec APIs:
+These are the ``Raw Unicode Escape'' codec APIs:
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeRawUnicodeEscape}{const char *s,
                                                int size,
                                                const char *errors}
   Creates a Unicode object by decoding \var{size} bytes of the
-  Raw-Unicode-Esacpe encoded string \var{s}.  Returns \NULL{} if an
+  Raw-Unicode-Escape encoded string \var{s}.  Returns \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1325,7 +1325,7 @@ machine running the codec.
 
 The following APIs are capable of handling Unicode objects and strings
 on input (we refer to them as strings in the descriptions) and return
-Unicode objects or integers as apporpriate.
+Unicode objects or integers as appropriate.
 
 They all return \NULL{} or \code{-1} if an exception occurs.
 

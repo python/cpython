@@ -498,7 +498,7 @@ Foo_Type.ob_type = &PyType_Type;
 
   The destructor function is called by the \cfunction{Py_DECREF()} and
   \cfunction{Py_XDECREF()} macros when the new reference count is
-  zero.  At this point, the instance is still in existance, but there
+  zero.  At this point, the instance is still in existence, but there
   are no references to it.  The destructor function should free all
   references which the instance owns, free all memory buffers owned by
   the instance (using the freeing function corresponding to the
@@ -1515,7 +1515,7 @@ to be able to test for its presence before using it.}
          \label{supporting-iteration}}
 
 
-\section{Supporting Cyclic Garbarge Collection
+\section{Supporting Cyclic Garbage Collection
          \label{supporting-cycle-detection}}
 
 Python's support for detecting and collecting garbage which involves

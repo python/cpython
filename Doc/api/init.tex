@@ -752,7 +752,7 @@ previous versions.
   function when an exception has been raised.  The callback function
   is called with this value for \var{what} when after any bytecode is
   processed after which the exception becomes set within the frame
-  being executed.  The effect of this is that as exception propogation
+  being executed.  The effect of this is that as exception propagation
   causes the Python stack to unwind, the callback is called upon
   return to each frame as the exception propagates.  Only trace
   functions receives these events; they are not needed by the
@@ -767,7 +767,7 @@ previous versions.
 
 \begin{cvardesc}{int}{PyTrace_RETURN}
   The value for the \var{what} parameter to \ctype{Py_tracefunc}
-  functions when a call is returning without propogating an exception.
+  functions when a call is returning without propagating an exception.
 \end{cvardesc}
 
 \begin{cfuncdesc}{void}{PyEval_SetProfile}{Py_tracefunc func, PyObject *obj}
