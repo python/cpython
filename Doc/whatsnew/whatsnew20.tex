@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.0}
-\release{1.00}
+\release{1.01}
 \author{A.M. Kuchling and Moshe Zadka}
 \authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
@@ -831,16 +831,9 @@ you can safely skip this section.
 
 The version number of the Python C API was incremented, so C
 extensions compiled for 1.5.2 must be recompiled in order to work with
-2.0.  On Windows, attempting to import a third party extension built
-for Python 1.5.x usually results in an immediate crash; there's not
-much we can do about this.  (Here's Mark Hammond's explanation of the
-reasons for the crash.  The 1.5 module is linked against
-\file{Python15.dll}.  When \file{Python.exe} , linked against
-\file{Python16.dll}, starts up, it initializes the Python data
-structures in \file{Python16.dll}.  When Python then imports the
-module \file{foo.pyd} linked against \file{Python15.dll}, it
-immediately tries to call the functions in that DLL.  As Python has
-not been initialized in that DLL, the program immediately crashes.)
+2.0.  On Windows, it's not possible for Python 2.0 to import a third
+party extension built for Python 1.5.x due to how Windows DLLs work,
+so Python will raise an exception and the import will fail.
 
 Users of Jim Fulton's ExtensionClass module will be pleased to find
 out that hooks have been added so that ExtensionClasses are now
@@ -1334,7 +1327,7 @@ these modules.
 \section{Acknowledgements}
 
 The authors would like to thank the following people for offering
-suggestions on drafts of this article: Mark Hammond, Gregg Hauser,
+suggestions on various drafts of this article: David Bolen, Mark Hammond, Gregg Hauser,
 Jeremy Hylton, Fredrik Lundh, Detlef Lannert, Aahz Maruch, Skip
 Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer,
 and Russ Schmidt.
