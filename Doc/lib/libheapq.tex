@@ -90,16 +90,24 @@ True
 
 The module also offers two general purpose functions based on heaps.
 
-\begin{funcdesc}{nlargest}{n, iterable}
+\begin{funcdesc}{nlargest}{n, iterable\optional{, key}}
 Return a list with the \var{n} largest elements from the dataset defined
-by \var{iterable}. Equivalent to:  \code{sorted(iterable, reverse=True)[:n]}
-\versionadded{2.4}              
+by \var{iterable}.  \var{key}, if provided, specifies a function of one
+argument that is used to extract a comparison key from each element
+in the iterable:  \samp{\var{key}=\function{str.lower}}
+Equivalent to:  \samp{sorted(iterable, key=key, reverse=True)[:n]}
+\versionadded{2.4}
+\versionchanged[Added the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
-\begin{funcdesc}{nsmallest}{n, iterable}
+\begin{funcdesc}{nsmallest}{n, iterable\optional{, key}}
 Return a list with the \var{n} smallest elements from the dataset defined
-by \var{iterable}. Equivalent to:  \code{sorted(iterable)[:n]}
-\versionadded{2.4}              
+by \var{iterable}.  \var{key}, if provided, specifies a function of one
+argument that is used to extract a comparison key from each element
+in the iterable:  \samp{\var{key}=\function{str.lower}}
+Equivalent to:  \samp{sorted(iterable, key=key)[:n]}
+\versionadded{2.4}
+\versionchanged[Added the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
 Both functions perform best for smaller values of \var{n}.  For larger

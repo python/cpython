@@ -4,6 +4,46 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5 alpha 1?
+=================================
+
+Core and builtins
+-----------------
+
+
+Extension Modules
+-----------------
+
+
+Library
+-------
+
+- heapq.nsmallest() and heapq.nlargest() now support key= arguments with
+  the same meaning as for list.sort().
+
+
+Build
+-----
+
+
+C API
+-----
+
+
+Tests
+-----
+
+
+Mac
+---
+
+
+
+Tools/Demos
+-----------
+
+
+
 What's New in Python 2.4 final?
 ===============================
 
