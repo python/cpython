@@ -261,7 +261,7 @@ sub do_cmd_platform{
     my $platform = next_argument();
     $ModulePlatforms{$THIS_MODULE} = $platform;
     $platform = "Macintosh"
-      if $platform eq "Mac";
+      if $platform eq 'Mac';
     return "\n<p class=availability>Availability: <span"
       . "\n class=platform>$platform</span>.</p>\n" . $_;
 }
@@ -733,9 +733,9 @@ sub do_env_memberdesc{
     $class = $THIS_CLASS
         unless $class;
     my $extra = '';
-    $extra = " ($class_name attribute)"
-        if (!($class eq ''));
-    my $idx = make_str_index_entry("<tt>$member</tt>$extra");
+    $extra = " ($class attribute)"
+        if ($class ne '');
+    my $idx = make_str_index_entry("<tt class=member>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>';
@@ -749,8 +749,8 @@ sub do_cmd_memberline{
     $class = $THIS_CLASS
         unless $class;
     my $extra = '';
-    $extra = " ($class_name attribute)"
-        if (!($class eq ''));
+    $extra = " ($class attribute)"
+        if ($class ne '');
     my $idx = make_str_index_entry("<tt class=member>$member</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
@@ -761,7 +761,7 @@ sub do_env_memberdescni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dl><dt><b>$member</b>\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b><tt class=member>$member</tt></b>\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -769,7 +769,7 @@ sub do_cmd_memberlineni{
     local($_) = @_;
     next_optional_argument();
     my $member = next_argument();
-    return "<dt><b>$member</b><dd>" . $_;
+    return "<dt><b><tt class=member>$member</tt></b><dd>" . $_;
 }
 
 @col_aligns = ("<td>", "<td>", "<td>", "<td>");
