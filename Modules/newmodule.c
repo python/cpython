@@ -27,6 +27,31 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "compile.h"
 
+static char new_instance_doc[] =
+"Create an instance object from (CLASS, DICT) without calling its __init__().";
+
+static object *
+new_instance(unused, args)
+	object* unused;
+	object* args;
+{
+	object* klass;
+	object *dict;
+	instanceobject *inst;
+	if (!newgetargs(args, "O!O!",
+			&Classtype, &klass,
+			&Dicttype, &dict))
+		return NULL;
+	inst = NEWOBJ(instanceobject, &Instancetype);
+	if (inst == NULL)
+		return NULL;
+	INCREF(klass);
+	INCREF(dict);
+	inst->in_class = (classobject *)klass;
+	inst->in_dict = dict;
+	return (object *)inst;
+}
+
 static char new_im_doc[] =
 "Create a instance method object from (FUNCTION, INSTANCE, CLASS).";
 
@@ -163,6 +188,7 @@ new_class(unused, args)
 }
 
 static struct methodlist new_methods[] = {
+	{"instance",		new_instance,		1, new_instance_doc},
 	{"instancemethod",	new_instancemethod,	1, new_im_doc},
 #if 0
 	{"function",		new_function,		1, new_function_doc},
