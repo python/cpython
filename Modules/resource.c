@@ -160,7 +160,7 @@ resource_methods[] = {
 DL_EXPORT(void)
 initresource(void)
 {
-	PyObject *m;
+	PyObject *m, *v;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("resource", resource_methods);
@@ -233,4 +233,16 @@ initresource(void)
 #ifdef RUSAGE_BOTH
 	PyModule_AddIntConstant(m, "RUSAGE_BOTH", RUSAGE_BOTH);
 #endif
+
+#if defined(HAVE_LONG_LONG)
+	if (sizeof(RLIM_INFINITY) > sizeof(long)) {
+		v = PyLong_FromLongLong((LONG_LONG) RLIM_INFINITY);
+	} else 
+#endif
+	{
+		v = PyInt_FromLong((long) RLIM_INFINITY);
+	}
+	if (v) {
+		PyModule_AddObject(m, "RLIM_INFINITY", v);
+	}
 }
