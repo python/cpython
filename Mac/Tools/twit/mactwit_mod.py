@@ -27,16 +27,15 @@ class ModuleBrowser(FrameWork.DialogWindow, TwitCore.ModuleBrowser):
 		self.SetPort()
 		Qd.TextFont(3)
 		Qd.TextSize(9)
-		self.mi_open(module)
-		
-	def create_items(self):
-		"""Create the lists we need"""
+
 		tp, h, rect = self.wid.GetDialogItem(I_MODULES)
 		self.modules = MT_AnyList(self.wid, rect, 1)
 		tp, h, rect = self.wid.GetDialogItem(I_VARS)
 		self.vars = MT_AnyList(self.wid, rect, 2)
 		tp, h, rect = self.wid.GetDialogItem(I_SOURCE)
 		self.source = MT_IconTextWidget(self.wid, rect)
+
+		self.mi_open(module)
 		
 	def setsource(self, msg):
 		tp, h, rect = self.wid.GetDialogItem(I_SOURCE_TITLE)
@@ -45,7 +44,25 @@ class ModuleBrowser(FrameWork.DialogWindow, TwitCore.ModuleBrowser):
 		else:
 			Dlg.SetDialogItemText(h, msg)
 		self.source.setcontent(self.cur_source)
+
+	def source_setbreaks(self, list):
+		self.source.setbreaks(list)
 		
+	def source_setline(self, lineno, icon):
+		self.source.setcurline(lineno, icon)
+		
+	def source_select(self, lineno):
+		self.source.select(lineno)
+
+	def setmodulenames(self):
+		self.modules.setcontent(self.cont_modules)
+
+	def module_select(self, number):
+		self.modules.select(number)
+
+	def setvars(self):
+		self.vars.setcontent(self.cont_varnames, self.cont_varvalues)
+				
 	def do_itemhit(self, item, event):
 		(what, message, when, where, modifiers) = event
 		Qd.SetPort(self.wid)

@@ -37,16 +37,15 @@ class StackBrowser(FrameWork.DialogWindow, TwitCore.StackBrowser):
 		self.SetPort()
 		Qd.TextFont(3)
 		Qd.TextSize(9)
-		self.mi_open()
-		
-	def create_items(self):
-		"""Create the lists we need"""
+
 		tp, h, rect = self.wid.GetDialogItem(I_STACK)
 		self.stack = MT_IndexList(self.wid, rect, 2)
 		tp, h, rect = self.wid.GetDialogItem(I_VARS)
 		self.vars = MT_AnyList(self.wid, rect, 2)
 		tp, h, rect = self.wid.GetDialogItem(I_SOURCE)
 		self.source = MT_IconTextWidget(self.wid, rect)
+
+		self.mi_open()
 		
 	def setsource(self, msg):
 		tp, h, rect = self.wid.GetDialogItem(I_SOURCE_TITLE)
@@ -55,6 +54,24 @@ class StackBrowser(FrameWork.DialogWindow, TwitCore.StackBrowser):
 		else:
 			Dlg.SetDialogItemText(h, msg)
 		self.source.setcontent(self.cur_source)
+		
+	def source_setbreaks(self, list):
+		self.source.setbreaks(list)
+		
+	def source_setline(self, lineno, icon):
+		self.source.setcurline(lineno, icon)
+		
+	def source_select(self, lineno):
+		self.source.select(lineno)
+
+	def stack_setcontent(self, names, locations):
+		self.stack.setcontent(names, locations)
+
+	def stack_select(self, number):
+		self.stack.select(number)
+		
+	def setvars(self):
+		self.vars.setcontent(self.cont_varnames, self.cont_varvalues)
 		
 	def setexception(self, name, value):
 		if name == None:
