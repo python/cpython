@@ -101,8 +101,8 @@ expression.  This is always combined with native byte order.
 
 Standard size and alignment are as follows: no alignment is required
 for any type (so you have to use pad bytes); short is 2 bytes; int and
-long are 4 bytes.  In this mode, there is no support for float and
-double (\code{'f'} and \code{'d'}).
+long are 4 bytes.  Float and double are 32-bit and 64-bit IEEE floating
+point numbers, respectively.
 
 Note the difference between \code{'@'} and \code{'='}: both use native
 byte order, but the size and alignment of the latter is standardized.
@@ -119,10 +119,14 @@ Examples (all using native byte order, size and alignment, on a
 big-endian machine):
 
 \bcode\begin{verbatim}
-from struct import *
-pack('hhl', 1, 2, 3) == '\000\001\000\002\000\000\000\003'
-unpack('hhl', '\000\001\000\002\000\000\000\003') == (1, 2, 3)
-calcsize('hhl') == 8
+>>> from struct import *
+>>> pack('hhl', 1, 2, 3)
+'\000\001\000\002\000\000\000\003'
+>>> unpack('hhl', '\000\001\000\002\000\000\000\003')
+(1, 2, 3)
+>>> calcsize('hhl')
+8
+>>> 
 \end{verbatim}\ecode
 
 Hint: to align the end of a structure to the alignment requirement of
