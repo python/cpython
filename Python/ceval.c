@@ -162,7 +162,7 @@ eval_code(co, globals, locals, arg)
 	lineno = -1;
 	
 	for (;;) {
-		static ticker;
+		static int ticker;
 		
 		/* Do periodic things */
 		
@@ -983,16 +983,14 @@ static int
 testbool(v)
 	object *v;
 {
-	if (is_intobject(v))
-		return getintvalue(v) != 0;
-	if (is_floatobject(v))
-		return getfloatvalue(v) != 0.0;
+	if (v == None)
+		return 0;
+	if (v->ob_type->tp_as_number != NULL)
+		return (*v->ob_type->tp_as_number->nb_nonzero)(v);
 	if (v->ob_type->tp_as_sequence != NULL)
 		return (*v->ob_type->tp_as_sequence->sq_length)(v) != 0;
 	if (v->ob_type->tp_as_mapping != NULL)
 		return (*v->ob_type->tp_as_mapping->mp_length)(v) != 0;
-	if (v == None)
-		return 0;
 	/* All other objects are 'true' */
 	return 1;
 }
