@@ -51,9 +51,11 @@ Ralph Butler
 Mike Carlton
 Donn Cave
 Per Cederqvist
+Jeffrey Chang
 Mitch Chapman
 David Chaum
 Nicolas Chauvat
+Albert Chin-A-Young
 Tom Christiansen
 Vadim Chugunov
 Steve Clift
@@ -65,6 +67,7 @@ Drew Csillag
 Tom Culliton
 John Cugini
 Andrew Dalke
+Lars Damerow
 Eric Daniel
 Jonathan Dasteel
 John DeGood
@@ -72,6 +75,7 @@ Roger Dev
 Toby Dickenson
 Jaromir Dolecek
 Fred Drake
+John DuBois
 Paul Dubois
 Robin Dunn
 Andy Dustman
@@ -101,8 +105,10 @@ Lele Gaifax
 Raymund Galvin
 Lars Garshol
 Thomas Gellekum
+Ben Gertzfield
 Jonathan Giddy
 Hans de Graaff
+Duncan Grisby
 Dag Gruneau
 Michael Guravage
 Paul ten Hagen
@@ -112,6 +118,7 @@ Jesse Hallio
 Jun Hamano
 Mark Hammond
 Manus Hand
+Milton L. Hankins
 Barry Hantman
 Lynda Hardman
 Jason Harper
@@ -135,6 +142,7 @@ Rob Hooft
 Ken Howard
 Brad Howes
 Jim Hugunin
+Greg Humphreys
 Jeremy Hylton
 John Interrante
 Ben Jackson
@@ -169,6 +177,7 @@ Marc-Andre Lemburg
 William Lewis
 Robert van Liere
 Christopher Lindblad
+Eric Lindvall
 Per Lindqvist
 Nick Lockwood
 Stephanie Lockwood
@@ -176,8 +185,10 @@ Martin von Loewis
 Anne Lord
 Ray Loyzaga
 Fredrik Lundh
+Loren Luke
 Mark Lutz
 Jim Lynch
+Mikael Lyngvig
 Tim MacKenzie
 Steve Majewski
 Grzegorz Makarewicz
@@ -195,6 +206,7 @@ Bill van Melle
 Mike Meyer
 Steven Miale
 Roman Milner
+Dom Mitchell
 Doug Moen
 The Dragon De Monsyne
 Skip Montanaro
@@ -224,14 +236,17 @@ Amrit Prem
 Eric Raymond
 John Redford
 Terry Reedy
+Ofir Reichenberg
 Sean Reifschneider
 Michael P. Reilly
 Bernhard Reiter
 Steven Reiz
+Jan Pieter Riegel
 Jim Robinson
 Mike Romberg
 Case Roole
 Timothy Roscoe
+Craig Rowland
 Jim Roskind
 Just van Rossum
 Hugo van Rossum
@@ -242,6 +257,7 @@ Kevin Samborn
 Ty Sarna
 Ben Sayer
 Michael Scharf
+Sam Schulenburg
 Neil Schemenauer
 Gregor Schmid
 Barry Scott
@@ -252,9 +268,11 @@ Michael Shiplett
 Joel Shprentz
 Eric Siegerman
 Paul Sijben
+Nathan Paul Simons
 George Sipe
 Rafal Smotrzyk
 Dirk Soede
+Paul Sokolovsky
 Clay Spence
 Per Spilling
 Greg Stein
@@ -273,11 +291,13 @@ Tobias Thelen
 Tracy Tims
 R Lindsay Todd
 Bennett Todd
+Laurence Tratt
 John Tromp
 Bill Tutt
 Jaap Vermeulen
 Al Vezza
 John Viega
+Kannan Vijayan
 Kurt Vile
 Norman Vine
 Frank Visser
@@ -300,6 +320,7 @@ Blake Winton
 Jean-Claude Wippler
 Lars Wirzenius
 Stefan Witzel
+Klaus-Juergen Wolf
 Richard Wolff
 Ka-Ping Yee
 Masazumi Yoshikawa
