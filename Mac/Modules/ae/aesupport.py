@@ -84,28 +84,6 @@ AEMethod = OSErrMethodGenerator
 includestuff = includestuff + """
 #include <AppleEvents.h>
 
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define AEIdleProcPtr IdleProcPtr
-#define AEFilterProcPtr EventFilterProcPtr
-#define AEEventHandlerProcPtr EventHandlerProcPtr
-#endif
-
-#ifndef HAVE_UNIVERSAL_HEADERS
-/* I'm trying to setup the code here so that is easily automated,
-** as follows:
-** - Use the UPP in the source
-** - for pre-universal headers, #define each UPP as the corresponding ProcPtr
-** - for each routine we pass we declare a upp_xxx that
-**   we initialize to the correct value in the init routine.
-*/
-#define AEIdleUPP AEIdleProcPtr
-#define AEFilterUPP AEFilterProcPtr
-#define AEEventHandlerUPP AEEventHandlerProcPtr
-#define NewAEIdleProc(x) (x)
-#define NewAEFilterProc(x) (x)
-#define NewAEEventHandlerProc(x) (x)
-#endif
-
 static pascal OSErr GenericEventHandler(); /* Forward */
 
 AEEventHandlerUPP upp_GenericEventHandler;

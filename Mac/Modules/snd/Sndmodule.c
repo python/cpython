@@ -10,12 +10,6 @@
 
 #include <Sound.h>
 
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define SndCallBackUPP ProcPtr
-#define NewSndCallBackProc(x) ((SndCallBackProcPtr)(x))
-#define SndListHandle Handle
-#endif
-
 #include <OSUtils.h> /* for Set(Current)A5 */
 
 /* Create a SndCommand object (an (int, int, int) tuple) */

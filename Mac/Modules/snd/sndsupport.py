@@ -18,12 +18,6 @@ class SndMethod(SndMixIn, OSErrMethodGenerator): pass
 
 includestuff = includestuff + """
 #include <Sound.h>
-
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define SndCallBackUPP ProcPtr
-#define NewSndCallBackProc(x) ((SndCallBackProcPtr)(x))
-#define SndListHandle Handle
-#endif
 """
 
 initstuff = initstuff + """

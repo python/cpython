@@ -2,11 +2,6 @@
 /* ========================== Module Scrap ========================== */
 
 #include "Python.h"
-
-
-
-#define SystemSevenOrLater 1
-
 #include "macglue.h"
 #include <Memory.h>
 #include <Dialogs.h>
