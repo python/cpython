@@ -229,8 +229,8 @@ def test_both():
             verify(0, "Invalid access code should have raised exception.")
 
         if os.name == "posix":
-            print "  Trying incompatible flags, prot and access parameters."
-            f=open(TESTFN, "r+b")
+            # Try incompatible flags, prot and access parameters.
+            f = open(TESTFN, "r+b")
             try:
                 m = mmap.mmap(f.fileno(), mapsize, flags=mmap.MAP_PRIVATE,
                               prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
