@@ -168,6 +168,7 @@ dbm_keys(dp, args)
 {
 	register object *v, *item;
 	datum key;
+	int err;
 
 	if (dp == NULL || !is_dbmobject(dp)) {
 		err_badcall();
@@ -179,11 +180,18 @@ dbm_keys(dp, args)
 	if (v == NULL)
 		return NULL;
 	for (key = dbm_firstkey(dp->di_dbm); key.dptr;
-				key = dbm_nextkey(dp->di_dbm) ) {
-	    item = newsizedstringobject(key.dptr, key.dsize);
-	    if ( item == 0 )
-	      return NULL;
-	    addlistitem(v, item);
+	     key = dbm_nextkey(dp->di_dbm)) {
+		item = newsizedstringobject(key.dptr, key.dsize);
+		if (item == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		err = addlistitem(v, item);
+		DECREF(item);
+		if (err != 0) {
+			DECREF(v);
+			return NULL;
+		}
 	}
 	return v;
 }
