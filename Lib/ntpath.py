@@ -11,7 +11,8 @@ import stat
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","islink","exists","isdir","isfile","ismount",
-           "walk","expanduser","expandvars","normpath","abspath","splitunc"]
+           "walk","expanduser","expandvars","normpath","abspath","splitunc",
+           "realpath","supports_unicode_filenames"]
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done

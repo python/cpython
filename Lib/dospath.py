@@ -6,7 +6,7 @@ import stat
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","islink","exists","isdir","isfile","ismount",
-           "walk","expanduser","expandvars","normpath","abspath"]
+           "walk","expanduser","expandvars","normpath","abspath","realpath"]
 
 def normcase(s):
     """Normalize the case of a pathname.
