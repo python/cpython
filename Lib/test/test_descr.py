@@ -3965,6 +3965,18 @@ def vicious_descriptor_nonsense():
     import gc; gc.collect()
     vereq(hasattr(c, 'attr'), False)
 
+def test_init():
+    # SF 1155938
+    class Foo(object):
+        def __init__(self):
+            return 10
+    try:
+        Foo()
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "did not test __init__() for None return"
+
 
 def test_main():
     weakref_segfault() # Must be first, somehow
@@ -4058,6 +4070,7 @@ def test_main():
     carloverre()
     filefault()
     vicious_descriptor_nonsense()
+    test_init()
 
     if verbose: print "All OK"
 
