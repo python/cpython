@@ -36,17 +36,15 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
-/* don't know why this isn't defined in a header file */
-#ifndef getrusage
-int getrusage(int who, struct rusage *rusage);
-#endif
-
-#ifndef getpagesize
-#ifdef linux
-extern size_t getpagesize(void);
-#else
-int getpagesize(void);
-#endif
+/* On some systems, these aren't in any header file.
+   On others they are, with inconsistent prototypes.
+   We declare the (default) return type, to shut up gcc -Wall;
+   but we can't declare the prototype, to avoid errors
+   when the header files declare it different.
+   Worse, on some Linuxes, getpagesize() returns a size_t... */
+#ifndef linux
+int getrusage();
+int getpagesize();
 #endif
 
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
