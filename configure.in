@@ -99,8 +99,6 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 		without_gcc=$withval;;
 	esac], [
 	case $ac_sys_system in
-	OSF1)	CC=cc
-		without_gcc=;;
 	AIX*)   CC=cc_r
 		without_gcc=;;
 	BeOS*)
