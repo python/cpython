@@ -63,7 +63,7 @@ class SanityTestCase(unittest.TestCase):
             dig = h.hexdigest()
             h2 = h.copy()
         except:
-            fail("Exception raised during normal usage of HMAC class.")
+            self.fail("Exception raised during normal usage of HMAC class.")
 
 class CopyTestCase(unittest.TestCase):
     def test_attributes(self):
