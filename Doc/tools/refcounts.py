@@ -33,7 +33,9 @@ def loadfile(fp):
             continue
         parts = string.split(line, ":", 4)
         function, type, arg, refcount, comment = parts
-        if refcount:
+        if refcount == "null":
+            refcount = None
+        elif refcount:
             refcount = int(refcount)
         else:
             refcount = None
