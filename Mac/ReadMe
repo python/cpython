@@ -1,4 +1,4 @@
-How to install Python 2.0b1 on your Macintosh
+How to install Python 2.0b1+ on your Macintosh
 ---------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
@@ -13,7 +13,11 @@ now. The documentation is in HTML format, start with index.html.
 
 Caveats
 -------
-This is a beta version, so use with caution.
+This is a beta version, so use with caution. This b1+ beta has received
+only very little testing, use the older b1 if it proves problematic.
+
+If you have used an earlier version of 2.0b1 you _must_ remove your old
+preference file, the files are incompatible.
 
 Aside from the general new Python 2.0 features (compared to 1.5.2, there
 was no 1.6 for the macintosh) like unicode support the main new features
