@@ -66,7 +66,11 @@ PACKAGE="html-$RELEASE.tar.bz2"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
 ssh python.sourceforge.net tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
-Mail -s "[$DOCLABEL doc updates]" $ADDRESSES <<EOF
+sendmail $ADDRESSES <<EOF
+To: $ADDRESSES
+From: "Fred L. Drake" <fdrake@acm.org>
+Subject: [$DOCLABEL doc updates]
+
 The development version of the documentation has been updated:
 
     http://python.sourceforge.net/$DOCTYPE-docs/
