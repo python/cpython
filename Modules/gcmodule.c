@@ -289,10 +289,10 @@ debug_cycle(PyObject *output, char *msg, PyObject *op)
 		debug_instance(output, msg, (PyInstanceObject *)op);
 	} else if (debug & DEBUG_OBJECTS) {
 		char buf[200];
-		sprintf(buf, "gc: %s<%s 0x%x>\n",
+		sprintf(buf, "gc: %s<%.100s 0x%p>\n",
 				msg,
 				op->ob_type->tp_name,
-				(long)op);
+				op);
 		PyFile_WriteString(buf, output);
 	}
 }
@@ -368,7 +368,7 @@ collect(PyGC_Head *young, PyGC_Head *old)
 		char buf[100];
 		sprintf(buf, "gc: collecting generation %d...\n", generation);
 		PyFile_WriteString(buf,output);
-		sprintf(buf, "gc: objects in each generation: %d %d %d\n",
+		sprintf(buf, "gc: objects in each generation: %ld %ld %ld\n",
 			gc_list_size(&generation0),
 			gc_list_size(&generation1),
 			gc_list_size(&generation2));
@@ -434,7 +434,7 @@ collect(PyGC_Head *young, PyGC_Head *old)
 		} else {
 			char buf[200];
 			sprintf(buf,
-				"gc: done, %d unreachable, %d uncollectable.\n",
+				"gc: done, %ld unreachable, %ld uncollectable.\n",
 				n+m, n);
 			PyFile_WriteString(buf, output);
 		}
