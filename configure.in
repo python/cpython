@@ -357,8 +357,13 @@ LIBOBJS="$LIBOBJS thread.o"], [
 AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lpthread"
+LIBOBJS="$LIBOBJS thread.o"], [
+AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_POSIX_THREADS)
+LIBS="$LIBS -lthread"
 LIBOBJS="$LIBOBJS thread.o"])
-])])
+])])])
+
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"
 LIBOBJS="$LIBOBJS thread.o"])
