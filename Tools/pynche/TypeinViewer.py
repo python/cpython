@@ -27,7 +27,7 @@ class TypeinViewer:
         self.__uwtyping.set(optiondb.get('UPWHILETYPE', 0))
         # create the gui
         self.__frame = Frame(master, relief=RAISED, borderwidth=1)
-        self.__frame.grid(row=3, column=1, sticky='NS')
+        self.__frame.grid(row=3, column=1, sticky='NSEW')
         # Red
         self.__xl = Label(self.__frame, text='Red:')
         self.__xl.grid(row=0, column=0, sticky=E)
