@@ -376,4 +376,6 @@ for FILE in $@ ; do
     rm -f $LOGFILE
 done
 
-rm -f $L2H_AUX_INIT_FILE
+if [ ! "$DEBUGGING" ] ; then
+    rm -f $L2H_AUX_INIT_FILE
+fi
