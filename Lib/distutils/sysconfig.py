@@ -204,13 +204,15 @@ def parse_makefile(fn, g=None):
                 n = m.group(1)
                 if done.has_key(n):
                     after = value[m.end():]
-                    value = value[:m.start()] + done[n] + after
+                    value = value[:m.start()] + str(done[n]) + after
                     if "$" in after:
                         notdone[name] = value
                     else:
                         try: value = string.atoi(value)
-                        except ValueError: pass
-                        done[name] = string.strip(value)
+                        except ValueError:
+                            done[name] = string.strip(value)
+                        else:
+                            done[name] = value
                         del notdone[name]
                 elif notdone.has_key(n):
                     # get it on a subsequent round
@@ -223,8 +225,10 @@ def parse_makefile(fn, g=None):
                         notdone[name] = value
                     else:
                         try: value = string.atoi(value)
-                        except ValueError: pass
-                        done[name] = string.strip(value)
+                        except ValueError:
+                            done[name] = string.strip(value)
+                        else:
+                            done[name] = value
                         del notdone[name]
             else:
                 # bogus variable reference; just drop it since we can't deal
