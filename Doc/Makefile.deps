@@ -172,6 +172,8 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libmsvcrt.tex \
 	../lib/libwinsound.tex \
 	../lib/windows.tex \
+	../lib/libpyclbr.tex \
+	../lib/libtokenize.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
