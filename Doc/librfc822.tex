@@ -40,11 +40,19 @@ returned.
 \end{funcdesc}
 
 \begin{funcdesc}{parsedate_tz}{date}
-Performs the same function as \code{parsedate}, but returns either
+Performs the same function as \code{parsedate()}, but returns either
 \code{None} or a 10-tuple; the first 9 elements make up a tuple that
 can be passed directly to \code{time.mktime()}, and the tenth is the
 offset of the date's time zone from UTC (which is the official term
 for Greenwich Mean Time).
+\end{funcdesc}
+
+\begin{funcdesc}{mktime_tz}{tuple}
+Turn a 10-tuple as returned by \code{parsedate_tz()} into a UTC timestamp.
+Minor deficiency: this first interprets the first 8 elements as a
+local time and then compensates for the timezone difference;
+this may yield a slight error around daylight savings time
+switch dates.  Not enough to worry about for common use.
 \end{funcdesc}
 
 \subsection{Message Objects}
