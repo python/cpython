@@ -216,6 +216,80 @@ heapify(PyObject *self, PyObject *heap)
 PyDoc_STRVAR(heapify_doc,
 "Transform list into a heap, in-place, in O(len(heap)) time.");
 
+static PyObject *
+nlargest(PyObject *self, PyObject *args)
+{
+	PyObject *heap=NULL, *elem, *rv, *iterable, *sol, *it, *oldelem;
+	int i, n;
+
+	if (!PyArg_ParseTuple(args, "Oi:nlargest", &iterable, &n))
+		return NULL;
+
+	it = PyObject_GetIter(iterable);
+	if (it == NULL)
+		return NULL;
+
+	heap = PyList_New(0);
+	if (it == NULL)
+		goto fail;
+
+	for (i=0 ; i<n ; i++ ){
+		elem = PyIter_Next(it);
+		if (elem == NULL)
+			goto sortit;
+		if (PyList_Append(heap, elem) == -1) {
+			Py_DECREF(elem);
+			goto fail;
+		}
+		Py_DECREF(elem);
+	}
+	if (PyList_GET_SIZE(heap) == 0)
+		goto sortit;
+
+	rv = heapify(self, heap);
+	if (rv == NULL)
+		goto fail;
+	Py_DECREF(rv);
+
+	sol = PyList_GET_ITEM(heap, 0);
+	while (1) {
+		elem = PyIter_Next(it);
+		if (elem == NULL) {
+			if (PyErr_Occurred())
+				goto fail;
+			else
+				goto sortit;
+		}
+		if (PyObject_RichCompareBool(elem, sol, Py_LE)) {
+			Py_DECREF(elem);
+			continue;
+		}
+		oldelem = PyList_GET_ITEM(heap, 0);
+		PyList_SET_ITEM(heap, 0, elem);
+		Py_DECREF(oldelem);
+		if (_siftup((PyListObject *)heap, 0) == -1)
+			goto fail;
+		sol = PyList_GET_ITEM(heap, 0);
+	}
+sortit:
+	Py_DECREF(it);
+	if (PyList_Sort(heap) == -1)
+		goto fail;
+	if (PyList_Reverse(heap) == -1)
+		goto fail;
+	return heap;
+
+fail:
+	Py_DECREF(it);
+	Py_XDECREF(heap);
+	return NULL;
+}
+
+PyDoc_STRVAR(nlargest_doc,
+"Find the n largest elements in a dataset.\n\
+\n\
+Equivalent to:  sorted(iterable, reverse=True)[:n]\n");
+
 static PyMethodDef heapq_methods[] = {
 	{"heappush",	(PyCFunction)heappush,		
 		METH_VARARGS,	heappush_doc},
@@ -225,6 +299,8 @@ static PyMethodDef heapq_methods[] = {
 		METH_VARARGS,	heapreplace_doc},
 	{"heapify",	(PyCFunction)heapify,
 		METH_O,		heapify_doc},
+	{"nlargest",	(PyCFunction)nlargest,
+		METH_VARARGS,	nlargest_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
