@@ -489,6 +489,14 @@ class ReTests(unittest.TestCase):
         self.assertEqual([item.group(0) for item in iter],
                          [":", "::", ":::"])
 
+    def test_bug_926075(self):
+        try:
+            unicode
+        except NameError:
+            return # no problem if we have no unicode
+        self.assert_(re.compile('bug_926075') is not
+                     re.compile(eval("u'bug_926075'")))
+
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
