@@ -969,7 +969,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     xmlparseobject *new_parser;
     int i;
 
-    if (!PyArg_ParseTuple(args, "s|s:ExternalEntityParserCreate",
+    if (!PyArg_ParseTuple(args, "z|s:ExternalEntityParserCreate",
                           &context, &encoding)) {
         return NULL;
     }
