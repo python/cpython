@@ -99,7 +99,7 @@ _copy_dispatch = d = {}
 
 def _copy_immutable(x):
     return x
-for t in (types.NoneType, int, long, float, bool, str, tuple,
+for t in (type(None), int, long, float, bool, str, tuple,
           frozenset, type, xrange, types.ClassType,
           types.BuiltinFunctionType):
     d[t] = _copy_immutable
@@ -195,26 +195,26 @@ _deepcopy_dispatch = d = {}
 
 def _deepcopy_atomic(x, memo):
     return x
-d[types.NoneType] = _deepcopy_atomic
-d[types.IntType] = _deepcopy_atomic
-d[types.LongType] = _deepcopy_atomic
-d[types.FloatType] = _deepcopy_atomic
-d[types.BooleanType] = _deepcopy_atomic
+d[type(None)] = _deepcopy_atomic
+d[int] = _deepcopy_atomic
+d[long] = _deepcopy_atomic
+d[float] = _deepcopy_atomic
+d[bool] = _deepcopy_atomic
 try:
-    d[types.ComplexType] = _deepcopy_atomic
+    d[complex] = _deepcopy_atomic
 except AttributeError:
     pass
-d[types.StringType] = _deepcopy_atomic
+d[str] = _deepcopy_atomic
 try:
-    d[types.UnicodeType] = _deepcopy_atomic
+    d[unicode] = _deepcopy_atomic
 except AttributeError:
     pass
 try:
     d[types.CodeType] = _deepcopy_atomic
 except AttributeError:
     pass
-d[types.TypeType] = _deepcopy_atomic
-d[types.XRangeType] = _deepcopy_atomic
+d[type] = _deepcopy_atomic
+d[xrange] = _deepcopy_atomic
 d[types.ClassType] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 
@@ -224,7 +224,7 @@ def _deepcopy_list(x, memo):
     for a in x:
         y.append(deepcopy(a, memo))
     return y
-d[types.ListType] = _deepcopy_list
+d[list] = _deepcopy_list
 
 def _deepcopy_tuple(x, memo):
     y = []
@@ -243,7 +243,7 @@ def _deepcopy_tuple(x, memo):
         y = x
     memo[d] = y
     return y
-d[types.TupleType] = _deepcopy_tuple
+d[tuple] = _deepcopy_tuple
 
 def _deepcopy_dict(x, memo):
     y = {}
@@ -251,7 +251,7 @@ def _deepcopy_dict(x, memo):
     for key, value in x.iteritems():
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
-d[types.DictionaryType] = _deepcopy_dict
+d[dict] = _deepcopy_dict
 if PyStringMap is not None:
     d[PyStringMap] = _deepcopy_dict
 
