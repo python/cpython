@@ -24,20 +24,22 @@
 ;; subsequently left the net; in 1995, Barry Warsaw inherited the
 ;; mode and is the current maintainer.
 
-;; Note: this version of python-mode.el is no longer compatible with
-;; Emacs 18.  For a gabazillion reasons, I highly recommend upgrading
-;; to X/Emacs 19 or X/Emacs 20.  For older versions of the 19 series,
-;; you may need to acquire the Custom library.  Please see
-;; <http://www.python.org/ftp/emacs/> for details.
+;; COMPATIBILITY:
 
-;; You will want to byte-compile this file.
+;; This version of python-mode.el is no longer compatible with Emacs
+;; 18.  For a gabazillion reasons, I highly recommend upgrading to
+;; X/Emacs 19 or X/Emacs 20.  I recommend at least Emacs 19.34 or
+;; XEmacs 19.15.  Any of the v20 X/Emacsen should be fine.
 
-;; python-mode.el is currently distributed with XEmacs 19 and XEmacs
-;; 20.  Since this file is not GPL'd it is not distributed with Emacs,
-;; but it is compatible with 19.34 and the current 20 series Emacsen.
-;; By default, in XEmacs when you visit a .py file, it is put in
-;; Python mode.  In Emacs, you need to add the following to your
-;; .emacs file (you don't need this for XEmacs):
+;; NOTE TO FSF EMACS USERS:
+
+;; You may need to acquire the Custom library -- this applies to users
+;; of Emacs 19.34 and NTEmacs based on 19.34, but not to Emacs 20
+;; users.  You must also byte-compile this file before use -- this
+;; applies to FSF's Emacs 19.34, 20.x, and NTEmacs based on 19.34.
+;; None of this applies to XEmacs (although byte compilation is still
+;; recommended).  You will also need to add the following to your
+;; .emacs file so that the .py files come up in python-mode:
 ;;
 ;;     (autoload 'python-mode "python-mode" "Python editing mode." t)
 ;;     (setq auto-mode-alist
@@ -51,19 +53,29 @@
 ;;
 ;;   #! /usr/bin/env python
 
-;; If you want font-lock support for Python source code (a.k.a. syntax
-;; coloring, highlighting), add this to your .emacs file:
-;;
-;;     (add-hook 'python-mode-hook 'turn-on-font-lock)
-;;
-;; Again, this should not be necessary for XEmacs, since it Just Works.
+;; NOTE TO XEMACS USERS:
+
+;; An older version of this file was distributed with XEmacs 19.15,
+;; 19.16 and 20.3.  By default, in XEmacs when you visit a .py file,
+;; the buffer is put in Python mode.  Likewise for executable scripts
+;; with the word `python' on the first line.  You shouldn't need to do
+;; much except make sure this new version is earlier in your
+;; load-path, and byte-compile this file.
+
+;; FOR MORE INFORMATION:
+
+;; Please see <http://www.python.org/ftp/emacs/pmdetails.html> for the
+;; latest information and compatibility notes.
+
+;; BUG REPORTING:
 
 ;; To submit bug reports, use C-c C-b.  Please include a complete, but
 ;; concise code sample and a recipe for reproducing the bug.  Send
 ;; suggestions and other comments to python-mode@python.org.
 
 ;; When in a Python mode buffer, do a C-h m for more help.  It's
-;; doubtful that a texinfo manual would be very useful.
+;; doubtful that a texinfo manual would be very useful, but if you
+;; want to contribute one, I'll certainly accept it!
 
 ;; If you are using XEmacs, you may also want to check out OO-Browser
 ;; that comes bundled with it, including documentation in the info
@@ -73,16 +85,23 @@
 ;; http://www.python.org/workshops/1996-06/papers/h.pasanen/oobr_contents.html
 ;; http://www.infodock.com/manuals/alt-oobr-cover.html
 
-;; Here's a brief to do list:
+;; You may also want to take a look at Harri Pasanen's "Python Library
+;; Reference Hot-Key Help System for XEmacs (or PLRHKHSX for short ;),
+;; version 1.0"
 ;;
-;; - Better integration with gud-mode for debugging.
+;; <http://www.iki.fi/hpa/>
+
+;; TO DO LIST:
+
+;; - Better integration with pdb.py and gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
 ;; - possibly force indent-tabs-mode == nil, and add a
 ;;   write-file-hooks that runs untabify on the whole buffer (to work
 ;;   around potential tab/space mismatch problems).  In practice this
 ;;   hasn't been a problem... yet.
 ;; - have py-execute-region on indented code act as if the region is
-;;   left justified. Avoids syntax errors.
+;;   left justified.  Avoids syntax errors.
+;; - add a py-goto-block-down, bound to C-c C-d
 
 ;;; Code:
 
