@@ -93,6 +93,7 @@ extern void initAE();
 extern void initCtl();
 extern void initDlg();
 extern void initEvt();
+extern void initList();
 extern void initMenu();
 extern void initQd();
 extern void initRes();
@@ -166,6 +167,7 @@ struct {
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
 	{"Menu", initMenu},
+	{"List", initList},
 	{"Qd", initQd},
 	{"Snd", initSnd},
 	{"Win", initWin},
