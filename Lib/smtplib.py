@@ -290,7 +290,11 @@ class SMTP:
         """
         name=string.strip(name)
         if len(name)==0:
-            name=socket.gethostbyaddr(socket.gethostname())[0]
+            name = socket.gethostname()
+            try:
+                name = socket.gethostbyaddr(name)[0]
+            except socket.error:
+                pass
         self.putcmd("helo",name)
         (code,msg)=self.getreply()
         self.helo_resp=msg
@@ -303,7 +307,11 @@ class SMTP:
         """
         name=string.strip(name)
         if len(name)==0:
-            name=socket.gethostbyaddr(socket.gethostname())[0]
+            name = socket.gethostname()
+            try:
+                name = socket.gethostbyaddr(name)[0]
+            except socket.error:
+                pass
         self.putcmd("ehlo",name)
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written) 
