@@ -641,7 +641,10 @@ class TestCopyingNested(TestCopying):
 libreftest = """
 Example from the Library Reference:  Doc/lib/libsets.tex
 
->>> from sets import Set
+>>> from sets import Set as Base  # override _repr to get sorted output
+>>> class Set(Base):
+...     def _repr(self):
+...         return Base._repr(self, sorted=True)
 >>> engineers = Set(['John', 'Jane', 'Jack', 'Janice'])
 >>> programmers = Set(['Jack', 'Sam', 'Susan', 'Janice'])
 >>> management = Set(['Jane', 'Jack', 'Susan', 'Zack'])
@@ -650,7 +653,7 @@ Example from the Library Reference:  Doc/lib/libsets.tex
 >>> fulltime_management = management - engineers - programmers # difference
 >>> engineers.add('Marvin')
 >>> print engineers
-Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
+Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin'])
 >>> employees.issuperset(engineers)           # superset test
 False
 >>> employees.update(engineers)               # update from another set
@@ -660,10 +663,10 @@ True
 ...     group.discard('Susan')                # unconditionally remove element
 ...     print group
 ...
-Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
-Set(['Janice', 'Jack', 'Sam'])
-Set(['Jane', 'Zack', 'Jack'])
-Set(['Zack', 'Sam', 'Marvin', 'Jack', 'Jane', 'Janice', 'John'])
+Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin'])
+Set(['Jack', 'Janice', 'Sam'])
+Set(['Jack', 'Jane', 'Zack'])
+Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin', 'Sam', 'Zack'])
 """
 
 #==============================================================================
