@@ -30,7 +30,7 @@ shouldn't happen often.
 
 BUGS
 Continuation lines are not dealt with at all and strings may confuse
-the hell out of the parser, but it usually works.'''
+the hell out of the parser, but it usually works.''' # ' <-- bow to font lock
 
 import os
 import sys
@@ -99,7 +99,7 @@ def readmodule(module, path=[], inpackage=0):
 		except ImportError:
 			f = None
 	if f is None:
-		fullpath = path + sys.path
+		fullpath = list(path) + sys.path
 		f, file, (suff, mode, type) = imp.find_module(module, fullpath)
 	if type == imp.PKG_DIRECTORY:
 		dict = {'__path__': [file]}
