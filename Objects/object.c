@@ -45,14 +45,15 @@ dump_counts()
 	typeobject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
-		printf("%s alloc'd: %d, freed: %d, max in use: %d\n",
-		       tp->tp_name, tp->tp_alloc, tp->tp_free,
-		       tp->tp_maxalloc);
-	printf("fast tuple allocs: %d, empty: %d\n", fast_tuple_allocs,
-	       tuple_zero_allocs);
-	printf("fast int allocs: pos: %d, neg: %d\n", quick_int_allocs,
-	       quick_neg_int_allocs);
-	printf("null strings: %d, 1-strings: %d\n", null_strings, one_strings);
+		fprintf(stderr, "%s alloc'd: %d, freed: %d, max in use: %d\n",
+			tp->tp_name, tp->tp_alloc, tp->tp_free,
+			tp->tp_maxalloc);
+	fprintf(stderr, "fast tuple allocs: %d, empty: %d\n",
+		fast_tuple_allocs, tuple_zero_allocs);
+	fprintf(stderr, "fast int allocs: pos: %d, neg: %d\n",
+		quick_int_allocs, quick_neg_int_allocs);
+	fprintf(stderr, "null strings: %d, 1-strings: %d\n",
+		null_strings, one_strings);
 }
 
 void
