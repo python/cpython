@@ -21,7 +21,7 @@
 static char soundex_module__doc__[] =
 "Perform Soundex comparisons on strings, allowing non-literal matching.";
 
-void soundex_hash(char *str, char *result)
+static void soundex_hash(char *str, char *result)
 {
     char *sptr = str;           /* pointer into str */
     char *rptr = result;        /* pointer into result */
