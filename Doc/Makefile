@@ -317,35 +317,35 @@ webcheck:
 	$(WEBCHECKER) file:`pwd`/ref/
 	$(WEBCHECKER) file:`pwd`/tut/
 
-lib-info-$(RELEASE).tar.gz: info
+lib-info-$(RELEASE).tgz: info
 	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
 
-latex-$(RELEASE).tar.gz:
+latex-$(RELEASE).tgz:
 	$(srcdir)/tools/mktarball.sh $(RELEASE)
 
-pdf-$(RELEASE).tar.gz: all-pdf
+pdf-$(PAPER)-$(RELEASE).tgz: all-pdf
 	(cd paper-$(PAPER); tar cf - $(PDFFILES)) | gzip -9 >$@
 
-postscript-$(RELEASE).tar.gz: all-ps
+postscript-$(PAPER)-$(RELEASE).tgz: all-ps
 	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
 
-html-$(RELEASE).tar.gz:
-	(cd html; tar cf - index.html ???/???.css ???/*.html */*.gif) \
+html-$(RELEASE).tgz:
+	(cd $(HTMLDIR); tar cf - index.html ???/???.css ???/*.html */*.gif) \
 		| gzip -9 >$@
 
 # convenience targets:
 
-tarhtml:  html-$(RELEASE).tar.gz
+tarhtml:  html-$(RELEASE).tgz
 
-tarinfo:  lib-info-$(RELEASE).tar.gz
+tarinfo:  lib-info-$(RELEASE).tgz
 
-tarps:	postscript-$(RELEASE).tar.gz
+tarps:	postscript-$(PAPER)-$(RELEASE).tgz
 
-tarpdf:	pdf-$(RELEASE).tar.gz
+tarpdf:	pdf-$(PAPER)-$(RELEASE).tgz
 
-tarlatex: latex-$(RELEASE).tar.gz
+tarlatex: latex-$(RELEASE).tgz
 
-tarballs:  tarpdf tarps tarhtml tarlatex
+tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
 
 
 # Housekeeping targets
@@ -355,11 +355,11 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
 	(cd paper-$(PAPER); rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm)
-	rm -f *.bak *.orig lib1.texi
+	(cd $(INFODIR); $(MAKE) clean)
 	(cd $(HTMLDIR); rm -f @webchecker.pickle)
-	rm -f html-$(RELEASE).tar.gz info-$(RELEASE).tar.gz
-	rm -f pdf-$(RELEASE).tar.gz postscript-$(RELEASE).tar.gz
-	rm -f latex-$(RELEASE).tar.gz
+	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
+	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
+	rm -f latex-$(RELEASE).tgz
 
 l2hclean:
 	(cd $(HTMLDIR); rm -rf api ext lib ref tut)
@@ -367,7 +367,7 @@ l2hclean:
 # Remove temporaries as well as final products
 clobber: clean l2hclean
 	(cd paper-$(PAPER); rm -f $(DVIFILES) $(PSFILES) $(PDFFILES))
-	(cd $(HTMLDIR); rm -f *.texi python-???.info python-???.info-[0-9]*)
+	(cd $(INFODIR); $(MAKE) clobber)
 
 realclean:  clobber
 distclean:  clobber
