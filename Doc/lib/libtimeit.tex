@@ -96,16 +96,16 @@ python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement ...]
 where the following options are understood:
 
 \begin{description}
-\item[-n N/--number=N] how many times to execute 'statement'
-\item[-r N/--repeat=N] how many times to repeat the timer (default 3)
-\item[-s S/--setup=S] statement to be executed once initially (default
+\item[-n N/\longprogramopt{number=N}] how many times to execute 'statement'
+\item[-r N/\longprogramopt{repeat=N}] how many times to repeat the timer (default 3)
+\item[-s S/\longprogramopt{setup=S}] statement to be executed once initially (default
 \code{'pass'})
-\item[-t/--time] use \function{time.time()}
+\item[-t/\longprogramopt{time}] use \function{time.time()}
 (default on all platforms but Windows)
-\item[-c/--clock] use \function{time.clock()} (default on Windows)
-\item[-v/--verbose] print raw timing results; repeat for more digits
+\item[-c/\longprogramopt{clock}] use \function{time.clock()} (default on Windows)
+\item[-v/\longprogramopt{verbose}] print raw timing results; repeat for more digits
 precision
-\item[-h/--help] print a short usage message and exit
+\item[-h/\longprogramopt{help}] print a short usage message and exit
 \end{description}
 
 A multi-line statement may be given by specifying each line as a
