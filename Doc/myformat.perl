@@ -183,12 +183,18 @@ sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
 $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+$any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
+$any_next_pair_rx7 = "$O(\\d+)$C([\\s\\S]*)$O\\7$C";
+$any_next_pair_rx9 = "$O(\\d+)$C([\\s\\S]*)$O\\9$C";
+$any_next_pair_pr_rx_5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
+$any_next_pair_pr_rx_7 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP";
+$any_next_pair_pr_rx_9 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP";
 $new_command{"indexsubitem"} = "";
 
 sub get_indexsubitem{
   local($result) = $new_command{"indexsubitem"};
   #print "\nget_indexsubitem ==> $result\n";
-  $result;
+  $result ? " $result" : '';
 }
 
 # similar to make_index_entry(), but includes the string in the result
@@ -216,7 +222,7 @@ sub do_env_cfuncdesc{
     $function_name = "$4";
     $arg_list = "$6";
     $idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt> " . &get_indexsubitem);
+			"<tt>$function_name</tt>" . &get_indexsubitem);
   }
   $* = 0;
   "<dl><dt>$return_type <strong>$idx</strong>" .
@@ -232,7 +238,7 @@ sub do_env_ctypedesc{
   if (/$cfuncdesc_rx/o) {
     $type_name = "$2";
     $idx = &make_str_index_entry($1,
-				 "<tt>$type_name</tt> " . &get_indexsubitem);
+				 "<tt>$type_name</tt>" . &get_indexsubitem);
   }
   $* = 0;
   "<dl><dt><strong>$idx</strong>\n<dd>$'\n</dl>"
@@ -247,7 +253,7 @@ sub do_env_cvardesc{
   if (/$cfuncdesc_rx/o) {
     $var_type = "$2";
     $var_name = "$4";
-    $idx = &make_str_index_entry($3,"<tt>$var_name</tt> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($3,"<tt>$var_name</tt>" . &get_indexsubitem);
   }
   $* = 0;
   "<dl><dt>$var_type <strong>$idx</strong>\n" .
@@ -263,7 +269,7 @@ sub do_env_funcdesc{
     $function_name = "$2";
     $arg_list = "$4";
     $idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt> " . &get_indexsubitem);
+			"<tt>$function_name</tt>" . &get_indexsubitem);
   }
   $* = 0;
   "<dl><dt><strong>$idx</strong> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
@@ -296,7 +302,7 @@ sub do_env_datadesc{
   if (/$datadesc_rx/o) {
     $data_name = "$2";
     $idx = &make_str_index_entry($3,
-				 "<tt>$data_name</tt> " . &get_indexsubitem);
+				 "<tt>$data_name</tt>" . &get_indexsubitem);
   }
   $* = 0;
   "<dl><dt><strong>$idx</strong>" .
@@ -304,6 +310,80 @@ sub do_env_datadesc{
 }
 
 sub do_env_excdesc{ &do_env_datadesc(@_); }
+
+@col_aligns = ("<td>", "<td>", "<td>");
+
+sub setup_column_alignments{
+  local($_) = @_;
+  local($j1,$a1,$a2,$a3,$j4) = split(/[|]/,$_);
+  $col_aligns[0] = (($a1 eq "c") ? "<td align=center>" : "<td>");
+  $col_aligns[1] = (($a2 eq "c") ? "<td align=center>" : "<td>");
+  $col_aligns[2] = (($a3 eq "c") ? "<td align=center>" : "<td>");
+}
+
+sub do_env_tableii{
+  local($_) = @_;
+  local($font,$h1,$h2) = ('', '', '');
+  local($tableiii_rx) =
+    "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7";
+  $* = 1;
+  if (/$tableiii_rx/o) {
+    &setup_column_alignments($2);
+    $font = $4;
+    $h1 = $6;
+    $h2 = $8;
+  }
+  $globals{"lineifont"} = $font;
+  "<table border>\n  <tr><th>$h1</th>\n      <th>$h2</th>$'\n"
+    . "</table>";
+}
+
+sub do_cmd_lineii{
+  local($_) = @_;
+  s/$next_pair_pr_rx//o;
+  local($c1) = $2;
+  s/$next_pair_pr_rx//o;
+  local($c2) = $2;
+  local($font) = $globals{"lineifont"};
+  local($c1align, $c2align) = @col_aligns[0,1];
+  "<tr>$c1align<$font>$c1</$font></td>\n"
+    . "      $c2align$c2</td>$'";
+}
+
+sub do_env_tableiii{
+  local($_) = @_;
+  local($font,$h1,$h2,$h3) = ('', '', '', '');
+  local($tableiii_rx) =
+    "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7"
+      . "$any_next_pair_rx9";
+  $* = 1;
+  if (/$tableiii_rx/o) {
+    &setup_column_alignments($2);
+    $font = $4;
+    $h1 = $6;
+    $h2 = $8;
+    $h3 = $10;
+  }
+  $globals{"lineifont"} = $font;
+  "<table border>\n  <tr><th>$h1</th>\n      <th>$h2</th>"
+    . "\n      <th>$h3</th>$'\n"
+    . "</table>";
+}
+
+sub do_cmd_lineiii{
+  local($_) = @_;
+  s/$next_pair_pr_rx//o;
+  local($c1) = $2;
+  s/$next_pair_pr_rx//o;
+  local($c2) = $2;
+  s/$next_pair_pr_rx//o;
+  local($c3) = $2;
+  local($font) = $globals{"lineifont"};
+  local($c1align, $c2align, $c3align) = @col_aligns;
+  "<tr>$c1align<$font>$c1</$font></td>\n"
+    . "      $c2align$c2</td>\n"
+    . "      $c3align$c3</td>$'";
+}
 
 sub do_env_seealso{
   local($_) = @_;
