@@ -893,7 +893,9 @@ class Transformer:
     return Node('ass_list', assigns)
 
   def com_assign_name(self, node, assigning):
-    return Node('ass_name', node[1], assigning)
+    n = Node('ass_name', node[1], assigning)
+    n.lineno = node[2]
+    return n
 
   def com_assign_trailer(self, primary, node, assigning):
     t = node[1][0]
