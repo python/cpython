@@ -49,7 +49,8 @@ class whrandom:
 		if 0 == x == y == z:
 			# Initialize from current time
 			import time
-			t = int(time.time() % 0x80000000)
+			t = long(time.time() * 256)
+			t = int((t&0xffffff) | (t>>24))
 			t, x = divmod(t, 256)
 			t, y = divmod(t, 256)
 			t, z = divmod(t, 256)
