@@ -53,7 +53,7 @@ def split(p):
 
 
 # Split a path in root and extension.
-# The extension is everything starting at the first dot in the last
+# The extension is everything starting at the last dot in the last
 # pathname component; the root is everything before that.
 # It is always true that root + ext == p.
 
