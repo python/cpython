@@ -27,14 +27,16 @@ SHELL=		/bin/sh
 # === Fixed definitions ===
 
 OBJS=		abstract.o accessobject.o \
-		classobject.o fileobject.o floatobject.o \
+		classobject.o cobject.o complexobject.o \
+		fileobject.o floatobject.o \
 		frameobject.o funcobject.o intobject.o listobject.o \
 		longobject.o mappingobject.o methodobject.o \
 		moduleobject.o object.o rangeobject.o stringobject.o \
 		tupleobject.o typeobject.o
 
 SRCS=		abstract.c accessobject.c \
-		classobject.c fileobject.c floatobject.c \
+		classobject.c cobject.c complexobject.c \
+		fileobject.c floatobject.c \
 		frameobject.c funcobject.c intobject.c listobject.c \
 		longobject.c mappingobject.c methodobject.c \
 		moduleobject.c object.c rangeobject.c stringobject.c \
@@ -71,6 +73,8 @@ depend:
 abstract.o: abstract.c
 accessobject.o: accessobject.c
 classobject.o: classobject.c
+cobject.o: cobject.c
+complexobject.o: complexobject.c
 fileobject.o: fileobject.c
 floatobject.o: floatobject.c
 frameobject.o: frameobject.c
