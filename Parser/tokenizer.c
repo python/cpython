@@ -573,7 +573,7 @@ tok_get(tok, p_start, p_end)
 			if (c == '.')
 				goto fraction;
 #ifndef WITHOUT_COMPLEX
-			if (c == 'i' || c == 'I' || c == 'j' || c == 'J')
+			if (c == 'j' || c == 'J')
 				goto imaginary;
 #endif
 			if (c == 'x' || c == 'X') {
@@ -622,7 +622,7 @@ tok_get(tok, p_start, p_end)
 					}
 				}
 #ifndef WITHOUT_COMPLEX
-				if (c == 'i' || c == 'I' || c == 'j' || c == 'J')
+				if (c == 'j' || c == 'J')
 					/* Imaginary part */
 		imaginary:
 					c = tok_nextc(tok);
