@@ -497,6 +497,7 @@ class ftpwrapper:
 		self.init()
 	def init(self):
 		import ftplib
+		self.busy = 0
 		self.ftp = ftplib.FTP()
 		self.ftp.connect(self.host, self.port)
 		self.ftp.login(self.user, self.passwd)
@@ -504,6 +505,7 @@ class ftpwrapper:
 			self.ftp.cwd(dir)
 	def retrfile(self, file, type):
 		import ftplib
+		self.endtransfer()
 		if type in ('d', 'D'): cmd = 'TYPE A'; isdir = 1
 		else: cmd = 'TYPE ' + type; isdir = 0
 		try:
@@ -513,6 +515,13 @@ class ftpwrapper:
 			self.ftp.voidcmd(cmd)
 		conn = None
 		if file and not isdir:
+			# Use nlst to see if the file exists at all
+			try:
+				self.ftp.nlst(file)
+			except ftplib.error_perm, reason:
+				raise IOError, ('ftp error', reason), \
+				      sys.exc_info()[2]
+			# Try to retrieve as a file
 			try:
 				cmd = 'RETR ' + file
 				conn = self.ftp.transfercmd(cmd)
@@ -525,13 +534,18 @@ class ftpwrapper:
 			if file: cmd = 'LIST ' + file
 			else: cmd = 'LIST'
 			conn = self.ftp.transfercmd(cmd)
+		self.busy = 1
 		return addclosehook(conn.makefile('rb'), self.endtransfer)
 	def endtransfer(self):
+		if not self.busy:
+			return
+		self.busy = 0
 		try:
 			self.ftp.voidresp()
 		except ftperrors():
 			pass
 	def close(self):
+		self.endtransfer()
 		try:
 			self.ftp.close()
 		except ftperrors():
