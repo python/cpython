@@ -1,9 +1,11 @@
 #!/usr/local/bin/python
+# -*- python -*-
 #
-# rcsbump,v 1.2 1995/06/22 21:27:27 bwarsaw Exp
+# guido's version, from rcsbump,v 1.2 1995/06/22 21:27:27 bwarsaw Exp
 #
 # Python script for bumping up an RCS major revision number.
 
+import sys
 import regex
 import rcslib
 import string
@@ -11,16 +13,21 @@ import string
 WITHLOCK = 1
 majorrev_re = regex.compile('^[0-9]+')
 
-dir = rcslib.RCSDirectory()
+dir = rcslib.RCS()
 
-for file in dir.listfiles():
+if sys.argv[1:]:
+    files = sys.argv[1:]
+else:
+    files = dir.listfiles()
+
+for file in files:
     # get the major revnumber of the file
     headbranch = dir.info(file)['head']
     majorrev_re.match(headbranch)
     majorrev = string.atoi(majorrev_re.group(0)) + 1
 
     if not dir.islocked(file):
-	dir.get(file, WITHLOCK)
+	dir.checkout(file, WITHLOCK)
 
     msg = "Bumping major revision number (to %d)" % majorrev
-    dir.put((file, "%s.0" % majorrev), msg, "-f")
+    dir.checkin((file, "%s.0" % majorrev), msg, "-f")
