@@ -24,21 +24,21 @@ this model:
 
 """
 
-#
-# XXX Todo:
-# - modulefinder support to build standalone apps
-# - consider turning this into a distutils extension
-#
 
-__all__ = ["BundleBuilder", "AppBuilder", "buildapp"]
+__all__ = ["BundleBuilder", "BundleBuilderError", "AppBuilder", "buildapp"]
 
 
 import sys
 import os, errno, shutil
+import imp, marshal
+import re
 from copy import deepcopy
 import getopt
 from plistlib import Plist
 from types import FunctionType as function
+
+
+class BundleBuilderError(Exception): pass
 
 
 class Defaults:
@@ -176,6 +176,7 @@ class BundleBuilder(Defaults):
 		else:
 			self.message("Copying files", 1)
 			msg = "Copying"
+		files.sort()
 		for src, dst in files:
 			if os.path.isdir(src):
 				self.message("%s %s/ to %s/" % (msg, src, dst), 2)
@@ -200,7 +201,42 @@ class BundleBuilder(Defaults):
 		pprint.pprint(self.__dict__)
 
 
-mainWrapperTemplate = """\
+
+if __debug__:
+	PYC_EXT = ".pyc"
+else:
+	PYC_EXT = ".pyo"
+
+MAGIC = imp.get_magic()
+USE_FROZEN = hasattr(imp, "set_frozenmodules")
+
+# For standalone apps, we have our own minimal site.py. We don't need
+# all the cruft of the real site.py.
+SITE_PY = """\
+import sys
+del sys.path[1:]  # sys.path[0] is Contents/Resources/
+"""
+
+if USE_FROZEN:
+	FROZEN_ARCHIVE = "FrozenModules.marshal"
+	SITE_PY += """\
+# bootstrapping
+import imp, marshal
+f = open(sys.path[0] + "/%s", "rb")
+imp.set_frozenmodules(marshal.load(f))
+f.close()
+""" % FROZEN_ARCHIVE
+
+SITE_CO = compile(SITE_PY, "<-bundlebuilder->", "exec")
+
+MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
+	'win32api', 'ce', '_winreg', 'nturl2path', 'sitecustomize',
+	'org.python.core', 'riscos', 'riscosenviron', 'riscospath'
+]
+
+STRIP_EXEC = "/usr/bin/strip"
+
+EXECVE_WRAPPER = """\
 #!/usr/bin/env python
 
 import os
@@ -211,13 +247,13 @@ mainprogram = os.path.join(resources, "%(mainprogram)s")
 assert os.path.exists(mainprogram)
 argv.insert(1, mainprogram)
 os.environ["PYTHONPATH"] = resources
-%(setpythonhome)s
 %(setexecutable)s
 os.execve(executable, argv, os.environ)
 """
 
 setExecutableTemplate = """executable = os.path.join(resources, "%s")"""
 pythonhomeSnippet = """os.environ["home"] = resources"""
+
 
 class AppBuilder(BundleBuilder):
 
@@ -239,9 +275,41 @@ class AppBuilder(BundleBuilder):
 	# Symlink the executable instead of copying it.
 	symlink_exec = 0
 
+	# If True, build standalone app.
+	standalone = 0
+
+	# The following attributes are only used when building a standalone app.
+
+	# Exclude these modules.
+	excludeModules = []
+
+	# Include these modules.
+	includeModules = []
+
+	# Include these packages.
+	includePackages = []
+
+	# Strip binaries.
+	strip = 0
+
+	# Found C extension modules: [(name, path), ...]
+	extensions = []
+
+	# Found Python modules: [(name, codeobject, ispkg), ...]
+	pymodules = []
+
+	# Modules that modulefinder couldn't find:
+	missingModules = []
+
+	# List of all binaries (executables or shared libs), for stripping purposes
+	binaries = []
+
 	def setup(self):
+		if self.standalone and self.mainprogram is None:
+			raise BundleBuilderError, ("must specify 'mainprogram' when "
+					"building a standalone application.")
 		if self.mainprogram is None and self.executable is None:
-			raise TypeError, ("must specify either or both of "
+			raise BundleBuilderError, ("must specify either or both of "
 					"'executable' and 'mainprogram'")
 
 		if self.name is not None:
@@ -262,8 +330,13 @@ class AppBuilder(BundleBuilder):
 
 		self.plist.CFBundleExecutable = self.name
 
+		if self.standalone:
+			if self.executable is None:  # *assert* that it is None?
+				self.executable = sys.executable
+			self.findDependencies()
+
 	def preProcess(self):
-		resdir = pathjoin("Contents", "Resources")
+		resdir = "Contents/Resources"
 		if self.executable is not None:
 			if self.mainprogram is None:
 				execpath = pathjoin(self.execdir, self.name)
@@ -271,6 +344,7 @@ class AppBuilder(BundleBuilder):
 				execpath = pathjoin(resdir, os.path.basename(self.executable))
 			if not self.symlink_exec:
 				self.files.append((self.executable, execpath))
+				self.binaries.append(execpath)
 			self.execpath = execpath
 			# For execve wrapper
 			setexecutable = setExecutableTemplate % os.path.basename(self.executable)
@@ -278,7 +352,6 @@ class AppBuilder(BundleBuilder):
 			setexecutable = ""  # XXX for locals() call
 
 		if self.mainprogram is not None:
-			setpythonhome = ""  # pythonhomeSnippet if we're making a standalone app
 			mainname = os.path.basename(self.mainprogram)
 			self.files.append((self.mainprogram, pathjoin(resdir, mainname)))
 			# Create execve wrapper
@@ -286,10 +359,14 @@ class AppBuilder(BundleBuilder):
 			execdir = pathjoin(self.bundlepath, self.execdir)
 			mainwrapperpath = pathjoin(execdir, self.name)
 			makedirs(execdir)
-			open(mainwrapperpath, "w").write(mainWrapperTemplate % locals())
+			open(mainwrapperpath, "w").write(EXECVE_WRAPPER % locals())
 			os.chmod(mainwrapperpath, 0777)
 
 	def postProcess(self):
+		self.addPythonModules()
+		if self.strip and not self.symlink:
+			self.stripBinaries()
+
 		if self.symlink_exec and self.executable:
 			self.message("Symlinking executable %s to %s" % (self.executable,
 					self.execpath), 2)
@@ -297,6 +374,157 @@ class AppBuilder(BundleBuilder):
 			makedirs(os.path.dirname(dst))
 			os.symlink(os.path.abspath(self.executable), dst)
 
+		if self.missingModules:
+			self.reportMissing()
+
+	def addPythonModules(self):
+		self.message("Adding Python modules", 1)
+		pymodules = self.pymodules
+
+		if USE_FROZEN:
+			# This anticipates the acceptance of this patch:
+			#   http://www.python.org/sf/642578
+			# Create a file containing all modules, frozen.
+			frozenmodules = []
+			for name, code, ispkg in pymodules:
+				if ispkg:
+					self.message("Adding Python package %s" % name, 2)
+				else:
+					self.message("Adding Python module %s" % name, 2)
+				frozenmodules.append((name, marshal.dumps(code), ispkg))
+			frozenmodules = tuple(frozenmodules)
+			relpath = "Contents/Resources/" + FROZEN_ARCHIVE
+			abspath = pathjoin(self.bundlepath, relpath)
+			f = open(abspath, "wb")
+			marshal.dump(frozenmodules, f)
+			f.close()
+			# add site.pyc
+			sitepath = pathjoin(self.bundlepath, "Contents/Resources/site" + PYC_EXT)
+			writePyc(SITE_CO, sitepath)
+		else:
+			# Create individual .pyc files.
+			for name, code, ispkg in pymodules:
+				if ispkg:
+					name += ".__init__"
+				path = name.split(".")
+				path = pathjoin("Contents/Resources/", *path) + PYC_EXT
+
+				if ispkg:
+					self.message("Adding Python package %s" % path, 2)
+				else:
+					self.message("Adding Python module %s" % path, 2)
+
+				abspath = pathjoin(self.bundlepath, path)
+				makedirs(os.path.dirname(abspath))
+				writePyc(code, abspath)
+
+	def stripBinaries(self):
+		if not os.path.exists(STRIP_EXEC):
+			self.message("Error: can't strip binaries: no strip program at "
+				"%s" % STRIP_EXEC, 0)
+		else:
+			self.message("Stripping binaries", 1)
+			for relpath in self.binaries:
+				self.message("Stripping %s" % relpath, 2)
+				abspath = pathjoin(self.bundlepath, relpath)
+				assert not os.path.islink(abspath)
+				rv = os.system("%s -S \"%s\"" % (STRIP_EXEC, abspath))
+
+	def findDependencies(self):
+		self.message("Finding module dependencies", 1)
+		import modulefinder
+		mf = modulefinder.ModuleFinder(excludes=self.excludeModules)
+		# manually add our own site.py
+		site = mf.add_module("site")
+		site.__code__ = SITE_CO
+		mf.scan_code(SITE_CO, site)
+
+		includeModules = self.includeModules[:]
+		for name in self.includePackages:
+			includeModules.extend(findPackageContents(name).keys())
+		for name in includeModules:
+			try:
+				mf.import_hook(name)
+			except ImportError:
+				self.missingModules.append(name)
+
+
+		mf.run_script(self.mainprogram)
+		modules = mf.modules.items()
+		modules.sort()
+		for name, mod in modules:
+			if mod.__file__ and mod.__code__ is None:
+				# C extension
+				path = mod.__file__
+				ext = os.path.splitext(path)[1]
+				if USE_FROZEN:  # "proper" freezing
+					# rename extensions that are submodules of packages to
+					# <packagename>.<modulename>.<ext>
+					dstpath = "Contents/Resources/" + name + ext
+				else:
+					dstpath = name.split(".")
+					dstpath = pathjoin("Contents/Resources/", *dstpath) + ext
+				self.files.append((path, dstpath))
+				self.extensions.append((name, path, dstpath))
+				self.binaries.append(dstpath)
+			elif mod.__code__ is not None:
+				ispkg = mod.__path__ is not None
+				if not USE_FROZEN or name != "site":
+					# Our site.py is doing the bootstrapping, so we must
+					# include a real .pyc file if USE_FROZEN is True.
+					self.pymodules.append((name, mod.__code__, ispkg))
+
+		self.missingModules.extend(mf.any_missing())
+
+	def reportMissing(self):
+		missing = [name for name in self.missingModules
+				if name not in MAYMISS_MODULES]
+		missingsub = [name for name in missing if "." in name]
+		missing = [name for name in missing if "." not in name]
+		missing.sort()
+		missingsub.sort()
+		if missing:
+			self.message("Warning: couldn't find the following modules:", 1)
+			self.message("  " + ", ".join(missing))
+		if missingsub:
+			self.message("Warning: couldn't find the following submodules "
+				"(but it's probably OK since modulefinder can't distinguish "
+				"between from \"module import submodule\" and "
+				"\"from module import name\"):", 1)
+			self.message("  " + ", ".join(missingsub))
+
+#
+# Utilities.
+#
+
+SUFFIXES = [_suf for _suf, _mode, _tp in imp.get_suffixes()]
+identifierRE = re.compile(r"[_a-zA-z][_a-zA-Z0-9]*$")
+
+def findPackageContents(name, searchpath=None):
+	head = name.split(".")[-1]
+	if identifierRE.match(head) is None:
+		return {}
+	try:
+		fp, path, (ext, mode, tp) = imp.find_module(head, searchpath)
+	except ImportError:
+		return {}
+	modules = {name: None}
+	if tp == imp.PKG_DIRECTORY and path:
+		files = os.listdir(path)
+		for sub in files:
+			sub, ext = os.path.splitext(sub)
+			fullname = name + "." + sub
+			if sub != "__init__" and fullname not in modules:
+				modules.update(findPackageContents(fullname, [path]))
+	return modules
+
+def writePyc(code, path):
+	f = open(path, "wb")
+	f.write("\0" * 8)  # don't bother about a time stamp
+	marshal.dump(code, f)
+	f.seek(0, 0)
+	f.write(MAGIC)
+	f.close()
 
 def copy(src, dst, mkdirs=0):
 	"""Copy a file or a directory."""
@@ -355,6 +583,12 @@ Options:
   -c, --creator=CCCC     4-char creator code (default: '????')
   -l, --link             symlink files/folder instead of copying them
       --link-exec        symlink the executable instead of copying it
+      --standalone       build a standalone application, which is fully
+                         independent of a Python installation
+  -x, --exclude=MODULE   exclude module (with --standalone)
+  -i, --include=MODULE   include module (with --standalone)
+      --package=PACKAGE  include a whole package (with --standalone)
+      --strip            strip binaries (remove debug info)
   -v, --verbose          increase verbosity level
   -q, --quiet            decrease verbosity level
   -h, --help             print this message
@@ -370,10 +604,11 @@ def main(builder=None):
 	if builder is None:
 		builder = AppBuilder(verbosity=1)
 
-	shortopts = "b:n:r:e:m:c:p:lhvq"
+	shortopts = "b:n:r:e:m:c:p:lx:i:hvq"
 	longopts = ("builddir=", "name=", "resource=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
-		"link-exec", "help", "verbose", "quiet")
+		"link-exec", "help", "verbose", "quiet", "standalone",
+		"exclude=", "include=", "package=", "strip")
 
 	try:
 		options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -407,6 +642,16 @@ def main(builder=None):
 			builder.verbosity += 1
 		elif opt in ('-q', '--quiet'):
 			builder.verbosity -= 1
+		elif opt == '--standalone':
+			builder.standalone = 1
+		elif opt in ('-x', '--exclude'):
+			builder.excludeModules.append(arg)
+		elif opt in ('-i', '--include'):
+			builder.includeModules.append(arg)
+		elif opt == '--package':
+			builder.includePackages.append(arg)
+		elif opt == '--strip':
+			builder.strip = 1
 
 	if len(args) != 1:
 		usage("Must specify one command ('build', 'report' or 'help')")
