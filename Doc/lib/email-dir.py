@@ -66,7 +66,7 @@ def main():
 
     sender = args[0]
     recips = args[1:]
-    
+
     # Create the enclosing (outer) message
     outer = MIMEMultipart()
     outer['Subject'] = 'Contents of directory %s' % os.path.abspath(dir)

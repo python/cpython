@@ -11,7 +11,7 @@ passed to the convert() function; changing this table can allow this
 tool to support additional LaTeX markups.
 
 The format of the table is largely undocumented; see the commented
-headers where the table is specified in main().  There is no provision 
+headers where the table is specified in main().  There is no provision
 to load an alternate table from an external file.
 """
 

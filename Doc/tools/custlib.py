@@ -10,20 +10,20 @@ modules = {}
 
 for modname in sys.builtin_module_names:
     modules[modname] = modname
-    
+
 for dir in sys.path:
     # Look for *.py files
     filelist = glob.glob(os.path.join(dir, '*.py'))
-    for file in filelist: 
+    for file in filelist:
         path, file = os.path.split(file)
         base, ext = os.path.splitext(file)
         modules[base.lower()] = base
 
     # Look for shared library files
-    filelist = (glob.glob(os.path.join(dir, '*.so')) + 
+    filelist = (glob.glob(os.path.join(dir, '*.so')) +
                 glob.glob(os.path.join(dir, '*.sl')) +
                 glob.glob(os.path.join(dir, '*.o')) )
-    for file in filelist: 
+    for file in filelist:
         path, file = os.path.split(file)
         base, ext = os.path.splitext(file)
         if base[-6:] == 'module':
@@ -54,7 +54,7 @@ modules = mlist
 # Phase III: write custlib.tex
 
 # Write the boilerplate
-# XXX should be fancied up.  
+# XXX should be fancied up.
 print """\documentstyle[twoside,11pt,myformat]{report}
 \\title{Python Library Reference}
 \\input{boilerplate}
@@ -69,10 +69,10 @@ print """\documentstyle[twoside,11pt,myformat]{report}
 \\pagebreak
 {\\parskip = 0mm \\tableofcontents}
 \\pagebreak\\pagenumbering{arabic}"""
-    
-for modname in mlist: 
+
+for modname in mlist:
     print "\\input{lib%s}" % (modname,)
-    
+
 # Write the end
 print """\\input{custlib.ind}                   % Index
 \\end{document}"""

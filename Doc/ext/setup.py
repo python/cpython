@@ -6,4 +6,3 @@ setup(name="noddy", version="1.0",
          Extension("noddy3", ["noddy3.c"]),
          Extension("noddy4", ["noddy4.c"]),
          ])
-

@@ -35,7 +35,7 @@ def handleSlideshow(slideshow):
 
 def handleSlides(slides):
     for slide in slides:
-       handleSlide(slide)
+        handleSlide(slide)
 
 def handleSlide(slide):
     handleSlideTitle(slide.getElementsByTagName("title")[0])

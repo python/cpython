@@ -11,13 +11,13 @@ def main():
     nwords = len(words)
     nrows = (nwords + ncols - 1) / ncols
     for irow in range(nrows):
-	for icol in range(ncols):
-	    i = irow + icol * nrows
-	    if 0 <= i < nwords:
-		word = words[i]
-	    else:
-		word = ""
-	    print "%-*s" % (colwidth, word),
-	print
+        for icol in range(ncols):
+            i = irow + icol * nrows
+            if 0 <= i < nwords:
+                word = words[i]
+            else:
+                word = ""
+            print "%-*s" % (colwidth, word),
+        print
 
 main()
