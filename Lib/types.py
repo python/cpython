@@ -9,6 +9,10 @@ TypeType = type(NoneType)
 IntType = type(0)
 LongType = type(0L)
 FloatType = type(0.0)
+import __builtin__
+if vars(__builtin__).has_key('complex'):
+	ComplexType = type(complex(0,1))
+del __builtin__
 
 StringType = type('')
 
