@@ -17,19 +17,21 @@ item: Global
   Patch Threshold=85
   Patch Memory=4000
   Variable Name1=_SYS_
+  Variable Description1=System directory
   Variable Default1=C:\WINNT\SYSTEM32
-  Variable Flags1=00001000
+  Variable Flags1=00001001
   Variable Name2=_WISE_
+  Variable Description2=WISE root directory
   Variable Default2=C:\Program Files\Wise
-  Variable Flags2=00001000
+  Variable Flags2=00001001
   Variable Name3=_SRC_
-  Variable Description3=Root of Python Build Tree
+  Variable Description3=Python source directory
   Variable Default3=D:\src\Python-1.6
   Variable Flags3=00001001
   Variable Name4=_DOC_
-  Variable Description4=HTML documentation tree
-  Variable Default4=C:\Windows\Desktop\pysrc\Python-1.6\html
-  Variable Flags4=00001000
+  Variable Description4=HTML documentation tree directory
+  Variable Default4=D:\src\Python-1.6\html
+  Variable Flags4=00001001
 end
 remarked item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -856,53 +858,11 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-remarked item: Install File
-  Source=%_DOC_%\index.html
-  Destination=%MAINDIR%\Doc\index.html
-  Description=Python Documentation Root (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\icons\*.*
-  Destination=%MAINDIR%\Doc\icons
-  Description=Python Documentation Icons
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\tut\*.*
-  Destination=%MAINDIR%\Doc\tut
-  Description=Python Tutorial (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\lib\*.*
-  Destination=%MAINDIR%\Doc\lib
-  Description=Python Library Reference (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\ext\*.*
-  Destination=%MAINDIR%\Doc\ext
-  Description=Python Extending and Embedding Manual (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\api\*.*
-  Destination=%MAINDIR%\Doc\api
-  Description=Python/C API Reference (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\ref\*.*
-  Destination=%MAINDIR%\Doc\ref
-  Description=Python Language Reference (HTML)
-  Flags=0000000000000010
-end
-remarked item: Install File
-  Source=%_DOC_%\doc\*.*
-  Destination=%MAINDIR%\Doc\doc
-  Description=Python Meta-Documentation (HTML)
-  Flags=0000000000000010
+item: Install File
+  Source=%_DOC_%\*.*
+  Destination=%MAINDIR%\Doc
+  Description=Python Documentation (HTML)
+  Flags=0000000100000010
 end
 item: End Block
 end
@@ -1130,7 +1090,7 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-remarked item: Create Shortcut
+item: Create Shortcut
   Source=%MAINDIR%\Doc\index.html
   Destination=%GROUP%\Python Manuals.lnk
   Working Directory=%MAINDIR%
