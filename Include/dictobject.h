@@ -17,3 +17,4 @@ extern int dictinsert PROTO((object *dp, char *key, object *item));
 extern int dictremove PROTO((object *dp, char *key));
 extern int getdictsize PROTO((object *dp));
 extern char *getdictkey PROTO((object *dp, int i));
+extern object *getdictkeys PROTO((object *dp));
