@@ -37,11 +37,19 @@ Core and builtins
   that, but note that fixing these bugs may change visible behavior in
   code relying (whether intentionally or accidentally) on old behavior.
 
+- SF bug 734869: Fixed a compiler bug that caused a fatal error when
+  compiling a list comprehension that contained another list comprehension
+  embedded in a lambda expression.
+
 - SF bug 705231:  builtin pow() no longer lets the platform C pow()
   raise -1.0 to integer powers, because (at least) glibc gets it wrong
   in some cases.  The result should be -1.0 if the power is odd and 1.0
   if the power is even, and any float with a sufficiently large exponent
   is (mathematically) an exact even integer.
+
+- SF bug 759227: A new-style class that implements __nonzero__() must
+  return a bool or int (but not an int subclass) from that method.  This
+  matches the restriction on classic classes.
 
 - The encoding attribute has been added for file objects, and set to
   the terminal encoding on Unix and Windows.
@@ -60,11 +68,23 @@ Core and builtins
   undefined (in order to allow for optimization of global and builtin
   name lookups).
 
+- SF bug 735247: The staticmethod and super types participate in
+  garbage collection. Before this change, it was possible for leaks to
+  occur in functions with non-global free variables that used these types.
+
 Extension modules
 -----------------
 
 - the socket module has a new exception, socket.timeout, to allow
   timeouts to be handled separately from other socket errors.
+
+- SF bug 751276: cPickle has fixed to propagate exceptions raised in
+  user code.  In earlier versions, cPickle caught and ignored any
+  exception when it performed operations that it expected to raise
+  specific exceptions like AttributeError.
+
+- cPickle Pickler and Unpickler objects now participate in garbage
+  collection.
 
 - mimetools.choose_boundary() could return duplicate strings at times,
   especially likely on Windows.  The strings returned are now guaranteed
@@ -88,6 +108,7 @@ Extension modules
   /usr/include/db.h exists and defines HASHVERSION to be 2.  This is true
   for many BSD-derived systems.
 
+
 Library
 -------
 
@@ -106,13 +127,6 @@ Library
   in unittest style), without losing unittest's powerful testing
   framework features (which doctest lacks).
 
-- ZipFile.testzip() now only traps BadZipfile exceptions.  Previously,
-  a bare except caught to much and reported all errors as a problem
-  in the archive.
-
-- The logging module now has a new function, makeLogRecord() making
-  LogHandler easier to interact with DatagramHandler and SocketHandler.
-
 - For compatibility with doctests created before 2.3, if an expected
   output block consists solely of "1" and the actual output block
   consists solely of "True", it's accepted as a match; similarly
@@ -121,6 +135,13 @@ Library
   constant DONT_ACCEPT_TRUE_FOR_1 to the new optionflags optional
   argument.
 
+- ZipFile.testzip() now only traps BadZipfile exceptions.  Previously,
+  a bare except caught to much and reported all errors as a problem
+  in the archive.
+
+- The logging module now has a new function, makeLogRecord() making
+  LogHandler easier to interact with DatagramHandler and SocketHandler.
+
 - The cgitb module has been extended to support plain text display (SF patch
   569574).
 
@@ -128,10 +149,17 @@ Library
   SourceForge) is now included as Lib/idlelib.  The old Tools/idle is
   no more.
 
+- Added a new module: trace (documentation missing).  This module used
+  to be distributed in Tools/scripts.  It uses sys.settrace() to trace
+  code execution -- either function calls or individual lines.  It can
+  generate tracing output during execution or a post-mortem report of
+  code coverage.
+
 - The threading module has new functions settrace() and setprofile()
   that cooperate with the functions of the same name in the sys
   module.  A function registered with the threading module will
-  be used for all threads it creates.
+  be used for all threads it creates.  The new trace module uses this
+  to provide tracing for code running in threads.
 
 - copy.py: applied SF patch 707900, fixing bug 702858, by Steven
   Taschuk.  Copying a new-style class that had a reference to itself
