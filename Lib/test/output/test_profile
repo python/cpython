@@ -1,0 +1,17 @@
+test_profile
+         53 function calls in 1.000 CPU seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    1.000    1.000 <string>:1(?)
+        0    0.000             0.000          profile:0(profiler)
+        1    0.000    0.000    1.000    1.000 profile:0(testfunc())
+        1    0.400    0.400    1.000    1.000 test_profile.py:21(testfunc)
+        2    0.080    0.040    0.600    0.300 test_profile.py:30(helper)
+        4    0.116    0.029    0.120    0.030 test_profile.py:48(helper1)
+        8    0.312    0.039    0.400    0.050 test_profile.py:56(helper2)
+        8    0.064    0.008    0.080    0.010 test_profile.py:66(subhelper)
+       28    0.028    0.001    0.028    0.001 test_profile.py:78(__getattr__)
+
+
