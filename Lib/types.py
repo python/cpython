@@ -15,6 +15,7 @@ except NameError:
     pass
 
 StringType = type('')
+BufferType = type(buffer(''))
 
 TupleType = type(())
 ListType = type([])
