@@ -5,6 +5,22 @@ Core language, builtins, and interpreter
 
 Standard library
 
+- pyexpat now detects the expat version if expat.h defines it. A
+  number of additional handlers are provided, which are only available
+  since expat 1.95. In addition, the methods SetParamEntityParsing and
+  GetInputContext of Parser objects are available with 1.95.x
+  only. Parser objects now provide the ordered_attributes and
+  specified_attributes attributes. A new module expat.model was added,
+  which offers a number of additional constants if 1.95.x is used.
+
+- xml.dom offers the new functions registerDOMImplementation and
+  getDOMImplementation.
+
+- xml.dom.minidom offers a toprettyxml method. A number of DOM
+  conformance issues have been resolved. In particular, Element now
+  has an hasAttributes method, and the handling of namespaces was
+  improved.
+
 Windows changes
 
 - Build:  Subproject _test (effectively) renamed to _testcapi.
@@ -121,6 +137,12 @@ Standard library
   interface will be added on top of _symtable in a future release.
 
 - Removed the obsolete soundex module.
+
+- xml.dom.minidom now uses the standard DOM exceptions. Node supports
+  the isSameNode method; NamedNodeMap the get method.
+
+- xml.sax.expatreader supports the lexical handler property; it
+  generates comment, startCDATA, and endCDATA events.
 
 Windows changes
 
@@ -373,6 +395,26 @@ Standard library
 - A new function, sys._getframe(), returns the stack frame pointer of
   the caller.  This is intended only as a building block for
   higher-level mechanisms such as string interpolation.
+
+- The pyexpat module supports a number of new handlers, which are
+  available only in expat 1.2. If invocation of a callback fails, it
+  will report an additional frame in the traceback. Parser objects
+  participate now in garbage collection. If expat reports an unknown
+  encoding, pyexpat will try to use a Python codec; that works only
+  for single-byte charsets. The parser type objects is exposed as
+  XMLParserObject.
+
+- xml.dom now offers standard definitions for symbolic node type and
+  exception code constants, and a hierarchy of DOM exceptions. minidom
+  was adjusted to use them.
+
+- The conformance of xml.dom.minidom to the DOM specification was
+  improved. It detects a number of additional error cases; the
+  previous/next relationship works even when the tree is modified;
+  Node supports the normalize() method; NamedNodeMap, DocumentType and
+  DOMImplementation classes were added; Element supports the
+  hasAttribute and hasAttributeNS methods; and Text supports the splitText
+  method.
 
 Build issues
 
