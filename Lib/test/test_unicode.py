@@ -679,6 +679,12 @@ except ValueError:
     pass
 else:
     raise TestFailed, '"\\".decode("unicode-escape") should fail'
+try:
+    int(u"\u0200")
+except UnicodeError:
+    pass
+else:
+    raise TestFailed, "int(u'\\u0200') failed to raise an exception"
 
 verify(u'hello'.encode('ascii') == 'hello')
 verify(u'hello'.encode('utf-7') == 'hello')
