@@ -21,10 +21,9 @@ macstat(path, buf)
 		FileParam f;
 		HFileInfo hf;
 	} pb;
-	char name[256];
 	short err;
 	
-	pb.d.ioNamePtr = (unsigned char *)c2pstr(strcpy(name, path));
+	pb.d.ioNamePtr = (unsigned char *)Pstring(path);
 	pb.d.ioVRefNum = 0;
 	pb.d.ioFDirIndex = 0;
 	pb.d.ioDrDirID = 0;
