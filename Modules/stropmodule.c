@@ -342,9 +342,6 @@ strop_strip(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
-	int len, i, j;
-
 	return do_strip(args, BOTHSTRIP);
 }
 
@@ -353,9 +350,6 @@ strop_lstrip(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
-	int len, i, j;
-
 	return do_strip(args, LEFTSTRIP);
 }
 
@@ -364,9 +358,6 @@ strop_rstrip(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
-	int len, i, j;
-
 	return do_strip(args, RIGHTSTRIP);
 }
 
