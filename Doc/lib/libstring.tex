@@ -227,6 +227,19 @@ Pad a numeric string on the left with zero digits until the given
 width is reached.  Strings starting with a sign are handled correctly.
 \end{funcdesc}
 
+\begin{funcdesc}{replace}{old, new, str}
+Return a copy of string \var{str} with all occurrences of substring
+\var{old} replaced by \var{new}.
+\end{funcdesc}
+
+\begin{funcdesc}{replace1}{old, new, str\optional{, start\optional{, end}}}
+Return a copy of string \var{str} with the first occurrence of
+substring \var{old} replaced by \var{new}.  If no occurrence is found,
+\var{str} is returned unchanged.  Optional arguments \var{start} and
+\var{end} limit the search for \var{old} like for \code{find} (they
+are not used to slice the result).
+\end{funcdesc}
+
 This module is implemented in Python.  Much of its functionality has
 been reimplemented in the built-in module \code{strop}.  However, you
 should \emph{never} import the latter module directly.  When
