@@ -755,12 +755,8 @@ initbinascii()
 	PyDict_SetItemString(d, "__doc__", x);
 	Py_XDECREF(x);
 
-	Error = PyString_FromString("binascii.Error");
+	Error = PyErr_NewException("binascii.Error", NULL, NULL);
 	PyDict_SetItemString(d, "Error", Error);
-	Incomplete = PyString_FromString("binascii.Incomplete");
+	Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
 	PyDict_SetItemString(d, "Incomplete", Incomplete);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module binascii");
 }
