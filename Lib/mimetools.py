@@ -140,6 +140,8 @@ def decode(input, output, encoding):
 	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.decode(input, output)
+	if encoding in ('7bit', '8bit'):
+		output.write(input.read())
 	if decodetab.has_key(encoding):
 		pipethrough(input, decodetab[encoding], output)
 	else:
@@ -157,6 +159,8 @@ def encode(input, output, encoding):
 	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.encode(input, output)
+	if encoding in ('7bit', '8bit'):
+		output.write(input.read())
 	if encodetab.has_key(encoding):
 		pipethrough(input, encodetab[encoding], output)
 	else:
