@@ -23,7 +23,7 @@ errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
 	  'ENODEV', 'ENOENT', 'ENOEXEC', 'ENOLCK', 'ENOLINK',
 	  'ENOMEM', 'ENOMSG', 'ENONET', 'ENOPKG', 'ENOPROTOOPT',
 	  'ENOSPC', 'ENOSR', 'ENOSTR', 'ENOSYS', 'ENOTBLK',
-	  'ENOTCONN', 'ENOTDIR', 'ENOTEMPTY', 'ENOTSOCK',
+	  'ENOTCONN', 'ENOTDIR', 'ENOTEMPTY', 'ENOTOBACCO', 'ENOTSOCK',
 	  'ENOTTY', 'ENOTUNIQ', 'ENXIO', 'EOPNOTSUPP',
 	  'EOVERFLOW', 'EPERM', 'EPFNOSUPPORT', 'EPIPE',
 	  'EPROTO', 'EPROTONOSUPPORT', 'EPROTOTYPE',
@@ -39,6 +39,11 @@ errors = ['E2BIG', 'EACCES', 'EADDRINUSE', 'EADDRNOTAVAIL', 'EADV',
 # test seems to work on SGI, Sparc & intel Solaris, and linux.
 #
 for error in errors:
-    a = getattr(errno, error)
-    if verbose:
-	print '%s: %d' % (error, a)
+    try:
+	a = getattr(errno, error)
+    except AttributeError:
+	if verbose:
+	    print '%s: not found' % error
+    else:
+	if verbose:
+	    print '%s: %d' % (error, a)
