@@ -211,6 +211,8 @@ EXPORTS
 	PyImport_GetModuleDict
 	PyImport_GetMagicNumber
 	PyImport_ImportModule
+	PyImport_ImportModuleEx
+	PyImport_Import
 	PyImport_ImportFrozenModule
 	PyImport_ReloadModule
 	PyNumber_Coerce
