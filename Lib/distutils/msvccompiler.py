@@ -124,10 +124,15 @@ class MacroExpander:
         self.set_macro("VSInstallDir", vsbase + r"\Setup\VS", "productdir")
         net = r"Software\Microsoft\.NETFramework"
         self.set_macro("FrameworkDir", net, "installroot")
-        if version > 7.0:
-            self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
-        else:
-            self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
+	try:
+	    if version > 7.0:
+		self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
+	    else:
+		self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
+	except KeyError, exc: #
+            raise DistutilsPlatformError, \
+                  ("The .NET Framework SDK needs to be installed before "
+                   "building extensions for Python.")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
         for base in HKEYS:
