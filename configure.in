@@ -49,22 +49,11 @@ fi
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
-AC_ISC_POSIX
 AC_MINIX
-
-was_it_defined=no
-AC_TRY_RUN([
-#ifdef _NEXT_SOURCE
-main() { exit(0); }
-#endif
-], AC_DEFINE(_POSIX_SOURCE)
-CC="$CC -posix"; was_it_defined=yes)
-AC_MSG_CHECKING(for NeXT)
-AC_MSG_RESULT($was_it_defined)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h)
+AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h sys/wait.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
@@ -125,12 +114,13 @@ then
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
+	Linux*) LDSHARED="gcc-elf -shared";;
 	*)	LDSHARED="ld";;
 	esac
 fi
 AC_MSG_RESULT($LDSHARED)
 # CCSHARED are the C *flags* used to create objects to go into a shared
-# library -- this is only needed for HP-UX
+# library -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
@@ -139,16 +129,18 @@ then
 		 then CCSHARED="-fpic";
 		 else CCSHARED="+z";
 		 fi;;
+	Linux*) CCSHARED="-fpic";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
 # LINKFORSHARED are the flags passed to the $(CC) command that links
-# the python executable -- this is only needed for HP-UX
+# the python executable -- this is only needed for a few systems
 AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system in
 	hp*|HP*) LINKFORSHARED="-Wl,-E";;
+	Linux*) LINKFORSHARED="-rdynamic";;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
