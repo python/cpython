@@ -1875,7 +1875,11 @@ def _test():
 	root.test = test
 	quit = Button(root, text="QUIT", command=root.destroy)
 	quit.pack()
-	root.tkraise()
+	# The following three commands are needed so the window pops
+	# up on top on Windows...
+	root.iconify()
+	root.update()
+	root.deiconify()
 	root.mainloop()
 
 if __name__ == '__main__':
