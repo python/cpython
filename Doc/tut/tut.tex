@@ -2751,6 +2751,10 @@ wildcard.
 Use this with extreme caution, since it is easy to mask a real
 programming error in this way!
 
+Each exception clause must have at least one line of executable code 
+in the block.  Comments are not executable code.  If you want the 
+exception clause to do nothing, use the \keyword{pass} statement.
+
 The \keyword{try} \ldots\ \keyword{except} statement has an optional
 \emph{else clause}, which must follow all except clauses.  It is
 useful to place code that must be executed if the try clause does not
