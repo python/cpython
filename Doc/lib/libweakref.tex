@@ -52,24 +52,6 @@ be made to support weak references; see section \ref{weakref-extension},
   has been deleted, they are equal iff they are identical.
 \end{funcdesc}
 
-\begin{funcdesc}{mapping}{\optional{dict\optional{, weakkeys=0}}}
-  Return a weak dictionary.  If \var{dict} is given and not
-  \code{None}, the new dictionary will contain the items contained in
-  \var{dict}.  The values from \var{dict} must be weakly referencable;
-  if any values which would be inserted into the new mapping are not
-  weakly referencable, \exception{TypeError} will be raised and the
-  new mapping will be empty.
-
-  If the \var{weakkeys} argument is not given or zero, the values in
-  the dictionary are weak. That means the entries in the dictionary
-  will be discarded when no strong reference to the value exists
-  anymore.
-
-  If the \var{weakkeys} argument is nonzero, the keys in the
-  dictionary are weak, i.e. the entry in the dictionary is discarded
-  when the last strong reference to the key is discarded.
-\end{funcdesc}
-
 \begin{funcdesc}{proxy}{object\optional{, callback}}
   Return a proxy to \var{object} which uses a weak reference.  This
   supports use of the proxy in most contexts instead of requiring the
@@ -94,15 +76,18 @@ be made to support weak references; see section \ref{weakref-extension},
 \end{funcdesc}
 
 \begin{classdesc}{WeakKeyDictionary}{\optional{dict}}
-  The class of the mapping objects returned by \function{mapping()}
-  when \var{weakkeys} is true.  This can be used for subclassing the
-  implementation if needed.
+  Mapping class that references keys weakly.  Entries in the
+  dictionary will be discarded when there is no longer a strong
+  reference to the key.  This can be used to associate additional data
+  with an object owned by other parts of an application without adding
+  attributes to those objects.  This can be especially useful with
+  objects that override attribute accesses.
 \end{classdesc}
 
 \begin{classdesc}{WeakValueDictionary}{\optional{dict}}
-  The class of the mapping objects returned by \function{mapping()}
-  when \var{weakkeys} if false.  This can be used for subclassing the
-  implementation if needed.
+  Mapping class that references values weakly.  Entries in the
+  dictionary will be discarded when no strong reference to the value
+  exists anymore.
 \end{classdesc}
 
 \begin{datadesc}{ReferenceType}
@@ -122,6 +107,11 @@ be made to support weak references; see section \ref{weakref-extension},
   it simpler to test if an object is a proxy without being dependent
   on naming both proxy types.
 \end{datadesc}
+
+\begin{excdesc}{ReferenceError}
+  Exception raised when a proxy object is used but the underlying
+  object has been collected.
+\end{excdesc}
 
 
 \begin{seealso}
@@ -193,7 +183,7 @@ do.
 \begin{verbatim}
 import weakref
 
-_id2obj_dict = weakref.mapping()
+_id2obj_dict = weakref.WeakValueDictionary()
 
 def remember(obj):
     _id2obj_dict[id(obj)] = obj
