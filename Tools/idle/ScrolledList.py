@@ -25,6 +25,9 @@ class ScrolledList:
         # Set the focus
         listbox.focus_set()
     
+    def close(self):
+        self.frame.destroy()
+    
     def clear(self):
         self.listbox.delete(0, "end")
     
