@@ -6,7 +6,7 @@
 \modulesynopsis{Set handlers for asynchronous events.}
 
 This module provides mechanisms to use signal handlers in Python.
-Some general rules for working with signals handlers:
+Some general rules for working with signals and their handlers:
 
 \begin{itemize}
 
@@ -144,3 +144,31 @@ The \module{signal} module defines the following functions:
   reference manual for a description of frame objects).
 \obindex{frame}
 \end{funcdesc}
+
+\subsection{Example}
+\nodename{Signal Example}
+
+Here is a minimal example program. It uses the \function{alarm()}
+function to limit the time spent waiting to open a file; this is
+useful if the file is for a serial device that may not be turned on,
+which would normally cause the \function{os.open()} to hang
+indefinitely.  The solution is to set a 5-second alarm before opening
+the file; if the operation takes too long, the alarm signal will be
+sent, and the handler raises an exception.
+
+\begin{verbatim}
+import signal, os, FCNTL
+
+def handler(signum, frame):
+    print 'Signal handler called with signal', signum
+    raise IOError, "Couldn't open device!"
+
+# Set the signal handler and a 5-second alarm
+signal.signal(signal.SIGALRM, handler)
+signal.alarm(5)
+
+# This open() may hang indefinitely
+fd = os.open('/dev/ttyS0', FCNTL.O_RDWR)  
+
+signal.alarm(0)          # Disable the alarm
+\end{verbatim}
