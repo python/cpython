@@ -7,7 +7,8 @@ Utility functions for manipulating directories and directory trees."""
 __revision__ = "$Id$"
 
 import os
-from distutils.errors import DistutilsFileError
+from types import *
+from distutils.errors import DistutilsFileError, DistutilsInternalError
 
 
 # cache for by mkpath() -- in addition to cheapening redundant calls,
@@ -28,6 +29,11 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
        actually created."""
 
     global PATH_CREATED
+
+    # Detect a common bug -- name is None
+    if type(name) is not StringType:
+        raise DistutilsInternalError, \
+              "mkpath: 'name' must be a string (got %s)" % `name`
 
     # XXX what's the better way to handle verbosity? print as we create
     # each directory in the path (the current behaviour), or only announce
