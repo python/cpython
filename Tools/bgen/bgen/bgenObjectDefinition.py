@@ -47,12 +47,8 @@ class ObjectDefinition(GeneratorGroup):
 		sf = self.static and "static "
 		Output("%sPyTypeObject %s;", sf, self.typename)
 		Output()
-		if self.basetype:
-			Output("#define %s_Check(x) ((x)->ob_type == &%s || PyObject_TypeCheck((x), %s)",
+		Output("#define %s_Check(x) ((x)->ob_type == &%s || PyObject_TypeCheck((x), &%s))",
 		       self.prefix, self.typename, self.typename)
-		else:
-			Output("#define %s_Check(x) ((x)->ob_type == &%s)",
-		       self.prefix, self.typename)
 		Output()
 		Output("typedef struct %s {", self.objecttype)
 		IndentLevel()
