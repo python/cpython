@@ -171,8 +171,8 @@ class SysModuleTest(unittest.TestCase):
         rc = subprocess.call([sys.executable, "-c",
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
-        
-            
+
+
     def test_getdefaultencoding(self):
         if test.test_support.have_unicode:
             self.assertRaises(TypeError, sys.getdefaultencoding, 42)
