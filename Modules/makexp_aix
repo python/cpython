@@ -18,6 +18,9 @@
 #                      <InputFile> is an object (.o) or an archive file (.a).
 #
 # HISTORY:
+#		3-Apr-1998  -- remove C++ entries of the form Class::method
+#		Vladimir Marangozov
+#
 #               1-Jul-1996  -- added header information
 #               Vladimir Marangozov
 #
@@ -65,7 +68,8 @@ echo "*" >> $expFileName
 #    as a symbol prefix, but such symbols are undefined externs.
 # 6. Eliminate everything including the key letter, so that we're
 #    left with just the symbol name.
+# 7. Eliminate all entries containing two colons, like Class::method
 #
-/usr/ccs/bin/nm -Bex $inputFiles			\
-| sed -e '/ [^BDT] /d' -e '/\./d' -e 's/.* [BDT] //'	\
+/usr/ccs/bin/nm -Bex $inputFiles				\
+| sed -e '/ [^BDT] /d' -e '/\./d' -e 's/.* [BDT] //' -e '/::/d'	\
 | sort | uniq >> $expFileName
