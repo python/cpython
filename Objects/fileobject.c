@@ -150,14 +150,27 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 			return NULL;
 		}
 #endif
+#ifdef _MSC_VER
+		/* MSVC 6 (Microsoft) leaves errno at 0 for bad mode strings,
+		 * across all Windows flavors.  When it sets EINVAL varies
+		 * across Windows flavors, the exact conditions aren't
+		 * documented, and the answer lies in the OS's implementation
+		 * of Win32's CreateFile function (whose source is secret).
+		 * Seems the best we can do is map EINVAL to ENOENT.
+		 */
+		if (errno == 0)	/* bad mode string */
+			errno = EINVAL;
+		else if (errno == EINVAL) /* unknown, but not a mode string */
+			errno = ENOENT;
+#endif
 		if (errno == EINVAL)
-			PyErr_Format(PyExc_IOError, "invalid argument: %s",
+			PyErr_Format(PyExc_IOError, "invalid mode: %s",
 				     mode);
 		else
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 		f = NULL;
 	}
-	if (f != NULL) 
+	if (f != NULL)
 		f = dircheck(f);
 	return (PyObject *)f;
 }
