@@ -40,19 +40,21 @@ READ = 1
 WRITE = 2
 
 
-def findtemplate():
+def findtemplate(template=None):
 	"""Locate the applet template along sys.path"""
+	if not template:
+		template=TEMPLATE
 	for p in sys.path:
-		template = os.path.join(p, TEMPLATE)
+		file = os.path.join(p, template)
 		try:
-			template, d1, d2 = macfs.ResolveAliasFile(template)
+			file, d1, d2 = macfs.ResolveAliasFile(file)
 			break
 		except (macfs.error, ValueError):
 			continue
 	else:
-		raise BuildError, "Template %s not found on sys.path" % `TEMPLATE`
-	template = template.as_pathname()
-	return template
+		raise BuildError, "Template %s not found on sys.path" % `template`
+	file = file.as_pathname()
+	return file
 
 
 def process(template, filename, output, copy_codefragment):
