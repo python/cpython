@@ -183,7 +183,7 @@ def record(v, info, filename, audiofilename):
 	while not gl.qtest():
 		try:
 			cd, id = v.GetCaptureData()
-		except RuntimeError:
+		except sv.error:
 			time.millisleep(10) # XXX is this necessary?
 			continue
 		id = id + 2*rate

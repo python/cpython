@@ -273,7 +273,7 @@ class Displayer(VideoParams):
 	# setinfo() must reset some internal flags
 
 	def setinfo(self, values):
-		VideoParams.setinfo(values)
+		VideoParams.setinfo(self, values)
 		self.colormapinited = 0
 		self.skipchrom = 0
 		self.color0 = None
@@ -282,33 +282,41 @@ class Displayer(VideoParams):
 	# Show one frame, initializing the window if necessary
 
 	def showframe(self, data, chromdata):
+		self.showpartframe(data, chromdata, \
+			  (0,0,self.width,self.height))
+
+	def showpartframe(self, data, chromdata, (x,y,w,h)):
 		if not self.colormapinited:
 			self.initcolormap()
 		if self.fixcolor0:
 			gl.mapcolor(self.color0)
 			self.fixcolor0 = 0
-		w, h, pf = self.width, self.height, self.packfactor
+		pf = self.packfactor
 		factor = self.magnify
 		if pf: factor = factor * pf
 		if chromdata and not self.skipchrom:
 			cp = self.chrompack
+			cx = int(x*factor*cp) + self.xorigin
+			cy = int(y*factor*cp) + self.yorigin
 			cw = (w+cp-1)/cp
 			ch = (h+cp-1)/cp
 			gl.rectzoom(factor*cp, factor*cp)
 			gl.pixmode(GL.PM_SIZE, 16)
 			gl.writemask(self.mask - ((1 << self.c0bits) - 1))
-			gl.lrectwrite(self.xorigin, self.yorigin, \
-				self.xorigin + cw - 1, self.yorigin + ch - 1, \
-				chromdata)
+			gl.lrectwrite(cx, cy, cx + cw - 1, cy + ch - 1, \
+				  chromdata)
 		#
 		if pf:
 			gl.writemask((1 << self.c0bits) - 1)
 			gl.pixmode(GL.PM_SIZE, 8)
 			w = w/pf
 			h = h/pf
+			x = x/pf
+			y = y/pf
 		gl.rectzoom(factor, factor)
-		gl.lrectwrite(self.xorigin, self.yorigin, \
-			self.xorigin + w - 1, self.yorigin + h - 1, data)
+		x = int(x*factor)+self.xorigin
+		y = int(y*factor)+self.yorigin
+		gl.lrectwrite(x, y, x + w - 1, y + h - 1, data)
 		gl.gflush()
 
 	# Initialize the window: set RGB or colormap mode as required,
