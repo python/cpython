@@ -952,7 +952,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;BUILD=46;$(NoInherit)"/>
+					PreprocessorDefinitions="BUILD=46"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
@@ -960,7 +960,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;BUILD=46;$(NoInherit)"/>
+					PreprocessorDefinitions="BUILD=47"/>
 			</FileConfiguration>
 		</File>
 		<File
