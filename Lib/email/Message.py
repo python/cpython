@@ -422,7 +422,11 @@ class Message:
         if value is missing:
             # This should have no parameters
             return self.get_default_type()
-        return paramre.split(value)[0].lower().strip()
+        ctype = paramre.split(value)[0].lower().strip()
+        # RFC 2045, section 5.2 says if its invalid, use text/plain
+        if ctype.count('/') <> 1:
+            return 'text/plain'
+        return ctype
 
     def get_content_maintype(self):
         """Returns the message's main content type.
@@ -432,8 +436,6 @@ class Message:
         ValueError is raised.
         """
         ctype = self.get_content_type()
-        if ctype.count('/') <> 1:
-            raise ValueError, 'No maintype found in: %s' % ctype
         return ctype.split('/')[0]
 
     def get_content_subtype(self):
@@ -444,8 +446,6 @@ class Message:
         ValueError is raised.
         """
         ctype = self.get_content_type()
-        if ctype.count('/') <> 1:
-            raise ValueError, 'No subtype found in: %s' % ctype
         return ctype.split('/')[1]
 
     def get_default_type(self):
