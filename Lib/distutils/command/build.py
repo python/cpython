@@ -26,10 +26,12 @@ class build (Command):
          "build-purelib or build-platlib"),
         ('build-temp=', 't',
          "temporary build directory"),
+        ('compiler=', 'c',
+         "specify the compiler type"),
         ('debug', 'g',
          "compile extensions and libraries with debugging information"),
         ('force', 'f',
-         "forcibly build everything (ignore file timestamps"),
+         "forcibly build everything (ignore file timestamps)"),
         ]
 
     def initialize_options (self):
@@ -40,6 +42,7 @@ class build (Command):
         self.build_platlib = None
         self.build_lib = None
         self.build_temp = None
+        self.compiler = None
         self.debug = None
         self.force = 0
 
