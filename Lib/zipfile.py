@@ -89,7 +89,7 @@ class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
 
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
-        self.filename = filename        # Name of the file in the archive
+        self.filename = _normpath(filename) # Name of the file in the archive
         self.date_time = date_time      # year, month, day, hour, min, sec
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
@@ -128,6 +128,17 @@ class ZipInfo:
                  compress_size, file_size,
                  len(self.filename), len(self.extra))
         return header + self.filename + self.extra
+
+
+# This is used to ensure paths in generated ZIP files always use
+# forward slashes as the directory separator, as required by the
+# ZIP format specification.
+if os.sep != "/":
+    def _normpath(path):
+        return path.replace(os.sep, "/")
+else:
+    def _normpath(path):
+        return path
 
 
 class ZipFile:
