@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Support for arbitrary objects supporting the read-only buffer
+  interface as the co_code field of code objects (something that was
+  only possible to create from C code) has been removed.
+
 - Made omitted callback and None equivalent for weakref.ref() and
   weakref.proxy(); the None case wasn't handled correctly in all
   cases.
