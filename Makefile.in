@@ -289,7 +289,7 @@ maninstall:
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
 MACHDEPS=	$(PLATDIR)
-LIBSUBDIRS=	lib-old lib-tk test test/output encodings \
+LIBSUBDIRS=	lib-old lib-tk site-packages test test/output encodings \
 		distutils distutils/command $(MACHDEPS)
 libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
