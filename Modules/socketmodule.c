@@ -1886,7 +1886,7 @@ BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 }
 
 static char inet_ntoa_doc[] = 
-"inet_aton(packed_ip) -> ip_address_string\n\
+"inet_ntoa(packed_ip) -> ip_address_string\n\
 \n\
 Convert an IP address from 32-bit packed binary format to string format";
 
