@@ -41,8 +41,13 @@ Copyright (C) 1994 Steen Lumholt.
 #define MAC_TCL
 #endif
 
+#ifdef TK_FRAMEWORK
+#include <Tcl/tcl.h>
+#include <Tk/tk.h>
+#else
 #include <tcl.h>
 #include <tk.h>
+#endif
 
 #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
 
@@ -454,6 +459,7 @@ Tkapp_New(char *screenName, char *baseName, char *className, int interactive)
 	ClearMenuBar();
 	TkMacInitMenus(v->interp);
 #endif
+
 	/* Delete the 'exit' command, which can screw things up */
 	Tcl_DeleteCommand(v->interp, "exit");
 
@@ -1580,7 +1586,7 @@ Tktt_Repr(PyObject *self)
 	char buf[100];
 
 	PyOS_snprintf(buf, sizeof(buf), "<tktimertoken at %p%s>", v,
-		      v->func == NULL ? ", handler deleted" : "");
+	                v->func == NULL ? ", handler deleted" : "");
 	return PyString_FromString(buf);
 }
 
@@ -2136,6 +2142,22 @@ init_tkinter(void)
 
 	Tktt_Type.ob_type = &PyType_Type;
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
+
+
+#ifdef TK_AQUA
+	/* Tk_MacOSXSetupTkNotifier must be called before Tcl's subsystems
+	 * start waking up.  Note that Tcl_FindExecutable will do this, this
+	 * code must be above it! The original warning from
+	 * tkMacOSXAppInit.c is copied below.
+	 *
+	 * NB - You have to swap in the Tk Notifier BEFORE you start up the
+	 * Tcl interpreter for now.  It probably should work to do this
+	 * in the other order, but for now it doesn't seem to.
+	 *
+	 */
+	Tk_MacOSXSetupTkNotifier();
+#endif
+
 
 	/* This helps the dynamic loader; in Unicode aware Tcl versions
 	   it also helps Tcl find its encodings. */
