@@ -18,11 +18,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #include "myproto.h"
-#include "mymalloc.h" /* For ANY */
 #include "intrcheck.h"
 
 /* Copied here from ceval.h -- can't include that file. */
-int Py_AddPendingCall(int (*func)(ANY *), ANY *arg);
+int Py_AddPendingCall(int (*func)(void *), void *arg);
 
 
 #ifdef QUICKWIN

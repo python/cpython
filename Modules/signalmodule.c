@@ -633,7 +633,7 @@ PyErr_SetInterrupt(void)
 {
 	is_tripped++;
 	Handlers[SIGINT].tripped = 1;
-	Py_AddPendingCall((int (*)(ANY *))PyErr_CheckSignals, NULL);
+	Py_AddPendingCall((int (*)(void *))PyErr_CheckSignals, NULL);
 }
 
 void

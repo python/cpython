@@ -18,7 +18,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define RTLD_LAZY 1
 #endif
 
-typedef ANY *PyUnivPtr;
+typedef void *PyUnivPtr;
 typedef struct {
 	PyObject_HEAD
 	PyUnivPtr *dl_handle;

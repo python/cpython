@@ -962,7 +962,7 @@ int (*_Py_abstract_hack)(PyObject *) = &PyObject_Size;
 
 /* Python's malloc wrappers (see mymalloc.h) */
 
-ANY *
+void *
 PyMem_Malloc(size_t nbytes)
 {
 #if _PyMem_EXTRA > 0
@@ -972,8 +972,8 @@ PyMem_Malloc(size_t nbytes)
 	return PyMem_MALLOC(nbytes);
 }
 
-ANY *
-PyMem_Realloc(ANY *p, size_t nbytes)
+void *
+PyMem_Realloc(void *p, size_t nbytes)
 {
 #if _PyMem_EXTRA > 0
 	if (nbytes == 0)
@@ -983,7 +983,7 @@ PyMem_Realloc(ANY *p, size_t nbytes)
 }
 
 void
-PyMem_Free(ANY *p)
+PyMem_Free(void *p)
 {
 	PyMem_FREE(p);
 }
@@ -991,20 +991,20 @@ PyMem_Free(ANY *p)
 
 /* Python's object malloc wrappers (see objimpl.h) */
 
-ANY *
+void *
 PyObject_Malloc(size_t nbytes)
 {
 	return PyObject_MALLOC(nbytes);
 }
 
-ANY *
-PyObject_Realloc(ANY *p, size_t nbytes)
+void *
+PyObject_Realloc(void *p, size_t nbytes)
 {
 	return PyObject_REALLOC(p, nbytes);
 }
 
 void
-PyObject_Free(ANY *p)
+PyObject_Free(void *p)
 {
 	PyObject_FREE(p);
 }

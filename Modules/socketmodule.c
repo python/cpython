@@ -799,7 +799,7 @@ PySocketSock_setsockopt(PySocketSockObject *s, PyObject *args)
 				      &level, &optname, &buf, &buflen))
 			return NULL;
 	}
-	res = setsockopt(s->sock_fd, level, optname, (ANY *)buf, buflen);
+	res = setsockopt(s->sock_fd, level, optname, (void *)buf, buflen);
 	if (res < 0)
 		return PySocket_Err();
 	Py_INCREF(Py_None);
@@ -841,7 +841,7 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 		int flag = 0;
 		socklen_t flagsize = sizeof flag;
 		res = getsockopt(s->sock_fd, level, optname,
-				 (ANY *)&flag, &flagsize);
+				 (void *)&flag, &flagsize);
 		if (res < 0)
 			return PySocket_Err();
 		return PyInt_FromLong(flag);
@@ -855,7 +855,7 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 	res = getsockopt(s->sock_fd, level, optname,
-			 (ANY *)PyString_AsString(buf), &buflen);
+			 (void *)PyString_AsString(buf), &buflen);
 	if (res < 0) {
 		Py_DECREF(buf);
 		return PySocket_Err();
@@ -1230,7 +1230,7 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 #if defined(PYOS_OS2)
 		     (struct sockaddr *)addrbuf, &addrlen
 #else
-		     (ANY *)addrbuf, &addrlen
+		     (void *)addrbuf, &addrlen
 #endif
 #else
 		     (struct sockaddr *)addrbuf, &addrlen

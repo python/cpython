@@ -40,7 +40,7 @@ DL_IMPORT(int) PyEval_GetRestricted(void);
 
 DL_IMPORT(int) Py_FlushLine(void);
 
-DL_IMPORT(int) Py_AddPendingCall(int (*func)(ANY *), ANY *arg);
+DL_IMPORT(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 DL_IMPORT(int) Py_MakePendingCalls(void);
 
 

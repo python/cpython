@@ -101,8 +101,8 @@ recommended to use PyObject_{New, NewVar, Del}. */
 #endif
 
 #ifdef NEED_TO_DECLARE_OBJECT_MALLOC_AND_FRIEND
-extern ANY *PyCore_OBJECT_MALLOC_FUNC PyCore_OBJECT_MALLOC_PROTO;
-extern ANY *PyCore_OBJECT_REALLOC_FUNC PyCore_OBJECT_REALLOC_PROTO;
+extern void *PyCore_OBJECT_MALLOC_FUNC PyCore_OBJECT_MALLOC_PROTO;
+extern void *PyCore_OBJECT_REALLOC_FUNC PyCore_OBJECT_REALLOC_PROTO;
 extern void PyCore_OBJECT_FREE_FUNC PyCore_OBJECT_FREE_PROTO;
 #endif
 
@@ -137,14 +137,14 @@ extern void PyCore_OBJECT_FREE_FUNC PyCore_OBJECT_FREE_PROTO;
    as Python. These wrappers *do not* make sure that allocating 0
    bytes returns a non-NULL pointer. Returned pointers must be checked
    for NULL explicitly; no action is performed on failure. */
-extern DL_IMPORT(ANY *) PyObject_Malloc(size_t);
-extern DL_IMPORT(ANY *) PyObject_Realloc(ANY *, size_t);
-extern DL_IMPORT(void) PyObject_Free(ANY *);
+extern DL_IMPORT(void *) PyObject_Malloc(size_t);
+extern DL_IMPORT(void *) PyObject_Realloc(void *, size_t);
+extern DL_IMPORT(void) PyObject_Free(void *);
 
 /* Macros */
 #define PyObject_MALLOC(n)           PyCore_OBJECT_MALLOC(n)
-#define PyObject_REALLOC(op, n)      PyCore_OBJECT_REALLOC((ANY *)(op), (n))
-#define PyObject_FREE(op)            PyCore_OBJECT_FREE((ANY *)(op))
+#define PyObject_REALLOC(op, n)      PyCore_OBJECT_REALLOC((void *)(op), (n))
+#define PyObject_FREE(op)            PyCore_OBJECT_FREE((void *)(op))
 
 /*
  * Generic object allocator interface

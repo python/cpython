@@ -293,7 +293,7 @@ static int
 gettmarg(PyObject *args, struct tm *p)
 {
 	int y;
-	memset((ANY *) p, '\0', sizeof(struct tm));
+	memset((void *) p, '\0', sizeof(struct tm));
 
 	if (!PyArg_Parse(args, "(iiiiiiiii)",
 			 &y,
@@ -343,7 +343,7 @@ time_strftime(PyObject *self, PyObject *args)
 	char *outbuf = 0;
 	size_t i;
 
-	memset((ANY *) &buf, '\0', sizeof(buf));
+	memset((void *) &buf, '\0', sizeof(buf));
 
 	if (!PyArg_ParseTuple(args, "sO:strftime", &fmt, &tup) 
 	    || !gettmarg(tup, &buf))
@@ -398,7 +398,7 @@ time_strptime(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s|s:strptime", &buf, &fmt))
 	        return NULL;
-	memset((ANY *) &tm, '\0', sizeof(tm));
+	memset((void *) &tm, '\0', sizeof(tm));
 	s = strptime(buf, fmt, &tm);
 	if (s == NULL) {
 		PyErr_SetString(PyExc_ValueError, "format mismatch");
