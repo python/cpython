@@ -1,0 +1,44 @@
+<p> This document was generated using the <a
+    href="http://www-dsed.llnl.gov/files/programs/unix/latex2html/manual/">
+    <strong>LaTeX</strong>2<tt>HTML</tt></a> translator.
+</p>
+
+<p> <a
+    href="http://www-dsed.llnl.gov/files/programs/unix/latex2html/manual/">
+    <strong>LaTeX</strong>2<tt>HTML</tt></a> is Copyright &copy;
+  1993, 1994, 1995, 1996, 1997, <a
+    href="http://cbl.leeds.ac.uk/nikos/personal.html">Nikos
+    Drakos</a>, Computer Based Learning Unit, University of
+  Leeds, and Copyright &copy; 1997, 1998, <a
+    href="http://www-math.mpce.mq.edu.au/&#126;ross/">Ross
+    Moore</a>, Mathematics Department, Macquarie University,
+  Sydney.
+</p>
+
+<p> The application of <a
+    href="http://www-dsed.llnl.gov/files/programs/unix/latex2html/manual/">
+    <strong>LaTeX</strong>2<tt>HTML</tt></a> to the Python
+  documentation has been heavily tailored by Fred L. Drake,
+  Jr.  Original navigation icons were contributed by Christopher
+  Petrilli.
+</p>
+
+<hr>
+
+<h2>Comments and Questions</h2>
+
+<p> General comments and questions regarding this document should
+  be sent by email to <a href="mailto:python-docs@python.org"
+    >python-docs@python.org</a>.  If you find specific errors in
+  this document, please report the bug at the <a
+    href="http://www.python.org/python-bugs/">Python Bugs
+    List</a>.
+</p>
+
+<p> Questions regarding how to use the information in this
+  document should be sent to the Python news group, <a
+    href="news:comp.lang.python">comp.lang.python</a>, or the <a
+    href="http://www.python.org/mailman/listinfo/python-list"
+    >Python mailing list</a> (which is gated to the newsgroup and
+  carries the same content).
+</p>
