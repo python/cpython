@@ -42,11 +42,6 @@ static void err_input(perrdetail *);
 static void initsigs(void);
 static void call_sys_exitfunc(void);
 static void call_ll_exitfuncs(void);
-
-#ifdef Py_TRACE_REFS
-int _Py_AskYesNo(char *prompt);
-#endif
-
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
 extern void _PyCodecRegistry_Init(void);
@@ -1388,21 +1383,6 @@ initsigs(void)
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
-
-#ifdef Py_TRACE_REFS
-/* Ask a yes/no question */
-
-int
-_Py_AskYesNo(char *prompt)
-{
-	char buf[256];
-	
-	fprintf(stderr, "%s [ny] ", prompt);
-	if (fgets(buf, sizeof buf, stdin) == NULL)
-		return 0;
-	return buf[0] == 'y' || buf[0] == 'Y';
-}
-#endif
 
 #ifdef MPW
 
