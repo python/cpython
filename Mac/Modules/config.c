@@ -278,6 +278,7 @@ extern void initCtl();
 extern void initDlg();
 extern void initEvt();
 extern void initMenu();
+extern void initQd();
 extern void initRes();
 extern void initSnd();
 extern void initWin();
@@ -321,17 +322,16 @@ struct {
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
-#ifdef THINK_C
 /* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
 	{"Menu", initMenu},
+	{"Qd", initQd},
 	{"Res", initRes},
 	{"Snd", initSnd},
 	{"Win", initWin},
-#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
