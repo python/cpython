@@ -142,6 +142,12 @@ class Header:
         """A synonym for self.encode()."""
         return self.encode()
 
+    def __unicode__(self):
+        """Helper for the built-in unicode function."""
+        # charset item is a Charset instance so we need to stringify it.
+        uchunks = [unicode(s, str(charset)) for s, charset in self._chunks]
+        return u''.join(uchunks)
+
     def append(self, s, charset=None):
         """Append string s with Charset charset to the MIME header.
 
