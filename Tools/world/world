@@ -1,10 +1,7 @@
-#! /depot/sundry/plat/bin/python
-#
-# Note: you may have to edit the top line in this file.
+#! /usr/bin/env python
 #
 # Usage: world addr1 [addr2 ...]
 #
-# $Id$
 
 # This little script will take an Internet address of the form
 # foobar@some.place.domain and will print out where in the world that
@@ -12,13 +9,37 @@
 # the `domain' part against a hard-coded list, which can probably
 # change fairly quickly given the world's political fluidity.
 
+# TBD: it would be cool if this script could update itself.  I can't
+# remember where I got the original list of top level domain
+# abbreviations -- probably from the InterNIC.  So far I haven't hit
+# any that this script can't resolve, so I assume they don't change
+# too frequently.
+
 import sys
-prog = sys.argv[0]
-del sys.argv[0]
-if not sys.argv:
-    print "No addresses provided.\nUsage:", prog, "addr1 [addr2 ...]\n"
+import string
 
 
+def usage(msg=None, exit=0):
+    if msg: print msg
+    print 'Usage:', sys.argv[0], 'addr [addr ...]'
+    sys.exit(exit)
+
+
+def resolve(rawaddr):
+    parts = string.splitfields(rawaddr, '.')
+    if not len(parts):
+	print 'No top-level domain in:', rawaddr
+	return
+    addr = parts[-1]
+    if nameorg.has_key(addr):
+	print addr, 'is from a USA', nameorg[addr], 'organization'
+    elif country.has_key(addr):
+	print addr, 'originated from', country[addr]
+    else:
+	print 'Where in the world is', addr, '?'
+
+
+
 # The mappings
 nameorg = {
     "arpa": "Arpanet",
@@ -28,10 +49,11 @@ nameorg = {
     "mil": "military",
     "net": "networking",
     "org": "non-commercial",
-    "int": "international"
+    "int": "international",
     }
 
 
+
 country = {
     "ag": "Antigua and Barbuda",
     "al": "Albania",
@@ -123,21 +145,10 @@ country = {
     "vi": "Virgin Islands",
     "yu": "Yugoslavia",
     "za": "South Africa",
-    "zw": "Zimbabwe"
+    "zw": "Zimbabwe",
     }
 
-import string
 
-while sys.argv:
-    rawaddr = sys.argv[0]
-    del sys.argv[0]
-
-    components = string.splitfields(rawaddr, ".")
-    addr = components[-1]
-
-    if nameorg.has_key(addr):
-	print addr, "is from a USA", nameorg[addr], "organization"
-    elif country.has_key(addr):
-	print addr, "originated from", country[addr]
-    else:
-	print "I have no idea where", addr, "came from!"
+
+if __name__ == '__main__':
+    map(resolve, sys.argv[1:])
