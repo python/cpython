@@ -545,7 +545,7 @@ Notes:
 
 \item[(2)] Keys and values are listed in random order.
 
-\item[(3)] \code{b} must be of the same type as \code{a}.
+\item[(3)] \var{b} must be of the same type as \var{a}.
 
 \item[(4)] Never raises an exception if \var{k} is not in the map,
 instead it returns \var{f}.  \var{f} is optional, when not provided
@@ -666,6 +666,8 @@ built-in functions and methods, e.g.\ \code{posix.popen()} and
 \code{posix.fdopen()} and the \code{makefile()} method of socket
 objects.
 \bifuncindex{open}
+\refbimodindex{posix}
+\refbimodindex{socket}
 
 When a file operation fails for an I/O-related reason, the exception
 \code{IOError} is raised.  This includes situations where the
