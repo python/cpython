@@ -121,6 +121,7 @@ Here is an example session that uses the \samp{GET} method:
 >>> h.putrequest('GET', '/index.html')
 >>> h.putheader('Accept', 'text/html')
 >>> h.putheader('Accept', 'text/plain')
+>>> h.putheader('Host', 'www.cwi.nl')
 >>> h.endheaders()
 >>> errcode, errmsg, headers = h.getreply()
 >>> print errcode # Should be 200
