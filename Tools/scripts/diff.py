@@ -31,8 +31,8 @@ def main():
 
     fromdate = time.ctime(os.stat(fromfile).st_mtime)
     todate = time.ctime(os.stat(tofile).st_mtime)
-    fromlines = open(fromfile).readlines()
-    tolines = open(tofile).readlines()
+    fromlines = open(fromfile, 'U').readlines()
+    tolines = open(tofile, 'U').readlines()
 
     if options.u:
         diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
