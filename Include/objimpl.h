@@ -34,10 +34,7 @@ You must first include "object.h".
    allocator) and initialize its object header fields.
 
 Note that objects created with PyObject_{New, NewVar} are allocated
-within the Python heap by the raw memory allocator (usually the system
-malloc).  If you want to use the specialized Python allocator use
-PyMalloc_New and PyMalloc_NewVar to allocate the objects and
-PyMalloc_Del to free them.
+using the specialized Python allocator (implemented in obmalloc.c).
 
 In case a specific form of memory management is needed, implying that
 the objects would not reside in the Python heap (for example standard
@@ -82,10 +79,40 @@ extern DL_IMPORT(void *) PyObject_Malloc(size_t);
 extern DL_IMPORT(void *) PyObject_Realloc(void *, size_t);
 extern DL_IMPORT(void) PyObject_Free(void *);
 
+
 /* Macros */
-#define PyObject_MALLOC(n)           PyMem_MALLOC(n)
-#define PyObject_REALLOC(op, n)      PyMem_REALLOC((void *)(op), (n))
-#define PyObject_FREE(op)            PyMem_FREE((void *)(op))
+#ifdef WITH_PYMALLOC
+#ifdef PYMALLOC_DEBUG
+DL_IMPORT(void *) _PyObject_DebugMalloc(size_t nbytes);
+DL_IMPORT(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
+DL_IMPORT(void) _PyObject_DebugFree(void *p);
+DL_IMPORT(void) _PyObject_DebugDumpAddress(const void *p);
+DL_IMPORT(void) _PyObject_DebugCheckAddress(const void *p);
+DL_IMPORT(void) _PyObject_DebugDumpStats(void);
+#define PyObject_MALLOC _PyObject_DebugMalloc
+#define PyObject_Malloc _PyObject_DebugMalloc
+#define PyObject_REALLOC _PyObject_DebugRealloc
+#define PyObject_Realloc _PyObject_DebugRealloc
+#define PyObject_FREE _PyObject_DebugFree
+#define PyObject_Free _PyObject_DebugFree
+
+#else	/* WITH_PYMALLOC && ! PYMALLOC_DEBUG */
+#define PyObject_MALLOC		PyObject_Malloc
+#define PyObject_REALLOC	PyObject_Realloc
+#define PyObject_FREE		PyObject_Free
+#endif
+
+#else	/* ! WITH_PYMALLOC */
+#define PyObject_MALLOC		PyMem_MALLOC
+#define PyObject_REALLOC	PyMem_REALLOC
+#define PyObject_FREE		PyMem_FREE
+#endif	/* WITH_PYMALLOC */
+
+#define PyObject_Del PyObject_Free
+#define PyObject_DEL PyObject_FREE
+
+/* for source compatibility with 2.2 */
+#define _PyObject_Del PyObject_Free
 
 /*
  * Generic object allocator interface
@@ -98,13 +125,11 @@ extern DL_IMPORT(PyVarObject *) PyObject_InitVar(PyVarObject *,
                                                  PyTypeObject *, int);
 extern DL_IMPORT(PyObject *) _PyObject_New(PyTypeObject *);
 extern DL_IMPORT(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
-extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 
 #define PyObject_New(type, typeobj) \
 		( (type *) _PyObject_New(typeobj) )
 #define PyObject_NewVar(type, typeobj, n) \
 		( (type *) _PyObject_NewVar((typeobj), (n)) )
-#define PyObject_Del(op) _PyObject_Del((PyObject *)(op))
 
 /* Macros trading binary compatibility for speed. See also pymem.h.
    Note that these macros expect non-NULL object pointers.*/
@@ -146,8 +171,6 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
       (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE((typeobj),(n)) ),\
       (typeobj), (n)) )
 
-#define PyObject_DEL(op) PyObject_FREE(op)
-
 /* This example code implements an object constructor with a custom
    allocator, where PyObject_New is inlined, and shows the important
    distinction between two steps (at least):
@@ -178,22 +201,6 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
    constructor you would start directly with PyObject_Init/InitVar. */
 
 /*
- * The PyMalloc Object Allocator
- * =============================
- */
-
-extern DL_IMPORT(PyObject *) _PyMalloc_New(PyTypeObject *);
-extern DL_IMPORT(PyVarObject *) _PyMalloc_NewVar(PyTypeObject *, int);
-extern DL_IMPORT(void) _PyMalloc_Del(PyObject *);
-
-#define PyMalloc_New(type, typeobj) \
-		( (type *) _PyMalloc_New(typeobj) )
-#define PyMalloc_NewVar(type, typeobj, n) \
-		( (type *) _PyMalloc_NewVar((typeobj), (n)) )
-#define PyMalloc_Del(op) _PyMalloc_Del((PyObject *)(op))
-
-
-/*
  * Garbage Collection Support
  * ==========================
  *
@@ -209,17 +216,12 @@ extern DL_IMPORT(void) _PyMalloc_Del(PyObject *);
 #define PyObject_IS_GC(o) (PyType_IS_GC((o)->ob_type) && \
 	((o)->ob_type->tp_is_gc == NULL || (o)->ob_type->tp_is_gc(o)))
 
-extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *, int);
 extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
-
 #define PyObject_GC_Resize(type, op, n) \
 		( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
 
-extern DL_IMPORT(PyObject *) _PyObject_GC_New(PyTypeObject *);
-extern DL_IMPORT(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, int);
-extern DL_IMPORT(void) _PyObject_GC_Del(PyObject *);
-extern DL_IMPORT(void) _PyObject_GC_Track(PyObject *);
-extern DL_IMPORT(void) _PyObject_GC_UnTrack(PyObject *);
+/* for source compatibility with 2.2 */
+#define _PyObject_GC_Del PyObject_GC_Del
 
 #ifdef WITH_CYCLE_GC
 
@@ -257,18 +259,22 @@ extern PyGC_Head _PyGC_generation0;
 	g->gc.gc_next = NULL; \
     } while (0);
 
-#define PyObject_GC_Track(op) _PyObject_GC_Track((PyObject *)op)
-#define PyObject_GC_UnTrack(op) _PyObject_GC_UnTrack((PyObject *)op)
-
+extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(size_t);
+extern DL_IMPORT(PyObject *) _PyObject_GC_New(PyTypeObject *);
+extern DL_IMPORT(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, int);
+extern DL_IMPORT(void) PyObject_GC_Track(void *);
+extern DL_IMPORT(void) PyObject_GC_UnTrack(void *);
+extern DL_IMPORT(void) PyObject_GC_Del(void *);
 
 #define PyObject_GC_New(type, typeobj) \
 		( (type *) _PyObject_GC_New(typeobj) )
 #define PyObject_GC_NewVar(type, typeobj, n) \
 		( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
-#define PyObject_GC_Del(op) _PyObject_GC_Del((PyObject *)(op))
+
 
 #else /* !WITH_CYCLE_GC */
 
+#define _PyObject_GC_Malloc PyObject_Malloc
 #define PyObject_GC_New PyObject_New
 #define PyObject_GC_NewVar PyObject_NewVar
 #define PyObject_GC_Del	 PyObject_Del
