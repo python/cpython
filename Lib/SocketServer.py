@@ -304,6 +304,7 @@ class ForkingMixIn:
                 os._exit(0)
             except:
                 try:
+                    self.socket.close()
                     self.handle_error(request,
                                       client_address)
                 finally:
