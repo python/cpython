@@ -5,7 +5,7 @@
 
 # Usage:
 #
-# Vinfo [-d] [-q] [-s] [file] ...
+# Vinfo [-d] [-q] [-s] [-t] [file] ...
 
 
 # Options:
@@ -13,6 +13,7 @@
 # -d       : print deltas between frames instead of frame times
 # -q       : quick: don't read the frames
 # -s       : don't print times (but do count frames and print the total)
+# -t       : terse (one line/file, implies -s)
 # file ... : file(s) to inspect; default film.video
 
 
@@ -86,6 +87,13 @@ def process(filename):
 		print string.ljust(vin.format, 8),
 		print string.rjust(`vin.width`, 4),
 		print string.rjust(`vin.height`, 4),
+		s = string.rjust(`vin.packfactor`, 2)
+		if vin.packfactor and vin.format not in ('rgb', 'jpeg') and \
+			  (vin.width/vin.packfactor) % 4 <> 0:
+			s = s + '!'
+		else:
+			s = s + ' '
+		print s,
 		sys.stdout.flush()
 	else:
 		vin.printinfo()
