@@ -1634,8 +1634,6 @@ merge_compute_minrun(int n)
 	return n + r;
 }
 
-static PyTypeObject immutable_list_type;
-
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
  * list will be some permutation of its input state (nothing is lost or
@@ -1648,7 +1646,9 @@ listsort(PyListObject *self, PyObject *args)
 	PyObject **lo, **hi;
 	int nremaining;
 	int minrun;
-	PyTypeObject *savetype;
+	int saved_ob_size;
+	PyObject **saved_ob_item;
+	PyObject **empty_ob_item;
 	PyObject *compare = NULL;
 	PyObject *result = NULL;	/* guilty until proved innocent */
 
@@ -1659,17 +1659,24 @@ listsort(PyListObject *self, PyObject *args)
 	}
 	merge_init(&ms, compare);
 
-	savetype = self->ob_type;
-	self->ob_type = &immutable_list_type;
+	/* The list is temporarily made empty, so that mutations performed
+	 * by comparison functions can't affect the slice of memory we're
+	 * sorting (allowing mutations during sorting is a core-dump
+	 * factory, since ob_item may change).
+	 */
+	saved_ob_size = self->ob_size;
+	saved_ob_item = self->ob_item;
+	self->ob_size = 0;
+	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0);
 
-	nremaining = self->ob_size;
+	nremaining = saved_ob_size;
 	if (nremaining < 2)
 		goto succeed;
 
 	/* March over the array once, left to right, finding natural runs,
 	 * and extending short natural runs to minrun elements.
 	 */
-	lo = self->ob_item;
+	lo = saved_ob_item;
 	hi = lo + nremaining;
 	minrun = merge_compute_minrun(nremaining);
 	do {
@@ -1706,13 +1713,25 @@ listsort(PyListObject *self, PyObject *args)
 	if (merge_force_collapse(&ms) < 0)
 		goto fail;
 	assert(ms.n == 1);
-	assert(ms.pending[0].base == self->ob_item);
-	assert(ms.pending[0].len == self->ob_size);
+	assert(ms.pending[0].base == saved_ob_item);
+	assert(ms.pending[0].len == saved_ob_size);
 
 succeed:
 	result = Py_None;
 fail:
- 	self->ob_type = savetype;
+	if (self->ob_item != empty_ob_item || self->ob_size) {
+		/* The user mucked with the list during the sort. */
+		(void)list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL);
+		if (result != NULL) {
+			PyErr_SetString(PyExc_ValueError,
+					"list modified during sort");
+			result = NULL;
+		}
+	}
+	if (self->ob_item == empty_ob_item)
+		PyMem_FREE(empty_ob_item);
+	self->ob_size = saved_ob_size;
+	self->ob_item = saved_ob_item;
 	merge_freemem(&ms);
 	Py_XINCREF(result);
 	return result;
@@ -2325,92 +2344,6 @@ PyTypeObject PyList_Type = {
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
 	PyObject_GC_Del,			/* tp_free */
-};
-
-
-/* During a sort, we really can't have anyone modifying the list; it could
-   cause core dumps.  Thus, we substitute a dummy type that raises an
-   explanatory exception when a modifying operation is used.  Caveat:
-   comparisons may behave differently; but I guess it's a bad idea anyway to
-   compare a list that's being sorted... */
-
-static PyObject *
-immutable_list_op(void)
-{
-	PyErr_SetString(PyExc_TypeError,
-			"a list cannot be modified while it is being sorted");
-	return NULL;
-}
-
-static PyMethodDef immutable_list_methods[] = {
-	{"append",	(PyCFunction)immutable_list_op, METH_VARARGS},
-	{"insert",	(PyCFunction)immutable_list_op, METH_VARARGS},
-	{"extend",      (PyCFunction)immutable_list_op,  METH_O},
-	{"pop",		(PyCFunction)immutable_list_op, METH_VARARGS},
-	{"remove",	(PyCFunction)immutable_list_op, METH_VARARGS},
-	{"index",	(PyCFunction)listindex,         METH_O},
-	{"count",	(PyCFunction)listcount,         METH_O},
-	{"reverse",	(PyCFunction)immutable_list_op, METH_VARARGS},
-	{"sort",	(PyCFunction)immutable_list_op, METH_VARARGS},
-	{NULL,		NULL}		/* sentinel */
-};
-
-static int
-immutable_list_ass(void)
-{
-	immutable_list_op();
-	return -1;
-}
-
-static PySequenceMethods immutable_list_as_sequence = {
-	(inquiry)list_length,			/* sq_length */
-	(binaryfunc)list_concat,		/* sq_concat */
-	(intargfunc)list_repeat,		/* sq_repeat */
-	(intargfunc)list_item,			/* sq_item */
-	(intintargfunc)list_slice,		/* sq_slice */
-	(intobjargproc)immutable_list_ass,	/* sq_ass_item */
-	(intintobjargproc)immutable_list_ass,	/* sq_ass_slice */
-	(objobjproc)list_contains,		/* sq_contains */
-};
-
-static PyTypeObject immutable_list_type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"list (immutable, during sort)",
-	sizeof(PyListObject),
-	0,
-	0, /* Cannot happen */			/* tp_dealloc */
-	(printfunc)list_print,			/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0, /* Won't be called */		/* tp_compare */
-	(reprfunc)list_repr,			/* tp_repr */
-	0,					/* tp_as_number */
-	&immutable_list_as_sequence,		/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	list_nohash,				/* tp_hash */
-	0,					/* tp_call */
-	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
- 	list_doc,				/* tp_doc */
- 	(traverseproc)list_traverse,		/* tp_traverse */
-	0,					/* tp_clear */
-	list_richcompare,			/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
-	0,					/* tp_iternext */
-	immutable_list_methods,			/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
-	0,					/* tp_init */
-	/* NOTE: This is *not* the standard list_type struct! */
 };
 
 

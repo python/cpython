@@ -66,6 +66,16 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- Thanks to Armin Rigo, the last known way to provoke a system crash
+  by cleverly arranging for a comparison function to mutate a list
+  during a list.sort() operation has been fixed.  The effect of
+  attempting to mutate a list, or even to inspect its contents or
+  length, while a sort is in progress, is not defined by the language.
+  The C implementation of Python 2.3 attempts to detect mutations,
+  and raise ValueError if one occurs, but there's no guarantee that
+  all mutations will be caught, or that any will be caught across
+  releases or implementations.
+
 - Unicode file name processing for Windows (PEP 277) is implemented.
   All platforms now have an os.path.supports_unicode_filenames attribute,
   which is set to True on Windows NT/2000/XP, and False elsewhere.
@@ -428,7 +438,7 @@ Library
 - Added operator.pow(a,b) which is equivalent to a**b.
 
 - Added random.sample(population,k) for random sampling without replacement.
-  Returns a k length list of unique elements chosen from the population.								    
+  Returns a k length list of unique elements chosen from the population.
 
 - random.randrange(-sys.maxint-1, sys.maxint) no longer raises
   OverflowError.  That is, it now accepts any combination of 'start'

@@ -367,10 +367,10 @@ except TypeError: pass
 else: raise TestFailed, 'list sort compare function is not callable'
 
 def selfmodifyingComparison(x,y):
-    z[0] = 1
+    z.append(1)
     return cmp(x, y)
 try: z.sort(selfmodifyingComparison)
-except TypeError: pass
+except ValueError: pass
 else: raise TestFailed, 'modifying list during sort'
 
 try: z.sort(lambda x, y: 's')
