@@ -1,3 +1,23 @@
+"""Generic output formatting.
+
+Formatter objects transform an abstract flow of formatting events into
+specific output events on writer objects. Formatters manage several stack
+structures to allow various properties of a writer object to be changed and
+restored; writers need not be able to handle relative changes nor any sort
+of ``change back'' operation. Specific writer properties which may be
+controlled via formatter objects are horizontal alignment, font, and left
+margin indentations. A mechanism is provided which supports providing
+arbitrary, non-exclusive style settings to a writer as well. Additional
+interfaces facilitate formatting events which are not reversible, such as
+paragraph separation. 
+
+Writer objects encapsulate device interfaces. Abstract devices, such as
+file formats, are supported as well as physical devices. The provided
+implementations all work with abstract devices. The interface makes
+available mechanisms for setting the properties which formatter objects
+manage and inserting data into the output. 
+"""
+
 import string
 import sys
 from types import StringType

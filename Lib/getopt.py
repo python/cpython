@@ -1,4 +1,4 @@
-"""Module getopt -- Parser for command line options.
+"""Parser for command line options.
 
 This module helps scripts to parse the command line arguments in
 sys.argv.  It supports the same conventions as the Unix getopt()

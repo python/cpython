@@ -1,4 +1,5 @@
-'''An FTP client class, and some helper functions.
+"""An FTP client class and some helper functions.
+
 Based on RFC 959: File Transfer Protocol
 (FTP), by J. Postel and J. Reynolds
 
@@ -31,7 +32,7 @@ drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
 
 A nice test that reveals some of the network dialogue would be:
 python ftplib.py -d localhost -l -p -l
-'''
+"""
 
 
 import os

@@ -1,4 +1,4 @@
-"""Module 'dospath' -- common operations on DOS pathnames"""
+"""Common operations on DOS pathnames."""
 
 import os
 import stat

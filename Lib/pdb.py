@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""pdb.py -- finally, a Python debugger!"""
+"""A Python debugger."""
 
 # (See pdb.doc for documentation.)
 

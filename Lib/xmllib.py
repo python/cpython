@@ -1,4 +1,5 @@
-# A parser for XML, using the derived class as static DTD.
+"""A parser for XML, using the derived class as static DTD."""
+
 # Author: Sjoerd Mullender.
 
 import re

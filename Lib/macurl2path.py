@@ -1,5 +1,6 @@
-"""Mac specific module for conversion between pathnames and URLs.
-Do not import directly, use urllib instead."""
+"""Macintosh-specific module for conversion between pathnames and URLs.
+
+Do not import directly; use urllib instead."""
 
 import string
 import urllib

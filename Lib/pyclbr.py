@@ -1,4 +1,4 @@
-'''Parse a Python file and retrieve classes and methods.
+"""Parse a Python file and retrieve classes and methods.
 
 Parse enough of a Python file to recognize class and method
 definitions and to find out the superclasses of a class.
@@ -51,7 +51,7 @@ PACKAGE RELATED BUGS
   It can't locate the parent.  It probably needs to have the same
   hairy logic that the import locator already does.  (This logic
   exists coded in Python in the freeze package.)
-''' # ' <-- bow to font lock
+"""
 
 import os
 import sys

@@ -1,4 +1,4 @@
-"""binhex - Macintosh binhex compression/decompression
+"""Macintosh binhex compression/decompression.
 
 easy interface:
 binhex(inputfilename, outputfilename)

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-'''Mimification and unmimification of mail messages.
+"""Mimification and unmimification of mail messages.
 
 Decode quoted-printable parts of a mail message or encode using
 quoted-printable.
@@ -19,7 +19,7 @@ Interactive usage:
 	mimify.py -d [infile [outfile]]
 to encode and decode respectively.  Infile defaults to standard
 input and outfile to standard output.
-'''
+"""
 
 # Configure
 MAXLEN = 200	# if lines longer than this, encode as quoted-printable
