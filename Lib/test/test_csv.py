@@ -447,6 +447,13 @@ class TestDictFields(unittest.TestCase):
         self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
                                          "4": '4', "5": '5', "6": '6'})
 
+    def test_read_semi_sep(self):
+        reader = csv.DictReader(["1;2;abc;4;5;6\r\n"],
+                                fieldnames="1 2 3 4 5 6".split(),
+                                delimiter=';')
+        self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+                                         "4": '4', "5": '5', "6": '6'})
+
 class TestArrayWrites(unittest.TestCase):
     def test_int_write(self):
         import array
