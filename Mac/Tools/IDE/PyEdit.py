@@ -359,14 +359,15 @@ class Editor(W.Window):
 		if self.editgroup.editor.changed:
 			import EasyDialogs
 			import Qd
-			Qd.InitCursor() # XXX should be done by dialog
-			save = EasyDialogs.AskYesNoCancel('Save window "%s" before closing?' % self.title, 1)
+			Qd.InitCursor()
+			save = EasyDialogs.AskYesNoCancel('Save window "%s" before closing?' % self.title,
+					default=1, no="Don\xd5t save")
 			if save > 0:
 				if self.domenu_save():
 					return 1
 			elif save < 0:
 				return 1
-		self.globals = None	    # XXX doesn't help... all globals leak :-(
+		self.globals = None
 		W.Window.close(self)
 	
 	def domenu_close(self, *args):
@@ -564,13 +565,12 @@ class Editor(W.Window):
 			else:
 				raise W.AlertError, "Can't find a class."
 			if globals.has_key(classname):
-				locals = globals[classname].__dict__
+				klass = globals[classname]
 			else:
 				raise W.AlertError, "Can't find class \"%s\"." % classname
-			# dedent to top level
-			for i in range(len(lines)):
-				lines[i] = lines[i][1:]
-			pytext = string.join(lines, '\r')
+			# add class def
+			pytext = ("class %s:\n" % classname) + pytext
+			selfirstline = selfirstline - 1
 		elif indent > 0:
 			raise W.AlertError, "Can't run indented code."
 		
@@ -578,6 +578,10 @@ class Editor(W.Window):
 		# now a traceback will give the right line number
 		pytext = selfirstline * '\r' + pytext
 		self.execstring(pytext, globals, locals, file, modname)
+		if indent == 1 and globals[classname] is not klass:
+			# update the class in place
+			klass.__dict__.update(globals[classname].__dict__)
+			globals[classname] = klass
 	
 	def setthreadstate(self, state):
 		oldstate = self._threadstate
@@ -786,7 +790,7 @@ def _escape(where, what) :
 
 def _makewholewordpattern(word):
 	# first, escape special regex chars
-	for esc in "\\[].*^+$?":
+	for esc in "\\[]().*^+$?":
 		word = _escape(word, esc)
 	notwordcharspat = '[^' + _wordchars + ']'
 	pattern = '(' + word + ')'
