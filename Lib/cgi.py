@@ -399,7 +399,7 @@ backwards compatible and debugging classes and functions?
 
 # " <== Emacs font-lock de-bogo-kludgificocity
 
-__version__ = "2.0b3"
+__version__ = "2.0b4"
 
 
 # Imports
@@ -891,6 +891,7 @@ class FieldStorage:
 		if strippedline == last:
 		    self.done = 1
 		    break
+	    odelim = delim
 	    if line[-2:] == "\r\n":
 		delim = "\r\n"
 		line = line[:-2]
@@ -899,7 +900,7 @@ class FieldStorage:
 		line = line[:-1]
 	    else:
 		delim = ""
-	    self.file.write(delim + line)
+	    self.file.write(odelim + line)
 
     def skip_lines(self):
 	"""Internal: skip lines until outer boundary if defined."""
