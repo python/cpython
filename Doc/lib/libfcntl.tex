@@ -151,10 +151,10 @@ to lock to the end of the file.  The default for \var{whence} is also
 Examples (all on a SVR4 compliant system):
 
 \begin{verbatim}
-import struct, fcntl
+import struct, fcntl, os
 
-f = file(...)
-rv = fcntl(f, fcntl.F_SETFL, os.O_NDELAY)
+f = open(...)
+rv = fcntl.fcntl(f, fcntl.F_SETFL, os.O_NDELAY)
 
 lockdata = struct.pack('hhllhh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
 rv = fcntl.fcntl(f, fcntl.F_SETLKW, lockdata)
