@@ -506,14 +506,14 @@ decoding_feof(struct tok_state *tok)
 /* Fetch a byte from TOK, using the string buffer. */
 
 static int buf_getc(struct tok_state *tok) {
-	return *tok->str++;
+	return Py_CHARMASK(*tok->str++);
 }
 
 /* Unfetch a byte from TOK, using the string buffer. */
 
 static void buf_ungetc(int c, struct tok_state *tok) {
 	tok->str--;
-	assert(*tok->str == c);	/* tok->cur may point to read-only segment */
+	assert(Py_CHARMASK(*tok->str) == c);	/* tok->cur may point to read-only segment */
 }
 
 /* Set the readline function for TOK to ENC. For the string-based

@@ -190,6 +190,8 @@ class BuiltinTest(unittest.TestCase):
 
     def test_compile(self):
         compile('print 1\n', '', 'exec')
+        bom = '\xef\xbb\xbf'
+        compile(bom + 'print 1\n', '', 'exec')
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'single', 0xff)
@@ -305,6 +307,8 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(eval(unicode('a'), globals, locals), 1)
             self.assertEqual(eval(unicode('b'), globals, locals), 200)
             self.assertEqual(eval(unicode('c'), globals, locals), 300)
+            bom = '\xef\xbb\xbf'
+            self.assertEqual(eval(bom + 'a', globals, locals), 1)
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
