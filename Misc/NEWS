@@ -134,6 +134,7 @@ Library
   Closes bug #1039270.
 
 - Updates for the email package:
+
   + email.Utils.formatdate() grew a 'usegmt' argument for HTTP support.
   + All deprecated APIs that in email 2.x issued warnings have been removed:
     _encoder argument to the MIMEText constructor, Message.add_payload(),
