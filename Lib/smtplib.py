@@ -46,6 +46,7 @@ import re
 import rfc822
 import base64
 import hmac
+from email.base64MIME import encode as encode_base64
 
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
            "SMTPSenderRefused","SMTPRecipientsRefused","SMTPDataError",
@@ -54,6 +55,8 @@ __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
 
 SMTP_PORT = 25
 CRLF="\r\n"
+
+OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
 
 # Exception classes used by this module.
 class SMTPException(Exception):
@@ -399,6 +402,19 @@ class SMTP:
         resp=self.ehlo_resp.split('\n')
         del resp[0]
         for each in resp:
+            # To be able to communicate with as many SMTP servers as possible,
+            # we have to take the old-style auth advertisement into account,
+            # because:
+            # 1) Else our SMTP feature parser gets confused.
+            # 2) There are some servers that only advertise the auth methods we
+            #    support using the old style.
+            auth_match = OLDSTYLE_AUTH.match(each)
+            if auth_match:
+                # This doesn't remove duplicates, but that's no problem
+                self.esmtp_features["auth"] = self.esmtp_features.get("auth", "") \
+                        + " " + auth_match.groups(0)[0]
+                continue
+
             # RFC 1869 requires a space between ehlo keyword and parameters.
             # It's actually stricter, in that only spaces are allowed between
             # parameters, but were not going to check for that here.  Note
@@ -407,7 +423,11 @@ class SMTP:
             if m:
                 feature=m.group("feature").lower()
                 params=m.string[m.end("feature"):].strip()
-                self.esmtp_features[feature]=params
+                if feature == "auth":
+                    self.esmtp_features[feature] = self.esmtp_features.get(feature, "") \
+                            + " " + params
+                else:
+                    self.esmtp_features[feature]=params
         return (code,msg)
 
     def has_extn(self, opt):
@@ -506,14 +526,15 @@ class SMTP:
         def encode_cram_md5(challenge, user, password):
             challenge = base64.decodestring(challenge)
             response = user + " " + hmac.HMAC(password, challenge).hexdigest()
-            return base64.encodestring(response)[:-1]
+            return encode_base64(response, eol="")
 
         def encode_plain(user, password):
-            return base64.encodestring("%s\0%s\0%s" %
-                                       (user, user, password))[:-1]
+            return encode_base64("%s\0%s\0%s" % (user, user, password), eol="")
+ 
 
         AUTH_PLAIN = "PLAIN"
         AUTH_CRAM_MD5 = "CRAM-MD5"
+        AUTH_LOGIN = "LOGIN"
 
         if self.helo_resp is None and self.ehlo_resp is None:
             if not (200 <= self.ehlo()[0] <= 299):
@@ -530,8 +551,7 @@ class SMTP:
         # List of authentication methods we support: from preferred to
         # less preferred methods. Except for the purpose of testing the weaker
         # ones, we prefer stronger methods like CRAM-MD5:
-        preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN]
-        #preferred_auths = [AUTH_PLAIN, AUTH_CRAM_MD5]
+        preferred_auths = [AUTH_CRAM_MD5, AUTH_PLAIN, AUTH_LOGIN]
 
         # Determine the authentication method we'll use
         authmethod = None
@@ -539,7 +559,6 @@ class SMTP:
             if method in authlist:
                 authmethod = method
                 break
-        if self.debuglevel > 0: print "AuthMethod:", authmethod
 
         if authmethod == AUTH_CRAM_MD5:
             (code, resp) = self.docmd("AUTH", AUTH_CRAM_MD5)
@@ -550,6 +569,12 @@ class SMTP:
         elif authmethod == AUTH_PLAIN:
             (code, resp) = self.docmd("AUTH",
                 AUTH_PLAIN + " " + encode_plain(user, password))
+        elif authmethod == AUTH_LOGIN:
+            (code, resp) = self.docmd("AUTH",
+                "%s %s" % (AUTH_LOGIN, encode_base64(user, eol="")))
+            if code != 334:
+                raise SMTPAuthenticationError(code, resp)
+            (code, resp) = self.docmd(encode_base64(user, eol=""))
         elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
         if code not in [235, 503]:
