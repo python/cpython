@@ -47,11 +47,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef THINK_C
-#define label label_
-#undef label
-#endif
-
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
