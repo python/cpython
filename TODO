@@ -1,3 +1,43 @@
+(*) 2 specific leaks: 1 PYTHONPATH; 2 reading code from .pyc
+
+(-) if __getattr__ prints something, calling repr(x) from cmd line
+forgets a newline
+
+(-) improve performance of list.append/insert etc. by keeping high/low
+watermark instead of realloc'ing each time?
+
+(-) findmethod should cache (also findmember?)
+
+(-) sysget("check_interval") is called before each method call which
+breaks dictlookup caching
+
+(*) core dump on import of ridiculously long module name
+
+(-) core dump on repr / print of deeply nested or recursive object
+
+(*) parsing from string should calculate line numbers
+
+(-) whrandom doc needs update
+
+(-) mpz power is still binary insterad of ternary
+
+(*) design interface to call arbitrary asynchronous routines
+
+(*) whrandom.set...(0,0,0) doesn't generate random numbers
+
+(*) Lance's latest curses additions
+
+(-) Jack's new code:
+	(*) new xxmodule.c
+	(*) mac has type for .pyc files
+	(*) should run .pyc files when passed as command line argument
+
+(*) all new all singing all dancing freeze script
+
+(*) make clean should remove *.so and not Makefile.pre
+
+(-) fix signalmodule.c to re-establish SIGC[H]LD handler
+
 (-) try out Kees Blom's railroad diagram generator
 
 (-) redesign error handling (cf. Donald's mail)
@@ -146,16 +186,16 @@ instance -- also have separate __delattr__
 
 (*) Jaap's freeze script
 
-Incorporate with contrib status:
-- additions to glmodule by rg3h
-(*) Jaap's posixfile module (with locking)
-(*) pthreads interface
+(-) Incorporate with contrib status:
+    - additions to glmodule by rg3h
+    (*) Jaap's posixfile module (with locking)
+    (*) pthreads interface
 
-Later:
-- put the offending object in IOError and posix.error
-- make module marshal work with user-defined file-like objects
-- built-in help?
-- hierarchical module names?
+(-) Later:
+    - put the offending object in IOError and posix.error
+    - make module marshal work with user-defined file-like objects
+    - built-in help?
+    - hierarchical module names?
 
 Big plans:
 
@@ -205,31 +245,31 @@ persistency
 
 new Dbhash.py, dbhash library
 
-reraise; or raise 3rd param for traceback?
--or- except type, value, tbackobjec
+(-) reraise; or raise 3rd param for traceback?
+    -or- except type, value, tbackobjec
 
-redesign exceptions from scratch?
+(-) redesign exceptions from scratch?
 
-dbm objects miss items(), values() methods
+(-) dbm objects miss items(), values() methods
 
 (*) jar's new profile
 
-answer q about coerce()
+(-) answer q about coerce()
 
 (*) reconsider pass [expression] ??? -or- don't print non-interactive
     exprs -or- option to suppress printing non-None expressions
 
 (*) should be able to hash code objs (add fns to convert between lists/tuples)
 
-describe() ?
+(-) describe() ?
 
-distribute demo2 with Holmes
+(-) distribute demo2 with Holmes
 
 (*) re-reply on try-continue
 
-classes are too slow
+(-) classes are too slow
 
-add += etc. ?
+(-) add += etc. ?
 
 optimize tuple = tuple
 

@@ -1,4 +1,138 @@
+Thu Oct  6 16:40:05 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Got rid of Modules/imgformat.c (will be distributed with Jack's
+	img package)
+
+	* Doc/*.tex: moved title boilerplate to separate file, added
+	copyright notice (separate file)
+
+Wed Oct  5 11:13:13 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Modules/config.c.in: don't include frozen.c when frozen (the new
+	freeze script compiles it separately)
+
+	* Lib/os.py: add dummy import posixpath, for freeze script
+
+	* Python/marshal.c (r_object): plugged memory leak in reading of
+	code objects
+
+	* Modules/config.c.in (getpythonpath): always return malloc'ed
+	memory -- save a static pointer to free next time (prevents leaks)
+
+Thu Sep 29 10:35:28 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Grammar/Grammar: got rid of history; changed some diagram
+	commands
+
+	* Lib/types.py: cosmetic changes
+
+	* Mac/{config.c,macosmodule.c}: new interface to (a few bits of)
+	the Mac OS
+
+	* Modules/xxmodule.c: integrated with xxobject.c by Jack
+
+	* Modules/(posix,socket}module.c: more NT changes
+
+	* Python/traceback.c: security fix -- check for buffer oveflow
+	before concatenating sys.path item and module name
+
+	* Python/ceval.c, Include/ceval.h: promote MakePendingCalls to
+	global: Py_MakePendingCalls.  Also guard against recursive calls
+
+	* Python/pythonmain.c: fatal error if can't alloc mem for -c
+	string
+
+	* Python/pythonrun.c: add string "Python" to fatal error message
+
+Wed Sep 28 16:39:09 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/longobject.c: change ValueError to OverflowError when
+	converting to int
+
+	* Objects/xxobject.c: changed to use new style (not finished?)
+
+	* Objects/stringobject.c: use HAVE_LIMITS instead of __STDC__
+
+	* Objects/rangeobject.c: modernized
+
+	* Objects/floatobject.c: add overflow check when converting float
+	to int and implement truncation towards zero using ceil/float
+
+	* Parser/intrcheck.c: make 'interrupted' global (forgot for
+	whom...)
+
+	* Include/rename1.h: don't even define Py_FPROTO
+
+	* Python/{modsupport.c,getargs.c,Makefile.in},
+	Include/modsupport.h: moved getargs() to its own file and
+	re-implemented it entirely to support optional arguments, multiple
+	arguments without surrounding parentheses
+	(when called as newgetargs()), and better error messages
+
+	* Include/classobject.h, Objects/classobject.c,
+	Python/{ceval.c,bltinmodule.c}: entirely redone operator
+	overloading.  The rules for class instances are now much more
+	relaxed than for other built-in types
+	(whose coerce must still return two objects of the same type)
+
+Sun Sep 18 07:26:39 1994  Guido van Rossum  <guido@cayenne.cwi.nl>
+
+	* Python/pythonrun.c (print_error): print only last line of
+	multi-line source line
+
+	* Parser/tokenizer.c (tok_nextc): count line numbers when parsing
+        strings
+
+Fri Sep 16 15:54:56 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/modsupport.c (do_arg): added error message if "O!" fails;
+	change type of converter for "O&" to function returning int taking
+	an object* and a void* parameter; it should return 1 for success
+	or return 0 and set an exception for failure to convert
+
+Wed Sep 14 14:08:44 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Include/Python.h: new header file for new naming scheme
+
+	* various modules: #include "Python.h" and remove most remporary
+	renaming hacks
+
+	* Lib/whrandom.py: if seed is (0,0,0), initialize from current
+	time; default seed's arguments to (0,0,0)
+
+	* Python/ceval.c (eval_code), Include/ceval.h: added registry of
+        pending functions (to be used by functions that are called
+        asynchronously, like UNIX signal handlers or Mac I/O completion
+        routines)
+
+Wed Sep 14 11:05:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libsys.tex (section{Built-in Module \sectcode{sys}}):
+	documented sys.check_interval
+
+Tue Sep 13 21:35:19 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Import/pythonrun.h, Python/{import,pythonrun}.c,
+	mac/macsetfiletype.c: changes by Jack to execute .pyc file passed
+	as command line argument.  On the Mac .pyc files are given a
+	special type so they can be double-clicked
+
+	* Modules/stropmodule.c (strop_[r]find): change index range check
+	-- don't raise ValueError buit silently clip when it's out of
+	range (this is compatible with slicing)
+
 Mon Sep 12 12:53:07 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Extensions/X11/Xmmodule.c: (Sjoerd): Implemented
+	Xm.OptionButtonGadget and Xm.OptionLabelGadget
+
+	* Modules/Setup.in: define PYTHONPATH using COREPYTHONPATH for
+	extensions; add -lm to math module definition
+
+	* Modules/Makefile.pre.in: remove *.so and so_locations on clobber
+
+	* Modules/makesetup: (Sjoerd): treat words beginning with a dollar
+	and not ending in a well-known extension as linker arguments
 
 	* Lib/urlparse.py: URL parser according to the latest Internet
 	draft
@@ -20,7 +154,7 @@ Sun Sep 11 12:12:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 	libraries and to set $(MACHDEP) (machine dependent subdirectory of
 	Lib)
 
-	* Makefile.in: shared library support; added targer sharedinstall
+	* Makefile.in: shared library support; added target sharedinstall
 	which move shared libraries into Lib/$(MACHDEP)
 
 	* Modules/{Makefile.pre.in,Setup.in,makesetup}: support shared
@@ -144,10 +278,6 @@ Mon Aug 22 10:53:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Lib/traceback.py: print SyntaxError correctly
 
-	* Lib/stat.py: moved to posixstat.py; added macstat.py which has
-	the constants for the Mac; and created new stat.py which includes
-	the right one
-
 	* Modules/signalmodule.c: added pause().
 
 	* Python/pythonrun.c (print_error): added INCREF/DECREF pair --
@@ -228,7 +358,9 @@ Thu Aug 11 16:41:14 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 	setattr(x, name, value) for class instances.  This uses a special
 	hack whereby the class is supposed to be static: the __getattr__
 	and __setattr__ methods are looked up only once and saved in the
-	instance structure for speed
+	instance structure for speed.
+	(Later rewritten to also support __delattr__ and to store the
+	routines in the class instead of in the instance)
 
 Wed Aug 10 13:42:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
