@@ -227,48 +227,6 @@ indentation hints, unless the comment character is in column zero."
 	  )
   :group 'python)
 
-(defcustom py-scroll-process-buffer nil
-  "*Scroll Python process buffer as output arrives.
-If nil, the Python process buffer acts, with respect to scrolling, like
-Shell-mode buffers normally act.  This is surprisingly complicated and
-so won't be explained here; in fact, you can't get the whole story
-without studying the Emacs C code.
-
-If non-nil, the behavior is different in two respects (which are
-slightly inaccurate in the interest of brevity):
-
-  - If the buffer is in a window, and you left point at its end, the
-    window will scroll as new output arrives, and point will move to the
-    buffer's end, even if the window is not the selected window (that
-    being the one the cursor is in).  The usual behavior for `shell-mode'
-    windows is not to scroll, and to leave point where it was, if the
-    buffer is in a window other than the selected window.
-
-  - If the buffer is not visible in any window, and you left point at
-    its end, the buffer will be popped into a window as soon as more
-    output arrives.  This is handy if you have a long-running
-    computation and don't want to tie up screen area waiting for the
-    output.  The usual behavior for a `shell-mode' buffer is to stay
-    invisible until you explicitly visit it.
-
-Note the `and if you left point at its end' clauses in both of the
-above:  you can `turn off' the special behaviors while output is in
-progress, by visiting the Python buffer and moving point to anywhere
-besides the end.  Then the buffer won't scroll, point will remain where
-you leave it, and if you hide the buffer it will stay hidden until you
-visit it again.  You can enable and disable the special behaviors as
-often as you like, while output is in progress, by (respectively) moving
-point to, or away from, the end of the buffer.
-
-Warning:  If you expect a large amount of output, you'll probably be
-happier setting this option to nil.
-
-Obscure:  `End of buffer' above should really say `at or beyond the
-process mark', but if you know what that means you didn't need to be
-told <grin>."
-  :type 'boolean
-  :group 'python)
-
 (defcustom py-temp-directory
   (let ((ok '(lambda (x)
 	       (and x
@@ -972,7 +930,6 @@ VARIABLES
 py-indent-offset\t\tindentation increment
 py-block-comment-prefix\t\tcomment string used by `comment-region'
 py-python-command\t\tshell command to invoke Python interpreter
-py-scroll-process-buffer\t\talways scroll Python process buffer
 py-temp-directory\t\tdirectory used for temp files (if needed)
 py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
   (interactive)
@@ -1110,11 +1067,11 @@ comint believe the user typed this string so that
 `kill-output-from-shell' does The Right Thing."
   (let ((curbuf (current-buffer))
 	(procbuf (process-buffer proc))
-	(comint-scroll-to-bottom-on-output t)
+;	(comint-scroll-to-bottom-on-output t)
 	(msg (format "## working on region in file %s...\n" filename))
 	(cmd (format "execfile('%s')\n" filename)))
     (unwind-protect
-	(progn
+	(save-excursion
 	  (set-buffer procbuf)
 	  (goto-char (point-max))
 	  (move-marker (process-mark proc) (point))
@@ -1122,69 +1079,17 @@ comint believe the user typed this string so that
       (set-buffer curbuf))
     (process-send-string proc cmd)))
 
-(defun py-process-filter (pyproc string)
-  (let ((curbuf (current-buffer))
-	(pbuf (process-buffer pyproc))
-	(pmark (process-mark pyproc))
-	file-finished)
-    ;; make sure we switch to a different buffer at least once.  if we
-    ;; *don't* do this, then if the process buffer is in the selected
-    ;; window, and point is before the end, and lots of output is
-    ;; coming at a fast pace, then (a) simple cursor-movement commands
-    ;; like C-p, C-n, C-f, C-b, C-a, C-e take an incredibly long time
-    ;; to have a visible effect (the window just doesn't get updated,
-    ;; sometimes for minutes(!)), and (b) it takes about 5x longer to
-    ;; get all the process output (until the next python prompt).
-    ;;
-    ;; #b makes no sense to me at all.  #a almost makes sense: unless
-    ;; we actually change buffers, set_buffer_internal in buffer.c
-    ;; doesn't set windows_or_buffers_changed to 1, & that in turn
-    ;; seems to make the Emacs command loop reluctant to update the
-    ;; display.  Perhaps the default process filter in process.c's
-    ;; read_process_output has update_mode_lines++ for a similar
-    ;; reason?  beats me ...
-
-    (unwind-protect
-	;; make sure current buffer is restored
-	;; BAW - we want to check to see if this still applies
-	(progn
-	  ;; mysterious ugly hack
-	  (if (eq curbuf pbuf)
-	      (set-buffer (get-buffer-create "*scratch*")))
-
-	  (set-buffer pbuf)
-	  (let* ((start (point))
-		 (goback (< start pmark))
-		 (goend (and (not goback) (= start (point-max))))
-		 (buffer-read-only nil))
-	    (goto-char pmark)
-	    (insert string)
-	    (move-marker pmark (point))
-	    (setq file-finished
-		  (and py-file-queue
-		       (equal ">>> "
-			      (buffer-substring
-			       (prog2 (beginning-of-line) (point)
-				 (goto-char pmark))
-			       (point)))))
-	    (if goback (goto-char start)
-	      ;; else
-	      (if py-scroll-process-buffer
-		  (let* ((pop-up-windows t)
-			 (pwin (display-buffer pbuf)))
-		    (set-window-point pwin (point)))))
-	    (set-buffer curbuf)
-	    (if file-finished
-		(progn
-		  (py-safe (delete-file (car py-file-queue)))
-		  (setq py-file-queue (cdr py-file-queue))
-		  (if py-file-queue
-		      (py-execute-file pyproc (car py-file-queue)))))
-	    (and goend
-		 (progn (set-buffer pbuf)
-			(goto-char (point-max))))
-	    ))
-      (set-buffer curbuf))))
+(defun py-comint-output-filter-function (string)
+  "Watch output for Python prompt and exec next file waiting in queue.
+This function is appropriate for `comint-output-filter-functions'."
+  (when (and (string-equal ">>> " string)
+	     py-file-queue)
+    (py-safe (delete-file (car py-file-queue)))
+    (setq py-file-queue (cdr py-file-queue))
+    (if py-file-queue
+	(let ((pyproc (get-buffer-process (current-buffer))))
+	  (py-execute-file pyproc (car py-file-queue))))
+    ))
 
 (defun py-postprocess-output-buffer (buf)
   "Highlight exceptions found in BUF.
@@ -1263,9 +1168,6 @@ instead of a shell.  See the `Interactive Shell' and `Shell Mode'
 sections of the Emacs manual for details, especially for the key
 bindings active in the `*Python*' buffer.
 
-See the docs for variable `py-scroll-buffer' for info on scrolling
-behavior in the process window.
-
 Note: You can toggle between using the CPython interpreter and the
 JPython interpreter by hitting \\[py-toggle-shells].  This toggles
 buffer local variables which control whether all your subshell
@@ -1296,7 +1198,8 @@ filter."
    (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
-  (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
+  (make-local-variable 'comint-output-filter-functions)
+  (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
   (set-syntax-table py-mode-syntax-table)
   ;; set up keybindings for this subshell
   (local-set-key [tab]   'self-insert-command)
@@ -1368,7 +1271,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (if (not py-file-queue)
 	  (py-execute-file proc file)
 	(message "File %s queued for execution" file))
-      (push file py-file-queue)
+      (setq py-file-queue (append py-file-queue (list file)))
       (setq py-exception-buffer (cons file (current-buffer))))
      (t
       ;; otherwise either run it synchronously in a subprocess
@@ -2593,14 +2496,12 @@ py-indent-offset\tindentation increment
 py-block-comment-prefix\tcomment string used by comment-region
 
 py-python-command\tshell command to invoke Python interpreter
-py-scroll-process-buffer\talways scroll Python process buffer
 py-temp-directory\tdirectory used for temp files (if needed)
 
 py-beep-if-tab-change\tring the bell if tab-width is changed
 %v:py-indent-offset
 %v:py-block-comment-prefix
 %v:py-python-command
-%v:py-scroll-process-buffer
 %v:py-temp-directory
 %v:py-beep-if-tab-change
 
@@ -3102,7 +3003,6 @@ non-nil) just submit an enhancement request."
        '(py-python-command
 	 py-indent-offset
 	 py-block-comment-prefix
-	 py-scroll-process-buffer
 	 py-temp-directory
 	 py-beep-if-tab-change))
      nil				;pre-hooks
