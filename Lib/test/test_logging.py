@@ -30,11 +30,11 @@ import socket, threading, time, locale
 import logging, logging.handlers, logging.config
 
 try:
-    locale.setlocale(locale.LC_ALL, '')
+    cur_locale = locale.setlocale(locale.LC_ALL, '')
 except (ValueError, locale.Error):
     # this happens on a Solaris box which only supports "C" locale
     # or a Mac OS X box which supports very little locale stuff at all
-    pass
+    cur_locale = None
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
 
@@ -473,6 +473,9 @@ def test_main():
         sockOut.close()
         banner("logrecv output", "end")
         sys.stdout.flush()
+
+    if cur_locale:
+        locale.setlocale(locale.LC_ALL, "C")
 
 if __name__ == "__main__":
     sys.stdout.write("test_logging\n")
