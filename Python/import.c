@@ -651,8 +651,8 @@ imp_get_magic(self, args)
 		return NULL;
 	buf[0] = (MAGIC >>  0) & 0xff;
 	buf[1] = (MAGIC >>  8) & 0xff;
-	buf[3] = (MAGIC >> 16) & 0xff;
-	buf[4] = (MAGIC >> 24) & 0xff;
+	buf[2] = (MAGIC >> 16) & 0xff;
+	buf[3] = (MAGIC >> 24) & 0xff;
 
 	return newsizedstringobject(buf, 4);
 }
