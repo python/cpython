@@ -387,7 +387,6 @@ static PyObject *
 file_close(PyFileObject *f)
 {
 	int sts = 0;
-	PyMem_Free(f->f_setbuf);
 	if (f->f_fp != NULL) {
 		if (f->f_close != NULL) {
 			Py_BEGIN_ALLOW_THREADS
@@ -397,6 +396,7 @@ file_close(PyFileObject *f)
 		}
 		f->f_fp = NULL;
 	}
+	PyMem_Free(f->f_setbuf);
 	if (sts == EOF)
 		return PyErr_SetFromErrno(PyExc_IOError);
 	if (sts != 0)
