@@ -4,11 +4,12 @@ import addpack
 addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 def main():
 	input = "QuickDraw.h"
 	output = "qdgen.py"
-	defsoutput = "QuickDraw.py"
+	defsoutput = TOOLBOXDIR + "QuickDraw.py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
@@ -33,7 +34,7 @@ def main():
 		ifp.close()
 		ofp.close()
 		ifp = open("@QuickDrawText.py")
-		ofp = open("QuickDraw.py", "a")
+		ofp = open(TOOLBOXDIR + "QuickDraw.py", "a")
 		ofp.write(ifp.read())
 		ifp.close()
 		ofp.close()

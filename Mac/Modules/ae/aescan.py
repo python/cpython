@@ -10,6 +10,7 @@ import string
 import regex
 import regsub
 import MacOS
+from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner
 
@@ -17,7 +18,7 @@ def main():
 	print "=== Scanning AERegistry.h for defines ==="
 	input = "AERegistry.h"
 	output = "@dummy-registry.py"
-	defsoutput = "AERegistry.py"
+	defsoutput = TOOLBOXDIR + "AERegistry.py"
 	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
@@ -27,14 +28,14 @@ def main():
 	# once we start writing servers in python.
 	input = "AEObjects.h"
 	output = "@dummy-objects.py"
-	defsoutput = "AEObjects.py"
+	defsoutput = TOOLBOXDIR + "AEObjects.py"
 	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
 	print "=== Scanning AppleEvents.py ==="
 	input = "AppleEvents.h"
 	output = "aegen.py"
-	defsoutput = "AppleEvents.py"
+	defsoutput = TOOLBOXDIR + "AppleEvents.py"
 	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

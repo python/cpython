@@ -3,6 +3,7 @@
 import addpack
 addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 LONG = "Fonts"
 SHORT = "Fm"
@@ -10,7 +11,7 @@ SHORT = "Fm"
 def main():
 	input = "Fonts.h"
 	output = SHORT + "gen.py"
-	defsoutput = LONG + ".py"
+	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

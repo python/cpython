@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+# Generated from 'Sap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
 f = Function(void, 'SetPort',
     (GrafPtr, 'port', InMode),
@@ -926,7 +926,7 @@ f = Function(void, 'GetIndPattern',
 )
 functions.append(f)
 
-# Generated from 'flap:CodeWarrior:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+# Generated from 'Sap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
 f = Function(void, 'TextFont',
     (short, 'font', InMode),

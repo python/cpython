@@ -3,6 +3,7 @@
 import addpack
 addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 LONG = "Lists"
 SHORT = "list"
@@ -11,7 +12,7 @@ OBJECT = "ListRef"
 def main():
 	input = LONG + ".h"
 	output = SHORT + "gen.py"
-	defsoutput = LONG + ".py"
+	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

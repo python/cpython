@@ -10,13 +10,14 @@ import regsub
 import MacOS
 import addpack
 addpack.addpack(':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner
 
 def main():
 	input = "Resources.h"
 	output = "resgen.py"
-	defsoutput = "Resources.py"
+	defsoutput = TOOLBOXDIR + "Resources.py"
 	scanner = ResourcesScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

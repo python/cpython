@@ -40,6 +40,9 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
+extern PyObject *PMObj_New(PixMapHandle);
+extern int PMObj_Convert(PyObject *, PixMapHandle *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Resources.h>
