@@ -229,6 +229,15 @@ class TestOneliners(GetSourceBase):
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
+class TestBuggyCases(GetSourceBase):
+    fodderFile = mod2
+
+    def test_with_comment(self):
+        self.assertSourceEqual(mod2.with_comment, 58, 59)
+
+    def test_multiline_sig(self):
+        self.assertSourceEqual(mod2.multiline_sig[0], 63, 64)
+
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
@@ -414,6 +423,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
 def test_main():
     run_unittest(TestDecorators, TestRetrievingSourceCode, TestOneliners,
+                 TestBuggyCases,
                  TestInterpreterStack, TestClassesAndFunctions, TestPredicates)
 
 if __name__ == "__main__":
