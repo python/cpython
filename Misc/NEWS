@@ -7,6 +7,16 @@ Python News
 What's New in Python 2.3.4 (final)?
 ===================================
 
+*Release date: xx-xxx-2004*
+
+Extension modules
+-----------------
+
+- Patch #954115: Properly handle UNC roots in nt.stat.
+
+What's New in Python 2.3.4 (final)?
+===================================
+
 *Release date: 27-May-2004*
 
 What's New in Python 2.3.4rc1?
