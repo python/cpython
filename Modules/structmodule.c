@@ -34,6 +34,29 @@ PERFORMANCE OF THIS SOFTWARE.
 /* New version supporting byte order, alignment and size options,
    character strings, and unsigned numbers */
 
+static char struct__doc__[] = "\
+Functions to convert between Python values and C structs.\n\
+Python strings are used to hold the data representing the C struct\n\
+and also as format strings to describe the layout of data in the C struct.\n\
+\n\
+The optional first format char indicates byte ordering and alignment:\n\
+ @: native w/native alignment(default)\n\
+ =: native w/standard alignment\n\
+ <: little-endian, std. alignment\n\
+ >: big-endian, std. alignment\n\
+ !: network, std (same as >)\n\
+\n\
+The remaining chars indicate types of args and must match exactly;\n\
+these can be preceded by a decimal repeat count:\n\
+ x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
+ h:short; H:unsigned short; i:int; I:unsigned int;\n\
+ l:long; L:unsigned long; f:float; d:double.\n\
+Special cases (preceding decimal count indicates length):\n\
+ s:string (array of char); p: pascal string (w. count byte).\n\
+Whitespace between formats is ignored.\n\
+\n\
+The variable struct.error is an exception raised on errors.";
+
 #include "Python.h"
 #include "mymath.h"
 
@@ -1023,7 +1046,10 @@ calcsize(fmt, f)
 }
 
 
-/* pack(fmt, v1, v2, ...) --> string */
+static char calcsize__doc__[] = "\
+calcsize(fmt) -> int\n\
+Return size of C struct described by format string fmt.\n\
+See struct.__doc__ for more on format strings.";
 
 static PyObject *
 struct_calcsize(self, args)
@@ -1044,7 +1070,10 @@ struct_calcsize(self, args)
 }
 
 
-/* pack(fmt, v1, v2, ...) --> string */
+static char pack__doc__[] = "\
+pack(fmt, v1, v2, ...) -> string\n\
+Return string containing values v1, v2, ... packed according to fmt.\n\
+See struct.__doc__ for more on format strings.";
 
 static PyObject *
 struct_pack(self, args)
@@ -1179,7 +1208,11 @@ struct_pack(self, args)
 }
 
 
-/* unpack(fmt, string) --> (v1, v2, ...) */
+static char unpack__doc__[] =
+"unpack(fmt, string) -> (v1, v2, ...)
+Unpack the string, containing packed C structure data, according\n"
+"to fmt.  Requires len(string)==calcsize(fmt).\n\
+See struct.__doc__ for more on format strings.";
 
 static PyObject *
 struct_unpack(self, args)
@@ -1279,9 +1312,9 @@ struct_unpack(self, args)
 /* List of functions */
 
 static PyMethodDef struct_methods[] = {
-	{"calcsize",	struct_calcsize,	METH_VARARGS},
-	{"pack",	struct_pack,		METH_VARARGS},
-	{"unpack",	struct_unpack,		METH_VARARGS},
+	{"calcsize",	struct_calcsize,	METH_VARARGS, calcsize__doc__},
+	{"pack",	struct_pack,		METH_VARARGS, pack__doc__},
+	{"unpack",	struct_unpack,		METH_VARARGS, unpack__doc__},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1294,7 +1327,8 @@ initstruct()
 	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("struct", struct_methods);
+	m = Py_InitModule4("struct", struct_methods, struct__doc__,
+			   (PyObject*)NULL, PYTHON_API_VERSION);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
