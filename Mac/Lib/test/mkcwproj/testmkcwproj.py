@@ -1,4 +1,4 @@
-import mkcwproj
+import mkcwproject
 import sys
 
 dict = {
@@ -8,5 +8,5 @@ dict = {
 }
 	
 	
-mkcwproj.mkproject("mkcwtest.prj", "mkcwtest", dict)
-mkcwproj.buildproject("mkcwtest.prj")
+mkcwproject.mkproject("mkcwtest.prj", "mkcwtest", dict)
+mkcwproject.buildproject("mkcwtest.prj")
