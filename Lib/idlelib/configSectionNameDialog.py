@@ -27,7 +27,7 @@ class GetCfgSectionNameDialog(Toplevel):
         self.update_idletasks()
         #needs to be done here so that the winfo_reqwidth is valid
         self.messageInfo.config(width=self.frameMain.winfo_reqwidth())
-        self.geometry("+%d+%d" % 
+        self.geometry("+%d+%d" %
             ((parent.winfo_rootx()+((parent.winfo_width()/2)
                 -(self.winfo_reqwidth()/2)),
               parent.winfo_rooty()+((parent.winfo_height()/2)
@@ -56,7 +56,7 @@ class GetCfgSectionNameDialog(Toplevel):
         self.buttonCancel.grid(row=0,column=1,padx=5,pady=5)
 
     def NameOk(self):
-        #simple validity check for a sensible 
+        #simple validity check for a sensible
         #ConfigParser file section name
         nameOk=1
         name=self.name.get()
@@ -75,12 +75,12 @@ class GetCfgSectionNameDialog(Toplevel):
                     message='This name is already in use.')
             nameOk=0
         return nameOk
-    
+
     def Ok(self, event=None):
         if self.NameOk():
             self.result=self.name.get().strip()
             self.destroy()
-        
+
     def Cancel(self, event=None):
         self.result=''
         self.destroy()
@@ -95,5 +95,3 @@ if __name__ == '__main__':
         print dlg.result
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()
-    
- 

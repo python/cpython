@@ -62,7 +62,7 @@ def extended_linecache_checkcache(orig_checkcache=linecache.checkcache):
             save[filename] = cache[filename]
     orig_checkcache()
     cache.update(save)
-    
+
 # Patch linecache.checkcache():
 linecache.checkcache = extended_linecache_checkcache
 
@@ -194,7 +194,7 @@ class PyShellEditorWindow(EditorWindow):
             lines = open(self.breakpointPath,"r").readlines()
             for line in lines:
                 if line.startswith(filename + '='):
-                    breakpoint_linenumbers = eval(line[len(filename)+1:]) 
+                    breakpoint_linenumbers = eval(line[len(filename)+1:])
                     for breakpoint_linenumber in breakpoint_linenumbers:
                         self.set_breakpoint(breakpoint_linenumber)
 
@@ -226,7 +226,7 @@ class PyShellEditorWindow(EditorWindow):
         "Extend base method - clear breaks when module is closed"
         self.clear_file_breaks()
         EditorWindow._close(self)
-                                
+
 
 class PyShellFileList(FileList):
     "Extend base class: file list when a shell is present"
@@ -246,7 +246,7 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
-    
+
     def __init__(self):
         ColorDelegator.__init__(self)
         self.LoadTagDefs()
@@ -255,7 +255,7 @@ class ModifiedColorDelegator(ColorDelegator):
         self.tag_remove("TODO", "1.0", "iomark")
         self.tag_add("SYNC", "1.0", "iomark")
         ColorDelegator.recolorize_main(self)
-    
+
     def LoadTagDefs(self):
         ColorDelegator.LoadTagDefs(self)
         theme = idleConf.GetOption('main','Theme','name')
@@ -300,7 +300,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     rpcclt = None
     rpcpid = None
 
-    def spawn_subprocess(self):         
+    def spawn_subprocess(self):
         args = self.build_subprocess_arglist()
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
 
@@ -312,7 +312,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # here are the applet architectures tried:
             #
             # framework applet: sys.executable + -p is correct
-            # python 2.2 + pure python main applet: 
+            # python 2.2 + pure python main applet:
             #                   sys.executable + -p is correct
             # pythonw idle.py:  sys.executable + -c is correct
             #
@@ -360,7 +360,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # close only the subprocess debugger
         debug = self.getdebugger()
         if debug:
-            RemoteDebugger.close_subprocess_debugger(self.rpcclt)           
+            RemoteDebugger.close_subprocess_debugger(self.rpcclt)
         # kill subprocess, spawn a new one, accept connection
         self.rpcclt.close()
         self.spawn_subprocess()
@@ -434,7 +434,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         while tb:
             for rpcfile in exclude:
                 if tb[-1][0].count(rpcfile):
-                    break       
+                    break
             else:
                 break
             del tb[-1]
@@ -525,7 +525,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         lines = source.split("\n")
         linecache.cache[filename] = len(source)+1, 0, lines, filename
         return filename
-    
+
     def showsyntaxerror(self, filename=None):
         """Extend base class method: Add Colorizing
 
@@ -587,7 +587,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             "The Python Shell window is already executing a command; "
             "please wait until it is finished.",
             master=self.tkconsole.text)
-        
+
     def runcommand(self, code):
         "Run the code without invoking the debugger"
         # The code better not raise an exception!
@@ -1075,10 +1075,10 @@ class PseudoFile:
 
 usage_msg = """\
 
-USAGE: idle  [-deis] [-t title] [file]*             
+USAGE: idle  [-deis] [-t title] [file]*
        idle  [-ds] [-t title] (-c cmd | -r file) [arg]*
        idle  [-ds] [-t title] - [arg]*
-       
+
   -h         print this help message and exit
 
 The following options will override the IDLE 'settings' configuration:
@@ -1175,7 +1175,7 @@ def main():
     if args and args[0] == '-':
         cmd = sys.stdin.read()
         enable_shell = True
-        
+
     use_subprocess = True
 
     # process sys.argv and sys.path:
@@ -1202,9 +1202,9 @@ def main():
             sys.path.insert(0, dir)
     # check the IDLE settings configuration (but command line overrides)
     edit_start = idleConf.GetOption('main', 'General',
-                                    'editor-on-startup', type='bool') 
+                                    'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
-    enable_shell = enable_shell or not edit_start  
+    enable_shell = enable_shell or not edit_start
     # start editor and/or shell windows:
     root = Tk(className="Idle")
     fixwordbreaks(root)
@@ -1258,7 +1258,7 @@ start. Here are some possible causes of this problem:
   3. Personal firewall software is preventing IDLE from using this port
 
 IDLE makes and accepts connections only with this computer, and does not
-communicate over the internet in any way. Its use of port 8833 should not 
+communicate over the internet in any way. Its use of port 8833 should not
 be a security risk on a single-user machine.
 """
 

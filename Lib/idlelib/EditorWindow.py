@@ -111,7 +111,7 @@ class EditorWindow:
         text.bind("<<untabify-region>>",self.untabify_region_event)
         text.bind("<<toggle-tabs>>",self.toggle_tabs_event)
         text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
-        
+
         if flist:
             flist.inversedict[self] = key
             if key:
@@ -186,7 +186,7 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
- 
+
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
@@ -273,21 +273,21 @@ class EditorWindow:
 
     def about_dialog(self, event=None):
         aboutDialog.AboutDialog(self.top,'About IDLEfork')
-        
+
     def config_dialog(self, event=None):
         configDialog.ConfigDialog(self.top,'Settings')
-        
+
     def good_advice(self, event=None):
         tkMessageBox.showinfo('Advice', "Don't Panic!", master=self.text)
 
     def view_readme(self, event=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'README.txt')
-        textView.TextViewer(self.top,'IDLEfork - README',fn)        
+        textView.TextViewer(self.top,'IDLEfork - README',fn)
 
     def help_dialog(self, event=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
-        textView.TextViewer(self.top,'Help',fn)        
-        
+        textView.TextViewer(self.top,'Help',fn)
+
     help_url = "http://www.python.org/doc/current/"
     if sys.platform[:3] == "win":
         fn = os.path.dirname(__file__)
@@ -469,7 +469,7 @@ class EditorWindow:
         self.per.removefilter(self.color)
         self.color = None
         self.per.insertfilter(self.undo)
-        
+
     def ResetColorizer(self):
         "Update the colour theme if it is changed"
         # Called from configDialog.py
@@ -478,7 +478,7 @@ class EditorWindow:
             self.per.insertfilter(self.color)
 
     def ResetFont(self):
-        "Update the text widgets' font if it is changed" 
+        "Update the text widgets' font if it is changed"
         # Called from configDialog.py
         fontWeight='normal'
         if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
@@ -535,15 +535,15 @@ class EditorWindow:
                 self.menuExtraHelp.add_command(label=menuItem[0],
                         command=self.__DisplayExtraHelpCallback(menuItem[1]))
         else: #no extra help items
-            if hasattr(self,'menuExtraHelp'): 
-                helpMenu.delete(cascadeIndex-1)                    
+            if hasattr(self,'menuExtraHelp'):
+                helpMenu.delete(cascadeIndex-1)
                 del(self.menuExtraHelp)
-    
+
     def __DisplayExtraHelpCallback(self,helpFile):
         def DisplayExtraHelp(helpFile=helpFile):
             self.display_docs(helpFile)
         return DisplayExtraHelp
-                    
+
     def UpdateRecentFilesList(self,newFile=None):
         "Load or update the recent files list, and menu if required"
         rfList=[]
@@ -553,7 +553,7 @@ class EditorWindow:
                 rfList=RFfile.readlines()
             finally:
                 RFfile.close()
-        if newFile: 
+        if newFile:
             newFile=os.path.abspath(newFile)+'\n'
             if newFile in rfList:
                 rfList.remove(newFile)
@@ -567,7 +567,7 @@ class EditorWindow:
             for instance in self.top.instanceDict.keys():
                 menu = instance.menuRecentFiles
                 menu.delete(1,END)
-                i = 0 ; ul = 0; ullen = len(ullist)                
+                i = 0 ; ul = 0; ullen = len(ullist)
                 for file in rfList:
                     fileName=file[0:-1]
                     callback = instance.__RecentFileCallback(fileName)
@@ -577,13 +577,13 @@ class EditorWindow:
                                      command=callback,
                                      underline=ul)
                     i += 1
-                    
+
     def __CleanRecentFiles(self,rfList):
         origRfList=rfList[:]
         count=0
         nonFiles=[]
         for path in rfList:
-            if not os.path.exists(path[0:-1]): 
+            if not os.path.exists(path[0:-1]):
                 nonFiles.append(count)
             count=count+1
         if nonFiles:
@@ -599,12 +599,12 @@ class EditorWindow:
         finally:
             RFfile.close()
         return rfList
-    
+
     def __RecentFileCallback(self,fileName):
         def OpenRecentFile(fileName=fileName):
             self.io.open(editFile=fileName)
         return OpenRecentFile
-    
+
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
@@ -672,7 +672,7 @@ class EditorWindow:
     def maybesave(self):
         if self.io:
             if not self.get_saved():
-                if self.top.state()!='normal': 
+                if self.top.state()!='normal':
                     self.top.deiconify()
                 self.top.lower()
                 self.top.lift()

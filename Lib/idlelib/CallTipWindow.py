@@ -37,7 +37,7 @@ class CallTip:
             # This command is only needed and available on Tk >= 8.4.0 for OSX
             # Without it, call tips intrude on the typing process by grabbing
             # the focus.
-            tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w, 
+            tw.tk.call("::tk::unsupported::MacWindowStyle", "style", tw._w,
                        "help", "noActivates")
         except TclError:
             pass

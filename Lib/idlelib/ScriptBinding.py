@@ -99,7 +99,7 @@ class ScriptBinding:
             self.errorbox("Syntax error",
                           "There's an error in your program:\n" + msg)
             return False
-        
+
     def colorize_syntax_error(self, msg, lineno, offset):
         text = self.editwin.text
         pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
@@ -112,7 +112,7 @@ class ScriptBinding:
         else:
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
-        
+
     def run_script_event(self, event):
         "Check syntax, if ok run the script in the shell top level"
         filename = self.getfilename()

@@ -52,7 +52,7 @@ class ColorDelegator(Delegator):
             if cnf:
                 apply(self.tag_configure, (tag,), cnf)
         self.tag_raise('sel')
-    
+
     def LoadTagDefs(self):
         theme = idleConf.GetOption('main','Theme','name')
         self.tagdefs = {
@@ -67,7 +67,7 @@ class ColorDelegator(Delegator):
             # The following is used by ReplaceDialog:
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
-        
+
     if DEBUG: print 'tagdefs',tagdefs
 
     def insert(self, index, chars, tags=None):
