@@ -75,7 +75,9 @@ file = open(TESTFN, 'w')
 file.write(source)
 file.close()
 
+# Note that load_source creates file TESTFN+'c' or TESTFN+'o'.
 mod = imp.load_source('testmod', TESTFN)
+files_to_clean_up = [TESTFN, TESTFN + 'c', TESTFN + 'o']
 
 def istest(func, exp):
     obj = eval(exp)
@@ -204,4 +206,8 @@ test(inspect.formatargvalues(args, varargs, varkw, locals) ==
      '(a=7, b=8, c=9, d=3, (e=4, (f=5,)), *g=(), **h={})',
      'mod.fr.f_back formatted argvalues')
 
-os.unlink(TESTFN)
+for fname in files_to_clean_up:
+    try:
+        os.unlink(fname)
+    except:
+        pass
