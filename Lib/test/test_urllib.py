@@ -35,18 +35,75 @@ out2_2 = "abc?def"
 verify(urllib.quote(in2) == out2_1, "urllib.quote problem 4")
 verify(urllib.quote(in2, '?') == out2_2, "urllib.quote problem 5")
 
+
+
 in3 = {"p1":"v1","p2":"v2"}
+in3list = [("p1", "v1"), ("p2","v2")]
 exp3_1 = "p2=v2&p1=v1"
 exp3_2 = "p1=v1&p2=v2"
+# dict input, only string values
 act3 = urllib.urlencode(in3)
-verify(act3==exp3_1 or act3==exp3_2, "urllib.urlencode problem 1")
+verify(act3==exp3_1 or act3==exp3_2, "urllib.urlencode problem 1 dict")
+# list input, only string values
+act3list = urllib.urlencode(in3list)
+verify(act3list==exp3_2, "urllib.urlencode problem 1 list")
+
 
 in4 = {"p1":["v1","v2"]}
+in4list = [("p1", ["v1","v2"])]
 exp4 = "p1=v1&p1=v2"
+# dict input, list values, doseq==1
 act4 = urllib.urlencode(in4,doseq=1)
-verify(act4==exp4, "urllib.urlencode problem 2")
+verify(act4==exp4, "urllib.urlencode problem 2 dict")
+# list input, list values, doseq==1
+act4list = urllib.urlencode(in4,doseq=1)
+verify(act4list==exp4, "urllib.urlencode problem 2 list")
+
 
 in5 = in4
+in5list = in4list
 exp5 = "p1=%5B%27v1%27%2C+%27v2%27%5D"
+exp5list = "p1=%5B%27v1%27%2C+%27v2%27%5D"
+# dict input, list variables, doseq=0
 act5 = urllib.urlencode(in5)
-verify(act5==exp5, "urllib.urlencode problem 3")
+verify(act5==exp5, "urllib.urlencode problem 3 dict")
+# list input, list variables, doseq=0
+act5list = urllib.urlencode(in5list)
+verify(act5list==exp5list, "urllib.urlencode problem 3 list")
+
+
+in6 = {"p1":"v1","p2":"v2"}
+in6list = [("p1", "v1"), ("p2","v2")]
+exp6_1 = "p2=v2&p1=v1"
+exp6_2 = "p1=v1&p2=v2"
+# dict input, only string values, doseq==1
+act6 = urllib.urlencode(in6,doseq=1)
+verify(act6==exp6_1 or act6==exp6_2, "urllib.urlencode problem 4 dict")
+# list input, only string values
+act6list = urllib.urlencode(in6list,doseq=1)
+verify(act6list==exp6_2, "urllib.urlencode problem 4 list")
+
+
+in7 = "p1=v1&p2=v2"
+try:
+    act7 = urllib.urlencode(in7)
+    print "urllib.urlencode problem 5 string"
+except TypeError:
+    pass
+
+
+import UserDict
+in8 = UserDict.UserDict()
+in8["p1"] = "v1"
+in8["p2"] = ["v1", "v2"]
+exp8_1 = "p1=v1&p2=v1&p2=v2"
+exp8_2 = "p2=v1&p2=v2&p1=v1"
+act8 = urllib.urlencode(in8,doseq=1)
+verify(act8==exp8_1 or act8==exp8_2, "urllib.urlencode problem 6 UserDict")
+
+
+import UserString
+in9 = UserString.UserString("")
+exp9 = ""
+act9 = urllib.urlencode(in9,doseq=1)
+verify(act9==exp9, "urllib.urlencode problem 7 UserString")
