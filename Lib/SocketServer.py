@@ -561,7 +561,8 @@ class StreamRequestHandler(BaseRequestHandler):
         self.wfile = self.connection.makefile('wb', self.wbufsize)
 
     def finish(self):
-        self.wfile.flush()
+        if not self.wfile.closed:
+            self.wfile.flush()
         self.wfile.close()
         self.rfile.close()
 
