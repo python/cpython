@@ -87,6 +87,7 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #ifdef WITH_THREAD
+#include <sys/types.h> /* For pid_t */
 #include "thread.h"
 static long main_thread;
 static pid_t main_pid;
