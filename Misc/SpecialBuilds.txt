@@ -42,12 +42,17 @@ Py_TRACE_REFS implies Py_REF_DEBUG.
 Special gimmicks:
 
 sys.getobjects(max[, type])
-    Return list of the most-recently allocated max objects, most recently
-    allocated first in the list, least-recently allocated last in the
-    list.  max=0 means no limit on list length.  If an optional type
-    object is passed, the list is also restricted to objects of that
-    type.  The return list itself, and some temp objects created just
-    to call sys.getobjects(), are excluded from the return list.
+    Return list of the (no more than) max most-recently allocated objects,
+    most recently allocated first in the list, least-recently allocated
+    last in the list.  max=0 means no limit on list length.
+    If an optional type object is passed, the list is also restricted to
+    objects of that type.
+    The return list itself, and some temp objects created just to call
+    sys.getobjects(), are excluded from the return list.  Note that the
+    list returned is just another object, though, so may appear in the
+    return list the next time you call getobjects(); note that every
+    object in the list is kept alive too, simply by virtue of being in
+    the list.
 
 envar PYTHONDUMPREFS
     If this envar exists, Py_Finalize() arranges to print a list of
