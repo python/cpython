@@ -191,6 +191,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/internet.tex \
 	../lib/netdata.tex \
 	../lib/markup.tex \
+	../lib/language.tex \
 	../lib/libpycompile.tex \
 	../lib/libcompileall.tex \
 	../lib/libshlex.tex \
