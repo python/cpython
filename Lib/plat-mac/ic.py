@@ -3,7 +3,9 @@
 import icglue
 import string
 import sys
+import os
 from Carbon import Res
+import Carbon.File
 import macfs
 import macostools
 
@@ -216,13 +218,9 @@ class IC:
 		return self.ic.ICMapTypeCreator(type, creator, filename)
 		
 	def settypecreator(self, file):
-		if type(file) == type(''):
-			fss = macfs.FSSpec(file)
-		else:
-			fss = file
-		name = fss.as_tuple()[2]
-		record = self.mapfile(name)
-		fss.SetCreatorType(record[2], record[1])
+		file = Carbon.File.pathname(file)
+		record = self.mapfile(os.path.split(file)[1])
+		MacOS.SetCreatorAndType(file, record[2], record[1])
 		macostools.touched(fss)
 		
 # Convenience routines
