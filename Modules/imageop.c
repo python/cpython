@@ -572,7 +572,7 @@ PyObject *args;
 		b = (int) (((value >> 16) & 0xff) / 255. * 3. + .5);
 #endif
 		nvalue = (r<<5) | (b<<3) | g;
-		*ncp++ = nvalue;
+		*ncp++ = (unsigned char)nvalue;
 	}
 	return rv;
 }
@@ -653,7 +653,7 @@ PyObject *args;
 		b = (value >> 16) & 0xff;
 		nvalue = (int)(0.30*r + 0.59*g + 0.11*b);
 		if ( nvalue > 255 ) nvalue = 255;
-		*ncp++ = nvalue;
+		*ncp++ = (unsigned char)nvalue;
 	}
 	return rv;
 }

@@ -255,7 +255,7 @@ audioop_avg(self, args)
 	signed char *cp;
 	int len, size, val = 0;
 	int i;
-	float avg = 0.0;
+	double avg = 0.0;
 
 	if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
 		return 0;
@@ -272,7 +272,7 @@ audioop_avg(self, args)
 	if ( len == 0 )
 		val = 0;
 	else
-		val = (int)(avg / (float)(len/size));
+		val = (int)(avg / (double)(len/size));
 	return PyInt_FromLong(val);
 }
 
@@ -284,7 +284,7 @@ audioop_rms(self, args)
 	signed char *cp;
 	int len, size, val = 0;
 	int i;
-	float sum_squares = 0.0;
+	double sum_squares = 0.0;
 
 	if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
 		return 0;
@@ -296,12 +296,12 @@ audioop_rms(self, args)
 		if ( size == 1 )      val = (int)*CHARP(cp, i);
 		else if ( size == 2 ) val = (int)*SHORTP(cp, i);
 		else if ( size == 4 ) val = (int)*LONGP(cp, i);
-		sum_squares += (float)val*(float)val;
+		sum_squares += (double)val*(double)val;
 	}
 	if ( len == 0 )
 		val = 0;
 	else
-		val = (int)sqrt(sum_squares / (float)(len/size));
+		val = (int)sqrt(sum_squares / (double)(len/size));
 	return PyInt_FromLong(val);
 }
 
@@ -498,7 +498,7 @@ audioop_avgpp(self, args)
 	int len, size, val = 0, prevval = 0, prevextremevalid = 0,
 		prevextreme = 0;
 	int i;
-	float avg = 0.0;
+	double avg = 0.0;
 	int diff, prevdiff, extremediff, nextreme = 0;
 
 	if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
@@ -544,7 +544,7 @@ audioop_avgpp(self, args)
 	if ( nextreme == 0 )
 		val = 0;
 	else
-		val = (int)(avg / (float)nextreme);
+		val = (int)(avg / (double)nextreme);
 	return PyInt_FromLong(val);
 }
 

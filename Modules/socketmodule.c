@@ -417,7 +417,7 @@ getsockaddrarg,PySocketSockObject *,s, PyObject *,args, struct sockaddr **,addr_
 		if (setipaddr(host, addr) < 0)
 			return 0;
 		addr->sin_family = AF_INET;
-		addr->sin_port = htons(port);
+		addr->sin_port = htons((short)port);
 		*addr_ret = (struct sockaddr *) addr;
 		*len_ret = sizeof *addr;
 		return 1;
@@ -516,7 +516,9 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 {
 	int block;
+#ifndef MS_WINDOWS
 	int delay_flag;
+#endif
 	if (!PyArg_GetInt(args, &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS

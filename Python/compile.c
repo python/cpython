@@ -182,6 +182,9 @@ typeobject Codetype = {
 	(hashfunc)code_hash, /*tp_hash*/
 };
 
+#define NAME_CHARS \
+	"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+
 codeobject *
 newcodeobject(argcount, nlocals, stacksize, flags,
 	      code, consts, names, varnames, filename, name,
@@ -237,7 +240,7 @@ newcodeobject(argcount, nlocals, stacksize, flags,
 		if (!is_stringobject(v))
 			continue;
 		p = getstringvalue(v);
-		if (strspn(p, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz")
+		if ((int)strspn(p, NAME_CHARS)
 		    != getstringsize(v))
 			continue;
 		PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));

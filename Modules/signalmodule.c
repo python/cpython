@@ -31,8 +31,14 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Signal module -- many thanks to Lance Ellinghaus */
 
+/* XXX Signals should be recorded per thread, now we have thread state. */
+
 #include "Python.h"
 #include "intrcheck.h"
+
+#ifdef MS_WIN32
+#include <process.h>
+#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -119,7 +125,8 @@ signal_handler(sig_num)
 #endif
 		is_tripped++;
 		Handlers[sig_num].tripped = 1;
-		Py_AddPendingCall((int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
+		Py_AddPendingCall(
+			(int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
 #ifdef WITH_THREAD
 	}
 #endif
