@@ -45,7 +45,7 @@ Data members:
 
 /* Define delimiter used in $PYTHONPATH */
 
-#ifdef THINK_C
+#ifdef macintosh
 #define DELIM ' '
 #endif
 

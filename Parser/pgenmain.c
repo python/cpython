@@ -42,7 +42,7 @@ int debugging;
 
 /* Forward */
 grammar *getgrammar PROTO((char *filename));
-#ifdef THINK_C
+#ifdef macintosh
 int main PROTO((int, char **));
 char *askfile PROTO((void));
 #endif
@@ -57,7 +57,7 @@ main(argc, argv)
 	FILE *fp;
 	char *filename;
 	
-#ifdef THINK_C
+#ifdef macintosh
 	filename = askfile();
 #else
 	if (argc != 2) {
@@ -115,7 +115,7 @@ getgrammar(filename)
 	return g;
 }
 
-#ifdef THINK_C
+#ifdef macintosh
 char *
 askfile()
 {

@@ -24,6 +24,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Check for interrupts */
 
+#ifdef THINK_C
+#define macintosh
+#endif
+
+
 #ifdef MSDOS
 
 /* This might work for MS-DOS (untested though): */
@@ -49,19 +54,26 @@ intrcheck()
 #endif
 
 
-#ifdef THINK_C
+#ifdef macintosh
 
+#ifdef THINK_C
 /* This is for THINK C 4.0.
    For 3.0, you may have to remove the signal stuff. */
-
 #include <MacHeaders>
+#else
+/* This is for MPW 3.1 */
+/* XXX Untested */
+#include <OSEvents.h>
+#include <SysEqu.h>
+#endif
+
 #include <signal.h>
 #include "sigtype.h"
 
 static int interrupted;
 
 static SIGTYPE
-intcatcher(sig)
+intcatcher(ig)
 	int sig;
 {
 	interrupted = 1;
@@ -80,17 +92,15 @@ intrcheck()
 {
 	register EvQElPtr q;
 	
-	/* This is like THINK C 4.0's <console.h>.
-	   I'm not sure why FlushEvents must be called from asm{}. */
-	for (q = (EvQElPtr)EventQueue.qHead; q; q = (EvQElPtr)q->qLink) {
+	/* This is like THINK C 4.0's <console.h> */
+	/* q = (EvQElPtr) EventQueue.qHead; */
+	q = (EvQElPtr) GetEvQHdr()->qHead;
+	
+	for (; q; q = (EvQElPtr)q->qLink) {
 		if (q->evtQWhat == keyDown &&
 				(char)q->evtQMessage == '.' &&
 				(q->evtQModifiers & cmdKey) != 0) {
-			
-			asm {
-				moveq	#keyDownMask,d0
-				_FlushEvents
-			}
+			FlushEvents(keyDownMask, 0);
 			interrupted = 1;
 			break;
 		}
@@ -104,7 +114,7 @@ intrcheck()
 
 #define OK
 
-#endif /* THINK_C */
+#endif /* macintosh */
 
 
 #ifndef OK

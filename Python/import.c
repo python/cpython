@@ -37,13 +37,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "ceval.h"
 
-#ifdef THINK_C
-#define macintosh
-#endif
-
 /* Define pathname separator used in file names */
 
-#ifdef THINK_C
+#ifdef macintosh
 #define SEP ':'
 #endif
 
