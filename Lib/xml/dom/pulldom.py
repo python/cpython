@@ -27,26 +27,28 @@ class PullDOM(xml.sax.ContentHandler):
         del self._ns_contexts[-1]
 
     def startElementNS(self, name, tagName , attrs):
-        if name[0]:
+        uri,localname = name
+        if uri:
             # When using namespaces, the reader may or may not
             # provide us with the original name. If not, create
             # *a* valid tagName from the current context.
             if tagName is None:
-                tagName = self._current_context[name[0]] + ":" + name[1]
-            node = self.document.createElementNS(name[0], tagName)
+                tagName = self._current_context[uri] + ":" + localname
+            node = self.document.createElementNS(uri, tagName)
         else:
             # When the tagname is not prefixed, it just appears as
-            # name[1]
-            node = self.document.createElement(name[1])
+            # localname
+            node = self.document.createElement(localname)
 
         for aname,value in attrs.items():
-            if aname[0]:
-                qname = self._current_context[name[0]] + ":" + aname[1]
-                attr = self.document.createAttributeNS(name[0], qname)
+            a_uri, a_localname = aname
+            if a_uri:
+                qname = self._current_context[a_uri] + ":" + a_localname
+                attr = self.document.createAttributeNS(a_uri, qname)
             else:
-                attr = self.document.createAttribute(name[0], name[1])
+                attr = self.document.createAttribute(a_localname)
             attr.value = value
-            node.setAttributeNode(qname, attr)
+            node.setAttributeNode(attr)
         
         parent = self.curNode
         node.parentNode = parent
