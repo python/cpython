@@ -2,6 +2,8 @@
 """Test script for the bsddb C module
    Roger E. Masse
 """
+
+import os
 import bsddb
 import tempfile
 from test_support import verbose
@@ -56,6 +58,10 @@ def test(openmethod, what):
             print word
 
     f.close()
+    try:
+        os.remove(fname)
+    except os.error:
+        pass
 
 types = [(bsddb.btopen, 'BTree'),
          (bsddb.hashopen, 'Hash Table'),
@@ -66,4 +72,3 @@ types = [(bsddb.btopen, 'BTree'),
 
 for type in types:
     test(type[0], type[1])
-
