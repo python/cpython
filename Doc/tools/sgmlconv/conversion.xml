@@ -466,13 +466,21 @@
   <macro name="Cpp" outputname="">
     <text>C++</text>
     </macro>
-  <macro name="geq"/>
-  <macro name="LaTeX"/>
+  <macro name="geq" outputname="">
+    <entityref name="geq"/>
+    </macro>
+  <macro name="LaTeX" outputname="">
+    <text>LaTeX</text>
+    </macro>
   <macro name="ldots" outputname="">
     <text>...</text>
     </macro>
-  <macro name="leq"/>
-  <macro name="TeX"/>
+  <macro name="leq" outputname="">
+    <entityref name="leq"/>
+    </macro>
+  <macro name="TeX" outputname="">
+    <text>TeX</text>
+    </macro>
   <macro name="version"/>
 
   <!-- Misc. -->
