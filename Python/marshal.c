@@ -635,6 +635,14 @@ r_object(RFILE *p)
 	}
 }
 
+int
+PyMarshal_ReadShortFromFile(FILE *fp)
+{
+	RFILE rf;
+	rf.fp = fp;
+	return r_short(&rf);
+}
+
 long
 PyMarshal_ReadLongFromFile(FILE *fp)
 {
