@@ -825,6 +825,8 @@ class Transformer:
         return dot, node[3][1]
 
     def com_import_as_name(self, node):
+        if node == '*':
+            return '*', None
         if node[0] == token.NAME:
             return node[1], None
         assert len(node) == 4
