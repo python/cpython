@@ -3735,7 +3735,8 @@ def dict_type_with_metaclass():
 
 def meth_class_get():
     # Full coverage of descrobject.c::classmethod_get()
-    if verbose: print "Testing __get__ method of METH_CLASS C methods..."
+    if verbose:
+        print "Testing __get__ method of METH_CLASS C methods..."
     # Baseline
     arg = [1, 2, 3]
     res = {1: None, 2: None, 3: None}
@@ -3771,6 +3772,32 @@ def meth_class_get():
         pass
     else:
         raise TestFailed, "shouldn't have allowed descr.__get__(None, int)"
+
+def isinst_isclass():
+    if verbose:
+        print "Testing proxy isinstance() and isclass()..."
+    class Proxy(object):
+        def __init__(self, obj):
+            self.__obj = obj
+        def __getattribute__(self, name):
+            if name.startswith("_Proxy__"):
+                return object.__getattribute__(self, name)
+            else:
+                return getattr(self.__obj, name)
+    # Test with a classic class
+    class C:
+        pass
+    a = C()
+    pa = Proxy(a)
+    verify(isinstance(a, C))  # Baseline
+    verify(isinstance(pa, C)) # Test
+    # Test with a new-style class
+    class C(object):
+        pass
+    a = C()
+    pa = Proxy(a)
+    verify(isinstance(a, C))  # Baseline
+    verify(isinstance(pa, C)) # Test
 
 
 def test_main():
@@ -3859,6 +3886,7 @@ def test_main():
     subclass_right_op()
     dict_type_with_metaclass()
     meth_class_get()
+    isinst_isclass()
 
     if verbose: print "All OK"
 
