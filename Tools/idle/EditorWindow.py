@@ -40,6 +40,8 @@ class EditorWindow:
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
         self.text.bind("<<center-insert>>", self.center_insert_event)
+        self.text.bind("<<help>>", self.help_dialog)
+        self.text.bind("<<about-idle>>", self.about_dialog)
 
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
@@ -75,32 +77,25 @@ class EditorWindow:
 
         self.saved_change_hook()
 
+    menu_specs = [
+        ("file", "File"),
+        ("edit", "Edit"),
+        ("help", "Help"),
+    ]
+
     def createmenubar(self):
         mbar = self.menubar
+        self.menudict = mdict = {}
+        for name, label in self.menu_specs:
+            mdict[name] = menu = Menu(mbar, name=name)
+            mbar.add_cascade(label=label, menu=menu)
+        self.Bindings.fill_menus(self.text, mdict)
 
-        self.filemenu = Menu(mbar)
-
-        self.editmenu = Menu(mbar)
-
-        self.helpmenu = Menu(mbar, name="help")
-        self.helpmenu.add_command(label="Help...", command=self.help_dialog)
-        self.helpmenu.add_separator()
-        self.helpmenu.add_command(label="About...", command=self.about_dialog)
-
-        mbar.add_cascade(label="File", menu=self.filemenu)
-        mbar.add_cascade(label="Edit", menu=self.editmenu)
-        mbar.add_cascade(label="Help", menu=self.helpmenu)
-
-        dict = {"file": self.filemenu,
-                "edit": self.editmenu,
-                "help": self.helpmenu}
-        self.Bindings.fill_menus(self.text, dict)
-
-    def about_dialog(self):
+    def about_dialog(self, event=None):
         tkMessageBox.showinfo(self.about_title, self.about_text,
                               master=self.text)
 
-    def help_dialog(self):
+    def help_dialog(self, event=None):
         from HelpWindow import HelpWindow
         HelpWindow(root=self.root)
 
