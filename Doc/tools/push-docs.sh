@@ -26,6 +26,7 @@ else
     DOCTYPE="devel"
 fi
 
+DOCTYPE_SPECIFIED=false
 EXPLANATION=''
 ANNOUNCE=true
 
@@ -55,6 +56,7 @@ while [ "$#" -gt 0 ] ; do
           ;;
       -t)
           DOCTYPE="$2"
+          DOCTYPE_SPECIFIED=true
           shift 2
           ;;
       -F)
@@ -99,9 +101,17 @@ else
     exit 2
 fi
 
+# switch to .../Doc/
 cd ..
 
-# now in .../Doc/
+# If $DOCTYPE was not specified explicitly, look for .doctype in
+# .../Doc/ and use the content of that file if present.
+if $DOCTYPE_SPECIFIED ; then
+    :
+elif [ -f .doctype ] ; then
+    DOCTYPE="`cat .doctype`"
+fi
+
 make --no-print-directory ${PKGTYPE}html || exit $?
 PACKAGE="html-$VERSION.$PKGEXT"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
