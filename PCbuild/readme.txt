@@ -145,19 +145,19 @@ tix
 
     Edit win\common.mak in this directory, to set the following variables:
         TCL_VER=8.4
-	INSTALLDIR=..\..\tix-8.1.4
-	TCL_PATCH=3
-	RMDIR=$(TKDIR)\win\rmd.bat
-	MKDIR=$(TKDIR)\win\mkd.bat
+        INSTALLDIR=..\..\tix-8.1.4
+        TCL_PATCH=3
+        RMDIR=$(TKDIR)\win\rmd.bat
+        MKDIR=$(TKDIR)\win\mkd.bat
 
     Edit win\makefile.vc:
         TOOLS32 = <directory of bin\cl.exe>
-	TOOLS32_rc = <directory of bin\rc.exe>
+        TOOLS32_rc = <directory of bin\rc.exe>
 
     Edit win\tk8.4\pkgindex.tcl, to replace
         lappend dirs ../../Dlls
     with
-	lappend dirs [file join [file dirname [info nameofexe]] DLLs]
+        lappend dirs [file join [file dirname [info nameofexe]] DLLs]
 
     nmake -f makefile.vc
     nmake -f makefile.vc install
