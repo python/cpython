@@ -618,8 +618,8 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 
 #ifdef macintosh
 	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
-	if (PyMac_getfiletype(filename) == 'PYC '
-	    || PyMac_getfiletype(filename) == 'APPL')
+	if (PyMac_getfiletype((char *)filename) == 'PYC '
+	    || PyMac_getfiletype((char *)filename) == 'APPL')
 		return 1;
 #endif /* macintosh */
 
