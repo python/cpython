@@ -65,6 +65,19 @@ staticforward typeobject Mfsstype;
 #define is_mfssobject(v)		((v)->ob_type == &Mfsstype)
 
 
+/* ---------------------------------------------------------------- */
+/* Declarations for objects of type FInfo */
+
+typedef struct {
+	OB_HEAD
+	FInfo finfo;
+} mfsiobject;
+
+staticforward typeobject Mfsitype;
+
+#define is_mfsiobject(v)		((v)->ob_type == &Mfsitype)
+
+
 mfssobject *newmfssobject(FSSpec *fss); /* Forward */
 
 /* ---------------------------------------------------------------- */
@@ -214,6 +227,114 @@ statichere typeobject Mfsatype = {
 /* End of code for Alias objects */
 /* -------------------------------------------------------- */
 
+/* ---------------------------------------------------------------- */
+
+static struct methodlist mfsi_methods[] = {
+	
+	{NULL,		NULL}		/* sentinel */
+};
+
+/* ---------- */
+
+static mfsiobject *
+newmfsiobject()
+{
+	mfsiobject *self;
+	
+	self = NEWOBJ(mfsiobject, &Mfsitype);
+	if (self == NULL)
+		return NULL;
+	memset((char *)&self->finfo, '\0', sizeof(self->finfo));
+	return self;
+}
+
+static void
+mfsi_dealloc(self)
+	mfsiobject *self;
+{
+	DEL(self);
+}
+
+static object *
+mfsi_getattr(self, name)
+	mfsiobject *self;
+	char *name;
+{
+	object *rv;
+	
+	if ( strcmp(name, "Type") == 0 )
+		return PyMac_BuildOSType(self->finfo.fdType);
+	else if ( strcmp(name, "Creator") == 0 )
+		return PyMac_BuildOSType(self->finfo.fdCreator);
+	else if ( strcmp(name, "Flags") == 0 )
+		return Py_BuildValue("i", (int)self->finfo.fdFlags);
+	else if ( strcmp(name, "Location") == 0 )
+		return PyMac_BuildPoint(self->finfo.fdLocation);
+	else if ( strcmp(name, "Fldr") == 0 )
+		return Py_BuildValue("i", (int)self->finfo.fdFldr);
+	else
+		return findmethod(mfsi_methods, (object *)self, name);
+}
+
+
+static int
+mfsi_setattr(self, name, v)
+	mfsiobject *self;
+	char *name;
+	object *v;
+{
+	int rv;
+	int i;
+	
+	if ( v == NULL ) {
+		err_setstr(AttributeError, "Cannot delete attribute");
+		return -1;
+	}
+	if ( strcmp(name, "Type") == 0 )
+		rv = PyMac_GetOSType(v, &self->finfo.fdType);
+	else if ( strcmp(name, "Creator") == 0 )
+		rv = PyMac_GetOSType(v, &self->finfo.fdCreator);
+	else if ( strcmp(name, "Flags") == 0 ) {
+		rv = PyArg_Parse(v, "i", &i);
+		self->finfo.fdFlags = (short)i;
+	} else if ( strcmp(name, "Location") == 0 )
+		rv = PyMac_GetPoint(v, &self->finfo.fdLocation);
+	else if ( strcmp(name, "Fldr") == 0 ) {
+		rv = PyArg_Parse(v, "i", &i);
+		self->finfo.fdFldr = (short)i;
+	} else {
+		err_setstr(AttributeError, "No such attribute");
+		return -1;
+	}
+	if (rv)
+		return 0;
+	return -1;
+}
+
+
+static typeobject Mfsitype = {
+	OB_HEAD_INIT(&Typetype)
+	0,				/*ob_size*/
+	"FInfo object",			/*tp_name*/
+	sizeof(mfsiobject),		/*tp_basicsize*/
+	0,				/*tp_itemsize*/
+	/* methods */
+	(destructor)mfsi_dealloc,	/*tp_dealloc*/
+	(printfunc)0,		/*tp_print*/
+	(getattrfunc)mfsi_getattr,	/*tp_getattr*/
+	(setattrfunc)mfsi_setattr,	/*tp_setattr*/
+	(cmpfunc)0,		/*tp_compare*/
+	(reprfunc)0,		/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+	(hashfunc)0,		/*tp_hash*/
+};
+
+/* End of code for FInfo object objects */
+/* -------------------------------------------------------- */
+
+
 /*
 ** Helper routine for other modules: return an FSSpec * if the
 ** object is a python fsspec object, else NULL
@@ -299,7 +420,7 @@ mfss_NewAliasMinimal(self, args)
 	return (object *)newmfsaobject(alias);
 }
 
-/* XXXX These routines should be replaced with a complete interface to *FInfo */
+/* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
 static object *
 mfss_GetCreatorType(self, args)
 	mfssobject *self;
@@ -346,6 +467,47 @@ mfss_SetCreatorType(self, args)
 	return None;
 }
 
+static object *
+mfss_GetFInfo(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	mfsiobject *fip;
+	
+	
+	if (!newgetargs(args, ""))
+		return NULL;
+	if ( (fip=newmfsiobject()) == NULL )
+		return NULL;
+	err = FSpGetFInfo(&self->fsspec, &fip->finfo);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		DECREF(fip);
+		return NULL;
+	}
+	return (object *)fip;
+}
+
+static object *
+mfss_SetFInfo(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	mfsiobject *fip;
+	
+	if (!newgetargs(args, "O!", &Mfsitype, &fip))
+		return NULL;
+	err = FSpSetFInfo(&self->fsspec, &fip->finfo);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist mfss_methods[] = {
 	{"as_pathname",		(method)mfss_as_pathname,			1},
 	{"as_tuple",		(method)mfss_as_tuple,				1},
@@ -353,6 +515,8 @@ static struct methodlist mfss_methods[] = {
 	{"NewAliasMinimal",	(method)mfss_NewAliasMinimal,		1},
 	{"GetCreatorType",	(method)mfss_GetCreatorType,		1},
 	{"SetCreatorType",	(method)mfss_SetCreatorType,		1},
+	{"GetFInfo",		(method)mfss_GetFInfo,				1},
+	{"SetFInfo",		(method)mfss_SetFInfo,				1},
  
 	{NULL,			NULL}		/* sentinel */
 };
@@ -590,6 +754,14 @@ mfs_FindFolder(self, args)
 	return mkvalue("(ii)", refnum, dirid);
 }
 
+static object *
+mfs_FInfo(self, args)
+	object *self;
+	object *args;
+{	
+	return (object *)newmfsiobject();
+}
+
 /* List of methods defined in the module */
 
 static struct methodlist mfs_methods[] = {
@@ -601,6 +773,7 @@ static struct methodlist mfs_methods[] = {
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
 	{"FindFolder",			mfs_FindFolder,			1},
+	{"FInfo",				mfs_FInfo,				1},
  
 	{NULL,		NULL}		/* sentinel */
 };
