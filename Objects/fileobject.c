@@ -30,10 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
 
-#include "errno.h"
-#ifndef errno
-extern int errno;
-#endif
+#include <errno.h>
 
 typedef struct {
 	OB_HEAD

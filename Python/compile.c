@@ -39,8 +39,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 
 #include <ctype.h>
-
-extern int errno;
+#include <errno.h>
 
 #define OFF(x) offsetof(codeobject, x)
 

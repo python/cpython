@@ -24,10 +24,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* FL module -- interface to Mark Overmars' FORMS Library. */
 
-/* As distributed, this code works with FORMS 2.0.
-   If you #define the symbol FL_V15 it will work with FORMS 1.5 (I hope),
-   and possibly also with previous versions.
-   (You must also edit FL.py to set _v15 to 1.) */
+/* This code works with FORMS version 2.2a.
+   FORMS can be ftp'ed from ftp.cs.ruu.nl (131.211.80.17), directory
+   /pub/SGI/FORMS. */
 
 /* A half-hearted attempt has been made to allow programs using this
  * module to exploit parallelism (through the threads module). No provisions
@@ -269,6 +268,35 @@ generic_unfreeze_object(g, args)
 	return generic_call(g, args, fl_unfreeze_object);
 }
 
+static object *
+generic_activate_object(g, args)
+	genericobject *g;
+	object *args;
+{
+	return generic_call(g, args, fl_activate_object);
+}
+
+static object *
+generic_deactivate_object(g, args)
+	genericobject *g;
+	object *args;
+{
+	return generic_call(g, args, fl_deactivate_object);
+}
+
+static object *
+generic_set_object_shortcut(g, args)
+	genericobject *g;
+	object *args;
+{
+	char *str;
+	if (!getargs(args, "s", &str))
+		return NULL;
+	fl_set_object_shortcut(g->ob_generic, str);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist generic_methods[] = {
 	{"set_call_back",	generic_set_call_back},
 	{"delete_object",	generic_delete_object},
@@ -277,10 +305,9 @@ static struct methodlist generic_methods[] = {
 	{"redraw_object",	generic_redraw_object},
 	{"freeze_object",	generic_freeze_object},
 	{"unfreeze_object",	generic_unfreeze_object},
-#if 0
-	{"handle_object",	generic_handle_object},
-	{"handle_object_direct",generic_handle_object_direct},
-#endif
+	{"activate_object",	generic_activate_object},
+	{"deactivate_object",	generic_deactivate_object},
+	{"set_object_shortcut",	generic_set_object_shortcut},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -314,7 +341,7 @@ static struct memberlist generic_memberlist[] = {
 	{"pushed",	T_INT,		OFF(pushed),	RO},
 	{"focus",	T_INT,		OFF(focus),	RO},
 	{"belowmouse",	T_INT,		OFF(belowmouse),RO},
-	{"frozen",	T_INT,		OFF(frozen),	RO},
+/*	{"frozen",	T_INT,		OFF(frozen),	RO},	*/
 	{"active",	T_INT,		OFF(active)},
 	{"input",	T_INT,		OFF(input)},
 	{"visible",	T_INT,		OFF(visible),	RO},
@@ -518,7 +545,7 @@ call_forms_INstr (func, obj, args)
 }
 
 
-/* voide func (object, int, string) */
+/* void func (object, int, string) */
 static object *
 call_forms_INiINstr (func, obj, args)
 	void (*func)(FL_OBJECT *, int, char *);
@@ -537,10 +564,10 @@ call_forms_INiINstr (func, obj, args)
 }
 
 #ifdef UNUSED
-/* void func (object, float) */
+/* void func (object, int, int) */
 static object *
 call_forms_INiINi (func, obj, args)
-	void (*func)(FL_OBJECT *, float, float);
+	void (*func)(FL_OBJECT *, int, int);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -848,6 +875,15 @@ get_button(g, args)
 {
 	return call_forms_Ri (fl_get_button, g-> ob_generic, args);
 }
+
+static object *
+get_button_numb(g, args)
+	genericobject *g;
+	object *args;
+{
+	return call_forms_Ri (fl_get_button_numb, g-> ob_generic, args);
+}
+
 static object *
 set_button_shortcut(g, args)
 	genericobject *g;
@@ -859,9 +895,8 @@ set_button_shortcut(g, args)
 static struct methodlist button_methods[] = {
 	{"set_button",		set_button},
 	{"get_button",		get_button},
-#ifndef FL_V15
+	{"get_button_numb",	get_button_numb},
 	{"set_button_shortcut",	set_button_shortcut},
-#endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1034,47 +1069,8 @@ static struct methodlist counter_methods[] = {
 	{NULL,				NULL}		/* sentinel */
 };
 
-#ifdef FL_V15
-/* Class : Defaults */
-
-static object *
-get_default(g, args)
-	genericobject *g;
-	object *args;
-{
-	char c;
-
-	if (!getnoarg(args)) return NULL;
-
-	c = fl_get_default (g->ob_generic);
-
-	return mkvalue("c", c);
-}
-
-static struct methodlist default_methods[] = {
-	{"get_default",		get_default},
-	{NULL,			NULL}		/* sentinel */
-};
-#endif /* FL_V15 */
-
 
 /* Class: Dials */
-
-#ifdef FL_V15
-static object *
-set_dial (g, args)
-	genericobject *g;
-	object *args;
-{
-	float f1, f2, f3;
-
-	if (!getargs(args, "(fff)", &f1, &f2, &f3))
-		return NULL;
-	fl_set_dial (g->ob_generic, f1, f2, f3);
-	INCREF(None);
-	return None;
-}
-#endif /* FL_V15 */
 
 static object *
 get_dial_value(g, args)
@@ -1108,7 +1104,6 @@ get_dial_bounds (g, args)
 	return call_forms_OUTfOUTf (fl_get_dial_bounds, g-> ob_generic, args);
 }
 
-#ifndef FL_V15
 static object *
 set_dial_step (g, args)
 	genericobject *g;
@@ -1116,20 +1111,13 @@ set_dial_step (g, args)
 {
 	return call_forms_INf (fl_set_dial_step, g-> ob_generic, args);
 }
-#endif /* !FL_V15 */
 
 static struct methodlist dial_methods[] = {
-#ifdef FL_V15
-	{"set_dial",		set_dial},
-	{"get_dial",		get_dial_value},
-#endif /* FL_V15 */
 	{"set_dial_value",	set_dial_value},
 	{"get_dial_value",	get_dial_value},
 	{"set_dial_bounds",	set_dial_bounds},
 	{"get_dial_bounds",	get_dial_bounds},
-#ifndef FL_V15
 	{"set_dial_step",	set_dial_step},
-#endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1159,7 +1147,6 @@ set_input_color (g, args)
 	return call_forms_INfINf (fl_set_input_color, g-> ob_generic, args);
 }
 
-#ifndef FL_V15
 static object *
 set_input_return (g, args)
 	genericobject *g;
@@ -1167,15 +1154,12 @@ set_input_return (g, args)
 {
 	return call_forms_INi (fl_set_input_return, g-> ob_generic, args);
 }
-#endif /* !FL_V15 */
 
 static struct methodlist input_methods[] = {
 	{"set_input",		set_input},
 	{"get_input",		get_input},
 	{"set_input_color",	set_input_color},
-#ifndef FL_V15
 	{"set_input_return",	set_input_return},
-#endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1226,22 +1210,6 @@ static struct methodlist menu_methods[] = {
 
 
 /* Class: Sliders */
-
-#ifdef FL_V15
-static object *
-set_slider (g, args)
-	genericobject *g;
-	object *args;
-{
-	float f1, f2, f3;
-
-	if (!args(args, "(fff)", &f1, &f2, &f3))
-		return NULL;
-	fl_set_slider (g->ob_generic, f1, f2, f3);
-	INCREF(None);
-	return None;
-}
-#endif /* FL_V15 */
 
 static object *
 get_slider_value(g, args)
@@ -1299,7 +1267,6 @@ set_slider_precision (g, args)
 	return call_forms_INi (fl_set_slider_precision, g-> ob_generic, args);
 }
 
-#ifndef FL_V15
 static object *
 set_slider_step (g, args)
 	genericobject *g;
@@ -1307,14 +1274,9 @@ set_slider_step (g, args)
 {
 	return call_forms_INf (fl_set_slider_step, g-> ob_generic, args);
 }
-#endif /* !FL_V15 */
 
 
 static struct methodlist slider_methods[] = {
-#ifdef FL_V15
-	{"set_slider",		set_slider},
-	{"get_slider",		get_slider_value},
-#endif /* FL_V15 */
 	{"set_slider_value",	set_slider_value},
 	{"get_slider_value",	get_slider_value},
 	{"set_slider_bounds",	set_slider_bounds},
@@ -1322,9 +1284,7 @@ static struct methodlist slider_methods[] = {
 	{"set_slider_return",	set_slider_return},
 	{"set_slider_size",	set_slider_size},
 	{"set_slider_precision",set_slider_precision},
-#ifndef FL_V15
 	{"set_slider_step",	set_slider_step},
-#endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1488,6 +1448,22 @@ form_call_INiINi(func, f, args)
 }
 
 static object *
+form_call_INfINf(func, f, args)
+	FL_FORM *f;
+	object *args;
+	void (*func)(FL_FORM *, float, float);
+{
+	float a, b;
+
+	if (!getargs(args, "(ff)", &a, &b)) return NULL;
+
+	(*func)(f, a, b);
+
+	INCREF(None);
+	return None;
+}
+
+static object *
 form_hide_form(f, args)
 	formobject *f;
 	object *args;
@@ -1532,6 +1508,22 @@ form_set_form_position(f, args)
 	object *args;
 {
 	return form_call_INiINi(fl_set_form_position, f-> ob_form, args);
+}
+
+static object *
+form_set_form_size(f, args)
+	formobject *f;
+	object *args;
+{
+	return form_call_INiINi(fl_set_form_size, f-> ob_form, args);
+}
+
+static object *
+form_scale_form(f, args)
+	formobject *f;
+	object *args;
+{
+	return form_call_INfINf(fl_scale_form, f-> ob_form, args);
 }
 
 static object *
@@ -1627,16 +1619,6 @@ form_add_counter(f, args)
 	return generic_add_object(f, args, fl_add_counter, counter_methods);
 }
 
-#ifdef FL_V15
-static object *
-form_add_default(f, args)
-	formobject *f;
-	object *args;
-{
-	return generic_add_object(f, args, fl_add_default, default_methods);
-}
-#endif /* FL_V15 */
-
 static object *
 form_add_clock(f, args)
 	formobject *f;
@@ -1718,16 +1700,6 @@ form_unfreeze_form(f, args)
 {
 	return form_call(fl_unfreeze_form, f-> ob_form, args);
 }
-
-#ifdef FL_V15
-static object *
-form_remove_form(f, args)
-	formobject *f;
-	object *args;
-{
-	return form_call(fl_remove_form, f-> ob_form, args);
-}
-#endif /* FL_V15 */
 
 static object *
 form_activate_form(f, args)
@@ -1845,11 +1817,10 @@ static struct methodlist form_methods[] = {
 	{"hide_form",		form_hide_form},
 	{"redraw_form",		form_redraw_form},
 	{"set_form_position",	form_set_form_position},
+	{"set_form_size",	form_set_form_size},
+	{"scale_form",		form_scale_form},
 	{"freeze_form",		form_freeze_form},
 	{"unfreeze_form",	form_unfreeze_form},
-#ifdef FL_V15
-	{"remove_form",		form_remove_form},
-#endif /* FL_V15 */
 	{"activate_form",	form_activate_form},
 	{"deactivate_form",	form_deactivate_form},
 	{"bgn_group",		form_bgn_group},
@@ -1869,9 +1840,6 @@ static struct methodlist form_methods[] = {
 	{"add_valslider",	form_add_valslider},
 	{"add_dial",		form_add_dial},
 	{"add_counter",		form_add_counter},
-#ifdef FL_V15
-	{"add_default",		form_add_default},
-#endif /* FL_V15 */
 	{"add_box",		form_add_box},
 	{"add_clock",		form_add_clock},
 	{"add_choice",		form_add_choice},
@@ -2136,7 +2104,6 @@ fl_call(func, args)
 }
 #endif
 
-#ifndef FL_V15
 static object *
 forms_set_graphics_mode(dummy, args)
 	object *dummy;
@@ -2191,8 +2158,6 @@ forms_set_font_name(dummy, args)
 	INCREF(None);
 	return None;
 }
-
-#endif /* !FL_V15 */
 
 
 static object *
@@ -2552,12 +2517,10 @@ static struct methodlist forms_methods[] = {
 	{"get_directory",	forms_get_directory},
 	{"get_pattern",		forms_get_pattern},
 	{"get_filename",	forms_get_filename},
-#ifndef FL_V15
 	{"set_graphics_mode",	forms_set_graphics_mode},
 	{"get_rgbmode",		forms_get_rgbmode},
 	{"show_errors",		forms_show_errors},
 	{"set_font_name",	forms_set_font_name},
-#endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -2566,7 +2529,5 @@ initfl()
 {
 	initmodule("fl", forms_methods);
 	foreground();
-#ifndef FL_V15
 	fl_init();
-#endif /* !FL_V15 */
 }

@@ -469,7 +469,7 @@ floatsleep(secs)
 #endif /* unix */
 
 
-#ifdef TURBO_C /* Maybe also for MS-DOS? */
+#ifdef TURBO_C
 
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 55	/* 54.945 msec per tick (18.2 HZ clock) */
@@ -492,3 +492,14 @@ millitimer()
 }
 
 #endif /* TURBO_C */
+
+#ifdef MSDOS
+
+floatsleep(secs)
+      double secs;
+{
+      clock_t t= clock( );
+      while( (clock()-t)/CLOCKS_PER_SEC<secs )
+              ;
+}
+#endif /* MSDOS */

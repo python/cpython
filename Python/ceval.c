@@ -1652,7 +1652,7 @@ locals_2_fast(f, clear)
 	err_setval(error_type, error_value);
 }
 
-void
+static void
 mergelocals()
 {
 	locals_2_fast(current_frame, 1);

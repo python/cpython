@@ -47,6 +47,13 @@ int main PROTO((int, char **));
 char *askfile PROTO((void));
 #endif
 
+void
+goaway(sts)
+	int sts;
+{
+	exit(sts);
+}
+
 int
 main(argc, argv)
 	int argc;
@@ -62,7 +69,7 @@ main(argc, argv)
 #else
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s grammar\n", argv[0]);
-		exit(2);
+		goaway(2);
 	}
 	filename = argv[1];
 #endif
@@ -70,7 +77,7 @@ main(argc, argv)
 	fp = fopen("graminit.c", "w");
 	if (fp == NULL) {
 		perror("graminit.c");
-		exit(1);
+		goaway(1);
 	}
 	printf("Writing graminit.c ...\n");
 	printgrammar(g, fp);
@@ -78,12 +85,12 @@ main(argc, argv)
 	fp = fopen("graminit.h", "w");
 	if (fp == NULL) {
 		perror("graminit.h");
-		exit(1);
+		goaway(1);
 	}
 	printf("Writing graminit.h ...\n");
 	printnonterminals(g, fp);
 	fclose(fp);
-	exit(0);
+	goaway(0);
 }
 
 grammar *
@@ -97,7 +104,7 @@ getgrammar(filename)
 	fp = fopen(filename, "r");
 	if (fp == NULL) {
 		perror(filename);
-		exit(1);
+		goaway(1);
 	}
 	g0 = meta_grammar();
 	n = NULL;
@@ -105,12 +112,12 @@ getgrammar(filename)
 	fclose(fp);
 	if (n == NULL) {
 		fprintf(stderr, "Parsing error.\n");
-		exit(1);
+		goaway(1);
 	}
 	g = pgen(n);
 	if (g == NULL) {
 		printf("Bad grammar.\n");
-		exit(1);
+		goaway(1);
 	}
 	return g;
 }
@@ -124,12 +131,12 @@ askfile()
 	printf("Input file name: ");
 	if (fgets(buf, sizeof buf, stdin) == NULL) {
 		printf("EOF\n");
-		exit(1);
+		goaway(1);
 	}
 	/* XXX The (unsigned char *) case is needed by THINK C 3.0 */
 	if (sscanf(/*(unsigned char *)*/buf, " %s ", name) != 1) {
 		printf("No file\n");
-		exit(1);
+		goaway(1);
 	}
 	return name;
 }
@@ -140,7 +147,7 @@ fatal(msg)
 	char *msg;
 {
 	fprintf(stderr, "pgen: FATAL ERROR: %s\n", msg);
-	exit(1);
+	goaway(1);
 }
 
 #ifdef macintosh
