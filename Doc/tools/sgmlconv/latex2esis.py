@@ -487,7 +487,10 @@ class TableHandler(xml.sax.handler.ContentHandler):
         if attrs.has_key("outputname"):
             self.__current.outputname = attrs.get("outputname")
     def end_macro(self):
-        self.__table[self.__current.name] = self.__current
+        name = self.__current.name
+        if self.__table.has_key(name):
+            raise ValueError("name %s already in use" % `name`)
+        self.__table[name] = self.__current
         self.__current = None
 
     def start_attribute(self, attrs):
