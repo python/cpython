@@ -98,6 +98,23 @@ exists(filename)
 }
 
 
+static int
+ismodule(filename)	/* Is module -- check for .pyc/.pyo too */
+	char *filename;
+{
+	if (exists(filename))
+		return 1;
+
+	/* Check for the compiled version of prefix. */
+	if (strlen(filename) < MAXPATHLEN) {
+		strcat(filename, Py_OptimizeFlag ? "o" : "c");
+		if (exists(filename))
+			return 1;
+	}
+	return 0;
+}
+
+
 static void
 join(buffer, stuff)
 	char *buffer;
@@ -131,7 +148,7 @@ search_for_prefix(argv0_path, landmark)
 	do {
 		n = strlen(prefix);
 		join(prefix, landmark);
-		if (exists(prefix)) {
+		if (ismodule(prefix)) {
 			prefix[n] = '\0';
 			return 1;
 		}
@@ -142,6 +159,22 @@ search_for_prefix(argv0_path, landmark)
 }
 
 #ifdef MS_WIN32
+
+#ifndef BUILD_LANDMARK
+#define BUILD_LANDMARK "PC\\getpathp.c"
+#endif
+
+static int
+prefixisbuilddir()
+{
+	int n = strlen(prefix);
+	int ok;
+	join(prefix, BUILD_LANDMARK);
+	ok = exists(prefix);
+	prefix[n] = '\0';
+	return ok;
+}
+
 #include "malloc.h" // for alloca - see comments below!
 extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at startup.
 
@@ -309,18 +342,10 @@ calculate_path()
 	int bufsz;
 	char *pythonhome = Py_GetPythonHome();
 	char *envpath = getenv("PYTHONPATH");
-#ifdef MS_WIN32
-	char *machinepath, *userpath;
 
-	/* Are we running under Windows 3.1(1) Win32s? */
-	if (PyWin_IsWin32s()) {
-		/* Only CLASSES_ROOT is supported */
-		machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
-		userpath = NULL;
-	} else {
-		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
-		userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
-	}
+#ifdef MS_WIN32
+	char *machinepath = NULL;
+	char *userpath = NULL;
 #endif
 
 	get_progpath();
@@ -329,19 +354,8 @@ calculate_path()
 	if (pythonhome == NULL || *pythonhome == '\0') {
 		if (search_for_prefix(argv0_path, LANDMARK))
 			pythonhome = prefix;
-		else {
-			/* Couldnt find a source version - lets see if a compiled version exists. */
-			char LANDMARK_Look[MAX_PATH+1];
-			strcpy(LANDMARK_Look, LANDMARK);
-			/* Turn it into ".pyc" or ".pyc" depending on the current mode. */
-			strcat(LANDMARK_Look, Py_OptimizeFlag ? "o": "c");
-			/* And search again */
-			if (search_for_prefix(argv0_path, LANDMARK_Look))
-				pythonhome = prefix;
-			else
-				/* Give up in disgust - just use the default! */
-				pythonhome = NULL;
-		}
+		else
+			pythonhome = NULL;
 	}
 	else
 		strcpy(prefix, pythonhome);
@@ -349,14 +363,30 @@ calculate_path()
 	if (envpath && *envpath == '\0')
 		envpath = NULL;
 
-	/* We need to construct a path from the following parts:
+#ifdef MS_WIN32
+	if (!prefixisbuilddir()) {
+		/* Are we running under Windows 3.1(1) Win32s? */
+		if (PyWin_IsWin32s()) {
+			/* Only CLASSES_ROOT is supported */
+			machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
+			userpath = NULL;
+		} else {
+			machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
+			userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
+		}
+	}
+#endif
+
+	/* We need to construct a path from the following parts.
 	   (1) the PYTHONPATH environment variable, if set;
 	   (2) for Win32, the machinepath and userpath, if set;
-	   The following only if neither machinepath nor userpath is set:
 	   (3) the PYTHONPATH config macro, with the leading "."
 	       of each component replaced with pythonhome, if set;
 	   (4) the directory containing the executable (argv0_path).
 	   The length calculation calculates #3 first.
+	   Extra rules:
+	   - If PYTHONHOME is set (in any way) item (2) is ignored.
+	   - If registry values are used, (3) and (4) are ignored.
 	*/
 
 	/* Calculate size of return buffer */
