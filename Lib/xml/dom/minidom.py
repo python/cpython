@@ -29,11 +29,19 @@ class Node:
     DOCUMENT_FRAGMENT_NODE      = 11
     NOTATION_NODE               = 12
 
-    allnodes=[]
+    allnodes={}
+    _debug=0
+    _makeParentNodes=1
+    debug=None
 
     def __init__( self ):
         self.childNodes=[]
-        Node.allnodes.append( repr( id( self ))+repr( self.__class__ ))
+        if Node._debug: 
+            index=repr( id( self ))+repr( self.__class__ )
+            Node.allnodes[index]=repr( self.__dict__ )
+            if Node.debug==None:
+                Node.debug=open( "debug4.out", "w" )
+            Node.debug.write( "create %s\n"%index )
 
     def __getattr__( self, key ):
         if key[0:2]=="__": raise AttributeError
@@ -72,12 +80,39 @@ class Node:
         if self.childNodes: return 1
         else: return 0
 
+    def _get_firstChild( self ):
+        return self.childNodes[0]
+
+    def _get_lastChild( self ):
+        return self.childNodes[-1]
+
     def insertBefore( self, newChild, refChild):
         index=self.childNodes.index( refChild )
         self.childNodes.insert( index, newChild )
+        if self._makeParentNodes:
+            newChild.parentNode=self
 
     def appendChild( self, node ):
         self.childNodes.append( node )
+        return node
+
+    def replaceChild( self, newChild, oldChild ):
+        index=self.childNodes.index( oldChild )
+        self.childNodes[index]=oldChild
+
+    def removeChild( self, oldChild ):
+        index=self.childNodes.index( oldChild )
+        del self.childNodes[index]
+
+    def cloneNode( self, deep ):
+        import new
+        clone=new.instance( self.__class__, self.__dict__ )
+        clone.attributes=self.attributes.copy()
+        if not deep:
+            clone.childNodes=[]
+        else:
+            clone.childNodes=map( lambda x: x.cloneNode, self.childNodes )
+        return clone
 
     def unlink( self ):
         self.parentNode=None
@@ -86,11 +121,14 @@ class Node:
             del self.childNodes[-1] # probably not most efficient!
         self.childNodes=None
         if self.attributes:
-            for attr in self.attributes.values():
-                attr.unlink()
-        self.attributes=None
-        index=Node.allnodes.index( repr( id( self ))+repr( self.__class__ ))
-        del Node.allnodes[index]
+            for attr in self._attrs.values():
+                self.removeAttributeNode( attr )
+            assert not len( self._attrs )
+            assert not len( self._attrsNS )
+        if Node._debug:
+            index=repr( id( self ))+repr( self.__class__ )
+            self.debug.write( "Deleting: %s\n" % index )
+            del Node.allnodes[index]
 
 def _write_data( writer, data):
     "Writes datachars to writer."
@@ -99,11 +137,6 @@ def _write_data( writer, data):
     data=string.replace(data,"\"","&quot;")
     data=string.replace(data,">","&gt;")
     writer.write(data)
-
-def _closeElement( element ):
-    del element.parentNode
-    for node in element.elements:
-        _closeElement( node )
 
 def _getElementsByTagNameHelper( parent, name, rc ):
     for node in parent.childNodes:
@@ -123,17 +156,16 @@ def _getElementsByTagNameNSHelper( parent, nsURI, localName, rc ):
 
 class Attr(Node):
     nodeType=Node.ATTRIBUTE_NODE
-    def __init__( self, qName, namespaceURI="", prefix="",
-                  localName=None ):
-        Node.__init__( self )
-        assert qName
+    def __init__( self, qName, namespaceURI="", localName=None,
+prefix=None ):
         # skip setattr for performance
-        self.__dict__["nodeName"] = self.__dict__["name"] = qName
         self.__dict__["localName"]=localName or qName
-        self.__dict__["prefix"]=prefix
+        self.__dict__["nodeName"] = self.__dict__["name"] = qName
         self.__dict__["namespaceURI"]=namespaceURI
-        # nodeValue and value are set elsewhere
+        self.__dict__["prefix"]=prefix
         self.attributes=None
+        Node.__init__( self )
+        # nodeValue and value are set elsewhere
 
     def __setattr__( self, name, value ):
         if name in ("value", "nodeValue" ):
@@ -142,12 +174,13 @@ class Attr(Node):
             self.__dict__[name]=value
 
 class AttributeList:
-    # the attribute list is a transient interface to the underlying dictionaries
-    # mutations here will change the underlying element's dictionary
+    """the attribute list is a transient interface to the underlying
+dictionaries.  mutations here will change the underlying element's
+dictionary"""
     def __init__( self, attrs, attrsNS ):
-        self.__attrs=attrs
-        self.__attrsNS=attrs
-        self.length=len( self.__attrs.keys() )
+        self._attrs=attrs
+        self._attrsNS=attrsNS
+        self.length=len( self._attrs.keys() )
 
     def item( self, index ):
         try:
@@ -157,40 +190,46 @@ class AttributeList:
         
     def items( self ):
         return map( lambda node: (node.tagName, node.value),
-                    self.__attrs.values() )
+                    self._attrs.values() )
 
     def itemsNS( self ):
         return map( lambda node: ((node.URI, node.localName), node.value),
-                    self.__attrs.values() )
+                    self._attrs.values() )
     
     def keys( self ):
-        return self.__attrs.keys()
+        return self._attrs.keys()
 
     def keysNS( self ):
-        return self.__attrsNS.keys()
+        return self._attrsNS.keys()
 
     def values( self ):
-        return self.__attrs.values()
+        return self._attrs.values()
 
     def __len__( self ):
         return self.length
 
     def __cmp__( self, other ):
-        if self.__attrs is other.__attrs: 
+        if self._attrs is getattr( other, "_attrs", None ):
             return 0
         else: 
             return cmp( id( self ), id( other ) )
 
     #FIXME: is it appropriate to return .value?
     def __getitem__( self, attname_or_tuple ):
-        if type( attname_or_tuple ) == type( (1,2) ):
-            return self.__attrsNS[attname_or_tuple].value
+        if type( attname_or_tuple ) == type( () ):
+            return self._attrsNS[attname_or_tuple]
         else:
-            return self.__attrs[attname_or_tuple].value
+            return self._attrs[attname_or_tuple]
 
     def __setitem__( self, attname ):
         raise TypeError, "object does not support item assignment"
-        
+
+    def __delitem__( self, attname_or_tuple ):
+        node=self[attname_or_tuple]
+        node.unlink()
+        del self._attrs[node.name]
+        del self._attrsNS[(node.namespaceURI, node.localName)]
+ 
 class Element( Node ):
     nodeType=Node.ELEMENT_NODE
     def __init__( self, tagName, namespaceURI="", prefix="",
@@ -202,18 +241,18 @@ class Element( Node ):
         self.namespaceURI=namespaceURI
         self.nodeValue=None
 
-        self.__attrs={}  # attributes are double-indexed:
-        self.__attrsNS={}#    tagName -> Attribute
+        self._attrs={}  # attributes are double-indexed:
+        self._attrsNS={}#    tagName -> Attribute
                 #    URI,localName -> Attribute
                 # in the future: consider lazy generation of attribute objects
                 #                this is too tricky for now because of headaches
                 #                with namespaces.
 
     def getAttribute( self, attname ):
-        return self.__attrs[attname].value
+        return self._attrs[attname].value
 
     def getAttributeNS( self, namespaceURI, localName ):
-        return self.__attrsNS[(namespaceURI, localName)].value
+        return self._attrsNS[(namespaceURI, localName)].value
     
     def setAttribute( self, attname, value ):
         attr=Attr( attname )
@@ -222,26 +261,37 @@ class Element( Node ):
         self.setAttributeNode( attr )
 
     def setAttributeNS( self, namespaceURI, qualifiedName, value ):
-        attr=createAttributeNS( namespaceURI, qualifiedName )
+        prefix,localname=_nssplit( qualifiedName )
         # for performance
+        attr = Attr( qualifiedName, namespaceURI, localname, prefix )
         attr.__dict__["value"]=attr.__dict__["nodeValue"]=value
         self.setAttributeNode( attr )
 
+    def getAttributeNode( self, attrname ):
+        return self._attrs.get( attrname )
+
+    def getAttributeNodeNS( self, namespaceURI, localName ):
+        return self._attrsNS[(namespaceURI, localName)]
+
     def setAttributeNode( self, attr ):
-        self.__attrs[attr.name]=attr
-        self.__attrsNS[(attr.namespaceURI,attr.localName)]=attr
+        old=self._attrs.get( attr.name, None)
+        if old:
+            old.unlink()
+        self._attrs[attr.name]=attr
+        self._attrsNS[(attr.namespaceURI,attr.localName)]=attr
 
     def removeAttribute( self, name ):
-        attr = self.__attrs[name]
+        attr = self._attrs[name]
         self.removeAttributeNode( attr )
 
     def removeAttributeNS( self, namespaceURI, localName ):
-        attr = self.__attrsNS[(uri, localName)]
+        attr = self._attrsNS[(namespaceURI, localName)]
         self.removeAttributeNode( attr )
 
     def removeAttributeNode( self, node ):
-        del self.__attrs[node.name]
-        del self.__attrsNS[(node.namespaceURI, node.localName)]
+        node.unlink()
+        del self._attrs[node.name]
+        del self._attrsNS[(node.namespaceURI, node.localName)]
         
     def getElementsByTagName( self, name ):
         return _getElementsByTagNameHelper( self, name, [] )
@@ -271,7 +321,7 @@ class Element( Node ):
             writer.write("/>")
 
     def _get_attributes( self ):
-        return AttributeList( self.__attrs, self.__attrsNS )
+        return AttributeList( self._attrs, self._attrsNS )
 
 class Comment( Node ):
     nodeType=Node.COMMENT_NODE
@@ -313,14 +363,29 @@ class Text( Node ):
     def writexml( self, writer ):
         _write_data( writer, self.data )
 
+def _nssplit( qualifiedName ):
+    fields = string.split(qualifiedName, ':')
+    if len(fields) == 2:
+        return fields
+    elif len(fields) == 1:
+        return( '', fields[0] )
+
 class Document( Node ):
     nodeType=Node.DOCUMENT_NODE
+    documentElement=None
     def __init__( self ):
         Node.__init__( self )
-        self.documentElement=None
         self.attributes=None
         self.nodeName="#document"
         self.nodeValue=None
+
+    def appendChild( self, node ):
+        if node.nodeType==Node.ELEMENT_NODE and self.documentElement:
+            raise TypeError, "Two document elements disallowed"
+        else:
+            self.documentElement=node
+        Node.appendChild( self, node )
+        return node
 
     createElement=Element
 
@@ -333,31 +398,15 @@ class Document( Node ):
     createAttribute=Attr
 
     def createElementNS(self, namespaceURI, qualifiedName):
-        fields = string.split(qualifiedName, ':')
-        if len(fields) == 2:
-            prefix = fields[0]
-            localName = fields[1]
-        elif len(fields) == 1:
-            prefix = ''
-            localName = fields[0]            
-        return Element(self, qualifiedName, namespaceURI, prefix, localName)
+        prefix,localName=_nssplit( qualifiedName )
+        return Element(qualifiedName, namespaceURI, prefix, localName)
 
     def createAttributeNS(self, namespaceURI, qualifiedName):
-        fields = string.split(qualifiedName,':')
-        if len(fields) == 2:
-            localName = fields[1]
-            prefix = fields[0]
-        elif len(fields) == 1:
-            localName = fields[0]
-            prefix = None
-        return Attr(qualifiedName, namespaceURI, prefix, localName)
+        prefix,localName=_nssplit( qualifiedName )
+        return Attr(namespaceURI, qualifiedName, localName, prefix)
 
     def getElementsByTagNameNS(self,namespaceURI,localName):
         _getElementsByTagNameNSHelper( self, namespaceURI, localName )
-
-    def close( self ):
-        for node in self.elements:
-            _closeElement( node )
 
     def unlink( self ):
         self.documentElement=None
