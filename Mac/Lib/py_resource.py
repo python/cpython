@@ -28,30 +28,34 @@ def open(dst):
 	Res.UseResFile(output)
 	return output
 
-def writemodule(name, id, data, type='PYC '):
+def writemodule(name, id, data, type='PYC ', preload=0):
 	"""Write pyc code to a PYC resource with given name and id."""
 	# XXXX Check that it doesn't exist
 	res = Res.Resource(data)
 	res.AddResource(type, id, name)
+	if preload:
+		attrs = res.GetResAttrs()
+		attrs = attrs | 0x04
+		res.SetResAttrs(attrs)
 	res.WriteResource()
 	res.ReleaseResource()
 		
-def frompycfile(file, name=None):
+def frompycfile(file, name=None, preload=0):
 	"""Copy one pyc file to the open resource file"""
 	if name == None:
 		d, name = os.path.split(file)
 		name = name[:-4]
 	id = findfreeid()
-	writemodule(name, id, __builtin__.open(file, 'rb').read())
+	writemodule(name, id, __builtin__.open(file, 'rb').read(), preload=preload)
 	return id, name
 
-def frompyfile(file, name=None):
+def frompyfile(file, name=None, preload=0):
 	"""Compile python source file to pyc file and add to resource file"""
 	import py_compile
 	
 	py_compile.compile(file)
 	file = file +'c'
-	return frompycfile(file, name)	
+	return frompycfile(file, name, preload=preload)	
 
 # XXXX Note this is incorrect, it only handles one type and one file....
 
