@@ -1361,7 +1361,7 @@ to be the same as for expressions, and invalid syntax is rejected
 during the code generation phase, causing less detailed error
 messages.)
 
-\section{The \verb\pass\ statement}
+\section{The {\tt pass} statement}
 
 \begin{verbatim}
 pass_stmt:      "pass"
@@ -1377,7 +1377,7 @@ def f(arg): pass    # a no-op function
 class C: pass       # an empty class
 \end{verbatim}
 
-\section{The \verb\del\ statement}
+\section{The {\tt del} statement}
 
 \begin{verbatim}
 del_stmt:       "del" target_list
@@ -1399,7 +1399,7 @@ is passed to the primary object involved; deletion of a slicing
 is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 
-\section{The \verb\print\ statement}
+\section{The {\tt print} statement}
 
 \begin{verbatim}
 print_stmt:     "print" [ condition ("," condition)* [","] ]
@@ -1428,7 +1428,7 @@ or if it is not a writable file, a \verb\RuntimeError\ exception is raised.
 (The original implementation attempts to write to the system's original
 standard output instead, but this is not safe, and should be fixed.)
 
-\section{The \verb\return\ statement}
+\section{The {\tt return} statement}
 
 \begin{verbatim}
 return_stmt:    "return" [condition_list]
@@ -1447,7 +1447,7 @@ When \verb\return\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the function.
 
-\section{The \verb\raise\ statement}
+\section{The {\tt raise} statement}
 
 \begin{verbatim}
 raise_stmt:     "raise" condition ["," condition]
@@ -1460,7 +1460,7 @@ else \verb\None\ is substituted.
 It then raises the exception identified by the first object,
 with the second one (or \verb\None\) as its parameter.
 
-\section{The \verb\break\ statement}
+\section{The {\tt break} statement}
 
 \begin{verbatim}
 break_stmt:     "break"
@@ -1479,7 +1479,7 @@ When \verb\break\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the loop.
 
-\section{The \verb\continue\ statement}
+\section{The {\tt continue} statement}
 
 \begin{verbatim}
 continue_stmt:  "continue"
@@ -1493,7 +1493,7 @@ not nested in the \verb\try\ clause of a \verb\try\ statement with a
 
 It continues with the next cycle of the nearest enclosing loop.
 
-\section{The \verb\import\ statement}
+\section{The {\tt import} statement}
 
 \begin{verbatim}
 import_stmt:    "import" identifier ("," identifier)*
@@ -1520,10 +1520,10 @@ path; it is initialized from the shell environment variable
 
 If a built-in module is found, its built-in initialization code is
 executed and step (1) is finished.  If no matching file is found,
-\ImportError\ is raised (and step (2) is never started).  If a file is
+\verb\ImportError\ is raised (and step (2) is never started).  If a file is
 found, it is parsed.  If a syntax error occurs, HIRO
 
-\section{The \verb\global\ statement}
+\section{The {\tt global} statement}
 
 \begin{verbatim}
 global_stmt:    "global" identifier ("," identifier)*
@@ -1541,7 +1541,7 @@ compound_stmt:  if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 suite:          statement | NEWLINE INDENT statement+ DEDENT
 \end{verbatim}
 
-\section{The \verb\if\ statement}
+\section{The {\tt if} statement}
 
 \begin{verbatim}
 if_stmt:        "if" condition ":" suite
@@ -1549,20 +1549,20 @@ if_stmt:        "if" condition ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-\section{The \verb\while\ statement}
+\section{The {\tt while} statement}
 
 \begin{verbatim}
 while_stmt:     "while" condition ":" suite ["else" ":" suite]
 \end{verbatim}
 
-\section{The \verb\for\ statement}
+\section{The {\tt for} statement}
 
 \begin{verbatim}
 for_stmt:       "for" target_list "in" condition_list ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-\section{The \verb\try\ statement}
+\section{The {\tt try} statement}
 
 \begin{verbatim}
 try_stmt:       "try" ":" suite
