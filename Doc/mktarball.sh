@@ -19,17 +19,18 @@ MYDIR=`pwd`
 
 TAG="$1"
 
-mkdirhier $TEMPDIR/Doc || exit $?
+mkdirhier $TEMPDIR/Python-$VERSION/Doc || exit $?
 if [ "$TAG" ] ; then
-    cvs export -r $TAG -d $TEMPDIR/Doc python/dist/src/Doc || exit $?
+    cvs export -r $TAG -d $TEMPDIR/Python-$VERSION/Doc python/dist/src/Doc \
+     || exit $?
 else
-    cvs checkout -d $TEMPDIR/Doc python/dist/src/Doc || exit $?
+    cvs checkout -d $TEMPDIR/Python-$VERSION/Doc python/dist/src/Doc || exit $?
     rm -r `find $TEMPDIR -name CVS -print` || exit $?
 fi
 
 cd $TEMPDIR
 
-(tar cf - Doc | gzip -9 >$MYDIR/latex-$VERSION.tar.gz) || exit $?
+(tar cf - Python-$VERSION | gzip -9 >$MYDIR/latex-$VERSION.tar.gz) || exit $?
 cd $MYDIR
 rm -r $TEMPDIR || exit $?
 
