@@ -1011,7 +1011,10 @@ AC_SUBST(HAVE_GETHOSTBYNAME)
 # (none yet)
 
 # Linux requires this for correct f.p. operations
-AC_CHECK_LIB(ieee, __fpu_control)
+AC_CHECK_FUNC(__fpu_control,
+  [],
+  [AC_CHECK_LIB(ieee, __fpu_control)
+])
 
 # Check for --with-fpectl
 AC_MSG_CHECKING(for --with-fpectl)
