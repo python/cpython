@@ -4,7 +4,7 @@
 
 Level 1, version 1
 
-Generated from flap:Programma's:Netscape 2.0b5 Folder:Netscape 2.0b5
+Generated from flap:Programma's:Netscape NavigatorÅ Folder:Netscape NavigatorÅ 3.0
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -40,7 +40,7 @@ class Standard_URL_suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
