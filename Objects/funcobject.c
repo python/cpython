@@ -30,7 +30,10 @@ PyFunction_New(PyObject *code, PyObject *globals)
 			doc = Py_None;
 		Py_INCREF(doc);
 		op->func_doc = doc;
+		op->func_dict = NULL;
 	}
+	else
+		return NULL;
 	PyObject_GC_Init(op);
 	return (PyObject *)op;
 }
@@ -102,25 +105,54 @@ static struct memberlist func_memberlist[] = {
 };
 
 static PyObject *
-func_getattr(PyFunctionObject *op, char *name)
+func_getattro(PyFunctionObject *op, PyObject *name)
 {
-	if (name[0] != '_' && PyEval_GetRestricted()) {
+	PyObject *rtn;
+	char *sname = PyString_AsString(name);
+	
+	if (sname[0] != '_' && PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
 		  "function attributes not accessible in restricted mode");
 		return NULL;
 	}
-	return PyMember_Get((char *)op, func_memberlist, name);
+
+	if (!strcmp(sname, "__dict__") || !strcmp(sname, "func_dict")) {
+		if (op->func_dict == NULL)
+			rtn = Py_None;
+		else
+			rtn = op->func_dict;
+
+		Py_INCREF(rtn);
+		return rtn;
+	}
+
+	/* no API for PyMember_HasAttr() */
+	rtn = PyMember_Get((char *)op, func_memberlist, sname);
+
+	if (rtn == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		PyErr_Clear();
+		if (op->func_dict != NULL) {
+			rtn = PyDict_GetItem(op->func_dict, name);
+			Py_XINCREF(rtn);
+		}
+		if (rtn == NULL)
+			PyErr_SetObject(PyExc_AttributeError, name);
+	}
+	return rtn;
 }
 
 static int
-func_setattr(PyFunctionObject *op, char *name, PyObject *value)
+func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
 {
+	int rtn;
+	char *sname = PyString_AsString(name);
+
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
 		  "function attributes not settable in restricted mode");
 		return -1;
 	}
-	if (strcmp(name, "func_code") == 0) {
+	if (strcmp(sname, "func_code") == 0) {
 		if (value == NULL || !PyCode_Check(value)) {
 			PyErr_SetString(
 				PyExc_TypeError,
@@ -128,7 +160,7 @@ func_setattr(PyFunctionObject *op, char *name, PyObject *value)
 			return -1;
 		}
 	}
-	else if (strcmp(name, "func_defaults") == 0) {
+	else if (strcmp(sname, "func_defaults") == 0) {
 		if (value != Py_None && !PyTuple_Check(value)) {
 			PyErr_SetString(
 				PyExc_TypeError,
@@ -138,7 +170,33 @@ func_setattr(PyFunctionObject *op, char *name, PyObject *value)
 		if (value == Py_None)
 			value = NULL;
 	}
-	return PyMember_Set((char *)op, func_memberlist, name, value);
+	else if (!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__")) {
+		if (value != Py_None && !PyDict_Check(value)) {
+			PyErr_SetString(
+				PyExc_TypeError,
+				"func_dict must be set to a dict object");
+			return -1;
+		}
+		if (value == Py_None)
+			value = NULL;
+
+		Py_XDECREF(op->func_dict);
+		Py_XINCREF(value);
+		op->func_dict = value;
+		return 0;
+	}
+
+	rtn = PyMember_Set((char *)op, func_memberlist, sname, value);
+	if (rtn < 0 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		PyErr_Clear();
+		if (op->func_dict == NULL) {
+			op->func_dict = PyDict_New();
+			if (op->func_dict == NULL)
+				return -1;
+		}
+		rtn = PyDict_SetItem(op->func_dict, name, value);
+	}
+	return rtn;
 }
 
 static void
@@ -150,6 +208,7 @@ func_dealloc(PyFunctionObject *op)
 	Py_DECREF(op->func_name);
 	Py_XDECREF(op->func_defaults);
 	Py_XDECREF(op->func_doc);
+	Py_XDECREF(op->func_dict);
 	op = (PyFunctionObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 }
@@ -227,6 +286,11 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 		if (err)
 			return err;
 	}
+	if (f->func_dict) {
+		err = visit(f->func_dict, arg);
+		if (err)
+			return err;
+	}
 	return 0;
 }
 
@@ -238,8 +302,8 @@ PyTypeObject PyFunction_Type = {
 	0,
 	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	(getattrfunc)func_getattr, /*tp_getattr*/
-	(setattrfunc)func_setattr, /*tp_setattr*/
+	0, /*tp_getattr*/
+	0, /*tp_setattr*/
 	(cmpfunc)func_compare, /*tp_compare*/
 	(reprfunc)func_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
@@ -248,8 +312,8 @@ PyTypeObject PyFunction_Type = {
 	(hashfunc)func_hash, /*tp_hash*/
 	0,		/*tp_call*/
 	0,		/*tp_str*/
-	0,		/*tp_getattro*/
-	0,		/*tp_setattro*/
+	(getattrofunc)func_getattro,	     /*tp_getattro*/
+	(setattrofunc)func_setattro,	     /*tp_setattro*/
 	0,		/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,		/* tp_doc */
