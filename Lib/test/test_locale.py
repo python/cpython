@@ -1,7 +1,9 @@
-from test.test_support import verbose
+from test.test_support import verbose, TestSkipped
 import locale
 import sys
 
+if sys.platform == 'darwin':
+	raise TestSkipped("Locale support on MacOSX is minimal and cannot be tested")
 oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
 tloc = "en_US"
