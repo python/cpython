@@ -756,7 +756,7 @@ def getframeinfo(frame, context=1):
             lines = index = None
         else:
             start = max(start, 1)
-            start = min(start, len(lines) - context)
+            start = max(0, min(start, len(lines) - context))
             lines = lines[start:start+context]
             index = lineno - 1 - start
     else:
