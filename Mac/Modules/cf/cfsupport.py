@@ -360,7 +360,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 		if (v == Py_None) { *p_itself = NULL; return 1; }
 		if (PyString_Check(v)) {
 		    char *cStr;
-		    if (!PyArg_Parse(v, "et", "ascii", &cStr))
+		    if (!PyArg_Parse(v, "es", "ascii", &cStr))
 		    	return NULL;
 			*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
 			return 1;
