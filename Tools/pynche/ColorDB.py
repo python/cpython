@@ -104,14 +104,24 @@ class ColorDB:
 		nearest_name = name
 	return nearest_name
 
-    def all_names(self):
+    def unique_names(self):
         # sorted
         if not self.__allnames:
             self.__allnames = []
             for name, aliases in self.__byrgb.values():
                 self.__allnames.append(name)
-            self.__allnames.sort()
+            # sort irregardless of case
+            def nocase_cmp(n1, n2):
+                return cmp(string.lower(n1), string.lower(n2))
+            self.__allnames.sort(nocase_cmp)
         return self.__allnames
+
+    def aliases_of(self, red, green, blue):
+        try:
+            name, aliases = self.__byrgb[(red, green, blue)]
+        except KeyError:
+            raise BadColor((red, green, blue))
+        return [name] + aliases
 	
 
 class RGBColorDB(ColorDB):
