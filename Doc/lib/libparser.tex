@@ -10,6 +10,7 @@
 %
 
 \section{Built-in Module \sectcode{parser}}
+\label{module-parser}
 \bimodindex{parser}
 
 The \code{parser} module provides an interface to Python's internal
@@ -609,9 +610,9 @@ the ``short form'' or the ``long form.''  The short form is used when
 the code block is on the same line as the definition of the code
 block, as in
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def square(x): "Square an argument."; return x ** 2
-\end{verbatim}\ecode
+\end{verbatim}
 %
 while the long form uses an indented block and allows nested
 definitions:
@@ -674,8 +675,20 @@ module.  If information is required which is not extracted by the code
 of this example, the code may be extended at clearly defined points to
 provide additional capabilities.
 
+\begin{seealso}
+
+\seemodule{symbol}%
+  {useful constants representing internal nodes of the parse tree}
+
+\seemodule{token}%
+  {useful constants representing leaf nodes of the parse tree and
+functions for testing node values}
+
+\end{seealso}
+
 
 \section{Standard Module \sectcode{symbol}}
+\label{module-symbol}
 \stmodindex{symbol}
 
 This module provides constants which represent the numeric values of
@@ -696,8 +709,13 @@ module back to name strings, allowing more human-readable
 representation of parse trees to be generated.
 \end{datadesc}
 
+\begin{seealso}
+\seemodule{parser}{second example uses this module}
+\end{seealso}
+
 
 \section{Standard Module \sectcode{token}}
+\label{module-token}
 \stmodindex{token}
 
 This module provides constants which represent the numeric values of
@@ -731,5 +749,6 @@ Return true for non-terminal token values.
 Return true if \var{x} is the marker indicating the end of input.
 \end{funcdesc}
 
-%%
-%%  end of file
+\begin{seealso}
+\seemodule{parser}{second example uses this module}
+\end{seealso}
