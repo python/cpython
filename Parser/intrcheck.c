@@ -174,7 +174,7 @@ intrcheck()
 #include <string.h>
 #include <signal.h>
 
-static int interrupted;
+int interrupted;
 
 /* ARGSUSED */
 static RETSIGTYPE
