@@ -1449,65 +1449,39 @@ Tkapp_AddErrorInfo(PyObject *self, PyObject *args)
 
 TCL_DECLARE_MUTEX(var_mutex)
 
-typedef CONST84_RETURN char* (*EventFunc1)(Tcl_Interp*, CONST char*, int);
-typedef CONST84_RETURN char* (*EventFunc2)(Tcl_Interp*, CONST char*, CONST char*, int);
-typedef CONST84_RETURN char* (*EventFunc3)(Tcl_Interp*, CONST char*, CONST char*, CONST char*, int);
+typedef PyObject* (*EventFunc)(PyObject*, PyObject *args, int flags);
 typedef struct VarEvent {
 	Tcl_Event ev; /* must be first */
-	TkappObject *self;
-	char* arg1;
-	char* arg2;
-	char* arg3;
+	PyObject *self;
+	PyObject *args;
 	int flags;
-	EventFunc1 func1;
-	EventFunc2 func2;
-	EventFunc3 func3;
+	EventFunc func;
 	PyObject **res;
-	PyObject **exc;
+	PyObject **exc_type;
+	PyObject **exc_val;
 	Tcl_Condition cond;
-	int coderesult;
 } VarEvent;
 
-static const char*
+void
 var_perform(VarEvent *ev)
 {
-	if (!ev->arg2 && !ev->arg2)
-		return ev->func1(ev->self->interp, ev->arg1, ev->flags);
-	if (!ev->arg3)
-		return ev->func2(ev->self->interp, ev->arg1,
-				 ev->arg2, ev->flags);
-	return ev->func3(ev->self->interp, ev->arg1, ev->arg2,
-			 ev->arg3, ev->flags);
-}
-
-static void
-var_fill_result(VarEvent *ev, const char* res)
-{
-	if (ev->coderesult) {
-		if ((int)res != TCL_ERROR) {
-			Py_INCREF(Py_None);
-			*(ev->res) = Py_None;
-			return;
-		}
+	*(ev->res) = ev->func(ev->self, ev->args, ev->flags);
+	if (!*(ev->res)) {
+		PyObject *exc, *val, *tb;
+		PyErr_Fetch(&exc, &val, &tb);
+		PyErr_NormalizeException(&exc, &val, &tb);
+		*(ev->exc_type) = exc;
+		*(ev->exc_val) = val;
+		Py_DECREF(tb);
 	}
-	else if (res) {
-		*(ev->res) = PyString_FromString(res);
-		return;
-	}
-
-	*(ev->res) = NULL;
-	*(ev->exc) = PyObject_CallFunction(
-		Tkinter_TclError, "s",
-		Tcl_GetStringResult(ev->self->interp));
-
+		
 }
 
 static int
 var_proc(VarEvent* ev, int flags)
 {
-	const char *result = var_perform(ev);
 	ENTER_PYTHON
-	var_fill_result(ev, result);
+        var_perform(ev);
 	Tcl_MutexLock(&var_mutex);
 	Tcl_ConditionNotify(&ev->cond);
 	Tcl_MutexUnlock(&var_mutex);
@@ -1516,125 +1490,105 @@ var_proc(VarEvent* ev, int flags)
 }
 
 static PyObject*
-var_invoke(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
-	   EventFunc1 func1, EventFunc2 func2, EventFunc3 func3,
-	   int coderesult)
+var_invoke(EventFunc func, PyObject *_self, PyObject *args, int flags)
 {
-	VarEvent _ev;
 	TkappObject *self = (TkappObject*)_self;
-	VarEvent *ev = self->threaded ? 
-		(VarEvent*)ckalloc(sizeof(VarEvent)) : &_ev;
-	PyObject *res, *exc;
-
-	ev->self = self;
-	ev->arg1 = arg1;
-	ev->arg2 = arg2;
-	ev->arg3 = arg3;
-	ev->flags = flags;
-	ev->func1 = func1;
-	ev->func2 = func2;
-	ev->func3 = func3;
-	ev->coderesult = coderesult;
-	ev->res = &res;
-	ev->exc = &exc;
 #ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
+		TkappObject *self = (TkappObject*)_self;
+		VarEvent *ev;
+		PyObject *res, *exc_type, *exc_val;
+		
 		/* The current thread is not the interpreter thread.  Marshal
 		   the call to the interpreter thread, then wait for
 		   completion. */
-
 		if (!WaitForMainloop(self))
 			return NULL;
+
+		ev = (VarEvent*)ckalloc(sizeof(VarEvent));
+
+		ev->self = _self;
+		ev->args = args;
+		ev->flags = flags;
+		ev->func = func;
+		ev->res = &res;
+		ev->exc_type = &exc_type;
+		ev->exc_val = &exc_val;
 		ev->cond = NULL;
 		ev->ev.proc = (Tcl_EventProc*)var_proc;
 		Tkapp_ThreadSend(self, (Tcl_Event*)ev, &ev->cond, &var_mutex);
+		if (!res) {
+			PyErr_SetObject(exc_type, exc_val);
+			Py_DECREF(exc_type);
+			Py_DECREF(exc_val);
+			return NULL;
+		}
+		return res;
 	}
-	else 
 #endif
-	{
-		/* Tcl is not threaded, or this is the interpreter thread.  To
-		   perform the call, we must hold the TCL lock. To receive the
-		   results, we must also hold the Python lock. */
-		const char *result;
-		ENTER_TCL
-		result = var_perform(ev);
-		ENTER_OVERLAP
-		var_fill_result(ev, result);
-		LEAVE_OVERLAP_TCL
-	}
-	if (!res) {
-		PyErr_SetObject(Tkinter_TclError, exc);
-		return NULL;
-	}
-	return res;
-}
-
-static PyObject*
-var_invoke2(PyObject *_self, char* arg1, char* arg2, char* arg3, int flags,
-	   int (*func1)(Tcl_Interp*, CONST char*, int),
-	   int (*func2)(Tcl_Interp*, CONST char*, CONST char*, int),
-	   int (*func3)(Tcl_Interp*, CONST char*, CONST char*, CONST char*, int))
-{
-	return var_invoke(_self, arg1, arg2, arg3, flags,
-			  (EventFunc1)func1, (EventFunc2)func2,
-			  (EventFunc3)func3, 1);
+        /* Tcl is not threaded, or this is the interpreter thread. */
+	return func(_self, args, flags);
 }
 
 static PyObject *
 SetVar(PyObject *self, PyObject *args, int flags)
 {
-	char *name1, *name2, *s;
-	PyObject *res;
+	char *name1, *name2;
 	PyObject *newValue;
-	PyObject *tmp;
+	PyObject *res = NULL;
+	Tcl_Obj *newval, *ok;
 
-	tmp = PyList_New(0);
-	if (!tmp)
-		return NULL;
-	
 	if (PyArg_ParseTuple(args, "sO:setvar", &name1, &newValue)) {
-		/* XXX Merge? */
-		s = AsString(newValue, tmp);
-		if (s == NULL)
+		/* XXX Acquire tcl lock??? */
+		newval = AsObj(newValue);
+		if (newval == NULL)
 			return NULL;
-		res = var_invoke(self, name1, s, NULL, flags,
-				 NULL, Tcl_SetVar, NULL, 0);
+		ENTER_TCL
+		ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, NULL, 
+				   newval, flags);
+		ENTER_OVERLAP
+		if (!ok)
+			Tkinter_Error(self);
+		else {
+			res = Py_None;
+			Py_INCREF(res);
+		}
+		LEAVE_OVERLAP_TCL
 	}
 	else {
 		PyErr_Clear();
 		if (PyArg_ParseTuple(args, "ssO:setvar",
 				     &name1, &name2, &newValue)) {
-			s = AsString(newValue, tmp);
-			if (s == NULL)
-				return NULL;
-			res = var_invoke(self, name1, name2, s, flags,
-					 NULL, NULL, Tcl_SetVar2, 0);
+			/* XXX must hold tcl lock already??? */
+			newval = AsObj(newValue);
+			ENTER_TCL
+			ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2, newval, flags);
+			ENTER_OVERLAP
+			if (!ok)
+				Tkinter_Error(self);
+			else {
+				res = Py_None;
+				Py_INCREF(res);
+			}
+			LEAVE_OVERLAP_TCL
 		}
 		else {
-			Py_DECREF(tmp);
 			return NULL;
 		}
 	}
-	Py_DECREF(tmp);
-
-	if (!res)
-		return NULL;
-
-	Py_DECREF(res);
-	Py_INCREF(Py_None);
-	return Py_None;
+	return res;
 }
 
 static PyObject *
 Tkapp_SetVar(PyObject *self, PyObject *args)
 {
-	return SetVar(self, args, TCL_LEAVE_ERR_MSG);
+	return var_invoke(SetVar, self, args, TCL_LEAVE_ERR_MSG);
 }
 
 static PyObject *
 Tkapp_GlobalSetVar(PyObject *self, PyObject *args)
 {
-	return SetVar(self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
+	return var_invoke(SetVar, self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
 }
 
 
@@ -1644,25 +1598,29 @@ GetVar(PyObject *self, PyObject *args, int flags)
 {
 	char *name1, *name2=NULL;
 	PyObject *res = NULL;
+	Tcl_Obj *tres;
 
 	if (!PyArg_ParseTuple(args, "s|s:getvar", &name1, &name2))
 		return NULL;
 
-	res = var_invoke(self, name1, name2, NULL, flags,
-			 Tcl_GetVar, Tcl_GetVar2, NULL, 0);
+	ENTER_TCL
+	tres = Tcl_GetVar2Ex(Tkapp_Interp(self), name1, name2, flags);
+	ENTER_OVERLAP
+	res = FromObj(self, tres);
+	LEAVE_OVERLAP_TCL
 	return res;
 }
 
 static PyObject *
 Tkapp_GetVar(PyObject *self, PyObject *args)
 {
-	return GetVar(self, args, TCL_LEAVE_ERR_MSG);
+	return var_invoke(GetVar, self, args, TCL_LEAVE_ERR_MSG);
 }
 
 static PyObject *
 Tkapp_GlobalGetVar(PyObject *self, PyObject *args)
 {
-	return GetVar(self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
+	return var_invoke(GetVar, self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
 }
 
 
@@ -1671,26 +1629,35 @@ static PyObject *
 UnsetVar(PyObject *self, PyObject *args, int flags)
 {
 	char *name1, *name2=NULL;
+	int code;
 	PyObject *res = NULL;
 
 	if (!PyArg_ParseTuple(args, "s|s:unsetvar", &name1, &name2))
 		return NULL;
 
-	res = var_invoke2(self, name1, name2, NULL, flags,
-			  Tcl_UnsetVar, Tcl_UnsetVar2, NULL);
+	ENTER_TCL
+	code = Tcl_UnsetVar2(Tkapp_Interp(self), name1, name2, flags);
+	ENTER_OVERLAP
+	if (code == TCL_ERROR)
+		res = Tkinter_Error(self);
+	else {
+		Py_INCREF(Py_None);
+		res = Py_None;
+	}
+	LEAVE_OVERLAP_TCL
 	return res;
 }
 
 static PyObject *
 Tkapp_UnsetVar(PyObject *self, PyObject *args)
 {
-	return UnsetVar(self, args, TCL_LEAVE_ERR_MSG);
+	return var_invoke(UnsetVar, self, args, TCL_LEAVE_ERR_MSG);
 }
 
 static PyObject *
 Tkapp_GlobalUnsetVar(PyObject *self, PyObject *args)
 {
-	return UnsetVar(self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
+	return var_invoke(UnsetVar, self, args, TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
 }
 
 
