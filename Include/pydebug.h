@@ -42,6 +42,7 @@ extern DL_IMPORT(int) Py_OptimizeFlag;
 extern DL_IMPORT(int) Py_NoSiteFlag;
 extern DL_IMPORT(int) Py_UseClassExceptionsFlag;
 extern DL_IMPORT(int) Py_FrozenFlag;
+extern DL_IMPORT(int) Py_TabcheckFlag;
 
 void Py_FatalError	Py_PROTO((char *));
 
