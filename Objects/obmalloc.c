@@ -534,8 +534,32 @@ error:
  * so the (I) < narenas must be false, saving us from trying to index into
  * a NULL arenas.
  */
-#define ADDRESS_IN_RANGE(P, I) \
-	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ARENA_SIZE)
+#define Py_ADDRESS_IN_RANGE(P, POOL)	\
+	((POOL)->arenaindex < narenas &&		\
+	 (uptr)(P) - arenas[(POOL)->arenaindex] < (uptr)ARENA_SIZE)
+
+/* This is only useful when running memory debuggers such as
+ * Purify or Valgrind.  Uncomment to use.
+ *
+ */
+#define Py_USING_MEMORY_DEBUGGER
+
+#ifdef Py_USING_MEMORY_DEBUGGER
+
+/* Py_ADDRESS_IN_RANGE may access uninitialized memory by design
+ * This leads to thousands of spurious warnings when using
+ * Purify or Valgrind.  By making a function, we can easily
+ * suppress the uninitialized memory reads in this one function.
+ * So we won't ignore real errors elsewhere.
+ *
+ * Disable the macro and use a function.
+ */
+
+#undef Py_ADDRESS_IN_RANGE
+
+/* Don't make static, to ensure this isn't inlined. */
+int Py_ADDRESS_IN_RANGE(void *P, poolp pool);
+#endif
 
 /*==========================================================================*/
 
@@ -708,7 +732,7 @@ PyObject_Free(void *p)
 		return;
 
 	pool = POOL_ADDR(p);
-	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
+	if (Py_ADDRESS_IN_RANGE(p, pool)) {
 		/* We allocated this address. */
 		LOCK();
 		/*
@@ -791,7 +815,7 @@ PyObject_Realloc(void *p, size_t nbytes)
 		return PyObject_Malloc(nbytes);
 
 	pool = POOL_ADDR(p);
-	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
+	if (Py_ADDRESS_IN_RANGE(p, pool)) {
 		/* We're in charge of this block */
 		size = INDEX2SIZE(pool->szidx);
 		if (nbytes <= size) {
@@ -1373,3 +1397,14 @@ _PyObject_DebugMallocStats(void)
 }
 
 #endif	/* PYMALLOC_DEBUG */
+
+#ifdef Py_USING_MEMORY_DEBUGGER
+/* Make this function last so gcc won't inline it
+   since the definition is after the reference. */
+int
+Py_ADDRESS_IN_RANGE(void *P, poolp pool)
+{
+	return ((pool->arenaindex) < narenas &&
+		(uptr)(P) - arenas[pool->arenaindex] < (uptr)ARENA_SIZE);
+}
+#endif
