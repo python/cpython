@@ -231,6 +231,10 @@ class HTTPResponse:
         line = self.fp.readline()
         if self.debuglevel > 0:
             print "reply:", repr(line)
+        if not line:
+            # Presumably, the server closed the connection before
+            # sending a valid response.
+            raise BadStatusLine(line)
         try:
             [version, status, reason] = line.split(None, 2)
         except ValueError:
