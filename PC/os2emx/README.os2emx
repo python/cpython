@@ -330,6 +330,7 @@ Procedure
    ncurses               HAVE_NCURSES
    GNU gdbm              HAVE_GDBM
    libbz2                HAVE_BZ2
+   OpenSSL               HAVE_OPENSSL
 
    Please note that you need to check that what you have installed 
    is compatible with Python's build options.  In particular, the 
@@ -651,6 +652,22 @@ implementation in IBM's TCP/IP stack:-
 27.  As of Python 2.4, the mpz, rotor and xreadlines modules have been 
 dropped from the Python source tree.
 
+28.  The subprocess module was added to the standard library relatively
+late in the 2.4 development cycle.  Unfortunately I haven't had the
+round tuits to adapt the module to the EMX environment yet, and
+test_subprocess has a number of failures as a result.
+
+29.  The default stack size for threads has been 64k.  This is proving
+insufficient for some codebases, such as Zope.  The thread stack size
+still defaults to 64k, but this can now be increased by defining
+THREAD_STACK_SIZE to an appropriate value in the Makefile (which contains
+a commented out definition for 128kB thread stacks).  I have seen
+references to heavy Zope/Plone usage requiring 1MB thread stacks on
+FreeBSD and Linux, but doubt that for most likely usage on OS/2 that
+more than 256kB is necessary.  The size of the required stacks (main 
+and thread) can vary significantly depending on which version of gcc
+is used along with the compiler optimisations selected.
+
 ... probably other issues that I've not encountered, or don't remember :-(
 
 If you encounter other difficulties with this port, which can be 
@@ -690,4 +707,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-3 October, 2004.
+17 February, 2005.
