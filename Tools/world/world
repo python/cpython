@@ -1,29 +1,40 @@
 #! /usr/bin/env python
-#
-# Usage: world addr1 [addr2 ...]
-#
 
-# This little script will take an Internet address of the form
-# foobar@some.place.domain and will print out where in the world that
-# message originated from.  Its pretty dumb in that it just matches
-# the `domain' part against a hard-coded list, which can probably
-# change fairly quickly given the world's political fluidity.
+"""Print the long name of an Internet domain.
 
-# TBD: it would be cool if this script could update itself.  I can't
-# remember where I got the original list of top level domain
-# abbreviations -- probably from the InterNIC.  So far I haven't hit
-# any that this script can't resolve, so I assume they don't change
-# too frequently.
+This script will take an Internet address and print out where in the
+world that message originated from, based on the top-level domain code
+found in the address.  Addresses can be in any of the following forms:
+
+    xx                -- just the country code or top-level domain identifier
+    host.domain.xx    -- any Internet host or network name
+    somebody@where.xx -- an Internet email address
+
+Country codes are maintained by the RIPE Network Coordination Centre,
+in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.
+
+    <url:ftp://info.ripe.net/iso3166-countrycodes>
+
+The latest known change to this information was:
+
+    Thu Feb 10 10:20:28 MET 1994
+
+Usage: %s [-d] [-h] addr [addr ...]
+
+    -d (--dump)  -- print mapping of all known top-level domains
+    -h (--help)  -- print this help message
+
+"""
 
 import sys
 import string
+import getopt
 
 
-def usage(msg=None, exit=0):
-    if msg: print msg
-    print 'Usage:', sys.argv[0], 'addr [addr ...]'
-    sys.exit(exit)
-
+
+def usage(status=0):
+    print __doc__ % sys.argv[0]
+    sys.exit(status)
 
 def resolve(rawaddr):
     parts = string.splitfields(rawaddr, '.')
@@ -36,8 +47,39 @@ def resolve(rawaddr):
     elif country.has_key(addr):
 	print addr, 'originated from', country[addr]
     else:
-	print 'Where in the world is', addr, '?'
+	print 'Where in the world is %s?' % addr
 
+
+
+def main():
+    help = 0
+    status = 0
+    dump = 0
+
+    opts, args = getopt.getopt(sys.argv[1:], 'hd', ['help', 'dump'])
+    for arg, val in opts:
+	if arg in ('-h', '--help'):
+	    help = 1
+	elif arg in ('-d', '--dump'):
+	    dump = 1
+
+    if help:
+	usage(status)
+
+    if dump:
+	print 'USA-centric domains:'
+	codes = nameorg.keys()
+	codes.sort()
+	for code in codes:
+	    print '    %4s:' % code, nameorg[code]
+
+	print '\nCountry coded domains:'
+	codes = country.keys()
+	codes.sort()
+	for code in codes:
+	    print '    %2s:' % code, country[code]
+    else:
+	map(resolve, args)
 
 
 # The mappings
@@ -152,4 +194,4 @@ country = {
 
 
 if __name__ == '__main__':
-    map(resolve, sys.argv[1:])
+    main()
