@@ -2,11 +2,35 @@
 # -*- mode: python -*-
 # $Id$
 
+import sys
+sys.path=['.']+sys.path
+
 from test_support import verbose, TestFailed
 import re
 import sys, os, string, traceback
 
 # Misc tests from Tim Peters' re.doc
+
+if verbose:
+    print 'Running tests on re.search and re.match'
+
+try:
+    assert re.search('x*', 'axx').span(0) == (0, 0)
+    assert re.search('x*', 'axx').span() == (0, 0)
+    assert re.search('x+', 'axx').span(0) == (1, 3)
+    assert re.search('x+', 'axx').span() == (1, 3)
+    assert re.search('x', 'aaa') == None
+except:
+    raise TestFailed, "re.search"
+
+try:
+    assert re.match('a*', 'xxx').span(0) == (0, 0)
+    assert re.match('a*', 'xxx').span() == (0, 0)
+    assert re.match('x*', 'xxxa').span(0) == (0, 3)
+    assert re.match('x*', 'xxxa').span() == (0, 3)
+    assert re.match('a+', 'xxx') == None
+except:
+    raise TestFailed, "re.search"
 
 if verbose:
     print 'Running tests on re.sub'
@@ -19,24 +43,29 @@ try:
         return str(int_value + 1)
 
     assert re.sub(r'\d+', bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
+    assert re.sub(r'\d+', bump_num, '08.2 -2 23x99y', 3) == '9.3 -3 23x99y'
     
     assert re.sub('.', lambda m: r"\n", 'x') == '\\n'
     assert re.sub('.', r"\n", 'x') == '\n'
 
     s = r"\1\1"
     assert re.sub('(.)', s, 'x') == 'xx'
-    assert re.sub('(.)', re.escape(s), 'x') == s
+    assert re.sub('(.)', re.escape(s), 'x') == s 
     assert re.sub('(.)', lambda m: s, 'x') == s
 
     assert re.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
+    assert re.sub('(?P<a>x)', '\g<a>\g<1>', 'xx') == 'xxxx'
     assert re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx') == 'xxxx'
+    assert re.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx') == 'xxxx'
 
-    assert re.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\bBZ\aAwWsSdD'
+    assert re.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D'
     assert re.sub('a', '\t\n\v\r\f\a', 'a') == '\t\n\v\r\f\a'
     assert re.sub('a', '\t\n\v\r\f\a', 'a') == (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7))
 
+    assert re.sub('^\s*', 'X', 'test') == 'Xtest'
 except AssertionError:
     raise TestFailed, "re.sub"
+
 
 try:
     assert re.sub('a', 'b', 'aaaaa') == 'bbbbb'
@@ -76,6 +105,13 @@ else:
     raise TestFailed, "symbolic reference"
 
 try:
+    re.sub('(?P<a>x)', '\g<1a1>', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
     re.sub('(?P<a>x)', '\g<ab>', 'xx')
 except IndexError, reason:
     pass
@@ -104,9 +140,13 @@ try:
     assert re.subn("b+", "x", "bbbb BBBB") == ('x BBBB', 1)
     assert re.subn("b+", "x", "xyz") == ('xyz', 0)
     assert re.subn("b*", "x", "xyz") == ('xxxyxzx', 4)
+    assert re.subn("b*", "x", "xyz", 2) == ('xxxyz', 2)
 except AssertionError:
     raise TestFailed, "re.subn"
 
+if verbose:
+    print 'Running tests on re.split'
+    
 try:
     assert re.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
     assert re.split(":*", ":a:b::c") == ['', 'a', 'b', 'c']
@@ -117,7 +157,6 @@ try:
     assert re.split("(b)|(:+)", ":a:b::c") == \
            ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
     assert re.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
-    
 except AssertionError:
     raise TestFailed, "re.split"
 
@@ -130,16 +169,55 @@ try:
 except AssertionError:
     raise TestFailed, "qualified re.split"
 
-if verbose:
-    print 'Pickling a RegexObject instance'
-    import pickle
-    pat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
-    s = pickle.dumps(pat)
-    pat = pickle.loads(s)
+try:
+    # No groups at all
+    m = re.match('a', 'a') ; assert m.groups() == ()    
+    # A single group
+    m = re.match('(a)', 'a') ; assert m.groups() == ('a',)      
+
+    pat = re.compile('((a)|(b))(c)?')
+    assert pat.match('a').groups() == ('a', 'a', None, None)    
+    assert pat.match('b').groups() == ('b', None, 'b', None)    
+    assert pat.match('ac').groups() == ('a', 'a', None, 'c')    
+    assert pat.match('bc').groups() == ('b', None, 'b', 'c')    
+except AssertionError:
+    raise TestFailed, "match .groups() method"
+
+try:
+    # A single group
+    m = re.match('(a)', 'a') 
+    assert m.group(0) == 'a' ; assert m.group(0) == 'a' 
+    assert m.group(1) == 'a' ; assert m.group(1, 1) == ('a', 'a')
+
+    pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+    assert pat.match('a').group(1, 2, 3) == ('a', None, None)   
+    assert pat.match('b').group('a1', 'b2', 'c3') == (None, 'b', None)  
+    assert pat.match('ac').group(1, 'b2', 3) == ('a', None, 'c')        
+except AssertionError:
+    raise TestFailed, "match .group() method"
+
+try:
+    p=""
+    for i in range(0, 256):
+        p = p + chr(i)
+        assert re.match(re.escape(chr(i)), chr(i)) != None
+        assert re.match(re.escape(chr(i)), chr(i)).span() == (0,1)
+
+    pat=re.compile( re.escape(p) )
+    assert pat.match(p) != None
+    assert pat.match(p).span() == (0,256)
+except AssertionError:
+    raise TestFailed, "re.escape"
+    
 
 if verbose:
-    print 'Running tests on re.split'
-    
+    print 'Pickling a RegexObject instance'
+
+import pickle
+pat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
+s = pickle.dumps(pat)
+pat = pickle.loads(s)
+
 try:
     assert re.I == re.IGNORECASE
     assert re.L == re.LOCALE
@@ -156,11 +234,13 @@ for flags in [re.I, re.M, re.X, re.S, re.L]:
         print 'Exception raised on flag', flags
 
 from re_tests import *
+
 if verbose:
     print 'Running re_tests test suite'
 else:
     # To save time, only run the first and last 10 tests
-    pass #tests = tests[:10] + tests[-10:]
+    #tests = tests[:10] + tests[-10:]
+    pass 
 
 for t in tests:
     sys.stdout.flush()
@@ -180,7 +260,7 @@ for t in tests:
             print '=== Syntax error:', t
     except KeyboardInterrupt: raise KeyboardInterrupt
     except:
-        print '*** Unexpected error ***'
+        print '*** Unexpected error ***', t
         if verbose:
             traceback.print_exc(file=sys.stdout)
     else:
@@ -250,4 +330,3 @@ for t in tests:
             result=obj.search(s)
             if result==None:
                 print '=== Fails on locale-sensitive match', t
-

@@ -66,8 +66,8 @@ def escape(pattern):
     alphanum=string.letters+'_'+string.digits
     for char in pattern:
         if char not in alphanum:
-            if char == '\000': result.append(r'\000')
-            else: result.append('\\' + char)
+            if char=='\000': result.append('\\000')
+            else: result.append('\\'+char)
         else: result.append(char)
     return string.join(result, '')
 
@@ -132,9 +132,9 @@ class RegexObject:
     def subn(self, repl, source, count=0): 
         """Return a 2-tuple containing (new_string, number).
         new_string is the string obtained by replacing the leftmost
-        non-overlapping occurrences of the pattern in string by the
-        replacement repl.  number is the number of substitutions that
-        were made."""
+        non-overlapping occurrences of the pattern in the source
+        string by the replacement repl.  number is the number of
+        substitutions that were made."""
 
         if count < 0:
             raise error, "negative substitution count"
@@ -174,7 +174,7 @@ class RegexObject:
         return (string.join(results, ''), n)
                                                                             
     def split(self, source, maxsplit=0):
-        """Split \var{string} by the occurrences of the pattern,
+        """Split the \var{source} string by the occurrences of the pattern,
         returning a list containing the resulting substrings."""
 
         if maxsplit < 0:

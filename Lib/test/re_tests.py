@@ -2,7 +2,7 @@
 # -*- mode: python -*-
 # $Id$
 
-# Re test suite and benchmark suite v1.5b2
+# Re test suite and benchmark suite v1.5
 
 # The 3 possible outcomes for each pattern
 [SUCCEED, FAIL, SYNTAX_ERROR] = range(3)
@@ -62,23 +62,20 @@ tests = [
 
     ('(?P<foo_123>a)', 'a', SUCCEED, 'g1', 'a'),
     ('(?P<foo_123>a)(?P=foo_123)', 'aa', SUCCEED, 'g1', 'a'),
-    
+
     # Test octal escapes
-    ('\\1', 'a', SYNTAX_ERROR),
+    ('\\1', 'a', SYNTAX_ERROR),    # Backreference
+    ('[\\1]', '\1', SUCCEED, 'found', '\1'),  # Character
     ('\\09', chr(0) + '9', SUCCEED, 'found', chr(0) + '9'),
     ('\\141', 'a', SUCCEED, 'found', 'a'),
     ('(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)\\119', 'abcdefghijklk9', SUCCEED, 'found+"-"+g11', 'abcdefghijklk9-k'),
 
-    # Test that a literal \0 is handled everywhere
-    ('\0', '\0', SUCCEED, 'found', '\0'),
+    # Test \0 is handled everywhere
     (r'\0', '\0', SUCCEED, 'found', '\0'),
-    ('[\0a]', '\0', SUCCEED, 'found', '\0'),
-    ('[a\0]', '\0', SUCCEED, 'found', '\0'),
-    ('[^a\0]', '\0', FAIL),
     (r'[\0a]', '\0', SUCCEED, 'found', '\0'),
     (r'[a\0]', '\0', SUCCEED, 'found', '\0'),
     (r'[^a\0]', '\0', FAIL),
-
+    
     # Test various letter escapes
     (r'\a[\b]\f\n\r\t\v', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
     (r'[\a][\b][\f][\n][\r][\t][\v]', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
@@ -103,6 +100,8 @@ tests = [
     ('(?s)a.{4,5}b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
     ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
 
+    (')', '', SYNTAX_ERROR),           # Unmatched right bracket
+    ('', '', SUCCEED, 'found', ''),    # Empty pattern
     ('abc', 'abc', SUCCEED, 'found', 'abc'),
     ('abc', 'xbc', FAIL),
     ('abc', 'axc', FAIL),
@@ -393,9 +392,6 @@ tests = [
     ('(.*)c(.*)', 'abcde', SUCCEED, 'found+"-"+g1+"-"+g2', 'abcde-ab-de'),
     ('\\((.*), (.*)\\)', '(a, b)', SUCCEED, 'g2+"-"+g1', 'b-a'),
     ('[k]', 'ab', FAIL),
-# XXX
-#    ('abcd', 'abcd', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'abcd-$&-\\abcd'),
-#    ('a(bc)d', 'abcd', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'bc-$1-\\bc'),
     ('a[-]?c', 'ac', SUCCEED, 'found', 'ac'),
     ('(abc)\\1', 'abcabc', SUCCEED, 'g1', 'abc'),
     ('([a-c]*)\\1', 'abcabc', SUCCEED, 'g1', 'abc'),
