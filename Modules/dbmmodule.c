@@ -53,9 +53,9 @@ static PyObject *DbmError;
 
 static PyObject *
 newdbmobject(file, flags, mode)
-    char *file;
-    int flags;
-    int mode;
+	char *file;
+int flags;
+int mode;
 {
         dbmobject *dp;
 
@@ -64,9 +64,9 @@ newdbmobject(file, flags, mode)
 		return NULL;
 	dp->di_size = -1;
 	if ( (dp->di_dbm = dbm_open(file, flags, mode)) == 0 ) {
-	    PyErr_SetFromErrno(DbmError);
-	    Py_DECREF(dp);
-	    return NULL;
+		PyErr_SetFromErrno(DbmError);
+		Py_DECREF(dp);
+		return NULL;
 	}
 	return (PyObject *)dp;
 }
@@ -78,7 +78,7 @@ dbm_dealloc(dp)
 	register dbmobject *dp;
 {
         if ( dp->di_dbm )
-	  dbm_close(dp->di_dbm);
+		dbm_close(dp->di_dbm);
 	PyMem_DEL(dp);
 }
 
@@ -87,14 +87,14 @@ dbm_length(dp)
 	dbmobject *dp;
 {
         if ( dp->di_size < 0 ) {
-	    datum key;
-	    int size;
+		datum key;
+		int size;
 
-	    size = 0;
-	    for ( key=dbm_firstkey(dp->di_dbm); key.dptr;
-				   key = dbm_nextkey(dp->di_dbm))
-		 size++;
-	    dp->di_size = size;
+		size = 0;
+		for ( key=dbm_firstkey(dp->di_dbm); key.dptr;
+		      key = dbm_nextkey(dp->di_dbm))
+			size++;
+		dp->di_size = size;
 	}
 	return dp->di_size;
 }
@@ -102,7 +102,7 @@ dbm_length(dp)
 static PyObject *
 dbm_subscript(dp, key)
 	dbmobject *dp;
-	register PyObject *key;
+register PyObject *key;
 {
 	datum drec, krec;
 	
@@ -111,14 +111,14 @@ dbm_subscript(dp, key)
 	
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
-	    PyErr_SetString(PyExc_KeyError,
-			    PyString_AS_STRING((PyStringObject *)key));
-	    return NULL;
+		PyErr_SetString(PyExc_KeyError,
+				PyString_AS_STRING((PyStringObject *)key));
+		return NULL;
 	}
 	if ( dbm_error(dp->di_dbm) ) {
-	    dbm_clearerr(dp->di_dbm);
-	    PyErr_SetString(DbmError, "");
-	    return NULL;
+		dbm_clearerr(dp->di_dbm);
+		PyErr_SetString(DbmError, "");
+		return NULL;
 	}
 	return PyString_FromStringAndSize(drec.dptr, drec.dsize);
 }
@@ -126,39 +126,39 @@ dbm_subscript(dp, key)
 static int
 dbm_ass_sub(dp, v, w)
 	dbmobject *dp;
-	PyObject *v, *w;
+PyObject *v, *w;
 {
         datum krec, drec;
 	
         if ( !PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
-	    PyErr_SetString(PyExc_TypeError,
-			    "dbm mappings have string indices only");
-	    return -1;
+		PyErr_SetString(PyExc_TypeError,
+				"dbm mappings have string indices only");
+		return -1;
 	}
 	dp->di_size = -1;
 	if (w == NULL) {
-	    if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
-		dbm_clearerr(dp->di_dbm);
-		PyErr_SetString(PyExc_KeyError,
-				PyString_AS_STRING((PyStringObject *)v));
-		return -1;
-	    }
+		if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
+			dbm_clearerr(dp->di_dbm);
+			PyErr_SetString(PyExc_KeyError,
+					PyString_AS_STRING((PyStringObject *)v));
+			return -1;
+		}
 	} else {
-	    if ( !PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize) ) {
-		PyErr_SetString(PyExc_TypeError,
-			   "dbm mappings have string elements only");
-		return -1;
-	    }
-	    if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
-		dbm_clearerr(dp->di_dbm);
-		PyErr_SetString(DbmError, "Cannot add item to database");
-		return -1;
-	    }
+		if ( !PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize) ) {
+			PyErr_SetString(PyExc_TypeError,
+					"dbm mappings have string elements only");
+			return -1;
+		}
+		if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
+			dbm_clearerr(dp->di_dbm);
+			PyErr_SetString(DbmError, "Cannot add item to database");
+			return -1;
+		}
 	}
 	if ( dbm_error(dp->di_dbm) ) {
-	    dbm_clearerr(dp->di_dbm);
-	    PyErr_SetString(DbmError, "");
-	    return -1;
+		dbm_clearerr(dp->di_dbm);
+		PyErr_SetString(DbmError, "");
+		return -1;
 	}
 	return 0;
 }
@@ -172,12 +172,12 @@ static PyMappingMethods dbm_as_mapping = {
 static PyObject *
 dbm__close(dp, args)
 	register dbmobject *dp;
-	PyObject *args;
+PyObject *args;
 {
 	if ( !PyArg_NoArgs(args) )
 		return NULL;
         if ( dp->di_dbm )
-	    dbm_close(dp->di_dbm);
+		dbm_close(dp->di_dbm);
 	dp->di_dbm = NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -186,7 +186,7 @@ dbm__close(dp, args)
 static PyObject *
 dbm_keys(dp, args)
 	register dbmobject *dp;
-	PyObject *args;
+PyObject *args;
 {
 	register PyObject *v, *item;
 	datum key;
@@ -217,7 +217,7 @@ dbm_keys(dp, args)
 static PyObject *
 dbm_has_key(dp, args)
 	register dbmobject *dp;
-	PyObject *args;
+PyObject *args;
 {
 	datum key, val;
 	
@@ -237,7 +237,7 @@ static PyMethodDef dbm_methods[] = {
 static PyObject *
 dbm_getattr(dp, name)
 	dbmobject *dp;
-	char *name;
+char *name;
 {
 	return Py_FindMethod(dbm_methods, (PyObject *)dp, name);
 }
@@ -263,8 +263,8 @@ static PyTypeObject Dbmtype = {
 
 static PyObject *
 dbmopen(self, args)
-    PyObject *self;
-    PyObject *args;
+	PyObject *self;
+PyObject *args;
 {
 	char *name;
 	char *flags = "r";
@@ -272,37 +272,37 @@ dbmopen(self, args)
 	int mode = 0666;
 
         if ( !PyArg_ParseTuple(args, "s|si", &name, &flags, &mode) )
-	  return NULL;
+		return NULL;
 	if ( strcmp(flags, "r") == 0 )
-	  iflags = O_RDONLY;
+		iflags = O_RDONLY;
 	else if ( strcmp(flags, "w") == 0 )
-	  iflags = O_RDWR;
+		iflags = O_RDWR;
 	else if ( strcmp(flags, "rw") == 0 ) /* B/W compat */
-	  iflags = O_RDWR|O_CREAT; 
+		iflags = O_RDWR|O_CREAT; 
 	else if ( strcmp(flags, "c") == 0 )
-	  iflags = O_RDWR|O_CREAT;
+		iflags = O_RDWR|O_CREAT;
 	else if ( strcmp(flags, "n") == 0 )
-	  iflags = O_RDWR|O_CREAT|O_TRUNC;
+		iflags = O_RDWR|O_CREAT|O_TRUNC;
 	else {
-	    PyErr_SetString(DbmError,
-		       "Flags should be one of 'r', 'w', 'c' or 'n'");
-	    return NULL;
+		PyErr_SetString(DbmError,
+				"Flags should be one of 'r', 'w', 'c' or 'n'");
+		return NULL;
 	}
         return newdbmobject(name, iflags, mode);
 }
 
 static PyMethodDef dbmmodule_methods[] = {
-    { "open", (PyCFunction)dbmopen, 1 },
-    { 0, 0 },
+	{ "open", (PyCFunction)dbmopen, 1 },
+	{ 0, 0 },
 };
 
 void
 initdbm() {
-    PyObject *m, *d;
+	PyObject *m, *d;
 
-    m = Py_InitModule("dbm", dbmmodule_methods);
-    d = PyModule_GetDict(m);
-    DbmError = PyString_FromString("dbm.error");
-    if ( DbmError == NULL || PyDict_SetItemString(d, "error", DbmError) )
-      Py_FatalError("can't define dbm.error");
+	m = Py_InitModule("dbm", dbmmodule_methods);
+	d = PyModule_GetDict(m);
+	DbmError = PyString_FromString("dbm.error");
+	if ( DbmError == NULL || PyDict_SetItemString(d, "error", DbmError) )
+		Py_FatalError("can't define dbm.error");
 }
