@@ -29,137 +29,137 @@
 /* First, the C functions that do the real work */
 
 /* constants */
-static complex c_1 = {1., 0.};
-static complex c_half = {0.5, 0.};
-static complex c_i = {0., 1.};
-static complex c_i2 = {0., 0.5};
-static complex c_mi = {0., -1.};
-static complex c_pi2 = {M_PI/2., 0.};
+static Py_complex c_1 = {1., 0.};
+static Py_complex c_half = {0.5, 0.};
+static Py_complex c_i = {0., 1.};
+static Py_complex c_i2 = {0., 0.5};
+static Py_complex c_mi = {0., -1.};
+static Py_complex c_pi2 = {M_PI/2., 0.};
 
 /* forward declarations */
-staticforward complex c_log();
-staticforward complex c_prodi();
-staticforward complex c_sqrt();
+staticforward Py_complex c_log();
+staticforward Py_complex c_prodi();
+staticforward Py_complex c_sqrt();
 
 
-static complex c_acos(x)
-	complex x;
+static Py_complex c_acos(x)
+	Py_complex x;
 {
 	return c_neg(c_prodi(c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))))));
 }
 
-static complex c_acosh(x)
-	complex x;
+static Py_complex c_acosh(x)
+	Py_complex x;
 {
 	return c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))));
 }
 
-static complex c_asin(x)
-	complex x;
+static Py_complex c_asin(x)
+	Py_complex x;
 {
 	return c_neg(c_prodi(c_log(c_sum(c_prod(c_i,x),
 		    c_sqrt(c_diff(c_1,c_prod(x,x)))))));
 }
 
-static complex c_asinh(x)
-	complex x;
+static Py_complex c_asinh(x)
+	Py_complex x;
 {
 	return c_neg(c_log(c_diff(c_sqrt(c_sum(c_1,c_prod(x,x))),x)));
 }
 
-static complex c_atan(x)
-	complex x;
+static Py_complex c_atan(x)
+	Py_complex x;
 {
 	return c_prod(c_i2,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
 
-static complex c_atanh(x)
-	complex x;
+static Py_complex c_atanh(x)
+	Py_complex x;
 {
 	return c_prod(c_half,c_log(c_quot(c_sum(c_1,x),c_diff(c_1,x))));
 }
 
-static complex c_cos(x)
-	complex x;
+static Py_complex c_cos(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	r.real = cos(x.real)*cosh(x.imag);
 	r.imag = -sin(x.real)*sinh(x.imag);
 	return r;
 }
 
-static complex c_cosh(x)
-	complex x;
+static Py_complex c_cosh(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	r.real = cos(x.imag)*cosh(x.real);
 	r.imag = sin(x.imag)*sinh(x.real);
 	return r;
 }
 
-static complex c_exp(x)
-	complex x;
+static Py_complex c_exp(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double l = exp(x.real);
 	r.real = l*cos(x.imag);
 	r.imag = l*sin(x.imag);
 	return r;
 }
 
-static complex c_log(x)
-	complex x;
+static Py_complex c_log(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double l = hypot(x.real,x.imag);
 	r.imag = atan2(x.imag, x.real);
 	r.real = log(l);
 	return r;
 }
 
-static complex c_log10(x)
-	complex x;
+static Py_complex c_log10(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double l = hypot(x.real,x.imag);
 	r.imag = atan2(x.imag, x.real)/log(10.);
 	r.real = log10(l);
 	return r;
 }
 
-static complex c_prodi(x)
-     complex x;
+static Py_complex c_prodi(x)
+     Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	r.real = -x.imag;
 	r.imag = x.real;
 	return r;
 }
 
-static complex c_sin(x)
-	complex x;
+static Py_complex c_sin(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	r.real = sin(x.real)*cosh(x.imag);
 	r.imag = cos(x.real)*sinh(x.imag);
 	return r;
 }
 
-static complex c_sinh(x)
-	complex x;
+static Py_complex c_sinh(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	r.real = cos(x.imag)*sinh(x.real);
 	r.imag = sin(x.imag)*cosh(x.real);
 	return r;
 }
 
-static complex c_sqrt(x)
-	complex x;
+static Py_complex c_sqrt(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double s,d;
 	if (x.real == 0. && x.imag == 0.)
 		r = x;
@@ -182,10 +182,10 @@ static complex c_sqrt(x)
 	return r;
 }
 
-static complex c_tan(x)
-	complex x;
+static Py_complex c_tan(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double sr,cr,shi,chi;
 	double rs,is,rc,ic;
 	double d;
@@ -203,10 +203,10 @@ static complex c_tan(x)
 	return r;
 }
 
-static complex c_tanh(x)
-	complex x;
+static Py_complex c_tanh(x)
+	Py_complex x;
 {
-	complex r;
+	Py_complex r;
 	double si,ci,shr,chr;
 	double rs,is,rc,ic;
 	double d;
@@ -242,9 +242,9 @@ math_error()
 static object *
 math_1(args, func)
 	object *args;
-	complex (*func) FPROTO((complex));
+	Py_complex (*func) FPROTO((Py_complex));
 {
-	complex x;
+	Py_complex x;
 	if (!PyArg_ParseTuple(args, "D", &x))
 		return NULL;
 	errno = 0;
