@@ -494,7 +494,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
 	ident = PyThread_start_new_thread(t_bootstrap, (void*) boot);
 	if (ident == -1) {
-		PyErr_SetString(ThreadError, "can't start new thread\n");
+		PyErr_SetString(ThreadError, "can't start new thread");
 		Py_DECREF(func);
 		Py_DECREF(args);
 		Py_XDECREF(keyw);
