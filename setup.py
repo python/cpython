@@ -224,6 +224,7 @@ class PyBuildExt(build_ext):
         exts = []
 
         platform = self.get_platform()
+        (srcdir,) = sysconfig.get_config_vars('srcdir')
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
@@ -558,6 +559,7 @@ class PyBuildExt(build_ext):
             xmlbo = "12"
         else:
             xmlbo = "21"
+        expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
         exts.append(Extension('pyexpat',
                               sources = [
             'pyexpat.c',
@@ -572,7 +574,7 @@ class PyBuildExt(build_ext):
             ('XML_BYTE_ORDER', xmlbo),
             ('XML_CONTEXT_BYTES','1024'),
             ],
-                              include_dirs = ['Modules/expat']
+                              include_dirs = [expatinc]
                                ))                        
 
         # Dynamic loading module
