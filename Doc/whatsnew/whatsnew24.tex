@@ -76,6 +76,10 @@ The \var{reverse} parameter should have a Boolean value.  If the value is
 of \code{L.sort() ; L.reverse()}, you can now write
 \code{L.sort(reverse=True)}.
 
+\item The \function{zip()} built-in function and \function{itertools.izip()} now return  an empty list 
+  instead of raising a \exception{TypeError} exception if called
+  with no arguments.
+
 \end{itemize}
 
 
@@ -109,6 +113,17 @@ details.
    \function{use_default_colors()}.   On platforms where the terminal 
    supports transparency, this makes it possible to use a transparent background.
    (Contributed by J\"org Lehmann.)
+
+\item The \module{random} module has a new method called \method{getrandbits(N)} 
+   which returns an N-bit long integer.
+
+\item The regular expression language accepted by the \module{re} module
+   was extended with simple conditional expressions, written as
+   \code{(?(\var{group})\var{A}|\var{B})}.  \var{group} is either a
+   numeric group ID or a group name defined with \code{(?P<group>...)} 
+   earlier in the expression.  If the specified group matched, the
+   regular expression pattern \var{A} will be tested against the string; if
+   the group didn't match, the pattern \var{B} will be used instead.
    
 \end{itemize}
 
@@ -124,7 +139,13 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item Detailed changes are listed here.
+  \item Three new convenience macros were added for common return
+  values from extension functions: \csimplemacro{Py_RETURN_NONE},
+  \csimplemacro{Py_RETURN_TRUE}, and \csimplemacro{Py_RETURN_FALSE}.
+
+  \item A new function, \cfunction{PyTuple_Pack(N, obj1, obj2, ...,
+  objN)}, constructs tuples from a variable length argument list of
+  Python objects.
 
 \end{itemize}
 
@@ -160,8 +181,12 @@ changes to your code:
 
 \begin{itemize}
 
-\item dircache.listdir now passes exceptions to the caller, 
-instead of returning empty lists.
+\item The \function{zip()} built-in function and \function{itertools.izip()} now return  an empty list 
+  instead of raising a \exception{TypeError} exception if called
+  with no arguments.
+
+\item \function{dircache.listdir()} now passes exceptions to the caller
+      instead of returning empty lists.
 
 \end{itemize}
 
