@@ -89,6 +89,7 @@ elif os.name == 'mac':
 else:
     template = 'tmp' # XXX might choose a better one
 
+_pidcache = {}
 def gettempprefix():
     """Function to calculate a prefix of the filename to use.
 
@@ -96,9 +97,15 @@ def gettempprefix():
     notion, so that concurrent processes don't generate the same prefix.
     """
 
-    global template
     if template is None:
-        return '@' + `os.getpid()` + '.'
+        p = os.getpid()
+        t = _pidcache.get(p, 0)
+        if t:
+            return t
+        if len(_pidcache) > 100:    # stop unbounded growth
+            _pidcache.clear()
+        t = _pidcache[p] = '@' + `p` + '.'
+        return t
     else:
         return template
 

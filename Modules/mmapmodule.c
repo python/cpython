@@ -841,9 +841,6 @@ new_mmap_object(PyObject *self, PyObject *args)
 	int fileno;
 	HANDLE fh = 0;
 
-	/* Patch the object type */
-	mmap_object_type.ob_type = &PyType_Type;
-
 	if (!PyArg_ParseTuple(args,
 			  "iO|z",
 			  &fileno,
@@ -956,6 +953,10 @@ DL_EXPORT(void)
 initmmap(void)
 {
 	PyObject *dict, *module;
+
+	/* Patch the object type */
+	mmap_object_type.ob_type = &PyType_Type;
+
 	module = Py_InitModule ("mmap", mmap_functions);
 	dict = PyModule_GetDict (module);
 	mmap_module_error = PyExc_EnvironmentError;
