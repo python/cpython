@@ -490,17 +490,22 @@ Currently-active file is at the head of the list.")
   ;; bol  -- beginning of line
   ;; eol  -- end of line
   ;; bod  -- beginning of defun
+  ;; bob  -- beginning of buffer
+  ;; eob  -- end of buffer
   ;; boi  -- back to indentation
+  ;; bos  -- beginning of statement
   ;; 
   ;; This function does not modify point or mark.
   (let ((here (point)))
     (cond
      ((eq position 'bol) (beginning-of-line))
      ((eq position 'eol) (end-of-line))
-     ((eq position 'bod) (beginning-of-python-def-or-class))
+     ((eq position 'bod) (py-beginning-of-def-or-class))
+     ;; Kind of funny, I know, but useful for py-up-exception.
      ((eq position 'bob) (beginning-of-buffer))
      ((eq position 'eob) (end-of-buffer))
      ((eq position 'boi) (back-to-indentation))
+     ((eq position 'bos) (py-goto-initial-line))
      (t (error "unknown buffer position requested: %s" position))
      )
     (prog1
@@ -606,8 +611,8 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c#"     'py-comment-region)
   (define-key py-mode-map "\C-c?"     'py-describe-mode)
   (define-key py-mode-map "\C-c\C-hm" 'py-describe-mode)
-  (define-key py-mode-map "\e\C-a"    'beginning-of-python-def-or-class)
-  (define-key py-mode-map "\e\C-e"    'end-of-python-def-or-class)
+  (define-key py-mode-map "\e\C-a"    'py-beginning-of-def-or-class)
+  (define-key py-mode-map "\e\C-e"    'py-end-of-def-or-class)
   (define-key py-mode-map "\C-c-"     'py-up-exception)
   (define-key py-mode-map "\C-c="     'py-down-exception)
   ;; information
@@ -709,10 +714,10 @@ package.  Note that the latest X/Emacs releases contain this package.")
 	["Start interpreter..." py-shell t]
 	"-"
 	["Go to start of block" py-goto-block-up t]
-	["Go to start of class" (beginning-of-python-def-or-class t) t]
-	["Move to end of class" (end-of-python-def-or-class t) t]
-	["Move to start of def" beginning-of-python-def-or-class t]
-	["Move to end of def"   end-of-python-def-or-class t]
+	["Go to start of class" (py-beginning-of-def-or-class t) t]
+	["Move to end of class" (py-end-of-def-or-class t) t]
+	["Move to start of def" py-beginning-of-def-or-class t]
+	["Move to end of def"   py-end-of-def-or-class t]
 	"-"
 	["Describe mode"        py-describe-mode t]
 	)))
@@ -1030,7 +1035,7 @@ Electric behavior is inhibited inside a string or comment."
   ;; are we in a string or comment?
   (if (save-excursion
 	(let ((pps (parse-partial-sexp (save-excursion
-					 (beginning-of-python-def-or-class)
+					 (py-beginning-of-def-or-class)
 					 (point))
 				       (point))))
 	  (not (or (nth 3 pps) (nth 4 pps)))))
@@ -1995,72 +2000,94 @@ NOMARK is not nil."
       (goto-char start)
       (error "Enclosing block not found"))))
 
-(defun beginning-of-python-def-or-class (&optional class)
-  "Move point to start of def (or class, with prefix arg).
+(defun py-beginning-of-def-or-class (&optional class count)
+  "Move point to start of `def' or `class'.
 
 Searches back for the closest preceding `def'.  If you supply a prefix
-arg, looks for a `class' instead.  The docs assume the `def' case;
-just substitute `class' for `def' for the other case.
+arg, looks for a `class' instead.  The docs below assume the `def'
+case; just substitute `class' for `def' for the other case.
 
-If point is in a def statement already, and after the `d', simply
+When second optional argument is given programmatically, move to the
+COUNTth start of `def'.
+
+If point is in a `def' statement already, and after the `d', simply
 moves point to the start of the statement.
 
-Else (point is not in a def statement, or at or before the `d' of a
-def statement), searches for the closest preceding def statement, and
-leaves point at its start.  If no such statement can be found, leaves
-point at the start of the buffer.
+Otherwise (i.e. when point is not in a `def' statement, or at or
+before the `d' of a `def' statement), searches for the closest
+preceding `def' statement, and leaves point at its start.  If no such
+statement can be found, leaves point at the start of the buffer.
 
-Returns t iff a def statement is found by these rules.
+Returns t iff a `def' statement is found by these rules.
 
 Note that doing this command repeatedly will take you closer to the
 start of the buffer each time.
 
-If you want to mark the current def/class, see
-`\\[py-mark-def-or-class]'."
+If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
+  (if (not count)
+      (setq count 1))
   (let ((at-or-before-p (<= (current-column) (current-indentation)))
-	(start-of-line (progn (beginning-of-line) (point)))
-	(start-of-stmt (progn (py-goto-initial-line) (point))))
-    (if (or (/= start-of-stmt start-of-line)
-	    (not at-or-before-p))
-	(end-of-line))			; OK to match on this line
-    (re-search-backward (if class "^[ \t]*class\\>" "^[ \t]*def\\>")
-			nil 'move)))
+	(start-of-line (goto-char (py-point 'bol)))
+	(start-of-stmt (goto-char (py-point 'bos)))
+	(start-re (if class
+		      "^[ \t]*class\\>"
+		    "^[ \t]*def\\>"))
+	)
+    ;; searching backward
+    (if (and (< 0 count)
+	     (or (/= start-of-stmt start-of-line)
+		 (not at-or-before-p)))
+	(end-of-line))
+    ;; search forward
+    (if (and (> 0 count)
+	     (zerop (current-column))
+	     (looking-at start-re))
+	(end-of-line))
+    (re-search-backward start-re nil 'move count)
+    (goto-char (match-beginning 0))))
 
-(defun end-of-python-def-or-class (&optional class)
-  "Move point beyond end of def (or class, with prefix arg) body.
+;; Backwards compatibility
+(defalias 'beginning-of-python-def-or-class 'py-beginning-of-def-or-class)
 
-By default, looks for an appropriate `def'.  If you supply a prefix arg,
-looks for a `class' instead.  The docs assume the `def' case; just
-substitute `class' for `def' for the other case.
+(defun py-end-of-def-or-class (&optional class count)
+  "Move point beyond end of `def' or `class' body.
 
-If point is in a def statement already, this is the def we use.
+By default, looks for an appropriate `def'.  If you supply a prefix
+arg, looks for a `class' instead.  The docs below assume the `def'
+case; just substitute `class' for `def' for the other case.
 
-Else if the def found by `\\[beginning-of-python-def-or-class]'
-contains the statement you started on, that's the def we use.
+When second optional argument is given programmatically, move to the
+COUNTth end of `def'.
 
-Else we search forward for the closest following def, and use that.
+If point is in a `def' statement already, this is the `def' we use.
 
-If a def can be found by these rules, point is moved to the start of
-the line immediately following the def block, and the position of the
-start of the def is returned.
+Else, if the `def' found by `\\[py-beginning-of-def-or-class]'
+contains the statement you started on, that's the `def' we use.
+
+Otherwise, we search forward for the closest following `def', and use that.
+
+If a `def' can be found by these rules, point is moved to the start of
+the line immediately following the `def' block, and the position of the
+start of the `def' is returned.
 
 Else point is moved to the end of the buffer, and nil is returned.
 
 Note that doing this command repeatedly will take you closer to the
 end of the buffer each time.
 
-If you want to mark the current def/class, see
-`\\[py-mark-def-or-class]'."
+If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
+  (if (and count (/= count 1))
+      (py-beginning-of-def-or-class (- 1 count)))
   (let ((start (progn (py-goto-initial-line) (point)))
 	(which (if class "class" "def"))
 	(state 'not-found))
     ;; move point to start of appropriate def/class
     (if (looking-at (concat "[ \t]*" which "\\>")) ; already on one
 	(setq state 'at-beginning)
-      ;; else see if beginning-of-python-def-or-class hits container
-      (if (and (beginning-of-python-def-or-class class)
+      ;; else see if py-beginning-of-def-or-class hits container
+      (if (and (py-beginning-of-def-or-class class)
 	       (progn (py-goto-beyond-block)
 		      (> (point) start)))
 	  (setq state 'at-end)
@@ -2073,7 +2100,10 @@ If you want to mark the current def/class, see
      ((eq state 'at-beginning) (py-goto-beyond-block) t)
      ((eq state 'at-end) t)
      ((eq state 'not-found) nil)
-     (t (error "internal error in end-of-python-def-or-class")))))
+     (t (error "internal error in py-end-of-def-or-class")))))
+
+;; Backwards compabitility
+(defalias 'py-end-of-def-or-class 'py-end-of-def-or-class)
 
 
 ;; Functions for marking regions
@@ -2202,8 +2232,8 @@ Pushes the current mark, then point, on the mark ring (all language
 modes do this, but although it's handy it's never documented ...).
 
 In most Emacs language modes, this function bears at least a
-hallucinogenic resemblance to `\\[end-of-python-def-or-class]' and
-`\\[beginning-of-python-def-or-class]'.
+hallucinogenic resemblance to `\\[py-end-of-def-or-class]' and
+`\\[py-beginning-of-def-or-class]'.
 
 And in earlier versions of Python mode, all 3 were tightly connected.
 Turned out that was more confusing than useful: the `goto start' and
@@ -2535,10 +2565,10 @@ the block structure:
 \\[py-previous-statement]\t move to statement preceding point
 \\[py-next-statement]\t move to statement following point
 \\[py-goto-block-up]\t move up to start of current block
-\\[beginning-of-python-def-or-class]\t move to start of def
-\\[universal-argument] \\[beginning-of-python-def-or-class]\t move to start of class
-\\[end-of-python-def-or-class]\t move to end of def
-\\[universal-argument] \\[end-of-python-def-or-class]\t move to end of class
+\\[py-beginning-of-def-or-class]\t move to start of def
+\\[universal-argument] \\[py-beginning-of-def-or-class]\t move to start of class
+\\[py-end-of-def-or-class]\t move to end of def
+\\[universal-argument] \\[py-end-of-def-or-class]\t move to end of class
 
 The first two move to one statement beyond the statement that contains
 point.  A numeric prefix argument tells them to move that many
@@ -2551,8 +2581,8 @@ Or do `\\[py-previous-statement]' with a huge prefix argument.
 %c:py-previous-statement
 %c:py-next-statement
 %c:py-goto-block-up
-%c:beginning-of-python-def-or-class
-%c:end-of-python-def-or-class
+%c:py-beginning-of-def-or-class
+%c:py-end-of-def-or-class
 
 @LITTLE-KNOWN EMACS COMMANDS PARTICULARLY USEFUL IN PYTHON MODE
 
