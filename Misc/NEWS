@@ -86,6 +86,21 @@ Extension modules
 Library
 -------
 
+- Some happy doctest extensions from Jim Fulton have been added to
+  doctest.py.  These are already being used in Zope3.  The two
+  primary ones:
+
+  doctest.debug(module, name) extracts the doctests from the named object
+  in the given module, puts them in a temp file, and starts pdb running
+  on that file.  This is great when a doctest fails.
+
+  doctest.DocTestSuite(module=None) returns a synthesized unittest
+  TestSuite instance, to be run by the unittest framework, which
+  runs all the doctests in the module.  This allows writing tests in
+  doctest style (which can be clearer and shorter than writing tests
+  in unittest style), without losing unittest's powerful testing
+  framework features (which doctest lacks).
+
 - ZipFile.testzip() now only traps BadZipfile exceptions.  Previously,
   a bare except caught to much and reported all errors as a problem
   in the archive.
