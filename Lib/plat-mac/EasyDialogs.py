@@ -28,7 +28,6 @@ import MacOS
 import string
 from Carbon.ControlAccessor import *	# Also import Controls constants
 import Carbon.File
-import macfs
 import macresource
 import os
 
@@ -494,17 +493,17 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 				else:
 					MacOS.SysBeep()
 			elif n == ARGV_ADD_OLDFILE:
-				fss, ok = macfs.StandardGetFile()
-				if ok:
-					stringstoadd = [fss.as_pathname()]
+				pathname = AskFileForOpen()
+				if pathname:
+					stringstoadd = [pathname]
 			elif n == ARGV_ADD_NEWFILE:
-				fss, ok = macfs.StandardPutFile('')
-				if ok:
-					stringstoadd = [fss.as_pathname()]
+				pathname = AskFileForSave()
+				if pathname:
+					stringstoadd = [pathname]
 			elif n == ARGV_ADD_FOLDER:
-				fss, ok = macfs.GetDirectory()
-				if ok:
-					stringstoadd = [fss.as_pathname()]
+				pathname = AskFolder()
+				if pathname:
+					stringstoadd = [pathname]
 			elif n == ARGV_CMDLINE_DATA:
 				pass # Nothing to do
 			else:
@@ -694,7 +693,7 @@ def AskFolder(**args):
 	
 
 def test():
-	import time, sys
+	import time, sys, macfs
 
 	Message("Testing EasyDialogs.")
 	optionlist = (('v', 'Verbose'), ('verbose', 'Verbose as long option'), 
