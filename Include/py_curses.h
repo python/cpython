@@ -18,11 +18,23 @@
 ** against multiple definition of wchar_t and wint_t.
 */
 #ifdef	_XOPEN_SOURCE_EXTENDED
+#ifndef __FreeBSD_version
+#include <osreldate.h>
+#endif
+#if __FreeBSD_version >= 500000
+#ifndef __wchar_t
+#define __wchar_t
+#endif
+#ifndef __wint_t
+#define __wint_t
+#endif
+#else
 #ifndef _WCHAR_T
 #define _WCHAR_T
 #endif
 #ifndef _WINT_T
 #define _WINT_T
+#endif
 #endif
 #endif
 #endif
