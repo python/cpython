@@ -840,6 +840,19 @@ builtin_input(self, args)
 	return res;
 }
 
+static PyObject *
+builtin_intern(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *s;
+	if (!PyArg_ParseTuple(args, "S", &s))
+		return NULL;
+	Py_INCREF(s);
+	PyString_InternInPlace(&s);
+	return s;
+}
+
 static object *
 builtin_int(self, args)
 	object *self;
@@ -1558,6 +1571,7 @@ static struct methodlist builtin_methods[] = {
 	{"hex",		builtin_hex, 1},
 	{"id",		builtin_id, 1},
 	{"input",	builtin_input, 1},
+	{"intern",	builtin_intern, 1},
 	{"int",		builtin_int, 1},
 	{"len",		builtin_len, 1},
 	{"list",	builtin_list, 1},
