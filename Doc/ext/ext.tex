@@ -1128,6 +1128,9 @@ Convert a C \ctype{double} to a Python floating point number.
 \item[\samp{f} (float) {[float]}]
 Same as \samp{d}.
 
+\item[\samp{D} (complex) {[Py_complex *]}]
+Convert a C \ctype{Py_complex} structure to a Python complex number.
+
 \item[\samp{O} (object) {[PyObject *]}]
 Pass a Python object untouched (except for its reference count, which
 is incremented by one).  If the object passed in is a \NULL{}
