@@ -63,10 +63,18 @@ class install_data (Command):
                 elif self.root:
                     dir = change_root(self.root, dir)
                 self.mkpath(dir)
-                for data in f[1]:
-                    data = convert_path(data)
-                    (out, _) = self.copy_file(data, dir)
-                    self.outfiles.append(out)
+
+                if f[1] == []:
+                    # If there are no files listed, the user must be
+                    # trying to create an empty directory, so add the
+                    # directory to the list of output files.
+                    self.outfiles.append(dir)
+                else:
+                    # Copy files, adding them to the list of output files.
+                    for data in f[1]:
+                        data = convert_path(data)
+                        (out, _) = self.copy_file(data, dir)
+                        self.outfiles.append(out)
 
     def get_inputs (self):
         return self.data_files or []
