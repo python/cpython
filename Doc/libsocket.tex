@@ -96,6 +96,9 @@ Return a string containing the hostname of the machine where
 the Python interpreter is currently executing.  If you want to know the
 current machine's IP address, use
 \code{socket.gethostbyname(socket.gethostname())}.
+Note: \code{gethostname()} doesn't always return the fully qualified
+domain name; use \code{socket.gethostbyaddr(socket.gethostname())}
+(see below).
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyaddr}{ip_address}
@@ -105,6 +108,8 @@ Return a triple \code{(hostname, aliaslist, ipaddrlist)} where
 alternative host names for the same address, and \code{ipaddrlist} is
 a list of IP addresses for the same interface on the same
 host (most likely containing only a single address).
+To find the fully qualified domain name, check \var{hostname} and the
+items of \var{aliaslist} for an entry containing at least one period.
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
