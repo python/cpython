@@ -520,13 +520,14 @@ class Editor(W.Window):
 			modname = ""
 			while os.path.exists(os.path.join(dir, "__init__.py")):
 				dir, dirname = os.path.split(dir)
-				modname = modname + dirname + '.'
+				modname = dirname + '.' + modname
 			subname = _filename_as_modname(self.title)
 			if modname:
 				if subname == "__init__":
-					modname  = modname[:-1]  # strip trailing period
+					# strip trailing period
+					modname = modname[:-1]
 				else:
-					modname  = modname + subname
+					modname = modname + subname
 			else:
 				modname = subname
 			if sys.modules.has_key(modname):
