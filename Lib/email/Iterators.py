@@ -19,7 +19,7 @@ def _structure(msg, level=0, fp=None):
     if fp is None:
         fp = sys.stdout
     tab = ' ' * (level * 4)
-    print >> fp, tab + msg.get_type(msg.get_default_type())
+    print >> fp, tab + msg.get_content_type()
     if msg.is_multipart():
         for subpart in msg.get_payload():
             _structure(subpart, level+1, fp)
