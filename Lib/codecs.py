@@ -127,14 +127,19 @@ class StreamWriter(Codec):
         self.stream = stream
         self.errors = errors
 
-    def write(self,object):
+    def write(self, object):
 
         """ Writes the object's contents encoded to self.stream.
         """
         data, consumed = self.encode(object,self.errors)
         self.stream.write(data)
 
-    # XXX .writelines() ?
+    def writelines(self, list):
+
+        """ Writes the concatenated list of strings to the stream
+            using .write().
+        """
+        self.write(''.join(list))
         
     def reset(self):
 
@@ -179,7 +184,7 @@ class StreamReader(Codec):
         self.stream = stream
         self.errors = errors
 
-    def read(self,size=-1):
+    def read(self, size=-1):
 
         """ Decodes data from the stream self.stream and returns the
             resulting object.
@@ -221,8 +226,44 @@ class StreamReader(Codec):
             else:
                 return object
 
-    # XXX .readline() and .readlines() (these are hard to implement
-    #     without using buffers for keeping read-ahead data)
+    def readline(self, size=None):
+
+        """ Read one line from the input stream and return the
+            decoded data.
+
+            Note: Unlike the .readlines() method, line breaking must
+            be implemented by the underlying stream's .readline()
+            method -- there is currently no support for line breaking
+            using the codec decoder due to lack of line buffering.
+
+            size, if given, is passed as size argument to the stream's
+            .readline() method.
+            
+        """
+        if size is None:
+            line = self.stream.readline()
+        else:
+            line = self.stream.readline(size)
+        return self.decode(line)[0]
+            
+
+    def readlines(self, sizehint=0):
+
+        """ Read all lines available on the input stream
+            and return them as list of lines.
+
+            Line breaks are implemented using the codec's decoder
+            method and are included in the list entries.
+            
+            sizehint, if given, is passed as size argument to the
+            stream's .read() method.
+
+        """
+        if sizehint is None:
+            data = self.stream.read()
+        else:
+            data = self.stream.read(sizehint)
+        return self.decode(data)[0].splitlines(1)
 
     def reset(self):
 
@@ -247,6 +288,9 @@ class StreamReader(Codec):
 
 class StreamReaderWriter:
 
+    # Optional attributes set by the file wrappers below
+    encoding = 'unknown'
+
     def __init__(self,stream,Reader,Writer,errors='strict'):
 
         """ Creates a StreamReaderWriter instance.
@@ -269,9 +313,21 @@ class StreamReaderWriter:
 
         return self.reader.read(size)
 
+    def readline(size=None):
+
+        return self.reader.readline(size)
+
+    def readlines(sizehint=None):
+
+        return self.reader.readlines(sizehint)
+
     def write(self,data):
 
         return self.writer.write(data)
+
+    def writelines(self,list):
+
+        return self.writer.writelines(list)
 
     def reset(self):
 
@@ -289,6 +345,10 @@ class StreamReaderWriter:
 ###
 
 class StreamRecoder:
+
+    # Optional attributes set by the file wrappers below
+    data_encoding = 'unknown'
+    file_encoding = 'unknown'
 
     def __init__(self,stream,encode,decode,Reader,Writer,errors='strict'):
 
@@ -328,13 +388,34 @@ class StreamRecoder:
         data, bytesencoded = self.encode(data, self.errors)
         return data
 
+    def readline(self,size=None):
+
+        if size is None:
+            data = self.reader.readline()
+        else:
+            data = self.reader.readline(size)
+        data, bytesencoded = self.encode(data, self.errors)
+        return data
+
+    def readlines(self,sizehint=None):
+
+        if sizehint is None:
+            data = self.reader.read()
+        else:
+            data = self.reader.read(sizehint)
+        data, bytesencoded = self.encode(data, self.errors)
+        return data.splitlines(1)
+
     def write(self,data):
 
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
-    # .writelines(), .readline() and .readlines() ... see notes
-    # above.
+    def writelines(self,list):
+
+        data = ''.join(list)
+        data, bytesdecoded = self.decode(data, self.errors)
+        return self.writer.write(data)
 
     def reset(self):
 
@@ -380,33 +461,45 @@ def open(filename, mode, encoding=None, errors='strict', buffering=1):
     if encoding is None:
         return file
     (e,d,sr,sw) = lookup(encoding)
-    return StreamReaderWriter(file, sr, sw, errors)
+    srw = StreamReaderWriter(file, sr, sw, errors)
+    # Add attributes to simplify introspection
+    srw.encoding = encoding
+    return srw
 
-def EncodedFile(file, input, output=None, errors='strict'):
+def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
     """ Return a wrapped version of file which provides transparent
         encoding translation.
 
         Strings written to the wrapped file are interpreted according
-        to the given input encoding and then written to the original
-        file as string using the output encoding. The intermediate
-        encoding will usually be Unicode but depends on the specified
-        codecs.
+        to the given data_encoding and then written to the original
+        file as string using file_encoding. The intermediate encoding
+        will usually be Unicode but depends on the specified codecs.
 
-        If output is not given, it defaults to input.
+        Strings are read from the file using file_encoding and then
+        passed back to the caller as string using data_encoding.
+
+        If file_encoding is not given, it defaults to data_encoding.
 
         errors may be given to define the error handling. It defaults
         to 'strict' which causes ValueErrors to be raised in case an
         encoding error occurs.
 
+        data_encoding and file_encoding are added to the wrapped file
+        object as attributes .data_encoding and .file_encoding resp.
+
     """
-    if output is None:
-        output = input
-    encode, decode = lookup(input)[:2]
-    Reader, Writer = lookup(output)[2:]
-    return StreamRecoder(file,
-                         encode,decode,Reader,Writer,
-                         errors)
+    if file_encoding is None:
+        file_encoding = data_encoding
+    encode, decode = lookup(data_encoding)[:2]
+    Reader, Writer = lookup(file_encoding)[2:]
+    sr = StreamRecoder(file,
+                       encode,decode,Reader,Writer,
+                       errors)
+    # Add attributes to simplify introspection
+    sr.data_encoding = data_encoding
+    sr.file_encoding = file_encoding
+    return sr
 
 ### Tests
     
@@ -414,5 +507,8 @@ if __name__ == '__main__':
 
     import sys
     
-    # Make stdout translate Latin-1 into Unicode-Escape
-    sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'unicode-escape')
+    # Make stdout translate Latin-1 output into UTF-8 output
+    sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
+    
+    # Have stdin translate Latin-1 input into UTF-8 input
+    sys.stdin = EncodedFile(sys.stdin, 'utf-8', 'latin-1')
