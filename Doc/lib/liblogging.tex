@@ -8,7 +8,7 @@
 \moduleauthor{Vinay Sajip}{vinay_sajip@red-dove.com}
 \sectionauthor{Vinay Sajip}{vinay_sajip@red-dove.com}
 
-\modulesynopsis{Logging module for Python based on PEP 282.}
+\modulesynopsis{Logging module for Python based on \pep{282}.}
 
 \indexii{Errors}{logging}
 
@@ -90,7 +90,7 @@ sockets.
 designated email address.
 
 \item \class{SysLogHandler} instances send error messages to a
-Unix syslog, possibly on a remote machine.
+\UNIX{} syslog daemon, possibly on a remote machine.
 
 \item \class{NTEventLogHandler} instances send error messages to a
 Windows NT/2000/XP event log.
@@ -100,7 +100,7 @@ buffer in memory, which is flushed whenever specific criteria are
 met.
 
 \item \class{HTTPHandler} instances send error messages to an
-HTTP server using either GET or POST semantics.
+HTTP server using either \samp{GET} or \samp{POST} semantics.
 
 \end{enumerate}
 
@@ -227,6 +227,14 @@ loggers are instantiated by applications which need to use custom logger
 behavior.
 \end{funcdesc}
 
+
+\begin{seealso}
+  \seepep{282}{A Logging System}
+         {The proposal which described this feature for inclusion in
+          the Python standard library.}
+\end{seealso}
+
+
 \subsection{Logger Objects}
 
 Loggers have the following attributes and methods. Note that Loggers are
@@ -342,10 +350,10 @@ specialized \class{LogRecord} instances.
 
 \subsection{Handler Objects}
 
-Handlers have the following attributes and methods. Note that a Handler is
-never instantiated directly; this class acts as a base for more useful
-subclasses. However, the \method{__init__()} in subclasses needs to call
-\method{Handler.__init__()}.
+Handlers have the following attributes and methods. Note that
+\class{Handler} is never instantiated directly; this class acts as a
+base for more useful subclasses. However, the \method{__init__()}
+method in subclasses needs to call \method{Handler.__init__()}.
 
 \begin{methoddesc}{__init__}{level=\constant{ALL}}
 Initializes the \class{Handler} instance by setting its level, setting
@@ -457,7 +465,7 @@ at times.
 \subsubsection{FileHandler}
 
 The \class{FileHandler} class sends logging output to a disk file.
-It delegates the output functionality from \class{StreamHandler}.
+It inherits the output functionality from \class{StreamHandler}.
 
 \begin{classdesc}{FileHandler}{filename\optional{, mode}}
 Returns a new instance of the \class{FileHandler} class. The specified
@@ -482,7 +490,7 @@ The \class{RotatingFileHandler} class supports rotation of disk log files.
 							 backupCount}}
 Returns a new instance of the \class{RotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. If
-\var{mode} is not specified, \constant{"a"} is used. By default, the
+\var{mode} is not specified, \code{'a'} is used. By default, the
 file grows indefinitely. You can use the \var{maxBytes} and
 \var{backupCount} values to allow the file to \dfn{rollover} at a
 predetermined size. When the size is about to be exceeded, the file is
@@ -582,14 +590,15 @@ partial sends which can happen when the network is busy.
 \subsubsection{SysLogHandler}
 
 The \class{SysLogHandler} class supports sending logging messages to a
-remote or local Unix syslog.
+remote or local \UNIX{} syslog.
 
 \begin{classdesc}{SysLogHandler}{\optional{address\optional{, facility}}}
 Returns a new instance of the \class{SysLogHandler} class intended to
-communicate with a remote Unix machine whose address is given by
-\var{address} in the form of a (host, port) tuple. If \var{address} is not
-specified, ('localhost', 514) is used. The address is used to open a UDP
-socket. If \var{facility} is not specified, \constant{LOG_USER} is used.
+communicate with a remote \UNIX{} machine whose address is given by
+\var{address} in the form of a \code{(\var{host}, \var{port})}
+tuple.  If \var{address} is not specified, \code{('localhost', 514)} is
+used.  The address is used to open a UDP socket.  If \var{facility} is
+not specified, \constant{LOG_USER} is used.
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
@@ -757,12 +766,12 @@ Checks for buffer full or a record at the \var{flushLevel} or higher.
 \subsubsection{HTTPHandler}
 
 The \class{HTTPHandler} class supports sending logging messages to a
-Web server, using either GET or POST semantics.
+Web server, using either \samp{GET} or \samp{POST} semantics.
 
 \begin{classdesc}{HTTPHandler}{host, url\optional{, method}}
 Returns a new instance of the \class{HTTPHandler} class. The
 instance is initialized with a host address, url and HTTP method.
-If no \var{method} is specified, GET is used.
+If no \var{method} is specified, \samp{GET} is used.
 \end{classdesc}
 
 \begin{methoddesc}{emit}{record}
