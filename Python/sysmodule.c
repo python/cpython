@@ -115,6 +115,8 @@ void
 initsys()
 {
 	extern int fclose PROTO((FILE *));
+	extern char version[];
+	object *v = newstringobject(version);
 	object *m = initmodule("sys", sys_methods);
 	sysdict = getmoduledict(m);
 	INCREF(sysdict);
@@ -124,13 +126,15 @@ initsys()
 	sysout = newopenfileobject(stdout, "<stdout>", "w", fclose);
 	syserr = newopenfileobject(stderr, "<stderr>", "w", fclose);
 	if (err_occurred())
-		fatal("can't create sys.std* file objects");
+		fatal("can't create sys.* objects");
 	dictinsert(sysdict, "stdin", sysin);
 	dictinsert(sysdict, "stdout", sysout);
 	dictinsert(sysdict, "stderr", syserr);
+	dictinsert(sysdict, "version", v);
 	dictinsert(sysdict, "modules", get_modules());
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
+	DECREF(v);
 }
 
 static object *
