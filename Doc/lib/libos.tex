@@ -331,6 +331,11 @@ streams and also retrieve the return codes is to use the
 \class{Popen3} and \class{Popen4} classes from the \refmodule{popen2}
 module; these are only available on \UNIX.
 
+For a discussion of possible dead lock conditions related to the use
+of these functions, see ``\ulink{Flow Control
+Issues}{popen2-flow-control.html}''
+(section~\ref{popen2-flow-control}).
+
 \begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout})}.
