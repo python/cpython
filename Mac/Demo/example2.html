@@ -6,52 +6,51 @@
 In this document we rewrite the application of the <A
 HREF="example1.html">previous example</A> to use modeless dialogs. We
 will use an application framework, and we will have a look at creating
-applets, standalone applications written in Python.  <A
-HREF="example2/InterslipControl-2.py">Source</A> and resource file (in
-binary and <A HREF="example2/InterslipControl-2.rsrc.hqx">BinHex</A>
-form for downloading) are available in the folder <A
-HREF="example2">example2</A>. <p>
+applets, standalone applications written in Python.  The <A
+HREF="example2/dnslookup-2.py">source code</A> and 
+<A HREF="example2/dnslookup-2.rsrc">resource file</A> are available in the folder 
+<A HREF="example2">example2</A>. <p>
 
 Again, we start with ResEdit to create our dialogs. Not only do we
-want a main dialog this time but also an "About" dialog, and we
-provide the <A NAME="bundle">BNDL resource</A> and related stuff that
-an application cannot be without. (Actually, a python applet can be
-without, <A HREF="#no-bundle">see below</A>). "Inside Mac" or various
-books on macintosh programming will help here. Also, you can refer to
+want a main dialog this time but also an "About" dialog.  This example is less
+than complete since we do not provide a <A NAME="bundle">BNDL resource</A> 
+and related stuff that an application cannot be without. We are able to do this
+when building a python applet since BuildApplet will substitute default resources
+for BNDL, etc. when none are supplied (<A HREF="#no-bundle">See below</A>.)
+"Inside Mac" or various
+books on Macintosh programming will help here. Also, you can refer to
 the resource files provided in the Python source distribution for some
 of the python-specific points of BNDL programming: the
 "appletbundle.rsrc" file is what is used for creating applets if you
 don't provide your own resource file. <p>
 
-Let's have a look at InterslipControl-2.rsrc, our resource file. First
-off, there's the standard BNDL combo. I've picked 'PYTi' as signature
-for the application. I tend to pick PYT plus one lower-case letter for
-my signatures.  The finder gets confused if you have two applications
-with the same signature. This may be due to some incorrectness on the
-side of "BuildApplet", I am not sure.  There is one case when you
-definitely need a unique signature: when you create an applet that has
-its own data files and you want the user to be able to start your
+When creating your own BNDL resouorces, keep in mind that the Finder gets 
+confused if you have more than one application with the same signature. This may be due 
+to some incorrectness on the side of "BuildApplet", I am not sure.  There is one 
+case when you definitely need a unique signature: when you create an applet that 
+has its own data files and you want the user to be able to start your
 applet by double-clicking one of the datafiles. <p>
 
-There's little to tell about the BNDL stuff: I basically copied the
-generic Python applet icons and pasted in the symbol for
-InterSLIP. The two dialogs are equally unexciting: dialog 512 is our
-main window which has four static text fields (two of which we will be
-modifying during runtime, to show the status of the connection) and
-two buttons "connect" and "disconnect". The "quit" and "update status"
-buttons have disappeared, because they are handled by a menu choice
-and automatically, respectively. <p>
+Let's have a look at dnslookup-2.rsrc, our resource file. Dialog 512 is the
+main window which has one button (Lookup), two labels and
+two text entry areas, one of which is used for output only. The "Quit" and 
+button has disappeared, because its function is handled by a menu choice.  Here's
+what it will look like at run time:<p>
+<div align=center>
+<img width=324 height=205 src="example2/dnslookup-2.gif" alt="dialog image">
+</div>
+<p>
 
 <H2>A modeless dialog application using FrameWork</H2>
 
 On to the source code in <A
-HREF="example2/InterslipControl-2.py">InterslipControl-2.py</A>.  The
+HREF="example2/dnslookup-2.py">dnslookup-2.py</A>.  The
 start is similar to our previous example program <A
-HREF="example1/InterslipControl-1.py">InterSlipControl-1.py</A>, with
+HREF="example1/dnslookup-1.py">dnslookup-1.py</A>, with
 one extra module being imported. To make life more simple we will use
 the <CODE>FrameWork</CODE> module, a nifty piece of code that handles
-all the gory mac details of event loop programming, menubar
-installation and all the other code that is the same for every mac
+all the gory Mac details of event loop programming, menubar
+installation and all the other code that is the same for every Mac
 program in the world.  Like most standard modules, FrameWork will run
 some sample test code when you invoke it as a main program, so try it
 now. It will create a menu bar with an Apple menu with the about box
@@ -68,7 +67,7 @@ also continue with this document.
 
 After the imports we get the definitions of resource-IDs in our
 resource file, slightly changed from the previous version of our
-program, and the state to string mapping. The main program is also
+program. The main program is also
 similar to our previous version, with one important exception: we
 first check to see whether our resource is available before opening
 the resource file. Why is this? Because later, when we will have
@@ -77,13 +76,13 @@ the applet file and we don't need the separate resource file
 anymore. <p>
 
 Next comes the definition of our main class,
-<CODE>InterslipControl</CODE>, which inherits
+<CODE>DNSLookup</CODE>, which inherits
 <CODE>FrameWork.Application</CODE>. The Application class handles the
 menu bar and the main event loop and event dispatching. In the
 <CODE>__init__</CODE> routine we first let the base class initialize
 itself, then we create our modeless dialog and finally we jump into
 the main loop. The main loop continues until we call <CODE>self._quit</CODE>,
-which we will do when the user selects "quit". When we create
+which we will do when the user selects "Quit". When we create
 the instance of <CODE>MyDialog</CODE> (which inherits
 <CODE>DialogWindow</CODE>, which inherits <CODE>Window</CODE>) we pass
 a reference to the application object, this reference is used to tell
@@ -104,31 +103,17 @@ familiar to you from the previous example program. That do_about is
 called when the user selects About from the Apple menu is, again,
 taken care of by the __init__ routine of Application. <p>
 
-Our main object finally overrides <CODE>idle()</CODE>, the method
-called when no event is available. It passes the call on to our dialog
-object to give it a chance to update the status fields, if needed. <p>
-
 The <CODE>MyDialog</CODE> class is the container for our main
 window. Initialization is again done by first calling the base class
-<CODE>__init__</CODE> function and finally setting two local variables
-that are used by <CODE>updatestatus()</CODE> later. <p>
+<CODE>__init__</CODE> function and finally setting the local variable
+"parent." <p>
 
 <CODE>Do_itemhit()</CODE> is called when an item is selected in this
 dialog by the user. We are passed the item number (and the original
 event structure, which we normally ignore). The code is similar to the
 main loop of our previous example program: a switch depending on the
-item selected.  <CODE>Connect()</CODE> and <CODE>disconnect()</CODE>
-are again quite similar to our previous example. <p>
-
-<CODE>Updatestatus()</CODE> is different, however. It is now
-potentially called many times per second instead of only when the
-user presses a button we don't want to update the display every time
-since that would cause some quite horrible flashing. Luckily,
-<CODE>interslip.status()</CODE> not only provides us with a state and
-a message but also with a message sequence number. If neither state
-nor message sequence number has changed since the last call there is
-no need to update the display, so we just return. For the rest,
-nothing has changed. <p>
+item selected.  <CODE>Dnslookup()</CODE> is quite similar to our previous 
+example. <p>
 
 <H2><IMG SRC="html.icons/mkapplet.gif"><A NAME="applets">Creating applets</A></H2>
 
@@ -158,13 +143,8 @@ resources from that file will be copied to your applet too. If there
 is no resource file for your script a set of default resources will be
 used, and the applet will have the default creator 'Pyt0'. The latter
 also happens if you do have a resource file but without the BNDL
-combo. <A NAME="no-bundle">Actually</A>, for our example that would
-have been the most logical solution, since our applet does not have
-its own data files.  It would have saved us hunting for an unused
-creator code. The only reason for using the BNDL in this case is
-having the custom icon, but that could have been done by pasting an
-icon on the finder Info window, or by providing an custon icon in your
-resource file and setting the "custom icon" finder bit. <p>
+combo. <A NAME="no-bundle">Actually</A>, as in the present example.
+<p>
 
 If you need slightly more control over the BuildApplet process you can
 double-click it, and you will get dialogs for source and
@@ -178,3 +158,5 @@ interpreter still work. <p>
 
 That's all for this example, you may now return to the <A HREF="index.html">
 table of contents</A> to pick another topic. <p>
+</BODY>
+</HTML>
