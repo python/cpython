@@ -673,15 +673,7 @@ then
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
-	OpenBSD*) LDSHARED="ld -Bshareable";;
-	NetBSD*)
-		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
-		then
-			LDSHARED="cc -shared"
-		else
-			LDSHARED="ld -Bshareable"
-		fi;;
-	FreeBSD*)
+	OpenBSD*|NetBSD*|FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LDSHARED="cc -shared ${LDFLAGS}"
@@ -716,8 +708,7 @@ then
 		 fi;;
 	Linux*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
-	OpenBSD*) CCSHARED="-fpic";;
-	FreeBSD*|NetBSD*) CCSHARED="-fPIC";;
+	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fPIC";;
 	UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -762,7 +753,7 @@ then
 	UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
-	FreeBSD*|NetBSD*) 
+	FreeBSD*|NetBSD*|OpenBSD*) 
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
