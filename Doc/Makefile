@@ -612,7 +612,7 @@ postscript-$(PAPER)-$(RELEASE).zip: $(PSFILES) paper-$(PAPER)/README
 	zip -q -r -9 $@ Python-Docs-$(RELEASE)
 	rm -r Python-Docs-$(RELEASE)
 
-HTMLPKGFILES=*.html */*.css */*.html */*.gif */*.txt
+HTMLPKGFILES=*.html */*.css */*.html */*.gif */*.png */*.txt
 
 html-$(RELEASE).tar:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 	mkdir Python-Docs-$(RELEASE)
