@@ -5,16 +5,6 @@ from test import test_support
 
 import os
 
-from test.test_support import verbose, TestFailed, TESTFN, vereq, have_unicode
-
-def veris(a, b):
-    if a is not b:
-        raise TestFailed, "%r is %r" % (a, b)
-
-def verisnot(a, b):
-    if a is b:
-        raise TestFailed, "%r is %r" % (a, b)
-
 class BoolTest(unittest.TestCase):
 
     def assertIs(self, a, b):
@@ -217,7 +207,7 @@ class BoolTest(unittest.TestCase):
         self.assertIs("xyz".startswith("x"), True)
         self.assertIs("xyz".startswith("z"), False)
 
-        if have_unicode:
+        if test_support.have_unicode:
             self.assertIs(unicode("xyz", 'ascii').endswith(unicode("z", 'ascii')), True)
             self.assertIs(unicode("xyz", 'ascii').endswith(unicode("x", 'ascii')), False)
             self.assertIs(unicode("xyz0123", 'ascii').isalnum(), True)
@@ -256,12 +246,12 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            f = file(TESTFN, "w")
+            f = file(test_support.TESTFN, "w")
             self.assertIs(f.closed, False)
             f.close()
             self.assertIs(f.closed, True)
         finally:
-            os.remove(TESTFN)
+            os.remove(test_support.TESTFN)
 
     def test_operator(self):
         import operator
@@ -288,8 +278,8 @@ class BoolTest(unittest.TestCase):
 
     def test_marshal(self):
         import marshal
-        veris(marshal.loads(marshal.dumps(True)), True)
-        veris(marshal.loads(marshal.dumps(False)), False)
+        self.assertIs(marshal.loads(marshal.dumps(True)), True)
+        self.assertIs(marshal.loads(marshal.dumps(False)), False)
 
     def test_pickle(self):
         import pickle
