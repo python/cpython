@@ -7,6 +7,8 @@ testing: countOf
 testing: delitem
 testing: delslice
 testing: div
+testing: floordiv
+testing: truediv
 testing: getitem
 testing: getslice
 testing: indexOf

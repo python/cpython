@@ -31,6 +31,8 @@ if a != [0, 1, 8, 9]:
 
 a = range(10)
 test('div', 5, 2, 2)
+test('floordiv', 5, 2, 2)
+test('truediv', 5, 2.5, 2)
 test('getitem', a, 2, 2)
 test('getslice', a, [4, 5], 4, 6)
 test('indexOf', [4, 3, 2, 1], 1, 3)
