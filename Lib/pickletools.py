@@ -1861,7 +1861,7 @@ def genops(pickle):
 ##############################################################################
 # A symbolic pickle disassembler.
 
-def dis(pickle, out=None, indentlevel=4):
+def dis(pickle, out=None, memo=None, indentlevel=4):
     """Produce a symbolic disassembly of a pickle.
 
     'pickle' is a file-like object, or string, containing a (at least one)
@@ -1870,6 +1870,12 @@ def dis(pickle, out=None, indentlevel=4):
 
     Optional arg 'out' is a file-like object to which the disassembly is
     printed.  It defaults to sys.stdout.
+
+    Optional arg 'memo' is a Python dict, used as the pickle's memo.  It
+    may be mutated by dis(), if the pickle contains PUT or BINPUT opcodes.
+    Passing the same memo object to another dis() call then allows disassembly
+    to proceed across multiple pickles that were all created by the same
+    pickler with the same memo.  Ordinarily you don't need to worry about this.
 
     Optional arg indentlevel is the number of blanks by which to indent
     a new MARK level.  It defaults to 4.
@@ -1895,7 +1901,8 @@ def dis(pickle, out=None, indentlevel=4):
     # (which in turn is needed to indent MARK blocks correctly).
 
     stack = []          # crude emulation of unpickler stack
-    memo = {}           # crude emulation of unpicker memo
+    if memo is None:
+        memo = {}       # crude emulation of unpicker memo
     maxproto = -1       # max protocol number seen
     markstack = []      # bytecode positions of MARK opcodes
     indentchunk = ' ' * indentlevel
@@ -2195,7 +2202,36 @@ highest protocol among opcodes = 2
 highest protocol among opcodes = 2
 """
 
+_memo_test = r"""
+>>> import pickle
+>>> from StringIO import StringIO
+>>> f = StringIO()
+>>> p = pickle.Pickler(f, 2)
+>>> x = [1, 2, 3]
+>>> p.dump(x)
+>>> p.dump(x)
+>>> f.seek(0)
+>>> memo = {}
+>>> dis(f, memo=memo)
+    0: \x80 PROTO      2
+    2: ]    EMPTY_LIST
+    3: q    BINPUT     0
+    5: (    MARK
+    6: K        BININT1    1
+    8: K        BININT1    2
+   10: K        BININT1    3
+   12: e        APPENDS    (MARK at 5)
+   13: .    STOP
+highest protocol among opcodes = 2
+>>> dis(f, memo=memo)
+   14: \x80 PROTO      2
+   16: h    BINGET     0
+   18: .    STOP
+highest protocol among opcodes = 2
+"""
+
 __test__ = {'disassembler_test': _dis_test,
+            'disassembler_memo_test': _memo_test,
            }
 
 def _test():
