@@ -99,6 +99,17 @@ that the indentation commands won't get confused (i.e., the string
 should be of the form `#x...' where `x' is not a blank or a tab, and
 `...' is arbitrary).")
 
+(defvar py-honor-comment-indentation t
+  "*If non-nil, single-# comments are a hint to subsequent line indentation.
+If the previous line is a comment which begins with a single `#'
+character (as opposed to `py-block-comment-prefix' -- normally `##'),
+then it's indentation is used as a hint for this line's indentation.
+When this variable is nil, all comments are skipped for indentation
+purposes, and a faster algorithm is used.
+
+Under Emacs 18, or old Emacs 19's, this variable has no effect, and
+the behavior is as if it were always non-nil.")
+
 (defvar py-scroll-process-buffer t
   "*Scroll Python process buffer as output arrives.
 If nil, the Python process buffer acts, with respect to scrolling, like
@@ -853,7 +864,8 @@ the new line indented."
 	;; will skip a blank or non-indenting comment line that
 	;; happens to be a continuation line too.  use fast Emacs 19
 	;; function if it's there.
-	(if (fboundp 'forward-comment)
+	(if (and (not py-honor-comment-indentation)
+		 (fboundp 'forward-comment))
 	    (forward-comment (- (point-max)))
 	  (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move))
 	;; if we landed inside a string, go to the beginning of that
