@@ -161,6 +161,12 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.pos(0) == 0)
         self.failUnless(operator.pos(-0) == 0)
 
+    def test_pow(self):
+        self.failUnless(operator.pow(3,5) == 3**5)
+        self.failUnless(operator.__pow__(3,5) == 3**5)
+        self.assertRaises(TypeError, operator.pow, 1)
+        self.assertRaises(TypeError, operator.pow, 1, 2, 3)
+
     def test_repeat(self):
         a = range(3)
         self.failUnless(operator.repeat(a, 2) == a+a)
