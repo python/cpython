@@ -574,14 +574,14 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
     def testUnbufferedReadline(self):
         """Read a line, create a new file object, read another line with it."""
         line = self.serv_file.readline() # first line
-	self.assertEqual(line, MSG) # first line
+        self.assertEqual(line, "A. " + MSG) # first line
         self.serv_file = self.cli_conn.makefile('rb', 0)
         line = self.serv_file.readline() # second line
-	self.assertEqual(line, MSG) # second line
+        self.assertEqual(line, "B. " + MSG) # second line
 
     def _testUnbufferedReadline(self):
-        self.cli_file.write(MSG)
-        self.cli_file.write(MSG)
+        self.cli_file.write("A. " + MSG)
+        self.cli_file.write("B. " + MSG)
         self.cli_file.flush()
 
 
