@@ -1180,7 +1180,8 @@ profiler_get_closed(ProfilerObject *self, void *closure)
 }
 
 static PyGetSetDef profiler_getsets[] = {
-    {"closed", (getter)profiler_get_closed, NULL},
+    {"closed", (getter)profiler_get_closed, NULL,
+     "True if the profiler's output file has already been closed."},
     {NULL}
 };
 
@@ -1437,9 +1438,13 @@ write_header(ProfilerObject *self)
     for (i = 0; i < len; ++i) {
         PyObject *item = PyList_GET_ITEM(temp, i);
         buffer = PyString_AsString(item);
-        if (buffer == NULL)
-            return -1;
-        pack_add_info(self, "sys-path-entry", buffer);
+        if (buffer == NULL) {
+            pack_add_info(self, "sys-path-entry", "<non-string-path-entry>");
+            PyErr_Clear();
+        }
+        else {
+            pack_add_info(self, "sys-path-entry", buffer);
+        }
     }
     pack_frame_times(self);
     pack_line_times(self);
