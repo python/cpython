@@ -12,6 +12,10 @@ What's New in Python 2.3.5?
 Core and builtins
 -----------------
 
+- Bug #952807:  Unpickling pickled instances of subclasses of
+  datetime.date, datetime.datetime and datetime.time could yield insane
+  objects.  Thanks to Jiwon Seo for a fix.
+
 - Bug #845802: Python crashed when __init__.py is a directory.
 
 Extension modules
@@ -23,7 +27,7 @@ Extension modules
 
 - Bug #841757: xmlrpclib failed on structs with Unicode keys.
 
-- Bug #954364: inspect.getframeinfo() sometimes produces incorrect traceback 
+- Bug #954364: inspect.getframeinfo() sometimes produces incorrect traceback
   line numbers
 
 What's New in Python 2.3.4 (final)?

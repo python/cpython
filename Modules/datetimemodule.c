@@ -2199,7 +2199,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	{
 	    	PyDateTime_Date *me;
 
-		me = PyObject_New(PyDateTime_Date, type);
+		me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 			memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
@@ -3042,8 +3042,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			}
 		}
 		aware = (char)(tzinfo != Py_None);
-		me = (PyDateTime_Time *) time_alloc(&PyDateTime_TimeType,
-						    aware);
+		me = (PyDateTime_Time *) (type->tp_alloc(type, aware));
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 
@@ -3564,9 +3563,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			}
 		}
 		aware = (char)(tzinfo != Py_None);
-		me = (PyDateTime_DateTime *) datetime_alloc(
-						&PyDateTime_DateTimeType,
-				     		aware);
+		me = (PyDateTime_DateTime *) (type->tp_alloc(type , aware));
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 
