@@ -168,6 +168,12 @@ class PyBuildExt(build_ext):
                 'WARNING: skipping import check for Carbon-based "%s"' %
                 ext.name)
             return
+        # Workaround for Cygwin: Cygwin currently has fork issues when many
+        # modules have been imported
+        if self.get_platform() == 'cygwin':
+            self.announce('WARNING: skipping import check for Cygwin-based "%s"'
+                % ext.name)
+            return
         ext_filename = os.path.join(
             self.build_lib,
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
