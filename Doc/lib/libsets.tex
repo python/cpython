@@ -60,7 +60,7 @@ elements must be known when the constructor is called.
 \end{classdesc}
 
 
-\subsection{Set Objects}
+\subsection{Set Objects \label{set-objects}}
 
 Instances of \class{Set} and \class{ImmutableSet} both provide
 the following operations:
@@ -142,23 +142,21 @@ but not found in \class{ImmutableSet}:
 
   \hline
   \lineii{\var{s}.add(\var{x})}
-         {Add element \var{x} to set \var{s}}
+         {add element \var{x} to set \var{s}}
   \lineii{\var{s}.remove(\var{x})}
-         {Remove element \var{x} from set \var{s}}
+         {remove \var{x} from set \var{s}}
   \lineii{\var{s}.discard(\var{x})}
-         {Removes element \var{x} from set \var{s}. Like \var{s}.remove(\var{x})
-          but does not raise KeyError if \var{x} is not in \var{s}}
+         {removes \var{x} from set \var{s} if present}
   \lineii{\var{s}.pop()}
-         {Remove and return an element from \var{s}; no guarantee is
-          made about which element is removed}
+         {remove and return an arbitrary element from \var{s}}
   \lineii{\var{s}.update(\var{t})}
-         {Add elements from \var{t} to set \var{s}}
+         {add elements from \var{t} to set \var{s}}
   \lineii{\var{s}.clear()}
-         {Remove all elements from set \var{s}}
+         {remove all elements from set \var{s}}
 \end{tableii}
 
 
-\subsection{Example}
+\subsection{Example \label{set-example}}
 
 \begin{verbatim}
 >>> from sets import Set
