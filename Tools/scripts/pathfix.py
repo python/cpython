@@ -87,7 +87,7 @@ def recursedown(dirname):
     return bad
 
 def fix(filename):
-##      dbg('fix(' + `filename` + ')\n')
+##  dbg('fix(' + `filename` + ')\n')
     try:
         f = open(filename, 'r')
     except IOError, msg:

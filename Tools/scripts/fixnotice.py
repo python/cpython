@@ -30,7 +30,7 @@ def process(arg):
     f.close()
     i = string.find(data, OLD_NOTICE)
     if i < 0:
-##         print "No old notice in", arg
+##      print "No old notice in", arg
         return
     data = data[:i] + NEW_NOTICE + data[i+len(OLD_NOTICE):]
     new = arg + ".new"
