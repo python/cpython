@@ -98,7 +98,7 @@ Send a blank line to the server, signalling the end of the headers.
 Complete the request by shutting down the sending end of the socket,
 read the reply from the server, and return a triple
 \code{(\var{replycode}, \var{message}, \var{headers})}.  Here,
-\var{replycode} is the integer reply code from the request (e.g.\
+\var{replycode} is the integer reply code from the request (e.g.,
 \code{200} if the request was handled properly); \var{message} is the
 message string corresponding to the reply code; and \var{headers} is
 an instance of the class \class{mimetools.Message} containing the
