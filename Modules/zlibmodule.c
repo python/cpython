@@ -1,14 +1,7 @@
 /* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.info-zip.org/pub/infozip/zlib/ */
 
-/* *** Notes for Windows Users ***
-   * Download the source distribution as referenced above.
-   * Unpack the distribution such that a "..\..\zlib-1.1.3" directory is created
-     relative to the "pcbuild" directory.
-   * Build this "zlib" project.  Via from MSVC magic, the correct zlib makefile will
-     be run, and "..\..\zlib-1.1.3\zlib.lib" will be built before zlib.pyd.
-   *** End of notes for Windows users ***
-*/
+/* Windows users:  read Python's PCbuild\readme.txt */
 
 
 #include "Python.h"

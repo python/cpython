@@ -13,7 +13,6 @@ Core language, builtins, and interpreter
 - Functions are now compared and hashed by identity, not by value, since
   the func_code attribute is writable.
 
-
 Standard library
 
 - random.py is now self-contained, and offers all the functionality of
@@ -25,6 +24,12 @@ Standard library
   threaded programs, creating one instance of the random.Random() class for
   each thread, then using .jumpahead() to force each instance to use a
   non-overlapping segment of the full period.
+
+Windows changes
+
+- Build procedure:  the zlib project is built in a different way that
+  ensures the zlib header files used can no longer get out of synch with
+  the zlib binary used.  See PCbuild\readme.txt for details.
 
 
 What's New in Python 2.1 alpha 1?

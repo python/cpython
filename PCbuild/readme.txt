@@ -69,12 +69,17 @@ _tkinter
     Be sure to install everything, including the Tcl/Tk header files.
 
 zlib
-    Python wrapper for the zlib compression library.  Requires
-        http://www.winimage.com/zLibDll/zlib133dll.zip
-    and
-        ftp://ftp.uu.net/graphics/png/src/zlib133.zip
-    Unpack the former into dist\zlib113dll.
-    Uppack the latter into dist\zlib113.
+    NOTE: This procedure is new (& simpler, & safer) for 2.1a2.
+    Python wrapper for the zlib compression library.  Get the source code
+    for version 1.1.3 from a convenient mirror at:
+        http://www.info-zip.org/pub/infozip/zlib/
+    Unpack into dist\zlib-1.1.3.
+    A custom pre-link step in the zlib project settings should manage to
+    build zlib-1.1.3\zlib.lib by magic before zlib.pyd (or zlib_d.pyd) is
+    linked in PCbuild\.
+    However, the zlib project is not smart enough to remove anything under
+    zlib-1.1.3\ when you do a clean, so if you want to rebuild zlib.lib
+    you need to clean up zlib-1.1.3\ by hand.
 
 bsddb
     Python wrapper for the BSD database 1.85.  Requires db.1.85.win32.zip,
