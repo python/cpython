@@ -3146,15 +3146,15 @@ PyString_Format(PyObject *format, PyObject *args)
 		return NULL;
 	}
 	orig_args = args;
-	fmt = PyString_AsString(format);
-	fmtcnt = PyString_Size(format);
+	fmt = PyString_AS_STRING(format);
+	fmtcnt = PyString_GET_SIZE(format);
 	reslen = rescnt = fmtcnt + 100;
 	result = PyString_FromStringAndSize((char *)NULL, reslen);
 	if (result == NULL)
 		return NULL;
 	res = PyString_AsString(result);
 	if (PyTuple_Check(args)) {
-		arglen = PyTuple_Size(args);
+		arglen = PyTuple_GET_SIZE(args);
 		argidx = 0;
 	}
 	else {
@@ -3170,7 +3170,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				reslen += rescnt;
 				if (_PyString_Resize(&result, reslen) < 0)
 					return NULL;
-				res = PyString_AsString(result)
+				res = PyString_AS_STRING(result)
 					+ reslen - rescnt;
 				--rescnt;
 			}
@@ -3351,7 +3351,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				}
 #endif
 				if (c == 's')
-				temp = PyObject_Str(v);
+					temp = PyObject_Str(v);
 				else
 					temp = PyObject_Repr(v);
 				if (temp == NULL)
@@ -3359,10 +3359,11 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (!PyString_Check(temp)) {
 					PyErr_SetString(PyExc_TypeError,
 					  "%s argument has non-string str()");
+					Py_DECREF(temp);
 					goto error;
 				}
-				pbuf = PyString_AsString(temp);
-				len = PyString_Size(temp);
+				pbuf = PyString_AS_STRING(temp);
+				len = PyString_GET_SIZE(temp);
 				if (prec >= 0 && len > prec)
 					len = prec;
 				break;
@@ -3441,7 +3442,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				reslen += rescnt;
 				if (_PyString_Resize(&result, reslen) < 0)
 					return NULL;
-				res = PyString_AsString(result)
+				res = PyString_AS_STRING(result)
 					+ reslen - rescnt;
 			}
 			if (sign) {
