@@ -13,7 +13,7 @@ opensolidid = struct.pack('h', 471)
 
 arrows = (nullid, closedid, openid, closedsolidid, opensolidid)
 
-has_ctlcharsRE = re.compile('[\000-\037\177-\377]')
+has_ctlcharsRE = re.compile(r'[\000-\037\177-\377]')
 def ctlcharsREsearch(str):
 	if has_ctlcharsRE.search(str) is None:
 		return -1

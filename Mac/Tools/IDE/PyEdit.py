@@ -790,7 +790,7 @@ def _escape(where, what) :
 
 def _makewholewordpattern(word):
 	# first, escape special regex chars
-	for esc in "\\[]().*^+$?":
+	for esc in "\\[]()|.*^+$?":
 		word = _escape(word, esc)
 	notwordcharspat = '[^' + _wordchars + ']'
 	pattern = '(' + word + ')'
@@ -1166,7 +1166,7 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		PyDebugger.stop()
 
 
-_identifieRE = re.compile("[A-Za-z_][A-Za-z_0-9]*")
+_identifieRE = re.compile(r"[A-Za-z_][A-Za-z_0-9]*")
 
 def identifieRE_match(str):
 	match = _identifieRE.match(str)

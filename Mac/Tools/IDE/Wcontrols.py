@@ -381,14 +381,6 @@ class Scrollbar(ControlWidget):
 			return self._value
 	
 
-class __xxxx_PopupControl(ControlWidget):
-	
-	def __init__(self, possize, title = "Button", callback = None):
-		procID = Controls.popupMenuProc	# | Controls.useWFont
-		ControlWidget.__init__(self, possize, title, procID, callback, 0, 0, 1)
-		self._isdefault = 0
-	
-
 def _scalebarvalue(absmin, absmax, curmin, curmax):
 	if curmin <= absmin and curmax >= absmax:
 		return None
