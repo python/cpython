@@ -662,6 +662,15 @@ sub do_env_methoddesc{
 }
 
 
+sub do_cmd_methodlineni{
+    local($_) = @_;
+    next_optional_argument();
+    my $method = next_argument();
+    my $arg_list = next_argument();
+    return "<dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
+           . $_;
+}
+
 sub do_env_methoddescni{
     local($_) = @_;
     next_optional_argument();
