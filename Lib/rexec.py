@@ -1,7 +1,7 @@
 # Implement restricted execution of Python code
 
 import __builtin__
-import new
+import imp
 import os
 import sys
 import types
@@ -22,7 +22,7 @@ def copydict(src, dst, exceptions = [], only = None):
 def copymodule(src, dst, exceptions = [], only = None):
 	copydict(src.__dict__, dst.__dict__, exceptions, only)
 
-safe_path = ['/ufs/guido/lib/python']
+safe_path = ['/usr/local/lib/python']
 safe_modules = ['array', 'math', 'regex', 'strop', 'time']
 unsafe_builtin_names = ['open', 'reload', '__import__',
 			'raw_input', 'input']
@@ -30,7 +30,7 @@ safe_posix_names = ['error', 'fstat', 'listdir', 'lstat', 'readlink', 'stat',
 		    'times', 'uname', 'getpid', 'getppid', 'getcwd',
 		    'getuid', 'getgid', 'geteuid', 'getegid']
 
-safe_sys = new.module('sys')
+safe_sys = imp.new_module('sys')
 safe_sys.modules = {}
 safe_sys.modules['sys'] = safe_sys
 safe_sys.path = safe_path[:]
@@ -42,7 +42,7 @@ safe_sys.version = sys.version + ' [restricted mode]'
 safe_sys.exit = sys.exit
 
 def new_module(name):
-	safe_sys.modules[name] = m = new.module(name)
+	safe_sys.modules[name] = m = imp.new_module(name)
 	return m
 
 safe_builtin = new_module('__builtin__')
