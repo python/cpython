@@ -58,7 +58,7 @@ test_classes = []
 
 class test_exports(TC):
     def test_exports(self):
-        """There are no surprising symbols in the tempfile module"""
+        # There are no surprising symbols in the tempfile module
         dict = tempfile.__dict__
 
         expected = {
@@ -91,12 +91,12 @@ class test__RandomNameSequence(TC):
         self.r = tempfile._RandomNameSequence()
 
     def test_get_six_char_str(self):
-        """_RandomNameSequence returns a six-character string"""
+        # _RandomNameSequence returns a six-character string
         s = self.r.next()
         self.nameCheck(s, '', '', '')
 
     def test_many(self):
-        """_RandomNameSequence returns no duplicate strings (stochastic)"""
+        # _RandomNameSequence returns no duplicate strings (stochastic)
 
         dict = {}
         r = self.r
@@ -107,7 +107,7 @@ class test__RandomNameSequence(TC):
             dict[s] = 1
 
     def test_supports_iter(self):
-        """_RandomNameSequence supports the iterator protocol"""
+        # _RandomNameSequence supports the iterator protocol
 
         i = 0
         r = self.r
@@ -126,7 +126,7 @@ class test__candidate_tempdir_list(TC):
     """Test the internal function _candidate_tempdir_list."""
 
     def test_nonempty_list(self):
-        """_candidate_tempdir_list returns a nonempty list of strings"""
+        # _candidate_tempdir_list returns a nonempty list of strings
 
         cand = tempfile._candidate_tempdir_list()
 
@@ -136,7 +136,7 @@ class test__candidate_tempdir_list(TC):
                          "%s is not a string" % c)
 
     def test_wanted_dirs(self):
-        """_candidate_tempdir_list contains the expected directories"""
+        # _candidate_tempdir_list contains the expected directories
 
         # Make sure the interesting environment variables are all set.
         added = []
@@ -177,12 +177,12 @@ class test__get_candidate_names(TC):
     """Test the internal function _get_candidate_names."""
 
     def test_retval(self):
-        """_get_candidate_names returns a _RandomNameSequence object"""
+        # _get_candidate_names returns a _RandomNameSequence object
         obj = tempfile._get_candidate_names()
         self.assert_(isinstance(obj, tempfile._RandomNameSequence))
 
     def test_same_thing(self):
-        """_get_candidate_names always returns the same object"""
+        # _get_candidate_names always returns the same object
         a = tempfile._get_candidate_names()
         b = tempfile._get_candidate_names()
 
@@ -225,7 +225,7 @@ class test__mkstemp_inner(TC):
         return file
 
     def test_basic(self):
-        """_mkstemp_inner can create files"""
+        # _mkstemp_inner can create files
         self.do_create().write("blat")
         self.do_create(pre="a").write("blat")
         self.do_create(suf="b").write("blat")
@@ -233,13 +233,13 @@ class test__mkstemp_inner(TC):
         self.do_create(pre="aa", suf=".txt").write("blat")
 
     def test_basic_many(self):
-        """_mkstemp_inner can create many files (stochastic)"""
+        # _mkstemp_inner can create many files (stochastic)
         extant = range(TEST_FILES)
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
     def test_choose_directory(self):
-        """_mkstemp_inner can create files in a user-selected directory"""
+        # _mkstemp_inner can create files in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write("blat")
@@ -247,7 +247,7 @@ class test__mkstemp_inner(TC):
             os.rmdir(dir)
 
     def test_file_mode(self):
-        """_mkstemp_inner creates files with the proper mode"""
+        # _mkstemp_inner creates files with the proper mode
         if not has_stat:
             return            # ugh, can't use TestSkipped.
 
@@ -262,7 +262,7 @@ class test__mkstemp_inner(TC):
         self.assertEqual(mode, expected)
 
     def test_noinherit(self):
-        """_mkstemp_inner file handles are not inherited by child processes"""
+        # _mkstemp_inner file handles are not inherited by child processes
         if not has_spawnl:
             return            # ugh, can't use TestSkipped.
 
@@ -292,7 +292,7 @@ class test__mkstemp_inner(TC):
         self.failIf(retval > 0, "child process reports failure")
 
     def test_textmode(self):
-        """_mkstemp_inner can create files in text mode"""
+        # _mkstemp_inner can create files in text mode
         if not has_textmode:
             return            # ugh, can't use TestSkipped.
 
@@ -306,14 +306,14 @@ class test_gettempprefix(TC):
     """Test gettempprefix()."""
 
     def test_sane_template(self):
-        """gettempprefix returns a nonempty prefix string"""
+        # gettempprefix returns a nonempty prefix string
         p = tempfile.gettempprefix()
 
         self.assert_(isinstance(p, basestring))
         self.assert_(len(p) > 0)
 
     def test_usable_template(self):
-        """gettempprefix returns a usable prefix string"""
+        # gettempprefix returns a usable prefix string
 
         # Create a temp directory, avoiding use of the prefix.
         # Then attempt to create a file whose name is
@@ -338,7 +338,7 @@ class test_gettempdir(TC):
     """Test gettempdir()."""
 
     def test_directory_exists(self):
-        """gettempdir returns a directory which exists"""
+        # gettempdir returns a directory which exists
 
         dir = tempfile.gettempdir()
         self.assert_(os.path.isabs(dir) or dir == os.curdir,
@@ -347,7 +347,7 @@ class test_gettempdir(TC):
                      "%s is not a directory" % dir)
 
     def test_directory_writable(self):
-        """gettempdir returns a directory writable by the user"""
+        # gettempdir returns a directory writable by the user
 
         # sneaky: just instantiate a NamedTemporaryFile, which
         # defaults to writing into the directory returned by
@@ -360,7 +360,7 @@ class test_gettempdir(TC):
             self.failOnException("create file in %s" % tempfile.gettempdir())
 
     def test_same_thing(self):
-        """gettempdir always returns the same object"""
+        # gettempdir always returns the same object
         a = tempfile.gettempdir()
         b = tempfile.gettempdir()
 
@@ -371,6 +371,7 @@ test_classes.append(test_gettempdir)
 
 class test_mkstemp(TC):
     """Test mkstemp()."""
+
     def do_create(self, dir=None, pre="", suf="", ):
         if dir is None:
             dir = tempfile.gettempdir()
@@ -386,7 +387,7 @@ class test_mkstemp(TC):
             os.unlink(name)
 
     def test_basic(self):
-        """mkstemp can create files"""
+        # mkstemp can create files
         self.do_create()
         self.do_create(pre="a")
         self.do_create(suf="b")
@@ -394,7 +395,7 @@ class test_mkstemp(TC):
         self.do_create(pre="aa", suf=".txt")
 
     def test_choose_directory(self):
-        """mkstemp can create directories in a user-selected directory"""
+        # mkstemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
@@ -423,7 +424,7 @@ class test_mkdtemp(TC):
             raise
 
     def test_basic(self):
-        """mkdtemp can create directories"""
+        # mkdtemp can create directories
         os.rmdir(self.do_create())
         os.rmdir(self.do_create(pre="a"))
         os.rmdir(self.do_create(suf="b"))
@@ -431,7 +432,7 @@ class test_mkdtemp(TC):
         os.rmdir(self.do_create(pre="aa", suf=".txt"))
 
     def test_basic_many(self):
-        """mkdtemp can create many directories (stochastic)"""
+        # mkdtemp can create many directories (stochastic)
         extant = range(TEST_FILES)
         try:
             for i in extant:
@@ -442,7 +443,7 @@ class test_mkdtemp(TC):
                     os.rmdir(i)
 
     def test_choose_directory(self):
-        """mkdtemp can create directories in a user-selected directory"""
+        # mkdtemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
@@ -450,7 +451,7 @@ class test_mkdtemp(TC):
             os.rmdir(dir)
 
     def test_mode(self):
-        """mkdtemp creates directories with the proper mode"""
+        # mkdtemp creates directories with the proper mode
         if not has_stat:
             return            # ugh, can't use TestSkipped.
 
@@ -511,7 +512,7 @@ class test_mktemp(TC):
         return file
 
     def test_basic(self):
-        """mktemp can choose usable file names"""
+        # mktemp can choose usable file names
         self.do_create()
         self.do_create(pre="a")
         self.do_create(suf="b")
@@ -519,13 +520,13 @@ class test_mktemp(TC):
         self.do_create(pre="aa", suf=".txt")
 
     def test_many(self):
-        """mktemp can choose many usable file names (stochastic)"""
+        # mktemp can choose many usable file names (stochastic)
         extant = range(TEST_FILES)
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
     def test_warning(self):
-        """mktemp issues a warning when used"""
+        # mktemp issues a warning when used
         warnings.filterwarnings("error",
                                 category=RuntimeWarning,
                                 message="mktemp")
@@ -554,7 +555,7 @@ class test_NamedTemporaryFile(TC):
 
 
     def test_basic(self):
-        """NamedTemporaryFile can create files"""
+        # NamedTemporaryFile can create files
         self.do_create()
         self.do_create(pre="a")
         self.do_create(suf="b")
@@ -562,13 +563,13 @@ class test_NamedTemporaryFile(TC):
         self.do_create(pre="aa", suf=".txt")
 
     def test_creates_named(self):
-        """NamedTemporaryFile creates files with names"""
+        # NamedTemporaryFile creates files with names
         f = tempfile.NamedTemporaryFile()
         self.failUnless(os.path.exists(f.name),
                         "NamedTemporaryFile %s does not exist" % f.name)
 
     def test_del_on_close(self):
-        """A NamedTemporaryFile is deleted when closed"""
+        # A NamedTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
             f = tempfile.NamedTemporaryFile(dir=dir)
@@ -580,7 +581,7 @@ class test_NamedTemporaryFile(TC):
             os.rmdir(dir)
 
     def test_multiple_close(self):
-        """A NamedTemporaryFile can be closed many times without error"""
+        # A NamedTemporaryFile can be closed many times without error
 
         f = tempfile.NamedTemporaryFile()
         f.write('abc\n')
@@ -600,7 +601,7 @@ class test_TemporaryFile(TC):
     """Test TemporaryFile()."""
 
     def test_basic(self):
-        """TemporaryFile can create files"""
+        # TemporaryFile can create files
         # No point in testing the name params - the file has no name.
         try:
             tempfile.TemporaryFile()
@@ -608,7 +609,7 @@ class test_TemporaryFile(TC):
             self.failOnException("TemporaryFile")
 
     def test_has_no_name(self):
-        """TemporaryFile creates files with no names (on this system)"""
+        # TemporaryFile creates files with no names (on this system)
         dir = tempfile.mkdtemp()
         f = tempfile.TemporaryFile(dir=dir)
         f.write('blat')
@@ -625,7 +626,7 @@ class test_TemporaryFile(TC):
             self.failOnException("rmdir", ei)
 
     def test_multiple_close(self):
-        """A TemporaryFile can be closed many times without error"""
+        # A TemporaryFile can be closed many times without error
         f = tempfile.TemporaryFile()
         f.write('abc\n')
         f.close()
@@ -637,14 +638,8 @@ class test_TemporaryFile(TC):
 
     # How to test the mode and bufsize parameters?
 
-class dummy_test_TemporaryFile(TC):
-    def test_dummy(self):
-        """TemporaryFile and NamedTemporaryFile are the same (on this system)"""
-        pass
 
-if tempfile.NamedTemporaryFile is tempfile.TemporaryFile:
-    test_classes.append(dummy_test_TemporaryFile)
-else:
+if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
     test_classes.append(test_TemporaryFile)
 
 def test_main():
