@@ -41,7 +41,6 @@ import copy_reg
 import types
 import marshal
 
-import interrupt
 
 def unpickle_code(ms):
     co = marshal.loads(ms)
@@ -327,12 +326,9 @@ class SocketIO:
         while len(s) > 0:
             try:
                 n = self.sock.send(s)
-            except AttributeError:
+            except (AttributeError, socket.error):
                 # socket was closed
                 raise IOError
-            except socket.error:
-                self.debug("putmessage:socketerror:pid:%s" % os.getpid())
-                os._exit(0)
             else:
                 s = s[n:]
 
@@ -471,7 +467,6 @@ class SocketIO:
             self.responses[key] = ('EOF', None)
             cv.notify()
             cv.release()
-        interrupt.interrupt_main()
         # call our (possibly overridden) exit function
         self.exithook()
 

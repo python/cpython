@@ -296,6 +296,14 @@ class ModifiedUndoDelegator(UndoDelegator):
             pass
         UndoDelegator.delete(self, index1, index2)
 
+
+class MyRPCClient(rpc.RPCClient):
+
+    def handle_EOF(self):
+        "Override the base class - just re-raise EOFError"
+        raise EOFError
+
+    
 class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
@@ -329,7 +337,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         for i in range(3):
             time.sleep(i)
             try:
-                self.rpcclt = rpc.RPCClient(addr)
+                self.rpcclt = MyRPCClient(addr)
                 break
             except socket.error, err:
                 print>>sys.__stderr__,"IDLE socket error: " + err[1]\
@@ -426,9 +434,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except (EOFError, IOError, KeyboardInterrupt):
             # lost connection or subprocess terminated itself, restart
             # [the KBI is from rpc.SocketIO.handle_EOF()]
+            if self.tkconsole.closing:
+                return
             response = None
             self.restart_subprocess()
-            self.tkconsole.endexecuting()
         if response:
             self.tkconsole.resetoutput()
             self.active_seq = None
@@ -673,7 +682,9 @@ class PyShell(OutputWindow):
 
     def __init__(self, flist=None):
         if use_subprocess:
-            self.menu_specs.insert(2, ("shell", "_Shell"))
+            ms = self.menu_specs
+            if ms[2][0] != "shell":
+                ms.insert(2, ("shell", "_Shell"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
@@ -793,15 +804,9 @@ class PyShell(OutputWindow):
                 parent=self.text)
             if response == False:
                 return "cancel"
-            # interrupt the subprocess
-            self.canceled = True
-            if use_subprocess:
-                self.interp.interrupt_subprocess()
-            return "cancel"
-        else:
-            self.closing = True
-            # Wait for poll_subprocess() rescheduling to stop
-            self.text.after(2 * self.pollinterval, self.close2)
+        self.closing = True
+        # Wait for poll_subprocess() rescheduling to stop
+        self.text.after(2 * self.pollinterval, self.close2)
 
     def close2(self):
         return EditorWindow.close(self)
@@ -885,7 +890,10 @@ class PyShell(OutputWindow):
         if self.reading:
             self.top.quit()
         elif (self.executing and self.interp.rpcclt):
-            self.interp.interrupt_subprocess()
+            if self.interp.getdebugger():
+                self.interp.restart_subprocess()
+            else:
+                self.interp.interrupt_subprocess()
         return "break"
 
     def eof_callback(self, event):
@@ -1021,16 +1029,7 @@ class PyShell(OutputWindow):
         self.text.see("restart")
 
     def restart_shell(self, event=None):
-        if self.executing:
-            self.cancel_callback()
-            # Wait for subprocess to interrupt and restart
-            # This can be a long time if shell is scrolling on a slow system
-            # XXX 14 May 03 KBK This delay (and one in ScriptBinding) could be
-            #     shorter if we didn't print the KeyboardInterrupt on
-            #     restarting while user code is running....
-            self.text.after(2000, self.interp.restart_subprocess)
-        else:
-            self.interp.restart_subprocess()
+        self.interp.restart_subprocess()
 
     def showprompt(self):
         self.resetoutput()

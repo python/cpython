@@ -125,17 +125,6 @@ class ScriptBinding:
         interp = shell.interp
         if PyShell.use_subprocess:
             shell.restart_shell()
-            if shell.executing:
-                delay = 2700
-            else:
-                delay = 500
-            # Wait for the interrupt and reset to finish
-            shell.text.after(delay, self.run_module_event2, interp,
-                             filename, code)
-        else:
-            self.run_module_event2(interp, filename, code)
-
-    def run_module_event2(self, interp, filename, code):
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
             _filename = %s

@@ -21,7 +21,8 @@ import __main__
 # the socket) and the main thread (which runs user code), plus global
 # completion and exit flags:
 
-exit_requested = False
+exit_now = False
+quitting = False
 
 def main():
     """Start the Python execution server in a subprocess
@@ -41,6 +42,8 @@ def main():
     register and unregister themselves.
 
     """
+    global exit_now
+    global quitting
     port = 8833
     if sys.argv[1:]:
         port = int(sys.argv[1])
@@ -52,8 +55,12 @@ def main():
     sockthread.start()
     while 1:
         try:
-            if exit_requested:
-                sys.exit(0)
+            if exit_now:
+                try:
+                    sys.exit(0)
+                except KeyboardInterrupt:
+                    # exiting but got an extra KBI? Try again!
+                    continue
             try:
                 seq, request = rpc.request_queue.get(0)
             except Queue.Empty:
@@ -63,17 +70,22 @@ def main():
             ret = method(*args, **kwargs)
             rpc.response_queue.put((seq, ret))
         except KeyboardInterrupt:
+            if quitting:
+                exit_now = True
             continue
         except SystemExit:
             raise
         except:
+            type, value, tb = sys.exc_info()
             try:
                 print_exception()
                 rpc.response_queue.put((seq, None))
             except:
-                traceback.print_exc(file=sys.__stderr__)
-                sys.exit(1.1)
-            continue
+                # Link didn't work, print same exception to __stderr__
+                traceback.print_exception(type, value, tb, file=sys.__stderr__)
+                sys.exit(0)
+            else:
+                continue
 
 def manage_socket(address):
     for i in range(6):
@@ -89,17 +101,17 @@ def manage_socket(address):
                                               + err[1] + ", retrying...."
     else:
         print>>sys.__stderr__, "\nConnection to Idle failed, exiting."
-        global exit_requested
-        exit_requested = True
+        global exit_now
+        exit_now = True
         return
     server.handle_request() # A single request only
 
 def print_exception():
     flush_stdout()
     efile = sys.stderr
-    typ, val, tb = info = sys.exc_info()
+    typ, val, tb = sys.exc_info()
     tbe = traceback.extract_tb(tb)
-    print >>efile, 'Traceback (most recent call last):'
+    print >>efile, '\nTraceback (most recent call last):'
     exclude = ("run.py", "rpc.py", "threading.py", "Queue.py",
                "RemoteDebugger.py", "bdb.py")
     cleanup_traceback(tbe, exclude)
@@ -161,8 +173,8 @@ class MyRPCServer(rpc.RPCServer):
         except SystemExit:
             raise
         except EOFError:
-            global exit_requested
-            exit_requested = True
+            global exit_now
+            exit_now = True
             interrupt.interrupt_main()
         except:
             erf = sys.__stderr__
@@ -174,7 +186,7 @@ class MyRPCServer(rpc.RPCServer):
             traceback.print_exc(file=erf)
             print>>erf, '\n*** Unrecoverable, server exiting!'
             print>>erf, '-'*40
-            os._exit(0)
+            sys.exit(0)
 
 
 class MyHandler(rpc.RPCHandler):
@@ -190,15 +202,18 @@ class MyHandler(rpc.RPCHandler):
 
     def exithook(self):
         "override SocketIO method - wait for MainThread to shut us down"
-        while 1: pass
+        time.sleep(10)
 
     def EOFhook(self):
         "Override SocketIO method - terminate wait on callback and exit thread"
-        global exit_requested
-        exit_requested = True
+        global quitting
+        quitting = True
+        interrupt.interrupt_main()
 
     def decode_interrupthook(self):
         "interrupt awakened thread"
+        global quitting
+        quitting = True
         interrupt.interrupt_main()
 
 
@@ -213,15 +228,10 @@ class Executive:
         try:
             exec code in self.locals
         except:
-            if exit_requested:
+            if quitting:
                 sys.exit(0)
-            try:
-                # even print a user code SystemExit exception, continue
-                print_exception()
-            except:
-                # link not working? 
-                traceback.print_exc(file=sys.__stderr__)
-                sys.exit(1.2)
+            # even print a user code SystemExit exception, continue
+            print_exception()
         else:
             flush_stdout()
 
