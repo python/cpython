@@ -535,6 +535,30 @@ rds_object(str, len)
 	return r_object(&rf);
 }
 
+object *
+PyMarshal_WriteObjectToString(x) /* wrs_object() */
+	object *x;
+{
+	WFILE wf;
+	wf.fp = NULL;
+	wf.str = newsizedstringobject((char *)NULL, 50);
+	if (wf.str == NULL)
+		return NULL;
+	wf.ptr = GETSTRINGVALUE((stringobject *)wf.str);
+	wf.end = wf.ptr + getstringsize(wf.str);
+	wf.error = 0;
+	w_object(x, &wf);
+	if (wf.str != NULL)
+		resizestring(&wf.str,
+		    (int) (wf.ptr - GETSTRINGVALUE((stringobject *)wf.str)));
+	if (wf.error) {
+		XDECREF(wf.str);
+		err_setstr(ValueError, "unmarshallable object");
+		return NULL;
+	}
+	return wf.str;
+}
+
 /* And an interface for Python programs... */
 
 static object *
@@ -595,27 +619,10 @@ marshal_dumps(self, args)
 	object *self;
 	object *args;
 {
-	WFILE wf;
 	object *x;
 	if (!getargs(args, "O", &x))
 		return NULL;
-	wf.fp = NULL;
-	wf.str = newsizedstringobject((char *)NULL, 50);
-	if (wf.str == NULL)
-		return NULL;
-	wf.ptr = GETSTRINGVALUE((stringobject *)wf.str);
-	wf.end = wf.ptr + getstringsize(wf.str);
-	wf.error = 0;
-	w_object(x, &wf);
-	if (wf.str != NULL)
-		resizestring(&wf.str,
-		    (int) (wf.ptr - GETSTRINGVALUE((stringobject *)wf.str)));
-	if (wf.error) {
-		XDECREF(wf.str);
-		err_setstr(ValueError, "unmarshallable object");
-		return NULL;
-	}
-	return wf.str;
+	return PyMarshal_WriteObjectToString(x);
 }
 
 static object *
