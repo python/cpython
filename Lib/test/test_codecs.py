@@ -161,11 +161,11 @@ class UTF16Test(ReadTest):
 
     def test_badbom(self):
         s = StringIO.StringIO("\xff\xff")
-        f = codecs.getwriter(self.encoding)(s)
+        f = codecs.getreader(self.encoding)(s)
         self.assertRaises(UnicodeError, f.read)
 
         s = StringIO.StringIO("\xff\xff\xff\xff")
-        f = codecs.getwriter(self.encoding)(s)
+        f = codecs.getreader(self.encoding)(s)
         self.assertRaises(UnicodeError, f.read)
 
     def test_partial(self):
