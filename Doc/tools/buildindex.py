@@ -16,7 +16,6 @@ class Node:
         self.seqno = seqno
         # remove <#\d+#> left in by moving the data out of LaTeX2HTML
         str = self.__rmjunk.sub('', str)
-        # now remove <tt>...</tt> markup; contents remain.
         # build up the text
         self.text = split_entry_text(str)
         self.key = split_entry_key(str)
