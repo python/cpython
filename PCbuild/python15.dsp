@@ -376,6 +376,13 @@ SOURCE=..\PC\python_nt.def
 # Begin Source File
 
 SOURCE=..\PC\python_nt.rc
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

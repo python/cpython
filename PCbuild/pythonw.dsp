@@ -91,6 +91,13 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=..\PC\python_exe.rc
+
+!IF  "$(CFG)" == "pythonw - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythonw - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
