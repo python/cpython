@@ -12,6 +12,16 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- Some speedups for long arithmetic, thanks to Trevor Perrin.  Gradeschool
+  multiplication was sped a little by optimizing the C code.  Gradeschool
+  squaring was sped by about a factor of 2, by exploiting that about half
+  the digit products are duplicates in a square.  Because exponentiation
+  uses squaring often, this also speeds long power.  For example, the time
+  to compute 17**1000000 dropped from about 14 seconds to 9 on my box due
+  to this much.  The cutoff for Karatsuba multiplication was raised,
+  since gradeschool multiplication got quicker, and the cutoff was
+  aggressively small regardless.
+
 - OverflowWarning is no longer generated.  PEP 237 scheduled this to
   occur in Python 2.3, but since OverflowWarning was disabled by default,
   nobody realized it was still being generated.  On the chance that user
