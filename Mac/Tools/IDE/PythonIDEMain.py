@@ -13,9 +13,9 @@ from Carbon import File
 from Carbon import Files
 
 if MacOS.runtimemodel == 'macho':
-	ELIPSES = '...'
+	ELLIPSIS = '...'
 else:
-	ELIPSES = '\xc9'
+	ELLIPSIS = '\xc9'
 
 def runningOnOSX():
 	from gestalt import gestalt
@@ -74,16 +74,16 @@ class PythonIDE(Wapplication.Application):
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
 		newitem = FrameWork.MenuItem(m, "New", "N", 'new')
-		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
-		openbynameitem = FrameWork.MenuItem(m, "Open File by Name"+ELIPSES, "D", 'openbyname')
+		openitem = FrameWork.MenuItem(m, "Open"+ELLIPSIS, "O", 'open')
+		openbynameitem = FrameWork.MenuItem(m, "Open File by Name"+ELLIPSIS, "D", 'openbyname')
 		self.openrecentmenu = FrameWork.SubMenu(m, "Open Recent")
 		self.makeopenrecentmenu()
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
-		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
+		saveasitem = FrameWork.MenuItem(m, "Save as"+ELLIPSIS, None, 'save_as')
 		FrameWork.Separator(m)
-		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet"+ELIPSES, None, 'save_as_applet')
+		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet"+ELLIPSIS, None, 'save_as_applet')
 		FrameWork.Separator(m)
 		instmgritem = FrameWork.MenuItem(m, "Package Manager", None, 'openpackagemanager')
 		gensuiteitem = FrameWork.MenuItem(m, "Generate OSA Suite...", None, 'gensuite')
@@ -104,7 +104,7 @@ class PythonIDE(Wapplication.Application):
 		selallitem = FrameWork.MenuItem(m, "Select all", "A", "selectall")
 		sellineitem = FrameWork.MenuItem(m, "Select line", "L", "selectline")
 		FrameWork.Separator(m)
-		finditem = FrameWork.MenuItem(m, "Find"+ELIPSES, "F", "find")
+		finditem = FrameWork.MenuItem(m, "Find"+ELLIPSIS, "F", "find")
 		findagainitem = FrameWork.MenuItem(m, "Find again", 'G', "findnext")
 		enterselitem = FrameWork.MenuItem(m, "Enter search string", "E", "entersearchstring")
 		replaceitem = FrameWork.MenuItem(m, "Replace", None, "replace")
@@ -117,12 +117,12 @@ class PythonIDE(Wapplication.Application):
 		runitem = FrameWork.MenuItem(m, "Run window", "R", 'run')
 		runselitem = FrameWork.MenuItem(m, "Run selection", None, 'runselection')
 		FrameWork.Separator(m)
-		moditem = FrameWork.MenuItem(m, "Module browser"+ELIPSES, "M", self.domenu_modulebrowser)
+		moditem = FrameWork.MenuItem(m, "Module browser"+ELLIPSIS, "M", self.domenu_modulebrowser)
 		FrameWork.Separator(m)
 		mm = FrameWork.SubMenu(m, "Preferences")
-		FrameWork.MenuItem(mm, "Set Scripts folder"+ELIPSES, None, self.do_setscriptsfolder)
-		FrameWork.MenuItem(mm, "Editor default settings"+ELIPSES, None, self.do_editorprefs)
-		FrameWork.MenuItem(mm, "Set default window font"+ELIPSES, None, self.do_setwindowfont)
+		FrameWork.MenuItem(mm, "Set Scripts folder"+ELLIPSIS, None, self.do_setscriptsfolder)
+		FrameWork.MenuItem(mm, "Editor default settings"+ELLIPSIS, None, self.do_editorprefs)
+		FrameWork.MenuItem(mm, "Set default window font"+ELLIPSIS, None, self.do_setwindowfont)
 		
 		self.openwindowsmenu = Wapplication.Menu(self.menubar, 'Windows')
 		self.makeopenwindowsmenu()
@@ -146,7 +146,7 @@ class PythonIDE(Wapplication.Application):
 					path = os.path.join(os.getcwd(), "Scripts")
 				if not os.path.exists(path):
 					os.makedirs(path)
-					f = open(os.path.join(path, "Place your scripts here"+ELIPSES), "w")
+					f = open(os.path.join(path, "Place your scripts here"+ELLIPSIS), "w")
 					f.close()
 			fsr = File.FSRef(path)
 			self.scriptsfolder = fsr.FSNewAliasMinimal()
@@ -196,7 +196,7 @@ class PythonIDE(Wapplication.Application):
 			W.Message("Can't open file of type '%s'." % ftype)
 	
 	def getabouttext(self):
-		return "About Python IDE"+ELIPSES
+		return "About Python IDE"+ELLIPSIS
 	
 	def do_about(self, id, item, window, event):
 		Splash.about()
