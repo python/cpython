@@ -1,0 +1,41 @@
+% Documentation based on module docstrings, by Fred L. Drake, Jr.
+% <fdrake@acm.org>
+
+\section{\module{compileall} ---
+         Byte-compile Python libraries.}
+
+\declaremodule{standard}{compileall}
+
+\modulesynopsis{Tools for byte-compiling all Python source files in a
+directory tree.}
+
+
+This module provides some utility functions to support installing
+Python libraries.  These functions compile Python source files in a
+directory tree, allowing users without permission to write to the
+libraries to take advantage of cached byte-code files.
+
+The source file for this module may also be used as a script to
+compile Python sources in directories named on the command line or in
+\code{sys.path}.
+
+
+\begin{funcdesc}{compile_dir}{dir\optional{, maxlevels\optional{, ddir}}}
+  Recursively descend the directory tree named by \var{dir}, compiling
+  all \file{.py} files along the way.  The \var{maxlevels} parameter
+  is used to limit the depth of the recursion; it defaults to
+  \code{10}.  If \var{ddir} is given, it is used as the base path from 
+  which the filenames used in error messages will be generated.
+\end{funcdesc}
+
+\begin{funcdesc}{compile_path}{\optional{skip_curdir\optional{, maxlevels}}}
+  Byte-compile all the \file{.py} files found along \code{sys.path}.
+  If \var{skip_curdir} is true (the default), the current directory is 
+  not included in the search.  The \var{maxlevels} parameter defaults
+  to \code{0} and is passed to the \function{compile_dir()} function.
+\end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule[pycompile]{py_compile}{Byte-compile a single source file.}
+\end{seealso}
