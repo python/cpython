@@ -5,9 +5,13 @@ section on using the parser module.  Refer to the manual for a thorough
 discussion of the operation of this code.
 """
 
+import os
+import parser
 import symbol
 import token
 import types
+
+from types import ListType, TupleType
 
 
 def get_docs(fileName):
@@ -17,12 +21,9 @@ def get_docs(fileName):
         Name of the file to read Python source code from.
     """
     source = open(fileName).read()
-    import os
     basename = os.path.basename(os.path.splitext(fileName)[0])
-    import parser
     ast = parser.suite(source)
-    tup = parser.ast2tuple(ast)
-    return ModuleInfo(tup, basename)
+    return ModuleInfo(ast.totuple(), basename)
 
 
 class SuiteInfoBase:
@@ -112,8 +113,6 @@ class ModuleInfo(SuiteInfoBase, SuiteFuncInfo):
                 self._docstring = vars["docstring"]
 
 
-from types import ListType, TupleType
-
 def match(pattern, data, vars=None):
     """Match `data' to `pattern', with variable extraction.
 
@@ -189,6 +188,3 @@ DOCSTRING_STMT_PATTERN = (
                      )))))))))))))))),
      (token.NEWLINE, '')
      ))
-
-#
-#  end of file
