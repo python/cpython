@@ -136,6 +136,7 @@ struct compiling {
 	object *c_code;		/* string */
 	object *c_consts;	/* list of objects */
 	object *c_names;	/* list of strings (names) */
+	object *c_globals;	/* dictionary */
 	int c_nexti;		/* index into c_code */
 	int c_errors;		/* counts errors occurred */
 	int c_infunction;	/* set when compiling a function */
@@ -204,6 +205,8 @@ com_init(c, filename)
 		goto fail_2;
 	if ((c->c_names = newlistobject(0)) == NULL)
 		goto fail_1;
+	if ((c->c_globals = newdictobject()) == NULL)
+		goto fail_0;
 	c->c_nexti = 0;
 	c->c_errors = 0;
 	c->c_infunction = 0;
@@ -213,6 +216,8 @@ com_init(c, filename)
 	c->c_filename = filename;
 	return 1;
 	
+  fail_0:
+  	DECREF(c->c_names);
   fail_1:
 	DECREF(c->c_consts);
   fail_2:
@@ -228,6 +233,7 @@ com_free(c)
 	XDECREF(c->c_code);
 	XDECREF(c->c_consts);
 	XDECREF(c->c_names);
+	XDECREF(c->c_globals);
 }
 
 static void
@@ -381,6 +387,19 @@ com_addopname(c, op, n)
 		i = com_addname(c, v);
 		DECREF(v);
 	}
+	/* Hack to replace *_NAME opcodes by *_GLOBAL if necessary */
+	switch (op) {
+	case LOAD_NAME:
+	case STORE_NAME:
+	case DELETE_NAME:
+		if (dictlookup(c->c_globals, name) != NULL) {
+			switch (op) {
+			case LOAD_NAME:   op = LOAD_GLOBAL;   break;
+			case STORE_NAME:  op = STORE_GLOBAL;  break;
+			case DELETE_NAME: op = DELETE_GLOBAL; break;
+			}
+		}
+	}
 	com_addoparg(c, op, i);
 }
 
@@ -390,10 +409,15 @@ parsenumber(s)
 {
 	extern long strtol();
 	extern double strtod();
-	char *end = s;
+	char *end;
 	long x;
 	double xx;
 	errno = 0;
+	end = s + strlen(s) - 1;
+	if (*end == 'l' || *end == 'L') {
+		extern object *long_scan();
+		return long_scan(s, 0);
+	}
 	x = strtol(s, &end, 0);
 	if (*end == '\0') {
 		if (errno != 0) {
@@ -401,10 +425,6 @@ parsenumber(s)
 			return NULL;
 		}
 		return newintobject(x);
-	}
-	if (*end == 'l' || *end == 'L') {
-		extern object *long_scan();
-		return long_scan(s, 0);
 	}
 	errno = 0;
 	xx = strtod(s, &end);
@@ -1342,6 +1362,21 @@ com_import_stmt(c, n)
 }
 
 static void
+com_global_stmt(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	object *v;
+	REQ(n, global_stmt);
+	/* 'global' NAME (',' NAME)* */
+	for (i = 1; i < NCH(n); i += 2) {
+		if (dictinsert(c->c_globals, STR(CHILD(n, i)), None) != 0)
+			c->c_errors++;
+	}
+}
+
+static void
 com_if_stmt(c, n)
 	struct compiling *c;
 	node *n;
@@ -1654,7 +1689,7 @@ com_funcdef(c, n)
 }
 
 static void
-com_bases(c, n)
+com_oldbases(c, n)
 	struct compiling *c;
 	node *n;
 {
@@ -1662,11 +1697,24 @@ com_bases(c, n)
 	REQ(n, baselist);
 	/*
 	baselist: atom arguments (',' atom arguments)*
-	arguments: '(' [testlist] ')'
+	arguments: '(' ')'
 	*/
 	for (i = 0; i < NCH(n); i += 3)
 		com_node(c, CHILD(n, i));
 	com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 3);
+}
+
+static void
+com_newbases(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i, nbases;
+	REQ(n, testlist);
+	/* testlist: test (',' test)* [','] */
+	for (i = 0; i < NCH(n); i += 2)
+		com_node(c, CHILD(n, i));
+	com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 2);
 }
 
 static void
@@ -1677,14 +1725,38 @@ com_classdef(c, n)
 	object *v;
 	REQ(n, classdef);
 	/*
-	classdef: 'class' NAME parameters ['=' baselist] ':' suite
+	classdef: 'class' NAME
+		['(' testlist ')' |'(' ')' ['=' baselist]] ':' suite
 	baselist: atom arguments (',' atom arguments)*
-	arguments: '(' [testlist] ')'
+	arguments: '(' ')'
 	*/
-	if (NCH(n) == 7)
-		com_bases(c, CHILD(n, 4));
-	else
-		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	/* This piece of code must push a tuple on the stack (the bases) */
+	if (TYPE(CHILD(n, 2)) != LPAR) {
+		/* New syntax without base classes:
+		class NAME ':' suite
+		___________^
+		*/
+		com_addoparg(c, BUILD_TUPLE, 0);
+	}
+	else {
+		if (TYPE(CHILD(n, 3)) == RPAR) {
+			/* Old syntax with or without base classes:
+			class NAME '(' ')' ['=' baselist] ':' suite
+			_______________^....^...^
+			*/
+			if (TYPE(CHILD(n, 4)) == EQUAL)
+				com_oldbases(c, CHILD(n, 5));
+			else
+				com_addoparg(c, BUILD_TUPLE, 0);
+		}
+		else {
+			/* New syntax with base classes:
+			class NAME '(' testlist ')' ':' suite
+			_______________^
+			*/
+			com_newbases(c, CHILD(n, 3));
+		}
+	}
 	v = (object *)compile(n, c->c_filename);
 	if (v == NULL)
 		c->c_errors++;
@@ -1769,6 +1841,9 @@ com_node(c, n)
 		break;
 	case import_stmt:
 		com_import_stmt(c, n);
+		break;
+	case global_stmt:
+		com_global_stmt(c, n);
 		break;
 	case if_stmt:
 		com_if_stmt(c, n);
@@ -1950,9 +2025,11 @@ compile_node(c, n)
 		break;
 	
 	case classdef: /* A class definition */
-		/* 'class' NAME parameters ['=' baselist] ':' suite */
+		/* classdef: 'class' NAME
+			['(' testlist ')' |'(' ')' ['=' baselist]]
+			':' suite */
 		com_addbyte(c, REFUSE_ARGS);
-		com_node(c, CHILD(n, NCH(n)-1));
+		com_node(c, CHILD(n, NCH(n)-1)); /* The suite */
 		com_addbyte(c, LOAD_LOCALS);
 		com_addbyte(c, RETURN_VALUE);
 		break;
