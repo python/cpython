@@ -2604,8 +2604,8 @@ moves to the end of the block (& does not set mark or display a msg)."
       (while (and
 	      (setq last-pos (point))	; always true -- side effect
 	      (py-goto-statement-below)
-	      (> (current-indentation) initial-indent))
-	nil))
+	      (> (current-indentation) initial-indent)
+	      )))
 
      ;; else plain code line; stop at next blank line, or stmt or
      ;; indenting comment line indented <
@@ -3341,7 +3341,8 @@ does not include blank lines, comments, or continuation lines."
   (let ((start (point)))
     (py-goto-beyond-final-line)
     (while (and
-	    (looking-at py-blank-or-comment-re)
+	    (or (looking-at py-blank-or-comment-re)
+		(py-in-literal))
 	    (not (eobp)))
       (forward-line 1))
     (if (eobp)
