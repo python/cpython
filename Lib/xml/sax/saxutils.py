@@ -104,6 +104,10 @@ class XMLFilterBase(xmlreader.XMLReader):
     the event stream or the configuration requests as they pass
     through."""
 
+    def __init__(self, parent = None):
+        xmlreader.XMLReader.__init__(self)
+        self._parent = parent
+    
     # ErrorHandler methods
 
     def error(self, exception):
@@ -192,6 +196,14 @@ class XMLFilterBase(xmlreader.XMLReader):
 
     def setProperty(self, name, value):
         self._parent.setProperty(name, value)
+
+    # XMLFilter methods
+
+    def getParent(self):
+        return self._parent
+
+    def setParent(self, parent):
+        self._parent = parent
 
 # --- Utility functions
 
