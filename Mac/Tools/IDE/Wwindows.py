@@ -157,7 +157,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		if y == None:
 			x, y = x
 		self.SetPort()
-		Win.InvalRect(self.getgrowrect())
+		Win.InvalWindowRect(self.getgrowrect())
 		self.wid.SizeWindow(x, y, 1)
 		self._calcbounds()
 	
@@ -247,7 +247,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 	def drawwidgetbounds(self, onoff):
 		self._drawwidgetbounds = onoff
 		self.SetPort()
-		Win.InvalRect(self._bounds)
+		Win.InvalWindowRect(self._bounds)
 	
 	def _drawbounds(self):
 		pass
@@ -353,7 +353,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		self.draw()
 	
 	def do_postresize(self, width, height, window):
-		Win.InvalRect(self.getgrowrect())
+		Win.InvalWindowRect(self.getgrowrect())
 		self._calcbounds()
 	
 	def do_inGoAway(self, partcode, window, event):

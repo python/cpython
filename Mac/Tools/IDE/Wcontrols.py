@@ -32,7 +32,7 @@ class ControlWidget(Wbase.ClickableWidget):
 						self._procID, 
 						0)
 		self.SetPort()
-		#Win.ValidRect(self._bounds)
+		#Win.ValidWindowRect(self._bounds)
 		self.enable(self._enabled)
 	
 	def adjust(self, oldbounds):
@@ -43,7 +43,7 @@ class ControlWidget(Wbase.ClickableWidget):
 		if self._visible:
 			Qd.EraseRect(self._bounds)
 			self._control.ShowControl()
-			Win.ValidRect(self._bounds)
+			Win.ValidWindowRect(self._bounds)
 	
 	def close(self):
 		self._control.HideControl()
@@ -162,8 +162,8 @@ class Button(ControlWidget):
 			old = Qd.InsetRect(oldbounds, -4, -4)
 			new = Qd.InsetRect(self._bounds, -4, -4)
 			Qd.EraseRect(old)
-			Win.InvalRect(old)
-			Win.InvalRect(new)
+			Win.InvalWindowRect(old)
+			Win.InvalWindowRect(new)
 		ControlWidget.adjust(self, oldbounds)
 
 
@@ -346,7 +346,7 @@ class Scrollbar(ControlWidget):
 	
 	def adjust(self, oldbounds):
 		self.SetPort()
-		Win.InvalRect(oldbounds)
+		Win.InvalWindowRect(oldbounds)
 		self._control.HideControl()
 		self._control.MoveControl(self._bounds[0], self._bounds[1])
 		self._control.SizeControl(self._bounds[2] - self._bounds[0], self._bounds[3] - self._bounds[1])
@@ -356,7 +356,7 @@ class Scrollbar(ControlWidget):
 				self._control.ShowControl()
 			else:
 				Qd.FrameRect(self._bounds)
-			Win.ValidRect(self._bounds)
+			Win.ValidWindowRect(self._bounds)
 	
 	def activate(self, onoff):
 		self._activated = onoff
@@ -366,7 +366,7 @@ class Scrollbar(ControlWidget):
 			else:
 				self._control.HideControl()
 				self.draw(None)
-				Win.ValidRect(self._bounds)
+				Win.ValidWindowRect(self._bounds)
 		
 	def set(self, value):
 		if self._control:
