@@ -584,11 +584,17 @@ text_event(self, args)
 	if (!geteventarg(args, &e))
 		return NULL;
 	if (e.type == WE_MOUSE_DOWN) {
-		/* Cheat at the left margin */
+		/* Cheat at the margins */
+		int width, height;
+		wgetdocsize(e.window, &width, &height);
 		if (e.u.where.h < 0 && tegetleft(tp) == 0)
 			e.u.where.h = 0;
-		/* XXX should also check right margin and bottom,
-		   but we have no wgetdocsize() yet */
+		else if (e.u.where.h > width && tegetright(tp) == width)
+			e.u.where.h = width;
+		if (e.u.where.v < 0 && tegettop(tp) == 0)
+			e.u.where.v = 0;
+		else if (e.u.where.v > height && tegetright(tp) == height)
+			e.u.where.v = height;
 	}
 	return newintobject((long) teevent(tp, &e));
 }
@@ -1433,6 +1439,30 @@ stdwin_setdefwinsize(sw, args)
 }
 
 static object *
+stdwin_getdefwinpos(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int h, v;
+	if (!getnoarg(args))
+		return NULL;
+	wgetdefwinpos(&h, &v);
+	return makepoint(h, v);
+}
+
+static object *
+stdwin_getdefwinsize(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int width, height;
+	if (!getnoarg(args))
+		return NULL;
+	wgetdefwinsize(&width, &height);
+	return makepoint(width, height);
+}
+
+static object *
 stdwin_menucreate(self, args)
 	object *self;
 	object *args;
@@ -1609,6 +1639,8 @@ static struct methodlist stdwin_methods[] = {
 	{"fleep",		stdwin_fleep},
 	{"getselection",	stdwin_getselection},
 	{"getcutbuffer",	stdwin_getcutbuffer},
+	{"getdefwinpos",	stdwin_getdefwinpos},
+	{"getdefwinsize",	stdwin_getdefwinsize},
 	{"getevent",		stdwin_getevent},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
