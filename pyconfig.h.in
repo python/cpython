@@ -754,6 +754,9 @@
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
 
+/* Define on Linux to activate all library features */
+#undef _GNU_SOURCE
+
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE
 
@@ -772,6 +775,11 @@
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
+
+/* Define on UNIX to activate XPG/5 features.  */
+#ifndef _XOPEN_SOURCE
+# define _XOPEN_SOURCE 500
+#endif
 
 /* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
