@@ -146,7 +146,7 @@ OPT=		@OPT@
 SUBDIRS=	Parser Objects Python Modules
 
 # Other subdirectories
-SUBDIRSTOO=	Include Lib Doc Misc Demo Grammar
+SUBDIRSTOO=	Include Lib Misc Demo Grammar
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.in acconfig.h config.h.in Makefile.in
@@ -485,11 +485,13 @@ localclean:
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
+		    if test -d $$i; then \
 			(echo making clean in subdirectory $$i; cd $$i; \
 			 if test -f Makefile; \
 			 then $(MAKE) clean; \
 			 else $(MAKE) -f Makefile.*in clean; \
 			 fi); \
+		    else true; fi; \
 		done
 
 localclobber:	localclean
@@ -498,11 +500,13 @@ localclobber:	localclean
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
+		    if test -d $$i; then \
 			(echo clobbering subdirectory $$i; cd $$i; \
 			 if test -f Makefile; \
 			 then $(MAKE) clobber; \
-			 else $(MAKE) -f $(srcdir)/Makefile.in clobber; \
+			 else $(MAKE) -f $(srcdir)/Makefile*.in clobber; \
 			 fi); \
+		    else true; fi; \
 		done
 
 # Make things extra clean, before making a distribution:
