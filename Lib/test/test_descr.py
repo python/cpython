@@ -184,12 +184,19 @@ def dict_constructor():
     vereq(d, {})
     d = dict({})
     vereq(d, {})
-    d = dict(items={})
+    d = dict({})
     vereq(d, {})
     d = dict({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
     vereq(d, dict(d.items()))
-    vereq(d, dict(items=d.iteritems()))
+    vereq(d, dict(d.iteritems()))
+    d = dict({'one':1, 'two':2})
+    vereq(d, dict(one=1, two=2))
+    vereq(d, dict(**d))
+    vereq(d, dict({"one": 1}, two=2))
+    vereq(d, dict([("two", 2)], one=1))
+    vereq(d, dict([("one", 100), ("two", 200)], **d))
+    verify(d is not dict(**d))
     for badarg in 0, 0L, 0j, "0", [0], (0,):
         try:
             dict(badarg)
@@ -205,12 +212,6 @@ def dict_constructor():
                 raise TestFailed("no TypeError from dict(%r)" % badarg)
         else:
             raise TestFailed("no TypeError from dict(%r)" % badarg)
-    try:
-        dict(senseless={})
-    except TypeError:
-        pass
-    else:
-        raise TestFailed("no TypeError from dict(senseless={})")
 
     try:
         dict({}, {})
@@ -232,7 +233,7 @@ def dict_constructor():
 
     Mapping.keys = lambda self: self.dict.keys()
     Mapping.__getitem__ = lambda self, i: self.dict[i]
-    d = dict(items=Mapping())
+    d = dict(Mapping())
     vereq(d, Mapping.dict)
 
     # Init from sequence of iterable objects, each producing a 2-sequence.
@@ -2332,10 +2333,10 @@ def keywords():
     vereq(unicode(string='abc', errors='strict'), u'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), range(3))
-    vereq(dict(items={1: 2}), {1: 2})
+    # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
     for constructor in (int, float, long, complex, str, unicode,
-                        tuple, list, dict, file):
+                        tuple, list, file):
         try:
             constructor(bogus_keyword_arg=1)
         except TypeError:

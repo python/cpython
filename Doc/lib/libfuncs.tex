@@ -189,27 +189,34 @@ def my_import(name):
 \end{funcdesc}
 
 \begin{funcdesc}{dict}{\optional{mapping-or-sequence}}
-  Return a new dictionary initialized from the optional argument.
-  If an argument is not specified, return a new empty dictionary.
-  If the argument is a mapping object, return a dictionary mapping the
-  same keys to the same values as does the mapping object.
-  Else the argument must be a sequence, a container that supports
-  iteration, or an iterator object.  The elements of the argument must
-  each also be of one of those kinds, and each must in turn contain
+  Return a new dictionary initialized from an optional positional
+  argument or from a set of keyword arguments.
+  If no arguments are given, return a new empty dictionary.
+  If the positional argument is a mapping object, return a dictionary
+  mapping the same keys to the same values as does the mapping object.
+  Otherwise the positional argument must be a sequence, a container that
+  supports iteration, or an iterator object.  The elements of the argument
+  must each also be of one of those kinds, and each must in turn contain
   exactly two objects.  The first is used as a key in the new dictionary,
   and the second as the key's value.  If a given key is seen more than
   once, the last value associated with it is retained in the new
   dictionary.
+
+  If keyword arguments are given, the keywords themselves with their
+  associated values are added as items to the dictionary. If a key
+  is specified both in the positional argument and as a keyword argument,
+  the value associated with the keyword is retained in the dictionary.
   For example, these all return a dictionary equal to
-  \code{\{1: 2, 2: 3\}}:
+  \code{\{"one": 2, "two": 3\}}:
 
   \begin{itemize}
-    \item \code{dict(\{1: 2, 2: 3\})}
-    \item \code{dict(\{1: 2, 2: 3\}.items())}
-    \item \code{dict(\{1: 2, 2: 3\}.iteritems())}
-    \item \code{dict(zip((1, 2), (2, 3)))}
-    \item \code{dict([[2, 3], [1, 2]])}
-    \item \code{dict([(i-1, i) for i in (2, 3)])}
+    \item \code{dict(\{'one': 2, 'two': 3\})}
+    \item \code{dict(\{'one': 2, 'two': 3\}.items())}
+    \item \code{dict(\{'one': 2, 'two': 3\}.iteritems())}
+    \item \code{dict(zip(('one', 'two'), (2, 3)))}
+    \item \code{dict([['two', 3], ['one', 2]])}
+    \item \code{dict(one=2, two=3)}
+    \item \code{dict([(['one', 'two'][i-2], i) for i in (2, 3)])}
   \end{itemize}
 
   \versionadded{2.2}

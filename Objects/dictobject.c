@@ -1705,7 +1705,7 @@ static PyMethodDef mapp_methods[] = {
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
 	 setdefault_doc__},
 	{"pop",         (PyCFunction)dict_pop,          METH_O,
-	 pop__doc__},	
+	 pop__doc__},
 	{"popitem",	(PyCFunction)dict_popitem,	METH_NOARGS,
 	 popitem__doc__},
 	{"keys",	(PyCFunction)dict_keys,		METH_NOARGS,
@@ -1781,11 +1781,9 @@ static int
 dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *arg = NULL;
-	static char *kwlist[] = {"items", 0};
 	int result = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:dict",
-					 kwlist, &arg))
+	if (!PyArg_ParseTuple(args, "|O:dict", &arg))
 		result = -1;
 
 	else if (arg != NULL) {
@@ -1794,6 +1792,8 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 		else
 			result = PyDict_MergeFromSeq2(self, arg, 1);
 	}
+	if (result == 0 && kwds != NULL)
+		result = PyDict_Merge(self, kwds, 1);
 	return result;
 }
 
@@ -1817,7 +1817,9 @@ PyDoc_STRVAR(dictionary_doc,
 "dict(seq) -> new dictionary initialized as if via:\n"
 "    d = {}\n"
 "    for k, v in seq:\n"
-"        d[k] = v");
+"        d[k] = v\n"
+"dict(**kwargs) -> new dictionary initialized with the name=value pairs\n"
+"    in the keyword argument list.  For example:  dict(one=1, two=2)");
 
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
