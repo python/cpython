@@ -376,7 +376,7 @@ class Pickler:
                     return
             # Next check for 4-byte signed ints:
             high_bits = object >> 31  # note that Python shift sign-extends
-            if  high_bits == 0 or high_bits == -1:
+            if high_bits == 0 or high_bits == -1:
                 # All high bits are copies of bit 2**31, so the value
                 # fits in a 4-byte signed int.
                 self.write(BININT + pack("<i", object))
