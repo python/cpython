@@ -122,7 +122,8 @@ class FTP:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.connect(sa)
             except socket.error, msg:
-                self.sock.close()
+                if self.sock:
+                    self.sock.close()
                 self.sock = None
                 continue
             break
@@ -272,13 +273,15 @@ class FTP:
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
         msg = "getaddrinfo returns an empty list"
+        sock = None
         for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
             af, socktype, proto, canonname, sa = res
             try:
                 sock = socket.socket(af, socktype, proto)
                 sock.bind(sa)
             except socket.error, msg:
-                sock.close()
+                if sock:
+                    sock.close()
                 sock = None
                 continue
             break

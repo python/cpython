@@ -265,6 +265,7 @@ class SMTP:
         if not port: port = SMTP_PORT
         if self.debuglevel > 0: print 'connect:', (host, port)
         msg = "getaddrinfo returns an empty list"
+        self.sock = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
@@ -273,7 +274,8 @@ class SMTP:
                 self.sock.connect(sa)
             except socket.error, msg:
                 if self.debuglevel > 0: print 'connect fail:', (host, port)
-                self.sock.close()
+                if self.sock:
+                    self.sock.close()
                 self.sock = None
                 continue
             break
