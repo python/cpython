@@ -8,6 +8,7 @@ from distutils.spawn import spawn
 from distutils import log
 from md5 import md5
 import os
+import socket
 import platform
 import ConfigParser
 import httplib
