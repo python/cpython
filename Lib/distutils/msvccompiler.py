@@ -474,13 +474,18 @@ class MSVCCompiler (CCompiler) :
         return self.library_filename (lib)
 
 
-    def find_library_file (self, dirs, lib):
-
+    def find_library_file (self, dirs, lib, debug=0):
+        # Prefer a debugging library if found (and requested), but deal
+        # with it if we don't have one.
+        if debug:
+            try_names = [lib + "_d", lib]
+        else:
+            try_names = [lib]
         for dir in dirs:
-            libfile = os.path.join (dir, self.library_filename (lib))
-            if os.path.exists (libfile):
-                return libfile
-
+            for name in try_names:
+                libfile = os.path.join(dir, self.library_filename (name))
+                if os.path.exists(libfile):
+                    return libfile
         else:
             # Oops, didn't find it in *any* of 'dirs'
             return None
