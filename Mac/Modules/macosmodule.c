@@ -111,7 +111,7 @@ Rsrc_GetResInfo(RsrcObject *r, PyObject *args)
 	short id;
 	ResType type;
 	Str255 name;
-	if (!PyArg_Parse(args, "()"))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	GetResInfo(r->h, &id, &type, name);
 	return Py_BuildValue("(is#s#)",
@@ -125,7 +125,7 @@ Rsrc_AsBytes(RsrcObject *r, PyObject *args)
 	PyObject *rv;
 	char *cp;
 	
-	if (!PyArg_Parse(args, "(l)", &len))
+	if (!PyArg_ParseTuple(args, "l", &len))
 		return NULL;
 	HLock(r->h);
 	cp = (char *)*r->h;
@@ -140,7 +140,7 @@ Rsrc_AsString(RsrcObject *r, PyObject *args)
 	PyObject *rv;
 	unsigned char *cp;
 	
-	if (!PyArg_Parse(args, "()"))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	HLock(r->h);
 	cp = (unsigned char *)*r->h;
@@ -187,7 +187,7 @@ MacOS_GetResource(PyObject *self, PyObject *args)
 	ResType rt;
 	int id;
 	Handle h;
-	if (!PyArg_Parse(args, "(O&i)", GetOSType, &rt, &id))
+	if (!PyArg_ParseTuple(args, "O&i", GetOSType, &rt, &id))
 		return NULL;
 	h = GetResource(rt, id);
 	return (PyObject *)Rsrc_FromHandle(h);
@@ -199,10 +199,63 @@ MacOS_GetNamedResource(PyObject *self, PyObject *args)
 	ResType rt;
 	Str255 name;
 	Handle h;
-	if (!PyArg_Parse(args, "(O&O&)", GetOSType, &rt, GetStr255, &name))
+	if (!PyArg_ParseTuple(args, "O&O&", GetOSType, &rt, GetStr255, &name))
 		return NULL;
 	h = GetNamedResource(rt, name);
 	return (PyObject *)Rsrc_FromHandle(h);
+}
+
+/*----------------------------------------------------------------------*/
+/* Miscellaneous File System Operations */
+
+static PyObject *
+MacOS_GetFileType(PyObject *self, PyObject *args)
+{
+	Str255 name;
+	FInfo info;
+	PyObject *type, *creator, *res;
+	OSErr err;
+	
+	if (!PyArg_ParseTuple(args, "O&", GetStr255, &name))
+		return NULL;
+	if ((err = GetFInfo(name, 0, &info)) != noErr) {
+		errno = err;
+		PyErr_SetFromErrno(MacOS_Error);
+		return NULL;
+	}
+	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
+	creator = PyString_FromStringAndSize((char *)&info.fdCreator, 4);
+	res = Py_BuildValue("OO", type, creator);
+	DECREF(type);
+	DECREF(creator);
+	return res;
+}
+
+static PyObject *
+MacOS_SetFileType(PyObject *self, PyObject *args)
+{
+	Str255 name;
+	ResType type, creator;
+	FInfo info;
+	OSErr err;
+	
+	if (!PyArg_ParseTuple(args, "O&O&O&",
+			GetStr255, &name, GetOSType, &type, GetOSType, &creator))
+		return NULL;
+	if ((err = GetFInfo(name, 0, &info)) != noErr) {
+		errno = err;
+		PyErr_SetFromErrno(MacOS_Error);
+		return NULL;
+	}
+	info.fdType = type;
+	info.fdCreator = creator;
+	if ((err = SetFInfo(name, 0, &info)) != noErr) {
+		errno = err;
+		err_errno(MacOS_Error);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /*----------------------------------------------------------------------*/
@@ -215,23 +268,13 @@ GetSndCommand(PyObject *v, SndCommand *pc)
 	int len;
 	pc->param1 = 0;
 	pc->param2 = 0;
-	if (PyArg_Parse(v, "h", &pc->cmd))
-		return 1;
-	PyErr_Clear();
-	if (PyArg_Parse(v, "(h)", &pc->cmd))
-		return 1;
-	PyErr_Clear();
-	if (PyArg_Parse(v, "(hh)", &pc->cmd, &pc->param1))
-		return 1;
-	PyErr_Clear();
-	if (PyArg_Parse(v, "(hhl)",
-			&pc->cmd, &pc->param1, &pc->param2))
-		return 1;
-	PyErr_Clear();
-	if (PyArg_Parse(v, "(hhs#);SndCommand arg must be 1-3 ints or 2 ints + string",
-			&pc->cmd, &pc->param1, &pc->param2, &len))
-		return 1;
-	return 0;
+	if (PyTuple_Check(v)) {
+		if (PyArg_ParseTuple(v, "h|hl", &pc->cmd, &pc->param1, &pc->param2))
+			return 1;
+		PyErr_Clear();
+		return PyArg_ParseTuple(v, "hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
+	}
+	return PyArg_Parse(v, "h", &pc->cmd);
 }
 
 typedef struct {
@@ -277,7 +320,7 @@ SndCh_DisposeChannel(SndChObject *s, PyObject *args)
 {
 	int quitNow = 1;
 	if (PyTuple_Size(args) > 0) {
-		if (!PyArg_Parse(args, "(i)", &quitNow))
+		if (!PyArg_ParseTuple(args, "i", &quitNow))
 			return NULL;
 	}
 	SndCh_Cleanup(s, quitNow);
@@ -300,11 +343,8 @@ SndCh_SndPlay(SndChObject *s, PyObject *args)
 {
 	RsrcObject *r;
 	int async = 0;
-	if (!PyArg_Parse(args, "(O!)", RsrcType, &r)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(O&i)", RsrcType, &r, &async))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "O!|i", RsrcType, &r, &async))
+		return NULL;
 	if (!SndCh_OK(s))
 		return NULL;
 	SndPlay(s->chan, r->h, async);
@@ -318,11 +358,8 @@ SndCh_SndDoCommand(SndChObject *s, PyObject *args)
 	SndCommand c;
 	int noWait = 0;
 	OSErr err;
-	if (!PyArg_Parse(args, "(O&)", GetSndCommand, &c)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(O&i)", GetSndCommand, &c, &noWait))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "O&|i", GetSndCommand, &c, &noWait))
+		return NULL;
 	if (!SndCh_OK(s))
 		return NULL;
 	err = SndDoCommand(s->chan, &c, noWait);
@@ -334,7 +371,7 @@ SndCh_SndDoImmediate(SndChObject *s, PyObject *args)
 {
 	SndCommand c;
 	OSErr err;
-	if (!PyArg_Parse(args, "(O&)", GetSndCommand, &c))
+	if (!PyArg_ParseTuple(args, "O&", GetSndCommand, &c))
 		return 0;
 	if (!SndCh_OK(s))
 		return NULL;
@@ -432,14 +469,8 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 	SndCallBackUPP userroutine = 0;
 	OSErr err;
 	PyObject *res;
-	if (!PyArg_Parse(args, "(h)", &synth)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(hl)", &synth, &init)) {
-			PyErr_Clear();
-			if (!PyArg_Parse(args, "(hlO)", &synth, &init, &callback))
-				return NULL;
-		}
-	}
+	if (!PyArg_ParseTuple(args, "h|lO", &synth, &init, &callback))
+		return NULL;
 	if (callback != NULL) {
 		p = NEW(cbinfo, 1);
 		if (p == NULL)
@@ -472,7 +503,7 @@ MacOS_SndPlay(PyObject *self, PyObject *args)
 {
 	RsrcObject *r;
 	OSErr err;
-	if (!PyArg_Parse(args, "(O!)", &RsrcType, &r))
+	if (!PyArg_ParseTuple(args, "O!", &RsrcType, &r))
 		return NULL;
 	err = SndPlay((SndChannelPtr)NULL, r->h, 0);
 	return PyErr_Mac(MacOS_Error, (int)err);
@@ -484,7 +515,7 @@ MacOS_SndControl(PyObject *self, PyObject *args)
 	int id;
 	SndCommand c;
 	OSErr err;
-	if (!PyArg_Parse(args, "(iO&)", &id, GetSndCommand, &c))
+	if (!PyArg_ParseTuple(args, "iO&", &id, GetSndCommand, &c))
 		return NULL;
 	err = SndControl(id, &c);
 	if (err)
@@ -495,6 +526,8 @@ MacOS_SndControl(PyObject *self, PyObject *args)
 static PyMethodDef MacOS_Methods[] = {
 	{"GetResource",			MacOS_GetResource, 1},
 	{"GetNamedResource",	MacOS_GetNamedResource, 1},
+	{"GetFileType",			MacOS_GetFileType, 1},
+	{"SetFileType",			MacOS_SetFileType, 1},
 	{"SndNewChannel",		MacOS_SndNewChannel, 1},
 	{"SndPlay",				MacOS_SndPlay, 1},
 	{"SndControl",			MacOS_SndControl, 1},
