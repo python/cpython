@@ -2,14 +2,13 @@
 \label{module-imghdr}
 \stmodindex{imghdr}
 
-The \code{imghdr} module determines the type of image contained in a
+The \module{imghdr} module determines the type of image contained in a
 file or byte stream.
 
-The \code{imghdr} module defines the following function:
+The \module{imghdr} module defines the following function:
 
-\setindexsubitem{(in module imghdr)}
 
-\begin{funcdesc}{what}{filename\optional{\, h}}
+\begin{funcdesc}{what}{filename\optional{, h}}
 Tests the image data contained in the file named by \var{filename},
 and returns a string describing the image type.  If optional \var{h}
 is provided, the \var{filename} is ignored and \var{h} is assumed to
@@ -17,35 +16,27 @@ contain the byte stream to test.
 \end{funcdesc}
 
 The following image types are recognized, as listed below with the
-return value from \code{what}:
+return value from \function{what()}:
 
-\begin{enumerate}
-\item[``rgb''] SGI ImgLib Files
+\begin{tableii}{|l|l|}{code}{Value}{Image format}
+  \lineii{'rgb'}{SGI ImgLib Files}
+  \lineii{'gif'}{GIF 87a and 89a Files}
+  \lineii{'pbm'}{Portable Bitmap Files}
+  \lineii{'pgm'}{Portable Graymap Files}
+  \lineii{'ppm'}{Portable Pixmap Files}
+  \lineii{'tiff'}{TIFF Files}
+  \lineii{'rast'}{Sun Raster Files}
+  \lineii{'xbm'}{X Bitmap Files}
+  \lineii{'jpeg'}{JPEG data in JIFF format}
+\end{tableii}
 
-\item[``gif''] GIF 87a and 89a Files
-
-\item[``pbm''] Portable Bitmap Files
-
-\item[``pgm''] Portable Graymap Files
-
-\item[``ppm''] Portable Pixmap Files
-
-\item[``tiff''] TIFF Files
-
-\item[``rast''] Sun Raster Files
-
-\item[``xbm''] X Bitmap Files
-
-\item[``jpeg''] JPEG data in JIFF format
-\end{enumerate}
-
-You can extend the list of file types \code{imghdr} can recognize by
+You can extend the list of file types \module{imghdr} can recognize by
 appending to this variable:
 
 \begin{datadesc}{tests}
 A list of functions performing the individual tests.  Each function
 takes two arguments: the byte-stream and an open file-like object.
-When \code{what()} is called with a byte-stream, the file-like
+When \function{what()} is called with a byte-stream, the file-like
 object will be \code{None}.
 
 The test function should return a string describing the image type if
