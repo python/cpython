@@ -206,7 +206,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		return NULL;
 	}
 
-	PyOs_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
 	if( Py_VerboseFlag ) {
 		printf( "get_image_symbol( %s )\n", funcname );
 	}
@@ -233,7 +233,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		               "Bad index for %.180s", funcname );
 			break;
 		default:
-			PyOS_snprintf( buff, sizeof(buf),
+			PyOS_snprintf( buff, sizeof(buff),
 			       "can't load init function for dynamic module: "
 		               "Unknown error looking up %.180s", funcname );
 			break;
