@@ -64,6 +64,10 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
 		return NULL;
+	if (iterable != NULL && iterable->ob_type == &PyFrozenSet_Type) {
+		Py_INCREF(iterable);
+		return iterable;
+	}
 	return make_new_set(type, iterable);
 }
 
@@ -152,6 +156,16 @@ set_copy(PySetObject *so)
 	newso->data = data;
 	newso->hash = so->hash;
 	return (PyObject *)newso;
+}
+
+static PyObject *
+frozenset_copy(PySetObject *so)
+{
+	if (so->ob_type == &PyFrozenSet_Type) {
+		Py_INCREF(so);
+		return (PyObject *)so;
+	}
+	return set_copy(so);
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a set.");
@@ -686,7 +700,7 @@ frozenset_hash(PyObject *self)
 {
 	PyObject *it, *item;
 	PySetObject *so = (PySetObject *)self;
-	long hash = 0, x;
+	long hash = 0;
 
 	if (so->hash != -1)
 		return so->hash;
@@ -696,14 +710,12 @@ frozenset_hash(PyObject *self)
 		return -1;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		x = PyObject_Hash(item);
-		/* Applying  x*(x+1) breaks-up linear relationships so that
-		   h(1) ^ h(2) will be less likely to coincide with hash(3).
-		   Multiplying by a large prime increases the dispersion 
-		   between consecutive hashes.  Adding one bit from the 
-		   original restores the one bit lost during the multiply 
-		   (all the products are even numbers).  */
-		hash ^= (x * (x+1) * 3644798167) | (x&1);
+		/* Multiplying by a large prime increases the bit dispersion for
+		   closely spaced hash values.  The is important because some
+		   use cases have many combinations of a small number of 
+		   elements with nearby hashes so that many distinct combinations
+		   collapse to only a handful of distinct hash values. */
+		hash ^= PyObject_Hash(item) * 3644798167;
 		Py_DECREF(item);
 	}
 	Py_DECREF(it);
@@ -1096,17 +1108,17 @@ PyTypeObject PySet_Type = {
 
 
 static PyMethodDef frozenset_methods[] = {
-	{"copy",	(PyCFunction)set_copy,		METH_NOARGS,
+	{"copy",	(PyCFunction)frozenset_copy,	METH_NOARGS,
 	 copy_doc},
-	{"__copy__",	(PyCFunction)set_copy,		METH_NOARGS,
+	{"__copy__",	(PyCFunction)frozenset_copy,	METH_NOARGS,
 	 copy_doc},
-	{"difference",(PyCFunction)set_difference,	METH_O,
+	{"difference",	(PyCFunction)set_difference,	METH_O,
 	 difference_doc},
 	{"intersection",(PyCFunction)set_intersection,	METH_O,
 	 intersection_doc},
-	{"issubset",(PyCFunction)set_issubset,		METH_O,
+	{"issubset",	(PyCFunction)set_issubset,	METH_O,
 	 issubset_doc},
-	{"issuperset",(PyCFunction)set_issuperset,	METH_O,
+	{"issuperset",	(PyCFunction)set_issuperset,	METH_O,
 	 issuperset_doc},
 	{"__reduce__",	(PyCFunction)set_reduce,	METH_NOARGS,
 	 reduce_doc},
