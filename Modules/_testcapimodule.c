@@ -588,6 +588,169 @@ test_thread_state(PyObject *self, PyObject *args)
 }
 #endif
 
+/* a classic-type with copyable instances */
+
+typedef struct {
+	PyObject_HEAD
+	/* instance tag (a string). */
+	PyObject* tag;
+} CopyableObject;
+
+staticforward PyTypeObject Copyable_Type;
+
+#define Copyable_CheckExact(op) ((op)->ob_type == &Copyable_Type)
+
+/* -------------------------------------------------------------------- */
+
+/* copyable constructor and destructor */
+static PyObject*
+copyable_new(PyObject* tag)
+{
+	CopyableObject* self;
+
+	self = PyObject_New(CopyableObject, &Copyable_Type);
+	if (self == NULL)
+		return NULL;
+	Py_INCREF(tag);
+	self->tag = tag;
+	return (PyObject*) self;
+}
+
+static PyObject*
+copyable(PyObject* self, PyObject* args, PyObject* kw)
+{
+	PyObject* elem;
+	PyObject* tag;
+	if (!PyArg_ParseTuple(args, "O:Copyable", &tag))
+		return NULL;
+	elem = copyable_new(tag);
+	return elem;
+}
+
+static void
+copyable_dealloc(CopyableObject* self)
+{
+	/* discard attributes */
+	Py_DECREF(self->tag);
+	PyObject_Del(self);
+}
+
+/* copyable methods */
+
+static PyObject*
+copyable_copy(CopyableObject* self, PyObject* args)
+{
+	CopyableObject* copyable;
+	if (!PyArg_ParseTuple(args, ":__copy__"))
+		return NULL;
+	copyable = (CopyableObject*)copyable_new(self->tag);
+	if (!copyable)
+		return NULL;
+	return (PyObject*) copyable;
+}
+
+PyObject* _copy_deepcopy;
+
+static PyObject*
+copyable_deepcopy(CopyableObject* self, PyObject* args)
+{
+	CopyableObject* copyable = 0;
+	PyObject* memo;
+	PyObject* tag_copy;
+	if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
+		return NULL;
+
+	tag_copy = PyObject_CallFunctionObjArgs(_copy_deepcopy, self->tag, memo, NULL);
+
+	if(tag_copy) {
+		copyable = (CopyableObject*)copyable_new(tag_copy);
+		Py_DECREF(tag_copy);
+	}
+	return (PyObject*) copyable;
+}
+
+static PyObject*
+copyable_repr(CopyableObject* self)
+{
+	PyObject* repr;
+	char buffer[100];
+	
+	repr = PyString_FromString("<Copyable {");
+
+	PyString_ConcatAndDel(&repr, PyObject_Repr(self->tag));
+
+	sprintf(buffer, "} at %p>", self);
+	PyString_ConcatAndDel(&repr, PyString_FromString(buffer));
+
+	return repr;
+}
+
+static int
+copyable_compare(CopyableObject* obj1, CopyableObject* obj2)
+{
+	return PyObject_Compare(obj1->tag, obj2->tag);
+}
+
+static PyMethodDef copyable_methods[] = {
+	{"__copy__", (PyCFunction) copyable_copy, METH_VARARGS},
+	{"__deepcopy__", (PyCFunction) copyable_deepcopy, METH_VARARGS},
+	{NULL, NULL}
+};
+
+static PyObject*  
+copyable_getattr(CopyableObject* self, char* name)
+{
+	PyObject* res;
+	res = Py_FindMethod(copyable_methods, (PyObject*) self, name);
+	if (res)
+	return res;
+	PyErr_Clear();
+	if (strcmp(name, "tag") == 0) {
+	res = self->tag;
+	} else {
+		PyErr_SetString(PyExc_AttributeError, name);
+		return NULL;
+	}
+	if (!res)
+		return NULL;
+	Py_INCREF(res);
+	return res;
+}
+
+static int
+copyable_setattr(CopyableObject* self, const char* name, PyObject* value)
+{
+	if (value == NULL) {
+		PyErr_SetString(
+			PyExc_AttributeError,
+			"can't delete copyable attributes"
+			);
+		return -1;
+	}
+	if (strcmp(name, "tag") == 0) {
+		Py_DECREF(self->tag);
+		self->tag = value;
+		Py_INCREF(self->tag);
+	} else {
+		PyErr_SetString(PyExc_AttributeError, name);
+		return -1;
+	}
+	return 0;
+}
+
+statichere PyTypeObject Copyable_Type = {
+	PyObject_HEAD_INIT(NULL)
+	0, "Copyable", sizeof(CopyableObject), 0,
+	/* methods */
+	(destructor)copyable_dealloc, /* tp_dealloc */
+	0, /* tp_print */
+	(getattrfunc)copyable_getattr, /* tp_getattr */
+	(setattrfunc)copyable_setattr, /* tp_setattr */
+	(cmpfunc)copyable_compare, /* tp_compare */
+	(reprfunc)copyable_repr, /* tp_repr */
+	0, /* tp_as_number */
+};
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -614,9 +777,11 @@ static PyMethodDef TestMethods[] = {
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
 #endif
 #ifdef WITH_THREAD
-	{"_test_thread_state", (PyCFunction)test_thread_state, METH_VARARGS},
+	{"_test_thread_state",	(PyCFunction)test_thread_state, METH_VARARGS},
 #endif
+	{"make_copyable",	(PyCFunction) copyable,		METH_VARARGS},
 	{NULL, NULL} /* sentinel */
+
 };
 
 #define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
@@ -625,6 +790,15 @@ PyMODINIT_FUNC
 init_testcapi(void)
 {
 	PyObject *m;
+	PyObject *copy_module;
+
+
+	copy_module = PyImport_ImportModule("copy");
+	if(!copy_module)
+		return;
+	_copy_deepcopy = PyObject_GetAttrString(copy_module, "deepcopy");
+	Py_DECREF(copy_module);
+	Copyable_Type.ob_type = &PyType_Type;
 
 	m = Py_InitModule("_testcapi", TestMethods);
 
