@@ -37,6 +37,14 @@ handler class.  Finally, call the \method{handle_request()} or
 \method{serve_forever()} method of the server object to process one or
 many requests.
 
+When inheriting from \class{ThreadingMixIn} for threaded connection
+behavior, you should explicitly declare how you want your threads
+to behave on an abrupt shutdown. The \class{ThreadingMixIn} class
+defines an attribute \var{daemon_threads}, which indicates whether
+or not the server should wait for thread termination. You should
+set the flag explicitly if you would like threads to behave
+autonomously.
+
 Server classes have the same external methods and attributes, no
 matter what network protocol they use:
 
