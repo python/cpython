@@ -155,6 +155,7 @@ class build_ext (Command):
         # also Python's library directory must be appended to library_dirs
         if os.name == 'nt':
             self.library_dirs.append (os.path.join(sys.exec_prefix, 'libs'))
+            self.implib_dir = self.build_temp
             if self.debug:
                 self.build_temp = os.path.join (self.build_temp, "Debug")
             else:
@@ -545,7 +546,7 @@ class build_ext (Command):
         # directory. Since they have different names for debug and release
         # builds, they can go into the same directory.
         implib_file = os.path.join (
-            self.build_temp,
+            self.implib_dir,
             self.get_ext_libname (ext.name))
         extra_args.append ('/IMPLIB:' + implib_file)
         self.mkpath (os.path.dirname (implib_file))
