@@ -40,9 +40,13 @@ The test_support helper module provides a two functions for use by
 PyUnit based tests in the Python regression testing framework:
 run_unittest() takes a unittest.TestCase derived class as a parameter
 and runs the tests defined in that class, and run_suite() takes a
-populated TestSuite instance and runs the tests..  All test methods in
-the Python regression framework have names that start with "test_" and
-use lower-case names with words separated with underscores.
+populated TestSuite instance and runs the tests.  run_suite() is
+preferred because unittest files typically grow multiple test classes,
+and you might as well be prepared.
+
+All test methods in the Python regression framework have names that
+start with "test_" and use lower-case names with words separated with
+underscores.
 
 All PyUnit-based tests in the Python test suite use boilerplate that
 looks like this:
@@ -50,11 +54,17 @@ looks like this:
     import unittest
     import test_support
 
-    class MyTestCase(unittest.TestCase):
+    class MyTestCase1(unittest.TestCase):
         # define test methods here...
 
+    class MyTestCase2(unittest.TestCase):
+        # define more test methods here...
+
     def test_main():
-        test_support.run_unittest(MyTestCase)
+	suite = unittest.TestSuite()
+	suite.addTest(unittest.makeSuite(MyTestCase1))
+	suite.addTest(unittest.makeSuite(MyTestCase2))
+        test_support.run_suite(suite)
 
     if __name__ == "__main__":
         test_main()
@@ -153,7 +163,7 @@ top level:
 
     make test
 
-{WINDOWS] Run rt.bat from your PCBuild directory.  Read the comments at
+[WINDOWS] Run rt.bat from your PCBuild directory.  Read the comments at
 the top of rt.bat for the use of special -d, -O and -q options processed
 by rt.bat.
 
