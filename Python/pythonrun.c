@@ -693,12 +693,18 @@ parse_syntax_error(PyObject *err, PyObject **message, char **filename,
 
 	if (!(v = PyObject_GetAttrString(err, "offset")))
 		goto finally;
-	hold = PyInt_AsLong(v);
-	Py_DECREF(v);
-	v = NULL;
-	if (hold < 0 && PyErr_Occurred())
-		goto finally;
-	*offset = (int)hold;
+	if (v == Py_None) {
+		*offset = -1;
+		Py_DECREF(v);
+		v = NULL;
+	} else {
+		hold = PyInt_AsLong(v);
+		Py_DECREF(v);
+		v = NULL;
+		if (hold < 0 && PyErr_Occurred())
+			goto finally;
+		*offset = (int)hold;
+	}
 
 	if (!(v = PyObject_GetAttrString(err, "text")))
 		goto finally;
@@ -718,6 +724,40 @@ void
 PyErr_Print(void)
 {
 	PyErr_PrintEx(1);
+}
+
+static void
+print_error_text(PyObject *f, int offset, char *text)
+{
+	char *nl;
+	if (offset >= 0) {
+		if (offset > 0 && offset == (int)strlen(text))
+			offset--;
+		for (;;) {
+			nl = strchr(text, '\n');
+			if (nl == NULL || nl-text >= offset)
+				break;
+			offset -= (nl+1-text);
+			text = nl+1;
+		}
+		while (*text == ' ' || *text == '\t') {
+			text++;
+			offset--;
+		}
+	}
+	PyFile_WriteString("    ", f);
+	PyFile_WriteString(text, f);
+	if (*text == '\0' || text[strlen(text)-1] != '\n')
+		PyFile_WriteString("\n", f);
+	if (offset == -1)
+		return;
+	PyFile_WriteString("    ", f);
+	offset--;
+	while (offset > 0) {
+		PyFile_WriteString(" ", f);
+		offset--;
+	}
+	PyFile_WriteString("^\n", f);
 }
 
 void
@@ -795,36 +835,8 @@ PyErr_PrintEx(int set_sys_last_vars)
 				sprintf(buf, "%d", lineno);
 				PyFile_WriteString(buf, f);
 				PyFile_WriteString("\n", f);
-				if (text != NULL) {
-					char *nl;
-					if (offset > 0 &&
-					    offset == (int)strlen(text))
-						offset--;
-					for (;;) {
-						nl = strchr(text, '\n');
-						if (nl == NULL ||
-						    nl-text >= offset)
-							break;
-						offset -= (nl+1-text);
-						text = nl+1;
-					}
-					while (*text == ' ' || *text == '\t') {
-						text++;
-						offset--;
-					}
-					PyFile_WriteString("    ", f);
-					PyFile_WriteString(text, f);
-					if (*text == '\0' ||
-					    text[strlen(text)-1] != '\n')
-						PyFile_WriteString("\n", f);
-					PyFile_WriteString("    ", f);
-					offset--;
-					while (offset > 0) {
-						PyFile_WriteString(" ", f);
-						offset--;
-					}
-					PyFile_WriteString("^\n", f);
-				}
+				if (text != NULL)
+					print_error_text(f, offset, text);
 				Py_INCREF(message);
 				Py_DECREF(v);
 				v = message;
