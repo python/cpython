@@ -17,6 +17,7 @@ else:
     has_stat = 0
 
 has_textmode = (tempfile._text_openflags != tempfile._bin_openflags)
+has_spawnl = hasattr(os, 'spawnl')
 
 # TEST_FILES may need to be tweaked for systems depending on the maximum
 # number of files that can be opened at one time (see ulimit -n)
@@ -323,39 +324,33 @@ class test__mkstemp_inner(TC):
 
     def test_noinherit(self):
         """_mkstemp_inner file handles are not inherited by child processes"""
-        # FIXME: Find a way to test this on Windows.
-        if os.name != 'posix':
+        if not has_spawnl:
             return            # ugh, can't use TestSkipped.
 
+        if test_support.verbose:
+            v="v"
+        else:
+            v="q"
+
         file = self.do_create()
+        fd = "%d" % file.fd
+
+        try:
+            me = __file__
+        except NameError:
+            me = sys.argv[0]
 
         # We have to exec something, so that FD_CLOEXEC will take
-        # effect.  The sanest thing to try is /bin/sh; we can easily
-        # instruct it to attempt to write to the fd and report success
-        # or failure.  Unfortunately, sh syntax does not permit use of
-        # fds numerically larger than 9; abandon this test if so.
-        if file.fd > 9:
-            raise test_support.TestSkipped, 'cannot test with fd %d' % file.fd
+        # effect.  The core of this test is therefore in
+        # tf_inherit_check.py, which see.
+        tester = os.path.join(os.path.dirname(os.path.abspath(me)),
+                              "tf_inherit_check.py")
 
-        pid = os.fork()
-        if pid:
-            status = os.wait()[1]
-            self.failUnless(os.WIFEXITED(status),
-                            "child process did not exit (status %d)" % status)
-
-            # We want the child to have exited _un_successfully, indicating
-            # failure to write to the closed fd.
-            self.failUnless(os.WEXITSTATUS(status) != 0,
-                            "child process exited successfully")
-
-        else:
-            try:
-                # Throw away stderr.
-                nul = os.open('/dev/null', os.O_RDWR)
-                os.dup2(nul, 2)
-                os.execv('/bin/sh', ['sh', '-c', 'echo blat >&%d' % file.fd])
-            except:
-                os._exit(0)
+        retval = os.spawnl(os.P_WAIT, sys.executable,
+                           sys.executable, tester, v, fd)
+        self.failIf(retval < 0,
+                    "child process caught fatal signal %d" % -retval)
+        self.failIf(retval > 0, "child process reports failure")
 
     def test_textmode(self):
         """_mkstemp_inner can create files in text mode"""
