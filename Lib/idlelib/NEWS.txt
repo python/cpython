@@ -1,3 +1,14 @@
+What's New in IDLE 1.1b2?
+=========================
+
+*Release date: DD-MMM-2004*
+
+- When paragraph reformat width was made configurable, a bug was
+  introduced that caused reformatting of comment blocks to ignore how
+  far the block was indented, effectively adding the indentation width
+  to the reformat width.  This has been repaired, and the reformat
+  width is again a bound on the total width of reformatted lines.
+
 What's New in IDLE 1.1b1?
 =========================
 
@@ -52,7 +63,7 @@ What's New in IDLE 1.1a1?
 - If nulls somehow got into the strings in recent-files.lst
   EditorWindow.update_recent_files_list() was failing.  Python Bug 931336.
 
-- If the normal background is changed via Configure/Highlighting, it will update 
+- If the normal background is changed via Configure/Highlighting, it will update
   immediately, thanks to the previously mentioned patch by Nigel Rowe.
 
 - Add a highlight theme for builtin keywords.  Python Patch 805830 Nigel Rowe
@@ -73,7 +84,7 @@ What's New in IDLE 1.1a1?
   the port or connect to the subprocess.  Clean up error handling during
   connection initiation phase.  This is an update of Python Patch 778323.
 
-- Print correct exception even if source file changed since shell was 
+- Print correct exception even if source file changed since shell was
   restarted.  IDLEfork Patch 869012 Noam Raphael
 
 - Keybindings with the Shift modifier now work correctly.  So do bindings which
@@ -81,7 +92,7 @@ What's New in IDLE 1.1a1?
   Python Bug 775353, IDLEfork Bugs 755647, 761557
 
 - After an exception, run.py was not setting the exception vector. Noam
-  Raphael suggested correcting this so pdb's postmortem pm() would work. 
+  Raphael suggested correcting this so pdb's postmortem pm() would work.
   IDLEfork Patch 844675
 
 - IDLE now does not fail to save the file anymore if the Tk buffer is not a
@@ -179,7 +190,7 @@ What's New in IDLEfork 0.9b1?
 *Release date: 02-Jun-2003*
 
 - The current working directory of the execution environment (and shell
-  following completion of execution) is now that of the module being run. 
+  following completion of execution) is now that of the module being run.
 
 - Added the delete-exitfunc option to config-main.def.  (This option is not
   included in the Options dialog.)  Setting this to True (the default) will
@@ -247,7 +258,7 @@ What's New in IDLEfork 0.9b1?
 - Improved I/O response by tweaking the wait parameter in various
   calls to signal.signal().
 
-- Implemented a threaded subprocess which allows interrupting a pass 
+- Implemented a threaded subprocess which allows interrupting a pass
   loop in user code using the 'interrupt' extension.  User code runs
   in MainThread, while the RPCServer is handled by SockThread.  This is
   necessary because Windows doesn't support signals.
@@ -269,11 +280,11 @@ What's New in IDLEfork 0.9b1?
 
 - Exit IDLE cleanly even when doing subprocess I/O
 
-- Handle subprocess interrupt with an RPC message.  
+- Handle subprocess interrupt with an RPC message.
 
 - Restart the subprocess if it terminates itself. (VPython programs do that)
 
-- Support subclassing of exceptions, including in the shell, by moving the 
+- Support subclassing of exceptions, including in the shell, by moving the
   exception formatting to the subprocess.
 
 
@@ -312,15 +323,15 @@ What's New in IDLEfork 0.9 Alpha 2?
 
 - Removed the File Path from the Additional Help Sources scrolled list.
 
-- Add capability to access Additional Help Sources on the web if the 
+- Add capability to access Additional Help Sources on the web if the
   Help File Path begins with //http or www.  (Otherwise local path is
   validated, as before.)
 
 - Additional Help Sources were not being posted on the Help menu in the
-  order entered.  Implement sorting the list by [HelpFiles] 'option' 
+  order entered.  Implement sorting the list by [HelpFiles] 'option'
   number.
 
-- Add Browse button to New Help Source dialog.  Arrange to start in 
+- Add Browse button to New Help Source dialog.  Arrange to start in
   Python/Doc if platform is Windows, otherwise start in current directory.
 
 - Put the Additional Help Sources directly on the Help menu instead of in
@@ -348,7 +359,7 @@ What's New in IDLEfork 0.9 Alpha 2?
   accessing python.org.
 
 - Make the methods for finding the Python help docs more robust, and make
-  them work in the installed configuration, also.  
+  them work in the installed configuration, also.
 
 - On the Save Before Run dialog, make the OK button the default.  One
   less mouse action!
@@ -385,7 +396,7 @@ What's New in IDLEfork 0.9 Alpha 2?
 What's New in IDLEfork 0.9 Alpha 1?
 ===================================
 
-*Release date: 31-Dec-2002* 
+*Release date: 31-Dec-2002*
 
 - First release of major new functionality.  For further details refer to
   Idle-dev and/or the Sourceforge CVS.
